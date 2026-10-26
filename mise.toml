@@ -1,0 +1,7 @@
+# Tool pins for the jadwigo monorepo. `mise install` reads this; CI's setup action does too.
+# Postgres comes from Postgres.app locally and the runner's Postgres 16 in CI. No Docker.
+[tools]
+node = "24.22.1"
+bun = "1.4.4"
+uv = "0.12.5"
+gitleaks = "8.30.1"

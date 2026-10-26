@@ -1,0 +1,14 @@
+node_modules/
+.turbo/
+.venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/commands/
+coverage/
+dist/
+.DS_Store

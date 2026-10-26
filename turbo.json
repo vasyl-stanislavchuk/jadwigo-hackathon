@@ -1,0 +1,21 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "globalDependencies": [
+    "tsconfig.base.json",
+    "biome.json",
+    "vitest.config.ts",
+    "lint/*.grit",
+    "mise.toml"
+  ],
+  "globalPassThroughEnv": ["DATABASE_URL"],
+  "tasks": {
+    "lint": {},
+    "typecheck": {},
+    "test": {},
+    "test:int": { "cache": false },
+    "//#lint": {},
+    "//#typecheck": {},
+    "//#test": {},
+    "dev": { "cache": false, "persistent": true }
+  }
+}

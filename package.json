@@ -1,0 +1,49 @@
+{
+  "name": "jadwigo",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.4",
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*",
+      "tools"
+    ],
+    "catalog": {
+      "@types/node": "24.19.2",
+      "fast-check": "4.10.2",
+      "typescript": "6.0.3",
+      "vitest": "5.0.5",
+      "zod": "4.6.7"
+    }
+  },
+  "scripts": {
+    "check": "turbo run lint typecheck test --affected",
+    "lint": "biome check .claude lint tools/src *.json *.ts && knip && depcruise apps packages tools --config .dependency-cruiser.cjs && bun tools/src/check-no-bank.ts && bun tools/src/check-worklog.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "bun test ./.claude/hooks/guard.test.ts",
+    "prepare": "lefthook install"
+  },
+  "//": {
+    "@biomejs/biome": "lint and format for every package (biome.json) and the GritQL house rules in lint/*.grit; the PostToolUse hook runs it on each edited file",
+    "@types/bun": "types for the bun-run scripts at the root: .claude/hooks/guard.ts and its bun:test file",
+    "@types/node": "Node 24 types for the root vitest.config.ts and the hooks",
+    "dependency-cruiser": "import direction (.dependency-cruiser.cjs): apps import packages, packages never import apps, contracts imports nothing of ours, only tests import testing",
+    "knip": "unused files, exports and dependencies across the workspace (knip.json)",
+    "lefthook": "the pre-commit hook (lefthook.yml): Biome on staged files and gitleaks",
+    "turbo": "affected-only lint, typecheck and test across the workspace (turbo.json), the engine of make check",
+    "typescript": "tsc for typecheck in every package; the strict base is tsconfig.base.json",
+    "vitest": "the test runner every package's test script calls with the root vitest.config.ts"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@types/bun": "1.4.3",
+    "@types/node": "catalog:",
+    "dependency-cruiser": "18.6.0",
+    "knip": "6.42.0",
+    "lefthook": "2.2.2",
+    "turbo": "2.11.9",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
