@@ -163,6 +163,15 @@ jobs:
           cache: true
       - name: No question bank in git
         run: bun tools/src/check-no-bank.ts
+      - name: The PR body has the /jadwigo-pr shape
+        if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'renovate[bot]'
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          bun tools/src/check-pr-body.ts || {
+            echo "::error::Fix the body (gh pr edit --body-file), then rerun this job: gh run rerun ${{ github.run_id }} --failed"
+            exit 1
+          }
 
   ci-ok:
     needs: [changes, lint, typecheck, unit, integration, contracts, docs, fence-checks]

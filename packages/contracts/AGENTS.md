@@ -1,0 +1,15 @@
+# packages/contracts
+
+Zod schemas for everything that crosses a boundary: ids, the lesson script, answers, routes, errors.
+
+- **Not here:** Logic beyond parsing. Any import of ours (dependency-cruiser fails it).
+- **Owner:** the platform workstream (`docs/workstreams/platform.md`). **Filled by:** `dl-5ssh.34.5`.
+- **Imports:** `zod` only.
+- **Public surface:** `src/index.ts`. Other files are private to this package.
+- **Test:** `bunx turbo run lint typecheck test --filter=./packages/contracts`
+
+## Rules here
+
+- Ids are branded types; only the parsers here create them.
+- `schemas/*.json` are snapshots. Changing one is a one-way door: update with `vitest -u` on purpose and say so in the PR.
+- In a wave, contracts change only in the lead's step 0 PR.

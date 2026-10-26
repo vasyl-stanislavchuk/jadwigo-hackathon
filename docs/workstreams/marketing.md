@@ -15,3 +15,12 @@ The labeler (`.github/labeler.yml`) puts the `ws:marketing` label on a PR that t
 
 - Check what changed: `make check`.
 - Only this workstream's packages: `bunx turbo run lint typecheck test --filter=./apps/site`.
+
+## Done at the next milestone
+
+Milestone 1, free tier (the order is in `docs/README.md`). jadwigo.pl and jadwigo.kids are live in Polish and English and lead a family to the featured lesson.
+
+## Meets
+
+- **platform:** hosts in `packages/config` and the site's distribution.
+- **learner-experience:** `packages/ui` and `packages/copy`.

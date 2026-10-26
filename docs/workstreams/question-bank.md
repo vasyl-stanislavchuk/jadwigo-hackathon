@@ -15,3 +15,13 @@ The labeler (`.github/labeler.yml`) puts the `ws:question-bank` label on a PR th
 
 - Check what changed: `make check`.
 - Only this workstream's packages: `bunx turbo run lint typecheck test --filter=./packages/bank`.
+
+## Done at the next milestone
+
+Milestone 2, goals loop (the order is in `docs/README.md`). An agent sends a need and gets back fitting, credited question sets, and every change to search is measured on the golden sets.
+
+## Meets
+
+- **learner-knowledge:** lessons come from the bank and a child's own mistakes.
+- **ai-workflows:** `jw question` and the workflows that compose lessons.
+- **platform:** the bank routes in `apps/api`.

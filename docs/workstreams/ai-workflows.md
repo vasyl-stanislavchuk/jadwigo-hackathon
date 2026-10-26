@@ -17,3 +17,13 @@ The labeler (`.github/labeler.yml`) puts the `ws:ai-workflows` label on a PR tha
 - Check what changed: `make check`.
 - Only this workstream's packages: `bunx turbo run lint typecheck test --filter=./apps/cli`.
 - The CLI on its own: `cd apps/cli && uv run pytest`.
+
+## Done at the next milestone
+
+Milestone 4, hackathon (the order is in `docs/README.md`). A judge plays without installing anything, and a parent's request goes from a workflow through `jw` and MCP calls to a lesson, with the human in charge at every step.
+
+## Meets
+
+- **platform:** `packages/api-client` under `jw`.
+- **question-bank:** `jw question` verbs.
+- **learner-knowledge:** the knowledge base a workflow reads.

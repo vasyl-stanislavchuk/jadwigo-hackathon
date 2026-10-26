@@ -26,3 +26,14 @@ The labeler (`.github/labeler.yml`) puts the `ws:platform` label on a PR that to
 - Check what changed: `make check`.
 - Only this workstream's packages: `bunx turbo run lint typecheck test --filter=./apps/api --filter=./packages/contracts --filter=./packages/store --filter=./packages/config --filter=./packages/api-client --filter=./packages/testing`.
 - The integration placeholder: `DATABASE_URL=postgresql://localhost/jadwigo_test bunx turbo run test:int --filter=./packages/store` (Postgres.app).
+
+## Done at the next milestone
+
+Milestone 1, free tier (the order is in `docs/README.md`). A featured lesson is served by `apps/api` through `packages/contracts` and `packages/store`, the owner deploys it with one command, and CI guards every PR with `ci-ok`.
+
+## Meets
+
+- **Every workstream** builds on its contracts, its CI and its fences.
+- **learner-experience:** `packages/api-client` is what the player calls.
+- **marketing:** hosts come from `packages/config`.
+- **question-bank:** the bank routes in `apps/api`.
