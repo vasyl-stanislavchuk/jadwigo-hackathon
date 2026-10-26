@@ -8,8 +8,9 @@
 - `.claude/skills/` links in two kinds of instructions, and they never mix:
   - **Dev commands** (`.agents/skills/dev-*`), for building this repo: `/dev-pr` whenever you write
     or rewrite a PR body (the guard refuses a `gh pr create` or `gh pr edit` body without its
-    shape, so write it to a file and pass `--body-file`), `/dev-handoff` when work moves to another session, `/dev-drop` to make,
-    check or publish a drop.
+    shape, so write it to a file and pass `--body-file`), and `/dev-drop` to make, check or
+    publish a drop. `/dev-drop` builds on md's own `/md-drops`, which `md ai setup --yes`
+    installs into `.claude/commands/`.
   - **Product AI workflows** (`workflows/jadwigo-*`), which the app runs for parents. You run
     one here only to develop or test it.
 - Land a PR with `gh pr merge <n> --auto --squash`: GitHub merges it once `ci-ok` is green.

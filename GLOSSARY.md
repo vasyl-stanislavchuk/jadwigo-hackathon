@@ -24,7 +24,7 @@ inside the repo, and the outside sense gets a qualifier.
 
 | Word | Means |
 | --- | --- |
-| **issue** | one unit of work on the beads tracker, with Read, Owns, Frozen, Do, Done when, Stop if. "Bead" means the same; "card" is not used |
+| **issue** | one unit of work on the beads tracker, with Read, Owns, Frozen, Do, Done when, Stop if. It is the whole brief a fresh session gets. "Bead" means the same; "card" is not used |
 | **epic** | an issue that groups others toward one goal, such as `dl-5ssh.34` |
 | **workstream** | one md context project and the directories it owns (`docs/workstreams/`) |
 | **wave** | one round of parallel work on an epic, planned in `docs/worklog/<epic>/<date>-wave-<n>.md` |
@@ -39,7 +39,7 @@ inside the repo, and the outside sense gets a qualifier.
 | **dev command** | instructions for an agent building this repo, such as writing a PR body. Lives in `.agents/skills/`, named `/dev-<verb>`. Never shipped to a parent |
 | **drop** | a small published site that explains a design or a result, sourced in `docs/drops/<folder>/` |
 | **worklog** | notes a running epic needs between sessions, deleted when it closes |
-| **handoff** | the note that lets a fresh session pick up work: what was asked, done, hit, and next |
+| **stop note** | 4 lines appended to an issue when a session stops short: what was asked, what was done, the exact error, what to try next |
 | **owner** | the person who decides product questions, runs paid and outward steps, and deploys |
 
 ## Merge danger

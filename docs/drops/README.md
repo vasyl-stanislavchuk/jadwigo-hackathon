@@ -53,11 +53,11 @@ starts one, and `md drops --help` covers the rest.
    current password. Without `--force` md makes a second site (`-2`), and `--password auto --force`
    rotates the password.
 
-`/dev-drop` (a dev command in `.agents/skills/`) walks through these steps and stops before the publish.
+`/dev-drop` walks through these steps for jadwigo. It is a dev command in `.agents/skills/`, layered on md's own `/md-drops`, which says how any drop is built. A one-page drop can be a `spec.json` alone, written by a `build.ts` beside it and stops before the publish.
 
 ## Never in a drop source
 
-- a password, or a link carrying `?password=` (`check-drops.ts` fails it)
+- a password, or a link carrying `?password=` (`check-drops.ts` fails it, in a `site.json` drop or a one-page `spec.json` drop)
 - a family member's name or real learner data (gitleaks, and `AGENTS.md` fence 9)
 - question bank content (`check-no-bank.ts`)
 - a generated page edited by hand: rerun its generator instead, and on a merge conflict regenerate it
