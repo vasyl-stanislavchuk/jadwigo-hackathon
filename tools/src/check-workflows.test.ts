@@ -4,40 +4,58 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { checkWorkflows } from "./check-workflows.ts";
 
-function repo(name: string, meta: string, links: string[]) {
+function repo() {
   const root = mkdtempSync(join(tmpdir(), "workflows-"));
-  mkdirSync(join(root, "workflows", name), { recursive: true });
-  writeFileSync(join(root, "workflows", name, "SKILL.md"), `---\n${meta}\n---\n\n# x\n`);
-  for (const dir of [".claude/skills", ".agents/skills"]) {
+  for (const dir of ["workflows", ".claude/skills", ".agents/skills"])
     mkdirSync(join(root, dir), { recursive: true });
-    if (links.includes(dir)) symlinkSync(`../../workflows/${name}`, join(root, dir, name));
-  }
   return root;
 }
 
-const both = [".claude/skills", ".agents/skills"];
+function skill(root: string, dir: string, name: string, meta = `name: ${name}\ndescription: x`) {
+  mkdirSync(join(root, dir, name), { recursive: true });
+  writeFileSync(join(root, dir, name, "SKILL.md"), `---\n${meta}\n---\n\n# x\n`);
+}
+
+const link = (root: string, at: string, to: string) => symlinkSync(to, join(root, at));
+
+function good() {
+  const root = repo();
+  skill(root, "workflows", "jadwigo-lesson-compose");
+  mkdirSync(join(root, "workflows/_shared"));
+  link(root, ".claude/skills/jadwigo-lesson-compose", "../../workflows/jadwigo-lesson-compose");
+  link(root, ".agents/skills/jadwigo-lesson-compose", "../../workflows/jadwigo-lesson-compose");
+  skill(root, ".agents/skills", "dev-pr");
+  link(root, ".claude/skills/dev-pr", "../../.agents/skills/dev-pr");
+  return root;
+}
 
 describe("checkWorkflows", () => {
-  it("passes a named workflow with both links", () => {
-    const root = repo("jadwigo-pr", 'name: jadwigo-pr\ndescription: "Use when…"', both);
-    expect(checkWorkflows(root)).toEqual([]);
+  it("passes a product workflow and a dev command, each in its home with its links", () => {
+    expect(checkWorkflows(good())).toEqual([]);
   });
 
-  it("fails a missing link", () => {
-    const root = repo("jadwigo-pr", "name: jadwigo-pr\ndescription: x", [".claude/skills"]);
+  it("fails a dev command among the product workflows, and a product one in .agents", () => {
+    const root = good();
+    skill(root, "workflows", "dev-handoff");
+    skill(root, ".agents/skills", "jadwigo-drop-publish");
     expect(checkWorkflows(root)).toEqual([
-      ".agents/skills/jadwigo-pr: not a link to ../../workflows/jadwigo-pr; run make skills",
+      "workflows/dev-handoff: dev commands live in .agents/skills/, not with the product workflows",
+      ".agents/skills/jadwigo-drop-publish: product workflows live in workflows/, linked here",
     ]);
   });
 
-  it("fails a wrong name, a missing description, an unprefixed folder and a stray link", () => {
-    const root = repo("pr", "name: other", both);
-    symlinkSync("../../workflows/gone", join(root, ".claude/skills/gone"));
+  it("fails a missing link, a stray link, a bad name and a wrong frontmatter name", () => {
+    const root = repo();
+    skill(root, "workflows", "jadwigo-lesson", "name: other\ndescription: x");
+    skill(root, ".agents/skills", "dev-pr");
+    link(root, ".claude/skills/gone", "../../workflows/gone");
     expect(checkWorkflows(root)).toEqual([
-      "workflows/pr: names start with jadwigo-",
-      "workflows/pr: frontmatter name is not pr",
-      "workflows/pr: frontmatter has no description",
-      ".claude/skills/gone: no workflow by that name; remove the link",
+      "workflows/jadwigo-lesson: product workflows are jadwigo-<record>-<verb>",
+      "workflows/jadwigo-lesson: frontmatter name is not jadwigo-lesson",
+      ".claude/skills/jadwigo-lesson: not a link to ../../workflows/jadwigo-lesson; run make skills",
+      ".agents/skills/jadwigo-lesson: not a link to ../../workflows/jadwigo-lesson; run make skills",
+      ".claude/skills/dev-pr: not a link to ../../.agents/skills/dev-pr; run make skills",
+      ".claude/skills/gone: links to nothing this repo defines; remove it",
     ]);
   });
 });

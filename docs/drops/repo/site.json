@@ -24,7 +24,8 @@
     "../../research/README.md",
     "../../worklog/README.md",
     "../../../workflows/README.md",
-    "../../../workflows/jadwigo-pr/SKILL.md",
+    "../../../.agents/skills/README.md",
+    "../../../.agents/skills/dev-pr/SKILL.md",
     "../../../.github/pull_request_template.md"
   ]
 }

@@ -8,7 +8,7 @@ __pycache__/
 !.env.example
 CLAUDE.local.md
 .claude/settings.local.json
-.claude/commands/
+.claude/worktrees/
 coverage/
 dist/
 .DS_Store

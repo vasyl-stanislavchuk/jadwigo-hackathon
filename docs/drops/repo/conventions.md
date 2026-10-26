@@ -9,7 +9,7 @@ when: 2026-10-26T20:00:00Z
 
 ## The PR body
 
-`/jadwigo-pr` is the `pr` skill from Matt Pocock's skills, vendored with its MIT licence and credits. It writes these sections:
+`/dev-pr` is the `pr` skill from Matt Pocock's skills, vendored with its MIT licence and credits. It writes these sections:
 
 - **Summary:** the smallest visual that shows the change, such as a file tree, a call tree, a shaped diff or a diagram.
 - **Evidence:** a before and an after, such as a failing test that now passes, changed output or a screenshot. It also says what did not run.
@@ -31,17 +31,19 @@ A revert does not undo these, so they are always called one-way:
 | a deploy, a publish, an email | it has already left the machine |
 :::
 
-## The workflows
+## Dev commands and product workflows
 
-:::table The /jadwigo workflows
-| Workflow | Used when |
+The repo keeps its agent instructions in two separate homes. **Product AI workflows** live in `workflows/` as `/jadwigo-<record>-<verb>`: they are what Jadwigo's AI does for a parent, and they ship with the product. **Dev commands** live in `.agents/skills/` as `/dev-<verb>`: they help agents build the repo, and never reach a parent.
+
+:::table The dev commands
+| Command | Used when |
 | --- | --- |
-| `/jadwigo-pr` | writing or rewriting any PR body |
-| `/jadwigo-handoff` | work moves to another session; it writes a handoff note and a prompt ready to paste |
-| `/jadwigo-drop` | making, checking or publishing a drop; it stops before the publish |
+| `/dev-pr` | writing or rewriting any PR body |
+| `/dev-handoff` | work moves to another session; it writes a handoff note and a prompt ready to paste |
+| `/dev-drop` | making, checking or publishing a drop; it stops before the publish |
 :::
 
-Each workflow lives in `workflows/<name>/` and is linked into `.claude/skills/` and `.agents/skills/`. The links are committed, so every worktree has them, and a check fails a missing one.
+`.agents/skills/` is the home other agents read, and `.claude/skills/` links to it. Product workflows are linked into both. The links are committed, so every worktree has them. `check-workflows.ts` fails a missing link, and it also fails an instruction filed in the wrong home.
 
 ## A home for each kind of doc
 

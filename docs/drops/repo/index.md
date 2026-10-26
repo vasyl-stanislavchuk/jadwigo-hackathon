@@ -16,7 +16,8 @@ tile: Repo checks | 6 | good
 - **One issue, one PR, one squash.** An agent claims an issue and branches from `main`. The agent opens a draft PR titled with the issue id and turns on auto-merge, and GitHub merges once `ci-ok` is green. More on [How agents work](agents.html).
 - **Swarms run as waves of lanes.** A lead lands the contracts first. Each lane owns its own paths and works through its queue in its own worktree, and the builder never reviews its own work.
 - **Agents know when to stop.** Repeated failures with no new information, a file outside the lane, an ambiguous contract or someone else's failing test all end in a short handoff and a status word.
-- **PR bodies show rather than tell.** `/jadwigo-pr` writes a small visual, a before and after, and whether the change is a one-way or a two-way door. CI checks the shape. More on [PRs, drops and docs](conventions.html).
+- **Product workflows and dev commands live apart.** What the app's AI does for a parent goes in `workflows/` as `/jadwigo-<record>-<verb>`. What helps agents build the repo goes in `.agents/skills/` as `/dev-<verb>`.
+- **PR bodies show rather than tell.** `/dev-pr` writes a small visual, a before and after, and whether the change is a one-way or a two-way door. CI checks the shape. More on [PRs, drops and docs](conventions.html).
 - **Drops live in the repo from now on.** Each one is a folder in `docs/drops/`, checked in CI and by `md drops check`, and published from `main` once the owner says yes.
 
 ## Pages

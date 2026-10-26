@@ -1,6 +1,6 @@
 # Credits
 
-`jadwigo-pr` is the `pr` skill from [Matt Pocock's skills](https://github.com/mattpocock/skills),
+`dev-pr` is the `pr` skill from [Matt Pocock's skills](https://github.com/mattpocock/skills),
 `skills/engineering/pr` at commit `5beb35b040e3de97e54fa9e386d7e42d15c295c2`, under the MIT
 licence in [`LICENSE`](LICENSE).
 

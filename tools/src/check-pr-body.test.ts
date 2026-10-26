@@ -5,7 +5,7 @@ const body = (door: string) =>
   `Issue: \`dl-x.1\`\n\n## Summary\n\nx\n\n## Evidence\n\ny\n\n## Merge Danger\n\n**Door:** ${door}\n\n**Blast Radius:** docs\n`;
 
 describe("checkPrBody", () => {
-  it("passes the /jadwigo-pr shape", () => {
+  it("passes the /dev-pr shape", () => {
     expect(checkPrBody(body("two-way"))).toEqual([]);
     expect(checkPrBody(body("one-way: a migration"))).toEqual([]);
   });
