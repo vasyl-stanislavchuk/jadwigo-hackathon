@@ -73,7 +73,9 @@ to **Do**, **Done when**, and **Stop if**. If yours lacks one of these, ask befo
    issue (`bd create "…" --deps discovered-from:<id>`), not part of this PR.
 4. `make check`, then run each "done when" check and keep its real output.
 5. Push, open a draft PR titled `<id>: <what>` with a body from `/jadwigo-pr`, and push often.
-6. Ready: `gh pr ready`, then `gh pr merge --auto --squash`. GitHub merges it once `ci-ok` is green.
+6. Ready: `gh pr ready`, then `gh pr merge --auto --squash`. GitHub merges it once `ci-ok` and
+   `review-ok` are green. md's merge steward posts `review-ok` (`md merge-steward start`). No
+   path needs the owner's approval, and a broken `main` is fixed forward.
 7. `bd close <id> --reason "<what ran, what did not>"`.
 
 ## Lanes and waves
@@ -142,6 +144,7 @@ Each fence has a test that plants a violation (`tools/src/*.test.ts`, `.claude/h
    - `terraform apply` and prod AWS profiles
    - Docker and `supabase start`
    - force-push, `--no-verify`, pushes to `main`
+   - `gh pr merge --admin`, `gh pr review --approve`, and `gh api` writes to rulesets or branch protection
    - `git add -A` and `git add .`
    - `git pull --rebase` without `=merges`
    - `bd update --notes` (use `--append-notes`)

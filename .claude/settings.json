@@ -104,6 +104,7 @@
       "Bash(gh run list *)",
       "Bash(md context *)",
       "Bash(md drops check *)",
+      "Bash(md merge-steward *)",
       "Bash(ls *)",
       "Bash(ls)",
       "Bash(pwd)",

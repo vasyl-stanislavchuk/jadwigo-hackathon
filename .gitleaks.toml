@@ -1,5 +1,5 @@
 # gitleaks for jadwigo: the default rules (keys, tokens) plus house rules.
-# Owner approval is required on this file (.github/rulesets/main.json).
+# CI runs it on every PR (the gitleaks job under ci-ok), and pre-commit on the staged diff.
 title = "jadwigo"
 
 [extend]

@@ -1,0 +1,22 @@
+# The policy md's merge-steward persona reads for this repo (dl-5ssh.34.46). It reviews each ready
+# PR on Opus, posts the review-ok commit status, and fixes main forward. No path needs approval:
+# david-learns/decisions/2026-10-26-the-merge-steward-is-an-md-persona-that-reviews-on-the-subscript.
+# The reviewer prompts are dl-5ssh.34.32. Contract snapshots are never self-fixed: they are a one-way door.
+[merge_steward]
+base = "main"
+ci_workflow = "ci"
+required_checks = ["ci-ok"]
+review_check = "review-ok"
+review_prompts = "workflows/jadwigo-review.md"
+check_command = "make check"
+tracker = "~/projects/david-learns/.beads"
+round_cap = 2
+
+[merge_steward.self_fix]
+commands = ["bunx biome check --write"]
+lockfile = "bun install"
+generated = [{ paths = [".claude/skills/", ".agents/skills/"], command = "make skills" }]
+
+[merge_steward.dependency_bots]
+logins = ["renovate[bot]"]
+fast_path = ["patch", "minor"]
