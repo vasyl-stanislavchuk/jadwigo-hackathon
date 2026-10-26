@@ -1,15 +1,24 @@
-<!-- The title starts with the issue id: "dl-5ssh.34.3: CI with the ci-ok gate". CI checks it. -->
+<!-- Title: "<issue id>: <what>", e.g. "dl-5ssh.34.8: a home for drops". Write the body with /jadwigo-pr.
+     CI fails a body without the three headings or a door. -->
 
-## Issue
+Issue: `dl-…`
 
-`dl-…`: what this PR carries out, in one line.
+## Summary
 
-## Evidence it works
+<the smallest visual that shows the change: a tree, a call tree, a shaped diff or a diagram>
 
-What ran and what it showed: `make check` output, a screenshot, a curl, the test that now fails
-without this change. Say what did not run.
+## Evidence
 
-## Learner data
+- **Before:** <failing test, output or screenshot>
+  **After:** <passing test, output or screenshot>
 
-- [ ] This PR does not touch learner data (records, answers, the knowledge base, names, fixtures from real sessions).
-- [ ] It does, and here is how it stays private:
+Did not run: <what, and why>
+
+## Merge Danger
+
+**Door:** <one-way or two-way>
+
+**Blast Radius:** <one word>
+
+Learner data touched: <no | yes, and how it stays private>
+Contract snapshots updated: <no | yes: which, and why>
