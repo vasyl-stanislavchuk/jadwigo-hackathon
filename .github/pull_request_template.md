@@ -1,4 +1,4 @@
-<!-- Title: "<issue id>: <what>", e.g. "dl-5ssh.34.8: a home for drops". Write the body with /jadwigo-pr.
+<!-- Title: "<issue id>: <what>", e.g. "dl-5ssh.34.8: a home for drops". Write the body with /dev-pr.
      CI fails a body without the three headings or a door. -->
 
 Issue: `dl-…`

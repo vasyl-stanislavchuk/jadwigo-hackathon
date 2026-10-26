@@ -17,11 +17,13 @@ check-all:
 dev:
 	bunx turbo run dev
 
-## skills: link each AI workflow in workflows/<name>/ into .claude/skills (Claude Code) and
-## .agents/skills (other agents). The links are committed; tools/src/check-workflows.ts checks them
+## skills: link the product AI workflows (workflows/jadwigo-*) into .claude/skills and .agents/skills,
+## and the dev commands (.agents/skills/dev-*) into .claude/skills. The links are committed;
+## tools/src/check-workflows.ts checks them
 skills:
 	mkdir -p .claude/skills .agents/skills
-	for d in workflows/*/; do n=$$(basename "$$d"); ln -sfn "../../workflows/$$n" ".claude/skills/$$n"; ln -sfn "../../workflows/$$n" ".agents/skills/$$n"; done
+	for d in workflows/jadwigo-*/; do [ -d "$$d" ] || continue; n=$$(basename "$$d"); ln -sfn "../../workflows/$$n" ".claude/skills/$$n"; ln -sfn "../../workflows/$$n" ".agents/skills/$$n"; done
+	for d in .agents/skills/dev-*/; do [ -d "$$d" ] || continue; n=$$(basename "$$d"); ln -sfn "../../.agents/skills/$$n" ".claude/skills/$$n"; done
 
 ## drops: md drops check on every drop under docs/drops/
 drops:

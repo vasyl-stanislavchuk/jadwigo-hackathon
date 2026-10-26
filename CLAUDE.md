@@ -5,10 +5,12 @@
 - `.claude/settings.json` is committed: the guard on every tool, Biome after each edit, and
   `make check` on Stop. Worktrees inherit it. Personal overrides go in `.claude/settings.local.json`.
 - Launch every subagent with `model: "opus"`. The guard refuses any other.
-- The workflows in `workflows/` are skills here, through the links in `.claude/skills/`:
-  - `/jadwigo-pr` whenever you write or rewrite a PR body
-  - `/jadwigo-handoff` when work moves to another session
-  - `/jadwigo-drop` to make, check or publish a drop
+- `.claude/skills/` links in two kinds of instructions, and they never mix:
+  - **Dev commands** (`.agents/skills/dev-*`), for building this repo: `/dev-pr` whenever you write
+    or rewrite a PR body, `/dev-handoff` when work moves to another session, `/dev-drop` to make,
+    check or publish a drop.
+  - **Product AI workflows** (`workflows/jadwigo-*`), which the app runs for parents. You run
+    one here only to develop or test it.
 - Land a PR with `gh pr merge <n> --auto --squash`: GitHub merges it once `ci-ok` is green.
   It is allowlisted. A merge without `--auto` is not, and the ruleset refuses it while CI is red.
 - A step the owner runs (paid, careful, outward) goes to the owner as one command to type with

@@ -1,9 +1,9 @@
 ---
-name: jadwigo-handoff
+name: dev-handoff
 description: "Use when work in the jadwigo repo moves to a fresh session: the owner asks for a handoff or a prompt to run elsewhere, a lead briefs a lane, or a session ends with the issue unfinished. Writes docs/worklog/<epic>/<date>-handoff-<slug>.md with the outcome, what it must answer, what to read, the rules, done when, and a prompt ready to paste."
 ---
 
-# /jadwigo-handoff
+# /dev-handoff
 
 A handoff is the whole context the next session gets. Write it for a model that has read only
 `AGENTS.md`, the issue and this note.

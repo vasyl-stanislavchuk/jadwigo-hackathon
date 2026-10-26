@@ -1,5 +1,5 @@
 ---
-name: jadwigo-pr
+name: dev-pr
 description: "Use when writing or rewriting a PR body in the jadwigo repo: a Summary that shows the change as one small visual, Evidence as a before and after, and Merge Danger as a one-way or two-way door with a blast radius. Fills .github/pull_request_template.md."
 ---
 

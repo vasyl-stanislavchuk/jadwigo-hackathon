@@ -1,11 +1,16 @@
-// AI workflows in workflows/<name>/SKILL.md (dl-5ssh.34.8): each is reachable from Claude Code
-// (.claude/skills/<name>) and from other agents (.agents/skills/<name>) through a committed
-// relative link, and its frontmatter names it as its folder does. `make skills` makes the links.
+// Two kinds of agent instructions, kept apart (dl-5ssh.34.45):
+// - product AI workflows, workflows/<name>/SKILL.md, named jadwigo-<record>-<verb>, linked into
+//   .claude/skills and .agents/skills;
+// - dev commands, .agents/skills/dev-<verb>/SKILL.md (the cross-agent home is their source),
+//   linked into .claude/skills.
+// Every link is committed and relative, and each frontmatter names its folder. `make skills`
+// makes the links. Folders starting with _ under workflows/ are shared parts, not workflows.
 // Run: bun tools/src/check-workflows.ts [repo]
-import { existsSync, lstatSync, readdirSync, readFileSync, readlinkSync, statSync } from "node:fs";
+import { existsSync, lstatSync, readdirSync, readFileSync, readlinkSync } from "node:fs";
 import { join } from "node:path";
 
-const LINK_DIRS = [".claude/skills", ".agents/skills"];
+const PRODUCT = /^jadwigo-[a-z0-9]+-[a-z0-9-]+$/;
+const DEV = /^dev-[a-z0-9-]+$/;
 
 function frontmatter(text: string): Record<string, string> {
   const block = /^---\n([\s\S]*?)\n---/.exec(text)?.[1] ?? "";
@@ -18,39 +23,77 @@ function frontmatter(text: string): Record<string, string> {
   );
 }
 
+function linkTarget(path: string): string | undefined {
+  try {
+    return lstatSync(path).isSymbolicLink() ? readlinkSync(path) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function entries(dir: string): string[] {
+  return existsSync(dir) ? readdirSync(dir) : [];
+}
+
+function checkSkill(dir: string, shown: string, name: string, problems: string[]): void {
+  const skill = join(dir, "SKILL.md");
+  if (!existsSync(skill)) {
+    problems.push(`${shown}: holds no SKILL.md`);
+    return;
+  }
+  const meta = frontmatter(readFileSync(skill, "utf8"));
+  if (meta["name"] !== name) problems.push(`${shown}: frontmatter name is not ${name}`);
+  if (!meta["description"]) problems.push(`${shown}: frontmatter has no description`);
+}
+
 export function checkWorkflows(repo: string): string[] {
-  const dir = join(repo, "workflows");
-  if (!existsSync(dir)) return [];
   const problems: string[] = [];
-  const names = readdirSync(dir).filter((e) => statSync(join(dir, e)).isDirectory());
-  for (const name of names) {
-    const skill = join(dir, name, "SKILL.md");
-    if (!existsSync(skill)) {
-      problems.push(`workflows/${name}: holds no SKILL.md`);
+  const expected = new Map<string, string>(); // link path -> wanted target
+
+  for (const name of entries(join(repo, "workflows"))) {
+    const dir = join(repo, "workflows", name);
+    if (name.startsWith("_") || !lstatSync(dir).isDirectory()) continue;
+    const shown = `workflows/${name}`;
+    if (DEV.test(name)) {
+      problems.push(
+        `${shown}: dev commands live in .agents/skills/, not with the product workflows`,
+      );
       continue;
     }
-    const meta = frontmatter(readFileSync(skill, "utf8"));
-    if (!name.startsWith("jadwigo-")) problems.push(`workflows/${name}: names start with jadwigo-`);
-    if (meta["name"] !== name) problems.push(`workflows/${name}: frontmatter name is not ${name}`);
-    if (!meta["description"]) problems.push(`workflows/${name}: frontmatter has no description`);
-    for (const links of LINK_DIRS) {
-      const link = join(repo, links, name);
-      const want = `../../workflows/${name}`;
-      let target: string | undefined;
-      try {
-        target = lstatSync(link).isSymbolicLink() ? readlinkSync(link) : undefined;
-      } catch {
-        target = undefined;
-      }
-      if (target !== want)
-        problems.push(`${links}/${name}: not a link to ${want}; run make skills`);
-    }
+    if (!PRODUCT.test(name))
+      problems.push(`${shown}: product workflows are jadwigo-<record>-<verb>`);
+    checkSkill(dir, shown, name, problems);
+    expected.set(`.claude/skills/${name}`, `../../workflows/${name}`);
+    expected.set(`.agents/skills/${name}`, `../../workflows/${name}`);
   }
-  for (const links of LINK_DIRS) {
-    if (!existsSync(join(repo, links))) continue;
-    for (const entry of readdirSync(join(repo, links))) {
-      if (!names.includes(entry))
-        problems.push(`${links}/${entry}: no workflow by that name; remove the link`);
+
+  for (const name of entries(join(repo, ".agents/skills"))) {
+    const path = join(repo, ".agents/skills", name);
+    if (!lstatSync(path).isDirectory()) continue; // a product workflow's link (checked below) or a README
+    const shown = `.agents/skills/${name}`;
+    if (!DEV.test(name)) {
+      problems.push(
+        name.startsWith("jadwigo-")
+          ? `${shown}: product workflows live in workflows/, linked here`
+          : `${shown}: dev commands are dev-<verb>`,
+      );
+      continue;
+    }
+    checkSkill(path, shown, name, problems);
+    expected.set(`.claude/skills/${name}`, `../../.agents/skills/${name}`);
+  }
+
+  for (const [link, want] of expected) {
+    if (linkTarget(join(repo, link)) !== want)
+      problems.push(`${link}: not a link to ${want}; run make skills`);
+  }
+  for (const dir of [".claude/skills", ".agents/skills"]) {
+    for (const name of entries(join(repo, dir))) {
+      const link = `${dir}/${name}`;
+      if (linkTarget(join(repo, link)) !== undefined && !expected.has(link))
+        problems.push(`${link}: links to nothing this repo defines; remove it`);
+      else if (dir === ".claude/skills" && !expected.has(link))
+        problems.push(`${link}: write it in workflows/ or .agents/skills/, and link it here`);
     }
   }
   return problems;

@@ -1,4 +1,4 @@
-// The PR body has the /jadwigo-pr shape (dl-5ssh.34.8): Summary, Evidence, Merge Danger, and a door
+// The PR body has the /dev-pr shape (dl-5ssh.34.8): Summary, Evidence, Merge Danger, and a door
 // stated as one-way or two-way. CI runs it on every PR but Renovate's, with the body in PR_BODY.
 // Run: PR_BODY="$(gh pr view <n> --json body --jq .body)" bun tools/src/check-pr-body.ts
 const HEADINGS = ["## Summary", "## Evidence", "## Merge Danger"];
@@ -14,6 +14,6 @@ export function checkPrBody(body: string): string[] {
 
 if (import.meta.main) {
   const problems = checkPrBody(process.env["PR_BODY"] ?? "");
-  for (const p of problems) console.error(`pr body: ${p}. Write it with /jadwigo-pr.`);
+  for (const p of problems) console.error(`pr body: ${p}. Write it with /dev-pr.`);
   if (problems.length > 0) process.exit(1);
 }

@@ -163,7 +163,7 @@ jobs:
           cache: true
       - name: No question bank in git
         run: bun tools/src/check-no-bank.ts
-      - name: The PR body has the /jadwigo-pr shape
+      - name: The PR body has the /dev-pr shape
         if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'renovate[bot]'
         env:
           PR_BODY: ${{ github.event.pull_request.body }}

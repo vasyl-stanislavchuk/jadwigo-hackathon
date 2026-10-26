@@ -1,30 +1,37 @@
-# Workflows
+# Product AI workflows
 
-The AI workflows agents run here, as `/jadwigo-<name>`. In this repo "skill" means a learner's
-skill, so these are workflows, even though Claude Code loads them as skills.
+What Jadwigo's AI does for a parent, such as composing a lesson from a brief, planning the next
+one from a learner's mistakes, or writing a report. These are part of the product: a parent's
+request runs through one of them, through `jw` and MCP calls, to an outcome, with the parent in
+charge at every step. The ai-workflows workstream owns them (`docs/workstreams/ai-workflows.md`).
+
+Instructions for agents that *build* the repo, such as writing a PR body or a handoff, are not
+here. They are dev commands in `.agents/skills/` (`.agents/skills/README.md`).
 
 ```
-workflows/<name>/SKILL.md     # frontmatter (name, description), then the instructions
-workflows/<name>/…            # anything the workflow reads: templates, credits
+workflows/jadwigo-<record>-<verb>/SKILL.md   # one workflow: frontmatter (name, description), then its steps
+workflows/_shared/                           # rules every workflow follows, in every language
+workflows/_lang/{pl,en}/                     # style, glossary, checklist and examples per language
 .claude/skills/<name>  -> ../../workflows/<name>   # Claude Code
-.agents/skills/<name>  -> ../../workflows/<name>   # Codex and other agents
+.agents/skills/<name>  -> ../../workflows/<name>   # other agents, such as Muse Code and Codex
 ```
 
-The links are committed, so every worktree has them with no setup. `make skills` recreates them,
-and `tools/src/workflows.test.ts` fails when one is missing or a `name` doesn't match its folder.
-
-| Workflow | Use it when |
-| --- | --- |
-| [`jadwigo-pr`](jadwigo-pr/SKILL.md) | writing or rewriting any PR body |
-| [`jadwigo-handoff`](jadwigo-handoff/SKILL.md) | work moves to another session |
-| [`jadwigo-drop`](jadwigo-drop/SKILL.md) | making, checking or publishing a drop |
+The links are committed. `make skills` recreates them, and `tools/src/check-workflows.ts` fails
+a missing link, a wrong name, or a dev command filed here.
 
 ## Writing one
 
-- `name` is the folder name and starts with `jadwigo-`. The `description` says when to use it,
-  because an agent picks a workflow by its description.
-- Keep it to one file unless a template or credit needs its own. A workflow that only another
-  workflow cites should be part of that one.
-- It writes through the repo's commands (`bd`, `md`, `gh`, `jw`), never around them, and stops
-  before anything paid or outward.
-- Copied from elsewhere: keep the licence and a `CREDITS.md`, and name the source commit.
+- **Name it record first:** `/jadwigo-<record>-<verb>`, such as `jadwigo-lesson-compose` or
+  `jadwigo-report-write`. The record comes from `GLOSSARY.md`, and the verb matches the `jw`
+  verb it calls (`jw <record> <verb>`).
+- **Describe when to use it.** An agent picks a workflow by its `description`.
+- **Write only through `jw`.** A workflow never writes a record, a brain page or a file by
+  hand, and it trusts what `jw` returns rather than working it out again.
+- **Leave judging to code.** A model never decides whether an answer is correct.
+- **Stop before anything paid or outward**, and leave product choices to the parent.
+- **The language comes from the record.** `jw` resolves it and assembles the `_lang` parts
+  (`dl-5ssh.34.23`).
+- **Every change is checked** on the evals for its journey before it ships.
+
+None exist yet. The first ones come with the ai-workflows epics (`dl-hin8`, `dl-u1y5`) and
+`jw` (`dl-5ssh.34.7`).

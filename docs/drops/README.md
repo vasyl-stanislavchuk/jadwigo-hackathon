@@ -53,7 +53,7 @@ starts one, and `md drops --help` covers the rest.
    current password. Without `--force` md makes a second site (`-2`), and `--password auto --force`
    rotates the password.
 
-`/jadwigo-drop` walks through these steps and stops before the publish.
+`/dev-drop` (a dev command in `.agents/skills/`) walks through these steps and stops before the publish.
 
 ## Never in a drop source
 

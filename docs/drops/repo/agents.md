@@ -21,7 +21,7 @@ An issue is a brief, with these parts: **Read**, **Owns**, **Frozen**, **Do**, *
 | Claim | `bd update <id> --claim` |
 | Branch | `git switch -c <lane>/<id> origin/main` |
 | Check | `make check`, then each "done when" check, keeping its real output |
-| Open | a draft PR titled `<id>: <what>`, with a body from `/jadwigo-pr` |
+| Open | a draft PR titled `<id>: <what>`, with a body from `/dev-pr` |
 | Land | `gh pr ready`, then `gh pr merge --auto --squash` |
 | Close | `bd close <id> --reason "<what ran, what did not>"` |
 :::
