@@ -73,7 +73,8 @@ to **Do**, **Done when**, and **Stop if**. If yours lacks one of these, ask befo
 3. Do exactly the issue. One issue is one deliverable. Work you find along the way becomes a new
    issue (`bd create "…" --deps discovered-from:<id>`), not part of this PR.
 4. `make check`, then run each "done when" check and keep its real output.
-5. Push, open a draft PR titled `<id>: <what>` with a body from `/dev-pr`, and push often.
+5. Push, write the body with `/dev-pr` to a file, open a draft PR titled `<id>: <what>` with
+   `gh pr create --draft --body-file <file>`, and push often.
 6. Ready: `gh pr ready`, then `gh pr merge --auto --squash`. GitHub merges it once `ci-ok` is green.
 7. `bd close <id> --reason "<what ran, what did not>"`.
 
@@ -146,6 +147,7 @@ Each fence has a test that plants a violation (`tools/src/*.test.ts`, `.claude/h
    - `git add -A` and `git add .`
    - `git pull --rebase` without `=merges`
    - `bd update --notes` (use `--append-notes`)
+   - `gh pr create` or `gh pr edit` with a body that lacks the `/dev-pr` shape: write it to a file and pass `--body-file`
    - an Agent launch without `model: opus`
    - a bare `gbrain`, and other projects' databases
 2. **Hooks:** Biome on every file you edit. The Stop hook runs `make check`, and you may not finish red.
