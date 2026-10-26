@@ -15,3 +15,13 @@ The labeler (`.github/labeler.yml`) puts the `ws:learner-knowledge` label on a P
 
 - Check what changed: `make check`.
 - Only this workstream's packages: `bunx turbo run lint typecheck test --filter=./packages/core`.
+
+## Done at the next milestone
+
+Milestone 2, goals loop, then 3, parent login (the order is in `docs/README.md`). Lessons come from the bank and the child's own mistakes, and mastery in `packages/core` moves with each attempt. At parent login, a parent's account keeps the child's answers and knowledge base.
+
+## Meets
+
+- **question-bank:** the questions a lesson is composed from.
+- **platform:** the records in `packages/store`.
+- **learner-experience:** the parent screens in `apps/web`.
