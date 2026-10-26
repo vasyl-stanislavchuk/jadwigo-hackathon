@@ -1,0 +1,8 @@
+# Flaky tests held out of the gate, each with an owner, a bead and an expiry date. Empty is the
+# goal. The steward (dl-5ssh.34.33) reads this file and reopens a test the day it expires.
+#
+# - test: "packages/core/src/score.test.ts > clampScore > always lands in [0, 1]"
+#   owner: vasyl-stanislavchuk
+#   bead: dl-…
+#   expires: 2026-11-30
+tests: []

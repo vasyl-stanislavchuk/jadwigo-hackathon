@@ -1,0 +1,179 @@
+# CI for jadwigo (dl-5ssh.34.3). Every PR push and every push to main. No paths: filter: the
+# changes job decides what runs, and turbo --affected decides which packages. ci-ok gathers every
+# job and is the one required check, so a skipped job never leaves the PR pending.
+name: ci
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: diff
+        name: Is anything outside docs changed?
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then base="$PR_BASE"; head="$PR_HEAD"; else base="$BEFORE"; head="$GITHUB_SHA"; fi
+          if [ -z "$base" ] || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            echo "no usable base, so everything runs"; echo "code=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          code=false
+          while IFS= read -r f; do
+            case "$f" in
+              docs/*|*.md) ;;
+              *) code=true; echo "code change: $f" ;;
+            esac
+          done < <(git diff --name-only "$base" "$head")
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+  lint:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Biome per package (affected)
+        run: bunx turbo run lint --affected
+      - name: Biome on the root, knip, dependency-cruiser, no-bank, worklog
+        run: bun run lint:repo
+
+  typecheck:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: bunx turbo run typecheck --affected
+
+  unit:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: bunx turbo run test --affected
+
+  integration:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: postgresql://runner:runner@localhost:5432/jadwigo_test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Start the runner's Postgres (no Docker)
+        run: |
+          sudo systemctl start postgresql.service
+          sudo -u postgres psql -c "create role runner superuser login password 'runner'"
+          createdb -h localhost -U runner jadwigo_test
+        env:
+          PGPASSWORD: runner
+      - run: bunx turbo run test:int
+
+  contracts:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: JSON Schema snapshots (CI never writes them, so drift fails)
+        run: bunx turbo run test --filter=@jadwigo/contracts
+
+  docs:
+    needs: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: The guard's tests
+        run: bun test ./.claude/hooks/guard.test.ts
+      - name: The worklog layout
+        run: bun tools/src/check-worklog.ts
+
+  fence-checks:
+    needs: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: The PR title names an issue id
+        if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'renovate[bot]'
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if [[ ! "$TITLE" =~ ^dl-[a-z0-9]+(\.[0-9]+)*:\  ]]; then
+            echo "::error::The PR title must start with an issue id, as in 'dl-5ssh.34.3: CI with the ci-ok gate'. Got: $TITLE"
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          cache: true
+      - name: No question bank in git
+        run: bun tools/src/check-no-bank.ts
+
+  ci-ok:
+    needs: [changes, lint, typecheck, unit, integration, contracts, docs, fence-checks]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Every job passed or was skipped
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          echo "$RESULTS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          bad="$(echo "$RESULTS" | jq -r '[to_entries[] | select(.value.result != "success" and .value.result != "skipped") | .key] | join(", ")')"
+          if [ -n "$bad" ]; then echo "::error::Not green: $bad"; exit 1; fi
