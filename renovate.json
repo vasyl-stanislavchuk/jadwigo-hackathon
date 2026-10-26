@@ -34,6 +34,18 @@
       "allowedVersions": "<7"
     },
     {
+      "description": "requires-python is a floor for whoever runs jw, not a pin; the runner's Python decides",
+      "matchManagers": ["pep621"],
+      "matchDepTypes": ["requires-python"],
+      "enabled": false
+    },
+    {
+      "description": "uv_build stays a range that moves with the uv pinned in mise.toml",
+      "matchManagers": ["pep621"],
+      "matchPackageNames": ["uv_build"],
+      "rangeStrategy": "replace"
+    },
+    {
       "description": "Node 24 is the runtime everywhere (Lambda nodejs24.x); its types follow it",
       "matchPackageNames": ["@types/node"],
       "allowedVersions": "<25"
