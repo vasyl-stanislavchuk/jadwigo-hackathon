@@ -16,3 +16,5 @@ slug (`md context decisions --project jadwigo-platform --current`).
   `tools/src/check-worklog.ts` holds the layout.
 
 Research, drops and the how-it-works pages move in from david-learns under `dl-5ssh.34.8`.
+
+CI skips the code jobs on a PR that only touches `docs/` or Markdown; `ci-ok` still reports.
