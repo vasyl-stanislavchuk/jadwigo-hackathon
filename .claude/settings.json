@@ -94,6 +94,7 @@
       "Bash(gh pr view *)",
       "Bash(gh pr checks *)",
       "Bash(gh pr create *)",
+      "Bash(gh pr merge * --auto --squash)",
       "Bash(gh run view *)",
       "Bash(gh run list *)",
       "Bash(md context *)",
