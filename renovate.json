@@ -1,0 +1,42 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    ":pinAllExceptPeerDependencies"
+  ],
+  "minimumReleaseAge": "7 days",
+  "internalChecksFilter": "strict",
+  "prConcurrentLimit": 5,
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "groupName": "lint and type tooling",
+      "matchPackageNames": [
+        "@biomejs/biome",
+        "knip",
+        "dependency-cruiser",
+        "typescript",
+        "turbo",
+        "lefthook"
+      ]
+    },
+    {
+      "groupName": "test tooling",
+      "matchPackageNames": ["vitest", "fast-check", "@types/node", "@types/bun", "postgres"]
+    },
+    { "groupName": "GitHub Actions", "matchManagers": ["github-actions"] },
+    { "groupName": "mise tools", "matchManagers": ["mise"] },
+    { "groupName": "jw CLI (uv)", "matchManagers": ["pep621"] },
+    {
+      "description": "dependency-cruiser cannot read TypeScript 7's API yet (dl-5ssh.34.2); lift when it can",
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<7"
+    },
+    {
+      "description": "Node 24 is the runtime everywhere (Lambda nodejs24.x); its types follow it",
+      "matchPackageNames": ["@types/node"],
+      "allowedVersions": "<25"
+    }
+  ]
+}

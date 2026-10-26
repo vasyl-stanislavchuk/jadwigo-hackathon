@@ -1,0 +1,7 @@
+# Only the files that guard money and learner data need the owner's approval
+# (david-learns/decisions/2026-10-24-agents-ship-fast-squash-merge-after-ci-and-a-light-automatic-rev).
+# Everything else merges on ci-ok alone. The ruleset turns on code-owner review for these paths.
+/infra/bootstrap/                @vasyl-stanislavchuk
+/infra/policy/                   @vasyl-stanislavchuk
+/.github/workflows/deploy.yml    @vasyl-stanislavchuk
+/.gitleaks.toml                  @vasyl-stanislavchuk
