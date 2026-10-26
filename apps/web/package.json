@@ -1,0 +1,28 @@
+{
+  "name": "@jadwigo/web",
+  "description": "The service at app.: the lesson player and the parent screens (dl-5ssh.34.6 moves it in)",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --config ../../vitest.config.ts --project unit"
+  },
+  "//": {
+    "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
+    "typescript": "tsc for this package's typecheck script",
+    "vitest": "runs this package's unit test with the root vitest.config.ts",
+    "@jadwigo/config": "hosts.prod, the host this app serves (src/index.ts)"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "dependencies": {
+    "@jadwigo/config": "workspace:*"
+  }
+}

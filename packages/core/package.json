@@ -1,0 +1,26 @@
+{
+  "name": "@jadwigo/core",
+  "description": "Pure logic: grading, numbers, mastery, FSRS (the Python port, dl-5ssh.34.5)",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --config ../../vitest.config.ts --project unit"
+  },
+  "//": {
+    "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
+    "typescript": "tsc for this package's typecheck script",
+    "vitest": "runs this package's unit test with the root vitest.config.ts",
+    "fast-check": "the property tests in src/*.test.ts (score.test.ts today)"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "fast-check": "catalog:"
+  }
+}
