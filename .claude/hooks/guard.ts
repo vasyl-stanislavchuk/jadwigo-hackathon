@@ -5,7 +5,7 @@
 //   bun .claude/hooks/guard.ts pretool   PreToolUse on every tool: may deny the call
 //   bun .claude/hooks/guard.ts session   SessionStart: warns when ANTHROPIC_API_KEY is exported
 //   bun .claude/hooks/guard.ts format    PostToolUse on Edit|Write: Biome on the edited file
-//   bun .claude/hooks/guard.ts stop      Stop: the affected lint, typecheck and test
+//   bun .claude/hooks/guard.ts stop      Stop: make check (the affected lint, typecheck and test)
 //
 // Fails OPEN on every absence (no input, unparseable input): a guard that cannot give up is a hang.
 // A denial always starts with "guard:" and says what to do instead. Cases: guard.test.ts.
@@ -296,17 +296,14 @@ function run(mode: string, raw: string, env: Env): number {
 
   if (mode === "stop") {
     if (input.stop_hook_active) return 0;
-    const out = spawnSync(
-      "bunx",
-      ["turbo", "run", "lint", "typecheck", "test", "--affected", "--output-logs=errors-only"],
-      {
-        cwd: root,
-        encoding: "utf8",
-      },
-    );
+    const out = spawnSync("make", ["check"], {
+      cwd: root,
+      encoding: "utf8",
+      env: { ...process.env, TURBO_OUTPUT_LOGS: "errors-only" },
+    });
     if (out.status !== 0) {
       console.error(
-        `make check failed (turbo run lint typecheck test --affected). Fix it before you finish:\n${(out.stdout + out.stderr).slice(-6000)}`,
+        `make check failed. Fix it before you finish:\n${(out.stdout + out.stderr).slice(-6000)}`,
       );
       return 2;
     }

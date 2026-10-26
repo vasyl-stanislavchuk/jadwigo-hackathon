@@ -18,8 +18,8 @@
     }
   },
   "scripts": {
-    "check": "turbo run lint typecheck test --affected",
-    "lint": "biome check .claude lint tools/src *.json *.ts && knip && depcruise apps packages tools --config .dependency-cruiser.cjs && bun tools/src/check-no-bank.ts && bun tools/src/check-worklog.ts",
+    "check": "turbo run lint typecheck test --affected && bun run lint:repo",
+    "lint:repo": "biome check .claude lint tools/src *.json *.ts && knip && depcruise apps packages tools --config .dependency-cruiser.cjs && bun tools/src/check-no-bank.ts && bun tools/src/check-worklog.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "bun test ./.claude/hooks/guard.test.ts",
     "prepare": "lefthook install"
