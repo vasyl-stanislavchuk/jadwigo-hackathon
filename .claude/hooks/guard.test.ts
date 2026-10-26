@@ -121,6 +121,15 @@ describe("guard: PR bodies have the /dev-pr shape", () => {
     expect(pr(heredoc)).toBeUndefined();
   });
 
+  test("a body file written by a heredoc in the same command is read from the heredoc", () => {
+    const fresh = join(dir, "fresh.md");
+    const body = "## Summary\n\nx\n\n## Evidence\n\ny\n\n## Merge Danger\n\n**Door:** two-way\n";
+    const write = (text: string) =>
+      `cat > ${fresh} <<'EOF'\n${text}EOF\ngh pr create --title t --body-file ${fresh}`;
+    expect(pr(write(body))).toBeUndefined();
+    expect(pr(write("## Summary\n\nonly this\n"))).toMatch(/Merge Danger/);
+  });
+
   test("an edit that leaves the body alone is allowed", () => {
     expect(pr('gh pr edit 3 --title "dl-x.1: better"')).toBeUndefined();
     expect(pr("git checkout -b x && gh pr edit 3 --add-label docs")).toBeUndefined();

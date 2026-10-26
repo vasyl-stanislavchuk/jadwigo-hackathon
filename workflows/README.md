@@ -5,7 +5,7 @@ one from a learner's mistakes, or writing a report. These are part of the produc
 request runs through one of them, through `jw` and MCP calls, to an outcome, with the parent in
 charge at every step. The ai-workflows workstream owns them (`docs/workstreams/ai-workflows.md`).
 
-Instructions for agents that *build* the repo, such as writing a PR body or a handoff, are not
+Instructions for agents that *build* the repo, such as writing a PR body or building a drop, are not
 here. They are dev commands in `.agents/skills/` (`.agents/skills/README.md`).
 
 ```

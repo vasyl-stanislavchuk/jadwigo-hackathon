@@ -19,6 +19,12 @@ function files(dir: string): string[] {
   });
 }
 
+function passwords(drop: string): string[] {
+  return files(drop)
+    .filter((file) => /password=/i.test(readFileSync(file, "utf8")))
+    .map((file) => `${file}: holds a password; point to md drops history instead`);
+}
+
 export function checkDrops(dir: string, repo = "."): string[] {
   if (!existsSync(dir)) return [];
   const problems: string[] = [];
@@ -26,8 +32,19 @@ export function checkDrops(dir: string, repo = "."): string[] {
     const drop = join(dir, entry);
     if (!statSync(drop).isDirectory()) continue;
     const sitePath = join(drop, "site.json");
+    const specPath = join(drop, "spec.json");
     if (!existsSync(sitePath)) {
-      problems.push(`${drop}: a drop folder holds a site.json`);
+      // A one-page drop is a spec.json alone.
+      if (!existsSync(specPath))
+        problems.push(`${drop}: a drop folder holds a site.json or a spec.json`);
+      else {
+        try {
+          JSON.parse(readFileSync(specPath, "utf8"));
+        } catch (e) {
+          problems.push(`${specPath}: not valid JSON (${(e as Error).message})`);
+        }
+        problems.push(...passwords(drop));
+      }
       continue;
     }
     let site: Site;
@@ -57,10 +74,7 @@ export function checkDrops(dir: string, repo = "."): string[] {
         problems.push(`${sitePath}: evidence ${evidence} is outside the repo`);
       else if (!existsSync(path)) problems.push(`${sitePath}: evidence ${evidence} is missing`);
     }
-    for (const file of files(drop)) {
-      if (/password=/i.test(readFileSync(file, "utf8")))
-        problems.push(`${file}: holds a password; point to md drops history instead`);
-    }
+    problems.push(...passwords(drop));
   }
   return problems;
 }

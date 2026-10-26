@@ -83,7 +83,21 @@ function gitSub(words: string[]): { sub: string; args: string[] } | undefined {
 const USE_DEV_PR = "Write the body with /dev-pr into a file, then pass it with --body-file <path>.";
 
 /** gh pr create always carries a body file that passes check-pr-body; gh pr edit does when it sets the body. */
-function prBodyDenial(cmd: string, args: string[], cwd: string | undefined): string | undefined {
+/** The body a heredoc in the same command writes to file (`cat > file <<'EOF'`), since the hook runs first. */
+function heredocBody(full: string, file: string): string | undefined {
+  const at = full.indexOf(file);
+  if (at < 0) return undefined;
+  const after = full.slice(at + file.length);
+  const m = /^['"]?\s*<<-?\s*(['"]?)(\w+)\1[^\n]*\n([\s\S]*?)\n\2[ \t]*(\n|$)/.exec(after);
+  return m?.[3];
+}
+
+function prBodyDenial(
+  cmd: string,
+  full: string,
+  args: string[],
+  cwd: string | undefined,
+): string | undefined {
   const setsBody = args.some((a) =>
     /^(--body|-b|--body-file|-F|--fill|--fill-first|--fill-verbose)(=|$)/.test(a),
   );
@@ -99,8 +113,9 @@ function prBodyDenial(cmd: string, args: string[], cwd: string | undefined): str
   if (!file || file === "-") return `this PR has no body file. ${USE_DEV_PR}`;
   const home = file.startsWith("~/") ? join(process.env["HOME"] ?? "~", file.slice(2)) : file;
   const path = isAbsolute(home) ? home : join(cwd ?? ".", home);
-  if (!existsSync(path)) return `the body file ${file} does not exist. ${USE_DEV_PR}`;
-  const problems = checkPrBody(readFileSync(path, "utf8"));
+  const body = existsSync(path) ? readFileSync(path, "utf8") : heredocBody(full, file);
+  if (body === undefined) return `the body file ${file} does not exist. ${USE_DEV_PR}`;
+  const problems = checkPrBody(body);
   if (problems.length > 0) return `the PR body in ${file} is ${problems.join("; ")}. ${USE_DEV_PR}`;
   return undefined;
 }
@@ -207,7 +222,7 @@ function bashDenial(
 
     // 5. PR bodies have the /dev-pr shape, checked here so a session fixes it before CI does.
     if (prog === "gh" && args[0] === "pr" && (args[1] === "create" || args[1] === "edit")) {
-      const reason = prBodyDenial(bare, args, cwd);
+      const reason = prBodyDenial(bare, cmd, args, cwd);
       if (reason) return reason;
     }
 

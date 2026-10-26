@@ -58,7 +58,7 @@ Not in the repo, on purpose: decisions (the md context brain), the question bank
 | Everything | `make check-all` |
 | One package | `bunx turbo run lint typecheck test --filter=./packages/core` |
 | Integration tests | `DATABASE_URL=postgresql://localhost/jadwigo_test bunx turbo run test:int` |
-| Drops | `make drops` (`md drops check` on each) |
+| Drops | `make drops` (`md drops check` on each); build one with `/dev-drop` |
 | Workflow and dev command links | `make skills` |
 
 Run the tests your change touches. CI runs the rest. Playwright is CI's job.
@@ -77,6 +77,14 @@ to **Do**, **Done when**, and **Stop if**. If yours lacks one of these, ask befo
    `gh pr create --draft --body-file <file>`, and push often.
 6. Ready: `gh pr ready`, then `gh pr merge --auto --squash`. GitHub merges it once `ci-ok` is green.
 7. `bd close <id> --reason "<what ran, what did not>"`.
+
+**Work moving to another session lives in the bead, not in a file.** Fill it so a fresh session
+needs nothing else:
+- `--description`: scope, what to read, the paths it owns, the rules
+- `--design` (or `--design-file`): the longer context, with the owner's words quoted and the decisions cited by slug
+- `--acceptance`: done when, as commands and what they show
+
+The prompt for the next session is then one line: "Run issue `<id>`: `bd show <id>` and follow it."
 
 ## Lanes and waves
 
@@ -106,7 +114,7 @@ Stop and hand off when:
 - a test you didn't write and didn't touch fails
 - the next step is a migration, a new database, a paid call or a publish the issue didn't name
 
-The handoff is 4 lines on the issue (`bd update <id> --append-notes`): what the issue asked, what
+The stop note is 4 lines on the issue (`bd update <id> --append-notes`): what the issue asked, what
 you did, the exact command and error that stopped you, what you would try next.
 
 End every session with one word, `DONE`, `DONE_WITH_CONCERNS`, `NEEDS_DECISIONS` or `BLOCKED`,

@@ -1,6 +1,6 @@
 :::meta
 eyebrow: Jadwigo · the repo
-subtitle: How a PR is written, which changes are one-way doors, and where drops, research, runbooks and handoffs go.
+subtitle: How a PR is written, which changes are one-way doors, and where drops, research, runbooks and wave plans go.
 by: the jadwigo lead session
 when: 2026-10-26T20:00:00Z
 :::
@@ -39,7 +39,6 @@ The repo keeps its agent instructions in two separate homes. **Product AI workfl
 | Command | Used when |
 | --- | --- |
 | `/dev-pr` | writing or rewriting any PR body |
-| `/dev-handoff` | work moves to another session; it writes a handoff note and a prompt ready to paste |
 | `/dev-drop` | making, checking or publishing a drop; it stops before the publish |
 :::
 
@@ -53,7 +52,8 @@ The repo keeps its agent instructions in two separate homes. **Product AI workfl
 | a drop | `docs/drops/<folder>/`, published as `jadwigo-<folder>` | `check-drops.ts` in CI, `md drops check` locally |
 | a research note | `docs/research/<topic>.md`, ending in a `jadwigo-outcome` block | `check-research.ts` |
 | a runbook | `docs/runbooks/<task>.md`, a numbered checklist the owner runs | review |
-| a wave plan or handoff | `docs/worklog/<epic>/<date>-<slug>.md`, deleted when the epic closes | `check-worklog.ts` |
+| a wave plan | `docs/worklog/<epic>/<date>-<slug>.md`, deleted when the epic closes | `check-worklog.ts` |
+| a brief for another session | the issue: description, design, acceptance | `bd show <id>` is the whole prompt |
 | a decision | the md context brain, cited by slug | never a file here |
 :::
 
