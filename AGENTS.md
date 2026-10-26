@@ -103,7 +103,9 @@ to **Do**, **Done when**, and **Stop if**. If yours lacks one of these, ask befo
 4. `make check`, then run each "done when" check and keep its real output.
 5. Push, write the body with `/dev-pr` to a file, open a draft PR titled `<id>: <what>` with
    `gh pr create --draft --body-file <file>`, and push often.
-6. Ready: `gh pr ready`, then `gh pr merge --auto --squash`. GitHub merges it once `ci-ok` is green.
+6. Ready: `gh pr ready`, then `gh pr merge --auto --squash`. GitHub merges it once `ci-ok` and
+   `review-ok` are green. md's merge steward posts `review-ok` (`md merge-steward start`). No
+   path needs the owner's approval, and a broken `main` is fixed forward.
 7. `bd close <id> --reason "<what ran, what did not>"`.
 
 **Work moving to another session lives in the bead, not in a file.** Fill it so a fresh session
@@ -171,10 +173,11 @@ Each fence has a test that plants a violation (`tools/src/*.test.ts`, `.claude/h
 
 1. **The guard** (`.claude/hooks/guard.ts`) denies: every tool while `ANTHROPIC_API_KEY` is set;
    `terraform apply` and prod AWS profiles; Docker and `supabase start`; force-push, `--no-verify`
-   and pushes to `main`; `git add -A` and `git add .`; `git pull --rebase` without `=merges`;
-   `bd update --notes` (use `--append-notes`); a `gh pr create` or `gh pr edit` body without the
-   `/dev-pr` shape (pass `--body-file`); an Agent launch without `model: opus`; a bare `gbrain`,
-   and other projects' databases.
+   and pushes to `main`; `gh pr merge --admin`, `gh pr review --approve` and `gh api` writes to
+   rulesets or branch protection; `git add -A` and `git add .`; `git pull --rebase` without
+   `=merges`; `bd update --notes` (use `--append-notes`); a `gh pr create` or `gh pr edit` body
+   without the `/dev-pr` shape (pass `--body-file`); an Agent launch without `model: opus`; a bare
+   `gbrain`, and other projects' databases.
 2. **Hooks:** Biome on every file you edit. The Stop hook runs `make check`, and you may not finish red.
 3. **Strict TypeScript:** `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, and ids that
    are branded types only the Zod parsers in `packages/contracts` create.

@@ -1,6 +1,6 @@
-# Only the files that guard money and learner data need the owner's approval
-# (david-learns/decisions/2026-10-24-agents-ship-fast-squash-merge-after-ci-and-a-light-automatic-rev).
-# Everything else merges on ci-ok alone. The ruleset turns on code-owner review for these paths.
+# CODEOWNERS only notifies the owner when these files change. No path needs approval: the
+# ruleset requires ci-ok and review-ok, md's merge steward merges, and a broken main is fixed
+# forward (david-learns/decisions/2026-10-26-the-merge-steward-is-an-md-persona-that-reviews-on-the-subscript).
 /infra/bootstrap/                @vasyl-stanislavchuk
 /infra/policy/                   @vasyl-stanislavchuk
 /.github/workflows/deploy.yml    @vasyl-stanislavchuk

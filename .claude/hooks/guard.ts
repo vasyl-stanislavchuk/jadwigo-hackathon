@@ -80,6 +80,18 @@ function gitSub(words: string[]): { sub: string; args: string[] } | undefined {
   return sub ? { sub, args: words.slice(i + 1) } : undefined;
 }
 
+/** The HTTP method of a `gh api` call: -X/--method if given, else POST when it sends fields. */
+function ghApiMethod(args: string[]): string | undefined {
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i] ?? "";
+    if (a === "-X" || a === "--method") return args[i + 1]?.toUpperCase();
+    if (a.startsWith("--method=")) return a.slice(9).toUpperCase();
+    if (a.startsWith("-X") && a.length > 2) return a.slice(2).toUpperCase();
+  }
+  const sends = args.some((a) => /^(-f|-F|--field|--raw-field|--input)(=|$)|^-[fF]\S/.test(a));
+  return sends ? "POST" : "GET";
+}
+
 const USE_DEV_PR = "Write the body with /dev-pr into a file, then pass it with --body-file <path>.";
 
 /** gh pr create always carries a body file that passes check-pr-body; gh pr edit does when it sets the body. */
@@ -226,7 +238,28 @@ function bashDenial(
       if (reason) return reason;
     }
 
-    // 6. The board: --notes replaces a bead's whole log.
+    // 6. GitHub: the merge steward and ci-ok decide a merge. Nobody approves, admin-merges or
+    // rewrites the ruleset from a session (david-learns/decisions/2026-10-26-the-merge-steward-is-
+    // an-md-persona-that-reviews-on-the-subscript).
+    if (prog === "gh") {
+      const [area, sub, ...rest] = args;
+      if (area === "pr" && sub === "merge" && rest.includes("--admin")) {
+        return "gh pr merge --admin skips the required checks. Use `gh pr merge <n> --auto --squash` and let ci-ok and review-ok decide.";
+      }
+      if (area === "pr" && sub === "review" && rest.some((a) => a === "--approve" || a === "-a")) {
+        return "no approvals from a session. md's merge steward posts review-ok; there is no approval gate.";
+      }
+      if (area === "api") {
+        const method = ghApiMethod(args.slice(1));
+        const settings = /(^|\/)rulesets(\/|$)|(^|\/)branches\/[^/\s]+\/protection(\/|$)/;
+        const target = args.slice(1).some((a) => settings.test(a)) || settings.test(cmd);
+        if (method && method !== "GET" && target) {
+          return "rulesets and branch protection are the owner's to change. Edit .github/rulesets/main.json in a PR and name the apply command under Merge Danger.";
+        }
+      }
+    }
+
+    // 7. The board: --notes replaces a bead's whole log.
     if (
       prog === "bd" &&
       args.includes("update") &&

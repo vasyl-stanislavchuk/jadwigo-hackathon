@@ -32,7 +32,7 @@ inside the repo, and the outside sense gets a qualifier.
 | **lead** | the session that plans a wave, lands step 0 and reviews. It builds no lane itself |
 | **step 0** | the lead's first PR in a wave: the plan, contract changes and shared stubs |
 | **frozen test** | a test a lane must make pass and may not edit |
-| **steward** | the agent that keeps PRs moving: reruns flakes, sends red CI back, reverts a broken `main` |
+| **steward** | md's `merge-steward` persona: reviews each ready PR, posts `review-ok`, reruns flakes, sends red CI back, reverts a broken `main` |
 | **fence** | a rule enforced by code (a hook, a lint, a test, CI), listed in `AGENTS.md` |
 | **guard** | `.claude/hooks/guard.ts`, the fence that judges every tool call |
 | **workflow** | a product AI workflow: what Jadwigo's AI does for a parent, such as composing a lesson. Lives in `workflows/`, named `/jadwigo-<record>-<verb>`. Never called a "skill" |

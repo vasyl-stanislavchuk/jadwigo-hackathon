@@ -1,6 +1,7 @@
 # CI for jadwigo (dl-5ssh.34.3). Every PR push and every push to main. No paths: filter: the
 # changes job decides what runs, and turbo --affected decides which packages. ci-ok gathers every
-# job and is the one required check, so a skipped job never leaves the PR pending.
+# job and is CI's one required check, so a skipped job never leaves the PR pending. The other
+# required check, review-ok, is a commit status that md's merge steward posts.
 name: ci
 
 on:
@@ -173,8 +174,37 @@ jobs:
             exit 1
           }
 
+  gitleaks:
+    needs: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # gitleaks comes from mise.toml, the pin pre-commit uses, so Renovate moves one version.
+      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
+        with:
+          install_args: gitleaks
+          cache: true
+      - name: No secrets in the commits this run brings
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then base="$PR_BASE"; head="$PR_HEAD"; else base="$BEFORE"; head="$GITHUB_SHA"; fi
+          if [ -n "$base" ] && git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            set -- "--log-opts=${base}..${head}"
+          else
+            echo "no usable base, so the whole history is scanned"; set --
+          fi
+          gitleaks git --redact --no-banner --config .gitleaks.toml "$@"
+
   ci-ok:
-    needs: [changes, lint, typecheck, unit, integration, contracts, docs, fence-checks]
+    needs: [changes, lint, typecheck, unit, integration, contracts, docs, fence-checks, gitleaks]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2

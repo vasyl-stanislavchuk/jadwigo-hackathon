@@ -13,8 +13,9 @@
     installs into `.claude/commands/`.
   - **Product AI workflows** (`workflows/jadwigo-*`), which the app runs for parents. You run
     one here only to develop or test it.
-- Land a PR with `gh pr merge <n> --auto --squash`: GitHub merges it once `ci-ok` is green.
-  It is allowlisted. A merge without `--auto` is not, and the ruleset refuses it while CI is red.
+- Land a PR with `gh pr merge <n> --auto --squash`: GitHub merges it once `ci-ok` and `review-ok`
+  are green. md's merge steward posts `review-ok`; start it with `md merge-steward start`. The merge
+  is allowlisted. A merge without `--auto` is not, and the ruleset refuses it while a check is red.
 - A step the owner runs (paid, careful, outward) goes to the owner as one command to type with
   `!` in the prompt, so its output lands in the session. Never route around a guard denial.
 - Ask the owner with `AskUserQuestion`, which keeps the turn alive, not with a question in prose.
