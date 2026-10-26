@@ -17,7 +17,7 @@ docs/worklog/<epic>/<yyyy-mm-dd>-<slug>.md
 - **A wave plan:** `<date>-wave-<n>.md`. One row per lane gives the lane, the paths it owns, the
   paths it must not touch, its frozen tests, its issue queue in order, and its state. The template
   and the lead's workflows come with `dl-5ssh.34.13`.
-- **A handoff:** `<date>-handoff-<slug>.md`, written by `/jadwigo-handoff`, for a fresh session
+- **A handoff:** `<date>-handoff-<slug>.md`, written by `/dev-handoff`, for a fresh session
   to pick the work up. It covers:
   - the outcome, in the owner's words
   - what the work must answer

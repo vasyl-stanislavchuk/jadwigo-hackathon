@@ -1,9 +1,9 @@
 ---
-name: jadwigo-drop
+name: dev-drop
 description: "Use when a drop is to be made, updated, checked or published from the jadwigo repo: a small password-protected site that explains a design, plan or result. Keeps the source in docs/drops/<folder>/, runs the checks, and stops before publishing until the owner says yes."
 ---
 
-# /jadwigo-drop
+# /dev-drop
 
 The contract is `docs/drops/README.md`. Read it first.
 
@@ -18,7 +18,7 @@ The contract is `docs/drops/README.md`. Read it first.
    - `bun tools/src/check-drops.ts`
    - `make drops` (`md drops check`: evidence, links, secrets, size)
    - `md drops shot docs/drops/<folder>/site.json`, then look at the screenshots
-4. Add a row to `docs/drops/index.md`. Commit on a branch and open the PR with `/jadwigo-pr`.
+4. Add a row to `docs/drops/index.md`. Commit on a branch and open the PR with `/dev-pr`.
 
 ## Publish (the owner's yes first)
 

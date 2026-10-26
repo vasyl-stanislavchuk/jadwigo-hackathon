@@ -43,7 +43,8 @@ dependency-cruiser fails these edges outright: a package that imports an app, an
 | Folder | What it is for |
 | --- | --- |
 | `tools/` | repo scripts, each with a test, run by `make check`: no-bank, worklog, drops, research, workflows, PR body, ports |
-| `workflows/` | the `/jadwigo-*` AI workflows, linked into `.claude/skills` and `.agents/skills` |
+| `workflows/` | product AI workflows, `/jadwigo-<record>-<verb>`: what the app's AI does for a parent |
+| `.agents/skills/` | dev commands, `/dev-<verb>`: how agents build this repo |
 | `lint/` | GritQL house rules for Biome |
 | `docs/` | workstreams, drops, research, runbooks, worklog |
 | `infra/` | Terraform, one root module, under `dl-5ssh.34.4` |

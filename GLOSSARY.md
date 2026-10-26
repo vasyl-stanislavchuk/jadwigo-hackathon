@@ -35,7 +35,8 @@ inside the repo, and the outside sense gets a qualifier.
 | **steward** | the agent that keeps PRs moving: reruns flakes, sends red CI back, reverts a broken `main` |
 | **fence** | a rule enforced by code (a hook, a lint, a test, CI), listed in `AGENTS.md` |
 | **guard** | `.claude/hooks/guard.ts`, the fence that judges every tool call |
-| **workflow** | an AI workflow in `workflows/`, run as `/jadwigo-<name>`. Never called a "skill" |
+| **workflow** | a product AI workflow: what Jadwigo's AI does for a parent, such as composing a lesson. Lives in `workflows/`, named `/jadwigo-<record>-<verb>`. Never called a "skill" |
+| **dev command** | instructions for an agent building this repo, such as writing a PR body. Lives in `.agents/skills/`, named `/dev-<verb>`. Never shipped to a parent |
 | **drop** | a small published site that explains a design or a result, sourced in `docs/drops/<folder>/` |
 | **worklog** | notes a running epic needs between sessions, deleted when it closes |
 | **handoff** | the note that lets a fresh session pick up work: what was asked, done, hit, and next |

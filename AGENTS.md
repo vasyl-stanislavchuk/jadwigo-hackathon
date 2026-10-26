@@ -33,12 +33,13 @@ Read in this order, and stop when you know enough:
 | `packages/config` | hosts and languages for every environment, one source | nothing of ours | platform |
 | `packages/testing` | fixtures, factories, the unit setup. Test files only | anything | platform |
 | `tools/` | repo scripts, each with a test, run by `make check` | nothing of ours | platform |
-| `workflows/` | the `/jadwigo-*` AI workflows (`workflows/README.md`) | n/a | ai-workflows |
+| `workflows/` | product AI workflows, `/jadwigo-<record>-<verb>`: what the app's AI does for a parent (`workflows/README.md`) | n/a | ai-workflows |
+| `.agents/skills/` | dev commands, `/dev-<verb>`: how agents build this repo (`.agents/skills/README.md`) | n/a | platform |
 | `lint/` | GritQL house rules for Biome (`lint/README.md`) | n/a | platform |
 | `docs/` | how it works: workstreams, research, drops, runbooks, worklog (`docs/README.md`) | n/a | each its own |
 | `infra/` | Terraform, one root module (`dl-5ssh.34.4`) | n/a | platform |
 | `supabase/` | migrations and their tests (`dl-5ssh.34.34`) | n/a | platform |
-| `.claude/`, `.agents/` | hooks, the guard, settings, links to the workflows | n/a | platform |
+| `.claude/` | hooks, the guard, settings, and links to both kinds of instructions | n/a | platform |
 | `.github/` | CI, the setup action, the ruleset, CODEOWNERS, Renovate's labels | n/a | platform |
 
 dependency-cruiser enforces two edges of that column: packages never import apps, and
@@ -58,7 +59,7 @@ Not in the repo, on purpose: decisions (the md context brain), the question bank
 | One package | `bunx turbo run lint typecheck test --filter=./packages/core` |
 | Integration tests | `DATABASE_URL=postgresql://localhost/jadwigo_test bunx turbo run test:int` |
 | Drops | `make drops` (`md drops check` on each) |
-| Workflow links | `make skills` |
+| Workflow and dev command links | `make skills` |
 
 Run the tests your change touches. CI runs the rest. Playwright is CI's job.
 
@@ -72,7 +73,7 @@ to **Do**, **Done when**, and **Stop if**. If yours lacks one of these, ask befo
 3. Do exactly the issue. One issue is one deliverable. Work you find along the way becomes a new
    issue (`bd create "…" --deps discovered-from:<id>`), not part of this PR.
 4. `make check`, then run each "done when" check and keep its real output.
-5. Push, open a draft PR titled `<id>: <what>` with a body from `/jadwigo-pr`, and push often.
+5. Push, open a draft PR titled `<id>: <what>` with a body from `/dev-pr`, and push often.
 6. Ready: `gh pr ready`, then `gh pr merge --auto --squash`. GitHub merges it once `ci-ok` is green.
 7. `bd close <id> --reason "<what ran, what did not>"`.
 
@@ -123,7 +124,7 @@ and the PR link.
 ## Git and PRs
 
 - Stage files by name. The squash subject is the PR title, so `git log --grep <id>` finds an issue's changes.
-- The PR body has the `/jadwigo-pr` shape: Summary (one small visual), Evidence (before and
+- The PR body has the `/dev-pr` shape: Summary (one small visual), Evidence (before and
   after), Merge Danger (door and blast radius). CI checks the headings.
 - **One-way doors in this repo.** Call these one-way, never two-way:
   - a migration under `supabase/`
