@@ -7,7 +7,8 @@
 - Launch every subagent with `model: "opus"`. The guard refuses any other.
 - `.claude/skills/` links in two kinds of instructions, and they never mix:
   - **Dev commands** (`.agents/skills/dev-*`), for building this repo: `/dev-pr` whenever you write
-    or rewrite a PR body, `/dev-handoff` when work moves to another session, `/dev-drop` to make,
+    or rewrite a PR body (the guard refuses a `gh pr create` or `gh pr edit` body without its
+    shape, so write it to a file and pass `--body-file`), `/dev-handoff` when work moves to another session, `/dev-drop` to make,
     check or publish a drop.
   - **Product AI workflows** (`workflows/jadwigo-*`), which the app runs for parents. You run
     one here only to develop or test it.
