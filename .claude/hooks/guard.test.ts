@@ -3,6 +3,9 @@
 // its own test strings. Run: bun test .claude/hooks
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { denial, type HookInput } from "./guard.ts";
 
 const onBranch = (branch: string) => () => branch;
@@ -116,6 +119,43 @@ describe("guard: Bash", () => {
   test("a bare git push from main is denied, from a branch allowed", () => {
     expect(denial(bash("git push"), {}, onBranch("main"))).toMatch(/through a PR/);
     expect(denial(bash("git push"), {}, onBranch("dl-5ssh.34.3/ci"))).toBeUndefined();
+  });
+});
+
+describe("guard: PR bodies have the /dev-pr shape", () => {
+  const dir = mkdtempSync(join(tmpdir(), "pr-body-"));
+  const good = join(dir, "good.md");
+  const bad = join(dir, "bad.md");
+  writeFileSync(
+    good,
+    "Issue: `dl-x.1`\n\n## Summary\n\nx\n\n## Evidence\n\ny\n\n## Merge Danger\n\n**Door:** two-way\n",
+  );
+  writeFileSync(bad, "## Issue\n\nWhat it does.\n");
+  const pr = (command: string) => denial(bash(command), {}, onBranch("lane/a"));
+
+  test("a body file with the shape is allowed", () => {
+    expect(pr(`gh pr create --title "dl-x.1: y" --body-file ${good}`)).toBeUndefined();
+    expect(pr(`git push -u origin lane/a && gh pr create -F ${good} --title t`)).toBeUndefined();
+    expect(pr(`gh pr edit 3 --body-file=${good}`)).toBeUndefined();
+  });
+
+  test("prose that mentions gh pr create is not the call", () => {
+    const heredoc = `cat > /tmp/b.md <<'EOF'\ngh pr create --body-file with this body\nEOF\ngh pr create --body-file ${good}`;
+    expect(pr(heredoc)).toBeUndefined();
+  });
+
+  test("an edit that leaves the body alone is allowed", () => {
+    expect(pr('gh pr edit 3 --title "dl-x.1: better"')).toBeUndefined();
+    expect(pr("git checkout -b x && gh pr edit 3 --add-label docs")).toBeUndefined();
+  });
+
+  test("a body without the shape, an inline body, --fill or no body is denied", () => {
+    expect(pr(`gh pr create --title t --body-file ${bad}`)).toMatch(/Merge Danger.*\/dev-pr/);
+    expect(pr('gh pr create --title t --body "## Summary"')).toMatch(/inline/);
+    expect(pr('gh pr edit 3 -b "quick fix"')).toMatch(/inline/);
+    expect(pr("gh pr create --fill")).toMatch(/\/dev-pr/);
+    expect(pr("gh pr create --title t")).toMatch(/no body file/);
+    expect(pr(`gh pr create --title t --body-file ${dir}/missing.md`)).toMatch(/does not exist/);
   });
 });
 

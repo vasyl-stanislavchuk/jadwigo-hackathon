@@ -39,6 +39,10 @@ Contract snapshots updated: <no | yes: which, and why>
 
 The title is `<issue id>: <what>`, and the body starts at `Issue:`, with no preamble.
 
+Write the body to a file (in the scratchpad, not the repo) and pass it with
+`gh pr create --body-file <file>` or `gh pr edit <n> --body-file <file>`. The guard checks the
+file before the call runs and refuses an inline `--body`, `--fill` or a body without the shape.
+
 ## One-way doors in this repo
 
 Call these one-way, whatever the diff looks like. `AGENTS.md` keeps the list:
