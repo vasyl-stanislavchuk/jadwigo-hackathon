@@ -1,0 +1,6 @@
+# md's committed layer (medallion-dev-cli docs/repo-registry/contract.md). md reads it from main.
+# [review] joins once apps/web serves (dl-5ssh.34.6).
+
+[run.dev]
+command = "make dev"
+default = true
