@@ -1,0 +1,24 @@
+{
+  "name": "@jadwigo/lesson-kit",
+  "description": "Interaction families and blocks for lessons",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --config ../../vitest.config.ts --project unit"
+  },
+  "//": {
+    "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
+    "typescript": "tsc for this package's typecheck script",
+    "vitest": "runs this package's unit test with the root vitest.config.ts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

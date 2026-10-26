@@ -1,0 +1,28 @@
+{
+  "name": "@jadwigo/site",
+  "description": "The marketing site at jadwigo.pl, Astro, pl and en (dl-w0b4.1 fills it)",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --config ../../vitest.config.ts --project unit"
+  },
+  "//": {
+    "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
+    "typescript": "tsc for this package's typecheck script",
+    "vitest": "runs this package's unit test with the root vitest.config.ts",
+    "@jadwigo/config": "hosts.prod, the host this app serves (src/index.ts)"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "dependencies": {
+    "@jadwigo/config": "workspace:*"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "@jadwigo/store",
+  "description": "The record store behind an interface: in-memory today, Postgres once dl-e8ov.5.34 maps the records",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --config ../../vitest.config.ts --project unit",
+    "test:int": "vitest run --config ../../vitest.config.ts --project integration"
+  },
+  "//": {
+    "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
+    "typescript": "tsc for this package's typecheck script",
+    "vitest": "runs this package's unit test with the root vitest.config.ts",
+    "@jadwigo/contracts": "LearnerId, the key every record is stored under",
+    "postgres": "the integration placeholder only (src/postgres.int.test.ts) until the Postgres store lands (dl-e8ov.5.34)"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "postgres": "3.4.9"
+  },
+  "dependencies": {
+    "@jadwigo/contracts": "workspace:*"
+  }
+}

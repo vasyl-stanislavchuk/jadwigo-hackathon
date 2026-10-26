@@ -1,0 +1,28 @@
+{
+  "name": "@jadwigo/contracts",
+  "description": "Zod contracts: ids, lesson script, answer envelope, routes, errors. Imports nothing of ours",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --config ../../vitest.config.ts --project unit"
+  },
+  "//": {
+    "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
+    "typescript": "tsc for this package's typecheck script",
+    "vitest": "runs this package's unit test with the root vitest.config.ts",
+    "zod": "the schemas themselves, and z.toJSONSchema() for the snapshots in schemas/"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "@jadwigo/cli",
+  "description": "jw, a Python uv project with Click. This manifest only lets turbo run its tests with the rest",
+  "private": true,
+  "scripts": {
+    "test": "uv run --frozen pytest -q"
+  }
+}
