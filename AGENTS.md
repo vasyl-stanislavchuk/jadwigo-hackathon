@@ -8,7 +8,7 @@ monorepo: bun workspaces and Turborepo for TypeScript, a uv project for the `jw`
 | Need | Command |
 | --- | --- |
 | Install | `mise install && bun install --frozen-lockfile` |
-| The gate before you finish | `make check` (lint, typecheck and test on what changed, `turbo --affected`) |
+| The gate before you finish | `make check` (lint, typecheck and test on what changed, `turbo --affected`, then knip, dependency-cruiser and the no-bank check) |
 | Everything | `make check-all` |
 | One package | `bunx turbo run lint typecheck test --filter=./packages/core` |
 | Integration tests | `DATABASE_URL=postgresql://localhost/jadwigo_test bunx turbo run test:int` |
