@@ -1,0 +1,8 @@
+// House rule, from qm: process.env is read in one config module per app or package
+// (src/config.ts), so every setting has one place to look. biome.json applies it to the
+// apps' and packages' src/, minus config.ts, tests and packages/testing.
+language js
+
+`process.env` as $env where {
+  register_diagnostic(span=$env, message="Read process.env only in src/config.ts (one config module per app or package).", severity="error")
+}
