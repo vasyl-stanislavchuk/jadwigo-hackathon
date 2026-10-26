@@ -4,7 +4,7 @@
 
 | Drop | Source | What it explains |
 | --- | --- | --- |
-| `jadwigo-repo` (not yet published) | [`repo/`](repo/) | where things live in this repo and how agents work in it |
+| [jadwigo-repo](https://drops.medallion.md/sites/jadwigo-repo/) | [`repo/`](repo/) | where things live in this repo and how agents work in it |
 
 ## Made before the repo
 
