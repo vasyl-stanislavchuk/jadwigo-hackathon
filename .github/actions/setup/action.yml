@@ -1,0 +1,37 @@
+name: setup
+description: >-
+  Every CI job's setup: mise's tools (Node 24, bun, uv, gitleaks), the bun and turbo caches,
+  bun install, and TURBO_SCM_BASE so turbo --affected compares against the PR's base.
+  The job's checkout must use fetch-depth 0.
+runs:
+  using: composite
+  steps:
+    - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+      with:
+        cache: true
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.bun/install/cache
+          .turbo/cache
+        key: bun-turbo-${{ runner.os }}-${{ hashFiles('bun.lock') }}-${{ github.sha }}
+        restore-keys: |
+          bun-turbo-${{ runner.os }}-${{ hashFiles('bun.lock') }}-
+          bun-turbo-${{ runner.os }}-
+    - name: Install
+      shell: bash
+      run: bun install --frozen-lockfile
+    - name: Point turbo --affected at the base
+      shell: bash
+      env:
+        EVENT: ${{ github.event_name }}
+        PR_BASE: ${{ github.event.pull_request.base.sha }}
+        BEFORE: ${{ github.event.before }}
+      run: |
+        if [ "$EVENT" = pull_request ]; then base="$PR_BASE"; else base="$BEFORE"; fi
+        # A first push has no before commit: compare with the parent, or the root on a one-commit history.
+        if [ -z "$base" ] || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+          base="$(git rev-parse HEAD~1 2>/dev/null || git rev-list --max-parents=0 HEAD)"
+        fi
+        echo "TURBO_SCM_BASE=$base" >> "$GITHUB_ENV"
+        echo "turbo --affected compares against $base"

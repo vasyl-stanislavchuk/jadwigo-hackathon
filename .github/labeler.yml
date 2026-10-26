@@ -1,0 +1,33 @@
+# A PR's labels follow the directories it touches, one per workstream (docs/workstreams/).
+"ws:learner-experience":
+  - changed-files:
+      - any-glob-to-any-file: ["apps/web/**", "packages/lesson-kit/**", "packages/ui/**", "packages/copy/**"]
+"ws:platform":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "apps/api/**"
+          - "packages/contracts/**"
+          - "packages/store/**"
+          - "packages/config/**"
+          - "packages/api-client/**"
+          - "packages/testing/**"
+          - "infra/**"
+          - "supabase/**"
+          - "tools/**"
+          - ".github/**"
+          - ".claude/**"
+"ws:ai-workflows":
+  - changed-files:
+      - any-glob-to-any-file: ["apps/cli/**", "workflows/**"]
+"ws:question-bank":
+  - changed-files:
+      - any-glob-to-any-file: ["packages/bank/**"]
+"ws:learner-knowledge":
+  - changed-files:
+      - any-glob-to-any-file: ["packages/core/**"]
+"ws:marketing":
+  - changed-files:
+      - any-glob-to-any-file: ["apps/site/**"]
+"docs":
+  - changed-files:
+      - any-glob-to-any-file: ["docs/**"]
