@@ -11,8 +11,9 @@
 // A denial always starts with "guard:" and says what to do instead. Cases: guard.test.ts.
 
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import { extname, isAbsolute, relative } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { extname, isAbsolute, join, relative } from "node:path";
+import { checkPrBody } from "../../tools/src/check-pr-body.ts";
 
 export interface HookInput {
   tool_name?: string;
@@ -77,6 +78,31 @@ function gitSub(words: string[]): { sub: string; args: string[] } | undefined {
   }
   const sub = words[i];
   return sub ? { sub, args: words.slice(i + 1) } : undefined;
+}
+
+const USE_DEV_PR = "Write the body with /dev-pr into a file, then pass it with --body-file <path>.";
+
+/** gh pr create always carries a body file that passes check-pr-body; gh pr edit does when it sets the body. */
+function prBodyDenial(cmd: string, args: string[], cwd: string | undefined): string | undefined {
+  const setsBody = args.some((a) =>
+    /^(--body|-b|--body-file|-F|--fill|--fill-first|--fill-verbose)(=|$)/.test(a),
+  );
+  // cmd is stripProse's output: heredocs and quoted text are gone, so prose that mentions
+  // gh pr create is never read as the call, and an inline --body "…" leaves its flag behind.
+  const at = cmd.search(/\bgh\s+pr\s+(create|edit)\b/);
+  const raw = cmd.slice(Math.max(at, 0)).split(/&&|\|\||;|\n/)[0] ?? "";
+  const inline = /(^|\s)(--body|-b)(=|\s)/.test(raw);
+  if (args[1] === "edit" && !setsBody && !inline) return undefined;
+  if (inline || args.some((a) => /^--fill/.test(a)))
+    return `an inline or generated PR body skips the /dev-pr shape. ${USE_DEV_PR}`;
+  const file = /(?:^|\s)(?:--body-file|-F)(?:=|\s+)(['"]?)([^'"\s]+)\1/.exec(raw)?.[2];
+  if (!file || file === "-") return `this PR has no body file. ${USE_DEV_PR}`;
+  const home = file.startsWith("~/") ? join(process.env["HOME"] ?? "~", file.slice(2)) : file;
+  const path = isAbsolute(home) ? home : join(cwd ?? ".", home);
+  if (!existsSync(path)) return `the body file ${file} does not exist. ${USE_DEV_PR}`;
+  const problems = checkPrBody(readFileSync(path, "utf8"));
+  if (problems.length > 0) return `the PR body in ${file} is ${problems.join("; ")}. ${USE_DEV_PR}`;
+  return undefined;
 }
 
 function bashDenial(
@@ -179,7 +205,13 @@ function bashDenial(
       }
     }
 
-    // 5. The board: --notes replaces a bead's whole log.
+    // 5. PR bodies have the /dev-pr shape, checked here so a session fixes it before CI does.
+    if (prog === "gh" && args[0] === "pr" && (args[1] === "create" || args[1] === "edit")) {
+      const reason = prBodyDenial(bare, args, cwd);
+      if (reason) return reason;
+    }
+
+    // 6. The board: --notes replaces a bead's whole log.
     if (
       prog === "bd" &&
       args.includes("update") &&
