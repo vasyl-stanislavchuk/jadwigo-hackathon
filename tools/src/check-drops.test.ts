@@ -43,6 +43,17 @@ describe("checkDrops", () => {
     expect(problems).toContain("holds a password");
   });
 
+  it("passes a one-page drop that is a spec.json alone, and still finds a password in it", () => {
+    const { root, dir } = repo(good, { "index.md": "x" });
+    mkdirSync(join(dir, "one"));
+    writeFileSync(join(dir, "one/spec.json"), JSON.stringify({ title: "One page" }));
+    expect(checkDrops(dir, root)).toEqual([]);
+    writeFileSync(join(dir, "one/build.ts"), "// ?password=abc\n");
+    expect(checkDrops(dir, root)).toEqual([
+      `${join(dir, "one/build.ts")}: holds a password; point to md drops history instead`,
+    ]);
+  });
+
   it("fails a folder with no site.json or broken JSON", () => {
     const { root, dir } = repo(good, { "index.md": "x" });
     mkdirSync(join(dir, "empty"));

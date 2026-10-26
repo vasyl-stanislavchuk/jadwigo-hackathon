@@ -36,10 +36,10 @@ describe("checkWorkflows", () => {
 
   it("fails a dev command among the product workflows, and a product one in .agents", () => {
     const root = good();
-    skill(root, "workflows", "dev-handoff");
+    skill(root, "workflows", "dev-drop");
     skill(root, ".agents/skills", "jadwigo-drop-publish");
     expect(checkWorkflows(root)).toEqual([
-      "workflows/dev-handoff: dev commands live in .agents/skills/, not with the product workflows",
+      "workflows/dev-drop: dev commands live in .agents/skills/, not with the product workflows",
       ".agents/skills/jadwigo-drop-publish: product workflows live in workflows/, linked here",
     ]);
   });

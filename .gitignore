@@ -12,3 +12,4 @@ CLAUDE.local.md
 coverage/
 dist/
 .DS_Store
+.claude/commands/

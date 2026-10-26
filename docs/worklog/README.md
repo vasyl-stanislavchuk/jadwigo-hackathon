@@ -17,15 +17,8 @@ docs/worklog/<epic>/<yyyy-mm-dd>-<slug>.md
 - **A wave plan:** `<date>-wave-<n>.md`. One row per lane gives the lane, the paths it owns, the
   paths it must not touch, its frozen tests, its issue queue in order, and its state. The template
   and the lead's workflows come with `dl-5ssh.34.13`.
-- **A handoff:** `<date>-handoff-<slug>.md`, written by `/dev-handoff`, for a fresh session
-  to pick the work up. It covers:
-  - the outcome, in the owner's words
-  - what the work must answer
-  - what to read first
-  - the rules
-  - "done when"
-  - a prompt ready to paste
 - **Notes between sessions** that would be noise on the issue itself.
 
-A short stop note (what was asked, what was done, the exact error, what to try next) goes on the
-issue with `bd update <id> --append-notes`, not here.
+A brief for one issue never goes here: it lives in the issue itself (`AGENTS.md`, "One issue, start to
+finish"), and so does a stop note (`bd update <id> --append-notes`). The worklog is for what
+spans issues.

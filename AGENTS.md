@@ -10,9 +10,37 @@ Read in this order, and stop when you know enough:
 
 1. This file.
 2. The `AGENTS.md` nearest to the files you will touch (every app and package has one).
-3. Your issue: `bd -C ~/projects/david-learns/.beads show <id>`.
+3. Your issue: `bd -C ~/projects/david-learns/.beads show <id>` (see "Projects and the board").
 4. The workstream page in `docs/workstreams/` that owns those files.
-5. Words you don't know: `GLOSSARY.md`. A decision the docs leave open: `md context ask "<question>" --project jadwigo-platform`.
+5. Words you don't know: `GLOSSARY.md`. A decision the docs leave open: `md context ask "<question>" --project jadwigo-<workstream>`.
+
+## Projects and the board
+
+Jadwigo runs as one meta project, `jadwigo-hackathon`, and six workstream projects in the md
+context brain. The meta project holds the goals and observes; it never builds. Each workstream
+has its own decisions, report and page. All of them share one beads board, the david-learns
+tracker. A workstream owns a scope on it: its epics, and the label every open issue carries.
+
+| Workstream | Label | Builds in | Scope epics |
+| --- | --- | --- | --- |
+| platform | `project:jadwigo-platform` | this repo | `dl-5ssh`, `dl-e8ov.1`, `dl-e8ov.2` |
+| learner-knowledge | `project:jadwigo-learner-knowledge` | this repo | `dl-e8ov.5`, `dl-liwi`, `dl-r77f`, `dl-e5c4` |
+| ai-workflows | `project:jadwigo-ai-workflows` | this repo | `dl-hin8`, `dl-u1y5` |
+| marketing | `project:jadwigo-marketing` | this repo | `dl-w0b4` |
+| learner-experience | `project:jadwigo-learner-experience` | the david-learns playground, until `dl-5ssh.34.6` ports it here | `dl-uukj`, `dl-w3`, `dl-7wlo` |
+| question-bank | `project:jadwigo-question-bank` | `packages/bank` here; the Khan pipeline in david-learns until it has a home | `dl-n9fr`, `dl-r772` |
+
+- **Finding work:** `bd -C ~/projects/david-learns/.beads ready --label project:jadwigo-<workstream>`
+  (in zsh, wrap `bd -C …` in a function such as `B() { bd -C ~/projects/david-learns/.beads "$@"; }`, never a variable).
+  An issue labelled `needs-owner` is a question or a step for the owner. Don't pick it up; it
+  waits on the owner's answer.
+- **Filing work:** every new issue gets exactly one workstream label and a parent epic in that
+  workstream's scope. Work that changes a goal, or two or more workstreams, goes to the meta
+  project (`project:jadwigo-hackathon`).
+- **Decisions** are recorded in the project whose area they change, and in the meta project when
+  they cross workstreams. Ask the project the work belongs to.
+- **Nothing else in david-learns is developed.** Its Django backend and Python lesson path are
+  thrown away. Its CLI, brain and docs are paused.
 
 ## Layout
 
@@ -58,7 +86,7 @@ Not in the repo, on purpose: decisions (the md context brain), the question bank
 | Everything | `make check-all` |
 | One package | `bunx turbo run lint typecheck test --filter=./packages/core` |
 | Integration tests | `DATABASE_URL=postgresql://localhost/jadwigo_test bunx turbo run test:int` |
-| Drops | `make drops` (`md drops check` on each) |
+| Drops | `make drops` (`md drops check` on each); build one with `/dev-drop` |
 | Workflow and dev command links | `make skills` |
 
 Run the tests your change touches. CI runs the rest. Playwright is CI's job.
@@ -80,6 +108,14 @@ to **Do**, **Done when**, and **Stop if**. If yours lacks one of these, ask befo
    path needs the owner's approval, and a broken `main` is fixed forward.
 7. `bd close <id> --reason "<what ran, what did not>"`.
 
+**Work moving to another session lives in the bead, not in a file.** Fill it so a fresh session
+needs nothing else:
+- `--description`: scope, what to read, the paths it owns, the rules
+- `--design` (or `--design-file`): the longer context, with the owner's words quoted and the decisions cited by slug
+- `--acceptance`: done when, as commands and what they show
+
+The prompt for the next session is then one line: "Run issue `<id>`: `bd show <id>` and follow it."
+
 ## Lanes and waves
 
 Big changes ship as a wave: a lead plans it, and lanes build it in parallel.
@@ -100,15 +136,12 @@ Big changes ship as a wave: a lead plans it, and lanes build it in parallel.
 
 ## When to stop
 
-Stop and hand off when:
+Stop and hand off when the same step failed 3 times with no new information; "done when" can't
+pass without touching a file outside what you own; a contract is ambiguous or disagrees with the
+issue; a test you didn't write and didn't touch fails; or the next step is a migration, a new
+database, a paid call or a publish the issue didn't name.
 
-- the same step failed 3 times with no new information
-- "done when" can't pass without touching a file outside what you own
-- a contract is ambiguous, or disagrees with the issue
-- a test you didn't write and didn't touch fails
-- the next step is a migration, a new database, a paid call or a publish the issue didn't name
-
-The handoff is 4 lines on the issue (`bd update <id> --append-notes`): what the issue asked, what
+The stop note is 4 lines on the issue (`bd update <id> --append-notes`): what the issue asked, what
 you did, the exact command and error that stopped you, what you would try next.
 
 End every session with one word, `DONE`, `DONE_WITH_CONCERNS`, `NEEDS_DECISIONS` or `BLOCKED`,
@@ -129,30 +162,22 @@ and the PR link.
 - Stage files by name. The squash subject is the PR title, so `git log --grep <id>` finds an issue's changes.
 - The PR body has the `/dev-pr` shape: Summary (one small visual), Evidence (before and
   after), Merge Danger (door and blast radius). CI checks the headings.
-- **One-way doors in this repo.** Call these one-way, never two-way:
-  - a migration under `supabase/`
-  - a change to a `packages/contracts/schemas/*.json` snapshot
-  - anything that deletes, moves or exports learner data
-  - `infra/bootstrap/` and anything that changes IAM
-  - a deploy, a publish, an email: anything that leaves the machine
+- **One-way doors in this repo**, never called two-way: a migration under `supabase/`; a change to
+  a `packages/contracts/schemas/*.json` snapshot; anything that deletes, moves or exports learner
+  data; `infra/bootstrap/` and anything that changes IAM; a deploy, a publish or an email.
 - After a merge that changes `docs/`, run `md context repo sync --project jadwigo-platform`.
 
 ## Fences
 
 Each fence has a test that plants a violation (`tools/src/*.test.ts`, `.claude/hooks/guard.test.ts`).
 
-1. **The guard** (`.claude/hooks/guard.ts`) denies:
-   - every tool while `ANTHROPIC_API_KEY` is set
-   - `terraform apply` and prod AWS profiles
-   - Docker and `supabase start`
-   - force-push, `--no-verify`, pushes to `main`
-   - `gh pr merge --admin`, `gh pr review --approve`, and `gh api` writes to rulesets or branch protection
-   - `git add -A` and `git add .`
-   - `git pull --rebase` without `=merges`
-   - `bd update --notes` (use `--append-notes`)
-   - `gh pr create` or `gh pr edit` with a body that lacks the `/dev-pr` shape: write it to a file and pass `--body-file`
-   - an Agent launch without `model: opus`
-   - a bare `gbrain`, and other projects' databases
+1. **The guard** (`.claude/hooks/guard.ts`) denies: every tool while `ANTHROPIC_API_KEY` is set;
+   `terraform apply` and prod AWS profiles; Docker and `supabase start`; force-push, `--no-verify`
+   and pushes to `main`; `gh pr merge --admin`, `gh pr review --approve` and `gh api` writes to
+   rulesets or branch protection; `git add -A` and `git add .`; `git pull --rebase` without
+   `=merges`; `bd update --notes` (use `--append-notes`); a `gh pr create` or `gh pr edit` body
+   without the `/dev-pr` shape (pass `--body-file`); an Agent launch without `model: opus`; a bare
+   `gbrain`, and other projects' databases.
 2. **Hooks:** Biome on every file you edit. The Stop hook runs `make check`, and you may not finish red.
 3. **Strict TypeScript:** `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, and ids that
    are branded types only the Zod parsers in `packages/contracts` create.
@@ -174,8 +199,6 @@ Each fence has a test that plants a violation (`tools/src/*.test.ts`, `.claude/h
 - Every dependency has a line in its `package.json` `"//"` block naming the one thing that needs it.
 - Versions are pinned exact, and Renovate moves them after 7 days.
 - A merge deploys nothing; the owner deploys by hand.
-- Issues live on the david-learns tracker: `bd -C ~/projects/david-learns/.beads …`. In zsh,
-  wrap it in a function, `B() { bd -C ~/projects/david-learns/.beads "$@"; }`, never a variable.
 - Writing: digits for numbers, issue ids in backticks, "issue" (not "card"), outcomes rather
   than dates or costs. Text a child reads is short and kind, and never a bare "wrong".
 - Shell: `cp -f`, `mv -f` and `rm -f` (the aliases prompt). Stop a dev server by its PID, never

@@ -1,6 +1,6 @@
 :::meta
 eyebrow: Jadwigo · the repo
-subtitle: The working loop every agent follows, from david-learns' lessons: briefs, lanes, stop conditions, handoffs, and what stays with the owner.
+subtitle: The working loop every agent follows, from david-learns' lessons: briefs in the bead, lanes, stop conditions, and what stays with the owner.
 by: the jadwigo lead session
 when: 2026-10-26T20:00:00Z
 :::
@@ -50,7 +50,7 @@ An agent stops and hands off on any of these:
 - a failing test it didn't write
 - a migration, paid call or publish the issue didn't name
 
-The handoff is a short note on the issue: what was asked, what was done, the exact command and error, and what to try next. The session ends with `DONE`, `DONE_WITH_CONCERNS`, `NEEDS_DECISIONS` or `BLOCKED`.
+The stop note is a short note on the issue: what was asked, what was done, the exact command and error, and what to try next. The session ends with `DONE`, `DONE_WITH_CONCERNS`, `NEEDS_DECISIONS` or `BLOCKED`.
 
 ## What stays with the owner
 

@@ -8,7 +8,6 @@ a product workflow, and those live in `workflows/` (`workflows/README.md`).
 | Command | Use it when |
 | --- | --- |
 | [`dev-pr`](dev-pr/SKILL.md) | writing or rewriting any PR body |
-| [`dev-handoff`](dev-handoff/SKILL.md) | work moves to another session |
 | [`dev-drop`](dev-drop/SKILL.md) | making, checking or publishing a drop |
 
 ```
