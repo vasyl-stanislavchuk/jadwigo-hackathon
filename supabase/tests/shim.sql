@@ -23,6 +23,7 @@ grant anon, authenticated, service_role to authenticator;
 -- Supabase's default: the Data API roles may use the public schema and everything in it.
 grant usage on schema public to anon, authenticated, service_role;
 alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
 alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
 
 create schema if not exists auth;

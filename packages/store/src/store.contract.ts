@@ -394,6 +394,34 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         ).rejects.toMatchObject({ type: "EventIdMismatch" });
       });
 
+      it("keep times sent with an offset, in UTC", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        const { answer: stored } = await store.appendAttemptAnswer(
+          a.pod,
+          answer(attempt, 1, 1, { entered: "5" }, false, {
+            asked_at: "2026-09-01T10:00:00+02:00",
+            answered_at: "2026-09-01T10:00:01.500+02:00",
+          }),
+        );
+        expect(Date.parse(stored.asked_at)).toBe(Date.parse("2026-09-01T08:00:00Z"));
+        expect(Date.parse(stored.answered_at)).toBe(Date.parse("2026-09-01T08:00:01.500Z"));
+        expect(stored.answered_at).toMatch(/Z$/);
+      });
+
+      it("refuse an answer given before its question was asked with BadRequest", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        await expect(
+          store.appendAttemptAnswer(
+            a.pod,
+            answer(attempt, 1, 1, { entered: "5" }, false, {
+              answered_at: "2026-09-01T07:59:59.000Z",
+            }),
+          ),
+        ).rejects.toMatchObject(BAD_REQUEST);
+      });
+
       it("refuse a value of another family with BadRequest", async () => {
         const store = await make();
         const { a, attempt } = await started(store);

@@ -54,6 +54,12 @@ function parse<T>(schema: Schema<T>, value: unknown, what: string): T {
   return result.data;
 }
 
+/** A time as the store keeps it, in UTC as timestamptz gives it back; any other text is left to the parser. */
+function utc(at: string): string {
+  const ms = Date.parse(at);
+  return Number.isNaN(ms) ? at : new Date(ms).toISOString();
+}
+
 /** A fresh id for a record, a v4 uuid written as the wire id. */
 function mint<T>(schema: Schema<T>, prefix: IdPrefix): T {
   return parse(schema, idOf(prefix, crypto.randomUUID()), "a minted id");
@@ -491,10 +497,19 @@ export class InMemoryStore implements Store {
     const row = frozen(
       parse(
         AttemptAnswer,
-        { ...answer, pod_id: pod, help_used: question.help_released },
+        {
+          ...answer,
+          asked_at: utc(answer.asked_at),
+          answered_at: utc(answer.answered_at),
+          pod_id: pod,
+          help_used: question.help_released,
+        },
         "the answer",
       ),
     );
+    if (Date.parse(row.answered_at) < Date.parse(row.asked_at)) {
+      throw new StoreError("BadRequest", "an answer is given after its question is asked");
+    }
     if (
       (row.kind === "skip") !== (row.skip_reason !== null) ||
       (row.kind === "try") !== (row.value !== null) ||

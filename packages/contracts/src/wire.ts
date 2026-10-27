@@ -150,8 +150,9 @@ export const AttemptAnswerResult = z.object({
   replayed: z.boolean(),
   /** Null for a skip, and while the assignment holds verdicts. */
   correct: z.boolean().nullable(),
-  /** Which parts were correct after a miss, never the mistake class. */
+  /** Which parts were correct after a miss, never the mistake class. Null while verdicts are held. */
   parts: z.array(PartMark).nullable(),
+  /** Null while verdicts are held: a reveal follows a correct try. */
   reveal: Reveal.nullable(),
   /** How the question ended (`done` while verdicts are held), or null while it stays open after a miss. */
   ended: PageEnded.nullable(),

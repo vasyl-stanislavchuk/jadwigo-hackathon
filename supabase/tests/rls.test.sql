@@ -1,7 +1,7 @@
 -- Row-level security keeps pods apart (RULES.md rule 12, decision
 -- 2026-10-27-before-supabase-auth-row-level-security-reads-the-caller-s-pod-f).
 begin;
-select plan(12);
+select plan(13);
 \ir _fixture.sql
 
 -- How many of pod A's rows the caller can read, across every table and the view.
@@ -33,9 +33,16 @@ select ok(
   not exists (
     select from pg_default_acl d, aclexplode(d.defaclacl) a
     where d.defaclnamespace = 'public'::regnamespace
-      and a.grantee in (select oid from pg_roles where rolname in ('anon', 'authenticated'))
+      and a.grantee in (select oid from pg_roles
+                        where rolname in ('anon', 'authenticated', 'service_role'))
   ),
-  'a table, sequence or function made later is not granted to anon or authenticated'
+  'a table, sequence or function made later is not granted to anon, authenticated or service_role'
+);
+select is(
+  (select count(*) from information_schema.role_table_grants
+   where table_schema = 'public' and grantee in ('anon', 'authenticated', 'service_role')),
+  0::bigint,
+  'anon, authenticated and service_role hold no grant on any table or view'
 );
 
 set local role jadwigo_api;

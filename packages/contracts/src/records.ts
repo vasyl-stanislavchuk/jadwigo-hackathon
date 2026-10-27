@@ -252,6 +252,7 @@ export const AttemptAnswer = z.object({
   mistake_class: z.string().nullable(),
   parts: z.array(PartVerdict).nullable(),
   judged_by: z.string().nullable(),
+  /** The server's hash of the request body, never sent by the page: a replay is matched on it. */
   body_hash: z.string().min(1),
 });
 export type AttemptAnswer = z.infer<typeof AttemptAnswer>;

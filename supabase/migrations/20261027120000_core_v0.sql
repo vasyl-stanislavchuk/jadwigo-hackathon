@@ -227,6 +227,7 @@ create table attempt_answer (
   check ((kind = 'skip') = (skip_reason is not null)),
   check ((kind = 'try') = (value is not null)),
   check (kind = 'try' or correct is null),
+  check (answered_at >= asked_at),
   foreign key (pod_id, attempt_id, seq) references attempt_question (pod_id, attempt_id, seq)
 );
 
@@ -466,14 +467,17 @@ grant update (help_released, ended) on attempt_question to jadwigo_api;
 grant delete on lesson_version_question to jadwigo_api;
 
 -- Supabase grants the public schema to its Data API roles. jadwigo reaches Postgres only through
--- apps/api, so they get nothing here.
+-- apps/api, so they get nothing here: service_role included, since it bypasses row-level
+-- security and nothing of ours uses it. The default privileges revoked are the migrating role's
+-- (postgres on Supabase, which runs every migration), the role that makes our later tables.
 do $$
 declare
   r text;
 begin
-  foreach r in array array['anon', 'authenticated'] loop
+  foreach r in array array['anon', 'authenticated', 'service_role'] loop
     if exists (select from pg_roles where rolname = r) then
       execute format('revoke all on all tables in schema public from %I', r);
+      execute format('revoke all on all sequences in schema public from %I', r);
       execute format('revoke all on all functions in schema app from %I', r);
       -- Supabase grants every table made later to these roles by default: stop that too.
       execute format('alter default privileges in schema public revoke all on tables from %I', r);

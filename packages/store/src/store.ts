@@ -177,7 +177,10 @@ export interface Store {
    * - the same `event_id` and `body_hash` for the same try (`attempt_id`, `seq`, `try_no`,
    *   `kind`) returns the stored row, `replayed: true`;
    * - the same `event_id` with another body or for another try is `EventIdMismatch`;
-   * - a try's `value` that is not its question's family's is `BadRequest`;
+   * - a try's `value` that is not its question's family's shape is `BadRequest` (a shape check
+   *   only: whether the ids exist or the text is empty is the judge's, which marks it);
+   * - `asked_at` and `answered_at` may carry an offset and are kept in UTC; an answer before its
+   *   question was asked is `BadRequest`;
    * - another `event_id` for a stored `(attempt_id, seq, try_no)` is `AnswerConflict`;
    * - a `try_no` that is not the question's next is `TryOutOfOrder`;
    * - an ended question is `QuestionNotOpen`; a paused attempt `AttemptPaused`; a finished one `AttemptFinished`.

@@ -1,6 +1,6 @@
 -- The keys that make writes from the page idempotent (RULES.md rules 7 and 19).
 begin;
-select plan(7);
+select plan(8);
 \ir _fixture.sql
 
 select col_is_pk('attempt_answer', 'event_id', 'event_id is attempt_answer''s key');
@@ -52,6 +52,15 @@ select throws_ok(
     values ('00000000-0000-4000-8000-0000000004a2', 2, '00000000-0000-4000-8000-00000000000a',
             '00000000-0000-4000-8000-0000000003a1', 'spare')$$,
   '23505', null, 'a version lists a lesson question once'
+);
+
+select throws_ok(
+  $$insert into attempt_answer
+      (event_id, pod_id, attempt_id, seq, try_no, kind, skip_reason, latency_ms, asked_at, answered_at, body_hash)
+    values (gen_random_uuid(), '00000000-0000-4000-8000-00000000000a',
+            '00000000-0000-4000-8000-0000000006a1', 3, 2, 'skip', 'dont_know', 1000,
+            '2026-09-01T08:00:01Z', '2026-09-01T08:00:00Z', 'early')$$,
+  '23514', null, 'an answer is not given before its question is asked'
 );
 
 select * from finish();
