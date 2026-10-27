@@ -1,0 +1,15 @@
+variable "environment" {
+  description = "The environment this root is applied for, as packages/config names it"
+  type        = string
+}
+
+variable "aws_region" {
+  description = "Region for buckets and state. Viewers reach the CloudFront edge"
+  type        = string
+  default     = "eu-central-1"
+}
+
+variable "site_domain" {
+  description = "The apex the marketing site answers on (packages/config hosts.<env>.site)"
+  type        = string
+}
