@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@jadwigo/contracts": "workspace:*",
-    "kysely": "0.28.18",
+    "kysely": "0.29.7",
     "pg": "8.23.1"
   }
 }
