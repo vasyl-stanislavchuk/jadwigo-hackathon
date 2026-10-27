@@ -1,0 +1,239 @@
+{
+  "leads": {
+    "A": {
+      "name": "Jasność",
+      "parent": "Zobacz, z czym Twoje dziecko radzi sobie dobrze, a co warto jeszcze poćwiczyć.",
+      "child": "Zagraj w krótką lekcję. Możesz się pomylić. To część nauki."
+    },
+    "B": {
+      "name": "Spokój",
+      "parent": "Nauka bez punktów, zegarów i rankingów. Dziecko ćwiczy w swoim tempie, a Ty decydujesz, co dalej.",
+      "child": "Tu nikt cię nie pogania."
+    },
+    "C": {
+      "name": "Zaufanie",
+      "parent": "Zadania z Alfika Matematycznego i Khan Academy, zawsze z podanym źródłem. Dane Twojego dziecka należą do Ciebie.",
+      "child": "Prawdziwe zagadki, krok po kroku."
+    }
+  },
+  "looks": [
+    {
+      "id": "zeszyt",
+      "name": "Zeszyt",
+      "label": "1. Zeszyt",
+      "leans": "B",
+      "display": "Andika",
+      "displayLicence": "SIL Open Font License 1.1 (SIL International)",
+      "idea": "The wordmark is plain Andika 700 in ink, with \"go\" in the child's blue ink and a ruled line under it. The site is the lesson's own paper with a faint squared grid. Nothing new is added to Zeszyt.",
+      "mark": "rule",
+      "day": {
+        "ground": "#ffffff",
+        "card": "#ffffff",
+        "ink": "#22252d",
+        "inkSoft": "#50535c",
+        "accent": "#3a5fa8",
+        "line": "#e8e2d5",
+        "grid": "#eef2f8",
+        "act": "#9fbaeb",
+        "onAct": "#0f285a",
+        "actEdge": "#6585c2"
+      },
+      "night": {
+        "ground": "#1d1e22",
+        "card": "#1d1e22",
+        "ink": "#ece8de",
+        "inkSoft": "#b9b4a7",
+        "accent": "#93b6ff",
+        "line": "#373941",
+        "grid": "#25272d",
+        "act": "#3a5fa8",
+        "onAct": "#e6eeff",
+        "actEdge": "#24407a"
+      }
+    },
+    {
+      "id": "krolewski",
+      "name": "Królewski zeszyt",
+      "label": "2. Królewski zeszyt",
+      "leans": "C",
+      "display": "Fraunces",
+      "displayLicence": "SIL Open Font License 1.1 (The Fraunces Project Authors)",
+      "idea": "The wordmark is in Fraunces, a soft serif, next to a small paper-cut crown with a sprout growing from it. The site sits on cream with royal blue and warm gold, as in a wycinanka. The lesson keeps Zeszyt's white paper.",
+      "mark": "crown",
+      "day": {
+        "ground": "#fbf6ea",
+        "card": "#ffffff",
+        "ink": "#1c2a52",
+        "inkSoft": "#4a5170",
+        "accent": "#2a4ea0",
+        "gold": "#ad7f1f",
+        "goldInk": "#6e5210",
+        "line": "#e6dcc4",
+        "grid": "#f3ead6",
+        "act": "#9fbaeb",
+        "onAct": "#0f285a",
+        "actEdge": "#6585c2"
+      },
+      "night": {
+        "ground": "#151a2b",
+        "card": "#1d2338",
+        "ink": "#f1ead8",
+        "inkSoft": "#c3bba5",
+        "accent": "#9db7f2",
+        "gold": "#d9ae4c",
+        "goldInk": "#e6c675",
+        "line": "#2c3350",
+        "grid": "#1b2134",
+        "act": "#3a5fa8",
+        "onAct": "#e6eeff",
+        "actEdge": "#24407a"
+      }
+    },
+    {
+      "id": "slad",
+      "name": "Ślad",
+      "label": "3. Ślad",
+      "leans": "A",
+      "display": "Baloo 2",
+      "displayLicence": "SIL Open Font License 1.1 (The Baloo 2 Project Authors)",
+      "idea": "The wordmark is in Baloo 2, round and warm, and a trail of small footprints in the child's blue ink leads away from it. On the lesson the step bar becomes that trail, so a child sees how far they have walked, never a score.",
+      "mark": "steps",
+      "day": {
+        "ground": "#ffffff",
+        "card": "#ffffff",
+        "ink": "#22252d",
+        "inkSoft": "#50535c",
+        "accent": "#3a5fa8",
+        "note": "#fbf1d2",
+        "noteInk": "#5a4300",
+        "line": "#e8e2d5",
+        "grid": "#eef2f8",
+        "act": "#9fbaeb",
+        "onAct": "#0f285a",
+        "actEdge": "#6585c2"
+      },
+      "night": {
+        "ground": "#1d1e22",
+        "card": "#1d1e22",
+        "ink": "#ece8de",
+        "inkSoft": "#b9b4a7",
+        "accent": "#93b6ff",
+        "note": "#3a3016",
+        "noteInk": "#ffe7a3",
+        "line": "#373941",
+        "grid": "#25272d",
+        "act": "#3a5fa8",
+        "onAct": "#e6eeff",
+        "actEdge": "#24407a"
+      }
+    }
+  ],
+  "pairs": [
+    ["ink", "ground", "text"],
+    ["inkSoft", "ground", "text"],
+    ["accent", "ground", "text"],
+    ["onAct", "act", "text"],
+    ["goldInk", "ground", "text"],
+    ["gold", "ground", "mark"],
+    ["noteInk", "note", "text"]
+  ],
+  "voices": [
+    {
+      "id": "przewodnik",
+      "name": "Spokojny przewodnik",
+      "en": "a calm guide",
+      "leans": "B",
+      "how": "Short sentences, few exclamation marks, nothing hurried. It speaks the way a parent sits next to a child doing homework.",
+      "lines": {
+        "headline": "Nauka w swoim tempie. Bez punktów i bez pośpiechu.",
+        "cta": "Otwórz pierwszą lekcję",
+        "welcome": "Cześć. Zaczniemy od kilku zadań. Masz tyle czasu, ile chcesz.",
+        "right": "Dobrze. Tak właśnie jest.",
+        "miss": "Jeszcze nie. Spójrz na zaznaczone miejsce.",
+        "pause": "Lekcja poczeka. Wrócisz, kiedy zechcesz.",
+        "chat": "Zrobiliśmy z synem krótkie lekcje matematyki, bez punktów i bez reklam. Jeśli chcecie spróbować z dzieckiem: jadwigo.pl"
+      }
+    },
+    {
+      "id": "nauczycielka",
+      "name": "Życzliwa nauczycielka",
+      "en": "a kind teacher",
+      "leans": "A",
+      "how": "Warm and clear, the way a good teacher talks in the first school grades. It names what went well, shows the next step and says where each question comes from.",
+      "lines": {
+        "headline": "Zobacz, co Twoje dziecko już umie, a co warto jeszcze poćwiczyć.",
+        "cta": "Zacznij od krótkiej lekcji",
+        "welcome": "Dzień dobry! Rozwiążmy razem kilka zadań.",
+        "right": "Dobrze! Dobrze pomyślane.",
+        "miss": "Jeszcze nie. Popraw zaznaczone miejsce, dasz radę.",
+        "pause": "Zróbmy przerwę. Lekcja zaczeka na ciebie.",
+        "chat": "Dzień dobry, przygotowaliśmy dla naszej klasy krótkie lekcje matematyki. Są bezpłatne i bez reklam. Link: jadwigo.pl"
+      }
+    },
+    {
+      "id": "towarzysz",
+      "name": "Ciekawy towarzysz",
+      "en": "a curious companion",
+      "leans": "C",
+      "how": "Playful and curious, plays with the \"go\" in the name (gotowi, dlaczego). It treats a question as a riddle to solve together, never as a test.",
+      "lines": {
+        "headline": "Każde „dlaczego” to dobry początek.",
+        "cta": "Wypróbuj zagadkę z dzieckiem",
+        "welcome": "Gotowi? Go! Pierwsza zagadka już czeka.",
+        "right": "Jest! Właśnie tak.",
+        "miss": "Jeszcze nie. Coś tu się nie zgadza, spójrz jeszcze raz.",
+        "pause": "Przerwa! Zagadka poczeka na ciebie.",
+        "chat": "Robimy z synem zagadki matematyczne dla jego klasy. Bez punktów i bez reklam. Zagracie z nami? jadwigo.pl"
+      }
+    }
+  ],
+  "lineNames": {
+    "headline": "Nagłówek strony (rodzic)",
+    "cta": "Przycisk dla rodzica",
+    "welcome": "Powitanie dziecka",
+    "right": "Dobra odpowiedź",
+    "miss": "Jeszcze nie",
+    "pause": "Przerwa",
+    "chat": "Wiadomość na czacie klasy (7. linia)"
+  },
+  "lineNamesEn": {
+    "headline": "landing headline (parent)",
+    "cta": "parent's call to action",
+    "welcome": "child's welcome",
+    "right": "right answer",
+    "miss": "miss",
+    "pause": "pause",
+    "chat": "class chat message (line 7)"
+  },
+  "stories": [
+    {
+      "id": "krolowa",
+      "name": "Królowa, która dała szkole klejnoty",
+      "en": "The queen who gave her jewels to a school",
+      "story": "Jadwigo nosi imię patronki szkoły: królowej Jadwigi. Sprzedaż jej klejnotów pomogła odnowić Akademię Krakowską, która ruszyła na nowo w 1400 roku. My też chcemy, żeby nauka była dla każdego dziecka.",
+      "character": "lantern",
+      "characterName": "Latarenka",
+      "characterIdea": "A paper-cut lantern that lights the next step. It glows a little brighter after a right answer and stays lit through a miss."
+    },
+    {
+      "id": "jadwigo-go",
+      "name": "Jadwigo, go!",
+      "en": "Jadwigo, go!",
+      "story": "Po polsku tak wołamy Jadwigę: „Jadwigo!”. A w środku imienia jest „go”, jak w „gotowi?” i w „dlaczego?”. Jadwigo to zawołanie do drogi: pytasz, próbujesz, idziesz dalej.",
+      "character": "crown",
+      "characterName": "Kiełek",
+      "characterIdea": "A small soft crown with a sprout growing from it. The sprout grows a leaf as the child moves on, and never wilts."
+    },
+    {
+      "id": "stopka",
+      "name": "Stopka",
+      "en": "The footprint",
+      "story": "W Krakowie, w murze kościoła Karmelitów, widać odcisk stopy. Legenda mówi, że to ślad królowej Jadwigi, która pomogła ubogiemu kamieniarzowi. U nas każdy krok w lekcji zostawia taki mały ślad na kratkach zeszytu.",
+      "character": "steps",
+      "characterName": "Ślady",
+      "characterIdea": "No figure at all: the footprints are the character. Each task leaves one blue-ink footprint on the squared paper."
+    }
+  ],
+  "founder": "Tę aplikację zrobiliśmy najpierw dla naszego syna. Teraz otwieramy ją dla jego klasy, a potem dla całej szkoły. Nazwa pochodzi od patronki tej szkoły, królowej Jadwigi.",
+  "hackathon": "Prace nad Jadwigo zaczęliśmy jesienią 2026 roku podczas Meta Global AI Developer Hackathon."
+}

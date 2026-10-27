@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "title": "Jadwigo's identity: look, voice and the story of the name",
+  "password": "auto",
+  "nav": [
+    { "page": "index.html", "label": "Overview" },
+    { "page": "look.html", "label": "Look" },
+    { "page": "rings.html", "label": "Child, class, school" },
+    { "page": "voice.html", "label": "Voice" },
+    { "page": "name.html", "label": "Name story" },
+    { "page": "decide.html", "label": "What the owner decides" }
+  ],
+  "sequence": true,
+  "pages": {
+    "index.html": "index.md",
+    "look.html": "look.md",
+    "rings.html": "rings.md",
+    "voice.html": "voice.md",
+    "name.html": "name.md",
+    "decide.html": "decide.md"
+  },
+  "copy": ["img", "diagrams", "fonts", "data"],
+  "evidence": [
+    "../../research/jadwigo-identity.md",
+    "../../research/jadwigo-go-to-market.md",
+    "data/identity.json",
+    "data/contrast.json",
+    "build.ts",
+    "shots.sh"
+  ]
+}
