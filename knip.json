@@ -13,9 +13,6 @@
     },
     "packages/lesson-import": {
       "ignoreDependencies": ["@jadwigo/contracts", "@jadwigo/store"]
-    },
-    "packages/store": {
-      "ignoreDependencies": ["kysely"]
     }
   },
   "ignoreBinaries": ["make", "gitleaks", "uv"],
