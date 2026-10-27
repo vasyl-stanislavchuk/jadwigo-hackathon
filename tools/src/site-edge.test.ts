@@ -28,6 +28,12 @@ const run = (host: string, uri: string, qs: Record<string, string> = {}) =>
   });
 
 describe("site edge", () => {
+  it("uses no syntax the cloudfront-js-2.0 runtime rejects", () => {
+    // CloudFront answered 503 on 2026-10-27 for `host?.value`: SyntaxError: Unexpected token "===".
+    const code = source.replace(/\/\/.*$/gm, "");
+    expect(code).not.toMatch(/\?\.|\?\?/);
+  });
+
   it("sends www to the apex with a 301, keeping the path and query", () => {
     const res = run("www.jadwigo.pl", "/a", { x: "1" }) as Redirect;
     expect(res.statusCode).toBe(301);
