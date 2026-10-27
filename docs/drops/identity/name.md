@@ -1,13 +1,13 @@
 :::meta
 eyebrow: Jadwigo · mission and value
 subtitle: What the name tells, in 3 stories about a school's patron, Queen Jadwiga
-by: the jadwigo-marketing session for dl-w0b4.48
-when: 2026-10-27T18:00:00Z
+by: the jadwigo-marketing session for dl-w0b4.53
+when: 2026-10-27T22:00:00Z
 :::
 
 # Name story
 
-Jadwigo is named after the patron of our son's school, Queen Jadwiga. In Polish you call a Jadwiga "Jadwigo!", and in English the name reads as "Jadwiga, go!". Our family's own story comes first ([Story](story.html)), and a name story is the line or two that explains the word. This repo names only the patron, never the school.
+Jadwigo is named after the patron of our son's school, Queen Jadwiga. In Polish you call a Jadwiga "Jadwigo!", and in English the name reads as "Jadwiga, go!". A name story is the line or two on jadwigo.pl that explains the word.
 
 Each story rests on these facts:
 - She was [crowned "King" of Poland in Kraków](https://en.wikipedia.org/wiki/Jadwiga_of_Poland) on 16 October 1384.
@@ -34,7 +34,7 @@ A legend of a footprint, told as one step at a time.
 
 ## Go in the name
 
-Inside the name is "go", and it gives the copy some play without any picture.
+The "go" inside the name gives the copy some play without a picture.
 
 :::table Ideas from the "go" in the name, and where each could live in the copy
 | Idea | Where it lives | Example |
@@ -46,5 +46,5 @@ Inside the name is "go", and it gives the copy some play without any picture.
 :::
 
 :::aside
-Whether a character carries the name is parked until the design system merges (`dl-w0b4.38`). A story is picked by the owner in `dl-w0b4.37`.
+The owner picks a story in `dl-w0b4.37`. Whether a character carries the name waits for the design system (`dl-w0b4.38`).
 :::
