@@ -203,6 +203,10 @@ jobs:
           fi
           gitleaks git --redact --no-banner --config .gitleaks.toml "$@"
 
+  # OPEN: a browser job (a Playwright smoke that plays one sample lesson) joins ci-ok when apps/web
+  # serves, with the playground port (dl-5ssh.34.6). Component tests already run in the unit job
+  # (Vitest's dom project, happy-dom).
+
   ci-ok:
     needs: [changes, lint, typecheck, unit, integration, contracts, docs, fence-checks, gitleaks]
     if: always()
