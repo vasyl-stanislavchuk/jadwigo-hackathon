@@ -65,19 +65,28 @@ pgtap:
 	pg_prove --dbname "$$DATABASE_URL" supabase/tests/*.test.sql
 
 # The Supabase projects (decision 2026-10-27-jadwigo-runs-on-a-prod-and-a-dev-supabase-project-a-native-local),
-# reached through the Supabase CLI mise.toml pins. Each secret is read from the environment when set
-# (this checkout's .env.local: SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, JADWIGO_API_DB_PASSWORD,
-# each for one ENV), or else from the macOS keychain: supabase-access-token, supabase-db-password-<env>
-# (postgres) and jadwigo-api-db-password-<env> (jadwigo_api). Never echoed. docs/runbooks/migrations.md.
+# reached through the Supabase CLI mise.toml pins. Secrets live outside every checkout, in
+# ~/.config/jadwigo/supabase.env (mode 600; SUPABASE_SECRETS names another file): SUPABASE_ACCESS_TOKEN,
+# SUPABASE_DB_PASSWORD_DEV|PROD (postgres) and JADWIGO_API_DB_PASSWORD_DEV|PROD (jadwigo_api). Only these
+# targets read it, inside their own shell, so no other target or test sees a secret. A value missing
+# there comes from the macOS keychain: supabase-access-token, supabase-db-password-<env>,
+# jadwigo-api-db-password-<env>. Never echoed. The steps are docs/runbooks/migrations.md.
+SUPABASE_SECRETS ?= $(HOME)/.config/jadwigo/supabase.env
 SUPABASE_REF_dev := jweuvslwntdimuwcvlzq
 SUPABASE_REF_prod := xhzkmpainwzrfktxffjv
 SUPABASE_REF := $(SUPABASE_REF_$(ENV))
-# Links ENV's project with both secrets in the environment. Each recipe line using it is one shell.
+ENV_UPPER = $(subst dev,DEV,$(subst prod,PROD,$(ENV)))
+# Loads the secrets file, then links ENV's project with both secrets in the environment. Each recipe
+# line using it is one shell.
 SUPABASE_LINK = case "$(ENV)" in dev|prod) ;; *) echo "$@: ENV=dev or ENV=prod"; exit 1;; esac; \
+	if [ -f "$(SUPABASE_SECRETS)" ]; then \
+	  [ "$$(stat -f %Lp "$(SUPABASE_SECRETS)")" = 600 ] || { echo "$@: run chmod 600 $(SUPABASE_SECRETS) first"; exit 1; }; \
+	  set -a; . "$(SUPABASE_SECRETS)"; set +a; \
+	fi; \
 	SUPABASE_ACCESS_TOKEN=$${SUPABASE_ACCESS_TOKEN:-$$(security find-generic-password -s supabase-access-token -w 2>/dev/null)}; \
-	test -n "$$SUPABASE_ACCESS_TOKEN" || { echo "$@: set SUPABASE_ACCESS_TOKEN in .env.local, or add the keychain item supabase-access-token"; exit 1; }; \
-	SUPABASE_DB_PASSWORD=$${SUPABASE_DB_PASSWORD:-$$(security find-generic-password -s supabase-db-password-$(ENV) -w 2>/dev/null)}; \
-	test -n "$$SUPABASE_DB_PASSWORD" || { echo "$@: set SUPABASE_DB_PASSWORD (jadwigo-$(ENV)'s postgres password) in .env.local, or add the keychain item supabase-db-password-$(ENV)"; exit 1; }; \
+	test -n "$$SUPABASE_ACCESS_TOKEN" || { echo "$@: set SUPABASE_ACCESS_TOKEN in $(SUPABASE_SECRETS), or add the keychain item supabase-access-token"; exit 1; }; \
+	SUPABASE_DB_PASSWORD=$${SUPABASE_DB_PASSWORD_$(ENV_UPPER):-$$(security find-generic-password -s supabase-db-password-$(ENV) -w 2>/dev/null)}; \
+	test -n "$$SUPABASE_DB_PASSWORD" || { echo "$@: set SUPABASE_DB_PASSWORD_$(ENV_UPPER) (jadwigo-$(ENV)'s postgres password) in $(SUPABASE_SECRETS), or add the keychain item supabase-db-password-$(ENV)"; exit 1; }; \
 	export SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD; \
 	supabase link --project-ref $(SUPABASE_REF) >/dev/null || exit 1
 # Agents never touch prod: Claude Code's shells set CLAUDECODE. The owner pushes prod from a terminal.
@@ -110,13 +119,13 @@ db-push:
 	if [ "$$answer" != "$(ENV)" ]; then echo "db-push: nothing pushed"; exit 1; fi; \
 	supabase db push --linked
 
-## db-role ENV=dev|prod: give jadwigo_api (made by the migration, nologin) a login and the password in
-## the keychain item jadwigo-api-db-password-<env>. Run it after the first db-push, and after a rotation.
+## db-role ENV=dev|prod: give jadwigo_api (made by the migration, nologin) a login and its password
+## (JADWIGO_API_DB_PASSWORD_<ENV>, or the keychain item jadwigo-api-db-password-<env>). Run it after the first db-push, and after a rotation.
 db-role:
 	@$(NOT_PROD_FROM_AGENT)
 	@$(SUPABASE_LINK); \
-	API_PASSWORD=$${JADWIGO_API_DB_PASSWORD:-$$(security find-generic-password -s jadwigo-api-db-password-$(ENV) -w 2>/dev/null)}; \
-	test -n "$$API_PASSWORD" || { echo "db-role: set JADWIGO_API_DB_PASSWORD in .env.local, or add the keychain item jadwigo-api-db-password-$(ENV) (docs/runbooks/migrations.md)"; exit 1; }; \
+	API_PASSWORD=$${JADWIGO_API_DB_PASSWORD_$(ENV_UPPER):-$$(security find-generic-password -s jadwigo-api-db-password-$(ENV) -w 2>/dev/null)}; \
+	test -n "$$API_PASSWORD" || { echo "db-role: set JADWIGO_API_DB_PASSWORD_$(ENV_UPPER) in $(SUPABASE_SECRETS), or add the keychain item jadwigo-api-db-password-$(ENV)"; exit 1; }; \
 	export API_PASSWORD; \
 	test -s supabase/.temp/pooler-url || { echo "db-role: supabase link wrote no supabase/.temp/pooler-url"; exit 1; }; \
 	printf '%s\n' '\set pw `printenv API_PASSWORD`' "alter role jadwigo_api login password :'pw';" \

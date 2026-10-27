@@ -9,17 +9,30 @@ Push dev first; push prod only after the same migrations have run on dev.
 | `jadwigo-dev` | `jweuvslwntdimuwcvlzq` | eu-central-1 |
 | `jadwigo-prod` | `xhzkmpainwzrfktxffjv` | eu-central-1 |
 
-The `make` targets read each secret from the environment when it's set, or else from the macOS
-keychain, and never print it. The environment can come from the `.env.local` of the checkout you push
-from (`SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `JADWIGO_API_DB_PASSWORD`). Keep them out of
-the main checkout's `.env.local`, which md copies into every worktree. `make` reads that file, so
-write a `$` in a value as `$$`. The passwords are per project: set the ones for the ENV you run.
+The `make` targets read their secrets from one file outside every checkout,
+`~/.config/jadwigo/supabase.env`, which must be mode 600 (they refuse it otherwise). Only these
+targets read it, inside their own shell, so no other target, test or worktree's `.env.local` holds
+a secret. A value missing from the file comes from the macOS keychain instead. Nothing is printed.
 
-| Variable in `.env.local` | Keychain item (service) instead |
+```sh
+mkdir -p ~/.config/jadwigo && touch ~/.config/jadwigo/supabase.env && chmod 600 ~/.config/jadwigo/supabase.env
+```
+
+Then fill it in an editor (shell syntax: single-quote each value):
+
+```sh
+SUPABASE_ACCESS_TOKEN='sbp_…'              # supabase.com/dashboard/account/tokens
+SUPABASE_DB_PASSWORD_DEV='…'               # jadwigo-dev's postgres password
+JADWIGO_API_DB_PASSWORD_DEV='…'            # new: openssl rand -base64 32
+SUPABASE_DB_PASSWORD_PROD='…'              # when you push prod
+JADWIGO_API_DB_PASSWORD_PROD='…'
+```
+
+| Variable in `supabase.env` | Keychain item (service) instead |
 | --- | --- |
 | `SUPABASE_ACCESS_TOKEN` | `supabase-access-token` |
-| `SUPABASE_DB_PASSWORD` | `supabase-db-password-dev`, `supabase-db-password-prod` |
-| `JADWIGO_API_DB_PASSWORD` | `jadwigo-api-db-password-dev`, `jadwigo-api-db-password-prod` |
+| `SUPABASE_DB_PASSWORD_DEV`, `_PROD` | `supabase-db-password-dev`, `supabase-db-password-prod` |
+| `JADWIGO_API_DB_PASSWORD_DEV`, `_PROD` | `jadwigo-api-db-password-dev`, `jadwigo-api-db-password-prod` |
 
 What each one is:
 
@@ -35,10 +48,9 @@ What each one is:
    `git switch main && git pull --rebase=merges && ls supabase/migrations`.
 2. The migrations pass locally: `make migrate && make pgtap` ends with `Result: PASS`.
 3. The CLI is the pinned one: `mise install && supabase --version` prints `2.121.0`.
-4. The keychain has the items above. The `jadwigo_api` ones are made once per project. The command
-   asks for the password, so it never sits in your shell history:
-   `security add-generic-password -s jadwigo-api-db-password-dev -a jadwigo_api -w`
-   (generate the password with `openssl rand -base64 32`).
+4. `~/.config/jadwigo/supabase.env` has the values above for the ENV you run, and `ls -l` shows it
+   as `-rw-------`. The `jadwigo_api` password is made once per project with
+   `openssl rand -base64 32`.
 
 ## Steps
 
