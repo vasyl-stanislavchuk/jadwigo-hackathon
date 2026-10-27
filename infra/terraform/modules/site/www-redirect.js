@@ -3,7 +3,7 @@
 // biome-ignore lint/correctness/noUnusedVariables: CloudFront calls handler by name
 function handler(event) {
   const request = event.request;
-  // biome-ignore lint/correctness/noUndeclaredVariables: defined by the line Terraform prepends
+  // apex: defined by the line Terraform prepends
   const target = apex;
   if (request.headers.host?.value !== `www.${target}`) return request;
   const qs = Object.keys(request.querystring)
