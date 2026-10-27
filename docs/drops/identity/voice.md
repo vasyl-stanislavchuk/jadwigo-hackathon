@@ -1,13 +1,13 @@
 :::meta
 eyebrow: Jadwigo · mission and value
 subtitle: The same Polish lines in 3 voices, for the parent and for the child
-by: the jadwigo-marketing session for dl-w0b4.48
-when: 2026-10-27T18:00:00Z
+by: the jadwigo-marketing session for dl-w0b4.53
+when: 2026-10-27T22:00:00Z
 :::
 
 # Voice
 
-Each voice writes the same lines, so the difference between the voices is easy to hear. The lines where the child asks for more, or says it's enough for today, are new since the first version of this drop. Both come from the owner's core promise.
+Each voice writes the same lines, so you can hear the difference.
 
 Rules for every voice:
 - The child is addressed as "ty", in the imperative.
@@ -39,5 +39,5 @@ Rules for every voice:
 The class chat message is the one a parent posts. It speaks to other parents, never to their children.
 
 :::aside
-The owner picks a voice in `dl-w0b4.36`. Each voice can carry any lead line from [Mission and value](promise.html). A native speaker reads the chosen voice first (`dl-w0b4.40`).
+Any voice can carry any lead line. The owner picks one in `dl-w0b4.36`, and a native speaker reads it first (`dl-w0b4.40`).
 :::

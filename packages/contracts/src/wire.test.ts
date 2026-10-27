@@ -6,6 +6,7 @@ import {
   PageAttemptResult,
   pageAttemptResult,
   pageEnded,
+  SentAt,
   verdictsHeld,
 } from "./wire.ts";
 
@@ -49,6 +50,18 @@ describe("the answer request's times", () => {
       answered_at: "2026-09-01T10:00:01+02:00",
     };
     expect(AttemptAnswerRequest.safeParse(local).success).toBe(true);
+  });
+
+  it("refuses a time finer than a millisecond, so both stores compare the same instants", () => {
+    const fine = { ...TRY, asked_at: "2026-09-01T08:00:00.0005Z" };
+    expect(AttemptAnswerRequest.safeParse(fine).success).toBe(false);
+  });
+
+  it("refuses a time outside the years 1 to 9999 in UTC", () => {
+    for (const at of ["0000-01-01T00:00:00+14:00", "9999-12-31T23:59:59-12:00"]) {
+      expect(SentAt.safeParse(at).success, at).toBe(false);
+    }
+    expect(SentAt.safeParse("9999-12-31T23:59:59Z").success).toBe(true);
   });
 
   it("refuses an answer given before its question was asked", () => {

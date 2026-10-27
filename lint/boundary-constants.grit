@@ -1,0 +1,25 @@
+// House rule, RULES.md rule 22: a value that crosses a boundary is written through its named
+// constant in @jadwigo/contracts, so it has one place to rename and to search: an error type
+// (ErrorType.enum), a route path (ROUTES) and an id prefix (ID_PREFIXES). Enum comparisons stay
+// literals: TypeScript checks them against their union. biome.json leaves out tests and the files
+// that define the constants (contracts' ids.ts, routes.ts and wire.ts).
+language js
+
+or {
+  `new StoreError($type, $message)` where {
+    $type <: r"[\"'][A-Za-z]+[\"']",
+    register_diagnostic(span=$type, message="Write an error type as ErrorType.enum.<Type> from @jadwigo/contracts, not a string (RULES.md rule 22).", severity="error")
+  },
+  `type: $type` where {
+    $type <: r"[\"'][A-Z][A-Za-z]+[\"']",
+    register_diagnostic(span=$type, message="Write an error type as ErrorType.enum.<Type> from @jadwigo/contracts, not a string (RULES.md rule 22).", severity="error")
+  },
+  string() as $path where {
+    $path <: r"[\"']/api/.*",
+    register_diagnostic(span=$path, message="Name a route through ROUTES in @jadwigo/contracts, not a path string (RULES.md rule 22).", severity="error")
+  },
+  string() as $prefix where {
+    $prefix <: r"[\"'](?:pod|lrn|les|lesv|lq|asg|att)_[\"']",
+    register_diagnostic(span=$prefix, message="Name an id prefix through ID_PREFIXES in @jadwigo/contracts, not a string (RULES.md rule 22).", severity="error")
+  }
+}

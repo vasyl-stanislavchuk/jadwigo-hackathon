@@ -6,7 +6,7 @@ Issue: `dl-w0b4.48`
 
 - **Promise:** Jadwigo puts the family at the centre. A parent sees the child grow, and each new lesson is built from what the child got right and wrong in the last one. A child learns at their own pace, with room to make mistakes and to say "I want more" or "enough for today".
 - **First audience:** one family, the owner's own: a mum, a dad and their son, with 2 goals set by his parents, multiplication and Polish spelling. Then his class, his school, and anyone who finds it.
-- **Difference:** Khan Academy personalises the pace of a shared course. Duolingo builds a daily habit on streaks, and charged for mistakes through hearts. Kahoot is a group quiz, and Quizlet runs on a teacher's study sets. None is built around one child's goals with a parent beside them.
+- **Difference:** Khan Academy personalises the pace of a shared course. Duolingo builds a daily habit on streaks, and its free plan meters practice with energy until a learner pays. Kahoot is a group quiz, and Quizlet runs on a teacher's study sets. None is built around one child's goals with a parent beside them.
 - **Strategy:** do things that don't scale, let real goals decide what gets built, and reach families through people they trust.
 - **Owner's choices** are a mission, a vision, a lead line, a voice and a name story, laid out in the drop `docs/drops/identity/` with no pick. Both the look and a character wait for the design system.
 
@@ -18,7 +18,9 @@ Issue: `dl-w0b4.48`
 
 ## 1. Promise
 
-On 27 October the owner chose 2 of 4 offered promises, growth you can see and "lessons that remember", and added family bonding. On review the owner called that second label slop. The drop now says what the system does. After each lesson, Jadwigo records what went well, where the child struggled and which mistakes they made. It builds the next lesson from that. In the owner's words: "we are focusing on every kid: not rushing with their learning, giving them a space to make mistakes, giving them a space to say, 'I want more,' or, on the other hand, 'It's too much for today.' And all with parent awareness".
+On 27 October the owner chose 2 of 4 offered promises, growth you can see and "lessons that remember", and added family bonding. On review the owner called that second label slop. The drop now says what the system does. After each lesson, Jadwigo records what went well, where the child struggled and which mistakes they made. It builds the next lesson from that.
+
+In the owner's words: "we are focusing on every kid: not rushing with their learning, giving them a space to make mistakes, giving them a space to say, 'I want more,' or, on the other hand, 'It's too much for today.' And all with parent awareness".
 
 That same day, the owner confirmed that a parent sets many goals for one child, and that one sitting may mix subjects. This drop turns those words into 3 mission options, 3 vision options, 5 value lines for parent, child and family, and 4 lead lines.
 
@@ -31,11 +33,23 @@ A lesson built from one child's history used to take a private tutor, and a fami
 | Product | Built around | Personalises | Source |
 | --- | --- | --- | --- |
 | Khan Academy | a shared course, worked through toward mastery | the pace | [Khan Academy help centre](https://support.khanacademy.org/hc/en-us/articles/360030753412) |
-| Duolingo | a daily habit: streaks, points, leagues. Hearts were lost on each mistake, and Super subscribers had unlimited hearts. Energy began replacing hearts in 2025 | not checked | [PocketGamer.biz](https://www.pocketgamer.biz/how-duolingo-has-gamified-learning/), [Duolingo shareholder letter](https://investors.duolingo.com/static-files/0b55110c-2eb9-466d-8549-5459e0851290) |
+| Duolingo | a daily habit: streaks and points. A free plan with an ad after each lesson, and energy that meters practice. Paying removes both | not checked | [2025 annual report](https://www.sec.gov/Archives/edgar/data/1562088/000162828026012494/duol-20251231.htm), [Q2 2025 shareholder letter](https://www.sec.gov/Archives/edgar/data/1562088/000156208825000165/q2fy25duolingo6-30x25share.htm) |
 | Kahoot | a quiz a group plays at once. The free plan has multiple choice and true or false | one quiz for the group | [Purdue teaching guide](https://onlineteachinghub.education.purdue.edu/kahoot) |
 | Quizlet | study sets, assigned by a teacher to a class | the order of a set's questions, in Learn mode | [Quizlet help centre](https://help.quizlet.com/hc/en-au/articles/39836814088845-Using-Assignments) |
 
 No product putting the family first is the owner's claim. Neither note found one, and it stays out of public copy until someone runs a wider search.
+
+### Duolingo's free plan
+
+The owner asked on 27 October how Duolingo turns free learners into paying ones (`dl-w0b4.52`). A side agent had flagged that "Duolingo charges for mistakes" is out of date. Duolingo's own documents answer the question:
+
+- **Content is free, everything around it is paid.** "We intentionally do not put our learning content behind a paywall" ([2025 annual report](https://www.sec.gov/Archives/edgar/data/1562088/000162828026012494/duol-20251231.htm)). About 9% of monthly active users paid at the end of 2025.
+- **Free users see an ad at the end of each lesson**, and paid subscribers don't ([2025 annual report](https://www.sec.gov/Archives/edgar/data/1562088/000162828026012494/duol-20251231.htm)).
+- **Energy meters practice.** "Each exercise uses a unit of energy, regardless of whether the answer is right or wrong", and a run of right answers earns energy back ([Q2 2025 shareholder letter](https://www.sec.gov/Archives/edgar/data/1562088/000156208825000165/q2fy25duolingo6-30x25share.htm)). It recharges in about a day, and an ad or gems buy a refill ([Duolingo blog](https://blog.duolingo.com/duolingo-energy/)). Subscribing avoids the energy system ([Android Authority](https://www.androidauthority.com/quitting-duolingo-energy-system-3599842/)).
+- **Energy raised conversion.** Duolingo wrote that energy "increased DAUs, median time spent learning well, and subscriber conversion" ([Q2 2025 shareholder letter](https://www.sec.gov/Archives/edgar/data/1562088/000156208825000165/q2fy25duolingo6-30x25share.htm)).
+- **Streaks and trials.** About 43 million daily learners held a streak of 7 days or more at the end of 2025 ([2025 annual report](https://www.sec.gov/Archives/edgar/data/1562088/000162828026012494/duol-20251231.htm)). In 2026 Duolingo is offering longer free trials ([Q2 2026 shareholder letter](https://www.sec.gov/Archives/edgar/data/0001562088/000162828026053299/q2fy26duolingo6-30x26share.htm)).
+
+Duolingo says energy, unlike hearts, does not penalise mistakes. Our own reading is that a learner who makes many mistakes earns little energy back and meets the offer to pay sooner. Duolingo doesn't say that. Public copy uses "its free plan meters how much you practise", not "charges for mistakes".
 
 ## 4. Story
 
@@ -61,6 +75,11 @@ Each principle comes from a decision in force. The family is the first user, rea
   "sources": [
     "https://support.khanacademy.org/hc/en-us/articles/360030753412",
     "https://www.pocketgamer.biz/how-duolingo-has-gamified-learning/",
+    "https://www.sec.gov/Archives/edgar/data/1562088/000156208825000165/q2fy25duolingo6-30x25share.htm",
+    "https://www.sec.gov/Archives/edgar/data/0001562088/000162828026053299/q2fy26duolingo6-30x26share.htm",
+    "https://www.sec.gov/Archives/edgar/data/1562088/000162828026012494/duol-20251231.htm",
+    "https://blog.duolingo.com/duolingo-energy/",
+    "https://www.androidauthority.com/quitting-duolingo-energy-system-3599842/",
     "https://investors.duolingo.com/static-files/0b55110c-2eb9-466d-8549-5459e0851290",
     "https://onlineteachinghub.education.purdue.edu/kahoot",
     "https://help.quizlet.com/hc/en-au/articles/39836814088845-Using-Assignments",

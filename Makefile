@@ -13,7 +13,7 @@ ifneq (,$(wildcard $(HOME)/perl5/bin/pg_prove))
 export PATH := $(HOME)/perl5/bin:$(PATH)
 export PERL5LIB := $(HOME)/perl5/lib/perl5$(if $(PERL5LIB),:$(PERL5LIB))
 endif
-.PHONY: check check-all dev db migrate pgtap skills drops
+.PHONY: check check-all dev db migrate pgtap db-reset db-seed db-push db-role skills drops
 
 ## check: lint, typecheck and test what changed since main (turbo --affected), uv's pytest
 ## included, then the repo-wide checks turbo cannot scope: knip, dependency-cruiser, no-bank, worklog,
@@ -63,6 +63,75 @@ migrate:
 pgtap:
 	psql "$$DATABASE_URL" -q -v ON_ERROR_STOP=1 -c 'create extension if not exists pgtap'
 	pg_prove --dbname "$$DATABASE_URL" supabase/tests/*.test.sql
+
+# The Supabase projects (decision 2026-10-27-jadwigo-runs-on-a-prod-and-a-dev-supabase-project-a-native-local),
+# reached through the Supabase CLI mise.toml pins. Secrets live outside every checkout, in
+# ~/.config/jadwigo/supabase.env (mode 600; SUPABASE_SECRETS names another file): SUPABASE_ACCESS_TOKEN,
+# SUPABASE_DB_PASSWORD_DEV|PROD (postgres) and JADWIGO_API_DB_PASSWORD_DEV|PROD (jadwigo_api). Only these
+# targets read it, inside their own shell, so no other target or test sees a secret. A value missing
+# there comes from the macOS keychain: supabase-access-token, supabase-db-password-<env>,
+# jadwigo-api-db-password-<env>. Never echoed. The steps are docs/runbooks/migrations.md.
+SUPABASE_SECRETS ?= $(HOME)/.config/jadwigo/supabase.env
+SUPABASE_REF_dev := jweuvslwntdimuwcvlzq
+SUPABASE_REF_prod := xhzkmpainwzrfktxffjv
+SUPABASE_REF := $(SUPABASE_REF_$(ENV))
+ENV_UPPER = $(subst dev,DEV,$(subst prod,PROD,$(ENV)))
+# Loads the secrets file, then links ENV's project with both secrets in the environment. Each recipe
+# line using it is one shell.
+SUPABASE_LINK = case "$(ENV)" in dev|prod) ;; *) echo "$@: ENV=dev or ENV=prod"; exit 1;; esac; \
+	if [ -f "$(SUPABASE_SECRETS)" ]; then \
+	  [ "$$(stat -f %Lp "$(SUPABASE_SECRETS)")" = 600 ] || { echo "$@: run chmod 600 $(SUPABASE_SECRETS) first"; exit 1; }; \
+	  set -a; . "$(SUPABASE_SECRETS)"; set +a; \
+	fi; \
+	SUPABASE_ACCESS_TOKEN=$${SUPABASE_ACCESS_TOKEN:-$$(security find-generic-password -s supabase-access-token -w 2>/dev/null)}; \
+	test -n "$$SUPABASE_ACCESS_TOKEN" || { echo "$@: set SUPABASE_ACCESS_TOKEN in $(SUPABASE_SECRETS), or add the keychain item supabase-access-token"; exit 1; }; \
+	SUPABASE_DB_PASSWORD=$${SUPABASE_DB_PASSWORD_$(ENV_UPPER):-$$(security find-generic-password -s supabase-db-password-$(ENV) -w 2>/dev/null)}; \
+	test -n "$$SUPABASE_DB_PASSWORD" || { echo "$@: set SUPABASE_DB_PASSWORD_$(ENV_UPPER) (jadwigo-$(ENV)'s postgres password) in $(SUPABASE_SECRETS), or add the keychain item supabase-db-password-$(ENV)"; exit 1; }; \
+	export SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD; \
+	supabase link --project-ref $(SUPABASE_REF) >/dev/null || exit 1
+# Agents never touch prod: Claude Code's shells set CLAUDECODE. The owner pushes prod from a terminal.
+NOT_PROD_FROM_AGENT = if [ "$(ENV)" = prod ] && [ -n "$$CLAUDECODE" ]; then echo "$@ ENV=prod: run it from your own terminal, not from an agent's shell"; exit 1; fi
+
+## db-reset: rebuild the local jadwigo database from nothing (the shim, every migration, the seed).
+## ENV=dev resets jadwigo-dev instead (supabase db reset --linked, which asks first). Never prod.
+db-reset:
+ifeq ($(ENV),)
+	$(MAKE) migrate db-seed DATABASE_URL=postgresql://localhost:$${PGPORT:-5433}/jadwigo
+else
+	@if [ "$(ENV)" != dev ]; then echo "db-reset: only ENV=dev; prod is never reset"; exit 1; fi
+	@$(SUPABASE_LINK); supabase db reset --linked
+endif
+
+## db-seed: the featured lessons, by lesson import's seed script (dl-e8ov.2.32.5), into DATABASE_URL.
+## Until that script exists it says so and does nothing.
+db-seed:
+	@if grep -q '"seed":' packages/lesson-import/package.json; then bun run --cwd packages/lesson-import seed; \
+	else echo "db-seed: no seed yet (dl-e8ov.2.32.5 adds packages/lesson-import's seed script)"; fi
+
+## db-push ENV=dev|prod: show the migrations ENV's project lacks (a dry run), then push them only when
+## you type the ENV's name, or pass it as CONFIRM=<env> where there is no keyboard (`!` in Claude Code).
+## DRY_RUN=1 stops after the dry run. One-way: a pushed migration stays.
+db-push:
+	@$(NOT_PROD_FROM_AGENT)
+	@$(SUPABASE_LINK); \
+	supabase db push --linked --dry-run || exit 1; \
+	if [ -n "$(DRY_RUN)" ]; then exit 0; fi; \
+	answer="$(CONFIRM)"; \
+	if [ -z "$$answer" ]; then printf 'Push these to jadwigo-%s? Type %s to push (or pass CONFIRM=%s): ' "$(ENV)" "$(ENV)" "$(ENV)"; read answer; fi; \
+	if [ "$$answer" != "$(ENV)" ]; then echo "db-push: nothing pushed"; exit 1; fi; \
+	supabase db push --linked
+
+## db-role ENV=dev|prod: give jadwigo_api (made by the migration, nologin) a login and its password
+## (JADWIGO_API_DB_PASSWORD_<ENV>, or the keychain item jadwigo-api-db-password-<env>). Run it after the first db-push, and after a rotation.
+db-role:
+	@$(NOT_PROD_FROM_AGENT)
+	@$(SUPABASE_LINK); \
+	API_PASSWORD=$${JADWIGO_API_DB_PASSWORD_$(ENV_UPPER):-$$(security find-generic-password -s jadwigo-api-db-password-$(ENV) -w 2>/dev/null)}; \
+	test -n "$$API_PASSWORD" || { echo "db-role: set JADWIGO_API_DB_PASSWORD_$(ENV_UPPER) in $(SUPABASE_SECRETS), or add the keychain item jadwigo-api-db-password-$(ENV)"; exit 1; }; \
+	export API_PASSWORD; \
+	test -s supabase/.temp/pooler-url || { echo "db-role: supabase link wrote no supabase/.temp/pooler-url"; exit 1; }; \
+	printf '%s\n' '\set pw `printenv API_PASSWORD`' "alter role jadwigo_api login password :'pw';" \
+	  | PGPASSWORD=$$SUPABASE_DB_PASSWORD psql "$$(cat supabase/.temp/pooler-url)" -q -v ON_ERROR_STOP=1 && echo "db-role: jadwigo_api can log in on jadwigo-$(ENV)"
 
 ## drops: md drops check on every drop under docs/drops/
 drops:

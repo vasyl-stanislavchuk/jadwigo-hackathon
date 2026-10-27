@@ -16,3 +16,4 @@ dist/
 .astro/
 test-results/
 playwright-report/
+supabase/.temp/

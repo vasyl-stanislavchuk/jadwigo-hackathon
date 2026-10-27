@@ -7,6 +7,7 @@ through an override, so a rule applies only to `apps/*/src` and `packages/*/src`
 | Rule | Fails |
 | --- | --- |
 | `no-raw-process-env.grit` | `process.env` read anywhere but a `src/config.ts` |
+| `boundary-constants.grit` | an error type, an `/api/` path or an id prefix written as a string, not through `ErrorType.enum`, `ROUTES` or `ID_PREFIXES` (`packages/contracts/RULES.md` rule 22) |
 
 ## Adding a rule
 

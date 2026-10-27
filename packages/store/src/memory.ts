@@ -7,6 +7,7 @@ import {
   AttemptQuestion,
   type AttemptResult,
   Ended,
+  ErrorType,
   ID_PREFIXES,
   type IdPrefix,
   idOf,
@@ -51,17 +52,23 @@ interface Schema<T> {
 /** A record the stored state accepts, or `BadRequest`, as a database check refuses a row. */
 function parse<T>(schema: Schema<T>, value: unknown, what: string): T {
   const result = schema.safeParse(value);
-  if (!result.success) throw new StoreError("BadRequest", `${what} is not valid`);
+  if (!result.success) throw new StoreError(ErrorType.enum.BadRequest, `${what} is not valid`);
   return result.data;
 }
 
 /**
  * A sent time as the store keeps it: in UTC, to the millisecond. Only a time `SentAt` takes is
- * converted, so a time with no zone is never read in the host's zone; anything else is left for
- * the record's parser to refuse.
+ * converted, so a time with no zone is never read in the host's zone, and a finer one is never
+ * truncated before the order check.
  */
 function utc(at: string): string {
-  return SentAt.safeParse(at).success ? new Date(Date.parse(at)).toISOString() : at;
+  if (!SentAt.safeParse(at).success) {
+    throw new StoreError(
+      ErrorType.enum.BadRequest,
+      `${JSON.stringify(at)} is not a sent time (SentAt)`,
+    );
+  }
+  return new Date(Date.parse(at)).toISOString();
 }
 
 /** A fresh id for a record, a v4 uuid written as the wire id. */
@@ -70,7 +77,7 @@ function mint<T>(schema: Schema<T>, prefix: IdPrefix): T {
 }
 
 function notFound(what: string): StoreError {
-  return new StoreError("NotFound", `${what} was not found`);
+  return new StoreError(ErrorType.enum.NotFound, `${what} was not found`);
 }
 
 /** Frozen on the way in, so a caller holding a returned record cannot change the stored one. */
@@ -126,7 +133,8 @@ export class InMemoryStore implements Store {
   /** An id another pod holds cannot be written here, and its record is never returned. */
   #taken<T extends { pod_id: PodId }>(map: Map<string, T>, pod: PodId, id: string): T | undefined {
     const row = map.get(id);
-    if (row && row.pod_id !== pod) throw new StoreError("WriteOnce", "that id is already taken");
+    if (row && row.pod_id !== pod)
+      throw new StoreError(ErrorType.enum.WriteOnce, "that id is already taken");
     return row;
   }
 
@@ -166,7 +174,10 @@ export class InMemoryStore implements Store {
     );
     for (const other of this.#learners.values()) {
       if (other.pod_id === pod && other.handle === row.handle) {
-        throw new StoreError("WriteOnce", "another learner in the pod has that handle");
+        throw new StoreError(
+          ErrorType.enum.WriteOnce,
+          "another learner in the pod has that handle",
+        );
       }
     }
     this.#learners.set(row.id, row);
@@ -203,7 +214,10 @@ export class InMemoryStore implements Store {
     const stored = this.#taken(this.#questions, pod, id);
     if (stored) {
       if (stored.content_hash === question.content_hash) return stored;
-      throw new StoreError("WriteOnce", "a lesson question is written once; an edit is a new one");
+      throw new StoreError(
+        ErrorType.enum.WriteOnce,
+        "a lesson question is written once; an edit is a new one",
+      );
     }
     const row = frozen(
       parse(
@@ -222,20 +236,23 @@ export class InMemoryStore implements Store {
     if (version.id) {
       const stored = this.#taken(this.#versions, pod, version.id);
       if (stored && stored.lesson_id !== lesson.id) {
-        throw new StoreError("WriteOnce", "this version id belongs to another lesson");
+        throw new StoreError(ErrorType.enum.WriteOnce, "this version id belongs to another lesson");
       }
       if (stored) return stored;
     }
     const roles = version.questions.map((q) => q.role);
     if (!roles.includes("planned")) {
-      throw new StoreError("BadRequest", "a version plans at least one question");
+      throw new StoreError(ErrorType.enum.BadRequest, "a version plans at least one question");
     }
     if (roles.indexOf("spare") !== -1 && roles.lastIndexOf("planned") > roles.indexOf("spare")) {
-      throw new StoreError("BadRequest", "the planned questions come before the spares");
+      throw new StoreError(
+        ErrorType.enum.BadRequest,
+        "the planned questions come before the spares",
+      );
     }
     const listed = version.questions.map((q) => q.lesson_question_id);
     if (new Set(listed).size !== listed.length) {
-      throw new StoreError("BadRequest", "a version lists each lesson question once");
+      throw new StoreError(ErrorType.enum.BadRequest, "a version lists each lesson question once");
     }
     for (const id of listed) this.#inPod(this.#questions, pod, id, "a lesson question on the list");
     // Read and write with no await between, so 2 publishes can't both take the same number.
@@ -318,7 +335,7 @@ export class InMemoryStore implements Store {
       this.#inPod(this.#versions, pod, row.lesson_version_id, "the lesson version");
     }
     if (row.opens_at !== null && row.closes_at !== null && row.closes_at <= row.opens_at) {
-      throw new StoreError("BadRequest", "an assignment closes after it opens");
+      throw new StoreError(ErrorType.enum.BadRequest, "an assignment closes after it opens");
     }
     this.#assignments.set(row.id, row);
     return row;
@@ -332,18 +349,24 @@ export class InMemoryStore implements Store {
     const assignment = this.#inPod(this.#assignments, pod, attempt.assignment_id, "the assignment");
     const taken = attempt.id && this.#taken(this.#attempts, pod, attempt.id);
     if (taken && taken.assignment_id !== assignment.id) {
-      throw new StoreError("WriteOnce", "this attempt id belongs to another assignment");
+      throw new StoreError(
+        ErrorType.enum.WriteOnce,
+        "this attempt id belongs to another assignment",
+      );
     }
     if (taken) return this.getAttempt(pod, taken.id);
     if (attempt.learner_id && assignment.identity !== "pick") {
-      throw new StoreError("BadRequest", "a learner is named only when the assignment picks one");
+      throw new StoreError(
+        ErrorType.enum.BadRequest,
+        "a learner is named only when the assignment picks one",
+      );
     }
     const now = this.#now().getTime();
     if (
       (assignment.opens_at !== null && now < Date.parse(assignment.opens_at)) ||
       (assignment.closes_at !== null && now >= Date.parse(assignment.closes_at))
     ) {
-      throw new StoreError("AssignmentClosed", "this assignment is not open now");
+      throw new StoreError(ErrorType.enum.AssignmentClosed, "this assignment is not open now");
     }
     const version =
       assignment.lesson_version_id !== null
@@ -420,7 +443,7 @@ export class InMemoryStore implements Store {
   #playing(pod: PodId, id: AttemptId): { attempt: Attempt; asked: AttemptQuestion[] } {
     const attempt = this.#inPod(this.#attempts, pod, id, "the attempt");
     if (attempt.status === "finished") {
-      throw new StoreError("AttemptFinished", "this attempt is finished");
+      throw new StoreError(ErrorType.enum.AttemptFinished, "this attempt is finished");
     }
     return { attempt, asked: this.#asked.get(id) ?? [] };
   }
@@ -449,7 +472,7 @@ export class InMemoryStore implements Store {
   ): Promise<AttemptQuestion> {
     const { asked } = this.#playing(pod, attempt);
     if (asked.some((q) => q.ended === null)) {
-      throw new StoreError("QuestionNotOpen", "another question is still open");
+      throw new StoreError(ErrorType.enum.QuestionNotOpen, "another question is still open");
     }
     this.#inPod(this.#questions, pod, question.lesson_question_id, "the lesson question");
     const seq = asked.length + 1;
@@ -459,7 +482,10 @@ export class InMemoryStore implements Store {
       planned !== (question.added_for === null) ||
       (question.added_for !== null && !asked.some((q) => q.seq === question.added_for))
     ) {
-      throw new StoreError("BadRequest", "an added question names where it went and what for");
+      throw new StoreError(
+        ErrorType.enum.BadRequest,
+        "an added question names where it went and what for",
+      );
     }
     const row = this.#newQuestion(pod, attempt, seq, question);
     this.#asked.set(attempt, [...asked, row]);
@@ -482,21 +508,25 @@ export class InMemoryStore implements Store {
       ) {
         return { answer: stored, replayed: true };
       }
-      throw new StoreError("EventIdMismatch", "this event was already sent with another body");
+      throw new StoreError(
+        ErrorType.enum.EventIdMismatch,
+        "this event was already sent with another body",
+      );
     }
     const { attempt } = this.#playing(pod, answer.attempt_id);
     if (attempt.status === "paused")
-      throw new StoreError("AttemptPaused", "this attempt is paused");
+      throw new StoreError(ErrorType.enum.AttemptPaused, "this attempt is paused");
     const question = this.#asking(pod, answer.attempt_id, answer.seq);
-    if (question.ended !== null) throw new StoreError("QuestionNotOpen", "this question has ended");
+    if (question.ended !== null)
+      throw new StoreError(ErrorType.enum.QuestionNotOpen, "this question has ended");
     const rows = [...this.#answers.values()].filter(
       (a) => a.attempt_id === answer.attempt_id && a.seq === answer.seq,
     );
     if (rows.some((a) => a.try_no === answer.try_no)) {
-      throw new StoreError("AnswerConflict", "this try was already answered");
+      throw new StoreError(ErrorType.enum.AnswerConflict, "this try was already answered");
     }
     if (answer.try_no !== rows.length + 1) {
-      throw new StoreError("TryOutOfOrder", "this is not the question's next try");
+      throw new StoreError(ErrorType.enum.TryOutOfOrder, "this is not the question's next try");
     }
     const row = frozen(
       parse(
@@ -512,14 +542,20 @@ export class InMemoryStore implements Store {
       ),
     );
     if (Date.parse(row.answered_at) < Date.parse(row.asked_at)) {
-      throw new StoreError("BadRequest", "an answer is given after its question is asked");
+      throw new StoreError(
+        ErrorType.enum.BadRequest,
+        "an answer is given after its question is asked",
+      );
     }
     if (
       (row.kind === "skip") !== (row.skip_reason !== null) ||
       (row.kind === "try") !== (row.value !== null) ||
       (row.kind === "skip" && row.correct !== null)
     ) {
-      throw new StoreError("BadRequest", "a try carries a value and a skip its reason");
+      throw new StoreError(
+        ErrorType.enum.BadRequest,
+        "a try carries a value and a skip its reason",
+      );
     }
     const { family } = this.#inPod(
       this.#questions,
@@ -528,7 +564,7 @@ export class InMemoryStore implements Store {
       "the lesson question",
     );
     if (row.kind === "try" && !valueFor(family).safeParse(row.value).success) {
-      throw new StoreError("BadRequest", `the value is not a ${family} value`);
+      throw new StoreError(ErrorType.enum.BadRequest, `the value is not a ${family} value`);
     }
     this.#answers.set(row.event_id, row);
     return { answer: row, replayed: false };
@@ -542,7 +578,8 @@ export class InMemoryStore implements Store {
   ): Promise<{ readonly question: AttemptQuestion; readonly released: boolean }> {
     const question = this.#asking(pod, attempt, seq);
     if (seen !== question.help_released) return { question, released: false };
-    if (question.ended !== null) throw new StoreError("QuestionNotOpen", "this question has ended");
+    if (question.ended !== null)
+      throw new StoreError(ErrorType.enum.QuestionNotOpen, "this question has ended");
     if (question.help_released >= 4) return { question, released: false };
     const row = this.#replace({ ...question, help_released: question.help_released + 1 });
     return { question: row, released: true };
@@ -557,7 +594,8 @@ export class InMemoryStore implements Store {
     const question = this.#asking(pod, attempt, seq);
     parse(Ended, ended, "how the question ended");
     if (question.ended === ended) return question;
-    if (question.ended !== null) throw new StoreError("QuestionNotOpen", "this question has ended");
+    if (question.ended !== null)
+      throw new StoreError(ErrorType.enum.QuestionNotOpen, "this question has ended");
     return this.#replace({ ...question, ended });
   }
 
@@ -582,7 +620,7 @@ export class InMemoryStore implements Store {
   async finishAttempt(pod: PodId, attempt: AttemptId): Promise<Attempt> {
     const { attempt: stored, asked } = this.#playing(pod, attempt);
     if (asked.some((q) => q.ended === null)) {
-      throw new StoreError("QuestionNotOpen", "a question is still open");
+      throw new StoreError(ErrorType.enum.QuestionNotOpen, "a question is still open");
     }
     const row = frozen({ ...stored, status: "finished" as const, finished_at: this.#at() });
     this.#attempts.set(row.id, row);

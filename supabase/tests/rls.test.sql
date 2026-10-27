@@ -1,7 +1,7 @@
 -- Row-level security keeps pods apart (RULES.md rule 12, decision
 -- 2026-10-27-before-supabase-auth-row-level-security-reads-the-caller-s-pod-f).
 begin;
-select plan(15);
+select plan(16);
 \ir _fixture.sql
 
 -- How many of pod A's rows the caller can read, across every table and the view.
@@ -56,6 +56,14 @@ select ok(
   has_schema_privilege('jadwigo_api', 'app', 'usage')
     and has_function_privilege('jadwigo_api', 'app.made_later()', 'execute'),
   'a function made later in app is callable by jadwigo_api'
+);
+select ok(
+  exists (
+    select from pg_default_acl d, aclexplode(d.defaclacl) a
+    where d.defaclnamespace = 'app'::regnamespace and d.defaclobjtype = 'f'
+      and a.grantee = 'jadwigo_api'::regrole and a.privilege_type = 'EXECUTE'
+  ),
+  'the migration grants jadwigo_api every function made later in app'
 );
 
 set local role jadwigo_api;
