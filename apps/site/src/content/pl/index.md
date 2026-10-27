@@ -1,8 +1,8 @@
 ---
 title: Jadwigo
-description: Jadwigo. Wkrótce.
-heading: Jadwigo.
+description: Jadwigo, wkrótce
+heading: Jadwigo
 reviewed: true
 ---
 
-Wkrótce.
+Wkrótce
