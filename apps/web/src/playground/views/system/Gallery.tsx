@@ -18,6 +18,7 @@ import {
   type EntryState,
   Grip,
   HelpLadder,
+  LessonTheme,
   press,
   STATUS,
   Stem,
@@ -569,41 +570,43 @@ function LiveStage(): JSX.Element {
   return (
     <Live label="Try it: play one written question through. Each pick shows its written scenario.">
       <div className="kid-step rounded-2xl border-2 border-border bg-background p-4">
-        <StepFrame stepId="system-live-stage">
-          <StepShell
-            language={LANG}
-            category="child"
-            feedback={feedback}
-            stem={<Stem say={q.say} stem={q.stem} language={LANG} />}
-            answer={
-              <ChoiceGroup
-                label="Odpowiedzi"
-                items={options(q, state, picked)}
-                select="one"
-                layout="grid"
-                chosen={picked === null ? [] : [picked]}
-                locked={ended}
-                clock={browserClock}
-                onToggle={(id) => {
-                  setPicked(id);
-                  if (state === "waiting") setState("answered");
-                }}
-              />
-            }
-            action={{ ready: picked !== null, press: check }}
-            ladder={
-              ended
-                ? null
-                : {
-                    help: help > 0 ? rung(q, help) : null,
-                    ask: { enabled: help < q.rungs.length, press: ask },
-                    refused: false,
-                  }
-            }
-            moveOn={ended ? null : { enabled: true, press: giveUp }}
-            next={ended ? { press: press(browserClock, reset) } : null}
-          />
-        </StepFrame>
+        <LessonTheme>
+          <StepFrame stepId="system-live-stage">
+            <StepShell
+              language={LANG}
+              category="child"
+              feedback={feedback}
+              stem={<Stem say={q.say} stem={q.stem} language={LANG} />}
+              answer={
+                <ChoiceGroup
+                  label="Odpowiedzi"
+                  items={options(q, state, picked)}
+                  select="one"
+                  layout="grid"
+                  chosen={picked === null ? [] : [picked]}
+                  locked={ended}
+                  clock={browserClock}
+                  onToggle={(id) => {
+                    setPicked(id);
+                    if (state === "waiting") setState("answered");
+                  }}
+                />
+              }
+              action={{ ready: picked !== null, press: check }}
+              ladder={
+                ended
+                  ? null
+                  : {
+                      help: help > 0 ? rung(q, help) : null,
+                      ask: { enabled: help < q.rungs.length, press: ask },
+                      refused: false,
+                    }
+              }
+              moveOn={ended ? null : { enabled: true, press: giveUp }}
+              next={ended ? { press: press(browserClock, reset) } : null}
+            />
+          </StepFrame>
+        </LessonTheme>
       </div>
       <Button
         variant="outline"
@@ -617,8 +620,9 @@ function LiveStage(): JSX.Element {
   );
 }
 
-/** One of the six states, frozen, in the step frame a lesson uses: the written miss in a miss and
- * after help, the written right answer when right. */
+/** One of the six states, frozen, in the step frame a lesson uses and in Zeszyt's theme (its ink
+ * caret and keyboard frame too): the written miss in a miss and after help, the written right
+ * answer when right. */
 export function Shell({ state }: { state: BandState }): JSX.Element {
   const LANG = useSystemLanguage();
   const q = useStageQuestion();
@@ -626,34 +630,36 @@ export function Shell({ state }: { state: BandState }): JSX.Element {
     state === "waiting" ? null : state === "right" || state === "answered" ? q.right : q.miss;
   const ended = state === "right" || state === "solution";
   return (
-    <StepFrame stepId={`system-band-${state}`}>
-      <StepShell
-        language={LANG}
-        category="child"
-        feedback={feedbackOf(state)}
-        stem={<Stem say={q.say} stem={q.stem} language={LANG} />}
-        answer={
-          <ChoiceStatic
-            label="Odpowiedzi"
-            layout="grid"
-            chosen={picked === null ? [] : [picked]}
-            items={options(q, state, picked)}
-          />
-        }
-        action={{ ready: state !== "waiting", press: NOOP }}
-        ladder={
-          ended
-            ? null
-            : {
-                help: state === "help" ? rung(q, 1) : null,
-                ask: { enabled: true, press: NOOP },
-                refused: false,
-              }
-        }
-        moveOn={ended ? null : { enabled: true, press: NOOP }}
-        next={ended ? { press: NOOP } : null}
-      />
-    </StepFrame>
+    <LessonTheme>
+      <StepFrame stepId={`system-band-${state}`}>
+        <StepShell
+          language={LANG}
+          category="child"
+          feedback={feedbackOf(state)}
+          stem={<Stem say={q.say} stem={q.stem} language={LANG} />}
+          answer={
+            <ChoiceStatic
+              label="Odpowiedzi"
+              layout="grid"
+              chosen={picked === null ? [] : [picked]}
+              items={options(q, state, picked)}
+            />
+          }
+          action={{ ready: state !== "waiting", press: NOOP }}
+          ladder={
+            ended
+              ? null
+              : {
+                  help: state === "help" ? rung(q, 1) : null,
+                  ask: { enabled: true, press: NOOP },
+                  refused: false,
+                }
+          }
+          moveOn={ended ? null : { enabled: true, press: NOOP }}
+          next={ended ? { press: NOOP } : null}
+        />
+      </StepFrame>
+    </LessonTheme>
   );
 }
 
