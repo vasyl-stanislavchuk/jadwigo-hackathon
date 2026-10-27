@@ -197,7 +197,8 @@ Each fence has a test that plants a violation (`tools/src/*.test.ts`, `.claude/h
 5. **Imports** (dependency-cruiser): apps import packages, never the reverse. `contracts` imports
    nothing of ours. Only test files import `@jadwigo/testing`. knip fails unused files, exports and
    dependencies.
-6. **Unit tests** fail on network, real AWS and an unpinned clock. Anything that needs those is a `*.int.test.ts`.
+6. **Unit tests** fail on network, real AWS and an unpinned clock, and so do component tests
+   (`*.test.tsx`, Vitest's `dom` project in happy-dom). Anything that needs those is a `*.int.test.ts`.
 7. **Contract snapshots** fail on drift. Update them with `vitest -u` on purpose and say so in the PR.
 8. **No bank in git:** no question pages, Khan items, SQLite, bank media or files over 1 MB.
 9. **Pre-commit** runs Biome and gitleaks. Never commit a family member's name.

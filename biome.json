@@ -59,9 +59,12 @@
     {
       "includes": [
         "apps/*/src/**/*.ts",
+        "apps/*/src/**/*.tsx",
         "packages/*/src/**/*.ts",
+        "packages/*/src/**/*.tsx",
         "!**/src/config.ts",
         "!**/*.test.ts",
+        "!**/*.test.tsx",
         "!packages/testing/**"
       ],
       "plugins": ["./lint/no-raw-process-env.grit"]

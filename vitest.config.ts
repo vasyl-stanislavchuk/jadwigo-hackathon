@@ -21,6 +21,17 @@ export default defineConfig({
         },
       },
       {
+        // Component tests (*.test.tsx) in a DOM, with the same guard on network, AWS and the clock.
+        extends: true,
+        test: {
+          name: "dom",
+          include: ["**/*.test.tsx"],
+          exclude: ["**/node_modules/**", ".claude/**"],
+          environment: "happy-dom",
+          setupFiles: [unitSetup],
+        },
+      },
+      {
         extends: true,
         test: {
           name: "integration",
