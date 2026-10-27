@@ -41,7 +41,7 @@ export interface PageSolutionLine {
 export interface PageHelp {
   /** 1 look again, 2 a smaller step, 3 almost there, 4 your turn (the twin). */
   rung: number;
-  card: { text: string; picture?: HelpPicture } | null;
+  card: { text: string; picture?: HelpPicture | undefined } | null;
   /** Rung 1: the parts the view outlines, by id. */
   focus: string[] | null;
   /** Rung 2 and 3: the parts given away, in the family's shape. The view draws them as given and

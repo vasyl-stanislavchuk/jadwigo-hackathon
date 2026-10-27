@@ -11,6 +11,7 @@ import type {
   PartialCopyTable,
 } from "./types.ts";
 
+export { harshWordsIn } from "./harsh.ts";
 export type { Category, CopyKey, Language } from "./types.ts";
 
 /** The child tables: every key, in every language. A category with no line of its own reads these. */

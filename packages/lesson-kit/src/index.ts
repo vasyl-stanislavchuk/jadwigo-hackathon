@@ -1,6 +1,7 @@
 // The public surface apps/web imports: the stage, its parts and the family views. Contract types
 // (Gap, Stem, PlaceData and the rest) come from @jadwigo/contracts. Other files are private (AGENTS.md).
 
+export { solutionOf } from "./families/answer.ts";
 export type { Criterion, CriterionJudgement } from "./families/explain/model.ts";
 export { FamilyView } from "./families/FamilyView.tsx";
 export type { Figure, GroupIcon } from "./families/figure.ts";
