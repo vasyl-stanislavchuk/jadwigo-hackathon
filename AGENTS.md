@@ -96,17 +96,25 @@ Run the tests your change touches. CI runs the rest. Playwright is CI's job.
 An issue is a brief. It names what to **Read**, the paths it **Owns**, the **Frozen** tests, what
 to **Do**, **Done when**, and **Stop if**. If yours lacks one of these, ask before you start.
 
+Before a new issue, take back your own PRs: one that md's merge steward returned to draft (a red
+`review-ok` or a failure in your code) comes first. Its findings are in the steward's PR comment
+and the issue's notes. Fix them, push, and `gh pr ready` again. If your session is still open, the
+steward types the hand-back into it.
+
 1. `bd show <id>`, then `bd update <id> --claim`.
 2. `git switch -c <lane>/<id> origin/main` (with no lane: `<id>/<slug>`).
 3. Do exactly the issue. One issue is one deliverable. Work you find along the way becomes a new
    issue (`bd create "…" --deps discovered-from:<id>`), not part of this PR.
 4. `make check`, then run each "done when" check and keep its real output.
 5. Push, write the body with `/dev-pr` to a file, open a draft PR titled `<id>: <what>` with
-   `gh pr create --draft --body-file <file>`, and push often.
-6. Ready: `gh pr ready`, then `gh pr merge --auto --squash`. GitHub merges it once `ci-ok` and
-   `review-ok` are green. md's merge steward posts `review-ok` (`md merge-steward start`). No
-   path needs the owner's approval, and a broken `main` is fixed forward.
-7. `bd close <id> --reason "<what ran, what did not>"`.
+   `gh pr create --draft --body-file <file>`, and push often. The steward leaves drafts alone.
+6. Ready: `gh pr ready`, then `gh pr merge --auto --squash`. Going ready is what starts the
+   review: once `ci-ok` is green, md's merge steward runs fresh reviewers on the PR and posts
+   `review-ok`, and GitHub merges it once both are green. The steward fixes only mechanical
+   failures (a flaky job, a stale branch, format, a lockfile, generated files) and hands anything
+   else back to you. No path needs the owner's approval, and a broken `main` is fixed forward.
+7. `bd update <id> --append-notes "<what ran, what did not>"`, then start your next issue. Don't
+   wait for the merge, and don't close the issue: the steward closes it when the PR merges.
 
 **Work moving to another session lives in the bead, not in a file.** Fill it so a fresh session
 needs nothing else:
