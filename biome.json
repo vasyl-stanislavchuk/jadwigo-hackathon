@@ -96,6 +96,21 @@
       }
     },
     {
+      "includes": [
+        "packages/lesson-kit/src/**/*.test.ts",
+        "packages/lesson-kit/src/**/*.test.tsx",
+        "apps/web/src/**/*.test.ts",
+        "apps/web/src/**/*.test.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noTemplateCurlyInString": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": ["**/*.astro"],
       "linter": {
         "rules": {
