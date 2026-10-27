@@ -1,28 +1,61 @@
 {
   "name": "@jadwigo/web",
-  "description": "The service at app.: the lesson player and the parent screens (dl-5ssh.34.6 moves it in)",
+  "description": "The app at app.: the question-type playground now, the lesson player and parent screens later",
   "private": true,
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
     "lint": "biome check .",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run --config ../../vitest.config.ts --project unit"
+    "test": "vitest run --config ../../vitest.config.ts --project unit --project dom",
+    "e2e": "playwright test"
   },
   "//": {
+    "@jadwigo/config": "hosts.prod, the host this app serves (src/index.ts)",
+    "@jadwigo/contracts": "the question shapes the playground's examples are typed and parsed with",
+    "@jadwigo/copy": "every string the app shows, in pl and en",
+    "@jadwigo/lesson-kit": "the stage and the family views the playground shows",
+    "@jadwigo/ui": "Zeszyt's styles and the neutral primitives the playground's tools are built from",
+    "@playwright/test": "the browser smoke in e2e/ that CI's browser job runs (playwright.config.ts)",
+    "@tailwindcss/vite": "compiles Zeszyt's Tailwind 4 styles in the Vite build (vite.config.ts)",
+    "@testing-library/dom": "@testing-library/react's required peer: the queries themselves",
+    "@testing-library/react": "renders a playground page in a *.test.tsx and queries it the way a person would",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
+    "@types/react": "types for src/**/*.tsx",
+    "@types/react-dom": "types for react-dom/client in src/main.tsx",
+    "@vitejs/plugin-react": "React's JSX transform and fast refresh in Vite (vite.config.ts)",
+    "happy-dom": "the DOM the dom Vitest project runs *.test.tsx in",
+    "react": "the app's components in src/**/*.tsx",
+    "react-dom": "mounts the app (src/main.tsx)",
     "typescript": "tsc for this package's typecheck script",
-    "vitest": "runs this package's unit test with the root vitest.config.ts",
-    "@jadwigo/config": "hosts.prod, the host this app serves (src/index.ts)"
+    "vite": "serves and builds the app (vite.config.ts)",
+    "vitest": "runs this package's unit test with the root vitest.config.ts"
   },
   "devDependencies": {
+    "@playwright/test": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@testing-library/dom": "catalog:",
+    "@testing-library/react": "catalog:",
     "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "happy-dom": "catalog:",
     "typescript": "catalog:",
+    "vite": "catalog:",
     "vitest": "catalog:"
   },
   "dependencies": {
-    "@jadwigo/config": "workspace:*"
+    "@jadwigo/config": "workspace:*",
+    "@jadwigo/contracts": "workspace:*",
+    "@jadwigo/copy": "workspace:*",
+    "@jadwigo/lesson-kit": "workspace:*",
+    "@jadwigo/ui": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:"
   }
 }

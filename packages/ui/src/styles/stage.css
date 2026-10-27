@@ -1,0 +1,1609 @@
+/* The lesson frame (components/parts/StepShell.tsx), after Claude Design's lesson frame (decision
+ * dl-q3p9; docs/plan/design-system/lesson-frame/README.md §2-4). Layout only: it reads the Zeszyt
+ * role tokens through their aliases (styles/foundation.css §3).
+ *
+ * - In a lesson the top bar (close and the step bar) and the 96px footer are fixed to the window,
+ *   full width, and only the page between them scrolls. A step shown on its own (a playground cell,
+ *   the System page) has no top bar, and its footer is a contained band under the column.
+ * - After a check the footer turns into the band at the same height: right, a miss, or the solution.
+ * - The phone frame (under 600px) keeps one row: the 64px bulb, then Sprawdź filling the rest.
+ * - The answer (dl-uukj.29.44, dl-uukj.29.83): in the page in every frame, one scroll. On a phone
+ *   in a lesson its tools (the keypad, the letter row) are docked above the footer, folding under a
+ *   square arrow; on a laptop there is no keypad and no Narzędzia (Enter addendum 4.2): the keyboard
+ *   types, and a step's sign keys sit in a row under its field.
+ *   StepShell sets data-frame by input and shape (components/parts/frame.ts: phone, tablet,
+ *   tablet-sideways, phone-sideways, laptop) and --kid-tray-height; this file reads only that, and
+ *   no width breakpoint picks a frame. */
+
+/* The footer's height is foundation.css's --kid-bar-height (96px, README rule 1). */
+:root {
+  --kid-topbar-height: 4.5rem; /* 72px on a laptop */
+}
+
+@media (width < 37.5rem) {
+  :root {
+    --kid-topbar-height: 3.5rem; /* 56px on a phone */
+  }
+}
+
+/* The top bar per frame (README §2), from the one picker (components/parts/frame.ts). */
+:root:has(.kid-step-shell[data-frame="phone"]) {
+  --kid-topbar-height: 3.5rem; /* 56 */
+}
+
+:root:has(.kid-step-shell[data-frame="tablet"]) {
+  --kid-topbar-height: 4rem; /* 64 */
+}
+
+:root:has(.kid-step-shell:is([data-frame="tablet-sideways"], [data-frame="laptop"])) {
+  --kid-topbar-height: 4.5rem; /* 72 */
+}
+
+:root:has(.kid-step-shell[data-frame="phone-sideways"]) {
+  --kid-topbar-height: 3rem; /* 48 */
+}
+
+/* In a lesson nothing scrolls sideways (dl-uukj.29.38), and the frame draws its own margins. */
+:is([data-learner-view], .kid-page) {
+  overflow-x: clip;
+}
+
+:is([data-learner-view], .kid-page):has([data-step-shell][data-framed]) {
+  padding-block: 0;
+}
+
+/* Scrolling to a part stops clear of the top bar and the footer (dl-uukj.29.35), and on a phone of
+ * the docked tools and the half of their fold arrow that stands above the dock line (dl-uukj.29.111). */
+html:has([data-step-shell][data-framed]) {
+  scroll-padding-top: calc(var(--kid-topbar-height) + 0.5rem);
+  scroll-padding-bottom: calc(
+    var(--kid-bar-height, 6rem) +
+    var(--kid-tray-height, 0px) +
+    var(--kid-fold-overhang, 0px) +
+    1rem
+  );
+}
+
+html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
+  --kid-fold-overhang: 1.75rem; /* half the 56px fold arrow, centred on the dock line */
+}
+
+.kid-step-shell {
+  --kid-stage-max: 45rem; /* 720px: the design's column at 1280 */
+  --kid-instruction-size: 1.375rem; /* 22px */
+  --stage-gap: calc(var(--spacing) * 4);
+  --band-bg: var(--background);
+  --band-ink: var(--foreground);
+  --band-line: var(--border);
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  /* The frame is picked by input and shape (data-frame, frame.ts); the container only fits the
+     * laptop's footer to a narrow column. */
+  container: stage / inline-size;
+}
+
+.kid-step-shell:is([data-frame="phone"], [data-frame="phone-sideways"]) {
+  --kid-instruction-size: 1.1875rem; /* 19px */
+}
+
+[data-stage] {
+  width: 100%;
+  max-width: var(--kid-stage-max);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--stage-gap);
+  padding-bottom: calc(var(--spacing) * 6);
+}
+
+.kid-step-shell[data-framed] > [data-stage] {
+  padding-top: calc(var(--kid-topbar-height) + 0.5rem);
+  padding-bottom: calc(var(--kid-bar-height) + 2rem);
+}
+
+/* On a phone or an upright tablet in a lesson the step is one scroll, as on a laptop (Choose
+ * addendum 1.1): the column pads 8 16 32 and ends clear of the footer and of the docked tools. */
+.kid-step-shell[data-framed]:is([data-frame="phone"], [data-frame="tablet"]) > [data-stage] {
+  padding-bottom: calc(var(--kid-bar-height) + var(--kid-tray-height, 0px) + 2rem);
+}
+
+/* Where the step's content ends, for the more-below arrow: right under the last part. */
+[data-stage-end] {
+  height: 1px;
+  margin-top: calc(-1 * var(--stage-gap));
+}
+
+/* The instruction: what to do, in strong words, above the card and apart from it. */
+[data-instruction] .kid-prompt {
+  font-size: var(--kid-instruction-size);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.3;
+}
+
+/* The prompt card: the question, its picture and its clips. The quietest raised surface. */
+[data-prompt-card] {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 0.125rem solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: calc(var(--spacing) * 5);
+}
+
+.kid-step-shell:is([data-frame="phone"], [data-frame="phone-sideways"]) [data-prompt-card] {
+  padding: calc(var(--spacing) * 4);
+}
+
+/* ---- The answer: the docked tools and the fold (lesson-frame README §2-3, Enter addendum 4) ---- */
+[data-area="answer"] {
+  position: relative;
+}
+
+/* A phone's docked tools in a lesson (Choose addendum 1.1.1, owner 2026-10-26): the keypad and the
+ * letter row above the footer, full width, a 2px line on top, padding 12 16 16, docked as the
+ * system keyboard is. The fields stay in the page. The top padding is 32, not 12: the fold arrow
+ * hangs 28 below the dock line (Enter addendum 3.1), and the top key row starts 4 under it, so no
+ * key is hidden (dl-uukj.29.111). */
+.kid-step-shell[data-framed] [data-tools-dock] {
+  position: fixed;
+  inset: auto 0 var(--kid-bar-height);
+  z-index: 15;
+  padding: 2rem 1rem 1rem;
+  background-color: var(--background);
+  border-top: 0.125rem solid var(--border);
+}
+
+/* Folded (help open, or the arrow), only the fold arrow stays, on the footer's top line: the dock
+ * draws no line and takes no room (Enter addendum section 5). */
+.kid-step-shell[data-framed] [data-tools-dock][data-folded] {
+  /* Above the footer, whose top line the arrow then sits on. */
+  z-index: 21;
+  padding: 0;
+  border-top: 0;
+  background-color: transparent;
+}
+
+[data-tools-dock] > [data-tools-slot] {
+  max-width: var(--kid-stage-max);
+  max-height: calc(100svh - var(--kid-topbar-height) - var(--kid-bar-height) - 8rem);
+  overflow-y: auto;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Square controls only (Enter addendum 2.5): the fold arrow is a 56 square, the more-below arrow
+ * a 48 square, each 16px corners, paper, a 2px line on its 4px edge, like the keys. */
+.kid-step-shell [data-fold] {
+  width: 3.5rem;
+  height: 3.5rem;
+  min-width: 3.5rem;
+  min-height: 3.5rem;
+  border-radius: 1rem;
+  background-color: var(--card);
+}
+
+/* The dock's fold arrow, a chevron down, on its top line at the right (top −28), so the keypad
+ * keeps the full width (Enter addendum 3.1). */
+[data-tools-dock] > [data-fold] {
+  position: absolute;
+  top: 0;
+  right: 1rem;
+  translate: 0 -50%;
+}
+
+/* Outside a lesson the tools are drawn under the fields: the fold arrow at the answer's right, and
+ * the fields leave it room (README §3). */
+[data-area="answer"] > [data-fold] {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.kid-step-shell:not([data-framed]):is([data-frame="phone"], [data-frame="tablet"])[data-tools]
+  [data-area="answer"] {
+  padding-right: 3.75rem;
+}
+
+/* A Slots step keeps that room once it ends (right, the solution), when its tools and their arrow
+ * go: a line of gaps that wrapped beside the arrow would otherwise reflow, and a gap would jump to
+ * the line above (Slots addendum section 10: no gap moves by a pixel between states). */
+.kid-step-shell:not([data-framed], [data-tools]):is([data-frame="phone"], [data-frame="tablet"]):is(
+  .kid-family-gaps,
+  :has(.kid-family-gaps)
+):not(:has(div[data-wide])) [data-area="answer"] {
+  padding-right: 3.75rem;
+}
+
+/* Only the fields leave the arrow room: the keypad and the letter row take the answer's full width. */
+.kid-step-shell:not([data-framed]):is([data-frame="phone"], [data-frame="tablet"])[data-tools]
+  [data-area="answer"]
+  [data-tools] {
+  margin-right: -3.75rem;
+}
+
+/* A draggable's grip (README §3): 2 × 3 dots of 3px, 3px apart, so 9 × 15px; the muted ink, and the
+ * pick's ink while grabbed. Each dot sits at the middle of a 6px cell, the grid shifted half a dot. */
+.kid-grip {
+  flex: none;
+  display: block;
+  width: 0.5625rem;
+  height: 0.9375rem;
+  color: var(--muted-foreground);
+  background-image: radial-gradient(circle, currentColor 1.5px, transparent 1.6px);
+  background-size: 6px 6px;
+  background-position: -1.5px -1.5px;
+}
+
+.kid-grip[data-grabbed] {
+  color: var(--accent-foreground);
+}
+
+/* The keypad (Enter addendum 4.1): 3 × 4 keys 72 tall, 8 apart, the extra key left of 0, and an
+ * expression's six signs in one row of 56 above the digits (Keypad.tsx). In the dock the keypad
+ * body is 312 tall for a number or a decimal and 376 for an expression or an equation; with the
+ * dock's 2px line and padding 32 16 16 (dl-uukj.29.111) the dock is 362 and 426. */
+[data-keypad-pad] {
+  width: 100%;
+}
+
+/* On a laptop a step's sign keys sit in a row under its field: 56 × 56, 8 apart (addendum 4.2,
+ * Keypad.tsx), 16 under the field as the answer's parts stand. */
+
+/* The key badges 1 to 4 on the options, on a keyboard only (README §3): 32px, 10px corners. */
+[data-key-badge] {
+  display: none;
+  flex: none;
+  place-items: center;
+  box-sizing: border-box;
+  width: 2rem;
+  height: 2rem;
+  border: 0.125rem solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9375rem; /* 15px */
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+.kid-step-shell[data-frame="laptop"] [data-key-badge] {
+  display: grid;
+}
+
+/* The badge follows its option's tone (ChooseStep tone table, dl-uukj.29.93): at rest the line and
+ * the muted ink. Picked, right, a miss, taken away or the solution, it takes the option's own edge colour
+ * and ink, so "1" is blue on a pick and green on a right answer. Colour only: the badge's border
+ * stays solid and 2px, so nothing moves. */
+:is([data-option], [data-still-option]):is(
+  [data-checked],
+  [aria-checked="true"],
+  [class~="bg-primary/10"],
+  :not([data-tone="idle"]),
+  [data-help-removed],
+  [data-solution]
+) > [data-key-badge] {
+  border-color: inherit;
+  color: inherit;
+}
+
+/* In a centred tile (grid, binary) the badge leaves the flow, so the answer stays centred (Choose
+ * addendum 1.6). By default it sits in the tile's top-left corner (8, 8) over 44px of padding, as a
+ * dot array's always does. A tile wide enough (about 152px, so the answer keeps 40px clear between
+ * the badges' room) takes it at its side instead: absolute at left 20, centred on the tile's height,
+ * the content padded 12 56. The set of tiles is the container that decides, so a narrow column
+ * (4 tiles of 120px) never squeezes "3 · 4" onto two lines. The tile's size is the same in every
+ * state, so nothing moves. */
+.kid-step-shell[data-frame="laptop"]
+:is([role="radiogroup"], [role="group"], ul):has(> [data-badge-at]) {
+  container: kid-choices / inline-size;
+}
+
+.kid-step-shell[data-frame="laptop"] :is([data-option], [data-still-option])[data-badge-at] {
+  padding-top: 2.75rem;
+}
+
+.kid-step-shell[data-frame="laptop"]
+  :is([data-option], [data-still-option])[data-badge-at]
+  > [data-key-badge] {
+  position: absolute;
+  left: 0.5rem;
+  top: 0.5rem;
+}
+
+@container kid-choices (min-width: 19.75rem) {
+  .kid-step-shell[data-frame="laptop"]
+    :is([data-option], [data-still-option])[data-badge-at="side-2"] {
+    padding: 0.75rem 3.5rem;
+  }
+
+  .kid-step-shell[data-frame="laptop"]
+    :is([data-option], [data-still-option])[data-badge-at="side-2"]
+    > [data-key-badge] {
+    left: 1.25rem;
+    top: 50%;
+    margin-top: -1rem;
+  }
+}
+
+@container kid-choices (min-width: 40.25rem) {
+  .kid-step-shell[data-frame="laptop"]
+    :is([data-option], [data-still-option])[data-badge-at="side-4"] {
+    padding: 0.75rem 3.5rem;
+  }
+
+  .kid-step-shell[data-frame="laptop"]
+    :is([data-option], [data-still-option])[data-badge-at="side-4"]
+    > [data-key-badge] {
+    left: 1.25rem;
+    top: 50%;
+    margin-top: -1rem;
+  }
+}
+
+/* The letter row (Enter addendum 3.6): on a laptop one row of ten 56 × 56 keys under the field,
+ * 6 apart; on a phone two rows of five, keys 48 tall, riding on the system keyboard. Each key is a
+ * square-cornered tile (10px corners, a 4px edge, 22px bold, styles/foundation.css) that fills its
+ * cell, so the tiles stand exactly the gap apart. */
+.kid-step-shell [data-letters] {
+  gap: 0.375rem;
+  margin-left: 0;
+}
+
+.kid-step-shell [data-letters] > [data-slot="button"] {
+  width: auto;
+  min-width: 0;
+  height: 3.5rem;
+  min-height: 3.5rem;
+}
+
+[data-lesson-theme="zeszyt"] .kid-step-shell [data-letters] [data-pill] {
+  width: 100%;
+  height: calc(100% - var(--jw-press));
+}
+
+/* A laptop column narrower than 640 (the playground's 518) takes two rows of five, so the row never
+ * runs 96 px past it (Slots addendum 3.2, dl-uukj.29.124). The row's own wrapper is the container
+ * (LetterRow.tsx). */
+.kid-step-shell[data-frame="laptop"] [data-letters] {
+  grid-template-columns: repeat(5, 3.5rem);
+  margin-top: 0.75rem;
+}
+
+@container (min-width: 40rem) {
+  .kid-step-shell[data-frame="laptop"] [data-letters] {
+    grid-template-columns: repeat(10, 3.5rem);
+  }
+}
+
+.kid-step-shell[data-frame="phone"] [data-letters] > [data-slot="button"] {
+  height: 3rem;
+  min-height: 3rem;
+}
+
+/* ---- The top bar ----------------------------------------------------------------------------- */
+/* Close at the window's left, the step bar over the column; the 2px edge only while content is
+ * scrolled under it (rules 13, 14). */
+[data-topbar] {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 20;
+  height: var(--kid-topbar-height);
+  display: flex;
+  align-items: center;
+  background-color: var(--background);
+  border-bottom: 0.125rem solid transparent;
+}
+
+[data-topbar][data-scrolled] {
+  border-bottom-color: var(--border);
+}
+
+[data-topbar-inner] {
+  width: 100%;
+  max-width: var(--kid-stage-max);
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing) * 3);
+}
+
+[data-topbar] [data-pause] {
+  position: absolute;
+  left: calc(var(--spacing) * 8);
+  color: var(--muted-foreground);
+}
+
+[data-progress] {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing) * 3);
+}
+
+[data-progress-label] {
+  font-weight: var(--font-weight-bold);
+  color: var(--muted-foreground);
+}
+
+[data-progress-track] {
+  flex: 1;
+  height: 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--border);
+  overflow: hidden;
+}
+
+[data-progress-fill] {
+  height: 100%;
+  border-radius: inherit;
+  background-color: var(--kid-selected, var(--primary));
+  transition: width var(--jw-dur-step, 320ms) var(--jw-ease-out, ease-out);
+}
+
+.kid-step-shell:is([data-frame="phone"], [data-frame="phone-sideways"]) [data-topbar-inner] {
+  padding: 0 calc(var(--spacing) * 4) 0 calc(var(--spacing) * 2);
+}
+
+.kid-step-shell:is([data-frame="phone"], [data-frame="phone-sideways"]) [data-topbar] [data-pause] {
+  position: static;
+}
+
+/* ---- The footer and the band ---------------------------------------------------------------- */
+[data-bar] {
+  position: relative;
+  margin-top: auto;
+  box-sizing: border-box;
+  min-height: var(--kid-bar-height);
+  display: flex;
+  align-items: center;
+  padding: calc(var(--spacing) * 4);
+  background-color: var(--band-bg);
+  color: var(--band-ink);
+  border-top: 0.125rem solid var(--band-line);
+}
+
+/* A step on its own: a band of colour, with no line, is contained in its own corners. The plain
+ * footer and the solution band draw the 2px line on top, and it runs straight across the step's full
+ * width, as the export's (ChooseStep.dc.html): rounded corners bent a top border down at both ends
+ * (dl-uukj.29.96). In a lesson the footer is the window's width and has no corners at all. */
+.kid-step-shell:not([data-framed]) [data-bar]:is([data-band="right"], [data-band="miss"]) {
+  border-radius: var(--radius-xl);
+}
+
+/* In a lesson the footer is fixed to the bottom of the window, full width. */
+.kid-step-shell[data-framed] [data-bar] {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 20;
+  height: var(--kid-bar-height);
+}
+
+[data-bar][data-band="none"] {
+  --band-bg: transparent;
+}
+
+.kid-step-shell[data-framed] [data-bar][data-band="none"] {
+  --band-bg: var(--background);
+}
+
+[data-bar][data-band="right"] {
+  --band-bg: var(--kid-correct-soft);
+  --band-ink: var(--kid-correct-ink);
+  --band-line: transparent;
+}
+
+[data-bar][data-band="miss"] {
+  --band-bg: var(--kid-try-again-soft);
+  --band-ink: var(--kid-try-again-ink);
+  --band-line: transparent;
+}
+
+/* After "Jeszcze nie wiem": the prompt card's paper, the solution above it. */
+[data-bar][data-band="solution"] {
+  --band-bg: var(--card);
+  --band-ink: var(--foreground);
+}
+
+[data-bar]:not([data-band="none"]) {
+  animation: stage-band-rise var(--jw-dur-band, 260ms) var(--jw-ease-out, ease-out);
+}
+
+[data-bar-inner] {
+  width: 100%;
+  max-width: var(--kid-stage-max);
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing) * 3);
+}
+
+[data-bar-verdict] {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+[data-band-title] {
+  font-size: 1.375rem; /* 22px */
+  font-weight: var(--font-weight-bold);
+  line-height: 1.2;
+}
+
+[data-band-line] {
+  font-size: 1.125rem; /* 18px */
+  font-weight: 400;
+  line-height: 1.3;
+  /* The band keeps its 96px (Choose addendum 1.3): beside the 22px title a long worked line
+     * stops at one line. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+}
+
+/* The verdict's mark sits in a paper disc (README §3: 44px). */
+[data-disc] {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  background-color: var(--popover);
+}
+
+[data-disc] svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+[data-band="right"] [data-disc] {
+  color: var(--kid-correct);
+}
+
+[data-band="miss"] [data-disc] {
+  color: var(--kid-try-again);
+}
+
+[data-band="solution"] [data-disc] {
+  color: var(--muted-foreground);
+}
+
+[data-bar] [data-area="action"] {
+  margin-left: auto;
+  display: flex;
+}
+
+[data-bar] .kid-action {
+  min-width: 12.5rem; /* 200px: Sprawdź and Dalej on a laptop */
+  font-size: 1.375rem; /* 22px bold in every frame (README §3) */
+}
+
+/* The bulb: "Pomóż mi" as a soft button on a laptop. While help is open an invisible copy holds
+ * its width, so Sprawdź does not move. */
+[data-bar] [data-bulb] {
+  padding-inline: 1.375rem;
+  font-size: 1.25rem;
+}
+
+[data-bar] [data-bulb][data-held] {
+  visibility: hidden;
+}
+
+/* After a miss "Pomóż mi" stands at the band's right, in the band's soft red (owner, 2026-10-24). */
+[data-bar][data-band="miss"] [data-bulb] {
+  order: 3;
+  margin-left: auto;
+  min-width: 12.5rem;
+}
+
+.kid-step-shell [data-bar][data-band="miss"] [data-bulb] {
+  background-color: var(--kid-try-again-action, var(--kid-try-again));
+  color: var(--kid-try-again-action-foreground, var(--kid-try-again-foreground));
+  border-color: transparent;
+  box-shadow: 0 var(--kid-press, 0px) 0 var(--kid-try-again-action-edge, transparent);
+}
+
+/* Dalej in the right band takes the band's green. */
+.kid-step-shell [data-bar][data-band="right"] [data-area="action"] [data-next] {
+  background-color: var(--kid-correct-action, var(--kid-correct));
+  color: var(--kid-correct-action-foreground, var(--kid-correct-foreground));
+  box-shadow: 0 var(--kid-press, 0px) 0 var(--kid-correct-action-edge, transparent);
+}
+
+/* The incomplete line is said in the live region on a phone; on a laptop it sits between the two. */
+[data-bar] [data-status] {
+  border-color: transparent;
+  background-color: transparent;
+  padding-inline: 0;
+  color: inherit;
+}
+
+/* More below: a 48px square arrow, an arrow down, centred on the footer's top line, or on a phone
+ * with its tools docked on theirs (rule 15, Choose addendum 1.1, Enter addendum 2.5). */
+[data-more-below] {
+  position: absolute;
+  left: 50%;
+  top: calc(-1 * var(--kid-tray-height, 0px));
+  translate: -50% -50%;
+  width: 3rem;
+  height: 3rem;
+  min-width: 3rem;
+  min-height: 3rem;
+  border-radius: 1rem;
+  background-color: var(--card);
+}
+
+.kid-step-shell[data-frame="phone"] [data-bar] {
+  padding: 0.875rem calc(var(--spacing) * 4) calc(var(--spacing) * 4);
+}
+
+.kid-step-shell[data-frame="phone"] [data-bar] [data-area="action"] {
+  flex: 1;
+}
+
+/* The quiet Sprawdź after a miss carries its tooltip (StepShell.tsx): the bubble's wrapper
+ * stretches with the button. */
+.kid-step-shell[data-frame="phone"] [data-bar] [data-area="action"] > .kid-tooltip {
+  flex: 1;
+}
+
+.kid-step-shell[data-frame="phone"] [data-bar] .kid-action {
+  width: 100%;
+  min-width: 0;
+}
+
+/* One row on a phone: the bulb is a 64px square, its words for the screen reader only. */
+.kid-step-shell[data-frame="phone"] [data-bar] [data-bulb] {
+  width: var(--kid-commit-height);
+  padding-inline: 0;
+}
+
+.kid-step-shell[data-frame="phone"] [data-bar] [data-help-label] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.kid-step-shell[data-frame="phone"] [data-bar][data-band="miss"] [data-bulb] {
+  order: 0;
+  margin-left: 0;
+  min-width: 0;
+}
+
+/* A phone's band draws no disc, which gives its words about 45px (Choose addendum 1.3). */
+.kid-step-shell[data-frame="phone"] [data-bar] [data-disc],
+.kid-step-shell[data-frame="phone"] [data-bar] [data-wide-only],
+.kid-step-shell[data-frame="phone"] [data-bar][data-band="none"] [data-bar-verdict] {
+  display: none;
+}
+
+.kid-step-shell[data-frame="phone"] [data-band-title] {
+  font-size: 1.125rem; /* 18px */
+}
+
+/* The second line: 16px / 1.25, at most two lines, then an ellipsis. */
+.kid-step-shell[data-frame="phone"] [data-band-line] {
+  font-size: 1rem; /* 16px */
+  line-height: 1.25;
+  -webkit-line-clamp: 2;
+}
+
+/* Dalej on a phone's right and solution bands: padding 0 28 and no minimum width, so the words keep
+ * the room. */
+.kid-step-shell[data-frame="phone"]
+  [data-bar]:is([data-band="right"], [data-band="solution"])
+  [data-area="action"] {
+  flex: none;
+}
+
+.kid-step-shell[data-frame="phone"]
+  [data-bar]:is([data-band="right"], [data-band="solution"])
+  .kid-action {
+  width: auto;
+  padding-inline: 1.75rem;
+}
+
+@keyframes stage-band-rise {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-bar]:not([data-band="none"]) {
+    animation: none;
+  }
+}
+
+/* Before anything is said, the footer reserves no line for a verdict. */
+[data-bar] [data-area="status"]:has([data-status="answering"]) {
+  display: none;
+}
+
+/* ---- The help note (components/parts/HelpLadder.tsx) ---------------------------------------- */
+.kid-help-note {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing) * 3);
+  padding: calc(var(--spacing) * 4) calc(var(--spacing) * 5);
+  border: 0.125rem solid var(--kid-help-edge);
+  border-radius: var(--radius-xl);
+  background-color: var(--kid-help);
+  color: var(--foreground);
+  font-size: 1.125rem; /* 18px */
+  line-height: 1.45;
+}
+
+[data-help-head] {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing) * 2);
+  font-weight: var(--font-weight-bold);
+  color: var(--kid-help-ink);
+}
+
+.kid-help-bulb {
+  width: 1.375rem;
+  height: 1.375rem;
+  flex: none;
+}
+
+[data-help-count] {
+  margin-left: auto;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+[data-help-cards] {
+  font-weight: 400;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing) * 3);
+}
+
+[data-help-card] {
+  outline: none;
+}
+
+/* Each new card joins under a 1px line; the older ones turn muted (rule 6). */
+[data-help-card] + [data-help-card] {
+  border-top: 0.0625rem solid var(--kid-help-edge);
+  padding-top: calc(var(--spacing) * 3);
+}
+
+[data-help-card][data-old] {
+  color: var(--muted-foreground);
+}
+
+.kid-help-eye {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* ---- The solution card (components/parts/SolutionCard.tsx, Choose addendum 1.2) ------------ */
+/* The solution look at card size: the prompt card's paper in a 2px line of text ink. Never help's
+ * yellow: yellow stays help, ink stays solution. */
+.kid-solution-card {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing) * 2.5);
+  padding: calc(var(--spacing) * 4) calc(var(--spacing) * 5);
+  border: 0.125rem solid var(--foreground);
+  border-radius: var(--radius-xl);
+  background-color: var(--card);
+  color: var(--foreground);
+  font-size: 1.125rem; /* 18px */
+  line-height: 1.45;
+}
+
+[data-solution-card-head] {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing) * 2);
+  font-weight: var(--font-weight-bold);
+}
+
+.kid-solution-eye {
+  width: 1.375rem;
+  height: 1.375rem;
+  flex: none;
+  color: var(--muted-foreground);
+}
+
+[data-solution-lines] {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing) * 2.5);
+  font-weight: 400;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Each line's number in a 28px column in the soft ink, the words beside it. */
+[data-solution-step] {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr);
+  text-wrap: pretty;
+}
+
+[data-solution-n] {
+  color: var(--muted-foreground);
+}
+
+[data-solution-text] {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing) * 2.5);
+  min-width: 0;
+}
+
+/* ---- The pause sheet ------------------------------------------------------------------------ */
+/* Behind close: the page's own paper over everything, no dimming. */
+.kid-pause-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: calc(var(--spacing) * 4);
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+[data-pause-body] {
+  width: 100%;
+  max-width: 30rem;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing) * 4);
+  font-size: 1.25rem;
+}
+
+[data-pause-body] p {
+  font-weight: 400;
+}
+
+[data-pause-body] h2 {
+  font-size: 1.75rem;
+}
+
+/* ---- The tooltip (components/parts/Tooltip.tsx) --------------------------------------------- */
+/* A small ink bubble: the text colour as its fill, the page as its words, a 6px arrow. Mouse and
+ * keyboard only, so touch never depends on it. */
+.kid-tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.kid-tooltip-bubble {
+  position: absolute;
+  /* A long line (the quiet Sprawdź repeating the instruction) wraps rather than run past the
+     * window (dl-uukj.29.4). */
+  width: max-content;
+  max-width: min(22rem, calc(100vw - 1rem));
+  left: 50%;
+  bottom: calc(100% + 0.625rem);
+  z-index: 20;
+  /* --tip-shift (Tooltip.tsx) slides it back inside the window; the arrow counters it. */
+  transform: translateX(calc(-50% + var(--tip-shift, 0px)));
+  padding: calc(var(--spacing) * 2) calc(var(--spacing) * 3);
+  border-radius: var(--radius-sm);
+  background-color: var(--foreground);
+  color: var(--background);
+  font-size: 0.9375rem; /* 15px */
+  font-weight: var(--font-weight-bold);
+  line-height: 1.3;
+  white-space: normal;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+}
+
+.kid-tooltip-bubble::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - var(--tip-shift, 0px));
+  top: 100%;
+  margin-left: -0.375rem;
+  border: 0.375rem solid transparent;
+  border-top-color: var(--foreground);
+}
+
+.kid-tooltip[data-placement="bottom"] .kid-tooltip-bubble {
+  bottom: auto;
+  top: calc(100% + 0.625rem);
+}
+
+.kid-tooltip[data-placement="bottom"] .kid-tooltip-bubble::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: var(--foreground);
+}
+
+.kid-tooltip[data-align="start"] .kid-tooltip-bubble {
+  left: 0;
+  transform: translateX(var(--tip-shift, 0px));
+}
+
+.kid-tooltip[data-align="start"] .kid-tooltip-bubble::after {
+  /* Under the control's centre (--tip-anchor, Tooltip.tsx), whatever its size. */
+  left: calc(var(--tip-anchor, 1.75rem) - var(--tip-shift, 0px));
+}
+
+.kid-tooltip[data-open] .kid-tooltip-bubble,
+.kid-tooltip:focus-within .kid-tooltip-bubble {
+  visibility: visible;
+  opacity: 1;
+  animation: stage-tip-in var(--jw-dur-fast, 120ms) var(--jw-ease-out, ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .kid-tooltip:hover .kid-tooltip-bubble {
+    visibility: visible;
+    opacity: 1;
+    animation: stage-tip-in var(--jw-dur-fast, 120ms) var(--jw-ease-out, ease-out);
+  }
+}
+
+@keyframes stage-tip-in {
+  from {
+    opacity: 0;
+    translate: 0 0.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kid-tooltip-bubble {
+    animation: none !important;
+  }
+}
+
+/* ---- Media (dl-uukj.29.5; README rules 16-17, §3 Sound and Picture sheet) ------------------- */
+/* Sound: play 56, the turtle 48 beside it so play reads first. Both r16. */
+[data-clip] {
+  border-radius: var(--radius-xl);
+}
+
+[data-clip="slow"] {
+  width: 3rem;
+  height: 3rem;
+  min-width: 3rem;
+  min-height: 3rem;
+}
+
+[data-clip="slow"] svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* A question picture is at most 40% of the scroll area's height: the window less the top bar and
+ * the footer. Picture.tsx and the plain image both read --picture-max-h. */
+[data-picture] {
+  --picture-max-h: calc((100svh - var(--kid-topbar-height) - var(--kid-bar-height, 6rem)) * 0.4);
+  display: inline-flex;
+  justify-content: center;
+  align-self: center;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: zoom-in;
+  border-radius: var(--radius-xl);
+}
+
+[data-picture]:focus-visible {
+  outline: 0.1875rem solid var(--ring);
+  outline-offset: 0.125rem;
+}
+
+:is([data-picture], [data-picture-sheet]) > img {
+  display: block;
+  max-width: 100%;
+  max-height: var(--picture-max-h);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Beside sound the picture is a thumbnail: 96 on a phone, 120 on a laptop. */
+[data-sound-row] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--spacing) * 4);
+}
+
+[data-picture][data-thumb] {
+  --picture-max-h: 7.5rem;
+  width: 7.5rem;
+  height: 7.5rem;
+  flex: none;
+  align-items: center;
+  background-color: var(--background);
+  border: 0.125rem solid var(--border);
+  overflow: hidden;
+}
+
+[data-picture][data-thumb] > img {
+  max-width: 100%;
+}
+
+.kid-step-shell:is([data-frame="phone"], [data-frame="phone-sideways"]) [data-picture][data-thumb] {
+  --picture-max-h: 6rem;
+  width: 6rem;
+  height: 6rem;
+}
+
+/* The picture sheet: the page's own paper over everything, no dimming. Close sits where the
+ * lesson's close does. The picture goes up to 1120 x 640, never larger than its file. */
+.kid-picture-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--background);
+  color: var(--foreground);
+  cursor: zoom-out;
+}
+
+.kid-picture-sheet [data-topbar] {
+  position: static;
+}
+
+/* The sheet covers the window, so its close follows the window's width, not the step's. */
+.kid-picture-sheet [data-topbar] [data-topbar-inner] {
+  max-width: none;
+  padding: 0 calc(var(--spacing) * 8);
+}
+
+.kid-picture-sheet [data-topbar] [data-sheet-close] {
+  position: static;
+}
+
+@media (width < 37.5rem) {
+  .kid-picture-sheet [data-topbar] [data-topbar-inner] {
+    padding: 0 calc(var(--spacing) * 4) 0 calc(var(--spacing) * 2);
+  }
+}
+
+[data-picture-sheet] {
+  --picture-max-h: min(40rem, calc(100svh - var(--kid-topbar-height) - 3rem));
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 0 calc(var(--spacing) * 4) calc(var(--spacing) * 12);
+}
+
+[data-picture-sheet] > * {
+  max-width: min(100%, 70rem);
+}
+
+/* Formulas (rule 17): KaTeX sets fractions, powers and roots with Andika's digits and signs at the
+ * text's own size, and a formula never breaks across lines. */
+[data-lesson-theme="zeszyt"] .katex {
+  font-family: var(--jw-font);
+  font-size: 1em;
+  white-space: nowrap;
+}
+
+[data-formula] {
+  white-space: nowrap;
+}
+
+/* ---- The tablet and phone-sideways frames (README §2, dl-uukj.29.53) ------------------------ */
+/* Upright tablet: a 600 column with 84 gutters, the docked tools 420 wide and centred, Sprawdź 240
+ * on the right. */
+.kid-step-shell[data-frame="tablet"] {
+  --kid-stage-max: 37.5rem; /* 600 */
+}
+
+.kid-step-shell[data-framed][data-frame="tablet"] [data-tools-dock] > [data-tools-slot] {
+  max-width: 26.25rem; /* 420 */
+}
+
+.kid-step-shell[data-frame="tablet"] [data-keypad-pad] {
+  max-width: 26.25rem; /* 3 x 4, 420 wide */
+  margin-inline: auto;
+}
+
+.kid-step-shell[data-frame="tablet"] [data-bar] .kid-action {
+  min-width: 15rem; /* 240 */
+}
+
+/* Sideways, a tablet or a phone on its side: the keypad docked at the right and fixed while the
+ * column scrolls. The tablet's column is 600 beside a 304 keypad, 44 gutters; the phone's takes
+ * what is left beside a 300 keypad, 16 gutters, its keys 4 x 3. */
+.kid-step-shell[data-frame="tablet-sideways"] {
+  --kid-stage-max: 37.5rem; /* 600 */
+  --kid-side-tools: 19rem; /* 304 */
+  --kid-side-gutter: 2.75rem; /* 44 */
+}
+
+.kid-step-shell[data-frame="phone-sideways"] {
+  --kid-stage-max: calc(100% - 2rem); /* 16 gutters */
+  --kid-side-tools: 18.75rem; /* 300 */
+  --kid-side-gutter: 1rem; /* 16 */
+}
+
+/* Sideways in a lesson the step spans the window, so the column and the docked keypad share it.
+ * The page clips sideways overflow at the window then, not at its own column. */
+.kid-step-shell[data-framed]:is([data-frame="tablet-sideways"], [data-frame="phone-sideways"]) {
+  width: 100vw;
+  margin-inline: calc(50% - 50vw);
+}
+
+html:has(
+  .kid-step-shell[data-framed]:is([data-frame="tablet-sideways"], [data-frame="phone-sideways"])
+) {
+  overflow-x: clip;
+}
+
+:is([data-learner-view], .kid-page):has(
+  .kid-step-shell[data-framed]:is([data-frame="tablet-sideways"], [data-frame="phone-sideways"])
+) {
+  overflow-x: visible;
+}
+
+.kid-step-shell[data-framed]:is(
+    [data-frame="tablet-sideways"],
+    [data-frame="phone-sideways"]
+  )[data-keypad-tool]
+  > [data-stage] {
+  margin-inline: var(--kid-side-gutter) calc(var(--kid-side-tools) + var(--kid-side-gutter) + 2rem);
+  width: auto;
+}
+
+.kid-step-shell[data-framed][data-frame="tablet-sideways"][data-keypad-tool] > [data-stage] {
+  margin-left: max(
+    var(--kid-side-gutter),
+    calc(100vw - var(--kid-stage-max) - var(--kid-side-tools) - var(--kid-side-gutter) - 2rem)
+  );
+}
+
+.kid-step-shell[data-framed]:is([data-frame="tablet-sideways"], [data-frame="phone-sideways"])
+  [data-area="answer"]
+  [data-tools="keypad"] {
+  position: fixed;
+  z-index: 15;
+  top: calc(var(--kid-topbar-height) + 0.5rem);
+  right: var(--kid-side-gutter);
+  width: var(--kid-side-tools);
+  max-height: calc(100svh - var(--kid-topbar-height) - var(--kid-bar-height) - 1rem);
+  overflow-y: auto;
+}
+
+.kid-step-shell[data-frame="tablet-sideways"] [data-tools="keypad"] [data-keypad-pad] {
+  max-width: 17.5rem; /* 280 */
+  margin-inline: auto;
+}
+
+.kid-step-shell[data-frame="phone-sideways"] [data-tools="keypad"] [data-keypad] {
+  max-width: none;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.kid-step-shell[data-frame="tablet-sideways"] [data-bar] .kid-action {
+  min-width: 17.5rem; /* 280 */
+}
+
+.kid-step-shell[data-frame="phone-sideways"] [data-bar] .kid-action {
+  min-width: 18.75rem; /* 300 */
+}
+
+/* The phone on its side: a 48 top bar with a 12 progress bar. */
+.kid-step-shell[data-frame="phone-sideways"] [data-progress-track] {
+  height: 0.75rem;
+}
+
+/* The letter row: two rows of five on a phone, one row of ten on a laptop (above), a tablet and a
+ * phone on its side. */
+.kid-step-shell[data-frame="phone"] [data-letters] {
+  width: 100%;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.kid-step-shell:is(
+    [data-frame="tablet"],
+    [data-frame="tablet-sideways"],
+    [data-frame="phone-sideways"]
+  )
+  [data-letters] {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+}
+
+/* ---- Phone spelling: the system keyboard (rule 18, dl-uukj.29.51) --------------------------- */
+/* While a touch phone's keyboard is up (StepShell's visualViewport reading), the docked Polish
+ * letter row rides on top of it; the footer waits under the keyboard, and the keyboard's own "go"
+ * checks. The field stays in the page, and the page scrolls it clear. */
+.kid-step-shell[data-framed][data-keyboard] [data-tools-dock] {
+  bottom: var(--kid-keyboard, 0px);
+}
+
+.kid-step-shell[data-framed][data-keyboard] > [data-stage] {
+  padding-bottom: calc(var(--kid-keyboard, 0px) + var(--kid-tray-height, 0px) + 1rem);
+}
+
+/* ---- Sizes per answer kind (docs/plan/lesson-stage.md "Sizes per answer kind", README §2-§3) ---- */
+/* A single number field is 180 wide, 160 on a phone; a word or an expression keeps the column (on
+ * a phone less the fold arrow’s 60, above). A Slots gap is as wide as its length setting (InlineField.tsx fieldWidth). */
+.kid-step-shell [data-entry="number"] {
+  width: 11.25rem; /* 180 */
+  max-width: 100%;
+}
+
+.kid-step-shell:is([data-frame="phone"], [data-frame="phone-sideways"]) [data-entry="number"] {
+  width: 10rem; /* 160 */
+}
+
+/* A wide answer (a number line, a table, data-wide) breaks out of the 720 column on a laptop, to
+ * 1120 with 80 gutters, never wider than the stage leaves room for (Round 1 Stress Cases 4b). */
+.kid-step-shell[data-frame="laptop"] [data-area="answer"] [data-wide] {
+  --kid-wide: max(100%, min(70rem, 100cqw - 10rem));
+  width: var(--kid-wide);
+  max-width: none;
+  margin-inline: calc((100% - var(--kid-wide)) / 2);
+  justify-content: center;
+}
+
+/* A phone on its side has no height to stack in: the question card and its picture on the left,
+ * the fields beside it on the right, the help under the fields (README §2, "fields beside
+ * picture"). A question with no picture stacks as before. */
+.kid-step-shell[data-frame="phone-sideways"]
+[data-stage]:has(> [data-area="stem"] :is(img, [data-figure])) {
+  display: grid;
+  /* The fields take the wider share: two 88 fields and their words fit on one line. */
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  column-gap: 1rem;
+  align-items: start;
+}
+
+.kid-step-shell[data-frame="phone-sideways"]
+  [data-stage]:has(> [data-area="stem"] :is(img, [data-figure]))
+  > [data-area="stem"] {
+  grid-column: 1;
+  grid-row: 1 / span 3;
+}
+
+.kid-step-shell[data-frame="phone-sideways"]
+  [data-stage]:has(> [data-area="stem"] :is(img, [data-figure]))
+  > :not([data-area="stem"]) {
+  grid-column: 2;
+}
+
+/* A match pair on a phone: the fixed card over the card that moves, so the pair fits the 358 column
+ * with both at full width; a pair stands apart from the next by the list's 12 (dl-uukj.29.69). */
+.kid-step-shell:is([data-frame="phone"], [data-frame="phone-sideways"])
+[data-sort-id]:has(> [data-beside]) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+}
+
+.kid-step-shell:is([data-frame="phone"], [data-frame="phone-sideways"])
+  [data-sort-id]
+  > [data-beside] {
+  flex: none;
+}
+
+/* A laptop step in a column under 600 (the playground's Try it cell): the frame stays the laptop's,
+ * with no keypad, but the footer fits the column as the phone's does: the bulb a square, its words
+ * for the screen reader, Sprawdź taking the rest (dl-uukj.29.4). */
+@container stage (width < 37.5rem) {
+  .kid-step-shell[data-frame="laptop"] [data-bar] [data-area="action"],
+  .kid-step-shell[data-frame="laptop"] [data-bar] [data-area="action"] > .kid-tooltip {
+    flex: 1;
+  }
+
+  .kid-step-shell[data-frame="laptop"] [data-bar] .kid-action {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .kid-step-shell[data-frame="laptop"] [data-bar] [data-bulb] {
+    width: var(--kid-commit-height);
+    padding-inline: 0;
+  }
+
+  .kid-step-shell[data-frame="laptop"] [data-bar] [data-help-label] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .kid-step-shell[data-frame="laptop"] [data-bar][data-band="miss"] [data-bulb] {
+    min-width: 0;
+  }
+}
+
+/* A figure is sized for the phone (Slots addendum 2.5, dl-uukj.29.122): the instruction, the
+ * figure and the first field open above the dock. The clock face is 200 px (its numbers stay 17 of
+ * 200), 384 at most elsewhere (ClockFace.tsx max-w-sm). Coins stay one row at 0.62 of their laptop
+ * size, about 55 px each, and shrink alike if the row is still too wide (Coins.tsx CoinRow). */
+.kid-step-shell:is([data-frame="phone"], [data-frame="phone-sideways"]) [data-figure="clock"] svg {
+  width: 200px;
+  max-width: 200px;
+}
+
+/* The clock's `□ : □` on a phone (dl-uukj.29.127): one line of two 64 px fields, so the maths
+ * line's 2.25 leading only adds 6.5 px of empty line box above them. Face to fields is then 34
+ * (the card's 16 padding and 2 border, the stage's 16 gap). */
+.kid-step-shell:is([data-frame="phone"], [data-frame="phone-sideways"])
+  [data-stage]:has([data-figure="clock"])
+  [data-area="answer"]
+  p:has(> [data-field="h"]) {
+  line-height: 1;
+}
+
+/* A smaller face on a short phone (owner, 2026-10-27, dl-uukj.29.127): a clock read on a phone
+ * opens with the whole face and its fields between the top bar's line (bar + 16) and the dock's
+ * limit (footer, docked tools, the fold arrow's 28 over the dock line, 16), after the 34 gap and the
+ * 64 fields. The face takes that room, 200 whenever it fits and never under 160; its numbers stay
+ * 17 of 200 as they scale with the face. At 390 x 844 that is 844 - 72 - 502 - 34 - 64 = 172. With
+ * the tools folded, or outside a lesson, the tray and the overhang are 0 and the face is 200. */
+.kid-step-shell[data-frame="phone"] [data-stage]:has([data-field="h"]) [data-figure="clock"] svg {
+  --kid-clock-room: calc(
+    100dvh -
+    var(--kid-topbar-height) -
+    1rem -
+    var(--kid-bar-height, 6rem) -
+    var(--kid-tray-height, 0px) -
+    var(--kid-fold-overhang, 0px) -
+    1rem -
+    2.125rem -
+    4rem
+  );
+  width: clamp(10rem, var(--kid-clock-room), 12.5rem);
+  max-width: 12.5rem;
+}
+
+.kid-step-shell:is([data-frame="phone"], [data-frame="phone-sideways"]) [data-figure="coins"] {
+  --coin-scale: 0.62;
+  --coin-gap: 0.5rem;
+}
+
+/* A table on a phone (dl-uukj.29.74): its cells pad 4 px, not 12, and a number gap in a cell is the
+ * tap target's 56 wide, not 88, so a times-table row fits the 358 column. Outside a lesson the fold
+ * arrow then sits over the table, not beside it: the answer keeps a row for the arrow on top and
+ * gives the table the full width (in a lesson the arrow is on the dock). A table still wider than
+ * the column scrolls inside its own box, so the page never scrolls sideways. */
+.kid-step-shell:not([data-framed])[data-frame="phone"][data-tools]
+[data-area="answer"]:has(div[data-wide]) {
+  padding-right: 0;
+  padding-top: calc(3rem + 0.5rem);
+}
+
+.kid-step-shell:not([data-framed])[data-frame="phone"][data-tools]
+  [data-area="answer"]:has(div[data-wide])
+  [data-tools] {
+  margin-right: 0;
+}
+
+/* A Slots step with a keypad keeps that row once it ends (right, the solution), when its tools and
+ * their arrow go, so the table does not climb 56 px (Slots addendum 6 and 10: the child's gaps do
+ * not move by a pixel). `data-keypad-gaps` marks a step whose gaps the keypad types into. */
+.kid-step-shell:not([data-framed], [data-tools])[data-frame="phone"]
+[data-area="answer"]:has([data-keypad-gaps]):has(div[data-wide]) {
+  padding-top: calc(3rem + 0.5rem);
+}
+
+.kid-step-shell[data-frame="phone"] [data-area="answer"] div[data-wide] {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.kid-step-shell[data-frame="phone"] [data-wide] :is(th, td) {
+  padding-inline: 0.25rem;
+}
+
+.kid-step-shell[data-frame="phone"] [data-wide] :is(th, td) [data-field] {
+  min-width: var(--kid-tap-min);
+}
+
+/* ---- The source credit on a borrowed question (components/parts/QuestionCredit.tsx) ----------- */
+/* docs/plan/design-system/source-credit/README.md §1 to §3 and §9, dl-uukj.29.136. The instruction
+ * row holds the instruction and, at its right end, "z Khan Academy". A long instruction pushes the
+ * credit under it, still right-aligned; with no instruction it stands alone above the card. It is
+ * drawn the same in every state, so it never moves. */
+[data-instruction-row] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem; /* 4 16 */
+}
+
+[data-instruction-row] > [data-instruction] {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+[data-credit-wrap] {
+  position: relative;
+  margin-left: auto;
+  display: inline-flex;
+}
+
+/* The trigger: 15 regular, muted, a dotted underline 4 below, no icon. A 48 hit area whose -12
+ * margins keep the row as tall as its words. */
+[data-credit-trigger] {
+  height: 3rem;
+  margin-block: -0.75rem;
+  padding-inline: 0.25rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: 0.9375rem; /* 15 */
+  font-weight: 400;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.25rem;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  [data-credit-trigger]:hover {
+    color: var(--foreground);
+  }
+}
+
+/* The card: under the trigger, its right edge on the trigger's, 6 apart (a transparent bridge, so
+ * a mouse moving onto it keeps it open); above the trigger when there is no room below. */
+[data-credit-card] {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 30;
+  width: min(20rem, calc(100vw - 2rem)); /* 320, or the phone's width less its gutters */
+  padding-top: 0.375rem;
+}
+
+[data-credit-card][data-place="above"] {
+  top: auto;
+  bottom: 100%;
+  padding-top: 0;
+  padding-bottom: 0.375rem;
+}
+
+/* Beside the lesson column, in the free margin right of it, its top on the credit's (owner,
+ * 2026-10-27, dl-uukj.29.138), so nothing of the question is covered. QuestionCredit.tsx sets
+ * the width the margin allows (240 to 320) and the bridge: the transparent padding from the
+ * credit's right end across to the column's edge and 12 past it. */
+[data-credit-card][data-place="beside"] {
+  top: 0;
+  right: auto;
+  left: 100%;
+  width: calc(var(--credit-width) + var(--credit-bridge));
+  padding-top: 0;
+  padding-left: var(--credit-bridge);
+}
+
+/* In the playground when the controls panel leaves no margin: above the column, its right edge on
+ * the credit's, its bottom 12 over the column's top. The lift is a transparent bridge from the
+ * credit up to it, across the instruction, so a mouse moving up keeps it open. */
+[data-credit-card][data-place="over-column"] {
+  top: auto;
+  bottom: 100%;
+  padding-top: 0;
+  padding-bottom: var(--credit-lift);
+}
+
+/* The page clips sideways at its own 800 column; while the card stands in the margin the window
+ * clips instead, as for a sideways frame below. The card ends 16 inside the window. */
+:is([data-learner-view], .kid-page):has([data-credit-card][data-place="beside"]:not([hidden])) {
+  overflow-x: visible;
+}
+
+html:has([data-credit-card][data-place="beside"]:not([hidden])) {
+  overflow-x: clip;
+}
+
+[data-credit-card][hidden] {
+  display: none;
+}
+
+[data-credit-panel] {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  border: 0.125rem solid var(--border);
+  border-radius: 1rem;
+  padding: 0.5rem 1rem 0.75rem;
+  font-size: 0.9375rem; /* 15 */
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+}
+
+[data-credit-head] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+[data-credit-title] {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+[data-credit-close] {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  margin: -0.5rem -0.75rem -0.5rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+[data-credit-close] svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* The licence line and the source's notice read as one group, 6 apart; "not affiliated" is its
+ * own paragraph, 12 above, muted. */
+[data-credit-notice] {
+  margin-top: 0.375rem;
+}
+
+[data-credit-not-affiliated] {
+  margin-top: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+/* The links: bold, in the focus ink, underlined 4 below, a licence name never broken. */
+[data-credit-panel] [data-outside-link] {
+  color: var(--jw-focus, var(--primary));
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
+[data-credit-link] {
+  white-space: nowrap;
+}
+
+/* ---- The confirmation before a link leaves Jadwigo (components/parts/LeaveJadwigo.tsx) -------- */
+/* In place of the lines that held the link, on the same paper: what leaving means, where it goes,
+ * Zostań (the focus starts there) and Otwórz. Owner, 2026-10-27. */
+[data-leave-guarded][hidden] {
+  display: none;
+}
+
+[data-leave-title] {
+  font-weight: 700;
+}
+
+[data-leave-where] {
+  margin-top: 0.375rem;
+  overflow-wrap: anywhere;
+}
+
+[data-leave-actions] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+[data-leave-actions] > * {
+  flex: 1 1 auto;
+}
