@@ -32,12 +32,14 @@ module.exports = {
       name: "not-to-unresolvable",
       severity: "error",
       from: {},
-      to: { couldNotResolve: true },
+      // astro:* modules are Astro's virtual modules, resolved by its build, not on disk.
+      to: { couldNotResolve: true, pathNot: "^astro:" },
     },
   ],
   options: {
     doNotFollow: { path: "node_modules" },
-    exclude: { path: "(^|/)node_modules/" },
+    // .astro/ holds the types Astro generates for apps/site, never imported by our code.
+    exclude: { path: "(^|/)(node_modules|\\.astro)/" },
     tsPreCompilationDeps: true,
     combinedDependencies: true,
     enhancedResolveOptions: {

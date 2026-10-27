@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "question": {
+      "type": "string",
+      "pattern": "^(khan|bank|authored):.+$"
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "change": {
+            "type": "string",
+            "enum": [
+              "numbers",
+              "context",
+              "wording",
+              "tutor_notes"
+            ]
+          },
+          "why": {
+            "type": "string"
+          },
+          "reviewed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "change",
+          "why",
+          "reviewed"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "question",
+    "changes"
+  ],
+  "additionalProperties": false
+}

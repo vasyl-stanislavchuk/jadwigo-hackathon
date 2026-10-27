@@ -1,0 +1,241 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "gaps": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "accept": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "form": {
+                "type": "string",
+                "enum": [
+                  "sum",
+                  "difference",
+                  "product",
+                  "quotient",
+                  "any"
+                ]
+              },
+              "forms": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "integer",
+                    "proper",
+                    "improper",
+                    "mixed",
+                    "decimal"
+                  ]
+                }
+              },
+              "exact_terms": {
+                "type": "boolean"
+              },
+              "sides": {
+                "type": "string",
+                "enum": [
+                  "either",
+                  "kept"
+                ]
+              },
+              "case": {
+                "type": "string",
+                "enum": [
+                  "exact",
+                  "ignore"
+                ]
+              },
+              "accents": {
+                "type": "string",
+                "enum": [
+                  "exact",
+                  "ignore"
+                ]
+              },
+              "typo": {
+                "type": "string",
+                "enum": [
+                  "miss",
+                  "accept"
+                ]
+              },
+              "near": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "tolerance": {
+                "type": "number"
+              },
+              "rule": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "rule": {
+                        "type": "string",
+                        "const": "times_table"
+                      },
+                      "a": {
+                        "type": "number"
+                      },
+                      "b": {
+                        "type": "number"
+                      },
+                      "recent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        }
+                      }
+                    },
+                    "required": [
+                      "rule",
+                      "a",
+                      "b",
+                      "recent"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "rule": {
+                        "type": "string",
+                        "const": "fill_blank"
+                      },
+                      "template": {
+                        "type": "string"
+                      },
+                      "operands": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        }
+                      },
+                      "op": {
+                        "type": "string",
+                        "enum": [
+                          "add",
+                          "sub",
+                          "mul",
+                          "div"
+                        ]
+                      },
+                      "recent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        }
+                      }
+                    },
+                    "required": [
+                      "rule",
+                      "template",
+                      "operands",
+                      "op",
+                      "recent"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "rule": {
+                        "type": "string",
+                        "const": "number_line"
+                      },
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "place",
+                          "read"
+                        ]
+                      },
+                      "min": {
+                        "type": "number"
+                      },
+                      "max": {
+                        "type": "number"
+                      },
+                      "step": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "rule",
+                      "mode",
+                      "min",
+                      "max",
+                      "step"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "kind": {
+                "type": "string",
+                "const": "enter"
+              }
+            },
+            "required": [
+              "accept",
+              "kind"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "correct": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "near": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "kind": {
+                "type": "string",
+                "const": "choose"
+              }
+            },
+            "required": [
+              "correct",
+              "kind"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "gaps"
+  ],
+  "additionalProperties": false
+}

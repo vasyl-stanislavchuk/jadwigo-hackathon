@@ -9,6 +9,10 @@
   ],
   "globalPassThroughEnv": ["DATABASE_URL"],
   "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
     "lint": {},
     "typecheck": {},
     "test": {},
@@ -20,10 +24,6 @@
     "dev": {
       "cache": false,
       "persistent": true
-    },
-    "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
     }
   }
 }

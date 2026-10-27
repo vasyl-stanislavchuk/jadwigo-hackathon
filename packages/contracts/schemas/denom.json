@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "string",
+  "enum": [
+    "gr1",
+    "gr2",
+    "gr5",
+    "gr10",
+    "gr20",
+    "gr50",
+    "zl1",
+    "zl2",
+    "zl5",
+    "zl10",
+    "zl20",
+    "zl50",
+    "zl100",
+    "zl200"
+  ]
+}

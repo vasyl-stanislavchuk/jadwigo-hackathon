@@ -1,8 +1,22 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
-    ".": { "entry": [".claude/hooks/guard.ts"], "project": [".claude/hooks/*.ts"] },
-    "tools": { "entry": ["src/check-*.ts"] }
+    ".": {
+      "entry": [".claude/hooks/guard.ts"],
+      "project": [".claude/hooks/*.ts"]
+    },
+    "tools": {
+      "entry": ["src/check-*.ts"]
+    },
+    "apps/api": {
+      "ignoreDependencies": ["@aws-lambda-powertools/event-handler"]
+    },
+    "packages/lesson-import": {
+      "ignoreDependencies": ["@jadwigo/contracts", "@jadwigo/store"]
+    },
+    "packages/store": {
+      "ignoreDependencies": ["kysely"]
+    }
   },
   "ignoreBinaries": ["make", "gitleaks", "uv"],
   "ignoreWorkspaces": ["apps/cli"]

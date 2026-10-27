@@ -1,0 +1,14 @@
+---
+import Base from "../layouts/Base.astro";
+
+const page = {
+  title: "Nie ma takiej strony · Jadwigo",
+  description: "Tej strony tu nie ma.",
+  heading: "Tej strony tu nie ma.",
+  reviewed: true,
+};
+---
+
+<Base page={page} path="/404">
+  <p><a href="/">Wróć na stronę główną</a></p>
+</Base>
