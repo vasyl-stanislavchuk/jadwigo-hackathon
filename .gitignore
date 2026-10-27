@@ -14,3 +14,4 @@ dist/
 .DS_Store
 .claude/commands/
 .astro/
+supabase/.temp/
