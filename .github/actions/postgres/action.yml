@@ -3,7 +3,14 @@ description: >
   Postgres 17, prod's major version, from the PGDG apt repository, with pgTAP and pg_prove, on port
   5433 as Postgres.app runs it locally. No Docker (decision
   jadwigo-platform/decisions/2026-10-27-jadwigo-runs-on-a-prod-and-a-dev-supabase-project-a-native-local).
-  Creates the superuser runner and the database jadwigo_test.
+  Creates the superuser runner and the database jadwigo_test. PGDG serves only the newest 17.x, so
+  the minor isn't pinned: a different major fails the job, and a minor other than prod's warns.
+inputs:
+  prod-version:
+    description: >
+      Supabase prod's server_version (Management API, 2026-10-27). Update it when Supabase upgrades
+      prod; dl-5ssh.34.54 compares it live.
+    default: "17.11"
 runs:
   using: composite
   steps:
@@ -12,6 +19,10 @@ runs:
       run: |
         sudo install -d /usr/share/postgresql-common/pgdg
         sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+        # The PGDG signing key, checked by fingerprint before apt trusts it.
+        gpg --show-keys --with-colons /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+          | grep -q '^fpr:::::::::B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8:$' \
+          || { echo "::error::the PGDG key's fingerprint is not B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8"; exit 1; }
         echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
           | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
         sudo apt-get update -qq
@@ -23,4 +34,18 @@ runs:
         sudo pg_createcluster 17 main --port 5433 --start
         sudo -u postgres psql -p 5433 -c "create role runner superuser login password 'runner'"
         PGPASSWORD=runner createdb -h localhost -p 5433 -U runner jadwigo_test
-        PGPASSWORD=runner psql -h localhost -p 5433 -U runner -d jadwigo_test -Atc 'show server_version'
+    - name: Check the version against prod's
+      shell: bash
+      env:
+        PROD_VERSION: ${{ inputs.prod-version }}
+      run: |
+        version=$(PGPASSWORD=runner psql -h localhost -p 5433 -U runner -d jadwigo_test -Atc 'show server_version')
+        version=${version%% *}
+        echo "Postgres $version here, $PROD_VERSION on Supabase prod"
+        if [ "${version%%.*}" != "${PROD_VERSION%%.*}" ]; then
+          echo "::error::Postgres $version is not prod's major version ($PROD_VERSION)"
+          exit 1
+        fi
+        if [ "$version" != "$PROD_VERSION" ]; then
+          echo "::warning::Postgres $version here and $PROD_VERSION on prod: same major, another minor"
+        fi
