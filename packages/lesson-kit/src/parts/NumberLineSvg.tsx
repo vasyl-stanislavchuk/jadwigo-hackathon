@@ -42,13 +42,15 @@ interface Props {
   arcs: boolean;
   label: string;
   svgRef?: Ref<SVGSVGElement> | undefined;
-  interactive?: {
-    valueText: string;
-    onPointerDown(e: PointerEvent<SVGSVGElement>): void;
-    onPointerMove(e: PointerEvent<SVGSVGElement>): void;
-    onPointerUp(e: PointerEvent<SVGSVGElement>): void;
-    onKeyDown(e: KeyboardEvent<SVGSVGElement>): void;
-  };
+  interactive?:
+    | {
+        valueText: string | undefined;
+        onPointerDown(e: PointerEvent<SVGSVGElement>): void;
+        onPointerMove(e: PointerEvent<SVGSVGElement>): void;
+        onPointerUp(e: PointerEvent<SVGSVGElement>): void;
+        onKeyDown(e: KeyboardEvent<SVGSVGElement>): void;
+      }
+    | undefined;
 }
 
 const MARKER: Record<Tone, string> = {

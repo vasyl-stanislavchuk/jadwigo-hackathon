@@ -39,15 +39,15 @@ export interface StepField {
   /** The result marked it missed, and it was not edited since. */
   marked: boolean;
   /** A word, not a number: after a miss only its first run of missed letters is selected (§3.5). */
-  word?: boolean;
+  word?: boolean | undefined;
   /** The first run of missed letters in a word, [start, end), when letter marks give it (an
    * accent or one-letter slip, components/parts/letters.ts). Absent, the whole word is selected. */
-  missedRun?: readonly [number, number];
+  missedRun?: readonly [number, number] | undefined;
   /** May stay empty and the answer is still complete (a column's small cell). */
-  optional?: boolean;
+  optional?: boolean | undefined;
   /** A number field whose length its type fixes (Slots addendum 2.4): the numbers it takes, from
    * and to. It moves on by itself once no longer answer is possible (`full`). */
-  range?: readonly [number, number];
+  range?: readonly [number, number] | undefined;
 }
 
 export type KeysPhase = "rest" | "miss" | "ended";
@@ -267,7 +267,7 @@ export interface StepKeysInput {
   /** After a miss, the child clicked away on the page (true) or came back to a field (false):
    * the view draws the marked field as its dashed miss mark while away (Enter addendum 2.3). A
    * view that leaves it out keeps one look. */
-  away?(away: boolean): void;
+  away?: ((away: boolean) => void) | undefined;
 }
 
 /** What a pointer on the page may land on that is a control, not the page: it never sends the
@@ -390,7 +390,7 @@ export function useStepKeys({
   complete: boolean;
   /** On touch a typed word's system keyboard closes on a miss, so the band and the marks are
    * seen, and a tap on the field opens it again with the same selection (rule 18, §3.5). */
-  touch?: boolean;
+  touch?: boolean | undefined;
   onFocusField(): void;
 }): StepKeysHook {
   // The verdict a marked part changed under; changed only while that verdict stands.

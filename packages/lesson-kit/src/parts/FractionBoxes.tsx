@@ -41,7 +41,7 @@ export function FractionBoxes({
   active?: FractionBox | null | undefined;
   /** Play: each box is a button that moves the keypad to it. Without these the boxes are still. */
   clock?: Clock | undefined;
-  onPick?(box: FractionBox, at: Instant, modality: PressModality): void;
+  onPick?: ((box: FractionBox, at: Instant, modality: PressModality) => void) | undefined;
   /** The whole answer's name, for a screen reader. */
   label?: string | undefined;
   /** The box selected after a miss (stepKeys.ts): its digits wear the selection fill, and the

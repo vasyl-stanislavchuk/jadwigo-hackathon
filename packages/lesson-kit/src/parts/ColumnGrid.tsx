@@ -44,7 +44,7 @@ export interface ColumnGridProps {
   cells: ColumnGridCell[];
   slot(id: string): ReactNode;
   /** Whether a gap holds something, for crossing out a digit. */
-  filled?(id: string): boolean;
+  filled?: ((id: string) => boolean) | undefined;
   /** The grid's name for a screen reader, such as the sum in words. */
   label: string;
 }

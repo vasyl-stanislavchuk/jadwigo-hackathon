@@ -67,14 +67,6 @@ function PictureSheet({
   children: ReactNode;
 }): JSX.Element {
   const sheet = useRef<HTMLDivElement>(null);
-  // A tap anywhere closes, close included: its click reaches the sheet. Escape closes from the
-  // keyboard (below).
-  useEffect(() => {
-    const el = sheet.current;
-    if (el === null) return;
-    el.addEventListener("click", onClose);
-    return () => el.removeEventListener("click", onClose);
-  }, [onClose]);
   useEffect(() => {
     // React 18's Button takes no ref: the sheet finds its own close.
     sheet.current?.querySelector<HTMLElement>("[data-sheet-close]")?.focus();
@@ -91,6 +83,14 @@ function PictureSheet({
       aria-modal="true"
       aria-label={alt || copy(language, "ds_open_picture")}
       className="kid-picture-sheet"
+      // A tap anywhere closes, close included: its click reaches the sheet. Escape inside it closes
+      // here; the document's listener catches an Escape from outside.
+      onClick={onClose}
+      onKeyDown={(event) => {
+        if (event.key !== "Escape") return;
+        event.stopPropagation();
+        onClose();
+      }}
     >
       <header data-topbar>
         <div data-topbar-inner>

@@ -25,8 +25,10 @@ export interface FractionShapeProps {
   /** The whole picture's words (still), or the group's name (interactive). */
   label: string;
   /** Each part's words when interactive, such as "Part 3 of 4". */
-  partLabel?(i: number): string;
-  interactive?: { clock: Clock; onToggle(i: number, at: Instant, modality: PressModality): void };
+  partLabel?: ((i: number) => string) | undefined;
+  interactive?:
+    | { clock: Clock; onToggle(i: number, at: Instant, modality: PressModality): void }
+    | undefined;
   /** Whose shading it is: the child's (blue, --focus) by default, or the question's, drawn in
    * ink (--text), as a figure to read is (Enter addendum 3.4, 10b). */
   ink?: "child" | "question" | undefined;

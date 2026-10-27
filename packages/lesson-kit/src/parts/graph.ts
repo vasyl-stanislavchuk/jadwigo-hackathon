@@ -102,7 +102,7 @@ export interface GraphCategory {
   id: string;
   /** Words, or TeX between dollars, as a Khan category may be. */
   label: string;
-  picture?: GraphPicture;
+  picture?: GraphPicture | undefined;
 }
 
 export interface GraphData {
@@ -112,12 +112,12 @@ export interface GraphData {
   /** The finest height a bar takes. */
   step: number;
   /** The labelled gridline spacing; the step when absent. A picture graph draws one picture per tick. */
-  tick?: number;
-  unit_label?: string;
-  category_label?: string;
+  tick?: number | undefined;
+  unit_label?: string | undefined;
+  category_label?: string | undefined;
   /** A histogram's bin edges, one more than its categories, increasing (dl-w3.61.3): bin i runs
    * from `bins[i]` to `bins[i + 1]`, and the edges are what the axis labels. */
-  bins?: readonly number[];
+  bins?: readonly number[] | undefined;
 }
 
 /** The SVG's own units. */

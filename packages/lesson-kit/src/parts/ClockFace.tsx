@@ -67,16 +67,18 @@ export interface ClockFaceProps {
   tone?: Tone | undefined;
   /** The hands rung 1 points at. */
   focus?: ReadonlySet<string> | undefined;
-  interactive?: {
-    minuteStep: number;
-    gearing: Gearing;
-    /** Each hand's name and its position in words, for its slider. */
-    handLabel(hand: Hand): string;
-    valueText(hand: Hand, hands: ClockHands): string;
-    /** The two buttons that pick the active hand. */
-    pickLabel: string;
-    onChange(next: ClockHands, hand: Hand, modality: "click" | "keyboard"): void;
-  };
+  interactive?:
+    | {
+        minuteStep: number;
+        gearing: Gearing;
+        /** Each hand's name and its position in words, for its slider. */
+        handLabel(hand: Hand): string;
+        valueText(hand: Hand, hands: ClockHands): string;
+        /** The two buttons that pick the active hand. */
+        pickLabel: string;
+        onChange(next: ClockHands, hand: Hand, modality: "click" | "keyboard"): void;
+      }
+    | undefined;
 }
 
 function HandShape({

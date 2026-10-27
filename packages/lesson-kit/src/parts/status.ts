@@ -75,9 +75,9 @@ const BY_KIND: Record<Feedback["kind"], StepStatus> = {
 export interface StatusInput {
   feedback: Feedback | null;
   /** The answer is on its way to the judge. */
-  checking?: boolean;
+  checking?: boolean | undefined;
   /** The child pressed Check before the answer was complete; the family's reason. */
-  incomplete?: CopyKey | null;
+  incomplete?: CopyKey | null | undefined;
 }
 
 /** The status area's state. Checking first, then a reason for an incomplete answer, then the verdict. */

@@ -20,9 +20,9 @@ export interface LineData {
   max: number;
   step: number;
   /** The finest position the marker takes; the step when absent. Divides the step. */
-  snap?: number;
+  snap?: number | undefined;
   /** How a non-whole tick is written; `decimal` when absent. */
-  tick_label?: TickLabelStyle;
+  tick_label?: TickLabelStyle | undefined;
 }
 
 /** The SVG's own units; the line runs from PAD to WIDTH - PAD. */

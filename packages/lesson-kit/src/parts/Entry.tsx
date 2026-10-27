@@ -80,7 +80,7 @@ export function Entry({
    * knows no family (the Enter family passes its EXPRESSION_SIGNS and signOf, or the decimal
    * comma for a decimal, dl-w3.70.7). None, digits only. */
   signs?: readonly string[] | undefined;
-  signOf?: (key: string) => string | null;
+  signOf?: ((key: string) => string | null) | undefined;
   code?: boolean | undefined;
   max: number;
   state: EntryState;
@@ -115,7 +115,7 @@ export function Entry({
   /** Keypad only: where the field stands. The Enter view puts it in the maths line, inside the
    * question card (InlineField.tsx, addendum 2.4); the keypad stays where it is. Absent, the field
    * stands here, under the card. */
-  place?: (field: JSX.Element) => JSX.Element;
+  place?: ((field: JSX.Element) => JSX.Element) | undefined;
   onChange(next: EntryState, ev: EntryEvent): void;
   onSubmit(at: Instant, modality: "click" | "keyboard"): void;
 }): JSX.Element {

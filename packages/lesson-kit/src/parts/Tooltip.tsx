@@ -10,7 +10,21 @@
  */
 
 import { cn } from "@jadwigo/ui";
-import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import {
+  cloneElement,
+  type FocusEvent,
+  type PointerEvent,
+  type ReactElement,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+} from "react";
+
+/** The one control a tooltip names: it takes the hover and the focus that fit the bubble. */
+type TooltipControl = ReactElement<{
+  onPointerEnter?: ((event: PointerEvent<HTMLElement>) => void) | undefined;
+  onFocus?: ((event: FocusEvent<HTMLElement>) => void) | undefined;
+}>;
 
 /** The room the bubble keeps from the window's edges. */
 const EDGE = 8;
@@ -34,10 +48,9 @@ export function Tooltip({
   open?: boolean | undefined;
   placement?: "top" | "bottom" | undefined;
   align?: "center" | "start" | undefined;
-  children: ReactNode;
+  children: TooltipControl;
 }): JSX.Element {
   const bubble = useRef<HTMLSpanElement>(null);
-  const host = useRef<HTMLSpanElement>(null);
   const fitBubble = useCallback(() => {
     const el = bubble.current;
     if (el === null) return;
@@ -59,26 +72,24 @@ export function Tooltip({
     window.addEventListener("resize", fitBubble);
     return () => window.removeEventListener("resize", fitBubble);
   }, [open, fitBubble, text]);
-  // A hover or a focus inside fits the bubble before it shows.
-  useEffect(() => {
-    const el = host.current;
-    if (el === null) return;
-    el.addEventListener("pointerenter", fitBubble);
-    el.addEventListener("focusin", fitBubble);
-    return () => {
-      el.removeEventListener("pointerenter", fitBubble);
-      el.removeEventListener("focusin", fitBubble);
-    };
-  }, [fitBubble]);
   return (
     <span
-      ref={host}
       className="kid-tooltip"
       data-open={open ? "" : undefined}
       data-placement={placement}
       data-align={align}
     >
-      {children}
+      {/* The control fits the bubble as a hover or a focus reaches it, its own handlers kept. */}
+      {cloneElement(children, {
+        onPointerEnter: (event: PointerEvent<HTMLElement>) => {
+          fitBubble();
+          children.props.onPointerEnter?.(event);
+        },
+        onFocus: (event: FocusEvent<HTMLElement>) => {
+          fitBubble();
+          children.props.onFocus?.(event);
+        },
+      })}
       <span ref={bubble} role="tooltip" className={cn("kid-tooltip-bubble")}>
         {text}
       </span>

@@ -33,7 +33,7 @@ export interface RichTextProps {
   display?: boolean | undefined;
   /** What a `{id}` marker draws. Only the ids in `slotIds` are slots (every well-formed marker
    * when `slotIds` is not given); a marker outside them, or inside TeX, is plain text. */
-  slots?: (id: string) => ReactNode;
+  slots?: ((id: string) => ReactNode) | undefined;
   slotIds?: ReadonlySet<string> | undefined;
   /** The printed look for code chips. */
   paper?: boolean | undefined;

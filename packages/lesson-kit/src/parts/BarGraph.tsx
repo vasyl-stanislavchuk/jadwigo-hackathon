@@ -68,9 +68,11 @@ interface Props {
   given?: ReadonlySet<string> | undefined;
   /** Bars rung 1 points at. */
   focus?: ReadonlySet<string> | undefined;
-  interactive?: {
-    onChange(id: string, height: number, modality: "click" | "keyboard"): void;
-  };
+  interactive?:
+    | {
+        onChange(id: string, height: number, modality: "click" | "keyboard"): void;
+      }
+    | undefined;
 }
 
 const FILL: Record<Tone, string> = {
@@ -245,7 +247,8 @@ export function BarGraph({
           ))}
           {data.kind === "line" && (
             <polyline
-              aria-hidden
+              aria-hidden="true"
+              tabIndex={-1}
               data-testid="graph-line"
               points={data.categories
                 .map((c, i) => `${column(i, n).cx},${yOf(heights[c.id] ?? 0, data)}`)
@@ -259,7 +262,7 @@ export function BarGraph({
           {edges?.map((_, i) => {
             const x = i < n ? column(i, n).x0 : column(n - 1, n).x1;
             return (
-              <g key={`edge-${i}`} aria-hidden>
+              <g key={`edge-${i}`} aria-hidden="true" tabIndex={-1}>
                 <line
                   x1={x}
                   y1={PLOT.y1}
@@ -434,7 +437,8 @@ export function BarGraph({
                           width={markSize}
                           height={markSize}
                           preserveAspectRatio="xMidYMid meet"
-                          aria-hidden
+                          aria-hidden="true"
+                          tabIndex={-1}
                           className={cn(locked && "opacity-50")}
                         />
                       );

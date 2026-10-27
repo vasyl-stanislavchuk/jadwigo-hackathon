@@ -127,8 +127,8 @@ export interface LessonProgress {
 
 /** What the lesson page adds to the pause sheet: the sound switch and ending for today. */
 export interface LessonFrameValue {
-  sound?: { on: boolean; set(on: boolean): void };
-  onStop?: () => void;
+  sound?: { on: boolean; set(on: boolean): void } | undefined;
+  onStop?: (() => void) | undefined;
 }
 
 export const LessonFrame = createContext<LessonFrameValue>({});

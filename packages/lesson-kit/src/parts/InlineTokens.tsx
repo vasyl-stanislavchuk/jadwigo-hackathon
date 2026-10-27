@@ -136,7 +136,7 @@ export function InlineTokens({
   locked: boolean;
   /** Absent: the text is drawn inert, for a solution, a review or paper. */
   clock?: Clock | undefined;
-  onToggle?(id: string, at: Instant, modality: PressModality): void;
+  onToggle?: ((id: string, at: Instant, modality: PressModality) => void) | undefined;
   className?: string | undefined;
 }): JSX.Element {
   const byId = new Map(tokens.map((t) => [t.id, t]));
