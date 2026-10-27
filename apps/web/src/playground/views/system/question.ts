@@ -25,13 +25,13 @@ function showcase(): WrittenExample {
 
 const EXAMPLE = showcase();
 
-export interface StageOption {
+interface StageOption {
   id: string;
   content: string;
 }
 
 /** What a scenario shows once its pick is checked. */
-export interface StageOutcome {
+interface StageOutcome {
   outcome: WrittenScenario["outcome"];
   marks: readonly PartMark[];
 }

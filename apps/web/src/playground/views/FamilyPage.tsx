@@ -46,7 +46,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../tool/tabs.tsx";
 
 /** Where an example sits in the playground's own list: its family, its question type and its id. */
-export interface ExamplePlace {
+interface ExamplePlace {
   family: FamilyName;
   question_type: string;
   example: string;
@@ -57,7 +57,7 @@ export interface ExamplePlace {
  * examples, then the next question type's, in the sidebar's order, and after the very last back to
  * the first. Try it's Dalej goes there once the one-step lesson ends.
  */
-export function nextExample(from: ExamplePlace): ExamplePlace {
+function nextExample(from: ExamplePlace): ExamplePlace {
   const order: ExamplePlace[] = [];
   for (const family of FAMILIES)
     for (const type of questionTypesOf(family))
@@ -73,7 +73,7 @@ export function nextExample(from: ExamplePlace): ExamplePlace {
 }
 
 /** The question type a family route shows: the one named, else the family's first. */
-export function pickQuestionType(family: FamilyName, name: string | null): QuestionTypeInfo {
+function pickQuestionType(family: FamilyName, name: string | null): QuestionTypeInfo {
   const types = questionTypesOf(family);
   const first = types[0];
   if (first === undefined) throw new Error(`${family} has no question type`);

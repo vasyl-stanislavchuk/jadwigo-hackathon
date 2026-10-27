@@ -29,7 +29,7 @@ import {
 } from "@jadwigo/lesson-kit";
 import type { Found } from "./question.ts";
 
-export type PageHelp = ReturnType<typeof pageHelpOf>;
+type PageHelp = ReturnType<typeof pageHelpOf>;
 type SolutionLines = ReturnType<typeof solutionLines>;
 
 /** One commit, for the owner's readout: what was committed and what the data says it is, if anything. */

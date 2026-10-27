@@ -227,7 +227,7 @@ export interface MenuItem {
 }
 
 /** A section heading in the menu: a label, never a row. */
-export interface MenuHeading {
+interface MenuHeading {
   heading: string;
 }
 

@@ -7,7 +7,7 @@
  */
 
 /** A section anchor of the group, for a rule to point at the part that shows it. */
-export type FrameAnchor =
+type FrameAnchor =
   | "frame-rules"
   | "frame-frames"
   | "frame-footer"

@@ -52,11 +52,7 @@ export function LearnerControls({
 }
 
 /** One segmented control per switch that applies to this question type, its value read from the URL. */
-export function PlaygroundSwitches({
-  question_type,
-}: {
-  question_type: string;
-}): ReactElement | null {
+function PlaygroundSwitches({ question_type }: { question_type: string }): ReactElement | null {
   const { query } = useLocation();
   const shown = switchesFor(question_type);
   if (shown.length === 0) return null;

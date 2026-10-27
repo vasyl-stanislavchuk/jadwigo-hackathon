@@ -45,8 +45,8 @@ export function ControlGroup({
  * narrow the segments wrap onto a second line, and a label longer than the whole row wraps inside
  * its segment. Segments stand a hair apart (spacing 1), each with its own border and corners, so a
  * wrapped row still reads as buttons. */
-export const SEGMENTED_GROUP = "w-full flex-wrap";
-export const SEGMENTED_ITEM =
+const SEGMENTED_GROUP = "w-full flex-wrap";
+const SEGMENTED_ITEM =
   "h-auto min-h-8 min-w-fit max-w-full flex-auto whitespace-normal py-1 text-center text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground";
 
 /** A labelled single choice drawn as a segmented toggle: language, learner, network, feedback. */

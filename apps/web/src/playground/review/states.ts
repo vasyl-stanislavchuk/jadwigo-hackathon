@@ -32,12 +32,12 @@ import { resolve } from "../localize.ts";
 import { humanClass, scenariosIn, verdictOf } from "../panels/question.ts";
 
 /** A fixed instant: a still state records no latency. */
-export const STILL_CLOCK: Clock = {
+const STILL_CLOCK: Clock = {
   now: (): Instant => ({ perf: 0, wall: "2026-10-18T00:00:00.000Z" }),
 };
 
 /** The play props of any family, less the spec, which the state names beside them. */
-export type StillProps = Omit<PlayProps<FamilySpec["family"]>, "spec">;
+type StillProps = Omit<PlayProps<FamilySpec["family"]>, "spec">;
 
 export interface ReviewState {
   id: string;

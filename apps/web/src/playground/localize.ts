@@ -23,7 +23,7 @@ export type Authored<T> = T extends string
       ? { readonly [K in keyof T]: Authored<T[K]> }
       : T | { readonly pl: T; readonly en: T };
 
-export function isTr(value: unknown): value is { pl: unknown; en: unknown } {
+function isTr(value: unknown): value is { pl: unknown; en: unknown } {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
   const keys = Object.keys(value);
   return keys.length > 0 && keys.every((k) => k === "pl" || k === "en");

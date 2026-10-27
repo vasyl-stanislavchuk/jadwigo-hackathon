@@ -35,8 +35,8 @@ export interface PlaygroundRoute {
 }
 
 /** The playground's own pages beside the families. */
-export const PAGES = ["system"] as const;
-export type PlaygroundPage = (typeof PAGES)[number];
+const PAGES = ["system"] as const;
+type PlaygroundPage = (typeof PAGES)[number];
 const isPage = (name: string | undefined): name is PlaygroundPage =>
   name !== undefined && (PAGES as readonly string[]).includes(name);
 
@@ -126,10 +126,10 @@ export function setQuery(
 
 // ---- the query's values ----------------------------------------------------------------------
 
-export const CATEGORIES: readonly Category[] = ["child", "adult"];
+const CATEGORIES: readonly Category[] = ["child", "adult"];
 /** A question type page's tabs. Details holds the type's facts, its modes and its data. */
 export type Tab = "try" | "review" | "details";
-export const TABS: readonly Tab[] = ["try", "review", "details"];
+const TABS: readonly Tab[] = ["try", "review", "details"];
 
 export function queryLanguage(query: URLSearchParams): Language | null {
   const value = query.get("lang");

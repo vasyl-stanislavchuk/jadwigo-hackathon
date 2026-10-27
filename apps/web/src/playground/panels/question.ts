@@ -15,7 +15,7 @@ import { resolve } from "../localize.ts";
 import { applySwitches } from "../switchApply.ts";
 
 /** The id a question type's example plays under: unique across the playground. */
-export const specId = (example: WrittenExample): string =>
+const specId = (example: WrittenExample): string =>
   `${example.question.question_type}/${example.id}`;
 
 function specOfQuestion(id: string, question: WrittenQuestion, language: Language): FamilySpec {
@@ -52,7 +52,7 @@ export function scenariosIn(example: WrittenExample, language: Language): Writte
 }
 
 /** Deep equality of two committed values; a Choose value's `chosen` compares as a set. */
-export function sameValue(family: string, a: unknown, b: unknown): boolean {
+function sameValue(family: string, a: unknown, b: unknown): boolean {
   if (family === "choose") {
     const x = (a as { chosen?: unknown } | null)?.chosen;
     const y = (b as { chosen?: unknown } | null)?.chosen;

@@ -5,7 +5,7 @@
  * marks. Nothing is judged in the playground; Sprawdź finds the scenario whose value was committed.
  */
 
-import type { Family, Help, PartMark, QuestionType } from "@jadwigo/contracts";
+import type { Family, PartMark, QuestionType } from "@jadwigo/contracts";
 import type { Language } from "@jadwigo/copy";
 import type { Text } from "../localize.ts";
 
@@ -45,5 +45,3 @@ export interface WrittenExample {
   twin?: WrittenQuestion;
   scenarios: WrittenScenario[];
 }
-
-export type { Help };

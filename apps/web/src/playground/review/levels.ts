@@ -16,7 +16,7 @@ import { type FamilySpec, type Figure, GROUP_ICONS, type GroupIcon } from "@jadw
 import type { Tr } from "../localize.ts";
 import { LEVELS, type Level } from "../route.ts";
 
-export { LEVELS, type Level } from "../route.ts";
+export type { Level } from "../route.ts";
 
 /** What the switch says, in the learner's language: the picture a level draws, in plain words. */
 export const LEVEL_LABEL: Record<Level, Tr> = {
@@ -35,7 +35,7 @@ export const LEVEL_TITLE: Record<Level, string> = {
 const BLANK = "□";
 
 /** The a × b fact a question's key names, or null when the key names none. */
-export function factOf(spec: FamilySpec): { a: number; b: number } | null {
+function factOf(spec: FamilySpec): { a: number; b: number } | null {
   if (spec.family === "enter") {
     const rule = spec.key.rule;
     return rule?.rule === "times_table" ? { a: rule.a, b: rule.b } : null;
@@ -62,12 +62,12 @@ export function factOf(spec: FamilySpec): { a: number; b: number } | null {
 }
 
 /** The object a derived concrete figure draws: fixed per fact, so the same question keeps its icon. */
-export function iconFor(a: number, b: number): GroupIcon {
+function iconFor(a: number, b: number): GroupIcon {
   return GROUP_ICONS[(a * b) % GROUP_ICONS.length] ?? "apple";
 }
 
 /** The question with `figure` as its picture. Enter and Slots carry it in their data, Choose in its stem. */
-export function withFigure(spec: FamilySpec, figure: Figure): FamilySpec {
+function withFigure(spec: FamilySpec, figure: Figure): FamilySpec {
   switch (spec.family) {
     case "enter":
       return { ...spec, data: { ...spec.data, figure } };
@@ -81,7 +81,7 @@ export function withFigure(spec: FamilySpec, figure: Figure): FamilySpec {
 }
 
 /** The figure a level draws for an a × b fact, in the learner's language. Abstract keeps the question's own. */
-export function figureFor(level: Level, a: number, b: number, language: Language): Figure | null {
+function figureFor(level: Level, a: number, b: number, language: Language): Figure | null {
   switch (level) {
     case "concrete":
       return {

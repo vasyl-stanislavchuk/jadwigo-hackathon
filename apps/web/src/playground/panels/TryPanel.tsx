@@ -28,8 +28,7 @@ import { TryExample } from "./TryExample.tsx";
 import type { TryAttempt, TryState } from "./tryState.ts";
 
 /** What the panel says of an answer the authored data does not name. */
-export const NOT_JUDGED =
-  "Not judged in the playground: this answer is not in the example's scenarios";
+const NOT_JUDGED = "Not judged in the playground: this answer is not in the example's scenarios";
 
 type ThemeChoice = "light" | "dark" | "system";
 const THEME_OPTIONS: { value: ThemeChoice; label: string }[] = [

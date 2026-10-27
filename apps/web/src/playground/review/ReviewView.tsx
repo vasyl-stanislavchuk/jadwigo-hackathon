@@ -92,7 +92,7 @@ function Cell({
 }
 
 /** A live cell with its own round, so it can be tried again, and the last answer under it. */
-export function LiveCell({
+function LiveCell({
   example,
   spec,
   language,

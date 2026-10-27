@@ -11,7 +11,7 @@ import { type FamilySpec, rungsWritten, solutionOf } from "@jadwigo/lesson-kit";
 
 export type ChecklistStatus = "check" | "not_built" | "auto_yes" | "auto_no";
 
-export interface ChecklistLine {
+interface ChecklistLine {
   id: string;
   text: string;
   /** The decision slug in the md context brain, or the doc section. */
@@ -34,7 +34,7 @@ function learnerText(spec: FamilySpec): string[] {
   return out;
 }
 
-export const CHECKLIST: ChecklistLine[] = [
+const CHECKLIST: ChecklistLine[] = [
   {
     id: "step-contract",
     text: "The step contract: one layout through StepShell, and nothing moves after an answer.",

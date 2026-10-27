@@ -43,7 +43,7 @@ function EventTable({ title, rows }: { title: string; rows: readonly EventRow[] 
   );
 }
 
-export function FrameRules(): JSX.Element {
+function FrameRules(): JSX.Element {
   return (
     <>
       <Sub
@@ -87,7 +87,7 @@ export function FrameRules(): JSX.Element {
   );
 }
 
-export function Frames(): JSX.Element {
+function Frames(): JSX.Element {
   return (
     <>
       <Sub
@@ -154,7 +154,7 @@ export function Frames(): JSX.Element {
   );
 }
 
-export function FooterAndBand(): JSX.Element {
+function FooterAndBand(): JSX.Element {
   return (
     <Sub
       title="Every state, phone and laptop"
@@ -190,7 +190,7 @@ export function FooterAndBand(): JSX.Element {
   );
 }
 
-export function StepLife(): JSX.Element {
+function StepLife(): JSX.Element {
   return (
     <>
       <Sub
@@ -230,7 +230,7 @@ export function StepLife(): JSX.Element {
   );
 }
 
-export function HelpNoteBehaviour(): JSX.Element {
+function HelpNoteBehaviour(): JSX.Element {
   return (
     <>
       <p className="text-muted-foreground">
@@ -245,7 +245,7 @@ export function HelpNoteBehaviour(): JSX.Element {
   );
 }
 
-export function TrayAndTools(): JSX.Element {
+function TrayAndTools(): JSX.Element {
   return (
     <>
       <EventTable {...EVENTS.options} />
@@ -255,7 +255,7 @@ export function TrayAndTools(): JSX.Element {
   );
 }
 
-export function Scrolling(): JSX.Element {
+function Scrolling(): JSX.Element {
   return <EventTable {...EVENTS.scroll} />;
 }
 
@@ -264,7 +264,7 @@ function Dots(): JSX.Element {
   return <DotArray rows={3} cols={4} label="3 × 4" className="grid max-w-full gap-2 p-3" />;
 }
 
-export function Media(): JSX.Element {
+function Media(): JSX.Element {
   const LANG = useSystemLanguage();
   return (
     <>
@@ -314,7 +314,7 @@ export function Media(): JSX.Element {
   );
 }
 
-export function ProgressPauseEnd(): JSX.Element {
+function ProgressPauseEnd(): JSX.Element {
   return (
     <p className="text-muted-foreground">
       The step bar sits in the top bar and moves when a step ends, never on a miss, help or the

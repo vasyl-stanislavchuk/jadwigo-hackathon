@@ -23,7 +23,7 @@ import {
 } from "@jadwigo/lesson-kit";
 
 /** The options compared per family, with the values each takes. A family missing here has none. */
-export const OPTION_VALUES: Partial<Record<FamilyName, Record<string, readonly string[]>>> = {
+const OPTION_VALUES: Partial<Record<FamilyName, Record<string, readonly string[]>>> = {
   choose: {
     layout: ["list", "grid", "binary", "lettered", "inline"],
     select: ["one", "many"],
@@ -51,7 +51,7 @@ export const OPTION_VALUES: Partial<Record<FamilyName, Record<string, readonly s
   },
 };
 
-export interface Variant {
+interface Variant {
   value: string;
   spec: FamilySpec;
   /** The value the question was written with. */
@@ -67,7 +67,7 @@ export interface OptionVariants {
 const LETTERS = ["A", "B", "C", "D", "E"];
 
 /** The value the question has now for `option`; a Slots question with both kinds of gap is `mixed`. */
-export function currentValue(spec: FamilySpec, option: string): string {
+function currentValue(spec: FamilySpec, option: string): string {
   if (spec.family === "slots" && option === "gap_kind") {
     const kinds = new Set(spec.data.gaps.map((g) => g.kind as string));
     return kinds.size === 1 ? ([...kinds][0] ?? "") : "mixed";
@@ -214,7 +214,7 @@ function rewritePlace(
 }
 
 /** The question with `option` set to `value`, or null when the pairing has no meaning. Not yet validated. */
-export function rewrite(spec: FamilySpec, option: string, value: string): FamilySpec | null {
+function rewrite(spec: FamilySpec, option: string, value: string): FamilySpec | null {
   const id = `${spec.id}~${option}=${value}`;
   switch (spec.family) {
     case "choose":
