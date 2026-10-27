@@ -6,8 +6,8 @@
  */
 
 import { type ReactNode, useEffect } from "react";
-import { installInkCaret } from "../parts/inkCaret.ts";
-import { installKeyboardFocus } from "../parts/keyboardFocus.ts";
+import { installInkCaret } from "./inkCaret.ts";
+import { installKeyboardFocus } from "./keyboardFocus.ts";
 
 export function LessonTheme({ children }: { children: ReactNode }): JSX.Element {
   // Zeszyt's 3px breathing caret over every typed field (the export's AnswerField), and the
