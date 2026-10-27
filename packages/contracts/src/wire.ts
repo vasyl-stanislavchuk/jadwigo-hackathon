@@ -8,7 +8,15 @@ import {
   QuestionType,
 } from "./families/index.ts";
 import { EventId, LearnerId, LessonQuestionId } from "./ids.ts";
-import { Added, Attempt, AttemptResult, Ended, Placed, SkipReason } from "./records.ts";
+import {
+  Added,
+  type Assignment,
+  Attempt,
+  type AttemptResult,
+  Ended,
+  Placed,
+  SkipReason,
+} from "./records.ts";
 
 /**
  * What crosses `/api/v1` during an attempt (decision
@@ -18,7 +26,29 @@ import { Added, Attempt, AttemptResult, Ended, Placed, SkipReason } from "./reco
  */
 
 const At = z.iso.datetime();
+/** A time the page sends: UTC or with its offset, so a device on local time is not refused. */
+const SentAt = z.iso.datetime({ offset: true });
 const Count = z.int().min(1);
+
+/**
+ * How a question ended, as the page sees it. While the assignment holds verdicts and the attempt
+ * is not finished, an ended question is `done`: `correct` or `skipped` would give the verdict away.
+ */
+export const PageEnded = z.enum([...Ended.options, "done"]);
+export type PageEnded = z.infer<typeof PageEnded>;
+
+/** Whether verdicts are held from the page now: the assignment holds them until the attempt finishes. */
+export function verdictsHeld(
+  assignment: Pick<Assignment, "hold_verdicts">,
+  attempt: Pick<Attempt, "status">,
+): boolean {
+  return assignment.hold_verdicts && attempt.status !== "finished";
+}
+
+export function pageEnded(ended: Ended | null, held: boolean): PageEnded | null {
+  if (ended === null) return null;
+  return held ? "done" : ended;
+}
 
 /** One rung of the help ladder, as released to the page. */
 export const ReleasedHelp = z.object({
@@ -51,7 +81,7 @@ export const PageAttemptQuestion = z.object({
   help: z.array(ReleasedHelp),
   /** Tries made so far, skips included. */
   tries: z.int().min(0),
-  ended: Ended.nullable(),
+  ended: PageEnded.nullable(),
   asked_at: At,
 });
 export type PageAttemptQuestion = z.infer<typeof PageAttemptQuestion>;
@@ -80,22 +110,27 @@ const AnswerFields = {
   seq: Count,
   try_no: Count,
   latency_ms: z.int().min(0),
-  asked_at: At,
-  answered_at: At,
+  asked_at: SentAt,
+  answered_at: SentAt,
 };
 
 /**
  * `POST /api/v1/attempts/{id}/answers`: one try, or a skip. Strict, so a field the server owns
  * (`correct`, `mistake_class`, `help_used`, a `skip_reason` of `help_twin`) is refused.
  */
-export const AttemptAnswerRequest = z.discriminatedUnion("kind", [
-  z.strictObject({ ...AnswerFields, kind: z.literal("try"), value: AnswerValue }),
-  z.strictObject({
-    ...AnswerFields,
-    kind: z.literal("skip"),
-    skip_reason: SkipReason.exclude(["help_twin"]),
-  }),
-]);
+export const AttemptAnswerRequest = z
+  .discriminatedUnion("kind", [
+    z.strictObject({ ...AnswerFields, kind: z.literal("try"), value: AnswerValue }),
+    z.strictObject({
+      ...AnswerFields,
+      kind: z.literal("skip"),
+      skip_reason: SkipReason.exclude(["help_twin"]),
+    }),
+  ])
+  .refine((a) => Date.parse(a.answered_at) >= Date.parse(a.asked_at), {
+    message: "an answer is given after its question is asked",
+    path: ["answered_at"],
+  });
 export type AttemptAnswerRequest = z.infer<typeof AttemptAnswerRequest>;
 
 /** What a correct try reveals from the key, once it can no longer give the answer away. */
@@ -118,8 +153,8 @@ export const AttemptAnswerResult = z.object({
   /** Which parts were correct after a miss, never the mistake class. */
   parts: z.array(PartMark).nullable(),
   reveal: Reveal.nullable(),
-  /** How the question ended, or null while it stays open after a miss. */
-  ended: Ended.nullable(),
+  /** How the question ended (`done` while verdicts are held), or null while it stays open after a miss. */
+  ended: PageEnded.nullable(),
   /** The question asked next, written as it is asked; null when this one stays open or the attempt finished. */
   next: PageAttemptQuestion.nullable(),
   attempt_status: Attempt.shape.status,
@@ -145,7 +180,7 @@ export const HelpResult = z.object({
   help_released: z.int().min(0),
   released: ReleasedHelp.nullable(),
   more: z.boolean(),
-  ended: Ended.nullable(),
+  ended: PageEnded.nullable(),
   next: PageAttemptQuestion.nullable(),
 });
 export type HelpResult = z.infer<typeof HelpResult>;
@@ -156,10 +191,41 @@ export const AttemptPatch = z.strictObject({
 });
 export type AttemptPatch = z.infer<typeof AttemptPatch>;
 
-/** `GET /api/v1/attempts/{id}/results`: the `attempt_result` view, in `seq` order. */
+/**
+ * One question of the child's after-lesson list: what was asked, how it ended and the help used.
+ * No tries, no time and no mistake classes: the list is not a score (decision
+ * `2026-10-27-the-child-s-after-lesson-list-shows-what-was-asked-how-it-ended`). The full
+ * `attempt_result` row is for the parent.
+ */
+export const PageAttemptResult = z.object({
+  seq: Count,
+  lesson_question_id: LessonQuestionId,
+  say: z.string(),
+  added: Added,
+  /** Null while the question is open. */
+  ended: PageEnded.nullable(),
+  help_used: z.int().min(0),
+});
+export type PageAttemptResult = z.infer<typeof PageAttemptResult>;
+
+export function pageAttemptResult(row: AttemptResult, held: boolean): PageAttemptResult {
+  return {
+    seq: row.seq,
+    lesson_question_id: row.lesson_question_id,
+    say: row.say,
+    added: row.added,
+    ended: pageEnded(row.ended, held),
+    help_used: row.help_used,
+  };
+}
+
+/**
+ * `GET /api/v1/attempts/{id}/results`: the list in `seq` order, readable mid-lesson too. While
+ * verdicts are held (`verdictsHeld`), each ended question is `done`.
+ */
 export const AttemptResults = z.object({
   attempt: Attempt,
-  results: z.array(AttemptResult),
+  results: z.array(PageAttemptResult),
 });
 export type AttemptResults = z.infer<typeof AttemptResults>;
 

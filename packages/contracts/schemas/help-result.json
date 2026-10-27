@@ -295,7 +295,8 @@
           "type": "string",
           "enum": [
             "correct",
-            "skipped"
+            "skipped",
+            "done"
           ]
         },
         {
@@ -11361,7 +11362,8 @@
                   "type": "string",
                   "enum": [
                     "correct",
-                    "skipped"
+                    "skipped",
+                    "done"
                   ]
                 },
                 {

@@ -11055,7 +11055,8 @@
           "type": "string",
           "enum": [
             "correct",
-            "skipped"
+            "skipped",
+            "done"
           ]
         },
         {
