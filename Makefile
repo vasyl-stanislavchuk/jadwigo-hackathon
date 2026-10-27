@@ -109,13 +109,15 @@ db-seed:
 	else echo "db-seed: no seed yet (dl-e8ov.2.32.5 adds packages/lesson-import's seed script)"; fi
 
 ## db-push ENV=dev|prod: show the migrations ENV's project lacks (a dry run), then push them only when
-## you type the ENV's name. DRY_RUN=1 stops after the dry run. One-way: a pushed migration stays.
+## you type the ENV's name, or pass it as CONFIRM=<env> where there is no keyboard (`!` in Claude Code).
+## DRY_RUN=1 stops after the dry run. One-way: a pushed migration stays.
 db-push:
 	@$(NOT_PROD_FROM_AGENT)
 	@$(SUPABASE_LINK); \
 	supabase db push --linked --dry-run || exit 1; \
 	if [ -n "$(DRY_RUN)" ]; then exit 0; fi; \
-	printf 'Push these to jadwigo-%s? Type %s to push: ' "$(ENV)" "$(ENV)"; read answer; \
+	answer="$(CONFIRM)"; \
+	if [ -z "$$answer" ]; then printf 'Push these to jadwigo-%s? Type %s to push (or pass CONFIRM=%s): ' "$(ENV)" "$(ENV)" "$(ENV)"; read answer; fi; \
 	if [ "$$answer" != "$(ENV)" ]; then echo "db-push: nothing pushed"; exit 1; fi; \
 	supabase db push --linked
 
