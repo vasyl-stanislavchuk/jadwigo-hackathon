@@ -596,7 +596,31 @@ export class InMemoryStore implements Store {
     if (question.ended === ended) return question;
     if (question.ended !== null)
       throw new StoreError(ErrorType.enum.QuestionNotOpen, "this question has ended");
+    if (ended === "missed") this.#mayMiss(pod, attempt, seq);
     return this.#replace({ ...question, ended });
+  }
+
+  /**
+   * `missed` only while verdicts are held, after a wrong try and no right one, as the
+   * `attempt_question_missed` trigger refuses it (migration 20261027210000_ended_missed.sql).
+   */
+  #mayMiss(pod: PodId, attempt: AttemptId, seq: number): void {
+    const { assignment_id } = this.#inPod(this.#attempts, pod, attempt, "the attempt");
+    if (!this.#inPod(this.#assignments, pod, assignment_id, "the assignment").hold_verdicts) {
+      throw new StoreError(
+        ErrorType.enum.BadRequest,
+        "a question ends missed only while its assignment holds verdicts",
+      );
+    }
+    const tries = [...this.#answers.values()].filter(
+      (a) => a.attempt_id === attempt && a.seq === seq && a.kind === "try",
+    );
+    if (!tries.some((a) => a.correct === false) || tries.some((a) => a.correct === true)) {
+      throw new StoreError(
+        ErrorType.enum.BadRequest,
+        "a question ends missed only after a wrong try and no right one",
+      );
+    }
   }
 
   async setAttemptStatus(

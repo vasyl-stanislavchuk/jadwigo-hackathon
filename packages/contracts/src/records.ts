@@ -206,7 +206,24 @@ export type Added = z.infer<typeof Added>;
 /** Where an added question went: straight after, or into the review round. */
 export const Placed = z.enum(["now", "review_round"]);
 export type Placed = z.infer<typeof Placed>;
-export const Ended = z.enum(["correct", "skipped"]);
+/**
+ * How an attempt question ended. An open question is `null`; it ends once (RULES.md rule 11).
+ *
+ * ```text
+ *                    the assignment's hold_verdicts
+ *                    off (practice)                  on, attempt not finished (a check)
+ * right try          correct                         correct
+ * wrong try          stays open: retry, help ladder  missed: no retry, no help after it
+ * Not sure yet,
+ * or help rung 4     skipped (and its twin)          skipped (and its twin)
+ * ```
+ *
+ * `missed` exists only while verdicts are held, so a second try can't give the verdict away
+ * (decision 2026-10-27-while-an-assignment-holds-verdicts-every-question-gets-one-try-a). The
+ * database and the Store refuse it unless the attempt's assignment holds verdicts and the
+ * question has a wrong try and no right one.
+ */
+export const Ended = z.enum(["correct", "skipped", "missed"]);
 export type Ended = z.infer<typeof Ended>;
 
 /** One asking of a lesson question in one attempt, written when it is asked (RULES.md rule 7). */

@@ -81,6 +81,8 @@ describe("held verdicts", () => {
   it("show an ended question as done, and an open one as open", () => {
     expect(pageEnded("correct", true)).toBe("done");
     expect(pageEnded("skipped", true)).toBe("done");
+    expect(pageEnded("missed", true)).toBe("done");
+    expect(pageEnded("missed", false)).toBe("missed");
     expect(pageEnded("correct", false)).toBe("correct");
     expect(pageEnded(null, true)).toBeNull();
   });

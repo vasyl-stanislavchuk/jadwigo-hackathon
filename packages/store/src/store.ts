@@ -204,7 +204,10 @@ export interface Store {
   ): Promise<{ readonly question: AttemptQuestion; readonly released: boolean }>;
   /**
    * Ends an open question, once. Ending it again the same way returns it; another way is
-   * `QuestionNotOpen`; a value outside `Ended` is `BadRequest`.
+   * `QuestionNotOpen`; a value outside `Ended` is `BadRequest`. `missed` is `BadRequest` unless
+   * the attempt's assignment holds verdicts and the question has a wrong try and no right one:
+   * while verdicts are held the caller ends a question after its first wrong try, so a 2nd try
+   * can't give the verdict away (`Ended` in `@jadwigo/contracts` has the table).
    */
   endAttemptQuestion(
     pod: PodId,

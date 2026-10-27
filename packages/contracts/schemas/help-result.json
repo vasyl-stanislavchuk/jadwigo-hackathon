@@ -296,6 +296,7 @@
           "enum": [
             "correct",
             "skipped",
+            "missed",
             "done"
           ]
         },
@@ -11363,6 +11364,7 @@
                   "enum": [
                     "correct",
                     "skipped",
+                    "missed",
                     "done"
                   ]
                 },

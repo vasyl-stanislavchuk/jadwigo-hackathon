@@ -44,12 +44,27 @@ const Count = z.int().min(1);
 
 /**
  * How a question ended, as the page sees it. While the assignment holds verdicts and the attempt
- * is not finished, an ended question is `done`: `correct` or `skipped` would give the verdict away.
+ * is not finished, an ended question is `done`: `correct`, `skipped` or `missed` would give the
+ * verdict away. Once the attempt finishes, the page sees the stored value.
+ *
+ * ```text
+ *                         stored ended           page, while held       page, after finish
+ * right try               correct                done                   correct
+ * wrong try (held only)   missed                 done                   missed
+ * Not sure yet / rung 4   skipped                done                   skipped
+ * still open              null                   null                   (cannot finish open)
+ * ```
  */
 export const PageEnded = z.enum([...Ended.options, "done"]);
 export type PageEnded = z.infer<typeof PageEnded>;
 
-/** Whether verdicts are held from the page now: the assignment holds them until the attempt finishes. */
+/**
+ * Whether verdicts are held from the page now: the assignment holds them until the attempt
+ * finishes. While they are held, the course gives each question one try: a right one ends it
+ * `correct`, a wrong one `missed`, and both go on to the next question the same way, with no
+ * retry and no help ladder after a miss (decision
+ * 2026-10-27-while-an-assignment-holds-verdicts-every-question-gets-one-try-a).
+ */
 export function verdictsHeld(
   assignment: Pick<Assignment, "hold_verdicts">,
   attempt: Pick<Attempt, "status">,
