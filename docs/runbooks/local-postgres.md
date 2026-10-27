@@ -1,46 +1,59 @@
-# Local Postgres that matches Supabase: Postgres.app 17 with pgTAP
+# Local Postgres that matches Supabase: a Postgres.app 17 server on port 5433, with pgTAP
 
-The owner runs this once per machine. Each worktree shares the result. It makes the local Postgres
-match prod's major version (17) and adds pgTAP, so migrations, row-level security and the pgTAP
-tests behave locally as they will on Supabase. Decision:
+Once per machine, and every worktree shares the result. It gives jadwigo a local Postgres on prod's
+major version (17), beside the 18 server that other projects use, plus pgTAP, so migrations,
+row-level security and pgTAP tests behave locally as they will on Supabase. Decision:
 `jadwigo-platform/decisions/2026-10-27-jadwigo-runs-on-a-prod-and-a-dev-supabase-project-a-native-local`.
+
+The agent runs every step it may. The steps the owner must run are in one script, at the end.
+
+**Never stop the 18 server on 5432.** It holds other projects' databases. Jadwigo runs on its own
+17 server, on 5433.
 
 ## Before
 
-- Postgres.app is installed: `ls /Applications/Postgres.app`.
-- See what runs now: `psql -XAtc 'select version()' postgres`. On 2026-10-27 this showed 18.1.
-- `git`, `make` and `perl` are present: `git --version && make --version && perl -v | head -2`.
+- Postgres.app is the all-versions build (2.9.6 or later, versions 14 to 18):
+  `ls /Applications/Postgres.app/Contents/Versions` lists `17`.
+- The 18 server answers: `psql -p 5432 -XAtc 'show server_version' postgres` prints `18.x`.
 
-## Steps
+## Steps (agent)
 
-1. **Add a Postgres 17 server.** In Postgres.app, open the sidebar → **+** → version **17**, port
-   **5432**. Stop the 18 server first, since both cannot hold 5432. Initialize and start 17.
-   You should see: `psql -XAtc 'show server_version' postgres` prints `17.x`.
-2. **Point the shell at 17's tools.**
-   `sudo mkdir -p /etc/paths.d && echo /Applications/Postgres.app/Contents/Versions/17/bin | sudo tee /etc/paths.d/postgresapp`,
-   then open a new terminal.
-   You should see: `pg_config --version` prints `PostgreSQL 17.x`.
-3. **Install pgTAP into 17.** It is plain SQL and needs no compiler:
-   ```
-   git clone --depth 1 --branch v1.3.3 https://github.com/theory/pgtap.git /tmp/pgtap
-   make -C /tmp/pgtap && make -C /tmp/pgtap install
-   ```
-   You should see: `psql -XAtc "select default_version from pg_available_extensions where name = 'pgtap'" postgres` prints `1.3.3`, the version prod has.
-4. **Install `pg_prove`:** `sudo cpan TAP::Parser::SourceHandler::pgTAP`.
-   You should see: `pg_prove --version` prints a version.
-5. **Recreate the 2 local databases on 17:** `make db`, from any jadwigo worktree.
-   You should see: `psql -lqt | cut -d'|' -f1 | grep -E '^ *jadwigo'` lists `jadwigo` and `jadwigo_test`.
+1. **Install the all-versions build if `17` is missing.** Download
+   `Postgres-<v>-14-15-16-17-18.dmg` from the PostgresApp releases on GitHub, and check its SHA-256
+   against the release's digest. Mount it, and verify it with `codesign --verify --deep --strict`. Then:
+   - quit Postgres.app, and stop the 18 server with its own `pg_ctl -m fast`;
+   - move the old app aside as a backup, and `ditto` the new one in;
+   - open Postgres.app.
+   You should see: the 18 server back on 5432, and its databases answering.
+2. **Create the 17 data directory:**
+   `Versions/17/bin/initdb -D ~/Library/Application\ Support/Postgres/var-17 -U postgres --encoding=UTF8 --locale=en_US.UTF-8 --auth=trust`.
+3. **Register it in Postgres.app.** With the app quit:
+   `defaults write com.postgresapp.Postgres2 Servers -array-add '{binPath = "/Applications/Postgres.app/Contents/Versions/17/bin"; name = "PostgreSQL 17"; port = 5433; startOnLogin = 1; varPath = "…/var-17";}'`.
+4. **Start it** with `Versions/17/bin/pg_ctl -D …/var-17 -o "-p 5433 …" -w start`, then
+   `create role <you> superuser login`.
+   You should see: `psql -p 5433 -XAtc 'show server_version' postgres` prints `17.x`.
+5. **Create the databases:** `createdb -p 5433 jadwigo` and `createdb -p 5433 jadwigo_test`. Then set
+   `DATABASE_URL=postgresql://localhost:5433/jadwigo_test` in each worktree's `.env.local`.
+
+## Steps (owner, one script)
+
+6. pgTAP 1.3.3 into the 17 server, and `pg_prove`. Both install into system locations, so the owner
+   runs them. The agent hands over a script that clones pgTAP at `v1.3.3` and runs
+   `make PG_CONFIG=/Applications/Postgres.app/Contents/Versions/17/bin/pg_config install`, then
+   installs `TAP::Parser::SourceHandler::pgTAP` with `cpan`.
 
 ## After
 
 ```
-psql -XAtc "select current_setting('server_version'), (select default_version from pg_available_extensions where name='pgtap')" jadwigo_test
+psql -p 5433 -XAtc "select current_setting('server_version'), (select default_version from pg_available_extensions where name='pgtap')" jadwigo_test
 ```
 
-This prints `17.x|1.3.3`. Once the ops lane lands it, `bun tools/src/check-supabase-match.ts`
+This prints `17.x|1.3.3`, prod's versions. Once the ops lane lands it, `bun tools/src/check-supabase-match.ts`
 compares this server with `jadwigo-dev`.
 
 ## Undo
 
-Two-way. Stop the 17 server and start 18 again in Postgres.app, then remove `/etc/paths.d/postgresapp`
-or point it back. The 18 server's data is untouched.
+Two-way, and the 18 server is never touched:
+- stop the 17 server (`pg_ctl -D …/var-17 stop`);
+- remove its entry from the `Servers` preference and delete `var-17`;
+- to go back to the old app, quit Postgres.app and move the backup over `/Applications/Postgres.app`.
