@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "icon": {
+          "type": "string",
+          "enum": [
+            "apple",
+            "banana",
+            "cherry",
+            "grape",
+            "candy",
+            "cookie",
+            "ice_cream",
+            "pizza",
+            "egg",
+            "sun",
+            "cloud",
+            "rain",
+            "snow",
+            "flower",
+            "leaf",
+            "dog",
+            "cat",
+            "fish",
+            "bird",
+            "star",
+            "heart",
+            "smile",
+            "book",
+            "pencil",
+            "car",
+            "bus",
+            "square"
+          ]
+        }
+      },
+      "required": [
+        "icon"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "src": {
+          "type": "string"
+        },
+        "alt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "src",
+        "alt"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

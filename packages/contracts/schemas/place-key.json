@@ -1,0 +1,348 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "surface": {
+          "type": "string",
+          "const": "number_line"
+        },
+        "value": {
+          "type": "number"
+        },
+        "tolerance": {
+          "type": "number"
+        },
+        "rule": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "rule": {
+                  "type": "string",
+                  "const": "times_table"
+                },
+                "a": {
+                  "type": "number"
+                },
+                "b": {
+                  "type": "number"
+                },
+                "recent": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              },
+              "required": [
+                "rule",
+                "a",
+                "b",
+                "recent"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "rule": {
+                  "type": "string",
+                  "const": "fill_blank"
+                },
+                "template": {
+                  "type": "string"
+                },
+                "operands": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "op": {
+                  "type": "string",
+                  "enum": [
+                    "add",
+                    "sub",
+                    "mul",
+                    "div"
+                  ]
+                },
+                "recent": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              },
+              "required": [
+                "rule",
+                "template",
+                "operands",
+                "op",
+                "recent"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "rule": {
+                  "type": "string",
+                  "const": "number_line"
+                },
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "place",
+                    "read"
+                  ]
+                },
+                "min": {
+                  "type": "number"
+                },
+                "max": {
+                  "type": "number"
+                },
+                "step": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "rule",
+                "mode",
+                "min",
+                "max",
+                "step"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": [
+        "surface",
+        "value",
+        "tolerance"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "surface": {
+          "type": "string",
+          "const": "image"
+        },
+        "targets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "polygon": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "x",
+                    "y"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "id",
+              "polygon"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "near": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "polygon": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "x",
+                    "y"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "mistake_class": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "polygon",
+              "mistake_class"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "require_all": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "surface",
+        "targets",
+        "require_all"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "surface": {
+          "type": "string",
+          "const": "grid"
+        },
+        "rows": {
+          "type": "number"
+        },
+        "cols": {
+          "type": "number"
+        },
+        "either_order": {
+          "type": "boolean"
+        },
+        "off_by_one": {
+          "type": "boolean"
+        },
+        "split": {
+          "type": "object",
+          "properties": {
+            "accept_at": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "surface",
+        "rows",
+        "cols",
+        "either_order"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "surface": {
+          "type": "string",
+          "const": "bars"
+        },
+        "heights": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "tolerance": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "surface",
+        "heights"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "surface": {
+          "type": "string",
+          "const": "clock"
+        },
+        "h": {
+          "type": "number"
+        },
+        "m": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "surface",
+        "h",
+        "m"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "surface": {
+          "type": "string",
+          "const": "coins"
+        },
+        "amount_gr": {
+          "type": "number"
+        },
+        "fewest": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "surface",
+        "amount_gr"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "surface": {
+          "type": "string",
+          "const": "fraction"
+        },
+        "count": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "surface",
+        "count"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}
