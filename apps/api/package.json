@@ -12,6 +12,7 @@
     "test": "vitest run --config ../../vitest.config.ts --project unit"
   },
   "//": {
+    "@aws-lambda-powertools/event-handler": "the router the /api/v1 routes register on (dl-e8ov.2.32.6)",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit test with the root vitest.config.ts"
@@ -20,5 +21,8 @@
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "dependencies": {
+    "@aws-lambda-powertools/event-handler": "2.36.0"
   }
 }

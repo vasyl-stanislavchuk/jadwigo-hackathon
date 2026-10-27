@@ -50,9 +50,10 @@ tracker. A workstream owns a scope on it: its epics, and the label every open is
 | `apps/web` | the app at app.jadwigo.pl: lesson player, parent screens | packages | learner-experience |
 | `apps/site` | the marketing site, jadwigo.pl and jadwigo.kids | packages | marketing |
 | `apps/cli` | `jw`, Python and Click, later `jw mcp serve` | nothing of ours | ai-workflows |
-| `packages/contracts` | Zod schemas: ids, lesson script, answers, routes, errors; JSON Schema snapshots | Zod only | platform |
+| `packages/contracts` | Zod schemas: ids, family schemas, records, the attempt wire, the `/api/v1` route table, errors; `RULES.md`; JSON Schema snapshots | Zod only | platform |
 | `packages/core` | grading, numbers, mastery: pure functions | contracts | learner-knowledge |
-| `packages/store` | the `Store` interface, in-memory and Postgres | contracts, core, config | platform |
+| `packages/store` | the `Store` interface, in-memory and Postgres, and the contract suite both pass | contracts, core, config | platform |
+| `packages/lesson-import` | compiles a playground lesson file into lesson questions and a published version (`dl-e8ov.2.32.5`) | contracts, store | platform |
 | `packages/bank` | bank code: read, search, import. Never questions | contracts | question-bank |
 | `packages/api-client` | the typed client web, cli and MCP share | contracts | platform |
 | `packages/lesson-kit` | interaction families and lesson blocks | contracts, core, ui, copy | learner-experience |
@@ -66,7 +67,7 @@ tracker. A workstream owns a scope on it: its epics, and the label every open is
 | `lint/` | GritQL house rules for Biome (`lint/README.md`) | n/a | platform |
 | `docs/` | how it works: workstreams, research, drops, runbooks, worklog (`docs/README.md`) | n/a | each its own |
 | `infra/` | Terraform, one root module (`dl-5ssh.34.4`) | n/a | platform |
-| `supabase/` | migrations and their tests (`dl-5ssh.34.34`) | n/a | platform |
+| `supabase/` | migrations, the Supabase shim and the pgTAP tests (`supabase/README.md`) | n/a | platform |
 | `.claude/` | hooks, the guard, settings, and links to both kinds of instructions | n/a | platform |
 | `.github/` | CI, the setup action, the ruleset, CODEOWNERS, Renovate's labels | n/a | platform |
 
@@ -86,7 +87,8 @@ Not in the repo, on purpose: decisions (the md context brain), the question bank
 | The gate before you finish | `make check`: lint, typecheck and test on what changed (`turbo --affected`), then the repo checks |
 | Everything | `make check-all` |
 | One package | `bunx turbo run lint typecheck test --filter=./packages/core` |
-| Integration tests | `DATABASE_URL=postgresql://localhost/jadwigo_test bunx turbo run test:int` |
+| Integration tests | `make migrate`, then `bunx turbo run test:int` (`DATABASE_URL` from `.env.local`: Postgres.app 17 on port 5433) |
+| Migrations and their pgTAP tests | `make migrate && make pgtap` (plain Postgres, no Docker) |
 | Drops | `make drops` (`md drops check` on each); build one with `/dev-drop` |
 | Workflow and dev command links | `make skills` |
 
