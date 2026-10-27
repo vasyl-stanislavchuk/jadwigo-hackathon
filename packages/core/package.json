@@ -1,6 +1,6 @@
 {
   "name": "@jadwigo/core",
-  "description": "Pure logic: grading, numbers, mastery, FSRS (the Python port, dl-5ssh.34.5)",
+  "description": "Pure logic: the family judges, the help release, grading, numbers, mastery",
   "private": true,
   "type": "module",
   "exports": {
@@ -15,12 +15,18 @@
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit test with the root vitest.config.ts",
-    "fast-check": "the property tests in src/*.test.ts (score.test.ts today)"
+    "fast-check": "the property tests in src/*.test.ts and src/families/*.test.ts",
+    "@jadwigo/contracts": "the family question, value, verdict and help types the judges and the help release read",
+    "@jadwigo/testing": "the playground's golden corpus that src/families/golden.test.ts holds the judges to"
+  },
+  "dependencies": {
+    "@jadwigo/contracts": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
-    "fast-check": "catalog:"
+    "fast-check": "catalog:",
+    "@jadwigo/testing": "workspace:*"
   }
 }
