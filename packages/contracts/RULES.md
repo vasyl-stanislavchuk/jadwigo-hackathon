@@ -38,10 +38,15 @@ The words themselves are in the root `GLOSSARY.md`. Rules marked **(tested)** fa
    - a count is `<thing>_<verb>` (`help_released`) or a plural noun (`tries`);
    - a boolean is an adjective or a verb phrase (`correct`, `hold_verdicts`), never `is_`;
    - a jsonb column is a noun for what it holds (`data`, `key`, `help`, `credit`, `based_on`). **(tested: `_at`, `_ms`)**
-7. **Order has 3 words:**
-   - `position` is a question's place in a version's plan;
-   - `seq` is its place in what an attempt actually played;
-   - `try_no` is a try within one attempt question.
+7. **Order has 3 words, each a dense count from 1:**
+   - `position` is a question's place in a version's list: the planned questions first, 1 to n,
+     then the spares from n + 1. It is fixed when the version is published.
+   - `seq` is a question's place in what one attempt actually played. An attempt question is written
+     when it is asked, never ahead, so `seq` is the play order, a twin placed `now` simply takes the
+     next `seq`, and nothing is ever renumbered. What comes next is worked out from the version's
+     positions, the questions already asked and the twins still owed.
+   - `try_no` counts the rows of one attempt question, 1, 2, 3. A skip is a row too and takes the
+     next `try_no`, so `unique (attempt_id, seq, try_no)` covers it.
 8. **Ids** are `uuid` columns, v4 by default. On the wire and in `jw`, an id is its prefix plus 26
    lowercase Crockford base32 characters. The prefixes are registered in `src/ids.ts`: `pod_`,
    `lrn_`, `les_`, `lesv_`, `lq_`, `asg_`, `att_`. A record keyed by its owner's key, such as
