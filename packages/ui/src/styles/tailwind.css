@@ -13,6 +13,10 @@
  * the neutral tools keep theirs (LessonTheme in packages/lesson-kit sets the attribute). */
 @import "./foundation.css";
 @import "./lesson.css";
+/* Tailwind scans the app it is built in, and skips node_modules, where the workspace packages are
+ * linked: their classes are named here, or a class only a part uses is never generated. */
+@source "../../../lesson-kit/src";
+@source "..";
 
 /* dark: follows [theme='dark'], where tokens.css and kids.css keep their dark values. */
 @custom-variant dark (&:where([theme="dark"], [theme="dark"] *));
