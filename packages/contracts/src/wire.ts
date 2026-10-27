@@ -26,8 +26,11 @@ import {
  */
 
 const At = z.iso.datetime();
-/** A time the page sends: UTC or with its offset, so a device on local time is not refused. */
-const SentAt = z.iso.datetime({ offset: true });
+/**
+ * A time the page sends: UTC or with its offset, so a device on local time is not refused. A
+ * time with no zone is refused: it could mean any instant. The store keeps it in UTC.
+ */
+export const SentAt = z.iso.datetime({ offset: true });
 const Count = z.int().min(1);
 
 /**

@@ -406,7 +406,31 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         );
         expect(Date.parse(stored.asked_at)).toBe(Date.parse("2026-09-01T08:00:00Z"));
         expect(Date.parse(stored.answered_at)).toBe(Date.parse("2026-09-01T08:00:01.500Z"));
-        expect(stored.answered_at).toMatch(/Z$/);
+        for (const at of [stored.asked_at, stored.answered_at]) {
+          expect(at).toMatch(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/);
+        }
+        const [read] = (await store.getAttempt(a.pod, attempt)).answers;
+        expect(read).toEqual(stored);
+      });
+
+      it("refuse a time with no zone, or not a time, with BadRequest, on any host", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        for (const answered_at of [
+          "2026-09-01T10:00:00",
+          "2026-09-01",
+          "Tue, 01 Sep 2026 10:00:00 GMT",
+          "09/01/2026",
+        ]) {
+          await expect(
+            store.appendAttemptAnswer(
+              a.pod,
+              answer(attempt, 1, 1, { entered: "5" }, false, { answered_at }),
+            ),
+            answered_at,
+          ).rejects.toMatchObject(BAD_REQUEST);
+        }
+        expect((await store.getAttempt(a.pod, attempt)).answers).toEqual([]);
       });
 
       it("refuse an answer given before its question was asked with BadRequest", async () => {

@@ -179,8 +179,9 @@ export interface Store {
    * - the same `event_id` with another body or for another try is `EventIdMismatch`;
    * - a try's `value` that is not its question's family's shape is `BadRequest` (a shape check
    *   only: whether the ids exist or the text is empty is the judge's, which marks it);
-   * - `asked_at` and `answered_at` may carry an offset and are kept in UTC; an answer before its
-   *   question was asked is `BadRequest`;
+   * - `asked_at` and `answered_at` may carry an offset and are kept in UTC to the millisecond
+   *   (`2026-09-01T08:00:00.000Z`); a time with no zone, or an answer before its question was
+   *   asked, is `BadRequest`;
    * - another `event_id` for a stored `(attempt_id, seq, try_no)` is `AnswerConflict`;
    * - a `try_no` that is not the question's next is `TryOutOfOrder`;
    * - an ended question is `QuestionNotOpen`; a paused attempt `AttemptPaused`; a finished one `AttemptFinished`.

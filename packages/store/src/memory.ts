@@ -21,6 +21,7 @@ import {
   type LessonVersionQuestion,
   Pod,
   type PodId,
+  SentAt,
   valueFor,
 } from "@jadwigo/contracts";
 import { attemptResults } from "./result.ts";
@@ -54,10 +55,13 @@ function parse<T>(schema: Schema<T>, value: unknown, what: string): T {
   return result.data;
 }
 
-/** A time as the store keeps it, in UTC as timestamptz gives it back; any other text is left to the parser. */
+/**
+ * A sent time as the store keeps it: in UTC, to the millisecond. Only a time `SentAt` takes is
+ * converted, so a time with no zone is never read in the host's zone; anything else is left for
+ * the record's parser to refuse.
+ */
 function utc(at: string): string {
-  const ms = Date.parse(at);
-  return Number.isNaN(ms) ? at : new Date(ms).toISOString();
+  return SentAt.safeParse(at).success ? new Date(Date.parse(at)).toISOString() : at;
 }
 
 /** A fresh id for a record, a v4 uuid written as the wire id. */

@@ -1,7 +1,7 @@
 -- Row-level security keeps pods apart (RULES.md rule 12, decision
 -- 2026-10-27-before-supabase-auth-row-level-security-reads-the-caller-s-pod-f).
 begin;
-select plan(13);
+select plan(15);
 \ir _fixture.sql
 
 -- How many of pod A's rows the caller can read, across every table and the view.
@@ -43,6 +43,19 @@ select is(
    where table_schema = 'public' and grantee in ('anon', 'authenticated', 'service_role')),
   0::bigint,
   'anon, authenticated and service_role hold no grant on any table or view'
+);
+
+create function app.made_later() returns int language sql security definer as 'select 1';
+select ok(
+  not has_schema_privilege('anon', 'app', 'usage')
+    and not has_schema_privilege('authenticated', 'app', 'usage')
+    and not has_schema_privilege('service_role', 'app', 'usage'),
+  'a function made later in app is not callable by anon, authenticated or service_role'
+);
+select ok(
+  has_schema_privilege('jadwigo_api', 'app', 'usage')
+    and has_function_privilege('jadwigo_api', 'app.made_later()', 'execute'),
+  'a function made later in app is callable by jadwigo_api'
 );
 
 set local role jadwigo_api;

@@ -488,4 +488,10 @@ begin
 end
 $$;
 revoke all on all functions in schema app from public;
+-- Postgres gives every new function EXECUTE for PUBLIC, a global default a schema-level revoke
+-- can't remove (and a global revoke would reach extensions too). Calling a function also needs
+-- USAGE on its schema, and only jadwigo_api has it on app (above), so a later security definer
+-- function there can't be called by anon, authenticated or service_role. rls.test.sql pins it.
+revoke all on schema app from public;
+alter default privileges in schema app grant execute on functions to jadwigo_api;
 grant execute on all functions in schema app to jadwigo_api;
