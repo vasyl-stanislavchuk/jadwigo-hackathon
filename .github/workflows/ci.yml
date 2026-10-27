@@ -215,12 +215,27 @@ jobs:
           fi
           gitleaks git --redact --no-banner --config .gitleaks.toml "$@"
 
-  # OPEN: a browser job (a Playwright smoke that plays one sample lesson) joins ci-ok when apps/web
-  # serves, with the playground port (dl-5ssh.34.6). Component tests already run in the unit job
-  # (Vitest's dom project, happy-dom).
+  # The browser smoke: apps/web built and served, played at 390 and 1280 (apps/web/e2e). Component
+  # tests run in the unit job (Vitest's dom project, happy-dom); this is the one real browser.
+  browser:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Chromium for Playwright
+        working-directory: apps/web
+        run: bunx playwright install --with-deps chromium
+      - name: The playground smoke
+        working-directory: apps/web
+        run: bunx playwright test
 
   ci-ok:
-    needs: [changes, lint, typecheck, unit, integration, supabase, contracts, docs, fence-checks, gitleaks]
+    needs: [changes, lint, typecheck, unit, integration, supabase, contracts, docs, fence-checks, gitleaks, browser]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
