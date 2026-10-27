@@ -11,9 +11,6 @@
     "apps/api": {
       "ignoreDependencies": ["@aws-lambda-powertools/event-handler"]
     },
-    "packages/lesson-import": {
-      "ignoreDependencies": ["@jadwigo/contracts", "@jadwigo/store"]
-    },
     "packages/store": {
       "ignoreDependencies": ["kysely"]
     }

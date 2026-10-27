@@ -1,0 +1,2643 @@
+{
+  "id": "multiplication-times-four",
+  "title": {
+    "pl": "Razy cztery: podwójne razy dwa",
+    "uk": "Помножити на чотири: подвоєне на два",
+    "en": "Times four: double times two"
+  },
+  "flavour": "child-pl-maths",
+  "language": "pl",
+  "category": "child",
+  "subject": "math",
+  "reasoning": {
+    "pl": "Pierwsza lekcja do celu „podstawy mnożenia”. Rzędy 2, 5 i 10 są fundamentem, a tabliczkę razy cztery buduje się z nich przez podwajanie: 4 × 7 to dwa razy 2 × 7. Lekcja idzie od przedmiotów, przez prostokąt, do zapisu, a potem ćwiczy to samo na pięć sposobów. Ułożona ręcznie z pytań banku tabliczki mnożenia i Khan Academy, na plac zabaw, jeszcze nie z zapisu ucznia.",
+    "uk": "Перший урок до мети «основи множення». Ряди 2, 5 і 10 є фундаментом, а таблицю множення на чотири будують із них подвоєнням: 4 × 7 це двічі 2 × 7. Урок іде від предметів, через прямокутник, до запису, а потім вправляє те саме пʼятьма способами. Складений вручну з питань банку таблиці множення і Khan Academy, для пісочниці, ще не з записів учня.",
+    "en": "The first lesson toward the basic-multiplication goal. Rows 2, 5 and 10 are the foundation, and the four times table is built from them by doubling: 4 × 7 is 2 × 7 twice. The lesson goes from objects, through a rectangle, to the written fact, then practises it five ways. Composed by hand from the times-table bank and Khan Academy questions, for the playground, not yet from a learner’s record."
+  },
+  "can_do": [
+    {
+      "id": "curriculum/math/multiplication/strategy-doubling",
+      "text": {
+        "pl": "Umiem policzyć razy cztery: podwajam razy dwa.",
+        "uk": "Я вмію множити на чотири: подвоюю множення на два.",
+        "en": "I can work out times four by doubling times two."
+      }
+    },
+    {
+      "id": "curriculum/math/multiplication/row-4",
+      "text": {
+        "pl": "Znam wyniki 4 × 6, 4 × 7, 4 × 8 i 4 × 9.",
+        "uk": "Я знаю, скільки буде 4 × 6, 4 × 7, 4 × 8 і 4 × 9.",
+        "en": "I know 4 × 6, 4 × 7, 4 × 8 and 4 × 9."
+      }
+    },
+    {
+      "id": "curriculum/math/multiplication/row-2",
+      "text": {
+        "pl": "Pamiętam tabliczkę razy dwa.",
+        "uk": "Я памʼятаю таблицю множення на два.",
+        "en": "I remember the two times table."
+      }
+    }
+  ],
+  "reviewed": false,
+  "script": {
+    "parts": [
+      {
+        "part": "warm_up",
+        "steps": [
+          {
+            "id": "s01",
+            "skill_ids": [],
+            "based_on": {
+              "question": "authored:multiplication-times-four",
+              "changes": []
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Powitanie i plan: co dziś poznamy.",
+                "uk": "Привітання і план: що сьогодні дізнаємося.",
+                "en": "A hello and the plan: what we learn today."
+              }
+            },
+            "say": {
+              "pl": "Cześć! Dziś poznasz sprytny sposób na tabliczkę razy cztery. Najpierw krótka rozgrzewka z dwójkami.",
+              "uk": "Привіт! Сьогодні ти дізнаєшся хитрий спосіб для таблиці множення на чотири. Спершу коротка розминка з двійками.",
+              "en": "Hi! Today you will learn a clever way into the four times table. First, a short warm-up with twos."
+            },
+            "teach": {
+              "text": {
+                "pl": "Dziś: razy cztery to podwójne razy dwa.",
+                "uk": "Сьогодні: помножити на чотири це подвоєне множення на два.",
+                "en": "Today: times four is times two, doubled."
+              }
+            }
+          },
+          {
+            "id": "s02",
+            "question_type": "production",
+            "skill_ids": ["curriculum/math/multiplication/row-2"],
+            "based_on": {
+              "question": "bank:times-table.pl#k1-01",
+              "changes": []
+            },
+            "reason": {
+              "brief": "review",
+              "why": {
+                "pl": "Ciepły start: fakt z rzędu 2, który zna. Dziś go podwoimy (praktyka przypominania).",
+                "uk": "Теплий початок: факт із ряду 2, який він знає. Сьогодні ми його подвоїмо (практика пригадування).",
+                "en": "A warm start: a row-2 fact he knows. Today we double it (retrieval practice)."
+              }
+            },
+            "say": {
+              "pl": "Ile to jest 2 razy 7? Napisz albo powiedz.",
+              "uk": "Скільки буде 2 помножити на 7? Напиши або скажи.",
+              "en": "What is 2 times 7? Type or say it."
+            },
+            "question": {
+              "family": "enter",
+              "data": {
+                "input": "number",
+                "entry": "keypad",
+                "voice": true,
+                "figure": {
+                  "kind": "expression",
+                  "text": "2 × 7 = ?"
+                }
+              },
+              "key": {
+                "accept": ["14"],
+                "near": {
+                  "9": "add_for_multiply",
+                  "12": "neighbour_row",
+                  "16": "neighbour_row"
+                },
+                "rule": {
+                  "rule": "times_table",
+                  "a": 2,
+                  "b": 7,
+                  "recent": []
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Spójrz jeszcze raz na obie liczby w zadaniu.",
+                    "uk": "Подивися ще раз на обидва числа в завданні.",
+                    "en": "Look again at both numbers in the task."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Spróbuj narysować to jako równe grupy kropek.",
+                    "uk": "Спробуй намалювати це як рівні групи крапок.",
+                    "en": "Try drawing it as equal groups of dots."
+                  }
+                },
+                "boost_by_mistake": {
+                  "add_for_multiply": {
+                    "text": {
+                      "pl": "Tu jest „razy”, a nie „dodać”. 2 × 7 to 2 razy po 7.",
+                      "uk": "Тут «помножити», а не «додати». 2 × 7 це 2 рази по 7.",
+                      "en": "This is “times”, not “plus”. 2 × 7 is 2 lots of 7."
+                    }
+                  },
+                  "neighbour_row": {
+                    "text": {
+                      "pl": "Ta liczba jest w tabliczce o jeden krok obok. Policz jeszcze raz, ile jest grup.",
+                      "uk": "Це число в таблиці на один крок поруч. Порахуй ще раз, скільки груп.",
+                      "en": "That number is one step away in the times table. Count again how many groups there are."
+                    }
+                  }
+                },
+                "almost": [
+                  {
+                    "pl": "2 × 7 to 7 + 7.",
+                    "uk": "2 × 7 це 7 + 7.",
+                    "en": "2 × 7 is 7 + 7."
+                  },
+                  "7 + 7 = □"
+                ],
+                "worked": [
+                  {
+                    "pl": "2 × 7 to 7 + 7.",
+                    "uk": "2 × 7 це 7 + 7.",
+                    "en": "2 × 7 is 7 + 7."
+                  },
+                  "7 + 7 = 14"
+                ],
+                "twin": {
+                  "say": {
+                    "pl": "Ile to jest 7 razy 2? Napisz albo powiedz.",
+                    "uk": "Скільки буде 7 помножити на 2? Напиши або скажи.",
+                    "en": "What is 7 times 2? Type or say it."
+                  },
+                  "family": "enter",
+                  "data": {
+                    "input": "number",
+                    "entry": "keypad",
+                    "voice": true,
+                    "figure": {
+                      "kind": "expression",
+                      "text": "7 × 2 = ?"
+                    }
+                  },
+                  "key": {
+                    "accept": ["14"],
+                    "near": {
+                      "9": "add_for_multiply",
+                      "12": "neighbour_row",
+                      "16": "neighbour_row"
+                    },
+                    "rule": {
+                      "rule": "times_table",
+                      "a": 7,
+                      "b": 2,
+                      "recent": []
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz 14",
+                  "uk": "Запиши 14",
+                  "en": "Type 14"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "entered": "14"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz 9 (dodane zamiast pomnożonych)",
+                  "uk": "Запиши 9 (додано замість множення)",
+                  "en": "Type 9 (added, not multiplied)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "add_for_multiply",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka „razy, nie dodać”",
+                  "uk": "лишається на кроці, підказка «помножити, не додати»",
+                  "en": "stays on the step, the “times, not plus” hint"
+                },
+                "value": {
+                  "entered": "9"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz 16 (rząd obok)",
+                  "uk": "Запиши 16 (сусідній рядок)",
+                  "en": "Type 16 (the row next door)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "neighbour_row",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "16"
+                }
+              }
+            ]
+          },
+          {
+            "id": "s03",
+            "question_type": "recognition",
+            "skill_ids": ["curriculum/math/multiplication/row-2"],
+            "based_on": {
+              "question": "bank:times-table.pl#k1-13",
+              "changes": []
+            },
+            "reason": {
+              "brief": "review",
+              "why": {
+                "pl": "Drugi fakt z rzędu 2, tym razem do wybrania. Przyda się w części o podwajaniu.",
+                "uk": "Другий факт із ряду 2, цього разу на вибір. Знадобиться в частині про подвоєння.",
+                "en": "A second row-2 fact, picked this time. The doubling part uses it."
+              }
+            },
+            "say": {
+              "pl": "Ile to jest 2 razy 8? Wybierz liczbę.",
+              "uk": "Скільки буде 2 помножити на 8? Вибери число.",
+              "en": "What is 2 times 8? Pick the number."
+            },
+            "question": {
+              "family": "choose",
+              "data": {
+                "options": [
+                  {
+                    "id": "o1",
+                    "content": {
+                      "kind": "number",
+                      "number": 10
+                    }
+                  },
+                  {
+                    "id": "o2",
+                    "content": {
+                      "kind": "number",
+                      "number": 14
+                    }
+                  },
+                  {
+                    "id": "o3",
+                    "content": {
+                      "kind": "number",
+                      "number": 16
+                    }
+                  },
+                  {
+                    "id": "o4",
+                    "content": {
+                      "kind": "number",
+                      "number": 18
+                    }
+                  }
+                ],
+                "select": "one",
+                "layout": "grid"
+              },
+              "key": {
+                "correct": ["o3"],
+                "near": {
+                  "o1": "add_for_multiply",
+                  "o2": "neighbour_row",
+                  "o4": "neighbour_row"
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Spójrz na wszystkie liczby, zanim wybierzesz.",
+                    "uk": "Подивися на всі числа, перш ніж вибрати.",
+                    "en": "Look at all the numbers before you choose."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Spróbuj narysować to jako równe grupy kropek.",
+                    "uk": "Спробуй намалювати це як рівні групи крапок.",
+                    "en": "Try drawing it as equal groups of dots."
+                  }
+                },
+                "boost_by_mistake": {
+                  "add_for_multiply": {
+                    "text": {
+                      "pl": "Tu jest „razy”, a nie „dodać”. 2 × 8 to 2 razy po 8.",
+                      "uk": "Тут «помножити», а не «додати». 2 × 8 це 2 рази по 8.",
+                      "en": "This is “times”, not “plus”. 2 × 8 is 2 lots of 8."
+                    }
+                  },
+                  "neighbour_row": {
+                    "text": {
+                      "pl": "Ta liczba jest w tabliczce o jeden krok obok. Policz jeszcze raz, ile jest grup.",
+                      "uk": "Це число в таблиці на один крок поруч. Порахуй ще раз, скільки груп.",
+                      "en": "That number is one step away in the times table. Count again how many groups there are."
+                    }
+                  }
+                },
+                "almost": [
+                  {
+                    "pl": "2 × 8 to 8 + 8.",
+                    "uk": "2 × 8 це 8 + 8.",
+                    "en": "2 × 8 is 8 + 8."
+                  },
+                  "8 + 8 = □"
+                ],
+                "worked": [
+                  {
+                    "pl": "2 × 8 to 8 + 8.",
+                    "uk": "2 × 8 це 8 + 8.",
+                    "en": "2 × 8 is 8 + 8."
+                  },
+                  "8 + 8 = 16"
+                ],
+                "twin": {
+                  "say": {
+                    "pl": "Ile to jest 5 razy 7? Wybierz liczbę.",
+                    "uk": "Скільки буде 5 помножити на 7? Вибери число.",
+                    "en": "What is 5 times 7? Pick the number."
+                  },
+                  "family": "choose",
+                  "data": {
+                    "options": [
+                      {
+                        "id": "o1",
+                        "content": {
+                          "kind": "number",
+                          "number": 12
+                        }
+                      },
+                      {
+                        "id": "o2",
+                        "content": {
+                          "kind": "number",
+                          "number": 30
+                        }
+                      },
+                      {
+                        "id": "o3",
+                        "content": {
+                          "kind": "number",
+                          "number": 35
+                        }
+                      },
+                      {
+                        "id": "o4",
+                        "content": {
+                          "kind": "number",
+                          "number": 40
+                        }
+                      }
+                    ],
+                    "select": "one",
+                    "layout": "grid"
+                  },
+                  "key": {
+                    "correct": ["o3"],
+                    "near": {
+                      "o1": "add_for_multiply",
+                      "o2": "neighbour_row",
+                      "o4": "neighbour_row"
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Dotknij 16",
+                  "uk": "Торкнися 16",
+                  "en": "Tap 16"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "chosen": ["o3"]
+                }
+              },
+              {
+                "try": {
+                  "pl": "Dotknij 10 (dodane zamiast pomnożonych)",
+                  "uk": "Торкнися 10 (додано замість множення)",
+                  "en": "Tap 10 (added, not multiplied)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "add_for_multiply",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "chosen": ["o1"]
+                }
+              },
+              {
+                "try": {
+                  "pl": "Dotknij 14 (rząd obok)",
+                  "uk": "Торкнися 14 (сусідній рядок)",
+                  "en": "Tap 14 (the row next door)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "neighbour_row",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "chosen": ["o2"]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "part": "teach",
+        "steps": [
+          {
+            "id": "s04",
+            "skill_ids": [
+              "curriculum/math/multiplication/row-4",
+              "curriculum/math/multiplication/strategy-doubling"
+            ],
+            "based_on": {
+              "question": "bank:times-table.pl#k3-05",
+              "changes": [
+                {
+                  "change": "context",
+                  "why": {
+                    "pl": "Rozwiązanie z czwartego szczebla pytania pokazane na początku jako przykład z obrazkiem, zanim padnie jakiekolwiek pytanie.",
+                    "uk": "Розвʼязок із четвертого щабля питання показано на початку як приклад із малюнком, перш ніж буде будь-яке питання.",
+                    "en": "The question’s rung-4 worked solution, shown first as an example with a picture, before any question is asked."
+                  },
+                  "reviewed": false
+                }
+              ]
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Jeden przykład z rozwiązaniem, zanim sam spróbuje (efekt przykładu rozwiązanego, Sweller).",
+                "uk": "Один приклад із розвʼязком, перш ніж він спробує сам (ефект розвʼязаного прикладу, Sweller).",
+                "en": "One worked example before he tries himself (the worked-example effect, Sweller)."
+              }
+            },
+            "say": {
+              "pl": "Popatrz. Cztery rzędy po sześć to dwa rzędy po sześć, a pod nimi jeszcze dwa takie same. Dwa razy sześć to dwanaście, a dwanaście i dwanaście to dwadzieścia cztery.",
+              "uk": "Подивися. Чотири ряди по шість це два ряди по шість, а під ними ще два такі самі. Два помножити на шість це дванадцять, а дванадцять і дванадцять це двадцять чотири.",
+              "en": "Look. Four rows of six is two rows of six, with two more just like them underneath. Two times six is twelve, and twelve and twelve is twenty-four."
+            },
+            "teach": {
+              "text": {
+                "pl": "4 × 6 to podwojone 2 × 6: 2 × 6 = 12, a 12 + 12 = 24.",
+                "uk": "4 × 6 це подвоєне 2 × 6: 2 × 6 = 12, а 12 + 12 = 24.",
+                "en": "4 × 6 is 2 × 6 doubled: 2 × 6 = 12, and 12 + 12 = 24."
+              },
+              "figure": {
+                "kind": "dots",
+                "rows": 4,
+                "cols": 6,
+                "alt": {
+                  "pl": "4 × 6 to podwojone 2 × 6: 2 × 6 = 12, a 12 + 12 = 24.",
+                  "uk": "4 × 6 це подвоєне 2 × 6: 2 × 6 = 12, а 12 + 12 = 24.",
+                  "en": "4 × 6 is 2 × 6 doubled: 2 × 6 = 12, and 12 + 12 = 24."
+                }
+              }
+            }
+          },
+          {
+            "id": "s05",
+            "skill_ids": ["curriculum/math/multiplication/strategy-doubling"],
+            "based_on": {
+              "question": "authored:multiplication-times-four",
+              "changes": []
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Ta sama reguła w rzędzie tabliczki: dotknięcie 3 × 2 zapala 3 × 4, dwa razy większe. Wzór z przykładu na placu zabaw „sevens-doubling”, z rzędem 3.",
+                "uk": "Те саме правило в ряду таблиці: дотик до 3 × 2 запалює 3 × 4, удвічі більше. Шаблон із прикладу пісочниці «sevens-doubling», з рядом 3.",
+                "en": "The same rule in a row of the table: tapping 3 × 2 lights 3 × 4, twice as big. The playground’s “sevens-doubling” example, on row 3."
+              }
+            },
+            "say": {
+              "pl": "Popatrz. Trzy razy dwa to sześć, a trzy razy cztery to dwanaście: dwa razy więcej.",
+              "uk": "Подивися. Три помножити на два це шість, а три помножити на чотири це дванадцять: удвічі більше.",
+              "en": "Look. Three times two is six, and three times four is twelve: twice as much."
+            },
+            "teach": {
+              "text": {
+                "pl": "3 × 2 = 6, a 3 × 4 = 12: dwa razy więcej.",
+                "uk": "3 × 2 = 6, а 3 × 4 = 12: удвічі більше.",
+                "en": "3 × 2 = 6, and 3 × 4 = 12: twice as much."
+              }
+            }
+          },
+          {
+            "id": "s06",
+            "question_type": "production",
+            "skill_ids": [
+              "curriculum/math/multiplication/row-4",
+              "curriculum/math/multiplication/strategy-doubling"
+            ],
+            "based_on": {
+              "question": "bank:times-table.pl#k3-06",
+              "changes": [
+                {
+                  "change": "context",
+                  "why": {
+                    "pl": "Narysowane jako cztery grupy po siedem kwiatków (poziom konkretny), zamiast samego działania.",
+                    "uk": "Намальовано як чотири групи по сім квіток (конкретний рівень) замість самої дії.",
+                    "en": "Drawn as four groups of seven flowers (the concrete level) instead of the bare fact."
+                  },
+                  "reviewed": false
+                },
+                {
+                  "change": "wording",
+                  "why": {
+                    "pl": "Pytanie o kwiatki, z podpowiedzią, żeby podwoić dwie grupy.",
+                    "uk": "Питання про квітки, з підказкою подвоїти дві групи.",
+                    "en": "A question about the flowers, with a nudge to double two groups."
+                  },
+                  "reviewed": false
+                }
+              ]
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Pomysł na przedmiotach: dwie grupy i jeszcze dwie takie same (konkret w sekwencji CRA).",
+                "uk": "Ідея на предметах: дві групи і ще дві такі самі (конкретне в послідовності CRA).",
+                "en": "The idea on objects: two groups and two more just like them (concrete, in the CRA sequence)."
+              }
+            },
+            "say": {
+              "pl": "Ile jest kwiatków razem? Policz dwie grupy, a potem podwój. Napisz albo powiedz.",
+              "uk": "Скільки всього квіток? Порахуй дві групи, а потім подвій. Напиши або скажи.",
+              "en": "How many flowers are there in all? Count two groups, then double it. Type or say it."
+            },
+            "question": {
+              "family": "enter",
+              "data": {
+                "input": "number",
+                "entry": "keypad",
+                "voice": true,
+                "figure": {
+                  "kind": "groups",
+                  "groups": 4,
+                  "each": 7,
+                  "icon": "flower",
+                  "alt": {
+                    "pl": "Cztery grupy kwiatków, w każdej tyle samo",
+                    "uk": "Чотири групи квіток, у кожній однаково",
+                    "en": "Four groups of flowers, the same number in each"
+                  }
+                }
+              },
+              "key": {
+                "accept": ["28"],
+                "near": {
+                  "11": "add_for_multiply",
+                  "24": "neighbour_row",
+                  "32": "neighbour_row"
+                },
+                "rule": {
+                  "rule": "times_table",
+                  "a": 4,
+                  "b": 7,
+                  "recent": []
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Spójrz jeszcze raz na obie liczby w zadaniu.",
+                    "uk": "Подивися ще раз на обидва числа в завданні.",
+                    "en": "Look again at both numbers in the task."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Dwie grupy po siedem to 2 × 7. Ile to jest? Potem dodaj to samo jeszcze raz.",
+                    "uk": "Дві групи по сім це 2 × 7. Скільки це? Потім додай те саме ще раз.",
+                    "en": "Two groups of seven is 2 × 7. How many is that? Then add the same again."
+                  }
+                },
+                "boost_by_mistake": {
+                  "add_for_multiply": {
+                    "text": {
+                      "pl": "Tu jest „razy”, a nie „dodać”. 4 × 7 to 4 razy po 7.",
+                      "uk": "Тут «помножити», а не «додати». 4 × 7 це 4 рази по 7.",
+                      "en": "This is “times”, not “plus”. 4 × 7 is 4 lots of 7."
+                    }
+                  },
+                  "neighbour_row": {
+                    "text": {
+                      "pl": "Ta liczba jest w tabliczce o jeden krok obok. Policz jeszcze raz, ile jest grup.",
+                      "uk": "Це число в таблиці на один крок поруч. Порахуй ще раз, скільки груп.",
+                      "en": "That number is one step away in the times table. Count again how many groups there are."
+                    }
+                  }
+                },
+                "almost": [
+                  {
+                    "pl": "4 × 7 to podwojone 2 × 7.",
+                    "uk": "4 × 7 це подвоєне 2 × 7.",
+                    "en": "4 × 7 is 2 × 7 doubled."
+                  },
+                  "2 × 7 = 14",
+                  "14 + 14 = □"
+                ],
+                "worked": [
+                  {
+                    "pl": "4 × 7 to podwojone 2 × 7.",
+                    "uk": "4 × 7 це подвоєне 2 × 7.",
+                    "en": "4 × 7 is 2 × 7 doubled."
+                  },
+                  "2 × 7 = 14",
+                  "14 + 14 = 28"
+                ],
+                "twin": {
+                  "say": {
+                    "pl": "Ile jest jabłek razem? Policz dwie grupy, a potem podwój. Napisz albo powiedz.",
+                    "uk": "Скільки всього яблук? Порахуй дві групи, а потім подвій. Напиши або скажи.",
+                    "en": "How many apples are there in all? Count two groups, then double it. Type or say it."
+                  },
+                  "family": "enter",
+                  "data": {
+                    "input": "number",
+                    "entry": "keypad",
+                    "voice": true,
+                    "figure": {
+                      "kind": "groups",
+                      "groups": 4,
+                      "each": 6,
+                      "icon": "apple",
+                      "alt": {
+                        "pl": "Cztery grupy jabłek, w każdej tyle samo",
+                        "uk": "Чотири групи яблук, у кожній однаково",
+                        "en": "Four groups of apples, the same number in each"
+                      }
+                    }
+                  },
+                  "key": {
+                    "accept": ["24"],
+                    "near": {
+                      "10": "add_for_multiply",
+                      "20": "neighbour_row",
+                      "28": "neighbour_row"
+                    },
+                    "rule": {
+                      "rule": "times_table",
+                      "a": 4,
+                      "b": 6,
+                      "recent": []
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz 28",
+                  "uk": "Запиши 28",
+                  "en": "Type 28"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "entered": "28"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz 11 (dodane zamiast pomnożonych)",
+                  "uk": "Запиши 11 (додано замість множення)",
+                  "en": "Type 11 (added, not multiplied)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "add_for_multiply",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "11"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz 14 (tylko dwie grupy, bez podwojenia)",
+                  "uk": "Запиши 14 (лише дві групи, без подвоєння)",
+                  "en": "Type 14 (two groups only, not doubled)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "other_wrong",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka o kropkach",
+                  "uk": "лишається на кроці, підказка про крапки",
+                  "en": "stays on the step, the dots hint"
+                },
+                "value": {
+                  "entered": "14"
+                }
+              }
+            ]
+          },
+          {
+            "id": "s07",
+            "question_type": "area_model",
+            "skill_ids": [
+              "curriculum/math/multiplication/row-4",
+              "curriculum/math/multiplication/strategy-doubling"
+            ],
+            "based_on": {
+              "question": "bank:times-table.pl#k3-08",
+              "changes": [
+                {
+                  "change": "context",
+                  "why": {
+                    "pl": "Zamiast wpisać wynik 4 × 8, buduje prostokąt cztery na osiem i przecina go na dwa 2 × 8 (poziom obrazkowy). Prostokąt z przykładu na placu zabaw „split-six-sevens”.",
+                    "uk": "Замість записати відповідь 4 × 8, будує прямокутник чотири на вісім і розрізає його на два 2 × 8 (рівень зображення). Прямокутник із прикладу пісочниці «split-six-sevens».",
+                    "en": "Instead of typing 4 × 8, he builds a four-by-eight rectangle and cuts it into two 2 × 8 (the representational level). The rectangle of the playground’s “split-six-sevens” example."
+                  },
+                  "reviewed": false
+                }
+              ]
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Ten sam pomysł na prostokącie: przecięty na pół pokazuje dwa razy 2 × 8 (model prostokąta, Van de Walle).",
+                "uk": "Та сама ідея на прямокутнику: розрізаний навпіл, він показує двічі 2 × 8 (модель площі, Van de Walle).",
+                "en": "The same idea on a rectangle: cut in half, it shows 2 × 8 twice (the area model, Van de Walle)."
+              }
+            },
+            "say": {
+              "pl": "Zbuduj prostokąt: cztery rzędy po osiem. Potem przetnij go na dwie równe części, po dwa rzędy w każdej.",
+              "uk": "Побудуй прямокутник: чотири ряди по вісім. Потім розріж його на дві рівні частини, по два ряди в кожній.",
+              "en": "Build a rectangle: four rows of eight. Then cut it into two equal parts, two rows in each."
+            },
+            "question": {
+              "family": "place",
+              "data": {
+                "surface": "grid",
+                "size": 10,
+                "label": "4 × 8",
+                "split": "one",
+                "cells": "squares"
+              },
+              "key": {
+                "surface": "grid",
+                "rows": 8,
+                "cols": 4,
+                "either_order": true,
+                "split": {
+                  "accept_at": [2]
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Pierwsza liczba mówi, ile jest rzędów. Druga mówi, ile kratek jest w każdym rzędzie.",
+                    "uk": "Перше число каже, скільки рядів. Друге каже, скільки клітинок у кожному ряду.",
+                    "en": "The first number says how many rows. The second says how many squares are in each row."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Zbuduj najpierw jeden rząd po osiem, potem dokładaj takie same, aż będą cztery. Przetnij między drugim a trzecim rzędem.",
+                    "uk": "Спершу побудуй один ряд по вісім, потім додавай такі самі, поки їх не буде чотири. Розріж між другим і третім рядом.",
+                    "en": "Build one row of eight first, then add rows like it until there are four. Cut between the second and the third row."
+                  }
+                },
+                "boost_by_mistake": {
+                  "split_not_helpful": {
+                    "text": {
+                      "pl": "Tnij między rzędami, nie w poprzek rzędu: każda część ma mieć dwa całe rzędy po osiem.",
+                      "uk": "Ріж між рядами, а не впоперек ряду: у кожній частині мають бути два цілі ряди по вісім.",
+                      "en": "Cut between the rows, not across them: each part should hold two whole rows of eight."
+                    }
+                  },
+                  "wrong_size": {
+                    "text": {
+                      "pl": "Policz jeszcze raz rzędy, a potem kratki w jednym rzędzie.",
+                      "uk": "Порахуй ще раз ряди, а потім клітинки в одному ряду.",
+                      "en": "Count the rows again, then the squares in one row."
+                    }
+                  }
+                },
+                "almost": [
+                  {
+                    "pl": "4 rzędy po 8 kratek.",
+                    "uk": "4 ряди по 8 клітинок.",
+                    "en": "4 rows of 8 squares."
+                  },
+                  {
+                    "pl": "Cięcie po □ rzędach: dwie części 2 × 8.",
+                    "uk": "Розріз після □ рядів: дві частини 2 × 8.",
+                    "en": "A cut after □ rows: two parts of 2 × 8."
+                  }
+                ],
+                "worked": [
+                  {
+                    "pl": "4 rzędy po 8 kratek.",
+                    "uk": "4 ряди по 8 клітинок.",
+                    "en": "4 rows of 8 squares."
+                  },
+                  {
+                    "pl": "Cięcie po 2 rzędach: dwie części 2 × 8.",
+                    "uk": "Розріз після 2 рядів: дві частини 2 × 8.",
+                    "en": "A cut after 2 rows: two parts of 2 × 8."
+                  },
+                  "16 + 16 = 32"
+                ],
+                "twin": {
+                  "say": {
+                    "pl": "Zbuduj prostokąt: cztery rzędy po sześć. Potem przetnij go na dwie równe części, po dwa rzędy w każdej.",
+                    "uk": "Побудуй прямокутник: чотири ряди по шість. Потім розріж його на дві рівні частини, по два ряди в кожній.",
+                    "en": "Build a rectangle: four rows of six. Then cut it into two equal parts, two rows in each."
+                  },
+                  "family": "place",
+                  "data": {
+                    "surface": "grid",
+                    "size": 10,
+                    "label": "4 × 6",
+                    "split": "one",
+                    "cells": "squares"
+                  },
+                  "key": {
+                    "surface": "grid",
+                    "rows": 6,
+                    "cols": 4,
+                    "either_order": true,
+                    "split": {
+                      "accept_at": [2]
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Zbuduj 4 rzędy po 8, przetnij po drugim rzędzie, potem {check}",
+                  "uk": "Побудуй 4 ряди по 8, розріж після другого ряду, потім {check}",
+                  "en": "Build 4 rows of 8, cut after the second row, then {check}"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "rows": 4,
+                  "cols": 8,
+                  "split": {
+                    "axis": "rows",
+                    "at": 2
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Zbuduj 4 × 8 i naciśnij {check} bez cięcia",
+                  "uk": "Побудуй 4 × 8 і натисни {check} без розрізу",
+                  "en": "Build 4 × 8 and press {check} without a cut"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "no_split",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "rows": 4,
+                  "cols": 8
+                }
+              },
+              {
+                "try": {
+                  "pl": "Zbuduj 4 × 8, przetnij w poprzek rzędów, po czwartej kratce",
+                  "uk": "Побудуй 4 × 8, розріж упоперек рядів, після четвертої клітинки",
+                  "en": "Build 4 × 8, cut across the rows, after the fourth square"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "split_not_helpful",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "rows": 4,
+                  "cols": 8,
+                  "split": {
+                    "axis": "cols",
+                    "at": 4
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Zbuduj 4 rzędy po 7 (o jedną kratkę za mało)",
+                  "uk": "Побудуй 4 ряди по 7 (на одну клітинку менше)",
+                  "en": "Build 4 rows of 7 (one square short)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "wrong_size",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "rows": 4,
+                  "cols": 7,
+                  "split": {
+                    "axis": "rows",
+                    "at": 2
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": "s08",
+            "question_type": "fill_gaps",
+            "skill_ids": ["curriculum/math/multiplication/strategy-doubling"],
+            "based_on": {
+              "question": "bank:times-table.pl#k7-03",
+              "changes": []
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Ten sam pomysł w samym zapisie: znany fakt i jego podwojenie (abstrakcja w sekwencji CRA).",
+                "uk": "Та сама ідея в самому записі: відомий факт і його подвоєння (абстрактне в послідовності CRA).",
+                "en": "The same idea as the bare fact: a known fact and its double (abstract, in the CRA sequence)."
+              }
+            },
+            "say": {
+              "pl": "Jaka liczba pasuje do okienka?",
+              "uk": "Яке число підходить до віконця?",
+              "en": "Which number fits in the box?"
+            },
+            "question": {
+              "family": "slots",
+              "data": {
+                "template": {
+                  "pl": "2 × 9 = 18, więc 4 × 9 = {g1}",
+                  "uk": "2 × 9 = 18, тож 4 × 9 = {g1}",
+                  "en": "2 × 9 = 18, so 4 × 9 = {g1}"
+                },
+                "gaps": [
+                  {
+                    "id": "g1",
+                    "kind": "enter",
+                    "input": "number"
+                  }
+                ]
+              },
+              "key": {
+                "gaps": {
+                  "g1": {
+                    "kind": "enter",
+                    "accept": ["36"],
+                    "near": {
+                      "13": "add_for_multiply",
+                      "18": "neighbour_fact_swap",
+                      "32": "neighbour_row",
+                      "40": "neighbour_row"
+                    },
+                    "rule": {
+                      "rule": "fill_blank",
+                      "template": "2 × 9 = 18, więc 4 × 9 = □",
+                      "operands": [4, 9],
+                      "op": "mul",
+                      "recent": [18]
+                    }
+                  }
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Spójrz jeszcze raz: która liczba schowała się w okienku?",
+                    "uk": "Подивися ще раз: яке число сховалося у віконці?",
+                    "en": "Look again: which number is hiding in the box?"
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Spróbuj narysować to jako równe grupy kropek.",
+                    "uk": "Спробуй намалювати це як рівні групи крапок.",
+                    "en": "Try drawing it as equal groups of dots."
+                  }
+                },
+                "boost_by_mistake": {
+                  "add_for_multiply": {
+                    "text": {
+                      "pl": "Tu jest „razy”, a nie „dodać”. 4 × 9 to 4 razy po 9.",
+                      "uk": "Тут «помножити», а не «додати». 4 × 9 це 4 рази по 9.",
+                      "en": "This is “times”, not “plus”. 4 × 9 is 4 lots of 9."
+                    }
+                  },
+                  "neighbour_fact_swap": {
+                    "text": {
+                      "pl": "Ta liczba pasuje do innego mnożenia. Popatrz, jakie liczby są w tym zadaniu.",
+                      "uk": "Це число підходить до іншого множення. Подивися, які числа в цьому завданні.",
+                      "en": "That number belongs to another multiplication. Look at which numbers are in this task."
+                    }
+                  },
+                  "neighbour_row": {
+                    "text": {
+                      "pl": "Ta liczba jest w tabliczce o jeden krok obok. Policz jeszcze raz, ile jest grup.",
+                      "uk": "Це число в таблиці на один крок поруч. Порахуй ще раз, скільки груп.",
+                      "en": "That number is one step away in the times table. Count again how many groups there are."
+                    }
+                  }
+                },
+                "almost": [
+                  {
+                    "pl": "4 × 9 to podwojone 2 × 9.",
+                    "uk": "4 × 9 це подвоєне 2 × 9.",
+                    "en": "4 × 9 is 2 × 9 doubled."
+                  },
+                  "18 + 18 = □"
+                ],
+                "worked": [
+                  {
+                    "pl": "4 × 9 to podwojone 2 × 9.",
+                    "uk": "4 × 9 це подвоєне 2 × 9.",
+                    "en": "4 × 9 is 2 × 9 doubled."
+                  },
+                  "18 + 18 = 36"
+                ],
+                "twin": {
+                  "say": {
+                    "pl": "Jaka liczba pasuje do okienka?",
+                    "uk": "Яке число підходить до віконця?",
+                    "en": "Which number fits in the box?"
+                  },
+                  "family": "slots",
+                  "data": {
+                    "template": {
+                      "pl": "2 × 6 = 12, więc 4 × 6 = {g1}",
+                      "uk": "2 × 6 = 12, тож 4 × 6 = {g1}",
+                      "en": "2 × 6 = 12, so 4 × 6 = {g1}"
+                    },
+                    "gaps": [
+                      {
+                        "id": "g1",
+                        "kind": "enter",
+                        "input": "number"
+                      }
+                    ]
+                  },
+                  "key": {
+                    "gaps": {
+                      "g1": {
+                        "kind": "enter",
+                        "accept": ["24"],
+                        "near": {
+                          "10": "add_for_multiply",
+                          "12": "neighbour_fact_swap",
+                          "20": "neighbour_row",
+                          "28": "neighbour_row"
+                        },
+                        "rule": {
+                          "rule": "fill_blank",
+                          "template": "2 × 6 = 12, więc 4 × 6 = □",
+                          "operands": [4, 6],
+                          "op": "mul",
+                          "recent": [12]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz 36",
+                  "uk": "Запиши 36",
+                  "en": "Type 36"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "36"
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz 18 (przepisany znany fakt)",
+                  "uk": "Запиши 18 (переписаний відомий факт)",
+                  "en": "Type 18 (the known fact copied)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "neighbour_fact_swap",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "18"
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz 13 (dodane zamiast pomnożonych)",
+                  "uk": "Запиши 13 (додано замість множення)",
+                  "en": "Type 13 (added, not multiplied)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "add_for_multiply",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "13"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "part": "practise",
+        "steps": [
+          {
+            "id": "s09",
+            "question_type": "fill_table",
+            "skill_ids": [
+              "curriculum/math/multiplication/strategy-doubling",
+              "curriculum/math/multiplication/row-4"
+            ],
+            "based_on": {
+              "question": "bank:times-table.pl#k7-02",
+              "changes": [
+                {
+                  "change": "context",
+                  "why": {
+                    "pl": "Trzy podwojenia z komponentu k7 w jednej tabeli: kolumna razy dwa obok kolumny razy cztery, żeby było widać, że druga to podwojona pierwsza.",
+                    "uk": "Три подвоєння з компонента k7 в одній таблиці: стовпець на два поруч зі стовпцем на чотири, щоб було видно, що другий це подвоєний перший.",
+                    "en": "Three doublings from component k7 in one table: the times-two column beside the times-four column, so the second shows as the first doubled."
+                  },
+                  "reviewed": false
+                },
+                {
+                  "change": "numbers",
+                  "why": {
+                    "pl": "Rzędy 5, 6 i 8.",
+                    "uk": "Ряди 5, 6 і 8.",
+                    "en": "Rows 5, 6 and 8."
+                  },
+                  "reviewed": false
+                }
+              ]
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Pierwsze ćwiczenie: trzy podwojenia naraz, z razy dwa podanym obok.",
+                "uk": "Перша вправа: три подвоєння разом, із множенням на два поруч.",
+                "en": "First practice: three doublings at once, with times two given beside them."
+              }
+            },
+            "say": {
+              "pl": "Uzupełnij kolumnę razy cztery. Podwój liczbę obok.",
+              "uk": "Доповни стовпець «помножити на чотири». Подвій число поруч.",
+              "en": "Fill in the times-four column. Double the number beside it."
+            },
+            "question": {
+              "family": "slots",
+              "data": {
+                "template": "",
+                "table": {
+                  "header": [
+                    {
+                      "pl": "liczba",
+                      "uk": "число",
+                      "en": "number"
+                    },
+                    {
+                      "pl": "razy 2",
+                      "uk": "на 2",
+                      "en": "times 2"
+                    },
+                    {
+                      "pl": "razy 4",
+                      "uk": "на 4",
+                      "en": "times 4"
+                    }
+                  ],
+                  "rows": [["5", "10", "{g1}"], ["6", "12", "{g2}"], ["8", "16", "{g3}"]]
+                },
+                "gaps": [
+                  {
+                    "id": "g1",
+                    "kind": "enter",
+                    "input": "number"
+                  },
+                  {
+                    "id": "g2",
+                    "kind": "enter",
+                    "input": "number"
+                  },
+                  {
+                    "id": "g3",
+                    "kind": "enter",
+                    "input": "number"
+                  }
+                ]
+              },
+              "key": {
+                "gaps": {
+                  "g1": {
+                    "kind": "enter",
+                    "accept": ["20"],
+                    "near": {
+                      "9": "add_for_multiply",
+                      "15": "neighbour_row"
+                    }
+                  },
+                  "g2": {
+                    "kind": "enter",
+                    "accept": ["24"],
+                    "near": {
+                      "10": "add_for_multiply",
+                      "18": "neighbour_row"
+                    }
+                  },
+                  "g3": {
+                    "kind": "enter",
+                    "accept": ["32"],
+                    "near": {
+                      "12": "add_for_multiply",
+                      "24": "neighbour_row"
+                    }
+                  }
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Zacznij od pierwszego rzędu. Popatrz na liczbę w kolumnie razy dwa.",
+                    "uk": "Почни з першого ряду. Подивися на число в стовпці «на 2».",
+                    "en": "Start with the first row. Look at the number in the times-two column."
+                  },
+                  "focus": ["g1"]
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Pierwsze okienko już jest wpisane: dziesięć i jeszcze dziesięć. Teraz zrób tak samo z dwunastką i szesnastką.",
+                    "uk": "Перше віконце вже заповнене: десять і ще десять. Тепер зроби так само з дванадцятьма і шістнадцятьма.",
+                    "en": "The first box is filled in for you: ten and ten more. Now do the same with twelve and sixteen."
+                  }
+                },
+                "give": ["g1"],
+                "boost_by_mistake": {
+                  "neighbour_row": {
+                    "text": {
+                      "pl": "To wynik razy trzy, nie razy cztery. Podwój liczbę z kolumny razy dwa.",
+                      "uk": "Це відповідь на три, а не на чотири. Подвій число зі стовпця «на 2».",
+                      "en": "That is times three, not times four. Double the number from the times-two column."
+                    }
+                  }
+                },
+                "almost": ["10 + 10 = 20", "12 + 12 = 24", "16 + 16 = □"],
+                "worked": ["10 + 10 = 20", "12 + 12 = 24", "16 + 16 = 32"],
+                "twin": {
+                  "say": {
+                    "pl": "Uzupełnij kolumnę razy cztery. Podwój liczbę obok.",
+                    "uk": "Доповни стовпець «помножити на чотири». Подвій число поруч.",
+                    "en": "Fill in the times-four column. Double the number beside it."
+                  },
+                  "family": "slots",
+                  "data": {
+                    "template": "",
+                    "table": {
+                      "header": [
+                        {
+                          "pl": "liczba",
+                          "uk": "число",
+                          "en": "number"
+                        },
+                        {
+                          "pl": "razy 2",
+                          "uk": "на 2",
+                          "en": "times 2"
+                        },
+                        {
+                          "pl": "razy 4",
+                          "uk": "на 4",
+                          "en": "times 4"
+                        }
+                      ],
+                      "rows": [["3", "6", "{g1}"], ["7", "14", "{g2}"], ["9", "18", "{g3}"]]
+                    },
+                    "gaps": [
+                      {
+                        "id": "g1",
+                        "kind": "enter",
+                        "input": "number"
+                      },
+                      {
+                        "id": "g2",
+                        "kind": "enter",
+                        "input": "number"
+                      },
+                      {
+                        "id": "g3",
+                        "kind": "enter",
+                        "input": "number"
+                      }
+                    ]
+                  },
+                  "key": {
+                    "gaps": {
+                      "g1": {
+                        "kind": "enter",
+                        "accept": ["12"],
+                        "near": {
+                          "9": "neighbour_row"
+                        }
+                      },
+                      "g2": {
+                        "kind": "enter",
+                        "accept": ["28"],
+                        "near": {
+                          "21": "neighbour_row"
+                        }
+                      },
+                      "g3": {
+                        "kind": "enter",
+                        "accept": ["36"],
+                        "near": {
+                          "27": "neighbour_row"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz 20, 24 i 32",
+                  "uk": "Впиши 20, 24 і 32",
+                  "en": "Type 20, 24 and 32"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "20",
+                    "g2": "24",
+                    "g3": "32"
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz 15, 24 i 32 (razy trzy w pierwszym)",
+                  "uk": "Впиши 15, 24 і 32 (на три в першому)",
+                  "en": "Type 15, 24 and 32 (times three in the first)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "neighbour_row",
+                "shows": {
+                  "pl": "15 zaznaczone, wskazówka",
+                  "uk": "15 позначено, підказка",
+                  "en": "15 marked, a hint"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "15",
+                    "g2": "24",
+                    "g3": "32"
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz 20, 24 i 30",
+                  "uk": "Впиши 20, 24 і 30",
+                  "en": "Type 20, 24 and 30"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "other_wrong",
+                "shows": {
+                  "pl": "30 zaznaczone, wskazówka",
+                  "uk": "30 позначено, підказка",
+                  "en": "30 marked, a hint"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "20",
+                    "g2": "24",
+                    "g3": "30"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": "s10",
+            "question_type": "number_line_place",
+            "skill_ids": ["curriculum/math/multiplication/row-4"],
+            "based_on": {
+              "question": "khan:x54154ed4ef5e0f00",
+              "changes": [
+                {
+                  "change": "context",
+                  "why": {
+                    "pl": "Zamiast wybierać obrazek osi dla „4 times 7”, sam stawia 7 × 4 na osi, która liczy czwórkami.",
+                    "uk": "Замість вибирати малюнок осі для «4 times 7», сам ставить 7 × 4 на осі, що лічить четвірками.",
+                    "en": "Instead of picking the number-line picture for “4 times 7”, he places 7 × 4 on a line that counts in fours."
+                  },
+                  "reviewed": false
+                },
+                {
+                  "change": "numbers",
+                  "why": {
+                    "pl": "7 × 4, czyli siedem skoków po cztery, bo po polsku 7 × 4 to 7 razy po 4.",
+                    "uk": "7 × 4, тобто сім стрибків по чотири, бо 7 × 4 це 7 разів по 4.",
+                    "en": "7 × 4, seven jumps of four, because in Polish 7 × 4 is read as 7 lots of 4."
+                  },
+                  "reviewed": false
+                }
+              ]
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Druga droga do razy cztery: liczenie czwórkami na osi (model liczbowy).",
+                "uk": "Другий шлях до множення на чотири: лічба четвірками на осі (числова модель).",
+                "en": "A second way into times four: counting in fours on a number line."
+              }
+            },
+            "say": {
+              "pl": "Gdzie na osi jest siedem razy cztery? Przesuń znacznik.",
+              "uk": "Де на осі сім помножити на чотири? Посунь позначку.",
+              "en": "Where is seven times four on the line? Move the marker."
+            },
+            "question": {
+              "family": "place",
+              "data": {
+                "surface": "number_line",
+                "min": 0,
+                "max": 40,
+                "step": 4,
+                "labelled": [0, 20, 40],
+                "target_label": "7 × 4"
+              },
+              "key": {
+                "surface": "number_line",
+                "value": 28,
+                "tolerance": 0,
+                "rule": {
+                  "rule": "number_line",
+                  "mode": "place",
+                  "min": 0,
+                  "max": 40,
+                  "step": 4
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Każda kreska na tej osi to cztery. Zacznij od zera.",
+                    "uk": "Кожна рисочка на цій осі це чотири. Почни з нуля.",
+                    "en": "Each tick on this line is four. Start from zero."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Siedem razy po cztery to siedem skoków po cztery. Do 20 jest pięć skoków. Ile jeszcze?",
+                    "uk": "Сім разів по чотири це сім стрибків по чотири. До 20 пʼять стрибків. Скільки ще?",
+                    "en": "Seven lots of four is seven jumps of four. It is five jumps to 20. How many more?"
+                  }
+                },
+                "boost_by_mistake": {
+                  "off_by_tick": {
+                    "text": {
+                      "pl": "Blisko. Policz skoki jeszcze raz, palcem, od zera.",
+                      "uk": "Близько. Порахуй стрибки ще раз, пальцем, від нуля.",
+                      "en": "Close. Count the jumps again, with your finger, from zero."
+                    }
+                  },
+                  "wrong_direction": {
+                    "text": {
+                      "pl": "Liczby rosną w prawo. Zacznij od zera, z lewej strony.",
+                      "uk": "Числа зростають праворуч. Почни з нуля, зліва.",
+                      "en": "The numbers grow to the right. Start from zero, on the left."
+                    }
+                  }
+                },
+                "almost": [
+                  "4, 8, 12, 16, 20, 24, …",
+                  {
+                    "pl": "Siódmy skok kończy się na □.",
+                    "uk": "Сьомий стрибок закінчується на □.",
+                    "en": "The seventh jump lands on □."
+                  }
+                ],
+                "worked": [
+                  "4, 8, 12, 16, 20, 24, 28",
+                  {
+                    "pl": "Siódmy skok kończy się na 28.",
+                    "uk": "Сьомий стрибок закінчується на 28.",
+                    "en": "The seventh jump lands on 28."
+                  }
+                ],
+                "twin": {
+                  "say": {
+                    "pl": "Gdzie na osi jest sześć razy cztery? Przesuń znacznik.",
+                    "uk": "Де на осі шість помножити на чотири? Посунь позначку.",
+                    "en": "Where is six times four on the line? Move the marker."
+                  },
+                  "family": "place",
+                  "data": {
+                    "surface": "number_line",
+                    "min": 0,
+                    "max": 40,
+                    "step": 4,
+                    "labelled": [0, 20, 40],
+                    "target_label": "6 × 4"
+                  },
+                  "key": {
+                    "surface": "number_line",
+                    "value": 24,
+                    "tolerance": 0,
+                    "rule": {
+                      "rule": "number_line",
+                      "mode": "place",
+                      "min": 0,
+                      "max": 40,
+                      "step": 4
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Postaw znacznik na 28, potem {check}",
+                  "uk": "Постав позначку на 28, потім {check}",
+                  "en": "Put the marker on 28, then {check}"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "at": 28
+                }
+              },
+              {
+                "try": {
+                  "pl": "Postaw go na 32 (o jeden skok za daleko)",
+                  "uk": "Постав її на 32 (на один стрибок далі)",
+                  "en": "Put it on 32 (one jump too far)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "off_by_tick",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "at": 32
+                }
+              },
+              {
+                "try": {
+                  "pl": "Policz od prawej: 7 skoków od 40 (wychodzi 12)",
+                  "uk": "Відлічи справа: 7 стрибків від 40 (виходить 12)",
+                  "en": "Count from the right: 7 jumps from 40 (which lands on 12)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "wrong_direction",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "at": 12
+                }
+              }
+            ],
+            "credit": {
+              "checked": "2026-10-18",
+              "original_lang": "en",
+              "ref": "x54154ed4ef5e0f00",
+              "source": "khan",
+              "url": "https://www.khanacademy.org/math/cc-third-grade-math/intro-to-multiplication/multiplication-on-thnumber-line/e/number_line",
+              "licence": "cc-by-nc-sa-4.0"
+            }
+          },
+          {
+            "id": "s11",
+            "question_type": "match",
+            "skill_ids": ["curriculum/math/multiplication/row-4"],
+            "based_on": {
+              "question": "bank:times-table.pl#k11-03",
+              "changes": [
+                {
+                  "change": "context",
+                  "why": {
+                    "pl": "Mieszana powtórka z banku jako jedno połączenie: cztery fakty razy cztery z tej lekcji (k3-05, k3-06, k3-08, k7-03) do ich wyników, żeby było widać pomyłkę między sąsiadami, 28 i 32.",
+                    "uk": "Змішане повторення з банку як одне зʼєднання: чотири факти множення на чотири з цього уроку (k3-05, k3-06, k3-08, k7-03) з їхніми відповідями, щоб було видно сплутування сусідів, 28 і 32.",
+                    "en": "The bank’s mixed review as one matching step: the four times-four facts of this lesson (k3-05, k3-06, k3-08, k7-03) to their answers, so a mix-up between neighbours, 28 and 32, shows."
+                  },
+                  "reviewed": false
+                }
+              ]
+            },
+            "reason": {
+              "brief": "review",
+              "why": {
+                "pl": "Przypomnienie wszystkich faktów z lekcji naraz, wymieszanych (praktyka przeplatana).",
+                "uk": "Пригадування всіх фактів уроку разом, упереміш (перемішана практика).",
+                "en": "All of the lesson’s facts recalled at once, mixed up (interleaved practice)."
+              }
+            },
+            "say": {
+              "pl": "Połącz każde działanie z wynikiem.",
+              "uk": "Зʼєднай кожну дію з відповіддю.",
+              "en": "Match each fact to its answer."
+            },
+            "question": {
+              "family": "group",
+              "data": {
+                "groups": [
+                  {
+                    "id": "a32",
+                    "label": "32",
+                    "capacity": 1
+                  },
+                  {
+                    "id": "a24",
+                    "label": "24",
+                    "capacity": 1
+                  },
+                  {
+                    "id": "a36",
+                    "label": "36",
+                    "capacity": 1
+                  },
+                  {
+                    "id": "a28",
+                    "label": "28",
+                    "capacity": 1
+                  }
+                ],
+                "items": [
+                  {
+                    "id": "f6",
+                    "label": "4 × 6"
+                  },
+                  {
+                    "id": "f7",
+                    "label": "4 × 7"
+                  },
+                  {
+                    "id": "f8",
+                    "label": "4 × 8"
+                  },
+                  {
+                    "id": "f9",
+                    "label": "4 × 9"
+                  }
+                ],
+                "each_item": "one"
+              },
+              "key": {
+                "items": {
+                  "f6": ["a24"],
+                  "f7": ["a28"],
+                  "f8": ["a32"],
+                  "f9": ["a36"]
+                },
+                "near": {
+                  "f6": {
+                    "a28": "neighbour_row"
+                  },
+                  "f7": {
+                    "a32": "neighbour_row",
+                    "a24": "neighbour_row"
+                  },
+                  "f8": {
+                    "a28": "neighbour_row",
+                    "a36": "neighbour_row"
+                  },
+                  "f9": {
+                    "a32": "neighbour_row"
+                  }
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Zacznij od 4 × 8: to podwojone 2 × 8, które już znasz.",
+                    "uk": "Почни з 4 × 8: це подвоєне 2 × 8, яке ти вже знаєш.",
+                    "en": "Start with 4 × 8: it is 2 × 8 doubled, which you already know."
+                  },
+                  "focus": ["f8"]
+                },
+                "boost": {
+                  "text": {
+                    "pl": "4 × 6 już stoi na swoim miejscu. Dla reszty: najpierw razy dwa, potem podwój.",
+                    "uk": "4 × 6 уже на своєму місці. Для решти: спершу на два, потім подвій.",
+                    "en": "4 × 6 is in its place for you. For the rest: times two first, then double it."
+                  }
+                },
+                "give": ["f6"],
+                "boost_by_mistake": {
+                  "neighbour_row": {
+                    "text": {
+                      "pl": "Dwa wyniki zamieniły się z sąsiadem. Między nimi jest tylko cztery. Sprawdź każde podwojenie.",
+                      "uk": "Дві відповіді помінялися із сусідом. Між ними лише чотири. Перевір кожне подвоєння.",
+                      "en": "Two answers swapped with a neighbour. They are only four apart. Check each doubling."
+                    }
+                  }
+                },
+                "almost": [
+                  "4 × 6 = 12 + 12 = 24",
+                  "4 × 7 = 14 + 14 = 28",
+                  "4 × 8 = 16 + 16 = 32",
+                  "4 × 9 = 18 + 18 = □"
+                ],
+                "worked": [
+                  "4 × 6 = 12 + 12 = 24",
+                  "4 × 7 = 14 + 14 = 28",
+                  "4 × 8 = 16 + 16 = 32",
+                  "4 × 9 = 18 + 18 = 36"
+                ],
+                "twin": {
+                  "say": {
+                    "pl": "Połącz każde działanie z wynikiem.",
+                    "uk": "Зʼєднай кожну дію з відповіддю.",
+                    "en": "Match each fact to its answer."
+                  },
+                  "family": "group",
+                  "data": {
+                    "groups": [
+                      {
+                        "id": "a16",
+                        "label": "16",
+                        "capacity": 1
+                      },
+                      {
+                        "id": "a20",
+                        "label": "20",
+                        "capacity": 1
+                      },
+                      {
+                        "id": "a12",
+                        "label": "12",
+                        "capacity": 1
+                      }
+                    ],
+                    "items": [
+                      {
+                        "id": "f3",
+                        "label": "4 × 3"
+                      },
+                      {
+                        "id": "f4",
+                        "label": "4 × 4"
+                      },
+                      {
+                        "id": "f5",
+                        "label": "4 × 5"
+                      }
+                    ],
+                    "each_item": "one"
+                  },
+                  "key": {
+                    "items": {
+                      "f3": ["a12"],
+                      "f4": ["a16"],
+                      "f5": ["a20"]
+                    },
+                    "near": {
+                      "f4": {
+                        "a20": "neighbour_row",
+                        "a12": "neighbour_row"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "4 × 6 do 24, 4 × 7 do 28, 4 × 8 do 32, 4 × 9 do 36, potem {check}",
+                  "uk": "4 × 6 до 24, 4 × 7 до 28, 4 × 8 до 32, 4 × 9 до 36, потім {check}",
+                  "en": "4 × 6 to 24, 4 × 7 to 28, 4 × 8 to 32, 4 × 9 to 36, then {check}"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "items": {
+                    "f6": ["a24"],
+                    "f7": ["a28"],
+                    "f8": ["a32"],
+                    "f9": ["a36"]
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Zamień 28 i 32 (sąsiednie wyniki)",
+                  "uk": "Поміняй 28 і 32 (сусідні відповіді)",
+                  "en": "Swap 28 and 32 (neighbouring answers)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "neighbour_row",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "items": {
+                    "f6": ["a24"],
+                    "f7": ["a32"],
+                    "f8": ["a28"],
+                    "f9": ["a36"]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": "s12",
+            "question_type": "production",
+            "skill_ids": [
+              "curriculum/math/word-problems/multiply-divide",
+              "curriculum/math/multiplication/row-4"
+            ],
+            "based_on": {
+              "question": "bank:times-table.pl#k12-03",
+              "changes": []
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Razy cztery w krótkiej historyjce: trzeba samemu zobaczyć równe grupy.",
+                "uk": "Множення на чотири в короткій історії: треба самому побачити рівні групи.",
+                "en": "Times four in a short story: he has to see the equal groups himself."
+              }
+            },
+            "say": {
+              "pl": "Kot ma 4 łapy. Ile łap ma razem 5 kotów? Napisz albo powiedz.",
+              "uk": "Кіт має 4 лапи. Скільки лап разом у 5 котів? Напиши або скажи.",
+              "en": "A cat has 4 paws. How many paws do 5 cats have in all? Type or say it."
+            },
+            "question": {
+              "family": "enter",
+              "data": {
+                "input": "number",
+                "entry": "keypad",
+                "voice": true
+              },
+              "key": {
+                "accept": ["20"],
+                "near": {
+                  "9": "add_for_multiply",
+                  "15": "neighbour_row",
+                  "25": "neighbour_row"
+                },
+                "rule": {
+                  "rule": "times_table",
+                  "a": 5,
+                  "b": 4,
+                  "recent": []
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Przeczytaj historyjkę jeszcze raz. Co trzeba policzyć?",
+                    "uk": "Прочитай історію ще раз. Що треба порахувати?",
+                    "en": "Read the story again. What do you need to count?"
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Spróbuj narysować to jako równe grupy kropek.",
+                    "uk": "Спробуй намалювати це як рівні групи крапок.",
+                    "en": "Try drawing it as equal groups of dots."
+                  }
+                },
+                "boost_by_mistake": {
+                  "add_for_multiply": {
+                    "text": {
+                      "pl": "Tu jest „razy”, a nie „dodać”. 5 × 4 to 5 razy po 4.",
+                      "uk": "Тут «помножити», а не «додати». 5 × 4 це 5 разів по 4.",
+                      "en": "This is “times”, not “plus”. 5 × 4 is 5 lots of 4."
+                    }
+                  },
+                  "neighbour_row": {
+                    "text": {
+                      "pl": "Ta liczba jest w tabliczce o jeden krok obok. Policz jeszcze raz, ile jest grup.",
+                      "uk": "Це число в таблиці на один крок поруч. Порахуй ще раз, скільки груп.",
+                      "en": "That number is one step away in the times table. Count again how many groups there are."
+                    }
+                  }
+                },
+                "almost": [
+                  {
+                    "pl": "To 5 razy po 4.",
+                    "uk": "Це 5 разів по 4.",
+                    "en": "It is 5 lots of 4."
+                  },
+                  "5 × 4 = □"
+                ],
+                "worked": [
+                  {
+                    "pl": "To 5 razy po 4.",
+                    "uk": "Це 5 разів по 4.",
+                    "en": "It is 5 lots of 4."
+                  },
+                  "5 × 4 = 20"
+                ],
+                "twin": {
+                  "say": {
+                    "pl": "Jeden bilet do zoo kosztuje 9 złotych. Ile kosztują 3 bilety? Napisz albo powiedz.",
+                    "uk": "Один квиток до зоопарку коштує 9 злотих. Скільки коштують 3 квитки? Напиши або скажи.",
+                    "en": "One zoo ticket costs 9 złoty. How much do 3 tickets cost? Type or say it."
+                  },
+                  "family": "enter",
+                  "data": {
+                    "input": "number",
+                    "entry": "keypad",
+                    "voice": true
+                  },
+                  "key": {
+                    "accept": ["27"],
+                    "near": {
+                      "12": "add_for_multiply",
+                      "18": "neighbour_row",
+                      "36": "neighbour_row"
+                    },
+                    "rule": {
+                      "rule": "times_table",
+                      "a": 3,
+                      "b": 9,
+                      "recent": []
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz 20",
+                  "uk": "Запиши 20",
+                  "en": "Type 20"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "entered": "20"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz 9 (4 + 5)",
+                  "uk": "Запиши 9 (4 + 5)",
+                  "en": "Type 9 (4 + 5)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "add_for_multiply",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "9"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz 25 (rząd obok)",
+                  "uk": "Запиши 25 (сусідній рядок)",
+                  "en": "Type 25 (the row next door)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "neighbour_row",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "25"
+                }
+              }
+            ]
+          },
+          {
+            "id": "s13",
+            "question_type": "fill_gaps",
+            "skill_ids": [
+              "curriculum/math/multiplication/strategy-doubling",
+              "curriculum/math/multiplication/row-8"
+            ],
+            "based_on": {
+              "question": "bank:times-table.pl#k7-04",
+              "changes": []
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Krok dalej, trudny celowo: to samo podwojenie prowadzi od razy cztery do razy osiem. Pomoc jest pod ręką.",
+                "uk": "Крок далі, складний навмисно: те саме подвоєння веде від множення на чотири до множення на вісім. Допомога поруч.",
+                "en": "A step further, hard on purpose: the same doubling takes times four to times eight. Help is there."
+              }
+            },
+            "say": {
+              "pl": "Jaka liczba pasuje do okienka?",
+              "uk": "Яке число підходить до віконця?",
+              "en": "Which number fits in the box?"
+            },
+            "question": {
+              "family": "slots",
+              "data": {
+                "template": {
+                  "pl": "4 × 6 = 24, więc 8 × 6 = {g1}",
+                  "uk": "4 × 6 = 24, тож 8 × 6 = {g1}",
+                  "en": "4 × 6 = 24, so 8 × 6 = {g1}"
+                },
+                "gaps": [
+                  {
+                    "id": "g1",
+                    "kind": "enter",
+                    "input": "number"
+                  }
+                ]
+              },
+              "key": {
+                "gaps": {
+                  "g1": {
+                    "kind": "enter",
+                    "accept": ["48"],
+                    "near": {
+                      "14": "add_for_multiply",
+                      "24": "neighbour_fact_swap",
+                      "42": "neighbour_row",
+                      "54": "neighbour_row"
+                    },
+                    "rule": {
+                      "rule": "fill_blank",
+                      "template": "4 × 6 = 24, więc 8 × 6 = □",
+                      "operands": [8, 6],
+                      "op": "mul",
+                      "recent": [24]
+                    }
+                  }
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Spójrz jeszcze raz: która liczba schowała się w okienku?",
+                    "uk": "Подивися ще раз: яке число сховалося у віконці?",
+                    "en": "Look again: which number is hiding in the box?"
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Osiem to dwa razy cztery. Więc 8 × 6 to dwa razy 4 × 6.",
+                    "uk": "Вісім це двічі чотири. Тож 8 × 6 це двічі 4 × 6.",
+                    "en": "Eight is two fours. So 8 × 6 is 4 × 6 twice."
+                  }
+                },
+                "boost_by_mistake": {
+                  "add_for_multiply": {
+                    "text": {
+                      "pl": "Tu jest „razy”, a nie „dodać”. 8 × 6 to 8 razy po 6.",
+                      "uk": "Тут «помножити», а не «додати». 8 × 6 це 8 разів по 6.",
+                      "en": "This is “times”, not “plus”. 8 × 6 is 8 lots of 6."
+                    }
+                  },
+                  "neighbour_fact_swap": {
+                    "text": {
+                      "pl": "Ta liczba pasuje do innego mnożenia. Popatrz, jakie liczby są w tym zadaniu.",
+                      "uk": "Це число підходить до іншого множення. Подивися, які числа в цьому завданні.",
+                      "en": "That number belongs to another multiplication. Look at which numbers are in this task."
+                    }
+                  },
+                  "neighbour_row": {
+                    "text": {
+                      "pl": "Ta liczba jest w tabliczce o jeden krok obok. Policz jeszcze raz, ile jest grup.",
+                      "uk": "Це число в таблиці на один крок поруч. Порахуй ще раз, скільки груп.",
+                      "en": "That number is one step away in the times table. Count again how many groups there are."
+                    }
+                  }
+                },
+                "almost": [
+                  {
+                    "pl": "8 × 6 to podwojone 4 × 6.",
+                    "uk": "8 × 6 це подвоєне 4 × 6.",
+                    "en": "8 × 6 is 4 × 6 doubled."
+                  },
+                  "24 + 24 = □"
+                ],
+                "worked": [
+                  {
+                    "pl": "8 × 6 to podwojone 4 × 6.",
+                    "uk": "8 × 6 це подвоєне 4 × 6.",
+                    "en": "8 × 6 is 4 × 6 doubled."
+                  },
+                  "24 + 24 = 48"
+                ],
+                "twin": {
+                  "say": {
+                    "pl": "Jaka liczba pasuje do okienka?",
+                    "uk": "Яке число підходить до віконця?",
+                    "en": "Which number fits in the box?"
+                  },
+                  "family": "slots",
+                  "data": {
+                    "template": {
+                      "pl": "4 × 7 = 28, więc 8 × 7 = {g1}",
+                      "uk": "4 × 7 = 28, тож 8 × 7 = {g1}",
+                      "en": "4 × 7 = 28, so 8 × 7 = {g1}"
+                    },
+                    "gaps": [
+                      {
+                        "id": "g1",
+                        "kind": "enter",
+                        "input": "number"
+                      }
+                    ]
+                  },
+                  "key": {
+                    "gaps": {
+                      "g1": {
+                        "kind": "enter",
+                        "accept": ["56"],
+                        "near": {
+                          "15": "add_for_multiply",
+                          "28": "neighbour_fact_swap",
+                          "49": "neighbour_row",
+                          "63": "neighbour_row"
+                        },
+                        "rule": {
+                          "rule": "fill_blank",
+                          "template": "4 × 7 = 28, więc 8 × 7 = □",
+                          "operands": [8, 7],
+                          "op": "mul",
+                          "recent": [28]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz 48",
+                  "uk": "Запиши 48",
+                  "en": "Type 48"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "48"
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz 24 (przepisany znany fakt)",
+                  "uk": "Запиши 24 (переписаний відомий факт)",
+                  "en": "Type 24 (the known fact copied)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "neighbour_fact_swap",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "24"
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz 42 (rząd obok)",
+                  "uk": "Запиши 42 (сусідній рядок)",
+                  "en": "Type 42 (the row next door)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "neighbour_row",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "42"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "part": "wrap_up",
+        "steps": [
+          {
+            "id": "s14",
+            "question_type": "true_false",
+            "skill_ids": ["curriculum/math/multiplication/strategy-doubling"],
+            "based_on": {
+              "question": "bank:times-table.pl#k6-02",
+              "changes": [
+                {
+                  "change": "numbers",
+                  "why": {
+                    "pl": "Zdanie to podwojenie z lekcji, 4 × 6 = 2 × 6 + 2 × 6, zamiast zamiany czynników 6 × 4 = 4 × 6.",
+                    "uk": "Речення це подвоєння з уроку, 4 × 6 = 2 × 6 + 2 × 6, замість переставлення множників 6 × 4 = 4 × 6.",
+                    "en": "The claim is the lesson’s doubling, 4 × 6 = 2 × 6 + 2 × 6, in place of the turnaround 6 × 4 = 4 × 6."
+                  },
+                  "reviewed": false
+                }
+              ]
+            },
+            "reason": {
+              "brief": "recheck",
+              "why": {
+                "pl": "Spokojne sprawdzenie pomysłu na koniec, bez liczenia na czas.",
+                "uk": "Спокійна перевірка ідеї наприкінці, без лічби на час.",
+                "en": "A calm check of the idea to end on, with nothing to race."
+              }
+            },
+            "say": {
+              "pl": "Czy to prawda?",
+              "uk": "Чи це правда?",
+              "en": "Is it true?"
+            },
+            "question": {
+              "family": "choose",
+              "data": {
+                "stem": {
+                  "text": "4 × 6 = 2 × 6 + 2 × 6"
+                },
+                "options": [
+                  {
+                    "id": "true",
+                    "content": {
+                      "kind": "bool",
+                      "bool": true
+                    }
+                  },
+                  {
+                    "id": "false",
+                    "content": {
+                      "kind": "bool",
+                      "bool": false
+                    }
+                  }
+                ],
+                "select": "one",
+                "layout": "binary"
+              },
+              "key": {
+                "correct": ["true"],
+                "near": {
+                  "false": "false_reject"
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Przeczytaj jeszcze raz całe zdanie, od lewej do prawej.",
+                    "uk": "Прочитай ще раз усе речення, зліва направо.",
+                    "en": "Read the whole sentence again, from left to right."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Pomyśl o prostokącie, który przeciąłeś na dwie części po dwa rzędy.",
+                    "uk": "Згадай прямокутник, який ти розрізав на дві частини по два ряди.",
+                    "en": "Think of the rectangle you cut into two parts of two rows."
+                  }
+                },
+                "boost_by_mistake": {
+                  "false_reject": {
+                    "text": {
+                      "pl": "Sprawdź jeszcze raz. Może to jednak prawda?",
+                      "uk": "Перевір ще раз. Може, це все-таки правда?",
+                      "en": "Check again. Could it be true after all?"
+                    }
+                  }
+                },
+                "almost": [
+                  "2 × 6 = 12",
+                  "12 + 12 = 24 i 4 × 6 = 24",
+                  {
+                    "pl": "Czy to zdanie jest prawdziwe? □",
+                    "uk": "Чи це речення правдиве? □",
+                    "en": "Is the sentence true? □"
+                  }
+                ],
+                "worked": [
+                  "2 × 6 = 12",
+                  "12 + 12 = 24 i 4 × 6 = 24",
+                  {
+                    "pl": "To zdanie jest prawdziwe.",
+                    "uk": "Це речення правдиве.",
+                    "en": "The sentence is true."
+                  }
+                ],
+                "twin": {
+                  "say": {
+                    "pl": "Czy to prawda?",
+                    "uk": "Чи це правда?",
+                    "en": "Is it true?"
+                  },
+                  "family": "choose",
+                  "data": {
+                    "stem": {
+                      "text": "4 × 8 = 2 × 8 + 2"
+                    },
+                    "options": [
+                      {
+                        "id": "true",
+                        "content": {
+                          "kind": "bool",
+                          "bool": true
+                        }
+                      },
+                      {
+                        "id": "false",
+                        "content": {
+                          "kind": "bool",
+                          "bool": false
+                        }
+                      }
+                    ],
+                    "select": "one",
+                    "layout": "binary"
+                  },
+                  "key": {
+                    "correct": ["false"],
+                    "near": {
+                      "true": "false_accept"
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Dotknij {yes}",
+                  "uk": "Торкнися {yes}",
+                  "en": "Tap {yes}"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "chosen": ["true"]
+                }
+              },
+              {
+                "try": {
+                  "pl": "Dotknij {no}",
+                  "uk": "Торкнися {no}",
+                  "en": "Tap {no}"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "false_reject",
+                "shows": {
+                  "pl": "zostaje na kroku, pierwsza wskazówka",
+                  "uk": "лишається на кроці, перша підказка",
+                  "en": "stays on the step, the first hint"
+                },
+                "value": {
+                  "chosen": ["false"]
+                }
+              }
+            ]
+          },
+          {
+            "id": "s15",
+            "question_type": "explain",
+            "skill_ids": ["curriculum/math/multiplication/strategy-doubling"],
+            "based_on": {
+              "question": "bank:times-table.pl#k3-08",
+              "changes": [
+                {
+                  "change": "context",
+                  "why": {
+                    "pl": "Zamiast wyniku 4 × 8 pyta, jak go policzyć z 2 × 8, które zna. Odpowiedź ocenia się po lekcji.",
+                    "uk": "Замість відповіді 4 × 8 питає, як її порахувати з 2 × 8, яке він знає. Відповідь оцінюють після уроку.",
+                    "en": "Instead of the answer to 4 × 8 it asks how to get it from 2 × 8, which he knows. The answer is judged after the lesson."
+                  },
+                  "reviewed": false
+                }
+              ]
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Własnymi słowami: wyjaśnienie, dlaczego to działa, utrwala pomysł (samowyjaśnianie, Rittle-Johnson 2006). Ocenia się po lekcji, w raporcie.",
+                "uk": "Своїми словами: пояснення, чому це працює, закріплює ідею (самопояснення, Rittle-Johnson 2006). Оцінюється після уроку, у звіті.",
+                "en": "In his own words: explaining why it works makes the idea stick (self-explanation, Rittle-Johnson 2006). Judged after the lesson, in the report."
+              }
+            },
+            "say": {
+              "pl": "Wiesz już, ile to dwa razy osiem. Jak z tego policzysz cztery razy osiem? Napisz własnymi słowami.",
+              "uk": "Ти вже знаєш, скільки буде два помножити на вісім. Як із цього порахувати чотири помножити на вісім? Напиши своїми словами.",
+              "en": "You already know two times eight. How would you use it to work out four times eight? Write it in your own words."
+            },
+            "question": {
+              "family": "explain",
+              "data": {
+                "input": "text",
+                "stem": {
+                  "text": {
+                    "pl": "2 × 8 = 16. Jak policzysz 4 × 8?",
+                    "uk": "2 × 8 = 16. Як порахувати 4 × 8?",
+                    "en": "2 × 8 = 16. How do you work out 4 × 8?"
+                  }
+                }
+              },
+              "key": {
+                "criteria": [
+                  {
+                    "id": "k1",
+                    "text": "Names the doubling: 4 × 8 is 2 × 8 twice, 16 + 16, or 16 doubled.",
+                    "cite": "Kling & Bay-Williams, \"Assessing basic fact fluency\", Teaching Children Mathematics 20(8), 2014: the doubling strategy for the fours. The times-table bank, component k7 (curriculum/banks/times-table.pl.json)"
+                  },
+                  {
+                    "id": "k2",
+                    "text": "Reaches the product, 32, or writes the step that makes it (16 + 16).",
+                    "cite": "Podstawa programowa klasy 1–3, II.3.3 (Dz.U. 2017 poz. 356): multiplies within the times table. Rittle-Johnson 2006 (Child Development 77): self-explanation names the how, not only the answer"
+                  }
+                ],
+                "criteria_version": "draft-1"
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Pomyśl o prostokącie cztery na osiem, który przeciąłeś na pół.",
+                    "uk": "Згадай прямокутник чотири на вісім, який ти розрізав навпіл.",
+                    "en": "Think of the four-by-eight rectangle you cut in half."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Możesz zacząć tak: „Dwa razy osiem to szesnaście, więc cztery razy osiem to…”",
+                    "uk": "Можеш почати так: «Два помножити на вісім це шістнадцять, тож чотири помножити на вісім це…»",
+                    "en": "You could start like this: “Two times eight is sixteen, so four times eight is…”"
+                  },
+                  "picture": {
+                    "kind": "dots",
+                    "rows": 4,
+                    "cols": 8,
+                    "alt": {
+                      "pl": "Cztery rzędy po osiem kropek",
+                      "uk": "Чотири ряди по вісім крапок",
+                      "en": "Four rows of eight dots"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "s16",
+            "skill_ids": [],
+            "based_on": {
+              "question": "authored:multiplication-times-four",
+              "changes": []
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Ciepłe zakończenie, przed kartą „umiem”.",
+                "uk": "Тепле завершення перед карткою «я вмію».",
+                "en": "A warm close, before the can-do card."
+              }
+            },
+            "say": {
+              "pl": "Dziś odkryłeś, że razy cztery to podwójne razy dwa. Dziękuję za wspólną pracę!",
+              "uk": "Сьогодні ти відкрив, що множення на чотири це подвоєне множення на два. Дякую за спільну роботу!",
+              "en": "Today you found out that times four is times two, doubled. Thank you for working with me!"
+            },
+            "teach": {
+              "text": {
+                "pl": "Razy cztery to podwójne razy dwa.",
+                "uk": "Помножити на чотири це подвоєне множення на два.",
+                "en": "Times four is times two, doubled."
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
