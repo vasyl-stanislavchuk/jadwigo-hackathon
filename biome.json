@@ -85,6 +85,17 @@
       }
     },
     {
+      "includes": ["packages/lesson-kit/src/**", "apps/web/src/**"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useSemanticElements": "off",
+            "noSvgWithoutTitle": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": ["**/*.astro"],
       "linter": {
         "rules": {
