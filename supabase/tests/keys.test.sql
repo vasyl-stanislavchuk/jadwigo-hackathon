@@ -1,6 +1,6 @@
 -- The keys that make writes from the page idempotent (RULES.md rules 7 and 19).
 begin;
-select plan(6);
+select plan(7);
 \ir _fixture.sql
 
 select col_is_pk('attempt_answer', 'event_id', 'event_id is attempt_answer''s key');
@@ -39,6 +39,19 @@ select throws_ok(
     values ('00000000-0000-4000-8000-0000000006b1', 2, '00000000-0000-4000-8000-00000000000b',
             '00000000-0000-4000-8000-0000000003a1', 'planned')$$,
   '23503', null, 'an attempt question cannot point at another pod''s lesson question'
+);
+
+insert into lesson_version (id, pod_id, lesson_id, version) values
+  ('00000000-0000-4000-8000-0000000004a2', '00000000-0000-4000-8000-00000000000a',
+   '00000000-0000-4000-8000-0000000002a1', 2);
+insert into lesson_version_question (lesson_version_id, position, pod_id, lesson_question_id, role)
+  values ('00000000-0000-4000-8000-0000000004a2', 1, '00000000-0000-4000-8000-00000000000a',
+          '00000000-0000-4000-8000-0000000003a1', 'planned');
+select throws_ok(
+  $$insert into lesson_version_question (lesson_version_id, position, pod_id, lesson_question_id, role)
+    values ('00000000-0000-4000-8000-0000000004a2', 2, '00000000-0000-4000-8000-00000000000a',
+            '00000000-0000-4000-8000-0000000003a1', 'spare')$$,
+  '23505', null, 'a version lists a lesson question once'
 );
 
 select * from finish();

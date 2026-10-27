@@ -132,6 +132,9 @@ create table lesson_version_question (
   lesson_question_id uuid not null,
   role question_role not null,
   primary key (lesson_version_id, position),
+  -- A version lists a question once: coming back to it is a twin or another asking
+  -- (decision 2026-10-27-a-lesson-version-lists-each-lesson-question-at-most-once).
+  unique (lesson_version_id, lesson_question_id),
   foreign key (pod_id, lesson_version_id) references lesson_version (pod_id, id),
   foreign key (pod_id, lesson_question_id) references lesson_question (pod_id, id)
 );

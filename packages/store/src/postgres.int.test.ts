@@ -1,5 +1,6 @@
 // Proves Postgres 17 answers, locally (Postgres.app, port 5433) and in CI, and that `make migrate`
 // built the core v0 schema. PostgresStore's contract run replaces it (dl-e8ov.2.32.3).
+import { RECORDS } from "@jadwigo/contracts";
 import pg from "pg";
 import { describe, expect, it } from "vitest";
 import { databaseUrl } from "./config.ts";
@@ -9,12 +10,17 @@ describe("Postgres", () => {
     const client = new pg.Client({ connectionString: databaseUrl() });
     await client.connect();
     try {
-      const { rows } = await client.query<{ major: string; tables: string }>(
-        "select current_setting('server_version_num')::int / 10000 as major, " +
-          "(select count(*) from pg_tables where schemaname = 'public') as tables",
+      const version = await client.query<{ major: number }>(
+        "select current_setting('server_version_num')::int / 10000 as major",
       );
-      expect(Number(rows[0]?.major)).toBe(17);
-      expect(Number(rows[0]?.tables)).toBe(10);
+      expect(version.rows[0]?.major).toBe(17);
+      const relations = await client.query<{ table_name: string }>(
+        "select table_name from information_schema.tables where table_schema = 'public'",
+      );
+      // Every record's table or view, and any a later migration adds.
+      expect(relations.rows.map((r) => r.table_name)).toEqual(
+        expect.arrayContaining(Object.keys(RECORDS)),
+      );
     } finally {
       await client.end();
     }

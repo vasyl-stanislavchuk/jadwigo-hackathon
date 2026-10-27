@@ -1,5 +1,6 @@
 import {
   AttemptId,
+  type Ended,
   EventId,
   ID_PREFIXES,
   type IdPrefix,
@@ -135,6 +136,33 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         expect(lesson.status).toBe("draft");
       });
 
+      it("refuses a list that names one lesson question twice with BadRequest", async () => {
+        const store = await make();
+        const a = await seed(store);
+        await expect(
+          store.publishLessonVersion(a.pod, {
+            lesson_id: a.lesson,
+            questions: [
+              { lesson_question_id: a.apples, role: "planned" },
+              { lesson_question_id: a.apples, role: "spare" },
+            ],
+          }),
+        ).rejects.toMatchObject(BAD_REQUEST);
+      });
+
+      it("refuses a stored version id under another lesson with WriteOnce", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const other = await store.putLesson(a.pod, LESSON);
+        await expect(
+          store.publishLessonVersion(a.pod, {
+            id: a.version,
+            lesson_id: other.id,
+            questions: [{ lesson_question_id: a.apples, role: "planned" }],
+          }),
+        ).rejects.toMatchObject(WRITE_ONCE);
+      });
+
       it("refuses a list with none planned, or a planned question after a spare", async () => {
         const store = await make();
         const a = await seed(store);
@@ -251,6 +279,35 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         expect(open.attempt.status).toBe("in_progress");
       });
 
+      it("refuses a stored attempt id under another assignment with WriteOnce", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        const other = await store.putAssignment(a.pod, { ...ASSIGNMENT, lesson_id: a.lesson });
+        await expect(
+          store.startAttempt(a.pod, { id: attempt, assignment_id: other.id }),
+        ).rejects.toMatchObject(WRITE_ONCE);
+      });
+
+      it("names a learner only when the assignment picks one, and BadRequest otherwise", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const learner = await store.putLearner(a.pod, { handle: "fox", first_name: "Fox" });
+        await expect(
+          store.startAttempt(a.pod, { assignment_id: a.assignment, learner_id: learner.id }),
+        ).rejects.toMatchObject(BAD_REQUEST);
+
+        const picks = await store.putAssignment(a.pod, {
+          audience: "learners",
+          identity: "pick",
+          lesson_id: a.lesson,
+        });
+        const record = await store.startAttempt(a.pod, {
+          assignment_id: picks.id,
+          learner_id: learner.id,
+        });
+        expect(record.attempt.learner_id).toBe(learner.id);
+      });
+
       it("is NotFound when the lesson has no published version", async () => {
         const store = await make();
         const pod = await newPod(store, "Pod of foxes");
@@ -324,6 +381,26 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
           }),
         ).rejects.toMatchObject({ type: "EventIdMismatch" });
         expect((await store.getAttempt(a.pod, attempt)).answers).toEqual([stored.answer]);
+      });
+
+      it("replay only the same try: the same event_id and body on another try is EventIdMismatch", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        const first = answer(attempt, 1, 1, { entered: "5" }, false);
+        await store.appendAttemptAnswer(a.pod, first);
+
+        await expect(
+          store.appendAttemptAnswer(a.pod, { ...first, try_no: 2 }),
+        ).rejects.toMatchObject({ type: "EventIdMismatch" });
+      });
+
+      it("refuse a value of another family with BadRequest", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        await expect(
+          store.appendAttemptAnswer(a.pod, answer(attempt, 1, 1, { chosen: ["a"] }, false)),
+        ).rejects.toMatchObject(BAD_REQUEST);
+        expect((await store.getAttempt(a.pod, attempt)).answers).toEqual([]);
       });
 
       it("refuse a 2nd event for a stored try with AnswerConflict, and a skipped try_no with TryOutOfOrder", async () => {
@@ -427,6 +504,15 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         await expect(store.endAttemptQuestion(a.pod, attempt, 1, "correct")).rejects.toMatchObject(
           NOT_OPEN,
         );
+      });
+
+      it("refuses an end that is not correct or skipped with BadRequest", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        await expect(
+          store.endAttemptQuestion(a.pod, attempt, 1, "abandoned" as Ended),
+        ).rejects.toMatchObject(BAD_REQUEST);
+        expect((await store.getAttempt(a.pod, attempt)).questions[0]?.ended).toBeNull();
       });
     });
 
@@ -584,6 +670,7 @@ type Role = "planned" | "spare";
 const NOT_FOUND = { type: "NotFound" };
 const BAD_REQUEST = { type: "BadRequest" };
 const NOT_OPEN = { type: "QuestionNotOpen" };
+const WRITE_ONCE = { type: "WriteOnce" };
 
 const LESSON = {
   title: "Equal groups",

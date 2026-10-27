@@ -6,7 +6,7 @@ import {
   AttemptId,
   AttemptQuestion,
   type AttemptResult,
-  type Ended,
+  Ended,
   ID_PREFIXES,
   type IdPrefix,
   idOf,
@@ -21,6 +21,7 @@ import {
   type LessonVersionQuestion,
   Pod,
   type PodId,
+  valueFor,
 } from "@jadwigo/contracts";
 import { attemptResults } from "./result.ts";
 import {
@@ -210,6 +211,9 @@ export class InMemoryStore implements Store {
     const lesson = this.#inPod(this.#lessons, pod, version.lesson_id, "the lesson");
     if (version.id) {
       const stored = this.#taken(this.#versions, pod, version.id);
+      if (stored && stored.lesson_id !== lesson.id) {
+        throw new StoreError("WriteOnce", "this version id belongs to another lesson");
+      }
       if (stored) return stored;
     }
     const roles = version.questions.map((q) => q.role);
@@ -219,9 +223,11 @@ export class InMemoryStore implements Store {
     if (roles.indexOf("spare") !== -1 && roles.lastIndexOf("planned") > roles.indexOf("spare")) {
       throw new StoreError("BadRequest", "the planned questions come before the spares");
     }
-    for (const q of version.questions) {
-      this.#inPod(this.#questions, pod, q.lesson_question_id, "a lesson question on the list");
+    const listed = version.questions.map((q) => q.lesson_question_id);
+    if (new Set(listed).size !== listed.length) {
+      throw new StoreError("BadRequest", "a version lists each lesson question once");
     }
+    for (const id of listed) this.#inPod(this.#questions, pod, id, "a lesson question on the list");
     // Read and write with no await between, so 2 publishes can't both take the same number.
     const latest = this.#latest(pod, lesson.id);
     const row = frozen(
@@ -314,8 +320,13 @@ export class InMemoryStore implements Store {
 
   async startAttempt(pod: PodId, attempt: NewAttempt): Promise<AttemptRecord> {
     const assignment = this.#inPod(this.#assignments, pod, attempt.assignment_id, "the assignment");
-    if (attempt.id && this.#taken(this.#attempts, pod, attempt.id)) {
-      return this.getAttempt(pod, attempt.id);
+    const taken = attempt.id && this.#taken(this.#attempts, pod, attempt.id);
+    if (taken && taken.assignment_id !== assignment.id) {
+      throw new StoreError("WriteOnce", "this attempt id belongs to another assignment");
+    }
+    if (taken) return this.getAttempt(pod, taken.id);
+    if (attempt.learner_id && assignment.identity !== "pick") {
+      throw new StoreError("BadRequest", "a learner is named only when the assignment picks one");
     }
     const now = this.#now().getTime();
     if (
@@ -412,7 +423,7 @@ export class InMemoryStore implements Store {
   }
 
   #replace(question: AttemptQuestion): AttemptQuestion {
-    const row = frozen(question);
+    const row = frozen(parse(AttemptQuestion, question, "the attempt question"));
     const asked = this.#asked.get(row.attempt_id) ?? [];
     this.#asked.set(
       row.attempt_id,
@@ -451,7 +462,14 @@ export class InMemoryStore implements Store {
   ): Promise<{ readonly answer: AttemptAnswer; readonly replayed: boolean }> {
     const stored = this.#answers.get(answer.event_id);
     if (stored) {
-      if (stored.pod_id === pod && stored.body_hash === answer.body_hash) {
+      if (
+        stored.pod_id === pod &&
+        stored.body_hash === answer.body_hash &&
+        stored.attempt_id === answer.attempt_id &&
+        stored.seq === answer.seq &&
+        stored.try_no === answer.try_no &&
+        stored.kind === answer.kind
+      ) {
         return { answer: stored, replayed: true };
       }
       throw new StoreError("EventIdMismatch", "this event was already sent with another body");
@@ -484,6 +502,15 @@ export class InMemoryStore implements Store {
     ) {
       throw new StoreError("BadRequest", "a try carries a value and a skip its reason");
     }
+    const { family } = this.#inPod(
+      this.#questions,
+      pod,
+      question.lesson_question_id,
+      "the lesson question",
+    );
+    if (row.kind === "try" && !valueFor(family).safeParse(row.value).success) {
+      throw new StoreError("BadRequest", `the value is not a ${family} value`);
+    }
     this.#answers.set(row.event_id, row);
     return { answer: row, replayed: false };
   }
@@ -509,6 +536,7 @@ export class InMemoryStore implements Store {
     ended: Ended,
   ): Promise<AttemptQuestion> {
     const question = this.#asking(pod, attempt, seq);
+    parse(Ended, ended, "how the question ended");
     if (question.ended === ended) return question;
     if (question.ended !== null) throw new StoreError("QuestionNotOpen", "this question has ended");
     return this.#replace({ ...question, ended });

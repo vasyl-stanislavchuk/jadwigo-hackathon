@@ -126,7 +126,8 @@ export interface Store {
 
   // Content: written once, idempotent by id. Writing a stored id again returns the stored row,
   // even when the content given differs (on conflict do nothing); a lesson question alone
-  // compares its `content_hash`.
+  // compares its `content_hash`. A stored id under another parent (a version id under another
+  // lesson, an attempt id under another assignment) is `WriteOnce`, never the other record.
 
   putPod(pod: NewPod): Promise<Pod>;
   putLearner(pod: PodId, learner: NewLearner): Promise<Learner>;
@@ -139,8 +140,8 @@ export interface Store {
   /**
    * Publishes the lesson's next version (1, 2, ...) with its list in one unit, `revises` the
    * latest before it, and marks the lesson published. A list with a planned question after a
-   * spare, or none planned, is refused with `BadRequest`, checked before the questions are
-   * looked up (an unknown one is `NotFound`).
+   * spare, none planned, or one lesson question twice is refused with `BadRequest`, checked
+   * before the questions are looked up (an unknown one is `NotFound`).
    */
   publishLessonVersion(pod: PodId, version: NewLessonVersion): Promise<LessonVersion>;
   getLessonVersion(pod: PodId, id: LessonVersionId): Promise<LessonVersionWithQuestions>;
@@ -157,7 +158,8 @@ export interface Store {
   /**
    * Starts an attempt in one unit (access pattern 1): resolves the version once (the
    * assignment's, or the latest published), writes the attempt, and asks the planned question
-   * at position 1 as `seq` 1. Refused with `AssignmentClosed` outside `opens_at` to `closes_at`.
+   * at position 1 as `seq` 1. Refused with `AssignmentClosed` outside `opens_at` to `closes_at`,
+   * and a `learner_id` with `BadRequest` unless the assignment's `identity` is `pick`.
    */
   startAttempt(pod: PodId, attempt: NewAttempt): Promise<AttemptRecord>;
   getAttempt(pod: PodId, id: AttemptId): Promise<AttemptRecord>;
@@ -172,8 +174,10 @@ export interface Store {
   ): Promise<AttemptQuestion>;
   /**
    * Appends a try or a skip (access pattern 3), idempotent by `event_id`:
-   * - the same `event_id` and `body_hash` returns the stored row, `replayed: true`;
-   * - the same `event_id` with another `body_hash` is `EventIdMismatch`;
+   * - the same `event_id` and `body_hash` for the same try (`attempt_id`, `seq`, `try_no`,
+   *   `kind`) returns the stored row, `replayed: true`;
+   * - the same `event_id` with another body or for another try is `EventIdMismatch`;
+   * - a try's `value` that is not its question's family's is `BadRequest`;
    * - another `event_id` for a stored `(attempt_id, seq, try_no)` is `AnswerConflict`;
    * - a `try_no` that is not the question's next is `TryOutOfOrder`;
    * - an ended question is `QuestionNotOpen`; a paused attempt `AttemptPaused`; a finished one `AttemptFinished`.
@@ -194,7 +198,10 @@ export interface Store {
     seq: number,
     seen: number,
   ): Promise<{ readonly question: AttemptQuestion; readonly released: boolean }>;
-  /** Ends an open question, once. Ending it again the same way returns it; another way is `QuestionNotOpen`. */
+  /**
+   * Ends an open question, once. Ending it again the same way returns it; another way is
+   * `QuestionNotOpen`; a value outside `Ended` is `BadRequest`.
+   */
   endAttemptQuestion(
     pod: PodId,
     attempt: AttemptId,
@@ -216,6 +223,9 @@ export interface Store {
    * open, and with `AttemptFinished` once finished, as the `attempt_finished` trigger does.
    */
   finishAttempt(pod: PodId, attempt: AttemptId): Promise<Attempt>;
-  /** The `attempt_result` view's rows, in `seq` order (access pattern 8). */
+  /**
+   * The `attempt_result` view's rows, in `seq` order (access pattern 8): the parent's full rows.
+   * The page gets `pageAttemptResult` of each, with `verdictsHeld` (`@jadwigo/contracts` wire).
+   */
   getAttemptResult(pod: PodId, attempt: AttemptId): Promise<readonly AttemptResult[]>;
 }
