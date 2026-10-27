@@ -16,8 +16,10 @@ prod's major version, with no Docker: Postgres.app on port 5433 locally, and the
   shim and every migration.
 - `make pgtap` runs the tests with `pg_prove`. Locally, install it once with
   `cpanm TAP::Parser::SourceHandler::pgTAP`.
-- CI's `supabase` job runs both. A migration reaches a real project only when the owner runs it
-  (`dl-e8ov.2.32.12`); CI never applies one, and a merge deploys nothing.
+- `make db-reset` rebuilds the local `jadwigo` database the same way, then seeds it.
+- CI's `supabase` job runs both. A migration reaches a real project only when the owner pushes it
+  with `make db-push ENV=dev|prod` (`docs/runbooks/migrations.md`); CI never applies one, and a
+  merge deploys nothing.
 
 ## Rules
 
