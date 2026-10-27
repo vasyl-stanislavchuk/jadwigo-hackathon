@@ -97,21 +97,33 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      DATABASE_URL: postgresql://runner:runner@localhost:5432/jadwigo_test
+      DATABASE_URL: postgresql://runner:runner@localhost:5433/jadwigo_test
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
       - uses: ./.github/actions/setup
-      - name: Start the runner's Postgres (no Docker)
-        run: |
-          sudo systemctl start postgresql.service
-          sudo -u postgres psql -c "create role runner superuser login password 'runner'"
-          createdb -h localhost -U runner jadwigo_test
-        env:
-          PGPASSWORD: runner
+      - uses: ./.github/actions/postgres
+      - run: make migrate
       - run: bunx turbo run test:int
+
+  supabase:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: postgresql://runner:runner@localhost:5433/jadwigo_test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/postgres
+      - name: Apply the shim and every migration (supabase/migrations)
+        run: make migrate
+      - name: pgTAP (supabase/tests)
+        run: make pgtap
 
   contracts:
     needs: changes
@@ -204,7 +216,7 @@ jobs:
           gitleaks git --redact --no-banner --config .gitleaks.toml "$@"
 
   ci-ok:
-    needs: [changes, lint, typecheck, unit, integration, contracts, docs, fence-checks, gitleaks]
+    needs: [changes, lint, typecheck, unit, integration, supabase, contracts, docs, fence-checks, gitleaks]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
