@@ -82,6 +82,7 @@ Not in the repo, on purpose: decisions (the md context brain), the question bank
 | Need | Command |
 | --- | --- |
 | Install | `mise install && bun install --frozen-lockfile` |
+| Local setup, once per machine | `cp .env.example .env.local && make db` (Postgres.app) |
 | The gate before you finish | `make check`: lint, typecheck and test on what changed (`turbo --affected`), then the repo checks |
 | Everything | `make check-all` |
 | One package | `bunx turbo run lint typecheck test --filter=./packages/core` |
