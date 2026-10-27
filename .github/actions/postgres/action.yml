@@ -1,0 +1,26 @@
+name: Postgres 17
+description: >
+  Postgres 17, prod's major version, from the PGDG apt repository, with pgTAP and pg_prove, on port
+  5433 as Postgres.app runs it locally. No Docker (decision
+  jadwigo-platform/decisions/2026-10-27-jadwigo-runs-on-a-prod-and-a-dev-supabase-project-a-native-local).
+  Creates the superuser runner and the database jadwigo_test.
+runs:
+  using: composite
+  steps:
+    - name: Install Postgres 17 and pgTAP
+      shell: bash
+      run: |
+        sudo install -d /usr/share/postgresql-common/pgdg
+        sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+        echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+          | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq postgresql-17 postgresql-17-pgtap libtap-parser-sourcehandler-pgtap-perl
+    - name: Start 17 on port 5433
+      shell: bash
+      run: |
+        sudo pg_dropcluster --stop 17 main 2>/dev/null || true
+        sudo pg_createcluster 17 main --port 5433 --start
+        sudo -u postgres psql -p 5433 -c "create role runner superuser login password 'runner'"
+        PGPASSWORD=runner createdb -h localhost -p 5433 -U runner jadwigo_test
+        PGPASSWORD=runner psql -h localhost -p 5433 -U runner -d jadwigo_test -Atc 'show server_version'

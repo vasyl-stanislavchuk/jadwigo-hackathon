@@ -10,6 +10,7 @@ Zod schemas for everything that crosses a boundary: ids, the lesson script, answ
 
 ## Rules here
 
+- Every name, record and route follows [`RULES.md`](RULES.md), the data model and API rules. `src/naming.test.ts` fails the ones a machine can check.
 - Ids are branded types; only the parsers here create them.
 - `schemas/*.json` are snapshots. Changing one is a one-way door: update with `vitest -u` on purpose and say so in the PR.
 - In a wave, contracts change only in the lead's step 0 PR.

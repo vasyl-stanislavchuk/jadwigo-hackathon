@@ -1,13 +1,18 @@
-import { LearnerId } from "@jadwigo/contracts";
+import { ID_PREFIXES, idOf, PodId } from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
-import { InMemoryStore } from "./store.ts";
+import { InMemoryStore } from "./memory.ts";
+import { storeContract } from "./store.contract.ts";
+
+storeContract("InMemoryStore", () => new InMemoryStore());
 
 describe("InMemoryStore", () => {
-  it("returns what was put, and nothing for an unknown learner", async () => {
-    const store = new InMemoryStore();
-    const learnerId = LearnerId.parse("lrn_000000000001");
-    await store.put({ learnerId, displayName: "Learner one" });
-    expect(await store.get(learnerId)).toEqual({ learnerId, displayName: "Learner one" });
-    expect(await store.get(LearnerId.parse("lrn_000000000002"))).toBeUndefined();
+  it("stamps records with the clock it is given", async () => {
+    const store = new InMemoryStore({ now: () => new Date("2026-10-27T09:00:00.000Z") });
+    const pod = await store.putPod({
+      id: PodId.parse(idOf(ID_PREFIXES.pod, crypto.randomUUID())),
+      name: "Pod of foxes",
+      language: "pl",
+    });
+    expect(pod.created_at).toBe("2026-10-27T09:00:00.000Z");
   });
 });

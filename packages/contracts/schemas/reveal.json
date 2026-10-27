@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "why": {
+      "type": "string"
+    },
+    "worked_solution": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "other_form": {
+      "type": "string"
+    },
+    "question_form": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

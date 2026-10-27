@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "learner_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "player_name": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "real",
+        "preview"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

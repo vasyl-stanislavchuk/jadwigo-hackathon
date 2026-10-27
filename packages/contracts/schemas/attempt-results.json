@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "attempt": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^att_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+        },
+        "pod_id": {
+          "type": "string",
+          "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+        },
+        "assignment_id": {
+          "type": "string",
+          "pattern": "^asg_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+        },
+        "lesson_version_id": {
+          "type": "string",
+          "pattern": "^lesv_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+        },
+        "learner_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "player_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "real",
+            "preview"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "in_progress",
+            "paused",
+            "finished"
+          ]
+        },
+        "resume_at": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        },
+        "finished_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "pod_id",
+        "assignment_id",
+        "lesson_version_id",
+        "learner_id",
+        "player_name",
+        "mode",
+        "status",
+        "resume_at",
+        "started_at",
+        "finished_at"
+      ],
+      "additionalProperties": false
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "lesson_question_id": {
+            "type": "string",
+            "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+          },
+          "say": {
+            "type": "string"
+          },
+          "added": {
+            "type": "string",
+            "enum": [
+              "planned",
+              "twin"
+            ]
+          },
+          "ended": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "correct",
+                  "skipped",
+                  "done"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "help_used": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "seq",
+          "lesson_question_id",
+          "say",
+          "added",
+          "ended",
+          "help_used"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "attempt",
+    "results"
+  ],
+  "additionalProperties": false
+}

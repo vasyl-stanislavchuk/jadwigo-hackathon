@@ -1,17 +1,28 @@
-// The integration placeholder: proves CI's Postgres 16 (and Postgres.app locally) answers.
-// The Postgres store replaces this once dl-e8ov.5.34 maps the records.
-import postgres from "postgres";
+// Proves Postgres 17 answers, locally (Postgres.app, port 5433) and in CI, and that `make migrate`
+// built the core v0 schema. PostgresStore's contract run replaces it (dl-e8ov.2.32.3).
+import { RECORDS } from "@jadwigo/contracts";
+import pg from "pg";
 import { describe, expect, it } from "vitest";
 import { databaseUrl } from "./config.ts";
 
 describe("Postgres", () => {
-  it("answers a query", async () => {
-    const sql = postgres(databaseUrl(), { max: 1 });
+  it("runs 17 with the core v0 tables", async () => {
+    const client = new pg.Client({ connectionString: databaseUrl() });
+    await client.connect();
     try {
-      const rows = await sql`select 1 as one`;
-      expect(rows[0]?.["one"]).toBe(1);
+      const version = await client.query<{ major: number }>(
+        "select current_setting('server_version_num')::int / 10000 as major",
+      );
+      expect(version.rows[0]?.major).toBe(17);
+      const relations = await client.query<{ table_name: string }>(
+        "select table_name from information_schema.tables where table_schema = 'public'",
+      );
+      // Every record's table or view, and any a later migration adds.
+      expect(relations.rows.map((r) => r.table_name)).toEqual(
+        expect.arrayContaining(Object.keys(RECORDS)),
+      );
     } finally {
-      await sql.end();
+      await client.end();
     }
   });
 });

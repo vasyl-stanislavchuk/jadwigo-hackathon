@@ -1,0 +1,30 @@
+{
+  "name": "@jadwigo/lesson-import",
+  "description": "Compiles a playground lesson file into lesson questions and a published version, and seeds the featured lessons (dl-e8ov.2.32.5)",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --config ../../vitest.config.ts --project unit"
+  },
+  "//": {
+    "@jadwigo/contracts": "the lesson question, version and assignment records an import writes",
+    "@jadwigo/store": "the Store an import writes through, InMemoryStore in its tests",
+    "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
+    "typescript": "tsc for this package's typecheck script",
+    "vitest": "runs this package's unit test with the root vitest.config.ts"
+  },
+  "dependencies": {
+    "@jadwigo/contracts": "workspace:*",
+    "@jadwigo/store": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

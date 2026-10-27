@@ -1,6 +1,6 @@
 {
   "name": "@jadwigo/contracts",
-  "description": "Zod contracts: ids, lesson script, answer envelope, routes, errors. Imports nothing of ours",
+  "description": "Zod contracts: ids, family schemas, records, the attempt wire, the /api/v1 route table, errors. Imports nothing of ours",
   "private": true,
   "type": "module",
   "exports": {
@@ -13,12 +13,14 @@
   },
   "//": {
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
+    "fast-check": "the property test of the id codec (src/ids.test.ts)",
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit test with the root vitest.config.ts",
     "zod": "the schemas themselves, and z.toJSONSchema() for the snapshots in schemas/"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "fast-check": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
