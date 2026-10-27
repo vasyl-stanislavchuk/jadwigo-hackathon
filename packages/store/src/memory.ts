@@ -222,7 +222,8 @@ export class InMemoryStore implements Store {
     for (const q of version.questions) {
       this.#inPod(this.#questions, pod, q.lesson_question_id, "a lesson question on the list");
     }
-    const latest = await this.getLatestLessonVersion(pod, lesson.id);
+    // Read and write with no await between, so 2 publishes can't both take the same number.
+    const latest = this.#latest(pod, lesson.id);
     const row = frozen(
       parse(
         LessonVersion,
@@ -262,6 +263,10 @@ export class InMemoryStore implements Store {
   }
 
   async getLatestLessonVersion(pod: PodId, lesson: LessonId): Promise<LessonVersion | undefined> {
+    return this.#latest(pod, lesson);
+  }
+
+  #latest(pod: PodId, lesson: LessonId): LessonVersion | undefined {
     let latest: LessonVersion | undefined;
     for (const v of this.#versions.values()) {
       if (v.pod_id === pod && v.lesson_id === lesson && v.published_at !== null) {
@@ -322,7 +327,7 @@ export class InMemoryStore implements Store {
     const version =
       assignment.lesson_version_id !== null
         ? this.#inPod(this.#versions, pod, assignment.lesson_version_id, "the lesson version")
-        : await this.getLatestLessonVersion(pod, assignment.lesson_id);
+        : this.#latest(pod, assignment.lesson_id);
     if (!version) throw notFound("a published version of the lesson");
     const first = this.#lists.get(version.id)?.[0];
     if (first?.role !== "planned") throw notFound("the version's first question");

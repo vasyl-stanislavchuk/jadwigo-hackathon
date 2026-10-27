@@ -95,6 +95,23 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         expect(lesson.status).toBe("published");
       });
 
+      it("gives 2 publishes at once 2 numbers, or refuses one", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const publish = () =>
+          store.publishLessonVersion(a.pod, {
+            lesson_id: a.lesson,
+            questions: [{ lesson_question_id: a.apples, role: "planned" }],
+          });
+        const settled = await Promise.allSettled([publish(), publish()]);
+        const published = settled.flatMap((s) => (s.status === "fulfilled" ? [s.value] : []));
+
+        expect(published.length).toBeGreaterThan(0);
+        expect(new Set(published.map((v) => v.version)).size).toBe(published.length);
+        const latest = await store.getLatestLessonVersion(a.pod, a.lesson);
+        expect(latest?.version).toBe(1 + published.length);
+      });
+
       it("lists the questions from position 1 in the order given, each joined to its question", async () => {
         const store = await make();
         const a = await seed(store);
@@ -172,6 +189,21 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         });
         expect(record.answers).toEqual([]);
         expect(await store.getAttempt(a.pod, record.attempt.id)).toEqual(record);
+      });
+
+      it("starts one attempt when the same id is started twice at once", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const id = AttemptId.parse(fresh(ID_PREFIXES.attempt));
+        const start = (player_name: string) =>
+          store.startAttempt(a.pod, { id, assignment_id: a.assignment, player_name });
+        const settled = await Promise.allSettled([start("Hedgehog"), start("Badger")]);
+        const started = settled.flatMap((s) => (s.status === "fulfilled" ? [s.value] : []));
+
+        expect(started.length).toBeGreaterThan(0);
+        const stored = await store.getAttempt(a.pod, id);
+        expect(stored.questions).toHaveLength(1);
+        for (const record of started) expect(record.attempt).toEqual(stored.attempt);
       });
 
       it("plays the assignment's own version, and otherwise the latest published", async () => {
