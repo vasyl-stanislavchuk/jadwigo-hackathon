@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg viewBox="0 0 1184 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="core-v0-play-title core-v0-play-desc">
       <title id="core-v0-play-title">Core v0: play and evidence</title>
-      <desc id="core-v0-play-desc">Entity-relationship model of core v0 play: an assignment of a lesson opens attempts, each attempt holds an ordered list of attempt questions, each question collects append-only answers, and the attempt_results view reads both.</desc>
+      <desc id="core-v0-play-desc">Entity-relationship model of core v0 play: an assignment of a lesson opens attempts, each attempt holds an ordered list of attempt questions, each question collects append-only attempt answers, and the attempt_result view reads both.</desc>
       <defs>
         <style>@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');</style>
         <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#5a6b85"/></marker>
@@ -16,8 +16,8 @@
       <line x1="280" y1="180" x2="328" y2="180" stroke="#5a6b85" stroke-width="1"/>
       <line x1="568" y1="180" x2="616" y2="180" stroke="#5a6b85" stroke-width="1"/>
       <line x1="856" y1="180" x2="904" y2="180" stroke="#5a6b85" stroke-width="1"/>
-      <path d="M 648,360 V 384 Q 648,392 656,392 H 728 Q 736,392 736,384 V 360" fill="none" stroke="#5a6b85" stroke-width="1"/>
-      <line x1="816" y1="360" x2="816" y2="580" stroke="#5a6b85" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <path d="M 648,380 V 404 Q 648,412 656,412 H 728 Q 736,412 736,404 V 380" fill="none" stroke="#5a6b85" stroke-width="1"/>
+      <line x1="816" y1="380" x2="816" y2="580" stroke="#5a6b85" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
       <line x1="1024" y1="524" x2="1024" y2="580" stroke="#5a6b85" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
       <!-- cardinality and labels -->
       <rect x="166" y="100" width="12" height="12" rx="2" fill="#fbfcfe"/>
@@ -44,12 +44,12 @@
       <text x="866.0" y="172" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" font-weight="600" text-anchor="middle">1</text>
       <rect x="888" y="162" width="12" height="12" rx="2" fill="#fbfcfe"/>
       <text x="894.0" y="172" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" font-weight="600" text-anchor="middle">N</text>
-      <rect x="630" y="366" width="12" height="12" rx="2" fill="#fbfcfe"/>
-      <text x="636.0" y="376" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" font-weight="600" text-anchor="middle">N</text>
-      <rect x="742" y="366" width="32" height="12" rx="2" fill="#fbfcfe"/>
-      <text x="758.0" y="376" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" font-weight="600" text-anchor="middle">0..1</text>
-      <rect x="660.0" y="398" width="64" height="12" rx="2" fill="#fbfcfe"/>
-      <text x="692.0" y="407" fill="#5a6b85" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">ADDED_FOR</text>
+      <rect x="630" y="386" width="12" height="12" rx="2" fill="#fbfcfe"/>
+      <text x="636.0" y="396" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" font-weight="600" text-anchor="middle">N</text>
+      <rect x="742" y="386" width="32" height="12" rx="2" fill="#fbfcfe"/>
+      <text x="758.0" y="396" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" font-weight="600" text-anchor="middle">0..1</text>
+      <rect x="660.0" y="418" width="64" height="12" rx="2" fill="#fbfcfe"/>
+      <text x="692.0" y="427" fill="#5a6b85" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">ADDED_FOR</text>
       <rect x="824" y="556" width="40" height="12" rx="2" fill="#fbfcfe"/>
       <text x="844" y="565" fill="#5a6b85" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">READS</text>
       <rect x="1032" y="556" width="40" height="12" rx="2" fill="#fbfcfe"/>
@@ -112,8 +112,8 @@
       <text x="344" y="388" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">resume_at</text>
       <text x="344" y="406" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">started_at</text>
       <text x="344" y="424" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">finished_at</text>
-      <rect x="616" y="160" width="240" height="200" rx="6" fill="#fbfcfe"/>
-      <rect x="616" y="160" width="240" height="200" rx="6" fill="#2941f3" fill-opacity="0.10" stroke="#2941f3" stroke-width="1.5"/>
+      <rect x="616" y="160" width="240" height="220" rx="6" fill="#fbfcfe"/>
+      <rect x="616" y="160" width="240" height="220" rx="6" fill="#2941f3" fill-opacity="0.10" stroke="#2941f3" stroke-width="1.5"/>
       <path d="M 622,160 H 850 Q 856,160 856,166 V 200 H 616 V 166 Q 616,160 622,160 Z" fill="#2941f3" fill-opacity="0.06"/>
       <line x1="616" y1="200" x2="856" y2="200" stroke="#091628" stroke-opacity="0.12" stroke-width="1"/>
       <text x="632" y="175" fill="#2941f3" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" font-weight="500" letter-spacing="0.18em">ENTITY · FOCAL</text>
@@ -124,25 +124,27 @@
       <text x="632" y="262" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">→ lesson_question_id</text>
       <text x="844" y="262" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">uuid</text>
       <text x="632" y="280" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">added</text>
-      <text x="844" y="280" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">planned | twin | review_round</text>
-      <text x="632" y="298" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">→ added_for</text>
-      <text x="844" y="298" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">seq · self</text>
-      <text x="632" y="316" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">hints_released</text>
-      <text x="632" y="334" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">ended</text>
-      <text x="844" y="334" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">right | skipped</text>
-      <text x="632" y="352" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">added_at</text>
+      <text x="844" y="280" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">planned | twin</text>
+      <text x="632" y="298" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">placed</text>
+      <text x="844" y="298" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">now | review_round</text>
+      <text x="632" y="316" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">→ added_for</text>
+      <text x="844" y="316" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">seq · self</text>
+      <text x="632" y="334" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">help_released</text>
+      <text x="632" y="352" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">ended</text>
+      <text x="844" y="352" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">correct | skipped</text>
+      <text x="632" y="370" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">added_at</text>
       <rect x="904" y="160" width="240" height="364" rx="6" fill="#fbfcfe"/>
       <rect x="904" y="160" width="240" height="364" rx="6" fill="#2941f3" fill-opacity="0.10" stroke="#2941f3" stroke-width="1.5"/>
       <path d="M 910,160 H 1138 Q 1144,160 1144,166 V 200 H 904 V 166 Q 904,160 910,160 Z" fill="#2941f3" fill-opacity="0.06"/>
       <line x1="904" y1="200" x2="1144" y2="200" stroke="#091628" stroke-opacity="0.12" stroke-width="1"/>
       <text x="920" y="175" fill="#2941f3" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" font-weight="500" letter-spacing="0.18em">ENTITY · FOCAL</text>
-      <text x="920" y="192" fill="#040810" font-size="14" font-family="'Inter', system-ui, sans-serif" font-weight="600">answer</text>
+      <text x="920" y="192" fill="#040810" font-size="14" font-family="'Inter', system-ui, sans-serif" font-weight="600">attempt_answer</text>
       <text x="920" y="226" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace"># event_id</text>
       <text x="1132" y="226" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">uuid</text>
       <text x="920" y="244" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">pod_id</text>
       <text x="920" y="262" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">→ (attempt_id, seq)</text>
       <text x="920" y="280" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">kind</text>
-      <text x="1132" y="280" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">answer | skip</text>
+      <text x="1132" y="280" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">try | skip</text>
       <text x="920" y="298" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">try_no</text>
       <text x="920" y="316" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">value</text>
       <text x="920" y="334" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">skip_reason</text>
@@ -161,22 +163,23 @@
       <rect x="616" y="580" width="528" height="156" rx="6" fill="#040810" fill-opacity="0.02" stroke="#7888a0" stroke-width="1" stroke-dasharray="2,3"/>
       <line x1="616" y1="620" x2="1144" y2="620" stroke="#091628" stroke-opacity="0.12" stroke-width="1"/>
       <text x="632" y="595" fill="#7888a0" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" font-weight="500" letter-spacing="0.18em">VIEW · SECURITY_INVOKER</text>
-      <text x="632" y="612" fill="#040810" font-size="14" font-family="'Inter', system-ui, sans-serif" font-weight="600">attempt_results</text>
+      <text x="632" y="612" fill="#040810" font-size="14" font-family="'Inter', system-ui, sans-serif" font-weight="600">attempt_result</text>
       <text x="1132" y="612" fill="#7888a0" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">one row per attempt_question</text>
       <text x="632" y="646" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">seq</text>
       <text x="632" y="664" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">added</text>
-      <text x="632" y="682" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">added_reason</text>
-      <text x="632" y="700" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">say</text>
-      <text x="632" y="718" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">family</text>
-      <text x="808" y="646" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">subject</text>
-      <text x="808" y="664" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">skill_ids</text>
-      <text x="808" y="682" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">tries</text>
-      <text x="808" y="700" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">first_try_right</text>
-      <text x="808" y="718" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">mistake_classes</text>
-      <text x="984" y="646" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">help_used</text>
-      <text x="984" y="664" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">skip_reason</text>
-      <text x="984" y="682" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">time_ms</text>
-      <text x="984" y="700" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">ended</text>
+      <text x="632" y="682" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">placed</text>
+      <text x="632" y="700" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">added_reason</text>
+      <text x="632" y="718" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">say</text>
+      <text x="808" y="646" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">family</text>
+      <text x="808" y="664" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">subject</text>
+      <text x="808" y="682" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">skill_ids</text>
+      <text x="808" y="700" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">tries</text>
+      <text x="808" y="718" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">first_try_correct</text>
+      <text x="984" y="646" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">mistake_classes</text>
+      <text x="984" y="664" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">help_used</text>
+      <text x="984" y="682" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">skip_reason</text>
+      <text x="984" y="700" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">time_ms</text>
+      <text x="984" y="718" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">ended</text>
       <text x="40" y="488" fill="#5a6b85" font-size="14" font-family="'Inter', system-ui, sans-serif" font-style="italic">Every row carries pod_id, and RLS compares it</text>
       <text x="40" y="510" fill="#5a6b85" font-size="14" font-family="'Inter', system-ui, sans-serif" font-style="italic">with app.pod_id, set per transaction after authorize().</text>
       <line x1="40" y1="776" x2="1144" y2="776" stroke="#091628" stroke-opacity="0.10" stroke-width="0.8"/>
