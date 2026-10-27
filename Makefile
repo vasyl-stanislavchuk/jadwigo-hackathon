@@ -4,6 +4,10 @@ ifneq (,$(wildcard .env.local))
 include .env.local
 export
 endif
+# The tools mise.toml pins (gitleaks for the fence test, terraform) on PATH even in a shell that never
+# activated mise, such as the Stop hook's. Without mise, PATH is left as it is.
+MISE_BIN_PATHS := $(shell command -v mise >/dev/null 2>&1 && mise bin-paths 2>/dev/null | tr '\n' ':')
+export PATH := $(MISE_BIN_PATHS)$(PATH)
 .PHONY: check check-all dev db skills drops
 
 ## check: lint, typecheck and test what changed since main (turbo --affected), uv's pytest

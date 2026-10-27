@@ -1,4 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["src"]
+  "compilerOptions": {
+    "lib": ["es2024", "dom"]
+  },
+  "include": ["src", "scripts", ".astro/types.d.ts"]
 }
