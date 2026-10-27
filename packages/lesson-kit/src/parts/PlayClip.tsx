@@ -25,9 +25,9 @@ import { Tooltip } from "./Tooltip.tsx";
 import { prefersReducedMotion } from "./tone.ts";
 
 /** Where the page fetches a clip (dl.paths.TTS_MEDIA_URL; drops.media.TtsClipView serves it). */
-export const TTS_MEDIA_URL = "/media/tts/";
+const TTS_MEDIA_URL = "/media/tts/";
 
-export const clipUrl = (id: string): string => `${TTS_MEDIA_URL}${id}.mp3`;
+const clipUrl = (id: string): string => `${TTS_MEDIA_URL}${id}.mp3`;
 
 /**
  * Whether a clip may play by itself when its question opens. False unless the page says so: the

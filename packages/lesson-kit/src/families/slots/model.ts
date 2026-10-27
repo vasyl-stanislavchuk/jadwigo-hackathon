@@ -21,9 +21,7 @@ import { pyramidCellText, pyramidFillOrder } from "./pyramid.ts";
 
 export type {
   Gap,
-  GapAt,
   GapKey,
-  GapRange,
   SlotsData,
   SlotsKey,
   SlotsTable,
@@ -74,7 +72,7 @@ function cut(template: string): Piece[] {
 }
 
 /** A table's rows in reading order: the header first when it says anything, then each row. */
-export function tableRows(table: SlotsTable): string[][] {
+function tableRows(table: SlotsTable): string[][] {
   return table.header.some((c) => c.trim() !== "") ? [table.header, ...table.rows] : table.rows;
 }
 

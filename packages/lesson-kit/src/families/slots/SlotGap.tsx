@@ -89,7 +89,7 @@ const PAPER = "border-border bg-card";
 /** A gap rung 2 gave keeps its box, so nothing moves, turns help yellow and locks (Slots addendum
  * 2.3): a typed gap the field's box, with a word's margin; a chosen gap the menu's, in the same
  * wrapper as the menu. */
-export function GivenGap({ gap, label, play }: PartProps): JSX.Element {
+function GivenGap({ gap, label, play }: PartProps): JSX.Element {
   const value = play.given[gap.id] ?? "";
   if (gap.kind === Family.Choose)
     return (
@@ -132,7 +132,7 @@ export function GivenGap({ gap, label, play }: PartProps): JSX.Element {
  */
 export const WORD_MARGIN = "mx-[var(--gap-mx,0.375rem)]";
 
-export function ChosenSlot({
+function ChosenSlot({
   gap,
   label,
   play,
@@ -167,7 +167,7 @@ export function ChosenSlot({
 }
 
 /** Stacked boxes in the line (dl-w3.70.16): a tap on a box moves the keypad there. */
-export function FractionGap({ gap, label, play }: PartProps): JSX.Element {
+function FractionGap({ gap, label, play }: PartProps): JSX.Element {
   const { focus, ring } = helpLook(play, gap.id);
   const text = play.values[gap.id] ?? "";
   const here = play.active === gap.id && !play.away;
@@ -195,7 +195,7 @@ export function FractionGap({ gap, label, play }: PartProps): JSX.Element {
 
 /** A number the one keypad types into. Tab reaches the gaps in reading order, and the keypad types
  * into the gap that has the focus. */
-export function NumberGap({ gap, label, play }: PartProps & { gap: TypedGap }): JSX.Element {
+function NumberGap({ gap, label, play }: PartProps & { gap: TypedGap }): JSX.Element {
   const { focus, ring } = helpLook(play, gap.id);
   const t = play.tone(gap.id);
   const look = t === "idle" ? PAPER : TONE_CLASS[t];
@@ -234,7 +234,7 @@ export function NumberGap({ gap, label, play }: PartProps & { gap: TypedGap }): 
  * Its width is its length setting's, so the line never moves as letters arrive (Slots addendum 3.1;
  * it no longer grows, dl-w3.68.30).
  */
-export function TextGap({ gap, label, play }: PartProps & { gap: TypedGap }): JSX.Element {
+function TextGap({ gap, label, play }: PartProps & { gap: TypedGap }): JSX.Element {
   const { focus, ring } = helpLook(play, gap.id);
   const t = play.tone(gap.id);
   const look = t === "idle" ? PAPER : TONE_CLASS[t];

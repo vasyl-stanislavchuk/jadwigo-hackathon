@@ -14,9 +14,6 @@ import { type Figure, GroupIcon } from "@jadwigo/contracts";
 
 export type { Figure };
 
-/** The units a ruler figure is marked in, as a real ruler writes them (never translated). */
-export type RulerUnit = Extract<Figure, { kind: "ruler" }>["unit"];
-
 /** The objects a concrete figure may draw, from the icon library the UI uses, never custom art
  * (decision 2026-10-18-2026-10-18-engagement-uses-simple-sounds-and-animations-from-ui). */
 export const GROUP_ICONS = GroupIcon.options;

@@ -42,14 +42,14 @@ const MARKER = /\{([a-z][a-z0-9_]*)\}/g;
 const WORD = /[\p{L}\p{N}]+(?:[-'’][\p{L}\p{N}]+)*/gu;
 
 /** The id a plain word's answer carries, and the slot it sits in within the text. */
-export const wordId = (n: number): string => `w:${n}`;
+const wordId = (n: number): string => `w:${n}`;
 const wordSlot = (n: number): string => `w_${n}`;
 
 /**
  * The text with every plain word outside the markers and the TeX turned into a slot of its own:
  * `Ala ma {o1} lat` → `{w_1} {w_2} {o1} {w_3}`, and the words by slot.
  */
-export function wordSlots(text: string): {
+function wordSlots(text: string): {
   text: string;
   words: Map<string, { id: string; word: string }>;
 } {

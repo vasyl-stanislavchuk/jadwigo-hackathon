@@ -12,7 +12,7 @@
 
 import type { ExplainData } from "@jadwigo/contracts";
 
-export type { Criterion, ExplainData, ExplainKey, ExplainValue } from "@jadwigo/contracts";
+export type { Criterion, ExplainData } from "@jadwigo/contracts";
 
 /** The soft minimum when a step names none: one short sentence for a nine-year-old. */
 export const EXPLAIN_MIN_WORDS = 4;

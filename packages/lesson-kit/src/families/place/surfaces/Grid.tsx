@@ -47,7 +47,7 @@ const sideOf = (split: GridSplit | undefined, r: number, c: number): 0 | 1 =>
   split === undefined ? 0 : (split.axis === "cols" ? c : r) < split.at ? 0 : 1;
 
 /** The split read as a sum: 6 × 7 split after 5 columns is "6 × 5 + 6 × 2". */
-export function splitSum(rect: Rect): string | null {
+function splitSum(rect: Rect): string | null {
   const s = rect.split;
   if (s === undefined) return null;
   return s.axis === "cols"

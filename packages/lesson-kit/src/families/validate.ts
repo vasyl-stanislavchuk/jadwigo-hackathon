@@ -44,7 +44,7 @@ export interface Problem {
 }
 
 /** The most gaps one step shows a child at once (ClassTime allows 200). */
-export const MAX_GAPS = 6;
+const MAX_GAPS = 6;
 /** Text an editor leaves behind when nobody wrote the real thing. */
 const PLACEHOLDER = /^(?:example (?:item|category|option)|todo|tbd|lorem ipsum|\.\.\.|…)$/i;
 

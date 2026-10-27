@@ -6,16 +6,14 @@
  * the API plays a lesson.
  */
 
-import type { AnswerValue, HelpPicture, PartMark, Picture, TerminalCard } from "@jadwigo/contracts";
+import type { HelpPicture, PartMark, Picture, TerminalCard } from "@jadwigo/contracts";
 import type { CopyKey } from "@jadwigo/copy";
-import type { Instant } from "./clock.ts";
-import type { PressHandlers } from "./press.ts";
 
 export type { Category, Language } from "@jadwigo/copy";
 export type { HelpPicture, PartMark, TerminalCard };
 
 /** A served picture with its size and words, as a stem, an option or a hint carries it. */
-export type PagePicture = Picture;
+type PagePicture = Picture;
 
 /** One line of a terminal card: a command and what it prints. */
 export type TerminalLine = TerminalCard["lines"][number];
@@ -80,30 +78,4 @@ export interface Feedback {
   why?: string;
   /** praise only: a right equation written the other way round, in the question's form. */
   swapped?: string;
-}
-
-/** A committed answer: the value, the press instant and how it was pressed. */
-export interface Commit {
-  value: AnswerValue;
-  t1: Instant;
-  modality: "click" | "keyboard";
-  tSelect?: Instant;
-}
-
-/** What the stage hands a view that draws the whole question itself: whether the answer is on its
- * way, moving on, the help note, Dalej and the progress bar. */
-export interface StepContext {
-  checking: boolean;
-  /** "Jeszcze nie wiem", drawn at the end of the help note. */
-  moveOn: { enabled: boolean; press: PressHandlers } | null;
-  /** The help note: the cards released so far, and asking for the next. */
-  ladder?: {
-    help: PageHelp | null;
-    ask: { enabled: boolean; press: PressHandlers } | null;
-    refused: boolean;
-  } | null;
-  /** Dalej after a verdict, drawn in the action slot. */
-  next?: { press: PressHandlers } | null;
-  /** How far through the lesson, for the top bar's step bar. */
-  progress?: { done: number; total: number; review?: boolean } | null;
 }

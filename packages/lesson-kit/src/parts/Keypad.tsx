@@ -43,7 +43,7 @@ const STRIP_SIGN = cn(
 );
 
 /** The signs that take the cell left of 0 on the pad, the step's one extra key. */
-export const EXTRA_KEYS: readonly string[] = [",", "/", "="];
+const EXTRA_KEYS: readonly string[] = [",", "/", "="];
 
 /** What a screen reader calls each sign key. */
 const SIGN_NAMES: Record<string, CopyKey> = {
@@ -67,7 +67,7 @@ export interface SignKeys {
 
 /** The pad's layout of a step's signs: the one extra key left of 0 (the last of `,` `/` `=` the
  * step has), and the row above the digits (every other sign). */
-export function padLayout(signs: readonly string[]): { extra: string | null; row: string[] } {
+function padLayout(signs: readonly string[]): { extra: string | null; row: string[] } {
   const extra = [...signs].reverse().find((s) => EXTRA_KEYS.includes(s)) ?? null;
   return { extra, row: signs.filter((s) => s !== extra) };
 }

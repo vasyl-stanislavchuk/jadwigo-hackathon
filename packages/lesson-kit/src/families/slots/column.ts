@@ -55,7 +55,7 @@ export interface ColumnWork {
   flipped: Map<number, number>;
 }
 
-export function columnValue(sum: Pick<ColumnSum, "op" | "operands">): number {
+function columnValue(sum: Pick<ColumnSum, "op" | "operands">): number {
   const [a, b] = sum.operands;
   return sum.op === "add" ? a + b : sum.op === "sub" ? a - b : a * b;
 }
@@ -103,8 +103,8 @@ export function columnWork(sum: Pick<ColumnSum, "op" | "operands">): ColumnWork 
   return { top, bottom, result, small, blank, forgot, flipped };
 }
 
-export const resultId = (i: number): string => `r${i}`;
-export const smallId = (i: number): string => `c${i}`;
+const resultId = (i: number): string => `r${i}`;
+const smallId = (i: number): string => `c${i}`;
 
 /** The column a cell id names, and whether it is a small cell; null for an id of another shape. */
 export function cellOf(id: string): { small: boolean; col: number } | null {
@@ -114,7 +114,7 @@ export function cellOf(id: string): { small: boolean; col: number } | null {
 
 /** Every cell in the order a child works it: the units digit, then for each column to the left
  * its small cell first, then its digit. The step's gaps, its Tab order and its voice read this. */
-export function columnCells(sum: ColumnSum, work: ColumnWork = columnWork(sum)): string[] {
+function columnCells(sum: ColumnSum, work: ColumnWork = columnWork(sum)): string[] {
   const out: string[] = [];
   for (let i = 0; i < work.result.length; i++) {
     if (sum.carry_row && work.small.has(i)) out.push(smallId(i));
@@ -198,15 +198,6 @@ export function columnKey(sum: ColumnSum): {
     gaps: ids.map((id) => ({ id, kind: Family.Enter, input: "number", max_length: 1 })),
     key: { gaps: keys },
   };
-}
-
-/** What an empty small cell stands for when it is judged: no carry (0), or the digit as written.
- * A result cell has no such reading: empty is missing. */
-export function columnBlank(sum: Pick<ColumnSum, "op" | "operands">, id: string): string | null {
-  const cell = cellOf(id);
-  if (cell === null || !cell.small) return null;
-  const blank = columnWork(sum).blank.get(cell.col);
-  return blank === undefined ? null : String(blank);
 }
 
 /** A cell of the drawn grid: a digit, a gap, or a digit filled in for the child. */

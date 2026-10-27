@@ -9,13 +9,6 @@
  * An expression is compared by its value and its form (enter/expression.ts), never as a string.
  */
 
-import type {
-  EnterData,
-  EnterInput,
-  EnterKey,
-  EnterValue,
-  Figure,
-  Simplify,
-} from "@jadwigo/contracts";
+import type { EnterData, EnterKey, EnterValue, Figure } from "@jadwigo/contracts";
 
-export type { EnterData, EnterInput, EnterKey, EnterValue, Figure, Simplify };
+export type { EnterData, EnterKey, EnterValue, Figure };

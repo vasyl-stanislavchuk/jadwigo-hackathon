@@ -6,11 +6,4 @@
  * collide on a case-insensitive disk, so the model sits in its own folder, as a family's does.)
  */
 
-export type {
-  AudioText,
-  Picture,
-  PictureLabel,
-  PictureLabels,
-  Stem,
-  StemReference,
-} from "@jadwigo/contracts";
+export type { Picture, Stem, StemReference } from "@jadwigo/contracts";

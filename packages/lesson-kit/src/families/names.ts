@@ -74,7 +74,6 @@ export const QuestionType = {
   Explain: "explain",
 } as const satisfies Record<string, ContractQuestionType>;
 export type QuestionTypeName = ContractQuestionType;
-export const QUESTION_TYPE_NAMES: readonly QuestionTypeName[] = Object.values(QuestionType);
 
 /** The surfaces Place marks a position on. */
 export const Surface = {
@@ -90,4 +89,3 @@ export const Surface = {
   /** A bar, a circle or a rectangle cut into equal parts to shade (dl-w3.61.7, lane F). */
   Fraction: "fraction",
 } as const satisfies Record<string, ContractSurface>;
-export type SurfaceName = ContractSurface;

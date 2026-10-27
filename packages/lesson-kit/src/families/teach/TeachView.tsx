@@ -10,7 +10,7 @@ import type { Category, Language } from "../../stage/types.ts";
 import { Stem } from "../Stem.tsx";
 import type { TeachStep } from "./model.ts";
 
-export interface TeachViewProps {
+interface TeachViewProps {
   step: TeachStep;
   language: Language;
   category: Category;

@@ -30,7 +30,7 @@ export function missed(feedback: Feedback | null): boolean {
 }
 
 /** The whole step's tone. */
-export function toneOf(feedback: Feedback | null): Tone {
+function toneOf(feedback: Feedback | null): Tone {
   return feedback === null ? "idle" : TONE[feedback.kind];
 }
 
@@ -84,27 +84,6 @@ export function wholeTone(feedback: Feedback | null, changed: ReadonlySet<string
   return feedback.parts === undefined && changed.size === 0 ? "amber" : "idle";
 }
 
-/**
- * One part's share of the step's feedback, in a question of several parts (families/compound): the
- * marks under `<partId>.`, the prefix taken off. A part the result marked right reads as praised,
- * green and locked; a missed part keeps its own marks, or is marked as a whole when it has none.
- */
-export function feedbackOfPart(feedback: Feedback | null, partId: string): Feedback | null {
-  if (feedback === null || feedback.kind !== "try_again" || feedback.parts === undefined)
-    return feedback;
-  if (feedback.parts.some((p) => p.id === partId && p.correct))
-    return { kind: "praise", index: feedback.index };
-  const prefix = `${partId}.`;
-  const inner = feedback.parts
-    .filter((p) => p.id.startsWith(prefix))
-    .map((p) => ({ ...p, id: p.id.slice(prefix.length) }));
-  return {
-    kind: "try_again",
-    index: feedback.index,
-    ...(inner.length > 0 ? { parts: inner } : {}),
-  };
-}
-
 /** The classes for a tone, from the kid tokens. Amber is dashed too. */
 export const TONE_CLASS: Record<Tone, string> = {
   idle: "",
@@ -119,7 +98,7 @@ export const TONE_CLASS: Record<Tone, string> = {
  * padding, so not one part inside moves by a pixel as the mark comes and goes. Dashed for a miss
  * (and for a group left empty), solid for right. Leave 8 px free around the group for it.
  */
-export const WHOLE_CLASS: Record<Tone, string> = {
+const WHOLE_CLASS: Record<Tone, string> = {
   idle: "",
   green: "outline-solid outline-2 outline-offset-[0.375rem] outline-kid-correct",
   amber: "outline-dashed outline-2 outline-offset-[0.375rem] outline-kid-try-again",

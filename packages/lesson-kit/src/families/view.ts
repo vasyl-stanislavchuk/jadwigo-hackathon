@@ -40,12 +40,11 @@ export const ViewMode = {
   Print: "print",
 } as const;
 export type ViewModeName = (typeof ViewMode)[keyof typeof ViewMode];
-export const VIEW_MODES: readonly ViewModeName[] = Object.values(ViewMode);
 
 export type PageSpecOf<F extends FamilyName> = Extract<PageFamilySpec, { family: F }>;
-export type KeyOf<F extends FamilyName> = SpecOf<F>["key"];
+type KeyOf<F extends FamilyName> = SpecOf<F>["key"];
 
-export interface FamilyCommit<V> {
+interface FamilyCommit<V> {
   value: V;
   t1: Instant;
   modality: "click" | "keyboard";

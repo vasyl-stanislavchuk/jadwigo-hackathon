@@ -34,22 +34,10 @@ export function slotCount(
 
 /** A place's id, as `help.give` and `help.look.focus` name it (1 is first). */
 export const slotId = (place: number): string => `s${place}`;
-export const SLOT_ID = /^s(\d+)$/;
+const SLOT_ID = /^s(\d+)$/;
 
 /** The place a slot id names (0 is first), or null when the id is not one. */
 export function slotIndex(id: string): number | null {
   const m = SLOT_ID.exec(id);
   return m === null ? null : Number(m[1]) - 1;
 }
-
-/** One class for the whole order, the most specific first. The last two are tile mode's: the tile
- * a place holds is not in the answer, or a tile the answer needs was not used. */
-export const SEQUENCE_CLASSES = [
-  "reversed",
-  "swapped_neighbours",
-  "one_misplaced",
-  "other_order",
-  "extra_tile",
-  "missing_tile",
-  "other_wrong",
-] as const;

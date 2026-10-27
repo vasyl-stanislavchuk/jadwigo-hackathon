@@ -27,7 +27,7 @@ export const MathNotation = createContext<Language>("en");
 export const useNotation = (): Language => useContext(MathNotation);
 
 /** Whether a lesson in `language` draws numbers and signs the Polish school's way. */
-export const schoolNotation = (language: Language): boolean => language === "pl";
+const schoolNotation = (language: Language): boolean => language === "pl";
 
 // A no-break space keeps 1 000 000 on one line; inside TeX the thin space `\,` does the same.
 const NBSP = " ";

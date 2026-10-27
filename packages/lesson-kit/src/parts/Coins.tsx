@@ -16,8 +16,8 @@
 
 import { cn } from "@jadwigo/ui";
 
-export type CoinMetal = "gr" | "zl" | "note";
-export type CoinSize = "sm" | "md" | "lg" | "note";
+type CoinMetal = "gr" | "zl" | "note";
+type CoinSize = "sm" | "md" | "lg" | "note";
 
 export interface CoinToken {
   face: string;

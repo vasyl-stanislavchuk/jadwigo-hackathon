@@ -26,7 +26,6 @@ import { createPortal } from "react-dom";
 export type ToolKind = "keypad" | "letters";
 
 /** The frame a step is drawn in, picked by input and shape (frame.ts, README §2). */
-export type { StepFrameKind } from "./frame.ts";
 
 import type { StepFrameKind } from "./frame.ts";
 

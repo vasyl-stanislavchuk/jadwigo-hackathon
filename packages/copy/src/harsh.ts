@@ -6,7 +6,7 @@
 
 import type { Language } from "./types.ts";
 
-export const HARSH_WORDS: Record<Language, readonly string[]> = {
+const HARSH_WORDS: Record<Language, readonly string[]> = {
   pl: [
     "źle",
     "zły",

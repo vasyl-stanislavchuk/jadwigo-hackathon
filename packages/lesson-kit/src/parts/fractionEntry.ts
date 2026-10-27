@@ -19,7 +19,7 @@ export interface FractionBoxes {
 }
 
 /** The most digits one box takes: a grade 4 fraction has at most three. */
-export const BOX_DIGITS = 3;
+const BOX_DIGITS = 3;
 
 /** The longest string the boxes make: three boxes, a space and a bar. */
 export const FRACTION_MAX = 3 * BOX_DIGITS + 2;

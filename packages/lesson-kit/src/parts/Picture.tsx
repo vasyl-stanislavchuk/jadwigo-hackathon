@@ -15,7 +15,7 @@
 
 import { RichText } from "./RichText.tsx";
 
-export interface PictureLabelProps {
+interface PictureLabelProps {
   content: string;
   coordinates: [number, number];
   alignment: string;

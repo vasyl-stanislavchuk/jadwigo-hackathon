@@ -16,10 +16,6 @@ export function letterUnits(text: string): string[] {
   return text.match(/\P{M}\p{M}*|\p{M}+/gu) ?? [];
 }
 
-/** A letter's part id: `l3`, or `g1.l3` for a gap's. */
-export const letterId = (n: number, of?: string): string =>
-  of === undefined ? `l${n}` : `${of}.l${n}`;
-
 const LETTER = /^l(\d+)$/;
 
 /** The letters a result marked missed, by their place, for one field (`of` a gap's id, or none for

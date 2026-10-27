@@ -15,7 +15,7 @@
  * keypad's own glyphs; both read the same.
  */
 
-export type Op = "+" | "−" | "×" | "÷";
+type Op = "+" | "−" | "×" | "÷";
 
 export type Expr =
   | { kind: "num"; value: number }
@@ -24,9 +24,6 @@ export type Expr =
 
 /** The top-level operation of an expression: what it is, as a form. */
 export type Form = "number" | "sum" | "difference" | "product" | "quotient";
-
-/** The forms a key may require (`EnterKey.form`); `any` compares by value alone. */
-export type RequiredForm = Exclude<Form, "number"> | "any";
 
 /** The signs the expression keypad offers, in the order it draws them. */
 export const EXPRESSION_SIGNS: readonly string[] = ["×", "÷", "+", "−", "(", ")"];

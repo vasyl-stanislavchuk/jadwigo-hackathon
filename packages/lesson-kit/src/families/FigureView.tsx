@@ -26,7 +26,7 @@ import { isDenom, tokenOf } from "./money.ts";
 const ONE_FORMULA = /^\s*\$[^$]+\$\s*$/;
 
 /** A ruler figure's geometry for the Ruler part (components/parts/rulerGeometry.ts). */
-export function rulerGeometry(figure: Extract<Figure, { kind: "ruler" }>): RulerGeometry {
+function rulerGeometry(figure: Extract<Figure, { kind: "ruler" }>): RulerGeometry {
   return {
     length: figure.length,
     pixelsPerUnit: figure.pixels_per_unit,

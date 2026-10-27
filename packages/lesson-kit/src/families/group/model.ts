@@ -18,7 +18,7 @@
 import type { GroupCard, GroupData, GroupLayout } from "@jadwigo/contracts";
 import { QuestionType } from "../names.ts";
 
-export type { GroupCard, GroupData, GroupKey, GroupLayout, GroupValue } from "@jadwigo/contracts";
+export type { GroupCard, GroupData, GroupLayout, GroupValue } from "@jadwigo/contracts";
 
 /** The layout a step plays in: what it names, else its question type's default. */
 export function layoutOf(data: GroupData, question_type: string): GroupLayout {

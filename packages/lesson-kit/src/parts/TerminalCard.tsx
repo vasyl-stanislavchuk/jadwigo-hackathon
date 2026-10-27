@@ -43,7 +43,7 @@ const ANNOUNCE_MS = 100;
 
 /** Copy a command; true only when the write really happened. The fallback selects a hidden
  * textarea, then hands focus back to whatever held it (the copy button). */
-export async function writeClipboard(text: string): Promise<boolean> {
+async function writeClipboard(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
     return true;

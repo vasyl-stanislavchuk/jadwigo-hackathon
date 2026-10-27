@@ -458,11 +458,6 @@ export function termsIn(text: string): Term[] {
   return out;
 }
 
-/** Does this text hold TeX? */
-export function hasTex(text: string): boolean {
-  return texSpans(text).length > 0;
-}
-
 /** One paragraph of plain words: no TeX, bold, code, break or block in it. */
 export function isPlainText(text: string): boolean {
   const blocks = parseRichText(text);

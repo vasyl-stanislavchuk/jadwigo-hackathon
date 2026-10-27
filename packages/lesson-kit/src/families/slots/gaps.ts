@@ -72,7 +72,7 @@ export function mathsLine(data: Pick<SlotsData, "template" | "code">): boolean {
 
 /** How long a typed gap is drawn (Slots addendum 3.1): its length setting (`max_length`), else 4
  * digits for a number and 9 letters for a word; one character is a square. Never what is typed. */
-export function lengthOf(gap: Gap): FieldLength {
+function lengthOf(gap: Gap): FieldLength {
   if (gap.kind !== Family.Enter || gap.max_length === 1) return "char";
   return gap.input === "text"
     ? { letters: gap.max_length ?? DEFAULT_LETTERS }

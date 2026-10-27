@@ -18,9 +18,9 @@ import { type RefObject, useLayoutEffect, useState } from "react";
 export type StepFrameKind = "phone" | "tablet" | "tablet-sideways" | "phone-sideways" | "laptop";
 
 /** The width under which every window is a phone: 600 px, the one breakpoint (README §2). */
-export const PHONE_MAX = 600;
+const PHONE_MAX = 600;
 /** A sideways window under this height is a phone on its side. */
-export const SIDEWAYS_PHONE_MAX_HEIGHT = 500;
+const SIDEWAYS_PHONE_MAX_HEIGHT = 500;
 
 export function pickFrame({
   width,

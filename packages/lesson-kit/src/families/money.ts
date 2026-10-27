@@ -10,7 +10,7 @@ import type { CoinToken } from "../parts/Coins.tsx";
 
 export type { Denom };
 
-export const DENOMS = Denom.options;
+const DENOMS = Denom.options;
 
 /** Each denomination's value in grosze (100 grosze is 1 złoty). */
 export const DENOM_GR: Record<Denom, number> = {

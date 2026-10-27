@@ -58,7 +58,7 @@ import {
 
 type F = typeof Family.Choose;
 
-export function OptionContent({
+function OptionContent({
   option,
   language,
 }: {

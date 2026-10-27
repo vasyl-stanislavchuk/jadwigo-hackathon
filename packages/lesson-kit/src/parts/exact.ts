@@ -31,7 +31,7 @@ const MAX_DIGITS = 12;
 
 const DECIMAL = /^(-?)([0-9]*)(?:[.,]([0-9]*))?$/;
 
-export function gcd(a: number, b: number): number {
+function gcd(a: number, b: number): number {
   let x = Math.abs(a);
   let y = Math.abs(b);
   while (y !== 0) [x, y] = [y, x % y];
@@ -39,7 +39,7 @@ export function gcd(a: number, b: number): number {
 }
 
 /** n/d in lowest terms, the sign on n; null when d is 0. */
-export function exact(n: number, d: number): Exact | null {
+function exact(n: number, d: number): Exact | null {
   if (d === 0 || !Number.isSafeInteger(n) || !Number.isSafeInteger(d)) return null;
   const g = gcd(n, d) || 1;
   const s = d < 0 ? -1 : 1;

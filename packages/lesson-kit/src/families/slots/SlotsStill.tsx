@@ -83,7 +83,7 @@ function StillGap({
  * every gap's answer. `data-solution-line` is the step's body, which "Jeszcze nie wiem" scrolls
  * to when the step has no card (paper-behaviour README §3.6).
  */
-export function SlotsGivenUp({
+function SlotsGivenUp({
   data,
   language,
   shown,

@@ -23,7 +23,6 @@ export type {
   PlaceKey,
   PlaceValue,
   Point,
-  Region,
 } from "@jadwigo/contracts";
 
 /** The line cut into `parts` equal parts: its step is the span over the parts. */

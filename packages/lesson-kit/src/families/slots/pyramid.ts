@@ -47,7 +47,7 @@ export function pyramidShaped(rows: PyramidRows): boolean {
  * a brick under a known brick beside a known sibling is the difference. Bricks the givens do not
  * settle stay null (the gaps then have more than one answer).
  */
-export function pyramidSolve(rows: PyramidRows): (number | null)[][] {
+function pyramidSolve(rows: PyramidRows): (number | null)[][] {
   const v = rows.map((row) => row.map((c) => (typeof c === "number" ? c : null)));
   let moved = true;
   while (moved) {
@@ -98,7 +98,7 @@ export function pyramidValues(rows: PyramidRows): Record<string, number> {
 }
 
 /** The near misses for each gap, by gap id: the entry each classic slip gives, and its class. */
-export function pyramidNear(rows: PyramidRows): Record<string, Record<string, string>> {
+function pyramidNear(rows: PyramidRows): Record<string, Record<string, string>> {
   const v = pyramidSolve(rows);
   const out: Record<string, Record<string, string>> = {};
   rows.forEach((row, i) => {

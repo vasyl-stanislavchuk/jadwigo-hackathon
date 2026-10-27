@@ -36,11 +36,6 @@ export function scrollDelta(
 let pressed = false;
 let installed = false;
 
-/** Whether a finger or a mouse button is down now. */
-export function pointerDown(): boolean {
-  return pressed;
-}
-
 function install(): void {
   if (installed || typeof document === "undefined") return;
   installed = true;
@@ -130,7 +125,7 @@ export function afterRelease(fn: () => void): void {
  * docked keypad's fold arrow. When it does not, the instruction keeps its place 16 px under the top
  * bar and the field shows as far as the room allows: Choose README 6.6 and 6.7 open a step "at the
  * top", and a child reads the task before they answer it. */
-export function openBox(field: Element): { top: number; bottom: number } {
+function openBox(field: Element): { top: number; bottom: number } {
   const box = (field.closest("[data-scroll-target]") ?? field).getBoundingClientRect();
   const start = field
     .closest("[data-step-shell]")

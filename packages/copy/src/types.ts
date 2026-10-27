@@ -11,7 +11,7 @@ export type Language = "pl" | "en";
 export type Category = "child" | "adult";
 
 /** Intl.PluralRules categories; `other` is the one every language has. */
-export type PluralForms = Partial<Record<"zero" | "one" | "two" | "few" | "many", string>> & {
+type PluralForms = Partial<Record<"zero" | "one" | "two" | "few" | "many", string>> & {
   other: string;
 };
 

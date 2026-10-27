@@ -14,7 +14,7 @@ import { SequenceView } from "./sequence/SequenceView.tsx";
 import { SlotsView } from "./slots/SlotsView.tsx";
 import type { ViewProps } from "./view.ts";
 
-export const FAMILY_VIEWS: { [F in FamilyName]: ComponentType<ViewProps<F>> } = {
+const FAMILY_VIEWS: { [F in FamilyName]: ComponentType<ViewProps<F>> } = {
   [Family.Choose]: ChooseView,
   [Family.Enter]: EnterView,
   [Family.Slots]: SlotsView,

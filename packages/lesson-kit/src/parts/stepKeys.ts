@@ -27,7 +27,7 @@ import {
 } from "react";
 import { afterRelease, scrollToShow, showOnOpen } from "./scroll.ts";
 
-export type FieldKind = "slot" | "field";
+type FieldKind = "slot" | "field";
 
 /** One field of the answer, as the view that draws it reports it. */
 export interface StepField {
@@ -86,8 +86,7 @@ export function nextEmpty(fields: readonly StepField[], from: number): number {
 }
 
 /** The first marked field in fill order, or -1. */
-export const firstMarked = (fields: readonly StepField[]): number =>
-  fields.findIndex((f) => f.marked);
+const firstMarked = (fields: readonly StepField[]): number => fields.findIndex((f) => f.marked);
 
 /** Where the focus goes after a miss, and on a quiet Sprawdź after one: the first marked field,
  * else the first empty, else the first. */
@@ -177,7 +176,7 @@ export const onMiss = (fields: readonly StepField[]): KeysMove =>
 
 /** The element with the focus went (Więcej pomocy after the last rung, §3.2 and §4): the first
  * marked field after a miss, its part selected, else the first empty field, else the first. */
-export function onFocusLost(fields: readonly StepField[], phase: KeysPhase): KeysMove {
+function onFocusLost(fields: readonly StepField[], phase: KeysPhase): KeysMove {
   if (fields.length === 0 || phase === "ended") return STAY;
   return phase === "miss"
     ? field(markedOrFirst(fields), true)
@@ -188,7 +187,7 @@ export function onFocusLost(fields: readonly StepField[], phase: KeysPhase): Key
  * character; a field with a range once it holds its full length, or once any further digit would
  * leave the range (an hour from 0 to 23 after "7", minutes after "6"). Any other field never is,
  * because "1" may still become "12". */
-export function full(f: StepField): boolean {
+function full(f: StepField): boolean {
   if (f.kind === "slot") return [...f.value].length === 1;
   if (f.range === undefined || !/^\d+$/.test(f.value)) return false;
   return f.value.length >= f.maxLength || Number(`${f.value}0`) > f.range[1];
@@ -322,10 +321,7 @@ const TABBABLE = "a[href], button, input, select, textarea, [tabindex]";
  * can reach after every field in the page's order, or with Shift the last one before them all. A
  * field's own boxes, and an element that holds the fields (the step's own frame), are never it. Null when there is none, and the browser's Tab goes on.
  */
-export function pastFields(
-  fieldEls: readonly (HTMLElement | null)[],
-  back: boolean,
-): HTMLElement | null {
+function pastFields(fieldEls: readonly (HTMLElement | null)[], back: boolean): HTMLElement | null {
   const els = fieldEls.filter((e): e is HTMLElement => e !== null);
   if (els.length === 0) return null;
   const inField = (c: Element): boolean => els.some((e) => e.contains(c) || c.contains(e));

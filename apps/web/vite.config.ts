@@ -6,6 +6,7 @@ import { webPort } from "./src/config.ts";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  server: { port: webPort(), strictPort: true },
-  preview: { port: webPort(), strictPort: true },
+  // One address everywhere: "localhost" is ::1 alone on macOS, and the Playwright smoke dials 127.0.0.1.
+  server: { host: "127.0.0.1", port: webPort(), strictPort: true },
+  preview: { host: "127.0.0.1", port: webPort(), strictPort: true },
 });

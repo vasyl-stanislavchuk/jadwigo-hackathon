@@ -36,7 +36,7 @@ const MARKER_TONE: Record<Tone, string> = {
 };
 
 /** The keyboard crosshair's grid: 20 cells each way, so a cell is 5% of the picture. */
-export const CURSOR_CELLS = 20;
+const CURSOR_CELLS = 20;
 const ARROWS: Record<string, [number, number]> = {
   ArrowLeft: [-1, 0],
   ArrowRight: [1, 0],

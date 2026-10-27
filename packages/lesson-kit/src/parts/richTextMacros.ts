@@ -16,7 +16,7 @@ import type { Language } from "../stage/types.ts";
 import { notationTex } from "./notation.ts";
 import { texRanges } from "./richTextParse.ts";
 
-export type TexRole =
+type TexRole =
   | "blue"
   | "green"
   | "gold"
@@ -28,21 +28,8 @@ export type TexRole =
   | "gray-h"
   | "gray-i";
 
-export const TEX_ROLES: readonly TexRole[] = [
-  "blue",
-  "green",
-  "gold",
-  "red",
-  "pink",
-  "purple",
-  "violet",
-  "gray",
-  "gray-h",
-  "gray-i",
-];
-
 /** The class a role paints with: `.tex-blue { color: var(--tex-blue) }` in tokens.css. */
-export const texClass = (role: TexRole): string => `tex-${role}`;
+const texClass = (role: TexRole): string => `tex-${role}`;
 
 const paint = (role: TexRole) => `\\htmlClass{${texClass(role)}}{#1}`;
 

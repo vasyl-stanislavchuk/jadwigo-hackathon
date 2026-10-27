@@ -8,7 +8,6 @@
 
 import { copy } from "@jadwigo/copy";
 import { cn } from "@jadwigo/ui";
-import type { ReactNode } from "react";
 import { ColumnGrid } from "../../parts/ColumnGrid.tsx";
 import { PyramidGrid } from "../../parts/PyramidGrid.tsx";
 import { RichText } from "../../parts/RichText.tsx";

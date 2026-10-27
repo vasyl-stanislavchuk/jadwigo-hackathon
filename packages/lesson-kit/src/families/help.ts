@@ -33,20 +33,20 @@
  * with no twin ends on the worked solution and moving on, as before.
  */
 
-import type { Help, HelpCard, HintCard } from "@jadwigo/contracts";
+import type { HelpCard, HintCard } from "@jadwigo/contracts";
 import { uncoloured } from "../parts/richTextMacros.ts";
 import type { HelpPicture, PageHelp, PageHintCard, PageSolutionLine } from "../stage/types.ts";
 import { answerWords, givesAway } from "./answer.ts";
 import { Family, Surface } from "./names.ts";
 import { slotIndex, tileMode } from "./sequence/model.ts";
 import { fillOrder } from "./slots/model.ts";
-import { type BareSpec, type FamilySpec, pageSpec, type StepHelp, type Verdict } from "./types.ts";
+import { type BareSpec, type FamilySpec, pageSpec, type Verdict } from "./types.ts";
 
-export type { Help, HelpCard, HelpPicture, HintCard } from "@jadwigo/contracts";
+export type { HintCard } from "@jadwigo/contracts";
 
 /** A card on the hint stack: a Khan hint as written, or a ladder rung turned into one (its
  * picture kept, its worked or almost-there lines under `lines`). The page's PageHintCard. */
-export type StackCard = HintCard & { picture?: HelpPicture; lines?: string[]; blank?: boolean };
+type StackCard = HintCard & { picture?: HelpPicture; lines?: string[]; blank?: boolean };
 
 /**
  * The ladder as the playground holds it: the contracts' `Help`, and the twin rung 4 plays. In v0 a
@@ -89,10 +89,7 @@ export const namedMiss = (mistake: string | null): LastMiss => ({ mistake, misse
  * is missed too. Null for every other family: a choice's rung 2 takes distractors away, which
  * gives no part's answer, and the rest have no parts help can point at.
  */
-export function missedOf(
-  spec: BareSpec,
-  verdict: Pick<Verdict, "correct" | "parts">,
-): string[] | null {
+function missedOf(spec: BareSpec, verdict: Pick<Verdict, "correct" | "parts">): string[] | null {
   const order = partOrder(spec);
   if (order === null) return null;
   const missed = new Set(

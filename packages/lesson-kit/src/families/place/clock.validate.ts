@@ -14,7 +14,7 @@ type Report = (path: string, rule: string, message: string) => void;
 type ClockData = Extract<PlaceData, { surface: typeof Surface.Clock }>;
 type ClockKey = Extract<PlaceKey, { surface: typeof Surface.Clock }>;
 
-export const MINUTE_STEPS = [5, 15, 30] as const;
+const MINUTE_STEPS = [5, 15, 30] as const;
 
 export function clockProblems(data: ClockData, key: ClockKey, err: Report, warn: Report): void {
   if (data.target_label.trim() === "")

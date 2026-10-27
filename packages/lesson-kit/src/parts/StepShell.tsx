@@ -89,7 +89,7 @@ import { Tooltip } from "./Tooltip.tsx";
 
 /** The step's Check. `ready` is false until the answer is complete: the button reads as disabled
  * but stays pressable, so a press too soon can say what is left (rule 8). */
-export interface CheckAction {
+interface CheckAction {
   ready: boolean;
   press: PressHandlers;
 }
@@ -266,9 +266,9 @@ function useFocusOnOpen(answer: { current: HTMLElement | null }, fields: boolean
 }
 
 /** What the footer is now: the plain footer before a check, then one band. */
-export type Band = "none" | "right" | "miss" | "solution";
+type Band = "none" | "right" | "miss" | "solution";
 
-export function bandOf(state: StepStatus): Band {
+function bandOf(state: StepStatus): Band {
   if (state === StepStatus.Right) return "right";
   if (state === StepStatus.NotYet) return "miss";
   if (state === StepStatus.MovedOn) return "solution";
@@ -276,7 +276,7 @@ export function bandOf(state: StepStatus): Band {
 }
 
 /** The progress as words, never a number (rule 13): at the start, about half, nearly the end. */
-export function progressWords(language: Language, p: LessonProgress): string {
+function progressWords(language: Language, p: LessonProgress): string {
   if (p.review) return copy(language, "ds_review_bar");
   const share = p.total === 0 ? 0 : p.done / p.total;
   return copy(

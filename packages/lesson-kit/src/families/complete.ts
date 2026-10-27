@@ -82,16 +82,6 @@ export function missingText(text: string): Missing | null {
   return text.trim() === "" ? { reason: "incomplete_text", parts: [] } : null;
 }
 
-/** A question in several parts (compound/model.ts) is missing while any part is: each part says
- * what it lacks in its own answer area, and the step names the parts, by id. */
-export function missingParts(
-  partIds: readonly string[],
-  complete: ReadonlySet<string>,
-): Missing | null {
-  const parts = partIds.filter((id) => !complete.has(id));
-  return parts.length === 0 ? null : { reason: "incomplete_parts", parts };
-}
-
 /** Enter with an expression (dl-w3.51.1): empty, or still being written (`2×`, an open bracket).
  * A finished expression that does not parse is a miss, not a gap. */
 export function missingExpression(text: string): Missing | null {

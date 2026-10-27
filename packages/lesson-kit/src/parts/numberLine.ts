@@ -59,10 +59,10 @@ export function ticks({ min, max, step }: LineData): number[] {
  * 720px, so 30 intervals keep drawn ticks at least 24px apart (WCAG 2.2 SC 2.5.8's minimum).
  * Our own bound for tablets, not a cited one; whether lint caps the line is dl-w3.6's decision.
  */
-export const FINGER_INTERVALS = 30;
+const FINGER_INTERVALS = 30;
 
 /** A line whose ticks sit closer than a finger can choose between. */
-export function isDense(line: LineData): boolean {
+function isDense(line: LineData): boolean {
   return Math.round((lastTick(line) - line.min) / line.step) > FINGER_INTERVALS;
 }
 

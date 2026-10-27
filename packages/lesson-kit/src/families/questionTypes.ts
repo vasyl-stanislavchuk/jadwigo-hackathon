@@ -11,10 +11,10 @@ import { Family, type FamilyName, QuestionType, type QuestionTypeName, Surface }
 import type { Marks } from "./types.ts";
 
 /** Where a question type stands in the playground. */
-export type Status = "refined" | "draft" | "idea";
+type Status = "refined" | "draft" | "idea";
 
 /** Chi and Wylie's ladder of engagement: how much the question type asks the learner to produce. */
-export type Icap = "passive" | "active" | "constructive";
+type Icap = "passive" | "active" | "constructive";
 
 export interface QuestionTypeInfo {
   name: QuestionTypeName;
@@ -402,7 +402,7 @@ export interface FamilyInfo {
   key: string;
 }
 
-export const FAMILY_INFO: FamilyInfo[] = [
+const FAMILY_INFO: FamilyInfo[] = [
   {
     name: Family.Choose,
     label: "Choose",

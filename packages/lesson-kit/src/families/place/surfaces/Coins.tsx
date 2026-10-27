@@ -33,7 +33,7 @@ import {
 type CoinsData = DataOf<typeof Surface.Coins>;
 
 /** A tray is missing until a coin lies in it. */
-export function missingCoins(value: unknown | null): Missing | null {
+function missingCoins(value: unknown | null): Missing | null {
   const items =
     value !== null && typeof value === "object" && "items" in value
       ? (value as { items: unknown }).items

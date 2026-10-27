@@ -36,9 +36,8 @@ import type {
 } from "@jadwigo/contracts";
 import type { Family, FamilyName } from "./names.ts";
 
-export type { PartMark, PartVerdict, Verdict } from "@jadwigo/contracts";
-export type { FamilyName, QuestionTypeName, SurfaceName } from "./names.ts";
-export { FAMILIES, Family, QuestionType, Surface } from "./names.ts";
+export type { Verdict } from "@jadwigo/contracts";
+export type { FamilyName } from "./names.ts";
 
 /** Whether a miss marks the missed parts or only the whole step (the marks rule). A typed word's
  * letters are marked under either: they are inside the one field. */
@@ -54,7 +53,7 @@ interface Envelope {
   help?: StepHelp | undefined;
 }
 
-export type FamilyStep =
+type FamilyStep =
   | { family: typeof Family.Choose; data: ChooseData; key: ChooseKey }
   | { family: typeof Family.Enter; data: EnterData; key: EnterKey }
   | { family: typeof Family.Slots; data: SlotsData; key: SlotsKey }
@@ -66,7 +65,7 @@ export type FamilyStep =
 /** A playground question built from contracts pieces: the envelope, the family's data and its key. */
 export type FamilySpec = Envelope & FamilyStep;
 
-export type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
 /** A question without its help ladder, as a twin is. */
 export type BareSpec = DistributiveOmit<FamilySpec, "help">;

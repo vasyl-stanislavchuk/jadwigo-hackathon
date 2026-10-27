@@ -19,7 +19,7 @@ import { cn } from "@jadwigo/ui";
 import type { ReactNode } from "react";
 import { gapFit, rem, SQUARE_RADIUS, usePhoneCells } from "./gapFit.ts";
 
-export interface ColumnGridCell {
+interface ColumnGridCell {
   row: number;
   col: number;
   /** A digit or the sign, drawn as text. */

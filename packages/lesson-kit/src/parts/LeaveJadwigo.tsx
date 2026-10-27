@@ -30,7 +30,7 @@ type Ask = (href: string, from: HTMLElement) => void;
 const Guard = createContext<Ask | null>(null);
 
 /** Where a link goes, as the confirmation names it: the address's host ('www.khanacademy.org'). */
-export function whereOf(href: string): string {
+function whereOf(href: string): string {
   try {
     return new URL(href).host;
   } catch {
@@ -73,7 +73,7 @@ export function LeaveGuard({
 }
 
 /** The confirmation itself: what leaving means, Zostań (the default) and Otwórz. */
-export function LeaveConfirm({
+function LeaveConfirm({
   language,
   href,
   onStay,

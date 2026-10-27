@@ -14,7 +14,7 @@ import type { KeyboardEvent, PointerEvent } from "react";
 import type { Clock, Instant } from "../stage/clock.ts";
 import type { PressModality } from "../stage/press.ts";
 
-export type FractionShapeKind = "bar" | "circle" | "rect";
+type FractionShapeKind = "bar" | "circle" | "rect";
 
 export interface FractionShapeProps {
   shape: FractionShapeKind;
@@ -54,7 +54,7 @@ function slice(i: number, n: number): string {
 }
 
 /** The columns of a rectangle (or a bar, one row). */
-export function columnsOf(parts: number, rows = 1): number {
+function columnsOf(parts: number, rows = 1): number {
   return Math.max(1, Math.round(parts / Math.max(1, rows)));
 }
 

@@ -48,7 +48,7 @@ export interface CreditShown {
 }
 
 /** One question's credit, in the language the question is shown in; null for our own. */
-export interface QuestionCreditValue {
+interface QuestionCreditValue {
   credit: CreditShown;
   language: Language;
 }
@@ -73,7 +73,7 @@ export function QuestionCredit({
 }
 
 /** The question's credit, or null. */
-export function useQuestionCredit(): QuestionCreditValue | null {
+function useQuestionCredit(): QuestionCreditValue | null {
   return useContext(Credit);
 }
 
@@ -100,9 +100,9 @@ function withLink(text: string, slot: string, node: ReactNode): ReactNode {
 type Opened = "click" | "hover" | null;
 
 /** The card's width, as README §2 draws it under the trigger. */
-export const CARD_WIDTH = 320;
+const CARD_WIDTH = 320;
 /** The narrowest card that may stand beside the column: its title and the licence name still fit. */
-export const BESIDE_MIN_WIDTH = 240;
+const BESIDE_MIN_WIDTH = 240;
 /** From the column's edge to the card: a transparent bridge, so a mouse moving across keeps it open. */
 export const BESIDE_GAP = 12;
 /** Kept clear between the card and the edge of the room it may use. */

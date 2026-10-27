@@ -12,7 +12,7 @@ import type { PlaceData, PlaceKey } from "./model.ts";
 type Report = (path: string, rule: string, message: string) => void;
 
 /** The most places a tray draws: two rows a child's screen holds. */
-export const MAX_SLOTS = 12;
+const MAX_SLOTS = 12;
 
 export function coinsProblems(
   data: Extract<PlaceData, { surface: typeof Surface.Coins }>,

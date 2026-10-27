@@ -35,7 +35,7 @@ export function speakable(text: string): string {
 }
 
 /** A part of a command the learner fills in, such as `<Buy paint id>` (dl.contracts.spec.PLACEHOLDER). */
-export const PLACEHOLDER = /<[^<>]+>/;
+const PLACEHOLDER = /<[^<>]+>/;
 
 export function hasPlaceholder(cmd: string): boolean {
   return PLACEHOLDER.test(cmd);

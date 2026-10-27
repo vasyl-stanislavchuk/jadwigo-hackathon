@@ -44,15 +44,15 @@ export const SPLIT_PART = "split";
  * half an hour's gap, since a child's hand half way between two numbers is never exactly on it. */
 export const HOUR_TOLERANCE = 2.5;
 
-export function chooseSolution(key: ChooseKey): ChooseValue {
+function chooseSolution(key: ChooseKey): ChooseValue {
   return { chosen: [...key.correct] };
 }
 
-export function enterSolution(key: EnterKey): EnterValue {
+function enterSolution(key: EnterKey): EnterValue {
   return { entered: key.accept[0] ?? "" };
 }
 
-export function slotsSolution(key: SlotsKey): SlotsValue {
+function slotsSolution(key: SlotsKey): SlotsValue {
   return {
     gaps: Object.fromEntries(
       Object.entries(key.gaps).map(([id, k]) => [
@@ -63,11 +63,11 @@ export function slotsSolution(key: SlotsKey): SlotsValue {
   };
 }
 
-export function sequenceSolution(key: SequenceKey): SequenceValue {
+function sequenceSolution(key: SequenceKey): SequenceValue {
   return [...(key.orders[0] ?? [])];
 }
 
-export function groupSolution(key: GroupKey): GroupValue {
+function groupSolution(key: GroupKey): GroupValue {
   return {
     items: Object.fromEntries(Object.entries(key.items).map(([id, groups]) => [id, [...groups]])),
   };
@@ -88,7 +88,7 @@ function inside(p: Point, polygon: readonly Point[]): boolean {
 
 /** A point inside the region: the mean of its corners when that falls inside (any convex region),
  * else the first inside point on a 20 by 20 scan of its bounds. */
-export function pointIn(polygon: readonly Point[]): Point {
+function pointIn(polygon: readonly Point[]): Point {
   const mean = {
     x: polygon.reduce((a, p) => a + p.x, 0) / polygon.length,
     y: polygon.reduce((a, p) => a + p.y, 0) / polygon.length,
@@ -106,23 +106,23 @@ export function pointIn(polygon: readonly Point[]): Point {
 }
 
 /** The split an area model's solution draws: the first place the key accepts, else the middle. */
-export function solutionSplit(key: GridKey): GridSplit | undefined {
+function solutionSplit(key: GridKey): GridSplit | undefined {
   if (key.split === undefined) return undefined;
   return { axis: "cols", at: key.split.accept_at?.[0] ?? Math.floor(key.cols / 2) };
 }
 
 /** A shape's solution: the first `count` parts, side by side. */
-export function fractionSolution(key: FractionKey): { shaded: number[] } {
+function fractionSolution(key: FractionKey): { shaded: number[] } {
   return { shaded: Array.from({ length: key.count }, (_, i) => i) };
 }
 
 /** The clock as the key sets it: the hour hand where a real clock puts it. */
-export function clockSolution(key: ClockKey): { hour_at: number; m: number } {
+function clockSolution(key: ClockKey): { hour_at: number; m: number } {
   return { hour_at: hourAtOf(key.h, key.m), m: mod(key.m, 60) };
 }
 
 /** The fewest coins from the bank that make the amount, or null when the bank cannot make it. */
-export function coinsSolution(
+function coinsSolution(
   key: CoinsKey,
   data?: Extract<PlaceData, { surface: "coins" }>,
 ): PlaceValue | null {

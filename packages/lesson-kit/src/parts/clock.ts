@@ -22,7 +22,7 @@ export interface ClockHands {
 export type Hand = "h" | "m";
 export type Gearing = "geared" | "free";
 
-export const MARKS = 60;
+const MARKS = 60;
 
 export const mod = (a: number, n: number): number => ((a % n) + n) % n;
 

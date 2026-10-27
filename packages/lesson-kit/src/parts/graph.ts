@@ -93,7 +93,7 @@ export const GRAPH_ICONS = {
   bus: Bus,
   square: Square,
 } as const satisfies Record<string, LucideIcon>;
-export type GraphIconName = keyof typeof GRAPH_ICONS;
+type GraphIconName = keyof typeof GRAPH_ICONS;
 
 /** What a picture graph stacks: one of our icons, or a served image with its words (Khan's picUrl). */
 export type GraphPicture = { icon: GraphIconName } | { src: string; alt: string };
@@ -161,9 +161,6 @@ export function histogramBar(i: number, n: number): { x: number; w: number } {
 export const numberedKind = (kind: GraphKind): boolean =>
   kind === "bar" || kind === "picture" || kind === "line" || kind === "histogram";
 
-/** What a histogram bin is called in words: its two edges, "120–125". */
-export const binLabel = (bins: readonly number[], i: number): string => `${bins[i]}–${bins[i + 1]}`;
-
 /** The nearest height to a point, given as a fraction 0..1 of the SVG's height from its top. */
 export function heightAt(fractionY: number, g: GraphData): number {
   const y = fractionY * HEIGHT;
@@ -177,7 +174,7 @@ export function nudgeHeight(value: number, by: -1 | 1, g: GraphData): number {
   return clampHeight(tidy(i * g.step), g);
 }
 
-export function clampHeight(value: number, g: GraphData): number {
+function clampHeight(value: number, g: GraphData): number {
   return Math.min(g.max, Math.max(0, value));
 }
 
