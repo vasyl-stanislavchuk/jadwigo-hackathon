@@ -22,8 +22,9 @@ An issue is a brief, with these parts: **Read**, **Owns**, **Frozen**, **Do**, *
 | Branch | `git switch -c <lane>/<id> origin/main` |
 | Check | `make check`, then each "done when" check, keeping its real output |
 | Open | a draft PR titled `<id>: <what>`, with a body from `/dev-pr` |
-| Land | `gh pr ready`, then `gh pr merge --auto --squash` |
-| Close | `bd close <id> --reason "<what ran, what did not>"` |
+| Land | `gh pr ready`, then `gh pr merge --auto --squash`; going ready starts md's merge steward's review |
+| Note | `bd update <id> --append-notes "<what ran, what did not>"`; the steward closes the issue on merge |
+| Take back | a PR the steward returned to draft comes before the next issue: fix, push, `gh pr ready` |
 :::
 
 One issue is one deliverable. Work found along the way becomes a new issue linked with `discovered-from`, never part of the same PR.
