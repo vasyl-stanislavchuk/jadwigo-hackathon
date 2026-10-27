@@ -1,4 +1,9 @@
 # Thin on purpose: every target calls turbo, bun, md or Postgres.app's tools. The gate is `make check`.
+# .env.local (from .env.example) is read here, so check-all's integration tests see DATABASE_URL.
+ifneq (,$(wildcard .env.local))
+include .env.local
+export
+endif
 .PHONY: check check-all dev db skills drops
 
 ## check: lint, typecheck and test what changed since main (turbo --affected), uv's pytest
@@ -8,9 +13,11 @@ check:
 	bunx turbo run lint typecheck test --affected
 	bun run lint:repo
 
-## check-all: the same on every package
+## check-all: the same on every package, plus the integration tests (*.int.test.ts) against the
+## DATABASE_URL in .env.local; run `make db` once first
 check-all:
-	bunx turbo run lint typecheck test
+	@test -n "$$DATABASE_URL" || { echo "check-all: DATABASE_URL is unset. Run: cp .env.example .env.local && make db"; exit 1; }
+	bunx turbo run lint typecheck test test:int
 	bun run lint:repo
 
 ## dev: every app's dev server (ports from md's environment, tools/src/ports.ts)
