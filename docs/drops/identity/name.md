@@ -1,59 +1,50 @@
 :::meta
-eyebrow: Jadwigo · identity
-subtitle: Stories about a school's patron, Queen Jadwiga, each with and without a character, and ideas from the "go" in the name
-by: the jadwigo-marketing session for dl-w0b4.27
-when: 2026-10-27T15:00:00Z
+eyebrow: Jadwigo · mission and value
+subtitle: What the name tells, in 3 stories about a school's patron, Queen Jadwiga
+by: the jadwigo-marketing session for dl-w0b4.48
+when: 2026-10-27T18:00:00Z
 :::
 
-# The name story, and whether a character carries it
+# Name story
 
-Jadwigo is named after a school's patron, Queen Jadwiga. In Polish you call a Jadwiga "Jadwigo!", and in English the name reads as "Jadwiga, go!". Each story rests on these facts:
+Jadwigo is named after the patron of our son's school, Queen Jadwiga. In Polish you call a Jadwiga "Jadwigo!", and in English the name reads as "Jadwiga, go!". Our family's own story comes first ([Story](story.html)), and a name story is the line or two that explains the word. This repo names only the patron, never the school.
+
+Each story rests on these facts:
 - She was [crowned "King" of Poland in Kraków](https://en.wikipedia.org/wiki/Jadwiga_of_Poland) on 16 October 1384.
 - The sale of her jewellery [helped restore the Kraków Academy](https://en.wikipedia.org/wiki/Jadwiga_of_Poland), whose charter came on 26 July 1400.
-- She was [canonised](https://en.wikipedia.org/wiki/Jadwiga_of_Poland) on 8 June 1997.
 - A [folk legend](https://www.trasadlabobasa.pl/en/tab/articles/legend_of_queen_jadwiga's_footprint/5) says a footprint in the wall of Kraków's Carmelite church is hers.
 
-This repo names only the patron, never the school (`jadwigo-marketing/decisions/2026-10-27-the-jadwigo-repo-names-only-the-patron-queen-jadwiga-never-the-s`).
+## Królowa
 
-## Królowa, która dała szkole klejnoty
+"Królowa, która dała szkole klejnoty": a queen who gave her jewels to a school.
 
-The queen who gave her jewels to a school. Its character is Latarenka, a paper-cut lantern that lights the next step.
-
-![The queen story, without and with Latarenka](img/name-krolowa.png)
+> Jadwigo nosi imię patronki szkoły naszego syna, królowej Jadwigi. Sprzedaż jej klejnotów pomogła odnowić Akademię Krakowską. My też chcemy, żeby dobra nauka była dla każdego dziecka.
 
 ## Jadwigo, go!
 
-The vocative as a call: you ask, you try, you go on. Its character is Kiełek, a soft crown with a sprout that grows a leaf as the child moves on and never wilts.
+A call to set off, hidden in the name.
 
-![The Jadwigo, go! story, without and with Kiełek](img/name-jadwigo-go.png)
+> Po polsku tak wołamy Jadwigę: „Jadwigo!”. A w środku imienia jest „go”, jak w „gotowi?” i w „dlaczego?”. Jadwigo to zawołanie do drogi: pytasz, próbujesz, idziesz dalej.
 
 ## Stopka
 
-The footprint legend as a trail of steps on squared paper. There is no figure: the footprints are the character.
+A legend of a footprint, told as one step at a time.
 
-![The footprint story, without and with the footprints](img/name-stopka.png)
+> W Krakowie, w murze kościoła Karmelitów, widać odcisk stopy. Legenda mówi, że to ślad królowej Jadwigi. U nas każde zadanie to jeden mały krok, i każdy krok widać.
 
-## Characters: what weighs on the choice
+## Go in the name
 
-- **For:** the charter wants "characters that make a child smile". Khan Academy Kids gives its bear the job of cheering a right answer and showing how to think after a miss.
-- **Against:** Zeszyt keeps decoration off the lesson ("decoration costs attention"). Under lead B (calm), a loud mascot fights the message.
-- **A don't-scale option:** the class draws and names the character. That character is the most "ours", but it needs the parents' and the teacher's consent, and the drawings stay outside git.
-- **Never:** the queen as a portrait, or anything that looks like another product's character.
+Inside the name is "go", and it gives the copy some play without any picture.
 
-## "Go" in the name
-
-:::table Where each idea would live
-| Idea | Where it lives | Fits lead |
+:::table Ideas from the "go" in the name, and where each could live in the copy
+| Idea | Where it lives | Example |
 | --- | --- | --- |
-| "Jadwigo, go!", the call | the wordmark sets "go" apart in blue ink | all |
-| GOtowi?: "gotowi" starts with "go" | the child's welcome: "Gotowi? Go!" | A, C |
-| dlaczeGO?: Polish questions end in "-go" | the headline "Każde „dlaczego” to dobry początek." | A |
-| Krok po kroku: going means walking | the footprint trail and the step bar | A, B |
-| A Go board on squared paper | each answer a stone, a quiet step bar | B |
-| A paper plane from a zeszyt page | a celebration move for the illustration style (`dl-w0b4.18`) | B, C |
-| Green for go | left out: green means "right" only in Zeszyt | none |
+| "Jadwigo, go!", the call | the name story, the pitch | Jadwigo, go! |
+| "gotowi" starts with "go" | the child's welcome | Gotowi? Go! |
+| Polish questions end in "-go" | the landing headline | Każde „dlaczego” to dobry początek. |
+| going means walking | progress, said in words | Krok po kroku. |
 :::
 
 :::aside
-Each story also sits beside the family's own: "Tę aplikację zrobiliśmy najpierw dla naszego syna. Teraz otwieramy ją dla jego klasy, a potem dla całej szkoły." See the [O nas mock](rings.html).
+Whether a character carries the name is parked until the design system merges (`dl-w0b4.38`). A story is picked by the owner in `dl-w0b4.37`.
 :::
