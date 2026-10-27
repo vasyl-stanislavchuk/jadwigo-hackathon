@@ -9,8 +9,19 @@ Push dev first; push prod only after the same migrations have run on dev.
 | `jadwigo-dev` | `jweuvslwntdimuwcvlzq` | eu-central-1 |
 | `jadwigo-prod` | `xhzkmpainwzrfktxffjv` | eu-central-1 |
 
-The `make` targets read their secrets from the macOS keychain into one command's environment, and
-never print them:
+The `make` targets read each secret from the environment when it's set, or else from the macOS
+keychain, and never print it. The environment can come from the `.env.local` of the checkout you push
+from (`SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `JADWIGO_API_DB_PASSWORD`). Keep them out of
+the main checkout's `.env.local`, which md copies into every worktree. `make` reads that file, so
+write a `$` in a value as `$$`. The passwords are per project: set the ones for the ENV you run.
+
+| Variable in `.env.local` | Keychain item (service) instead |
+| --- | --- |
+| `SUPABASE_ACCESS_TOKEN` | `supabase-access-token` |
+| `SUPABASE_DB_PASSWORD` | `supabase-db-password-dev`, `supabase-db-password-prod` |
+| `JADWIGO_API_DB_PASSWORD` | `jadwigo-api-db-password-dev`, `jadwigo-api-db-password-prod` |
+
+What each one is:
 
 | Keychain item (service) | What it is |
 | --- | --- |
