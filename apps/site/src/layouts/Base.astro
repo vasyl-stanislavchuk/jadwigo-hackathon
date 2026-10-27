@@ -1,0 +1,52 @@
+---
+// Every page's frame: Polish, the head from lib/seo.ts, and the placeholder's look.
+import { getCollection } from "astro:content";
+import { assertReviewed, headTags, jsonLd, type Page } from "../lib/seo.ts";
+
+interface Props {
+  page: Page;
+  path: string;
+}
+
+const { page, path } = Astro.props;
+assertReviewed(await getCollection("pages"), import.meta.env.PROD);
+const tags = headTags(page, path);
+---
+
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{page.title}</title>
+    {
+      tags.map((t) =>
+        t.kind === "meta" ? (
+          <meta name={t.name} content={t.content} />
+        ) : t.kind === "property" ? (
+          <meta property={t.property} content={t.content} />
+        ) : (
+          <link rel={t.rel} href={t.href} />
+        ),
+      )
+    }
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd())} />
+    <style is:global>
+      html, body { height: 100%; margin: 0; }
+      body {
+        display: grid; place-items: center;
+        background: #fbf8f2; color: #2b2a28;
+        font-family: ui-rounded, "Segoe UI", system-ui, sans-serif;
+      }
+      h1 { font-size: clamp(2.5rem, 8vw, 4.5rem); margin: 0; letter-spacing: -0.02em; }
+      p { font-size: clamp(1.1rem, 3vw, 1.5rem); margin: 0.5rem 0 0; text-align: center; color: #6b665e; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>{page.heading}</h1>
+      <slot />
+    </main>
+  </body>
+</html>

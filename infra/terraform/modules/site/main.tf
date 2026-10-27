@@ -68,15 +68,6 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "site" {
   }
 }
 
-resource "aws_s3_object" "index" {
-  bucket        = aws_s3_bucket.site.id
-  key           = "index.html"
-  source        = var.index_html
-  etag          = filemd5(var.index_html)
-  content_type  = "text/html; charset=utf-8"
-  cache_control = "public, max-age=300"
-}
-
 resource "aws_cloudfront_origin_access_control" "site" {
   name                              = var.bucket_name
   origin_access_control_origin_type = "s3"
@@ -84,12 +75,13 @@ resource "aws_cloudfront_origin_access_control" "site" {
   signing_protocol                  = "sigv4"
 }
 
-# www.<apex> answers with a permanent redirect to the apex.
-resource "aws_cloudfront_function" "www_redirect" {
-  name    = "${replace(var.domain_name, ".", "-")}-www-redirect"
+# The edge: www.<apex> redirects to the apex, and a page path reads its index.html (edge.js).
+# The bucket's files come from `make -C infra site-deploy`, not from Terraform.
+resource "aws_cloudfront_function" "edge" {
+  name    = "${replace(var.domain_name, ".", "-")}-edge"
   runtime = "cloudfront-js-2.0"
   publish = true
-  code    = "const apex = ${jsonencode(var.domain_name)};\n${file("${path.module}/www-redirect.js")}"
+  code    = "const apex = ${jsonencode(var.domain_name)};\n${file("${path.module}/edge.js")}"
 }
 
 data "aws_cloudfront_cache_policy" "optimized" {
@@ -126,16 +118,20 @@ resource "aws_cloudfront_distribution" "site" {
 
     function_association {
       event_type   = "viewer-request"
-      function_arn = aws_cloudfront_function.www_redirect.arn
+      function_arn = aws_cloudfront_function.edge.arn
     }
   }
 
-  # A path that is not there serves the page, so a stray link still lands somewhere.
-  custom_error_response {
-    error_code            = 403
-    response_code         = 404
-    response_page_path    = "/index.html"
-    error_caching_min_ttl = 60
+  # A path that is not there serves the site's 404 page. A private bucket answers 403 for a
+  # missing key, so both codes land there.
+  dynamic "custom_error_response" {
+    for_each = [403, 404]
+    content {
+      error_code            = custom_error_response.value
+      response_code         = 404
+      response_page_path    = "/404.html"
+      error_caching_min_ttl = 60
+    }
   }
 
   restrictions {

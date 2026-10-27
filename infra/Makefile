@@ -5,7 +5,7 @@ include aws.mk
 ENV ?= prod
 TF := AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform
 
-.PHONY: init plan apply output fmt validate
+.PHONY: init plan apply output site-deploy fmt validate
 
 init:
 	$(TF) init -input=false -reconfigure -backend-config=environments/$(ENV).backend.hcl
@@ -18,6 +18,18 @@ apply: init
 
 output:
 	@$(TF) output
+
+# The site's files: build, check the head tags, sync to the bucket, then invalidate. The owner runs it
+# after an apply; a merge deploys nothing. Hashed assets under _astro/ cache for a year, the rest 5 minutes.
+SITE := ../apps/site
+AWS := aws --profile $(AWS_PROFILE)
+
+site-deploy:
+	cd $(SITE) && bun run build && bun run check:dist
+	bucket=$$($(TF) output -raw site_bucket) && dist_id=$$($(TF) output -raw site_distribution_id) && \
+	{ [ ! -d $(SITE)/dist/_astro ] || $(AWS) s3 sync $(SITE)/dist/_astro s3://$$bucket/_astro --cache-control "public, max-age=31536000, immutable"; } && \
+	$(AWS) s3 sync $(SITE)/dist s3://$$bucket --delete --exclude "_astro/*" --cache-control "public, max-age=300" && \
+	$(AWS) cloudfront create-invalidation --distribution-id $$dist_id --paths "/*"
 
 # No AWS: what CI and `make check` can run.
 fmt:

@@ -12,5 +12,4 @@ module "site" {
 
   domain_name = var.site_domain
   bucket_name = "jadwigo-site-${var.environment}-843109108289"
-  index_html  = "${path.root}/../../apps/site/placeholder/index.html"
 }

@@ -9,6 +9,9 @@
   ],
   "globalPassThroughEnv": ["DATABASE_URL"],
   "tasks": {
+    "build": {
+      "outputs": ["dist/**"]
+    },
     "lint": {},
     "typecheck": {},
     "test": {},
