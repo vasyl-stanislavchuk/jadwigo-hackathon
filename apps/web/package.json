@@ -28,7 +28,10 @@
     "@types/react": "types for src/**/*.tsx",
     "@types/react-dom": "types for react-dom/client in src/main.tsx",
     "@vitejs/plugin-react": "React's JSX transform and fast refresh in Vite (vite.config.ts)",
+    "class-variance-authority": "the variants of the playground's tool buttons, badges and toggles (src/playground/tool)",
     "happy-dom": "the DOM the dom Vitest project runs *.test.tsx in",
+    "lucide-react": "the icons in the playground's tool chrome and tab headers",
+    "radix-ui": "the behaviour under the playground's neutral tool chrome (src/playground/tool): sidebar, tabs, select, sheet, tooltip",
     "react": "the app's components in src/**/*.tsx",
     "react-dom": "mounts the app (src/main.tsx)",
     "typescript": "tsc for this package's typecheck script",
@@ -55,6 +58,9 @@
     "@jadwigo/copy": "workspace:*",
     "@jadwigo/lesson-kit": "workspace:*",
     "@jadwigo/ui": "workspace:*",
+    "class-variance-authority": "catalog:",
+    "lucide-react": "catalog:",
+    "radix-ui": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"
   }
