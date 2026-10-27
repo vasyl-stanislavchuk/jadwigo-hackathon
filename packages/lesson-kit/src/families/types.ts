@@ -22,6 +22,7 @@ import type {
   GroupData,
   GroupKey,
   GroupValue,
+  Help,
   PlaceData,
   PlaceKey,
   PlaceValue,
@@ -33,7 +34,6 @@ import type {
   SlotsKey,
   SlotsValue,
 } from "@jadwigo/contracts";
-import type { StepHelp } from "./help.ts";
 import type { Family, FamilyName } from "./names.ts";
 
 export type { PartMark, PartVerdict, Verdict } from "@jadwigo/contracts";
@@ -70,6 +70,12 @@ export type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omi
 
 /** A question without its help ladder, as a twin is. */
 export type BareSpec = DistributiveOmit<FamilySpec, "help">;
+
+/** A question's help ladder, and rung 4's twin: an item like this one, of the same family and
+ * question type, with its own key and no help. */
+export type StepHelp = Help & {
+  twin?: BareSpec | undefined;
+};
 
 /** The same question as the page receives it: everything but the key and the help ladder. */
 export type PageFamilySpec = Omit<Envelope, "help"> & DistributiveOmit<FamilyStep, "key">;

@@ -20,7 +20,7 @@ import { gapFit, rem, SQUARE_RADIUS, usePhoneCells } from "../../parts/gapFit.ts
 import { RichText } from "../../parts/RichText.tsx";
 import { Family } from "../names.ts";
 import { type Gap, MARKER, type SlotsTable as TableData } from "./model.ts";
-import type { Slot } from "./SlotsBody.tsx";
+import type { Slot } from "./slot.ts";
 
 /** A cell's width, laptop then phone; a turned table's two columns; the cell's least height. */
 const WIDTH = { laptop: 88, phone: 80 } as const;

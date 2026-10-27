@@ -96,6 +96,55 @@ describe("fences fail on planted violations", { timeout: 60_000 }, () => {
     expect(output).not.toMatch(/testing-only-in-tests: packages\/ui\/src\/ok\.test\.tsx/);
   });
 
+  it("dependency-cruiser: lesson-kit's layers, the drag library and katex", () => {
+    const lib = (name: string) => ({
+      [`node_modules/${name}/package.json`]: JSON.stringify({ name, main: "index.js" }),
+      [`node_modules/${name}/index.js`]: "module.exports = {};\n",
+    });
+    const dir = plant({
+      ...lib("@dnd-kit/core"),
+      ...lib("katex"),
+      "packages/lesson-kit/src/families/view.ts": "export const view = 1;\n",
+      "packages/lesson-kit/src/parts/Part.tsx":
+        'import { view } from "../families/view.ts";\nexport const part = view;\n',
+      "packages/lesson-kit/src/stage/clock.ts":
+        'import { part } from "../parts/Part.tsx";\nexport const clock = part;\n',
+      "packages/lesson-kit/src/parts/Drag.tsx":
+        'import * as dnd from "@dnd-kit/core";\nexport const drag = dnd;\n',
+      "packages/lesson-kit/src/parts/SortableList.tsx":
+        'import * as dnd from "@dnd-kit/core";\nexport const sortable = dnd;\n',
+      "packages/lesson-kit/src/parts/Formula.tsx":
+        'import katex from "katex";\nexport const formula = katex;\n',
+      "packages/lesson-kit/src/parts/RichText.tsx":
+        'import katex from "katex";\nexport const rich = katex;\n',
+    });
+    const config = join(repo, ".dependency-cruiser.cjs");
+    const { status, output } = run(
+      bin("depcruise"),
+      ["packages", "--config", config, "--output-type", "err"],
+      dir,
+    );
+    expect(status).not.toBe(0);
+    expect(output).toMatch(
+      /lesson-kit-stage-is-the-bottom: packages\/lesson-kit\/src\/stage\/clock\.ts/,
+    );
+    expect(output).toMatch(
+      /lesson-kit-parts-know-no-family: packages\/lesson-kit\/src\/parts\/Part\.tsx/,
+    );
+    expect(output).toMatch(
+      /drag-only-in-the-drag-parts: packages\/lesson-kit\/src\/parts\/Drag\.tsx/,
+    );
+    expect(output).not.toMatch(
+      /drag-only-in-the-drag-parts: packages\/lesson-kit\/src\/parts\/SortableList/,
+    );
+    expect(output).toMatch(
+      /katex-only-in-rich-text: packages\/lesson-kit\/src\/parts\/Formula\.tsx/,
+    );
+    expect(output).not.toMatch(
+      /katex-only-in-rich-text: packages\/lesson-kit\/src\/parts\/RichText/,
+    );
+  });
+
   it("knip: an unused file and an unused dependency", () => {
     const dir = plant({
       "package.json": JSON.stringify({

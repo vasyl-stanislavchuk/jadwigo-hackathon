@@ -21,7 +21,6 @@ import {
   releaseStack,
   rungFor,
   rungsWritten,
-  type StepHelp,
   solutionLines,
   stackFree,
   stackNext,
@@ -30,7 +29,7 @@ import { Family, QuestionType, Surface } from "./names.ts";
 import { CLOCK_GAPS, clockReadKey } from "./slots/clock.ts";
 import { columnKey } from "./slots/column.ts";
 import { MONEY_GAPS, MONEY_TEMPLATE, moneyKey } from "./slots/money.ts";
-import type { FamilySpec } from "./types.ts";
+import type { FamilySpec, StepHelp } from "./types.ts";
 import { pageSpec } from "./types.ts";
 import { validate } from "./validate.ts";
 

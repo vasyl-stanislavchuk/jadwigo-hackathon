@@ -19,9 +19,9 @@ import { type Gap, markerIds, pieces, placedGaps, type SlotsData } from "./model
 import { pyramidCellText, pyramidGapOf } from "./pyramid.ts";
 import { SlotsLabelled } from "./SlotsLabelled.tsx";
 import { SlotsTable } from "./SlotsTable.tsx";
+import type { Slot } from "./slot.ts";
 
 /** Draws the gap with this id where the body holds it. */
-export type Slot = (id: string) => ReactNode;
 
 /**
  * The template with each gap drawn by `slot`. The template is rich text and the gaps are its slots

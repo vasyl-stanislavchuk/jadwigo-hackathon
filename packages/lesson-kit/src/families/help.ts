@@ -40,7 +40,7 @@ import { answerWords, givesAway } from "./answer.ts";
 import { Family, Surface } from "./names.ts";
 import { slotIndex, tileMode } from "./sequence/model.ts";
 import { fillOrder } from "./slots/model.ts";
-import { type BareSpec, type FamilySpec, pageSpec, type Verdict } from "./types.ts";
+import { type BareSpec, type FamilySpec, pageSpec, type StepHelp, type Verdict } from "./types.ts";
 
 export type { Help, HelpCard, HelpPicture, HintCard } from "@jadwigo/contracts";
 
@@ -53,11 +53,6 @@ export type StackCard = HintCard & { picture?: HelpPicture; lines?: string[]; bl
  * twin is its own lesson question in the database, so `Help` has no field for it; the playground
  * keeps it beside the ladder until its loader turns each twin into a question of its own.
  */
-export type StepHelp = Help & {
-  /** An item like this one, of the same family and question type, with its own key. Has no help. */
-  twin?: BareSpec | undefined;
-};
-
 export const HelpRung = { None: 0, Look: 1, Boost: 2, Almost: 3, Twin: 4 } as const;
 export type HelpRungNo = (typeof HelpRung)[keyof typeof HelpRung];
 

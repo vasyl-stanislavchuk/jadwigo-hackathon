@@ -13,7 +13,7 @@ import { cn } from "@jadwigo/ui";
 import { Picture } from "../../parts/Picture.tsx";
 import type { Picture as PictureData } from "../stem/model.ts";
 import type { Gap } from "./model.ts";
-import type { Slot } from "./SlotsBody.tsx";
+import type { Slot } from "./slot.ts";
 
 /** A picture no taller than this is a strip (a number line, a ruler): its ticks and printed labels
  * sit closer than a gap is wide, so a gap on its point would hide them. */
