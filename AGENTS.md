@@ -193,7 +193,8 @@ Each fence has a test that plants a violation (`tools/src/*.test.ts`, `.claude/h
 3. **Strict TypeScript:** `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, and ids that
    are branded types only the Zod parsers in `packages/contracts` create.
 4. **Biome:** errors on `any`, `@ts-ignore`, `.only` and `.skip`. `lint/*.grit`: `process.env`
-   is read only in a `src/config.ts`.
+   is read only in a `src/config.ts`, and an error type, route path or id prefix is written
+   through its constant.
 5. **Imports** (dependency-cruiser): apps import packages, never the reverse. `contracts` imports
    nothing of ours. Only test files import `@jadwigo/testing`. knip fails unused files, exports and
    dependencies.
@@ -209,6 +210,9 @@ Each fence has a test that plants a violation (`tools/src/*.test.ts`, `.claude/h
 ## House rules
 
 - Every dependency has a line in its `package.json` `"//"` block naming the one thing that needs it.
+- A value that crosses a boundary (an error type, a route path, an id prefix) is written through
+  its constant in `packages/contracts`, never retyped as a string. An enum comparison stays a
+  literal: TypeScript checks it (`packages/contracts/RULES.md` rule 22).
 - Versions are pinned exact, and Renovate moves them after 7 days.
 - A merge deploys nothing; the owner deploys by hand.
 - Writing: digits for numbers, issue ids in backticks, "issue" (not "card"), outcomes rather

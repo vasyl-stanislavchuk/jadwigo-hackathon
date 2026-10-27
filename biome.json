@@ -70,6 +70,22 @@
       "plugins": ["./lint/no-raw-process-env.grit"]
     },
     {
+      "includes": [
+        "apps/*/src/**/*.ts",
+        "apps/*/src/**/*.tsx",
+        "packages/*/src/**/*.ts",
+        "packages/*/src/**/*.tsx",
+        "!**/*.test.ts",
+        "!**/*.test.tsx",
+        "!**/*.contract.ts",
+        "!packages/testing/**",
+        "!packages/contracts/src/ids.ts",
+        "!packages/contracts/src/routes.ts",
+        "!packages/contracts/src/wire.ts"
+      ],
+      "plugins": ["./lint/boundary-constants.grit"]
+    },
+    {
       "includes": [".claude/hooks/**", "tools/**"],
       "linter": {
         "rules": {

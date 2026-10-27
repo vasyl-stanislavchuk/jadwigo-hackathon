@@ -95,3 +95,11 @@ The words themselves are in the root `GLOSSARY.md`. Rules marked **(tested)** fa
 21. **The server owns the lesson's course.** It decides the next question, a growth question and when
     an attempt finishes. A response never carries a question's `key` or help that has not been
     released.
+
+## Code
+
+22. **A value that crosses a boundary is written through its constant here**, so it has one place
+    to rename and to search: an error type as `ErrorType.enum.WriteOnce`, a route through `ROUTES`,
+    an id prefix through `ID_PREFIXES`. A comparison with an enum's value stays a literal
+    (`status === "finished"`): TypeScript checks it against the union. Tests, SQL and the files
+    that define the constants are left out. Biome fails the rest (`lint/boundary-constants.grit`).
