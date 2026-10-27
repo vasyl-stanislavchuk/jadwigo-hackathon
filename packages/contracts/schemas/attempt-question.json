@@ -63,7 +63,8 @@
           "type": "string",
           "enum": [
             "correct",
-            "skipped"
+            "skipped",
+            "missed"
           ]
         },
         {

@@ -577,7 +577,55 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         );
       });
 
-      it("refuses an end that is not correct or skipped with BadRequest", async () => {
+      it("ends a question missed while verdicts are held, after a wrong try", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const held = await store.putAssignment(a.pod, {
+          ...ASSIGNMENT,
+          lesson_id: a.lesson,
+          hold_verdicts: true,
+        });
+        const { attempt } = await store.startAttempt(a.pod, { assignment_id: held.id });
+
+        await expect(
+          store.endAttemptQuestion(a.pod, attempt.id, 1, "missed"),
+          "no try yet",
+        ).rejects.toMatchObject(BAD_REQUEST);
+        await store.appendAttemptAnswer(a.pod, answer(attempt.id, 1, 1, { entered: "5" }, false));
+        const missed = await store.endAttemptQuestion(a.pod, attempt.id, 1, "missed");
+        expect(missed).toMatchObject({ seq: 1, ended: "missed" });
+
+        const [row] = await store.getAttemptResult(a.pod, attempt.id);
+        expect(row).toMatchObject({ ended: "missed", correct: false, tries: 1 });
+      });
+
+      it("refuses missed in practice, or after a right try, with BadRequest", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        await store.appendAttemptAnswer(a.pod, answer(attempt, 1, 1, { entered: "5" }, false));
+        await expect(
+          store.endAttemptQuestion(a.pod, attempt, 1, "missed"),
+          "verdicts not held",
+        ).rejects.toMatchObject(BAD_REQUEST);
+
+        const held = await store.putAssignment(a.pod, {
+          ...ASSIGNMENT,
+          lesson_id: a.lesson,
+          hold_verdicts: true,
+        });
+        const right = await store.startAttempt(a.pod, { assignment_id: held.id });
+        await store.appendAttemptAnswer(
+          a.pod,
+          answer(right.attempt.id, 1, 1, { entered: "6" }, true),
+        );
+        await expect(
+          store.endAttemptQuestion(a.pod, right.attempt.id, 1, "missed"),
+          "a right try",
+        ).rejects.toMatchObject(BAD_REQUEST);
+        expect((await store.getAttempt(a.pod, attempt)).questions[0]?.ended).toBeNull();
+      });
+
+      it("refuses an end outside correct, skipped and missed with BadRequest", async () => {
         const store = await make();
         const { a, attempt } = await started(store);
         await expect(

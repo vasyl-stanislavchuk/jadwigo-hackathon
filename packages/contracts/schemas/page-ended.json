@@ -4,6 +4,7 @@
   "enum": [
     "correct",
     "skipped",
+    "missed",
     "done"
   ]
 }

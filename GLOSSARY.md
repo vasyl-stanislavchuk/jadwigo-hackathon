@@ -20,9 +20,10 @@ inside the repo, and the outside sense gets a qualifier.
 | **assignment** | a lesson sent to an audience, with its growth settings. A featured lesson is an assignment to anyone | a homework task |
 | **block** | one interaction inside a lesson, from an interaction family in `packages/lesson-kit` | a UI component |
 | **attempt** | one play of one lesson version: in progress, paused or finished | a session |
-| **attempt question** | one asking of a lesson question in one attempt, at its `seq`: why it was asked (`added`, `placed`), the help released, how it ended (`correct` or `skipped`) | the lesson question itself |
+| **attempt question** | one asking of a lesson question in one attempt, at its `seq`: why it was asked (`added`, `placed`), the help released, how it ended (`correct`, `skipped`, or `missed` when verdicts are held) | the lesson question itself |
 | **attempt answer** | one try at an attempt question, or a skip. Never changed | a "response" |
 | **try** | one committed answer to one attempt question, counted by `try_no` | an attempt |
+| **missed** | how an attempt question ends after one wrong try while its assignment holds verdicts: there is no 2nd try, so the child can't tell a miss from a right answer until the attempt finishes. Never used in practice | "wrong", "failed" |
 | **help** | the ladder a lesson question carries (look, boost, almost, worked, and Khan's cards in `help.hints[]`), released one rung at a time | "hint", outside `help.hints[]` |
 | **correct** | the verdict on a try, and how an attempt question ends | "right" |
 | **question bank** | the credited question sets lessons are composed from. Lives outside git | fixtures |
