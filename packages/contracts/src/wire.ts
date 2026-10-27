@@ -29,8 +29,17 @@ const At = z.iso.datetime();
 /**
  * A time the page sends: UTC or with its offset, so a device on local time is not refused. A
  * time with no zone is refused: it could mean any instant. The store keeps it in UTC.
+ *
+ * At most milliseconds, so the stores compare the same instants (Postgres keeps microseconds, a
+ * JavaScript date milliseconds), and a year from 1 to 9999 in UTC, so it is written in 4 digits.
  */
-export const SentAt = z.iso.datetime({ offset: true });
+export const SentAt = z.iso
+  .datetime({ offset: true })
+  .refine((at) => !/\.\d{4,}/.test(at), "a sent time carries at most milliseconds")
+  .refine((at) => {
+    const year = new Date(Date.parse(at)).getUTCFullYear();
+    return year >= 1 && year <= 9999;
+  }, "a sent time falls in the years 1 to 9999 in UTC");
 const Count = z.int().min(1);
 
 /**

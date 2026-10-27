@@ -416,18 +416,37 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
       it("refuse a time with no zone, or not a time, with BadRequest, on any host", async () => {
         const store = await make();
         const { a, attempt } = await started(store);
-        for (const answered_at of [
+        for (const at of [
           "2026-09-01T10:00:00",
           "2026-09-01",
           "Tue, 01 Sep 2026 10:00:00 GMT",
           "09/01/2026",
         ]) {
+          for (const field of ["asked_at", "answered_at"] as const) {
+            await expect(
+              store.appendAttemptAnswer(
+                a.pod,
+                answer(attempt, 1, 1, { entered: "5" }, false, { [field]: at }),
+              ),
+              `${field} ${at}`,
+            ).rejects.toMatchObject(BAD_REQUEST);
+          }
+        }
+        expect((await store.getAttempt(a.pod, attempt)).answers).toEqual([]);
+      });
+
+      it("refuse a time finer than a millisecond, or outside the years 1 to 9999, with BadRequest", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        for (const times of [
+          // Answered before asked, by less than a millisecond: Postgres would see it.
+          { asked_at: "2026-09-01T08:00:00.0005Z", answered_at: "2026-09-01T08:00:00.0001Z" },
+          { asked_at: "0000-01-01T00:00:00+14:00", answered_at: "2026-09-01T08:00:00Z" },
+          { asked_at: "2026-09-01T08:00:00Z", answered_at: "9999-12-31T23:59:59-12:00" },
+        ]) {
           await expect(
-            store.appendAttemptAnswer(
-              a.pod,
-              answer(attempt, 1, 1, { entered: "5" }, false, { answered_at }),
-            ),
-            answered_at,
+            store.appendAttemptAnswer(a.pod, answer(attempt, 1, 1, { entered: "5" }, false, times)),
+            JSON.stringify(times),
           ).rejects.toMatchObject(BAD_REQUEST);
         }
         expect((await store.getAttempt(a.pod, attempt)).answers).toEqual([]);

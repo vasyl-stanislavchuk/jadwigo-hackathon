@@ -57,11 +57,14 @@ function parse<T>(schema: Schema<T>, value: unknown, what: string): T {
 
 /**
  * A sent time as the store keeps it: in UTC, to the millisecond. Only a time `SentAt` takes is
- * converted, so a time with no zone is never read in the host's zone; anything else is left for
- * the record's parser to refuse.
+ * converted, so a time with no zone is never read in the host's zone, and a finer one is never
+ * truncated before the order check.
  */
 function utc(at: string): string {
-  return SentAt.safeParse(at).success ? new Date(Date.parse(at)).toISOString() : at;
+  if (!SentAt.safeParse(at).success) {
+    throw new StoreError("BadRequest", `${JSON.stringify(at)} is not a sent time (SentAt)`);
+  }
+  return new Date(Date.parse(at)).toISOString();
 }
 
 /** A fresh id for a record, a v4 uuid written as the wire id. */
