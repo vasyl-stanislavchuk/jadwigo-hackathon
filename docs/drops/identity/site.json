@@ -3,14 +3,34 @@
   "title": "Jadwigo: mission, value and story",
   "password": "auto",
   "nav": [
-    { "page": "index.html", "label": "Overview" },
-    { "page": "promise.html", "label": "Mission and value" },
-    { "page": "story.html", "label": "Story" },
-    { "page": "compare.html", "label": "How Jadwigo differs" },
-    { "page": "strategy.html", "label": "Strategy" },
-    { "page": "voice.html", "label": "Voice" },
-    { "page": "name.html", "label": "Name story" },
-    { "page": "decide.html", "label": "What the owner decides" }
+    {
+      "page": "index.html",
+      "label": "Overview"
+    },
+    {
+      "page": "promise.html",
+      "label": "Mission and value"
+    },
+    {
+      "page": "story.html",
+      "label": "Story"
+    },
+    {
+      "page": "compare.html",
+      "label": "How Jadwigo differs"
+    },
+    {
+      "page": "strategy.html",
+      "label": "Strategy"
+    },
+    {
+      "page": "voice.html",
+      "label": "Voice"
+    },
+    {
+      "page": "name.html",
+      "label": "Name story"
+    }
   ],
   "sequence": true,
   "pages": {
@@ -20,8 +40,7 @@
     "compare.html": "compare.md",
     "strategy.html": "strategy.md",
     "voice.html": "voice.md",
-    "name.html": "name.md",
-    "decide.html": "decide.md"
+    "name.html": "name.md"
   },
   "evidence": [
     "../../research/jadwigo-mission-and-value.md",
