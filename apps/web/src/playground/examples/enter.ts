@@ -13,8 +13,8 @@ export const ENTER_EXAMPLES: WrittenExample[] = [
       question_type: "production",
       family: "enter",
       say: {
-        pl: "Ile to jest siedem razy osiem? Napisz albo powiedz.",
-        en: "What is seven times eight? Type or say it.",
+        pl: "Ile to jest siedem razy osiem? Napisz odpowiedź.",
+        en: "What is seven times eight? Type the answer.",
       },
       data: {
         input: "number",
@@ -90,8 +90,8 @@ export const ENTER_EXAMPLES: WrittenExample[] = [
       question_type: "production",
       family: "enter",
       say: {
-        pl: "Ile to jest sześć razy osiem? Napisz albo powiedz.",
-        en: "What is six times eight? Type or say it.",
+        pl: "Ile to jest sześć razy osiem? Napisz odpowiedź.",
+        en: "What is six times eight? Type the answer.",
       },
       data: {
         input: "number",
