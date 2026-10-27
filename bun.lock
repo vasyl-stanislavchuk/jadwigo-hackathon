@@ -146,6 +146,7 @@
         "@jadwigo/ui": "workspace:*",
         "@shadcn/react": "catalog:",
         "katex": "catalog:",
+        "lucide-react": "catalog:",
         "react": "catalog:",
         "react-dom": "catalog:",
       },
