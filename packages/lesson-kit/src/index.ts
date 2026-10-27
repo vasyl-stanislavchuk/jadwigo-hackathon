@@ -57,6 +57,7 @@ export { Tooltip } from "./parts/Tooltip.tsx";
 export type { Tone } from "./parts/tone.ts";
 export type { Clock, Instant } from "./stage/clock.ts";
 export { browserClock } from "./stage/clock.ts";
+export { LessonTheme } from "./stage/LessonTheme.tsx";
 export { press } from "./stage/press.ts";
 export { StepFrame } from "./stage/StepFrame.tsx";
 export type { Feedback, PartMark } from "./stage/types.ts";

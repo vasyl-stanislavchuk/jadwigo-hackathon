@@ -9,6 +9,10 @@
 @import "./tokens.css";
 @import "./kids.css";
 @import "./stage.css";
+/* Zeszyt, the lesson's look: its tokens and its ground, both scoped under [data-lesson-theme], so
+ * the neutral tools keep theirs (LessonTheme in packages/lesson-kit sets the attribute). */
+@import "./foundation.css";
+@import "./lesson.css";
 
 /* dark: follows [theme='dark'], where tokens.css and kids.css keep their dark values. */
 @custom-variant dark (&:where([theme="dark"], [theme="dark"] *));
