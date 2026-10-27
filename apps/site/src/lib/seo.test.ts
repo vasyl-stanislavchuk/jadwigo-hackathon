@@ -3,8 +3,8 @@ import { assertReviewed, canonical, headTags, jsonLd, type Page, robotsTxt } fro
 
 const page: Page = {
   title: "Jadwigo",
-  description: "Jadwigo. Wkrótce.",
-  heading: "Jadwigo.",
+  description: "Jadwigo, wkrótce",
+  heading: "Jadwigo",
   reviewed: true,
 };
 
