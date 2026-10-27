@@ -69,8 +69,9 @@ supa /projects | jq '[.[] | {ref: .id, name, region, status, pg: .database.versi
 
 ### The organisation
 
-7. **DPA.** In the organisation's settings, find the legal documents page and request the Data Processing
-   Addendum. If there is no such page, request it from Supabase support. Sign it when it arrives.
+7. **DPA: no action.** Organization → Legal Documents says the Data Processing Addendum is part of
+   Supabase's Terms of Service, so every organisation has it and nothing needs signing. Save a copy
+   with View DPA if you want one on file.
 8. **2FA.** Turn on MFA for your own account (Account → Security). Add a second owner with MFA, and
    turn on "Require MFA" for the organisation if it is offered.
 
