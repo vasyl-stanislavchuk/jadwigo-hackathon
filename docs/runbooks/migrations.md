@@ -58,7 +58,7 @@ What each one is:
    migrations dev lacks; nothing changes. You should see each new `supabase/migrations/*.sql`
    by name.
 2. **Push dev.** Run `make db-push ENV=dev`. It shows the same list, and pushes only after you type
-   `dev`. Each migration runs in one transaction: if one fails, dev keeps the state before it.
+   `dev`. With no keyboard (`!` in Claude Code), pass it instead: `make db-push ENV=dev CONFIRM=dev`. Each migration runs in one transaction: if one fails, dev keeps the state before it.
 3. **The API's login, once per project.** Run `make db-role ENV=dev`. It ends with
    `db-role: jadwigo_api can log in on jadwigo-dev`.
 4. **Rebuild dev, when it has drifted:** `make db-reset ENV=dev` drops dev's schema and reruns
