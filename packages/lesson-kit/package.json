@@ -26,6 +26,7 @@
     "@types/react-dom": "types for react-dom in the component tests",
     "happy-dom": "the DOM the dom Vitest project runs *.test.tsx in",
     "katex": "draws the TeX in question text (src/parts/RichText.tsx)",
+    "lucide-react": "the icons the parts draw: the status marks, the drag handle, the play clip, the credit link",
     "react": "the stage, parts and family views in src/**/*.tsx",
     "react-dom": "React's renderer, which @testing-library/react renders the components with",
     "typescript": "tsc for this package's typecheck script",
@@ -50,6 +51,7 @@
     "@jadwigo/ui": "workspace:*",
     "@shadcn/react": "catalog:",
     "katex": "catalog:",
+    "lucide-react": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"
   }
