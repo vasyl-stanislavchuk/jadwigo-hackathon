@@ -1,7 +1,9 @@
 # Tool pins for the jadwigo monorepo. `mise install` reads this; CI's setup action does too.
-# Postgres comes from Postgres.app locally and the runner's Postgres 16 in CI. No Docker.
+# Postgres 17 comes from Postgres.app locally and from PGDG in CI (.github/actions/postgres). No Docker.
 [tools]
 node = "24.22.1"
 bun = "1.4.4"
-uv = "0.13.3"
+uv = "0.13.4"
 gitleaks = "8.30.1"
+# make db-push, db-reset ENV=dev and db-role: links and migrates the Supabase projects (never `supabase start`)
+supabase = "2.121.0"

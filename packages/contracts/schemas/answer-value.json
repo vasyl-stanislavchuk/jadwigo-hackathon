@@ -1,0 +1,252 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "chosen": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "chosen"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "entered": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "entered"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "gaps": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "gaps"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "at": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "at"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "points"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rows": {
+              "type": "number"
+            },
+            "cols": {
+              "type": "number"
+            },
+            "split": {
+              "type": "object",
+              "properties": {
+                "axis": {
+                  "type": "string",
+                  "enum": [
+                    "rows",
+                    "cols"
+                  ]
+                },
+                "at": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "axis",
+                "at"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "rows",
+            "cols"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "heights": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "heights"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "hour_at": {
+              "type": "number"
+            },
+            "m": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "hour_at",
+            "m"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "gr1",
+                  "gr2",
+                  "gr5",
+                  "gr10",
+                  "gr20",
+                  "gr50",
+                  "zl1",
+                  "zl2",
+                  "zl5",
+                  "zl10",
+                  "zl20",
+                  "zl50",
+                  "zl100",
+                  "zl200"
+                ]
+              }
+            }
+          },
+          "required": [
+            "items"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "shaded": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "shaded"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "spoken": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

@@ -19,7 +19,7 @@ module.exports = {
       name: "testing-only-in-tests",
       comment: "Only test files import @jadwigo/testing or any */testing subpath.",
       severity: "error",
-      from: { pathNot: ["\\.test\\.ts$", "^packages/testing/", "(^|/)src/testing(/|\\.ts$)"] },
+      from: { pathNot: ["\\.test\\.tsx?$", "^packages/testing/", "(^|/)src/testing(/|\\.ts$)"] },
       to: { path: ["^packages/testing/", "(^|/)src/testing(/|\\.ts$)"] },
     },
     {
@@ -45,7 +45,7 @@ module.exports = {
     enhancedResolveOptions: {
       exportsFields: ["exports"],
       conditionNames: ["import", "default", "types"],
-      extensions: [".ts", ".js"],
+      extensions: [".ts", ".tsx", ".js"],
     },
   },
 };

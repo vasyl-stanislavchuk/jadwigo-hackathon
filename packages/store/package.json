@@ -1,6 +1,6 @@
 {
   "name": "@jadwigo/store",
-  "description": "The record store behind an interface: in-memory today, Postgres once dl-e8ov.5.34 maps the records",
+  "description": "The record store behind the Store interface: InMemoryStore, the shared contract suite, and PostgresStore on Kysely (dl-e8ov.2.32.3)",
   "private": true,
   "type": "module",
   "exports": {
@@ -13,19 +13,23 @@
     "test:int": "vitest run --config ../../vitest.config.ts --project integration"
   },
   "//": {
+    "@jadwigo/contracts": "the records, ids and error types every method takes and returns",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
+    "@types/pg": "types for pg",
+    "kysely": "the query builder PostgresStore is written on (dl-e8ov.2.32.3)",
+    "pg": "the Postgres driver under Kysely, and the integration test (src/postgres.int.test.ts)",
     "typescript": "tsc for this package's typecheck script",
-    "vitest": "runs this package's unit test with the root vitest.config.ts",
-    "@jadwigo/contracts": "LearnerId, the key every record is stored under",
-    "postgres": "the integration placeholder only (src/postgres.int.test.ts) until the Postgres store lands (dl-e8ov.5.34)"
+    "vitest": "runs this package's unit test with the root vitest.config.ts"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@types/pg": "8.23.1",
     "typescript": "catalog:",
-    "vitest": "catalog:",
-    "postgres": "3.4.9"
+    "vitest": "catalog:"
   },
   "dependencies": {
-    "@jadwigo/contracts": "workspace:*"
+    "@jadwigo/contracts": "workspace:*",
+    "kysely": "0.29.7",
+    "pg": "8.23.1"
   }
 }

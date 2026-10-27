@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "const": "enter"
+        },
+        "input": {
+          "type": "string",
+          "enum": [
+            "number",
+            "text",
+            "fraction"
+          ]
+        },
+        "max_length": {
+          "type": "number"
+        },
+        "range": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "at": {
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "x",
+            "y"
+          ],
+          "additionalProperties": false
+        },
+        "letters": {
+          "type": "string",
+          "enum": [
+            "pl",
+            "none"
+          ]
+        },
+        "decimal": {
+          "type": "boolean"
+        },
+        "whole": {
+          "type": "boolean"
+        },
+        "simplify": {
+          "type": "string",
+          "enum": [
+            "required",
+            "enforced"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "input"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "const": "choose"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "label"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "at": {
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "x",
+            "y"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "options"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

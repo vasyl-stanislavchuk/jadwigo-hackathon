@@ -4,3 +4,5 @@ export const tokens = {
   paper: "#fffdf8",
   accent: "#6b3fa0",
 } as const;
+
+export { VisuallyHidden } from "./visually-hidden.tsx";

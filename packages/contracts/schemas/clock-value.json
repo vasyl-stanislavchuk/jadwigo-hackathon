@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "hour_at": {
+      "type": "number"
+    },
+    "m": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "hour_at",
+    "m"
+  ],
+  "additionalProperties": false
+}

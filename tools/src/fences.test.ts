@@ -32,6 +32,7 @@ describe("fences fail on planted violations", { timeout: 60_000 }, () => {
       "src/focused.test.ts": 'import { it } from "vitest";\nit.only("x", () => {});\n',
       "src/skipped.test.ts": 'import { it } from "vitest";\nit.skip("x", () => {});\n',
       "apps/x/src/env.ts": 'export const k = process.env["KEY"];\n',
+      "apps/x/src/view.tsx": 'export const v = process.env["KEY"];\n',
     });
     cpSync(join(repo, "biome.json"), join(dir, "biome.json"));
     cpSync(join(repo, "lint"), join(dir, "lint"), { recursive: true });
@@ -45,6 +46,35 @@ describe("fences fail on planted violations", { timeout: 60_000 }, () => {
       expect(output).toContain(rule);
     }
     expect(output).toContain("Read process.env only in src/config.ts");
+    expect(output).toMatch(/view\.tsx[\s\S]*Read process\.env only in src\/config\.ts/);
+  });
+
+  it("Biome: boundary values through their constants (RULES.md rule 22)", () => {
+    const dir = plant({
+      "packages/x/src/store.ts":
+        'class StoreError extends Error { constructor(readonly type: string, m: string) { super(m); } }\nexport const e = new StoreError("WriteOnce", "taken");\n',
+      "apps/x/src/envelope.ts":
+        'export const body = { error: { type: "NotFound", message: "gone" } };\n',
+      "apps/x/src/route.ts": 'export const path = "/api/v1/attempts";\n',
+      "packages/x/src/prefix.ts": 'export const prefix = "att_";\n',
+      "packages/x/src/fine.ts":
+        'export const kind = { type: "try" };\nexport const done = (s: string) => s === "finished";\n',
+      "packages/x/src/fine.test.ts": 'export const path = "/api/v1/attempts";\n',
+    });
+    cpSync(join(repo, "biome.json"), join(dir, "biome.json"));
+    cpSync(join(repo, "lint"), join(dir, "lint"), { recursive: true });
+    const { status, output } = run(
+      bin("biome"),
+      ["lint", "--vcs-enabled=false", "--max-diagnostics=50", "."],
+      dir,
+    );
+    expect(status).not.toBe(0);
+    expect(output).toMatch(/store\.ts[\s\S]*ErrorType\.enum/);
+    expect(output).toMatch(/envelope\.ts[\s\S]*ErrorType\.enum/);
+    expect(output).toMatch(/route\.ts[\s\S]*through ROUTES/);
+    expect(output).toMatch(/prefix\.ts[\s\S]*through ID_PREFIXES/);
+    expect(output).not.toContain("fine.ts");
+    expect(output).not.toContain("fine.test.ts");
   });
 
   it("TypeScript: unchecked index access, exact optional properties and branded ids", () => {
@@ -77,6 +107,8 @@ describe("fences fail on planted violations", { timeout: 60_000 }, () => {
       "packages/testing/src/index.ts": "export const FIXED = 1;\n",
       "packages/store/src/ok.test.ts":
         'import { FIXED } from "../../testing/src/index.ts";\nexport const t = FIXED;\n',
+      "packages/ui/src/ok.test.tsx":
+        'import { FIXED } from "../../testing/src/index.ts";\nexport const t = FIXED;\n',
     });
     const config = join(repo, ".dependency-cruiser.cjs");
     const { status, output } = run(
@@ -89,6 +121,7 @@ describe("fences fail on planted violations", { timeout: 60_000 }, () => {
     expect(output).toContain("contracts-imports-nothing-of-ours");
     expect(output).toMatch(/testing-only-in-tests: packages\/store\/src\/index\.ts/);
     expect(output).not.toMatch(/testing-only-in-tests: packages\/store\/src\/ok\.test\.ts/);
+    expect(output).not.toMatch(/testing-only-in-tests: packages\/ui\/src\/ok\.test\.tsx/);
   });
 
   it("knip: an unused file and an unused dependency", () => {

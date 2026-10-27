@@ -1,0 +1,10 @@
+// The base config plus the DOM and JSX, for front-end packages: packages/ui now; packages/lesson-kit,
+// packages/copy and apps/web when dl-5ssh.34.6 ports the playground (React 18.3.1, as it runs there).
+// apps/site is Astro and brings its own config (dl-w0b4.1). OPEN: moving to React 19 is not decided.
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["es2024", "dom", "dom.iterable"]
+  }
+}

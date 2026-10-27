@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wave 1 of dl-e8ov.2.32</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #fbfcfe;
+      --color-ink:     #040810;
+      --color-muted:   #5a6b85;
+      --color-soft:    #7888a0;
+      --color-accent:  #2941f3;
+      --font-sans:     'Inter', system-ui, sans-serif;
+      --font-display:  'Space Grotesk', system-ui, sans-serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1040px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+    .caption {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--color-soft);
+      border-top: 1px solid rgba(9,22,40,0.12);
+      margin-top: 1.25rem;
+      padding-top: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Dependency · dl-e8ov.2.32</p>
+    <h1>Wave 1 of dl-e8ov.2.32</h1>
+    <svg viewBox="0 0 1040 740" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="wave-1-order-title wave-1-order-desc">
+      <title id="wave-1-order-title">Wave 1 of dl-e8ov.2.32</title>
+      <desc id="wave-1-order-desc">Dependency graph of wave 1: the design note and the answered owner decisions feed the lead PR, which unblocks the store, core and import lanes; core and import feed the api lane, and api and store feed the playground.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#5a6b85"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2941f3"/></marker>
+        <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#0f7f76"/></marker>
+      </defs>
+      <rect width="100%" height="100%" fill="#fbfcfe"/>
+      <!-- edges first -->
+      <line x1="464" y1="176" x2="464" y2="240" stroke="#5a6b85" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="576" y1="176" x2="576" y2="240" stroke="#5a6b85" stroke-width="1" marker-end="url(#arrow)"/>
+      <path d="M 440,368 V 392 Q 440,400 432,400 H 280 Q 272,400 272,408 V 432" fill="none" stroke="#5a6b85" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="520" y1="368" x2="520" y2="432" stroke="#5a6b85" stroke-width="1" marker-end="url(#arrow)"/>
+      <path d="M 600,368 V 392 Q 600,400 608,400 H 760 Q 768,400 768,408 V 432" fill="none" stroke="#5a6b85" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="332" y1="512" x2="332" y2="576" stroke="#5a6b85" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="460" y1="512" x2="460" y2="576" stroke="#5a6b85" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="496" y1="616" x2="668" y2="616" stroke="#5a6b85" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="768" y1="512" x2="768" y2="576" stroke="#5a6b85" stroke-width="1" marker-end="url(#arrow)"/>
+      <text x="40" y="140" fill="#5a6b85" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.18em">RANK 0</text>
+      <text x="40" y="284" fill="#5a6b85" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.18em">RANK 1</text>
+      <text x="40" y="476" fill="#5a6b85" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.18em">RANK 2</text>
+      <text x="40" y="620" fill="#5a6b85" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.18em">RANK 3</text>
+      <!-- nodes -->
+      <rect x="300" y="96" width="200" height="80" rx="6" fill="#fbfcfe"/>
+      <rect x="300" y="96" width="200" height="80" rx="6" fill="#ffffff" stroke="#5a6b85" stroke-width="1"/>
+      <rect x="308" y="104" width="36" height="12" rx="2" fill="transparent" stroke="#5a6b85" stroke-opacity="0.5" stroke-width="0.8"/>
+      <text x="326.0" y="113" fill="#5a6b85" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">NOTE</text>
+      <rect x="452" y="104" width="40" height="12" rx="2" fill="transparent" stroke="#5a6b85" stroke-opacity="0.5" stroke-width="0.8"/>
+      <text x="472.0" y="113" fill="#5a6b85" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1 WAIT</text>
+      <text x="400.0" y="138" fill="#040810" font-size="12" font-family="'Inter', system-ui, sans-serif" font-weight="600" text-anchor="middle">Design note</text>
+      <text x="400.0" y="154" fill="#5a6b85" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">dl-e8ov.5.34</text>
+      <text x="400.0" y="170" fill="#7888a0" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">core v0 data model</text>
+      <rect x="540" y="96" width="200" height="80" rx="6" fill="#fbfcfe"/>
+      <rect x="540" y="96" width="200" height="80" rx="6" fill="rgba(90,107,133,0.08)" stroke="#667997" stroke-width="1"/>
+      <rect x="548" y="104" width="36" height="12" rx="2" fill="transparent" stroke="#667997" stroke-opacity="0.5" stroke-width="0.8"/>
+      <text x="566.0" y="113" fill="#667997" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">DONE</text>
+      <rect x="692" y="104" width="40" height="12" rx="2" fill="transparent" stroke="#667997" stroke-opacity="0.5" stroke-width="0.8"/>
+      <text x="712.0" y="113" fill="#667997" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1 WAIT</text>
+      <text x="640.0" y="138" fill="#040810" font-size="12" font-family="'Inter', system-ui, sans-serif" font-weight="600" text-anchor="middle">Owner decisions</text>
+      <text x="640.0" y="154" fill="#5a6b85" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">dl-e8ov.2.32.8 .9 .10</text>
+      <text x="640.0" y="170" fill="#7888a0" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">answered 2026-10-27</text>
+      <rect x="360" y="240" width="320" height="128" rx="6" fill="#fbfcfe"/>
+      <rect x="360" y="240" width="320" height="128" rx="6" fill="rgba(41,65,243,0.10)" stroke="#2941f3" stroke-width="1.5"/>
+      <rect x="368" y="248" width="36" height="12" rx="2" fill="transparent" stroke="#2941f3" stroke-opacity="0.5" stroke-width="0.8"/>
+      <text x="386.0" y="257" fill="#2941f3" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">LEAD</text>
+      <rect x="632" y="248" width="40" height="12" rx="2" fill="transparent" stroke="#2941f3" stroke-opacity="0.5" stroke-width="0.8"/>
+      <text x="652.0" y="257" fill="#2941f3" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">3 WAIT</text>
+      <text x="520.0" y="282" fill="#040810" font-size="12" font-family="'Inter', system-ui, sans-serif" font-weight="600" text-anchor="middle">Lead PR</text>
+      <text x="520.0" y="298" fill="#5a6b85" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">dl-e8ov.2.32.1</text>
+      <text x="520.0" y="314" fill="#7888a0" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">carries dl-e8ov.2.32.2 and dl-5ssh.34.34</text>
+      <text x="520.0" y="328" fill="#7888a0" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">contracts · migration + RLS + pgTAP</text>
+      <text x="520.0" y="342" fill="#7888a0" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">Store + InMemoryStore · /api/v1 routes</text>
+      <rect x="172" y="432" width="200" height="80" rx="6" fill="#fbfcfe"/>
+      <rect x="172" y="432" width="200" height="80" rx="6" fill="#ffffff" stroke="#5a6b85" stroke-width="1"/>
+      <rect x="180" y="440" width="36" height="12" rx="2" fill="transparent" stroke="#5a6b85" stroke-opacity="0.5" stroke-width="0.8"/>
+      <text x="198.0" y="449" fill="#5a6b85" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">LANE</text>
+      <rect x="324" y="440" width="40" height="12" rx="2" fill="transparent" stroke="#5a6b85" stroke-opacity="0.5" stroke-width="0.8"/>
+      <text x="344.0" y="449" fill="#5a6b85" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1 WAIT</text>
+      <text x="272.0" y="474" fill="#040810" font-size="12" font-family="'Inter', system-ui, sans-serif" font-weight="600" text-anchor="middle">core</text>
+      <text x="272.0" y="490" fill="#5a6b85" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">dl-e8ov.2.32.4</text>
+      <text x="272.0" y="506" fill="#7888a0" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">judges + hint release</text>
+      <rect x="420" y="432" width="200" height="80" rx="6" fill="#fbfcfe"/>
+      <rect x="420" y="432" width="200" height="80" rx="6" fill="#ffffff" stroke="#5a6b85" stroke-width="1"/>
+      <rect x="428" y="440" width="36" height="12" rx="2" fill="transparent" stroke="#5a6b85" stroke-opacity="0.5" stroke-width="0.8"/>
+      <text x="446.0" y="449" fill="#5a6b85" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">LANE</text>
+      <rect x="572" y="440" width="40" height="12" rx="2" fill="transparent" stroke="#5a6b85" stroke-opacity="0.5" stroke-width="0.8"/>
+      <text x="592.0" y="449" fill="#5a6b85" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1 WAIT</text>
+      <text x="520.0" y="474" fill="#040810" font-size="12" font-family="'Inter', system-ui, sans-serif" font-weight="600" text-anchor="middle">import</text>
+      <text x="520.0" y="490" fill="#5a6b85" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">dl-e8ov.2.32.5</text>
+      <text x="520.0" y="506" fill="#7888a0" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">packages/lesson-import</text>
+      <rect x="668" y="432" width="200" height="80" rx="6" fill="#fbfcfe"/>
+      <rect x="668" y="432" width="200" height="80" rx="6" fill="#ffffff" stroke="#5a6b85" stroke-width="1"/>
+      <rect x="676" y="440" width="36" height="12" rx="2" fill="transparent" stroke="#5a6b85" stroke-opacity="0.5" stroke-width="0.8"/>
+      <text x="694.0" y="449" fill="#5a6b85" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">LANE</text>
+      <rect x="820" y="440" width="40" height="12" rx="2" fill="transparent" stroke="#5a6b85" stroke-opacity="0.5" stroke-width="0.8"/>
+      <text x="840.0" y="449" fill="#5a6b85" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1 WAIT</text>
+      <text x="768.0" y="474" fill="#040810" font-size="12" font-family="'Inter', system-ui, sans-serif" font-weight="600" text-anchor="middle">store</text>
+      <text x="768.0" y="490" fill="#5a6b85" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">dl-e8ov.2.32.3</text>
+      <text x="768.0" y="506" fill="#7888a0" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">PostgresStore</text>
+      <rect x="296" y="576" width="200" height="80" rx="6" fill="#fbfcfe"/>
+      <rect x="296" y="576" width="200" height="80" rx="6" fill="#ffffff" stroke="#5a6b85" stroke-width="1"/>
+      <rect x="304" y="584" width="36" height="12" rx="2" fill="transparent" stroke="#5a6b85" stroke-opacity="0.5" stroke-width="0.8"/>
+      <text x="322.0" y="593" fill="#5a6b85" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">LANE</text>
+      <rect x="448" y="584" width="40" height="12" rx="2" fill="transparent" stroke="#5a6b85" stroke-opacity="0.5" stroke-width="0.8"/>
+      <text x="468.0" y="593" fill="#5a6b85" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1 WAIT</text>
+      <text x="396.0" y="618" fill="#040810" font-size="12" font-family="'Inter', system-ui, sans-serif" font-weight="600" text-anchor="middle">api</text>
+      <text x="396.0" y="634" fill="#5a6b85" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">dl-e8ov.2.32.6</text>
+      <text x="396.0" y="650" fill="#7888a0" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">/api/v1 routes</text>
+      <rect x="668" y="576" width="200" height="80" rx="6" fill="#fbfcfe"/>
+      <rect x="668" y="576" width="200" height="80" rx="6" fill="#ffffff" stroke="#7888a0" stroke-width="1" stroke-dasharray="4,3"/>
+      <rect x="676" y="584" width="36" height="12" rx="2" fill="transparent" stroke="#7888a0" stroke-opacity="0.5" stroke-width="0.8"/>
+      <text x="694.0" y="593" fill="#7888a0" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">LANE</text>
+      <rect x="820" y="584" width="40" height="12" rx="2" fill="transparent" stroke="#7888a0" stroke-opacity="0.5" stroke-width="0.8"/>
+      <text x="840.0" y="593" fill="#7888a0" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">0 WAIT</text>
+      <text x="768.0" y="618" fill="#040810" font-size="12" font-family="'Inter', system-ui, sans-serif" font-weight="600" text-anchor="middle">playground</text>
+      <text x="768.0" y="634" fill="#5a6b85" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">dl-e8ov.2.32.7</text>
+      <text x="768.0" y="650" fill="#7888a0" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">in david-learns</text>
+      <line x1="40" y1="696" x2="1000" y2="696" stroke="rgba(9,22,40,0.10)" stroke-width="0.8"/>
+      <text x="40" y="716" fill="#5a6b85" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.18em">LEGEND</text>
+      <rect x="120" y="708" width="14" height="10" rx="2" fill="rgba(41,65,243,0.10)" stroke="#2941f3" stroke-width="1.5"/>
+      <text x="140" y="717" fill="#5a6b85" font-size="9" font-family="'Inter', system-ui, sans-serif">Lead PR</text>
+      <rect x="203.0" y="708" width="14" height="10" rx="2" fill="#ffffff" stroke="#5a6b85" stroke-width="1"/>
+      <text x="223.0" y="717" fill="#5a6b85" font-size="9" font-family="'Inter', system-ui, sans-serif">Lane issue</text>
+      <rect x="301.0" y="708" width="14" height="10" rx="2" fill="rgba(90,107,133,0.08)" stroke="#667997" stroke-width="1"/>
+      <text x="321.0" y="717" fill="#5a6b85" font-size="9" font-family="'Inter', system-ui, sans-serif">Done</text>
+      <rect x="369.0" y="708" width="14" height="10" rx="2" fill="#ffffff" stroke="#7888a0" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="389.0" y="717" fill="#5a6b85" font-size="9" font-family="'Inter', system-ui, sans-serif">Builds in another repo</text>
+      <line x1="527.0" y1="713" x2="551.0" y2="713" stroke="#5a6b85" stroke-width="1" marker-end="url(#arrow)"/>
+      <text x="559.0" y="717" fill="#5a6b85" font-size="9" font-family="'Inter', system-ui, sans-serif">Prerequisite to dependent</text>
+      <rect x="712.0" y="707" width="36" height="12" rx="2" fill="transparent" stroke="rgba(90,107,133,0.45)" stroke-width="0.8"/>
+      <text x="730.0" y="716" fill="#5a6b85" font-size="7" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">1 WAIT</text>
+      <text x="756.0" y="717" fill="#5a6b85" font-size="9" font-family="'Inter', system-ui, sans-serif">Issues waiting on it</text>
+    </svg>
+    <p class="caption">Arrows run from prerequisite to dependent. The lead PR is the one every lane waits on.</p>
+  </div>
+</body>
+</html>
