@@ -5,7 +5,7 @@
 | Drop | Source | What it explains |
 | --- | --- | --- |
 | [jadwigo-repo](https://drops.medallion.md/sites/jadwigo-repo/) | [`repo/`](repo/) | where things live in this repo and how agents work in it |
-| jadwigo-identity (not yet published) | [`identity/`](identity/) | Jadwigo's look, voice and name story: the options the owner picks from |
+| [jadwigo-identity](https://drops.medallion.md/sites/jadwigo-identity/) | [`identity/`](identity/) | Jadwigo's look, voice and name story: the options the owner picks from |
 
 ## Made before the repo
 

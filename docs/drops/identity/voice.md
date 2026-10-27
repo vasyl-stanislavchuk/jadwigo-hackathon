@@ -24,7 +24,7 @@ Every register below says [the same 6 lines](data/identity.json). They are a lan
 ## How each one sounds
 
 - **Spokojny przewodnik** (a calm guide): Short sentences, few exclamation marks, nothing hurried. It speaks the way a parent sits next to a child doing homework.
-- **Życzliwa nauczycielka** (a kind teacher): Warm and clear, the way a good teacher talks in the first school grades. It names what went well, shows the next step and says where each question comes from.
+- **Życzliwa nauczycielka** (a kind teacher): Warm and clear, the way a good teacher talks in the first school grades. This voice names what went well, shows the next step and says where each question comes from.
 - **Ciekawy towarzysz** (a curious companion): Playful and curious, plays with the "go" in the name (gotowi, dlaczego). It treats a question as a riddle to solve together, never as a test.
 
 ## Rules every line keeps
