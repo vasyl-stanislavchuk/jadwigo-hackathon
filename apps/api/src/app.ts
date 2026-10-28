@@ -39,6 +39,9 @@ export function createApp(store: Store): Router {
   };
 
   on("health", async () => ({ status: "ok" }));
+  // Public by design: no authorize(). It reads only the featured pod's open anyone-assignments,
+  // and a start on one is authorized like any other (decision 2026-10-26-the-login-free-lesson-is-
+  // protected-by-invisible-limits-only-per).
   on("featuredLessons", () => featuredLessons(store));
   on("startAttempt", (params, body) => startAttempt(store, params.id, body));
   on("getAttempt", (params) => getAttempt(store, params.id));
@@ -51,9 +54,16 @@ export function createApp(store: Store): Router {
   return app;
 }
 
-/** The body as JSON. One past `LIMITS.bodyBytes` is refused before it is parsed, so nothing is judged or stored. */
+/**
+ * The body as JSON. One past `LIMITS.bodyBytes` is refused before it is parsed, so nothing is judged
+ * or stored, and a content-length that is not a byte count is refused before the body is read.
+ */
 async function bodyOf(req: Request): Promise<unknown> {
-  if (Number(req.headers.get("content-length") ?? 0) > LIMITS.bodyBytes) throw tooLarge();
+  const length = req.headers.get("content-length");
+  if (length !== null && !/^\d+$/.test(length.trim())) {
+    throw new ApiError(ErrorType.enum.BadRequest, "the content-length is not a number of bytes");
+  }
+  if (Number(length ?? 0) > LIMITS.bodyBytes) throw tooLarge();
   const text = await req.text();
   if (new TextEncoder().encode(text).byteLength > LIMITS.bodyBytes) throw tooLarge();
   if (text.trim() === "") return undefined;

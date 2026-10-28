@@ -38,6 +38,17 @@ aws --profile sergii ssm put-parameter --region eu-central-1 --name /jadwigo/pro
 
 The Lambda reads it once per cold start. Until the first deploy, its placeholder code answers 503.
 
+**The database URL never passes through Terraform.** The module creates the parameter with a write-only
+placeholder, so neither a tfvars file nor the state holds the value. The owner sets it after the first
+`apply`, and again after a password rotation, with jadwigo_api's transaction pooler URL (port 6543):
+
+```sh
+aws --profile sergii ssm put-parameter --region eu-central-1 --name /jadwigo/prod/database-url \
+  --type SecureString --overwrite --value "postgresql://jadwigo_api.<ref>:<password>@<pooler-host>:6543/postgres"
+```
+
+The Lambda reads it once per cold start. Until the first deploy, its placeholder code answers 503.
+
 The state bucket `jadwigo-terraform-state-843109108289` is created by hand before the first `init` (`dl-5ssh.9`):
 
 ```sh
