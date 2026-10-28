@@ -2,15 +2,18 @@
 // - product AI workflows, workflows/<name>/SKILL.md, named jadwigo-<record>-<verb>, linked into
 //   .claude/skills and .agents/skills;
 // - dev commands, .agents/skills/dev-<verb>/SKILL.md (the cross-agent home is their source),
-//   linked into .claude/skills.
+//   linked into .claude/skills;
+// - marketing commands, .agents/skills/mk-<noun>/SKILL.md (dl-w0b4.56), linked the same way.
 // Every link is committed and relative, and each frontmatter names its folder. `make skills`
-// makes the links. Folders starting with _ under workflows/ are shared parts, not workflows.
+// makes the links. Folders starting with _ under workflows/ and .agents/skills/ are shared
+// parts, not commands.
 // Run: bun tools/src/check-workflows.ts [repo]
 import { existsSync, lstatSync, readdirSync, readFileSync, readlinkSync } from "node:fs";
 import { join } from "node:path";
 
 const PRODUCT = /^jadwigo-[a-z0-9]+-[a-z0-9-]+$/;
 const DEV = /^dev-[a-z0-9-]+$/;
+const MARKETING = /^mk-[a-z0-9-]+$/;
 
 function frontmatter(text: string): Record<string, string> {
   const block = /^---\n([\s\S]*?)\n---/.exec(text)?.[1] ?? "";
@@ -54,9 +57,9 @@ export function checkWorkflows(repo: string): string[] {
     const dir = join(repo, "workflows", name);
     if (name.startsWith("_") || !lstatSync(dir).isDirectory()) continue;
     const shown = `workflows/${name}`;
-    if (DEV.test(name)) {
+    if (DEV.test(name) || MARKETING.test(name)) {
       problems.push(
-        `${shown}: dev commands live in .agents/skills/, not with the product workflows`,
+        `${shown}: dev and marketing commands live in .agents/skills/, not with the product workflows`,
       );
       continue;
     }
@@ -69,13 +72,13 @@ export function checkWorkflows(repo: string): string[] {
 
   for (const name of entries(join(repo, ".agents/skills"))) {
     const path = join(repo, ".agents/skills", name);
-    if (!lstatSync(path).isDirectory()) continue; // a product workflow's link (checked below) or a README
+    if (name.startsWith("_") || !lstatSync(path).isDirectory()) continue; // shared parts, a product workflow's link (checked below) or a README
     const shown = `.agents/skills/${name}`;
-    if (!DEV.test(name)) {
+    if (!DEV.test(name) && !MARKETING.test(name)) {
       problems.push(
         name.startsWith("jadwigo-")
           ? `${shown}: product workflows live in workflows/, linked here`
-          : `${shown}: dev commands are dev-<verb>`,
+          : `${shown}: dev commands are dev-<verb>, marketing commands mk-<noun>`,
       );
       continue;
     }
