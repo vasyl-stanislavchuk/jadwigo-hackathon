@@ -301,6 +301,8 @@ export const ERROR_STATUS = {
   EventIdMismatch: 409,
   WriteOnce: 409,
   AnswerLimit: 429,
+  Unauthorized: 401,
+  BankUnavailable: 502,
 } as const;
 export const ErrorType = z.enum(
   Object.keys(ERROR_STATUS) as [keyof typeof ERROR_STATUS, ...(keyof typeof ERROR_STATUS)[]],

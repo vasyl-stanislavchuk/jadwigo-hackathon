@@ -5,12 +5,12 @@ import { Language } from "./records.ts";
  * The question bank's seam: the need a caller sends and the envelope the bank answers with.
  *
  * Written from `schemas/need.schema.json` and `schemas/search-envelope.schema.json` in the
- * `jadwigo-bank` repo at commit `ac60440`, the commit `david-learns` pins too. The bank owns these
+ * `jadwigo-bank` repo at commit `527c6e0` (`ac60440` plus `bank_rev`; david-learns pins `ac60440`). The bank owns these
  * shapes: a field is added there first and here second, and the snapshots in `schemas/` say which
  * bank commit they follow. Route: `ROUTES.questionSearches` (decision
  * `jadwigo-question-bank/decisions/2026-10-28-the-bank-s-search-route-is-post-api-v1-question-searches`).
  */
-export const BANK_COMMIT = "ac60440";
+export const BANK_COMMIT = "527c6e0";
 
 const Words = z.array(z.string());
 
@@ -136,6 +136,12 @@ export const SearchEnvelope = z
       .describe("Server-side stage times in milliseconds")
       .optional(),
     cache: z.enum(["hit", "miss", "off"]).optional(),
+    bank_rev: z
+      .string()
+      .describe(
+        "sha256 of the index manifest the service answered from; the publisher writes it with the rows, so a caller can tell which build of the bank a row came from",
+      )
+      .optional(),
     rows: z.array(SearchRow),
     state: z
       .array(SearchState)

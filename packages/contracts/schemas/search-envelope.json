@@ -72,7 +72,7 @@
         "grade"
       ],
       "additionalProperties": false,
-      "description": "A search need, from jadwigo-bank schemas/need.schema.json at commit ac60440. It carries at least one of words, skills, can_do or resemble."
+      "description": "A search need, from jadwigo-bank schemas/need.schema.json at commit 527c6e0. It carries at least one of words, skills, can_do or resemble."
     },
     "arm": {
       "type": "string",
@@ -117,6 +117,10 @@
         "miss",
         "off"
       ]
+    },
+    "bank_rev": {
+      "type": "string",
+      "description": "sha256 of the index manifest the service answered from; the publisher writes it with the rows, so a caller can tell which build of the bank a row came from"
     },
     "rows": {
       "type": "array",
@@ -314,5 +318,5 @@
     "state"
   ],
   "additionalProperties": false,
-  "description": "A bank search's answer, version 1, from jadwigo-bank schemas/search-envelope.schema.json at commit ac60440."
+  "description": "A bank search's answer, version 1, from jadwigo-bank schemas/search-envelope.schema.json at commit 527c6e0."
 }
