@@ -13,7 +13,7 @@ ifneq (,$(wildcard $(HOME)/perl5/bin/pg_prove))
 export PATH := $(HOME)/perl5/bin:$(PATH)
 export PERL5LIB := $(HOME)/perl5/lib/perl5$(if $(PERL5LIB),:$(PERL5LIB))
 endif
-.PHONY: check check-all dev db migrate pgtap db-reset db-seed api-dev db-push db-role skills drops
+.PHONY: check check-all dev db migrate pgtap db-reset db-seed api-dev api-bundle api-invoke db-push db-role skills drops
 
 ## check: lint, typecheck and test what changed since main (turbo --affected), uv's pytest
 ## included, then the repo-wide checks turbo cannot scope: knip, dependency-cruiser, no-bank, worklog,
@@ -168,6 +168,23 @@ db-role:
 	test -s supabase/.temp/pooler-url || { echo "db-role: supabase link wrote no supabase/.temp/pooler-url"; exit 1; }; \
 	printf '%s\n' '\set pw `printenv API_PASSWORD`' "alter role jadwigo_api login password :'pw';" \
 	  | PGPASSWORD=$$SUPABASE_DB_PASSWORD psql "$$(cat supabase/.temp/pooler-url)" -q -v ON_ERROR_STOP=1 && echo "db-role: jadwigo_api can log in on jadwigo-$(ENV)"
+
+## api-bundle: apps/api's Lambda entry (src/index.ts, `index.handler`) as one ESM file for Node 24,
+## apps/api/dist/index.mjs, which `make -C infra api-deploy` zips. bun's bundler, with a require()
+## for pg's CommonJS. The AWS SDK is bundled, pinned, rather than taken from the runtime.
+API_BUNDLE := apps/api/dist/index.mjs
+api-bundle:
+	rm -f $(API_BUNDLE)
+	bun build apps/api/src/index.ts --target=node --format=esm --minify \
+	  --banner='import { createRequire } from "node:module"; const require = createRequire(import.meta.url);' \
+	  --outfile $(API_BUNDLE)
+	@printf 'api-bundle: %s, %s bytes\n' $(API_BUNDLE) "$$(wc -c < $(API_BUNDLE) | tr -d ' ')"
+
+## api-invoke: the bundle, invoked in a fresh Node with an API Gateway v2 event for GET /api/health;
+## prints the status and the cold start. No AWS: DATABASE_URL names the local database, and health
+## never reaches it.
+api-invoke: api-bundle
+	DATABASE_URL=$${DATABASE_URL:-postgresql://localhost:$${PGPORT:-5433}/jadwigo} bun run --cwd apps/api invoke
 
 ## drops: md drops check on every drop under docs/drops/
 drops:
