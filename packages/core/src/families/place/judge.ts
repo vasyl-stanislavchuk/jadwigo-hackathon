@@ -38,8 +38,6 @@ import { fractionSolution, judgeFraction } from "./fraction.ts";
  * Marks: per tap on a picture (a tap is the learner's own, and marking it shows nothing new), per
  * bar on a graph (a marked bar still has to be counted again), and size and split on an area model;
  * the whole step on a line, a plain grid or a fraction.
- *
- * Ported from david-learns `frontend/src/families/place/judge.ts`.
  */
 
 const OTHER: Verdict = { correct: false, mistake_class: "other_wrong", parts: [] };

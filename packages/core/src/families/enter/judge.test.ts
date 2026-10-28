@@ -7,8 +7,7 @@ import { enterSolution, judgeEnter } from "./judge.ts";
  * The Enter judge's cases from the playground's view tests, without the render code: an
  * expression compared by value and form (dl-w3.51.1), a length read off a ruler (dl-w3.51.4), an
  * exact decimal (dl-w3.70.7) and a fraction in stacked boxes (dl-w3.70.16), alone and in a gap.
- * Ported from david-learns `frontend/src/families/enter/{enter,decimal,fraction}.test.tsx`; their
- * validator, voice, help, nudge and view cases stay with the page.
+ * The validator, voice, help, nudge and view cases stay with the page.
  */
 
 type Step = { data: EnterData; key: EnterKey };

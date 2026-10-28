@@ -5,9 +5,7 @@ import { judgePlace, placeMarks, placeSolution } from "./judge.ts";
 
 /**
  * Set the clock (clock_set, dl-w3.61.5): the judge per hand and per class, and the geometry it
- * reads. Ported from the judge half of david-learns `frontend/src/families/place/clock.test.tsx`
- * and the cases of `frontend/src/components/parts/clock.test.ts` for the helpers ported here;
- * the checks stay with validation and the view with the web app.
+ * reads. The checks stay with validation and the view with the web app.
  */
 
 type ClockData = Extract<PlaceData, { surface: "clock" }>;

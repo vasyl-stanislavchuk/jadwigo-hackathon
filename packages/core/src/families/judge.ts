@@ -8,8 +8,7 @@ import { judgeSequence, sequenceSolution } from "./sequence.ts";
 import { judgeSlots, slotsMarks, slotsSolution } from "./slots/judge.ts";
 
 /**
- * One entry point per question code asks about a family question. Ported from david-learns
- * `frontend/src/families/judge.ts`.
+ * One entry point per question code asks about a family question.
  * - judge(): what code decides about one committed value, a verdict per part.
  * - pageMarks(): what the page is told after a miss, under the marks rule: the parts marked right
  *   or missed, or null to mark the whole question. Never a mistake class. A typed word's slipped

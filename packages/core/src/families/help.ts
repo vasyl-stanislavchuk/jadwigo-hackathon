@@ -34,7 +34,7 @@ import { fillOrder } from "./slots/model.ts";
  * (ruling 05's rule for the key, applied to every rung, so a rung can never leak early). A rung
  * the author did not write is skipped, so a question with no help shows no Help button.
  *
- * Ported from david-learns `frontend/src/families/help.ts`. Two things were left out:
+ * Two parts of the playground's help are left out of v0:
  * - The hint stack (`releaseStack`, `stackNext`, `stackFree`, `helpNext`, `helpTop`, `pageHelpOf`):
  *   the wire's `ReleasedHelp.rung` stops at 4, so v0 plays Khan's hints mapped onto the ladder.
  *   The solution card (`solutionLines`) is not on the v0 wire either.

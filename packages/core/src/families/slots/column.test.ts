@@ -5,9 +5,8 @@ import { judgeSlots } from "./judge.ts";
 
 /**
  * Written column arithmetic (dl-w3.61.4): the cells, the key and the near misses come from the sum,
- * and the judge reads an empty small cell as no carry. Ported from david-learns
- * `frontend/src/families/slots/column.test.ts`; its grid, completeness, voice and validator cases
- * stay with the page and the validator.
+ * and the judge reads an empty small cell as no carry. The grid, completeness, voice and validator
+ * cases stay with the page and the validator.
  */
 
 const sum = (

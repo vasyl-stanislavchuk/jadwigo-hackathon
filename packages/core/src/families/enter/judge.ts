@@ -69,8 +69,6 @@ import { slippedLetters, textClass, textMatches } from "./text.ts";
  * unit on a centimetre ruler and one on a millimetre ruler when the key names none. Its misses:
  * `off_by_one_unit` (one mark too many or too few, the zero end or the count), `unit_mixed`
  * (millimetres for centimetres or the other way), else `other_wrong`.
- *
- * Ported from david-learns `frontend/src/families/enter/judge.ts`.
  */
 
 const NUMBER = /^-?[0-9]+$/;

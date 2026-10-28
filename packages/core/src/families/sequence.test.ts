@@ -6,8 +6,7 @@ import { judgeSequence, sequenceSolution, slotIndex, tileMode } from "./sequence
 /**
  * The Sequence judge in both shapes: cards, where every item is used once, and tiles
  * (dl-w3.51.9), where the places are judged by what their tiles say, so two `8` tiles are
- * interchangeable and a tile may stay in the bank. Ported from david-learns
- * `frontend/src/families/sequence/judge.test.ts`.
+ * interchangeable and a tile may stay in the bank.
  */
 
 const cards: SequenceData = {
@@ -127,7 +126,7 @@ describe("the help release's helpers", () => {
 });
 
 describe("a tile used in two places", () => {
-  // The bank keeps its tiles (david-learns `sequence/model.ts`), so one `8` may fill both places.
+  // The bank keeps its tiles (the playground's tile model), so one `8` may fill both places.
   it("is judged by what the places say", () => {
     expect(verdict(tiles, tileKey, ["u8", "tp", "u8"])).toBe("correct");
     expect(verdict(tiles, { orders: [["t8", "tp", "u8"]] }, ["t8", "tp", "t8"])).toBe("correct");

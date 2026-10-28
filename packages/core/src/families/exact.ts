@@ -3,8 +3,8 @@ import type { NumberForm } from "@jadwigo/contracts";
 /**
  * Exact numbers for the Enter judge (dl-w3.70.7): a decimal as a child types it, read as a
  * fraction of whole numbers, so `0,5`, `0.5`, `,5` and `0.50` are the same number and nothing is
- * ever compared as a float. A decimal is a scaled integer: `12,37` is 1237 hundredths. Ported from
- * david-learns `frontend/src/components/parts/exact.ts`, the judge's half.
+ * ever compared as a float. A decimal is a scaled integer: `12,37` is 1237 hundredths. Only the
+ * judge's half is here; formatting a number for the page stays with the page.
  *
  * The rule follows Perseus's numeric-input scorer, read and cited, never copied
  * (https://github.com/Khan/perseus, packages/perseus-score/src/widgets/numeric-input/: a decimal

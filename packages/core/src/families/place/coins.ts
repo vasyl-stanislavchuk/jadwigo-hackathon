@@ -11,8 +11,6 @@ import { DENOM_GR, fewestOf, isDenom, MAX_GR, totalGr } from "../money.ts";
  * - `too_much` or `too_little`;
  * - `not_fewest`: the right total, with more coins than needed, when the key asks for the fewest.
  * The marks are whole: a coin is never marked, since a marked coin would say which one to change.
- *
- * Ported from david-learns `frontend/src/families/place/coins.judge.ts`.
  */
 
 type CoinsKey = Extract<PlaceKey, { surface: "coins" }>;

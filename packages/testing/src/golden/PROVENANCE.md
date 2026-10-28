@@ -5,7 +5,8 @@
 
 ## Source
 
-- Repo: david-learns, commit `e84829978511797e83f969116fa4533d5a9edbf5` (2026-10-27).
+- Repo: the playground's source repo, where it lived before it was ported here, commit
+  `e84829978511797e83f969116fa4533d5a9edbf5` (2026-10-27).
 - Test: `frontend/src/playground/sim/familyGolden.test.ts`, both of its suites:
   - `golden`: every row of `sim/golden.json` (the Python grader's verdicts, `dl-w3.37.8`) for every
     built lesson with exercises, turned into a family question by `playground/adapt.ts` `toFamily`
@@ -34,7 +35,7 @@
 ## How to sync it again
 
 The export walks the same rows as `familyGolden.test.ts` and checks every scenario against the
-playground's own `judge()` before writing. Put this file in david-learns as
+playground's own `judge()` before writing. Put this file in the playground's source repo as
 `frontend/src/playground/sim/zzCoreGoldenExport.test.ts`, run it, then delete it:
 
 ```sh

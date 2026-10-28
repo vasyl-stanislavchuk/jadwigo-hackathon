@@ -16,9 +16,8 @@ import { pyramidCellText, pyramidFillOrder } from "./pyramid.ts";
  * `at` sits as a marker. The reading order is the picture's markers, then the template, then the
  * table row by row, and `markerIds` and `pieces` read all three.
  *
- * Ported from david-learns `frontend/src/families/slots/model.ts`, the reading order the judge and
- * the help release need; the types are in `@jadwigo/contracts`. `texRanges` is ported privately
- * from `frontend/src/components/parts/richTextParse.ts`.
+ * Only the reading order the judge and the help release need is here; the types are in
+ * `@jadwigo/contracts`. `texRanges` finds the TeX spans, whose braces are never gaps.
  */
 
 /** What the markers are read from: a template string, or a step's picture, template and table. */

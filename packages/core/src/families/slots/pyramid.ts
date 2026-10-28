@@ -12,8 +12,7 @@ import type { GapKey, PyramidRows } from "@jadwigo/contracts";
  * adding instead of subtracting (`added_for_missing`), and a brick over two known ones found by
  * subtracting instead of adding (`subtracted_for_sum`).
  *
- * Ported from david-learns `frontend/src/families/slots/pyramid.ts`, without the validator's
- * shape and sum checks.
+ * The validator's shape and sum checks are not here: a judge reads a key the validator passed.
  */
 
 type PyramidCell = PyramidRows[number][number];

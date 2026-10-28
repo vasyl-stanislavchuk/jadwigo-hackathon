@@ -4,8 +4,7 @@ import { judgePlace, placeMarks } from "./judge.ts";
 
 /**
  * The Place judge's surfaces the dispatcher's cases (judge.test.ts) leave out: a line graph and a
- * histogram judged as bars, from the judge half of david-learns
- * `frontend/src/families/place/hotspotGraph.test.tsx`, and the picture rules its comment names.
+ * histogram judged as bars, and a picture, where each tap is judged by the target it lands in.
  */
 
 const bars = (kind: "line" | "histogram", bins?: number[]): PlaceData => ({

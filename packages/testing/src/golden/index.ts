@@ -2,9 +2,9 @@ import golden from "./golden.json" with { type: "json" };
 
 /**
  * The playground's golden judge corpus, synced with its provenance by `dl-e8ov.2.32.4`
- * (`PROVENANCE.md`): every row `familyGolden.test.ts` judges in david-learns, resolved to its family
- * question and family value, with the verdict the playground holds its judges to. Plain JSON, so
- * this package needs no contracts; `packages/core` parses each question before judging it.
+ * (`PROVENANCE.md`): every row the playground's `familyGolden.test.ts` judges, resolved to its
+ * family question and family value, with the verdict the playground holds its judges to. Plain
+ * JSON, so this package needs no contracts; `packages/core` parses each question before judging it.
  */
 
 /** A question as a lesson question holds it: its type, family, data and key. */

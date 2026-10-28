@@ -21,8 +21,7 @@ import { isNum } from "../rules.ts";
  * - else `wrong_hour` or `wrong_minute`.
  * The step's class is its first missed part's, the hour hand first.
  *
- * Ported from david-learns `frontend/src/families/place/clock.judge.ts`, with the clock geometry
- * it needs from `frontend/src/components/parts/clock.ts`.
+ * The clock geometry here is the part the judge needs: where each hand points, in minutes.
  */
 
 type ClockKey = Extract<PlaceKey, { surface: "clock" }>;

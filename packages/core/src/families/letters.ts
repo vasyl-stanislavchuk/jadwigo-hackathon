@@ -3,8 +3,8 @@
  * verdict marks only the letters to fix, by their place in the typed text. A letter is a code
  * point with the combining marks after it, so an `o` typed with a combining acute is one letter, as
  * the eye reads it. Its part id is `l<n>`, from 0 at the first letter as typed, spaces counted;
- * inside a gap it is `<gap>.l<n>`. Ported from david-learns `frontend/src/components/parts/letters.ts`,
- * the judge's half.
+ * inside a gap it is `<gap>.l<n>`. Only the judge's half is here; drawing the letters is the
+ * page's.
  */
 
 /** The letters of a text: each code point with the combining marks that follow it. */

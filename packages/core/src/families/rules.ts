@@ -3,7 +3,7 @@ import type { RuleRef } from "@jadwigo/contracts";
 /**
  * The mistake-class rules for numbers, shared by every family that takes one: a port of
  * src/dl/grading/mistakes.py classify(), classify_fill_blank() and classify_number_line(), rule for
- * rule and in the same order. Ported from david-learns `frontend/src/families/rules.ts`.
+ * rule and in the same order.
  *
  * A key may name a rule (`RuleRef`). A family judge asks for it only after the author's own `near`
  * table found nothing, and treats `other_wrong` from a rule as "no class yet", so a later check
