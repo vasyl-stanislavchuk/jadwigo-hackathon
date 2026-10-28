@@ -1,0 +1,1046 @@
+/* The Jadwigo design system on the lesson screen: Zeszyt, as the owner reviewed it in Claude Design
+ * (owner, 2026-10-24: david-learns/notes/2026-10-24-the-lesson-screen-takes-the-reviewed-zeszyt-design
+ * -system-pomoz; dl-uukj.29.30). The export is docs/plan/design-system/claude-design/, whose
+ * tokens/colors.css and guidelines/scheme-data.js are the source of every value below.
+ *
+ * The lesson screen is a Polish school exercise book: white paper, blue ink for the one thing to
+ * press, a clear blue for what the child picked, warm yellow for help, green for right and red pen
+ * for a miss. Colour goes in four places only: the page, a picked option, the action that can be
+ * pressed now, and one band after a check. The paper went from cream to white on 2026-10-25
+ * (paper-behaviour/README.md §1,
+ * david-learns/decisions/2026-10-25-zeszyt-goes-white-paper-keyboard-focus-is-an-inner-frame-and-eve;
+ * dl-uukj.29.59). The keyboard's inner focus frame of that decision was removed on 2026-10-26: no
+ * button or option draws a focus (owner, dl-uukj.29.93).
+ *
+ * It is the playground lessons' default look (?look=zeszyt, LessonTheme.tsx) and the System page
+ * (/playground/system) shows all of it. Real lessons outside the playground keep Grape until
+ * dl-uukj.29.14, so everything here is scoped to [data-lesson-theme='zeszyt'].
+ *
+ * Three tiers, each built only from the one above it:
+ *   1. primitives, --jw-p-*: the only literal colours;
+ *   2. roles, --jw-*: named for what they mean on a lesson screen, set again for dark;
+ *   3. aliases: the shadcn and --kid-* names the parts, families and blocks already read.
+ * playground/theme/foundation.test.ts reads this file, resolves the roles and holds every text pair
+ * to 4.5:1 in light and dark, and every hue to its one meaning. */
+
+/* ---- 1. Primitives ---------------------------------------------------------------------------- */
+[data-lesson-theme="zeszyt"] {
+  /* Paper by day: white, its quiet fill and its line (paper-behaviour/README.md §1, option 2c). */
+  --jw-p-paper-100: #f2eee6;
+  --jw-p-paper-200: #e8e2d5;
+  --jw-p-paper-500: #726f68;
+  --jw-p-paper-600: #50535c;
+  --jw-p-paper-650: #55565c;
+  --jw-p-paper-900: #22252d;
+  --jw-p-white: #ffffff;
+  /* The desk at night: one flat tone for the page and every card. The darker and lighter tones
+     * are kept for the miss edge's ink and the solution's band, so the band stands apart. */
+  --jw-p-night-0: #18191d;
+  --jw-p-night-25: #1d1e22;
+  --jw-p-night-75: #24262c;
+  --jw-p-night-100: #2a2c33;
+  --jw-p-night-200: #373941;
+  --jw-p-night-450: #918c83;
+  --jw-p-night-550: #b3aea2;
+  --jw-p-night-600: #b9b4a7;
+  --jw-p-night-900: #ece8de;
+  /* Blue ink: the action, a pick, the focus ring. */
+  --jw-p-ink-50: #e6eeff;
+  --jw-p-ink-100: #dce8fb;
+  --jw-p-ink-150: #d9e6ff;
+  --jw-p-ink-300: #9fbaeb;
+  --jw-p-ink-350: #93b6ff;
+  --jw-p-ink-400: #7aa6f0;
+  --jw-p-ink-500: #6585c2;
+  --jw-p-ink-600: #3a5fa8;
+  --jw-p-ink-650: #2f63b8;
+  --jw-p-ink-750: #24407a;
+  --jw-p-ink-800: #163a78;
+  --jw-p-ink-850: #1d3157;
+  --jw-p-ink-900: #0f285a;
+  --jw-p-ink-950: #0f1a33;
+  /* Warm yellow for help. */
+  --jw-p-sun-100: #fbf1d2;
+  --jw-p-sun-200: #ffe7a3;
+  --jw-p-sun-500: #b8973a;
+  --jw-p-sun-600: #a07c14;
+  --jw-p-sun-800: #5a4300;
+  --jw-p-sun-900: #3a3016;
+  /* Green for right. */
+  --jw-p-green-50: #e2f5e0;
+  --jw-p-green-100: #e3eedc;
+  --jw-p-green-150: #cbe9c8;
+  --jw-p-green-300: #a6cf9c;
+  --jw-p-green-400: #6fc477;
+  --jw-p-green-500: #6b9a61;
+  --jw-p-green-600: #3f8a46;
+  --jw-p-green-700: #2f6a36;
+  --jw-p-green-800: #25522a;
+  --jw-p-green-850: #26452a;
+  --jw-p-green-900: #1b4320;
+  --jw-p-green-950: #123a17;
+  /* Red pen for a miss, and for nothing else. */
+  --jw-p-red-50: #ffe6e1;
+  --jw-p-red-100: #f8e5e0;
+  --jw-p-red-150: #ffdcd5;
+  --jw-p-red-300: #f0b2a6;
+  --jw-p-red-400: #ff8a7a;
+  --jw-p-red-500: #c27a6d;
+  --jw-p-red-600: #c4402f;
+  --jw-p-red-700: #8f3a2e;
+  --jw-p-red-800: #90321f;
+  --jw-p-red-850: #682b23;
+  --jw-p-red-900: #5c231b;
+  --jw-p-red-950: #4a130b;
+}
+
+/* ---- 2. Roles, by day ------------------------------------------------------------------------- */
+[data-lesson-theme="zeszyt"] {
+  /* The quiet ground the question sits on: white, and the cards are white on it, told apart only
+     * by their 2px line. */
+  --jw-ground: var(--jw-p-white);
+  --jw-card: var(--jw-p-white);
+  --jw-prompt-card: var(--jw-p-white);
+  --jw-ink: var(--jw-p-paper-900);
+  --jw-ink-soft: var(--jw-p-paper-600);
+  /* A typed field's hint before the child writes: lighter than the soft ink yet 4.5:1 on paper and
+     * on a card, by day and night (dl-uukj.29.31), and gone once the cursor is in. */
+  --jw-placeholder: var(--jw-p-paper-500);
+  --jw-line: var(--jw-p-paper-200);
+  /* A neutral outline under a mouse: it darkens to the soft ink. */
+  --jw-line-strong: var(--jw-p-paper-600);
+  /* The one thing to press now, the edge it stands on, and the same action at rest. */
+  --jw-act: var(--jw-p-ink-300);
+  --jw-on-act: var(--jw-p-ink-900);
+  --jw-act-edge: var(--jw-p-ink-500);
+  --jw-act-quiet: var(--jw-p-paper-100);
+  --jw-on-act-quiet: var(--jw-p-paper-650);
+  /* Ink blue: a typed field's active edge and caret, and every mark drawn in the lesson's own
+     * colour. The keyboard's frame on a button or an option is in that control's own edge instead
+     * (Behaviour: focus). */
+  --jw-focus: var(--jw-p-ink-600);
+  --jw-on-focus: var(--jw-p-white);
+  /* What the child picked: chosen, not yet judged. */
+  --jw-pick: var(--jw-p-ink-100);
+  --jw-pick-edge: var(--jw-p-ink-650);
+  --jw-pick-ink: var(--jw-p-ink-800);
+  /* Help: a clue, and asking was fine. */
+  --jw-help: var(--jw-p-sun-100);
+  --jw-help-edge: var(--jw-p-sun-600);
+  --jw-help-ink: var(--jw-p-sun-800);
+  /* Right: the band, its edge, its words, and Dalej in it. */
+  --jw-right: var(--jw-p-green-100);
+  --jw-right-edge: var(--jw-p-green-600);
+  --jw-right-ink: var(--jw-p-green-800);
+  --jw-right-act: var(--jw-p-green-300);
+  --jw-on-right-act: var(--jw-p-green-950);
+  --jw-right-act-edge: var(--jw-p-green-500);
+  /* A miss: the band, its edge, its words, and "Pomóż mi" in it. */
+  --jw-miss: var(--jw-p-red-100);
+  --jw-miss-edge: var(--jw-p-red-600);
+  --jw-miss-ink: var(--jw-p-red-800);
+  --jw-on-miss-edge: var(--jw-p-white);
+  --jw-miss-act: var(--jw-p-red-300);
+  --jw-on-miss-act: var(--jw-p-red-950);
+  --jw-miss-act-edge: var(--jw-p-red-500);
+  /* At rest: the solution's band after "Jeszcze nie wiem". */
+  --jw-rest: var(--jw-p-white);
+  --jw-rest-ink: var(--jw-p-paper-900);
+}
+
+/* ---- 2. Roles, by night ----------------------------------------------------------------------- */
+[theme="dark"] [data-lesson-theme="zeszyt"] {
+  --jw-ground: var(--jw-p-night-25);
+  --jw-card: var(--jw-p-night-25);
+  --jw-prompt-card: var(--jw-p-night-25);
+  --jw-ink: var(--jw-p-night-900);
+  --jw-ink-soft: var(--jw-p-night-600);
+  --jw-placeholder: var(--jw-p-night-450);
+  --jw-line: var(--jw-p-night-200);
+  --jw-line-strong: var(--jw-p-night-600);
+  --jw-act: var(--jw-p-ink-600);
+  --jw-on-act: var(--jw-p-ink-50);
+  --jw-act-edge: var(--jw-p-ink-750);
+  --jw-act-quiet: var(--jw-p-night-100);
+  --jw-on-act-quiet: var(--jw-p-night-550);
+  --jw-focus: var(--jw-p-ink-350);
+  --jw-on-focus: var(--jw-p-ink-950);
+  --jw-pick: var(--jw-p-ink-850);
+  --jw-pick-edge: var(--jw-p-ink-400);
+  --jw-pick-ink: var(--jw-p-ink-150);
+  --jw-help: var(--jw-p-sun-900);
+  --jw-help-edge: var(--jw-p-sun-500);
+  --jw-help-ink: var(--jw-p-sun-200);
+  --jw-right: var(--jw-p-green-850);
+  --jw-right-edge: var(--jw-p-green-400);
+  --jw-right-ink: var(--jw-p-green-150);
+  --jw-right-act: var(--jw-p-green-700);
+  --jw-on-right-act: var(--jw-p-green-50);
+  --jw-right-act-edge: var(--jw-p-green-900);
+  --jw-miss: var(--jw-p-red-850);
+  --jw-miss-edge: var(--jw-p-red-400);
+  --jw-miss-ink: var(--jw-p-red-150);
+  --jw-on-miss-edge: var(--jw-p-night-0);
+  --jw-miss-act: var(--jw-p-red-700);
+  --jw-on-miss-act: var(--jw-p-red-50);
+  --jw-miss-act-edge: var(--jw-p-red-900);
+  --jw-rest: var(--jw-p-night-75);
+  --jw-rest-ink: var(--jw-p-night-900);
+}
+
+/* ---- Type, shape, space and motion (the same by day and by night) ----------------------------- */
+[data-lesson-theme="zeszyt"] {
+  /* Andika: SIL's face for children learning to read, with a single-storey a, a 1 and an l told
+     * apart, and every Polish and Ukrainian letter. It has 400 and 700 only. */
+  --jw-font: "Andika", "Nunito Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --jw-weight-text: 400;
+  --jw-weight-strong: 700;
+  --jw-leading: 1.3;
+  /* The child's scale, laptop first; a phone takes the second set below. */
+  --jw-size-instruction: 1.375rem; /* 22px */
+  --jw-size-prompt: 2rem; /* 32px */
+  --jw-size-option: 1.625rem; /* 26px */
+  --jw-size-math: 2.25rem; /* 36px */
+  --jw-size-verdict: 1.375rem; /* 22px */
+  --jw-size-body: 1.125rem; /* 18px: help, hints, the band's second line */
+  --jw-size-small: 0.9375rem; /* 15px */
+  /* Room around × and ÷ so a sum reads as one thing. */
+  --jw-math-op-space: 0.2em;
+
+  --jw-radius-card: 1rem; /* 16px */
+  --jw-radius-control: 1rem; /* 16px: options and the action */
+  --jw-radius-small: 0.625rem; /* 10px: keys and tiles */
+  --jw-radius-chip: 9999px;
+  --jw-border: 2px;
+  /* The pressed edge: tiles, keys and the action stand on a darker 4px edge and sink by it when
+     * pressed. Nothing has a blurred shadow. */
+  --jw-press: 4px;
+  --jw-focus-width: 3px;
+
+  --jw-space-1: 0.25rem;
+  --jw-space-2: 0.5rem;
+  --jw-space-3: 0.75rem;
+  --jw-space-4: 1rem;
+  --jw-space-5: 1.5rem;
+  --jw-space-6: 2rem;
+  --jw-space-7: 3rem;
+  --jw-space-8: 4rem;
+
+  /* The lesson frame's motion (lesson-frame/README.md §4). All of it is 0 under reduced motion. */
+  --jw-dur-fast: 120ms; /* a press sinks by its edge, a hover, a tooltip */
+  --jw-dur-mark: 120ms; /* a miss's mark fades in, no shake */
+  --jw-dur-band: 260ms; /* the verdict band rises */
+  --jw-dur-step: 320ms; /* the next step slides in */
+  --jw-step-shift: 1.5rem; /* 24px: how far it slides */
+  --jw-dur-scroll: 320ms; /* a scroll the frame makes: more below, to the band, to a new hint */
+  --jw-dur-tools: 200ms; /* the laptop's tools panel unfolds upward */
+  --jw-dur-tick: 400ms; /* the right tick arrives */
+  --jw-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* The frame (lesson-frame/README.md rule 1): one footer on every step, in every state, that turns
+     * into the verdict band at the same height. */
+  --jw-bar-height: 6rem; /* 96px */
+}
+
+/* Phone sizes switch at 600 only, as the frame picker does (components/parts/frame.ts); a phone
+ * on its side keeps them (README §2). */
+@media (width < 37.5rem) {
+  [data-lesson-theme="zeszyt"] {
+    --jw-size-instruction: 1.25rem; /* 20px */
+    --jw-size-prompt: 1.75rem; /* 28px, the kid minimum */
+    --jw-size-option: 1.5rem; /* 24px, the kid minimum */
+    --jw-size-math: 1.875rem; /* 30px */
+    --jw-size-verdict: 1.25rem; /* 20px */
+  }
+}
+
+[data-lesson-theme="zeszyt"]:has(.kid-step-shell[data-frame="phone-sideways"]) {
+  --jw-size-instruction: 1.25rem; /* 20px */
+  --jw-size-prompt: 1.75rem; /* 28px, the kid minimum */
+  --jw-size-option: 1.5rem; /* 24px, the kid minimum */
+  --jw-size-math: 1.875rem; /* 30px */
+  --jw-size-verdict: 1.25rem; /* 20px */
+}
+
+/* ---- 3. Aliases: what the existing parts read ------------------------------------------------- */
+[data-lesson-theme="zeszyt"] {
+  --background: var(--jw-ground);
+  --foreground: var(--jw-ink);
+  --card: var(--jw-prompt-card);
+  --card-foreground: var(--jw-ink);
+  --popover: var(--jw-card);
+  --popover-foreground: var(--jw-ink);
+  /* The parts draw selections, marks and rings in --primary: that is the ink blue. The main action
+     * button takes the softer action blue below (Behaviour: the action). */
+  --primary: var(--jw-focus);
+  --primary-foreground: var(--jw-on-focus);
+  --secondary: var(--jw-act-quiet);
+  --secondary-foreground: var(--jw-ink);
+  /* Quiet surfaces: a settled or given part, a hint of what is left. Help has its own yellow
+     * (Behaviour: help). */
+  --muted: var(--jw-act-quiet);
+  --muted-foreground: var(--jw-ink-soft);
+  --accent: var(--jw-pick);
+  --accent-foreground: var(--jw-pick-ink);
+  --border: var(--jw-line);
+  --input: var(--jw-line-strong);
+  --ring: var(--jw-focus);
+
+  --kid-correct: var(--jw-right-edge);
+  --kid-correct-foreground: var(--jw-on-right-act);
+  --kid-correct-action: var(--jw-right-act);
+  --kid-correct-action-foreground: var(--jw-on-right-act);
+  --kid-correct-action-edge: var(--jw-right-act-edge);
+  --kid-correct-soft: var(--jw-right);
+  --kid-correct-ink: var(--jw-right-ink);
+  --kid-try-again: var(--jw-miss-edge);
+  --kid-try-again-foreground: var(--jw-on-miss-edge);
+  --kid-try-again-soft: var(--jw-miss);
+  --kid-try-again-ink: var(--jw-miss-ink);
+  --kid-try-again-action: var(--jw-miss-act);
+  --kid-try-again-action-foreground: var(--jw-on-miss-act);
+  --kid-try-again-action-edge: var(--jw-miss-act-edge);
+  --kid-help: var(--jw-help);
+  --kid-help-edge: var(--jw-help-edge);
+  --kid-help-ink: var(--jw-help-ink);
+  --kid-rest: var(--jw-rest);
+  --kid-rest-ink: var(--jw-rest-ink);
+  --kid-action: var(--jw-act);
+  --kid-action-foreground: var(--jw-on-act);
+  --kid-action-edge: var(--jw-act-edge);
+  --kid-action-quiet: var(--jw-act-quiet);
+  --kid-action-quiet-foreground: var(--jw-on-act-quiet);
+  --kid-press: var(--jw-press);
+  --kid-bar-height: var(--jw-bar-height);
+  --kid-selected: var(--jw-pick-edge);
+  --kid-selected-soft: var(--jw-pick);
+  --kid-selected-ink: var(--jw-pick-ink);
+
+  --kid-say-size: var(--jw-size-prompt);
+  --kid-answer-size: var(--jw-size-option);
+  /* Digits in a typed field, a fraction box and the maths line: 36 px, 30 on a phone (Enter
+     * addendum 2.6, decision dl-y3th 15b). */
+  --kid-math-size: var(--jw-size-math);
+
+  --font-body: var(--jw-font);
+  --font-sans: var(--jw-font);
+  --radius-sm: var(--jw-radius-small);
+  --radius: var(--jw-radius-control);
+  --radius-lg: var(--jw-radius-card);
+  --radius-xl: var(--jw-radius-card);
+  --radius-2xl: var(--jw-radius-card);
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-elevation: none;
+  --duration-slow: var(--jw-dur-step);
+  --theme-icon-stroke: 2;
+
+  font-weight: var(--jw-weight-text);
+  line-height: var(--jw-leading);
+  /* Maths is half the work: digits line up in columns and never change width. */
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Every button's fill runs to its edge, as the export's borderless buttons: shadcn clips the fill to
+ * the padding, and its transparent 2px border showed the paper as a pale ring. */
+[data-lesson-theme="zeszyt"] [data-slot="button"] {
+  background-clip: border-box;
+}
+
+/* ---- Behaviour: the action ---------------------------------------------------------------------- */
+/* The one thing to press now: the action blue, standing on its darker edge. At rest, before there is
+ * an answer to check, it is quiet paper with no edge. */
+[data-lesson-theme="zeszyt"] [data-slot="button"][data-variant="default"]:not([data-key-click]) {
+  background-color: var(--jw-act);
+  color: var(--jw-on-act);
+  box-shadow: 0 var(--jw-press) 0 var(--jw-act-edge);
+}
+
+[data-lesson-theme="zeszyt"] [data-slot="button"][data-variant="default"][aria-disabled="true"],
+[data-lesson-theme="zeszyt"] [data-check][aria-disabled="true"],
+[data-lesson-theme="zeszyt"] [data-next][aria-disabled="true"] {
+  background-color: var(--jw-act-quiet);
+  color: var(--jw-on-act-quiet);
+  box-shadow: none;
+  opacity: 1;
+}
+
+/* Strong words: the instruction, buttons and the band's verdict line. Andika has 400 and 700. */
+[data-lesson-theme="zeszyt"] :is(h1, h2, h3, [data-slot="button"], [data-status], label) {
+  font-weight: var(--jw-weight-strong);
+}
+
+/* ---- Behaviour: what can be pressed ------------------------------------------------------------- */
+/* Options, keys and tiles: paper with a 2px line, standing on a 4px edge of the same line. A radio
+ * marked data-plain is a flat settings control (playground/views/system/settings.tsx) and stays off
+ * these rules. A one-answer option is a label around its sr-only radio (ChoiceList.tsx), so the
+ * label carries the option's rules (dl-uukj.29.49). */
+[data-lesson-theme="zeszyt"]
+[data-slot="button"]:is([data-variant="outline"], [data-variant="secondary"]):not([data-key-click]),
+[data-lesson-theme="zeszyt"]
+  :is(
+    [role="radio"]:not([data-plain]),
+    label[data-option]:has(> input[type="radio"]),
+    [role="checkbox"],
+    [data-tile]
+  ):not([aria-disabled="true"], [data-solution]) {
+  border-width: var(--jw-border);
+  box-shadow: 0 var(--jw-press) 0 var(--jw-edge, var(--jw-line));
+}
+
+/* A several-answer option stays on its edge once the step locks it after a check, as a one-answer
+ * option does, and so does an option drawn still beside the solution (ChoiceStatic): the export's
+ * tone table stands every tone on an edge but the miss, the removed and the solution. */
+[data-lesson-theme="zeszyt"]
+button[role="checkbox"][data-option][aria-disabled="true"]:not(
+  [data-help-removed],
+  [data-solution]
+),
+[data-lesson-theme="zeszyt"] li[data-still-option]:not([data-solution]) {
+  box-shadow: 0 var(--jw-press) 0 var(--jw-edge, var(--jw-line));
+}
+
+/* The edge follows the option's tone (ChooseStep tone table, dl-uukj.29.93): the line at rest, the
+ * pick's edge when picked, the right edge when right, and none on a miss. The rule above draws it
+ * through --jw-edge, so its weight never hides the tone. */
+[data-lesson-theme="zeszyt"]
+:is(
+  [class~="bg-primary/10"],
+  label[data-checked],
+  [role="checkbox"][aria-checked="true"],
+  [data-tile][aria-pressed="true"]
+) {
+  --jw-edge: var(--jw-pick-edge);
+}
+
+[data-lesson-theme="zeszyt"] [data-tone="green"]:not([data-status]) {
+  --jw-edge: var(--jw-right-edge);
+}
+
+[data-lesson-theme="zeszyt"] [data-tone="amber"]:not([data-status]) {
+  --jw-edge: transparent;
+}
+
+/* An option (ChoiceGroup: a one-answer label or a several-answer checkbox) is 72 tall with 20px
+ * sides (lesson-frame README §3 "Option"); its 26px bold, 16px corners and 12px gap come from the
+ * kid tokens above. The block padding is for a picture option, which grows past 72. The same option
+ * drawn still (ChoiceStatic: the solution, a review) keeps that box, so nothing moves when the step
+ * shows its solution (Choose addendum section 4). */
+[data-lesson-theme="zeszyt"] :is(label, button[role="checkbox"])[data-option],
+[data-lesson-theme="zeszyt"] li[data-still-option] {
+  min-height: 4.5rem;
+  padding: 0.5rem 1.25rem;
+}
+
+/* A picked option wears the pick: the clear blue fill, its edge, its ink. Colour only, never size. */
+[data-lesson-theme="zeszyt"] [class~="bg-primary/10"],
+[data-lesson-theme="zeszyt"] [data-tile][aria-pressed="true"],
+[data-lesson-theme="zeszyt"] [data-slot="toggle"][data-state="on"] {
+  border-color: var(--jw-pick-edge);
+  background-color: var(--jw-pick);
+  color: var(--jw-pick-ink);
+  box-shadow: 0 var(--jw-press) 0 var(--jw-pick-edge);
+  --tw-ring-color: transparent;
+}
+
+/* Right and a miss keep their fill and edge (tone.ts), and stand on an edge of the same colour. A
+ * miss stays dashed (docs/17 §2f rule 4). */
+[data-lesson-theme="zeszyt"] [data-tone="green"]:not([data-status]) {
+  box-shadow: 0 var(--jw-press) 0 var(--jw-right-edge);
+}
+
+[data-lesson-theme="zeszyt"] [data-tone="amber"]:not([data-status]) {
+  box-shadow: none;
+}
+
+/* Hover, on a mouse or a trackpad only: a neutral outline darkens, a filled button lifts its fill a
+ * touch. Never a change of size or of meaning. */
+@media (hover: hover) and (pointer: fine) {
+  [data-lesson-theme="zeszyt"]
+    [data-slot="button"]:is([data-variant="outline"], [data-variant="secondary"]):not(
+      [data-key-click]
+    ):hover,
+  [data-lesson-theme="zeszyt"]
+    :is(
+      [role="radio"]:not([data-plain]),
+      label[data-option]:has(> input[type="radio"]),
+      [role="checkbox"],
+      [data-tile]
+    ):not(
+      [aria-disabled="true"],
+      [data-tone="green"],
+      [data-tone="amber"],
+      [class~="bg-primary/10"],
+      [data-solution]
+    ):hover {
+    border-color: var(--jw-line-strong);
+  }
+
+  [data-lesson-theme="zeszyt"]
+    [data-slot="button"][data-variant="default"]:not([aria-disabled="true"]):hover {
+    filter: brightness(1.05) saturate(1.05);
+  }
+}
+
+/* A sound button while it plays (lesson-frame/README.md §3): it keeps its icon and wears the pick,
+ * and the action blue fills it from the left as the clip plays. The player sets --jw-play from 0 to 1,
+ * in steps instead of a glide under reduced motion. A tap stops it. */
+[data-lesson-theme="zeszyt"] [data-slot="button"][data-playing]:not([data-key-click]),
+[data-lesson-theme="zeszyt"] [data-slot="button"][data-playing]:not([data-key-click]):hover {
+  border-color: var(--jw-pick-edge);
+  background-color: var(--jw-pick);
+  background-image: linear-gradient(
+    to right,
+    var(--jw-act) calc(var(--jw-play, 0) * 100%),
+    transparent 0
+  );
+  color: var(--jw-pick-ink);
+  box-shadow: 0 var(--jw-press) 0 var(--jw-pick-edge);
+}
+
+/* A press sinks into the edge, 120ms. The action at rest has no edge and does not move. */
+[data-lesson-theme="zeszyt"]
+:is(
+  [data-slot="button"],
+  [role="radio"]:not([data-plain]),
+  label[data-option]:has(> input[type="radio"]),
+  [role="checkbox"],
+  [data-tile]
+):not([data-key-click], [aria-disabled="true"]):active {
+  box-shadow: none;
+  transform: translateY(var(--jw-press));
+}
+
+[data-lesson-theme="zeszyt"]
+  :is(
+    [data-slot="button"],
+    [role="radio"]:not([data-plain]),
+    label[data-option]:has(> input[type="radio"]),
+    [role="checkbox"],
+    [data-tile]
+  ) {
+  transition:
+    transform var(--jw-dur-fast),
+    box-shadow var(--jw-dur-fast),
+    border-color var(--jw-dur-fast),
+    background-color var(--jw-dur-fast),
+    filter var(--jw-dur-fast);
+}
+
+/* The link action ("Jeszcze nie wiem"), as the export's LinkButton: bold, quiet ink, a 2px underline
+ * 4px below. A hover on a mouse, or a press, darkens the ink to the text and thickens the line to
+ * 3px. No fill, no movement. Colour sits in :where() so the band's own ink (stage.css) still wins. */
+[data-lesson-theme="zeszyt"] .kid-quiet[data-variant="ghost"] {
+  font-weight: var(--jw-weight-strong);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  transition:
+    color var(--jw-dur-fast),
+    text-decoration-thickness var(--jw-dur-fast);
+}
+
+[data-lesson-theme="zeszyt"] :where(.kid-quiet[data-variant="ghost"]) {
+  color: var(--jw-ink-soft);
+}
+
+/* The link is as wide as its words (a full-width footer stretched it), so its focus ring rings the
+ * words, on the small corner. */
+[data-lesson-theme="zeszyt"] .kid-quiet[data-variant="ghost"] {
+  padding-inline: var(--jw-space-2);
+  width: fit-content;
+  max-width: 100%;
+  border-radius: var(--jw-radius-small);
+}
+
+/* The help note's two actions (lesson-frame/README.md §3). "Więcej pomocy" (data-help-more) is a
+ * full-width paper button on help's edge, its bulb and words in help's ink. "Jeszcze nie wiem" is
+ * the note's last line: a centred quiet link in the soft ink, plain weight, underlined. */
+[data-lesson-theme="zeszyt"] [data-help-ladder] [data-slot="button"][data-help-more],
+[data-lesson-theme="zeszyt"] [data-help-ladder] [data-slot="button"][data-help-more]:hover {
+  width: 100%;
+  min-height: var(--kid-tap-min);
+  justify-content: center;
+  border: var(--jw-border) solid var(--jw-help-edge);
+  border-radius: var(--jw-radius-control);
+  background-color: var(--jw-card);
+  color: var(--jw-help-ink);
+  box-shadow: 0 var(--jw-press) 0 var(--jw-help-edge);
+}
+
+[data-lesson-theme="zeszyt"] [data-help-ladder] .kid-quiet[data-variant="ghost"] {
+  align-self: center;
+  font-weight: var(--jw-weight-text);
+}
+
+[data-lesson-theme="zeszyt"] [data-bar] .kid-quiet[data-variant="ghost"] {
+  align-self: center;
+}
+
+/* shadcn's ghost fills on hover and nudges on a press: the link does neither, on any pointer. */
+[data-lesson-theme="zeszyt"] .kid-quiet[data-variant="ghost"]:is(:hover, :active) {
+  background-color: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+[data-lesson-theme="zeszyt"] .kid-quiet[data-variant="ghost"]:active {
+  text-decoration-thickness: 3px;
+}
+
+[data-lesson-theme="zeszyt"] :where(.kid-quiet[data-variant="ghost"]:active) {
+  color: var(--jw-ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-lesson-theme="zeszyt"] .kid-quiet[data-variant="ghost"]:hover {
+    text-decoration-thickness: 3px;
+  }
+
+  [data-lesson-theme="zeszyt"] :where(.kid-quiet[data-variant="ghost"]:hover) {
+    color: var(--jw-ink);
+  }
+}
+
+/* The Polish letter row, as the export's LetterRow: each key a soft tile with 10px corners, a 2px
+ * line on a 4px edge and a bold letter. The tile fills the key's kid-size target but 3px a side, so
+ * the tiles stand 6px apart, as the export's do, and the row keeps its one row or two rows of five.
+ * Capitals on, a pressed key and a key the keyboard just typed wear the pick. */
+[data-lesson-theme="zeszyt"] [data-letters] {
+  margin-left: 0;
+}
+
+[data-lesson-theme="zeszyt"] [data-letters] [data-pill] {
+  width: calc(100% - 6px);
+  height: calc(100% - 4px - var(--jw-press));
+  border: var(--jw-border) solid var(--jw-line);
+  border-radius: var(--jw-radius-small);
+  background-color: var(--jw-card);
+  color: var(--jw-ink);
+  box-shadow: 0 var(--jw-press) 0 var(--jw-line);
+  font-size: 1.375rem;
+  font-weight: var(--jw-weight-strong);
+}
+
+[data-lesson-theme="zeszyt"]
+  [data-letters]
+  :is([aria-pressed="true"], [data-pressed="true"], [data-lit="true"])
+  > [data-pill] {
+  border-color: var(--jw-pick-edge);
+  background-color: var(--jw-pick);
+  color: var(--jw-pick-ink);
+  box-shadow: 0 var(--jw-press) 0 var(--jw-pick-edge);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-lesson-theme="zeszyt"]
+    [data-letters]
+    :not([aria-pressed="true"], [data-pressed="true"], [data-lit="true"]):hover
+    > [data-pill] {
+    border-color: var(--jw-line-strong);
+    background-color: var(--jw-card);
+  }
+}
+
+/* Help's "look here" (rung 1, components/parts/tone.ts FOCUS_CLASS) is part of the sticky note, so it
+ * wears help's darker yellow: a dashed 3px ring, 4px out, on the control's own corners (Slots
+ * addendum 2.3). Blue stays the child's own marks and the keyboard focus, and red stays a miss. */
+[data-lesson-theme="zeszyt"] .kid-look {
+  outline: var(--jw-focus-width) dashed var(--jw-help-edge);
+  outline-offset: 4px;
+}
+
+/* A part help gave (rung 2, tone.ts GIVEN_CLASS) keeps its size, turns help yellow and locks: the help
+ * fill inside a 2px help edge, in help's ink (Slots addendum 2.3). */
+[data-lesson-theme="zeszyt"] [data-help-given="true"] {
+  border: var(--jw-border) solid var(--jw-help-edge);
+  background-color: var(--jw-help);
+  color: var(--jw-help-ink);
+  box-shadow: none;
+}
+
+/* On a control that stands on its edge, the ring is a layer that reaches past the edge, so its lower
+ * side does not run into it. */
+[data-lesson-theme="zeszyt"]
+.kid-look:is([data-slot="button"], [role="radio"], [role="checkbox"], [data-tile]) {
+  position: relative;
+  outline: none;
+}
+
+[data-lesson-theme="zeszyt"]
+  .kid-look:is([data-slot="button"], [role="radio"], [role="checkbox"], [data-tile])::after {
+  --jw-ring-out: calc(var(--jw-border) + 2 * var(--jw-focus-width));
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--jw-ring-out));
+  bottom: calc(-1 * var(--jw-ring-out) - var(--jw-press));
+  border: var(--jw-focus-width) dashed var(--jw-help-edge);
+  border-radius: calc(var(--jw-radius-card) + var(--jw-ring-out));
+  pointer-events: none;
+}
+
+[data-lesson-theme="zeszyt"] .kid-look[data-tile]::after {
+  border-radius: calc(var(--jw-radius-small) + var(--jw-ring-out));
+}
+
+/* The verdict band, as the export's VerdictBand: a right band and a miss band draw no line, since
+ * their colour and their words say it. The miss's dashes belong on the marked answer, not on the band:
+ * along a rounded band they broke off at the corners. */
+[data-lesson-theme="zeszyt"] [data-bar][data-band="miss"] {
+  --band-line: transparent;
+}
+
+/* The solution's band is the rest tone, not the card's: at night the page and the cards are one flat
+ * tone, and the band keeps its own lighter one so it still stands apart (paper-behaviour/README.md,
+ * "Where we differ"). */
+[data-lesson-theme="zeszyt"] [data-bar][data-band="solution"] {
+  --band-bg: var(--jw-rest);
+  --band-ink: var(--jw-rest-ink);
+}
+
+/* A clue the help ladder just opened fades in (components/parts/HelpLadder.tsx). */
+[data-lesson-theme="zeszyt"] .kid-clue-in {
+  animation: jw-fade-in var(--jw-dur-band) var(--jw-ease-out) both;
+}
+
+/* ---- Behaviour: focus ------------------------------------------------------------------------ */
+/* No focus is drawn on a button, an option, a tile, a key, a toggle or the sound button (owner,
+ * 2026-10-26, dl-uukj.29.93): it replaces the inner frame of paper-behaviour/README.md §2. The
+ * keyboard still moves the focus as before (components/parts/keyboardFocus.ts, stepKeys.ts). Only
+ * the drawing is gone, the browser's ring and the 3px outer ring included. Help's "look here" ring is
+ * no focus and stays, and typed fields keep their active look below. A link, the one thing left
+ * that takes the keyboard and is none of these, keeps the 3px ink outline, 3px out. */
+[data-lesson-theme="zeszyt"]
+:is(
+  button,
+  [role="button"],
+  [role="radio"],
+  [role="checkbox"],
+  [role="switch"],
+  [role="slider"],
+  [data-tile],
+  [data-slot="toggle"],
+  [data-key-click]
+):focus-visible:not(.kid-look) {
+  outline: none;
+  --tw-ring-color: transparent;
+}
+
+:root:not([data-input="pointer"]) [data-lesson-theme="zeszyt"] a:focus-visible {
+  outline: var(--jw-focus-width) solid var(--jw-focus);
+  outline-offset: var(--jw-focus-width);
+}
+
+/* Nothing draws a focus after a tap, the browser's own ring included. Help's "look here" ring is no
+ * focus and stays. */
+:root[data-input="pointer"] [data-lesson-theme="zeszyt"] :focus-visible:not(.kid-look) {
+  outline: none;
+}
+
+/* A ghost icon control (the close control) stands on no edge: the export draws it round, with no
+ * fill and quiet ink. */
+[data-lesson-theme="zeszyt"]
+[data-slot="button"][data-variant="ghost"][data-size="icon"]:not(.kid-quiet) {
+  border-radius: 999px;
+  color: var(--jw-ink-soft);
+  background-color: transparent;
+}
+
+[data-lesson-theme="zeszyt"]
+  [data-slot="button"][data-variant="ghost"][data-size="icon"]:not(.kid-quiet):is(:hover, :active) {
+  background-color: transparent;
+  transform: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-lesson-theme="zeszyt"]
+    [data-slot="button"][data-variant="ghost"][data-size="icon"]:not(.kid-quiet):hover {
+    color: var(--jw-ink);
+  }
+}
+
+/* The active field is paper (Enter addendum 2.1, decision dl-y3th 14b, which replaces the pick's
+ * fill of lesson-frame/README.md rule 10): the surface inside the ink blue on its own 2px line, and
+ * the 3px ink caret. No glow. The pick's blue is left for the selection after a miss, where it
+ * stands out. A field the keypad types into, which never holds the browser's focus, says so with
+ * data-active. */
+[data-lesson-theme="zeszyt"] :is(input:not([type="radio"], [type="checkbox"]), textarea):focus,
+[data-lesson-theme="zeszyt"]
+  :is(input:not([type="radio"], [type="checkbox"]), textarea):focus-visible,
+[data-lesson-theme="zeszyt"] [data-active="true"] {
+  outline: none;
+  border-color: var(--jw-focus);
+  background-color: var(--jw-card);
+  --tw-ring-color: transparent;
+}
+
+/* A marked field the child is in, just after a miss or back after a click away (Enter addendum
+ * 2.3, decision dl-y3th 4b, which replaces dl-uukj.29.99's mark fill): exactly the active look,
+ * paper inside one solid ink edge with the caret, and the whole answer selected in the pick
+ * ([data-selection] and ::selection below), so the next key replaces it. No dashed red, no browser
+ * ring. Away (no focus, the keypad's field without data-active) it is only marked: the miss's fill
+ * inside its 2px dashed edge (tone.ts). */
+[data-lesson-theme="zeszyt"]
+:is(
+  input:not([type="radio"], [type="checkbox"]),
+  textarea,
+  [role="textbox"][data-field],
+  button[data-field],
+  button[data-box]
+)[data-tone="amber"]:is(:focus, [data-active="true"]) {
+  outline: none;
+  border-style: solid;
+  border-color: var(--jw-focus);
+  background-color: var(--jw-card);
+  color: var(--jw-ink);
+}
+
+/* Help's "look here" stays on the field the child is in (Slots addendum 2.3: rung 1 outlines the first
+ * missed part, which after a miss is also the active one). The active and marked looks above take
+ * the browser's ring off a field; this ring is no focus, so it wins over them. */
+[data-lesson-theme="zeszyt"] .kid-look:is(input, textarea, [data-field], [data-active="true"]) {
+  outline: var(--jw-focus-width) dashed var(--jw-help-edge) !important;
+  outline-offset: 4px !important;
+}
+
+/* A right field is flat (Enter addendum section 5): the right fill inside its 2px edge, standing on
+ * no pressed edge, so it sits exactly where it was typed. An option keeps its edge. */
+[data-lesson-theme="zeszyt"]
+:is(
+  input,
+  textarea,
+  [role="textbox"][data-field],
+  button[data-field],
+  [data-box]
+)[data-tone="green"]:not([data-status]) {
+  box-shadow: none;
+}
+
+/* A chosen gap (Slots addendum 2.2, dl-uukj.29.123, families/slots/GapMenu.tsx). Right, it is green
+ * like a typed gap and as flat. After a miss, the one the child is in keeps its word in the miss's
+ * fill under the solid ink edge: a dropdown has nothing to select, so it never wears the pick. */
+[data-lesson-theme="zeszyt"] [data-reads-whole][data-tone="green"] {
+  box-shadow: none;
+}
+
+[data-lesson-theme="zeszyt"] button[data-menu][data-tone="amber"]:is(:focus, [data-menu-focused]) {
+  border-style: solid;
+  border-color: var(--jw-focus);
+  background-color: var(--jw-miss);
+  color: var(--jw-miss-ink);
+}
+
+/* Its options: no ring when the list opens or after a tap (dl-xx9f), and on the keyboard ↑ ↓ the
+ * 3px ink outline, 2px out, on :focus-visible only. */
+:root:not([data-input="pointer"]) [data-lesson-theme="zeszyt"] [data-menu-option]:focus-visible {
+  outline: var(--jw-focus-width) solid var(--jw-focus);
+  outline-offset: 2px;
+}
+
+/* The keypad goes quiet while a chosen gap's list is open (Keypad.tsx `quiet`): every key where it
+ * was, in the page's fill with muted digits, on no pressed edge, and no press sinks it. */
+[data-lesson-theme="zeszyt"]
+  :is([data-keypad-pad], [data-signs])[data-quiet]
+  [data-slot="button"][data-variant]:is(*, :hover, :active) {
+  border-color: var(--jw-line);
+  background-color: var(--jw-ground);
+  color: var(--jw-ink-soft);
+  box-shadow: none;
+  transform: none;
+  filter: none;
+}
+
+/* The keypad's field and box never hold a text caret, so the active one draws the 3px ink caret
+ * after its digits, or after their selection (rule 10, the export's AnswerField). It takes no width,
+ * so nothing moves as the active field changes. */
+[data-lesson-theme="zeszyt"] :is([role="textbox"], button)[data-field][data-active="true"]::after,
+[data-lesson-theme="zeszyt"] button[data-box][data-active="true"]::after {
+  content: "";
+  flex: none;
+  width: 3px;
+  height: 1.1em;
+  margin-inline: 1px -4px;
+  border-radius: 0.125rem;
+  background-color: var(--jw-focus);
+  animation: jw-caret 1.2s ease-in-out infinite;
+}
+
+/* Selected digits in a keypad box wear the pick, as an input's selection does (::selection below). */
+[data-lesson-theme="zeszyt"] [data-selection] {
+  /* As tall as the digits, not as the sentence's tall line around a gap. */
+  line-height: 1.2;
+  background-color: var(--jw-pick);
+  color: var(--jw-pick-ink);
+}
+
+/* A mark (rule 11): a miss marks only the part to fix, and in a word only the letters to fix
+ * (data-mark='miss' on each, components/parts/LetterMarks.tsx). An accent or one-letter slip (Enter
+ * addendum 3.6, dl-y3th 8b): the miss's fill behind the letter, r4, and its edge colour as a 3px
+ * underline at offset 6, while the field around it stays paper. The mark fades in, never shakes. */
+[data-lesson-theme="zeszyt"] [data-mark="miss"] {
+  border-radius: 4px;
+  background-color: var(--jw-miss);
+  color: var(--jw-miss-ink);
+  text-decoration-line: underline;
+  text-decoration-color: var(--jw-miss-edge);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 6px;
+  animation: jw-mark-in var(--jw-dur-mark) ease-out;
+}
+
+/* A field whose letters are marked selects its first marked run after the miss (stepKeys.ts), so
+ * the next key replaces the slipped letter; the marks show over it, so the selection draws nothing. */
+[data-lesson-theme="zeszyt"] [data-letter-marked]::selection {
+  background-color: transparent;
+  color: inherit;
+}
+
+/* An option that shows the solution after "Jeszcze nie wiem" (§3): the question card's paper inside
+ * a 2px line of text ink, standing on no edge. Its eye and "Rozwiązanie" are in the soft ink. */
+[data-lesson-theme="zeszyt"] [data-solution] {
+  border: var(--jw-border) solid var(--jw-ink);
+  background-color: var(--jw-prompt-card);
+  color: var(--jw-ink);
+  box-shadow: none;
+}
+
+[data-lesson-theme="zeszyt"] [data-solution] [data-solution-label] {
+  color: var(--jw-ink-soft);
+  font-size: var(--jw-size-small);
+}
+
+/* The native caret in ink; a single-line field draws the 3px ink caret over it instead
+ * (components/parts/inkCaret.ts, the export's AnswerField). */
+[data-lesson-theme="zeszyt"] :is(input, textarea) {
+  caret-color: var(--jw-focus);
+}
+
+/* The four states of a typed field (the export's AnswerField): a faint placeholder; the cursor in,
+ * which clears the placeholder; the text written; and selected text in the pick's clear blue. */
+[data-lesson-theme="zeszyt"] :is(input, textarea)::placeholder {
+  color: var(--jw-placeholder);
+  font-weight: var(--jw-weight-text);
+  opacity: 1;
+}
+
+[data-lesson-theme="zeszyt"] :is(input, textarea):focus::placeholder {
+  color: transparent;
+}
+
+[data-lesson-theme="zeszyt"] ::selection {
+  background-color: var(--jw-pick);
+  color: var(--jw-pick-ink);
+}
+
+/* ---- Behaviour: help ------------------------------------------------------------------------- */
+/* A rung of help is a warm yellow note with its own edge: a clue, never a verdict. */
+[data-lesson-theme="zeszyt"] :is(aside[data-help], [data-hint-no]) {
+  background-color: var(--jw-help);
+  border: var(--jw-border) solid var(--jw-help-edge);
+  border-radius: var(--jw-radius-card);
+  color: var(--jw-ink);
+}
+
+[data-lesson-theme="zeszyt"] aside[data-help] > p:first-child,
+[data-lesson-theme="zeszyt"] [data-hint-no] > p:first-child {
+  color: var(--jw-help-ink);
+}
+
+/* ---- Behaviour: motion ------------------------------------------------------------------------ */
+/* A miss is marked, not shaken: the dashed edge fades in where the eye should go (LessonTheme turns
+ * the shake off). A right answer's tick arrives. Nothing counts anything. */
+[data-lesson-theme="zeszyt"] [data-tone="amber"]:not([data-status]) {
+  animation: jw-mark-in var(--jw-dur-mark) ease-out;
+}
+
+[data-lesson-theme="zeszyt"] [data-status][data-tone="green"] svg {
+  animation: jw-tick-in var(--jw-dur-tick) var(--jw-ease-out);
+}
+
+/* The next step comes in from the side (lesson-frame/README.md §4), 24 px over 320 ms, once as it
+ * opens (paper-behaviour README §3.6); in place at once under reduced motion. */
+[data-lesson-theme="zeszyt"] [data-step-shell][data-framed] > [data-stage] {
+  /* backwards, not both: a transform held after the slide would make the stage the containing
+     * block of the fixed tray and the side keypad. */
+  animation: jw-step-in var(--jw-dur-step) var(--jw-ease-out) backwards;
+}
+
+@keyframes jw-step-in {
+  from {
+    transform: translateX(var(--jw-step-shift));
+    opacity: 0;
+  }
+}
+
+@keyframes jw-mark-in {
+  from {
+    border-color: transparent;
+  }
+}
+
+@keyframes jw-tick-in {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Everything is 0 ms (lesson-frame/README.md §4): the band is there, the mark is drawn, the next
+     * step is in place, the scroll lands. */
+  [data-lesson-theme="zeszyt"] {
+    --jw-dur-fast: 0ms;
+    --jw-dur-mark: 0ms;
+    --jw-dur-band: 0ms;
+    --jw-dur-step: 0ms;
+    --jw-dur-scroll: 0ms;
+    --jw-dur-tools: 0ms;
+    --jw-dur-tick: 0ms;
+  }
+
+  [data-lesson-theme="zeszyt"] [data-slot="button"]:active,
+  [data-lesson-theme="zeszyt"]
+    :is(
+      [role="radio"]:not([data-plain]),
+      label[data-option]:has(> input[type="radio"]),
+      [role="checkbox"],
+      [data-tile]
+    ):active {
+    transform: none;
+  }
+
+  /* The keypad's caret stands still, as the ink caret does (inkCaret.ts). */
+  [data-lesson-theme="zeszyt"] :is([role="textbox"], button)[data-field][data-active="true"]::after,
+  [data-lesson-theme="zeszyt"] button[data-box][data-active="true"]::after {
+    animation: none;
+  }
+}
+
+@keyframes jw-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The ink caret breathes (components/parts/inkCaret.ts): fully there, then fading, never gone. */
+@keyframes jw-caret {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.25;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* A built block's own Check key is a third of the keypad: Andika's Sprawdź fits at 18px. */
+[data-lesson-theme="zeszyt"] .grid-cols-3 > [data-slot="button"][data-variant="default"] {
+  font-size: var(--text-lg);
+  padding-inline: 0;
+}
