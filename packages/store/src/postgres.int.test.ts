@@ -1,5 +1,6 @@
 // PostgresStore against the database `make migrate` built: Postgres.app 17 on port 5433 locally,
 // the PGDG packages in CI. The contract suite is the one InMemoryStore passes in store.test.ts.
+import { ID_PREFIXES, idOf, PodId } from "@jadwigo/contracts";
 import pg from "pg";
 import { afterAll, describe, expect, it } from "vitest";
 import { databaseUrl } from "./config.ts";
@@ -7,11 +8,45 @@ import { introspect } from "./db/introspect.ts";
 import { COLUMNS } from "./db/types.ts";
 import { createPostgresStore } from "./postgres.ts";
 import { storeContract } from "./store.contract.ts";
+import { StoreError } from "./store.ts";
 
 const store = createPostgresStore(databaseUrl());
 afterAll(() => store.close());
 
 storeContract("PostgresStore", () => store);
+
+describe("PostgresStore's units", () => {
+  it("rolls back every write in a unit that throws, and maps a refusal inside one", async () => {
+    const pod = PodId.parse(idOf(ID_PREFIXES.pod, crypto.randomUUID()));
+    await expect(
+      store.unit(async () => {
+        await store.putPod({ id: pod, name: "Pod of moles", language: "en" });
+        throw new Error("planted");
+      }),
+    ).rejects.toThrow("planted");
+    // The pod was rolled back with the unit, so a write into it is refused.
+    await expect(store.putLearner(pod, { handle: "mole", first_name: "Mole" })).rejects.toEqual(
+      expect.objectContaining({ type: "NotFound" }),
+    );
+    await expect(
+      store.unit(() => store.putLearner(pod, { handle: "mole", first_name: "Mole" })),
+    ).rejects.toBeInstanceOf(StoreError);
+  });
+
+  it("runs a unit on one connection, so a pool of 1 serves nested calls", async () => {
+    const one = createPostgresStore(databaseUrl(), { max: 1, connectionTimeoutMillis: 2000 });
+    try {
+      const pod = PodId.parse(idOf(ID_PREFIXES.pod, crypto.randomUUID()));
+      const lessons = await one.unit(async () => {
+        await one.putPod({ id: pod, name: "Pod of moles", language: "en" });
+        return one.listOpenAssignments(pod);
+      });
+      expect(lessons).toEqual([]);
+    } finally {
+      await one.close();
+    }
+  });
+});
 
 describe("Postgres", () => {
   it("runs 17, with the schema src/db/types.ts was generated from", async () => {

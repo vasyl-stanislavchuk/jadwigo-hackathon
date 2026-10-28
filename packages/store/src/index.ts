@@ -15,6 +15,7 @@ export {
   type NewLessonVersion,
   type NewPod,
   type OpenAssignment,
+  type OpenedAttempt,
   type Store,
   StoreError,
 } from "./store.ts";

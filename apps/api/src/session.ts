@@ -41,7 +41,7 @@ export async function help(
   if (!parsed.success) throw badRequest(parsed.error.issues);
   const seen = parsed.data.help_released;
 
-  const record = await store.getAttempt(scope.pod, id);
+  const { record } = scope;
   const version = await versionOf(store, scope.pod, record);
   const asked = record.questions.find((q) => q.seq === seq);
   if (asked === undefined)
@@ -79,10 +79,9 @@ export async function help(
     }
   }
   // Asks the twin once rung 4 ended the question, whichever request ended it, and while paused
-  // too; it does nothing when the course has gone on already.
-  await goOn(store, scope, version, id, seq);
-
-  const after = await store.getAttempt(scope.pod, id);
+  // too; it does nothing when the course has gone on already. Read after the release, which
+  // may have lost a race.
+  const after = await goOn(store, scope, version, await store.getAttempt(scope.pod, id), seq);
   const held = verdictsHeld(scope.assignment, after.attempt);
   const now = after.questions.find((q) => q.seq === seq) ?? asked;
   const answers = after.answers.filter((a) => a.seq === seq);
@@ -112,14 +111,14 @@ export async function patchAttempt(
   const scope = await authorize(store, { attempt: id });
   const parsed = AttemptPatch.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
-  const record = await store.getAttempt(scope.pod, id);
-  if (parsed.data.status === "paused") {
-    const open = record.questions.find((q) => q.ended === null);
-    await store.setAttemptStatus(scope.pod, id, "paused", open?.seq ?? null);
-  } else {
-    await store.setAttemptStatus(scope.pod, id, "in_progress");
-  }
-  const after = await store.getAttempt(scope.pod, id);
+  const { record } = scope;
+  const open = record.questions.find((q) => q.ended === null);
+  const attempt =
+    parsed.data.status === "paused"
+      ? await store.setAttemptStatus(scope.pod, id, "paused", open?.seq ?? null)
+      : await store.setAttemptStatus(scope.pod, id, "in_progress");
+  // The pause writes only the attempt row, under its lock.
+  const after = { ...record, attempt };
   return snapshot(scope.assignment, await versionOf(store, scope.pod, after), after);
 }
 
@@ -131,7 +130,7 @@ export async function patchAttempt(
  */
 export async function getResults(store: Store, id: AttemptId): Promise<AttemptResults> {
   const scope = await authorize(store, { attempt: id });
-  const { attempt } = await store.getAttempt(scope.pod, id);
+  const { attempt } = scope.record;
   const held = verdictsHeld(scope.assignment, attempt);
   const rows = await store.getAttemptResult(scope.pod, id);
   return { attempt, results: rows.map((row) => pageAttemptResult(row, held)) };

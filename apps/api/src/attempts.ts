@@ -61,8 +61,7 @@ export async function startAttempt(
 
 /** `GET /api/v1/attempts/{id}`. */
 export async function getAttempt(store: Store, id: AttemptId): Promise<AttemptSnapshot> {
-  const scope = await authorize(store, { attempt: id });
-  const record = await store.getAttempt(scope.pod, id);
+  const { record, ...scope } = await authorize(store, { attempt: id });
   return snapshot(scope.assignment, await versionOf(store, scope.pod, record), record);
 }
 
@@ -100,7 +99,7 @@ export async function answer(
       `an entered answer is at most ${LIMITS.enteredChars} characters`,
     );
 
-  const record = await store.getAttempt(scope.pod, id);
+  const { record } = scope;
   // The cap on one attempt's answers (LIMITS): a replay of a stored answer is still answered.
   // Only the open question takes a try, and only its next one, so 2 sends at once can't both pass.
   if (
@@ -159,36 +158,55 @@ export async function answer(
     end === undefined ? {} : { end },
   );
 
+  // What is stored now: a new answer is added to what authorize() read, under the lock the append
+  // held to its end, and a replay is read again.
+  let after: AttemptRecord = replayed
+    ? await store.getAttempt(scope.pod, id)
+    : {
+        attempt: record.attempt,
+        questions: record.questions.map((q) =>
+          q.seq === stored.seq && end ? { ...q, ended: end } : q,
+        ),
+        answers: [...record.answers, stored],
+      };
   // A replay goes on too: it may race its original, or follow one that stopped before going on.
-  if (replayed || end !== undefined) await goOn(store, scope, version, id, stored.seq);
-  const after = await store.getAttempt(scope.pod, id);
+  if (replayed || end !== undefined) after = await goOn(store, scope, version, after, stored.seq);
   return answerResult(scope, version, after, stored, replayed);
 }
 
-/** After the question at `seq` ended: asks the next one, or finishes the attempt. */
+/**
+ * After the question at `seq` ended: asks the next one, or finishes the attempt. `record` is the
+ * attempt as stored now; the record after is built from what the write returned, and read again
+ * only when a racing request went on first.
+ */
 export async function goOn(
   store: Store,
   scope: Scope,
   version: LessonVersionWithQuestions,
-  id: AttemptId,
+  record: AttemptRecord,
   seq: number,
-): Promise<void> {
-  const record = await store.getAttempt(scope.pod, id);
+): Promise<AttemptRecord> {
+  const id = record.attempt.id;
   const last = record.questions.at(-1);
   // Only once, after the last question asked ends: a later question, an open one or a finished
   // attempt means the course has gone on already.
-  if (record.attempt.status === "finished" || last?.seq !== seq || last.ended === null) return;
+  if (record.attempt.status === "finished" || last?.seq !== seq || last.ended === null)
+    return record;
   const next = nextQuestion(scope.assignment, version, record, seq);
   try {
     // Asked only at the seq after the one this read saw, so a stale run never asks twice.
-    if (next) await store.askQuestion(scope.pod, id, next, { seq: last.seq + 1 });
-    else await store.finishAttempt(scope.pod, id);
+    if (next) {
+      const asked = await store.askQuestion(scope.pod, id, next, { seq: last.seq + 1 });
+      return { ...record, questions: [...record.questions, asked] };
+    }
+    return { ...record, attempt: await store.finishAttempt(scope.pod, id) };
   } catch (error) {
     // A request racing this one went on first: its question is open, or the attempt finished.
     const won =
       error instanceof StoreError &&
       (error.type === "QuestionNotOpen" || error.type === "AttemptFinished");
     if (!won) throw error;
+    return store.getAttempt(scope.pod, id);
   }
 }
 

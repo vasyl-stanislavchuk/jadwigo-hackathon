@@ -35,7 +35,16 @@ const OTHER_POD: NewPod = {
   language: "en",
 };
 
-export function routeSuite(name: string, makeStore: () => Store): void {
+/**
+ * `units`: the store runs a request as one unit that rolls back on a throw and holds its attempt's
+ * lock to the end (PostgresStore). InMemoryStore does neither, so it keeps the race cases a
+ * request split across many units can meet.
+ */
+export function routeSuite(
+  name: string,
+  makeStore: () => Store,
+  { units = false }: { readonly units?: boolean } = {},
+): void {
   describe(`the /api/v1 attempt routes on ${name}`, () => {
     let s: Seeded;
     beforeEach(() => {
@@ -373,45 +382,149 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         expect(snap.body.questions.map((q) => q.seq)).toEqual([1, 2]);
       });
 
-      it("a replay goes on after an original that stopped between its append and the next question", async () => {
-        // The store fails the first ask, as a crash after the append-and-end would leave it.
-        const store = makeStore();
-        let failed = false;
-        const crashing = new Proxy(store, {
-          get(target, key) {
-            if (key === "askQuestion" && !failed) {
-              failed = true;
-              return () => Promise.reject(new Error("planted crash before the next question"));
-            }
-            const value: unknown = Reflect.get(target, key, target);
-            return typeof value === "function" ? value.bind(target) : value;
-          },
+      if (!units) {
+        it("a replay goes on after an original that stopped between its append and the next question", async () => {
+          // The store fails the first ask, as a crash after the append-and-end would leave it.
+          const store = makeStore();
+          let failed = false;
+          const crashing = new Proxy(store, {
+            get(target, key) {
+              if (key === "askQuestion" && !failed) {
+                failed = true;
+                return () => Promise.reject(new Error("planted crash before the next question"));
+              }
+              const value: unknown = Reflect.get(target, key, target);
+              return typeof value === "function" ? value.bind(target) : value;
+            },
+          });
+          const c = seeded(crashing);
+          const { id, snapshot } = await start(c, await c.assign("equalGroups"));
+          const page = snapshot.questions[0];
+          if (page === undefined) throw new Error("no first question");
+          const body = {
+            ...answerFields(page),
+            kind: "try",
+            value: solutionOf(await c.questionOf(page)),
+          };
+          const first = await c.call("POST", pathOf("answer", { id }), body);
+          expect(first.status).toBe(500);
+          const stuck = await c.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+          expect([stuck.body.open_seq, stuck.body.questions[0]?.ended]).toEqual([null, "correct"]);
+
+          const replay = await c.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), body);
+          expect(replay.body).toMatchObject({ replayed: true, ended: "correct", next: { seq: 2 } });
+          const healed = await c.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+          expect(healed.body.open_seq).toBe(2);
         });
-        const c = seeded(crashing);
-        const { id, snapshot } = await start(c, await c.assign("equalGroups"));
-        const page = snapshot.questions[0];
-        if (page === undefined) throw new Error("no first question");
-        const body = {
-          ...answerFields(page),
-          kind: "try",
-          value: solutionOf(await c.questionOf(page)),
-        };
-        const first = await c.call("POST", pathOf("answer", { id }), body);
-        expect(first.status).toBe(500);
-        const stuck = await c.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
-        expect([stuck.body.open_seq, stuck.body.questions[0]?.ended]).toEqual([null, "correct"]);
 
-        const replay = await c.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), body);
-        expect(replay.body).toMatchObject({ replayed: true, ended: "correct", next: { seq: 2 } });
-        const healed = await c.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
-        expect(healed.body.open_seq).toBe(2);
-      });
+        it("a stale go-on whose ask lands after q2 ended never asks a planned question twice", async () => {
+          // Asks 1 and 3 wait at a gate: the original's (stale) and the one after q2's answer.
+          const store = makeStore();
+          const gates = new Map<number, { arrived: Promise<void>; open: () => void }>();
+          for (const call of [1, 3]) {
+            let arrive = () => {};
+            let open = () => {};
+            const arrived = new Promise<void>((r) => {
+              arrive = r;
+            });
+            const opened = new Promise<void>((r) => {
+              open = r;
+            });
+            gates.set(call, { arrived: arrived.then(() => opened), open });
+            gates.set(-call, { arrived, open: arrive });
+          }
+          let calls = 0;
+          const gated = new Proxy(store, {
+            get(target, key) {
+              const value: unknown = Reflect.get(target, key, target);
+              if (key !== "askQuestion" || typeof value !== "function") {
+                return typeof value === "function" ? value.bind(target) : value;
+              }
+              return async (...args: Parameters<Store["askQuestion"]>) => {
+                calls += 1;
+                const gate = gates.get(calls);
+                if (gate) {
+                  gates.get(-calls)?.open();
+                  await gate.arrived;
+                }
+                return target.askQuestion(...args);
+              };
+            },
+          });
+          const c = seeded(gated);
+          const { id, snapshot } = await start(c, await c.assign("equalGroups"));
+          const q1 = snapshot.questions[0];
+          if (q1 === undefined) throw new Error("no first question");
+          const body = {
+            ...answerFields(q1),
+            kind: "try",
+            value: solutionOf(await c.questionOf(q1)),
+          };
 
-      it("a stale go-on whose ask lands after q2 ended never asks a planned question twice", async () => {
-        // Asks 1 and 3 wait at a gate: the original's (stale) and the one after q2's answer.
-        const store = makeStore();
-        const gates = new Map<number, { arrived: Promise<void>; open: () => void }>();
-        for (const call of [1, 3]) {
+          const original = c.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), body);
+          await gates.get(-1)?.arrived; // the original holds a stale ask for seq 2
+          const replay = await c.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), body);
+          expect(replay.body.next).toMatchObject({ seq: 2 }); // the replay asked q2
+
+          const q2 = await openQuestion(c, id);
+          const second = c.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), {
+            ...answerFields(q2),
+            kind: "try",
+            value: solutionOf(await c.questionOf(q2)),
+          });
+          await gates.get(-3)?.arrived; // q2 has ended; its ask of q3 waits
+          gates.get(1)?.open(); // the stale ask lands now, with no question open
+          const late = await original;
+          gates.get(3)?.open();
+          expect((await second).body.next).toMatchObject({ seq: 3 });
+
+          expect(late.status).toBe(201);
+          expect(late.body.next).toMatchObject({ seq: 2 });
+          const snap = await c.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+          const asked = snap.body.questions.map((q) => q.lesson_question_id);
+          expect(asked).toHaveLength(3);
+          expect(new Set(asked).size).toBe(3);
+        });
+      } else {
+        it("a request that fails after its append writes nothing, so its resend is answered as new", async () => {
+          // The store fails the first ask: the unit rolls the append and the end back with it.
+          const store = makeStore();
+          let failed = false;
+          const crashing = new Proxy(store, {
+            get(target, key) {
+              if (key === "askQuestion" && !failed) {
+                failed = true;
+                return () => Promise.reject(new Error("planted crash before the next question"));
+              }
+              const value: unknown = Reflect.get(target, key, target);
+              return typeof value === "function" ? value.bind(target) : value;
+            },
+          });
+          const c = seeded(crashing);
+          const { id, snapshot } = await start(c, await c.assign("equalGroups"));
+          const page = snapshot.questions[0];
+          if (page === undefined) throw new Error("no first question");
+          const body = {
+            ...answerFields(page),
+            kind: "try",
+            value: solutionOf(await c.questionOf(page)),
+          };
+          const first = await c.call("POST", pathOf("answer", { id }), body);
+          expect(first.status).toBe(500);
+          const untouched = await c.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+          expect(untouched.body.open_seq).toBe(1);
+          expect(untouched.body.questions[0]).toMatchObject({ ended: null, tries: 0 });
+
+          const resend = await c.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), body);
+          expect(resend.body).toMatchObject({
+            replayed: false,
+            ended: "correct",
+            next: { seq: 2 },
+          });
+        });
+
+        it("a 2nd request on an attempt waits for the 1st to commit, so no ask goes stale", async () => {
+          const store = makeStore();
           let arrive = () => {};
           let open = () => {};
           const arrived = new Promise<void>((r) => {
@@ -420,61 +533,50 @@ export function routeSuite(name: string, makeStore: () => Store): void {
           const opened = new Promise<void>((r) => {
             open = r;
           });
-          gates.set(call, { arrived: arrived.then(() => opened), open });
-          gates.set(-call, { arrived, open: arrive });
-        }
-        let calls = 0;
-        const gated = new Proxy(store, {
-          get(target, key) {
-            const value: unknown = Reflect.get(target, key, target);
-            if (key !== "askQuestion" || typeof value !== "function") {
-              return typeof value === "function" ? value.bind(target) : value;
-            }
-            return async (...args: Parameters<Store["askQuestion"]>) => {
-              calls += 1;
-              const gate = gates.get(calls);
-              if (gate) {
-                gates.get(-calls)?.open();
-                await gate.arrived;
+          let calls = 0;
+          const gated = new Proxy(store, {
+            get(target, key) {
+              const value: unknown = Reflect.get(target, key, target);
+              if (key !== "askQuestion" || typeof value !== "function") {
+                return typeof value === "function" ? value.bind(target) : value;
               }
-              return target.askQuestion(...args);
-            };
-          },
+              return async (...args: Parameters<Store["askQuestion"]>) => {
+                calls += 1;
+                if (calls === 1) {
+                  arrive();
+                  await opened;
+                }
+                return target.askQuestion(...args);
+              };
+            },
+          });
+          const c = seeded(gated);
+          const { id, snapshot } = await start(c, await c.assign("equalGroups"));
+          const q1 = snapshot.questions[0];
+          if (q1 === undefined) throw new Error("no first question");
+          const body = {
+            ...answerFields(q1),
+            kind: "try",
+            value: solutionOf(await c.questionOf(q1)),
+          };
+
+          const original = c.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), body);
+          await arrived; // the original holds its ask of seq 2, and the attempt's lock
+          let settled = false;
+          const replay = c
+            .call<AttemptAnswerResult>("POST", pathOf("answer", { id }), body)
+            .finally(() => {
+              settled = true;
+            });
+          await new Promise((r) => setTimeout(r, 300));
+          expect(settled).toBe(false);
+          open();
+          expect((await original).body).toMatchObject({ replayed: false, next: { seq: 2 } });
+          expect((await replay).body).toMatchObject({ replayed: true, next: { seq: 2 } });
+          const snap = await c.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+          expect(snap.body.questions.map((q) => q.seq)).toEqual([1, 2]);
         });
-        const c = seeded(gated);
-        const { id, snapshot } = await start(c, await c.assign("equalGroups"));
-        const q1 = snapshot.questions[0];
-        if (q1 === undefined) throw new Error("no first question");
-        const body = {
-          ...answerFields(q1),
-          kind: "try",
-          value: solutionOf(await c.questionOf(q1)),
-        };
-
-        const original = c.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), body);
-        await gates.get(-1)?.arrived; // the original holds a stale ask for seq 2
-        const replay = await c.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), body);
-        expect(replay.body.next).toMatchObject({ seq: 2 }); // the replay asked q2
-
-        const q2 = await openQuestion(c, id);
-        const second = c.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), {
-          ...answerFields(q2),
-          kind: "try",
-          value: solutionOf(await c.questionOf(q2)),
-        });
-        await gates.get(-3)?.arrived; // q2 has ended; its ask of q3 waits
-        gates.get(1)?.open(); // the stale ask lands now, with no question open
-        const late = await original;
-        gates.get(3)?.open();
-        expect((await second).body.next).toMatchObject({ seq: 3 });
-
-        expect(late.status).toBe(201);
-        expect(late.body.next).toMatchObject({ seq: 2 });
-        const snap = await c.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
-        const asked = snap.body.questions.map((q) => q.lesson_question_id);
-        expect(asked).toHaveLength(3);
-        expect(new Set(asked).size).toBe(3);
-      });
+      }
 
       it("refuses a field the server writes as ServerFieldSupplied, and a body that fails its schema", async () => {
         const { id, snapshot } = await start(s, await s.assign("equalGroups"));
