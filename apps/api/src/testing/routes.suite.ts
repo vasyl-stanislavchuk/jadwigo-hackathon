@@ -620,6 +620,67 @@ export function routeSuite(name: string, makeStore: () => Store): void {
       });
     });
 
+    describe("help at rung 4, under a pause and in races", () => {
+      // equal-groups' first question has 4 rungs: 1 wrong try opens the gate, 3 requests reach rung 3.
+      const toRungThree = async (id: string) => {
+        await tryAt(s, id, await openQuestion(s, id), false);
+        for (const seen of [0, 1, 2])
+          await s.call("POST", pathOf("help", { id, seq: 1 }), { help_released: seen });
+      };
+      const rungFour = (id: string) =>
+        s.call<HelpResult>("POST", pathOf("help", { id, seq: 1 }), { help_released: 3 });
+
+      it("refuses help on a paused attempt before any write, and releases rung 4 after resume", async () => {
+        const { id } = await start(s, await s.assign("equalGroups", { after_not_sure: "next" }));
+        await toRungThree(id);
+        await s.call("PATCH", pathOf("patchAttempt", { id }), { status: "paused" });
+        const paused = await rungFour(id);
+        expect([paused.status, (paused.body as unknown as ErrorEnvelope).error.type]).toEqual([
+          409,
+          "AttemptPaused",
+        ]);
+        const held = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect(held.body.questions[0]).toMatchObject({ help_released: 3, ended: null });
+
+        await s.call("PATCH", pathOf("patchAttempt", { id }), { status: "in_progress" });
+        const twin = await rungFour(id);
+        expect(twin.body).toMatchObject({ help_released: 4, ended: "skipped" });
+        expect(twin.body.next).toMatchObject({ seq: 2, added: "twin" });
+      });
+
+      it("ends the question even when a wrong try races the rung-4 request", async () => {
+        const { id } = await start(s, await s.assign("equalGroups", { after_not_sure: "next" }));
+        await toRungThree(id);
+        const page = await openQuestion(s, id);
+        const [, help] = await Promise.all([tryAt(s, id, page, false), rungFour(id)]);
+        expect(help.status).toBe(200);
+        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect(snap.body.questions[0]).toMatchObject({ help_released: 4, ended: "skipped" });
+        expect(snap.body.questions[1]).toMatchObject({ seq: 2, added: "twin", added_for: 1 });
+        expect(snap.body.questions).toHaveLength(2);
+      });
+
+      it("gives 2 identical rung-4 requests at once the same reply, and a later retry too", async () => {
+        const { id } = await start(s, await s.assign("equalGroups", { after_not_sure: "next" }));
+        await toRungThree(id);
+        const [a, b] = await Promise.all([rungFour(id), rungFour(id)]);
+        expect([a.status, b.status]).toEqual([200, 200]);
+        expect(a.body).toEqual(b.body);
+        expect(a.body).toMatchObject({ ended: "skipped", next: { seq: 2 } });
+        expect((await rungFour(id)).body).toEqual(a.body);
+        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect(snap.body.questions[0]?.tries).toBe(2); // the wrong try and 1 help_twin skip
+      });
+
+      it("refuses a help_released ahead of what was released", async () => {
+        const { id } = await start(s, await s.assign("equalGroups"));
+        const ahead = await s.call<ErrorEnvelope>("POST", pathOf("help", { id, seq: 1 }), {
+          help_released: 9,
+        });
+        expect([ahead.status, ahead.body.error.type]).toEqual([400, "BadRequest"]);
+      });
+    });
+
     describe("help on a ladder with rungs 1 and 4 only", () => {
       it("gives the page the true rung, and the 2nd release, rung 4, ends the question", async () => {
         // A look and a 1-line worked solution: rung 1 and rung 4, with no boost and no rung 3.
