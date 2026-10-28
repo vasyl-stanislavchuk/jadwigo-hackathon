@@ -11,6 +11,8 @@ describe("playRoute", () => {
 
   it("names no lesson for a malformed id, and is null off the player's paths", () => {
     expect(playRoute("/play/not-an-id")).toEqual({ assignmentId: null });
+    // decodeURIComponent throws on this; App calls playRoute while rendering (dl-5ssh.3.9).
+    expect(playRoute("/play/%E0%A4")).toEqual({ assignmentId: null });
     expect(playRoute("/")).toBeNull();
     expect(playRoute("/playground")).toBeNull();
   });
