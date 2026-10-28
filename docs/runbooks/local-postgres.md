@@ -55,8 +55,19 @@ its own 17 server, on 5433. The one step that restarts the 18 server is step 1, 
 psql -p 5433 -XAtc "select current_setting('server_version'), (select default_version from pg_available_extensions where name='pgtap')" jadwigo_test
 ```
 
-This prints `17.x|1.3.3`, prod's versions. Once the ops lane lands it, `bun tools/src/check-supabase-match.ts`
-compares this server with `jadwigo-dev`.
+This prints `17.x|1.3.3`, prod's versions. Then compare this server with a Supabase project, after
+`make migrate` (the roles and auth functions come from the shim):
+
+```
+bun tools/src/check-supabase-match.ts dev     # or prod
+```
+
+It runs one catalog query through the Management API's read-only endpoint, with the token from
+`~/.config/jadwigo/supabase.env` or the keychain, and writes nothing. It compares the major version,
+the extensions `pgtap`, `vector`, `pgcrypto`, `uuid-ossp` and `pg_cron`, the roles `anon`,
+`authenticated`, `authenticator` and `service_role` with their `bypassrls`, and `auth.uid()`,
+`jwt()`, `role()` and `email()`. It prints each drift and exits 1. An extension's version must match
+only where a migration or test creates it; the others, and `pg_cron` missing locally, print as notes.
 
 ## Undo
 
