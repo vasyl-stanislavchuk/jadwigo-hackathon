@@ -9,7 +9,7 @@ import {
   PodId,
 } from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
-import type { NewAttemptAnswer, NewLessonQuestion, Store } from "./store.ts";
+import type { HelpTwin, NewAttemptAnswer, NewLessonQuestion, Store } from "./store.ts";
 
 /**
  * The behaviour every `Store` has, run against each one: `InMemoryStore` in `store.test.ts`, and
@@ -677,6 +677,78 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         await store.endAttemptQuestion(a.pod, attempt, 1, "correct");
         await expect(store.releaseHelp(a.pod, attempt, 1, 0)).rejects.toMatchObject(NOT_OPEN);
       });
+
+      it("releases the last rung with its help_twin skip and ends the question skipped, in one unit", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        await store.appendAttemptAnswer(a.pod, answer(attempt, 1, 1, { entered: "5" }, false));
+        for (const seen of [0, 1, 2]) await store.releaseHelp(a.pod, attempt, 1, seen);
+
+        const last = await store.releaseHelp(a.pod, attempt, 1, 3, { twin: twin() });
+        expect(last).toMatchObject({
+          released: true,
+          question: { seq: 1, help_released: 4, ended: "skipped" },
+        });
+        const retry = await store.releaseHelp(a.pod, attempt, 1, 3, { twin: twin() });
+        expect(retry).toEqual({ question: last.question, released: false });
+        const { answers } = await store.getAttempt(a.pod, attempt);
+        expect(answers.map((r) => [r.try_no, r.kind, r.skip_reason, r.help_used])).toEqual([
+          [1, "try", null, 0],
+          [2, "skip", "help_twin", 4],
+        ]);
+      });
+
+      it("writes nothing when the twin is refused", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        for (const seen of [0, 1, 2]) await store.releaseHelp(a.pod, attempt, 1, seen);
+
+        await expect(
+          store.releaseHelp(a.pod, attempt, 1, 3, { twin: twin({ try_no: 2 }) }),
+        ).rejects.toMatchObject({ type: "TryOutOfOrder" });
+        await expect(
+          store.releaseHelp(a.pod, attempt, 1, 3, {
+            twin: twin({ answered_at: "2026-09-01T07:59:59.000Z" }),
+          }),
+        ).rejects.toMatchObject(BAD_REQUEST);
+        const taken = answer(attempt, 1, 1, { entered: "5" }, false);
+        const other = await started(store);
+        await store.appendAttemptAnswer(
+          other.a.pod,
+          answer(other.attempt, 1, 1, { entered: "5" }, false, { event_id: taken.event_id }),
+        );
+        await expect(
+          store.releaseHelp(a.pod, attempt, 1, 3, { twin: twin({ event_id: taken.event_id }) }),
+        ).rejects.toMatchObject({ type: "EventIdMismatch" });
+
+        const { questions, answers } = await store.getAttempt(a.pod, attempt);
+        expect(questions[0]).toMatchObject({ help_released: 3, ended: null });
+        expect(answers).toHaveLength(0);
+      });
+
+      it("never shows the last rung on an open question when a try races it", async () => {
+        const store = await make();
+        // Several races, each on its own attempt: on Postgres each call is its own transaction on
+        // its own pooled connection, so either may take the question first.
+        for (let round = 0; round < 5; round++) {
+          const { a, attempt } = await started(store);
+          for (const seen of [0, 1, 2]) await store.releaseHelp(a.pod, attempt, 1, seen);
+
+          const [released, tried] = await Promise.allSettled([
+            store.releaseHelp(a.pod, attempt, 1, 3, { twin: twin() }),
+            store.appendAttemptAnswer(a.pod, answer(attempt, 1, 1, { entered: "5" }, false)),
+          ]);
+
+          expect(released.status).toBe("fulfilled");
+          if (tried.status === "rejected") expect(tried.reason).toMatchObject(NOT_OPEN);
+          const { questions, answers } = await store.getAttempt(a.pod, attempt);
+          expect(questions[0]).toMatchObject({ help_released: 4, ended: "skipped" });
+          expect(answers.filter((r) => r.skip_reason === "help_twin")).toHaveLength(1);
+          // No try was made while the worked answer showed.
+          expect(answers.filter((r) => r.kind === "try" && r.help_used === 4)).toEqual([]);
+          expect(answers.map((r) => r.try_no)).toEqual(tried.status === "fulfilled" ? [1, 2] : [1]);
+        }
+      });
     });
 
     describe("ending a question", () => {
@@ -1018,6 +1090,18 @@ function planned(id: LessonQuestionId) {
 
 function twinOf1(id: LessonQuestionId) {
   return { lesson_question_id: id, added: "twin", placed: "now", added_for: 1 } as const;
+}
+
+/** The help_twin skip the last rung writes, under a fresh event id. */
+function twin(more: Partial<HelpTwin> = {}): HelpTwin {
+  return {
+    event_id: EventId.parse(crypto.randomUUID()),
+    latency_ms: 1000,
+    asked_at: "2026-09-01T08:00:00.000Z",
+    answered_at: "2026-09-01T08:00:01.000Z",
+    body_hash: `twin-${crypto.randomUUID()}`,
+    ...more,
+  };
 }
 
 /** A try as the caller judged it, under a fresh event id. */

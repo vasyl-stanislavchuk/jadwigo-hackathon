@@ -94,6 +94,15 @@ export interface NewAttemptQuestion {
 /** A try or a skip as judged by the caller. The store copies `help_used` from the question. */
 export type NewAttemptAnswer = Omit<AttemptAnswer, "pod_id" | "help_used">;
 
+/**
+ * The `help_twin` skip `releaseHelp` writes with the last rung. The store fills in the rest: the
+ * attempt and `seq`, `kind: "skip"`, and the question's next `try_no` unless one is given.
+ */
+export type HelpTwin = Pick<
+  NewAttemptAnswer,
+  "event_id" | "latency_ms" | "asked_at" | "answered_at" | "body_hash"
+> & { readonly try_no?: number };
+
 /** Everything one attempt has recorded: the evidence a snapshot is built from. */
 export interface AttemptRecord {
   readonly attempt: Attempt;
@@ -207,12 +216,21 @@ export interface Store {
    * stale `seen` changes nothing and returns the question as stored, `released: false`. The
    * stale check comes first, so a retry after rung 4 ended the question gets the stored question.
    * At 4 nothing more is released (`released: false`); an ended question is `QuestionNotOpen`.
+   *
+   * With `twin` (the caller passes it only for the last rung, whose help is the worked answer),
+   * the release also appends the `help_twin` skip at the question's next `try_no` and ends the
+   * question `skipped`, in one unit with the question held: a try sent at the same time lands
+   * before it or is `QuestionNotOpen`, so the answer never shows on an open question. The skip
+   * is checked as `appendAttemptAnswer` checks an answer (a given `try_no` that is not the next is
+   * `TryOutOfOrder`, a stored `event_id` is `EventIdMismatch`, a bad time `BadRequest`), and a
+   * refusal writes nothing. A retry with the same `seen` finds it stale and returns the question.
    */
   releaseHelp(
     pod: PodId,
     attempt: AttemptId,
     seq: number,
     seen: number,
+    options?: { readonly twin?: HelpTwin },
   ): Promise<{ readonly question: AttemptQuestion; readonly released: boolean }>;
   /**
    * Ends an open question, once. Ending it again the same way returns it; another way is

@@ -3,6 +3,7 @@ export { createPostgresStore } from "./postgres.ts";
 export { attemptResults, type ResultQuestion } from "./result.ts";
 export {
   type AttemptRecord,
+  type HelpTwin,
   type LessonVersionWithQuestions,
   type NewAssignment,
   type NewAttempt,
