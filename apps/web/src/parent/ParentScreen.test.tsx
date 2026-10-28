@@ -185,6 +185,56 @@ describe("ParentScreen", () => {
     expect(storedAttempt.get(ASSIGNMENT)).toBeNull();
   });
 
+  it("says gently that a try-out lesson is not saved, and forgets it", async () => {
+    storedAttempt.set(ASSIGNMENT, ATTEMPT);
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const api = client({
+      getMe: async () => me([snapshot]),
+      claimAttempt: async () => {
+        throw new ApiError("preview", 409, "AttemptPreview");
+      },
+    });
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams(`claim=${ASSIGNMENT}`)}
+        auth={auth}
+        client={api}
+      />,
+    );
+    await screen.findByText("Czyja to była lekcja?");
+    await press(`[data-learner="${LEARNER}"]`);
+    expect(
+      await screen.findByText("Ta lekcja była na próbę, więc nie zapisujemy jej."),
+    ).toBeTruthy();
+    expect(storedAttempt.get(ASSIGNMENT)).toBeNull();
+  });
+
+  it("keeps the tab's attempt when the claim fails for another reason", async () => {
+    storedAttempt.set(ASSIGNMENT, ATTEMPT);
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const api = client({
+      getMe: async () => me([snapshot]),
+      claimAttempt: async () => {
+        throw new Error("offline");
+      },
+    });
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams(`claim=${ASSIGNMENT}`)}
+        auth={auth}
+        client={api}
+      />,
+    );
+    await screen.findByText("Czyja to była lekcja?");
+    await press(`[data-learner="${LEARNER}"]`);
+    expect(document.querySelector("[data-failed]")).not.toBeNull();
+    expect(storedAttempt.get(ASSIGNMENT)).toBe(ATTEMPT);
+  });
+
   it("makes the account when GET /me answers AccountMissing", async () => {
     const auth = signedOutAuth();
     auth.signedIn = true;

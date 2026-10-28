@@ -207,6 +207,14 @@ function SignIn({
   );
 }
 
+/** A claim refusal the page takes calmly: the line it shows, or null for none. Anything else fails. */
+const CLAIM_REFUSED: Record<string, CopyKey | null> = {
+  AttemptClaimed: "parent_claimed_elsewhere",
+  AttemptPreview: "parent_claim_preview",
+  // The attempt is gone (swept, or the database rebuilt): nothing to keep.
+  NotFound: null,
+};
+
 type View = { kind: "loading" } | { kind: "failed" } | { kind: "ready"; me: Me };
 
 /** The tab's attempt of `?claim`'s assignment, if it still holds one. */
@@ -253,15 +261,17 @@ function SignedIn({
   }, [api, language]);
   useEffect(load, [load]);
 
-  /** Keeps the tab's attempt for `learner`, then forgets it here, whatever the server said. */
+  /** Keeps the tab's attempt for `learner`, then forgets it here: after a 201, or a refusal that
+   * means it can never be kept. Any other failure keeps it, for another go. */
   const keepFor = async (learner: LearnerId): Promise<void> => {
     if (pending === null) return;
     try {
+      // 201 for a first claim and for a replay by the same account for the same learner.
       await api.claimAttempt(pending.attempt, { learner_id: learner });
     } catch (error) {
-      if (isApiError(error) && error.type === "AttemptClaimed")
-        setNotice("parent_claimed_elsewhere");
-      else if (!(isApiError(error) && error.status === 404)) throw error;
+      const refused = isApiError(error) ? CLAIM_REFUSED[error.type ?? ""] : undefined;
+      if (refused === undefined) throw error;
+      if (refused !== null) setNotice(refused);
     }
     storedAttempt.clear(pending.assignment);
     setPending(null);

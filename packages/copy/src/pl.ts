@@ -389,6 +389,10 @@ export const pl: CopyTable = {
     text: "Ta lekcja jest już zapisana na innym koncie.",
     reviewed: false,
   },
+  parent_claim_preview: {
+    text: "Ta lekcja była na próbę, więc nie zapisujemy jej.",
+    reviewed: false,
+  },
   parent_no_attempts: { text: "Jeszcze nie ma tu lekcji.", reviewed: false },
   parent_sign_out: { text: "Wyloguj się", reviewed: false },
   // end parent login

@@ -371,6 +371,7 @@ export const en: CopyTable = {
     text: "This lesson is already saved on another account.",
     reviewed: false,
   },
+  parent_claim_preview: { text: "This lesson was a try-out, so it is not saved.", reviewed: false },
   parent_no_attempts: { text: "No lessons here yet.", reviewed: false },
   parent_sign_out: { text: "Sign out", reviewed: false },
   // end parent login

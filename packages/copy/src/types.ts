@@ -341,6 +341,7 @@ export const COPY_KEYS = [
   "parent_add",
   "parent_whose",
   "parent_claimed_elsewhere",
+  "parent_claim_preview",
   "parent_no_attempts",
   "parent_sign_out",
   // end parent login
