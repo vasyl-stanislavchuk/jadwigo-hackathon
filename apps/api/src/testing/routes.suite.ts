@@ -3,10 +3,12 @@
 // /api/v1's seq and try_no, and the growth rules.
 import { randomUUID } from "node:crypto";
 import {
+  AssignmentId,
   type AttemptAnswerResult,
   type AttemptResults,
   type AttemptSnapshot,
   type ErrorEnvelope,
+  FEATURED_POD_ID,
   type Featured,
   type HelpResult,
   ID_PREFIXES,
@@ -65,6 +67,21 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         );
         expect(started.status).toBe(201);
       });
+
+      it("lists them oldest first, the id breaking a tie, as both stores order them", async () => {
+        const made: string[] = [];
+        for (let n = 0; n < 3; n++) made.push(await s.assign("equalGroups"));
+        const records = await Promise.all(
+          made.map((id) => s.store.getAssignment(FEATURED_POD_ID, AssignmentId.parse(id))),
+        );
+        const expected = records
+          .sort((x, y) => x.created_at.localeCompare(y.created_at) || (x.id < y.id ? -1 : 1))
+          .map((r) => r.id);
+
+        const reply = await s.call<Featured>("GET", pathOf("featuredLessons", {}));
+        const ids = reply.body.lessons.map((l) => l.assignment_id);
+        expect(ids.filter((id) => made.includes(id))).toEqual(expected);
+      });
     });
 
     describe("the login-free limits", () => {
@@ -116,6 +133,22 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         const after = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
         expect(after.body.last_event_id).toBeNull();
         expect(after.body.questions[0]?.tries).toBe(0);
+      });
+
+      it("refuses a content-length that is not a number of bytes with BadRequest, storing nothing", async () => {
+        const { id, snapshot } = await start(s, await s.assign("equalGroups"));
+        const page = snapshot.questions[0];
+        if (page === undefined) throw new Error("no first question");
+        const body = { ...answerFields(page), kind: "try", value: { entered: "9999" } };
+        for (const length of ["abc", "-1", "1e9", "12 bytes"]) {
+          const refused = await s.call<ErrorEnvelope>("POST", pathOf("answer", { id }), body, {
+            "content-length": length,
+          });
+          expect(refused.status, length).toBe(400);
+          expect(refused.body.error.type).toBe("BadRequest");
+        }
+        const after = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect(after.body.last_event_id).toBeNull();
       });
     });
 

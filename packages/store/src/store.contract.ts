@@ -200,6 +200,13 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
 
         const open = await store.listOpenAssignments(a.pod);
         expect(open.map((o) => o.assignment.id).sort()).toEqual([a.assignment, later.id].sort());
+        // Oldest first, and the id breaks a tie, as PostgresStore's ORDER BY created_at, id.
+        const byAge = [...open].sort(
+          (x, y) =>
+            x.assignment.created_at.localeCompare(y.assignment.created_at) ||
+            (x.assignment.id < y.assignment.id ? -1 : 1),
+        );
+        expect(open.map((o) => o.assignment.id)).toEqual(byAge.map((o) => o.assignment.id));
         expect(open.every((o) => o.lesson.id === a.lesson && o.lesson.title === LESSON.title)).toBe(
           true,
         );
@@ -1061,7 +1068,8 @@ async function newPod(store: Store, name: string): Promise<PodId> {
 }
 
 /** A pod with 2 planned questions and the twin of the first as a spare, published, and assigned. */
-async function seed(store: Store) {
+/** A pod with a published 3-question lesson and one open anyone-assignment. */
+export async function seed(store: Store) {
   const pod = await newPod(store, "Pod of foxes");
   const lesson = (await store.putLesson(pod, LESSON)).id;
   const first = (await store.putLessonQuestion(pod, apples())).id;

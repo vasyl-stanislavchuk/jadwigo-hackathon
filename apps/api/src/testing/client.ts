@@ -27,19 +27,29 @@ export interface Reply<T = unknown> {
   readonly body: T;
 }
 
-type Call = <T = unknown>(method: string, path: string, body?: unknown) => Promise<Reply<T>>;
+type Call = <T = unknown>(
+  method: string,
+  path: string,
+  body?: unknown,
+  headers?: Record<string, string>,
+) => Promise<Reply<T>>;
 
 function client(store: Store): Call {
   const app = createApp(store);
   const context = {} as Parameters<typeof app.resolve>[1];
-  return async <T>(method: string, path: string, body?: unknown): Promise<Reply<T>> => {
+  return async <T>(
+    method: string,
+    path: string,
+    body?: unknown,
+    headers: Record<string, string> = {},
+  ): Promise<Reply<T>> => {
     const reply = (await app.resolve(
       {
         version: "2.0",
         routeKey: "$default",
         rawPath: path,
         rawQueryString: "",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...headers },
         requestContext: { http: { method, path }, stage: "$default" },
         body: body === undefined ? undefined : JSON.stringify(body),
         isBase64Encoded: false,
