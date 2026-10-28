@@ -9,7 +9,7 @@ export PATH := $(MISE_BIN_PATHS)$(PATH)
 ENV ?= prod
 TF := AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform
 
-.PHONY: init plan apply output site-deploy deploy api-deploy web-deploy fmt validate
+.PHONY: init plan apply output site-deploy deploy api-deploy web-deploy auth-diff auth-apply fmt validate
 
 init:
 	$(TF) init -input=false -reconfigure -backend-config=environments/$(ENV).backend.hcl
@@ -65,6 +65,16 @@ web-deploy:
 	{ [ ! -d $(WEB)/dist/assets ] || $(AWS) s3 sync $(WEB)/dist/assets s3://$$bucket/assets --cache-control "public, max-age=31536000, immutable"; } && \
 	$(AWS) s3 sync $(WEB)/dist s3://$$bucket --delete --exclude "assets/*" --cache-control "public, max-age=300" && \
 	$(AWS) cloudfront create-invalidation --distribution-id $$dist_id --paths "/*"
+
+# Supabase Auth settings for jadwigo-prod and jadwigo-dev (dl-e8ov.2.40): site URL, redirect URLs,
+# OTP length, from supabase-auth/<env>.json. auth-diff only reads; it exits 2 when a project would
+# change. auth-apply writes them, and is the owner's, from a terminal.
+auth-diff:
+	supabase-auth/auth.sh diff
+
+auth-apply:
+	@$(NOT_FROM_AGENT)
+	supabase-auth/auth.sh apply
 
 # No AWS: what CI and `make check` can run.
 fmt:

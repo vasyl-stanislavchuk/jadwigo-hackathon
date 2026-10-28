@@ -26,6 +26,8 @@ A merge deploys nothing. The owner deploys by hand
 | `make -C infra site-deploy` | build `apps/site`, check `dist/`, sync it to the bucket, invalidate | the owner |
 | `make -C infra deploy` | `api-deploy` (`make api-bundle`, zip, `update-function-code`, wait), then `web-deploy` (build `apps/web`, sync to the app bucket, invalidate) | the owner |
 | `make -n -C infra deploy` | print both halves, running nothing | anyone |
+| `make -C infra auth-diff` | read both Supabase projects' auth config and print what `supabase-auth/<env>.json` would change; exits 2 if anything would | anyone with the token |
+| `make -C infra auth-apply` | write those settings through the Management API | the owner |
 
 **The database URL never passes through Terraform.** The module creates the parameter with a write-only
 placeholder, so neither a tfvars file nor the state holds the value. The owner sets it after the first
@@ -48,6 +50,14 @@ aws --profile sergii ssm put-parameter --region eu-central-1 --name /jadwigo/pro
 ```
 
 The Lambda reads it once per cold start. Until the first deploy, its placeholder code answers 503.
+
+**Supabase Auth settings live in `supabase-auth/`, not in Terraform.** The root module's state is one
+environment's, and these settings span both projects, so a script reads and writes them through the
+Management API: `prod.json` and `dev.json` each hold a project's ref and only the settings we own
+(site URL, redirect URLs, the email OTP length). Every other auth setting stays as Supabase has it.
+The token is `SUPABASE_ACCESS_TOKEN`, else the line in `~/.config/jadwigo/supabase.env`; it reaches
+curl on stdin and is never printed. Dev has no hosted app yet (`packages/config` names prod only), so
+its redirect list is any local port on `127.0.0.1` and `localhost`.
 
 The state bucket `jadwigo-terraform-state-843109108289` is created by hand before the first `init` (`dl-5ssh.9`):
 
