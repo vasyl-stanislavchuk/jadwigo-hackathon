@@ -1,0 +1,388 @@
+{
+  "description": {
+    "en": "Multiply 7 times a number less than or equal to 10.",
+    "pl": "Mnożenie 8 przez liczbę mniejszą lub równą 10."
+  },
+  "enrichment": {
+    "can_do": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "child multiplies 1·7 with picture support",
+          "quote": "1 · 7 =",
+          "source": "item:pl:x60f336d3187a0f4a"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": {
+        "en": "The child can multiply 7 by a number from 0 to 10 using an array, equal groups or a number line.",
+        "pl": "Dziecko potrafi pomnożyć 7 przez liczbę od 0 do 10, posługując się rysunkiem prostokątnym, grupami przedmiotów lub osią liczbową."
+      }
+    },
+    "contexts": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "items are bare products with only a visual hint, no story context",
+          "quote": "Wykonaj mnożenie. 0 × 7 =",
+          "source": "item:pl:x059435cfc2e17c3f"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": {
+        "en": [],
+        "pl": []
+      }
+    },
+    "curriculum_tags": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "covers mental multiplication within the times table",
+          "quote": "mnoży i dzieli w pamięci w zakresie tabliczki mnożenia",
+          "source": "pl-2017:II.3.3"
+        },
+        {
+          "claim": "covers meaning of multiplication shown with pictures and models",
+          "quote": "wyjaśnia istotę działań matematycznych – dodawania, odejmowania, mnożenia, dzielenia",
+          "source": "pl-2017:II.3.1"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": ["pl-2017:II.3.3", "pl-2017:II.3.1", "ccss:3.OA.C.7"]
+    },
+    "keywords": {
+      "agreement": 0.78,
+      "grounds": [
+        {
+          "claim": "keywords reflect multiply-by-seven practice",
+          "quote": "Pomnóż przez 7",
+          "source": "set:set_khan_x59551e61"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": {
+        "en": [
+          "multiplication table",
+          "multiplying by 7",
+          "second factor up to 10",
+          "arrays",
+          "equal groups",
+          "number line",
+          "mental multiplication"
+        ],
+        "pl": [
+          "tabliczka mnożenia",
+          "mnożenie przez 7",
+          "drugi czynnik do 10",
+          "rysunek prostokątny",
+          "równe grupy",
+          "oś liczbowa",
+          "mnożenie w pamięci"
+        ]
+      }
+    },
+    "mistake_classes": {
+      "agreement": 0.67,
+      "grounds": [
+        {
+          "claim": "adding instead of multiplying shows on 7·6 items",
+          "quote": "7 · 6=",
+          "source": "item:pl:x4c85359703082794"
+        },
+        {
+          "claim": "jump-count slips show on 9·7 number-line items",
+          "quote": "aby pomnożyć 9 · 7, wykorzystaj poniższą oś liczbową.",
+          "source": "item:pl:x608c11a62ef3df76"
+        },
+        {
+          "claim": "neighbour-fact intrusion supported by adjacent 8·7 array item",
+          "quote": "poniższy rysunek pomoże Ci pomnożyć 8 · 7.",
+          "source": "item:pl:x854d41422abcb9ca"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": [
+        {
+          "en": "Adding instead of multiplying",
+          "id": "adding-instead-of-multiplying",
+          "pl": "Dodawanie zamiast mnożenia",
+          "spot": "the typed value equals the sum of the factors instead of the product"
+        },
+        {
+          "en": "Miscounting jumps on the number line",
+          "id": "off-by-one-jump-on-number-line",
+          "pl": "Błąd liczenia skoków na osi liczbowej",
+          "spot": "for number-line items the typed value is one jump of 7 too high or too low"
+        },
+        {
+          "en": "Confusing neighbouring times-7 facts",
+          "id": "confusing-neighbouring-seven-facts",
+          "pl": "Mylenie sąsiednich wyników mnożenia przez 7",
+          "spot": "for 9 × 7 the typed value matches the adjacent times-7 fact"
+        }
+      ]
+    },
+    "prerequisites": {
+      "agreement": 0.78,
+      "grounds": [
+        {
+          "claim": "multiplying with drawings should come before this set",
+          "quote": "Mnożenie za pomocą rysunków",
+          "source": "index:set_khan_xd578b25b"
+        },
+        {
+          "claim": "multiplying on the number line should come before this set",
+          "quote": "Mnożenie na osi liczbowej",
+          "source": "index:set_khan_213229225"
+        },
+        {
+          "claim": "multiply by 0 or 1 should come before because set includes 0x7 and 1x7",
+          "quote": "Pomnóż przez 0 lub 1",
+          "source": "index:set_khan_xade69011"
+        },
+        {
+          "claim": "set includes 0x7 item supporting 0-or-1 prerequisite",
+          "quote": "0 × 7 =",
+          "source": "item:pl:x059435cfc2e17c3f"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": ["set_khan_xd578b25b", "set_khan_213229225", "set_khan_xade69011"]
+    },
+    "skill_ids": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "skill is the 7 row of multiplication",
+          "quote": "Multiply by 7",
+          "source": "set:set_khan_x59551e61"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": ["maths.multiplication.row-7"]
+    },
+    "summary": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "set practises multiplying 7 by numbers <=10",
+          "quote": "Multiply 7 times a number less than or equal to 10.",
+          "source": "set:set_khan_x59551e61"
+        },
+        {
+          "claim": "uses array support for 7·6",
+          "quote": "poniższy rysunek pomoże Ci pomnożyć 7 · 6.",
+          "source": "item:pl:x4c85359703082794"
+        },
+        {
+          "claim": "uses number-line jumps for 7·7",
+          "quote": "aby pomnożyć 7 · 7, wykorzystaj poniższą oś liczbową.",
+          "source": "item:pl:x1f9e1e8fb58865fd"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": {
+        "en": "This set practises multiplying 7 by numbers from 0 to 10, up to 70. Children use rectangular arrays, equal groups and jumps on the number line.",
+        "pl": "Ten zestaw ćwiczy mnożenie przez 7, gdy drugi czynnik jest od 0 do 10, czyli w zakresie do 70. Dziecko korzysta z rysunków prostokątnych, równych grup i skoków na osi liczbowej."
+      }
+    },
+    "synthetic_needs": {
+      "agreement": 0.67,
+      "grounds": [
+        {
+          "claim": "parent search centres on multiply by 7",
+          "quote": "Pomnóż przez 7",
+          "source": "set:set_khan_x59551e61"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": [
+        {
+          "language": "pl",
+          "words": "tabliczka mnożenia na 7 ćwiczenia do druku dla klasy 3"
+        },
+        {
+          "language": "pl",
+          "words": "jak wytłumaczyć dziecku mnożenie przez 7 z rysunkiem i osią liczbową?"
+        },
+        {
+          "language": "pl",
+          "words": "utrwalenie mnożenia przez 7 w domu z kartami i krótkimi seriami"
+        },
+        {
+          "language": "pl",
+          "words": "mnożenie przez 7 na osi liczbowej zadania dla trzecioklasisty"
+        },
+        {
+          "language": "en",
+          "words": "grade 3 practice multiplying by seven with arrays and number lines"
+        },
+        {
+          "language": "en",
+          "words": "how can my child practise times-seven facts at home?"
+        },
+        {
+          "language": "en",
+          "words": "extra printables for the seven times table with visual models"
+        },
+        {
+          "language": "uk",
+          "words": "вправи на таблицю множення на 7 для 3 класу з малюнками"
+        },
+        {
+          "language": "uk",
+          "words": "як пояснити дитині множення на 7 за допомогою числової прямої?"
+        }
+      ]
+    }
+  },
+  "families": ["enter"],
+  "grade": "3",
+  "id": "set_khan_x59551e61",
+  "items": {
+    "count": {
+      "en": 21,
+      "pl": 21,
+      "shared": 21
+    },
+    "ids": [
+      "x059435cfc2e17c3f",
+      "x1f9e1e8fb58865fd",
+      "x2891e208f79a82d9",
+      "x38ac8a31cdb4b661",
+      "x4c85359703082794",
+      "x5e6f410dee6bd404",
+      "x608c11a62ef3df76",
+      "x60f336d3187a0f4a",
+      "x688467334998916a",
+      "x854d41422abcb9ca",
+      "x86be9ecfc5bb0ff6",
+      "x8c0783d48fb1641f",
+      "x8e8a547f077190b0",
+      "x8ebb4b0b725ad32b",
+      "x9d202b7dd8ff373b",
+      "xae5145d66f39c227",
+      "xce134b078b060698",
+      "xe8c36bec1bd4579c",
+      "xf1ab5146927c4fe3",
+      "xf5452b97a35219b9",
+      "xff3ca0e0c2d3b61a"
+    ]
+  },
+  "languages": {
+    "en": true,
+    "pl": true
+  },
+  "problem_types": [
+    {
+      "count": {
+        "en": 7,
+        "pl": 7
+      },
+      "name": "Arrays",
+      "samples": [
+        {
+          "en": "Multiply. Hint: Use the array below to help solve7 × 6. 7 × 6=",
+          "item_id": "x4c85359703082794",
+          "pl": "Wykonaj mnożenie. Wskazówka: poniższy rysunek pomoże Ci pomnożyć 7 · 6. 7 · 6="
+        },
+        {
+          "en": "Multiply. Hint: Use the array below to help solve 1 × 7. 1 × 7 =",
+          "item_id": "x60f336d3187a0f4a",
+          "pl": "Wykonaj mnożenie. Wskazówka: poniższy rysunek pomoże Ci pomnożyć 1 · 7. 1 · 7 ="
+        },
+        {
+          "en": "Multiply. Hint: Use the array below to help solve 5 × 7. 5 × 7 =",
+          "item_id": "x688467334998916a",
+          "pl": "Wykonaj mnożenie. Wskazówka: poniższy rysunek pomoże Ci pomnożyć 5 · 7. 5 · 7 ="
+        }
+      ]
+    },
+    {
+      "count": {
+        "en": 7,
+        "pl": 7
+      },
+      "name": "Groups of objects",
+      "samples": [
+        {
+          "en": "Multiply. Hint: Use the image below to help solve 7× 3. 7 × 3 =",
+          "item_id": "x38ac8a31cdb4b661",
+          "pl": "Wykonaj mnożenie. Wskazówka: poniższy rysunek pomoże Ci pomnożyć 7· 3. 7 · 3 ="
+        },
+        {
+          "en": "Multiply. Hint: Use the image below to help solve 4× 7. 4 × 7 =",
+          "item_id": "x5e6f410dee6bd404",
+          "pl": "Wykonaj mnożenie. Wskazówka: poniższy rysunek pomoże Ci pomnożyć 4· 7. 4 · 7 ="
+        },
+        {
+          "en": "Multiply. Hint: Use the image below to help solve 7× 7. 7× 7 =",
+          "item_id": "x8e8a547f077190b0",
+          "pl": "Wykonaj mnożenie. Wskazówka: poniższy rysunek pomoże Ci pomnożyć 7· 7. 7· 7 ="
+        }
+      ]
+    },
+    {
+      "count": {
+        "en": 7,
+        "pl": 7
+      },
+      "name": "Number lines",
+      "samples": [
+        {
+          "en": "Multiply. Hint: Use the number line below to help solve 7 × 7. 7 × 7 =",
+          "item_id": "x1f9e1e8fb58865fd",
+          "pl": "Wykonaj mnożenie. Wskazówka: aby pomnożyć 7 · 7, wykorzystaj poniższą oś liczbową. 7 · 7 ="
+        },
+        {
+          "en": "Multiply. Hint: Use the number line below to help solve 7 × 2. 7 × 2 =",
+          "item_id": "x2891e208f79a82d9",
+          "pl": "Wykonaj mnożenie. Wskazówka: aby pomnożyć 7 · 2, wykorzystaj poniższą oś liczbową. 7 · 2 ="
+        },
+        {
+          "en": "Multiply. Hint: Use the number line below to help solve 9 × 7. 9 ×7 =",
+          "item_id": "x608c11a62ef3df76",
+          "pl": "Wykonaj mnożenie. Wskazówka: aby pomnożyć 9 · 7, wykorzystaj poniższą oś liczbową. 9 ·7 ="
+        }
+      ]
+    }
+  ],
+  "question_types": ["production"],
+  "source": {
+    "credit": "z Khan Academy",
+    "exercise_id": "x59551e61",
+    "licence": "CC BY-NC-SA 4.0",
+    "name": "khan",
+    "url": "https://www.khanacademy.org/math/cc-third-grade-math/3rd-basic-multiplication/multiply-by-7-8-or-9/e/multiplying-by-7"
+  },
+  "source_place": {
+    "ancestors": ["xd8fe5d3aeb19d10e", "x9ae6719f9187864e", "x95ab04602940c446", "x7a488390"],
+    "course": "cc-third-grade-math",
+    "lesson": "multiply-by-7-8-or-9",
+    "lesson_title": {
+      "en": "Multiply by 7, 8, or 9",
+      "pl": "Mnożenie przez 7,8 lub 9"
+    },
+    "order": 24,
+    "unit": "3rd-basic-multiplication",
+    "unit_title": {
+      "en": "1-digit multiplication",
+      "pl": "Mnożenie przez liczby jednocyfrowe"
+    }
+  },
+  "subject": "math",
+  "titles": {
+    "en": "Multiply by 7",
+    "pl": "Pomnóż przez 7"
+  }
+}

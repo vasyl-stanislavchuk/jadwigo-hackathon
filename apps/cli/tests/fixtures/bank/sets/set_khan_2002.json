@@ -1,0 +1,357 @@
+{
+  "description": {
+    "en": "Practice adding three-digit numbers. All sums are 1000 or less.",
+    "pl": "Ćwiczenie z dodawania liczb trzycyfrowych. Wszystkie sumy wynoszą 1000 lub mniej."
+  },
+  "enrichment": {
+    "can_do": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "Child adds three-digit numbers with sums up to 1000.",
+          "quote": "Practice adding three-digit numbers. All sums are 1000 or less.",
+          "source": "set:set_khan_2002"
+        },
+        {
+          "claim": "Child adds horizontal and column examples.",
+          "quote": "Wykonaj dodawanie. 512+288=",
+          "source": "item:pl:x1d7a45abc9601b33"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": {
+        "en": "The child can add three-digit numbers within 1000, horizontally and in column form, with and without regrouping tens and hundreds.",
+        "pl": "Dziecko potrafi dodać liczby trzycyfrowe w zakresie do 1000, poziomo i pisemnie w słupku, bez przeniesienia i z przeniesieniem dziesiątek i setek."
+      }
+    },
+    "contexts": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "Questions are bare arithmetic with no real-life context.",
+          "quote": "Wykonaj dodawanie. =352+540",
+          "source": "item:pl:x00251dacbbaeacf1"
+        },
+        {
+          "claim": "Column items also carry no real-life context.",
+          "quote": "Wykonaj dodawanie. 312 +263",
+          "source": "item:pl:x0aefe0238448e6dc"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": {
+        "en": [],
+        "pl": []
+      }
+    },
+    "curriculum_tags": {
+      "agreement": 0.78,
+      "grounds": [
+        {
+          "claim": "Curriculum covers computing sums of larger numbers.",
+          "quote": "oblicza sumy i różnice większych liczb w prostych przykładach typu: 250 + 50, 180 – 30",
+          "source": "pl-2017:II.3.4"
+        },
+        {
+          "claim": "Curriculum covers ones, tens and hundreds place value.",
+          "quote": "wskazuje jedności, dziesiątki, setki itd.",
+          "source": "pl-2017:II.2.3"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": ["pl-2017:II.3.4", "pl-2017:II.2.3", "ccss:3.NBT.A.2"]
+    },
+    "keywords": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "Set topic is addition to 1000.",
+          "quote": "Dodawanie do 1000",
+          "source": "set:set_khan_2002"
+        },
+        {
+          "claim": "English topic is adding three-digit numbers.",
+          "quote": "Practice adding three-digit numbers.",
+          "source": "set:set_khan_2002"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": {
+        "en": [
+          "adding three-digit numbers",
+          "column addition",
+          "vertical addition",
+          "regrouping",
+          "sums to 1000"
+        ],
+        "pl": [
+          "dodawanie liczb trzycyfrowych",
+          "dodawanie pisemne",
+          "dodawanie w słupku",
+          "dodawanie z przeniesieniem",
+          "sumy do 1000"
+        ]
+      }
+    },
+    "mistake_classes": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "Missed carry is plausible on regrouping item.",
+          "quote": "Wykonaj dodawanie. 659 +319",
+          "source": "item:pl:x1b772e48e11da569"
+        },
+        {
+          "claim": "Misaligned two-digit addend is plausible here.",
+          "quote": "794+41=",
+          "source": "item:pl:x7b2a1680efe39208"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": [
+        {
+          "en": "Forgetting the regrouped ten or hundred",
+          "id": "missed-carry",
+          "pl": "Pomijanie przeniesienia",
+          "spot": "answer is exactly 10 or 100 too low because the carried 1 was not added"
+        },
+        {
+          "en": "Misaligning place value, especially with a two-digit addend",
+          "id": "place-value-misalignment",
+          "pl": "Błędne ustawienie rzędów, zwłaszcza przy dwucyfrowym składniku",
+          "spot": "for the item with 41 as second addend, ones are treated as tens, so the answer is several hundred too high"
+        }
+      ]
+    },
+    "prerequisites": {
+      "agreement": 0.89,
+      "grounds": [
+        {
+          "claim": "Break-apart 3-digit addition should come first.",
+          "quote": "Rozbij 3-cyfrową liczbę na mniejsze liczby - zadania",
+          "source": "index:set_khan_xb6cd2020"
+        },
+        {
+          "claim": "Adding with groups of 10 and 100 should come first.",
+          "quote": "Dodawaj używając grup po 10 i po 100",
+          "source": "index:set_khan_xa543efd6"
+        },
+        {
+          "claim": "Adding on a number line should come first.",
+          "quote": "Dodawanie na osi liczbowej",
+          "source": "index:set_khan_x94f7921f"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": ["set_khan_xb6cd2020", "set_khan_xa543efd6", "set_khan_x94f7921f"]
+    },
+    "skill_ids": {
+      "agreement": 0.67,
+      "grounds": [
+        {
+          "claim": "Proposed addition-within-1000 skill fits this regrouping practice.",
+          "quote": "Adding with regrouping within 1000",
+          "source": "set:set_khan_2002"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": ["proposed:maths.addition.add-within-1000"]
+    },
+    "summary": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "The set practises three-digit addition with sums up to 1000.",
+          "quote": "Ćwiczenie z dodawania liczb trzycyfrowych. Wszystkie sumy wynoszą 1000 lub mniej.",
+          "source": "set:set_khan_2002"
+        },
+        {
+          "claim": "Items use horizontal and column layout.",
+          "quote": "608 +251",
+          "source": "item:pl:x081930e156036ee7"
+        },
+        {
+          "claim": "Two items use a two-digit addend.",
+          "quote": "794+41=",
+          "source": "item:pl:x7b2a1680efe39208"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": {
+        "en": "This set practises adding three-digit numbers with sums up to 1000, shown horizontally and in column form, with and without regrouping; two items use a two-digit addend.",
+        "pl": "Zestaw ćwiczy dodawanie liczb trzycyfrowych z wynikiem do 1000, zapisanych poziomo i w słupku, bez przeniesienia i z przeniesieniem; dwa przykłady mają dwucyfrowy składnik."
+      }
+    },
+    "synthetic_needs": {
+      "agreement": 0.67,
+      "grounds": [
+        {
+          "claim": "Search needs concern column addition with regrouping to 1000.",
+          "quote": "Dodawanie z przegrupowywaniem do 1000",
+          "source": "set:set_khan_2002"
+        }
+      ],
+      "made_by": "model:muse-spark-1.3-contributor",
+      "reviewed": false,
+      "value": [
+        {
+          "language": "pl",
+          "words": "dodawanie pisemne liczb trzycyfrowych z przeniesieniem klasa 3 karty pracy"
+        },
+        {
+          "language": "pl",
+          "words": "ćwiczenia z dodawania w słupku do 1000"
+        },
+        {
+          "language": "pl",
+          "words": "jak ćwiczyć z dzieckiem przenoszenie dziesiątek przy dodawaniu"
+        },
+        {
+          "language": "pl",
+          "words": "zadania z dodawania liczb trzycyfrowych dla klasy 3"
+        },
+        {
+          "language": "en",
+          "words": "three-digit column addition with regrouping practice"
+        },
+        {
+          "language": "en",
+          "words": "adding hundreds tens and ones worksheets grade 3"
+        },
+        {
+          "language": "en",
+          "words": "column addition worksheets with regrouping for grade 3"
+        },
+        {
+          "language": "uk",
+          "words": "додавання трицифрових чисел у стовпчик для 3 класу"
+        },
+        {
+          "language": "uk",
+          "words": "вправи на додавання з переходом через десяток"
+        }
+      ]
+    }
+  },
+  "families": ["enter"],
+  "grade": "3",
+  "id": "set_khan_2002",
+  "items": {
+    "count": {
+      "en": 19,
+      "pl": 19,
+      "shared": 19
+    },
+    "ids": [
+      "x00251dacbbaeacf1",
+      "x081930e156036ee7",
+      "x0aefe0238448e6dc",
+      "x1493055dc44922b0",
+      "x1b772e48e11da569",
+      "x1d7a45abc9601b33",
+      "x35cf4627cec6e00a",
+      "x52e7cb2258ca56f0",
+      "x5d96b3100d8c2e57",
+      "x7617f8f3f00883ed",
+      "x7b2a1680efe39208",
+      "x8de8dee6756fc299",
+      "x982307f67e80d568",
+      "x9b05feb5b59fbac7",
+      "x9b2e3b5b8b65dc6b",
+      "x9bbb3dbf5d42fc67",
+      "xa5a475ca2abf8404",
+      "xc07c8d4f78de2581",
+      "xe86dc9cc513380ca"
+    ]
+  },
+  "languages": {
+    "en": true,
+    "pl": true
+  },
+  "problem_types": [
+    {
+      "count": {
+        "en": 11,
+        "pl": 11
+      },
+      "name": "Horizontal",
+      "samples": [
+        {
+          "en": "Add. =352+540",
+          "item_id": "x00251dacbbaeacf1",
+          "pl": "Wykonaj dodawanie. =352+540"
+        },
+        {
+          "en": "Add. =705+158",
+          "item_id": "x1493055dc44922b0",
+          "pl": "Wykonaj dodawanie. =705+158"
+        },
+        {
+          "en": "Add. 512+288=",
+          "item_id": "x1d7a45abc9601b33",
+          "pl": "Wykonaj dodawanie. 512+288="
+        }
+      ]
+    },
+    {
+      "count": {
+        "en": 8,
+        "pl": 8
+      },
+      "name": "Vertical",
+      "samples": [
+        {
+          "en": "Add. 608 +251",
+          "item_id": "x081930e156036ee7",
+          "pl": "Wykonaj dodawanie. 608 +251"
+        },
+        {
+          "en": "Add. 312 +263",
+          "item_id": "x0aefe0238448e6dc",
+          "pl": "Wykonaj dodawanie. 312 +263"
+        },
+        {
+          "en": "Add. 659 +319",
+          "item_id": "x1b772e48e11da569",
+          "pl": "Wykonaj dodawanie. 659 +319"
+        }
+      ]
+    }
+  ],
+  "question_types": ["production"],
+  "source": {
+    "credit": "z Khan Academy",
+    "exercise_id": "2002",
+    "licence": "CC BY-NC-SA 4.0",
+    "name": "khan",
+    "url": "https://www.khanacademy.org/math/cc-third-grade-math/imp-addition-and-subtraction/imp-adding-with-regrouping-within-1000/e/addition_4"
+  },
+  "source_place": {
+    "ancestors": ["xf155a790bb50c18f", "xc09fcb17c3dc1166", "x95ab04602940c446", "x7a488390"],
+    "course": "cc-third-grade-math",
+    "lesson": "imp-adding-with-regrouping-within-1000",
+    "lesson_title": {
+      "en": "Adding with regrouping within 1000",
+      "pl": "Dodawanie z przegrupowywaniem do 1000"
+    },
+    "order": 36,
+    "unit": "imp-addition-and-subtraction",
+    "unit_title": {
+      "en": "Addition, subtraction, and estimation",
+      "pl": "Dodawanie, odejmowanie i szacowanie"
+    }
+  },
+  "subject": "math",
+  "titles": {
+    "en": "Add within 1000",
+    "pl": "Dodawanie do 1000"
+  }
+}
