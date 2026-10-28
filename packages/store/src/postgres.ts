@@ -144,7 +144,7 @@ function isPgError(error: unknown): error is PgError {
  * as InMemoryStore does, so these are the backstop: a race the checks lost, or a rule only the
  * database holds.
  */
-function refusal(error: unknown): unknown {
+export function refusal(error: unknown): unknown {
   if (!isPgError(error)) return error;
   switch (error.code) {
     case "23505": // unique_violation
@@ -171,7 +171,12 @@ function refusal(error: unknown): unknown {
     case "22P02": // invalid_text_representation: a value outside its enum
     case "22007": // invalid_datetime_format
     case "22008": // datetime_field_overflow
-    case "23001": // restrict_violation: the write-once and `missed` triggers
+    case "23001": // restrict_violation: the write-once, `missed` and answer-open triggers
+      // An answer to an ended question names its own constraint (migration
+      // 20261029100000_answer_question_open.sql): the store's check lost a race.
+      if (error.constraint === "attempt_answer_question_open") {
+        return new StoreError(ErrorType.enum.QuestionNotOpen, error.message);
+      }
       return new StoreError(ErrorType.enum.BadRequest, error.message);
     default:
       return error;
