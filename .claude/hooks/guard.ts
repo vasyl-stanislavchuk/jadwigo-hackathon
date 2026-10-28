@@ -92,6 +92,119 @@ function ghApiMethod(args: string[]): string | undefined {
   return sends ? "POST" : "GET";
 }
 
+/** The Makefile targets that write to a Supabase project; ENV=prod on any of them is the owner's. */
+const DB_TARGET = /(^|[\s'",[(])db-(push|role|seed|reset)\b/;
+const PROD = /\bENV\W{0,4}prod\b/;
+/** Programs that can run a command on a pseudo-terminal, or hide one in a quoted script. */
+const WRAPPERS =
+  /^(script|expect|unbuffer|socat|python[\d.]*|perl|ruby|node|bun|deno|osascript|bash|sh|zsh|dash|fish)$/;
+const CLEARS_CLAUDECODE =
+  /(^|\s)(-u\s*|--unset[=\s]+)CLAUDECODE\b|\bunset\s+(-v\s+)?(\w+\s+)*CLAUDECODE\b|\bexport\s+(-\w+\s+)*-\w*n\w*\s+(\w+\s+)*CLAUDECODE\b|\b(typeset|declare|local)\s+([-+]\w+\s+)*\+\w*x\w*\s+(\w+\s+)*CLAUDECODE\b/;
+/** The env program, bare or by path (/usr/bin/env), and exec -c, which clears the environment. */
+const ENV_PROGRAM = /(^|[\s;&|('"/])env(?=\s|$)/;
+// exec's -a takes a name, so `exec -a x -c` still reaches the -c.
+const EXEC_CLEARS = /(^|[\s;&|('"])exec\s+((-[A-Za-z]*a\s+\S+|-\w+)\s+)*-[A-Za-z]*c[A-Za-z]*(\s|$)/;
+/** Programs that run a command on a pseudo-terminal; python counts when the line imports pty. */
+const PTY_WRAPPERS = /^(script|expect|unbuffer|socat|screen|tmux)$/;
+const MAKE = /(^|[\s'",[(])g?make\b/;
+
+/**
+ * Whether the text clears the whole environment, and CLAUDECODE with it: exec -c, or an env whose
+ * options hold -i, - or --ignore-environment anywhere, in a short-flag cluster (-0i, -vi), after
+ * options that take a value (-u FOO, -C dir, -P path) or inside an -S string.
+ */
+function clearsEnv(text: string): boolean {
+  if (EXEC_CLEARS.test(text)) return true;
+  for (const m of text.matchAll(new RegExp(ENV_PROGRAM, "g"))) {
+    // Quotes become spaces, so the words of an -S '...' string read as more options.
+    const words = text
+      .slice((m.index ?? 0) + m[0].length)
+      .replace(/['"]/g, " ")
+      .split(/\s+/)
+      .filter(Boolean);
+    for (let i = 0; i < words.length; i++) {
+      const w = words[i] ?? "";
+      if (!w.startsWith("-") || w === "--") break;
+      if (w === "-" || w === "--ignore-environment" || w === "--ignore-env") return true;
+      if (w.startsWith("--")) {
+        if (/^--(unset|chdir)$/.test(w)) i++;
+        continue;
+      }
+      for (let j = 1; j < w.length; j++) {
+        const c = w[j] ?? "";
+        if (c === "i") return true;
+        if ("uCP".includes(c)) {
+          if (j === w.length - 1) i++;
+          break;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * The line with shell quoting a word can hide behind undone: empty '' and "" pairs and backslashes
+ * dropped, and quotes around a word with no space in it removed. `make db-pu''sh ENV=pr\od` reads
+ * as `make db-push ENV=prod`. A quoted string with spaces stays, so prose in a commit message is
+ * still prose to stripProse.
+ */
+export function unquoteWords(cmd: string): string {
+  return cmd
+    .replace(/\\(\S)/g, "$1")
+    .replace(/'([^'\s]*)'/g, "$1")
+    .replace(/"([^"\s]*)"/g, "$1");
+}
+
+/**
+ * The prod db targets (dl-5ssh.45). The Makefile's PROD_GATE asks for a terminal and a typed prod
+ * (dl-e8ov.2.34), but a session can fake the terminal with a pty, so a session never runs one: no
+ * make db-* with ENV=prod, no clearing CLAUDECODE (the gate reads it), and no pty or script wrapper
+ * whose quoted text names a db target and prod. Codex shells have no guard; the gate is all they meet.
+ *
+ * The guard reads text, so it runs on the raw line and on unquoteWords' copy of it. It does not
+ * follow eval, $(...) or variables (`E=prod make db-push ENV=$E`), and it judges one call at a
+ * time, so a makefile fragment written in one call and passed with `make -f` in the next gets past
+ * it. The Makefile's PROD_GATE still stops both: it asks for a terminal and a typed prod.
+ */
+function prodDbDenial(cmd: string, bare: string, commands: string[][]): string | undefined {
+  const base = (w: string) => w.slice(w.lastIndexOf("/") + 1);
+  if (assignments(bare).some((a) => a.startsWith("CLAUDECODE=")) || CLEARS_CLAUDECODE.test(bare)) {
+    return "clearing CLAUDECODE hides that a session runs the command, which the prod db gate reads. Leave it set.";
+  }
+  const runsDbTarget = MAKE.test(cmd) && DB_TARGET.test(cmd);
+  // The -S string of env is quoted, so stripProse drops it: read the raw text when env runs at all.
+  const envRuns = ENV_PROGRAM.test(bare);
+  if (runsDbTarget && (clearsEnv(bare) || (envRuns && clearsEnv(cmd)))) {
+    return "env -i, env - and exec -c clear CLAUDECODE with the rest of the environment, which the prod db gate reads. Run make db-* with the environment as it is.";
+  }
+  for (const words of commands) {
+    const make = words.some((w) => /^g?make$/.test(base(w)));
+    if (make && words.some((w) => DB_TARGET.test(w)) && PROD.test(cmd)) {
+      return "make db-push, db-role, db-seed and db-reset with ENV=prod are the owner's, typed at their own terminal (`!` in Claude Code). From a session, use ENV=dev.";
+    }
+    const pty = words.some(
+      (w) => PTY_WRAPPERS.test(base(w)) || (/^python[\d.]*$/.test(base(w)) && /\bpty\b/.test(cmd)),
+    );
+    if (pty && runsDbTarget) {
+      return "a pty wrapper around make db-* fakes the terminal its gate asks for, whatever ENV says. Run make db-* directly; prod db steps are the owner's, typed at their own terminal.";
+    }
+    if (words.some((w) => WRAPPERS.test(base(w)))) {
+      if (DB_TARGET.test(cmd) && /\bprod\b/.test(cmd)) {
+        return "a pty or script wrapper around a prod db target fakes the terminal its gate asks for. Prod db steps are the owner's, typed at their own terminal.";
+      }
+      if (
+        CLEARS_CLAUDECODE.test(cmd) ||
+        (runsDbTarget && clearsEnv(cmd)) ||
+        /CLAUDECODE/.test(cmd.replace(/\$\{?CLAUDECODE/g, ""))
+      ) {
+        return "a wrapped script that touches CLAUDECODE can hide that a session runs it, which the prod db gate reads. Leave it set.";
+      }
+    }
+  }
+  return undefined;
+}
+
 const USE_DEV_PR = "Write the body with /dev-pr into a file, then pass it with --body-file <path>.";
 
 /** gh pr create always carries a body file that passes check-pr-body; gh pr edit does when it sets the body. */
@@ -140,6 +253,13 @@ function bashDenial(
 ): string | undefined {
   const bare = stripProse(cmd);
   const commands = simpleCommands(bare);
+
+  // 3b. Prod db targets stay the owner's, however the terminal is faked or the words are quoted.
+  const plain = unquoteWords(cmd);
+  const plainBare = stripProse(plain);
+  const prodDb =
+    prodDbDenial(cmd, bare, commands) ?? prodDbDenial(plain, plainBare, simpleCommands(plainBare));
+  if (prodDb) return prodDb;
 
   for (const words of commands) {
     const [prog = "", ...args] = words;

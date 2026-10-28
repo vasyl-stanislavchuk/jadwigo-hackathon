@@ -89,9 +89,11 @@ SUPABASE_LINK = case "$(ENV)" in dev|prod) ;; *) echo "$@: ENV=dev or ENV=prod";
 	test -n "$$SUPABASE_DB_PASSWORD" || { echo "$@: set SUPABASE_DB_PASSWORD_$(ENV_UPPER) (jadwigo-$(ENV)'s postgres password) in $(SUPABASE_SECRETS), or add the keychain item supabase-db-password-$(ENV)"; exit 1; }; \
 	export SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD; \
 	supabase link --project-ref $(SUPABASE_REF) >/dev/null || exit 1
-# Agents never touch prod (dl-e8ov.2.34). ENV=prod runs only at a terminal (stdin a tty, which no
-# agent's shell is, whatever it sets or clears) and only once a person types prod at the prompt,
-# before anything links. CONFIRM never answers for prod, typed on the command line or exported.
+# Agents never touch prod (dl-e8ov.2.34). ENV=prod runs only at a terminal (stdin a tty) and only
+# once someone types prod at the prompt, before anything links. CONFIRM never answers for prod,
+# typed on the command line or exported. This gate stops a plain agent shell, not a determined one:
+# a pty wrapper (script, expect, python's pty) gives it a terminal and can type prod. In Claude Code
+# .claude/hooks/guard.ts denies that, and clearing CLAUDECODE (dl-5ssh.45); a Codex shell has no guard.
 PROD_GATE = if [ "$(ENV)" = prod ]; then \
 	  if [ -n "$$CLAUDECODE" ] || [ ! -t 0 ]; then echo "$@ ENV=prod: run it from your own terminal, where it asks you to type prod"; exit 1; fi; \
 	  printf '%s on jadwigo-prod? Type prod to go on: ' "$@"; read answer; \

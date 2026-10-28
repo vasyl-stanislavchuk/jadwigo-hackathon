@@ -147,6 +147,19 @@ describe("the prod db targets", { timeout: 60_000 }, () => {
     });
   }
 
+  it("db-role ENV=prod: a pty that types prod passes this gate, so the guard is what stops a session", () => {
+    // The Makefile cannot tell a person's terminal from a pty a session made, which is what
+    // atTerminal does here. In Claude Code, .claude/hooks/guard.ts denies this command and any
+    // clearing of CLAUDECODE before it runs (dl-5ssh.45, its DENY cases in guard.test.ts). A Codex
+    // shell has no guard, so this gate is all it meets. Stubs only: nothing reaches Supabase.
+    const s = stage();
+    const { status, output } = atTerminal(s, "db-role", "prod");
+    expect(output).toContain("Type prod");
+    expect(output).not.toContain("run it from your own terminal");
+    expect(calls(s)).toContain(`supabase link --project-ref ${PROD_REF}`);
+    expect(status, output).toBe(0);
+  });
+
   it("db-seed ENV=prod: once prod is typed, the seed sees no SUPABASE_* or JADWIGO_API_* variable", () => {
     const s = stage();
     const { status, output } = atTerminal(s, "db-seed", "prod");
