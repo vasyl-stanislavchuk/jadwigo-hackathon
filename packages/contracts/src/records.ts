@@ -9,14 +9,18 @@ import {
   QuestionType,
 } from "./families/index.ts";
 import {
+  AccountId,
   AssignmentId,
   AttemptId,
   EventId,
+  GoalId,
   LearnerId,
   LessonId,
   LessonQuestionId,
   LessonVersionId,
+  MemberId,
   PodId,
+  Uuid,
 } from "./ids.ts";
 
 /**
@@ -88,6 +92,45 @@ export const Learner = z.object({
   created_at: At,
 });
 export type Learner = z.infer<typeof Learner>;
+
+// People (decision 2026-10-27-the-v0-people-records-are-pod-and-learner-account-and-member-com).
+// The tables come with dl-e8ov.2.37's migration, which also lists these in RECORDS.
+
+/**
+ * Someone who signs in. `sub` is the Supabase Auth user, the token's `sub` claim; `pod_id` is the
+ * pod the first sign-in made. No email and no name: the token carries them.
+ */
+export const Account = z.object({
+  id: AccountId,
+  pod_id: PodId,
+  sub: Uuid,
+  created_at: At,
+});
+export type Account = z.infer<typeof Account>;
+
+/** What an account is in a pod: the parent of its learners, or a learner who signs in as `self`. */
+export const MemberRole = z.enum(["parent", "self"]);
+export type MemberRole = z.infer<typeof MemberRole>;
+
+/** One account in one pod. Which learners it covers waits on the owner (dl-e8ov.2.28). */
+export const Member = z.object({
+  id: MemberId,
+  pod_id: PodId,
+  account_id: AccountId,
+  role: MemberRole,
+  created_at: At,
+});
+export type Member = z.infer<typeof Member>;
+
+/** A goal stub: a name for one learner. Skills and stages attach later. */
+export const Goal = z.object({
+  id: GoalId,
+  pod_id: PodId,
+  learner_id: LearnerId,
+  name: z.string().min(1),
+  created_at: At,
+});
+export type Goal = z.infer<typeof Goal>;
 
 export const LessonKind = z.enum(["practice", "review", "check", "diagnostic"]);
 export const LessonStatus = z.enum(["draft", "published", "archived"]);

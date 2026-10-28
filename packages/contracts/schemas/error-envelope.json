@@ -10,7 +10,11 @@
           "enum": [
             "BadRequest",
             "ServerFieldSupplied",
+            "NotSignedIn",
             "NotFound",
+            "AccountMissing",
+            "AttemptClaimed",
+            "AttemptPreview",
             "AssignmentClosed",
             "AttemptFinished",
             "AttemptPaused",

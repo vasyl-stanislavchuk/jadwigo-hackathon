@@ -7,15 +7,28 @@ import {
   PartMark,
   QuestionType,
 } from "./families/index.ts";
-import { AssignmentId, EventId, LearnerId, LessonId, LessonQuestionId } from "./ids.ts";
 import {
+  AccountId,
+  AssignmentId,
+  AttemptId,
+  EventId,
+  LearnerId,
+  LessonId,
+  LessonQuestionId,
+} from "./ids.ts";
+import {
+  Account,
   Added,
   type Assignment,
   Attempt,
-  type AttemptResult,
+  AttemptResult,
   Ended,
+  Goal,
   Language,
+  Learner,
+  Member,
   Placed,
+  Pod,
   SkipReason,
 } from "./records.ts";
 
@@ -258,6 +271,96 @@ export const AttemptResults = z.object({
 });
 export type AttemptResults = z.infer<typeof AttemptResults>;
 
+// Parent login (wave 3 of dl-e8ov.2, docs/research/parent-login.md). Every route below needs a
+// token (`auth: "token"` in ROUTES); the pod is the caller's, found from the account's member row.
+
+/** A goal as the adult names it when adding a child: a name, nothing more yet. */
+export const GoalStub = z.strictObject({
+  name: z.string().trim().min(1).max(120),
+});
+export type GoalStub = z.infer<typeof GoalStub>;
+
+/**
+ * `POST /api/v1/learners`: add a child to the caller's pod. The server makes the `handle`, unique
+ * in the pod, from the first name.
+ */
+export const LearnerCreate = z.strictObject({
+  first_name: z.string().trim().min(1).max(60),
+  age_group: z.string().trim().min(1).max(30).nullable().optional(),
+  goals: z.array(GoalStub).max(5).optional(),
+});
+export type LearnerCreate = z.infer<typeof LearnerCreate>;
+
+/** A learner with its goals, as the parent's screens show it. */
+export const LearnerSnapshot = z.object({
+  learner: Learner,
+  /** Oldest first. */
+  goals: z.array(Goal),
+});
+export type LearnerSnapshot = z.infer<typeof LearnerSnapshot>;
+
+/**
+ * `GET /api/v1/me`, and the reply to `POST /api/v1/accounts`. Before the first sign-in has made an
+ * account, `account`, `member` and `pod` are null and `learners` is empty.
+ */
+export const Me = z.object({
+  account: Account.nullable(),
+  member: Member.nullable(),
+  pod: Pod.nullable(),
+  /** Oldest first. */
+  learners: z.array(LearnerSnapshot),
+});
+export type Me = z.infer<typeof Me>;
+
+/**
+ * `POST /api/v1/accounts`: the first sign-in makes the pod, the account (keyed by the token's
+ * `sub`) and a `parent` member row in one transaction. Idempotent per signed-in user: a 2nd call
+ * makes nothing and returns the same `Me`.
+ */
+export const AccountCreate = z.strictObject({
+  /** The pod's language: the page's. */
+  language: Language,
+});
+export type AccountCreate = z.infer<typeof AccountCreate>;
+
+/**
+ * `POST /api/v1/attempts/{id}/claims`: attach the tab's anonymous attempt to a learner in the
+ * caller's pod. The attempt id is the path's, the account is the token's.
+ */
+export const AttemptClaim = z.strictObject({
+  learner_id: LearnerId,
+});
+export type AttemptClaim = z.infer<typeof AttemptClaim>;
+
+/**
+ * The reply to a claim. A replay by the same account for the same learner returns the stored
+ * claim; any other claim of a claimed attempt is 409 `AttemptClaimed`. Answers never change.
+ */
+export const Claim = z.object({
+  attempt_id: AttemptId,
+  learner_id: LearnerId,
+  claimed_by: AccountId,
+  claimed_at: At,
+});
+export type Claim = z.infer<typeof Claim>;
+
+/** One attempt on the parent home: what was played, and the full `attempt_result` rows. */
+export const LearnerAttempt = z.object({
+  attempt: Attempt,
+  title: z.string().min(1),
+  language: Language,
+  /** In `seq` order: the parent's full row, tries, time and mistake classes included. */
+  results: z.array(AttemptResult),
+});
+export type LearnerAttempt = z.infer<typeof LearnerAttempt>;
+
+/** `GET /api/v1/learners/{id}/attempts`: the learner's attempts, newest first. */
+export const LearnerAttempts = z.object({
+  learner: Learner,
+  attempts: z.array(LearnerAttempt),
+});
+export type LearnerAttempts = z.infer<typeof LearnerAttempts>;
+
 /**
  * The login-free tier's invisible limits (decision
  * `2026-10-26-the-login-free-lesson-is-protected-by-invisible-limits-only-per`): nothing is shown
@@ -291,7 +394,15 @@ export type Featured = z.infer<typeof Featured>;
 export const ERROR_STATUS = {
   BadRequest: 400,
   ServerFieldSupplied: 400,
+  /** A token route called with no token, or one that fails verification. */
+  NotSignedIn: 401,
   NotFound: 404,
+  /** A signed-in caller with no account yet: `POST /api/v1/accounts` comes first. */
+  AccountMissing: 409,
+  /** The attempt already has a learner: named, or claimed by another call. */
+  AttemptClaimed: 409,
+  /** A preview attempt counts toward no learner and is never claimed. */
+  AttemptPreview: 409,
   AssignmentClosed: 409,
   AttemptFinished: 409,
   AttemptPaused: 409,
