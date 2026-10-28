@@ -26,21 +26,37 @@ function good() {
   link(root, ".agents/skills/jadwigo-lesson-compose", "../../workflows/jadwigo-lesson-compose");
   skill(root, ".agents/skills", "dev-pr");
   link(root, ".claude/skills/dev-pr", "../../.agents/skills/dev-pr");
+  skill(root, ".agents/skills", "mk-brief");
+  link(root, ".claude/skills/mk-brief", "../../.agents/skills/mk-brief");
+  mkdirSync(join(root, ".agents/skills/_shared"));
+  writeFileSync(join(root, ".agents/skills/_shared/jadwigo-rules.md"), "# rules\n");
   return root;
 }
 
 describe("checkWorkflows", () => {
-  it("passes a product workflow and a dev command, each in its home with its links", () => {
+  it("passes a product workflow, a dev command and a marketing command, each in its home with its links, and a _shared folder", () => {
     expect(checkWorkflows(good())).toEqual([]);
   });
 
-  it("fails a dev command among the product workflows, and a product one in .agents", () => {
+  it("fails a dev or marketing command among the product workflows, and a product one or a bare name in .agents", () => {
     const root = good();
     skill(root, "workflows", "dev-drop");
+    skill(root, "workflows", "mk-listen");
     skill(root, ".agents/skills", "jadwigo-drop-publish");
+    skill(root, ".agents/skills", "marketing-brief");
     expect(checkWorkflows(root)).toEqual([
-      "workflows/dev-drop: dev commands live in .agents/skills/, not with the product workflows",
+      "workflows/dev-drop: dev and marketing commands live in .agents/skills/, not with the product workflows",
+      "workflows/mk-listen: dev and marketing commands live in .agents/skills/, not with the product workflows",
       ".agents/skills/jadwigo-drop-publish: product workflows live in workflows/, linked here",
+      ".agents/skills/marketing-brief: dev commands are dev-<verb>, marketing commands mk-<noun>",
+    ]);
+  });
+
+  it("fails a SKILL.md in a _ folder under .agents/skills, which agents would still find as a command", () => {
+    const root = good();
+    skill(root, ".agents/skills", "_draft", "name: anything\ndescription: x");
+    expect(checkWorkflows(root)).toEqual([
+      ".agents/skills/_draft: a _ folder holds shared parts, not a command; move its SKILL.md",
     ]);
   });
 
