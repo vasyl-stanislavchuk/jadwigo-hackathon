@@ -27,7 +27,7 @@ import { isNum } from "../rules.ts";
 type ClockKey = Extract<PlaceKey, { surface: "clock" }>;
 type ClockData = Extract<PlaceData, { surface: "clock" }>;
 
-// The clock's geometry, from components/parts/clock.ts. Both hands are measured in minute marks
+// The clock's geometry, the part the judge needs. Both hands are measured in minute marks
 // round the face, 0 at the top and 60 marks a full turn: the minute hand sits on mark `minute`, the
 // hour hand on mark `hourAt`, which may fall between marks (at 7:30 a real hour hand is half way
 // from 7 to 8, mark 37.5).
