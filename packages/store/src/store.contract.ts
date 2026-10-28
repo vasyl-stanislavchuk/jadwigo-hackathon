@@ -663,12 +663,23 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         const stale = await store.releaseHelp(a.pod, attempt, 1, 0);
         expect(stale).toEqual({ question: first.question, released: false });
 
-        for (const seen of [1, 2, 3]) {
+        for (const seen of [1, 2]) {
           expect((await store.releaseHelp(a.pod, attempt, 1, seen)).released).toBe(true);
         }
-        const top = await store.releaseHelp(a.pod, attempt, 1, 4);
-        expect(top.released).toBe(false);
+        const top = await store.releaseHelp(a.pod, attempt, 1, 3, { twin: twin() });
+        expect(top.released).toBe(true);
         expect(top.question.help_released).toBe(4);
+      });
+
+      it("refuses the 4th release without twin with BadRequest, writing nothing", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        for (const seen of [0, 1, 2]) await store.releaseHelp(a.pod, attempt, 1, seen);
+
+        await expect(store.releaseHelp(a.pod, attempt, 1, 3)).rejects.toMatchObject(BAD_REQUEST);
+        const { questions, answers } = await store.getAttempt(a.pod, attempt);
+        expect(questions[0]).toMatchObject({ help_released: 3, ended: null });
+        expect(answers).toHaveLength(0);
       });
 
       it("is refused with QuestionNotOpen once the question ended", async () => {

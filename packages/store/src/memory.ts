@@ -57,6 +57,14 @@ function parse<T>(schema: Schema<T>, value: unknown, what: string): T {
   return result.data;
 }
 
+/** The 4th release can only be the last rung, whose worked answer must end the question with it. */
+function lastRungNeedsTwin(): StoreError {
+  return new StoreError(
+    ErrorType.enum.BadRequest,
+    "the last rung is released with its help twin skip",
+  );
+}
+
 /**
  * A sent time as the store keeps it: in UTC, to the millisecond. Only a time `SentAt` takes is
  * converted, so a time with no zone is never read in the host's zone, and a finer one is never
@@ -596,6 +604,7 @@ export class InMemoryStore implements Store {
       throw new StoreError(ErrorType.enum.QuestionNotOpen, "this question has ended");
     if (question.help_released >= 4) return { question, released: false };
     const help_released = question.help_released + 1;
+    if (help_released === 4 && !options.twin) throw lastRungNeedsTwin();
     if (!options.twin) {
       return { question: this.#replace({ ...question, help_released }), released: true };
     }
