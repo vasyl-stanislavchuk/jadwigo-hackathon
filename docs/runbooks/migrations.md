@@ -66,6 +66,8 @@ What each one is:
 5. **Seed dev's featured lessons:** `make db-seed ENV=dev` imports the lesson files in
    `packages/testing/src/lessons/` through the session pooler. It prints one line per lesson,
    `version 1 published` the first time and `unchanged` after that, so rerun it after any push.
+   To play against dev, `make api-dev ENV=dev` serves the local `apps/api` on jadwigo-dev as
+   `jadwigo_api` through the transaction pooler (port 6543), on `PORT` (8787 by default).
 6. **Prod**, once dev has run the same migrations and its checks pass: from your own terminal, not
    an agent's (the targets refuse prod there), `make db-push ENV=prod DRY_RUN=1`, then
    `make db-push ENV=prod`, then `make db-role ENV=prod` the first time.
