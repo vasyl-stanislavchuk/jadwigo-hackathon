@@ -375,4 +375,8 @@ export const en: CopyTable = {
   parent_no_attempts: { text: "No lessons here yet.", reviewed: false },
   parent_sign_out: { text: "Sign out", reviewed: false },
   // end parent login
+  // the home page's featured lessons (dl-5ssh.3.6)
+  home_title: { text: "Pick a lesson", reviewed: false },
+  home_empty: { text: "There are no lessons here yet.", reviewed: false },
+  // end the home page
 };

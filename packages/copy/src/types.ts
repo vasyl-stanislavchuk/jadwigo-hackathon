@@ -345,6 +345,10 @@ export const COPY_KEYS = [
   "parent_no_attempts",
   "parent_sign_out",
   // end parent login
+  // the home page's featured lessons (dl-5ssh.3.6)
+  "home_title",
+  "home_empty",
+  // end the home page
 ] as const;
 
 export type CopyKey = (typeof COPY_KEYS)[number];

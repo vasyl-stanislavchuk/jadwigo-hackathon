@@ -16,6 +16,7 @@ import { FractionBoxes } from "../../parts/FractionBoxes.tsx";
 import type { FractionBox } from "../../parts/fractionEntry.ts";
 import { LetterMarks } from "../../parts/LetterMarks.tsx";
 import {
+  EMPTY_FIELD,
   FOCUS_CLASS,
   GIVEN_CLASS,
   MARK_FADE,
@@ -224,7 +225,7 @@ function NumberGap({ gap, label, play }: PartProps & { gap: TypedGap }): JSX.Ele
       onClick={h.onClick}
       onFocus={() => play.setActive(gap.id)}
     >
-      {selected && value ? <span {...SELECTION}>{value}</span> : value || " "}
+      {selected && value ? <span {...SELECTION}>{value}</span> : value || EMPTY_FIELD}
     </button>
   );
 }

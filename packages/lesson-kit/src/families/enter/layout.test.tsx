@@ -8,6 +8,7 @@ import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { inlineLine } from "../../parts/InlineField.tsx";
 import { must } from "../../parts/must.ts";
+import { EMPTY_FIELD } from "../../parts/tone.ts";
 import type { Clock, Instant } from "../../stage/clock.ts";
 import { StepFrame } from "../../stage/StepFrame.tsx";
 import type { Feedback, PageSolutionLine } from "../../stage/types.ts";
@@ -91,6 +92,16 @@ describe("the field in the maths line (addendum 2.4, 3.1)", () => {
     // No "?" is drawn, and the instruction is not repeated in the card.
     expect(card.textContent).not.toContain("?");
     expect(card.textContent).not.toContain("siedem");
+  });
+
+  it("keeps the line on one baseline through the first digit: the empty field holds a no-break space", () => {
+    // A flex box drops a plain space, so an empty field had no baseline and the line's text sat
+    // lower until the first digit (dl-e8ov.2.32.45). happy-dom draws no layout; the text pins it.
+    render(step(SEVEN));
+    expect(field().textContent).toBe(EMPTY_FIELD);
+    field().focus();
+    key("5");
+    expect(field().textContent).toBe("5");
   });
 
   it('a decimal, a text answer or a line with no "=" keeps the field under the card', () => {

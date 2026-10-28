@@ -1,7 +1,8 @@
 /**
- * The `/api/v1` calls, typed from the contracts: the lesson player's attempt calls (dl-5ssh.3.1) and
- * the signed-in parent's (dl-e8ov.2.38), which carry the Supabase Auth token on the routes whose
- * `auth` is `token`. Every path comes from
+ * The `/api/v1` calls, typed from the contracts: the featured lessons the home page lists
+ * (dl-5ssh.3.6), the lesson player's attempt calls (dl-5ssh.3.1) and the signed-in parent's
+ * (dl-e8ov.2.38), which carry the Supabase Auth token on the routes whose `auth` is `token`. Every
+ * path comes from
  * `ROUTES` and every reply is parsed with the route's own response schema, so a reply the page
  * cannot trust is an error here, never a shape a view has to guess at (RULES.md rule 18).
  *
@@ -26,6 +27,7 @@ import {
   type Claim,
   ErrorEnvelope,
   type ErrorType,
+  type Featured,
   type HelpRequest,
   type HelpResult,
   type LearnerAttempts,
@@ -75,6 +77,11 @@ export interface AttemptClient {
   getResults(attemptId: AttemptId): Promise<AttemptResults>;
 }
 
+/** The home page's call: the lessons anyone may play now, oldest first. */
+export interface FeaturedClient {
+  featuredLessons(): Promise<Featured>;
+}
+
 /** The signed-in parent's calls (dl-e8ov.2.38). Each needs a token. */
 export interface ParentClient {
   getMe(): Promise<Me>;
@@ -85,7 +92,7 @@ export interface ParentClient {
 }
 
 /** Every `/api/v1` call this client makes. */
-export type Client = AttemptClient & ParentClient;
+export type Client = AttemptClient & FeaturedClient & ParentClient;
 
 /** A route's path with its `{name}` params filled in. */
 export function pathOf(route: Route, params: Record<string, string | number>): string {
@@ -149,6 +156,7 @@ export function createClient({
   }
 
   return {
+    featuredLessons: () => call(ROUTES.featuredLessons, {}, undefined),
     startAttempt: (assignmentId, body = {}) =>
       call(ROUTES.startAttempt, { id: assignmentId }, body),
     getAttempt: (attemptId) => call(ROUTES.getAttempt, { id: attemptId }, undefined),

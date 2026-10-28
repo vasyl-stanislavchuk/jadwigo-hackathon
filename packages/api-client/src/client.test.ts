@@ -81,6 +81,24 @@ describe("createClient", () => {
     expect(reply.questions[0]?.seq).toBe(1);
   });
 
+  it("reads the featured lessons from the route's path and parses the list", async () => {
+    const lesson = {
+      assignment_id: ASSIGNMENT,
+      lesson_id: "les_2h4m8gyw0fb1cvz2nkqw0px8fq",
+      title: "Równe grupy",
+      language: "pl",
+    };
+    const { fetch, sent } = stub(200, { lessons: [lesson] });
+    const reply = await createClient({ base: "", fetch }).featuredLessons();
+    expect(sent).toEqual([{ url: ROUTES.featuredLessons.path, method: "GET", body: undefined }]);
+    expect(reply.lessons).toEqual([lesson]);
+  });
+
+  it("refuses a featured list it cannot trust", async () => {
+    const { fetch } = stub(200, { lessons: [{ title: "" }] });
+    await expect(createClient({ base: "", fetch }).featuredLessons()).rejects.toThrow();
+  });
+
   it("joins a base URL in front of the path", async () => {
     const { fetch, sent } = stub(200, snapshot);
     await createClient({ base: "http://127.0.0.1:8787/", fetch }).getAttempt(ATTEMPT);
