@@ -367,7 +367,11 @@ export class InMemoryStore implements Store {
       )
       .map((assignment) => ({ assignment, lesson: this.#lessons.get(assignment.lesson_id) }))
       .filter((o): o is OpenAssignment => o.lesson?.status === "published")
-      .sort((a, b) => a.assignment.created_at.localeCompare(b.assignment.created_at));
+      .sort(
+        (a, b) =>
+          a.assignment.created_at.localeCompare(b.assignment.created_at) ||
+          (a.assignment.id < b.assignment.id ? -1 : a.assignment.id > b.assignment.id ? 1 : 0),
+      );
   }
 
   async startAttempt(pod: PodId, attempt: NewAttempt): Promise<AttemptRecord> {
