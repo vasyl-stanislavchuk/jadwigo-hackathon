@@ -13,3 +13,8 @@ variable "site_domain" {
   description = "The apex the marketing site answers on (packages/config hosts.<env>.site)"
   type        = string
 }
+
+variable "app_domain" {
+  description = "The host the service answers on (packages/config hosts.<env>.app)"
+  type        = string
+}

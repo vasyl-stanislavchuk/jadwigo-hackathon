@@ -13,3 +13,30 @@ module "site" {
   domain_name = var.site_domain
   bucket_name = "jadwigo-site-${var.environment}-843109108289"
 }
+
+# The service at app.<apex>: apps/web, and /api/* to the one Lambda (dl-5ssh.3.3).
+module "app" {
+  source = "./modules/app"
+
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
+
+  domain_name = var.app_domain
+  zone_name   = var.site_domain
+  environment = var.environment
+  bucket_name = "jadwigo-app-${var.environment}-843109108289"
+
+  # ROUTES in packages/contracts/src/routes.ts, as "<METHOD> <path>".
+  routes = [
+    "GET /api/health",
+    "GET /api/v1/featured-lessons",
+    "POST /api/v1/assignments/{id}/attempts",
+    "GET /api/v1/attempts/{id}",
+    "PATCH /api/v1/attempts/{id}",
+    "POST /api/v1/attempts/{id}/answers",
+    "POST /api/v1/attempts/{id}/questions/{seq}/help",
+    "GET /api/v1/attempts/{id}/results",
+  ]
+}
