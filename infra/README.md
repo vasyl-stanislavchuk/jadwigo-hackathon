@@ -24,6 +24,19 @@ A merge deploys nothing. The owner deploys by hand
 | `make -C infra plan` | init against the state bucket, then plan prod | the owner |
 | `make -C infra apply` | init, then apply prod | the owner |
 | `make -C infra site-deploy` | build `apps/site`, check `dist/`, sync it to the bucket, invalidate | the owner |
+| `make -C infra deploy` | `api-deploy` (`make api-bundle`, zip, `update-function-code`, wait), then `web-deploy` (build `apps/web`, sync to the app bucket, invalidate) | the owner |
+| `make -n -C infra deploy` | print both halves, running nothing | anyone |
+
+**The database URL never passes through Terraform.** The module creates the parameter with a write-only
+placeholder, so neither a tfvars file nor the state holds the value. The owner sets it after the first
+`apply`, and again after a password rotation, with jadwigo_api's transaction pooler URL (port 6543):
+
+```sh
+aws --profile sergii ssm put-parameter --region eu-central-1 --name /jadwigo/prod/database-url \
+  --type SecureString --overwrite --value "postgresql://jadwigo_api.<ref>:<password>@<pooler-host>:6543/postgres"
+```
+
+The Lambda reads it once per cold start. Until the first deploy, its placeholder code answers 503.
 
 **The database URL never passes through Terraform.** The module creates the parameter with a write-only
 placeholder, so neither a tfvars file nor the state holds the value. The owner sets it after the first
@@ -46,4 +59,5 @@ aws --profile sergii s3api put-public-access-block --bucket jadwigo-terraform-st
 ```
 
 The first time, in order: the state bucket above, `plan`, `apply` (the certificate and the distribution take
-10 to 15 minutes), then `site-deploy`. Until `site-deploy` runs, the site answers 404.
+10 to 15 minutes), then `site-deploy`. Until `site-deploy` runs, the site answers 404. For app.jadwigo.pl:
+`apply`, the `put-parameter` above, then `deploy`, then `curl https://app.jadwigo.pl/api/health`.
