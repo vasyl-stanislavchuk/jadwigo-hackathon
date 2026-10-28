@@ -339,4 +339,40 @@ export const en: CopyTable = {
   play_paused_back: { text: "Back to the lesson", reviewed: false },
   play_not_found: { text: "This lesson is not here.", reviewed: false },
   // end the lesson player
+  // parent login: the save prompt, the email code, a child, the parent home (dl-e8ov.2.38). Drafts:
+  // the promise and consent wait on dl-e8ov.2.14 and dl-e8ov.2.9.
+  play_save: { text: "Save the progress", reviewed: false },
+  play_save_note: {
+    text: "For a grown-up: sign in, and this lesson stays on the child's account.",
+    reviewed: false,
+  },
+  parent_title: { text: "Parent account", reviewed: false },
+  parent_off: { text: "Signing in is not switched on yet.", reviewed: false },
+  parent_promise: {
+    text: "We keep your child's lessons on your account, so the next ones fit them.",
+    reviewed: false,
+  },
+  parent_guardian: { text: "I am this child's parent or guardian.", reviewed: false },
+  parent_email: { text: "Your email", reviewed: false },
+  parent_send_code: { text: "Send the code", reviewed: false },
+  parent_send_failed: { text: "The code did not go out. Try again in a moment.", reviewed: false },
+  parent_code: { text: "The code from the email, 6 digits", reviewed: false },
+  parent_code_sent: { text: "We sent a code to {email}.", reviewed: false },
+  parent_sign_in: { text: "Sign in", reviewed: false },
+  parent_code_mismatch: {
+    text: "That code does not match. Check the email and type it again.",
+    reviewed: false,
+  },
+  parent_add_child: { text: "Add a child", reviewed: false },
+  parent_first_name: { text: "The child's first name", reviewed: false },
+  parent_add: { text: "Add", reviewed: false },
+  parent_whose: { text: "Whose lesson was it?", reviewed: false },
+  parent_claimed_elsewhere: {
+    text: "This lesson is already saved on another account.",
+    reviewed: false,
+  },
+  parent_claim_preview: { text: "This lesson was a try-out, so it is not saved.", reviewed: false },
+  parent_no_attempts: { text: "No lessons here yet.", reviewed: false },
+  parent_sign_out: { text: "Sign out", reviewed: false },
+  // end parent login
 };

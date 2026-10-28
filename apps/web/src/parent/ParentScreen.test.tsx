@@ -1,0 +1,251 @@
+/**
+ * The parent's screens against doubles of the sign-in and the API (no network): the email code
+ * signs in, the first sign-in makes the account, a child is added, the tab's attempt is claimed
+ * for them and forgotten, and the parent home lists it.
+ */
+
+import { ApiError, type ParentClient } from "@jadwigo/api-client";
+import {
+  AccountId,
+  AssignmentId,
+  AttemptId,
+  type Claim,
+  LearnerId,
+  type LearnerSnapshot,
+  type Me,
+} from "@jadwigo/contracts";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { storedAttempt } from "../play/storedAttempt.ts";
+import type { Auth } from "./auth.ts";
+import { ParentScreen } from "./ParentScreen.tsx";
+
+const AT = "2026-10-28T14:02:06.274Z";
+const POD = "pod_6et2fhbnwvb45aw9atcfzs33za";
+const ASSIGNMENT = AssignmentId.parse("asg_0ectzj2evqb95a3v1v6wewjzy3");
+const ATTEMPT = AttemptId.parse("att_43007b83dp9w2tnfjxhha74cyq");
+const LEARNER = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
+const ACCOUNT = AccountId.parse("acc_7qre3atahx8cpak6xbjtz73var");
+
+const NOBODY: Me = { account: null, member: null, pod: null, learners: [] };
+const pod = { id: POD, name: "Dom", language: "pl", created_at: AT };
+const account = {
+  id: ACCOUNT,
+  pod_id: POD,
+  sub: "6f1c2a3e-1b2c-4d5e-8f90-123456789abc",
+  created_at: AT,
+};
+const member = {
+  id: "mem_2h4m8gyw0fb1cvz2nkqw0px8fq",
+  pod_id: POD,
+  account_id: ACCOUNT,
+  role: "parent",
+  created_at: AT,
+};
+const snapshot = {
+  learner: {
+    id: LEARNER,
+    pod_id: POD,
+    handle: "ola",
+    first_name: "Ola",
+    age_group: null,
+    created_at: AT,
+  },
+  goals: [],
+} as unknown as LearnerSnapshot;
+const me = (learners: LearnerSnapshot[]): Me =>
+  ({ account, member, pod, learners }) as unknown as Me;
+
+function signedOutAuth(): Auth & { signedIn: boolean } {
+  const auth = {
+    signedIn: false,
+    token: async () => (auth.signedIn ? "header.payload.signature" : null),
+    sendCode: vi.fn(async () => {}),
+    verifyCode: vi.fn(async (_email: string, code: string) => {
+      auth.signedIn = code === "123456";
+      return auth.signedIn;
+    }),
+    signOut: async () => {
+      auth.signedIn = false;
+    },
+  };
+  return auth;
+}
+
+const refused = (): never => {
+  throw new Error("not called in this test");
+};
+
+function client(changes: Partial<ParentClient>): ParentClient {
+  return {
+    getMe: refused,
+    createAccount: refused,
+    createLearner: refused,
+    claimAttempt: refused,
+    getLearnerAttempts: async () => ({ learner: snapshot.learner, attempts: [] }),
+    ...changes,
+  };
+}
+
+const type = (selector: string, value: string): void => {
+  const field = document.querySelector(selector);
+  if (field === null) throw new Error(`no ${selector}`);
+  fireEvent.change(field, { target: { value } });
+};
+const press = async (selector: string): Promise<void> => {
+  const target = document.querySelector(selector);
+  if (target === null) throw new Error(`no ${selector}`);
+  await act(async () => fireEvent.click(target));
+};
+
+beforeEach(() => {
+  window.sessionStorage.clear();
+  window.history.replaceState(null, "", "/parent");
+});
+afterEach(cleanup);
+
+describe("ParentScreen", () => {
+  it("says sign-in is off when the build has no Supabase project", () => {
+    render(<ParentScreen language="pl" query={new URLSearchParams()} auth={null} />);
+    expect(screen.getByText("Logowanie jest jeszcze wyłączone.")).toBeTruthy();
+  });
+
+  it("signs in with the email code, makes the account, adds a child and keeps the tab's attempt", async () => {
+    storedAttempt.set(ASSIGNMENT, ATTEMPT);
+    const auth = signedOutAuth();
+    let learners: LearnerSnapshot[] = [];
+    const claim: Claim = {
+      attempt_id: ATTEMPT,
+      learner_id: LEARNER,
+      claimed_by: ACCOUNT,
+      claimed_at: AT,
+    } as Claim;
+    const api = client({
+      getMe: vi.fn(async () => (learners.length === 0 && auth.signedIn ? NOBODY : me(learners))),
+      createAccount: vi.fn(async () => me([])),
+      createLearner: vi.fn(async () => {
+        learners = [snapshot];
+        return snapshot;
+      }),
+      claimAttempt: vi.fn(async () => claim),
+    });
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams(`claim=${ASSIGNMENT}`)}
+        auth={auth}
+        client={api}
+      />,
+    );
+
+    await screen.findByText("Wyślij kod");
+    type("[data-email]", "rodzic@example.com");
+    await press("[data-send-code]");
+    expect(auth.sendCode).toHaveBeenCalledWith("rodzic@example.com");
+
+    type("[data-code]", "111111");
+    await press("[data-sign-in]");
+    expect(await screen.findByRole("alert")).toBeTruthy();
+
+    type("[data-code]", "123456");
+    await press("[data-sign-in]");
+    await screen.findByText("Imię dziecka");
+    expect(api.createAccount).toHaveBeenCalledWith({ language: "pl" });
+
+    type("[data-first-name]", " Ola ");
+    await press("[data-add]");
+    await screen.findByText("Ola");
+    expect(api.createLearner).toHaveBeenCalledWith({ first_name: "Ola" });
+    expect(api.claimAttempt).toHaveBeenCalledWith(ATTEMPT, { learner_id: LEARNER });
+    expect(storedAttempt.get(ASSIGNMENT)).toBeNull();
+    expect(window.location.search).not.toContain("claim");
+  });
+
+  it("asks whose lesson it was when the pod has a child, and says so when the attempt is already kept", async () => {
+    storedAttempt.set(ASSIGNMENT, ATTEMPT);
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const api = client({
+      getMe: async () => me([snapshot]),
+      claimAttempt: vi.fn(async () => {
+        throw new ApiError("claimed", 409, "AttemptClaimed");
+      }),
+    });
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams(`claim=${ASSIGNMENT}`)}
+        auth={auth}
+        client={api}
+      />,
+    );
+    await screen.findByText("Czyja to była lekcja?");
+    await press(`[data-learner="${LEARNER}"]`);
+    expect(await screen.findByText("Ta lekcja jest już zapisana na innym koncie.")).toBeTruthy();
+    expect(storedAttempt.get(ASSIGNMENT)).toBeNull();
+  });
+
+  it("says gently that a try-out lesson is not saved, and forgets it", async () => {
+    storedAttempt.set(ASSIGNMENT, ATTEMPT);
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const api = client({
+      getMe: async () => me([snapshot]),
+      claimAttempt: async () => {
+        throw new ApiError("preview", 409, "AttemptPreview");
+      },
+    });
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams(`claim=${ASSIGNMENT}`)}
+        auth={auth}
+        client={api}
+      />,
+    );
+    await screen.findByText("Czyja to była lekcja?");
+    await press(`[data-learner="${LEARNER}"]`);
+    expect(
+      await screen.findByText("Ta lekcja była na próbę, więc nie zapisujemy jej."),
+    ).toBeTruthy();
+    expect(storedAttempt.get(ASSIGNMENT)).toBeNull();
+  });
+
+  it("keeps the tab's attempt when the claim fails for another reason", async () => {
+    storedAttempt.set(ASSIGNMENT, ATTEMPT);
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const api = client({
+      getMe: async () => me([snapshot]),
+      claimAttempt: async () => {
+        throw new Error("offline");
+      },
+    });
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams(`claim=${ASSIGNMENT}`)}
+        auth={auth}
+        client={api}
+      />,
+    );
+    await screen.findByText("Czyja to była lekcja?");
+    await press(`[data-learner="${LEARNER}"]`);
+    expect(document.querySelector("[data-failed]")).not.toBeNull();
+    expect(storedAttempt.get(ASSIGNMENT)).toBe(ATTEMPT);
+  });
+
+  it("makes the account when GET /me answers AccountMissing", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const api = client({
+      getMe: async () => {
+        throw new ApiError("no account", 409, "AccountMissing");
+      },
+      createAccount: vi.fn(async () => me([snapshot])),
+    });
+    render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
+    await screen.findByText("Jeszcze nie ma tu lekcji.");
+    expect(api.createAccount).toHaveBeenCalledTimes(1);
+  });
+});

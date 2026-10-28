@@ -1,5 +1,7 @@
 /**
- * The `/api/v1` attempt calls, typed from the contracts (dl-5ssh.3.1). Every path comes from
+ * The `/api/v1` calls, typed from the contracts: the lesson player's attempt calls (dl-5ssh.3.1) and
+ * the signed-in parent's (dl-e8ov.2.38), which carry the Supabase Auth token on the routes whose
+ * `auth` is `token`. Every path comes from
  * `ROUTES` and every reply is parsed with the route's own response schema, so a reply the page
  * cannot trust is an error here, never a shape a view has to guess at (RULES.md rule 18).
  *
@@ -11,18 +13,26 @@
  */
 
 import {
+  type AccountCreate,
   type AssignmentId,
   type AttemptAnswerRequest,
   type AttemptAnswerResult,
+  type AttemptClaim,
   type AttemptId,
   type AttemptPatch,
   type AttemptResults,
   type AttemptSnapshot,
   type AttemptStart,
+  type Claim,
   ErrorEnvelope,
   type ErrorType,
   type HelpRequest,
   type HelpResult,
+  type LearnerAttempts,
+  type LearnerCreate,
+  type LearnerId,
+  type LearnerSnapshot,
+  type Me,
   ROUTES,
   type Route,
 } from "@jadwigo/contracts";
@@ -50,6 +60,10 @@ export interface ClientOptions {
   /** Where the API is: "" for the page's own origin, which is how app.jadwigo.pl reaches /api. */
   base: string;
   fetch?: typeof fetch;
+  /** The signed-in adult's access token, or null when nobody is signed in. Sent only on the
+   * routes whose `auth` is `token`; a token route with no token is refused here as `NotSignedIn`,
+   * before anything is sent. */
+  token?: () => Promise<string | null>;
 }
 
 export interface AttemptClient {
@@ -60,6 +74,18 @@ export interface AttemptClient {
   patchAttempt(attemptId: AttemptId, body: AttemptPatch): Promise<AttemptSnapshot>;
   getResults(attemptId: AttemptId): Promise<AttemptResults>;
 }
+
+/** The signed-in parent's calls (dl-e8ov.2.38). Each needs a token. */
+export interface ParentClient {
+  getMe(): Promise<Me>;
+  createAccount(body: AccountCreate): Promise<Me>;
+  createLearner(body: LearnerCreate): Promise<LearnerSnapshot>;
+  claimAttempt(attemptId: AttemptId, body: AttemptClaim): Promise<Claim>;
+  getLearnerAttempts(learnerId: LearnerId): Promise<LearnerAttempts>;
+}
+
+/** Every `/api/v1` call this client makes. */
+export type Client = AttemptClient & ParentClient;
 
 /** A route's path with its `{name}` params filled in. */
 export function pathOf(route: Route, params: Record<string, string | number>): string {
@@ -73,13 +99,26 @@ export function pathOf(route: Route, params: Record<string, string | number>): s
 export function createClient({
   base,
   fetch: send = globalThis.fetch,
-}: ClientOptions): AttemptClient {
+  token = async () => null,
+}: ClientOptions): Client {
   async function call<R extends Route>(
     route: R,
     params: Record<string, string | number>,
     body: unknown,
   ): Promise<ReturnType<R["response"]["parse"]>> {
-    const init: RequestInit = { method: route.method, headers: { accept: "application/json" } };
+    const headers: Record<string, string> = { accept: "application/json" };
+    if (route.auth === "token") {
+      const bearer = await token();
+      if (bearer === null) {
+        throw new ApiError(
+          `${route.method} ${route.path}: nobody is signed in`,
+          401,
+          "NotSignedIn",
+        );
+      }
+      headers["authorization"] = `Bearer ${bearer}`;
+    }
+    const init: RequestInit = { method: route.method, headers };
     if (body !== undefined) {
       init.body = JSON.stringify(body);
       init.headers = { ...init.headers, "content-type": "application/json" };
@@ -117,5 +156,11 @@ export function createClient({
     help: (attemptId, seq, body) => call(ROUTES.help, { id: attemptId, seq }, body),
     patchAttempt: (attemptId, body) => call(ROUTES.patchAttempt, { id: attemptId }, body),
     getResults: (attemptId) => call(ROUTES.getResults, { id: attemptId }, undefined),
+    getMe: () => call(ROUTES.getMe, {}, undefined),
+    createAccount: (body) => call(ROUTES.createAccount, {}, body),
+    createLearner: (body) => call(ROUTES.createLearner, {}, body),
+    claimAttempt: (attemptId, body) => call(ROUTES.claimAttempt, { id: attemptId }, body),
+    getLearnerAttempts: (learnerId) =>
+      call(ROUTES.getLearnerAttempts, { id: learnerId }, undefined),
   };
 }
