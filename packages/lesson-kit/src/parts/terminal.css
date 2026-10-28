@@ -1,0 +1,16 @@
+/* The terminal card's sideways scroll (dl-i952.19, prototype C): a soft shade at the edge that has
+ * more to show, so a long command never looks cut off. The covers scroll with the content (local)
+ * and hide each shade at its own end. Token colours only. */
+.kid-terminal-scroll {
+  --kid-terminal-shade: color-mix(in srgb, var(--code-surface) 55%, black);
+  background:
+    linear-gradient(to right, var(--code-surface) 30%, transparent) left center / 2.5rem 100%
+    no-repeat local,
+    linear-gradient(to left, var(--code-surface) 30%, transparent) right center / 2.5rem 100%
+    no-repeat local,
+    radial-gradient(farthest-side at 0 50%, var(--kid-terminal-shade), transparent) left center /
+    0.9rem 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, var(--kid-terminal-shade), transparent) right center
+    / 0.9rem 100% no-repeat scroll;
+  background-color: var(--code-surface);
+}

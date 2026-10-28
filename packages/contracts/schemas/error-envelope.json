@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "error": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "BadRequest",
+            "ServerFieldSupplied",
+            "NotFound",
+            "AssignmentClosed",
+            "AttemptFinished",
+            "AttemptPaused",
+            "QuestionNotOpen",
+            "TryOutOfOrder",
+            "AnswerConflict",
+            "EventIdMismatch",
+            "WriteOnce",
+            "AnswerLimit"
+          ]
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "message"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "error"
+  ],
+  "additionalProperties": false
+}

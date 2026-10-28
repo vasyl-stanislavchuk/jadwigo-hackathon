@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "lesson_version_id": {
+      "type": "string",
+      "pattern": "^lesv_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "position": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "pod_id": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "lesson_question_id": {
+      "type": "string",
+      "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "spare"
+      ]
+    }
+  },
+  "required": [
+    "lesson_version_id",
+    "position",
+    "pod_id",
+    "lesson_question_id",
+    "role"
+  ],
+  "additionalProperties": false
+}

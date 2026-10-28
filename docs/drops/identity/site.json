@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "title": "Jadwigo: mission, value and story",
+  "password": "auto",
+  "nav": [
+    {
+      "page": "index.html",
+      "label": "Overview"
+    },
+    {
+      "page": "promise.html",
+      "label": "Mission and value"
+    },
+    {
+      "page": "story.html",
+      "label": "Story"
+    },
+    {
+      "page": "compare.html",
+      "label": "How Jadwigo differs"
+    },
+    {
+      "page": "strategy.html",
+      "label": "Strategy"
+    },
+    {
+      "page": "voice.html",
+      "label": "Voice"
+    },
+    {
+      "page": "name.html",
+      "label": "Name story"
+    }
+  ],
+  "sequence": true,
+  "pages": {
+    "index.html": "index.md",
+    "promise.html": "promise.md",
+    "story.html": "story.md",
+    "compare.html": "compare.md",
+    "strategy.html": "strategy.md",
+    "voice.html": "voice.md",
+    "name.html": "name.md"
+  },
+  "evidence": [
+    "../../research/jadwigo-mission-and-value.md",
+    "../../research/jadwigo-go-to-market.md",
+    "../../research/jadwigo-identity.md"
+  ]
+}

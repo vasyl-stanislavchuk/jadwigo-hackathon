@@ -1,1 +1,20 @@
-export { InMemoryStore, type LearnerRecord, type Store } from "./store.ts";
+export { InMemoryStore } from "./memory.ts";
+export { createPostgresStore } from "./postgres.ts";
+export { attemptResults, type ResultQuestion } from "./result.ts";
+export {
+  type AttemptRecord,
+  type HelpTwin,
+  type LessonVersionWithQuestions,
+  type NewAssignment,
+  type NewAttempt,
+  type NewAttemptAnswer,
+  type NewAttemptQuestion,
+  type NewLearner,
+  type NewLesson,
+  type NewLessonQuestion,
+  type NewLessonVersion,
+  type NewPod,
+  type OpenAssignment,
+  type Store,
+  StoreError,
+} from "./store.ts";

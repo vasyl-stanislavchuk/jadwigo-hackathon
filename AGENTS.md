@@ -50,9 +50,10 @@ tracker. A workstream owns a scope on it: its epics, and the label every open is
 | `apps/web` | the app at app.jadwigo.pl: lesson player, parent screens | packages | learner-experience |
 | `apps/site` | the marketing site, jadwigo.pl and jadwigo.kids | packages | marketing |
 | `apps/cli` | `jw`, Python and Click, later `jw mcp serve` | nothing of ours | ai-workflows |
-| `packages/contracts` | Zod schemas: ids, lesson script, answers, routes, errors; JSON Schema snapshots | Zod only | platform |
+| `packages/contracts` | Zod schemas: ids, family schemas, records, the attempt wire, the `/api/v1` route table, errors; `RULES.md`; JSON Schema snapshots | Zod only | platform |
 | `packages/core` | grading, numbers, mastery: pure functions | contracts | learner-knowledge |
-| `packages/store` | the `Store` interface, in-memory and Postgres | contracts, core, config | platform |
+| `packages/store` | the `Store` interface, in-memory and Postgres, and the contract suite both pass | contracts, core, config | platform |
+| `packages/lesson-import` | compiles a playground lesson file into lesson questions and a published version (`dl-e8ov.2.32.5`) | contracts, store | platform |
 | `packages/bank` | bank code: read, search, import. Never questions | contracts | question-bank |
 | `packages/api-client` | the typed client web, cli and MCP share | contracts | platform |
 | `packages/lesson-kit` | interaction families and lesson blocks | contracts, core, ui, copy | learner-experience |
@@ -66,7 +67,7 @@ tracker. A workstream owns a scope on it: its epics, and the label every open is
 | `lint/` | GritQL house rules for Biome (`lint/README.md`) | n/a | platform |
 | `docs/` | how it works: workstreams, research, drops, runbooks, worklog (`docs/README.md`) | n/a | each its own |
 | `infra/` | Terraform, one root module (`dl-5ssh.34.4`) | n/a | platform |
-| `supabase/` | migrations and their tests (`dl-5ssh.34.34`) | n/a | platform |
+| `supabase/` | migrations, the Supabase shim and the pgTAP tests (`supabase/README.md`) | n/a | platform |
 | `.claude/` | hooks, the guard, settings, and links to both kinds of instructions | n/a | platform |
 | `.github/` | CI, the setup action, the ruleset, CODEOWNERS, Renovate's labels | n/a | platform |
 
@@ -86,7 +87,8 @@ Not in the repo, on purpose: decisions (the md context brain), the question bank
 | The gate before you finish | `make check`: lint, typecheck and test on what changed (`turbo --affected`), then the repo checks |
 | Everything | `make check-all` |
 | One package | `bunx turbo run lint typecheck test --filter=./packages/core` |
-| Integration tests | `DATABASE_URL=postgresql://localhost/jadwigo_test bunx turbo run test:int` |
+| Integration tests | `make migrate`, then `bunx turbo run test:int` (`DATABASE_URL` from `.env.local`: Postgres.app 17 on port 5433) |
+| Migrations and their pgTAP tests | `make migrate && make pgtap` (plain Postgres, no Docker) |
 | Drops | `make drops` (`md drops check` on each); build one with `/dev-drop` |
 | Workflow and dev command links | `make skills` |
 
@@ -191,11 +193,13 @@ Each fence has a test that plants a violation (`tools/src/*.test.ts`, `.claude/h
 3. **Strict TypeScript:** `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, and ids that
    are branded types only the Zod parsers in `packages/contracts` create.
 4. **Biome:** errors on `any`, `@ts-ignore`, `.only` and `.skip`. `lint/*.grit`: `process.env`
-   is read only in a `src/config.ts`.
+   is read only in a `src/config.ts`, and an error type, route path or id prefix is written
+   through its constant.
 5. **Imports** (dependency-cruiser): apps import packages, never the reverse. `contracts` imports
    nothing of ours. Only test files import `@jadwigo/testing`. knip fails unused files, exports and
    dependencies.
-6. **Unit tests** fail on network, real AWS and an unpinned clock. Anything that needs those is a `*.int.test.ts`.
+6. **Unit tests** fail on network, real AWS and an unpinned clock, and so do component tests
+   (`*.test.tsx`, Vitest's `dom` project in happy-dom). Anything that needs those is a `*.int.test.ts`.
 7. **Contract snapshots** fail on drift. Update them with `vitest -u` on purpose and say so in the PR.
 8. **No bank in git:** no question pages, Khan items, SQLite, bank media or files over 1 MB.
 9. **Pre-commit** runs Biome and gitleaks. Never commit a family member's name.
@@ -206,6 +210,9 @@ Each fence has a test that plants a violation (`tools/src/*.test.ts`, `.claude/h
 ## House rules
 
 - Every dependency has a line in its `package.json` `"//"` block naming the one thing that needs it.
+- A value that crosses a boundary (an error type, a route path, an id prefix) is written through
+  its constant in `packages/contracts`, never retyped as a string. An enum comparison stays a
+  literal: TypeScript checks it (`packages/contracts/RULES.md` rule 22).
 - Versions are pinned exact, and Renovate moves them after 7 days.
 - A merge deploys nothing; the owner deploys by hand.
 - Writing: digits for numbers, issue ids in backticks, "issue" (not "card"), outcomes rather

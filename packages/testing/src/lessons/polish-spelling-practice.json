@@ -1,0 +1,2836 @@
+{
+  "id": "polish-spelling-practice",
+  "title": {
+    "pl": "Ó i rz: zmień słowo i posłuchaj (mock)",
+    "uk": "Ó і rz: зміни слово і послухай (mock)",
+    "en": "Ó and rz: change the word and listen (mock)"
+  },
+  "flavour": "child-pl-spelling",
+  "language": "pl",
+  "category": "child",
+  "subject": "polish",
+  "kind": "practice",
+  "readout": "spelling",
+  "reasoning": {
+    "pl": "Pierwsza lekcja pisowni: reguły, od których zaczyna diagnoza (ó i rz wymienne, końcówka decyduje, słowo, które sprawdza), na kilku słowach w wielu formach. Pytania są próbne (mock), z banku napisanego ręcznie i spoza niego, jeszcze nieprzeczytane przez rodzica.",
+    "uk": "Перший урок правопису: правила, з яких починається діагностика (ó і rz, що чергуються, закінчення вирішує, перевірне слово), на кількох словах у багатьох формах. Питання пробні (mock), з написаного вручну банку і поза ним, ще не прочитані батьками.",
+    "en": "The first spelling lesson: the rules the diagnostic opens with (ó and rz that alternate, the ending decides, the proof word), on a few words in many forms. Mock questions, from the hand-written bank and beside it, not yet read by a parent."
+  },
+  "can_do": [
+    {
+      "id": "spelling.o-alternating",
+      "text": {
+        "pl": "Umiem sprawdzić ó: mróz, bo mrozy.",
+        "uk": "Я вмію перевірити ó: mróz, бо mrozy.",
+        "en": "I can check ó: mróz, because mrozy."
+      }
+    },
+    {
+      "id": "spelling.rz-alternating",
+      "text": {
+        "pl": "Umiem sprawdzić rz: morze, bo morski.",
+        "uk": "Я вмію перевірити rz: morze, бо morski.",
+        "en": "I can check rz: morze, because morski."
+      }
+    },
+    {
+      "id": "spelling.ending-decides",
+      "text": {
+        "pl": "Wiem, że -ów piszę przez ó, a -uje przez u.",
+        "uk": "Я знаю, що -ów пишу через ó, а -uje через u.",
+        "en": "I know -ów is written with ó, and -uje with u."
+      }
+    },
+    {
+      "id": "spelling.proof-word",
+      "text": {
+        "pl": "Umiem znaleźć słowo, które sprawdza pisownię.",
+        "uk": "Я вмію знайти слово, яке перевіряє написання.",
+        "en": "I can find a word that proves a spelling."
+      }
+    }
+  ],
+  "reviewed": false,
+  "script": {
+    "parts": [
+      {
+        "part": "warm_up",
+        "steps": [
+          {
+            "id": "s01",
+            "skill_ids": [],
+            "based_on": {
+              "question": "authored:polish-spelling-practice",
+              "changes": []
+            },
+            "reason": {
+              "brief": "school",
+              "why": {
+                "pl": "Ciepłe otwarcie i zapowiedź: najpierw to, co umie.",
+                "uk": "Тепле відкриття і анонс: спершу те, що він уміє.",
+                "en": "A warm opening that says what comes: first, something he can do."
+              }
+            },
+            "say": {
+              "pl": "Dzień dobry! Dziś poćwiczymy kilka słów o zimie i o morzu. Na rozgrzewkę coś, co już umiesz.",
+              "uk": "Добрий день! Сьогодні потренуємо кілька слів про зиму і про море. Для розминки щось, що ти вже вмієш.",
+              "en": "Hello! Today we’ll practise a few words about winter and the sea. To warm up, something you can already do."
+            },
+            "teach": {
+              "text": {
+                "pl": "Dzień dobry! Dziś poćwiczymy kilka słów o zimie i o morzu. Na rozgrzewkę coś, co już umiesz.",
+                "uk": "Добрий день! Сьогодні потренуємо кілька слів про зиму і про море. Для розминки щось, що ти вже вмієш.",
+                "en": "Hello! Today we’ll practise a few words about winter and the sea. To warm up, something you can already do."
+              }
+            }
+          },
+          {
+            "id": "s02",
+            "question_type": "short_text",
+            "skill_ids": ["draft.ortografia.proof-word"],
+            "based_on": {
+              "question": "authored:polish-spelling-practice#P12",
+              "changes": []
+            },
+            "reason": {
+              "brief": "school",
+              "why": {
+                "pl": "Rozgrzewka: zmiana słowa (jeden, dwa) to ruch, którego potrzebuje słowo, które sprawdza (P12). Tu bez pułapki, o słychać wyraźnie.",
+                "uk": "Розминка: зміна слова (один, два) це рух, потрібний для перевірного слова (P12). Тут без пастки, o чути чітко.",
+                "en": "Warm-up: changing a word (one, two) is the move the proof word needs (P12). No trap here: the o is plain to hear."
+              }
+            },
+            "say": {
+              "pl": "Napisz to, czego brakuje w zdaniu.",
+              "uk": "Напиши те, чого бракує в реченні.",
+              "en": "Write what is missing in the sentence."
+            },
+            "question": {
+              "family": "enter",
+              "data": {
+                "input": "text",
+                "entry": "keyboard",
+                "stem": {
+                  "text": "🏠🏠\n\nJeden dom, dwa ___."
+                },
+                "letters": "pl"
+              },
+              "key": {
+                "accept": ["domy"],
+                "case": "exact",
+                "near": {
+                  "dómy": "diacritic"
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Powiedz całe zdanie na głos: jeden, dwa.",
+                    "uk": "Скажи все речення вголос: один, два.",
+                    "en": "Say the whole sentence aloud: one, two."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Policz, ile ich jest na obrazku. Powiedz: dwa… i dokończ zdanie.",
+                    "uk": "Порахуй, скільки їх на малюнку. Скажи: dwa… і закінчи речення.",
+                    "en": "Count how many are in the picture. Say: dwa… (two) and finish the sentence."
+                  }
+                },
+                "boost_by_mistake": {
+                  "diacritic": {
+                    "text": {
+                      "pl": "Posłuchaj: tu słychać zwykłe o. Kreskę nad o piszemy tam, gdzie słychać u.",
+                      "uk": "Послухай: тут чути звичайне o. Риску над o пишемо там, де чути u.",
+                      "en": "Listen: you can hear a plain o here. The stroke over o goes where you hear u."
+                    }
+                  }
+                },
+                "almost": ["Jeden dom, dwa d□my."],
+                "worked": ["Jeden dom, dwa domy."],
+                "twin": {
+                  "say": {
+                    "pl": "Napisz to, czego brakuje w zdaniu.",
+                    "uk": "Напиши те, чого бракує в реченні.",
+                    "en": "Write what is missing in the sentence."
+                  },
+                  "family": "enter",
+                  "data": {
+                    "input": "text",
+                    "entry": "keyboard",
+                    "stem": {
+                      "text": "🍲🍲\n\nJeden obiad, dwa ___."
+                    }
+                  },
+                  "key": {
+                    "accept": ["obiady"],
+                    "case": "exact",
+                    "near": {
+                      "óbiady": "diacritic"
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz domy, potem {check}",
+                  "uk": "Впиши domy, potem {check}",
+                  "en": "Type domy, potem {check}"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "entered": "domy"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz dómy",
+                  "uk": "Впиши dómy",
+                  "en": "Type dómy"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "diacritic",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "dómy"
+                }
+              }
+            ]
+          },
+          {
+            "id": "s03",
+            "question_type": "short_text",
+            "skill_ids": ["draft.ortografia.proof-word"],
+            "based_on": {
+              "question": "authored:polish-spelling-practice#P12",
+              "changes": []
+            },
+            "reason": {
+              "brief": "school",
+              "why": {
+                "pl": "Rozgrzewka: ta sama zmiana słowa na drugim łatwym słowie.",
+                "uk": "Розминка: та сама зміна слова на другому легкому слові.",
+                "en": "Warm-up: the same change on a second easy word."
+              }
+            },
+            "say": {
+              "pl": "Napisz to, czego brakuje w zdaniu.",
+              "uk": "Напиши те, чого бракує в реченні.",
+              "en": "Write what is missing in the sentence."
+            },
+            "question": {
+              "family": "enter",
+              "data": {
+                "input": "text",
+                "entry": "keyboard",
+                "stem": {
+                  "text": "🐈🐈\n\nJeden kot, dwa ___."
+                },
+                "letters": "pl"
+              },
+              "key": {
+                "accept": ["koty"],
+                "case": "exact",
+                "near": {
+                  "kóty": "diacritic"
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Powiedz całe zdanie na głos: jeden, dwa.",
+                    "uk": "Скажи все речення вголос: один, два.",
+                    "en": "Say the whole sentence aloud: one, two."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Policz, ile ich jest na obrazku. Powiedz: dwa… i dokończ zdanie.",
+                    "uk": "Порахуй, скільки їх на малюнку. Скажи: dwa… і закінчи речення.",
+                    "en": "Count how many are in the picture. Say: dwa… (two) and finish the sentence."
+                  }
+                },
+                "boost_by_mistake": {
+                  "diacritic": {
+                    "text": {
+                      "pl": "Posłuchaj: tu słychać zwykłe o. Kreskę nad o piszemy tam, gdzie słychać u.",
+                      "uk": "Послухай: тут чути звичайне o. Риску над o пишемо там, де чути u.",
+                      "en": "Listen: you can hear a plain o here. The stroke over o goes where you hear u."
+                    }
+                  }
+                },
+                "almost": ["Jeden kot, dwa k□ty."],
+                "worked": ["Jeden kot, dwa koty."],
+                "twin": {
+                  "say": {
+                    "pl": "Napisz to, czego brakuje w zdaniu.",
+                    "uk": "Напиши те, чого бракує в реченні.",
+                    "en": "Write what is missing in the sentence."
+                  },
+                  "family": "enter",
+                  "data": {
+                    "input": "text",
+                    "entry": "keyboard",
+                    "stem": {
+                      "text": "🚲🚲\n\nJeden rower, dwa ___."
+                    }
+                  },
+                  "key": {
+                    "accept": ["rowery"],
+                    "case": "exact",
+                    "near": {
+                      "rówery": "diacritic"
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz koty, potem {check}",
+                  "uk": "Впиши koty, potem {check}",
+                  "en": "Type koty, potem {check}"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "entered": "koty"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz kóty",
+                  "uk": "Впиши kóty",
+                  "en": "Type kóty"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "diacritic",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "kóty"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "part": "teach",
+        "steps": [
+          {
+            "id": "s04",
+            "skill_ids": [],
+            "based_on": {
+              "question": "authored:polish-spelling-practice",
+              "changes": []
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "P1 i P12: reguła ó wymiennego (PWN [5] a-b) słowami dziecka, ze słowem, które sprawdza (podstawa programowa 2026, 1.3.j).",
+                "uk": "P1 і P12: правило ó, що чергується (PWN [5] a-b), словами дитини, з перевірним словом (програма 2026, 1.3.j).",
+                "en": "P1 and P12: the rule for ó that alternates (PWN [5] a-b) in a child’s words, with the proof word (2026 core curriculum, 1.3.j)."
+              }
+            },
+            "say": {
+              "pl": "Czasem słyszysz u i nie wiesz, czy napisać ó, czy u. Jest na to sposób: zmień słowo. Powiedz je tak, jakby były dwa, albo znajdź słowo z tej samej rodziny. Jeśli wtedy słychać o, piszesz ó.",
+              "uk": "Іноді ти чуєш u і не знаєш, писати ó чи u. Є спосіб: зміни слово. Скажи його так, ніби їх два, або знайди слово з тієї ж родини. Якщо тоді чути o, пишеш ó.",
+              "en": "Sometimes you hear u and don’t know whether to write ó or u. There’s a trick: change the word. Say it as if there were two, or find a word from the same family. If you can hear o then, you write ó."
+            },
+            "teach": {
+              "text": {
+                "pl": "Czasem słyszysz u i nie wiesz, czy napisać ó, czy u. Jest na to sposób: zmień słowo. Powiedz je tak, jakby były dwa, albo znajdź słowo z tej samej rodziny. Jeśli wtedy słychać o, piszesz ó.",
+                "uk": "Іноді ти чуєш u і не знаєш, писати ó чи u. Є спосіб: зміни слово. Скажи його так, ніби їх два, або знайди слово з тієї ж родини. Якщо тоді чути o, пишеш ó.",
+                "en": "Sometimes you hear u and don’t know whether to write ó or u. There’s a trick: change the word. Say it as if there were two, or find a word from the same family. If you can hear o then, you write ó."
+              }
+            }
+          },
+          {
+            "id": "s05",
+            "skill_ids": [],
+            "based_on": {
+              "question": "authored:polish-spelling-practice",
+              "changes": []
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Jeden przykład z rozwiązaniem, zanim sam spróbuje (efekt przykładu rozwiązanego, Sweller), na słowie z banku (spell-p1-1).",
+                "uk": "Один приклад із розвʼязком, перш ніж він спробує сам (ефект розвʼязаного прикладу, Sweller), на слові з банку (spell-p1-1).",
+                "en": "One worked example before he tries himself (Sweller’s worked-example effect), on the bank’s word (spell-p1-1)."
+              }
+            },
+            "say": {
+              "pl": "Weźmy słowo mróz. Zmieniam słowo: dwa mrozy. W słowie mrozy słychać o. Więc mróz piszę przez ó. Mróz, bo mrozy.",
+              "uk": "Візьмімо слово mróz. Змінюю слово: dwa mrozy. У слові mrozy чути o. Тож mróz пишу через ó. Mróz, бо mrozy.",
+              "en": "Take the word mróz, frost. I change the word: dwa mrozy, two frosts. In mrozy you can hear o. So I write mróz with ó. Mróz, because mrozy."
+            },
+            "teach": {
+              "text": {
+                "pl": "Weźmy słowo mróz. Zmieniam słowo: dwa mrozy. W słowie mrozy słychać o. Więc mróz piszę przez ó. Mróz, bo mrozy.",
+                "uk": "Візьмімо слово mróz. Змінюю слово: dwa mrozy. У слові mrozy чути o. Тож mróz пишу через ó. Mróz, бо mrozy.",
+                "en": "Take the word mróz, frost. I change the word: dwa mrozy, two frosts. In mrozy you can hear o. So I write mróz with ó. Mróz, because mrozy."
+              }
+            }
+          },
+          {
+            "id": "s06",
+            "question_type": "recognition",
+            "skill_ids": ["draft.ortografia.o-alternating", "draft.ortografia.proof-word"],
+            "based_on": {
+              "question": "bank:spelling-diagnostic.pl#spell-p1-1",
+              "changes": [
+                {
+                  "change": "wording",
+                  "why": {
+                    "pl": "Zadane jako wybór z dwóch form, zanim to słowo trzeba napisać.",
+                    "uk": "Подано як вибір із двох форм, перш ніж це слово треба написати.",
+                    "en": "Asked as a choice of two forms, before the word has to be typed."
+                  },
+                  "reviewed": false
+                }
+              ]
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "P1: wspólna próba zaraz po przykładzie, z nagraniem słowa. Wybór z dwóch form to pierwszy kontakt z regułą (polish-spelling §7).",
+                "uk": "P1: спільна спроба одразу після прикладу, із записом слова. Вибір із двох форм це перший контакт із правилом (polish-spelling §7).",
+                "en": "P1: a guided try straight after the example, with the word’s clip. A choice of two forms is first contact with a rule (polish-spelling §7)."
+              }
+            },
+            "say": {
+              "pl": "Posłuchaj słowa. Potem wybierz, jak się je pisze.",
+              "uk": "Послухай слово. Потім обери, як його пишуть.",
+              "en": "Listen to the word. Then choose how it is written."
+            },
+            "question": {
+              "family": "choose",
+              "data": {
+                "line": "Zimą na dworze jest {pick}.",
+                "options": [
+                  {
+                    "id": "c1",
+                    "content": {
+                      "kind": "text",
+                      "text": "mruz"
+                    }
+                  },
+                  {
+                    "id": "c2",
+                    "content": {
+                      "kind": "text",
+                      "text": "mróz"
+                    }
+                  }
+                ],
+                "select": "one",
+                "layout": "grid",
+                "stem": {
+                  "audio": {
+                    "clip": "EzUFU9cdt6Y4Nzm7y18fGQ",
+                    "slow": "_J1MO1YwW43bkSRWuBTkEQ"
+                  }
+                }
+              },
+              "key": {
+                "correct": ["c2"],
+                "near": {
+                  "c1": "o_u"
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Przypomnij sobie przykład. Zmień słowo: dwa…",
+                    "uk": "Пригадай приклад. Зміни слово: dwa…",
+                    "en": "Remember the example. Change the word: dwa…"
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Zmień słowo: powiedz je tak, jakby były dwa. Posłuchaj środka słowa.",
+                    "uk": "Зміни слово: скажи його так, ніби їх два. Послухай середину слова.",
+                    "en": "Change the word: say it as if there were two. Listen to the middle of the word."
+                  }
+                },
+                "boost_by_mistake": {
+                  "o_u": {
+                    "text": {
+                      "pl": "Powiedz: dwa… Jaką głoskę teraz słyszysz w środku?",
+                      "uk": "Скажи: dwa… Який звук тепер чути в середині?",
+                      "en": "Say: dwa… Which sound do you hear in the middle now?"
+                    }
+                  }
+                },
+                "almost": ["Dwa mrozy: słychać o.", "Zimą na dworze jest mr□z."],
+                "worked": ["Dwa mrozy: słychać o.", "Zimą na dworze jest mróz."],
+                "twin": {
+                  "say": {
+                    "pl": "Posłuchaj słowa. Potem wybierz, jak się je pisze.",
+                    "uk": "Послухай слово. Потім обери, як його пишуть.",
+                    "en": "Listen to the word. Then choose how it is written."
+                  },
+                  "family": "choose",
+                  "data": {
+                    "line": "Podaj mi, proszę, {pick}.",
+                    "options": [
+                      {
+                        "id": "c1",
+                        "content": {
+                          "kind": "text",
+                          "text": "sul"
+                        }
+                      },
+                      {
+                        "id": "c2",
+                        "content": {
+                          "kind": "text",
+                          "text": "sól"
+                        }
+                      }
+                    ],
+                    "select": "one",
+                    "layout": "grid",
+                    "stem": {
+                      "audio": {
+                        "clip": "vqgFSy1hUU5cUL4sDTIkIQ",
+                        "slow": "26cSmmivZlFHUUoQ28VP8A"
+                      }
+                    }
+                  },
+                  "key": {
+                    "correct": ["c2"],
+                    "near": {
+                      "c1": "o_u"
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wybierz „mróz”",
+                  "uk": "Обери «mróz»",
+                  "en": "Choose mróz"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "słowo wpisane w zdanie, pochwała",
+                  "uk": "слово вписане в речення, похвала",
+                  "en": "the word written into the sentence, praise"
+                },
+                "value": {
+                  "chosen": ["c2"]
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wybierz „mruz”",
+                  "uk": "Обери «mruz»",
+                  "en": "Choose mruz"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "o_u",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "chosen": ["c1"]
+                }
+              }
+            ]
+          },
+          {
+            "id": "s07",
+            "skill_ids": [],
+            "based_on": {
+              "question": "authored:polish-spelling-practice",
+              "changes": []
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "P2 i P12: reguła rz wymiennego (PWN [30] a) i jej przykład na słowie z banku (spell-p2-3), morze, bo morski.",
+                "uk": "P2 і P12: правило rz, що чергується (PWN [30] a), і його приклад на слові з банку (spell-p2-3), morze, бо morski.",
+                "en": "P2 and P12: the rule for rz that alternates (PWN [30] a) and its example on the bank’s word (spell-p2-3), morze, because morski."
+              }
+            },
+            "say": {
+              "pl": "Z rz jest tak samo. Słyszysz ż, ale w słowie z tej samej rodziny słychać r? Wtedy piszesz rz. Morze, bo morski: w słowie morski słychać r.",
+              "uk": "З rz так само. Чуєш ż, але в слові з тієї ж родини чути r? Тоді пишеш rz. Morze, бо morski: у слові morski чути r.",
+              "en": "rz works the same way. You hear ż, but in a word from the same family you can hear r? Then you write rz. Morze, sea, because morski, of the sea: in morski you can hear r."
+            },
+            "teach": {
+              "text": {
+                "pl": "Z rz jest tak samo. Słyszysz ż, ale w słowie z tej samej rodziny słychać r? Wtedy piszesz rz. Morze, bo morski: w słowie morski słychać r.",
+                "uk": "З rz так само. Чуєш ż, але в слові з тієї ж родини чути r? Тоді пишеш rz. Morze, бо morski: у слові morski чути r.",
+                "en": "rz works the same way. You hear ż, but in a word from the same family you can hear r? Then you write rz. Morze, sea, because morski, of the sea: in morski you can hear r."
+              }
+            }
+          },
+          {
+            "id": "s08",
+            "skill_ids": [],
+            "based_on": {
+              "question": "authored:polish-spelling-practice",
+              "changes": []
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "P3: końcówka decyduje (PWN [5] c, [6] a-b), na przykładach z podpowiedzi banku.",
+                "uk": "P3: закінчення вирішує (PWN [5] c, [6] a-b), на прикладах із підказок банку.",
+                "en": "P3: the ending decides (PWN [5] c, [6] a-b), on the examples the bank’s hints use."
+              }
+            },
+            "say": {
+              "pl": "A czasem nie trzeba szukać innego słowa, bo podpowiada końcówka. W końcówce -ów zawsze piszemy ó: kotów, psów. A w końcówce -uje zawsze u: maluje, buduje.",
+              "uk": "А іноді не треба шукати іншого слова, бо підказує закінчення. У закінченні -ów завжди пишемо ó: kotów, psów. А в закінченні -uje завжди u: maluje, buduje.",
+              "en": "And sometimes you don’t need another word, because the ending tells you. In the ending -ów we always write ó: kotów, psów. In the ending -uje always u: maluje, buduje."
+            },
+            "teach": {
+              "text": {
+                "pl": "A czasem nie trzeba szukać innego słowa, bo podpowiada końcówka. W końcówce -ów zawsze piszemy ó: kotów, psów. A w końcówce -uje zawsze u: maluje, buduje.",
+                "uk": "А іноді не треба шукати іншого слова, бо підказує закінчення. У закінченні -ów завжди пишемо ó: kotów, psów. А в закінченні -uje завжди u: maluje, buduje.",
+                "en": "And sometimes you don’t need another word, because the ending tells you. In the ending -ów we always write ó: kotów, psów. In the ending -uje always u: maluje, buduje."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "part": "practise",
+        "steps": [
+          {
+            "id": "s09",
+            "question_type": "recognition",
+            "skill_ids": ["draft.ortografia.rz-alternating", "draft.ortografia.proof-word"],
+            "based_on": {
+              "question": "bank:spelling-diagnostic.pl#spell-p2-3",
+              "changes": [
+                {
+                  "change": "wording",
+                  "why": {
+                    "pl": "Zadane jako wybór z dwóch form, zanim to słowo trzeba napisać.",
+                    "uk": "Подано як вибір із двох форм, перш ніж це слово треба написати.",
+                    "en": "Asked as a choice of two forms, before the word has to be typed."
+                  },
+                  "reviewed": false
+                }
+              ]
+            },
+            "reason": {
+              "brief": "school",
+              "why": {
+                "pl": "P2: morze najpierw jako wybór, z nagraniem słowa.",
+                "uk": "P2: morze спершу як вибір, із записом слова.",
+                "en": "P2: morze first as a choice, with its clip."
+              }
+            },
+            "say": {
+              "pl": "Wybierz słowo, które pasuje do zdania.",
+              "uk": "Обери слово, яке підходить до речення.",
+              "en": "Choose the word that fits the sentence."
+            },
+            "question": {
+              "family": "choose",
+              "data": {
+                "line": "Latem jedziemy nad {pick}. Woda jest tam słona, a fale są duże.",
+                "options": [
+                  {
+                    "id": "c1",
+                    "content": {
+                      "kind": "text",
+                      "text": "morze"
+                    }
+                  },
+                  {
+                    "id": "c2",
+                    "content": {
+                      "kind": "text",
+                      "text": "może"
+                    }
+                  }
+                ],
+                "select": "one",
+                "layout": "grid",
+                "stem": {
+                  "audio": {
+                    "clip": "sl1Xyij-NjgasdniNa550w",
+                    "slow": "VNzYfsPdTdXJyiNea78DEw"
+                  }
+                }
+              },
+              "key": {
+                "correct": ["c1"],
+                "near": {
+                  "c2": "rz_z"
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Tu chodzi o wodę i fale. Przeczytaj całe zdanie.",
+                    "uk": "Тут ідеться про воду і хвилі. Прочитай усе речення.",
+                    "en": "This is about water and waves. Read the whole sentence."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Poszukaj słowa z tej samej rodziny. Posłuchaj, czy pojawia się w nim głoska r.",
+                    "uk": "Пошукай слово з тієї ж родини. Послухай, чи є в ньому звук r.",
+                    "en": "Find a word from the same family. Listen for an r in it."
+                  }
+                },
+                "boost_by_mistake": {
+                  "rz_z": {
+                    "text": {
+                      "pl": "To słowo brzmi tak samo, ale znaczy coś innego. Tu chodzi o wodę i fale: poszukaj słowa z tej samej rodziny, w którym słychać r.",
+                      "uk": "Це слово звучить так само, але означає інше. Тут ідеться про воду і хвилі: пошукай слово з тієї ж родини, в якому чути r.",
+                      "en": "That word sounds the same but means something else. This is about water and waves: find a word from the same family where you hear r."
+                    }
+                  }
+                },
+                "almost": ["Morski: słychać r.", "Latem jedziemy nad mo□e."],
+                "worked": ["Morski: słychać r.", "Latem jedziemy nad morze."],
+                "twin": {
+                  "say": {
+                    "pl": "Wybierz słowo, które pasuje do zdania.",
+                    "uk": "Обери слово, яке підходить до речення.",
+                    "en": "Choose the word that fits the sentence."
+                  },
+                  "family": "choose",
+                  "data": {
+                    "line": "Do szkoły jadę na {pick}.",
+                    "options": [
+                      {
+                        "id": "c1",
+                        "content": {
+                          "kind": "text",
+                          "text": "rowerze"
+                        }
+                      },
+                      {
+                        "id": "c2",
+                        "content": {
+                          "kind": "text",
+                          "text": "roweże"
+                        }
+                      }
+                    ],
+                    "select": "one",
+                    "layout": "grid",
+                    "stem": {
+                      "audio": {
+                        "clip": "bnas3s_XjJgfT3zAvJcvKQ",
+                        "slow": "3sxy5ZpDwRHQTrc7gSe7kw"
+                      }
+                    }
+                  },
+                  "key": {
+                    "correct": ["c1"],
+                    "near": {
+                      "c2": "rz_z"
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wybierz „morze”",
+                  "uk": "Обери «morze»",
+                  "en": "Choose morze"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "słowo wpisane w zdanie, pochwała",
+                  "uk": "слово вписане в речення, похвала",
+                  "en": "the word written into the sentence, praise"
+                },
+                "value": {
+                  "chosen": ["c1"]
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wybierz „może”",
+                  "uk": "Обери «może»",
+                  "en": "Choose może"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "rz_z",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "chosen": ["c2"]
+                }
+              }
+            ]
+          },
+          {
+            "id": "s10",
+            "question_type": "recognition",
+            "skill_ids": ["draft.ortografia.ending-decides"],
+            "based_on": {
+              "question": "bank:spelling-diagnostic.pl#spell-p3-1",
+              "changes": [
+                {
+                  "change": "wording",
+                  "why": {
+                    "pl": "Zadane jako wybór z dwóch form, zanim to słowo trzeba napisać.",
+                    "uk": "Подано як вибір із двох форм, перш ніж це слово треба написати.",
+                    "en": "Asked as a choice of two forms, before the word has to be typed."
+                  },
+                  "reviewed": false
+                }
+              ]
+            },
+            "reason": {
+              "brief": "school",
+              "why": {
+                "pl": "P3: domów najpierw jako wybór. To samo słowo co w rozgrzewce, w nowej formie.",
+                "uk": "P3: domów спершу як вибір. Те саме слово, що в розминці, в новій формі.",
+                "en": "P3: domów first as a choice. The warm-up’s word in a new form."
+              }
+            },
+            "say": {
+              "pl": "Wybierz słowo, które pasuje do zdania.",
+              "uk": "Обери слово, яке підходить до речення.",
+              "en": "Choose the word that fits the sentence."
+            },
+            "question": {
+              "family": "choose",
+              "data": {
+                "line": "Na naszej ulicy jest dużo {pick}.",
+                "options": [
+                  {
+                    "id": "c1",
+                    "content": {
+                      "kind": "text",
+                      "text": "domuw"
+                    }
+                  },
+                  {
+                    "id": "c2",
+                    "content": {
+                      "kind": "text",
+                      "text": "domów"
+                    }
+                  }
+                ],
+                "select": "one",
+                "layout": "grid"
+              },
+              "key": {
+                "correct": ["c2"],
+                "near": {
+                  "c1": "o_u"
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Spójrz na koniec słowa.",
+                    "uk": "Подивися на кінець слова.",
+                    "en": "Look at the end of the word."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Niektóre końcówki piszemy zawsze tak samo. Przypomnij sobie, której końcówki to słowo używa.",
+                    "uk": "Деякі закінчення пишемо завжди однаково. Пригадай, яке закінчення має це слово.",
+                    "en": "Some endings are always written the same way. Think which ending this word has."
+                  }
+                },
+                "boost_by_mistake": {
+                  "o_u": {
+                    "text": {
+                      "pl": "Ta końcówka zawsze jest taka sama: kotów, psów.",
+                      "uk": "Це закінчення завжди однакове: kotów, psów.",
+                      "en": "This ending is always the same: kotów, psów."
+                    }
+                  }
+                },
+                "almost": ["Końcówka -ów: kotów, psów.", "Na naszej ulicy jest dużo dom□w."],
+                "worked": ["Końcówka -ów: kotów, psów.", "Na naszej ulicy jest dużo domów."],
+                "twin": {
+                  "say": {
+                    "pl": "Wybierz słowo, które pasuje do zdania.",
+                    "uk": "Обери слово, яке підходить до речення.",
+                    "en": "Choose the word that fits the sentence."
+                  },
+                  "family": "choose",
+                  "data": {
+                    "line": "W lampie świeci nowa {pick}.",
+                    "options": [
+                      {
+                        "id": "c1",
+                        "content": {
+                          "kind": "text",
+                          "text": "żaruwka"
+                        }
+                      },
+                      {
+                        "id": "c2",
+                        "content": {
+                          "kind": "text",
+                          "text": "żarówka"
+                        }
+                      }
+                    ],
+                    "select": "one",
+                    "layout": "grid"
+                  },
+                  "key": {
+                    "correct": ["c2"],
+                    "near": {
+                      "c1": "o_u"
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wybierz „domów”",
+                  "uk": "Обери «domów»",
+                  "en": "Choose domów"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "słowo wpisane w zdanie, pochwała",
+                  "uk": "слово вписане в речення, похвала",
+                  "en": "the word written into the sentence, praise"
+                },
+                "value": {
+                  "chosen": ["c2"]
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wybierz „domuw”",
+                  "uk": "Обери «domuw»",
+                  "en": "Choose domuw"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "o_u",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "chosen": ["c1"]
+                }
+              }
+            ]
+          },
+          {
+            "id": "s11",
+            "question_type": "fill_gaps",
+            "skill_ids": ["draft.ortografia.o-alternating"],
+            "based_on": {
+              "question": "bank:spelling-diagnostic.pl#spell-p1-1",
+              "changes": [
+                {
+                  "change": "context",
+                  "why": {
+                    "pl": "Dodane nagranie słowa, zwykłe i wolne.",
+                    "uk": "Додано запис слова, звичайний і повільний.",
+                    "en": "A clip of the word added, normal and slow."
+                  },
+                  "reviewed": false
+                }
+              ]
+            },
+            "reason": {
+              "brief": "school",
+              "why": {
+                "pl": "P1: mróz teraz pisany, z nagraniem i rzędem liter.",
+                "uk": "P1: mróz тепер письмово, із записом і рядком літер.",
+                "en": "P1: mróz now typed, with its clip and the letter row."
+              }
+            },
+            "say": {
+              "pl": "Wpisz brakujące litery.",
+              "uk": "Впиши літери, яких бракує.",
+              "en": "Type the missing letters."
+            },
+            "question": {
+              "family": "slots",
+              "data": {
+                "template": "Zimą na dworze jest mr{g1}z.",
+                "gaps": [
+                  {
+                    "id": "g1",
+                    "kind": "enter",
+                    "input": "text",
+                    "max_length": 3,
+                    "letters": "pl"
+                  }
+                ],
+                "stem": {
+                  "audio": {
+                    "clip": "EzUFU9cdt6Y4Nzm7y18fGQ",
+                    "slow": "_J1MO1YwW43bkSRWuBTkEQ"
+                  }
+                }
+              },
+              "key": {
+                "gaps": {
+                  "g1": {
+                    "kind": "enter",
+                    "accept": ["ó"],
+                    "case": "exact",
+                    "near": {
+                      "u": "o_u",
+                      "o": "diacritic"
+                    }
+                  }
+                }
+              },
+              "help": {
+                "look": {
+                  "text": "Przeczytaj całe zdanie jeszcze raz i powiedz to słowo na głos."
+                },
+                "boost": {
+                  "text": "Przeczytaj zdanie jeszcze raz i powiedz to słowo na głos, powoli."
+                },
+                "boost_by_mistake": {
+                  "o_u": {
+                    "text": "Poszukaj słowa z tej samej rodziny, w którym ta głoska brzmi inaczej. Ono podpowie, jak to napisać."
+                  },
+                  "rz_z": {
+                    "text": "Poszukaj słowa z tej samej rodziny. Posłuchaj, czy pojawia się w nim głoska r."
+                  },
+                  "ch_h": {
+                    "text": "Tego nie sprawdzisz innym słowem. Przypomnij sobie, jak to słowo wygląda w książce."
+                  },
+                  "capital": {
+                    "text": "To jest nazwa, a nie zwykłe słowo. Pomyśl, jak zaczynamy pisać imiona i nazwy miejsc."
+                  },
+                  "apart_together": {
+                    "text": "Pomyśl, czy to słowo mówi, co ktoś robi, czy jaki ktoś jest. To podpowie, czy pisać razem, czy osobno."
+                  },
+                  "devoicing": {
+                    "text": "Powiedz to słowo w innej formie, na przykład gdy jest ich dwa albo gdy czegoś nie ma. Wtedy tę głoskę słychać wyraźnie."
+                  },
+                  "nasal": {
+                    "text": "Mówisz o sobie. Posłuchaj, jak kończy się to słowo, gdy mówisz je wyraźnie."
+                  },
+                  "soft": {
+                    "text": "Powiedz to słowo powoli. Czy ta głoska szumi twardo, czy brzmi miękko?"
+                  },
+                  "l_ł": {
+                    "text": "Powiedz to słowo powoli. Czy słyszysz tę głoskę jak w „lato”, czy jak w „łapa”?"
+                  },
+                  "diacritic": {
+                    "text": "Spójrz na kreski i kropki nad literami. Każda zmienia dźwięk."
+                  },
+                  "other_wrong": {
+                    "text": "Przeczytaj zdanie jeszcze raz i powiedz to słowo na głos, powoli."
+                  }
+                },
+                "almost": ["Sprawdzam: dwa mrozy. Słychać o.", "Zimą na dworze jest mr□z."],
+                "worked": ["Sprawdzam: dwa mrozy. Słychać o.", "Zimą na dworze jest mróz."]
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz ó, potem {check}",
+                  "uk": "Впиши ó, potem {check}",
+                  "en": "Type ó, potem {check}"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "ó"
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz u (g1)",
+                  "uk": "Впиши u (g1)",
+                  "en": "Type u (g1)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "o_u",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "u"
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz o (g1)",
+                  "uk": "Впиши o (g1)",
+                  "en": "Type o (g1)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "diacritic",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "o"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": "s12",
+            "question_type": "recognition",
+            "skill_ids": ["draft.ortografia.ending-decides"],
+            "based_on": {
+              "question": "bank:spelling-diagnostic.pl#spell-p3-2",
+              "changes": [
+                {
+                  "change": "wording",
+                  "why": {
+                    "pl": "Zadane jako wybór z dwóch form, zanim to słowo trzeba napisać.",
+                    "uk": "Подано як вибір із двох форм, перш ніж це слово треба написати.",
+                    "en": "Asked as a choice of two forms, before the word has to be typed."
+                  },
+                  "reviewed": false
+                },
+                {
+                  "change": "context",
+                  "why": {
+                    "pl": "Nowe zdanie, żeby pisane pytanie później nie było kopią.",
+                    "uk": "Нове речення, щоб письмове питання пізніше не було копією.",
+                    "en": "A new sentence, so the typed question later is not a copy."
+                  },
+                  "reviewed": false
+                }
+              ]
+            },
+            "reason": {
+              "brief": "school",
+              "why": {
+                "pl": "P3: druga połowa reguły, u w -uje, najpierw jako wybór.",
+                "uk": "P3: друга половина правила, u в -uje, спершу як вибір.",
+                "en": "P3: the rule’s other half, u in -uje, first as a choice."
+              }
+            },
+            "say": {
+              "pl": "Wybierz słowo, które pasuje do zdania.",
+              "uk": "Обери слово, яке підходить до речення.",
+              "en": "Choose the word that fits the sentence."
+            },
+            "question": {
+              "family": "choose",
+              "data": {
+                "line": "Kasia {pick} w zeszycie dom i drzewo.",
+                "options": [
+                  {
+                    "id": "c1",
+                    "content": {
+                      "kind": "text",
+                      "text": "rysuje"
+                    }
+                  },
+                  {
+                    "id": "c2",
+                    "content": {
+                      "kind": "text",
+                      "text": "rysóje"
+                    }
+                  }
+                ],
+                "select": "one",
+                "layout": "grid"
+              },
+              "key": {
+                "correct": ["c1"],
+                "near": {
+                  "c2": "o_u"
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Spójrz na koniec słowa.",
+                    "uk": "Подивися на кінець слова.",
+                    "en": "Look at the end of the word."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Niektóre końcówki piszemy zawsze tak samo. Przypomnij sobie, której końcówki to słowo używa.",
+                    "uk": "Деякі закінчення пишемо завжди однаково. Пригадай, яке закінчення має це слово.",
+                    "en": "Some endings are always written the same way. Think which ending this word has."
+                  }
+                },
+                "boost_by_mistake": {
+                  "o_u": {
+                    "text": {
+                      "pl": "Ta końcówka zawsze jest taka sama: maluje, buduje.",
+                      "uk": "Це закінчення завжди однакове: maluje, buduje.",
+                      "en": "This ending is always the same: maluje, buduje."
+                    }
+                  }
+                },
+                "almost": [
+                  "Końcówka -uje: maluje, buduje.",
+                  "Kasia rys□je w zeszycie dom i drzewo."
+                ],
+                "worked": [
+                  "Końcówka -uje: maluje, buduje.",
+                  "Kasia rysuje w zeszycie dom i drzewo."
+                ],
+                "twin": {
+                  "say": {
+                    "pl": "Wybierz słowo, które pasuje do zdania.",
+                    "uk": "Обери слово, яке підходить до речення.",
+                    "en": "Choose the word that fits the sentence."
+                  },
+                  "family": "choose",
+                  "data": {
+                    "line": "Tata {pick} zupę na kuchence.",
+                    "options": [
+                      {
+                        "id": "c1",
+                        "content": {
+                          "kind": "text",
+                          "text": "gotóje"
+                        }
+                      },
+                      {
+                        "id": "c2",
+                        "content": {
+                          "kind": "text",
+                          "text": "gotuje"
+                        }
+                      }
+                    ],
+                    "select": "one",
+                    "layout": "grid"
+                  },
+                  "key": {
+                    "correct": ["c2"],
+                    "near": {
+                      "c1": "o_u"
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wybierz „rysuje”",
+                  "uk": "Обери «rysuje»",
+                  "en": "Choose rysuje"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "słowo wpisane w zdanie, pochwała",
+                  "uk": "слово вписане в речення, похвала",
+                  "en": "the word written into the sentence, praise"
+                },
+                "value": {
+                  "chosen": ["c1"]
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wybierz „rysóje”",
+                  "uk": "Обери «rysóje»",
+                  "en": "Choose rysóje"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "o_u",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "chosen": ["c2"]
+                }
+              }
+            ]
+          },
+          {
+            "id": "s13",
+            "question_type": "short_text",
+            "skill_ids": ["draft.ortografia.rz-alternating"],
+            "based_on": {
+              "question": "bank:spelling-diagnostic.pl#spell-p2-3",
+              "changes": [
+                {
+                  "change": "context",
+                  "why": {
+                    "pl": "Dodane nagranie słowa, zwykłe i wolne.",
+                    "uk": "Додано запис слова, звичайний і повільний.",
+                    "en": "A clip of the word added, normal and slow."
+                  },
+                  "reviewed": false
+                }
+              ]
+            },
+            "reason": {
+              "brief": "school",
+              "why": {
+                "pl": "P2: morze teraz pisane całe, z nagraniem.",
+                "uk": "P2: morze тепер письмово цілим словом, із записом.",
+                "en": "P2: morze now typed whole, with its clip."
+              }
+            },
+            "say": {
+              "pl": "Napisz to, czego brakuje w zdaniu.",
+              "uk": "Напиши те, чого бракує в реченні.",
+              "en": "Write what is missing in the sentence."
+            },
+            "question": {
+              "family": "enter",
+              "data": {
+                "input": "text",
+                "entry": "keyboard",
+                "stem": {
+                  "text": "🌊\n\nLatem jedziemy nad ___. Woda jest tam słona, a fale są duże.",
+                  "audio": {
+                    "clip": "sl1Xyij-NjgasdniNa550w",
+                    "slow": "VNzYfsPdTdXJyiNea78DEw"
+                  }
+                },
+                "letters": "pl"
+              },
+              "key": {
+                "accept": ["morze"],
+                "case": "exact",
+                "near": {
+                  "może": "rz_z",
+                  "morże": "rz_z"
+                }
+              },
+              "help": {
+                "look": {
+                  "text": "Spójrz na obrazek i przeczytaj zdanie. Powiedz to słowo na głos, powoli."
+                },
+                "boost": {
+                  "text": "Przeczytaj zdanie jeszcze raz i powiedz to słowo na głos, powoli."
+                },
+                "boost_by_mistake": {
+                  "o_u": {
+                    "text": "Poszukaj słowa z tej samej rodziny, w którym ta głoska brzmi inaczej. Ono podpowie, jak to napisać."
+                  },
+                  "rz_z": {
+                    "text": "Poszukaj słowa z tej samej rodziny. Posłuchaj, czy pojawia się w nim głoska r."
+                  },
+                  "ch_h": {
+                    "text": "Tego nie sprawdzisz innym słowem. Przypomnij sobie, jak to słowo wygląda w książce."
+                  },
+                  "capital": {
+                    "text": "To jest nazwa, a nie zwykłe słowo. Pomyśl, jak zaczynamy pisać imiona i nazwy miejsc."
+                  },
+                  "apart_together": {
+                    "text": "Pomyśl, czy to słowo mówi, co ktoś robi, czy jaki ktoś jest. To podpowie, czy pisać razem, czy osobno."
+                  },
+                  "devoicing": {
+                    "text": "Powiedz to słowo w innej formie, na przykład gdy jest ich dwa albo gdy czegoś nie ma. Wtedy tę głoskę słychać wyraźnie."
+                  },
+                  "nasal": {
+                    "text": "Mówisz o sobie. Posłuchaj, jak kończy się to słowo, gdy mówisz je wyraźnie."
+                  },
+                  "soft": {
+                    "text": "Powiedz to słowo powoli. Czy ta głoska szumi twardo, czy brzmi miękko?"
+                  },
+                  "l_ł": {
+                    "text": "Powiedz to słowo powoli. Czy słyszysz tę głoskę jak w „lato”, czy jak w „łapa”?"
+                  },
+                  "diacritic": {
+                    "text": "Spójrz na kreski i kropki nad literami. Każda zmienia dźwięk."
+                  },
+                  "other_wrong": {
+                    "text": "Przeczytaj zdanie jeszcze raz i powiedz to słowo na głos, powoli."
+                  }
+                },
+                "almost": [
+                  "Sprawdzam: morski. Słychać r.",
+                  "Latem jedziemy nad mo□e. Woda jest tam słona, a fale są duże."
+                ],
+                "worked": [
+                  "Sprawdzam: morski. Słychać r.",
+                  "Latem jedziemy nad morze. Woda jest tam słona, a fale są duże."
+                ],
+                "twin": {
+                  "say": "Napisz to, czego brakuje w zdaniu.",
+                  "family": "enter",
+                  "data": {
+                    "input": "text",
+                    "entry": "keyboard",
+                    "stem": {
+                      "text": "🌬️\n\nFlaga powiewa na ___."
+                    }
+                  },
+                  "key": {
+                    "accept": ["wietrze"],
+                    "case": "exact",
+                    "near": {
+                      "wietże": "rz_z",
+                      "wietsze": "devoicing"
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz morze, potem {check}",
+                  "uk": "Впиши morze, potem {check}",
+                  "en": "Type morze, potem {check}"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "entered": "morze"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz może",
+                  "uk": "Впиши może",
+                  "en": "Type może"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "rz_z",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "może"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz morże",
+                  "uk": "Впиши morże",
+                  "en": "Type morże"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "rz_z",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "morże"
+                }
+              }
+            ]
+          },
+          {
+            "id": "s14",
+            "question_type": "short_text",
+            "skill_ids": ["draft.ortografia.proof-word", "draft.ortografia.o-alternating"],
+            "based_on": {
+              "question": "authored:polish-spelling-practice#P12",
+              "changes": []
+            },
+            "reason": {
+              "brief": "school",
+              "why": {
+                "pl": "P12: słowo, które sprawdza mróz, napisane samo (wyraz pokrewny, polish-spelling §3, umiejętność 1).",
+                "uk": "P12: перевірне слово для mróz, написане самостійно (споріднене слово, polish-spelling §3, уміння 1).",
+                "en": "P12: the word that proves mróz, typed on its own (a related form, polish-spelling §3, skill 1)."
+              }
+            },
+            "say": {
+              "pl": "Napisz to, czego brakuje w zdaniu.",
+              "uk": "Напиши те, чого бракує в реченні.",
+              "en": "Write what is missing in the sentence."
+            },
+            "question": {
+              "family": "enter",
+              "data": {
+                "input": "text",
+                "entry": "keyboard",
+                "stem": {
+                  "text": "🥶\n\nW styczniu przyszły silne ___.",
+                  "audio": {
+                    "clip": "dMzExiOW85FZASAfu8YRFw",
+                    "slow": "4Dl0-Z0xxAgdhJLnoSVRhQ"
+                  }
+                },
+                "letters": "pl"
+              },
+              "key": {
+                "accept": ["mrozy"],
+                "case": "exact",
+                "near": {
+                  "mrózy": "diacritic",
+                  "mruzy": "o_u",
+                  "mrosy": "devoicing"
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "To słowo z tej samej rodziny co zimowe słowo z przykładu. Powiedz zdanie na głos.",
+                    "uk": "Це слово з тієї ж родини, що й зимове слово з прикладу. Скажи речення вголос.",
+                    "en": "It’s from the same family as the winter word in the example. Say the sentence aloud."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "To słowo znasz już w innej formie. Powiedz je tak, jakby były dwa, i posłuchaj.",
+                    "uk": "Це слово ти вже знаєш в іншій формі. Скажи його так, ніби їх два, і послухай.",
+                    "en": "You have met this word in another form. Say it as if there were two, and listen."
+                  }
+                },
+                "boost_by_mistake": {
+                  "diacritic": {
+                    "text": {
+                      "pl": "Posłuchaj: tu słychać zwykłe o. Kreskę nad o piszemy tam, gdzie słychać u.",
+                      "uk": "Послухай: тут чути звичайне o. Риску над o пишемо там, де чути u.",
+                      "en": "Listen: you can hear a plain o here. The stroke over o goes where you hear u."
+                    }
+                  },
+                  "o_u": {
+                    "text": {
+                      "pl": "Tu słychać o, nie u. To właśnie słowo, które sprawdza.",
+                      "uk": "Тут чути o, а не u. Це і є перевірне слово.",
+                      "en": "You hear o here, not u. This is the proof word itself."
+                    }
+                  },
+                  "devoicing": {
+                    "text": {
+                      "pl": "Powiedz to słowo powoli. W środku słychać z, nie s.",
+                      "uk": "Скажи це слово повільно. У середині чути z, а не s.",
+                      "en": "Say the word slowly. In the middle you hear z, not s."
+                    }
+                  }
+                },
+                "almost": ["Jeden mróz, dwa mr□zy.", "W styczniu przyszły silne mr□zy."],
+                "worked": ["Jeden mróz, dwa mrozy: słychać o.", "W styczniu przyszły silne mrozy."],
+                "twin": {
+                  "say": {
+                    "pl": "Napisz to, czego brakuje w zdaniu.",
+                    "uk": "Напиши те, чого бракує в реченні.",
+                    "en": "Write what is missing in the sentence."
+                  },
+                  "family": "enter",
+                  "data": {
+                    "input": "text",
+                    "entry": "keyboard",
+                    "stem": {
+                      "text": "🍲🧂\n\nZupa nie ma smaku. Brakuje w niej ___.",
+                      "audio": {
+                        "clip": "soU6tThj12GU5OJfHH6Ikg",
+                        "slow": "r1CKc-celFf7CmHi_Pxj7w"
+                      }
+                    }
+                  },
+                  "key": {
+                    "accept": ["soli"],
+                    "case": "exact",
+                    "near": {
+                      "sóli": "diacritic",
+                      "suli": "o_u"
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz mrozy, potem {check}",
+                  "uk": "Впиши mrozy, potem {check}",
+                  "en": "Type mrozy, potem {check}"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "entered": "mrozy"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz mrózy",
+                  "uk": "Впиши mrózy",
+                  "en": "Type mrózy"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "diacritic",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "mrózy"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz mruzy",
+                  "uk": "Впиши mruzy",
+                  "en": "Type mruzy"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "o_u",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "mruzy"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz mrosy",
+                  "uk": "Впиши mrosy",
+                  "en": "Type mrosy"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "devoicing",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "mrosy"
+                }
+              }
+            ]
+          },
+          {
+            "id": "s15",
+            "question_type": "short_text",
+            "skill_ids": ["draft.ortografia.ending-decides"],
+            "based_on": {
+              "question": "authored:polish-spelling-practice#P3",
+              "changes": []
+            },
+            "reason": {
+              "brief": "school",
+              "why": {
+                "pl": "P3: domów pisane całe, z nagraniem. Łączy rozgrzewkę (domy) z końcówką -ów.",
+                "uk": "P3: domów письмово цілим словом, із записом. Повʼязує розминку (domy) із закінченням -ów.",
+                "en": "P3: domów typed whole, with its clip. It ties the warm-up (domy) to the ending -ów."
+              }
+            },
+            "say": {
+              "pl": "Napisz to, czego brakuje w zdaniu.",
+              "uk": "Напиши те, чого бракує в реченні.",
+              "en": "Write what is missing in the sentence."
+            },
+            "question": {
+              "family": "enter",
+              "data": {
+                "input": "text",
+                "entry": "keyboard",
+                "stem": {
+                  "text": "🏠🏠🏠🏠🏠\n\nJeden dom, dwa domy, pięć ___.",
+                  "audio": {
+                    "clip": "6KueiyjmA0SXcX_aLPxXkg",
+                    "slow": "6W4ALYi-NWmzvqLbGk3UMQ"
+                  }
+                },
+                "letters": "pl"
+              },
+              "key": {
+                "accept": ["domów"],
+                "case": "exact",
+                "near": {
+                  "domuw": "o_u",
+                  "domow": "diacritic",
+                  "domóf": "devoicing"
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Policz: jeden, dwa, pięć. Ostatnie słowo ma końcówkę, którą znasz.",
+                    "uk": "Порахуй: один, два, пʼять. Останнє слово має закінчення, яке ти знаєш.",
+                    "en": "Count: one, two, five. The last word has an ending you know."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Niektóre końcówki piszemy zawsze tak samo. Przypomnij sobie, której końcówki to słowo używa.",
+                    "uk": "Деякі закінчення пишемо завжди однаково. Пригадай, яке закінчення має це слово.",
+                    "en": "Some endings are always written the same way. Think which ending this word has."
+                  }
+                },
+                "boost_by_mistake": {
+                  "o_u": {
+                    "text": {
+                      "pl": "Ta końcówka zawsze jest taka sama: kotów, psów.",
+                      "uk": "Це закінчення завжди однакове: kotów, psów.",
+                      "en": "This ending is always the same: kotów, psów."
+                    }
+                  },
+                  "diacritic": {
+                    "text": {
+                      "pl": "W tej końcówce nad o jest kreska.",
+                      "uk": "У цьому закінченні над o є риска.",
+                      "en": "In this ending the o has a stroke."
+                    }
+                  },
+                  "devoicing": {
+                    "text": {
+                      "pl": "Na końcu słychać f, ale ta końcówka kończy się zawsze tak samo: kotów, psów.",
+                      "uk": "В кінці чути f, але це закінчення завжди однакове: kotów, psów.",
+                      "en": "You hear f at the end, but this ending is always written the same: kotów, psów."
+                    }
+                  }
+                },
+                "almost": ["Końcówka -ów: kotów, psów.", "Jeden dom, dwa domy, pięć dom□w."],
+                "worked": ["Końcówka -ów: kotów, psów.", "Jeden dom, dwa domy, pięć domów."],
+                "twin": {
+                  "say": {
+                    "pl": "Napisz to, czego brakuje w zdaniu.",
+                    "uk": "Напиши те, чого бракує в реченні.",
+                    "en": "Write what is missing in the sentence."
+                  },
+                  "family": "enter",
+                  "data": {
+                    "input": "text",
+                    "entry": "keyboard",
+                    "stem": {
+                      "text": "🌷🌷🌷🌷🌷\n\nJeden kwiat, dwa kwiaty, pięć ___.",
+                      "audio": {
+                        "clip": "lwzL-YdvUA916xv4PfyL1g",
+                        "slow": "eRx1ONfcTyr0EksHC0eA9Q"
+                      }
+                    }
+                  },
+                  "key": {
+                    "accept": ["kwiatów"],
+                    "case": "exact",
+                    "near": {
+                      "kwiatuw": "o_u",
+                      "kwiatow": "diacritic",
+                      "kwiatóf": "devoicing"
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz domów, potem {check}",
+                  "uk": "Впиши domów, potem {check}",
+                  "en": "Type domów, potem {check}"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "entered": "domów"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz domuw",
+                  "uk": "Впиши domuw",
+                  "en": "Type domuw"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "o_u",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "domuw"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz domow",
+                  "uk": "Впиши domow",
+                  "en": "Type domow"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "diacritic",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "domow"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz domóf",
+                  "uk": "Впиши domóf",
+                  "en": "Type domóf"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "devoicing",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "domóf"
+                }
+              }
+            ]
+          },
+          {
+            "id": "s16",
+            "question_type": "fill_gaps",
+            "skill_ids": ["draft.ortografia.rz-alternating", "draft.ortografia.proof-word"],
+            "based_on": {
+              "question": "authored:polish-spelling-practice#P2",
+              "changes": [
+                {
+                  "change": "wording",
+                  "why": {
+                    "pl": "W kształcie pytania z banku spell-p2-2 (słowo i słowo, które sprawdza), na słowie morze.",
+                    "uk": "У формі питання з банку spell-p2-2 (слово і перевірне слово), на слові morze.",
+                    "en": "In the shape of bank question spell-p2-2 (a word and its proof), on the word morze."
+                  },
+                  "reviewed": false
+                }
+              ]
+            },
+            "reason": {
+              "brief": "school",
+              "why": {
+                "pl": "P2 i P12: morze w nowej formie (po morzu) i słowo, które je sprawdza, napisane samo.",
+                "uk": "P2 і P12: morze в новій формі (po morzu) і перевірне слово, написане самостійно.",
+                "en": "P2 and P12: morze in a new form (po morzu) and its proof word, typed on its own."
+              }
+            },
+            "say": {
+              "pl": "Wpisz brakujące litery. Potem napisz słowo z tej samej rodziny, które pasuje do drugiego zdania.",
+              "uk": "Впиши літери, яких бракує. Потім напиши слово з тієї ж родини, яке пасує до другого речення.",
+              "en": "Type the missing letters. Then write a word from the same family that fits the second sentence."
+            },
+            "question": {
+              "family": "slots",
+              "data": {
+                "template": "Statek płynie po mo{g1}u. Mewa to ptak {g2}.",
+                "gaps": [
+                  {
+                    "id": "g1",
+                    "kind": "enter",
+                    "input": "text",
+                    "max_length": 3,
+                    "letters": "pl"
+                  },
+                  {
+                    "id": "g2",
+                    "kind": "enter",
+                    "input": "text",
+                    "letters": "pl"
+                  }
+                ]
+              },
+              "key": {
+                "gaps": {
+                  "g1": {
+                    "kind": "enter",
+                    "accept": ["rz"],
+                    "case": "exact",
+                    "near": {
+                      "ż": "rz_z",
+                      "sz": "devoicing"
+                    }
+                  },
+                  "g2": {
+                    "kind": "enter",
+                    "accept": ["morski"],
+                    "case": "exact",
+                    "near": {
+                      "możski": "rz_z"
+                    }
+                  }
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Przeczytaj oba zdania. Najpierw uzupełnij pierwsze słowo, potem napisz drugie.",
+                    "uk": "Прочитай обидва речення. Спершу доповни перше слово, потім напиши друге.",
+                    "en": "Read both sentences. Fill in the first word, then write the second."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Poszukaj słowa z tej samej rodziny. Posłuchaj, czy pojawia się w nim głoska r.",
+                    "uk": "Пошукай слово з тієї ж родини. Послухай, чи є в ньому звук r.",
+                    "en": "Find a word from the same family. Listen for an r in it."
+                  }
+                },
+                "boost_by_mistake": {
+                  "rz_z": {
+                    "text": {
+                      "pl": "Poszukaj słowa z tej samej rodziny. Posłuchaj, czy pojawia się w nim głoska r.",
+                      "uk": "Пошукай слово з тієї ж родини. Послухай, чи є в ньому звук r.",
+                      "en": "Find a word from the same family. Listen for an r in it."
+                    }
+                  },
+                  "devoicing": {
+                    "text": {
+                      "pl": "Ten dźwięk brzmi twardo, ale tu piszemy go inaczej. Poszukaj słowa z tej samej rodziny.",
+                      "uk": "Цей звук звучить твердо, але тут ми пишемо його інакше. Пошукай слово з тієї ж родини.",
+                      "en": "The sound is hard here, but it is written another way. Find a word from the same family."
+                    }
+                  }
+                },
+                "almost": [
+                  "Mewa żyje nad morzem. Jaki to ptak? Słychać r.",
+                  "Statek płynie po mo□u. Mewa to ptak □."
+                ],
+                "worked": [
+                  "Morski: słychać r, więc piszę rz.",
+                  "Statek płynie po morzu. Mewa to ptak morski."
+                ],
+                "twin": {
+                  "say": {
+                    "pl": "Wpisz brakujące litery. Potem napisz słowo z tej samej rodziny, które pasuje do drugiego zdania.",
+                    "uk": "Впиши літери, яких бракує. Потім напиши слово з тієї ж родини, яке пасує до другого речення.",
+                    "en": "Type the missing letters. Then write a word from the same family that fits the second sentence."
+                  },
+                  "family": "slots",
+                  "data": {
+                    "template": "Oglądamy bajkę w teat{g1}e. To jest najstarszy {g2} w naszym mieście.",
+                    "gaps": [
+                      {
+                        "id": "g1",
+                        "kind": "enter",
+                        "input": "text",
+                        "max_length": 3
+                      },
+                      {
+                        "id": "g2",
+                        "kind": "enter",
+                        "input": "text"
+                      }
+                    ]
+                  },
+                  "key": {
+                    "gaps": {
+                      "g1": {
+                        "kind": "enter",
+                        "accept": ["rz"],
+                        "case": "exact",
+                        "near": {
+                          "ż": "rz_z",
+                          "sz": "devoicing"
+                        }
+                      },
+                      "g2": {
+                        "kind": "enter",
+                        "accept": ["teatr"],
+                        "case": "exact",
+                        "near": {
+                          "teatż": "rz_z"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz rz, morski, potem {check}",
+                  "uk": "Впиши rz, morski, potem {check}",
+                  "en": "Type rz, morski, potem {check}"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "rz",
+                    "g2": "morski"
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz ż (g1)",
+                  "uk": "Впиши ż (g1)",
+                  "en": "Type ż (g1)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "rz_z",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "ż",
+                    "g2": "morski"
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz sz (g1)",
+                  "uk": "Впиши sz (g1)",
+                  "en": "Type sz (g1)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "devoicing",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "sz",
+                    "g2": "morski"
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz możski (g2)",
+                  "uk": "Впиши możski (g2)",
+                  "en": "Type możski (g2)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "rz_z",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "rz",
+                    "g2": "możski"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": "s17",
+            "question_type": "short_text",
+            "skill_ids": ["draft.ortografia.proof-word", "draft.ortografia.o-alternating"],
+            "based_on": {
+              "question": "authored:polish-spelling-practice#P12",
+              "changes": []
+            },
+            "reason": {
+              "brief": "school",
+              "why": {
+                "pl": "P12: słowo, które sprawdza mróz, znalezione samodzielnie. Każda forma, w której ó zmienia się w o, jest dobra (mrozy, mrozu, mrozem…), więc po dobrej odpowiedzi widać drugą (dl-w3.68.1).",
+                "uk": "P12: перевірне слово для mróz, знайдене самостійно. Кожна форма, де ó змінюється на o, правильна (mrozy, mrozu, mrozem…), тож після правильної відповіді видно іншу (dl-w3.68.1).",
+                "en": "P12: the word that proves mróz, found on his own. Every form where ó turns into o is right (mrozy, mrozu, mrozem…), so a right answer shows another one (dl-w3.68.1)."
+              }
+            },
+            "say": {
+              "pl": "Zmień to słowo tak, żeby było słychać o, i napisz je.",
+              "uk": "Зміни це слово так, щоб було чути o, і напиши його.",
+              "en": "Change this word so that you can hear o, and write it."
+            },
+            "question": {
+              "family": "enter",
+              "data": {
+                "input": "text",
+                "entry": "keyboard",
+                "stem": {
+                  "text": "❄️\n\nmróz → ___"
+                },
+                "letters": "pl"
+              },
+              "key": {
+                "accept": [
+                  "mrozy",
+                  "mrozu",
+                  "mrozem",
+                  "mrozie",
+                  "mrozów",
+                  "mrozom",
+                  "mrozami",
+                  "mrozach"
+                ],
+                "case": "exact",
+                "near": {
+                  "mrózy": "diacritic",
+                  "mrózu": "diacritic",
+                  "mruzy": "o_u",
+                  "mruzu": "o_u",
+                  "mrosy": "devoicing"
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Powiedz: dwa… albo: nie ma… Posłuchaj środka słowa.",
+                    "uk": "Скажи: dwa… або: nie ma… Послухай середину слова.",
+                    "en": "Say: dwa… (two) or: nie ma… (there is no). Listen to the middle of the word."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Zmień słowo: powiedz je tak, jakby były dwa. Posłuchaj środka słowa.",
+                    "uk": "Зміни слово: скажи його так, ніби їх два. Послухай середину слова.",
+                    "en": "Change the word: say it as if there were two. Listen to the middle of the word."
+                  }
+                },
+                "boost_by_mistake": {
+                  "diacritic": {
+                    "text": {
+                      "pl": "Posłuchaj: tu słychać zwykłe o. Kreskę nad o piszemy tam, gdzie słychać u.",
+                      "uk": "Послухай: тут чути звичайне o. Риску над o пишемо там, де чути u.",
+                      "en": "Listen: you can hear a plain o here. The stroke over o goes where you hear u."
+                    }
+                  },
+                  "o_u": {
+                    "text": {
+                      "pl": "W słowie, które sprawdza, słychać o, nie u.",
+                      "uk": "У перевірному слові чути o, а не u.",
+                      "en": "In the proof word you hear o, not u."
+                    }
+                  },
+                  "devoicing": {
+                    "text": {
+                      "pl": "Powiedz to słowo powoli. W środku słychać z, nie s.",
+                      "uk": "Скажи це слово повільно. У середині чути z, а не s.",
+                      "en": "Say the word slowly. In the middle you hear z, not s."
+                    }
+                  }
+                },
+                "almost": ["Dwa mr□zy. Nie ma mr□zu."],
+                "worked": ["Dwa mrozy. Nie ma mrozu. Słychać o, więc mróz piszę przez ó."],
+                "twin": {
+                  "say": {
+                    "pl": "Zmień to słowo tak, żeby było słychać o, i napisz je.",
+                    "uk": "Зміни це слово так, щоб було чути o, і напиши його.",
+                    "en": "Change this word so that you can hear o, and write it."
+                  },
+                  "family": "enter",
+                  "data": {
+                    "input": "text",
+                    "entry": "keyboard",
+                    "stem": {
+                      "text": "🪑\n\nstół → ___"
+                    }
+                  },
+                  "key": {
+                    "accept": [
+                      "stoły",
+                      "stołu",
+                      "stołem",
+                      "stole",
+                      "stołów",
+                      "stołom",
+                      "stołami",
+                      "stołach"
+                    ],
+                    "case": "exact",
+                    "near": {
+                      "stóły": "diacritic",
+                      "stółu": "diacritic",
+                      "stuły": "o_u",
+                      "stułu": "o_u"
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz mrozy, potem {check}",
+                  "uk": "Впиши mrozy, potem {check}",
+                  "en": "Type mrozy, potem {check}"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała i „Można też napisać”, potem dalej",
+                  "uk": "похвала і «Можна також написати», потім далі",
+                  "en": "praise and “You can also write”, then on"
+                },
+                "value": {
+                  "entered": "mrozy"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz mrozu (inna dobra forma)",
+                  "uk": "Впиши mrozu (inna dobra forma)",
+                  "en": "Type mrozu (inna dobra forma)"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała i „Można też napisać: mrozy”",
+                  "uk": "похвала і «Можна також написати: mrozy»",
+                  "en": "praise and “You can also write: mrozy”"
+                },
+                "value": {
+                  "entered": "mrozu"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz mrozem (inna dobra forma)",
+                  "uk": "Впиши mrozem (inna dobra forma)",
+                  "en": "Type mrozem (inna dobra forma)"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała i „Można też napisać: mrozy”",
+                  "uk": "похвала і «Можна також написати: mrozy»",
+                  "en": "praise and “You can also write: mrozy”"
+                },
+                "value": {
+                  "entered": "mrozem"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz mrozie (inna dobra forma)",
+                  "uk": "Впиши mrozie (inna dobra forma)",
+                  "en": "Type mrozie (inna dobra forma)"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała i „Można też napisać: mrozy”",
+                  "uk": "похвала і «Можна також написати: mrozy»",
+                  "en": "praise and “You can also write: mrozy”"
+                },
+                "value": {
+                  "entered": "mrozie"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz mrozów (inna dobra forma)",
+                  "uk": "Впиши mrozów (inna dobra forma)",
+                  "en": "Type mrozów (inna dobra forma)"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała i „Można też napisać: mrozy”",
+                  "uk": "похвала і «Можна також написати: mrozy»",
+                  "en": "praise and “You can also write: mrozy”"
+                },
+                "value": {
+                  "entered": "mrozów"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz mrozom (inna dobra forma)",
+                  "uk": "Впиши mrozom (inna dobra forma)",
+                  "en": "Type mrozom (inna dobra forma)"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała i „Można też napisać: mrozy”",
+                  "uk": "похвала і «Можна також написати: mrozy»",
+                  "en": "praise and “You can also write: mrozy”"
+                },
+                "value": {
+                  "entered": "mrozom"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz mrozami (inna dobra forma)",
+                  "uk": "Впиши mrozami (inna dobra forma)",
+                  "en": "Type mrozami (inna dobra forma)"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała i „Można też napisać: mrozy”",
+                  "uk": "похвала і «Можна також написати: mrozy»",
+                  "en": "praise and “You can also write: mrozy”"
+                },
+                "value": {
+                  "entered": "mrozami"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz mrozach (inna dobra forma)",
+                  "uk": "Впиши mrozach (inna dobra forma)",
+                  "en": "Type mrozach (inna dobra forma)"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała i „Można też napisać: mrozy”",
+                  "uk": "похвала і «Можна також написати: mrozy»",
+                  "en": "praise and “You can also write: mrozy”"
+                },
+                "value": {
+                  "entered": "mrozach"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz mrózy",
+                  "uk": "Впиши mrózy",
+                  "en": "Type mrózy"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "diacritic",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "mrózy"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz mrózu",
+                  "uk": "Впиши mrózu",
+                  "en": "Type mrózu"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "diacritic",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "mrózu"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz mruzy",
+                  "uk": "Впиши mruzy",
+                  "en": "Type mruzy"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "o_u",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "mruzy"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz mruzu",
+                  "uk": "Впиши mruzu",
+                  "en": "Type mruzu"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "o_u",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "mruzu"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz mrosy",
+                  "uk": "Впиши mrosy",
+                  "en": "Type mrosy"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "devoicing",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "entered": "mrosy"
+                }
+              }
+            ]
+          },
+          {
+            "id": "s18",
+            "question_type": "fill_gaps",
+            "skill_ids": ["draft.ortografia.ending-decides"],
+            "based_on": {
+              "question": "bank:spelling-diagnostic.pl#spell-p3-2",
+              "changes": []
+            },
+            "reason": {
+              "brief": "school",
+              "why": {
+                "pl": "P3: rysuje teraz pisane, w zdaniu z banku.",
+                "uk": "P3: rysuje тепер письмово, у реченні з банку.",
+                "en": "P3: rysuje now typed, in the bank’s sentence."
+              }
+            },
+            "say": {
+              "pl": "Wpisz brakujące litery.",
+              "uk": "Впиши літери, яких бракує.",
+              "en": "Type the missing letters."
+            },
+            "question": {
+              "family": "slots",
+              "data": {
+                "template": "Mój brat ładnie rys{g1}je.",
+                "gaps": [
+                  {
+                    "id": "g1",
+                    "kind": "enter",
+                    "input": "text",
+                    "max_length": 3,
+                    "letters": "pl"
+                  }
+                ]
+              },
+              "key": {
+                "gaps": {
+                  "g1": {
+                    "kind": "enter",
+                    "accept": ["u"],
+                    "case": "exact",
+                    "near": {
+                      "ó": "o_u"
+                    }
+                  }
+                }
+              },
+              "help": {
+                "look": {
+                  "text": "Przeczytaj całe zdanie jeszcze raz i powiedz to słowo na głos."
+                },
+                "boost": {
+                  "text": "Przeczytaj zdanie jeszcze raz i powiedz to słowo na głos, powoli."
+                },
+                "boost_by_mistake": {
+                  "o_u": {
+                    "text": "Spójrz na koniec słowa. Niektóre końcówki piszemy zawsze tak samo."
+                  },
+                  "rz_z": {
+                    "text": "Poszukaj słowa z tej samej rodziny. Posłuchaj, czy pojawia się w nim głoska r."
+                  },
+                  "ch_h": {
+                    "text": "Tego nie sprawdzisz innym słowem. Przypomnij sobie, jak to słowo wygląda w książce."
+                  },
+                  "capital": {
+                    "text": "To jest nazwa, a nie zwykłe słowo. Pomyśl, jak zaczynamy pisać imiona i nazwy miejsc."
+                  },
+                  "apart_together": {
+                    "text": "Pomyśl, czy to słowo mówi, co ktoś robi, czy jaki ktoś jest. To podpowie, czy pisać razem, czy osobno."
+                  },
+                  "devoicing": {
+                    "text": "Powiedz to słowo w innej formie, na przykład gdy jest ich dwa albo gdy czegoś nie ma. Wtedy tę głoskę słychać wyraźnie."
+                  },
+                  "nasal": {
+                    "text": "Mówisz o sobie. Posłuchaj, jak kończy się to słowo, gdy mówisz je wyraźnie."
+                  },
+                  "soft": {
+                    "text": "Powiedz to słowo powoli. Czy ta głoska szumi twardo, czy brzmi miękko?"
+                  },
+                  "l_ł": {
+                    "text": "Powiedz to słowo powoli. Czy słyszysz tę głoskę jak w „lato”, czy jak w „łapa”?"
+                  },
+                  "diacritic": {
+                    "text": "Spójrz na kreski i kropki nad literami. Każda zmienia dźwięk."
+                  },
+                  "other_wrong": {
+                    "text": "Przeczytaj zdanie jeszcze raz i powiedz to słowo na głos, powoli."
+                  }
+                },
+                "almost": ["Końcówka -uje: maluje, buduje, pracuje.", "Mój brat ładnie rys□je."],
+                "worked": ["Końcówka -uje: maluje, buduje, pracuje.", "Mój brat ładnie rysuje."]
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz u, potem {check}",
+                  "uk": "Впиши u, potem {check}",
+                  "en": "Type u, potem {check}"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "u"
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz ó (g1)",
+                  "uk": "Впиши ó (g1)",
+                  "en": "Type ó (g1)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "o_u",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "ó"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": "s19",
+            "question_type": "fill_gaps",
+            "skill_ids": ["draft.ortografia.o-alternating", "draft.ortografia.proof-word"],
+            "based_on": {
+              "question": "bank:spelling-diagnostic.pl#spell-p1-2",
+              "changes": []
+            },
+            "reason": {
+              "brief": "school",
+              "why": {
+                "pl": "P1 i P12: ta sama reguła na nowym słowie, stół, bo stoły, ostatnia, żeby sprawdzić, czy sposób działa dalej.",
+                "uk": "P1 і P12: те саме правило на новому слові, stół, бо stoły, останнім, щоб перевірити, чи спосіб працює далі.",
+                "en": "P1 and P12: the same rule on a new word, stół because stoły, last, to see the trick carry over."
+              }
+            },
+            "say": {
+              "pl": "Wpisz brakujące litery. Potem napisz to samo słowo tak, żeby pasowało do drugiego zdania.",
+              "uk": "Впиши літери, яких бракує. Потім напиши те саме слово так, щоб воно пасувало до другого речення.",
+              "en": "Type the missing letters. Then write the same word so that it fits the second sentence."
+            },
+            "question": {
+              "family": "slots",
+              "data": {
+                "template": "Na środku kuchni stoi st{g1}ł. Tu stoją dwa {g2}.",
+                "gaps": [
+                  {
+                    "id": "g1",
+                    "kind": "enter",
+                    "input": "text",
+                    "max_length": 3,
+                    "letters": "pl"
+                  },
+                  {
+                    "id": "g2",
+                    "kind": "enter",
+                    "input": "text",
+                    "letters": "pl"
+                  }
+                ]
+              },
+              "key": {
+                "gaps": {
+                  "g1": {
+                    "kind": "enter",
+                    "accept": ["ó"],
+                    "case": "exact",
+                    "near": {
+                      "u": "o_u",
+                      "o": "diacritic"
+                    }
+                  },
+                  "g2": {
+                    "kind": "enter",
+                    "accept": ["stoły"],
+                    "case": "exact",
+                    "near": {
+                      "stuły": "o_u",
+                      "stóły": "o_u"
+                    }
+                  }
+                }
+              },
+              "help": {
+                "look": {
+                  "text": "Przeczytaj oba zdania. Najpierw uzupełnij pierwsze słowo, potem napisz drugie."
+                },
+                "boost": {
+                  "text": "Przeczytaj zdanie jeszcze raz i powiedz to słowo na głos, powoli."
+                },
+                "boost_by_mistake": {
+                  "o_u": {
+                    "text": "Poszukaj słowa z tej samej rodziny, w którym ta głoska brzmi inaczej. Ono podpowie, jak to napisać."
+                  },
+                  "rz_z": {
+                    "text": "Poszukaj słowa z tej samej rodziny. Posłuchaj, czy pojawia się w nim głoska r."
+                  },
+                  "ch_h": {
+                    "text": "Tego nie sprawdzisz innym słowem. Przypomnij sobie, jak to słowo wygląda w książce."
+                  },
+                  "capital": {
+                    "text": "To jest nazwa, a nie zwykłe słowo. Pomyśl, jak zaczynamy pisać imiona i nazwy miejsc."
+                  },
+                  "apart_together": {
+                    "text": "Pomyśl, czy to słowo mówi, co ktoś robi, czy jaki ktoś jest. To podpowie, czy pisać razem, czy osobno."
+                  },
+                  "devoicing": {
+                    "text": "Powiedz to słowo w innej formie, na przykład gdy jest ich dwa albo gdy czegoś nie ma. Wtedy tę głoskę słychać wyraźnie."
+                  },
+                  "nasal": {
+                    "text": "Mówisz o sobie. Posłuchaj, jak kończy się to słowo, gdy mówisz je wyraźnie."
+                  },
+                  "soft": {
+                    "text": "Powiedz to słowo powoli. Czy ta głoska szumi twardo, czy brzmi miękko?"
+                  },
+                  "l_ł": {
+                    "text": "Powiedz to słowo powoli. Czy słyszysz tę głoskę jak w „lato”, czy jak w „łapa”?"
+                  },
+                  "diacritic": {
+                    "text": "Spójrz na kreski i kropki nad literami. Każda zmienia dźwięk."
+                  },
+                  "other_wrong": {
+                    "text": "Przeczytaj zdanie jeszcze raz i powiedz to słowo na głos, powoli."
+                  }
+                },
+                "almost": [
+                  "Zmieniam słowo: gdy są dwa… Słychać o.",
+                  "Na środku kuchni stoi st□ł. Tu stoją dwa □."
+                ],
+                "worked": [
+                  "Zmieniam słowo: gdy są dwa… Słychać o.",
+                  "Na środku kuchni stoi stół. Tu stoją dwa stoły."
+                ]
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz ó, stoły, potem {check}",
+                  "uk": "Впиши ó, stoły, potem {check}",
+                  "en": "Type ó, stoły, potem {check}"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "ó",
+                    "g2": "stoły"
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz u (g1)",
+                  "uk": "Впиши u (g1)",
+                  "en": "Type u (g1)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "o_u",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "u",
+                    "g2": "stoły"
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz o (g1)",
+                  "uk": "Впиши o (g1)",
+                  "en": "Type o (g1)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "diacritic",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "o",
+                    "g2": "stoły"
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz stuły (g2)",
+                  "uk": "Впиши stuły (g2)",
+                  "en": "Type stuły (g2)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "o_u",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "ó",
+                    "g2": "stuły"
+                  }
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz stóły (g2)",
+                  "uk": "Впиши stóły (g2)",
+                  "en": "Type stóły (g2)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "o_u",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": {
+                  "gaps": {
+                    "g1": "ó",
+                    "g2": "stóły"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "part": "wrap_up",
+        "steps": [
+          {
+            "id": "s20",
+            "skill_ids": [],
+            "based_on": {
+              "question": "authored:polish-spelling-practice",
+              "changes": []
+            },
+            "reason": {
+              "brief": "school",
+              "why": {
+                "pl": "Spokojne zakończenie: sposób do zapamiętania, bez wyniku.",
+                "uk": "Спокійне завершення: спосіб, який варто запамʼятати, без результату.",
+                "en": "A calm end: the trick to keep, with no result."
+              }
+            },
+            "say": {
+              "pl": "To wszystko na dziś. Pamiętasz sposób? Gdy nie wiesz, jak napisać słowo, zmień je i posłuchaj. Dziękuję za wspólne pisanie!",
+              "uk": "На сьогодні все. Памʼятаєш спосіб? Коли не знаєш, як написати слово, зміни його і послухай. Дякую за спільне письмо!",
+              "en": "That’s all for today. Remember the trick? When you don’t know how to write a word, change it and listen. Thank you for writing with me!"
+            },
+            "teach": {
+              "text": {
+                "pl": "To wszystko na dziś. Pamiętasz sposób? Gdy nie wiesz, jak napisać słowo, zmień je i posłuchaj. Dziękuję za wspólne pisanie!",
+                "uk": "На сьогодні все. Памʼятаєш спосіб? Коли не знаєш, як написати слово, зміни його і послухай. Дякую за спільне письмо!",
+                "en": "That’s all for today. Remember the trick? When you don’t know how to write a word, change it and listen. Thank you for writing with me!"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

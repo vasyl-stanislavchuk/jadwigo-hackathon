@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "axis": {
+      "type": "string",
+      "enum": [
+        "rows",
+        "cols"
+      ]
+    },
+    "at": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "axis",
+    "at"
+  ],
+  "additionalProperties": false
+}

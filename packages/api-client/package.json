@@ -12,6 +12,7 @@
     "test": "vitest run --config ../../vitest.config.ts --project unit"
   },
   "//": {
+    "@jadwigo/contracts": "ROUTES, the wire schemas every reply is parsed with, and the error envelope (src/client.ts)",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit test with the root vitest.config.ts"
@@ -20,5 +21,8 @@
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "dependencies": {
+    "@jadwigo/contracts": "workspace:*"
   }
 }

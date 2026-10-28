@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "criteria": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "cite": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "cite"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "criteria_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "criteria",
+    "criteria_version"
+  ],
+  "additionalProperties": false
+}

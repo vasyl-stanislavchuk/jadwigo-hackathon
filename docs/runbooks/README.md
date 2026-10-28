@@ -15,4 +15,4 @@ An agent writes and updates runbooks. The owner runs them. When a step can be a 
 script in `tools/` or `infra/` and make the step the command that runs it.
 
 Runbooks land with the work that needs them: deploy (`dl-5ssh.2`), infra (`dl-5ssh.34.4`) and
-migrations (`dl-5ssh.34.34`).
+migrations (`migrations.md`).

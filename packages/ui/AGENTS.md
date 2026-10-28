@@ -10,4 +10,8 @@ Design tokens, primitives and the parts the web app and the site share.
 
 ## Rules here
 
-- Theme, sound and motion packs land here (engagement epic `dl-7wlo`).
+- Components are `.tsx` on React 18.3.1 (`tsconfig.dom.json`), tested as `*.test.tsx` in Vitest's `dom`
+  project with Testing Library. Query the way a person would (role, text), never by class name.
+- The playground's primitives, shadcn/ui and Tailwind come with `dl-5ssh.34.6`. OPEN: theme, sound and
+  motion packs wait on the engagement epic (`dl-7wlo`); the can-do card is out of scope
+  (`jadwigo-learner-experience/decisions/2026-10-27-the-can-do-card-and-the-look-back-review-at-a-lesson-s-end-are-o`).

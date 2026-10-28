@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "op": {
+      "type": "string",
+      "enum": [
+        "add",
+        "sub",
+        "mul"
+      ]
+    },
+    "operands": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "given_steps": {
+      "type": "number"
+    },
+    "carry_row": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "op",
+    "operands",
+    "given_steps",
+    "carry_row"
+  ],
+  "additionalProperties": false
+}

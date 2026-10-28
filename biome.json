@@ -22,6 +22,11 @@
     "indentWidth": 2,
     "lineWidth": 100
   },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
   "assist": {
     "enabled": true,
     "actions": {
@@ -59,12 +64,31 @@
     {
       "includes": [
         "apps/*/src/**/*.ts",
+        "apps/*/src/**/*.tsx",
         "packages/*/src/**/*.ts",
+        "packages/*/src/**/*.tsx",
         "!**/src/config.ts",
         "!**/*.test.ts",
+        "!**/*.test.tsx",
         "!packages/testing/**"
       ],
       "plugins": ["./lint/no-raw-process-env.grit"]
+    },
+    {
+      "includes": [
+        "apps/*/src/**/*.ts",
+        "apps/*/src/**/*.tsx",
+        "packages/*/src/**/*.ts",
+        "packages/*/src/**/*.tsx",
+        "!**/*.test.ts",
+        "!**/*.test.tsx",
+        "!**/*.contract.ts",
+        "!packages/testing/**",
+        "!packages/contracts/src/ids.ts",
+        "!packages/contracts/src/routes.ts",
+        "!packages/contracts/src/wire.ts"
+      ],
+      "plugins": ["./lint/boundary-constants.grit"]
     },
     {
       "includes": [".claude/hooks/**", "tools/**"],
@@ -72,6 +96,32 @@
         "rules": {
           "suspicious": {
             "noConsole": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/lesson-kit/src/**", "apps/web/src/**"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useSemanticElements": "off",
+            "noSvgWithoutTitle": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "packages/lesson-kit/src/**/*.test.ts",
+        "packages/lesson-kit/src/**/*.test.tsx",
+        "apps/web/src/**/*.test.ts",
+        "apps/web/src/**/*.test.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noTemplateCurlyInString": "off"
           }
         }
       }
