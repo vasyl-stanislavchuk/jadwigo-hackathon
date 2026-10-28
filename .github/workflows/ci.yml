@@ -182,7 +182,7 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           bun tools/src/check-pr-body.ts || {
-            echo "::error::Fix the body (gh pr edit --body-file), then rerun this job: gh run rerun ${{ github.run_id }} --failed"
+            echo "::error::Fix the body with gh pr edit --body-file. The edit starts a new run; a rerun of this one checks the old body again."
             exit 1
           }
 
