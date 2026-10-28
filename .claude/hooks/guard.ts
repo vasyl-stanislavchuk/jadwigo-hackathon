@@ -92,6 +92,43 @@ function ghApiMethod(args: string[]): string | undefined {
   return sends ? "POST" : "GET";
 }
 
+/** The Makefile targets that write to a Supabase project; ENV=prod on any of them is the owner's. */
+const DB_TARGET = /(^|[\s'",[(])db-(push|role|seed|reset)\b/;
+const PROD = /\bENV\W{0,4}prod\b/;
+/** Programs that can run a command on a pseudo-terminal, or hide one in a quoted script. */
+const WRAPPERS =
+  /^(script|expect|unbuffer|socat|python[\d.]*|perl|ruby|node|bun|deno|osascript|bash|sh|zsh|dash|fish)$/;
+const CLEARS_CLAUDECODE =
+  /(^|\s)(-u\s*|--unset[=\s]+)CLAUDECODE\b|\bunset\s+(-v\s+)?(\w+\s+)*CLAUDECODE\b|\bexport\s+-n\s+(\w+\s+)*CLAUDECODE\b/;
+
+/**
+ * The prod db targets (dl-5ssh.45). The Makefile's PROD_GATE asks for a terminal and a typed prod
+ * (dl-e8ov.2.34), but a session can fake the terminal with a pty, so a session never runs one: no
+ * make db-* with ENV=prod, no clearing CLAUDECODE (the gate reads it), and no pty or script wrapper
+ * whose quoted text names a db target and prod. Codex shells have no guard; the gate is all they meet.
+ */
+function prodDbDenial(cmd: string, bare: string, commands: string[][]): string | undefined {
+  const base = (w: string) => w.slice(w.lastIndexOf("/") + 1);
+  if (assignments(bare).some((a) => a.startsWith("CLAUDECODE=")) || CLEARS_CLAUDECODE.test(bare)) {
+    return "clearing CLAUDECODE hides that a session runs the command, which the prod db gate reads. Leave it set.";
+  }
+  for (const words of commands) {
+    const make = words.some((w) => /^g?make$/.test(base(w)));
+    if (make && words.some((w) => DB_TARGET.test(w)) && PROD.test(cmd)) {
+      return "make db-push, db-role, db-seed and db-reset with ENV=prod are the owner's, typed at their own terminal (`!` in Claude Code). From a session, use ENV=dev.";
+    }
+    if (words.some((w) => WRAPPERS.test(base(w)))) {
+      if (DB_TARGET.test(cmd) && /\bprod\b/.test(cmd)) {
+        return "a pty or script wrapper around a prod db target fakes the terminal its gate asks for. Prod db steps are the owner's, typed at their own terminal.";
+      }
+      if (CLEARS_CLAUDECODE.test(cmd) || /CLAUDECODE/.test(cmd.replace(/\$\{?CLAUDECODE/g, ""))) {
+        return "a wrapped script that touches CLAUDECODE can hide that a session runs it, which the prod db gate reads. Leave it set.";
+      }
+    }
+  }
+  return undefined;
+}
+
 const USE_DEV_PR = "Write the body with /dev-pr into a file, then pass it with --body-file <path>.";
 
 /** gh pr create always carries a body file that passes check-pr-body; gh pr edit does when it sets the body. */
@@ -140,6 +177,10 @@ function bashDenial(
 ): string | undefined {
   const bare = stripProse(cmd);
   const commands = simpleCommands(bare);
+
+  // 3b. Prod db targets stay the owner's, however the terminal is faked.
+  const prodDb = prodDbDenial(cmd, bare, commands);
+  if (prodDb) return prodDb;
 
   for (const words of commands) {
     const [prog = "", ...args] = words;
