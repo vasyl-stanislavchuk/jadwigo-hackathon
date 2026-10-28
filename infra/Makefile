@@ -5,7 +5,7 @@ include aws.mk
 ENV ?= prod
 TF := AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform
 
-.PHONY: init plan apply output site-deploy fmt validate
+.PHONY: init plan apply output site-deploy deploy api-deploy web-deploy fmt validate
 
 init:
 	$(TF) init -input=false -reconfigure -backend-config=environments/$(ENV).backend.hcl
@@ -29,6 +29,37 @@ site-deploy:
 	bucket=$$($(TF) output -raw site_bucket) && dist_id=$$($(TF) output -raw site_distribution_id) && \
 	{ [ ! -d $(SITE)/dist/_astro ] || $(AWS) s3 sync $(SITE)/dist/_astro s3://$$bucket/_astro --cache-control "public, max-age=31536000, immutable"; } && \
 	$(AWS) s3 sync $(SITE)/dist s3://$$bucket --delete --exclude "_astro/*" --cache-control "public, max-age=300" && \
+	$(AWS) cloudfront create-invalidation --distribution-id $$dist_id --paths "/*"
+
+# The service at app.<apex> (dl-5ssh.2): `make -C infra deploy` is the api, then the web app. The
+# owner runs it after an apply, from a terminal; a merge deploys nothing
+# (jadwigo-platform/decisions/2026-10-26-a-green-merge-does-not-deploy-to-prod-the-owner-deploys-manually).
+# Every name comes from terraform output. An agent's shell (Claude Code sets CLAUDECODE) is refused;
+# `make -n -C infra deploy` prints the steps anywhere.
+WEB := ../apps/web
+API_ZIP := ../apps/api/dist/api.zip
+NOT_FROM_AGENT = if [ -n "$$CLAUDECODE" ]; then echo "$@: the owner deploys, from a terminal, not from an agent's shell"; exit 1; fi
+
+deploy: api-deploy web-deploy
+
+# The bundle (`make api-bundle`), zipped, as the function's code; then wait until it is live.
+api-deploy:
+	@$(NOT_FROM_AGENT)
+	$(MAKE) -C .. api-bundle
+	rm -f $(API_ZIP) && zip -qj $(API_ZIP) ../apps/api/dist/index.mjs
+	fn=$$($(TF) output -raw api_function_name) && \
+	$(AWS) lambda update-function-code --function-name $$fn --zip-file fileb://$(API_ZIP) --architectures arm64 >/dev/null && \
+	$(AWS) lambda wait function-updated-v2 --function-name $$fn && echo "api-deploy: $$fn is live"
+
+# apps/web's build to the app bucket, then invalidate. Hashed files under assets/ cache for a year,
+# the rest (index.html first) 5 minutes, so a deploy shows within minutes.
+web-deploy:
+	@$(NOT_FROM_AGENT)
+	cd $(WEB) && bun run build
+	test -f $(WEB)/dist/index.html
+	bucket=$$($(TF) output -raw app_bucket) && dist_id=$$($(TF) output -raw app_distribution_id) && \
+	{ [ ! -d $(WEB)/dist/assets ] || $(AWS) s3 sync $(WEB)/dist/assets s3://$$bucket/assets --cache-control "public, max-age=31536000, immutable"; } && \
+	$(AWS) s3 sync $(WEB)/dist s3://$$bucket --delete --exclude "assets/*" --cache-control "public, max-age=300" && \
 	$(AWS) cloudfront create-invalidation --distribution-id $$dist_id --paths "/*"
 
 # No AWS: what CI and `make check` can run.
