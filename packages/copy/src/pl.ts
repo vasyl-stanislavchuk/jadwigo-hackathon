@@ -342,4 +342,19 @@ export const pl: CopyTable = {
   leave_stay: { text: "Zostań", reviewed: false },
   leave_go: { text: "Otwórz", reviewed: false },
   // end the source credit
+  // the lesson player's end screen and pause (dl-5ssh.3.1)
+  play_congrats: { text: "Brawo! To już wszystko na dziś.", reviewed: false },
+  play_results_title: { text: "Pytania z tej lekcji", reviewed: false },
+  play_results_none: { text: "Tu pojawią się pytania z lekcji.", reviewed: false },
+  play_ended_correct: { text: "Udało się", reviewed: false },
+  play_ended_missed: { text: "Jeszcze się uczymy", reviewed: false },
+  play_ended_skipped: { text: "Wrócimy do tego", reviewed: false },
+  play_ended_done: { text: "Zrobione", reviewed: false },
+  play_ended_open: { text: "Jeszcze przed tobą", reviewed: false },
+  play_results_twin: { text: "podobne pytanie", reviewed: false },
+  play_results_help: { text: "Pomoc: {n}", reviewed: false },
+  play_paused: { text: "Lekcja czeka na ciebie.", reviewed: false },
+  play_paused_back: { text: "Wracam do lekcji", reviewed: false },
+  play_not_found: { text: "Tej lekcji tu nie ma.", reviewed: false },
+  // end the lesson player
 };
