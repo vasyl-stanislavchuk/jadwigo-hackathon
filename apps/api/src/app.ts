@@ -3,6 +3,7 @@ import { ErrorType, ROUTES, type RouteName } from "@jadwigo/contracts";
 import type { Store } from "@jadwigo/store";
 import { answer, getAttempt, startAttempt } from "./attempts.ts";
 import { ApiError, errorResponse, json, refusal } from "./errors.ts";
+import { getResults, help, patchAttempt } from "./session.ts";
 
 type Params<N extends RouteName> = ReturnType<(typeof ROUTES)[N]["params"]["parse"]>;
 type Handle<N extends RouteName> = (params: Params<N>, body: unknown) => Promise<unknown>;
@@ -40,6 +41,9 @@ export function createApp(store: Store): Router {
   on("startAttempt", (params, body) => startAttempt(store, params.id, body));
   on("getAttempt", (params) => getAttempt(store, params.id));
   on("answer", (params, body) => answer(store, params.id, body));
+  on("help", (params, body) => help(store, params.id, params.seq, body));
+  on("patchAttempt", (params, body) => patchAttempt(store, params.id, body));
+  on("getResults", (params) => getResults(store, params.id));
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;

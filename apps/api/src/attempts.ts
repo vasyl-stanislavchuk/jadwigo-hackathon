@@ -139,7 +139,7 @@ export async function answer(
 }
 
 /** Ends a question, then asks the next one or finishes the attempt. */
-async function endAndGoOn(
+export async function endAndGoOn(
   store: Store,
   scope: Scope,
   version: LessonVersionWithQuestions,
@@ -189,7 +189,7 @@ function answerResult(
   };
 }
 
-async function versionOf(
+export async function versionOf(
   store: Store,
   pod: PodId,
   record: AttemptRecord,
@@ -207,8 +207,8 @@ function serverFieldIn(raw: unknown): string | undefined {
     : undefined;
 }
 
-/** The request body's hash, over its keys in sorted order: a replay is matched on it. */
-function bodyHash(body: AttemptAnswerRequest): string {
+/** A request body's hash, over its keys in sorted order: a replay is matched on it. */
+export function bodyHash(body: unknown): string {
   return createHash("sha256").update(canonical(body)).digest("hex");
 }
 
