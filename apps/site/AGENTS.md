@@ -26,4 +26,5 @@ jadwigo.kids and English wait.
 - A page with `reviewed: false` builds in dev and stops a prod build. A native speaker reviews the
   Polish before it is flipped.
 - The placeholder page says only "Jadwigo. Wkrótce."
-  (`jadwigo-marketing/decisions/2026-10-27-the-jadwigo-pl-placeholder-says-jadwigo-wkrotce-and-is-built-in`).
+  (`jadwigo-marketing/decisions/2026-10-27-the-jadwigo-pl-placeholder-says-jadwigo-wkrotce-and-is-built-in`),
+  plus one link to the app, "Zagraj w lekcję", at `appUrl` from `hosts.prod.app` (`dl-e8ov.2.41`).

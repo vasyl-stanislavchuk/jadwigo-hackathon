@@ -1,7 +1,12 @@
 # Thin on purpose: every target calls turbo, bun, md or Postgres.app's tools. The gate is `make check`.
 # .env.local (from .env.example) is read here, so check-all's integration tests see DATABASE_URL.
+# A variable already in the environment wins over .env.local's (dl-5ssh.43): an included assignment
+# would otherwise override it, so DATABASE_URL=… make migrate reset the database .env.local names.
 ifneq (,$(wildcard .env.local))
+ENV_LOCAL_KEPT := $(foreach v,$(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' .env.local),$(if $(filter environment,$(origin $(v))),$(v)))
+$(foreach v,$(ENV_LOCAL_KEPT),$(eval ENV_LOCAL_KEPT_$(v) := $$(value $(v))))
 include .env.local
+$(foreach v,$(ENV_LOCAL_KEPT),$(eval $(v) := $$(ENV_LOCAL_KEPT_$(v))))
 export
 endif
 # The tools mise.toml pins (gitleaks for the fence test, terraform) on PATH even in a shell that never
@@ -54,15 +59,15 @@ db:
 migrate:
 	@test -n "$$DATABASE_URL" || { echo "migrate: DATABASE_URL is unset. Run: cp .env.example .env.local && make db"; exit 1; }
 	@case "$${DATABASE_URL##*/}" in jadwigo*) ;; *) echo "migrate: resets only a jadwigo* database, not $${DATABASE_URL##*/}"; exit 1;; esac
-	psql "$$DATABASE_URL" -q -v ON_ERROR_STOP=1 -c 'drop schema if exists public, app, auth cascade' -c 'create schema public'
-	psql "$$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f supabase/tests/shim.sql
-	for f in supabase/migrations/*.sql; do echo "$$f"; psql "$$DATABASE_URL" -q -v ON_ERROR_STOP=1 -1 -f "$$f" || exit 1; done
+	psql "$(DATABASE_URL)" -q -v ON_ERROR_STOP=1 -c 'drop schema if exists public, app, auth cascade' -c 'create schema public'
+	psql "$(DATABASE_URL)" -q -v ON_ERROR_STOP=1 -f supabase/tests/shim.sql
+	for f in supabase/migrations/*.sql; do echo "$$f"; psql "$(DATABASE_URL)" -q -v ON_ERROR_STOP=1 -1 -f "$$f" || exit 1; done
 
 ## pgtap: the pgTAP tests in supabase/tests on the database `make migrate` built. Each test runs in
 ## a transaction it rolls back. Needs pg_prove (cpanm TAP::Parser::SourceHandler::pgTAP)
 pgtap:
-	psql "$$DATABASE_URL" -q -v ON_ERROR_STOP=1 -c 'create extension if not exists pgtap'
-	pg_prove --dbname "$$DATABASE_URL" supabase/tests/*.test.sql
+	psql "$(DATABASE_URL)" -q -v ON_ERROR_STOP=1 -c 'create extension if not exists pgtap'
+	pg_prove --dbname "$(DATABASE_URL)" supabase/tests/*.test.sql
 
 # The Supabase projects (decision 2026-10-27-jadwigo-runs-on-a-prod-and-a-dev-supabase-project-a-native-local),
 # reached through the Supabase CLI mise.toml pins. Secrets live outside every checkout, in

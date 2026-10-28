@@ -40,6 +40,13 @@ module "app" {
     "POST /api/v1/attempts/{id}/answers",
     "POST /api/v1/attempts/{id}/questions/{seq}/help",
     "GET /api/v1/attempts/{id}/results",
+    # Parent login (dl-e8ov.2.36): these 5 need a token. The JWT authorizer on them is
+    # dl-e8ov.2.42; apply them only together with it, never alone.
+    "GET /api/v1/me",
+    "POST /api/v1/accounts",
+    "POST /api/v1/learners",
+    "POST /api/v1/attempts/{id}/claims",
+    "GET /api/v1/learners/{id}/attempts",
   ]
 
   # ROUTES entries whose auth is "token" (dl-e8ov.2.36): only these carry the JWT authorizer.
