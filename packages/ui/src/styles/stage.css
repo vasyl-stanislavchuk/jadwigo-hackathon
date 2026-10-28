@@ -210,9 +210,10 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
  * go: a line of gaps that wrapped beside the arrow would otherwise reflow, and a gap would jump to
  * the line above (Slots addendum section 10: no gap moves by a pixel between states). */
 .kid-step-shell:not([data-framed], [data-tools]):is([data-frame="phone"], [data-frame="tablet"]):is(
-  .kid-family-gaps,
-  :has(.kid-family-gaps)
-):not(:has(div[data-wide])) [data-area="answer"] {
+    .kid-family-gaps,
+    :has(.kid-family-gaps)
+  ):not(:has(div[data-wide]))
+  [data-area="answer"] {
   padding-right: 3.75rem;
 }
 
@@ -275,13 +276,14 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
  * and ink, so "1" is blue on a pick and green on a right answer. Colour only: the badge's border
  * stays solid and 2px, so nothing moves. */
 :is([data-option], [data-still-option]):is(
-  [data-checked],
-  [aria-checked="true"],
-  [class~="bg-primary/10"],
-  :not([data-tone="idle"]),
-  [data-help-removed],
-  [data-solution]
-) > [data-key-badge] {
+    [data-checked],
+    [aria-checked="true"],
+    [class~="bg-primary/10"],
+    :not([data-tone="idle"]),
+    [data-help-removed],
+    [data-solution]
+  )
+  > [data-key-badge] {
   border-color: inherit;
   color: inherit;
 }
@@ -294,7 +296,7 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
  * (4 tiles of 120px) never squeezes "3 · 4" onto two lines. The tile's size is the same in every
  * state, so nothing moves. */
 .kid-step-shell[data-frame="laptop"]
-:is([role="radiogroup"], [role="group"], ul):has(> [data-badge-at]) {
+  :is([role="radiogroup"], [role="group"], ul):has(> [data-badge-at]) {
   container: kid-choices / inline-size;
 }
 
@@ -1259,7 +1261,7 @@ html:has(
  * the fields beside it on the right, the help under the fields (README §2, "fields beside
  * picture"). A question with no picture stacks as before. */
 .kid-step-shell[data-frame="phone-sideways"]
-[data-stage]:has(> [data-area="stem"] :is(img, [data-figure])) {
+  [data-stage]:has(> [data-area="stem"] :is(img, [data-figure])) {
   display: grid;
   /* The fields take the wider share: two 88 fields and their words fit on one line. */
   grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
@@ -1283,7 +1285,7 @@ html:has(
 /* A match pair on a phone: the fixed card over the card that moves, so the pair fits the 358 column
  * with both at full width; a pair stands apart from the next by the list's 12 (dl-uukj.29.69). */
 .kid-step-shell:is([data-frame="phone"], [data-frame="phone-sideways"])
-[data-sort-id]:has(> [data-beside]) {
+  [data-sort-id]:has(> [data-beside]) {
   flex-direction: column;
   align-items: stretch;
   gap: 0.25rem;
@@ -1380,7 +1382,7 @@ html:has(
  * gives the table the full width (in a lesson the arrow is on the dock). A table still wider than
  * the column scrolls inside its own box, so the page never scrolls sideways. */
 .kid-step-shell:not([data-framed])[data-frame="phone"][data-tools]
-[data-area="answer"]:has(div[data-wide]) {
+  [data-area="answer"]:has(div[data-wide]) {
   padding-right: 0;
   padding-top: calc(3rem + 0.5rem);
 }
@@ -1395,7 +1397,7 @@ html:has(
  * their arrow go, so the table does not climb 56 px (Slots addendum 6 and 10: the child's gaps do
  * not move by a pixel). `data-keypad-gaps` marks a step whose gaps the keypad types into. */
 .kid-step-shell:not([data-framed], [data-tools])[data-frame="phone"]
-[data-area="answer"]:has([data-keypad-gaps]):has(div[data-wide]) {
+  [data-area="answer"]:has([data-keypad-gaps]):has(div[data-wide]) {
   padding-top: calc(3rem + 0.5rem);
 }
 
