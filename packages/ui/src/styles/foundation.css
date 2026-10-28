@@ -376,7 +376,9 @@
  * these rules. A one-answer option is a label around its sr-only radio (ChoiceList.tsx), so the
  * label carries the option's rules (dl-uukj.29.49). */
 [data-lesson-theme="zeszyt"]
-[data-slot="button"]:is([data-variant="outline"], [data-variant="secondary"]):not([data-key-click]),
+  [data-slot="button"]:is([data-variant="outline"], [data-variant="secondary"]):not(
+    [data-key-click]
+  ),
 [data-lesson-theme="zeszyt"]
   :is(
     [role="radio"]:not([data-plain]),
@@ -392,10 +394,10 @@
  * option does, and so does an option drawn still beside the solution (ChoiceStatic): the export's
  * tone table stands every tone on an edge but the miss, the removed and the solution. */
 [data-lesson-theme="zeszyt"]
-button[role="checkbox"][data-option][aria-disabled="true"]:not(
-  [data-help-removed],
-  [data-solution]
-),
+  button[role="checkbox"][data-option][aria-disabled="true"]:not(
+    [data-help-removed],
+    [data-solution]
+  ),
 [data-lesson-theme="zeszyt"] li[data-still-option]:not([data-solution]) {
   box-shadow: 0 var(--jw-press) 0 var(--jw-edge, var(--jw-line));
 }
@@ -404,12 +406,12 @@ button[role="checkbox"][data-option][aria-disabled="true"]:not(
  * pick's edge when picked, the right edge when right, and none on a miss. The rule above draws it
  * through --jw-edge, so its weight never hides the tone. */
 [data-lesson-theme="zeszyt"]
-:is(
-  [class~="bg-primary/10"],
-  label[data-checked],
-  [role="checkbox"][aria-checked="true"],
-  [data-tile][aria-pressed="true"]
-) {
+  :is(
+    [class~="bg-primary/10"],
+    label[data-checked],
+    [role="checkbox"][aria-checked="true"],
+    [data-tile][aria-pressed="true"]
+  ) {
   --jw-edge: var(--jw-pick-edge);
 }
 
@@ -500,13 +502,13 @@ button[role="checkbox"][data-option][aria-disabled="true"]:not(
 
 /* A press sinks into the edge, 120ms. The action at rest has no edge and does not move. */
 [data-lesson-theme="zeszyt"]
-:is(
-  [data-slot="button"],
-  [role="radio"]:not([data-plain]),
-  label[data-option]:has(> input[type="radio"]),
-  [role="checkbox"],
-  [data-tile]
-):not([data-key-click], [aria-disabled="true"]):active {
+  :is(
+    [data-slot="button"],
+    [role="radio"]:not([data-plain]),
+    label[data-option]:has(> input[type="radio"]),
+    [role="checkbox"],
+    [data-tile]
+  ):not([data-key-click], [aria-disabled="true"]):active {
   box-shadow: none;
   transform: translateY(var(--jw-press));
 }
@@ -661,7 +663,7 @@ button[role="checkbox"][data-option][aria-disabled="true"]:not(
 /* On a control that stands on its edge, the ring is a layer that reaches past the edge, so its lower
  * side does not run into it. */
 [data-lesson-theme="zeszyt"]
-.kid-look:is([data-slot="button"], [role="radio"], [role="checkbox"], [data-tile]) {
+  .kid-look:is([data-slot="button"], [role="radio"], [role="checkbox"], [data-tile]) {
   position: relative;
   outline: none;
 }
@@ -710,17 +712,17 @@ button[role="checkbox"][data-option][aria-disabled="true"]:not(
  * no focus and stays, and typed fields keep their active look below. A link, the one thing left
  * that takes the keyboard and is none of these, keeps the 3px ink outline, 3px out. */
 [data-lesson-theme="zeszyt"]
-:is(
-  button,
-  [role="button"],
-  [role="radio"],
-  [role="checkbox"],
-  [role="switch"],
-  [role="slider"],
-  [data-tile],
-  [data-slot="toggle"],
-  [data-key-click]
-):focus-visible:not(.kid-look) {
+  :is(
+    button,
+    [role="button"],
+    [role="radio"],
+    [role="checkbox"],
+    [role="switch"],
+    [role="slider"],
+    [data-tile],
+    [data-slot="toggle"],
+    [data-key-click]
+  ):focus-visible:not(.kid-look) {
   outline: none;
   --tw-ring-color: transparent;
 }
@@ -739,7 +741,7 @@ button[role="checkbox"][data-option][aria-disabled="true"]:not(
 /* A ghost icon control (the close control) stands on no edge: the export draws it round, with no
  * fill and quiet ink. */
 [data-lesson-theme="zeszyt"]
-[data-slot="button"][data-variant="ghost"][data-size="icon"]:not(.kid-quiet) {
+  [data-slot="button"][data-variant="ghost"][data-size="icon"]:not(.kid-quiet) {
   border-radius: 999px;
   color: var(--jw-ink-soft);
   background-color: transparent;
@@ -780,13 +782,13 @@ button[role="checkbox"][data-option][aria-disabled="true"]:not(
  * ring. Away (no focus, the keypad's field without data-active) it is only marked: the miss's fill
  * inside its 2px dashed edge (tone.ts). */
 [data-lesson-theme="zeszyt"]
-:is(
-  input:not([type="radio"], [type="checkbox"]),
-  textarea,
-  [role="textbox"][data-field],
-  button[data-field],
-  button[data-box]
-)[data-tone="amber"]:is(:focus, [data-active="true"]) {
+  :is(
+    input:not([type="radio"], [type="checkbox"]),
+    textarea,
+    [role="textbox"][data-field],
+    button[data-field],
+    button[data-box]
+  )[data-tone="amber"]:is(:focus, [data-active="true"]) {
   outline: none;
   border-style: solid;
   border-color: var(--jw-focus);
@@ -805,13 +807,13 @@ button[role="checkbox"][data-option][aria-disabled="true"]:not(
 /* A right field is flat (Enter addendum section 5): the right fill inside its 2px edge, standing on
  * no pressed edge, so it sits exactly where it was typed. An option keeps its edge. */
 [data-lesson-theme="zeszyt"]
-:is(
-  input,
-  textarea,
-  [role="textbox"][data-field],
-  button[data-field],
-  [data-box]
-)[data-tone="green"]:not([data-status]) {
+  :is(
+    input,
+    textarea,
+    [role="textbox"][data-field],
+    button[data-field],
+    [data-box]
+  )[data-tone="green"]:not([data-status]) {
   box-shadow: none;
 }
 
