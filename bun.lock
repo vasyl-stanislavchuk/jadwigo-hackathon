@@ -119,7 +119,11 @@
     },
     "packages/core": {
       "name": "@jadwigo/core",
+      "dependencies": {
+        "@jadwigo/contracts": "workspace:*",
+      },
       "devDependencies": {
+        "@jadwigo/testing": "workspace:*",
         "@types/node": "catalog:",
         "fast-check": "catalog:",
         "typescript": "catalog:",
