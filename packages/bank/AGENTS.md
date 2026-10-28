@@ -13,3 +13,4 @@ Code for the question bank: read, search, import. The bank itself never enters g
 - Profiles are `fixture` (made-up sets in memory) and `api` (`POST /api/v1/question-searches`), named by `JADWIGO_BANK`. `local` and `remote` are served by the Python service in `jadwigo-bank`, not built here (`docs/research/bank-into-the-monorepo.md`).
 - Every answer goes through `publicEnvelope` (`src/envelope.ts`): a row carrying a private body is dropped, a field the envelope does not name is stripped.
 - The doubles live at `@jadwigo/bank/testing`, which only tests may import (dependency-cruiser holds it): `fakeBank`, `emptyBank`, `bankThatAbstains`, `degradedRerank`, `bankThatTimesOut`, `keyLeakAttempt`.
+- A new backend passes `bankContract` (`src/conformance.ts`), as fixture and api do in `src/conformance.test.ts`.
