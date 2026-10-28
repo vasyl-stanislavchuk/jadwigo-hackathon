@@ -59,7 +59,7 @@
     "vitest": "the test runner every package's test script calls with the root vitest.config.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.15",
+    "@biomejs/biome": "2.6.2",
     "@types/bun": "1.4.3",
     "@types/node": "catalog:",
     "dependency-cruiser": "18.7.0",
