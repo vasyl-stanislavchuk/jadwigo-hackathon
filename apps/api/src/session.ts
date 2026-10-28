@@ -13,9 +13,9 @@ import {
   verdictsHeld,
 } from "@jadwigo/contracts";
 import { gateOpen, HelpRung, helpLeft, rungFor } from "@jadwigo/core";
-import { type LessonVersionWithQuestions, type Store, StoreError } from "@jadwigo/store";
+import type { Store } from "@jadwigo/store";
 import { bodyHash, goOn, versionOf } from "./attempts.ts";
-import { authorize, type Scope } from "./authorize.ts";
+import { authorize } from "./authorize.ts";
 import { lessonQuestion } from "./course.ts";
 import { ApiError, badRequest } from "./errors.ts";
 import { pageQuestion, releasedHelp, rungsWritten, snapshot } from "./page.ts";
@@ -61,9 +61,26 @@ export async function help(
     if (asked.ended !== null)
       throw new ApiError(ErrorType.enum.QuestionNotOpen, "this question has ended");
     const rung = rungFor(question, written[seen - 1] ?? HelpRung.None, gateOpen(tries));
-    if (rung !== null) await store.releaseHelp(scope.pod, id, seq, seen);
+    if (rung === HelpRung.Twin) {
+      // Rung 4 shows the worked answer, so the store releases it, appends the help_twin skip and
+      // ends the question in one unit: no try can land on the question once the answer shows.
+      const now = new Date().toISOString();
+      await store.releaseHelp(scope.pod, id, seq, seen, {
+        twin: {
+          event_id: randomUUID() as EventId,
+          latency_ms: Math.max(0, Date.parse(now) - Date.parse(asked.asked_at)),
+          asked_at: asked.asked_at,
+          answered_at: now,
+          body_hash: bodyHash({ seq, skip_reason: "help_twin" }),
+        },
+      });
+    } else if (rung !== null) {
+      await store.releaseHelp(scope.pod, id, seq, seen);
+    }
   }
-  await endOnTwinRung(store, scope, version, id, seq, written);
+  // Asks the twin once rung 4 ended the question, whichever request ended it, and while paused
+  // too; it does nothing when the course has gone on already.
+  await goOn(store, scope, version, id, seq);
 
   const after = await store.getAttempt(scope.pod, id);
   const held = verdictsHeld(scope.assignment, after.attempt);
@@ -118,70 +135,4 @@ export async function getResults(store: Store, id: AttemptId): Promise<AttemptRe
   const held = verdictsHeld(scope.assignment, attempt);
   const rows = await store.getAttemptResult(scope.pod, id);
   return { attempt, results: rows.map((row) => pageAttemptResult(row, held)) };
-}
-
-/** What a request racing the help_twin skip leaves behind: try again on a fresh read. */
-const RACED: ReadonlySet<ErrorType> = new Set([
-  ErrorType.enum.AnswerConflict,
-  ErrorType.enum.TryOutOfOrder,
-  ErrorType.enum.QuestionNotOpen,
-]);
-
-/**
- * Once rung 4 is released, the question ends skipped (`help_twin`) and its twin is asked, from
- * stored state, so every request that finds it so finishes the job: the one that released it, a
- * retry, a concurrent rung-4 request, and one after a request that stopped between the release
- * and the skip. A try racing the skip takes its `try_no`, so the skip is tried again on a fresh
- * read; a question another request ended only needs its next question asked (`goOn`). A paused
- * attempt is left as it is until it resumes.
- */
-async function endOnTwinRung(
-  store: Store,
-  scope: Scope,
-  version: LessonVersionWithQuestions,
-  id: AttemptId,
-  seq: number,
-  written: readonly number[],
-): Promise<void> {
-  for (let round = 0; round < 3; round++) {
-    const record = await store.getAttempt(scope.pod, id);
-    const asked = record.questions.find((q) => q.seq === seq);
-    if (asked === undefined || record.attempt.status !== "in_progress") return;
-    if (asked.ended !== null) {
-      await goOn(store, scope, version, id, seq);
-      return;
-    }
-    if (written[asked.help_released - 1] !== HelpRung.Twin) return;
-    const now = new Date().toISOString();
-    try {
-      // The skip ends the question in the same store unit as its append.
-      await store.appendAttemptAnswer(
-        scope.pod,
-        {
-          event_id: randomUUID() as EventId,
-          attempt_id: id,
-          seq,
-          try_no: record.answers.filter((a) => a.seq === seq).length + 1,
-          kind: "skip",
-          value: null,
-          skip_reason: "help_twin",
-          latency_ms: Math.max(0, Date.parse(now) - Date.parse(asked.asked_at)),
-          asked_at: asked.asked_at,
-          answered_at: now,
-          correct: null,
-          mistake_class: null,
-          parts: null,
-          judged_by: null,
-          body_hash: bodyHash({ seq, skip_reason: "help_twin" }),
-        },
-        { end: "skipped" },
-      );
-    } catch (error) {
-      const raced = error instanceof StoreError && RACED.has(error.type);
-      if (!raced) throw error;
-      continue;
-    }
-    await goOn(store, scope, version, id, seq);
-    return;
-  }
 }

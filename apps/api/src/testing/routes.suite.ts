@@ -672,6 +672,44 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         expect(snap.body.questions[0]?.tries).toBe(2); // the wrong try and 1 help_twin skip
       });
 
+      for (const order of ["pause first", "help first"] as const) {
+        it(`never leaves rung 4 showing on an open question when a pause races it (${order})`, async () => {
+          const { id, snapshot } = await start(
+            s,
+            await s.assign("equalGroups", { after_not_sure: "next" }),
+          );
+          await toRungThree(id);
+          const pause = () => s.call("PATCH", pathOf("patchAttempt", { id }), { status: "paused" });
+          await (order === "pause first"
+            ? Promise.all([pause(), rungFour(id)])
+            : Promise.all([rungFour(id), pause()]));
+
+          const held = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+          const q1 = held.body.questions[0];
+          // Either the help won and rung 4 ended the question with its twin asked, or the pause
+          // won and nothing was released: never rung 4 on an open question.
+          if (q1?.help_released === 4) {
+            expect(q1.ended).toBe("skipped");
+            expect(held.body.questions[1]).toMatchObject({ seq: 2, added: "twin", added_for: 1 });
+          } else {
+            expect(q1).toMatchObject({ help_released: 3, ended: null });
+          }
+
+          await s.call("PATCH", pathOf("patchAttempt", { id }), { status: "in_progress" });
+          if (q1?.help_released === 4) {
+            const late = await tryAt(
+              s,
+              id,
+              { ...(q1 as AttemptSnapshot["questions"][number]), tries: 2 },
+              true,
+            );
+            expect(late.status).toBe(409);
+          }
+          const record = await s.store.getAttempt(snapshot.attempt.pod_id, snapshot.attempt.id);
+          expect(record.answers.some((a) => a.kind === "try" && a.help_used === 4)).toBe(false);
+        });
+      }
+
       it("refuses a help_released ahead of what was released", async () => {
         const { id } = await start(s, await s.assign("equalGroups"));
         const ahead = await s.call<ErrorEnvelope>("POST", pathOf("help", { id, seq: 1 }), {
