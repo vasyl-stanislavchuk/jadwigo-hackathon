@@ -4,6 +4,7 @@ import {
   Family,
   FamilyQuestion,
   Help,
+  PartMark,
   PartVerdict,
   QUESTION_TYPE_FAMILY,
   QuestionType,
@@ -14,6 +15,7 @@ import {
   EventId,
   LearnerId,
   LessonId,
+  LessonQuestionExampleId,
   LessonQuestionId,
   LessonVersionId,
   PodId,
@@ -156,6 +158,46 @@ export const LessonQuestion = z
     path: ["question_type"],
   });
 export type LessonQuestion = z.infer<typeof LessonQuestion>;
+
+/**
+ * One way a child might answer a question, written by hand for the playground (decision
+ * `2026-10-27-until-the-judges-land-the-playground-s-try-it-plays-each-example`): the value
+ * committed, what it shows and the parts the page marks. Nothing judges it; the value is checked
+ * against its question's family by `LessonQuestionExample`'s readers.
+ */
+export const ExampleScenario = z.object({
+  /** What the child tries, for the owner: "types 54". */
+  try: z.string().min(1),
+  value: z.unknown(),
+  outcome: z.enum(["correct", "incorrect"]),
+  mistake_class: z.string().min(1).nullable(),
+  marks: z.array(PartMark),
+});
+export type ExampleScenario = z.infer<typeof ExampleScenario>;
+
+/**
+ * A question type's written example in one language, shown in the playground: its question and
+ * its twin, a label for the owner and the scenarios Try it plays. Not write-once: the seed
+ * replaces a pod's examples, and the questions stay write-once (owner, 2026-10-28, `dl-w3.75`).
+ */
+export const LessonQuestionExample = z.object({
+  id: LessonQuestionExampleId,
+  pod_id: PodId,
+  lesson_question_id: LessonQuestionId,
+  /** Help rung 4's twin: a lesson question whose `twin_of` is this example's question. */
+  twin: LessonQuestionId.nullable(),
+  language: Language,
+  /** Unique within its question type and language, used in the playground's URL. */
+  slug: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "a slug is lowercase words joined by dashes"),
+  /** Its place among its question type's examples, the showcase first. */
+  position: Count,
+  /** What sets this example apart, for the owner, in English. */
+  label: z.string().min(1),
+  showcase: z.boolean(),
+  scenarios: z.array(ExampleScenario),
+  created_at: At,
+});
+export type LessonQuestionExample = z.infer<typeof LessonQuestionExample>;
 
 // Who it goes to
 
@@ -309,6 +351,7 @@ export const RECORDS = {
     data: z.unknown(),
     key: z.unknown(),
   }),
+  lesson_question_example: LessonQuestionExample,
   assignment: Assignment,
   attempt: Attempt,
   attempt_question: AttemptQuestion,

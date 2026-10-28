@@ -1,7 +1,7 @@
 -- Row-level security keeps pods apart (RULES.md rule 12, decision
 -- 2026-10-27-before-supabase-auth-row-level-security-reads-the-caller-s-pod-f).
 begin;
-select plan(16);
+select plan(17);
 \ir _fixture.sql
 
 -- How many of pod A's rows the caller can read, across every table and the view.
@@ -12,6 +12,7 @@ create function pg_temp.pod_a_rows_seen() returns bigint language sql as $$
     + (select count(*) from lesson_version where pod_id = '00000000-0000-4000-8000-00000000000a')
     + (select count(*) from lesson_question where pod_id = '00000000-0000-4000-8000-00000000000a')
     + (select count(*) from lesson_version_question where pod_id = '00000000-0000-4000-8000-00000000000a')
+    + (select count(*) from lesson_question_example where pod_id = '00000000-0000-4000-8000-00000000000a')
     + (select count(*) from assignment where pod_id = '00000000-0000-4000-8000-00000000000a')
     + (select count(*) from attempt where pod_id = '00000000-0000-4000-8000-00000000000a')
     + (select count(*) from attempt_question where pod_id = '00000000-0000-4000-8000-00000000000a')
@@ -79,12 +80,17 @@ select throws_ok(
   '42501', null, 'pod B cannot write a row into pod A'
 );
 update attempt set status = 'paused' where id = '00000000-0000-4000-8000-0000000006a1';
+delete from lesson_question_example where pod_id = '00000000-0000-4000-8000-00000000000a';
 
 select set_config('app.pod_id', '00000000-0000-4000-8000-00000000000a', true);
-select is(pg_temp.pod_a_rows_seen(), 22::bigint, 'pod A reads all its own rows');
+select is(pg_temp.pod_a_rows_seen(), 23::bigint, 'pod A reads all its own rows');
 select is(
   (select status from attempt where id = '00000000-0000-4000-8000-0000000006a1'),
   'in_progress'::attempt_status, 'pod B''s update of pod A''s attempt changed nothing'
+);
+select is(
+  (select count(*) from lesson_question_example), 1::bigint,
+  'pod B''s delete of pod A''s playground examples removed nothing'
 );
 
 -- The same check with row-level security off sees pod A's rows from pod B, so the isolation

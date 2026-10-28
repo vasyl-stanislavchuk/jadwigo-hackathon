@@ -27,12 +27,13 @@ import {
   TileBank,
   Tooltip,
 } from "@jadwigo/lesson-kit";
-import { Button } from "@jadwigo/ui";
+import { Button, Spinner } from "@jadwigo/ui";
 import { ArrowUp, Calculator, Delete, RotateCcw, Turtle, Volume2, X } from "lucide-react";
 import { type ComponentProps, type CSSProperties, type ReactNode, useMemo, useState } from "react";
+import { useExamples } from "../../examples/index.ts";
 import { Sub } from "./Foundations.tsx";
 import { useSystemLanguage } from "./lang.ts";
-import { type StageQuestion, stageQuestion } from "./question.ts";
+import { type StageQuestion, stageExample, stageQuestion } from "./question.ts";
 
 const NOOP = { onPointerDown: () => {}, onClick: () => {} };
 
@@ -528,17 +529,31 @@ function feedbackOf(state: BandState): Feedback | null {
   return null;
 }
 
-/** The written question in the page's language. */
-function useStageQuestion(): StageQuestion {
+/** The written question in the page's language, once the examples are read (null until then). */
+function useStageQuestion(): StageQuestion | null {
   const LANG = useSystemLanguage();
-  return useMemo(() => stageQuestion(LANG), [LANG]);
+  const loaded = useExamples(LANG);
+  return useMemo(() => {
+    if (loaded.kind !== "ready") return null;
+    return stageQuestion(stageExample(loaded.examples), LANG);
+  }, [loaded, LANG]);
+}
+
+/** Where the stage stands while its question is read. */
+function StageWaiting(): JSX.Element {
+  const LANG = useSystemLanguage();
+  return <Spinner label={copy(LANG, "loading")} />;
 }
 
 /** The stage as a lesson plays it: pick, Sprawdź, the band, help, and on. Sprawdź shows the written
  * scenario of the pick: its outcome sets the band, its marks the options. */
 function LiveStage(): JSX.Element {
-  const LANG = useSystemLanguage();
   const q = useStageQuestion();
+  return q === null ? <StageWaiting /> : <LiveStageOn q={q} />;
+}
+
+function LiveStageOn({ q }: { q: StageQuestion }): JSX.Element {
+  const LANG = useSystemLanguage();
   const [state, setState] = useState<BandState>("waiting");
   const [picked, setPicked] = useState<string | null>(null);
   const [help, setHelp] = useState(0);
@@ -624,8 +639,12 @@ function LiveStage(): JSX.Element {
  * caret and keyboard frame too): the written miss in a miss and after help, the written right
  * answer when right. */
 export function Shell({ state }: { state: BandState }): JSX.Element {
-  const LANG = useSystemLanguage();
   const q = useStageQuestion();
+  return q === null ? <StageWaiting /> : <ShellOn state={state} q={q} />;
+}
+
+function ShellOn({ state, q }: { state: BandState; q: StageQuestion }): JSX.Element {
+  const LANG = useSystemLanguage();
   const picked =
     state === "waiting" ? null : state === "right" || state === "answered" ? q.right : q.miss;
   const ended = state === "right" || state === "solution";

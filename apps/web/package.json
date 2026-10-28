@@ -15,10 +15,11 @@
     "e2e": "playwright test"
   },
   "//": {
-    "@jadwigo/api-client": "the typed /api/v1 calls the lesson player makes (src/play/)",
+    "@jadwigo/api-client": "the typed /api/v1 calls the lesson player makes (src/play/) and the playground's examples read (src/playground/examples/load.ts)",
     "@jadwigo/config": "hosts.prod, the host this app serves (src/index.ts)",
     "@jadwigo/contracts": "the question shapes the playground's examples are typed and parsed with",
     "@jadwigo/copy": "every string the app shows, in pl and en",
+    "@jadwigo/lesson-import": "the written examples the playground's tests play, as the seed compiles them (test only)",
     "@jadwigo/lesson-kit": "the stage and the family views the playground shows",
     "@jadwigo/ui": "Zeszyt's styles and the neutral primitives the playground's tools are built from",
     "@playwright/test": "the browser smoke in e2e/ that CI's browser job runs (playwright.config.ts)",
@@ -40,6 +41,7 @@
     "vitest": "runs this package's unit test with the root vitest.config.ts"
   },
   "devDependencies": {
+    "@jadwigo/lesson-import": "workspace:*",
     "@playwright/test": "catalog:",
     "@tailwindcss/vite": "catalog:",
     "@testing-library/dom": "catalog:",

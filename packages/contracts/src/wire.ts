@@ -6,6 +6,7 @@ import {
   PageFamilyQuestion,
   PartMark,
   QuestionType,
+  valueFor,
 } from "./families/index.ts";
 import { AssignmentId, EventId, LearnerId, LessonId, LessonQuestionId } from "./ids.ts";
 import {
@@ -15,6 +16,8 @@ import {
   type AttemptResult,
   Ended,
   Language,
+  LessonQuestion,
+  LessonQuestionExample,
   Placed,
   SkipReason,
 } from "./records.ts";
@@ -286,6 +289,44 @@ export type FeaturedLesson = z.infer<typeof FeaturedLesson>;
 /** `GET /api/v1/featured-lessons`: the featured pod's open `anyone` assignments, oldest first. */
 export const Featured = z.object({ lessons: z.array(FeaturedLesson) });
 export type Featured = z.infer<typeof Featured>;
+
+/**
+ * `GET /api/v1/playground-examples/{language}`: every written example in Jadwigo's own pod in
+ * that language, by question type, then position, and every question and twin they name, once.
+ * The one response that carries a key (RULES.md rule 21): the playground is a review tool over
+ * Jadwigo's own authored examples, and Try it looks a free answer up in the key's accepted and
+ * near answers (owner, 2026-10-28, `dl-w3.75`).
+ */
+export const PlaygroundExamples = z
+  .object({
+    examples: z.array(LessonQuestionExample),
+    questions: z.array(LessonQuestion),
+  })
+  .superRefine((reply, ctx) => {
+    const byId = new Map(reply.questions.map((q) => [q.id, q]));
+    reply.examples.forEach((example, i) => {
+      const question = byId.get(example.lesson_question_id);
+      if (!question || (example.twin !== null && !byId.has(example.twin))) {
+        ctx.addIssue({
+          code: "custom",
+          message: "names a question the reply lacks",
+          path: ["examples", i],
+        });
+        return;
+      }
+      const value = valueFor(question.family);
+      example.scenarios.forEach((scenario, j) => {
+        if (!value.safeParse(scenario.value).success) {
+          ctx.addIssue({
+            code: "custom",
+            message: `not a ${question.family} value`,
+            path: ["examples", i, "scenarios", j, "value"],
+          });
+        }
+      });
+    });
+  });
+export type PlaygroundExamples = z.infer<typeof PlaygroundExamples>;
 
 /** Every error type, with its status (RULES.md rule 20). */
 export const ERROR_STATUS = {
