@@ -25,7 +25,7 @@
     "@jadwigo/config": "hosts.prod, the host this app serves (src/index.ts, astro.config.mjs)"
   },
   "devDependencies": {
-    "@astrojs/check": "0.9.11",
+    "@astrojs/check": "0.9.12",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
@@ -33,6 +33,6 @@
   "dependencies": {
     "@astrojs/sitemap": "3.7.4",
     "@jadwigo/config": "workspace:*",
-    "astro": "7.4.1"
+    "astro": "7.4.2"
   }
 }
