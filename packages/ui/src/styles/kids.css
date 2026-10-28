@@ -1,0 +1,48 @@
+/* The kid layer: the minimum sizes every block meets and the feedback colours (docs/17 §2,
+ * blocks.md "Sizes and the kid layer"). Per-block sizes refine these minima but never narrow them.
+ * Tailwind names them in styles/tailwind.css (min-h-[var(--kid-tap-min)], bg-kid-correct-soft);
+ * runner/kidUx.test.ts checks the sizes, the hues and the 4.5:1 contrast of every pair. */
+
+:root,
+:host {
+  /* Kid minima as plain vars for dl-b.9's tap-target test. */
+  --kid-tap-min: 3.5rem; /* 56px — every tappable control */
+  --kid-key-size: 4.5rem; /* 72px — keypad keys (a tappable control: at least --kid-tap-min) */
+  --kid-commit-height: 4rem; /* 64px — commit/continue controls */
+  --kid-status-height: 3.5rem; /* 56px — the step's status area, two lines, kept from the first frame (docs/17 §2f) */
+  --kid-credit-height: 1.25rem; /* 20px — the credit line under a borrowed step, kept when there is no credit (dl-w3.52) */
+  --kid-say-size: 1.75rem; /* 28px — prompt (say) line */
+  --kid-answer-size: 1.5rem; /* 24px — answer text */
+  --kid-math-size: 2.25rem; /* 36px — digits in a typed field, a fraction box, the maths line (Enter addendum 2.6) */
+  --kid-choice-gap: 0.75rem; /* 12px — choice-row gaps */
+  --kid-play-width: 50rem; /* 800px — the play column: 12 build cells + 11 gaps + p-4 (dl-lnt) */
+
+  /* Feedback colours (dl-0ax3): one meaning each, everywhere (docs/17 §2). Green is "right" and
+     * red is "try again", a miss (decision 2026-10-24-a-miss-is-marked-in-red, dl-uukj.29.16). A
+     * fill takes its -foreground text; a -soft tint takes its -ink text. Tailwind names them
+     * bg-kid-correct, text-kid-try-again-ink, ….
+     * Right is a Material 3 custom colour (color, on-color, color-container, on-color-container)
+     * from #2e7d32, not harmonized toward the accent (dl-0ax3.5, docs/plan/kid-palette/). Try again
+     * is the Grape scheme's own M3 error palette (seed #7c3aed, vibrant, spec 2025: hue 12, chroma
+     * 80) at M3's standard tones 40, 100, 90 and 10, and 80, 20, 30 and 90 in dark. */
+  --kid-correct: #1b6d24;
+  --kid-correct-foreground: #ffffff;
+  --kid-correct-soft: #a3f69c;
+  --kid-correct-ink: #002204;
+  --kid-try-again: #b81843;
+  --kid-try-again-foreground: #ffffff;
+  --kid-try-again-soft: #ffdadc;
+  --kid-try-again-ink: #400010;
+}
+
+/* The same M3 feedback roles at their dark tones. */
+[theme="dark"] {
+  --kid-correct: #88d982;
+  --kid-correct-foreground: #003909;
+  --kid-correct-soft: #005312;
+  --kid-correct-ink: #a3f69c;
+  --kid-try-again: #ffb2b9;
+  --kid-try-again-foreground: #67001f;
+  --kid-try-again-soft: #91002f;
+  --kid-try-again-ink: #ffdadc;
+}

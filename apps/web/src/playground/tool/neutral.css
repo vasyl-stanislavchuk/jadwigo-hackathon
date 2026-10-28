@@ -1,0 +1,67 @@
+/* The playground's own tools in shadcn/ui's neutral palette (decision
+ * 2026-10-24-the-playground-s-own-tools-are-neutral-shadcn-ui-only-the-lesson, dl-uukj.29.22): the left
+ * list, the header, the Controls panel and drawer, the outline, and the Overview and Decisions pages.
+ * shadcn's "neutral" base colour (ui.shadcn.com/themes), as hex.
+ * PlaygroundScreen puts data-playground on <html>, which outranks tokens.css's :root, and a lesson
+ * surface takes the lesson tokens back (tokens.css). A [data-tool-surface] inside a lesson surface,
+ * such as the learner view's drawer, is chrome again. Only colour changes here: type, space and
+ * sizes stay the lesson's.
+ */
+
+html[data-playground],
+[data-tool-surface] {
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0a;
+  --primary: #171717;
+  --primary-foreground: #fafafa;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #171717;
+  --muted: #f5f5f5;
+  --muted-foreground: #666666; /* shadcn's #737373 is 4.3:1 on its muted, so one step darker */
+  --accent: #f5f5f5;
+  --accent-foreground: #171717;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #a3a3a3;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #0a0a0a;
+  --sidebar-primary: #171717;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #f5f5f5;
+  --sidebar-accent-foreground: #171717;
+  --sidebar-border: #e5e5e5;
+  --sidebar-ring: #a3a3a3;
+}
+
+html[data-playground][theme="dark"],
+[theme="dark"] [data-tool-surface] {
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --card: #171717;
+  --card-foreground: #fafafa;
+  --popover: #171717;
+  --popover-foreground: #fafafa;
+  --primary: #e5e5e5;
+  --primary-foreground: #171717;
+  --secondary: #262626;
+  --secondary-foreground: #fafafa;
+  --muted: #262626;
+  --muted-foreground: #a3a3a3;
+  --accent: #262626;
+  --accent-foreground: #fafafa;
+  --border: #2e2e2e;
+  --input: #383838;
+  --ring: #737373;
+  --sidebar: #171717;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #e5e5e5;
+  --sidebar-primary-foreground: #171717;
+  --sidebar-accent: #262626;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #2e2e2e;
+  --sidebar-ring: #737373;
+}
