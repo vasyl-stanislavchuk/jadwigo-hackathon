@@ -10,6 +10,11 @@ Postgres 17, signing with an RS256 key, and the Ireland project `jadwigo.pl`
 (`whyfosckezuauwwnnzpm`) deleted. Migrations reach the projects later, through
 `make db-push` (`docs/runbooks/migrations.md`).
 
+**Run on 2026-10-27** (`dl-5ssh.5`, closed): `jadwigo-prod` is `xhzkmpainwzrfktxffjv` and
+`jadwigo-dev` is `jweuvslwntdimuwcvlzq`, both eu-central-1 on Postgres 17.11 with RS256 in use.
+The Ireland project was checked empty and deleted. Steps 5 and 6 are done for good; the rest stays
+here for recreating a project.
+
 ## Before
 
 - **A Supabase personal access token in the keychain.** The checks below read it. Create one at
@@ -22,10 +27,11 @@ Postgres 17, signing with an RS256 key, and the Ireland project `jadwigo.pl`
 - The `Jadwigo` organisation is on Pro. Check Organization → Billing.
 - `jq` and `curl` are installed: `jq --version`.
 
-Define the check once in your shell. It prints no secret:
+Define the check once in your shell. It prints no secret, and passes any further arguments
+(`-X POST`, `-H`, `-d`) through to curl:
 
 ```zsh
-supa() { curl -sS -H "Authorization: Bearer $(security find-generic-password -a jadwigo -s supabase-access-token -w)" "https://api.supabase.com/v1$1"; }
+supa() { local p=$1; shift; curl -sS -H "Authorization: Bearer $(security find-generic-password -a jadwigo -s supabase-access-token -w)" "$@" "https://api.supabase.com/v1$p"; }
 supa /projects | jq '[.[] | {ref: .id, name, region, status, pg: .database.version}]'
 ```
 
