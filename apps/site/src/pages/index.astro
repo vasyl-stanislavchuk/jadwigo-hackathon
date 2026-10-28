@@ -1,5 +1,6 @@
 ---
 import { getEntry, render } from "astro:content";
+import { appUrl } from "../index.ts";
 import Base from "../layouts/Base.astro";
 
 const entry = await getEntry("pages", "index");
@@ -9,4 +10,5 @@ const { Content } = await render(entry);
 
 <Base page={entry.data} path="/">
   <Content />
+  {entry.data.play && <p class="play"><a href={appUrl}>{entry.data.play}</a></p>}
 </Base>
