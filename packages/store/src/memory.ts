@@ -602,7 +602,10 @@ export class InMemoryStore implements Store {
       "the lesson question",
     );
     if (row.kind === "try" && !valueFor(family).safeParse(row.value).success) {
-      throw new StoreError(ErrorType.enum.BadRequest, `the value is not a ${family} value`);
+      throw new StoreError(
+        ErrorType.enum.BadRequest,
+        `the value is not a value of the ${family} family`,
+      );
     }
     if (options.end === "missed") this.#mayMiss(pod, answer.attempt_id, answer.seq, row);
     this.#answers.set(row.event_id, row);

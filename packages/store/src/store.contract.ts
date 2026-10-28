@@ -539,7 +539,11 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         const { a, attempt } = await started(store);
         await expect(
           store.appendAttemptAnswer(a.pod, answer(attempt, 1, 1, { chosen: ["a"] }, false)),
-        ).rejects.toMatchObject(BAD_REQUEST);
+        ).rejects.toMatchObject({
+          ...BAD_REQUEST,
+          // An article that fits every family: never "a enter" or "a order".
+          message: "the value is not a value of the enter family",
+        });
         expect((await store.getAttempt(a.pod, attempt)).answers).toEqual([]);
       });
 

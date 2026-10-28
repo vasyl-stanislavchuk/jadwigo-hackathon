@@ -984,7 +984,10 @@ class PostgresStore implements Store {
         .where("id", "=", question.lesson_question_id)
         .executeTakeFirstOrThrow();
       if (valid.kind === "try" && !valueFor(family).safeParse(valid.value).success) {
-        throw new StoreError(ErrorType.enum.BadRequest, `the value is not a ${family} value`);
+        throw new StoreError(
+          ErrorType.enum.BadRequest,
+          `the value is not a value of the ${family} family`,
+        );
       }
       const row = await tx
         .insertInto("attempt_answer")
