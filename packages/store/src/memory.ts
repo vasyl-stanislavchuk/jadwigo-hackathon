@@ -469,10 +469,15 @@ export class InMemoryStore implements Store {
     pod: PodId,
     attempt: AttemptId,
     question: NewAttemptQuestion,
+    options: { readonly seq?: number } = {},
   ): Promise<AttemptQuestion> {
+    // No await from here to the write, as the attempt lock holds it in PostgresStore.
     const { asked } = this.#playing(pod, attempt);
     if (asked.some((q) => q.ended === null)) {
       throw new StoreError(ErrorType.enum.QuestionNotOpen, "another question is still open");
+    }
+    if (options.seq !== undefined && options.seq !== asked.length + 1) {
+      throw new StoreError(ErrorType.enum.QuestionNotOpen, "another question took this seq");
     }
     this.#inPod(this.#questions, pod, question.lesson_question_id, "the lesson question");
     const seq = asked.length + 1;
