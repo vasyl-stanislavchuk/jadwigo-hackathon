@@ -16,24 +16,25 @@ const planted = `  claim: {
 describe("check-infra-routes", () => {
   it("passes on the repo as it is", () => {
     expect(contractRoutes(contracts)).toContain("GET /api/health");
-    expect(compareRoutes(contracts, terraform)).toEqual([]);
+    expect(compareRoutes(contracts, terraform)).toEqual({ problems: [], warnings: [] });
   });
 
   it("fails on a route added to ROUTES with no Terraform route", () => {
     const added = contracts.replace("} as const satisfies Record<string, Route>;", planted);
-    expect(compareRoutes(added, terraform)).toEqual([
+    expect(compareRoutes(added, terraform).problems).toEqual([
       '"POST /api/v1/attempts/{id}/claim" is in ROUTES but has no route in infra/terraform/main.tf',
     ]);
   });
 
-  it("fails on a Terraform route that ROUTES does not have", () => {
+  it("only warns on a Terraform route that ROUTES does not have", () => {
     const extra = terraform.replace(
       '"GET /api/health",',
       '"GET /api/health",\n    "GET /api/v1/gone",',
     );
-    expect(compareRoutes(contracts, extra)).toEqual([
-      '"GET /api/v1/gone" is routed in infra/terraform/main.tf but is not in ROUTES',
-    ]);
+    expect(compareRoutes(contracts, extra)).toEqual({
+      problems: [],
+      warnings: ['"GET /api/v1/gone" is routed in infra/terraform/main.tf but is not in ROUTES'],
+    });
   });
 
   it("reads no route key out of a comment", () => {

@@ -1,7 +1,8 @@
 // The HTTP API's route keys in infra/terraform/main.tf match ROUTES in packages/contracts (dl-5ssh.50).
 // A route in ROUTES with no Terraform route still answers through $default, but at the stage default
 // throttle instead of its own 10/20 (jadwigo-platform/decisions/2026-10-28-the-app-s-http-api-stage-
-// throttles-every-route-but-health-at-10); a Terraform route ROUTES dropped is a stale throttle.
+// throttles-every-route-but-health-at-10). That fails. A Terraform route ROUTES lacks is only a
+// warning, so Terraform can route a new key before the contracts PR that adds it merges.
 // Both files are read as text: tools imports nothing of ours. Run: bun tools/src/check-infra-routes.ts
 import { readFileSync } from "node:fs";
 
@@ -22,7 +23,14 @@ export function terraformRoutes(source: string): string[] {
   );
 }
 
-export function compareRoutes(contracts: string, terraform: string): string[] {
+export interface Comparison {
+  /** Fail the check: ROUTES entries with no Terraform route. */
+  readonly problems: string[];
+  /** Warn only: Terraform routes ROUTES does not have, yet or any more. */
+  readonly warnings: string[];
+}
+
+export function compareRoutes(contracts: string, terraform: string): Comparison {
   const want = new Set(contractRoutes(contracts));
   const have = new Set(terraformRoutes(terraform));
   const problems: string[] = [];
@@ -30,18 +38,21 @@ export function compareRoutes(contracts: string, terraform: string): string[] {
     problems.push(`${CONTRACTS}: no routes found; has the ROUTES shape changed?`);
   for (const key of want)
     if (!have.has(key)) problems.push(`"${key}" is in ROUTES but has no route in ${TERRAFORM}`);
-  for (const key of have)
-    if (!want.has(key)) problems.push(`"${key}" is routed in ${TERRAFORM} but is not in ROUTES`);
-  return problems;
+  const warnings = [...have]
+    .filter((key) => !want.has(key))
+    .map((key) => `"${key}" is routed in ${TERRAFORM} but is not in ROUTES`);
+  return { problems, warnings };
 }
 
 if (import.meta.main) {
-  const problems = compareRoutes(readFileSync(CONTRACTS, "utf8"), readFileSync(TERRAFORM, "utf8"));
+  const { problems, warnings } = compareRoutes(
+    readFileSync(CONTRACTS, "utf8"),
+    readFileSync(TERRAFORM, "utf8"),
+  );
+  for (const w of warnings) console.error(`infra routes (warning): ${w}`);
   for (const p of problems) console.error(`infra routes: ${p}`);
   if (problems.length > 0) {
-    console.error(
-      "infra routes: add or drop the key in module app's routes in main.tf, or in ROUTES.",
-    );
+    console.error("infra routes: add the key to module app's routes in main.tf.");
     process.exit(1);
   }
 }
