@@ -28,6 +28,7 @@ import {
 import { attemptResults } from "./result.ts";
 import {
   type AttemptRecord,
+  type HelpTwin,
   type LessonVersionWithQuestions,
   type NewAssignment,
   type NewAttempt,
@@ -586,13 +587,59 @@ export class InMemoryStore implements Store {
     attempt: AttemptId,
     seq: number,
     seen: number,
+    options: { readonly twin?: HelpTwin } = {},
   ): Promise<{ readonly question: AttemptQuestion; readonly released: boolean }> {
+    // No await from here to the writes: the release, the skip and the end are one unit.
     const question = this.#asking(pod, attempt, seq);
     if (seen !== question.help_released) return { question, released: false };
     if (question.ended !== null)
       throw new StoreError(ErrorType.enum.QuestionNotOpen, "this question has ended");
     if (question.help_released >= 4) return { question, released: false };
-    const row = this.#replace({ ...question, help_released: question.help_released + 1 });
+    const help_released = question.help_released + 1;
+    if (!options.twin) {
+      return { question: this.#replace({ ...question, help_released }), released: true };
+    }
+    const twin = options.twin;
+    if (this.#answers.has(twin.event_id)) {
+      throw new StoreError(ErrorType.enum.EventIdMismatch, "this event was already sent");
+    }
+    const next =
+      [...this.#answers.values()].filter((a) => a.attempt_id === attempt && a.seq === seq).length +
+      1;
+    if ((twin.try_no ?? next) !== next) {
+      throw new StoreError(ErrorType.enum.TryOutOfOrder, "this is not the question's next try");
+    }
+    const skip = frozen(
+      parse(
+        AttemptAnswer,
+        {
+          ...twin,
+          asked_at: utc(twin.asked_at),
+          answered_at: utc(twin.answered_at),
+          pod_id: pod,
+          attempt_id: attempt,
+          seq,
+          try_no: next,
+          kind: "skip",
+          value: null,
+          skip_reason: "help_twin",
+          help_used: help_released,
+          correct: null,
+          mistake_class: null,
+          parts: null,
+          judged_by: null,
+        },
+        "the help twin skip",
+      ),
+    );
+    if (Date.parse(skip.answered_at) < Date.parse(skip.asked_at)) {
+      throw new StoreError(
+        ErrorType.enum.BadRequest,
+        "an answer is given after its question is asked",
+      );
+    }
+    this.#answers.set(skip.event_id, skip);
+    const row = this.#replace({ ...question, help_released, ended: "skipped" });
     return { question: row, released: true };
   }
 

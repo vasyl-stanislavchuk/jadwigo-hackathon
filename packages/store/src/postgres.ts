@@ -31,6 +31,7 @@ import pg from "pg";
 import type { DB } from "./db/types.ts";
 import {
   type AttemptRecord,
+  type HelpTwin,
   type LessonVersionWithQuestions,
   type NewAssignment,
   type NewAttempt,
@@ -990,8 +991,10 @@ class PostgresStore implements Store {
     attempt: AttemptId,
     seq: number,
     seen: number,
+    options: { readonly twin?: HelpTwin } = {},
   ): Promise<{ readonly question: AttemptQuestion; readonly released: boolean }> {
     const attemptId = uuidOf(ID_PREFIXES.attempt, attempt);
+    const twin = options.twin;
     return this.#in(pod, async (tx) => {
       const question = await this.#asking(tx, attemptId, seq);
       if (seen !== question.help_released) {
@@ -1003,15 +1006,90 @@ class PostgresStore implements Store {
       if (question.help_released >= 4) {
         return { question: read(AttemptQuestion, question), released: false };
       }
+      const help_released = question.help_released + 1;
+      if (twin) await this.#appendTwin(tx, pod, attemptId, seq, help_released, twin);
       const row = await tx
         .updateTable("attempt_question")
-        .set({ help_released: question.help_released + 1 })
+        .set(twin ? { help_released, ended: "skipped" } : { help_released })
         .where("attempt_id", "=", attemptId)
         .where("seq", "=", seq)
         .returningAll()
         .executeTakeFirstOrThrow();
       return { question: read(AttemptQuestion, row), released: true };
     });
+  }
+
+  /** The `help_twin` skip, at the question's next try, which the caller's lock holds. */
+  async #appendTwin(
+    tx: Tx,
+    pod: PodId,
+    attemptId: string,
+    seq: number,
+    help_released: number,
+    twin: HelpTwin,
+  ): Promise<void> {
+    const tries = await tx
+      .selectFrom("attempt_answer")
+      .select("try_no")
+      .where("attempt_id", "=", attemptId)
+      .where("seq", "=", seq)
+      .execute();
+    const next = tries.length + 1;
+    if ((twin.try_no ?? next) !== next) {
+      throw new StoreError(ErrorType.enum.TryOutOfOrder, "this is not the question's next try");
+    }
+    const skip = parse(
+      AttemptAnswer,
+      {
+        ...twin,
+        asked_at: utc(twin.asked_at),
+        answered_at: utc(twin.answered_at),
+        pod_id: pod,
+        attempt_id: idOf(ID_PREFIXES.attempt, attemptId),
+        seq,
+        try_no: next,
+        kind: "skip",
+        value: null,
+        skip_reason: "help_twin",
+        help_used: help_released,
+        correct: null,
+        mistake_class: null,
+        parts: null,
+        judged_by: null,
+      },
+      "the help twin skip",
+    );
+    if (Date.parse(skip.answered_at) < Date.parse(skip.asked_at)) {
+      throw new StoreError(
+        ErrorType.enum.BadRequest,
+        "an answer is given after its question is asked",
+      );
+    }
+    const row = await tx
+      .insertInto("attempt_answer")
+      .values({
+        event_id: skip.event_id,
+        pod_id: uuidOf(ID_PREFIXES.pod, pod),
+        attempt_id: attemptId,
+        seq,
+        try_no: next,
+        kind: "skip",
+        value: null,
+        skip_reason: "help_twin",
+        latency_ms: skip.latency_ms,
+        help_used: help_released,
+        asked_at: skip.asked_at,
+        answered_at: skip.answered_at,
+        correct: null,
+        mistake_class: null,
+        parts: null,
+        judged_by: null,
+        body_hash: skip.body_hash,
+      })
+      .onConflict((oc) => oc.column("event_id").doNothing())
+      .returning("event_id")
+      .executeTakeFirst();
+    if (!row) throw new StoreError(ErrorType.enum.EventIdMismatch, "this event was already sent");
   }
 
   async endAttemptQuestion(
