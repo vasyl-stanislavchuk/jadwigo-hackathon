@@ -1,7 +1,7 @@
-// The help ladder's release, ported from david-learns `frontend/src/families/help.test.ts`. The
-// playground's examples (two-facts, purse, half-past-seven, add-with-carry, even-numbers) are
-// written here as invented fixtures of the same shape, and verdicts are written by hand rather
-// than judged. The hint stack, the twin, pageSpec, validate and the solution card are not ported.
+// The help ladder's release. The playground's examples (two-facts, purse, half-past-seven,
+// add-with-carry, even-numbers) are written here as invented fixtures of the same shape, and
+// verdicts are written by hand rather than judged. The hint stack, the twin, pageSpec, validate
+// and the solution card are not ported.
 import type { Help, HintCard, Verdict } from "@jadwigo/contracts";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";

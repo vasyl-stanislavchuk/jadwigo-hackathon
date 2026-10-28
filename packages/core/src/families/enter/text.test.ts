@@ -7,8 +7,8 @@ import { foldAccents, oneEditApart, otherForm } from "./text.ts";
 /**
  * A typed word (short_text, dl-w3.61.2): the judge folds accents and case only inside the
  * comparison, names a miss by the author's near form, then accents, case and a one-letter slip,
- * and the key's `accents` and `typo` turn the last two into right answers. Ported from
- * david-learns `frontend/src/families/enter/text.test.ts`; its validator case stays there.
+ * and the key's `accents` and `typo` turn the last two into right answers. The validator's case
+ * stays with the validator.
  */
 
 const data: EnterData = { input: "text", entry: "keyboard" };

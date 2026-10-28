@@ -25,8 +25,7 @@ import type { ColumnSum, GapKey } from "@jadwigo/contracts";
  * fading of a worked example (Renkl and Atkinson 2003, "Structuring the transition from example
  * study to problem solving"). A plan lowers k from item to item until the child works it all.
  *
- * Ported from david-learns `frontend/src/families/slots/column.ts`, the judge's half: the drawn
- * grid stays with the page.
+ * Only the judge's half is here: the drawn grid stays with the page.
  */
 
 type EnterGapKey = Extract<GapKey, { kind: "enter" }>;

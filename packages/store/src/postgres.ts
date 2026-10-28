@@ -847,8 +847,10 @@ class PostgresStore implements Store {
   async appendAttemptAnswer(
     pod: PodId,
     answer: NewAttemptAnswer,
+    options: { readonly end?: Ended } = {},
   ): Promise<{ readonly answer: AttemptAnswer; readonly replayed: boolean }> {
     const attemptId = uuidOf(ID_PREFIXES.attempt, answer.attempt_id);
+    if (options.end !== undefined) parse(Ended, options.end, "how the question ended");
     return this.#in(pod, async (tx) => {
       const find = () =>
         tx
@@ -872,6 +874,9 @@ class PostgresStore implements Store {
           "this event was already sent with another body",
         );
       };
+      // Wait for an append to this attempt that holds it, so a send of the same event that
+      // ended the question reads as a replay, not as QuestionNotOpen.
+      await tx.selectFrom("attempt").select("id").where("id", "=", attemptId).forUpdate().execute();
       const stored = await find();
       if (stored) return replay(stored);
       const attempt = await this.#playing(tx, attemptId);
@@ -953,7 +958,18 @@ class PostgresStore implements Store {
         .onConflict((oc) => oc.column("event_id").doNothing())
         .returningAll()
         .executeTakeFirst();
-      if (row) return { answer: read(AttemptAnswer, row), replayed: false };
+      if (row) {
+        if (options.end === "missed") await this.#mayMiss(tx, attemptId, answer.seq);
+        if (options.end !== undefined) {
+          await tx
+            .updateTable("attempt_question")
+            .set({ ended: options.end })
+            .where("attempt_id", "=", attemptId)
+            .where("seq", "=", answer.seq)
+            .execute();
+        }
+        return { answer: read(AttemptAnswer, row), replayed: false };
+      }
       // The event id is another pod's, or a send of the same event won the race.
       const raced = await find();
       if (raced) return replay(raced);

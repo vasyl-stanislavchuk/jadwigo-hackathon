@@ -495,7 +495,11 @@ export class InMemoryStore implements Store {
   async appendAttemptAnswer(
     pod: PodId,
     answer: NewAttemptAnswer,
+    options: { readonly end?: Ended } = {},
   ): Promise<{ readonly answer: AttemptAnswer; readonly replayed: boolean }> {
+    // No await from here to the write: the check that the question is open, the append and the
+    // end are one unit, as the locked transaction is in PostgresStore.
+    if (options.end !== undefined) parse(Ended, options.end, "how the question ended");
     const stored = this.#answers.get(answer.event_id);
     if (stored) {
       if (
@@ -566,7 +570,9 @@ export class InMemoryStore implements Store {
     if (row.kind === "try" && !valueFor(family).safeParse(row.value).success) {
       throw new StoreError(ErrorType.enum.BadRequest, `the value is not a ${family} value`);
     }
+    if (options.end === "missed") this.#mayMiss(pod, answer.attempt_id, answer.seq, row);
     this.#answers.set(row.event_id, row);
+    if (options.end !== undefined) this.#replace({ ...question, ended: options.end });
     return { answer: row, replayed: false };
   }
 
@@ -604,7 +610,7 @@ export class InMemoryStore implements Store {
    * `missed` only while verdicts are held, after a wrong try and no right one, as the
    * `attempt_question_missed` trigger refuses it (migration 20261027210000_ended_missed.sql).
    */
-  #mayMiss(pod: PodId, attempt: AttemptId, seq: number): void {
+  #mayMiss(pod: PodId, attempt: AttemptId, seq: number, appending?: AttemptAnswer): void {
     const { assignment_id } = this.#inPod(this.#attempts, pod, attempt, "the attempt");
     if (!this.#inPod(this.#assignments, pod, assignment_id, "the assignment").hold_verdicts) {
       throw new StoreError(
@@ -612,7 +618,7 @@ export class InMemoryStore implements Store {
         "a question ends missed only while its assignment holds verdicts",
       );
     }
-    const tries = [...this.#answers.values()].filter(
+    const tries = [...this.#answers.values(), ...(appending ? [appending] : [])].filter(
       (a) => a.attempt_id === attempt && a.seq === seq && a.kind === "try",
     );
     if (!tries.some((a) => a.correct === false) || tries.some((a) => a.correct === true)) {

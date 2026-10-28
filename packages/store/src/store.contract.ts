@@ -501,6 +501,84 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         ).rejects.toMatchObject(NOT_OPEN);
       });
 
+      it("end the question in the same unit when given end; a later one is QuestionNotOpen, a replay ends nothing", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        const right = answer(attempt, 1, 1, { entered: "6" }, true);
+
+        const stored = await store.appendAttemptAnswer(a.pod, right, { end: "correct" });
+        expect(stored.replayed).toBe(false);
+        expect((await store.getAttempt(a.pod, attempt)).questions[0]?.ended).toBe("correct");
+        await expect(
+          store.appendAttemptAnswer(a.pod, answer(attempt, 1, 2, { entered: "6" }, true)),
+        ).rejects.toMatchObject(NOT_OPEN);
+        expect(await store.appendAttemptAnswer(a.pod, right, { end: "skipped" })).toEqual({
+          answer: stored.answer,
+          replayed: true,
+        });
+        const { questions, answers } = await store.getAttempt(a.pod, attempt);
+        expect(questions[0]?.ended).toBe("correct");
+        expect(answers).toHaveLength(1);
+      });
+
+      it("let only one of 2 appends at once land when the first ends the question", async () => {
+        const store = await make();
+        // Several races, each on its own attempt: on Postgres each send is its own transaction on
+        // its own pooled connection, so the order they take the lock in is not fixed.
+        for (let round = 0; round < 5; round++) {
+          const { a, attempt } = await started(store);
+          const settled = await Promise.allSettled([
+            store.appendAttemptAnswer(a.pod, answer(attempt, 1, 1, { entered: "6" }, true), {
+              end: "correct",
+            }),
+            store.appendAttemptAnswer(a.pod, answer(attempt, 1, 2, { entered: "6" }, true)),
+          ]);
+
+          const [first, second] = settled;
+          expect(first?.status, "the right try that ends the question lands").toBe("fulfilled");
+          expect(second).toMatchObject({
+            status: "rejected",
+            reason: { type: expect.stringMatching(/^(QuestionNotOpen|TryOutOfOrder)$/) },
+          });
+          const { questions, answers } = await store.getAttempt(a.pod, attempt);
+          expect(questions[0]?.ended).toBe("correct");
+          expect(answers.map((r) => r.try_no)).toEqual([1]);
+        }
+      });
+
+      it("end missed counting the try they append, and write nothing when the end is refused", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        await expect(
+          store.appendAttemptAnswer(a.pod, answer(attempt, 1, 1, { entered: "5" }, false), {
+            end: "missed",
+          }),
+          "verdicts not held",
+        ).rejects.toMatchObject(BAD_REQUEST);
+        await expect(
+          store.appendAttemptAnswer(a.pod, answer(attempt, 1, 1, { entered: "5" }, false), {
+            end: "abandoned" as Ended,
+          }),
+        ).rejects.toMatchObject(BAD_REQUEST);
+        const untouched = await store.getAttempt(a.pod, attempt);
+        expect(untouched.answers).toHaveLength(0);
+        expect(untouched.questions[0]?.ended).toBeNull();
+
+        const held = await store.putAssignment(a.pod, {
+          ...ASSIGNMENT,
+          lesson_id: a.lesson,
+          hold_verdicts: true,
+        });
+        const playing = await store.startAttempt(a.pod, { assignment_id: held.id });
+        await store.appendAttemptAnswer(
+          a.pod,
+          answer(playing.attempt.id, 1, 1, { entered: "5" }, false),
+          { end: "missed" },
+        );
+        const [row] = await store.getAttemptResult(a.pod, playing.attempt.id);
+        expect(row).toMatchObject({ ended: "missed", correct: false, tries: 1 });
+      });
+
       it("are refused with AttemptPaused while paused, and accepted after resuming", async () => {
         const store = await make();
         const { a, attempt } = await started(store);

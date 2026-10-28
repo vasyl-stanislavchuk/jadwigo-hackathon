@@ -5,9 +5,8 @@ import { groupMarks, groupSolution, judgeGroup } from "./group.ts";
 
 /**
  * The Group judge. No group question is in the golden corpus, so these are its parity check. The
- * cases come from david-learns `frontend/src/families/judge.test.ts` (Group), the marks half of
- * `group/columns.test.tsx` (three pairs marked each, two marked whole) and the judge's own rules;
- * `group/group.test.ts` checks validation only and stays with it.
+ * cases are the playground's Group examples, its marks rule (three groups marked each, two marked
+ * whole) and the judge's own rules; validation is checked where it lives.
  */
 
 const groups = (n: number): GroupData => ({

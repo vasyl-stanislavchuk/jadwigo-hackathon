@@ -3,9 +3,8 @@ import { describe, expect, it } from "vitest";
 import { judgePlace, placeMarks, placeSolution } from "./judge.ts";
 
 /**
- * area_model (dl-w3.61.7): the grid judge with a split, per part. Ported from the judge half of
- * david-learns `frontend/src/families/place/areaModel.test.tsx`; its checks stay with validation
- * and its split strip with the web app.
+ * area_model (dl-w3.61.7): the grid judge with a split, per part. The checks stay with validation
+ * and the split strip with the web app.
  */
 
 const data: PlaceData = {

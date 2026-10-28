@@ -35,8 +35,6 @@ import { letterUnits } from "../letters.ts";
  *
  * After a right answer, `otherForm` names the first accepted form the entry did not match, so the
  * child sees once that it could also be written that way (handoff-language-questions §L1).
- *
- * Ported from david-learns `frontend/src/families/enter/text.ts`.
  */
 
 /** The shortest accepted form a one-letter slip is counted against. */

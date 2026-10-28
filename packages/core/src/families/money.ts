@@ -2,7 +2,7 @@ import { Denom } from "@jadwigo/contracts";
 
 /**
  * Polish money for the coins judge: what each coin and note is worth, and the fewest that make an
- * amount. Ported from david-learns `frontend/src/families/money.ts`, the judge's half.
+ * amount. Only the judge's half is here; the coin pictures are the page's.
  */
 
 /** Each denomination's value in grosze (100 grosze is 1 złoty). */
