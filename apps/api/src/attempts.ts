@@ -14,7 +14,13 @@ import {
   verdictsHeld,
 } from "@jadwigo/contracts";
 import { judge, pageMarks } from "@jadwigo/core";
-import type { AttemptRecord, LessonVersionWithQuestions, NewAttempt, Store } from "@jadwigo/store";
+import {
+  type AttemptRecord,
+  type LessonVersionWithQuestions,
+  type NewAttempt,
+  type Store,
+  StoreError,
+} from "@jadwigo/store";
 import { authorize, type Scope } from "./authorize.ts";
 import { lessonQuestion, nextQuestion } from "./course.ts";
 import { ApiError, badRequest } from "./errors.ts";
@@ -134,7 +140,8 @@ export async function answer(
     end === undefined ? {} : { end },
   );
 
-  if (!replayed && end !== undefined) await goOn(store, scope, version, id, stored.seq);
+  // A replay goes on too: it may race its original, or follow one that stopped before going on.
+  if (replayed || end !== undefined) await goOn(store, scope, version, id, stored.seq);
   const after = await store.getAttempt(scope.pod, id);
   return answerResult(scope, version, after, stored, replayed);
 }
@@ -148,9 +155,21 @@ export async function goOn(
   seq: number,
 ): Promise<void> {
   const record = await store.getAttempt(scope.pod, id);
+  const last = record.questions.at(-1);
+  // Only once, after the last question asked ends: a later question, an open one or a finished
+  // attempt means the course has gone on already.
+  if (record.attempt.status === "finished" || last?.seq !== seq || last.ended === null) return;
   const next = nextQuestion(scope.assignment, version, record, seq);
-  if (next) await store.askQuestion(scope.pod, id, next);
-  else await store.finishAttempt(scope.pod, id);
+  try {
+    if (next) await store.askQuestion(scope.pod, id, next);
+    else await store.finishAttempt(scope.pod, id);
+  } catch (error) {
+    // A request racing this one went on first: its question is open, or the attempt finished.
+    const won =
+      error instanceof StoreError &&
+      (error.type === "QuestionNotOpen" || error.type === "AttemptFinished");
+    if (!won) throw error;
+  }
 }
 
 /**

@@ -223,6 +223,59 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         expect(snap.body.questions[0]).toMatchObject({ seq: 1, tries: 1, ended: "correct" });
       });
 
+      it("answers a retry racing its original with the original's reply", async () => {
+        const { id, snapshot } = await start(s, await s.assign("equalGroups"));
+        const page = snapshot.questions[0];
+        if (page === undefined) throw new Error("no first question");
+        const body = {
+          ...answerFields(page),
+          kind: "try",
+          value: solutionOf(await s.questionOf(page)),
+        };
+        const post = () => s.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), body);
+        const [a, b] = await Promise.all([post(), post()]);
+        expect([a.status, b.status]).toEqual([201, 201]);
+        expect([a.body.replayed, b.body.replayed].sort()).toEqual([false, true]);
+        expect({ ...a.body, replayed: null }).toEqual({ ...b.body, replayed: null });
+        expect(a.body.next).toMatchObject({ seq: 2 });
+        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect(snap.body.questions.map((q) => q.seq)).toEqual([1, 2]);
+      });
+
+      it("a replay goes on after an original that stopped between its append and the next question", async () => {
+        // The store fails the first ask, as a crash after the append-and-end would leave it.
+        const store = makeStore();
+        let failed = false;
+        const crashing = new Proxy(store, {
+          get(target, key) {
+            if (key === "askQuestion" && !failed) {
+              failed = true;
+              return () => Promise.reject(new Error("planted crash before the next question"));
+            }
+            const value: unknown = Reflect.get(target, key, target);
+            return typeof value === "function" ? value.bind(target) : value;
+          },
+        });
+        const c = seeded(crashing);
+        const { id, snapshot } = await start(c, await c.assign("equalGroups"));
+        const page = snapshot.questions[0];
+        if (page === undefined) throw new Error("no first question");
+        const body = {
+          ...answerFields(page),
+          kind: "try",
+          value: solutionOf(await c.questionOf(page)),
+        };
+        const first = await c.call("POST", pathOf("answer", { id }), body);
+        expect(first.status).toBe(500);
+        const stuck = await c.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect([stuck.body.open_seq, stuck.body.questions[0]?.ended]).toEqual([null, "correct"]);
+
+        const replay = await c.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), body);
+        expect(replay.body).toMatchObject({ replayed: true, ended: "correct", next: { seq: 2 } });
+        const healed = await c.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect(healed.body.open_seq).toBe(2);
+      });
+
       it("refuses a field the server writes as ServerFieldSupplied, and a body that fails its schema", async () => {
         const { id, snapshot } = await start(s, await s.assign("equalGroups"));
         const page = snapshot.questions[0];
