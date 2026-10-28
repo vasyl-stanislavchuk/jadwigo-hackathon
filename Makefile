@@ -103,7 +103,8 @@ else
 endif
 
 ## db-seed: the featured lessons, by lesson import's seed script (dl-e8ov.2.32.5), into DATABASE_URL.
-## ENV=dev|prod seeds that project instead, as postgres through its session pooler (port 5432; the
+## ENV=dev|prod seeds that project instead, as jadwigo_api (the Store sets that role, and postgres
+## on Supabase is not a member of it; run db-role first) through its session pooler (port 5432; the
 ## transaction pooler on 6543 cannot hold the seed's transactions), the password in PGPASSWORD only.
 ## ENV=prod asks before it links prod (CONFIRM=prod where there is no keyboard). The seed runs
 ## under env -i: it sees PATH, HOME, USER, TMPDIR, PGPASSWORD and DATABASE_URL, no other secret. Safe to rerun:
@@ -119,10 +120,12 @@ else
 	  if [ "$$answer" != prod ]; then echo "db-seed: nothing seeded"; exit 1; fi; \
 	fi
 	@$(SUPABASE_LINK); \
+	API_PASSWORD=$${JADWIGO_API_DB_PASSWORD_$(ENV_UPPER):-$$(security find-generic-password -s jadwigo-api-db-password-$(ENV) -w 2>/dev/null)}; \
+	test -n "$$API_PASSWORD" || { echo "db-seed: set JADWIGO_API_DB_PASSWORD_$(ENV_UPPER) in $(SUPABASE_SECRETS), or add the keychain item jadwigo-api-db-password-$(ENV)"; exit 1; }; \
 	test -s supabase/.temp/pooler-url || { echo "db-seed: supabase link wrote no supabase/.temp/pooler-url"; exit 1; }; \
-	url=$$(sed 's/:6543\//:5432\//' supabase/.temp/pooler-url); \
-	case "$$url" in *:5432/*) ;; *) echo "db-seed: supabase/.temp/pooler-url names no pooler port"; exit 1;; esac; \
-	env -i PATH="$$PATH" HOME="$$HOME" USER="$$USER" TMPDIR="$${TMPDIR:-/tmp}" PGPASSWORD="$$SUPABASE_DB_PASSWORD" DATABASE_URL="$$url" \
+	url=$$(sed 's/:6543\//:5432\//; s|://postgres\.|://jadwigo_api.|' supabase/.temp/pooler-url); \
+	case "$$url" in *://jadwigo_api.*:5432/*) ;; *) echo "db-seed: supabase/.temp/pooler-url is not postgres.<ref>@<pooler>:6543"; exit 1;; esac; \
+	env -i PATH="$$PATH" HOME="$$HOME" USER="$$USER" TMPDIR="$${TMPDIR:-/tmp}" PGPASSWORD="$$API_PASSWORD" DATABASE_URL="$$url" \
 	  bun run --cwd packages/lesson-import seed
 endif
 
