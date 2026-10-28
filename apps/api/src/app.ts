@@ -4,6 +4,7 @@ import type { Store } from "@jadwigo/store";
 import { answer, getAttempt, startAttempt } from "./attempts.ts";
 import { ApiError, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
+import { playgroundExamples } from "./playground.ts";
 import { getResults, help, patchAttempt } from "./session.ts";
 
 type Params<N extends RouteName> = ReturnType<(typeof ROUTES)[N]["params"]["parse"]>;
@@ -43,6 +44,9 @@ export function createApp(store: Store): Router {
   // and a start on one is authorized like any other (decision 2026-10-26-the-login-free-lesson-is-
   // protected-by-invisible-limits-only-per).
   on("featuredLessons", () => featuredLessons(store));
+  // Public by design: no authorize(). It reads only Jadwigo's own pod's written playground
+  // examples, which hold no learner's data (dl-w3.75).
+  on("playgroundExamples", (params) => playgroundExamples(store, params.language));
   on("startAttempt", (params, body) => startAttempt(store, params.id, body));
   on("getAttempt", (params) => getAttempt(store, params.id));
   on("answer", (params, body) => answer(store, params.id, body));

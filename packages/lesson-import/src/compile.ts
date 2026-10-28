@@ -65,7 +65,7 @@ function dropped(given: unknown, kept: unknown, path = ""): string[] {
 }
 
 /** Parses with a contract schema, and refuses a field the schema would silently drop. */
-function strictly<S extends z.ZodType>(schema: S, value: unknown, at: string): z.infer<S> {
+export function strictly<S extends z.ZodType>(schema: S, value: unknown, at: string): z.infer<S> {
   const parsed = schema.safeParse(value);
   if (!parsed.success) throw new Error(`${at}: ${parsed.error.message}`);
   const lost = dropped(value, parsed.data);
