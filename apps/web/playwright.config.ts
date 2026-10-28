@@ -5,14 +5,18 @@
 // runs only when JW_E2E_API=1, with the api at JW_API_URL (src/config.ts) and the featured lessons
 // seeded. The spec's header says how.
 //
-// The build gets a Supabase project that does not exist (JW_SUPABASE_URL, src/config.ts), so the
-// results offer "save your progress"; e2e/parent.spec.ts answers its auth calls with page.route.
+// Parent login's test (e2e/parent.spec.ts) needs the same api, and runs in the same project. The
+// build's Supabase project (JW_SUPABASE_URL, src/config.ts) is e2e/auth-server.ts, a stand-in this
+// config starts beside the page, so the results offer "save your progress" and the email code
+// signs in with no Supabase; the api reads that stand-in's JWKS (AUTH_JWKS_URL).
 import { defineConfig, devices } from "@playwright/test";
+import { AUTH_ORIGIN } from "./e2e/auth-origin.ts";
 import { playE2e, webPort } from "./src/config.ts";
 
 const port = webPort();
 const laptop = { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } };
-const PLAY = /play\.spec\.ts$/;
+/** The specs that need the api: the lesson player and parent login. */
+const API = /(play|parent)\.spec\.ts$/;
 
 export default defineConfig({
   testDir: "e2e",
@@ -23,17 +27,29 @@ export default defineConfig({
   projects: [
     {
       name: "phone",
-      testIgnore: PLAY,
+      testIgnore: API,
       use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } },
     },
-    { name: "laptop", testIgnore: PLAY, use: laptop },
-    ...(playE2e() ? [{ name: "api", testMatch: PLAY, use: laptop }] : []),
+    { name: "laptop", testIgnore: API, use: laptop },
+    ...(playE2e() ? [{ name: "api", testMatch: API, use: laptop }] : []),
   ],
-  webServer: {
-    command: "bunx vite build && bunx vite preview",
-    port,
-    reuseExistingServer: false,
-    env: { JW_SUPABASE_URL: "http://127.0.0.1:54321", JW_SUPABASE_KEY: "e2e" },
-    timeout: 120_000,
-  },
+  webServer: [
+    {
+      command: "bunx vite build && bunx vite preview",
+      port,
+      reuseExistingServer: false,
+      env: { JW_SUPABASE_URL: AUTH_ORIGIN, JW_SUPABASE_KEY: "e2e" },
+      timeout: 120_000,
+    },
+    ...(playE2e()
+      ? [
+          {
+            command: "bun e2e/auth-server.ts",
+            url: `${AUTH_ORIGIN}/auth/v1/.well-known/jwks.json`,
+            reuseExistingServer: false,
+            timeout: 30_000,
+          },
+        ]
+      : []),
+  ],
 });
