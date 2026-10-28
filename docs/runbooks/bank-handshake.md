@@ -111,3 +111,11 @@ Undo in the reverse order, because this root cannot plan once the bank's paramet
 2. **The bank root:** revert `infra/ssm.tf` and its outputs in `jadwigo-bank`, then
    `terraform plan -out=plan.tfplan` (expect 0 to add, 0 to change, 1 to destroy) and
    `terraform apply plan.tfplan`. The function, its alias and its URL are untouched.
+
+## Applied on 2026-10-28
+
+By the lead under `jadwigo-question-bank/decisions/2026-10-28-the-overnight-wave-may-push-and-open-prs-in-the-monorepo-and-app`, recorded on `dl-5ssh.57`:
+
+1. The bank root: `Plan: 1 to add, 0 to change, 0 to destroy`, `Apply complete! Resources: 1 added` (`aws_ssm_parameter.search_alias_arn`), the parameter reading the live alias ARN.
+2. This root, the real plan once the parameter existed: `Plan: 2 to add, 3 to change, 0 to destroy`: the `POST /api/v1/question-searches` route key and `aws_ssm_parameter.bank_read_token` added; `aws_iam_role_policy.api`, `aws_lambda_function.api` (the 2 env names) and the `$default` stage changed in place. `Apply complete! Resources: 2 added, 3 changed, 0 destroyed`.
+3. Not done: `make api-deploy`, which is the owner's, and the read token's real value, set by hand per "Steps".
