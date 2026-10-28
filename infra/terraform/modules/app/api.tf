@@ -4,7 +4,8 @@
 locals {
   name          = "jadwigo-api-${var.environment}"
   health        = "GET /api/health"
-  throttled     = setsubtract(concat(var.routes, ["$default"]), [local.health])
+  all_routes    = concat(var.routes, var.token_routes, ["$default"])
+  throttled     = setsubtract(local.all_routes, [local.health])
   db_url_param  = "/jadwigo/${var.environment}/database-url"
   log_retention = var.log_retention_days
 }
@@ -118,14 +119,32 @@ resource "aws_apigatewayv2_integration" "api" {
   timeout_milliseconds   = 10000
 }
 
-# One route per ROUTES entry, so each carries its own throttle; $default sends the rest to the
-# router, which answers NotFound.
-resource "aws_apigatewayv2_route" "api" {
-  for_each = toset(concat(var.routes, ["$default"]))
+# Supabase Auth's access tokens, verified at the gateway against the project's JWKS (RS256 only:
+# jadwigo-platform/decisions/2026-10-27-jadwigo-s-supabase-projects-are-recreated-in-frankfurt-and-sign).
+# A missing, expired or foreign token is answered 401 before the Lambda runs; apps/api authorizes
+# the verified caller against its member rows.
+resource "aws_apigatewayv2_authorizer" "supabase" {
+  api_id           = aws_apigatewayv2_api.api.id
+  name             = "supabase"
+  authorizer_type  = "JWT"
+  identity_sources = ["$request.header.Authorization"]
 
-  api_id    = aws_apigatewayv2_api.api.id
-  route_key = each.key
-  target    = "integrations/${aws_apigatewayv2_integration.api.id}"
+  jwt_configuration {
+    issuer   = var.jwt_issuer
+    audience = [var.jwt_audience]
+  }
+}
+
+# One route per ROUTES entry, so each carries its own throttle; $default sends the rest to the
+# router, which answers NotFound. Only the token routes carry the authorizer.
+resource "aws_apigatewayv2_route" "api" {
+  for_each = toset(local.all_routes)
+
+  api_id             = aws_apigatewayv2_api.api.id
+  route_key          = each.key
+  target             = "integrations/${aws_apigatewayv2_integration.api.id}"
+  authorization_type = contains(var.token_routes, each.key) ? "JWT" : "NONE"
+  authorizer_id      = contains(var.token_routes, each.key) ? aws_apigatewayv2_authorizer.supabase.id : null
 }
 
 resource "aws_apigatewayv2_stage" "api" {
