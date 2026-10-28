@@ -44,7 +44,10 @@ The words themselves are in the root `GLOSSARY.md`. Rules marked **(tested)** fa
    - `seq` is a question's place in what one attempt actually played. An attempt question is written
      when it is asked, never ahead, so `seq` is the play order, a twin placed `now` simply takes the
      next `seq`, and nothing is ever renumbered. What comes next is worked out from the version's
-     positions, the questions already asked and the twins still owed.
+     positions, the questions already asked and the twins still owed. The page still gets the whole
+     plan from the start: the snapshot's `plan` is the version's planned questions in `position`
+     order, read from `lesson_version_question`, and a planned attempt question ties to its entry
+     by `lesson_question_id`.
    - `try_no` counts the rows of one attempt question, 1, 2, 3. A skip is a row too and takes the
      next `try_no`, so `unique (attempt_id, seq, try_no)` covers it.
 8. **Ids** are `uuid` columns, v4 by default. On the wire and in `jw`, an id is its prefix plus 26

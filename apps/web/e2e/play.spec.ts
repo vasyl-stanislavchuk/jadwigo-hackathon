@@ -19,6 +19,12 @@ import { expect, type Locator, type Page, test } from "@playwright/test";
 
 const band = (page: Page): Locator => page.locator("[data-bar]");
 const field = (page: Page): Locator => page.locator("[data-field]").first();
+const fill = (page: Page): Locator => page.locator("[data-progress-fill]");
+
+/** Waits for the top bar to stand at `done` of `total` questions (dl-e8ov.2.32.44). */
+async function barAt(page: Page, done: number, total: number): Promise<void> {
+  await expect(fill(page)).toHaveAttribute("style", `width: ${Math.round((done / total) * 100)}%;`);
+}
 
 /** Types `value` into the question's first field, replacing what is there, and presses Sprawdź. */
 async function answer(page: Page, value: string): Promise<void> {
@@ -45,18 +51,22 @@ test("a child plays equal-groups to the results, through a miss, a twin, a pause
   await page.goto("/");
   await expect(page).toHaveURL(/\/play\/asg_[0-9a-z]{26}$/);
 
-  // 2 × 5: a miss stays on the question, then the right answer and Dalej.
+  // 2 × 5: a miss stays on the question, then the right answer and Dalej. The bar is drawn from
+  // the 4 planned questions, so it starts at 0 and a quarter is done after the first.
   await onQuestion(page, "2 × 5");
+  await barAt(page, 0, 4);
   await answer(page, "7");
   await expect(band(page)).toHaveAttribute("data-band", "miss");
   await answer(page, "10");
   await expect(band(page)).toHaveAttribute("data-band", "right");
   await page.locator("[data-next]").click();
 
-  // 3 × 4: help, then "Not sure yet", and its twin comes next on its own.
+  // 3 × 4: help, then "Not sure yet", and its twin comes next on its own, adding one to the total.
   await onQuestion(page, "3 × 4");
+  await barAt(page, 1, 4);
   await notSureYet(page);
   await onQuestion(page, "3 × 5");
+  await barAt(page, 2, 5);
 
   // Pause from the top bar, reload: the lesson waits, and goes back to the same question.
   await page.locator("[data-pause]").click();
@@ -66,6 +76,7 @@ test("a child plays equal-groups to the results, through a miss, a twin, a pause
   await expect(page.locator("[data-paused]")).toBeVisible();
   await page.locator("[data-resume]").click();
   await onQuestion(page, "3 × 5");
+  await barAt(page, 2, 5);
   await answer(page, "15");
   await expect(band(page)).toHaveAttribute("data-band", "right");
   await page.locator("[data-next]").click();

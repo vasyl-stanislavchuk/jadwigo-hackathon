@@ -62,6 +62,14 @@ function snapshot(
       started_at: AT,
       finished_at: status === "finished" ? AT : null,
     },
+    // Each question asked is a planned one, at its seq.
+    plan: (questions as PageAttemptQuestion[]).map((q) => ({
+      position: q.seq,
+      lesson_question_id: q.lesson_question_id,
+      question_type: q.question_type,
+      say: q.say,
+      question: q.question,
+    })),
     questions,
     open_seq: status === "finished" ? null : questions.length,
     last_event_id: null,

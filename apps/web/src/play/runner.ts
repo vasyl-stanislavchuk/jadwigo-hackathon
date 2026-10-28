@@ -24,6 +24,7 @@ import type {
   AttemptSnapshot,
   HelpResult,
   PageAttemptQuestion,
+  PagePlannedQuestion,
   PartMark,
   ReleasedHelp,
 } from "@jadwigo/contracts";
@@ -43,6 +44,11 @@ type Next =
   | { kind: "resync" };
 
 export interface RunnerState {
+  /**
+   * The whole pre-defined lesson from the snapshot, in `position` order. It only sizes the bar: a
+   * planned question is played once the server asks it and it shows in `questions`.
+   */
+  plan: PagePlannedQuestion[];
   /** Every question asked so far, in `seq` order. */
   questions: PageAttemptQuestion[];
   /** The question on screen, or null once nothing is open. */
@@ -134,6 +140,7 @@ function show(
 }
 
 export const initialRunner: RunnerState = {
+  plan: [],
   questions: [],
   seq: null,
   phase: "resyncing",
@@ -178,10 +185,11 @@ export function runner(state: RunnerState, action: RunnerAction): RunnerState {
   switch (action.type) {
     case "loaded": {
       const { snapshot } = action;
+      const planned = { ...state, plan: snapshot.plan };
       if (snapshot.attempt.status === "finished") {
-        return { ...show(state, snapshot.questions, null) };
+        return { ...show(planned, snapshot.questions, null) };
       }
-      return show(state, snapshot.questions, snapshot.open_seq);
+      return show(planned, snapshot.questions, snapshot.open_seq);
     }
     case "sending":
       return state.phase === "live" ? { ...state, phase: "sending" } : state;
@@ -278,9 +286,13 @@ export function runner(state: RunnerState, action: RunnerAction): RunnerState {
   }
 }
 
-/** How far through the lesson, for the step bar: questions ended of questions asked. The wire
- * carries no planned total, so the bar measures what has been asked so far. */
+/**
+ * How far through the lesson, for the step bar: questions ended of the planned questions plus the
+ * twins asked so far, so a twin grows the total by one and the bar ends only at the last question
+ * (decision 2026-10-28-the-page-loads-the-whole-planned-lesson-when-an-attempt-starts-s).
+ */
 export function progressOf(state: RunnerState): { done: number; total: number } {
   const done = state.questions.filter((q) => q.ended !== null).length;
-  return { done, total: Math.max(state.questions.length, 1) };
+  const twins = state.questions.filter((q) => q.added === "twin").length;
+  return { done, total: Math.max(state.plan.length + twins, state.questions.length, 1) };
 }

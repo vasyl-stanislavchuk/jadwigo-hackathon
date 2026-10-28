@@ -6,6 +6,7 @@ import {
   type LessonQuestion,
   type PageAttemptQuestion,
   type PageFamilyQuestion,
+  type PagePlannedQuestion,
   pageEnded,
   type ReleasedHelp,
   type Reveal,
@@ -83,7 +84,25 @@ export function pageQuestion(
   };
 }
 
-/** `GET /api/v1/attempts/{id}`: everything asked so far, the open question last. */
+/**
+ * The version's planned questions in `position` order (the store's order), read from the version the attempt started
+ * on, so start, reload and resume give the page the same plan. Explain questions stay off: v0 never
+ * asks one (decision 2026-10-28-in-v0-the-server-never-asks-an-explain-question-a-lesson-plays-i),
+ * and a bar counting one would never reach the end.
+ */
+function planOf(version: LessonVersionWithQuestions): PagePlannedQuestion[] {
+  return version.questions
+    .filter((v) => v.role === "planned" && v.question.family !== "explain")
+    .map((v) => ({
+      position: v.position,
+      lesson_question_id: v.lesson_question_id,
+      question_type: v.question.question_type,
+      say: v.question.say,
+      question: pageFamilyQuestion(v.question),
+    }));
+}
+
+/** `GET /api/v1/attempts/{id}`: the plan and everything asked so far, the open question last. */
 export function snapshot(
   assignment: Pick<Assignment, "hold_verdicts">,
   version: LessonVersionWithQuestions,
@@ -93,6 +112,7 @@ export function snapshot(
   const open = record.questions.find((q) => q.ended === null);
   return {
     attempt: record.attempt,
+    plan: planOf(version),
     questions: record.questions.map((q) => pageQuestion(version, q, record.answers, held)),
     open_seq: record.attempt.status === "finished" ? null : (open?.seq ?? null),
     last_event_id: record.answers.at(-1)?.event_id ?? null,
