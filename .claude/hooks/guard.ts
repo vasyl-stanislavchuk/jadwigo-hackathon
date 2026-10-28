@@ -100,18 +100,28 @@ const WRAPPERS =
   /^(script|expect|unbuffer|socat|python[\d.]*|perl|ruby|node|bun|deno|osascript|bash|sh|zsh|dash|fish)$/;
 const CLEARS_CLAUDECODE =
   /(^|\s)(-u\s*|--unset[=\s]+)CLAUDECODE\b|\bunset\s+(-v\s+)?(\w+\s+)*CLAUDECODE\b|\bexport\s+(-\w+\s+)*-\w*n\w*\s+(\w+\s+)*CLAUDECODE\b|\b(typeset|declare|local)\s+([-+]\w+\s+)*\+\w*x\w*\s+(\w+\s+)*CLAUDECODE\b/;
-/** The env program, bare or by path (/usr/bin/env), and exec -c, which clears the environment. */
-const ENV_PROGRAM = /(^|[\s;&|('"/])env(?=\s|$)/;
-// exec's -a takes a name, so `exec -a x -c` still reaches the -c.
-const EXEC_CLEARS = /(^|[\s;&|('"])exec\s+((-[A-Za-z]*a\s+\S+|-\w+)\s+)*-[A-Za-z]*c[A-Za-z]*(\s|$)/;
+/**
+ * The env program: bare, by path (/usr/bin/env), GNU's under another name (genv, gnuenv), or found
+ * by a substitution the text shows ($(which env), `command -v genv`). A variable holding it ($E -i)
+ * is the documented limit (dl-5ssh.56).
+ */
+const ENV_PROGRAM =
+  /(^|[\s;&|('"/])(g|gnu)?env(?=\s|$)|(\$\(|`)\s*(which|command\s+-v|type\s+-p|whence\s+-p)\s+\S*?(g|gnu)?env\s*(\)|`)/;
+// exec's -a takes a name, so `exec -a x -c` still reaches the -c. The name never starts with '-',
+// which keeps the two alternatives apart: otherwise 'exec ' + '-a '.repeat(n) backtracks for seconds.
+export const EXEC_CLEARS =
+  /(^|[\s;&|('"])exec\s+((-[A-Za-z]*a\s+[^-\s]\S*|-\w+)\s+)*-[A-Za-z]*c[A-Za-z]*(\s|$)/;
+/** Whether a long option is a prefix GNU getopt accepts for one of env's: at least `--` and a letter. */
+const longOption = (w: string, full: string) => w.length >= 3 && full.startsWith(w);
 /** Programs that run a command on a pseudo-terminal; python counts when the line imports pty. */
 const PTY_WRAPPERS = /^(script|expect|unbuffer|socat|screen|tmux)$/;
 const MAKE = /(^|[\s'",[(])g?make\b/;
 
 /**
  * Whether the text clears the whole environment, and CLAUDECODE with it: exec -c, or an env whose
- * options hold -i, - or --ignore-environment anywhere, in a short-flag cluster (-0i, -vi), after
- * options that take a value (-u FOO, -C dir, -P path) or inside an -S string.
+ * options hold -i, - or --ignore-environment (or a prefix GNU accepts, --ig) anywhere, in a
+ * short-flag cluster (-0i, -vi), after options that take a value (-u FOO, -C dir, -P path) or
+ * inside an -S or --split-string string.
  */
 function clearsEnv(text: string): boolean {
   if (EXEC_CLEARS.test(text)) return true;
@@ -125,9 +135,15 @@ function clearsEnv(text: string): boolean {
     for (let i = 0; i < words.length; i++) {
       const w = words[i] ?? "";
       if (!w.startsWith("-") || w === "--") break;
-      if (w === "-" || w === "--ignore-environment" || w === "--ignore-env") return true;
+      if (w === "-") return true;
       if (w.startsWith("--")) {
-        if (/^--(unset|chdir)$/.test(w)) i++;
+        const eq = w.indexOf("=");
+        const name = eq < 0 ? w : w.slice(0, eq);
+        if (longOption(name, "--ignore-environment")) return true;
+        // --split-string=-i: the string's words read as more options.
+        const value = w.slice(eq + 1);
+        if (eq >= 0 && value && longOption(name, "--split-string")) words.splice(i + 1, 0, value);
+        if (eq < 0 && ["--unset", "--chdir", "--argv0"].some((o) => longOption(name, o))) i++;
         continue;
       }
       for (let j = 1; j < w.length; j++) {
