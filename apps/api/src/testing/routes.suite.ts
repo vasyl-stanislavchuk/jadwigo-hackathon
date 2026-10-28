@@ -11,6 +11,7 @@ import {
   ID_PREFIXES,
   idOf,
 } from "@jadwigo/contracts";
+import { solutionOf } from "@jadwigo/core";
 import type { NewPod, Store } from "@jadwigo/store";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
@@ -202,6 +203,26 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         ]);
       });
 
+      it("of 2 tries at once on one question, stores exactly 1, and the winner's reply ends it", async () => {
+        const { id, snapshot } = await start(s, await s.assign("equalGroups"));
+        const page = snapshot.questions[0];
+        if (page === undefined) throw new Error("no first question");
+        const [first, second] = await Promise.all([
+          tryAt(s, id, page, true),
+          tryAt(s, id, page, true, { try_no: 2 }),
+        ]);
+        expect(first.status).toBe(201);
+        expect(first.body).toMatchObject({ seq: 1, try_no: 1, ended: "correct" });
+        expect(first.body.next).toMatchObject({ seq: 2 });
+        // The other request lost: refused before or after the winner's unit, never stored.
+        expect(second.status).toBe(409);
+        expect(["QuestionNotOpen", "TryOutOfOrder"]).toContain(
+          (second.body as unknown as ErrorEnvelope).error.type,
+        );
+        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect(snap.body.questions[0]).toMatchObject({ seq: 1, tries: 1, ended: "correct" });
+      });
+
       it("refuses a field the server writes as ServerFieldSupplied, and a body that fails its schema", async () => {
         const { id, snapshot } = await start(s, await s.assign("equalGroups"));
         const page = snapshot.questions[0];
@@ -237,32 +258,33 @@ export function routeSuite(name: string, makeStore: () => Store): void {
 
       it("finishes on the answer that ends the last question, then refuses answers and still replays", async () => {
         const { id } = await start(s, await s.assign("equalGroups"));
-        let last: AttemptAnswerResult | undefined;
-        let lastBody: unknown;
-        for (let n = 0; n < 4; n++) {
-          const page = await openQuestion(s, id);
-          const reply = await tryAt(s, id, page, true);
-          last = reply.body;
-          lastBody = page;
-        }
-        expect(last).toMatchObject({
+        for (let n = 0; n < 3; n++) await tryAt(s, id, await openQuestion(s, id), true);
+        const page = await openQuestion(s, id);
+        const body = {
+          ...answerFields(page),
+          kind: "try",
+          value: solutionOf(await s.questionOf(page)),
+        };
+        const last = await s.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), body);
+        expect(last.body).toMatchObject({
           seq: 4,
           ended: "correct",
           next: null,
           attempt_status: "finished",
         });
-        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id: id }));
+        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
         expect(snap.body.open_seq).toBeNull();
         expect(snap.body.attempt.finished_at).not.toBeNull();
 
-        const late = await skipAt(s, id, {
-          ...(lastBody as AttemptSnapshot["questions"][number]),
-          seq: 4,
-        });
-        expect(late.status).toBe(409);
+        const replay = await s.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), body);
+        expect(replay.status).toBe(201);
+        expect(replay.body).toEqual({ ...last.body, replayed: true });
 
-        const firstAnswer = snap.body.last_event_id;
-        expect(firstAnswer).not.toBeNull();
+        const late = await skipAt(s, id, { ...page, tries: 1 });
+        expect([late.status, (late.body as unknown as ErrorEnvelope).error.type]).toEqual([
+          409,
+          "AttemptFinished",
+        ]);
       });
 
       it("finishes on a skip of the last question, but not on a miss there", async () => {
@@ -380,10 +402,18 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         expect(snap.body.questions.map((q) => q.ended)).toEqual(["done", "done", null]);
       });
 
-      it("shows the stored endings once the attempt finishes", async () => {
+      it("keeps the answer that finishes the attempt neutral, then shows the stored endings", async () => {
         const { id } = await start(s, await s.assign("equalGroups", { hold_verdicts: true }));
         await tryAt(s, id, await openQuestion(s, id), false);
-        for (let n = 0; n < 3; n++) await tryAt(s, id, await openQuestion(s, id), true);
+        for (let n = 0; n < 2; n++) await tryAt(s, id, await openQuestion(s, id), true);
+        const last = await tryAt(s, id, await openQuestion(s, id), true);
+        expect(last.body).toMatchObject({
+          correct: null,
+          parts: null,
+          reveal: null,
+          ended: "done",
+          attempt_status: "finished",
+        });
         const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id: id }));
         expect(snap.body.attempt.status).toBe("finished");
         expect(snap.body.questions.map((q) => q.ended)).toEqual([
@@ -448,6 +478,39 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         ]);
         const results = await s.call<AttemptResults>("GET", pathOf("getResults", { id }));
         expect(results.body.results[0]).toMatchObject({ seq: 1, ended: "skipped" });
+      });
+    });
+
+    describe("help on a ladder with rungs 1 and 4 only", () => {
+      it("gives the page the true rung, and the 2nd release, rung 4, ends the question", async () => {
+        // A look and a 1-line worked solution: rung 1 and rung 4, with no boost and no rung 3.
+        const assignment = await s.assignLadder((help) => ({
+          ...(help.look !== undefined && { look: help.look }),
+          worked: (help.worked ?? []).slice(0, 1),
+        }));
+        const { id } = await start(s, assignment);
+        const askHelp = (seen: number) =>
+          s.call<HelpResult>("POST", pathOf("help", { id, seq: 1 }), { help_released: seen });
+
+        const look = await askHelp(0);
+        expect(look.body).toMatchObject({ help_released: 1, ended: null, more: true });
+        expect(look.body.released?.rung).toBe(1);
+        // Rung 4 waits for a real try.
+        expect((await askHelp(1)).body).toMatchObject({ help_released: 1, released: null });
+
+        await tryAt(s, id, await openQuestion(s, id), false);
+        const twin = await askHelp(1);
+        expect(twin.body.released?.rung).toBe(4);
+        expect(twin.body).toMatchObject({ help_released: 2, ended: "skipped", more: false });
+        expect(twin.body.next).toMatchObject({
+          seq: 2,
+          added: "twin",
+          placed: "now",
+          added_for: 1,
+        });
+
+        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect(snap.body.questions[0]?.help.map((h) => h.rung)).toEqual([1, 4]);
       });
     });
 

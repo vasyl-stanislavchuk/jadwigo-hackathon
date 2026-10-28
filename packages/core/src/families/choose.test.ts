@@ -6,8 +6,7 @@ import { chooseMarks, chooseSolution, judgeChoose } from "./choose.ts";
 /**
  * The Choose judge beyond the dispatcher's cases (judge.test.ts): mark the numbers (inline,
  * dl-w3.61.2), "none of these" (dl-w3.70.4), a line with its pick in place, and the marks after a
- * miss. Ported from the judge halves of david-learns `frontend/src/families/choose/{inline,none,
- * line,views}.test.tsx`; their view halves stay with the web app.
+ * miss. The page's own cases (what is drawn, what a tap does) stay with the web app.
  */
 
 const cls = (data: ChooseData, key: ChooseKey, chosen: string[]) => {

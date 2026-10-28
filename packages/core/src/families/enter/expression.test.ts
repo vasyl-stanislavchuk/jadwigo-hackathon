@@ -1,7 +1,6 @@
 /**
  * The expression parser behind Enter's `input: expression` (dl-w3.51.1): what reads as an
- * expression, its value, its form, and the signs a hardware key stands for. Ported from
- * david-learns `frontend/src/families/enter/expression.test.ts`.
+ * expression, its value, its form, and the signs a hardware key stands for.
  */
 
 import { describe, expect, it } from "vitest";

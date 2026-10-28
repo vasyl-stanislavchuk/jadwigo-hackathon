@@ -14,8 +14,7 @@
  * powers. A key may be written with Khan's TeX signs (`\times`, `\cdot`, `\div`) or with the
  * keypad's own glyphs; both read the same.
  *
- * Ported from david-learns `frontend/src/families/enter/expression.ts`, the judge's half: the
- * equation keypad's signs stay with the page.
+ * Only what the judge needs is here: the equation keypad's signs stay with the page.
  */
 
 type Op = "+" | "−" | "×" | "÷";

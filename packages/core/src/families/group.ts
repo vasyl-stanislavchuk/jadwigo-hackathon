@@ -15,8 +15,6 @@ import type {
  * Marks: per item when there are three or more groups. With two groups a marked item could only
  * belong in the other one, which gives the answer away, so the whole step is marked (the marks
  * rule).
- *
- * Ported from david-learns `frontend/src/families/group/judge.ts`.
  */
 
 function readGroups(value: unknown): Record<string, unknown> | null {

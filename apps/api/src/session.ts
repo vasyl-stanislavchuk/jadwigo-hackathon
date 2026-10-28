@@ -14,7 +14,7 @@ import {
 } from "@jadwigo/contracts";
 import { gateOpen, HelpRung, helpLeft, rungFor } from "@jadwigo/core";
 import type { Store } from "@jadwigo/store";
-import { bodyHash, endAndGoOn, versionOf } from "./attempts.ts";
+import { bodyHash, goOn, versionOf } from "./attempts.ts";
 import { authorize } from "./authorize.ts";
 import { lessonQuestion } from "./course.ts";
 import { ApiError, badRequest } from "./errors.ts";
@@ -64,24 +64,29 @@ export async function help(
   }
   if (twinNow) {
     const now = new Date().toISOString();
-    await store.appendAttemptAnswer(scope.pod, {
-      event_id: randomUUID() as EventId,
-      attempt_id: id,
-      seq,
-      try_no: record.answers.filter((a) => a.seq === seq).length + 1,
-      kind: "skip",
-      value: null,
-      skip_reason: "help_twin",
-      latency_ms: Math.max(0, Date.parse(now) - Date.parse(asked.asked_at)),
-      asked_at: asked.asked_at,
-      answered_at: now,
-      correct: null,
-      mistake_class: null,
-      parts: null,
-      judged_by: null,
-      body_hash: bodyHash({ seq, help_released: seen, skip_reason: "help_twin" }),
-    });
-    await endAndGoOn(store, scope, version, id, seq, "skipped");
+    // The skip ends the question in the same store unit as its append.
+    await store.appendAttemptAnswer(
+      scope.pod,
+      {
+        event_id: randomUUID() as EventId,
+        attempt_id: id,
+        seq,
+        try_no: record.answers.filter((a) => a.seq === seq).length + 1,
+        kind: "skip",
+        value: null,
+        skip_reason: "help_twin",
+        latency_ms: Math.max(0, Date.parse(now) - Date.parse(asked.asked_at)),
+        asked_at: asked.asked_at,
+        answered_at: now,
+        correct: null,
+        mistake_class: null,
+        parts: null,
+        judged_by: null,
+        body_hash: bodyHash({ seq, help_released: seen, skip_reason: "help_twin" }),
+      },
+      { end: "skipped" },
+    );
+    await goOn(store, scope, version, id, seq);
   }
 
   const after = await store.getAttempt(scope.pod, id);

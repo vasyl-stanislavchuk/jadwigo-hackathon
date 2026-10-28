@@ -26,8 +26,8 @@ import type {
  * Marks: the whole step only. Marking each position would tell the learner where items
  * belong (the marks rule).
  *
- * Ported from david-learns `frontend/src/families/sequence/judge.ts`, with `tileMode`,
- * `slotCount` and `slotIndex` from `sequence/model.ts`.
+ * `tileMode`, `slotCount` and `slotIndex` read the question's shape: tiles or cards, and how many
+ * places a tile row has.
  */
 
 /** Whether the step answers with tiles in places rather than cards in a list. */

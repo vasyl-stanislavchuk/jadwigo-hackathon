@@ -1,5 +1,5 @@
-// The judges agree with the playground: every case of the golden corpus, synced from david-learns
-// `frontend/src/playground/sim/familyGolden.test.ts` (packages/testing/src/golden/PROVENANCE.md),
+// The judges agree with the playground: every case of the golden corpus, synced from the
+// playground's family golden test (packages/testing/src/golden/PROVENANCE.md),
 // gets the verdict and mistake class the playground's judges gave it. Each question parses as the
 // contracts' FamilyQuestion first, so the corpus also holds the contracts to the playground's shapes.
 import { FamilyQuestion, QuestionType, valueFor } from "@jadwigo/contracts";

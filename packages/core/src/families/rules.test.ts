@@ -1,7 +1,6 @@
-// The number-line rule on fractions (dl-w3.55), ported from david-learns
-// `frontend/src/families/rules.test.ts`. The whole-number behaviour is held to the Python by the
-// golden corpus (golden.test.ts); this file covers positions and steps that are not whole, where
-// the 3 classes keep their meaning: off_by_tick, scale_misread and wrong_direction.
+// The number-line rule on fractions (dl-w3.55). The whole-number behaviour is held to the Python
+// by the golden corpus (golden.test.ts); this file covers positions and steps that are not whole,
+// where the 3 classes keep their meaning: off_by_tick, scale_misread and wrong_direction.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { applyRule, classify, classifyNumberLine, isNum, withinTolerance } from "./rules.ts";

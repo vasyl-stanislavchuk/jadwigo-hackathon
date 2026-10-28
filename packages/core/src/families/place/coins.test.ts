@@ -3,9 +3,8 @@ import { describe, expect, it } from "vitest";
 import { judgePlace, placeSolution } from "./judge.ts";
 
 /**
- * money_pay (dl-w3.61.6): the judge per class and the solution. Ported from the judge half of
- * david-learns `frontend/src/families/place/coins.test.tsx`; its money helpers' cases belong to
- * money.ts, its checks to validation, its view and money_count's Slots cases to their own ports.
+ * money_pay (dl-w3.61.6): the judge per class and the solution. The money helpers' cases belong to
+ * money.ts, the checks to validation, the view to the web app and money_count to Slots.
  */
 
 const BANK: Denom[] = ["gr10", "gr20", "gr50", "zl1", "zl2", "zl5"];

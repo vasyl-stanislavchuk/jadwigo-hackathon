@@ -103,10 +103,31 @@ else
 endif
 
 ## db-seed: the featured lessons, by lesson import's seed script (dl-e8ov.2.32.5), into DATABASE_URL.
-## Until that script exists it says so and does nothing.
+## ENV=dev|prod seeds that project instead, as jadwigo_api (the Store sets that role, and postgres
+## on Supabase is not a member of it; run db-role first) through its session pooler (port 5432; the
+## transaction pooler on 6543 cannot hold the seed's transactions), the password in PGPASSWORD only.
+## ENV=prod asks before it links prod (CONFIRM=prod where there is no keyboard). The seed runs
+## under env -i: it sees PATH, HOME, USER, TMPDIR, PGPASSWORD and DATABASE_URL, no other secret. Safe to rerun:
+## the same content publishes nothing new.
 db-seed:
-	@if grep -q '"seed":' packages/lesson-import/package.json; then bun run --cwd packages/lesson-import seed; \
-	else echo "db-seed: no seed yet (dl-e8ov.2.32.5 adds packages/lesson-import's seed script)"; fi
+ifeq ($(ENV),)
+	bun run --cwd packages/lesson-import seed
+else
+	@$(NOT_PROD_FROM_AGENT)
+	@if [ "$(ENV)" = prod ]; then \
+	  answer="$(CONFIRM)"; \
+	  if [ -z "$$answer" ]; then printf 'Seed jadwigo-prod? Type prod to seed (or pass CONFIRM=prod): '; read answer; fi; \
+	  if [ "$$answer" != prod ]; then echo "db-seed: nothing seeded"; exit 1; fi; \
+	fi
+	@$(SUPABASE_LINK); \
+	API_PASSWORD=$${JADWIGO_API_DB_PASSWORD_$(ENV_UPPER):-$$(security find-generic-password -s jadwigo-api-db-password-$(ENV) -w 2>/dev/null)}; \
+	test -n "$$API_PASSWORD" || { echo "db-seed: set JADWIGO_API_DB_PASSWORD_$(ENV_UPPER) in $(SUPABASE_SECRETS), or add the keychain item jadwigo-api-db-password-$(ENV)"; exit 1; }; \
+	test -s supabase/.temp/pooler-url || { echo "db-seed: supabase link wrote no supabase/.temp/pooler-url"; exit 1; }; \
+	url=$$(sed 's/:6543\//:5432\//; s|://postgres\.|://jadwigo_api.|' supabase/.temp/pooler-url); \
+	case "$$url" in *://jadwigo_api.*:5432/*) ;; *) echo "db-seed: supabase/.temp/pooler-url is not postgres.<ref>@<pooler>:6543"; exit 1;; esac; \
+	env -i PATH="$$PATH" HOME="$$HOME" USER="$$USER" TMPDIR="$${TMPDIR:-/tmp}" PGPASSWORD="$$API_PASSWORD" DATABASE_URL="$$url" \
+	  bun run --cwd packages/lesson-import seed
+endif
 
 ## db-push ENV=dev|prod: show the migrations ENV's project lacks (a dry run), then push them only when
 ## you type the ENV's name, or pass it as CONFIRM=<env> where there is no keyboard (`!` in Claude Code).

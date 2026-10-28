@@ -2,8 +2,8 @@ import type { FamilyQuestion, Help, QuestionType } from "@jadwigo/contracts";
 
 /**
  * A question as the judges and the help release read it: its family's data and key, the question
- * type it was written from and its help ladder. A `LessonQuestion` is one. Ported from david-learns
- * `frontend/src/families/types.ts` (its FamilySpec, without the page envelope).
+ * type it was written from and its help ladder. A `LessonQuestion` is one; the page's envelope
+ * (its words, voice and layout) is not part of it.
  */
 export type Question = FamilyQuestion & { question_type: QuestionType; help?: Help };
 
@@ -11,8 +11,8 @@ export type Question = FamilyQuestion & { question_type: QuestionType; help?: He
 export type Marks = "parts" | "whole";
 
 /**
- * Each question type's marks rule, from david-learns `frontend/src/families/questionTypes.ts`. A
- * typed word's letters are marked under either rule: they are inside the one field.
+ * Each question type's marks rule, as the playground's question types set it. A typed word's
+ * letters are marked under either rule: they are inside the one field.
  */
 export const QUESTION_TYPE_MARKS: Readonly<Record<QuestionType, Marks>> = {
   true_false: "parts",

@@ -185,10 +185,17 @@ export interface Store {
    * - another `event_id` for a stored `(attempt_id, seq, try_no)` is `AnswerConflict`;
    * - a `try_no` that is not the question's next is `TryOutOfOrder`;
    * - an ended question is `QuestionNotOpen`; a paused attempt `AttemptPaused`; a finished one `AttemptFinished`.
+   *
+   * With `end`, the question ends that way in the same unit, as `endAttemptQuestion` would end
+   * it after the append (its `missed` rule counts this try). The check that the question is open
+   * and the end hold the question for the whole unit, so of 2 appends at once for one question,
+   * one with `end`, the other is `QuestionNotOpen` or lands before it, never after; nothing of a
+   * refused append is written. A replay returns the stored row and ends nothing.
    */
   appendAttemptAnswer(
     pod: PodId,
     answer: NewAttemptAnswer,
+    options?: { readonly end?: Ended },
   ): Promise<{ readonly answer: AttemptAnswer; readonly replayed: boolean }>;
   /**
    * Releases one rung (access pattern 4) when `seen` is still the question's `help_released`; a

@@ -6,8 +6,7 @@ import { pyramidFillOrder, pyramidKey } from "./pyramid.ts";
 
 /**
  * Number pyramids (dl-w3.61.4): the pyramid solves itself from its givens, and the key and the two
- * classic slips come from it. Ported from david-learns `frontend/src/families/slots/pyramid.test.ts`;
- * its validator cases stay with the validator.
+ * classic slips come from it. The validator's cases stay with the validator.
  */
 
 const step = (rows: PyramidRows, ids: string[]): { data: SlotsData; key: SlotsKey } => ({

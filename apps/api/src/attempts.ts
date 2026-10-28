@@ -103,6 +103,11 @@ export async function answer(
     body_hash: bodyHash(body),
   };
   const verdict = body.kind === "try" ? judge(question, body.value) : null;
+  const held = verdictsHeld(scope.assignment, record.attempt);
+  // How this answer ends its question, if it does. The store appends and ends in one unit, so of
+  // 2 answers at once to one question the other is refused and writes nothing.
+  const end: Ended | undefined =
+    verdict === null ? "skipped" : verdict.correct ? "correct" : held ? "missed" : undefined;
   const { answer: stored, replayed } = await store.appendAttemptAnswer(
     scope.pod,
     body.kind === "try" && verdict
@@ -126,28 +131,22 @@ export async function answer(
           parts: null,
           judged_by: null,
         },
+    end === undefined ? {} : { end },
   );
 
-  if (!replayed) {
-    const held = verdictsHeld(scope.assignment, record.attempt);
-    const ended: Ended | null =
-      stored.kind === "skip" ? "skipped" : stored.correct ? "correct" : held ? "missed" : null;
-    if (ended !== null) await endAndGoOn(store, scope, version, id, stored.seq, ended);
-  }
+  if (!replayed && end !== undefined) await goOn(store, scope, version, id, stored.seq);
   const after = await store.getAttempt(scope.pod, id);
   return answerResult(scope, version, after, stored, replayed);
 }
 
-/** Ends a question, then asks the next one or finishes the attempt. */
-export async function endAndGoOn(
+/** After the question at `seq` ended: asks the next one, or finishes the attempt. */
+export async function goOn(
   store: Store,
   scope: Scope,
   version: LessonVersionWithQuestions,
   id: AttemptId,
   seq: number,
-  ended: Ended,
 ): Promise<void> {
-  await store.endAttemptQuestion(scope.pod, id, seq, ended);
   const record = await store.getAttempt(scope.pod, id);
   const next = nextQuestion(scope.assignment, version, record, seq);
   if (next) await store.askQuestion(scope.pod, id, next);
@@ -156,8 +155,10 @@ export async function endAndGoOn(
 
 /**
  * The reply to an answer, built from what is stored, so a replay reads the same as the first
- * reply. While verdicts are held, `correct`, `parts` and `reveal` are null and an ended question
- * is `done`; once the attempt finishes they are shown.
+ * reply. Under an assignment that holds verdicts, every answer reply is neutral: `correct`,
+ * `parts` and `reveal` are null and an ended question is `done`, the answer that finishes the
+ * attempt included, since every answer was stored before the attempt finished. The verdicts reach
+ * the page through the snapshot and the results once the attempt has finished (owner, 2026-10-28).
  */
 function answerResult(
   scope: Scope,
@@ -166,7 +167,7 @@ function answerResult(
   stored: AttemptAnswer,
   replayed: boolean,
 ): AttemptAnswerResult {
-  const held = verdictsHeld(scope.assignment, record.attempt);
+  const held = scope.assignment.hold_verdicts;
   const asked = record.questions.find((q) => q.seq === stored.seq);
   if (asked === undefined) throw new Error(`answer ${stored.event_id} has no question`);
   const question = lessonQuestion(version, asked.lesson_question_id);
