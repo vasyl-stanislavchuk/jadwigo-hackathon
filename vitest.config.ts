@@ -29,6 +29,9 @@ export default defineConfig({
           exclude: ["**/node_modules/**", ".claude/**"],
           environment: "happy-dom",
           setupFiles: [unitSetup],
+          // A loaded machine (load average 40+) pushed DOM tests past Vitest's 5 s default (dl-5ssh.47).
+          testTimeout: 20_000,
+          hookTimeout: 20_000,
         },
       },
       {
