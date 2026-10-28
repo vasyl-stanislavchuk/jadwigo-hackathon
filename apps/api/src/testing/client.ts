@@ -59,7 +59,12 @@ export interface Seeded {
   /** An assignment of the lesson with these growth settings, in the pod the lesson was imported to. */
   assign(
     lesson: keyof typeof LESSONS,
-    settings?: Partial<Pick<NewAssignment, "after_not_sure" | "hold_verdicts" | "audience">>,
+    settings?: Partial<
+      Pick<
+        NewAssignment,
+        "after_not_sure" | "hold_verdicts" | "audience" | "identity" | "opens_at" | "closes_at"
+      >
+    >,
     pod?: NewPod,
   ): Promise<string>;
   /**

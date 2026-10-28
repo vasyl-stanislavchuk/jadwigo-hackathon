@@ -75,6 +75,12 @@ export interface LessonVersionWithQuestions {
   readonly questions: readonly (LessonVersionQuestion & { readonly question: LessonQuestion })[];
 }
 
+/** An assignment anyone may play now, with the lesson it plays. */
+export interface OpenAssignment {
+  readonly assignment: Assignment;
+  readonly lesson: Lesson;
+}
+
 export interface NewAttempt {
   readonly id?: AttemptId;
   readonly assignment_id: AssignmentId;
@@ -161,6 +167,12 @@ export interface Store {
 
   putAssignment(pod: PodId, assignment: NewAssignment): Promise<Assignment>;
   getAssignment(pod: PodId, id: AssignmentId): Promise<Assignment>;
+  /**
+   * The pod's assignments anyone may play now: `audience` is `anyone`, the lesson is published,
+   * and now is inside `opens_at` to `closes_at` (a null end is open), each with its lesson, oldest
+   * first. Scoped to the pod like every other read, so another pod's are never listed.
+   */
+  listOpenAssignments(pod: PodId): Promise<readonly OpenAssignment[]>;
 
   // Evidence
 

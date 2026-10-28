@@ -39,6 +39,7 @@ import {
   type NewLessonQuestion,
   type NewLessonVersion,
   type NewPod,
+  type OpenAssignment,
   type Store,
   StoreError,
 } from "./store.ts";
@@ -352,6 +353,21 @@ export class InMemoryStore implements Store {
 
   async getAssignment(pod: PodId, id: AssignmentId): Promise<Assignment> {
     return this.#inPod(this.#assignments, pod, id, "the assignment");
+  }
+
+  async listOpenAssignments(pod: PodId): Promise<readonly OpenAssignment[]> {
+    const now = this.#now().getTime();
+    return [...this.#assignments.values()]
+      .filter(
+        (a) =>
+          a.pod_id === pod &&
+          a.audience === "anyone" &&
+          (a.opens_at === null || now >= Date.parse(a.opens_at)) &&
+          (a.closes_at === null || now < Date.parse(a.closes_at)),
+      )
+      .map((assignment) => ({ assignment, lesson: this.#lessons.get(assignment.lesson_id) }))
+      .filter((o): o is OpenAssignment => o.lesson?.status === "published")
+      .sort((a, b) => a.assignment.created_at.localeCompare(b.assignment.created_at));
   }
 
   async startAttempt(pod: PodId, attempt: NewAttempt): Promise<AttemptRecord> {

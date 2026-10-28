@@ -184,6 +184,31 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
       });
     });
 
+    describe("open assignments", () => {
+      it("lists the pod's open anyone-assignments of a published lesson, and no other pod's", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const b = await seed(store);
+        const assign = (extra: Partial<Parameters<Store["putAssignment"]>[1]>) =>
+          store.putAssignment(a.pod, { ...ASSIGNMENT, lesson_id: a.lesson, ...extra });
+        const later = await assign({ closes_at: hoursFromNow(2) });
+        await assign({ audience: "learners", identity: "pick" });
+        await assign({ closes_at: hoursFromNow(-1) });
+        await assign({ opens_at: hoursFromNow(1) });
+        const draft = await store.putLesson(a.pod, { ...LESSON, title: "Not published" });
+        await store.putAssignment(a.pod, { ...ASSIGNMENT, lesson_id: draft.id });
+
+        const open = await store.listOpenAssignments(a.pod);
+        expect(open.map((o) => o.assignment.id).sort()).toEqual([a.assignment, later.id].sort());
+        expect(open.every((o) => o.lesson.id === a.lesson && o.lesson.title === LESSON.title)).toBe(
+          true,
+        );
+        expect((await store.listOpenAssignments(b.pod)).map((o) => o.assignment.id)).toEqual([
+          b.assignment,
+        ]);
+      });
+    });
+
     describe("starting an attempt", () => {
       it("writes the attempt and asks position 1 as seq 1", async () => {
         const store = await make();

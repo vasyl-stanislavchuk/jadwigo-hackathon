@@ -214,7 +214,7 @@ describe("RULES.md, API", () => {
   it("rule 20: every error type is PascalCase with a 4xx status", () => {
     for (const [type, status] of Object.entries(wire.ERROR_STATUS)) {
       expect(type).toMatch(/^[A-Z][A-Za-z]+$/);
-      expect([400, 404, 409]).toContain(status);
+      expect([400, 404, 409, 429]).toContain(status);
     }
   });
 });
