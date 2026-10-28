@@ -62,7 +62,10 @@ What each one is:
 3. **The API's login, once per project.** Run `make db-role ENV=dev`. It ends with
    `db-role: jadwigo_api can log in on jadwigo-dev`.
 4. **Rebuild dev, when it has drifted:** `make db-reset ENV=dev` drops dev's schema and reruns
-   every migration, after asking. Seeding dev's featured lessons comes with `dl-e8ov.2.32.5`.
+   every migration, after asking. Then seed it again (step 4a).
+4a. **Seed dev's featured lessons:** `make db-seed ENV=dev` imports the lesson files in
+   `packages/testing/src/lessons/` through the session pooler. It prints one line per lesson,
+   `version 1 published` the first time and `unchanged` after that, so rerun it after any push.
 5. **Prod**, once dev has run the same migrations and its checks pass: from your own terminal, not
    an agent's (the targets refuse prod there), `make db-push ENV=prod DRY_RUN=1`, then
    `make db-push ENV=prod`, then `make db-role ENV=prod` the first time.
