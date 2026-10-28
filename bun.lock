@@ -135,8 +135,10 @@
       "dependencies": {
         "@jadwigo/contracts": "workspace:*",
         "@jadwigo/store": "workspace:*",
+        "zod": "catalog:",
       },
       "devDependencies": {
+        "@jadwigo/testing": "workspace:*",
         "@types/node": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:",

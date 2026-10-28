@@ -1,2 +1,3 @@
-/** The issue that fills this package. Until then it exports only this. */
-export const LESSON_IMPORT_ISSUE = "dl-e8ov.2.32.5";
+export { type CompiledLesson, type CompiledQuestion, compileLessonFile } from "./compile.ts";
+export { FEATURED_POD, featuredAssignmentId, IMPORT_NAMESPACE } from "./ids.ts";
+export { type ImportResult, importLessonFile } from "./import.ts";

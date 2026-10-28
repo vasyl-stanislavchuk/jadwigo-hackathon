@@ -11,9 +11,6 @@
     "apps/api": {
       "ignoreDependencies": ["@aws-lambda-powertools/event-handler"]
     },
-    "packages/lesson-import": {
-      "ignoreDependencies": ["@jadwigo/contracts", "@jadwigo/store"]
-    },
     "apps/web": {
       "entry": ["vite.config.ts", "playwright.config.ts", "e2e/**/*.spec.ts"],
       "project": ["src/**/*.{ts,tsx}", "e2e/**/*.ts", "*.config.ts"],
