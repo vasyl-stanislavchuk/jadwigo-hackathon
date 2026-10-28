@@ -7,5 +7,5 @@ export function databaseUrl(): string | undefined {
 
 /** The local server's port: md's environment sets `PORT` per worktree (tools/src/ports.ts). */
 export function port(): number {
-  return Number(process.env["PORT"] ?? 8787);
+  return Number(process.env["PORT"] || 8787);
 }

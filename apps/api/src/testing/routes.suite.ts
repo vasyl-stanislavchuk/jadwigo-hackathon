@@ -9,6 +9,7 @@ import {
   ID_PREFIXES,
   idOf,
 } from "@jadwigo/contracts";
+import { solutionOf } from "@jadwigo/core";
 import type { NewPod, Store } from "@jadwigo/store";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
@@ -235,32 +236,33 @@ export function routeSuite(name: string, makeStore: () => Store): void {
 
       it("finishes on the answer that ends the last question, then refuses answers and still replays", async () => {
         const { id } = await start(s, await s.assign("equalGroups"));
-        let last: AttemptAnswerResult | undefined;
-        let lastBody: unknown;
-        for (let n = 0; n < 4; n++) {
-          const page = await openQuestion(s, id);
-          const reply = await tryAt(s, id, page, true);
-          last = reply.body;
-          lastBody = page;
-        }
-        expect(last).toMatchObject({
+        for (let n = 0; n < 3; n++) await tryAt(s, id, await openQuestion(s, id), true);
+        const page = await openQuestion(s, id);
+        const body = {
+          ...answerFields(page),
+          kind: "try",
+          value: solutionOf(await s.questionOf(page)),
+        };
+        const last = await s.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), body);
+        expect(last.body).toMatchObject({
           seq: 4,
           ended: "correct",
           next: null,
           attempt_status: "finished",
         });
-        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id: id }));
+        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
         expect(snap.body.open_seq).toBeNull();
         expect(snap.body.attempt.finished_at).not.toBeNull();
 
-        const late = await skipAt(s, id, {
-          ...(lastBody as AttemptSnapshot["questions"][number]),
-          seq: 4,
-        });
-        expect(late.status).toBe(409);
+        const replay = await s.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), body);
+        expect(replay.status).toBe(201);
+        expect(replay.body).toEqual({ ...last.body, replayed: true });
 
-        const firstAnswer = snap.body.last_event_id;
-        expect(firstAnswer).not.toBeNull();
+        const late = await skipAt(s, id, { ...page, tries: 1 });
+        expect([late.status, (late.body as unknown as ErrorEnvelope).error.type]).toEqual([
+          409,
+          "AttemptFinished",
+        ]);
       });
 
       it("finishes on a skip of the last question, but not on a miss there", async () => {
@@ -378,10 +380,18 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         expect(snap.body.questions.map((q) => q.ended)).toEqual(["done", "done", null]);
       });
 
-      it("shows the stored endings once the attempt finishes", async () => {
+      it("keeps the answer that finishes the attempt neutral, then shows the stored endings", async () => {
         const { id } = await start(s, await s.assign("equalGroups", { hold_verdicts: true }));
         await tryAt(s, id, await openQuestion(s, id), false);
-        for (let n = 0; n < 3; n++) await tryAt(s, id, await openQuestion(s, id), true);
+        for (let n = 0; n < 2; n++) await tryAt(s, id, await openQuestion(s, id), true);
+        const last = await tryAt(s, id, await openQuestion(s, id), true);
+        expect(last.body).toMatchObject({
+          correct: null,
+          parts: null,
+          reveal: null,
+          ended: "done",
+          attempt_status: "finished",
+        });
         const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id: id }));
         expect(snap.body.attempt.status).toBe("finished");
         expect(snap.body.questions.map((q) => q.ended)).toEqual([

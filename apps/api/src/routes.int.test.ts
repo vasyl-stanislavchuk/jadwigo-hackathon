@@ -1,5 +1,6 @@
-// The route suite on PostgresStore, against the database `make migrate` built (Postgres.app 17 on
-// port 5433 locally). Each case uses fresh attempt and assignment ids, so the runs share one database.
+// The route suite on PostgresStore, against the database `make migrate` built from the
+// DATABASE_URL in .env.local (CI runs Postgres 17). Each case uses fresh attempt and assignment
+// ids, so the runs share one database.
 import { createPostgresStore } from "@jadwigo/store";
 import { afterAll } from "vitest";
 import { databaseUrl } from "./config.ts";
