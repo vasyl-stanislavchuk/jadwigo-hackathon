@@ -13,8 +13,7 @@ import type { GridSplit, PartVerdict, PlaceKey, Verdict } from "@jadwigo/contrac
  *   to break); `accept_at` lists where it may fall, counted from either end, and any split there is
  *   right when the key lists none. A split on the other side, or elsewhere, is `split_not_helpful`.
  *
- * Ported from david-learns `frontend/src/families/place/areaModel.ts`, the judge's half (its
- * checks stay with validation).
+ * Only the judge's half is here; the checks stay with validation.
  */
 
 type GridKey = Extract<PlaceKey, { surface: "grid" }>;

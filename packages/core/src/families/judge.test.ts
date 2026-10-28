@@ -1,4 +1,4 @@
-// Ported from david-learns `frontend/src/families/judge.test.ts`. Explain's criteria judging stays
+// The dispatcher's cases, family by family. Explain's criteria judging stays
 // in the playground: v0 keeps Explain without a verdict, so the last block checks only that.
 import { describe, expect, it } from "vitest";
 import { judge, pageMarks, solutionOf } from "./judge.ts";

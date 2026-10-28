@@ -34,8 +34,6 @@ import { markerIds } from "./model.ts";
  *
  * A gap the key has no entry for is a miss, `other_wrong`, never a throw: the validator refuses
  * such a step, and a judge reads anything.
- *
- * Ported from david-learns `frontend/src/families/slots/judge.ts`.
  */
 
 function readGaps(value: unknown): Record<string, unknown> | null {

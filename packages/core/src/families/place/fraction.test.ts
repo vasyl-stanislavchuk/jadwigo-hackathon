@@ -4,8 +4,7 @@ import { touching } from "./fraction.ts";
 import { judgePlace, placeSolution } from "./judge.ts";
 
 /**
- * fraction_shade (dl-w3.61.7): the judge per class. Ported from the judge half of david-learns
- * `frontend/src/families/place/fraction.test.tsx`; its checks stay with validation and its
+ * fraction_shade (dl-w3.61.7): the judge per class. The checks stay with validation and the
  * surface and figure with the web app.
  */
 

@@ -17,8 +17,7 @@ import type { PlaceData, PlaceKey, Verdict } from "@jadwigo/contracts";
  * The step is marked as a whole: amber falls on the shape, not on a part, since no single part is
  * the miss.
  *
- * Ported from david-learns `frontend/src/families/place/fraction.ts`, the judge's half (its
- * checks stay with validation).
+ * Only the judge's half is here; the checks stay with validation.
  */
 
 type FractionData = Extract<PlaceData, { surface: "fraction" }>;

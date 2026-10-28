@@ -4,8 +4,8 @@ import { markerIds, pieces } from "./model.ts";
 
 /**
  * The gap template's markers (slots/model.ts): `{g1}` is a gap, and braces inside TeX are TeX
- * (dl-r772.6), so `$\text{fives}$` and `$\blueD{7}$` make no gap. Ported from david-learns
- * `frontend/src/families/slots/model.test.ts`; `startsSentence` stays with the page.
+ * (dl-r772.6), so `$\text{fives}$` and `$\blueD{7}$` make no gap. `startsSentence` stays with the
+ * page.
  */
 
 describe("gap markers", () => {
