@@ -483,3 +483,22 @@ describe("properties of the ladder", () => {
     );
   });
 });
+
+describe("a mistake card that prints the answer", () => {
+  // twoFacts answers 7 and 8; this card says 7, so it stays off rungs 1 and 2.
+  const leaky = spec({
+    look: { text: "Count on from the bigger one." },
+    boost: { text: "Start at 4." },
+    boost_by_mistake: { off_by_small: { text: "It is 7." }, constructor: { text: "x" } },
+  });
+  it("never reaches rung 1 or 2", () => {
+    expect(release(leaky, HelpRung.Look, namedMiss("off_by_small")).card?.text).toBe(
+      "Count on from the bigger one.",
+    );
+    expect(release(leaky, HelpRung.Boost, namedMiss("off_by_small")).card?.text).toBe(
+      "Start at 4.",
+    );
+    const noBoost = spec({ boost_by_mistake: { off_by_small: { text: "It is 7." } } });
+    expect(release(noBoost, HelpRung.Boost, namedMiss("off_by_small")).card).toBeNull();
+  });
+});

@@ -370,8 +370,16 @@ export function release(
     authored || by[r].length === 0 ? [] : by[r];
   // The card written for the last miss, when the question has a rung 1 for it to take.
   const hasLook = help.look !== undefined || by[1].length > 0;
-  const named: HelpCard | undefined =
-    miss.mistake === null ? undefined : help.boost_by_mistake?.[miss.mistake];
+  // A mistake card that prints the answer never reaches rung 1 or 2, as a Khan hint would not.
+  const answers = answerWords(question);
+  const keeps = (card: HelpCard | undefined): HelpCard | undefined =>
+    card !== undefined && givesAway(card.text, answers) === null ? card : undefined;
+  const byMistake = help.boost_by_mistake ?? {};
+  const named = keeps(
+    miss.mistake !== null && Object.hasOwn(byMistake, miss.mistake)
+      ? byMistake[miss.mistake]
+      : undefined,
+  );
   const targeted = hasLook ? named : undefined;
   switch (rung) {
     case HelpRung.Look: {
@@ -394,7 +402,7 @@ export function release(
       const card =
         targeted !== undefined
           ? (help.boost ?? help.look ?? null)
-          : (named ?? help.boost ?? Object.values(help.boost_by_mistake ?? {})[0] ?? null);
+          : (named ?? help.boost ?? Object.values(byMistake).map(keeps).find(Boolean) ?? null);
       return { ...none, rung, card, given, hints: mapped(2, card !== null) };
     }
     case HelpRung.Almost: {

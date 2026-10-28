@@ -36,3 +36,11 @@ describe("money_pay judge", () => {
     expect(placeSolution(key, data)).toEqual({ items: ["zl2", "zl1", "gr50"] });
   });
 });
+
+describe("an amount past any a child counts", () => {
+  it("is other_wrong and never throws, nor does its solution", () => {
+    const huge: PlaceKey = { surface: "coins", amount_gr: 5_000_000_000, fewest: true };
+    expect(judgePlace(huge, { items: ["zl5"] }, data).mistake_class).toBe("other_wrong");
+    expect(placeSolution(huge, data)).toBeNull();
+  });
+});

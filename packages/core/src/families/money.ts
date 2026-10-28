@@ -33,11 +33,15 @@ export function totalGr(items: readonly Denom[]): number {
   return items.reduce((sum, d) => sum + DENOM_GR[d], 0);
 }
 
+/** The most a money question counts, in grosze (10 000 zł): far past any amount a child counts, and
+ * small enough that `fewestOf` stays a quick table. Past it a judge answers `other_wrong`. */
+export const MAX_GR = 1_000_000;
+
 /** The fewest coins and notes from `bank` (each as many times as wanted) that make `gr`, largest
  * first, or null when the bank cannot make it. Polish money is a 1-2-5 system, so taking the
  * largest that fits works for the full set; a bank with gaps is counted exactly. */
 export function fewestOf(gr: number, bank: readonly Denom[]): Denom[] | null {
-  if (!Number.isInteger(gr) || gr < 0) return null;
+  if (!Number.isInteger(gr) || gr < 0 || gr > MAX_GR) return null;
   const denoms = [...new Set(bank)];
   const count: number[] = Array.from({ length: gr + 1 }, () => Number.POSITIVE_INFINITY);
   const last: (Denom | null)[] = Array.from({ length: gr + 1 }, () => null);

@@ -1,5 +1,5 @@
 import type { Denom, PlaceData, PlaceKey, Verdict } from "@jadwigo/contracts";
-import { DENOM_GR, fewestOf, isDenom, totalGr } from "../money.ts";
+import { DENOM_GR, fewestOf, isDenom, MAX_GR, totalGr } from "../money.ts";
 
 /**
  * The coins judge (money_pay, dl-w3.61.6): the tray is judged as a whole. Any set of coins and
@@ -32,7 +32,7 @@ export function judgeCoins(
   data?: CoinsData,
 ): Verdict {
   const items = trayOf(value);
-  if (items === null || items.length === 0) return miss("other_wrong");
+  if (items === null || items.length === 0 || key.amount_gr > MAX_GR) return miss("other_wrong");
   const total = totalGr(items);
   const amount = key.amount_gr;
   if (total === amount) {
