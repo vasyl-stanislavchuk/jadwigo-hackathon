@@ -27,6 +27,11 @@
     },
     { "groupName": "GitHub Actions", "matchManagers": ["github-actions"] },
     { "groupName": "mise tools", "matchManagers": ["mise"] },
+    {
+      "description": "Terraform's binary (mise.toml) and required_version (infra/terraform/versions.tf) move in one PR, so they never disagree",
+      "groupName": "Terraform",
+      "matchPackageNames": ["terraform", "hashicorp/terraform"]
+    },
     { "groupName": "jw CLI (uv)", "matchManagers": ["pep621"] },
     {
       "description": "dependency-cruiser cannot read TypeScript 7's API yet (dl-5ssh.34.2); lift when it can",
