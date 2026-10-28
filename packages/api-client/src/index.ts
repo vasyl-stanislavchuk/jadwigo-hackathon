@@ -1,4 +1,4 @@
-/** Join the API's base URL and a route path without doubling or dropping the slash. */
-export function apiUrl(base: string, path: string): string {
-  return `${base.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
-}
+// The public surface: the typed /api/v1 client the web app, the CLI and MCP share.
+export type { AttemptClient, ClientOptions } from "./client.ts";
+export { ApiError, createClient, TransientError } from "./client.ts";
+export { apiUrl } from "./url.ts";

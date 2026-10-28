@@ -15,6 +15,7 @@
     "e2e": "playwright test"
   },
   "//": {
+    "@jadwigo/api-client": "the typed /api/v1 calls the lesson player makes (src/play/)",
     "@jadwigo/config": "hosts.prod, the host this app serves (src/index.ts)",
     "@jadwigo/contracts": "the question shapes the playground's examples are typed and parsed with",
     "@jadwigo/copy": "every string the app shows, in pl and en",
@@ -53,6 +54,7 @@
     "vitest": "catalog:"
   },
   "dependencies": {
+    "@jadwigo/api-client": "workspace:*",
     "@jadwigo/config": "workspace:*",
     "@jadwigo/contracts": "workspace:*",
     "@jadwigo/copy": "workspace:*",

@@ -307,6 +307,21 @@ export const COPY_KEYS = [
   "leave_stay",
   "leave_go",
   // end the source credit
+  // the lesson player's end screen and pause (dl-5ssh.3.1)
+  "play_congrats",
+  "play_results_title",
+  "play_results_none",
+  "play_ended_correct",
+  "play_ended_missed",
+  "play_ended_skipped",
+  "play_ended_done",
+  "play_ended_open",
+  "play_results_twin",
+  "play_results_help",
+  "play_paused",
+  "play_paused_back",
+  "play_not_found",
+  // end the lesson player
 ] as const;
 
 export type CopyKey = (typeof COPY_KEYS)[number];

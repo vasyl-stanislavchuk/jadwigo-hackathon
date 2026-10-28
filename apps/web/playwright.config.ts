@@ -1,9 +1,15 @@
 // The browser smoke CI runs (the browser job in .github/workflows/ci.yml). Playwright is CI's job:
 // locally it is run only on purpose, with `bun run e2e` from apps/web.
+//
+// The lesson player's test (e2e/play.spec.ts) plays a featured lesson against a real api, so it
+// runs only when JW_E2E_API=1, with the api at JW_API_URL (src/config.ts) and the featured lessons
+// seeded. The spec's header says how.
 import { defineConfig, devices } from "@playwright/test";
-import { webPort } from "./src/config.ts";
+import { playE2e, webPort } from "./src/config.ts";
 
 const port = webPort();
+const laptop = { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } };
+const PLAY = /play\.spec\.ts$/;
 
 export default defineConfig({
   testDir: "e2e",
@@ -12,11 +18,13 @@ export default defineConfig({
   reporter: [["list"]],
   use: { baseURL: `http://127.0.0.1:${port}` },
   projects: [
-    { name: "phone", use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } } },
     {
-      name: "laptop",
-      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+      name: "phone",
+      testIgnore: PLAY,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } },
     },
+    { name: "laptop", testIgnore: PLAY, use: laptop },
+    ...(playE2e() ? [{ name: "api", testMatch: PLAY, use: laptop }] : []),
   ],
   webServer: {
     command: "bunx vite build && bunx vite preview",

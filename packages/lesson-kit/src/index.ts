@@ -51,7 +51,7 @@ export { PictureView } from "./parts/PictureSheet.tsx";
 export { QuestionCredit } from "./parts/QuestionCredit.tsx";
 export { RichText } from "./parts/RichText.tsx";
 export type { LessonProgress } from "./parts/StepShell.tsx";
-export { StepShell } from "./parts/StepShell.tsx";
+export { LessonFrame, StepShell } from "./parts/StepShell.tsx";
 export { STATUS } from "./parts/status.ts";
 export { TileBank } from "./parts/TileBank.tsx";
 export { Tooltip } from "./parts/Tooltip.tsx";
