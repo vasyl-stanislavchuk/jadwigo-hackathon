@@ -2,6 +2,10 @@
 # and <env>.backend.hcl (jadwigo-platform/decisions/2026-10-26-terraform-lives-in-the-jadwigo-repo-under-infra-one-root-module).
 # Agents plan at most; the owner applies by hand. A merge deploys nothing.
 include aws.mk
+# The terraform mise.toml pins on PATH even in a shell that never activated mise, as the root Makefile
+# does. versions.tf requires exactly that version. Without mise, PATH is left as it is.
+MISE_BIN_PATHS := $(shell command -v mise >/dev/null 2>&1 && mise bin-paths 2>/dev/null | tr '\n' ':')
+export PATH := $(MISE_BIN_PATHS)$(PATH)
 ENV ?= prod
 TF := AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform
 
