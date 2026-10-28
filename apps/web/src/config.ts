@@ -17,3 +17,14 @@ export function apiTarget(env: Record<string, string | undefined> = process.env)
 export function playE2e(env: Record<string, string | undefined> = process.env): boolean {
   return env["JW_E2E_API"] === "1";
 }
+
+/** Where the parent signs in (dl-e8ov.2.38): a Supabase project's URL and its publishable key, which
+ * a browser may hold. The build bakes them in (vite.config.ts); with either unset, the app has no
+ * sign-in and the results offer no "save your progress". */
+export function authConfig(
+  env: Record<string, string | undefined> = process.env,
+): { url: string; key: string } | null {
+  const url = env["JW_SUPABASE_URL"];
+  const key = env["JW_SUPABASE_KEY"];
+  return url && key ? { url, key } : null;
+}
