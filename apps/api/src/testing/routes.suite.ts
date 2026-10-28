@@ -96,6 +96,18 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         expect([reply.status, reply.body.error.type]).toEqual([400, "BadRequest"]);
       });
 
+      it("refuses a learner named on an assignment whose identity is none", async () => {
+        const assignment = await s.assign("equalGroups");
+        const reply = await s.call<ErrorEnvelope>(
+          "POST",
+          pathOf("startAttempt", { id: assignment }),
+          {
+            learner_id: idOf(ID_PREFIXES.learner, randomUUID()),
+          },
+        );
+        expect([reply.status, reply.body.error.type]).toEqual([400, "BadRequest"]);
+      });
+
       it("refuses a start on an assignment for learners when no learner is named", async () => {
         const assignment = await s.assign("equalGroups", { audience: "learners" });
         const reply = await s.call<ErrorEnvelope>(
@@ -161,6 +173,11 @@ export function routeSuite(name: string, makeStore: () => Store): void {
           ended: "correct",
         });
         expect(right.body.reveal).not.toBeNull();
+        // Neither the miss, nor the right try's reveal, nor the next question carries the key.
+        for (const reply of [miss.body, right.body]) {
+          expect(JSON.stringify(reply)).not.toContain('"key"');
+          expect(JSON.stringify(reply)).not.toContain('"accept"');
+        }
         expect(right.body.next).toMatchObject({ seq: 2, added: "planned", tries: 0, ended: null });
         expect(right.body.attempt_status).toBe("in_progress");
       });
