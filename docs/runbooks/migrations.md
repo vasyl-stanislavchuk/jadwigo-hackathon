@@ -60,12 +60,19 @@ What each one is:
 2. **Push dev.** Run `make db-push ENV=dev`. It shows the same list, and pushes only after you type
    `dev`. With no keyboard (`!` in Claude Code), pass it instead: `make db-push ENV=dev CONFIRM=dev`. Each migration runs in one transaction: if one fails, dev keeps the state before it.
 3. **The API's login, once per project.** Run `make db-role ENV=dev`. It ends with
-   `db-role: jadwigo_api can log in on jadwigo-dev`.
+   `db-role: jadwigo_api can log in on jadwigo-dev`. It first tries to log in as `jadwigo_api`;
+   when that already works with the password in `supabase.env`, it changes nothing and says
+   `already logs in on jadwigo-dev`, so rerunning the whole setup is safe.
 4. **Rebuild dev, when it has drifted:** `make db-reset ENV=dev` drops dev's schema and reruns
    every migration, after asking. Then seed it again (step 5).
 5. **Seed dev's featured lessons:** `make db-seed ENV=dev` imports the lesson files in
    `packages/testing/src/lessons/` through the session pooler. It prints one line per lesson,
    `version 1 published` the first time and `unchanged` after that, so rerun it after any push.
+   Right after `db-role` sets a new password, the Supabase pooler still holds the old one for a
+   few minutes and refuses the new one (`28P01`, password authentication failed). `db-seed` waits
+   that out: it prints `refuses jadwigo_api's password (28P01) … retrying` every 10 s for up to
+   2 minutes, then seeds. If it still fails after 2 minutes, check `JADWIGO_API_DB_PASSWORD_DEV`
+   against the password `db-role` set, or run `db-role` again.
    To play against dev, `make api-dev ENV=dev` serves the local `apps/api` on jadwigo-dev as
    `jadwigo_api` through the transaction pooler (port 6543), on `PORT` (8787 by default).
 6. **Prod**, once dev has run the same migrations and its checks pass: from your own terminal, not
