@@ -99,13 +99,48 @@ const PROD = /\bENV\W{0,4}prod\b/;
 const WRAPPERS =
   /^(script|expect|unbuffer|socat|python[\d.]*|perl|ruby|node|bun|deno|osascript|bash|sh|zsh|dash|fish)$/;
 const CLEARS_CLAUDECODE =
-  /(^|\s)(-u\s*|--unset[=\s]+)CLAUDECODE\b|\bunset\s+(-v\s+)?(\w+\s+)*CLAUDECODE\b|\bexport\s+-n\s+(\w+\s+)*CLAUDECODE\b|\b(typeset|declare)\s+([-+]\w+\s+)*\+\w*x\w*\s+(\w+\s+)*CLAUDECODE\b/;
-/** Clearing the whole environment clears CLAUDECODE too: env -i, env -, env --ignore-environment, exec -c. */
-const CLEARS_ENV =
-  /(^|[\s;&|('"])env\s+(-[A-Za-z]*i[A-Za-z]*|-|--ignore-environment)(\s|$)|(^|[\s;&|('"])exec\s+-[A-Za-z]*c[A-Za-z]*(\s|$)/;
+  /(^|\s)(-u\s*|--unset[=\s]+)CLAUDECODE\b|\bunset\s+(-v\s+)?(\w+\s+)*CLAUDECODE\b|\bexport\s+(-\w+\s+)*-\w*n\w*\s+(\w+\s+)*CLAUDECODE\b|\b(typeset|declare|local)\s+([-+]\w+\s+)*\+\w*x\w*\s+(\w+\s+)*CLAUDECODE\b/;
+/** The env program, bare or by path (/usr/bin/env), and exec -c, which clears the environment. */
+const ENV_PROGRAM = /(^|[\s;&|('"/])env(?=\s|$)/;
+const EXEC_CLEARS = /(^|[\s;&|('"])exec\s+(-\w+\s+)*-[A-Za-z]*c[A-Za-z]*(\s|$)/;
 /** Programs that run a command on a pseudo-terminal; python counts when the line imports pty. */
-const PTY_WRAPPERS = /^(script|expect|unbuffer|socat)$/;
+const PTY_WRAPPERS = /^(script|expect|unbuffer|socat|screen|tmux)$/;
 const MAKE = /(^|[\s'",[(])g?make\b/;
+
+/**
+ * Whether the text clears the whole environment, and CLAUDECODE with it: exec -c, or an env whose
+ * options hold -i, - or --ignore-environment anywhere, in a short-flag cluster (-0i, -vi), after
+ * options that take a value (-u FOO, -C dir, -P path) or inside an -S string.
+ */
+function clearsEnv(text: string): boolean {
+  if (EXEC_CLEARS.test(text)) return true;
+  for (const m of text.matchAll(new RegExp(ENV_PROGRAM, "g"))) {
+    // Quotes become spaces, so the words of an -S '...' string read as more options.
+    const words = text
+      .slice((m.index ?? 0) + m[0].length)
+      .replace(/['"]/g, " ")
+      .split(/\s+/)
+      .filter(Boolean);
+    for (let i = 0; i < words.length; i++) {
+      const w = words[i] ?? "";
+      if (!w.startsWith("-") || w === "--") break;
+      if (w === "-" || w === "--ignore-environment" || w === "--ignore-env") return true;
+      if (w.startsWith("--")) {
+        if (/^--(unset|chdir)$/.test(w)) i++;
+        continue;
+      }
+      for (let j = 1; j < w.length; j++) {
+        const c = w[j] ?? "";
+        if (c === "i") return true;
+        if ("uCP".includes(c)) {
+          if (j === w.length - 1) i++;
+          break;
+        }
+      }
+    }
+  }
+  return false;
+}
 
 /**
  * The line with shell quoting a word can hide behind undone: empty '' and "" pairs and backslashes
@@ -137,7 +172,9 @@ function prodDbDenial(cmd: string, bare: string, commands: string[][]): string |
     return "clearing CLAUDECODE hides that a session runs the command, which the prod db gate reads. Leave it set.";
   }
   const runsDbTarget = MAKE.test(cmd) && DB_TARGET.test(cmd);
-  if (runsDbTarget && CLEARS_ENV.test(bare)) {
+  // The -S string of env is quoted, so stripProse drops it: read the raw text when env runs at all.
+  const envRuns = ENV_PROGRAM.test(bare);
+  if (runsDbTarget && (clearsEnv(bare) || (envRuns && clearsEnv(cmd)))) {
     return "env -i, env - and exec -c clear CLAUDECODE with the rest of the environment, which the prod db gate reads. Run make db-* with the environment as it is.";
   }
   for (const words of commands) {
@@ -157,7 +194,7 @@ function prodDbDenial(cmd: string, bare: string, commands: string[][]): string |
       }
       if (
         CLEARS_CLAUDECODE.test(cmd) ||
-        (runsDbTarget && CLEARS_ENV.test(cmd)) ||
+        (runsDbTarget && clearsEnv(cmd)) ||
         /CLAUDECODE/.test(cmd.replace(/\$\{?CLAUDECODE/g, ""))
       ) {
         return "a wrapped script that touches CLAUDECODE can hide that a session runs it, which the prod db gate reads. Leave it set.";
