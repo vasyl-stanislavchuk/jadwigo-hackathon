@@ -22,7 +22,7 @@ type Rung = Parameters<typeof release>[1];
  * The rungs a question's ladder has written, in order. `help_released` counts the rungs released,
  * so the n-th one released is the n-th written: a rung the author did not write is skipped.
  */
-function rungsWritten(question: LessonQuestion): Rung[] {
+export function rungsWritten(question: LessonQuestion): Rung[] {
   const out: Rung[] = [];
   for (let r = rungFor(question, 0, true); r !== null; r = rungFor(question, r, true)) out.push(r);
   return out;
@@ -38,7 +38,7 @@ export function verdictOf(answer: AttemptAnswer): Verdict {
 }
 
 /** The rungs released so far, each as it was released: after the last miss made before it. */
-function releasedHelp(
+export function releasedHelp(
   question: LessonQuestion,
   asked: AttemptQuestion,
   answers: readonly AttemptAnswer[],

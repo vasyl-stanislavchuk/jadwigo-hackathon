@@ -4,8 +4,10 @@
 import { randomUUID } from "node:crypto";
 import {
   type AttemptAnswerResult,
+  type AttemptResults,
   type AttemptSnapshot,
   type ErrorEnvelope,
+  type HelpResult,
   ID_PREFIXES,
   idOf,
 } from "@jadwigo/contracts";
@@ -572,6 +574,253 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id: id }));
         expect(snap.body.questions).toHaveLength(10);
         expect(snap.body.questions.some((q) => q.question.family === "explain")).toBe(false);
+      });
+    });
+    describe("help", () => {
+      const askHelp = (s: Seeded, id: string, seq: number, seen: number) =>
+        s.call<HelpResult>("POST", pathOf("help", { id, seq }), { help_released: seen });
+
+      it("releases one rung per request, holds rungs 3 and 4 until a try, and a retry gets the same rung", async () => {
+        const { id } = await start(s, await s.assign("equalGroups", { after_not_sure: "next" }));
+        const look = await askHelp(s, id, 1, 0);
+        expect(look.status).toBe(200);
+        expect(look.body).toMatchObject({ seq: 1, help_released: 1, ended: null, next: null });
+        expect(look.body.released?.rung).toBe(1);
+
+        const retry = await askHelp(s, id, 1, 0);
+        expect(retry.body).toEqual(look.body);
+
+        const boost = await askHelp(s, id, 1, 1);
+        expect([boost.body.help_released, boost.body.released?.rung]).toEqual([2, 2]);
+        const gated = await askHelp(s, id, 1, 2);
+        expect(gated.body).toMatchObject({ help_released: 2, released: null, more: true });
+
+        const reload = await openQuestion(s, id);
+        expect(reload.help.map((h) => h.rung)).toEqual([1, 2]);
+        expect(JSON.stringify(reload)).not.toContain('"key"');
+      });
+
+      it("rung 4 ends the question skipped and asks its twin now, whatever after_not_sure says", async () => {
+        const { id } = await start(s, await s.assign("equalGroups", { after_not_sure: "next" }));
+        await tryAt(s, id, await openQuestion(s, id), false);
+        let reply: HelpResult | undefined;
+        for (let seen = 0; seen < 4 && reply?.ended == null; seen++)
+          reply = (await askHelp(s, id, 1, seen)).body;
+        expect(reply?.released?.rung).toBe(4);
+        expect(reply).toMatchObject({ ended: "skipped", more: false });
+        expect(reply?.next).toMatchObject({ seq: 2, added: "twin", placed: "now", added_for: 1 });
+
+        const ended = await askHelp(s, id, 1, reply?.help_released ?? 0);
+        expect([ended.status, (ended.body as unknown as ErrorEnvelope).error.type]).toEqual([
+          409,
+          "QuestionNotOpen",
+        ]);
+        const results = await s.call<AttemptResults>("GET", pathOf("getResults", { id }));
+        expect(results.body.results[0]).toMatchObject({ seq: 1, ended: "skipped" });
+      });
+    });
+
+    describe("help at rung 4, under a pause and in races", () => {
+      // equal-groups' first question has 4 rungs: 1 wrong try opens the gate, 3 requests reach rung 3.
+      const toRungThree = async (id: string) => {
+        await tryAt(s, id, await openQuestion(s, id), false);
+        for (const seen of [0, 1, 2])
+          await s.call("POST", pathOf("help", { id, seq: 1 }), { help_released: seen });
+      };
+      const rungFour = (id: string) =>
+        s.call<HelpResult>("POST", pathOf("help", { id, seq: 1 }), { help_released: 3 });
+
+      it("refuses help on a paused attempt before any write, and releases rung 4 after resume", async () => {
+        const { id } = await start(s, await s.assign("equalGroups", { after_not_sure: "next" }));
+        await toRungThree(id);
+        await s.call("PATCH", pathOf("patchAttempt", { id }), { status: "paused" });
+        const paused = await rungFour(id);
+        expect([paused.status, (paused.body as unknown as ErrorEnvelope).error.type]).toEqual([
+          409,
+          "AttemptPaused",
+        ]);
+        const held = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect(held.body.questions[0]).toMatchObject({ help_released: 3, ended: null });
+
+        await s.call("PATCH", pathOf("patchAttempt", { id }), { status: "in_progress" });
+        const twin = await rungFour(id);
+        expect(twin.body).toMatchObject({ help_released: 4, ended: "skipped" });
+        expect(twin.body.next).toMatchObject({ seq: 2, added: "twin" });
+      });
+
+      it("ends the question even when a wrong try races the rung-4 request", async () => {
+        const { id } = await start(s, await s.assign("equalGroups", { after_not_sure: "next" }));
+        await toRungThree(id);
+        const page = await openQuestion(s, id);
+        const [, help] = await Promise.all([tryAt(s, id, page, false), rungFour(id)]);
+        expect(help.status).toBe(200);
+        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect(snap.body.questions[0]).toMatchObject({ help_released: 4, ended: "skipped" });
+        expect(snap.body.questions[1]).toMatchObject({ seq: 2, added: "twin", added_for: 1 });
+        expect(snap.body.questions).toHaveLength(2);
+      });
+
+      it("gives 2 identical rung-4 requests at once the same reply, and a later retry too", async () => {
+        const { id } = await start(s, await s.assign("equalGroups", { after_not_sure: "next" }));
+        await toRungThree(id);
+        const [a, b] = await Promise.all([rungFour(id), rungFour(id)]);
+        expect([a.status, b.status]).toEqual([200, 200]);
+        expect(a.body).toEqual(b.body);
+        expect(a.body).toMatchObject({ ended: "skipped", next: { seq: 2 } });
+        expect((await rungFour(id)).body).toEqual(a.body);
+        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect(snap.body.questions[0]?.tries).toBe(2); // the wrong try and 1 help_twin skip
+      });
+
+      for (const order of ["pause first", "help first"] as const) {
+        it(`never leaves rung 4 showing on an open question when a pause races it (${order})`, async () => {
+          const { id, snapshot } = await start(
+            s,
+            await s.assign("equalGroups", { after_not_sure: "next" }),
+          );
+          await toRungThree(id);
+          const pause = () => s.call("PATCH", pathOf("patchAttempt", { id }), { status: "paused" });
+          await (order === "pause first"
+            ? Promise.all([pause(), rungFour(id)])
+            : Promise.all([rungFour(id), pause()]));
+
+          const held = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+          const q1 = held.body.questions[0];
+          // Either the help won and rung 4 ended the question with its twin asked, or the pause
+          // won and nothing was released: never rung 4 on an open question.
+          if (q1?.help_released === 4) {
+            expect(q1.ended).toBe("skipped");
+            expect(held.body.questions[1]).toMatchObject({ seq: 2, added: "twin", added_for: 1 });
+          } else {
+            expect(q1).toMatchObject({ help_released: 3, ended: null });
+          }
+
+          await s.call("PATCH", pathOf("patchAttempt", { id }), { status: "in_progress" });
+          if (q1?.help_released === 4) {
+            const late = await tryAt(
+              s,
+              id,
+              { ...(q1 as AttemptSnapshot["questions"][number]), tries: 2 },
+              true,
+            );
+            expect(late.status).toBe(409);
+          }
+          const record = await s.store.getAttempt(snapshot.attempt.pod_id, snapshot.attempt.id);
+          expect(record.answers.some((a) => a.kind === "try" && a.help_used === 4)).toBe(false);
+        });
+      }
+
+      it("refuses a help_released ahead of what was released", async () => {
+        const { id } = await start(s, await s.assign("equalGroups"));
+        const ahead = await s.call<ErrorEnvelope>("POST", pathOf("help", { id, seq: 1 }), {
+          help_released: 9,
+        });
+        expect([ahead.status, ahead.body.error.type]).toEqual([400, "BadRequest"]);
+      });
+    });
+
+    describe("help on a ladder with rungs 1 and 4 only", () => {
+      it("gives the page the true rung, and the 2nd release, rung 4, ends the question", async () => {
+        // A look and a 1-line worked solution: rung 1 and rung 4, with no boost and no rung 3.
+        const assignment = await s.assignLadder((help) => ({
+          ...(help.look !== undefined && { look: help.look }),
+          worked: (help.worked ?? []).slice(0, 1),
+        }));
+        const { id } = await start(s, assignment);
+        const askHelp = (seen: number) =>
+          s.call<HelpResult>("POST", pathOf("help", { id, seq: 1 }), { help_released: seen });
+
+        const look = await askHelp(0);
+        expect(look.body).toMatchObject({ help_released: 1, ended: null, more: true });
+        expect(look.body.released?.rung).toBe(1);
+        // Rung 4 waits for a real try.
+        expect((await askHelp(1)).body).toMatchObject({ help_released: 1, released: null });
+
+        await tryAt(s, id, await openQuestion(s, id), false);
+        const twin = await askHelp(1);
+        expect(twin.body.released?.rung).toBe(4);
+        expect(twin.body).toMatchObject({ help_released: 2, ended: "skipped", more: false });
+        expect(twin.body.next).toMatchObject({
+          seq: 2,
+          added: "twin",
+          placed: "now",
+          added_for: 1,
+        });
+
+        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect(snap.body.questions[0]?.help.map((h) => h.rung)).toEqual([1, 4]);
+      });
+    });
+
+    describe("pause and resume", () => {
+      it("pauses at the open question, refuses answers while paused, and resumes on the version started", async () => {
+        const { id, snapshot } = await start(s, await s.assign("equalGroups"));
+        await tryAt(s, id, await openQuestion(s, id), true);
+        const paused = await s.call<AttemptSnapshot>("PATCH", pathOf("patchAttempt", { id }), {
+          status: "paused",
+        });
+        expect(paused.status).toBe(200);
+        expect(paused.body.attempt).toMatchObject({ status: "paused", resume_at: 2 });
+
+        const page = paused.body.questions.find((q) => q.seq === 2);
+        if (page === undefined) throw new Error("no 2nd question");
+        const refused = await tryAt(s, id, page, true);
+        expect([refused.status, (refused.body as unknown as ErrorEnvelope).error.type]).toEqual([
+          409,
+          "AttemptPaused",
+        ]);
+
+        const resumed = await s.call<AttemptSnapshot>("PATCH", pathOf("patchAttempt", { id }), {
+          status: "in_progress",
+        });
+        expect(resumed.body.attempt.status).toBe("in_progress");
+        expect(resumed.body.attempt.lesson_version_id).toBe(snapshot.attempt.lesson_version_id);
+        expect(resumed.body.open_seq).toBe(2);
+        expect((await tryAt(s, id, page, true)).status).toBe(201);
+      });
+
+      it("refuses a status the server sets, and a change once finished", async () => {
+        const { id } = await start(s, await s.assign("equalGroups"));
+        const finish = await s.call<ErrorEnvelope>("PATCH", pathOf("patchAttempt", { id }), {
+          status: "finished",
+        });
+        expect([finish.status, finish.body.error.type]).toEqual([400, "BadRequest"]);
+        for (let n = 0; n < 4; n++) await tryAt(s, id, await openQuestion(s, id), true);
+        const late = await s.call<ErrorEnvelope>("PATCH", pathOf("patchAttempt", { id }), {
+          status: "paused",
+        });
+        expect([late.status, late.body.error.type]).toEqual([409, "AttemptFinished"]);
+      });
+    });
+
+    describe("results", () => {
+      it("lists what was asked mid-lesson, with no tries, time or mistake classes", async () => {
+        const { id } = await start(s, await s.assign("equalGroups"));
+        await tryAt(s, id, await openQuestion(s, id), false);
+        await tryAt(s, id, await openQuestion(s, id), true);
+        const reply = await s.call<AttemptResults>("GET", pathOf("getResults", { id }));
+        expect(reply.status).toBe(200);
+        expect(reply.body.results.map((r) => [r.seq, r.added, r.ended])).toEqual([
+          [1, "planned", "correct"],
+          [2, "planned", null],
+        ]);
+        for (const key of ["tries", "time_ms", "mistake_classes", "first_try_correct"])
+          expect(JSON.stringify(reply.body)).not.toContain(`"${key}"`);
+      });
+
+      it("says done while verdicts are held, and the stored endings once finished", async () => {
+        const { id } = await start(s, await s.assign("equalGroups", { hold_verdicts: true }));
+        await tryAt(s, id, await openQuestion(s, id), false);
+        const held = await s.call<AttemptResults>("GET", pathOf("getResults", { id }));
+        expect(held.body.results.map((r) => r.ended)).toEqual(["done", null]);
+        for (let n = 0; n < 3; n++) await tryAt(s, id, await openQuestion(s, id), true);
+        const done = await s.call<AttemptResults>("GET", pathOf("getResults", { id }));
+        expect(done.body.results.map((r) => r.ended)).toEqual([
+          "missed",
+          "correct",
+          "correct",
+          "correct",
+        ]);
       });
     });
   });

@@ -4,6 +4,8 @@ import { randomUUID } from "node:crypto";
 import {
   type AttemptAnswerResult,
   type AttemptSnapshot,
+  ID_PREFIXES,
+  idOf,
   type LessonQuestion,
   type PageAttemptQuestion,
   ROUTES,
@@ -11,7 +13,7 @@ import {
 } from "@jadwigo/contracts";
 import { solutionOf } from "@jadwigo/core";
 import { importLessonFile } from "@jadwigo/lesson-import";
-import type { NewAssignment, NewPod, Store } from "@jadwigo/store";
+import type { NewAssignment, NewLessonQuestion, NewPod, Store } from "@jadwigo/store";
 import { LESSON_FILES } from "@jadwigo/testing";
 import { createApp } from "../app.ts";
 
@@ -60,6 +62,11 @@ export interface Seeded {
     settings?: Partial<Pick<NewAssignment, "after_not_sure" | "hold_verdicts" | "audience">>,
     pod?: NewPod,
   ): Promise<string>;
+  /**
+   * An assignment of a 1-question lesson: equal-groups' first question with its help ladder cut
+   * down by `cut`, and its twin as the spare.
+   */
+  assignLadder(cut: (help: LessonQuestion["help"]) => LessonQuestion["help"]): Promise<string>;
   /** The lesson question behind a page question, key and all, for the test to answer it. */
   questionOf(page: PageAttemptQuestion): Promise<LessonQuestion>;
 }
@@ -79,6 +86,50 @@ export function seeded(store: Store): Seeded {
         audience: "anyone",
         identity: "none",
         ...settings,
+      });
+      return assignment.id;
+    },
+    async assignLadder(cut) {
+      const imported = await importLessonFile(store, LESSON_FILES[LESSONS.equalGroups]);
+      const pod = imported.lesson.pod_id;
+      const version = await store.getLessonVersion(pod, imported.version.id);
+      const first = version.questions[0]?.question;
+      const twin = version.questions.find((v) => v.question.twin_of === first?.id)?.question;
+      if (first === undefined || twin === undefined)
+        throw new Error("equal-groups has no first question and twin");
+      const { id: _id, pod_id: _pod, created_at: _at, ...lesson } = imported.lesson;
+      const ladder = await store.putLesson(pod, {
+        ...lesson,
+        title: "One question, rungs as given",
+      });
+      const copy = async (
+        q: LessonQuestion,
+        changes: Partial<LessonQuestion>,
+      ): Promise<LessonQuestion> => {
+        const { pod_id: _p, created_at: _c, ...rest } = q;
+        const written = await store.putLessonQuestion(pod, {
+          ...rest,
+          ...changes,
+          id: idOf(ID_PREFIXES.lesson_question, randomUUID()),
+          content_hash: randomUUID(),
+        } as NewLessonQuestion);
+        known.set(written.id, written);
+        return written;
+      };
+      const asked = await copy(first, { help: cut(first.help) });
+      const spare = await copy(twin, { twin_of: asked.id });
+      await store.publishLessonVersion(pod, {
+        lesson_id: ladder.id,
+        questions: [
+          { lesson_question_id: asked.id, role: "planned" },
+          { lesson_question_id: spare.id, role: "spare" },
+        ],
+      });
+      const assignment = await store.putAssignment(pod, {
+        lesson_id: ladder.id,
+        audience: "anyone",
+        identity: "none",
+        after_not_sure: "next",
       });
       return assignment.id;
     },
