@@ -20,8 +20,13 @@
       "name": "@jadwigo/api",
       "dependencies": {
         "@aws-lambda-powertools/event-handler": "2.36.0",
+        "@jadwigo/contracts": "workspace:*",
+        "@jadwigo/core": "workspace:*",
+        "@jadwigo/store": "workspace:*",
       },
       "devDependencies": {
+        "@jadwigo/lesson-import": "workspace:*",
+        "@jadwigo/testing": "workspace:*",
         "@types/node": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:",
