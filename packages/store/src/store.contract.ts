@@ -1049,7 +1049,7 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         const second = await store.addLearner(pod, { first_name: "fox", age_group: "7-8" });
 
         expect(fox.learner).toMatchObject({ pod_id: pod, handle: "fox", first_name: "Fox" });
-        expect(fox.goals.map((g) => g.name).sort()).toEqual(["Reading", "Times tables"]);
+        expect(fox.goals.map((g) => g.name)).toEqual(["Times tables", "Reading"]);
         expect(second.learner).toMatchObject({ handle: "fox-2", age_group: "7-8" });
         expect(second.goals).toEqual([]);
         const me = await store.getMe(pod, account);
