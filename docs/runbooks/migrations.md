@@ -69,8 +69,10 @@ What each one is:
    To play against dev, `make api-dev ENV=dev` serves the local `apps/api` on jadwigo-dev as
    `jadwigo_api` through the transaction pooler (port 6543), on `PORT` (8787 by default).
 6. **Prod**, once dev has run the same migrations and its checks pass: from your own terminal, not
-   an agent's (the targets refuse prod there), `make db-push ENV=prod DRY_RUN=1`, then
-   `make db-push ENV=prod`, then `make db-role ENV=prod` the first time.
+   an agent's (the targets refuse prod unless stdin is a terminal), `make db-push ENV=prod DRY_RUN=1`,
+   then `make db-push ENV=prod`, then `make db-role ENV=prod` the first time, then
+   `make db-seed ENV=prod`. Each asks you to type `prod` before it links prod, and no `CONFIRM`
+   answers for it.
 
 ## After
 

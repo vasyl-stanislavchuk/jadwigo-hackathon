@@ -89,8 +89,14 @@ SUPABASE_LINK = case "$(ENV)" in dev|prod) ;; *) echo "$@: ENV=dev or ENV=prod";
 	test -n "$$SUPABASE_DB_PASSWORD" || { echo "$@: set SUPABASE_DB_PASSWORD_$(ENV_UPPER) (jadwigo-$(ENV)'s postgres password) in $(SUPABASE_SECRETS), or add the keychain item supabase-db-password-$(ENV)"; exit 1; }; \
 	export SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD; \
 	supabase link --project-ref $(SUPABASE_REF) >/dev/null || exit 1
-# Agents never touch prod: Claude Code's shells set CLAUDECODE. The owner pushes prod from a terminal.
-NOT_PROD_FROM_AGENT = if [ "$(ENV)" = prod ] && [ -n "$$CLAUDECODE" ]; then echo "$@ ENV=prod: run it from your own terminal, not from an agent's shell"; exit 1; fi
+# Agents never touch prod (dl-e8ov.2.34). ENV=prod runs only at a terminal (stdin a tty, which no
+# agent's shell is, whatever it sets or clears) and only once a person types prod at the prompt,
+# before anything links. CONFIRM never answers for prod, typed on the command line or exported.
+PROD_GATE = if [ "$(ENV)" = prod ]; then \
+	  if [ -n "$$CLAUDECODE" ] || [ ! -t 0 ]; then echo "$@ ENV=prod: run it from your own terminal, where it asks you to type prod"; exit 1; fi; \
+	  printf '%s on jadwigo-prod? Type prod to go on: ' "$@"; read answer; \
+	  if [ "$$answer" != prod ]; then echo "$@: nothing done on jadwigo-prod"; exit 1; fi; \
+	fi
 
 ## db-reset: rebuild the local jadwigo database from nothing (the shim, every migration, the seed).
 ## ENV=dev resets jadwigo-dev instead (supabase db reset --linked, which asks first). Never prod.
@@ -106,25 +112,20 @@ endif
 ## ENV=dev|prod seeds that project instead, as jadwigo_api (the Store sets that role, and postgres
 ## on Supabase is not a member of it; run db-role first) through its session pooler (port 5432; the
 ## transaction pooler on 6543 cannot hold the seed's transactions), the password in PGPASSWORD only.
-## ENV=prod asks before it links prod (CONFIRM=prod where there is no keyboard). The seed runs
+## ENV=prod runs only from your own terminal and asks you to type prod before it links. The seed runs
 ## under env -i: it sees PATH, HOME, USER, TMPDIR, PGPASSWORD and DATABASE_URL, no other secret. Safe to rerun:
 ## the same content publishes nothing new.
 db-seed:
 ifeq ($(ENV),)
 	bun run --cwd packages/lesson-import seed
 else
-	@$(NOT_PROD_FROM_AGENT)
-	@if [ "$(ENV)" = prod ]; then \
-	  answer="$(CONFIRM)"; \
-	  if [ -z "$$answer" ]; then printf 'Seed jadwigo-prod? Type prod to seed (or pass CONFIRM=prod): '; read answer; fi; \
-	  if [ "$$answer" != prod ]; then echo "db-seed: nothing seeded"; exit 1; fi; \
-	fi
+	@$(PROD_GATE)
 	@$(SUPABASE_LINK); \
 	API_PASSWORD=$${JADWIGO_API_DB_PASSWORD_$(ENV_UPPER):-$$(security find-generic-password -s jadwigo-api-db-password-$(ENV) -w 2>/dev/null)}; \
 	test -n "$$API_PASSWORD" || { echo "db-seed: set JADWIGO_API_DB_PASSWORD_$(ENV_UPPER) in $(SUPABASE_SECRETS), or add the keychain item jadwigo-api-db-password-$(ENV)"; exit 1; }; \
 	test -s supabase/.temp/pooler-url || { echo "db-seed: supabase link wrote no supabase/.temp/pooler-url"; exit 1; }; \
 	url=$$(sed 's/:6543\//:5432\//; s|://postgres\.|://jadwigo_api.|' supabase/.temp/pooler-url); \
-	case "$$url" in *://jadwigo_api.*:5432/*) ;; *) echo "db-seed: supabase/.temp/pooler-url is not postgres.<ref>@<pooler>:6543"; exit 1;; esac; \
+	case "$$url" in *://jadwigo_api.$(SUPABASE_REF)@*:5432/*) ;; *) echo "db-seed: supabase/.temp/pooler-url is not postgres.$(SUPABASE_REF)@<pooler>:6543 (jadwigo-$(ENV))"; exit 1;; esac; \
 	env -i PATH="$$PATH" HOME="$$HOME" USER="$$USER" TMPDIR="$${TMPDIR:-/tmp}" PGPASSWORD="$$API_PASSWORD" DATABASE_URL="$$url" \
 	  bun run --cwd packages/lesson-import seed
 endif
@@ -145,22 +146,24 @@ api-dev:
 	  bun run --cwd apps/api dev
 
 ## db-push ENV=dev|prod: show the migrations ENV's project lacks (a dry run), then push them only when
-## you type the ENV's name, or pass it as CONFIRM=<env> where there is no keyboard (`!` in Claude Code).
+## you type the ENV's name. For dev only, CONFIRM=dev on the command line answers where there is no
+## keyboard (`!` in Claude Code); prod runs only from your own terminal (PROD_GATE asks first).
 ## DRY_RUN=1 stops after the dry run. One-way: a pushed migration stays.
 db-push:
-	@$(NOT_PROD_FROM_AGENT)
+	@$(PROD_GATE)
 	@$(SUPABASE_LINK); \
 	supabase db push --linked --dry-run || exit 1; \
 	if [ -n "$(DRY_RUN)" ]; then exit 0; fi; \
-	answer="$(CONFIRM)"; \
-	if [ -z "$$answer" ]; then printf 'Push these to jadwigo-%s? Type %s to push (or pass CONFIRM=%s): ' "$(ENV)" "$(ENV)" "$(ENV)"; read answer; fi; \
+	answer=; if [ "$(ENV)" = dev ] && [ "$(origin CONFIRM)" = "command line" ]; then answer="$(CONFIRM)"; fi; \
+	if [ -z "$$answer" ]; then printf 'Push these to jadwigo-%s? Type %s to push: ' "$(ENV)" "$(ENV)"; read answer; fi; \
 	if [ "$$answer" != "$(ENV)" ]; then echo "db-push: nothing pushed"; exit 1; fi; \
 	supabase db push --linked
 
 ## db-role ENV=dev|prod: give jadwigo_api (made by the migration, nologin) a login and its password
 ## (JADWIGO_API_DB_PASSWORD_<ENV>, or the keychain item jadwigo-api-db-password-<env>). Run it after the first db-push, and after a rotation.
+## ENV=prod runs only from your own terminal and asks you to type prod first.
 db-role:
-	@$(NOT_PROD_FROM_AGENT)
+	@$(PROD_GATE)
 	@$(SUPABASE_LINK); \
 	API_PASSWORD=$${JADWIGO_API_DB_PASSWORD_$(ENV_UPPER):-$$(security find-generic-password -s jadwigo-api-db-password-$(ENV) -w 2>/dev/null)}; \
 	test -n "$$API_PASSWORD" || { echo "db-role: set JADWIGO_API_DB_PASSWORD_$(ENV_UPPER) in $(SUPABASE_SECRETS), or add the keychain item jadwigo-api-db-password-$(ENV)"; exit 1; }; \
