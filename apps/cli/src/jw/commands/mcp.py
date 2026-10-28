@@ -59,7 +59,8 @@ def build_server() -> Any:
         """Search the bank for question sets that meet a need; the bank's search envelope.
 
         grade is the bare grade number ("3"); words is the need in plain words in `language`
-        (pl, en or uk). stage "first" returns ids and titles fast, "final" the reranked rows.
+        (pl, en or uk). arm and stage reach only the bank's own route (JW_BANK_URL); the /api/v1
+        route answers stage final with every arm.
         """
         return _call(
             question.search_envelope,

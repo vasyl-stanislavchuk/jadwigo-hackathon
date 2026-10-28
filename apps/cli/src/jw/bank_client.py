@@ -31,7 +31,7 @@ import urllib.parse
 import urllib.request
 from functools import cache
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
@@ -84,11 +84,19 @@ class SetNotFound(JwError):
 
 # ---------------------------------------------------------------- where -----
 
-# The (URL name, token name, path) pairs, in the order they are tried.
+# The (URL name, token name, path, takes query fields) rows, in the order they are tried. The
+# /api/v1 route serves stage final with every arm and defines no query fields
+# (ROUTES.questionSearches), so only the bank's own route gets `arm` and `stage`.
 _PAIRS = (
-    (JW_API_URL, JW_BANK_READ_TOKEN, API_SEARCH_PATH),
-    (JW_BANK_URL, JW_BANK_TOKEN, BANK_SEARCH_PATH),
+    (JW_API_URL, JW_BANK_READ_TOKEN, API_SEARCH_PATH, False),
+    (JW_BANK_URL, JW_BANK_TOKEN, BANK_SEARCH_PATH, True),
 )
+
+
+class Endpoint(NamedTuple):
+    url: str  # the full search URL
+    token: str | None  # the bearer token; None sends none
+    takes_query: bool  # whether `arm` and `stage` may ride as query fields
 
 
 def env_file() -> Path:
@@ -115,21 +123,22 @@ def _read_env_file(path: Path) -> dict[str, str]:
     return values
 
 
-def endpoint() -> tuple[str, str | None]:
-    """The search URL and its bearer token (None: send none), per `jw.settings_keys`.
+def endpoint() -> Endpoint:
+    """The search URL, its bearer token and whether it takes query fields, per `jw.settings_keys`.
 
     A URL and its token come from one place, so a URL set in the environment never carries the
     file's token to a host the file did not name.
     """
-    for url_name, token_name, path in _PAIRS:
+    for url_name, token_name, path, takes_query in _PAIRS:
         base = os.environ.get(url_name)
         if base:
-            return base.rstrip("/") + path, os.environ.get(token_name) or None
+            token = os.environ.get(token_name) or None
+            return Endpoint(base.rstrip("/") + path, token, takes_query)
     stored = _read_env_file(env_file())
-    for url_name, token_name, path in _PAIRS:
+    for url_name, token_name, path, takes_query in _PAIRS:
         base = stored.get(url_name)
         if base:
-            return base.rstrip("/") + path, stored.get(token_name) or None
+            return Endpoint(base.rstrip("/") + path, stored.get(token_name) or None, takes_query)
     raise BankNotConfigured(
         f"neither {JW_API_URL} nor {JW_BANK_URL} is set, in the environment or in {env_file()}"
     )
@@ -189,14 +198,16 @@ def search(
 ) -> dict[str, Any]:
     """POST `need` to the search route; return the envelope, validated.
 
-    `limit` rides in the need (the schema has it); `arm` and `stage` go as query fields, since a
-    need with additionalProperties false has no room for them. `base_url` is a full search URL
+    `limit` rides in the need (the schema has it). `arm` and `stage` go as query fields on the
+    bank's own route (JW_BANK_URL), since a need with additionalProperties false has no room for
+    them. The /api/v1 route takes no query fields and always answers stage final with every arm,
+    so there they are not sent. `base_url` is a full search URL
     that skips `endpoint()` and sends no token (tests).
     """
     if base_url:
-        url, token = base_url, None
+        url, token, takes_query = base_url, None, not base_url.endswith(API_SEARCH_PATH)
     else:
-        url, token = endpoint()
+        url, token, takes_query = endpoint()
     body = {**need, "limit": limit}
     try:
         validate_need(body)
@@ -204,7 +215,7 @@ def search(
         raise NeedInvalid(f"the need does not match need.schema.json: {exc.message}") from exc
 
     query = {key: value for key, value in (("arm", arm), ("stage", stage)) if value is not None}
-    if query:
+    if query and takes_query:
         url += "?" + urllib.parse.urlencode(query)
     headers = {"Content-Type": "application/json", "Accept": "application/json"}
     if token:

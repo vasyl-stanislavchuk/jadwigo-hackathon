@@ -12,8 +12,9 @@ modules came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
 | `jw question show set_khan_2002` | One set page, checked against `src/jw/contracts/set.schema.json` | `JADWIGO_BANK_DIR` |
 | `jw question gaps --words "..." --skill <id> --grade 3` | Each need searched once, with `found`, `gap` or `degraded` | the bank URL and token |
 
-- **Search** returns the envelope as the bank sent it. `--stage first` asks for ids and titles
-  fast, and `--stage final` for the reranked rows. A bank that is down, slow or wrong comes back
+- **Search** returns the envelope as the bank sent it. The `/api/v1` route answers stage `final`
+  with every arm and takes no query fields, so `--stage` and `--arm` reach only the bank's own
+  route (`JW_BANK_URL`), where `--stage first` asks for ids and titles fast. A bank that is down, slow or wrong comes back
   as an envelope whose arms are all `degraded`, never as a crash.
 - **Show** reads set pages from a local checkout of the bank repo, `<JADWIGO_BANK_DIR>/sets/**`.
   The search route returns rows, not pages, and no page route exists yet.

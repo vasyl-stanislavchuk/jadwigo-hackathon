@@ -99,7 +99,7 @@ def test_serve_lists_the_three_tools_and_matches_the_verbs(bank: Any) -> None:
     )
     assert _without_timing(answers[0]) == _without_timing(search)
     assert _without_timing(answers[1]) == _without_timing(first)
-    assert answers[1]["stage"] == "first"
+    assert answers[1]["stage"] == "final"  # the /api/v1 route takes no stage and answers final
     assert answers[2] == show
     assert answers[3] == gaps
 

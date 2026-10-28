@@ -114,12 +114,17 @@ def _table(envelope: dict[str, Any], language: str) -> str:
 @click.option("--language", default="pl", show_default=True, type=click.Choice(["pl", "en", "uk"]))
 @click.option("--grade", required=True, help="The bare grade number, e.g. 3.")
 @click.option("--limit", default=20, show_default=True, type=click.IntRange(min=1))
-@click.option("--arm", default=None, help="Ask one arm (A, A1, B, B1, C, C2).")
+@click.option(
+    "--arm", default=None, help="Ask one arm (A, A1, B, B1, C, C2); the bank's own route only."
+)
 @click.option(
     "--stage",
     default=None,
     type=click.Choice(["first", "final"]),
-    help="first: vector order, ids and titles; final: reranked, full rows.",
+    help=(
+        "first: vector order, ids and titles; final: reranked, full rows. The bank's own route "
+        "only: the /api/v1 route always answers final."
+    ),
 )
 def search(
     json_mode: bool,
@@ -172,7 +177,9 @@ def show(set_id: str, json_mode: bool) -> None:
 @click.option("--skill", "skills", multiple=True, help="A skill id, one need each (repeatable).")
 @click.option("--language", default="pl", show_default=True, type=click.Choice(["pl", "en", "uk"]))
 @click.option("--grade", required=True, help="The bare grade number, e.g. 3.")
-@click.option("--arm", default=None, help="Ask one arm (A, A1, B, B1, C, C2).")
+@click.option(
+    "--arm", default=None, help="Ask one arm (A, A1, B, B1, C, C2); the bank's own route only."
+)
 def gaps(
     json_mode: bool,
     words: tuple[str, ...],

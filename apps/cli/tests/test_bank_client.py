@@ -74,10 +74,28 @@ def test_search_sends_a_valid_need_and_returns_a_valid_envelope(bank: Any) -> No
     assert envelope["need"] == seen.body
 
 
-def test_arm_and_stage_ride_as_query_fields(bank: Any) -> None:
+def test_the_api_route_gets_no_query_fields(bank: Any) -> None:
+    """/api/v1/question-searches defines no query fields and answers stage final, every arm."""
     envelope = bank_client.search(NEED, arm="A", stage="first")
 
-    assert bank.requests[0].query == {"arm": "A", "stage": "first"}
+    assert bank.requests[0].path == "/api/v1/question-searches"
+    assert bank.requests[0].query == {}
+    bank_client.validate_envelope(envelope)
+    assert envelope["stage"] == "final"
+
+
+def test_arm_and_stage_ride_as_query_fields_on_the_banks_own_route(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake = fake_bank.FakeBank().start()
+    try:
+        monkeypatch.setenv(JW_BANK_URL, fake.url)
+        envelope = bank_client.search(NEED, arm="A", stage="first")
+    finally:
+        fake.stop()
+
+    assert fake.requests[0].path == "/questions/search"
+    assert fake.requests[0].query == {"arm": "A", "stage": "first"}
     bank_client.validate_envelope(envelope)
     assert envelope["stage"] == "first"
     assert {s["arm"]: s["state"] for s in envelope["state"]}["A"] == "ok"
@@ -166,14 +184,14 @@ def test_cli_without_grade_fails_before_asking_the_bank(bank: Any) -> None:
     assert bank.requests == []
 
 
-def test_cli_stage_rides_as_a_query_field(bank: Any) -> None:
-    result = CliRunner().invoke(cli, [*SEARCH, "--stage", "first", "--json"])
+def test_cli_stage_is_not_sent_to_the_api_route(bank: Any) -> None:
+    result = CliRunner().invoke(cli, [*SEARCH, "--stage", "first", "--arm", "A", "--json"])
 
     assert result.exit_code == 0, result.output
-    assert bank.requests[0].query == {"stage": "first"}
+    assert bank.requests[0].query == {}
     envelope = json.loads(result.output)
     bank_client.validate_envelope(envelope)
-    assert envelope["stage"] == "first"
+    assert envelope["stage"] == "final"
 
 
 # ------------------------------------------- where the URL and token come from ----
@@ -202,7 +220,7 @@ def test_the_bank_url_is_the_fallback_with_its_own_token(monkeypatch: pytest.Mon
 def test_the_api_url_wins_over_the_bank_url(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv(JW_API_URL, "http://api.example/")
     monkeypatch.setenv(JW_BANK_URL, "http://bank.example")
-    assert bank_client.endpoint() == ("http://api.example/api/v1/question-searches", None)
+    assert bank_client.endpoint() == ("http://api.example/api/v1/question-searches", None, False)
 
 
 def test_with_no_url_in_the_env_the_file_gives_url_and_token(
@@ -227,7 +245,11 @@ def test_a_url_in_the_env_never_takes_the_files_token(
     path = _env_file(tmp_path, f"{JW_API_URL}=http://api.example\n{JW_BANK_READ_TOKEN}={TOKEN}\n")
     monkeypatch.setenv(JW_BANK_ENV_FILE, str(path))
     monkeypatch.setenv(JW_API_URL, "http://elsewhere.example")
-    assert bank_client.endpoint() == ("http://elsewhere.example/api/v1/question-searches", None)
+    assert bank_client.endpoint() == (
+        "http://elsewhere.example/api/v1/question-searches",
+        None,
+        False,
+    )
 
 
 def test_a_file_others_can_read_is_refused_without_its_token(
