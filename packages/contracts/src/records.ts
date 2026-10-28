@@ -94,7 +94,6 @@ export const Learner = z.object({
 export type Learner = z.infer<typeof Learner>;
 
 // People (decision 2026-10-27-the-v0-people-records-are-pod-and-learner-account-and-member-com).
-// The tables come with dl-e8ov.2.37's migration, which also lists these in RECORDS.
 
 /**
  * Someone who signs in. `sub` is the Supabase Auth user, the token's `sub` claim; `pod_id` is the
@@ -240,6 +239,17 @@ export const Attempt = z.object({
   resume_at: Count.nullable(),
   started_at: At,
   finished_at: At.nullable(),
+  /**
+   * The claim (migration 20261029120000_parent_login.sql): the account that attached this
+   * anonymous attempt to a learner, and when. A claimed attempt stays in the pod it was played in,
+   * and its learner may be in the claimer's pod. Optional until both stores fill them
+   * (dl-e8ov.2.39); null on an attempt nobody claimed.
+   */
+  claimed_by: AccountId.nullable().optional(),
+  claimed_at: At.nullable().optional(),
+  /** A move between learners, which comes with dl-e8ov.5.11. Null until then. */
+  moved_by: AccountId.nullable().optional(),
+  moved_at: At.nullable().optional(),
 });
 export type Attempt = z.infer<typeof Attempt>;
 
@@ -344,6 +354,9 @@ export type AttemptResult = z.infer<typeof AttemptResult>;
 export const RECORDS = {
   pod: Pod,
   learner: Learner,
+  account: Account,
+  member: Member,
+  goal: Goal,
   lesson: Lesson,
   lesson_version: LessonVersion,
   lesson_version_question: LessonVersionQuestion,
