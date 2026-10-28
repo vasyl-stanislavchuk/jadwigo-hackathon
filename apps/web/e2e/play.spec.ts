@@ -1,6 +1,7 @@
 // The lesson player end to end (dl-5ssh.3.1): a child opens the app with no login and plays the
-// featured equal-groups lesson against a real api, to the congratulation and the list. It runs only
-// in the `api` project, which playwright.config.ts adds when JW_E2E_API=1. To run it locally:
+// featured equal-groups lesson against a real api, picked from the home page's list (dl-5ssh.3.6),
+// to the congratulation and the list. It runs only in the `api` project, which playwright.config.ts
+// adds when JW_E2E_API=1. To run it locally:
 //
 //   createdb jadwigo_e2e && make migrate db-seed DATABASE_URL=postgresql://localhost:5433/jadwigo_e2e
 //   psql postgresql://localhost:5433/jadwigo_e2e \
@@ -43,6 +44,7 @@ test("a child plays equal-groups to the results, through a miss, a twin, a pause
   page,
 }) => {
   await page.goto("/");
+  await page.locator("[data-featured]").getByRole("link", { name: "Równe grupy" }).click();
   await expect(page).toHaveURL(/\/play\/asg_[0-9a-z]{26}$/);
 
   // 2 × 5: a miss stays on the question, then the right answer and Dalej.

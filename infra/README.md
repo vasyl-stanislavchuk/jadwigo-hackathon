@@ -12,7 +12,7 @@ Lambda (Node 24, arm64, `index.handler`), its role, 90-day log groups, the SSM S
 `DATABASE_URL`, and per-route throttles of 10 a second, burst 20, on every route but health
 (`jadwigo-platform/decisions/2026-10-28-the-app-s-http-api-stage-throttles-every-route-but-health-at-10`).
 The HTTP API's route list in `terraform/main.tf` mirrors `ROUTES` in `packages/contracts/src/routes.ts`:
-a route added there is added here too, or it falls to `$default` and its stage-default limit. Terraform owns no file in the bucket; `make site-deploy` uploads the Astro build of `apps/site`. `dl-5ssh.34.4` adds the other
+a route added there is added here too, or it falls to `$default` and its stage-default limit. `bun tools/src/check-infra-routes.ts`, in `make check` and CI, fails when the two differ. Terraform owns no file in the bucket; `make site-deploy` uploads the Astro build of `apps/site`. `dl-5ssh.34.4` adds the other
 modules, the OIDC roles script and the plan on every PR; `dl-w0b4.4` extends the site module.
 
 A merge deploys nothing. The owner deploys by hand
@@ -26,6 +26,8 @@ A merge deploys nothing. The owner deploys by hand
 | `make -C infra site-deploy` | build `apps/site`, check `dist/`, sync it to the bucket, invalidate | the owner |
 | `make -C infra deploy` | `api-deploy` (`make api-bundle`, zip, `update-function-code`, wait), then `web-deploy` (build `apps/web`, sync to the app bucket, invalidate) | the owner |
 | `make -n -C infra deploy` | print both halves, running nothing | anyone |
+| `make -C infra auth-diff` | read both Supabase projects' auth config and print what `supabase-auth/<env>.json` would change; exits 2 if anything would | anyone with the token |
+| `make -C infra auth-apply` | write those settings through the Management API | the owner |
 
 **The database URL never passes through Terraform.** The module creates the parameter with a write-only
 placeholder, so neither a tfvars file nor the state holds the value. The owner sets it after the first
@@ -48,6 +50,14 @@ aws --profile sergii ssm put-parameter --region eu-central-1 --name /jadwigo/pro
 ```
 
 The Lambda reads it once per cold start. Until the first deploy, its placeholder code answers 503.
+
+**Supabase Auth settings live in `supabase-auth/`, not in Terraform.** The root module's state is one
+environment's, and these settings span both projects, so a script reads and writes them through the
+Management API: `prod.json` and `dev.json` each hold a project's ref and only the settings we own
+(site URL, redirect URLs, the email OTP length). Every other auth setting stays as Supabase has it.
+The token is `SUPABASE_ACCESS_TOKEN`, else the line in `~/.config/jadwigo/supabase.env`; it reaches
+curl on stdin and is never printed. Dev has no hosted app yet (`packages/config` names prod only), so
+its redirect list is any local port on `127.0.0.1` and `localhost`.
 
 The state bucket `jadwigo-terraform-state-843109108289` is created by hand before the first `init` (`dl-5ssh.9`):
 
