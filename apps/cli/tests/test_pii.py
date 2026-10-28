@@ -168,7 +168,7 @@ def test_no_prompt_the_explanation_builds_carries_a_learner_name(
 ) -> None:
     pages = _pages()
     envelope = json.loads((BANK / "envelope.json").read_text(encoding="utf-8"))
-    # The fixture rows name made-up sets: point them at the copied pages.
+    # The fixture rows name made-up sets: point them at the fixture pages.
     envelope["rows"] = [
         {**envelope["rows"][0], "id": set_id, "rank": rank}
         for rank, set_id in enumerate(sorted(pages), start=1)
@@ -194,7 +194,7 @@ def test_no_prompt_the_explanation_builds_carries_a_learner_name(
 
 def test_the_prompt_tells_the_model_to_keep_placeholders_as_written() -> None:
     pages = _pages()
-    envelope = {"rows": [{"id": "set_khan_2002", "rank": 1}]}
+    envelope = {"rows": [{"id": "set_khan_fx0001", "rank": 1}]}
     drawn = draw(envelope, pages, kind="practice", today=dt.date(2026, 10, 28))
     (prompt,) = explain.prompts("Kasia", drawn, pages)
     assert "[NAME_1]" in prompt.text

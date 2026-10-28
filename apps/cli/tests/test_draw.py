@@ -1,7 +1,9 @@
-"""dl-e8ov.5.2.17: the draw on the fixture envelope and 3 set pages copied from the bank.
+"""dl-e8ov.5.2.17: the draw on the fixture envelope and 3 made-up set pages in the bank's shape.
 
-The fixture envelope's rows name made-up set ids, so it is used twice: as it is (rows without a
-page are left out, with that reason) and with its rows pointed at the copied pages.
+The fixture envelope's rows name set ids with no page, so it is used twice: as it is (rows without
+a page are left out, with that reason) and with its rows pointed at the fixture pages. The pages
+are invented, because no bank data enters this repo; they are Khan-shaped because the pinned set
+schema takes only Khan pages.
 """
 
 from __future__ import annotations
@@ -20,7 +22,7 @@ from jw.draw import DRAW_RULES, RULES_SETTLED, DrawRule, History, draw
 
 BANK = Path(__file__).resolve().parent / "fixtures" / "bank"
 TODAY = dt.date(2026, 10, 28)
-ADD, NUMBER_LINE, TIMES_7 = "set_khan_2002", "set_khan_x94f7921f", "set_khan_x59551e61"
+ADD, NUMBER_LINE, TIMES_6 = "set_khan_fx0001", "set_khan_fx0002", "set_khan_fx0003"
 
 
 def _pages() -> dict[str, dict[str, Any]]:
@@ -34,7 +36,7 @@ def _envelope() -> dict[str, Any]:
 
 
 def _pointed(ids: list[str]) -> dict[str, Any]:
-    """The fixture envelope with its rows pointed at copied pages, in this rank order."""
+    """The fixture envelope with its rows pointed at the fixture pages, in this rank order."""
     envelope = _envelope()
     template = envelope["rows"][0]
     rows = []
@@ -91,28 +93,28 @@ def test_seen_items_are_not_drawn_and_spacing_says_why() -> None:
 def test_a_set_without_the_lesson_language_does_not_play() -> None:
     pages = _pages()
     pages[ADD] = {**pages[ADD], "languages": {"pl": False, "en": True}}
-    result = draw(_pointed([ADD, TIMES_7]), pages, kind="practice", today=TODAY, language="pl")
-    assert all(q.set_id == TIMES_7 for q in result.questions)
+    result = draw(_pointed([ADD, TIMES_6]), pages, kind="practice", today=TODAY, language="pl")
+    assert all(q.set_id == TIMES_6 for q in result.questions)
     assert any(left.id == ADD and "no pl version" in left.reason for left in result.left_out)
 
 
 def test_flagged_media_keeps_a_question_out() -> None:
     pages = _pages()
-    item = pages[TIMES_7]["problem_types"][0]["samples"][0]["item_id"]
-    result = draw(_pointed([TIMES_7]), pages, kind="practice", today=TODAY, flagged=[item])
+    item = pages[TIMES_6]["problem_types"][0]["samples"][0]["item_id"]
+    result = draw(_pointed([TIMES_6]), pages, kind="practice", today=TODAY, flagged=[item])
     assert item not in {q.item_id for q in result.questions}
     assert any(left.id == item and "flagged" in left.reason for left in result.left_out)
 
 
 def test_check_takes_one_per_skill() -> None:
-    result = draw(_pointed([ADD, NUMBER_LINE, TIMES_7]), _pages(), kind="check", today=TODAY)
+    result = draw(_pointed([ADD, NUMBER_LINE, TIMES_6]), _pages(), kind="check", today=TODAY)
     skills = [q.skill for q in result.questions]
     assert len(skills) == 3 and len(set(skills)) == 3
 
 
 def test_diagnostic_takes_two_per_skill_easy_first() -> None:
     pages = _pages()
-    result = draw(_pointed([ADD, NUMBER_LINE, TIMES_7]), pages, kind="diagnostic", today=TODAY)
+    result = draw(_pointed([ADD, NUMBER_LINE, TIMES_6]), pages, kind="diagnostic", today=TODAY)
     per_skill: dict[str, int] = {}
     for q in result.questions:
         per_skill[q.skill] = per_skill.get(q.skill, 0) + 1
@@ -123,14 +125,14 @@ def test_diagnostic_takes_two_per_skill_easy_first() -> None:
 
 def test_review_draws_due_items_and_twins_for_due_items_that_do_not_play() -> None:
     pages = _pages()
-    arrays = pages[TIMES_7]["problem_types"][0]
+    arrays = pages[TIMES_6]["problem_types"][0]
     due_plays, due_flagged = arrays["samples"][0]["item_id"], arrays["samples"][1]["item_id"]
     history = History(
         seen={due_plays: TODAY - dt.timedelta(days=7), due_flagged: TODAY - dt.timedelta(days=7)},
         due={due_plays: TODAY, due_flagged: TODAY - dt.timedelta(days=1)},
     )
     result = draw(
-        _pointed([TIMES_7]),
+        _pointed([TIMES_6]),
         pages,
         kind="review",
         today=TODAY,
@@ -144,7 +146,7 @@ def test_review_draws_due_items_and_twins_for_due_items_that_do_not_play() -> No
 
 
 def test_review_with_nothing_due_draws_nothing_and_says_so() -> None:
-    result = draw(_pointed([TIMES_7]), _pages(), kind="review", today=TODAY)
+    result = draw(_pointed([TIMES_6]), _pages(), kind="review", today=TODAY)
     assert result.questions == []
     assert any("nothing in these sets is due" in left.reason for left in result.left_out)
 

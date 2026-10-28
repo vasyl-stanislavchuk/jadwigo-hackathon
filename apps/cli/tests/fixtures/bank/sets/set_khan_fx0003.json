@@ -1,0 +1,282 @@
+{
+  "description": {
+    "pl": "Pomnóż 6 przez liczbę od 0 do 10.",
+    "en": "Multiply 6 by a number from 0 to 10."
+  },
+  "enrichment": {
+    "can_do": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up can-do for the fixture",
+          "quote": "Multiply by 6",
+          "source": "set:set_khan_fx0003"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": {
+        "pl": "Zmyślony zestaw: tabliczka mnożenia przez 6.",
+        "en": "A made-up set: the 6 times table."
+      }
+    },
+    "contexts": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up: bare exercises",
+          "quote": "Mnożenie przez 6",
+          "source": "set:set_khan_fx0003"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": {
+        "pl": [],
+        "en": []
+      }
+    },
+    "curriculum_tags": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up tag for the fixture",
+          "quote": "Mnożenie przez 6",
+          "source": "set:set_khan_fx0003"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": ["pl-2017:II.3.3"]
+    },
+    "keywords": {
+      "agreement": 0.8,
+      "grounds": [
+        {
+          "claim": "made-up keywords",
+          "quote": "Mnożenie przez 6",
+          "source": "set:set_khan_fx0003"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": {
+        "pl": ["tabliczka mnożenia przez 6", "mnożenie przez 6"],
+        "en": ["6 times table", "multiply by 6"]
+      }
+    },
+    "mistake_classes": {
+      "agreement": 0.7,
+      "grounds": [
+        {
+          "claim": "made-up mistake class",
+          "quote": "Multiply by 6",
+          "source": "set:set_khan_fx0003"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": [
+        {
+          "id": "fixture-slip",
+          "pl": "Pomyłka w rachunku",
+          "en": "Slip in the sum",
+          "spot": "the answer is off by one"
+        }
+      ]
+    },
+    "prerequisites": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up: none",
+          "quote": "Multiply by 6",
+          "source": "set:set_khan_fx0003"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": []
+    },
+    "skill_ids": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up skill id",
+          "quote": "Multiply by 6",
+          "source": "set:set_khan_fx0003"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": ["fixture.times-6"]
+    },
+    "summary": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up summary",
+          "quote": "Multiply by 6",
+          "source": "set:set_khan_fx0003"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": {
+        "pl": "Zmyślony zestaw: tabliczka mnożenia przez 6.",
+        "en": "A made-up set: the 6 times table."
+      }
+    },
+    "synthetic_needs": {
+      "agreement": 0.7,
+      "grounds": [
+        {
+          "claim": "made-up needs",
+          "quote": "Mnożenie przez 6",
+          "source": "set:set_khan_fx0003"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": [
+        {
+          "language": "pl",
+          "words": "tabliczka mnożenia przez 6"
+        },
+        {
+          "language": "en",
+          "words": "6 times table"
+        }
+      ]
+    }
+  },
+  "families": ["enter"],
+  "grade": "3",
+  "id": "set_khan_fx0003",
+  "items": {
+    "count": {
+      "pl": 11,
+      "en": 11,
+      "shared": 11
+    },
+    "ids": [
+      "fxc101",
+      "fxc102",
+      "fxc103",
+      "fxc201",
+      "fxc202",
+      "fxc203",
+      "fxc301",
+      "fxc302",
+      "fxc303",
+      "fxc401",
+      "fxc402"
+    ]
+  },
+  "languages": {
+    "pl": true,
+    "en": true
+  },
+  "problem_types": [
+    {
+      "name": "Rows of dots",
+      "samples": [
+        {
+          "item_id": "fxc101",
+          "pl": "Policz kropki w rzędach: 6 · 3 =",
+          "en": "Count the dots in rows: 6 × 3 ="
+        },
+        {
+          "item_id": "fxc102",
+          "pl": "Policz kropki w rzędach: 6 · 4 =",
+          "en": "Count the dots in rows: 6 × 4 ="
+        },
+        {
+          "item_id": "fxc103",
+          "pl": "Policz kropki w rzędach: 6 · 7 =",
+          "en": "Count the dots in rows: 6 × 7 ="
+        }
+      ],
+      "count": {
+        "pl": 4,
+        "en": 4
+      }
+    },
+    {
+      "name": "Bags of apples",
+      "samples": [
+        {
+          "item_id": "fxc201",
+          "pl": "W 2 torbach jest po 6 jabłek. Ile razem?",
+          "en": "2 bags hold 6 apples each. How many in all?"
+        },
+        {
+          "item_id": "fxc202",
+          "pl": "W 5 torbach jest po 6 jabłek. Ile razem?",
+          "en": "5 bags hold 6 apples each. How many in all?"
+        },
+        {
+          "item_id": "fxc203",
+          "pl": "W 9 torbach jest po 6 jabłek. Ile razem?",
+          "en": "9 bags hold 6 apples each. How many in all?"
+        }
+      ],
+      "count": {
+        "pl": 4,
+        "en": 4
+      }
+    },
+    {
+      "name": "Hops of six",
+      "samples": [
+        {
+          "item_id": "fxc301",
+          "pl": "Skacz po 6: ile po 4 skokach?",
+          "en": "Hop by 6: where after 4 hops?"
+        },
+        {
+          "item_id": "fxc302",
+          "pl": "Skacz po 6: ile po 8 skokach?",
+          "en": "Hop by 6: where after 8 hops?"
+        },
+        {
+          "item_id": "fxc303",
+          "pl": "Skacz po 6: ile po 10 skokach?",
+          "en": "Hop by 6: where after 10 hops?"
+        }
+      ],
+      "count": {
+        "pl": 4,
+        "en": 4
+      }
+    }
+  ],
+  "question_types": ["production"],
+  "source": {
+    "credit": "z Khan Academy",
+    "exercise_id": "fx0003",
+    "licence": "CC BY-NC-SA 4.0",
+    "name": "khan",
+    "url": "https://fixture.invalid/jw/set_khan_fx0003"
+  },
+  "source_place": {
+    "ancestors": ["fxcourse", "fxunit"],
+    "course": "fixture-grade-3",
+    "lesson": "fixture-times-6",
+    "lesson_title": {
+      "pl": "Mnożenie przez 6",
+      "en": "Times 6"
+    },
+    "order": 20,
+    "unit": "fixture-multiplication",
+    "unit_title": {
+      "pl": "Mnożenie",
+      "en": "Multiplication"
+    }
+  },
+  "subject": "math",
+  "titles": {
+    "pl": "Mnożenie przez 6",
+    "en": "Multiply by 6"
+  }
+}

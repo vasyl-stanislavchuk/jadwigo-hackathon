@@ -100,7 +100,7 @@ def test_a_lesson_explanation_streams_with_names_restored_and_the_ledger_row_lan
 ) -> None:
     bank = Path(__file__).resolve().parent / "fixtures" / "bank"
     pages = {p.stem: json.loads(p.read_text()) for p in (bank / "sets").glob("*.json")}
-    envelope = {"rows": [{"id": "set_khan_2002", "rank": 1}]}
+    envelope = {"rows": [{"id": "set_khan_fx0001", "rank": 1}]}
     drawn = draw(envelope, pages, kind="practice", history=History(), today=dt.date(2026, 10, 28))
 
     chunks = list(

@@ -83,7 +83,7 @@ def test_serve_lists_the_three_tools_and_matches_the_verbs(bank: Any) -> None:
     calls = [
         ("question_search", {"grade": "3", "words": "dodawanie do 100"}),
         ("question_search", {"grade": "3", "words": "dodawanie do 100", "stage": "first"}),
-        ("question_show", {"set_id": "set_khan_2002"}),
+        ("question_show", {"set_id": "set_khan_fx0001"}),
         ("question_gaps", {"grade": "3", "words": ["dodawanie do 100"], "skills": ["maths.x"]}),
     ]
     names, answers = anyio.run(_session_calls, bank.url, calls)
@@ -93,7 +93,7 @@ def test_serve_lists_the_three_tools_and_matches_the_verbs(bank: Any) -> None:
     first = _verb(
         "question", "search", "--words", "dodawanie do 100", "--grade", "3", "--stage", "first"
     )
-    show = _verb("question", "show", "set_khan_2002")
+    show = _verb("question", "show", "set_khan_fx0001")
     gaps = _verb(
         "question", "gaps", "--words", "dodawanie do 100", "--skill", "maths.x", "--grade", "3"
     )

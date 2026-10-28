@@ -1,0 +1,284 @@
+{
+  "description": {
+    "pl": "Dodawaj, skacząc po osi liczbowej.",
+    "en": "Add by jumping along a number line."
+  },
+  "enrichment": {
+    "can_do": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up can-do for the fixture",
+          "quote": "Adding on a number line",
+          "source": "set:set_khan_fx0002"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": {
+        "pl": "Zmyślony zestaw: dodawanie na osi liczbowej.",
+        "en": "A made-up set: adding on a number line."
+      }
+    },
+    "contexts": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up: bare exercises",
+          "quote": "Dodawanie na osi liczbowej",
+          "source": "set:set_khan_fx0002"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": {
+        "pl": [],
+        "en": []
+      }
+    },
+    "curriculum_tags": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up tag for the fixture",
+          "quote": "Dodawanie na osi liczbowej",
+          "source": "set:set_khan_fx0002"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": ["pl-2017:II.3.1"]
+    },
+    "keywords": {
+      "agreement": 0.8,
+      "grounds": [
+        {
+          "claim": "made-up keywords",
+          "quote": "Dodawanie na osi liczbowej",
+          "source": "set:set_khan_fx0002"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": {
+        "pl": ["oś liczbowa dodawanie", "skoki na osi"],
+        "en": ["number line addition", "jumps on a line"]
+      }
+    },
+    "mistake_classes": {
+      "agreement": 0.7,
+      "grounds": [
+        {
+          "claim": "made-up mistake class",
+          "quote": "Adding on a number line",
+          "source": "set:set_khan_fx0002"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": [
+        {
+          "id": "fixture-slip",
+          "pl": "Pomyłka w rachunku",
+          "en": "Slip in the sum",
+          "spot": "the answer is off by one"
+        }
+      ]
+    },
+    "prerequisites": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up: none",
+          "quote": "Adding on a number line",
+          "source": "set:set_khan_fx0002"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": []
+    },
+    "skill_ids": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up skill id",
+          "quote": "Adding on a number line",
+          "source": "set:set_khan_fx0002"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": ["fixture.add-on-number-line"]
+    },
+    "summary": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up summary",
+          "quote": "Adding on a number line",
+          "source": "set:set_khan_fx0002"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": {
+        "pl": "Zmyślony zestaw: dodawanie na osi liczbowej.",
+        "en": "A made-up set: adding on a number line."
+      }
+    },
+    "synthetic_needs": {
+      "agreement": 0.7,
+      "grounds": [
+        {
+          "claim": "made-up needs",
+          "quote": "Dodawanie na osi liczbowej",
+          "source": "set:set_khan_fx0002"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": [
+        {
+          "language": "pl",
+          "words": "oś liczbowa dodawanie"
+        },
+        {
+          "language": "en",
+          "words": "number line addition"
+        }
+      ]
+    }
+  },
+  "families": ["choose"],
+  "grade": "3",
+  "id": "set_khan_fx0002",
+  "items": {
+    "count": {
+      "pl": 9,
+      "en": 9,
+      "shared": 9
+    },
+    "ids": [
+      "fxb101",
+      "fxb102",
+      "fxb103",
+      "fxb201",
+      "fxb202",
+      "fxb301",
+      "fxb401",
+      "fxb402",
+      "fxb501"
+    ]
+  },
+  "languages": {
+    "pl": true,
+    "en": true
+  },
+  "problem_types": [
+    {
+      "name": "Count the jumps",
+      "samples": [
+        {
+          "item_id": "fxb101",
+          "pl": "Ile skoków od 120 do 150?",
+          "en": "How many jumps from 120 to 150?"
+        },
+        {
+          "item_id": "fxb102",
+          "pl": "Ile skoków od 300 do 340?",
+          "en": "How many jumps from 300 to 340?"
+        },
+        {
+          "item_id": "fxb103",
+          "pl": "Ile skoków od 410 do 470?",
+          "en": "How many jumps from 410 to 470?"
+        }
+      ],
+      "count": {
+        "pl": 4,
+        "en": 4
+      }
+    },
+    {
+      "name": "Read the point",
+      "samples": [
+        {
+          "item_id": "fxb201",
+          "pl": "Jaka liczba stoi przy kropce? 200, 210, ?",
+          "en": "Which number is at the dot? 200, 210, ?"
+        },
+        {
+          "item_id": "fxb202",
+          "pl": "Jaka liczba stoi przy kropce? 500, 525, ?",
+          "en": "Which number is at the dot? 500, 525, ?"
+        }
+      ],
+      "count": {
+        "pl": 3,
+        "en": 3
+      }
+    },
+    {
+      "name": "Pick the sum",
+      "samples": [
+        {
+          "item_id": "fxb301",
+          "pl": "Który zapis pasuje do skoków? 250 + 30 czy 250 + 3?",
+          "en": "Which sum fits the jumps? 250 + 30 or 250 + 3?"
+        }
+      ],
+      "count": {
+        "pl": 2,
+        "en": 2
+      }
+    },
+    {
+      "name": "Label the line",
+      "samples": [
+        {
+          "item_id": "fxb401",
+          "pl": "Podpisz oś: 100, 150, ?, 250",
+          "en": "Label the line: 100, 150, ?, 250"
+        },
+        {
+          "item_id": "fxb402",
+          "pl": "Podpisz oś: 600, 620, ?, 660",
+          "en": "Label the line: 600, 620, ?, 660"
+        }
+      ],
+      "count": {
+        "pl": 3,
+        "en": 3
+      }
+    }
+  ],
+  "question_types": ["recognition"],
+  "source": {
+    "credit": "z Khan Academy",
+    "exercise_id": "fx0002",
+    "licence": "CC BY-NC-SA 4.0",
+    "name": "khan",
+    "url": "https://fixture.invalid/jw/set_khan_fx0002"
+  },
+  "source_place": {
+    "ancestors": ["fxcourse", "fxunit"],
+    "course": "fixture-grade-3",
+    "lesson": "fixture-number-line",
+    "lesson_title": {
+      "pl": "Oś liczbowa",
+      "en": "Number line"
+    },
+    "order": 28,
+    "unit": "fixture-addition",
+    "unit_title": {
+      "pl": "Dodawanie",
+      "en": "Addition"
+    }
+  },
+  "subject": "math",
+  "titles": {
+    "pl": "Dodawanie na osi liczbowej",
+    "en": "Adding on a number line"
+  }
+}

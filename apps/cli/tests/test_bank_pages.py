@@ -43,7 +43,7 @@ def test_every_fixture_page_validates(path: Path) -> None:
 
 
 def test_show_reads_the_page(bank: Any) -> None:
-    assert bank_client.show_set("set_khan_2002")["titles"]["pl"] == "Dodawanie do 1000"
+    assert bank_client.show_set("set_khan_fx0001")["titles"]["pl"] == "Dodawanie pisemne do 1000"
 
 
 def test_show_refuses_a_missing_dir_a_bad_id_and_an_unknown_set(
@@ -55,7 +55,7 @@ def test_show_refuses_a_missing_dir_a_bad_id_and_an_unknown_set(
         bank_client.show_set("set_khan_nope")
     monkeypatch.delenv(JADWIGO_BANK_DIR)
     with pytest.raises(bank_client.BankDirNotConfigured):
-        bank_client.show_set("set_khan_2002")
+        bank_client.show_set("set_khan_fx0001")
 
 
 def test_show_refuses_a_page_that_breaks_the_schema(tmp_path: Path) -> None:
