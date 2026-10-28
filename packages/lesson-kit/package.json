@@ -1,6 +1,6 @@
 {
   "name": "@jadwigo/lesson-kit",
-  "description": "Interaction families and blocks for lessons",
+  "description": "The lesson stage, its parts and the interaction families that draw a question",
   "private": true,
   "type": "module",
   "exports": {
@@ -9,16 +9,50 @@
   "scripts": {
     "lint": "biome check .",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run --config ../../vitest.config.ts --project unit"
+    "test": "vitest run --config ../../vitest.config.ts --project unit --project dom"
   },
   "//": {
+    "@dnd-kit/core": "dragging in the drag parts (src/parts/SortableList.tsx and the Group and Sequence views)",
+    "@dnd-kit/sortable": "reordering a list by drag (src/parts/SortableList.tsx)",
+    "@dnd-kit/utilities": "the CSS transform a dragged item takes (src/parts/SortableList.tsx)",
+    "@jadwigo/contracts": "the family data, key, value, help and verdict types every view is typed with",
+    "@jadwigo/copy": "every line a child reads in a part or a view, in pl and en",
+    "@jadwigo/ui": "Zeszyt's primitives and cn() the parts are built from",
+    "@shadcn/react": "the unstyled Questionnaire under StepFrame and ChoiceList: one radio group, arrow keys and A-E shortcuts. Its peer is React 19; it runs on React 18 because it calls only React 18 hooks",
+    "@testing-library/dom": "@testing-library/react's required peer: the queries themselves",
+    "@testing-library/react": "renders a part or a family view in a *.test.tsx and queries it the way a person would",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
+    "@types/react": "types for src/**/*.tsx",
+    "@types/react-dom": "types for react-dom in the component tests",
+    "happy-dom": "the DOM the dom Vitest project runs *.test.tsx in",
+    "katex": "draws the TeX in question text (src/parts/RichText.tsx)",
+    "lucide-react": "the icons the parts draw: the status marks, the drag handle, the play clip, the credit link",
+    "react": "the stage, parts and family views in src/**/*.tsx",
+    "react-dom": "React's renderer, which @testing-library/react renders the components with",
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit test with the root vitest.config.ts"
   },
   "devDependencies": {
+    "@testing-library/dom": "catalog:",
+    "@testing-library/react": "catalog:",
     "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "happy-dom": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "catalog:",
+    "@dnd-kit/sortable": "catalog:",
+    "@dnd-kit/utilities": "catalog:",
+    "@jadwigo/contracts": "workspace:*",
+    "@jadwigo/copy": "workspace:*",
+    "@jadwigo/ui": "workspace:*",
+    "@shadcn/react": "catalog:",
+    "katex": "catalog:",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
   }
 }
