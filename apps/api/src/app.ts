@@ -4,10 +4,15 @@ import type { Store } from "@jadwigo/store";
 import { answer, getAttempt, startAttempt } from "./attempts.ts";
 import { ApiError, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
+import { type BankDeps, searchQuestions } from "./questions.ts";
 import { getResults, help, patchAttempt } from "./session.ts";
 
 type Params<N extends RouteName> = ReturnType<(typeof ROUTES)[N]["params"]["parse"]>;
-type Handle<N extends RouteName> = (params: Params<N>, body: unknown) => Promise<unknown>;
+type Handle<N extends RouteName> = (
+  params: Params<N>,
+  body: unknown,
+  headers: Headers,
+) => Promise<unknown>;
 
 /**
  * The `/api/v1` routes on the Powertools router, each registered from `ROUTES` (RULES.md rule
@@ -15,7 +20,7 @@ type Handle<N extends RouteName> = (params: Params<N>, body: unknown) => Promise
  * reply is parsed with the route's response schema, which drops anything the schema does not name.
  * A refusal is `{error: {type, message}}` with the status `ERROR_STATUS` gives it.
  */
-export function createApp(store: Store): Router {
+export function createApp(store: Store, bank?: BankDeps): Router {
   const app = new Router();
 
   const on = <N extends RouteName>(name: N, handle: Handle<N>): void => {
@@ -28,7 +33,7 @@ export function createApp(store: Store): Router {
         // An id that does not parse names no record.
         if (!parsed.success) throw new ApiError(ErrorType.enum.NotFound, "no such record");
         const body = route.body === null ? undefined : await bodyOf(req);
-        const reply = await handle(parsed.data as Params<N>, body);
+        const reply = await handle(parsed.data as Params<N>, body, req.headers);
         return json(route.status, route.response.parse(reply));
       } catch (error) {
         const refused = refusal(error);
@@ -49,6 +54,7 @@ export function createApp(store: Store): Router {
   on("help", (params, body) => help(store, params.id, params.seq, body));
   on("patchAttempt", (params, body) => patchAttempt(store, params.id, body));
   on("getResults", (params) => getResults(store, params.id));
+  on("questionSearches", (_, body, headers) => searchQuestions(bank, headers, body));
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;

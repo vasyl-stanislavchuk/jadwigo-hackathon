@@ -16,6 +16,7 @@
   },
   "//": {
     "@aws-lambda-powertools/event-handler": "the router the /api/v1 routes register on (dl-e8ov.2.32.6)",
+    "@aws-sdk/client-lambda": "invokes the bank Lambda's live alias for POST /api/v1/question-searches in src/questions.ts (dl-n9fr.33)",
     "@aws-sdk/client-ssm": "reads the SecureString with DATABASE_URL once per cold start in src/config.ts (dl-5ssh.25)",
     "@jadwigo/contracts": "the route table, the wire schemas, the error types and pageEnded",
     "@jadwigo/core": "the family judges and the help ladder the answer and help routes run",
@@ -35,6 +36,7 @@
   },
   "dependencies": {
     "@aws-lambda-powertools/event-handler": "2.36.0",
+    "@aws-sdk/client-lambda": "3.1154.0",
     "@aws-sdk/client-ssm": "3.1154.0",
     "@jadwigo/contracts": "workspace:*",
     "@jadwigo/core": "workspace:*",
