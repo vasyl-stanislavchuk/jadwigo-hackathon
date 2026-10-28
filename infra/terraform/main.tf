@@ -28,9 +28,8 @@ module "app" {
   environment = var.environment
   bucket_name = "jadwigo-app-${var.environment}-843109108289"
 
-  # ROUTES in packages/contracts/src/routes.ts whose auth is "none", as "<METHOD> <path>".
-  # tools/src/check-infra-routes.ts (make check, CI's lint job) fails when routes and token_routes
-  # together differ from ROUTES, or token_routes differs from the entries whose auth is "token".
+  # ROUTES in packages/contracts/src/routes.ts, as "<METHOD> <path>". tools/src/check-infra-routes.ts
+  # (make check, CI's lint job) fails when the two differ.
   routes = [
     "GET /api/health",
     "GET /api/v1/featured-lessons",
@@ -49,7 +48,8 @@ module "app" {
     "GET /api/v1/learners/{id}/attempts",
   ]
 
-  # ROUTES entries whose auth is "token" (dl-e8ov.2.36): only these carry the JWT authorizer.
+  # The routes above whose ROUTES auth is "token": only these carry the JWT authorizer
+  # (dl-e8ov.2.42). tools/src/check-infra-routes.ts fails when the two lists differ.
   token_routes = [
     "GET /api/v1/me",
     "POST /api/v1/accounts",

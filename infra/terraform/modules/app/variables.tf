@@ -25,14 +25,19 @@ variable "log_retention_days" {
 }
 
 variable "routes" {
-  description = "The login-free route keys, ROUTES entries whose auth is none (packages/contracts/src/routes.ts). $default catches the rest"
+  description = "Every route key the HTTP API serves, from ROUTES in packages/contracts/src/routes.ts. $default catches the rest"
   type        = list(string)
 }
 
 variable "token_routes" {
-  description = "The route keys a signed-in adult calls, ROUTES entries whose auth is token: the JWT authorizer guards these and no others"
+  description = "The keys in routes whose ROUTES auth is token: the JWT authorizer guards these and no others"
   type        = list(string)
   default     = []
+
+  validation {
+    condition     = alltrue([for k in var.token_routes : contains(var.routes, k)])
+    error_message = "Every token_routes key is also in routes."
+  }
 }
 
 variable "jwt_issuer" {

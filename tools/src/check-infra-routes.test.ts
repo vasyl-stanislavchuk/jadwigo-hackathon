@@ -46,18 +46,14 @@ describe("check-infra-routes", () => {
   });
 
   it("fails on a token route routed without the authorizer", () => {
-    const open = terraform
-      .replace('    "GET /api/v1/me",\n', "")
-      .replace('"GET /api/health",', '"GET /api/health",\n    "GET /api/v1/me",');
+    const open = terraform.replace(/(token_routes = \[[^\]]*?)\n {4}"GET \/api\/v1\/me",/, "$1");
     expect(compareRoutes(contracts, open)).toEqual([
       `"GET /api/v1/me" has auth "token" in ROUTES but is not in token_routes in ${TF}`,
     ]);
   });
 
   it("fails on a login-free route behind the authorizer", () => {
-    const shut = terraform
-      .replace('    "GET /api/health",\n', "")
-      .replace("token_routes = [", 'token_routes = [\n    "GET /api/health",');
+    const shut = terraform.replace("token_routes = [", 'token_routes = [\n    "GET /api/health",');
     expect(compareRoutes(contracts, shut)).toEqual([
       `"GET /api/health" is in token_routes in ${TF} but has auth "none" in ROUTES`,
     ]);

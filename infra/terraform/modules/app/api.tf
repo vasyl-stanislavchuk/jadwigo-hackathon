@@ -4,8 +4,7 @@
 locals {
   name          = "jadwigo-api-${var.environment}"
   health        = "GET /api/health"
-  all_routes    = concat(var.routes, var.token_routes, ["$default"])
-  throttled     = setsubtract(local.all_routes, [local.health])
+  throttled     = setsubtract(concat(var.routes, ["$default"]), [local.health])
   db_url_param  = "/jadwigo/${var.environment}/database-url"
   log_retention = var.log_retention_days
 }
@@ -138,7 +137,7 @@ resource "aws_apigatewayv2_authorizer" "supabase" {
 # One route per ROUTES entry, so each carries its own throttle; $default sends the rest to the
 # router, which answers NotFound. Only the token routes carry the authorizer.
 resource "aws_apigatewayv2_route" "api" {
-  for_each = toset(local.all_routes)
+  for_each = toset(concat(var.routes, ["$default"]))
 
   api_id             = aws_apigatewayv2_api.api.id
   route_key          = each.key
