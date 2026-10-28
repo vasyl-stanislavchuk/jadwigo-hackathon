@@ -28,10 +28,11 @@ describe("round trips per request on PostgresStore", () => {
   it("is one transaction each, the published version read once per process", async () => {
     const s = seeded(store);
     const assignment = await s.assign("equalGroups");
+    // A 1st start reads the version the assignment plays, which may be a newer one than the
+    // import returned when another file imports the same lesson at once; the 2nd is counted.
+    await start(s, assignment);
     const started = await counted(() => start(s, assignment));
     const { id } = started.reply;
-    // A 2nd read, with the version already read once in this process.
-    await s.call("GET", pathOf("getAttempt", { id }));
     const read = await counted(() => s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id })));
     const first = read.reply.body.questions[0];
     if (first === undefined) throw new Error("no first question");
