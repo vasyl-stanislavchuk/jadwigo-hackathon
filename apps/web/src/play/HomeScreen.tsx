@@ -4,14 +4,29 @@
  * query (?lang) rides along on each link.
  */
 
-import { type AttemptClient, createClient } from "@jadwigo/api-client";
+import { createClient, type FeaturedClient } from "@jadwigo/api-client";
 import type { FeaturedLesson } from "@jadwigo/contracts";
 import { copy, type Language } from "@jadwigo/copy";
+import { LessonTheme } from "@jadwigo/lesson-kit";
 import { Button, Spinner } from "@jadwigo/ui";
-import { type ReactElement, useEffect, useMemo, useState } from "react";
+import { type ReactElement, type ReactNode, useEffect, useMemo, useState } from "react";
 import { NavLink } from "../playground/shell/NavLink.tsx";
-import { KidPage, Message } from "./PlayScreen.tsx";
 import { playPath } from "./route.ts";
+
+/** The kid page the player draws too (PlayScreen.tsx), kept apart from the player's own files. */
+function KidPage({ children }: { children: ReactNode }): ReactElement {
+  return (
+    <main className="kid-page" data-learner-view data-play>
+      <LessonTheme>{children}</LessonTheme>
+    </main>
+  );
+}
+
+function Message({ children }: { children: ReactNode }): ReactElement {
+  return (
+    <div className="mx-auto flex max-w-2xl flex-col items-start gap-6 p-6 text-2xl">{children}</div>
+  );
+}
 
 type Home = { kind: "loading" } | { kind: "ready"; lessons: FeaturedLesson[] } | { kind: "failed" };
 
@@ -24,7 +39,7 @@ export function HomeScreen({
   /** The page's query, carried onto each lesson's link. */
   query: URLSearchParams;
   /** The API, for tests; the page's own origin when absent. */
-  client?: AttemptClient;
+  client?: FeaturedClient;
 }): ReactElement {
   const api = useMemo(() => client ?? createClient({ base: "" }), [client]);
   const [home, setHome] = useState<Home>({ kind: "loading" });

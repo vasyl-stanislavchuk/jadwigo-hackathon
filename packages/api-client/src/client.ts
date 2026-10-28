@@ -55,8 +55,6 @@ export interface ClientOptions {
 }
 
 export interface AttemptClient {
-  /** The lessons anyone may play now, oldest first. */
-  featuredLessons(): Promise<Featured>;
   startAttempt(assignmentId: AssignmentId, body?: AttemptStart): Promise<AttemptSnapshot>;
   getAttempt(attemptId: AttemptId): Promise<AttemptSnapshot>;
   answer(attemptId: AttemptId, body: AttemptAnswerRequest): Promise<AttemptAnswerResult>;
@@ -64,6 +62,14 @@ export interface AttemptClient {
   patchAttempt(attemptId: AttemptId, body: AttemptPatch): Promise<AttemptSnapshot>;
   getResults(attemptId: AttemptId): Promise<AttemptResults>;
 }
+
+/** The home page's call: the lessons anyone may play now, oldest first. */
+export interface FeaturedClient {
+  featuredLessons(): Promise<Featured>;
+}
+
+/** Every `/api/v1` call this client makes. */
+export type Client = AttemptClient & FeaturedClient;
 
 /** A route's path with its `{name}` params filled in. */
 export function pathOf(route: Route, params: Record<string, string | number>): string {
@@ -74,10 +80,7 @@ export function pathOf(route: Route, params: Record<string, string | number>): s
   });
 }
 
-export function createClient({
-  base,
-  fetch: send = globalThis.fetch,
-}: ClientOptions): AttemptClient {
+export function createClient({ base, fetch: send = globalThis.fetch }: ClientOptions): Client {
   async function call<R extends Route>(
     route: R,
     params: Record<string, string | number>,

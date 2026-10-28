@@ -4,7 +4,7 @@
  * not load when the call fails.
  */
 
-import type { AttemptClient } from "@jadwigo/api-client";
+import type { FeaturedClient } from "@jadwigo/api-client";
 import { AssignmentId, type FeaturedLesson, LessonId } from "@jadwigo/contracts";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -25,21 +25,9 @@ const LESSONS: FeaturedLesson[] = [
   },
 ];
 
-const refused = (): never => {
-  throw new Error("not called in this test");
-};
-
-function client(featuredLessons: AttemptClient["featuredLessons"]): AttemptClient {
-  return {
-    featuredLessons,
-    startAttempt: refused,
-    getAttempt: refused,
-    answer: refused,
-    help: refused,
-    patchAttempt: refused,
-    getResults: refused,
-  };
-}
+const client = (featuredLessons: FeaturedClient["featuredLessons"]): FeaturedClient => ({
+  featuredLessons,
+});
 
 afterEach(cleanup);
 

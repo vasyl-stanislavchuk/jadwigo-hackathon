@@ -74,7 +74,6 @@ const refused = (): never => {
 
 function client(changes: Partial<AttemptClient>): AttemptClient {
   return {
-    featuredLessons: refused,
     startAttempt: refused,
     getAttempt: refused,
     answer: refused,
