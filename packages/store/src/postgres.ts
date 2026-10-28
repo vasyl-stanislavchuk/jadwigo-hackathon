@@ -1436,12 +1436,19 @@ class PostgresStore implements Store {
           ? []
           : await tx
               .insertInto("goal")
-              .values(names.map((name) => ({ pod_id: podId, learner_id: row.id, name })))
+              // clock_timestamp() rises row by row, so "oldest first" is the order given.
+              .values(
+                names.map((name) => ({
+                  pod_id: podId,
+                  learner_id: row.id,
+                  name,
+                  created_at: sql<Date>`clock_timestamp()`,
+                })),
+              )
               .returningAll()
               .execute();
       return {
         learner: read(Learner, row, ID_PREFIXES.learner),
-        // Inserted in order in one statement, so created_at ties and the order given stands.
         goals: goals.map((g) => read(Goal, g, ID_PREFIXES.goal)),
       };
     });
