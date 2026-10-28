@@ -93,6 +93,10 @@
     },
     "packages/bank": {
       "name": "@jadwigo/bank",
+      "dependencies": {
+        "@jadwigo/api-client": "workspace:*",
+        "@jadwigo/contracts": "workspace:*",
+      },
       "devDependencies": {
         "@types/node": "catalog:",
         "typescript": "catalog:",
