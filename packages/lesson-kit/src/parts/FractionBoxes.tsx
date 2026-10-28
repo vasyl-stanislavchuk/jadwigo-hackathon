@@ -10,7 +10,7 @@ import { cn } from "@jadwigo/ui";
 import type { Clock, Instant } from "../stage/clock.ts";
 import { type PressModality, press } from "../stage/press.ts";
 import { boxesOf, type FractionBox } from "./fractionEntry.ts";
-import { SELECTION, TONE_CLASS, type Tone } from "./tone.ts";
+import { EMPTY_FIELD, SELECTION, TONE_CLASS, type Tone } from "./tone.ts";
 
 /** A box (Enter addendum 3.4): 64 × 64 at least, r16, a 2 px edge, padding 0 8, its digits bold and
  * centred at the maths size the caller sets (36 / 30, 2.6), with the typed field's own looks: the
@@ -88,7 +88,7 @@ export function FractionBoxes({
         onClick={h.onClick}
         onFocus={() => onPick(box, clock.now(), "keyboard")}
       >
-        {selected === box && b[box] ? <span {...SELECTION}>{b[box]}</span> : b[box] || " "}
+        {selected === box && b[box] ? <span {...SELECTION}>{b[box]}</span> : b[box] || EMPTY_FIELD}
       </button>
     );
   };
