@@ -14,9 +14,6 @@
     "packages/lesson-import": {
       "ignoreDependencies": ["@jadwigo/contracts", "@jadwigo/store"]
     },
-    "packages/store": {
-      "ignoreDependencies": ["kysely"]
-    },
     "apps/web": {
       "entry": ["vite.config.ts", "playwright.config.ts", "e2e/**/*.spec.ts"],
       "project": ["src/**/*.{ts,tsx}", "e2e/**/*.ts", "*.config.ts"],
