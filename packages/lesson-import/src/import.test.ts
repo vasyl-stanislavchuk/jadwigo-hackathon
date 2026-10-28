@@ -16,6 +16,20 @@ function file(id: string): Record<string, unknown> {
   return structuredClone(found) as Record<string, unknown>;
 }
 
+type Step = Record<string, unknown> & {
+  say?: unknown;
+  skill_ids?: string[];
+  question_type?: string;
+};
+
+/** A step of a lesson file by its id. */
+function step(raw: Record<string, unknown>, id: string): Step {
+  const parts = (raw as { script: { parts: { steps: Step[] }[] } }).script.parts;
+  const found = parts.flatMap((p) => p.steps).find((s) => s["id"] === id);
+  if (found === undefined) throw new Error(`no step ${id}`);
+  return found;
+}
+
 function keysIn(value: unknown): string[] {
   if (Array.isArray(value)) return value.flatMap(keysIn);
   if (value !== null && typeof value === "object") {
@@ -52,7 +66,7 @@ describe("compiling a lesson file", () => {
     }
     expect(JSON.stringify(compiled)).not.toMatch(/"uk"|"en":/);
     const steps = compiled.questions.filter((q) => q.role === "planned").map((q) => q.step_id);
-    expect(steps).toEqual(["s02", "s04", "s05", "s06", "s07"]);
+    expect(steps).toEqual(["s02", "s05", "s06", "s07"]);
   });
 
   it("turns each help twin into a spare after the planned questions, with twin_of", () => {
@@ -68,14 +82,20 @@ describe("compiling a lesson file", () => {
     expect(twin?.based_on).toBeNull();
   });
 
-  it("carries the credit with its licence on a question based on a Khan item", () => {
-    const compiled = compileLessonFile(file("equal-groups"));
-    const khan = compiled.questions.find((q) => q.question.based_on?.question.startsWith("khan:"));
-    expect(khan?.question.credit).toMatchObject({
-      source: "khan",
-      ref: "x0b8fd6566e82aec2",
-      licence: "cc-by-nc-sa-4.0",
-    });
+  it("carries a step's credit, with its licence, onto its question", () => {
+    const raw = file("equal-groups");
+    const credit = {
+      source: "jadwigo",
+      ref: "equal-groups-s05",
+      licence: "cc-by-4.0",
+      original_lang: "pl",
+      checked: "2026-10-28",
+    };
+    step(raw, "s05")["credit"] = credit;
+    const compiled = compileLessonFile(raw);
+    const byStep = new Map(compiled.questions.map((q) => [q.step_id, q.question]));
+    expect(byStep.get("s05")?.credit).toEqual(credit);
+    expect(byStep.get("s02")?.credit).toBeNull();
   });
 
   it("gives the lesson the union of its questions' skill ids, in the contract's form", () => {
@@ -86,13 +106,9 @@ describe("compiling a lesson file", () => {
   });
 
   it("refuses 2 playground skill ids that become one", () => {
-    const raw = file("equal-groups") as {
-      script: { parts: { steps: { skill_ids: string[] }[] }[] };
-    };
-    const [s02, s04] = [raw.script.parts[0]?.steps[1], raw.script.parts[1]?.steps[1]];
-    if (s02 === undefined || s04 === undefined) throw new Error("equal-groups has no s02 or s04");
-    s02.skill_ids = ["draft.ortografia.l-ł"];
-    s04.skill_ids = ["draft.ortografia.l-l"];
+    const raw = file("equal-groups");
+    step(raw, "s02").skill_ids = ["draft.ortografia.l-ł"];
+    step(raw, "s05").skill_ids = ["draft.ortografia.l-l"];
     expect(() => compileLessonFile(raw)).toThrow(
       /draft\.ortografia\.l-ł and draft\.ortografia\.l-l both become draft\.ortografia\.l-l/,
     );
@@ -155,8 +171,8 @@ describe("importing a lesson file", () => {
     const { version, questions } = await store.getLessonVersion(pod, result.version.id);
     expect(version.published_at).toBe(FIXED_NOW.toISOString());
     expect(questions.map((q) => q.role)).toEqual([
-      ...Array(5).fill("planned"),
-      ...Array(5).fill("spare"),
+      ...Array(4).fill("planned"),
+      ...Array(4).fill("spare"),
     ]);
     expect((await store.getAssignment(pod, result.assignment.id)).lesson_id).toBe(result.lesson.id);
   });
@@ -175,6 +191,16 @@ describe("importing a lesson file", () => {
     expect(again.published).toBe(false);
     expect(again.version).toEqual(first.version);
     expect(again.assignment).toEqual(first.assignment);
+  });
+
+  it("keeps the stored lesson row when a re-import changes only the lesson's own fields", async () => {
+    const store = newStore();
+    const first = await importLessonFile(store, file("equal-groups"));
+    const retitled = file("equal-groups");
+    retitled["title"] = "Grupy po równo, nowy tytuł";
+    const again = await importLessonFile(store, retitled);
+    expect(again.lesson).toMatchObject({ id: first.lesson.id, title: first.lesson.title });
+    expect(again.published).toBe(false);
   });
 
   it("publishes version 2 when a question changed, revising version 1", async () => {

@@ -1173,7 +1173,7 @@
             "question": {
               "family": "choose",
               "data": {
-                "line": "Ola {pick} w zeszycie dom i drzewo.",
+                "line": "Kasia {pick} w zeszycie dom i drzewo.",
                 "options": [
                   {
                     "id": "c1",
@@ -1223,8 +1223,14 @@
                     }
                   }
                 },
-                "almost": ["Końcówka -uje: maluje, buduje.", "Ola rys□je w zeszycie dom i drzewo."],
-                "worked": ["Końcówka -uje: maluje, buduje.", "Ola rysuje w zeszycie dom i drzewo."],
+                "almost": [
+                  "Końcówka -uje: maluje, buduje.",
+                  "Kasia rys□je w zeszycie dom i drzewo."
+                ],
+                "worked": [
+                  "Końcówka -uje: maluje, buduje.",
+                  "Kasia rysuje w zeszycie dom i drzewo."
+                ],
                 "twin": {
                   "say": {
                     "pl": "Wybierz słowo, które pasuje do zdania.",

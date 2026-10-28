@@ -10,9 +10,9 @@
   "category": "child",
   "subject": "math",
   "reasoning": {
-    "pl": "Lekcja do tematów pokrewnych celu „podstawy mnożenia”: pieniądze, zegar, dzielenie po równo, mierzenie i wykres, każdy tam, gdzie spotyka tabliczkę razy pięć. Jedna nić: piątki są wszędzie. Monety po 5 zł, pięć minut między liczbami na zegarze, czekolada dla pięciu osób, wstążka 5 cm i wykres, w którym jeden obrazek to 5. Ułożona ręcznie z pytań banku tabliczki mnożenia i Khan Academy, na plac zabaw, jeszcze nie z zapisu ucznia.",
-    "uk": "Урок до суміжних тем мети «основи множення»: гроші, годинник, ділення порівну, вимірювання і діаграма, кожна там, де зустрічається з таблицею множення на пʼять. Одна нитка: пʼятірки всюди. Монети по 5 zł, пʼять хвилин між числами на годиннику, шоколадка на пʼятьох, стрічка 5 см і діаграма, де один малюнок це 5. Складений вручну з питань банку таблиці множення і Khan Academy, для пісочниці, ще не з записів учня.",
-    "en": "A lesson for the related topics of the basic-multiplication goal: money, the clock, equal shares, measuring and a graph, each where it meets the five times table. One thread: fives are everywhere. 5 zł coins, five minutes between the numbers on a clock, a chocolate bar for five people, a 5 cm ribbon and a graph where one picture is 5. Composed by hand from the times-table bank and Khan Academy questions, for the playground, not yet from a learner’s record."
+    "pl": "Lekcja do tematów pokrewnych celu „podstawy mnożenia”: pieniądze, zegar, dzielenie po równo, mierzenie i wykres, każdy tam, gdzie spotyka tabliczkę razy pięć. Jedna nić: piątki są wszędzie. Monety po 5 zł, pięć minut między liczbami na zegarze, czekolada dla pięciu osób, wstążka 5 cm i wykres, w którym jeden obrazek to 5.",
+    "uk": "Урок до суміжних тем мети «основи множення»: гроші, годинник, ділення порівну, вимірювання і діаграма, кожна там, де зустрічається з таблицею множення на пʼять. Одна нитка: пʼятірки всюди. Монети по 5 zł, пʼять хвилин між числами на годиннику, шоколадка на пʼятьох, стрічка 5 см і діаграма, де один малюнок це 5.",
+    "en": "A lesson for the related topics of the basic-multiplication goal: money, the clock, equal shares, measuring and a graph, each where it meets the five times table. One thread: fives are everywhere. 5 zł coins, five minutes between the numbers on a clock, a chocolate bar for five people, a 5 cm ribbon and a graph where one picture is 5."
   },
   "can_do": [
     {
@@ -271,527 +271,12 @@
                 }
               }
             ]
-          },
-          {
-            "id": "s03",
-            "question_type": "recognition",
-            "skill_ids": ["curriculum/math/multiplication/row-5"],
-            "based_on": {
-              "question": "khan:xcea2f0030f757c7d",
-              "changes": [
-                {
-                  "change": "context",
-                  "why": {
-                    "pl": "Dwa wpisywane okienka („8 fives” i „8 × 5”) zamienione na wybór jednej z czterech liczb.",
-                    "uk": "Два віконця для запису («8 fives» і «8 × 5») замінено на вибір одного з чотирьох чисел.",
-                    "en": "The two typed gaps (“8 fives” and “8 × 5”) become one pick from four numbers."
-                  },
-                  "reviewed": false
-                }
-              ]
-            },
-            "reason": {
-              "brief": "review",
-              "why": {
-                "pl": "Osiem piątek: ten fakt wróci na zegarze, gdy długa wskazówka stanie na 8.",
-                "uk": "Вісім пʼятірок: цей факт повернеться на годиннику, коли довга стрілка стане на 8.",
-                "en": "Eight fives: this fact comes back on the clock, when the long hand stands on 8."
-              }
-            },
-            "say": {
-              "pl": "Ile to jest osiem piątek? Wybierz liczbę.",
-              "uk": "Скільки це вісім пʼятірок? Вибери число.",
-              "en": "How much is eight fives? Pick the number."
-            },
-            "question": {
-              "family": "choose",
-              "data": {
-                "stem": {
-                  "text": {
-                    "pl": "8 piątek",
-                    "uk": "8 пʼятірок",
-                    "en": "8 fives"
-                  }
-                },
-                "options": [
-                  {
-                    "id": "o1",
-                    "content": {
-                      "kind": "number",
-                      "number": 13
-                    }
-                  },
-                  {
-                    "id": "o2",
-                    "content": {
-                      "kind": "number",
-                      "number": 35
-                    }
-                  },
-                  {
-                    "id": "o3",
-                    "content": {
-                      "kind": "number",
-                      "number": 40
-                    }
-                  },
-                  {
-                    "id": "o4",
-                    "content": {
-                      "kind": "number",
-                      "number": 45
-                    }
-                  }
-                ],
-                "select": "one",
-                "layout": "grid"
-              },
-              "key": {
-                "correct": ["o3"],
-                "near": {
-                  "o1": "add_for_multiply",
-                  "o2": "neighbour_row",
-                  "o4": "neighbour_row"
-                }
-              },
-              "help": {
-                "look": {
-                  "text": {
-                    "pl": "Spójrz na wszystkie liczby, zanim wybierzesz.",
-                    "uk": "Подивися на всі числа, перш ніж вибрати.",
-                    "en": "Look at all the numbers before you choose."
-                  }
-                },
-                "boost": {
-                  "text": {
-                    "pl": "Piątka to 5. Osiem piątek to 8 razy po 5.",
-                    "uk": "Пʼятірка це 5. Вісім пʼятірок це 8 разів по 5.",
-                    "en": "A five is 5. Eight fives is 8 lots of 5."
-                  }
-                },
-                "boost_by_mistake": {
-                  "add_for_multiply": {
-                    "text": {
-                      "pl": "Tu jest „razy”, a nie „dodać”. 8 × 5 to 8 razy po 5.",
-                      "uk": "Тут «помножити», а не «додати». 8 × 5 це 8 разів по 5.",
-                      "en": "This is “times”, not “plus”. 8 × 5 is 8 lots of 5."
-                    }
-                  },
-                  "neighbour_row": {
-                    "text": {
-                      "pl": "Ta liczba jest w tabliczce o jeden krok obok. Policz jeszcze raz, ile jest grup.",
-                      "uk": "Це число в таблиці на один крок поруч. Порахуй ще раз, скільки груп.",
-                      "en": "That number is one step away in the times table. Count again how many groups there are."
-                    }
-                  }
-                },
-                "almost": [
-                  {
-                    "pl": "8 × 5 to połowa z 8 × 10.",
-                    "uk": "8 × 5 це половина від 8 × 10.",
-                    "en": "8 × 5 is half of 8 × 10."
-                  },
-                  "8 × 10 = 80",
-                  {
-                    "pl": "Połowa z 80 to □.",
-                    "uk": "Половина від 80 це □.",
-                    "en": "Half of 80 is □."
-                  }
-                ],
-                "worked": [
-                  {
-                    "pl": "8 × 5 to połowa z 8 × 10.",
-                    "uk": "8 × 5 це половина від 8 × 10.",
-                    "en": "8 × 5 is half of 8 × 10."
-                  },
-                  "8 × 10 = 80",
-                  {
-                    "pl": "Połowa z 80 to 40.",
-                    "uk": "Половина від 80 це 40.",
-                    "en": "Half of 80 is 40."
-                  }
-                ],
-                "twin": {
-                  "say": {
-                    "pl": "Ile to jest siedem piątek? Wybierz liczbę.",
-                    "uk": "Скільки це сім пʼятірок? Вибери число.",
-                    "en": "How much is seven fives? Pick the number."
-                  },
-                  "family": "choose",
-                  "data": {
-                    "stem": {
-                      "text": {
-                        "pl": "7 piątek",
-                        "uk": "7 пʼятірок",
-                        "en": "7 fives"
-                      }
-                    },
-                    "options": [
-                      {
-                        "id": "o1",
-                        "content": {
-                          "kind": "number",
-                          "number": 12
-                        }
-                      },
-                      {
-                        "id": "o2",
-                        "content": {
-                          "kind": "number",
-                          "number": 30
-                        }
-                      },
-                      {
-                        "id": "o3",
-                        "content": {
-                          "kind": "number",
-                          "number": 35
-                        }
-                      },
-                      {
-                        "id": "o4",
-                        "content": {
-                          "kind": "number",
-                          "number": 40
-                        }
-                      }
-                    ],
-                    "select": "one",
-                    "layout": "grid"
-                  },
-                  "key": {
-                    "correct": ["o3"],
-                    "near": {
-                      "o1": "add_for_multiply",
-                      "o2": "neighbour_row",
-                      "o4": "neighbour_row"
-                    }
-                  }
-                }
-              }
-            },
-            "scenarios": [
-              {
-                "try": {
-                  "pl": "Dotknij 40",
-                  "uk": "Торкнися 40",
-                  "en": "Tap 40"
-                },
-                "outcome": "correct",
-                "mistake_class": null,
-                "shows": {
-                  "pl": "pochwała, potem dalej",
-                  "uk": "похвала, потім далі",
-                  "en": "praise, then on"
-                },
-                "value": {
-                  "chosen": ["o3"]
-                }
-              },
-              {
-                "try": {
-                  "pl": "Dotknij 13 (dodane zamiast pomnożonych)",
-                  "uk": "Торкнися 13 (додано замість множення)",
-                  "en": "Tap 13 (added, not multiplied)"
-                },
-                "outcome": "incorrect",
-                "mistake_class": "add_for_multiply",
-                "shows": {
-                  "pl": "zostaje na kroku, wskazówka",
-                  "uk": "лишається на кроці, підказка",
-                  "en": "stays on the step, a hint"
-                },
-                "value": {
-                  "chosen": ["o1"]
-                }
-              },
-              {
-                "try": {
-                  "pl": "Dotknij 45 (o jedną piątkę za dużo)",
-                  "uk": "Торкнися 45 (на одну пʼятірку більше)",
-                  "en": "Tap 45 (one five too many)"
-                },
-                "outcome": "incorrect",
-                "mistake_class": "neighbour_row",
-                "shows": {
-                  "pl": "zostaje na kroku, wskazówka",
-                  "uk": "лишається на кроці, підказка",
-                  "en": "stays on the step, a hint"
-                },
-                "value": {
-                  "chosen": ["o4"]
-                }
-              }
-            ],
-            "credit": {
-              "checked": "2026-10-18",
-              "original_lang": "en",
-              "ref": "xcea2f0030f757c7d",
-              "source": "khan",
-              "url": "https://www.khanacademy.org/math/cc-third-grade-math/intro-to-multiplication/multiply-with-groups-of-objects/e/multiply-using-groups-of-objects",
-              "licence": "cc-by-nc-sa-4.0"
-            }
           }
         ]
       },
       {
         "part": "teach",
         "steps": [
-          {
-            "id": "s04",
-            "question_type": "money_count",
-            "skill_ids": [
-              "curriculum/math/money/count-and-pay",
-              "curriculum/math/multiplication/row-5"
-            ],
-            "based_on": {
-              "question": "khan:x1527f2b718830010",
-              "changes": [
-                {
-                  "change": "context",
-                  "why": {
-                    "pl": "Suma „5 + 5 + 5 + 5 + 5 + 5” narysowana jako sześć monet po 5 zł w portfelu, wpisana w złotych i groszach.",
-                    "uk": "Суму «5 + 5 + 5 + 5 + 5 + 5» намальовано як шість монет по 5 zł у гаманці, записано в злотих і грошах.",
-                    "en": "The sum “5 + 5 + 5 + 5 + 5 + 5” drawn as six 5 zł coins in a purse, written in złoty and grosze."
-                  },
-                  "reviewed": false
-                }
-              ]
-            },
-            "reason": {
-              "brief": "new",
-              "why": {
-                "pl": "Piątki na przedmiotach: monety po 5 zł to równe grupy, które liczy się piątkami (konkret w sekwencji CRA). Ten sam fakt co na rozgrzewce.",
-                "uk": "Пʼятірки на предметах: монети по 5 zł це рівні групи, які рахують пʼятірками (конкретне в послідовності CRA). Той самий факт, що на розминці.",
-                "en": "Fives on objects: 5 zł coins are equal groups you count in fives (concrete, in the CRA sequence). The same fact as in the warm-up."
-              }
-            },
-            "say": {
-              "pl": "Ile pieniędzy jest w portfelu? Wpisz złote i grosze.",
-              "uk": "Скільки грошей у гаманці? Впиши злоті й гроші.",
-              "en": "How much money is in the purse? Write the złoty and the grosze."
-            },
-            "question": {
-              "family": "slots",
-              "data": {
-                "figure": {
-                  "kind": "coins",
-                  "items": ["zl5", "zl5", "zl5", "zl5", "zl5", "zl5"],
-                  "alt": {
-                    "pl": "Portfel: sześć monet po 5 zł.",
-                    "uk": "Гаманець: шість монет по 5 zł.",
-                    "en": "A purse: six 5 zł coins."
-                  }
-                },
-                "template": {
-                  "pl": "{zl} zł {gr} gr",
-                  "uk": "{zl} zł {gr} gr",
-                  "en": "{zl} zł {gr} gr"
-                },
-                "gaps": [
-                  {
-                    "id": "zl",
-                    "kind": "enter",
-                    "input": "number"
-                  },
-                  {
-                    "id": "gr",
-                    "kind": "enter",
-                    "input": "number",
-                    "max_length": 2,
-                    "range": [0, 99]
-                  }
-                ]
-              },
-              "key": {
-                "gaps": {
-                  "zl": {
-                    "kind": "enter",
-                    "accept": ["30"],
-                    "near": {
-                      "6": "counted_coins_not_value"
-                    }
-                  },
-                  "gr": {
-                    "kind": "enter",
-                    "accept": ["0"],
-                    "near": {
-                      "6": "counted_coins_not_value"
-                    }
-                  }
-                }
-              },
-              "help": {
-                "look": {
-                  "text": {
-                    "pl": "Na każdej monecie jest napisane, ile jest warta. Tu wszystkie są takie same.",
-                    "uk": "На кожній монеті написано, скільки вона варта. Тут усі однакові.",
-                    "en": "Each coin says what it is worth. Here they are all the same."
-                  },
-                  "focus": ["zl"]
-                },
-                "boost": {
-                  "text": {
-                    "pl": "Każda moneta to 5 zł. Policz piątkami, raz za każdą monetę. Monet z groszami tu nie ma.",
-                    "uk": "Кожна монета це 5 zł. Порахуй пʼятірками, один раз за кожну монету. Монет із грошами тут немає.",
-                    "en": "Each coin is 5 zł. Count in fives, once for each coin. There are no grosze coins here."
-                  }
-                },
-                "boost_by_mistake": {
-                  "counted_coins_not_value": {
-                    "text": {
-                      "pl": "To jest liczba monet. Pieniądze liczymy po wartości: każda moneta jest warta 5 zł.",
-                      "uk": "Це кількість монет. Гроші рахуємо за вартістю: кожна монета варта 5 zł.",
-                      "en": "That is how many coins there are. Money counts by value: each coin is worth 5 zł."
-                    }
-                  }
-                },
-                "almost": [
-                  "6 × 5 zł = □ zł",
-                  {
-                    "pl": "Groszy nie ma: 0 gr.",
-                    "uk": "Грошів немає: 0 gr.",
-                    "en": "No grosze: 0 gr."
-                  }
-                ],
-                "worked": [
-                  "5 + 5 + 5 + 5 + 5 + 5 = 30",
-                  "6 × 5 zł = 30 zł",
-                  {
-                    "pl": "Razem: 30 zł 0 gr",
-                    "uk": "Разом: 30 zł 0 gr",
-                    "en": "In all: 30 zł 0 gr"
-                  }
-                ],
-                "twin": {
-                  "say": {
-                    "pl": "Ile pieniędzy jest w skarbonce? Wpisz złote i grosze.",
-                    "uk": "Скільки грошей у скарбничці? Впиши злоті й гроші.",
-                    "en": "How much money is in the money box? Write the złoty and the grosze."
-                  },
-                  "family": "slots",
-                  "data": {
-                    "figure": {
-                      "kind": "coins",
-                      "items": ["zl5", "zl5", "zl5", "zl5", "zl5", "zl5", "zl5", "zl5"],
-                      "alt": {
-                        "pl": "Skarbonka: osiem monet po 5 zł.",
-                        "uk": "Скарбничка: вісім монет по 5 zł.",
-                        "en": "A money box: eight 5 zł coins."
-                      }
-                    },
-                    "template": {
-                      "pl": "{zl} zł {gr} gr",
-                      "uk": "{zl} zł {gr} gr",
-                      "en": "{zl} zł {gr} gr"
-                    },
-                    "gaps": [
-                      {
-                        "id": "zl",
-                        "kind": "enter",
-                        "input": "number"
-                      },
-                      {
-                        "id": "gr",
-                        "kind": "enter",
-                        "input": "number",
-                        "max_length": 2,
-                        "range": [0, 99]
-                      }
-                    ]
-                  },
-                  "key": {
-                    "gaps": {
-                      "zl": {
-                        "kind": "enter",
-                        "accept": ["40"],
-                        "near": {
-                          "8": "counted_coins_not_value"
-                        }
-                      },
-                      "gr": {
-                        "kind": "enter",
-                        "accept": ["0"],
-                        "near": {
-                          "8": "counted_coins_not_value"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "scenarios": [
-              {
-                "try": {
-                  "pl": "Wpisz 30 zł i 0 gr",
-                  "uk": "Впиши 30 zł і 0 gr",
-                  "en": "Type 30 zł and 0 gr"
-                },
-                "outcome": "correct",
-                "mistake_class": null,
-                "shows": {
-                  "pl": "pochwała, potem dalej",
-                  "uk": "похвала, потім далі",
-                  "en": "praise, then on"
-                },
-                "value": {
-                  "gaps": {
-                    "zl": "30",
-                    "gr": "0"
-                  }
-                }
-              },
-              {
-                "try": {
-                  "pl": "Wpisz 6 zł i 0 gr (policzone monety)",
-                  "uk": "Впиши 6 zł і 0 gr (пораховано монети)",
-                  "en": "Type 6 zł and 0 gr (the coins counted)"
-                },
-                "outcome": "incorrect",
-                "mistake_class": "counted_coins_not_value",
-                "shows": {
-                  "pl": "zostaje na kroku, wskazówka",
-                  "uk": "лишається на кроці, підказка",
-                  "en": "stays on the step, a hint"
-                },
-                "value": {
-                  "gaps": {
-                    "zl": "6",
-                    "gr": "0"
-                  }
-                }
-              },
-              {
-                "try": {
-                  "pl": "Wpisz 25 zł i 0 gr (o jedną monetę za mało)",
-                  "uk": "Впиши 25 zł і 0 gr (на одну монету менше)",
-                  "en": "Type 25 zł and 0 gr (one coin short)"
-                },
-                "outcome": "incorrect",
-                "mistake_class": "other_wrong",
-                "shows": {
-                  "pl": "zostaje na kroku, wskazówka",
-                  "uk": "лишається на кроці, підказка",
-                  "en": "stays on the step, a hint"
-                },
-                "value": {
-                  "gaps": {
-                    "zl": "25",
-                    "gr": "0"
-                  }
-                }
-              }
-            ],
-            "credit": {
-              "checked": "2026-10-18",
-              "original_lang": "en",
-              "ref": "x1527f2b718830010",
-              "source": "khan",
-              "url": "https://www.khanacademy.org/math/cc-third-grade-math/intro-to-multiplication/multiply-with-groups-of-objects/e/multiply-using-groups-of-objects",
-              "licence": "cc-by-nc-sa-4.0"
-            }
-          },
           {
             "id": "s05",
             "skill_ids": [
@@ -1490,242 +975,6 @@
             ]
           },
           {
-            "id": "s09",
-            "question_type": "fraction_shade",
-            "skill_ids": [
-              "curriculum/math/fractions/equal-shares",
-              "curriculum/math/multiplication/row-5"
-            ],
-            "based_on": {
-              "question": "khan:x054e4fc3852a8f0e",
-              "changes": [
-                {
-                  "change": "numbers",
-                  "why": {
-                    "pl": "Jedna czekolada z 10 kawałków zamiast 5 czekolad po 8 kawałków.",
-                    "uk": "Одна шоколадка з 10 шматочків замість 5 шоколадок по 8 шматочків.",
-                    "en": "One bar of 10 pieces instead of 5 bars of 8 pieces."
-                  },
-                  "reviewed": false
-                },
-                {
-                  "change": "context",
-                  "why": {
-                    "pl": "Zamiast wybrać działanie na wszystkie kawałki, dzieli czekoladę po równo na 5 osób i zamalowuje część jednej osoby.",
-                    "uk": "Замість вибрати дію на всі шматочки, ділить шоколадку порівну на 5 осіб і зафарбовує частину однієї особи.",
-                    "en": "Instead of picking the expression for all the pieces, he shares the bar equally among 5 people and shades one person’s share."
-                  },
-                  "reviewed": false
-                }
-              ]
-            },
-            "reason": {
-              "brief": "new",
-              "why": {
-                "pl": "Dzielenie po równo to mnożenie od drugiej strony: 5 osób po 2 kawałki to 10 kawałków. Jedna piąta to część jednej osoby, nie jeden kawałek (równe części, Van de Walle; CCSS 3.NF.A.1).",
-                "uk": "Ділення порівну це множення з іншого боку: 5 осіб по 2 шматочки це 10 шматочків. Одна пʼята це частина однієї особи, а не один шматочок (рівні частини, Van de Walle; CCSS 3.NF.A.1).",
-                "en": "Sharing equally is multiplication from the other side: 5 people with 2 pieces each is 10 pieces. One fifth is one person’s share, not one piece (equal parts, Van de Walle; CCSS 3.NF.A.1)."
-              }
-            },
-            "say": {
-              "pl": "Czekolada ma dziesięć kawałków. Dzielisz ją po równo na pięć osób. Zamaluj kawałki, które dostanie jedna osoba.",
-              "uk": "Шоколадка має десять шматочків. Ти ділиш її порівну на пʼятьох. Зафарбуй шматочки, які отримає одна людина.",
-              "en": "The chocolate bar has ten pieces. You share it equally among five people. Shade the pieces one person gets."
-            },
-            "question": {
-              "family": "place",
-              "data": {
-                "surface": "fraction",
-                "shape": "rect",
-                "parts": 10,
-                "rows": 2,
-                "label": {
-                  "pl": "$\\frac{1}{5}$",
-                  "uk": "$\\frac{1}{5}$",
-                  "en": "$\\frac{1}{5}$"
-                },
-                "stem": {
-                  "text": {
-                    "pl": "Jedna osoba dostaje jedną piątą czekolady.",
-                    "uk": "Одна людина отримує одну пʼяту шоколадки.",
-                    "en": "One person gets one fifth of the bar."
-                  }
-                }
-              },
-              "key": {
-                "surface": "fraction",
-                "count": 2
-              },
-              "help": {
-                "look": {
-                  "text": {
-                    "pl": "Policz kawałki czekolady. Na ile osób ją dzielisz?",
-                    "uk": "Порахуй шматочки шоколадки. На скільки людей ти її ділиш?",
-                    "en": "Count the pieces of chocolate. How many people are you sharing it with?"
-                  }
-                },
-                "boost": {
-                  "text": {
-                    "pl": "Rozdawaj po kolei: każda z pięciu osób dostaje jeden kawałek, potem znowu jeden, aż czekolada się skończy. Ile ma jedna osoba?",
-                    "uk": "Роздавай по черзі: кожна з пʼяти людей отримує один шматочок, потім знову один, поки шоколадка не закінчиться. Скільки має одна людина?",
-                    "en": "Hand them out in turn: each of the five people gets one piece, then one more, until the bar runs out. How many does one person have?"
-                  }
-                },
-                "boost_by_mistake": {
-                  "off_by_one_part": {
-                    "text": {
-                      "pl": "Jedna piąta to nie jeden kawałek, tylko część dla jednej osoby. Ile kawałków dostaje każda z pięciu osób?",
-                      "uk": "Одна пʼята це не один шматочок, а частина для однієї людини. Скільки шматочків отримує кожна з пʼяти людей?",
-                      "en": "One fifth is not one piece, it is one person’s share. How many pieces does each of the five people get?"
-                    }
-                  },
-                  "shaded_the_rest": {
-                    "text": {
-                      "pl": "Zamalowana jest czekolada dla pozostałych osób. Zamaluj tylko część jednej osoby.",
-                      "uk": "Зафарбовано шоколад для решти людей. Зафарбуй лише частину однієї людини.",
-                      "en": "You shaded the chocolate for the other people. Shade only one person’s share."
-                    }
-                  },
-                  "wrong_count": {
-                    "text": {
-                      "pl": "Dziesięć kawałków dzielimy na pięć równych części. Ile kawałków jest w jednej części?",
-                      "uk": "Десять шматочків ділимо на пʼять рівних частин. Скільки шматочків в одній частині?",
-                      "en": "Ten pieces are shared into five equal parts. How many pieces are in one part?"
-                    }
-                  }
-                },
-                "almost": [
-                  {
-                    "pl": "5 osób × □ kawałki = 10 kawałków",
-                    "uk": "5 людей × □ шматочки = 10 шматочків",
-                    "en": "5 people × □ pieces = 10 pieces"
-                  }
-                ],
-                "worked": [
-                  {
-                    "pl": "10 kawałków : 5 osób = 2 kawałki",
-                    "uk": "10 шматочків : 5 людей = 2 шматочки",
-                    "en": "10 pieces : 5 people = 2 pieces"
-                  },
-                  "5 × 2 = 10",
-                  {
-                    "pl": "Jedna piąta czekolady to 2 kawałki.",
-                    "uk": "Одна пʼята шоколадки це 2 шматочки.",
-                    "en": "One fifth of the bar is 2 pieces."
-                  }
-                ],
-                "twin": {
-                  "say": {
-                    "pl": "Czekolada ma dwanaście kawałków. Dzielisz ją po równo na cztery osoby. Zamaluj kawałki, które dostanie jedna osoba.",
-                    "uk": "Шоколадка має дванадцять шматочків. Ти ділиш її порівну на чотирьох. Зафарбуй шматочки, які отримає одна людина.",
-                    "en": "The chocolate bar has twelve pieces. You share it equally among four people. Shade the pieces one person gets."
-                  },
-                  "family": "place",
-                  "data": {
-                    "surface": "fraction",
-                    "shape": "rect",
-                    "parts": 12,
-                    "rows": 2,
-                    "label": {
-                      "pl": "$\\frac{1}{4}$",
-                      "uk": "$\\frac{1}{4}$",
-                      "en": "$\\frac{1}{4}$"
-                    },
-                    "stem": {
-                      "text": {
-                        "pl": "Jedna osoba dostaje jedną czwartą czekolady.",
-                        "uk": "Одна людина отримує одну четверту шоколадки.",
-                        "en": "One person gets one quarter of the bar."
-                      }
-                    }
-                  },
-                  "key": {
-                    "surface": "fraction",
-                    "count": 3
-                  }
-                }
-              }
-            },
-            "scenarios": [
-              {
-                "try": {
-                  "pl": "Zamaluj dwa kawałki, potem {check}",
-                  "uk": "Зафарбуй два шматочки, потім {check}",
-                  "en": "Shade two pieces, then {check}"
-                },
-                "outcome": "correct",
-                "mistake_class": null,
-                "shows": {
-                  "pl": "pochwała, potem dalej",
-                  "uk": "похвала, потім далі",
-                  "en": "praise, then on"
-                },
-                "value": {
-                  "shaded": [0, 1]
-                }
-              },
-              {
-                "try": {
-                  "pl": "Zamaluj jeden kawałek (jedna piąta jak jeden kawałek)",
-                  "uk": "Зафарбуй один шматочок (одна пʼята як один шматочок)",
-                  "en": "Shade one piece (one fifth read as one piece)"
-                },
-                "outcome": "incorrect",
-                "mistake_class": "off_by_one_part",
-                "shows": {
-                  "pl": "zostaje na kroku, wskazówka",
-                  "uk": "лишається на кроці, підказка",
-                  "en": "stays on the step, a hint"
-                },
-                "value": {
-                  "shaded": [0]
-                }
-              },
-              {
-                "try": {
-                  "pl": "Zamaluj pięć kawałków (po jednym dla każdej osoby)",
-                  "uk": "Зафарбуй пʼять шматочків (по одному для кожної людини)",
-                  "en": "Shade five pieces (one for each person)"
-                },
-                "outcome": "incorrect",
-                "mistake_class": "wrong_count",
-                "shows": {
-                  "pl": "zostaje na kroku, wskazówka",
-                  "uk": "лишається на кроці, підказка",
-                  "en": "stays on the step, a hint"
-                },
-                "value": {
-                  "shaded": [0, 1, 2, 3, 4]
-                }
-              },
-              {
-                "try": {
-                  "pl": "Zamaluj osiem kawałków (część pozostałych osób)",
-                  "uk": "Зафарбуй вісім шматочків (частина решти людей)",
-                  "en": "Shade eight pieces (the others’ share)"
-                },
-                "outcome": "incorrect",
-                "mistake_class": "shaded_the_rest",
-                "shows": {
-                  "pl": "zostaje na kroku, wskazówka",
-                  "uk": "лишається на кроці, підказка",
-                  "en": "stays on the step, a hint"
-                },
-                "value": {
-                  "shaded": [0, 1, 2, 3, 4, 5, 6, 7]
-                }
-              }
-            ],
-            "credit": {
-              "checked": "2026-10-18",
-              "original_lang": "en",
-              "ref": "x054e4fc3852a8f0e",
-              "source": "khan",
-              "url": "https://www.khanacademy.org/math/cc-third-grade-math/intro-to-multiplication/multiplication-in-contexts/e/multiplication-in-contexts",
-              "licence": "cc-by-nc-sa-4.0"
-            }
-          },
-          {
             "id": "s10",
             "question_type": "fraction_compare",
             "skill_ids": ["curriculum/math/fractions/equal-shares"],
@@ -2403,11 +1652,11 @@
                 "kind": "picture",
                 "categories": [
                   {
-                    "id": "ola",
+                    "id": "kasia",
                     "label": {
-                      "pl": "Ola",
-                      "uk": "Оля",
-                      "en": "Ola"
+                      "pl": "Kasia",
+                      "uk": "Катя",
+                      "en": "Kasia"
                     },
                     "picture": {
                       "icon": "star"
@@ -2446,16 +1695,16 @@
                 },
                 "stem": {
                   "text": {
-                    "pl": "Ola ma 15 naklejek, Kuba 10, a Zosia 20.\n\nJedna gwiazdka to 5 naklejek.",
-                    "uk": "Оля має 15 наліпок, Куба 10, а Зося 20.\n\nОдна зірочка це 5 наліпок.",
-                    "en": "Ola has 15 stickers, Kuba 10 and Zosia 20.\n\nOne star is 5 stickers."
+                    "pl": "Kasia ma 15 naklejek, Kuba 10, a Zosia 20.\n\nJedna gwiazdka to 5 naklejek.",
+                    "uk": "Катя має 15 наліпок, Куба 10, а Зося 20.\n\nОдна зірочка це 5 наліпок.",
+                    "en": "Kasia has 15 stickers, Kuba 10 and Zosia 20.\n\nOne star is 5 stickers."
                   }
                 }
               },
               "key": {
                 "surface": "bars",
                 "heights": {
-                  "ola": 15,
+                  "kasia": 15,
                   "kuba": 10,
                   "zosia": 20
                 }
@@ -2494,9 +1743,9 @@
                 },
                 "almost": [
                   {
-                    "pl": "Ola: 15 = 3 × 5, czyli 3 gwiazdki.",
-                    "uk": "Оля: 15 = 3 × 5, тобто 3 зірочки.",
-                    "en": "Ola: 15 = 3 × 5, so 3 stars."
+                    "pl": "Kasia: 15 = 3 × 5, czyli 3 gwiazdki.",
+                    "uk": "Катя: 15 = 3 × 5, тобто 3 зірочки.",
+                    "en": "Kasia: 15 = 3 × 5, so 3 stars."
                   },
                   {
                     "pl": "Kuba: 10 = 2 × 5, czyli 2 gwiazdki.",
@@ -2511,9 +1760,9 @@
                 ],
                 "worked": [
                   {
-                    "pl": "Ola: 15 = 3 × 5, czyli 3 gwiazdki.",
-                    "uk": "Оля: 15 = 3 × 5, тобто 3 зірочки.",
-                    "en": "Ola: 15 = 3 × 5, so 3 stars."
+                    "pl": "Kasia: 15 = 3 × 5, czyli 3 gwiazdki.",
+                    "uk": "Катя: 15 = 3 × 5, тобто 3 зірочки.",
+                    "en": "Kasia: 15 = 3 × 5, so 3 stars."
                   },
                   {
                     "pl": "Kuba: 10 = 2 × 5, czyli 2 gwiazdki.",
@@ -2538,11 +1787,11 @@
                     "kind": "picture",
                     "categories": [
                       {
-                        "id": "ola",
+                        "id": "kasia",
                         "label": {
-                          "pl": "Ola",
-                          "uk": "Оля",
-                          "en": "Ola"
+                          "pl": "Kasia",
+                          "uk": "Катя",
+                          "en": "Kasia"
                         },
                         "picture": {
                           "icon": "star"
@@ -2581,16 +1830,16 @@
                     },
                     "stem": {
                       "text": {
-                        "pl": "Ola ma 25 naklejek, Kuba 15, a Zosia 5.\n\nJedna gwiazdka to 5 naklejek.",
-                        "uk": "Оля має 25 наліпок, Куба 15, а Зося 5.\n\nОдна зірочка це 5 наліпок.",
-                        "en": "Ola has 25 stickers, Kuba 15 and Zosia 5.\n\nOne star is 5 stickers."
+                        "pl": "Kasia ma 25 naklejek, Kuba 15, a Zosia 5.\n\nJedna gwiazdka to 5 naklejek.",
+                        "uk": "Катя має 25 наліпок, Куба 15, а Зося 5.\n\nОдна зірочка це 5 наліпок.",
+                        "en": "Kasia has 25 stickers, Kuba 15 and Zosia 5.\n\nOne star is 5 stickers."
                       }
                     }
                   },
                   "key": {
                     "surface": "bars",
                     "heights": {
-                      "ola": 25,
+                      "kasia": 25,
                       "kuba": 15,
                       "zosia": 5
                     }
@@ -2601,9 +1850,9 @@
             "scenarios": [
               {
                 "try": {
-                  "pl": "Ola 3 gwiazdki, Kuba 2, Zosia 4, potem {check}",
-                  "uk": "Оля 3 зірочки, Куба 2, Зося 4, потім {check}",
-                  "en": "Ola 3 stars, Kuba 2, Zosia 4, then {check}"
+                  "pl": "Kasia 3 gwiazdki, Kuba 2, Zosia 4, potem {check}",
+                  "uk": "Катя 3 зірочки, Куба 2, Зося 4, потім {check}",
+                  "en": "Kasia 3 stars, Kuba 2, Zosia 4, then {check}"
                 },
                 "outcome": "correct",
                 "mistake_class": null,
@@ -2614,7 +1863,7 @@
                 },
                 "value": {
                   "heights": {
-                    "ola": 15,
+                    "kasia": 15,
                     "kuba": 10,
                     "zosia": 20
                   }
@@ -2635,7 +1884,7 @@
                 },
                 "value": {
                   "heights": {
-                    "ola": 15,
+                    "kasia": 15,
                     "kuba": 10,
                     "zosia": 15
                   }
@@ -2643,9 +1892,9 @@
               },
               {
                 "try": {
-                  "pl": "Ola 1 gwiazdka (jedynka z 15)",
-                  "uk": "Оля 1 зірочка (одиниця з 15)",
-                  "en": "Ola 1 star (the 1 of 15)"
+                  "pl": "Kasia 1 gwiazdka (jedynka z 15)",
+                  "uk": "Катя 1 зірочка (одиниця з 15)",
+                  "en": "Kasia 1 star (the 1 of 15)"
                 },
                 "outcome": "incorrect",
                 "mistake_class": "bar_wrong",
@@ -2656,7 +1905,7 @@
                 },
                 "value": {
                   "heights": {
-                    "ola": 5,
+                    "kasia": 5,
                     "kuba": 10,
                     "zosia": 20
                   }
@@ -2669,213 +1918,6 @@
       {
         "part": "wrap_up",
         "steps": [
-          {
-            "id": "s14",
-            "question_type": "true_false",
-            "skill_ids": [
-              "curriculum/math/time/clock-five-minutes",
-              "curriculum/math/multiplication/row-5"
-            ],
-            "based_on": {
-              "question": "khan:x7c714048b42ddd44",
-              "changes": [
-                {
-                  "change": "context",
-                  "why": {
-                    "pl": "Fakt „9 groups of 5” jako zdanie o zegarze do oceny, prawda czy nie, zamiast dwóch okienek do wpisania.",
-                    "uk": "Факт «9 groups of 5» як речення про годинник для оцінки, правда чи ні, замість двох віконець для запису.",
-                    "en": "The fact “9 groups of 5” as a sentence about the clock to judge true or not, instead of two typed gaps."
-                  },
-                  "reviewed": false
-                }
-              ]
-            },
-            "reason": {
-              "brief": "recheck",
-              "why": {
-                "pl": "Spokojne sprawdzenie nici lekcji na koniec: minuty na zegarze to piątki. Bez liczenia na czas.",
-                "uk": "Спокійна перевірка нитки уроку наприкінці: хвилини на годиннику це пʼятірки. Без лічби на час.",
-                "en": "A calm check of the lesson’s thread to end on: minutes on a clock are fives. Nothing to race."
-              }
-            },
-            "say": {
-              "pl": "Czy to prawda?",
-              "uk": "Чи це правда?",
-              "en": "Is it true?"
-            },
-            "question": {
-              "family": "choose",
-              "data": {
-                "stem": {
-                  "text": {
-                    "pl": "Gdy długa wskazówka stoi na 9, minęło 45 minut.",
-                    "uk": "Коли довга стрілка стоїть на 9, минуло 45 хвилин.",
-                    "en": "When the long hand is on 9, 45 minutes have gone by."
-                  }
-                },
-                "options": [
-                  {
-                    "id": "true",
-                    "content": {
-                      "kind": "bool",
-                      "bool": true
-                    }
-                  },
-                  {
-                    "id": "false",
-                    "content": {
-                      "kind": "bool",
-                      "bool": false
-                    }
-                  }
-                ],
-                "select": "one",
-                "layout": "binary"
-              },
-              "key": {
-                "correct": ["true"],
-                "near": {
-                  "false": "false_reject"
-                }
-              },
-              "help": {
-                "look": {
-                  "text": {
-                    "pl": "Przeczytaj jeszcze raz całe zdanie, od lewej do prawej.",
-                    "uk": "Прочитай ще раз усе речення, зліва направо.",
-                    "en": "Read the whole sentence again, from left to right."
-                  }
-                },
-                "boost": {
-                  "text": {
-                    "pl": "Każda liczba na tarczy to 5 minut. Policz piątkami do dziewiątki.",
-                    "uk": "Кожне число на циферблаті це 5 хвилин. Порахуй пʼятірками до девʼятки.",
-                    "en": "Each number on the face is 5 minutes. Count in fives up to the nine."
-                  }
-                },
-                "boost_by_mistake": {
-                  "false_reject": {
-                    "text": {
-                      "pl": "Sprawdź jeszcze raz. Może to jednak prawda?",
-                      "uk": "Перевір ще раз. Може, це все-таки правда?",
-                      "en": "Check again. Could it be true after all?"
-                    }
-                  }
-                },
-                "almost": [
-                  {
-                    "pl": "Długa wskazówka na 9: 9 skoków po 5 minut.",
-                    "uk": "Довга стрілка на 9: 9 стрибків по 5 хвилин.",
-                    "en": "The long hand on 9: 9 jumps of 5 minutes."
-                  },
-                  "9 × 5 = 45",
-                  {
-                    "pl": "Czy to zdanie jest prawdziwe? □",
-                    "uk": "Чи це речення правдиве? □",
-                    "en": "Is the sentence true? □"
-                  }
-                ],
-                "worked": [
-                  {
-                    "pl": "Długa wskazówka na 9: 9 skoków po 5 minut.",
-                    "uk": "Довга стрілка на 9: 9 стрибків по 5 хвилин.",
-                    "en": "The long hand on 9: 9 jumps of 5 minutes."
-                  },
-                  "9 × 5 = 45",
-                  {
-                    "pl": "To zdanie jest prawdziwe.",
-                    "uk": "Це речення правдиве.",
-                    "en": "The sentence is true."
-                  }
-                ],
-                "twin": {
-                  "say": {
-                    "pl": "Czy to prawda?",
-                    "uk": "Чи це правда?",
-                    "en": "Is it true?"
-                  },
-                  "family": "choose",
-                  "data": {
-                    "stem": {
-                      "text": {
-                        "pl": "Gdy długa wskazówka stoi na 4, minęło 40 minut.",
-                        "uk": "Коли довга стрілка стоїть на 4, минуло 40 хвилин.",
-                        "en": "When the long hand is on 4, 40 minutes have gone by."
-                      }
-                    },
-                    "options": [
-                      {
-                        "id": "true",
-                        "content": {
-                          "kind": "bool",
-                          "bool": true
-                        }
-                      },
-                      {
-                        "id": "false",
-                        "content": {
-                          "kind": "bool",
-                          "bool": false
-                        }
-                      }
-                    ],
-                    "select": "one",
-                    "layout": "binary"
-                  },
-                  "key": {
-                    "correct": ["false"],
-                    "near": {
-                      "true": "false_accept"
-                    }
-                  }
-                }
-              }
-            },
-            "scenarios": [
-              {
-                "try": {
-                  "pl": "Dotknij {yes}",
-                  "uk": "Торкнися {yes}",
-                  "en": "Tap {yes}"
-                },
-                "outcome": "correct",
-                "mistake_class": null,
-                "shows": {
-                  "pl": "pochwała, potem dalej",
-                  "uk": "похвала, потім далі",
-                  "en": "praise, then on"
-                },
-                "value": {
-                  "chosen": ["true"]
-                }
-              },
-              {
-                "try": {
-                  "pl": "Dotknij {no}",
-                  "uk": "Торкнися {no}",
-                  "en": "Tap {no}"
-                },
-                "outcome": "incorrect",
-                "mistake_class": "false_reject",
-                "shows": {
-                  "pl": "zostaje na kroku, pierwsza wskazówka",
-                  "uk": "лишається на кроці, перша підказка",
-                  "en": "stays on the step, the first hint"
-                },
-                "value": {
-                  "chosen": ["false"]
-                }
-              }
-            ],
-            "credit": {
-              "checked": "2026-10-18",
-              "original_lang": "en",
-              "ref": "x7c714048b42ddd44",
-              "source": "khan",
-              "url": "https://www.khanacademy.org/math/cc-third-grade-math/intro-to-multiplication/multiply-with-groups-of-objects/e/multiply-using-groups-of-objects",
-              "licence": "cc-by-nc-sa-4.0"
-            }
-          },
           {
             "id": "s15",
             "skill_ids": [],
