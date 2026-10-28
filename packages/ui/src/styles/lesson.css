@@ -1,0 +1,29 @@
+/* The lesson's root (packages/lesson-kit stage/LessonTheme.tsx): the lesson sits on Zeszyt's
+ * ground, in its own type. The tokens themselves are in foundation.css. Ported from david-learns
+ * frontend/src/playground/theme/lesson.css, without the learner view's rule. */
+[data-lesson-theme] {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  border-radius: var(--radius-2xl);
+  /* 12 px of ground around the lesson. */
+  padding: calc(var(--spacing) * 3);
+}
+
+/* On a phone the stage's ground goes to the edge, and the page's own 16 px are the lesson's gutters,
+ * so a phone draws its 358 column at 390 (dl-uukj.29.81). The keypad's
+ * Check key is then a third of the width, and Sprawdź fits at 18 px. */
+@media (width < 40rem) {
+  [data-lesson-theme] {
+    padding-inline: 0;
+  }
+
+  [data-lesson-theme] .grid-cols-3 > [data-slot="button"][data-variant="default"] {
+    font-size: var(--text-lg);
+    letter-spacing: -0.01em;
+  }
+}
+
+[data-lesson-theme] svg.lucide {
+  stroke-width: var(--theme-icon-stroke);
+}

@@ -23,6 +23,39 @@ module.exports = {
       to: { path: ["^packages/testing/", "(^|/)src/testing(/|\\.ts$)"] },
     },
     {
+      name: "lesson-kit-stage-is-the-bottom",
+      comment:
+        "lesson-kit's stage (clock, press, StepFrame, page types) imports neither its parts nor its families.",
+      severity: "error",
+      from: { path: "^packages/lesson-kit/src/stage/" },
+      to: { path: "^packages/lesson-kit/src/(parts|families)/" },
+    },
+    {
+      name: "lesson-kit-parts-know-no-family",
+      comment:
+        "A part draws for any family: it never imports a family view or model (david-learns levels.test.ts).",
+      severity: "error",
+      from: { path: "^packages/lesson-kit/src/parts/" },
+      to: { path: "^packages/lesson-kit/src/families/" },
+    },
+    {
+      name: "drag-only-in-the-drag-parts",
+      comment:
+        "@dnd-kit is imported only by the three drag parts, so a view that does not drag never loads it.",
+      severity: "error",
+      from: {
+        pathNot: "^packages/lesson-kit/src/parts/(DropZones|TileBank|SortableList)\\.tsx$",
+      },
+      to: { path: "node_modules/@dnd-kit/" },
+    },
+    {
+      name: "katex-only-in-rich-text",
+      comment: "TeX is drawn in one place: RichText and its macros.",
+      severity: "error",
+      from: { pathNot: "^packages/lesson-kit/src/parts/(RichText\\.tsx|richTextMacros\\.ts)$" },
+      to: { path: "node_modules/katex/" },
+    },
+    {
       name: "no-circular",
       severity: "error",
       from: {},
@@ -39,7 +72,8 @@ module.exports = {
   options: {
     doNotFollow: { path: "node_modules" },
     // .astro/ holds the types Astro generates for apps/site, never imported by our code.
-    exclude: { path: "(^|/)(node_modules|\\.astro)/" },
+    // node_modules stays in the graph as leaves (doNotFollow), so a rule can name a library.
+    exclude: { path: "(^|/)\\.astro/" },
     tsPreCompilationDeps: true,
     combinedDependencies: true,
     enhancedResolveOptions: {
