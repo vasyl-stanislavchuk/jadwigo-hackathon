@@ -12,7 +12,7 @@ Lambda (Node 24, arm64, `index.handler`), its role, 90-day log groups, the SSM S
 `DATABASE_URL`, and per-route throttles of 10 a second, burst 20, on every route but health
 (`jadwigo-platform/decisions/2026-10-28-the-app-s-http-api-stage-throttles-every-route-but-health-at-10`).
 The HTTP API's route list in `terraform/main.tf` mirrors `ROUTES` in `packages/contracts/src/routes.ts`:
-a route added there is added here too, or it falls to `$default` and its stage-default limit. Terraform owns no file in the bucket; `make site-deploy` uploads the Astro build of `apps/site`. `dl-5ssh.34.4` adds the other
+a route added there is added here too, or it falls to `$default` and its stage-default limit. `bun tools/src/check-infra-routes.ts`, in `make check` and CI, fails when the two differ. Terraform owns no file in the bucket; `make site-deploy` uploads the Astro build of `apps/site`. `dl-5ssh.34.4` adds the other
 modules, the OIDC roles script and the plan on every PR; `dl-w0b4.4` extends the site module.
 
 A merge deploys nothing. The owner deploys by hand
