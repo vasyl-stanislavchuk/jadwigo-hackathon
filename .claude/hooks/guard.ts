@@ -102,7 +102,8 @@ const CLEARS_CLAUDECODE =
   /(^|\s)(-u\s*|--unset[=\s]+)CLAUDECODE\b|\bunset\s+(-v\s+)?(\w+\s+)*CLAUDECODE\b|\bexport\s+(-\w+\s+)*-\w*n\w*\s+(\w+\s+)*CLAUDECODE\b|\b(typeset|declare|local)\s+([-+]\w+\s+)*\+\w*x\w*\s+(\w+\s+)*CLAUDECODE\b/;
 /** The env program, bare or by path (/usr/bin/env), and exec -c, which clears the environment. */
 const ENV_PROGRAM = /(^|[\s;&|('"/])env(?=\s|$)/;
-const EXEC_CLEARS = /(^|[\s;&|('"])exec\s+(-\w+\s+)*-[A-Za-z]*c[A-Za-z]*(\s|$)/;
+// exec's -a takes a name, so `exec -a x -c` still reaches the -c.
+const EXEC_CLEARS = /(^|[\s;&|('"])exec\s+((-[A-Za-z]*a\s+\S+|-\w+)\s+)*-[A-Za-z]*c[A-Za-z]*(\s|$)/;
 /** Programs that run a command on a pseudo-terminal; python counts when the line imports pty. */
 const PTY_WRAPPERS = /^(script|expect|unbuffer|socat|screen|tmux)$/;
 const MAKE = /(^|[\s'",[(])g?make\b/;
