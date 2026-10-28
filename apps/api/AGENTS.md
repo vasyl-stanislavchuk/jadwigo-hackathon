@@ -12,6 +12,11 @@ The one Lambda: a router, `authorize()` and the routes, with an entry per functi
 
 - Every route's input and output is a schema in `packages/contracts`; the handler parses, never trusts.
 - `authorize()` runs first on every route, and a pod only ever sees its own records.
+- **Token routes** (`auth: "token"` in `ROUTES`) run only with verified claims (`src/auth.ts`): in AWS
+  the API Gateway authorizer's, else an RS256 token checked against `AUTH_JWKS_URL`. With neither,
+  every token route is 401 `NotSignedIn`; no committed key is ever a default. Tests sign with a key
+  made per run (`src/testing/token.ts`). `authorizeMember()` finds the caller's pod from its member
+  row, and a signed-in user with no account yet is 409 `AccountMissing`.
 - Read environment variables only in `src/config.ts` (the grit rule fails elsewhere).
 - `authorize()` (`src/authorize.ts`) binds an attempt to its caller by its id: whoever holds the attempt id may read and answer it, since only the start reply carries it (decision `2026-10-28-an-anonymous-attempt-is-bound-to-its-caller-by-its-id-whoever-ho`). It is one narrow seam, so a token can replace the id later. An unknown id, or another pod's, is 404.
 - The page reads `ended` through `pageEnded(ended, verdictsHeld(assignment, attempt))` in every reply (snapshot, answer, help, results), and the results route returns `pageAttemptResult` rows, never the `attempt_result` row. While verdicts are held, the answer reply's `correct`, `parts` and `reveal` are null.

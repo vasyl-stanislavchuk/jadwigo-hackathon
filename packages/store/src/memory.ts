@@ -1,4 +1,6 @@
 import {
+  Account,
+  AccountId,
   Assignment,
   AssignmentId,
   Attempt,
@@ -8,11 +10,16 @@ import {
   type AttemptResult,
   Ended,
   ErrorType,
+  Goal,
+  GoalId,
   ID_PREFIXES,
   type IdPrefix,
   idOf,
+  type Language,
   Learner,
+  type LearnerAttempts,
   LearnerId,
+  type LearnerSnapshot,
   Lesson,
   LessonId,
   LessonQuestion,
@@ -20,21 +27,29 @@ import {
   LessonVersion,
   LessonVersionId,
   type LessonVersionQuestion,
+  type Me,
+  Member,
+  MemberId,
   Pod,
-  type PodId,
+  PodId,
   SentAt,
+  type Uuid,
   valueFor,
 } from "@jadwigo/contracts";
+import { handleFor } from "./handle.ts";
 import { attemptResults } from "./result.ts";
 import {
   type AttemptRecord,
   type HelpTwin,
   type LessonVersionWithQuestions,
+  type MemberScope,
   type NewAssignment,
   type NewAttempt,
   type NewAttemptAnswer,
   type NewAttemptQuestion,
+  type NewClaim,
   type NewLearner,
+  type NewLearnerWithGoals,
   type NewLesson,
   type NewLessonQuestion,
   type NewLessonVersion,
@@ -108,6 +123,9 @@ export class InMemoryStore implements Store {
   readonly #now: () => Date;
   readonly #pods = new Map<string, Pod>();
   readonly #learners = new Map<string, Learner>();
+  readonly #accounts = new Map<string, Account>();
+  readonly #members = new Map<string, Member>();
+  readonly #goals = new Map<string, Goal>();
   readonly #lessons = new Map<string, Lesson>();
   readonly #versions = new Map<string, LessonVersion>();
   /** By version id, in `position` order. */
@@ -421,6 +439,10 @@ export class InMemoryStore implements Store {
           resume_at: null,
           started_at: at,
           finished_at: null,
+          claimed_by: null,
+          claimed_at: null,
+          moved_by: null,
+          moved_at: null,
         },
         "the attempt",
       ),
@@ -742,4 +764,155 @@ export class InMemoryStore implements Store {
     const { questions, answers } = await this.getAttempt(pod, attempt);
     return attemptResults(questions, answers, (id) => this.#questions.get(id));
   }
+
+  async findMember(sub: Uuid): Promise<MemberScope | undefined> {
+    return this.#member(sub);
+  }
+
+  #member(sub: Uuid): MemberScope | undefined {
+    const account = [...this.#accounts.values()].find((a) => a.sub === sub);
+    if (!account) return undefined;
+    // The oldest member row, as app.member_pod orders them.
+    const member = [...this.#members.values()]
+      .filter((m) => m.account_id === account.id)
+      .sort((a, b) => a.created_at.localeCompare(b.created_at) || (a.id < b.id ? -1 : 1))[0];
+    return member && { pod: member.pod_id, account: account.id };
+  }
+
+  async createAccount(sub: Uuid, language: Language): Promise<MemberScope> {
+    // No await until the account is in: 2 sign-ins at once make one.
+    const found = this.#member(sub);
+    if (found) return found;
+    const at = this.#at();
+    const pod = frozen(
+      parse(
+        Pod,
+        { id: mint(PodId, ID_PREFIXES.pod), name: "home", language, created_at: at },
+        "the pod",
+      ),
+    );
+    this.#pods.set(pod.id, pod);
+    const account = frozen(
+      parse(
+        Account,
+        { id: mint(AccountId, ID_PREFIXES.account), pod_id: pod.id, sub, created_at: at },
+        "the account",
+      ),
+    );
+    const member = frozen(
+      parse(
+        Member,
+        {
+          id: mint(MemberId, ID_PREFIXES.member),
+          pod_id: pod.id,
+          account_id: account.id,
+          role: "parent",
+          created_at: at,
+        },
+        "the member",
+      ),
+    );
+    this.#accounts.set(account.id, account);
+    this.#members.set(member.id, member);
+    return { pod: pod.id, account: account.id };
+  }
+
+  async getMe(pod: PodId, account: AccountId): Promise<Me> {
+    const row = this.#inPod(this.#accounts, pod, account, "the account");
+    const member = [...this.#members.values()].find(
+      (m) => m.pod_id === pod && m.account_id === row.id,
+    );
+    if (!member) throw notFound("the member");
+    const learners = [...this.#learners.values()]
+      .filter((l) => l.pod_id === pod)
+      .sort(byAge)
+      .map((learner) => this.#snapshot(learner));
+    return { account: row, member, pod: this.#pod(pod), learners };
+  }
+
+  #snapshot(learner: Learner): LearnerSnapshot {
+    const goals = [...this.#goals.values()].filter((g) => g.learner_id === learner.id).sort(byAge);
+    return { learner, goals };
+  }
+
+  async addLearner(pod: PodId, learner: NewLearnerWithGoals): Promise<LearnerSnapshot> {
+    this.#pod(pod);
+    const taken = new Set(
+      [...this.#learners.values()].filter((l) => l.pod_id === pod).map((l) => l.handle),
+    );
+    const row = await this.putLearner(pod, {
+      handle: handleFor(learner.first_name, taken),
+      first_name: learner.first_name,
+      age_group: learner.age_group ?? null,
+    });
+    for (const name of learner.goals ?? []) {
+      const goal = frozen(
+        parse(
+          Goal,
+          {
+            id: mint(GoalId, ID_PREFIXES.goal),
+            pod_id: pod,
+            learner_id: row.id,
+            name,
+            created_at: this.#at(),
+          },
+          "the goal",
+        ),
+      );
+      this.#goals.set(goal.id, goal);
+    }
+    return this.#snapshot(row);
+  }
+
+  async claimAttempt(pod: PodId, claim: NewClaim): Promise<Attempt> {
+    const learner = this.#learners.get(claim.learner);
+    const member = [...this.#members.values()].find(
+      (m) => m.pod_id === pod && m.account_id === claim.account,
+    );
+    if (learner?.pod_id !== pod || !member) throw notFound("the learner in the caller's pod");
+    // The attempt may be in any pod: a featured lesson's is in Jadwigo's.
+    const attempt = this.#attempts.get(claim.attempt);
+    if (!attempt) throw notFound("the attempt");
+    if (attempt.learner_id === claim.learner && attempt.claimed_by === claim.account)
+      return attempt;
+    if (attempt.learner_id !== null || (attempt.claimed_by ?? null) !== null) {
+      throw new StoreError(ErrorType.enum.AttemptClaimed, "this attempt already has a learner");
+    }
+    if (attempt.mode === "preview") {
+      throw new StoreError(ErrorType.enum.AttemptPreview, "a preview attempt is never claimed");
+    }
+    const row = frozen({
+      ...attempt,
+      learner_id: learner.id,
+      claimed_by: claim.account,
+      claimed_at: this.#at(),
+    });
+    this.#attempts.set(row.id, row);
+    return row;
+  }
+
+  async getLearnerAttempts(pod: PodId, learner: LearnerId): Promise<LearnerAttempts> {
+    const row = this.#inPod(this.#learners, pod, learner, "the learner");
+    const attempts = [...this.#attempts.values()]
+      .filter((a) => a.learner_id === row.id)
+      .sort((a, b) => b.started_at.localeCompare(a.started_at) || (a.id < b.id ? 1 : -1))
+      .map((attempt) => {
+        const version = this.#versions.get(attempt.lesson_version_id);
+        const lesson = version && this.#lessons.get(version.lesson_id);
+        if (!lesson) throw notFound("the attempt's lesson");
+        const answers = [...this.#answers.values()]
+          .filter((a) => a.attempt_id === attempt.id)
+          .sort((a, b) => a.seq - b.seq || a.try_no - b.try_no);
+        const results = attemptResults(this.#asked.get(attempt.id) ?? [], answers, (id) =>
+          this.#questions.get(id),
+        );
+        return { attempt, title: lesson.title, language: lesson.language, results: [...results] };
+      });
+    return { learner: row, attempts };
+  }
+}
+
+/** Oldest first; a tie keeps the order they were written in (the sort is stable). */
+function byAge(a: { created_at: string }, b: { created_at: string }) {
+  return a.created_at.localeCompare(b.created_at);
 }

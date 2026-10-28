@@ -16,6 +16,7 @@ import { importLessonFile } from "@jadwigo/lesson-import";
 import type { NewAssignment, NewLessonQuestion, NewPod, Store } from "@jadwigo/store";
 import { LESSON_FILES } from "@jadwigo/testing";
 import { createApp } from "../app.ts";
+import { testAuth } from "./token.ts";
 
 /** A route's path with its parameters filled in. */
 export function pathOf(name: RouteName, params: Record<string, string | number>): string {
@@ -35,7 +36,7 @@ type Call = <T = unknown>(
 ) => Promise<Reply<T>>;
 
 function client(store: Store): Call {
-  const app = createApp(store);
+  const app = createApp(store, { authenticate: testAuth });
   const context = {} as Parameters<typeof app.resolve>[1];
   return async <T>(
     method: string,

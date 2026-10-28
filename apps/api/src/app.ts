@@ -1,34 +1,52 @@
 import { Router } from "@aws-lambda-powertools/event-handler/http";
-import { ErrorType, LIMITS, ROUTES, type RouteName } from "@jadwigo/contracts";
+import { ErrorType, LIMITS, ROUTES, type Route, type RouteName } from "@jadwigo/contracts";
 import type { Store } from "@jadwigo/store";
 import { answer, getAttempt, startAttempt } from "./attempts.ts";
+import { type Authenticate, type Claims, signedOut } from "./auth.ts";
 import { ApiError, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
+import { claimAttempt, createAccount, createLearner, getLearnerAttempts, getMe } from "./people.ts";
 import { getResults, help, patchAttempt } from "./session.ts";
 
 type Params<N extends RouteName> = ReturnType<(typeof ROUTES)[N]["params"]["parse"]>;
-type Handle<N extends RouteName> = (params: Params<N>, body: unknown) => Promise<unknown>;
+type Handle<N extends RouteName> = (
+  params: Params<N>,
+  body: unknown,
+  claims: Claims | undefined,
+) => Promise<unknown>;
+type OpenRoute = {
+  [N in RouteName]: (typeof ROUTES)[N]["auth"] extends "none" ? N : never;
+}[RouteName];
+type TokenRoute = Exclude<RouteName, OpenRoute>;
 
 /**
  * The `/api/v1` routes on the Powertools router, each registered from `ROUTES` (RULES.md rule
  * 22). A handler gets its parsed path parameters and the raw body, and parses the body itself; its
  * reply is parsed with the route's response schema, which drops anything the schema does not name.
- * A refusal is `{error: {type, message}}` with the status `ERROR_STATUS` gives it.
+ * A refusal is `{error: {type, message}}` with the status `ERROR_STATUS` gives it. A token route
+ * (`auth: "token"`) runs only with the claims `authenticate` verified, else it is 401
+ * `NotSignedIn`; with no `authenticate`, none is ever verified.
  */
-export function createApp(store: Store): Router {
+export function createApp(
+  store: Store,
+  { authenticate = signedOut }: { readonly authenticate?: Authenticate } = {},
+): Router {
   const app = new Router();
 
-  const on = <N extends RouteName>(name: N, handle: Handle<N>): void => {
-    const route = ROUTES[name];
+  const register = <N extends RouteName>(name: N, handle: Handle<N>): void => {
+    const route: Route = ROUTES[name];
     const path = route.path.replace(/\{(\w+)\}/g, ":$1") as `/${string}`;
     const method = route.method.toLowerCase() as "get" | "post" | "patch";
-    app[method](path, async ({ req, params }) => {
+    app[method](path, async ({ req, params, event }) => {
       try {
+        // A token route checks the token before anything else, so an unknown id is 401 too.
+        const claims = route.auth === "token" ? await authenticate(req, event) : undefined;
+        if (route.auth === "token" && claims === undefined) throw notSignedIn();
         const parsed = route.params.safeParse(params);
         // An id that does not parse names no record.
         if (!parsed.success) throw new ApiError(ErrorType.enum.NotFound, "no such record");
         const body = route.body === null ? undefined : await bodyOf(req);
-        const reply = await handle(parsed.data as Params<N>, body);
+        const reply = await handle(parsed.data as Params<N>, body, claims);
         return json(route.status, route.response.parse(reply));
       } catch (error) {
         const refused = refusal(error);
@@ -37,6 +55,20 @@ export function createApp(store: Store): Router {
       }
     });
   };
+
+  // An open route never sees claims; a token route gets the verified ones.
+  const on = <N extends OpenRoute>(
+    name: N,
+    handle: (params: Params<N>, body: unknown) => Promise<unknown>,
+  ) => register(name, (params, body) => handle(params, body));
+  const onSigned = <N extends TokenRoute>(
+    name: N,
+    handle: (params: Params<N>, body: unknown, claims: Claims) => Promise<unknown>,
+  ) =>
+    register(name, (params, body, claims) => {
+      if (claims === undefined) throw notSignedIn();
+      return handle(params, body, claims);
+    });
 
   on("health", async () => ({ status: "ok" }));
   // Public by design: no authorize(). It reads only the featured pod's open anyone-assignments,
@@ -49,6 +81,13 @@ export function createApp(store: Store): Router {
   on("help", (params, body) => help(store, params.id, params.seq, body));
   on("patchAttempt", (params, body) => patchAttempt(store, params.id, body));
   on("getResults", (params) => getResults(store, params.id));
+  onSigned("getMe", (_params, _body, claims) => getMe(store, claims));
+  onSigned("createAccount", (_params, body, claims) => createAccount(store, claims, body));
+  onSigned("createLearner", (_params, body, claims) => createLearner(store, claims, body));
+  onSigned("claimAttempt", (params, body, claims) => claimAttempt(store, claims, params.id, body));
+  onSigned("getLearnerAttempts", (params, _body, claims) =>
+    getLearnerAttempts(store, claims, params.id),
+  );
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;
@@ -72,6 +111,10 @@ async function bodyOf(req: Request): Promise<unknown> {
   } catch {
     throw new ApiError(ErrorType.enum.BadRequest, "the body is not JSON");
   }
+}
+
+function notSignedIn(): ApiError {
+  return new ApiError(ErrorType.enum.NotSignedIn, "sign in to use this");
 }
 
 function tooLarge(): ApiError {

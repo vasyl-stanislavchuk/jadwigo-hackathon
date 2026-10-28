@@ -7,6 +7,7 @@ import {
   idOf,
   type LessonQuestionId,
   PodId,
+  Uuid,
 } from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
 import type { HelpTwin, NewAttemptAnswer, NewLessonQuestion, Store } from "./store.ts";
@@ -1009,7 +1010,178 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         ]);
       });
     });
+
+    describe("people and the claim", () => {
+      it("makes a pod, account and parent member on the first sign-in, and the same again after", async () => {
+        const store = await make();
+        const sub = newSub();
+        expect(await store.findMember(sub)).toBeUndefined();
+
+        const made = await store.createAccount(sub, "en");
+        expect(await store.createAccount(sub, "pl")).toEqual(made);
+        expect(await store.findMember(sub)).toEqual(made);
+        const me = await store.getMe(made.pod, made.account);
+        expect(me).toMatchObject({
+          account: { id: made.account, pod_id: made.pod, sub },
+          member: { pod_id: made.pod, account_id: made.account, role: "parent" },
+          pod: { id: made.pod, name: "home", language: "en" },
+          learners: [],
+        });
+      });
+
+      it("makes one account when the same user signs in twice at once", async () => {
+        const store = await make();
+        const sub = newSub();
+        const [a, b] = await Promise.all([
+          store.createAccount(sub, "pl"),
+          store.createAccount(sub, "pl"),
+        ]);
+        expect(a).toEqual(b);
+      });
+
+      it("adds learners with goals, a free handle each, listed oldest first", async () => {
+        const store = await make();
+        const { pod, account } = await store.createAccount(newSub(), "pl");
+        const fox = await store.addLearner(pod, {
+          first_name: "Fox",
+          goals: ["Times tables", "Reading"],
+        });
+        const second = await store.addLearner(pod, { first_name: "fox", age_group: "7-8" });
+
+        expect(fox.learner).toMatchObject({ pod_id: pod, handle: "fox", first_name: "Fox" });
+        expect(fox.goals.map((g) => g.name).sort()).toEqual(["Reading", "Times tables"]);
+        expect(second.learner).toMatchObject({ handle: "fox-2", age_group: "7-8" });
+        expect(second.goals).toEqual([]);
+        const me = await store.getMe(pod, account);
+        expect(me.learners).toEqual([fox, second]);
+      });
+
+      it("claims an attempt played in another pod, once, without touching its answers", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        await store.appendAttemptAnswer(a.pod, answer(attempt, 1, 1, { entered: "5" }, false));
+        const before = await store.getAttempt(a.pod, attempt);
+        const parent = await store.createAccount(newSub(), "pl");
+        const { learner } = await store.addLearner(parent.pod, { first_name: "Badger" });
+        const claim = { attempt, learner: learner.id, account: parent.account };
+
+        const claimed = await store.claimAttempt(parent.pod, claim);
+        expect(claimed).toMatchObject({
+          id: attempt,
+          pod_id: a.pod,
+          learner_id: learner.id,
+          claimed_by: parent.account,
+          moved_by: null,
+          moved_at: null,
+        });
+        expect(claimed.claimed_at).toEqual(expect.any(String));
+        const after = await store.getAttempt(a.pod, attempt);
+        expect(after.answers).toEqual(before.answers);
+        expect(after.questions).toEqual(before.questions);
+
+        // The same claim again is a replay; any other is refused.
+        expect(await store.claimAttempt(parent.pod, claim)).toEqual(claimed);
+        const other = await store.addLearner(parent.pod, { first_name: "Mole" });
+        await expect(
+          store.claimAttempt(parent.pod, { ...claim, learner: other.learner.id }),
+        ).rejects.toMatchObject({ type: "AttemptClaimed" });
+      });
+
+      it("refuses a claim for another pod's learner, an unknown attempt and a preview", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        const parent = await store.createAccount(newSub(), "pl");
+        const stranger = await store.createAccount(newSub(), "pl");
+        const { learner } = await store.addLearner(parent.pod, { first_name: "Otter" });
+        const theirs = await store.addLearner(stranger.pod, { first_name: "Stoat" });
+
+        await expect(
+          store.claimAttempt(parent.pod, {
+            attempt,
+            learner: theirs.learner.id,
+            account: parent.account,
+          }),
+        ).rejects.toMatchObject(NOT_FOUND);
+        await expect(
+          store.claimAttempt(parent.pod, {
+            attempt,
+            learner: learner.id,
+            account: stranger.account,
+          }),
+        ).rejects.toMatchObject(NOT_FOUND);
+        await expect(
+          store.claimAttempt(parent.pod, {
+            attempt: AttemptId.parse(fresh(ID_PREFIXES.attempt)),
+            learner: learner.id,
+            account: parent.account,
+          }),
+        ).rejects.toMatchObject(NOT_FOUND);
+        const preview = await store.startAttempt(a.pod, {
+          assignment_id: a.assignment,
+          mode: "preview",
+        });
+        await expect(
+          store.claimAttempt(parent.pod, {
+            attempt: preview.attempt.id,
+            learner: learner.id,
+            account: parent.account,
+          }),
+        ).rejects.toMatchObject({ type: "AttemptPreview" });
+      });
+
+      it("claims a finished attempt", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        await store.endAttemptQuestion(a.pod, attempt, 1, "skipped");
+        await store.finishAttempt(a.pod, attempt);
+        const parent = await store.createAccount(newSub(), "pl");
+        const { learner } = await store.addLearner(parent.pod, { first_name: "Heron" });
+        const claimed = await store.claimAttempt(parent.pod, {
+          attempt,
+          learner: learner.id,
+          account: parent.account,
+        });
+        expect(claimed).toMatchObject({ status: "finished", learner_id: learner.id });
+      });
+
+      it("lists a learner's claimed attempts newest first with their lesson and results, to its pod only", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        await store.appendAttemptAnswer(a.pod, answer(attempt, 1, 1, { entered: "6" }, true), {
+          end: "correct",
+        });
+        const parent = await store.createAccount(newSub(), "pl");
+        const { learner } = await store.addLearner(parent.pod, { first_name: "Wren" });
+        const empty = await store.getLearnerAttempts(parent.pod, learner.id);
+        expect(empty).toEqual({ learner, attempts: [] });
+
+        await store.claimAttempt(parent.pod, {
+          attempt,
+          learner: learner.id,
+          account: parent.account,
+        });
+        const listed = await store.getLearnerAttempts(parent.pod, learner.id);
+        expect(listed.attempts).toHaveLength(1);
+        expect(listed.attempts[0]).toMatchObject({
+          attempt: { id: attempt, learner_id: learner.id, claimed_by: parent.account },
+          title: LESSON.title,
+          language: LESSON.language,
+        });
+        expect(listed.attempts[0]?.results).toEqual(await store.getAttemptResult(a.pod, attempt));
+        expect(listed.attempts[0]?.results[0]).toMatchObject({ seq: 1, ended: "correct" });
+
+        const stranger = await store.createAccount(newSub(), "pl");
+        await expect(store.getLearnerAttempts(stranger.pod, learner.id)).rejects.toMatchObject(
+          NOT_FOUND,
+        );
+      });
+    });
   });
+}
+
+/** A Supabase Auth user id: a bare uuid. */
+function newSub(): Uuid {
+  return Uuid.parse(crypto.randomUUID());
 }
 
 // Fixtures: the shape of supabase/tests/_fixture.sql, under fresh ids every time.

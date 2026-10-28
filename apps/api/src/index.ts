@@ -1,10 +1,13 @@
 import { createPostgresStore, type Store } from "@jadwigo/store";
 import { createApp } from "./app.ts";
-import { lambdaDatabaseUrl } from "./config.ts";
+import { lambdaAuth } from "./auth.ts";
+import { authJwksUrl, lambdaDatabaseUrl } from "./config.ts";
 
 export { createApp } from "./app.ts";
 
 let store: Promise<Store> | undefined;
+/** API Gateway's authorizer verifies the token routes' tokens; AUTH_JWKS_URL is for a local invoke. */
+const authenticate = lambdaAuth(authJwksUrl());
 
 /**
  * The Lambda entry (`index.handler` in the bundle `make api-bundle` writes): the routes on
@@ -22,5 +25,5 @@ export const handler = async (
   store.catch(() => {
     store = undefined;
   });
-  return createApp(await store).resolve(event, context);
+  return createApp(await store, { authenticate }).resolve(event, context);
 };

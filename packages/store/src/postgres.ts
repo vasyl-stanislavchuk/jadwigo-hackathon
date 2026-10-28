@@ -1,4 +1,6 @@
 import {
+  Account,
+  AccountId,
   Assignment,
   AssignmentId,
   Attempt,
@@ -8,11 +10,15 @@ import {
   AttemptResult,
   Ended,
   ErrorType,
+  Goal,
   ID_PREFIXES,
   type IdPrefix,
   idOf,
+  Language,
   Learner,
+  type LearnerAttempts,
   LearnerId,
+  type LearnerSnapshot,
   Lesson,
   LessonId,
   LessonQuestion,
@@ -20,24 +26,31 @@ import {
   LessonVersion,
   LessonVersionId,
   LessonVersionQuestion,
+  type Me,
+  Member,
   Pod,
   PodId,
   SentAt,
+  type Uuid,
   uuidOf,
   valueFor,
 } from "@jadwigo/contracts";
 import { Kysely, PostgresDialect, type Selectable, sql, type Transaction } from "kysely";
 import pg from "pg";
 import type { DB } from "./db/types.ts";
+import { handleFor } from "./handle.ts";
 import {
   type AttemptRecord,
   type HelpTwin,
   type LessonVersionWithQuestions,
+  type MemberScope,
   type NewAssignment,
   type NewAttempt,
   type NewAttemptAnswer,
   type NewAttemptQuestion,
+  type NewClaim,
   type NewLearner,
+  type NewLearnerWithGoals,
   type NewLesson,
   type NewLessonQuestion,
   type NewLessonVersion,
@@ -68,6 +81,9 @@ const PREFIXES: Readonly<Record<string, IdPrefix>> = {
   twin_of: ID_PREFIXES.lesson_question,
   assignment_id: ID_PREFIXES.assignment,
   attempt_id: ID_PREFIXES.attempt,
+  account_id: ID_PREFIXES.account,
+  claimed_by: ID_PREFIXES.account,
+  moved_by: ID_PREFIXES.account,
 };
 
 /**
@@ -132,6 +148,7 @@ function taken(): StoreError {
 interface PgError {
   readonly code: string;
   readonly constraint?: string;
+  readonly detail?: string;
   readonly message: string;
 }
 
@@ -169,9 +186,16 @@ function refusal(error: unknown): unknown {
     case "23502": // not_null_violation
     case "23514": // check_violation, answered_at >= asked_at among them
     case "22P02": // invalid_text_representation: a value outside its enum
+    case "P0002": // no_data_found: app.claim_attempt's learner, account or attempt
+      return new StoreError(ErrorType.enum.NotFound, error.message);
+    case "23001": // restrict_violation: the write-once, `missed` and claim triggers
+      // The claim trigger names its refusal in the detail.
+      if (error.detail === "AttemptClaimed" || error.detail === "AttemptPreview") {
+        return new StoreError(ErrorType.enum[error.detail], error.message);
+      }
+      return new StoreError(ErrorType.enum.BadRequest, error.message);
     case "22007": // invalid_datetime_format
     case "22008": // datetime_field_overflow
-    case "23001": // restrict_violation: the write-once and `missed` triggers
       return new StoreError(ErrorType.enum.BadRequest, error.message);
     default:
       return error;
@@ -1259,6 +1283,242 @@ class PostgresStore implements Store {
         .orderBy("seq")
         .execute();
       return rows.map((row) => read(AttemptResult, row));
+    });
+  }
+
+  async findMember(sub: Uuid): Promise<MemberScope | undefined> {
+    return this.#in(null, async (tx) => {
+      const { rows } = await sql<{ pod: string | null }>`
+        select app.member_pod(${sub}) as pod
+      `.execute(tx);
+      const pod = rows[0]?.pod;
+      if (!pod) return undefined;
+      await sql`select set_config('app.pod_id', ${pod}, true)`.execute(tx);
+      const account = await tx
+        .selectFrom("account")
+        .select("id")
+        .where("sub", "=", sub)
+        .executeTakeFirst();
+      if (!account) return undefined;
+      return {
+        pod: PodId.parse(idOf(ID_PREFIXES.pod, pod)),
+        account: AccountId.parse(idOf(ID_PREFIXES.account, account.id)),
+      };
+    });
+  }
+
+  async createAccount(sub: Uuid, language: Language): Promise<MemberScope> {
+    const found = await this.findMember(sub);
+    if (found) return found;
+    const pod = mint(PodId, ID_PREFIXES.pod);
+    const podId = uuidOf(ID_PREFIXES.pod, pod);
+    try {
+      return await this.#in(pod, async (tx) => {
+        await tx.insertInto("pod").values({ id: podId, name: "home", language }).execute();
+        const account = await tx
+          .insertInto("account")
+          .values({ pod_id: podId, sub })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        await tx
+          .insertInto("member")
+          .values({ pod_id: podId, account_id: account.id, role: "parent" })
+          .execute();
+        return { pod, account: AccountId.parse(idOf(ID_PREFIXES.account, account.id)) };
+      });
+    } catch (error) {
+      // A racing first sign-in of the same user made its account first: this one wrote nothing.
+      if (error instanceof StoreError && error.type === "WriteOnce") {
+        const raced = await this.findMember(sub);
+        if (raced) return raced;
+      }
+      throw error;
+    }
+  }
+
+  async getMe(pod: PodId, account: AccountId): Promise<Me> {
+    const accountId = uuidOf(ID_PREFIXES.account, account);
+    return this.#in(pod, async (tx) => {
+      const podRow = await tx.selectFrom("pod").selectAll().executeTakeFirst();
+      const accountRow = await tx
+        .selectFrom("account")
+        .selectAll()
+        .where("id", "=", accountId)
+        .executeTakeFirst();
+      const member = await tx
+        .selectFrom("member")
+        .selectAll()
+        .where("account_id", "=", accountId)
+        .executeTakeFirst();
+      if (!podRow || !accountRow || !member) throw notFound("the account");
+      const learners = await tx
+        .selectFrom("learner")
+        .selectAll()
+        .orderBy("created_at")
+        .orderBy("id")
+        .execute();
+      return {
+        account: read(Account, accountRow, ID_PREFIXES.account),
+        member: read(Member, member, ID_PREFIXES.member),
+        pod: read(Pod, podRow, ID_PREFIXES.pod),
+        learners: await this.#withGoals(tx, learners),
+      };
+    });
+  }
+
+  /** Learner rows with their goals, oldest first, in one read of the goals. */
+  async #withGoals(tx: Tx, learners: readonly object[]): Promise<LearnerSnapshot[]> {
+    const rows = learners.map((row) => read(Learner, row, ID_PREFIXES.learner));
+    const goals =
+      rows.length === 0
+        ? []
+        : await tx
+            .selectFrom("goal")
+            .selectAll()
+            .where(
+              "learner_id",
+              "in",
+              rows.map((l) => uuidOf(ID_PREFIXES.learner, l.id)),
+            )
+            .orderBy("created_at")
+            .orderBy("id")
+            .execute();
+    const all = goals.map((row) => read(Goal, row, ID_PREFIXES.goal));
+    return rows.map((learner) => ({
+      learner,
+      goals: all.filter((g) => g.learner_id === learner.id),
+    }));
+  }
+
+  async addLearner(pod: PodId, learner: NewLearnerWithGoals): Promise<LearnerSnapshot> {
+    // A racing add can take the handle this one picked; the next try picks past it.
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        return await this.#addLearner(pod, learner);
+      } catch (error) {
+        if (attempt >= 3 || !(error instanceof StoreError) || error.type !== "WriteOnce")
+          throw error;
+      }
+    }
+  }
+
+  async #addLearner(pod: PodId, learner: NewLearnerWithGoals): Promise<LearnerSnapshot> {
+    const podId = uuidOf(ID_PREFIXES.pod, pod);
+    return this.#in(pod, async (tx) => {
+      await this.#pod(tx, pod);
+      const handles = await tx.selectFrom("learner").select("handle").execute();
+      const valid = parse(
+        Learner,
+        {
+          id: mint(LearnerId, ID_PREFIXES.learner),
+          pod_id: pod,
+          handle: handleFor(learner.first_name, new Set(handles.map((h) => h.handle))),
+          first_name: learner.first_name,
+          age_group: learner.age_group ?? null,
+          created_at: new Date().toISOString(),
+        },
+        "the learner",
+      );
+      const row = await tx
+        .insertInto("learner")
+        .values({
+          id: uuidOf(ID_PREFIXES.learner, valid.id),
+          pod_id: podId,
+          handle: valid.handle,
+          first_name: valid.first_name,
+          age_group: valid.age_group,
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      const names = learner.goals ?? [];
+      const goals =
+        names.length === 0
+          ? []
+          : await tx
+              .insertInto("goal")
+              .values(names.map((name) => ({ pod_id: podId, learner_id: row.id, name })))
+              .returningAll()
+              .execute();
+      return {
+        learner: read(Learner, row, ID_PREFIXES.learner),
+        // Inserted in order in one statement, so created_at ties and the order given stands.
+        goals: goals.map((g) => read(Goal, g, ID_PREFIXES.goal)),
+      };
+    });
+  }
+
+  async claimAttempt(pod: PodId, claim: NewClaim): Promise<Attempt> {
+    return this.#in(pod, async (tx) => {
+      const { rows } = await sql<object>`
+        select * from app.claim_attempt(
+          ${uuidOf(ID_PREFIXES.attempt, claim.attempt)},
+          ${uuidOf(ID_PREFIXES.learner, claim.learner)},
+          ${uuidOf(ID_PREFIXES.account, claim.account)}
+        )
+      `.execute(tx);
+      const row = rows[0];
+      if (!row) throw notFound("the attempt");
+      return read(Attempt, row, ID_PREFIXES.attempt);
+    });
+  }
+
+  async getLearnerAttempts(pod: PodId, learner: LearnerId): Promise<LearnerAttempts> {
+    const learnerId = uuidOf(ID_PREFIXES.learner, learner);
+    return this.#in(pod, async (tx) => {
+      const row = await tx
+        .selectFrom("learner")
+        .selectAll()
+        .where("id", "=", learnerId)
+        .executeTakeFirst();
+      if (!row) throw notFound("the learner");
+      // A claimed attempt in another pod, its lesson and its results are read through the
+      // claimed_read policies.
+      const attempts = await tx
+        .selectFrom("attempt")
+        .selectAll()
+        .where("learner_id", "=", learnerId)
+        .orderBy("started_at", "desc")
+        .orderBy("id", "desc")
+        .execute();
+      const ids = attempts.map((a) => a.id);
+      const lessons =
+        ids.length === 0
+          ? []
+          : await tx
+              .selectFrom("lesson_version")
+              .innerJoin("lesson", "lesson.id", "lesson_version.lesson_id")
+              .select(["lesson_version.id as version", "lesson.title", "lesson.language"])
+              .where(
+                "lesson_version.id",
+                "in",
+                attempts.map((a) => a.lesson_version_id),
+              )
+              .execute();
+      const results =
+        ids.length === 0
+          ? []
+          : await tx
+              .selectFrom("attempt_result")
+              .selectAll()
+              .where("attempt_id", "in", ids)
+              .orderBy("seq")
+              .execute();
+      const byVersion = new Map(lessons.map((l) => [l.version, l]));
+      return {
+        learner: read(Learner, row, ID_PREFIXES.learner),
+        attempts: attempts.map((attempt) => {
+          const lesson = byVersion.get(attempt.lesson_version_id);
+          if (!lesson) throw notFound("the attempt's lesson");
+          return {
+            attempt: read(Attempt, attempt, ID_PREFIXES.attempt),
+            title: lesson.title,
+            language: Language.parse(lesson.language),
+            results: results
+              .filter((r) => r.attempt_id === attempt.id)
+              .map((r) => read(AttemptResult, r)),
+          };
+        }),
+      };
     });
   }
 }

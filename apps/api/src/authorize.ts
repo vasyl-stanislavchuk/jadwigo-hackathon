@@ -5,7 +5,8 @@ import {
   ErrorType,
   type PodId,
 } from "@jadwigo/contracts";
-import type { Store } from "@jadwigo/store";
+import type { MemberScope, Store } from "@jadwigo/store";
+import type { Claims } from "./auth.ts";
 import { ApiError } from "./errors.ts";
 
 /**
@@ -52,4 +53,20 @@ export async function authorize(store: Store, caller: Caller): Promise<Scope> {
 
 function notFound(what: string): ApiError {
   return new ApiError(ErrorType.enum.NotFound, `no such ${what}`);
+}
+
+/**
+ * A token route's scope, by the member rows: the pod and account of the signed-in user the
+ * verified token names. Before the first sign-in has made an account it is 409 `AccountMissing`:
+ * `POST /api/v1/accounts` comes first. Every read after it is scoped to that pod, so another pod's
+ * learner or attempt list is 404.
+ */
+export async function authorizeMember(store: Store, claims: Claims): Promise<MemberScope> {
+  const member = await store.findMember(claims.sub);
+  if (member === undefined)
+    throw new ApiError(
+      ErrorType.enum.AccountMissing,
+      "sign in once more: this user has no account",
+    );
+  return member;
 }
