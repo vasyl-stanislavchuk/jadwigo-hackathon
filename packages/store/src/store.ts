@@ -166,11 +166,16 @@ export interface Store {
   /**
    * Asks a question: writes it at the next `seq` (access pattern 5). Refused with
    * `QuestionNotOpen` while another question is open, `AttemptFinished` once finished.
+   *
+   * With `seq`, it asks only when that is the attempt's next `seq`, checked in the same unit as
+   * the write; otherwise another question was asked since the caller read the attempt, and it is
+   * `QuestionNotOpen` with nothing written. So of 2 asks at once with the same `seq`, one lands.
    */
   askQuestion(
     pod: PodId,
     attempt: AttemptId,
     question: NewAttemptQuestion,
+    options?: { readonly seq?: number },
   ): Promise<AttemptQuestion>;
   /**
    * Appends a try or a skip (access pattern 3), idempotent by `event_id`:

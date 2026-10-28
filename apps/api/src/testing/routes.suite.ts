@@ -276,6 +276,75 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         expect(healed.body.open_seq).toBe(2);
       });
 
+      it("a stale go-on whose ask lands after q2 ended never asks a planned question twice", async () => {
+        // Asks 1 and 3 wait at a gate: the original's (stale) and the one after q2's answer.
+        const store = makeStore();
+        const gates = new Map<number, { arrived: Promise<void>; open: () => void }>();
+        for (const call of [1, 3]) {
+          let arrive = () => {};
+          let open = () => {};
+          const arrived = new Promise<void>((r) => {
+            arrive = r;
+          });
+          const opened = new Promise<void>((r) => {
+            open = r;
+          });
+          gates.set(call, { arrived: arrived.then(() => opened), open });
+          gates.set(-call, { arrived, open: arrive });
+        }
+        let calls = 0;
+        const gated = new Proxy(store, {
+          get(target, key) {
+            const value: unknown = Reflect.get(target, key, target);
+            if (key !== "askQuestion" || typeof value !== "function") {
+              return typeof value === "function" ? value.bind(target) : value;
+            }
+            return async (...args: Parameters<Store["askQuestion"]>) => {
+              calls += 1;
+              const gate = gates.get(calls);
+              if (gate) {
+                gates.get(-calls)?.open();
+                await gate.arrived;
+              }
+              return target.askQuestion(...args);
+            };
+          },
+        });
+        const c = seeded(gated);
+        const { id, snapshot } = await start(c, await c.assign("equalGroups"));
+        const q1 = snapshot.questions[0];
+        if (q1 === undefined) throw new Error("no first question");
+        const body = {
+          ...answerFields(q1),
+          kind: "try",
+          value: solutionOf(await c.questionOf(q1)),
+        };
+
+        const original = c.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), body);
+        await gates.get(-1)?.arrived; // the original holds a stale ask for seq 2
+        const replay = await c.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), body);
+        expect(replay.body.next).toMatchObject({ seq: 2 }); // the replay asked q2
+
+        const q2 = await openQuestion(c, id);
+        const second = c.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), {
+          ...answerFields(q2),
+          kind: "try",
+          value: solutionOf(await c.questionOf(q2)),
+        });
+        await gates.get(-3)?.arrived; // q2 has ended; its ask of q3 waits
+        gates.get(1)?.open(); // the stale ask lands now, with no question open
+        const late = await original;
+        gates.get(3)?.open();
+        expect((await second).body.next).toMatchObject({ seq: 3 });
+
+        expect(late.status).toBe(201);
+        expect(late.body.next).toMatchObject({ seq: 2 });
+        const snap = await c.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        const asked = snap.body.questions.map((q) => q.lesson_question_id);
+        expect(asked).toHaveLength(3);
+        expect(new Set(asked).size).toBe(3);
+      });
+
       it("refuses a field the server writes as ServerFieldSupplied, and a body that fails its schema", async () => {
         const { id, snapshot } = await start(s, await s.assign("equalGroups"));
         const page = snapshot.questions[0];

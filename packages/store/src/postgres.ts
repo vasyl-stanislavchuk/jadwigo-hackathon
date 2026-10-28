@@ -797,9 +797,11 @@ class PostgresStore implements Store {
     pod: PodId,
     attempt: AttemptId,
     question: NewAttemptQuestion,
+    options: { readonly seq?: number } = {},
   ): Promise<AttemptQuestion> {
     const attemptId = uuidOf(ID_PREFIXES.attempt, attempt);
     return this.#in(pod, async (tx) => {
+      // The attempt row stays locked to the commit, so the seq read below is still the next one.
       await this.#playing(tx, attemptId);
       const asked = await tx
         .selectFrom("attempt_question")
@@ -808,6 +810,9 @@ class PostgresStore implements Store {
         .execute();
       if (asked.some((q) => q.ended === null)) {
         throw new StoreError(ErrorType.enum.QuestionNotOpen, "another question is still open");
+      }
+      if (options.seq !== undefined && options.seq !== asked.length + 1) {
+        throw new StoreError(ErrorType.enum.QuestionNotOpen, "another question took this seq");
       }
       const lessonQuestionId = uuidOf(ID_PREFIXES.lesson_question, question.lesson_question_id);
       const exists = await tx

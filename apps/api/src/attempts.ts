@@ -161,7 +161,8 @@ export async function goOn(
   if (record.attempt.status === "finished" || last?.seq !== seq || last.ended === null) return;
   const next = nextQuestion(scope.assignment, version, record, seq);
   try {
-    if (next) await store.askQuestion(scope.pod, id, next);
+    // Asked only at the seq after the one this read saw, so a stale run never asks twice.
+    if (next) await store.askQuestion(scope.pod, id, next, { seq: last.seq + 1 });
     else await store.finishAttempt(scope.pod, id);
   } catch (error) {
     // A request racing this one went on first: its question is open, or the attempt finished.
