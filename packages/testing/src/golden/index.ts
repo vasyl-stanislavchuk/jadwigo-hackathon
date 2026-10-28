@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import golden from "./golden.json" with { type: "json" };
 
 /**
  * The playground's golden judge corpus, synced with its provenance by `dl-e8ov.2.32.4`
@@ -38,9 +38,9 @@ interface GoldenFile {
   }[];
 }
 
-const file = JSON.parse(
-  readFileSync(new URL("./golden.json", import.meta.url), "utf8"),
-) as GoldenFile;
+// An import, not a file read: the dom project loads this package too, where import.meta.url is not
+// a file URL.
+const file = golden as GoldenFile;
 
 export const GOLDEN_CASES: readonly GoldenCase[] = file.cases.map(({ question, ...row }) => {
   const resolved = file.questions[question];
