@@ -201,6 +201,26 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         ]);
       });
 
+      it("of 2 tries at once on one question, stores exactly 1, and the winner's reply ends it", async () => {
+        const { id, snapshot } = await start(s, await s.assign("equalGroups"));
+        const page = snapshot.questions[0];
+        if (page === undefined) throw new Error("no first question");
+        const [first, second] = await Promise.all([
+          tryAt(s, id, page, true),
+          tryAt(s, id, page, true, { try_no: 2 }),
+        ]);
+        expect(first.status).toBe(201);
+        expect(first.body).toMatchObject({ seq: 1, try_no: 1, ended: "correct" });
+        expect(first.body.next).toMatchObject({ seq: 2 });
+        // The other request lost: refused before or after the winner's unit, never stored.
+        expect(second.status).toBe(409);
+        expect(["QuestionNotOpen", "TryOutOfOrder"]).toContain(
+          (second.body as unknown as ErrorEnvelope).error.type,
+        );
+        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect(snap.body.questions[0]).toMatchObject({ seq: 1, tries: 1, ended: "correct" });
+      });
+
       it("refuses a field the server writes as ServerFieldSupplied, and a body that fails its schema", async () => {
         const { id, snapshot } = await start(s, await s.assign("equalGroups"));
         const page = snapshot.questions[0];
