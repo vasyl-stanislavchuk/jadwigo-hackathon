@@ -1,5 +1,6 @@
 /**
- * The `/api/v1` attempt calls, typed from the contracts (dl-5ssh.3.1). Every path comes from
+ * The `/api/v1` calls the lesson player makes, typed from the contracts (dl-5ssh.3.1): the featured
+ * lessons the home page lists (dl-5ssh.3.6), and an attempt's own calls. Every path comes from
  * `ROUTES` and every reply is parsed with the route's own response schema, so a reply the page
  * cannot trust is an error here, never a shape a view has to guess at (RULES.md rule 18).
  *
@@ -21,6 +22,7 @@ import {
   type AttemptStart,
   ErrorEnvelope,
   type ErrorType,
+  type Featured,
   type HelpRequest,
   type HelpResult,
   ROUTES,
@@ -53,6 +55,8 @@ export interface ClientOptions {
 }
 
 export interface AttemptClient {
+  /** The lessons anyone may play now, oldest first. */
+  featuredLessons(): Promise<Featured>;
   startAttempt(assignmentId: AssignmentId, body?: AttemptStart): Promise<AttemptSnapshot>;
   getAttempt(attemptId: AttemptId): Promise<AttemptSnapshot>;
   answer(attemptId: AttemptId, body: AttemptAnswerRequest): Promise<AttemptAnswerResult>;
@@ -110,6 +114,7 @@ export function createClient({
   }
 
   return {
+    featuredLessons: () => call(ROUTES.featuredLessons, {}, undefined),
     startAttempt: (assignmentId, body = {}) =>
       call(ROUTES.startAttempt, { id: assignmentId }, body),
     getAttempt: (attemptId) => call(ROUTES.getAttempt, { id: attemptId }, undefined),

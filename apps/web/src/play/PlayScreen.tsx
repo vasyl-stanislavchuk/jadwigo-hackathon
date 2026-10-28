@@ -27,7 +27,7 @@ import { type Player, usePlayer } from "./usePlayer.ts";
 const CATEGORY: Category = "child";
 
 /** The page a learner sees: Zeszyt's kid page, with no tool chrome around it. */
-function KidPage({ children }: { children: ReactNode }): ReactElement {
+export function KidPage({ children }: { children: ReactNode }): ReactElement {
   return (
     <main className="kid-page" data-learner-view data-play>
       <LessonTheme>{children}</LessonTheme>
@@ -35,7 +35,7 @@ function KidPage({ children }: { children: ReactNode }): ReactElement {
   );
 }
 
-function Message({ children }: { children: ReactNode }): ReactElement {
+export function Message({ children }: { children: ReactNode }): ReactElement {
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-start gap-6 p-6 text-2xl">{children}</div>
   );
