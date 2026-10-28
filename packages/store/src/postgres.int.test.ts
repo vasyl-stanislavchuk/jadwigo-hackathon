@@ -1,6 +1,6 @@
 // PostgresStore against the database `make migrate` built: Postgres.app 17 on port 5433 locally,
 // the PGDG packages in CI. The contract suite is the one InMemoryStore passes in store.test.ts.
-import { ID_PREFIXES, idOf, PodId } from "@jadwigo/contracts";
+import { AttemptId, ID_PREFIXES, idOf, PodId } from "@jadwigo/contracts";
 import pg from "pg";
 import { afterAll, describe, expect, it } from "vitest";
 import { databaseUrl } from "./config.ts";
@@ -31,6 +31,21 @@ describe("PostgresStore's units", () => {
     await expect(
       store.unit(() => store.putLearner(pod, { handle: "mole", first_name: "Mole" })),
     ).rejects.toBeInstanceOf(StoreError);
+  });
+
+  it("refuses a call left running after its unit ended, rather than borrow another request's connection", async () => {
+    let release = () => {};
+    const gate = new Promise<void>((r) => {
+      release = r;
+    });
+    let late: Promise<unknown> | undefined;
+    await store.unit(async () => {
+      late = gate.then(() =>
+        store.findAttemptPod(AttemptId.parse(idOf(ID_PREFIXES.attempt, crypto.randomUUID()))),
+      );
+    });
+    release();
+    await expect(late).rejects.toThrow("outlived its unit");
   });
 
   it("runs a unit on one connection, so a pool of 1 serves nested calls", async () => {

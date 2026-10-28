@@ -864,12 +864,64 @@ export function routeSuite(
         expect(twin.body.next).toMatchObject({ seq: 2, added: "twin" });
       });
 
+      if (units) {
+        it("makes a try sent while rung 4 asks the twin wait for it, then refuses it: no deadlock", async () => {
+          // Rung 4's ask of the twin waits at a gate, with the release written and the unit open.
+          const store = makeStore();
+          let arrive = () => {};
+          let open = () => {};
+          const arrived = new Promise<void>((r) => {
+            arrive = r;
+          });
+          const opened = new Promise<void>((r) => {
+            open = r;
+          });
+          let gate = false;
+          const gated = new Proxy(store, {
+            get(target, key) {
+              const value: unknown = Reflect.get(target, key, target);
+              if (key !== "askQuestion" || typeof value !== "function") {
+                return typeof value === "function" ? value.bind(target) : value;
+              }
+              return async (...args: Parameters<Store["askQuestion"]>) => {
+                if (gate) {
+                  gate = false;
+                  arrive();
+                  await opened;
+                }
+                return target.askQuestion(...args);
+              };
+            },
+          });
+          const c = seeded(gated);
+          const { id } = await start(c, await c.assign("equalGroups", { after_not_sure: "next" }));
+          await tryAt(c, id, await openQuestion(c, id), false);
+          for (const seen of [0, 1, 2])
+            await c.call("POST", pathOf("help", { id, seq: 1 }), { help_released: seen });
+          const page = await openQuestion(c, id);
+
+          gate = true;
+          const help = c.call<HelpResult>("POST", pathOf("help", { id, seq: 1 }), {
+            help_released: 3,
+          });
+          await arrived;
+          const tried = tryAt(c, id, page, false);
+          await new Promise((r) => setTimeout(r, 300));
+          open();
+          expect((await help).status).toBe(200);
+          const late = (await tried) as unknown as { status: number; body: ErrorEnvelope };
+          expect([late.status, late.body.error?.type]).toEqual([409, "QuestionNotOpen"]);
+        });
+      }
+
       it("ends the question even when a wrong try races the rung-4 request", async () => {
         const { id } = await start(s, await s.assign("equalGroups", { after_not_sure: "next" }));
         await toRungThree(id);
         const page = await openQuestion(s, id);
-        const [, help] = await Promise.all([tryAt(s, id, page, false), rungFour(id)]);
+        const [tried, help] = await Promise.all([tryAt(s, id, page, false), rungFour(id)]);
         expect(help.status).toBe(200);
+        // The try lands before the rung, or finds the question ended: never a 500.
+        expect([201, 409]).toContain(tried.status);
         const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
         expect(snap.body.questions[0]).toMatchObject({ help_released: 4, ended: "skipped" });
         expect(snap.body.questions[1]).toMatchObject({ seq: 2, added: "twin", added_for: 1 });

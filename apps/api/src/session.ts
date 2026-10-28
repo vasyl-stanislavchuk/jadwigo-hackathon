@@ -117,7 +117,7 @@ export async function patchAttempt(
     parsed.data.status === "paused"
       ? await store.setAttemptStatus(scope.pod, id, "paused", open?.seq ?? null)
       : await store.setAttemptStatus(scope.pod, id, "in_progress");
-  // The pause writes only the attempt row, under its lock.
+  // The pause writes only the attempt row; the rest is what authorize() read under that row's lock.
   const after = { ...record, attempt };
   return snapshot(scope.assignment, await versionOf(store, scope.pod, after), after);
 }

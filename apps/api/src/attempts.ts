@@ -158,8 +158,8 @@ export async function answer(
     end === undefined ? {} : { end },
   );
 
-  // What is stored now: a new answer is added to what authorize() read, under the lock the append
-  // held to its end, and a replay is read again.
+  // What is stored now: a new answer is added to what authorize() read under the attempt's lock,
+  // which the unit holds to its end, and a replay is read again.
   let after: AttemptRecord = replayed
     ? await store.getAttempt(scope.pod, id)
     : {
