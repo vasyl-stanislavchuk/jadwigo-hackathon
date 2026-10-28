@@ -35,7 +35,7 @@ import { storedAttempt } from "./storedAttempt.ts";
 /** How long to wait before sending again after a transient failure. */
 const RETRY_MS = 1000;
 
-export type Stage =
+type Stage =
   | { kind: "loading" }
   | { kind: "playing" }
   | { kind: "paused" }

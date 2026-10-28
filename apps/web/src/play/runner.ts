@@ -31,7 +31,7 @@ import type { CopyKey } from "@jadwigo/copy";
 import type { Feedback, pageHelpOf } from "@jadwigo/lesson-kit";
 
 /** The help note as the stage draws it (lesson-kit's PageHelp). */
-export type PageHelp = ReturnType<typeof pageHelpOf>;
+type PageHelp = ReturnType<typeof pageHelpOf>;
 
 /** The pause after a moved-on line before the next question shows, as in the source runner. */
 export const BEAT_MS = 1200;
@@ -74,7 +74,7 @@ export type RunnerAction =
   | { type: "resync" };
 
 /** One released rung as the stage draws it. */
-export function pageHelp(released: ReleasedHelp, more: boolean): PageHelp {
+function pageHelp(released: ReleasedHelp, more: boolean): PageHelp {
   return {
     rung: released.rung,
     card:
