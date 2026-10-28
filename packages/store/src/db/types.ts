@@ -16,6 +16,7 @@ type Identity = "pick" | "type" | "none";
 type Language = "pl" | "en" | "uk";
 type LessonKind = "practice" | "review" | "check" | "diagnostic";
 type LessonStatus = "draft" | "published" | "archived";
+type MemberRole = "parent" | "self";
 type Placed = "now" | "review_round";
 type QuestionRole = "planned" | "spare";
 type QuestionType =
@@ -51,6 +52,13 @@ type QuestionType =
 type SkipReason = "dont_know" | "asked_to_skip" | "help_twin";
 type Subject = "math" | "polish" | "english";
 
+interface AccountTable {
+  id: Generated<string>;
+  pod_id: string;
+  sub: string;
+  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
 interface AssignmentTable {
   id: Generated<string>;
   pod_id: string;
@@ -77,6 +85,10 @@ interface AttemptTable {
   resume_at: number | null;
   started_at: ColumnType<Date, Date | string | undefined, Date | string>;
   finished_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
+  claimed_by: string | null;
+  claimed_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
+  moved_by: string | null;
+  moved_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
 }
 
 interface AttemptAnswerTable {
@@ -131,6 +143,14 @@ interface AttemptResultTable {
   skip_reason: SkipReason | null;
   time_ms: number | null;
   ended: Ended | null;
+}
+
+interface GoalTable {
+  id: Generated<string>;
+  pod_id: string;
+  learner_id: string;
+  name: string;
+  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
 }
 
 interface LearnerTable {
@@ -207,6 +227,14 @@ interface LessonVersionQuestionTable {
   role: QuestionRole;
 }
 
+interface MemberTable {
+  id: Generated<string>;
+  pod_id: string;
+  account_id: string;
+  role: MemberRole;
+  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
 interface PodTable {
   id: Generated<string>;
   name: string;
@@ -215,21 +243,30 @@ interface PodTable {
 }
 
 export interface DB {
+  account: AccountTable;
   assignment: AssignmentTable;
   attempt: AttemptTable;
   attempt_answer: AttemptAnswerTable;
   attempt_question: AttemptQuestionTable;
   attempt_result: AttemptResultTable;
+  goal: GoalTable;
   learner: LearnerTable;
   lesson: LessonTable;
   lesson_question: LessonQuestionTable;
   lesson_question_example: LessonQuestionExampleTable;
   lesson_version: LessonVersionTable;
   lesson_version_question: LessonVersionQuestionTable;
+  member: MemberTable;
   pod: PodTable;
 }
 
 export const COLUMNS = {
+  account: {
+    id: { type: "uuid", nullable: false, generated: true, labels: null },
+    pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    sub: { type: "uuid", nullable: false, generated: false, labels: null },
+    created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+  },
   assignment: {
     id: { type: "uuid", nullable: false, generated: true, labels: null },
     pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
@@ -275,6 +312,10 @@ export const COLUMNS = {
     resume_at: { type: "int4", nullable: true, generated: false, labels: null },
     started_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
     finished_at: { type: "timestamptz", nullable: true, generated: false, labels: null },
+    claimed_by: { type: "uuid", nullable: true, generated: false, labels: null },
+    claimed_at: { type: "timestamptz", nullable: true, generated: false, labels: null },
+    moved_by: { type: "uuid", nullable: true, generated: false, labels: null },
+    moved_at: { type: "timestamptz", nullable: true, generated: false, labels: null },
   },
   attempt_answer: {
     event_id: { type: "uuid", nullable: false, generated: false, labels: null },
@@ -386,6 +427,13 @@ export const COLUMNS = {
       generated: false,
       labels: ["correct", "skipped", "missed"],
     },
+  },
+  goal: {
+    id: { type: "uuid", nullable: false, generated: true, labels: null },
+    pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    learner_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    name: { type: "text", nullable: false, generated: false, labels: null },
+    created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
   },
   learner: {
     id: { type: "uuid", nullable: false, generated: true, labels: null },
@@ -519,6 +567,13 @@ export const COLUMNS = {
       generated: false,
       labels: ["planned", "spare"],
     },
+  },
+  member: {
+    id: { type: "uuid", nullable: false, generated: true, labels: null },
+    pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    account_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    role: { type: "member_role", nullable: false, generated: false, labels: ["parent", "self"] },
+    created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
   },
   pod: {
     id: { type: "uuid", nullable: false, generated: true, labels: null },
