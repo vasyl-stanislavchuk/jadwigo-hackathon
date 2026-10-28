@@ -189,10 +189,15 @@ function refusal(error: unknown): unknown {
 class PostgresStore implements Store {
   readonly #db: Kysely<DB>;
 
-  constructor(databaseUrl: string) {
-    this.#db = new Kysely<DB>({
-      dialect: new PostgresDialect({ pool: new pg.Pool({ connectionString: databaseUrl }) }),
+  constructor(databaseUrl: string, options: PoolOptions = {}) {
+    const pool = new pg.Pool({ connectionString: databaseUrl, ...options });
+    // An idle connection that drops (Supavisor closes it, or the socket dies while a Lambda is
+    // frozen) emits 'error' on the pool; with no listener that is an uncaught exception. The pool
+    // has already discarded the client, so the next query opens a fresh one.
+    pool.on("error", (error) => {
+      console.error("an idle Postgres connection dropped:", error.message);
     });
+    this.#db = new Kysely<DB>({ dialect: new PostgresDialect({ pool }) });
   }
 
   async close(): Promise<void> {
@@ -1259,8 +1264,23 @@ class PostgresStore implements Store {
 }
 
 /**
+ * The pool's options. The Lambda passes `max: 1`: one execution serves one request at a time, and
+ * Supavisor's transaction pooler (port 6543) shares the server connections. Kysely sends unnamed
+ * queries, so no prepared statement outlives its transaction there. It also passes
+ * `connectionTimeoutMillis`, so a connect that hangs after a thaw fails rather than running out
+ * the Lambda's timeout.
+ */
+interface PoolOptions {
+  readonly max?: number;
+  readonly connectionTimeoutMillis?: number;
+}
+
+/**
  * The Store on Postgres, held to `store.contract.ts` as InMemoryStore is. `close` ends its pool.
  */
-export function createPostgresStore(databaseUrl: string): Store & { close(): Promise<void> } {
-  return new PostgresStore(databaseUrl);
+export function createPostgresStore(
+  databaseUrl: string,
+  options?: PoolOptions,
+): Store & { close(): Promise<void> } {
+  return new PostgresStore(databaseUrl, options);
 }
