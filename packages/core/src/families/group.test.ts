@@ -114,3 +114,20 @@ describe("the Group solution", () => {
     );
   });
 });
+
+describe("a value the page never commits", () => {
+  it("a group named twice is not a second group", () => {
+    const both: GroupKey = { items: { i4: ["even", "odd"], i9: ["odd"] } };
+    const v = judgeGroup(groups(2), both, { items: { i4: ["even", "even"], i9: ["odd"] } });
+    expect(v.correct).toBe(false);
+    expect(v.parts[0]).toEqual({ id: "i4", correct: false, mistake_class: "wrong_group" });
+  });
+
+  it.each(["constructor", "toString", "hasOwnProperty", "__proto__"])(
+    "a group id %s finds no near class on Object.prototype",
+    (g) => {
+      const v = judgeGroup(groups(2), key, { items: { i4: ["even"], i9: [g] } });
+      expect(v.mistake_class).toBe("wrong_group");
+    },
+  );
+});

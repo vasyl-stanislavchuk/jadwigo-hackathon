@@ -6,7 +6,7 @@ import type { PlaceData, PlaceKey, Verdict } from "@jadwigo/contracts";
  * Any `count` parts are right: the fraction names how many equal parts, not which (CCSS 3.NF.A.1;
  * NCTM's "Developing Essential Understanding of Rational Numbers, Grades 3-5", ch. 1: a fraction of a
  * region is about equal parts, wherever they sit). With `contiguous` set (the playground switch
- * shade, an open question for the owner and Olya), the shaded parts must also touch.
+ * shade, an open question for the owner and the product designer), the shaded parts must also touch.
  *
  * A miss takes, in order:
  * - `shaded_the_rest`: d − n parts, the part not named (3/4 asked, 1/4 shaded).

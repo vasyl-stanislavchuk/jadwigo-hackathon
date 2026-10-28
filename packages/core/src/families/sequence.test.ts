@@ -125,3 +125,11 @@ describe("the help release's helpers", () => {
     expect(slotIndex("t8")).toBeNull();
   });
 });
+
+describe("a tile used in two places", () => {
+  // The bank keeps its tiles (david-learns `sequence/model.ts`), so one `8` may fill both places.
+  it("is judged by what the places say", () => {
+    expect(verdict(tiles, tileKey, ["u8", "tp", "u8"])).toBe("correct");
+    expect(verdict(tiles, { orders: [["t8", "tp", "u8"]] }, ["t8", "tp", "t8"])).toBe("correct");
+  });
+});

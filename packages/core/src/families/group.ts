@@ -27,8 +27,9 @@ function readGroups(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
+/** The same groups, each once: a group named twice is not a second group. */
 const sameSet = (a: readonly string[], b: readonly string[]): boolean =>
-  a.length === b.length && a.every((x) => b.includes(x));
+  new Set(a).size === a.length && a.length === b.length && a.every((x) => b.includes(x));
 
 export function judgeGroup(data: GroupData, key: GroupKey, value: unknown): Verdict {
   const given = readGroups(value);
@@ -39,7 +40,11 @@ export function judgeGroup(data: GroupData, key: GroupKey, value: unknown): Verd
     if (sameSet(placed, key.items[item.id] ?? []))
       return { id: item.id, correct: true, mistake_class: null };
     if (placed.length === 0) return { id: item.id, correct: false, mistake_class: "not_placed" };
-    const named = placed.map((g) => key.near?.[item.id]?.[g]).find((c) => c !== undefined);
+    const near =
+      key.near !== undefined && Object.hasOwn(key.near, item.id) ? key.near[item.id] : undefined;
+    const named = placed
+      .map((g) => (near !== undefined && Object.hasOwn(near, g) ? near[g] : undefined))
+      .find((c) => c !== undefined);
     return { id: item.id, correct: false, mistake_class: named ?? "wrong_group" };
   });
   const firstWrong = parts.find((p) => !p.correct);

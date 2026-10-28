@@ -32,6 +32,12 @@ const isWordToken = (id: string): boolean => WORD_TOKEN.test(id);
 
 const OTHER: Verdict = { correct: false, mistake_class: "other_wrong", parts: [] };
 
+/** The author's class for an option id, read only from the near table's own keys. */
+const ownNear = (
+  near: Readonly<Record<string, string>> | undefined,
+  id: string,
+): string | undefined => (near !== undefined && Object.hasOwn(near, id) ? near[id] : undefined);
+
 function readChosen(value: unknown): string[] | null {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
   const chosen = (value as { chosen?: unknown }).chosen;
@@ -52,7 +58,7 @@ export function judgeChoose(data: ChooseData, key: ChooseKey, value: unknown): V
     const [id] = chosen;
     if (chosen.length !== 1 || id === undefined) return OTHER;
     if (right.has(id)) return { correct: true, mistake_class: null, parts: [] };
-    return { correct: false, mistake_class: key.near?.[id] ?? "other_wrong", parts: [] };
+    return { correct: false, mistake_class: ownNear(key.near, id) ?? "other_wrong", parts: [] };
   }
 
   // "None of these" stands alone (dl-w3.70.4): picked beside another option, the answer says two
@@ -68,7 +74,7 @@ export function judgeChoose(data: ChooseData, key: ChooseKey, value: unknown): V
       return {
         id: o.id,
         correct: false,
-        mistake_class: key.near?.[o.id] ?? (inline ? "took_unneeded_number" : "wrong_pick"),
+        mistake_class: ownNear(key.near, o.id) ?? (inline ? "took_unneeded_number" : "wrong_pick"),
       };
     return {
       id: o.id,

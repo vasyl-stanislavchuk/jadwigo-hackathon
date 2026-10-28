@@ -240,3 +240,16 @@ describe("a decimal or fraction gap", () => {
     );
   });
 });
+
+describe("the near table", () => {
+  const sum: Step = {
+    data: { input: "number", entry: "keypad" },
+    key: { accept: ["5"], near: { "7": "add_for_multiply" } },
+  };
+  it.each(["constructor", "toString", "hasOwnProperty", "__proto__"])(
+    "%s finds no class on Object.prototype",
+    (entered) => {
+      expect(judge(sum, { entered }).mistake_class).toBe("other_wrong");
+    },
+  );
+});

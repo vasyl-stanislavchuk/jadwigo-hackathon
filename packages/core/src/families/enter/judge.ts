@@ -244,7 +244,9 @@ export function enterClass(
 ): string | null {
   // Text (dl-w3.61.2): accents, case, the author's near forms, then a one-letter slip (enter/text.ts).
   if (input === "text") return textClass(key, entered);
-  const authored = key.near?.[trimEnds(entered)];
+  const typed = trimEnds(entered);
+  const authored =
+    key.near !== undefined && Object.hasOwn(key.near, typed) ? key.near[typed] : undefined;
   if (authored !== undefined) return authored;
   // A number rule reasons about whole numbers; a decimal key takes the author's near forms only.
   const first = key.accept[0] ?? "";

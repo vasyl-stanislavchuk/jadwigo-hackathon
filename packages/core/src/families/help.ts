@@ -8,7 +8,8 @@ import { fillOrder } from "./slots/model.ts";
  * Help on a question (docs/18 "Help on a step", owner 2026-10-13): a ladder of four rungs the
  * learner climbs one at a time, by asking ("Help me") or by missing. Every rung gives a little
  * more, and the question always ends with the learner doing something: the last rung is the
- * worked solution, and the twin, a question like this one that the learner answers alone.
+ * worked solution. The twin, a question like this one that the learner answers alone, is its own
+ * lesson question in v0.
  *
  * 1. look: where to look, in one sentence. Never reduces the work (Wood, Bruner & Ross 1976:
  *    help only where the learner cannot manage). After a named miss, the card written for that
@@ -24,7 +25,7 @@ import { fillOrder } from "./slots/model.ts";
  * A choice's rung 2 takes distractors away, which gives no part's answer, so it keeps `give`.
  * 3. almost: the worked solution with its last line left for the learner (backward fading, Renkl
  *    & Atkinson).
- * 4. twin: the full worked solution, then the twin to answer.
+ * 4. worked: the full worked solution.
  *
  * Khan's questions bring `hints` instead (dl-w3.52): an ordered list of cards, each a little more,
  * the last one the answer. They are mapped onto the ladder (`hintsOnLadder`).

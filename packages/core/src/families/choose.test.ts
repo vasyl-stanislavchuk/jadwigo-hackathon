@@ -157,3 +157,20 @@ describe("the marks after a miss", () => {
     );
   });
 });
+
+describe("the near table", () => {
+  it("an option id like toString finds no class on Object.prototype", () => {
+    const data: ChooseData = {
+      options: ["toString", "c2"].map((id) => ({
+        id,
+        content: { kind: "text" as const, text: id },
+      })),
+      select: "one",
+      layout: "grid",
+    };
+    expect(
+      judgeChoose(data, { correct: ["c2"], near: { c2: "unused" } }, { chosen: ["toString"] })
+        .mistake_class,
+    ).toBe("other_wrong");
+  });
+});

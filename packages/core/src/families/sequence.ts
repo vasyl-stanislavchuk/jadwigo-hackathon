@@ -99,6 +99,10 @@ function orderClass(order: readonly string[], orders: readonly (readonly string[
 
 const miss = (mistake_class: string): Verdict => ({ correct: false, mistake_class, parts: [] });
 
+/**
+ * Tile mode judges what the places say. The bank keeps its tiles, so one tile may fill several
+ * places (`8`, `+`, `8` from a single `8`), and an id used twice is a real answer, not a slip.
+ */
 function judgeTiles(
   data: SequenceData & { tiles: SequenceItem[] },
   key: SequenceKey,
