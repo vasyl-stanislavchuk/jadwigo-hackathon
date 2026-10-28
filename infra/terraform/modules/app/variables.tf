@@ -40,3 +40,9 @@ variable "stage_throttle" {
   type        = object({ rate = number, burst = number })
   default     = { rate = 50, burst = 100 }
 }
+
+variable "bank_search_alias_param" {
+  description = "The SSM parameter jadwigo-bank/infra writes with its search function's live alias ARN (dl-5ssh.57)"
+  type        = string
+  default     = "/jadwigo/bank/search-alias-arn"
+}

@@ -53,9 +53,11 @@ resource "aws_iam_role" "api" {
   assume_role_policy = data.aws_iam_policy_document.assume.json
 }
 
-# Its own log group and the one parameter, nothing else. The aws/ssm key's policy lets the
+# Its own log group and the one parameter, plus the bank's statements (bank.tf), nothing else. The aws/ssm key's policy lets the
 # account's principals decrypt through SSM, so no KMS statement is needed.
 data "aws_iam_policy_document" "api" {
+  source_policy_documents = [data.aws_iam_policy_document.bank.json]
+
   statement {
     sid       = "WritesItsLogs"
     actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
@@ -89,7 +91,9 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      JADWIGO_DB_URL_PARAM = aws_ssm_parameter.database_url.name
+      JADWIGO_DB_URL_PARAM  = aws_ssm_parameter.database_url.name
+      BANK_SEARCH_ALIAS_ARN = data.aws_ssm_parameter.bank_search_alias_arn.insecure_value
+      BANK_READ_TOKEN_PARAM = aws_ssm_parameter.bank_read_token.name
     }
   }
 
