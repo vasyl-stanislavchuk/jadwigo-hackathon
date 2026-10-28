@@ -28,8 +28,9 @@ module "app" {
   environment = var.environment
   bucket_name = "jadwigo-app-${var.environment}-843109108289"
 
-  # ROUTES in packages/contracts/src/routes.ts, as "<METHOD> <path>". tools/src/check-infra-routes.ts
-  # (make check, CI's lint job) fails when the two differ.
+  # ROUTES in packages/contracts/src/routes.ts whose auth is "none", as "<METHOD> <path>".
+  # tools/src/check-infra-routes.ts (make check, CI's lint job) fails on a ROUTES entry missing
+  # here or in token_routes.
   routes = [
     "GET /api/health",
     "GET /api/v1/featured-lessons",
@@ -40,4 +41,15 @@ module "app" {
     "POST /api/v1/attempts/{id}/questions/{seq}/help",
     "GET /api/v1/attempts/{id}/results",
   ]
+
+  # ROUTES entries whose auth is "token" (dl-e8ov.2.36): only these carry the JWT authorizer.
+  token_routes = [
+    "GET /api/v1/me",
+    "POST /api/v1/accounts",
+    "POST /api/v1/learners",
+    "POST /api/v1/attempts/{id}/claims",
+    "GET /api/v1/learners/{id}/attempts",
+  ]
+
+  jwt_issuer = "https://${var.supabase_ref}.supabase.co/auth/v1"
 }

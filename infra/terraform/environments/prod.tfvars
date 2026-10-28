@@ -1,3 +1,4 @@
-environment = "prod"
-site_domain = "jadwigo.pl"
-app_domain  = "app.jadwigo.pl"
+environment  = "prod"
+site_domain  = "jadwigo.pl"
+app_domain   = "app.jadwigo.pl"
+supabase_ref = "xhzkmpainwzrfktxffjv"

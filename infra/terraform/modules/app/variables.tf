@@ -25,8 +25,25 @@ variable "log_retention_days" {
 }
 
 variable "routes" {
-  description = "Every route key the HTTP API serves, from ROUTES in packages/contracts/src/routes.ts. $default catches the rest"
+  description = "The login-free route keys, ROUTES entries whose auth is none (packages/contracts/src/routes.ts). $default catches the rest"
   type        = list(string)
+}
+
+variable "token_routes" {
+  description = "The route keys a signed-in adult calls, ROUTES entries whose auth is token: the JWT authorizer guards these and no others"
+  type        = list(string)
+  default     = []
+}
+
+variable "jwt_issuer" {
+  description = "The Supabase project's Auth issuer, https://<ref>.supabase.co/auth/v1, signing with RS256"
+  type        = string
+}
+
+variable "jwt_audience" {
+  description = "The aud claim Supabase puts in a signed-in user's access token"
+  type        = string
+  default     = "authenticated"
 }
 
 variable "route_throttle" {
