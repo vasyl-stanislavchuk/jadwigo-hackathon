@@ -99,29 +99,67 @@ const PROD = /\bENV\W{0,4}prod\b/;
 const WRAPPERS =
   /^(script|expect|unbuffer|socat|python[\d.]*|perl|ruby|node|bun|deno|osascript|bash|sh|zsh|dash|fish)$/;
 const CLEARS_CLAUDECODE =
-  /(^|\s)(-u\s*|--unset[=\s]+)CLAUDECODE\b|\bunset\s+(-v\s+)?(\w+\s+)*CLAUDECODE\b|\bexport\s+-n\s+(\w+\s+)*CLAUDECODE\b/;
+  /(^|\s)(-u\s*|--unset[=\s]+)CLAUDECODE\b|\bunset\s+(-v\s+)?(\w+\s+)*CLAUDECODE\b|\bexport\s+-n\s+(\w+\s+)*CLAUDECODE\b|\b(typeset|declare)\s+([-+]\w+\s+)*\+\w*x\w*\s+(\w+\s+)*CLAUDECODE\b/;
+/** Clearing the whole environment clears CLAUDECODE too: env -i, env -, env --ignore-environment, exec -c. */
+const CLEARS_ENV =
+  /(^|[\s;&|('"])env\s+(-[A-Za-z]*i[A-Za-z]*|-|--ignore-environment)(\s|$)|(^|[\s;&|('"])exec\s+-[A-Za-z]*c[A-Za-z]*(\s|$)/;
+/** Programs that run a command on a pseudo-terminal; python counts when the line imports pty. */
+const PTY_WRAPPERS = /^(script|expect|unbuffer|socat)$/;
+const MAKE = /(^|[\s'",[(])g?make\b/;
+
+/**
+ * The line with shell quoting a word can hide behind undone: empty '' and "" pairs and backslashes
+ * dropped, and quotes around a word with no space in it removed. `make db-pu''sh ENV=pr\od` reads
+ * as `make db-push ENV=prod`. A quoted string with spaces stays, so prose in a commit message is
+ * still prose to stripProse.
+ */
+export function unquoteWords(cmd: string): string {
+  return cmd
+    .replace(/\\(\S)/g, "$1")
+    .replace(/'([^'\s]*)'/g, "$1")
+    .replace(/"([^"\s]*)"/g, "$1");
+}
 
 /**
  * The prod db targets (dl-5ssh.45). The Makefile's PROD_GATE asks for a terminal and a typed prod
  * (dl-e8ov.2.34), but a session can fake the terminal with a pty, so a session never runs one: no
  * make db-* with ENV=prod, no clearing CLAUDECODE (the gate reads it), and no pty or script wrapper
  * whose quoted text names a db target and prod. Codex shells have no guard; the gate is all they meet.
+ *
+ * The guard reads text, so it runs on the raw line and on unquoteWords' copy of it. It does not
+ * follow eval, $(...) or variables (`E=prod make db-push ENV=$E`), and it judges one call at a
+ * time, so a makefile fragment written in one call and passed with `make -f` in the next gets past
+ * it. The Makefile's PROD_GATE still stops both: it asks for a terminal and a typed prod.
  */
 function prodDbDenial(cmd: string, bare: string, commands: string[][]): string | undefined {
   const base = (w: string) => w.slice(w.lastIndexOf("/") + 1);
   if (assignments(bare).some((a) => a.startsWith("CLAUDECODE=")) || CLEARS_CLAUDECODE.test(bare)) {
     return "clearing CLAUDECODE hides that a session runs the command, which the prod db gate reads. Leave it set.";
   }
+  const runsDbTarget = MAKE.test(cmd) && DB_TARGET.test(cmd);
+  if (runsDbTarget && CLEARS_ENV.test(bare)) {
+    return "env -i, env - and exec -c clear CLAUDECODE with the rest of the environment, which the prod db gate reads. Run make db-* with the environment as it is.";
+  }
   for (const words of commands) {
     const make = words.some((w) => /^g?make$/.test(base(w)));
     if (make && words.some((w) => DB_TARGET.test(w)) && PROD.test(cmd)) {
       return "make db-push, db-role, db-seed and db-reset with ENV=prod are the owner's, typed at their own terminal (`!` in Claude Code). From a session, use ENV=dev.";
     }
+    const pty = words.some(
+      (w) => PTY_WRAPPERS.test(base(w)) || (/^python[\d.]*$/.test(base(w)) && /\bpty\b/.test(cmd)),
+    );
+    if (pty && runsDbTarget) {
+      return "a pty wrapper around make db-* fakes the terminal its gate asks for, whatever ENV says. Run make db-* directly; prod db steps are the owner's, typed at their own terminal.";
+    }
     if (words.some((w) => WRAPPERS.test(base(w)))) {
       if (DB_TARGET.test(cmd) && /\bprod\b/.test(cmd)) {
         return "a pty or script wrapper around a prod db target fakes the terminal its gate asks for. Prod db steps are the owner's, typed at their own terminal.";
       }
-      if (CLEARS_CLAUDECODE.test(cmd) || /CLAUDECODE/.test(cmd.replace(/\$\{?CLAUDECODE/g, ""))) {
+      if (
+        CLEARS_CLAUDECODE.test(cmd) ||
+        (runsDbTarget && CLEARS_ENV.test(cmd)) ||
+        /CLAUDECODE/.test(cmd.replace(/\$\{?CLAUDECODE/g, ""))
+      ) {
         return "a wrapped script that touches CLAUDECODE can hide that a session runs it, which the prod db gate reads. Leave it set.";
       }
     }
@@ -178,8 +216,11 @@ function bashDenial(
   const bare = stripProse(cmd);
   const commands = simpleCommands(bare);
 
-  // 3b. Prod db targets stay the owner's, however the terminal is faked.
-  const prodDb = prodDbDenial(cmd, bare, commands);
+  // 3b. Prod db targets stay the owner's, however the terminal is faked or the words are quoted.
+  const plain = unquoteWords(cmd);
+  const plainBare = stripProse(plain);
+  const prodDb =
+    prodDbDenial(cmd, bare, commands) ?? prodDbDenial(plain, plainBare, simpleCommands(plainBare));
   if (prodDb) return prodDb;
 
   for (const words of commands) {
