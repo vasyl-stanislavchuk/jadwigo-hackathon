@@ -13,7 +13,7 @@ ifneq (,$(wildcard $(HOME)/perl5/bin/pg_prove))
 export PATH := $(HOME)/perl5/bin:$(PATH)
 export PERL5LIB := $(HOME)/perl5/lib/perl5$(if $(PERL5LIB),:$(PERL5LIB))
 endif
-.PHONY: check check-all dev db migrate pgtap db-reset db-seed db-push db-role skills drops
+.PHONY: check check-all dev db migrate pgtap db-reset db-seed api-dev db-push db-role skills drops
 
 ## check: lint, typecheck and test what changed since main (turbo --affected), uv's pytest
 ## included, then the repo-wide checks turbo cannot scope: knip, dependency-cruiser, no-bank, worklog,
@@ -128,6 +128,21 @@ else
 	env -i PATH="$$PATH" HOME="$$HOME" USER="$$USER" TMPDIR="$${TMPDIR:-/tmp}" PGPASSWORD="$$API_PASSWORD" DATABASE_URL="$$url" \
 	  bun run --cwd packages/lesson-import seed
 endif
+
+## api-dev ENV=dev: serve the local apps/api on jadwigo-dev, as the Lambda will reach a project: as
+## jadwigo_api through its transaction pooler (port 6543), the password in PGPASSWORD only (run
+## db-role first). The server runs under env -i: it sees PATH, HOME, USER, TMPDIR, PORT, PGPASSWORD
+## and DATABASE_URL, no other secret. Only dev: prod's api runs in Lambda, never from a laptop.
+api-dev:
+	@if [ "$(ENV)" != dev ]; then echo "api-dev: only ENV=dev; prod's api runs in Lambda"; exit 1; fi
+	@$(SUPABASE_LINK); \
+	API_PASSWORD=$${JADWIGO_API_DB_PASSWORD_$(ENV_UPPER):-$$(security find-generic-password -s jadwigo-api-db-password-$(ENV) -w 2>/dev/null)}; \
+	test -n "$$API_PASSWORD" || { echo "api-dev: set JADWIGO_API_DB_PASSWORD_$(ENV_UPPER) in $(SUPABASE_SECRETS), or add the keychain item jadwigo-api-db-password-$(ENV)"; exit 1; }; \
+	test -s supabase/.temp/pooler-url || { echo "api-dev: supabase link wrote no supabase/.temp/pooler-url"; exit 1; }; \
+	url=$$(sed 's/:5432\//:6543\//; s|://postgres\.|://jadwigo_api.|' supabase/.temp/pooler-url); \
+	case "$$url" in *://jadwigo_api.*:6543/*) ;; *) echo "api-dev: supabase/.temp/pooler-url is not postgres.<ref>@<pooler>:<port>"; exit 1;; esac; \
+	env -i PATH="$$PATH" HOME="$$HOME" USER="$$USER" TMPDIR="$${TMPDIR:-/tmp}" PORT="$${PORT:-8787}" PGPASSWORD="$$API_PASSWORD" DATABASE_URL="$$url" \
+	  bun run --cwd apps/api dev
 
 ## db-push ENV=dev|prod: show the migrations ENV's project lacks (a dry run), then push them only when
 ## you type the ENV's name, or pass it as CONFIRM=<env> where there is no keyboard (`!` in Claude Code).
