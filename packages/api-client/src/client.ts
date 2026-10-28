@@ -1,5 +1,6 @@
 /**
- * The `/api/v1` attempt calls, typed from the contracts (dl-5ssh.3.1). Every path comes from
+ * The `/api/v1` calls the lesson player makes, typed from the contracts (dl-5ssh.3.1): the featured
+ * lessons the home page lists (dl-5ssh.3.6), and an attempt's own calls. Every path comes from
  * `ROUTES` and every reply is parsed with the route's own response schema, so a reply the page
  * cannot trust is an error here, never a shape a view has to guess at (RULES.md rule 18).
  *
@@ -21,6 +22,7 @@ import {
   type AttemptStart,
   ErrorEnvelope,
   type ErrorType,
+  type Featured,
   type HelpRequest,
   type HelpResult,
   ROUTES,
@@ -61,6 +63,14 @@ export interface AttemptClient {
   getResults(attemptId: AttemptId): Promise<AttemptResults>;
 }
 
+/** The home page's call: the lessons anyone may play now, oldest first. */
+export interface FeaturedClient {
+  featuredLessons(): Promise<Featured>;
+}
+
+/** Every `/api/v1` call this client makes. */
+export type Client = AttemptClient & FeaturedClient;
+
 /** A route's path with its `{name}` params filled in. */
 export function pathOf(route: Route, params: Record<string, string | number>): string {
   return route.path.replace(/\{(\w+)\}/g, (_, name: string) => {
@@ -70,10 +80,7 @@ export function pathOf(route: Route, params: Record<string, string | number>): s
   });
 }
 
-export function createClient({
-  base,
-  fetch: send = globalThis.fetch,
-}: ClientOptions): AttemptClient {
+export function createClient({ base, fetch: send = globalThis.fetch }: ClientOptions): Client {
   async function call<R extends Route>(
     route: R,
     params: Record<string, string | number>,
@@ -110,6 +117,7 @@ export function createClient({
   }
 
   return {
+    featuredLessons: () => call(ROUTES.featuredLessons, {}, undefined),
     startAttempt: (assignmentId, body = {}) =>
       call(ROUTES.startAttempt, { id: assignmentId }, body),
     getAttempt: (attemptId) => call(ROUTES.getAttempt, { id: attemptId }, undefined),
