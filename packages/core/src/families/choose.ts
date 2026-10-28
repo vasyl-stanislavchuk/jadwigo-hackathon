@@ -19,8 +19,8 @@ import type {
  * already said is not the answer. Several options mark only the distractors picked. A miss that is
  * only a missed option marks the whole step, because marking a missed option would show it is right.
  *
- * `isNoneOption` and `isWordToken` read the option list as the page lays it out: a "none of these"
- * option, and the word tokens of an inline sentence that are not options.
+ * `isNoneOption` finds the "none of these" option, and `isWordToken` tells a plain word picked in
+ * an inline sentence (`w:<n>`) from an option id.
  */
 
 /** The "none of these" option, if the step has one (validate.ts keeps it last and alone). */

@@ -5,7 +5,7 @@
 
 ## Source
 
-- Repo: the playground's source repo, where it lived before it was ported here, commit
+- Repo: the playground's source repo, where it lived before `dl-5ssh.34.6` ported it here, commit
   `e84829978511797e83f969116fa4533d5a9edbf5` (2026-10-27).
 - Test: `frontend/src/playground/sim/familyGolden.test.ts`, both of its suites:
   - `golden`: every row of `sim/golden.json` (the Python grader's verdicts, `dl-w3.37.8`) for every
