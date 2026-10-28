@@ -1,0 +1,318 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "number",
+      "const": 1
+    },
+    "need": {
+      "type": "object",
+      "properties": {
+        "words": {
+          "type": "string",
+          "description": "The need in plain words, in the caller's language"
+        },
+        "words_en": {
+          "type": "string",
+          "description": "English terms for the keyword arm when the need is not in English; never stored on a page"
+        },
+        "skills": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mistakes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "can_do": {
+          "type": "string"
+        },
+        "contexts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "curriculum_tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "e.g. pl-2017:II.3.3, ccss:3.OA.C.7"
+        },
+        "resemble": {
+          "type": "string",
+          "description": "A task to resemble, e.g. a homework problem's text"
+        },
+        "language": {
+          "type": "string",
+          "enum": [
+            "pl",
+            "en",
+            "uk"
+          ]
+        },
+        "grade": {
+          "type": "string",
+          "description": "Canonical form: the bare number, e.g. \"3\""
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "language",
+        "grade"
+      ],
+      "additionalProperties": false,
+      "description": "A search need, from jadwigo-bank schemas/need.schema.json at commit ac60440. It carries at least one of words, skills, can_do or resemble."
+    },
+    "arm": {
+      "type": "string",
+      "description": "The arm that answered (A, A1, B, B1, C, C2)"
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "first",
+        "final"
+      ]
+    },
+    "timing_ms": {
+      "type": "object",
+      "properties": {
+        "embed": {
+          "type": "number"
+        },
+        "vectors": {
+          "type": "number"
+        },
+        "rows": {
+          "type": "number"
+        },
+        "keyword": {
+          "type": "number"
+        },
+        "rerank": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Server-side stage times in milliseconds"
+    },
+    "cache": {
+      "type": "string",
+      "enum": [
+        "hit",
+        "miss",
+        "off"
+      ]
+    },
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^set_"
+          },
+          "rank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "score": {
+            "type": "number"
+          },
+          "arm": {
+            "type": "string"
+          },
+          "vector_score": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "bm25_score": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "rerank_score": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "best_view": {
+            "description": "The index view the vector hit came from: title, samples, meaning_pl, meaning_en, needs",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "view_scores": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "grade": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "titles": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "By language code: pl, en"
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "skill_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "curriculum_tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "problem_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "question_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "views": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source": {
+            "type": "string",
+            "description": "Where the set's questions come from: khan, own, ai"
+          },
+          "credit": {
+            "type": "string",
+            "description": "The attribution line the product must show: Khan Academy, CC BY-NC-SA 4.0 and the exercise's URL"
+          },
+          "enrichment": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {},
+            "description": "The set's enrichment fields the caller may show: summary, can_do, mistake_classes, contexts"
+          },
+          "content_hash": {
+            "type": "string",
+            "description": "sha256 of the set page the row was built from"
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "shas of the pictures the set's questions need"
+          },
+          "items": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "How many questions the set holds (the bank's field name)"
+          },
+          "body": {
+            "not": {},
+            "description": "A private body never crosses this route"
+          },
+          "private_body": {
+            "not": {},
+            "description": "A private body never crosses this route"
+          }
+        },
+        "required": [
+          "id",
+          "rank",
+          "score",
+          "arm",
+          "titles"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "state": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "arm": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "empty",
+              "abstained",
+              "degraded",
+              "not_asked"
+            ]
+          },
+          "detail": {
+            "type": "string",
+            "description": "What degraded it (an embedder or reranker failure), never a key or a URL with a token"
+          }
+        },
+        "required": [
+          "arm",
+          "state"
+        ],
+        "additionalProperties": false
+      },
+      "description": "One row per known arm: the asked arm's outcome and not_asked for the rest"
+    }
+  },
+  "required": [
+    "version",
+    "rows",
+    "state"
+  ],
+  "additionalProperties": false,
+  "description": "A bank search's answer, version 1, from jadwigo-bank schemas/search-envelope.schema.json at commit ac60440."
+}

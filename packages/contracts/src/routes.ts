@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Need, SearchEnvelope } from "./bank.ts";
 import { AssignmentId, AttemptId } from "./ids.ts";
 import {
   AttemptAnswerRequest,
@@ -92,6 +93,15 @@ export const ROUTES = {
     params: z.object({ id: AttemptId }),
     body: null,
     response: AttemptResults,
+    status: 200,
+  },
+  /** A bank search: the need in, the envelope out (`src/bank.ts`). */
+  questionSearches: {
+    method: "POST",
+    path: "/api/v1/question-searches",
+    params: z.object({}),
+    body: Need,
+    response: SearchEnvelope,
     status: 200,
   },
 } as const satisfies Record<string, Route>;
