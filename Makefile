@@ -105,7 +105,8 @@ endif
 ## db-seed: the featured lessons, by lesson import's seed script (dl-e8ov.2.32.5), into DATABASE_URL.
 ## ENV=dev|prod seeds that project instead, as postgres through its session pooler (port 5432; the
 ## transaction pooler on 6543 cannot hold the seed's transactions), the password in PGPASSWORD only.
-## Safe to rerun: the same content publishes nothing new.
+## ENV=prod asks first, as db-push does (CONFIRM=prod where there is no keyboard). Safe to rerun:
+## the same content publishes nothing new.
 db-seed:
 ifeq ($(ENV),)
 	bun run --cwd packages/lesson-import seed
@@ -115,7 +116,13 @@ else
 	test -s supabase/.temp/pooler-url || { echo "db-seed: supabase link wrote no supabase/.temp/pooler-url"; exit 1; }; \
 	url=$$(sed 's/:6543\//:5432\//' supabase/.temp/pooler-url); \
 	case "$$url" in *:5432/*) ;; *) echo "db-seed: supabase/.temp/pooler-url names no pooler port"; exit 1;; esac; \
-	PGPASSWORD=$$SUPABASE_DB_PASSWORD DATABASE_URL="$$url" bun run --cwd packages/lesson-import seed
+	if [ "$(ENV)" = prod ]; then \
+	  answer="$(CONFIRM)"; \
+	  if [ -z "$$answer" ]; then printf 'Seed jadwigo-prod? Type prod to seed (or pass CONFIRM=prod): '; read answer; fi; \
+	  if [ "$$answer" != prod ]; then echo "db-seed: nothing seeded"; exit 1; fi; \
+	fi; \
+	env -u SUPABASE_ACCESS_TOKEN -u SUPABASE_DB_PASSWORD PGPASSWORD="$$SUPABASE_DB_PASSWORD" DATABASE_URL="$$url" \
+	  bun run --cwd packages/lesson-import seed
 endif
 
 ## db-push ENV=dev|prod: show the migrations ENV's project lacks (a dry run), then push them only when
