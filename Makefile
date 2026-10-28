@@ -103,10 +103,20 @@ else
 endif
 
 ## db-seed: the featured lessons, by lesson import's seed script (dl-e8ov.2.32.5), into DATABASE_URL.
-## Until that script exists it says so and does nothing.
+## ENV=dev|prod seeds that project instead, as postgres through its session pooler (port 5432; the
+## transaction pooler on 6543 cannot hold the seed's transactions), the password in PGPASSWORD only.
+## Safe to rerun: the same content publishes nothing new.
 db-seed:
-	@if grep -q '"seed":' packages/lesson-import/package.json; then bun run --cwd packages/lesson-import seed; \
-	else echo "db-seed: no seed yet (dl-e8ov.2.32.5 adds packages/lesson-import's seed script)"; fi
+ifeq ($(ENV),)
+	bun run --cwd packages/lesson-import seed
+else
+	@$(NOT_PROD_FROM_AGENT)
+	@$(SUPABASE_LINK); \
+	test -s supabase/.temp/pooler-url || { echo "db-seed: supabase link wrote no supabase/.temp/pooler-url"; exit 1; }; \
+	url=$$(sed 's/:6543\//:5432\//' supabase/.temp/pooler-url); \
+	case "$$url" in *:5432/*) ;; *) echo "db-seed: supabase/.temp/pooler-url names no pooler port"; exit 1;; esac; \
+	PGPASSWORD=$$SUPABASE_DB_PASSWORD DATABASE_URL="$$url" bun run --cwd packages/lesson-import seed
+endif
 
 ## db-push ENV=dev|prod: show the migrations ENV's project lacks (a dry run), then push them only when
 ## you type the ENV's name, or pass it as CONFIRM=<env> where there is no keyboard (`!` in Claude Code).
