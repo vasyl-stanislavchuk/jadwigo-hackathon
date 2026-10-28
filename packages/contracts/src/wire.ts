@@ -7,13 +7,14 @@ import {
   PartMark,
   QuestionType,
 } from "./families/index.ts";
-import { EventId, LearnerId, LessonQuestionId } from "./ids.ts";
+import { AssignmentId, EventId, LearnerId, LessonId, LessonQuestionId } from "./ids.ts";
 import {
   Added,
   type Assignment,
   Attempt,
   type AttemptResult,
   Ended,
+  Language,
   Placed,
   SkipReason,
 } from "./records.ts";
@@ -257,6 +258,35 @@ export const AttemptResults = z.object({
 });
 export type AttemptResults = z.infer<typeof AttemptResults>;
 
+/**
+ * The login-free tier's invisible limits (decision
+ * `2026-10-26-the-login-free-lesson-is-protected-by-invisible-limits-only-per`): nothing is shown
+ * to a child before them, and a request past one is refused.
+ *
+ * - `answersPerAttempt`: the answers one attempt stores; the next is `AnswerLimit` (owner,
+ *   2026-10-28: 200, well above the longest featured lesson's tries and twins).
+ * - `bodyBytes`: a request body's size, past which it is `BadRequest` before it is parsed.
+ * - `enteredChars`: an entered answer's length, past which it is `BadRequest` before it is judged.
+ */
+export const LIMITS = {
+  answersPerAttempt: 200,
+  bodyBytes: 16_384,
+  enteredChars: 200,
+} as const;
+
+/** A lesson anyone may play now, from the landing page. */
+export const FeaturedLesson = z.object({
+  assignment_id: AssignmentId,
+  lesson_id: LessonId,
+  title: z.string().min(1),
+  language: Language,
+});
+export type FeaturedLesson = z.infer<typeof FeaturedLesson>;
+
+/** `GET /api/v1/featured-lessons`: the featured pod's open `anyone` assignments, oldest first. */
+export const Featured = z.object({ lessons: z.array(FeaturedLesson) });
+export type Featured = z.infer<typeof Featured>;
+
 /** Every error type, with its status (RULES.md rule 20). */
 export const ERROR_STATUS = {
   BadRequest: 400,
@@ -270,6 +300,7 @@ export const ERROR_STATUS = {
   AnswerConflict: 409,
   EventIdMismatch: 409,
   WriteOnce: 409,
+  AnswerLimit: 429,
 } as const;
 export const ErrorType = z.enum(
   Object.keys(ERROR_STATUS) as [keyof typeof ERROR_STATUS, ...(keyof typeof ERROR_STATUS)[]],

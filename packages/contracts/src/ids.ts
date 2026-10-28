@@ -72,6 +72,13 @@ function prefixedId<B extends string>(prefix: IdPrefix, record: string) {
  */
 export const PodId = prefixedId<"PodId">(ID_PREFIXES.pod, "a pod");
 export type PodId = z.infer<typeof PodId>;
+/**
+ * Jadwigo's own pod, which holds the featured lessons: lesson import names it under its namespace
+ * (`packages/lesson-import/src/ids.ts`, whose test pins this value), and `GET /api/v1/featured-lessons`
+ * lists its open assignments (owner, 2026-10-28: the featured list is this pod's only).
+ */
+export const FEATURED_POD_ID = PodId.parse("pod_6et2fhbnwvb45aw9atcfzs33za");
+
 export const LearnerId = prefixedId<"LearnerId">(ID_PREFIXES.learner, "a learner");
 export type LearnerId = z.infer<typeof LearnerId>;
 export const LessonId = prefixedId<"LessonId">(ID_PREFIXES.lesson, "a lesson");

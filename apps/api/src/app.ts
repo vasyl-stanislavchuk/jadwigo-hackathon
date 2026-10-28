@@ -1,8 +1,9 @@
 import { Router } from "@aws-lambda-powertools/event-handler/http";
-import { ErrorType, ROUTES, type RouteName } from "@jadwigo/contracts";
+import { ErrorType, LIMITS, ROUTES, type RouteName } from "@jadwigo/contracts";
 import type { Store } from "@jadwigo/store";
 import { answer, getAttempt, startAttempt } from "./attempts.ts";
 import { ApiError, errorResponse, json, refusal } from "./errors.ts";
+import { featuredLessons } from "./featured.ts";
 import { getResults, help, patchAttempt } from "./session.ts";
 
 type Params<N extends RouteName> = ReturnType<(typeof ROUTES)[N]["params"]["parse"]>;
@@ -38,6 +39,7 @@ export function createApp(store: Store): Router {
   };
 
   on("health", async () => ({ status: "ok" }));
+  on("featuredLessons", () => featuredLessons(store));
   on("startAttempt", (params, body) => startAttempt(store, params.id, body));
   on("getAttempt", (params) => getAttempt(store, params.id));
   on("answer", (params, body) => answer(store, params.id, body));
@@ -49,12 +51,19 @@ export function createApp(store: Store): Router {
   return app;
 }
 
+/** The body as JSON. One past `LIMITS.bodyBytes` is refused before it is parsed, so nothing is judged or stored. */
 async function bodyOf(req: Request): Promise<unknown> {
+  if (Number(req.headers.get("content-length") ?? 0) > LIMITS.bodyBytes) throw tooLarge();
   const text = await req.text();
+  if (new TextEncoder().encode(text).byteLength > LIMITS.bodyBytes) throw tooLarge();
   if (text.trim() === "") return undefined;
   try {
     return JSON.parse(text);
   } catch {
     throw new ApiError(ErrorType.enum.BadRequest, "the body is not JSON");
   }
+}
+
+function tooLarge(): ApiError {
+  return new ApiError(ErrorType.enum.BadRequest, `the body is over ${LIMITS.bodyBytes} bytes`);
 }

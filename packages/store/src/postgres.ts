@@ -42,6 +42,7 @@ import {
   type NewLessonQuestion,
   type NewLessonVersion,
   type NewPod,
+  type OpenAssignment,
   type Store,
   StoreError,
 } from "./store.ts";
@@ -622,6 +623,38 @@ class PostgresStore implements Store {
         .executeTakeFirst();
       if (!row) throw notFound("the assignment");
       return read(Assignment, row, ID_PREFIXES.assignment);
+    });
+  }
+
+  async listOpenAssignments(pod: PodId): Promise<readonly OpenAssignment[]> {
+    return this.#in(pod, async (tx) => {
+      const rows = await tx
+        .selectFrom("assignment")
+        .selectAll()
+        .where("audience", "=", "anyone")
+        .where((eb) => eb.or([eb("opens_at", "is", null), eb("opens_at", "<=", sql<Date>`now()`)]))
+        .where((eb) => eb.or([eb("closes_at", "is", null), eb("closes_at", ">", sql<Date>`now()`)]))
+        .orderBy("created_at")
+        .orderBy("id")
+        .execute();
+      if (rows.length === 0) return [];
+      const lessons = await tx
+        .selectFrom("lesson")
+        .selectAll()
+        .where(
+          "id",
+          "in",
+          rows.map((r) => r.lesson_id),
+        )
+        .where("status", "=", "published")
+        .execute();
+      const byId = new Map(lessons.map((l) => [l.id, read(Lesson, l, ID_PREFIXES.lesson)]));
+      return rows.flatMap((row) => {
+        const lesson = byId.get(row.lesson_id);
+        return lesson
+          ? [{ assignment: read(Assignment, row, ID_PREFIXES.assignment), lesson }]
+          : [];
+      });
     });
   }
 

@@ -9,6 +9,7 @@ import {
   AttemptStart,
   type Ended,
   ErrorType,
+  LIMITS,
   type PodId,
   pageEnded,
   verdictsHeld,
@@ -74,6 +75,8 @@ export async function getAttempt(store: Store, id: AttemptId): Promise<AttemptSn
  * - A skip ends it `skipped`, and Not sure yet may owe its twin (`nextQuestion`).
  * - When a question ends, the next one is asked, or the attempt finishes.
  * - A replay (same `event_id`, same body) gets the stored result and changes nothing.
+ * - Past `LIMITS.answersPerAttempt` answers it is `AnswerLimit`, and an entry longer than
+ *   `LIMITS.enteredChars` is `BadRequest`, both before anything is judged or stored.
  */
 export async function answer(
   store: Store,
@@ -87,8 +90,24 @@ export async function answer(
   const parsed = AttemptAnswerRequest.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
   const body = parsed.data;
+  if (
+    body.kind === "try" &&
+    "entered" in body.value &&
+    body.value.entered.length > LIMITS.enteredChars
+  )
+    throw new ApiError(
+      ErrorType.enum.BadRequest,
+      `an entered answer is at most ${LIMITS.enteredChars} characters`,
+    );
 
   const record = await store.getAttempt(scope.pod, id);
+  // The cap on one attempt's answers (LIMITS): a replay of a stored answer is still answered.
+  // Only the open question takes a try, and only its next one, so 2 sends at once can't both pass.
+  if (
+    record.answers.length >= LIMITS.answersPerAttempt &&
+    !record.answers.some((a) => a.event_id === body.event_id)
+  )
+    throw new ApiError(ErrorType.enum.AnswerLimit, "this attempt has taken all the answers it can");
   const version = await versionOf(store, scope.pod, record);
   const asked = record.questions.find((q) => q.seq === body.seq);
   if (asked === undefined)

@@ -7,6 +7,7 @@ import {
   AttemptResults,
   AttemptSnapshot,
   AttemptStart,
+  Featured,
   Health,
   HelpRequest,
   HelpResult,
@@ -35,6 +36,14 @@ export const ROUTES = {
     params: z.object({}),
     body: null,
     response: Health,
+    status: 200,
+  },
+  featuredLessons: {
+    method: "GET",
+    path: "/api/v1/featured-lessons",
+    params: z.object({}),
+    body: null,
+    response: Featured,
     status: 200,
   },
   startAttempt: {

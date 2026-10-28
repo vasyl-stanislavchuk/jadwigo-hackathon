@@ -12,6 +12,7 @@
     "TryOutOfOrder",
     "AnswerConflict",
     "EventIdMismatch",
-    "WriteOnce"
+    "WriteOnce",
+    "AnswerLimit"
   ]
 }

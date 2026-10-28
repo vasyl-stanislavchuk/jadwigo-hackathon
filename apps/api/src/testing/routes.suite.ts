@@ -7,9 +7,11 @@ import {
   type AttemptResults,
   type AttemptSnapshot,
   type ErrorEnvelope,
+  type Featured,
   type HelpResult,
   ID_PREFIXES,
   idOf,
+  LIMITS,
 } from "@jadwigo/contracts";
 import { solutionOf } from "@jadwigo/core";
 import type { NewPod, Store } from "@jadwigo/store";
@@ -36,6 +38,85 @@ export function routeSuite(name: string, makeStore: () => Store): void {
     let s: Seeded;
     beforeEach(() => {
       s = seeded(makeStore());
+    });
+
+    describe("featured lessons", () => {
+      it("lists the featured pod's open anyone-assignments, never a closed, learners' or other pod's one", async () => {
+        const open = await s.assign("equalGroups");
+        const closed = await s.assign("equalGroups", { closes_at: "2000-01-01T00:00:00.000Z" });
+        const soon = await s.assign("equalGroups", { opens_at: "2999-01-01T00:00:00.000Z" });
+        const learners = await s.assign("equalGroups", { audience: "learners", identity: "pick" });
+        const theirs = await s.assign("equalGroups", {}, OTHER_POD);
+
+        const reply = await s.call<Featured>("GET", pathOf("featuredLessons", {}));
+        expect(reply.status).toBe(200);
+        const ids = reply.body.lessons.map((l) => l.assignment_id);
+        expect(ids).toContain(open);
+        for (const hidden of [closed, soon, learners, theirs]) expect(ids).not.toContain(hidden);
+        expect(reply.body.lessons.find((l) => l.assignment_id === open)).toMatchObject({
+          title: expect.any(String),
+          language: "pl",
+        });
+        // A listed lesson starts with no login.
+        const started = await s.call<AttemptSnapshot>(
+          "POST",
+          pathOf("startAttempt", { id: open }),
+          {},
+        );
+        expect(started.status).toBe(201);
+      });
+    });
+
+    describe("the login-free limits", () => {
+      it(`refuses an attempt's answer past ${LIMITS.answersPerAttempt} with AnswerLimit, storing nothing, and still replays`, async () => {
+        const { id, snapshot } = await start(s, await s.assign("equalGroups"));
+        let page = snapshot.questions[0];
+        if (page === undefined) throw new Error("no first question");
+        let last: Record<string, unknown> = {};
+        // A practice question stays open after a miss, so one question takes every try.
+        for (let n = 0; n < LIMITS.answersPerAttempt; n++) {
+          last = { ...answerFields(page), kind: "try", value: { entered: "9999" } };
+          const reply = await s.call("POST", pathOf("answer", { id }), last);
+          expect(reply.status).toBe(201);
+          page = { ...page, tries: page.tries + 1 };
+        }
+        const refused = await s.call<ErrorEnvelope>("POST", pathOf("answer", { id }), {
+          ...answerFields(page),
+          kind: "try",
+          value: { entered: "9999" },
+        });
+        expect(refused.status).toBe(429);
+        expect(refused.body.error.type).toBe("AnswerLimit");
+        const after = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect(after.body.questions[0]?.tries).toBe(LIMITS.answersPerAttempt);
+
+        const replay = await s.call<AttemptAnswerResult>("POST", pathOf("answer", { id }), last);
+        expect(replay.status).toBe(201);
+        expect(replay.body.replayed).toBe(true);
+      }, 60_000);
+
+      it("refuses an oversized body and an over-long entry with BadRequest, storing nothing", async () => {
+        const { id, snapshot } = await start(s, await s.assign("equalGroups"));
+        const page = snapshot.questions[0];
+        if (page === undefined) throw new Error("no first question");
+        const big = await s.call<ErrorEnvelope>("POST", pathOf("answer", { id }), {
+          ...answerFields(page),
+          kind: "try",
+          value: { entered: "1".repeat(LIMITS.bodyBytes) },
+        });
+        expect(big.status).toBe(400);
+        expect(big.body.error.type).toBe("BadRequest");
+        const long = await s.call<ErrorEnvelope>("POST", pathOf("answer", { id }), {
+          ...answerFields(page),
+          kind: "try",
+          value: { entered: "1".repeat(LIMITS.enteredChars + 1) },
+        });
+        expect(long.status).toBe(400);
+        expect(long.body.error.type).toBe("BadRequest");
+        const after = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect(after.body.last_event_id).toBeNull();
+        expect(after.body.questions[0]?.tries).toBe(0);
+      });
     });
 
     describe("start and snapshot", () => {
