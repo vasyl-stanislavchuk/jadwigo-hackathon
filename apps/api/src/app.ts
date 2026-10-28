@@ -33,6 +33,9 @@ export function createApp(store: Store): Router {
       } catch (error) {
         const refused = refusal(error);
         if (refused) return refused;
+        // The router answers it 500, which the api-5xx alarm counts (dl-5ssh.13); the log line
+        // is what tells why. Never the request's body: it may carry a child's answer.
+        logFailure(name, error);
         throw error;
       }
     });
@@ -52,6 +55,18 @@ export function createApp(store: Store): Router {
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;
+}
+
+/**
+ * One JSON line on stderr for a route that failed in a way no refusal names: the route, the
+ * error's name, message and stack. CloudWatch keeps it in the function's log group at level ERROR.
+ */
+function logFailure(route: RouteName, error: unknown): void {
+  const failure =
+    error instanceof Error
+      ? { name: error.name, message: error.message, stack: error.stack }
+      : { name: typeof error, message: String(error) };
+  console.error(JSON.stringify({ level: "ERROR", message: "route failed", route, error: failure }));
 }
 
 /**
