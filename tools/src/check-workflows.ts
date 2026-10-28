@@ -6,7 +6,7 @@
 // - marketing commands, .agents/skills/mk-<noun>/SKILL.md (dl-w0b4.56), linked the same way.
 // Every link is committed and relative, and each frontmatter names its folder. `make skills`
 // makes the links. Folders starting with _ under workflows/ and .agents/skills/ are shared
-// parts, not commands.
+// parts, not commands, and one under .agents/skills/ that holds a SKILL.md fails.
 // Run: bun tools/src/check-workflows.ts [repo]
 import { existsSync, lstatSync, readdirSync, readFileSync, readlinkSync } from "node:fs";
 import { join } from "node:path";
@@ -72,8 +72,14 @@ export function checkWorkflows(repo: string): string[] {
 
   for (const name of entries(join(repo, ".agents/skills"))) {
     const path = join(repo, ".agents/skills", name);
-    if (name.startsWith("_") || !lstatSync(path).isDirectory()) continue; // shared parts, a product workflow's link (checked below) or a README
+    if (!lstatSync(path).isDirectory()) continue; // a product workflow's link (checked below) or a README
     const shown = `.agents/skills/${name}`;
+    if (name.startsWith("_")) {
+      // shared parts, such as _shared/jadwigo-rules.md; a SKILL.md here would still be found as a command
+      if (existsSync(join(path, "SKILL.md")))
+        problems.push(`${shown}: a _ folder holds shared parts, not a command; move its SKILL.md`);
+      continue;
+    }
     if (!DEV.test(name) && !MARKETING.test(name)) {
       problems.push(
         name.startsWith("jadwigo-")

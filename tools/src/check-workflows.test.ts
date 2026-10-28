@@ -52,6 +52,14 @@ describe("checkWorkflows", () => {
     ]);
   });
 
+  it("fails a SKILL.md in a _ folder under .agents/skills, which agents would still find as a command", () => {
+    const root = good();
+    skill(root, ".agents/skills", "_draft", "name: anything\ndescription: x");
+    expect(checkWorkflows(root)).toEqual([
+      ".agents/skills/_draft: a _ folder holds shared parts, not a command; move its SKILL.md",
+    ]);
+  });
+
   it("fails a missing link, a stray link, a bad name and a wrong frontmatter name", () => {
     const root = repo();
     skill(root, "workflows", "jadwigo-lesson", "name: other\ndescription: x");
