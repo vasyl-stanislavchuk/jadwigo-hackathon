@@ -29,8 +29,8 @@ module "app" {
   bucket_name = "jadwigo-app-${var.environment}-843109108289"
 
   # ROUTES in packages/contracts/src/routes.ts whose auth is "none", as "<METHOD> <path>".
-  # tools/src/check-infra-routes.ts (make check, CI's lint job) fails on a ROUTES entry missing
-  # here or in token_routes.
+  # tools/src/check-infra-routes.ts (make check, CI's lint job) fails when routes and token_routes
+  # together differ from ROUTES, or token_routes differs from the entries whose auth is "token".
   routes = [
     "GET /api/health",
     "GET /api/v1/featured-lessons",

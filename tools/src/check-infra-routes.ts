@@ -1,58 +1,76 @@
-// The HTTP API's route keys in infra/terraform/main.tf match ROUTES in packages/contracts (dl-5ssh.50).
-// A route in ROUTES with no Terraform route still answers through $default, but at the stage default
-// throttle instead of its own 10/20 (jadwigo-platform/decisions/2026-10-28-the-app-s-http-api-stage-
-// throttles-every-route-but-health-at-10). That fails. A Terraform route ROUTES lacks is only a
-// warning, so Terraform can route a new key before the contracts PR that adds it merges.
+// The HTTP API's route keys in infra/terraform/main.tf match ROUTES in packages/contracts (dl-5ssh.50),
+// and the routes ROUTES marks auth "token" are exactly module app's token_routes, the ones the JWT
+// authorizer guards (dl-5ssh.7). A route in ROUTES with no Terraform route still answers through
+// $default, but at the stage default throttle instead of its own 10/20 (jadwigo-platform/decisions/
+// 2026-10-28-the-app-s-http-api-stage-throttles-every-route-but-health-at-10); a token route outside
+// token_routes reaches the Lambda with no token checked at the gateway.
 // Both files are read as text: tools imports nothing of ours. Run: bun tools/src/check-infra-routes.ts
 import { readFileSync } from "node:fs";
 
 const CONTRACTS = "packages/contracts/src/routes.ts";
 const TERRAFORM = "infra/terraform/main.tf";
 
-/** "<METHOD> <path>" for every ROUTES entry: each names its method, then its path. */
-export function contractRoutes(source: string): string[] {
-  const keys = [...source.matchAll(/\bmethod:\s*"([A-Z]+)",\s*path:\s*"([^"]+)"/g)];
-  return keys.map(([, method, path]) => `${method} ${path}`);
+export interface ContractRoute {
+  readonly key: string;
+  readonly auth: "none" | "token";
 }
+
+/** Each ROUTES entry as "<METHOD> <path>" and its auth; an entry that names no auth is "none". */
+export function contractRoutes(source: string): ContractRoute[] {
+  const entries = [...source.matchAll(/\n {2}\w+: \{([\s\S]*?)\n {2}\},/g)];
+  return entries.flatMap(([, body = ""]) => {
+    const key = body.match(/\bmethod:\s*"([A-Z]+)",\s*path:\s*"([^"]+)"/);
+    if (!key) return [];
+    const auth = body.match(/\bauth:\s*"(none|token)"/)?.[1] === "token" ? "token" : "none";
+    return [{ key: `${key[1]} ${key[2]}`, auth }];
+  });
+}
+
+const ROUTE_KEY = /"((?:GET|POST|PUT|PATCH|DELETE) \/[^"]*)"/g;
+const uncommented = (source: string) => source.replace(/^\s*(#|\/\/).*$/gm, "");
 
 /** Every quoted "<METHOD> /<path>" route key in the Terraform file, comment lines left out. */
 export function terraformRoutes(source: string): string[] {
-  const code = source.replace(/^\s*(#|\/\/).*$/gm, "");
-  return [...code.matchAll(/"((?:GET|POST|PUT|PATCH|DELETE) \/[^"]*)"/g)].map(
-    ([, key]) => key ?? "",
-  );
+  return [...uncommented(source).matchAll(ROUTE_KEY)].map(([, key]) => key ?? "");
 }
 
-export interface Comparison {
-  /** Fail the check: ROUTES entries with no Terraform route. */
-  readonly problems: string[];
-  /** Warn only: Terraform routes ROUTES does not have, yet or any more. */
-  readonly warnings: string[];
+/** The route keys in module app's token_routes list. */
+export function terraformTokenRoutes(source: string): string[] {
+  const list = uncommented(source).match(/\btoken_routes\s*=\s*\[([^\]]*)\]/)?.[1] ?? "";
+  return [...list.matchAll(ROUTE_KEY)].map(([, key]) => key ?? "");
 }
 
-export function compareRoutes(contracts: string, terraform: string): Comparison {
-  const want = new Set(contractRoutes(contracts));
+export function compareRoutes(contracts: string, terraform: string): string[] {
+  const routes = contractRoutes(contracts);
+  const want = new Set(routes.map((r) => r.key));
+  const wantToken = new Set(routes.filter((r) => r.auth === "token").map((r) => r.key));
   const have = new Set(terraformRoutes(terraform));
+  const haveToken = new Set(terraformTokenRoutes(terraform));
   const problems: string[] = [];
   if (want.size === 0)
     problems.push(`${CONTRACTS}: no routes found; has the ROUTES shape changed?`);
   for (const key of want)
     if (!have.has(key)) problems.push(`"${key}" is in ROUTES but has no route in ${TERRAFORM}`);
-  const warnings = [...have]
-    .filter((key) => !want.has(key))
-    .map((key) => `"${key}" is routed in ${TERRAFORM} but is not in ROUTES`);
-  return { problems, warnings };
+  for (const key of have)
+    if (!want.has(key)) problems.push(`"${key}" is routed in ${TERRAFORM} but is not in ROUTES`);
+  for (const key of wantToken)
+    if (have.has(key) && !haveToken.has(key))
+      problems.push(
+        `"${key}" has auth "token" in ROUTES but is not in token_routes in ${TERRAFORM}`,
+      );
+  for (const key of haveToken)
+    if (want.has(key) && !wantToken.has(key))
+      problems.push(`"${key}" is in token_routes in ${TERRAFORM} but has auth "none" in ROUTES`);
+  return problems;
 }
 
 if (import.meta.main) {
-  const { problems, warnings } = compareRoutes(
-    readFileSync(CONTRACTS, "utf8"),
-    readFileSync(TERRAFORM, "utf8"),
-  );
-  for (const w of warnings) console.error(`infra routes (warning): ${w}`);
+  const problems = compareRoutes(readFileSync(CONTRACTS, "utf8"), readFileSync(TERRAFORM, "utf8"));
   for (const p of problems) console.error(`infra routes: ${p}`);
   if (problems.length > 0) {
-    console.error("infra routes: add the key to module app's routes in main.tf.");
+    console.error(
+      "infra routes: module app's routes and token_routes in main.tf follow ROUTES and its auth.",
+    );
     process.exit(1);
   }
 }
