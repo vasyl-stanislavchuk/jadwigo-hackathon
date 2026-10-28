@@ -347,6 +347,43 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         expect(questions.map((q) => q.seq)).toEqual([1, 2, 3]);
       });
 
+      it("asks with seq only at the attempt's next seq; a stale seq is QuestionNotOpen and writes nothing", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        await store.endAttemptQuestion(a.pod, attempt, 1, "correct");
+
+        const asked = await store.askQuestion(a.pod, attempt, planned(a.groups), { seq: 2 });
+        expect(asked).toMatchObject({ seq: 2, lesson_question_id: a.groups });
+        await store.endAttemptQuestion(a.pod, attempt, 2, "correct");
+        // A caller that read the attempt before seq 2 was asked and ended asks seq 2 again.
+        await expect(
+          store.askQuestion(a.pod, attempt, planned(a.groups), { seq: 2 }),
+        ).rejects.toMatchObject(NOT_OPEN);
+        const { questions } = await store.getAttempt(a.pod, attempt);
+        expect(questions.map((q) => q.seq)).toEqual([1, 2]);
+      });
+
+      it("lets one of 2 asks at once with the same seq land", async () => {
+        const store = await make();
+        // Several races, each on its own attempt: on Postgres each ask is its own transaction on
+        // its own pooled connection.
+        for (let round = 0; round < 5; round++) {
+          const { a, attempt } = await started(store);
+          await store.endAttemptQuestion(a.pod, attempt, 1, "correct");
+          const settled = await Promise.allSettled([
+            store.askQuestion(a.pod, attempt, planned(a.groups), { seq: 2 }),
+            store.askQuestion(a.pod, attempt, planned(a.groups), { seq: 2 }),
+          ]);
+
+          expect(settled.filter((s) => s.status === "fulfilled")).toHaveLength(1);
+          expect(settled.find((s) => s.status === "rejected")).toMatchObject({
+            reason: NOT_OPEN,
+          });
+          const { questions } = await store.getAttempt(a.pod, attempt);
+          expect(questions.map((q) => q.seq)).toEqual([1, 2]);
+        }
+      });
+
       it("is refused with AttemptFinished once the attempt is finished", async () => {
         const store = await make();
         const { a, attempt } = await started(store);
