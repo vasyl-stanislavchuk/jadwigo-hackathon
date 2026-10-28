@@ -205,6 +205,50 @@ function prodDbDenial(cmd: string, bare: string, commands: string[][]): string |
   return undefined;
 }
 
+/** infra/Makefile's deploy targets (dl-5ssh.52): a Lambda update, an S3 sync and an invalidation. */
+const DEPLOY_WORD = /^(api-|web-|site-)?deploy$/;
+const DEPLOY_TARGET = /(^|[\s'",[(])(api-|web-|site-)?deploy(?=[\s'",)\]]|$)/;
+/** make's options that take a value; a cluster such as -Cn names directory n, not a dry run. */
+const MAKE_VALUE_FLAGS = "CfIjloWE";
+
+/** Whether make's words ask for a dry run: -n, a cluster holding n, --dry-run, --just-print or --recon. */
+function makeDryRun(words: string[]): boolean {
+  return words.some((w) => {
+    if (/^--(dry-run|just-print|recon)$/.test(w)) return true;
+    if (!/^-[A-Za-z]/.test(w)) return false;
+    for (const c of w.slice(1)) {
+      if (c === "n") return true;
+      if (MAKE_VALUE_FLAGS.includes(c)) return false;
+    }
+    return false;
+  });
+}
+
+/**
+ * A deploy is the owner's (AGENTS.md), and the CLAUDECODE check in infra/Makefile is all that
+ * stopped one: make deploy, api-deploy, web-deploy and site-deploy, directly, under env -i, or
+ * inside a wrapper's quoted script. make -n prints the recipe and runs nothing, so it stays allowed.
+ */
+function deployDenial(cmd: string, commands: string[][]): string | undefined {
+  const base = (w: string) => w.slice(w.lastIndexOf("/") + 1);
+  for (const words of commands) {
+    const at = words.findIndex((w) => /^g?make$/.test(base(w)));
+    if (at >= 0) {
+      const make = words.slice(at + 1);
+      if (make.some((w) => DEPLOY_WORD.test(w)) && !makeDryRun(make)) {
+        return "make deploy, api-deploy, web-deploy and site-deploy are the owner's, typed at their own terminal (`!` in Claude Code). From a session, `make -n -C infra deploy` shows what it would run.";
+      }
+    }
+    const wrapped = words.some(
+      (w) => WRAPPERS.test(base(w)) || PTY_WRAPPERS.test(base(w)) || base(w) === "eval",
+    );
+    if (wrapped && MAKE.test(cmd) && DEPLOY_TARGET.test(cmd)) {
+      return "a wrapper around make deploy, api-deploy, web-deploy or site-deploy still deploys, which is the owner's, typed at their own terminal.";
+    }
+  }
+  return undefined;
+}
+
 const USE_DEV_PR = "Write the body with /dev-pr into a file, then pass it with --body-file <path>.";
 
 /** gh pr create always carries a body file that passes check-pr-body; gh pr edit does when it sets the body. */
@@ -260,6 +304,8 @@ function bashDenial(
   const prodDb =
     prodDbDenial(cmd, bare, commands) ?? prodDbDenial(plain, plainBare, simpleCommands(plainBare));
   if (prodDb) return prodDb;
+  const deploy = deployDenial(cmd, commands) ?? deployDenial(plain, simpleCommands(plainBare));
+  if (deploy) return deploy;
 
   for (const words of commands) {
     const [prog = "", ...args] = words;
