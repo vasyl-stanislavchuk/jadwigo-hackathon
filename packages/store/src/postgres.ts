@@ -189,9 +189,11 @@ function refusal(error: unknown): unknown {
 class PostgresStore implements Store {
   readonly #db: Kysely<DB>;
 
-  constructor(databaseUrl: string) {
+  constructor(databaseUrl: string, options: PoolOptions = {}) {
     this.#db = new Kysely<DB>({
-      dialect: new PostgresDialect({ pool: new pg.Pool({ connectionString: databaseUrl }) }),
+      dialect: new PostgresDialect({
+        pool: new pg.Pool({ connectionString: databaseUrl, ...options }),
+      }),
     });
   }
 
@@ -1259,8 +1261,20 @@ class PostgresStore implements Store {
 }
 
 /**
+ * The pool's options. The Lambda passes `max: 1`: one execution serves one request at a time, and
+ * Supavisor's transaction pooler (port 6543) shares the server connections. Kysely sends unnamed
+ * queries, so no prepared statement outlives its transaction there.
+ */
+interface PoolOptions {
+  readonly max?: number;
+}
+
+/**
  * The Store on Postgres, held to `store.contract.ts` as InMemoryStore is. `close` ends its pool.
  */
-export function createPostgresStore(databaseUrl: string): Store & { close(): Promise<void> } {
-  return new PostgresStore(databaseUrl);
+export function createPostgresStore(
+  databaseUrl: string,
+  options?: PoolOptions,
+): Store & { close(): Promise<void> } {
+  return new PostgresStore(databaseUrl, options);
 }

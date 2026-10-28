@@ -11,10 +11,12 @@
     "lint": "biome check .",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --config ../../vitest.config.ts --project unit",
-    "test:int": "vitest run --config ../../vitest.config.ts --project integration"
+    "test:int": "vitest run --config ../../vitest.config.ts --project integration",
+    "invoke": "node scripts/invoke-health.mjs"
   },
   "//": {
     "@aws-lambda-powertools/event-handler": "the router the /api/v1 routes register on (dl-e8ov.2.32.6)",
+    "@aws-sdk/client-ssm": "reads the SecureString with DATABASE_URL once per cold start in src/config.ts (dl-5ssh.25)",
     "@jadwigo/contracts": "the route table, the wire schemas, the error types and pageEnded",
     "@jadwigo/core": "the family judges and the help ladder the answer and help routes run",
     "@jadwigo/lesson-import": "seeds the route tests' stores with the fixture lessons (test only, lead 2026-10-28)",
@@ -33,6 +35,7 @@
   },
   "dependencies": {
     "@aws-lambda-powertools/event-handler": "2.36.0",
+    "@aws-sdk/client-ssm": "3.1154.0",
     "@jadwigo/contracts": "workspace:*",
     "@jadwigo/core": "workspace:*",
     "@jadwigo/store": "workspace:*"
