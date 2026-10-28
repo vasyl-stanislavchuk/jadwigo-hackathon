@@ -102,6 +102,14 @@ function utc(at: string): string {
   return new Date(Date.parse(at)).toISOString();
 }
 
+/** The 4th release can only be the last rung, whose worked answer must end the question with it. */
+function lastRungNeedsTwin(): StoreError {
+  return new StoreError(
+    ErrorType.enum.BadRequest,
+    "the last rung is released with its help twin skip",
+  );
+}
+
 /** A jsonb parameter. pg would write a JS array as a Postgres array, so every value is sent as text. */
 function json(value: unknown): string | null {
   return value === null || value === undefined ? null : JSON.stringify(value);
@@ -1007,6 +1015,7 @@ class PostgresStore implements Store {
         return { question: read(AttemptQuestion, question), released: false };
       }
       const help_released = question.help_released + 1;
+      if (help_released === 4 && !twin) throw lastRungNeedsTwin();
       if (twin) await this.#appendTwin(tx, pod, attemptId, seq, help_released, twin);
       const row = await tx
         .updateTable("attempt_question")

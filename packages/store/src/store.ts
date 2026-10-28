@@ -221,9 +221,11 @@ export interface Store {
    * the release also appends the `help_twin` skip at the question's next `try_no` and ends the
    * question `skipped`, in one unit with the question held: a try sent at the same time lands
    * before it or is `QuestionNotOpen`, so the answer never shows on an open question. The skip
-   * is checked as `appendAttemptAnswer` checks an answer (a given `try_no` that is not the next is
-   * `TryOutOfOrder`, a stored `event_id` is `EventIdMismatch`, a bad time `BadRequest`), and a
-   * refusal writes nothing. A retry with the same `seen` finds it stale and returns the question.
+   * is checked as an answer's fields are (a given `try_no` that is not the next is
+   * `TryOutOfOrder`, a stored `event_id` is `EventIdMismatch`, a bad time `BadRequest`), but a
+   * paused attempt allows it, as it allows any release; a refusal writes nothing. A retry with the
+   * same `seen` finds it stale and returns the question. The 4th release, from `help_released` 3,
+   * can only be the last rung, so without `twin` it is `BadRequest` and writes nothing.
    */
   releaseHelp(
     pod: PodId,
