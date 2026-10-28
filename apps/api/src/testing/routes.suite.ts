@@ -1,0 +1,409 @@
+// The route suite, run on InMemoryStore by src/routes.test.ts and on PostgresStore by
+// src/routes.int.test.ts. It holds the simulated session API's cases from the playground, moved to
+// /api/v1's seq and try_no, and the growth rules.
+import { randomUUID } from "node:crypto";
+import {
+  type AttemptAnswerResult,
+  type AttemptSnapshot,
+  type ErrorEnvelope,
+  ID_PREFIXES,
+  idOf,
+} from "@jadwigo/contracts";
+import type { NewPod, Store } from "@jadwigo/store";
+import { beforeEach, describe, expect, it } from "vitest";
+import {
+  answerFields,
+  openQuestion,
+  pathOf,
+  type Seeded,
+  seeded,
+  skipAt,
+  start,
+  tryAt,
+} from "./client.ts";
+
+const OTHER_POD: NewPod = {
+  id: idOf(ID_PREFIXES.pod, "5b0f0d6e-6a52-4b8e-9d39-2a3e7f1c0b11") as NewPod["id"],
+  name: "Another pod",
+  language: "en",
+};
+
+export function routeSuite(name: string, makeStore: () => Store): void {
+  describe(`the /api/v1 attempt routes on ${name}`, () => {
+    let s: Seeded;
+    beforeEach(() => {
+      s = seeded(makeStore());
+    });
+
+    describe("start and snapshot", () => {
+      it("starts an attempt at the first planned question, and the snapshot holds no key", async () => {
+        const assignment = await s.assign("equalGroups");
+        const reply = await s.call<AttemptSnapshot>(
+          "POST",
+          pathOf("startAttempt", { id: assignment }),
+          {},
+        );
+        expect(reply.status).toBe(201);
+        expect(reply.body.attempt.status).toBe("in_progress");
+        expect(reply.body.questions.map((q) => [q.seq, q.added, q.ended])).toEqual([
+          [1, "planned", null],
+        ]);
+        expect(reply.body.open_seq).toBe(1);
+        expect(reply.body.last_event_id).toBeNull();
+        const text = JSON.stringify(reply.body);
+        expect(text).not.toContain('"key"');
+        expect(text).not.toContain('"worked"');
+        expect(reply.body.questions[0]?.help).toEqual([]);
+      });
+
+      it("reloads the same snapshot by the attempt's id", async () => {
+        const { id, snapshot } = await start(s, await s.assign("equalGroups"));
+        const reload = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id: id }));
+        expect(reload.status).toBe(200);
+        expect(reload.body).toEqual(snapshot);
+      });
+
+      it("answers 404 for an unknown assignment, an unknown attempt and an id that does not parse", async () => {
+        const unknownAttempt = idOf(ID_PREFIXES.attempt, randomUUID());
+        const unknownAssignment = idOf(ID_PREFIXES.assignment, randomUUID());
+        for (const [method, path] of [
+          ["GET", pathOf("getAttempt", { id: unknownAttempt })],
+          ["POST", pathOf("startAttempt", { id: unknownAssignment })],
+          ["GET", pathOf("getAttempt", { id: "not-an-id" })],
+        ] as const) {
+          const reply = await s.call<ErrorEnvelope>(
+            method,
+            path,
+            method === "POST" ? {} : undefined,
+          );
+          expect(reply.status).toBe(404);
+          expect(reply.body.error.type).toBe("NotFound");
+        }
+      });
+
+      it("refuses a start body with a field it does not know", async () => {
+        const assignment = await s.assign("equalGroups");
+        const reply = await s.call<ErrorEnvelope>(
+          "POST",
+          pathOf("startAttempt", { id: assignment }),
+          {
+            status: "finished",
+          },
+        );
+        expect([reply.status, reply.body.error.type]).toEqual([400, "BadRequest"]);
+      });
+
+      it("refuses a start on an assignment for learners when no learner is named", async () => {
+        const assignment = await s.assign("equalGroups", { audience: "learners" });
+        const reply = await s.call<ErrorEnvelope>(
+          "POST",
+          pathOf("startAttempt", { id: assignment }),
+          {},
+        );
+        expect([reply.status, reply.body.error.type]).toEqual([400, "BadRequest"]);
+      });
+    });
+
+    describe("caller binding: whoever holds the attempt id", () => {
+      it("serves each attempt to the holder of its id, from its own pod, and nothing for another id", async () => {
+        const mine = await start(s, await s.assign("equalGroups"));
+        const theirs = await start(s, await s.assign("equalGroups", {}, OTHER_POD));
+        expect(mine.snapshot.attempt.pod_id).not.toBe(theirs.snapshot.attempt.pod_id);
+
+        const read = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id: theirs.id }));
+        expect(read.body.attempt.pod_id).toBe(OTHER_POD.id);
+        expect(read.body.attempt.id).toBe(theirs.id);
+
+        // An answer to one attempt never lands on the other.
+        const page = await openQuestion(s, mine.id);
+        await tryAt(s, mine.id, page, true);
+        const other = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id: theirs.id }));
+        expect(other.body.last_event_id).toBeNull();
+
+        const guessed = idOf(ID_PREFIXES.attempt, randomUUID());
+        const refused = await s.call<ErrorEnvelope>("GET", pathOf("getAttempt", { id: guessed }));
+        expect(refused.status).toBe(404);
+        expect(JSON.stringify(refused.body)).not.toContain(OTHER_POD.id);
+      });
+    });
+
+    describe("answers", () => {
+      it("a miss stays open with its marks, a right try ends the question and asks the next", async () => {
+        const { id, snapshot } = await start(s, await s.assign("equalGroups"));
+        const first = snapshot.questions[0];
+        if (first === undefined) throw new Error("no first question");
+
+        const miss = await tryAt(s, id, first, false);
+        expect(miss.status).toBe(201);
+        expect(miss.body).toMatchObject({
+          seq: 1,
+          try_no: 1,
+          correct: false,
+          ended: null,
+          next: null,
+          reveal: null,
+        });
+        // A typed entry missed whole is marked whole: no parts.
+        expect(miss.body.parts).toBeNull();
+
+        const again = await openQuestion(s, id);
+        expect([again.seq, again.tries]).toEqual([1, 1]);
+
+        const right = await tryAt(s, id, again, true);
+        expect(right.body).toMatchObject({
+          seq: 1,
+          try_no: 2,
+          correct: true,
+          parts: null,
+          ended: "correct",
+        });
+        expect(right.body.reveal).not.toBeNull();
+        expect(right.body.next).toMatchObject({ seq: 2, added: "planned", tries: 0, ended: null });
+        expect(right.body.attempt_status).toBe("in_progress");
+      });
+
+      it("replays a same-body retry and refuses another body under the same event_id", async () => {
+        const { id, snapshot } = await start(s, await s.assign("equalGroups"));
+        const page = snapshot.questions[0];
+        if (page === undefined) throw new Error("no first question");
+        const body = { ...answerFields(page), kind: "try", value: { entered: "9999" } };
+        const first = await s.call<AttemptAnswerResult>("POST", pathOf("answer", { id: id }), body);
+        const replay = await s.call<AttemptAnswerResult>(
+          "POST",
+          pathOf("answer", { id: id }),
+          body,
+        );
+        expect(replay.status).toBe(201);
+        expect(replay.body).toEqual({ ...first.body, replayed: true });
+
+        const other = await s.call<ErrorEnvelope>("POST", pathOf("answer", { id: id }), {
+          ...body,
+          value: { entered: "10" },
+        });
+        expect([other.status, other.body.error.type]).toEqual([409, "EventIdMismatch"]);
+      });
+
+      it("refuses a 2nd event_id for the same try as AnswerConflict, and a try out of order", async () => {
+        const { id, snapshot } = await start(s, await s.assign("equalGroups"));
+        const page = snapshot.questions[0];
+        if (page === undefined) throw new Error("no first question");
+        await tryAt(s, id, page, false);
+        const loser = await tryAt(s, id, page, false);
+        expect([loser.status, (loser.body as unknown as ErrorEnvelope).error.type]).toEqual([
+          409,
+          "AnswerConflict",
+        ]);
+        const ahead = await tryAt(s, id, page, false, { try_no: 5 });
+        expect([ahead.status, (ahead.body as unknown as ErrorEnvelope).error.type]).toEqual([
+          409,
+          "TryOutOfOrder",
+        ]);
+      });
+
+      it("refuses a field the server writes as ServerFieldSupplied, and a body that fails its schema", async () => {
+        const { id, snapshot } = await start(s, await s.assign("equalGroups"));
+        const page = snapshot.questions[0];
+        if (page === undefined) throw new Error("no first question");
+        const post = (body: unknown) =>
+          s.call<ErrorEnvelope>("POST", pathOf("answer", { id: id }), body);
+
+        const correct = await post({
+          ...answerFields(page),
+          kind: "try",
+          value: { entered: "10" },
+          correct: true,
+        });
+        expect([correct.status, correct.body.error.type]).toEqual([400, "ServerFieldSupplied"]);
+        const twin = await post({ ...answerFields(page), kind: "skip", skip_reason: "help_twin" });
+        expect([twin.status, twin.body.error.type]).toEqual([400, "ServerFieldSupplied"]);
+        const early = await post({
+          ...answerFields(page),
+          kind: "skip",
+          skip_reason: "dont_know",
+          answered_at: "2000-01-01T00:00:00.000Z",
+        });
+        expect([early.status, early.body.error.type]).toEqual([400, "BadRequest"]);
+      });
+
+      it("answers 404 for a seq no question was asked at", async () => {
+        const { id, snapshot } = await start(s, await s.assign("equalGroups"));
+        const page = snapshot.questions[0];
+        if (page === undefined) throw new Error("no first question");
+        const reply = await tryAt(s, id, { ...page, seq: 7 }, true);
+        expect(reply.status).toBe(404);
+      });
+
+      it("finishes on the answer that ends the last question, then refuses answers and still replays", async () => {
+        const { id } = await start(s, await s.assign("equalGroups"));
+        let last: AttemptAnswerResult | undefined;
+        let lastBody: unknown;
+        for (let n = 0; n < 4; n++) {
+          const page = await openQuestion(s, id);
+          const reply = await tryAt(s, id, page, true);
+          last = reply.body;
+          lastBody = page;
+        }
+        expect(last).toMatchObject({
+          seq: 4,
+          ended: "correct",
+          next: null,
+          attempt_status: "finished",
+        });
+        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id: id }));
+        expect(snap.body.open_seq).toBeNull();
+        expect(snap.body.attempt.finished_at).not.toBeNull();
+
+        const late = await skipAt(s, id, {
+          ...(lastBody as AttemptSnapshot["questions"][number]),
+          seq: 4,
+        });
+        expect(late.status).toBe(409);
+
+        const firstAnswer = snap.body.last_event_id;
+        expect(firstAnswer).not.toBeNull();
+      });
+
+      it("finishes on a skip of the last question, but not on a miss there", async () => {
+        const { id } = await start(s, await s.assign("equalGroups"));
+        for (let n = 0; n < 3; n++) await tryAt(s, id, await openQuestion(s, id), true);
+        const lastQuestion = await openQuestion(s, id);
+        const miss = await tryAt(s, id, lastQuestion, false);
+        expect(miss.body.attempt_status).toBe("in_progress");
+        // A true-or-false miss marks the option chosen, never its mistake class.
+        expect(miss.body.parts).toEqual([expect.objectContaining({ correct: false })]);
+        expect(JSON.stringify(miss.body.parts)).not.toContain("mistake");
+        const skip = await skipAt(s, id, await openQuestion(s, id), "asked_to_skip");
+        expect(skip.body).toMatchObject({
+          ended: "skipped",
+          correct: null,
+          next: null,
+          attempt_status: "finished",
+        });
+      });
+    });
+
+    describe("growth after Not sure yet", () => {
+      it("next: goes on to the next planned question, no twin", async () => {
+        const { id, snapshot } = await start(
+          s,
+          await s.assign("equalGroups", { after_not_sure: "next" }),
+        );
+        const reply = await skipAt(
+          s,
+          id,
+          snapshot.questions[0] as AttemptSnapshot["questions"][number],
+        );
+        expect(reply.body.next).toMatchObject({
+          seq: 2,
+          added: "planned",
+          placed: null,
+          added_for: null,
+        });
+      });
+
+      it("twin_now: asks the twin straight after, once, then the next planned question", async () => {
+        const { id, snapshot } = await start(
+          s,
+          await s.assign("equalGroups", { after_not_sure: "twin_now" }),
+        );
+        const reply = await skipAt(
+          s,
+          id,
+          snapshot.questions[0] as AttemptSnapshot["questions"][number],
+        );
+        expect(reply.body.next).toMatchObject({
+          seq: 2,
+          added: "twin",
+          placed: "now",
+          added_for: 1,
+        });
+        // Not sure yet on the twin itself adds nothing: a twin has no twin.
+        const onTwin = await skipAt(s, id, await openQuestion(s, id));
+        expect(onTwin.body.next).toMatchObject({ seq: 3, added: "planned" });
+      });
+
+      it("review_round: owes the twin until the planned questions are done, in the order skipped", async () => {
+        const { id } = await start(
+          s,
+          await s.assign("equalGroups", { after_not_sure: "review_round" }),
+        );
+        await skipAt(s, id, await openQuestion(s, id)); // seq 1
+        await tryAt(s, id, await openQuestion(s, id), true); // seq 2
+        await skipAt(s, id, await openQuestion(s, id)); // seq 3
+        const fourth = await tryAt(s, id, await openQuestion(s, id), true); // seq 4, the last planned
+        expect(fourth.body.next).toMatchObject({
+          seq: 5,
+          added: "twin",
+          placed: "review_round",
+          added_for: 1,
+        });
+        const fifth = await tryAt(s, id, await openQuestion(s, id), true);
+        expect(fifth.body.next).toMatchObject({
+          seq: 6,
+          added: "twin",
+          placed: "review_round",
+          added_for: 3,
+        });
+        const sixth = await tryAt(s, id, await openQuestion(s, id), true);
+        expect(sixth.body).toMatchObject({ next: null, attempt_status: "finished" });
+      });
+    });
+
+    describe("held verdicts: one try per question", () => {
+      it("a wrong try ends the question, and the page sees done with no verdict", async () => {
+        const { id, snapshot } = await start(
+          s,
+          await s.assign("equalGroups", { hold_verdicts: true }),
+        );
+        const page = snapshot.questions[0] as AttemptSnapshot["questions"][number];
+        const miss = await tryAt(s, id, page, false);
+        expect(miss.body).toMatchObject({
+          correct: null,
+          parts: null,
+          reveal: null,
+          ended: "done",
+        });
+        expect(miss.body.next).toMatchObject({ seq: 2 });
+
+        const retry = await tryAt(s, id, { ...page, tries: 1 }, true);
+        expect([retry.status, (retry.body as unknown as ErrorEnvelope).error.type]).toEqual([
+          409,
+          "QuestionNotOpen",
+        ]);
+
+        const right = await tryAt(s, id, await openQuestion(s, id), true);
+        expect(right.body).toMatchObject({ correct: null, reveal: null, ended: "done" });
+
+        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id: id }));
+        expect(snap.body.questions.map((q) => q.ended)).toEqual(["done", "done", null]);
+      });
+
+      it("shows the stored endings once the attempt finishes", async () => {
+        const { id } = await start(s, await s.assign("equalGroups", { hold_verdicts: true }));
+        await tryAt(s, id, await openQuestion(s, id), false);
+        for (let n = 0; n < 3; n++) await tryAt(s, id, await openQuestion(s, id), true);
+        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id: id }));
+        expect(snap.body.attempt.status).toBe("finished");
+        expect(snap.body.questions.map((q) => q.ended)).toEqual([
+          "missed",
+          "correct",
+          "correct",
+          "correct",
+        ]);
+      });
+    });
+
+    describe("explain questions in v0", () => {
+      it("never asks one: times-four plays its other questions and finishes", async () => {
+        const { id } = await start(s, await s.assign("timesFour"));
+        let last: AttemptAnswerResult | undefined;
+        for (let n = 0; n < 20 && last?.attempt_status !== "finished"; n++)
+          last = (await skipAt(s, id, await openQuestion(s, id), "asked_to_skip")).body;
+        expect(last?.attempt_status).toBe("finished");
+        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id: id }));
+        expect(snap.body.questions).toHaveLength(10);
+        expect(snap.body.questions.some((q) => q.question.family === "explain")).toBe(false);
+      });
+    });
+  });
+}
