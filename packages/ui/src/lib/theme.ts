@@ -4,7 +4,7 @@
  * attribute from prefers-color-scheme and keeps it in step when the setting changes. While a page
  * prints it is light, since the paper is white. The printed sheet's route never calls this.
  *
- * The playground's review tab (dl-w3.47) may hold one theme while it is open, so Olya sees a type
+ * The playground's review tab (dl-w3.47) may hold one theme while it is open, so the reviewer sees a type
  * in dark on a light laptop: `holdTheme` sets the override, and the media listener respects it
  * until the hold is released. A lesson never holds a theme.
  */
