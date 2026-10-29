@@ -18,6 +18,14 @@ output "api_endpoint" {
   value = aws_apigatewayv2_api.api.api_endpoint
 }
 
+output "bank_search_alias_arn" {
+  value = data.aws_ssm_parameter.bank_search_alias_arn.insecure_value
+}
+
+output "bank_read_token_param" {
+  value = aws_ssm_parameter.bank_read_token.name
+}
+
 output "api_id" {
   value = aws_apigatewayv2_api.api.id
 }

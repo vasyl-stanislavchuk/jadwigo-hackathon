@@ -6,7 +6,7 @@
 // - marketing commands, .agents/skills/mk-<noun>/SKILL.md (dl-w0b4.56), linked the same way.
 // Every link is committed and relative, and each frontmatter names its folder. `make skills`
 // makes the links. Folders starting with _ under workflows/ and .agents/skills/ are shared
-// parts, not commands, and one under .agents/skills/ that holds a SKILL.md fails.
+// parts, not commands, and one under .agents/skills/ that holds a SKILL.md at any depth fails.
 // Run: bun tools/src/check-workflows.ts [repo]
 import { existsSync, lstatSync, readdirSync, readFileSync, readlinkSync } from "node:fs";
 import { join } from "node:path";
@@ -36,6 +36,12 @@ function linkTarget(path: string): string | undefined {
 
 function entries(dir: string): string[] {
   return existsSync(dir) ? readdirSync(dir) : [];
+}
+
+function skillFiles(dir: string): string[] {
+  return readdirSync(dir, { recursive: true, encoding: "utf8" })
+    .filter((file) => file === "SKILL.md" || file.endsWith("/SKILL.md"))
+    .sort();
 }
 
 function checkSkill(dir: string, shown: string, name: string, problems: string[]): void {
@@ -75,9 +81,10 @@ export function checkWorkflows(repo: string): string[] {
     if (!lstatSync(path).isDirectory()) continue; // a product workflow's link (checked below) or a README
     const shown = `.agents/skills/${name}`;
     if (name.startsWith("_")) {
-      // shared parts, such as _shared/jadwigo-rules.md; a SKILL.md here would still be found as a command
-      if (existsSync(join(path, "SKILL.md")))
-        problems.push(`${shown}: a _ folder holds shared parts, not a command; move its SKILL.md`);
+      // shared parts, such as _shared/jadwigo-rules.md; a SKILL.md at any depth here would
+      // still be found as a command
+      for (const file of skillFiles(path))
+        problems.push(`${shown}: a _ folder holds shared parts, not a command; move its ${file}`);
       continue;
     }
     if (!DEV.test(name) && !MARKETING.test(name)) {

@@ -222,6 +222,24 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         expect(reply.body.questions[0]?.help).toEqual([]);
       });
 
+      it("gives the whole planned lesson on start, in position order, with no spare and no key", async () => {
+        const { snapshot } = await start(s, await s.assign("equalGroups"));
+        expect(snapshot.plan.map((p) => p.position)).toEqual([1, 2, 3, 4]);
+        // The first planned question is the one asked at seq 1.
+        expect(snapshot.plan[0]?.lesson_question_id).toBe(
+          snapshot.questions[0]?.lesson_question_id,
+        );
+        // Exactly the version's planned rows: no spare, whatever its twin_of.
+        const version = await s.store.getLessonVersion(
+          snapshot.attempt.pod_id,
+          snapshot.attempt.lesson_version_id,
+        );
+        expect(snapshot.plan.map((p) => p.lesson_question_id)).toEqual(
+          version.questions.filter((v) => v.role === "planned").map((v) => v.lesson_question_id),
+        );
+        expect(JSON.stringify(snapshot.plan)).not.toContain('"key"');
+      });
+
       it("reloads the same snapshot by the attempt's id", async () => {
         const { id, snapshot } = await start(s, await s.assign("equalGroups"));
         const reload = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id: id }));
@@ -646,6 +664,14 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         // Not sure yet on the twin itself adds nothing: a twin has no twin.
         const onTwin = await skipAt(s, id, await openQuestion(s, id));
         expect(onTwin.body.next).toMatchObject({ seq: 3, added: "planned" });
+        // The twin is added to what was asked, never to the plan, and nothing is renumbered.
+        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect(snap.body.plan).toEqual(snapshot.plan);
+        expect(snap.body.questions.map((q) => [q.seq, q.added])).toEqual([
+          [1, "planned"],
+          [2, "twin"],
+          [3, "planned"],
+        ]);
       });
 
       it("review_round: owes the twin until the planned questions are done, in the order skipped", async () => {
@@ -737,6 +763,9 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id: id }));
         expect(snap.body.questions).toHaveLength(10);
         expect(snap.body.questions.some((q) => q.question.family === "explain")).toBe(false);
+        // The plan leaves the explain question off too, so the bar ends with the last one asked.
+        expect(snap.body.plan).toHaveLength(10);
+        expect(snap.body.plan.some((p) => p.question.family === "explain")).toBe(false);
       });
     });
     describe("help", () => {
