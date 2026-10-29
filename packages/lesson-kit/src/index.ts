@@ -57,7 +57,7 @@ export { TileBank } from "./parts/TileBank.tsx";
 export { Tooltip } from "./parts/Tooltip.tsx";
 export type { Tone } from "./parts/tone.ts";
 export type { Clock, Instant } from "./stage/clock.ts";
-export { browserClock } from "./stage/clock.ts";
+export { browserClock, stillClock } from "./stage/clock.ts";
 export { press } from "./stage/press.ts";
 export { StepFrame } from "./stage/StepFrame.tsx";
 export type { Feedback, PartMark } from "./stage/types.ts";
