@@ -179,8 +179,8 @@ def _plain(text: str) -> tuple[str, list[int]]:
 
     Each character is taken in its compatibility form (NFKC), so full-width "Ｋａｓｉａ" and
     math-bold "𝐊𝐚𝐬𝐢𝐚" read as Kasia, and format characters (soft hyphen, zero-width space and
-    joiner) are dropped, so a name with one inside it does too. Only the view changes: the prompt keeps its "5²"
-    and "½", which NFKC over the whole text would turn into "52" and "1⁄2".
+    joiner) are dropped, so a name with one inside it does too. Only the view changes: the
+    prompt keeps its "5²" and "½", which NFKC over the whole text would turn into "52" and "1⁄2".
     """
     chars: list[str] = []
     index: list[int] = []
@@ -234,6 +234,40 @@ def _name_spans(text: str, names: Iterable[str]) -> list[tuple[int, int, str]]:
             continue  # "olej" is not Ola; "OlaNowak" is
         spans.append((index[start], index[end - 1] + 1, form_of[m.group()]))
         at = end
+    spans += _spelled_spans(plain, index, pattern, form_of)
+    return sorted(spans)
+
+
+# 3 or more single letters, each split from the next by spaces or one of . - _ (with spaces
+# around it or not): "K a s i a", "K.a.s.i.a", "K-a-s-i-a", "K. a. s. i. a."
+_SPELLED_RE = re.compile(
+    r"(?<![^\W\d_])[^\W\d_](?:(?:\s*[.\-_]\s*|\s+)[^\W\d_]){2,}(?![^\W\d_])"
+)
+_LETTER_RE = re.compile(r"[^\W\d_]")
+
+
+def _spelled_spans(
+    plain: str, index: list[int], pattern: re.Pattern[str], form_of: Mapping[str, str]
+) -> list[tuple[int, int, str]]:
+    """Names spelled out letter by letter in `plain`, as spans of the original text.
+
+    A run's letters are read as one word, and a name form of 3 letters or more in it is hidden
+    from its first letter to its last, separators included. Polish has one-letter words
+    ("a", "i", "w", "z"), so "a i w domu" makes a run too; it stays, because "aiw" spells no name.
+    """
+    spans: list[tuple[int, int, str]] = []
+    for run in _SPELLED_RE.finditer(plain):
+        letters = [run.start() + m.start() for m in _LETTER_RE.finditer(run.group())]
+        word = _fold("".join(plain[i] for i in letters))
+        at = 0
+        while (m := pattern.search(word, at)) is not None:
+            start, end = m.span()
+            if end - start < 3:
+                at = start + 1
+                continue
+            first, last = letters[start], letters[end - 1]
+            spans.append((index[first], index[last] + 1, form_of[m.group()]))
+            at = end
     return spans
 
 

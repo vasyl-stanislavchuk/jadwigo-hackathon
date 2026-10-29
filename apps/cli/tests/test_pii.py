@@ -127,6 +127,27 @@ def test_no_spelling_of_the_name_gets_through(
     assert "[NAME_1]" in out
 
 
+@pytest.mark.parametrize(
+    ("text", "out"),
+    [
+        ("K a s i a liczy.", "[NAME_1] liczy."),
+        ("K.a.s.i.a.", "[NAME_1]."),
+        ("K-a-s-i-a", "[NAME_1]"),
+        ("K. a. s. i. a. ma 7 lat.", "[NAME_1]. ma 7 lat."),
+        ("Pomóż K a s i ą!", "Pomóż [NAME_1]!"),
+        ("w K a s i a", "w [NAME_1]"),
+        ("K a s i a i Ola", "[NAME_1] i [NAME_2]"),
+    ],
+)
+def test_a_name_spelled_out_letter_by_letter_is_hidden(text: str, out: str) -> None:
+    # dl-u1y5.24. The check reads the text itself, not leaks(), which shares the matcher.
+    assert guard(text, names=["Kasia", "Ola"]).text == out
+
+
+@pytest.mark.parametrize("text", ["a i w domu", "x = a - b - c", "p.n.e. i n.p.m."])
+def test_one_letter_words_that_spell_no_name_stay(text: str) -> None:
+    assert guard(text, names=["Kasia", "Ola"]).text == text
+
 def _as_read(text: str) -> str:
     """`text` as a reader sees it: no format characters, compatibility forms, lowercase, and
     without diacritics, so a full-width or zero-width spelling cannot pass by looking different."""
