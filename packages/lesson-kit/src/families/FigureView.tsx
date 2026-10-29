@@ -18,6 +18,7 @@ import { RichText } from "../parts/RichText.tsx";
 import { MeasuredPicture, type RulerControl } from "../parts/Ruler.tsx";
 import { isPlainText } from "../parts/richTextParse.ts";
 import { DEFAULT_TICKS, type RulerGeometry } from "../parts/rulerGeometry.ts";
+import { TASK_TARGET, TaskTarget } from "../parts/TaskTarget.tsx";
 import type { Language } from "../stage/types.ts";
 import type { Figure } from "./figure.ts";
 import { isDenom, tokenOf } from "./money.ts";
@@ -54,12 +55,12 @@ export function FigureView({
       return (
         <div data-figure="expression">
           {isPlainText(figure.text) ? (
-            <p className="text-[2.5rem] font-bold tabular-nums">{figure.text}</p>
+            <TaskTarget>{figure.text}</TaskTarget>
           ) : (
             <RichText
               display={ONE_FORMULA.test(figure.text)}
               text={figure.text}
-              className="text-[2.5rem] font-bold tabular-nums"
+              className={TASK_TARGET}
             />
           )}
         </div>
