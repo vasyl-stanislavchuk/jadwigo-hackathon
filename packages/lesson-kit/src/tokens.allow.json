@@ -22,7 +22,7 @@
   {
     "path": "families/FigureView.tsx",
     "snippet": "-[37.5rem]",
-    "why": ""
+    "why": "figure geometry: the number line's 600 cap, Enter addendum 3.5"
   },
   {
     "path": "families/group/GroupView.tsx",
@@ -92,11 +92,6 @@
   {
     "path": "families/slots/SlotsTable.tsx",
     "snippet": "[var(--jw-prompt-card,var(--card)",
-    "why": ""
-  },
-  {
-    "path": "families/Stem.tsx",
-    "snippet": "[length:var(--kid-math-size)",
     "why": ""
   },
   {
@@ -237,11 +232,6 @@
   {
     "path": "parts/TileBank.tsx",
     "snippet": "[var(--kid-choice-gap)",
-    "why": ""
-  },
-  {
-    "path": "parts/tone.ts",
-    "snippet": "-[0.375rem]",
     "why": ""
   },
   {

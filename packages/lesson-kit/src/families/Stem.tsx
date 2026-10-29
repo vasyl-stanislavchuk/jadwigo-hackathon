@@ -112,7 +112,7 @@ export function Stem({
             paper={paper}
             className={
               ONE_FORMULA.test(question)
-                ? "text-center text-[length:var(--kid-math-size)] font-bold"
+                ? "text-center text-jw-math font-bold"
                 : "text-kid-answer font-semibold"
             }
           />
