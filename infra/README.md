@@ -5,7 +5,9 @@ and `<env>.backend.hcl`, prod only. Decision: `jadwigo-platform/decisions/2026-1
 
 What it holds today: the marketing site's edge for jadwigo.pl (`terraform/modules/site`, `dl-w0b4.24`): the
 certificate, the private bucket, CloudFront with `edge.js` (www to the apex, page paths to their `index.html`)
-and the alias records. And the service at app.jadwigo.pl (`terraform/modules/app`, `dl-5ssh.3.3`): its own
+and the alias records. The docs at docs.jadwigo.pl (`module "docs"`, `dl-5ssh.90.11`) are the same module
+with `zone_name = jadwigo.pl` and `include_www = false`: no www name, and its records in the apex's zone; the
+defaults leave the marketing site as it was. And the service at app.jadwigo.pl (`terraform/modules/app`, `dl-5ssh.3.3`): its own
 certificate, a private bucket for `apps/web` with `spa.js` (a path with no extension reads `index.html`, so
 `/play/<id>` and `/playground` load the app), `/api/*` uncached to an HTTP API on the same origin, the one
 Lambda (Node 24, arm64, `index.handler`), its role, 90-day log groups, the SSM SecureString with
@@ -53,6 +55,7 @@ A merge deploys nothing. The owner deploys by hand
 | `make -C infra plan` | init against the state bucket, then plan prod | the owner |
 | `make -C infra apply` | init, then apply prod | the owner |
 | `make -C infra site-deploy` | build `apps/site`, check `dist/`, sync it to the bucket, invalidate | the owner |
+| `make -C infra docs-deploy` | build `apps/docs`, check `dist/`, sync it to the docs bucket, invalidate (`docs/runbooks/docs-publish.md`) | the owner |
 | `make -C infra deploy` | `api-deploy` (`make api-bundle`, zip, `update-function-code`, wait), then `web-deploy` (build `apps/web`, sync to the app bucket, invalidate) | the owner |
 | `make -n -C infra deploy` | print both halves, running nothing | anyone |
 | `make -C infra auth-diff` | read both Supabase projects' auth config and print what `supabase-auth/<env>.json` would change; exits 2 if anything would | anyone with the token |
@@ -76,6 +79,8 @@ Management API: `prod.json` and `dev.json` each hold a project's ref and only th
 The token is `SUPABASE_ACCESS_TOKEN`, else the line in `~/.config/jadwigo/supabase.env`; it reaches
 curl on stdin and is never printed. Dev has no hosted app yet (`packages/config` names prod only), so
 its redirect list is any local port on `127.0.0.1` and `localhost`.
+
+Google and Facebook sign-in add their provider settings here (`dl-e8ov.2.52`). The owner's steps in Google Cloud, Meta and Supabase are `docs/runbooks/social-sign-in.md`.
 
 The state bucket `jadwigo-terraform-state-843109108289` is created by hand before the first `init` (`dl-5ssh.9`):
 
