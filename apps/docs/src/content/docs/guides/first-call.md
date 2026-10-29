@@ -7,6 +7,8 @@ These calls need no credential. Each one is a single `curl`.
 
 ## 1. Check the API is up
 
+[Reference](/api/operations/health/).
+
 ```bash
 curl https://app.jadwigo.pl/api/health
 ```
@@ -16,6 +18,8 @@ curl https://app.jadwigo.pl/api/health
 ```
 
 ## 2. Find a lesson anyone may play
+
+[Reference](/api/operations/featuredlessons/).
 
 ```bash
 curl https://app.jadwigo.pl/api/v1/featured-lessons
@@ -38,6 +42,8 @@ Keep an `assignment_id`. You start an attempt at an assignment, not at a lesson.
 
 ## 3. Start an attempt
 
+[Reference](/api/operations/startattempt/).
+
 ```bash
 curl -X POST https://app.jadwigo.pl/api/v1/assignments/$ASSIGNMENT_ID/attempts \
   -H "Content-Type: application/json" \
@@ -58,6 +64,8 @@ The body is strict. A field the API does not know, or one the server owns, is `4
 
 ## 4. Read the attempt back
 
+[Reference](/api/operations/getattempt/).
+
 ```bash
 curl https://app.jadwigo.pl/api/v1/attempts/$ATTEMPT_ID
 ```
@@ -68,8 +76,8 @@ This returns the same snapshot. Call it after a reload to pick up where the chil
 
 An answer is a `POST` to `/api/v1/attempts/{id}/answers`. It names the question's `seq`, the
 `try_no`, an `event_id` and the value. A repeat with the same `event_id` and body returns the
-stored result, so a retry after a dropped connection is safe. The [API reference](/api/) shows
-every field.
+stored result, so a retry after a dropped connection is safe. Its
+[reference page](/api/operations/answer/) shows every field.
 
 ## Next
 

@@ -9,7 +9,8 @@
       "entry": ["src/check-*.ts"]
     },
     "apps/docs": {
-      "project": ["src/**/*.{ts,astro,mdx}", "scripts/*.ts", "*.mjs"]
+      "project": ["src/**/*.{ts,astro,mdx}", "scripts/*.ts", "*.mjs"],
+      "ignoreDependencies": ["satteri", "@jadwigo/cli"]
     },
     "apps/web": {
       "entry": ["vite.config.ts", "playwright.config.ts", "e2e/**/*.spec.ts", "e2e/auth-server.ts"],

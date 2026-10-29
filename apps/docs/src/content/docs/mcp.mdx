@@ -1,0 +1,85 @@
+---
+title: MCP
+description: The tools Jadwigo's MCP server gives an agent, and how to register it.
+---
+
+import McpToolTable from "../../components/McpToolTable.astro";
+
+`jw mcp serve` is Jadwigo's MCP server. It speaks MCP on stdio. An agent uses it to search the
+question bank and to draft a lesson for a parent.
+
+Each tool calls the same function as a `jw` command, so a tool's JSON is that command's
+`--json` output. A call that fails comes back as a tool error. Its text is the error and a hint.
+
+## Every tool
+
+This table and the tool pages are generated from the server's own tool list when the docs are
+built, so they are always complete. The list is also served as it is, at
+[`/mcp-tools.json`](/mcp-tools.json).
+
+<McpToolTable />
+
+## Drafting a lesson
+
+The tools read, draw, assemble and check. They never write a word a child reads. The agent does.
+
+1. **Draft.** Call [`lesson_draft`](/mcp/lesson_draft/) with the parent's request. Pass every name
+   the family uses in `names`. The tool replaces them before anything leaves the machine.
+2. **Write the help.** Fill every question's `help` in the lesson's language: the rungs and a twin.
+3. **Check.** Call [`lesson_check`](/mcp/lesson_check/) with the whole draft. Fix each error it
+   lists by step id, and check again until it answers `ok` with a card.
+
+## Registering it
+
+The server runs from a checkout of the repo through `uv`. It finds the bank's URL and token in
+`~/.config/jadwigo-bank/bank.env`. `JADWIGO_BANK_DIR` can sit in that file too, in place of the
+`env` entry. Replace the 2 paths below with your own.
+
+**Claude Code:**
+
+```sh
+claude mcp add --scope user --transport stdio \
+  -e JADWIGO_BANK_DIR=/path/to/jadwigo-bank \
+  jadwigo -- uv --directory /path/to/jadwigo/apps/cli run jw mcp serve
+```
+
+Or check it in for a project as `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "jadwigo": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["--directory", "/path/to/jadwigo/apps/cli", "run", "jw", "mcp", "serve"],
+      "env": { "JADWIGO_BANK_DIR": "/path/to/jadwigo-bank" }
+    }
+  }
+}
+```
+
+**Codex:**
+
+```sh
+codex mcp add jadwigo \
+  --env JADWIGO_BANK_DIR=/path/to/jadwigo-bank \
+  -- uv --directory /path/to/jadwigo/apps/cli run jw mcp serve
+```
+
+**Muse Code.** Muse has no `mcp add` command. A stdio server is an entry under `mcpServers` in
+`~/.config/muse/settings.json`, whose top level also needs `"schema_version": 1`. The entry's
+field names are not confirmed yet: Muse does not warn on a wrong one.
+
+```json
+{
+  "schema_version": 1,
+  "mcpServers": {
+    "jadwigo": {
+      "transport": "stdio",
+      "command": "uv",
+      "args": ["--directory", "/path/to/jadwigo/apps/cli", "run", "jw", "mcp", "serve"],
+      "env": { "JADWIGO_BANK_DIR": "/path/to/jadwigo-bank" }
+    }
+  }
+}
+```

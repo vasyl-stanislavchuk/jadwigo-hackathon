@@ -4,10 +4,12 @@ import { foundation, isColour, parseFoundation } from "./tokens.ts";
 describe("foundation", () => {
   const tiers = foundation();
 
+  // Floors, not counts: a new token needs no docs edit, and a re-scoping that empties a tier fails
+  // here. A deliberate token removal lowers its floor in the same PR.
   it("finds all 3 tiers, and the scale steps beside them", () => {
-    expect(tiers.primitives.length).toBeGreaterThan(0);
-    expect(tiers.roles.length).toBeGreaterThan(0);
-    expect(tiers.aliases.length).toBeGreaterThan(0);
+    expect(tiers.primitives.length).toBeGreaterThanOrEqual(60);
+    expect(tiers.roles.length).toBeGreaterThanOrEqual(36);
+    expect(tiers.aliases.length).toBeGreaterThanOrEqual(61);
     expect(tiers.scales.length).toBeGreaterThan(0);
   });
 
@@ -42,11 +44,14 @@ describe("foundation", () => {
 describe("parseFoundation", () => {
   const css = `
     /* a comment { with braces } */
-    [data-lesson-theme="zeszyt"] { --jw-p-blue: #0000ff; --jw-p-navy: #000080; }
-    [data-lesson-theme="zeszyt"] { --jw-ink: var(--jw-p-blue); --jw-space-1: 0.25rem; --ring: var(--jw-ink); }
-    [theme="dark"] [data-lesson-theme="zeszyt"] { --jw-ink: var(--jw-p-navy); }
-    @media (width < 37.5rem) { [data-lesson-theme="zeszyt"] { --jw-space-1: 1rem; } }
+    :root, :host { --jw-p-blue: #0000ff; --jw-p-navy: #000080; }
+    :root, :host, [theme="light"] { --jw-ink: var(--jw-p-blue); }
+    [theme="dark"] { --jw-ink: var(--jw-p-navy); }
+    :root, :host { --jw-space-1: 0.25rem; }
+    @media (width < 37.5rem) { :root { --jw-space-1: 1rem; } }
+    :root, :host, [theme], [data-lesson-theme] { --ring: var(--jw-ink); }
     [data-lesson-theme="zeszyt"] [data-slot="button"] { --jw-edge: red; }
+    [theme="dark"] [data-lesson-theme="zeszyt"] { --jw-ink: var(--jw-p-blue); }
   `;
   const parsed = parseFoundation(css);
 
@@ -66,7 +71,7 @@ describe("parseFoundation", () => {
     ]);
   });
 
-  it("keeps the laptop's value, not a phone's, and ignores a rule on a part", () => {
+  it("keeps the laptop's value, not a phone's, and ignores a rule on a part or a nested theme", () => {
     expect(parsed.scales.map((s) => [s.name, s.light])).toEqual([["jw-space-1", "0.25rem"]]);
   });
 
@@ -76,14 +81,12 @@ describe("parseFoundation", () => {
   });
 
   it("refuses a role that names a token nobody sets", () => {
-    expect(() =>
-      parseFoundation('[data-lesson-theme="zeszyt"] { --jw-ink: var(--jw-p-gone); }'),
-    ).toThrow(/--jw-p-gone is not set/);
+    expect(() => parseFoundation(":root { --jw-ink: var(--jw-p-gone); }")).toThrow(
+      /--jw-p-gone is not set/,
+    );
   });
 
   it("refuses a loop", () => {
-    expect(() =>
-      parseFoundation('[data-lesson-theme="zeszyt"] { --a: var(--b); --b: var(--a); }'),
-    ).toThrow(/loops/);
+    expect(() => parseFoundation(":root { --a: var(--b); --b: var(--a); }")).toThrow(/loops/);
   });
 });

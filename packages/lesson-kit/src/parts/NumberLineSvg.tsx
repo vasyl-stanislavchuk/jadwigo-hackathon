@@ -93,7 +93,7 @@ export function NumberLineSvg({
       <svg
         ref={svgRef}
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        className="block h-auto min-h-[var(--kid-tap-min)] w-full touch-none select-none"
+        className="block h-auto min-h-kid-tap w-full touch-none select-none"
         data-testid="number-line"
         {...(interactive
           ? {

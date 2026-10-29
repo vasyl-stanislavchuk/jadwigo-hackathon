@@ -1,8 +1,16 @@
 // Zeszyt's styles live in ./styles/tailwind.css (exported as "@jadwigo/ui/styles.css"); the app
-// imports it once. What follows is the code: cn(), the theme helpers and the neutral primitives.
+// imports it once. What follows is the code: cn(), the theme helpers, the primitives, and the parts
+// an app page is built from (dl-uukj.32.3).
 
 export { followSystemTheme, heldTheme, holdTheme, type Theme } from "./lib/theme.ts";
 export { cn } from "./lib/utils.ts";
+export { Field } from "./parts/field.tsx";
+export { Heading } from "./parts/heading.tsx";
+export { Label } from "./parts/label.tsx";
+export { Link, linkVariants } from "./parts/link.tsx";
+export { Notice } from "./parts/notice.tsx";
+export { OutcomeTile } from "./parts/outcome-tile.tsx";
+export { Page } from "./parts/page.tsx";
 export { Badge, badgeVariants } from "./primitives/badge.tsx";
 export { Button, buttonVariants } from "./primitives/button.tsx";
 export {
@@ -14,9 +22,12 @@ export {
   CardHeader,
   CardTitle,
 } from "./primitives/card.tsx";
+export type { Choice, ControlSize } from "./primitives/choice.ts";
 export { Input } from "./primitives/input.tsx";
 export { Popover, PopoverContent, PopoverTrigger } from "./primitives/popover.tsx";
 export { Progress } from "./primitives/progress.tsx";
+export { RadioGroup } from "./primitives/radio-group.tsx";
+export { SegmentedControl } from "./primitives/segmented-control.tsx";
 export {
   Sheet,
   SheetClose,
@@ -27,6 +38,7 @@ export {
   SheetTitle,
   SheetTrigger,
 } from "./primitives/sheet.tsx";
+export { type MenuEntry, type MenuItem, SideMenu } from "./primitives/side-menu.tsx";
 export { Slider } from "./primitives/slider.tsx";
 export { Spinner } from "./primitives/spinner.tsx";
 export { Switch } from "./primitives/switch.tsx";
@@ -40,6 +52,7 @@ export {
   TableHeader,
   TableRow,
 } from "./primitives/table.tsx";
+export { Tabs } from "./primitives/tabs.tsx";
 export { Toggle, toggleVariants } from "./primitives/toggle.tsx";
 export { ToggleGroup, ToggleGroupItem } from "./primitives/toggle-group.tsx";
 export { VisuallyHidden } from "./visually-hidden.tsx";

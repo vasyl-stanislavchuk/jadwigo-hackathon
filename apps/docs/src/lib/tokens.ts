@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 
-/** Zeszyt's tokens are scoped to this selector, and set again for dark under DARK. */
-const ROOT = "[data-lesson-theme='zeszyt']";
-const DARK = `[theme='dark'] ${ROOT}`;
+/** Zeszyt's tokens sit at :root, and the night roles under DARK (lib/theme.ts sets it on <html>). */
+const ROOT = ":root";
+const DARK = "[theme='dark']";
 
 /** A primitive: a literal colour, the only tier that holds one. */
 interface Primitive {
@@ -66,11 +66,23 @@ function topLevelRules(css: string): { selector: string; body: string }[] {
   return out;
 }
 
-/** Every custom property in the top-level rules whose selector is exactly `selector`, in order. */
+/** A selector list split at its top-level commas, not those inside :is() or :not(). */
+function selectorList(list: string): string[] {
+  const out = [""];
+  let depth = 0;
+  for (const ch of list) {
+    depth += ch === "(" ? 1 : ch === ")" ? -1 : 0;
+    if (ch === "," && depth === 0) out.push("");
+    else out[out.length - 1] += ch;
+  }
+  return out.map((x) => x.trim());
+}
+
+/** Every custom property in the top-level rules whose selector list holds `selector`, in order. */
 function declared(css: string, selector: string): Map<string, string> {
   const out = new Map<string, string>();
   for (const rule of topLevelRules(css)) {
-    if (rule.selector !== selector) continue;
+    if (!selectorList(rule.selector).includes(selector)) continue;
     for (const [, name = "", value = ""] of rule.body.matchAll(/--([\w-]+):\s*([^;]+);/g))
       out.set(name, value.trim());
   }

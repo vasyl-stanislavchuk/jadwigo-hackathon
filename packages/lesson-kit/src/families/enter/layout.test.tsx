@@ -154,7 +154,7 @@ describe("the field in the maths line (addendum 2.4, 3.1)", () => {
     const formula = must(must(document.querySelector("[data-prompt-card]")).firstElementChild);
     expect(formula.querySelector(".katex")).not.toBeNull();
     expect(formula.className).toContain("text-center");
-    expect(formula.className).toContain("text-[length:var(--kid-math-size)]");
+    expect(formula.className).toContain("text-jw-math");
     cleanup();
     render(
       step(

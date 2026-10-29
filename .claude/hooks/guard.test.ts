@@ -3,7 +3,7 @@
 // its own test strings. Run: bun test .claude/hooks
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { denial, EXEC_CLEARS, type HookInput } from "./guard.ts";
@@ -529,5 +529,18 @@ describe("guard: the process", () => {
   test("stop does nothing when stop_hook_active is set", () => {
     const out = guard("stop", JSON.stringify({ stop_hook_active: true }), {});
     expect(out.status).toBe(0);
+  });
+
+  test("stop gives make check 64 MB of output, so a green tree is never read as red (dl-5ssh.94)", () => {
+    // A planted overflow needs more than 1 MB of test output, so the call's options are checked as
+    // written: the stop-mode spawnSync carries maxBuffer, and the constant is at least 64 MB.
+    const source = readFileSync(`${import.meta.dir}/guard.ts`, "utf8");
+    const stop = source.slice(source.indexOf('if (mode === "stop")'));
+    expect(stop).toMatch(
+      /spawnSync\("make", \["check"\], \{[\s\S]*?maxBuffer: STOP_MAX_BUFFER,\s*\}\);/,
+    );
+    const value = /const STOP_MAX_BUFFER = (\d+) \* 1024 \* 1024;/.exec(source)?.[1];
+    expect(Number(value)).toBeGreaterThanOrEqual(64);
+    expect(stop).toContain("out.error !== undefined");
   });
 });

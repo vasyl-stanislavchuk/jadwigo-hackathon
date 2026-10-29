@@ -1,8 +1,11 @@
 /**
- * The foundation (styles/foundation.css, dl-uukj.29.25) keeps the rules every lesson theme keeps,
- * and the ones its own idea adds. The file is read as written and its roles resolved through the
- * primitives, so a value changed there is checked here:
+ * The foundation (styles/foundation.css, dl-uukj.29.25) is Zeszyt: its tokens at :root for every
+ * page (dl-uukj.32), and the rules a lesson keeps. The file is read as written and its roles resolved
+ * through the primitives, so a value changed there is checked here:
  *
+ * - the tokens at :root, the night roles under [theme='dark'], and the aliases declared again on
+ *   every [theme] and [data-lesson-theme], so a nested theme and a lesson inside the neutral chrome
+ *   resolve their own roles;
  * - every text pair a child reads at 4.5:1 in light and dark, a field's placeholder too, a typed
  *   field's active edge at 3:1;
  * - no focus drawn on a button or an option (owner, 2026-10-26, dl-uukj.29.93, replacing the inner
@@ -33,8 +36,11 @@ const flat = (text: string): string =>
     .replace(/,?\s+\)/g, ")");
 // Comments go first, so a block's selector is only its selector.
 const CSS = flat(readFileSync(join(import.meta.dirname, "foundation.css"), "utf-8"));
-const ROOT = "[data-lesson-theme='zeszyt']";
-const DARK = `[theme='dark'] ${ROOT}`;
+/** The heads of Zeszyt's blocks: primitives and type, the day roles, the aliases, the night roles. */
+const TOKENS = ":root, :host";
+const DAY = ":root, :host, [theme='light']";
+const ALIASES = ":root, :host, [theme], [data-lesson-theme]";
+const DARK = "[theme='dark']";
 
 /** Every custom property in the blocks whose selector is exactly `selector`, as written. */
 function declared(selector: string): Record<string, string> {
@@ -56,7 +62,7 @@ function resolve(vars: Record<string, string>, name: string, seen: string[] = []
   return resolve(vars, ref, [...seen, name]);
 }
 
-const light = declared(ROOT);
+const light = { ...declared(TOKENS), ...declared(DAY), ...declared(ALIASES) };
 const dark = { ...light, ...declared(DARK) };
 const MODES = { light, dark };
 const c = (vars: Record<string, string>, name: string) => resolve(vars, name);
@@ -299,6 +305,49 @@ describe("option tones", () => {
     expect(body).toMatch(/border-color:\s*inherit;/);
     expect(body).toMatch(/\bcolor:\s*inherit;/);
     expect(body).not.toMatch(/width|height|padding|margin|border-style/);
+  });
+});
+
+describe("where the tokens apply", () => {
+  /** Every block head in the file, as written. */
+  const heads = [...CSS.matchAll(/([^{}]+)\{/g)].map((m) => (m[1] ?? "").trim());
+
+  it("puts the primitives, the type and the day roles at :root, and the night roles on [theme='dark']", () => {
+    expect(declared(TOKENS)["jw-p-white"]).toBe("#ffffff");
+    expect(declared(TOKENS)["jw-size-prompt"]).toBe("2rem");
+    expect(declared(DAY)["jw-ground"]).toBe("var(--jw-p-white)");
+    expect(declared(DARK)["jw-ground"]).toBe("var(--jw-p-night-25)");
+  });
+
+  // A custom property resolves its var() where it is declared: the aliases are declared again on a
+  // nested theme (the System page's By day and By night columns) and on a lesson (the playground's
+  // chrome sets its own colours on <html>), or both would read the root's roles.
+  it("declares the aliases again on every [theme] and every [data-lesson-theme]", () => {
+    expect(heads).toContain(ALIASES);
+    expect(declared(ALIASES)["primary"]).toBe("var(--jw-focus)");
+    expect(declared(ALIASES)["kid-correct"]).toBe("var(--jw-right-edge)");
+  });
+
+  it("comes after the day roles with the night roles, so a dark <html> reads them", () => {
+    expect(heads.indexOf(DARK)).toBeGreaterThan(heads.indexOf(DAY));
+  });
+
+  // The lesson's weight, leading and digits are its own: the parent's pages keep the browser's.
+  it("keeps the lesson's text rules and no token under [data-lesson-theme]", () => {
+    const bodies = (head: string) =>
+      [...CSS.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+        .filter((m) => (m[1] ?? "").trim() === head)
+        .map((m) => m[2] ?? "")
+        .join(" ");
+    const lesson = bodies("[data-lesson-theme]");
+    expect(lesson).toMatch(/font-weight:\s*var\(--jw-weight-text\);/);
+    expect(lesson).toMatch(/line-height:\s*var\(--jw-leading\);/);
+    expect(lesson).toMatch(/font-variant-numeric:\s*tabular-nums lining-nums;/);
+    expect(bodies(ALIASES)).not.toMatch(/(^|;)\s*(font-weight|line-height|font-variant-numeric):/);
+    for (const [, head = "", body = ""] of CSS.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      if (!head.includes("data-lesson-theme") || head.trim() === ALIASES) continue;
+      expect(body, head.trim()).not.toMatch(/--jw-(p-|ground|act|ink|font|dur-)[\w-]*:/);
+    }
   });
 });
 

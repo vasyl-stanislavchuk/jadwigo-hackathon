@@ -1,9 +1,10 @@
 ---
 title: Design system
-description: Zeszyt, the look of a lesson, in its 3 token tiers, light and dark, and the rules its tests hold.
+description: Zeszyt, the look of the whole app, in its 3 token tiers, light and dark, and the rules its tests hold.
 ---
 
-Jadwigo's lesson screen is drawn in one design system, **Zeszyt**: a Polish school exercise book.
+Jadwigo is drawn in one design system, **Zeszyt**: a Polish school exercise book. It is the look
+of the whole app: the lesson, the child's list and results, and the parent's screens.
 White paper, blue ink for the one thing to press, a clear blue for what the child picked, warm
 yellow for help, green for right and red pen for a miss.
 
@@ -29,7 +30,7 @@ Every value is a CSS custom property. Each tier is built only from the one above
 
 1. **Primitives**, `--jw-p-*`: the only literal colours, such as `--jw-p-ink-600`. A primitive
    says what a colour is, never what it is for.
-2. **Roles**, `--jw-*`: named for what they mean on a lesson screen, such as `--jw-pick` for a
+2. **Roles**, `--jw-*`: named for what they mean, such as `--jw-pick` for a
    picked option or `--jw-miss-edge` for the edge of a miss. A role always reads a primitive.
 3. **Aliases**: the shadcn names (`--primary`, `--border`) and the `--kid-*` names that the
    parts, families and blocks read. An alias always reads a role, never a primitive.
@@ -45,8 +46,9 @@ these docs are built.
 
 ## Light and dark
 
-Every role is set twice: once for the day and once for the night. Primitives and aliases are set
-once. Dark mode swaps the roles to night primitives, and every alias follows on its own.
+The app follows the device's setting: in dark mode the page carries `[theme="dark"]`. Every role
+is set twice, once for the day and once for the night, and dark mode swaps the roles to night
+primitives. A primitive has one value. An alias follows the theme because it reads a role.
 
 ## Rules the tests hold
 
