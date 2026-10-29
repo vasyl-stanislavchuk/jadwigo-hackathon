@@ -21,7 +21,8 @@ export const SIDEBAR: readonly SidebarGroup[] = [
     label: "Guides",
     items: ["guides/introduction", "guides/authentication", "guides/first-call", "guides/errors"],
   },
-  { label: "API reference", items: ["api"] },
+  // Filled by starlight-openapi from public/openapi.json (astro.config.mjs).
+  { label: "API reference", items: [] },
   { label: "MCP", items: ["mcp"] },
   { label: "Design system", items: ["design-system"] },
   { label: "Architecture", items: ["architecture"] },
