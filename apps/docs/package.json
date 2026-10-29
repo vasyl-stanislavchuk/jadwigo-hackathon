@@ -7,11 +7,14 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "predev": "bun scripts/prepare.ts",
     "dev": "astro dev",
+    "prebuild": "bun scripts/prepare.ts",
     "build": "astro build",
     "preview": "astro preview",
     "check:dist": "bun scripts/check-dist.ts",
     "lint": "biome check .",
+    "pretypecheck": "bun scripts/prepare.ts",
     "typecheck": "astro check && tsc -p tsconfig.json",
     "test": "vitest run --config ../../vitest.config.ts --project unit"
   },
@@ -26,7 +29,7 @@
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit tests with the root vitest.config.ts",
     "@jadwigo/config": "hosts.prod.docs and hosts.prod.app: the site's own URL and the API's base URL (src/index.ts)",
-    "@jadwigo/contracts": "ERROR_STATUS, the source of the Errors guide's table (src/lib/errors.ts)"
+    "@jadwigo/contracts": "ERROR_STATUS, the source of the Errors guide's table (src/lib/errors.ts); the schemas each MCP tool's output follows (src/lib/mcp-output.ts)"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",

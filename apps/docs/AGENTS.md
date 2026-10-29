@@ -17,6 +17,9 @@ decision `jadwigo-platform/notes/2026-10-29-jadwigo-s-docs-are-a-starlight-site-
 
 - `src/content/docs/`: every page, as `.md` or `.mdx`, in Starlight's `docs` collection
   (`src/content.config.ts`). The file's path is its slug: `guides/errors.mdx` is `/guides/errors/`.
+- `mcp/<tool>`: one page per tool in `public/mcp-tools.json`, made by the loader in
+  `src/content.config.ts` from `src/lib/mcp.ts`. A new tool is a new page with no edit here, but
+  `src/lib/mcp-output.test.ts` fails until `MCP_OUTPUT` says what it returns.
 - `src/index.ts`: the hosts and `SIDEBAR`. A page joins the sidebar by its slug there; a new section
   is a new group. A slug with no page fails the build.
 - `src/lib/`: pure functions that turn the code into tables (`errors.ts` from `ERROR_STATUS`,

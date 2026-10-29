@@ -1,0 +1,24 @@
+---
+// The MCP overview's table: every tool page the docs loader made from mcp-tools.json, by name.
+import { getCollection } from "astro:content";
+
+const tools = (await getCollection("docs", (entry) => entry.id.startsWith("mcp/"))).sort((a, b) =>
+  a.id.localeCompare(b.id),
+);
+---
+
+<table>
+  <thead>
+    <tr><th>Tool</th><th>What it does</th></tr>
+  </thead>
+  <tbody>
+    {
+      tools.map((tool) => (
+        <tr>
+          <td><a href={`/${tool.id}/`}><code>{tool.data.title}</code></a></td>
+          <td>{tool.data.description}</td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>
