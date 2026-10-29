@@ -103,7 +103,7 @@ export function Ruler({ geometry: g, height, top, unit, zero, control }: RulerPr
     <svg
       ref={svg}
       viewBox={`0 0 ${g.width} ${height}`}
-      className="absolute inset-0 h-full w-full touch-none outline-none select-none focus-visible:outline-[0.1875rem]! focus-visible:outline-offset-[0.1875rem]! focus-visible:outline-ring! focus-visible:outline-solid!"
+      className="absolute inset-0 h-full w-full touch-none outline-none select-none focus-visible:outline-3! focus-visible:outline-offset-3! focus-visible:outline-ring! focus-visible:outline-solid!"
       data-testid="ruler"
       data-zero={zero}
       {...interactive}

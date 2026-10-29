@@ -20,24 +20,9 @@
     "why": ""
   },
   {
-    "path": "families/enter/EnterView.tsx",
-    "snippet": "[length:var(--kid-math-size)",
-    "why": ""
-  },
-  {
-    "path": "families/explain/ExplainView.tsx",
-    "snippet": "[length:var(--kid-answer-size)",
-    "why": ""
-  },
-  {
     "path": "families/FigureView.tsx",
     "snippet": "-[37.5rem]",
-    "why": ""
-  },
-  {
-    "path": "families/FigureView.tsx",
-    "snippet": "[var(--kid-tap-min)",
-    "why": ""
+    "why": "figure geometry: the number line's 600 cap, Enter addendum 3.5"
   },
   {
     "path": "families/group/GroupView.tsx",
@@ -52,21 +37,6 @@
   {
     "path": "families/group/GroupView.tsx",
     "snippet": "[var(--kid-choice-gap)",
-    "why": ""
-  },
-  {
-    "path": "families/place/surfaces/Coins.tsx",
-    "snippet": "[var(--kid-tap-min)",
-    "why": ""
-  },
-  {
-    "path": "families/place/surfaces/Grid.tsx",
-    "snippet": "[var(--kid-tap-min)",
-    "why": ""
-  },
-  {
-    "path": "families/place/surfaces/Image.tsx",
-    "snippet": "[var(--kid-tap-min)",
     "why": ""
   },
   {
@@ -125,28 +95,8 @@
     "why": ""
   },
   {
-    "path": "families/Stem.tsx",
-    "snippet": "[length:var(--kid-math-size)",
-    "why": ""
-  },
-  {
-    "path": "families/Stem.tsx",
-    "snippet": "[length:var(--kid-answer-size)",
-    "why": ""
-  },
-  {
-    "path": "families/Stem.tsx",
-    "snippet": "[var(--kid-tap-min)",
-    "why": ""
-  },
-  {
     "path": "parts/BarGraph.tsx",
     "snippet": "[length:var(--kid-answer-size)",
-    "why": ""
-  },
-  {
-    "path": "parts/cells.ts",
-    "snippet": "[var(--kid-tap-min)",
     "why": ""
   },
   {
@@ -200,39 +150,19 @@
     "why": ""
   },
   {
-    "path": "parts/Entry.tsx",
-    "snippet": "-[1.625rem]",
-    "why": ""
-  },
-  {
-    "path": "parts/Entry.tsx",
-    "snippet": "[length:var(--kid-math-size)",
-    "why": ""
-  },
-  {
-    "path": "parts/Entry.tsx",
-    "snippet": "[length:var(--kid-answer-size)",
-    "why": ""
-  },
-  {
     "path": "parts/InlineCode.tsx",
     "snippet": "-[0.32em]",
-    "why": ""
+    "why": "em, relative to the text the chip sits in: the chip scales with its host sentence at every size, which no fixed token can"
   },
   {
     "path": "parts/InlineCode.tsx",
     "snippet": "-[0.06em]",
-    "why": ""
+    "why": "em, relative to the text the chip sits in: the chip scales with its host sentence at every size, which no fixed token can"
   },
   {
     "path": "parts/InlineCode.tsx",
     "snippet": "-[0.86em]",
-    "why": ""
-  },
-  {
-    "path": "parts/InlineField.tsx",
-    "snippet": "[length:var(--kid-math-size)",
-    "why": ""
+    "why": "em, relative to the text the chip sits in: the chip scales with its host sentence at every size, which no fixed token can"
   },
   {
     "path": "parts/InlineTokens.tsx",
@@ -255,64 +185,9 @@
     "why": ""
   },
   {
-    "path": "parts/Keypad.tsx",
-    "snippet": "-[0.625rem]",
-    "why": ""
-  },
-  {
-    "path": "parts/Keypad.tsx",
-    "snippet": "-[1.875rem]",
-    "why": ""
-  },
-  {
-    "path": "parts/Keypad.tsx",
-    "snippet": "-[1.75rem]",
-    "why": ""
-  },
-  {
-    "path": "parts/Keypad.tsx",
-    "snippet": "-[1.625rem]",
-    "why": ""
-  },
-  {
-    "path": "parts/Keypad.tsx",
-    "snippet": "[var(--kid-key-size)",
-    "why": ""
-  },
-  {
-    "path": "parts/Keypad.tsx",
-    "snippet": "[var(--kid-tap-min)",
-    "why": ""
-  },
-  {
-    "path": "parts/LetterRow.tsx",
-    "snippet": "-[0.625rem]",
-    "why": ""
-  },
-  {
     "path": "parts/LetterRow.tsx",
     "snippet": "-[35rem]",
-    "why": ""
-  },
-  {
-    "path": "parts/LetterRow.tsx",
-    "snippet": "[var(--kid-tap-min)",
-    "why": ""
-  },
-  {
-    "path": "parts/NumberLineSvg.tsx",
-    "snippet": "[var(--kid-tap-min)",
-    "why": ""
-  },
-  {
-    "path": "parts/PyramidGrid.tsx",
-    "snippet": "-[0.625rem]",
-    "why": ""
-  },
-  {
-    "path": "parts/Ruler.tsx",
-    "snippet": "-[0.1875rem]",
-    "why": ""
+    "why": "a container-query breakpoint (@min-[35rem]): the row goes to 10 columns where 10 keys of --kid-tap-min fit (10 x 3.5rem); a container query cannot read var()"
   },
   {
     "path": "parts/SortableList.tsx",
@@ -327,42 +202,22 @@
   {
     "path": "parts/SortableList.tsx",
     "snippet": "[var(--kid-choice-gap)",
-    "why": ""
-  },
-  {
-    "path": "parts/StatusLine.tsx",
-    "snippet": "[var(--kid-status-height)",
-    "why": ""
-  },
-  {
-    "path": "parts/TaskPrompt.tsx",
-    "snippet": "[length:var(--kid-say-size)",
-    "why": ""
-  },
-  {
-    "path": "parts/Term.tsx",
-    "snippet": "[length:var(--kid-answer-size)",
     "why": ""
   },
   {
     "path": "parts/TerminalCard.tsx",
     "snippet": "-[3ch]",
-    "why": ""
+    "why": "ch, the monospace character: the $ prompt's gap and the printed hanging indent are counted in characters of the card's own font, not a size"
   },
   {
     "path": "parts/TerminalCard.tsx",
     "snippet": "-[2ch]",
-    "why": ""
+    "why": "ch, the monospace character: the $ prompt's gap and the printed hanging indent are counted in characters of the card's own font, not a size"
   },
   {
     "path": "parts/TerminalCard.tsx",
     "snippet": "-[1ch]",
-    "why": ""
-  },
-  {
-    "path": "parts/TerminalCard.tsx",
-    "snippet": "[var(--kid-tap-min)",
-    "why": ""
+    "why": "ch, the monospace character: the $ prompt's gap and the printed hanging indent are counted in characters of the card's own font, not a size"
   },
   {
     "path": "parts/TileBank.tsx",
@@ -377,11 +232,6 @@
   {
     "path": "parts/TileBank.tsx",
     "snippet": "[var(--kid-choice-gap)",
-    "why": ""
-  },
-  {
-    "path": "parts/tone.ts",
-    "snippet": "-[0.375rem]",
     "why": ""
   },
   {

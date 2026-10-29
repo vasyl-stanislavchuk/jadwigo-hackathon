@@ -204,7 +204,7 @@ describe("LetterRow", () => {
   it("draws each key as a tile inside a kid-size target, lowercase by default", () => {
     render(<Field />);
     for (const k of row().querySelectorAll("button")) {
-      expect(k.className).toMatch(/size-\[var\(--kid-tap-min\)\]/);
+      expect(k.className).toMatch(/size-kid-tap/);
       expect(k.querySelector("[data-pill]")).not.toBeNull();
     }
     expect(letters()).toEqual([...POLISH_LETTERS]);
@@ -213,7 +213,7 @@ describe("LetterRow", () => {
   it("draws every key at least the kid tap size", () => {
     render(<Field />);
     for (const k of document.querySelectorAll("[data-letters] button"))
-      expect(k.className).toMatch(/min-h-\[var\(--kid-tap-min\)\]/);
+      expect(k.className).toMatch(/min-h-kid-tap/);
   });
 
   it("lights the key for a marked letter the keyboard typed, for a beat, and not for a plain letter", () => {
