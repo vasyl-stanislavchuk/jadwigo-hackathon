@@ -220,6 +220,8 @@
   /* A settings or navigation control outside a lesson: 48, as decision 2026-10-25-settings-and-
      * navigation-controls says; a lesson answer keeps --kid-tap-min (56). */
   --jw-control-height: 3rem; /* 48px */
+  /* The same decision's 44: a sub-row of a side menu, a switch or a segmented control in a toolbar. */
+  --jw-control-height-sm: 2.75rem; /* 44px */
   /* Room around × and ÷ so a sum reads as one thing. */
   --jw-math-op-space: 0.2em;
 

@@ -5,7 +5,9 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { checkTokens, code, TOKEN_RULES, violationsIn } from "./tokens.ts";
 
-const rulesHit = (source: string): string[] => violationsIn("x.tsx", source).map((v) => v.rule);
+// A planted source writes a template placeholder as @{...}, so Biome reads the string as text.
+const rulesHit = (source: string): string[] =>
+  violationsIn("x.tsx", source.replaceAll("@{", "${")).map((v) => v.rule);
 
 describe("the token rules", () => {
   it.each([

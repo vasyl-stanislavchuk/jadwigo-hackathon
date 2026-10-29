@@ -16,6 +16,7 @@ import { copy } from "@jadwigo/copy";
 import { cn } from "@jadwigo/ui";
 import { type KeyboardEvent, useState } from "react";
 import { CELL } from "../../../parts/cells.ts";
+import { TaskTarget } from "../../../parts/TaskTarget.tsx";
 import { partTone, praised, TONE_CLASS, type Tone } from "../../../parts/tone.ts";
 import type { Clock, Instant } from "../../../stage/clock.ts";
 import { type PressModality, press } from "../../../stage/press.ts";
@@ -39,7 +40,7 @@ type Rect = { rows: number; cols: number; split?: GridSplit };
 
 /** What to build, such as "3 × 4", big under the stem. */
 export function GridLabel({ data }: { data: GridData }): JSX.Element {
-  return <p className="text-[2.5rem] font-bold tabular-nums">{data.label}</p>;
+  return <TaskTarget>{data.label}</TaskTarget>;
 }
 
 /** Which part of a split rectangle a cell is in: 0 before the split, 1 after it. */

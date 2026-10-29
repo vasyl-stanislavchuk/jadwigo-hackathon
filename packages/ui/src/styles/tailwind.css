@@ -128,6 +128,7 @@
   --spacing-kid-commit: var(--kid-commit-height);
   --spacing-kid-choice: var(--kid-choice-gap);
   --spacing-jw-control: var(--jw-control-height);
+  --spacing-jw-control-sm: var(--jw-control-height-sm);
   --radius-jw-card: var(--jw-radius-card);
   --radius-jw-control: var(--jw-radius-control);
   --radius-jw-small: var(--jw-radius-small);
@@ -137,6 +138,7 @@
   --transition-duration-jw-mark: var(--jw-dur-mark);
   --transition-duration-jw-band: var(--jw-dur-band);
   --transition-duration-jw-step: var(--jw-dur-step);
+  --ease-jw-out: var(--jw-ease-out);
 }
 
 @layer base {
