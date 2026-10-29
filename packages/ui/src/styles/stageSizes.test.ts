@@ -59,8 +59,9 @@ describe("sizes per answer kind", () => {
 
   it("keypad digits are 30 px", () => {
     expect(read("../../../lesson-kit/src/parts/Keypad.tsx")).toContain(
-      "const DIGIT = cn(TILE, 'min-h-[var(--kid-key-size)] text-[1.875rem]')",
+      "const DIGIT = cn(TILE, 'min-h-kid-key text-jw-key')",
     );
+    expect(read("foundation.css")).toContain("--jw-size-key: 1.875rem;");
   });
 
   // Enter addendum 4.1 and 3.1 (dl-uukj.29.104). The addendum gives the docks as 324 and 376, but
@@ -80,9 +81,8 @@ describe("sizes per answer kind", () => {
   it("the phone keypad: keys 72 and 8 apart, the sign row 56, docked under a 2px line, padding 32 16 16", () => {
     const pad = read("../../../lesson-kit/src/parts/Keypad.tsx");
     expect(read("kids.css")).toContain("--kid-key-size: 4.5rem;");
-    expect(pad).toContain(
-      "const PAD_SIGN = cn(TILE, 'min-h-[var(--kid-tap-min)] min-w-0 text-[1.75rem]')",
-    );
+    expect(pad).toContain("const PAD_SIGN = cn(TILE, 'min-h-kid-tap min-w-0 text-jw-key-sign')");
+    expect(read("foundation.css")).toContain("--jw-size-key-sign: 1.75rem;");
     expect(pad).toContain("<div data-keypad className='grid grid-cols-3 gap-2'>");
     const dock = rule(".kid-step-shell[data-framed] [data-tools-dock]");
     expect(dock).toContain("padding: 2rem 1rem 1rem");
@@ -101,8 +101,9 @@ describe("sizes per answer kind", () => {
   it("the laptop’s sign keys are 56 × 56, 26 px, 8 apart, under the field", () => {
     const pad = read("../../../lesson-kit/src/parts/Keypad.tsx");
     expect(pad).toContain(
-      "const STRIP_SIGN = cn(TILE, 'min-h-[var(--kid-tap-min)] min-w-[var(--kid-tap-min)] text-[1.625rem]')",
+      "const STRIP_SIGN = cn(TILE, 'min-h-kid-tap min-w-kid-tap text-jw-key-strip')",
     );
+    expect(read("foundation.css")).toContain("--jw-size-key-strip: 1.625rem;");
     expect(pad).toContain(
       "<div data-signs='strip' data-quiet={quiet ? '' : undefined} aria-disabled={quiet || undefined} className='flex flex-wrap gap-2' >",
     );
