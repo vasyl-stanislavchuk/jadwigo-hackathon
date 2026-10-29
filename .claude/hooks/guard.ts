@@ -11,6 +11,10 @@
 // A denial always starts with "guard:" and says what to do instead. Cases: guard.test.ts.
 
 import { spawnSync } from "node:child_process";
+
+/** The Stop hook's room for make check's output: 64 MB, far above the 1 MB that overflowed (dl-5ssh.94). */
+const STOP_MAX_BUFFER = 64 * 1024 * 1024;
+
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { extname, isAbsolute, join, relative, resolve } from "node:path";
@@ -620,11 +624,19 @@ function run(mode: string, raw: string, env: Env): number {
 
   if (mode === "stop") {
     if (input.stop_hook_active) return 0;
+    // make check prints more than spawnSync's default 1 MB (lesson-kit's dom tests alone print a
+    // React warning per file), and an overflow is ENOBUFS with status null: a green tree read as
+    // red (dl-5ssh.94). So the buffer is 64 MB, and a spawn error is reported as itself.
     const out = spawnSync("make", ["check"], {
       cwd: root,
       encoding: "utf8",
       env: { ...process.env, TURBO_OUTPUT_LOGS: "errors-only" },
+      maxBuffer: STOP_MAX_BUFFER,
     });
+    if (out.error !== undefined) {
+      console.error(`make check could not run: ${out.error.message}`);
+      return 2;
+    }
     if (out.status !== 0) {
       console.error(
         `make check failed. Fix it before you finish:\n${(out.stdout + out.stderr).slice(-6000)}`,
