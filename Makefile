@@ -177,7 +177,12 @@ db-role:
 ## api-bundle: apps/api's Lambda entry (src/index.ts, `index.handler`) as one ESM file for Node 24,
 ## apps/api/dist/index.mjs, which `make -C infra api-deploy` zips. bun's bundler, with a require()
 ## for pg's CommonJS. The AWS SDK is bundled, pinned, rather than taken from the runtime.
+## `--target=node` pins no Node version: `make api-invoke` checks the Node that runs it instead.
 API_BUNDLE := apps/api/dist/index.mjs
+# The Lambda's Node major and architecture, read from its Terraform so they are written once.
+LAMBDA_TF := infra/terraform/modules/app/api.tf
+LAMBDA_NODE := $(shell sed -n 's/.*runtime *= *"nodejs\([0-9]*\)\.x".*/\1/p' $(LAMBDA_TF))
+LAMBDA_ARCH := $(shell sed -n 's/.*architectures *= *\["\([a-z0-9_]*\)"\].*/\1/p' $(LAMBDA_TF))
 api-bundle:
 	rm -f $(API_BUNDLE)
 	bun build apps/api/src/index.ts --target=node --format=esm --minify \
@@ -187,8 +192,13 @@ api-bundle:
 
 ## api-invoke: the bundle, invoked in a fresh Node with an API Gateway v2 event for GET /api/health;
 ## prints the status and the cold start. No AWS: DATABASE_URL names the local database, and health
-## never reaches it.
+## never reaches it. Fails first unless that Node is the Lambda's: Node 24 on arm64, from $(LAMBDA_TF).
 api-invoke: api-bundle
+	@test -n "$(LAMBDA_NODE)" -a -n "$(LAMBDA_ARCH)" || { echo "api-invoke: no runtime or architectures found in $(LAMBDA_TF)"; exit 1; }
+	@# The $$( ) sends this line through sh: macOS make 3.81 runs a line with no shell character
+	@# itself and finds `node` on its own PATH, not the one above with mise's bin paths first.
+	@v=$$(node -p 'process.versions.node.split(".")[0] + " on " + process.arch'); \
+	  test "$$v" = "$(LAMBDA_NODE) on $(LAMBDA_ARCH)" || { echo "api-invoke: the Lambda runs Node $(LAMBDA_NODE) on $(LAMBDA_ARCH) ($(LAMBDA_TF)); this node is $$v"; exit 1; }
 	DATABASE_URL=$${DATABASE_URL:-postgresql://localhost:$${PGPORT:-5433}/jadwigo} bun run --cwd apps/api invoke
 
 ## drops: md drops check on every drop under docs/drops/
