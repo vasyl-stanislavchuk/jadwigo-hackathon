@@ -40,6 +40,8 @@ describe("cn", () => {
     ["min-h-[var(--kid-tap-min)] min-h-jw-control", "min-h-jw-control"],
     ["min-w-kid-tap min-w-kid-key", "min-w-kid-key"],
     ["gap-3 gap-kid-choice", "gap-kid-choice"],
+    ["min-h-kid-status min-h-0", "min-h-0"],
+    ["min-h-kid-tap min-h-0", "min-h-0"],
     ["rounded-lg rounded-jw-small", "rounded-jw-small"],
     ["shadow-xs shadow-jw-act", "shadow-jw-act"],
     ["duration-jw-fast duration-200", "duration-200"],

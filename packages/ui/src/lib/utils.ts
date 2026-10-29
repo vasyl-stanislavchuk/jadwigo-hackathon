@@ -18,8 +18,21 @@ const SIZES = [
   "jw-body",
   "jw-small",
   "jw-target",
+  "jw-key",
+  "jw-key-sign",
+  "jw-key-strip",
+  "jw-unit",
 ];
-const SPACING = ["kid-tap", "kid-key", "kid-commit", "kid-choice", "jw-control", "jw-control-sm"];
+const SPACING = [
+  "kid-tap",
+  "kid-key",
+  "kid-commit",
+  "kid-choice",
+  "kid-status",
+  "kid-credit",
+  "jw-control",
+  "jw-control-sm",
+];
 const twMerge = extendTailwindMerge({
   extend: {
     theme: {
