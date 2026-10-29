@@ -6,23 +6,7 @@
       "type": "object",
       "properties": {
         "type": {
-          "type": "string",
-          "enum": [
-            "BadRequest",
-            "ServerFieldSupplied",
-            "NotFound",
-            "AssignmentClosed",
-            "AttemptFinished",
-            "AttemptPaused",
-            "QuestionNotOpen",
-            "TryOutOfOrder",
-            "AnswerConflict",
-            "EventIdMismatch",
-            "WriteOnce",
-            "AnswerLimit",
-            "Unauthorized",
-            "BankUnavailable"
-          ]
+          "$ref": "#/$defs/ErrorType"
         },
         "message": {
           "type": "string"
@@ -38,5 +22,26 @@
   "required": [
     "error"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "ErrorType": {
+      "type": "string",
+      "enum": [
+        "BadRequest",
+        "ServerFieldSupplied",
+        "NotFound",
+        "AssignmentClosed",
+        "AttemptFinished",
+        "AttemptPaused",
+        "QuestionNotOpen",
+        "TryOutOfOrder",
+        "AnswerConflict",
+        "EventIdMismatch",
+        "WriteOnce",
+        "AnswerLimit",
+        "Unauthorized",
+        "BankUnavailable"
+      ]
+    }
+  }
 }

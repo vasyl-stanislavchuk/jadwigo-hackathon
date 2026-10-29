@@ -5,41 +5,55 @@
     "lessons": {
       "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "assignment_id": {
-            "type": "string",
-            "pattern": "^asg_[0-7][0-9a-hjkmnp-tv-z]{25}$"
-          },
-          "lesson_id": {
-            "type": "string",
-            "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
-          },
-          "title": {
-            "type": "string",
-            "minLength": 1
-          },
-          "language": {
-            "type": "string",
-            "enum": [
-              "pl",
-              "en",
-              "uk"
-            ]
-          }
-        },
-        "required": [
-          "assignment_id",
-          "lesson_id",
-          "title",
-          "language"
-        ],
-        "additionalProperties": false
+        "$ref": "#/$defs/FeaturedLesson"
       }
     }
   },
   "required": [
     "lessons"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "FeaturedLesson": {
+      "type": "object",
+      "properties": {
+        "assignment_id": {
+          "$ref": "#/$defs/AssignmentId"
+        },
+        "lesson_id": {
+          "$ref": "#/$defs/LessonId"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "language": {
+          "$ref": "#/$defs/Language"
+        }
+      },
+      "required": [
+        "assignment_id",
+        "lesson_id",
+        "title",
+        "language"
+      ],
+      "additionalProperties": false
+    },
+    "AssignmentId": {
+      "type": "string",
+      "pattern": "^asg_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LessonId": {
+      "type": "string",
+      "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en",
+        "uk"
+      ]
+    }
+  }
 }

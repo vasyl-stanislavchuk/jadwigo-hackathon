@@ -3,24 +3,17 @@
   "type": "object",
   "properties": {
     "assignment_id": {
-      "type": "string",
-      "pattern": "^asg_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/AssignmentId"
     },
     "lesson_id": {
-      "type": "string",
-      "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/LessonId"
     },
     "title": {
       "type": "string",
       "minLength": 1
     },
     "language": {
-      "type": "string",
-      "enum": [
-        "pl",
-        "en",
-        "uk"
-      ]
+      "$ref": "#/$defs/Language"
     }
   },
   "required": [
@@ -29,5 +22,23 @@
     "title",
     "language"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "AssignmentId": {
+      "type": "string",
+      "pattern": "^asg_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LessonId": {
+      "type": "string",
+      "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en",
+        "uk"
+      ]
+    }
+  }
 }

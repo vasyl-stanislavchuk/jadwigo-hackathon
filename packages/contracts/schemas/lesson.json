@@ -3,41 +3,23 @@
   "type": "object",
   "properties": {
     "id": {
-      "type": "string",
-      "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/LessonId"
     },
     "pod_id": {
-      "type": "string",
-      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/PodId"
     },
     "title": {
       "type": "string",
       "minLength": 1
     },
     "language": {
-      "type": "string",
-      "enum": [
-        "pl",
-        "en",
-        "uk"
-      ]
+      "$ref": "#/$defs/Language"
     },
     "kind": {
-      "type": "string",
-      "enum": [
-        "practice",
-        "review",
-        "check",
-        "diagnostic"
-      ]
+      "$ref": "#/$defs/LessonKind"
     },
     "status": {
-      "type": "string",
-      "enum": [
-        "draft",
-        "published",
-        "archived"
-      ]
+      "$ref": "#/$defs/LessonStatus"
     },
     "reasoning": {
       "type": [
@@ -46,19 +28,10 @@
       ]
     },
     "category": {
-      "type": "string",
-      "enum": [
-        "child",
-        "adult"
-      ]
+      "$ref": "#/$defs/Category"
     },
     "subject": {
-      "type": "string",
-      "enum": [
-        "math",
-        "polish",
-        "english"
-      ]
+      "$ref": "#/$defs/Subject"
     },
     "grade": {
       "anyOf": [
@@ -75,8 +48,7 @@
     "skill_ids": {
       "type": "array",
       "items": {
-        "type": "string",
-        "pattern": "^[a-z]+(\\.[a-z0-9-]+)+$"
+        "$ref": "#/$defs/SkillId"
       }
     },
     "created_at": {
@@ -99,5 +71,59 @@
     "skill_ids",
     "created_at"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "LessonId": {
+      "type": "string",
+      "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en",
+        "uk"
+      ]
+    },
+    "LessonKind": {
+      "type": "string",
+      "enum": [
+        "practice",
+        "review",
+        "check",
+        "diagnostic"
+      ]
+    },
+    "LessonStatus": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published",
+        "archived"
+      ]
+    },
+    "Category": {
+      "type": "string",
+      "enum": [
+        "child",
+        "adult"
+      ]
+    },
+    "Subject": {
+      "type": "string",
+      "enum": [
+        "math",
+        "polish",
+        "english"
+      ]
+    },
+    "SkillId": {
+      "type": "string",
+      "pattern": "^[a-z]+(\\.[a-z0-9-]+)+$"
+    }
+  }
 }

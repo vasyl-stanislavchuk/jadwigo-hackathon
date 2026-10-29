@@ -7,72 +7,7 @@
       "const": 1
     },
     "need": {
-      "type": "object",
-      "properties": {
-        "words": {
-          "type": "string",
-          "description": "The need in plain words, in the caller's language"
-        },
-        "words_en": {
-          "type": "string",
-          "description": "English terms for the keyword arm when the need is not in English; never stored on a page"
-        },
-        "skills": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "mistakes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "can_do": {
-          "type": "string"
-        },
-        "contexts": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "curriculum_tags": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "e.g. pl-2017:II.3.3, ccss:3.OA.C.7"
-        },
-        "resemble": {
-          "type": "string",
-          "description": "A task to resemble, e.g. a homework problem's text"
-        },
-        "language": {
-          "type": "string",
-          "enum": [
-            "pl",
-            "en",
-            "uk"
-          ]
-        },
-        "grade": {
-          "type": "string",
-          "description": "Canonical form: the bare number, e.g. \"3\""
-        },
-        "limit": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 9007199254740991
-        }
-      },
-      "required": [
-        "language",
-        "grade"
-      ],
-      "additionalProperties": false,
-      "description": "A search need, from jadwigo-bank schemas/need.schema.json at commit 527c6e0. It carries at least one of words, skills, can_do or resemble."
+      "$ref": "#/$defs/Need"
     },
     "arm": {
       "type": "string",
@@ -335,5 +270,78 @@
     "state"
   ],
   "additionalProperties": false,
-  "description": "A bank search's answer, version 1, from jadwigo-bank schemas/search-envelope.schema.json at commit 527c6e0."
+  "description": "A bank search's answer, version 1, from jadwigo-bank schemas/search-envelope.schema.json at commit 527c6e0.",
+  "$defs": {
+    "Need": {
+      "type": "object",
+      "properties": {
+        "words": {
+          "type": "string",
+          "description": "The need in plain words, in the caller's language"
+        },
+        "words_en": {
+          "type": "string",
+          "description": "English terms for the keyword arm when the need is not in English; never stored on a page"
+        },
+        "skills": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mistakes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "can_do": {
+          "type": "string"
+        },
+        "contexts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "curriculum_tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "e.g. pl-2017:II.3.3, ccss:3.OA.C.7"
+        },
+        "resemble": {
+          "type": "string",
+          "description": "A task to resemble, e.g. a homework problem's text"
+        },
+        "language": {
+          "$ref": "#/$defs/Language"
+        },
+        "grade": {
+          "type": "string",
+          "description": "Canonical form: the bare number, e.g. \"3\""
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "language",
+        "grade"
+      ],
+      "additionalProperties": false,
+      "description": "A search need, from jadwigo-bank schemas/need.schema.json at commit 527c6e0. It carries at least one of words, skills, can_do or resemble."
+    },
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en",
+        "uk"
+      ]
+    }
+  }
 }

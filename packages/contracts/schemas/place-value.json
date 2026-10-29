@@ -19,20 +19,7 @@
         "points": {
           "type": "array",
           "items": {
-            "type": "object",
-            "properties": {
-              "x": {
-                "type": "number"
-              },
-              "y": {
-                "type": "number"
-              }
-            },
-            "required": [
-              "x",
-              "y"
-            ],
-            "additionalProperties": false
+            "$ref": "#/$defs/Point"
           }
         }
       },
@@ -51,24 +38,7 @@
           "type": "number"
         },
         "split": {
-          "type": "object",
-          "properties": {
-            "axis": {
-              "type": "string",
-              "enum": [
-                "rows",
-                "cols"
-              ]
-            },
-            "at": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "axis",
-            "at"
-          ],
-          "additionalProperties": false
+          "$ref": "#/$defs/GridSplit"
         }
       },
       "required": [
@@ -96,20 +66,7 @@
       "additionalProperties": false
     },
     {
-      "type": "object",
-      "properties": {
-        "hour_at": {
-          "type": "number"
-        },
-        "m": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "hour_at",
-        "m"
-      ],
-      "additionalProperties": false
+      "$ref": "#/$defs/ClockValue"
     },
     {
       "type": "object",
@@ -117,23 +74,7 @@
         "items": {
           "type": "array",
           "items": {
-            "type": "string",
-            "enum": [
-              "gr1",
-              "gr2",
-              "gr5",
-              "gr10",
-              "gr20",
-              "gr50",
-              "zl1",
-              "zl2",
-              "zl5",
-              "zl10",
-              "zl20",
-              "zl50",
-              "zl100",
-              "zl200"
-            ]
+            "$ref": "#/$defs/Denom"
           }
         }
       },
@@ -157,5 +98,78 @@
       ],
       "additionalProperties": false
     }
-  ]
+  ],
+  "$defs": {
+    "Point": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false
+    },
+    "GridSplit": {
+      "type": "object",
+      "properties": {
+        "axis": {
+          "type": "string",
+          "enum": [
+            "rows",
+            "cols"
+          ]
+        },
+        "at": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "axis",
+        "at"
+      ],
+      "additionalProperties": false
+    },
+    "ClockValue": {
+      "type": "object",
+      "properties": {
+        "hour_at": {
+          "type": "number"
+        },
+        "m": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "hour_at",
+        "m"
+      ],
+      "additionalProperties": false
+    },
+    "Denom": {
+      "type": "string",
+      "enum": [
+        "gr1",
+        "gr2",
+        "gr5",
+        "gr10",
+        "gr20",
+        "gr50",
+        "zl1",
+        "zl2",
+        "zl5",
+        "zl10",
+        "zl20",
+        "zl50",
+        "zl100",
+        "zl200"
+      ]
+    }
+  }
 }

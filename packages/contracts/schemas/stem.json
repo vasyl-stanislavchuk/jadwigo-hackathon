@@ -17,119 +17,158 @@
     "pictures": {
       "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "src": {
-            "type": "string"
-          },
-          "alt": {
-            "type": "string"
-          },
-          "width": {
-            "type": "number"
-          },
-          "height": {
-            "type": "number"
-          },
-          "decorative": {
-            "type": "boolean",
-            "const": true
-          },
-          "labels": {
-            "type": "object",
-            "properties": {
-              "range": {
-                "type": "array",
-                "prefixItems": [
-                  {
-                    "type": "array",
-                    "prefixItems": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "number"
-                      }
-                    ],
-                    "items": false,
-                    "minItems": 2,
-                    "maxItems": 2
-                  },
-                  {
-                    "type": "array",
-                    "prefixItems": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "number"
-                      }
-                    ],
-                    "items": false,
-                    "minItems": 2,
-                    "maxItems": 2
-                  }
-                ],
-                "items": false,
-                "minItems": 2,
-                "maxItems": 2
-              },
-              "items": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "content": {
-                      "type": "string"
-                    },
-                    "coordinates": {
-                      "type": "array",
-                      "prefixItems": [
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "number"
-                        }
-                      ],
-                      "items": false,
-                      "minItems": 2,
-                      "maxItems": 2
-                    },
-                    "alignment": {
-                      "type": "string"
-                    },
-                    "math": {
-                      "type": "boolean",
-                      "const": false
-                    }
-                  },
-                  "required": [
-                    "content",
-                    "coordinates",
-                    "alignment"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            },
-            "required": [
-              "range",
-              "items"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "required": [
-          "src",
-          "alt",
-          "width",
-          "height"
-        ],
-        "additionalProperties": false
+        "$ref": "#/$defs/Picture"
       }
     },
     "terminal": {
+      "$ref": "#/$defs/TerminalCard"
+    },
+    "figure": {
+      "$ref": "#/$defs/Figure"
+    },
+    "reference": {
+      "$ref": "#/$defs/StemReference"
+    },
+    "audio": {
+      "type": "object",
+      "properties": {
+        "clip": {
+          "type": "string"
+        },
+        "slow": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "clip"
+      ],
+      "additionalProperties": false
+    },
+    "audio_text": {
+      "$ref": "#/$defs/AudioText"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "Picture": {
+      "type": "object",
+      "properties": {
+        "src": {
+          "type": "string"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        },
+        "decorative": {
+          "type": "boolean",
+          "const": true
+        },
+        "labels": {
+          "$ref": "#/$defs/PictureLabels"
+        }
+      },
+      "required": [
+        "src",
+        "alt",
+        "width",
+        "height"
+      ],
+      "additionalProperties": false
+    },
+    "PictureLabels": {
+      "type": "object",
+      "properties": {
+        "range": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "items": false,
+              "minItems": 2,
+              "maxItems": 2
+            },
+            {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "items": false,
+              "minItems": 2,
+              "maxItems": 2
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PictureLabel"
+          }
+        }
+      },
+      "required": [
+        "range",
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "PictureLabel": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "coordinates": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "alignment": {
+          "type": "string"
+        },
+        "math": {
+          "type": "boolean",
+          "const": false
+        }
+      },
+      "required": [
+        "content",
+        "coordinates",
+        "alignment"
+      ],
+      "additionalProperties": false
+    },
+    "TerminalCard": {
       "type": "object",
       "properties": {
         "lang": {
@@ -176,7 +215,7 @@
       ],
       "additionalProperties": false
     },
-    "figure": {
+    "Figure": {
       "oneOf": [
         {
           "type": "object",
@@ -221,13 +260,7 @@
               "type": "number"
             },
             "tick_label": {
-              "type": "string",
-              "enum": [
-                "decimal",
-                "fraction",
-                "mixed",
-                "non-reduced"
-              ]
+              "$ref": "#/$defs/TickLabelStyle"
             }
           },
           "required": [
@@ -279,15 +312,7 @@
               "type": "number"
             },
             "icon": {
-              "type": "string",
-              "enum": [
-                "apple",
-                "star",
-                "heart",
-                "fish",
-                "flower",
-                "cherry"
-              ]
+              "$ref": "#/$defs/GroupIcon"
             },
             "alt": {
               "type": "string"
@@ -310,116 +335,7 @@
               "const": "ruler"
             },
             "picture": {
-              "type": "object",
-              "properties": {
-                "src": {
-                  "type": "string"
-                },
-                "alt": {
-                  "type": "string"
-                },
-                "width": {
-                  "type": "number"
-                },
-                "height": {
-                  "type": "number"
-                },
-                "decorative": {
-                  "type": "boolean",
-                  "const": true
-                },
-                "labels": {
-                  "type": "object",
-                  "properties": {
-                    "range": {
-                      "type": "array",
-                      "prefixItems": [
-                        {
-                          "type": "array",
-                          "prefixItems": [
-                            {
-                              "type": "number"
-                            },
-                            {
-                              "type": "number"
-                            }
-                          ],
-                          "items": false,
-                          "minItems": 2,
-                          "maxItems": 2
-                        },
-                        {
-                          "type": "array",
-                          "prefixItems": [
-                            {
-                              "type": "number"
-                            },
-                            {
-                              "type": "number"
-                            }
-                          ],
-                          "items": false,
-                          "minItems": 2,
-                          "maxItems": 2
-                        }
-                      ],
-                      "items": false,
-                      "minItems": 2,
-                      "maxItems": 2
-                    },
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "content": {
-                            "type": "string"
-                          },
-                          "coordinates": {
-                            "type": "array",
-                            "prefixItems": [
-                              {
-                                "type": "number"
-                              },
-                              {
-                                "type": "number"
-                              }
-                            ],
-                            "items": false,
-                            "minItems": 2,
-                            "maxItems": 2
-                          },
-                          "alignment": {
-                            "type": "string"
-                          },
-                          "math": {
-                            "type": "boolean",
-                            "const": false
-                          }
-                        },
-                        "required": [
-                          "content",
-                          "coordinates",
-                          "alignment"
-                        ],
-                        "additionalProperties": false
-                      }
-                    }
-                  },
-                  "required": [
-                    "range",
-                    "items"
-                  ],
-                  "additionalProperties": false
-                }
-              },
-              "required": [
-                "src",
-                "alt",
-                "width",
-                "height"
-              ],
-              "additionalProperties": false
+              "$ref": "#/$defs/Picture"
             },
             "unit": {
               "type": "string",
@@ -492,23 +408,7 @@
             "items": {
               "type": "array",
               "items": {
-                "type": "string",
-                "enum": [
-                  "gr1",
-                  "gr2",
-                  "gr5",
-                  "gr10",
-                  "gr20",
-                  "gr50",
-                  "zl1",
-                  "zl2",
-                  "zl5",
-                  "zl10",
-                  "zl20",
-                  "zl50",
-                  "zl100",
-                  "zl200"
-                ]
+                "$ref": "#/$defs/Denom"
               }
             },
             "alt": {
@@ -576,7 +476,46 @@
         }
       ]
     },
-    "reference": {
+    "TickLabelStyle": {
+      "type": "string",
+      "enum": [
+        "decimal",
+        "fraction",
+        "mixed",
+        "non-reduced"
+      ]
+    },
+    "GroupIcon": {
+      "type": "string",
+      "enum": [
+        "apple",
+        "star",
+        "heart",
+        "fish",
+        "flower",
+        "cherry"
+      ]
+    },
+    "Denom": {
+      "type": "string",
+      "enum": [
+        "gr1",
+        "gr2",
+        "gr5",
+        "gr10",
+        "gr20",
+        "gr50",
+        "zl1",
+        "zl2",
+        "zl5",
+        "zl10",
+        "zl20",
+        "zl50",
+        "zl100",
+        "zl200"
+      ]
+    },
+    "StemReference": {
       "type": "object",
       "properties": {
         "prompt": {
@@ -592,22 +531,7 @@
       ],
       "additionalProperties": false
     },
-    "audio": {
-      "type": "object",
-      "properties": {
-        "clip": {
-          "type": "string"
-        },
-        "slow": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "clip"
-      ],
-      "additionalProperties": false
-    },
-    "audio_text": {
+    "AudioText": {
       "type": "object",
       "properties": {
         "text": {
@@ -627,6 +551,5 @@
       ],
       "additionalProperties": false
     }
-  },
-  "additionalProperties": false
+  }
 }
