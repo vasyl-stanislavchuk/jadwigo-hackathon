@@ -109,23 +109,36 @@ function errorTable(): string {
     .join("\n");
 }
 
+/** A route table the document cannot describe. The message starts with the route key. */
+export class RouteTableError extends Error {
+  override name = "RouteTableError";
+}
+
 export function openApiDocument(routes: Record<string, Route>): Json {
   const { registry, names } = components();
   const { all, differs } = schemaSets(registry);
   const nameOf = (schema: z.ZodType, what: string): string => {
     const name = names.get(schema);
-    if (name === undefined) throw new Error(`${what} is not an exported schema`);
+    if (name === undefined) throw new RouteTableError(`${what} is not an exported schema`);
     return name;
   };
 
   const paths: Record<string, Record<string, Json>> = {};
   for (const [operationId, route] of Object.entries(routes)) {
-    const shape = (route.params as z.ZodObject).shape as Record<string, z.ZodType>;
+    if (!(route.params instanceof z.ZodObject)) {
+      throw new RouteTableError(`${operationId}: params is not a z.object()`);
+    }
+    const shape = route.params.shape as Record<string, z.ZodType>;
+    for (const [, name] of route.path.matchAll(/\{([^}]+)\}/g)) {
+      if (name !== undefined && !(name in shape)) {
+        throw new RouteTableError(`${operationId}: {${name}} in path but not in params`);
+      }
+    }
     // A path segment is always a string, so the input side of a coercion (`Seq`) says nothing:
     // the parameter shows what the parser accepts.
     const parameters = Object.entries(shape).map(([name, schema]) => {
       if (!route.path.includes(`{${name}}`))
-        throw new Error(`${operationId}: no {${name}} in path`);
+        throw new RouteTableError(`${operationId}: no {${name}} in path`);
       const id = names.get(schema);
       const { $schema: _, ...inlined } = z.toJSONSchema(schema, { io: "output" });
       return {
@@ -168,7 +181,12 @@ export function openApiDocument(routes: Record<string, Route>): Json {
         "5XX": { $ref: ERROR },
       },
     };
-    paths[route.path] = { ...paths[route.path], [route.method.toLowerCase()]: operation };
+    const method = route.method.toLowerCase();
+    const taken = paths[route.path]?.[method]?.["operationId"];
+    if (taken !== undefined) {
+      throw new RouteTableError(`${operationId}: ${route.method} ${route.path} is also ${taken}`);
+    }
+    paths[route.path] = { ...paths[route.path], [method]: operation };
   }
 
   const error: Json = {
