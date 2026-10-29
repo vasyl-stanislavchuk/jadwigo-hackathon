@@ -330,7 +330,24 @@ describe("guard: Bash", () => {
     });
 
     test.each([
+      ["cd, push --all", `cd ${lane} && git push --all`],
+      ["cd, push --branches", `cd ${lane} && git push --branches origin`],
+      ["cd, push --mirror", `cd ${lane} && git push --mirror`],
+      ["cd, push --tags", `cd ${lane} && git push --tags`],
+      ["-C, push --all", `git -C ${lane} push --all`],
+      ["-C, push --mirror", `git -C ${lane} push --mirror origin`],
+      ["cd, -c push.default=matching", `cd ${lane} && git -c push.default=matching push`],
+      ["cd, -c remote.origin.push", `cd ${lane} && git -c remote.origin.push=main:main push`],
+      ["-C, -c push.default", `git -C ${lane} -c push.default=matching push`],
+      ["cd, GIT_CONFIG_* env", `cd ${lane} && GIT_CONFIG_COUNT=1 git push`],
+      ["cd, --config-env", `cd ${lane} && git --config-env=push.default=PD push`],
+    ])("a push whose flags or config may push main is judged from cwd: %s", (_name, command) => {
+      expect(from(command)).toMatch(/through a PR/);
+    });
+
+    test.each([
       ["cd then push", `cd ${lane} && git push`],
+      ["cd, push -u origin", `cd ${lane} && git push -u origin`],
       ["cd; push", `cd ${lane}; git push`],
       ["cd, push, then a pipe", `cd ${lane} && git push 2>&1 | tail -5`],
       ["two -C in order", `git -C ${root} -C lane push`],

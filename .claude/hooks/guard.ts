@@ -371,20 +371,37 @@ function runDir(segs: Segment[], k: number, cwd: string | undefined): string | u
   return dir;
 }
 
-/** The folder `git -C a -C b ...` runs in: each -C applied in order, relative to the one before. */
+/**
+ * The folder `git -C a -C b ...` runs in: each -C applied in order, relative to the one before.
+ * Undefined when git carries any other option of its own (-c, --config-env and the like can set
+ * push.default or remote.*.push), so the caller judges the push from cwd.
+ */
 function gitDir(words: string[], dir: string | undefined): string | undefined {
   let where = dir;
   // The same walk over git's own options as gitSub.
   for (let i = 1; i < words.length && (words[i] ?? "").startsWith("-"); i++) {
-    if (words[i] === "-c") i++;
-    else if (words[i] === "-C") {
-      i++;
-      where = inDir(where, words[i] ?? "");
-      if (where === undefined) return undefined;
-    }
+    if (words[i] !== "-C") return undefined;
+    i++;
+    where = inDir(where, words[i] ?? "");
+    if (where === undefined) return undefined;
   }
   return where;
 }
+
+/** Push options that change only how the push reports or tracks, never which refs it sends. */
+const PLAIN_PUSH_OPTIONS = new Set([
+  "-u",
+  "--set-upstream",
+  "-q",
+  "--quiet",
+  "-v",
+  "--verbose",
+  "--progress",
+  "--no-progress",
+  "-n",
+  "--dry-run",
+  "--porcelain",
+]);
 
 const PUSH_TO_MAIN =
   "main is reached only through a PR (squash-merge after ci-ok). Push your branch and open a PR with `gh pr create`.";
@@ -406,14 +423,17 @@ function pushToMainDenial(
     .replace(/'[^']*'/g, " <quoted> ")
     .replace(/"(?:[^"\\]|\\.)*"/g, " <quoted> ");
   const segs = segments(text);
-  const unfollowed = /\bGIT_(DIR|WORK_TREE)\b|--git-dir\b|--work-tree\b/.test(text);
+  const unfollowed = /\bGIT_(DIR|WORK_TREE|CONFIG\w*)\b|--git-dir\b|--work-tree\b/.test(text);
   for (const [k, { words }] of segs.entries()) {
     const git = gitSub(words);
     if (git?.sub !== "push") continue;
     const refspecs = git.args.filter((a) => !a.startsWith("-")).slice(1);
     if (refspecs.some((r) => /(^|:)(refs\/heads\/)?main$/.test(r))) return PUSH_TO_MAIN;
     if (refspecs.length > 0) continue;
-    const where = unfollowed ? cwd : gitDir(words, runDir(segs, k, cwd));
+    // A cd or -C is followed only for a plain push: --all, --branches, --mirror, --tags and any
+    // option not in PLAIN_PUSH_OPTIONS may send main from a feature checkout that holds one.
+    const plain = git.args.every((a) => !a.startsWith("-") || PLAIN_PUSH_OPTIONS.has(a));
+    const where = unfollowed || !plain ? cwd : gitDir(words, runDir(segs, k, cwd));
     // A folder the guard cannot read, or one that is no checkout, is judged as the session's own.
     const branch = (where === undefined ? undefined : branchOf(where)) ?? branchOf(cwd);
     if (branch === "main") return PUSH_TO_MAIN;
