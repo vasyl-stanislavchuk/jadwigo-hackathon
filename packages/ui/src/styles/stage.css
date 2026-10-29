@@ -84,7 +84,8 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
 }
 
 .kid-step-shell:is([data-frame="phone"], [data-frame="phone-sideways"]) {
-  --kid-instruction-size: 1.1875rem; /* 19px */
+  /* 20px: the System page keeps 20 (dl-uukj.29.144 G2). */
+  --kid-instruction-size: var(--jw-size-instruction);
 }
 
 [data-stage] {
@@ -151,8 +152,8 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
 }
 
 /* A phone's docked tools in a lesson (Choose addendum 1.1.1, owner 2026-10-26): the keypad and the
- * letter row above the footer, full width, a 2px line on top, padding 12 16 16, docked as the
- * system keyboard is. The fields stay in the page. The top padding is 32, not 12: the fold arrow
+ * letter row above the footer, full width, a 2px line on top, padding 32 16 16, docked as the
+ * system keyboard is. The fields stay in the page. The top padding is 32: the fold arrow
  * hangs 28 below the dock line (Enter addendum 3.1), and the top key row starts 4 under it, so no
  * key is hidden (dl-uukj.29.111). */
 .kid-step-shell[data-framed] [data-tools-dock] {
@@ -430,9 +431,16 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
   gap: calc(var(--spacing) * 3);
 }
 
+/* Close is a navigation control, 48 square (2026-10-25 decision, dl-uukj.29.144 G4). The 2px top
+ * margin centres it in the whole bar, whose bottom line takes 2px of the box. */
 [data-topbar] [data-pause] {
   position: absolute;
   left: calc(var(--spacing) * 8);
+  width: 3rem;
+  height: 3rem;
+  min-width: 3rem;
+  min-height: 3rem;
+  margin-top: 0.125rem;
   color: var(--muted-foreground);
 }
 
@@ -706,12 +714,12 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
 }
 
 .kid-step-shell[data-frame="phone"] [data-band-title] {
-  font-size: 1.125rem; /* 18px */
+  font-size: var(--jw-size-verdict); /* 20px on a phone (dl-uukj.29.144 G3) */
 }
 
-/* The second line: 16px / 1.25, at most two lines, then an ellipsis. */
+/* The second line: the body's 18px / 1.25, at most two lines, then an ellipsis. */
 .kid-step-shell[data-frame="phone"] [data-band-line] {
-  font-size: 1rem; /* 16px */
+  font-size: var(--jw-size-body); /* 18px */
   line-height: 1.25;
   -webkit-line-clamp: 2;
 }
