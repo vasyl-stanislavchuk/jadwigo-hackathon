@@ -1,12 +1,11 @@
 // The child's lesson review end to end (dl-uukj.30.1): a child plays the featured equal-groups
 // lesson against a real api, misses one question, finishes, opens that question from the end list
 // and sees the answer given and the right answer under it; a question answered right shows no
-// right-answer block. The file name ends in play.spec.ts so playwright.config.ts runs it in the
-// `api` project; it needs the same seeded database and api as e2e/play.spec.ts, whose header says
-// how to run it locally.
+// right-answer block. It runs in the `api` project (playwright.config.ts) and needs the same seeded
+// database and api as e2e/play.spec.ts, whose header says how to run it locally.
 //
-// The seeded keys carry no `why` or worked lines, so the speech bubble is checked by the component
-// tests (src/review/ReviewStep.test.tsx), not here.
+// No imported lesson carries reveal lines yet (the importer writes no `why` or worked lines into a
+// key), so the speech bubble is checked by the component tests (src/review/ReviewStep.test.tsx).
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
 const field = (page: Page): Locator => page.locator("[data-field]").first();
