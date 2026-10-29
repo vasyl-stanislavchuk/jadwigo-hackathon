@@ -1,0 +1,7401 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Jadwigo API",
+    "version": "v1",
+    "description": "The API behind app.jadwigo.pl: attempts at lessons, the parent screens and the question bank. Every request and reply body is JSON."
+  },
+  "tags": [
+    {
+      "name": "attempts"
+    },
+    {
+      "name": "parents"
+    },
+    {
+      "name": "lessons"
+    },
+    {
+      "name": "bank"
+    },
+    {
+      "name": "health"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "Answers when the API is up.",
+        "tags": [
+          "health"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/featured-lessons": {
+      "get": {
+        "operationId": "featuredLessons",
+        "summary": "Lists the featured lessons anyone may play.",
+        "description": "The featured pod's open `anyone` assignments, oldest first.",
+        "tags": [
+          "lessons"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Featured"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/playground-examples/{language}": {
+      "get": {
+        "operationId": "playgroundExamples",
+        "summary": "Lists the playground's authored examples in one language, with their keys.",
+        "description": "The one response that carries a key: the playground reviews Jadwigo's own examples, and Try it looks a free answer up in the key.",
+        "tags": [
+          "lessons"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "language",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Language"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaygroundExamples"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/assignments/{id}/attempts": {
+      "post": {
+        "operationId": "startAttempt",
+        "summary": "Starts an attempt at an assignment.",
+        "tags": [
+          "attempts"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AssignmentId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptStart"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptSnapshot"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "get": {
+        "operationId": "getAssignmentAttempts",
+        "summary": "Lists one assignment's attempts the caller's pod may read: the lesson overview.",
+        "description": "404 when the pod reads none of them.",
+        "tags": [
+          "parents"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AssignmentId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentAttempts"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/attempts/{id}": {
+      "get": {
+        "operationId": "getAttempt",
+        "summary": "Reads an attempt: its plan and everything asked so far.",
+        "description": "No sign-in: the attempt id is the access, and whoever holds it may use it.",
+        "tags": [
+          "attempts"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AttemptId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptSnapshot"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchAttempt",
+        "summary": "Pauses or resumes an attempt.",
+        "description": "No sign-in: the attempt id is the access, and whoever holds it may use it. The server finishes an attempt itself.",
+        "tags": [
+          "attempts"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AttemptId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptSnapshot"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/attempts/{id}/answers": {
+      "post": {
+        "operationId": "answer",
+        "summary": "Sends one try at the current question, or a skip.",
+        "description": "No sign-in: the attempt id is the access, and whoever holds it may use it. Strict: a field the server owns (`correct`, `mistake_class`, `help_used`) is refused. Idempotent by `event_id`.",
+        "tags": [
+          "attempts"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AttemptId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptAnswerRequestInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptAnswerResult"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/attempts/{id}/questions/{seq}/help": {
+      "post": {
+        "operationId": "help",
+        "summary": "Releases the next rung of help for one question.",
+        "description": "No sign-in: the attempt id is the access, and whoever holds it may use it. The page sends the `help_released` it has seen, so a retried request returns the same rung. Rung 4 ends the question skipped and asks its twin.",
+        "tags": [
+          "attempts"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AttemptId"
+            }
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HelpRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HelpResult"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/attempts/{id}/results": {
+      "get": {
+        "operationId": "getResults",
+        "summary": "Reads an attempt's results in question order, mid-lesson too.",
+        "description": "No sign-in: the attempt id is the access, and whoever holds it may use it.",
+        "tags": [
+          "attempts"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AttemptId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptResults"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/attempts/{id}/review": {
+      "get": {
+        "operationId": "getReview",
+        "summary": "Reads a finished attempt's questions again, for the child.",
+        "description": "No sign-in: the attempt id is the access, and whoever holds it may use it. 409 `AttemptNotFinished` before the attempt ends.",
+        "tags": [
+          "attempts"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AttemptId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptReview"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "operationId": "getMe",
+        "summary": "Reads the signed-in adult: account, pod and learners.",
+        "description": "Before the first sign-in has made an account, `account`, `member` and `pod` are null and `learners` is empty.",
+        "tags": [
+          "parents"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/accounts": {
+      "post": {
+        "operationId": "createAccount",
+        "summary": "Makes the account and pod on the first sign-in.",
+        "description": "Idempotent per signed-in user: a second call makes nothing and returns the same reply.",
+        "tags": [
+          "parents"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/learners": {
+      "post": {
+        "operationId": "createLearner",
+        "summary": "Adds a child to the caller's pod.",
+        "description": "The server makes the `handle`, unique in the pod, from the first name.",
+        "tags": [
+          "parents"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LearnerCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearnerSnapshot"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/attempts/{id}/claims": {
+      "post": {
+        "operationId": "claimAttempt",
+        "summary": "Attaches an anonymous attempt to a learner in the caller's pod.",
+        "description": "A replay by the same account for the same learner returns the stored claim; any other claim of a claimed attempt is 409 `AttemptClaimed`.",
+        "tags": [
+          "parents"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AttemptId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptClaim"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Claim"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/learners/{id}/attempts": {
+      "get": {
+        "operationId": "getLearnerAttempts",
+        "summary": "Lists a learner's attempts, newest first.",
+        "tags": [
+          "parents"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/LearnerId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearnerAttempts"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/learners/{id}/attempts/{attempt}/review": {
+      "get": {
+        "operationId": "getParentReview",
+        "summary": "Reads a finished attempt of the caller's learner, with every try.",
+        "description": "409 `AttemptNotFinished` before the attempt ends.",
+        "tags": [
+          "parents"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/LearnerId"
+            }
+          },
+          {
+            "name": "attempt",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AttemptId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParentAttemptReview"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/question-searches": {
+      "post": {
+        "operationId": "questionSearches",
+        "summary": "Searches the question bank: a need in, ranked questions out.",
+        "description": "Called with the bank's shared read token, not a Supabase token.",
+        "tags": [
+          "bank"
+        ],
+        "security": [
+          {
+            "bankToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Need"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/questions/{id}": {
+      "get": {
+        "operationId": "questionBody",
+        "summary": "Reads one bank question's body, with its answer key.",
+        "description": "Called with the bank's shared read token, not a Supabase token: without it the reply is 401, whatever the id.",
+        "tags": [
+          "bank"
+        ],
+        "security": [
+          {
+            "bankToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Account": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/AccountId"
+          },
+          "pod_id": {
+            "$ref": "#/components/schemas/PodId"
+          },
+          "sub": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "pod_id",
+          "sub",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "AccountCreate": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "$ref": "#/components/schemas/Language"
+          }
+        },
+        "required": [
+          "language"
+        ],
+        "additionalProperties": false
+      },
+      "AccountId": {
+        "type": "string",
+        "pattern": "^acc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "Added": {
+        "type": "string",
+        "enum": [
+          "planned",
+          "twin"
+        ]
+      },
+      "AfterNotSure": {
+        "type": "string",
+        "enum": [
+          "next",
+          "twin_now",
+          "review_round"
+        ]
+      },
+      "AnswerKind": {
+        "type": "string",
+        "enum": [
+          "try",
+          "skip"
+        ]
+      },
+      "AnswerValue": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ChooseValue"
+          },
+          {
+            "$ref": "#/components/schemas/EnterValue"
+          },
+          {
+            "$ref": "#/components/schemas/SlotsValue"
+          },
+          {
+            "$ref": "#/components/schemas/SequenceValue"
+          },
+          {
+            "$ref": "#/components/schemas/GroupValue"
+          },
+          {
+            "$ref": "#/components/schemas/PlaceValue"
+          },
+          {
+            "$ref": "#/components/schemas/ExplainValue"
+          }
+        ]
+      },
+      "AnswerValueInput": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ChooseValue"
+          },
+          {
+            "$ref": "#/components/schemas/EnterValue"
+          },
+          {
+            "$ref": "#/components/schemas/SlotsValue"
+          },
+          {
+            "$ref": "#/components/schemas/SequenceValue"
+          },
+          {
+            "$ref": "#/components/schemas/GroupValue"
+          },
+          {
+            "$ref": "#/components/schemas/PlaceValueInput"
+          },
+          {
+            "$ref": "#/components/schemas/ExplainValue"
+          }
+        ]
+      },
+      "Assignment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/AssignmentId"
+          },
+          "pod_id": {
+            "$ref": "#/components/schemas/PodId"
+          },
+          "lesson_id": {
+            "$ref": "#/components/schemas/LessonId"
+          },
+          "lesson_version_id": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LessonVersionId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "learners",
+              "anyone"
+            ]
+          },
+          "identity": {
+            "type": "string",
+            "enum": [
+              "pick",
+              "type",
+              "none"
+            ]
+          },
+          "after_not_sure": {
+            "$ref": "#/components/schemas/AfterNotSure"
+          },
+          "hold_verdicts": {
+            "type": "boolean"
+          },
+          "opens_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "closes_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "pod_id",
+          "lesson_id",
+          "lesson_version_id",
+          "audience",
+          "identity",
+          "after_not_sure",
+          "hold_verdicts",
+          "opens_at",
+          "closes_at",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "AssignmentAttempt": {
+        "type": "object",
+        "properties": {
+          "attempt": {
+            "$ref": "#/components/schemas/Attempt"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttemptResult"
+            }
+          }
+        },
+        "required": [
+          "attempt",
+          "name",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "AssignmentAttempts": {
+        "type": "object",
+        "properties": {
+          "assignment": {
+            "$ref": "#/components/schemas/Assignment"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "language": {
+            "$ref": "#/components/schemas/Language"
+          },
+          "attempts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssignmentAttempt"
+            }
+          }
+        },
+        "required": [
+          "assignment",
+          "title",
+          "language",
+          "attempts"
+        ],
+        "additionalProperties": false
+      },
+      "AssignmentId": {
+        "type": "string",
+        "pattern": "^asg_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "Attempt": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/AttemptId"
+          },
+          "pod_id": {
+            "$ref": "#/components/schemas/PodId"
+          },
+          "assignment_id": {
+            "$ref": "#/components/schemas/AssignmentId"
+          },
+          "lesson_version_id": {
+            "$ref": "#/components/schemas/LessonVersionId"
+          },
+          "learner_id": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LearnerId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "player_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "real",
+              "preview"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/AttemptStatus"
+          },
+          "resume_at": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "claimed_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AccountId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "claimed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "moved_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AccountId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "moved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "pod_id",
+          "assignment_id",
+          "lesson_version_id",
+          "learner_id",
+          "player_name",
+          "mode",
+          "status",
+          "resume_at",
+          "started_at",
+          "finished_at"
+        ],
+        "additionalProperties": false
+      },
+      "AttemptAnswerRequestInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "event_id": {
+                "$ref": "#/components/schemas/EventId"
+              },
+              "seq": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "try_no": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "latency_ms": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "asked_at": {
+                "$ref": "#/components/schemas/SentAt"
+              },
+              "answered_at": {
+                "$ref": "#/components/schemas/SentAt"
+              },
+              "kind": {
+                "type": "string",
+                "const": "try"
+              },
+              "value": {
+                "$ref": "#/components/schemas/AnswerValueInput"
+              }
+            },
+            "required": [
+              "event_id",
+              "seq",
+              "try_no",
+              "latency_ms",
+              "asked_at",
+              "answered_at",
+              "kind",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event_id": {
+                "$ref": "#/components/schemas/EventId"
+              },
+              "seq": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "try_no": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "latency_ms": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "asked_at": {
+                "$ref": "#/components/schemas/SentAt"
+              },
+              "answered_at": {
+                "$ref": "#/components/schemas/SentAt"
+              },
+              "kind": {
+                "type": "string",
+                "const": "skip"
+              },
+              "skip_reason": {
+                "type": "string",
+                "enum": [
+                  "dont_know",
+                  "asked_to_skip"
+                ]
+              }
+            },
+            "required": [
+              "event_id",
+              "seq",
+              "try_no",
+              "latency_ms",
+              "asked_at",
+              "answered_at",
+              "kind",
+              "skip_reason"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "AttemptAnswerResult": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "$ref": "#/components/schemas/EventId"
+          },
+          "seq": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "try_no": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "replayed": {
+            "type": "boolean"
+          },
+          "correct": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "parts": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PartMark"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reveal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Reveal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ended": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PageEnded"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PageAttemptQuestion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attempt_status": {
+            "$ref": "#/components/schemas/AttemptStatus"
+          }
+        },
+        "required": [
+          "event_id",
+          "seq",
+          "try_no",
+          "replayed",
+          "correct",
+          "parts",
+          "reveal",
+          "ended",
+          "next",
+          "attempt_status"
+        ],
+        "additionalProperties": false
+      },
+      "AttemptClaim": {
+        "type": "object",
+        "properties": {
+          "learner_id": {
+            "$ref": "#/components/schemas/LearnerId"
+          }
+        },
+        "required": [
+          "learner_id"
+        ],
+        "additionalProperties": false
+      },
+      "AttemptId": {
+        "type": "string",
+        "pattern": "^att_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "AttemptPatch": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "paused",
+              "in_progress"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "AttemptResult": {
+        "type": "object",
+        "properties": {
+          "pod_id": {
+            "$ref": "#/components/schemas/PodId"
+          },
+          "attempt_id": {
+            "$ref": "#/components/schemas/AttemptId"
+          },
+          "seq": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "lesson_question_id": {
+            "$ref": "#/components/schemas/LessonQuestionId"
+          },
+          "added": {
+            "$ref": "#/components/schemas/Added"
+          },
+          "placed": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Placed"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "added_for": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "say": {
+            "type": "string"
+          },
+          "family": {
+            "$ref": "#/components/schemas/Family"
+          },
+          "question_type": {
+            "$ref": "#/components/schemas/QuestionType"
+          },
+          "tries": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "first_try_correct": {
+            "type": "boolean"
+          },
+          "correct": {
+            "type": "boolean"
+          },
+          "mistake_classes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "help_used": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "skip_reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SkipReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "time_ms": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "ended": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Ended"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "pod_id",
+          "attempt_id",
+          "seq",
+          "lesson_question_id",
+          "added",
+          "placed",
+          "added_for",
+          "say",
+          "family",
+          "question_type",
+          "tries",
+          "first_try_correct",
+          "correct",
+          "mistake_classes",
+          "help_used",
+          "skip_reason",
+          "time_ms",
+          "ended"
+        ],
+        "additionalProperties": false
+      },
+      "AttemptResults": {
+        "type": "object",
+        "properties": {
+          "attempt": {
+            "$ref": "#/components/schemas/Attempt"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageAttemptResult"
+            }
+          }
+        },
+        "required": [
+          "attempt",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "AttemptReview": {
+        "type": "object",
+        "properties": {
+          "attempt": {
+            "$ref": "#/components/schemas/Attempt"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewQuestion"
+            }
+          }
+        },
+        "required": [
+          "attempt",
+          "questions"
+        ],
+        "additionalProperties": false
+      },
+      "AttemptSnapshot": {
+        "type": "object",
+        "properties": {
+          "attempt": {
+            "$ref": "#/components/schemas/Attempt"
+          },
+          "plan": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PagePlannedQuestion"
+            }
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageAttemptQuestion"
+            }
+          },
+          "open_seq": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_event_id": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "attempt",
+          "plan",
+          "questions",
+          "open_seq",
+          "last_event_id"
+        ],
+        "additionalProperties": false
+      },
+      "AttemptStart": {
+        "type": "object",
+        "properties": {
+          "learner_id": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LearnerId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "player_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "real",
+              "preview"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "AttemptStatus": {
+        "type": "string",
+        "enum": [
+          "in_progress",
+          "paused",
+          "finished"
+        ]
+      },
+      "AudioText": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "slow": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": [
+          "text",
+          "language"
+        ],
+        "additionalProperties": false
+      },
+      "BankQuestionId": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$",
+        "description": "A bank question's id: a Khan item id such as x1a2b3c4, letters, digits, _ and - only"
+      },
+      "BasedOn": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "pattern": "^(khan|bank|authored):.+$"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "change": {
+                  "type": "string",
+                  "enum": [
+                    "numbers",
+                    "context",
+                    "wording",
+                    "tutor_notes"
+                  ]
+                },
+                "why": {
+                  "type": "string"
+                },
+                "reviewed": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "change",
+                "why",
+                "reviewed"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "question",
+          "changes"
+        ],
+        "additionalProperties": false
+      },
+      "ChooseData": {
+        "type": "object",
+        "properties": {
+          "stem": {
+            "$ref": "#/components/schemas/Stem"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChooseOption"
+            }
+          },
+          "select": {
+            "type": "string",
+            "enum": [
+              "one",
+              "many"
+            ]
+          },
+          "layout": {
+            "type": "string",
+            "enum": [
+              "list",
+              "grid",
+              "binary",
+              "lettered",
+              "inline"
+            ]
+          },
+          "tokens": {
+            "type": "string",
+            "enum": [
+              "marked",
+              "words"
+            ]
+          },
+          "line": {
+            "type": "string"
+          },
+          "boost": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "options",
+          "select",
+          "layout"
+        ],
+        "additionalProperties": false
+      },
+      "ChooseKey": {
+        "type": "object",
+        "properties": {
+          "correct": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "near": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "worked_solution": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "why": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "correct"
+        ],
+        "additionalProperties": false
+      },
+      "ChooseOption": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "content": {
+            "$ref": "#/components/schemas/OptionContent"
+          },
+          "letter": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "content"
+        ],
+        "additionalProperties": false
+      },
+      "ChooseValue": {
+        "type": "object",
+        "properties": {
+          "chosen": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "chosen"
+        ],
+        "additionalProperties": false
+      },
+      "Claim": {
+        "type": "object",
+        "properties": {
+          "attempt_id": {
+            "$ref": "#/components/schemas/AttemptId"
+          },
+          "learner_id": {
+            "$ref": "#/components/schemas/LearnerId"
+          },
+          "claimed_by": {
+            "$ref": "#/components/schemas/AccountId"
+          },
+          "claimed_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "attempt_id",
+          "learner_id",
+          "claimed_by",
+          "claimed_at"
+        ],
+        "additionalProperties": false
+      },
+      "ClockValue": {
+        "type": "object",
+        "properties": {
+          "hour_at": {
+            "type": "number"
+          },
+          "m": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "hour_at",
+          "m"
+        ],
+        "additionalProperties": false
+      },
+      "ColumnSum": {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "add",
+              "sub",
+              "mul"
+            ]
+          },
+          "operands": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "given_steps": {
+            "type": "number"
+          },
+          "carry_row": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "op",
+          "operands",
+          "given_steps",
+          "carry_row"
+        ],
+        "additionalProperties": false
+      },
+      "Credit": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "licence": {
+            "type": "string",
+            "minLength": 1
+          },
+          "original_lang": {
+            "$ref": "#/components/schemas/Language"
+          },
+          "checked": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          }
+        },
+        "required": [
+          "source",
+          "ref",
+          "licence",
+          "original_lang",
+          "checked"
+        ],
+        "additionalProperties": false
+      },
+      "Criterion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "cite": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "cite"
+        ],
+        "additionalProperties": false
+      },
+      "Denom": {
+        "type": "string",
+        "enum": [
+          "gr1",
+          "gr2",
+          "gr5",
+          "gr10",
+          "gr20",
+          "gr50",
+          "zl1",
+          "zl2",
+          "zl5",
+          "zl10",
+          "zl20",
+          "zl50",
+          "zl100",
+          "zl200"
+        ]
+      },
+      "Ended": {
+        "type": "string",
+        "enum": [
+          "correct",
+          "skipped",
+          "missed"
+        ]
+      },
+      "EnterData": {
+        "type": "object",
+        "properties": {
+          "stem": {
+            "$ref": "#/components/schemas/Stem"
+          },
+          "input": {
+            "$ref": "#/components/schemas/EnterInput"
+          },
+          "entry": {
+            "type": "string",
+            "enum": [
+              "keypad",
+              "keyboard"
+            ]
+          },
+          "voice": {
+            "type": "boolean"
+          },
+          "code": {
+            "type": "boolean"
+          },
+          "max_length": {
+            "type": "number"
+          },
+          "decimal": {
+            "type": "boolean"
+          },
+          "equation": {
+            "type": "boolean"
+          },
+          "whole": {
+            "type": "boolean"
+          },
+          "simplify": {
+            "$ref": "#/components/schemas/Simplify"
+          },
+          "figure": {
+            "$ref": "#/components/schemas/Figure"
+          },
+          "letters": {
+            "type": "string",
+            "enum": [
+              "pl",
+              "none"
+            ]
+          },
+          "capitals": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "input",
+          "entry"
+        ],
+        "additionalProperties": false
+      },
+      "EnterInput": {
+        "type": "string",
+        "enum": [
+          "number",
+          "text",
+          "expression",
+          "fraction"
+        ]
+      },
+      "EnterKey": {
+        "type": "object",
+        "properties": {
+          "accept": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "form": {
+            "$ref": "#/components/schemas/RequiredForm"
+          },
+          "forms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NumberForm"
+            }
+          },
+          "exact_terms": {
+            "type": "boolean"
+          },
+          "sides": {
+            "type": "string",
+            "enum": [
+              "either",
+              "kept"
+            ]
+          },
+          "case": {
+            "type": "string",
+            "enum": [
+              "exact",
+              "ignore"
+            ]
+          },
+          "accents": {
+            "type": "string",
+            "enum": [
+              "exact",
+              "ignore"
+            ]
+          },
+          "typo": {
+            "type": "string",
+            "enum": [
+              "miss",
+              "accept"
+            ]
+          },
+          "near": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "tolerance": {
+            "type": "number"
+          },
+          "rule": {
+            "$ref": "#/components/schemas/RuleRef"
+          }
+        },
+        "required": [
+          "accept"
+        ],
+        "additionalProperties": false
+      },
+      "EnterValue": {
+        "type": "object",
+        "properties": {
+          "entered": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "entered"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorEnvelope": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "$ref": "#/components/schemas/ErrorType"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "message"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorType": {
+        "type": "string",
+        "enum": [
+          "BadRequest",
+          "ServerFieldSupplied",
+          "NotSignedIn",
+          "NotFound",
+          "AccountMissing",
+          "AttemptClaimed",
+          "AttemptPreview",
+          "AssignmentClosed",
+          "AttemptFinished",
+          "AttemptNotFinished",
+          "AttemptPaused",
+          "QuestionNotOpen",
+          "TryOutOfOrder",
+          "AnswerConflict",
+          "EventIdMismatch",
+          "WriteOnce",
+          "AnswerLimit",
+          "Unauthorized",
+          "BankUnavailable"
+        ]
+      },
+      "EventId": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+      },
+      "ExampleScenario": {
+        "type": "object",
+        "properties": {
+          "try": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {},
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "correct",
+              "incorrect"
+            ]
+          },
+          "mistake_class": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "marks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartMark"
+            }
+          }
+        },
+        "required": [
+          "try",
+          "value",
+          "outcome",
+          "mistake_class",
+          "marks"
+        ],
+        "additionalProperties": false
+      },
+      "ExplainData": {
+        "type": "object",
+        "properties": {
+          "stem": {
+            "$ref": "#/components/schemas/Stem"
+          },
+          "input": {
+            "type": "string",
+            "enum": [
+              "voice",
+              "text",
+              "both"
+            ]
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "min_words": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "input"
+        ],
+        "additionalProperties": false
+      },
+      "ExplainKey": {
+        "type": "object",
+        "properties": {
+          "criteria": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Criterion"
+            }
+          },
+          "criteria_version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "criteria",
+          "criteria_version"
+        ],
+        "additionalProperties": false
+      },
+      "ExplainValue": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "spoken": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "Family": {
+        "type": "string",
+        "enum": [
+          "choose",
+          "enter",
+          "slots",
+          "sequence",
+          "group",
+          "place",
+          "explain"
+        ]
+      },
+      "Featured": {
+        "type": "object",
+        "properties": {
+          "lessons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeaturedLesson"
+            }
+          }
+        },
+        "required": [
+          "lessons"
+        ],
+        "additionalProperties": false
+      },
+      "FeaturedLesson": {
+        "type": "object",
+        "properties": {
+          "assignment_id": {
+            "$ref": "#/components/schemas/AssignmentId"
+          },
+          "lesson_id": {
+            "$ref": "#/components/schemas/LessonId"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "language": {
+            "$ref": "#/components/schemas/Language"
+          }
+        },
+        "required": [
+          "assignment_id",
+          "lesson_id",
+          "title",
+          "language"
+        ],
+        "additionalProperties": false
+      },
+      "Figure": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "expression"
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "number_line"
+              },
+              "min": {
+                "type": "number"
+              },
+              "max": {
+                "type": "number"
+              },
+              "step": {
+                "type": "number"
+              },
+              "labelled": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "marker": {
+                "type": "number"
+              },
+              "tick_label": {
+                "$ref": "#/components/schemas/TickLabelStyle"
+              }
+            },
+            "required": [
+              "kind",
+              "min",
+              "max",
+              "step",
+              "labelled",
+              "marker"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "dots"
+              },
+              "rows": {
+                "type": "number"
+              },
+              "cols": {
+                "type": "number"
+              },
+              "alt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "rows",
+              "cols",
+              "alt"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "groups"
+              },
+              "groups": {
+                "type": "number"
+              },
+              "each": {
+                "type": "number"
+              },
+              "icon": {
+                "$ref": "#/components/schemas/GroupIcon"
+              },
+              "alt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "groups",
+              "each",
+              "icon",
+              "alt"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "ruler"
+              },
+              "picture": {
+                "$ref": "#/components/schemas/Picture"
+              },
+              "unit": {
+                "type": "string",
+                "enum": [
+                  "cm",
+                  "mm"
+                ]
+              },
+              "length": {
+                "type": "number"
+              },
+              "pixels_per_unit": {
+                "type": "number"
+              },
+              "ticks": {
+                "type": "number"
+              },
+              "start": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "kind",
+              "picture",
+              "unit",
+              "length",
+              "pixels_per_unit"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "clock"
+              },
+              "h": {
+                "type": "number"
+              },
+              "m": {
+                "type": "number"
+              },
+              "numbers": {
+                "type": "string",
+                "enum": [
+                  "arabic",
+                  "none"
+                ]
+              },
+              "alt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "h",
+              "m",
+              "alt"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "coins"
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Denom"
+                }
+              },
+              "alt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "items",
+              "alt"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "fraction_bars"
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "n": {
+                      "type": "number"
+                    },
+                    "d": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "n",
+                    "d"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "shape": {
+                "type": "string",
+                "enum": [
+                  "bar",
+                  "circle"
+                ]
+              },
+              "alt": {
+                "type": "string"
+              },
+              "labels": {
+                "type": "string",
+                "enum": [
+                  "shown",
+                  "none"
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "items",
+              "shape",
+              "alt"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "Gap": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "const": "enter"
+              },
+              "input": {
+                "type": "string",
+                "enum": [
+                  "number",
+                  "text",
+                  "fraction"
+                ]
+              },
+              "max_length": {
+                "type": "number"
+              },
+              "range": {
+                "$ref": "#/components/schemas/GapRange"
+              },
+              "at": {
+                "$ref": "#/components/schemas/GapAt"
+              },
+              "letters": {
+                "type": "string",
+                "enum": [
+                  "pl",
+                  "none"
+                ]
+              },
+              "decimal": {
+                "type": "boolean"
+              },
+              "whole": {
+                "type": "boolean"
+              },
+              "simplify": {
+                "$ref": "#/components/schemas/Simplify"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "input"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "const": "choose"
+              },
+              "options": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "label"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "at": {
+                "$ref": "#/components/schemas/GapAt"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "options"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "GapAt": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "x",
+          "y"
+        ],
+        "additionalProperties": false
+      },
+      "GapKey": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "accept": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "form": {
+                "$ref": "#/components/schemas/RequiredForm"
+              },
+              "forms": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/NumberForm"
+                }
+              },
+              "exact_terms": {
+                "type": "boolean"
+              },
+              "sides": {
+                "type": "string",
+                "enum": [
+                  "either",
+                  "kept"
+                ]
+              },
+              "case": {
+                "type": "string",
+                "enum": [
+                  "exact",
+                  "ignore"
+                ]
+              },
+              "accents": {
+                "type": "string",
+                "enum": [
+                  "exact",
+                  "ignore"
+                ]
+              },
+              "typo": {
+                "type": "string",
+                "enum": [
+                  "miss",
+                  "accept"
+                ]
+              },
+              "near": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "tolerance": {
+                "type": "number"
+              },
+              "rule": {
+                "$ref": "#/components/schemas/RuleRef"
+              },
+              "kind": {
+                "type": "string",
+                "const": "enter"
+              }
+            },
+            "required": [
+              "accept",
+              "kind"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "correct": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "near": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "kind": {
+                "type": "string",
+                "const": "choose"
+              }
+            },
+            "required": [
+              "correct",
+              "kind"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "GapRange": {
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "number"
+          }
+        ],
+        "items": false,
+        "minItems": 2,
+        "maxItems": 2
+      },
+      "Goal": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/GoalId"
+          },
+          "pod_id": {
+            "$ref": "#/components/schemas/PodId"
+          },
+          "learner_id": {
+            "$ref": "#/components/schemas/LearnerId"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "pod_id",
+          "learner_id",
+          "name",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "GoalId": {
+        "type": "string",
+        "pattern": "^gol_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "GoalStub": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "GraphCategory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "picture": {
+            "$ref": "#/components/schemas/GraphPicture"
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ],
+        "additionalProperties": false
+      },
+      "GraphIcon": {
+        "type": "string",
+        "enum": [
+          "apple",
+          "banana",
+          "cherry",
+          "grape",
+          "candy",
+          "cookie",
+          "ice_cream",
+          "pizza",
+          "egg",
+          "sun",
+          "cloud",
+          "rain",
+          "snow",
+          "flower",
+          "leaf",
+          "dog",
+          "cat",
+          "fish",
+          "bird",
+          "star",
+          "heart",
+          "smile",
+          "book",
+          "pencil",
+          "car",
+          "bus",
+          "square"
+        ]
+      },
+      "GraphKind": {
+        "type": "string",
+        "enum": [
+          "bar",
+          "picture",
+          "line_plot",
+          "dot_plot",
+          "line",
+          "histogram"
+        ]
+      },
+      "GraphPicture": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "icon": {
+                "$ref": "#/components/schemas/GraphIcon"
+              }
+            },
+            "required": [
+              "icon"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "src": {
+                "type": "string"
+              },
+              "alt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "src",
+              "alt"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "GridSplit": {
+        "type": "object",
+        "properties": {
+          "axis": {
+            "type": "string",
+            "enum": [
+              "rows",
+              "cols"
+            ]
+          },
+          "at": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "axis",
+          "at"
+        ],
+        "additionalProperties": false
+      },
+      "GroupCard": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "picture": {
+            "$ref": "#/components/schemas/Picture"
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ],
+        "additionalProperties": false
+      },
+      "GroupData": {
+        "type": "object",
+        "properties": {
+          "stem": {
+            "$ref": "#/components/schemas/Stem"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "picture": {
+                  "$ref": "#/components/schemas/Picture"
+                },
+                "capacity": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "label"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupCard"
+            }
+          },
+          "each_item": {
+            "type": "string",
+            "enum": [
+              "one",
+              "many"
+            ]
+          },
+          "layout": {
+            "$ref": "#/components/schemas/GroupLayout"
+          }
+        },
+        "required": [
+          "groups",
+          "items",
+          "each_item"
+        ],
+        "additionalProperties": false
+      },
+      "GroupIcon": {
+        "type": "string",
+        "enum": [
+          "apple",
+          "star",
+          "heart",
+          "fish",
+          "flower",
+          "cherry"
+        ]
+      },
+      "GroupKey": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "near": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "GroupLayout": {
+        "type": "string",
+        "enum": [
+          "columns",
+          "zones"
+        ]
+      },
+      "GroupValue": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "Help": {
+        "type": "object",
+        "properties": {
+          "hints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HintCard"
+            }
+          },
+          "look": {
+            "$ref": "#/components/schemas/HelpCard"
+          },
+          "boost": {
+            "$ref": "#/components/schemas/HelpCard"
+          },
+          "boost_by_mistake": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "$ref": "#/components/schemas/HelpCard"
+            }
+          },
+          "give": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "worked": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "almost": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "HelpCard": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "picture": {
+            "$ref": "#/components/schemas/HelpPicture"
+          },
+          "focus": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "HelpPicture": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "image"
+              },
+              "src": {
+                "type": "string"
+              },
+              "alt": {
+                "type": "string"
+              },
+              "width": {
+                "type": "number"
+              },
+              "height": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "kind",
+              "src",
+              "alt"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "dots"
+              },
+              "rows": {
+                "type": "number"
+              },
+              "cols": {
+                "type": "number"
+              },
+              "alt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "rows",
+              "cols",
+              "alt"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "HelpRequest": {
+        "type": "object",
+        "properties": {
+          "help_released": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "help_released"
+        ],
+        "additionalProperties": false
+      },
+      "HelpResult": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "help_released": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "released": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReleasedHelp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "more": {
+            "type": "boolean"
+          },
+          "ended": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PageEnded"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PageAttemptQuestion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "seq",
+          "help_released",
+          "released",
+          "more",
+          "ended",
+          "next"
+        ],
+        "additionalProperties": false
+      },
+      "HintCard": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "pictures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Picture"
+            }
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "Language": {
+        "type": "string",
+        "enum": [
+          "pl",
+          "en",
+          "uk"
+        ]
+      },
+      "Learner": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/LearnerId"
+          },
+          "pod_id": {
+            "$ref": "#/components/schemas/PodId"
+          },
+          "handle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "first_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "age_group": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "pod_id",
+          "handle",
+          "first_name",
+          "age_group",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "LearnerAttempt": {
+        "type": "object",
+        "properties": {
+          "attempt": {
+            "$ref": "#/components/schemas/Attempt"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "language": {
+            "$ref": "#/components/schemas/Language"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttemptResult"
+            }
+          }
+        },
+        "required": [
+          "attempt",
+          "title",
+          "language",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "LearnerAttempts": {
+        "type": "object",
+        "properties": {
+          "learner": {
+            "$ref": "#/components/schemas/Learner"
+          },
+          "attempts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LearnerAttempt"
+            }
+          }
+        },
+        "required": [
+          "learner",
+          "attempts"
+        ],
+        "additionalProperties": false
+      },
+      "LearnerCreate": {
+        "type": "object",
+        "properties": {
+          "first_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "age_group": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "goals": {
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GoalStub"
+            }
+          }
+        },
+        "required": [
+          "first_name"
+        ],
+        "additionalProperties": false
+      },
+      "LearnerId": {
+        "type": "string",
+        "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "LearnerSnapshot": {
+        "type": "object",
+        "properties": {
+          "learner": {
+            "$ref": "#/components/schemas/Learner"
+          },
+          "goals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Goal"
+            }
+          }
+        },
+        "required": [
+          "learner",
+          "goals"
+        ],
+        "additionalProperties": false
+      },
+      "LessonId": {
+        "type": "string",
+        "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "LessonQuestion": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/LessonQuestionId"
+              },
+              "pod_id": {
+                "$ref": "#/components/schemas/PodId"
+              },
+              "question_type": {
+                "$ref": "#/components/schemas/QuestionType"
+              },
+              "say": {
+                "type": "string"
+              },
+              "help": {
+                "$ref": "#/components/schemas/Help"
+              },
+              "credit": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Credit"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "subject": {
+                "$ref": "#/components/schemas/Subject"
+              },
+              "grade": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "skill_ids": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SkillId"
+                }
+              },
+              "twin_of": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/LessonQuestionId"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "based_on": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/BasedOn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "content_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              "family": {
+                "type": "string",
+                "const": "choose"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ChooseData"
+              },
+              "key": {
+                "$ref": "#/components/schemas/ChooseKey"
+              }
+            },
+            "required": [
+              "id",
+              "pod_id",
+              "question_type",
+              "say",
+              "help",
+              "credit",
+              "subject",
+              "grade",
+              "skill_ids",
+              "twin_of",
+              "based_on",
+              "content_hash",
+              "created_at",
+              "family",
+              "data",
+              "key"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/LessonQuestionId"
+              },
+              "pod_id": {
+                "$ref": "#/components/schemas/PodId"
+              },
+              "question_type": {
+                "$ref": "#/components/schemas/QuestionType"
+              },
+              "say": {
+                "type": "string"
+              },
+              "help": {
+                "$ref": "#/components/schemas/Help"
+              },
+              "credit": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Credit"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "subject": {
+                "$ref": "#/components/schemas/Subject"
+              },
+              "grade": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "skill_ids": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SkillId"
+                }
+              },
+              "twin_of": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/LessonQuestionId"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "based_on": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/BasedOn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "content_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              "family": {
+                "type": "string",
+                "const": "enter"
+              },
+              "data": {
+                "$ref": "#/components/schemas/EnterData"
+              },
+              "key": {
+                "$ref": "#/components/schemas/EnterKey"
+              }
+            },
+            "required": [
+              "id",
+              "pod_id",
+              "question_type",
+              "say",
+              "help",
+              "credit",
+              "subject",
+              "grade",
+              "skill_ids",
+              "twin_of",
+              "based_on",
+              "content_hash",
+              "created_at",
+              "family",
+              "data",
+              "key"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/LessonQuestionId"
+              },
+              "pod_id": {
+                "$ref": "#/components/schemas/PodId"
+              },
+              "question_type": {
+                "$ref": "#/components/schemas/QuestionType"
+              },
+              "say": {
+                "type": "string"
+              },
+              "help": {
+                "$ref": "#/components/schemas/Help"
+              },
+              "credit": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Credit"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "subject": {
+                "$ref": "#/components/schemas/Subject"
+              },
+              "grade": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "skill_ids": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SkillId"
+                }
+              },
+              "twin_of": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/LessonQuestionId"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "based_on": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/BasedOn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "content_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              "family": {
+                "type": "string",
+                "const": "slots"
+              },
+              "data": {
+                "$ref": "#/components/schemas/SlotsData"
+              },
+              "key": {
+                "$ref": "#/components/schemas/SlotsKey"
+              }
+            },
+            "required": [
+              "id",
+              "pod_id",
+              "question_type",
+              "say",
+              "help",
+              "credit",
+              "subject",
+              "grade",
+              "skill_ids",
+              "twin_of",
+              "based_on",
+              "content_hash",
+              "created_at",
+              "family",
+              "data",
+              "key"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/LessonQuestionId"
+              },
+              "pod_id": {
+                "$ref": "#/components/schemas/PodId"
+              },
+              "question_type": {
+                "$ref": "#/components/schemas/QuestionType"
+              },
+              "say": {
+                "type": "string"
+              },
+              "help": {
+                "$ref": "#/components/schemas/Help"
+              },
+              "credit": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Credit"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "subject": {
+                "$ref": "#/components/schemas/Subject"
+              },
+              "grade": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "skill_ids": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SkillId"
+                }
+              },
+              "twin_of": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/LessonQuestionId"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "based_on": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/BasedOn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "content_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              "family": {
+                "type": "string",
+                "const": "sequence"
+              },
+              "data": {
+                "$ref": "#/components/schemas/SequenceData"
+              },
+              "key": {
+                "$ref": "#/components/schemas/SequenceKey"
+              }
+            },
+            "required": [
+              "id",
+              "pod_id",
+              "question_type",
+              "say",
+              "help",
+              "credit",
+              "subject",
+              "grade",
+              "skill_ids",
+              "twin_of",
+              "based_on",
+              "content_hash",
+              "created_at",
+              "family",
+              "data",
+              "key"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/LessonQuestionId"
+              },
+              "pod_id": {
+                "$ref": "#/components/schemas/PodId"
+              },
+              "question_type": {
+                "$ref": "#/components/schemas/QuestionType"
+              },
+              "say": {
+                "type": "string"
+              },
+              "help": {
+                "$ref": "#/components/schemas/Help"
+              },
+              "credit": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Credit"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "subject": {
+                "$ref": "#/components/schemas/Subject"
+              },
+              "grade": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "skill_ids": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SkillId"
+                }
+              },
+              "twin_of": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/LessonQuestionId"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "based_on": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/BasedOn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "content_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              "family": {
+                "type": "string",
+                "const": "group"
+              },
+              "data": {
+                "$ref": "#/components/schemas/GroupData"
+              },
+              "key": {
+                "$ref": "#/components/schemas/GroupKey"
+              }
+            },
+            "required": [
+              "id",
+              "pod_id",
+              "question_type",
+              "say",
+              "help",
+              "credit",
+              "subject",
+              "grade",
+              "skill_ids",
+              "twin_of",
+              "based_on",
+              "content_hash",
+              "created_at",
+              "family",
+              "data",
+              "key"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/LessonQuestionId"
+              },
+              "pod_id": {
+                "$ref": "#/components/schemas/PodId"
+              },
+              "question_type": {
+                "$ref": "#/components/schemas/QuestionType"
+              },
+              "say": {
+                "type": "string"
+              },
+              "help": {
+                "$ref": "#/components/schemas/Help"
+              },
+              "credit": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Credit"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "subject": {
+                "$ref": "#/components/schemas/Subject"
+              },
+              "grade": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "skill_ids": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SkillId"
+                }
+              },
+              "twin_of": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/LessonQuestionId"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "based_on": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/BasedOn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "content_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              "family": {
+                "type": "string",
+                "const": "place"
+              },
+              "data": {
+                "$ref": "#/components/schemas/PlaceData"
+              },
+              "key": {
+                "$ref": "#/components/schemas/PlaceKey"
+              }
+            },
+            "required": [
+              "id",
+              "pod_id",
+              "question_type",
+              "say",
+              "help",
+              "credit",
+              "subject",
+              "grade",
+              "skill_ids",
+              "twin_of",
+              "based_on",
+              "content_hash",
+              "created_at",
+              "family",
+              "data",
+              "key"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/LessonQuestionId"
+              },
+              "pod_id": {
+                "$ref": "#/components/schemas/PodId"
+              },
+              "question_type": {
+                "$ref": "#/components/schemas/QuestionType"
+              },
+              "say": {
+                "type": "string"
+              },
+              "help": {
+                "$ref": "#/components/schemas/Help"
+              },
+              "credit": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Credit"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "subject": {
+                "$ref": "#/components/schemas/Subject"
+              },
+              "grade": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "skill_ids": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SkillId"
+                }
+              },
+              "twin_of": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/LessonQuestionId"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "based_on": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/BasedOn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "content_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              "family": {
+                "type": "string",
+                "const": "explain"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ExplainData"
+              },
+              "key": {
+                "$ref": "#/components/schemas/ExplainKey"
+              }
+            },
+            "required": [
+              "id",
+              "pod_id",
+              "question_type",
+              "say",
+              "help",
+              "credit",
+              "subject",
+              "grade",
+              "skill_ids",
+              "twin_of",
+              "based_on",
+              "content_hash",
+              "created_at",
+              "family",
+              "data",
+              "key"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "LessonQuestionExample": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/LessonQuestionExampleId"
+          },
+          "pod_id": {
+            "$ref": "#/components/schemas/PodId"
+          },
+          "lesson_question_id": {
+            "$ref": "#/components/schemas/LessonQuestionId"
+          },
+          "twin": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LessonQuestionId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "language": {
+            "$ref": "#/components/schemas/Language"
+          },
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "showcase": {
+            "type": "boolean"
+          },
+          "scenarios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExampleScenario"
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "pod_id",
+          "lesson_question_id",
+          "twin",
+          "language",
+          "slug",
+          "position",
+          "label",
+          "showcase",
+          "scenarios",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "LessonQuestionExampleId": {
+        "type": "string",
+        "pattern": "^lqx_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "LessonQuestionId": {
+        "type": "string",
+        "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "LessonVersionId": {
+        "type": "string",
+        "pattern": "^lesv_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "LineDivisions": {
+        "type": "object",
+        "properties": {
+          "min": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "min",
+          "max"
+        ],
+        "additionalProperties": false
+      },
+      "Me": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Account"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "member": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Member"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pod": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Pod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "learners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LearnerSnapshot"
+            }
+          }
+        },
+        "required": [
+          "account",
+          "member",
+          "pod",
+          "learners"
+        ],
+        "additionalProperties": false
+      },
+      "Member": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/MemberId"
+          },
+          "pod_id": {
+            "$ref": "#/components/schemas/PodId"
+          },
+          "account_id": {
+            "$ref": "#/components/schemas/AccountId"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MemberRole"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "pod_id",
+          "account_id",
+          "role",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "MemberId": {
+        "type": "string",
+        "pattern": "^mem_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "MemberRole": {
+        "type": "string",
+        "enum": [
+          "parent",
+          "self"
+        ]
+      },
+      "Need": {
+        "type": "object",
+        "properties": {
+          "words": {
+            "type": "string",
+            "description": "The need in plain words, in the caller's language"
+          },
+          "words_en": {
+            "type": "string",
+            "description": "English terms for the keyword arm when the need is not in English; never stored on a page"
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mistakes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "can_do": {
+            "type": "string"
+          },
+          "contexts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "curriculum_tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "e.g. pl-2017:II.3.3, ccss:3.OA.C.7"
+          },
+          "resemble": {
+            "type": "string",
+            "description": "A task to resemble, e.g. a homework problem's text"
+          },
+          "language": {
+            "$ref": "#/components/schemas/Language"
+          },
+          "grade": {
+            "type": "string",
+            "description": "Canonical form: the bare number, e.g. \"3\""
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "language",
+          "grade"
+        ],
+        "additionalProperties": false,
+        "description": "A search need, from jadwigo-bank schemas/need.schema.json at commit 703b679. It carries at least one of words, skills, can_do or resemble."
+      },
+      "NumberForm": {
+        "type": "string",
+        "enum": [
+          "integer",
+          "proper",
+          "improper",
+          "mixed",
+          "decimal"
+        ]
+      },
+      "Op": {
+        "type": "string",
+        "enum": [
+          "add",
+          "sub",
+          "mul",
+          "div"
+        ]
+      },
+      "OptionContent": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "text"
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "number"
+              },
+              "number": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "kind",
+              "number"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "bool"
+              },
+              "bool": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "kind",
+              "bool"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "array"
+              },
+              "rows": {
+                "type": "number"
+              },
+              "cols": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "kind",
+              "rows",
+              "cols"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "image"
+              },
+              "image": {
+                "type": "string"
+              },
+              "alt": {
+                "type": "string"
+              },
+              "width": {
+                "type": "number"
+              },
+              "height": {
+                "type": "number"
+              },
+              "labels": {
+                "$ref": "#/components/schemas/PictureLabels"
+              }
+            },
+            "required": [
+              "kind",
+              "image",
+              "alt"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "pictures"
+              },
+              "pictures": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Picture"
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "pictures"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "none"
+              }
+            },
+            "required": [
+              "kind"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "PageAttemptQuestion": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "lesson_question_id": {
+            "$ref": "#/components/schemas/LessonQuestionId"
+          },
+          "question_type": {
+            "$ref": "#/components/schemas/QuestionType"
+          },
+          "say": {
+            "type": "string"
+          },
+          "question": {
+            "$ref": "#/components/schemas/PageFamilyQuestion"
+          },
+          "added": {
+            "$ref": "#/components/schemas/Added"
+          },
+          "placed": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Placed"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "added_for": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "help_released": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "help": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReleasedHelp"
+            }
+          },
+          "tries": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "ended": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PageEnded"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "asked_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "seq",
+          "lesson_question_id",
+          "question_type",
+          "say",
+          "question",
+          "added",
+          "placed",
+          "added_for",
+          "help_released",
+          "help",
+          "tries",
+          "ended",
+          "asked_at"
+        ],
+        "additionalProperties": false
+      },
+      "PageAttemptResult": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "lesson_question_id": {
+            "$ref": "#/components/schemas/LessonQuestionId"
+          },
+          "say": {
+            "type": "string"
+          },
+          "added": {
+            "$ref": "#/components/schemas/Added"
+          },
+          "ended": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PageEnded"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "help_used": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "seq",
+          "lesson_question_id",
+          "say",
+          "added",
+          "ended",
+          "help_used"
+        ],
+        "additionalProperties": false
+      },
+      "PageEnded": {
+        "type": "string",
+        "enum": [
+          "correct",
+          "skipped",
+          "missed",
+          "done"
+        ]
+      },
+      "PageFamilyQuestion": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "family": {
+                "type": "string",
+                "const": "choose"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ChooseData"
+              }
+            },
+            "required": [
+              "family",
+              "data"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "family": {
+                "type": "string",
+                "const": "enter"
+              },
+              "data": {
+                "$ref": "#/components/schemas/EnterData"
+              }
+            },
+            "required": [
+              "family",
+              "data"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "family": {
+                "type": "string",
+                "const": "slots"
+              },
+              "data": {
+                "$ref": "#/components/schemas/SlotsData"
+              }
+            },
+            "required": [
+              "family",
+              "data"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "family": {
+                "type": "string",
+                "const": "sequence"
+              },
+              "data": {
+                "$ref": "#/components/schemas/SequenceData"
+              }
+            },
+            "required": [
+              "family",
+              "data"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "family": {
+                "type": "string",
+                "const": "group"
+              },
+              "data": {
+                "$ref": "#/components/schemas/GroupData"
+              }
+            },
+            "required": [
+              "family",
+              "data"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "family": {
+                "type": "string",
+                "const": "place"
+              },
+              "data": {
+                "$ref": "#/components/schemas/PlaceData"
+              }
+            },
+            "required": [
+              "family",
+              "data"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "family": {
+                "type": "string",
+                "const": "explain"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ExplainData"
+              }
+            },
+            "required": [
+              "family",
+              "data"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "PagePlannedQuestion": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "lesson_question_id": {
+            "$ref": "#/components/schemas/LessonQuestionId"
+          },
+          "question_type": {
+            "$ref": "#/components/schemas/QuestionType"
+          },
+          "say": {
+            "type": "string"
+          },
+          "question": {
+            "$ref": "#/components/schemas/PageFamilyQuestion"
+          }
+        },
+        "required": [
+          "position",
+          "lesson_question_id",
+          "question_type",
+          "say",
+          "question"
+        ],
+        "additionalProperties": false
+      },
+      "ParentAttemptReview": {
+        "type": "object",
+        "properties": {
+          "attempt": {
+            "$ref": "#/components/schemas/Attempt"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "language": {
+            "$ref": "#/components/schemas/Language"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParentReviewQuestion"
+            }
+          }
+        },
+        "required": [
+          "attempt",
+          "title",
+          "language",
+          "questions"
+        ],
+        "additionalProperties": false
+      },
+      "ParentReviewQuestion": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "added": {
+            "$ref": "#/components/schemas/Added"
+          },
+          "ended": {
+            "$ref": "#/components/schemas/Ended"
+          },
+          "help_used": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "question_type": {
+            "$ref": "#/components/schemas/QuestionType"
+          },
+          "say": {
+            "type": "string"
+          },
+          "question": {
+            "$ref": "#/components/schemas/PageFamilyQuestion"
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnswerValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parts": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PartMark"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "solution": {},
+          "reveal": {
+            "$ref": "#/components/schemas/Reveal"
+          },
+          "tries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewTry"
+            }
+          },
+          "result": {
+            "$ref": "#/components/schemas/AttemptResult"
+          }
+        },
+        "required": [
+          "seq",
+          "added",
+          "ended",
+          "help_used",
+          "question_type",
+          "say",
+          "question",
+          "answer",
+          "parts",
+          "solution",
+          "reveal",
+          "tries",
+          "result"
+        ],
+        "additionalProperties": false
+      },
+      "PartMark": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "correct": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "correct"
+        ],
+        "additionalProperties": false
+      },
+      "PartVerdict": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "correct": {
+            "type": "boolean"
+          },
+          "mistake_class": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "correct",
+          "mistake_class"
+        ],
+        "additionalProperties": false
+      },
+      "Picture": {
+        "type": "object",
+        "properties": {
+          "src": {
+            "type": "string"
+          },
+          "alt": {
+            "type": "string"
+          },
+          "width": {
+            "type": "number"
+          },
+          "height": {
+            "type": "number"
+          },
+          "decorative": {
+            "type": "boolean",
+            "const": true
+          },
+          "labels": {
+            "$ref": "#/components/schemas/PictureLabels"
+          }
+        },
+        "required": [
+          "src",
+          "alt",
+          "width",
+          "height"
+        ],
+        "additionalProperties": false
+      },
+      "PictureLabel": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "coordinates": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "alignment": {
+            "type": "string"
+          },
+          "math": {
+            "type": "boolean",
+            "const": false
+          }
+        },
+        "required": [
+          "content",
+          "coordinates",
+          "alignment"
+        ],
+        "additionalProperties": false
+      },
+      "PictureLabels": {
+        "type": "object",
+        "properties": {
+          "range": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "items": false,
+                "minItems": 2,
+                "maxItems": 2
+              },
+              {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "items": false,
+                "minItems": 2,
+                "maxItems": 2
+              }
+            ],
+            "items": false,
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PictureLabel"
+            }
+          }
+        },
+        "required": [
+          "range",
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "PlaceData": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "surface": {
+                "type": "string",
+                "const": "number_line"
+              },
+              "min": {
+                "type": "number"
+              },
+              "max": {
+                "type": "number"
+              },
+              "step": {
+                "type": "number"
+              },
+              "labelled": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "target_label": {
+                "type": [
+                  "number",
+                  "string",
+                  "null"
+                ]
+              },
+              "tick_label": {
+                "$ref": "#/components/schemas/TickLabelStyle"
+              },
+              "snap": {
+                "type": "number"
+              },
+              "divisions": {
+                "$ref": "#/components/schemas/LineDivisions"
+              },
+              "stem": {
+                "$ref": "#/components/schemas/Stem"
+              }
+            },
+            "required": [
+              "surface",
+              "min",
+              "max",
+              "step",
+              "labelled"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "surface": {
+                "type": "string",
+                "const": "image"
+              },
+              "image": {
+                "type": "string"
+              },
+              "image_alt": {
+                "type": "string"
+              },
+              "taps": {
+                "type": "number"
+              },
+              "stem": {
+                "$ref": "#/components/schemas/Stem"
+              }
+            },
+            "required": [
+              "surface",
+              "image",
+              "image_alt",
+              "taps"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "surface": {
+                "type": "string",
+                "const": "grid"
+              },
+              "size": {
+                "type": "number"
+              },
+              "label": {
+                "type": "string"
+              },
+              "split": {
+                "type": "string",
+                "const": "one"
+              },
+              "cells": {
+                "type": "string",
+                "enum": [
+                  "dots",
+                  "squares",
+                  "open"
+                ]
+              },
+              "stem": {
+                "$ref": "#/components/schemas/Stem"
+              }
+            },
+            "required": [
+              "surface",
+              "size",
+              "label"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "surface": {
+                "type": "string",
+                "const": "bars"
+              },
+              "kind": {
+                "$ref": "#/components/schemas/GraphKind"
+              },
+              "categories": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/GraphCategory"
+                }
+              },
+              "max": {
+                "type": "number"
+              },
+              "step": {
+                "type": "number"
+              },
+              "tick": {
+                "type": "number"
+              },
+              "unit_label": {
+                "type": "string"
+              },
+              "category_label": {
+                "type": "string"
+              },
+              "starting": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "number"
+                }
+              },
+              "stem": {
+                "$ref": "#/components/schemas/Stem"
+              },
+              "bins": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "required": [
+              "surface",
+              "kind",
+              "categories",
+              "max",
+              "step"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "surface": {
+                "type": "string",
+                "const": "clock"
+              },
+              "target_label": {
+                "type": "string"
+              },
+              "minute_step": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "const": 5
+                  },
+                  {
+                    "type": "number",
+                    "const": 15
+                  },
+                  {
+                    "type": "number",
+                    "const": 30
+                  }
+                ]
+              },
+              "hands": {
+                "type": "string",
+                "enum": [
+                  "geared",
+                  "free"
+                ]
+              },
+              "starting": {
+                "$ref": "#/components/schemas/ClockValue"
+              },
+              "stem": {
+                "$ref": "#/components/schemas/Stem"
+              }
+            },
+            "required": [
+              "surface",
+              "target_label",
+              "minute_step",
+              "hands"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "surface": {
+                "type": "string",
+                "const": "coins"
+              },
+              "bank": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Denom"
+                }
+              },
+              "amount_label": {
+                "type": "string"
+              },
+              "slots": {
+                "type": "number"
+              },
+              "total": {
+                "type": "string",
+                "enum": [
+                  "hidden",
+                  "shown"
+                ]
+              },
+              "stem": {
+                "$ref": "#/components/schemas/Stem"
+              }
+            },
+            "required": [
+              "surface",
+              "bank",
+              "amount_label",
+              "slots"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "surface": {
+                "type": "string",
+                "const": "fraction"
+              },
+              "shape": {
+                "type": "string",
+                "enum": [
+                  "bar",
+                  "circle",
+                  "rect"
+                ]
+              },
+              "parts": {
+                "type": "number"
+              },
+              "rows": {
+                "type": "number"
+              },
+              "label": {
+                "type": "string"
+              },
+              "contiguous": {
+                "type": "boolean"
+              },
+              "stem": {
+                "$ref": "#/components/schemas/Stem"
+              }
+            },
+            "required": [
+              "surface",
+              "shape",
+              "parts",
+              "label"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "PlaceKey": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "surface": {
+                "type": "string",
+                "const": "number_line"
+              },
+              "value": {
+                "type": "number"
+              },
+              "tolerance": {
+                "type": "number"
+              },
+              "rule": {
+                "$ref": "#/components/schemas/RuleRef"
+              }
+            },
+            "required": [
+              "surface",
+              "value",
+              "tolerance"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "surface": {
+                "type": "string",
+                "const": "image"
+              },
+              "targets": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Region"
+                }
+              },
+              "near": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "polygon": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Point"
+                      }
+                    },
+                    "mistake_class": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "polygon",
+                    "mistake_class"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "require_all": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "surface",
+              "targets",
+              "require_all"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "surface": {
+                "type": "string",
+                "const": "grid"
+              },
+              "rows": {
+                "type": "number"
+              },
+              "cols": {
+                "type": "number"
+              },
+              "either_order": {
+                "type": "boolean"
+              },
+              "off_by_one": {
+                "type": "boolean"
+              },
+              "split": {
+                "type": "object",
+                "properties": {
+                  "accept_at": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "surface",
+              "rows",
+              "cols",
+              "either_order"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "surface": {
+                "type": "string",
+                "const": "bars"
+              },
+              "heights": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "number"
+                }
+              },
+              "tolerance": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "surface",
+              "heights"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "surface": {
+                "type": "string",
+                "const": "clock"
+              },
+              "h": {
+                "type": "number"
+              },
+              "m": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "surface",
+              "h",
+              "m"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "surface": {
+                "type": "string",
+                "const": "coins"
+              },
+              "amount_gr": {
+                "type": "number"
+              },
+              "fewest": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "surface",
+              "amount_gr"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "surface": {
+                "type": "string",
+                "const": "fraction"
+              },
+              "count": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "surface",
+              "count"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "PlaceValue": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "at": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "at"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "points": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Point"
+                }
+              }
+            },
+            "required": [
+              "points"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "rows": {
+                "type": "number"
+              },
+              "cols": {
+                "type": "number"
+              },
+              "split": {
+                "$ref": "#/components/schemas/GridSplit"
+              }
+            },
+            "required": [
+              "rows",
+              "cols"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "heights": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "number"
+                }
+              }
+            },
+            "required": [
+              "heights"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "$ref": "#/components/schemas/ClockValue"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Denom"
+                }
+              }
+            },
+            "required": [
+              "items"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "shaded": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "required": [
+              "shaded"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "PlaceValueInput": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "at": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "at"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "points": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PointInput"
+                }
+              }
+            },
+            "required": [
+              "points"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "rows": {
+                "type": "number"
+              },
+              "cols": {
+                "type": "number"
+              },
+              "split": {
+                "$ref": "#/components/schemas/GridSplit"
+              }
+            },
+            "required": [
+              "rows",
+              "cols"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "heights": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "number"
+                }
+              }
+            },
+            "required": [
+              "heights"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "$ref": "#/components/schemas/ClockValue"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Denom"
+                }
+              }
+            },
+            "required": [
+              "items"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "shaded": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "required": [
+              "shaded"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "Placed": {
+        "type": "string",
+        "enum": [
+          "now",
+          "review_round"
+        ]
+      },
+      "PlaygroundExamples": {
+        "type": "object",
+        "properties": {
+          "examples": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LessonQuestionExample"
+            }
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LessonQuestion"
+            }
+          }
+        },
+        "required": [
+          "examples",
+          "questions"
+        ],
+        "additionalProperties": false
+      },
+      "Pod": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/PodId"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "language": {
+            "$ref": "#/components/schemas/Language"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "language",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "PodId": {
+        "type": "string",
+        "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "Point": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "x",
+          "y"
+        ],
+        "additionalProperties": false
+      },
+      "PointInput": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "x",
+          "y"
+        ]
+      },
+      "PyramidRows": {
+        "type": "array",
+        "items": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "string"
+            ]
+          }
+        }
+      },
+      "QuestionBody": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/BankQuestionId"
+          },
+          "source": {
+            "type": "string",
+            "const": "khan"
+          },
+          "pl": {
+            "type": "object",
+            "properties": {
+              "family": {
+                "type": "string",
+                "minLength": 1
+              },
+              "data": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              "key": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              "help": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              "say": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "family",
+              "data",
+              "key"
+            ],
+            "additionalProperties": false
+          },
+          "en": {
+            "type": "object",
+            "properties": {
+              "family": {
+                "type": "string",
+                "minLength": 1
+              },
+              "data": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              "key": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              "help": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              "say": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "family",
+              "data",
+              "key"
+            ],
+            "additionalProperties": false
+          },
+          "problem_type": {
+            "type": "string"
+          },
+          "credit": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string",
+                "minLength": 1
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "licence": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "source",
+              "licence"
+            ],
+            "additionalProperties": false
+          },
+          "pictures": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ref": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}\\.[a-z0-9]+$",
+                  "description": "The picture's sha256 with its extension, under <source>/media/ in the bucket"
+                },
+                "decorative": {
+                  "type": "boolean"
+                },
+                "pl": {
+                  "type": "string",
+                  "description": "The picture's Polish alternative text"
+                }
+              },
+              "required": [
+                "ref",
+                "decorative"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "credit"
+        ],
+        "additionalProperties": false,
+        "description": "One bank question's private body from questions/<source>/<id>.json: a version per language with its family, data, key and help, the credit and the pictures by sha; a question with no playable variant yet carries only id, credit and problem_type; it reaches only a caller with the read token"
+      },
+      "QuestionType": {
+        "type": "string",
+        "enum": [
+          "true_false",
+          "recognition",
+          "lettered_choice",
+          "multi_select",
+          "mark_numbers",
+          "fraction_compare",
+          "production",
+          "short_text",
+          "expression",
+          "measure",
+          "fill_gaps",
+          "fill_table",
+          "label_picture",
+          "column",
+          "pyramid",
+          "clock_read",
+          "money_count",
+          "order",
+          "bucket",
+          "match",
+          "number_line_place",
+          "hotspot",
+          "spatial_build",
+          "draw_graph",
+          "clock_set",
+          "money_pay",
+          "fraction_shade",
+          "area_model",
+          "explain"
+        ]
+      },
+      "Region": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "polygon": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Point"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "polygon"
+        ],
+        "additionalProperties": false
+      },
+      "ReleasedHelp": {
+        "type": "object",
+        "properties": {
+          "rung": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4
+          },
+          "card": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HelpCard"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "focus": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "given": {
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "worked": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "blank": {
+            "type": "boolean"
+          },
+          "hints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HintCard"
+            }
+          }
+        },
+        "required": [
+          "rung",
+          "card",
+          "focus",
+          "given",
+          "worked",
+          "blank",
+          "hints"
+        ],
+        "additionalProperties": false
+      },
+      "RequiredForm": {
+        "type": "string",
+        "enum": [
+          "sum",
+          "difference",
+          "product",
+          "quotient",
+          "any"
+        ]
+      },
+      "Reveal": {
+        "type": "object",
+        "properties": {
+          "why": {
+            "type": "string"
+          },
+          "worked_solution": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "other_form": {
+            "type": "string"
+          },
+          "question_form": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReviewQuestion": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "added": {
+            "$ref": "#/components/schemas/Added"
+          },
+          "ended": {
+            "$ref": "#/components/schemas/Ended"
+          },
+          "help_used": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "question_type": {
+            "$ref": "#/components/schemas/QuestionType"
+          },
+          "say": {
+            "type": "string"
+          },
+          "question": {
+            "$ref": "#/components/schemas/PageFamilyQuestion"
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnswerValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parts": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PartMark"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "solution": {},
+          "reveal": {
+            "$ref": "#/components/schemas/Reveal"
+          }
+        },
+        "required": [
+          "seq",
+          "added",
+          "ended",
+          "help_used",
+          "question_type",
+          "say",
+          "question",
+          "answer",
+          "parts",
+          "solution",
+          "reveal"
+        ],
+        "additionalProperties": false
+      },
+      "ReviewTry": {
+        "type": "object",
+        "properties": {
+          "try_no": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "kind": {
+            "$ref": "#/components/schemas/AnswerKind"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnswerValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "correct": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "parts": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PartVerdict"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mistake_class": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "latency_ms": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "help_used": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "skip_reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SkipReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "try_no",
+          "kind",
+          "value",
+          "correct",
+          "parts",
+          "mistake_class",
+          "latency_ms",
+          "help_used",
+          "skip_reason"
+        ],
+        "additionalProperties": false
+      },
+      "RuleRef": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "rule": {
+                "type": "string",
+                "const": "times_table"
+              },
+              "a": {
+                "type": "number"
+              },
+              "b": {
+                "type": "number"
+              },
+              "recent": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "required": [
+              "rule",
+              "a",
+              "b",
+              "recent"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "rule": {
+                "type": "string",
+                "const": "fill_blank"
+              },
+              "template": {
+                "type": "string"
+              },
+              "operands": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "op": {
+                "$ref": "#/components/schemas/Op"
+              },
+              "recent": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "required": [
+              "rule",
+              "template",
+              "operands",
+              "op",
+              "recent"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "rule": {
+                "type": "string",
+                "const": "number_line"
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "place",
+                  "read"
+                ]
+              },
+              "min": {
+                "type": "number"
+              },
+              "max": {
+                "type": "number"
+              },
+              "step": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "rule",
+              "mode",
+              "min",
+              "max",
+              "step"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "SearchEnvelope": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "const": 1
+          },
+          "need": {
+            "$ref": "#/components/schemas/Need"
+          },
+          "arm": {
+            "type": "string",
+            "description": "The arm that answered (A, A1, B, B1, C, C2)"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "first",
+              "final"
+            ]
+          },
+          "timing_ms": {
+            "type": "object",
+            "properties": {
+              "embed": {
+                "type": "number"
+              },
+              "vectors": {
+                "type": "number"
+              },
+              "rows": {
+                "type": "number"
+              },
+              "keyword": {
+                "type": "number"
+              },
+              "rerank": {
+                "type": "number"
+              },
+              "total": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": false,
+            "description": "Server-side stage times in milliseconds"
+          },
+          "cache": {
+            "type": "string",
+            "enum": [
+              "hit",
+              "miss",
+              "off"
+            ]
+          },
+          "bank_rev": {
+            "type": "string",
+            "description": "sha256 of the index manifest the service answered from; the publisher writes it with the rows, so a caller can tell which build of the bank a row came from"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^set_"
+                },
+                "rank": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "score": {
+                  "type": "number"
+                },
+                "arm": {
+                  "type": "string"
+                },
+                "vector_score": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "bm25_score": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "rerank_score": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "best_view": {
+                  "description": "The index view the vector hit came from: title, samples, meaning_pl, meaning_en, needs",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "view_scores": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "type": "number"
+                  }
+                },
+                "grade": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "titles": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "By language code: pl, en"
+                },
+                "languages": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "skill_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "curriculum_tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "problem_types": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "question_types": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "views": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "source": {
+                  "type": "string",
+                  "description": "Where the set's questions come from: khan, own, ai"
+                },
+                "credit": {
+                  "type": "string",
+                  "description": "The attribution line the product must show: Khan Academy, CC BY-NC-SA 4.0 and the exercise's URL"
+                },
+                "enrichment": {
+                  "type": "object",
+                  "properties": {
+                    "summary": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "By language code: pl, en"
+                    },
+                    "can_do": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "By language code: pl, en"
+                    },
+                    "mistake_classes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "pl": {
+                            "type": "string"
+                          },
+                          "en": {
+                            "type": "string"
+                          },
+                          "spot": {
+                            "type": "string",
+                            "description": "How the mistake shows in one answer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "pl",
+                          "en",
+                          "spot"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "contexts": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "By language code: pl, en"
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "The set's enrichment fields the caller may show, each the set page's value: summary and can_do by language, mistake_classes as records, contexts as word lists by language; any other key, a private body among them, is dropped on parse"
+                },
+                "content_hash": {
+                  "type": "string",
+                  "description": "sha256 of the set page the row was built from"
+                },
+                "media": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "shas of the pictures the set's questions need"
+                },
+                "items": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991,
+                  "description": "How many questions the set holds (the bank's field name)"
+                },
+                "body": {
+                  "not": {},
+                  "description": "A private body never crosses this route"
+                },
+                "private_body": {
+                  "not": {},
+                  "description": "A private body never crosses this route"
+                }
+              },
+              "required": [
+                "id",
+                "rank",
+                "score",
+                "arm",
+                "titles"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "state": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "arm": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "ok",
+                    "empty",
+                    "abstained",
+                    "degraded",
+                    "not_asked"
+                  ]
+                },
+                "detail": {
+                  "type": "string",
+                  "description": "What degraded it (an embedder or reranker failure), never a key or a URL with a token"
+                }
+              },
+              "required": [
+                "arm",
+                "state"
+              ],
+              "additionalProperties": false
+            },
+            "description": "One row per known arm: the asked arm's outcome and not_asked for the rest"
+          }
+        },
+        "required": [
+          "version",
+          "rows",
+          "state"
+        ],
+        "additionalProperties": false,
+        "description": "A bank search's answer, version 1, from jadwigo-bank schemas/search-envelope.schema.json at commit 703b679."
+      },
+      "SentAt": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "SequenceData": {
+        "type": "object",
+        "properties": {
+          "stem": {
+            "$ref": "#/components/schemas/Stem"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceItem"
+            }
+          },
+          "first_label": {
+            "type": "string"
+          },
+          "last_label": {
+            "type": "string"
+          },
+          "tiles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SequenceItem"
+            }
+          },
+          "slots": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "first_label",
+          "last_label"
+        ],
+        "additionalProperties": false
+      },
+      "SequenceItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "SequenceKey": {
+        "type": "object",
+        "properties": {
+          "orders": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "orders"
+        ],
+        "additionalProperties": false
+      },
+      "SequenceValue": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "Simplify": {
+        "type": "string",
+        "enum": [
+          "required",
+          "enforced"
+        ]
+      },
+      "SkillId": {
+        "type": "string",
+        "pattern": "^[a-z]+(\\.[a-z0-9-]+)+$"
+      },
+      "SkipReason": {
+        "type": "string",
+        "enum": [
+          "dont_know",
+          "asked_to_skip",
+          "help_twin"
+        ]
+      },
+      "SlotsData": {
+        "type": "object",
+        "properties": {
+          "stem": {
+            "$ref": "#/components/schemas/Stem"
+          },
+          "template": {
+            "type": "string"
+          },
+          "table": {
+            "$ref": "#/components/schemas/SlotsTable"
+          },
+          "picture": {
+            "$ref": "#/components/schemas/Picture"
+          },
+          "gaps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Gap"
+            }
+          },
+          "code": {
+            "type": "boolean"
+          },
+          "figure": {
+            "$ref": "#/components/schemas/Figure"
+          },
+          "column": {
+            "$ref": "#/components/schemas/ColumnSum"
+          },
+          "pyramid": {
+            "$ref": "#/components/schemas/PyramidRows"
+          },
+          "fill_order": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "template",
+          "gaps"
+        ],
+        "additionalProperties": false
+      },
+      "SlotsKey": {
+        "type": "object",
+        "properties": {
+          "gaps": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "$ref": "#/components/schemas/GapKey"
+            }
+          }
+        },
+        "required": [
+          "gaps"
+        ],
+        "additionalProperties": false
+      },
+      "SlotsTable": {
+        "type": "object",
+        "properties": {
+          "header": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "header",
+          "rows"
+        ],
+        "additionalProperties": false
+      },
+      "SlotsValue": {
+        "type": "object",
+        "properties": {
+          "gaps": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "gaps"
+        ],
+        "additionalProperties": false
+      },
+      "Stem": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          },
+          "image_alt": {
+            "type": "string"
+          },
+          "text_replaces_say": {
+            "type": "boolean"
+          },
+          "pictures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Picture"
+            }
+          },
+          "terminal": {
+            "$ref": "#/components/schemas/TerminalCard"
+          },
+          "figure": {
+            "$ref": "#/components/schemas/Figure"
+          },
+          "reference": {
+            "$ref": "#/components/schemas/StemReference"
+          },
+          "audio": {
+            "type": "object",
+            "properties": {
+              "clip": {
+                "type": "string"
+              },
+              "slow": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "clip"
+            ],
+            "additionalProperties": false
+          },
+          "audio_text": {
+            "$ref": "#/components/schemas/AudioText"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StemReference": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "Subject": {
+        "type": "string",
+        "enum": [
+          "math",
+          "polish",
+          "english"
+        ]
+      },
+      "TerminalCard": {
+        "type": "object",
+        "properties": {
+          "lang": {
+            "type": "string",
+            "const": "bash"
+          },
+          "copy": {
+            "type": "boolean"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "cmd": {
+                  "type": "string"
+                },
+                "out": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "cmd",
+                "out"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "lang",
+          "copy",
+          "lines"
+        ],
+        "additionalProperties": false
+      },
+      "TickLabelStyle": {
+        "type": "string",
+        "enum": [
+          "decimal",
+          "fraction",
+          "mixed",
+          "non-reduced"
+        ]
+      },
+      "Uuid": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "An error: `{error: {type, message}}`. The type names the cause, and answers with one status:\n\n- 400: `BadRequest`, `ServerFieldSupplied`\n- 401: `NotSignedIn`, `Unauthorized`\n- 404: `NotFound`\n- 409: `AccountMissing`, `AttemptClaimed`, `AttemptPreview`, `AssignmentClosed`, `AttemptFinished`, `AttemptNotFinished`, `AttemptPaused`, `QuestionNotOpen`, `TryOutOfOrder`, `AnswerConflict`, `EventIdMismatch`, `WriteOnce`\n- 429: `AnswerLimit`\n- 502: `BankUnavailable`",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "A Supabase Auth access token for a signed-in adult. API Gateway's JWT authorizer verifies it."
+      },
+      "bankToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "The question bank's shared read token, not a Supabase token. The API checks it itself."
+      }
+    }
+  }
+}
