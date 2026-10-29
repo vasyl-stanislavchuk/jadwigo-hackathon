@@ -43,6 +43,8 @@ jobs:
           code=false
           while IFS= read -r f; do
             case "$f" in
+              # The docs site's pages are its source: a .md under apps/docs is built (dl-5ssh.90.10).
+              apps/docs/*) code=true; echo "docs site change: $f" ;;
               docs/*|*.md) ;;
               *) code=true; echo "code change: $f" ;;
             esac
@@ -153,6 +155,26 @@ jobs:
         run: bun test ./.claude/hooks/guard.test.ts
       - name: The worklog layout
         run: bun tools/src/check-worklog.ts
+
+  # docs.jadwigo.pl builds on every code change, not only when turbo calls apps/docs affected: its
+  # pages read the openapi.json and mcp-tools.json snapshots as files, which --affected does not
+  # follow. A broken link, a guide naming a route ROUTES lacks, or a stale snapshot fails here,
+  # not at the owner's publish (dl-5ssh.90.10).
+  docs-site:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Build the docs site (links, generated pages, the API reference)
+        run: bunx turbo run build --filter=@jadwigo/docs
+      - name: Check what the build put in dist
+        run: bun run --cwd apps/docs check:dist
 
   fence-checks:
     needs: changes
@@ -270,7 +292,7 @@ jobs:
         run: cat "$RUNNER_TEMP/api.log"
 
   ci-ok:
-    needs: [changes, lint, typecheck, unit, integration, supabase, contracts, docs, fence-checks, gitleaks, browser]
+    needs: [changes, lint, typecheck, unit, integration, supabase, contracts, docs, docs-site, fence-checks, gitleaks, browser]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2

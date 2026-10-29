@@ -135,8 +135,8 @@ function Answer({
   if (fraction) {
     return (
       <div className="flex flex-col gap-1">
-        <span className="text-base">{label}</span>
-        <div className="text-[length:var(--kid-math-size)]">
+        <span className="text-jw-small">{label}</span>
+        <div className="text-jw-math">
           <FractionBoxes
             text={text}
             whole={fraction.whole || text.includes(" ")}
@@ -154,11 +154,11 @@ function Answer({
   }
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-base">{label}</span>
+      <span className="text-jw-small">{label}</span>
       <div
         data-tone={tone}
         className={cn(
-          "min-h-16 rounded-lg border-2 px-4 flex items-center text-[length:var(--kid-math-size)] font-bold tabular-nums lining-nums",
+          "min-h-16 rounded-lg border-2 px-4 flex items-center text-jw-math font-bold tabular-nums lining-nums",
           tone === "idle" ? "border-border" : TONE_CLASS[tone],
           code && "font-mono",
         )}

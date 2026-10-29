@@ -43,6 +43,7 @@ import type { Clock, Instant } from "../stage/clock.ts";
 import { type PressModality, press } from "../stage/press.ts";
 import type { Language } from "../stage/types.ts";
 import { Grip } from "./Grip.tsx";
+import { QUIET } from "./quiet.ts";
 import { moveTo, useTapPick } from "./tapPick.ts";
 import { FOCUS_CLASS, GIVEN_CLASS, TONE_CLASS, type Tone } from "./tone.ts";
 
@@ -87,18 +88,6 @@ export function moveAround(
   let n = 0;
   return order.map((x) => (fixed.has(x) ? x : (free[n++] ?? x)));
 }
-
-/** dnd-kit's own announcements are English only: this part announces in the lesson's language
- * through its live region instead, so dnd-kit's are silenced. */
-const QUIET = {
-  announcements: {
-    onDragStart: () => undefined,
-    onDragOver: () => undefined,
-    onDragEnd: () => undefined,
-    onDragCancel: () => undefined,
-  },
-  screenReaderInstructions: { draggable: "" },
-};
 
 const CARD =
   "min-h-[var(--kid-tap-min)] w-full rounded-xl border-2 py-3 pl-3 pr-[calc(2*var(--kid-tap-min)+0.75rem)] text-left text-[length:var(--kid-answer-size)] font-semibold flex items-center gap-3 bg-card touch-none select-none cursor-grab";
@@ -407,7 +396,9 @@ export function SortableList({
 
   return (
     <div className="flex flex-col gap-2" role="group" aria-label={label}>
-      <p className={cn("text-muted-foreground text-base", inset)}>{copy(language, "drag_hint")}</p>
+      <p className={cn("text-muted-foreground text-jw-small", inset)}>
+        {copy(language, "drag_hint")}
+      </p>
       {firstLabel !== undefined && (
         <p className={cn("text-lg font-semibold", inset)}>↑ {firstLabel}</p>
       )}

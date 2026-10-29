@@ -144,7 +144,7 @@ export function SlotsTable({
           role="table"
           data-table
           data-turned={turned || undefined}
-          className="grid w-max overflow-hidden rounded-[0.625rem] border-2 border-border bg-card leading-tight font-bold tabular-nums"
+          className="grid w-max overflow-hidden rounded-jw-small border-2 border-border bg-card leading-tight font-bold tabular-nums"
           style={{ gridTemplateColumns: columns }}
         >
           {cells.map((c) => {
@@ -196,7 +196,7 @@ export function SlotsTable({
         <div
           aria-hidden
           data-table-fade
-          className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-r from-transparent to-[var(--jw-prompt-card,var(--card))]"
+          className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-r from-transparent to-jw-prompt-card"
         />
       )}
     </div>

@@ -1,0 +1,24 @@
+---
+title: Jadwigo docs
+description: How to call Jadwigo's API and MCP server, and how its design system is built.
+template: splash
+hero:
+  tagline: How to call Jadwigo's API and MCP server, and how its design system is built.
+  actions:
+    - text: Read the guides
+      link: /guides/introduction/
+      icon: right-arrow
+---
+
+import { CardGrid, LinkCard } from "@astrojs/starlight/components";
+
+Jadwigo is a learning app for children in the first school grades, in Polish and English.
+These pages are for the people and agents who build on it.
+
+<CardGrid>
+  <LinkCard title="Guides" href="/guides/introduction/" description="What the API is, how to sign a request, your first call, and the errors." />
+  <LinkCard title="API reference" href="/api/" description="Every route, generated from the code." />
+  <LinkCard title="MCP" href="/mcp/" description="The tools Jadwigo's MCP server gives an agent." />
+  <LinkCard title="Design system" href="/design-system/" description="Tokens, question types and the parts a lesson is built from." />
+  <LinkCard title="Architecture" href="/architecture/" description="How the pieces fit." />
+</CardGrid>

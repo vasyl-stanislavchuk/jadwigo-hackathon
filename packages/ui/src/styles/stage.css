@@ -302,6 +302,7 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
     [data-checked],
     [aria-checked="true"],
     [class~="bg-primary/10"],
+    [data-picked],
     :not([data-tone="idle"]),
     [data-help-removed],
     [data-solution]

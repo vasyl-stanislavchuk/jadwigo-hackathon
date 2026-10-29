@@ -2,14 +2,29 @@
  * 2026-10-24-the-playground-s-own-tools-are-neutral-shadcn-ui-only-the-lesson, dl-uukj.29.22): the left
  * list, the header, the Controls panel and drawer, the outline, and the Overview and Decisions pages.
  * shadcn's "neutral" base colour (ui.shadcn.com/themes), as hex.
- * PlaygroundScreen puts data-playground on <html>, which outranks tokens.css's :root, and a lesson
- * surface takes the lesson tokens back (tokens.css). A [data-tool-surface] inside a lesson surface,
- * such as the learner view's drawer, is chrome again. Only colour changes here: type, space and
- * sizes stay the lesson's.
+ *
+ * Zeszyt is every page's look at :root (packages/ui styles/foundation.css, dl-uukj.32).
+ * PlaygroundScreen puts data-playground on <html>, and html[data-playground] outranks :root, so the
+ * chrome takes these colours and its own compact type, radii, shadows and motion back from Zeszyt's
+ * aliases. A lesson surface ([data-lesson-theme]) and a nested [theme] declare Zeszyt's aliases again,
+ * so the lesson inside the chrome is Zeszyt.
  */
 
-html[data-playground],
-[data-tool-surface] {
+html[data-playground] {
+  /* The chrome's compact shape, which Zeszyt's aliases at :root would make the lesson's. */
+  --font-sans:
+    "Inter", "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    "Helvetica Neue", helvetica, arial, sans-serif;
+  --radius-sm: 0.25rem; /* 4px */
+  --radius: 0.5rem; /* 8px: buttons, inputs, tags */
+  --radius-lg: 0.75rem; /* 12px: cards, panels */
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 5%);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 10%), 0 1px 2px -1px rgb(0 0 0 / 10%);
+  --shadow-elevation: 0 1px 2px rgb(0 0 0 / 6%), 0 4px 12px rgb(0 0 0 / 8%);
+  --duration-slow: 250ms;
+
   --background: #ffffff;
   --foreground: #0a0a0a;
   --card: #ffffff;
@@ -37,8 +52,10 @@ html[data-playground],
   --sidebar-ring: #a3a3a3;
 }
 
-html[data-playground][theme="dark"],
-[theme="dark"] [data-tool-surface] {
+html[data-playground][theme="dark"] {
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 30%);
+  --shadow-elevation: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 16px rgb(0 0 0 / 50%);
+
   --background: #0a0a0a;
   --foreground: #fafafa;
   --card: #171717;

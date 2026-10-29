@@ -4,6 +4,6 @@
  */
 
 export const CELL =
-  "min-w-[var(--kid-tap-min)] min-h-[var(--kid-tap-min)] rounded-lg border border-border flex flex-col items-center justify-center select-none";
+  "min-w-kid-tap min-h-kid-tap rounded-lg border border-border flex flex-col items-center justify-center select-none";
 
 export const CELL_IDLE = "bg-card";

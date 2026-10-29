@@ -1,0 +1,55 @@
+{
+  "name": "@jadwigo/docs",
+  "description": "The living docs at docs.jadwigo.pl: Starlight, static, English, generated from the code where it can be",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "bun scripts/prepare.ts && astro dev",
+    "build": "bun scripts/prepare.ts && astro build",
+    "preview": "astro preview",
+    "check:dist": "bun scripts/check-dist.ts",
+    "lint": "biome check .",
+    "pretypecheck": "bun scripts/prepare.ts",
+    "typecheck": "astro check && tsc -p tsconfig.json",
+    "test": "vitest run --config ../../vitest.config.ts --project unit"
+  },
+  "//": {
+    "astro": "builds the static site that Starlight runs in (astro.config.mjs)",
+    "@astrojs/starlight": "the docs theme: sidebar, search, the docs content collection (astro.config.mjs, src/content.config.ts)",
+    "@astrojs/markdown-remark": "Starlight's peer dependency for its markdown pipeline",
+    "starlight-links-validator": "fails the build on a broken internal link (astro.config.mjs)",
+    "starlight-openapi": "renders the API reference from public/openapi.json, which scripts/prepare.ts writes (astro.config.mjs)",
+    "@astrojs/markdown-satteri": "starlight-openapi's peer dependency for rendering the OpenAPI descriptions",
+    "satteri": "left external in the Vite build (astro.config.mjs) so its native binding resolves from apps/docs/node_modules; knip.json ignores it",
+    "starlight-llms-txt": "writes llms.txt, llms-full.txt and llms-small.txt for agents (astro.config.mjs)",
+    "@astrojs/check": "type-checks the .astro and .mdx files in this package's typecheck script",
+    "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
+    "typescript": "tsc for this package's typecheck script",
+    "vitest": "runs this package's unit tests with the root vitest.config.ts",
+    "@jadwigo/config": "hosts.prod.docs and hosts.prod.app: the site's own URL and the API's base URL (src/index.ts)",
+    "@jadwigo/contracts": "ERROR_STATUS, ROUTES and ROUTE_TAGS: the guides' generated tables, the guide path test and the API reference's tags (src/lib); the schemas each MCP tool's output follows (src/lib/mcp-output.ts)",
+    "@jadwigo/cli": "mcp-tools.json, read as a file by prepare.ts and the MCP pages; the edge makes turbo --affected rerun the docs on a CLI change; nothing imports it, so knip.json ignores it"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.12",
+    "@jadwigo/cli": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "dependencies": {
+    "@astrojs/markdown-remark": "7.3.4",
+    "@astrojs/markdown-satteri": "0.4.5",
+    "@astrojs/starlight": "0.42.6",
+    "@jadwigo/config": "workspace:*",
+    "@jadwigo/contracts": "workspace:*",
+    "astro": "7.4.2",
+    "satteri": "0.10.5",
+    "starlight-links-validator": "0.27.0",
+    "starlight-llms-txt": "0.12.0",
+    "starlight-openapi": "0.27.0"
+  }
+}

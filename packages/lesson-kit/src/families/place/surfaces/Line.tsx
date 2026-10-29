@@ -17,6 +17,7 @@ import { type KeyboardEvent, type PointerEvent, useRef, useState } from "react";
 import { NumberLineSvg } from "../../../parts/NumberLineSvg.tsx";
 import { nudge, snapAt, WIDTH, xOf } from "../../../parts/numberLine.ts";
 import { RichText } from "../../../parts/RichText.tsx";
+import { TaskTarget } from "../../../parts/TaskTarget.tsx";
 import type { Language } from "../../../stage/types.ts";
 import type { Surface } from "../../names.ts";
 import { showingSolution } from "../../view.ts";
@@ -37,13 +38,13 @@ function Target({ data }: { data: LineData }): JSX.Element | null {
   if (data.target_label === null || data.target_label === undefined) return null;
   // A fraction to place is written as TeX; a whole number stays a number.
   return (
-    <p className="text-[3rem] leading-none font-bold tabular-nums">
+    <TaskTarget className="leading-none">
       {typeof data.target_label === "string" ? (
         <RichText inline text={data.target_label} />
       ) : (
         data.target_label
       )}
-    </p>
+    </TaskTarget>
   );
 }
 

@@ -1,0 +1,237 @@
+[
+  {
+    "path": "families/choose/ChooseView.tsx",
+    "snippet": "-[2.5ch]",
+    "why": ""
+  },
+  {
+    "path": "families/choose/ChooseView.tsx",
+    "snippet": "[var(--kid-tap-min)",
+    "why": ""
+  },
+  {
+    "path": "families/choose/ChooseView.tsx",
+    "snippet": "[length:var(--kid-math-size)",
+    "why": ""
+  },
+  {
+    "path": "families/choose/ChooseView.tsx",
+    "snippet": "[length:var(--kid-answer-size)",
+    "why": ""
+  },
+  {
+    "path": "families/FigureView.tsx",
+    "snippet": "-[37.5rem]",
+    "why": "figure geometry: the number line's 600 cap, Enter addendum 3.5"
+  },
+  {
+    "path": "families/group/GroupView.tsx",
+    "snippet": "[var(--kid-tap-min)",
+    "why": ""
+  },
+  {
+    "path": "families/group/GroupView.tsx",
+    "snippet": "[length:var(--kid-answer-size)",
+    "why": ""
+  },
+  {
+    "path": "families/group/GroupView.tsx",
+    "snippet": "[var(--kid-choice-gap)",
+    "why": ""
+  },
+  {
+    "path": "families/sequence/SequenceView.tsx",
+    "snippet": "[var(--kid-tap-min)",
+    "why": ""
+  },
+  {
+    "path": "families/sequence/SequenceView.tsx",
+    "snippet": "[length:var(--kid-answer-size)",
+    "why": ""
+  },
+  {
+    "path": "families/sequence/SequenceView.tsx",
+    "snippet": "[var(--kid-choice-gap)",
+    "why": ""
+  },
+  {
+    "path": "families/slots/GapMenu.tsx",
+    "snippet": "-[1.375rem]",
+    "why": ""
+  },
+  {
+    "path": "families/slots/GapMenu.tsx",
+    "snippet": "-[3ch]",
+    "why": ""
+  },
+  {
+    "path": "families/slots/gaps.ts",
+    "snippet": "-[3ch]",
+    "why": ""
+  },
+  {
+    "path": "families/slots/gaps.ts",
+    "snippet": "[var(--kid-tap-min)",
+    "why": ""
+  },
+  {
+    "path": "families/slots/gaps.ts",
+    "snippet": "[length:var(--kid-answer-size)",
+    "why": ""
+  },
+  {
+    "path": "families/slots/gaps.ts",
+    "snippet": "[length:var(--kid-math-size)",
+    "why": ""
+  },
+  {
+    "path": "parts/BarGraph.tsx",
+    "snippet": "[length:var(--kid-answer-size)",
+    "why": ""
+  },
+  {
+    "path": "parts/ChoiceGroup.tsx",
+    "snippet": "-[0.3125rem]",
+    "why": ""
+  },
+  {
+    "path": "parts/ChoiceGroup.tsx",
+    "snippet": "-[0.9375rem]",
+    "why": ""
+  },
+  {
+    "path": "parts/ChoiceGroup.tsx",
+    "snippet": "[var(--kid-choice-gap)",
+    "why": ""
+  },
+  {
+    "path": "parts/ChoiceGroup.tsx",
+    "snippet": "[var(--kid-tap-min)",
+    "why": ""
+  },
+  {
+    "path": "parts/ChoiceGroup.tsx",
+    "snippet": "[length:var(--kid-answer-size)",
+    "why": ""
+  },
+  {
+    "path": "parts/ChoiceGroup.tsx",
+    "snippet": "[var(--jw-dur-mark,120ms)",
+    "why": ""
+  },
+  {
+    "path": "parts/ClockFace.tsx",
+    "snippet": "[var(--kid-tap-min)",
+    "why": ""
+  },
+  {
+    "path": "parts/DropZones.tsx",
+    "snippet": "[var(--kid-tap-min)",
+    "why": ""
+  },
+  {
+    "path": "parts/DropZones.tsx",
+    "snippet": "[length:var(--kid-answer-size)",
+    "why": ""
+  },
+  {
+    "path": "parts/DropZones.tsx",
+    "snippet": "[var(--kid-choice-gap)",
+    "why": ""
+  },
+  {
+    "path": "parts/InlineCode.tsx",
+    "snippet": "-[0.32em]",
+    "why": "em, relative to the text the chip sits in: the chip scales with its host sentence at every size, which no fixed token can"
+  },
+  {
+    "path": "parts/InlineCode.tsx",
+    "snippet": "-[0.06em]",
+    "why": "em, relative to the text the chip sits in: the chip scales with its host sentence at every size, which no fixed token can"
+  },
+  {
+    "path": "parts/InlineCode.tsx",
+    "snippet": "-[0.86em]",
+    "why": "em, relative to the text the chip sits in: the chip scales with its host sentence at every size, which no fixed token can"
+  },
+  {
+    "path": "parts/InlineTokens.tsx",
+    "snippet": "-[4.25rem]",
+    "why": ""
+  },
+  {
+    "path": "parts/InlineTokens.tsx",
+    "snippet": "[var(--kid-tap-min)",
+    "why": ""
+  },
+  {
+    "path": "parts/InlineTokens.tsx",
+    "snippet": "[length:var(--kid-answer-size)",
+    "why": ""
+  },
+  {
+    "path": "parts/LetterRow.tsx",
+    "snippet": "-[35rem]",
+    "why": "a container-query breakpoint (@min-[35rem]): the row goes to 10 columns where 10 keys of --kid-tap-min fit (10 x 3.5rem); a container query cannot read var()"
+  },
+  {
+    "path": "parts/SortableList.tsx",
+    "snippet": "[var(--kid-tap-min)",
+    "why": ""
+  },
+  {
+    "path": "parts/SortableList.tsx",
+    "snippet": "[length:var(--kid-answer-size)",
+    "why": ""
+  },
+  {
+    "path": "parts/SortableList.tsx",
+    "snippet": "[var(--kid-choice-gap)",
+    "why": ""
+  },
+  {
+    "path": "parts/TerminalCard.tsx",
+    "snippet": "-[3ch]",
+    "why": "ch, the monospace character: the $ prompt's gap and the printed hanging indent are counted in characters of the card's own font, not a size"
+  },
+  {
+    "path": "parts/TerminalCard.tsx",
+    "snippet": "-[2ch]",
+    "why": "ch, the monospace character: the $ prompt's gap and the printed hanging indent are counted in characters of the card's own font, not a size"
+  },
+  {
+    "path": "parts/TerminalCard.tsx",
+    "snippet": "-[1ch]",
+    "why": "ch, the monospace character: the $ prompt's gap and the printed hanging indent are counted in characters of the card's own font, not a size"
+  },
+  {
+    "path": "parts/TileBank.tsx",
+    "snippet": "[var(--kid-tap-min)",
+    "why": ""
+  },
+  {
+    "path": "parts/TileBank.tsx",
+    "snippet": "[length:var(--kid-answer-size)",
+    "why": ""
+  },
+  {
+    "path": "parts/TileBank.tsx",
+    "snippet": "[var(--kid-choice-gap)",
+    "why": ""
+  },
+  {
+    "path": "parts/tone.ts",
+    "snippet": "[var(--kid-help-edge,var(--muted-foreground)",
+    "why": ""
+  },
+  {
+    "path": "parts/tone.ts",
+    "snippet": "[var(--kid-help,var(--muted)",
+    "why": ""
+  },
+  {
+    "path": "parts/tone.ts",
+    "snippet": "[var(--kid-help-ink,var(--foreground)",
+    "why": ""
+  }
+]

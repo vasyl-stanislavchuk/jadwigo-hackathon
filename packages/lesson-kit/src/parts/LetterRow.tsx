@@ -50,14 +50,16 @@ export const ECHO_MS = 260;
 
 /** The key: no look of its own, only the kid-size target around its pill. */
 const KEY =
-  "group/key size-[var(--kid-tap-min)] min-h-[var(--kid-tap-min)] min-w-[var(--kid-tap-min)] rounded-[0.625rem] p-0 hover:bg-transparent active:translate-y-0";
+  "group/key size-kid-tap min-h-kid-tap min-w-kid-tap rounded-jw-small p-0 hover:bg-transparent active:translate-y-0";
 /** The tile inside the key. Its size, line, edge and the pick it wears when pressed, lit or on are
  * Zeszyt's letter row (styles/foundation.css), the one look (decision dl-76lr). */
 const PILL = "flex items-center justify-center";
-/** Colour eases in full and calm; under reduced it changes at once. */
+/** Colour eases in full and calm, over the theme's press-and-hover time (duration-jw-fast, as every
+ * control's colour does); under reduced it changes at once. Calm shortens the key's motions
+ * (keyFeel.ts), and a colour change is not motion, so calm eases colour as full does. */
 const EASE = {
-  full: "transition-colors duration-150",
-  calm: "transition-colors duration-100",
+  full: "transition-colors duration-jw-fast",
+  calm: "transition-colors duration-jw-fast",
   reduced: "",
 } as const;
 

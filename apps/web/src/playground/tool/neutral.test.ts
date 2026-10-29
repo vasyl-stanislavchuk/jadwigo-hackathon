@@ -1,7 +1,8 @@
 /**
  * The playground's tools are neutral, only the lesson takes a theme (dl-uukj.29.22). Read from the
  * stylesheets as written: the neutral palette covers every colour the tools use, in light and dark,
- * with readable pairs and no hue; and the lesson surfaces take the lesson tokens back.
+ * with readable pairs and no hue; the chrome keeps its compact type and radii though Zeszyt sits at
+ * :root (dl-uukj.32); and a lesson surface takes Zeszyt's aliases back.
  */
 
 import { readFileSync } from "node:fs";
@@ -10,7 +11,7 @@ import { describe, expect, it } from "vitest";
 
 const STYLES = join(import.meta.dirname, "../../../../../packages/ui/src/styles");
 const NEUTRAL = readFileSync(join(import.meta.dirname, "neutral.css"), "utf-8");
-const TOKENS = readFileSync(join(STYLES, "tokens.css"), "utf-8");
+const FOUNDATION = readFileSync(join(STYLES, "foundation.css"), "utf-8");
 const TAILWIND = readFileSync(join(STYLES, "tailwind.css"), "utf-8");
 
 function block(css: string, head: string): Record<string, string> {
@@ -22,10 +23,10 @@ function block(css: string, head: string): Record<string, string> {
   );
 }
 
-const light = block(NEUTRAL, "html[data-playground],\n[data-tool-surface] {");
-const dark = block(NEUTRAL, 'html[data-playground][theme="dark"],');
+const light = block(NEUTRAL, "html[data-playground] {");
+const dark = block(NEUTRAL, 'html[data-playground][theme="dark"] {');
 /** Every colour utility tailwind.css names, except the kid feedback colours, which stay the lesson's. */
-const UTILITIES = [...TAILWIND.matchAll(/^\s*--color-(?!kid-)([\w-]+):/gm)].map((m) => m[1]);
+const UTILITIES = [...TAILWIND.matchAll(/^\s*--color-(?!kid-|jw-)([\w-]+):/gm)].map((m) => m[1]);
 
 function channels(hex: string): [number, number, number] {
   const [r = 0, g = 0, b = 0] = [1, 3, 5].map(
@@ -78,15 +79,41 @@ describe("the neutral playground", () => {
     expect(contrast(dark[fg] ?? "", dark[bg] ?? "")).toBeGreaterThanOrEqual(4.5);
   });
 
-  it("outranks :root on <html>, and gives the lesson its tokens back on every lesson surface", () => {
-    expect(NEUTRAL).toContain("html[data-playground]");
-    const lightHead = TOKENS.slice(0, TOKENS.indexOf("{", TOKENS.indexOf(":root,")));
-    expect(lightHead).toContain("[data-lesson-surface]");
-    expect(lightHead).toContain(":is(.kid-page, .kid-step-shell):not([data-lesson-theme] *)");
-    const darkHead = TOKENS.slice(
-      TOKENS.indexOf('[theme="dark"] [data-lesson-surface]'),
-      TOKENS.indexOf('[theme="dark"] {'),
+  it("outranks :root on <html>, and gives the lesson Zeszyt's aliases back on every lesson surface", () => {
+    expect(NEUTRAL).not.toContain("[data-tool-surface]");
+    // The aliases' head: Zeszyt declares them on :root, again on every nested theme, and again on
+    // every lesson, so a lesson inside the chrome resolves its own roles, not the chrome's colours.
+    const at = FOUNDATION.indexOf("--primary: var(--jw-focus);");
+    const open = FOUNDATION.lastIndexOf("{", at);
+    const head = FOUNDATION.slice(FOUNDATION.lastIndexOf("}", open) + 1, open);
+    const selectors = head
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .split(",")
+      .map((x) => x.trim());
+    expect(selectors).toEqual([":root", ":host", "[theme]", "[data-lesson-theme]"]);
+  });
+
+  // Zeszyt's aliases at :root set the lesson's font, its 16 px corners, no shadows and its slower
+  // step; the chrome sets its own back on <html>, which outranks :root.
+  it("keeps the chrome's own type, radii, shadows and motion", () => {
+    const at = NEUTRAL.indexOf("html[data-playground] {");
+    const body = NEUTRAL.slice(at, NEUTRAL.indexOf("}", at));
+    const set = Object.fromEntries(
+      [...body.matchAll(/--([\w-]+):\s*([^;]+);/g)].map((m) => [m[1], (m[2] ?? "").trim()]),
     );
-    expect(darkHead).toContain(":is(.kid-page, .kid-step-shell):not([data-lesson-theme] *)");
+    expect(set["font-sans"]).toMatch(/^"Inter"/);
+    expect(set["radius"]).toBe("0.5rem");
+    for (const name of [
+      "radius-sm",
+      "radius-lg",
+      "radius-xl",
+      "radius-2xl",
+      "shadow-xs",
+      "shadow-sm",
+      "shadow-elevation",
+      "duration-slow",
+    ])
+      expect(set[name], `--${name}`).toBeDefined();
+    expect(set["shadow-sm"]).not.toBe("none");
   });
 });
