@@ -95,7 +95,8 @@ The words themselves are in the root `GLOSSARY.md`. Rules marked **(tested)** fa
     `message` is for a person and never names the key.
 21. **The server owns the lesson's course.** It decides the next question, a growth question and when
     an attempt finishes. A response never carries a question's `key` or help that has not been
-    released.
+    released. One named exception: `GET /api/v1/playground-examples/{language}` serves Jadwigo's
+    own written playground examples with their keys, for review (owner, 2026-10-28, `dl-w3.75`).
 
 ## Code
 

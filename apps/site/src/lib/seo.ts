@@ -13,6 +13,8 @@ export const pageSchema = z.object({
   description: z.string().min(1),
   heading: z.string().min(1),
   ogImage: z.string().startsWith("/").optional(),
+  /** The words of the page's one link to the app (appUrl), when it has one. */
+  play: z.string().min(1).optional(),
   reviewed: z.boolean(),
 });
 export type Page = z.infer<typeof pageSchema>;

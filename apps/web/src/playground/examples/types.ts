@@ -1,6 +1,7 @@
 /**
- * The shape of a written example: a question in packages/contracts' shapes, its twin, and the
- * scenarios that show it at work. Every state the playground draws reads from here: a scenario is
+ * The shape of a written example as the page plays it: a question in packages/contracts' shapes,
+ * its twin, and the scenarios that show it at work. They come from the API in one language
+ * (examples/load.ts); the tests also play them as authored, in both. Every state the playground draws reads from here: a scenario is
  * the value a child might commit, what it shows (`outcome`, `mistake_class`) and the parts the page
  * marks. Nothing is judged in the playground; Sprawdź finds the scenario whose value was committed.
  */
@@ -10,7 +11,7 @@ import type { Language } from "@jadwigo/copy";
 import type { Text } from "../localize.ts";
 
 /** A question as written: its family's data and key, in either language. Typed loosely here and
- * held to the contracts by examples.test.ts, which parses every example in both languages. */
+ * held to the contracts by the seed (packages/lesson-import) and the route's reply schema. */
 export interface WrittenQuestion {
   question_type: QuestionType;
   family: Family;

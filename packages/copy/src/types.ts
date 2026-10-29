@@ -322,6 +322,10 @@ export const COPY_KEYS = [
   "play_paused_back",
   "play_not_found",
   // end the lesson player
+  // the home page's featured lessons (dl-5ssh.3.6)
+  "home_title",
+  "home_empty",
+  // end the home page
 ] as const;
 
 export type CopyKey = (typeof COPY_KEYS)[number];

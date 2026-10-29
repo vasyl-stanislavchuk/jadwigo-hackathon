@@ -77,7 +77,7 @@ resource "aws_iam_role_policy" "api" {
   policy = data.aws_iam_policy_document.api.json
 }
 
-# No reserved or provisioned concurrency: the account's quota is 10 while the raise is open.
+# No reserved or provisioned concurrency: the account's quota is 1000 since 2026-10-28 (case 179318942100525).
 resource "aws_lambda_function" "api" {
   function_name    = local.name
   role             = aws_iam_role.api.arn

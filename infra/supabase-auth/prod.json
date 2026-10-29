@@ -1,0 +1,8 @@
+{
+  "ref": "xhzkmpainwzrfktxffjv",
+  "settings": {
+    "site_url": "https://app.jadwigo.pl",
+    "uri_allow_list": "https://app.jadwigo.pl/**",
+    "mailer_otp_length": 6
+  }
+}

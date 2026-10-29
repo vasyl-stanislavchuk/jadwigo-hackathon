@@ -2,3 +2,5 @@
 *.tfstate
 *.tfstate.*
 *.tfplan
+# The owner's own values, kept out of the public repo (alarms.tf)
+*.auto.tfvars
