@@ -15,6 +15,12 @@ The HTTP API's route list in `terraform/main.tf` mirrors `ROUTES` in `packages/c
 a route added there is added here too, or it falls to `$default` and its stage-default limit. `bun tools/src/check-infra-routes.ts`, in `make check` and CI, fails when the two differ. Terraform owns no file in the bucket; `make site-deploy` uploads the Astro build of `apps/site`. `dl-5ssh.34.4` adds the other
 modules, the OIDC roles script and the plan on every PR; `dl-w0b4.4` extends the site module.
 
+The Lambda runs at most `app_reserved_concurrency` instances at once (`dl-5ssh.75`), 150 in prod. Each
+instance holds 1 pooled connection (pool max 1, `dl-5ssh.25`), and jadwigo-prod's pooler (Supabase Pro,
+Micro compute) accepts 200 clients, so a burst cannot crowd out `make api-dev` and the seeds, which keep
+the other 50. Past 150 the Lambda throttles, and the `api-throttles` alarm fires. A larger compute size
+raises the pooler limit; raise this with it, in `terraform/environments/<env>.tfvars`.
+
 Mail (`terraform/modules/mail`, `dl-5ssh.6`): an SES domain identity for jadwigo.pl and for jadwigo.kids
 in eu-central-1, each with Easy DKIM (3 CNAMEs), a custom MAIL FROM at `mail.<apex>` with its MX and SPF,
 and a DMARC record (`p=quarantine`, relaxed alignment), all in the apex's own zone. The account already
