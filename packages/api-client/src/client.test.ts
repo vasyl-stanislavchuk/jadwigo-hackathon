@@ -93,6 +93,20 @@ describe("createClient", () => {
     await expect(createClient({ base: "", fetch }).featuredLessons()).rejects.toThrow();
   });
 
+  it("reads a language's playground examples and parses them", async () => {
+    const { fetch, sent } = stub(200, { examples: [], questions: [] });
+    const reply = await createClient({ base: "", fetch }).playgroundExamples("en");
+    expect(sent).toEqual([
+      { url: "/api/v1/playground-examples/en", method: "GET", body: undefined },
+    ]);
+    expect(reply).toEqual({ examples: [], questions: [] });
+  });
+
+  it("refuses a playground reply that is not the contract's", async () => {
+    const { fetch } = stub(200, { examples: [{ slug: "no-question" }], questions: [] });
+    await expect(createClient({ base: "", fetch }).playgroundExamples("pl")).rejects.toThrow();
+  });
+
   it("joins a base URL in front of the path", async () => {
     const { fetch, sent } = stub(200, snapshot);
     await createClient({ base: "http://127.0.0.1:8787/", fetch }).getAttempt(ATTEMPT);

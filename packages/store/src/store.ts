@@ -9,10 +9,12 @@ import type {
   AttemptResult,
   Ended,
   ErrorType,
+  Language,
   Learner,
   Lesson,
   LessonId,
   LessonQuestion,
+  LessonQuestionExample,
   LessonQuestionId,
   LessonVersion,
   LessonVersionId,
@@ -73,6 +75,19 @@ export interface NewLessonVersion {
 export interface LessonVersionWithQuestions {
   readonly version: LessonVersion;
   readonly questions: readonly (LessonVersionQuestion & { readonly question: LessonQuestion })[];
+}
+
+/**
+ * A playground example as the seed writes it: its question and twin already stored. The store
+ * mints its id, since a replace writes every row anew.
+ */
+export type NewLessonQuestionExample = Omit<LessonQuestionExample, "id" | "pod_id" | "created_at">;
+
+/** A playground example joined to its question and twin. */
+export interface ExampleWithQuestions {
+  readonly example: LessonQuestionExample;
+  readonly question: LessonQuestion;
+  readonly twin: LessonQuestion | null;
 }
 
 /** An assignment anyone may play now, with the lesson it plays. */
@@ -173,6 +188,23 @@ export interface Store {
    * first. Scoped to the pod like every other read, so another pod's are never listed.
    */
   listOpenAssignments(pod: PodId): Promise<readonly OpenAssignment[]>;
+
+  // The playground's written examples: not write-once, replaced whole by the seed (dl-w3.75)
+
+  /**
+   * Replaces the pod's examples in `language` with `examples`, in one unit, and returns them as
+   * stored. Each names a lesson question the pod holds (else `NotFound`); the batch is refused
+   * with `BadRequest` when an example is in another language, a slug repeats within its question
+   * type, a question repeats, a twin's `twin_of` is not its example's question, or a scenario's
+   * value is not its question's family's.
+   */
+  replaceExamples(
+    pod: PodId,
+    language: Language,
+    examples: readonly NewLessonQuestionExample[],
+  ): Promise<readonly LessonQuestionExample[]>;
+  /** The pod's examples in `language` with their questions, by question type, position, then slug. */
+  listExamples(pod: PodId, language: Language): Promise<readonly ExampleWithQuestions[]>;
 
   // Evidence
 

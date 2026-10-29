@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^lqx_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "pod_id": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "lesson_question_id": {
+      "type": "string",
+      "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "twin": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en",
+        "uk"
+      ]
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "position": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1
+    },
+    "showcase": {
+      "type": "boolean"
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "try": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {},
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "correct",
+              "incorrect"
+            ]
+          },
+          "mistake_class": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "marks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "correct": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "correct"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "try",
+          "value",
+          "outcome",
+          "mistake_class",
+          "marks"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+    }
+  },
+  "required": [
+    "id",
+    "pod_id",
+    "lesson_question_id",
+    "twin",
+    "language",
+    "slug",
+    "position",
+    "label",
+    "showcase",
+    "scenarios",
+    "created_at"
+  ],
+  "additionalProperties": false
+}

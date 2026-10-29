@@ -3,7 +3,22 @@
 // question type of Choose, Enter and Slots in Try it: a written miss from "Scenarios to play", then
 // the key's right answer by tap or keyboard and Sprawdź. Nothing here is judged: every state the
 // page shows is written in the example.
+//
+// The page reads its examples from GET /api/v1/playground-examples/{language} (dl-w3.75). CI's
+// browser job runs no api, so each test answers that route with what the seed writes, compiled
+// from the same written examples (src/playground/examples/fixture.ts).
+import { type Language, ROUTES } from "@jadwigo/contracts";
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { examplesReply } from "../src/playground/examples/fixture.ts";
+
+const EXAMPLES_PATH = ROUTES.playgroundExamples.path.replace("{language}", "*");
+
+test.beforeEach(async ({ page }) => {
+  await page.route(`**${EXAMPLES_PATH}`, (route) => {
+    const language = new URL(route.request().url()).pathname.split("/").pop() as Language;
+    return route.fulfill({ json: examplesReply(language) });
+  });
+});
 
 /** The playground controls: a column beside the page on a laptop, a drawer on a phone that starts
  * closed. Opens it when it is closed. */
@@ -55,6 +70,17 @@ test("the start page lists every family and its 29 question types, with no lesso
   await expect(rows.locator("[data-status]")).toHaveCount(29);
   const text = await page.locator("body").innerText();
   expect(text).not.toMatch(/\bLessons\b|Whole lessons/);
+});
+
+test("every question type opens on an example read from the api", async ({ page }) => {
+  await page.goto("/playground");
+  const links = page.locator("[data-question-type-link]");
+  await expect(links).toHaveCount(29);
+  const hrefs = await links.evaluateAll((all) => all.map((a) => a.getAttribute("href") ?? ""));
+  for (const href of hrefs) {
+    await page.goto(href);
+    await expect(page.locator("[data-example]").first(), href).toBeVisible();
+  }
 });
 
 test("the System page draws its sections", async ({ page }) => {

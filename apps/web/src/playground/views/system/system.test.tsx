@@ -8,11 +8,20 @@
 import { copy, TABLES } from "@jadwigo/copy";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { AUTHORED, fakeApi } from "../../examples/fixture.ts";
+import { loadExamples, PlaygroundApi } from "../../examples/index.ts";
 import { DESIGN_LINES } from "./data.ts";
 import { FRAME_KINDS, FRAME_RULES, MEASURES } from "./frame/data.ts";
 import { FRAME_SECTIONS } from "./frame/sections.tsx";
-import { stageQuestion } from "./question.ts";
+import { stageExample, stageQuestion } from "./question.ts";
 import { MENU, PAGE_IDS, SystemPage } from "./SystemPage.tsx";
+
+const API = fakeApi();
+const page = () => (
+  <PlaygroundApi.Provider value={API}>
+    <SystemPage />
+  </PlaygroundApi.Provider>
+);
 
 class Quiet {
   observe(): void {}
@@ -20,7 +29,9 @@ class Quiet {
   disconnect(): void {}
 }
 
-beforeAll(() => {
+beforeAll(async () => {
+  await loadExamples(API, "pl");
+  await loadExamples(API, "en");
   globalThis.IntersectionObserver ??= Quiet as unknown as typeof IntersectionObserver;
   globalThis.ResizeObserver ??= Quiet as unknown as typeof ResizeObserver;
   // A laptop's pointer, so a footer column that names no frame would be the laptop's.
@@ -36,7 +47,7 @@ afterEach(cleanup);
 
 describe("the System page", () => {
   it("draws a section for every entry of its menu", () => {
-    const { container } = render(<SystemPage />);
+    const { container } = render(page());
     const missing = PAGE_IDS.filter((id) => container.querySelector(`[id="${id}"]`) === null);
     expect(missing).toEqual([]);
   });
@@ -48,7 +59,7 @@ describe("the System page", () => {
   });
 
   it("shows the 18 rules, every frame and the measurement table", () => {
-    const { container } = render(<SystemPage />);
+    const { container } = render(page());
     expect(container.querySelectorAll("[data-frame-rule]")).toHaveLength(18);
     expect(container.querySelectorAll("[data-frame-kind]")).toHaveLength(FRAME_KINDS.length);
     // dl-uukj.29.53 built all five; the three touch frames preview with ?input=touch.
@@ -70,7 +81,7 @@ describe("the System page", () => {
   });
 
   it("freezes every footer state in a phone and a laptop column", () => {
-    const { container } = render(<SystemPage />);
+    const { container } = render(page());
     const states = container.querySelectorAll("[data-system-footer]");
     expect(states.length).toBe(6);
     for (const s of states) {
@@ -88,15 +99,15 @@ describe("the System page", () => {
 
   it("lists every design line in Interface words", () => {
     expect(DESIGN_LINES).toEqual(Object.keys(TABLES.pl).filter((k) => k.startsWith("ds_")));
-    const { container } = render(<SystemPage />);
+    const { container } = render(page());
     for (const key of DESIGN_LINES)
       expect(container.querySelector(`[data-line="${key}"]`), key).not.toBeNull();
     expect(container.textContent).toContain(copy("pl", "ds_end_title"));
   });
 
   it("draws the stage's states from the written example, and links no lesson", () => {
-    const { container } = render(<SystemPage />);
-    const q = stageQuestion("pl");
+    const { container } = render(page());
+    const q = stageQuestion(stageExample(AUTHORED), "pl");
     // A frozen option names no id: it is found by its place among the written options.
     const tone = (state: string, option: string) =>
       container

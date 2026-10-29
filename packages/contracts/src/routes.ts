@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AssignmentId, AttemptId, LearnerId } from "./ids.ts";
+import { Language } from "./records.ts";
 import {
   AccountCreate,
   AttemptAnswerRequest,
@@ -18,6 +19,7 @@ import {
   LearnerCreate,
   LearnerSnapshot,
   Me,
+  PlaygroundExamples,
 } from "./wire.ts";
 
 /**
@@ -58,6 +60,15 @@ export const ROUTES = {
     params: z.object({}),
     body: null,
     response: Featured,
+    status: 200,
+    auth: "none",
+  },
+  playgroundExamples: {
+    method: "GET",
+    path: "/api/v1/playground-examples/{language}",
+    params: z.object({ language: Language }),
+    body: null,
+    response: PlaygroundExamples,
     status: 200,
     auth: "none",
   },
