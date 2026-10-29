@@ -10,8 +10,9 @@
  * bd printed instead. A copy says "Copied" only once the clipboard write succeeded, and says so in
  * a live region too. Copying is not an answer and records nothing. The card is never read aloud.
  *
- * `paper` is the printed look (print support `adapted`): a black border, the $ kept, commands and
- * output wrapped between words with a hanging indent, no highlighting colour and no copy.
+ * `paper` is the printed look (print support `adapted`): a border and text in the ink (--jw-ink, so
+ * the theme's paper and night grounds both read it), the $ kept, commands and output wrapped between
+ * words with a hanging indent, no highlighting colour and no copy.
  */
 
 import { copy, type Language } from "@jadwigo/copy";
@@ -191,7 +192,7 @@ export function TerminalCard({
       className={cn(
         "overflow-hidden rounded-lg border font-mono text-lg leading-[1.55]",
         paper
-          ? "break-inside-avoid border-black text-black"
+          ? "break-inside-avoid border-jw-ink text-jw-ink"
           : "border-[color:var(--code-border)] bg-[color:var(--code-surface)] text-[color:var(--code-text)] [--ring:var(--code-ring)]",
       )}
     >
@@ -204,7 +205,7 @@ export function TerminalCard({
               data-line={index}
               className={cn(
                 "grid grid-cols-[minmax(0,1fr)_auto] items-center",
-                !paper && "min-h-[var(--kid-tap-min)]",
+                !paper && "min-h-kid-tap",
               )}
             >
               <ScrollRow label={copy(language, "code_command")} paper={paper}>
@@ -223,7 +224,7 @@ export function TerminalCard({
                     // The 56 px box stays the tap target (A2); the visible hover and focus
                     // fill is a pill inset from it, so it never fills the row or runs into
                     // the card's rounded corner (owner, 2026-10-08).
-                    "relative isolate mx-1 gap-1.5 border-0 bg-transparent px-3 font-sans text-base hover:bg-transparent [&_svg:not([class*=size-])]:size-6",
+                    "relative isolate mx-1 gap-1.5 border-0 bg-transparent px-3 font-sans text-jw-small hover:bg-transparent [&_svg:not([class*=size-])]:size-6",
                     "before:absolute before:inset-x-1.5 before:inset-y-2 before:-z-10 before:rounded-sm before:transition-colors hover:before:bg-[color:var(--code-hover)] focus-visible:before:bg-[color:var(--code-hover)]",
                     copied
                       ? "text-[color:var(--code-cmd)]"
@@ -247,7 +248,7 @@ export function TerminalCard({
               <p
                 data-placeholder-note=""
                 className={cn(
-                  "px-4 pb-2 font-sans text-base",
+                  "px-4 pb-2 font-sans text-jw-small",
                   !paper && "text-[color:var(--code-muted)]",
                 )}
               >
@@ -255,7 +256,7 @@ export function TerminalCard({
               </p>
             )}
             {status?.line === index && !status.ok && (
-              <p data-copy-failed="" className="px-4 pb-2 font-sans text-base">
+              <p data-copy-failed="" className="px-4 pb-2 font-sans text-jw-small">
                 {copy(language, "code_copy_failed")}
               </p>
             )}

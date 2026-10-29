@@ -22,7 +22,7 @@ import { shiftInto, Tooltip } from "./Tooltip.tsx";
 afterEach(cleanup);
 
 const clock: Clock = { now: (): Instant => ({ perf: 1, wall: "2026-10-06T00:00:00.000Z" }) };
-const KID_SIZE = /min-h-\[var\(--kid-(tap-min|commit-height|key-size)\)\]/;
+const KID_SIZE = /\bmin-h-kid-(tap|commit|key)\b/;
 
 describe("shiftInto", () => {
   it("leaves a bubble inside the window where it is", () =>
@@ -61,7 +61,7 @@ describe("TaskPrompt", () => {
   it("shows the task at the say size", () => {
     render(<TaskPrompt text="Ile to jest 7 × 8?" />);
     const p = screen.getByText("Ile to jest 7 × 8?");
-    expect(p.className).toMatch(/text-\[length:var\(--kid-say-size\)\]/);
+    expect(p.className).toMatch(/text-kid-say/);
   });
 });
 
@@ -87,7 +87,7 @@ describe("InlineCode", () => {
 
   it("prints a chip as an outline with no fill", () => {
     const { container } = render(<InlineCode text="`bd ready`" paper />);
-    expect(must(container.querySelector("code")).className).toMatch(/border-black/);
+    expect(must(container.querySelector("code")).className).toMatch(/border-jw-ink/);
     expect(must(container.querySelector("code")).className).not.toMatch(/bg-muted/);
   });
 });
@@ -328,10 +328,10 @@ describe("TerminalCard", () => {
     expect(container.querySelector("[data-copy-failed]")).not.toBeNull();
   });
 
-  it("prints adapted: a black border, the $ kept, wrapped between words, and no copy", () => {
+  it("prints adapted: a border in the ink, the $ kept, wrapped between words, and no copy", () => {
     const { container } = render(<TerminalCard card={lab} language="en" paper />);
     const card = must(container.querySelector<HTMLElement>("[data-terminal]"));
-    expect(card.className).toMatch(/border-black/);
+    expect(card.className).toMatch(/border-jw-ink/);
     expect(card.className).not.toMatch(/code-surface/);
     expect(screen.queryByRole("button")).toBeNull();
     expect(must(container.querySelector('[role="group"][aria-label="Command"]')).className).toMatch(
@@ -407,12 +407,12 @@ describe("Keypad", () => {
       <Keypad language="pl" clock={clock} signKeys={signKeys(["×", "+"])} onEvent={vi.fn()} />,
     );
     const seven = screen.getByRole("button", { name: "7" });
-    expect(seven.className).toContain("min-h-[var(--kid-key-size)]");
-    expect(seven.className).toContain("text-[1.875rem]");
-    expect(seven.className).toContain("rounded-[0.625rem]");
+    expect(seven.className).toContain("min-h-kid-key");
+    expect(seven.className).toContain("text-jw-key");
+    expect(seven.className).toContain("rounded-jw-small");
     const times = must(container.querySelector<HTMLElement>('[data-sign="×"]'));
-    expect(times.className).toContain("min-h-[var(--kid-tap-min)]");
-    expect(times.className).toContain("text-[1.75rem]");
+    expect(times.className).toContain("min-h-kid-tap");
+    expect(times.className).toContain("text-jw-key-sign");
     expect(must(container.querySelector("[data-keypad]")).className).toContain("gap-2");
   });
 });

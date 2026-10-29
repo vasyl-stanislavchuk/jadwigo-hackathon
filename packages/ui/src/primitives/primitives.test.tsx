@@ -57,6 +57,16 @@ describe("Button tap target", () => {
     const { getByRole } = render(<Button size="commit">Dalej</Button>);
     expect(getByRole("button").className).toMatch(/min-h-\[var\(--kid-commit-height\)\]/);
   });
+
+  // A settings or navigation control on an app page is 48, not the kid 56 (dl-og82, dl-uukj.32.3).
+  it("makes the control size 48, from --jw-control-height", () => {
+    const { getByRole } = render(<Button size="control">Zapisz</Button>);
+    const button = getByRole("button", { name: "Zapisz" });
+    expect(button.getAttribute("data-size")).toBe("control");
+    expect(button.className).toMatch(/(^|\s)min-h-jw-control(\s|$)/);
+    expect(button.className).not.toMatch(KID_SIZE);
+    expect(button.className, "no literal height or width").not.toMatch(LITERAL_SIZE);
+  });
 });
 
 describe("ToggleGroup tap target", () => {
@@ -112,9 +122,24 @@ describe("Switch tap target", () => {
 });
 
 describe("Input tap target", () => {
-  it("is sized from the kid layer", () => {
+  it("is sized from the kid layer, with tabular digits, by default", () => {
     const { getByRole } = render(<Input inputMode="numeric" aria-label="Wynik" />);
-    expectKidSized(getByRole("textbox"));
+    const input = getByRole("textbox", { name: "Wynik" });
+    expectKidSized(input);
+    expect(input.getAttribute("data-kind")).toBe("number");
+    expect(input.className).toMatch(/(^|\s)tabular-nums(\s|$)/);
+  });
+
+  // An adult's field on an app page (dl-uukj.32.3): 48 at the body size, proportional digits.
+  it("is 48 at the body size with proportional digits as kind text", () => {
+    const { getByRole } = render(<Input kind="text" type="email" aria-label="E-mail" />);
+    const input = getByRole("textbox", { name: "E-mail" });
+    expect(input.getAttribute("data-kind")).toBe("text");
+    expect(input.className).toMatch(/(^|\s)min-h-jw-control(\s|$)/);
+    expect(input.className).toMatch(/(^|\s)text-jw-body(\s|$)/);
+    expect(input.className).toMatch(/(^|\s)proportional-nums(\s|$)/);
+    expect(input.className).not.toMatch(KID_SIZE);
+    expect(input.className).not.toMatch(/tabular-nums|text-kid-answer/);
   });
 });
 
@@ -157,14 +182,18 @@ describe("primitive sources", () => {
         "input.tsx",
         "popover.tsx",
         "progress.tsx",
+        "radio-group.tsx",
+        "segmented-control.tsx",
         "sheet.tsx",
+        "side-menu.tsx",
         "slider.tsx",
         "spinner.tsx",
         "switch.tsx",
         "table.tsx",
+        "tabs.tsx",
         "toggle-group.tsx",
         "toggle.tsx",
-      ].sort(), // popover: the chosen-gap menu (dl-w3.37.16); switch: the pause sheet's Dźwięk (dl-uukj.29.55); sheet and table: the lesson overview's question sheet and heatmap (dl-uukj.30.4)
+      ].sort(), // popover: the chosen-gap menu (dl-w3.37.16); switch: the pause sheet's Dźwięk (dl-uukj.29.55); sheet and table: the lesson overview's question sheet and heatmap (dl-uukj.30.4); radio-group, segmented-control, tabs and side-menu: the settings and navigation controls (dl-uukj.32.3)
     );
   });
 
@@ -185,6 +214,21 @@ describe("primitive sources", () => {
   // inside a row that is itself tap-min high; each is listed with its reason.
   const LABELS = new Set(["badge.tsx", "progress.tsx", "card.tsx", "spinner.tsx"]);
   const DRAWN: Record<string, string[]> = {
+    "radio-group.tsx": [
+      "min-w-0", // lets the wrapper of legend and rows shrink in a flex row; the rows are the targets
+      "size-6", // the ring inside the 48 row that is the target
+      "size-3", // the dot inside the ring
+    ],
+    "segmented-control.tsx": [
+      "min-w-0", // lets the wrapper of legend and track shrink in a flex row; the track is the target
+    ],
+    "tabs.tsx": [
+      "min-w-0", // lets the tabs and their panel shrink in a flex row; each tab is a target
+    ],
+    "side-menu.tsx": [
+      "w-6", // the icon column inside a 48 or 44 row
+      "size-4", // the fold chevron inside a category row
+    ],
     "switch.tsx": [
       "h-8", // the track, drawn inside the tap-min row that is the switch
       "w-14", // the same

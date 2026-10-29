@@ -11,6 +11,7 @@ import { cn } from "@jadwigo/ui";
 import { useState } from "react";
 import { FractionShape } from "../../../parts/FractionShape.tsx";
 import { RichText } from "../../../parts/RichText.tsx";
+import { TaskTarget } from "../../../parts/TaskTarget.tsx";
 import { TONE_CLASS, type Tone } from "../../../parts/tone.ts";
 import type { Clock, Instant } from "../../../stage/clock.ts";
 import type { PressModality } from "../../../stage/press.ts";
@@ -33,9 +34,9 @@ type FractionData = DataOf<typeof Surface.Fraction>;
 /** The fraction to shade, big above the shape: the task, page-visible. */
 function Target({ data }: { data: FractionData }): JSX.Element {
   return (
-    <p className="text-[3rem] leading-none font-bold tabular-nums">
+    <TaskTarget className="leading-none">
       <RichText inline text={data.label} />
-    </p>
+    </TaskTarget>
   );
 }
 

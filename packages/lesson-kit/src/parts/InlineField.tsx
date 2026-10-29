@@ -108,7 +108,7 @@ export function InlineField({
     <div
       data-inline-line
       className={cn(
-        "flex flex-wrap items-baseline gap-3 text-[length:var(--kid-math-size)] leading-[1.2] font-bold tabular-nums lining-nums",
+        "flex flex-wrap items-baseline gap-3 text-jw-math leading-[1.2] font-bold tabular-nums lining-nums",
         className,
       )}
     >

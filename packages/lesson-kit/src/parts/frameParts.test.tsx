@@ -243,7 +243,7 @@ describe("a laptop has no Narzędzia: the keyboard types, and the signs sit unde
       "(",
       ")",
     ]);
-    for (const key of strip.children) expect(key.className).toContain("min-w-[var(--kid-tap-min)]");
+    for (const key of strip.children) expect(key.className).toContain("min-w-kid-tap");
     expect(strip.className).toContain("gap-2");
     expect(container.querySelector("[data-keypad]")).toBeNull();
     fireEvent.keyDown(window, { key: "*" });

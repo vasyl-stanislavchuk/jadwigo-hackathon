@@ -116,7 +116,7 @@ function Picture({
         <span
           aria-hidden="true"
           data-testid="hotspot-cursor"
-          className="pointer-events-none absolute size-[var(--kid-tap-min)] -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-dashed border-ring"
+          className="pointer-events-none absolute size-kid-tap -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-dashed border-ring"
           style={{ left: cellPercent(cursor.x), top: cellPercent(cursor.y) }}
         >
           <span className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 bg-ring" />
@@ -136,7 +136,7 @@ function Picture({
           data-tone={tones[i]}
           disabled={!onLift}
           className={cn(
-            "absolute size-[var(--kid-tap-min)] -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-card opacity-90",
+            "absolute size-kid-tap -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-card opacity-90",
             MARKER_TONE[tones[i] ?? "idle"],
           )}
           style={{ left: `${p.x * 100}%`, top: `${p.y * 100}%` }}

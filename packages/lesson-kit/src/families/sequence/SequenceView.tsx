@@ -91,7 +91,7 @@ function OrderList({
   const text = (id: string) => data.items.find((i) => i.id === id)?.text ?? id;
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-base">{label}</span>
+      <span className="text-jw-small">{label}</span>
       <ol
         data-tone={tone}
         className={cn(
@@ -132,7 +132,7 @@ function TileRow({
   const text = (id: string | null) => (!id ? null : (tiles.find((t) => t.id === id)?.text ?? id));
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-base">{label}</span>
+      <span className="text-jw-small">{label}</span>
       <ol
         data-tone={tone}
         className={cn(
@@ -152,7 +152,7 @@ function TileRow({
             >
               <span
                 aria-hidden="true"
-                className="text-base font-bold text-muted-foreground tabular-nums"
+                className="text-jw-small font-bold text-muted-foreground tabular-nums"
               >
                 {i + 1}
               </span>

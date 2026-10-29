@@ -22,6 +22,7 @@ import {
 import { Button } from "@jadwigo/ui";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ReactElement, ReactNode } from "react";
+import { withMedia } from "../media.ts";
 import { ENDED_ICON, ENDED_WORD } from "./ended.ts";
 
 const CATEGORY: Category = "child";
@@ -36,7 +37,8 @@ export function specOf(question: ReviewQuestion): PageFamilySpec {
     say: question.say,
     question_type: question.question_type,
     family: question.question.family,
-    data: question.question.data,
+    // A picture ref becomes its media URL before the kit sees a src (src/media.ts).
+    data: withMedia(question.question.data),
   } as PageFamilySpec;
 }
 

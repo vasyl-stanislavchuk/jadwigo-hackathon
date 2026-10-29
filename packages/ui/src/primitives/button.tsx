@@ -1,6 +1,7 @@
 // shadcn/ui button (radix-vega, shadcn@4.21.1), reshaped for the kid layer (dl-0ax3): every
 // size is at least --kid-tap-min, colours are ui-*, and the red and link variants are gone. Inside
 // Zeszyt it draws no ring of its own: the keyboard's frame is foundation.css's (dl-uukj.29.59).
+// size="control" is the 48 of a settings or navigation control (dl-uukj.32.3).
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
 import type * as React from "react";
@@ -20,6 +21,10 @@ const buttonVariants = cva(
         default: "min-h-[var(--kid-tap-min)] min-w-[var(--kid-tap-min)] px-5",
         commit: "min-h-[var(--kid-commit-height)] min-w-[var(--kid-commit-height)] px-8",
         icon: "min-h-[var(--kid-tap-min)] min-w-[var(--kid-tap-min)]",
+        // A settings or navigation control on an app page: 48 (--jw-control-height, dl-og82), at the
+        // body size. A lesson keeps the kid sizes above.
+        control:
+          "min-h-jw-control min-w-jw-control px-5 text-jw-body [&_svg:not([class*='size-'])]:size-5",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

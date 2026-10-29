@@ -16,3 +16,11 @@ export interface Clock {
 export const browserClock: Clock = {
   now: () => ({ perf: performance.now(), wall: new Date().toISOString() }),
 };
+
+/**
+ * A pinned clock for a still view (a review, the playground's Gallery and states): a still view has
+ * no timing to measure, so every instant is the same and the view draws the same every time.
+ */
+export const stillClock: Clock = {
+  now: () => ({ perf: 0, wall: "2026-10-18T00:00:00.000Z" }),
+};

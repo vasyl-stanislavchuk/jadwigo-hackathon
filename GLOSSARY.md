@@ -51,6 +51,24 @@ inside the repo, and the outside sense gets a qualifier.
 | **stop note** | 4 lines appended to an issue when a session stops short: what was asked, what was done, the exact error, what to try next |
 | **owner** | the person who decides product questions, runs paid and outward steps, and deploys |
 
+## The design system
+
+| Word | Means | Not |
+| --- | --- | --- |
+| **Zeszyt** | the one look of the app: white exercise-book paper, blue ink for the one thing to press, the teacher's green and red pen, Andika. Its tokens are `packages/ui/src/styles/foundation.css`; `/playground/system` is the reference | a theme among several (the theme lab went on 2026-10-25) |
+| **Grape** | the purple Material 3 palette of 2026-10-06, superseded by Zeszyt on 2026-10-26. Retired; the name survives only in history | a colour any screen may wear |
+| **token** | one named value of the design system, a CSS custom property: a primitive (`--jw-p-ink-600`, the only literal colours), a role, or an alias | a Tailwind class |
+| **role** | a token named for what it means on screen: `--jw-act`, `--jw-pick`, `--jw-miss-edge`, `--jw-size-body`. Set once by day and once by night | a colour named for its hue |
+| **alias** | the shadcn and `--kid-*` names the parts already read (`--primary`, `--kid-correct`), each valued from one role | a second palette |
+| **utility** | the Tailwind class a component writes for a token: `bg-jw-act`, `text-jw-body`, `min-h-kid-tap` (`tailwind.css` `@theme inline`). A `var()` written in a class is a violation | an arbitrary value |
+| **act** | the action role: the one thing to press now, blue ink on its pressed edge; quiet paper until there is an answer to check | any button |
+| **pick** | what the child chose, not yet judged: its own clear blue, colour only, never size | right or wrong |
+| **band** | the footer after a check, at the footer's own height: right, a miss, or the solution | a toast |
+| **help ladder** | the rungs a question carries (look, boost, almost, worked), one released at a time, in help's warm yellow, never a verdict's colour | a hint box |
+| **lesson surface** | anything under `[data-lesson-theme]`: a lesson, a review step, a playground cell. Lesson behaviour rules (the pressed edge, the band, the fields) apply only here | the whole page: tokens apply everywhere, behaviour only on a lesson surface |
+| **tool surface** | the playground's own chrome under `html[data-playground]`: neutral grey shadcn, so the lesson inside it is the only coloured thing | a learner screen |
+| **app page** | a non-lesson screen (the parent's, the home list): Zeszyt on white paper at the app-page register (h1 `--jw-size-prompt`, body `--jw-size-body`, controls 48) | a lesson surface |
+
 ## Merge danger
 
 | Word | Means |
