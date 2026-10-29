@@ -15,6 +15,7 @@
 
 import {
   type AccountCreate,
+  type AssignmentAttempts,
   type AssignmentId,
   type AttemptAnswerRequest,
   type AttemptAnswerResult,
@@ -102,6 +103,8 @@ export interface ParentClient {
   getLearnerAttempts(learnerId: LearnerId): Promise<LearnerAttempts>;
   /** A finished attempt of the learner with every try; `AttemptNotFinished` before it finishes. */
   getParentReview(learnerId: LearnerId, attemptId: AttemptId): Promise<ParentAttemptReview>;
+  /** One assignment's attempts the caller's pod reads, with their rows: the lesson overview. */
+  getAssignmentAttempts(assignmentId: AssignmentId): Promise<AssignmentAttempts>;
 }
 
 /** Every `/api/v1` call this client makes. */
@@ -186,6 +189,8 @@ export function createClient({
       call(ROUTES.getLearnerAttempts, { id: learnerId }, undefined),
     getParentReview: (learnerId, attemptId) =>
       call(ROUTES.getParentReview, { id: learnerId, attempt: attemptId }, undefined),
+    getAssignmentAttempts: (assignmentId) =>
+      call(ROUTES.getAssignmentAttempts, { id: assignmentId }, undefined),
     playgroundExamples: (language) => call(ROUTES.playgroundExamples, { language }, undefined),
   };
 }

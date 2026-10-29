@@ -139,6 +139,7 @@ function client(changes: Partial<ParentClient>): ParentClient {
     claimAttempt: refused,
     getLearnerAttempts: refused,
     getParentReview: async () => REVIEW,
+    getAssignmentAttempts: refused,
     ...changes,
   };
 }

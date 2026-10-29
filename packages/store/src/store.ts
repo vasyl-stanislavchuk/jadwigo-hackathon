@@ -2,6 +2,7 @@ import type {
   AccountId,
   Added,
   Assignment,
+  AssignmentAttempts,
   AssignmentId,
   Attempt,
   AttemptAnswer,
@@ -387,6 +388,15 @@ export interface Store {
    * and its `attempt_result` rows. A claimed attempt in another pod is read here, read-only.
    */
   getLearnerAttempts(pod: PodId, learner: LearnerId): Promise<LearnerAttempts>;
+  /**
+   * The lesson overview: an assignment with its lesson's title and language, and its real (never
+   * preview) attempts `pod` reads, newest first, at most `LIMITS.attemptsPerAssignment`, each with
+   * its `attempt_result` rows in `seq` order. The assignment's own pod reads every one; another
+   * pod reads only those its learners claimed. `name` is the learner's first name when `pod` reads
+   * the learner, else the typed `player_name`, else null. `NotFound` when `pod` reads neither the
+   * assignment nor any attempt on it.
+   */
+  getAssignmentAttempts(pod: PodId, assignment: AssignmentId): Promise<AssignmentAttempts>;
 
   /**
    * The `attempt_result` view's rows, in `seq` order (access pattern 8): the parent's full rows.

@@ -52,6 +52,8 @@ module "app" {
     "GET /api/v1/learners/{id}/attempts",
     # Lesson review (dl-uukj.30): the parent's, with every try; a token route.
     "GET /api/v1/learners/{id}/attempts/{attempt}/review",
+    # The lesson overview (dl-uukj.30 wave 2): one assignment's attempts; a token route.
+    "GET /api/v1/assignments/{id}/attempts",
   ]
 
   # The routes above whose ROUTES auth is "token": only these carry the JWT authorizer
@@ -63,6 +65,7 @@ module "app" {
     "POST /api/v1/attempts/{id}/claims",
     "GET /api/v1/learners/{id}/attempts",
     "GET /api/v1/learners/{id}/attempts/{attempt}/review",
+    "GET /api/v1/assignments/{id}/attempts",
   ]
 
   jwt_issuer = "https://${var.supabase_ref}.supabase.co/auth/v1"

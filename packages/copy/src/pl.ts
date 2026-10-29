@@ -424,6 +424,23 @@ export const pl: CopyTable = {
   parent_skip_dont_know: { text: "Jeszcze nie wie", reviewed: false },
   parent_skip_asked_to_skip: { text: "Dalej bez odpowiedzi", reviewed: false },
   parent_skip_help_twin: { text: "Po pomocy: podobne pytanie", reviewed: false },
+  // the lesson overview (dl-uukj.30 wave 2): the heatmap of one lesson's attempts
+  parent_overview_title: { text: "Lekcja pytanie po pytaniu", reviewed: false },
+  parent_overview_link: { text: "Wszystkie podejścia do tej lekcji", reviewed: false },
+  parent_overview_attempts: { text: "Podejścia: {n}", reviewed: false },
+  parent_overview_player: { text: "Uczestnik {n}", reviewed: false },
+  parent_overview_question: { text: "Pytanie {n}", reviewed: false },
+  parent_overview_legend: { text: "Legenda", reviewed: false },
+  parent_overview_see_tries: { text: "Zobacz próby", reviewed: false },
+  parent_overview_twin: { text: "Było też podobne pytanie", reviewed: false },
+  parent_overview_tries: { text: "Próby: {n}", reviewed: false },
+  // one line per grid outcome, kind and short
+  parent_outcome_first_try: { text: "Od razu", reviewed: false },
+  parent_outcome_got_there: { text: "Po próbach lub z pomocą", reviewed: false },
+  parent_outcome_not_yet: { text: "Jeszcze nie", reviewed: false },
+  parent_outcome_skipped: { text: "Pominięte", reviewed: false },
+  parent_outcome_open: { text: "W trakcie", reviewed: false },
+  parent_outcome_not_asked: { text: "Nie zadane", reviewed: false },
   parent_mistake_other: { text: "Inna odpowiedź niż ta, której szukaliśmy", reviewed: false },
   // a mistake class in plain words for the parent, never a verdict word (types.ts MISTAKE_CLASSES)
   parent_mistake_other_wrong: { text: "Inna odpowiedź", reviewed: false },
