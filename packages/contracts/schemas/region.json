@@ -8,20 +8,7 @@
     "polygon": {
       "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "x": {
-            "type": "number"
-          },
-          "y": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "x",
-          "y"
-        ],
-        "additionalProperties": false
+        "$ref": "#/$defs/Point"
       }
     }
   },
@@ -29,5 +16,23 @@
     "id",
     "polygon"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "Point": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false
+    }
+  }
 }

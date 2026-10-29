@@ -3,16 +3,13 @@
   "type": "object",
   "properties": {
     "attempt_id": {
-      "type": "string",
-      "pattern": "^att_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/AttemptId"
     },
     "learner_id": {
-      "type": "string",
-      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/LearnerId"
     },
     "claimed_by": {
-      "type": "string",
-      "pattern": "^acc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/AccountId"
     },
     "claimed_at": {
       "type": "string",
@@ -26,5 +23,19 @@
     "claimed_by",
     "claimed_at"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "AttemptId": {
+      "type": "string",
+      "pattern": "^att_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "AccountId": {
+      "type": "string",
+      "pattern": "^acc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    }
+  }
 }

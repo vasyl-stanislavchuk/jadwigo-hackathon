@@ -5,8 +5,7 @@
     "learner_id": {
       "anyOf": [
         {
-          "type": "string",
-          "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+          "$ref": "#/$defs/LearnerId"
         },
         {
           "type": "null"
@@ -32,5 +31,11 @@
       ]
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    }
+  }
 }

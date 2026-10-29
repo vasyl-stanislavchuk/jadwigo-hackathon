@@ -3,6 +3,15 @@
   "type": "object",
   "properties": {
     "language": {
+      "$ref": "#/$defs/Language"
+    }
+  },
+  "required": [
+    "language"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Language": {
       "type": "string",
       "enum": [
         "pl",
@@ -10,9 +19,5 @@
         "uk"
       ]
     }
-  },
-  "required": [
-    "language"
-  ],
-  "additionalProperties": false
+  }
 }

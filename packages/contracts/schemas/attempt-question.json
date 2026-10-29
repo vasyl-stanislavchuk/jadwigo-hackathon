@@ -3,8 +3,7 @@
   "type": "object",
   "properties": {
     "attempt_id": {
-      "type": "string",
-      "pattern": "^att_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/AttemptId"
     },
     "seq": {
       "type": "integer",
@@ -12,28 +11,18 @@
       "maximum": 9007199254740991
     },
     "pod_id": {
-      "type": "string",
-      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/PodId"
     },
     "lesson_question_id": {
-      "type": "string",
-      "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/LessonQuestionId"
     },
     "added": {
-      "type": "string",
-      "enum": [
-        "planned",
-        "twin"
-      ]
+      "$ref": "#/$defs/Added"
     },
     "placed": {
       "anyOf": [
         {
-          "type": "string",
-          "enum": [
-            "now",
-            "review_round"
-          ]
+          "$ref": "#/$defs/Placed"
         },
         {
           "type": "null"
@@ -60,12 +49,7 @@
     "ended": {
       "anyOf": [
         {
-          "type": "string",
-          "enum": [
-            "correct",
-            "skipped",
-            "missed"
-          ]
+          "$ref": "#/$defs/Ended"
         },
         {
           "type": "null"
@@ -90,5 +74,41 @@
     "ended",
     "asked_at"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "AttemptId": {
+      "type": "string",
+      "pattern": "^att_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LessonQuestionId": {
+      "type": "string",
+      "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "Added": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "twin"
+      ]
+    },
+    "Placed": {
+      "type": "string",
+      "enum": [
+        "now",
+        "review_round"
+      ]
+    },
+    "Ended": {
+      "type": "string",
+      "enum": [
+        "correct",
+        "skipped",
+        "missed"
+      ]
+    }
+  }
 }

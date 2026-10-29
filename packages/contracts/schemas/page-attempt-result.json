@@ -8,29 +8,18 @@
       "maximum": 9007199254740991
     },
     "lesson_question_id": {
-      "type": "string",
-      "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/LessonQuestionId"
     },
     "say": {
       "type": "string"
     },
     "added": {
-      "type": "string",
-      "enum": [
-        "planned",
-        "twin"
-      ]
+      "$ref": "#/$defs/Added"
     },
     "ended": {
       "anyOf": [
         {
-          "type": "string",
-          "enum": [
-            "correct",
-            "skipped",
-            "missed",
-            "done"
-          ]
+          "$ref": "#/$defs/PageEnded"
         },
         {
           "type": "null"
@@ -51,5 +40,27 @@
     "ended",
     "help_used"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "LessonQuestionId": {
+      "type": "string",
+      "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "Added": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "twin"
+      ]
+    },
+    "PageEnded": {
+      "type": "string",
+      "enum": [
+        "correct",
+        "skipped",
+        "missed",
+        "done"
+      ]
+    }
+  }
 }

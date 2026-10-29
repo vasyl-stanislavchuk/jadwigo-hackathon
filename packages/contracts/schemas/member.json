@@ -3,23 +3,16 @@
   "type": "object",
   "properties": {
     "id": {
-      "type": "string",
-      "pattern": "^mem_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/MemberId"
     },
     "pod_id": {
-      "type": "string",
-      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/PodId"
     },
     "account_id": {
-      "type": "string",
-      "pattern": "^acc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/AccountId"
     },
     "role": {
-      "type": "string",
-      "enum": [
-        "parent",
-        "self"
-      ]
+      "$ref": "#/$defs/MemberRole"
     },
     "created_at": {
       "type": "string",
@@ -34,5 +27,26 @@
     "role",
     "created_at"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "MemberId": {
+      "type": "string",
+      "pattern": "^mem_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "AccountId": {
+      "type": "string",
+      "pattern": "^acc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "MemberRole": {
+      "type": "string",
+      "enum": [
+        "parent",
+        "self"
+      ]
+    }
+  }
 }

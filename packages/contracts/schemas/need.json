@@ -43,12 +43,7 @@
       "description": "A task to resemble, e.g. a homework problem's text"
     },
     "language": {
-      "type": "string",
-      "enum": [
-        "pl",
-        "en",
-        "uk"
-      ]
+      "$ref": "#/$defs/Language"
     },
     "grade": {
       "type": "string",
@@ -65,5 +60,15 @@
     "grade"
   ],
   "additionalProperties": false,
-  "description": "A search need, from jadwigo-bank schemas/need.schema.json at commit 703b679. It carries at least one of words, skills, can_do or resemble."
+  "description": "A search need, from jadwigo-bank schemas/need.schema.json at commit 703b679. It carries at least one of words, skills, can_do or resemble.",
+  "$defs": {
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en",
+        "uk"
+      ]
+    }
+  }
 }

@@ -11,12 +11,14 @@ import {
   type LearnerAttempts,
   type LearnerSnapshot,
   type Me,
+  type ParentAttemptReview,
   ROUTES,
   type RouteName,
 } from "@jadwigo/contracts";
 import type { Store } from "@jadwigo/store";
 import { beforeEach, describe, expect, it } from "vitest";
-import { pathOf, type Seeded, seeded, start, tryAt } from "./client.ts";
+import { openQuestion, pathOf, type Seeded, seeded, skipAt, start, tryAt } from "./client.ts";
+import { KEY_ONLY } from "./routes.suite.ts";
 import { bearerOf, signToken } from "./token.ts";
 
 const TOKEN_ROUTES = (Object.keys(ROUTES) as RouteName[]).filter(
@@ -64,7 +66,7 @@ export function peopleSuite(name: string, makeStore: () => Store): void {
     }
 
     it("refuses every token route without a token, or with a bad one, as 401 NotSignedIn", async () => {
-      expect(TOKEN_ROUTES).toHaveLength(5);
+      expect(TOKEN_ROUTES).toHaveLength(6);
       const tokens = [
         undefined,
         signToken({}, true),
@@ -76,12 +78,14 @@ export function peopleSuite(name: string, makeStore: () => Store): void {
         for (const token of tokens) {
           const reply = await s.call<ErrorEnvelope>(
             method,
-            path.replace(
-              "{id}",
-              ROUTES[route].path.includes("learners/{id}")
-                ? idOf(ID_PREFIXES.learner, randomUUID())
-                : IDS.id,
-            ),
+            path
+              .replace(
+                "{id}",
+                ROUTES[route].path.includes("learners/{id}")
+                  ? idOf(ID_PREFIXES.learner, randomUUID())
+                  : IDS.id,
+              )
+              .replace("{attempt}", IDS.id),
             {},
             token === undefined ? {} : bearerOf(token),
           );
@@ -231,6 +235,144 @@ export function peopleSuite(name: string, makeStore: () => Store): void {
         { learner_id: child.id },
       );
       expect([refused.status, refused.body.error.type]).toEqual([409, "AttemptPreview"]);
+    });
+
+    describe("the parent's review", () => {
+      /** Plays equal-groups in practice to the end: q1 missed then right, q4 missed then skipped. */
+      async function finishedAttempt(): Promise<string> {
+        const { id } = await start(s, await s.assign("equalGroups"));
+        await tryAt(s, id, await openQuestion(s, id), false);
+        for (let n = 0; n < 3; n++) await tryAt(s, id, await openQuestion(s, id), true);
+        await tryAt(s, id, await openQuestion(s, id), false);
+        const last = await skipAt(s, id, await openQuestion(s, id), "asked_to_skip");
+        expect((last.body as AttemptAnswerResult).attempt_status).toBe("finished");
+        return id;
+      }
+
+      async function claimed(attempt: string) {
+        const p = parent();
+        await p.signUp();
+        const child = await p.addChild("Hedgehog");
+        const claim = await p.call<Claim>("POST", pathOf("claimAttempt", { id: attempt }), {
+          learner_id: child.id,
+        });
+        expect(claim.status).toBe(201);
+        return { p, child };
+      }
+
+      it("reads a claimed attempt's review with every try, its time and its mistake class, never the key", async () => {
+        const id = await finishedAttempt();
+        const { p, child } = await claimed(id);
+        const path = pathOf("getParentReview", { id: child.id, attempt: id });
+        const reply = await p.call<ParentAttemptReview>("GET", path);
+        expect(reply.status).toBe(200);
+        expect(reply.body).toMatchObject({
+          attempt: { id, learner_id: child.id, status: "finished" },
+          title: expect.any(String),
+          language: "pl",
+        });
+        const { questions } = reply.body;
+        expect(
+          questions.map((q) => [q.seq, q.ended, q.tries.map((t) => [t.try_no, t.kind])]),
+        ).toEqual([
+          [
+            1,
+            "correct",
+            [
+              [1, "try"],
+              [2, "try"],
+            ],
+          ],
+          [2, "correct", [[1, "try"]]],
+          [3, "correct", [[1, "try"]]],
+          [
+            4,
+            "skipped",
+            [
+              [1, "try"],
+              [2, "skip"],
+            ],
+          ],
+        ]);
+        const [first, , , fourth] = questions;
+        expect(first?.tries.map((t) => [t.correct, t.latency_ms])).toEqual([
+          [false, 1200],
+          [true, 1200],
+        ]);
+        expect(first?.result).toMatchObject({ seq: 1, tries: 2, first_try_correct: false });
+        // The true-or-false miss names its mistake class; the skip after it ends the question.
+        expect(fourth?.tries[0]?.mistake_class).toBe("false_reject");
+        expect(fourth?.tries[1]).toMatchObject({ value: null, skip_reason: "asked_to_skip" });
+        expect(fourth?.result).toMatchObject({
+          mistake_classes: ["false_reject"],
+          ended: "skipped",
+        });
+        expect(fourth?.result.time_ms).toBeGreaterThan(0);
+        // The last try's answer and marks, and the solution, as the child's review has them.
+        expect(fourth?.parts).toEqual([expect.objectContaining({ correct: false })]);
+        expect(fourth?.answer).not.toEqual(fourth?.solution);
+
+        const text = JSON.stringify(reply.body);
+        for (const absent of [...KEY_ONLY, '"body_hash"', '"event_id"'])
+          expect(text).not.toContain(absent);
+      });
+
+      it("refuses an unfinished attempt with AttemptNotFinished", async () => {
+        const { id, snapshot } = await start(s, await s.assign("equalGroups"));
+        await tryAt(s, id, snapshot.questions[0] as AttemptSnapshot["questions"][number], true);
+        const { p, child } = await claimed(id);
+        const reply = await p.call<ErrorEnvelope>(
+          "GET",
+          pathOf("getParentReview", { id: child.id, attempt: id }),
+        );
+        expect([reply.status, reply.body.error.type]).toEqual([409, "AttemptNotFinished"]);
+      });
+
+      it("refuses a learner of another pod, and another pod's caller, as 404", async () => {
+        const id = await finishedAttempt();
+        const { p, child } = await claimed(id);
+        const stranger = parent();
+        await stranger.signUp();
+        const theirs = await stranger.addChild("Stoat");
+        for (const [caller, learner] of [
+          [stranger, child.id],
+          [p, theirs.id],
+        ] as const) {
+          const reply = await caller.call<ErrorEnvelope>(
+            "GET",
+            pathOf("getParentReview", { id: learner, attempt: id }),
+          );
+          expect([reply.status, reply.body.error.type]).toEqual([404, "NotFound"]);
+        }
+      });
+
+      it("refuses an attempt not claimed for the learner, another child's, and an unknown one as 404", async () => {
+        const unclaimed = await finishedAttempt();
+        const id = await finishedAttempt();
+        const { p, child } = await claimed(id);
+        const sibling = await p.addChild("Mole");
+        for (const [learner, attempt] of [
+          [child.id, unclaimed],
+          [sibling.id, id],
+          [child.id, idOf(ID_PREFIXES.attempt, randomUUID())],
+        ] as const) {
+          const reply = await p.call<ErrorEnvelope>(
+            "GET",
+            pathOf("getParentReview", { id: learner, attempt }),
+          );
+          expect([reply.status, reply.body.error.type]).toEqual([404, "NotFound"]);
+        }
+      });
+
+      it("refuses a caller with no token as 401, and one with no account yet as 409", async () => {
+        const id = await finishedAttempt();
+        const { child } = await claimed(id);
+        const path = pathOf("getParentReview", { id: child.id, attempt: id });
+        const anonymous = await s.call<ErrorEnvelope>("GET", path);
+        expect([anonymous.status, anonymous.body.error.type]).toEqual([401, "NotSignedIn"]);
+        const early = await parent().call<ErrorEnvelope>("GET", path);
+        expect([early.status, early.body.error.type]).toEqual([409, "AccountMissing"]);
+      });
     });
   });
 }

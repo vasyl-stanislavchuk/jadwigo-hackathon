@@ -3,26 +3,21 @@
   "type": "object",
   "properties": {
     "id": {
-      "type": "string",
-      "pattern": "^att_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/AttemptId"
     },
     "pod_id": {
-      "type": "string",
-      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/PodId"
     },
     "assignment_id": {
-      "type": "string",
-      "pattern": "^asg_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/AssignmentId"
     },
     "lesson_version_id": {
-      "type": "string",
-      "pattern": "^lesv_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/LessonVersionId"
     },
     "learner_id": {
       "anyOf": [
         {
-          "type": "string",
-          "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+          "$ref": "#/$defs/LearnerId"
         },
         {
           "type": "null"
@@ -43,12 +38,7 @@
       ]
     },
     "status": {
-      "type": "string",
-      "enum": [
-        "in_progress",
-        "paused",
-        "finished"
-      ]
+      "$ref": "#/$defs/AttemptStatus"
     },
     "resume_at": {
       "anyOf": [
@@ -82,8 +72,7 @@
     "claimed_by": {
       "anyOf": [
         {
-          "type": "string",
-          "pattern": "^acc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+          "$ref": "#/$defs/AccountId"
         },
         {
           "type": "null"
@@ -105,8 +94,7 @@
     "moved_by": {
       "anyOf": [
         {
-          "type": "string",
-          "pattern": "^acc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+          "$ref": "#/$defs/AccountId"
         },
         {
           "type": "null"
@@ -139,5 +127,39 @@
     "started_at",
     "finished_at"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "AttemptId": {
+      "type": "string",
+      "pattern": "^att_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "AssignmentId": {
+      "type": "string",
+      "pattern": "^asg_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LessonVersionId": {
+      "type": "string",
+      "pattern": "^lesv_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "AttemptStatus": {
+      "type": "string",
+      "enum": [
+        "in_progress",
+        "paused",
+        "finished"
+      ]
+    },
+    "AccountId": {
+      "type": "string",
+      "pattern": "^acc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    }
+  }
 }

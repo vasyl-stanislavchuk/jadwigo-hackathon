@@ -5,24 +5,7 @@
     "criteria": {
       "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "text": {
-            "type": "string"
-          },
-          "cite": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "text",
-          "cite"
-        ],
-        "additionalProperties": false
+        "$ref": "#/$defs/Criterion"
       }
     },
     "criteria_version": {
@@ -33,5 +16,27 @@
     "criteria",
     "criteria_version"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "Criterion": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "cite": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "cite"
+      ],
+      "additionalProperties": false
+    }
+  }
 }
