@@ -386,7 +386,8 @@ const READ = /\$(?:\{(\w+)\}|(\w+))/g;
 /**
  * `$S` and `${S}` as the shell sees them at the gh call, which starts at `ghAt`. A name is pinned
  * only by one literal assignment of its own (`S=/a/b`, `export S=/a/b`) before the gh call, in the
- * same shell, that runs whatever ran before it, with nothing else on the line naming it again.
+ * same shell, that runs whatever ran before it, with nothing else on the line naming it again,
+ * and only to an absolute path.
  * Anything else leaves `$S` as it is, and the caller denies: a name set twice or read before it is
  * set; behind if, while, &&, || or a function; in a pipe, a subshell, a group or the background;
  * on the gh call itself (`S=x gh …`); by read, printf -v, source, eval and the like; a line the
@@ -467,7 +468,9 @@ function expandVars(
       const name = p.m?.[1] ?? "";
       const v = PINNED.exec(p.m?.[2] ?? "");
       const value = v?.[1] ?? v?.[2] ?? v?.[3];
-      if (vars.has(name) || twice.has(name) || !lastPinned || value === undefined) {
+      // A relative value would resolve against wherever a cd before the gh call moved to.
+      const relative = value === undefined || !value.startsWith("/");
+      if (vars.has(name) || twice.has(name) || !lastPinned || relative || value === undefined) {
         vars.delete(name);
         twice.add(name);
       } else {
@@ -540,7 +543,9 @@ function prBodyDenial(
   const written = new RegExp(`>>?\\s*['"]?${f}`);
   const unquoted = before.replace(/["']/g, "");
   const touched = (re: RegExp) => re.test(before) || re.test(unquoted);
-  if (touched(edited) || (fresh === undefined && touched(written))) return later;
+  // cp, mv, install, ln and rsync anywhere on a line that names the path may write it.
+  const copied = /(^|[\s;&|])(cp|mv|install|ln|rsync)\s/.test(before) && unquoted.includes(file);
+  if (copied || touched(edited) || (fresh === undefined && touched(written))) return later;
   const home = file.startsWith("~/") ? join(env["HOME"] ?? "~", file.slice(2)) : file;
   const path = isAbsolute(home) ? home : join(cwd ?? ".", home);
   const body = fresh ?? (existsSync(path) ? readFileSync(path, "utf8") : undefined);

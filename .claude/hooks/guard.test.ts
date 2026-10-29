@@ -372,6 +372,27 @@ describe("guard: PR bodies have the /dev-pr shape", () => {
     expect(pr(`P=${good}; gh pr create --title t --body-file '$P'`)).toMatch(/before the command/);
   });
 
+  test("a pinned relative path is denied, since a cd may move it", () => {
+    const other = mkdtempSync(join(tmpdir(), "pr-body-cd-"));
+    for (const sep of [";", " &&"]) {
+      // The hook's cwd holds a good good.md; the shell reads the one in the folder it moved to.
+      const command = `P=good.md; cd ${other}${sep} gh pr create --title t --body-file $P`;
+      const input = { ...bash(command), cwd: dir };
+      expect(denial(input, {}, onBranch("lane/a"))).toMatch(/before the command runs/);
+    }
+  });
+
+  test("cp, mv, install, ln or rsync onto the body file in the same command is a write", () => {
+    for (const tool of ["cp", "mv", "install", "ln -sf", "rsync"]) {
+      expect(pr(`P=${good}; ${tool} ${bad} $P; gh pr create --title t --body-file $P`)).toMatch(
+        /before the command runs/,
+      );
+    }
+    expect(pr(`cp ${bad} ${good} && gh pr create --title t --body-file ${good}`)).toMatch(
+      /before the command runs/,
+    );
+  });
+
   test("a body file written through a quoted path in the same command is not read early", () => {
     expect(pr(`S=${dir}; echo x > "$S"/good.md; gh pr create --body-file $S/good.md`)).toMatch(
       /before the command runs/,
