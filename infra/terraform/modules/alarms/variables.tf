@@ -8,11 +8,21 @@ variable "alarm_email" {
   type        = string
   default     = null
   sensitive   = true
+
+  validation {
+    condition     = var.alarm_email == null || can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", var.alarm_email))
+    error_message = "alarm_email is an address or null; an empty string would fail only at apply."
+  }
 }
 
 variable "function_name" {
   description = "The one Lambda (modules/app)"
   type        = string
+}
+
+variable "function_reserved_concurrency" {
+  description = "The Lambda's reserved concurrency (modules/app). Its own alarm fires at 80% of it"
+  type        = number
 }
 
 variable "api_id" {
