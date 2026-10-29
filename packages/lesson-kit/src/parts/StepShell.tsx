@@ -599,8 +599,20 @@ export function StepShell({
     if (!ended && answerArea.current)
       tallest.current = Math.max(tallest.current, answerArea.current.offsetHeight);
   });
-  // A tap on a field opens the folded tray again (rule 8).
+  // A tap on a field opens the folded tray again (rule 8). The shell's own focus moves (back to the
+  // field when help opens or when the focused bulb goes) hold the fold: the README's Pomóż mi row
+  // keeps the field active and folded until the child taps it (dl-uukj.29.140).
+  const holdFold = useRef(false);
+  const quietly = (move: () => void): void => {
+    holdFold.current = true;
+    try {
+      move();
+    } finally {
+      holdFold.current = false;
+    }
+  };
   const unfold = (event: { target: EventTarget }): void => {
+    if (holdFold.current) return;
     if (event.target instanceof Element && event.target.closest(FIELD)) setFolded(false);
   };
   // The step's keys (stepKeys.ts): Enter, Tab, the arrows and Backspace, the focus after a miss,
@@ -614,7 +626,9 @@ export function StepShell({
     verdict,
     complete: action?.ready === true,
     touch,
-    onFocusField: () => setFolded(false),
+    onFocusField: () => {
+      if (!holdFold.current) setFolded(false);
+    },
   });
   // The miss band folds back to the plain footer once the child edits a marked part (§3.5) or help
   // is out. A view may say itself whether a marked part changed (options, §3.3); else a step with no
@@ -652,7 +666,7 @@ export function StepShell({
     if (open && !wasOpen.current && frame === "laptop") {
       // The bulb that opened it holds its place unseen, so the focus must not stay on it: a
       // step with fields goes back to its field, one without to its text box or the step.
-      if (keys !== null && keys.fields.length > 0) stepKeys.resume();
+      if (keys !== null && keys.fields.length > 0) quietly(stepKeys.resume);
       else if (
         document.activeElement === document.body ||
         document.activeElement?.closest("[data-bulb]")
@@ -686,7 +700,7 @@ export function StepShell({
       return;
     held.current = null;
     if (ended) return;
-    if (keys !== null && keys.fields.length > 0) stepKeys.restore();
+    if (keys !== null && keys.fields.length > 0) quietly(stepKeys.restore);
     else shellRef.current?.closest<HTMLElement>("fieldset")?.focus({ preventScroll: true });
   });
   // The bulb: help from the first frame, while there is help to give or a way out to show.

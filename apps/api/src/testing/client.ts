@@ -83,7 +83,7 @@ export interface Seeded {
    */
   assignLadder(cut: (help: LessonQuestion["help"]) => LessonQuestion["help"]): Promise<string>;
   /** The lesson question behind a page question, key and all, for the test to answer it. */
-  questionOf(page: PageAttemptQuestion): Promise<LessonQuestion>;
+  questionOf(page: Pick<PageAttemptQuestion, "lesson_question_id">): Promise<LessonQuestion>;
 }
 
 export function seeded(store: Store): Seeded {

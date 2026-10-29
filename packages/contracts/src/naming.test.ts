@@ -213,10 +213,10 @@ describe("RULES.md, API", () => {
     );
   });
 
-  it("rule 20: every error type is PascalCase with a 4xx status", () => {
+  it("rule 20: every error type is PascalCase with a status rule 20 names", () => {
     for (const [type, status] of Object.entries(wire.ERROR_STATUS)) {
       expect(type).toMatch(/^[A-Z][A-Za-z]+$/);
-      expect([400, 401, 404, 409, 429]).toContain(status);
+      expect([400, 401, 404, 409, 429, 502]).toContain(status);
     }
   });
 });

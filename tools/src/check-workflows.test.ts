@@ -44,12 +44,14 @@ describe("checkWorkflows", () => {
     skill(root, "workflows", "mk-listen");
     skill(root, ".agents/skills", "jadwigo-drop-publish");
     skill(root, ".agents/skills", "marketing-brief");
-    expect(checkWorkflows(root)).toEqual([
-      "workflows/dev-drop: dev and marketing commands live in .agents/skills/, not with the product workflows",
-      "workflows/mk-listen: dev and marketing commands live in .agents/skills/, not with the product workflows",
-      ".agents/skills/jadwigo-drop-publish: product workflows live in workflows/, linked here",
-      ".agents/skills/marketing-brief: dev commands are dev-<verb>, marketing commands mk-<noun>",
-    ]);
+    expect(checkWorkflows(root).sort()).toEqual(
+      [
+        "workflows/dev-drop: dev and marketing commands live in .agents/skills/, not with the product workflows",
+        "workflows/mk-listen: dev and marketing commands live in .agents/skills/, not with the product workflows",
+        ".agents/skills/jadwigo-drop-publish: product workflows live in workflows/, linked here",
+        ".agents/skills/marketing-brief: dev commands are dev-<verb>, marketing commands mk-<noun>",
+      ].sort(),
+    );
   });
 
   it("fails a SKILL.md in a _ folder under .agents/skills, which agents would still find as a command", () => {
@@ -57,6 +59,14 @@ describe("checkWorkflows", () => {
     skill(root, ".agents/skills", "_draft", "name: anything\ndescription: x");
     expect(checkWorkflows(root)).toEqual([
       ".agents/skills/_draft: a _ folder holds shared parts, not a command; move its SKILL.md",
+    ]);
+  });
+
+  it("fails a SKILL.md nested deeper in a _ folder under .agents/skills", () => {
+    const root = good();
+    skill(root, ".agents/skills/_x", "sub", "name: sub\ndescription: x");
+    expect(checkWorkflows(root)).toEqual([
+      ".agents/skills/_x: a _ folder holds shared parts, not a command; move its sub/SKILL.md",
     ]);
   });
 
