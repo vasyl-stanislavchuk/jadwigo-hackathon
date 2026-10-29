@@ -10,7 +10,10 @@
     "lint": "biome check .",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --config ../../vitest.config.ts --project unit",
-    "seed": "bun src/seed.ts"
+    "seed": "bun src/seed.ts",
+    "check": "bun src/check.ts",
+    "import": "bun src/import-file.ts",
+    "test:int": "vitest run --config ../../vitest.config.ts --project integration"
   },
   "//": {
     "@jadwigo/contracts": "the lesson question, version and assignment records an import writes",
