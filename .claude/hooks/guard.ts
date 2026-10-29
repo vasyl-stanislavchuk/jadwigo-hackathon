@@ -315,6 +315,112 @@ function inDir(dir: string | undefined, path: string): string | undefined {
   return existsSync(full) ? full : undefined;
 }
 
+/** A simple command and the separators written between it and the one before. */
+interface Segment {
+  words: string[];
+  seps: string[];
+}
+
+/** simpleCommands, keeping the separators: (, ), |, ||, &, &&, ; and newline. */
+function segments(text: string): Segment[] {
+  const out: Segment[] = [];
+  let seps: string[] = [];
+  text.split(/(&&|\|\||[;&|()\n])/).forEach((part, i) => {
+    if (i % 2 === 1) {
+      seps.push(part);
+      return;
+    }
+    const words = simpleCommands(part)[0];
+    if (!words) return;
+    out.push({ words, seps });
+    seps = [];
+  });
+  return out;
+}
+
+/** Separators that keep the next command in the same shell, run after the one before. */
+const SEQUENTIAL = new Set(["&&", ";", "\n"]);
+/** Words that may move the shell's folder. Only a plain `cd <path>` among them is followed. */
+const MOVES = /^(cd|pushd|popd|chdir|builtin|eval|source|\.|\{|\})$/;
+
+/**
+ * The folder the command at `k` runs in: the session's `cwd`, moved by each `cd <path>` before
+ * it that is certain to have run when it runs (dl-5ssh.74). A cd is followed only at top level,
+ * only when every separator up to the command is && or ;, and only when it starts a statement or
+ * is joined to the command by && alone. Anything else that may move the folder (a subshell, a
+ * backgrounded or skippable cd, `cd -`, pushd, popd, builtin, eval, braces) or a path the guard
+ * cannot resolve gives back `cwd`: the session's own folder, as main's guard judged every push.
+ */
+function runDir(segs: Segment[], k: number, cwd: string | undefined): string | undefined {
+  const before = segs.slice(0, k);
+  if (!before.some((s) => s.words.some((w) => MOVES.test(w)))) return cwd;
+  const seps = segs.slice(1, k + 1).flatMap((s) => s.seps);
+  if (!seps.every((sep) => SEQUENTIAL.has(sep))) return cwd;
+  let dir = cwd;
+  for (const [i, { words }] of before.entries()) {
+    if (!words.some((w) => MOVES.test(w))) continue;
+    const [prog, path, ...rest] = words;
+    if (prog !== "cd" || path === undefined || path === "-" || rest.length > 0) return cwd;
+    const startsStatement = (segs[i]?.seps ?? []).every((sep) => sep !== "&&");
+    const chained = segs.slice(i + 1, k + 1).every((s) => s.seps.every((sep) => sep === "&&"));
+    if (!startsStatement && !chained) return cwd;
+    const next = inDir(dir, path);
+    if (next === undefined) return cwd;
+    dir = next;
+  }
+  return dir;
+}
+
+/** The folder `git -C a -C b ...` runs in: each -C applied in order, relative to the one before. */
+function gitDir(words: string[], dir: string | undefined): string | undefined {
+  let where = dir;
+  // The same walk over git's own options as gitSub.
+  for (let i = 1; i < words.length && (words[i] ?? "").startsWith("-"); i++) {
+    if (words[i] === "-c") i++;
+    else if (words[i] === "-C") {
+      i++;
+      where = inDir(where, words[i] ?? "");
+      if (where === undefined) return undefined;
+    }
+  }
+  return where;
+}
+
+const PUSH_TO_MAIN =
+  "main is reached only through a PR (squash-merge after ci-ok). Push your branch and open a PR with `gh pr create`.";
+
+/**
+ * A push that lands on main: a refspec naming it, or no refspec from a checkout on main. The line
+ * is read with the quotes around a word undone (`"main"`, `'HEAD:main'`) and any other quoted
+ * string kept as one word the guard cannot resolve. The checkout is the session's cwd, moved by
+ * the cds runDir follows and then by each `git -C` in order. GIT_DIR, GIT_WORK_TREE, --git-dir
+ * and --work-tree are not followed: a line naming one is judged from cwd, as main judged it.
+ */
+function pushToMainDenial(
+  cmd: string,
+  cwd: string | undefined,
+  branchOf: BranchOf,
+): string | undefined {
+  const text = unquoteWords(cmd)
+    .replace(/<<-?\s*(['"]?)(\w+)\1[\s\S]*?\n\2[ \t]*(\n|$)/g, "\n")
+    .replace(/'[^']*'/g, " <quoted> ")
+    .replace(/"(?:[^"\\]|\\.)*"/g, " <quoted> ");
+  const segs = segments(text);
+  const unfollowed = /\bGIT_(DIR|WORK_TREE)\b|--git-dir\b|--work-tree\b/.test(text);
+  for (const [k, { words }] of segs.entries()) {
+    const git = gitSub(words);
+    if (git?.sub !== "push") continue;
+    const refspecs = git.args.filter((a) => !a.startsWith("-")).slice(1);
+    if (refspecs.some((r) => /(^|:)(refs\/heads\/)?main$/.test(r))) return PUSH_TO_MAIN;
+    if (refspecs.length > 0) continue;
+    const where = unfollowed ? cwd : gitDir(words, runDir(segs, k, cwd));
+    // A folder the guard cannot read, or one that is no checkout, is judged as the session's own.
+    const branch = (where === undefined ? undefined : branchOf(where)) ?? branchOf(cwd);
+    if (branch === "main") return PUSH_TO_MAIN;
+  }
+  return undefined;
+}
+
 function bashDenial(
   cmd: string,
   env: Env,
@@ -333,11 +439,8 @@ function bashDenial(
   const deploy = deployDenial(cmd, commands) ?? deployDenial(plain, simpleCommands(plainBare));
   if (deploy) return deploy;
 
-  // The folder each command runs in: the session's, moved by a leading `cd` (dl-5ssh.74).
-  let dir = cwd;
   for (const words of commands) {
     const [prog = "", ...args] = words;
-    if (prog === "cd" && args[0] && args[0] !== "-") dir = inDir(dir, args[0]) ?? cwd;
 
     // 1. gbrain without its isolation env runs against whatever brain the shell points at.
     if (prog === "gbrain") {
@@ -403,16 +506,7 @@ function bashDenial(
         ) {
           return "no force-push. Push a new commit on top, or open a new branch.";
         }
-        const refspecs = gargs.filter((a) => !a.startsWith("-")).slice(1);
-        const toMain = refspecs.some((r) => /(^|:)(refs\/heads\/)?main$/.test(r));
-        const at = words.indexOf("-C");
-        const where = at > 0 && words[at + 1] ? inDir(dir, words[at + 1] ?? "") : dir;
-        // A folder the guard cannot read is judged as the session's own, never as "no branch".
-        const branch = (where === undefined ? undefined : branchOf(where)) ?? branchOf(cwd);
-        const implicit = refspecs.length === 0 && branch === "main";
-        if (toMain || implicit) {
-          return "main is reached only through a PR (squash-merge after ci-ok). Push your branch and open a PR with `gh pr create`.";
-        }
+        // A push to main is pushToMainDenial's, below: it reads the folder and unquotes the words.
       }
       if (
         sub === "add" &&
@@ -467,6 +561,9 @@ function bashDenial(
       return "bd update --notes replaces the whole notes field. Use --append-notes.";
     }
   }
+
+  const toMain = pushToMainDenial(cmd, cwd, branchOf);
+  if (toMain) return toMain;
 
   // Prod through the environment: AWS_PROFILE=prod-admin aws s3 ls
   const prodProfile = assignments(bare).find((a) => /^AWS_PROFILE=\S*prod/i.test(a));

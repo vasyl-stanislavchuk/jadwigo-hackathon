@@ -286,6 +286,60 @@ describe("guard: Bash", () => {
     expect(from(`cd ${root} && git push`)).toMatch(/through a PR/);
   });
 
+  describe("a cd the push may not run after is not followed (dl-5ssh.74 review)", () => {
+    const root = mkdtempSync(join(tmpdir(), "guard-cd-"));
+    const lane = join(root, "lane");
+    const checkout = join(root, "main-checkout");
+    mkdirSync(lane);
+    mkdirSync(checkout);
+    const branches: Record<string, string> = { [lane]: "dl-x.1/y", [checkout]: "main" };
+    const from = (command: string) =>
+      denial({ ...bash(command), cwd: checkout }, {}, (cwd) => branches[cwd ?? ""]);
+
+    test.each([
+      ["a cd in a subshell", `(cd ${lane}) && git push`],
+      ["a cd a failed && skips", `false && cd ${lane}; git push`],
+      ["a backgrounded cd", `cd ${lane} & git push`],
+      ["a cd after ||", `true || cd ${lane} && git push`],
+      ["cd - back", `cd ${lane} && cd - && git push`],
+      ["pushd back", `cd ${lane} && pushd ${checkout} && git push`],
+      ["popd back", `pushd ${lane} && popd && git push`],
+      ["builtin cd back", `cd ${lane} && builtin cd ${checkout} && git push`],
+      ["a cd inside braces", `cd ${lane} && { cd ${checkout}; } && git push`],
+      ["--git-dir names main's checkout", `cd ${lane} && git --git-dir=${checkout}/.git push`],
+      ["GIT_DIR names main's checkout", `cd ${lane} && GIT_DIR=${checkout}/.git git push`],
+    ])("%s is judged from the session's cwd, on main", (_name, command) => {
+      expect(from(command)).toMatch(/through a PR/);
+    });
+
+    test.each([
+      ["a double-quoted main", `cd ${lane} && git push origin "main"`],
+      ["a single-quoted HEAD:main", `cd ${lane} && git push origin 'HEAD:main'`],
+      ["a quoted refs/heads/main", `cd ${lane} && git push origin "HEAD:refs/heads/main"`],
+      ["git -C with a quoted folder", `cd ${lane} && git -C "${checkout}" push`],
+      ["git -C with a quoted dot and main", `cd ${lane} && git -C "." push origin main`],
+    ])("%s is a push to main", (_name, command) => {
+      expect(from(command)).toMatch(/through a PR/);
+    });
+
+    test.each([
+      ["-C main after -C lane", `git -C ${lane} -C ${checkout} push`],
+      ["-C relative to the one before", `git -C ${lane} -C ../main-checkout push`],
+    ])("each git -C applies in order: %s", (_name, command) => {
+      expect(from(command)).toMatch(/through a PR/);
+    });
+
+    test.each([
+      ["cd then push", `cd ${lane} && git push`],
+      ["cd; push", `cd ${lane}; git push`],
+      ["cd, push, then a pipe", `cd ${lane} && git push 2>&1 | tail -5`],
+      ["two -C in order", `git -C ${root} -C lane push`],
+      ["a quoted feature refspec", `cd ${lane} && git push origin "dl-x.1/y"`],
+    ])("a feature-branch push stays allowed: %s", (_name, command) => {
+      expect(from(command)).toBeUndefined();
+    });
+  });
+
   test("exec with a long run of -a stays linear (dl-5ssh.56)", () => {
     const line = `exec ${"-a ".repeat(20_000)}make db-push`;
     const start = performance.now();
