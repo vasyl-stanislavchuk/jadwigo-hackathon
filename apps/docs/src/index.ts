@@ -10,6 +10,8 @@ export const apiBase = `https://${hosts.prod.app}`;
 export interface SidebarGroup {
   readonly label: string;
   readonly items: readonly string[];
+  /** A directory whose pages follow the items, under its own label: pages the build generates. */
+  readonly generated?: { readonly label: string; readonly directory: string };
 }
 
 /**
@@ -23,7 +25,7 @@ export const SIDEBAR: readonly SidebarGroup[] = [
   },
   // Filled by starlight-openapi from public/openapi.json (astro.config.mjs).
   { label: "API reference", items: [] },
-  { label: "MCP", items: ["mcp"] },
+  { label: "MCP", items: ["mcp"], generated: { label: "Tools", directory: "mcp" } },
   { label: "Design system", items: ["design-system"] },
   { label: "Architecture", items: ["architecture"] },
 ];
@@ -31,5 +33,15 @@ export const SIDEBAR: readonly SidebarGroup[] = [
 /** SIDEBAR in the shape Starlight's `sidebar` option takes. */
 export const sidebar = SIDEBAR.map((group) => ({
   label: group.label,
-  items: group.items.map((slug) => ({ slug })),
+  items: [
+    ...group.items.map((slug) => ({ slug })),
+    ...(group.generated
+      ? [
+          {
+            label: group.generated.label,
+            items: [{ autogenerate: { directory: group.generated.directory } }],
+          },
+        ]
+      : []),
+  ],
 }));

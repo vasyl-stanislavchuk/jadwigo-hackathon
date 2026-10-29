@@ -12,6 +12,7 @@
     "preview": "astro preview",
     "check:dist": "bun scripts/check-dist.ts",
     "lint": "biome check .",
+    "pretypecheck": "bun scripts/prepare.ts",
     "typecheck": "astro check && tsc -p tsconfig.json",
     "test": "vitest run --config ../../vitest.config.ts --project unit"
   },
@@ -29,10 +30,12 @@
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit tests with the root vitest.config.ts",
     "@jadwigo/config": "hosts.prod.docs and hosts.prod.app: the site's own URL and the API's base URL (src/index.ts)",
-    "@jadwigo/contracts": "ERROR_STATUS, ROUTES and ROUTE_TAGS: the guides' generated tables, the guide path test and the API reference's tags (src/lib)"
+    "@jadwigo/contracts": "ERROR_STATUS, ROUTES and ROUTE_TAGS: the guides' generated tables, the guide path test and the API reference's tags (src/lib); the schemas each MCP tool's output follows (src/lib/mcp-output.ts)",
+    "@jadwigo/cli": "mcp-tools.json, read as a file by prepare.ts and the MCP pages; the edge makes turbo --affected rerun the docs on a CLI change; nothing imports it, so knip.json ignores it"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",
+    "@jadwigo/cli": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

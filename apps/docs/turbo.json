@@ -8,6 +8,12 @@
         "$TURBO_ROOT$/packages/contracts/openapi.json",
         "$TURBO_ROOT$/apps/cli/mcp-tools.json"
       ]
+    },
+    "test": {
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/cli/mcp-tools.json"]
+    },
+    "typecheck": {
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/cli/mcp-tools.json"]
     }
   }
 }

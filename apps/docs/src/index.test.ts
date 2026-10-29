@@ -24,4 +24,11 @@ describe("SIDEBAR", () => {
     expect(sidebar.map((group) => group.label)).toEqual(SIDEBAR.map((group) => group.label));
     expect(sidebar[0]?.items[0]).toEqual({ slug: "guides/introduction" });
   });
+
+  it("lists the MCP tool pages the build generates after the overview", () => {
+    expect(sidebar.find((group) => group.label === "MCP")?.items).toEqual([
+      { slug: "mcp" },
+      { label: "Tools", items: [{ autogenerate: { directory: "mcp" } }] },
+    ]);
+  });
 });
