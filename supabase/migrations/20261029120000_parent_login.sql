@@ -117,9 +117,11 @@ begin
     if new.claimed_by is not null or new.moved_by is not null then
       raise exception 'an attempt starts unclaimed' using errcode = 'restrict_violation';
     end if;
+    -- foreign_key_violation, as the composite key it replaces raised: the store answers NotFound
+    -- for another pod's learner or an unknown one, as InMemoryStore does.
     if new.learner_id is not null and app.learner_pod(new.learner_id) is distinct from new.pod_id then
       raise exception 'a named attempt''s learner is in the attempt''s pod'
-        using errcode = 'restrict_violation';
+        using errcode = 'foreign_key_violation', constraint = 'attempt_learner_in_pod';
     end if;
     return new;
   end if;
@@ -223,10 +225,12 @@ begin
 end
 $$;
 
--- A pod reads the attempts its learners claimed, with their questions and answers, and the
--- content of the pod they were played in (the lesson, its version and questions, the assignment).
--- Read only: every write still needs pod_id to be the caller's. Each subquery is uncorrelated and
--- starts from the caller's learners, so the login-free path, whose pod has none, pays almost nothing.
+-- A pod reads the attempts its learners claimed, with their questions and answers, and only the
+-- content those attempts point at: the attempt's lesson version, that version's lesson and the
+-- attempt's assignment. Nothing else of the pod they were played in: no other lesson or draft, no
+-- other assignment. Read only: every write still needs pod_id to be the caller's. Each subquery is
+-- uncorrelated and starts from the caller's learners, so the login-free path, whose pod has none,
+-- pays almost nothing.
 create policy claimed_read on attempt for select
   using (learner_id in (select id from learner));
 
@@ -240,14 +244,93 @@ begin
       '(select a.id from attempt as a where a.learner_id in (select id from learner)))', t
     );
   end loop;
-  foreach t in array array['lesson', 'lesson_version', 'lesson_question', 'assignment'] loop
-    execute format(
-      'create policy claimed_read on %I for select using (pod_id in '
-      '(select a.pod_id from attempt as a where a.learner_id in (select id from learner)))', t
-    );
-  end loop;
 end
 $$;
+
+create policy claimed_read on lesson_version for select
+  using (id in (select a.lesson_version_id from attempt as a where a.learner_id in (select id from learner)));
+
+create policy claimed_read on assignment for select
+  using (id in (select a.assignment_id from attempt as a where a.learner_id in (select id from learner)));
+
+create policy claimed_read on lesson for select
+  using (id in (
+    select v.lesson_id from lesson_version as v
+    where v.id in (select a.lesson_version_id from attempt as a where a.learner_id in (select id from learner))
+  ));
+
+-- lesson_question gets no claimed_read: every row carries its answer key, a policy picks rows and
+-- not columns, and the column grant is jadwigo_api's, which grades with key in its own pod.
+-- packages/contracts/RULES.md says a response never carries a key, and the decision in force
+-- (jadwigo-platform/notes/2026-10-29-a-claimed-attempt-stays-in-jadwigo-s-pod-the-parent-s-pod-reads)
+-- does not say the parent reads one, so the database is the second wall: the claimer's pod reads no
+-- lesson_question row. The results still name each question: attempt_result reads its face (say,
+-- family, question_type), never its key, through app.asked_question() below.
+
+-- The face of the question an attempt asked at seq, for a caller that reads the attempt: its own
+-- pod's, or one its learner claimed. Past row-level security, so it checks the caller itself, and,
+-- as row-level security does, lets a superuser through (is_superuser is the session's role, which
+-- a security definer call leaves alone; set role jadwigo_api turns it off).
+create function app.asked_question(attempt_id uuid, seq integer)
+returns table (say text, family family, question_type question_type)
+language sql stable security definer set search_path = public, pg_temp
+as $$
+  select q.say, q.family, q.question_type
+  from attempt_question as aq
+  join attempt as a on a.id = aq.attempt_id
+  join lesson_question as q on q.pod_id = aq.pod_id and q.id = aq.lesson_question_id
+  where aq.attempt_id = asked_question.attempt_id
+    and aq.seq = asked_question.seq
+    and (
+      a.pod_id = app.current_pod_id()
+      or (select l.pod_id from learner as l where l.id = a.learner_id) = app.current_pod_id()
+      or current_setting('is_superuser') = 'on'
+    )
+$$;
+
+-- attempt_result as in 20261027120000_core_v0.sql, the same columns, with the question's face read
+-- through app.asked_question() in place of a join on lesson_question.
+create or replace view attempt_result with (security_invoker = true) as
+select
+  aq.pod_id,
+  aq.attempt_id,
+  aq.seq,
+  aq.lesson_question_id,
+  aq.added,
+  aq.placed,
+  aq.added_for,
+  lq.say,
+  lq.family,
+  lq.question_type,
+  coalesce(s.tries, 0) as tries,
+  coalesce(s.first_try_correct, false) as first_try_correct,
+  coalesce(aq.ended = 'correct', false) as correct,
+  coalesce(m.mistake_classes, '{}') as mistake_classes,
+  coalesce(s.help_used, 0) as help_used,
+  s.skip_reason,
+  coalesce(s.time_ms, 0) as time_ms,
+  aq.ended
+from attempt_question as aq
+cross join lateral app.asked_question(aq.attempt_id, aq.seq) as lq
+left join lateral (
+  select
+    (count(*) filter (where a.kind = 'try'))::integer as tries,
+    bool_or(a.try_no = 1 and a.kind = 'try' and a.correct) as first_try_correct,
+    max(a.help_used) as help_used,
+    (array_agg(a.skip_reason order by a.try_no desc) filter (where a.kind = 'skip'))[1] as skip_reason,
+    sum(a.latency_ms)::integer as time_ms
+  from attempt_answer as a
+  where a.attempt_id = aq.attempt_id and a.seq = aq.seq
+) as s on true
+left join lateral (
+  select array_agg(c.mistake_class order by c.first_try_no) as mistake_classes
+  from (
+    select a.mistake_class, min(a.try_no) as first_try_no
+    from attempt_answer as a
+    where a.attempt_id = aq.attempt_id and a.seq = aq.seq and a.mistake_class is not null
+    group by a.mistake_class
+  ) as c
+) as m on true;
 
 -- The API reads and adds people; it changes and deletes none. A claim goes through
 -- app.claim_attempt(), never an update of attempt.
