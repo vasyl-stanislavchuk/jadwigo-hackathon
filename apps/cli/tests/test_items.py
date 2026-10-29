@@ -91,6 +91,14 @@ def test_an_english_item_loads_when_english_is_asked_for() -> None:
     assert view["credit"]["original_lang"] == "en"
 
 
+@pytest.mark.parametrize("language", ["pl", "en"])
+def test_a_multi_item_plays_in_the_language_asked_for(language: str) -> None:
+    view = items.load_item("item_m1", language=language)
+
+    assert view["language"] == language
+    assert view["question"]["key"] == {"accept": ["7"]}
+
+
 def test_a_missing_file_raises_with_the_setting_in_the_hint(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -110,7 +118,7 @@ def test_a_missing_id_names_the_file_its_count_and_the_setting() -> None:
 
     assert "item_zz" in str(caught.value)
     assert str(FIXTURE) in caught.value.hint
-    assert "3 items" in caught.value.hint
+    assert "4 items" in caught.value.hint
     assert JW_KHAN_CONVERTED in caught.value.hint
 
 

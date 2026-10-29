@@ -18,6 +18,8 @@ from typing import Any
 from jw import settings_keys
 from jw.errors import JwError
 
+MULTI = "multi"  # the language of a language-neutral item
+
 _FILE_HINT = (
     f"Set {settings_keys.JW_KHAN_CONVERTED} to the converted items file, or run the Polish "
     "conversion (bead dl-e8ov.5.38.1)."
@@ -87,7 +89,8 @@ def load_item(item_id: str, language: str = "pl") -> dict[str, Any]:
             hint=f"{path} holds {len(items)} items; "
             f"{settings_keys.JW_KHAN_CONVERTED} picks the file.",
         )
-    if item.get("language") != language:
+    # A "multi" item is numbers only: it plays in any language and takes the one asked for.
+    if item.get("language") not in (language, MULTI):
         raise JwError(
             f"item {item_id} is in {item.get('language')!r}, not {language!r}",
             hint=f"Ask for --language {item.get('language')}, or set "
@@ -104,7 +107,7 @@ def load_item(item_id: str, language: str = "pl") -> dict[str, Any]:
         )
     return {
         "id": item_id,
-        "language": item["language"],
+        "language": language,
         "family": spec["family"],
         "problem_type": item.get("problem_type"),
         "question_type": spec.get("question_type"),

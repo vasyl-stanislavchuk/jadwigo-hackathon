@@ -108,6 +108,41 @@
       "order": "0003",
       "source_url": "https://example.test/items/item_e1",
       "status": { "kind": "plays" }
+    },
+    {
+      "id": "item_m1",
+      "family": "enter",
+      "problem_type": "type_a",
+      "grade": 1,
+      "language": "multi",
+      "question": { "text": "5 + 2 = ?", "pictures": [] },
+      "spec": {
+        "id": "item_m1",
+        "family": "enter",
+        "phase": "practice",
+        "question_type": "production",
+        "say": "5 + 2 = ?",
+        "data": {
+          "input": "number",
+          "entry": "keypad",
+          "figure": { "kind": "expression", "text": "5 + 2 = ?" }
+        },
+        "key": { "accept": ["7"] },
+        "help": { "show": "5 + 2 = 7" }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "item_m1",
+        "original_lang": "en",
+        "checked": "2026-10-29"
+      },
+      "exercise": "addition-to-10",
+      "exercise_title": "Addition to 10",
+      "lesson_title": "Adding small numbers",
+      "unit_title": "Addition",
+      "order": "0004",
+      "source_url": "https://example.test/items/item_m1",
+      "status": { "kind": "plays" }
     }
   ]
 }
