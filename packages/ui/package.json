@@ -14,6 +14,7 @@
     "test": "vitest run --config ../../vitest.config.ts --project unit --project dom"
   },
   "//": {
+    "@jadwigo/testing": "the design-system check its tokens.test.ts runs (checkTokens), tests only",
     "@fontsource/andika": "Andika, the Zeszyt type a child reads, loaded by src/styles/tailwind.css",
     "@testing-library/dom": "@testing-library/react's required peer: the queries themselves",
     "@testing-library/react": "renders a component in a *.test.tsx and queries it the way a person would",
@@ -33,6 +34,7 @@
     "vitest": "runs this package's unit test with the root vitest.config.ts"
   },
   "devDependencies": {
+    "@jadwigo/testing": "workspace:*",
     "@testing-library/dom": "catalog:",
     "@testing-library/react": "catalog:",
     "@types/node": "catalog:",
