@@ -185,8 +185,8 @@ and the PR link.
 - The PR body has the `/dev-pr` shape: Summary (one small visual), Evidence (before and
   after), Merge Danger (door and blast radius). CI checks the headings.
 - **One-way doors in this repo**, never called two-way: a migration under `supabase/`; a change to
-  a `packages/contracts/schemas/*.json` snapshot; anything that deletes, moves or exports learner
-  data; `infra/bootstrap/` and anything that changes IAM; a deploy, a publish or an email.
+  a `packages/contracts/schemas/*.json` snapshot or to `packages/contracts/openapi.json`, the API
+  document docs.jadwigo.pl publishes; anything that deletes, moves or exports learner data; `infra/bootstrap/` and anything that changes IAM; a deploy, a publish or an email.
 - After a merge that changes `docs/`, run `md context repo sync --project jadwigo-platform`.
 
 ## Fences
