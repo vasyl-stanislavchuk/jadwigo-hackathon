@@ -68,3 +68,13 @@ variable "bank_search_alias_param" {
   type        = string
   default     = "/jadwigo/bank/search-alias-arn"
 }
+
+variable "reserved_concurrency" {
+  description = "Instances the function may run at once. Each holds 1 pooled connection, so this stays below the Supabase pooler's client limit"
+  type        = number
+
+  validation {
+    condition     = var.reserved_concurrency >= 1
+    error_message = "reserved_concurrency is at least 1; 0 would stop the function."
+  }
+}

@@ -4,8 +4,9 @@ variable "name" {
 }
 
 variable "alarm_email" {
-  description = "The address the topic mails. The owner confirms the subscription from the first message"
+  description = "The address the topic mails. The owner confirms the subscription from the first message. null: no subscription"
   type        = string
+  default     = null
   sensitive   = true
 }
 
@@ -19,10 +20,15 @@ variable "api_id" {
   type        = string
 }
 
-variable "concurrency_alarm_at" {
-  description = "Account-wide concurrent executions that raise the alarm: 80% of the account's Lambda quota (1000 on 2026-10-28)"
+variable "lambda_concurrency_quota" {
+  description = "The account's Lambda concurrent executions quota (Service Quotas L-B99A9384): 1000 since 2026-10-28, case 179318942100525. The alarm fires at 80% of it"
   type        = number
-  default     = 800
+  default     = 1000
+
+  validation {
+    condition     = var.lambda_concurrency_quota >= 1
+    error_message = "lambda_concurrency_quota is the account's quota, at least 1."
+  }
 }
 
 variable "ses_bounce_rate" {
