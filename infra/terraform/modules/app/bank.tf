@@ -46,6 +46,12 @@ data "aws_iam_policy_document" "bank" {
     resources = [aws_ssm_parameter.bank_read_token.arn]
   }
 
+  statement {
+    sid       = "ReadsTheContentBucketName"
+    actions   = ["ssm:GetParameter"]
+    resources = [var.content_bucket_param_arn]
+  }
+
   # The content bucket's questions/ and khan/converted/ (dl-n9fr.43.2), and no other prefix: not
   # khan/media/, which CloudFront serves, nor khan/raw/. The bank's search function gets no grant.
   statement {

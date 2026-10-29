@@ -80,5 +80,6 @@ module "app" {
   reserved_concurrency = var.app_reserved_concurrency
 
   # The api role reads questions/* and khan/converted/* in it (modules/app/bank.tf).
-  content_bucket_name = module.content.bucket_name
+  content_bucket_name      = module.content.bucket_name
+  content_bucket_param_arn = module.content.bucket_param_arn
 }
