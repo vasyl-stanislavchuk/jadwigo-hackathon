@@ -10,6 +10,7 @@ import {
   AssignmentId,
   AttemptId,
   type Claim,
+  type LearnerAttempts,
   LearnerId,
   type LearnerSnapshot,
   type Me,
@@ -83,6 +84,7 @@ function client(changes: Partial<ParentClient>): ParentClient {
     createLearner: refused,
     claimAttempt: refused,
     getLearnerAttempts: async () => ({ learner: snapshot.learner, attempts: [] }),
+    getParentReview: refused,
     ...changes,
   };
 }
@@ -247,5 +249,42 @@ describe("ParentScreen", () => {
     render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
     await screen.findByText("Jeszcze nie ma tu lekcji.");
     expect(api.createAccount).toHaveBeenCalledTimes(1);
+  });
+
+  it("links each lesson on the home to its attempt page, keeping its list, and opens it", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const attempts = {
+      learner: snapshot.learner,
+      attempts: [
+        {
+          attempt: { id: ATTEMPT, started_at: AT },
+          title: "Równe grupy",
+          results: [
+            { seq: 1, say: "Ile to 3 razy 4?", ended: "correct" },
+            { seq: 2, say: "Ile to 2 razy 5?", ended: "missed" },
+          ],
+        },
+      ],
+    } as unknown as LearnerAttempts;
+    const getParentReview = vi.fn(async () => {
+      throw new ApiError("not finished", 409, "AttemptNotFinished");
+    });
+    const api = client({
+      getMe: async () => me([snapshot]),
+      getLearnerAttempts: async () => attempts,
+      getParentReview,
+    });
+    render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
+    await screen.findByText("Równe grupy");
+    const lesson = document.querySelector(`li[data-attempt="${ATTEMPT}"]`);
+    expect(lesson?.querySelectorAll("li[data-seq]")).toHaveLength(2);
+    const link = lesson?.querySelector("a[data-attempt-link]");
+    expect(link?.getAttribute("href")).toBe(`/parent/attempts/${ATTEMPT}?learner=${LEARNER}`);
+
+    await press("a[data-attempt-link]");
+    expect(window.location.pathname).toBe(`/parent/attempts/${ATTEMPT}`);
+    await screen.findByText("Coś się zacięło. Poproś rodzica o pomoc.");
+    expect(getParentReview).toHaveBeenCalledWith(LEARNER, ATTEMPT);
   });
 });

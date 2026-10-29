@@ -90,6 +90,7 @@ function client(changes: Partial<AttemptClient>): AttemptClient {
     help: refused,
     patchAttempt: refused,
     getResults: refused,
+    getReview: refused,
     ...changes,
   };
 }

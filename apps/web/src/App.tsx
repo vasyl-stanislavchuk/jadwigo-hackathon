@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { useEffect } from "react";
 import { ParentScreen } from "./parent/ParentScreen.tsx";
-import { PARENT_PATH } from "./parent/route.ts";
+import { isParentPath } from "./parent/route.ts";
 import { HomeScreen } from "./play/HomeScreen.tsx";
 import { LessonNotFound, PlayScreen } from "./play/PlayScreen.tsx";
 import { playRoute } from "./play/route.ts";
@@ -14,6 +14,7 @@ import { navigate, queryLanguage, useLocation } from "./playground/route.ts";
  *   /                  the featured lessons, each a link to its player, with no login
  *   /play/<id>         the lesson player
  *   /parent            the parent's sign-in and home (dl-e8ov.2.38)
+ *   /parent/attempts/<id>  one finished lesson for the parent (dl-uukj.30.2)
  *   /playground/...    the question-type gallery, at an unlisted path (decision
  *                      2026-10-28-the-question-type-gallery-ships-at-app-jadwigo-pl-playground-wit)
  *
@@ -22,7 +23,7 @@ import { navigate, queryLanguage, useLocation } from "./playground/route.ts";
 export function App(): ReactElement | null {
   const { path, query } = useLocation();
   const inPlayground = path.startsWith("/playground");
-  const inParent = path === PARENT_PATH || path === `${PARENT_PATH}/`;
+  const inParent = isParentPath(path);
   const home = path === "/";
   const play = inPlayground || inParent || home ? null : playRoute(path);
   const elsewhere = !inPlayground && !inParent && !home && play === null;
