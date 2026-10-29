@@ -1,7 +1,10 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { ERROR_STATUS, ROUTES } from "@jadwigo/contracts";
+import { QUESTION_TYPES } from "@jadwigo/lesson-kit/question-types";
 import { apiBase, servedHost } from "../index.ts";
+import { gallery } from "./question-types.ts";
+import { foundation } from "./tokens.ts";
 
 /** A file the built site must have, and a text it must carry. */
 export const MUST: readonly (readonly [file: string, text: string])[] = [
@@ -15,7 +18,9 @@ export const MUST: readonly (readonly [file: string, text: string])[] = [
   ["guides/first-call/index.html", ROUTES.featuredLessons.path],
   ["api/index.html", "API reference"],
   ["mcp/index.html", "MCP"],
-  ["design-system/index.html", "Design system"],
+  ["design-system/index.html", gallery],
+  ["design-system/tokens/index.html", `<code>--${foundation().roles.at(-1)?.name}</code>`],
+  ["design-system/question-types/index.html", `<code>${QUESTION_TYPES.at(-1)?.name}</code>`],
   ["architecture/index.html", "Architecture"],
   ["404.html", "Page not found"],
   ["llms.txt", `https://${servedHost}/llms-full.txt`],

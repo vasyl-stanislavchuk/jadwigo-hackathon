@@ -26,7 +26,9 @@
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit tests with the root vitest.config.ts",
     "@jadwigo/config": "hosts.prod.docs and hosts.prod.app: the site's own URL and the API's base URL (src/index.ts)",
-    "@jadwigo/contracts": "ERROR_STATUS, the source of the Errors guide's table (src/lib/errors.ts)"
+    "@jadwigo/contracts": "ERROR_STATUS, the source of the Errors guide's table (src/lib/errors.ts)",
+    "@jadwigo/lesson-kit": "QUESTION_TYPES, the source of the Question types page's table (src/lib/question-types.ts)",
+    "@jadwigo/ui": "foundation.css, Zeszyt's tokens, the source of the Tokens page's tables (src/lib/tokens.ts)"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",
@@ -39,6 +41,8 @@
     "@astrojs/starlight": "0.42.6",
     "@jadwigo/config": "workspace:*",
     "@jadwigo/contracts": "workspace:*",
+    "@jadwigo/lesson-kit": "workspace:*",
+    "@jadwigo/ui": "workspace:*",
     "astro": "7.4.2",
     "starlight-links-validator": "0.27.0",
     "starlight-llms-txt": "0.12.0"

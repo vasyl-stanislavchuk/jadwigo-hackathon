@@ -23,7 +23,16 @@ export const SIDEBAR: readonly SidebarGroup[] = [
   },
   { label: "API reference", items: ["api"] },
   { label: "MCP", items: ["mcp"] },
-  { label: "Design system", items: ["design-system"] },
+  {
+    label: "Design system",
+    items: [
+      "design-system",
+      "design-system/tokens",
+      "design-system/primitives",
+      "design-system/question-types",
+      "design-system/copy",
+    ],
+  },
   { label: "Architecture", items: ["architecture"] },
 ];
 
