@@ -264,6 +264,20 @@ describe("guard: Bash", () => {
     expect(denial(bash("git push"), {}, onBranch("dl-5ssh.34.3/ci"))).toBeUndefined();
   });
 
+  test("a bare git push reads the branch of the folder a leading cd or git -C names", () => {
+    const at = (dirs: Record<string, string>) => (cwd: string | undefined) =>
+      dirs[cwd ?? ""] ?? "main";
+    const lanes = at({ "/w/lane": "dl-x.1/y", "/w/main-checkout": "main" });
+    const from = (command: string) =>
+      denial({ ...bash(command), cwd: "/w/main-checkout" }, {}, lanes);
+    expect(from("cd /w/lane && git push")).toBeUndefined();
+    expect(from("cd ../lane && git push -u origin")).toBeUndefined();
+    expect(from("git -C /w/lane push")).toBeUndefined();
+    expect(from("cd /w/lane && git -C ../main-checkout push")).toMatch(/through a PR/);
+    expect(from("git push")).toMatch(/through a PR/);
+    expect(from("cd /w/lane && git push origin main")).toMatch(/through a PR/);
+  });
+
   test("exec with a long run of -a stays linear (dl-5ssh.56)", () => {
     const line = `exec ${"-a ".repeat(20_000)}make db-push`;
     const start = performance.now();

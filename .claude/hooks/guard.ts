@@ -12,7 +12,7 @@
 
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { extname, isAbsolute, join, relative } from "node:path";
+import { extname, isAbsolute, join, relative, resolve } from "node:path";
 import { checkPrBody } from "../../tools/src/check-pr-body.ts";
 
 export interface HookInput {
@@ -305,6 +305,13 @@ function prBodyDenial(
   return undefined;
 }
 
+/** `path` as the shell resolves it from `dir`, with ~ expanded. */
+function inDir(dir: string | undefined, path: string): string {
+  const home =
+    path === "~" || path.startsWith("~/") ? join(process.env["HOME"] ?? "~", path.slice(1)) : path;
+  return resolve(dir ?? ".", home);
+}
+
 function bashDenial(
   cmd: string,
   env: Env,
@@ -323,8 +330,11 @@ function bashDenial(
   const deploy = deployDenial(cmd, commands) ?? deployDenial(plain, simpleCommands(plainBare));
   if (deploy) return deploy;
 
+  // The folder each command runs in: the session's, moved by a leading `cd` (dl-5ssh.74).
+  let dir = cwd;
   for (const words of commands) {
     const [prog = "", ...args] = words;
+    if (prog === "cd" && args[0] && args[0] !== "-") dir = inDir(dir, args[0]);
 
     // 1. gbrain without its isolation env runs against whatever brain the shell points at.
     if (prog === "gbrain") {
@@ -392,7 +402,9 @@ function bashDenial(
         }
         const refspecs = gargs.filter((a) => !a.startsWith("-")).slice(1);
         const toMain = refspecs.some((r) => /(^|:)(refs\/heads\/)?main$/.test(r));
-        const implicit = refspecs.length === 0 && branchOf(cwd) === "main";
+        const at = words.indexOf("-C");
+        const where = at > 0 && words[at + 1] ? inDir(dir, words[at + 1] ?? "") : dir;
+        const implicit = refspecs.length === 0 && branchOf(where) === "main";
         if (toMain || implicit) {
           return "main is reached only through a PR (squash-merge after ci-ok). Push your branch and open a PR with `gh pr create`.";
         }
