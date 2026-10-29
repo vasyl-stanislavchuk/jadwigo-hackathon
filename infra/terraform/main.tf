@@ -14,6 +14,23 @@ module "site" {
   bucket_name = "jadwigo-site-${var.environment}-843109108289"
 }
 
+# The public docs at docs.<apex>: apps/docs, a static Starlight build, in the apex's zone and with no
+# www (dl-5ssh.90, jadwigo-platform/notes/2026-10-29-jadwigo-s-docs-are-a-starlight-site-at-docs-jadwigo-pl-generated).
+module "docs" {
+  source = "./modules/site"
+
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
+
+  domain_name = var.docs_domain
+  zone_name   = var.site_domain
+  include_www = false
+  purpose     = "docs"
+  bucket_name = "jadwigo-docs-${var.environment}-843109108289"
+}
+
 # The service at app.<apex>: apps/web, and /api/* to the one Lambda (dl-5ssh.3.3).
 module "app" {
   source = "./modules/app"

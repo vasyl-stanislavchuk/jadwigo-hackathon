@@ -10,6 +10,18 @@ output "site_distribution_id" {
   value = module.site.distribution_id
 }
 
+output "docs_url" {
+  value = "https://${var.docs_domain}/"
+}
+
+output "docs_bucket" {
+  value = module.docs.bucket_name
+}
+
+output "docs_distribution_id" {
+  value = module.docs.distribution_id
+}
+
 output "app_url" {
   value = "https://${var.app_domain}/"
 }
