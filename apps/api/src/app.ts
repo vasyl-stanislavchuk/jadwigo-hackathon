@@ -21,7 +21,9 @@ type Handle<N extends RouteName> = (
  * reply is parsed with the route's response schema, which drops anything the schema does not name.
  * A refusal is `{error: {type, message}}` with the status `ERROR_STATUS` gives it. The store may
  * still be opening: only the routes that read it wait for it, so health answers while the Lambda's
- * database URL is still being read, and when that read has failed.
+ * database URL is still being read, and when that read has failed. Every route that reads the store
+ * runs as one `store.unit()`: one transaction on Postgres, rolled back with whatever it wrote on a
+ * refusal.
  */
 export function createApp(store: Store | Promise<Store>, bank?: BankDeps): Router {
   const app = new Router();
@@ -53,16 +55,23 @@ export function createApp(store: Store | Promise<Store>, bank?: BankDeps): Route
   // Public by design: no authorize(). It reads only the featured pod's open anyone-assignments,
   // and a start on one is authorized like any other (decision 2026-10-26-the-login-free-lesson-is-
   // protected-by-invisible-limits-only-per).
-  on("featuredLessons", async () => featuredLessons(await store));
+  // One unit per request that reads the store: one transaction on Postgres, not one per call.
+  const run = async <T>(work: (opened: Store) => Promise<T>): Promise<T> => {
+    const opened = await store;
+    return opened.unit(() => work(opened));
+  };
+
+  on("featuredLessons", () => run((s) => featuredLessons(s)));
   // Public by design: no authorize(). It reads only Jadwigo's own pod's written playground
   // examples, which hold no learner's data (dl-w3.75).
-  on("playgroundExamples", async (params) => playgroundExamples(await store, params.language));
-  on("startAttempt", async (params, body) => startAttempt(await store, params.id, body));
-  on("getAttempt", async (params) => getAttempt(await store, params.id));
-  on("answer", async (params, body) => answer(await store, params.id, body));
-  on("help", async (params, body) => help(await store, params.id, params.seq, body));
-  on("patchAttempt", async (params, body) => patchAttempt(await store, params.id, body));
-  on("getResults", async (params) => getResults(await store, params.id));
+  on("playgroundExamples", (params) => run((s) => playgroundExamples(s, params.language)));
+  on("startAttempt", (params, body) => run((s) => startAttempt(s, params.id, body)));
+  on("getAttempt", (params) => run((s) => getAttempt(s, params.id)));
+  on("answer", (params, body) => run((s) => answer(s, params.id, body)));
+  on("help", (params, body) => run((s) => help(s, params.id, params.seq, body)));
+  on("patchAttempt", (params, body) => run((s) => patchAttempt(s, params.id, body)));
+  on("getResults", (params) => run((s) => getResults(s, params.id)));
+  // No store: the bank answers it (questions.ts).
   on("questionSearches", (_, body, headers) => searchQuestions(bank, headers, body));
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));

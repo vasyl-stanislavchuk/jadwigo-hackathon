@@ -133,6 +133,13 @@ export interface AttemptRecord {
   readonly answers: readonly AttemptAnswer[];
 }
 
+/** `openAttempt`'s answer: the pod that holds an attempt, its record and its assignment. */
+export interface OpenedAttempt {
+  readonly pod: PodId;
+  readonly record: AttemptRecord;
+  readonly assignment: Assignment;
+}
+
 /**
  * The seam every app reads and writes records through (`docs/research/core-data-model.md`,
  * access patterns 1 to 8). Every method but the 2 pod lookups is scoped to one pod, as row-level
@@ -150,9 +157,23 @@ export interface AttemptRecord {
  * bookkeeping after the player leaves.
  */
 export interface Store {
+  /**
+   * Runs `work` as one unit: on Postgres every Store call inside it shares one transaction, with
+   * the role set once and the pod set each time it changes, and a throw out of `work` rolls all of
+   * it back. A request is one unit, so it pays for one transaction, not one per call. A unit inside
+   * a unit is the outer one. InMemoryStore runs `work` as it is: each call is already one unit
+   * there, and nothing is rolled back.
+   */
+  unit<T>(work: () => Promise<T>): Promise<T>;
+
   /** The pod behind an assignment or an attempt id, for `authorize()`. Not scoped: it is how the scope is found. */
   findAssignmentPod(id: AssignmentId): Promise<PodId | undefined>;
   findAttemptPod(id: AttemptId): Promise<PodId | undefined>;
+  /**
+   * `authorize()`'s read of an attempt id, in one go: the pod that holds it, the attempt's record
+   * and its assignment, or undefined when no pod holds the id. Not scoped, like the lookups.
+   */
+  openAttempt(id: AttemptId): Promise<OpenedAttempt | undefined>;
 
   // Content: written once, idempotent by id. Writing a stored id again returns the stored row,
   // even when the content given differs (on conflict do nothing); a lesson question alone
