@@ -175,26 +175,69 @@
             "type": "object",
             "properties": {
               "summary": {
-                "type": "string"
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "By language code: pl, en"
               },
               "can_do": {
-                "type": "string"
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "By language code: pl, en"
               },
               "mistake_classes": {
                 "type": "array",
                 "items": {
-                  "type": "string"
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "pl": {
+                      "type": "string"
+                    },
+                    "en": {
+                      "type": "string"
+                    },
+                    "spot": {
+                      "type": "string",
+                      "description": "How the mistake shows in one answer"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "pl",
+                    "en",
+                    "spot"
+                  ],
+                  "additionalProperties": false
                 }
               },
               "contexts": {
-                "type": "array",
-                "items": {
+                "type": "object",
+                "propertyNames": {
                   "type": "string"
-                }
+                },
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "description": "By language code: pl, en"
               }
             },
             "additionalProperties": false,
-            "description": "The set's enrichment fields the caller may show; any other key, a private body among them, is dropped on parse"
+            "description": "The set's enrichment fields the caller may show, each the set page's value: summary and can_do by language, mistake_classes as records, contexts as word lists by language; any other key, a private body among them, is dropped on parse"
           },
           "content_hash": {
             "type": "string",
@@ -270,7 +313,7 @@
     "state"
   ],
   "additionalProperties": false,
-  "description": "A bank search's answer, version 1, from jadwigo-bank schemas/search-envelope.schema.json at commit 527c6e0.",
+  "description": "A bank search's answer, version 1, from jadwigo-bank schemas/search-envelope.schema.json at commit 703b679.",
   "$defs": {
     "Need": {
       "type": "object",
@@ -333,7 +376,7 @@
         "grade"
       ],
       "additionalProperties": false,
-      "description": "A search need, from jadwigo-bank schemas/need.schema.json at commit 527c6e0. It carries at least one of words, skills, can_do or resemble."
+      "description": "A search need, from jadwigo-bank schemas/need.schema.json at commit 703b679. It carries at least one of words, skills, can_do or resemble."
     },
     "Language": {
       "type": "string",

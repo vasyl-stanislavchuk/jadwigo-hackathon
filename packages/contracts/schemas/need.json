@@ -60,7 +60,7 @@
     "grade"
   ],
   "additionalProperties": false,
-  "description": "A search need, from jadwigo-bank schemas/need.schema.json at commit 527c6e0. It carries at least one of words, skills, can_do or resemble.",
+  "description": "A search need, from jadwigo-bank schemas/need.schema.json at commit 703b679. It carries at least one of words, skills, can_do or resemble.",
   "$defs": {
     "Language": {
       "type": "string",

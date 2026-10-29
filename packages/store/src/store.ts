@@ -1,4 +1,5 @@
 import type {
+  AccountId,
   Added,
   Assignment,
   AssignmentId,
@@ -11,6 +12,9 @@ import type {
   ErrorType,
   Language,
   Learner,
+  LearnerAttempts,
+  LearnerId,
+  LearnerSnapshot,
   Lesson,
   LessonId,
   LessonQuestion,
@@ -19,9 +23,11 @@ import type {
   LessonVersion,
   LessonVersionId,
   LessonVersionQuestion,
+  Me,
   Placed,
   Pod,
   PodId,
+  Uuid,
 } from "@jadwigo/contracts";
 
 /**
@@ -123,6 +129,27 @@ export type HelpTwin = Pick<
   NewAttemptAnswer,
   "event_id" | "latency_ms" | "asked_at" | "answered_at" | "body_hash"
 > & { readonly try_no?: number };
+
+/** Who a signed-in user is: the pod its member row is in, and its account there. */
+export interface MemberScope {
+  readonly pod: PodId;
+  readonly account: AccountId;
+}
+
+/** A child as a parent adds one: the store makes its `handle`, unique in the pod, from `first_name`. */
+export interface NewLearnerWithGoals {
+  readonly first_name: string;
+  readonly age_group?: string | null | undefined;
+  /** Goal names, in order. */
+  readonly goals?: readonly string[] | undefined;
+}
+
+/** A claim: the caller's learner and account take an attempt that may sit in another pod. */
+export interface NewClaim {
+  readonly attempt: AttemptId;
+  readonly learner: LearnerId;
+  readonly account: AccountId;
+}
 
 /** Everything one attempt has recorded: the evidence a snapshot is built from. */
 export interface AttemptRecord {
@@ -327,6 +354,40 @@ export interface Store {
    * open, and with `AttemptFinished` once finished, as the `attempt_finished` trigger does.
    */
   finishAttempt(pod: PodId, attempt: AttemptId): Promise<Attempt>;
+  // People (migration 20261029120000_parent_login.sql, docs/research/parent-login.md)
+
+  /**
+   * The member a token's `sub` names: its pod and account, or undefined before the first sign-in
+   * made one. Not scoped: it is how a signed-in caller's scope is found (`app.member_pod`).
+   */
+  findMember(sub: Uuid): Promise<MemberScope | undefined>;
+  /**
+   * The first sign-in, idempotent per `sub`: a new pod (named `home`, in `language`), its account
+   * and a `parent` member, in one unit. When `sub` has a member already, or a racing call made one,
+   * it writes nothing and returns that one.
+   */
+  createAccount(sub: Uuid, language: Language): Promise<MemberScope>;
+  /** `GET /api/v1/me`: the pod, the account, its member row, and the learners with goals, oldest first. */
+  getMe(pod: PodId, account: AccountId): Promise<Me>;
+  /**
+   * Adds a learner and its goals in one unit. The handle is the first name made plain (lower
+   * case, letters and digits), with `-2`, `-3` and so on when the pod holds it already.
+   */
+  addLearner(pod: PodId, learner: NewLearnerWithGoals): Promise<LearnerSnapshot>;
+  /**
+   * Claims an attempt, wherever it was played, for a learner of `pod` (`app.claim_attempt`): sets
+   * its learner, `claimed_by` and `claimed_at` and nothing else; answers are never touched, and a
+   * finished attempt may be claimed. A learner or account outside `pod`, or no such attempt, is
+   * `NotFound`; the same learner and account again returns the stored attempt (a replay); any
+   * other attempt with a learner is `AttemptClaimed`; a preview attempt is `AttemptPreview`.
+   */
+  claimAttempt(pod: PodId, claim: NewClaim): Promise<Attempt>;
+  /**
+   * A learner of `pod` with its attempts, newest first, each with its lesson's title and language
+   * and its `attempt_result` rows. A claimed attempt in another pod is read here, read-only.
+   */
+  getLearnerAttempts(pod: PodId, learner: LearnerId): Promise<LearnerAttempts>;
+
   /**
    * The `attempt_result` view's rows, in `seq` order (access pattern 8): the parent's full rows.
    * The page gets `pageAttemptResult` of each, with `verdictsHeld` (`@jadwigo/contracts` wire).

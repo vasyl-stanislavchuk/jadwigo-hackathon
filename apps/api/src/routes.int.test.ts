@@ -4,6 +4,7 @@
 import { createPostgresStore } from "@jadwigo/store";
 import { afterAll } from "vitest";
 import { databaseUrl } from "./config.ts";
+import { peopleSuite } from "./testing/people.suite.ts";
 import { routeSuite } from "./testing/routes.suite.ts";
 
 const url = databaseUrl();
@@ -12,3 +13,4 @@ const store = createPostgresStore(url);
 afterAll(() => store.close());
 
 routeSuite("PostgresStore", () => store, { units: true });
+peopleSuite("PostgresStore", () => store);

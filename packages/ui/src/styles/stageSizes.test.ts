@@ -108,14 +108,14 @@ describe("sizes per answer kind", () => {
     );
   });
 
-  it("no round control on the lesson screen: the fold a 56 square, more below a 48 square, letter keys 10px corners", () => {
+  it("no round control on the lesson screen: the fold a 56 square, more below a 48 square, keys, arrows and letter keys 10px corners", () => {
     const fold = rule(".kid-step-shell [data-fold]");
     expect(fold).toContain("width: 3.5rem");
     expect(fold).toContain("height: 3.5rem");
-    expect(fold).toContain("border-radius: 1rem");
+    expect(fold).toContain("border-radius: 0.625rem");
     const more = rule("[data-more-below]");
     expect(more).toContain("width: 3rem");
-    expect(more).toContain("border-radius: 1rem");
+    expect(more).toContain("border-radius: 0.625rem");
     expect(rule("[data-tools-dock] > [data-fold]")).not.toContain("border-radius");
     for (const part of ["Keypad.tsx", "LetterRow.tsx", "StepShell.tsx", "Tools.tsx"])
       expect(read(`../../../lesson-kit/src/parts/${part}`), part).not.toContain("rounded-full");

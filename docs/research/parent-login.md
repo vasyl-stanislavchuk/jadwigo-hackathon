@@ -76,7 +76,7 @@ So the attempt stays where it is, and the claim only points it at a learner in a
 - Row-level security adds read-only policies:
   - an attempt is readable from a pod that holds its learner;
   - so are its attempt questions and answers;
-  - so is the content they point at: the lesson question, the version, the lesson and the assignment.
+  - so is the content the attempt points at: its version, that version's lesson and its assignment, and nothing else of the pod. No lesson question is readable, so no answer key: the results read each asked question's face (`say`, `family`, `question_type`) through `app.asked_question()`.
   Writes still need `pod_id` to be the caller's pod, so the parent's pod reads the attempt and can never write to it.
 - The parent's API transaction runs with the parent's pod, never with Jadwigo's, so a bug there cannot reach anyone else's anonymous attempts.
 

@@ -91,4 +91,37 @@ describe("HelpLadder: the help note", () => {
     show.mockRestore();
     rects.mockRestore();
   });
+
+  it("opened by a tap, scrolls into view once the finger lifts, not while it is down", () => {
+    const to = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+    vi.spyOn(window, "matchMedia").mockReturnValue({ matches: true } as MediaQueryList);
+    const rects = vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockReturnValue({ top: 2000, bottom: 2200, height: 200 } as DOMRect);
+    document.dispatchEvent(new Event("pointerdown"));
+    render(
+      <div data-learner-view>
+        <Note />
+      </div>,
+    );
+    expect(to).not.toHaveBeenCalled();
+    document.dispatchEvent(new Event("pointerup"));
+    expect(to).toHaveBeenCalled();
+    rects.mockRestore();
+    vi.restoreAllMocks();
+  });
+
+  it("does not scroll for a note that went before the finger lifted", () => {
+    const to = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+    document.dispatchEvent(new Event("pointerdown"));
+    const { unmount } = render(
+      <div data-learner-view>
+        <Note />
+      </div>,
+    );
+    unmount();
+    document.dispatchEvent(new Event("pointerup"));
+    expect(to).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
 });
