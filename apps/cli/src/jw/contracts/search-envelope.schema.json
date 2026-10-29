@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "jadwigo-bank/search-envelope",
-  "$comment": "Pinned copy of jadwigo-bank schemas/search-envelope.schema.json at bank commit ac60440. The bank's copy is the source of truth: change it there first, then re-copy here and update this commit.",
+  "$comment": "Pinned copy of jadwigo-bank schemas/search-envelope.schema.json at bank commit 703b679. The bank's copy is the source of truth: change it there first, then re-copy here and update this commit.",
   "title": "Search envelope",
   "description": "What a bank search returns, locally from tools/bank_search.py and from the production route alike. The caller sends a need (need.schema.json) and gets question sets back, ranked, with the state of every arm. The product repo pins this file and tests its client against it; a field is added here first and in the client second. Version 1 is the local search's shape today plus the fields the route adds (source, credit, enrichment, content_hash, media) so that one shape serves both.",
   "type": "object",
@@ -144,7 +144,56 @@
           },
           "enrichment": {
             "type": "object",
-            "description": "The set's enrichment fields the caller may show: summary, can_do, mistake_classes, contexts (tools/enrich_common.py FIELDS)"
+            "description": "The set's enrichment fields the caller may show, each the set page's value with its made_by and reviewed wrapper removed (service/rows.py ENRICHMENT_SHOWN; shapes from set.schema.json): summary and can_do by language, mistake_classes as records, contexts as word lists by language. Any other key is a private field and never leaves the service.",
+            "additionalProperties": false,
+            "properties": {
+              "summary": {
+                "type": "object",
+                "description": "By language code: pl, en",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "can_do": {
+                "type": "object",
+                "description": "By language code: pl, en",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "mistake_classes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["id", "pl", "en", "spot"],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "pl": {
+                      "type": "string"
+                    },
+                    "en": {
+                      "type": "string"
+                    },
+                    "spot": {
+                      "type": "string",
+                      "description": "How the mistake shows in one answer"
+                    }
+                  }
+                }
+              },
+              "contexts": {
+                "type": "object",
+                "description": "By language code: pl, en",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
           },
           "content_hash": {
             "type": "string",
