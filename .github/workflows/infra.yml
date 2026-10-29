@@ -1,5 +1,6 @@
 # Plan on every PR that touches infra/ (dl-5ssh.34.4): fmt, validate, tflint and trivy, then a prod
-# plan posted as one PR comment, updated in place, and kept as an artifact. No job applies: the owner
+# plan posted as one PR comment, updated in place, and its text kept as an artifact. A fork's PR
+# gets the checks but no plan: the role trusts this repo's runs only. No job applies: the owner
 # applies by hand (jadwigo-platform/decisions/2026-10-26-a-green-merge-does-not-deploy-to-prod-the-owner-deploys-manually).
 # The plan assumes jadwigo-github-plan (infra/bootstrap), which can only read and never decrypt
 # (decision bead dl-w146). The AWS provider refreshes an SSM parameter with decryption, so the plan
@@ -89,9 +90,9 @@ jobs:
         if: always()
         with:
           name: prod-plan-${{ github.event.pull_request.number }}
-          path: |
-            infra/terraform/plan.txt
-            infra/terraform/prod.tfplan
+          # plan.txt only: a saved .tfplan holds the prior state and the variables unredacted (the
+          # alarm address among them), and a public repo's artifacts are anyone's to download.
+          path: infra/terraform/plan.txt
           if-no-files-found: ignore
           retention-days: 14
       - name: Post the plan to the PR
@@ -114,7 +115,7 @@ jobs:
             echo '```'
             echo '</details>'
             echo
-            echo "Full plan: the prod-plan-$PR artifact of [this run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)."
+            echo "Full text: the prod-plan-$PR artifact of [this run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)."
           } > "$RUNNER_TEMP/comment.md"
           id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
             --jq "[.[] | select(.body | startswith(\"$marker\"))][0].id // empty")
