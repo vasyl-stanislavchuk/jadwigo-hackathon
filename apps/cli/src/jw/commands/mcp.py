@@ -1,12 +1,13 @@
-"""jw mcp serve: the question tools over MCP on stdio (dl-u1y5.23, moved from dl-e8ov.5.2.8).
+"""jw mcp serve: the question and lesson tools over MCP on stdio (dl-u1y5.23, moved from dl-e8ov.5.2.8).
 
-Four tools, each calling the function its `--json` verb prints, so a tool's JSON is the verb's
+Six tools, each calling the function its `--json` verb prints, so a tool's JSON is the verb's
 JSON: question_search (`jw question search --json`), question_show (`jw question show --json`),
-question_gaps (`jw question gaps --json`) and question_item (`jw question item --json`, read
-from JW_KHAN_CONVERTED, dl-e8ov.5.38.2). The server finds the bank the way the verbs do
-(`jw.settings_keys`: JW_API_URL, then JW_BANK_URL, then ~/.config/jadwigo-bank/bank.env) and reads
-pages from JADWIGO_BANK_DIR. Registration lines for Claude Code, Muse Code and Codex are in
-apps/cli/README.md.
+question_gaps (`jw question gaps --json`), question_item (`jw question item --json`, read
+from JW_KHAN_CONVERTED, dl-e8ov.5.38.2), lesson_draft (`jw lesson draft --json`) and lesson_check
+(`jw lesson check --json`, which runs check.ts in JADWIGO_REPO_DIR, dl-e8ov.5.38.4). The server
+finds the bank the way the verbs do (`jw.settings_keys`: JW_API_URL, then JW_BANK_URL, then
+~/.config/jadwigo-bank/bank.env) and reads pages from JADWIGO_BANK_DIR. Registration lines for
+Claude Code, Muse Code and Codex are in apps/cli/README.md.
 
 Built on the `mcp` package, 2.x (`mcp.server.mcpserver.MCPServer`, FastMCP's new name).
 """
@@ -17,22 +18,35 @@ from typing import Any
 
 import click
 
+from jw import lesson
 from jw.commands import question
 from jw.errors import JwError
 
-TOOLS = ("question_search", "question_show", "question_gaps", "question_item")
+TOOLS = (
+    "question_search",
+    "question_show",
+    "question_gaps",
+    "question_item",
+    "lesson_draft",
+    "lesson_check",
+)
 
 
 def build_server() -> Any:
-    """The MCP server with the four question tools. Imported lazily: only `serve` pays for it."""
+    """The MCP server with the six tools. Imported lazily: only `serve` pays for it."""
     from mcp.server.mcpserver import MCPServer
     from mcp.server.mcpserver.exceptions import ToolError
 
     server = MCPServer(
         name="jadwigo",
         instructions=(
-            "Search the Jadwigo question bank for question sets that meet a learner's need, "
-            "show one set's page, and list needs the bank cannot meet."
+            "Jadwigo's question bank and lesson drafts. To make a lesson from a parent's request: "
+            "call lesson_draft, write every question's help (look, boost, boost_by_mistake, "
+            "almost, worked and a twin) in the lesson's language, then call lesson_check with the "
+            "whole draft and fix any errors it lists by step id until it answers ok with a card "
+            "and a lesson_file. The tools never write a word a child reads; you do. "
+            "question_search, question_show, question_gaps and question_item look into the bank "
+            "directly: sets that meet a need, one set's page, needs it cannot meet, one item."
         ),
     )
 
@@ -110,6 +124,53 @@ def build_server() -> Any:
         """
         return _call(question.item_view, item_id=item_id, language=language)
 
+    @server.tool(name="lesson_draft")
+    def lesson_draft(
+        request: str,
+        grade: str,
+        names: list[str],
+        language: str = "pl",
+        kind: str = "practice",
+        count: int | None = None,
+        skills: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Draft a lesson for a parent's request: questions drawn from the bank, help left empty.
+
+        request is the parent's words ("6 zadań z mnożenia, klasa 3"); names is required: pass
+        every name the family uses in the request (the child's, siblings', the parent's), or []
+        when there is none; the tool replaces them before anything leaves the machine. grade the bare grade
+        number; kind practice, review, check or diagnostic; count overrides the draw rule's count.
+        Each question carries its family step, key, the source item's hints and worked lines as
+        `material`, credit, based_on and why it was drawn; left_out says why each set or item was
+        not used, and rule_settled is false (the draw rules are provisional). You write each
+        question's `help` in the lesson's language: look and boost as {"text"} cards,
+        boost_by_mistake as {mistake class: {"text"}}, almost and worked as lists of lines (almost
+        is worked with its last line left blank), and twin as a question from the same template
+        with its own say, data and key. Then call lesson_check with the whole draft.
+        """
+        return _call(
+            lesson.draft,
+            request=request,
+            grade=grade,
+            names=names,
+            language=language,
+            kind=kind,
+            count=count,
+            skills=skills or [],
+        )
+
+    @server.tool(name="lesson_check")
+    def lesson_check(draft: dict[str, Any]) -> dict[str, Any]:
+        """Check a draft whose help you have written, and return the card a parent reads.
+
+        Pass the whole draft lesson_draft returned, with every question's help filled. It is
+        assembled into a lesson file and checked as the import would check it. ok true returns
+        the card (per question: prompt, key, rungs, twin, source, licence, why drawn; and what was
+        left out), the lesson_file path, play_path and lesson_id. ok false lists errors by step
+        id: fix those questions and call lesson_check again.
+        """
+        return _call(lesson.check, filled=draft)
+
     return server
 
 
@@ -120,5 +181,5 @@ def group() -> None:
 
 @group.command()
 def serve() -> None:
-    """Serve question_search, question_show, question_gaps and question_item over MCP on stdio."""
+    """Serve the question and lesson tools over MCP on stdio."""
     build_server().run("stdio")

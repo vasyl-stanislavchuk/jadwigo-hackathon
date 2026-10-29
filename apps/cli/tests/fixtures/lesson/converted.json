@@ -1,0 +1,666 @@
+{
+  "generated_by": "tests/fixtures/lesson (hand-written for dl-e8ov.5.38.4; our own small bank, no Khan text)",
+  "licence_note": "Fixture licence note: our own small bank, written for these tests.",
+  "items": [
+    {
+      "id": "fxc101",
+      "family": "enter",
+      "problem_type": "Rows of dots",
+      "grade": 3,
+      "language": "pl",
+      "question": {
+        "text": "Policz kropki w rzędach: 6 · 3 =",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxc101",
+        "family": "enter",
+        "phase": "practice",
+        "question_type": "production",
+        "say": "Ile kropek jest w trzech rzędach po sześć?",
+        "data": {
+          "stem": {
+            "text": "Policz kropki w rzędach: 6 · 3 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "6 · 3 = ?"
+          }
+        },
+        "key": {
+          "accept": ["18"],
+          "near": {
+            "9": "added_instead"
+          }
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "To 6 razy po 3."
+            },
+            {
+              "text": "6 · 3 = 18"
+            }
+          ],
+          "worked": ["6 · 3 = 18"]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxc101",
+        "url": "https://fixture.invalid/jw/items/fxc101",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-29"
+      },
+      "exercise": "mnozenie-przez-6",
+      "exercise_title": "Mnożenie przez 6",
+      "lesson_title": "Tabliczka mnożenia",
+      "unit_title": "Mnożenie",
+      "order": "0001",
+      "source_url": "https://fixture.invalid/jw/items/fxc101",
+      "status": {
+        "kind": "plays"
+      }
+    },
+    {
+      "id": "fxc102",
+      "family": "enter",
+      "problem_type": "Rows of dots",
+      "grade": 3,
+      "language": "pl",
+      "question": {
+        "text": "Policz kropki w rzędach: 6 · 4 =",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxc102",
+        "family": "enter",
+        "phase": "practice",
+        "question_type": "production",
+        "say": "Ile kropek jest w czterech rzędach po sześć?",
+        "data": {
+          "stem": {
+            "text": "Policz kropki w rzędach: 6 · 4 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "6 · 4 = ?"
+          }
+        },
+        "key": {
+          "accept": ["24"],
+          "near": {
+            "10": "added_instead"
+          }
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "To 6 razy po 4."
+            },
+            {
+              "text": "6 · 4 = 24"
+            }
+          ],
+          "worked": ["6 · 4 = 24"]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxc102",
+        "url": "https://fixture.invalid/jw/items/fxc102",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-29"
+      },
+      "exercise": "mnozenie-przez-6",
+      "exercise_title": "Mnożenie przez 6",
+      "lesson_title": "Tabliczka mnożenia",
+      "unit_title": "Mnożenie",
+      "order": "0002",
+      "source_url": "https://fixture.invalid/jw/items/fxc102",
+      "status": {
+        "kind": "plays"
+      }
+    },
+    {
+      "id": "fxc103",
+      "family": "enter",
+      "problem_type": "Rows of dots",
+      "grade": 3,
+      "language": "pl",
+      "question": {
+        "text": "Policz kropki w rzędach: 6 · 7 =",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxc103",
+        "family": "enter",
+        "phase": "practice",
+        "question_type": "production",
+        "say": "Ile kropek jest w siedmiu rzędach po sześć?",
+        "data": {
+          "stem": {
+            "text": "Policz kropki w rzędach: 6 · 7 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "6 · 7 = ?"
+          }
+        },
+        "key": {
+          "accept": ["42"],
+          "near": {
+            "13": "added_instead"
+          }
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "To 6 razy po 7."
+            },
+            {
+              "text": "6 · 7 = 42"
+            }
+          ],
+          "worked": ["6 · 7 = 42"]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxc103",
+        "url": "https://fixture.invalid/jw/items/fxc103",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-29"
+      },
+      "exercise": "mnozenie-przez-6",
+      "exercise_title": "Mnożenie przez 6",
+      "lesson_title": "Tabliczka mnożenia",
+      "unit_title": "Mnożenie",
+      "order": "0003",
+      "source_url": "https://fixture.invalid/jw/items/fxc103",
+      "status": {
+        "kind": "plays"
+      }
+    },
+    {
+      "id": "fxc201",
+      "family": "enter",
+      "problem_type": "Bags of apples",
+      "grade": 3,
+      "language": "pl",
+      "question": {
+        "text": "W 2 torbach jest po 6 jabłek. Ile razem?",
+        "pictures": []
+      },
+      "spec": null,
+      "credit": {
+        "source": "bank",
+        "ref": "fxc201",
+        "url": "https://fixture.invalid/jw/items/fxc201",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-29"
+      },
+      "exercise": "mnozenie-przez-6",
+      "exercise_title": "Mnożenie przez 6",
+      "lesson_title": "Tabliczka mnożenia",
+      "unit_title": "Mnożenie",
+      "order": "0004",
+      "source_url": "https://fixture.invalid/jw/items/fxc201",
+      "status": {
+        "kind": "waiting",
+        "reason": "a fixture item that waits for its family step"
+      }
+    },
+    {
+      "id": "fxc202",
+      "family": "enter",
+      "problem_type": "Bags of apples",
+      "grade": 3,
+      "language": "pl",
+      "question": {
+        "text": "W 5 torbach jest po 6 jabłek. Ile razem?",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxc202",
+        "family": "enter",
+        "phase": "practice",
+        "question_type": "production",
+        "say": "W pięciu torbach jest po sześć jabłek. Ile razem?",
+        "data": {
+          "stem": {
+            "text": "W 5 torbach jest po 6 jabłek. Ile razem?"
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "5 · 6 = ?"
+          }
+        },
+        "key": {
+          "accept": ["30"],
+          "near": {
+            "11": "added_instead"
+          }
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "To 5 razy po 6."
+            },
+            {
+              "text": "5 · 6 = 30"
+            }
+          ],
+          "worked": ["5 · 6 = 30"]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxc202",
+        "url": "https://fixture.invalid/jw/items/fxc202",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-29"
+      },
+      "exercise": "mnozenie-przez-6",
+      "exercise_title": "Mnożenie przez 6",
+      "lesson_title": "Tabliczka mnożenia",
+      "unit_title": "Mnożenie",
+      "order": "0005",
+      "source_url": "https://fixture.invalid/jw/items/fxc202",
+      "status": {
+        "kind": "plays"
+      }
+    },
+    {
+      "id": "fxc203",
+      "family": "enter",
+      "problem_type": "Bags of apples",
+      "grade": 3,
+      "language": "pl",
+      "question": {
+        "text": "W 9 torbach jest po 6 jabłek. Ile razem?",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxc203",
+        "family": "enter",
+        "phase": "practice",
+        "question_type": "production",
+        "say": "W dziewięciu torbach jest po sześć jabłek. Ile razem?",
+        "data": {
+          "stem": {
+            "text": "W 9 torbach jest po 6 jabłek. Ile razem?"
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "9 · 6 = ?"
+          }
+        },
+        "key": {
+          "accept": ["54"],
+          "near": {
+            "15": "added_instead"
+          }
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "To 9 razy po 6."
+            },
+            {
+              "text": "9 · 6 = 54"
+            }
+          ],
+          "worked": ["9 · 6 = 54"]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxc203",
+        "url": "https://fixture.invalid/jw/items/fxc203",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-29"
+      },
+      "exercise": "mnozenie-przez-6",
+      "exercise_title": "Mnożenie przez 6",
+      "lesson_title": "Tabliczka mnożenia",
+      "unit_title": "Mnożenie",
+      "order": "0006",
+      "source_url": "https://fixture.invalid/jw/items/fxc203",
+      "status": {
+        "kind": "plays"
+      }
+    },
+    {
+      "id": "fxc301",
+      "family": "enter",
+      "problem_type": "Hops of six",
+      "grade": 3,
+      "language": "pl",
+      "question": {
+        "text": "Skacz po 6: ile po 4 skokach?",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxc301",
+        "family": "enter",
+        "phase": "practice",
+        "question_type": "production",
+        "say": "Skaczesz po sześć. Gdzie jesteś po czterech skokach?",
+        "data": {
+          "stem": {
+            "text": "Skacz po 6: ile po 4 skokach?"
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "4 · 6 = ?"
+          }
+        },
+        "key": {
+          "accept": ["24"],
+          "near": {
+            "10": "added_instead"
+          }
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "To 4 razy po 6."
+            },
+            {
+              "text": "4 · 6 = 24"
+            }
+          ],
+          "worked": ["4 · 6 = 24"]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxc301",
+        "url": "https://fixture.invalid/jw/items/fxc301",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-29"
+      },
+      "exercise": "mnozenie-przez-6",
+      "exercise_title": "Mnożenie przez 6",
+      "lesson_title": "Tabliczka mnożenia",
+      "unit_title": "Mnożenie",
+      "order": "0007",
+      "source_url": "https://fixture.invalid/jw/items/fxc301",
+      "status": {
+        "kind": "plays"
+      }
+    },
+    {
+      "id": "fxc302",
+      "family": "enter",
+      "problem_type": "Hops of six",
+      "grade": 3,
+      "language": "pl",
+      "question": {
+        "text": "Skacz po 6: ile po 8 skokach?",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxc302",
+        "family": "enter",
+        "phase": "practice",
+        "question_type": "production",
+        "say": "Skaczesz po sześć. Gdzie jesteś po ośmiu skokach?",
+        "data": {
+          "stem": {
+            "text": "Skacz po 6: ile po 8 skokach?"
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "8 · 6 = ?"
+          }
+        },
+        "key": {
+          "accept": ["48"],
+          "near": {
+            "14": "added_instead"
+          }
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "To 8 razy po 6."
+            },
+            {
+              "text": "8 · 6 = 48"
+            }
+          ],
+          "worked": ["8 · 6 = 48"]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxc302",
+        "url": "https://fixture.invalid/jw/items/fxc302",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-29"
+      },
+      "exercise": "mnozenie-przez-6",
+      "exercise_title": "Mnożenie przez 6",
+      "lesson_title": "Tabliczka mnożenia",
+      "unit_title": "Mnożenie",
+      "order": "0008",
+      "source_url": "https://fixture.invalid/jw/items/fxc302",
+      "status": {
+        "kind": "plays"
+      }
+    },
+    {
+      "id": "fxc303",
+      "family": "enter",
+      "problem_type": "Hops of six",
+      "grade": 3,
+      "language": "pl",
+      "question": {
+        "text": "Skacz po 6: ile po 10 skokach?",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxc303",
+        "family": "enter",
+        "phase": "practice",
+        "question_type": "production",
+        "say": "Skaczesz po sześć. Gdzie jesteś po dziesięciu skokach?",
+        "data": {
+          "stem": {
+            "text": "Skacz po 6: ile po 10 skokach?"
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "10 · 6 = ?"
+          }
+        },
+        "key": {
+          "accept": ["60"],
+          "near": {
+            "16": "added_instead"
+          }
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "To 10 razy po 6."
+            },
+            {
+              "text": "10 · 6 = 60"
+            }
+          ],
+          "worked": ["10 · 6 = 60"]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxc303",
+        "url": "https://fixture.invalid/jw/items/fxc303",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-29"
+      },
+      "exercise": "mnozenie-przez-6",
+      "exercise_title": "Mnożenie przez 6",
+      "lesson_title": "Tabliczka mnożenia",
+      "unit_title": "Mnożenie",
+      "order": "0009",
+      "source_url": "https://fixture.invalid/jw/items/fxc303",
+      "status": {
+        "kind": "plays"
+      }
+    },
+    {
+      "id": "fxc401",
+      "family": "enter",
+      "problem_type": null,
+      "grade": 3,
+      "language": "pl",
+      "question": {
+        "text": "Oblicz: 6 · 8 =",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxc401",
+        "family": "enter",
+        "phase": "practice",
+        "question_type": "production",
+        "say": "Ile to jest sześć razy osiem?",
+        "data": {
+          "stem": {
+            "text": "Oblicz: 6 · 8 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "6 · 8 = ?"
+          }
+        },
+        "key": {
+          "accept": ["48"],
+          "near": {
+            "14": "added_instead"
+          }
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "To 6 razy po 8."
+            },
+            {
+              "text": "6 · 8 = 48"
+            }
+          ],
+          "worked": ["6 · 8 = 48"]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxc401",
+        "url": "https://fixture.invalid/jw/items/fxc401",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-29"
+      },
+      "exercise": "mnozenie-przez-6",
+      "exercise_title": "Mnożenie przez 6",
+      "lesson_title": "Tabliczka mnożenia",
+      "unit_title": "Mnożenie",
+      "order": "0010",
+      "source_url": "https://fixture.invalid/jw/items/fxc401",
+      "status": {
+        "kind": "plays"
+      }
+    },
+    {
+      "id": "fxc402",
+      "family": "enter",
+      "problem_type": null,
+      "grade": 3,
+      "language": "pl",
+      "question": {
+        "text": "Oblicz: 6 · 9 =",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxc402",
+        "family": "enter",
+        "phase": "practice",
+        "question_type": "production",
+        "say": "Ile to jest sześć razy dziewięć?",
+        "data": {
+          "stem": {
+            "text": "Oblicz: 6 · 9 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "6 · 9 = ?"
+          }
+        },
+        "key": {
+          "accept": ["54"],
+          "near": {
+            "15": "added_instead"
+          }
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "To 6 razy po 9."
+            },
+            {
+              "text": "6 · 9 = 54"
+            }
+          ],
+          "worked": ["6 · 9 = 54"]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxc402",
+        "url": "https://fixture.invalid/jw/items/fxc402",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-29"
+      },
+      "exercise": "mnozenie-przez-6",
+      "exercise_title": "Mnożenie przez 6",
+      "lesson_title": "Tabliczka mnożenia",
+      "unit_title": "Mnożenie",
+      "order": "0011",
+      "source_url": "https://fixture.invalid/jw/items/fxc402",
+      "status": {
+        "kind": "plays"
+      }
+    }
+  ]
+}
