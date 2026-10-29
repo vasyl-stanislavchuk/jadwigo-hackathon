@@ -173,8 +173,10 @@ describe("RULES.md, API", () => {
         if (/^\{[a-z_]+\}$/.test(seg)) return;
         expect(seg, name).toMatch(/^[a-z]+(-[a-z]+)*$/);
         expect(VERBS.test(seg), `${name}: ${seg} is a verb`).toBe(false);
-        // A collection is plural; `help` is the one uncountable record, the last segment.
+        // A collection is plural; `help` is the one uncountable record, the last segment, and
+        // `me` is the signed-in caller, the whole path.
         if (seg === "help") expect(i, name).toBe(segments.length - 1);
+        else if (seg === "me") expect(segments, name).toEqual(["me"]);
         else expect(seg, name).toMatch(/s$/);
       });
     }
