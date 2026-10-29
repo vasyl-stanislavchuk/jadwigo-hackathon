@@ -21,9 +21,8 @@ import { ToggleGroup, ToggleGroupItem } from "./toggle-group";
 
 afterEach(cleanup);
 
-const KID_SIZE = /(^|\s)min-h-\[var\(--kid-(tap-min|commit-height|key-size)\)\]/;
-const KID_WIDTH =
-  /(^|\s)(min-w|w|size)-\[var\(--kid-(tap-min|commit-height|key-size)\)\]|(^|\s)w-full/;
+const KID_SIZE = /(^|\s)min-h-kid-(tap|commit|key)(\s|$)/;
+const KID_WIDTH = /(^|\s)(min-w|w|size)-kid-(tap|commit|key)(\s|$)|(^|\s)w-full(\s|$)/;
 const LITERAL_SIZE = /(^|\s)(min-)?[hw]-(\d|\[\d)|(^|\s)size-(\d|\[\d)/;
 
 function expectKidSized(el: HTMLElement): void {
@@ -55,7 +54,7 @@ describe("Button tap target", () => {
 
   it("makes the commit size at least the commit height", () => {
     const { getByRole } = render(<Button size="commit">Dalej</Button>);
-    expect(getByRole("button").className).toMatch(/min-h-\[var\(--kid-commit-height\)\]/);
+    expect(getByRole("button").className).toMatch(/(^|\s)min-h-kid-commit(\s|$)/);
   });
 
   // A settings or navigation control on an app page is 48, not the kid 56 (dl-og82, dl-uukj.32.3).
@@ -90,7 +89,7 @@ describe("ToggleGroup tap target", () => {
     );
     expect(
       must(container.querySelector<HTMLElement>('[data-slot="toggle-group"]')).className,
-    ).toMatch(/gap-\[var\(--kid-choice-gap\)\]/);
+    ).toMatch(/(^|\s)gap-kid-choice(\s|$)/);
   });
 });
 
@@ -158,12 +157,18 @@ describe("Slider tap target", () => {
   it("gives the thumb a hit area tied to --kid-tap-min through its ::after", () => {
     const { container } = renderSlider();
     const thumb = must(container.querySelector<HTMLElement>('[data-slot="slider-thumb"]'));
-    expect(thumb.className).toMatch(
-      /(^|\s)after:-inset-\[calc\(\(var\(--kid-tap-min\)-2\.5rem\)\/2\)\](\s|$)/,
-    );
-    // The face the inset is computed from: 2.5rem is size-10.
+    // The hit area is the kid tap size itself, centred on the face, whatever the face measures.
+    for (const c of [
+      "after:size-kid-tap",
+      "after:absolute",
+      "after:top-1/2",
+      "after:left-1/2",
+      "after:-translate-x-1/2",
+      "after:-translate-y-1/2",
+    ])
+      expect(thumb.classList.contains(c), c).toBe(true);
+    // The face: 2.5rem is size-10, smaller than the hit area around it.
     expect(thumb.className).toMatch(/(^|\s)size-10(\s|$)/);
-    expect(thumb.className).toMatch(/(^|\s)after:absolute(\s|$)/);
   });
 });
 
