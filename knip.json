@@ -15,6 +15,6 @@
       "playwright": false
     }
   },
-  "ignoreBinaries": ["make", "uv", "psql"],
+  "ignoreBinaries": ["make", "gitleaks", "uv", "psql"],
   "ignoreWorkspaces": ["apps/cli"]
 }

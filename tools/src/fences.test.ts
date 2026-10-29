@@ -201,4 +201,25 @@ describe("fences fail on planted violations", { timeout: 60_000 }, () => {
     );
     expect(status, output).toBe(1);
   });
+
+  it("gitleaks: a family name from the private-terms file, allowed under apps/site", () => {
+    // An invented word stands in for a name, so no real one is ever in the repo.
+    const terms = join(plant({ "terms.txt": "Zqvorlintap\n" }), "terms.txt");
+    const scan = (files: Record<string, string>) => {
+      const dir = plant(files);
+      const out = spawnSync(
+        "bun",
+        [join(repo, "tools/src/gitleaks.ts"), "dir", dir, "--no-banner", "--redact"],
+        { cwd: dir, encoding: "utf8", env: { ...process.env, JADWIGO_PRIVATE_TERMS: terms } },
+      );
+      return { status: out.status, output: `${out.stdout}${out.stderr}` };
+    };
+    const leaked = scan({ "src/greeting.ts": 'export const hi = "Cześć zqvorlintap!";\n' });
+    expect(leaked.status, leaked.output).toBe(1);
+    expect(leaked.output).not.toMatch(/zqvorlintap/i);
+    const site = scan({ "apps/site/src/about.md": "Zqvorlintap's story.\n" });
+    expect(site.status, site.output).toBe(0);
+    const tracker = scan({ "AGENTS.md": "bd -C ~/projects/zqvorlintap-learns/.beads ready\n" });
+    expect(tracker.status, tracker.output).toBe(0);
+  });
 });
