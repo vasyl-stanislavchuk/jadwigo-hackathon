@@ -146,6 +146,11 @@ def test_no_spelling_of_the_name_gets_through(
         ("Pomóż K a s i ą!", "Pomóż [NAME_1]!"),
         ("w K a s i a", "w [NAME_1]"),
         ("K a s i a i Ola", "[NAME_1] i [NAME_2]"),
+        # A format character breaks a word, as in the first pass, and a letter counts in its
+        # compatibility form.
+        ("x\u200bK a s i a", "x\u200b[NAME_1]"),
+        ("K\u200ba\u200bs\u200bi\u200ba", "[NAME_1]"),
+        ("\uff2b \uff41 s i a", "[NAME_1]"),
     ],
 )
 def test_a_name_spelled_out_letter_by_letter_is_hidden(text: str, out: str) -> None:
