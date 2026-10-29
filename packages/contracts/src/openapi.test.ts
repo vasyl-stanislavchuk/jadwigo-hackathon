@@ -46,6 +46,11 @@ describe("openapi.json", () => {
     }
   });
 
+  it("keeps every bank route off the Supabase token, so bankToken is never the wrong scheme", () => {
+    for (const route of Object.values(ROUTES))
+      if (route.tag === "bank") expect(route.auth).toBe("none");
+  });
+
   it("answers every error with the one Error response", () => {
     for (const { op } of operations) {
       const errors = Object.entries(op.responses).filter(([status]) => !/^2\d\d$/.test(status));
