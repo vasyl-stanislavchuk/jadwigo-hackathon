@@ -23,9 +23,7 @@ import { Button } from "@jadwigo/ui";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ReactElement, ReactNode } from "react";
 import { withMedia } from "../media.ts";
-import { ENDED_ICON, ENDED_WORD } from "./ended.ts";
-
-const CATEGORY: Category = "child";
+import { ENDED_ICON, ENDED_WORD } from "./outcome.ts";
 
 /** A still view has no timing to measure; a pinned clock keeps it the same on every draw. */
 const clock: Clock = { now: (): Instant => ({ perf: 0, wall: "2026-10-29T00:00:00.000Z" }) };
@@ -46,10 +44,12 @@ function Still({
   question,
   value,
   language,
+  category,
 }: {
   question: ReviewQuestion;
   value: unknown;
   language: Language;
+  category: Category;
 }): ReactElement {
   return (
     <div className="kid-step min-w-0">
@@ -58,7 +58,7 @@ function Still({
           mode={ViewMode.Solution}
           spec={specOf(question) as never}
           language={language}
-          category={CATEGORY}
+          category={category}
           clock={clock}
           value={value as never}
           solution={question.solution as never}
@@ -74,7 +74,9 @@ function Still({
  * - `question`: the question as the review route returns it; the parent passes a
  *   `ParentReviewQuestion`, which extends it.
  * - `index`, `total`: its 0-based place in the list and the list's length, for the header.
- * - `language`: the child's language.
+ * - `language`: the reader's language.
+ * - `category`: who reads it, `child` unless the parent's page says `adult`; every line and the
+ *   family view read that register (dl-uukj.32 wave 2 step 0).
  * - `onPrev`, `onNext`: move to the neighbour; absent at either end, and then its arrow is not drawn.
  * - `onAll`: back to the whole list ("Wszystkie pytania").
  * - `children`: drawn under the solution block; the parent puts its tries there.
@@ -84,6 +86,7 @@ export function ReviewStep({
   index,
   total,
   language,
+  category = "child",
   onPrev,
   onNext,
   onAll,
@@ -93,6 +96,7 @@ export function ReviewStep({
   index: number;
   total: number;
   language: Language;
+  category?: Category;
   onPrev?: () => void;
   onNext?: () => void;
   onAll: () => void;
@@ -117,7 +121,7 @@ export function ReviewStep({
     >
       <header className="flex flex-wrap items-center justify-between gap-3">
         <Button type="button" variant="outline" data-review-all onClick={onAll}>
-          {copy(language, "review_all")}
+          {copy(language, "review_all", {}, category)}
         </Button>
         <nav className="flex items-center gap-2">
           {onPrev !== undefined && (
@@ -126,14 +130,14 @@ export function ReviewStep({
               variant="outline"
               size="icon"
               data-review-prev
-              aria-label={copy(language, "review_prev")}
+              aria-label={copy(language, "review_prev", {}, category)}
               onClick={onPrev}
             >
               <ChevronLeft aria-hidden />
             </Button>
           )}
           <h2 data-review-title className="text-xl font-semibold">
-            {copy(language, "review_title", { n: index + 1, total })}
+            {copy(language, "review_title", { n: index + 1, total }, category)}
           </h2>
           {onNext !== undefined && (
             <Button
@@ -141,7 +145,7 @@ export function ReviewStep({
               variant="outline"
               size="icon"
               data-review-next
-              aria-label={copy(language, "review_next")}
+              aria-label={copy(language, "review_next", {}, category)}
               onClick={onNext}
             >
               <ChevronRight aria-hidden />
@@ -156,34 +160,39 @@ export function ReviewStep({
           className="inline-flex items-center gap-2 rounded-full border px-3 py-1 font-semibold"
         >
           <Icon aria-hidden className="size-4" />
-          {copy(language, ENDED_WORD[ended])}
+          {copy(language, ENDED_WORD[ended], {}, category)}
         </span>
         {question.added === "twin" && (
           <span data-review-twin className="text-sm">
-            {copy(language, "play_results_twin")}
+            {copy(language, "play_results_twin", {}, category)}
           </span>
         )}
         {question.help_used > 0 && (
           <span data-review-help className="text-sm">
-            {copy(language, "play_results_help", { n: question.help_used })}
+            {copy(language, "play_results_help", { n: question.help_used }, category)}
           </span>
         )}
       </p>
 
       {answer === null ? (
-        <p data-review-no-answer>{copy(language, "review_no_answer")}</p>
+        <p data-review-no-answer>{copy(language, "review_no_answer", {}, category)}</p>
       ) : (
         drawn && (
           <div data-review-answer>
-            <Still question={question} value={answer} language={language} />
+            <Still question={question} value={answer} language={language} category={category} />
           </div>
         )
       )}
 
       {!right && drawn && (
         <div data-review-solution className="flex flex-col gap-3">
-          <p className="font-semibold">{copy(language, "review_right_answer")}</p>
-          <Still question={question} value={question.solution} language={language} />
+          <p className="font-semibold">{copy(language, "review_right_answer", {}, category)}</p>
+          <Still
+            question={question}
+            value={question.solution}
+            language={language}
+            category={category}
+          />
         </div>
       )}
 
@@ -192,7 +201,9 @@ export function ReviewStep({
           data-review-bubble
           className="flex flex-col gap-2 rounded-2xl rounded-tl-sm border bg-card p-4"
         >
-          {right && <p className="font-semibold">{copy(language, "review_praise")}</p>}
+          {right && (
+            <p className="font-semibold">{copy(language, "review_praise", {}, category)}</p>
+          )}
           {lines.map((line) => (
             <p key={line} data-review-line>
               <RichText text={line} inline />

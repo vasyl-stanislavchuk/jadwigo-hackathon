@@ -1,14 +1,15 @@
 /**
  * How the overview draws an outcome: its line, its icon and its colours. Every cell carries an icon
  * as well as a colour, so the grid reads without colour too (wave 2 plan of dl-uukj.30). The
- * colours are the attempt page's tiles (AttemptReview.tsx): the player's own right and the miss
- * colour of decision 2026-10-24, plain for the rest. A plain minus for not yet: the parent's, never
+ * colours are the tones every screen shares (src/review/outcome.ts): the player's own right and
+ * the miss colour of decision 2026-10-24, plain for the rest. A plain minus for not yet: the parent's, never
  * a cross (src/review/ended.ts keeps the child's icons).
  */
 
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { Check, Contrast, Copy, Dot, Ellipsis, type LucideIcon, Minus, Redo2 } from "lucide-react";
 import type { ReactElement } from "react";
+import { TONE_CLASS, type Tone } from "../../review/outcome.ts";
 import type { Outcome, Row } from "./grid.ts";
 
 /** The overview is for the adult: the copy reads the adult's lines. */
@@ -32,14 +33,19 @@ const OUTCOME_ICON: Record<Outcome, LucideIcon> = {
   not_asked: Dot,
 };
 
-export const OUTCOME_TILE: Record<Outcome, string> = {
-  first_try: "border-kid-correct bg-kid-correct-soft text-kid-correct-ink",
-  got_there: "border-kid-correct bg-kid-correct-soft text-kid-correct-ink",
-  not_yet: "border-kid-try-again bg-kid-try-again-soft text-kid-try-again-ink",
-  skipped: "border-border bg-background",
-  open: "border-border bg-background",
-  not_asked: "border-border bg-background",
+/** The tone each outcome wears, from the one tone table every screen shares (src/review/outcome.ts). */
+const OUTCOME_TONE: Record<Outcome, Tone> = {
+  first_try: "right",
+  got_there: "right",
+  not_yet: "miss",
+  skipped: "plain",
+  open: "plain",
+  not_asked: "plain",
 };
+
+export const OUTCOME_TILE: Record<Outcome, string> = Object.fromEntries(
+  (Object.keys(OUTCOME_TONE) as Outcome[]).map((o) => [o, TONE_CLASS[OUTCOME_TONE[o]]]),
+) as Record<Outcome, string>;
 
 export function OutcomeIcon({ outcome }: { outcome: Outcome }): ReactElement {
   const Icon = OUTCOME_ICON[outcome];

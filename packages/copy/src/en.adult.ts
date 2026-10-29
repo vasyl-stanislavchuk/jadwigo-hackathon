@@ -22,4 +22,13 @@ export const enAdult: PartialCopyTable = {
   finished: { text: "That's the lesson done. Thank you!", reviewed: true },
   can_do_heading: { text: "What you can do now", reviewed: true },
   session_finished: { text: "This lesson is finished. You can start it again.", reviewed: true },
+  // The parent's lines on a finished lesson (dl-uukj.32 wave 2): the child's lines speak to the
+  // child ("you got it"); the adult reads how it went, in the adult's own words.
+  play_ended_correct: { text: "Right", reviewed: false },
+  play_ended_missed: { text: "Not yet", reviewed: false },
+  play_ended_skipped: { text: "Skipped", reviewed: false },
+  play_ended_done: { text: "Done", reviewed: false },
+  play_ended_open: { text: "Still open", reviewed: false },
+  review_no_answer: { text: "No answer given. The right answer is below.", reviewed: false },
+  review_praise: { text: "Why it is right:", reviewed: false },
 };

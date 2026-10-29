@@ -12,9 +12,9 @@ import type { AttemptResults } from "@jadwigo/contracts";
 import { copy, type Language } from "@jadwigo/copy";
 import { Button } from "@jadwigo/ui";
 import type { ReactElement } from "react";
+import { NavLink } from "../nav/NavLink.tsx";
 import { browserAuth } from "../parent/auth.ts";
 import { parentPath } from "../parent/route.ts";
-import { NavLink } from "../playground/shell/NavLink.tsx";
 import { ReviewList } from "../review/ReviewList.tsx";
 
 export function Results({

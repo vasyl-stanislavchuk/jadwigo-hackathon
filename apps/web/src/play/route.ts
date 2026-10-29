@@ -5,7 +5,7 @@
  *   /play/<assignment id>              plays that assignment; a reload resumes the tab's attempt
  *   /play/<assignment id>/review/<seq> once it is finished, that question again, from the end list
  *
- * Moving around uses the playground's pushState helpers (playground/route.ts), so both share one
+ * Moving around uses the app's pushState helpers (src/nav/location.ts), so both share one
  * live URL.
  */
 
