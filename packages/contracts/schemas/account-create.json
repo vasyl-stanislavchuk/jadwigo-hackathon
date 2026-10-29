@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "language": {
+      "$ref": "#/$defs/Language"
+    }
+  },
+  "required": [
+    "language"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en",
+        "uk"
+      ]
+    }
+  }
+}

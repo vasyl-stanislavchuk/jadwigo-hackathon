@@ -108,6 +108,17 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
   padding-bottom: calc(var(--kid-bar-height) + var(--kid-tray-height, 0px) + 2rem);
 }
 
+/* The 16 at the sides, the dock's own inset, so the instruction, the card and the answer line up
+ * with the keypad (dl-uukj.29.143): a 358 column on a 390 phone. An upright tablet keeps its 600
+ * column and only gives up width for the 16 in a window under 632. */
+.kid-step-shell[data-framed][data-frame="phone"] > [data-stage] {
+  padding-inline: 1rem;
+}
+
+.kid-step-shell[data-framed][data-frame="tablet"] > [data-stage] {
+  max-width: min(var(--kid-stage-max), 100% - 2rem);
+}
+
 /* Where the step's content ends, for the more-below arrow: right under the last part. */
 [data-stage-end] {
   height: 1px;

@@ -41,5 +41,26 @@ module "app" {
     "POST /api/v1/attempts/{id}/questions/{seq}/help",
     "GET /api/v1/attempts/{id}/results",
     "POST /api/v1/question-searches",
+    # Parent login (dl-e8ov.2.36): these 5 need a token. The JWT authorizer on them is
+    # dl-e8ov.2.42; apply them only together with it, never alone.
+    "GET /api/v1/me",
+    "POST /api/v1/accounts",
+    "POST /api/v1/learners",
+    "POST /api/v1/attempts/{id}/claims",
+    "GET /api/v1/learners/{id}/attempts",
   ]
+
+  # The routes above whose ROUTES auth is "token": only these carry the JWT authorizer
+  # (dl-e8ov.2.42). tools/src/check-infra-routes.ts fails when the two lists differ.
+  token_routes = [
+    "GET /api/v1/me",
+    "POST /api/v1/accounts",
+    "POST /api/v1/learners",
+    "POST /api/v1/attempts/{id}/claims",
+    "GET /api/v1/learners/{id}/attempts",
+  ]
+
+  jwt_issuer = "https://${var.supabase_ref}.supabase.co/auth/v1"
+
+  reserved_concurrency = var.app_reserved_concurrency
 }

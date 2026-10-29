@@ -98,6 +98,8 @@ Run the tests your change touches. CI runs the rest. Playwright is CI's job.
 
 An issue is a brief. It names what to **Read**, the paths it **Owns**, the **Frozen** tests, what
 to **Do**, **Done when**, and **Stop if**. If yours lacks one of these, ask before you start.
+When you write one, a layout claim (scroll, fold, size) is checked in `apps/web/e2e`: component
+tests run in happy-dom, which does no layout, so they check the logic only (`dl-5ssh.73`).
 
 Before a new issue, take back your own PRs: one that md's merge steward returned to draft (a red
 `review-ok` or a failure in your code) comes first. Its findings are in the steward's PR comment
@@ -136,6 +138,14 @@ Big changes ship as a wave: a lead plans it, and lanes build it in parallel.
   Issues carry `wave:<epic>-<n>` and `lane:<x>` labels, and a lane works `bd ready --label lane:<x>`.
 - **Step 0 is the lead's:** one PR with the plan, the contract changes and shared stubs. Lanes
   build against it and never edit a contract. A gap in a contract is a message to the lead.
+- **Step 0 lands before lane PRs face main.** A lane PR targets the step-0 branch, which GitHub
+  retargets to main once step 0 merges, or it stays a draft until then. Otherwise the steward
+  reviews step 0 again inside every lane PR (`dl-5ssh.67`).
+- **A stack updates by `git merge`, never by rebase.** The guard refuses force-push, so a rebased
+  base strands every PR above it. The squash merge keeps main's history clean anyway (`dl-5ssh.67`).
+- **Every PR keeps an owner after its lane ends.** The wave plan names who takes the steward's
+  hand-backs once the lanes stop: the lead, or a sweeper session parked on
+  `md merge-steward inbox --wait`. A red review with no owner waits for hours (`dl-5ssh.67`).
 - **You own your lane's paths and nothing else.** A file outside them (a shared fixture, a
   dependency, another lane's code) is a request to the lead, not an edit.
 - One md worktree per lane: `md worktree new <lane> --repo jadwigo-hackathon`. Inside a lane,

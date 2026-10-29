@@ -1,0 +1,412 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "learner": {
+      "$ref": "#/$defs/Learner"
+    },
+    "attempts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/LearnerAttempt"
+      }
+    }
+  },
+  "required": [
+    "learner",
+    "attempts"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Learner": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/LearnerId"
+        },
+        "pod_id": {
+          "$ref": "#/$defs/PodId"
+        },
+        "handle": {
+          "type": "string",
+          "minLength": 1
+        },
+        "first_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "age_group": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        }
+      },
+      "required": [
+        "id",
+        "pod_id",
+        "handle",
+        "first_name",
+        "age_group",
+        "created_at"
+      ],
+      "additionalProperties": false
+    },
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LearnerAttempt": {
+      "type": "object",
+      "properties": {
+        "attempt": {
+          "$ref": "#/$defs/Attempt"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "language": {
+          "$ref": "#/$defs/Language"
+        },
+        "results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AttemptResult"
+          }
+        }
+      },
+      "required": [
+        "attempt",
+        "title",
+        "language",
+        "results"
+      ],
+      "additionalProperties": false
+    },
+    "Attempt": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/AttemptId"
+        },
+        "pod_id": {
+          "$ref": "#/$defs/PodId"
+        },
+        "assignment_id": {
+          "$ref": "#/$defs/AssignmentId"
+        },
+        "lesson_version_id": {
+          "$ref": "#/$defs/LessonVersionId"
+        },
+        "learner_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LearnerId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "player_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "real",
+            "preview"
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/AttemptStatus"
+        },
+        "resume_at": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        },
+        "finished_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "pod_id",
+        "assignment_id",
+        "lesson_version_id",
+        "learner_id",
+        "player_name",
+        "mode",
+        "status",
+        "resume_at",
+        "started_at",
+        "finished_at"
+      ],
+      "additionalProperties": false
+    },
+    "AttemptId": {
+      "type": "string",
+      "pattern": "^att_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "AssignmentId": {
+      "type": "string",
+      "pattern": "^asg_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LessonVersionId": {
+      "type": "string",
+      "pattern": "^lesv_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "AttemptStatus": {
+      "type": "string",
+      "enum": [
+        "in_progress",
+        "paused",
+        "finished"
+      ]
+    },
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en",
+        "uk"
+      ]
+    },
+    "AttemptResult": {
+      "type": "object",
+      "properties": {
+        "pod_id": {
+          "$ref": "#/$defs/PodId"
+        },
+        "attempt_id": {
+          "$ref": "#/$defs/AttemptId"
+        },
+        "seq": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "lesson_question_id": {
+          "$ref": "#/$defs/LessonQuestionId"
+        },
+        "added": {
+          "$ref": "#/$defs/Added"
+        },
+        "placed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Placed"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "added_for": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "say": {
+          "type": "string"
+        },
+        "family": {
+          "$ref": "#/$defs/Family"
+        },
+        "question_type": {
+          "$ref": "#/$defs/QuestionType"
+        },
+        "tries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "first_try_correct": {
+          "type": "boolean"
+        },
+        "correct": {
+          "type": "boolean"
+        },
+        "mistake_classes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "help_used": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "skip_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SkipReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "time_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "ended": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ended"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "pod_id",
+        "attempt_id",
+        "seq",
+        "lesson_question_id",
+        "added",
+        "placed",
+        "added_for",
+        "say",
+        "family",
+        "question_type",
+        "tries",
+        "first_try_correct",
+        "correct",
+        "mistake_classes",
+        "help_used",
+        "skip_reason",
+        "time_ms",
+        "ended"
+      ],
+      "additionalProperties": false
+    },
+    "LessonQuestionId": {
+      "type": "string",
+      "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "Added": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "twin"
+      ]
+    },
+    "Placed": {
+      "type": "string",
+      "enum": [
+        "now",
+        "review_round"
+      ]
+    },
+    "Family": {
+      "type": "string",
+      "enum": [
+        "choose",
+        "enter",
+        "slots",
+        "sequence",
+        "group",
+        "place",
+        "explain"
+      ]
+    },
+    "QuestionType": {
+      "type": "string",
+      "enum": [
+        "true_false",
+        "recognition",
+        "lettered_choice",
+        "multi_select",
+        "mark_numbers",
+        "fraction_compare",
+        "production",
+        "short_text",
+        "expression",
+        "measure",
+        "fill_gaps",
+        "fill_table",
+        "label_picture",
+        "column",
+        "pyramid",
+        "clock_read",
+        "money_count",
+        "order",
+        "bucket",
+        "match",
+        "number_line_place",
+        "hotspot",
+        "spatial_build",
+        "draw_graph",
+        "clock_set",
+        "money_pay",
+        "fraction_shade",
+        "area_model",
+        "explain"
+      ]
+    },
+    "SkipReason": {
+      "type": "string",
+      "enum": [
+        "dont_know",
+        "asked_to_skip",
+        "help_twin"
+      ]
+    },
+    "Ended": {
+      "type": "string",
+      "enum": [
+        "correct",
+        "skipped",
+        "missed"
+      ]
+    }
+  }
+}
