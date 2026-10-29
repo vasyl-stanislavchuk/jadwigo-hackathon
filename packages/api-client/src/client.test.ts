@@ -39,7 +39,21 @@ const question = {
   asked_at: AT,
 };
 
-const snapshot = { attempt, questions: [question], open_seq: 1, last_event_id: null };
+const planned = {
+  position: 1,
+  lesson_question_id: question.lesson_question_id,
+  question_type: question.question_type,
+  say: question.say,
+  question: question.question,
+};
+
+const snapshot = {
+  attempt,
+  plan: [planned],
+  questions: [question],
+  open_seq: 1,
+  last_event_id: null,
+};
 
 interface Sent {
   url: string;
