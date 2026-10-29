@@ -1,15 +1,23 @@
 import type { InvokeCommand } from "@aws-sdk/client-lambda";
+import type { GetObjectCommand } from "@aws-sdk/client-s3";
 import {
   ERROR_STATUS,
   type ErrorEnvelope,
   ErrorType,
+  QuestionBody,
   ROUTES,
   SearchEnvelope,
 } from "@jadwigo/contracts";
 import { InMemoryStore } from "@jadwigo/store";
 import { describe, expect, it } from "vitest";
 import { createApp } from "./app.ts";
-import { type BankDeps, type BankInvokeReply, lambdaBank } from "./questions.ts";
+import {
+  type BankDeps,
+  type BankInvokeReply,
+  type BucketDeps,
+  lambdaBank,
+  lambdaBucket,
+} from "./questions.ts";
 
 /**
  * The fixture envelope from david-learns `tests/fixtures/bank/envelope.json` at commit `dc8412cd`,
@@ -324,5 +332,217 @@ describe("lambdaBank", () => {
     expect(await bank?.readToken()).toBe(TOKEN);
     expect(await bank?.readToken()).toBe(TOKEN);
     expect(names).toEqual(["/jadwigo/test/bank-read-token", "/jadwigo/test/bank-read-token"]);
+  });
+});
+
+/**
+ * An invented question body in the shape the bank's derive step writes to
+ * `questions/khan/<id>.json`: no Khan text, a made-up id, sha and credit URL.
+ */
+const BODY = {
+  id: "xfeed0001",
+  source: "khan",
+  pl: {
+    family: "enter",
+    data: { prompt: "Ile to jest 2 + 3?" },
+    key: { accept: ["5"] },
+    help: { worked: ["2 + 3 = 5"] },
+    say: "Ile to jest dwa plus trzy?",
+  },
+  problem_type: "invented-addition",
+  credit: {
+    source: "khan",
+    url: "https://example.org/invented/xfeed0001",
+    licence: "CC BY-NC-SA 4.0",
+  },
+  pictures: [{ ref: `${"ab".repeat(32)}.png`, decorative: true }],
+};
+
+/** A fake bucket: no network, the objects by key, every key it was asked for kept. */
+function fakeBucket(objects: Record<string, string>, fail?: Error) {
+  const asked: string[] = [];
+  const bucket: BucketDeps = {
+    get: async (key) => {
+      asked.push(key);
+      if (fail) throw fail;
+      return objects[key];
+    },
+  };
+  return { bucket, asked };
+}
+
+const STORED = { "questions/khan/xfeed0001.json": JSON.stringify(BODY) };
+
+async function getBody(
+  bucket: BucketDeps | undefined,
+  id: string,
+  headers: Record<string, string> = { authorization: `Bearer ${TOKEN}` },
+  wired: { bank: BankDeps | undefined } = {
+    bank: fakeBank(async () => answered(200, ENVELOPE)).bank,
+  },
+): Promise<{ status: number; body: unknown }> {
+  const app = createApp(new InMemoryStore(), { bank: wired.bank, bucket });
+  const path = ROUTES.questionBody.path.replace("{id}", id);
+  const reply = (await app.resolve(
+    {
+      version: "2.0",
+      routeKey: "$default",
+      rawPath: path,
+      rawQueryString: "",
+      headers,
+      requestContext: { http: { method: "GET", path }, stage: "$default" },
+      isBase64Encoded: false,
+    },
+    {} as Parameters<typeof app.resolve>[1],
+  )) as { statusCode: number; body?: string };
+  return { status: reply.statusCode, body: reply.body ? JSON.parse(reply.body) : null };
+}
+
+describe("GET /api/v1/questions/{id}", () => {
+  it.each([
+    ["no authorization header", {}],
+    ["a wrong token", { authorization: "Bearer not-the-token" }],
+  ])("refuses %s as 401 and never reads the bucket", async (_, headers) => {
+    const { bucket, asked } = fakeBucket(STORED);
+    refusedWith(await getBody(bucket, "xfeed0001", headers), ErrorType.enum.Unauthorized);
+    expect(asked).toEqual([]);
+  });
+
+  it("refuses a bad id without a token as 401 too, so the token comes before the id", async () => {
+    const { bucket, asked } = fakeBucket(STORED);
+    refusedWith(await getBody(bucket, "..%2Fsecret", {}), ErrorType.enum.Unauthorized);
+    expect(asked).toEqual([]);
+  });
+
+  it("returns the body with its key from questions/khan/<id>.json", async () => {
+    const { bucket, asked } = fakeBucket(STORED);
+    const reply = await getBody(bucket, "xfeed0001");
+    expect(reply.status).toBe(200);
+    expect(reply.body).toEqual(QuestionBody.parse(BODY));
+    expect((reply.body as QuestionBody).pl?.key).toEqual({ accept: ["5"] });
+    expect((reply.body as QuestionBody).pictures).toHaveLength(1);
+    expect(asked).toEqual(["questions/khan/xfeed0001.json"]);
+  });
+
+  it("drops a field the body schema does not name", async () => {
+    const { bucket } = fakeBucket({
+      "questions/khan/xfeed0001.json": JSON.stringify({ ...BODY, raw_item: { secret: 1 } }),
+    });
+    const reply = await getBody(bucket, "xfeed0001");
+    expect(reply.status).toBe(200);
+    expect(reply.body).not.toHaveProperty("raw_item");
+  });
+
+  it("answers 404 when the bucket holds no such object", async () => {
+    const { bucket, asked } = fakeBucket(STORED);
+    const reply = await getBody(bucket, "xnothere");
+    refusedWith(reply, ErrorType.enum.NotFound);
+    expect((reply.body as ErrorEnvelope).error.message).toBe("no such question");
+    expect(asked).toEqual(["questions/khan/xnothere.json"]);
+  });
+
+  it.each([
+    ["a dot segment", "..%2F..%2Findex"],
+    ["a dot", "x.json"],
+    ["one past 64 characters", "x".repeat(65)],
+    ["a space", "x%20y"],
+  ])("answers 404 for an id with %s and never builds a key from it", async (_, id) => {
+    const { bucket, asked } = fakeBucket(STORED);
+    refusedWith(await getBody(bucket, id), ErrorType.enum.NotFound);
+    expect(asked).toEqual([]);
+  });
+
+  it("answers 502 when the bucket read fails, naming nothing of the failure", async () => {
+    const { bucket } = fakeBucket(STORED, new Error("AccessDenied: arn:aws:s3:::bucket"));
+    const reply = await getBody(bucket, "xfeed0001");
+    refusedWith(reply, ErrorType.enum.BankUnavailable);
+    expect(JSON.stringify(reply.body)).not.toMatch(/AccessDenied|arn:/);
+  });
+
+  it.each([
+    ["is not JSON", "not json"],
+    ["is not a question body", JSON.stringify({ id: "xfeed0001", source: "khan" })],
+    ["names another id", JSON.stringify({ ...BODY, id: "xother" })],
+  ])("answers 502 when the stored object %s", async (_, text) => {
+    const { bucket } = fakeBucket({ "questions/khan/xfeed0001.json": text });
+    refusedWith(await getBody(bucket, "xfeed0001"), ErrorType.enum.BankUnavailable);
+  });
+
+  it("answers 502 when no bank or no bucket is wired, as on the local server", async () => {
+    refusedWith(
+      await getBody(fakeBucket(STORED).bucket, "xfeed0001", undefined, { bank: undefined }),
+      ErrorType.enum.BankUnavailable,
+    );
+    refusedWith(await getBody(undefined, "xfeed0001"), ErrorType.enum.BankUnavailable);
+  });
+});
+
+describe("lambdaBucket", () => {
+  const object = (text: string) => ({ Body: { transformToString: async () => text } });
+
+  it("reads the object from the bucket CONTENT_BUCKET names, without touching SSM", async () => {
+    const commands: GetObjectCommand[] = [];
+    const names: string[] = [];
+    const bucket = lambdaBucket(
+      "jadwigo-bank-content-test",
+      async (name) => {
+        names.push(name);
+        return "unused";
+      },
+      {
+        send: async (command) => {
+          commands.push(command);
+          return object('{"id":"x1"}');
+        },
+      },
+    );
+    expect(await bucket.get("questions/khan/x1.json")).toBe('{"id":"x1"}');
+    expect(commands[0]?.input).toEqual({
+      Bucket: "jadwigo-bank-content-test",
+      Key: "questions/khan/x1.json",
+    });
+    expect(names).toEqual([]);
+  });
+
+  it("falls back to the SSM parameter, read once per cold start and again after a failed read", async () => {
+    const names: string[] = [];
+    let fail = true;
+    const buckets: (string | undefined)[] = [];
+    const bucket = lambdaBucket(
+      undefined,
+      async (name) => {
+        names.push(name);
+        if (fail) throw new Error("ssm down");
+        return " jadwigo-bank-content-ssm \n";
+      },
+      {
+        send: async (command) => {
+          buckets.push(command.input.Bucket);
+          return object("{}");
+        },
+      },
+    );
+    await expect(bucket.get("k")).rejects.toThrow("ssm down");
+    fail = false;
+    await bucket.get("k");
+    await bucket.get("k");
+    expect(names).toEqual(["/jadwigo/bank/content-bucket", "/jadwigo/bank/content-bucket"]);
+    expect(buckets).toEqual(["jadwigo-bank-content-ssm", "jadwigo-bank-content-ssm"]);
+  });
+
+  it("throws when the parameter holds no name", async () => {
+    const bucket = lambdaBucket(undefined, async () => " ", { send: async () => object("{}") });
+    await expect(bucket.get("k")).rejects.toThrow("no content bucket");
+  });
+
+  it.each([
+    ["NoSuchKey", Object.assign(new Error("gone"), { name: "NoSuchKey" })],
+    ["a 404", Object.assign(new Error("gone"), { $metadata: { httpStatusCode: 404 } })],
+  ])("is undefined for a missing object (%s), and throws on any other failure", async (_, err) => {
+    const gone = lambdaBucket("b", undefined, { send: () => Promise.reject(err) });
+    expect(await gone.get("k")).toBeUndefined();
+    const denied = Object.assign(new Error("AccessDenied"), { $metadata: { httpStatusCode: 403 } });
+    const broken = lambdaBucket("b", undefined, { send: () => Promise.reject(denied) });
+    await expect(broken.get("k")).rejects.toThrow("AccessDenied");
   });
 });

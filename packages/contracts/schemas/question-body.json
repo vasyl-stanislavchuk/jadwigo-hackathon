@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "$ref": "#/$defs/BankQuestionId"
+    },
+    "source": {
+      "type": "string",
+      "const": "khan"
+    },
+    "pl": {
+      "type": "object",
+      "properties": {
+        "family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "data": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        },
+        "key": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        },
+        "help": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        },
+        "say": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "family",
+        "data",
+        "key"
+      ],
+      "additionalProperties": false
+    },
+    "en": {
+      "type": "object",
+      "properties": {
+        "family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "data": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        },
+        "key": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        },
+        "help": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        },
+        "say": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "family",
+        "data",
+        "key"
+      ],
+      "additionalProperties": false
+    },
+    "problem_type": {
+      "type": "string"
+    },
+    "credit": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "licence": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "source",
+        "licence"
+      ],
+      "additionalProperties": false
+    },
+    "pictures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}\\.[a-z0-9]+$",
+            "description": "The picture's sha256 with its extension, under <source>/media/ in the bucket"
+          },
+          "decorative": {
+            "type": "boolean"
+          },
+          "pl": {
+            "type": "string",
+            "description": "The picture's Polish alternative text"
+          }
+        },
+        "required": [
+          "ref",
+          "decorative"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "id",
+    "source",
+    "credit",
+    "pictures"
+  ],
+  "additionalProperties": false,
+  "description": "One bank question's private body from questions/<source>/<id>.json: a version per language with its family, data, key and help, the credit and the pictures by sha; it reaches only a caller with the read token",
+  "$defs": {
+    "BankQuestionId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,64}$",
+      "description": "A bank question's id: a Khan item id such as x1a2b3c4, letters, digits, _ and - only"
+    }
+  }
+}
