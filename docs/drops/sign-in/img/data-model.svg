@@ -138,7 +138,7 @@
         <text x="1016" y="208" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">name</text>
         <text x="1184" y="208" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">text</text>
         <text x="1016" y="228" fill="#040810" font-size="10" font-family="'Geist Mono', ui-monospace, monospace">language</text>
-        <text x="1184" y="228" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">pl | en</text>
+        <text x="1184" y="228" fill="#5a6b85" font-size="10" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="end">pl | en | uk</text>
         <text x="1016" y="252" fill="#7888a0" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">a family; the privacy boundary</text>
         <rect x="1000" y="400" width="200" height="136" rx="6" fill="#fbfcfe"/>
         <rect x="1000" y="400" width="200" height="136" rx="6" fill="#ffffff" stroke="#5a6b85" stroke-width="1"/>
