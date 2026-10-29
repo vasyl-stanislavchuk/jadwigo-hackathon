@@ -84,3 +84,17 @@ export function bankSearchAliasArn(): string | undefined {
 export function bankReadTokenParam(): string | undefined {
   return process.env["BANK_READ_TOKEN_PARAM"]?.trim() || undefined;
 }
+
+/**
+ * The SSM parameter holding the content bucket's name when `CONTENT_BUCKET` is unset. The bank's
+ * Terraform writes it beside `/jadwigo/bank/search-alias-arn`.
+ */
+export const CONTENT_BUCKET_PARAM = "/jadwigo/bank/content-bucket";
+
+/**
+ * The content bucket the question body route reads `questions/<source>/<id>.json` from, as the infra
+ * lane sets it on the function. Undefined when unset or blank: the name is then read from SSM.
+ */
+export function contentBucket(): string | undefined {
+  return process.env["CONTENT_BUCKET"]?.trim() || undefined;
+}

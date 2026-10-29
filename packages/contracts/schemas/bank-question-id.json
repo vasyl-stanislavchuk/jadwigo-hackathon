@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "string",
+  "pattern": "^[A-Za-z0-9_-]{1,64}$",
+  "description": "A bank question's id: a Khan item id such as x1a2b3c4, letters, digits, _ and - only"
+}
