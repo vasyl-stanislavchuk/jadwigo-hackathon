@@ -17,9 +17,29 @@ export {
 export { Input } from "./primitives/input.tsx";
 export { Popover, PopoverContent, PopoverTrigger } from "./primitives/popover.tsx";
 export { Progress } from "./primitives/progress.tsx";
+export {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "./primitives/sheet.tsx";
 export { Slider } from "./primitives/slider.tsx";
 export { Spinner } from "./primitives/spinner.tsx";
 export { Switch } from "./primitives/switch.tsx";
+export {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "./primitives/table.tsx";
 export { Toggle, toggleVariants } from "./primitives/toggle.tsx";
 export { ToggleGroup, ToggleGroupItem } from "./primitives/toggle-group.tsx";
 export { VisuallyHidden } from "./visually-hidden.tsx";
