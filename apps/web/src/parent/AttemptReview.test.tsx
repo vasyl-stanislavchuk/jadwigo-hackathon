@@ -14,6 +14,7 @@ import {
 } from "@jadwigo/contracts";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { reviewQuestion } from "../review/fixtures.ts";
 import { AttemptReview } from "./AttemptReview.tsx";
 
 const AT = "2026-10-28T14:02:06.274Z";
@@ -22,24 +23,10 @@ const ATTEMPT = AttemptId.parse("att_43007b83dp9w2tnfjxhha74cyq");
 const LEARNER = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
 const OTHER = LearnerId.parse("lrn_7qre3atahx8cpak6xbjtz73var");
 
-/** 3 times 4, picked from 3 numbers. */
-const choose = {
-  family: "choose",
-  data: {
-    options: [
-      { id: "o1", content: { kind: "text", text: "12" } },
-      { id: "o2", content: { kind: "text", text: "7" } },
-      { id: "o3", content: { kind: "text", text: "16" } },
-    ],
-    select: "one",
-    layout: "list",
-  },
-};
-
 const attempt = (overrides: Partial<ReviewTry>): ReviewTry => ({
   try_no: 1,
   kind: "try",
-  value: { chosen: ["o1"] },
+  value: { entered: "10" },
   correct: true,
   parts: null,
   mistake_class: null,
@@ -49,24 +36,16 @@ const attempt = (overrides: Partial<ReviewTry>): ReviewTry => ({
   ...overrides,
 });
 
+/** The review fixture's 2 × 5, with the parent's tries and its result row. */
 function question(
   seq: number,
   ended: ParentReviewQuestion["ended"],
   tries: ReviewTry[],
   timeMs: number,
 ): ParentReviewQuestion {
+  const asked = reviewQuestion(seq, ended);
   return {
-    seq,
-    added: "planned",
-    ended,
-    help_used: 0,
-    question_type: "recognition",
-    say: `Ile to 3 razy 4? (${seq})`,
-    question: choose,
-    answer: tries.at(-1)?.value ?? null,
-    parts: null,
-    solution: { chosen: ["o1"] },
-    reveal: null,
+    ...asked,
     tries,
     result: {
       pod_id: POD,
@@ -76,9 +55,9 @@ function question(
       added: "planned",
       placed: null,
       added_for: null,
-      say: `Ile to 3 razy 4? (${seq})`,
-      family: "choose",
-      question_type: "recognition",
+      say: asked.say,
+      family: "enter",
+      question_type: asked.question_type,
       tries: tries.length,
       first_try_correct: tries[0]?.correct === true,
       correct: ended === "correct",
@@ -115,14 +94,14 @@ const REVIEW = {
       [
         attempt({
           try_no: 1,
-          value: { chosen: ["o2"] },
+          value: { entered: "7" },
           correct: false,
           mistake_class: "add_for_multiply",
           latency_ms: 9_600,
         }),
         attempt({
           try_no: 2,
-          value: { chosen: ["o3"] },
+          value: { entered: "12" },
           correct: false,
           mistake_class: "some_class_with_no_line",
           latency_ms: 12_400,
@@ -206,7 +185,7 @@ describe("AttemptReview", () => {
     await draw(client({}));
     expect(tiles().map((t) => t.dataset["ended"])).toEqual(["correct", "missed", "skipped"]);
     expect(tiles().map((t) => t.dataset["tile"])).toEqual(["1", "2", "3"]);
-    expect(tiles()[1]?.textContent).toContain("Ile to 3 razy 4? (2)");
+    expect(tiles()[1]?.textContent).toContain("Ile to jest dwa razy pięć? (2)");
     expect(tiles()[0]?.className).toContain("bg-kid-correct-soft");
     expect(tiles()[1]?.className).toContain("bg-kid-try-again-soft");
     expect(tiles()[2]?.className).not.toMatch(/kid-(correct|try-again)/);
@@ -216,9 +195,7 @@ describe("AttemptReview", () => {
     await draw(client({}));
     await press('[data-tile="1"]');
     expect(document.querySelector("[data-tiles]")).toBeNull();
-    expect(document.querySelector("[data-review-step]")?.getAttribute("data-review-step")).toBe(
-      "1",
-    );
+    expect(document.querySelector("[data-review-step]")?.getAttribute("data-seq")).toBe("1");
     expect(tries()).toHaveLength(1);
     expect(tries()[0]?.querySelector("[data-try-view]")).not.toBeNull();
     expect(tries()[0]?.textContent).toContain("Czas: 4 s");
@@ -258,15 +235,11 @@ describe("AttemptReview", () => {
     await press('[data-tile="1"]');
     expect(document.querySelector("[data-review-prev]")).toBeNull();
     await press("[data-review-next]");
-    expect(document.querySelector("[data-review-step]")?.getAttribute("data-review-step")).toBe(
-      "2",
-    );
+    expect(document.querySelector("[data-review-step]")?.getAttribute("data-seq")).toBe("2");
     await press("[data-review-next]");
     expect(document.querySelector("[data-review-next]")).toBeNull();
     await press("[data-review-prev]");
-    expect(document.querySelector("[data-review-step]")?.getAttribute("data-review-step")).toBe(
-      "2",
-    );
+    expect(document.querySelector("[data-review-step]")?.getAttribute("data-seq")).toBe("2");
     await press("[data-review-all]");
     expect(tiles()).toHaveLength(3);
   });

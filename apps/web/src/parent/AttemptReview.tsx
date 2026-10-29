@@ -7,7 +7,7 @@
  *            decisions 2026-10-18 and 2026-10-03)
  *   grid     a tile per question with its seq and say, coloured by how it ended: green for right,
  *            the miss red for a miss (decision 2026-10-24-a-miss-is-marked-in-red), plain for a skip
- *   step     a tile opens the shared review step (src/review), with the tries under it: each answer
+ *   step     a tile opens the shared review step (src/review/ReviewStep.tsx), with the tries under it: each answer
  *            drawn small beside the right one, its time, the help it had, and the mistake or the
  *            skip in plain words
  */
@@ -22,11 +22,11 @@ import type {
   SkipReason,
 } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language, mistakeCopyKey } from "@jadwigo/copy";
-import { browserClock, FamilyView, type PageFamilySpec, ViewMode } from "@jadwigo/lesson-kit";
+import { type Clock, FamilyView, type Instant, LessonTheme, ViewMode } from "@jadwigo/lesson-kit";
 import { Spinner } from "@jadwigo/ui";
 import { type ReactElement, type ReactNode, useEffect, useState } from "react";
 import { NavLink } from "../playground/shell/NavLink.tsx";
-import { ReviewStep } from "./ReviewStep.stub.tsx";
+import { ReviewStep, specOf } from "../review/ReviewStep.tsx";
 import { parentPath } from "./route.ts";
 
 const isApiError = (error: unknown): error is ApiError => error instanceof ApiError;
@@ -52,6 +52,9 @@ const SKIPPED: Record<SkipReason, CopyKey> = {
   asked_to_skip: "parent_skip_asked_to_skip",
   help_twin: "parent_skip_help_twin",
 };
+
+/** A still view has no timing to measure; a pinned clock keeps it the same on every draw. */
+const clock: Clock = { now: (): Instant => ({ perf: 0, wall: "2026-10-29T00:00:00.000Z" }) };
 
 const seconds = (ms: number): number => Math.round(ms / 1000);
 
@@ -275,16 +278,18 @@ function Try({
       data-kind={entry.kind}
     >
       {entry.kind === "try" && entry.value !== null && (
-        <div className="[zoom:0.6]" data-try-view>
-          <FamilyView
-            mode={ViewMode.Solution}
-            spec={specOf(question) as never}
-            language={language}
-            category={CATEGORY}
-            clock={browserClock}
-            value={entry.value as never}
-            solution={question.solution as never}
-          />
+        <div className="kid-step min-w-0 [zoom:0.6]" data-try-view>
+          <LessonTheme>
+            <FamilyView
+              mode={ViewMode.Solution}
+              spec={specOf(question) as never}
+              language={language}
+              category={CATEGORY}
+              clock={clock}
+              value={entry.value as never}
+              solution={question.solution as never}
+            />
+          </LessonTheme>
         </div>
       )}
       <p className="text-sm">
@@ -295,15 +300,4 @@ function Try({
       {said !== null && <p data-said>{copy(language, said, {}, CATEGORY)}</p>}
     </li>
   );
-}
-
-/** The question as a family view draws it, built the way the player builds its step. */
-function specOf(question: ParentReviewQuestion): PageFamilySpec {
-  return {
-    id: `q${question.seq}`,
-    say: question.say,
-    question_type: question.question_type,
-    family: question.question.family,
-    data: question.question.data,
-  } as PageFamilySpec;
 }
