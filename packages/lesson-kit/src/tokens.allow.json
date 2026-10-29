@@ -115,16 +115,6 @@
     "why": ""
   },
   {
-    "path": "families/slots/SlotsTable.tsx",
-    "snippet": "-[0.625rem]",
-    "why": ""
-  },
-  {
-    "path": "families/slots/SlotsTable.tsx",
-    "snippet": "[var(--jw-prompt-card,var(--card)",
-    "why": ""
-  },
-  {
     "path": "families/Stem.tsx",
     "snippet": "[length:var(--kid-math-size)",
     "why": ""
