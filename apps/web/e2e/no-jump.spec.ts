@@ -1,8 +1,8 @@
 // The no-jump check (dl-w3.41.8): the lesson player against a real api, one question of each family
-// the featured lessons hold, at a phone with touch and at a laptop. On each, the instruction, the
-// question card and the footer hold their place through the first edit (a digit typed, an option
-// picked) and through Sprawdź, whatever it brings: a miss with its band and marks, or Dobrze! and its
-// band. The jumps it holds: the maths line dropping until the first digit (dl-e8ov.2.32.45), and the
+// the featured lessons hold, at a phone with touch and at a laptop. On each, the top bar, the
+// instruction, the question card, a maths line's text, the first field and the footer hold their
+// place through the first edit (a digit typed, an option picked) and through Sprawdź, whatever it
+// brings: a miss with its band and marks, or Dobrze! and its band. The jumps it holds: the maths line dropping until the first digit (dl-e8ov.2.32.45), and the
 // footer or the top bar moving with a transformed container (dl-e8ov.2.32.42).
 //
 // It runs in the `api` projects, which playwright.config.ts adds when JW_E2E_API=1; play.spec.ts
