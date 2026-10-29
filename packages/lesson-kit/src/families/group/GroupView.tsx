@@ -173,7 +173,7 @@ function Zones({
 }): JSX.Element {
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-base">{label}</span>
+      <span className="text-jw-small">{label}</span>
       <div
         className={cn(
           "grid gap-[var(--kid-choice-gap)]",
@@ -229,7 +229,7 @@ function Pairs({
   const groupOf = (id: string) => data.groups.find((g) => g.id === id);
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-base">{label}</span>
+      <span className="text-jw-small">{label}</span>
       <ol className="flex flex-col gap-[var(--kid-choice-gap)]">
         {data.items.map((item) => {
           const t = tone(item.id);

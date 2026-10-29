@@ -21,6 +21,7 @@ describe("the token rules", () => {
     ["className='text-[1.5rem]'", "arbitrary size"],
     ["className='min-h-[var(--kid-tap-min)]'", "token read in a class"],
     ["className='text-[length:var(--jw-size-body)]'", "token read in a class"],
+    ["className='duration-[var(--jw-dur-mark,120ms)]'", "token read in a class"],
     ["stroke='var(--color-accent)'", "colour utility read as var()"],
     ["className='text-destructive'", "nothing backs it"],
     ["className='animate-in fade-in-0'", "nothing backs it"],

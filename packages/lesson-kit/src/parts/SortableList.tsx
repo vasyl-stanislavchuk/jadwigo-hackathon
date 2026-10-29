@@ -396,7 +396,9 @@ export function SortableList({
 
   return (
     <div className="flex flex-col gap-2" role="group" aria-label={label}>
-      <p className={cn("text-muted-foreground text-base", inset)}>{copy(language, "drag_hint")}</p>
+      <p className={cn("text-muted-foreground text-jw-small", inset)}>
+        {copy(language, "drag_hint")}
+      </p>
       {firstLabel !== undefined && (
         <p className={cn("text-lg font-semibold", inset)}>↑ {firstLabel}</p>
       )}

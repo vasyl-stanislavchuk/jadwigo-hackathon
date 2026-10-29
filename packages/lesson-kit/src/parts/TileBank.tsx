@@ -165,7 +165,10 @@ function Place({
         onPointerDown={tap.onPointerDown}
         onClick={tap.onClick}
       >
-        <span aria-hidden="true" className="text-base font-bold text-muted-foreground tabular-nums">
+        <span
+          aria-hidden="true"
+          className="text-jw-small font-bold text-muted-foreground tabular-nums"
+        >
           {n}
         </span>
         {content}
@@ -252,7 +255,7 @@ export function TileBank({
         walkByArrows(event, root.current, tap.picked === null ? "[data-tile]" : "[data-place]")
       }
     >
-      <p className="text-muted-foreground text-base">{copy(language, "tile_hint")}</p>
+      <p className="text-muted-foreground text-jw-small">{copy(language, "tile_hint")}</p>
       <DndContext
         accessibility={QUIET}
         sensors={sensors}

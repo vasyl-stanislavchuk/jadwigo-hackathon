@@ -224,7 +224,7 @@ export function TerminalCard({
                     // The 56 px box stays the tap target (A2); the visible hover and focus
                     // fill is a pill inset from it, so it never fills the row or runs into
                     // the card's rounded corner (owner, 2026-10-08).
-                    "relative isolate mx-1 gap-1.5 border-0 bg-transparent px-3 font-sans text-base hover:bg-transparent [&_svg:not([class*=size-])]:size-6",
+                    "relative isolate mx-1 gap-1.5 border-0 bg-transparent px-3 font-sans text-jw-small hover:bg-transparent [&_svg:not([class*=size-])]:size-6",
                     "before:absolute before:inset-x-1.5 before:inset-y-2 before:-z-10 before:rounded-sm before:transition-colors hover:before:bg-[color:var(--code-hover)] focus-visible:before:bg-[color:var(--code-hover)]",
                     copied
                       ? "text-[color:var(--code-cmd)]"
@@ -248,7 +248,7 @@ export function TerminalCard({
               <p
                 data-placeholder-note=""
                 className={cn(
-                  "px-4 pb-2 font-sans text-base",
+                  "px-4 pb-2 font-sans text-jw-small",
                   !paper && "text-[color:var(--code-muted)]",
                 )}
               >
@@ -256,7 +256,7 @@ export function TerminalCard({
               </p>
             )}
             {status?.line === index && !status.ok && (
-              <p data-copy-failed="" className="px-4 pb-2 font-sans text-base">
+              <p data-copy-failed="" className="px-4 pb-2 font-sans text-jw-small">
                 {copy(language, "code_copy_failed")}
               </p>
             )}
