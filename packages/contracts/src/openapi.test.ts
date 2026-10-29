@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { openApiDocument } from "./openapi.ts";
+import { z } from "zod";
+import { openApiDocument, RouteTableError } from "./openapi.ts";
 import { ROUTE_TAGS, ROUTES } from "./routes.ts";
 
 /**
@@ -71,4 +72,45 @@ describe("openapi.json", () => {
   it("names no servers: the docs app adds them", () => {
     expect(doc).not.toHaveProperty("servers");
   });
+});
+
+describe("a route table openApiDocument refuses", () => {
+  const { getAttempt, help } = ROUTES;
+  it.each([
+    [
+      "a {param} in the path with no params key",
+      { help: { ...help, params: z.object({ id: help.params.shape.id }) } },
+      /^help: \{seq\} in path/,
+    ],
+    [
+      "a params key with no {param} in the path",
+      { getAttempt: { ...getAttempt, path: "/api/v1/attempts" } },
+      /^getAttempt: no \{id\} in path/,
+    ],
+    [
+      "two routes on one method and path",
+      { getAttempt, readAttempt: getAttempt },
+      /^readAttempt: GET \/api\/v1\/attempts\/\{id\} is also getAttempt/,
+    ],
+    [
+      "params that is not an object",
+      { getAttempt: { ...getAttempt, params: z.string() } },
+      /^getAttempt: params is not a z.object\(\)/,
+    ],
+  ])("%s, naming the route", (_what, routes, message) => {
+    expect(() => openApiDocument(routes)).toThrow(RouteTableError);
+    expect(() => openApiDocument(routes)).toThrow(message);
+  });
+
+  it.each(["toString", "constructor", "__proto__", "hasOwnProperty"])(
+    "a {%s} in the path, a name every object inherits, with no params key",
+    (name) => {
+      const routes = {
+        getAttempt: { ...getAttempt, path: `/api/v1/{${name}}`, params: z.object({}) },
+      };
+      expect(() => openApiDocument(routes)).toThrow(
+        `getAttempt: {${name}} in path but not in params`,
+      );
+    },
+  );
 });
