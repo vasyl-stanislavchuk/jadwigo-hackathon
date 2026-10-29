@@ -127,6 +127,8 @@
   --spacing-kid-key: var(--kid-key-size);
   --spacing-kid-commit: var(--kid-commit-height);
   --spacing-kid-choice: var(--kid-choice-gap);
+  --spacing-kid-status: var(--kid-status-height);
+  --spacing-kid-credit: var(--kid-credit-height);
   --spacing-jw-control: var(--jw-control-height);
   --spacing-jw-control-sm: var(--jw-control-height-sm);
   --radius-jw-card: var(--jw-radius-card);
