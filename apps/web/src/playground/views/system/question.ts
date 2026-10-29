@@ -1,6 +1,6 @@
 /**
  * The question the System page's stage draws: the recognition showcase (6 × 8 among four numbers)
- * from the playground's written examples, in the page's language. Its states come from the
+ * from the playground's written examples, read from the API in the page's language. Its states come from the
  * example's written scenarios: a pick shows the outcome and marks of the scenario that committed
  * it, so nothing here is judged.
  */
@@ -16,14 +16,13 @@ import type { Language } from "@jadwigo/copy";
 import { examplesFor, type WrittenExample, type WrittenScenario } from "../../examples/index.ts";
 import { resolve } from "../../localize.ts";
 
-function showcase(): WrittenExample {
-  const example = examplesFor("recognition")[0];
+/** The recognition showcase among the examples read. */
+export function stageExample(examples: readonly WrittenExample[]): WrittenExample {
+  const example = examplesFor(examples, "recognition")[0];
   if (example === undefined)
     throw new Error("the recognition question type has no written example");
   return example;
 }
-
-const EXAMPLE = showcase();
 
 interface StageOption {
   id: string;
@@ -64,8 +63,8 @@ function shown(content: OptionContent): string {
 const pickOf = (scenario: WrittenScenario): string | null =>
   ChooseValue.parse(scenario.value).chosen[0] ?? null;
 
-export function stageQuestion(language: Language): StageQuestion {
-  const { question, scenarios } = EXAMPLE;
+export function stageQuestion(example: WrittenExample, language: Language): StageQuestion {
+  const { question, scenarios } = example;
   const data = ChooseData.parse(resolve(question.data, language));
   const help = WrittenHelp.parse(resolve(question.help ?? {}, language));
   const played = scenarios.filter((s) => s.only === undefined || s.only.includes(language));
@@ -74,7 +73,7 @@ export function stageQuestion(language: Language): StageQuestion {
   const rightPick = right === undefined ? null : pickOf(right);
   const missPick = miss === undefined ? null : pickOf(miss);
   if (rightPick === null || missPick === null)
-    throw new Error(`${EXAMPLE.id} needs a written right and a written miss`);
+    throw new Error(`${example.id} needs a written right and a written miss`);
   return {
     say: resolve<string>(question.say, language),
     stem: data.stem,

@@ -55,7 +55,8 @@ supa /projects | jq '[.[] | {ref: .id, name, region, status, pg: .database.versi
    ```
    The first shows an entry with `"kty": "RSA", "alg": "RS256"`. The second shows `RS256` as `in_use`.
 3. **Record the ref** on the issue. A ref is not a secret:
-   `bd -C ~/projects/david-learns/.beads update dl-5ssh.5 --append-notes "prod ref: <ref>, eu-central-1, RS256 in use"`.
+   `B update dl-5ssh.5 --append-notes "prod ref: <ref>, eu-central-1, RS256 in use"`, with `B` the
+   board function in `AGENTS.md` ("Projects and the board").
 
 ### Dev
 

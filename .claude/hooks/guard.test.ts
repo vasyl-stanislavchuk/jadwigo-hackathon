@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { denial, type HookInput } from "./guard.ts";
+import { denial, EXEC_CLEARS, type HookInput } from "./guard.ts";
 
 const onBranch = (branch: string) => () => branch;
 const bash = (command: string): HookInput => ({ tool_name: "Bash", tool_input: { command } });
@@ -136,6 +136,24 @@ const cases: Array<[name: string, want: "allow" | "DENY", command: string]> = [
   ["tmux, plain", "DENY", 'tmux new-session -d "make db-role"'],
   ["local +x CLAUDECODE", "DENY", "local +x CLAUDECODE; make db-push"],
   ["export -fn CLAUDECODE", "DENY", "export -fn CLAUDECODE"],
+  // GNU env under other names, getopt abbreviations, env found by substitution (dl-5ssh.56)
+  ["genv -i make db-push", "DENY", "genv -i make db-push"],
+  ["gnuenv -i make db-push", "DENY", "gnuenv -i PATH=$PATH make db-push"],
+  ["genv --ignore-env", "DENY", "genv --ignore-env make db-push"],
+  ["/opt/homebrew/bin/genv -i", "DENY", "/opt/homebrew/bin/genv -i make db-seed"],
+  ["env --ignore-environ", "DENY", "env --ignore-environ make db-push"],
+  ["env --ig", "DENY", "env --ig make db-push"],
+  ["env --i", "DENY", "env --i make db-push"],
+  ["env --split-string=-i", "DENY", "env --split-string=-i make db-push"],
+  ["env --split=-i", "DENY", "env --split='-i PATH=/bin' make db-push"],
+  ["env --un FOO then -i", "DENY", "env --un FOO -i make db-push"],
+  ["$(which env) -i", "DENY", "$(which env) -i make db-push"],
+  ["backtick which env -i", "DENY", "`which env` -i make db-push"],
+  ["$(command -v genv) -i", "DENY", "$(command -v genv) -i make db-role ENV=dev"],
+  ["genv -i, no db target", "allow", "genv -i PATH=/bin ls"],
+  ["env --unset FOO", "allow", "env --unset FOO make db-push ENV=dev"],
+  ["env --split-string, no -i", "allow", "env --split-string='FOO=1' make db-push ENV=dev"],
+  ["$(which env), no -i", "allow", "$(which env) FOO=1 make db-push ENV=dev"],
   ["env | grep", "allow", "env | grep X"],
   ["env -i ls", "allow", "env -i PATH=/bin ls"],
   ["env -u, then make db-push ENV=dev", "allow", "env -u FOO make db-push ENV=dev"],
@@ -244,6 +262,13 @@ describe("guard: Bash", () => {
   test("a bare git push from main is denied, from a branch allowed", () => {
     expect(denial(bash("git push"), {}, onBranch("main"))).toMatch(/through a PR/);
     expect(denial(bash("git push"), {}, onBranch("dl-5ssh.34.3/ci"))).toBeUndefined();
+  });
+
+  test("exec with a long run of -a stays linear (dl-5ssh.56)", () => {
+    const line = `exec ${"-a ".repeat(20_000)}make db-push`;
+    const start = performance.now();
+    EXEC_CLEARS.test(line);
+    expect(performance.now() - start).toBeLessThan(200);
   });
 });
 
