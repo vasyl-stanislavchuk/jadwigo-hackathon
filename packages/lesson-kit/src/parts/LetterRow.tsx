@@ -50,7 +50,7 @@ export const ECHO_MS = 260;
 
 /** The key: no look of its own, only the kid-size target around its pill. */
 const KEY =
-  "group/key size-[var(--kid-tap-min)] min-h-[var(--kid-tap-min)] min-w-[var(--kid-tap-min)] rounded-[0.625rem] p-0 hover:bg-transparent active:translate-y-0";
+  "group/key size-kid-tap min-h-kid-tap min-w-kid-tap rounded-jw-small p-0 hover:bg-transparent active:translate-y-0";
 /** The tile inside the key. Its size, line, edge and the pick it wears when pressed, lit or on are
  * Zeszyt's letter row (styles/foundation.css), the one look (decision dl-76lr). */
 const PILL = "flex items-center justify-center";

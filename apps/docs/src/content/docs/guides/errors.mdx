@@ -1,0 +1,40 @@
+---
+title: Errors
+description: The one error envelope every route uses, and every error type with its status.
+---
+
+import ErrorTable from "../../../components/ErrorTable.astro";
+
+Every refusal has one shape:
+
+```json
+{
+  "error": {
+    "type": "AttemptNotFinished",
+    "message": "the attempt is not finished"
+  }
+}
+```
+
+- `type` is a fixed name. Branch on it.
+- `message` is for a person. It may change, so never parse it. It never names a token.
+
+## Every error type
+
+This table is generated from the API's own list when the docs are built, so it is always complete.
+
+<ErrorTable />
+
+## What to do
+
+- **`400`**: fix the request. `message` names the first field that failed, as `field: problem`.
+  A body over 16,384 bytes is `400` too.
+- **`401`**: send the right credential. See [Authentication](/guides/authentication/).
+- **`404`**: check the id. A record in another pod is `404`, never `403`, so the API never
+  says whether it exists.
+- **`409`**: read the record again and act on what it says now. An attempt that is paused,
+  finished or claimed refuses a write that no longer fits.
+- **`429`**: the attempt is past a limit, such as 200 answers. Start a new attempt.
+- **`502`**: the question bank did not answer. Try again later.
+
+A `500` is not on this list. It means the API failed on its side. Try the request again later.

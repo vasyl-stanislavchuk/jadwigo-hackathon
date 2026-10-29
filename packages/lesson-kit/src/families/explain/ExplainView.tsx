@@ -39,8 +39,7 @@ import { isShort } from "./model.ts";
 
 type F = typeof Family.Explain;
 
-const FIELD =
-  "min-h-40 w-full rounded-xl border-2 p-4 text-[length:var(--kid-answer-size)] leading-relaxed";
+const FIELD = "min-h-40 w-full rounded-xl border-2 p-4 text-kid-answer leading-relaxed";
 const NONE = new Set<string>();
 
 /** One dot per criterion: a mark without its words (the key never reaches the page). */

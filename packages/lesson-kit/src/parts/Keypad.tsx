@@ -30,17 +30,14 @@ import { type ComposerEvent, keyEvent, onControl } from "./composer.ts";
 import { Tray } from "./Tools.tsx";
 
 /** Every key is a square-cornered tile: 10 px corners (the System page's keys), a 2 px line on its 4 px edge, paper. */
-const TILE = "rounded-[0.625rem] border-2 bg-card p-0 font-bold";
+const TILE = "rounded-jw-small border-2 bg-card p-0 font-bold";
 /** A digit key on the pad: 72 tall, 30 px. */
-const DIGIT = cn(TILE, "min-h-[var(--kid-key-size)] text-[1.875rem]");
+const DIGIT = cn(TILE, "min-h-kid-key text-jw-key");
 /** A sign key in the pad's row above the digits: 56 tall, 28 px. Six share the phone's 358 column,
  * so each is 53 wide (min-w-0), as drawn. */
-const PAD_SIGN = cn(TILE, "min-h-[var(--kid-tap-min)] min-w-0 text-[1.75rem]");
+const PAD_SIGN = cn(TILE, "min-h-kid-tap min-w-0 text-jw-key-sign");
 /** A sign key in the laptop's row under the field: 56 × 56, 26 px. */
-const STRIP_SIGN = cn(
-  TILE,
-  "min-h-[var(--kid-tap-min)] min-w-[var(--kid-tap-min)] text-[1.625rem]",
-);
+const STRIP_SIGN = cn(TILE, "min-h-kid-tap min-w-kid-tap text-jw-key-strip");
 
 /** The signs that take the cell left of 0 on the pad, the step's one extra key. */
 const EXTRA_KEYS: readonly string[] = [",", "/", "="];

@@ -1,30 +1,37 @@
-/* The Jadwigo design system on the lesson screen: Zeszyt, as the owner reviewed it in Claude Design
- * (owner, 2026-10-24: david-learns/notes/2026-10-24-the-lesson-screen-takes-the-reviewed-zeszyt-design
- * -system-pomoz; dl-uukj.29.30). The export is docs/plan/design-system/claude-design/, whose
- * tokens/colors.css and guidelines/scheme-data.js are the source of every value below.
+/* The Jadwigo design system: Zeszyt, as the owner reviewed it in Claude Design (owner, 2026-10-24,
+ * dl-uukj.29.30), and the one look of the whole app (owner, 2026-10-29, dl-uukj.32): the lesson, the
+ * child's list and results, and the parent's screens. The purple palette before it is gone
+ * (decision 2026-10-26-zeszyt-replaces-the-grape-palette-the-2026-10).
  *
- * The lesson screen is a Polish school exercise book: white paper, blue ink for the one thing to
- * press, a clear blue for what the child picked, warm yellow for help, green for right and red pen
- * for a miss. Colour goes in four places only: the page, a picked option, the action that can be
- * pressed now, and one band after a check. The paper went from cream to white on 2026-10-25
- * (paper-behaviour/README.md §1,
- * david-learns/decisions/2026-10-25-zeszyt-goes-white-paper-keyboard-focus-is-an-inner-frame-and-eve;
- * dl-uukj.29.59). The keyboard's inner focus frame of that decision was removed on 2026-10-26: no
- * button or option draws a focus (owner, dl-uukj.29.93).
+ * A Polish school exercise book: white paper, blue ink for the one thing to press, a clear blue for
+ * what the child picked, warm yellow for help, green for right and red pen for a miss. Colour goes in
+ * four places only: the page, a picked option, the action that can be pressed now, and one band after
+ * a check. The paper went from cream to white on 2026-10-25 (decision
+ * 2026-10-25-zeszyt-goes-white-paper-keyboard-focus-is-an-inner-frame-and-eve, dl-uukj.29.59), and no
+ * button or option draws a focus since 2026-10-26 (owner, dl-uukj.29.93).
  *
- * It is the playground lessons' default look (?look=zeszyt, LessonTheme.tsx) and the System page
- * (/playground/system) shows all of it. Real lessons outside the playground keep Grape until
- * dl-uukj.29.14, so everything here is scoped to [data-lesson-theme='zeszyt'].
+ * Where it applies:
+ *   - the tokens sit at :root (and :host), so every page reads them; [theme='dark'] (lib/theme.ts
+ *     sets it on <html> from the laptop's setting) takes the night roles, and [theme='light'] takes
+ *     the day roles back inside a dark page (the System page's By day column);
+ *   - the aliases are declared again on every [theme] and [data-lesson-theme], because a custom
+ *     property resolves its var() where it is declared: a nested theme reads its own roles, and a
+ *     lesson inside the playground's neutral chrome (apps/web playground/tool/neutral.css) takes
+ *     Zeszyt back;
+ *   - every behaviour rule, and the lesson's own weight, leading and digits, stay under
+ *     [data-lesson-theme] (LessonTheme in packages/lesson-kit sets it).
+ * /playground/system shows all of it.
  *
  * Three tiers, each built only from the one above it:
  *   1. primitives, --jw-p-*: the only literal colours;
- *   2. roles, --jw-*: named for what they mean on a lesson screen, set again for dark;
- *   3. aliases: the shadcn and --kid-* names the parts, families and blocks already read.
- * playground/theme/foundation.test.ts reads this file, resolves the roles and holds every text pair
- * to 4.5:1 in light and dark, and every hue to its one meaning. */
+ *   2. roles, --jw-*: named for what they mean, set again for dark;
+ *   3. aliases: the shadcn and --kid-* names the parts, families and blocks read.
+ * foundation.test.ts beside this file reads it, resolves the roles and holds every text pair to 4.5:1
+ * in light and dark, and every hue to its one meaning. */
 
 /* ---- 1. Primitives ---------------------------------------------------------------------------- */
-[data-lesson-theme="zeszyt"] {
+:root,
+:host {
   /* Paper by day: white, its quiet fill and its line (paper-behaviour/README.md §1, option 2c). */
   --jw-p-paper-100: #f2eee6;
   --jw-p-paper-200: #e8e2d5;
@@ -95,7 +102,9 @@
 }
 
 /* ---- 2. Roles, by day ------------------------------------------------------------------------- */
-[data-lesson-theme="zeszyt"] {
+:root,
+:host,
+[theme="light"] {
   /* The quiet ground the question sits on: white, and the cards are white on it, told apart only
      * by their 2px line. */
   --jw-ground: var(--jw-p-white);
@@ -149,7 +158,7 @@
 }
 
 /* ---- 2. Roles, by night ----------------------------------------------------------------------- */
-[theme="dark"] [data-lesson-theme="zeszyt"] {
+[theme="dark"] {
   --jw-ground: var(--jw-p-night-25);
   --jw-card: var(--jw-p-night-25);
   --jw-prompt-card: var(--jw-p-night-25);
@@ -189,7 +198,8 @@
 }
 
 /* ---- Type, shape, space and motion (the same by day and by night) ----------------------------- */
-[data-lesson-theme="zeszyt"] {
+:root,
+:host {
   /* Andika: SIL's face for children learning to read, with a single-storey a, a 1 and an l told
      * apart, and every Polish and Ukrainian letter. It has 400 and 700 only. */
   --jw-font: "Andika", "Nunito Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -256,10 +266,10 @@
   --jw-bar-height: 6rem; /* 96px */
 }
 
-/* Phone sizes switch at 600 only, as the frame picker does (components/parts/frame.ts); a phone
- * on its side keeps them (README §2). */
+/* Phone sizes switch at 600 only, as the frame picker does (packages/lesson-kit parts/frame.ts); a
+ * phone on its side keeps them, through the lesson's own rule below. */
 @media (width < 37.5rem) {
-  [data-lesson-theme="zeszyt"] {
+  :root {
     --jw-size-instruction: 1.25rem; /* 20px */
     --jw-size-prompt: 1.75rem; /* 28px, the kid minimum */
     --jw-size-option: 1.5rem; /* 24px, the kid minimum */
@@ -277,7 +287,10 @@
 }
 
 /* ---- 3. Aliases: what the existing parts read ------------------------------------------------- */
-[data-lesson-theme="zeszyt"] {
+:root,
+:host,
+[theme],
+[data-lesson-theme] {
   --background: var(--jw-ground);
   --foreground: var(--jw-ink);
   --card: var(--jw-prompt-card);
@@ -348,7 +361,10 @@
   --shadow-elevation: none;
   --duration-slow: var(--jw-dur-step);
   --theme-icon-stroke: 2;
+}
 
+/* The lesson's own text: Andika's regular weight, its leading, and digits for maths. */
+[data-lesson-theme] {
   font-weight: var(--jw-weight-text);
   line-height: var(--jw-leading);
   /* Maths is half the work: digits line up in columns and never change width. */
@@ -1010,7 +1026,7 @@
 @media (prefers-reduced-motion: reduce) {
   /* Everything is 0 ms (lesson-frame/README.md §4): the band is there, the mark is drawn, the next
      * step is in place, the scroll lands. */
-  [data-lesson-theme="zeszyt"] {
+  :root {
     --jw-dur-fast: 0ms;
     --jw-dur-mark: 0ms;
     --jw-dur-band: 0ms;
