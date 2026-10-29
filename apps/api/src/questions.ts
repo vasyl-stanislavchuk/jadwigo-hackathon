@@ -113,7 +113,7 @@ export interface GetObjectClient {
 /**
  * The content bucket in the Lambda: its name from `CONTENT_BUCKET`, else from the SSM parameter
  * `/jadwigo/bank/content-bucket`, read once per cold start (again after a failed read), and each
- * object through the SDK. A missing object (`NoSuchKey`, or a 404) is undefined; a name that
+ * object through the SDK. A missing object (`NoSuchKey` or `AccessDenied`, a 404 or a 403) is undefined; a name that
  * resolves to nothing, and every other failure, throws, which the route answers 502.
  */
 export function lambdaBucket(
@@ -146,9 +146,16 @@ export function lambdaBucket(
   };
 }
 
+/**
+ * A missing key. The api role has `s3:GetObject` on `questions/*` and no `s3:ListBucket`, so S3
+ * answers a missing key 403 `AccessDenied`, not 404 `NoSuchKey`: both mean no such question. A
+ * grant that is missing altogether reads as 404 too, so a deployed route that 404s every id is
+ * the role's policy to check first.
+ */
 function missing(error: unknown): boolean {
   const e = error as { name?: unknown; $metadata?: { httpStatusCode?: unknown } } | null;
-  return e?.name === "NoSuchKey" || e?.$metadata?.httpStatusCode === 404;
+  const status = e?.$metadata?.httpStatusCode;
+  return e?.name === "NoSuchKey" || e?.name === "AccessDenied" || status === 404 || status === 403;
 }
 
 /** The client the bank is invoked through: `LambdaClient` in the Lambda, a fake in tests. */

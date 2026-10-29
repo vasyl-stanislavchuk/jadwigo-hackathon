@@ -1,14 +1,14 @@
 # dl-n9fr: wave 5, lane api-items, dl-n9fr.51: the question body route
 
-- **Landed:** code in `a63a751` on `lane/api-items`, and this note in the commit after it; not pushed. `GET /api/v1/questions/{id}` returns one question's body with its key from `questions/khan/<id>.json`.
+- **Landed:** code in `a63a751` and the bucket lane fixes in the commit after it, with this note; not pushed. `GET /api/v1/questions/{id}` returns one question's body with its key from `questions/khan/<id>.json`.
 - **Order in the handler:** the read token first, as the search route checks it, then the id, then the bucket read, then the parse. A caller without the token gets 401 whatever id it sends.
-- **Refusals:** 404 "no such question" for an id that fails `^[A-Za-z0-9_-]{1,64}$` or a missing object. 502 for a failed read, a body that is not a `QuestionBody`, or a body naming another id.
+- **Refusals:** 404 "no such question" for an id that fails `^[A-Za-z0-9_-]{1,64}$` or a missing object, which S3 answers `NoSuchKey` or, with no `s3:ListBucket`, 403 `AccessDenied`. 502 for a failed read, a body that is not a `QuestionBody`, or a body naming another id.
 - **Bucket name:** `CONTENT_BUCKET`, else the SSM parameter `/jadwigo/bank/content-bucket`, read once per cold start and again after a failed read.
-- **Tests:** `apps/api` ends `Tests  138 passed (138)`, and `packages/contracts` ends `Tests  246 passed (246)`.
+- **Tests:** `apps/api` ends `Tests  143 passed (143)`, and `packages/contracts` ends `Tests  247 passed (247)`.
 - **make check:** `Tasks:    29 successful, 29 total`, then `lint:repo` passed with `check-infra-routes`.
 - **Snapshots rewritten on purpose:** `vitest -u` wrote 2 new files, `schemas/question-body.json` and `schemas/bank-question-id.json`. No existing snapshot changed.
 - **Rule widened:** RULES.md rule 21 now names this route as its second exception to "a response never carries a key".
-- **Not done:** the Lambda role's `s3:GetObject` on `questions/khan/*` and `ssm:GetParameter` on the bucket parameter are the infra lane's. Until they land, the deployed route answers 502.
+- **Not done:** the function gets no `CONTENT_BUCKET` tonight, so it reads the SSM parameter. Because a 403 counts as missing, a role without its grant answers 404 for every id, not 502.
 
 ## What landed
 
@@ -23,7 +23,7 @@
 | `apps/api/src/config.ts` | `contentBucket()` and `CONTENT_BUCKET_PARAM` |
 | `apps/api/src/app.ts` | `bucket` in `AppDeps` and one `on("questionBody", ...)` line |
 | `apps/api/src/index.ts` | `createHandler` takes a 4th argument, the bucket, built once per cold start |
-| `apps/api/src/questions.test.ts` | 15 route tests and 5 `lambdaBucket` tests on fakes |
+| `apps/api/src/questions.test.ts` | 16 route tests and 9 `lambdaBucket` tests on fakes |
 | `apps/api/package.json`, `bun.lock` | `@aws-sdk/client-s3` pinned at `3.1156.0`, like `client-lambda` |
 | `infra/terraform/main.tf` | the route key `"GET /api/v1/questions/{id}"` in `routes`, nothing else |
 
@@ -33,7 +33,8 @@ The route tests cover these cases:
 - A bad id without a token is 401, not 404.
 - An invented body with family `enter`, a prompt, an accept key and 1 picture comes back 200, key included.
 - A field the schema does not name is dropped.
-- A missing object is 404 "no such question".
+- A missing object is 404 "no such question", and `lambdaBucket` turns `NoSuchKey`, `AccessDenied`, 404 and 403 into missing. A 500, a throttle and a network failure still throw.
+- A body with only id, credit and problem_type comes back 200.
 - An id with a dot segment, a dot, a space, or 65 characters is 404, and no key is built from it.
 - A bucket failure is 502, and the reply names nothing of the failure.
 - A stored object that is not JSON, not a body, or names another id is 502.
@@ -46,7 +47,7 @@ Every fixture is invented: the id `xfeed0001`, a repeated-hex sha and an `exampl
 - **Params parse only a string.** The route's `params` is `{id: string}`, and the handler checks `BankQuestionId` after the token. Parsing the regex in `params` would make a bad id without a token 404 before the token check.
 - **Body id must match.** A stored body whose `id` differs from the key's id is 502, so a misfiled object never reaches a caller.
 - **`help` and `say`.** `help` is an unknown-shaped record, as `Help` in the families is an object. `say` is a string, as every other `say` in the contracts is.
-- **At least one language.** `QuestionBody` refuses a body with neither `pl` nor `en`.
+- **No playable variant.** `pl`, `en`, `source` and `pictures` are optional. 278 of the 8,787 derived objects carry only id, credit and problem_type, per the bucket lane.
 
 ## Decisions followed
 
@@ -57,6 +58,6 @@ Every fixture is invented: the id `xfeed0001`, a repeated-hex sha and an `exampl
 
 ## Proposed bead changes
 
-- **New, infra lane:** grant the app Lambda's role `s3:GetObject` on `questions/khan/*` in the content bucket and `ssm:GetParameter` on `/jadwigo/bank/content-bucket`, and set `CONTENT_BUCKET` on the function. Done when the deployed route answers 200 for a real id with the read token.
+- **New, infra:** set `CONTENT_BUCKET` on the function in `api.tf`, and confirm the role reads `/jadwigo/bank/content-bucket`. Done when the deployed route answers 200 for a real id with the read token and 404 for an invented one.
 - **Follow-up already named in dl-n9fr.51:** the CLI's `question_item` switches to this route after the compose lane merges.
 - **New, small:** a missing SSM parameter makes every body request retry the read at once. A capped wait like the store's open would cut that to one read per wait.

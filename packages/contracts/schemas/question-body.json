@@ -140,12 +140,10 @@
   },
   "required": [
     "id",
-    "source",
-    "credit",
-    "pictures"
+    "credit"
   ],
   "additionalProperties": false,
-  "description": "One bank question's private body from questions/<source>/<id>.json: a version per language with its family, data, key and help, the credit and the pictures by sha; it reaches only a caller with the read token",
+  "description": "One bank question's private body from questions/<source>/<id>.json: a version per language with its family, data, key and help, the credit and the pictures by sha; a question with no playable variant yet carries only id, credit and problem_type; it reaches only a caller with the read token",
   "$defs": {
     "BankQuestionId": {
       "type": "string",

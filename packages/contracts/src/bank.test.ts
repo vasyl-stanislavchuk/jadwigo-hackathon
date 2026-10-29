@@ -176,10 +176,13 @@ describe("the question body", () => {
     expect(parsed).not.toHaveProperty("raw_item");
   });
 
-  it("refuses a body with no language, no credit, or a picture ref that is no sha", () => {
-    const { en: _, ...none } = BODY;
-    expect(QuestionBody.safeParse(none).success).toBe(false);
-    const { credit: __, ...uncredited } = BODY;
+  it("takes a body with no playable variant yet: only id, credit and problem_type", () => {
+    const waiting = { id: "xfeed0002", credit: BODY.credit, problem_type: "invented" };
+    expect(QuestionBody.parse(waiting)).toEqual(waiting);
+  });
+
+  it("refuses a body with no credit, or a picture ref that is no sha", () => {
+    const { credit: _, ...uncredited } = BODY;
     expect(QuestionBody.safeParse(uncredited).success).toBe(false);
     const odd = { ...BODY, pictures: [{ ref: "picture.png", decorative: true }] };
     expect(QuestionBody.safeParse(odd).success).toBe(false);

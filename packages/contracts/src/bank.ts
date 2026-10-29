@@ -217,11 +217,13 @@ const BodyPicture = z.object({
  * It carries the key by design: the body is private and reaches only an authorized caller
  * (david-learns decision `2026-10-25-a-bank-question-has-a-public-page-and-a-private-body-a-lesson-qu`),
  * through `ROUTES.questionBody` behind the read token. A field the schema does not name is dropped.
+ * A question with no playable variant yet (its English item waits on a refused Polish conversion)
+ * carries only its id, credit and problem type, so `pl`, `en`, `source` and `pictures` are optional.
  */
 export const QuestionBody = z
   .object({
     id: BankQuestionId,
-    source: z.literal("khan"),
+    source: z.literal("khan").optional(),
     pl: QuestionVariant.optional(),
     en: QuestionVariant.optional(),
     problem_type: z.string().optional(),
@@ -230,12 +232,9 @@ export const QuestionBody = z
       url: z.url().optional(),
       licence: z.string().min(1),
     }),
-    pictures: z.array(BodyPicture),
-  })
-  .refine((body) => body.pl !== undefined || body.en !== undefined, {
-    message: "a question body carries pl, en or both",
+    pictures: z.array(BodyPicture).optional(),
   })
   .describe(
-    "One bank question's private body from questions/<source>/<id>.json: a version per language with its family, data, key and help, the credit and the pictures by sha; it reaches only a caller with the read token",
+    "One bank question's private body from questions/<source>/<id>.json: a version per language with its family, data, key and help, the credit and the pictures by sha; a question with no playable variant yet carries only id, credit and problem_type; it reaches only a caller with the read token",
   );
 export type QuestionBody = z.infer<typeof QuestionBody>;

@@ -459,6 +459,14 @@ describe("GET /api/v1/questions/{id}", () => {
     expect(JSON.stringify(reply.body)).not.toMatch(/AccessDenied|arn:/);
   });
 
+  it("returns a body with no playable variant yet, only id, credit and problem_type", async () => {
+    const waiting = { id: "xfeed0001", credit: BODY.credit, problem_type: "invented-addition" };
+    const { bucket } = fakeBucket({ "questions/khan/xfeed0001.json": JSON.stringify(waiting) });
+    const reply = await getBody(bucket, "xfeed0001");
+    expect(reply.status).toBe(200);
+    expect(reply.body).toEqual(waiting);
+  });
+
   it.each([
     ["is not JSON", "not json"],
     ["is not a question body", JSON.stringify({ id: "xfeed0001", source: "khan" })],
@@ -538,11 +546,25 @@ describe("lambdaBucket", () => {
   it.each([
     ["NoSuchKey", Object.assign(new Error("gone"), { name: "NoSuchKey" })],
     ["a 404", Object.assign(new Error("gone"), { $metadata: { httpStatusCode: 404 } })],
-  ])("is undefined for a missing object (%s), and throws on any other failure", async (_, err) => {
+    // No s3:ListBucket on the api role: S3 answers a missing key 403 AccessDenied.
+    [
+      "AccessDenied",
+      Object.assign(new Error("denied"), {
+        name: "AccessDenied",
+        $metadata: { httpStatusCode: 403 },
+      }),
+    ],
+  ])("is undefined for a missing object (%s)", async (_, err) => {
     const gone = lambdaBucket("b", undefined, { send: () => Promise.reject(err) });
     expect(await gone.get("k")).toBeUndefined();
-    const denied = Object.assign(new Error("AccessDenied"), { $metadata: { httpStatusCode: 403 } });
-    const broken = lambdaBucket("b", undefined, { send: () => Promise.reject(denied) });
-    await expect(broken.get("k")).rejects.toThrow("AccessDenied");
+  });
+
+  it.each([
+    ["a 500", Object.assign(new Error("InternalError"), { $metadata: { httpStatusCode: 500 } })],
+    ["a throttle", Object.assign(new Error("SlowDown"), { name: "SlowDown" })],
+    ["a network failure", new Error("socket hang up")],
+  ])("throws on any other failure (%s)", async (_, err) => {
+    const broken = lambdaBucket("b", undefined, { send: () => Promise.reject(err) });
+    await expect(broken.get("k")).rejects.toThrow(err.message);
   });
 });
