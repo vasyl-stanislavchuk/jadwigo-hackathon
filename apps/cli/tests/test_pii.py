@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -15,7 +16,15 @@ import pytest
 
 from jw import explain
 from jw.draw import History, draw
-from jw.pii import GuardedPrompt, guard, leaks, name_forms, names_for, restore, restore_stream
+from jw.pii import (
+    GuardedPrompt,
+    guard,
+    leaks,
+    name_forms,
+    names_for,
+    restore,
+    restore_stream,
+)
 
 
 @dataclass(frozen=True)
@@ -75,8 +84,40 @@ def test_one_person_one_placeholder_and_restore_gives_the_name_back() -> None:
 
 
 def test_words_that_only_start_like_a_name_stay() -> None:
-    guarded = guard("Kasa w sklepie, kasztan i Kasiopeja.", names=["Kasia"])
-    assert guarded.text == "Kasa w sklepie, kasztan i Kasiopeja."
+    guarded = guard("Kasa w sklepie, kasztan, Mikasia i olej.", names=["Kasia", "Ola"])
+    assert guarded.text == "Kasa w sklepie, kasztan, Mikasia i olej."
+
+
+def test_a_word_that_starts_with_a_long_name_form_is_hidden_whole() -> None:
+    # The price of catching diminutives: Kasiopeja starts with "Kasio" and goes too.
+    guarded = guard("Kasiopeja na niebie.", names=["Kasia"])
+    assert guarded.text == "[NAME_1] na niebie."
+
+
+# Each of these reached a prompt before (PR #111's review). The checks read the text itself, not
+# leaks(), which shares the guard's matcher and so could not catch them.
+@pytest.mark.parametrize(
+    ("names", "text", "gone"),
+    [
+        (["Michał"], "Michal nie umie mnożyć.", "Michal"),
+        (["Łucja"], "Lucja liczy.", "Lucja"),
+        (["Kasia"], "Pomóż Kasie.", "Kasie"),
+        (["Kasia"], unicodedata.normalize("NFD", "Kasię martwi dzielenie."), "Kasi"),
+        (["Kasia"], "KasiaNowak zrobiła to sama.", "Kasia"),
+        (["Kasia"], "login kasia_k", "kasia"),
+        (["Kasia"], "Kasiaaa!!!", "Kasia"),
+        (["Kasia"], "Kasiunia i Kasieńka.", "Kasi"),
+        (["Kuba"], "Z Kubusiem.", "Kub"),
+        (["Ola"], "OlaNowak", "Ola"),
+    ],
+)
+def test_no_spelling_of_the_name_gets_through(
+    names: list[str], text: str, gone: str
+) -> None:
+    out = guard(text, names=names).text
+    folded = unicodedata.normalize("NFD", out).lower()
+    assert gone.lower() not in folded, out
+    assert "[NAME_1]" in out
 
 
 # ---------------------------------------------------------------- emails -----
@@ -111,7 +152,10 @@ def test_emails_are_replaced(text: str) -> None:
     ],
 )
 def test_phones_are_replaced(phone: str) -> None:
-    for text in (f"Zadzwoń pod {phone} po lekcji.", f"Call me on {phone} after the lesson."):
+    for text in (
+        f"Zadzwoń pod {phone} po lekcji.",
+        f"Call me on {phone} after the lesson.",
+    ):
         guarded = guard(text)
         assert "[PHONE_1]" in guarded.text, guarded.text
         assert restore(guarded.text, guarded) == text
@@ -119,7 +163,12 @@ def test_phones_are_replaced(phone: str) -> None:
 
 @pytest.mark.parametrize(
     "text",
-    ["Ile to 27 + 45?", "Dodawanie do 100 i do 1000.", "W 2026 roku, 3 klasa.", "345 + 278 = 623"],
+    [
+        "Ile to 27 + 45?",
+        "Dodawanie do 100 i do 1000.",
+        "W 2026 roku, 3 klasa.",
+        "345 + 278 = 623",
+    ],
 )
 def test_maths_is_not_a_phone_number(text: str) -> None:
     assert guard(text).text == text
@@ -141,7 +190,12 @@ def test_restore_stream_handles_a_placeholder_split_across_chunks() -> None:
 
 def test_names_for_takes_the_learner_and_the_pod() -> None:
     learner = Learner(handle="kasia", name="Kasia Nowak")
-    assert names_for(learner, ["Dawid Nowak", "J."]) == ["Kasia", "Nowak", "kasia", "Dawid"]
+    assert names_for(learner, ["Dawid Nowak", "J."]) == [
+        "Kasia",
+        "Nowak",
+        "kasia",
+        "Dawid",
+    ]
 
 
 # ---------------------------------------------- every explanation prompt -----
@@ -149,7 +203,8 @@ def test_names_for_takes_the_learner_and_the_pod() -> None:
 
 def _pages() -> dict[str, dict]:
     return {
-        p.stem: json.loads(p.read_text(encoding="utf-8")) for p in (BANK / "sets").glob("*.json")
+        p.stem: json.loads(p.read_text(encoding="utf-8"))
+        for p in (BANK / "sets").glob("*.json")
     }
 
 
@@ -183,7 +238,9 @@ def test_no_prompt_the_explanation_builds_carries_a_learner_name(
     )
     assert drawn.questions
     names = ["Kasia", "kasia", "Nowak", "Dawid"]
-    built = explain.prompts("Kasia", drawn, pages, language=language, parent_note=note, names=names)
+    built = explain.prompts(
+        "Kasia", drawn, pages, language=language, parent_note=note, names=names
+    )
     assert built
     for prompt in built:
         assert prompt.sealed
@@ -199,3 +256,23 @@ def test_the_prompt_tells_the_model_to_keep_placeholders_as_written() -> None:
     (prompt,) = explain.prompts("Kasia", drawn, pages)
     assert "[NAME_1]" in prompt.text
     assert "Copy it exactly as written" in prompt.text
+
+
+def test_the_explanation_hides_each_part_of_the_learner_s_full_name() -> None:
+    pages = _pages()
+    envelope = json.loads((BANK / "envelope.json").read_text(encoding="utf-8"))
+    envelope["rows"] = [
+        {**envelope["rows"][0], "id": set_id, "rank": rank}
+        for rank, set_id in enumerate(sorted(pages), start=1)
+    ]
+    drawn = draw(
+        envelope,
+        pages,
+        kind="practice",
+        history=History(),
+        language="pl",
+        today=dt.date(2026, 10, 28),
+    )
+    note = "Kasia nie lubi ułamków."
+    for prompt in explain.prompts("Kasia Kowalska", drawn, pages, parent_note=note):
+        assert "Kasia" not in prompt.text and "Kowalsk" not in prompt.text, prompt.text

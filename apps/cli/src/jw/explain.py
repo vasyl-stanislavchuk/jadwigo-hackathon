@@ -12,7 +12,7 @@ from typing import Any
 
 from jw import muse
 from jw.draw import Draw
-from jw.pii import GuardedPrompt, guard, restore_stream
+from jw.pii import GuardedPrompt, guard, names_for, restore_stream
 
 _LANGUAGE_NAMES = {"pl": "Polish", "en": "English", "uk": "Ukrainian"}
 
@@ -68,7 +68,8 @@ def prompts(
     `names` is everyone the guard hides: the learner (name and handle) and the pod's members,
     `jw.pii.names_for`. The learner's own name is always among them.
     """
-    hidden = [learner_name, *names]
+    # The full name and each part of it: "Kasia Kowalska" hides "Kasia" alone too.
+    hidden = [learner_name, *names_for(members=[learner_name]), *names]
     text = _lesson_text(learner_name, drawn, pages, language, parent_note)
     return [guard(text, names=hidden)]
 
@@ -85,6 +86,11 @@ def explain(
 ) -> Iterator[str]:
     """Stream the explanation, names restored, through the product's one model client."""
     for prompt in prompts(
-        learner_name, drawn, pages, language=language, parent_note=parent_note, names=names
+        learner_name,
+        drawn,
+        pages,
+        language=language,
+        parent_note=parent_note,
+        names=names,
     ):
         yield from restore_stream(muse.ask(prompt, tag=tag, stream=True), prompt)

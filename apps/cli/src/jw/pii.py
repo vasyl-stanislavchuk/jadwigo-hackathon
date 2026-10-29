@@ -11,7 +11,10 @@ replaces learner names, email addresses and phone numbers with placeholders and 
 Names come from the learner record and the pod's members (`names_for`). Polish names inflect, so
 a name is matched in every case form a sentence can use: Kasia, Kasi, Kasię, Kasią, Kasiu; Dawid,
 Dawida, Dawidowi, Dawidem, Dawidzie; Tomek, Tomka, Tomkiem. Matching ignores case, because a
-child types "kasia" as often as "Kasia". The cost is the odd common word that spells a name form
+child types "kasia" as often as "Kasia", and it ignores diacritics, because a phone keyboard
+drops them ("Michal", "Lucja", "Kasie"). A name form of 4 letters or more is also matched at the
+start of a longer word, which takes the whole word: glued text ("KasiaNowak"), a padded name
+("Kasiaaa") and a diminutive on the same stem ("Kasiunia", "Kubusiem"). The cost is the odd common word that spells a name form
 (the learner Maja against "mają", "they have"): it becomes a placeholder too. That costs the prompt
 a word; the other way would cost a child's name.
 
@@ -22,6 +25,7 @@ it cannot tell which case the original used.
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
@@ -61,7 +65,9 @@ class GuardedPrompt:
     """A prompt the guard has seen: its text with placeholders, and the map to undo them."""
 
     text: str
-    replacements: Mapping[str, str]  # placeholder -> original (a name in its dictionary form)
+    replacements: Mapping[
+        str, str
+    ]  # placeholder -> original (a name in its dictionary form)
     _seal: object = field(default=None, repr=False, compare=False)
 
     @property
@@ -119,17 +125,23 @@ def name_forms(name: str) -> set[str]:
         last = low[-1]
         if last in _SOFT_STEM:  # Jaś: Jasia, Jasiowi, Jasiem, Jasiu
             stems = [name[:-1] + _SOFT_STEM[last]]
-        elif low.endswith("ek") and len(name) > 3:  # Tomek: Tomka, Tomkiem (the e drops)
+        elif (
+            low.endswith("ek") and len(name) > 3
+        ):  # Tomek: Tomka, Tomkiem (the e drops)
             stems = [name, name[:-2] + "k"]
         for stem in stems:
-            forms |= {stem + e for e in ("a", "owi", "em", "iem", "u", "ie", "e", "y", "ów")}
+            forms |= {
+                stem + e for e in ("a", "owi", "em", "iem", "u", "ie", "e", "y", "ów")
+            }
             forms |= {stem[:-1] + e for e in _SOFTEN.get(stem[-1:].lower(), ())}
     # English possessive and plural: "Kasia's", "the Kowalskis"
     forms |= {f + "'s" for f in list(forms)} | {name + "s"}
     return {f for f in forms if len(f) >= 2}
 
 
-def names_for(learner: LearnerInfo | None = None, members: Iterable[str] = ()) -> list[str]:
+def names_for(
+    learner: LearnerInfo | None = None, members: Iterable[str] = ()
+) -> list[str]:
     """The names to guard for one learner: the display name, the handle and every pod member's."""
     names: list[str] = []
     if learner is not None:
@@ -142,17 +154,60 @@ def names_for(learner: LearnerInfo | None = None, members: Iterable[str] = ()) -
     return list(dict.fromkeys(n.strip(".,") for n in names if len(n.strip(".,")) >= 2))
 
 
-def _names_pattern(names: Iterable[str]) -> tuple[re.Pattern[str], dict[str, str]] | None:
+# A form this long is a name at the start of any word; a shorter one ("Ola", "Jan") only as a
+# whole word, or it would eat "olej" and "jabłko".
+_PREFIX_LEN = 4
+
+
+def _fold(text: str) -> str:
+    """`text` lowercased and without diacritics, one character for each character of `text`,
+    so a match in the folded text is a span of the same length in the original: Łucja -> lucja."""
+    out = []
+    for ch in text:
+        base = "l" if ch in "łŁ" else unicodedata.normalize("NFD", ch)[0]
+        low = base.lower()
+        out.append(low if len(low) == 1 else base)
+    return "".join(out)
+
+
+def _names_pattern(
+    names: Iterable[str],
+) -> tuple[re.Pattern[str], dict[str, str]] | None:
+    """A pattern over folded text, and each folded form's name in its dictionary form."""
     form_of: dict[str, str] = {}
     for name in names:
-        for form in name_forms(name):
-            form_of.setdefault(form.lower(), name)
+        for form in name_forms(unicodedata.normalize("NFC", name)):
+            form_of.setdefault(_fold(form), name)
     if not form_of:
         return None
     # Longest first, so "Kasią" wins over "Kasi" and "Dawidowi" over "Dawid".
     alternatives = sorted(form_of, key=len, reverse=True)
     body = "|".join(re.escape(f) for f in alternatives)
-    return re.compile(rf"(?<!\w)(?:{body})(?!\w)", re.IGNORECASE), form_of
+    return re.compile(f"(?:{body})"), form_of
+
+
+def _name_spans(text: str, names: Iterable[str]) -> list[tuple[int, int, str]]:
+    """Where `names` stand in `text` (NFC): (start, end, the name in its dictionary form)."""
+    compiled = _names_pattern(names)
+    if compiled is None:
+        return []
+    pattern, form_of = compiled
+    folded = _fold(text)
+    spans: list[tuple[int, int, str]] = []
+    at = 0
+    while (m := pattern.search(folded, at)) is not None:
+        start, end = m.span()
+        at = start + 1
+        if start > 0 and text[start - 1].isalpha():
+            continue  # inside a word: "Mikasia" is not Kasia
+        if len(m.group()) >= _PREFIX_LEN:
+            while end < len(text) and text[end].isalpha():
+                end += 1  # the whole word: "Kasiunia", "KasiaNowak"
+        elif end < len(text) and text[end].isalpha() and not text[end].isupper():
+            continue  # "olej" is not Ola; "OlaNowak" is
+        spans.append((start, end, form_of[m.group()]))
+        at = end
+    return spans
 
 
 # ---------------------------------------------------------------- guard ------
@@ -177,6 +232,8 @@ def guard(text: str, *, names: Iterable[str] = ()) -> GuardedPrompt:
             original_of[found] = original
         return found
 
+    # NFC first, so a name typed as e + combining ogonek is the same letters as the composed one.
+    text = unicodedata.normalize("NFC", text)
     out = EMAIL_RE.sub(lambda m: placeholder(EMAIL, m.group().lower(), m.group()), text)
 
     def phone(m: re.Match[str]) -> str:
@@ -187,21 +244,22 @@ def guard(text: str, *, names: Iterable[str] = ()) -> GuardedPrompt:
 
     out = PHONE_RE.sub(phone, out)
 
-    compiled = _names_pattern(names)
-    if compiled is not None:
-        pattern, form_of = compiled
-
-        def name(m: re.Match[str]) -> str:
-            base = form_of[m.group().lower()]
-            return placeholder(NAME, base.lower(), base)
-
-        out = pattern.sub(name, out)
-    return GuardedPrompt(text=out, replacements=MappingProxyType(dict(original_of)), _seal=_SEAL)
+    pieces: list[str] = []
+    done = 0
+    for start, end, base in _name_spans(out, names):
+        pieces += [out[done:start], placeholder(NAME, base.lower(), base)]
+        done = end
+    out = "".join([*pieces, out[done:]])
+    return GuardedPrompt(
+        text=out, replacements=MappingProxyType(dict(original_of)), _seal=_SEAL
+    )
 
 
 def restore(reply: str, guarded: GuardedPrompt) -> str:
     """Put the originals back into a model's reply, on this machine, after it has come back."""
-    return _PLACEHOLDER_RE.sub(lambda m: guarded.replacements.get(m.group(), m.group()), reply)
+    return _PLACEHOLDER_RE.sub(
+        lambda m: guarded.replacements.get(m.group(), m.group()), reply
+    )
 
 
 def restore_stream(chunks: Iterable[str], guarded: GuardedPrompt) -> Iterator[str]:
@@ -222,7 +280,5 @@ def restore_stream(chunks: Iterable[str], guarded: GuardedPrompt) -> Iterator[st
 
 def leaks(text: str, names: Iterable[str]) -> list[str]:
     """The name forms of `names` still present in `text`: empty when the guard did its job."""
-    compiled = _names_pattern(names)
-    if compiled is None:
-        return []
-    return [m.group() for m in compiled[0].finditer(text)]
+    text = unicodedata.normalize("NFC", text)
+    return [text[start:end] for start, end, _ in _name_spans(text, names)]
