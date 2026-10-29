@@ -101,4 +101,16 @@ describe("a route table openApiDocument refuses", () => {
     expect(() => openApiDocument(routes)).toThrow(RouteTableError);
     expect(() => openApiDocument(routes)).toThrow(message);
   });
+
+  it.each(["toString", "constructor", "__proto__", "hasOwnProperty"])(
+    "a {%s} in the path, a name every object inherits, with no params key",
+    (name) => {
+      const routes = {
+        getAttempt: { ...getAttempt, path: `/api/v1/{${name}}`, params: z.object({}) },
+      };
+      expect(() => openApiDocument(routes)).toThrow(
+        `getAttempt: {${name}} in path but not in params`,
+      );
+    },
+  );
 });

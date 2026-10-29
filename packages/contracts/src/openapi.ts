@@ -130,7 +130,7 @@ export function openApiDocument(routes: Record<string, Route>): Json {
     }
     const shape = route.params.shape as Record<string, z.ZodType>;
     for (const [, name] of route.path.matchAll(/\{([^}]+)\}/g)) {
-      if (name !== undefined && !(name in shape)) {
+      if (name !== undefined && !Object.hasOwn(shape, name)) {
         throw new RouteTableError(`${operationId}: {${name}} in path but not in params`);
       }
     }
