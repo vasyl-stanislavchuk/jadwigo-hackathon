@@ -12,5 +12,5 @@ if (url === undefined) throw new Error("DATABASE_URL is unset: see .env.example"
 const store = createPostgresStore(url);
 afterAll(() => store.close());
 
-routeSuite("PostgresStore", () => store);
+routeSuite("PostgresStore", () => store, { units: true });
 peopleSuite("PostgresStore", () => store);

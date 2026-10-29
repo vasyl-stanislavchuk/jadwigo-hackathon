@@ -224,6 +224,40 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
       });
     });
 
+    describe("opening an attempt and running a unit", () => {
+      it("opens an attempt id as its pod, its record and its assignment, and an unknown id as undefined", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const record = await store.startAttempt(a.pod, { assignment_id: a.assignment });
+
+        const opened = await store.openAttempt(record.attempt.id);
+        expect(opened).toEqual({
+          pod: a.pod,
+          record,
+          assignment: await store.getAssignment(a.pod, a.assignment),
+        });
+        expect(
+          await store.openAttempt(AttemptId.parse(fresh(ID_PREFIXES.attempt))),
+        ).toBeUndefined();
+      });
+
+      it("returns what its work returns, and its calls see each other's writes", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const b = await newPod(store, "Pod of owls");
+        const record = await store.unit(async () => {
+          const started = await store.startAttempt(a.pod, { assignment_id: a.assignment });
+          const opened = await store.openAttempt(started.attempt.id);
+          // Another pod's read in the same unit is still scoped to that pod.
+          await expect(store.getAssignment(b, a.assignment)).rejects.toMatchObject(NOT_FOUND);
+          return opened?.record;
+        });
+        if (record === undefined) throw new Error("the unit opened no attempt");
+        expect(record).toEqual(await store.getAttempt(a.pod, record.attempt.id));
+        expect(record.questions).toHaveLength(1);
+      });
+    });
+
     describe("playground examples", () => {
       it("replaces a language's examples and lists them by type, then position, with their twins", async () => {
         const store = await make();
