@@ -1,0 +1,72 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadWhatTheRootManages",
+      "Effect": "Allow",
+      "Action": [
+        "acm:Describe*",
+        "acm:Get*",
+        "acm:List*",
+        "apigateway:GET",
+        "cloudfront:Describe*",
+        "cloudfront:Get*",
+        "cloudfront:List*",
+        "cloudwatch:Describe*",
+        "cloudwatch:ListTagsForResource",
+        "iam:Get*",
+        "iam:List*",
+        "lambda:Get*",
+        "lambda:List*",
+        "logs:Describe*",
+        "logs:ListTagsForResource",
+        "logs:ListTagsLogGroup",
+        "route53:Get*",
+        "route53:List*",
+        "ses:Get*",
+        "ses:List*",
+        "sns:Get*",
+        "sns:List*",
+        "ssm:DescribeParameters",
+        "ssm:ListTagsForResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ReadJadwigoBucketsConfigNotObjects",
+      "Effect": "Allow",
+      "Action": ["s3:Get*", "s3:List*"],
+      "Resource": "arn:aws:s3:::jadwigo-*"
+    },
+    {
+      "Sid": "ReadProdState",
+      "Effect": "Allow",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::jadwigo-terraform-state-843109108289/prod/terraform.tfstate"
+    },
+    {
+      "Sid": "ReadTheBankAliasString",
+      "Effect": "Allow",
+      "Action": "ssm:GetParameter",
+      "Resource": "arn:aws:ssm:eu-central-1:843109108289:parameter/jadwigo/bank/search-alias-arn"
+    },
+    {
+      "Sid": "NoObjectButTheState",
+      "Effect": "Deny",
+      "Action": ["s3:GetObject*"],
+      "NotResource": "arn:aws:s3:::jadwigo-terraform-state-843109108289/prod/terraform.tfstate"
+    },
+    {
+      "Sid": "NeverDecrypt",
+      "Effect": "Deny",
+      "Action": "kms:Decrypt",
+      "Resource": "*"
+    },
+    {
+      "Sid": "NoParameterValueButTheBankAlias",
+      "Effect": "Deny",
+      "Action": "ssm:GetParameter*",
+      "NotResource": "arn:aws:ssm:eu-central-1:843109108289:parameter/jadwigo/bank/search-alias-arn"
+    }
+  ]
+}
