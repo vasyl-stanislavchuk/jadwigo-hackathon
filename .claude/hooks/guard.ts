@@ -12,7 +12,8 @@
 
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { extname, isAbsolute, join, relative } from "node:path";
+import { homedir } from "node:os";
+import { extname, isAbsolute, join, relative, resolve } from "node:path";
 import { checkPrBody } from "../../tools/src/check-pr-body.ts";
 
 export interface HookInput {
@@ -305,6 +306,63 @@ function prBodyDenial(
   return undefined;
 }
 
+const PUSH_TO_MAIN =
+  "main is reached only through a PR (squash-merge after ci-ok). Push your branch and open a PR with `gh pr create`.";
+
+/** One unquoted word the shell reads as written: no $, quotes, backslashes, globs or leading -. */
+const WORD = "[A-Za-z0-9._/~][A-Za-z0-9._/~-]*";
+/** The one command whose cd the guard follows (dl-5ssh.74). The owner chose this allowlist. */
+const LANE_PUSH = new RegExp(
+  `^cd (${WORD}) && git push(?: (?:-u|--set-upstream))?(?: origin)?(?: (${WORD}))?(?: 2>&1 \\| tail -\\d+)?$`,
+);
+
+/**
+ * Whether the whole line is exactly `cd <path> && git push [-u] [origin] [<feature>]`, and the
+ * folder is a checkout on a branch other than main. Only then is a push that main's check would
+ * deny from the session's folder allowed. Every other line is judged from the session's cwd.
+ */
+function lanePush(cmd: string, cwd: string | undefined, branchOf: BranchOf): boolean {
+  const m = LANE_PUSH.exec(cmd.trim());
+  const [, path = "", refspec] = m ?? [];
+  if (!m || (refspec !== undefined && (/main/i.test(refspec) || /^head$/i.test(refspec)))) {
+    return false;
+  }
+  const home = path === "~" || path.startsWith("~/") ? join(homedir(), path.slice(1)) : path;
+  const dir = resolve(cwd ?? ".", home);
+  if (!existsSync(dir)) return false;
+  const branch = branchOf(dir);
+  return branch !== undefined && branch !== "main";
+}
+
+/**
+ * main's push check again, on the line read so quoting cannot hide a push: every backslash escape
+ * blanked (an escaped quote or heredoc marker, `echo \"; git push origin main; echo \"`), the
+ * quotes around a word with no space undone (`"main"`, `-C "."`), and any other quoted string
+ * kept as one word (`_`) rather than dropped. It can only add a denial, never remove one.
+ */
+function hiddenPushDenial(
+  cmd: string,
+  cwd: string | undefined,
+  branchOf: BranchOf,
+): string | undefined {
+  const text = cmd
+    .replace(/\\[\s\S]/g, " ")
+    .replace(/'([^'\s]*)'/g, "$1")
+    .replace(/"([^"\s]*)"/g, "$1")
+    .replace(/<<-?\s*(['"]?)(\w+)\1[\s\S]*?\n\2[ \t]*(\n|$)/g, "\n")
+    .replace(/'[^']*'/g, " _ ")
+    .replace(/"[^"]*"/g, " _ ");
+  for (const words of simpleCommands(text)) {
+    const git = gitSub(words);
+    if (git?.sub !== "push") continue;
+    const refspecs = git.args.filter((a) => !a.startsWith("-")).slice(1);
+    const toMain = refspecs.some((r) => /(^|:)(refs\/heads\/)?main$/.test(r));
+    const implicit = refspecs.length === 0 && branchOf(cwd) === "main";
+    if ((toMain || implicit) && !lanePush(cmd, cwd, branchOf)) return PUSH_TO_MAIN;
+  }
+  return undefined;
+}
+
 function bashDenial(
   cmd: string,
   env: Env,
@@ -393,9 +451,7 @@ function bashDenial(
         const refspecs = gargs.filter((a) => !a.startsWith("-")).slice(1);
         const toMain = refspecs.some((r) => /(^|:)(refs\/heads\/)?main$/.test(r));
         const implicit = refspecs.length === 0 && branchOf(cwd) === "main";
-        if (toMain || implicit) {
-          return "main is reached only through a PR (squash-merge after ci-ok). Push your branch and open a PR with `gh pr create`.";
-        }
+        if ((toMain || implicit) && !lanePush(cmd, cwd, branchOf)) return PUSH_TO_MAIN;
       }
       if (
         sub === "add" &&
@@ -450,6 +506,9 @@ function bashDenial(
       return "bd update --notes replaces the whole notes field. Use --append-notes.";
     }
   }
+
+  const hidden = hiddenPushDenial(cmd, cwd, branchOf);
+  if (hidden) return hidden;
 
   // Prod through the environment: AWS_PROFILE=prod-admin aws s3 ls
   const prodProfile = assignments(bare).find((a) => /^AWS_PROFILE=\S*prod/i.test(a));
