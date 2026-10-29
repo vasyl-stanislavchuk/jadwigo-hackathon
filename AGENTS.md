@@ -50,6 +50,7 @@ tracker. A workstream owns a scope on it: its epics, and the label every open is
 | `apps/web` | the app at app.jadwigo.pl: lesson player, parent screens | packages | learner-experience |
 | `apps/site` | the marketing site, jadwigo.pl and jadwigo.kids | packages | marketing |
 | `apps/cli` | `jw`, Python and Click, later `jw mcp serve` | nothing of ours | ai-workflows |
+| `apps/docs` | the docs at docs.jadwigo.pl, Starlight: API, MCP and design system, generated from the code (`dl-5ssh.90`) | packages | platform |
 | `packages/contracts` | Zod schemas: ids, family schemas, records, the attempt wire, the `/api/v1` route table, errors; `RULES.md`; JSON Schema snapshots | Zod only | platform |
 | `packages/core` | grading, numbers, mastery: pure functions | contracts | learner-knowledge |
 | `packages/store` | the `Store` interface, in-memory and Postgres, and the contract suite both pass | contracts, core, config | platform |
@@ -184,8 +185,8 @@ and the PR link.
 - The PR body has the `/dev-pr` shape: Summary (one small visual), Evidence (before and
   after), Merge Danger (door and blast radius). CI checks the headings.
 - **One-way doors in this repo**, never called two-way: a migration under `supabase/`; a change to
-  a `packages/contracts/schemas/*.json` snapshot; anything that deletes, moves or exports learner
-  data; `infra/bootstrap/` and anything that changes IAM; a deploy, a publish or an email.
+  a `packages/contracts/schemas/*.json` snapshot or to `packages/contracts/openapi.json`, the API
+  document docs.jadwigo.pl publishes; anything that deletes, moves or exports learner data; `infra/bootstrap/` and anything that changes IAM; a deploy, a publish or an email.
 - After a merge that changes `docs/`, run `md context repo sync --project jadwigo-platform`.
 
 ## Fences
@@ -224,6 +225,8 @@ Each fence has a test that plants a violation (`tools/src/*.test.ts`, `.claude/h
   its constant in `packages/contracts`, never retyped as a string. An enum comparison stays a
   literal: TypeScript checks it (`packages/contracts/RULES.md` rule 22).
 - Versions are pinned exact, and Renovate moves them after 7 days.
+- A change to a route, an MCP tool or a design token brings its docs in the same PR: the route's
+  `summary`, the `openapi.json` or `mcp-tools.json` snapshot, the page in `apps/docs` (`dl-5ssh.90`).
 - A merge deploys nothing; the owner deploys by hand.
 - Writing: digits for numbers, issue ids in backticks, "issue" (not "card"), outcomes rather
   than dates or costs. Text a child reads is short and kind, and never a bare "wrong".

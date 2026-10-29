@@ -71,9 +71,12 @@ module.exports = {
   ],
   options: {
     doNotFollow: { path: "node_modules" },
-    // .astro/ holds the types Astro generates for apps/site, never imported by our code.
+    // An app's .astro/ holds the types Astro generates, and its dist/ the bundles a build writes
+    // (Starlight's search script in apps/docs is circular). Neither is imported by our code.
+    // Anchored to apps/<app>/ so it never matches node_modules: a library whose main is in dist/
+    // (@dnd-kit/core) must still be seen by its rule (tools/src/fences.test.ts).
     // node_modules stays in the graph as leaves (doNotFollow), so a rule can name a library.
-    exclude: { path: "(^|/)\\.astro/" },
+    exclude: { path: "^apps/[^/]+/(\\.astro|dist)/" },
     tsPreCompilationDeps: true,
     combinedDependencies: true,
     enhancedResolveOptions: {

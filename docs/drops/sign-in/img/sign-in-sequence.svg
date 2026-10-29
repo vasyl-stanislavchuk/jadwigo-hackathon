@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sign-in-sequence-title sign-in-sequence-desc" id="sign-in-sequence-root">
+        <title id="sign-in-sequence-title">Continue with Google, in the same tab</title>
+        <desc id="sign-in-sequence-desc">The parent leaves the tab for Google or Facebook and comes back to the same tab, which swaps the returned code for a Supabase session and then calls Jadwigo's API as before.</desc>
+        <defs>
+      <style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Serif:ital@0;1&amp;family=Noto+Sans+KR:wght@400;500;600&amp;family=Noto+Serif+KR:wght@400&amp;family=Noto+Sans+TC:wght@400;500;600&amp;family=Noto+Serif+TC:wght@400&amp;display=swap');
+      #sign-in-sequence-root { --color-paper:   #fbfcfe;
+      --color-ink:     #040810;
+      --color-muted:   #5a6b85;
+      --color-accent:  #2941f3;
+      --font-sans:     'Inter', system-ui, sans-serif;
+      --font-display:  'Space Grotesk', system-ui, sans-serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace; }
+      #sign-in-sequence-root { font-family: var(--font-sans); color: var(--color-ink); }
+      #sign-in-sequence-root .diagram-container { width: 100%; overflow-x: auto; }
+      @media print {
+#sign-in-sequence-root .diagram-container { overflow-x: visible; }
+}</style>
+          <marker id="sign-in-sequence-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#5a6b85"/></marker>
+          <marker id="sign-in-sequence-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2941f3"/></marker>
+          <marker id="sign-in-sequence-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#0f7f76"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#fbfcfe"/>
+
+        <!-- LIFELINES: Parent's tab 160 · Supabase Auth 400 · Google or Facebook 640 · Jadwigo API 880 -->
+        <line x1="160" y1="128" x2="160" y2="556" stroke="#040810" stroke-width="1" stroke-dasharray="3,3" stroke-opacity="0.20"/>
+        <line x1="400" y1="128" x2="400" y2="556" stroke="#040810" stroke-width="1" stroke-dasharray="3,3" stroke-opacity="0.20"/>
+        <line x1="640" y1="128" x2="640" y2="556" stroke="#040810" stroke-width="1" stroke-dasharray="3,3" stroke-opacity="0.20"/>
+        <line x1="880" y1="128" x2="880" y2="556" stroke="#040810" stroke-width="1" stroke-dasharray="3,3" stroke-opacity="0.20"/>
+
+        <!-- M1: tab → Supabase, the new call (accent) -->
+        <line x1="160" y1="176" x2="398" y2="176" stroke="#2941f3" stroke-width="1.5" marker-end="url(#sign-in-sequence-arrow-accent)"/>
+        <rect x="236" y="156" width="88" height="12" rx="2" fill="#fbfcfe"/>
+        <text x="280" y="165" fill="#5a6b85" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">1 OAUTH START</text>
+
+        <!-- M2: Supabase → provider -->
+        <line x1="400" y1="220" x2="638" y2="220" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#sign-in-sequence-arrow)"/>
+        <rect x="484" y="200" width="72" height="12" rx="2" fill="#fbfcfe"/>
+        <text x="520" y="209" fill="#5a6b85" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">2 CONSENT</text>
+
+        <!-- M3: provider → Supabase, callback with code -->
+        <line x1="640" y1="264" x2="402" y2="264" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#sign-in-sequence-arrow)"/>
+        <rect x="492" y="244" width="56" height="12" rx="2" fill="#fbfcfe"/>
+        <text x="520" y="253" fill="#5a6b85" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">3 CODE</text>
+
+        <!-- M4: Supabase → tab, redirect back with code -->
+        <line x1="400" y1="308" x2="162" y2="308" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#sign-in-sequence-arrow)"/>
+        <rect x="236" y="288" width="88" height="12" rx="2" fill="#fbfcfe"/>
+        <text x="280" y="297" fill="#5a6b85" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">4 BACK + CODE</text>
+
+        <!-- M5: tab → Supabase, exchange code -->
+        <line x1="160" y1="352" x2="398" y2="352" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#sign-in-sequence-arrow)"/>
+        <rect x="244" y="332" width="72" height="12" rx="2" fill="#fbfcfe"/>
+        <text x="280" y="341" fill="#5a6b85" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">5 EXCHANGE</text>
+
+        <!-- M6: Supabase → tab, session (return: dashed, filled marker) -->
+        <line x1="400" y1="396" x2="162" y2="396" stroke="#5a6b85" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#sign-in-sequence-arrow)"/>
+        <rect x="248" y="376" width="64" height="12" rx="2" fill="#fbfcfe"/>
+        <text x="280" y="385" fill="#5a6b85" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">6 SESSION</text>
+
+        <!-- M7: tab → Jadwigo API, GET /me (link) -->
+        <line x1="160" y1="440" x2="878" y2="440" stroke="#0f7f76" stroke-width="1.2" marker-end="url(#sign-in-sequence-arrow-link)"/>
+        <rect x="484" y="420" width="72" height="12" rx="2" fill="#fbfcfe"/>
+        <text x="520" y="429" fill="#5a6b85" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">7 GET /ME</text>
+
+        <!-- M8: Jadwigo API → tab, account or none (return, matches call colour) -->
+        <line x1="880" y1="484" x2="162" y2="484" stroke="#0f7f76" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#sign-in-sequence-arrow-link)"/>
+        <rect x="480" y="464" width="80" height="12" rx="2" fill="#fbfcfe"/>
+        <text x="520" y="473" fill="#5a6b85" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">8 ACCOUNT?</text>
+
+        <!-- M9: tab → Jadwigo API, claim what is missing (link) -->
+        <line x1="160" y1="528" x2="878" y2="528" stroke="#0f7f76" stroke-width="1.2" marker-end="url(#sign-in-sequence-arrow-link)"/>
+        <rect x="488" y="508" width="64" height="12" rx="2" fill="#fbfcfe"/>
+        <text x="520" y="517" fill="#5a6b85" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">9 CLAIM</text>
+
+        <!-- ACTOR BOXES, drawn after arrows -->
+        <!-- Parent's tab (input) -->
+        <rect x="80" y="72" width="160" height="56" rx="6" fill="#fbfcfe"/>
+        <rect x="80" y="72" width="160" height="56" rx="6" fill="#ffffff" stroke="#7888a0" stroke-width="1"/>
+        <rect x="88" y="78" width="28" height="12" rx="2" fill="none" stroke="#7888a0" stroke-width="0.8" stroke-opacity="0.40"/>
+        <text x="102" y="87" fill="#7888a0" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">TAB</text>
+        <text x="160" y="104" fill="#040810" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">Parent's tab</text>
+        <text x="160" y="119" fill="#5a6b85" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">app.jadwigo.pl</text>
+
+        <!-- Supabase Auth (backend) -->
+        <rect x="320" y="72" width="160" height="56" rx="6" fill="#fbfcfe"/>
+        <rect x="320" y="72" width="160" height="56" rx="6" fill="#ffffff" stroke="#5a6b85" stroke-width="1"/>
+        <rect x="328" y="78" width="32" height="12" rx="2" fill="none" stroke="#5a6b85" stroke-width="0.8" stroke-opacity="0.40"/>
+        <text x="344" y="87" fill="#5a6b85" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">AUTH</text>
+        <text x="400" y="104" fill="#040810" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">Supabase Auth</text>
+        <text x="400" y="119" fill="#5a6b85" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">&lt;ref&gt;.supabase.co</text>
+
+        <!-- Google or Facebook (external) -->
+        <rect x="560" y="72" width="160" height="56" rx="6" fill="#fbfcfe"/>
+        <rect x="560" y="72" width="160" height="56" rx="6" fill="#ffffff" stroke="#7888a0" stroke-width="1" stroke-dasharray="4,3"/>
+        <rect x="568" y="78" width="28" height="12" rx="2" fill="none" stroke="#7888a0" stroke-width="0.8" stroke-opacity="0.40"/>
+        <text x="582" y="87" fill="#7888a0" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">IDP</text>
+        <text x="640" y="104" fill="#040810" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">Google or Facebook</text>
+        <text x="640" y="119" fill="#5a6b85" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">OAuth consent</text>
+
+        <!-- Jadwigo API (backend) -->
+        <rect x="800" y="72" width="160" height="56" rx="6" fill="#fbfcfe"/>
+        <rect x="800" y="72" width="160" height="56" rx="6" fill="#ffffff" stroke="#5a6b85" stroke-width="1"/>
+        <rect x="808" y="78" width="28" height="12" rx="2" fill="none" stroke="#5a6b85" stroke-width="0.8" stroke-opacity="0.40"/>
+        <text x="822" y="87" fill="#5a6b85" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">API</text>
+        <text x="880" y="104" fill="#040810" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">Jadwigo API</text>
+        <text x="880" y="119" fill="#5a6b85" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">/api/v1</text>
+
+        <!-- STEP LIST: the detail behind each short arrow label, one row per message -->
+        <line x1="1000" y1="72" x2="1000" y2="564" stroke="#091628" stroke-width="0.8" stroke-opacity="0.12"/>
+        <text x="1024" y="87" fill="#5a6b85" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">STEPS</text>
+
+        <g font-family="'Geist Mono', monospace" font-size="9" fill="#040810">
+          <text x="1024" y="179" fill="#2941f3">1</text>
+          <text x="1040" y="179">signInWithOAuth</text>
+          <text x="1024" y="223" fill="#5a6b85">2</text>
+          <text x="1040" y="223">redirect to consent</text>
+          <text x="1024" y="267" fill="#5a6b85">3</text>
+          <text x="1040" y="267">code to /auth/v1/callback</text>
+          <text x="1024" y="311" fill="#5a6b85">4</text>
+          <text x="1040" y="311">/parent?claim=…&amp;code=…</text>
+          <text x="1024" y="355" fill="#5a6b85">5</text>
+          <text x="1040" y="355">exchangeCodeForSession(code)</text>
+          <text x="1024" y="399" fill="#5a6b85">6</text>
+          <text x="1040" y="399">session, RS256 access token</text>
+          <text x="1024" y="443" fill="#5a6b85">7</text>
+          <text x="1040" y="443">GET /me, Bearer token</text>
+          <text x="1024" y="487" fill="#5a6b85">8</text>
+          <text x="1040" y="487">account, or none yet</text>
+          <text x="1024" y="531" fill="#5a6b85">9</text>
+          <text x="1040" y="531">POST /accounts, /learners,</text>
+          <text x="1040" y="545">/attempts/{id}/claims</text>
+        </g>
+        <g font-family="'Inter', sans-serif" font-size="10" fill="#5a6b85">
+          <text x="1040" y="193">PKCE, verifier kept in the tab's storage</text>
+          <text x="1040" y="325">Supabase found or linked the user</text>
+          <text x="1040" y="559">only what is missing</text>
+        </g>
+
+        <!-- CALLOUT (accent) on the Parent's tab lifeline -->
+        <path d="M 196 588 Q 168 584 160 562" fill="none" stroke="#2941f3" stroke-width="1" stroke-dasharray="4,3" stroke-opacity="0.50"/>
+        <circle cx="160" cy="560" r="2" fill="#2941f3"/>
+        <text x="204" y="592" fill="#2941f3" font-size="14" font-style="italic" font-family="'Inter', sans-serif">The tab never changes, so the attempt id in sessionStorage</text>
+        <text x="204" y="612" fill="#2941f3" font-size="14" font-style="italic" font-family="'Inter', sans-serif">is still there for the claim.</text>
+
+        <!-- LEGEND -->
+        <line x1="40" y1="648" x2="1240" y2="648" stroke="#091628" stroke-width="0.8" stroke-opacity="0.10"/>
+        <text x="80" y="680" fill="#5a6b85" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+
+        <line x1="160" y1="677" x2="196" y2="677" stroke="#2941f3" stroke-width="1.5" marker-end="url(#sign-in-sequence-arrow-accent)"/>
+        <text x="204" y="680" fill="#5a6b85" font-size="9" font-family="'Inter', sans-serif">New call</text>
+
+        <line x1="320" y1="677" x2="356" y2="677" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#sign-in-sequence-arrow)"/>
+        <text x="364" y="680" fill="#5a6b85" font-size="9" font-family="'Inter', sans-serif">Redirect or call</text>
+
+        <line x1="500" y1="677" x2="536" y2="677" stroke="#0f7f76" stroke-width="1.2" marker-end="url(#sign-in-sequence-arrow-link)"/>
+        <text x="544" y="680" fill="#5a6b85" font-size="9" font-family="'Inter', sans-serif">HTTP to Jadwigo's API</text>
+
+        <line x1="700" y1="677" x2="736" y2="677" stroke="#5a6b85" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#sign-in-sequence-arrow)"/>
+        <text x="744" y="680" fill="#5a6b85" font-size="9" font-family="'Inter', sans-serif">Return</text>
+
+        <rect x="840" y="671" width="20" height="12" rx="2" fill="#ffffff" stroke="#7888a0" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="868" y="680" fill="#5a6b85" font-size="9" font-family="'Inter', sans-serif">Outside Jadwigo and Supabase</text>
+      </svg>
