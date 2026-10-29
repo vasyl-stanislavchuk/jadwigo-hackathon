@@ -42,7 +42,10 @@
       "Sid": "ReadProdState",
       "Effect": "Allow",
       "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::jadwigo-terraform-state-843109108289/prod/terraform.tfstate"
+      "Resource": [
+        "arn:aws:s3:::jadwigo-terraform-state-843109108289/prod/terraform.tfstate",
+        "arn:aws:s3:::jadwigo-terraform-state-843109108289/jadwigo-bank/prod/terraform.tfstate"
+      ]
     },
     {
       "Sid": "ReadTheBankAliasString",
@@ -54,7 +57,10 @@
       "Sid": "NoObjectButTheState",
       "Effect": "Deny",
       "Action": ["s3:GetObject*"],
-      "NotResource": "arn:aws:s3:::jadwigo-terraform-state-843109108289/prod/terraform.tfstate"
+      "NotResource": [
+        "arn:aws:s3:::jadwigo-terraform-state-843109108289/prod/terraform.tfstate",
+        "arn:aws:s3:::jadwigo-terraform-state-843109108289/jadwigo-bank/prod/terraform.tfstate"
+      ]
     },
     {
       "Sid": "NeverDecrypt",

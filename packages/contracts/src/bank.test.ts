@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Need, SearchEnvelope } from "./bank.ts";
+import { BankQuestionId, Need, QuestionBody, SearchEnvelope } from "./bank.ts";
 import { ROUTES } from "./routes.ts";
 
 /**
@@ -149,5 +149,57 @@ describe("the search route", () => {
     expect(ROUTES.questionSearches.method).toBe("POST");
     expect(ROUTES.questionSearches.body).toBe(Need);
     expect(ROUTES.questionSearches.response).toBe(SearchEnvelope);
+  });
+});
+
+/** An invented body in the derive step's shape: no Khan text, a made-up id, sha and URL. */
+const BODY = {
+  id: "xfeed0001",
+  source: "khan",
+  en: {
+    family: "enter",
+    data: { prompt: "What is 2 + 3?" },
+    key: { accept: ["5"] },
+  },
+  credit: {
+    source: "khan",
+    url: "https://example.org/invented/xfeed0001",
+    licence: "CC BY-NC-SA 4.0",
+  },
+  pictures: [{ ref: `${"cd".repeat(32)}.svg`, decorative: false, pl: "Dwa jabłka i trzy jabłka" }],
+};
+
+describe("the question body", () => {
+  it("parses an invented body with its key and drops a field it does not name", () => {
+    const parsed = QuestionBody.parse({ ...BODY, raw_item: { x: 1 } });
+    expect(parsed.en?.key).toEqual({ accept: ["5"] });
+    expect(parsed).not.toHaveProperty("raw_item");
+  });
+
+  it("takes a body with no playable variant yet: only id, credit and problem_type", () => {
+    const waiting = { id: "xfeed0002", credit: BODY.credit, problem_type: "invented" };
+    expect(QuestionBody.parse(waiting)).toEqual(waiting);
+  });
+
+  it("refuses a body with no credit, or a picture ref that is no sha", () => {
+    const { credit: _, ...uncredited } = BODY;
+    expect(QuestionBody.safeParse(uncredited).success).toBe(false);
+    const odd = { ...BODY, pictures: [{ ref: "picture.png", decorative: true }] };
+    expect(QuestionBody.safeParse(odd).success).toBe(false);
+  });
+
+  it.each(["x1a2b3", "abc_DEF-9", "x".repeat(64)])("takes %s as an id", (id) => {
+    expect(BankQuestionId.safeParse(id).success).toBe(true);
+  });
+
+  it.each(["", "../x", "x.json", "x/y", "x y", "x".repeat(65)])("refuses %j as an id", (id) => {
+    expect(BankQuestionId.safeParse(id).success).toBe(false);
+  });
+
+  it("is GET /api/v1/questions/{id}, no body and the body out", () => {
+    expect(ROUTES.questionBody.path).toBe("/api/v1/questions/{id}");
+    expect(ROUTES.questionBody.method).toBe("GET");
+    expect(ROUTES.questionBody.body).toBeNull();
+    expect(ROUTES.questionBody.response).toBe(QuestionBody);
   });
 });

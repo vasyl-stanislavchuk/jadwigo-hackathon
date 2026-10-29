@@ -14,6 +14,13 @@ module "site" {
   bucket_name = "jadwigo-site-${var.environment}-843109108289"
 }
 
+# The content bucket (dl-n9fr.43.2): the bank's Khan pull and the derived questions/ layer, private,
+# with CloudFront over khan/media/ only
+# (jadwigo-question-bank/decisions/2026-10-29-the-monorepo-s-terraform-root-creates-the-content-bucket-and-the).
+module "content" {
+  source = "./modules/content"
+}
+
 # The service at app.<apex>: apps/web, and /api/* to the one Lambda (dl-5ssh.3.3).
 module "app" {
   source = "./modules/app"
@@ -43,6 +50,7 @@ module "app" {
     # Lesson review (dl-uukj.30): a finished attempt's questions again, for the child.
     "GET /api/v1/attempts/{id}/review",
     "POST /api/v1/question-searches",
+    "GET /api/v1/questions/{id}",
     # Parent login (dl-e8ov.2.36): these 5 need a token. The JWT authorizer on them is
     # dl-e8ov.2.42; apply them only together with it, never alone.
     "GET /api/v1/me",
@@ -71,4 +79,8 @@ module "app" {
   jwt_issuer = "https://${var.supabase_ref}.supabase.co/auth/v1"
 
   reserved_concurrency = var.app_reserved_concurrency
+
+  # The api role reads questions/* and khan/converted/* in it (modules/app/bank.tf).
+  content_bucket_name      = module.content.bucket_name
+  content_bucket_param_arn = module.content.bucket_param_arn
 }
