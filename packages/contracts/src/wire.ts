@@ -110,20 +110,13 @@ export const ReleasedHelp = z.object({
 });
 export type ReleasedHelp = z.infer<typeof ReleasedHelp>;
 
-/**
- * The page's half of a question, as one JSON Schema definition: the snapshot carries it twice, in
- * the plan and in the questions asked, and a `$ref` keeps its snapshot under the 1 MB file cap
- * (`tools/src/check-no-bank.ts`). The shape is `PageFamilyQuestion`'s.
- */
-const PageQuestion = PageFamilyQuestion.meta({ id: "PageFamilyQuestion" });
-
 /** An attempt question as the page sees it: the page's half of the lesson question, never its key. */
 export const PageAttemptQuestion = z.object({
   seq: Count,
   lesson_question_id: LessonQuestionId,
   question_type: QuestionType,
   say: z.string(),
-  question: PageQuestion,
+  question: PageFamilyQuestion,
   added: Added,
   placed: Placed.nullable(),
   added_for: Count.nullable(),
@@ -147,7 +140,7 @@ export const PagePlannedQuestion = z.object({
   lesson_question_id: LessonQuestionId,
   question_type: QuestionType,
   say: z.string(),
-  question: PageQuestion,
+  question: PageFamilyQuestion,
 });
 export type PagePlannedQuestion = z.infer<typeof PagePlannedQuestion>;
 

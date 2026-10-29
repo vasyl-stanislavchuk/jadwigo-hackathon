@@ -19,6 +19,18 @@
       "const": true
     },
     "labels": {
+      "$ref": "#/$defs/PictureLabels"
+    }
+  },
+  "required": [
+    "src",
+    "alt",
+    "width",
+    "height"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "PictureLabels": {
       "type": "object",
       "properties": {
         "range": {
@@ -60,39 +72,7 @@
         "items": {
           "type": "array",
           "items": {
-            "type": "object",
-            "properties": {
-              "content": {
-                "type": "string"
-              },
-              "coordinates": {
-                "type": "array",
-                "prefixItems": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ],
-                "items": false,
-                "minItems": 2,
-                "maxItems": 2
-              },
-              "alignment": {
-                "type": "string"
-              },
-              "math": {
-                "type": "boolean",
-                "const": false
-              }
-            },
-            "required": [
-              "content",
-              "coordinates",
-              "alignment"
-            ],
-            "additionalProperties": false
+            "$ref": "#/$defs/PictureLabel"
           }
         }
       },
@@ -101,13 +81,41 @@
         "items"
       ],
       "additionalProperties": false
+    },
+    "PictureLabel": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "coordinates": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "alignment": {
+          "type": "string"
+        },
+        "math": {
+          "type": "boolean",
+          "const": false
+        }
+      },
+      "required": [
+        "content",
+        "coordinates",
+        "alignment"
+      ],
+      "additionalProperties": false
     }
-  },
-  "required": [
-    "src",
-    "alt",
-    "width",
-    "height"
-  ],
-  "additionalProperties": false
+  }
 }

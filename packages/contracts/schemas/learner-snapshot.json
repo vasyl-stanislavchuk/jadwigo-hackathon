@@ -3,15 +3,29 @@
   "type": "object",
   "properties": {
     "learner": {
+      "$ref": "#/$defs/Learner"
+    },
+    "goals": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Goal"
+      }
+    }
+  },
+  "required": [
+    "learner",
+    "goals"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Learner": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+          "$ref": "#/$defs/LearnerId"
         },
         "pod_id": {
-          "type": "string",
-          "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+          "$ref": "#/$defs/PodId"
         },
         "handle": {
           "type": "string",
@@ -43,47 +57,48 @@
       ],
       "additionalProperties": false
     },
-    "goals": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^gol_[0-7][0-9a-hjkmnp-tv-z]{25}$"
-          },
-          "pod_id": {
-            "type": "string",
-            "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
-          },
-          "learner_id": {
-            "type": "string",
-            "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
-          },
-          "name": {
-            "type": "string",
-            "minLength": 1
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-          }
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "Goal": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/GoalId"
         },
-        "required": [
-          "id",
-          "pod_id",
-          "learner_id",
-          "name",
-          "created_at"
-        ],
-        "additionalProperties": false
-      }
+        "pod_id": {
+          "$ref": "#/$defs/PodId"
+        },
+        "learner_id": {
+          "$ref": "#/$defs/LearnerId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        }
+      },
+      "required": [
+        "id",
+        "pod_id",
+        "learner_id",
+        "name",
+        "created_at"
+      ],
+      "additionalProperties": false
+    },
+    "GoalId": {
+      "type": "string",
+      "pattern": "^gol_[0-7][0-9a-hjkmnp-tv-z]{25}$"
     }
-  },
-  "required": [
-    "learner",
-    "goals"
-  ],
-  "additionalProperties": false
+  }
 }

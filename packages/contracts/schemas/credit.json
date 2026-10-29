@@ -19,12 +19,7 @@
       "minLength": 1
     },
     "original_lang": {
-      "type": "string",
-      "enum": [
-        "pl",
-        "en",
-        "uk"
-      ]
+      "$ref": "#/$defs/Language"
     },
     "checked": {
       "type": "string",
@@ -39,5 +34,15 @@
     "original_lang",
     "checked"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en",
+        "uk"
+      ]
+    }
+  }
 }

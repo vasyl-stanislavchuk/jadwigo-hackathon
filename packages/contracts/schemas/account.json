@@ -3,16 +3,13 @@
   "type": "object",
   "properties": {
     "id": {
-      "type": "string",
-      "pattern": "^acc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/AccountId"
     },
     "pod_id": {
-      "type": "string",
-      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/PodId"
     },
     "sub": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+      "$ref": "#/$defs/Uuid"
     },
     "created_at": {
       "type": "string",
@@ -26,5 +23,19 @@
     "sub",
     "created_at"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "AccountId": {
+      "type": "string",
+      "pattern": "^acc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "Uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    }
+  }
 }

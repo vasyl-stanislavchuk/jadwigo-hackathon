@@ -14,27 +14,7 @@
     "parts": {
       "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "correct": {
-            "type": "boolean"
-          },
-          "mistake_class": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "correct",
-          "mistake_class"
-        ],
-        "additionalProperties": false
+        "$ref": "#/$defs/PartVerdict"
       }
     },
     "sides_swapped": {
@@ -46,5 +26,30 @@
     "mistake_class",
     "parts"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "PartVerdict": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "correct": {
+          "type": "boolean"
+        },
+        "mistake_class": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "correct",
+        "mistake_class"
+      ],
+      "additionalProperties": false
+    }
+  }
 }
