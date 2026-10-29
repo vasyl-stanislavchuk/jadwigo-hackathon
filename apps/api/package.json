@@ -36,8 +36,8 @@
   },
   "dependencies": {
     "@aws-lambda-powertools/event-handler": "2.36.0",
-    "@aws-sdk/client-lambda": "3.1155.0",
-    "@aws-sdk/client-ssm": "3.1155.0",
+    "@aws-sdk/client-lambda": "3.1156.0",
+    "@aws-sdk/client-ssm": "3.1156.0",
     "@jadwigo/contracts": "workspace:*",
     "@jadwigo/core": "workspace:*",
     "@jadwigo/store": "workspace:*"
