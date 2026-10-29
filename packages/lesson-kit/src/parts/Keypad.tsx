@@ -29,8 +29,8 @@ import type { Language } from "../stage/types.ts";
 import { type ComposerEvent, keyEvent, onControl } from "./composer.ts";
 import { Tray } from "./Tools.tsx";
 
-/** Every key is a square-cornered tile: 16 px corners, a 2 px line on its 4 px edge, paper. */
-const TILE = "rounded-[1rem] border-2 bg-card p-0 font-bold";
+/** Every key is a square-cornered tile: 10 px corners (the System page's keys), a 2 px line on its 4 px edge, paper. */
+const TILE = "rounded-[0.625rem] border-2 bg-card p-0 font-bold";
 /** A digit key on the pad: 72 tall, 30 px. */
 const DIGIT = cn(TILE, "min-h-[var(--kid-key-size)] text-[1.875rem]");
 /** A sign key in the pad's row above the digits: 56 tall, 28 px. Six share the phone's 358 column,

@@ -9,7 +9,8 @@
  * When the note opens or grows it comes into view with the least scroll (Choose addendum 1.1,
  * paper-behaviour README §3.2, scroll.ts): the whole note, or its top 16 px under the top bar when it
  * is taller than the room. A note grown taller than the room shows its newest card the same way, so
- * the card the child asked for is never left below the footer (dl-uukj.29.77). It never takes the focus:
+ * the card the child asked for is never left below the footer (dl-uukj.29.77). Opened by a tap, it
+ * scrolls once the finger lifts (dl-uukj.29.153). It never takes the focus:
  * on a laptop the focus stays in the field, so typing goes on, and on "Więcej pomocy", which has
  * moved down under the new card, so a second press works. The step's one live region reads it.
  */
@@ -19,7 +20,7 @@ import { Button, cn } from "@jadwigo/ui";
 import { type ReactNode, useEffect, useRef } from "react";
 import type { PressHandlers } from "../stage/press.ts";
 import type { Language } from "../stage/types.ts";
-import { insetsOf, scrollToShow } from "./scroll.ts";
+import { afterRelease, insetsOf, scrollToShow } from "./scroll.ts";
 import { STATUS } from "./status.ts";
 
 // The bulb and the eye come from the state table, the one place a step's icons are named (docs/17 §2f rule 3).
@@ -62,12 +63,17 @@ export function HelpLadder({
     const el = note.current;
     // In a lesson the note that opens comes into view too; a still on a review page stays put.
     const opened = shown.current === null && el?.closest("[data-learner-view], .kid-page") != null;
-    if (el && (n > (shown.current ?? n) || opened)) {
-      const insets = insetsOf(el);
-      const room = window.innerHeight - insets.top - insets.bottom;
-      const card = newest.current;
-      scrollToShow(card !== null && el.getBoundingClientRect().height > room ? card : el, insets);
-    }
+    // A tap opens help on pointerdown, and nothing scrolls while a finger is down, so the scroll
+    // waits for it to lift (owner 2026-10-29, dl-uukj.29.153): else a tapped note opened unseen.
+    if (el && (n > (shown.current ?? n) || opened))
+      afterRelease(() => {
+        // The step may have gone before the finger lifted.
+        if (!el.isConnected) return;
+        const insets = insetsOf(el);
+        const room = window.innerHeight - insets.top - insets.bottom;
+        const card = newest.current;
+        scrollToShow(card !== null && el.getBoundingClientRect().height > room ? card : el, insets);
+      });
     shown.current = n;
   }, [n]);
 

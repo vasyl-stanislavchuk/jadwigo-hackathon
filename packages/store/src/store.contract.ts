@@ -6,6 +6,7 @@ import {
   ID_PREFIXES,
   type IdPrefix,
   idOf,
+  LearnerId,
   type LessonQuestionId,
   PodId,
   Uuid,
@@ -437,6 +438,27 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
           learner_id: learner.id,
         });
         expect(record.attempt.learner_id).toBe(learner.id);
+      });
+
+      it("is NotFound when a picking assignment names another pod's learner, or an unknown one", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const b = await newPod(store, "Pod of owls");
+        const theirs = await store.putLearner(b, { handle: "owl", first_name: "Owl" });
+        const picks = await store.putAssignment(a.pod, {
+          audience: "learners",
+          identity: "pick",
+          lesson_id: a.lesson,
+        });
+        await expect(
+          store.startAttempt(a.pod, { assignment_id: picks.id, learner_id: theirs.id }),
+        ).rejects.toMatchObject(NOT_FOUND);
+        await expect(
+          store.startAttempt(a.pod, {
+            assignment_id: picks.id,
+            learner_id: LearnerId.parse(fresh(ID_PREFIXES.learner)),
+          }),
+        ).rejects.toMatchObject(NOT_FOUND);
       });
 
       it("is NotFound when the lesson has no published version", async () => {

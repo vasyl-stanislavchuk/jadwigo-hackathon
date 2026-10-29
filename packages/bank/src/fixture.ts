@@ -50,8 +50,15 @@ export const FIXTURE_ROWS: readonly SearchRow[] = [
     source: "khan",
     credit: "Khan Academy, CC BY-NC-SA 4.0, https://www.khanacademy.org/e/fixture-add-within-20",
     enrichment: {
-      summary: "Adding two numbers with a sum up to 20.",
-      mistake_classes: ["counting-on"],
+      summary: { en: "Adding two numbers with a sum up to 20.", pl: "Dodawanie do 20." },
+      mistake_classes: [
+        {
+          id: "counting-on",
+          pl: "liczy od 1 zamiast od większej",
+          en: "counts from 1, not on",
+          spot: "8 + 3 answered 10",
+        },
+      ],
     },
     content_hash: "f1".repeat(32),
     items: 12,
@@ -62,7 +69,13 @@ export const FIXTURE_ROWS: readonly SearchRow[] = [
     grade: "2",
     skill_ids: ["maths.multiply.facts"],
     problem_types: ["times-table"],
-    enrichment: { summary: "Times tables of 2 and 5 in pictures.", contexts: ["shopping"] },
+    enrichment: {
+      summary: {
+        en: "Times tables of 2 and 5 in pictures.",
+        pl: "Tabliczka mnożenia 2 i 5 na obrazkach.",
+      },
+      contexts: { en: ["shopping"], pl: ["zakupy"] },
+    },
     content_hash: "f2".repeat(32),
   }),
   setRow({
@@ -72,7 +85,7 @@ export const FIXTURE_ROWS: readonly SearchRow[] = [
     skill_ids: ["maths.fractions.unit"],
     problem_types: ["name-the-fraction"],
     question_types: ["choose"],
-    enrichment: { summary: "Połowa i ćwierć figury, zaznaczone na rysunku." },
+    enrichment: { summary: { pl: "Połowa i ćwierć figury, zaznaczone na rysunku." } },
     content_hash: "f3".repeat(32),
     items: 6,
   }),
@@ -95,12 +108,11 @@ function needWords(need: Need): Set<string> {
 }
 
 function rowWords(row: SearchRow): Set<string> {
-  const summary = row.enrichment?.["summary"];
   const parts = [
     ...Object.values(row.titles),
     ...(row.skill_ids ?? []),
     ...(row.problem_types ?? []),
-    typeof summary === "string" ? summary : "",
+    ...Object.values(row.enrichment?.summary ?? {}),
   ];
   return new Set(parts.flatMap(words));
 }
