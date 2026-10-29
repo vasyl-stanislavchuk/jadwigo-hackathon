@@ -139,6 +139,7 @@ function client(changes: Partial<ParentClient>): ParentClient {
     claimAttempt: refused,
     getLearnerAttempts: refused,
     getParentReview: async () => REVIEW,
+    getAssignmentAttempts: refused,
     ...changes,
   };
 }
@@ -270,5 +271,11 @@ describe("AttemptReview", () => {
     );
     expect(document.querySelector("[data-failed]")).not.toBeNull();
     expect(document.querySelector("[data-parent-home]")).not.toBeNull();
+  });
+
+  it("links the header to the overview of the attempt's assignment", async () => {
+    await draw(client({}));
+    const link = screen.getByRole("link", { name: "Wszystkie podejścia do tej lekcji" });
+    expect(link.getAttribute("href")).toBe("/parent/assignments/asg_0ectzj2evqb95a3v1v6wewjzy3");
   });
 });

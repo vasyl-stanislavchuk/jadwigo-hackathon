@@ -1,6 +1,14 @@
 import { AssignmentId, AttemptId, LearnerId } from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
-import { attemptPath, claimOf, isParentPath, learnerOf, parentPath, parentRoute } from "./route.ts";
+import {
+  assignmentPath,
+  attemptPath,
+  claimOf,
+  isParentPath,
+  learnerOf,
+  parentPath,
+  parentRoute,
+} from "./route.ts";
 
 const ASSIGNMENT = AssignmentId.parse("asg_0ectzj2evqb95a3v1v6wewjzy3");
 const ATTEMPT = AttemptId.parse("att_43007b83dp9w2tnfjxhha74cyq");
@@ -63,6 +71,30 @@ describe("parentRoute", () => {
     const url = new URL(attemptPath({ attempt: ATTEMPT, learner: LEARNER }), "http://app.local");
     expect(parentRoute(url.pathname)).toEqual({ kind: "attempt", attempt: ATTEMPT });
     expect(learnerOf(url.searchParams)).toBe(LEARNER);
+  });
+});
+
+describe("assignmentPath", () => {
+  it("names the assignment in the path and the language in the query", () => {
+    expect(assignmentPath({ assignment: ASSIGNMENT })).toBe(`/parent/assignments/${ASSIGNMENT}`);
+    expect(assignmentPath({ assignment: ASSIGNMENT, lang: "en" })).toBe(
+      `/parent/assignments/${ASSIGNMENT}?lang=en`,
+    );
+  });
+
+  it("round-trips through parentRoute, a trailing slash too", () => {
+    const url = new URL(assignmentPath({ assignment: ASSIGNMENT, lang: "pl" }), "http://app.local");
+    expect(parentRoute(url.pathname)).toEqual({ kind: "assignment", assignment: ASSIGNMENT });
+    expect(parentRoute(`${url.pathname}/`)).toEqual({ kind: "assignment", assignment: ASSIGNMENT });
+  });
+
+  it("reads an id that does not parse as null, and the bare prefix as no page", () => {
+    expect(parentRoute(`/parent/assignments/${ATTEMPT}`)).toEqual({
+      kind: "assignment",
+      assignment: null,
+    });
+    expect(parentRoute("/parent/assignments")).toBeNull();
+    expect(isParentPath(`/parent/assignments/${ASSIGNMENT}`)).toBe(true);
   });
 });
 

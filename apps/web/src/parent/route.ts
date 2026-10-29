@@ -5,6 +5,9 @@
  *   /parent?claim=<assignment> the same, then keep the attempt this tab played of that assignment
  *   /parent/attempts/<attempt>?learner=<learner>
  *                              one finished lesson of the learner, question by question
+ *   /parent/assignments/<assignment>
+ *                              the lesson overview: every attempt the pod reads of that assignment,
+ *                              against its questions (dl-uukj.30.4)
  *
  * The claim names the assignment, never the attempt: the attempt id stays in sessionStorage
  * (play/storedAttempt.ts), out of the URL. The attempt page names its learner, whose route the API
@@ -15,6 +18,7 @@ import { AssignmentId, AttemptId, LearnerId } from "@jadwigo/contracts";
 
 const PARENT_PATH = "/parent";
 const ATTEMPTS_PATH = `${PARENT_PATH}/attempts`;
+const ASSIGNMENTS_PATH = `${PARENT_PATH}/assignments`;
 
 /** /parent, with the assignment whose attempt to keep and the page's language. */
 export function parentPath({
@@ -47,14 +51,42 @@ export function attemptPath({
   return query.size > 0 ? `${path}?${query}` : path;
 }
 
-/** Which parent page a path is: the home, an attempt (null for an id that does not parse), or none. */
-export type ParentRoute = { kind: "home" } | { kind: "attempt"; attempt: AttemptId | null };
+/** /parent/assignments/<assignment>, the lesson overview, with the page's language. */
+export function assignmentPath({
+  assignment,
+  lang,
+}: {
+  assignment: AssignmentId;
+  lang?: string | null;
+}): string {
+  const path = `${ASSIGNMENTS_PATH}/${assignment}`;
+  return lang ? `${path}?${new URLSearchParams({ lang })}` : path;
+}
+
+/** Which parent page a path is: the home, an attempt or an assignment's overview (null for an id
+ * that does not parse), or none. */
+export type ParentRoute =
+  | { kind: "home" }
+  | { kind: "attempt"; attempt: AttemptId | null }
+  | { kind: "assignment"; assignment: AssignmentId | null };
+
+/** The id after `prefix/`, trailing slash dropped; undefined when the path is not under it. */
+const idUnder = (path: string, prefix: string): string | undefined =>
+  path.startsWith(`${prefix}/`) ? path.slice(prefix.length + 1).replace(/\/$/, "") : undefined;
 
 export function parentRoute(path: string): ParentRoute | null {
   if (path === PARENT_PATH || path === `${PARENT_PATH}/`) return { kind: "home" };
-  if (!path.startsWith(`${ATTEMPTS_PATH}/`)) return null;
-  const parsed = AttemptId.safeParse(path.slice(ATTEMPTS_PATH.length + 1).replace(/\/$/, ""));
-  return { kind: "attempt", attempt: parsed.success ? parsed.data : null };
+  const attempt = idUnder(path, ATTEMPTS_PATH);
+  if (attempt !== undefined) {
+    const parsed = AttemptId.safeParse(attempt);
+    return { kind: "attempt", attempt: parsed.success ? parsed.data : null };
+  }
+  const assignment = idUnder(path, ASSIGNMENTS_PATH);
+  if (assignment !== undefined) {
+    const parsed = AssignmentId.safeParse(assignment);
+    return { kind: "assignment", assignment: parsed.success ? parsed.data : null };
+  }
+  return null;
 }
 
 /** Whether the path is one of the parent's pages, for the app's router. */
