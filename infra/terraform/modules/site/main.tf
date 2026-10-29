@@ -1,16 +1,21 @@
+# With the defaults (zone_name unset, include_www true) every value below is what it was before
+# these options, so the marketing site plans with no changes (dl-5ssh.90.11).
 locals {
-  www = "www.${var.domain_name}"
+  www   = "www.${var.domain_name}"
+  zone  = coalesce(var.zone_name, var.domain_name)
+  names = var.include_www ? [var.domain_name, local.www] : [var.domain_name]
 }
 
 data "aws_route53_zone" "this" {
-  name = var.domain_name
+  name = local.zone
 }
 
-# Certificate: one name for the apex and one for www, validated in the zone this account holds.
+# Certificate: one name for the domain and, with include_www, one for www, validated in the zone
+# this account holds.
 resource "aws_acm_certificate" "this" {
   provider                  = aws.us_east_1
   domain_name               = var.domain_name
-  subject_alternative_names = [local.www]
+  subject_alternative_names = var.include_www ? [local.www] : null
   validation_method         = "DNS"
 
   lifecycle {
@@ -76,7 +81,8 @@ resource "aws_cloudfront_origin_access_control" "site" {
 }
 
 # The edge: www.<apex> redirects to the apex, and a page path reads its index.html (edge.js).
-# The bucket's files come from `make -C infra site-deploy`, not from Terraform.
+# Without include_www no www host reaches it, and only the index.html mapping applies.
+# The bucket's files come from `make -C infra site-deploy` (docs-deploy for the docs), not from Terraform.
 resource "aws_cloudfront_function" "edge" {
   name    = "${replace(var.domain_name, ".", "-")}-edge"
   runtime = "cloudfront-js-2.0"
@@ -98,8 +104,8 @@ resource "aws_cloudfront_distribution" "site" {
   http_version        = "http2and3"
   price_class         = "PriceClass_100"
   default_root_object = "index.html"
-  aliases             = [var.domain_name, local.www]
-  comment             = "${var.domain_name} marketing site"
+  aliases             = local.names
+  comment             = "${var.domain_name} ${var.purpose}"
 
   origin {
     origin_id                = "site"
@@ -173,7 +179,7 @@ resource "aws_s3_bucket_policy" "site" {
 }
 
 resource "aws_route53_record" "alias" {
-  for_each = toset(flatten([for n in [var.domain_name, local.www] : ["${n}|A", "${n}|AAAA"]]))
+  for_each = toset(flatten([for n in local.names : ["${n}|A", "${n}|AAAA"]]))
 
   zone_id = data.aws_route53_zone.this.zone_id
   name    = split("|", each.key)[0]

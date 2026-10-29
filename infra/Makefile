@@ -9,7 +9,7 @@ export PATH := $(MISE_BIN_PATHS)$(PATH)
 ENV ?= prod
 TF := AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform
 
-.PHONY: init plan apply output site-deploy deploy api-deploy web-deploy auth-diff auth-apply fmt validate
+.PHONY: init plan apply output site-deploy deploy api-deploy web-deploy docs-deploy auth-diff auth-apply fmt validate
 
 init:
 	$(TF) init -input=false -reconfigure -backend-config=environments/$(ENV).backend.hcl
@@ -64,6 +64,20 @@ web-deploy:
 	bucket=$$($(TF) output -raw app_bucket) && dist_id=$$($(TF) output -raw app_distribution_id) && \
 	{ [ ! -d $(WEB)/dist/assets ] || $(AWS) s3 sync $(WEB)/dist/assets s3://$$bucket/assets --cache-control "public, max-age=31536000, immutable"; } && \
 	$(AWS) s3 sync $(WEB)/dist s3://$$bucket --delete --exclude "assets/*" --cache-control "public, max-age=300" && \
+	$(AWS) cloudfront create-invalidation --distribution-id $$dist_id --paths "/*"
+
+# The docs at docs.<apex> (dl-5ssh.90): apps/docs's Starlight build, checked, to the docs bucket, then
+# invalidate. As for the site, hashed files under _astro/ cache for a year and the rest 5 minutes,
+# which keeps the pages and the files agents read (openapi.json, mcp-tools.json, llms.txt) short.
+# docs/runbooks/docs-publish.md is the owner's order.
+DOCS := ../apps/docs
+
+docs-deploy:
+	@$(NOT_FROM_AGENT)
+	cd $(DOCS) && bun run build && bun run check:dist
+	bucket=$$($(TF) output -raw docs_bucket) && dist_id=$$($(TF) output -raw docs_distribution_id) && \
+	{ [ ! -d $(DOCS)/dist/_astro ] || $(AWS) s3 sync $(DOCS)/dist/_astro s3://$$bucket/_astro --cache-control "public, max-age=31536000, immutable"; } && \
+	$(AWS) s3 sync $(DOCS)/dist s3://$$bucket --delete --exclude "_astro/*" --cache-control "public, max-age=300" && \
 	$(AWS) cloudfront create-invalidation --distribution-id $$dist_id --paths "/*"
 
 # Supabase Auth settings for jadwigo-prod and jadwigo-dev (dl-e8ov.2.40): site URL, redirect URLs,
