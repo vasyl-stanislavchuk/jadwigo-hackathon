@@ -52,6 +52,7 @@ A merge deploys nothing. The owner deploys by hand
 | Command | What it does | Who |
 | --- | --- | --- |
 | `make -C infra fmt validate` | format check and validate, no AWS | anyone, CI |
+| `make -C infra test` | `terraform/tests/` against mock providers, no AWS: `modules/site` keeps jadwigo.pl's names and gives the docs theirs (`dl-5ssh.90.17`) | anyone |
 | `make -C infra plan` | init against the state bucket, then plan prod | the owner |
 | `make -C infra apply` | init, then apply prod | the owner |
 | `make -C infra site-deploy` | build `apps/site`, check `dist/`, sync it to the bucket, invalidate | the owner |
