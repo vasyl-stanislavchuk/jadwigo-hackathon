@@ -202,6 +202,32 @@ def test_one_letter_words_that_spell_no_name_stay(text: str) -> None:
     assert guard(text, names=["Kasia", "Ola"]).text == text
 
 
+@pytest.mark.parametrize(
+    ("name", "text", "out"),
+    [
+        # Spelled in mixed case: the cuts before a capital break it, the uncut reading does not.
+        ("Ola", "o l A", "[NAME_1]"),
+        ("Kasia", "k A s I a", "[NAME_1]"),
+        ("Kasia", "K a S i A", "[NAME_1]"),
+        ("jan", "J a N", "[NAME_1]"),
+        # A capital and the name as given, then another spelled word.
+        ("Ola", "O l a, t o", "[NAME_1], t o"),
+        ("Ola", "O l a, m a m a", "[NAME_1], m a m a"),
+        ("Ola", "O l a  m a  k o t a", "[NAME_1]  m a  k o t a"),
+        ("Ola", "O l a t o", "[NAME_1] t o"),
+        ("Ola", "O l a k", "[NAME_1] k"),
+        ("Ola", "O-l-a-m-a", "[NAME_1]-m-a"),
+        ("jan", "J a n  m a  p s a", "[NAME_1]  m a  p s a"),
+        ("Ewa", "E w a, t a t a", "[NAME_1], t a t a"),
+    ],
+)
+def test_a_spelled_name_in_mixed_case_or_before_another_word_is_hidden(
+    name: str, text: str, out: str
+) -> None:
+    # dl-u1y5.24, the merge steward's round-3 findings.
+    assert guard(text, names=[name]).text == out
+
+
 def test_a_spelled_word_that_reads_as_a_name_and_one_letter_words_is_hidden() -> None:
     # The price of reading one-letter words beside a spelled name: "w o l a" ("wola") reads as
     # "w Ola" and "O l i w i a" as "Oli w i a". The prompt loses a word; the other way would cost

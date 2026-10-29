@@ -285,6 +285,7 @@ def _spelled_spans(
     reads as "w Ola" and is hidden.
     """
     forms = sorted((f for f in form_of if len(f) >= 3), key=len, reverse=True)
+    bases = frozenset(f for f in forms if _fold(form_of[f]) == f)  # each name as it is given
     spaced = "".join(" " if unicodedata.category(ch) == "Cf" else ch for ch in text)
     spans: list[tuple[int, int, str]] = []
     for run in _SPELLED_RE.finditer(spaced):
@@ -297,17 +298,29 @@ def _spelled_spans(
                 letters += [i] * len(piece)
         word = _fold(shown)
         cuts = [j for j in range(1, len(shown)) if shown[j].isupper() and shown[j - 1].islower()]
+        found: list[tuple[int, int, str]] = []
         for lo, hi in zip([0, *cuts], [*cuts, len(word)], strict=True):
-            for start, end, form in _read_piece(word, lo, hi, forms):
-                spans.append((letters[start], letters[end - 1] + 1, form_of[form]))
+            found += _read_piece(word, shown, lo, hi, forms, bases)
+        # The run read again with no cuts, for a name spelled in mixed case ("k A s I a", "o l A"),
+        # which the cuts break into pieces that spell nothing. A name it finds where the cut
+        # reading found none is hidden too.
+        for name in _read_piece(word, shown, 0, len(word), forms, bases):
+            if all(name[1] <= s or name[0] >= e for s, e, _ in found):
+                found.append(name)
+        for start, end, form in found:
+            spans.append((letters[start], letters[end - 1] + 1, form_of[form]))
     return spans
 
 
 def _read_piece(
-    word: str, lo: int, hi: int, forms: list[str]
+    word: str, shown: str, lo: int, hi: int, forms: list[str], bases: frozenset[str]
 ) -> list[tuple[int, int, str]]:
-    """`word[lo:hi]` read as one-letter words and name forms: the names' spans, or none when the
-    piece cannot be read that way. Name forms are tried longest first, before a one-letter word."""
+    """`word[lo:hi]` read as one-letter words and name forms: the names' spans. Name forms are
+    tried longest first, before a one-letter word. A piece that cannot be read that way is a word
+    and stays ("s-z-k-o-ł-a", "o l e j"), unless it starts with a capital and the name as it is
+    given (one of `bases`): a capital marks a name, as in the first pass, so "O l a, t o" and
+    "O-l-a-m-a" hide "Ola". An inflected form does not count, as it may start another word: "O l e
+    k" is Olek, not Ola. `shown` is `word` with its case kept."""
     # read[j]: the names of a reading of word[j:hi], or None when there is none.
     read: list[list[tuple[int, int, str]] | None] = [None] * (hi - lo + 1)
     read[hi - lo] = []
@@ -327,7 +340,13 @@ def _read_piece(
         if found is None and word[j] in _ONE_LETTER_WORDS:
             found = read[j + 1 - lo]
         read[j - lo] = found
-    return read[0] or []
+    if read[0] is not None:
+        return read[0]
+    if lo < hi and shown[lo].isupper():
+        for form in forms:
+            if form in bases and word.startswith(form, lo) and lo + len(form) <= hi:
+                return [(lo, lo + len(form), form)]
+    return []
 
 
 # ---------------------------------------------------------------- guard ------
