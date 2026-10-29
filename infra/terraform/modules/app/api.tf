@@ -77,7 +77,9 @@ resource "aws_iam_role_policy" "api" {
   policy = data.aws_iam_policy_document.api.json
 }
 
-# No reserved or provisioned concurrency: the account's quota is 1000 since 2026-10-28 (case 179318942100525).
+# The account's quota is 1000 since 2026-10-28 (case 179318942100525). Reserved concurrency caps this
+# function below the Supabase pooler's client limit, as each instance holds 1 pooled connection
+# (pool max 1, dl-5ssh.25; dl-5ssh.75). No provisioned concurrency.
 resource "aws_lambda_function" "api" {
   function_name    = local.name
   role             = aws_iam_role.api.arn
@@ -88,6 +90,8 @@ resource "aws_lambda_function" "api" {
   timeout          = 10
   filename         = data.archive_file.placeholder.output_path
   source_code_hash = data.archive_file.placeholder.output_base64sha256
+
+  reserved_concurrent_executions = var.reserved_concurrency
 
   environment {
     variables = {
