@@ -88,7 +88,7 @@ The first time, in order: the state bucket above, `plan`, `apply` (the certifica
 10 to 15 minutes), then `site-deploy`. Until `site-deploy` runs, the site answers 404. For app.jadwigo.pl:
 `apply`, the `put-parameter` above, then `deploy`, then `curl https://app.jadwigo.pl/api/health`.
 
-**The plan role is the owner's to create, once** (`bootstrap/`, `dl-5ssh.34.4`). `bootstrap/00-oidc.sh`
+**The plan role is the owner's to create, once** (`bootstrap/`, `dl-5ssh.34.4`). `bootstrap/00-oidc.sh` runs as aws.mk's profile even when one is exported (`JADWIGO_AWS_PROFILE` picks another),
 reuses the account's GitHub OIDC provider and creates `jadwigo-boundary` and `jadwigo-github-plan`. It
 refuses an agent's shell and is safe to run again:
 
