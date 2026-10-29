@@ -110,13 +110,20 @@ export const ReleasedHelp = z.object({
 });
 export type ReleasedHelp = z.infer<typeof ReleasedHelp>;
 
+/**
+ * The page's half of a question, as one JSON Schema definition: the snapshot carries it twice, in
+ * the plan and in the questions asked, and a `$ref` keeps its snapshot under the 1 MB file cap
+ * (`tools/src/check-no-bank.ts`). The shape is `PageFamilyQuestion`'s.
+ */
+const PageQuestion = PageFamilyQuestion.meta({ id: "PageFamilyQuestion" });
+
 /** An attempt question as the page sees it: the page's half of the lesson question, never its key. */
 export const PageAttemptQuestion = z.object({
   seq: Count,
   lesson_question_id: LessonQuestionId,
   question_type: QuestionType,
   say: z.string(),
-  question: PageFamilyQuestion,
+  question: PageQuestion,
   added: Added,
   placed: Placed.nullable(),
   added_for: Count.nullable(),
@@ -130,9 +137,30 @@ export const PageAttemptQuestion = z.object({
 });
 export type PageAttemptQuestion = z.infer<typeof PageAttemptQuestion>;
 
-/** `GET /api/v1/attempts/{id}`, and the reply to a start: everything asked so far. */
+/**
+ * A planned question of the attempt's version as the page sees it, asked or not: the page's half,
+ * never its key. An attempt question with `added = planned` asks the entry with its
+ * `lesson_question_id`, which is unique on a version.
+ */
+export const PagePlannedQuestion = z.object({
+  position: Count,
+  lesson_question_id: LessonQuestionId,
+  question_type: QuestionType,
+  say: z.string(),
+  question: PageQuestion,
+});
+export type PagePlannedQuestion = z.infer<typeof PagePlannedQuestion>;
+
+/** `GET /api/v1/attempts/{id}`, and the reply to a start: the plan and everything asked so far. */
 export const AttemptSnapshot = z.object({
   attempt: Attempt,
+  /**
+   * The whole pre-defined lesson, in `position` order, so the page knows its length from the
+   * start (decision 2026-10-28-the-page-loads-the-whole-planned-lesson-when-an-attempt-starts-s).
+   * Spares are drawn by growth and explain questions are never asked in v0, so neither is on it.
+   * An entry is answerable only once the server asks it and it shows in `questions`.
+   */
+  plan: z.array(PagePlannedQuestion),
   /** In `seq` order. The open one, when there is one, is last. */
   questions: z.array(PageAttemptQuestion),
   /** The open question's `seq`, or null once the attempt is finished. */
@@ -453,6 +481,8 @@ export const ERROR_STATUS = {
   EventIdMismatch: 409,
   WriteOnce: 409,
   AnswerLimit: 429,
+  Unauthorized: 401,
+  BankUnavailable: 502,
 } as const;
 export const ErrorType = z.enum(
   Object.keys(ERROR_STATUS) as [keyof typeof ERROR_STATUS, ...(keyof typeof ERROR_STATUS)[]],

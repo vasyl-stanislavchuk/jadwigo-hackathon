@@ -135,17 +135,34 @@ function openBox(field: Element): { top: number; bottom: number } {
 }
 
 /** How far a step opening on a field scrolls: none when `open` (the instruction down to the field)
- * fits between the insets; when it does not, the least scroll that brings the field itself above
- * the dock, and the instruction may scroll off (Slots addendum 2.5, which wins over keeping the
- * instruction in place: a child on a phone sees the field the keypad types into). */
+ * fits between the insets. When it does not, the instruction still stops 16 px under the top bar
+ * while the field's own box (`own`) then ends above the dock's line (`line`, from the view's top):
+ * on a short phone the fold arrow may stand over the card's corner, and the child reads the task and
+ * sees the field (owner 2026-10-29, dl-uukj.29.140). Else the least scroll that brings the field
+ * above the dock, and the instruction may scroll off (Slots addendum 2.5: a child on a phone sees
+ * the field the keypad types into). */
 export function openDelta(
   open: { top: number; bottom: number },
   field: { top: number; bottom: number },
   height: number,
   insets: Insets,
+  own?: { box: { top: number; bottom: number }; line: number },
 ): number {
   const fits = open.bottom - open.top <= height - insets.top - insets.bottom;
-  return fits ? scrollDelta(open, height, insets) : scrollDelta(field, height, insets);
+  if (fits) return scrollDelta(open, height, insets);
+  const atTop = open.top - insets.top;
+  if (own !== undefined && own.box.bottom - atTop <= own.line) return atTop;
+  return scrollDelta(field, height, insets);
+}
+
+/** Where the docked tools start, in px from the view's top: the dock's line over the footer, or
+ * the footer's when nothing is docked. Outside a lesson, the view's bottom. */
+function dockLineOf(el: Element, height: number): number {
+  const shell = el.closest("[data-step-shell]");
+  if (shell?.closest("[data-learner-view], .kid-page") == null) return height;
+  const footer = shell.querySelector<HTMLElement>("[data-bar]")?.offsetHeight ?? 0;
+  const dock = shell.querySelector<HTMLElement>("[data-tools-dock]:not([hidden])");
+  return height - footer - (dock !== null && !dock.contains(el) ? dock.offsetHeight : 0);
 }
 
 /** A step opening on its first field: show `openBox`, or the field when that does not fit, at
@@ -153,11 +170,9 @@ export function openDelta(
 export function showOnOpen(field: Element): void {
   if (typeof window === "undefined") return;
   const box = (field.closest("[data-scroll-target]") ?? field).getBoundingClientRect();
-  scrollByAnimated(
-    openDelta(openBox(field), box, window.innerHeight, insetsOf(field)),
-    field,
-    true,
-  );
+  const height = window.innerHeight;
+  const own = { box: field.getBoundingClientRect(), line: dockLineOf(field, height) };
+  scrollByAnimated(openDelta(openBox(field), box, height, insetsOf(field), own), field, true);
 }
 
 /** Show `el` with the least scroll (§3.7), between the step's clear edges or the given ones. Does

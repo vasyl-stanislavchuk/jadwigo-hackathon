@@ -23,7 +23,9 @@
             "AnswerConflict",
             "EventIdMismatch",
             "WriteOnce",
-            "AnswerLimit"
+            "AnswerLimit",
+            "Unauthorized",
+            "BankUnavailable"
           ]
         },
         "message": {
