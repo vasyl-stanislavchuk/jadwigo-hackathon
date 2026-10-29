@@ -45,8 +45,9 @@ export function HelpLadder({
   language: Language;
   /** Every card released so far, oldest first. */
   cards: readonly ReactNode[];
-  /** How many cards the step has in all. */
-  of: number;
+  /** How many cards the step has in all; null while unknown (a rung the api wrote itself, with
+   * more to come), and then the counter is not drawn rather than guess (dl-uukj.29.154). */
+  of: number | null;
   /** "Więcej pomocy", while more can be given now. */
   more?: PressHandlers | null | undefined;
   /** "Jeszcze nie wiem": ends the step and shows its solution. */
@@ -76,7 +77,7 @@ export function HelpLadder({
       <p data-help-head>
         <TableIcon row="boost" className="kid-help-bulb" />
         <span>{copy(language, "ds_help_title")}</span>
-        {n > 0 && (
+        {n > 0 && of !== null && (
           <span data-help-count>{copy(language, "ds_hint_of", { n, of: Math.max(of, n) })}</span>
         )}
       </p>

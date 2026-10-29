@@ -182,6 +182,19 @@ function TableIcon({
   );
 }
 
+/** A released rung with nothing to show: no card or hint, no marked part, nothing given or worked. */
+function emptyRung(h: PageHelp): boolean {
+  return (
+    (h.card?.text ?? "").trim() === "" &&
+    h.card?.picture === undefined &&
+    (h.hints?.length ?? 0) === 0 &&
+    (h.focus?.length ?? 0) === 0 &&
+    (h.given === null || h.given === undefined) &&
+    (h.worked?.length ?? 0) === 0 &&
+    (h.twin === null || h.twin === undefined)
+  );
+}
+
 function HelpCard({
   state,
   language,
@@ -540,8 +553,6 @@ export function StepShell({
   const [dockBox, setDockBox] = useState<HTMLElement | null>(null);
   // A keyboard smaller than this is no system keyboard (a browser's own bar coming and going).
   const keyboard = useKeyboardInset(docked && touch) > 120;
-  // The help note opened on a step with nothing to give yet: it holds only the way out.
-  const [noteOpen, setNoteOpen] = useState(false);
   const [paused, setPaused] = useState(false);
   // After a check on a step with no fields, the marked part comes into view above the band
   // (§3.7); a step with fields scrolls to the first marked field as the focus moves there.
@@ -557,10 +568,15 @@ export function StepShell({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input.feedback]);
 
-  const help = ladder?.help ?? null;
-  const ask = ladder?.ask?.enabled === true ? ladder.ask : null;
+  // A rung that shows nothing (no card, no marked part, nothing given) is no help: the note never
+  // opens empty, and the bulb gives way to "Jeszcze nie wiem" (owner 2026-10-29, dl-uukj.29.154).
+  // Until the wire says how much help a step has (dl-e8ov.1.2), the first ask is how it is found.
+  const rung = ladder?.help ?? null;
+  const nothing = rung !== null && emptyRung(rung);
+  const help = nothing ? null : rung;
+  const ask = ladder?.ask?.enabled === true && !nothing ? ladder.ask : null;
   const leaving = moveOn?.enabled === true ? moveOn : null;
-  const open = help !== null || ladder?.refused === true || noteOpen;
+  const open = help !== null || ladder?.refused === true;
   const ended = verdict === "right" || verdict === "solution";
 
   // The answer's tools (Tools.tsx): which kinds the step has, and whether the phone's docked tools
@@ -703,19 +719,24 @@ export function StepShell({
     if (keys !== null && keys.fields.length > 0) quietly(stepKeys.restore);
     else shellRef.current?.closest<HTMLElement>("fieldset")?.focus({ preventScroll: true });
   });
-  // The bulb: help from the first frame, while there is help to give or a way out to show.
-  const showNote: PressHandlers = {
-    onPointerDown: () => setNoteOpen(true),
-    onClick: (event) => event.detail === 0 && setNoteOpen(true),
-  };
-  const bulbPress: PressHandlers | null = ended
-    ? null
-    : ask
-      ? ask.press
-      : leaving
-        ? showNote
-        : null;
-  const cards = (help?.hints ?? []).map((h, i) => <Hint key={i} hint={h} />);
+  // The bulb: only while there is help to give. With none left, its slot holds "Jeszcze nie wiem",
+  // the way out, one tap away (owner 2026-10-29, dl-uukj.29.154).
+  const bulbPress: PressHandlers | null = ended ? null : ask ? ask.press : null;
+  const wayOut: PressHandlers | null = ended || ask ? null : (leaving?.press ?? null);
+  // A rung the api writes itself (look again, a smaller step) has its card and no hints: the card is
+  // the note's one card, or the note opened empty (owner 2026-10-29, dl-uukj.29.154).
+  const written: PageHintCard[] =
+    (help?.hints?.length ?? 0) > 0
+      ? (help?.hints ?? [])
+      : help?.card
+        ? [
+            {
+              text: help.card.text,
+              ...(help.card.picture === undefined ? {} : { picture: help.card.picture }),
+            },
+          ]
+        : [];
+  const cards = written.map((h, i) => <Hint key={i} hint={h} />);
   // The solution card's lines (addendum 1.2): as released with the solution, else a worked
   // solution released before (a Choose step with no help, after its second miss). That release
   // shows mid-step in the same card, never in help's yellow (dl-uukj.29.96): yellow stays help,
@@ -750,15 +771,31 @@ export function StepShell({
   useEffect(() => {
     if (bandLine !== "") setAnnounce(liveWords(bandLine, language));
   }, [bandLine, language]);
-  const rungs = help?.hints?.length ?? 0;
+  const rungs = written.length;
   useEffect(() => {
-    const newest = help?.hints?.[rungs - 1];
+    const newest = written[rungs - 1];
     if (newest) setAnnounce(liveWords(newest.text, language));
     // A new rung is the change to read.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rungs]);
 
   const helpButton = (where: "rest" | "miss") => {
+    if (wayOut !== null)
+      return (
+        <Button
+          key={`move-on-${where}`}
+          type="button"
+          variant="outline"
+          size="commit"
+          data-move-on
+          className="kid-help-ask"
+          onPointerDown={wayOut.onPointerDown}
+          onClick={wayOut.onClick}
+        >
+          <TableIcon row={StepStatus.MovedOn} />
+          <span data-help-label>{copy(language, "dont_know_yet")}</span>
+        </Button>
+      );
     if (bulbPress === null) return null;
     // While the note is open the bulb's slot stays empty, holding its width (README §3).
     const held = where === "rest" && open;
@@ -902,7 +939,7 @@ export function StepShell({
             <HelpLadder
               language={language}
               cards={cards}
-              of={help?.hintsTotal ?? cards.length}
+              of={help?.hintsTotal ?? (help?.more ? null : cards.length)}
               more={help !== null && ask ? ask.press : null}
               dontKnow={leaving?.press ?? null}
               refused={ladder?.refused === true}
