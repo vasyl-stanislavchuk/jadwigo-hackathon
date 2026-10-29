@@ -32,6 +32,7 @@ import type { Clock, Instant } from "../stage/clock.ts";
 import { type PressModality, press } from "../stage/press.ts";
 import type { Language } from "../stage/types.ts";
 import { Grip } from "./Grip.tsx";
+import { QUIET } from "./quiet.ts";
 import { useTapPick, walkByArrows } from "./tapPick.ts";
 import { FOCUS_CLASS, GIVEN_CLASS, TONE_CLASS, type Tone, wholeMark } from "./tone.ts";
 
@@ -56,18 +57,6 @@ export interface TilePlace {
   /** Marked by a Check pressed too soon, while still empty. */
   missing?: boolean | undefined;
 }
-
-/** dnd-kit's own announcements are English only: this part announces in the lesson's language
- * through its live region instead, so dnd-kit's are silenced. */
-const QUIET = {
-  announcements: {
-    onDragStart: () => undefined,
-    onDragOver: () => undefined,
-    onDragEnd: () => undefined,
-    onDragCancel: () => undefined,
-  },
-  screenReaderInstructions: { draggable: "" },
-};
 
 const TILE =
   "min-h-[var(--kid-tap-min)] min-w-[var(--kid-tap-min)] rounded-xl border-2 px-4 py-2 text-[length:var(--kid-answer-size)] font-semibold flex items-center justify-center gap-2 bg-card touch-none select-none cursor-grab";
