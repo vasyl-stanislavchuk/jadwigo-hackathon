@@ -276,39 +276,227 @@ function heredocBody(full: string, file: string): string | undefined {
   return m?.[3];
 }
 
+/** A command line as the shell tokenizes it, without running it. Offsets are offsets in the line. */
+interface ShellText {
+  /** The line with heredoc bodies, quoted strings, backslash escapes and comments blanked. */
+  masked: string;
+  /** Offsets where the shell expands no `$`: single quotes, escapes, comments, quoted heredocs. */
+  literal: Uint8Array;
+  /** Heredoc bodies, [start, end) in the line. */
+  bodies: Array<{ start: number; end: number }>;
+  /** False when a `<<` could not be read as a heredoc, so lines after it may be its body. */
+  exact: boolean;
+}
+
 /**
- * `$S` and `${S}` as the shell would see them at the gh call: from literal assignments in `prefix`
- * (the line before it), then env. `masked` is prefix with heredocs and quotes blanked. A name set
- * any way but one plain literal assignment (twice, behind if/for/while or a subshell, from `$…`,
- * a backtick, `read` or `for NAME in`) stays unexpanded, with no env fallback, so the guard denies
- * rather than guess which value the shell passes.
+ * One pass, left to right, as the shell reads: a quote, an escape or a comment hides what is in
+ * it, and a heredoc body starts on the line after its operator and ends at its delimiter line.
  */
-export function expandVars(prefix: string, masked: string, env: Env): (text: string) => string {
-  const vars: Record<string, string | undefined> = {};
-  const expand = (text: string) =>
-    text.replace(/\$(?:\{(\w+)\}|(\w+))/g, (m, a?: string, b?: string) => {
-      const name = a ?? b ?? "";
-      return name in vars ? (vars[name] ?? m) : (env[name] ?? m);
-    });
-  const nested = /\b(if|then|else|elif|fi|for|while|until|do|done|case|esac)\b|(^|[^$])[({]/;
-  const end = "(?=[\\s;&|)]|$)";
-  const assign = new RegExp(
-    `(?:^|[\\s;&|])(?:export\\s+)?([A-Za-z_]\\w*)=("[^"$\`\\\\]*"${end}|'[^']*'${end}|[^\\s;&|()'"\`$\\\\]+${end})?`,
-    "g",
-  );
-  for (const m of prefix.matchAll(assign)) {
-    const name = m[1] ?? "";
-    const at = (m.index ?? 0) + m[0].indexOf(name);
-    if (masked.slice(at, at + name.length) !== name) continue; // inside a quote or heredoc
-    const literal = m[2]?.replace(/^(["'])(.*)\1$/, "$2");
-    vars[name] = name in vars || nested.test(masked) ? undefined : literal;
-  }
-  for (const m of masked.matchAll(/\bread\b([^;&|\n]*)|\bfor\s+([A-Za-z_]\w*)/g)) {
-    for (const name of (m[1] ?? m[2] ?? "").match(/(?<!\S)[A-Za-z_]\w*\b/g) ?? []) {
-      vars[name] = undefined;
+function readShell(full: string): ShellText {
+  const n = full.length;
+  const out = full.split("");
+  const literal = new Uint8Array(n);
+  const blank = (a: number, b: number, lit: boolean) => {
+    for (let k = a; k < Math.min(b, n); k++) {
+      out[k] = " ";
+      if (lit) literal[k] = 1;
+    }
+  };
+  const bodies: ShellText["bodies"] = [];
+  const op = /<<(-?)[ \t]*(?:'(\w+)'|"(\w+)"|(\\?)(\w+))(?=[\s;&|<>)]|$)/y;
+  let pending: Array<{ delim: string; dash: boolean; quoted: boolean }> = [];
+  let exact = true;
+  let i = 0;
+  while (i < n) {
+    const c = full[i];
+    if (c === "\n" && pending.length > 0) {
+      let start = i + 1;
+      for (const h of pending) {
+        let end = n;
+        for (let k = start; k < n; ) {
+          const nl = full.indexOf("\n", k);
+          const e = nl < 0 ? n : nl;
+          const line = full.slice(k, e);
+          if ((h.dash ? line.replace(/^\t+/, "") : line) === h.delim) {
+            end = e;
+            break;
+          }
+          k = e + 1;
+        }
+        blank(start, end, h.quoted);
+        bodies.push({ start, end });
+        start = end + 1;
+      }
+      pending = [];
+      i = start - 1;
+    } else if (c === "\\") {
+      blank(i, i + 2, true);
+      i += 2;
+    } else if (c === "'") {
+      const j = full.indexOf("'", i + 1);
+      const e = j < 0 ? n : j + 1;
+      blank(i, e, true);
+      i = e;
+    } else if (c === '"') {
+      let j = i + 1;
+      while (j < n && full[j] !== '"') {
+        if (full[j] === "\\") literal[j + 1] = 1;
+        j += full[j] === "\\" ? 2 : 1;
+      }
+      blank(i, j + 1, false);
+      i = j + 1;
+    } else if (c === "#" && (i === 0 || /[\s;&|()]/.test(full[i - 1] ?? ""))) {
+      const j = full.indexOf("\n", i);
+      const e = j < 0 ? n : j;
+      blank(i, e, true);
+      i = e;
+    } else if (full.startsWith("<<", i) && full[i + 2] !== "<" && full[i - 1] !== "<") {
+      op.lastIndex = i;
+      const m = op.exec(full);
+      if (m) {
+        const delim = m[2] ?? m[3] ?? m[5] ?? "";
+        pending.push({ delim, dash: m[1] === "-", quoted: m[5] === undefined || m[4] === "\\" });
+        i += m[0].length;
+      } else {
+        exact = false;
+        i += 2;
+      }
+    } else {
+      i++;
     }
   }
-  return expand;
+  return { masked: out.join(""), literal, bodies, exact };
+}
+
+/** A value the guard pins: one word that splits, globs and tilde-expands to itself. */
+const PINNED = /^(?:"([\w./@%+=:,-]+)"|'([\w./@%+=:,-]+)'|([\w./@%+=:,-]+))$/;
+const KEYWORDS =
+  /\b(if|then|else|elif|fi|for|select|while|until|do|done|case|esac|function|coproc)\b/;
+/** Commands that run code or set a variable named by an argument (bash and zsh). */
+const SETS_BY_NAME = new Set(
+  (
+    "source . eval trap declare typeset local export readonly let read mapfile readarray printf " +
+    "getopts unset wait set shopt enable builtin alias unalias hash integer float vared zparseopts " +
+    "zstyle print sysread zstat zformat zregexparse strftime noglob functions emulate setopt " +
+    "unsetopt autoload zmodload fc bind compgen"
+  ).split(" "),
+);
+const READ = /\$(?:\{(\w+)\}|(\w+))/g;
+
+/**
+ * `$S` and `${S}` as the shell sees them at the gh call, which starts at `ghAt`. A name is pinned
+ * only by one literal assignment of its own (`S=/a/b`, `export S=/a/b`) before the gh call, in the
+ * same shell, that runs whatever ran before it, with nothing else on the line naming it again.
+ * Anything else leaves `$S` as it is, and the caller denies: a name set twice or read before it is
+ * set; behind if, while, &&, || or a function; in a pipe, a subshell, a group or the background;
+ * on the gh call itself (`S=x gh …`); by read, printf -v, source, eval and the like; a line the
+ * guard cannot read ($(…), backticks, $'…', ${S:…}, arithmetic, an unread heredoc); and every name
+ * from the environment, since the Bash tool's shell need not share the hook's.
+ */
+function expandVars(
+  full: string,
+  shell: ShellText,
+  ghAt: number,
+): (start: number, end: number) => string {
+  const none = (start: number, end: number) => full.slice(start, end);
+  const prefix = full.slice(0, ghAt);
+  const mPrefix = shell.masked.slice(0, ghAt);
+  const live = prefix.split(""); // what the shell expands: quoted heredoc bodies blanked
+  const code = prefix.split(""); // what the shell runs: every heredoc body blanked
+  for (const b of shell.bodies) {
+    for (let k = b.start; k < Math.min(b.end, ghAt); k++) {
+      code[k] = " ";
+      if (shell.literal[k]) live[k] = " ";
+    }
+  }
+  const liveText = live.join("");
+  if (
+    !shell.exact ||
+    KEYWORDS.test(mPrefix) ||
+    /\bIFS\b/.test(prefix) ||
+    /[(){}[\]]/.test(mPrefix.replace(/\$\{\w+\}/g, "")) ||
+    /\$\(|`|\$'|\$"|\$\[|\$\{(?!\w+\})|\(\(/.test(liveText)
+  ) {
+    return none;
+  }
+
+  type Stmt = { a: number; b: number; before: string; after: string };
+  const stmts: Stmt[] = [];
+  let a = 0;
+  let before = "";
+  for (const m of mPrefix.matchAll(/&&|\|\||\|&|;;|;&|[;|\n]|(?<![<>])&(?![>&])/g)) {
+    const at = m.index ?? 0;
+    if (mPrefix.slice(a, at).trim() === "") {
+      if (before === "" || before === ";" || before === "\n") before = m[0]; // `x &&\n y` is one line
+    } else {
+      stmts.push({ a, b: at, before, after: m[0] });
+      before = m[0];
+    }
+    a = at + m[0].length;
+  }
+  if (mPrefix.slice(a).trim() !== "") stmts.push({ a, b: ghAt, before, after: "gh" });
+
+  const vars = new Map<string, { value: string; at: number }>();
+  const twice = new Set<string>();
+  let lastPinned = false;
+  for (const s of stmts) {
+    const text = full.slice(s.a, s.b);
+    const words = [...text.matchAll(/\S+/g)];
+    const first = words[0]?.[0] === "export" ? 1 : 0;
+    const pairs = words.slice(first).map((w) => ({
+      m: /^([A-Za-z_]\w*)=(.*)$/.exec(w[0]),
+      at: s.a + (w.index ?? 0),
+    }));
+    const pure = pairs.length > 0 && pairs.every((p) => p.m && PINNED.test(p.m[2] ?? ""));
+    if (!pure) {
+      const plain = code
+        .slice(s.a, s.b)
+        .join("")
+        .replace(READ, (r, x?: string, y?: string) => {
+          return vars.get(x ?? y ?? "")?.value ?? r;
+        });
+      const tokens = plain.replace(/[\\"']/g, "").split(/[\s;&|<>]+/);
+      if (tokens.some((t) => SETS_BY_NAME.has(t))) return none;
+      lastPinned = false;
+      continue;
+    }
+    const runs: boolean =
+      ["", ";", "\n", "&"].includes(s.before) || (s.before === "&&" && lastPinned);
+    lastPinned = runs && [";", "\n", "&&", "||"].includes(s.after);
+    for (const p of pairs) {
+      const name = p.m?.[1] ?? "";
+      const v = PINNED.exec(p.m?.[2] ?? "");
+      const value = v?.[1] ?? v?.[2] ?? v?.[3];
+      if (vars.has(name) || twice.has(name) || !lastPinned || value === undefined) {
+        vars.delete(name);
+        twice.add(name);
+      } else {
+        vars.set(name, { value, at: p.at });
+      }
+    }
+  }
+  // Anything else that names a pinned variable may set it: only `$S` and `${S}` read it.
+  for (const [name, v] of vars) {
+    for (const m of prefix.matchAll(new RegExp(`\\b${name}\\b`, "g"))) {
+      const at = m.index ?? 0;
+      const read =
+        prefix[at - 1] === "$" ||
+        (prefix.slice(at - 2, at) === "${" && prefix[at + name.length] === "}");
+      if (!read && at !== v.at) vars.delete(name);
+    }
+  }
+  // Every read before the gh call is of a pinned name, after its assignment.
+  for (const m of liveText.matchAll(READ)) {
+    const v = vars.get(m[1] ?? m[2] ?? "");
+    if (!v || v.at > (m.index ?? 0)) return none;
+  }
+  return (start, end) =>
+    full
+      .slice(start, end)
+      .replace(READ, (r, x: string | undefined, y: string | undefined, off: number) => {
+        if (shell.literal[start + off]) return r;
+        return vars.get(x ?? y ?? "")?.value ?? r;
+      });
 }
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -334,24 +522,25 @@ function prBodyDenial(
     return `an inline or generated PR body skips the /dev-pr shape. ${USE_DEV_PR}`;
   // The path is read from the full line, where its quotes and variables still are. Heredocs and
   // quoted strings are blanked to the same length, so an offset in masked is one in full.
-  const masked = full
-    .replace(/<<-?\s*(['"]?)(\w+)\1[^\n]*\n[\s\S]*?\n\2[ \t]*(\n|$)/g, (m) => " ".repeat(m.length))
-    .replace(/"(?:[^"\\]|\\.)*"|'[^']*'/g, (m) => " ".repeat(m.length));
+  const shell = readShell(full);
+  const masked = shell.masked;
   const ghAt = Math.max(masked.search(/\bgh\s+pr\s+(create|edit)\b/), 0);
   const end = masked.slice(ghAt).search(/&&|\|\||;|\n/);
-  const expand = expandVars(full.slice(0, ghAt), masked.slice(0, ghAt), env);
-  const segment = expand(full.slice(ghAt, end < 0 ? undefined : ghAt + end));
+  const expand = expandVars(full, shell, ghAt);
+  const segment = expand(ghAt, end < 0 ? full.length : ghAt + end);
   const m = /(?:^|\s)(?:--body-file|-F)(?:=|\s+)(?:"([^"]*)"|'([^']*)'|(\S+))/.exec(segment);
   const file = m?.[1] ?? m?.[2] ?? m?.[3];
   if (!file || file === "-") return `this PR has no body file. ${USE_DEV_PR}`;
   const later = `the guard reads the body before the command runs, so write ${file} in one call and run gh pr create --body-file <path> in the next.`;
   if (file.includes("$")) return later;
-  const before = expand(full.slice(0, ghAt));
+  const before = expand(0, ghAt);
   const fresh = heredocBody(before, file);
   const f = escapeRe(file);
   const edited = new RegExp(`\\b(sed\\s+-i|perl\\s+-\\w*i|python3?|tee)\\b[^\\n;&|]*${f}`);
   const written = new RegExp(`>>?\\s*['"]?${f}`);
-  if (edited.test(before) || (fresh === undefined && written.test(before))) return later;
+  const unquoted = before.replace(/["']/g, "");
+  const touched = (re: RegExp) => re.test(before) || re.test(unquoted);
+  if (touched(edited) || (fresh === undefined && touched(written))) return later;
   const home = file.startsWith("~/") ? join(env["HOME"] ?? "~", file.slice(2)) : file;
   const path = isAbsolute(home) ? home : join(cwd ?? ".", home);
   const body = fresh ?? (existsSync(path) ? readFileSync(path, "utf8") : undefined);

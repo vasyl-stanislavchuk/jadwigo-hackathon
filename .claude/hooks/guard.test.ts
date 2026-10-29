@@ -332,13 +332,52 @@ describe("guard: PR bodies have the /dev-pr shape", () => {
     expect(pr(sub)).toMatch(/before the command runs/);
   });
 
-  test("a variable the command sets from something not literal skips env and is denied", () => {
+  test("a variable from the environment, or set from something not literal, is denied", () => {
+    // The Bash tool's shell starts from the user's profile, so the hook's env is not the shell's.
     const prEnv = (command: string) => denial(bash(command), { P: good }, onBranch("lane/a"));
-    expect(prEnv("gh pr create --title t --body-file $P")).toBeUndefined();
+    expect(prEnv("gh pr create --title t --body-file $P")).toMatch(/before the command/);
     expect(prEnv("read P; gh pr create --title t --body-file $P")).toMatch(/before the command/);
     expect(prEnv("P=$(mktemp); gh pr create --title t --body-file $P")).toMatch(
       /before the command/,
     );
+  });
+
+  test("an assignment the shell may not run, or not in this shell, pins nothing", () => {
+    const gh = "gh pr create --title t --body-file $P";
+    for (const before of [
+      `false && P=${good}; `, // skipped when false fails
+      `P=${good} | true; `, // a pipe runs it in a subshell
+      `P=${good} & `, // so does the background
+      `P=${good} cmd; `, // it lasts for cmd only
+      `P=${good} `, // on the gh call, $P is expanded before it applies
+      `false && x >& P=${good}; `, // a redirect target, not an assignment
+      `x # ; P=${good}\n`, // a comment
+      `echo \\; P=${good}; `, // an argument after an escaped ;
+    ]) {
+      expect(pr(before + gh)).toMatch(/before the command runs/);
+    }
+  });
+
+  test("a pinned variable that something else may set again is not pinned", () => {
+    const gh = "gh pr create --title t --body-file $P";
+    for (const after of [
+      `source ./x; `,
+      `printf -v P %s ${bad}; `,
+      `P+=x; `,
+      `: \${P:=x}; `,
+      `C=declare; X=P; $C $X=${bad}; `,
+    ]) {
+      expect(pr(`P=${good}; ${after}${gh}`)).toMatch(/before the command runs/);
+    }
+    expect(pr(`P=${good}; gh pr create --title t --body-file '$P'`)).toMatch(/before the command/);
+  });
+
+  test("a body file written through a quoted path in the same command is not read early", () => {
+    expect(pr(`S=${dir}; echo x > "$S"/good.md; gh pr create --body-file $S/good.md`)).toMatch(
+      /before the command runs/,
+    );
+    expect(pr(`P=${good} && gh pr create --body-file "$P"`)).toBeUndefined();
+    expect(pr(`export P=${good}; gh pr create --body-file $P`)).toBeUndefined();
   });
 
   test("an edit that leaves the body alone is allowed", () => {
