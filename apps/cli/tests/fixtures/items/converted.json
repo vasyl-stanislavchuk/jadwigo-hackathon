@@ -1,0 +1,113 @@
+{
+  "generated_by": "tests/fixtures/items (hand-written)",
+  "licence_note": "Fixture licence note: our own small bank, written for these tests.",
+  "items": [
+    {
+      "id": "item_a1",
+      "family": "enter",
+      "problem_type": "type_a",
+      "grade": 3,
+      "language": "pl",
+      "question": { "text": "Ile to jest 6 × 4?", "pictures": [] },
+      "spec": {
+        "id": "item_a1",
+        "family": "enter",
+        "phase": "practice",
+        "question_type": "production",
+        "say": "Ile to jest sześć razy cztery?",
+        "data": {
+          "input": "number",
+          "entry": "keypad",
+          "figure": { "kind": "expression", "text": "6 × 4 = ?" }
+        },
+        "key": { "accept": ["24"], "near": { "10": "add_for_multiply" } },
+        "help": { "hint": "Policz 4 cztery razy po 6.", "show": "6 + 6 + 6 + 6 = 24" }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "item_a1",
+        "url": "https://example.test/items/item_a1",
+        "original_lang": "pl",
+        "checked": "2026-10-29"
+      },
+      "exercise": "mnozenie-do-50",
+      "exercise_title": "Mnożenie do 50",
+      "lesson_title": "Tabliczka mnożenia",
+      "unit_title": "Mnożenie",
+      "order": "0001",
+      "source_url": "https://example.test/items/item_a1",
+      "status": { "kind": "plays" }
+    },
+    {
+      "id": "item_a2",
+      "family": "enter",
+      "problem_type": "type_a",
+      "grade": 2,
+      "language": "pl",
+      "question": { "text": "Ile to jest 27 + 15?", "pictures": [] },
+      "spec": {
+        "id": "item_a2",
+        "family": "enter",
+        "phase": "practice",
+        "question_type": "production",
+        "say": "Ile to jest dwadzieścia siedem dodać piętnaście?",
+        "data": {
+          "input": "number",
+          "entry": "keypad",
+          "figure": { "kind": "expression", "text": "27 + 15 = ?" }
+        },
+        "key": { "accept": ["42"], "near": { "32": "forgot_carry" } },
+        "help": { "hint": "Najpierw dodaj jedności: 7 + 5.", "show": "27 + 15 = 42" }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "item_a2",
+        "original_lang": "pl",
+        "checked": "2026-10-29",
+        "licence": "Fixture item licence"
+      },
+      "exercise": "dodawanie-do-100",
+      "exercise_title": "Dodawanie do 100",
+      "lesson_title": "Dodawanie z przekroczeniem",
+      "unit_title": "Dodawanie",
+      "order": "0002",
+      "source_url": "https://example.test/items/item_a2",
+      "status": { "kind": "plays" }
+    },
+    {
+      "id": "item_e1",
+      "family": "enter",
+      "problem_type": "type_a",
+      "grade": 1,
+      "language": "en",
+      "question": { "text": "What is 3 + 4?", "pictures": [] },
+      "spec": {
+        "id": "item_e1",
+        "family": "enter",
+        "phase": "practice",
+        "question_type": "production",
+        "say": "What is three plus four?",
+        "data": {
+          "input": "number",
+          "entry": "keypad",
+          "figure": { "kind": "expression", "text": "3 + 4 = ?" }
+        },
+        "key": { "accept": ["7"] },
+        "help": { "hint": "Count on 4 from 3." }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "item_e1",
+        "original_lang": "en",
+        "checked": "2026-10-29"
+      },
+      "exercise": "addition-to-10",
+      "exercise_title": "Addition to 10",
+      "lesson_title": "Adding small numbers",
+      "unit_title": "Addition",
+      "order": "0003",
+      "source_url": "https://example.test/items/item_e1",
+      "status": { "kind": "plays" }
+    }
+  ]
+}

@@ -21,10 +21,11 @@ from mcp.client.stdio import StdioServerParameters, stdio_client
 
 from jw.cli import main as cli
 from jw.commands.mcp import TOOLS
-from jw.settings_keys import JADWIGO_BANK_DIR, JW_API_URL, JW_BANK_ENV_FILE
+from jw.settings_keys import JADWIGO_BANK_DIR, JW_API_URL, JW_BANK_ENV_FILE, JW_KHAN_CONVERTED
 
 ROOT = Path(__file__).resolve().parents[1]
 BANK_DIR = ROOT / "tests" / "fixtures" / "bank"
+ITEMS_FILE = ROOT / "tests" / "fixtures" / "items" / "converted.json"
 JW = Path(sys.executable).with_name("jw")
 
 
@@ -89,6 +90,7 @@ def test_serve_lists_the_three_tools_and_matches_the_verbs(bank: Any) -> None:
     names, answers = anyio.run(_session_calls, bank.url, calls)
 
     assert names == sorted(TOOLS)
+    assert "question_item" in names
     search = _verb("question", "search", "--words", "dodawanie do 100", "--grade", "3")
     first = _verb(
         "question", "search", "--words", "dodawanie do 100", "--grade", "3", "--stage", "first"
@@ -122,3 +124,27 @@ def test_a_tool_error_names_the_problem_and_its_hint(
     assert result.is_error
     text = "".join(getattr(c, "text", "") for c in result.content)
     assert "set_khan_nope" in text and "search` row" in text
+
+
+def test_question_item_returns_the_verbs_item(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(JW_KHAN_CONVERTED, str(ITEMS_FILE))
+
+    async def call() -> Any:
+        params = StdioServerParameters(
+            command=str(JW),
+            args=["mcp", "serve"],
+            env={
+                JW_KHAN_CONVERTED: str(ITEMS_FILE),
+                JW_BANK_ENV_FILE: str(ROOT / "tests" / "no-bank.env"),
+            },
+            cwd=str(ROOT),
+        )
+        async with stdio_client(params) as (read, write), ClientSession(read, write) as session:
+            await session.initialize()
+            return await session.call_tool("question_item", {"item_id": "item_a1"})
+
+    result = anyio.run(call)
+    assert not result.is_error, result.content
+    answer = json.loads("".join(getattr(c, "text", "") for c in result.content))
+    assert answer == _verb("question", "item", "item_a1")
+    assert answer["question"]["key"] == {"accept": ["24"], "near": {"10": "add_for_multiply"}}

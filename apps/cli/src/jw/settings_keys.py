@@ -42,3 +42,10 @@ DEFAULT_BANK_TIMEOUT_SECS = 10.0
 # A local checkout of the bank repo (or a folder of its set pages) that `jw question show` and the
 # draw read set pages from. The search route returns rows, not pages, and no page route exists yet.
 JADWIGO_BANK_DIR = "JADWIGO_BANK_DIR"
+
+# ---- converted items, read by `jw question item` and the question_item tool (dl-e8ov.5.38.2) ----
+
+# The converted Khan items file, outside git. Unset: DEFAULT_KHAN_DIR/converted-pl.json when it
+# exists, else DEFAULT_KHAN_DIR/converted.json.
+JW_KHAN_CONVERTED = "JW_KHAN_CONVERTED"
+DEFAULT_KHAN_DIR = Path.home() / "projects" / "david-learns" / "media" / "khan"  # the parsed pull
