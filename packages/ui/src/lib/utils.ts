@@ -2,8 +2,11 @@
 import { type ClassValue, clsx } from "clsx";
 import { extendTailwindMerge } from "tailwind-merge";
 
-// text-kid-* and text-jw-<size> are font sizes (@theme in styles/tailwind.css). Without this,
-// tailwind-merge reads any unknown text-* as a colour and drops one of a size/colour pair.
+// The named utilities of @theme inline (styles/tailwind.css) that tailwind-merge cannot guess
+// (dl-uukj.32): text-kid-* and text-jw-<size> are font sizes, not colours; min-h-kid-tap and
+// min-h-jw-control are the same group, so the later one wins; the same for the radii, the shadow,
+// the durations and the easing. Without this, cn() keeps both classes of a pair and Tailwind's own
+// order picks, so a key could draw 56 instead of 72.
 const SIZES = [
   "kid-say",
   "kid-answer",
@@ -16,8 +19,20 @@ const SIZES = [
   "jw-small",
   "jw-target",
 ];
+const SPACING = ["kid-tap", "kid-key", "kid-commit", "kid-choice", "jw-control", "jw-control-sm"];
 const twMerge = extendTailwindMerge({
-  extend: { classGroups: { "font-size": [{ text: SIZES }] } },
+  extend: {
+    theme: {
+      spacing: SPACING,
+      radius: ["jw-card", "jw-control", "jw-small"],
+      shadow: ["jw-act"],
+      ease: ["jw-out"],
+    },
+    classGroups: {
+      "font-size": [{ text: SIZES }],
+      duration: [{ duration: ["jw-fast", "jw-mark", "jw-band", "jw-step"] }],
+    },
+  },
 });
 
 export function cn(...inputs: ClassValue[]): string {
