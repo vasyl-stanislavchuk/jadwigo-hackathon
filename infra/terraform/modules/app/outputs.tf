@@ -6,6 +6,10 @@ output "distribution_id" {
   value = aws_cloudfront_distribution.app.id
 }
 
+output "reserved_concurrency" {
+  value = aws_lambda_function.api.reserved_concurrent_executions
+}
+
 output "function_name" {
   value = aws_lambda_function.api.function_name
 }
