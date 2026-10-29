@@ -276,21 +276,30 @@ function heredocBody(full: string, file: string): string | undefined {
   return m?.[3];
 }
 
-/** `$S` and `${S}` as the shell would see them: from literal assignments in the command, then env. */
-export function expandVars(full: string, env: Env): string {
-  const vars: Record<string, string> = {};
+/**
+ * `$S` and `${S}` as the shell would see them at the gh call: from literal assignments in `prefix`
+ * (the line before it), then env. `masked` is prefix with heredocs and quotes blanked. A name
+ * assigned twice, or any assignment behind if/for/while or a subshell, stays unexpanded, so the
+ * guard denies rather than guess which value the shell passes.
+ */
+export function expandVars(prefix: string, masked: string, env: Env): (text: string) => string {
+  const vars: Record<string, string | undefined> = {};
   const expand = (text: string) =>
     text.replace(/\$(?:\{(\w+)\}|(\w+))/g, (m, a?: string, b?: string) => {
       const name = a ?? b ?? "";
-      return vars[name] ?? env[name] ?? m;
+      return name in vars ? (vars[name] ?? m) : (env[name] ?? m);
     });
-  for (const m of full.matchAll(
+  const nested = /\b(if|then|else|elif|fi|for|while|until|do|done|case|esac)\b|(^|[^$])[({]/;
+  for (const m of prefix.matchAll(
     /(?:^|[\s;&|])(?:export\s+)?([A-Za-z_]\w*)=(?:"([^"`]*)"|'([^']*)'|([^\s;&|()'"`]+))/g,
   )) {
+    const name = m[1] ?? "";
+    const at = (m.index ?? 0) + m[0].indexOf(name);
+    if (masked.slice(at, at + name.length) !== name) continue; // inside a quote or heredoc
     const value = m[3] ?? expand(m[2] ?? m[4] ?? "");
-    if (!value.includes("$")) vars[m[1] ?? ""] = value;
+    vars[name] = name in vars || nested.test(masked) || value.includes("$") ? undefined : value;
   }
-  return expand(full);
+  return expand;
 }
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -315,20 +324,20 @@ function prBodyDenial(
   if (inline || args.some((a) => /^--fill/.test(a)))
     return `an inline or generated PR body skips the /dev-pr shape. ${USE_DEV_PR}`;
   // The path is read from the full line, where its quotes and variables still are. Heredocs and
-  // quoted prose are blanked to the same length, so an offset in masked is one in expanded.
-  const expanded = expandVars(full, env);
-  const masked = expanded
+  // quoted strings are blanked to the same length, so an offset in masked is one in full.
+  const masked = full
     .replace(/<<-?\s*(['"]?)(\w+)\1[^\n]*\n[\s\S]*?\n\2[ \t]*(\n|$)/g, (m) => " ".repeat(m.length))
-    .replace(/"[^"]*\s[^"]*"|'[^']*\s[^']*'/g, (m) => " ".repeat(m.length));
+    .replace(/"(?:[^"\\]|\\.)*"|'[^']*'/g, (m) => " ".repeat(m.length));
   const ghAt = Math.max(masked.search(/\bgh\s+pr\s+(create|edit)\b/), 0);
   const end = masked.slice(ghAt).search(/&&|\|\||;|\n/);
-  const segment = expanded.slice(ghAt, end < 0 ? undefined : ghAt + end);
+  const expand = expandVars(full.slice(0, ghAt), masked.slice(0, ghAt), env);
+  const segment = expand(full.slice(ghAt, end < 0 ? undefined : ghAt + end));
   const m = /(?:^|\s)(?:--body-file|-F)(?:=|\s+)(?:"([^"]*)"|'([^']*)'|(\S+))/.exec(segment);
   const file = m?.[1] ?? m?.[2] ?? m?.[3];
   if (!file || file === "-") return `this PR has no body file. ${USE_DEV_PR}`;
   const later = `the guard reads the body before the command runs, so write ${file} in one call and run gh pr create --body-file <path> in the next.`;
   if (file.includes("$")) return later;
-  const before = expanded.slice(0, ghAt);
+  const before = expand(full.slice(0, ghAt));
   const fresh = heredocBody(before, file);
   const f = escapeRe(file);
   const edited = new RegExp(`\\b(sed\\s+-i|perl\\s+-\\w*i|python3?|tee)\\b[^\\n;&|]*${f}`);

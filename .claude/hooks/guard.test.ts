@@ -318,6 +318,18 @@ describe("guard: PR bodies have the /dev-pr shape", () => {
     expect(
       pr(`git commit -m "the guard's check: gh pr create --body-file with a body" && git push`),
     ).toBeUndefined();
+    expect(pr(`gh pr create --title "x;y" --body-file ${good}`)).toBeUndefined();
+  });
+
+  test("a variable the guard cannot pin to one value is denied", () => {
+    const bump = `P=${bad}; gh pr create --title t --body-file "$P"; P=${good}`;
+    expect(pr(bump)).toMatch(/Merge Danger/);
+    const twice = `P=${bad}; P=${good}; gh pr create --title t --body-file $P`;
+    expect(pr(twice)).toMatch(/before the command runs/);
+    const branch = `if false; then P=${good}; fi; gh pr create --title t --body-file $P`;
+    expect(pr(branch)).toMatch(/before the command runs/);
+    const sub = `(P=${good}); gh pr create --title t --body-file $P`;
+    expect(pr(sub)).toMatch(/before the command runs/);
   });
 
   test("an edit that leaves the body alone is allowed", () => {
