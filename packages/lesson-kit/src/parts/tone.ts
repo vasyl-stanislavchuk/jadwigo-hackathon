@@ -143,10 +143,10 @@ export function useChanged(attemptNo: number): {
 
 const NONE: ReadonlySet<string> = new Set();
 
-/** A mark fades as the child edits its part (paper-behaviour README §3.5): 120 ms, at once under
- * reduced motion. */
+/** A mark fades as the child edits its part (paper-behaviour README §3.5): the theme's mark time
+ * (--jw-dur-mark, 120 ms), at once under reduced motion. */
 export const MARK_FADE =
-  "transition-[background-color,border-color,color] duration-[120ms] ease-out motion-reduce:transition-none";
+  "transition-[background-color,border-color,color] duration-jw-mark ease-out motion-reduce:transition-none";
 
 /**
  * The digits of a box the keypad types into, selected after a miss (paper-behaviour README §3.5):

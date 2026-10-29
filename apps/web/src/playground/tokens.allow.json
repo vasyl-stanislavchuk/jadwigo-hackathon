@@ -1,0 +1,492 @@
+[
+  {
+    "path": "panels/TryPanel.tsx",
+    "snippet": "-[37.5rem]",
+    "why": ""
+  },
+  {
+    "path": "shell/NavSidebar.tsx",
+    "snippet": "-[0.65rem]",
+    "why": ""
+  },
+  {
+    "path": "tool/badge.tsx",
+    "snippet": "-[0.1875rem]",
+    "why": ""
+  },
+  {
+    "path": "tool/badge.tsx",
+    "snippet": "border-destructive",
+    "why": ""
+  },
+  {
+    "path": "tool/badge.tsx",
+    "snippet": "ring-destructive",
+    "why": ""
+  },
+  {
+    "path": "tool/badge.tsx",
+    "snippet": "bg-destructive",
+    "why": ""
+  },
+  {
+    "path": "tool/badge.tsx",
+    "snippet": "text-destructive",
+    "why": ""
+  },
+  {
+    "path": "tool/button.tsx",
+    "snippet": "border-destructive",
+    "why": ""
+  },
+  {
+    "path": "tool/button.tsx",
+    "snippet": "ring-destructive",
+    "why": ""
+  },
+  {
+    "path": "tool/button.tsx",
+    "snippet": "bg-destructive",
+    "why": ""
+  },
+  {
+    "path": "tool/button.tsx",
+    "snippet": "text-destructive",
+    "why": ""
+  },
+  {
+    "path": "tool/input.tsx",
+    "snippet": "border-destructive",
+    "why": ""
+  },
+  {
+    "path": "tool/input.tsx",
+    "snippet": "ring-destructive",
+    "why": ""
+  },
+  {
+    "path": "tool/select.tsx",
+    "snippet": "border-destructive",
+    "why": ""
+  },
+  {
+    "path": "tool/select.tsx",
+    "snippet": "ring-destructive",
+    "why": ""
+  },
+  {
+    "path": "tool/select.tsx",
+    "snippet": "slide-in-from-top-2",
+    "why": ""
+  },
+  {
+    "path": "tool/select.tsx",
+    "snippet": "slide-in-from-right-2",
+    "why": ""
+  },
+  {
+    "path": "tool/select.tsx",
+    "snippet": "slide-in-from-left-2",
+    "why": ""
+  },
+  {
+    "path": "tool/select.tsx",
+    "snippet": "slide-in-from-bottom-2",
+    "why": ""
+  },
+  {
+    "path": "tool/select.tsx",
+    "snippet": "animate-in",
+    "why": ""
+  },
+  {
+    "path": "tool/select.tsx",
+    "snippet": "fade-in-0",
+    "why": ""
+  },
+  {
+    "path": "tool/select.tsx",
+    "snippet": "zoom-in-95",
+    "why": ""
+  },
+  {
+    "path": "tool/select.tsx",
+    "snippet": "animate-out",
+    "why": ""
+  },
+  {
+    "path": "tool/select.tsx",
+    "snippet": "fade-out-0",
+    "why": ""
+  },
+  {
+    "path": "tool/select.tsx",
+    "snippet": "zoom-out-95",
+    "why": ""
+  },
+  {
+    "path": "tool/sheet.tsx",
+    "snippet": "animate-in",
+    "why": ""
+  },
+  {
+    "path": "tool/sheet.tsx",
+    "snippet": "fade-in-0",
+    "why": ""
+  },
+  {
+    "path": "tool/sheet.tsx",
+    "snippet": "animate-out",
+    "why": ""
+  },
+  {
+    "path": "tool/sheet.tsx",
+    "snippet": "fade-out-0",
+    "why": ""
+  },
+  {
+    "path": "tool/sheet.tsx",
+    "snippet": "slide-in-from-bottom-10",
+    "why": ""
+  },
+  {
+    "path": "tool/sheet.tsx",
+    "snippet": "slide-in-from-left-10",
+    "why": ""
+  },
+  {
+    "path": "tool/sheet.tsx",
+    "snippet": "slide-in-from-right-10",
+    "why": ""
+  },
+  {
+    "path": "tool/sheet.tsx",
+    "snippet": "slide-in-from-top-10",
+    "why": ""
+  },
+  {
+    "path": "tool/sheet.tsx",
+    "snippet": "slide-out-to-bottom-10",
+    "why": ""
+  },
+  {
+    "path": "tool/sheet.tsx",
+    "snippet": "slide-out-to-left-10",
+    "why": ""
+  },
+  {
+    "path": "tool/sheet.tsx",
+    "snippet": "slide-out-to-right-10",
+    "why": ""
+  },
+  {
+    "path": "tool/sheet.tsx",
+    "snippet": "slide-out-to-top-10",
+    "why": ""
+  },
+  {
+    "path": "tool/sidebar.tsx",
+    "snippet": "-[0.125rem]",
+    "why": ""
+  },
+  {
+    "path": "tool/switch.tsx",
+    "snippet": "-[1.15rem]",
+    "why": ""
+  },
+  {
+    "path": "tool/switch.tsx",
+    "snippet": "-[2rem]",
+    "why": ""
+  },
+  {
+    "path": "tool/switch.tsx",
+    "snippet": "-[0.875rem]",
+    "why": ""
+  },
+  {
+    "path": "tool/switch.tsx",
+    "snippet": "-[1.5rem]",
+    "why": ""
+  },
+  {
+    "path": "tool/switch.tsx",
+    "snippet": "border-destructive",
+    "why": ""
+  },
+  {
+    "path": "tool/switch.tsx",
+    "snippet": "ring-destructive",
+    "why": ""
+  },
+  {
+    "path": "tool/tabs.tsx",
+    "snippet": "-[0.1875rem]",
+    "why": ""
+  },
+  {
+    "path": "tool/toggle.tsx",
+    "snippet": "-[0.1875rem]",
+    "why": ""
+  },
+  {
+    "path": "tool/toggle.tsx",
+    "snippet": "border-destructive",
+    "why": ""
+  },
+  {
+    "path": "tool/toggle.tsx",
+    "snippet": "ring-destructive",
+    "why": ""
+  },
+  {
+    "path": "tool/tooltip.tsx",
+    "snippet": "-[0.125rem]",
+    "why": ""
+  },
+  {
+    "path": "tool/tooltip.tsx",
+    "snippet": "slide-in-from-top-2",
+    "why": ""
+  },
+  {
+    "path": "tool/tooltip.tsx",
+    "snippet": "slide-in-from-right-2",
+    "why": ""
+  },
+  {
+    "path": "tool/tooltip.tsx",
+    "snippet": "slide-in-from-left-2",
+    "why": ""
+  },
+  {
+    "path": "tool/tooltip.tsx",
+    "snippet": "slide-in-from-bottom-2",
+    "why": ""
+  },
+  {
+    "path": "tool/tooltip.tsx",
+    "snippet": "animate-in",
+    "why": ""
+  },
+  {
+    "path": "tool/tooltip.tsx",
+    "snippet": "fade-in-0",
+    "why": ""
+  },
+  {
+    "path": "tool/tooltip.tsx",
+    "snippet": "zoom-in-95",
+    "why": ""
+  },
+  {
+    "path": "tool/tooltip.tsx",
+    "snippet": "animate-out",
+    "why": ""
+  },
+  {
+    "path": "tool/tooltip.tsx",
+    "snippet": "fade-out-0",
+    "why": ""
+  },
+  {
+    "path": "tool/tooltip.tsx",
+    "snippet": "zoom-out-95",
+    "why": ""
+  },
+  {
+    "path": "views/FamilyPage.tsx",
+    "snippet": "text-destructive",
+    "why": ""
+  },
+  {
+    "path": "views/StartPage.tsx",
+    "snippet": "text-destructive",
+    "why": ""
+  },
+  {
+    "path": "views/system/Foundations.tsx",
+    "snippet": "[var(--jw-radius-small)",
+    "why": ""
+  },
+  {
+    "path": "views/system/Foundations.tsx",
+    "snippet": "[var(--kid-key-size)",
+    "why": ""
+  },
+  {
+    "path": "views/system/Foundations.tsx",
+    "snippet": "fade-in",
+    "why": ""
+  },
+  {
+    "path": "views/system/frame/sections.tsx",
+    "snippet": "-[56rem]",
+    "why": ""
+  },
+  {
+    "path": "views/system/frame/sections.tsx",
+    "snippet": "-[24.375rem]",
+    "why": ""
+  },
+  {
+    "path": "views/system/frame/sections.tsx",
+    "snippet": "-[48rem]",
+    "why": ""
+  },
+  {
+    "path": "views/system/frame/sections.tsx",
+    "snippet": "[length:var(--jw-size-math)",
+    "why": ""
+  },
+  {
+    "path": "views/system/Gallery.tsx",
+    "snippet": "-[4.5rem]",
+    "why": ""
+  },
+  {
+    "path": "views/system/Gallery.tsx",
+    "snippet": "-[1.125rem]",
+    "why": ""
+  },
+  {
+    "path": "views/system/Gallery.tsx",
+    "snippet": "-[45rem]",
+    "why": ""
+  },
+  {
+    "path": "views/system/Gallery.tsx",
+    "snippet": "[var(--jw-pick-edge)",
+    "why": ""
+  },
+  {
+    "path": "views/system/Gallery.tsx",
+    "snippet": "[var(--jw-pick-ink)",
+    "why": ""
+  },
+  {
+    "path": "views/system/Gallery.tsx",
+    "snippet": "[length:var(--jw-size-body)",
+    "why": ""
+  },
+  {
+    "path": "views/system/Gallery.tsx",
+    "snippet": "[var(--jw-radius-control)",
+    "why": ""
+  },
+  {
+    "path": "views/system/Gallery.tsx",
+    "snippet": "[length:var(--jw-size-option)",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "-[3.25rem]",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "-[1.375rem]",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "-[0.1875rem]",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "-[1.5rem]",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "-[0.8125rem]",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "-[0.08em]",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "[var(--jw-dur-fast)",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "[var(--jw-act-quiet)",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "[var(--jw-radius-small)",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "[var(--jw-line)",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "[var(--jw-card)",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "[var(--jw-ink-soft)",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "[var(--jw-pick-edge)",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "[var(--jw-ease-out)",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "[var(--jw-radius-card)",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "[var(--jw-pick)",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "[var(--jw-pick-ink)",
+    "why": ""
+  },
+  {
+    "path": "views/system/settings.tsx",
+    "snippet": "[var(--jw-border)",
+    "why": ""
+  },
+  {
+    "path": "views/system/SystemPage.tsx",
+    "snippet": "-[96rem]",
+    "why": ""
+  },
+  {
+    "path": "views/system/SystemPage.tsx",
+    "snippet": "[var(--jw-dur-step)",
+    "why": ""
+  },
+  {
+    "path": "views/system/SystemPage.tsx",
+    "snippet": "[var(--jw-ease-out)",
+    "why": ""
+  },
+  {
+    "path": "views/system/SystemPage.tsx",
+    "snippet": "[var(--jw-line)",
+    "why": ""
+  }
+]

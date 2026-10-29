@@ -14,6 +14,7 @@ import { useState } from "react";
 import { ClockFace } from "../../../parts/ClockFace.tsx";
 import { type ClockHands, faceNumbers, type Hand, hourAtOf } from "../../../parts/clock.ts";
 import { RichText } from "../../../parts/RichText.tsx";
+import { TaskTarget } from "../../../parts/TaskTarget.tsx";
 import { partTone, praised, type Tone } from "../../../parts/tone.ts";
 import type { Language } from "../../../stage/types.ts";
 import type { Missing } from "../../complete.ts";
@@ -48,9 +49,9 @@ function startOf(data: ClockData): ClockHands {
 /** The time to show, big above the face; it may be words or digits. */
 function Target({ data }: { data: ClockData }): JSX.Element {
   return (
-    <p className="text-center text-[2.5rem] leading-tight font-bold">
+    <TaskTarget className="text-center leading-tight">
       <RichText inline text={data.target_label} />
-    </p>
+    </TaskTarget>
   );
 }
 
