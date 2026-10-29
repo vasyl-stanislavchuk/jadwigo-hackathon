@@ -217,20 +217,29 @@ def _name_spans(text: str, names: Iterable[str]) -> list[tuple[int, int, str]]:
     pattern, form_of = compiled
     plain, index = _plain(text)
     folded = _fold(plain)
+
+    def letter_next_to(j: int, k: int) -> bool:
+        """Whether plain[j] is a letter of the same word as plain[k], its neighbour. A dropped
+        format character between them breaks the word, and so does a symbol that NFKC spelled
+        as letters ("™" is "TM", "㎏" is "kg"): "kot", a zero-width space, "kasia" is two words."""
+        if not 0 <= j < len(plain) or abs(index[j] - index[k]) > 1:
+            return False
+        return plain[j].isalpha() and text[index[j]].isalpha()
+
     spans: list[tuple[int, int, str]] = []
     at = 0
     while (m := pattern.search(folded, at)) is not None:
         start, end = m.span()
         at = start + 1
-        if start > 0 and plain[start - 1].isalpha():
+        if letter_next_to(start - 1, start):
             # Inside a word ("Mikasia" is not Kasia), unless the name starts a capital after a
             # lowercase letter: glued on the end of another word, "NowakKasia", "kochamKasię".
             if not (plain[start].isupper() and plain[start - 1].islower()):
                 continue
         if len(m.group()) >= _PREFIX_LEN:
-            while end < len(plain) and plain[end].isalpha():
+            while letter_next_to(end, end - 1):
                 end += 1  # the whole word: "Kasiunia", "KasiaNowak"
-        elif end < len(plain) and plain[end].isalpha() and not plain[end].isupper():
+        elif letter_next_to(end, end - 1) and not plain[end].isupper():
             continue  # "olej" is not Ola; "OlaNowak" is
         spans.append((index[start], index[end - 1] + 1, form_of[m.group()]))
         at = end

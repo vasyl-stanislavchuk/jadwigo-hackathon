@@ -111,7 +111,16 @@ def test_a_word_that_starts_with_a_long_name_form_is_hidden_whole() -> None:
         (["Ola"], "OlaNowak", "Ola"),
         # dl-u1y5.25: glued on the end of another word, or disguised by Unicode.
         (["Kasia"], "NowakKasia kochamKasię", "Kasi"),
-        (["Kasia"], "Nowak\u200bKasia", "Kasi"),
+        # PR 170's review: a dropped format character or a symbol NFKC spells as letters is a
+        # word break, never glue that joins a name to the word beside it.
+        (["Kasia"], "kot\u200bkasia liczy", "kasi"),
+        (["Kasia"], "Ala\u00adkasia", "kasi"),
+        (["Kasia"], "\u24dakasia", "kasi"),  # circled k
+        (["Kasia"], "\u2122kasia", "kasi"),  # trade mark sign
+        (["Ola"], "Ola\u200bi Kasia", "ola"),
+        (["Ola"], "Ola\u00adnie", "ola"),
+        (["Ola"], "\u2060ola\u2060i", "ola"),
+        (["Ola"], "Ola\u338f", "ola"),  # kilogram sign
         (["Kasia"], "\uff2b\uff41\uff53\uff49\uff41 liczy.", "Kasi"),  # full-width
         (["Kasia"], "\U0001d40a\U0001d41a\U0001d42c\U0001d422\U0001d41a liczy.", "Kasi"),  # math bold
         (["Kasia"], "Ka\u00adsia liczy.", "Kasi"),  # soft hyphen
