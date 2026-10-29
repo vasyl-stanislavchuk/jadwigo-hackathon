@@ -46,13 +46,7 @@
           }
         },
         "op": {
-          "type": "string",
-          "enum": [
-            "add",
-            "sub",
-            "mul",
-            "div"
-          ]
+          "$ref": "#/$defs/Op"
         },
         "recent": {
           "type": "array",
@@ -103,5 +97,16 @@
       ],
       "additionalProperties": false
     }
-  ]
+  ],
+  "$defs": {
+    "Op": {
+      "type": "string",
+      "enum": [
+        "add",
+        "sub",
+        "mul",
+        "div"
+      ]
+    }
+  }
 }

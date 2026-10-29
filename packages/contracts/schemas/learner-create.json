@@ -23,23 +23,28 @@
       "maxItems": 5,
       "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 120
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "additionalProperties": false
+        "$ref": "#/$defs/GoalStub"
       }
     }
   },
   "required": [
     "first_name"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "GoalStub": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false
+    }
+  }
 }

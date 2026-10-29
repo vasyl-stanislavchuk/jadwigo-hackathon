@@ -3,12 +3,10 @@
   "type": "object",
   "properties": {
     "id": {
-      "type": "string",
-      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/LearnerId"
     },
     "pod_id": {
-      "type": "string",
-      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/PodId"
     },
     "handle": {
       "type": "string",
@@ -38,5 +36,15 @@
     "age_group",
     "created_at"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    }
+  }
 }

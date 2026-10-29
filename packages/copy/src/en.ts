@@ -393,6 +393,16 @@ export const en: CopyTable = {
   parent_review_help: { text: "Help: {n}", reviewed: false },
   parent_review_first_try: { text: "On the first try", reviewed: false },
   parent_review_questions: { text: "Questions", reviewed: false },
+  // the attempt page's header counts, the total time and the way back (dl-uukj.30.2)
+  parent_review_asked: { text: "Questions asked: {n}", reviewed: false },
+  parent_review_first_try_count: { text: "Right on the first try: {n}", reviewed: false },
+  parent_review_total_time: { text: "{minutes} min {seconds} s", reviewed: false },
+  parent_review_try_right: { text: "Right", reviewed: false },
+  parent_review_back: { text: "All lessons", reviewed: false },
+  // a skip's reason in plain words, one per SkipReason
+  parent_skip_dont_know: { text: "Didn't know yet", reviewed: false },
+  parent_skip_asked_to_skip: { text: "Moved on without answering", reviewed: false },
+  parent_skip_help_twin: { text: "After help: a similar question", reviewed: false },
   parent_mistake_other: { text: "An answer other than the one we looked for", reviewed: false },
   // a mistake class in plain words for the parent, never a verdict word (types.ts MISTAKE_CLASSES)
   parent_mistake_other_wrong: { text: "Another answer", reviewed: false },

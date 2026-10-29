@@ -15,110 +15,7 @@
           "type": "number"
         },
         "rule": {
-          "oneOf": [
-            {
-              "type": "object",
-              "properties": {
-                "rule": {
-                  "type": "string",
-                  "const": "times_table"
-                },
-                "a": {
-                  "type": "number"
-                },
-                "b": {
-                  "type": "number"
-                },
-                "recent": {
-                  "type": "array",
-                  "items": {
-                    "type": "number"
-                  }
-                }
-              },
-              "required": [
-                "rule",
-                "a",
-                "b",
-                "recent"
-              ],
-              "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "properties": {
-                "rule": {
-                  "type": "string",
-                  "const": "fill_blank"
-                },
-                "template": {
-                  "type": "string"
-                },
-                "operands": {
-                  "type": "array",
-                  "items": {
-                    "type": "number"
-                  }
-                },
-                "op": {
-                  "type": "string",
-                  "enum": [
-                    "add",
-                    "sub",
-                    "mul",
-                    "div"
-                  ]
-                },
-                "recent": {
-                  "type": "array",
-                  "items": {
-                    "type": "number"
-                  }
-                }
-              },
-              "required": [
-                "rule",
-                "template",
-                "operands",
-                "op",
-                "recent"
-              ],
-              "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "properties": {
-                "rule": {
-                  "type": "string",
-                  "const": "number_line"
-                },
-                "mode": {
-                  "type": "string",
-                  "enum": [
-                    "place",
-                    "read"
-                  ]
-                },
-                "min": {
-                  "type": "number"
-                },
-                "max": {
-                  "type": "number"
-                },
-                "step": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "rule",
-                "mode",
-                "min",
-                "max",
-                "step"
-              ],
-              "additionalProperties": false
-            }
-          ]
+          "$ref": "#/$defs/RuleRef"
         }
       },
       "required": [
@@ -138,36 +35,7 @@
         "targets": {
           "type": "array",
           "items": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "polygon": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "x": {
-                      "type": "number"
-                    },
-                    "y": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "x",
-                    "y"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            },
-            "required": [
-              "id",
-              "polygon"
-            ],
-            "additionalProperties": false
+            "$ref": "#/$defs/Region"
           }
         },
         "near": {
@@ -181,20 +49,7 @@
               "polygon": {
                 "type": "array",
                 "items": {
-                  "type": "object",
-                  "properties": {
-                    "x": {
-                      "type": "number"
-                    },
-                    "y": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "x",
-                    "y"
-                  ],
-                  "additionalProperties": false
+                  "$ref": "#/$defs/Point"
                 }
               },
               "mistake_class": {
@@ -344,5 +199,151 @@
       ],
       "additionalProperties": false
     }
-  ]
+  ],
+  "$defs": {
+    "RuleRef": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "type": "string",
+              "const": "times_table"
+            },
+            "a": {
+              "type": "number"
+            },
+            "b": {
+              "type": "number"
+            },
+            "recent": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "rule",
+            "a",
+            "b",
+            "recent"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "type": "string",
+              "const": "fill_blank"
+            },
+            "template": {
+              "type": "string"
+            },
+            "operands": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "op": {
+              "$ref": "#/$defs/Op"
+            },
+            "recent": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "rule",
+            "template",
+            "operands",
+            "op",
+            "recent"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "type": "string",
+              "const": "number_line"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "place",
+                "read"
+              ]
+            },
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            },
+            "step": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "rule",
+            "mode",
+            "min",
+            "max",
+            "step"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Op": {
+      "type": "string",
+      "enum": [
+        "add",
+        "sub",
+        "mul",
+        "div"
+      ]
+    },
+    "Region": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "polygon": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Point"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "polygon"
+      ],
+      "additionalProperties": false
+    },
+    "Point": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false
+    }
+  }
 }

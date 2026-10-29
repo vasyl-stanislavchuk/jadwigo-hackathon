@@ -23,34 +23,10 @@
           "type": "number"
         },
         "range": {
-          "type": "array",
-          "prefixItems": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "number"
-            }
-          ],
-          "items": false,
-          "minItems": 2,
-          "maxItems": 2
+          "$ref": "#/$defs/GapRange"
         },
         "at": {
-          "type": "object",
-          "properties": {
-            "x": {
-              "type": "number"
-            },
-            "y": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "x",
-            "y"
-          ],
-          "additionalProperties": false
+          "$ref": "#/$defs/GapAt"
         },
         "letters": {
           "type": "string",
@@ -66,11 +42,7 @@
           "type": "boolean"
         },
         "simplify": {
-          "type": "string",
-          "enum": [
-            "required",
-            "enforced"
-          ]
+          "$ref": "#/$defs/Simplify"
         }
       },
       "required": [
@@ -110,20 +82,7 @@
           }
         },
         "at": {
-          "type": "object",
-          "properties": {
-            "x": {
-              "type": "number"
-            },
-            "y": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "x",
-            "y"
-          ],
-          "additionalProperties": false
+          "$ref": "#/$defs/GapAt"
         }
       },
       "required": [
@@ -133,5 +92,44 @@
       ],
       "additionalProperties": false
     }
-  ]
+  ],
+  "$defs": {
+    "GapRange": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "GapAt": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false
+    },
+    "Simplify": {
+      "type": "string",
+      "enum": [
+        "required",
+        "enforced"
+      ]
+    }
+  }
 }

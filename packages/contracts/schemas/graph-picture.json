@@ -5,36 +5,7 @@
       "type": "object",
       "properties": {
         "icon": {
-          "type": "string",
-          "enum": [
-            "apple",
-            "banana",
-            "cherry",
-            "grape",
-            "candy",
-            "cookie",
-            "ice_cream",
-            "pizza",
-            "egg",
-            "sun",
-            "cloud",
-            "rain",
-            "snow",
-            "flower",
-            "leaf",
-            "dog",
-            "cat",
-            "fish",
-            "bird",
-            "star",
-            "heart",
-            "smile",
-            "book",
-            "pencil",
-            "car",
-            "bus",
-            "square"
-          ]
+          "$ref": "#/$defs/GraphIcon"
         }
       },
       "required": [
@@ -58,5 +29,39 @@
       ],
       "additionalProperties": false
     }
-  ]
+  ],
+  "$defs": {
+    "GraphIcon": {
+      "type": "string",
+      "enum": [
+        "apple",
+        "banana",
+        "cherry",
+        "grape",
+        "candy",
+        "cookie",
+        "ice_cream",
+        "pizza",
+        "egg",
+        "sun",
+        "cloud",
+        "rain",
+        "snow",
+        "flower",
+        "leaf",
+        "dog",
+        "cat",
+        "fish",
+        "bird",
+        "star",
+        "heart",
+        "smile",
+        "book",
+        "pencil",
+        "car",
+        "bus",
+        "square"
+      ]
+    }
+  }
 }

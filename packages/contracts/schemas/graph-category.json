@@ -9,41 +9,22 @@
       "type": "string"
     },
     "picture": {
+      "$ref": "#/$defs/GraphPicture"
+    }
+  },
+  "required": [
+    "id",
+    "label"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "GraphPicture": {
       "anyOf": [
         {
           "type": "object",
           "properties": {
             "icon": {
-              "type": "string",
-              "enum": [
-                "apple",
-                "banana",
-                "cherry",
-                "grape",
-                "candy",
-                "cookie",
-                "ice_cream",
-                "pizza",
-                "egg",
-                "sun",
-                "cloud",
-                "rain",
-                "snow",
-                "flower",
-                "leaf",
-                "dog",
-                "cat",
-                "fish",
-                "bird",
-                "star",
-                "heart",
-                "smile",
-                "book",
-                "pencil",
-                "car",
-                "bus",
-                "square"
-              ]
+              "$ref": "#/$defs/GraphIcon"
             }
           },
           "required": [
@@ -68,11 +49,38 @@
           "additionalProperties": false
         }
       ]
+    },
+    "GraphIcon": {
+      "type": "string",
+      "enum": [
+        "apple",
+        "banana",
+        "cherry",
+        "grape",
+        "candy",
+        "cookie",
+        "ice_cream",
+        "pizza",
+        "egg",
+        "sun",
+        "cloud",
+        "rain",
+        "snow",
+        "flower",
+        "leaf",
+        "dog",
+        "cat",
+        "fish",
+        "bird",
+        "star",
+        "heart",
+        "smile",
+        "book",
+        "pencil",
+        "car",
+        "bus",
+        "square"
+      ]
     }
-  },
-  "required": [
-    "id",
-    "label"
-  ],
-  "additionalProperties": false
+  }
 }

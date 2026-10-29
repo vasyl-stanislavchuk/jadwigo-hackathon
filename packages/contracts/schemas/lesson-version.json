@@ -3,16 +3,13 @@
   "type": "object",
   "properties": {
     "id": {
-      "type": "string",
-      "pattern": "^lesv_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/LessonVersionId"
     },
     "pod_id": {
-      "type": "string",
-      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/PodId"
     },
     "lesson_id": {
-      "type": "string",
-      "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/LessonId"
     },
     "version": {
       "type": "integer",
@@ -22,8 +19,7 @@
     "revises": {
       "anyOf": [
         {
-          "type": "string",
-          "pattern": "^lesv_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+          "$ref": "#/$defs/LessonVersionId"
         },
         {
           "type": "null"
@@ -51,5 +47,19 @@
     "revises",
     "published_at"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "LessonVersionId": {
+      "type": "string",
+      "pattern": "^lesv_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LessonId": {
+      "type": "string",
+      "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    }
+  }
 }

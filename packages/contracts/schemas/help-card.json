@@ -6,6 +6,21 @@
       "type": "string"
     },
     "picture": {
+      "$ref": "#/$defs/HelpPicture"
+    },
+    "focus": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "text"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "HelpPicture": {
       "oneOf": [
         {
           "type": "object",
@@ -60,16 +75,6 @@
           "additionalProperties": false
         }
       ]
-    },
-    "focus": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
     }
-  },
-  "required": [
-    "text"
-  ],
-  "additionalProperties": false
+  }
 }

@@ -486,13 +486,45 @@ describe("the help note", () => {
     );
   });
 
-  it("opens with only the way out on a step with no help to give", () => {
-    const { container } = render(shell({ moveOn: { enabled: true, press: press() } }));
+  it("with no help to give, the bulb's slot holds Jeszcze nie wiem, one tap away (dl-uukj.29.154)", () => {
+    const out = vi.fn();
+    const { container } = render(shell({ moveOn: { enabled: true, press: press(out) } }));
+    expect(bar(container).querySelector("[data-bulb]")).toBeNull();
+    const wayOut = must(bar(container).querySelector<HTMLElement>("[data-move-on]"));
+    expect(wayOut.textContent).toContain(en("dont_know_yet"));
+    fireEvent.pointerDown(wayOut);
+    expect(out).toHaveBeenCalledOnce();
     expect(container.querySelector("[data-help-note]")).toBeNull();
-    fireEvent.pointerDown(must(bar(container).querySelector("[data-bulb]")));
-    const note = must(container.querySelector("[data-help-note]"));
-    expect(note.querySelector("[data-help-card]")).toBeNull();
-    expect(note.textContent).toContain(en("dont_know_yet"));
+  });
+
+  it("draws a rung the api wrote itself, a card and no hints, as the note's one card", () => {
+    const look = {
+      ...released(0),
+      rung: 1,
+      card: { text: "Spójrz jeszcze raz." },
+      hints: [],
+      hintsTotal: null,
+      more: true,
+    };
+    const { container } = render(shell({ ladder: { help: look, ask: ask(), refused: false } }));
+    const cards = container.querySelectorAll("[data-help-card]");
+    expect(cards).toHaveLength(1);
+    expect(cards[0]?.textContent).toContain("Spójrz jeszcze raz.");
+    // With more to come and no total, the counter is not drawn: "1 z 1" beside Więcej pomocy lied.
+    expect(container.querySelector("[data-help-count]")).toBeNull();
+  });
+
+  it("a rung with nothing to show opens no empty note: the bulb gives way to Jeszcze nie wiem", () => {
+    const empty = { ...released(0), more: true, hints: [] };
+    const { container } = render(
+      shell({
+        ladder: { help: empty, ask: ask(), refused: false },
+        moveOn: { enabled: true, press: press() },
+      }),
+    );
+    expect(container.querySelector("[data-help-note]")).toBeNull();
+    expect(bar(container).querySelector("[data-bulb]")).toBeNull();
+    expect(bar(container).querySelector("[data-move-on]")).not.toBeNull();
   });
 
   it("says to have a go first when the gate holds the next card", () => {

@@ -28,20 +28,7 @@
     "marks": {
       "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "correct": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "id",
-          "correct"
-        ],
-        "additionalProperties": false
+        "$ref": "#/$defs/PartMark"
       }
     }
   },
@@ -52,5 +39,23 @@
     "mistake_class",
     "marks"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "PartMark": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "correct": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "correct"
+      ],
+      "additionalProperties": false
+    }
+  }
 }
