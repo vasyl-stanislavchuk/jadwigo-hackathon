@@ -372,6 +372,63 @@ describe("the parent's calls", () => {
     ]);
   });
 
+  it("lists one assignment's attempts with their rows, on the token route", async () => {
+    const result = {
+      pod_id: attempt.pod_id,
+      attempt_id: ATTEMPT,
+      seq: 1,
+      lesson_question_id: question.lesson_question_id,
+      added: "planned",
+      placed: null,
+      added_for: null,
+      say: question.say,
+      family: "enter",
+      question_type: question.question_type,
+      tries: 1,
+      first_try_correct: true,
+      correct: true,
+      mistake_classes: [],
+      help_used: 0,
+      skip_reason: null,
+      time_ms: 2100,
+      ended: "correct",
+    };
+    const { fetch, sent } = stub(200, {
+      assignment: {
+        id: ASSIGNMENT,
+        pod_id: attempt.pod_id,
+        lesson_id: "les_7qre3atahx8cpak6xbjtz73var",
+        lesson_version_id: attempt.lesson_version_id,
+        audience: "anyone",
+        identity: "none",
+        after_not_sure: "next",
+        hold_verdicts: false,
+        opens_at: null,
+        closes_at: null,
+        created_at: AT,
+      },
+      title: "Mnożenie przez 5",
+      language: "pl",
+      attempts: [
+        { attempt: { ...finished, learner_id: LEARNER }, name: "Wren", results: [result] },
+      ],
+    });
+    const overview = await createClient({ base: "", fetch, token: signedIn }).getAssignmentAttempts(
+      ASSIGNMENT,
+    );
+    expect(sent).toEqual([
+      {
+        url: `/api/v1/assignments/${ASSIGNMENT}/attempts`,
+        method: "GET",
+        body: undefined,
+        authorization: "Bearer header.payload.signature",
+      },
+    ]);
+    expect(overview.attempts.map((a) => [a.name, a.results[0]?.ended])).toEqual([
+      ["Wren", "correct"],
+    ]);
+  });
+
   it("never sends the token on a login-free route", async () => {
     const { fetch, sent } = stub(200, snapshot);
     await createClient({ base: "", fetch, token: signedIn }).getAttempt(ATTEMPT);

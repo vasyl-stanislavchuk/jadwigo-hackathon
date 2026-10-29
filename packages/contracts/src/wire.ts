@@ -20,7 +20,7 @@ import {
 import {
   Account,
   Added,
-  type Assignment,
+  Assignment,
   Attempt,
   AttemptAnswer,
   AttemptResult,
@@ -426,6 +426,36 @@ export const LearnerAttempts = z.object({
 });
 export type LearnerAttempts = z.infer<typeof LearnerAttempts>;
 
+// The lesson overview (wave 2 of dl-uukj.30): every attempt the caller's pod reads of one
+// assignment, so a parent or a tutor sees the questions across whoever played it. The rows are
+// `attempt_result`'s, which carry the question's face and never its key (RULES.md rule 21); a try's
+// value and the solution stay on the attempt's own review (`getParentReview`).
+
+/** One attempt on the overview: who played it, as the page names them, and the full rows. */
+export const AssignmentAttempt = z.object({
+  attempt: Attempt,
+  /** The learner's first name, else the name the player typed, else null: the page numbers it. */
+  name: z.string().nullable(),
+  /** In `seq` order: the parent's full row, tries, time and mistake classes included. */
+  results: z.array(AttemptResult),
+});
+export type AssignmentAttempt = z.infer<typeof AssignmentAttempt>;
+
+/**
+ * `GET /api/v1/assignments/{id}/attempts`: the real (never preview) attempts of one assignment
+ * the caller's pod may read, newest first, at most `LIMITS.attemptsPerAssignment`. The caller's
+ * own pod reads every attempt on its assignment; another pod reads only the attempts its learners
+ * claimed (row-level security, migration 20261029120000_parent_login.sql). 404 when the pod
+ * reads none of them.
+ */
+export const AssignmentAttempts = z.object({
+  assignment: Assignment,
+  title: z.string().min(1),
+  language: Language,
+  attempts: z.array(AssignmentAttempt),
+});
+export type AssignmentAttempts = z.infer<typeof AssignmentAttempts>;
+
 /** One try or skip as the parent's review shows it: the `attempt_answer` row's own fields. */
 export const ReviewTry = AttemptAnswer.pick({
   try_no: true,
@@ -473,6 +503,8 @@ export type ParentAttemptReview = z.infer<typeof ParentAttemptReview>;
  */
 export const LIMITS = {
   answersPerAttempt: 200,
+  /** The attempts one overview lists (`getAssignmentAttempts`), newest first. */
+  attemptsPerAssignment: 100,
   bodyBytes: 16_384,
   enteredChars: 200,
 } as const;

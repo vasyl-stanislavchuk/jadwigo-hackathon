@@ -497,6 +497,23 @@ export const COPY_KEYS = [
   // a mistake class in plain words for the parent: `parent_mistake_<class>`, one per MISTAKE_CLASSES
   ...MISTAKE_CLASSES.map((c) => `parent_mistake_${c}` as const),
   // end lesson review
+  // the lesson overview (dl-uukj.30 wave 2): one assignment's attempts against its questions
+  "parent_overview_title",
+  "parent_overview_link",
+  "parent_overview_attempts",
+  "parent_overview_player",
+  "parent_overview_question",
+  "parent_overview_legend",
+  "parent_overview_see_tries",
+  "parent_overview_twin",
+  // how a question went for one attempt, in plain words; one per grid outcome
+  "parent_outcome_first_try",
+  "parent_outcome_got_there",
+  "parent_outcome_not_yet",
+  "parent_outcome_skipped",
+  "parent_outcome_open",
+  "parent_outcome_not_asked",
+  // end the lesson overview
 ] as const;
 
 export type CopyKey = (typeof COPY_KEYS)[number];

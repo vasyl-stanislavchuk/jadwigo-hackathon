@@ -172,12 +172,13 @@ describe("lesson review", () => {
 });
 
 describe("parent login", () => {
-  it("needs a token on the 6 parent routes only; the login-free routes stay open", () => {
+  it("needs a token on the 7 parent routes only; the login-free routes stay open", () => {
     const token = Object.entries(ROUTES)
       .filter(([, route]) => route.auth === "token")
       .map(([, route]) => `${route.method} ${route.path}`)
       .sort();
     expect(token).toEqual([
+      "GET /api/v1/assignments/{id}/attempts",
       "GET /api/v1/learners/{id}/attempts",
       "GET /api/v1/learners/{id}/attempts/{attempt}/review",
       "GET /api/v1/me",

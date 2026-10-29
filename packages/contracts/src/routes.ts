@@ -4,6 +4,7 @@ import { AssignmentId, AttemptId, LearnerId } from "./ids.ts";
 import { Language } from "./records.ts";
 import {
   AccountCreate,
+  AssignmentAttempts,
   AttemptAnswerRequest,
   AttemptAnswerResult,
   AttemptClaim,
@@ -181,6 +182,16 @@ export const ROUTES = {
     params: z.object({ id: LearnerId }),
     body: null,
     response: LearnerAttempts,
+    status: 200,
+    auth: "token",
+  },
+  /** One assignment's attempts the caller's pod reads, with their rows: the lesson overview. */
+  getAssignmentAttempts: {
+    method: "GET",
+    path: "/api/v1/assignments/{id}/attempts",
+    params: z.object({ id: AssignmentId }),
+    body: null,
+    response: AssignmentAttempts,
     status: 200,
     auth: "token",
   },
