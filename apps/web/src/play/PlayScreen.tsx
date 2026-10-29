@@ -23,7 +23,7 @@ import {
 import { Button, Spinner } from "@jadwigo/ui";
 import { type ReactElement, type ReactNode, useCallback, useEffect, useMemo } from "react";
 import { withMedia } from "../media.ts";
-import { navigate, useLocation } from "../playground/route.ts";
+import { navigate, useLocation } from "../nav/location.ts";
 import { ChildReview } from "../review/ChildReview.tsx";
 import { Results } from "./Results.tsx";
 import { playPath, playRoute, reviewPath } from "./route.ts";

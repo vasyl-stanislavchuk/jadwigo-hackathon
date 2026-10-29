@@ -56,6 +56,36 @@ describe("ReviewStep", () => {
     expect($("[data-review-no-answer]")).toBeNull();
   });
 
+  it("for the adult, reads the adult register: how it went in the adult's words, no praise to a child", () => {
+    render(
+      <ReviewStep
+        question={reviewQuestion(2, "missed")}
+        index={1}
+        total={3}
+        language="pl"
+        category="adult"
+        onAll={() => undefined}
+      />,
+    );
+    expect(screen.getByText("Jeszcze nie")).toBeTruthy();
+    expect(screen.queryByText("Jeszcze się uczymy")).toBeNull();
+    cleanup();
+    render(
+      <ReviewStep
+        question={reviewQuestion(1, "correct")}
+        index={0}
+        total={3}
+        language="pl"
+        category="adult"
+        onAll={() => undefined}
+      />,
+    );
+    expect(screen.getByText("Dobrze")).toBeTruthy();
+    const bubble = $("[data-review-bubble]");
+    expect(bubble?.textContent).toContain("Dlaczego tak:");
+    expect(bubble?.textContent).not.toContain("Brawo");
+  });
+
   it("a skip with no answer: a kind line instead of the answer, then the right answer", () => {
     render(
       <ReviewStep

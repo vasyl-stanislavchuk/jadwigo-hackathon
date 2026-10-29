@@ -17,7 +17,7 @@ import type { AssignmentAttempts, AssignmentId } from "@jadwigo/contracts";
 import { copy, type Language } from "@jadwigo/copy";
 import { Spinner } from "@jadwigo/ui";
 import { type ReactElement, type ReactNode, useEffect, useMemo, useState } from "react";
-import { NavLink } from "../../playground/shell/NavLink.tsx";
+import { NavLink } from "../../nav/NavLink.tsx";
 import { parentPath } from "../route.ts";
 import { buildGrid, type Grid } from "./grid.ts";
 import { Heatmap } from "./Heatmap.tsx";

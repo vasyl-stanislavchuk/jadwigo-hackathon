@@ -515,6 +515,13 @@ export const COPY_KEYS = [
   "parent_outcome_open",
   "parent_outcome_not_asked",
   // end the lesson overview
+  // Zeszyt everywhere (dl-uukj.32 wave 2): lines the parent screens joined in code, and a close
+  "close",
+  "parent_review_try_line",
+  "parent_overview_sheet_line",
+  "parent_overview_ratio",
+  "parent_attempt_line",
+  "parent_load_failed",
 ] as const;
 
 export type CopyKey = (typeof COPY_KEYS)[number];

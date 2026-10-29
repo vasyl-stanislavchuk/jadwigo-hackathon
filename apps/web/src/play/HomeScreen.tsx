@@ -10,7 +10,7 @@ import { copy, type Language } from "@jadwigo/copy";
 import { LessonTheme } from "@jadwigo/lesson-kit";
 import { Button, Spinner } from "@jadwigo/ui";
 import { type ReactElement, type ReactNode, useEffect, useMemo, useState } from "react";
-import { NavLink } from "../playground/shell/NavLink.tsx";
+import { NavLink } from "../nav/NavLink.tsx";
 import { playPath } from "./route.ts";
 
 /** The kid page the player draws too (PlayScreen.tsx), kept apart from the player's own files. */

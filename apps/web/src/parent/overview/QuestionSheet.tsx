@@ -8,7 +8,7 @@ import type { AttemptResult } from "@jadwigo/contracts";
 import { copy, type Language } from "@jadwigo/copy";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@jadwigo/ui";
 import type { ReactElement } from "react";
-import { NavLink } from "../../playground/shell/NavLink.tsx";
+import { NavLink } from "../../nav/NavLink.tsx";
 import type { Column, Outcome, Row } from "./grid.ts";
 import { rowOutcome } from "./grid.ts";
 import { reviewOf } from "./Heatmap.tsx";
