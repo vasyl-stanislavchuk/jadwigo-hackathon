@@ -1,62 +1,20 @@
-/* Type, space, motion and colour tokens (dl-0ax3). Type, space and motion come from adam-calling
- * frontend/src/styles/tokens.scss:1-109 @3c06646 (trimmed: de-branded, --text-3xl added for the say
- * minimum). They share Tailwind's theme names (--text-*, --radius-*), and as unlayered :root
- * declarations they win over Tailwind's @layer theme, so text-xl and rounded-lg read ours.
+/* The tokens Zeszyt does not set (dl-0ax3): Tailwind's type scale and the few layout sizes the pages
+ * read, and three palettes of their own: maths text, money and the terminal card. As unlayered :root
+ * declarations they win over Tailwind's @layer theme, so text-xl and rounded-full read ours. Type
+ * started from adam-calling frontend/src/styles/tokens.scss @3c06646 (de-branded, --text-3xl added
+ * for the say minimum).
  *
- * Colour: shadcn/ui's token names, valued from Material 3. The palette is Grape (owner,
- * 2026-10-06, dl-0ax3.5): the M3 vibrant scheme of the seed #7c3aed, one M3 role per token (named
- * beside each value). docs/plan/kid-palette/ makes the values (m3.mjs) and checks them (check.py);
- * runner/kidUx.test.ts holds every text pair to 4.5:1 in both themes. styles/tailwind.css maps
- * each to a utility (bg-primary, text-muted-foreground). The feedback colours are in kids.css.
- *
- * In the playground the tools are neutral shadcn/ui and only the lesson takes a theme (decision
- * 2026-10-24-the-playground-s-own-tools-are-neutral-shadcn-ui-only-the-lesson, dl-uukj.29.22):
- * playground/shell/neutral.css sets the neutral palette on html[data-playground], and the lesson
- * surfaces listed beside :root take these values back. A lesson surface is a [data-lesson-surface]
- * (the learner view's frame, the whole-lesson section) or a kid screen (.kid-page, a step's
- * .kid-step-shell) that Zeszyt's [data-lesson-theme] does not wrap, so its tokens are never reset. Outside the
- * playground every one of them matches :root, so real lessons are unchanged.
+ * Every colour a page shows, its font, its radii, its shadows and its motion are Zeszyt's
+ * (foundation.css, at :root; dl-uukj.32). The playground's own tools are neutral shadcn/ui
+ * (apps/web playground/tool/neutral.css), and a lesson inside them takes Zeszyt back.
  */
 
 :root,
-:host,
-[data-lesson-surface],
-:is(.kid-page, .kid-step-shell):not([data-lesson-theme] *) {
-  /* ---- Colour: Grape, light ------------------------------------------------ */
-  --background: #fef7ff; /* surface */
-  --foreground: #1d1a24; /* on-surface */
-  --card: #ffffff; /* surface-container-lowest (dark: surface-container) */
-  --card-foreground: #1d1a24; /* on-surface */
-  --primary: #7706ff; /* primary */
-  --primary-foreground: #ffffff; /* on-primary */
-  --secondary: #f9f1ff; /* surface-container-low */
-  --secondary-foreground: #1d1a24; /* on-surface */
-  --muted: #ede5f4; /* surface-container-high */
-  --muted-foreground: #4a4453; /* on-surface-variant */
-  --accent: #eaddff; /* primary-container */
-  --accent-foreground: #5a00c6; /* on-primary-container */
-  --border: #ccc3d5; /* outline-variant */
-  --input: #ccc3d5; /* outline-variant */
-  --ring: #7706ff; /* primary */
-
-  /* The owner's tools only (components/tool, the playground; dl-w3.33): shadcn's popover and
-     * sidebar names, on the same M3 roles as above. No learner page reads them. */
-  --popover: #ffffff; /* surface-container-lowest */
-  --popover-foreground: #1d1a24; /* on-surface */
-  --sidebar: #f9f1ff; /* surface-container-low */
-  --sidebar-foreground: #1d1a24; /* on-surface */
-  --sidebar-primary: #7706ff; /* primary */
-  --sidebar-primary-foreground: #ffffff; /* on-primary */
-  --sidebar-accent: #eaddff; /* primary-container */
-  --sidebar-accent-foreground: #5a00c6; /* on-primary-container */
-  --sidebar-border: #ccc3d5; /* outline-variant */
-  --sidebar-ring: #7706ff; /* primary */
-
+:host {
   /* ---- Colour: the terminal card (dl-i952.19) ------------------------------ */
-  /* Always dark, in both themes (owner, 2026-10-08, variant C of docs/plan/widgets/code-parts.md),
-     * so these hold the Grape scheme's DARK roles and [theme='dark'] never redefines them. Two are
-     * new roles, generated with docs/plan/kid-palette/m3.mjs (seed #7c3aed, vibrant, dark); the rest
-     * repeat dark values from below. runner/kidUx.test.ts holds every pair to 4.5:1 on the surface.
+  /* Always dark, in both themes (owner, 2026-10-08), so [theme='dark'] never redefines them. They
+     * are the dark roles of Grape, the palette before Zeszyt (seed #7c3aed), kept as they are:
+     * dl-uukj.32 leaves the terminal card's palette for later. Each pair holds 4.5:1 on the surface.
      * The page reads them as bg-[var(--code-surface)] and so on: no utility of their own, since a
      * utility must have a light and a dark value. */
   --code-surface: #15121c; /* surface (dark) */
@@ -72,14 +30,13 @@
   --code-ring: #d2bbff; /* primary (dark): focus inside the card */
 
   /* ---- Colour: maths text (dl-r772.6) ------------------------------------- */
-  /* The ten roles Khan's colour macros fold into (components/parts/richTextMacros.ts): Khan's
+  /* The ten roles Khan's colour macros fold into (packages/lesson-kit richTextMacros.ts): Khan's
      * renderer paints \blueD, \greenD and the rest with ten accessible colours (mathjax-renderer
      * 3.0.2, tex-input-config.js: blue 3D7586, green 447A53, gold 946700, red D92916, pink B25071,
      * purple 594094, violet 8351E8, gray 5D5F66, gray H 3B3D45, gray I 21242C). Each is taken as
-     * an M3 tonal palette, like the feedback colours in kids.css (docs/plan/kid-palette/m3.mjs):
-     * tone 40 on the light paper, tone 80 on the dark one, and the three grays a step apart so
-     * they stay three. Every one holds 4.5:1 on --background and --card in its theme
-     * (components/parts/richText.khan.test.tsx). */
+     * an M3 tonal palette: tone 40 on the light paper, tone 80 on the dark one, and the three grays
+     * a step apart so they stay three. Every one holds 4.5:1 on --background and --card in its
+     * theme. */
   --tex-blue: #2c6676;
   --tex-green: #336944;
   --tex-gold: #7e5700;
@@ -92,7 +49,7 @@
   --tex-gray-i: #2d3039; /* tone 20 */
 
   /* ---- Colour: money tokens (dl-w3.61.6, lane E) ---------------------------- */
-  /* Drawn coins and notes (components/parts/Coins.tsx), never pictures of real money: grosze
+  /* Drawn coins and notes (Coins in packages/lesson-kit), never pictures of real money: grosze
      * coins in a copper tone, złoty coins in a gold tone, notes on a pale green paper. Each face
      * colour holds 4.5:1 on its ground in both themes. */
   --money-gr: #f2d2b3;
@@ -112,19 +69,14 @@
   --money-note-h: 3rem;
 
   /* ---- Typography --------------------------------------------------------- */
-  /* --font-title is intentionally NOT set here; it belongs to the later identity layer. */
-  /* Body / mono are the canonical workhorses. */
-  --font-body:
-    "Inter", "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    "Helvetica Neue", helvetica, arial, sans-serif;
-  --font-sans: var(--font-body);
+  /* --font-sans is Zeszyt's Andika (foundation.css); mono is the ids' and the code's. */
   --font-mono:
     ui-monospace, "SF Mono", "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono", monospace;
 
-  /* Type scale — the product runs compact; body is 14px (--text-sm). */
+  /* Type scale: Tailwind's names, compact. */
   --text-3xl: 1.75rem; /* 28px — the say-prompt line (kid minimum) */
   --text-2xl: 1.5rem; /* 24px — big metric numbers; the kid answer-text minimum */
-  --text-xl: 1.25rem; /* 20px — page title (PageHeader h1) */
+  --text-xl: 1.25rem; /* 20px — page title */
   --text-lg: 1.125rem; /* 18px — showcase section headings */
   --text-base: 1rem; /* 16px — section-card title */
   --text-sm: 0.875rem; /* 14px — body / table text (the workhorse) */
@@ -145,96 +97,20 @@
   --tracking-wide: 0.04em;
   --tracking-wider: 0.06em; /* uppercase eyebrow / section labels */
 
-  /* ---- Radius ------------------------------------------------------------- */
-  --radius-sm: 0.25rem; /* 4px — small inner controls, snacks */
-  --radius: 0.5rem; /* 8px — buttons, inputs, tags (the default) */
-  --radius-base: var(--radius);
-  --radius-lg: 0.75rem; /* 12px — cards, modals, peek shells */
+  /* ---- Radius: the rest are Zeszyt's -------------------------------------- */
   --radius-full: 9999px; /* pills, dots, avatars */
 
-  /* ---- Spacing scale (4px base) — drives gap/padding everywhere ----------- */
-  --space-0_5: 0.125rem; /* 2px */
-  --space-1: 0.25rem; /* 4px */
-  --space-1_5: 0.375rem; /* 6px */
-  --space-2: 0.5rem; /* 8px */
-  --space-2_5: 0.625rem; /* 10px */
-  --space-3: 0.75rem; /* 12px */
-  --space-4: 1rem; /* 16px — default card / page padding unit */
-  --space-5: 1.25rem; /* 20px — section card inner padding */
-  --space-6: 1.5rem; /* 24px */
-  --space-8: 2rem; /* 32px */
-  --space-10: 2.5rem; /* 40px */
-  --space-12: 3rem; /* 48px — collapsed rail width */
-
-  /* ---- Layout rails ------------------------------------------------------- */
+  /* ---- Layout ------------------------------------------------------------- */
   --sidebar-width: 15rem; /* 240px expanded (w-60) */
-  --sidebar-width-collapsed: 3.5rem; /* 56px icon rail (w-14) */
-  --rail-width: 20rem; /* 320px focused-view side rail */
-  --rail-width-collapsed: 3rem; /* 48px collapse-to-rail */
-  --page-max-width: 72rem; /* max-w-6xl — padded canvas */
   --page-prose-max: 48rem; /* max-w-3xl — subtitles, single-column forms */
 
-  /* Default; PageHeader's sticky mode overrides it at runtime on <html>. */
-  --page-sticky-offset: 0px;
-
-  /* ---- Elevation — soft, 2-layer, quiet ----------------------------------- */
-  --shadow-xs: 0 1px 2px rgb(0 0 0 / 5%);
-  --shadow-elevation: 0 1px 2px rgb(0 0 0 / 6%), 0 4px 12px rgb(0 0 0 / 8%);
-  --shadow-popover: 0 4px 16px rgb(0 0 0 / 12%);
-
-  /* ---- Z-index ladder ----------------------------------------------------- */
-  --z-sidebar: 10;
-  --z-sticky-header: 20;
-  --z-modal: 50;
-
-  /* ---- Motion — calm everywhere (150-250ms ease-out) ---------------------- */
-  --duration-fast: 150ms;
-  --duration-base: 200ms;
-  --duration-slow: 250ms;
+  /* ---- Motion: the durations are Zeszyt's --------------------------------- */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-standard: ease-out;
-  --transition-colors:
-    color var(--duration-fast) var(--ease-standard),
-    background-color var(--duration-fast) var(--ease-standard),
-    border-color var(--duration-fast) var(--ease-standard);
-  --transition-rail:
-    grid-template-columns var(--duration-base) var(--ease-out),
-    width var(--duration-base) var(--ease-out);
 }
 
-/* Dark: the same M3 roles at their dark tones. Lesson pages follow the laptop's light or dark
- * setting for every learner (owner, 2026-10-08): lib/theme.ts sets [theme='dark'] from
- * prefers-color-scheme, and never on the printed sheet. */
-[theme="dark"] [data-lesson-surface],
-[theme="dark"] :is(.kid-page, .kid-step-shell):not([data-lesson-theme] *),
+/* Dark: the maths text and the money at their dark tones. lib/theme.ts sets [theme='dark'] from the
+ * laptop's setting, and never on the printed sheet. */
 [theme="dark"] {
-  --background: #15121c; /* surface */
-  --foreground: #e8dfee; /* on-surface */
-  --card: #221e28; /* surface-container-lowest (dark: surface-container) */
-  --card-foreground: #e8dfee; /* on-surface */
-  --primary: #d2bbff; /* primary */
-  --primary-foreground: #3f008e; /* on-primary */
-  --secondary: #1d1a24; /* surface-container-low */
-  --secondary-foreground: #e8dfee; /* on-surface */
-  --muted: #2c2833; /* surface-container-high */
-  --muted-foreground: #ccc3d5; /* on-surface-variant */
-  --accent: #5a00c6; /* primary-container */
-  --accent-foreground: #eaddff; /* on-primary-container */
-  --border: #4a4453; /* outline-variant */
-  --input: #4a4453; /* outline-variant */
-  --ring: #d2bbff; /* primary */
-
-  --popover: #221e28; /* surface-container */
-  --popover-foreground: #e8dfee; /* on-surface */
-  --sidebar: #1d1a24; /* surface-container-low */
-  --sidebar-foreground: #e8dfee; /* on-surface */
-  --sidebar-primary: #d2bbff; /* primary */
-  --sidebar-primary-foreground: #3f008e; /* on-primary */
-  --sidebar-accent: #5a00c6; /* primary-container */
-  --sidebar-accent-foreground: #eaddff; /* on-primary-container */
-  --sidebar-border: #4a4453; /* outline-variant */
-  --sidebar-ring: #d2bbff; /* primary */
-
   /* Maths text at its dark tones (tone 80; purple 70, violet 85, gray H 85, gray I 90). */
   --tex-blue: #97cfe2;
   --tex-green: #9ad4a6;
@@ -257,13 +133,9 @@
   --money-note: #23412a;
   --money-note-foreground: #d3f0d8;
   --money-note-edge: #6f9d77;
-
-  --shadow-xs: 0 1px 2px rgb(0 0 0 / 30%);
-  --shadow-elevation: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 16px rgb(0 0 0 / 50%);
-  --shadow-popover: 0 4px 20px rgb(0 0 0 / 60%);
 }
 
-/* The classes the colour macros paint with (components/parts/richTextMacros.ts): KaTeX puts one on
+/* The classes the colour macros paint with (packages/lesson-kit richTextMacros.ts): KaTeX puts one on
  * the span it encloses, and the colour follows the theme through the token. */
 .tex-blue {
   color: var(--tex-blue);

@@ -1,5 +1,5 @@
-/* Tailwind, our tokens and the kid layer: the whole stylesheet (dl-0ax3). The base layer started
- * from adam-calling frontend/src/styles/tailwind.css:1-43 @3c06646. */
+/* Tailwind, Zeszyt and the kid layer: the whole stylesheet (dl-0ax3, dl-uukj.32). The base layer
+ * started from adam-calling frontend/src/styles/tailwind.css:1-43 @3c06646. */
 
 @import "tailwindcss";
 @import "@fontsource/andika/400.css";
@@ -9,8 +9,8 @@
 @import "./tokens.css";
 @import "./kids.css";
 @import "./stage.css";
-/* Zeszyt, the lesson's look: its tokens and its ground, both scoped under [data-lesson-theme], so
- * the neutral tools keep theirs (LessonTheme in packages/lesson-kit sets the attribute). */
+/* Zeszyt, the app's one look: its tokens at :root, its lesson rules and the lesson's ground under
+ * [data-lesson-theme] (LessonTheme in packages/lesson-kit sets the attribute). */
 @import "./foundation.css";
 @import "./lesson.css";
 /* Tailwind scans the app it is built in, and skips node_modules, where the workspace packages are
@@ -18,14 +18,14 @@
 @source "../../../lesson-kit/src";
 @source "..";
 
-/* dark: follows [theme='dark'], where tokens.css and kids.css keep their dark values. */
+/* dark: follows [theme='dark'], where foundation.css keeps Zeszyt's night roles. */
 @custom-variant dark (&:where([theme="dark"], [theme="dark"] *));
 
 /*
- * shadcn/ui's colour names (bg-primary, text-muted-foreground, border-border), each valued in
- * tokens.css from a Material 3 role. @theme inline puts the var() in the utility, so it resolves
- * on the element and follows [theme='dark'] wherever it is set. The kid sizes and feedback
- * colours live in kids.css and are only named for Tailwind here.
+ * shadcn/ui's colour names (bg-primary, text-muted-foreground, border-border), each an alias of a
+ * Zeszyt role (foundation.css §3). @theme inline puts the var() in the utility, so it resolves on
+ * the element and follows [theme='dark'] wherever it is set. The kid sizes live in kids.css, the
+ * feedback colours are Zeszyt's aliases, and both are only named for Tailwind here.
  */
 @theme inline {
   --color-background: var(--background);
@@ -44,8 +44,8 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* The owner's tools (components/tool, the playground) read shadcn's popover and sidebar
-     * names, valued in tokens.css on existing roles. */
+  /* The owner's tools (the playground's chrome) read shadcn's popover and sidebar names: popover is
+     * a Zeszyt alias, and the sidebar is valued only in apps/web playground/tool/neutral.css. */
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-sidebar: var(--sidebar);
@@ -164,8 +164,8 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Visible focus ring in the accent for keyboard users on every control. Zeszyt draws its own
-     * (styles/foundation.css, Behaviour: focus), so none is drawn under it there. */
+  /* Visible focus ring for keyboard users on every control outside a lesson. A lesson draws its
+     * own (foundation.css, Behaviour: focus), so none is drawn under it there. */
   :is(a, button, input, select, [tabindex]):focus-visible:where(
     :not([data-lesson-theme="zeszyt"] *)
   ) {
