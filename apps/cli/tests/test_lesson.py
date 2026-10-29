@@ -28,7 +28,7 @@ from click.testing import CliRunner
 from mcp import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
 
-from jw import lesson, settings_keys
+from jw import lesson, pii, settings_keys
 from jw.cli import main as cli
 from jw.commands.mcp import TOOLS
 from jw.errors import JwError
@@ -72,6 +72,14 @@ def bank(monkeypatch: pytest.MonkeyPatch) -> Iterator[LessonBank]:
     fake.stop()
 
 
+def _undated(draft: dict[str, Any]) -> dict[str, Any]:
+    """A draft made in a child process, whose clock the test does not pin, without its dated id."""
+    out = copy.deepcopy(draft)
+    skeleton = out["lesson_file_skeleton"]
+    assert re.fullmatch(r".+-\d{4}-\d{2}-\d{2}", skeleton.pop("id"))
+    return out
+
+
 def _rungs() -> dict[str, Any]:
     rungs: dict[str, Any] = json.loads((LESSON / "rungs.json").read_text(encoding="utf-8"))
     return rungs["rungs"]
@@ -108,7 +116,7 @@ OK = {
 
 
 def test_draft_draws_6_questions_with_credit_and_empty_help(bank: LessonBank) -> None:
-    draft = lesson.draft(REQUEST, "3", today=TODAY)
+    draft = lesson.draft(REQUEST, "3", names=[], today=TODAY)
 
     assert bank.requests[-1].body["words"] == REQUEST
     assert draft["need"] == {"language": "pl", "grade": "3", "words": REQUEST}
@@ -145,8 +153,29 @@ def test_draft_draws_6_questions_with_credit_and_empty_help(bank: LessonBank) ->
     ]
 
 
+def test_a_name_in_the_request_never_leaves_the_machine(bank: LessonBank) -> None:
+    named = "6 zadań z mnożenia dla Kasi, klasa 3"  # Kasia: an invented name, as tests/test_pii.py
+    draft = lesson.draft(named, "3", names=["Kasia"], today=TODAY)
+
+    sent = bank.requests[-1].body["words"]
+    assert pii.leaks(sent, ["Kasia"]) == [] and "[NAME_1]" in sent
+    skeleton = draft["lesson_file_skeleton"]
+    for text in (draft["request"], skeleton["id"], skeleton["title"], skeleton["reasoning"]):
+        assert pii.leaks(text, ["Kasia"]) == [], text
+    assert pii.leaks(json.dumps(draft, ensure_ascii=False), ["Kasia"]) == []
+    assert len(draft["questions"]) == 6
+
+
+def test_a_draft_without_names_is_refused(bank: LessonBank) -> None:
+    with pytest.raises(JwError, match="names"):
+        lesson.draft(REQUEST, "3", names=None, today=TODAY)
+    with pytest.raises(TypeError):
+        lesson.draft(REQUEST, "3", today=TODAY)  # type: ignore[call-arg]
+    assert bank.requests == []
+
+
 def test_the_proposed_mark_is_stripped_from_skill_ids(bank: LessonBank) -> None:
-    draft = lesson.draft(REQUEST, "3", count=1, today=TODAY)
+    draft = lesson.draft(REQUEST, "3", names=[], count=1, today=TODAY)
     (q,) = draft["questions"]
     assert q["skill"] == "proposed:fixture.times-6"  # the draw's skill, as the bank wrote it
     assert q["skill_ids"] == ["fixture.times-6"] and "skill_note" not in q
@@ -163,15 +192,20 @@ def test_a_skill_that_is_no_skill_id_is_left_out_with_a_note() -> None:
 
 
 def test_a_count_overrides_the_rule(bank: LessonBank) -> None:
-    draft = lesson.draft(REQUEST, "3", count=3, today=TODAY)
+    draft = lesson.draft(REQUEST, "3", names=[], count=3, today=TODAY)
     assert len(draft["questions"]) == 3
     assert draft["rule"]["count"] == 3
 
 
 def test_the_draft_verb_prints_the_draft(bank: LessonBank) -> None:
-    result = CliRunner().invoke(cli, ["lesson", "draft", REQUEST, "--grade", "3", "--json"])
+    args = ["lesson", "draft", REQUEST, "--grade", "3", "--json"]
+    result = CliRunner().invoke(cli, [*args, "--no-names"])
     assert result.exit_code == 0, result.output
-    assert json.loads(result.output) == lesson.draft(REQUEST, "3")
+    assert _undated(json.loads(result.output)) == _undated(
+        lesson.draft(REQUEST, "3", names=[], today=TODAY)
+    )
+    refused = CliRunner().invoke(cli, args)
+    assert refused.exit_code == 2 and "--name" in refused.output
 
 
 # ---------------------------------------------------------------- check ------
@@ -180,7 +214,7 @@ def test_the_draft_verb_prints_the_draft(bank: LessonBank) -> None:
 def test_check_turns_a_filled_draft_into_a_lesson_file_and_a_card(
     bank: LessonBank, tmp_path: Path
 ) -> None:
-    filled = _filled(lesson.draft(REQUEST, "3", today=TODAY))
+    filled = _filled(lesson.draft(REQUEST, "3", names=[], today=TODAY))
     seen: list[Any] = []
     result = lesson.check(filled, runner=_stub(OK, seen), out_dir=tmp_path)
 
@@ -232,7 +266,7 @@ def test_check_turns_a_filled_draft_into_a_lesson_file_and_a_card(
 
 
 def test_check_accepts_bare_strings_for_rungs(bank: LessonBank, tmp_path: Path) -> None:
-    filled = _filled(lesson.draft(REQUEST, "3", count=1, today=TODAY))
+    filled = _filled(lesson.draft(REQUEST, "3", names=[], count=1, today=TODAY))
     help_ = filled["questions"][0]["help"]
     help_["look"] = help_["look"]["text"]
     help_["worked"] = "\n".join(help_["worked"])
@@ -248,7 +282,7 @@ def test_check_accepts_bare_strings_for_rungs(bank: LessonBank, tmp_path: Path) 
 
 
 def test_an_answer_with_errors_comes_back_by_step_id(bank: LessonBank, tmp_path: Path) -> None:
-    filled = _filled(lesson.draft(REQUEST, "3", today=TODAY))
+    filled = _filled(lesson.draft(REQUEST, "3", names=[], today=TODAY))
     errors = [{"step_id": "q2", "message": "lesson file x, step q2 help: no field for help.y"}]
     answer = {"ok": False, "errors": errors, "play_path": "/play/asg_x", "lesson_id": "les_x",
               "questions": 0}
@@ -259,7 +293,7 @@ def test_an_answer_with_errors_comes_back_by_step_id(bank: LessonBank, tmp_path:
 
 
 def test_empty_rungs_are_errors_before_check_ts_runs(bank: LessonBank, tmp_path: Path) -> None:
-    filled = _filled(lesson.draft(REQUEST, "3", today=TODAY))
+    filled = _filled(lesson.draft(REQUEST, "3", names=[], today=TODAY))
     filled["questions"][1]["help"]["boost"] = None
     filled["questions"][3]["help"]["twin"] = {}
     seen: list[Any] = []
@@ -273,7 +307,7 @@ def test_empty_rungs_are_errors_before_check_ts_runs(bank: LessonBank, tmp_path:
 
 
 def test_check_ts_that_prints_no_json_is_an_error(bank: LessonBank, tmp_path: Path) -> None:
-    filled = _filled(lesson.draft(REQUEST, "3", count=1, today=TODAY))
+    filled = _filled(lesson.draft(REQUEST, "3", names=[], count=1, today=TODAY))
 
     def broken(argv: list[str]) -> Any:
         return SimpleNamespace(returncode=1, stdout="", stderr="error: Cannot find module 'zod'")
@@ -314,15 +348,17 @@ def test_lesson_draft_over_mcp_returns_the_draft(bank: LessonBank) -> None:
         async with stdio_client(params) as (read, write), ClientSession(read, write) as session:
             await session.initialize()
             names = sorted(t.name for t in (await session.list_tools()).tools)
+            refused = await session.call_tool("lesson_draft", {"request": REQUEST, "grade": "3"})
+            assert refused.is_error  # names is required
             return names, await session.call_tool(
-                "lesson_draft", {"request": REQUEST, "grade": "3"}
+                "lesson_draft", {"request": REQUEST, "grade": "3", "names": []}
             )
 
     names, result = anyio.run(call)
     assert names == sorted(TOOLS)
     assert not result.is_error, result.content
     answer = json.loads("".join(getattr(c, "text", "") for c in result.content))
-    assert answer == lesson.draft(REQUEST, "3")
+    assert _undated(answer) == _undated(lesson.draft(REQUEST, "3", names=[], today=TODAY))
 
 
 # ---------------------------------------------------------------- the real check.ts --
@@ -332,7 +368,7 @@ def test_lesson_draft_over_mcp_returns_the_draft(bank: LessonBank) -> None:
 def test_the_real_check_ts_accepts_the_filled_fixture_draft(
     bank: LessonBank, tmp_path: Path
 ) -> None:
-    filled = _filled(lesson.draft(REQUEST, "3", today=TODAY))
+    filled = _filled(lesson.draft(REQUEST, "3", names=[], today=TODAY))
     result = lesson.check(filled, out_dir=tmp_path)
     assert result["ok"] is True, result
     assert result["play_path"].startswith("/play/")
@@ -343,7 +379,7 @@ def test_the_real_check_ts_accepts_the_filled_fixture_draft(
 
 @pytest.mark.skipif(shutil.which("bun") is None, reason="bun is not on PATH")
 def test_the_real_check_ts_names_the_step_it_refuses(bank: LessonBank, tmp_path: Path) -> None:
-    filled = _filled(lesson.draft(REQUEST, "3", today=TODAY))
+    filled = _filled(lesson.draft(REQUEST, "3", names=[], today=TODAY))
     filled["questions"][2]["question_type"] = "recognition"  # a choose type on an enter step
     result = lesson.check(filled, out_dir=tmp_path)
     assert result["ok"] is False

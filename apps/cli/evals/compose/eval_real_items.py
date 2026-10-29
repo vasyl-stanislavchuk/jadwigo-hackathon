@@ -16,6 +16,7 @@ temporary folder.
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import os
 import shutil
@@ -28,6 +29,7 @@ from jw import lesson, settings_keys
 from jw.commands import question
 
 REQUEST = "6 zadań z mnożenia, klasa 3"
+TODAY = dt.date(2026, 10, 29)
 CONVERTED = os.environ.get(settings_keys.JW_KHAN_CONVERTED, "")
 BANK_DIR = os.environ.get(settings_keys.JADWIGO_BANK_DIR, "")
 
@@ -83,7 +85,7 @@ def test_a_real_multiplication_draft_checks(
     assert rows, f"no grade 3 multiplication set in {BANK_DIR} holds a converted item"
     monkeypatch.setattr(question, "search_envelope", lambda **_: {"rows": rows})
 
-    draft = lesson.draft(REQUEST, "3")
+    draft = lesson.draft(REQUEST, "3", names=[], today=TODAY)
     assert draft["rule_settled"] is False
     assert len(draft["questions"]) == 6, draft["left_out"]
     assert all(q["credit"]["source"] and q["credit"]["licence"] for q in draft["questions"])

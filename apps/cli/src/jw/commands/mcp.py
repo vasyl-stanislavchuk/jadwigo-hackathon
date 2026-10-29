@@ -128,6 +128,7 @@ def build_server() -> Any:
     def lesson_draft(
         request: str,
         grade: str,
+        names: list[str],
         language: str = "pl",
         kind: str = "practice",
         count: int | None = None,
@@ -135,7 +136,9 @@ def build_server() -> Any:
     ) -> dict[str, Any]:
         """Draft a lesson for a parent's request: questions drawn from the bank, help left empty.
 
-        request is the parent's words ("6 zadań z mnożenia, klasa 3"); grade the bare grade
+        request is the parent's words ("6 zadań z mnożenia, klasa 3"); names is required: pass
+        every name the family uses in the request (the child's, siblings', the parent's), or []
+        when there is none; the tool replaces them before anything leaves the machine. grade the bare grade
         number; kind practice, review, check or diagnostic; count overrides the draw rule's count.
         Each question carries its family step, key, the source item's hints and worked lines as
         `material`, credit, based_on and why it was drawn; left_out says why each set or item was
@@ -149,6 +152,7 @@ def build_server() -> Any:
             lesson.draft,
             request=request,
             grade=grade,
+            names=names,
             language=language,
             kind=kind,
             count=count,

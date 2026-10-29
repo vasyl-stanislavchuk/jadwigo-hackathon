@@ -2,7 +2,8 @@
 
 Two steps, each one MCP tool and one `jw lesson` verb:
 
-1. `draft(request, grade, ...)` searches the bank with the request as a need, fetches each row's
+1. `draft(request, grade, ..., names=[...])` guards the request (`jw.pii.guard`), searches the bank
+   with the guarded words as a need, fetches each row's
    set page, draws the questions (`jw.draw`, the provisional practice rule, `rule_settled` false),
    and loads each drawn item's family step (`jw.items.load_item`). It returns the draft: per
    question the step, the key, the item's own hints and worked lines as `material`, the credit and
@@ -16,6 +17,13 @@ The tools read, draw, assemble and check. They never write a word a child reads:
 the twin of every question are the calling agent's, in the lesson's language
 (david-learns/decisions/2026-10-16-help-ladder-the-planner-writes-every-rung). A tool's own text
 (errors, `reasoning`) is in English.
+
+The request leaves the machine only guarded. The bank turns a need's words into model input
+(an embedding and a rerank), so `draft` takes the names the family uses from the calling agent,
+required, and replaces them with placeholders before the search
+(jadwigo-hackathon/decisions/2026-10-29-lesson-draft-takes-the-family-s-names-from-the-calling-agent-and).
+The draft's `request`, the lesson file's id, title and reasoning are built from the guarded text;
+the raw request and the names are used in-process only and never stored, echoed or logged.
 
 An item `load_item` refuses (waiting for its family step, or missing from the file) goes to
 `left_out` with its reason, and the draw runs again with the refused ids in `flagged`, until every
@@ -37,7 +45,7 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from jw import bank_client, items, settings_keys
+from jw import bank_client, items, pii, settings_keys
 from jw.commands import question
 from jw.draw import DRAW_RULES, Draw, draw
 from jw.errors import JwError
@@ -58,7 +66,7 @@ Runner = Callable[[list[str]], Any]
 
 
 def _need(request: str, grade: str, language: str, skills: Sequence[str]) -> dict[str, Any]:
-    """The need the bank is asked (`contracts/need.schema.json`): the request's words, as given."""
+    """The need the bank is asked (`contracts/need.schema.json`): the guarded request's words."""
     need: dict[str, Any] = {"language": language, "grade": grade, "words": request}
     if skills:
         need["skills"] = list(skills)
@@ -159,10 +167,20 @@ def draft(
     count: int | None = None,
     skills: Sequence[str] = (),
     *,
+    names: Sequence[str] | None,
     today: dt.date | None = None,
 ) -> dict[str, Any]:
-    """A lesson draft for `request`: drawn questions with their keys and credit, help left empty."""
-    request = request.strip()
+    """A lesson draft for `request`: drawn questions with their keys and credit, help left empty.
+
+    `names` is every name the family uses in the request (the child's, siblings', the parent's),
+    required: an empty list says there are none. They are replaced before anything leaves.
+    """
+    if names is None:
+        raise JwError(
+            "a lesson draft needs the family's names",
+            hint="Pass names: every name the family uses in the request, or [] when there is none.",
+        )
+    request = pii.guard(request.strip(), names=pii.names_for(members=names)).text
     if not request:
         raise JwError("a lesson draft needs a request", hint="Say what the lesson is for.")
     if kind not in DRAW_RULES:

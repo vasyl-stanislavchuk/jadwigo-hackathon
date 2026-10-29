@@ -13,7 +13,7 @@ came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
 | `jw question show set_khan_2002` | One set page, checked against `src/jw/contracts/set.schema.json` | `JADWIGO_BANK_DIR` |
 | `jw question gaps --words "..." --skill <id> --grade 3` | Each need searched once, with `found`, `gap` or `degraded` | the bank URL and token |
 | `jw question item <item id>` | One converted item: its family step with key and help, credit and `based_on` | `JW_KHAN_CONVERTED` |
-| `jw lesson draft "6 zadań z mnożenia, klasa 3" --grade 3` | A lesson draft: drawn questions with keys and credit, help left empty | all of the above |
+| `jw lesson draft "6 zadań z mnożenia, klasa 3" --grade 3 --name <name>` (or `--no-names`) | A lesson draft: drawn questions with keys and credit, help left empty | all of the above |
 | `jw lesson check <draft.json>` | The card, the lesson file's path and its `/play/` path, or errors by step id | `JADWIGO_REPO_DIR` and `bun` |
 
 - **Search** returns the envelope as the bank sent it. The `/api/v1` route answers stage `final`
@@ -91,7 +91,7 @@ the bank commit it was copied at.
 - `question_gaps(grade, words?, skills?, language="pl", arm?)`
 - `question_item(item_id, language="pl")`: the composer's view of one item, key and help kept.
   Never paste it where a child reads.
-- `lesson_draft(request, grade, language="pl", kind="practice", count?, skills?)`
+- `lesson_draft(request, grade, names, language="pl", kind="practice", count?, skills?)`
 - `lesson_check(draft)`
 
 A failing call comes back as a tool error whose text is the verb's error and its hint.
@@ -102,7 +102,12 @@ The tools read, draw, assemble and check. They never write a word a child reads:
 writes every question's help ladder and twin, in the lesson's language
 (`david-learns/decisions/2026-10-16-help-ladder-the-planner-writes-every-rung`).
 
-1. **Ask.** `lesson_draft` sends the request to the bank as a need, fetches each row's set page,
+1. **Ask.** `names` is required: pass every name the family uses in the request (the child's,
+   siblings', the parent's); the tool replaces them before anything leaves the machine, because
+   the bank turns a need's words into model input
+   (`jadwigo-hackathon/decisions/2026-10-29-lesson-draft-takes-the-family-s-names-from-the-calling-agent-and`).
+   The draft's `request`, the lesson file's id, title and reasoning carry the placeholders
+   (`[NAME_1]`), never a name. `lesson_draft` then sends the guarded request to the bank as a need, fetches each row's set page,
    draws the questions with the provisional rule for the lesson kind (`src/jw/draw.py`, so
    `rule_settled` is `false`), and loads each drawn item from `JW_KHAN_CONVERTED`. An item that
    cannot load (waiting for its family step, or missing) goes to `left_out` with its reason, and
@@ -123,7 +128,8 @@ writes every question's help ladder and twin, in the lesson's language
 
 In Claude Code, with the server registered as below, the owner asks in plain words:
 
-> Przygotuj lekcję: 6 zadań z mnożenia, klasa 3. Użyj lesson_draft, napisz wszystkie podpowiedzi i
+> Przygotuj lekcję dla <imię dziecka>: 6 zadań z mnożenia, klasa 3. Użyj lesson_draft i podaj w names
+> wszystkie imiona z prośby (<imię dziecka>, rodzeństwa, moje), napisz wszystkie podpowiedzi i
 > bliźniaka po polsku, sprawdź lesson_check i pokaż mi kartę.
 
 ## Registering it

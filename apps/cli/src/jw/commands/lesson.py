@@ -30,6 +30,13 @@ def group() -> None:
 @click.option("--kind", default="practice", show_default=True, type=click.Choice(list(DRAW_RULES)))
 @click.option("--count", default=None, type=click.IntRange(min=1), help="Questions to draw.")
 @click.option("--skill", "skills", multiple=True, help="Skill id (repeatable).")
+@click.option(
+    "--name",
+    "names",
+    multiple=True,
+    help="A name the family uses in REQUEST (repeatable); replaced before anything leaves.",
+)
+@click.option("--no-names", is_flag=True, help="Say the request names nobody.")
 @click.option("--json", "json_mode", is_flag=True, help="Print the draft.")
 def draft(
     request: str,
@@ -38,10 +45,14 @@ def draft(
     kind: str,
     count: int | None,
     skills: tuple[str, ...],
+    names: tuple[str, ...],
+    no_names: bool,
     json_mode: bool,
 ) -> None:
     """Draft a lesson for REQUEST: drawn questions with keys and credit, help left to write."""
-    result = lesson.draft(request, grade, language, kind, count, skills)
+    if not names and not no_names:
+        raise click.UsageError("pass every name the family uses with --name, or --no-names")
+    result = lesson.draft(request, grade, language, kind, count, skills, names=list(names))
     if json_mode:
         click.echo(json.dumps(result, ensure_ascii=False))
         return
