@@ -1,8 +1,9 @@
 /**
  * The `/api/v1` calls the lesson player makes, typed from the contracts (dl-5ssh.3.1): the featured
- * lessons the home page lists (dl-5ssh.3.6), and an attempt's own calls. Every path comes from
- * `ROUTES` and every reply is parsed with the route's own response schema, so a reply the page
- * cannot trust is an error here, never a shape a view has to guess at (RULES.md rule 18).
+ * lessons the home page lists (dl-5ssh.3.6), an attempt's own calls, and the playground's examples
+ * (dl-w3.75). Every path comes from `ROUTES` and every reply is parsed with the route's own
+ * response schema, so a reply the page cannot trust is an error here, never a shape a view has to
+ * guess at (RULES.md rule 18).
  *
  * Two kinds of failure, as the lesson player needs them: a `TransientError` is worth sending again
  * with the same body (no answer from the network, or a 5xx), and an `ApiError` is the server's
@@ -25,6 +26,8 @@ import {
   type Featured,
   type HelpRequest,
   type HelpResult,
+  type Language,
+  type PlaygroundExamples,
   ROUTES,
   type Route,
 } from "@jadwigo/contracts";
@@ -68,8 +71,13 @@ export interface FeaturedClient {
   featuredLessons(): Promise<Featured>;
 }
 
+/** The playground's read: the written examples in one language, keys included. */
+export interface PlaygroundClient {
+  playgroundExamples(language: Language): Promise<PlaygroundExamples>;
+}
+
 /** Every `/api/v1` call this client makes. */
-export type Client = AttemptClient & FeaturedClient;
+export type Client = AttemptClient & FeaturedClient & PlaygroundClient;
 
 /** A route's path with its `{name}` params filled in. */
 export function pathOf(route: Route, params: Record<string, string | number>): string {
@@ -125,5 +133,6 @@ export function createClient({ base, fetch: send = globalThis.fetch }: ClientOpt
     help: (attemptId, seq, body) => call(ROUTES.help, { id: attemptId, seq }, body),
     patchAttempt: (attemptId, body) => call(ROUTES.patchAttempt, { id: attemptId }, body),
     getResults: (attemptId) => call(ROUTES.getResults, { id: attemptId }, undefined),
+    playgroundExamples: (language) => call(ROUTES.playgroundExamples, { language }, undefined),
   };
 }

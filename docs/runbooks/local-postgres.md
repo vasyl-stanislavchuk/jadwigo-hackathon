@@ -7,7 +7,7 @@ row-level security and pgTAP tests behave locally as they will on Supabase. Deci
 
 The agent runs every step it may. The owner runs the steps that touch system locations or the 18
 server: step 1, only on a machine without `17`, quitting and reopening Postgres.app in step 3, and
-step 6.
+step 6. Quitting Postgres.app may stop the 18 server too, so every quit is the owner's.
 
 **An agent never stops the 18 server on 5432.** It holds other projects' databases. Jadwigo runs on
 its own 17 server, on 5433. The one step that restarts the 18 server is step 1, and the owner runs it.
@@ -32,12 +32,27 @@ its own 17 server, on 5433. The one step that restarts the 18 server is step 1, 
 ## Steps (agent)
 
 2. **Create the 17 data directory:**
-   `Versions/17/bin/initdb -D ~/Library/Application\ Support/Postgres/var-17 -U postgres --encoding=UTF8 --locale=en_US.UTF-8 --auth=trust`.
+   ```zsh
+   /Applications/Postgres.app/Contents/Versions/17/bin/initdb -D "$HOME/Library/Application Support/Postgres/var-17" -U postgres --encoding=UTF8 --locale=en_US.UTF-8 --auth=trust
+   ```
 3. **Register it in Postgres.app.** The owner quits Postgres.app, the agent runs this line, and the
    owner reopens the app (an agent never quits it):
-   `defaults write com.postgresapp.Postgres2 Servers -array-add '{binPath = "/Applications/Postgres.app/Contents/Versions/17/bin"; name = "PostgreSQL 17"; port = 5433; startOnLogin = 1; varPath = "…/var-17";}'`.
-4. **Start it** with `Versions/17/bin/pg_ctl -D …/var-17 -o "-p 5433 …" -w start`, then
-   `create role <you> superuser login`.
+   ```zsh
+   defaults write com.postgresapp.Postgres2 Servers -array-add "{binPath = \"/Applications/Postgres.app/Contents/Versions/17/bin\"; name = \"PostgreSQL 17\"; port = 5433; startOnLogin = 1; varPath = \"$HOME/Library/Application Support/Postgres/var-17\";}"
+   ```
+   You should see: `defaults read com.postgresapp.Postgres2 Servers` lists `PostgreSQL 17` on port 5433 beside `PostgreSQL 18` on 5432.
+4. **Start it, if reopening the app has not.** With `startOnLogin = 1`, reopening Postgres.app in
+   step 3 usually starts the 17 server already. Check first, and start it only if it is not running:
+   ```zsh
+   PG17=/Applications/Postgres.app/Contents/Versions/17/bin
+   VAR17="$HOME/Library/Application Support/Postgres/var-17"
+   "$PG17/pg_ctl" -D "$VAR17" status || "$PG17/pg_ctl" -D "$VAR17" -o "-p 5433" -w start
+   ```
+   Starting a running server fails on its `postmaster.pid`, which is why the status check comes
+   first. Then create your own login role:
+   ```zsh
+   psql -p 5433 -U postgres -XAtc "create role \"$USER\" superuser login" postgres
+   ```
    You should see: `psql -p 5433 -XAtc 'show server_version' postgres` prints `17.x`.
 5. **Create the databases:** `createdb -p 5433 jadwigo` and `createdb -p 5433 jadwigo_test`. Then set
    `DATABASE_URL=postgresql://localhost:5433/jadwigo_test` in each worktree's `.env.local`.
@@ -71,7 +86,17 @@ only where a migration or test creates it; the others, and `pg_cron` missing loc
 
 ## Undo
 
-Two-way. Only the last line touches the 18 server, and the owner runs it:
-- stop the 17 server (`pg_ctl -D …/var-17 stop`);
-- remove its entry from the `Servers` preference and delete `var-17`;
-- to go back to the old app, quit Postgres.app and move the backup over `/Applications/Postgres.app`.
+Two-way. Every quit of Postgres.app is the owner's, as in step 3:
+1. Agent: stop the 17 server.
+   ```zsh
+   /Applications/Postgres.app/Contents/Versions/17/bin/pg_ctl -D "$HOME/Library/Application Support/Postgres/var-17" stop
+   ```
+2. Owner: quit Postgres.app.
+3. Agent: remove the 17 entry from the `Servers` preference, keeping the 18 one, then delete the data:
+   ```zsh
+   defaults write com.postgresapp.Postgres2 Servers -array "{binPath = \"/Applications/Postgres.app/Contents/Versions/18/bin\"; name = \"PostgreSQL 18\"; port = 5432; startOnLogin = 1; varPath = \"$HOME/Library/Application Support/Postgres/var-18\";}"
+   rm -rf "$HOME/Library/Application Support/Postgres/var-17"
+   ```
+   First check with `defaults read com.postgresapp.Postgres2 Servers` that the 18 entry above matches yours.
+4. Owner: reopen Postgres.app. To go back to the old app instead, move the backup over
+   `/Applications/Postgres.app` before reopening.

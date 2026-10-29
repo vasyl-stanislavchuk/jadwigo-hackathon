@@ -65,7 +65,7 @@ function dropped(given: unknown, kept: unknown, path = ""): string[] {
 }
 
 /** Parses with a contract schema, and refuses a field the schema would silently drop. */
-function strictly<S extends z.ZodType>(schema: S, value: unknown, at: string): z.infer<S> {
+export function strictly<S extends z.ZodType>(schema: S, value: unknown, at: string): z.infer<S> {
   const parsed = schema.safeParse(value);
   if (!parsed.success) throw new Error(`${at}: ${parsed.error.message}`);
   const lost = dropped(value, parsed.data);
@@ -151,6 +151,15 @@ export function compileLessonFile(raw: unknown, pod: PodId = FEATURED_POD.id): C
   const file = parseLessonFile(raw);
   const steps = questionSteps(file);
   if (steps.length === 0) throw new Error(`lesson file ${file.id}: no question to ask`);
+  // The server never asks an explain question in v0, but an attempt starts at position 1 whatever
+  // its family, so a lesson that opens with one would stick (dl-e8ov.2.32.28, decision
+  // 2026-10-28-in-v0-the-server-never-asks-an-explain-question-a-lesson-plays-i).
+  const first = steps[0];
+  if (first?.question.family === "explain") {
+    throw new Error(
+      `lesson file ${file.id}, step ${first.id}: a v0 lesson cannot open with an explain question, which is never asked`,
+    );
+  }
   const shared = { subject: file.subject, grade: null };
 
   const planned: CompiledQuestion[] = [];

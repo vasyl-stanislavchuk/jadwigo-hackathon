@@ -10,8 +10,8 @@ import {
   valueFor,
 } from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
-import { LANGUAGES, resolve } from "../localize.ts";
 import { EXAMPLES, examplesFor } from "./index.ts";
+import { LANGUAGES, resolve } from "./localize.ts";
 import type { WrittenQuestion } from "./types.ts";
 
 function parses(question: WrittenQuestion, language: "pl" | "en"): string[] {

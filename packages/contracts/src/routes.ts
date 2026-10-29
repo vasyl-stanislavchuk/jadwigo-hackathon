@@ -1,5 +1,7 @@
 import { z } from "zod";
+import { Need, SearchEnvelope } from "./bank.ts";
 import { AssignmentId, AttemptId, LearnerId } from "./ids.ts";
+import { Language } from "./records.ts";
 import {
   AccountCreate,
   AttemptAnswerRequest,
@@ -18,6 +20,7 @@ import {
   LearnerCreate,
   LearnerSnapshot,
   Me,
+  PlaygroundExamples,
 } from "./wire.ts";
 
 /**
@@ -58,6 +61,15 @@ export const ROUTES = {
     params: z.object({}),
     body: null,
     response: Featured,
+    status: 200,
+    auth: "none",
+  },
+  playgroundExamples: {
+    method: "GET",
+    path: "/api/v1/playground-examples/{language}",
+    params: z.object({ language: Language }),
+    body: null,
+    response: PlaygroundExamples,
     status: 200,
     auth: "none",
   },
@@ -159,6 +171,18 @@ export const ROUTES = {
     response: LearnerAttempts,
     status: 200,
     auth: "token",
+  },
+  /** A bank search: the need in, the envelope out (`src/bank.ts`). */
+  questionSearches: {
+    method: "POST",
+    path: "/api/v1/question-searches",
+    params: z.object({}),
+    body: Need,
+    response: SearchEnvelope,
+    status: 200,
+    // No Supabase token: the caller holds the bank's shared read token, which apps/api checks
+    // (questions.ts), so API Gateway's JWT authorizer stays off this route.
+    auth: "none",
   },
 } as const satisfies Record<string, Route>;
 export type RouteName = keyof typeof ROUTES;

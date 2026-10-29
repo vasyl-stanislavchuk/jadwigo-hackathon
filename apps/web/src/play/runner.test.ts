@@ -3,6 +3,7 @@ import {
   AttemptSnapshot,
   type HelpResult,
   type PageAttemptQuestion,
+  type PagePlannedQuestion,
 } from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
 import { currentOf, initialRunner, progressOf, type RunnerState, runner } from "./runner.ts";
@@ -28,9 +29,21 @@ function question(seq: number, changes: Partial<PageAttemptQuestion> = {}): Page
   } as PageAttemptQuestion;
 }
 
+/** A plan of `n` planned questions, positions 1 to n. */
+function planOf(n: number): PagePlannedQuestion[] {
+  return Array.from({ length: n }, (_, k) => ({
+    position: k + 1,
+    lesson_question_id: "lq_2h4m8gyw0fb1cvz2nkqw0px8fq",
+    question_type: "production",
+    say: `question ${k + 1}`,
+    question: { family: "enter", data: { input: "number", entry: "keypad" } },
+  })) as PagePlannedQuestion[];
+}
+
 function snapshot(
   questions: PageAttemptQuestion[],
   status: "in_progress" | "paused" | "finished" = "in_progress",
+  plan: PagePlannedQuestion[] = planOf(questions.filter((q) => q.added === "planned").length),
 ): AttemptSnapshot {
   return AttemptSnapshot.parse({
     attempt: {
@@ -46,6 +59,7 @@ function snapshot(
       started_at: AT,
       finished_at: status === "finished" ? AT : null,
     },
+    plan,
     questions,
     open_seq: status === "finished" ? null : (questions.find((q) => q.ended === null)?.seq ?? null),
     last_event_id: null,
@@ -199,5 +213,76 @@ describe("runner", () => {
     });
     expect(state.phase).toBe("finished");
     expect(currentOf(state)).toBeNull();
+  });
+
+  it("draws the bar from the plan: 0 on question 1, a quarter after it, a twin adds one", () => {
+    const start = runner(initialRunner, {
+      type: "loaded",
+      snapshot: snapshot([question(1)], "in_progress", planOf(4)),
+    });
+    expect(progressOf(start)).toEqual({ done: 0, total: 4 });
+
+    const right = runner(start, {
+      type: "answered",
+      result: result({ correct: true, ended: "correct", next: question(2) }),
+    });
+    expect(progressOf(right)).toEqual({ done: 1, total: 4 });
+
+    // Not sure yet on question 2 asks its twin now: the total grows by one.
+    const second = runner(right, { type: "advance" });
+    const skipped = runner(second, {
+      type: "answered",
+      result: result({ seq: 2, ended: "skipped", next: question(3, { added: "twin" }) }),
+    });
+    // The twin counts from the reply that names it, through the beat, so the bar never steps back.
+    expect(progressOf(skipped)).toEqual({ done: 2, total: 5 });
+    const twin = runner(skipped, { type: "advance" });
+    expect(progressOf(twin)).toEqual({ done: 2, total: 5 });
+
+    // A reload mid-lesson draws the same bar.
+    const reload = runner(initialRunner, {
+      type: "loaded",
+      snapshot: snapshot(twin.questions, "in_progress", planOf(4)),
+    });
+    expect(progressOf(reload)).toEqual(progressOf(twin));
+  });
+
+  it("never reads full while a review-round twin asked after the last planned question waits for Dalej", () => {
+    const asked = [
+      question(1, { ended: "correct" }),
+      question(2, { ended: "skipped" }),
+      question(3, { ended: "correct" }),
+      question(4),
+    ];
+    const last = runner(initialRunner, {
+      type: "loaded",
+      snapshot: snapshot(asked, "in_progress", planOf(4)),
+    });
+    const right = runner(last, {
+      type: "answered",
+      result: result({
+        seq: 4,
+        correct: true,
+        ended: "correct",
+        next: question(5, { added: "twin", placed: "review_round", added_for: 2 }),
+      }),
+    });
+    expect(right.phase).toBe("feedback");
+    expect(progressOf(right)).toEqual({ done: 4, total: 5 });
+    expect(progressOf(runner(right, { type: "advance" }))).toEqual({ done: 4, total: 5 });
+  });
+
+  it("reaches the end only once the last planned question ends", () => {
+    const asked = [1, 2, 3].map((seq) => question(seq, { ended: "correct" }));
+    const last = runner(initialRunner, {
+      type: "loaded",
+      snapshot: snapshot([...asked, question(4)], "in_progress", planOf(4)),
+    });
+    expect(progressOf(last)).toEqual({ done: 3, total: 4 });
+    const done = runner(last, {
+      type: "answered",
+      result: result({ seq: 4, ended: "correct", attempt_status: "finished" }),
+    });
+    expect(progressOf(done)).toEqual({ done: 4, total: 4 });
   });
 });

@@ -14,8 +14,10 @@ import {
   ID_PREFIXES,
   idOf,
   LIMITS,
+  type PlaygroundExamples,
 } from "@jadwigo/contracts";
 import { solutionOf } from "@jadwigo/core";
+import { importExamples, PLAYGROUND_EXAMPLES } from "@jadwigo/lesson-import";
 import type { NewPod, Store } from "@jadwigo/store";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
@@ -81,6 +83,53 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         const reply = await s.call<Featured>("GET", pathOf("featuredLessons", {}));
         const ids = reply.body.lessons.map((l) => l.assignment_id);
         expect(ids.filter((id) => made.includes(id))).toEqual(expected);
+      });
+    });
+
+    describe("playground examples", () => {
+      it("serves every written example in a language, with its question, key and twin, and no other pod's", async () => {
+        await importExamples(s.store);
+        await importExamples(s.store, PLAYGROUND_EXAMPLES.slice(0, 1), OTHER_POD);
+
+        const reply = await s.call<PlaygroundExamples>(
+          "GET",
+          pathOf("playgroundExamples", { language: "pl" }),
+        );
+        expect(reply.status).toBe(200);
+        const { examples, questions } = reply.body;
+        const byId = new Map(questions.map((q) => [q.id, q]));
+        expect(examples).toHaveLength(PLAYGROUND_EXAMPLES.length);
+        expect(examples.every((e) => e.language === "pl")).toBe(true);
+        expect(questions.every((q) => q.key !== undefined && q.pod_id === FEATURED_POD_ID)).toBe(
+          true,
+        );
+        const twinned = examples.filter((e) => e.twin !== null);
+        expect(twinned.length).toBe(PLAYGROUND_EXAMPLES.filter((e) => e.twin).length);
+        expect(
+          twinned.every(
+            (e) => byId.get(e.twin ?? e.lesson_question_id)?.twin_of === e.lesson_question_id,
+          ),
+        ).toBe(true);
+        // A type with a showcase leads with one.
+        const typeOf = (e: (typeof examples)[number]) =>
+          byId.get(e.lesson_question_id)?.question_type;
+        for (const e of examples.filter((x) => x.showcase)) {
+          expect(examples.find((x) => typeOf(x) === typeOf(e))?.showcase, e.slug).toBe(true);
+        }
+      });
+
+      it("serves a language with no examples as an empty list, and an unknown one as NotFound", async () => {
+        await importExamples(s.store);
+        const uk = await s.call<PlaygroundExamples>(
+          "GET",
+          pathOf("playgroundExamples", { language: "uk" }),
+        );
+        expect(uk.body).toEqual({ examples: [], questions: [] });
+        const de = await s.call<ErrorEnvelope>(
+          "GET",
+          pathOf("playgroundExamples", { language: "de" }),
+        );
+        expect(de.status).toBe(404);
       });
     });
 
@@ -171,6 +220,24 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         expect(text).not.toContain('"key"');
         expect(text).not.toContain('"worked"');
         expect(reply.body.questions[0]?.help).toEqual([]);
+      });
+
+      it("gives the whole planned lesson on start, in position order, with no spare and no key", async () => {
+        const { snapshot } = await start(s, await s.assign("equalGroups"));
+        expect(snapshot.plan.map((p) => p.position)).toEqual([1, 2, 3, 4]);
+        // The first planned question is the one asked at seq 1.
+        expect(snapshot.plan[0]?.lesson_question_id).toBe(
+          snapshot.questions[0]?.lesson_question_id,
+        );
+        // Exactly the version's planned rows: no spare, whatever its twin_of.
+        const version = await s.store.getLessonVersion(
+          snapshot.attempt.pod_id,
+          snapshot.attempt.lesson_version_id,
+        );
+        expect(snapshot.plan.map((p) => p.lesson_question_id)).toEqual(
+          version.questions.filter((v) => v.role === "planned").map((v) => v.lesson_question_id),
+        );
+        expect(JSON.stringify(snapshot.plan)).not.toContain('"key"');
       });
 
       it("reloads the same snapshot by the attempt's id", async () => {
@@ -597,6 +664,14 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         // Not sure yet on the twin itself adds nothing: a twin has no twin.
         const onTwin = await skipAt(s, id, await openQuestion(s, id));
         expect(onTwin.body.next).toMatchObject({ seq: 3, added: "planned" });
+        // The twin is added to what was asked, never to the plan, and nothing is renumbered.
+        const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id }));
+        expect(snap.body.plan).toEqual(snapshot.plan);
+        expect(snap.body.questions.map((q) => [q.seq, q.added])).toEqual([
+          [1, "planned"],
+          [2, "twin"],
+          [3, "planned"],
+        ]);
       });
 
       it("review_round: owes the twin until the planned questions are done, in the order skipped", async () => {
@@ -688,6 +763,9 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         const snap = await s.call<AttemptSnapshot>("GET", pathOf("getAttempt", { id: id }));
         expect(snap.body.questions).toHaveLength(10);
         expect(snap.body.questions.some((q) => q.question.family === "explain")).toBe(false);
+        // The plan leaves the explain question off too, so the bar ends with the last one asked.
+        expect(snap.body.plan).toHaveLength(10);
+        expect(snap.body.plan.some((p) => p.question.family === "explain")).toBe(false);
       });
     });
     describe("help", () => {

@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { denial, type HookInput } from "./guard.ts";
+import { denial, EXEC_CLEARS, type HookInput } from "./guard.ts";
 
 const onBranch = (branch: string) => () => branch;
 const bash = (command: string): HookInput => ({ tool_name: "Bash", tool_input: { command } });
@@ -136,6 +136,24 @@ const cases: Array<[name: string, want: "allow" | "DENY", command: string]> = [
   ["tmux, plain", "DENY", 'tmux new-session -d "make db-role"'],
   ["local +x CLAUDECODE", "DENY", "local +x CLAUDECODE; make db-push"],
   ["export -fn CLAUDECODE", "DENY", "export -fn CLAUDECODE"],
+  // GNU env under other names, getopt abbreviations, env found by substitution (dl-5ssh.56)
+  ["genv -i make db-push", "DENY", "genv -i make db-push"],
+  ["gnuenv -i make db-push", "DENY", "gnuenv -i PATH=$PATH make db-push"],
+  ["genv --ignore-env", "DENY", "genv --ignore-env make db-push"],
+  ["/opt/homebrew/bin/genv -i", "DENY", "/opt/homebrew/bin/genv -i make db-seed"],
+  ["env --ignore-environ", "DENY", "env --ignore-environ make db-push"],
+  ["env --ig", "DENY", "env --ig make db-push"],
+  ["env --i", "DENY", "env --i make db-push"],
+  ["env --split-string=-i", "DENY", "env --split-string=-i make db-push"],
+  ["env --split=-i", "DENY", "env --split='-i PATH=/bin' make db-push"],
+  ["env --un FOO then -i", "DENY", "env --un FOO -i make db-push"],
+  ["$(which env) -i", "DENY", "$(which env) -i make db-push"],
+  ["backtick which env -i", "DENY", "`which env` -i make db-push"],
+  ["$(command -v genv) -i", "DENY", "$(command -v genv) -i make db-role ENV=dev"],
+  ["genv -i, no db target", "allow", "genv -i PATH=/bin ls"],
+  ["env --unset FOO", "allow", "env --unset FOO make db-push ENV=dev"],
+  ["env --split-string, no -i", "allow", "env --split-string='FOO=1' make db-push ENV=dev"],
+  ["$(which env), no -i", "allow", "$(which env) FOO=1 make db-push ENV=dev"],
   ["env | grep", "allow", "env | grep X"],
   ["env -i ls", "allow", "env -i PATH=/bin ls"],
   ["env -u, then make db-push ENV=dev", "allow", "env -u FOO make db-push ENV=dev"],
@@ -157,6 +175,36 @@ const cases: Array<[name: string, want: "allow" | "DENY", command: string]> = [
   ["commit message naming it", "allow", "git commit -m 'guard: deny make db-push ENV=prod'"],
   ["python with no db target", "allow", "python3 -c 'print(1)'"],
   ["db-targets test", "allow", "bunx vitest run tools/src/db-targets.test.ts"],
+  // deploys are the owner's (dl-5ssh.52)
+  ["make -C infra deploy", "DENY", "make -C infra deploy"],
+  ["make -C infra api-deploy", "DENY", "make -C infra api-deploy"],
+  ["make -C infra web-deploy", "DENY", "make -C infra web-deploy"],
+  ["make -C infra site-deploy", "DENY", "make -C infra site-deploy"],
+  ["cd infra && make deploy", "DENY", "cd infra && make deploy"],
+  ["gmake by path", "DENY", "/opt/homebrew/bin/gmake -C infra site-deploy"],
+  ["env -u CLAUDECODE make deploy", "DENY", "env -u CLAUDECODE make -C infra deploy"],
+  ["env -u CLAUDECODE make api-deploy", "DENY", "env -u CLAUDECODE make -C infra api-deploy"],
+  ["env -u CLAUDECODE make web-deploy", "DENY", "env -u CLAUDECODE make -C infra web-deploy"],
+  ["env -u CLAUDECODE make site-deploy", "DENY", "env -u CLAUDECODE make -C infra site-deploy"],
+  ["CLAUDECODE= make deploy", "DENY", "CLAUDECODE= make -C infra deploy"],
+  ["env -i make deploy", "DENY", "env -i PATH=$PATH make -C infra deploy"],
+  ["env - make web-deploy", "DENY", "env - make -C infra web-deploy"],
+  ["exec -c make deploy", "DENY", "exec -c make -C infra deploy"],
+  ["quoted target", "DENY", "make -C infra 'site-deploy'"],
+  ["bash -c make deploy", "DENY", "bash -c 'make -C infra deploy'"],
+  ["eval make deploy", "DENY", "eval 'make -C infra api-deploy'"],
+  ["make -Cn is a directory, not a dry run", "DENY", "make -Cn deploy"],
+  ["make -n -C infra deploy", "allow", "make -n -C infra deploy"],
+  ["make --dry-run site-deploy", "allow", "make --dry-run -C infra site-deploy"],
+  ["make -sn deploy", "allow", "make -sn -C infra deploy"],
+  ["make -C infra plan", "allow", "make -C infra plan"],
+  ["make api-bundle", "allow", "make api-bundle"],
+  [
+    "commit message naming make deploy",
+    "allow",
+    "git commit -m 'guard: deny make -C infra deploy'",
+  ],
+  ["grep deploy", "allow", "grep -n deploy infra/Makefile"],
   // git
   ["push --force", "DENY", "git push --force origin lane/a"],
   ["push -f", "DENY", "git push -f"],
@@ -214,6 +262,13 @@ describe("guard: Bash", () => {
   test("a bare git push from main is denied, from a branch allowed", () => {
     expect(denial(bash("git push"), {}, onBranch("main"))).toMatch(/through a PR/);
     expect(denial(bash("git push"), {}, onBranch("dl-5ssh.34.3/ci"))).toBeUndefined();
+  });
+
+  test("exec with a long run of -a stays linear (dl-5ssh.56)", () => {
+    const line = `exec ${"-a ".repeat(20_000)}make db-push`;
+    const start = performance.now();
+    EXEC_CLEARS.test(line);
+    expect(performance.now() - start).toBeLessThan(200);
   });
 });
 

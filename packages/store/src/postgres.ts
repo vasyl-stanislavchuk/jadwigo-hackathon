@@ -22,6 +22,8 @@ import {
   Lesson,
   LessonId,
   LessonQuestion,
+  LessonQuestionExample,
+  LessonQuestionExampleId,
   LessonQuestionId,
   LessonVersion,
   LessonVersionId,
@@ -38,9 +40,11 @@ import {
 import { Kysely, PostgresDialect, type Selectable, sql, type Transaction } from "kysely";
 import pg from "pg";
 import type { DB } from "./db/types.ts";
+import { byTypeThenPosition, checkExamples } from "./example.ts";
 import { handleFor } from "./handle.ts";
 import {
   type AttemptRecord,
+  type ExampleWithQuestions,
   type HelpTwin,
   type LessonVersionWithQuestions,
   type MemberScope,
@@ -53,6 +57,7 @@ import {
   type NewLearnerWithGoals,
   type NewLesson,
   type NewLessonQuestion,
+  type NewLessonQuestionExample,
   type NewLessonVersion,
   type NewPod,
   type OpenAssignment,
@@ -79,6 +84,7 @@ const PREFIXES: Readonly<Record<string, IdPrefix>> = {
   revises: ID_PREFIXES.lesson_version,
   lesson_question_id: ID_PREFIXES.lesson_question,
   twin_of: ID_PREFIXES.lesson_question,
+  twin: ID_PREFIXES.lesson_question,
   assignment_id: ID_PREFIXES.assignment,
   attempt_id: ID_PREFIXES.attempt,
   account_id: ID_PREFIXES.account,
@@ -161,7 +167,7 @@ function isPgError(error: unknown): error is PgError {
  * as InMemoryStore does, so these are the backstop: a race the checks lost, or a rule only the
  * database holds.
  */
-function refusal(error: unknown): unknown {
+export function refusal(error: unknown): unknown {
   if (!isPgError(error)) return error;
   switch (error.code) {
     case "23505": // unique_violation
@@ -183,19 +189,23 @@ function refusal(error: unknown): unknown {
       return new StoreError(ErrorType.enum.WriteOnce, error.message);
     case "23503": // foreign_key_violation: the row it names is not in the pod
       return new StoreError(ErrorType.enum.NotFound, error.message);
+    case "P0002": // no_data_found: app.claim_attempt's learner, account or attempt
+      return new StoreError(ErrorType.enum.NotFound, error.message);
     case "23502": // not_null_violation
     case "23514": // check_violation, answered_at >= asked_at among them
     case "22P02": // invalid_text_representation: a value outside its enum
-    case "P0002": // no_data_found: app.claim_attempt's learner, account or attempt
-      return new StoreError(ErrorType.enum.NotFound, error.message);
-    case "23001": // restrict_violation: the write-once, `missed` and claim triggers
+    case "22007": // invalid_datetime_format
+    case "22008": // datetime_field_overflow
+    case "23001": // restrict_violation: the write-once, `missed`, answer-open and claim triggers
+      // An answer to an ended question names its own constraint (migration
+      // 20261029100000_answer_question_open.sql): the store's check lost a race.
+      if (error.constraint === "attempt_answer_question_open") {
+        return new StoreError(ErrorType.enum.QuestionNotOpen, error.message);
+      }
       // The claim trigger names its refusal in the detail.
       if (error.detail === "AttemptClaimed" || error.detail === "AttemptPreview") {
         return new StoreError(ErrorType.enum[error.detail], error.message);
       }
-      return new StoreError(ErrorType.enum.BadRequest, error.message);
-    case "22007": // invalid_datetime_format
-    case "22008": // datetime_field_overflow
       return new StoreError(ErrorType.enum.BadRequest, error.message);
     default:
       return error;
@@ -687,6 +697,119 @@ class PostgresStore implements Store {
     });
   }
 
+  async replaceExamples(
+    pod: PodId,
+    language: Language,
+    examples: readonly NewLessonQuestionExample[],
+  ): Promise<readonly LessonQuestionExample[]> {
+    return this.#in(pod, async (tx) => {
+      await this.#pod(tx, pod);
+      const questions = await this.#questionsById(
+        tx,
+        examples.flatMap((e) =>
+          e.twin === null ? [e.lesson_question_id] : [e.lesson_question_id, e.twin],
+        ),
+      );
+      checkExamples(language, examples, (id) => questions.get(id));
+      await tx.deleteFrom("lesson_question_example").where("language", "=", language).execute();
+      if (examples.length === 0) return [];
+      const valid = examples.map((example) =>
+        parse(
+          LessonQuestionExample,
+          {
+            ...example,
+            id: mint(LessonQuestionExampleId, ID_PREFIXES.lesson_question_example),
+            pod_id: pod,
+            created_at: new Date().toISOString(),
+          },
+          "the example",
+        ),
+      );
+      const rows = await tx
+        .insertInto("lesson_question_example")
+        .values(
+          valid.map((e) => ({
+            id: uuidOf(ID_PREFIXES.lesson_question_example, e.id),
+            pod_id: uuidOf(ID_PREFIXES.pod, pod),
+            lesson_question_id: uuidOf(ID_PREFIXES.lesson_question, e.lesson_question_id),
+            twin: e.twin === null ? null : uuidOf(ID_PREFIXES.lesson_question, e.twin),
+            language: e.language,
+            slug: e.slug,
+            position: e.position,
+            label: e.label,
+            showcase: e.showcase,
+            scenarios: JSON.stringify(e.scenarios),
+          })),
+        )
+        .returningAll()
+        .execute();
+      const byId = new Map(
+        rows.map((r) => [
+          r.id,
+          read(LessonQuestionExample, r, ID_PREFIXES.lesson_question_example),
+        ]),
+      );
+      return valid.flatMap((e) => {
+        const row = byId.get(uuidOf(ID_PREFIXES.lesson_question_example, e.id));
+        return row ? [row] : [];
+      });
+    });
+  }
+
+  async listExamples(pod: PodId, language: Language): Promise<readonly ExampleWithQuestions[]> {
+    return this.#in(pod, async (tx) => {
+      const rows = await tx
+        .selectFrom("lesson_question_example")
+        .selectAll()
+        .where("language", "=", language)
+        .execute();
+      const examples = rows.map((r) =>
+        read(LessonQuestionExample, r, ID_PREFIXES.lesson_question_example),
+      );
+      const questions = await this.#questionsById(
+        tx,
+        examples.flatMap((e) =>
+          e.twin === null ? [e.lesson_question_id] : [e.lesson_question_id, e.twin],
+        ),
+      );
+      const question = (id: LessonQuestionId, what: string): LessonQuestion => {
+        const found = questions.get(id);
+        if (!found) throw notFound(what);
+        return found;
+      };
+      return examples
+        .map((example) => ({
+          example,
+          question: question(example.lesson_question_id, "the question"),
+          twin: example.twin === null ? null : question(example.twin, "the twin's question"),
+        }))
+        .sort(byTypeThenPosition);
+    });
+  }
+
+  /** The pod's lesson questions behind these ids, by wire id; an id the pod lacks is left out. */
+  async #questionsById(
+    tx: Tx,
+    ids: readonly LessonQuestionId[],
+  ): Promise<Map<LessonQuestionId, LessonQuestion>> {
+    if (ids.length === 0) return new Map();
+    const rows = await tx
+      .selectFrom("lesson_question")
+      .selectAll()
+      .where(
+        "id",
+        "in",
+        [...new Set(ids)].map((id) => uuidOf(ID_PREFIXES.lesson_question, id)),
+      )
+      .execute();
+    return new Map(
+      rows.map((r) => {
+        const q = read(LessonQuestion, r, ID_PREFIXES.lesson_question);
+        return [q.id, q];
+      }),
+    );
+  }
+
   async startAttempt(pod: PodId, attempt: NewAttempt): Promise<AttemptRecord> {
     return this.#in(pod, async (tx) => {
       const assignment = await tx
@@ -1008,7 +1131,10 @@ class PostgresStore implements Store {
         .where("id", "=", question.lesson_question_id)
         .executeTakeFirstOrThrow();
       if (valid.kind === "try" && !valueFor(family).safeParse(valid.value).success) {
-        throw new StoreError(ErrorType.enum.BadRequest, `the value is not a ${family} value`);
+        throw new StoreError(
+          ErrorType.enum.BadRequest,
+          `the value is not a value of the ${family} family`,
+        );
       }
       const row = await tx
         .insertInto("attempt_answer")

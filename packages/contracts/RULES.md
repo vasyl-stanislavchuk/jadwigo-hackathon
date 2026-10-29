@@ -44,7 +44,10 @@ The words themselves are in the root `GLOSSARY.md`. Rules marked **(tested)** fa
    - `seq` is a question's place in what one attempt actually played. An attempt question is written
      when it is asked, never ahead, so `seq` is the play order, a twin placed `now` simply takes the
      next `seq`, and nothing is ever renumbered. What comes next is worked out from the version's
-     positions, the questions already asked and the twins still owed.
+     positions, the questions already asked and the twins still owed. The page still gets the whole
+     plan from the start: the snapshot's `plan` is the version's planned questions in `position`
+     order, read from `lesson_version_question`, and a planned attempt question ties to its entry
+     by `lesson_question_id`.
    - `try_no` counts the rows of one attempt question, 1, 2, 3. A skip is a row too and takes the
      next `try_no`, so `unique (attempt_id, seq, try_no)` covers it.
 8. **Ids** are `uuid` columns, v4 by default. On the wire and in `jw`, an id is its prefix plus 26
@@ -92,12 +95,14 @@ The words themselves are in the root `GLOSSARY.md`. Rules marked **(tested)** fa
     - A 2nd `event_id` for the same try is 409 `AnswerConflict`.
 20. **Errors are `{error: {type, message}}`.** `type` is a `PascalCase` name listed here: 400 for a
     body that fails its schema, 401 for a token route called without a valid token
-    (`NotSignedIn`), 404 for an unknown record, 409 for a conflict with stored state, 429 for a
-    limit the request is past (`LIMITS`). Another pod's record is 404, never 403.
+    (`NotSignedIn`) or a request without a valid credential, 404 for an unknown record, 409 for a
+    conflict with stored state, 429 for a limit the request is past (`LIMITS`), 502 for an upstream
+    the server calls (the bank) that did not answer. Another pod's record is 404, never 403.
     `message` is for a person and never names the key.
 21. **The server owns the lesson's course.** It decides the next question, a growth question and when
     an attempt finishes. A response never carries a question's `key` or help that has not been
-    released.
+    released. One named exception: `GET /api/v1/playground-examples/{language}` serves Jadwigo's
+    own written playground examples with their keys, for review (owner, 2026-10-28, `dl-w3.75`).
 
 ## Code
 
