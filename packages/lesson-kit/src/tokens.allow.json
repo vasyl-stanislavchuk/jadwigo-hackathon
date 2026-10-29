@@ -85,16 +85,6 @@
     "why": ""
   },
   {
-    "path": "families/slots/SlotsTable.tsx",
-    "snippet": "-[0.625rem]",
-    "why": ""
-  },
-  {
-    "path": "families/slots/SlotsTable.tsx",
-    "snippet": "[var(--jw-prompt-card,var(--card)",
-    "why": ""
-  },
-  {
     "path": "parts/BarGraph.tsx",
     "snippet": "[length:var(--kid-answer-size)",
     "why": ""
