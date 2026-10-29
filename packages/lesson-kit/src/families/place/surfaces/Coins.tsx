@@ -45,7 +45,7 @@ function missingCoins(value: unknown | null): Missing | null {
 }
 
 const PLACE = "flex h-16 w-28 items-center justify-center rounded-lg border-2";
-const TAP = "min-h-[var(--kid-tap-min)] min-w-[var(--kid-tap-min)]";
+const TAP = "min-h-kid-tap min-w-kid-tap";
 
 function itemsOf(value: SurfaceStillProps<typeof Surface.Coins>["shown"]): Denom[] | null {
   return value !== null && "items" in value && Array.isArray(value.items)
@@ -72,7 +72,7 @@ function TotalLine({
     <p
       data-coins-total={data.total === "shown" ? totalGr(items) : undefined}
       aria-live="polite"
-      className="min-h-[var(--kid-tap-min)] text-2xl tabular-nums"
+      className="min-h-kid-tap text-2xl tabular-nums"
     >
       {data.total === "shown"
         ? copy(language, "coins_total", { amount: formatAmount(totalGr(items)) })

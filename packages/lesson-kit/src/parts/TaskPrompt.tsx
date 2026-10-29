@@ -10,7 +10,7 @@ import { RichText } from "./RichText.tsx";
 
 export function TaskPrompt({ text }: { text: string }): JSX.Element {
   return (
-    <p className="kid-prompt text-[length:var(--kid-say-size)] font-semibold leading-snug">
+    <p className="kid-prompt text-kid-say font-semibold leading-snug">
       <RichText inline text={text} />
     </p>
   );

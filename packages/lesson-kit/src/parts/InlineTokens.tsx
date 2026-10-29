@@ -77,7 +77,7 @@ function wordSlots(text: string): {
 // whole-set mark, 6 px outside it (tone.ts), keeps its distance from the words and nothing moves
 // when the mark comes (owner, 2026-10-26).
 const TOKEN =
-  "mx-0.5 inline-flex min-h-[var(--kid-tap-min)] min-w-[var(--kid-tap-min)] items-center justify-center rounded-xl border-2 px-2 align-middle leading-none transition-colors duration-[var(--jw-dur-mark,120ms)]";
+  "mx-0.5 inline-flex min-h-[var(--kid-tap-min)] min-w-[var(--kid-tap-min)] items-center justify-center rounded-xl border-2 px-2 align-middle leading-none transition-colors duration-jw-mark";
 
 const STEP: Record<string, 1 | -1> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
 

@@ -121,8 +121,8 @@ describe("Ruler", () => {
     expect(cls).toEqual(
       expect.arrayContaining([
         "outline-none",
-        "focus-visible:outline-[0.1875rem]!",
-        "focus-visible:outline-offset-[0.1875rem]!",
+        "focus-visible:outline-3!",
+        "focus-visible:outline-offset-3!",
         "focus-visible:outline-ring!",
       ]),
     );

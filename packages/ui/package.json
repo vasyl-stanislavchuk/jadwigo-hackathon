@@ -1,6 +1,6 @@
 {
   "name": "@jadwigo/ui",
-  "description": "Zeszyt's tokens and styles (Tailwind 4) and the neutral shadcn/ui primitives",
+  "description": "Zeszyt's tokens and styles (Tailwind 4), the shadcn/ui primitives and the settings controls, and the parts an app page is built from",
   "private": true,
   "type": "module",
   "exports": {
@@ -24,8 +24,8 @@
     "class-variance-authority": "the variants of the shadcn/ui primitives (src/primitives/button.tsx and friends)",
     "clsx": "joins class names in cn() (src/lib/utils.ts)",
     "happy-dom": "the DOM the dom Vitest project runs *.test.tsx in, as the playground's tests do",
-    "lucide-react": "the icons the primitives draw (a chevron, a check, a close cross)",
-    "radix-ui": "the behaviour under the shadcn/ui primitives: popover, dialog (the sheet, src/primitives/sheet.tsx), tabs, select",
+    "lucide-react": "the icons the primitives and parts draw (a chevron, a check, a close cross, Field's problem mark)",
+    "radix-ui": "the behaviour under the shadcn/ui primitives: popover, dialog (the sheet, src/primitives/sheet.tsx), radio group (radio-group, segmented-control), tabs, and Slot for asChild (Button, Link, OutcomeTile)",
     "react": "the components in src/*.tsx; 18.3.1, the version the playground runs (dl-5ssh.34.6 ports it)",
     "react-dom": "React's renderer, which @testing-library/react renders the components with",
     "tailwind-merge": "lets a later Tailwind class win over an earlier one in cn() (src/lib/utils.ts)",

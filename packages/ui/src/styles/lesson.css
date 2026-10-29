@@ -1,6 +1,5 @@
-/* The lesson's root (packages/lesson-kit stage/LessonTheme.tsx): the lesson sits on Zeszyt's
- * ground, in its own type. The tokens themselves are in foundation.css. Ported from david-learns
- * frontend/src/playground/theme/lesson.css, without the learner view's rule. */
+/* The lesson's root (LessonTheme in packages/lesson-kit): the lesson sits on Zeszyt's ground, in its
+ * own type. The tokens themselves are in foundation.css, at :root. */
 [data-lesson-theme] {
   background-color: var(--background);
   color: var(--foreground);

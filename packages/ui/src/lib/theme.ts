@@ -1,8 +1,9 @@
 /**
- * Lesson pages follow the laptop's light or dark setting, for every learner (owner, 2026-10-08,
- * dl-i952.19). tokens.css and kids.css hold the dark values under [theme='dark']; this sets that
- * attribute from prefers-color-scheme and keeps it in step when the setting changes. While a page
- * prints it is light, since the paper is white. The printed sheet's route never calls this.
+ * Every page follows the laptop's light or dark setting, for every learner (owner, 2026-10-08,
+ * dl-i952.19). Zeszyt's night roles sit under [theme='dark'] (styles/foundation.css), and the dark
+ * maths and money tones too (styles/tokens.css); this sets that attribute from prefers-color-scheme
+ * and keeps it in step when the setting changes. While a page prints it is light, since the paper is
+ * white. The printed sheet's route never calls this.
  *
  * The playground's review tab (dl-w3.47) may hold one theme while it is open, so the reviewer sees a type
  * in dark on a light laptop: `holdTheme` sets the override, and the media listener respects it

@@ -205,7 +205,7 @@ export function TerminalCard({
               data-line={index}
               className={cn(
                 "grid grid-cols-[minmax(0,1fr)_auto] items-center",
-                !paper && "min-h-[var(--kid-tap-min)]",
+                !paper && "min-h-kid-tap",
               )}
             >
               <ScrollRow label={copy(language, "code_command")} paper={paper}>
