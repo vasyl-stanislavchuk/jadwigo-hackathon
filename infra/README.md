@@ -23,10 +23,11 @@ has SES production access in eu-central-1. No SMTP user: auth mail goes out thro
 
 Alarms (`terraform/modules/alarms`, `dl-5ssh.13`): one SNS topic, `jadwigo-prod-alarms`, mailing the owner,
 and 6 alarms on 5-minute periods. They cover the Lambda's errors and throttles, the HTTP API's 5xx,
-account-wide concurrency at 800 (80% of the quota of 1000), and SES's bounce and complaint rates. There are no dashboards. The
+account-wide concurrency at 80% of `lambda_concurrency_quota` (1000, so 800), and SES's bounce and complaint rates. There are no dashboards. The
 logs are modules/app's. The address is not in git, because the repo is public: put it once in
 `terraform/owner.auto.tfvars`, which git ignores and Terraform reads by itself, as
-`alarm_email = "you@example.com"`. Without it, `plan` stops with "No value for required variable". After the
+`alarm_email = "you@example.com"`. Without it (CI, another checkout) `plan` still runs and has no
+subscription, so an apply from such a checkout would remove the owner's (`dl-5ssh.64`). After the
 first apply, AWS mails a confirmation link, and the alarms reach no one until the owner clicks it.
 
 Parent routes (`dl-e8ov.2.42`): a JWT authorizer named `supabase` on the HTTP API verifies Supabase Auth's
