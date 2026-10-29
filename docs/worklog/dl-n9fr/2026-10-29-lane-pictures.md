@@ -1,13 +1,13 @@
 # dl-n9fr wave 5, lane pictures (dl-n9fr.52): Khan pictures from CloudFront, playground samples from the bucket
 
-- **Done, with 1 blocker outside the lane:** apps/web and the playground ask for pictures at the CloudFront media path, and a PNG item renders there with Django stopped.
-- **Blocker:** the bank's sync uploaded every picture as `binary/octet-stream`, so SVGs stay blank until they are retyped and CloudFront is invalidated. That needs an AWS write, so it is the lead's.
+- **Done:** apps/web and the playground ask for pictures at the CloudFront media path. A PNG item and an SVG item both render there, and pictures need no Django.
+- **Fixed on the way:** the bank's sync uploaded every picture as `binary/octet-stream`, which left SVGs blank. The lead fixed the upload, retyped the keys and invalidated CloudFront at 22:58 UTC.
 - **Monorepo:** commit db7c53e on lane/pictures. apps/web lint, typecheck and test are green, 891 tests.
 - **david-learns:** local commit f2e0180c, not pushed. Frontend typecheck is green, and vitest passes 6181 tests with the samples and 5914 plus 38 skipped without them.
 - **Samples:** `make playground` downloads them from the bucket into a gitignored items.json. They are byte-identical to the file that left git.
 - **Git:** `git ls-files frontend/src/playground/khan/items.json` in david-learns prints nothing.
 - **Curl:** a picture ref on the media URL returns 200, and through Vite's `/media/khan/` proxy it is 200 with Django down.
-- **Proposed bead change:** a bead for the content-type fix in jadwigo-bank `tools/khan/sync.py` and the retype of the keys already up. Details below.
+- **Proposed bead changes:** a note on dl-n9fr.44 that the page shell still needs Django, and the david-learns `khan-items` target. Details below.
 - No lesson-kit change: refs are resolved in apps/web before the kit sees a `src`.
 
 ## Monorepo (lane/pictures, db7c53e)
@@ -68,17 +68,25 @@ These were checked in a headless browser with the full `make playground` running
 | Item | Result |
 |---|---|
 | `/playground/slots/fill_gaps/x4a4417f7b43a6185` | The PNG `0d2458ab...png` renders with naturalWidth 400 |
-| `/playground/enter/production/x089f47caad041faa` | The SVG `0b91aab2...svg` is blank with naturalWidth 0, because its type is `binary/octet-stream` |
+| `/playground/enter/production/x089f47caad041faa` | Before the retype: the SVG `0b91aab2...svg` was blank with naturalWidth 0, because its type was `binary/octet-stream`. After the invalidation it renders 4 groups of 5 clocks, naturalWidth 320 |
+
+After the invalidation, the edge serves the same key with the right type:
+
+```
+curl -sI https://dx5i3bka3zn5f.cloudfront.net/0b91aab290b0f63669b7622615f1bbbd61c95d22fee6c4f230c7b84e67346ffd.svg
+HTTP/2 200
+content-type: image/svg+xml
+x-cache: Hit from cloudfront
+```
 
 At 23:45, 36 of the 225 sample refs returned 200. The rest were 403, because they were not uploaded yet.
 
 ## What I could not do
 
-- **SVGs:** the bank's sync (`tools/khan/sync.py:285`) calls `upload_file` without a ContentType, so S3 stores `binary/octet-stream` and CloudFront adds `nosniff`. Some keys have since been retyped, but CloudFront caches the old type and ignores query strings. The fix needs the retype to finish and then an invalidation of `/*`. Both are AWS writes, and the lead has both messages.
+- **SVGs, now fixed:** the bank's sync (`tools/khan/sync.py:285`) called `upload_file` without a ContentType, so S3 stored `binary/octet-stream`. CloudFront added `nosniff` and cached that type, ignoring query strings. The lead fixed the upload, added a `sync retype` mode and invalidated `/*`. Those steps were AWS writes, so this lane did not make them.
 - **"With Django stopped":** pictures need no Django. The playground's page shell does, and `make playground` starts Django for it. Removing that dependency belongs with dl-n9fr.44.
 
 ## Proposed bead changes
 
-- **New, under dl-n9fr:** fix sync.py to pass a ContentType by extension, retype the keys already in `khan/media/`, and invalidate the distribution. Done when `curl -sI` on any `.svg` says `image/svg+xml` and the item above draws.
 - **dl-n9fr.44:** note that the playground shell still needs Django. Only pictures and samples are off it now.
 - **david-learns Makefile:** `khan-items` still names `scripts/khan/to_family.py` and its committed output. That target should point at `scripts/playground_samples.py` or go. It is not in this lane.
