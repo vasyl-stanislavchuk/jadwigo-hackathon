@@ -9,7 +9,9 @@ import { playE2e, webPort } from "./src/config.ts";
 
 const port = webPort();
 const laptop = { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } };
-const PLAY = /play\.spec\.ts$/;
+/** The specs that play against a real api (JW_E2E_API=1). */
+const PLAY = /(play|no-jump)\.spec\.ts$/;
+const phone = { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } };
 
 export default defineConfig({
   testDir: "e2e",
@@ -18,13 +20,19 @@ export default defineConfig({
   reporter: [["list"]],
   use: { baseURL: `http://127.0.0.1:${port}` },
   projects: [
-    {
-      name: "phone",
-      testIgnore: PLAY,
-      use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } },
-    },
+    { name: "phone", testIgnore: PLAY, use: phone },
     { name: "laptop", testIgnore: PLAY, use: laptop },
-    ...(playE2e() ? [{ name: "api", testMatch: PLAY, use: laptop }] : []),
+    ...(playE2e()
+      ? [
+          { name: "api", testMatch: PLAY, use: laptop },
+          // The no-jump check again on a phone with touch, the keypad docked.
+          {
+            name: "api-phone",
+            testMatch: /no-jump\.spec\.ts$/,
+            use: { ...phone, isMobile: true, hasTouch: true },
+          },
+        ]
+      : []),
   ],
   webServer: {
     command: "bunx vite build && bunx vite preview",

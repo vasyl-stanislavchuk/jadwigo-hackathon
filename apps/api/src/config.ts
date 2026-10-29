@@ -31,7 +31,7 @@ function checkedDatabaseUrl(value: string, source: string): string {
 /** Reads one SecureString, decrypted. The Lambda's role may read only the parameter it names. */
 export type ReadParameter = (name: string) => Promise<string | undefined>;
 
-const readSsm: ReadParameter = async (name) => {
+export const readSsm: ReadParameter = async (name) => {
   const reply = await new SSMClient({}).send(
     new GetParameterCommand({ Name: name, WithDecryption: true }),
   );
@@ -58,4 +58,20 @@ export async function lambdaDatabaseUrl(read: ReadParameter = readSsm): Promise<
 /** The local server's port: md's environment sets `PORT` per worktree (tools/src/ports.ts). */
 export function port(): number {
   return Number(process.env["PORT"] || 8787);
+}
+
+/**
+ * The bank Lambda's `live` alias ARN the search route invokes, which Terraform sets from the
+ * bank root's SSM handshake (`dl-5ssh.57`). Undefined when unset or blank: no bank is wired.
+ */
+export function bankSearchAliasArn(): string | undefined {
+  return process.env["BANK_SEARCH_ALIAS_ARN"]?.trim() || undefined;
+}
+
+/**
+ * The name of the SSM SecureString holding the read token callers present to the search route
+ * (`/jadwigo/<env>/bank-read-token`). Interim until `jw login` exists (`dl-e8ov.2.11`).
+ */
+export function bankReadTokenParam(): string | undefined {
+  return process.env["BANK_READ_TOKEN_PARAM"]?.trim() || undefined;
 }

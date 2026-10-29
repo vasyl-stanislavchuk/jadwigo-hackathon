@@ -1230,6 +1230,25 @@ describe("on a phone in a lesson the answer sits in the page", () => {
     expect(dock.hasAttribute("data-folded")).toBe(false);
   });
 
+  // dl-uukj.29.140: at 360x640 and 390x844 the note opened under the keypad. The bulb that opened it
+  // went with the focus on it, the focus went back to the field, and that unfolded the dock.
+  it("keeps the keypad folded when help opens and the focus goes back to the field from the bulb", () => {
+    const miss = { feedback: { kind: "try_again", index: 0 } } as const;
+    const { container, rerender } = render(
+      lesson({ ...miss, ladder: { help: null, ask: ask(), refused: false } }),
+    );
+    const bulb = must(container.querySelector<HTMLElement>("[data-bulb]"));
+    bulb.focus();
+    rerender(lesson({ ...miss, ladder: { help: released(1), ask: ask(), refused: false } }));
+    const dock = must(container.querySelector<HTMLElement>("[data-tools-dock]"));
+    expect(bulb.isConnected && document.activeElement === bulb).toBe(false);
+    expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "answer" }));
+    expect(dock.hasAttribute("data-folded")).toBe(true);
+    // The child's own tap on the field still brings the keypad back.
+    fireEvent.pointerDown(screen.getByRole("textbox", { name: "answer" }));
+    expect(dock.hasAttribute("data-folded")).toBe(false);
+  });
+
   it("a tap on the folded arrow opens the keypad again, and the dock goes once the step ends", () => {
     const { container, rerender } = render(lesson());
     rerender(lesson({ ladder: { help: released(1), ask: ask(), refused: false } }));

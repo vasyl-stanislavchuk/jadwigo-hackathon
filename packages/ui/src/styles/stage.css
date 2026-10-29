@@ -153,6 +153,16 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
   border-top: 0.125rem solid var(--border);
 }
 
+/* On a short phone (a 360x640 Android) the keys drop from 72 to the kid layer's 56, its minimum and
+ * never less: four rows of 72 left 66 px between the top bar and the fold arrow, and a step opened
+ * with its instruction under the top bar (owner 2026-10-29, dl-uukj.29.140). At 56 the dock is 298,
+ * and the instruction, card and field show above it. 390x844 keeps 72. */
+@media (height < 45rem) {
+  .kid-step-shell[data-framed] [data-tools-dock] {
+    --kid-key-size: var(--kid-tap-min);
+  }
+}
+
 /* Folded (help open, or the arrow), only the fold arrow stays, on the footer's top line: the dock
  * draws no line and takes no room (Enter addendum section 5). */
 .kid-step-shell[data-framed] [data-tools-dock][data-folded] {
