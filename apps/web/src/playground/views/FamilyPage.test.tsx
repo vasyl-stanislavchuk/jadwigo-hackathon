@@ -7,8 +7,9 @@
 
 import { holdTheme } from "@jadwigo/ui";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { examplesFor } from "../examples/index.ts";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { AUTHORED, examplesReply as examplesReplyOf, fakeApi } from "../examples/fixture.ts";
+import { examplesFor, loadExamples } from "../examples/index.ts";
 import { PlaygroundScreen } from "../PlaygroundScreen.tsx";
 import { foundOf, specOf } from "../panels/question.ts";
 import {
@@ -22,6 +23,13 @@ import {
 
 const PAGE = "/playground/choose/true_false/neighbour-row-claim";
 
+// One client for the file, its two languages read before any page draws, as a page that has
+// read them once draws at once.
+const API = fakeApi();
+beforeAll(async () => {
+  await loadExamples(API, "pl");
+  await loadExamples(API, "en");
+});
 beforeEach(() => window.history.replaceState(null, "", "/playground"));
 afterEach(() => {
   cleanup();
@@ -30,12 +38,13 @@ afterEach(() => {
 });
 
 function open(url: string): void {
+  // Every read goes through the client, never fetch.
   vi.stubGlobal(
     "fetch",
-    vi.fn(() => Promise.reject(new Error("the playground calls no API"))),
+    vi.fn(() => Promise.reject(new Error("the playground reads through its client"))),
   );
   window.history.replaceState(null, "", url);
-  render(<PlaygroundScreen />);
+  render(<PlaygroundScreen client={API} />);
 }
 
 const check = (): void => {
@@ -86,7 +95,7 @@ describe("Try it", () => {
   });
 
   it("says an answer no scenario names is not judged, and leaves the step open", () => {
-    const example = examplesFor("production")[0];
+    const example = examplesFor(AUTHORED, "production")[0];
     if (example === undefined) throw new Error("no production example");
     const spec = specOf(example, "en");
     const state = commitTry(spec, initialTry, { entered: "123456" }, null);
@@ -96,7 +105,7 @@ describe("Try it", () => {
   });
 
   it("releases help rung by rung, rungs 3 and 4 after a miss, and rung 4 plays the twin", () => {
-    const example = examplesFor("true_false").find((e) => e.id === "neighbour-row-claim");
+    const example = examplesFor(AUTHORED, "true_false").find((e) => e.id === "neighbour-row-claim");
     if (example === undefined) throw new Error("no example");
     const spec = specOf(example, "en");
     const miss = example.scenarios.find((s) => s.outcome === "incorrect") ?? null;
@@ -118,7 +127,7 @@ describe("Try it", () => {
   });
 
   it("moves on to the solution read from the key, and offers Dalej", () => {
-    const example = examplesFor("true_false").find((e) => e.id === "neighbour-row-claim");
+    const example = examplesFor(AUTHORED, "true_false").find((e) => e.id === "neighbour-row-claim");
     if (example === undefined) throw new Error("no example");
     const spec = specOf(example, "en");
     const state = moveOn(spec, initialTry);
@@ -168,5 +177,34 @@ describe("Details", () => {
     const data = screen.getByRole("region", { name: "Each scenario, as written" });
     expect(data.textContent).toContain('"outcome": "correct"');
     expect(screen.getByRole("region", { name: "The twin" })).toBeTruthy();
+  });
+});
+
+describe("reading the examples", () => {
+  it("shows the page loading until the API answers, then plays the example", async () => {
+    let answer: (reply: ReturnType<typeof examplesReplyOf>) => void = () => {};
+    const slow = fakeApi(() => new Promise((resolve) => (answer = resolve)));
+    window.history.replaceState(null, "", `${PAGE}?lang=en`);
+    render(<PlaygroundScreen client={slow} />);
+    expect(
+      document.querySelector("[data-examples-state]")?.getAttribute("data-examples-state"),
+    ).toBe("loading");
+    await act(async () => answer(examplesReplyOf("en")));
+    expect(document.querySelector("[data-examples-state]")).toBeNull();
+    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual([
+      "Try it",
+      "Review",
+      "Details",
+    ]);
+  });
+
+  it("says so when the API cannot be read", async () => {
+    const down = fakeApi(() => Promise.reject(new Error("no answer from the server")));
+    window.history.replaceState(null, "", `${PAGE}?lang=en`);
+    render(<PlaygroundScreen client={down} />);
+    await act(async () => {});
+    expect(
+      document.querySelector("[data-examples-state]")?.getAttribute("data-examples-state"),
+    ).toBe("failed");
   });
 });

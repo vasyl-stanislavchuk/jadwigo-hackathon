@@ -4,9 +4,11 @@ import { fileURLToPath } from "node:url";
 import { createPostgresStore } from "@jadwigo/store";
 import { databaseUrl } from "./config.ts";
 import { importLessonFile } from "./import.ts";
+import { importExamples } from "./playground/import.ts";
 
 /**
- * The featured lessons, seeded into DATABASE_URL through the Store, which sets `app.pod_id` per
+ * The featured lessons, then the playground's written examples in Polish and English (dl-w3.75),
+ * seeded into DATABASE_URL through the Store, which sets `app.pod_id` per
  * write: `make db-seed`, or `bun run seed [folder]`. The folder defaults to the exported lesson
  * files in `packages/testing/src/lessons/`, read as files: only tests import `@jadwigo/testing`.
  */
@@ -21,4 +23,8 @@ for (const name of readdirSync(folder)
   process.stdout.write(
     `${name}: ${lesson.id} version ${version.version}${published ? " published" : " unchanged"}, featured ${assignment.id}\n`,
   );
+}
+const examples = await importExamples(store);
+for (const [language, rows] of Object.entries(examples)) {
+  process.stdout.write(`playground examples: ${rows.length} in ${language}\n`);
 }

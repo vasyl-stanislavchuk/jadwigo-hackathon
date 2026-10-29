@@ -7,11 +7,13 @@
  *   Details)  ·  the System page (views/system/SystemPage)
  *
  * Nothing is judged and nothing is stored: every state a page shows is written in an example's
- * scenarios (examples/).
+ * scenarios, read from the API (examples/load.ts).
  */
 
+import type { PlaygroundClient } from "@jadwigo/api-client";
 import { familyInfo, questionTypesOf } from "@jadwigo/lesson-kit";
 import { type ReactElement, useEffect } from "react";
+import { PlaygroundApi } from "./examples/index.ts";
 import "./tool/neutral.css";
 import { linkTo, type PlaygroundRoute, playgroundRoute, useLocation } from "./route.ts";
 import { type Crumb, Shell } from "./shell/Shell.tsx";
@@ -56,7 +58,20 @@ function view(route: PlaygroundRoute | null): {
   };
 }
 
-export function PlaygroundScreen(): ReactElement {
+export function PlaygroundScreen({
+  client,
+}: {
+  /** The API, for tests; the page's own origin when absent. */
+  client?: PlaygroundClient;
+} = {}): ReactElement {
+  return (
+    <PlaygroundApi.Provider value={client ?? null}>
+      <PlaygroundPages />
+    </PlaygroundApi.Provider>
+  );
+}
+
+function PlaygroundPages(): ReactElement {
   const { path } = useLocation();
   // The tools are neutral; only the lesson takes a theme (tool/neutral.css).
   useEffect(() => {

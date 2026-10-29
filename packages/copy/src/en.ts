@@ -339,4 +339,8 @@ export const en: CopyTable = {
   play_paused_back: { text: "Back to the lesson", reviewed: false },
   play_not_found: { text: "This lesson is not here.", reviewed: false },
   // end the lesson player
+  // the home page's featured lessons (dl-5ssh.3.6)
+  home_title: { text: "Pick a lesson", reviewed: false },
+  home_empty: { text: "There are no lessons here yet.", reviewed: false },
+  // end the home page
 };

@@ -26,7 +26,7 @@ import { Keypad, type SignKeys } from "./Keypad.tsx";
 import { LetterMarks } from "./LetterMarks.tsx";
 import { LetterRow } from "./LetterRow.tsx";
 import { Tools } from "./Tools.tsx";
-import { MARK_FADE, SELECTION, TONE_CLASS, type Tone } from "./tone.ts";
+import { EMPTY_FIELD, MARK_FADE, SELECTION, TONE_CLASS, type Tone } from "./tone.ts";
 
 /** The field (Enter addendum 2.1, 2.6): min 64 tall, r16, a 2 px edge, text at the left, bold.
  * Digits and signs at Zeszyt's maths size, 36 px on a laptop and 30 px on a phone, in tabular
@@ -242,7 +242,7 @@ export function Entry({
           {showSelected && state.text ? (
             <span {...SELECTION}>{state.text}</span>
           ) : (
-            state.text || " "
+            state.text || EMPTY_FIELD
           )}
         </div>
         {unit && (

@@ -4,6 +4,7 @@ import type { Store } from "@jadwigo/store";
 import { answer, getAttempt, startAttempt } from "./attempts.ts";
 import { ApiError, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
+import { playgroundExamples } from "./playground.ts";
 import { type BankDeps, searchQuestions } from "./questions.ts";
 import { getResults, help, patchAttempt } from "./session.ts";
 
@@ -18,9 +19,11 @@ type Handle<N extends RouteName> = (
  * The `/api/v1` routes on the Powertools router, each registered from `ROUTES` (RULES.md rule
  * 22). A handler gets its parsed path parameters and the raw body, and parses the body itself; its
  * reply is parsed with the route's response schema, which drops anything the schema does not name.
- * A refusal is `{error: {type, message}}` with the status `ERROR_STATUS` gives it.
+ * A refusal is `{error: {type, message}}` with the status `ERROR_STATUS` gives it. The store may
+ * still be opening: only the routes that read it wait for it, so health answers while the Lambda's
+ * database URL is still being read, and when that read has failed.
  */
-export function createApp(store: Store, bank?: BankDeps): Router {
+export function createApp(store: Store | Promise<Store>, bank?: BankDeps): Router {
   const app = new Router();
 
   const on = <N extends RouteName>(name: N, handle: Handle<N>): void => {
@@ -38,6 +41,9 @@ export function createApp(store: Store, bank?: BankDeps): Router {
       } catch (error) {
         const refused = refusal(error);
         if (refused) return refused;
+        // The router answers it 500, which the api-5xx alarm counts (dl-5ssh.13); the log line
+        // is what tells why. Never the request's body: it may carry a child's answer.
+        logFailure(name, error);
         throw error;
       }
     });
@@ -47,17 +53,32 @@ export function createApp(store: Store, bank?: BankDeps): Router {
   // Public by design: no authorize(). It reads only the featured pod's open anyone-assignments,
   // and a start on one is authorized like any other (decision 2026-10-26-the-login-free-lesson-is-
   // protected-by-invisible-limits-only-per).
-  on("featuredLessons", () => featuredLessons(store));
-  on("startAttempt", (params, body) => startAttempt(store, params.id, body));
-  on("getAttempt", (params) => getAttempt(store, params.id));
-  on("answer", (params, body) => answer(store, params.id, body));
-  on("help", (params, body) => help(store, params.id, params.seq, body));
-  on("patchAttempt", (params, body) => patchAttempt(store, params.id, body));
-  on("getResults", (params) => getResults(store, params.id));
+  on("featuredLessons", async () => featuredLessons(await store));
+  // Public by design: no authorize(). It reads only Jadwigo's own pod's written playground
+  // examples, which hold no learner's data (dl-w3.75).
+  on("playgroundExamples", async (params) => playgroundExamples(await store, params.language));
+  on("startAttempt", async (params, body) => startAttempt(await store, params.id, body));
+  on("getAttempt", async (params) => getAttempt(await store, params.id));
+  on("answer", async (params, body) => answer(await store, params.id, body));
+  on("help", async (params, body) => help(await store, params.id, params.seq, body));
+  on("patchAttempt", async (params, body) => patchAttempt(await store, params.id, body));
+  on("getResults", async (params) => getResults(await store, params.id));
   on("questionSearches", (_, body, headers) => searchQuestions(bank, headers, body));
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;
+}
+
+/**
+ * One JSON line on stderr for a route that failed in a way no refusal names: the route, the
+ * error's name, message and stack. CloudWatch keeps it in the function's log group at level ERROR.
+ */
+function logFailure(route: RouteName, error: unknown): void {
+  const failure =
+    error instanceof Error
+      ? { name: error.name, message: error.message, stack: error.stack }
+      : { name: typeof error, message: String(error) };
+  console.error(JSON.stringify({ level: "ERROR", message: "route failed", route, error: failure }));
 }
 
 /**

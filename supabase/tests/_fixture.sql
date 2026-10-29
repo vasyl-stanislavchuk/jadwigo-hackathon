@@ -36,6 +36,17 @@ values
    'enter', 'production', 'How many plums?', '{"input": "number", "entry": "keypad"}',
    '{"accept": ["4"]}', '{}', 'math', '{math.mul.equal-groups}', null, 'h4');
 
+-- One playground example in each pod, on its first question (pod A's with the twin).
+insert into lesson_question_example
+  (id, pod_id, lesson_question_id, twin, language, slug, position, label, showcase, scenarios)
+values
+  ('00000000-0000-4000-8000-000000000ea1', '00000000-0000-4000-8000-00000000000a',
+   '00000000-0000-4000-8000-0000000003a1', '00000000-0000-4000-8000-0000000003a3', 'en', 'apples', 1, 'Apples in groups', true,
+   '[{"try": "types 6", "value": {"entered": "6"}, "outcome": "correct", "mistake_class": null, "marks": []}]'),
+  ('00000000-0000-4000-8000-000000000eb1', '00000000-0000-4000-8000-00000000000b',
+   '00000000-0000-4000-8000-0000000003b1', null, 'en', 'plums', 1, 'Plums in groups', true,
+   '[{"try": "types 4", "value": {"entered": "4"}, "outcome": "correct", "mistake_class": null, "marks": []}]');
+
 -- Each version is written as a draft, listed, then published.
 insert into lesson_version (id, pod_id, lesson_id, version) values
   ('00000000-0000-4000-8000-0000000004a1', '00000000-0000-4000-8000-00000000000a',
