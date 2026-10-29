@@ -301,6 +301,15 @@ describe("guard: PR bodies have the /dev-pr shape", () => {
       `cat > ${fresh} <<'EOF'\n${text}EOF\ngh pr create --title t --body-file ${fresh}`;
     expect(pr(write(body))).toBeUndefined();
     expect(pr(write("## Summary\n\nonly this\n"))).toMatch(/Merge Danger/);
+    expect(pr(`cat <<'EOF' > ${fresh}\n${body}EOF\ngh pr create -F ${fresh}`)).toBeUndefined();
+  });
+
+  test("a heredoc that only feeds a command naming the body file does not write it", () => {
+    const body = "## Summary\n\nx\n\n## Evidence\n\ny\n\n## Merge Danger\n\n**Door:** two-way\n";
+    const gh = `gh pr create --title t --body-file ${bad}`;
+    expect(pr(`cat ${bad} <<'EOF'\n${body}EOF\n${gh}`)).toMatch(/Merge Danger/);
+    expect(pr(`grep x ${bad} <<'EOF'\n${body}EOF\n${gh}`)).toMatch(/Merge Danger/);
+    expect(pr(`cat > ${bad} <<<EOF\n${body}EOF\n${gh}`)).toMatch(/before the command runs/);
   });
 
   test("a body file path is read the way the shell would (dl-5ssh.69)", () => {

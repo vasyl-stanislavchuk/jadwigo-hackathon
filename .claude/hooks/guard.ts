@@ -267,13 +267,28 @@ function deployDenial(cmd: string, commands: string[][]): string | undefined {
 
 const USE_DEV_PR = "Write the body with /dev-pr into a file, then pass it with --body-file <path>.";
 
-/** The body a heredoc in the same command writes to file (`cat > file <<'EOF'`), since the hook runs first. */
+/**
+ * The body a heredoc in the same command writes to file, since the hook runs first. Only a heredoc
+ * redirected into the file counts (`cat > file <<EOF`, `<<EOF > file`, `tee file <<EOF`): one that
+ * only feeds a command naming the file (`cat file <<EOF`, `grep x file <<EOF`) never writes it.
+ */
 function heredocBody(full: string, file: string): string | undefined {
-  const at = full.indexOf(file);
-  if (at < 0) return undefined;
-  const after = full.slice(at + file.length);
-  const m = /^['"]?\s*<<-?\s*(['"]?)(\w+)\1[^\n]*\n([\s\S]*?)\n\2[ \t]*(\n|$)/.exec(after);
-  return m?.[3];
+  for (let at = full.indexOf(file); at >= 0; at = full.indexOf(file, at + 1)) {
+    const lineStart = full.lastIndexOf("\n", at - 1) + 1;
+    const nl = full.indexOf("\n", at);
+    const lineEnd = nl < 0 ? full.length : nl;
+    // The simple command around the file on its line: no ; & | between them.
+    const head = full.slice(lineStart, at).split(/[;&|]/).pop() ?? "";
+    const tail = full.slice(at + file.length, lineEnd).split(/[;&|]/)[0] ?? "";
+    const into = /(^|[^0-9&>])>>?\s*['"]?$/.test(head) || /(^|\s)tee(\s+-\w+)*\s+['"]?$/.test(head);
+    const op = /(?<!<)<<(?!<)-?\s*(['"]?)(\w+)\1/.exec(head + " " + tail);
+    if (!into || !op || nl < 0) continue;
+    const delim = op[2] ?? "";
+    const rest = full.slice(nl + 1);
+    const end = new RegExp(`(^|\\n)${delim}[ \\t]*(\\n|$)`).exec(rest);
+    if (end) return rest.slice(0, end.index + (end[1] ? 1 : 0));
+  }
+  return undefined;
 }
 
 /** A command line as the shell tokenizes it, without running it. Offsets are offsets in the line. */
