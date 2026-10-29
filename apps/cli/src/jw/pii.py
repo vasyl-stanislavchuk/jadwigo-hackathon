@@ -14,7 +14,11 @@ Dawida, Dawidowi, Dawidem, Dawidzie; Tomek, Tomka, Tomkiem. Matching ignores cas
 child types "kasia" as often as "Kasia", and it ignores diacritics, because a phone keyboard
 drops them ("Michal", "Lucja", "Kasie"). A name form of 4 letters or more is also matched at the
 start of a longer word, which takes the whole word: glued text ("KasiaNowak"), a padded name
-("Kasiaaa") and a diminutive on the same stem ("Kasiunia", "Kubusiem"). The cost is the odd common word that spells a name form
+("Kasiaaa") and a diminutive on the same stem ("Kasiunia", "Kubusiem"). A capital after a
+lowercase letter starts a word too, so a name glued on the end of another is found
+("NowakKasia", "kochamKasię") and "Mikasia" is not. Full-width and math-bold letters read as
+the plain ones, and invisible format characters inside a name (a soft hyphen, a zero-width space) are ignored
+(`_plain`). The cost is the odd common word that spells a name form
 (the learner Maja against "mają", "they have"): it becomes a placeholder too. That costs the prompt
 a word; the other way would cost a child's name.
 
@@ -161,13 +165,32 @@ _PREFIX_LEN = 4
 
 def _fold(text: str) -> str:
     """`text` lowercased and without diacritics, one character for each character of `text`,
-    so a match in the folded text is a span of the same length in the original: Łucja -> lucja."""
+    so a match in the folded text is a span of the same length in its input: Łucja -> lucja."""
     out = []
     for ch in text:
         base = "l" if ch in "łŁ" else unicodedata.normalize("NFD", ch)[0]
         low = base.lower()
         out.append(low if len(low) == 1 else base)
     return "".join(out)
+
+
+def _plain(text: str) -> tuple[str, list[int]]:
+    """`text` as the matcher reads it, and where each of its characters sits in `text`.
+
+    Each character is taken in its compatibility form (NFKC), so full-width "Ｋａｓｉａ" and
+    math-bold "𝐊𝐚𝐬𝐢𝐚" read as Kasia, and format characters (soft hyphen, zero-width space and
+    joiner) are dropped, so a name with one inside it does too. Only the view changes: the prompt keeps its "5²"
+    and "½", which NFKC over the whole text would turn into "52" and "1⁄2".
+    """
+    chars: list[str] = []
+    index: list[int] = []
+    for i, ch in enumerate(text):
+        if unicodedata.category(ch) == "Cf":
+            continue
+        for c in unicodedata.normalize("NFKC", ch):
+            chars.append(c)
+            index.append(i)
+    return "".join(chars), index
 
 
 def _names_pattern(
@@ -192,20 +215,24 @@ def _name_spans(text: str, names: Iterable[str]) -> list[tuple[int, int, str]]:
     if compiled is None:
         return []
     pattern, form_of = compiled
-    folded = _fold(text)
+    plain, index = _plain(text)
+    folded = _fold(plain)
     spans: list[tuple[int, int, str]] = []
     at = 0
     while (m := pattern.search(folded, at)) is not None:
         start, end = m.span()
         at = start + 1
-        if start > 0 and text[start - 1].isalpha():
-            continue  # inside a word: "Mikasia" is not Kasia
+        if start > 0 and plain[start - 1].isalpha():
+            # Inside a word ("Mikasia" is not Kasia), unless the name starts a capital after a
+            # lowercase letter: glued on the end of another word, "NowakKasia", "kochamKasię".
+            if not (plain[start].isupper() and plain[start - 1].islower()):
+                continue
         if len(m.group()) >= _PREFIX_LEN:
-            while end < len(text) and text[end].isalpha():
+            while end < len(plain) and plain[end].isalpha():
                 end += 1  # the whole word: "Kasiunia", "KasiaNowak"
-        elif end < len(text) and text[end].isalpha() and not text[end].isupper():
+        elif end < len(plain) and plain[end].isalpha() and not plain[end].isupper():
             continue  # "olej" is not Ola; "OlaNowak" is
-        spans.append((start, end, form_of[m.group()]))
+        spans.append((index[start], index[end - 1] + 1, form_of[m.group()]))
         at = end
     return spans
 

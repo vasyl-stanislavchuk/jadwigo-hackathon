@@ -109,15 +109,43 @@ def test_a_word_that_starts_with_a_long_name_form_is_hidden_whole() -> None:
         (["Kasia"], "Kasiunia i Kasieńka.", "Kasi"),
         (["Kuba"], "Z Kubusiem.", "Kub"),
         (["Ola"], "OlaNowak", "Ola"),
+        # dl-u1y5.25: glued on the end of another word, or disguised by Unicode.
+        (["Kasia"], "NowakKasia kochamKasię", "Kasi"),
+        (["Kasia"], "Nowak\u200bKasia", "Kasi"),
+        (["Kasia"], "\uff2b\uff41\uff53\uff49\uff41 liczy.", "Kasi"),  # full-width
+        (["Kasia"], "\U0001d40a\U0001d41a\U0001d42c\U0001d422\U0001d41a liczy.", "Kasi"),  # math bold
+        (["Kasia"], "Ka\u00adsia liczy.", "Kasi"),  # soft hyphen
+        (["Kasia"], "Ka\u200bsia liczy.", "Kasi"),  # zero-width space
+        (["Kasia"], "Ka\u200dsi\u2060a liczy.", "Kasi"),  # zero-width joiner, word joiner
     ],
 )
 def test_no_spelling_of_the_name_gets_through(
     names: list[str], text: str, gone: str
 ) -> None:
     out = guard(text, names=names).text
-    folded = unicodedata.normalize("NFD", out).lower()
-    assert gone.lower() not in folded, out
+    assert gone.lower() not in _as_read(out), out
     assert "[NAME_1]" in out
+
+
+def _as_read(text: str) -> str:
+    """`text` as a reader sees it: no format characters, compatibility forms, lowercase, and
+    without diacritics, so a full-width or zero-width spelling cannot pass by looking different."""
+    visible = "".join(ch for ch in text if unicodedata.category(ch) != "Cf")
+    return "".join(
+        ch for ch in unicodedata.normalize("NFKD", visible).lower() if not unicodedata.combining(ch)
+    )
+
+
+def test_a_name_glued_after_a_lowercase_word_goes_but_not_inside_one() -> None:
+    guarded = guard("NowakKasia kochamKasię, Mikasia i MIKASIA.", names=["Kasia"])
+    assert guarded.text == "Nowak[NAME_1] kocham[NAME_1], Mikasia i MIKASIA."
+
+
+def test_text_around_a_name_keeps_its_own_characters() -> None:
+    # The matcher reads compatibility forms; the prompt keeps a square, a half, a soft hyphen
+    # and full-width digits as typed.
+    text = "Kasia: 5\u00b2 + \u00bd = ? Zada\u00adnie, \uff11\uff12."
+    assert guard(text, names=["Kasia"]).text == "[NAME_1]: 5\u00b2 + \u00bd = ? Zada\u00adnie, \uff11\uff12."
 
 
 # ---------------------------------------------------------------- emails -----
