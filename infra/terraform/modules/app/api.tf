@@ -98,6 +98,7 @@ resource "aws_lambda_function" "api" {
       JADWIGO_DB_URL_PARAM  = aws_ssm_parameter.database_url.name
       BANK_SEARCH_ALIAS_ARN = data.aws_ssm_parameter.bank_search_alias_arn.insecure_value
       BANK_READ_TOKEN_PARAM = aws_ssm_parameter.bank_read_token.name
+      CONTENT_BUCKET        = var.content_bucket_name
     }
   }
 

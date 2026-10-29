@@ -104,8 +104,11 @@ The words themselves are in the root `GLOSSARY.md`. Rules marked **(tested)** fa
     `message` is for a person and never names the key.
 21. **The server owns the lesson's course.** It decides the next question, a growth question and when
     an attempt finishes. A response never carries a question's `key` or help that has not been
-    released. One named exception: `GET /api/v1/playground-examples/{language}` serves Jadwigo's
+    released. Two named exceptions. One: `GET /api/v1/playground-examples/{language}` serves Jadwigo's
     own written playground examples with their keys, for review (owner, 2026-10-28, `dl-w3.75`).
+    The other: `GET /api/v1/questions/{id}` serves one bank question's private body with its key, only
+    to a caller with the bank's read token, for lesson composing (david-learns decision
+    `2026-10-25-a-bank-question-has-a-public-page-and-a-private-body-a-lesson-qu`, `dl-n9fr.51`).
 
 ## Code
 

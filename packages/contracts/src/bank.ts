@@ -175,3 +175,66 @@ export const SearchEnvelope = z
     `A bank search's answer, version 1, from jadwigo-bank schemas/search-envelope.schema.json at commit ${BANK_COMMIT}.`,
   );
 export type SearchEnvelope = z.infer<typeof SearchEnvelope>;
+
+/**
+ * A bank question's id as the content bucket keys it: an `x`-prefixed or bare Khan item id, letters,
+ * digits, `_` and `-` only, so it can never climb out of `questions/<source>/` in a key.
+ */
+export const BankQuestionId = z
+  .string()
+  .regex(/^[A-Za-z0-9_-]{1,64}$/)
+  .describe("A bank question's id: a Khan item id such as x1a2b3c4, letters, digits, _ and - only");
+export type BankQuestionId = z.infer<typeof BankQuestionId>;
+
+/**
+ * A family's JSON, kept unknown-shaped at the bank seam: the families' own schemas type it where a
+ * lesson question is built from it, so this seam does not pin every family to the bank's commit.
+ */
+const FamilyJson = z.record(z.string(), z.unknown());
+
+/** One language's version of a question: its family, data, key and help, as the derive step wrote them. */
+const QuestionVariant = z.object({
+  family: z.string().min(1),
+  data: FamilyJson,
+  key: FamilyJson,
+  help: FamilyJson.optional(),
+  say: z.string().optional(),
+});
+
+const BodyPicture = z.object({
+  ref: z
+    .string()
+    .regex(/^[0-9a-f]{64}\.[a-z0-9]+$/)
+    .describe("The picture's sha256 with its extension, under <source>/media/ in the bucket"),
+  decorative: z.boolean(),
+  pl: z.string().describe("The picture's Polish alternative text").optional(),
+});
+
+/**
+ * One question's body, as the bank's derive step writes it to the content bucket at
+ * `questions/<source>/<id>.json` (decision
+ * `jadwigo-question-bank/decisions/2026-10-29-the-content-bucket-is-keyed-by-source-first-khan-then-the-next-l`).
+ * It carries the key by design: the body is private and reaches only an authorized caller
+ * (david-learns decision `2026-10-25-a-bank-question-has-a-public-page-and-a-private-body-a-lesson-qu`),
+ * through `ROUTES.questionBody` behind the read token. A field the schema does not name is dropped.
+ * A question with no playable variant yet (its English item waits on a refused Polish conversion)
+ * carries only its id, credit and problem type, so `pl`, `en`, `source` and `pictures` are optional.
+ */
+export const QuestionBody = z
+  .object({
+    id: BankQuestionId,
+    source: z.literal("khan").optional(),
+    pl: QuestionVariant.optional(),
+    en: QuestionVariant.optional(),
+    problem_type: z.string().optional(),
+    credit: z.object({
+      source: z.string().min(1),
+      url: z.url().optional(),
+      licence: z.string().min(1),
+    }),
+    pictures: z.array(BodyPicture).optional(),
+  })
+  .describe(
+    "One bank question's private body from questions/<source>/<id>.json: a version per language with its family, data, key and help, the credit and the pictures by sha; a question with no playable variant yet carries only id, credit and problem_type; it reaches only a caller with the read token",
+  );
+export type QuestionBody = z.infer<typeof QuestionBody>;

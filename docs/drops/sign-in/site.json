@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "title": "Google and Facebook sign-in for parents, on Supabase Auth",
+  "password": "auto",
+  "nav": [
+    { "page": "index.html", "label": "Overview" },
+    { "page": "today.html", "label": "Today" },
+    { "page": "vision.html", "label": "The design" },
+    { "page": "providers.html", "label": "Google and Facebook" },
+    { "page": "steps.html", "label": "Owner steps" },
+    { "page": "questions.html", "label": "Open questions" }
+  ],
+  "sequence": true,
+  "pages": {
+    "index.html": "index.md",
+    "today.html": "today.md",
+    "vision.html": "vision.md",
+    "providers.html": "providers.md",
+    "steps.html": "steps.md",
+    "questions.html": "questions.md"
+  },
+  "copy": ["img"],
+  "evidence": [
+    "../../research/social-sign-in.md",
+    "../../research/parent-login.md",
+    "../../runbooks/social-sign-in.md",
+    "../../runbooks/supabase-projects.md",
+    "../../../apps/web/src/parent/auth.ts",
+    "../../../apps/web/src/parent/route.ts",
+    "../../../apps/api/src/auth.ts",
+    "../../../supabase/migrations/20261029120000_parent_login.sql",
+    "../../../infra/supabase-auth/auth.sh",
+    "../../../infra/supabase-auth/prod.json",
+    "../../../infra/supabase-auth/dev.json",
+    "../../../infra/terraform/modules/app/api.tf"
+  ]
+}
