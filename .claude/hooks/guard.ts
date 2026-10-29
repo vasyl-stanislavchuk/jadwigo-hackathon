@@ -267,265 +267,21 @@ function deployDenial(cmd: string, commands: string[][]): string | undefined {
 
 const USE_DEV_PR = "Write the body with /dev-pr into a file, then pass it with --body-file <path>.";
 
-/**
- * The body a heredoc in the same command writes to file, since the hook runs first. Only a heredoc
- * redirected into the file counts (`cat > file <<EOF`, `<<EOF > file`, `tee file <<EOF`): one that
- * only feeds a command naming the file (`cat file <<EOF`, `grep x file <<EOF`) never writes it.
- */
-function heredocBody(full: string, file: string): string | undefined {
-  for (let at = full.indexOf(file); at >= 0; at = full.indexOf(file, at + 1)) {
-    const lineStart = full.lastIndexOf("\n", at - 1) + 1;
-    const nl = full.indexOf("\n", at);
-    const lineEnd = nl < 0 ? full.length : nl;
-    // The simple command around the file on its line: no ; & | between them.
-    const head = full.slice(lineStart, at).split(/[;&|]/).pop() ?? "";
-    const tail = full.slice(at + file.length, lineEnd).split(/[;&|]/)[0] ?? "";
-    const into = /(^|[^0-9&>])>>?\s*['"]?$/.test(head) || /(^|\s)tee(\s+-\w+)*\s+['"]?$/.test(head);
-    const op = /(?<!<)<<(?!<)-?\s*(['"]?)(\w+)\1/.exec(head + " " + tail);
-    if (!into || !op || nl < 0) continue;
-    const delim = op[2] ?? "";
-    const rest = full.slice(nl + 1);
-    const end = new RegExp(`(^|\\n)${delim}[ \\t]*(\\n|$)`).exec(rest);
-    if (end) return rest.slice(0, end.index + (end[1] ? 1 : 0));
-  }
-  return undefined;
-}
-
-/** A command line as the shell tokenizes it, without running it. Offsets are offsets in the line. */
-interface ShellText {
-  /** The line with heredoc bodies, quoted strings, backslash escapes and comments blanked. */
-  masked: string;
-  /** Offsets where the shell expands no `$`: single quotes, escapes, comments, quoted heredocs. */
-  literal: Uint8Array;
-  /** Heredoc bodies, [start, end) in the line. */
-  bodies: Array<{ start: number; end: number }>;
-  /** False when a `<<` could not be read as a heredoc, so lines after it may be its body. */
-  exact: boolean;
-}
-
-/**
- * One pass, left to right, as the shell reads: a quote, an escape or a comment hides what is in
- * it, and a heredoc body starts on the line after its operator and ends at its delimiter line.
- */
-function readShell(full: string): ShellText {
-  const n = full.length;
-  const out = full.split("");
-  const literal = new Uint8Array(n);
-  const blank = (a: number, b: number, lit: boolean) => {
-    for (let k = a; k < Math.min(b, n); k++) {
-      out[k] = " ";
-      if (lit) literal[k] = 1;
-    }
-  };
-  const bodies: ShellText["bodies"] = [];
-  const op = /<<(-?)[ \t]*(?:'(\w+)'|"(\w+)"|(\\?)(\w+))(?=[\s;&|<>)]|$)/y;
-  let pending: Array<{ delim: string; dash: boolean; quoted: boolean }> = [];
-  let exact = true;
-  let i = 0;
-  while (i < n) {
-    const c = full[i];
-    if (c === "\n" && pending.length > 0) {
-      let start = i + 1;
-      for (const h of pending) {
-        let end = n;
-        for (let k = start; k < n; ) {
-          const nl = full.indexOf("\n", k);
-          const e = nl < 0 ? n : nl;
-          const line = full.slice(k, e);
-          if ((h.dash ? line.replace(/^\t+/, "") : line) === h.delim) {
-            end = e;
-            break;
-          }
-          k = e + 1;
-        }
-        blank(start, end, h.quoted);
-        bodies.push({ start, end });
-        start = end + 1;
-      }
-      pending = [];
-      i = start - 1;
-    } else if (c === "\\") {
-      blank(i, i + 2, true);
-      i += 2;
-    } else if (c === "'") {
-      const j = full.indexOf("'", i + 1);
-      const e = j < 0 ? n : j + 1;
-      blank(i, e, true);
-      i = e;
-    } else if (c === '"') {
-      let j = i + 1;
-      while (j < n && full[j] !== '"') {
-        if (full[j] === "\\") literal[j + 1] = 1;
-        j += full[j] === "\\" ? 2 : 1;
-      }
-      blank(i, j + 1, false);
-      i = j + 1;
-    } else if (c === "#" && (i === 0 || /[\s;&|()]/.test(full[i - 1] ?? ""))) {
-      const j = full.indexOf("\n", i);
-      const e = j < 0 ? n : j;
-      blank(i, e, true);
-      i = e;
-    } else if (full.startsWith("<<", i) && full[i + 2] !== "<" && full[i - 1] !== "<") {
-      op.lastIndex = i;
-      const m = op.exec(full);
-      if (m) {
-        const delim = m[2] ?? m[3] ?? m[5] ?? "";
-        pending.push({ delim, dash: m[1] === "-", quoted: m[5] === undefined || m[4] === "\\" });
-        i += m[0].length;
-      } else {
-        exact = false;
-        i += 2;
-      }
-    } else {
-      i++;
-    }
-  }
-  return { masked: out.join(""), literal, bodies, exact };
-}
-
-/** A value the guard pins: one word that splits, globs and tilde-expands to itself. */
-const PINNED = /^(?:"([\w./@%+=:,-]+)"|'([\w./@%+=:,-]+)'|([\w./@%+=:,-]+))$/;
-const KEYWORDS =
-  /\b(if|then|else|elif|fi|for|select|while|until|do|done|case|esac|function|coproc)\b/;
-/** Commands that run code or set a variable named by an argument (bash and zsh). */
-const SETS_BY_NAME = new Set(
-  (
-    "source . eval trap declare typeset local export readonly let read mapfile readarray printf " +
-    "getopts unset wait set shopt enable builtin alias unalias hash integer float vared zparseopts " +
-    "zstyle print sysread zstat zformat zregexparse strftime noglob functions emulate setopt " +
-    "unsetopt autoload zmodload fc bind compgen"
-  ).split(" "),
-);
-const READ = /\$(?:\{(\w+)\}|(\w+))/g;
-
-/**
- * `$S` and `${S}` as the shell sees them at the gh call, which starts at `ghAt`. A name is pinned
- * only by one literal assignment of its own (`S=/a/b`, `export S=/a/b`) before the gh call, in the
- * same shell, that runs whatever ran before it, with nothing else on the line naming it again,
- * and only to an absolute path.
- * Anything else leaves `$S` as it is, and the caller denies: a name set twice or read before it is
- * set; behind if, while, &&, || or a function; in a pipe, a subshell, a group or the background;
- * on the gh call itself (`S=x gh …`); by read, printf -v, source, eval and the like; a line the
- * guard cannot read ($(…), backticks, $'…', ${S:…}, arithmetic, an unread heredoc); and every name
- * from the environment, since the Bash tool's shell need not share the hook's.
- */
-function expandVars(
-  full: string,
-  shell: ShellText,
-  ghAt: number,
-): (start: number, end: number) => string {
-  const none = (start: number, end: number) => full.slice(start, end);
-  const prefix = full.slice(0, ghAt);
-  const mPrefix = shell.masked.slice(0, ghAt);
-  const live = prefix.split(""); // what the shell expands: quoted heredoc bodies blanked
-  const code = prefix.split(""); // what the shell runs: every heredoc body blanked
-  for (const b of shell.bodies) {
-    for (let k = b.start; k < Math.min(b.end, ghAt); k++) {
-      code[k] = " ";
-      if (shell.literal[k]) live[k] = " ";
-    }
-  }
-  const liveText = live.join("");
-  if (
-    !shell.exact ||
-    KEYWORDS.test(mPrefix) ||
-    /\bIFS\b/.test(prefix) ||
-    /[(){}[\]]/.test(mPrefix.replace(/\$\{\w+\}/g, "")) ||
-    /\$\(|`|\$'|\$"|\$\[|\$\{(?!\w+\})|\(\(/.test(liveText)
-  ) {
-    return none;
-  }
-
-  type Stmt = { a: number; b: number; before: string; after: string };
-  const stmts: Stmt[] = [];
-  let a = 0;
-  let before = "";
-  for (const m of mPrefix.matchAll(/&&|\|\||\|&|;;|;&|[;|\n]|(?<![<>])&(?![>&])/g)) {
-    const at = m.index ?? 0;
-    if (mPrefix.slice(a, at).trim() === "") {
-      if (before === "" || before === ";" || before === "\n") before = m[0]; // `x &&\n y` is one line
-    } else {
-      stmts.push({ a, b: at, before, after: m[0] });
-      before = m[0];
-    }
-    a = at + m[0].length;
-  }
-  if (mPrefix.slice(a).trim() !== "") stmts.push({ a, b: ghAt, before, after: "gh" });
-
-  const vars = new Map<string, { value: string; at: number }>();
-  const twice = new Set<string>();
-  let lastPinned = false;
-  for (const s of stmts) {
-    const text = full.slice(s.a, s.b);
-    const words = [...text.matchAll(/\S+/g)];
-    const first = words[0]?.[0] === "export" ? 1 : 0;
-    const pairs = words.slice(first).map((w) => ({
-      m: /^([A-Za-z_]\w*)=(.*)$/.exec(w[0]),
-      at: s.a + (w.index ?? 0),
-    }));
-    const pure = pairs.length > 0 && pairs.every((p) => p.m && PINNED.test(p.m[2] ?? ""));
-    if (!pure) {
-      const plain = code
-        .slice(s.a, s.b)
-        .join("")
-        .replace(READ, (r, x?: string, y?: string) => {
-          return vars.get(x ?? y ?? "")?.value ?? r;
-        });
-      const tokens = plain.replace(/[\\"']/g, "").split(/[\s;&|<>]+/);
-      if (tokens.some((t) => SETS_BY_NAME.has(t))) return none;
-      lastPinned = false;
-      continue;
-    }
-    const runs: boolean =
-      ["", ";", "\n", "&"].includes(s.before) || (s.before === "&&" && lastPinned);
-    lastPinned = runs && [";", "\n", "&&", "||"].includes(s.after);
-    for (const p of pairs) {
-      const name = p.m?.[1] ?? "";
-      const v = PINNED.exec(p.m?.[2] ?? "");
-      const value = v?.[1] ?? v?.[2] ?? v?.[3];
-      // A relative value would resolve against wherever a cd before the gh call moved to.
-      const relative = value === undefined || !value.startsWith("/");
-      if (vars.has(name) || twice.has(name) || !lastPinned || relative || value === undefined) {
-        vars.delete(name);
-        twice.add(name);
-      } else {
-        vars.set(name, { value, at: p.at });
-      }
-    }
-  }
-  // Anything else that names a pinned variable may set it: only `$S` and `${S}` read it.
-  for (const [name, v] of vars) {
-    for (const m of prefix.matchAll(new RegExp(`\\b${name}\\b`, "g"))) {
-      const at = m.index ?? 0;
-      const read =
-        prefix[at - 1] === "$" ||
-        (prefix.slice(at - 2, at) === "${" && prefix[at + name.length] === "}");
-      if (!read && at !== v.at) vars.delete(name);
-    }
-  }
-  // Every read before the gh call is of a pinned name, after its assignment.
-  for (const m of liveText.matchAll(READ)) {
-    const v = vars.get(m[1] ?? m[2] ?? "");
-    if (!v || v.at > (m.index ?? 0)) return none;
-  }
-  return (start, end) =>
-    full
-      .slice(start, end)
-      .replace(READ, (r, x: string | undefined, y: string | undefined, off: number) => {
-        if (shell.literal[start + off]) return r;
-        return vars.get(x ?? y ?? "")?.value ?? r;
-      });
-}
-
-const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
 /** gh pr create always carries a body file that passes check-pr-body; gh pr edit does when it sets the body. */
+/** The body a heredoc in the same command writes to file (`cat > file <<'EOF'`), since the hook runs first. */
+function heredocBody(full: string, file: string): string | undefined {
+  const at = full.indexOf(file);
+  if (at < 0) return undefined;
+  const after = full.slice(at + file.length);
+  const m = /^['"]?\s*<<-?\s*(['"]?)(\w+)\1[^\n]*\n([\s\S]*?)\n\2[ \t]*(\n|$)/.exec(after);
+  return m?.[3];
+}
+
 function prBodyDenial(
   cmd: string,
   full: string,
   args: string[],
   cwd: string | undefined,
-  env: Env,
 ): string | undefined {
   const setsBody = args.some((a) =>
     /^(--body|-b|--body-file|-F|--fill|--fill-first|--fill-verbose)(=|$)/.test(a),
@@ -538,36 +294,59 @@ function prBodyDenial(
   if (args[1] === "edit" && !setsBody && !inline) return undefined;
   if (inline || args.some((a) => /^--fill/.test(a)))
     return `an inline or generated PR body skips the /dev-pr shape. ${USE_DEV_PR}`;
-  // The path is read from the full line, where its quotes and variables still are. Heredocs and
-  // quoted strings are blanked to the same length, so an offset in masked is one in full.
-  const shell = readShell(full);
-  const masked = shell.masked;
-  const ghAt = Math.max(masked.search(/\bgh\s+pr\s+(create|edit)\b/), 0);
-  const end = masked.slice(ghAt).search(/&&|\|\||;|\n/);
-  const expand = expandVars(full, shell, ghAt);
-  const segment = expand(ghAt, end < 0 ? full.length : ghAt + end);
-  const m = /(?:^|\s)(?:--body-file|-F)(?:=|\s+)(?:"([^"]*)"|'([^']*)'|(\S+))/.exec(segment);
-  const file = m?.[1] ?? m?.[2] ?? m?.[3];
+  const file = /(?:^|\s)(?:--body-file|-F)(?:=|\s+)(['"]?)([^'"\s]+)\1/.exec(raw)?.[2];
   if (!file || file === "-") return `this PR has no body file. ${USE_DEV_PR}`;
-  const later = `the guard reads the body before the command runs, so write ${file} in one call and run gh pr create --body-file <path> in the next.`;
-  if (file.includes("$")) return later;
-  const before = expand(0, ghAt);
-  const fresh = heredocBody(before, file);
-  const f = escapeRe(file);
-  const edited = new RegExp(`\\b(sed\\s+-i|perl\\s+-\\w*i|python3?|tee)\\b[^\\n;&|]*${f}`);
-  const written = new RegExp(`>>?\\s*['"]?${f}`);
-  const unquoted = before.replace(/["']/g, "");
-  const touched = (re: RegExp) => re.test(before) || re.test(unquoted);
-  // cp, mv, install, ln and rsync anywhere on a line that names the path may write it.
-  const copied = /(^|[\s;&|])(cp|mv|install|ln|rsync)\s/.test(before) && unquoted.includes(file);
-  if (copied || touched(edited) || (fresh === undefined && touched(written))) return later;
-  const home = file.startsWith("~/") ? join(env["HOME"] ?? "~", file.slice(2)) : file;
+  const home = file.startsWith("~/") ? join(process.env["HOME"] ?? "~", file.slice(2)) : file;
   const path = isAbsolute(home) ? home : join(cwd ?? ".", home);
-  const body = fresh ?? (existsSync(path) ? readFileSync(path, "utf8") : undefined);
+  const body = existsSync(path) ? readFileSync(path, "utf8") : heredocBody(full, file);
   if (body === undefined) return `the body file ${file} does not exist. ${USE_DEV_PR}`;
   const problems = checkPrBody(body);
   if (problems.length > 0) return `the PR body in ${file} is ${problems.join("; ")}. ${USE_DEV_PR}`;
   return undefined;
+}
+
+type Word = { text: string; bare: boolean };
+
+/**
+ * The one command main's check above may deny that the guard still allows (dl-5ssh.69): the whole
+ * line is a single gh pr create or gh pr edit with no shell syntax at all, and one --body-file or
+ * -F naming a literal absolute path whose file on disk has the /dev-pr shape. Nothing on the line
+ * is expanded or interpreted. Anything else (a variable, a relative path, more than one command)
+ * keeps main's answer.
+ */
+function plainBodyFile(cmd: string, env: Env): boolean {
+  const line = cmd.trim();
+  if (/[\n\r]/.test(line)) return false;
+  // A word is a bare run of safe characters, or a quoted string with no $, backtick or backslash.
+  const next = /[ \t]*(?:"([^"$`\\]*)"|'([^'$`\\]*)'|([A-Za-z0-9._/:,@%+=~-]+))(?=[ \t]|$)/y;
+  const words: Word[] = [];
+  for (let i = 0; i < line.length; i = next.lastIndex) {
+    next.lastIndex = i;
+    const m = next.exec(line);
+    if (!m) return false;
+    words.push({ text: m[1] ?? m[2] ?? m[3] ?? "", bare: m[3] !== undefined });
+  }
+  const [gh, pr, verb] = words;
+  if (!gh?.bare || !pr?.bare || !verb?.bare) return false;
+  if (gh.text !== "gh" || pr.text !== "pr" || !["create", "edit"].includes(verb.text)) return false;
+  const paths: Array<Word | undefined> = [];
+  for (const [k, w] of words.entries()) {
+    if (w.text === "--body-file" || w.text === "-F") paths.push(words[k + 1]);
+    else if (w.text.startsWith("--body-file=")) {
+      const text = w.text.slice("--body-file=".length);
+      paths.push(w.bare && !text.includes("~") ? { text, bare: true } : undefined);
+    } else if (/^(--body|-b|--fill|--fill-first|--fill-verbose)(=|$)|^-[A-Za-z]{2,}/.test(w.text)) {
+      return false; // an inline body, a generated one, or a short-flag cluster such as -dF
+    }
+  }
+  const path = paths.length === 1 ? paths[0] : undefined;
+  if (!path?.bare || !/^(\/|~\/)[A-Za-z0-9._/-]*$/.test(path.text)) return false;
+  // `~` is expanded only at the start of the path; anywhere else on the line it is refused.
+  if (words.some((w) => w.bare && w !== path && w.text.includes("~"))) return false;
+  const home = env["HOME"];
+  if (path.text.startsWith("~/") && !home) return false;
+  const file = path.text.startsWith("~/") ? join(home ?? "", path.text.slice(2)) : path.text;
+  return existsSync(file) && checkPrBody(readFileSync(file, "utf8")).length === 0;
 }
 
 function bashDenial(
@@ -681,8 +460,8 @@ function bashDenial(
 
     // 5. PR bodies have the /dev-pr shape, checked here so a session fixes it before CI does.
     if (prog === "gh" && args[0] === "pr" && (args[1] === "create" || args[1] === "edit")) {
-      const reason = prBodyDenial(bare, cmd, args, cwd, env);
-      if (reason) return reason;
+      const reason = prBodyDenial(bare, cmd, args, cwd);
+      if (reason && !plainBodyFile(cmd, env)) return reason;
     }
 
     // 6. GitHub: the merge steward and ci-ok decide a merge. Nobody approves, admin-merges or

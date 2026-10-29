@@ -301,113 +301,75 @@ describe("guard: PR bodies have the /dev-pr shape", () => {
       `cat > ${fresh} <<'EOF'\n${text}EOF\ngh pr create --title t --body-file ${fresh}`;
     expect(pr(write(body))).toBeUndefined();
     expect(pr(write("## Summary\n\nonly this\n"))).toMatch(/Merge Danger/);
-    expect(pr(`cat <<'EOF' > ${fresh}\n${body}EOF\ngh pr create -F ${fresh}`)).toBeUndefined();
   });
 
-  test("a heredoc that only feeds a command naming the body file does not write it", () => {
-    const body = "## Summary\n\nx\n\n## Evidence\n\ny\n\n## Merge Danger\n\n**Door:** two-way\n";
-    const gh = `gh pr create --title t --body-file ${bad}`;
-    expect(pr(`cat ${bad} <<'EOF'\n${body}EOF\n${gh}`)).toMatch(/Merge Danger/);
-    expect(pr(`grep x ${bad} <<'EOF'\n${body}EOF\n${gh}`)).toMatch(/Merge Danger/);
-    expect(pr(`cat > ${bad} <<<EOF\n${body}EOF\n${gh}`)).toMatch(/before the command runs/);
-  });
-
-  test("a body file path is read the way the shell would (dl-5ssh.69)", () => {
-    const body = "## Summary\n\nx\n\n## Evidence\n\ny\n\n## Merge Danger\n\n**Door:** two-way\n";
-    expect(
-      pr(
-        `S=${dir}/s; cat > $S/b.md <<'EOF'\n${body}EOF\ngh pr create --title t --body-file $S/b.md`,
-      ),
-    ).toBeUndefined();
-    expect(pr(`P="${good}" && gh pr create --title t --body-file "$P"`)).toBeUndefined();
-    expect(pr("gh pr create --title t --body-file $(mktemp)")).toMatch(/before the command runs/);
-    expect(pr(`sed -i '' 's/x/y/' ${good} && gh pr create --body-file ${good}`)).toMatch(
-      /before the command runs/,
-    );
-    expect(
-      pr(`git commit -m "the guard's check: gh pr create --body-file with a body" && git push`),
-    ).toBeUndefined();
-    expect(pr(`gh pr create --title "x;y" --body-file ${good}`)).toBeUndefined();
-  });
-
-  test("a variable the guard cannot pin to one value is denied", () => {
-    const bump = `P=${bad}; gh pr create --title t --body-file "$P"; P=${good}`;
-    expect(pr(bump)).toMatch(/Merge Danger/);
-    const twice = `P=${bad}; P=${good}; gh pr create --title t --body-file $P`;
-    expect(pr(twice)).toMatch(/before the command runs/);
-    const branch = `if false; then P=${good}; fi; gh pr create --title t --body-file $P`;
-    expect(pr(branch)).toMatch(/before the command runs/);
-    const sub = `(P=${good}); gh pr create --title t --body-file $P`;
-    expect(pr(sub)).toMatch(/before the command runs/);
-  });
-
-  test("a variable from the environment, or set from something not literal, is denied", () => {
-    // The Bash tool's shell starts from the user's profile, so the hook's env is not the shell's.
-    const prEnv = (command: string) => denial(bash(command), { P: good }, onBranch("lane/a"));
-    expect(prEnv("gh pr create --title t --body-file $P")).toMatch(/before the command/);
-    expect(prEnv("read P; gh pr create --title t --body-file $P")).toMatch(/before the command/);
-    expect(prEnv("P=$(mktemp); gh pr create --title t --body-file $P")).toMatch(
-      /before the command/,
-    );
-  });
-
-  test("an assignment the shell may not run, or not in this shell, pins nothing", () => {
-    const gh = "gh pr create --title t --body-file $P";
-    for (const before of [
-      `false && P=${good}; `, // skipped when false fails
-      `P=${good} | true; `, // a pipe runs it in a subshell
-      `P=${good} & `, // so does the background
-      `P=${good} cmd; `, // it lasts for cmd only
-      `P=${good} `, // on the gh call, $P is expanded before it applies
-      `false && x >& P=${good}; `, // a redirect target, not an assignment
-      `x # ; P=${good}\n`, // a comment
-      `echo \\; P=${good}; `, // an argument after an escaped ;
+  test("one plain gh call with a literal absolute body file is allowed (dl-5ssh.69)", () => {
+    for (const command of [
+      `gh pr create --draft --title "x" --body-file ${good}`,
+      `gh pr edit 12 --body-file ${good}`,
+      `gh pr create --title "x;y" --body-file ${good}`,
+      `gh pr create --title 'a && b | c' -F ${good}`,
+      `  gh pr create --title t --body-file=${good}  `,
     ]) {
-      expect(pr(before + gh)).toMatch(/before the command runs/);
+      expect(pr(command)).toBeUndefined();
     }
+    const home = denial(bash("gh pr edit 12 --body-file ~/good.md"), { HOME: dir }, onBranch("x"));
+    expect(home).toBeUndefined();
   });
 
-  test("a pinned variable that something else may set again is not pinned", () => {
-    const gh = "gh pr create --title t --body-file $P";
-    for (const after of [
-      `source ./x; `,
-      `printf -v P %s ${bad}; `,
-      `P+=x; `,
-      `: \${P:=x}; `,
-      `C=declare; X=P; $C $X=${bad}; `,
-    ]) {
-      expect(pr(`P=${good}; ${after}${gh}`)).toMatch(/before the command runs/);
-    }
-    expect(pr(`P=${good}; gh pr create --title t --body-file '$P'`)).toMatch(/before the command/);
-  });
-
-  test("a pinned relative path is denied, since a cd may move it", () => {
+  test("anything else is judged as on main: variables, relative paths, several commands", () => {
+    const body = "## Summary\n\nx\n\n## Evidence\n\ny\n\n## Merge Danger\n\n**Door:** two-way\n";
     const other = mkdtempSync(join(tmpdir(), "pr-body-cd-"));
-    for (const sep of [";", " &&"]) {
-      // The hook's cwd holds a good good.md; the shell reads the one in the folder it moved to.
-      const command = `P=good.md; cd ${other}${sep} gh pr create --title t --body-file $P`;
-      const input = { ...bash(command), cwd: dir };
-      expect(denial(input, {}, onBranch("lane/a"))).toMatch(/before the command runs/);
-    }
-  });
-
-  test("cp, mv, install, ln or rsync onto the body file in the same command is a write", () => {
-    for (const tool of ["cp", "mv", "install", "ln -sf", "rsync"]) {
-      expect(pr(`P=${good}; ${tool} ${bad} $P; gh pr create --title t --body-file $P`)).toMatch(
-        /before the command runs/,
-      );
-    }
-    expect(pr(`cp ${bad} ${good} && gh pr create --title t --body-file ${good}`)).toMatch(
-      /before the command runs/,
-    );
-  });
-
-  test("a body file written through a quoted path in the same command is not read early", () => {
-    expect(pr(`S=${dir}; echo x > "$S"/good.md; gh pr create --body-file $S/good.md`)).toMatch(
-      /before the command runs/,
-    );
-    expect(pr(`P=${good} && gh pr create --body-file "$P"`)).toBeUndefined();
-    expect(pr(`export P=${good}; gh pr create --body-file $P`)).toBeUndefined();
+    const gh = "gh pr create --title t --body-file $P";
+    const denied = [
+      // round 1: the shell may pass another file than the one an assignment names
+      `P=${bad}; gh pr create --title t --body-file "$P"; P=${good}`,
+      `P=${bad}; P=${good}; ${gh}`,
+      `if false; then P=${good}; fi; ${gh}`,
+      `(P=${good}); ${gh}`,
+      `P="${good}" && gh pr create --title t --body-file "$P"`,
+      `export P=${good}; ${gh}`,
+      "gh pr create --title t --body-file $(mktemp)",
+      "gh pr create --title t --body-file `mktemp`",
+      `gh pr create --title "$(true)" --body-file ${bad}`,
+      // round 2: assignments the shell may not run, or not in this shell, and later changes
+      ...[
+        `false && P=${good}; `,
+        `P=${good} | true; `,
+        `P=${good} & `,
+        `P=${good} cmd; `,
+        `P=${good} `,
+        `false && x >& P=${good}; `,
+        `x # ; P=${good}\n`,
+        `echo \\; P=${good}; `,
+        `read P; `,
+        `P=$(mktemp); `,
+      ].map((before) => before + gh),
+      ...[`source ./x; `, `printf -v P %s ${bad}; `, `P+=x; `, `: \${P:=x}; `].map(
+        (after) => `P=${good}; ${after}${gh}`,
+      ),
+      `C=declare; X=P; $C $X=${bad}; P=${good}; ${gh}`,
+      `P=${good}; gh pr create --title t --body-file '$P'`,
+      `S=${dir}; echo x > "$S"/good.md; gh pr create --body-file $S/good.md`,
+      // round 3: a relative path after a cd, and cp, mv, install, ln or rsync onto the file
+      `P=good.md; cd ${other}; ${gh}`,
+      `P=good.md; cd ${other} && ${gh}`,
+      ...["cp", "mv", "install", "ln -sf", "rsync"].map((t) => `P=${good}; ${t} ${bad} $P; ${gh}`),
+      // round 3: a heredoc that only feeds a command naming the body file never writes it
+      `cat ${bad} <<'EOF'\n${body}EOF\ngh pr create --title t --body-file ${bad}`,
+      `grep x ${bad} <<'EOF'\n${body}EOF\ngh pr create --title t --body-file ${bad}`,
+      `cat > ${bad} <<<EOF\n${body}EOF\ngh pr create --title t --body-file ${bad}`,
+      // the allowlist itself: one word out of place keeps main's answer
+      `gh pr create --title t --body-file ${bad}`,
+      `gh pr create --title t --body x --body-file ${good}`,
+      `gh pr create --title "$P" --body-file ${good}x`,
+      `gh pr create --title t --body-file "${dir}/missing.md"`,
+      `gh pr create --title t --body-file ${dir}/missing.md`,
+      `gh pr create --title t --body-file good.md`,
+    ];
+    expect(denied.filter((command) => pr(command) === undefined)).toEqual([]);
+    const home = denial(bash("gh pr edit 12 --body-file ~/bad.md"), { HOME: dir }, onBranch("x"));
+    expect(home).toMatch(/^the /);
   });
 
   test("an edit that leaves the body alone is allowed", () => {
