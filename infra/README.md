@@ -12,8 +12,8 @@ Lambda (Node 24, arm64, `index.handler`), its role, 90-day log groups, the SSM S
 `DATABASE_URL`, and per-route throttles of 10 a second, burst 20, on every route but health
 (`jadwigo-platform/decisions/2026-10-28-the-app-s-http-api-stage-throttles-every-route-but-health-at-10`).
 The HTTP API's route list in `terraform/main.tf` mirrors `ROUTES` in `packages/contracts/src/routes.ts`:
-a route added there is added here too, or it falls to `$default` and its stage-default limit. `bun tools/src/check-infra-routes.ts`, in `make check` and CI, fails when the two differ. Terraform owns no file in the bucket; `make site-deploy` uploads the Astro build of `apps/site`. `dl-5ssh.34.4` adds the other
-modules, the OIDC roles script and the plan on every PR; `dl-w0b4.4` extends the site module.
+a route added there is added here too, or it falls to `$default` and its stage-default limit. `bun tools/src/check-infra-routes.ts`, in `make check` and CI, fails when the two differ. Terraform owns no file in the bucket; `make site-deploy` uploads the Astro build of `apps/site`. `dl-5ssh.34.4` adds the plan
+role (`bootstrap/`, below) and the plan on every PR; `dl-w0b4.4` extends the site module.
 
 The Lambda runs at most `app_reserved_concurrency` instances at once (`dl-5ssh.75`), 150 in prod. Each
 instance holds 1 pooled connection (pool max 1, `dl-5ssh.25`), and jadwigo-prod's pooler (Supabase Pro,
@@ -87,3 +87,22 @@ aws --profile sergii s3api put-public-access-block --bucket jadwigo-terraform-st
 The first time, in order: the state bucket above, `plan`, `apply` (the certificate and the distribution take
 10 to 15 minutes), then `site-deploy`. Until `site-deploy` runs, the site answers 404. For app.jadwigo.pl:
 `apply`, the `put-parameter` above, then `deploy`, then `curl https://app.jadwigo.pl/api/health`.
+
+**The plan role is the owner's to create, once** (`bootstrap/`, `dl-5ssh.34.4`). `bootstrap/00-oidc.sh`
+reuses the account's GitHub OIDC provider and creates `jadwigo-boundary` and `jadwigo-github-plan`. It
+refuses an agent's shell and is safe to run again:
+
+```sh
+infra/bootstrap/00-oidc.sh      # then run the gh variable set line it prints
+```
+
+The role trusts only this repo's `pull_request` runs, with the immutable-id subject
+(`repo:<owner>@<id>/<repo>@<id>:pull_request`, which GitHub sends for repos created after 15 July 2026).
+The repo is public and a PR's run executes the PR's own workflow, so the role can only read: no write
+verb, a Deny on `kms:Decrypt`, no SSM value but the bank alias (a String), and no S3 object but the
+prod state (decision bead `dl-w146`). The AWS provider refreshes an `aws_ssm_parameter` with
+decryption, so the CI plan runs `-refresh=false -lock=false`: it shows the config against the state,
+and drift shows only in the owner's `make -C infra plan`. `bun tools/src/check-bootstrap.ts` (in
+`make check`) fails on a write verb, a missing Deny, or a wider trust. `jadwigo-boundary` is the ceiling
+every jadwigo role carries: no role under it can edit it, shed it, create a role without it, or make
+a user or an access key. There is no apply role; the owner applies by hand.
