@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Need, SearchEnvelope } from "./bank.ts";
+import { Need, QuestionBody, SearchEnvelope } from "./bank.ts";
 import { AssignmentId, AttemptId, LearnerId } from "./ids.ts";
 import { Language } from "./records.ts";
 import {
@@ -278,6 +278,21 @@ export const ROUTES = {
     summary: "Searches the question bank: a need in, ranked questions out.",
     tag: "bank",
     description: "Called with the bank's shared read token, not a Supabase token.",
+  },
+  /**
+   * One bank question's body with its key, from the content bucket (`src/bank.ts`). The id is
+   * checked against `BankQuestionId` in apps/api after the read token, so a caller without the
+   * token is 401 whatever id it sends.
+   */
+  questionBody: {
+    method: "GET",
+    path: "/api/v1/questions/{id}",
+    params: z.object({ id: z.string() }),
+    body: null,
+    response: QuestionBody,
+    status: 200,
+    // Like questionSearches: the bank's shared read token, checked in apps/api (questions.ts).
+    auth: "none",
   },
 } as const satisfies Record<string, Route>;
 export type RouteName = keyof typeof ROUTES;
