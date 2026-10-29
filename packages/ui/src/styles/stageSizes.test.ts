@@ -68,6 +68,15 @@ describe("sizes per answer kind", () => {
   // row and its gap on top), and the dock, with its 2px line and padding 12 16 16, 342 and 406.
   // dl-uukj.29.111: the top padding is 32, so the fold arrow's 28 below the dock line hides no key:
   // the docks are 362 and 426.
+  // dl-uukj.29.140 (owner 2026-10-29): under 720 px of height the docked keys are the kid layer's
+  // 56, never less, so at 360x640 the dock is 298 (four rows of 56, three gaps of 8, 50 around).
+  it("a short phone's docked keys drop to the kid tap minimum, 56", () => {
+    expect(STAGE).toContain(
+      "@media (height < 45rem) { .kid-step-shell[data-framed] [data-tools-dock] { --kid-key-size: var(--kid-tap-min); } }",
+    );
+    expect(read("kids.css")).toContain("--kid-tap-min: 3.5rem;");
+  });
+
   it("the phone keypad: keys 72 and 8 apart, the sign row 56, docked under a 2px line, padding 32 16 16", () => {
     const pad = read("../../../lesson-kit/src/parts/Keypad.tsx");
     expect(read("kids.css")).toContain("--kid-key-size: 4.5rem;");

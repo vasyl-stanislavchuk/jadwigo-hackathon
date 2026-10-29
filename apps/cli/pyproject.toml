@@ -1,10 +1,14 @@
 [project]
 name = "jw"
 version = "0.0.1"
-description = "jw, the jadwigo CLI (dl-5ssh.34.7 fills it), and later jw mcp serve"
+description = "jw, the jadwigo CLI: the question bank verbs and jw mcp serve"
 requires-python = ">=3.12"
 dependencies = [
   "click==8.5.0", # the command tree (src/jw/cli.py)
+  "jsonschema==4.26.0", # the pinned need, envelope and set schemas (src/jw/bank_client.py)
+  # jw mcp serve (src/jw/commands/mcp.py): 2.x is MCPServer, FastMCP's new name, as david-learns
+  # used it; the stdio client in tests/test_mcp.py comes from the same package
+  "mcp==2.3.0",
 ]
 
 [project.scripts]
@@ -13,6 +17,7 @@ jw = "jw.cli:main"
 [dependency-groups]
 dev = [
   "pytest==9.1.1", # the tests in tests/
+  "anyio==4.15.1", # tests/test_mcp.py drives the async MCP client
 ]
 
 [build-system]

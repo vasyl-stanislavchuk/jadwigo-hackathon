@@ -128,7 +128,7 @@ That full row is the parent's. `GET /api/v1/attempts/{id}/results` returns the c
 | # | Pattern | Who calls it | What it runs |
 | --- | --- | --- | --- |
 | 1 | Start an attempt | the player, at `POST /api/v1/assignments/{id}/attempts` | resolve the version, insert `attempt`, insert the first `attempt_question` (position 1 as `seq` 1): one transaction |
-| 2 | Snapshot | the player, on load and reload | the attempt, its attempt questions joined to `lesson_question` (without `key` and unreleased help), and the last `event_id` |
+| 2 | Snapshot | the player, on load and reload | the attempt, the plan (the version's planned questions from `lesson_version_question` in `position` order, explain questions left off), its attempt questions joined to `lesson_question` (without `key` and unreleased help), and the last `event_id` |
 | 3 | Write an answer | the player, `POST /api/v1/attempts/{id}/answers` | judge in `packages/core`, then insert `attempt_answer` with `on conflict (event_id) do nothing`, comparing `body_hash` on conflict; end the attempt question if correct |
 | 4 | Release help | the player's Help, `POST /api/v1/attempts/{id}/questions/{seq}/help` | increment `help_released` under the gate, return one rung |
 | 5 | Ask the next question | the server, inside 3 and 4 | insert one `attempt_question` at the next `seq`, planned or a twin with its `placed` and `added_for` |
