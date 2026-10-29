@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { EventId, ID_SCHEMAS } from "./ids.ts";
 import { RECORDS } from "./records.ts";
-import { ROUTES } from "./routes.ts";
+import { ROUTE_TAGS, ROUTES } from "./routes.ts";
 import * as wire from "./wire.ts";
 
 /**
@@ -194,6 +194,14 @@ describe("RULES.md, API", () => {
     for (const route of Object.values(ROUTES)) {
       expect(["GET", "POST", "PATCH"]).toContain(route.method);
       if (route.method === "GET") expect(route.body).toBeNull();
+    }
+  });
+
+  it("rule 18: every route carries a summary and a tag for the API reference", () => {
+    for (const [name, route] of Object.entries(ROUTES)) {
+      expect(route.summary.trim(), name).not.toBe("");
+      expect(route.summary, name).toMatch(/^[A-Z][a-z]+s .*\.$/);
+      expect(ROUTE_TAGS, name).toContain(route.tag);
     }
   });
 

@@ -116,6 +116,7 @@ export const ROUTES = {
     auth: "none",
     summary: "Reads an attempt: its plan and everything asked so far.",
     tag: "attempts",
+    description: "No sign-in: the attempt id is the access, and whoever holds it may use it.",
   },
   answer: {
     method: "POST",
@@ -128,7 +129,7 @@ export const ROUTES = {
     summary: "Sends one try at the current question, or a skip.",
     tag: "attempts",
     description:
-      "Strict: a field the server owns (`correct`, `mistake_class`, `help_used`) is refused. Idempotent by `event_id`.",
+      "No sign-in: the attempt id is the access, and whoever holds it may use it. Strict: a field the server owns (`correct`, `mistake_class`, `help_used`) is refused. Idempotent by `event_id`.",
   },
   help: {
     method: "POST",
@@ -141,7 +142,7 @@ export const ROUTES = {
     summary: "Releases the next rung of help for one question.",
     tag: "attempts",
     description:
-      "The page sends the `help_released` it has seen, so a retried request returns the same rung. Rung 4 ends the question skipped and asks its twin.",
+      "No sign-in: the attempt id is the access, and whoever holds it may use it. The page sends the `help_released` it has seen, so a retried request returns the same rung. Rung 4 ends the question skipped and asks its twin.",
   },
   patchAttempt: {
     method: "PATCH",
@@ -153,7 +154,8 @@ export const ROUTES = {
     auth: "none",
     summary: "Pauses or resumes an attempt.",
     tag: "attempts",
-    description: "The server finishes an attempt itself.",
+    description:
+      "No sign-in: the attempt id is the access, and whoever holds it may use it. The server finishes an attempt itself.",
   },
   getResults: {
     method: "GET",
@@ -165,6 +167,7 @@ export const ROUTES = {
     auth: "none",
     summary: "Reads an attempt's results in question order, mid-lesson too.",
     tag: "attempts",
+    description: "No sign-in: the attempt id is the access, and whoever holds it may use it.",
   },
   getReview: {
     method: "GET",
@@ -176,7 +179,8 @@ export const ROUTES = {
     auth: "none",
     summary: "Reads a finished attempt's questions again, for the child.",
     tag: "attempts",
-    description: "409 `AttemptNotFinished` before the attempt ends.",
+    description:
+      "No sign-in: the attempt id is the access, and whoever holds it may use it. 409 `AttemptNotFinished` before the attempt ends.",
   },
   getMe: {
     method: "GET",
@@ -293,6 +297,10 @@ export const ROUTES = {
     status: 200,
     // Like questionSearches: the bank's shared read token, checked in apps/api (questions.ts).
     auth: "none",
+    summary: "Reads one bank question's body, with its answer key.",
+    tag: "bank",
+    description:
+      "Called with the bank's shared read token, not a Supabase token: without it the reply is 401, whatever the id.",
   },
 } as const satisfies Record<string, Route>;
 export type RouteName = keyof typeof ROUTES;
