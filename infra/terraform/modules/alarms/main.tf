@@ -19,7 +19,7 @@ locals {
   concurrency_alarm_at = floor(0.8 * var.lambda_concurrency_quota)
   # The function's own cap (dl-5ssh.75) is far below the account's quota, so the account-wide alarm
   # cannot fire from it; this one does, before the cap throttles (dl-5ssh.81).
-  api_concurrency_alarm_at = floor(0.8 * var.function_reserved_concurrency)
+  api_concurrency_alarm_at = max(1, floor(0.8 * var.function_reserved_concurrency))
 
   lambda = { FunctionName = var.function_name }
   api    = { ApiId = var.api_id, Stage = "$default" }
