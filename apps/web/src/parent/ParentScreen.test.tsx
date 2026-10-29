@@ -83,6 +83,7 @@ function client(changes: Partial<ParentClient>): ParentClient {
     createLearner: refused,
     claimAttempt: refused,
     getLearnerAttempts: async () => ({ learner: snapshot.learner, attempts: [] }),
+    getParentReview: refused,
     ...changes,
   };
 }
