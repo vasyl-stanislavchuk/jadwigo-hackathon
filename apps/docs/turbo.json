@@ -11,6 +11,9 @@
     },
     "test": {
       "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/cli/mcp-tools.json"]
+    },
+    "typecheck": {
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/cli/mcp-tools.json"]
     }
   }
 }
