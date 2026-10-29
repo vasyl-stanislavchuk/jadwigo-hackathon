@@ -12,6 +12,7 @@
 
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { extname, isAbsolute, join, relative, resolve } from "node:path";
 import { checkPrBody } from "../../tools/src/check-pr-body.ts";
 
@@ -305,138 +306,59 @@ function prBodyDenial(
   return undefined;
 }
 
-/** `path` as the shell resolves it from `dir`, with ~ expanded; undefined when the guard cannot
- * know it (a `$` in it, or no such folder), so the caller falls back to the session's cwd. */
-function inDir(dir: string | undefined, path: string): string | undefined {
-  if (path.includes("$")) return undefined;
-  const home =
-    path === "~" || path.startsWith("~/") ? join(process.env["HOME"] ?? "~", path.slice(1)) : path;
-  const full = resolve(dir ?? ".", home);
-  return existsSync(full) ? full : undefined;
-}
-
-/** A simple command and the separators written between it and the one before. */
-interface Segment {
-  words: string[];
-  seps: string[];
-}
-
-/** simpleCommands, keeping the separators: (, ), |, ||, &, &&, ; and newline. */
-function segments(text: string): Segment[] {
-  const out: Segment[] = [];
-  let seps: string[] = [];
-  text.split(/(&&|\|\||[;&|()\n])/).forEach((part, i) => {
-    if (i % 2 === 1) {
-      seps.push(part);
-      return;
-    }
-    const words = simpleCommands(part)[0];
-    if (!words) return;
-    out.push({ words, seps });
-    seps = [];
-  });
-  return out;
-}
-
-/** Separators that keep the next command in the same shell, run after the one before. */
-const SEQUENTIAL = new Set(["&&", ";", "\n"]);
-/** Words that may move the shell's folder. Only a plain `cd <path>` among them is followed. */
-const MOVES = /^(cd|pushd|popd|chdir|builtin|eval|source|\.|\{|\})$/;
-
-/**
- * The folder the command at `k` runs in: the session's `cwd`, moved by each `cd <path>` before
- * it that is certain to have run when it runs (dl-5ssh.74). A cd is followed only at top level,
- * only when every separator up to the command is && or ;, and only when it starts a statement or
- * is joined to the command by && alone. Anything else that may move the folder (a subshell, a
- * backgrounded or skippable cd, `cd -`, pushd, popd, builtin, eval, braces) or a path the guard
- * cannot resolve gives back `cwd`: the session's own folder, as main's guard judged every push.
- */
-function runDir(segs: Segment[], k: number, cwd: string | undefined): string | undefined {
-  const before = segs.slice(0, k);
-  if (!before.some((s) => s.words.some((w) => MOVES.test(w)))) return cwd;
-  const seps = segs.slice(1, k + 1).flatMap((s) => s.seps);
-  if (!seps.every((sep) => SEQUENTIAL.has(sep))) return cwd;
-  let dir = cwd;
-  for (const [i, { words }] of before.entries()) {
-    if (!words.some((w) => MOVES.test(w))) continue;
-    const [prog, path, ...rest] = words;
-    if (prog !== "cd" || path === undefined || path === "-" || rest.length > 0) return cwd;
-    const startsStatement = (segs[i]?.seps ?? []).every((sep) => sep !== "&&");
-    const chained = segs.slice(i + 1, k + 1).every((s) => s.seps.every((sep) => sep === "&&"));
-    if (!startsStatement && !chained) return cwd;
-    const next = inDir(dir, path);
-    if (next === undefined) return cwd;
-    dir = next;
-  }
-  return dir;
-}
-
-/**
- * The folder `git -C a -C b ...` runs in: each -C applied in order, relative to the one before.
- * Undefined when git carries any other option of its own (-c, --config-env and the like can set
- * push.default or remote.*.push), so the caller judges the push from cwd.
- */
-function gitDir(words: string[], dir: string | undefined): string | undefined {
-  let where = dir;
-  // The same walk over git's own options as gitSub.
-  for (let i = 1; i < words.length && (words[i] ?? "").startsWith("-"); i++) {
-    if (words[i] !== "-C") return undefined;
-    i++;
-    where = inDir(where, words[i] ?? "");
-    if (where === undefined) return undefined;
-  }
-  return where;
-}
-
-/** Push options that change only how the push reports or tracks, never which refs it sends. */
-const PLAIN_PUSH_OPTIONS = new Set([
-  "-u",
-  "--set-upstream",
-  "-q",
-  "--quiet",
-  "-v",
-  "--verbose",
-  "--progress",
-  "--no-progress",
-  "-n",
-  "--dry-run",
-  "--porcelain",
-]);
-
 const PUSH_TO_MAIN =
   "main is reached only through a PR (squash-merge after ci-ok). Push your branch and open a PR with `gh pr create`.";
 
+/** One unquoted word the shell reads as written: no $, quotes, backslashes, globs or leading -. */
+const WORD = "[A-Za-z0-9._/~][A-Za-z0-9._/~-]*";
+/** The one command whose cd the guard follows (dl-5ssh.74). The owner chose this allowlist. */
+const LANE_PUSH = new RegExp(
+  `^cd (${WORD}) && git push(?: (?:-u|--set-upstream))?(?: origin)?(?: (${WORD}))?(?: 2>&1 \\| tail -\\d+)?$`,
+);
+
 /**
- * A push that lands on main: a refspec naming it, or no refspec from a checkout on main. The line
- * is read with the quotes around a word undone (`"main"`, `'HEAD:main'`) and any other quoted
- * string kept as one word the guard cannot resolve. The checkout is the session's cwd, moved by
- * the cds runDir follows and then by each `git -C` in order. GIT_DIR, GIT_WORK_TREE, --git-dir
- * and --work-tree are not followed: a line naming one is judged from cwd, as main judged it.
+ * Whether the whole line is exactly `cd <path> && git push [-u] [origin] [<feature>]`, and the
+ * folder is a checkout on a branch other than main. Only then is a push that main's check would
+ * deny from the session's folder allowed. Every other line is judged from the session's cwd.
  */
-function pushToMainDenial(
+function lanePush(cmd: string, cwd: string | undefined, branchOf: BranchOf): boolean {
+  const m = LANE_PUSH.exec(cmd.trim());
+  const [, path = "", refspec] = m ?? [];
+  if (!m || (refspec !== undefined && (/main/i.test(refspec) || /^head$/i.test(refspec)))) {
+    return false;
+  }
+  const home = path === "~" || path.startsWith("~/") ? join(homedir(), path.slice(1)) : path;
+  const dir = resolve(cwd ?? ".", home);
+  if (!existsSync(dir)) return false;
+  const branch = branchOf(dir);
+  return branch !== undefined && branch !== "main";
+}
+
+/**
+ * main's push check again, on the line read so quoting cannot hide a push: every backslash escape
+ * blanked (an escaped quote or heredoc marker, `echo \"; git push origin main; echo \"`), the
+ * quotes around a word with no space undone (`"main"`, `-C "."`), and any other quoted string
+ * kept as one word (`_`) rather than dropped. It can only add a denial, never remove one.
+ */
+function hiddenPushDenial(
   cmd: string,
   cwd: string | undefined,
   branchOf: BranchOf,
 ): string | undefined {
-  const text = unquoteWords(cmd)
+  const text = cmd
+    .replace(/\\[\s\S]/g, " ")
+    .replace(/'([^'\s]*)'/g, "$1")
+    .replace(/"([^"\s]*)"/g, "$1")
     .replace(/<<-?\s*(['"]?)(\w+)\1[\s\S]*?\n\2[ \t]*(\n|$)/g, "\n")
-    .replace(/'[^']*'/g, " <quoted> ")
-    .replace(/"(?:[^"\\]|\\.)*"/g, " <quoted> ");
-  const segs = segments(text);
-  const unfollowed = /\bGIT_(DIR|WORK_TREE|CONFIG\w*)\b|--git-dir\b|--work-tree\b/.test(text);
-  for (const [k, { words }] of segs.entries()) {
+    .replace(/'[^']*'/g, " _ ")
+    .replace(/"[^"]*"/g, " _ ");
+  for (const words of simpleCommands(text)) {
     const git = gitSub(words);
     if (git?.sub !== "push") continue;
     const refspecs = git.args.filter((a) => !a.startsWith("-")).slice(1);
-    if (refspecs.some((r) => /(^|:)(refs\/heads\/)?main$/.test(r))) return PUSH_TO_MAIN;
-    if (refspecs.length > 0) continue;
-    // A cd or -C is followed only for a plain push: --all, --branches, --mirror, --tags and any
-    // option not in PLAIN_PUSH_OPTIONS may send main from a feature checkout that holds one.
-    const plain = git.args.every((a) => !a.startsWith("-") || PLAIN_PUSH_OPTIONS.has(a));
-    const where = unfollowed || !plain ? cwd : gitDir(words, runDir(segs, k, cwd));
-    // A folder the guard cannot read, or one that is no checkout, is judged as the session's own.
-    const branch = (where === undefined ? undefined : branchOf(where)) ?? branchOf(cwd);
-    if (branch === "main") return PUSH_TO_MAIN;
+    const toMain = refspecs.some((r) => /(^|:)(refs\/heads\/)?main$/.test(r));
+    const implicit = refspecs.length === 0 && branchOf(cwd) === "main";
+    if ((toMain || implicit) && !lanePush(cmd, cwd, branchOf)) return PUSH_TO_MAIN;
   }
   return undefined;
 }
@@ -526,7 +448,10 @@ function bashDenial(
         ) {
           return "no force-push. Push a new commit on top, or open a new branch.";
         }
-        // A push to main is pushToMainDenial's, below: it reads the folder and unquotes the words.
+        const refspecs = gargs.filter((a) => !a.startsWith("-")).slice(1);
+        const toMain = refspecs.some((r) => /(^|:)(refs\/heads\/)?main$/.test(r));
+        const implicit = refspecs.length === 0 && branchOf(cwd) === "main";
+        if ((toMain || implicit) && !lanePush(cmd, cwd, branchOf)) return PUSH_TO_MAIN;
       }
       if (
         sub === "add" &&
@@ -582,8 +507,8 @@ function bashDenial(
     }
   }
 
-  const toMain = pushToMainDenial(cmd, cwd, branchOf);
-  if (toMain) return toMain;
+  const hidden = hiddenPushDenial(cmd, cwd, branchOf);
+  if (hidden) return hidden;
 
   // Prod through the environment: AWS_PROFILE=prod-admin aws s3 ls
   const prodProfile = assignments(bare).find((a) => /^AWS_PROFILE=\S*prod/i.test(a));
