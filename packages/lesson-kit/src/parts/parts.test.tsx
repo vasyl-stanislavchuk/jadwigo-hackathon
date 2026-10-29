@@ -87,7 +87,7 @@ describe("InlineCode", () => {
 
   it("prints a chip as an outline with no fill", () => {
     const { container } = render(<InlineCode text="`bd ready`" paper />);
-    expect(must(container.querySelector("code")).className).toMatch(/border-black/);
+    expect(must(container.querySelector("code")).className).toMatch(/border-jw-ink/);
     expect(must(container.querySelector("code")).className).not.toMatch(/bg-muted/);
   });
 });
@@ -328,10 +328,10 @@ describe("TerminalCard", () => {
     expect(container.querySelector("[data-copy-failed]")).not.toBeNull();
   });
 
-  it("prints adapted: a black border, the $ kept, wrapped between words, and no copy", () => {
+  it("prints adapted: a border in the ink, the $ kept, wrapped between words, and no copy", () => {
     const { container } = render(<TerminalCard card={lab} language="en" paper />);
     const card = must(container.querySelector<HTMLElement>("[data-terminal]"));
-    expect(card.className).toMatch(/border-black/);
+    expect(card.className).toMatch(/border-jw-ink/);
     expect(card.className).not.toMatch(/code-surface/);
     expect(screen.queryByRole("button")).toBeNull();
     expect(must(container.querySelector('[role="group"][aria-label="Command"]')).className).toMatch(

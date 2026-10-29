@@ -236,11 +236,6 @@
   },
   {
     "path": "parts/InlineCode.tsx",
-    "snippet": "border-black",
-    "why": ""
-  },
-  {
-    "path": "parts/InlineCode.tsx",
     "snippet": "-[0.32em]",
     "why": ""
   },
@@ -362,16 +357,6 @@
   {
     "path": "parts/Term.tsx",
     "snippet": "[length:var(--kid-answer-size)",
-    "why": ""
-  },
-  {
-    "path": "parts/TerminalCard.tsx",
-    "snippet": "border-black",
-    "why": ""
-  },
-  {
-    "path": "parts/TerminalCard.tsx",
-    "snippet": "text-black",
     "why": ""
   },
   {

@@ -10,7 +10,7 @@ import { cn } from "@jadwigo/ui";
 import { Fragment } from "react";
 import { splitInline } from "./code.ts";
 
-/** One chip. `paper` is the printed look: a thin black outline and no fill. */
+/** One chip. `paper` is the printed look: a thin outline in the ink and no fill. */
 export function CodeChip({
   text,
   paper = false,
@@ -23,7 +23,7 @@ export function CodeChip({
       data-inline-code=""
       className={cn(
         "rounded-sm px-[0.32em] py-[0.06em] font-mono text-[0.86em] font-medium [box-decoration-break:clone]",
-        paper ? "border border-black" : "bg-muted text-foreground",
+        paper ? "border border-jw-ink" : "bg-muted text-foreground",
       )}
     >
       {text.split(/( +)/).map((word, index) =>
