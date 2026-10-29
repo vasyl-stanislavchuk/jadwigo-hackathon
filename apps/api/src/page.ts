@@ -55,7 +55,7 @@ export function releasedHelp(
 }
 
 /** The page's half of a lesson question: its family and data, never its key. */
-function pageFamilyQuestion(question: LessonQuestion): PageFamilyQuestion {
+export function pageFamilyQuestion(question: LessonQuestion): PageFamilyQuestion {
   return { family: question.family, data: question.data } as PageFamilyQuestion;
 }
 

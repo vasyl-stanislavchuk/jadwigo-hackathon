@@ -77,8 +77,9 @@ The words themselves are in the root `GLOSSARY.md`. Rules marked **(tested)** fa
 15. **A path is plural nouns of records, nested by ownership.** The parent segment names the owner,
     so the child drops it: `attempt_answer` is `/attempts/{id}/answers`, and `attempt_question` is
     `/attempts/{id}/questions/{seq}`. A name of 2 or more words is kebab-case in a path
-    (`/lesson-questions`). No verbs in a path. Two segments are not plural: `help`, the one
-    uncountable record, and `/api/v1/me`, the signed-in caller. **(tested)**
+    (`/lesson-questions`). No verbs in a path. Three segments are not plural: `help`, the one
+    uncountable record; `review`, since an attempt has exactly one review (lead, `dl-uukj.30`); and
+    `/api/v1/me`, the signed-in caller. `help` and `review` are only ever the last segment. **(tested)**
 16. **Methods:**
     - `GET` reads and changes nothing;
     - `POST` creates or appends (`/attempts`, `/answers`, `/help`);

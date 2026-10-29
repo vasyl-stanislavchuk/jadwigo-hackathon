@@ -4,11 +4,13 @@ import { AssignmentId, AttemptId, LearnerId } from "./ids.ts";
 import { Language } from "./records.ts";
 import {
   AccountCreate,
+  AssignmentAttempts,
   AttemptAnswerRequest,
   AttemptAnswerResult,
   AttemptClaim,
   AttemptPatch,
   AttemptResults,
+  AttemptReview,
   AttemptSnapshot,
   AttemptStart,
   Claim,
@@ -20,6 +22,7 @@ import {
   LearnerCreate,
   LearnerSnapshot,
   Me,
+  ParentAttemptReview,
   PlaygroundExamples,
 } from "./wire.ts";
 
@@ -127,6 +130,16 @@ export const ROUTES = {
     status: 200,
     auth: "none",
   },
+  /** A finished attempt's questions again, for the child; 409 `AttemptNotFinished` before. */
+  getReview: {
+    method: "GET",
+    path: "/api/v1/attempts/{id}/review",
+    params: z.object({ id: AttemptId }),
+    body: null,
+    response: AttemptReview,
+    status: 200,
+    auth: "none",
+  },
   getMe: {
     method: "GET",
     path: "/api/v1/me",
@@ -169,6 +182,26 @@ export const ROUTES = {
     params: z.object({ id: LearnerId }),
     body: null,
     response: LearnerAttempts,
+    status: 200,
+    auth: "token",
+  },
+  /** One assignment's attempts the caller's pod reads, with their rows: the lesson overview. */
+  getAssignmentAttempts: {
+    method: "GET",
+    path: "/api/v1/assignments/{id}/attempts",
+    params: z.object({ id: AssignmentId }),
+    body: null,
+    response: AssignmentAttempts,
+    status: 200,
+    auth: "token",
+  },
+  /** A finished attempt of the caller's learner with every try; 409 `AttemptNotFinished` before. */
+  getParentReview: {
+    method: "GET",
+    path: "/api/v1/learners/{id}/attempts/{attempt}/review",
+    params: z.object({ id: LearnerId, attempt: AttemptId }),
+    body: null,
+    response: ParentAttemptReview,
     status: 200,
     auth: "token",
   },

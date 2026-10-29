@@ -2,9 +2,11 @@
  * The player against a double of the API (no network): a new tab starts an attempt and keeps its
  * id for a reload, a paused attempt waits on the paused screen and resumes on the same question, a
  * finished one shows the congratulation and the list, and an id the server forgot starts afresh.
+ * The review (dl-uukj.30.1): a card opens its question's step, the arrows walk the list, "Wszystkie
+ * pytania" goes back, and a reload on a review path opens the same step again.
  */
 
-import { ApiError, type AttemptClient } from "@jadwigo/api-client";
+import { ApiError, type AttemptClient, TransientError } from "@jadwigo/api-client";
 import {
   AssignmentId,
   AttemptId,
@@ -15,7 +17,9 @@ import {
 } from "@jadwigo/contracts";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { reviewQuestion } from "../review/fixtures.ts";
 import { PlayScreen } from "./PlayScreen.tsx";
+import { playPath, reviewPath } from "./route.ts";
 import { storedAttempt } from "./storedAttempt.ts";
 
 const ASSIGNMENT = AssignmentId.parse("asg_0ectzj2evqb95a3v1v6wewjzy3");
@@ -90,11 +94,15 @@ function client(changes: Partial<AttemptClient>): AttemptClient {
     help: refused,
     patchAttempt: refused,
     getResults: refused,
+    getReview: refused,
     ...changes,
   };
 }
 
-beforeEach(() => window.sessionStorage.clear());
+beforeEach(() => {
+  window.sessionStorage.clear();
+  window.history.replaceState(null, "", "/");
+});
 afterEach(cleanup);
 
 describe("PlayScreen", () => {
@@ -191,5 +199,130 @@ describe("PlayScreen", () => {
     );
     expect(await screen.findAllByText("Ile to jest dwa razy pięć? (1)")).not.toHaveLength(0);
     expect(storedAttempt.get(ASSIGNMENT)).toBe(FRESH);
+  });
+
+  describe("the review", () => {
+    const finished = (): AttemptSnapshot =>
+      snapshot(ATTEMPT, "finished", [question(1, "correct"), question(2, "missed")]);
+    const results = (): AttemptResults => ({
+      attempt: finished().attempt,
+      results: [
+        {
+          seq: 1,
+          lesson_question_id: LQ,
+          say: "Pierwsze",
+          added: "planned",
+          ended: "correct",
+          help_used: 0,
+        },
+        {
+          seq: 2,
+          lesson_question_id: LQ,
+          say: "Drugie",
+          added: "planned",
+          ended: "missed",
+          help_used: 0,
+        },
+      ],
+    });
+    const review = () => ({
+      attempt: finished().attempt,
+      questions: [reviewQuestion(1, "correct"), reviewQuestion(2, "missed")],
+    });
+    const finishedClient = (changes: Partial<AttemptClient> = {}): AttemptClient =>
+      client({
+        getAttempt: async () => finished(),
+        getResults: async () => results(),
+        getReview: async () => review(),
+        ...changes,
+      });
+
+    it("a card opens its question, the arrows walk the list, and Wszystkie pytania goes back", async () => {
+      storedAttempt.set(ASSIGNMENT, ATTEMPT);
+      window.history.replaceState(null, "", `${playPath(ASSIGNMENT)}?lang=pl`);
+      render(<PlayScreen assignmentId={ASSIGNMENT} language="pl" client={finishedClient()} />);
+      const first = (await screen.findByText("Pierwsze")).closest("a");
+      expect(first?.getAttribute("href")).toBe(`${reviewPath(ASSIGNMENT, 1)}?lang=pl`);
+      // The congratulation stays first, above the cards.
+      const congrats = screen.getByText("Brawo! To już wszystko na dziś.");
+      expect(
+        congrats.compareDocumentPosition(first as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+
+      await act(async () => fireEvent.click(first as Element));
+      expect(window.location.pathname).toBe(reviewPath(ASSIGNMENT, 1));
+      expect(await screen.findByText("Pytanie 1 z 2")).toBeTruthy();
+      expect(screen.queryByLabelText("Poprzednie")).toBeNull();
+      expect(document.querySelector("[data-review-solution]")).toBeNull();
+
+      await act(async () => fireEvent.click(screen.getByLabelText("Następne")));
+      expect(window.location.pathname).toBe(reviewPath(ASSIGNMENT, 2));
+      expect(window.location.search).toBe("?lang=pl");
+      expect(await screen.findByText("Pytanie 2 z 2")).toBeTruthy();
+      expect(screen.queryByLabelText("Następne")).toBeNull();
+      expect(screen.getByText("Tak wygląda dobra odpowiedź:")).toBeTruthy();
+
+      await act(async () => fireEvent.click(screen.getByText("Wszystkie pytania")));
+      expect(window.location.pathname).toBe(playPath(ASSIGNMENT));
+      expect(await screen.findByText("Brawo! To już wszystko na dziś.")).toBeTruthy();
+    });
+
+    it("a reload on a review path opens the same question from the tab's attempt", async () => {
+      storedAttempt.set(ASSIGNMENT, ATTEMPT);
+      window.history.replaceState(null, "", reviewPath(ASSIGNMENT, 2));
+      const getReview = vi.fn(async () => review());
+      render(
+        <PlayScreen
+          assignmentId={ASSIGNMENT}
+          language="pl"
+          client={finishedClient({ getReview })}
+        />,
+      );
+      expect(await screen.findByText("Pytanie 2 z 2")).toBeTruthy();
+      expect(getReview).toHaveBeenCalledWith(ATTEMPT);
+      expect(screen.getByText("Jeszcze się uczymy")).toBeTruthy();
+    });
+
+    it("sends the review again while the failure is transient", async () => {
+      storedAttempt.set(ASSIGNMENT, ATTEMPT);
+      window.history.replaceState(null, "", reviewPath(ASSIGNMENT, 1));
+      const getReview = vi
+        .fn<AttemptClient["getReview"]>()
+        .mockRejectedValueOnce(new TransientError("offline"))
+        .mockImplementation(async () => review());
+      render(
+        <PlayScreen
+          assignmentId={ASSIGNMENT}
+          language="pl"
+          client={finishedClient({ getReview })}
+        />,
+      );
+      expect(await screen.findByText("Pytanie 1 z 2", {}, { timeout: 3000 })).toBeTruthy();
+      expect(getReview).toHaveBeenCalledTimes(2);
+    });
+
+    it("a seq the attempt has no question at goes back to the list", async () => {
+      storedAttempt.set(ASSIGNMENT, ATTEMPT);
+      window.history.replaceState(null, "", reviewPath(ASSIGNMENT, 9));
+      render(<PlayScreen assignmentId={ASSIGNMENT} language="pl" client={finishedClient()} />);
+      expect(await screen.findByText("Pierwsze")).toBeTruthy();
+      expect(window.location.pathname).toBe(playPath(ASSIGNMENT));
+    });
+
+    it("a review path on an attempt still being played goes back to the lesson", async () => {
+      storedAttempt.set(ASSIGNMENT, ATTEMPT);
+      window.history.replaceState(null, "", reviewPath(ASSIGNMENT, 1));
+      render(
+        <PlayScreen
+          assignmentId={ASSIGNMENT}
+          language="pl"
+          client={client({
+            getAttempt: async () => snapshot(ATTEMPT, "in_progress", [question(1)]),
+          })}
+        />,
+      );
+      expect(await screen.findAllByText("Ile to jest dwa razy pięć? (1)")).not.toHaveLength(0);
+      expect(window.location.pathname).toBe(playPath(ASSIGNMENT));
+    });
   });
 });

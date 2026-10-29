@@ -8,8 +8,10 @@ import {
   AttemptClaim,
   LearnerCreate,
   PageAttemptResult,
+  ParentReviewQuestion,
   pageAttemptResult,
   pageEnded,
+  ReviewQuestion,
   SentAt,
   verdictsHeld,
 } from "./wire.ts";
@@ -113,14 +115,72 @@ describe("the child's after-lesson list", () => {
   });
 });
 
+describe("lesson review", () => {
+  const REVIEWED = {
+    seq: 1,
+    added: "planned",
+    ended: "missed",
+    help_used: 0,
+    question_type: "production",
+    say: "How many apples?",
+    question: { family: "enter", data: { input: "number", entry: "keypad" } },
+    answer: { entered: "7" },
+    parts: null,
+    solution: { entered: "6" },
+    reveal: {},
+  };
+
+  it("gives the child what was asked, the answer and the right one: no tries, time or class", () => {
+    const fields = Object.keys(ReviewQuestion.shape);
+    for (const field of ["tries", "latency_ms", "time_ms", "mistake_class", "result"]) {
+      expect(fields, field).not.toContain(field);
+    }
+    expect(ReviewQuestion.parse(REVIEWED).solution).toEqual({ entered: "6" });
+  });
+
+  it("refuses an open question: a review is of a finished attempt", () => {
+    expect(ReviewQuestion.safeParse({ ...REVIEWED, ended: null }).success).toBe(false);
+    expect(ReviewQuestion.safeParse({ ...REVIEWED, ended: "done" }).success).toBe(false);
+  });
+
+  it("gives the parent every try with its time and mistake class, and the result row", () => {
+    const parent = ParentReviewQuestion.parse({
+      ...REVIEWED,
+      tries: [
+        {
+          try_no: 1,
+          kind: "try",
+          value: { entered: "7" },
+          correct: false,
+          parts: null,
+          mistake_class: "off_by_small",
+          latency_ms: 4000,
+          help_used: 0,
+          skip_reason: null,
+        },
+      ],
+      result: ROW,
+    });
+    expect(parent.tries[0]?.mistake_class).toBe("off_by_small");
+    expect(parent.result.time_ms).toBe(ROW.time_ms);
+  });
+
+  it("reads a review only by GET, the child's open and the parent's behind a token", () => {
+    expect(ROUTES.getReview).toMatchObject({ method: "GET", auth: "none", body: null });
+    expect(ROUTES.getParentReview).toMatchObject({ method: "GET", auth: "token", body: null });
+  });
+});
+
 describe("parent login", () => {
-  it("needs a token on the 5 parent routes only; the login-free routes stay open", () => {
+  it("needs a token on the 7 parent routes only; the login-free routes stay open", () => {
     const token = Object.entries(ROUTES)
       .filter(([, route]) => route.auth === "token")
       .map(([, route]) => `${route.method} ${route.path}`)
       .sort();
     expect(token).toEqual([
+      "GET /api/v1/assignments/{id}/attempts",
       "GET /api/v1/learners/{id}/attempts",
+      "GET /api/v1/learners/{id}/attempts/{attempt}/review",
       "GET /api/v1/me",
       "POST /api/v1/accounts",
       "POST /api/v1/attempts/{id}/claims",

@@ -55,6 +55,22 @@ const snapshot = {
   last_event_id: null,
 };
 
+const finished = { ...attempt, status: "finished", finished_at: AT };
+
+const reviewed = {
+  seq: 1,
+  added: "planned",
+  ended: "correct",
+  help_used: 0,
+  question_type: question.question_type,
+  say: question.say,
+  question: question.question,
+  answer: { entered: "10" },
+  parts: null,
+  solution: { entered: "10" },
+  reveal: { why: "2 razy 5 to 5 + 5." },
+};
+
 interface Sent {
   url: string;
   method: string | undefined;
@@ -228,6 +244,35 @@ describe("createClient", () => {
     expect(String((dropped as Error).message)).not.toContain(ATTEMPT);
   });
 
+  it("reads a finished attempt's review at the route's path, with no token", async () => {
+    const { fetch, sent } = stub(200, { attempt: finished, questions: [reviewed] });
+    const review = await createClient({
+      base: "",
+      fetch,
+      token: async () => "header.payload.signature",
+    }).getReview(ATTEMPT);
+    expect(sent).toEqual([
+      { url: `/api/v1/attempts/${ATTEMPT}/review`, method: "GET", body: undefined },
+    ]);
+    expect(review.questions[0]?.solution).toEqual({ entered: "10" });
+  });
+
+  it("names AttemptNotFinished on a review asked too early, without the attempt id", async () => {
+    const { fetch } = stub(409, {
+      error: { type: "AttemptNotFinished", message: "this lesson is not finished yet" },
+    });
+    const error = await createClient({ base: "", fetch })
+      .getReview(ATTEMPT)
+      .catch((e: unknown) => e);
+    expect(error).toMatchObject({ status: 409, type: "AttemptNotFinished" });
+    expect(String((error as Error).message)).not.toContain(ATTEMPT);
+  });
+
+  it("refuses a review with an open question, which a finished attempt never has", async () => {
+    const { fetch } = stub(200, { attempt: finished, questions: [{ ...reviewed, ended: null }] });
+    await expect(createClient({ base: "", fetch }).getReview(ATTEMPT)).rejects.toThrow();
+  });
+
   it("refuses a reply its schema does not accept", async () => {
     const { fetch } = stub(200, { attempt, questions: "not a list" });
     await expect(createClient({ base: "", fetch }).getAttempt(ATTEMPT)).rejects.toThrow();
@@ -268,6 +313,120 @@ describe("the parent's calls", () => {
     expect(refused).toBeInstanceOf(ApiError);
     expect((refused as ApiError).type).toBe("NotSignedIn");
     expect(sent).toEqual([]);
+  });
+
+  it("reads the parent's review of an attempt with the token, every try included", async () => {
+    const result = {
+      pod_id: attempt.pod_id,
+      attempt_id: ATTEMPT,
+      seq: 1,
+      lesson_question_id: question.lesson_question_id,
+      added: "planned",
+      placed: null,
+      added_for: null,
+      say: question.say,
+      family: "enter",
+      question_type: question.question_type,
+      tries: 2,
+      first_try_correct: false,
+      correct: true,
+      mistake_classes: ["add_for_multiply"],
+      help_used: 0,
+      skip_reason: null,
+      time_ms: 5200,
+      ended: "correct",
+    };
+    const tries = [
+      { entered: "7", correct: false, mistake_class: "add_for_multiply", latency_ms: 3100 },
+      { entered: "10", correct: true, mistake_class: null, latency_ms: 2100 },
+    ].map(({ entered, ...rest }, i) => ({
+      try_no: i + 1,
+      kind: "try",
+      value: { entered },
+      parts: null,
+      help_used: 0,
+      skip_reason: null,
+      ...rest,
+    }));
+    const { fetch, sent } = stub(200, {
+      attempt: { ...finished, learner_id: LEARNER },
+      title: "Mnożenie przez 5",
+      language: "pl",
+      questions: [{ ...reviewed, tries, result }],
+    });
+    const review = await createClient({ base: "", fetch, token: signedIn }).getParentReview(
+      LEARNER,
+      ATTEMPT,
+    );
+    expect(sent).toEqual([
+      {
+        url: `/api/v1/learners/${LEARNER}/attempts/${ATTEMPT}/review`,
+        method: "GET",
+        body: undefined,
+        authorization: "Bearer header.payload.signature",
+      },
+    ]);
+    expect(review.questions[0]?.tries.map((t) => t.mistake_class)).toEqual([
+      "add_for_multiply",
+      null,
+    ]);
+  });
+
+  it("lists one assignment's attempts with their rows, on the token route", async () => {
+    const result = {
+      pod_id: attempt.pod_id,
+      attempt_id: ATTEMPT,
+      seq: 1,
+      lesson_question_id: question.lesson_question_id,
+      added: "planned",
+      placed: null,
+      added_for: null,
+      say: question.say,
+      family: "enter",
+      question_type: question.question_type,
+      tries: 1,
+      first_try_correct: true,
+      correct: true,
+      mistake_classes: [],
+      help_used: 0,
+      skip_reason: null,
+      time_ms: 2100,
+      ended: "correct",
+    };
+    const { fetch, sent } = stub(200, {
+      assignment: {
+        id: ASSIGNMENT,
+        pod_id: attempt.pod_id,
+        lesson_id: "les_7qre3atahx8cpak6xbjtz73var",
+        lesson_version_id: attempt.lesson_version_id,
+        audience: "anyone",
+        identity: "none",
+        after_not_sure: "next",
+        hold_verdicts: false,
+        opens_at: null,
+        closes_at: null,
+        created_at: AT,
+      },
+      title: "Mnożenie przez 5",
+      language: "pl",
+      attempts: [
+        { attempt: { ...finished, learner_id: LEARNER }, name: "Wren", results: [result] },
+      ],
+    });
+    const overview = await createClient({ base: "", fetch, token: signedIn }).getAssignmentAttempts(
+      ASSIGNMENT,
+    );
+    expect(sent).toEqual([
+      {
+        url: `/api/v1/assignments/${ASSIGNMENT}/attempts`,
+        method: "GET",
+        body: undefined,
+        authorization: "Bearer header.payload.signature",
+      },
+    ]);
+    expect(overview.attempts.map((a) => [a.name, a.results[0]?.ended])).toEqual([
+      ["Wren", "correct"],
+    ]);
   });
 
   it("never sends the token on a login-free route", async () => {

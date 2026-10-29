@@ -5,9 +5,17 @@ import { answer, getAttempt, startAttempt } from "./attempts.ts";
 import { type Authenticate, type Claims, signedOut } from "./auth.ts";
 import { ApiError, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
-import { claimAttempt, createAccount, createLearner, getLearnerAttempts, getMe } from "./people.ts";
+import {
+  claimAttempt,
+  createAccount,
+  createLearner,
+  getAssignmentAttempts,
+  getLearnerAttempts,
+  getMe,
+} from "./people.ts";
 import { playgroundExamples } from "./playground.ts";
 import { type BankDeps, searchQuestions } from "./questions.ts";
+import { getParentReview, getReview } from "./review.ts";
 import { getResults, help, patchAttempt } from "./session.ts";
 
 type Params<N extends RouteName> = ReturnType<(typeof ROUTES)[N]["params"]["parse"]>;
@@ -107,6 +115,7 @@ export function createApp(
   on("help", (params, body) => run((s) => help(s, params.id, params.seq, body)));
   on("patchAttempt", (params, body) => run((s) => patchAttempt(s, params.id, body)));
   on("getResults", (params) => run((s) => getResults(s, params.id)));
+  on("getReview", (params) => run((s) => getReview(s, params.id)));
   // No store: the bank answers it (questions.ts).
   on("questionSearches", (_, body, headers) => searchQuestions(bank, headers, body));
   // The token was verified before the unit opens; the member lookup and the route's reads and
@@ -119,6 +128,13 @@ export function createApp(
   );
   onSigned("getLearnerAttempts", (params, _body, claims) =>
     run((s) => getLearnerAttempts(s, claims, params.id)),
+  );
+  onSigned("getAssignmentAttempts", (params, _body, claims) =>
+    run((s) => getAssignmentAttempts(s, claims, params.id)),
+  );
+  // Reads under the caller's pod to find the attempt, then under the attempt's own pod.
+  onSigned("getParentReview", (params, _body, claims) =>
+    run((s) => getParentReview(s, claims, params.id, params.attempt)),
   );
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));

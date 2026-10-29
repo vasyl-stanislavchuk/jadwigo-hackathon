@@ -157,12 +157,14 @@ describe("primitive sources", () => {
         "input.tsx",
         "popover.tsx",
         "progress.tsx",
+        "sheet.tsx",
         "slider.tsx",
         "spinner.tsx",
         "switch.tsx",
+        "table.tsx",
         "toggle-group.tsx",
         "toggle.tsx",
-      ].sort(), // popover: the chosen-gap menu (dl-w3.37.16); switch: the pause sheet's Dźwięk (dl-uukj.29.55)
+      ].sort(), // popover: the chosen-gap menu (dl-w3.37.16); switch: the pause sheet's Dźwięk (dl-uukj.29.55); sheet and table: the lesson overview's question sheet and heatmap (dl-uukj.30.4)
     );
   });
 

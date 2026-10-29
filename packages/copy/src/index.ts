@@ -2,17 +2,19 @@ import { enAdult } from "./en.adult.ts";
 import { en } from "./en.ts";
 import { plAdult } from "./pl.adult.ts";
 import { pl } from "./pl.ts";
-import type {
-  Category,
-  CopyEntry,
-  CopyKey,
-  CopyTable,
-  Language,
-  PartialCopyTable,
+import {
+  type Category,
+  type CopyEntry,
+  type CopyKey,
+  type CopyTable,
+  type Language,
+  MISTAKE_CLASSES,
+  type PartialCopyTable,
 } from "./types.ts";
 
 export { harshWordsIn } from "./harsh.ts";
-export type { Category, CopyKey, Language } from "./types.ts";
+export type { Category, CopyKey, Language, MistakeClass } from "./types.ts";
+export { MISTAKE_CLASSES } from "./types.ts";
 
 /** The child tables: every key, in every language. A category with no line of its own reads these. */
 export const TABLES: Record<Language, CopyTable> = { pl, en };
@@ -77,4 +79,15 @@ export function copyAt(
   const entry = list[((index % list.length) + list.length) % list.length];
   if (entry === undefined) throw new Error(`copy: ${key} has no line in ${language}`);
   return fill(entry, language, vars);
+}
+
+/**
+ * The copy key that names a mistake class in plain words for the parent (dl-uukj.30): null for no
+ * class, and `parent_mistake_other` for a class with no line yet, so the raw id never shows.
+ */
+export function mistakeCopyKey(mistakeClass: string | null): CopyKey | null {
+  if (mistakeClass === null) return null;
+  return (MISTAKE_CLASSES as readonly string[]).includes(mistakeClass)
+    ? (`parent_mistake_${mistakeClass}` as CopyKey)
+    : "parent_mistake_other";
 }

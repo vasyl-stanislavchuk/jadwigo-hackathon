@@ -6,7 +6,10 @@
  *     ?claim     the tab still holds an attempt of that assignment: pick the child, or add one,
  *                and POST /attempts/{id}/claims; the tab then forgets the attempt
  *     no child   add one: a first name (goals and the age group wait on the owner)
- *     home       each child, with their lessons, newest first
+ *     home       each child, with their lessons, newest first, each a link to its attempt page
+ *   /parent/attempts/<attempt>, signed in: that lesson, question by question (AttemptReview.tsx)
+ *   /parent/assignments/<assignment>, signed in: every attempt at that lesson against its
+ *                questions (overview/AssignmentOverview.tsx)
  *
  * The page is for the adult, so it has no lesson frame around it.
  */
@@ -33,9 +36,19 @@ import {
   useState,
 } from "react";
 import { storedAttempt } from "../play/storedAttempt.ts";
-import { navigate } from "../playground/route.ts";
+import { navigate, useLocation } from "../playground/route.ts";
+import { NavLink } from "../playground/shell/NavLink.tsx";
+import { AttemptReview } from "./AttemptReview.tsx";
 import { type Auth, browserAuth } from "./auth.ts";
-import { claimOf, parentPath } from "./route.ts";
+import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";
+import {
+  assignmentPath,
+  attemptPath,
+  claimOf,
+  learnerOf,
+  parentPath,
+  parentRoute,
+} from "./route.ts";
 
 const isApiError = (error: unknown): error is ApiError => error instanceof ApiError;
 
@@ -77,6 +90,7 @@ export function ParentScreen({
       }) satisfies Client),
     [client, auth],
   );
+  const route = parentRoute(useLocation().path);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   useEffect(() => {
     if (auth === null) return;
@@ -99,6 +113,17 @@ export function ParentScreen({
   if (signedIn === null) return <Loading language={language} />;
   if (!signedIn)
     return <SignIn auth={auth} language={language} onSignedIn={() => setSignedIn(true)} />;
+  if (route?.kind === "attempt")
+    return (
+      <AttemptReview
+        api={api}
+        attempt={route.attempt}
+        learner={learnerOf(query)}
+        language={language}
+      />
+    );
+  if (route?.kind === "assignment")
+    return <AssignmentOverview api={api} assignment={route.assignment} language={language} />;
   return (
     <SignedIn
       api={api}
@@ -434,8 +459,28 @@ function LearnerCard({
               data-attempt={attempt.id}
               className="flex flex-col gap-2 rounded-xl border p-4"
             >
-              <span className="font-semibold">{title}</span>
+              <NavLink
+                href={attemptPath({
+                  attempt: attempt.id,
+                  learner: learner.id,
+                  lang: new URLSearchParams(window.location.search).get("lang"),
+                })}
+                className="font-semibold underline"
+                data-attempt-link
+              >
+                {title}
+              </NavLink>
               <span className="text-sm">{day.format(new Date(attempt.started_at))}</span>
+              <NavLink
+                href={assignmentPath({
+                  assignment: attempt.assignment_id,
+                  lang: new URLSearchParams(window.location.search).get("lang"),
+                })}
+                className="text-sm underline"
+                data-overview-link
+              >
+                {copy(language, "parent_overview_link", {}, "adult")}
+              </NavLink>
               <ol className="flex flex-col gap-1">
                 {results.map((row) => (
                   <li key={row.seq} data-seq={row.seq} data-ended={row.ended ?? "open"}>
