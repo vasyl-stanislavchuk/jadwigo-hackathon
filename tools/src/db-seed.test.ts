@@ -67,6 +67,14 @@ function seedProd(answer: string) {
   // The file is the only source of a secret: a keychain lookup finds nothing.
   stub("security", "exit 44");
   stub("mise", "true");
+  // The recipe checks the file's mode with BSD stat (stat -f %Lp), as on the owner's Mac. On a
+  // Linux runner GNU stat answers that differently, so this stat answers the Mac way on both.
+  // It logs nothing: its argument names the secrets file, and the log is checked for supabase.
+  writeFileSync(
+    join(bin, "stat"),
+    `#!/bin/sh\nif [ "$(uname)" = Darwin ]; then exec /usr/bin/stat "$@"; fi\nexec /usr/bin/stat -c %a "$3"\n`,
+  );
+  chmodSync(join(bin, "stat"), 0o755);
   const secrets = join(dir, "supabase.env");
   writeFileSync(
     secrets,
