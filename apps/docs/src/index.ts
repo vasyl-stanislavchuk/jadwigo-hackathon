@@ -1,0 +1,34 @@
+import { hosts } from "@jadwigo/config";
+
+/** The host this app serves in prod. */
+export const servedHost = hosts.prod.docs;
+
+/** Where every API path in the guides starts: the app's host, which serves `/api` too. */
+export const apiBase = `https://${hosts.prod.app}`;
+
+/** One sidebar group: a label and the pages under it, each by its slug in src/content/docs. */
+export interface SidebarGroup {
+  readonly label: string;
+  readonly items: readonly string[];
+}
+
+/**
+ * The sidebar, in the order a reader meets it. A page is listed by its slug, so a new page joins a
+ * group here, and a new section is a new group. A slug with no page fails the build.
+ */
+export const SIDEBAR: readonly SidebarGroup[] = [
+  {
+    label: "Guides",
+    items: ["guides/introduction", "guides/authentication", "guides/first-call", "guides/errors"],
+  },
+  { label: "API reference", items: ["api"] },
+  { label: "MCP", items: ["mcp"] },
+  { label: "Design system", items: ["design-system"] },
+  { label: "Architecture", items: ["architecture"] },
+];
+
+/** SIDEBAR in the shape Starlight's `sidebar` option takes. */
+export const sidebar = SIDEBAR.map((group) => ({
+  label: group.label,
+  items: group.items.map((slug) => ({ slug })),
+}));

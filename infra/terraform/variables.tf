@@ -19,6 +19,11 @@ variable "app_domain" {
   type        = string
 }
 
+variable "docs_domain" {
+  description = "The host the docs answer on (packages/config hosts.<env>.docs), in site_domain's zone"
+  type        = string
+}
+
 variable "supabase_ref" {
   description = "The environment's Supabase project ref; its Auth issues the tokens the JWT authorizer verifies"
   type        = string

@@ -13,6 +13,7 @@
       "!**/.turbo",
       "!**/.venv",
       "!**/schemas/*.json",
+      "!packages/contracts/openapi.json",
       "!bun.lock"
     ]
   },
