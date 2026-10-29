@@ -53,7 +53,7 @@ export function PyramidGrid({
               <div
                 key={j}
                 data-brick
-                className="flex items-center justify-center rounded-[0.625rem] border-2 border-muted-foreground"
+                className="flex items-center justify-center rounded-jw-small border-2 border-muted-foreground"
                 style={brick}
               >
                 {b.text}

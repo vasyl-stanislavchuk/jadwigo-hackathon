@@ -35,7 +35,7 @@ import { EMPTY_FIELD, MARK_FADE, SELECTION, TONE_CLASS, type Tone } from "./tone
  * once the child is away, right is green and flat. Every state keeps the same box, so the field
  * never moves by a pixel. */
 const FIELD = cn(
-  "relative min-h-16 w-full rounded-lg border-2 px-4 flex items-center text-[length:var(--kid-math-size)] font-bold",
+  "relative min-h-16 w-full rounded-lg border-2 px-4 flex items-center text-jw-math font-bold",
   MARK_FADE,
 );
 
@@ -170,7 +170,7 @@ export function Entry({
           data-field={ENTRY_FIELD}
           data-empty={state.text === "" ? "" : undefined}
           data-away={away ? "" : undefined}
-          className="text-[length:var(--kid-math-size)]"
+          className="text-jw-math"
         >
           <FractionBoxes
             text={state.text}
@@ -283,7 +283,7 @@ export function Entry({
             data-letter-marked={lettered ? "" : undefined}
             // A word at the answer size, 26 / 24; a number or an expression typed on a
             // keyboard keeps the maths size (Enter addendum 2.6).
-            className={cn(look, input === "text" && "text-[length:var(--kid-answer-size)]")}
+            className={cn(look, input === "text" && "text-kid-answer")}
             value={state.text}
             readOnly={locked}
             inputMode={input === "number" ? "numeric" : input === "expression" ? "decimal" : "text"}
@@ -311,10 +311,7 @@ export function Entry({
             <LetterMarks
               text={state.text}
               missed={marks}
-              className={cn(
-                "px-4 font-bold text-[length:var(--kid-answer-size)]",
-                code && "font-mono",
-              )}
+              className={cn("px-4 font-bold text-kid-answer", code && "font-mono")}
             />
           )}
         </div>

@@ -113,7 +113,7 @@ export function Stem({
             className={
               ONE_FORMULA.test(question)
                 ? "text-center text-[length:var(--kid-math-size)] font-bold"
-                : "text-[length:var(--kid-answer-size)] font-semibold"
+                : "text-kid-answer font-semibold"
             }
           />
         ) : (
@@ -180,7 +180,7 @@ function Reference({
       open={paper || undefined}
       className="rounded-xl border border-border bg-muted/40"
     >
-      <summary className="flex min-h-[var(--kid-tap-min)] cursor-pointer items-center rounded-xl px-4 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+      <summary className="flex min-h-kid-tap cursor-pointer items-center rounded-xl px-4 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
         {reference.prompt}
       </summary>
       <div className="px-4 pb-4">

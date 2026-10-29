@@ -44,7 +44,7 @@ export function Term({
       </PopoverTrigger>
       <PopoverContent
         data-term="meaning"
-        className="max-w-prose px-4 py-3 text-[length:var(--kid-answer-size)] leading-snug"
+        className="max-w-prose px-4 py-3 text-kid-answer leading-snug"
       >
         {meaning}
       </PopoverContent>
