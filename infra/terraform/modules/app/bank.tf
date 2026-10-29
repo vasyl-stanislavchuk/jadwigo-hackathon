@@ -3,6 +3,12 @@
 # this module reads it, lets the api role invoke that alias and nothing else, and hands the
 # function the ARN. Apply the bank root first: until it has written the parameter, a plan here
 # stops on ParameterNotFound (docs/runbooks/bank-handshake.md).
+# The content bucket's name, from modules/content (dl-n9fr.43.2). Declared here, beside the grant it scopes.
+variable "content_bucket_name" {
+  description = "The content bucket the api reads question bodies from: questions/* and khan/converted/* only"
+  type        = string
+}
+
 locals {
   bank_read_token_param = "/jadwigo/${var.environment}/bank-read-token"
 }
@@ -38,5 +44,16 @@ data "aws_iam_policy_document" "bank" {
     sid       = "ReadsTheBankReadToken"
     actions   = ["ssm:GetParameter"]
     resources = [aws_ssm_parameter.bank_read_token.arn]
+  }
+
+  # The content bucket's questions/ and khan/converted/ (dl-n9fr.43.2), and no other prefix: not
+  # khan/media/, which CloudFront serves, nor khan/raw/. The bank's search function gets no grant.
+  statement {
+    sid     = "ReadsTheContentBucketQuestions"
+    actions = ["s3:GetObject"]
+    resources = [
+      "arn:aws:s3:::${var.content_bucket_name}/questions/*",
+      "arn:aws:s3:::${var.content_bucket_name}/khan/converted/*",
+    ]
   }
 }

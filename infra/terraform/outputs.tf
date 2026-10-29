@@ -37,3 +37,11 @@ output "bank_search_alias_arn" {
 output "bank_read_token_param" {
   value = module.app.bank_read_token_param
 }
+
+output "content_bucket" {
+  value = module.content.bucket_name
+}
+
+output "media_url" {
+  value = module.content.media_url
+}
