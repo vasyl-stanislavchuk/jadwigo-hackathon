@@ -5,10 +5,5 @@ title = "jadwigo"
 [extend]
 useDefault = true
 
-# MISSING: the family-name rule. Learner names must never be committed (fixtures, screenshots,
-# transcripts). The owner gives the list of names; until then only the default rules run.
-# [[rules]]
-# id = "family-name"
-# description = "A family member's name in a committed file"
-# regex = '''(?i)\b(name-one|name-two)\b'''
-# keywords = ["name-one", "name-two"]
+# The family-name rule is not here, because the repo is public. Pre-commit runs gitleaks through
+# tools/src/gitleaks.ts, which adds the rule from the owner's private-terms file (dl-5ssh.34.39).

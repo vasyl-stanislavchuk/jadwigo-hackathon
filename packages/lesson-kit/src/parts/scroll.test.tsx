@@ -24,6 +24,21 @@ describe("openDelta (Slots addendum 2.5)", () => {
     // Does not fit: the field's bottom lands 16 px over the footer, the instruction scrolls off.
     expect(openDelta({ top: 60, bottom: 956 }, field, view, insets)).toBe(956 - (800 - 112));
   });
+
+  it("on a short phone keeps the instruction at the top while the field ends above the dock line", () => {
+    // 360x640, keys at 56: top bar 56, footer 96, dock 298 from 246. Instruction 76..125, card
+    // 141..241, field 159..223: the card misses the room by its gap and the fold arrow's overhang.
+    const small = 640;
+    const rail = { top: 56 + GAP, bottom: 96 + 298 + 28 + GAP };
+    const open = { top: 76, bottom: 241 };
+    const card = { top: 141, bottom: 241 };
+    const own = { box: { top: 159, bottom: 223 }, line: 640 - 96 - 298 };
+    expect(openDelta(open, card, small, rail, own)).toBe(76 - 72);
+    // With 72 px keys the dock is 362 from 182 and the field would end under it: the field wins.
+    const tall = { top: 56 + GAP, bottom: 96 + 362 + 28 + GAP };
+    const under = { box: own.box, line: 640 - 96 - 362 };
+    expect(openDelta(open, card, small, tall, under)).toBe(scrollDelta(card, small, tall));
+  });
 });
 
 describe("scrollDelta", () => {

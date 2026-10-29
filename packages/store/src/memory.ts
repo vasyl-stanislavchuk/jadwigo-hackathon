@@ -23,6 +23,8 @@ import {
   Lesson,
   LessonId,
   LessonQuestion,
+  LessonQuestionExample,
+  LessonQuestionExampleId,
   LessonQuestionId,
   LessonVersion,
   LessonVersionId,
@@ -36,10 +38,12 @@ import {
   type Uuid,
   valueFor,
 } from "@jadwigo/contracts";
+import { byTypeThenPosition, checkExamples } from "./example.ts";
 import { handleFor } from "./handle.ts";
 import { attemptResults } from "./result.ts";
 import {
   type AttemptRecord,
+  type ExampleWithQuestions,
   type HelpTwin,
   type LessonVersionWithQuestions,
   type MemberScope,
@@ -52,9 +56,11 @@ import {
   type NewLearnerWithGoals,
   type NewLesson,
   type NewLessonQuestion,
+  type NewLessonQuestionExample,
   type NewLessonVersion,
   type NewPod,
   type OpenAssignment,
+  type OpenedAttempt,
   type Store,
   StoreError,
 } from "./store.ts";
@@ -131,6 +137,7 @@ export class InMemoryStore implements Store {
   /** By version id, in `position` order. */
   readonly #lists = new Map<string, LessonVersionQuestion[]>();
   readonly #questions = new Map<string, LessonQuestion>();
+  readonly #examples = new Map<string, LessonQuestionExample>();
   readonly #assignments = new Map<string, Assignment>();
   readonly #attempts = new Map<string, Attempt>();
   /** By attempt id, in `seq` order. */
@@ -178,6 +185,17 @@ export class InMemoryStore implements Store {
 
   async findAttemptPod(id: AttemptId): Promise<PodId | undefined> {
     return this.#attempts.get(id)?.pod_id;
+  }
+
+  async unit<T>(work: () => Promise<T>): Promise<T> {
+    return work();
+  }
+
+  async openAttempt(id: AttemptId): Promise<OpenedAttempt | undefined> {
+    const pod = await this.findAttemptPod(id);
+    if (pod === undefined) return undefined;
+    const record = await this.getAttempt(pod, id);
+    return { pod, record, assignment: await this.getAssignment(pod, record.attempt.assignment_id) };
   }
 
   async putPod(pod: NewPod): Promise<Pod> {
@@ -390,6 +408,51 @@ export class InMemoryStore implements Store {
           a.assignment.created_at.localeCompare(b.assignment.created_at) ||
           (a.assignment.id < b.assignment.id ? -1 : a.assignment.id > b.assignment.id ? 1 : 0),
       );
+  }
+
+  async replaceExamples(
+    pod: PodId,
+    language: Language,
+    examples: readonly NewLessonQuestionExample[],
+  ): Promise<readonly LessonQuestionExample[]> {
+    this.#pod(pod);
+    checkExamples(language, examples, (id) => {
+      const question = this.#questions.get(id);
+      return question?.pod_id === pod ? question : undefined;
+    });
+    const rows = examples.map((example) =>
+      frozen(
+        parse(
+          LessonQuestionExample,
+          {
+            ...example,
+            id: mint(LessonQuestionExampleId, ID_PREFIXES.lesson_question_example),
+            pod_id: pod,
+            created_at: this.#at(),
+          },
+          "the example",
+        ),
+      ),
+    );
+    for (const [id, row] of this.#examples) {
+      if (row.pod_id === pod && row.language === language) this.#examples.delete(id);
+    }
+    for (const row of rows) this.#examples.set(row.id, row);
+    return rows;
+  }
+
+  async listExamples(pod: PodId, language: Language): Promise<readonly ExampleWithQuestions[]> {
+    return [...this.#examples.values()]
+      .filter((e) => e.pod_id === pod && e.language === language)
+      .map((example) => ({
+        example,
+        question: this.#inPod(this.#questions, pod, example.lesson_question_id, "the question"),
+        twin:
+          example.twin === null
+            ? null
+            : this.#inPod(this.#questions, pod, example.twin, "the twin's question"),
+      }))
+      .sort(byTypeThenPosition);
   }
 
   async startAttempt(pod: PodId, attempt: NewAttempt): Promise<AttemptRecord> {
@@ -624,7 +687,10 @@ export class InMemoryStore implements Store {
       "the lesson question",
     );
     if (row.kind === "try" && !valueFor(family).safeParse(row.value).success) {
-      throw new StoreError(ErrorType.enum.BadRequest, `the value is not a ${family} value`);
+      throw new StoreError(
+        ErrorType.enum.BadRequest,
+        `the value is not a value of the ${family} family`,
+      );
     }
     if (options.end === "missed") this.#mayMiss(pod, answer.attempt_id, answer.seq, row);
     this.#answers.set(row.event_id, row);

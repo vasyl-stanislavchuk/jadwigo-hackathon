@@ -16,7 +16,9 @@ docs/worklog/<epic>/<yyyy-mm-dd>-<slug>.md
 
 - **A wave plan:** `<date>-wave-<n>.md`. One row per lane gives the lane, the paths it owns, the
   paths it must not touch, its frozen tests, its issue queue in order, and its state. The template
-  and the lead's workflows come with `dl-5ssh.34.13`.
+  and the lead's workflows come with `dl-5ssh.34.13`. Each plan also names who takes the
+  steward's hand-backs after the lanes stop, and says lane PRs target the step-0 branch
+  (`AGENTS.md`, "Lanes and waves", `dl-5ssh.67`).
 - **Notes between sessions** that would be noise on the issue itself.
 
 A brief for one issue never goes here: it lives in the issue itself (`AGENTS.md`, "One issue, start to

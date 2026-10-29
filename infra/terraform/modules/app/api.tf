@@ -53,9 +53,11 @@ resource "aws_iam_role" "api" {
   assume_role_policy = data.aws_iam_policy_document.assume.json
 }
 
-# Its own log group and the one parameter, nothing else. The aws/ssm key's policy lets the
+# Its own log group and the one parameter, plus the bank's statements (bank.tf), nothing else. The aws/ssm key's policy lets the
 # account's principals decrypt through SSM, so no KMS statement is needed.
 data "aws_iam_policy_document" "api" {
+  source_policy_documents = [data.aws_iam_policy_document.bank.json]
+
   statement {
     sid       = "WritesItsLogs"
     actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
@@ -75,7 +77,7 @@ resource "aws_iam_role_policy" "api" {
   policy = data.aws_iam_policy_document.api.json
 }
 
-# No reserved or provisioned concurrency: the account's quota is 10 while the raise is open.
+# No reserved or provisioned concurrency: the account's quota is 1000 since 2026-10-28 (case 179318942100525).
 resource "aws_lambda_function" "api" {
   function_name    = local.name
   role             = aws_iam_role.api.arn
@@ -89,7 +91,9 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      JADWIGO_DB_URL_PARAM = aws_ssm_parameter.database_url.name
+      JADWIGO_DB_URL_PARAM  = aws_ssm_parameter.database_url.name
+      BANK_SEARCH_ALIAS_ARN = data.aws_ssm_parameter.bank_search_alias_arn.insecure_value
+      BANK_READ_TOKEN_PARAM = aws_ssm_parameter.bank_read_token.name
     }
   }
 
@@ -118,14 +122,32 @@ resource "aws_apigatewayv2_integration" "api" {
   timeout_milliseconds   = 10000
 }
 
+# Supabase Auth's access tokens, verified at the gateway against the project's JWKS (RS256 only:
+# jadwigo-platform/decisions/2026-10-27-jadwigo-s-supabase-projects-are-recreated-in-frankfurt-and-sign).
+# A missing, expired or foreign token is answered 401 before the Lambda runs; apps/api authorizes
+# the verified caller against its member rows.
+resource "aws_apigatewayv2_authorizer" "supabase" {
+  api_id           = aws_apigatewayv2_api.api.id
+  name             = "supabase"
+  authorizer_type  = "JWT"
+  identity_sources = ["$request.header.Authorization"]
+
+  jwt_configuration {
+    issuer   = var.jwt_issuer
+    audience = [var.jwt_audience]
+  }
+}
+
 # One route per ROUTES entry, so each carries its own throttle; $default sends the rest to the
-# router, which answers NotFound.
+# router, which answers NotFound. Only the token routes carry the authorizer.
 resource "aws_apigatewayv2_route" "api" {
   for_each = toset(concat(var.routes, ["$default"]))
 
-  api_id    = aws_apigatewayv2_api.api.id
-  route_key = each.key
-  target    = "integrations/${aws_apigatewayv2_integration.api.id}"
+  api_id             = aws_apigatewayv2_api.api.id
+  route_key          = each.key
+  target             = "integrations/${aws_apigatewayv2_integration.api.id}"
+  authorization_type = contains(var.token_routes, each.key) ? "JWT" : "NONE"
+  authorizer_id      = contains(var.token_routes, each.key) ? aws_apigatewayv2_authorizer.supabase.id : null
 }
 
 resource "aws_apigatewayv2_stage" "api" {

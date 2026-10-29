@@ -1,5 +1,6 @@
 // The api on this machine, with no AWS: `bun run dev` in apps/api. On PostgresStore when
-// DATABASE_URL is set, else on an in-memory store seeded with nothing.
+// DATABASE_URL is set, else on an in-memory store seeded with nothing. It listens on 127.0.0.1 only,
+// so `make api-dev ENV=dev` never serves jadwigo-dev data to the local network.
 import { createServer } from "node:http";
 import { createPostgresStore, InMemoryStore } from "@jadwigo/store";
 import { createApp } from "./app.ts";
@@ -42,4 +43,4 @@ createServer(async (req, res) => {
   const result = reply as { statusCode?: number; headers?: Record<string, string>; body?: string };
   res.writeHead(result.statusCode ?? 500, result.headers ?? {});
   res.end(result.body ?? "");
-}).listen(port(), () => process.stdout.write(`api on http://localhost:${port()}\n`));
+}).listen(port(), "127.0.0.1", () => process.stdout.write(`api on http://127.0.0.1:${port()}\n`));

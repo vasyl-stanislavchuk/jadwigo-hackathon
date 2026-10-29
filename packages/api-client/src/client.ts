@@ -1,10 +1,10 @@
 /**
  * The `/api/v1` calls, typed from the contracts: the featured lessons the home page lists
- * (dl-5ssh.3.6), the lesson player's attempt calls (dl-5ssh.3.1) and the signed-in parent's
- * (dl-e8ov.2.38), which carry the Supabase Auth token on the routes whose `auth` is `token`. Every
- * path comes from
- * `ROUTES` and every reply is parsed with the route's own response schema, so a reply the page
- * cannot trust is an error here, never a shape a view has to guess at (RULES.md rule 18).
+ * (dl-5ssh.3.6), the lesson player's attempt calls (dl-5ssh.3.1), the playground's examples
+ * (dl-w3.75) and the signed-in parent's (dl-e8ov.2.38), which carry the Supabase Auth token on the
+ * routes whose `auth` is `token`. Every path comes from `ROUTES` and every reply is parsed with the
+ * route's own response schema, so a reply the page cannot trust is an error here, never a shape a
+ * view has to guess at (RULES.md rule 18).
  *
  * Two kinds of failure, as the lesson player needs them: a `TransientError` is worth sending again
  * with the same body (no answer from the network, or a 5xx), and an `ApiError` is the server's
@@ -30,11 +30,13 @@ import {
   type Featured,
   type HelpRequest,
   type HelpResult,
+  type Language,
   type LearnerAttempts,
   type LearnerCreate,
   type LearnerId,
   type LearnerSnapshot,
   type Me,
+  type PlaygroundExamples,
   ROUTES,
   type Route,
 } from "@jadwigo/contracts";
@@ -82,6 +84,11 @@ export interface FeaturedClient {
   featuredLessons(): Promise<Featured>;
 }
 
+/** The playground's read: the written examples in one language, keys included. */
+export interface PlaygroundClient {
+  playgroundExamples(language: Language): Promise<PlaygroundExamples>;
+}
+
 /** The signed-in parent's calls (dl-e8ov.2.38). Each needs a token. */
 export interface ParentClient {
   getMe(): Promise<Me>;
@@ -92,7 +99,7 @@ export interface ParentClient {
 }
 
 /** Every `/api/v1` call this client makes. */
-export type Client = AttemptClient & FeaturedClient & ParentClient;
+export type Client = AttemptClient & FeaturedClient & ParentClient & PlaygroundClient;
 
 /** A route's path with its `{name}` params filled in. */
 export function pathOf(route: Route, params: Record<string, string | number>): string {
@@ -170,5 +177,6 @@ export function createClient({
     claimAttempt: (attemptId, body) => call(ROUTES.claimAttempt, { id: attemptId }, body),
     getLearnerAttempts: (learnerId) =>
       call(ROUTES.getLearnerAttempts, { id: learnerId }, undefined),
+    playgroundExamples: (language) => call(ROUTES.playgroundExamples, { language }, undefined),
   };
 }

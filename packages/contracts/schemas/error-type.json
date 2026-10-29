@@ -17,6 +17,8 @@
     "AnswerConflict",
     "EventIdMismatch",
     "WriteOnce",
-    "AnswerLimit"
+    "AnswerLimit",
+    "Unauthorized",
+    "BankUnavailable"
   ]
 }

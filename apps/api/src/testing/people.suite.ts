@@ -112,6 +112,16 @@ export function peopleSuite(name: string, makeStore: () => Store): void {
       expect(refused.status).toBe(400);
     });
 
+    it("makes one account for 2 first sign-ins at once, and 2 handles for 2 same-named children at once", async () => {
+      // Each request is a unit of its own: one transaction on Postgres, where a unique violation
+      // would abort it rather than leave a 2nd look possible.
+      const p = parent();
+      const [a, b] = await Promise.all([p.signUp(), p.signUp()]);
+      expect(a).toEqual(b);
+      const [fox, again] = await Promise.all([p.addChild("Fox"), p.addChild("Fox")]);
+      expect(new Set([fox.handle, again.handle]).size).toBe(2);
+    });
+
     it("adds a child with goals once the account exists, and lists it on Me", async () => {
       const p = parent();
       const early = await p.call<ErrorEnvelope>("POST", pathOf("createLearner", {}), {

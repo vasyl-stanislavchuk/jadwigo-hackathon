@@ -1,0 +1,246 @@
+{
+  "description": {
+    "pl": "Dodaj dwie liczby trzycyfrowe.",
+    "en": "Add two 3-digit numbers."
+  },
+  "enrichment": {
+    "can_do": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up can-do for the fixture",
+          "quote": "Column addition within 1000",
+          "source": "set:set_khan_fx0001"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": {
+        "pl": "Zmyślony zestaw: dodawanie liczb trzycyfrowych.",
+        "en": "A made-up set: adding 3-digit numbers."
+      }
+    },
+    "contexts": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up: bare exercises",
+          "quote": "Dodawanie pisemne do 1000",
+          "source": "set:set_khan_fx0001"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": {
+        "pl": [],
+        "en": []
+      }
+    },
+    "curriculum_tags": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up tag for the fixture",
+          "quote": "Dodawanie pisemne do 1000",
+          "source": "set:set_khan_fx0001"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": ["pl-2017:II.2.3"]
+    },
+    "keywords": {
+      "agreement": 0.8,
+      "grounds": [
+        {
+          "claim": "made-up keywords",
+          "quote": "Dodawanie pisemne do 1000",
+          "source": "set:set_khan_fx0001"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": {
+        "pl": ["dodawanie do 1000", "dodawanie pisemne"],
+        "en": ["addition within 1000", "column addition"]
+      }
+    },
+    "mistake_classes": {
+      "agreement": 0.7,
+      "grounds": [
+        {
+          "claim": "made-up mistake class",
+          "quote": "Column addition within 1000",
+          "source": "set:set_khan_fx0001"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": [
+        {
+          "id": "fixture-slip",
+          "pl": "Pomyłka w rachunku",
+          "en": "Slip in the sum",
+          "spot": "the answer is off by one"
+        }
+      ]
+    },
+    "prerequisites": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up: none",
+          "quote": "Column addition within 1000",
+          "source": "set:set_khan_fx0001"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": []
+    },
+    "skill_ids": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up skill id",
+          "quote": "Column addition within 1000",
+          "source": "set:set_khan_fx0001"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": ["fixture.add-within-1000"]
+    },
+    "summary": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up summary",
+          "quote": "Column addition within 1000",
+          "source": "set:set_khan_fx0001"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": {
+        "pl": "Zmyślony zestaw: dodawanie liczb trzycyfrowych.",
+        "en": "A made-up set: adding 3-digit numbers."
+      }
+    },
+    "synthetic_needs": {
+      "agreement": 0.7,
+      "grounds": [
+        {
+          "claim": "made-up needs",
+          "quote": "Dodawanie pisemne do 1000",
+          "source": "set:set_khan_fx0001"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": [
+        {
+          "language": "pl",
+          "words": "dodawanie do 1000"
+        },
+        {
+          "language": "en",
+          "words": "addition within 1000"
+        }
+      ]
+    }
+  },
+  "families": ["enter"],
+  "grade": "3",
+  "id": "set_khan_fx0001",
+  "items": {
+    "count": {
+      "pl": 8,
+      "en": 8,
+      "shared": 8
+    },
+    "ids": ["fxa101", "fxa102", "fxa103", "fxa201", "fxa202", "fxa203", "fxa301", "fxa302"]
+  },
+  "languages": {
+    "pl": true,
+    "en": true
+  },
+  "problem_types": [
+    {
+      "name": "Side by side",
+      "samples": [
+        {
+          "item_id": "fxa101",
+          "pl": "Oblicz: 312 + 145 =",
+          "en": "Work out: 312 + 145 ="
+        },
+        {
+          "item_id": "fxa102",
+          "pl": "Oblicz: 228 + 360 =",
+          "en": "Work out: 228 + 360 ="
+        },
+        {
+          "item_id": "fxa103",
+          "pl": "Oblicz: 407 + 251 =",
+          "en": "Work out: 407 + 251 ="
+        }
+      ],
+      "count": {
+        "pl": 4,
+        "en": 4
+      }
+    },
+    {
+      "name": "In a column",
+      "samples": [
+        {
+          "item_id": "fxa201",
+          "pl": "Dodaj w słupku: 136 + 243",
+          "en": "Add in a column: 136 + 243"
+        },
+        {
+          "item_id": "fxa202",
+          "pl": "Dodaj w słupku: 518 + 170",
+          "en": "Add in a column: 518 + 170"
+        },
+        {
+          "item_id": "fxa203",
+          "pl": "Dodaj w słupku: 625 + 314",
+          "en": "Add in a column: 625 + 314"
+        }
+      ],
+      "count": {
+        "pl": 4,
+        "en": 4
+      }
+    }
+  ],
+  "question_types": ["production"],
+  "source": {
+    "credit": "z Khan Academy",
+    "exercise_id": "fx0001",
+    "licence": "CC BY-NC-SA 4.0",
+    "name": "khan",
+    "url": "https://fixture.invalid/jw/set_khan_fx0001"
+  },
+  "source_place": {
+    "ancestors": ["fxcourse", "fxunit"],
+    "course": "fixture-grade-3",
+    "lesson": "fixture-column-addition",
+    "lesson_title": {
+      "pl": "Dodawanie pisemne",
+      "en": "Column addition"
+    },
+    "order": 30,
+    "unit": "fixture-addition",
+    "unit_title": {
+      "pl": "Dodawanie",
+      "en": "Addition"
+    }
+  },
+  "subject": "math",
+  "titles": {
+    "pl": "Dodawanie pisemne do 1000",
+    "en": "Column addition within 1000"
+  }
+}

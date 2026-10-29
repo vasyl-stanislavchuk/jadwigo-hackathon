@@ -17,6 +17,9 @@ The one Lambda: a router, `authorize()` and the routes, with an entry per functi
   every token route is 401 `NotSignedIn`; no committed key is ever a default. Tests sign with a key
   made per run (`src/testing/token.ts`). `authorizeMember()` finds the caller's pod from its member
   row, and a signed-in user with no account yet is 409 `AccountMissing`.
+- `app.ts` runs each request as one `store.unit()`. A route goes on from the record `authorize()`
+  read and the rows its writes return, and reads the attempt again only after a race or a replay
+  (`src/roundtrips.int.test.ts` pins the round trips per request).
 - Read environment variables only in `src/config.ts` (the grit rule fails elsewhere).
 - `authorize()` (`src/authorize.ts`) binds an attempt to its caller by its id: whoever holds the attempt id may read and answer it, since only the start reply carries it (decision `2026-10-28-an-anonymous-attempt-is-bound-to-its-caller-by-its-id-whoever-ho`). It is one narrow seam, so a token can replace the id later. An unknown id, or another pod's, is 404.
 - The page reads `ended` through `pageEnded(ended, verdictsHeld(assignment, attempt))` in every reply (snapshot, answer, help, results), and the results route returns `pageAttemptResult` rows, never the `attempt_result` row. While verdicts are held, the answer reply's `correct`, `parts` and `reveal` are null.

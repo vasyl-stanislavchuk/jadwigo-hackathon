@@ -15,6 +15,26 @@ The HTTP API's route list in `terraform/main.tf` mirrors `ROUTES` in `packages/c
 a route added there is added here too, or it falls to `$default` and its stage-default limit. `bun tools/src/check-infra-routes.ts`, in `make check` and CI, fails when the two differ. Terraform owns no file in the bucket; `make site-deploy` uploads the Astro build of `apps/site`. `dl-5ssh.34.4` adds the other
 modules, the OIDC roles script and the plan on every PR; `dl-w0b4.4` extends the site module.
 
+Mail (`terraform/modules/mail`, `dl-5ssh.6`): an SES domain identity for jadwigo.pl and for jadwigo.kids
+in eu-central-1, each with Easy DKIM (3 CNAMEs), a custom MAIL FROM at `mail.<apex>` with its MX and SPF,
+and a DMARC record (`p=quarantine`, relaxed alignment), all in the apex's own zone. The account already
+has SES production access in eu-central-1. No SMTP user: auth mail goes out through the Send Email Hook
+(`dl-liwi.33`).
+
+Alarms (`terraform/modules/alarms`, `dl-5ssh.13`): one SNS topic, `jadwigo-prod-alarms`, mailing the owner,
+and 6 alarms on 5-minute periods. They cover the Lambda's errors and throttles, the HTTP API's 5xx,
+account-wide concurrency at 800 (80% of the quota of 1000), and SES's bounce and complaint rates. There are no dashboards. The
+logs are modules/app's. The address is not in git, because the repo is public: put it once in
+`terraform/owner.auto.tfvars`, which git ignores and Terraform reads by itself, as
+`alarm_email = "you@example.com"`. Without it, `plan` stops with "No value for required variable". After the
+first apply, AWS mails a confirmation link, and the alarms reach no one until the owner clicks it.
+
+Parent routes (`dl-e8ov.2.42`): a JWT authorizer named `supabase` on the HTTP API verifies Supabase Auth's
+RS256 access tokens (issuer `https://<supabase_ref>.supabase.co/auth/v1`, audience `authenticated`, the
+`Authorization` header). It sits only on the routes in `token_routes` in `terraform/main.tf`, which are the `ROUTES`
+entries whose `auth` is `token`. The login-free routes and `$default` have none. A missing or bad token is answered 401 at the
+gateway, and `apps/api` then checks the caller's member rows.
+
 A merge deploys nothing. The owner deploys by hand
 (`jadwigo-platform/decisions/2026-10-26-a-green-merge-does-not-deploy-to-prod-the-owner-deploys-manually`).
 
@@ -28,17 +48,6 @@ A merge deploys nothing. The owner deploys by hand
 | `make -n -C infra deploy` | print both halves, running nothing | anyone |
 | `make -C infra auth-diff` | read both Supabase projects' auth config and print what `supabase-auth/<env>.json` would change; exits 2 if anything would | anyone with the token |
 | `make -C infra auth-apply` | write those settings through the Management API | the owner |
-
-**The database URL never passes through Terraform.** The module creates the parameter with a write-only
-placeholder, so neither a tfvars file nor the state holds the value. The owner sets it after the first
-`apply`, and again after a password rotation, with jadwigo_api's transaction pooler URL (port 6543):
-
-```sh
-aws --profile sergii ssm put-parameter --region eu-central-1 --name /jadwigo/prod/database-url \
-  --type SecureString --overwrite --value "postgresql://jadwigo_api.<ref>:<password>@<pooler-host>:6543/postgres"
-```
-
-The Lambda reads it once per cold start. Until the first deploy, its placeholder code answers 503.
 
 **The database URL never passes through Terraform.** The module creates the parameter with a write-only
 placeholder, so neither a tfvars file nor the state holds the value. The owner sets it after the first

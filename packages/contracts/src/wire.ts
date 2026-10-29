@@ -6,6 +6,7 @@ import {
   PageFamilyQuestion,
   PartMark,
   QuestionType,
+  valueFor,
 } from "./families/index.ts";
 import {
   AccountId,
@@ -26,6 +27,8 @@ import {
   Goal,
   Language,
   Learner,
+  LessonQuestion,
+  LessonQuestionExample,
   Member,
   Placed,
   Pod,
@@ -107,13 +110,20 @@ export const ReleasedHelp = z.object({
 });
 export type ReleasedHelp = z.infer<typeof ReleasedHelp>;
 
+/**
+ * The page's half of a question, as one JSON Schema definition: the snapshot carries it twice, in
+ * the plan and in the questions asked, and a `$ref` keeps its snapshot under the 1 MB file cap
+ * (`tools/src/check-no-bank.ts`). The shape is `PageFamilyQuestion`'s.
+ */
+const PageQuestion = PageFamilyQuestion.meta({ id: "PageFamilyQuestion" });
+
 /** An attempt question as the page sees it: the page's half of the lesson question, never its key. */
 export const PageAttemptQuestion = z.object({
   seq: Count,
   lesson_question_id: LessonQuestionId,
   question_type: QuestionType,
   say: z.string(),
-  question: PageFamilyQuestion,
+  question: PageQuestion,
   added: Added,
   placed: Placed.nullable(),
   added_for: Count.nullable(),
@@ -127,9 +137,30 @@ export const PageAttemptQuestion = z.object({
 });
 export type PageAttemptQuestion = z.infer<typeof PageAttemptQuestion>;
 
-/** `GET /api/v1/attempts/{id}`, and the reply to a start: everything asked so far. */
+/**
+ * A planned question of the attempt's version as the page sees it, asked or not: the page's half,
+ * never its key. An attempt question with `added = planned` asks the entry with its
+ * `lesson_question_id`, which is unique on a version.
+ */
+export const PagePlannedQuestion = z.object({
+  position: Count,
+  lesson_question_id: LessonQuestionId,
+  question_type: QuestionType,
+  say: z.string(),
+  question: PageQuestion,
+});
+export type PagePlannedQuestion = z.infer<typeof PagePlannedQuestion>;
+
+/** `GET /api/v1/attempts/{id}`, and the reply to a start: the plan and everything asked so far. */
 export const AttemptSnapshot = z.object({
   attempt: Attempt,
+  /**
+   * The whole pre-defined lesson, in `position` order, so the page knows its length from the
+   * start (decision 2026-10-28-the-page-loads-the-whole-planned-lesson-when-an-attempt-starts-s).
+   * Spares are drawn by growth and explain questions are never asked in v0, so neither is on it.
+   * An entry is answerable only once the server asks it and it shows in `questions`.
+   */
+  plan: z.array(PagePlannedQuestion),
   /** In `seq` order. The open one, when there is one, is last. */
   questions: z.array(PageAttemptQuestion),
   /** The open question's `seq`, or null once the attempt is finished. */
@@ -390,6 +421,44 @@ export type FeaturedLesson = z.infer<typeof FeaturedLesson>;
 export const Featured = z.object({ lessons: z.array(FeaturedLesson) });
 export type Featured = z.infer<typeof Featured>;
 
+/**
+ * `GET /api/v1/playground-examples/{language}`: every written example in Jadwigo's own pod in
+ * that language, by question type, then position, and every question and twin they name, once.
+ * The one response that carries a key (RULES.md rule 21): the playground is a review tool over
+ * Jadwigo's own authored examples, and Try it looks a free answer up in the key's accepted and
+ * near answers (owner, 2026-10-28, `dl-w3.75`).
+ */
+export const PlaygroundExamples = z
+  .object({
+    examples: z.array(LessonQuestionExample),
+    questions: z.array(LessonQuestion),
+  })
+  .superRefine((reply, ctx) => {
+    const byId = new Map(reply.questions.map((q) => [q.id, q]));
+    reply.examples.forEach((example, i) => {
+      const question = byId.get(example.lesson_question_id);
+      if (!question || (example.twin !== null && !byId.has(example.twin))) {
+        ctx.addIssue({
+          code: "custom",
+          message: "names a question the reply lacks",
+          path: ["examples", i],
+        });
+        return;
+      }
+      const value = valueFor(question.family);
+      example.scenarios.forEach((scenario, j) => {
+        if (!value.safeParse(scenario.value).success) {
+          ctx.addIssue({
+            code: "custom",
+            message: `not a ${question.family} value`,
+            path: ["examples", i, "scenarios", j, "value"],
+          });
+        }
+      });
+    });
+  });
+export type PlaygroundExamples = z.infer<typeof PlaygroundExamples>;
+
 /** Every error type, with its status (RULES.md rule 20). */
 export const ERROR_STATUS = {
   BadRequest: 400,
@@ -412,6 +481,8 @@ export const ERROR_STATUS = {
   EventIdMismatch: 409,
   WriteOnce: 409,
   AnswerLimit: 429,
+  Unauthorized: 401,
+  BankUnavailable: 502,
 } as const;
 export const ErrorType = z.enum(
   Object.keys(ERROR_STATUS) as [keyof typeof ERROR_STATUS, ...(keyof typeof ERROR_STATUS)[]],

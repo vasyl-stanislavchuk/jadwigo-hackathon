@@ -5,6 +5,7 @@ export type {
   ClientOptions,
   FeaturedClient,
   ParentClient,
+  PlaygroundClient,
 } from "./client.ts";
 export { ApiError, createClient, TransientError } from "./client.ts";
 export { apiUrl } from "./url.ts";

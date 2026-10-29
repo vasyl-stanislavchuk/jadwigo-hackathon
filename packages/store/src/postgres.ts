@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import {
   Account,
   AccountId,
@@ -22,6 +23,8 @@ import {
   Lesson,
   LessonId,
   LessonQuestion,
+  LessonQuestionExample,
+  LessonQuestionExampleId,
   LessonQuestionId,
   LessonVersion,
   LessonVersionId,
@@ -35,12 +38,14 @@ import {
   uuidOf,
   valueFor,
 } from "@jadwigo/contracts";
-import { Kysely, PostgresDialect, type Selectable, sql, type Transaction } from "kysely";
+import { Kysely, PostgresDialect, type Selectable, sql } from "kysely";
 import pg from "pg";
-import type { DB } from "./db/types.ts";
+import { COLUMNS, type DB } from "./db/types.ts";
+import { byTypeThenPosition, checkExamples } from "./example.ts";
 import { handleFor } from "./handle.ts";
 import {
   type AttemptRecord,
+  type ExampleWithQuestions,
   type HelpTwin,
   type LessonVersionWithQuestions,
   type MemberScope,
@@ -53,9 +58,11 @@ import {
   type NewLearnerWithGoals,
   type NewLesson,
   type NewLessonQuestion,
+  type NewLessonQuestionExample,
   type NewLessonVersion,
   type NewPod,
   type OpenAssignment,
+  type OpenedAttempt,
   type Store,
   StoreError,
 } from "./store.ts";
@@ -68,7 +75,25 @@ interface Schema<T> {
   ): { success: true; data: T } | { success: false; error: { message: string } };
 }
 
-type Tx = Transaction<DB>;
+/** A connection inside a unit's transaction. */
+type Tx = Kysely<DB>;
+
+/**
+ * The open unit: its connection, the pod `app.pod_id` holds now (a bare uuid), if any, the
+ * versions it read (kept once it commits), and whether it has ended.
+ */
+interface Unit {
+  readonly tx: Tx;
+  pod: string | null;
+  readonly versions: Map<string, LessonVersionWithQuestions>;
+  closed: boolean;
+}
+
+/** The published versions kept in process. A version is written once, so a kept one stays true. */
+const VERSIONS_KEPT = 64;
+
+/** A bare uuid, the only text spliced into a statement rather than sent as a parameter. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /** The prefix of each id column that is not its own table's `id`. `event_id` stays a bare uuid. */
 const PREFIXES: Readonly<Record<string, IdPrefix>> = {
@@ -79,6 +104,7 @@ const PREFIXES: Readonly<Record<string, IdPrefix>> = {
   revises: ID_PREFIXES.lesson_version,
   lesson_question_id: ID_PREFIXES.lesson_question,
   twin_of: ID_PREFIXES.lesson_question,
+  twin: ID_PREFIXES.lesson_question,
   assignment_id: ID_PREFIXES.assignment,
   attempt_id: ID_PREFIXES.attempt,
   account_id: ID_PREFIXES.account,
@@ -127,6 +153,15 @@ function lastRungNeedsTwin(): StoreError {
   );
 }
 
+/** A value no caller can change: a kept version is shared by every request. */
+function deepFrozen<T>(value: T): T {
+  if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
+    for (const inner of Object.values(value)) deepFrozen(inner);
+    Object.freeze(value);
+  }
+  return value;
+}
+
 /** A jsonb parameter. pg would write a JS array as a Postgres array, so every value is sent as text. */
 function json(value: unknown): string | null {
   return value === null || value === undefined ? null : JSON.stringify(value);
@@ -161,7 +196,7 @@ function isPgError(error: unknown): error is PgError {
  * as InMemoryStore does, so these are the backstop: a race the checks lost, or a rule only the
  * database holds.
  */
-function refusal(error: unknown): unknown {
+export function refusal(error: unknown): unknown {
   if (!isPgError(error)) return error;
   switch (error.code) {
     case "23505": // unique_violation
@@ -183,19 +218,23 @@ function refusal(error: unknown): unknown {
       return new StoreError(ErrorType.enum.WriteOnce, error.message);
     case "23503": // foreign_key_violation: the row it names is not in the pod
       return new StoreError(ErrorType.enum.NotFound, error.message);
+    case "P0002": // no_data_found: app.claim_attempt's learner, account or attempt
+      return new StoreError(ErrorType.enum.NotFound, error.message);
     case "23502": // not_null_violation
     case "23514": // check_violation, answered_at >= asked_at among them
     case "22P02": // invalid_text_representation: a value outside its enum
-    case "P0002": // no_data_found: app.claim_attempt's learner, account or attempt
-      return new StoreError(ErrorType.enum.NotFound, error.message);
-    case "23001": // restrict_violation: the write-once, `missed` and claim triggers
+    case "22007": // invalid_datetime_format
+    case "22008": // datetime_field_overflow
+    case "23001": // restrict_violation: the write-once, `missed`, answer-open and claim triggers
+      // An answer to an ended question names its own constraint (migration
+      // 20261029100000_answer_question_open.sql): the store's check lost a race.
+      if (error.constraint === "attempt_answer_question_open") {
+        return new StoreError(ErrorType.enum.QuestionNotOpen, error.message);
+      }
       // The claim trigger names its refusal in the detail.
       if (error.detail === "AttemptClaimed" || error.detail === "AttemptPreview") {
         return new StoreError(ErrorType.enum[error.detail], error.message);
       }
-      return new StoreError(ErrorType.enum.BadRequest, error.message);
-    case "22007": // invalid_datetime_format
-    case "22008": // datetime_field_overflow
       return new StoreError(ErrorType.enum.BadRequest, error.message);
     default:
       return error;
@@ -203,17 +242,20 @@ function refusal(error: unknown): unknown {
 }
 
 /**
- * The Store on Postgres, through Kysely. Each call is one transaction, run as the `jadwigo_api`
- * role (`set local role`, so the login must be a member of it) with `app.pod_id` set to the pod
- * it is scoped to, so row-level security holds every read and write to that pod. The rules are
+ * The Store on Postgres, through Kysely. Each call is one transaction, or a part of the open
+ * unit's, run as the `jadwigo_api` role with `app.pod_id` set to the pod it is scoped to, so
+ * row-level security holds every read and write to that pod. The rules are
  * checked in code first, under row locks, in the order InMemoryStore checks them: the attempt
  * row for asking, answering, pausing and finishing; the attempt question for help, ending and
  * answers; the lesson for publishing. The database's own refusals are mapped by `refusal`.
  */
 class PostgresStore implements Store {
   readonly #db: Kysely<DB>;
+  readonly #units = new AsyncLocalStorage<Unit>();
+  /** Published versions by pod and id, oldest first. */
+  readonly #versions = new Map<string, LessonVersionWithQuestions>();
 
-  constructor(databaseUrl: string, options: PoolOptions = {}) {
+  constructor(databaseUrl: string, { onQuery, ...options }: PoolOptions = {}) {
     const pool = new pg.Pool({ connectionString: databaseUrl, ...options });
     // An idle connection that drops (Supavisor closes it, or the socket dies while a Lambda is
     // frozen) emits 'error' on the pool; with no listener that is an uncaught exception. The pool
@@ -221,6 +263,15 @@ class PostgresStore implements Store {
     pool.on("error", (error) => {
       console.error("an idle Postgres connection dropped:", error.message);
     });
+    if (onQuery) {
+      pool.on("connect", (client) => {
+        const query = client.query.bind(client) as (...args: unknown[]) => unknown;
+        (client as { query: unknown }).query = (...args: unknown[]) => {
+          onQuery(typeof args[0] === "string" ? args[0] : "");
+          return query(...args);
+        };
+      });
+    }
     this.#db = new Kysely<DB>({ dialect: new PostgresDialect({ pool }) });
   }
 
@@ -228,20 +279,61 @@ class PostgresStore implements Store {
     await this.#db.destroy();
   }
 
-  async #in<T>(pod: PodId | null, work: (tx: Tx) => Promise<T>): Promise<T> {
+  async unit<T>(work: () => Promise<T>): Promise<T> {
+    if (this.#units.getStore()) return work();
     try {
-      return await this.#db.transaction().execute(async (tx) => {
-        await sql`set local role jadwigo_api`.execute(tx);
-        if (pod !== null) {
-          await sql`select set_config('app.pod_id', ${uuidOf(ID_PREFIXES.pod, pod)}, true)`.execute(
-            tx,
-          );
-        }
-        return work(tx);
-      });
+      return await this.#open(null, () => work());
     } catch (error) {
       throw refusal(error);
     }
+  }
+
+  /**
+   * A call's work, in the open unit or in a unit of its own. Inside a unit the pod is set only
+   * when it changes; a unit of its own sends its `begin`, role and pod as one statement.
+   */
+  async #in<T>(pod: PodId | null, work: (tx: Tx) => Promise<T>): Promise<T> {
+    const scope = pod === null ? null : uuidOf(ID_PREFIXES.pod, pod);
+    try {
+      const unit = this.#units.getStore();
+      if (!unit) return await this.#open(scope, work);
+      // A call that outlived its unit would run on a connection another request may hold.
+      if (unit.closed) throw new Error("a Store call outlived its unit");
+      if (scope !== null && unit.pod !== scope) {
+        await sql`select set_config('app.pod_id', ${scope}, true)`.execute(unit.tx);
+        unit.pod = scope;
+      }
+      return await work(unit.tx);
+    } catch (error) {
+      throw refusal(error);
+    }
+  }
+
+  /**
+   * One transaction on one connection, run as the `jadwigo_api` role (`set local role`, so the
+   * login must be a member of it) with `app.pod_id` set when `pod` is given. Its calls find it
+   * through `#units`, so a request on a pool of 1 never waits on a 2nd connection.
+   */
+  async #open<T>(pod: string | null, work: (tx: Tx) => Promise<T>): Promise<T> {
+    if (pod !== null && !UUID.test(pod)) throw notFound("the pod");
+    return this.#db.connection().execute(async (tx) => {
+      const setPod = pod === null ? "" : `; select set_config('app.pod_id', '${pod}', true)`;
+      const unit: Unit = { tx, pod, versions: new Map(), closed: false };
+      try {
+        // Inside the try, so a failed role or pod never hands the pool an aborted transaction.
+        await sql.raw(`begin; set local role jadwigo_api${setPod}`).execute(tx);
+        const result = await this.#units.run(unit, () => work(tx));
+        await sql`commit`.execute(tx);
+        // Only a committed read is kept: a version published in a unit that rolls back is not.
+        for (const [key, version] of unit.versions) this.#keep(key, version);
+        return result;
+      } catch (error) {
+        await sql`rollback`.execute(tx).catch(() => undefined);
+        throw error;
+      } finally {
+        unit.closed = true;
+      }
+    });
   }
 
   /**
@@ -269,6 +361,49 @@ class PostgresStore implements Store {
       `.execute(tx);
       const pod = rows[0]?.pod;
       return pod ? PodId.parse(idOf(ID_PREFIXES.pod, pod)) : undefined;
+    });
+  }
+
+  async openAttempt(id: AttemptId): Promise<OpenedAttempt | undefined> {
+    const attemptId = uuidOf(ID_PREFIXES.attempt, id);
+    return this.#in(null, async (tx) => {
+      // The lookup sets the pod it finds, in the same statement, for the reads after it.
+      const { rows } = await sql<{ pod: string }>`
+        select set_config('app.pod_id', pod::text, true) as pod
+        from app.attempt_pod(${attemptId}) as pod where pod is not null
+      `.execute(tx);
+      const found = rows[0]?.pod;
+      if (found === undefined) return undefined;
+      const unit = this.#units.getStore();
+      if (unit) unit.pod = found;
+      const pod = PodId.parse(idOf(ID_PREFIXES.pod, found));
+      // The attempt and its assignment in one read, the attempt locked to the end of the unit:
+      // every write to an attempt takes this lock first, so the questions and answers read after
+      // it stay what the request sees, and locks are always taken attempt first, question second.
+      // The assignment's columns come back prefixed.
+      const joined = await sql<Record<string, unknown>>`
+        select attempt.*, ${sql.join(
+          Object.keys(COLUMNS.assignment).map(
+            (column) => sql`assignment.${sql.ref(column)} as ${sql.id(`assignment.${column}`)}`,
+          ),
+        )}
+        from attempt join assignment on assignment.id = attempt.assignment_id
+        where attempt.id = ${attemptId}
+        for update of attempt
+      `.execute(tx);
+      const row = joined.rows[0];
+      if (!row) return undefined;
+      const attempt: Record<string, unknown> = {};
+      const assignment: Record<string, unknown> = {};
+      for (const [column, value] of Object.entries(row)) {
+        if (column.startsWith("assignment.")) assignment[column.slice(11)] = value;
+        else attempt[column] = value;
+      }
+      return {
+        pod,
+        record: await this.#record(tx, attemptId, attempt),
+        assignment: read(Assignment, assignment, ID_PREFIXES.assignment),
+      };
     });
   }
 
@@ -529,6 +664,25 @@ class PostgresStore implements Store {
   }
 
   async getLessonVersion(pod: PodId, id: LessonVersionId): Promise<LessonVersionWithQuestions> {
+    const key = `${pod}/${id}`;
+    const unit = this.#units.getStore();
+    const kept = this.#versions.get(key) ?? unit?.versions.get(key);
+    if (kept) return kept;
+    const version = deepFrozen(await this.#readLessonVersion(pod, id));
+    if (unit) unit.versions.set(key, version);
+    else this.#keep(key, version);
+    return version;
+  }
+
+  #keep(key: string, version: LessonVersionWithQuestions): void {
+    if (this.#versions.size >= VERSIONS_KEPT) {
+      const oldest = this.#versions.keys().next().value;
+      if (oldest !== undefined) this.#versions.delete(oldest);
+    }
+    this.#versions.set(key, version);
+  }
+
+  async #readLessonVersion(pod: PodId, id: LessonVersionId): Promise<LessonVersionWithQuestions> {
     const versionId = uuidOf(ID_PREFIXES.lesson_version, id);
     return this.#in(pod, async (tx) => {
       const version = await tx
@@ -687,6 +841,119 @@ class PostgresStore implements Store {
     });
   }
 
+  async replaceExamples(
+    pod: PodId,
+    language: Language,
+    examples: readonly NewLessonQuestionExample[],
+  ): Promise<readonly LessonQuestionExample[]> {
+    return this.#in(pod, async (tx) => {
+      await this.#pod(tx, pod);
+      const questions = await this.#questionsById(
+        tx,
+        examples.flatMap((e) =>
+          e.twin === null ? [e.lesson_question_id] : [e.lesson_question_id, e.twin],
+        ),
+      );
+      checkExamples(language, examples, (id) => questions.get(id));
+      await tx.deleteFrom("lesson_question_example").where("language", "=", language).execute();
+      if (examples.length === 0) return [];
+      const valid = examples.map((example) =>
+        parse(
+          LessonQuestionExample,
+          {
+            ...example,
+            id: mint(LessonQuestionExampleId, ID_PREFIXES.lesson_question_example),
+            pod_id: pod,
+            created_at: new Date().toISOString(),
+          },
+          "the example",
+        ),
+      );
+      const rows = await tx
+        .insertInto("lesson_question_example")
+        .values(
+          valid.map((e) => ({
+            id: uuidOf(ID_PREFIXES.lesson_question_example, e.id),
+            pod_id: uuidOf(ID_PREFIXES.pod, pod),
+            lesson_question_id: uuidOf(ID_PREFIXES.lesson_question, e.lesson_question_id),
+            twin: e.twin === null ? null : uuidOf(ID_PREFIXES.lesson_question, e.twin),
+            language: e.language,
+            slug: e.slug,
+            position: e.position,
+            label: e.label,
+            showcase: e.showcase,
+            scenarios: JSON.stringify(e.scenarios),
+          })),
+        )
+        .returningAll()
+        .execute();
+      const byId = new Map(
+        rows.map((r) => [
+          r.id,
+          read(LessonQuestionExample, r, ID_PREFIXES.lesson_question_example),
+        ]),
+      );
+      return valid.flatMap((e) => {
+        const row = byId.get(uuidOf(ID_PREFIXES.lesson_question_example, e.id));
+        return row ? [row] : [];
+      });
+    });
+  }
+
+  async listExamples(pod: PodId, language: Language): Promise<readonly ExampleWithQuestions[]> {
+    return this.#in(pod, async (tx) => {
+      const rows = await tx
+        .selectFrom("lesson_question_example")
+        .selectAll()
+        .where("language", "=", language)
+        .execute();
+      const examples = rows.map((r) =>
+        read(LessonQuestionExample, r, ID_PREFIXES.lesson_question_example),
+      );
+      const questions = await this.#questionsById(
+        tx,
+        examples.flatMap((e) =>
+          e.twin === null ? [e.lesson_question_id] : [e.lesson_question_id, e.twin],
+        ),
+      );
+      const question = (id: LessonQuestionId, what: string): LessonQuestion => {
+        const found = questions.get(id);
+        if (!found) throw notFound(what);
+        return found;
+      };
+      return examples
+        .map((example) => ({
+          example,
+          question: question(example.lesson_question_id, "the question"),
+          twin: example.twin === null ? null : question(example.twin, "the twin's question"),
+        }))
+        .sort(byTypeThenPosition);
+    });
+  }
+
+  /** The pod's lesson questions behind these ids, by wire id; an id the pod lacks is left out. */
+  async #questionsById(
+    tx: Tx,
+    ids: readonly LessonQuestionId[],
+  ): Promise<Map<LessonQuestionId, LessonQuestion>> {
+    if (ids.length === 0) return new Map();
+    const rows = await tx
+      .selectFrom("lesson_question")
+      .selectAll()
+      .where(
+        "id",
+        "in",
+        [...new Set(ids)].map((id) => uuidOf(ID_PREFIXES.lesson_question, id)),
+      )
+      .execute();
+    return new Map(
+      rows.map((r) => {
+        const q = read(LessonQuestion, r, ID_PREFIXES.lesson_question);
+        return [q.id, q];
+      }),
+    );
+  }
+
   async startAttempt(pod: PodId, attempt: NewAttempt): Promise<AttemptRecord> {
     return this.#in(pod, async (tx) => {
       const assignment = await tx
@@ -789,12 +1056,11 @@ class PostgresStore implements Store {
     });
   }
 
-  async #record(tx: Tx, attemptId: string): Promise<AttemptRecord> {
-    const attempt = await tx
-      .selectFrom("attempt")
-      .selectAll()
-      .where("id", "=", attemptId)
-      .executeTakeFirst();
+  /** The attempt's record; `row` is its attempt row when the caller has read it already. */
+  async #record(tx: Tx, attemptId: string, row?: object): Promise<AttemptRecord> {
+    const attempt =
+      row ??
+      (await tx.selectFrom("attempt").selectAll().where("id", "=", attemptId).executeTakeFirst());
     if (!attempt) throw notFound("the attempt");
     const questions = await tx
       .selectFrom("attempt_question")
@@ -845,12 +1111,13 @@ class PostgresStore implements Store {
     return attempt;
   }
 
-  /** The attempt question, locked for this transaction. */
+  /** The attempt question, locked for this transaction after its attempt, in the order every write takes them. */
   async #asking(tx: Tx, attemptId: string, seq: number) {
     const attempt = await tx
       .selectFrom("attempt")
       .select("id")
       .where("id", "=", attemptId)
+      .forUpdate()
       .executeTakeFirst();
     if (!attempt) throw notFound("the attempt");
     const question = await tx
@@ -873,25 +1140,29 @@ class PostgresStore implements Store {
     const attemptId = uuidOf(ID_PREFIXES.attempt, attempt);
     return this.#in(pod, async (tx) => {
       // The attempt row stays locked to the commit, so the seq read below is still the next one.
+      // The read comes after the lock, in a statement of its own, so it sees the last holder's
+      // writes.
       await this.#playing(tx, attemptId);
-      const asked = await tx
-        .selectFrom("attempt_question")
-        .select(["seq", "ended"])
-        .where("attempt_id", "=", attemptId)
-        .execute();
+      const lessonQuestionId = uuidOf(ID_PREFIXES.lesson_question, question.lesson_question_id);
+      const { rows } = await sql<{
+        asked: { seq: number; ended: string | null }[];
+        known: boolean;
+      }>`
+        select
+          (select coalesce(json_agg(json_build_object('seq', seq, 'ended', ended)), '[]')
+           from attempt_question where attempt_id = ${attemptId}) as asked,
+          exists (select from lesson_question where id = ${lessonQuestionId}) as known
+      `.execute(tx);
+      const state = rows[0];
+      if (!state) throw notFound("the attempt");
+      const { asked } = state;
       if (asked.some((q) => q.ended === null)) {
         throw new StoreError(ErrorType.enum.QuestionNotOpen, "another question is still open");
       }
       if (options.seq !== undefined && options.seq !== asked.length + 1) {
         throw new StoreError(ErrorType.enum.QuestionNotOpen, "another question took this seq");
       }
-      const lessonQuestionId = uuidOf(ID_PREFIXES.lesson_question, question.lesson_question_id);
-      const exists = await tx
-        .selectFrom("lesson_question")
-        .select("id")
-        .where("id", "=", lessonQuestionId)
-        .executeTakeFirst();
-      if (!exists) throw notFound("the lesson question");
+      if (!state.known) throw notFound("the lesson question");
       const planned = question.added === "planned";
       if (
         planned !== (question.placed === null) ||
@@ -952,24 +1223,45 @@ class PostgresStore implements Store {
       };
       // Wait for an append to this attempt that holds it, so a send of the same event that
       // ended the question reads as a replay, not as QuestionNotOpen.
-      await tx.selectFrom("attempt").select("id").where("id", "=", attemptId).forUpdate().execute();
+      const attempt = await tx
+        .selectFrom("attempt")
+        .selectAll()
+        .where("id", "=", attemptId)
+        .forUpdate()
+        .executeTakeFirst();
       const stored = await find();
       if (stored) return replay(stored);
-      const attempt = await this.#playing(tx, attemptId);
+      if (!attempt) throw notFound("the attempt");
+      if (attempt.status === "finished") {
+        throw new StoreError(ErrorType.enum.AttemptFinished, "this attempt is finished");
+      }
       if (attempt.status === "paused") {
         throw new StoreError(ErrorType.enum.AttemptPaused, "this attempt is paused");
       }
-      const question = await this.#asking(tx, attemptId, answer.seq);
+      // The question, locked, with its family for the value's shape check and its tries so far.
+      // The tries are read under the attempt's lock, which every append takes first; the one
+      // other writer of an answer, the last rung's help_twin skip, ends the question with it.
+      const question = await tx
+        .selectFrom("attempt_question")
+        .innerJoin("lesson_question", "lesson_question.id", "attempt_question.lesson_question_id")
+        .selectAll("attempt_question")
+        .select("lesson_question.family")
+        .select(
+          sql<number[]>`array(
+            select try_no from attempt_answer
+            where attempt_id = attempt_question.attempt_id and seq = attempt_question.seq
+          )`.as("tries"),
+        )
+        .where("attempt_question.attempt_id", "=", attemptId)
+        .where("attempt_question.seq", "=", answer.seq)
+        .forUpdate("attempt_question")
+        .executeTakeFirst();
+      if (!question) throw notFound("the question");
       if (question.ended !== null) {
         throw new StoreError(ErrorType.enum.QuestionNotOpen, "this question has ended");
       }
-      const tries = await tx
-        .selectFrom("attempt_answer")
-        .select("try_no")
-        .where("attempt_id", "=", attemptId)
-        .where("seq", "=", answer.seq)
-        .execute();
-      if (tries.some((a) => a.try_no === answer.try_no)) {
+      const { tries } = question;
+      if (tries.includes(answer.try_no)) {
         throw new StoreError(ErrorType.enum.AnswerConflict, "this try was already answered");
       }
       if (answer.try_no !== tries.length + 1) {
@@ -1002,13 +1294,12 @@ class PostgresStore implements Store {
           "a try carries a value and a skip its reason",
         );
       }
-      const { family } = await tx
-        .selectFrom("lesson_question")
-        .select("family")
-        .where("id", "=", question.lesson_question_id)
-        .executeTakeFirstOrThrow();
+      const { family } = question;
       if (valid.kind === "try" && !valueFor(family).safeParse(valid.value).success) {
-        throw new StoreError(ErrorType.enum.BadRequest, `the value is not a ${family} value`);
+        throw new StoreError(
+          ErrorType.enum.BadRequest,
+          `the value is not a value of the ${family} family`,
+        );
       }
       const row = await tx
         .insertInto("attempt_answer")
@@ -1288,12 +1579,15 @@ class PostgresStore implements Store {
 
   async findMember(sub: Uuid): Promise<MemberScope | undefined> {
     return this.#in(null, async (tx) => {
-      const { rows } = await sql<{ pod: string | null }>`
-        select app.member_pod(${sub}) as pod
+      // The lookup sets the pod it finds, in the same statement, for the reads after it.
+      const { rows } = await sql<{ pod: string }>`
+        select set_config('app.pod_id', pod::text, true) as pod
+        from app.member_pod(${sub}) as pod where pod is not null
       `.execute(tx);
       const pod = rows[0]?.pod;
-      if (!pod) return undefined;
-      await sql`select set_config('app.pod_id', ${pod}, true)`.execute(tx);
+      if (pod === undefined) return undefined;
+      const unit = this.#units.getStore();
+      if (unit) unit.pod = pod;
       const account = await tx
         .selectFrom("account")
         .select("id")
@@ -1307,13 +1601,21 @@ class PostgresStore implements Store {
     });
   }
 
+  /**
+   * One unit, the request's when one is open. A racing first sign-in of the same user waits on the
+   * user's lock to the end of the other's unit, then finds the account it made. A unique violation
+   * would abort the request's transaction, so nothing here relies on one.
+   */
   async createAccount(sub: Uuid, language: Language): Promise<MemberScope> {
-    const found = await this.findMember(sub);
-    if (found) return found;
-    const pod = mint(PodId, ID_PREFIXES.pod);
-    const podId = uuidOf(ID_PREFIXES.pod, pod);
-    try {
-      return await this.#in(pod, async (tx) => {
+    return this.unit(async () => {
+      await this.#in(null, (tx) =>
+        sql`select pg_advisory_xact_lock(hashtextextended(${sub}::text, 0))`.execute(tx),
+      );
+      const found = await this.findMember(sub);
+      if (found) return found;
+      const pod = mint(PodId, ID_PREFIXES.pod);
+      const podId = uuidOf(ID_PREFIXES.pod, pod);
+      return this.#in(pod, async (tx) => {
         await tx.insertInto("pod").values({ id: podId, name: "home", language }).execute();
         const account = await tx
           .insertInto("account")
@@ -1326,14 +1628,7 @@ class PostgresStore implements Store {
           .execute();
         return { pod, account: AccountId.parse(idOf(ID_PREFIXES.account, account.id)) };
       });
-    } catch (error) {
-      // A racing first sign-in of the same user made its account first: this one wrote nothing.
-      if (error instanceof StoreError && error.type === "WriteOnce") {
-        const raced = await this.findMember(sub);
-        if (raced) return raced;
-      }
-      throw error;
-    }
+    });
   }
 
   async getMe(pod: PodId, account: AccountId): Promise<Me> {
@@ -1391,18 +1686,19 @@ class PostgresStore implements Store {
   }
 
   async addLearner(pod: PodId, learner: NewLearnerWithGoals): Promise<LearnerSnapshot> {
-    // A racing add can take the handle this one picked; the next try picks past it.
-    for (let attempt = 1; ; attempt += 1) {
-      try {
-        return await this.#addLearner(pod, learner);
-      } catch (error) {
-        if (attempt >= 3 || !(error instanceof StoreError) || error.type !== "WriteOnce")
-          throw error;
-      }
+    // A racing add can take the handle this one picked: its insert writes nothing, since a unique
+    // violation would abort the request's transaction, and the next try picks past it.
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const added = await this.#addLearner(pod, learner);
+      if (added) return added;
     }
+    throw new StoreError(ErrorType.enum.WriteOnce, "the learner's handle was taken 3 times");
   }
 
-  async #addLearner(pod: PodId, learner: NewLearnerWithGoals): Promise<LearnerSnapshot> {
+  async #addLearner(
+    pod: PodId,
+    learner: NewLearnerWithGoals,
+  ): Promise<LearnerSnapshot | undefined> {
     const podId = uuidOf(ID_PREFIXES.pod, pod);
     return this.#in(pod, async (tx) => {
       await this.#pod(tx, pod);
@@ -1428,8 +1724,10 @@ class PostgresStore implements Store {
           first_name: valid.first_name,
           age_group: valid.age_group,
         })
+        .onConflict((oc) => oc.columns(["pod_id", "handle"]).doNothing())
         .returningAll()
-        .executeTakeFirstOrThrow();
+        .executeTakeFirst();
+      if (!row) return undefined;
       const names = learner.goals ?? [];
       const goals =
         names.length === 0
@@ -1540,6 +1838,8 @@ class PostgresStore implements Store {
 interface PoolOptions {
   readonly max?: number;
   readonly connectionTimeoutMillis?: number;
+  /** Called once per statement sent, each a round trip: a test counts what a request costs. */
+  readonly onQuery?: (text: string) => void;
 }
 
 /**

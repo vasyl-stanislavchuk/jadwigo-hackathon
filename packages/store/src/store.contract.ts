@@ -2,6 +2,7 @@ import {
   AttemptId,
   type Ended,
   EventId,
+  type ExampleScenario,
   ID_PREFIXES,
   type IdPrefix,
   idOf,
@@ -10,7 +11,13 @@ import {
   Uuid,
 } from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
-import type { HelpTwin, NewAttemptAnswer, NewLessonQuestion, Store } from "./store.ts";
+import type {
+  HelpTwin,
+  NewAttemptAnswer,
+  NewLessonQuestion,
+  NewLessonQuestionExample,
+  Store,
+} from "./store.ts";
 
 /**
  * The behaviour every `Store` has, run against each one: `InMemoryStore` in `store.test.ts`, and
@@ -213,6 +220,97 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         );
         expect((await store.listOpenAssignments(b.pod)).map((o) => o.assignment.id)).toEqual([
           b.assignment,
+        ]);
+      });
+    });
+
+    describe("opening an attempt and running a unit", () => {
+      it("opens an attempt id as its pod, its record and its assignment, and an unknown id as undefined", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const record = await store.startAttempt(a.pod, { assignment_id: a.assignment });
+
+        const opened = await store.openAttempt(record.attempt.id);
+        expect(opened).toEqual({
+          pod: a.pod,
+          record,
+          assignment: await store.getAssignment(a.pod, a.assignment),
+        });
+        expect(
+          await store.openAttempt(AttemptId.parse(fresh(ID_PREFIXES.attempt))),
+        ).toBeUndefined();
+      });
+
+      it("returns what its work returns, and its calls see each other's writes", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const b = await newPod(store, "Pod of owls");
+        const record = await store.unit(async () => {
+          const started = await store.startAttempt(a.pod, { assignment_id: a.assignment });
+          const opened = await store.openAttempt(started.attempt.id);
+          // Another pod's read in the same unit is still scoped to that pod.
+          await expect(store.getAssignment(b, a.assignment)).rejects.toMatchObject(NOT_FOUND);
+          return opened?.record;
+        });
+        if (record === undefined) throw new Error("the unit opened no attempt");
+        expect(record).toEqual(await store.getAttempt(a.pod, record.attempt.id));
+        expect(record.questions).toHaveLength(1);
+      });
+    });
+
+    describe("playground examples", () => {
+      it("replaces a language's examples and lists them by type, then position, with their twins", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const b = await seed(store);
+        const apples = example(a.apples, { slug: "apples", twin: a.pears });
+        const groups = example(a.groups, { slug: "groups", scenarios: [CHOSEN] });
+        await store.replaceExamples(a.pod, "en", [apples, groups]);
+        await store.replaceExamples(a.pod, "pl", [example(a.apples, { language: "pl" })]);
+        await store.replaceExamples(b.pod, "en", [example(b.apples)]);
+
+        const listed = await store.listExamples(a.pod, "en");
+        // recognition is declared before production in QuestionType.
+        expect(listed.map((e) => e.example.slug)).toEqual(["groups", "apples"]);
+        expect(listed[1]?.question.id).toBe(a.apples);
+        expect(listed[1]?.twin?.id).toBe(a.pears);
+        expect(listed[0]?.twin).toBeNull();
+        expect(listed[1]?.example.scenarios).toEqual(apples.scenarios);
+
+        await store.replaceExamples(a.pod, "en", [groups]);
+        expect((await store.listExamples(a.pod, "en")).map((e) => e.example.slug)).toEqual([
+          "groups",
+        ]);
+        expect((await store.listExamples(a.pod, "pl")).map((e) => e.question.id)).toEqual([
+          a.apples,
+        ]);
+        expect((await store.listExamples(b.pod, "en")).map((e) => e.question.id)).toEqual([
+          b.apples,
+        ]);
+      });
+
+      it("refuses a batch it cannot keep, and writes nothing of it", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const b = await seed(store);
+        await store.replaceExamples(a.pod, "en", [example(a.apples)]);
+        const refused = [
+          [example(a.groups, { language: "pl" })],
+          [example(a.apples, { slug: "same" }), example(a.pears, { slug: "same" })],
+          [example(a.apples), example(a.apples, { slug: "other" })],
+          [example(a.groups, { twin: a.pears })],
+          [example(a.groups, { scenarios: [SIX] })],
+        ];
+        for (const batch of refused) {
+          await expect(store.replaceExamples(a.pod, "en", batch)).rejects.toMatchObject(
+            BAD_REQUEST,
+          );
+        }
+        await expect(store.replaceExamples(a.pod, "en", [example(b.apples)])).rejects.toMatchObject(
+          NOT_FOUND,
+        );
+        expect((await store.listExamples(a.pod, "en")).map((e) => e.question.id)).toEqual([
+          a.apples,
         ]);
       });
     });
@@ -540,7 +638,11 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         const { a, attempt } = await started(store);
         await expect(
           store.appendAttemptAnswer(a.pod, answer(attempt, 1, 1, { chosen: ["a"] }, false)),
-        ).rejects.toMatchObject(BAD_REQUEST);
+        ).rejects.toMatchObject({
+          ...BAD_REQUEST,
+          // An article that fits every family: never "a enter" or "a order".
+          message: "the value is not a value of the enter family",
+        });
         expect((await store.getAttempt(a.pod, attempt)).answers).toEqual([]);
       });
 
@@ -1232,6 +1334,33 @@ function apples(): NewLessonQuestion {
     key: { accept: ["6"] },
     help: { look: { text: "Count the groups." } },
     content_hash: "h1",
+  };
+}
+
+const SIX: ExampleScenario = {
+  try: "types 6",
+  value: { entered: "6" },
+  outcome: "correct",
+  mistake_class: null,
+  marks: [],
+};
+const CHOSEN: ExampleScenario = { ...SIX, try: "picks a", value: { chosen: ["a"] } };
+
+/** A playground example in English on `question`, with one scenario. */
+function example(
+  question: LessonQuestionId,
+  more: Partial<NewLessonQuestionExample> = {},
+): NewLessonQuestionExample {
+  return {
+    lesson_question_id: question,
+    twin: null,
+    language: "en",
+    slug: "apples",
+    position: 1,
+    label: "Apples in groups",
+    showcase: true,
+    scenarios: [SIX],
+    ...more,
   };
 }
 

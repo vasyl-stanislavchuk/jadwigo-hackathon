@@ -196,6 +196,20 @@ interface LessonQuestionTable {
   created_at: ColumnType<Date, Date | string | undefined, Date | string>;
 }
 
+interface LessonQuestionExampleTable {
+  id: Generated<string>;
+  pod_id: string;
+  lesson_question_id: string;
+  twin: string | null;
+  language: Language;
+  slug: string;
+  position: number;
+  label: string;
+  showcase: Generated<boolean>;
+  scenarios: ColumnType<unknown, string, string>;
+  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
 interface LessonVersionTable {
   id: Generated<string>;
   pod_id: string;
@@ -239,6 +253,7 @@ export interface DB {
   learner: LearnerTable;
   lesson: LessonTable;
   lesson_question: LessonQuestionTable;
+  lesson_question_example: LessonQuestionExampleTable;
   lesson_version: LessonVersionTable;
   lesson_version_question: LessonVersionQuestionTable;
   member: MemberTable;
@@ -518,6 +533,19 @@ export const COLUMNS = {
     twin_of: { type: "uuid", nullable: true, generated: false, labels: null },
     based_on: { type: "jsonb", nullable: true, generated: false, labels: null },
     content_hash: { type: "text", nullable: false, generated: false, labels: null },
+    created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+  },
+  lesson_question_example: {
+    id: { type: "uuid", nullable: false, generated: true, labels: null },
+    pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    lesson_question_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    twin: { type: "uuid", nullable: true, generated: false, labels: null },
+    language: { type: "language", nullable: false, generated: false, labels: ["pl", "en", "uk"] },
+    slug: { type: "text", nullable: false, generated: false, labels: null },
+    position: { type: "int4", nullable: false, generated: false, labels: null },
+    label: { type: "text", nullable: false, generated: false, labels: null },
+    showcase: { type: "bool", nullable: false, generated: true, labels: null },
+    scenarios: { type: "jsonb", nullable: false, generated: false, labels: null },
     created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
   },
   lesson_version: {

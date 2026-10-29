@@ -18,6 +18,7 @@ import type {
   Lesson,
   LessonId,
   LessonQuestion,
+  LessonQuestionExample,
   LessonQuestionId,
   LessonVersion,
   LessonVersionId,
@@ -80,6 +81,19 @@ export interface NewLessonVersion {
 export interface LessonVersionWithQuestions {
   readonly version: LessonVersion;
   readonly questions: readonly (LessonVersionQuestion & { readonly question: LessonQuestion })[];
+}
+
+/**
+ * A playground example as the seed writes it: its question and twin already stored. The store
+ * mints its id, since a replace writes every row anew.
+ */
+export type NewLessonQuestionExample = Omit<LessonQuestionExample, "id" | "pod_id" | "created_at">;
+
+/** A playground example joined to its question and twin. */
+export interface ExampleWithQuestions {
+  readonly example: LessonQuestionExample;
+  readonly question: LessonQuestion;
+  readonly twin: LessonQuestion | null;
 }
 
 /** An assignment anyone may play now, with the lesson it plays. */
@@ -146,6 +160,13 @@ export interface AttemptRecord {
   readonly answers: readonly AttemptAnswer[];
 }
 
+/** `openAttempt`'s answer: the pod that holds an attempt, its record and its assignment. */
+export interface OpenedAttempt {
+  readonly pod: PodId;
+  readonly record: AttemptRecord;
+  readonly assignment: Assignment;
+}
+
 /**
  * The seam every app reads and writes records through (`docs/research/core-data-model.md`,
  * access patterns 1 to 8). Every method but the 2 pod lookups is scoped to one pod, as row-level
@@ -163,9 +184,23 @@ export interface AttemptRecord {
  * bookkeeping after the player leaves.
  */
 export interface Store {
+  /**
+   * Runs `work` as one unit: on Postgres every Store call inside it shares one transaction, with
+   * the role set once and the pod set each time it changes, and a throw out of `work` rolls all of
+   * it back. A request is one unit, so it pays for one transaction, not one per call. A unit inside
+   * a unit is the outer one. InMemoryStore runs `work` as it is: each call is already one unit
+   * there, and nothing is rolled back.
+   */
+  unit<T>(work: () => Promise<T>): Promise<T>;
+
   /** The pod behind an assignment or an attempt id, for `authorize()`. Not scoped: it is how the scope is found. */
   findAssignmentPod(id: AssignmentId): Promise<PodId | undefined>;
   findAttemptPod(id: AttemptId): Promise<PodId | undefined>;
+  /**
+   * `authorize()`'s read of an attempt id, in one go: the pod that holds it, the attempt's record
+   * and its assignment, or undefined when no pod holds the id. Not scoped, like the lookups.
+   */
+  openAttempt(id: AttemptId): Promise<OpenedAttempt | undefined>;
 
   // Content: written once, idempotent by id. Writing a stored id again returns the stored row,
   // even when the content given differs (on conflict do nothing); a lesson question alone
@@ -201,6 +236,23 @@ export interface Store {
    * first. Scoped to the pod like every other read, so another pod's are never listed.
    */
   listOpenAssignments(pod: PodId): Promise<readonly OpenAssignment[]>;
+
+  // The playground's written examples: not write-once, replaced whole by the seed (dl-w3.75)
+
+  /**
+   * Replaces the pod's examples in `language` with `examples`, in one unit, and returns them as
+   * stored. Each names a lesson question the pod holds (else `NotFound`); the batch is refused
+   * with `BadRequest` when an example is in another language, a slug repeats within its question
+   * type, a question repeats, a twin's `twin_of` is not its example's question, or a scenario's
+   * value is not its question's family's.
+   */
+  replaceExamples(
+    pod: PodId,
+    language: Language,
+    examples: readonly NewLessonQuestionExample[],
+  ): Promise<readonly LessonQuestionExample[]>;
+  /** The pod's examples in `language` with their questions, by question type, position, then slug. */
+  listExamples(pod: PodId, language: Language): Promise<readonly ExampleWithQuestions[]>;
 
   // Evidence
 

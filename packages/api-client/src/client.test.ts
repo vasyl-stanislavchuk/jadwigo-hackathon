@@ -39,7 +39,21 @@ const question = {
   asked_at: AT,
 };
 
-const snapshot = { attempt, questions: [question], open_seq: 1, last_event_id: null };
+const planned = {
+  position: 1,
+  lesson_question_id: question.lesson_question_id,
+  question_type: question.question_type,
+  say: question.say,
+  question: question.question,
+};
+
+const snapshot = {
+  attempt,
+  plan: [planned],
+  questions: [question],
+  open_seq: 1,
+  last_event_id: null,
+};
 
 interface Sent {
   url: string;
@@ -97,6 +111,20 @@ describe("createClient", () => {
   it("refuses a featured list it cannot trust", async () => {
     const { fetch } = stub(200, { lessons: [{ title: "" }] });
     await expect(createClient({ base: "", fetch }).featuredLessons()).rejects.toThrow();
+  });
+
+  it("reads a language's playground examples and parses them", async () => {
+    const { fetch, sent } = stub(200, { examples: [], questions: [] });
+    const reply = await createClient({ base: "", fetch }).playgroundExamples("en");
+    expect(sent).toEqual([
+      { url: "/api/v1/playground-examples/en", method: "GET", body: undefined },
+    ]);
+    expect(reply).toEqual({ examples: [], questions: [] });
+  });
+
+  it("refuses a playground reply that is not the contract's", async () => {
+    const { fetch } = stub(200, { examples: [{ slug: "no-question" }], questions: [] });
+    await expect(createClient({ base: "", fetch }).playgroundExamples("pl")).rejects.toThrow();
   });
 
   it("joins a base URL in front of the path", async () => {
