@@ -138,8 +138,11 @@ async function invokeBank(bank: BankDeps, need: Need): Promise<unknown> {
     throw unavailable();
   }
   if (reply.functionError !== undefined || reply.payload === undefined) throw unavailable();
-  const response = parseJson(reply.payload) as BankResponse | undefined;
-  if (response === undefined || typeof response.statusCode !== "number") throw unavailable();
+  const parsed = parseJson(reply.payload);
+  // JSON null (a handler that returned None) and any other non-object are no response.
+  if (typeof parsed !== "object" || parsed === null) throw unavailable();
+  const response = parsed as BankResponse;
+  if (typeof response.statusCode !== "number") throw unavailable();
   const answer = parseJson(response.body ?? "");
   if (response.statusCode === 400) {
     throw new ApiError(ErrorType.enum.BadRequest, bankDetail(answer));

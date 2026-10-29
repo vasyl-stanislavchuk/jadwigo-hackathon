@@ -237,6 +237,8 @@ describe("POST /api/v1/question-searches", () => {
     ["the bank answers 403", async () => answered(403, { error: "forbidden" })],
     ["the bank answers 500", async () => answered(500, { error: "search failed" })],
     ["the payload is not JSON", async () => ({ payload: "not json" })],
+    ["the payload is null (a handler that returned None)", async () => ({ payload: "null" })],
+    ["the payload is a bare number", async () => ({ payload: "42" })],
     ["the body is no envelope", async () => answered(200, { version: 2, rows: "none" })],
   ])("returns the 502 error envelope when %s", async (_, reply) => {
     const { bank } = fakeBank(reply as () => Promise<BankInvokeReply>);
