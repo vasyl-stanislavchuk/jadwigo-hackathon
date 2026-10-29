@@ -8,6 +8,8 @@
  *     no child   add one: a first name (goals and the age group wait on the owner)
  *     home       each child, with their lessons, newest first, each a link to its attempt page
  *   /parent/attempts/<attempt>, signed in: that lesson, question by question (AttemptReview.tsx)
+ *   /parent/assignments/<assignment>, signed in: every attempt at that lesson against its
+ *                questions (overview/AssignmentOverview.tsx)
  *
  * The page is for the adult, so it has no lesson frame around it.
  */
@@ -38,7 +40,15 @@ import { navigate, useLocation } from "../playground/route.ts";
 import { NavLink } from "../playground/shell/NavLink.tsx";
 import { AttemptReview } from "./AttemptReview.tsx";
 import { type Auth, browserAuth } from "./auth.ts";
-import { attemptPath, claimOf, learnerOf, parentPath, parentRoute } from "./route.ts";
+import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";
+import {
+  assignmentPath,
+  attemptPath,
+  claimOf,
+  learnerOf,
+  parentPath,
+  parentRoute,
+} from "./route.ts";
 
 const isApiError = (error: unknown): error is ApiError => error instanceof ApiError;
 
@@ -112,6 +122,8 @@ export function ParentScreen({
         language={language}
       />
     );
+  if (route?.kind === "assignment")
+    return <AssignmentOverview api={api} assignment={route.assignment} language={language} />;
   return (
     <SignedIn
       api={api}
@@ -459,6 +471,16 @@ function LearnerCard({
                 {title}
               </NavLink>
               <span className="text-sm">{day.format(new Date(attempt.started_at))}</span>
+              <NavLink
+                href={assignmentPath({
+                  assignment: attempt.assignment_id,
+                  lang: new URLSearchParams(window.location.search).get("lang"),
+                })}
+                className="text-sm underline"
+                data-overview-link
+              >
+                {copy(language, "parent_overview_link", {}, "adult")}
+              </NavLink>
               <ol className="flex flex-col gap-1">
                 {results.map((row) => (
                   <li key={row.seq} data-seq={row.seq} data-ended={row.ended ?? "open"}>

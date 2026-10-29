@@ -27,7 +27,7 @@ import { Spinner } from "@jadwigo/ui";
 import { type ReactElement, type ReactNode, useEffect, useState } from "react";
 import { NavLink } from "../playground/shell/NavLink.tsx";
 import { ReviewStep, specOf } from "../review/ReviewStep.tsx";
-import { parentPath } from "./route.ts";
+import { assignmentPath, parentPath } from "./route.ts";
 
 const isApiError = (error: unknown): error is ApiError => error instanceof ApiError;
 
@@ -219,6 +219,16 @@ function Header({
     <header className="flex flex-col gap-2" data-review-header>
       <p className="text-sm">{copy(language, "parent_review_title", {}, CATEGORY)}</p>
       <h1 className="text-3xl font-semibold">{review.title}</h1>
+      <NavLink
+        href={assignmentPath({
+          assignment: review.attempt.assignment_id,
+          lang: new URLSearchParams(window.location.search).get("lang"),
+        })}
+        className="text-base underline"
+        data-overview-link
+      >
+        {copy(language, "parent_overview_link", {}, CATEGORY)}
+      </NavLink>
       <p data-day>{day.format(new Date(review.attempt.started_at))}</p>
       <p data-total-time>{copy(language, "parent_review_total_time", time, CATEGORY)}</p>
       <p data-asked={review.questions.length}>

@@ -288,4 +288,35 @@ describe("ParentScreen", () => {
     await screen.findByText("Coś się zacięło. Poproś rodzica o pomoc.");
     expect(getParentReview).toHaveBeenCalledWith(LEARNER, ATTEMPT);
   });
+
+  it("links each lesson on the home to its assignment's overview, and opens it", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const attempts = {
+      learner: snapshot.learner,
+      attempts: [
+        {
+          attempt: { id: ATTEMPT, assignment_id: ASSIGNMENT, started_at: AT },
+          title: "Równe grupy",
+          results: [],
+        },
+      ],
+    } as unknown as LearnerAttempts;
+    const getAssignmentAttempts = vi.fn(async () => {
+      throw new ApiError("not found", 404, "NotFound");
+    });
+    const api = client({
+      getMe: async () => me([snapshot]),
+      getLearnerAttempts: async () => attempts,
+      getAssignmentAttempts,
+    });
+    render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
+    const link = await screen.findByRole("link", { name: "Wszystkie podejścia do tej lekcji" });
+    expect(link.getAttribute("href")).toBe(`/parent/assignments/${ASSIGNMENT}`);
+
+    await press("a[data-overview-link]");
+    expect(window.location.pathname).toBe(`/parent/assignments/${ASSIGNMENT}`);
+    await screen.findByText("Coś się zacięło. Poproś rodzica o pomoc.");
+    expect(getAssignmentAttempts).toHaveBeenCalledWith(ASSIGNMENT);
+  });
 });

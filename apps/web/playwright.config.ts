@@ -16,8 +16,9 @@ import { playE2e, webPort } from "./src/config.ts";
 const port = webPort();
 const laptop = { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } };
 /** The specs that need the api: the lesson player, its no-jump check, parent login, and the
- * lesson review (dl-uukj.30): the child's review.spec.ts and the parent's parent-review.spec.ts. */
-const API = /(play|no-jump|parent|review|parent-review)\.spec\.ts$/;
+ * lesson review (dl-uukj.30): the child's review.spec.ts, the parent's parent-review.spec.ts and
+ * the lesson overview's parent-overview.spec.ts. */
+const API = /(play|no-jump|parent|review|parent-review|parent-overview)\.spec\.ts$/;
 const phone = { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } };
 
 export default defineConfig({
