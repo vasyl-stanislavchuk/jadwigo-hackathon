@@ -1,21 +1,27 @@
 // shadcn/ui switch (radix-ui Switch), reshaped for the kid layer (dl-uukj.29.55): the whole row,
 // its words and the track, is one --kid-tap-min button, so a child taps the words or the track.
 // On or off takes effect at once (the pause sheet's "Dźwięk", lesson-frame README §3). On is the
-// primary ink with the knob right, never green (green is kept for a correct answer).
+// primary ink with the knob right, never green (green is kept for a correct answer). It is the one
+// switch (dl-uukj.32.3): a settings row on an app page takes size md (48) or sm (44, a toolbar), as
+// the System page's controls do (decision dl-og82).
 import { Switch as SwitchPrimitive } from "radix-ui";
 import type * as React from "react";
 import { cn } from "../lib/utils.ts";
+import { type ControlSize, ROW } from "./choice.ts";
 
 function Switch({
   className,
   children,
+  size = "default",
   ...props
-}: React.ComponentProps<typeof SwitchPrimitive.Root>) {
+}: React.ComponentProps<typeof SwitchPrimitive.Root> & { size?: "default" | ControlSize }) {
   return (
     <SwitchPrimitive.Root
       data-slot="switch"
+      data-size={size}
       className={cn(
-        "group/switch inline-flex min-h-[var(--kid-tap-min)] w-full items-center justify-between gap-4 rounded-lg px-1 text-xl font-semibold outline-none select-none disabled:pointer-events-none disabled:opacity-50",
+        "group/switch inline-flex w-full items-center justify-between gap-4 rounded-lg font-semibold outline-none select-none disabled:pointer-events-none disabled:opacity-50",
+        size === "default" ? "min-h-[var(--kid-tap-min)] px-1 text-xl" : ["px-3", ROW[size]],
         className,
       )}
       {...props}
