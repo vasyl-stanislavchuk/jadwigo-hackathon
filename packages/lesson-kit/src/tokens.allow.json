@@ -176,11 +176,6 @@
   },
   {
     "path": "parts/InlineTokens.tsx",
-    "snippet": "[var(--jw-dur-mark,120ms)",
-    "why": ""
-  },
-  {
-    "path": "parts/InlineTokens.tsx",
     "snippet": "[length:var(--kid-answer-size)",
     "why": ""
   },

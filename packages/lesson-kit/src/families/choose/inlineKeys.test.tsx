@@ -165,7 +165,7 @@ describe("mark the numbers: §3.3 keys", () => {
     expect(band()).toBe("miss");
     space(must(tokens()[2]));
     expect(must(tokens()[2]).dataset["tone"]).toBe("idle");
-    expect(must(tokens()[2]).className).toContain("duration-[var(--jw-dur-mark,120ms)]");
+    expect(must(tokens()[2]).className).toContain("duration-jw-mark");
     expect(band()).toBe("none");
     expect(must(sprawdz()).getAttribute("aria-disabled")).not.toBe("true");
     expect(screen.queryByRole("status")?.textContent ?? "").toBe("");
