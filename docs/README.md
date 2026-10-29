@@ -9,6 +9,7 @@ context brain, and the docs cite them by slug (`md context decisions --project j
 | [`drops/`](drops/) | the sources of drops made from this repo, one folder each, and an index of the older ones | [`drops/README.md`](drops/README.md), `tools/src/check-drops.ts` |
 | [`research/`](research/) | one note per research question, ending in an outcome block | [`research/README.md`](research/README.md), `tools/src/check-research.ts` |
 | [`runbooks/`](runbooks/) | steps the owner runs by hand: deploy, roll back, secrets | [`runbooks/README.md`](runbooks/README.md) |
+| [`audits/`](audits/) | one page per design pass over the running app: the gaps against the System page, each with its screenshot, its fix and its state | the rows the issue names |
 | [`worklog/`](worklog/) | what a running epic needs between sessions and that spans issues, such as wave plans. Deleted when the epic closes | [`worklog/README.md`](worklog/README.md), `tools/src/check-worklog.ts` |
 
 ## Workstreams

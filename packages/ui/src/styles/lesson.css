@@ -10,6 +10,14 @@
   padding: calc(var(--spacing) * 3);
 }
 
+/* The app's own pages (apps/web/src/play: the lesson, the list, the results) are Zeszyt to the
+ * window's bottom: the white paper fills it, so a short step never shows the root's ground under
+ * it, and its corners are the window's, not a card's (dl-uukj.29.144, audit row G1). */
+.kid-page[data-play] > [data-lesson-theme] {
+  min-height: 100svh;
+  border-radius: 0;
+}
+
 /* On a phone the stage's ground goes to the edge, and the page's own 16 px are the lesson's gutters,
  * so a phone draws its 358 column at 390 (dl-uukj.29.81). The keypad's
  * Check key is then a third of the width, and Sprawdź fits at 18 px. */
