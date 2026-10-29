@@ -234,6 +234,8 @@ describe("runner", () => {
       type: "answered",
       result: result({ seq: 2, ended: "skipped", next: question(3, { added: "twin" }) }),
     });
+    // The twin counts from the reply that names it, through the beat, so the bar never steps back.
+    expect(progressOf(skipped)).toEqual({ done: 2, total: 5 });
     const twin = runner(skipped, { type: "advance" });
     expect(progressOf(twin)).toEqual({ done: 2, total: 5 });
 
@@ -243,6 +245,31 @@ describe("runner", () => {
       snapshot: snapshot(twin.questions, "in_progress", planOf(4)),
     });
     expect(progressOf(reload)).toEqual(progressOf(twin));
+  });
+
+  it("never reads full while a review-round twin asked after the last planned question waits for Dalej", () => {
+    const asked = [
+      question(1, { ended: "correct" }),
+      question(2, { ended: "skipped" }),
+      question(3, { ended: "correct" }),
+      question(4),
+    ];
+    const last = runner(initialRunner, {
+      type: "loaded",
+      snapshot: snapshot(asked, "in_progress", planOf(4)),
+    });
+    const right = runner(last, {
+      type: "answered",
+      result: result({
+        seq: 4,
+        correct: true,
+        ended: "correct",
+        next: question(5, { added: "twin", placed: "review_round", added_for: 2 }),
+      }),
+    });
+    expect(right.phase).toBe("feedback");
+    expect(progressOf(right)).toEqual({ done: 4, total: 5 });
+    expect(progressOf(runner(right, { type: "advance" }))).toEqual({ done: 4, total: 5 });
   });
 
   it("reaches the end only once the last planned question ends", () => {

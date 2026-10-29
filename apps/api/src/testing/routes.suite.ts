@@ -180,10 +180,14 @@ export function routeSuite(name: string, makeStore: () => Store): void {
         expect(snapshot.plan[0]?.lesson_question_id).toBe(
           snapshot.questions[0]?.lesson_question_id,
         );
-        for (const p of snapshot.plan) {
-          const q = await s.questionOf(p);
-          expect(q.twin_of).toBeNull();
-        }
+        // Exactly the version's planned rows: no spare, whatever its twin_of.
+        const version = await s.store.getLessonVersion(
+          snapshot.attempt.pod_id,
+          snapshot.attempt.lesson_version_id,
+        );
+        expect(snapshot.plan.map((p) => p.lesson_question_id)).toEqual(
+          version.questions.filter((v) => v.role === "planned").map((v) => v.lesson_question_id),
+        );
         expect(JSON.stringify(snapshot.plan)).not.toContain('"key"');
       });
 

@@ -289,10 +289,17 @@ export function runner(state: RunnerState, action: RunnerAction): RunnerState {
 /**
  * How far through the lesson, for the step bar: questions ended of the planned questions plus the
  * twins asked so far, so a twin grows the total by one and the bar ends only at the last question
- * (decision 2026-10-28-the-page-loads-the-whole-planned-lesson-when-an-attempt-starts-s).
+ * (decision 2026-10-28-the-page-loads-the-whole-planned-lesson-when-an-attempt-starts-s). A twin the
+ * server has asked counts from the reply that names it, while it still waits in `next` for the
+ * beat or for Dalej, so the bar never reads full before it and matches a reload at that moment.
  */
 export function progressOf(state: RunnerState): { done: number; total: number } {
   const done = state.questions.filter((q) => q.ended !== null).length;
-  const twins = state.questions.filter((q) => q.added === "twin").length;
-  return { done, total: Math.max(state.plan.length + twins, state.questions.length, 1) };
+  const waiting = state.next?.kind === "question" ? state.next.question : null;
+  const asked =
+    waiting !== null && !state.questions.some((q) => q.seq === waiting.seq)
+      ? [...state.questions, waiting]
+      : state.questions;
+  const twins = asked.filter((q) => q.added === "twin").length;
+  return { done, total: Math.max(state.plan.length + twins, asked.length, 1) };
 }
