@@ -4,7 +4,7 @@
 -- Pod B's attempt in the fixture stands in for a featured lesson's anonymous attempt: no learner,
 -- in a pod the parent is not in. Pod C is the parent's, made here the way the API makes it.
 begin;
-select plan(31);
+select plan(40);
 \ir _fixture.sql
 
 -- Pod B's anonymous attempt gets an answer, and then finishes, as the child sees the results.
@@ -24,6 +24,34 @@ update attempt set status = 'finished', finished_at = now()
 insert into attempt (id, pod_id, assignment_id, lesson_version_id, mode) values
   ('00000000-0000-4000-8000-0000000006b3', '00000000-0000-4000-8000-00000000000b',
    '00000000-0000-4000-8000-0000000005b1', '00000000-0000-4000-8000-0000000004b1', 'preview');
+
+-- More of pod B that the claim must not open: a 2nd published lesson with its question and
+-- assignment, a draft lesson with an unpublished version, and a 2nd assignment of the played lesson.
+insert into lesson (id, pod_id, title, language, category, subject, status) values
+  ('00000000-0000-4000-8000-0000000002b2', '00000000-0000-4000-8000-00000000000b',
+   'Sharing', 'en', 'child', 'math', 'published'),
+  ('00000000-0000-4000-8000-0000000002b3', '00000000-0000-4000-8000-00000000000b',
+   'Halves', 'en', 'child', 'math', 'draft');
+insert into lesson_question
+  (id, pod_id, family, question_type, say, data, key, subject, content_hash)
+values
+  ('00000000-0000-4000-8000-0000000003b2', '00000000-0000-4000-8000-00000000000b',
+   'enter', 'production', 'How many pears each?', '{"input": "number", "entry": "keypad"}',
+   '{"accept": ["3"]}', 'math', 'h5');
+insert into lesson_version (id, pod_id, lesson_id, version) values
+  ('00000000-0000-4000-8000-0000000004b2', '00000000-0000-4000-8000-00000000000b',
+   '00000000-0000-4000-8000-0000000002b2', 1),
+  ('00000000-0000-4000-8000-0000000004b3', '00000000-0000-4000-8000-00000000000b',
+   '00000000-0000-4000-8000-0000000002b3', 1);
+insert into lesson_version_question (lesson_version_id, position, pod_id, lesson_question_id, role) values
+  ('00000000-0000-4000-8000-0000000004b2', 1, '00000000-0000-4000-8000-00000000000b',
+   '00000000-0000-4000-8000-0000000003b2', 'planned');
+update lesson_version set published_at = now() where id = '00000000-0000-4000-8000-0000000004b2';
+insert into assignment (id, pod_id, lesson_id, audience, identity) values
+  ('00000000-0000-4000-8000-0000000005b2', '00000000-0000-4000-8000-00000000000b',
+   '00000000-0000-4000-8000-0000000002b2', 'anyone', 'none'),
+  ('00000000-0000-4000-8000-0000000005b3', '00000000-0000-4000-8000-00000000000b',
+   '00000000-0000-4000-8000-0000000002b1', 'learners', 'pick');
 
 -- Pod B's answers, as text, to show a claim leaves them byte for byte.
 create function pg_temp.pod_b_answers() returns text language sql as $$
@@ -126,6 +154,26 @@ select is(
   (select count(*) from attempt where pod_id = '00000000-0000-4000-8000-00000000000a'),
   0::bigint, 'and none of pod A''s attempts'
 );
+
+-- Of pod B's content, only what the claimed attempt points at: no other lesson, no draft, no other
+-- assignment, and no lesson question, so no answer key.
+select is((select array_agg(id::text order by id) from lesson),
+  array['00000000-0000-4000-8000-0000000002b1'],
+  'pod C reads the claimed attempt''s lesson, and no other lesson or draft of pod B');
+select is((select array_agg(id::text order by id) from lesson_version),
+  array['00000000-0000-4000-8000-0000000004b1'],
+  'and only the version the attempt played');
+select is((select array_agg(id::text order by id) from assignment),
+  array['00000000-0000-4000-8000-0000000005b1'],
+  'and only the attempt''s assignment, not another of the same lesson');
+select is((select count(*) from lesson_question), 0::bigint,
+  'and no lesson question, so no key: the results read the question''s face');
+select is((select count(*) from lesson_version_question), 0::bigint, 'and no version''s list');
+select is(
+  (select row(say, family, question_type)::text from app.asked_question('00000000-0000-4000-8000-0000000006b1', 1)),
+  row('How many plums?', 'enter'::family, 'production'::question_type)::text,
+  'app.asked_question() gives pod C the face of a question its claimed attempt asked'
+);
 update attempt set resume_at = 1 where id = '00000000-0000-4000-8000-0000000006b1';
 select throws_ok($$
   insert into attempt_answer
@@ -149,6 +197,11 @@ select throws_ok($$
 $$, '23001', 'attempt 00000000-0000-4000-8000-0000000006b1 already has a learner',
   'a claimed attempt is never claimed again');
 select is((select count(*) from attempt), 0::bigint, 'pod D reads none of it');
+select is(
+  (select count(*) from lesson) + (select count(*) from assignment)
+    + (select count(*) from app.asked_question('00000000-0000-4000-8000-0000000006b1', 1)),
+  0::bigint, 'nor its lesson, its assignment or its questions'' faces'
+);
 
 -- Pod B, where it was played, still reads it; the claim kept it there.
 select set_config('app.pod_id', '00000000-0000-4000-8000-00000000000b', true);
@@ -156,6 +209,15 @@ select is(
   (select row(pod_id, learner_id, resume_at)::text from attempt where id = '00000000-0000-4000-8000-0000000006b1'),
   row('00000000-0000-4000-8000-00000000000b'::uuid, '00000000-0000-4000-8000-0000000001c1'::uuid, null::integer)::text,
   'the attempt stays in pod B, and pod C''s update above changed nothing'
+);
+select throws_ok($$
+  update attempt set learner_id = '00000000-0000-4000-8000-0000000001b1',
+    claimed_by = '00000000-0000-4000-8000-0000000009c1', claimed_at = now()
+  where id = '00000000-0000-4000-8000-0000000006b3'
+$$, '42501', null, 'the API sets a learner only through app.claim_attempt(), never an update');
+select is(
+  (select count(*) from attempt_result where attempt_id = '00000000-0000-4000-8000-0000000006b1'),
+  1::bigint, 'pod B still reads its results'
 );
 reset role;
 
@@ -173,7 +235,8 @@ select throws_ok($$
   insert into attempt (pod_id, assignment_id, lesson_version_id, learner_id) values
     ('00000000-0000-4000-8000-00000000000b', '00000000-0000-4000-8000-0000000005b1',
      '00000000-0000-4000-8000-0000000004b1', '00000000-0000-4000-8000-0000000001a1')
-$$, '23001', null, 'a named attempt''s learner is in the attempt''s pod');
+$$, '23503', 'a named attempt''s learner is in the attempt''s pod',
+  'a named attempt''s learner is in the attempt''s pod, refused as the foreign key it replaces was');
 
 select * from finish();
 rollback;
