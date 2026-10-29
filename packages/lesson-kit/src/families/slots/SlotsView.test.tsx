@@ -8,6 +8,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { must } from "../../parts/must.ts";
+import { EMPTY_FIELD } from "../../parts/tone.ts";
 import type { Clock, Instant } from "../../stage/clock.ts";
 import { StepFrame } from "../../stage/StepFrame.tsx";
 import type { Feedback } from "../../stage/types.ts";
@@ -228,8 +229,8 @@ describe("Gaps: a table of cells (fill_table, dl-w3.51.5)", () => {
     expect(gap(2).closest('[role="cell"]')).not.toBeNull();
     expect([...document.querySelectorAll('[role="cell"]')].map((td) => td.textContent)).toEqual([
       "7",
-      " ",
-      " ",
+      EMPTY_FIELD,
+      EMPTY_FIELD,
     ]);
     fireEvent.click(screen.getByRole("button", { name: "2" }), { detail: 0 });
     fireEvent.click(screen.getByRole("button", { name: "1" }), { detail: 0 });

@@ -12,6 +12,7 @@ export const ID_PREFIXES = {
   lesson: "les_",
   lesson_version: "lesv_",
   lesson_question: "lq_",
+  lesson_question_example: "lqx_",
   assignment: "asg_",
   attempt: "att_",
 } as const;
@@ -93,6 +94,11 @@ export const LessonQuestionId = prefixedId<"LessonQuestionId">(
   "a lesson question",
 );
 export type LessonQuestionId = z.infer<typeof LessonQuestionId>;
+export const LessonQuestionExampleId = prefixedId<"LessonQuestionExampleId">(
+  ID_PREFIXES.lesson_question_example,
+  "a lesson question example",
+);
+export type LessonQuestionExampleId = z.infer<typeof LessonQuestionExampleId>;
 export const AssignmentId = prefixedId<"AssignmentId">(ID_PREFIXES.assignment, "an assignment");
 export type AssignmentId = z.infer<typeof AssignmentId>;
 export const AttemptId = prefixedId<"AttemptId">(ID_PREFIXES.attempt, "an attempt");
@@ -109,6 +115,7 @@ export const ID_SCHEMAS = {
   lesson_id: LessonId,
   lesson_version_id: LessonVersionId,
   lesson_question_id: LessonQuestionId,
+  lesson_question_example_id: LessonQuestionExampleId,
   assignment_id: AssignmentId,
   attempt_id: AttemptId,
 } as const;

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AssignmentId, AttemptId } from "./ids.ts";
+import { Language } from "./records.ts";
 import {
   AttemptAnswerRequest,
   AttemptAnswerResult,
@@ -11,6 +12,7 @@ import {
   Health,
   HelpRequest,
   HelpResult,
+  PlaygroundExamples,
 } from "./wire.ts";
 
 /**
@@ -44,6 +46,14 @@ export const ROUTES = {
     params: z.object({}),
     body: null,
     response: Featured,
+    status: 200,
+  },
+  playgroundExamples: {
+    method: "GET",
+    path: "/api/v1/playground-examples/{language}",
+    params: z.object({ language: Language }),
+    body: null,
+    response: PlaygroundExamples,
     status: 200,
   },
   startAttempt: {

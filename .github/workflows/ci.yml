@@ -215,25 +215,55 @@ jobs:
           fi
           gitleaks git --redact --no-banner --config .gitleaks.toml "$@"
 
-  # The browser smoke: apps/web built and served, played at 390 and 1280 (apps/web/e2e). Component
-  # tests run in the unit job (Vitest's dom project, happy-dom); this is the one real browser.
+  # The browser smoke: apps/web built and served, played at 390 and 1280 (apps/web/e2e), and the
+  # lesson player end to end against a local api on a seeded database (e2e/play.spec.ts, the `api`
+  # project, dl-5ssh.46). Component tests run in the unit job (Vitest's dom project, happy-dom);
+  # this is the one real browser.
   browser:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      DATABASE_URL: postgresql://runner:runner@localhost:5433/jadwigo_e2e
+      JW_E2E_API: "1"
+      JW_API_URL: http://127.0.0.1:8787
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
       - uses: ./.github/actions/setup
+      - uses: ./.github/actions/postgres
+      - name: The e2e database, migrated and seeded with the featured lessons
+        run: |
+          PGPASSWORD=runner createdb -h localhost -p 5433 -U runner jadwigo_e2e
+          make migrate
+          make db-seed
+      # On this CI database only: equal-groups' featured assignment asks a twin right after "Not
+      # sure yet", which play.spec.ts plays through. The seed, and so every real database, keeps
+      # `next`, which asks no twin.
+      - name: Twin after "Not sure yet" on the e2e database (jadwigo_e2e only)
+        run: |
+          updated=$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -Atc "update assignment set after_not_sure = 'twin_now' where id = '0e66bf21-3b77-5a4a-a1ec-3b371dc97fc3' returning id")
+          test -n "$updated" || { echo "::error::no featured equal-groups assignment to set twin_now on"; exit 1; }
+      - name: The api on port 8787
+        run: |
+          PORT=8787 nohup bun apps/api/src/serve.ts > "$RUNNER_TEMP/api.log" 2>&1 &
+          for _ in $(seq 1 30); do
+            curl -fsS "$JW_API_URL/api/v1/featured-lessons" >/dev/null && exit 0
+            sleep 1
+          done
+          echo "::error::the api did not answer on $JW_API_URL"; cat "$RUNNER_TEMP/api.log"; exit 1
       - name: Chromium for Playwright
         working-directory: apps/web
         run: bunx playwright install --with-deps chromium
-      - name: The playground smoke
+      - name: The playground smoke and the lesson player
         working-directory: apps/web
         run: bunx playwright test
+      - name: The api's log
+        if: failure()
+        run: cat "$RUNNER_TEMP/api.log"
 
   ci-ok:
     needs: [changes, lint, typecheck, unit, integration, supabase, contracts, docs, fence-checks, gitleaks, browser]

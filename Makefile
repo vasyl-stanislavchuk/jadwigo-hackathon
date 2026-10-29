@@ -1,7 +1,12 @@
 # Thin on purpose: every target calls turbo, bun, md or Postgres.app's tools. The gate is `make check`.
 # .env.local (from .env.example) is read here, so check-all's integration tests see DATABASE_URL.
+# A variable already in the environment wins over .env.local's (dl-5ssh.43): an included assignment
+# would otherwise override it, so DATABASE_URL=… make migrate reset the database .env.local names.
 ifneq (,$(wildcard .env.local))
+ENV_LOCAL_KEPT := $(foreach v,$(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' .env.local),$(if $(filter environment,$(origin $(v))),$(v)))
+$(foreach v,$(ENV_LOCAL_KEPT),$(eval ENV_LOCAL_KEPT_$(v) := $$(value $(v))))
 include .env.local
+$(foreach v,$(ENV_LOCAL_KEPT),$(eval $(v) := $$(ENV_LOCAL_KEPT_$(v))))
 export
 endif
 # The tools mise.toml pins (gitleaks for the fence test, terraform) on PATH even in a shell that never
@@ -54,15 +59,15 @@ db:
 migrate:
 	@test -n "$$DATABASE_URL" || { echo "migrate: DATABASE_URL is unset. Run: cp .env.example .env.local && make db"; exit 1; }
 	@case "$${DATABASE_URL##*/}" in jadwigo*) ;; *) echo "migrate: resets only a jadwigo* database, not $${DATABASE_URL##*/}"; exit 1;; esac
-	psql "$$DATABASE_URL" -q -v ON_ERROR_STOP=1 -c 'drop schema if exists public, app, auth cascade' -c 'create schema public'
-	psql "$$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f supabase/tests/shim.sql
-	for f in supabase/migrations/*.sql; do echo "$$f"; psql "$$DATABASE_URL" -q -v ON_ERROR_STOP=1 -1 -f "$$f" || exit 1; done
+	psql "$(DATABASE_URL)" -q -v ON_ERROR_STOP=1 -c 'drop schema if exists public, app, auth cascade' -c 'create schema public'
+	psql "$(DATABASE_URL)" -q -v ON_ERROR_STOP=1 -f supabase/tests/shim.sql
+	for f in supabase/migrations/*.sql; do echo "$$f"; psql "$(DATABASE_URL)" -q -v ON_ERROR_STOP=1 -1 -f "$$f" || exit 1; done
 
 ## pgtap: the pgTAP tests in supabase/tests on the database `make migrate` built. Each test runs in
 ## a transaction it rolls back. Needs pg_prove (cpanm TAP::Parser::SourceHandler::pgTAP)
 pgtap:
-	psql "$$DATABASE_URL" -q -v ON_ERROR_STOP=1 -c 'create extension if not exists pgtap'
-	pg_prove --dbname "$$DATABASE_URL" supabase/tests/*.test.sql
+	psql "$(DATABASE_URL)" -q -v ON_ERROR_STOP=1 -c 'create extension if not exists pgtap'
+	pg_prove --dbname "$(DATABASE_URL)" supabase/tests/*.test.sql
 
 # The Supabase projects (decision 2026-10-27-jadwigo-runs-on-a-prod-and-a-dev-supabase-project-a-native-local),
 # reached through the Supabase CLI mise.toml pins. Secrets live outside every checkout, in
@@ -100,6 +105,18 @@ PROD_GATE = if [ "$(ENV)" = prod ]; then \
 	  if [ "$$answer" != prod ]; then echo "$@: nothing done on jadwigo-prod"; exit 1; fi; \
 	fi
 
+# jadwigo_api's session pooler URL (port 5432) in url, from the pooler-url supabase link wrote, refused
+# unless it names ENV's project.
+API_SESSION_URL = test -s supabase/.temp/pooler-url || { echo "$@: supabase link wrote no supabase/.temp/pooler-url"; exit 1; }; \
+	url=$$(sed 's/:6543\//:5432\//; s|://postgres\.|://jadwigo_api.|' supabase/.temp/pooler-url); \
+	case "$$url" in *://jadwigo_api.$(SUPABASE_REF)@*:5432/*) ;; *) echo "$@: supabase/.temp/pooler-url is not postgres.$(SUPABASE_REF)@<pooler>:6543 (jadwigo-$(ENV))"; exit 1;; esac
+# One login as jadwigo_api at url with API_PASSWORD, under env -i; exits 0 when it logs in.
+API_LOGIN = env -i PATH="$$PATH" HOME="$$HOME" PGCONNECT_TIMEOUT=10 PGPASSWORD="$$API_PASSWORD" psql "$$url" -qXAt -c 'select 1'
+# After db-role sets a new password, the Supabase pooler refuses it for a few minutes (28P01,
+# dl-5ssh.58). db-seed retries that refusal every LOGIN_STEP seconds for up to LOGIN_WAIT.
+LOGIN_WAIT ?= 120
+LOGIN_STEP ?= 10
+
 ## db-reset: rebuild the local jadwigo database from nothing (the shim, every migration, the seed).
 ## ENV=dev resets jadwigo-dev instead (supabase db reset --linked, which asks first). Never prod.
 db-reset:
@@ -116,7 +133,8 @@ endif
 ## transaction pooler on 6543 cannot hold the seed's transactions), the password in PGPASSWORD only.
 ## ENV=prod runs only from your own terminal and asks you to type prod before it links. The seed runs
 ## under env -i: it sees PATH, HOME, USER, TMPDIR, PGPASSWORD and DATABASE_URL, no other secret. Safe to rerun:
-## the same content publishes nothing new.
+## the same content publishes nothing new. It first waits up to LOGIN_WAIT seconds while the pooler
+## still refuses a password db-role just set.
 db-seed:
 ifeq ($(ENV),)
 	bun run --cwd packages/lesson-import seed
@@ -125,9 +143,14 @@ else
 	@$(SUPABASE_LINK); \
 	API_PASSWORD=$${JADWIGO_API_DB_PASSWORD_$(ENV_UPPER):-$$(security find-generic-password -s jadwigo-api-db-password-$(ENV) -w 2>/dev/null)}; \
 	test -n "$$API_PASSWORD" || { echo "db-seed: set JADWIGO_API_DB_PASSWORD_$(ENV_UPPER) in $(SUPABASE_SECRETS), or add the keychain item jadwigo-api-db-password-$(ENV)"; exit 1; }; \
-	test -s supabase/.temp/pooler-url || { echo "db-seed: supabase link wrote no supabase/.temp/pooler-url"; exit 1; }; \
-	url=$$(sed 's/:6543\//:5432\//; s|://postgres\.|://jadwigo_api.|' supabase/.temp/pooler-url); \
-	case "$$url" in *://jadwigo_api.$(SUPABASE_REF)@*:5432/*) ;; *) echo "db-seed: supabase/.temp/pooler-url is not postgres.$(SUPABASE_REF)@<pooler>:6543 (jadwigo-$(ENV))"; exit 1;; esac; \
+	$(API_SESSION_URL); \
+	waited=0; \
+	until err=$$($(API_LOGIN) 2>&1 >/dev/null); do \
+	  case "$$err" in *"password authentication failed"*) ;; *) printf '%s\n' "$$err"; exit 1;; esac; \
+	  if [ "$$waited" -ge $(LOGIN_WAIT) ]; then echo "db-seed: jadwigo-$(ENV) still refuses jadwigo_api's password after $(LOGIN_WAIT)s (28P01). Check JADWIGO_API_DB_PASSWORD_$(ENV_UPPER), or run make db-role ENV=$(ENV)"; exit 1; fi; \
+	  echo "db-seed: jadwigo-$(ENV) refuses jadwigo_api's password (28P01). Its pooler holds the old one for a few minutes after db-role sets it; retrying in $(LOGIN_STEP)s ($$waited of $(LOGIN_WAIT)s)"; \
+	  sleep $(LOGIN_STEP); waited=$$((waited + $(LOGIN_STEP))); \
+	done; \
 	env -i PATH="$$PATH" HOME="$$HOME" USER="$$USER" TMPDIR="$${TMPDIR:-/tmp}" PGPASSWORD="$$API_PASSWORD" DATABASE_URL="$$url" \
 	  bun run --cwd packages/lesson-import seed
 endif
@@ -163,6 +186,8 @@ db-push:
 
 ## db-role ENV=dev|prod: give jadwigo_api (made by the migration, nologin) a login and its password
 ## (JADWIGO_API_DB_PASSWORD_<ENV>, or the keychain item jadwigo-api-db-password-<env>). Run it after the first db-push, and after a rotation.
+## When jadwigo_api already logs in with that password it changes nothing, so rerunning the setup
+## does not reset the password the pooler holds.
 ## ENV=prod runs only from your own terminal and asks you to type prod first.
 db-role:
 	@$(PROD_GATE)
@@ -170,9 +195,11 @@ db-role:
 	API_PASSWORD=$${JADWIGO_API_DB_PASSWORD_$(ENV_UPPER):-$$(security find-generic-password -s jadwigo-api-db-password-$(ENV) -w 2>/dev/null)}; \
 	test -n "$$API_PASSWORD" || { echo "db-role: set JADWIGO_API_DB_PASSWORD_$(ENV_UPPER) in $(SUPABASE_SECRETS), or add the keychain item jadwigo-api-db-password-$(ENV)"; exit 1; }; \
 	export API_PASSWORD; \
-	test -s supabase/.temp/pooler-url || { echo "db-role: supabase link wrote no supabase/.temp/pooler-url"; exit 1; }; \
+	$(API_SESSION_URL); \
+	if $(API_LOGIN) >/dev/null 2>&1; then echo "db-role: jadwigo_api already logs in on jadwigo-$(ENV) with this password; nothing changed"; exit 0; fi; \
 	printf '%s\n' '\set pw `printenv API_PASSWORD`' "alter role jadwigo_api login password :'pw';" \
-	  | PGPASSWORD=$$SUPABASE_DB_PASSWORD psql "$$(cat supabase/.temp/pooler-url)" -q -v ON_ERROR_STOP=1 && echo "db-role: jadwigo_api can log in on jadwigo-$(ENV)"
+	  | PGPASSWORD=$$SUPABASE_DB_PASSWORD psql "$$(cat supabase/.temp/pooler-url)" -q -v ON_ERROR_STOP=1 \
+	  && echo "db-role: jadwigo_api can log in on jadwigo-$(ENV). The pooler may refuse the new password for a few minutes; db-seed waits for it"
 
 ## api-bundle: apps/api's Lambda entry (src/index.ts, `index.handler`) as one ESM file for Node 24,
 ## apps/api/dist/index.mjs, which `make -C infra api-deploy` zips. bun's bundler, with a require()

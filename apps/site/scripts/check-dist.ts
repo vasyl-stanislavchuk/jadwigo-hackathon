@@ -11,6 +11,7 @@ const must = [
   ["index.html", '<script type="application/ld+json">'],
   ["index.html", "<h1>Jadwigo</h1>"],
   ["index.html", "<p>Wkrótce</p>"],
+  ["index.html", '<a href="https://app.jadwigo.pl/">Zagraj w lekcję</a>'],
   ["404.html", "Tej strony tu nie ma."],
   ["robots.txt", "Sitemap: https://jadwigo.pl/sitemap-index.xml"],
   ["sitemap-index.xml", "https://jadwigo.pl/sitemap-0.xml"],
