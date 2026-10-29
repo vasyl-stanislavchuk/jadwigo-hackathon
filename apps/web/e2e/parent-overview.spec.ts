@@ -77,7 +77,9 @@ test("a parent opens a lesson's overview: one row, the legend, a question's shee
   await expect(sheet).toBeHidden();
 
   // On a phone the grid scrolls inside its wrapper; the page itself does not scroll sideways.
-  await page.setViewportSize({ width: 390, height: 844 });
+  // At 390 the seed's 4 columns fit (a 322 table in a 358 wrapper), so the narrowest phone, 320,
+  // is where the grid is wider than its wrapper.
+  await page.setViewportSize({ width: 320, height: 844 });
   const widths = await page.evaluate(() => {
     const wrapper = document.querySelector("[data-overview-grid] [data-slot=table-container]");
     return {
