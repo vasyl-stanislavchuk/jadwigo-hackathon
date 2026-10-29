@@ -69,6 +69,56 @@ describe("Button tap target", () => {
   });
 });
 
+// The default variant is Zeszyt's action on every page, not only under [data-lesson-theme], so the
+// parent's "Wyślij kod" is the action blue, not Grape's purple (dl-uukj.32.3). Disabled, it goes quiet.
+describe("Button default is the action", () => {
+  const ACT = ["bg-jw-act", "text-jw-on-act", "shadow-jw-act"];
+
+  it("wears the action outside any lesson theme", () => {
+    const { getByRole } = render(<Button>Wyślij kod</Button>);
+    const button = getByRole("button", { name: "Wyślij kod" });
+    expect(button.closest("[data-lesson-theme]")).toBeNull();
+    expect(button.getAttribute("data-variant")).toBe("default");
+    for (const c of ACT) expect(button.classList.contains(c), c).toBe(true);
+    expect(button.className).not.toMatch(/(^|\s)bg-primary(\s|$)/);
+  });
+
+  it.each(["secondary", "outline", "ghost"] as const)(
+    "leaves the %s variant without it",
+    (variant) => {
+      const { getByRole } = render(<Button variant={variant}>Wróć</Button>);
+      const button = getByRole("button", { name: "Wróć" });
+      for (const c of ACT) expect(button.classList.contains(c), c).toBe(false);
+    },
+  );
+
+  it("goes quiet when disabled, natively or by aria, with no edge", () => {
+    const { getByRole } = render(
+      <>
+        <Button disabled>Wysyłam</Button>
+        <Button aria-disabled="true">Sprawdź</Button>
+      </>,
+    );
+    const native = getByRole("button", { name: "Wysyłam" });
+    const aria = getByRole("button", { name: "Sprawdź" });
+    for (const c of [
+      "disabled:bg-jw-act-quiet",
+      "disabled:text-jw-on-act-quiet",
+      "disabled:shadow-none",
+      // full opacity outside a lesson; in one foundation.css decides, as before
+      "not-in-data-[lesson-theme=zeszyt]:disabled:opacity-100",
+    ])
+      expect(native.classList.contains(c), c).toBe(true);
+    for (const c of [
+      "aria-disabled:bg-jw-act-quiet",
+      "aria-disabled:text-jw-on-act-quiet",
+      "aria-disabled:shadow-none",
+      "aria-disabled:opacity-100",
+    ])
+      expect(aria.classList.contains(c), c).toBe(true);
+  });
+});
+
 describe("ToggleGroup tap target", () => {
   it.each(["default", "key"] as const)("every %s item is sized from the kid layer", (size) => {
     const { getAllByRole } = render(

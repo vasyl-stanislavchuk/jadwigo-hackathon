@@ -1,7 +1,8 @@
 // shadcn/ui button (radix-vega, shadcn@4.21.1), reshaped for the kid layer (dl-0ax3): every
 // size is at least --kid-tap-min, colours are ui-*, and the red and link variants are gone. Inside
 // Zeszyt it draws no ring of its own: the keyboard's frame is foundation.css's (dl-uukj.29.59).
-// size="control" is the 48 of a settings or navigation control (dl-uukj.32.3).
+// size="control" is the 48 of a settings or navigation control, and the default variant is Zeszyt's
+// action everywhere, not only under [data-lesson-theme] (dl-uukj.32.3).
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
 import type * as React from "react";
@@ -12,7 +13,14 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground font-bold hover:bg-primary/85",
+        // The action (dl-uukj.32.3): the one thing to press, blue ink standing on its darker edge, as
+        // foundation.css draws it on a lesson surface. It fills to its edge (no pale ring from the
+        // transparent border). Disabled, native or aria, it goes quiet: paper with no edge, at full
+        // opacity outside a lesson. In a lesson foundation.css's unlayered rules still decide, so a
+        // natively disabled action there keeps its 50% as before. Hover and press stay lesson
+        // behaviour.
+        default:
+          "bg-jw-act bg-clip-border font-bold text-jw-on-act shadow-jw-act aria-disabled:bg-jw-act-quiet aria-disabled:text-jw-on-act-quiet aria-disabled:shadow-none aria-disabled:opacity-100 disabled:bg-jw-act-quiet disabled:text-jw-on-act-quiet disabled:shadow-none not-in-data-[lesson-theme=zeszyt]:disabled:opacity-100",
         secondary: "bg-secondary text-secondary-foreground hover:bg-muted",
         outline: "border-border bg-background text-foreground hover:bg-muted",
         ghost: "text-foreground hover:bg-muted",
