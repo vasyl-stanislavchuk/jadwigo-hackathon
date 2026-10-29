@@ -1,0 +1,127 @@
+# Plan on every PR that touches infra/ (dl-5ssh.34.4): fmt, validate, tflint and trivy, then a prod
+# plan posted as one PR comment, updated in place, and kept as an artifact. No job applies: the owner
+# applies by hand (jadwigo-platform/decisions/2026-10-26-a-green-merge-does-not-deploy-to-prod-the-owner-deploys-manually).
+# The plan assumes jadwigo-github-plan (infra/bootstrap), which can only read and never decrypt
+# (decision bead dl-w146). The AWS provider refreshes an SSM parameter with decryption, so the plan
+# runs -refresh=false: config against state, no drift. -lock=false, as the role cannot write the lock.
+name: infra
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: infra-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # terraform comes from mise.toml, the version infra/terraform/versions.tf requires.
+      - uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        with:
+          cache: true
+      - name: fmt and validate
+        run: make -C infra fmt validate
+      # Child modules inherit the root's versions, so tflint's missing-constraint warnings there are by design.
+      - name: tflint
+        run: mise exec tflint@0.65.0 -- tflint --chdir=infra/terraform --recursive --minimum-failure-severity=error
+      # Ignored on purpose, each a cost the service does not pay while idle:
+      #   AWS-0011 no WAF on the 2 distributions (a web ACL is a monthly fee; the stage throttles instead),
+      #   AWS-0132 SSE-S3 rather than a customer key (the buckets hold the public site and app builds),
+      #   AWS-0095 the alarm topic unencrypted (it carries alarm states, never data).
+      - name: trivy
+        run: |
+          printf '%s\n' AWS-0011 AWS-0132 AWS-0095 > "$RUNNER_TEMP/trivyignore"
+          mise exec trivy@0.76.1 -- trivy config --quiet --severity HIGH,CRITICAL --exit-code 1 \
+            --ignorefile "$RUNNER_TEMP/trivyignore" --tf-vars infra/terraform/environments/prod.tfvars infra/terraform
+
+  plan:
+    needs: check
+    # A fork's run gets no OIDC token, and the role trusts this repo's runs only.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    env:
+      ROLE: ${{ vars.AWS_PLAN_ROLE_ARN }}
+    steps:
+      - name: The plan role is set
+        run: |
+          if [ -z "$ROLE" ]; then
+            echo "::error::No AWS_PLAN_ROLE_ARN repo variable. The owner runs infra/bootstrap/00-oidc.sh, then the gh variable set line it prints."
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        with:
+          cache: true
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ env.ROLE }}
+          role-session-name: jadwigo-plan-pr-${{ github.event.pull_request.number }}
+          aws-region: eu-central-1
+      - name: plan prod
+        working-directory: infra/terraform
+        run: |
+          terraform init -input=false -backend-config=environments/prod.backend.hcl
+          set +e
+          terraform plan -input=false -no-color -refresh=false -lock=false \
+            -var-file=environments/prod.tfvars -out=prod.tfplan > plan.txt 2>&1
+          echo "rc=$?" >> "$GITHUB_ENV"
+          cat plan.txt
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: prod-plan-${{ github.event.pull_request.number }}
+          path: |
+            infra/terraform/plan.txt
+            infra/terraform/prod.tfplan
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Post the plan to the PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          marker='<!-- infra-plan:prod -->'
+          summary=$(grep -E '^(Plan:|No changes\.|Error:)' infra/terraform/plan.txt | head -3 || true)
+          {
+            echo "$marker"
+            echo "**terraform plan, prod** on \`${SHA:0:7}\` (exit ${rc:-?}, -refresh=false): ${summary:-see the run}"
+            echo
+            echo '<details><summary>The plan</summary>'
+            echo
+            echo '```'
+            head -c 60000 infra/terraform/plan.txt 2>/dev/null || echo "no plan output"
+            echo '```'
+            echo '</details>'
+            echo
+            echo "Full plan: the prod-plan-$PR artifact of [this run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)."
+          } > "$RUNNER_TEMP/comment.md"
+          id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq "[.[] | select(.body | startswith(\"$marker\"))][0].id // empty")
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F "body=@$RUNNER_TEMP/comment.md" >/dev/null
+          else
+            gh pr comment "$PR" --body-file "$RUNNER_TEMP/comment.md"
+          fi
+      - name: The plan ran
+        run: test "${rc:-1}" = 0
