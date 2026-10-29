@@ -44,3 +44,4 @@ Milestone 2, goals loop (the order is in `docs/README.md`). An agent sends a nee
 - `dl-n9fr.20, .12, .8, dl-r772.32, .33, dl-e8ov.5.18, .5.20, .5.28` (deferred until the bank's first build wave): the index grain, AI-written questions, golden sets, reviewers, read and write access, the OpenAI and Voyage setup
 - `dl-liwi.21` (deferred): Alfik images on S3
 - `dl-n9fr.30` (open): where the Khan pipeline (`scripts/khan`) runs once david-learns stops
+- `dl-n9fr.32` (answered): the prototype bank into this repo. 5 owner decisions (how callers reach the bank, the search route name under rule 14, where the bank Terraform root lives, where the Khan pipeline homes, what the served copy is) are in [the research note](../research/bank-into-the-monorepo.md).

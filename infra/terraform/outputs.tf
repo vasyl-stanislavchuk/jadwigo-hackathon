@@ -29,3 +29,11 @@ output "api_function_name" {
 output "db_url_param" {
   value = module.app.db_url_param
 }
+
+output "bank_search_alias_arn" {
+  value = module.app.bank_search_alias_arn
+}
+
+output "bank_read_token_param" {
+  value = module.app.bank_read_token_param
+}

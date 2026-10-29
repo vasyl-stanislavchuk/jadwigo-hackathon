@@ -40,5 +40,6 @@ module "app" {
     "POST /api/v1/attempts/{id}/answers",
     "POST /api/v1/attempts/{id}/questions/{seq}/help",
     "GET /api/v1/attempts/{id}/results",
+    "POST /api/v1/question-searches",
   ]
 }

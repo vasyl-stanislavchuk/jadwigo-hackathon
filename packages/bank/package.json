@@ -1,10 +1,11 @@
 {
   "name": "@jadwigo/bank",
-  "description": "Bank code only: BankSource (fixture, local, remote), search, import. The bank itself is never in git",
+  "description": "Bank code only: createBank over the fixture and api profiles, the ports, the doubles at ./testing and one conformance suite. The bank itself is never in git",
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./testing": "./src/testing.ts"
   },
   "scripts": {
     "lint": "biome check .",
@@ -12,13 +13,19 @@
     "test": "vitest run --config ../../vitest.config.ts --project unit"
   },
   "//": {
+    "@jadwigo/api-client": "apiUrl, so the api profile joins its base and the route path as the web app does (src/api.ts)",
+    "@jadwigo/contracts": "Need, SearchEnvelope, ROUTES.questionSearches and the error envelope every answer is parsed with",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
-    "vitest": "runs this package's unit test with the root vitest.config.ts"
+    "vitest": "runs this package's unit tests and the conformance suite with the root vitest.config.ts"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "dependencies": {
+    "@jadwigo/api-client": "workspace:*",
+    "@jadwigo/contracts": "workspace:*"
   }
 }

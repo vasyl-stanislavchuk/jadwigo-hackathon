@@ -5,10 +5,15 @@ import { answer, getAttempt, startAttempt } from "./attempts.ts";
 import { ApiError, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
 import { playgroundExamples } from "./playground.ts";
+import { type BankDeps, searchQuestions } from "./questions.ts";
 import { getResults, help, patchAttempt } from "./session.ts";
 
 type Params<N extends RouteName> = ReturnType<(typeof ROUTES)[N]["params"]["parse"]>;
-type Handle<N extends RouteName> = (params: Params<N>, body: unknown) => Promise<unknown>;
+type Handle<N extends RouteName> = (
+  params: Params<N>,
+  body: unknown,
+  headers: Headers,
+) => Promise<unknown>;
 
 /**
  * The `/api/v1` routes on the Powertools router, each registered from `ROUTES` (RULES.md rule
@@ -16,10 +21,11 @@ type Handle<N extends RouteName> = (params: Params<N>, body: unknown) => Promise
  * reply is parsed with the route's response schema, which drops anything the schema does not name.
  * A refusal is `{error: {type, message}}` with the status `ERROR_STATUS` gives it. The store may
  * still be opening: only the routes that read it wait for it, so health answers while the Lambda's
- * database URL is still being read, and when that read has failed. Every other route runs as one
- * `store.unit()`: one transaction on Postgres, rolled back with whatever it wrote on a refusal.
+ * database URL is still being read, and when that read has failed. Every route that reads the store
+ * runs as one `store.unit()`: one transaction on Postgres, rolled back with whatever it wrote on a
+ * refusal.
  */
-export function createApp(store: Store | Promise<Store>): Router {
+export function createApp(store: Store | Promise<Store>, bank?: BankDeps): Router {
   const app = new Router();
 
   const on = <N extends RouteName>(name: N, handle: Handle<N>): void => {
@@ -32,7 +38,7 @@ export function createApp(store: Store | Promise<Store>): Router {
         // An id that does not parse names no record.
         if (!parsed.success) throw new ApiError(ErrorType.enum.NotFound, "no such record");
         const body = route.body === null ? undefined : await bodyOf(req);
-        const reply = await handle(parsed.data as Params<N>, body);
+        const reply = await handle(parsed.data as Params<N>, body, req.headers);
         return json(route.status, route.response.parse(reply));
       } catch (error) {
         const refused = refusal(error);
@@ -65,6 +71,8 @@ export function createApp(store: Store | Promise<Store>): Router {
   on("help", (params, body) => run((s) => help(s, params.id, params.seq, body)));
   on("patchAttempt", (params, body) => run((s) => patchAttempt(s, params.id, body)));
   on("getResults", (params) => run((s) => getResults(s, params.id)));
+  // No store: the bank answers it (questions.ts).
+  on("questionSearches", (_, body, headers) => searchQuestions(bank, headers, body));
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;
