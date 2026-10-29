@@ -254,7 +254,7 @@ export function DropZones({
       aria-label={label}
       {...wholeMark(tone, "flex flex-col gap-4")}
     >
-      <p className="text-muted-foreground text-base">{copy(language, "drag_hint")}</p>
+      <p className="text-muted-foreground text-jw-small">{copy(language, "drag_hint")}</p>
       <DndContext
         accessibility={QUIET}
         sensors={sensors}
