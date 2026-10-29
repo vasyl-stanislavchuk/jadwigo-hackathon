@@ -414,6 +414,16 @@ export const pl: CopyTable = {
   parent_review_help: { text: "Pomoc: {n}", reviewed: false },
   parent_review_first_try: { text: "Za pierwszym razem", reviewed: false },
   parent_review_questions: { text: "Pytania", reviewed: false },
+  // the attempt page's header counts, the total time and the way back (dl-uukj.30.2)
+  parent_review_asked: { text: "Zadane pytania: {n}", reviewed: false },
+  parent_review_first_try_count: { text: "Dobrze za pierwszym razem: {n}", reviewed: false },
+  parent_review_total_time: { text: "{minutes} min {seconds} s", reviewed: false },
+  parent_review_try_right: { text: "Dobrze", reviewed: false },
+  parent_review_back: { text: "Wszystkie lekcje", reviewed: false },
+  // a skip's reason in plain words, one per SkipReason, with no gendered verb form
+  parent_skip_dont_know: { text: "Jeszcze nie wie", reviewed: false },
+  parent_skip_asked_to_skip: { text: "Dalej bez odpowiedzi", reviewed: false },
+  parent_skip_help_twin: { text: "Po pomocy: podobne pytanie", reviewed: false },
   parent_mistake_other: { text: "Inna odpowiedź niż ta, której szukaliśmy", reviewed: false },
   // a mistake class in plain words for the parent, never a verdict word (types.ts MISTAKE_CLASSES)
   parent_mistake_other_wrong: { text: "Inna odpowiedź", reviewed: false },
