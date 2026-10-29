@@ -15,7 +15,7 @@ describe("the token rules", () => {
     ["className='border-black'", "palette class"],
     ["className='bg-black/50 text-white'", "palette class"],
     ["className='min-w-[6px]'", "pixel size"],
-    ["className={`w-[\${w}px]`}", "pixel template"],
+    ["className={`w-[@{w}px]`}", "pixel template"],
     ["className='text-[1.5rem]'", "arbitrary size"],
     ["className='min-h-[var(--kid-tap-min)]'", "token read in a class"],
     ["className='text-[length:var(--jw-size-body)]'", "token read in a class"],
@@ -35,8 +35,8 @@ describe("the token rules", () => {
     "// at least 56px, see --kid-tap-min",
     "/* #ff0000 is the old red */",
     "const dash = '2 5';",
-    "style={{ height: `\${h}px`, left: `\${rect.left}px` }}",
-    "el.style.setProperty('--kid-tray-height', `\${h}px`);",
+    "style={{ height: `@{h}px`, left: `@{rect.left}px` }}",
+    "el.style.setProperty('--kid-tray-height', `@{h}px`);",
   ])("lets %s through", (source) => {
     expect(rulesHit(source)).toEqual([]);
   });
