@@ -88,6 +88,7 @@ def test_a_real_multiplication_draft_checks(
     assert len(draft["questions"]) == 6, draft["left_out"]
     assert all(q["credit"]["source"] and q["credit"]["licence"] for q in draft["questions"])
     assert all(q["why_drawn"] for q in draft["questions"])
+    assert all(q["skill_ids"] and ":" not in q["skill_ids"][0] for q in draft["questions"])
     assert all(left["reason"] for left in draft["left_out"])
 
     result = lesson.check(_fill(draft), out_dir=tmp_path)

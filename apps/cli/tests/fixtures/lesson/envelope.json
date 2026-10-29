@@ -38,7 +38,7 @@
         "en": "Multiply by 6"
       },
       "languages": ["pl", "en"],
-      "skill_ids": ["fixture.times-6"],
+      "skill_ids": ["proposed:fixture.times-6"],
       "curriculum_tags": ["pl-2017:II.3.2", "ccss:2.NBT.B.5"],
       "problem_types": ["Rows of dots", "Bags of apples", "Hops of six"],
       "question_types": ["production"],

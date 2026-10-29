@@ -46,6 +46,8 @@ RUNGS = ("look", "boost", "almost", "worked")
 HELP_KEYS = (*RUNGS, "twin")
 CATEGORY = "child"  # a drafted lesson is for a child; the set pages carry no category
 SKILL_ID_RE = re.compile(r"^[a-z]+(\.[a-z0-9-]+)+$")  # SkillId in packages/contracts records.ts
+# The bank's enrichment marks a skill id it has not settled; the mark is not part of the id.
+PROPOSED = "proposed:"
 CHECK_TIMEOUT_SECS = 120
 
 # What `check` runs: argv in, an object with `returncode`, `stdout` and `stderr` out.
@@ -118,13 +120,24 @@ def _slug(text: str) -> str:
     return "-".join(words[:8]) or "lesson"
 
 
-def _skill_ids(skill: str) -> list[str]:
-    """The step's skill ids: the drawn skill when it is a contract skill id, else none.
+def _skill_ids(skill: str) -> tuple[list[str], str | None]:
+    """The step's skill ids, and a note when the drawn skill is left out of them.
 
-    The draw falls back to the set id when a set names no skill, and a set id is not a skill id.
+    The bank's `proposed:` mark is stripped (owner decision of 2026-10-29: it is the
+    enrichment's confidence mark, as the bank's own search drops it). An id that still fails the
+    contract's SkillId, such as the set id the draw falls back to, is left out, with the note.
     """
-    mapped = skill.replace("/", ".").lower()
-    return [skill] if SKILL_ID_RE.match(mapped) else []
+    plain = skill.removeprefix(PROPOSED)
+    if SKILL_ID_RE.match(plain.replace("/", ".").lower()):
+        return [plain], None
+    return [], f"{skill} is not a skill id, so this step names no skill"
+
+
+def _skill_label(skill: str) -> str:
+    """The skill as the card names it: a proposed one says so."""
+    if skill.startswith(PROPOSED):
+        return f"{skill.removeprefix(PROPOSED)} (proposed)"
+    return skill
 
 
 def _empty_help() -> dict[str, Any]:
@@ -171,12 +184,14 @@ def draft(
     questions: list[dict[str, Any]] = []
     for n, (drawn, view) in enumerate(loaded, start=1):
         khan_help = view["question"].get("help") or {}
+        skill_ids, skill_note = _skill_ids(drawn.skill)
         questions.append(
             {
                 "step_id": f"q{n}",
                 "item_id": drawn.item_id,
                 "set_id": drawn.set_id,
                 "skill": drawn.skill,
+                "skill_ids": skill_ids,
                 "family": view["family"],
                 "question_type": view["question_type"],
                 "say": view["say"],
@@ -195,6 +210,8 @@ def draft(
                 "why_drawn": drawn.reason,
             }
         )
+        if skill_note:
+            questions[-1]["skill_note"] = skill_note
     # A refused item's left_out line says why load_item refused it, not that it was flagged.
     left_out = [
         {"id": left.id, "reason": refused.get(left.id, left.reason)} for left in result.left_out
@@ -275,7 +292,7 @@ def _step(q: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "id": q["step_id"],
         "question_type": q["question_type"],
-        "skill_ids": _skill_ids(str(q["skill"])),
+        "skill_ids": q.get("skill_ids", _skill_ids(str(q["skill"]))[0]),
         "based_on": q["based_on"],
         "say": q["say"],
         "question": {**q["question"], "help": _ladder(q)},
@@ -421,6 +438,7 @@ def card(filled: Mapping[str, Any]) -> dict[str, Any]:
             {
                 "n": n,
                 "step_id": q.get("step_id"),
+                "skill": _skill_label(str(q.get("skill") or "")),
                 "prompt": _prompt(q.get("say"), q["question"].get("data")),
                 "key": q["question"].get("key"),
                 "rungs": {
@@ -453,6 +471,7 @@ def card_text(card_: Mapping[str, Any]) -> str:
         rungs = q["rungs"]
         lines += [
             f"{q['n']}. {q['prompt']}",
+            f"   skill: {q['skill']}",
             f"   key: {_key_text(q['key'])}",
             f"   look: {rungs['look']}",
             f"   boost: {rungs['boost']}",

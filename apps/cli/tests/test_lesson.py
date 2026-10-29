@@ -145,6 +145,23 @@ def test_draft_draws_6_questions_with_credit_and_empty_help(bank: LessonBank) ->
     ]
 
 
+def test_the_proposed_mark_is_stripped_from_skill_ids(bank: LessonBank) -> None:
+    draft = lesson.draft(REQUEST, "3", count=1, today=TODAY)
+    (q,) = draft["questions"]
+    assert q["skill"] == "proposed:fixture.times-6"  # the draw's skill, as the bank wrote it
+    assert q["skill_ids"] == ["fixture.times-6"] and "skill_note" not in q
+    step = draft["lesson_file_skeleton"]["script"]["parts"][0]["steps"][0]
+    assert step["skill_ids"] == ["fixture.times-6"]
+
+
+def test_a_skill_that_is_no_skill_id_is_left_out_with_a_note() -> None:
+    assert lesson._skill_ids("maths.add.within100") == (["maths.add.within100"], None)
+    ids, note = lesson._skill_ids("set_khan_fx0003")  # the draw's fallback when a set names none
+    assert ids == [] and note is not None and "set_khan_fx0003" in note
+    ids, note = lesson._skill_ids("proposed:Not An Id")
+    assert ids == [] and note is not None
+
+
 def test_a_count_overrides_the_rule(bank: LessonBank) -> None:
     draft = lesson.draft(REQUEST, "3", count=3, today=TODAY)
     assert len(draft["questions"]) == 3
@@ -199,8 +216,9 @@ def test_check_turns_a_filled_draft_into_a_lesson_file_and_a_card(
     card = result["card"]
     assert len(card["questions"]) == 6
     first = card["questions"][0]
-    assert set(first) == {"n", "step_id", "prompt", "key", "rungs", "twin", "source", "licence",
-                          "why_drawn"}
+    assert set(first) == {"n", "step_id", "skill", "prompt", "key", "rungs", "twin", "source",
+                          "licence", "why_drawn"}
+    assert first["skill"] == "fixture.times-6 (proposed)"
     assert first["n"] == 1 and first["prompt"].startswith(filled["questions"][0]["say"])
     item = filled["questions"][0]["item_id"]
     assert first["source"] == f"bank {item} https://fixture.invalid/jw/items/{item}"
@@ -210,6 +228,7 @@ def test_check_turns_a_filled_draft_into_a_lesson_file_and_a_card(
 
     text = lesson.card_text(card)
     assert text.startswith("1. ") and "left out:" in text and "fxc201" in text
+    assert "skill: fixture.times-6 (proposed)" in text
 
 
 def test_check_accepts_bare_strings_for_rungs(bank: LessonBank, tmp_path: Path) -> None:
