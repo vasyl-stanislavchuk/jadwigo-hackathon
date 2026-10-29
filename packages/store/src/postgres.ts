@@ -3,6 +3,7 @@ import {
   Account,
   AccountId,
   Assignment,
+  type AssignmentAttempts,
   AssignmentId,
   Attempt,
   AttemptAnswer,
@@ -29,6 +30,7 @@ import {
   LessonVersion,
   LessonVersionId,
   LessonVersionQuestion,
+  LIMITS,
   type Me,
   Member,
   Pod,
@@ -1823,6 +1825,61 @@ class PostgresStore implements Store {
               .map((r) => read(AttemptResult, r)),
           };
         }),
+      };
+    });
+  }
+
+  async getAssignmentAttempts(pod: PodId, id: AssignmentId): Promise<AssignmentAttempts> {
+    const assignmentId = uuidOf(ID_PREFIXES.assignment, id);
+    return this.#in(pod, async (tx) => {
+      // The pod's own assignment through pod_scope; another pod's through claimed_read, which
+      // shows it only when one of the caller's learners claimed an attempt on it.
+      const row = await tx
+        .selectFrom("assignment")
+        .selectAll()
+        .where("id", "=", assignmentId)
+        .executeTakeFirst();
+      if (!row) throw notFound("the assignment");
+      const lesson = await tx
+        .selectFrom("lesson")
+        .select(["title", "language"])
+        .where("id", "=", row.lesson_id)
+        .executeTakeFirst();
+      if (!lesson) throw notFound("the assignment's lesson");
+      // pod_scope reads every attempt of the pod's own, claimed_read the caller's learners'. A
+      // learner in another pod is hidden, so its first name comes back null.
+      const attempts = await tx
+        .selectFrom("attempt")
+        .leftJoin("learner", "learner.id", "attempt.learner_id")
+        .selectAll("attempt")
+        .select("learner.first_name")
+        .where("attempt.assignment_id", "=", assignmentId)
+        .where("attempt.mode", "=", "real")
+        .orderBy("attempt.started_at", "desc")
+        .orderBy("attempt.id", "desc")
+        .limit(LIMITS.attemptsPerAssignment)
+        .execute();
+      const ids = attempts.map((a) => a.id);
+      const results =
+        ids.length === 0
+          ? []
+          : await tx
+              .selectFrom("attempt_result")
+              .selectAll()
+              .where("attempt_id", "in", ids)
+              .orderBy("seq")
+              .execute();
+      return {
+        assignment: read(Assignment, row, ID_PREFIXES.assignment),
+        title: lesson.title,
+        language: Language.parse(lesson.language),
+        attempts: attempts.map(({ first_name, ...attempt }) => ({
+          attempt: read(Attempt, attempt, ID_PREFIXES.attempt),
+          name: first_name ?? attempt.player_name,
+          results: results
+            .filter((r) => r.attempt_id === attempt.id)
+            .map((r) => read(AttemptResult, r)),
+        })),
       };
     });
   }
