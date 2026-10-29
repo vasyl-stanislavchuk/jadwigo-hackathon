@@ -29,6 +29,28 @@ variable "routes" {
   type        = list(string)
 }
 
+variable "token_routes" {
+  description = "The keys in routes whose ROUTES auth is token: the JWT authorizer guards these and no others"
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for k in var.token_routes : contains(var.routes, k)])
+    error_message = "Every token_routes key is also in routes."
+  }
+}
+
+variable "jwt_issuer" {
+  description = "The Supabase project's Auth issuer, https://<ref>.supabase.co/auth/v1, signing with RS256"
+  type        = string
+}
+
+variable "jwt_audience" {
+  description = "The aud claim Supabase puts in a signed-in user's access token"
+  type        = string
+  default     = "authenticated"
+}
+
 variable "route_throttle" {
   description = "Per-route limit on every route but health (jadwigo-platform/decisions/2026-10-28-the-app-s-http-api-stage-throttles-every-route-but-health-at-10)"
   type        = object({ rate = number, burst = number })

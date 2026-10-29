@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { idOf } from "./ids.ts";
 import { AttemptResult } from "./records.ts";
+import { ROUTES } from "./routes.ts";
 import {
+  AccountCreate,
   AttemptAnswerRequest,
+  AttemptClaim,
+  LearnerCreate,
   PageAttemptResult,
   pageAttemptResult,
   pageEnded,
@@ -106,5 +110,49 @@ describe("the child's after-lesson list", () => {
 
   it("shows done while verdicts are held", () => {
     expect(pageAttemptResult(ROW, true).ended).toBe("done");
+  });
+});
+
+describe("parent login", () => {
+  it("needs a token on the 5 parent routes only; the login-free routes stay open", () => {
+    const token = Object.entries(ROUTES)
+      .filter(([, route]) => route.auth === "token")
+      .map(([, route]) => `${route.method} ${route.path}`)
+      .sort();
+    expect(token).toEqual([
+      "GET /api/v1/learners/{id}/attempts",
+      "GET /api/v1/me",
+      "POST /api/v1/accounts",
+      "POST /api/v1/attempts/{id}/claims",
+      "POST /api/v1/learners",
+    ]);
+  });
+
+  it("adds a child with a first name and up to 5 named goals, and refuses what the server owns", () => {
+    const child = { first_name: " Ala ", age_group: "7-8", goals: [{ name: "Tables of 7" }] };
+    expect(LearnerCreate.parse(child).first_name).toBe("Ala");
+    expect(LearnerCreate.safeParse({ first_name: "Ala" }).success).toBe(true);
+    for (const owned of ["handle", "pod_id", "id"]) {
+      expect(LearnerCreate.safeParse({ ...child, [owned]: "x" }).success, owned).toBe(false);
+    }
+    expect(LearnerCreate.safeParse({ first_name: " " }).success).toBe(false);
+    const six = Array.from({ length: 6 }, (_, i) => ({ name: `Goal ${i}` }));
+    expect(LearnerCreate.safeParse({ first_name: "Ala", goals: six }).success).toBe(false);
+    expect(
+      LearnerCreate.safeParse({ first_name: "Ala", goals: [{ name: "x", skill_ids: [] }] }).success,
+    ).toBe(false);
+  });
+
+  it("claims with a learner id only: the account is the token's, the attempt the path's", () => {
+    const learner_id = idOf("lrn_", "00000000-0000-4000-8000-0000000001a1");
+    expect(AttemptClaim.safeParse({ learner_id }).success).toBe(true);
+    const account = idOf("acc_", "00000000-0000-4000-8000-0000000009a1");
+    expect(AttemptClaim.safeParse({ learner_id, claimed_by: account }).success).toBe(false);
+    expect(AttemptClaim.safeParse({ learner_id: account }).success).toBe(false);
+  });
+
+  it("makes an account from the page's language and nothing else", () => {
+    expect(AccountCreate.safeParse({ language: "pl" }).success).toBe(true);
+    expect(AccountCreate.safeParse({ language: "pl", sub: "x" }).success).toBe(false);
   });
 });

@@ -77,7 +77,8 @@ The words themselves are in the root `GLOSSARY.md`. Rules marked **(tested)** fa
 15. **A path is plural nouns of records, nested by ownership.** The parent segment names the owner,
     so the child drops it: `attempt_answer` is `/attempts/{id}/answers`, and `attempt_question` is
     `/attempts/{id}/questions/{seq}`. A name of 2 or more words is kebab-case in a path
-    (`/lesson-questions`). No verbs in a path. **(tested)**
+    (`/lesson-questions`). No verbs in a path. Two segments are not plural: `help`, the one
+    uncountable record, and `/api/v1/me`, the signed-in caller. **(tested)**
 16. **Methods:**
     - `GET` reads and changes nothing;
     - `POST` creates or appends (`/attempts`, `/answers`, `/help`);
@@ -93,9 +94,10 @@ The words themselves are in the root `GLOSSARY.md`. Rules marked **(tested)** fa
     - The same `event_id` with another body is 409 `EventIdMismatch`.
     - A 2nd `event_id` for the same try is 409 `AnswerConflict`.
 20. **Errors are `{error: {type, message}}`.** `type` is a `PascalCase` name listed here: 400 for a
-    body that fails its schema, 404 for an unknown record, 409 for a conflict with stored state,
-    429 for a limit the request is past (`LIMITS`); 401 for a request without a valid credential;
-    502 for an upstream the server calls (the bank) that did not answer.
+    body that fails its schema, 401 for a token route called without a valid token
+    (`NotSignedIn`) or a request without a valid credential, 404 for an unknown record, 409 for a
+    conflict with stored state, 429 for a limit the request is past (`LIMITS`), 502 for an upstream
+    the server calls (the bank) that did not answer. Another pod's record is 404, never 403.
     `message` is for a person and never names the key.
 21. **The server owns the lesson's course.** It decides the next question, a growth question and when
     an attempt finishes. A response never carries a question's `key` or help that has not been

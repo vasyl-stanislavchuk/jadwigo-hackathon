@@ -1,0 +1,481 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "jadwigo-bank/set",
+  "$comment": "Pinned copy of jadwigo-bank schemas/set.schema.json at bank commit 16f03f3. The bank's copy is the source of truth: change it there first, then re-copy here and update this commit.",
+  "title": "Question set page",
+  "description": "One question set, the unit search returns (david-learns/decisions/2026-10-25-the-question-bank-is-searched-for-question-sets-by-agents-sendin). Source fields are copied from the source and never rewritten. Enrichment fields are written by a pass and carry who made them and whether a person reviewed them.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "source",
+    "languages",
+    "titles",
+    "source_place",
+    "problem_types",
+    "question_types",
+    "items",
+    "enrichment"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^set_khan_[a-z0-9]+$",
+      "description": "set_khan_<khan exercise id>"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "exercise_id", "url", "licence", "credit"],
+      "properties": {
+        "name": {
+          "const": "khan"
+        },
+        "exercise_id": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "url_pl": {
+          "type": "string"
+        },
+        "licence": {
+          "const": "CC BY-NC-SA 4.0"
+        },
+        "credit": {
+          "const": "z Khan Academy"
+        }
+      }
+    },
+    "subject": {
+      "type": "string"
+    },
+    "grade": {
+      "type": "string"
+    },
+    "languages": {
+      "type": "object",
+      "description": "Which languages Khan carries this exercise in.",
+      "additionalProperties": false,
+      "required": ["pl", "en"],
+      "properties": {
+        "pl": {
+          "type": "boolean"
+        },
+        "en": {
+          "type": "boolean"
+        }
+      }
+    },
+    "titles": {
+      "$ref": "#/$defs/lines"
+    },
+    "description": {
+      "$ref": "#/$defs/lines"
+    },
+    "source_place": {
+      "type": "object",
+      "description": "Provisional while dl-n9fr.20 is open: Khan's own place fields, kept apart so moving them is a rename.",
+      "additionalProperties": false,
+      "properties": {
+        "course": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "unit_title": {
+          "$ref": "#/$defs/lines"
+        },
+        "lesson": {
+          "type": "string"
+        },
+        "lesson_title": {
+          "$ref": "#/$defs/lines"
+        },
+        "order": {
+          "type": "integer"
+        },
+        "ancestors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "problem_types": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "count", "samples"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "count": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "pl": {
+                "type": "integer"
+              },
+              "en": {
+                "type": "integer"
+              }
+            }
+          },
+          "samples": {
+            "type": "array",
+            "maxItems": 3,
+            "description": "Question text cleaned of widget markup, no key or hint text.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["item_id"],
+              "properties": {
+                "item_id": {
+                  "type": "string"
+                },
+                "pl": {
+                  "type": "string"
+                },
+                "en": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "question_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "families": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "ids"],
+      "properties": {
+        "count": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "pl": {
+              "type": "integer"
+            },
+            "en": {
+              "type": "integer"
+            },
+            "shared": {
+              "type": "integer"
+            }
+          }
+        },
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "plays_share": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "enrichment": {
+      "type": "object",
+      "description": "Empty until the enrichment pass (dl-n9fr.31.5) fills it; every filled field carries made_by and reviewed. Value shapes are pinned per field (lead, 2026-10-27, from the search lane's handoff): the indexer reads summary and can_do as {pl, en} strings, keywords and contexts as {pl, en} lists, synthetic_needs as a list of {language, words}.",
+      "additionalProperties": false,
+      "properties": {
+        "summary": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/made"
+            },
+            {
+              "properties": {
+                "value": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["pl", "en"],
+                  "properties": {
+                    "pl": {
+                      "type": "string"
+                    },
+                    "en": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "can_do": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/made"
+            },
+            {
+              "properties": {
+                "value": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["pl", "en"],
+                  "properties": {
+                    "pl": {
+                      "type": "string"
+                    },
+                    "en": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "keywords": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/made"
+            },
+            {
+              "properties": {
+                "value": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["pl", "en"],
+                  "properties": {
+                    "pl": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "en": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "contexts": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/made"
+            },
+            {
+              "properties": {
+                "value": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["pl", "en"],
+                  "properties": {
+                    "pl": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "en": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "prerequisites": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/made"
+            },
+            {
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^set_"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "skill_ids": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/made"
+            },
+            {
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "curriculum_tags": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/made"
+            },
+            {
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^(pl-2017|ccss):"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "mistake_classes": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/made"
+            },
+            {
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["id", "pl", "en", "spot"],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "pl": {
+                        "type": "string"
+                      },
+                      "en": {
+                        "type": "string"
+                      },
+                      "spot": {
+                        "type": "string",
+                        "description": "How the mistake shows in one answer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "synthetic_needs": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/made"
+            },
+            {
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["language", "words"],
+                    "properties": {
+                      "language": {
+                        "enum": ["pl", "en", "uk"]
+                      },
+                      "words": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "lines": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pl": {
+          "type": "string"
+        },
+        "en": {
+          "type": "string"
+        }
+      }
+    },
+    "made": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "made_by", "reviewed"],
+      "properties": {
+        "value": {},
+        "made_by": {
+          "type": "string",
+          "description": "model:<model id> or person:<name>"
+        },
+        "reviewed": {
+          "type": "boolean"
+        },
+        "grounds": {
+          "type": "array",
+          "description": "Each claim and the verbatim source text it rests on; code drops a ground whose quote is not in the cited source.",
+          "items": {
+            "type": "object",
+            "required": ["claim", "quote", "source"],
+            "properties": {
+              "claim": {
+                "type": "string"
+              },
+              "quote": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "agreement": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Share of independent drafts that agreed"
+        }
+      }
+    }
+  }
+}
