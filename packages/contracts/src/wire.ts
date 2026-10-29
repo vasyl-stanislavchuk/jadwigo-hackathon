@@ -22,6 +22,7 @@ import {
   Added,
   type Assignment,
   Attempt,
+  AttemptAnswer,
   AttemptResult,
   Ended,
   Goal,
@@ -302,6 +303,46 @@ export const AttemptResults = z.object({
 });
 export type AttemptResults = z.infer<typeof AttemptResults>;
 
+// Lesson review (epic dl-uukj.30). Both routes answer only once the attempt is finished, and
+// `AttemptNotFinished` before: by then nothing a review shows can give an answer away (decisions
+// jadwigo-learner-experience 2026-10-29 and jadwigo-hackathon 2026-10-29).
+
+/**
+ * One question of a finished attempt, opened again from the end list: what was asked, the last
+ * try's answer with a mark on each part, and the right answer as a value of the same family. No
+ * tries, no time and no mistake class: the child's slice is not a score (decision
+ * `2026-10-27-the-child-s-after-lesson-list-shows-what-was-asked-how-it-ended`).
+ */
+export const ReviewQuestion = z.object({
+  seq: Count,
+  added: Added,
+  /** The stored value: a finished attempt has no open question and holds no verdict back. */
+  ended: Ended,
+  help_used: z.int().min(0),
+  question_type: QuestionType,
+  say: z.string(),
+  question: PageQuestion,
+  /** The last try's value; null when the question was only skipped. */
+  answer: AnswerValue.nullable(),
+  /** The last try's marks; null for a skip, or a try no judge marks by part. */
+  parts: z.array(PartMark).nullable(),
+  /**
+   * The right answer as a value of the question's family, so the page draws it in the same
+   * widget. Never the key itself: accepted forms, near answers and rules stay on the server.
+   */
+  solution: z.unknown(),
+  /** What the key reveals after a correct try, shown here however the question ended. */
+  reveal: Reveal,
+});
+export type ReviewQuestion = z.infer<typeof ReviewQuestion>;
+
+/** `GET /api/v1/attempts/{id}/review`: every question of a finished attempt, in `seq` order. */
+export const AttemptReview = z.object({
+  attempt: Attempt,
+  questions: z.array(ReviewQuestion),
+});
+export type AttemptReview = z.infer<typeof AttemptReview>;
+
 // Parent login (wave 3 of dl-e8ov.2, docs/research/parent-login.md). Every route below needs a
 // token (`auth: "token"` in ROUTES); the pod is the caller's, found from the account's member row.
 
@@ -392,6 +433,41 @@ export const LearnerAttempts = z.object({
 });
 export type LearnerAttempts = z.infer<typeof LearnerAttempts>;
 
+/** One try or skip as the parent's review shows it: the `attempt_answer` row's own fields. */
+export const ReviewTry = AttemptAnswer.pick({
+  try_no: true,
+  kind: true,
+  value: true,
+  correct: true,
+  parts: true,
+  mistake_class: true,
+  latency_ms: true,
+  help_used: true,
+  skip_reason: true,
+});
+export type ReviewTry = z.infer<typeof ReviewTry>;
+
+/** A review question with the full record the parent sees: every try and the `attempt_result` row. */
+export const ParentReviewQuestion = ReviewQuestion.extend({
+  /** In `try_no` order, skips included. */
+  tries: z.array(ReviewTry),
+  result: AttemptResult,
+});
+export type ParentReviewQuestion = z.infer<typeof ParentReviewQuestion>;
+
+/**
+ * `GET /api/v1/learners/{id}/attempts/{attempt}/review`: a finished attempt of the caller's
+ * learner, in `seq` order. The API reads it under the attempt's pod, since a claimed attempt stays
+ * in the pod it was played in (decision jadwigo-hackathon 2026-10-29).
+ */
+export const ParentAttemptReview = z.object({
+  attempt: Attempt,
+  title: z.string().min(1),
+  language: Language,
+  questions: z.array(ParentReviewQuestion),
+});
+export type ParentAttemptReview = z.infer<typeof ParentAttemptReview>;
+
 /**
  * The login-free tier's invisible limits (decision
  * `2026-10-26-the-login-free-lesson-is-protected-by-invisible-limits-only-per`): nothing is shown
@@ -474,6 +550,8 @@ export const ERROR_STATUS = {
   AttemptPreview: 409,
   AssignmentClosed: 409,
   AttemptFinished: 409,
+  /** A review asked for before the attempt finished. */
+  AttemptNotFinished: 409,
   AttemptPaused: 409,
   QuestionNotOpen: 409,
   TryOutOfOrder: 409,

@@ -9,6 +9,7 @@ import {
   AttemptClaim,
   AttemptPatch,
   AttemptResults,
+  AttemptReview,
   AttemptSnapshot,
   AttemptStart,
   Claim,
@@ -20,6 +21,7 @@ import {
   LearnerCreate,
   LearnerSnapshot,
   Me,
+  ParentAttemptReview,
   PlaygroundExamples,
 } from "./wire.ts";
 
@@ -127,6 +129,16 @@ export const ROUTES = {
     status: 200,
     auth: "none",
   },
+  /** A finished attempt's questions again, for the child; 409 `AttemptNotFinished` before. */
+  getReview: {
+    method: "GET",
+    path: "/api/v1/attempts/{id}/review",
+    params: z.object({ id: AttemptId }),
+    body: null,
+    response: AttemptReview,
+    status: 200,
+    auth: "none",
+  },
   getMe: {
     method: "GET",
     path: "/api/v1/me",
@@ -169,6 +181,16 @@ export const ROUTES = {
     params: z.object({ id: LearnerId }),
     body: null,
     response: LearnerAttempts,
+    status: 200,
+    auth: "token",
+  },
+  /** A finished attempt of the caller's learner with every try; 409 `AttemptNotFinished` before. */
+  getParentReview: {
+    method: "GET",
+    path: "/api/v1/learners/{id}/attempts/{attempt}/review",
+    params: z.object({ id: LearnerId, attempt: AttemptId }),
+    body: null,
+    response: ParentAttemptReview,
     status: 200,
     auth: "token",
   },

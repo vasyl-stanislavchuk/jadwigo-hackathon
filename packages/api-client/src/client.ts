@@ -1,7 +1,7 @@
 /**
  * The `/api/v1` calls, typed from the contracts: the featured lessons the home page lists
  * (dl-5ssh.3.6), the lesson player's attempt calls (dl-5ssh.3.1), the playground's examples
- * (dl-w3.75) and the signed-in parent's (dl-e8ov.2.38), which carry the Supabase Auth token on the
+ * (dl-w3.75), the lesson review (dl-uukj.30) and the signed-in parent's (dl-e8ov.2.38), which carry the Supabase Auth token on the
  * routes whose `auth` is `token`. Every path comes from `ROUTES` and every reply is parsed with the
  * route's own response schema, so a reply the page cannot trust is an error here, never a shape a
  * view has to guess at (RULES.md rule 18).
@@ -22,6 +22,7 @@ import {
   type AttemptId,
   type AttemptPatch,
   type AttemptResults,
+  type AttemptReview,
   type AttemptSnapshot,
   type AttemptStart,
   type Claim,
@@ -36,6 +37,7 @@ import {
   type LearnerId,
   type LearnerSnapshot,
   type Me,
+  type ParentAttemptReview,
   type PlaygroundExamples,
   ROUTES,
   type Route,
@@ -77,6 +79,8 @@ export interface AttemptClient {
   help(attemptId: AttemptId, seq: number, body: HelpRequest): Promise<HelpResult>;
   patchAttempt(attemptId: AttemptId, body: AttemptPatch): Promise<AttemptSnapshot>;
   getResults(attemptId: AttemptId): Promise<AttemptResults>;
+  /** A finished attempt's questions again; `AttemptNotFinished` before it finishes. */
+  getReview(attemptId: AttemptId): Promise<AttemptReview>;
 }
 
 /** The home page's call: the lessons anyone may play now, oldest first. */
@@ -96,6 +100,8 @@ export interface ParentClient {
   createLearner(body: LearnerCreate): Promise<LearnerSnapshot>;
   claimAttempt(attemptId: AttemptId, body: AttemptClaim): Promise<Claim>;
   getLearnerAttempts(learnerId: LearnerId): Promise<LearnerAttempts>;
+  /** A finished attempt of the learner with every try; `AttemptNotFinished` before it finishes. */
+  getParentReview(learnerId: LearnerId, attemptId: AttemptId): Promise<ParentAttemptReview>;
 }
 
 /** Every `/api/v1` call this client makes. */
@@ -171,12 +177,15 @@ export function createClient({
     help: (attemptId, seq, body) => call(ROUTES.help, { id: attemptId, seq }, body),
     patchAttempt: (attemptId, body) => call(ROUTES.patchAttempt, { id: attemptId }, body),
     getResults: (attemptId) => call(ROUTES.getResults, { id: attemptId }, undefined),
+    getReview: (attemptId) => call(ROUTES.getReview, { id: attemptId }, undefined),
     getMe: () => call(ROUTES.getMe, {}, undefined),
     createAccount: (body) => call(ROUTES.createAccount, {}, body),
     createLearner: (body) => call(ROUTES.createLearner, {}, body),
     claimAttempt: (attemptId, body) => call(ROUTES.claimAttempt, { id: attemptId }, body),
     getLearnerAttempts: (learnerId) =>
       call(ROUTES.getLearnerAttempts, { id: learnerId }, undefined),
+    getParentReview: (learnerId, attemptId) =>
+      call(ROUTES.getParentReview, { id: learnerId, attempt: attemptId }, undefined),
     playgroundExamples: (language) => call(ROUTES.playgroundExamples, { language }, undefined),
   };
 }

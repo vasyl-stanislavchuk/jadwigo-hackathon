@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { harshWordsIn } from "./harsh.ts";
-import { CATEGORY_TABLES, copy, copyAt, lookup, TABLES } from "./index.ts";
+import { CATEGORY_TABLES, copy, copyAt, lookup, mistakeCopyKey, TABLES } from "./index.ts";
 import {
   COPY_KEYS,
   type CopyEntry,
   type CopyKey,
   LIST_KEYS,
+  MISTAKE_CLASSES,
   type PartialCopyTable,
 } from "./types.ts";
 
@@ -292,5 +293,30 @@ describe("copy() by category (dl-i952.17)", () => {
     expect(copy("pl", "start", {}, "adult")).toBe("Rozpocznij lekcję");
     expect(CATEGORY_TABLES.adult?.pl?.check).toBeUndefined();
     expect(copy("pl", "check", {}, "adult")).toBe(copy("pl", "check"));
+  });
+});
+
+describe("lesson review (dl-uukj.30)", () => {
+  it("names every mistake class in plain words for the parent, in every language", () => {
+    for (const language of ["pl", "en"] as const) {
+      for (const c of MISTAKE_CLASSES) {
+        const key = mistakeCopyKey(c);
+        expect(key, c).toBe(`parent_mistake_${c}`);
+        const text = copy(language, key as CopyKey);
+        expect(text, `${language}.${c}`).not.toContain("_");
+        expect(text, `${language}.${c}`).not.toMatch(/\bwrong\b|źle|—/i);
+      }
+    }
+  });
+
+  it("gives no key for no class, and the plain fallback for a class with no line", () => {
+    expect(mistakeCopyKey(null)).toBeNull();
+    expect(mistakeCopyKey("a_class_nobody_wrote")).toBe("parent_mistake_other");
+  });
+
+  it("fills the review step's place and the parent's time", () => {
+    expect(copy("pl", "review_title", { n: 3, total: 8 })).toBe("Pytanie 3 z 8");
+    expect(copy("en", "review_title", { n: 3, total: 8 })).toBe("Question 3 of 8");
+    expect(copy("pl", "parent_review_time", { seconds: 12 })).toBe("Czas: 12 s");
   });
 });
