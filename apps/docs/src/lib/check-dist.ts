@@ -10,6 +10,7 @@ export const MUST: readonly (readonly [file: string, text: string])[] = [
   ["guides/introduction/index.html", apiBase],
   ["guides/authentication/index.html", ROUTES.getMe.path],
   ["guides/authentication/index.html", ROUTES.questionSearches.path],
+  ["guides/authentication/index.html", ROUTES.questionBody.path],
   ["guides/errors/index.html", `<code>${Object.keys(ERROR_STATUS).at(-1)}</code>`],
   ["guides/first-call/index.html", ROUTES.featuredLessons.path],
   ["api/index.html", "API reference"],

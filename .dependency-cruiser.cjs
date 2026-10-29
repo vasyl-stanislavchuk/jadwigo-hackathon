@@ -71,9 +71,10 @@ module.exports = {
   ],
   options: {
     doNotFollow: { path: "node_modules" },
-    // .astro/ holds the types Astro generates for apps/site, never imported by our code.
+    // .astro/ holds the types Astro generates, and dist/ the bundles a build writes (Starlight's
+    // search script in apps/docs is circular). Neither is imported by our code.
     // node_modules stays in the graph as leaves (doNotFollow), so a rule can name a library.
-    exclude: { path: "(^|/)\\.astro/" },
+    exclude: { path: "(^|/)(\\.astro|dist)/" },
     tsPreCompilationDeps: true,
     combinedDependencies: true,
     enhancedResolveOptions: {
