@@ -13,7 +13,7 @@
 
 import { AssignmentId, AttemptId, LearnerId } from "@jadwigo/contracts";
 
-export const PARENT_PATH = "/parent";
+const PARENT_PATH = "/parent";
 const ATTEMPTS_PATH = `${PARENT_PATH}/attempts`;
 
 /** /parent, with the assignment whose attempt to keep and the page's language. */
@@ -55,6 +55,11 @@ export function parentRoute(path: string): ParentRoute | null {
   if (!path.startsWith(`${ATTEMPTS_PATH}/`)) return null;
   const parsed = AttemptId.safeParse(path.slice(ATTEMPTS_PATH.length + 1).replace(/\/$/, ""));
   return { kind: "attempt", attempt: parsed.success ? parsed.data : null };
+}
+
+/** Whether the path is one of the parent's pages, for the app's router. */
+export function isParentPath(path: string): boolean {
+  return parentRoute(path) !== null;
 }
 
 /** The assignment `?claim` names, or null. */

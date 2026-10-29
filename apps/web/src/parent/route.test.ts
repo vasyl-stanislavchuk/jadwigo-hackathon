@@ -1,6 +1,6 @@
 import { AssignmentId, AttemptId, LearnerId } from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
-import { attemptPath, claimOf, learnerOf, parentPath, parentRoute } from "./route.ts";
+import { attemptPath, claimOf, isParentPath, learnerOf, parentPath, parentRoute } from "./route.ts";
 
 const ASSIGNMENT = AssignmentId.parse("asg_0ectzj2evqb95a3v1v6wewjzy3");
 const ATTEMPT = AttemptId.parse("att_43007b83dp9w2tnfjxhha74cyq");
@@ -51,6 +51,12 @@ describe("parentRoute", () => {
     expect(parentRoute("/parent/attempts")).toBeNull();
     expect(parentRoute("/parents")).toBeNull();
     expect(parentRoute("/play/asg_0ectzj2evqb95a3v1v6wewjzy3")).toBeNull();
+  });
+
+  it("tells the app's router which paths are the parent's", () => {
+    expect(isParentPath("/parent")).toBe(true);
+    expect(isParentPath(`/parent/attempts/${ATTEMPT}`)).toBe(true);
+    expect(isParentPath("/parents")).toBe(false);
   });
 
   it("round-trips attemptPath", () => {
