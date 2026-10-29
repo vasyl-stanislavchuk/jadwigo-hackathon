@@ -30,7 +30,7 @@ const CATEGORY: Category = "child";
 const clock: Clock = { now: (): Instant => ({ perf: 0, wall: "2026-10-29T00:00:00.000Z" }) };
 
 /** The page's half of the question, as the family view takes it: never a key. */
-function specOf(question: ReviewQuestion): PageFamilySpec {
+export function specOf(question: ReviewQuestion): PageFamilySpec {
   return {
     id: `q${question.seq}`,
     say: question.say,
