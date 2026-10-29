@@ -1,9 +1,11 @@
 import { Router } from "@aws-lambda-powertools/event-handler/http";
-import { ErrorType, LIMITS, ROUTES, type RouteName } from "@jadwigo/contracts";
+import { ErrorType, LIMITS, ROUTES, type Route, type RouteName } from "@jadwigo/contracts";
 import type { Store } from "@jadwigo/store";
 import { answer, getAttempt, startAttempt } from "./attempts.ts";
+import { type Authenticate, type Claims, signedOut } from "./auth.ts";
 import { ApiError, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
+import { claimAttempt, createAccount, createLearner, getLearnerAttempts, getMe } from "./people.ts";
 import { playgroundExamples } from "./playground.ts";
 import { type BankDeps, searchQuestions } from "./questions.ts";
 import { getResults, help, patchAttempt } from "./session.ts";
@@ -13,7 +15,20 @@ type Handle<N extends RouteName> = (
   params: Params<N>,
   body: unknown,
   headers: Headers,
+  claims: Claims | undefined,
 ) => Promise<unknown>;
+type OpenRoute = {
+  [N in RouteName]: (typeof ROUTES)[N]["auth"] extends "none" ? N : never;
+}[RouteName];
+type TokenRoute = Exclude<RouteName, OpenRoute>;
+
+/** What the app is built with besides the store. */
+export interface AppDeps {
+  /** Verifies a token route's token. With none, no token is ever verified. */
+  readonly authenticate?: Authenticate;
+  /** The bank the search route asks. With none, no bank is wired. */
+  readonly bank?: BankDeps | undefined;
+}
 
 /**
  * The `/api/v1` routes on the Powertools router, each registered from `ROUTES` (RULES.md rule
@@ -23,22 +38,29 @@ type Handle<N extends RouteName> = (
  * still be opening: only the routes that read it wait for it, so health answers while the Lambda's
  * database URL is still being read, and when that read has failed. Every route that reads the store
  * runs as one `store.unit()`: one transaction on Postgres, rolled back with whatever it wrote on a
- * refusal.
+ * refusal. A token route (`auth: "token"`) runs only with the claims `authenticate` verified, else
+ * it is 401 `NotSignedIn`; with no `authenticate`, none is ever verified.
  */
-export function createApp(store: Store | Promise<Store>, bank?: BankDeps): Router {
+export function createApp(
+  store: Store | Promise<Store>,
+  { authenticate = signedOut, bank }: AppDeps = {},
+): Router {
   const app = new Router();
 
-  const on = <N extends RouteName>(name: N, handle: Handle<N>): void => {
-    const route = ROUTES[name];
+  const register = <N extends RouteName>(name: N, handle: Handle<N>): void => {
+    const route: Route = ROUTES[name];
     const path = route.path.replace(/\{(\w+)\}/g, ":$1") as `/${string}`;
     const method = route.method.toLowerCase() as "get" | "post" | "patch";
-    app[method](path, async ({ req, params }) => {
+    app[method](path, async ({ req, params, event }) => {
       try {
+        // A token route checks the token before anything else, so an unknown id is 401 too.
+        const claims = route.auth === "token" ? await authenticate(req, event) : undefined;
+        if (route.auth === "token" && claims === undefined) throw notSignedIn();
         const parsed = route.params.safeParse(params);
         // An id that does not parse names no record.
         if (!parsed.success) throw new ApiError(ErrorType.enum.NotFound, "no such record");
         const body = route.body === null ? undefined : await bodyOf(req);
-        const reply = await handle(parsed.data as Params<N>, body, req.headers);
+        const reply = await handle(parsed.data as Params<N>, body, req.headers, claims);
         return json(route.status, route.response.parse(reply));
       } catch (error) {
         const refused = refusal(error);
@@ -50,6 +72,20 @@ export function createApp(store: Store | Promise<Store>, bank?: BankDeps): Route
       }
     });
   };
+
+  // An open route never sees claims; a token route gets the verified ones.
+  const on = <N extends OpenRoute>(
+    name: N,
+    handle: (params: Params<N>, body: unknown, headers: Headers) => Promise<unknown>,
+  ) => register(name, (params, body, headers) => handle(params, body, headers));
+  const onSigned = <N extends TokenRoute>(
+    name: N,
+    handle: (params: Params<N>, body: unknown, claims: Claims) => Promise<unknown>,
+  ) =>
+    register(name, (params, body, _headers, claims) => {
+      if (claims === undefined) throw notSignedIn();
+      return handle(params, body, claims);
+    });
 
   on("health", async () => ({ status: "ok" }));
   // Public by design: no authorize(). It reads only the featured pod's open anyone-assignments,
@@ -73,6 +109,17 @@ export function createApp(store: Store | Promise<Store>, bank?: BankDeps): Route
   on("getResults", (params) => run((s) => getResults(s, params.id)));
   // No store: the bank answers it (questions.ts).
   on("questionSearches", (_, body, headers) => searchQuestions(bank, headers, body));
+  // The token was verified before the unit opens; the member lookup and the route's reads and
+  // writes are one unit, so the claim is one transaction.
+  onSigned("getMe", (_params, _body, claims) => run((s) => getMe(s, claims)));
+  onSigned("createAccount", (_params, body, claims) => run((s) => createAccount(s, claims, body)));
+  onSigned("createLearner", (_params, body, claims) => run((s) => createLearner(s, claims, body)));
+  onSigned("claimAttempt", (params, body, claims) =>
+    run((s) => claimAttempt(s, claims, params.id, body)),
+  );
+  onSigned("getLearnerAttempts", (params, _body, claims) =>
+    run((s) => getLearnerAttempts(s, claims, params.id)),
+  );
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;
@@ -108,6 +155,10 @@ async function bodyOf(req: Request): Promise<unknown> {
   } catch {
     throw new ApiError(ErrorType.enum.BadRequest, "the body is not JSON");
   }
+}
+
+function notSignedIn(): ApiError {
+  return new ApiError(ErrorType.enum.NotSignedIn, "sign in to use this");
 }
 
 function tooLarge(): ApiError {

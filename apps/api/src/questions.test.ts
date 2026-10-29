@@ -123,7 +123,7 @@ async function search(
   body: unknown,
   headers: Record<string, string> = { authorization: `Bearer ${TOKEN}` },
 ): Promise<{ status: number; body: unknown }> {
-  const app = createApp(new InMemoryStore(), bank);
+  const app = createApp(new InMemoryStore(), { bank });
   const path = ROUTES.questionSearches.path;
   const reply = (await app.resolve(
     {

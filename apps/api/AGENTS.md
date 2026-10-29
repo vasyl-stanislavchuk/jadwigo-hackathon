@@ -12,6 +12,11 @@ The one Lambda: a router, `authorize()` and the routes, with an entry per functi
 
 - Every route's input and output is a schema in `packages/contracts`; the handler parses, never trusts.
 - `authorize()` runs first on every route, and a pod only ever sees its own records.
+- **Token routes** (`auth: "token"` in `ROUTES`) run only with verified claims (`src/auth.ts`): in AWS
+  the API Gateway authorizer's, else an RS256 token checked against `AUTH_JWKS_URL`. With neither,
+  every token route is 401 `NotSignedIn`; no committed key is ever a default. Tests sign with a key
+  made per run (`src/testing/token.ts`). `authorizeMember()` finds the caller's pod from its member
+  row, and a signed-in user with no account yet is 409 `AccountMissing`.
 - `app.ts` runs each request as one `store.unit()`. A route goes on from the record `authorize()`
   read and the rows its writes return, and reads the attempt again only after a race or a replay
   (`src/roundtrips.int.test.ts` pins the round trips per request).

@@ -61,6 +61,15 @@ export function port(): number {
 }
 
 /**
+ * Where the token routes' keys are: Supabase's JWKS, `https://<ref>.supabase.co/auth/v1/.well-known/jwks.json`.
+ * Unset, the local server and the Lambda accept no token unless API Gateway's authorizer verified
+ * one; the tests sign with a key of their own (src/testing/token.ts).
+ */
+export function authJwksUrl(): string | undefined {
+  return process.env["AUTH_JWKS_URL"]?.trim() || undefined;
+}
+
+/**
  * The bank Lambda's `live` alias ARN the search route invokes, which Terraform sets from the
  * bank root's SSM handshake (`dl-5ssh.57`). Undefined when unset or blank: no bank is wired.
  */
