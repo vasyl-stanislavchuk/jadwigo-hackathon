@@ -5,7 +5,14 @@ import { answer, getAttempt, startAttempt } from "./attempts.ts";
 import { type Authenticate, type Claims, signedOut } from "./auth.ts";
 import { ApiError, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
-import { claimAttempt, createAccount, createLearner, getLearnerAttempts, getMe } from "./people.ts";
+import {
+  claimAttempt,
+  createAccount,
+  createLearner,
+  getAssignmentAttempts,
+  getLearnerAttempts,
+  getMe,
+} from "./people.ts";
 import { playgroundExamples } from "./playground.ts";
 import { type BankDeps, searchQuestions } from "./questions.ts";
 import { getParentReview, getReview } from "./review.ts";
@@ -121,6 +128,9 @@ export function createApp(
   );
   onSigned("getLearnerAttempts", (params, _body, claims) =>
     run((s) => getLearnerAttempts(s, claims, params.id)),
+  );
+  onSigned("getAssignmentAttempts", (params, _body, claims) =>
+    run((s) => getAssignmentAttempts(s, claims, params.id)),
   );
   // Reads under the caller's pod to find the attempt, then under the attempt's own pod.
   onSigned("getParentReview", (params, _body, claims) =>
