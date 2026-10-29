@@ -91,7 +91,8 @@ The words themselves are in the root `GLOSSARY.md`. Rules marked **(tested)** fa
     - A 2nd `event_id` for the same try is 409 `AnswerConflict`.
 20. **Errors are `{error: {type, message}}`.** `type` is a `PascalCase` name listed here: 400 for a
     body that fails its schema, 404 for an unknown record, 409 for a conflict with stored state,
-    429 for a limit the request is past (`LIMITS`).
+    429 for a limit the request is past (`LIMITS`); 401 for a request without a valid credential;
+    502 for an upstream the server calls (the bank) that did not answer.
     `message` is for a person and never names the key.
 21. **The server owns the lesson's course.** It decides the next question, a growth question and when
     an attempt finishes. A response never carries a question's `key` or help that has not been

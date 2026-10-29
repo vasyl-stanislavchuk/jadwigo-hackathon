@@ -1,6 +1,7 @@
 import { createPostgresStore, type Store } from "@jadwigo/store";
 import { createApp } from "./app.ts";
 import { lambdaDatabaseUrl } from "./config.ts";
+import { type BankDeps, lambdaBank } from "./questions.ts";
 
 export { createApp } from "./app.ts";
 
@@ -39,8 +40,12 @@ const lambdaDeps: HandlerDeps = {
  * The routes on PostgresStore. The store opens on the first request and is kept for the life of
  * the execution environment. Health never waits for it, so a health check tells an SSM or database
  * fault from an app fault. A failed open is retried on the first request after a capped wait.
+ * The search route's bank is the alias in `BANK_SEARCH_ALIAS_ARN`, or none when it is unset.
  */
-export function createHandler(deps: HandlerDeps = lambdaDeps) {
+export function createHandler(
+  deps: HandlerDeps = lambdaDeps,
+  bank: BankDeps | undefined = lambdaBank(),
+) {
   let store: Promise<Store> | undefined;
   let failed = false;
   let failures = 0;
@@ -64,7 +69,7 @@ export function createHandler(deps: HandlerDeps = lambdaDeps) {
     return opening;
   };
 
-  return (event: unknown, context: Context) => createApp(open()).resolve(event, context);
+  return (event: unknown, context: Context) => createApp(open(), bank).resolve(event, context);
 }
 
 /** The Lambda entry (`index.handler` in the bundle `make api-bundle` writes). */
