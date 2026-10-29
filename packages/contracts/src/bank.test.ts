@@ -97,6 +97,17 @@ describe("the search envelope", () => {
     expect(ROUTES.questionSearches.response.safeParse(leaked).success).toBe(false);
   });
 
+  it("drops a private body nested in a row's enrichment", () => {
+    const enrichment = { ...FIRST?.enrichment, body: "SECRET", private_body: { key: 42 } };
+    const leaked = { ...ENVELOPE, rows: [{ ...FIRST, enrichment }] };
+    for (const parsed of [
+      SearchEnvelope.parse(leaked),
+      ROUTES.questionSearches.response.parse(leaked),
+    ]) {
+      expect(parsed.rows[0]?.enrichment).toEqual(FIRST?.enrichment);
+    }
+  });
+
   it("drops a row field the bank adds before this contract names it", () => {
     const later = { ...ENVELOPE, rows: [{ ...FIRST, added_later: 1 }] };
     expect(SearchEnvelope.parse(later).rows[0]).not.toHaveProperty("added_later");

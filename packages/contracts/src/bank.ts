@@ -104,9 +104,14 @@ const SearchRow = z.object({
     )
     .optional(),
   enrichment: z
-    .record(z.string(), z.unknown())
+    .object({
+      summary: z.string().optional(),
+      can_do: z.string().optional(),
+      mistake_classes: Words.optional(),
+      contexts: Words.optional(),
+    })
     .describe(
-      "The set's enrichment fields the caller may show: summary, can_do, mistake_classes, contexts",
+      "The set's enrichment fields the caller may show; any other key, a private body among them, is dropped on parse",
     )
     .optional(),
   content_hash: z.string().describe("sha256 of the set page the row was built from").optional(),
