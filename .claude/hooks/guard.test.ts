@@ -211,6 +211,11 @@ const cases: Array<[name: string, want: "allow" | "DENY", command: string]> = [
   ["make -n -C infra deploy", "allow", "make -n -C infra deploy"],
   ["make --dry-run site-deploy", "allow", "make --dry-run -C infra site-deploy"],
   ["make -sn deploy", "allow", "make -sn -C infra deploy"],
+  // docs.<apex> is published the same way (dl-5ssh.90.14)
+  ["make -C infra docs-deploy", "DENY", "make -C infra docs-deploy"],
+  ["env -u CLAUDECODE make docs-deploy", "DENY", "env -u CLAUDECODE make -C infra docs-deploy"],
+  ["bash -c make docs-deploy", "DENY", "bash -c 'make -C infra docs-deploy'"],
+  ["make -n -C infra docs-deploy", "allow", "make -n -C infra docs-deploy"],
   ["make -C infra plan", "allow", "make -C infra plan"],
   ["make api-bundle", "allow", "make api-bundle"],
   [
