@@ -1,0 +1,26 @@
+---
+// The routes that take one credential, generated from ROUTES in @jadwigo/contracts at build time.
+import { type Credential, routesTaking } from "../lib/access.ts";
+
+interface Props {
+  credential: Credential;
+}
+
+const rows = routesTaking(Astro.props.credential);
+---
+
+<table>
+  <thead>
+    <tr><th>Route</th><th>What it does</th></tr>
+  </thead>
+  <tbody>
+    {
+      rows.map((row) => (
+        <tr>
+          <td><code>{row.method} {row.path}</code></td>
+          <td>{row.summary}</td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>

@@ -22,6 +22,7 @@ import {
 } from "@jadwigo/lesson-kit";
 import { Button, Spinner } from "@jadwigo/ui";
 import { type ReactElement, type ReactNode, useCallback, useEffect, useMemo } from "react";
+import { withMedia } from "../media.ts";
 import { navigate, useLocation } from "../playground/route.ts";
 import { ChildReview } from "../review/ChildReview.tsx";
 import { Results } from "./Results.tsx";
@@ -62,7 +63,8 @@ function Question({
     say: question.say,
     question_type: question.question_type,
     family: question.question.family,
-    data: question.question.data,
+    // A picture ref becomes its media URL here, before the kit sees a src (src/media.ts).
+    data: withMedia(question.question.data),
   } as PageFamilySpec;
   const live = state.phase === "live";
   const clock = browserClock;
@@ -91,7 +93,7 @@ function Question({
               }),
             },
             ladder: {
-              help: state.help,
+              help: withMedia(state.help),
               ask:
                 state.help === null || state.help.more
                   ? { enabled: live, press: press(clock, () => player.askHelp()) }

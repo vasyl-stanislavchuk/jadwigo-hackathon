@@ -96,6 +96,11 @@ the bank commit it was copied at.
 
 A failing call comes back as a tool error whose text is the verb's error and its hint.
 
+`mcp-tools.json` is the tool list as a client sees it: each tool's name, description,
+`inputSchema` and `outputSchema`, sorted by name. The docs site renders one page per tool from it,
+and `tests/test_mcp_snapshot.py` fails when the server drifts from it. After changing a tool,
+rewrite it with `JW_UPDATE_SNAPSHOTS=1 uv run --frozen pytest -q tests/test_mcp_snapshot.py`.
+
 ## Drafting a lesson
 
 The tools read, draw, assemble and check. They never write a word a child reads: the calling agent

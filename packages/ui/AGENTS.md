@@ -5,7 +5,7 @@ Design tokens, primitives and the parts the web app and the site share.
 - **Not here:** Business logic and data fetching.
 - **Owner:** the learner-experience workstream (`docs/workstreams/learner-experience.md`). **Filled by:** `dl-5ssh.34.6`.
 - **Imports:** `copy`.
-- **Public surface:** `src/index.ts`. Other files are private to this package.
+- **Public surface:** `src/index.ts`, `src/styles/tailwind.css` as `@jadwigo/ui/styles.css`, and `src/styles/foundation.css` as `@jadwigo/ui/foundation.css`: Zeszyt's tokens alone, for a build-time reader such as apps/docs (`dl-5ssh.90.9`). Other files are private to this package.
 - **Test:** `bunx turbo run lint typecheck test --filter=./packages/ui`
 
 ## Rules here

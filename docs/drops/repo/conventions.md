@@ -26,6 +26,7 @@ A revert does not undo these, so they are always called one-way:
 | --- | --- |
 | a migration under `supabase/` | the data has already moved |
 | a `packages/contracts/schemas/*.json` snapshot | every consumer of the contract sees it |
+| `packages/contracts/openapi.json` | the API document docs.jadwigo.pl publishes |
 | deleting, moving or exporting learner data | it cannot be called back |
 | `infra/bootstrap/` and IAM | access granted is access used |
 | a deploy, a publish, an email | it has already left the machine |
