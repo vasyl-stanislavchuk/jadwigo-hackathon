@@ -31,6 +31,7 @@ import { browserClock } from "@jadwigo/lesson-kit";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { BEAT_MS, currentOf, initialRunner, type RunnerState, runner } from "./runner.ts";
 import { storedAttempt } from "./storedAttempt.ts";
+import { uuid } from "./uuid.ts";
 
 /** How long to wait before sending again after a transient failure. */
 const RETRY_MS = 1000;
@@ -230,7 +231,7 @@ export function usePlayer(assignmentId: AssignmentId, client?: AttemptClient): P
   );
 
   const common = (seq: number, tryNo: number, at: Instant) => ({
-    event_id: EventId.parse(crypto.randomUUID()),
+    event_id: EventId.parse(uuid()),
     seq,
     try_no: tryNo,
     latency_ms: Math.max(0, Math.round(at.perf - shown.current.perf)),
