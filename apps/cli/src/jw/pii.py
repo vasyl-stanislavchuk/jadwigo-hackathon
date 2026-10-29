@@ -252,10 +252,14 @@ def _name_spans(text: str, names: Iterable[str]) -> list[tuple[int, int, str]]:
     return sorted(spans)
 
 
-# 3 or more single letters, each split from the next by spaces or one of . - _ (with spaces
-# around it or not): "K a s i a", "K.a.s.i.a", "K-a-s-i-a", "K. a. s. i. a."
+# What may stand between the letters of a spelled-out name: spaces and the punctuation a person
+# spells with, repeated or mixed ("K a s i a", "K.a.s.i.a", "K, a, s", "K–a–s", "K/a/s",
+# '"K" "a"'), and a combining mark left over from a decorated letter. Never a maths operator
+# (+ = − × ÷ < >), so "O = l + a" stays an equation.
+_SPELL_SEP = r"[\s.,;:/|'\"·*_\-\u2010-\u2015\u0300-\u036f]{1,5}"
+# 3 or more single letters with a separator between each two.
 _SPELLED_RE = re.compile(
-    r"(?<![^\W\d_])[^\W\d_](?:(?:\s*[.\-_]\s*|\s+)[^\W\d_]){2,}(?![^\W\d_])"
+    rf"(?<![^\W\d_])[^\W\d_](?:{_SPELL_SEP}[^\W\d_]){{2,}}(?![^\W\d_])"
 )
 
 
@@ -266,27 +270,35 @@ def _spelled_spans(
 
     Read over `text` itself, with each format character taken as a space, so a zero-width space
     breaks a word here as it does in the first pass, and a symbol such as "™" is never a letter.
-    A run's letters, each in its compatibility form, are read as one word, and a name form of 3
-    letters or more in it is hidden from its first letter to its last, separators included.
-    Polish has one-letter words ("a", "i", "w", "z"), so "a i w domu" makes a run too; it stays,
-    because "aiw" spells no name.
+    A run's letters, each in its compatibility form, are read as one word, and the first pass's
+    word rules apply to it: a name form starts the word or is a capital after a lowercase letter;
+    one of 4 letters or more takes the rest of the word ("K a s i u n i a"); a shorter one must
+    end the word or stand before a capital. So "s-z-k-o-ł-a" and "w o l a" are not Ola, and
+    "a i w domu" stays because "aiw" spells no name.
     """
     spaced = "".join(" " if unicodedata.category(ch) == "Cf" else ch for ch in text)
     spans: list[tuple[int, int, str]] = []
     for run in _SPELLED_RE.finditer(spaced):
         letters: list[int] = []  # for each letter of the word, where it stands in `text`
-        word = ""
+        shown = ""  # the word in compatibility forms, case kept
         for i in range(run.start(), run.end()):
             if spaced[i].isalpha():
-                piece = _fold(unicodedata.normalize("NFKC", spaced[i]))
-                word += piece
+                piece = unicodedata.normalize("NFKC", spaced[i])
+                shown += piece
                 letters += [i] * len(piece)
+        word = _fold(shown)
         at = 0
         while (m := pattern.search(word, at)) is not None:
             start, end = m.span()
+            at = start + 1
             if end - start < 3:
-                at = start + 1
                 continue
+            if start > 0 and not (shown[start].isupper() and shown[start - 1].islower()):
+                continue  # "w o l a" is not Ola
+            if end - start >= _PREFIX_LEN:
+                end = len(word)  # the whole word: "K a s i u n i a"
+            elif end < len(word) and not shown[end].isupper():
+                continue  # "o l e j" is not Ola
             spans.append((letters[start], letters[end - 1] + 1, form_of[m.group()]))
             at = end
     return spans

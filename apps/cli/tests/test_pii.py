@@ -145,7 +145,17 @@ def test_no_spelling_of_the_name_gets_through(
         ("K. a. s. i. a. ma 7 lat.", "[NAME_1]. ma 7 lat."),
         ("Pomóż K a s i ą!", "Pomóż [NAME_1]!"),
         ("w K a s i a", "w [NAME_1]"),
-        ("K a s i a i Ola", "[NAME_1] i [NAME_2]"),
+        # A long form takes the rest of the run, as "Kasiunia" goes whole in the first pass, so a
+        # one-letter word right after the name goes with it: the prompt loses a word, not a name.
+        ("K a s i a i Ola", "[NAME_1] [NAME_2]"),
+        ("K a s i u n i a", "[NAME_1]"),
+        # PR 171's review: the separators a person spells with.
+        ("K/a/s/i/a", "[NAME_1]"),
+        ("K, a, s, i, a", "[NAME_1]"),
+        ("K\u2013a\u2013s\u2013i\u2013a", "[NAME_1]"),  # en dash
+        ('"K" "a" "s" "i" "a"', '"[NAME_1]"'),
+        ("K..a..s..i..a", "[NAME_1]"),
+        ("O l a", "[NAME_1]"),
         # A format character breaks a word, as in the first pass, and a letter counts in its
         # compatibility form.
         ("x\u200bK a s i a", "x\u200b[NAME_1]"),
@@ -158,9 +168,28 @@ def test_a_name_spelled_out_letter_by_letter_is_hidden(text: str, out: str) -> N
     assert guard(text, names=["Kasia", "Ola"]).text == out
 
 
-@pytest.mark.parametrize("text", ["a i w domu", "x = a - b - c", "p.n.e. i n.p.m."])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "a i w domu",
+        "x = a - b - c",
+        "p.n.e. i n.p.m.",
+        "U.S.A.",
+        # PR 171's review: a short form inside a spelled word is not the name, as "olej" is not Ola.
+        "Przeliteruj: s-z-k-o-ł-a.",
+        "o l e j",
+        "p-o-l-a",
+        "w o l a n o",
+        "O l e k",
+        "O l i w i a",
+        # A maths operator is not a spelling separator.
+        "O = l + a",
+        "O - l + a = 0",
+    ],
+)
 def test_one_letter_words_that_spell_no_name_stay(text: str) -> None:
     assert guard(text, names=["Kasia", "Ola"]).text == text
+
 
 def _as_read(text: str) -> str:
     """`text` as a reader sees it: no format characters, compatibility forms, lowercase, and
