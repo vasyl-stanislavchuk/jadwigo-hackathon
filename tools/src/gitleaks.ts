@@ -16,13 +16,22 @@ export function parseTerms(text: string): string[] {
     .filter((line) => line !== "" && !line.startsWith("#"));
 }
 
+/** The beads tracker's name. It holds a family name, and it is the one '-learns' word allowed. */
+const TRACKER = "david-learns";
+
+const escapeRe = (t: string) => t.replace(/[\\.+*?()|[\]{}^$]/g, "\\$&");
+
 /** A config that extends the repo's and adds the family-name rule. apps/site may name the family
  * (2026-10-27-fence-9-narrows-the-marketing-site-may-name-the-owner-s-family-n), and so may the
- * david-learns tracker's path. RE2 has no lookahead, so that is a line allowlist. */
-export function familyNameConfig(base: string, terms: string[]): string {
-  const escaped = terms.map((t) => t.replace(/[\\.+*?()|[\]{}^$]/g, "\\$&"));
+ * tracker's own name. RE2 has no lookahead, so the rule's match takes a '-learns' after a term,
+ * and the allowlist exempts a match that is the tracker's name, never the line it sits on. */
+export function familyNameConfig(base: string, terms: string[], tracker = TRACKER): string {
+  const escaped = terms.map(escapeRe);
   // RE2's \b knows only ASCII letters, so a name starting with Ł needs its own boundary.
-  const regex = `(?i)(?:^|[^\\p{L}\\p{N}_])(?:${escaped.join("|")})(?:[^\\p{L}\\p{N}_]|$)`;
+  const edge = "[^\\p{L}\\p{N}_]";
+  // The '-learns' branch ends on \b and consumes no edge, so a term right after the tracker's
+  // name still has its leading edge to match.
+  const regex = `(?i)(?:^|${edge})(?:${escaped.join("|")})(?:-learns\\b|${edge}|$)`;
   const keywords = terms.map((t) => JSON.stringify(t.toLowerCase())).join(", ");
   return `[extend]
 path = ${JSON.stringify(base)}
@@ -34,11 +43,11 @@ regex = '''${regex}'''
 keywords = [${keywords}]
 
 [[rules.allowlists]]
-paths = ['''(^|/)apps/site/''']
+paths = ['''^apps/site/''']
 
 [[rules.allowlists]]
-regexTarget = "line"
-regexes = ['''(?i)\\pL+[-_]learns''']
+regexTarget = "match"
+regexes = ['''(?i)^${edge}?${escapeRe(tracker)}$''']
 `;
 }
 
@@ -57,10 +66,15 @@ if (import.meta.main) {
   } else {
     console.error(`gitleaks: no terms in ${termsFile}, so the family-name rule is off.`);
   }
-  const out = spawnSync("gitleaks", [...process.argv.slice(2), "--config", config], {
-    stdio: "inherit",
-  });
-  if (dir) rmSync(dir, { recursive: true, force: true });
+  const args = process.argv.slice(2);
+  // Always --redact, so a run by hand never prints a name it found.
+  if (!args.includes("--redact")) args.push("--redact");
+  let out: ReturnType<typeof spawnSync>;
+  try {
+    out = spawnSync("gitleaks", [...args, "--config", config], { stdio: "inherit" });
+  } finally {
+    if (dir) rmSync(dir, { recursive: true, force: true });
+  }
   if (out.error) console.error(`gitleaks: ${out.error.message}`);
   process.exit(out.status ?? 1);
 }
