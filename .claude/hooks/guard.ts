@@ -305,11 +305,14 @@ function prBodyDenial(
   return undefined;
 }
 
-/** `path` as the shell resolves it from `dir`, with ~ expanded. */
-function inDir(dir: string | undefined, path: string): string {
+/** `path` as the shell resolves it from `dir`, with ~ expanded; undefined when the guard cannot
+ * know it (a `$` in it, or no such folder), so the caller falls back to the session's cwd. */
+function inDir(dir: string | undefined, path: string): string | undefined {
+  if (path.includes("$")) return undefined;
   const home =
     path === "~" || path.startsWith("~/") ? join(process.env["HOME"] ?? "~", path.slice(1)) : path;
-  return resolve(dir ?? ".", home);
+  const full = resolve(dir ?? ".", home);
+  return existsSync(full) ? full : undefined;
 }
 
 function bashDenial(
@@ -334,7 +337,7 @@ function bashDenial(
   let dir = cwd;
   for (const words of commands) {
     const [prog = "", ...args] = words;
-    if (prog === "cd" && args[0] && args[0] !== "-") dir = inDir(dir, args[0]);
+    if (prog === "cd" && args[0] && args[0] !== "-") dir = inDir(dir, args[0]) ?? cwd;
 
     // 1. gbrain without its isolation env runs against whatever brain the shell points at.
     if (prog === "gbrain") {
@@ -404,7 +407,9 @@ function bashDenial(
         const toMain = refspecs.some((r) => /(^|:)(refs\/heads\/)?main$/.test(r));
         const at = words.indexOf("-C");
         const where = at > 0 && words[at + 1] ? inDir(dir, words[at + 1] ?? "") : dir;
-        const implicit = refspecs.length === 0 && branchOf(where) === "main";
+        // A folder the guard cannot read is judged as the session's own, never as "no branch".
+        const branch = (where === undefined ? undefined : branchOf(where)) ?? branchOf(cwd);
+        const implicit = refspecs.length === 0 && branch === "main";
         if (toMain || implicit) {
           return "main is reached only through a PR (squash-merge after ci-ok). Push your branch and open a PR with `gh pr create`.";
         }

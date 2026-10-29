@@ -3,7 +3,7 @@
 // its own test strings. Run: bun test .claude/hooks
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { denial, EXEC_CLEARS, type HookInput } from "./guard.ts";
@@ -265,17 +265,25 @@ describe("guard: Bash", () => {
   });
 
   test("a bare git push reads the branch of the folder a leading cd or git -C names", () => {
-    const at = (dirs: Record<string, string>) => (cwd: string | undefined) =>
-      dirs[cwd ?? ""] ?? "main";
-    const lanes = at({ "/w/lane": "dl-x.1/y", "/w/main-checkout": "main" });
+    const root = mkdtempSync(join(tmpdir(), "guard-cd-"));
+    const lane = join(root, "lane");
+    const checkout = join(root, "main-checkout");
+    mkdirSync(lane);
+    mkdirSync(checkout);
+    const branches: Record<string, string> = { [lane]: "dl-x.1/y", [checkout]: "main" };
     const from = (command: string) =>
-      denial({ ...bash(command), cwd: "/w/main-checkout" }, {}, lanes);
-    expect(from("cd /w/lane && git push")).toBeUndefined();
+      denial({ ...bash(command), cwd: checkout }, {}, (cwd) => branches[cwd ?? ""]);
+    expect(from(`cd ${lane} && git push`)).toBeUndefined();
     expect(from("cd ../lane && git push -u origin")).toBeUndefined();
-    expect(from("git -C /w/lane push")).toBeUndefined();
-    expect(from("cd /w/lane && git -C ../main-checkout push")).toMatch(/through a PR/);
+    expect(from(`git -C ${lane} push`)).toBeUndefined();
+    expect(from(`cd ${lane} && git -C ../main-checkout push`)).toMatch(/through a PR/);
     expect(from("git push")).toMatch(/through a PR/);
-    expect(from("cd /w/lane && git push origin main")).toMatch(/through a PR/);
+    expect(from(`cd ${lane} && git push origin main`)).toMatch(/through a PR/);
+    // What the guard cannot resolve falls back to the session's cwd, which is on main.
+    expect(from('cd "$X" && git push')).toMatch(/through a PR/);
+    expect(from("cd $X && git push")).toMatch(/through a PR/);
+    expect(from(`cd ${root}/missing && git push`)).toMatch(/through a PR/);
+    expect(from(`cd ${root} && git push`)).toMatch(/through a PR/);
   });
 
   test("exec with a long run of -a stays linear (dl-5ssh.56)", () => {
