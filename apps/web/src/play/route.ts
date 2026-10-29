@@ -10,12 +10,19 @@
 
 import { AssignmentId } from "@jadwigo/contracts";
 
-/** The assignment a /play path names, or null when the path is not one. A malformed id is a
- * player path with no lesson in it: `{ assignmentId: null }`. */
+/** The assignment a /play path names, or null when the path is not one. A malformed id, or one
+ * whose percent-encoding does not decode, is a player path with no lesson in it:
+ * `{ assignmentId: null }`. */
 export function playRoute(path: string): { assignmentId: AssignmentId | null } | null {
   const match = path.match(/^\/play\/([^/]+)\/?$/);
   if (match?.[1] === undefined) return null;
-  const parsed = AssignmentId.safeParse(decodeURIComponent(match[1]));
+  let raw: string;
+  try {
+    raw = decodeURIComponent(match[1]);
+  } catch {
+    return { assignmentId: null };
+  }
+  const parsed = AssignmentId.safeParse(raw);
   return { assignmentId: parsed.success ? parsed.data : null };
 }
 

@@ -12,11 +12,14 @@ import {
   ID_PREFIXES,
   type IdPrefix,
   idOf,
+  type Language,
   Learner,
   LearnerId,
   Lesson,
   LessonId,
   LessonQuestion,
+  LessonQuestionExample,
+  LessonQuestionExampleId,
   LessonQuestionId,
   LessonVersion,
   LessonVersionId,
@@ -30,8 +33,10 @@ import {
 import { Kysely, PostgresDialect, type Selectable, sql } from "kysely";
 import pg from "pg";
 import { COLUMNS, type DB } from "./db/types.ts";
+import { byTypeThenPosition, checkExamples } from "./example.ts";
 import {
   type AttemptRecord,
+  type ExampleWithQuestions,
   type HelpTwin,
   type LessonVersionWithQuestions,
   type NewAssignment,
@@ -41,6 +46,7 @@ import {
   type NewLearner,
   type NewLesson,
   type NewLessonQuestion,
+  type NewLessonQuestionExample,
   type NewLessonVersion,
   type NewPod,
   type OpenAssignment,
@@ -86,6 +92,7 @@ const PREFIXES: Readonly<Record<string, IdPrefix>> = {
   revises: ID_PREFIXES.lesson_version,
   lesson_question_id: ID_PREFIXES.lesson_question,
   twin_of: ID_PREFIXES.lesson_question,
+  twin: ID_PREFIXES.lesson_question,
   assignment_id: ID_PREFIXES.assignment,
   attempt_id: ID_PREFIXES.attempt,
 };
@@ -807,6 +814,119 @@ class PostgresStore implements Store {
     });
   }
 
+  async replaceExamples(
+    pod: PodId,
+    language: Language,
+    examples: readonly NewLessonQuestionExample[],
+  ): Promise<readonly LessonQuestionExample[]> {
+    return this.#in(pod, async (tx) => {
+      await this.#pod(tx, pod);
+      const questions = await this.#questionsById(
+        tx,
+        examples.flatMap((e) =>
+          e.twin === null ? [e.lesson_question_id] : [e.lesson_question_id, e.twin],
+        ),
+      );
+      checkExamples(language, examples, (id) => questions.get(id));
+      await tx.deleteFrom("lesson_question_example").where("language", "=", language).execute();
+      if (examples.length === 0) return [];
+      const valid = examples.map((example) =>
+        parse(
+          LessonQuestionExample,
+          {
+            ...example,
+            id: mint(LessonQuestionExampleId, ID_PREFIXES.lesson_question_example),
+            pod_id: pod,
+            created_at: new Date().toISOString(),
+          },
+          "the example",
+        ),
+      );
+      const rows = await tx
+        .insertInto("lesson_question_example")
+        .values(
+          valid.map((e) => ({
+            id: uuidOf(ID_PREFIXES.lesson_question_example, e.id),
+            pod_id: uuidOf(ID_PREFIXES.pod, pod),
+            lesson_question_id: uuidOf(ID_PREFIXES.lesson_question, e.lesson_question_id),
+            twin: e.twin === null ? null : uuidOf(ID_PREFIXES.lesson_question, e.twin),
+            language: e.language,
+            slug: e.slug,
+            position: e.position,
+            label: e.label,
+            showcase: e.showcase,
+            scenarios: JSON.stringify(e.scenarios),
+          })),
+        )
+        .returningAll()
+        .execute();
+      const byId = new Map(
+        rows.map((r) => [
+          r.id,
+          read(LessonQuestionExample, r, ID_PREFIXES.lesson_question_example),
+        ]),
+      );
+      return valid.flatMap((e) => {
+        const row = byId.get(uuidOf(ID_PREFIXES.lesson_question_example, e.id));
+        return row ? [row] : [];
+      });
+    });
+  }
+
+  async listExamples(pod: PodId, language: Language): Promise<readonly ExampleWithQuestions[]> {
+    return this.#in(pod, async (tx) => {
+      const rows = await tx
+        .selectFrom("lesson_question_example")
+        .selectAll()
+        .where("language", "=", language)
+        .execute();
+      const examples = rows.map((r) =>
+        read(LessonQuestionExample, r, ID_PREFIXES.lesson_question_example),
+      );
+      const questions = await this.#questionsById(
+        tx,
+        examples.flatMap((e) =>
+          e.twin === null ? [e.lesson_question_id] : [e.lesson_question_id, e.twin],
+        ),
+      );
+      const question = (id: LessonQuestionId, what: string): LessonQuestion => {
+        const found = questions.get(id);
+        if (!found) throw notFound(what);
+        return found;
+      };
+      return examples
+        .map((example) => ({
+          example,
+          question: question(example.lesson_question_id, "the question"),
+          twin: example.twin === null ? null : question(example.twin, "the twin's question"),
+        }))
+        .sort(byTypeThenPosition);
+    });
+  }
+
+  /** The pod's lesson questions behind these ids, by wire id; an id the pod lacks is left out. */
+  async #questionsById(
+    tx: Tx,
+    ids: readonly LessonQuestionId[],
+  ): Promise<Map<LessonQuestionId, LessonQuestion>> {
+    if (ids.length === 0) return new Map();
+    const rows = await tx
+      .selectFrom("lesson_question")
+      .selectAll()
+      .where(
+        "id",
+        "in",
+        [...new Set(ids)].map((id) => uuidOf(ID_PREFIXES.lesson_question, id)),
+      )
+      .execute();
+    return new Map(
+      rows.map((r) => {
+        const q = read(LessonQuestion, r, ID_PREFIXES.lesson_question);
+        return [q.id, q];
+      }),
+    );
+  }
+
   async startAttempt(pod: PodId, attempt: NewAttempt): Promise<AttemptRecord> {
     return this.#in(pod, async (tx) => {
       const assignment = await tx
@@ -1149,7 +1269,10 @@ class PostgresStore implements Store {
       }
       const { family } = question;
       if (valid.kind === "try" && !valueFor(family).safeParse(valid.value).success) {
-        throw new StoreError(ErrorType.enum.BadRequest, `the value is not a ${family} value`);
+        throw new StoreError(
+          ErrorType.enum.BadRequest,
+          `the value is not a value of the ${family} family`,
+        );
       }
       const row = await tx
         .insertInto("attempt_answer")
