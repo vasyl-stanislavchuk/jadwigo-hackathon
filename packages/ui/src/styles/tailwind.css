@@ -68,6 +68,75 @@
 
   --text-kid-say: var(--kid-say-size);
   --text-kid-answer: var(--kid-answer-size);
+
+  /* Zeszyt's roles and sizes as utilities (dl-uukj.32): bg-jw-act, text-jw-ink-soft, border-jw-line,
+     * text-jw-body, min-h-kid-tap, gap-kid-choice, rounded-jw-card, shadow-jw-act, duration-jw-step. A
+     * component reads these names; a var() written in a class is a violation (packages/testing
+     * src/tokens.ts). The roles are foundation.css §2, the sizes its type block. */
+  --color-jw-ground: var(--jw-ground);
+  --color-jw-card: var(--jw-card);
+  --color-jw-prompt-card: var(--jw-prompt-card);
+  --color-jw-ink: var(--jw-ink);
+  --color-jw-ink-soft: var(--jw-ink-soft);
+  --color-jw-placeholder: var(--jw-placeholder);
+  --color-jw-line: var(--jw-line);
+  --color-jw-line-strong: var(--jw-line-strong);
+  --color-jw-act: var(--jw-act);
+  --color-jw-on-act: var(--jw-on-act);
+  --color-jw-act-edge: var(--jw-act-edge);
+  --color-jw-act-quiet: var(--jw-act-quiet);
+  --color-jw-on-act-quiet: var(--jw-on-act-quiet);
+  --color-jw-focus: var(--jw-focus);
+  --color-jw-on-focus: var(--jw-on-focus);
+  --color-jw-pick: var(--jw-pick);
+  --color-jw-pick-edge: var(--jw-pick-edge);
+  --color-jw-pick-ink: var(--jw-pick-ink);
+  --color-jw-help: var(--jw-help);
+  --color-jw-help-edge: var(--jw-help-edge);
+  --color-jw-help-ink: var(--jw-help-ink);
+  --color-jw-right: var(--jw-right);
+  --color-jw-right-edge: var(--jw-right-edge);
+  --color-jw-right-ink: var(--jw-right-ink);
+  --color-jw-right-act: var(--jw-right-act);
+  --color-jw-on-right-act: var(--jw-on-right-act);
+  --color-jw-right-act-edge: var(--jw-right-act-edge);
+  --color-jw-miss: var(--jw-miss);
+  --color-jw-miss-edge: var(--jw-miss-edge);
+  --color-jw-miss-ink: var(--jw-miss-ink);
+  --color-jw-on-miss-edge: var(--jw-on-miss-edge);
+  --color-jw-miss-act: var(--jw-miss-act);
+  --color-jw-on-miss-act: var(--jw-on-miss-act);
+  --color-jw-miss-act-edge: var(--jw-miss-act-edge);
+  --color-jw-rest: var(--jw-rest);
+  --color-jw-rest-ink: var(--jw-rest-ink);
+  --color-kid-selected: var(--kid-selected);
+  --color-kid-selected-soft: var(--kid-selected-soft);
+  --color-kid-selected-ink: var(--kid-selected-ink);
+
+  --text-jw-instruction: var(--jw-size-instruction);
+  --text-jw-prompt: var(--jw-size-prompt);
+  --text-jw-option: var(--jw-size-option);
+  --text-jw-math: var(--jw-size-math);
+  --text-jw-verdict: var(--jw-size-verdict);
+  --text-jw-body: var(--jw-size-body);
+  --text-jw-small: var(--jw-size-small);
+  --text-jw-target: var(--jw-size-target);
+
+  /* Sizes: min-h-kid-tap, size-kid-key, h-kid-commit, gap-kid-choice, min-h-jw-control. */
+  --spacing-kid-tap: var(--kid-tap-min);
+  --spacing-kid-key: var(--kid-key-size);
+  --spacing-kid-commit: var(--kid-commit-height);
+  --spacing-kid-choice: var(--kid-choice-gap);
+  --spacing-jw-control: var(--jw-control-height);
+  --radius-jw-card: var(--jw-radius-card);
+  --radius-jw-control: var(--jw-radius-control);
+  --radius-jw-small: var(--jw-radius-small);
+  /* The pressed edge the action stands on (foundation.css, Behaviour: the action). */
+  --shadow-jw-act: 0 var(--jw-press) 0 var(--jw-act-edge);
+  --transition-duration-jw-fast: var(--jw-dur-fast);
+  --transition-duration-jw-mark: var(--jw-dur-mark);
+  --transition-duration-jw-band: var(--jw-dur-band);
+  --transition-duration-jw-step: var(--jw-dur-step);
 }
 
 @layer base {

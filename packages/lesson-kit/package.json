@@ -12,6 +12,7 @@
     "test": "vitest run --config ../../vitest.config.ts --project unit --project dom"
   },
   "//": {
+    "@jadwigo/testing": "the design-system check its tokens.test.ts runs (checkTokens), tests only",
     "@dnd-kit/core": "dragging in the drag parts (src/parts/SortableList.tsx and the Group and Sequence views)",
     "@dnd-kit/sortable": "reordering a list by drag (src/parts/SortableList.tsx)",
     "@dnd-kit/utilities": "the CSS transform a dragged item takes (src/parts/SortableList.tsx)",
@@ -33,6 +34,7 @@
     "vitest": "runs this package's unit test with the root vitest.config.ts"
   },
   "devDependencies": {
+    "@jadwigo/testing": "workspace:*",
     "@testing-library/dom": "catalog:",
     "@testing-library/react": "catalog:",
     "@types/node": "catalog:",

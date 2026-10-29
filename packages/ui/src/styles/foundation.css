@@ -204,6 +204,12 @@
   --jw-size-verdict: 1.375rem; /* 22px */
   --jw-size-body: 1.125rem; /* 18px: help, hints, the band's second line */
   --jw-size-small: 0.9375rem; /* 15px */
+  /* The big readout a task shows beside its figure (TaskTarget, dl-uukj.32): one size for the sites
+     * that wrote 2.5rem or 3rem by hand. */
+  --jw-size-target: 2.5rem; /* 40px */
+  /* A settings or navigation control outside a lesson: 48, as decision 2026-10-25-settings-and-
+     * navigation-controls says; a lesson answer keeps --kid-tap-min (56). */
+  --jw-control-height: 3rem; /* 48px */
   /* Room around × and ÷ so a sum reads as one thing. */
   --jw-math-op-space: 0.2em;
 
@@ -408,6 +414,7 @@
 [data-lesson-theme="zeszyt"]
   :is(
     [class~="bg-primary/10"],
+    [data-picked],
     label[data-checked],
     [role="checkbox"][aria-checked="true"],
     [data-tile][aria-pressed="true"]
@@ -436,6 +443,7 @@
 
 /* A picked option wears the pick: the clear blue fill, its edge, its ink. Colour only, never size. */
 [data-lesson-theme="zeszyt"] [class~="bg-primary/10"],
+[data-lesson-theme="zeszyt"] [data-picked],
 [data-lesson-theme="zeszyt"] [data-tile][aria-pressed="true"],
 [data-lesson-theme="zeszyt"] [data-slot="toggle"][data-state="on"] {
   border-color: var(--jw-pick-edge);
@@ -473,6 +481,7 @@
       [data-tone="green"],
       [data-tone="amber"],
       [class~="bg-primary/10"],
+      [data-picked],
       [data-solution]
     ):hover {
     border-color: var(--jw-line-strong);

@@ -25,7 +25,7 @@ function block(css: string, head: string): Record<string, string> {
 const light = block(NEUTRAL, "html[data-playground],\n[data-tool-surface] {");
 const dark = block(NEUTRAL, 'html[data-playground][theme="dark"],');
 /** Every colour utility tailwind.css names, except the kid feedback colours, which stay the lesson's. */
-const UTILITIES = [...TAILWIND.matchAll(/^\s*--color-(?!kid-)([\w-]+):/gm)].map((m) => m[1]);
+const UTILITIES = [...TAILWIND.matchAll(/^\s*--color-(?!kid-|jw-)([\w-]+):/gm)].map((m) => m[1]);
 
 function channels(hex: string): [number, number, number] {
   const [r = 0, g = 0, b = 0] = [1, 3, 5].map(

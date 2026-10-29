@@ -2,10 +2,22 @@
 import { type ClassValue, clsx } from "clsx";
 import { extendTailwindMerge } from "tailwind-merge";
 
-// text-kid-say and text-kid-answer are font sizes (@theme in styles/tailwind.css). Without this,
+// text-kid-* and text-jw-<size> are font sizes (@theme in styles/tailwind.css). Without this,
 // tailwind-merge reads any unknown text-* as a colour and drops one of a size/colour pair.
+const SIZES = [
+  "kid-say",
+  "kid-answer",
+  "jw-instruction",
+  "jw-prompt",
+  "jw-option",
+  "jw-math",
+  "jw-verdict",
+  "jw-body",
+  "jw-small",
+  "jw-target",
+];
 const twMerge = extendTailwindMerge({
-  extend: { classGroups: { "font-size": [{ text: ["kid-say", "kid-answer"] }] } },
+  extend: { classGroups: { "font-size": [{ text: SIZES }] } },
 });
 
 export function cn(...inputs: ClassValue[]): string {
