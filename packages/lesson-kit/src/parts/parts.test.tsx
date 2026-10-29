@@ -408,11 +408,11 @@ describe("Keypad", () => {
     );
     const seven = screen.getByRole("button", { name: "7" });
     expect(seven.className).toContain("min-h-kid-key");
-    expect(seven.className).toContain("text-[1.875rem]");
+    expect(seven.className).toContain("text-jw-key");
     expect(seven.className).toContain("rounded-jw-small");
     const times = must(container.querySelector<HTMLElement>('[data-sign="×"]'));
     expect(times.className).toContain("min-h-kid-tap");
-    expect(times.className).toContain("text-[1.75rem]");
+    expect(times.className).toContain("text-jw-key-sign");
     expect(must(container.querySelector("[data-keypad]")).className).toContain("gap-2");
   });
 });

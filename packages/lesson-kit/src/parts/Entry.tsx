@@ -246,7 +246,7 @@ export function Entry({
           )}
         </div>
         {unit && (
-          <span data-unit className="text-[1.625rem] leading-none font-bold text-muted-foreground">
+          <span data-unit className="text-jw-unit leading-none font-bold text-muted-foreground">
             {unit}
           </span>
         )}

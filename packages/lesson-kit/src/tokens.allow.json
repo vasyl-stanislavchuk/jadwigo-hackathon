@@ -155,11 +155,6 @@
     "why": ""
   },
   {
-    "path": "parts/Entry.tsx",
-    "snippet": "-[1.625rem]",
-    "why": ""
-  },
-  {
     "path": "parts/InlineCode.tsx",
     "snippet": "-[0.32em]",
     "why": "em, relative to the text the chip sits in: the chip scales with its host sentence at every size, which no fixed token can"
@@ -195,21 +190,6 @@
     "why": ""
   },
   {
-    "path": "parts/Keypad.tsx",
-    "snippet": "-[1.875rem]",
-    "why": ""
-  },
-  {
-    "path": "parts/Keypad.tsx",
-    "snippet": "-[1.75rem]",
-    "why": ""
-  },
-  {
-    "path": "parts/Keypad.tsx",
-    "snippet": "-[1.625rem]",
-    "why": ""
-  },
-  {
     "path": "parts/LetterRow.tsx",
     "snippet": "-[35rem]",
     "why": "a container-query breakpoint (@min-[35rem]): the row goes to 10 columns where 10 keys of --kid-tap-min fit (10 x 3.5rem); a container query cannot read var()"
@@ -227,11 +207,6 @@
   {
     "path": "parts/SortableList.tsx",
     "snippet": "[var(--kid-choice-gap)",
-    "why": ""
-  },
-  {
-    "path": "parts/StatusLine.tsx",
-    "snippet": "[var(--kid-status-height)",
     "why": ""
   },
   {
