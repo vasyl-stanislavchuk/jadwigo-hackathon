@@ -3,7 +3,7 @@
  * as well as a colour, so the grid reads without colour too (wave 2 plan of dl-uukj.30). The
  * colours are the tones every screen shares (src/review/outcome.ts): the player's own right and
  * the miss colour of decision 2026-10-24, plain for the rest. A plain minus for not yet: the parent's, never
- * a cross (src/review/ended.ts keeps the child's icons).
+ * a cross (src/review/outcome.ts keeps the child's icons).
  */
 
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";

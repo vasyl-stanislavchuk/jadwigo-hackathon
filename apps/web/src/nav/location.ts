@@ -1,7 +1,7 @@
 /**
  * The app's one address: the current path and query, and a client-side move (pushState) that
- * keeps the query (dl-uukj.32 wave 2 step 0, split out of playground/route.ts so the product's
- * screens no longer import the playground). Links stay real links (NavLink.tsx); a move re-renders
+ * keeps the query (dl-uukj.32 wave 2 step 0, split out of the playground's route file so the
+ * product's screens no longer import the playground). Links stay real links (NavLink.tsx); a move re-renders
  * every useLocation() through one event.
  */
 
