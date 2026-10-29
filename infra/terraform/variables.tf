@@ -23,3 +23,8 @@ variable "supabase_ref" {
   description = "The environment's Supabase project ref; its Auth issues the tokens the JWT authorizer verifies"
   type        = string
 }
+
+variable "app_reserved_concurrency" {
+  description = "The app Lambda's reserved concurrency, set per environment below its Supabase pooler's client limit (dl-5ssh.75)"
+  type        = number
+}
