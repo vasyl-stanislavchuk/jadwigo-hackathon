@@ -196,13 +196,14 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
 }
 
 /* Square controls only (Enter addendum 2.5): the fold arrow is a 56 square, the more-below arrow
- * a 48 square, each 16px corners, paper, a 2px line on its 4px edge, like the keys. */
+ * a 48 square, each 10px corners, paper, a 2px line on its 4px edge, like the keys (owner,
+ * 2026-10-29, dl-uukj.29.148). */
 .kid-step-shell [data-fold] {
   width: 3.5rem;
   height: 3.5rem;
   min-width: 3.5rem;
   min-height: 3.5rem;
-  border-radius: 1rem;
+  border-radius: 0.625rem;
   background-color: var(--card);
 }
 
@@ -662,7 +663,7 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
   height: 3rem;
   min-width: 3rem;
   min-height: 3rem;
-  border-radius: 1rem;
+  border-radius: 0.625rem;
   background-color: var(--card);
 }
 

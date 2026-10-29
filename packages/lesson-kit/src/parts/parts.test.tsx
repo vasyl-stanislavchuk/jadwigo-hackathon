@@ -402,14 +402,14 @@ describe("Keypad", () => {
     expect(bottomRow(container)[0]?.getAttribute("data-sign")).toBe("=");
   });
 
-  it("sizes the keys as drawn: digits 72 tall and 30 px, the sign row 56 tall and 28 px, 8 apart", () => {
+  it("sizes the keys as drawn: digits 72 tall and 30 px, the sign row 56 tall and 28 px, 8 apart, 10 px corners", () => {
     const { container } = render(
       <Keypad language="pl" clock={clock} signKeys={signKeys(["×", "+"])} onEvent={vi.fn()} />,
     );
     const seven = screen.getByRole("button", { name: "7" });
     expect(seven.className).toContain("min-h-[var(--kid-key-size)]");
     expect(seven.className).toContain("text-[1.875rem]");
-    expect(seven.className).toContain("rounded-[1rem]");
+    expect(seven.className).toContain("rounded-[0.625rem]");
     const times = must(container.querySelector<HTMLElement>('[data-sign="×"]'));
     expect(times.className).toContain("min-h-[var(--kid-tap-min)]");
     expect(times.className).toContain("text-[1.75rem]");
