@@ -4,8 +4,9 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ACCOUNT=843109108289
-# The profile infra/aws.mk pins; a command line still wins (AWS_PROFILE=other ./00-oidc.sh).
-PROFILE="${AWS_PROFILE:-$(sed -n 's/^AWS_PROFILE := //p' "$HERE/../aws.mk")}"
+# The profile infra/aws.mk pins. An exported AWS_PROFILE never wins, as with aws.mk's := (direnv
+# exports one in md worktrees); only JADWIGO_AWS_PROFILE=other ./00-oidc.sh picks another.
+PROFILE="${JADWIGO_AWS_PROFILE:-$(sed -n 's/^AWS_PROFILE := //p' "$HERE/../aws.mk")}"
 AWS=(aws --profile "$PROFILE" --output text)
 
 step() { printf '\n==> %s\n' "$*"; }
