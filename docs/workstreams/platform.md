@@ -9,6 +9,7 @@
 ## Directories it owns
 
 - `apps/api/`
+- `apps/docs/` (`dl-5ssh.90`)
 - `packages/contracts/`
 - `packages/store/`
 - `packages/config/`
@@ -53,6 +54,7 @@ Milestone 1, free tier (the order is in `docs/README.md`). A featured lesson is 
 - `jadwigo-hackathon/decisions/2026-10-26-each-workstream-builds-where-its-code-lives-four-in-the-jadwigo`: where each workstream builds
 - `jadwigo-hackathon/decisions/2026-10-26-voice-is-out-of-scope-until-the-core-works-well-children-answer`: voice is out of scope until the core works well
 - The meta decision of 2026-10-26 that the top epic is the learner growing toward his goals, not the hackathon submission (`md context decisions --project jadwigo-hackathon`; its slug names the learner, so it is not quoted here)
+- `jadwigo-platform/notes/2026-10-29-jadwigo-s-docs-are-a-starlight-site-at-docs-jadwigo-pl-generated`: the docs are a Starlight site at docs.jadwigo.pl, generated from the code (a draft until the owner accepts it)
 - And the david-learns decisions this project carries: `jadwigo-platform/notes/decisions-in-force-from-david-learns`.
 
 ## Open

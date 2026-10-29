@@ -80,7 +80,7 @@ def _without_timing(envelope: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in envelope.items() if k != "timing_ms"}
 
 
-def test_serve_lists_the_three_tools_and_matches_the_verbs(bank: Any) -> None:
+def test_serve_lists_every_tool_and_the_question_tools_match_the_verbs(bank: Any) -> None:
     calls = [
         ("question_search", {"grade": "3", "words": "dodawanie do 100"}),
         ("question_search", {"grade": "3", "words": "dodawanie do 100", "stage": "first"}),

@@ -11,6 +11,10 @@
 // A denial always starts with "guard:" and says what to do instead. Cases: guard.test.ts.
 
 import { spawnSync } from "node:child_process";
+
+/** The Stop hook's room for make check's output: 64 MB, far above the 1 MB that overflowed (dl-5ssh.94). */
+const STOP_MAX_BUFFER = 64 * 1024 * 1024;
+
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { extname, isAbsolute, join, relative, resolve } from "node:path";
@@ -222,9 +226,12 @@ function prodDbDenial(cmd: string, bare: string, commands: string[][]): string |
   return undefined;
 }
 
-/** infra/Makefile's deploy targets (dl-5ssh.52): a Lambda update, an S3 sync and an invalidation. */
-const DEPLOY_WORD = /^(api-|web-|site-)?deploy$/;
-const DEPLOY_TARGET = /(^|[\s'",[(])(api-|web-|site-)?deploy(?=[\s'",)\]]|$)/;
+/**
+ * infra/Makefile's deploy targets (dl-5ssh.52): a Lambda update, an S3 sync and an invalidation.
+ * docs-deploy publishes docs.<apex> (dl-5ssh.90.14).
+ */
+const DEPLOY_WORD = /^(api-|web-|site-|docs-)?deploy$/;
+const DEPLOY_TARGET = /(^|[\s'",[(])(api-|web-|site-|docs-)?deploy(?=[\s'",)\]]|$)/;
 /** make's options that take a value; a cluster such as -Cn names directory n, not a dry run. */
 const MAKE_VALUE_FLAGS = "CfIjloWE";
 
@@ -243,7 +250,7 @@ function makeDryRun(words: string[]): boolean {
 
 /**
  * A deploy is the owner's (AGENTS.md), and the CLAUDECODE check in infra/Makefile is all that
- * stopped one: make deploy, api-deploy, web-deploy and site-deploy, directly, under env -i, or
+ * stopped one: make deploy, api-deploy, web-deploy, site-deploy and docs-deploy, directly, under env -i, or
  * inside a wrapper's quoted script. make -n prints the recipe and runs nothing, so it stays allowed.
  */
 function deployDenial(cmd: string, commands: string[][]): string | undefined {
@@ -253,14 +260,14 @@ function deployDenial(cmd: string, commands: string[][]): string | undefined {
     if (at >= 0) {
       const make = words.slice(at + 1);
       if (make.some((w) => DEPLOY_WORD.test(w)) && !makeDryRun(make)) {
-        return "make deploy, api-deploy, web-deploy and site-deploy are the owner's, typed at their own terminal (`!` in Claude Code). From a session, `make -n -C infra deploy` shows what it would run.";
+        return "make deploy, api-deploy, web-deploy, site-deploy and docs-deploy are the owner's, typed at their own terminal (`!` in Claude Code). From a session, `make -n -C infra deploy` shows what it would run.";
       }
     }
     const wrapped = words.some(
       (w) => WRAPPERS.test(base(w)) || PTY_WRAPPERS.test(base(w)) || base(w) === "eval",
     );
     if (wrapped && MAKE.test(cmd) && DEPLOY_TARGET.test(cmd)) {
-      return "a wrapper around make deploy, api-deploy, web-deploy or site-deploy still deploys, which is the owner's, typed at their own terminal.";
+      return "a wrapper around make deploy, api-deploy, web-deploy, site-deploy or docs-deploy still deploys, which is the owner's, typed at their own terminal.";
     }
   }
   return undefined;
@@ -617,11 +624,19 @@ function run(mode: string, raw: string, env: Env): number {
 
   if (mode === "stop") {
     if (input.stop_hook_active) return 0;
+    // make check prints more than spawnSync's default 1 MB (lesson-kit's dom tests alone print a
+    // React warning per file), and an overflow is ENOBUFS with status null: a green tree read as
+    // red (dl-5ssh.94). So the buffer is 64 MB, and a spawn error is reported as itself.
     const out = spawnSync("make", ["check"], {
       cwd: root,
       encoding: "utf8",
       env: { ...process.env, TURBO_OUTPUT_LOGS: "errors-only" },
+      maxBuffer: STOP_MAX_BUFFER,
     });
+    if (out.error !== undefined) {
+      console.error(`make check could not run: ${out.error.message}`);
+      return 2;
+    }
     if (out.status !== 0) {
       console.error(
         `make check failed. Fix it before you finish:\n${(out.stdout + out.stderr).slice(-6000)}`,

@@ -1,0 +1,313 @@
+{
+  "tools": [
+    {
+      "description": "Check a draft whose help you have written, and return the card a parent reads.\n\n        Pass the whole draft lesson_draft returned, with every question's help filled. It is\n        assembled into a lesson file and checked as the import would check it. ok true returns\n        the card (per question: prompt, key, rungs, twin, source, licence, why drawn; and what was\n        left out), the lesson_file path, play_path and lesson_id. ok false lists errors by step\n        id: fix those questions and call lesson_check again.\n        ",
+      "inputSchema": {
+        "properties": {
+          "draft": {
+            "additionalProperties": true,
+            "title": "Draft",
+            "type": "object"
+          }
+        },
+        "required": ["draft"],
+        "title": "lesson_checkArguments",
+        "type": "object"
+      },
+      "name": "lesson_check",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "lesson_checkDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "description": "Draft a lesson for a parent's request: questions drawn from the bank, help left empty.\n\n        request is the parent's words (\"6 zadań z mnożenia, klasa 3\"); names is required: pass\n        every name the family uses in the request (the child's, siblings', the parent's), or []\n        when there is none; the tool replaces them before anything leaves the machine. grade the bare grade\n        number; kind practice, review, check or diagnostic; count overrides the draw rule's count.\n        Each question carries its family step, key, the source item's hints and worked lines as\n        `material`, credit, based_on and why it was drawn; left_out says why each set or item was\n        not used, and rule_settled is false (the draw rules are provisional). You write each\n        question's `help` in the lesson's language: look and boost as {\"text\"} cards,\n        boost_by_mistake as {mistake class: {\"text\"}}, almost and worked as lists of lines (almost\n        is worked with its last line left blank), and twin as a question from the same template\n        with its own say, data and key. Then call lesson_check with the whole draft.\n        ",
+      "inputSchema": {
+        "properties": {
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Count"
+          },
+          "grade": {
+            "title": "Grade",
+            "type": "string"
+          },
+          "kind": {
+            "default": "practice",
+            "title": "Kind",
+            "type": "string"
+          },
+          "language": {
+            "default": "pl",
+            "title": "Language",
+            "type": "string"
+          },
+          "names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Names",
+            "type": "array"
+          },
+          "request": {
+            "title": "Request",
+            "type": "string"
+          },
+          "skills": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Skills"
+          }
+        },
+        "required": ["request", "grade", "names"],
+        "title": "lesson_draftArguments",
+        "type": "object"
+      },
+      "name": "lesson_draft",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "lesson_draftDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "description": "Search each need once (one per words, one per skill) and say which find nothing.",
+      "inputSchema": {
+        "properties": {
+          "arm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Arm"
+          },
+          "grade": {
+            "title": "Grade",
+            "type": "string"
+          },
+          "language": {
+            "default": "pl",
+            "title": "Language",
+            "type": "string"
+          },
+          "skills": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Skills"
+          },
+          "words": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Words"
+          }
+        },
+        "required": ["grade"],
+        "title": "question_gapsArguments",
+        "type": "object"
+      },
+      "name": "question_gaps",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "question_gapsDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "description": "One converted item by its id: the composer's view, never shown to a child.\n\n        Returns the family step a lesson file's question takes (family, data, key, help), the\n        say line, the credit and based_on (`khan:<id>`). The key and help are in it, so use it to\n        draft a lesson and never paste it where a child reads. language is the item's language\n        (pl by default); an item in another language is an error.\n        ",
+      "inputSchema": {
+        "properties": {
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "language": {
+            "default": "pl",
+            "title": "Language",
+            "type": "string"
+          }
+        },
+        "required": ["item_id"],
+        "title": "question_itemArguments",
+        "type": "object"
+      },
+      "name": "question_item",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "question_itemDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "description": "Search the bank for question sets that meet a need; the bank's search envelope.\n\n        grade is the bare grade number (\"3\"); words is the need in plain words in `language`\n        (pl, en or uk). arm and stage reach only the bank's own route (JW_BANK_URL); the /api/v1\n        route answers stage final with every arm.\n        ",
+      "inputSchema": {
+        "properties": {
+          "arm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Arm"
+          },
+          "grade": {
+            "title": "Grade",
+            "type": "string"
+          },
+          "language": {
+            "default": "pl",
+            "title": "Language",
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "mistakes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mistakes"
+          },
+          "skills": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Skills"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Stage"
+          },
+          "words": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Words"
+          },
+          "words_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Words En"
+          }
+        },
+        "required": ["grade"],
+        "title": "question_searchArguments",
+        "type": "object"
+      },
+      "name": "question_search",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "question_searchDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "description": "One question set page by its id (a `set_...` id from a search row).",
+      "inputSchema": {
+        "properties": {
+          "set_id": {
+            "title": "Set Id",
+            "type": "string"
+          }
+        },
+        "required": ["set_id"],
+        "title": "question_showArguments",
+        "type": "object"
+      },
+      "name": "question_show",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "question_showDictOutput",
+        "type": "object"
+      }
+    }
+  ]
+}
