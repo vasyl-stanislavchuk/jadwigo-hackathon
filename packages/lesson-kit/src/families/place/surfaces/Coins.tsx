@@ -12,6 +12,7 @@ import { copy } from "@jadwigo/copy";
 import { cn } from "@jadwigo/ui";
 import { useState } from "react";
 import { CoinFace } from "../../../parts/Coins.tsx";
+import { TaskTarget } from "../../../parts/TaskTarget.tsx";
 import { TONE_CLASS, type Tone } from "../../../parts/tone.ts";
 import type { Clock, Instant } from "../../../stage/clock.ts";
 import { type PressModality, press } from "../../../stage/press.ts";
@@ -54,7 +55,7 @@ function itemsOf(value: SurfaceStillProps<typeof Surface.Coins>["shown"]): Denom
 
 /** The amount to pay, big under the stem: it is the task. */
 function Amount({ data }: { data: CoinsData }): JSX.Element {
-  return <p className="text-[2.5rem] leading-none font-bold tabular-nums">{data.amount_label}</p>;
+  return <TaskTarget className="leading-none">{data.amount_label}</TaskTarget>;
 }
 
 /** The running total's line, reserved whether it shows or not. */

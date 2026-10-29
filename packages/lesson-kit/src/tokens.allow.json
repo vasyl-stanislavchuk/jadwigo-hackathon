@@ -31,11 +31,6 @@
   },
   {
     "path": "families/FigureView.tsx",
-    "snippet": "-[2.5rem]",
-    "why": ""
-  },
-  {
-    "path": "families/FigureView.tsx",
     "snippet": "-[37.5rem]",
     "why": ""
   },
@@ -60,28 +55,8 @@
     "why": ""
   },
   {
-    "path": "families/place/surfaces/Clock.tsx",
-    "snippet": "-[2.5rem]",
-    "why": ""
-  },
-  {
-    "path": "families/place/surfaces/Coins.tsx",
-    "snippet": "-[2.5rem]",
-    "why": ""
-  },
-  {
     "path": "families/place/surfaces/Coins.tsx",
     "snippet": "[var(--kid-tap-min)",
-    "why": ""
-  },
-  {
-    "path": "families/place/surfaces/Fraction.tsx",
-    "snippet": "-[3rem]",
-    "why": ""
-  },
-  {
-    "path": "families/place/surfaces/Grid.tsx",
-    "snippet": "-[2.5rem]",
     "why": ""
   },
   {
@@ -92,11 +67,6 @@
   {
     "path": "families/place/surfaces/Image.tsx",
     "snippet": "[var(--kid-tap-min)",
-    "why": ""
-  },
-  {
-    "path": "families/place/surfaces/Line.tsx",
-    "snippet": "-[3rem]",
     "why": ""
   },
   {
