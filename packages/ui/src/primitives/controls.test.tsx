@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { RadioGroup } from "./radio-group.tsx";
 import { SegmentedControl } from "./segmented-control.tsx";
 import { type MenuEntry, SideMenu } from "./side-menu.tsx";
+import { Switch } from "./switch.tsx";
 import { Tabs } from "./tabs.tsx";
 
 afterEach(cleanup);
@@ -97,7 +98,7 @@ describe("SegmentedControl", () => {
     const md = screen.getByRole("radiogroup", { name: "Duży" });
     const sm = screen.getByRole("radiogroup", { name: "Mały" });
     expect(has(md, "min-h-jw-control")).toBe(true);
-    expect(has(sm, "min-h-11")).toBe(true);
+    expect(has(sm, "min-h-jw-control-sm")).toBe(true);
     expect(has(sm, "min-h-jw-control")).toBe(false);
   });
 
@@ -199,7 +200,23 @@ describe("SideMenu", () => {
     expect(has(screen.getByRole("button", { name: "Kolor" }), "min-h-jw-control")).toBe(true);
     expect(has(screen.getByRole("button", { name: "Kontrolki" }), "min-h-jw-control")).toBe(true);
     const sub = screen.getByRole("button", { name: "Radio" });
-    expect(has(sub, "min-h-11")).toBe(true);
+    expect(has(sub, "min-h-jw-control-sm")).toBe(true);
     expect(has(sub, "min-h-jw-control")).toBe(false);
+  });
+});
+
+// The one switch (ui's) takes the settings sizes too, so the System page drops its own copy.
+describe("Switch at the settings sizes", () => {
+  it.each([
+    ["md", "min-h-jw-control"],
+    ["sm", "min-h-jw-control-sm"],
+  ] as const)("is a %s row of %s, words and track one target", (size, height) => {
+    render(<Switch size={size}>Dźwięk</Switch>);
+    const row = screen.getByRole("switch", { name: "Dźwięk" });
+    expect(has(row, height)).toBe(true);
+    expect(row.className).not.toMatch(/kid-tap/);
+    expect(row.getAttribute("aria-checked")).toBe("false");
+    fireEvent.click(row);
+    expect(row.getAttribute("aria-checked")).toBe("true");
   });
 });

@@ -116,7 +116,7 @@ function SideMenu({
           <ChevronRight
             aria-hidden
             className={cn(
-              "size-4 shrink-0 text-jw-ink-soft transition-transform duration-jw-fast ease-out",
+              "size-4 shrink-0 text-jw-ink-soft transition-transform duration-jw-fast ease-jw-out",
               isOpen && "rotate-90",
             )}
           />

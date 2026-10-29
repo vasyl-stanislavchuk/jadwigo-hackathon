@@ -9,11 +9,11 @@ import type * as React from "react";
 import { cn } from "../lib/utils.ts";
 
 const inputVariants = cva(
-  "w-full rounded-lg border-2 border-input bg-background px-4 text-foreground transition-[color,border-color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-primary aria-invalid:ring-4 aria-invalid:ring-primary/30",
+  "w-full border-2 border-input bg-background px-4 text-foreground transition-[color,border-color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-primary aria-invalid:ring-4 aria-invalid:ring-primary/30",
   {
     variants: {
       kind: {
-        number: "min-h-[var(--kid-tap-min)] text-kid-answer font-semibold tabular-nums",
+        number: "min-h-[var(--kid-tap-min)] rounded-lg text-kid-answer font-semibold tabular-nums",
         text: "min-h-jw-control rounded-jw-small border-jw-line bg-jw-card text-jw-body text-jw-ink proportional-nums placeholder:text-jw-placeholder focus-visible:border-jw-focus",
       },
     },

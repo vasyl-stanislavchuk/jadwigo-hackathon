@@ -15,10 +15,10 @@ export interface Choice {
  */
 export type ControlSize = "md" | "sm";
 
-/** The row height of each size. sm is Tailwind's 2.75rem until 44 has a token of its own. */
+/** The row height of each size: --jw-control-height and --jw-control-height-sm. */
 export const ROW: Record<ControlSize, string> = {
   md: "min-h-jw-control text-jw-body",
-  sm: "min-h-11 text-jw-small",
+  sm: "min-h-jw-control-sm text-jw-small",
 };
 
 /** A legend over a group of choices. */
