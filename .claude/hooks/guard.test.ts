@@ -332,6 +332,15 @@ describe("guard: PR bodies have the /dev-pr shape", () => {
     expect(pr(sub)).toMatch(/before the command runs/);
   });
 
+  test("a variable the command sets from something not literal skips env and is denied", () => {
+    const prEnv = (command: string) => denial(bash(command), { P: good }, onBranch("lane/a"));
+    expect(prEnv("gh pr create --title t --body-file $P")).toBeUndefined();
+    expect(prEnv("read P; gh pr create --title t --body-file $P")).toMatch(/before the command/);
+    expect(prEnv("P=$(mktemp); gh pr create --title t --body-file $P")).toMatch(
+      /before the command/,
+    );
+  });
+
   test("an edit that leaves the body alone is allowed", () => {
     expect(pr('gh pr edit 3 --title "dl-x.1: better"')).toBeUndefined();
     expect(pr("git checkout -b x && gh pr edit 3 --add-label docs")).toBeUndefined();

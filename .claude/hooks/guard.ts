@@ -278,9 +278,10 @@ function heredocBody(full: string, file: string): string | undefined {
 
 /**
  * `$S` and `${S}` as the shell would see them at the gh call: from literal assignments in `prefix`
- * (the line before it), then env. `masked` is prefix with heredocs and quotes blanked. A name
- * assigned twice, or any assignment behind if/for/while or a subshell, stays unexpanded, so the
- * guard denies rather than guess which value the shell passes.
+ * (the line before it), then env. `masked` is prefix with heredocs and quotes blanked. A name set
+ * any way but one plain literal assignment (twice, behind if/for/while or a subshell, from `$…`,
+ * a backtick, `read` or `for NAME in`) stays unexpanded, with no env fallback, so the guard denies
+ * rather than guess which value the shell passes.
  */
 export function expandVars(prefix: string, masked: string, env: Env): (text: string) => string {
   const vars: Record<string, string | undefined> = {};
@@ -290,14 +291,22 @@ export function expandVars(prefix: string, masked: string, env: Env): (text: str
       return name in vars ? (vars[name] ?? m) : (env[name] ?? m);
     });
   const nested = /\b(if|then|else|elif|fi|for|while|until|do|done|case|esac)\b|(^|[^$])[({]/;
-  for (const m of prefix.matchAll(
-    /(?:^|[\s;&|])(?:export\s+)?([A-Za-z_]\w*)=(?:"([^"`]*)"|'([^']*)'|([^\s;&|()'"`]+))/g,
-  )) {
+  const end = "(?=[\\s;&|)]|$)";
+  const assign = new RegExp(
+    `(?:^|[\\s;&|])(?:export\\s+)?([A-Za-z_]\\w*)=("[^"$\`\\\\]*"${end}|'[^']*'${end}|[^\\s;&|()'"\`$\\\\]+${end})?`,
+    "g",
+  );
+  for (const m of prefix.matchAll(assign)) {
     const name = m[1] ?? "";
     const at = (m.index ?? 0) + m[0].indexOf(name);
     if (masked.slice(at, at + name.length) !== name) continue; // inside a quote or heredoc
-    const value = m[3] ?? expand(m[2] ?? m[4] ?? "");
-    vars[name] = name in vars || nested.test(masked) || value.includes("$") ? undefined : value;
+    const literal = m[2]?.replace(/^(["'])(.*)\1$/, "$2");
+    vars[name] = name in vars || nested.test(masked) ? undefined : literal;
+  }
+  for (const m of masked.matchAll(/\bread\b([^;&|\n]*)|\bfor\s+([A-Za-z_]\w*)/g)) {
+    for (const name of (m[1] ?? m[2] ?? "").match(/(?<!\S)[A-Za-z_]\w*\b/g) ?? []) {
+      vars[name] = undefined;
+    }
   }
   return expand;
 }
