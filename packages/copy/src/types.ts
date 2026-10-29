@@ -506,6 +506,7 @@ export const COPY_KEYS = [
   "parent_overview_legend",
   "parent_overview_see_tries",
   "parent_overview_twin",
+  "parent_overview_tries",
   // how a question went for one attempt, in plain words; one per grid outcome
   "parent_outcome_first_try",
   "parent_outcome_got_there",
