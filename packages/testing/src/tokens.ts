@@ -51,7 +51,7 @@ export const TOKEN_RULES: readonly TokenRule[] = [
   },
   {
     name: "token read in a class",
-    pattern: /\[(?:length:)?var\(--(?:jw|kid)-[\w-]+\)/,
+    pattern: /\[(?:length:)?var\(--(?:jw|kid)-[\w-]+(?:,[^)]*)?\)/,
     fix: "every --jw-* and --kid-* has a utility (tailwind.css @theme inline): write that name",
   },
   {

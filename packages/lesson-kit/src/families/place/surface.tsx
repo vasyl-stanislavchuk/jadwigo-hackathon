@@ -147,6 +147,6 @@ export function StillLabel({
   yours: boolean;
 }): JSX.Element {
   return (
-    <span className="text-base">{copy(language, yours ? "answer_yours" : "answer_right")}</span>
+    <span className="text-jw-small">{copy(language, yours ? "answer_yours" : "answer_right")}</span>
   );
 }
