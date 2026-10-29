@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "jadwigo-bank/search-envelope",
+  "$comment": "Pinned copy of jadwigo-bank schemas/search-envelope.schema.json at bank commit ac60440. The bank's copy is the source of truth: change it there first, then re-copy here and update this commit.",
+  "title": "Search envelope",
+  "description": "What a bank search returns, locally from tools/bank_search.py and from the production route alike. The caller sends a need (need.schema.json) and gets question sets back, ranked, with the state of every arm. The product repo pins this file and tests its client against it; a field is added here first and in the client second. Version 1 is the local search's shape today plus the fields the route adds (source, credit, enrichment, content_hash, media) so that one shape serves both.",
+  "type": "object",
+  "required": ["version", "rows", "state"],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "need": {
+      "$ref": "need.schema.json",
+      "description": "The need as the search understood it, echoed so a caller can show it back while the rows load"
+    },
+    "arm": {
+      "type": "string",
+      "description": "The arm that answered (A, A1, B, B1, C, C2)"
+    },
+    "stage": {
+      "enum": ["first", "final"],
+      "description": "A caller that streams gets `first` (vector order, ids and titles) then `final` (reranked, full rows); a single answer is `final`"
+    },
+    "timing_ms": {
+      "type": "object",
+      "description": "Server-side stage times in milliseconds, so the latency budget can be checked per call",
+      "properties": {
+        "embed": {
+          "type": "number"
+        },
+        "vectors": {
+          "type": "number"
+        },
+        "rows": {
+          "type": "number"
+        },
+        "keyword": {
+          "type": "number"
+        },
+        "rerank": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        }
+      }
+    },
+    "cache": {
+      "enum": ["hit", "miss", "off"]
+    },
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "rank", "score", "arm", "titles"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^set_"
+          },
+          "rank": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "score": {
+            "type": "number"
+          },
+          "arm": {
+            "type": "string"
+          },
+          "vector_score": {
+            "type": ["number", "null"]
+          },
+          "bm25_score": {
+            "type": ["number", "null"]
+          },
+          "rerank_score": {
+            "type": ["number", "null"]
+          },
+          "best_view": {
+            "type": ["string", "null"],
+            "description": "The index view the vector hit came from: title, samples, meaning_pl, meaning_en, needs"
+          },
+          "view_scores": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "grade": {
+            "type": ["string", "null"]
+          },
+          "titles": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "By language code: pl, en"
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "skill_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "curriculum_tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "problem_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "question_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "views": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source": {
+            "type": "string",
+            "description": "Where the set's questions come from: khan, own, ai"
+          },
+          "credit": {
+            "type": "string",
+            "description": "The attribution line the product must show: Khan Academy, CC BY-NC-SA 4.0 and the exercise's URL"
+          },
+          "enrichment": {
+            "type": "object",
+            "description": "The set's enrichment fields the caller may show: summary, can_do, mistake_classes, contexts (tools/enrich_common.py FIELDS)"
+          },
+          "content_hash": {
+            "type": "string",
+            "description": "sha256 of the set page the row was built from, so a cached row can be checked against the bank"
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "shas of the pictures the set's items need"
+          },
+          "items": {
+            "type": "integer",
+            "description": "How many items the set holds"
+          }
+        }
+      }
+    },
+    "state": {
+      "type": "array",
+      "description": "One row per known arm: the asked arm's outcome and not_asked for the rest",
+      "items": {
+        "type": "object",
+        "required": ["arm", "state"],
+        "properties": {
+          "arm": {
+            "type": "string"
+          },
+          "state": {
+            "enum": ["ok", "empty", "abstained", "degraded", "not_asked"]
+          },
+          "detail": {
+            "type": "string",
+            "description": "What degraded it (an embedder or reranker failure), never a key or a URL with a token"
+          }
+        }
+      }
+    },
+    "bank_rev": {
+      "type": "string",
+      "description": "sha256 of the index manifest the service answered from; the publisher writes it with the rows, so a caller can tell which build of the bank a row came from"
+    }
+  }
+}
