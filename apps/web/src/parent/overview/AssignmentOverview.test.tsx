@@ -175,6 +175,9 @@ describe("AssignmentOverview", () => {
     expect(nested?.querySelector("[data-sheet-outcome]")?.textContent).toBe("Od razu");
     expect(second?.querySelector("[data-sheet-outcome]")?.textContent).toBe("Nie zadane");
     expect(second?.querySelector("[data-sheet-numbers]")).toBeNull();
+
+    await act(async () => fireEvent.click(within(sheet).getByRole("button", { name: "Zamknij" })));
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("gives a sheet line the tries, the help and the time", async () => {

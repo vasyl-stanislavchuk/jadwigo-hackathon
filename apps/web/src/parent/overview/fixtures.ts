@@ -14,7 +14,7 @@ import {
   PodId,
 } from "@jadwigo/contracts";
 
-export const AT = "2026-10-28T14:02:06.274Z";
+const AT = "2026-10-28T14:02:06.274Z";
 const POD = PodId.parse("pod_6et2fhbnwvb45aw9atcfzs33za");
 export const ASSIGNMENT = AssignmentId.parse("asg_0ectzj2evqb95a3v1v6wewjzy3");
 export const LEARNER = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");

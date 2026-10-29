@@ -14,7 +14,7 @@ import type { Outcome, Row } from "./grid.ts";
 /** The overview is for the adult: the copy reads the adult's lines. */
 export const CATEGORY = "adult";
 
-export const OUTCOME_WORD: Record<Outcome, CopyKey> = {
+const OUTCOME_WORD: Record<Outcome, CopyKey> = {
   first_try: "parent_outcome_first_try",
   got_there: "parent_outcome_got_there",
   not_yet: "parent_outcome_not_yet",

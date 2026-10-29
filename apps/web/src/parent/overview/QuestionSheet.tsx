@@ -6,13 +6,13 @@
 
 import type { AttemptResult } from "@jadwigo/contracts";
 import { copy, type Language } from "@jadwigo/copy";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@jadwigo/ui";
 import type { ReactElement } from "react";
 import { NavLink } from "../../playground/shell/NavLink.tsx";
 import type { Column, Outcome, Row } from "./grid.ts";
 import { rowOutcome } from "./grid.ts";
 import { reviewOf } from "./Heatmap.tsx";
 import { CATEGORY, OUTCOME_TILE, OutcomeIcon, outcomeWord, rowName, TwinMark } from "./outcome.tsx";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui-stub.tsx";
 
 const seconds = (ms: number): number => Math.round(ms / 1000);
 
@@ -33,8 +33,13 @@ export function QuestionSheet({
   return (
     <Sheet open={column !== null} onOpenChange={(open) => !open && onClose()}>
       {column !== null && (
-        <SheetContent side="bottom" data-question-sheet={column.number}>
-          <SheetHeader>
+        <SheetContent
+          side="bottom"
+          closeLabel={copy(language, "credit_close", {}, CATEGORY)}
+          className="p-4"
+          data-question-sheet={column.number}
+        >
+          <SheetHeader className="p-0 pr-12">
             <SheetTitle className="text-2xl font-semibold">
               {copy(language, "parent_overview_question", { n: column.number }, CATEGORY)}
             </SheetTitle>
@@ -122,7 +127,7 @@ function Numbers({
 }): ReactElement {
   return (
     <p className="text-sm" data-sheet-numbers>
-      {copy(language, "parent_review_tries", {}, CATEGORY)}: {result.tries}
+      {copy(language, "parent_overview_tries", { n: result.tries }, CATEGORY)}
       {" · "}
       {copy(language, "parent_review_help", { n: result.help_used }, CATEGORY)}
       {" · "}

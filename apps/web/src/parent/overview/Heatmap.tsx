@@ -2,11 +2,20 @@
  * The heatmap on Table: a row per attempt, a column per planned question, and a footer row with the
  * first-try count per column. A row's name and each of its cells link to that attempt's own page
  * once it is finished (an unfinished one has no review yet); a column's number opens its sheet.
- * The table scrolls inside its wrapper, so a phone's page does not (checked in
+ * The table scrolls inside its own container, so a phone's page does not (checked in
  * e2e/parent-overview.spec.ts: happy-dom does no layout).
  */
 
 import { copy, type Language } from "@jadwigo/copy";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@jadwigo/ui";
 import type { ReactElement, ReactNode } from "react";
 import { NavLink } from "../../playground/shell/NavLink.tsx";
 import { attemptPath } from "../route.ts";
@@ -20,15 +29,6 @@ import {
   rowName,
   TwinMark,
 } from "./outcome.tsx";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "./ui-stub.tsx";
 
 /** The attempt page of a row, or null while the attempt is unfinished. */
 export const reviewOf = (row: Row): string | null =>
@@ -37,7 +37,7 @@ export const reviewOf = (row: Row): string | null =>
     : null;
 
 /** A cell's accessible name: the question, its outcome, and the twin when one was folded in. */
-export function cellLabel(language: Language, column: Column, cell: Cell): string {
+function cellLabel(language: Language, column: Column, cell: Cell): string {
   const question = copy(language, "parent_overview_question", { n: column.number }, CATEGORY);
   const twin = cell.twin ? `, ${copy(language, "parent_overview_twin", {}, CATEGORY)}` : "";
   return `${question}: ${outcomeWord(language, cell.outcome)}${twin}`;
@@ -57,7 +57,7 @@ export function Heatmap({
 }): ReactElement {
   const firstTry = copy(language, "parent_outcome_first_try", {}, CATEGORY);
   return (
-    <div className="w-full min-w-0 max-w-full overflow-x-auto" data-overview-grid>
+    <div className="w-full min-w-0 max-w-full" data-overview-grid>
       <Table className="w-max border-separate border-spacing-1 text-base">
         <TableHeader>
           <TableRow>

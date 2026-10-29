@@ -79,7 +79,7 @@ test("a parent opens a lesson's overview: one row, the legend, a question's shee
   // On a phone the grid scrolls inside its wrapper; the page itself does not scroll sideways.
   await page.setViewportSize({ width: 390, height: 844 });
   const widths = await page.evaluate(() => {
-    const wrapper = document.querySelector("[data-overview-grid]");
+    const wrapper = document.querySelector("[data-overview-grid] [data-slot=table-container]");
     return {
       wrapper: wrapper === null ? 0 : wrapper.scrollWidth - wrapper.clientWidth,
       page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
