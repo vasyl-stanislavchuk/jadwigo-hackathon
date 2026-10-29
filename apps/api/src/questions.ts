@@ -162,7 +162,23 @@ function publicEnvelope(answer: unknown): SearchEnvelope {
   const kept = Array.isArray(rows) ? rows.filter((row) => Row.safeParse(row).success) : rows;
   const parsed = SearchEnvelope.safeParse({ ...answer, rows: kept });
   if (!parsed.success) throw unavailable();
-  return parsed.data;
+  const sent = Array.isArray(rows) ? rows.length : 0;
+  return sent > 0 && parsed.data.rows.length === 0 ? allRowsDropped(parsed.data) : parsed.data;
+}
+
+/**
+ * The bank answered rows and not one passed the row schema: the shapes have drifted (as they had
+ * on 2026-10-29, dl-n9fr.37), so the answering arm's state says `degraded` with the reason, never
+ * an empty `ok` a caller would read as "nothing matched".
+ */
+function allRowsDropped(envelope: SearchEnvelope): SearchEnvelope {
+  const detail = "every row the bank answered failed the contract's row schema";
+  const arm = envelope.arm ?? "final";
+  const state = envelope.state.map((s) =>
+    s.arm === arm ? { ...s, state: "degraded" as const, detail } : s,
+  );
+  if (!state.some((s) => s.arm === arm)) state.push({ arm, state: "degraded", detail });
+  return { ...envelope, state };
 }
 
 function parseJson(text: string): unknown {

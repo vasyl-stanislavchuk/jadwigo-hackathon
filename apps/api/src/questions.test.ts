@@ -46,10 +46,20 @@ const ENVELOPE = {
       credit:
         "Khan Academy, CC BY-NC-SA 4.0, https://www.khanacademy.org/math/cc-2nd-grade-math/x3184e0ec:add-and-subtract-within-100/e/adding-within-100",
       enrichment: {
-        summary: "Two-digit addition within 100, with and without regrouping.",
-        can_do: "I can add two numbers within 100.",
-        mistake_classes: ["regrouping"],
-        contexts: ["shopping"],
+        summary: {
+          pl: "Dodawanie dwucyfrowe w zakresie 100, z przekroczeniem progu i bez.",
+          en: "Two-digit addition within 100, with and without regrouping.",
+        },
+        can_do: { pl: "Umiem dodać dwie liczby do 100.", en: "I can add two numbers within 100." },
+        mistake_classes: [
+          {
+            id: "regrouping",
+            pl: "gubi przeniesienie dziesiątki",
+            en: "drops the carried ten",
+            spot: "47 + 25 answered 62",
+          },
+        ],
+        contexts: { pl: ["zakupy"], en: ["shopping"] },
       },
       content_hash: "3f1c8a0e5b7d2f94c6a1e0b8d7f3a2c95e4b6d1a0f8c7e2b9d3a5f6c1e0b7d48",
       media: [],
@@ -191,6 +201,28 @@ describe("POST /api/v1/question-searches", () => {
     expect(reply.status).toBe(200);
     expect(reply.body).toEqual(SearchEnvelope.parse(ENVELOPE));
     expect(sent).toEqual([{ need: NEED, stage: "final" }]);
+    // The live shape: enrichment values by language survive the parse (dl-n9fr.37).
+    const [first] = (reply.body as SearchEnvelope).rows;
+    expect(first?.enrichment?.summary?.["pl"]).toContain("Dodawanie");
+    expect(first?.enrichment?.mistake_classes?.[0]?.id).toBe("regrouping");
+  });
+
+  it("says degraded on the answering arm when every row the bank sent fails the row schema", async () => {
+    // The shape the contract typed before 2026-10-29: flat strings the bank never sent. A bank
+    // that drifts again must not come through as an empty ok.
+    const flat = { summary: "Two-digit addition.", contexts: ["shopping"] };
+    const drifted = {
+      ...ENVELOPE,
+      rows: ENVELOPE.rows.map((row) => ({ ...row, enrichment: flat })),
+    };
+    const { bank } = fakeBank(async () => answered(200, drifted));
+    const reply = await search(bank, NEED);
+    expect(reply.status).toBe(200);
+    const body = SearchEnvelope.parse(reply.body);
+    expect(body.rows).toEqual([]);
+    const answering = body.state.find((s) => s.arm === "B1");
+    expect(answering?.state).toBe("degraded");
+    expect(answering?.detail).toContain("row schema");
   });
 
   it("strips a field the envelope does not name from a row, and drops a row carrying a private body", async () => {

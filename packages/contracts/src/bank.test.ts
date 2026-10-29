@@ -37,10 +37,20 @@ const ENVELOPE = {
       credit:
         "Khan Academy, CC BY-NC-SA 4.0, https://www.khanacademy.org/math/cc-2nd-grade-math/x3184e0ec:add-and-subtract-within-100/e/adding-within-100",
       enrichment: {
-        summary: "Two-digit addition within 100, with and without regrouping.",
-        can_do: "I can add two numbers within 100.",
-        mistake_classes: ["regrouping"],
-        contexts: ["shopping"],
+        summary: {
+          pl: "Dodawanie dwucyfrowe w zakresie 100, z przekroczeniem progu i bez.",
+          en: "Two-digit addition within 100, with and without regrouping.",
+        },
+        can_do: { pl: "Umiem dodać dwie liczby do 100.", en: "I can add two numbers within 100." },
+        mistake_classes: [
+          {
+            id: "regrouping",
+            pl: "gubi przeniesienie dziesiątki",
+            en: "drops the carried ten",
+            spot: "47 + 25 answered 62",
+          },
+        ],
+        contexts: { pl: ["zakupy"], en: ["shopping"] },
       },
       content_hash: "3f1c8a0e5b7d2f94c6a1e0b8d7f3a2c95e4b6d1a0f8c7e2b9d3a5f6c1e0b7d48",
       media: [],

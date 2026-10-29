@@ -5,12 +5,13 @@ import { Language } from "./records.ts";
  * The question bank's seam: the need a caller sends and the envelope the bank answers with.
  *
  * Written from `schemas/need.schema.json` and `schemas/search-envelope.schema.json` in the
- * `jadwigo-bank` repo at commit `527c6e0` (`ac60440` plus `bank_rev`; david-learns pins `ac60440`). The bank owns these
- * shapes: a field is added there first and here second, and the snapshots in `schemas/` say which
- * bank commit they follow. Route: `ROUTES.questionSearches` (decision
+ * `jadwigo-bank` repo at commit `703b679` (`527c6e0` plus the typed enrichment; david-learns pins
+ * `ac60440`). The bank owns these shapes: a field is added there first and here second, and the
+ * snapshots in `schemas/` say which bank commit they follow. Route: `ROUTES.questionSearches`
+ * (decision
  * `jadwigo-question-bank/decisions/2026-10-28-the-bank-s-search-route-is-post-api-v1-question-searches`).
  */
-export const BANK_COMMIT = "527c6e0";
+export const BANK_COMMIT = "703b679";
 
 const Words = z.array(z.string());
 
@@ -67,6 +68,34 @@ export type SearchState = z.infer<typeof SearchState>;
 
 const Score = z.number().nullable().optional();
 
+const ByLanguage = z.record(z.string(), z.string()).describe("By language code: pl, en");
+const WordsByLanguage = z.record(z.string(), Words).describe("By language code: pl, en");
+
+const MistakeClass = z.object({
+  id: z.string(),
+  pl: z.string(),
+  en: z.string(),
+  spot: z.string().describe("How the mistake shows in one answer"),
+});
+
+/**
+ * The set page's enrichment values with their `made_by` and `reviewed` wrapper removed, the way
+ * the bank's `service/rows.py` serves them: `summary` and `can_do` by language, `mistake_classes`
+ * as records, `contexts` as word lists by language. Any other key, a private body among them, is
+ * dropped on parse. The flat strings this contract typed before 2026-10-29 never matched a live
+ * row, and the route dropped every one (dl-n9fr.37).
+ */
+const Enrichment = z
+  .object({
+    summary: ByLanguage.optional(),
+    can_do: ByLanguage.optional(),
+    mistake_classes: z.array(MistakeClass).optional(),
+    contexts: WordsByLanguage.optional(),
+  })
+  .describe(
+    "The set's enrichment fields the caller may show, each the set page's value: summary and can_do by language, mistake_classes as records, contexts as word lists by language; any other key, a private body among them, is dropped on parse",
+  );
+
 /**
  * One ranked question set. Fields the bank adds later are dropped on parse; a private body is
  * refused outright, so it can never leave through the route (`body` and `private_body` are
@@ -103,17 +132,7 @@ const SearchRow = z.object({
       "The attribution line the product must show: Khan Academy, CC BY-NC-SA 4.0 and the exercise's URL",
     )
     .optional(),
-  enrichment: z
-    .object({
-      summary: z.string().optional(),
-      can_do: z.string().optional(),
-      mistake_classes: Words.optional(),
-      contexts: Words.optional(),
-    })
-    .describe(
-      "The set's enrichment fields the caller may show; any other key, a private body among them, is dropped on parse",
-    )
-    .optional(),
+  enrichment: Enrichment.optional(),
   content_hash: z.string().describe("sha256 of the set page the row was built from").optional(),
   media: Words.describe("shas of the pictures the set's questions need").optional(),
   items: z.int().describe("How many questions the set holds (the bank's field name)").optional(),
