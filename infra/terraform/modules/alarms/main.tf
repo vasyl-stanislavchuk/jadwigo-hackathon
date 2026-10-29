@@ -5,13 +5,19 @@ resource "aws_sns_topic" "alarms" {
 }
 
 # Pending until the owner clicks the link in AWS's first mail; an alarm before that mails no one.
+# With no address (a plan in CI or another checkout) there is no subscription, and the topic and
+# alarms are planned all the same.
 resource "aws_sns_topic_subscription" "owner" {
+  count = var.alarm_email == null ? 0 : 1
+
   topic_arn = aws_sns_topic.alarms.arn
   protocol  = "email"
   endpoint  = var.alarm_email
 }
 
 locals {
+  concurrency_alarm_at = floor(0.8 * var.lambda_concurrency_quota)
+
   lambda = { FunctionName = var.function_name }
   api    = { ApiId = var.api_id, Stage = "$default" }
 
@@ -46,7 +52,7 @@ locals {
       metric      = "ConcurrentExecutions"
       dimensions  = {}
       statistic   = "Maximum"
-      threshold   = var.concurrency_alarm_at
+      threshold   = local.concurrency_alarm_at
     }
     "ses-bounce-rate" = {
       description = "SES account bounce rate near the level where SES reviews the account"

@@ -1,6 +1,7 @@
 # Alarms on the service, mailed to the owner through one SNS topic (dl-5ssh.13). The address is not
 # in git, as the repo is public: the owner keeps it in terraform/owner.auto.tfvars, which git ignores
-# and Terraform reads by itself (infra/README.md). Without it, plan stops and asks for it.
+# and Terraform reads by itself (infra/README.md). Without it the plan has no subscription and
+# nothing else changes, so a plan in CI or another checkout runs (dl-5ssh.64).
 module "alarms" {
   source = "./modules/alarms"
 
@@ -11,8 +12,9 @@ module "alarms" {
 }
 
 variable "alarm_email" {
-  description = "Where alarms are mailed: the owner's address, from owner.auto.tfvars"
+  description = "Where alarms are mailed: the owner's address, from owner.auto.tfvars. null: no subscription"
   type        = string
+  default     = null
   sensitive   = true
 }
 
