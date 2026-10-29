@@ -47,6 +47,7 @@ sys.exit(os.waitstatus_to_exitcode(status))
 
 interface Stage {
   readonly dir: string;
+  readonly outcomes: string;
   readonly log: string;
   readonly bunEnv: string;
   readonly env: Record<string, string>;
@@ -68,7 +69,21 @@ function stage(ref = PROD_REF): Stage {
     `if [ "$1" = link ]; then mkdir -p supabase/.temp; echo "postgresql://postgres.${ref}@aws-0-eu-central-1.pooler.supabase.com:6543/postgres" > supabase/.temp/pooler-url; fi`,
   );
   stub("bun", `env > "${bunEnv}"`);
-  stub("psql", "cat > /dev/null");
+  // A login as jadwigo_api (db-role's check, db-seed's wait) reads no stdin. Its outcomes, one per
+  // line, are in login-outcomes: ok, refused (28P01) or down; with none left, it logs in.
+  const outcomes = join(dir, "login-outcomes");
+  stub(
+    "psql",
+    `case "$*" in *://jadwigo_api.*)
+  next=$(head -n 1 "${outcomes}" 2>/dev/null); sed -i.bak 1d "${outcomes}" 2>/dev/null
+  case "$next" in
+    refused) echo 'psql: error: FATAL:  password authentication failed for user "jadwigo_api"' >&2; exit 2;;
+    down) echo 'psql: error: connection to server failed: Connection refused' >&2; exit 2;;
+  esac
+  exit 0;;
+esac
+cat > /dev/null`,
+  );
   stub("security", "echo stub-secret");
   stub("mise", "true");
   const env: Record<string, string> = {
@@ -80,17 +95,17 @@ function stage(ref = PROD_REF): Stage {
     JADWIGO_API_DB_PASSWORD_PROD: "stub-api-password",
     JADWIGO_API_URL: "https://stub.invalid",
   };
-  return { dir, log, bunEnv, env };
+  return { dir, outcomes, log, bunEnv, env };
 }
 
-const makeArgs = (s: Stage, target: string, extra: string[] = []) => [
+const makeArgs = (s: Stage, target: string, extra: string[] = [], env = "prod") => [
   "-s",
   "-C",
   s.dir,
   "-f",
   join(repo, "Makefile"),
   target,
-  "ENV=prod",
+  `ENV=${env}`,
   ...extra,
 ];
 
@@ -147,6 +162,19 @@ describe("the prod db targets", { timeout: 60_000 }, () => {
     });
   }
 
+  it("db-role ENV=prod: a pty that types prod passes this gate, so the guard is what stops a session", () => {
+    // The Makefile cannot tell a person's terminal from a pty a session made, which is what
+    // atTerminal does here. In Claude Code, .claude/hooks/guard.ts denies this command and any
+    // clearing of CLAUDECODE before it runs (dl-5ssh.45, its DENY cases in guard.test.ts). A Codex
+    // shell has no guard, so this gate is all it meets. Stubs only: nothing reaches Supabase.
+    const s = stage();
+    const { status, output } = atTerminal(s, "db-role", "prod");
+    expect(output).toContain("Type prod");
+    expect(output).not.toContain("run it from your own terminal");
+    expect(calls(s)).toContain(`supabase link --project-ref ${PROD_REF}`);
+    expect(status, output).toBe(0);
+  });
+
   it("db-seed ENV=prod: once prod is typed, the seed sees no SUPABASE_* or JADWIGO_API_* variable", () => {
     const s = stage();
     const { status, output } = atTerminal(s, "db-seed", "prod");
@@ -164,6 +192,62 @@ describe("the prod db targets", { timeout: 60_000 }, () => {
     const { status, output } = atTerminal(s, "db-seed", "prod");
     expect(status).not.toBe(0);
     expect(output).toContain("pooler-url is not");
+    expect(existsSync(s.bunEnv)).toBe(false);
+  });
+});
+
+/** make ENV=dev from a pipe, the jadwigo_api logins answering with these outcomes in turn. */
+function onDev(target: string, outcomes: string[], extra: string[] = []) {
+  const s = stage(DEV_REF);
+  writeFileSync(s.outcomes, outcomes.map((o) => `${o}\n`).join(""));
+  const out = spawnSync("make", makeArgs(s, target, extra, "dev"), {
+    env: s.env,
+    input: "",
+    encoding: "utf8",
+  });
+  return { s, status: out.status, output: `${out.stdout}${out.stderr}` };
+}
+
+const altered = (s: Stage) => calls(s).includes(`psql postgresql://postgres.${DEV_REF}@`);
+
+// After db-role sets jadwigo_api's password, the Supabase pooler refuses it for a few minutes
+// (dl-5ssh.58). db-role leaves a password that already logs in alone; db-seed waits out a refusal.
+describe("db-role and db-seed around the pooler's old password", { timeout: 60_000 }, () => {
+  it("db-role: when jadwigo_api already logs in, it alters nothing", () => {
+    const { s, status, output } = onDev("db-role", ["ok"]);
+    expect(status, output).toBe(0);
+    expect(output).toContain("already logs in on jadwigo-dev");
+    expect(calls(s)).toContain(`psql postgresql://jadwigo_api.${DEV_REF}@`);
+    expect(altered(s)).toBe(false);
+  });
+
+  it("db-role: when the login is refused, it sets the password as postgres", () => {
+    const { s, status, output } = onDev("db-role", ["refused"]);
+    expect(status, output).toBe(0);
+    expect(altered(s)).toBe(true);
+    expect(output).toContain("db-seed waits for it");
+  });
+
+  it("db-seed: a refused password is retried until the pooler takes it, then the seed runs", () => {
+    const { s, status, output } = onDev("db-seed", ["refused", "refused", "ok"], ["LOGIN_STEP=0"]);
+    expect(status, output).toBe(0);
+    expect(output.match(/refuses jadwigo_api's password \(28P01\)/g)).toHaveLength(2);
+    expect(existsSync(s.bunEnv)).toBe(true);
+  });
+
+  it("db-seed: still refused after LOGIN_WAIT, it stops before the seed", () => {
+    const refusals = Array.from({ length: 10 }, () => "refused");
+    const { s, status, output } = onDev("db-seed", refusals, ["LOGIN_WAIT=2", "LOGIN_STEP=1"]);
+    expect(status).not.toBe(0);
+    expect(output).toContain("still refuses jadwigo_api's password after 2s");
+    expect(existsSync(s.bunEnv)).toBe(false);
+  });
+
+  it("db-seed: any other login error stops at once, without retrying", () => {
+    const { s, status, output } = onDev("db-seed", ["down", "ok"], ["LOGIN_STEP=0"]);
+    expect(status).not.toBe(0);
+    expect(output).toContain("Connection refused");
+    expect(output).not.toContain("retrying");
     expect(existsSync(s.bunEnv)).toBe(false);
   });
 });

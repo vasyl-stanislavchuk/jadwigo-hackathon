@@ -161,6 +161,14 @@ export const SELECTION = {
 } as const;
 
 /**
+ * What an empty box the keypad types into holds: a no-break space. The box is an inline-flex sat on
+ * its line's baseline, and a flex box drops a plain space, so an empty one had no text to give a
+ * baseline and sat on its bottom edge; the first digit gave it one and the line's text jumped about
+ * 5 px up (dl-e8ov.2.32.45). A no-break space is kept, so the baseline is the same empty or not.
+ */
+export const EMPTY_FIELD = "\u00a0";
+
+/**
  * The help ladder's outline (families/help.ts rung 1): where to look, on the first missed part
  * (Slots addendum 2.3). A ring, so it never moves the layout (docs/17 §2f rule 2): 3 px, dashed, 4 px
  * out, so it reads as "look here" and never as a verdict (rule 4: no meaning on colour alone).

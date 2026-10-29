@@ -1,13 +1,13 @@
 /**
  * The playground's start page: what it is in two lines, then every question type in one table,
- * grouped by family, with where it stands and how many written examples it plays. Read from the
- * registries (lesson-kit's questionTypes.ts and examples/), so a type another lane adds shows up
- * here. At phone width each row is a card.
+ * grouped by family, with where it stands and how many written examples it plays. Read from
+ * lesson-kit's questionTypes.ts and the API's examples (examples/load.ts), so a type another lane
+ * adds shows up here. At phone width each row is a card.
  */
 
 import { FAMILIES, familyInfo, type QuestionTypeInfo, questionTypesOf } from "@jadwigo/lesson-kit";
 import type { ReactElement, ReactNode } from "react";
-import { examplesFor } from "../examples/index.ts";
+import { type Examples, examplesFor, useExamples } from "../examples/index.ts";
 import { linkTo } from "../route.ts";
 import { NavLink } from "../shell/NavLink.tsx";
 import { STATUS_LABEL, statusLabel, statusMeans } from "../status.ts";
@@ -23,8 +23,18 @@ function Cell({ label, children }: { label: string; children: ReactNode }): Reac
   );
 }
 
-function Row({ type }: { type: QuestionTypeInfo }): ReactElement {
-  const examples = examplesFor(type.name).length;
+/** How many examples a type plays, or what stands in for the number while it is read. */
+function countOf(examples: Examples, type: QuestionTypeInfo): number | null {
+  return examples.kind === "ready" ? examplesFor(examples.examples, type.name).length : null;
+}
+
+function Row({
+  type,
+  examples,
+}: {
+  type: QuestionTypeInfo;
+  examples: number | null;
+}): ReactElement {
   return (
     <tr
       data-question-type-row={type.name}
@@ -51,8 +61,12 @@ function Row({ type }: { type: QuestionTypeInfo }): ReactElement {
         </Badge>
       </Cell>
       <Cell label="Examples">
-        <span className="text-muted-foreground tabular-nums" data-examples={examples}>
-          {examples === 0 ? "Nothing to try yet" : `${examples} to try, in Polish and English`}
+        <span className="text-muted-foreground tabular-nums" data-examples={examples ?? undefined}>
+          {examples === null
+            ? "…"
+            : examples === 0
+              ? "Nothing to try yet"
+              : `${examples} to try, in Polish and English`}
         </span>
       </Cell>
     </tr>
@@ -62,6 +76,8 @@ function Row({ type }: { type: QuestionTypeInfo }): ReactElement {
 export function StartPage(): ReactElement {
   const types = FAMILIES.flatMap((f) => questionTypesOf(f));
   const refined = types.filter((t) => t.status === "refined").length;
+  // The counts are the same in both languages, so the Polish read serves them.
+  const examples = useExamples("pl");
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-10 p-4 sm:p-6 lg:p-8">
@@ -76,6 +92,11 @@ export function StartPage(): ReactElement {
           , and the rest are drafts. Nothing is judged and nothing is saved: every state you see is
           written in the example.
         </p>
+        {examples.kind === "failed" ? (
+          <p className="text-destructive" data-examples-failed>
+            The written examples could not be read from the API. Reload to try again.
+          </p>
+        ) : null}
       </header>
 
       <section aria-labelledby="types" className="flex flex-col gap-6">
@@ -109,7 +130,7 @@ export function StartPage(): ReactElement {
                 </thead>
                 <tbody className="flex flex-col gap-3 md:table-row-group">
                   {own.map((type) => (
-                    <Row key={type.name} type={type} />
+                    <Row key={type.name} type={type} examples={countOf(examples, type)} />
                   ))}
                 </tbody>
               </table>
