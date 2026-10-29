@@ -1,6 +1,6 @@
 # How does a goal turn a child's answers into mastery and pick the next lesson from the bank?
 
-Issue: `dl-e8ov.5` (the goals loop, milestone 2 in `docs/README.md`)
+Issue: `dl-e8ov.5.37`, under the goals-loop epic `dl-e8ov.5` (milestone 2 in `docs/README.md`)
 
 ## The answer in 5 lines
 
@@ -16,7 +16,7 @@ Read:
 
 - the decisions in force, listed under "Decisions in force";
 - `docs/research/core-data-model.md`, mainly "What is deferred", and `docs/research/parent-login.md`;
-- `supabase/migrations/*`, which run up to tonight's parent login (`account`, `member`, the `goal` name stub);
+- `supabase/migrations/*` on `main`, and the parent-login migration in review (`dl-e8ov.2.37`, PR #105: `account`, `member`, a `goal` name stub). Nothing here assumes it merged; if the stub changes, `goal` below is made whole in this milestone's migration instead;
 - the bank repo's `schemas/need.schema.json`, `search-envelope.schema.json` and `set.schema.json`;
 - the open issues under `dl-e8ov.5`, `dl-e8ov.2.4`, `dl-liwi.15` and `dl-liwi.17`.
 
@@ -89,7 +89,7 @@ erDiagram
 | `topic` | `id`, `pod_id`, `curriculum_id`, `subject`, `name`, `code`, `created_at` | A curriculum category with no order, such as "Edukacja matematyczna > mnożenie", with its official code where one exists. A curriculum tag on a goal is a topic. |
 | `skill` | `id`, `pod_id`, `code`, `topic_id` (nullable), `kind` (`accuracy` or `speed`), `can_do` (jsonb, per language, each line with `reviewed`), `status` (`draft` or `reviewed`), `maps_to` (nullable, the reviewed skill a draft became), `source`, `created_at` | `code` is the string `lesson_question.skill_ids` already holds (`math.mul.7x8`), unique per pod. A draft lives in the family's pod, and a reviewed one in Jadwigo's. |
 | `skill_prerequisite` | `pod_id`, `skill_id`, `requires` | The order to learn in. For a draft goal, the goal-setting workflow drafts these too. |
-| `goal` (grows from tonight's stub) | adds `words` (the parent's own), `can_do` (jsonb, the child's line and the parent's), `lesson_language`, `status` (`active`, `paused`, `reached`, `dropped`) | `name` stays the short label. No stage, and no subject column. |
+| `goal` (grows from the parent-login stub, or is made here if that stub changes) | adds `words` (the parent's own), `can_do` (jsonb, the child's line and the parent's), `lesson_language`, `status` (`active`, `paused`, `reached`, `dropped`) | `name` stays the short label. No stage, and no subject column. |
 | `goal_skill` | `pod_id`, `goal_id`, `skill_id` | The goal's skills. A draft can be swapped for its `maps_to` and keep its evidence, because mastery is keyed by the skill code. |
 | `goal_topic` | `pod_id`, `goal_id`, `topic_id` | Curriculum tags the parent confirmed. Zero is fine. |
 | `lesson_goal` | `pod_id`, `lesson_id`, `goal_id` | The goals a lesson was planned for. A featured lesson has none. |
@@ -149,6 +149,11 @@ The fold is a pure function in `packages/core`, `masteryOf(evidence[], skill)`, 
 
 The decision says mastery is worked out "at the end of every sitting". On read that holds automatically: each read folds every answer so far. Whether to also keep a cache table is owner question 3.
 
+**Retention.** Mastery lasts exactly as long as the answers it is folded from. Some of those answers go:
+- **Unclaimed anonymous attempts** are swept after 3 months, but they never counted toward a learner.
+- **A dropped goal** keeps its skills' evidence, because mastery is keyed by skill, not by goal.
+- **Erasing a learner or a pod** deletes the answers and with them the mastery (`dl-e8ov.2.2`, the erasure path). A cache table, if the owner wants one (question 3), is deleted on the same path.
+
 ### The brief
 
 `brief(learner)` is another pure function in `core`. It takes all active goals' skills, the prerequisites, every skill's level and FSRS due date, and any recent homework tags. It returns the 5 lists the planner reads:
@@ -185,12 +190,18 @@ parent taps "next lesson" (or the results screen offers one; owner question 4)
 - **A gap is said out loud** (first-loop decision, point 8). When no set fits an entry, the workflow may write the question itself. It marks it `based_on { question: "authored:…" }`, and the parent, not the child, sees that AI wrote it (`dl-e8ov.5.5`).
 - **Lesson language.** A lesson mixing goals in different lesson languages is open as `dl-e8ov.5.35` (owner question 5).
 
+**What a need may carry.** A need goes through an AI workflow prompt and then the bank's search, which embeds the text through external endpoints. It carries:
+- skill codes, mistake-class ids, a can-do line, contexts, the language and the grade;
+- never a learner id, a name, the child's answer text or the parent's own goal words.
+
+Whether a query may carry any text from a learner's own materials is open owner decision `dl-e8ov.5.19`. This loop depends on its answer before the compose workflow runs on real families.
+
 ## What the parent sees
 
 The parent home from `dl-e8ov.2.38` grows one level down: learner, then goals.
 
 ```text
-Ala                                                       [ Next lesson ]
+[the child]                                               [ Next lesson ]
   Tabliczka mnożenia do 100                 on its way
     Can do now        2 × 3 … 5 × 10 (Umiem mnożyć przez 2, 5 i 10)
     Needs attention   7 × 8, 6 × 7 (a miss in the last 2 lessons)
@@ -215,6 +226,15 @@ Lessons      each attempt, newest first, with its results (as tonight)
 - `packages/core` gains 3 pure functions: `masteryOf`, `brief` and `draw`. They are the testable heart of the loop.
 - 3 existing issues still carry stages or the Django contract and need rewriting before anyone works them: `dl-e8ov.5.1`, `dl-e8ov.5.4` and `dl-e8ov.5.7`. `dl-e8ov.2.4` and `dl-liwi.17` are right in substance but name `dl` verbs and stages in passing.
 - The bank route `POST /api/v1/question-searches` (`dl-n9fr.33`) is a dependency, not part of this work.
+- **Filing the proposed issues.** One marked "rewrite of" an existing issue is carried out by rewriting that issue in place, never by filing a new one. One marked "narrowed" also rewrites its issue in place. The rest are new.
+- **Still provisional, for the owner to confirm with the build:**
+  - the goal statuses (`active`, `paused`, `reached`, `dropped`), with no rule yet for `reached`;
+  - "good" meaning every skill is Proficient or better;
+  - the parent's action list.
+- **Not yet covered by a proposed issue:**
+  - the spelling diagnostic's readout as a first profile (`dl-e8ov.5.8`);
+  - a second throwaway pod running the whole loop (`dl-e8ov.5.8`'s done-when);
+  - the `based_on` lint (`dl-e8ov.5.5`).
 
 ### The owner's questions, with the lead's recommendation
 
@@ -232,7 +252,7 @@ The outcome block lists the options only, as the research check requires. The re
 
 ```json jadwigo-outcome
 {
-  "issue": "dl-e8ov.5",
+  "issue": "dl-e8ov.5.37",
   "question": "How does a goal turn a child's answers into mastery and pick the next lesson from the bank?",
   "answer": "A goal is the parent's words plus skills (no stages) from a shared catalogue or pod-private drafts; mastery is folded in packages/core from a view of judged tries per learner and skill; code computes a brief over all active goals, an AI workflow turns it into needs for POST /api/v1/question-searches, code draws questions from the returned sets, and lesson import writes the lesson and its assignment; the parent sees each goal's computed status and can-do, needs-attention and next lists, the child only reached can-do lines.",
   "status": "answered",
