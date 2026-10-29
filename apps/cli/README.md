@@ -21,18 +21,52 @@ modules came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
 - **Gaps** is the caller's view: a need is a gap when every arm that was asked came back empty or
   abstained. A bank that could not be asked is `degraded`, not a gap.
 
-## Where the bank is
+## Settings
+
+jw reads every setting through one loader, `setting()` in `src/jw/settings_keys.py`. For each key,
+the first match wins:
+
+1. The environment.
+2. The operator's file, `~/.config/jadwigo-bank/bank.env`, or the file `JW_BANK_ENV_FILE` names.
+   It must be mode 600, or jw refuses it. Lines are `NAME=value`, with an optional `export ` and
+   quotes. A ` #` after an unquoted value starts a comment.
+3. The default below. An empty value counts as unset.
+
+No error or log line names a value. `.env.example` in this folder lists the same keys with no
+values. Copy it into the file and fill what you use.
+
+| Key | What it is | Default |
+|---|---|---|
+| `JW_API_URL` | The API's base URL. Searches go to `<JW_API_URL>/api/v1/question-searches` | none |
+| `JW_BANK_READ_TOKEN` | The bearer read token for `JW_API_URL`, from SSM `/jadwigo/prod/bank-read-token` | none |
+| `JW_BANK_URL` | The bank's own search URL, `<JW_BANK_URL>/questions/search` | none |
+| `JW_BANK_TOKEN` | The bearer token for `JW_BANK_URL`, from Secrets Manager `jadwigo-bank/api-token` | none |
+| `JW_BANK_TIMEOUT_SECS` | Seconds one search may take before it comes back degraded | `10` |
+| `JADWIGO_BANK_DIR` | A checkout of the bank repo, whose `sets/` `jw question show` reads | none |
+| `JADWIGO_KHAN_DIR` | The synced copy of the bank's Khan bucket | `~/.cache/jadwigo-bank/khan` |
+| `JW_KHAN_CONVERTED` | The converted items file `jw question item` reads | `<JADWIGO_KHAN_DIR>/converted/pl.json` |
+
+The Khan copy is filled from the bucket by the bank repo. Run this in a checkout of `jadwigo-bank`:
+
+```sh
+uv run python -m tools.khan.sync down
+```
+
+Without it, `jw question item` stops with an error that names the missing file, the 2 keys and
+this command. The lesson draft reads item bodies from that file for now
+(`jadwigo-hackathon/decisions/2026-10-29-the-first-lesson-draft-reads-item-bodies-from-the-local-bank-che`).
+
+### Where the bank is
 
 Callers reach the bank only through `apps/api`
 (`jadwigo-question-bank/decisions/2026-10-28-callers-reach-the-bank-only-through-apps-api-which-invokes-the-b`).
-The first match wins:
+The bank URL and its token are read as a pair, and the first match wins:
 
 1. `JW_API_URL` in the environment. The need goes to `<JW_API_URL>/api/v1/question-searches`
    with `JW_BANK_READ_TOKEN` as the bearer token.
 2. `JW_BANK_URL` in the environment. The need goes to the bank's own `<JW_BANK_URL>/questions/search`
    with `JW_BANK_TOKEN`. This is a fallback for the lead's checks until the route is deployed.
-3. Neither set. The same 2 pairs are read from `~/.config/jadwigo-bank/bank.env`
-   (`dl-e8ov.5.2.26`). The file must be mode 600, or jw refuses it.
+3. Neither set. The same 2 pairs are read from the file, in the same order (`dl-e8ov.5.2.26`).
 
 A URL and its token always come from the same place, so a URL in the environment never picks up
 the file's token. With the file in place, a registration needs no token, which keeps the token out
@@ -56,9 +90,9 @@ A failing call comes back as a tool error whose text is the verb's error and its
 ## Registering it
 
 These lines run the server from a checkout through `uv`, with the URL and token in
-`~/.config/jadwigo-bank/bank.env`. Replace the paths with your checkouts.
+`~/.config/jadwigo-bank/bank.env`. `JADWIGO_BANK_DIR` can sit in that file too, in place of the `env` entry. Replace the paths with your checkouts.
 
-**Claude Code.** The flags were confirmed against `claude mcp add --help` in `david-learns`.
+**Claude Code.** The flags were confirmed against `claude mcp add --help`.
 
 ```sh
 claude mcp add --scope user --transport stdio \
@@ -82,7 +116,7 @@ Or check it in for a project as `.mcp.json`:
 ```
 
 **Codex.** The form `codex mcp add <NAME> -- <COMMAND>...` with `--env KEY=VALUE` was confirmed
-against `codex mcp add --help` in `david-learns`.
+against `codex mcp add --help`.
 
 ```sh
 codex mcp add jadwigo \
@@ -130,5 +164,6 @@ cd apps/cli && uv run --frozen pytest -q
 `tests/fake_bank.py` answers both search routes with `tests/fixtures/bank/envelope.json`.
 `tests/test_mcp.py` starts `jw mcp serve` under the `mcp` package's stdio client, lists the 3 tools
 and checks each tool's JSON against its verb's. `tests/test_muse.py` runs against a fake `muse` on
-`PATH`, so no test calls a model. `tests/conftest.py` points the bank file at a path that does not
-exist, so no test reads your real token.
+`PATH`, so no test calls a model. `tests/conftest.py` clears every key, points the bank file at a path that
+does not exist and the Khan default at a temporary folder, so no test reads your real token or
+your synced copy. `tests/test_settings.py` covers the loader.

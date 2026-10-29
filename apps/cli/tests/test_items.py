@@ -1,6 +1,6 @@
 """dl-e8ov.5.38.2: `jw.items.load_item` and `jw question item` read converted items by id.
 
-Every test points JW_KHAN_CONVERTED or DEFAULT_KHAN_DIR at a fixture, so none reads the real pull.
+Every test points JW_KHAN_CONVERTED or DEFAULT_KHAN_DIR at a fixture, so none reads the real copy.
 """
 
 from __future__ import annotations
@@ -109,7 +109,7 @@ def test_a_missing_file_raises_with_the_setting_in_the_hint(
 
     assert "nowhere.json" in str(caught.value)
     assert JW_KHAN_CONVERTED in caught.value.hint
-    assert "dl-e8ov.5.38.1" in caught.value.hint
+    assert "tools.khan.sync down" in caught.value.hint
 
 
 def test_a_missing_id_names_the_file_its_count_and_the_setting() -> None:
@@ -162,31 +162,23 @@ def test_a_waiting_item_with_no_family_step_says_why(
 def test_the_setting_overrides_the_default_dir(tmp_path: Path) -> None:
     payload = _fixture()
     payload["items"][0]["spec"]["say"] = "from the default dir"
-    _write(tmp_path / "khan" / "converted-pl.json", payload)
+    _write(tmp_path / "khan" / "converted" / "pl.json", payload)
 
     assert items.converted_path() == FIXTURE
     assert items.load_item("item_a1")["say"] == "Ile to jest sześć razy cztery?"
 
 
-def test_unset_reads_converted_pl_then_converted(
+def test_unset_reads_converted_pl_in_the_default_khan_dir(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.delenv(JW_KHAN_CONVERTED)
     khan = tmp_path / "khan"
-    plain = _fixture()
-    plain["items"][0]["spec"]["say"] = "from converted.json"
-    _write(khan / "converted.json", plain)
-
-    assert items.converted_path() == khan / "converted.json"
-    assert items.load_item("item_a1")["say"] == "from converted.json"
-
     polish = _fixture()
-    polish["items"][0]["spec"]["say"] = "from converted-pl.json"
-    _write(khan / "converted-pl.json", polish)
-    items._read.cache_clear()
+    polish["items"][0]["spec"]["say"] = "from converted/pl.json"
+    _write(khan / "converted" / "pl.json", polish)
 
-    assert items.converted_path() == khan / "converted-pl.json"
-    assert items.load_item("item_a1")["say"] == "from converted-pl.json"
+    assert items.converted_path() == khan / "converted" / "pl.json"
+    assert items.load_item("item_a1")["say"] == "from converted/pl.json"
 
 
 def test_the_file_is_read_once_per_process(monkeypatch: pytest.MonkeyPatch) -> None:

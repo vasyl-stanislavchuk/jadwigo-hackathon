@@ -1,16 +1,15 @@
 """Converted items by id, read from a file outside git (dl-e8ov.5.38.2).
 
-The file is the Khan pull's conversion to family steps (`converted-pl.json`, bead dl-e8ov.5.38.1,
-or `converted.json`): `{"generated_by", "licence_note", "items": [...]}`. `load_item` returns the
+The file is the Khan pull's conversion to family steps (`converted/pl.json` in the synced bucket
+copy, bead dl-e8ov.5.38.1): `{"generated_by", "licence_note", "items": [...]}`. `load_item` returns the
 composer's view of one item: the family step with its key and help, the contract's `Credit`, and
 `based_on`. A child never sees it. Where the file comes from is `jw.settings_keys`
-(JW_KHAN_CONVERTED, then DEFAULT_KHAN_DIR).
+(JW_KHAN_CONVERTED, else <JADWIGO_KHAN_DIR>/converted/pl.json, both read through `setting`).
 """
 
 from __future__ import annotations
 
 import json
-import os
 from functools import cache
 from pathlib import Path
 from typing import Any
@@ -21,19 +20,19 @@ from jw.errors import JwError
 MULTI = "multi"  # the language of a language-neutral item
 
 _FILE_HINT = (
-    f"Set {settings_keys.JW_KHAN_CONVERTED} to the converted items file, or run the Polish "
-    "conversion (bead dl-e8ov.5.38.1)."
+    f"Set {settings_keys.JW_KHAN_CONVERTED} to the converted items file, or set "
+    f"{settings_keys.JADWIGO_KHAN_DIR} to the synced Khan copy (default "
+    f"{settings_keys.DEFAULT_KHAN_DIR}) and fill it with `{settings_keys.KHAN_SYNC_COMMAND}` in "
+    "the bank repo."
 )
 
 
 def converted_path() -> Path:
-    """The converted items file: JW_KHAN_CONVERTED, else converted-pl.json, else converted.json."""
-    configured = os.environ.get(settings_keys.JW_KHAN_CONVERTED)
+    """The converted items file: JW_KHAN_CONVERTED, else <JADWIGO_KHAN_DIR>/converted/pl.json."""
+    configured = settings_keys.setting(settings_keys.JW_KHAN_CONVERTED)
     if configured:
         return Path(configured).expanduser()
-    khan_dir = settings_keys.DEFAULT_KHAN_DIR
-    polish = khan_dir / "converted-pl.json"
-    return polish if polish.exists() else khan_dir / "converted.json"
+    return settings_keys.khan_dir() / settings_keys.CONVERTED_DEFAULT
 
 
 @cache

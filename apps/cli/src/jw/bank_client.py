@@ -1,4 +1,4 @@
-"""jw's client for the question bank's search (dl-u1y5.23, moved from david-learns dl.bank_client).
+"""jw's client for the question bank's search (dl-u1y5.23).
 
 The bank repo (jadwigo-bank) owns the data, the search service and the contract; jw meets it only
 at the search envelope. A caller sends a need (contracts/need.schema.json) and gets question sets
@@ -42,14 +42,15 @@ from jw.settings_keys import (
     API_SEARCH_PATH,
     BANK_SEARCH_PATH,
     DEFAULT_BANK_ENV_FILE,
-    DEFAULT_BANK_TIMEOUT_SECS,
     JADWIGO_BANK_DIR,
     JW_API_URL,
-    JW_BANK_ENV_FILE,
     JW_BANK_READ_TOKEN,
-    JW_BANK_TIMEOUT_SECS,
     JW_BANK_TOKEN,
     JW_BANK_URL,
+    bank_timeout,
+    env_file,
+    read_env_file,
+    setting,
 )
 
 CONTRACTS = Path(__file__).resolve().parent / "contracts"
@@ -99,42 +100,19 @@ class Endpoint(NamedTuple):
     takes_query: bool  # whether `arm` and `stage` may ride as query fields
 
 
-def env_file() -> Path:
-    return Path(os.environ.get(JW_BANK_ENV_FILE) or DEFAULT_BANK_ENV_FILE)
-
-
-def _read_env_file(path: Path) -> dict[str, str]:
-    """`NAME=value` lines (an `export ` prefix and quotes allowed). Refuses a file others can read.
-
-    Every error names the file and never a value from it.
-    """
-    if not path.is_file():
-        return {}
-    if path.stat().st_mode & 0o077:
-        raise JwError(
-            f"{path} can be read by other users",
-            hint=f"chmod 600 {path}; it holds the bank token.",
-        )
-    values: dict[str, str] = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        name, sep, value = line.strip().removeprefix("export ").partition("=")
-        if sep and name and not name.startswith("#"):
-            values[name.strip()] = value.strip().strip("'\"")
-    return values
-
-
 def endpoint() -> Endpoint:
     """The search URL, its bearer token and whether it takes query fields, per `jw.settings_keys`.
 
-    A URL and its token come from one place, so a URL set in the environment never carries the
-    file's token to a host the file did not name.
+    The pair rule sits on top of the loader: a URL and its token come from one place, so a URL set
+    in the environment never carries the file's token to a host the file did not name. That is why
+    this reads the environment and the file apart instead of calling `setting` per key.
     """
     for url_name, token_name, path, takes_query in _PAIRS:
         base = os.environ.get(url_name)
         if base:
             token = os.environ.get(token_name) or None
             return Endpoint(base.rstrip("/") + path, token, takes_query)
-    stored = _read_env_file(env_file())
+    stored = read_env_file(env_file())
     for url_name, token_name, path, takes_query in _PAIRS:
         base = stored.get(url_name)
         if base:
@@ -182,11 +160,6 @@ def degraded(detail: str, need: dict[str, Any] | None = None) -> dict[str, Any]:
     return envelope
 
 
-def _timeout() -> float:
-    raw = os.environ.get(JW_BANK_TIMEOUT_SECS)
-    return float(raw) if raw else DEFAULT_BANK_TIMEOUT_SECS
-
-
 def search(
     need: dict[str, Any],
     *,
@@ -223,7 +196,7 @@ def search(
     request = urllib.request.Request(
         url, data=json.dumps(body).encode("utf-8"), headers=headers, method="POST"
     )
-    wait = timeout if timeout is not None else _timeout()
+    wait = timeout if timeout is not None else bank_timeout()
 
     # Every detail below is written here, never copied from the exception: a URL or a reason
     # string can carry a token.
@@ -275,10 +248,10 @@ def show_set(set_id: str, *, bank_dir: str | Path | None = None) -> dict[str, An
     """
     if not SET_ID_RE.match(set_id):
         raise SetNotFound(f"{set_id!r} is not a set id")
-    root = bank_dir or os.environ.get(JADWIGO_BANK_DIR)
+    root = bank_dir or setting(JADWIGO_BANK_DIR)
     if not root:
         raise BankDirNotConfigured(f"{JADWIGO_BANK_DIR} is not set")
-    sets = Path(root) / "sets"
+    sets = Path(root).expanduser() / "sets"
     found = next(iter(sorted(sets.rglob(f"{set_id}.json"))), None) if sets.is_dir() else None
     if found is None:
         raise SetNotFound(f"no page for {set_id} under {sets}")
