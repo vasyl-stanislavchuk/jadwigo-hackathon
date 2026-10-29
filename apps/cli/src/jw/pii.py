@@ -263,6 +263,11 @@ _SPELLED_RE = re.compile(
 )
 
 
+# Polish (and English) words of one letter. Spelled out next to a name they join its run ("O l a
+# i T o m e k"), so the spelled-out pass reads them as words of their own.
+_ONE_LETTER_WORDS = frozenset("aiouwz")
+
+
 def _spelled_spans(
     text: str, pattern: re.Pattern[str], form_of: Mapping[str, str]
 ) -> list[tuple[int, int, str]]:
@@ -270,38 +275,59 @@ def _spelled_spans(
 
     Read over `text` itself, with each format character taken as a space, so a zero-width space
     breaks a word here as it does in the first pass, and a symbol such as "™" is never a letter.
-    A run's letters, each in its compatibility form, are read as one word, and the first pass's
-    word rules apply to it: a name form starts the word or is a capital after a lowercase letter;
-    one of 4 letters or more takes the rest of the word ("K a s i u n i a"); a shorter one must
-    end the word or stand before a capital. So "s-z-k-o-ł-a" and "w o l a" are not Ola, and
-    "a i w domu" stays because "aiw" spells no name.
+    A run's letters, each in its compatibility form, are joined and cut before each capital that
+    follows a lowercase letter, as the first pass reads "NowakKasia". The spaces that split a
+    name's letters also split it from a one-letter word beside it ("i", "a", "w", "z", "o", "u"),
+    so each piece is read as one-letter words and name forms (3 letters or more), where a form of
+    4 letters or more may take the rest of the piece ("K a s i u n i a"). A piece read that way
+    has its names hidden: "O l a i T o m e k", "o l a i k a s i a". A piece that cannot be is a
+    word, and stays: "s-z-k-o-ł-a", "o l e j", "w o l a n o", "a i w domu". The cost: "w o l a"
+    reads as "w Ola" and is hidden.
     """
+    forms = sorted((f for f in form_of if len(f) >= 3), key=len, reverse=True)
     spaced = "".join(" " if unicodedata.category(ch) == "Cf" else ch for ch in text)
     spans: list[tuple[int, int, str]] = []
     for run in _SPELLED_RE.finditer(spaced):
         letters: list[int] = []  # for each letter of the word, where it stands in `text`
-        shown = ""  # the word in compatibility forms, case kept
+        shown = ""  # the letters in compatibility forms, case kept
         for i in range(run.start(), run.end()):
             if spaced[i].isalpha():
                 piece = unicodedata.normalize("NFKC", spaced[i])
                 shown += piece
                 letters += [i] * len(piece)
         word = _fold(shown)
-        at = 0
-        while (m := pattern.search(word, at)) is not None:
-            start, end = m.span()
-            at = start + 1
-            if end - start < 3:
-                continue
-            if start > 0 and not (shown[start].isupper() and shown[start - 1].islower()):
-                continue  # "w o l a" is not Ola
-            if end - start >= _PREFIX_LEN:
-                end = len(word)  # the whole word: "K a s i u n i a"
-            elif end < len(word) and not shown[end].isupper():
-                continue  # "o l e j" is not Ola
-            spans.append((letters[start], letters[end - 1] + 1, form_of[m.group()]))
-            at = end
+        cuts = [j for j in range(1, len(shown)) if shown[j].isupper() and shown[j - 1].islower()]
+        for lo, hi in zip([0, *cuts], [*cuts, len(word)], strict=True):
+            for start, end, form in _read_piece(word, lo, hi, forms):
+                spans.append((letters[start], letters[end - 1] + 1, form_of[form]))
     return spans
+
+
+def _read_piece(
+    word: str, lo: int, hi: int, forms: list[str]
+) -> list[tuple[int, int, str]]:
+    """`word[lo:hi]` read as one-letter words and name forms: the names' spans, or none when the
+    piece cannot be read that way. Name forms are tried longest first, before a one-letter word."""
+    # read[j]: the names of a reading of word[j:hi], or None when there is none.
+    read: list[list[tuple[int, int, str]] | None] = [None] * (hi - lo + 1)
+    read[hi - lo] = []
+    for j in range(hi - 1, lo - 1, -1):
+        found: list[tuple[int, int, str]] | None = None
+        for form in forms:
+            end = j + len(form)
+            if end > hi or not word.startswith(form, j):
+                continue
+            rest = read[end - lo]
+            if rest is not None:
+                found = [(j, end, form), *rest]
+            elif len(form) >= _PREFIX_LEN:
+                found = [(j, hi, form)]  # the rest of the piece: "K a s i u n i a"
+            if found is not None:
+                break
+        if found is None and word[j] in _ONE_LETTER_WORDS:
+            found = read[j + 1 - lo]
+        read[j - lo] = found
+    return read[0] or []
 
 
 # ---------------------------------------------------------------- guard ------

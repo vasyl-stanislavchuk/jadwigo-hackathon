@@ -145,9 +145,21 @@ def test_no_spelling_of_the_name_gets_through(
         ("K. a. s. i. a. ma 7 lat.", "[NAME_1]. ma 7 lat."),
         ("Pomóż K a s i ą!", "Pomóż [NAME_1]!"),
         ("w K a s i a", "w [NAME_1]"),
-        # A long form takes the rest of the run, as "Kasiunia" goes whole in the first pass, so a
-        # one-letter word right after the name goes with it: the prompt loses a word, not a name.
-        ("K a s i a i Ola", "[NAME_1] [NAME_2]"),
+        ("K a s i a i Ola", "[NAME_1] i [NAME_2]"),
+        # PR 171's second review: a one-letter word spelled beside a name joins its run, and is
+        # read as a word of its own.
+        ("O l a i Tomek", "[NAME_1] i Tomek"),
+        ("O l a w domu.", "[NAME_1] w domu."),
+        ("O-l-a i K-a-s-i-a", "[NAME_1] i [NAME_2]"),
+        ("O. l. a. i K. a. s. i. a.", "[NAME_1]. i [NAME_2]."),
+        ("O l ę i K a s i ę", "[NAME_1] i [NAME_2]"),
+        ("O l a, a Tomek", "[NAME_1], a Tomek"),
+        ("O l a a", "[NAME_1] a"),
+        ("i o l a", "i [NAME_1]"),
+        ("a k a s i a", "a [NAME_1]"),
+        ("u o l i", "u [NAME_1]"),
+        ("o l a i k a s i a", "[NAME_1] i [NAME_2]"),
+        ("K a s i a i O l a", "[NAME_1] i [NAME_2]"),
         ("K a s i u n i a", "[NAME_1]"),
         # PR 171's review: the separators a person spells with.
         ("K/a/s/i/a", "[NAME_1]"),
@@ -181,7 +193,6 @@ def test_a_name_spelled_out_letter_by_letter_is_hidden(text: str, out: str) -> N
         "p-o-l-a",
         "w o l a n o",
         "O l e k",
-        "O l i w i a",
         # A maths operator is not a spelling separator.
         "O = l + a",
         "O - l + a = 0",
@@ -189,6 +200,14 @@ def test_a_name_spelled_out_letter_by_letter_is_hidden(text: str, out: str) -> N
 )
 def test_one_letter_words_that_spell_no_name_stay(text: str) -> None:
     assert guard(text, names=["Kasia", "Ola"]).text == text
+
+
+def test_a_spelled_word_that_reads_as_a_name_and_one_letter_words_is_hidden() -> None:
+    # The price of reading one-letter words beside a spelled name: "w o l a" ("wola") reads as
+    # "w Ola" and "O l i w i a" as "Oli w i a". The prompt loses a word; the other way would cost
+    # a child's name in "O l a w domu".
+    assert guard("w o l a", names=["Ola"]).text == "w [NAME_1]"
+    assert guard("O l i w i a", names=["Ola"]).text == "[NAME_1] w i a"
 
 
 def _as_read(text: str) -> str:
