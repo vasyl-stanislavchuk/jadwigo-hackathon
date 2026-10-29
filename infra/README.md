@@ -29,6 +29,12 @@ logs are modules/app's. The address is not in git, because the repo is public: p
 `alarm_email = "you@example.com"`. Without it, `plan` stops with "No value for required variable". After the
 first apply, AWS mails a confirmation link, and the alarms reach no one until the owner clicks it.
 
+Parent routes (`dl-e8ov.2.42`): a JWT authorizer named `supabase` on the HTTP API verifies Supabase Auth's
+RS256 access tokens (issuer `https://<supabase_ref>.supabase.co/auth/v1`, audience `authenticated`, the
+`Authorization` header). It sits only on the routes in `token_routes` in `terraform/main.tf`, which are the `ROUTES`
+entries whose `auth` is `token`. The login-free routes and `$default` have none. A missing or bad token is answered 401 at the
+gateway, and `apps/api` then checks the caller's member rows.
+
 A merge deploys nothing. The owner deploys by hand
 (`jadwigo-platform/decisions/2026-10-26-a-green-merge-does-not-deploy-to-prod-the-owner-deploys-manually`).
 

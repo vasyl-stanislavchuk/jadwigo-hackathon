@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "jadwigo-bank/need",
+  "$comment": "Pinned copy of jadwigo-bank schemas/need.schema.json at bank commit 16f03f3. The bank's copy is the source of truth: change it there first, then re-copy here and update this commit.",
+  "title": "Need",
+  "description": "What a caller sends search: a need, not a sentence (david-learns/decisions/2026-10-25-the-question-bank-is-searched-for-question-sets-by-agents-sendin). Plain words are one field among several.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["language", "grade"],
+  "anyOf": [
+    {
+      "required": ["words"]
+    },
+    {
+      "required": ["skills"]
+    },
+    {
+      "required": ["can_do"]
+    },
+    {
+      "required": ["resemble"]
+    }
+  ],
+  "properties": {
+    "words": {
+      "type": "string",
+      "description": "The need in plain words, in the caller's language"
+    },
+    "words_en": {
+      "type": "string",
+      "description": "English terms for the keyword arm when the need is not in English; never stored on a page"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "mistakes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "can_do": {
+      "type": "string"
+    },
+    "contexts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "curriculum_tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "e.g. pl-2017:II.3.3, ccss:3.OA.C.7"
+    },
+    "resemble": {
+      "type": "string",
+      "description": "A task to resemble, e.g. a homework problem's text"
+    },
+    "language": {
+      "enum": ["pl", "en", "uk"],
+      "description": "The caller's language. Khan text is Polish and English only; a Ukrainian-speaking parent may still ask in Ukrainian."
+    },
+    "grade": {
+      "type": "string",
+      "description": "Canonical form: the bare number, e.g. \"3\""
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}
