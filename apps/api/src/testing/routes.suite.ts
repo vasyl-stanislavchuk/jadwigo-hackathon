@@ -6,6 +6,7 @@ import {
   AssignmentId,
   type AttemptAnswerResult,
   type AttemptResults,
+  type AttemptReview,
   type AttemptSnapshot,
   type ErrorEnvelope,
   FEATURED_POD_ID,
@@ -30,6 +31,8 @@ import {
   start,
   tryAt,
 } from "./client.ts";
+
+type Page = AttemptSnapshot["questions"][number];
 
 const OTHER_POD: NewPod = {
   id: idOf(ID_PREFIXES.pod, "5b0f0d6e-6a52-4b8e-9d39-2a3e7f1c0b11") as NewPod["id"],
@@ -1169,5 +1172,92 @@ export function routeSuite(
         ]);
       });
     });
+
+    describe("review", () => {
+      it("refuses an attempt that has not finished with AttemptNotFinished", async () => {
+        const { id } = await start(s, await s.assign("equalGroups", { hold_verdicts: true }));
+        const fresh = await s.call<ErrorEnvelope>("GET", pathOf("getReview", { id }));
+        expect([fresh.status, fresh.body.error.type]).toEqual([409, "AttemptNotFinished"]);
+        await tryAt(s, id, await openQuestion(s, id), false);
+        const held = await s.call<ErrorEnvelope>("GET", pathOf("getReview", { id }));
+        expect([held.status, held.body.error.type]).toEqual([409, "AttemptNotFinished"]);
+        const unknown = await s.call<ErrorEnvelope>(
+          "GET",
+          pathOf("getReview", { id: idOf(ID_PREFIXES.attempt, randomUUID()) }),
+        );
+        expect(unknown.status).toBe(404);
+      });
+
+      it("gives a finished attempt under held verdicts its verdicts, answers, marks, solutions and reveals, never the key", async () => {
+        const { id } = await start(s, await s.assign("equalGroups", { hold_verdicts: true }));
+        const skipped = await openQuestion(s, id);
+        await skipAt(s, id, skipped, "asked_to_skip");
+        // Held, the answer reply keeps the reveal back; a practice run of the lesson shows it.
+        const practice = await start(s, await s.assign("equalGroups"));
+        const shown = await tryAt(s, practice.id, practice.snapshot.questions[0] as Page, true);
+        for (let n = 0; n < 2; n++) await tryAt(s, id, await openQuestion(s, id), true);
+        const missed = await openQuestion(s, id);
+        const last = await tryAt(s, id, missed, false);
+        expect(last.body).toMatchObject({ ended: "done", attempt_status: "finished" });
+
+        const reply = await s.call<AttemptReview>("GET", pathOf("getReview", { id }));
+        expect(reply.status).toBe(200);
+        expect(reply.body.attempt.status).toBe("finished");
+        const { questions } = reply.body;
+        // The stored endings, not done: the attempt is over.
+        expect(questions.map((q) => [q.seq, q.added, q.ended])).toEqual([
+          [1, "planned", "skipped"],
+          [2, "planned", "correct"],
+          [3, "planned", "correct"],
+          [4, "planned", "missed"],
+        ]);
+        const [skip, right, , miss] = questions;
+        // A skip with no try: no answer and no marks, but the solution and the reveal.
+        expect(skip).toMatchObject({ answer: null, parts: null });
+        expect(skip?.solution).toEqual(solutionOf(await s.questionOf(skipped)));
+        // A right try: its answer is the solution, and no marks.
+        expect(right?.parts).toBeNull();
+        expect(right?.answer).toEqual(right?.solution);
+        // A true-or-false miss: the option chosen, marked, and the right one as the solution.
+        const missedQuestion = await s.questionOf(missed);
+        expect(miss?.answer).not.toBeNull();
+        expect(miss?.answer).not.toEqual(miss?.solution);
+        expect(miss?.parts).toEqual([expect.objectContaining({ correct: false })]);
+        expect(miss?.solution).toEqual(solutionOf(missedQuestion));
+        expect(miss?.question.family).toBe(missedQuestion.family);
+        // Every question carries the reveal a right try gets, however it ended.
+        expect(skip?.reveal).toEqual(shown.body.reveal);
+
+        // The child's slice: no tries, time or mistake class, and nothing of the key.
+        const text = JSON.stringify(reply.body);
+        for (const absent of [...CHILD_ONLY_ABSENT, ...KEY_ONLY])
+          expect(text).not.toContain(absent);
+      });
+    });
   });
 }
+
+/** The fields the child's review never carries (decision 2026-10-27 on the after-lesson list). */
+const CHILD_ONLY_ABSENT = [
+  '"tries"',
+  '"time_ms"',
+  '"mistake_class',
+  '"latency_ms"',
+  "false_reject",
+];
+
+/**
+ * What only equal-groups' keys hold: their field names, rule names and near answers' mistake
+ * classes. The solution and the reveal come from the key too, so its right answers may show.
+ */
+export const KEY_ONLY = [
+  '"key"',
+  '"accept"',
+  '"near"',
+  '"rule"',
+  '"orders"',
+  "times_table",
+  "neighbour_row",
+  "add_for_multiply",
+  "digit_reversal",
+];
