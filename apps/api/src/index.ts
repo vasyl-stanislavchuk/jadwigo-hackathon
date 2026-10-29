@@ -4,23 +4,68 @@ import { lambdaDatabaseUrl } from "./config.ts";
 
 export { createApp } from "./app.ts";
 
-let store: Promise<Store> | undefined;
+/**
+ * The Lambda's pool: 1 connection, since one execution serves one request at a time and
+ * Supavisor's transaction pooler shares them. A connect that takes over 5 seconds fails the request
+ * instead of hanging to the Lambda timeout.
+ */
+export const LAMBDA_POOL = { max: 1, connectionTimeoutMillis: 5000 } as const;
 
 /**
- * The Lambda entry (`index.handler` in the bundle `make api-bundle` writes): the routes on
- * PostgresStore. The database URL is read once per cold start, and the pool holds 1 connection,
- * since one execution serves one request at a time and Supavisor's transaction pooler shares them.
- * A connect that takes over 5 seconds fails the request instead of hanging to the Lambda timeout.
+ * After a failed open, the next one waits 1 s, then 2 s, 4 s and so on up to 60 s, so a broken SSM
+ * parameter or database costs one read per wait rather than one per request. A request inside the
+ * wait gets the same failure at once.
  */
-export const handler = async (
-  event: unknown,
-  context: Parameters<ReturnType<typeof createApp>["resolve"]>[1],
-) => {
-  store ??= lambdaDatabaseUrl().then((url) =>
-    createPostgresStore(url, { max: 1, connectionTimeoutMillis: 5000 }),
-  );
-  store.catch(() => {
-    store = undefined;
-  });
-  return createApp(await store).resolve(event, context);
+export const RETRY_FIRST_MS = 1000;
+export const RETRY_MAX_MS = 60_000;
+
+type Context = Parameters<ReturnType<typeof createApp>["resolve"]>[1];
+
+export interface HandlerDeps {
+  /** The database URL, read once per cold start. */
+  readUrl: () => Promise<string>;
+  /** The store on that URL. */
+  connect: (url: string) => Store;
+  now: () => number;
+}
+
+const lambdaDeps: HandlerDeps = {
+  readUrl: () => lambdaDatabaseUrl(),
+  connect: (url) => createPostgresStore(url, LAMBDA_POOL),
+  now: () => Date.now(),
 };
+
+/**
+ * The routes on PostgresStore. The store opens on the first request and is kept for the life of
+ * the execution environment. Health never waits for it, so a health check tells an SSM or database
+ * fault from an app fault. A failed open is retried on the first request after a capped wait.
+ */
+export function createHandler(deps: HandlerDeps = lambdaDeps) {
+  let store: Promise<Store> | undefined;
+  let failed = false;
+  let failures = 0;
+  let retryAt = 0;
+
+  const open = (): Promise<Store> => {
+    if (store !== undefined && (!failed || deps.now() < retryAt)) return store;
+    failed = false;
+    const opening = deps.readUrl().then(deps.connect);
+    opening.then(
+      () => {
+        failures = 0;
+      },
+      () => {
+        failed = true;
+        failures += 1;
+        retryAt = deps.now() + Math.min(RETRY_FIRST_MS * 2 ** (failures - 1), RETRY_MAX_MS);
+      },
+    );
+    store = opening;
+    return opening;
+  };
+
+  return (event: unknown, context: Context) => createApp(open()).resolve(event, context);
+}
+
+/** The Lambda entry (`index.handler` in the bundle `make api-bundle` writes). */
+export const handler = createHandler();

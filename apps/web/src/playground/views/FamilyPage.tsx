@@ -7,11 +7,11 @@
  *   (review/ReviewView).
  * - Details: the type's facts, the example in every mode (panels/ModesPanel) and as data
  *   (panels/DataPanel), and the family's guide (guides.ts).
- * Nothing is judged: every state comes from the written examples. The URL keeps the question type
- * and the example. Expand shows the open tab full screen in place, so an answer in progress stays.
+ * Nothing is judged: every state comes from the written examples, read from the API in the page's
+ * language (examples/load.ts). The URL keeps the question type and the example. Expand shows the open tab full screen in place, so an answer in progress stays.
  */
 
-import type { Category, Language } from "@jadwigo/copy";
+import { type Category, copy, type Language } from "@jadwigo/copy";
 import {
   FAMILIES,
   type FamilyName,
@@ -19,9 +19,10 @@ import {
   type QuestionTypeInfo,
   questionTypesOf,
 } from "@jadwigo/lesson-kit";
+import { Spinner } from "@jadwigo/ui";
 import { ClipboardCheck, Info, Maximize2, Minimize2, SquareMousePointer } from "lucide-react";
 import { type ReactElement, type ReactNode, useEffect, useState } from "react";
-import { examplesFor, type WrittenExample } from "../examples/index.ts";
+import { examplesFor, useExamples, type WrittenExample } from "../examples/index.ts";
 import { GUIDES } from "../guides.ts";
 import { DataPanel } from "../panels/DataPanel.tsx";
 import { ModesPanel } from "../panels/ModesPanel.tsx";
@@ -57,11 +58,11 @@ interface ExamplePlace {
  * examples, then the next question type's, in the sidebar's order, and after the very last back to
  * the first. Try it's Dalej goes there once the one-step lesson ends.
  */
-function nextExample(from: ExamplePlace): ExamplePlace {
+function nextExample(all: readonly WrittenExample[], from: ExamplePlace): ExamplePlace {
   const order: ExamplePlace[] = [];
   for (const family of FAMILIES)
     for (const type of questionTypesOf(family))
-      for (const e of examplesFor(type.name))
+      for (const e of examplesFor(all, type.name))
         order.push({ family, question_type: type.name, example: e.id });
   const here = order.findIndex(
     (p) =>
@@ -95,7 +96,9 @@ export function FamilyPage({
   const language: Language = queryLanguage(query) ?? "pl";
   const category: Category = queryCategory(query) ?? "child";
   const current = pickQuestionType(family, route.question_type);
-  const examples = examplesFor(current.name);
+  const loaded = useExamples(language);
+  const all = loaded.kind === "ready" ? loaded.examples : [];
+  const examples = examplesFor(all, current.name);
   const example: WrittenExample | undefined =
     examples.find((e) => e.id === route.example) ?? examples[0];
   // The playground switches in the URL change the question every tab plays (switchApply.ts).
@@ -118,13 +121,30 @@ export function FamilyPage({
   // Dalej after the one-step lesson ends: the next example in the playground's order.
   const goNext = (): void => {
     if (!example) return;
-    const to = nextExample({ family, question_type: current.name, example: example.id });
+    const to = nextExample(all, { family, question_type: current.name, example: example.id });
     navigate(
       linkTo(`/playground/${to.family}/${to.question_type}/${to.example}`, {
         tab: query.get("tab"),
       }),
     );
   };
+
+  if (loaded.kind !== "ready") {
+    return (
+      <div
+        className="mx-auto flex max-w-6xl flex-col items-start gap-3 p-4 sm:p-6 lg:p-8"
+        data-question-type-page={current.name}
+        data-examples-state={loaded.kind}
+      >
+        <h1 className="text-2xl font-bold tracking-tight">{current.label}</h1>
+        {loaded.kind === "loading" ? (
+          <Spinner label={copy(language, "loading")} />
+        ) : (
+          <p className="text-destructive">{copy(language, "load_failed")}</p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div

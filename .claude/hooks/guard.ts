@@ -92,6 +92,179 @@ function ghApiMethod(args: string[]): string | undefined {
   return sends ? "POST" : "GET";
 }
 
+/** The Makefile targets that write to a Supabase project; ENV=prod on any of them is the owner's. */
+const DB_TARGET = /(^|[\s'",[(])db-(push|role|seed|reset)\b/;
+const PROD = /\bENV\W{0,4}prod\b/;
+/** Programs that can run a command on a pseudo-terminal, or hide one in a quoted script. */
+const WRAPPERS =
+  /^(script|expect|unbuffer|socat|python[\d.]*|perl|ruby|node|bun|deno|osascript|bash|sh|zsh|dash|fish)$/;
+const CLEARS_CLAUDECODE =
+  /(^|\s)(-u\s*|--unset[=\s]+)CLAUDECODE\b|\bunset\s+(-v\s+)?(\w+\s+)*CLAUDECODE\b|\bexport\s+(-\w+\s+)*-\w*n\w*\s+(\w+\s+)*CLAUDECODE\b|\b(typeset|declare|local)\s+([-+]\w+\s+)*\+\w*x\w*\s+(\w+\s+)*CLAUDECODE\b/;
+/**
+ * The env program: bare, by path (/usr/bin/env), GNU's under another name (genv, gnuenv), or found
+ * by a substitution the text shows ($(which env), `command -v genv`). A variable holding it ($E -i)
+ * is the documented limit (dl-5ssh.56).
+ */
+const ENV_PROGRAM =
+  /(^|[\s;&|('"/])(g|gnu)?env(?=\s|$)|(\$\(|`)\s*(which|command\s+-v|type\s+-p|whence\s+-p)\s+\S*?(g|gnu)?env\s*(\)|`)/;
+// exec's -a takes a name, so `exec -a x -c` still reaches the -c. The name never starts with '-',
+// which keeps the two alternatives apart: otherwise 'exec ' + '-a '.repeat(n) backtracks for seconds.
+export const EXEC_CLEARS =
+  /(^|[\s;&|('"])exec\s+((-[A-Za-z]*a\s+[^-\s]\S*|-\w+)\s+)*-[A-Za-z]*c[A-Za-z]*(\s|$)/;
+/** Whether a long option is a prefix GNU getopt accepts for one of env's: at least `--` and a letter. */
+const longOption = (w: string, full: string) => w.length >= 3 && full.startsWith(w);
+/** Programs that run a command on a pseudo-terminal; python counts when the line imports pty. */
+const PTY_WRAPPERS = /^(script|expect|unbuffer|socat|screen|tmux)$/;
+const MAKE = /(^|[\s'",[(])g?make\b/;
+
+/**
+ * Whether the text clears the whole environment, and CLAUDECODE with it: exec -c, or an env whose
+ * options hold -i, - or --ignore-environment (or a prefix GNU accepts, --ig) anywhere, in a
+ * short-flag cluster (-0i, -vi), after options that take a value (-u FOO, -C dir, -P path) or
+ * inside an -S or --split-string string.
+ */
+function clearsEnv(text: string): boolean {
+  if (EXEC_CLEARS.test(text)) return true;
+  for (const m of text.matchAll(new RegExp(ENV_PROGRAM, "g"))) {
+    // Quotes become spaces, so the words of an -S '...' string read as more options.
+    const words = text
+      .slice((m.index ?? 0) + m[0].length)
+      .replace(/['"]/g, " ")
+      .split(/\s+/)
+      .filter(Boolean);
+    for (let i = 0; i < words.length; i++) {
+      const w = words[i] ?? "";
+      if (!w.startsWith("-") || w === "--") break;
+      if (w === "-") return true;
+      if (w.startsWith("--")) {
+        const eq = w.indexOf("=");
+        const name = eq < 0 ? w : w.slice(0, eq);
+        if (longOption(name, "--ignore-environment")) return true;
+        // --split-string=-i: the string's words read as more options.
+        const value = w.slice(eq + 1);
+        if (eq >= 0 && value && longOption(name, "--split-string")) words.splice(i + 1, 0, value);
+        if (eq < 0 && ["--unset", "--chdir", "--argv0"].some((o) => longOption(name, o))) i++;
+        continue;
+      }
+      for (let j = 1; j < w.length; j++) {
+        const c = w[j] ?? "";
+        if (c === "i") return true;
+        if ("uCP".includes(c)) {
+          if (j === w.length - 1) i++;
+          break;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * The line with shell quoting a word can hide behind undone: empty '' and "" pairs and backslashes
+ * dropped, and quotes around a word with no space in it removed. `make db-pu''sh ENV=pr\od` reads
+ * as `make db-push ENV=prod`. A quoted string with spaces stays, so prose in a commit message is
+ * still prose to stripProse.
+ */
+export function unquoteWords(cmd: string): string {
+  return cmd
+    .replace(/\\(\S)/g, "$1")
+    .replace(/'([^'\s]*)'/g, "$1")
+    .replace(/"([^"\s]*)"/g, "$1");
+}
+
+/**
+ * The prod db targets (dl-5ssh.45). The Makefile's PROD_GATE asks for a terminal and a typed prod
+ * (dl-e8ov.2.34), but a session can fake the terminal with a pty, so a session never runs one: no
+ * make db-* with ENV=prod, no clearing CLAUDECODE (the gate reads it), and no pty or script wrapper
+ * whose quoted text names a db target and prod. Codex shells have no guard; the gate is all they meet.
+ *
+ * The guard reads text, so it runs on the raw line and on unquoteWords' copy of it. It does not
+ * follow eval, $(...) or variables (`E=prod make db-push ENV=$E`), and it judges one call at a
+ * time, so a makefile fragment written in one call and passed with `make -f` in the next gets past
+ * it. The Makefile's PROD_GATE still stops both: it asks for a terminal and a typed prod.
+ */
+function prodDbDenial(cmd: string, bare: string, commands: string[][]): string | undefined {
+  const base = (w: string) => w.slice(w.lastIndexOf("/") + 1);
+  if (assignments(bare).some((a) => a.startsWith("CLAUDECODE=")) || CLEARS_CLAUDECODE.test(bare)) {
+    return "clearing CLAUDECODE hides that a session runs the command, which the prod db gate reads. Leave it set.";
+  }
+  const runsDbTarget = MAKE.test(cmd) && DB_TARGET.test(cmd);
+  // The -S string of env is quoted, so stripProse drops it: read the raw text when env runs at all.
+  const envRuns = ENV_PROGRAM.test(bare);
+  if (runsDbTarget && (clearsEnv(bare) || (envRuns && clearsEnv(cmd)))) {
+    return "env -i, env - and exec -c clear CLAUDECODE with the rest of the environment, which the prod db gate reads. Run make db-* with the environment as it is.";
+  }
+  for (const words of commands) {
+    const make = words.some((w) => /^g?make$/.test(base(w)));
+    if (make && words.some((w) => DB_TARGET.test(w)) && PROD.test(cmd)) {
+      return "make db-push, db-role, db-seed and db-reset with ENV=prod are the owner's, typed at their own terminal (`!` in Claude Code). From a session, use ENV=dev.";
+    }
+    const pty = words.some(
+      (w) => PTY_WRAPPERS.test(base(w)) || (/^python[\d.]*$/.test(base(w)) && /\bpty\b/.test(cmd)),
+    );
+    if (pty && runsDbTarget) {
+      return "a pty wrapper around make db-* fakes the terminal its gate asks for, whatever ENV says. Run make db-* directly; prod db steps are the owner's, typed at their own terminal.";
+    }
+    if (words.some((w) => WRAPPERS.test(base(w)))) {
+      if (DB_TARGET.test(cmd) && /\bprod\b/.test(cmd)) {
+        return "a pty or script wrapper around a prod db target fakes the terminal its gate asks for. Prod db steps are the owner's, typed at their own terminal.";
+      }
+      if (
+        CLEARS_CLAUDECODE.test(cmd) ||
+        (runsDbTarget && clearsEnv(cmd)) ||
+        /CLAUDECODE/.test(cmd.replace(/\$\{?CLAUDECODE/g, ""))
+      ) {
+        return "a wrapped script that touches CLAUDECODE can hide that a session runs it, which the prod db gate reads. Leave it set.";
+      }
+    }
+  }
+  return undefined;
+}
+
+/** infra/Makefile's deploy targets (dl-5ssh.52): a Lambda update, an S3 sync and an invalidation. */
+const DEPLOY_WORD = /^(api-|web-|site-)?deploy$/;
+const DEPLOY_TARGET = /(^|[\s'",[(])(api-|web-|site-)?deploy(?=[\s'",)\]]|$)/;
+/** make's options that take a value; a cluster such as -Cn names directory n, not a dry run. */
+const MAKE_VALUE_FLAGS = "CfIjloWE";
+
+/** Whether make's words ask for a dry run: -n, a cluster holding n, --dry-run, --just-print or --recon. */
+function makeDryRun(words: string[]): boolean {
+  return words.some((w) => {
+    if (/^--(dry-run|just-print|recon)$/.test(w)) return true;
+    if (!/^-[A-Za-z]/.test(w)) return false;
+    for (const c of w.slice(1)) {
+      if (c === "n") return true;
+      if (MAKE_VALUE_FLAGS.includes(c)) return false;
+    }
+    return false;
+  });
+}
+
+/**
+ * A deploy is the owner's (AGENTS.md), and the CLAUDECODE check in infra/Makefile is all that
+ * stopped one: make deploy, api-deploy, web-deploy and site-deploy, directly, under env -i, or
+ * inside a wrapper's quoted script. make -n prints the recipe and runs nothing, so it stays allowed.
+ */
+function deployDenial(cmd: string, commands: string[][]): string | undefined {
+  const base = (w: string) => w.slice(w.lastIndexOf("/") + 1);
+  for (const words of commands) {
+    const at = words.findIndex((w) => /^g?make$/.test(base(w)));
+    if (at >= 0) {
+      const make = words.slice(at + 1);
+      if (make.some((w) => DEPLOY_WORD.test(w)) && !makeDryRun(make)) {
+        return "make deploy, api-deploy, web-deploy and site-deploy are the owner's, typed at their own terminal (`!` in Claude Code). From a session, `make -n -C infra deploy` shows what it would run.";
+      }
+    }
+    const wrapped = words.some(
+      (w) => WRAPPERS.test(base(w)) || PTY_WRAPPERS.test(base(w)) || base(w) === "eval",
+    );
+    if (wrapped && MAKE.test(cmd) && DEPLOY_TARGET.test(cmd)) {
+      return "a wrapper around make deploy, api-deploy, web-deploy or site-deploy still deploys, which is the owner's, typed at their own terminal.";
+    }
+  }
+  return undefined;
+}
+
 const USE_DEV_PR = "Write the body with /dev-pr into a file, then pass it with --body-file <path>.";
 
 /** gh pr create always carries a body file that passes check-pr-body; gh pr edit does when it sets the body. */
@@ -140,6 +313,15 @@ function bashDenial(
 ): string | undefined {
   const bare = stripProse(cmd);
   const commands = simpleCommands(bare);
+
+  // 3b. Prod db targets stay the owner's, however the terminal is faked or the words are quoted.
+  const plain = unquoteWords(cmd);
+  const plainBare = stripProse(plain);
+  const prodDb =
+    prodDbDenial(cmd, bare, commands) ?? prodDbDenial(plain, plainBare, simpleCommands(plainBare));
+  if (prodDb) return prodDb;
+  const deploy = deployDenial(cmd, commands) ?? deployDenial(plain, simpleCommands(plainBare));
+  if (deploy) return deploy;
 
   for (const words of commands) {
     const [prog = "", ...args] = words;

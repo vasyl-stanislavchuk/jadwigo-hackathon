@@ -234,11 +234,28 @@
           },
           "enrichment": {
             "type": "object",
-            "propertyNames": {
-              "type": "string"
+            "properties": {
+              "summary": {
+                "type": "string"
+              },
+              "can_do": {
+                "type": "string"
+              },
+              "mistake_classes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "contexts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
             },
-            "additionalProperties": {},
-            "description": "The set's enrichment fields the caller may show: summary, can_do, mistake_classes, contexts"
+            "additionalProperties": false,
+            "description": "The set's enrichment fields the caller may show; any other key, a private body among them, is dropped on parse"
           },
           "content_hash": {
             "type": "string",

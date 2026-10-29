@@ -357,4 +357,8 @@ export const pl: CopyTable = {
   play_paused_back: { text: "Wracam do lekcji", reviewed: false },
   play_not_found: { text: "Tej lekcji tu nie ma.", reviewed: false },
   // end the lesson player
+  // the home page's featured lessons (dl-5ssh.3.6)
+  home_title: { text: "Wybierz lekcję", reviewed: false },
+  home_empty: { text: "Na razie nie ma tu lekcji.", reviewed: false },
+  // end the home page
 };

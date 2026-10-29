@@ -144,6 +144,24 @@ describe("compiling a lesson file", () => {
     expect(() => compileLessonFile(raw)).toThrow(/s02.*sparkle/);
   });
 
+  it("refuses a lesson that opens with an explain question, which v0 never asks", () => {
+    const raw = file("multiplication-times-four") as { script: { parts: { steps: Step[] }[] } };
+    const explain = step(raw, "s15");
+    for (const part of raw.script.parts) part.steps = part.steps.filter((s) => s !== explain);
+    raw.script.parts[0]?.steps.unshift(explain);
+    expect(() => compileLessonFile(raw)).toThrow(
+      /s15: a v0 lesson cannot open with an explain question/,
+    );
+  });
+
+  it("keeps an explain question that comes later, for the course to pass over", () => {
+    const families = compileLessonFile(file("multiplication-times-four")).questions.map(
+      (q) => q.question.family,
+    );
+    expect(families[0]).not.toBe("explain");
+    expect(families).toContain("explain");
+  });
+
   it("refuses a question type of another family", () => {
     const raw = file("equal-groups") as {
       script: { parts: { steps: { question_type?: string }[] }[] };

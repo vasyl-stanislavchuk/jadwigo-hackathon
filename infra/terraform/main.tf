@@ -28,15 +28,18 @@ module "app" {
   environment = var.environment
   bucket_name = "jadwigo-app-${var.environment}-843109108289"
 
-  # ROUTES in packages/contracts/src/routes.ts, as "<METHOD> <path>".
+  # ROUTES in packages/contracts/src/routes.ts, as "<METHOD> <path>". tools/src/check-infra-routes.ts
+  # (make check, CI's lint job) fails when the two differ.
   routes = [
     "GET /api/health",
     "GET /api/v1/featured-lessons",
+    "GET /api/v1/playground-examples/{language}",
     "POST /api/v1/assignments/{id}/attempts",
     "GET /api/v1/attempts/{id}",
     "PATCH /api/v1/attempts/{id}",
     "POST /api/v1/attempts/{id}/answers",
     "POST /api/v1/attempts/{id}/questions/{seq}/help",
     "GET /api/v1/attempts/{id}/results",
+    "POST /api/v1/question-searches",
   ]
 }
