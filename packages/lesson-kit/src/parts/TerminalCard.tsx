@@ -10,8 +10,9 @@
  * bd printed instead. A copy says "Copied" only once the clipboard write succeeded, and says so in
  * a live region too. Copying is not an answer and records nothing. The card is never read aloud.
  *
- * `paper` is the printed look (print support `adapted`): a black border, the $ kept, commands and
- * output wrapped between words with a hanging indent, no highlighting colour and no copy.
+ * `paper` is the printed look (print support `adapted`): a border and text in the ink (--jw-ink, so
+ * the theme's paper and night grounds both read it), the $ kept, commands and output wrapped between
+ * words with a hanging indent, no highlighting colour and no copy.
  */
 
 import { copy, type Language } from "@jadwigo/copy";
@@ -191,7 +192,7 @@ export function TerminalCard({
       className={cn(
         "overflow-hidden rounded-lg border font-mono text-lg leading-[1.55]",
         paper
-          ? "break-inside-avoid border-black text-black"
+          ? "break-inside-avoid border-jw-ink text-jw-ink"
           : "border-[color:var(--code-border)] bg-[color:var(--code-surface)] text-[color:var(--code-text)] [--ring:var(--code-ring)]",
       )}
     >
