@@ -29,15 +29,21 @@ export function contractRoutes(source: string): ContractRoute[] {
 const ROUTE_KEY = /"((?:GET|POST|PUT|PATCH|DELETE) \/[^"]*)"/g;
 const uncommented = (source: string) => source.replace(/^\s*(#|\/\/).*$/gm, "");
 
-/** Every quoted "<METHOD> /<path>" route key in the Terraform file, comment lines left out. */
+/** The route keys in one list of module app (`routes` or `token_routes`), comment lines left out. */
+function listKeys(source: string, name: "routes" | "token_routes"): string[] {
+  // \b keeps "routes" from matching inside "token_routes": "_" and "r" are both word characters.
+  const list = uncommented(source).match(new RegExp(`\\b${name}\\s*=\\s*\\[([^\\]]*)\\]`))?.[1];
+  return [...(list ?? "").matchAll(ROUTE_KEY)].map(([, key]) => key ?? "");
+}
+
+/** The route keys in module app's routes list: a key only in token_routes is not routed. */
 export function terraformRoutes(source: string): string[] {
-  return [...uncommented(source).matchAll(ROUTE_KEY)].map(([, key]) => key ?? "");
+  return listKeys(source, "routes");
 }
 
 /** The route keys in module app's token_routes list. */
 export function terraformTokenRoutes(source: string): string[] {
-  const list = uncommented(source).match(/\btoken_routes\s*=\s*\[([^\]]*)\]/)?.[1] ?? "";
-  return [...list.matchAll(ROUTE_KEY)].map(([, key]) => key ?? "");
+  return listKeys(source, "token_routes");
 }
 
 export function compareRoutes(contracts: string, terraform: string): string[] {

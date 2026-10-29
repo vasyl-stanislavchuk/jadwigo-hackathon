@@ -52,6 +52,15 @@ describe("check-infra-routes", () => {
     ]);
   });
 
+  it("fails on a token route left only in token_routes, out of the routes list", () => {
+    const routes = terraform.match(/\n {2}routes = \[[^\]]*\]/)?.[0] ?? "";
+    expect(routes).toContain('"GET /api/v1/me"');
+    const unrouted = terraform.replace(routes, routes.replace(/\n {4}"GET \/api\/v1\/me",/, ""));
+    expect(compareRoutes(contracts, unrouted)).toContain(
+      `"GET /api/v1/me" is in ROUTES but has no route in ${TF}`,
+    );
+  });
+
   it("fails on a login-free route behind the authorizer", () => {
     const shut = terraform.replace("token_routes = [", 'token_routes = [\n    "GET /api/health",');
     expect(compareRoutes(contracts, shut)).toEqual([
