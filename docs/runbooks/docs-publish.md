@@ -26,10 +26,10 @@ files agents read: `/llms.txt`, `/openapi.json` and `/mcp-tools.json`.
    make -C infra plan
    ```
 
-   The first time you should see `13 to add, 0 to change, 0 to destroy`, all under `module.docs`:
-   the certificate, its validation record and validation, the bucket with its 3 settings and its
-   policy, the origin access control, the edge function, the distribution and 2 alias records.
-   Nothing under `module.site`.
+   The first time you should see 13 additions under `module.docs`: the certificate, its validation
+   record and validation, the bucket with its 3 settings and its policy, the origin access control,
+   the edge function, the distribution and 2 alias records. Nothing under `module.site`. A module
+   not applied yet (`module.content`, say) shows its own additions; read those as its own.
    Any change under `module.site` means stop: the docs' options should leave the marketing site as
    it is (`dl-5ssh.90.11`).
 
