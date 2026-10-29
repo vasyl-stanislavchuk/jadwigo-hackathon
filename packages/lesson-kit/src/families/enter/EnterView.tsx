@@ -135,7 +135,7 @@ function Answer({
   if (fraction) {
     return (
       <div className="flex flex-col gap-1">
-        <span className="text-base">{label}</span>
+        <span className="text-jw-small">{label}</span>
         <div className="text-[length:var(--kid-math-size)]">
           <FractionBoxes
             text={text}
@@ -154,7 +154,7 @@ function Answer({
   }
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-base">{label}</span>
+      <span className="text-jw-small">{label}</span>
       <div
         data-tone={tone}
         className={cn(

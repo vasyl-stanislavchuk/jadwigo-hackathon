@@ -159,7 +159,7 @@ function Grid({
           aria-live="polite"
         >
           {splitSum(rect) ?? (
-            <span className="text-base font-normal text-muted-foreground">
+            <span className="text-jw-small font-normal text-muted-foreground">
               {copy(language, "split_none")}
             </span>
           )}
