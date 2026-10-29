@@ -6,6 +6,7 @@ import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { familyNameConfig } from "./gitleaks";
 
 const repo = resolve(import.meta.dirname, "../..");
 const bin = (name: string) => join(repo, "node_modules/.bin", name);
@@ -200,5 +201,59 @@ describe("fences fail on planted violations", { timeout: 60_000 }, () => {
       dir,
     );
     expect(status, output).toBe(1);
+  });
+
+  it("gitleaks: a family name from the private-terms file, allowed under apps/site", () => {
+    // An invented word stands in for a name, so no real one is ever in the repo.
+    const terms = join(plant({ "terms.txt": "Zqvorlintap\n" }), "terms.txt");
+    const scan = (files: Record<string, string>) => {
+      const dir = plant(files);
+      const out = spawnSync(
+        "bun",
+        // A relative scan root, so paths read as they do in the staged scan: apps/site/...
+        [join(repo, "tools/src/gitleaks.ts"), "dir", ".", "--no-banner"],
+        { cwd: dir, encoding: "utf8", env: { ...process.env, JADWIGO_PRIVATE_TERMS: terms } },
+      );
+      return { status: out.status, output: `${out.stdout}${out.stderr}` };
+    };
+    const leaked = scan({ "src/greeting.ts": 'export const hi = "Cześć zqvorlintap!";\n' });
+    expect(leaked.status, leaked.output).toBe(1);
+    expect(leaked.output).not.toMatch(/zqvorlintap/i);
+    const site = scan({ "apps/site/src/about.md": "Zqvorlintap's story.\n" });
+    expect(site.status, site.output).toBe(0);
+    const nested = scan({ "docs/apps/site/about.md": "Zqvorlintap's story.\n" });
+    expect(nested.status, nested.output).toBe(1);
+    // The '-learns' exemption is for the tracker's own name, never for a line that holds one.
+    const nearTracker = scan({ "src/a.ts": 'const kid = "zqvorlintap"; // see zz-learns\n' });
+    expect(nearTracker.status, nearTracker.output).toBe(1);
+    const nameLearns = scan({ "src/b.md": "zqvorlintap-learns\n" });
+    expect(nameLearns.status, nameLearns.output).toBe(1);
+  });
+
+  it("gitleaks: the tracker's own name passes, and nothing else on its line does", () => {
+    // The tracker's name holds a family name, so this plants an invented tracker and its term.
+    const config = familyNameConfig(
+      join(repo, ".gitleaks.toml"),
+      ["zqvorlintap", "plombuzet"],
+      "zqvorlintap-learns",
+    );
+    const scan = (body: string) => {
+      const dir = plant({ "gitleaks.toml": config, "notes/AGENTS.md": body });
+      return run("gitleaks", ["dir", "notes", "--config", "gitleaks.toml", "--no-banner"], dir);
+    };
+    const tracker = scan("bd -C ~/projects/zqvorlintap-learns/.beads ready\n");
+    expect(tracker.status, tracker.output).toBe(0);
+    const titleCase = scan("See ~/projects/Zqvorlintap-Learns/AGENTS.md.\n");
+    expect(titleCase.status, titleCase.output).toBe(0);
+    const nameBeside = scan("zqvorlintap-learns is plombuzet's tracker\n");
+    expect(nameBeside.status, nameBeside.output).toBe(1);
+    const termTwice = scan("zqvorlintap-learns belongs to zqvorlintap\n");
+    expect(termTwice.status, termTwice.output).toBe(1);
+    const termAdjacent = scan("zqvorlintap-learns zqvorlintap\n");
+    expect(termAdjacent.status, termAdjacent.output).toBe(1);
+    const otherLearns = scan("plombuzet-learns\n");
+    expect(otherLearns.status, otherLearns.output).toBe(1);
+    const longer = scan("zqvorlintap-learnsx\n");
+    expect(longer.status, longer.output).toBe(1);
   });
 });

@@ -78,7 +78,7 @@ class GuardedPrompt:
 # ---------------------------------------------------------------- names ------
 
 # Locative and vocative endings soften the last consonant: Dawid -> Dawidzie, Piotr -> Piotrze,
-# Marta -> Marcie, Michał -> Michale, Olga -> Oldze, Agnieszka -> Agnieszce.
+# Marta -> Marcie, Michał -> Michale, Jadwiga -> Jadwidze, Agnieszka -> Agnieszce.
 _SOFTEN = {
     "d": ("dzie",),
     "t": ("cie",),
