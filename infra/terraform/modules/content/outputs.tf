@@ -21,3 +21,8 @@ output "bucket_param" {
 output "media_url_param" {
   value = aws_ssm_parameter.media_url.name
 }
+
+output "bucket_param_arn" {
+  value       = aws_ssm_parameter.bucket.arn
+  description = "The ARN of the parameter holding the bucket's name, for the api role's ssm:GetParameter"
+}
