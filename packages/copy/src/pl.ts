@@ -433,6 +433,7 @@ export const pl: CopyTable = {
   parent_overview_legend: { text: "Legenda", reviewed: false },
   parent_overview_see_tries: { text: "Zobacz próby", reviewed: false },
   parent_overview_twin: { text: "Było też podobne pytanie", reviewed: false },
+  parent_overview_tries: { text: "Próby: {n}", reviewed: false },
   // one line per grid outcome, kind and short
   parent_outcome_first_try: { text: "Od razu", reviewed: false },
   parent_outcome_got_there: { text: "Po próbach lub z pomocą", reviewed: false },

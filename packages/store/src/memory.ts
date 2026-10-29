@@ -2,6 +2,7 @@ import {
   Account,
   AccountId,
   Assignment,
+  type AssignmentAttempts,
   AssignmentId,
   Attempt,
   AttemptAnswer,
@@ -29,6 +30,7 @@ import {
   LessonVersion,
   LessonVersionId,
   type LessonVersionQuestion,
+  LIMITS,
   type Me,
   Member,
   MemberId,
@@ -966,15 +968,48 @@ export class InMemoryStore implements Store {
         const version = this.#versions.get(attempt.lesson_version_id);
         const lesson = version && this.#lessons.get(version.lesson_id);
         if (!lesson) throw notFound("the attempt's lesson");
-        const answers = [...this.#answers.values()]
-          .filter((a) => a.attempt_id === attempt.id)
-          .sort((a, b) => a.seq - b.seq || a.try_no - b.try_no);
-        const results = attemptResults(this.#asked.get(attempt.id) ?? [], answers, (id) =>
-          this.#questions.get(id),
-        );
-        return { attempt, title: lesson.title, language: lesson.language, results: [...results] };
+        const results = this.#results(attempt.id);
+        return { attempt, title: lesson.title, language: lesson.language, results };
       });
     return { learner: row, attempts };
+  }
+
+  async getAssignmentAttempts(pod: PodId, id: AssignmentId): Promise<AssignmentAttempts> {
+    // Row-level security by hand: pod_scope reads the pod's own attempts, claimed_read those its
+    // learners claimed, and the assignment and its lesson come with either.
+    const learnerOf = (attempt: Attempt) => {
+      const learner =
+        attempt.learner_id === null ? undefined : this.#learners.get(attempt.learner_id);
+      return learner?.pod_id === pod ? learner : undefined;
+    };
+    const visible = [...this.#attempts.values()].filter(
+      (a) => a.assignment_id === id && (a.pod_id === pod || learnerOf(a) !== undefined),
+    );
+    const assignment = this.#assignments.get(id);
+    if (!assignment || (assignment.pod_id !== pod && visible.length === 0))
+      throw notFound("the assignment");
+    const lesson = this.#lessons.get(assignment.lesson_id);
+    if (!lesson) throw notFound("the assignment's lesson");
+    const attempts = visible
+      .filter((a) => a.mode === "real")
+      .sort((a, b) => b.started_at.localeCompare(a.started_at) || (a.id < b.id ? 1 : -1))
+      .slice(0, LIMITS.attemptsPerAssignment)
+      .map((attempt) => ({
+        attempt,
+        name: learnerOf(attempt)?.first_name ?? attempt.player_name,
+        results: this.#results(attempt.id),
+      }));
+    return { assignment, title: lesson.title, language: lesson.language, attempts };
+  }
+
+  /** An attempt's `attempt_result` rows, in `seq` order. */
+  #results(attempt: AttemptId): AttemptResult[] {
+    const answers = [...this.#answers.values()]
+      .filter((a) => a.attempt_id === attempt)
+      .sort((a, b) => a.seq - b.seq || a.try_no - b.try_no);
+    return [
+      ...attemptResults(this.#asked.get(attempt) ?? [], answers, (id) => this.#questions.get(id)),
+    ];
   }
 }
 

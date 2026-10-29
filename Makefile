@@ -18,7 +18,7 @@ ifneq (,$(wildcard $(HOME)/perl5/bin/pg_prove))
 export PATH := $(HOME)/perl5/bin:$(PATH)
 export PERL5LIB := $(HOME)/perl5/lib/perl5$(if $(PERL5LIB),:$(PERL5LIB))
 endif
-.PHONY: check check-all dev db migrate pgtap db-reset db-seed api-dev api-bundle api-invoke db-push db-role skills drops
+.PHONY: check check-all dev db migrate pgtap db-reset db-seed lesson-import api-dev api-bundle api-invoke db-push db-role skills drops
 
 ## check: lint, typecheck and test what changed since main (turbo --affected), uv's pytest
 ## included, then the repo-wide checks turbo cannot scope: knip, dependency-cruiser, no-bank, worklog,
@@ -116,6 +116,22 @@ API_LOGIN = env -i PATH="$$PATH" HOME="$$HOME" PGCONNECT_TIMEOUT=10 PGPASSWORD="
 # dl-5ssh.58). db-seed retries that refusal every LOGIN_STEP seconds for up to LOGIN_WAIT.
 LOGIN_WAIT ?= 120
 LOGIN_STEP ?= 10
+# ENV's project as jadwigo_api through its session pooler, for db-seed and lesson-import: links it,
+# reads jadwigo_api's password into API_PASSWORD and the URL into url, and waits out the pooler's
+# 28P01 for up to LOGIN_WAIT seconds. AS_API then runs a command under env -i with only PATH, HOME,
+# USER, TMPDIR, PGPASSWORD and DATABASE_URL, so it sees no other secret.
+API_SESSION = $(SUPABASE_LINK); \
+	API_PASSWORD=$${JADWIGO_API_DB_PASSWORD_$(ENV_UPPER):-$$(security find-generic-password -s jadwigo-api-db-password-$(ENV) -w 2>/dev/null)}; \
+	test -n "$$API_PASSWORD" || { echo "$@: set JADWIGO_API_DB_PASSWORD_$(ENV_UPPER) in $(SUPABASE_SECRETS), or add the keychain item jadwigo-api-db-password-$(ENV)"; exit 1; }; \
+	$(API_SESSION_URL); \
+	waited=0; \
+	until err=$$($(API_LOGIN) 2>&1 >/dev/null); do \
+	  case "$$err" in *"password authentication failed"*) ;; *) printf '%s\n' "$$err"; exit 1;; esac; \
+	  if [ "$$waited" -ge $(LOGIN_WAIT) ]; then echo "$@: jadwigo-$(ENV) still refuses jadwigo_api's password after $(LOGIN_WAIT)s (28P01). Check JADWIGO_API_DB_PASSWORD_$(ENV_UPPER), or run make db-role ENV=$(ENV)"; exit 1; fi; \
+	  echo "$@: jadwigo-$(ENV) refuses jadwigo_api's password (28P01). Its pooler holds the old one for a few minutes after db-role sets it; retrying in $(LOGIN_STEP)s ($$waited of $(LOGIN_WAIT)s)"; \
+	  sleep $(LOGIN_STEP); waited=$$((waited + $(LOGIN_STEP))); \
+	done
+AS_API = env -i PATH="$$PATH" HOME="$$HOME" USER="$$USER" TMPDIR="$${TMPDIR:-/tmp}" PGPASSWORD="$$API_PASSWORD" DATABASE_URL="$$url"
 
 ## db-reset: rebuild the local jadwigo database from nothing (the shim, every migration, the seed).
 ## ENV=dev resets jadwigo-dev instead (supabase db reset --linked, which asks first). Never prod.
@@ -140,19 +156,22 @@ ifeq ($(ENV),)
 	bun run --cwd packages/lesson-import seed
 else
 	@$(PROD_GATE)
-	@$(SUPABASE_LINK); \
-	API_PASSWORD=$${JADWIGO_API_DB_PASSWORD_$(ENV_UPPER):-$$(security find-generic-password -s jadwigo-api-db-password-$(ENV) -w 2>/dev/null)}; \
-	test -n "$$API_PASSWORD" || { echo "db-seed: set JADWIGO_API_DB_PASSWORD_$(ENV_UPPER) in $(SUPABASE_SECRETS), or add the keychain item jadwigo-api-db-password-$(ENV)"; exit 1; }; \
-	$(API_SESSION_URL); \
-	waited=0; \
-	until err=$$($(API_LOGIN) 2>&1 >/dev/null); do \
-	  case "$$err" in *"password authentication failed"*) ;; *) printf '%s\n' "$$err"; exit 1;; esac; \
-	  if [ "$$waited" -ge $(LOGIN_WAIT) ]; then echo "db-seed: jadwigo-$(ENV) still refuses jadwigo_api's password after $(LOGIN_WAIT)s (28P01). Check JADWIGO_API_DB_PASSWORD_$(ENV_UPPER), or run make db-role ENV=$(ENV)"; exit 1; fi; \
-	  echo "db-seed: jadwigo-$(ENV) refuses jadwigo_api's password (28P01). Its pooler holds the old one for a few minutes after db-role sets it; retrying in $(LOGIN_STEP)s ($$waited of $(LOGIN_WAIT)s)"; \
-	  sleep $(LOGIN_STEP); waited=$$((waited + $(LOGIN_STEP))); \
-	done; \
-	env -i PATH="$$PATH" HOME="$$HOME" USER="$$USER" TMPDIR="$${TMPDIR:-/tmp}" PGPASSWORD="$$API_PASSWORD" DATABASE_URL="$$url" \
-	  bun run --cwd packages/lesson-import seed
+	@$(API_SESSION); \
+	$(AS_API) bun run --cwd packages/lesson-import seed
+endif
+
+## lesson-import FILE=<path>: one lesson file into the local jadwigo database, printing its
+## /play/<assignment> path (dl-e8ov.5.38.3); check it first with `bun run --cwd packages/lesson-import
+## check <path>`. ENV=dev imports into jadwigo-dev instead, as jadwigo_api the way db-seed does. Only
+## dev: prod imports are the owner's, by hand. Safe to rerun: the same content publishes nothing new.
+lesson-import:
+	@test -n "$(FILE)" || { echo "lesson-import: FILE=<lesson file> is required"; exit 1; }
+ifeq ($(ENV),)
+	DATABASE_URL=postgresql://localhost:$${PGPORT:-5433}/jadwigo bun run --cwd packages/lesson-import import "$(abspath $(FILE))"
+else
+	@if [ "$(ENV)" != dev ]; then echo "lesson-import: only ENV=dev; prod imports are the owner's, by hand"; exit 1; fi
+	@$(API_SESSION); \
+	$(AS_API) bun run --cwd packages/lesson-import import "$(abspath $(FILE))"
 endif
 
 ## api-dev ENV=dev: serve the local apps/api on jadwigo-dev, as the Lambda will reach a project: as

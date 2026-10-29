@@ -2,6 +2,7 @@
 // PostgresStore by src/routes.int.test.ts. Tokens are signed with the run's own test key.
 import { randomUUID } from "node:crypto";
 import {
+  type AssignmentAttempts,
   type AttemptAnswerResult,
   type AttemptSnapshot,
   type Claim,
@@ -66,7 +67,7 @@ export function peopleSuite(name: string, makeStore: () => Store): void {
     }
 
     it("refuses every token route without a token, or with a bad one, as 401 NotSignedIn", async () => {
-      expect(TOKEN_ROUTES).toHaveLength(6);
+      expect(TOKEN_ROUTES).toHaveLength(7);
       const tokens = [
         undefined,
         signToken({}, true),
@@ -235,6 +236,64 @@ export function peopleSuite(name: string, makeStore: () => Store): void {
         { learner_id: child.id },
       );
       expect([refused.status, refused.body.error.type]).toEqual([409, "AttemptPreview"]);
+    });
+
+    it("lists an assignment's claimed attempt with its full rows, never a preview, an unclaimed one or a key", async () => {
+      const assignment = await s.assign("equalGroups");
+      const { id, snapshot } = await start(s, assignment);
+      const first = snapshot.questions[0];
+      if (first === undefined) throw new Error("no first question");
+      await tryAt(s, id, first, true);
+      const unclaimed = await start(s, assignment);
+      const preview = await start(s, assignment, { mode: "preview" });
+      const p = parent();
+      await p.signUp();
+      const child = await p.addChild("Wren");
+      const claim = await p.call<Claim>("POST", pathOf("claimAttempt", { id }), {
+        learner_id: child.id,
+      });
+      expect(claim.status).toBe(201);
+
+      const reply = await p.call<AssignmentAttempts>(
+        "GET",
+        pathOf("getAssignmentAttempts", { id: assignment }),
+      );
+      expect(reply.status).toBe(200);
+      expect(reply.body).toMatchObject({
+        assignment: { id: assignment },
+        title: expect.any(String),
+        language: "pl",
+      });
+      expect(reply.body.attempts.map((a) => [a.attempt.id, a.name])).toEqual([[id, "Wren"]]);
+      expect(reply.body.attempts.map((a) => a.attempt.id)).not.toContain(unclaimed.id);
+      expect(reply.body.attempts.map((a) => a.attempt.id)).not.toContain(preview.id);
+      // The parent's full rows, tries and time included, as getLearnerAttempts gives them.
+      expect(reply.body.attempts[0]?.results.map((r) => [r.seq, r.ended, r.tries])).toEqual([
+        [1, "correct", 1],
+        [2, null, 0],
+      ]);
+      expect(reply.body.attempts[0]?.results[0]?.time_ms).toEqual(expect.any(Number));
+      const text = JSON.stringify(reply.body);
+      for (const absent of [...KEY_ONLY, '"body_hash"', '"event_id"'])
+        expect(text).not.toContain(absent);
+    });
+
+    it("refuses an assignment the caller's pod reads no attempt of as 404, and no account as 409", async () => {
+      const assignment = await s.assign("equalGroups");
+      await start(s, assignment);
+      const path = pathOf("getAssignmentAttempts", { id: assignment });
+      const stranger = parent();
+      await stranger.signUp();
+      await stranger.addChild("Stoat");
+      const reply = await stranger.call<ErrorEnvelope>("GET", path);
+      expect([reply.status, reply.body.error.type]).toEqual([404, "NotFound"]);
+      const unknown = await stranger.call<ErrorEnvelope>(
+        "GET",
+        pathOf("getAssignmentAttempts", { id: idOf(ID_PREFIXES.assignment, randomUUID()) }),
+      );
+      expect([unknown.status, unknown.body.error.type]).toEqual([404, "NotFound"]);
+      const early = await parent().call<ErrorEnvelope>("GET", path);
+      expect([early.status, early.body.error.type]).toEqual([409, "AccountMissing"]);
     });
 
     describe("the parent's review", () => {

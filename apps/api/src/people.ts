@@ -1,5 +1,7 @@
 import {
   AccountCreate,
+  type AssignmentAttempts,
+  type AssignmentId,
   AttemptClaim,
   type AttemptId,
   type Claim,
@@ -85,4 +87,18 @@ export async function getLearnerAttempts(
 ): Promise<LearnerAttempts> {
   const { pod } = await authorizeMember(store, claims);
   return store.getLearnerAttempts(pod, id);
+}
+
+/**
+ * `GET /api/v1/assignments/{id}/attempts`: the lesson overview, the assignment's attempts the
+ * caller's pod reads with their full `attempt_result` rows (never `pageAttemptResult`'s: they are
+ * the parent's). Another pod's assignment, with none of its attempts claimed here, is 404.
+ */
+export async function getAssignmentAttempts(
+  store: Store,
+  claims: Claims,
+  id: AssignmentId,
+): Promise<AssignmentAttempts> {
+  const { pod } = await authorizeMember(store, claims);
+  return store.getAssignmentAttempts(pod, id);
 }

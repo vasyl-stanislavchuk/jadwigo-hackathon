@@ -1,4 +1,4 @@
-"""jw question verbs: search the bank, show a set, list gaps (dl-u1y5.23).
+"""jw question verbs: search the bank, show a set, list gaps (dl-u1y5.23), read an item.
 
 Moved from david-learns `dl question` (dl-e8ov.5.2.7, dl-e8ov.5.2.8). Each `--json` verb prints
 what one function below returns, and `jw mcp serve` calls the same functions, so a verb and its
@@ -12,7 +12,7 @@ from typing import Any
 
 import click
 
-from jw import bank_client
+from jw import bank_client, items
 from jw.errors import JwError, emit
 
 
@@ -28,7 +28,7 @@ class _EmitErrorsCommand(click.Command):
 
 @click.group()
 def group() -> None:
-    """Question bank: search, show, gaps."""
+    """Question bank: search, show, gaps, item."""
 
 
 # ------------------------------------------------- the functions verbs and tools share ----
@@ -79,6 +79,11 @@ def gaps_report(
     if not needs:
         raise JwError("gaps needs at least one --words or --skill", hint="Name what to look for.")
     return bank_client.gaps(needs, arm=arm)
+
+
+def item_view(item_id: str, language: str = "pl") -> dict[str, Any]:
+    """`jw question item --json` and the question_item tool: one converted item (dl-e8ov.5.38.2)."""
+    return items.load_item(item_id, language)
 
 
 def _title(row: dict[str, Any], language: str) -> str:
@@ -197,3 +202,23 @@ def gaps(
         need = row["need"]
         what = need.get("words") or ", ".join(need.get("skills") or [])
         click.echo(f"{row['verdict']:<9} {row['rows']:>3} rows  {what}")
+
+
+@group.command(cls=_EmitErrorsCommand)
+@click.argument("item_id")
+@click.option("--language", default="pl", show_default=True, type=click.Choice(["pl", "en", "uk"]))
+@click.option("--json", "json_mode", is_flag=True, help="Print the item.")
+def item(item_id: str, language: str, json_mode: bool) -> None:
+    """Show one converted item's family step, key and help kept (read from JW_KHAN_CONVERTED)."""
+    view = item_view(item_id, language)
+    if json_mode:
+        click.echo(json.dumps(view, ensure_ascii=False))
+        return
+    course = view["course"]
+    lines = [
+        f"{view['id']}  {view['family']} / {view['question_type']}  ({view['language']})",
+        f"  say: {view['say']}",
+        f"  course: {course['unit_title']} / {course['lesson_title']} / {course['exercise_title']}",
+        f"  credit: {view['credit']['source']} {view['credit']['ref']}",
+    ]
+    click.echo("\n".join(lines))

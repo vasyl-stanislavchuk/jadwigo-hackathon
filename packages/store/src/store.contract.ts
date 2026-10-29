@@ -1,4 +1,5 @@
 import {
+  AssignmentId,
   AttemptId,
   type Ended,
   EventId,
@@ -8,6 +9,7 @@ import {
   idOf,
   LearnerId,
   type LessonQuestionId,
+  LIMITS,
   PodId,
   Uuid,
 } from "@jadwigo/contracts";
@@ -1298,6 +1300,88 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         await expect(store.getLearnerAttempts(stranger.pod, learner.id)).rejects.toMatchObject(
           NOT_FOUND,
         );
+      });
+
+      it("lists an assignment's claimed attempt to the claimer's pod, and every real attempt to its own", async () => {
+        const store = await make();
+        const { a, attempt } = await started(store);
+        await store.appendAttemptAnswer(a.pod, answer(attempt, 1, 1, { entered: "6" }, true), {
+          end: "correct",
+        });
+        const sibling = await store.startAttempt(a.pod, {
+          assignment_id: a.assignment,
+          player_name: "Kit",
+        });
+        const preview = await store.startAttempt(a.pod, {
+          assignment_id: a.assignment,
+          mode: "preview",
+        });
+        const parent = await store.createAccount(newSub(), "pl");
+        const { learner } = await store.addLearner(parent.pod, { first_name: "Wren" });
+        const claimed = await store.claimAttempt(parent.pod, {
+          attempt,
+          learner: learner.id,
+          account: parent.account,
+        });
+
+        // The parent's pod reads the claimed attempt and its rows, never the unclaimed sibling.
+        const theirs = await store.getAssignmentAttempts(parent.pod, a.assignment);
+        expect(theirs).toEqual({
+          assignment: await store.getAssignment(a.pod, a.assignment),
+          title: LESSON.title,
+          language: LESSON.language,
+          attempts: [
+            {
+              attempt: claimed,
+              name: "Wren",
+              results: await store.getAttemptResult(a.pod, attempt),
+            },
+          ],
+        });
+        expect(theirs.attempts[0]?.results[0]).toMatchObject({ seq: 1, ended: "correct" });
+
+        // The assignment's own pod reads every real attempt, preview left out; a learner of
+        // another pod is hidden from it, so only a typed name shows.
+        const own = await store.getAssignmentAttempts(a.pod, a.assignment);
+        const named = own.attempts.map((x) => [x.attempt.id, x.name, x.results.length]);
+        expect(named.sort()).toEqual(
+          [
+            [attempt, null, 1],
+            [sibling.attempt.id, "Kit", 1],
+          ].sort(),
+        );
+        expect(own.attempts.map((x) => x.attempt.id)).not.toContain(preview.attempt.id);
+      });
+
+      it("reads an assignment's attempts as NotFound to a pod that reads none of them", async () => {
+        const store = await make();
+        const { a } = await started(store);
+        const stranger = await store.createAccount(newSub(), "pl");
+        await store.addLearner(stranger.pod, { first_name: "Stoat" });
+
+        await expect(store.getAssignmentAttempts(stranger.pod, a.assignment)).rejects.toMatchObject(
+          NOT_FOUND,
+        );
+        const unknown = AssignmentId.parse(fresh(ID_PREFIXES.assignment));
+        await expect(store.getAssignmentAttempts(a.pod, unknown)).rejects.toMatchObject(NOT_FOUND);
+        // Its own pod reads it with no attempts yet.
+        const b = await seed(store);
+        expect(await store.getAssignmentAttempts(b.pod, b.assignment)).toMatchObject({
+          attempts: [],
+        });
+      });
+
+      it("lists at most LIMITS.attemptsPerAssignment attempts, newest first", async () => {
+        const store = await make();
+        const a = await seed(store);
+        for (let n = 0; n <= LIMITS.attemptsPerAssignment; n++)
+          await store.startAttempt(a.pod, { assignment_id: a.assignment });
+
+        const { attempts } = await store.getAssignmentAttempts(a.pod, a.assignment);
+        expect(attempts).toHaveLength(LIMITS.attemptsPerAssignment);
+        const startedAt = attempts.map((x) => x.attempt.started_at);
+        expect(startedAt).toEqual([...startedAt].sort().reverse());
+        expect(new Set(attempts.map((x) => x.attempt.id)).size).toBe(LIMITS.attemptsPerAssignment);
       });
     });
   });
