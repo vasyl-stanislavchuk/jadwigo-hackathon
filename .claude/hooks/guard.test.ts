@@ -354,6 +354,51 @@ describe("guard: Bash", () => {
     });
   });
 
+  // The cases of the other rewrite (13ac6fc), on real folders: every one it denied stays denied.
+  test("only `cd <lane> && git push` from a session on main is judged by the lane's branch", () => {
+    const root = mkdtempSync(join(tmpdir(), "guard-cd-"));
+    const lane = join(root, "lane");
+    const missing = join(root, "missing");
+    mkdirSync(lane);
+    const branches: Record<string, string> = { [lane]: "dl-x.1/y" };
+    // The session's own folder is on main; only the lane folder knows another branch.
+    const branchOf = (cwd: string | undefined) => branches[cwd ?? ""] ?? (cwd ? undefined : "main");
+    const from = (command: string) => denial(bash(command), {}, branchOf);
+    expect(from(`cd ${lane} && git push`)).toBeUndefined();
+    expect(from(`cd ${lane} && git push -u origin dl-x.1/y`)).toBeUndefined();
+    for (const command of [
+      "git push",
+      `cd ${lane} && git push origin main`,
+      `cd ${lane} && git push origin HEAD:main`,
+      `cd ${lane} && git push origin "main"`,
+      `cd ${lane} && git push origin 'HEAD:main'`,
+      `(cd ${lane}) && git push`,
+      `false && cd ${lane}; git push`,
+      `cd ${lane} & git push`,
+      `cd ${lane}; git push`,
+      `cd ${lane} && cd - && git push`,
+      `cd ${lane} && pushd ${root} && git push`,
+      `git -C ${lane} -C ${root} push`,
+      `git -C ${lane} push`,
+      'cd "$X" && git push',
+      "cd $X && git push",
+      `cd ${missing} && git push`,
+      "cd lane && git push",
+      "cd ~/lane && git push",
+      `env cd ${lane} && git push`,
+      `nohup cd ${lane} && git push`,
+      `echo ${lane} | xargs cd && git push`,
+      `echo \\"; cd ${lane} && git push; echo \\"`,
+      `echo \\"; git push origin main; echo \\"`,
+      `cat <\\<EOF\ncd ${lane} && git push\nEOF\ngit push`,
+      `cat <<EOF\ncd ${lane} && git push\nEOF\ngit push`,
+      `cd ${lane} && git push && git push origin main`,
+      `cd ${lane} && git push 2>&1`,
+    ]) {
+      expect(from(command) ?? `allowed: ${command}`, command).toMatch(/through a PR/);
+    }
+  });
+
   test("exec with a long run of -a stays linear (dl-5ssh.56)", () => {
     const line = `exec ${"-a ".repeat(20_000)}make db-push`;
     const start = performance.now();
