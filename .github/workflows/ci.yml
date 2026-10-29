@@ -247,7 +247,11 @@ jobs:
         run: |
           updated=$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -Atc "update assignment set after_not_sure = 'twin_now' where id = '0e66bf21-3b77-5a4a-a1ec-3b371dc97fc3' returning id")
           test -n "$updated" || { echo "::error::no featured equal-groups assignment to set twin_now on"; exit 1; }
+      # The token routes verify against the JWKS of e2e/auth-server.ts, the Supabase Auth stand-in
+      # playwright.config.ts starts; the api reads it on the first token, after Playwright is up.
       - name: The api on port 8787
+        env:
+          AUTH_JWKS_URL: http://127.0.0.1:54321/auth/v1/.well-known/jwks.json
         run: |
           PORT=8787 nohup bun apps/api/src/serve.ts > "$RUNNER_TEMP/api.log" 2>&1 &
           for _ in $(seq 1 30); do
@@ -258,7 +262,7 @@ jobs:
       - name: Chromium for Playwright
         working-directory: apps/web
         run: bunx playwright install --with-deps chromium
-      - name: The playground smoke and the lesson player
+      - name: The playground smoke, the lesson player and parent login
         working-directory: apps/web
         run: bunx playwright test
       - name: The api's log

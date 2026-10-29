@@ -1,4 +1,4 @@
-import { AssignmentId, AttemptId, EventId, ROUTES } from "@jadwigo/contracts";
+import { AssignmentId, AttemptId, EventId, LearnerId, ROUTES } from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
 import { ApiError, createClient, pathOf, TransientError } from "./client.ts";
 
@@ -59,16 +59,22 @@ interface Sent {
   url: string;
   method: string | undefined;
   body: unknown;
+  authorization?: string;
 }
+
+const authorizationOf = (init?: RequestInit): string | undefined =>
+  (init?.headers as Record<string, string> | undefined)?.["authorization"];
 
 /** A fetch that records what was sent and answers with `status` and `json`. */
 function stub(status: number, json: unknown): { fetch: typeof fetch; sent: Sent[] } {
   const sent: Sent[] = [];
   const fake = async (url: string | URL | Request, init?: RequestInit): Promise<Response> => {
+    const authorization = authorizationOf(init);
     sent.push({
       url: String(url),
       method: init?.method,
       body: typeof init?.body === "string" ? JSON.parse(init.body) : undefined,
+      ...(authorization === undefined ? {} : { authorization }),
     });
     return new Response(JSON.stringify(json), {
       status,
@@ -225,6 +231,49 @@ describe("createClient", () => {
   it("refuses a reply its schema does not accept", async () => {
     const { fetch } = stub(200, { attempt, questions: "not a list" });
     await expect(createClient({ base: "", fetch }).getAttempt(ATTEMPT)).rejects.toThrow();
+  });
+});
+
+describe("the parent's calls", () => {
+  const LEARNER = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
+  const claim = {
+    attempt_id: ATTEMPT,
+    learner_id: LEARNER,
+    claimed_by: "acc_7qre3atahx8cpak6xbjtz73var",
+    claimed_at: AT,
+  };
+  const signedIn = async (): Promise<string> => "header.payload.signature";
+
+  it("sends the token on a token route, at the route's path", async () => {
+    const { fetch, sent } = stub(201, claim);
+    const reply = await createClient({ base: "", fetch, token: signedIn }).claimAttempt(ATTEMPT, {
+      learner_id: LEARNER,
+    });
+    expect(sent).toEqual([
+      {
+        url: `/api/v1/attempts/${ATTEMPT}/claims`,
+        method: "POST",
+        body: { learner_id: LEARNER },
+        authorization: "Bearer header.payload.signature",
+      },
+    ]);
+    expect(reply.learner_id).toBe(LEARNER);
+  });
+
+  it("refuses a token route as NotSignedIn when nobody is signed in, sending nothing", async () => {
+    const { fetch, sent } = stub(200, {});
+    const refused = await createClient({ base: "", fetch })
+      .getMe()
+      .catch((e: unknown) => e);
+    expect(refused).toBeInstanceOf(ApiError);
+    expect((refused as ApiError).type).toBe("NotSignedIn");
+    expect(sent).toEqual([]);
+  });
+
+  it("never sends the token on a login-free route", async () => {
+    const { fetch, sent } = stub(200, snapshot);
+    await createClient({ base: "", fetch, token: signedIn }).getAttempt(ATTEMPT);
+    expect(sent[0]?.authorization).toBeUndefined();
   });
 });
 

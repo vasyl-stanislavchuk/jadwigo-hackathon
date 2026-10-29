@@ -357,6 +357,45 @@ export const pl: CopyTable = {
   play_paused_back: { text: "Wracam do lekcji", reviewed: false },
   play_not_found: { text: "Tej lekcji tu nie ma.", reviewed: false },
   // end the lesson player
+  // parent login: the save prompt, the email code, a child, the parent home (dl-e8ov.2.38). Drafts:
+  // the promise and consent wait on dl-e8ov.2.14 and dl-e8ov.2.9.
+  play_save: { text: "Zapisz postępy", reviewed: false },
+  play_save_note: {
+    text: "Dla dorosłego: zaloguj się, a ta lekcja zostanie na koncie dziecka.",
+    reviewed: false,
+  },
+  parent_title: { text: "Konto rodzica", reviewed: false },
+  parent_off: { text: "Logowanie jest jeszcze wyłączone.", reviewed: false },
+  parent_promise: {
+    text: "Zapiszemy lekcje dziecka na Twoim koncie, żeby następne do niego pasowały.",
+    reviewed: false,
+  },
+  parent_guardian: { text: "Jestem rodzicem lub opiekunem tego dziecka.", reviewed: false },
+  parent_email: { text: "Twój e-mail", reviewed: false },
+  parent_send_code: { text: "Wyślij kod", reviewed: false },
+  parent_send_failed: { text: "Nie udało się wysłać kodu. Spróbuj za chwilę.", reviewed: false },
+  parent_code: { text: "Kod z e-maila, 6 cyfr", reviewed: false },
+  parent_code_sent: { text: "Wysłaliśmy kod na {email}.", reviewed: false },
+  parent_sign_in: { text: "Zaloguj się", reviewed: false },
+  parent_code_mismatch: {
+    text: "Ten kod nie pasuje. Sprawdź e-mail i wpisz go jeszcze raz.",
+    reviewed: false,
+  },
+  parent_add_child: { text: "Dodaj dziecko", reviewed: false },
+  parent_first_name: { text: "Imię dziecka", reviewed: false },
+  parent_add: { text: "Dodaj", reviewed: false },
+  parent_whose: { text: "Czyja to była lekcja?", reviewed: false },
+  parent_claimed_elsewhere: {
+    text: "Ta lekcja jest już zapisana na innym koncie.",
+    reviewed: false,
+  },
+  parent_claim_preview: {
+    text: "Ta lekcja była na próbę, więc nie zapisujemy jej.",
+    reviewed: false,
+  },
+  parent_no_attempts: { text: "Jeszcze nie ma tu lekcji.", reviewed: false },
+  parent_sign_out: { text: "Wyloguj się", reviewed: false },
+  // end parent login
   // the home page's featured lessons (dl-5ssh.3.6)
   home_title: { text: "Wybierz lekcję", reviewed: false },
   home_empty: { text: "Na razie nie ma tu lekcji.", reviewed: false },

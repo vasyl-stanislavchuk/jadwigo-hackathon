@@ -9,7 +9,11 @@
 
 import type { AttemptResults, PageEnded } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
+import { Button } from "@jadwigo/ui";
 import type { ReactElement } from "react";
+import { browserAuth } from "../parent/auth.ts";
+import { parentPath } from "../parent/route.ts";
+import { NavLink } from "../playground/shell/NavLink.tsx";
 
 const ENDED: Record<PageEnded | "open", CopyKey> = {
   correct: "play_ended_correct",
@@ -60,6 +64,34 @@ export function Results({
           ))}
         </ol>
       )}
+      <SaveProgress results={results} language={language} />
     </section>
+  );
+}
+
+/**
+ * For the adult, under the list (dl-e8ov.2.38): sign in and keep this attempt for the child. Only
+ * when the build has a sign-in, and only for an attempt that can still be claimed.
+ */
+function SaveProgress({
+  results,
+  language,
+}: {
+  results: AttemptResults | null;
+  language: Language;
+}): ReactElement | null {
+  if (browserAuth() === null || results === null) return null;
+  const { attempt } = results;
+  if (attempt.mode === "preview" || attempt.learner_id !== null) return null;
+  const lang = new URLSearchParams(window.location.search).get("lang");
+  return (
+    <aside data-save className="flex flex-col items-start gap-3 border-t pt-6">
+      <p>{copy(language, "play_save_note")}</p>
+      <Button asChild variant="outline">
+        <NavLink href={parentPath({ claim: attempt.assignment_id, lang })} data-save-link>
+          {copy(language, "play_save")}
+        </NavLink>
+      </Button>
+    </aside>
   );
 }
