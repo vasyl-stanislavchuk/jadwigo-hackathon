@@ -75,3 +75,5 @@ every field.
 
 - [Authentication](/guides/authentication/) for the routes a parent calls.
 - [Errors](/guides/errors/) for what a refusal looks like.
+
+See [a page that does not exist](/guides/no-such-page/).
