@@ -267,7 +267,6 @@ function deployDenial(cmd: string, commands: string[][]): string | undefined {
 
 const USE_DEV_PR = "Write the body with /dev-pr into a file, then pass it with --body-file <path>.";
 
-/** gh pr create always carries a body file that passes check-pr-body; gh pr edit does when it sets the body. */
 /** The body a heredoc in the same command writes to file (`cat > file <<'EOF'`), since the hook runs first. */
 function heredocBody(full: string, file: string): string | undefined {
   const at = full.indexOf(file);
@@ -277,11 +276,32 @@ function heredocBody(full: string, file: string): string | undefined {
   return m?.[3];
 }
 
+/** `$S` and `${S}` as the shell would see them: from literal assignments in the command, then env. */
+export function expandVars(full: string, env: Env): string {
+  const vars: Record<string, string> = {};
+  const expand = (text: string) =>
+    text.replace(/\$(?:\{(\w+)\}|(\w+))/g, (m, a?: string, b?: string) => {
+      const name = a ?? b ?? "";
+      return vars[name] ?? env[name] ?? m;
+    });
+  for (const m of full.matchAll(
+    /(?:^|[\s;&|])(?:export\s+)?([A-Za-z_]\w*)=(?:"([^"`]*)"|'([^']*)'|([^\s;&|()'"`]+))/g,
+  )) {
+    const value = m[3] ?? expand(m[2] ?? m[4] ?? "");
+    if (!value.includes("$")) vars[m[1] ?? ""] = value;
+  }
+  return expand(full);
+}
+
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** gh pr create always carries a body file that passes check-pr-body; gh pr edit does when it sets the body. */
 function prBodyDenial(
   cmd: string,
   full: string,
   args: string[],
   cwd: string | undefined,
+  env: Env,
 ): string | undefined {
   const setsBody = args.some((a) =>
     /^(--body|-b|--body-file|-F|--fill|--fill-first|--fill-verbose)(=|$)/.test(a),
@@ -294,11 +314,29 @@ function prBodyDenial(
   if (args[1] === "edit" && !setsBody && !inline) return undefined;
   if (inline || args.some((a) => /^--fill/.test(a)))
     return `an inline or generated PR body skips the /dev-pr shape. ${USE_DEV_PR}`;
-  const file = /(?:^|\s)(?:--body-file|-F)(?:=|\s+)(['"]?)([^'"\s]+)\1/.exec(raw)?.[2];
+  // The path is read from the full line, where its quotes and variables still are. Heredocs and
+  // quoted prose are blanked to the same length, so an offset in masked is one in expanded.
+  const expanded = expandVars(full, env);
+  const masked = expanded
+    .replace(/<<-?\s*(['"]?)(\w+)\1[^\n]*\n[\s\S]*?\n\2[ \t]*(\n|$)/g, (m) => " ".repeat(m.length))
+    .replace(/"[^"]*\s[^"]*"|'[^']*\s[^']*'/g, (m) => " ".repeat(m.length));
+  const ghAt = Math.max(masked.search(/\bgh\s+pr\s+(create|edit)\b/), 0);
+  const end = masked.slice(ghAt).search(/&&|\|\||;|\n/);
+  const segment = expanded.slice(ghAt, end < 0 ? undefined : ghAt + end);
+  const m = /(?:^|\s)(?:--body-file|-F)(?:=|\s+)(?:"([^"]*)"|'([^']*)'|(\S+))/.exec(segment);
+  const file = m?.[1] ?? m?.[2] ?? m?.[3];
   if (!file || file === "-") return `this PR has no body file. ${USE_DEV_PR}`;
-  const home = file.startsWith("~/") ? join(process.env["HOME"] ?? "~", file.slice(2)) : file;
+  const later = `the guard reads the body before the command runs, so write ${file} in one call and run gh pr create --body-file <path> in the next.`;
+  if (file.includes("$")) return later;
+  const before = expanded.slice(0, ghAt);
+  const fresh = heredocBody(before, file);
+  const f = escapeRe(file);
+  const edited = new RegExp(`\\b(sed\\s+-i|perl\\s+-\\w*i|python3?|tee)\\b[^\\n;&|]*${f}`);
+  const written = new RegExp(`>>?\\s*['"]?${f}`);
+  if (edited.test(before) || (fresh === undefined && written.test(before))) return later;
+  const home = file.startsWith("~/") ? join(env["HOME"] ?? "~", file.slice(2)) : file;
   const path = isAbsolute(home) ? home : join(cwd ?? ".", home);
-  const body = existsSync(path) ? readFileSync(path, "utf8") : heredocBody(full, file);
+  const body = fresh ?? (existsSync(path) ? readFileSync(path, "utf8") : undefined);
   if (body === undefined) return `the body file ${file} does not exist. ${USE_DEV_PR}`;
   const problems = checkPrBody(body);
   if (problems.length > 0) return `the PR body in ${file} is ${problems.join("; ")}. ${USE_DEV_PR}`;
@@ -416,7 +454,7 @@ function bashDenial(
 
     // 5. PR bodies have the /dev-pr shape, checked here so a session fixes it before CI does.
     if (prog === "gh" && args[0] === "pr" && (args[1] === "create" || args[1] === "edit")) {
-      const reason = prBodyDenial(bare, cmd, args, cwd);
+      const reason = prBodyDenial(bare, cmd, args, cwd, env);
       if (reason) return reason;
     }
 

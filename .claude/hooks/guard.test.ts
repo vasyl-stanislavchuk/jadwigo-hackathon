@@ -303,6 +303,23 @@ describe("guard: PR bodies have the /dev-pr shape", () => {
     expect(pr(write("## Summary\n\nonly this\n"))).toMatch(/Merge Danger/);
   });
 
+  test("a body file path is read the way the shell would (dl-5ssh.69)", () => {
+    const body = "## Summary\n\nx\n\n## Evidence\n\ny\n\n## Merge Danger\n\n**Door:** two-way\n";
+    expect(
+      pr(
+        `S=${dir}/s; cat > $S/b.md <<'EOF'\n${body}EOF\ngh pr create --title t --body-file $S/b.md`,
+      ),
+    ).toBeUndefined();
+    expect(pr(`P="${good}" && gh pr create --title t --body-file "$P"`)).toBeUndefined();
+    expect(pr("gh pr create --title t --body-file $(mktemp)")).toMatch(/before the command runs/);
+    expect(pr(`sed -i '' 's/x/y/' ${good} && gh pr create --body-file ${good}`)).toMatch(
+      /before the command runs/,
+    );
+    expect(
+      pr(`git commit -m "the guard's check: gh pr create --body-file with a body" && git push`),
+    ).toBeUndefined();
+  });
+
   test("an edit that leaves the body alone is allowed", () => {
     expect(pr('gh pr edit 3 --title "dl-x.1: better"')).toBeUndefined();
     expect(pr("git checkout -b x && gh pr edit 3 --add-label docs")).toBeUndefined();
