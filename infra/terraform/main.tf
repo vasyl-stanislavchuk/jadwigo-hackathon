@@ -40,6 +40,8 @@ module "app" {
     "POST /api/v1/attempts/{id}/answers",
     "POST /api/v1/attempts/{id}/questions/{seq}/help",
     "GET /api/v1/attempts/{id}/results",
+    # Lesson review (dl-uukj.30): a finished attempt's questions again, for the child.
+    "GET /api/v1/attempts/{id}/review",
     "POST /api/v1/question-searches",
     # Parent login (dl-e8ov.2.36): these 5 need a token. The JWT authorizer on them is
     # dl-e8ov.2.42; apply them only together with it, never alone.
@@ -48,6 +50,8 @@ module "app" {
     "POST /api/v1/learners",
     "POST /api/v1/attempts/{id}/claims",
     "GET /api/v1/learners/{id}/attempts",
+    # Lesson review (dl-uukj.30): the parent's, with every try; a token route.
+    "GET /api/v1/learners/{id}/attempts/{attempt}/review",
   ]
 
   # The routes above whose ROUTES auth is "token": only these carry the JWT authorizer
@@ -58,6 +62,7 @@ module "app" {
     "POST /api/v1/learners",
     "POST /api/v1/attempts/{id}/claims",
     "GET /api/v1/learners/{id}/attempts",
+    "GET /api/v1/learners/{id}/attempts/{attempt}/review",
   ]
 
   jwt_issuer = "https://${var.supabase_ref}.supabase.co/auth/v1"

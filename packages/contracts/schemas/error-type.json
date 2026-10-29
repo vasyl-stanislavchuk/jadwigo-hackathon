@@ -11,6 +11,7 @@
     "AttemptPreview",
     "AssignmentClosed",
     "AttemptFinished",
+    "AttemptNotFinished",
     "AttemptPaused",
     "QuestionNotOpen",
     "TryOutOfOrder",
