@@ -1,7 +1,11 @@
-"""The environment variables jw reads: one home for each name and its default.
+"""The settings jw reads: one home for each name, its default, and the one loader for all of them.
 
-Moved from david-learns src/dl/settings_keys.py, keeping only the question bank's names. Values are
-read at call time, so a test changes one with `monkeypatch.setenv`.
+Values are read at call time, so a test changes one with `monkeypatch.setenv`.
+
+`setting(name)` is the only way jw reads a key in `KEYS` (dl-n9fr.47). It takes the environment
+first, then the operator's mode-600 file (`JW_BANK_ENV_FILE`, else
+`~/.config/jadwigo-bank/bank.env`), then gives None so the caller applies the default named here.
+It refuses a file other users can read, and no error or log line it writes carries a value.
 
 How `jw question` and `jw mcp serve` find the bank (jadwigo-question-bank/decisions/2026-10-28-
 callers-reach-the-bank-only-through-apps-api-which-invokes-the-b), first match wins:
@@ -10,14 +14,20 @@ callers-reach-the-bank-only-through-apps-api-which-invokes-the-b), first match w
    `JW_BANK_READ_TOKEN` as the bearer token.
 2. `JW_BANK_URL` in the environment: POST `<JW_BANK_URL>/questions/search`, the bank's own route,
    with `JW_BANK_TOKEN`. A fallback for the lead's checks until the /api/v1 route is deployed.
-3. Neither set: the same 2 pairs, read from the mode-600 file `~/.config/jadwigo-bank/bank.env`
-   (dl-e8ov.5.2.26), so an MCP registration carries no token. A URL and its token always come
-   from one place: a URL in the environment never picks up the file's token.
+3. Neither set: the same 2 pairs, read from the file (dl-e8ov.5.2.26), so an MCP registration
+   carries no token. A URL and its token always come from one place: a URL in the environment
+   never picks up the file's token. `jw.bank_client.endpoint` keeps that rule on top of the loader.
 """
 
 from __future__ import annotations
 
+import logging
+import os
 from pathlib import Path
+
+from jw.errors import JwError
+
+log = logging.getLogger(__name__)
 
 # ---- the platform route (apps/api) ----
 
@@ -31,21 +41,116 @@ JW_BANK_URL = "JW_BANK_URL"  # the bank's search service: <JW_BANK_URL>/question
 JW_BANK_TOKEN = "JW_BANK_TOKEN"  # sent as a bearer token when set; never in a degraded detail
 BANK_SEARCH_PATH = "/questions/search"
 
-# ---- where the pair comes from when the environment has neither URL ----
+# Seconds one search may take before it comes back degraded.
+JW_BANK_TIMEOUT_SECS = "JW_BANK_TIMEOUT_SECS"
+DEFAULT_BANK_TIMEOUT_SECS = 10.0
+
+# ---- the operator's file ----
 
 JW_BANK_ENV_FILE = "JW_BANK_ENV_FILE"  # a file in place of DEFAULT_BANK_ENV_FILE (tests)
 DEFAULT_BANK_ENV_FILE = Path.home() / ".config" / "jadwigo-bank" / "bank.env"
 
-# Seconds one search may take before it comes back degraded.
-JW_BANK_TIMEOUT_SECS = "JW_BANK_TIMEOUT_SECS"
-DEFAULT_BANK_TIMEOUT_SECS = 10.0
+# ---- local folders, each until a route replaces it ----
+
 # A local checkout of the bank repo (or a folder of its set pages) that `jw question show` and the
 # draw read set pages from. The search route returns rows, not pages, and no page route exists yet.
 JADWIGO_BANK_DIR = "JADWIGO_BANK_DIR"
 
-# ---- converted items, read by `jw question item` and the question_item tool (dl-e8ov.5.38.2) ----
+# The synced copy of the bank's Khan bucket, laid out as the bucket is (converted/pl.json,
+# converted/en.json, raw/, media/). KHAN_SYNC_COMMAND, run in the bank repo, writes it.
+JADWIGO_KHAN_DIR = "JADWIGO_KHAN_DIR"
+DEFAULT_KHAN_DIR = Path.home() / ".cache" / "jadwigo-bank" / "khan"
+KHAN_SYNC_COMMAND = "uv run python -m tools.khan.sync down"
 
-# The converted Khan items file, outside git. Unset: DEFAULT_KHAN_DIR/converted-pl.json when it
-# exists, else DEFAULT_KHAN_DIR/converted.json.
+# The converted Khan items file, read by `jw question item` and the question_item tool
+# (dl-e8ov.5.38.2). Unset: <JADWIGO_KHAN_DIR>/converted/pl.json.
 JW_KHAN_CONVERTED = "JW_KHAN_CONVERTED"
-DEFAULT_KHAN_DIR = Path.home() / "projects" / "david-learns" / "media" / "khan"  # the parsed pull
+CONVERTED_DEFAULT = Path("converted") / "pl.json"  # relative to the Khan dir
+
+# Every key an operator may fill, in the order .env.example and the README list them.
+KEYS = (
+    JW_API_URL,
+    JW_BANK_READ_TOKEN,
+    JW_BANK_URL,
+    JW_BANK_TOKEN,
+    JW_BANK_TIMEOUT_SECS,
+    JADWIGO_BANK_DIR,
+    JADWIGO_KHAN_DIR,
+    JW_KHAN_CONVERTED,
+)
+
+
+def env_file() -> Path:
+    """The operator's settings file: JW_BANK_ENV_FILE, else ~/.config/jadwigo-bank/bank.env."""
+    return Path(os.environ.get(JW_BANK_ENV_FILE) or DEFAULT_BANK_ENV_FILE).expanduser()
+
+
+def read_env_file(path: Path | None = None) -> dict[str, str]:
+    """`NAME=value` lines (an `export ` prefix and quotes allowed); {} when there is no file.
+
+    A ` #` after an unquoted value starts a comment, so a copy of `.env.example` reads as unset.
+    Refuses a file others can read. Every error names the file and never a value from it.
+    """
+    path = path or env_file()
+    if not path.is_file():
+        return {}
+    if path.stat().st_mode & 0o077:
+        raise JwError(
+            f"{path} can be read by other users",
+            hint=f"chmod 600 {path}; it holds the bank token.",
+        )
+    values: dict[str, str] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        name, sep, value = line.strip().removeprefix("export ").partition("=")
+        if sep and name and not name.startswith("#"):
+            values[name.strip()] = _unquote(value.strip())
+    return values
+
+
+def _unquote(value: str) -> str:
+    quote = value[:1]
+    if quote in ("'", '"'):
+        end = value.find(quote, 1)
+        return value[1:end] if end > 0 else value[1:]
+    if value.startswith("#"):
+        return ""
+    return value.split(" #", 1)[0].split("\t#", 1)[0].strip()
+
+
+def setting(name: str) -> str | None:
+    """One key's value: the environment, then the operator's file, else None. Logs no value.
+
+    An empty value counts as unset, so `NAME=` in the file falls through to the default.
+    """
+    if name not in KEYS:
+        raise ValueError(f"{name} is not a jw setting; add it to settings_keys.KEYS")
+    value = os.environ.get(name)
+    if value:
+        log.debug("setting %s from the environment", name)
+        return value
+    value = read_env_file().get(name)
+    if value:
+        log.debug("setting %s from %s", name, env_file())
+        return value
+    log.debug("setting %s unset; the default applies", name)
+    return None
+
+
+def khan_dir() -> Path:
+    """The synced Khan copy: JADWIGO_KHAN_DIR, else ~/.cache/jadwigo-bank/khan."""
+    configured = setting(JADWIGO_KHAN_DIR)
+    return Path(configured).expanduser() if configured else DEFAULT_KHAN_DIR
+
+
+def bank_timeout() -> float:
+    """Seconds one search may take: JW_BANK_TIMEOUT_SECS, else 10."""
+    raw = setting(JW_BANK_TIMEOUT_SECS)
+    if not raw:
+        return DEFAULT_BANK_TIMEOUT_SECS
+    try:
+        return float(raw)
+    except ValueError as exc:
+        raise JwError(
+            f"{JW_BANK_TIMEOUT_SECS} is not a number of seconds",
+            hint=f"Set {JW_BANK_TIMEOUT_SECS} to a number such as 10, or unset it.",
+        ) from exc
