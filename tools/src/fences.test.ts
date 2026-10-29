@@ -174,6 +174,29 @@ describe("fences fail on planted violations", { timeout: 60_000 }, () => {
     );
   });
 
+  it("dependency-cruiser: a library rule still fires when the library resolves into dist/", () => {
+    // The real @dnd-kit/core's main is dist/index.js; excluding build output must not hide it.
+    const dir = plant({
+      "node_modules/@dnd-kit/core/package.json": JSON.stringify({
+        name: "@dnd-kit/core",
+        main: "dist/index.js",
+      }),
+      "node_modules/@dnd-kit/core/dist/index.js": "module.exports = {};\n",
+      "packages/lesson-kit/src/parts/Drag.tsx":
+        'import * as dnd from "@dnd-kit/core";\nexport const drag = dnd;\n',
+    });
+    const config = join(repo, ".dependency-cruiser.cjs");
+    const { status, output } = run(
+      bin("depcruise"),
+      ["packages", "--config", config, "--output-type", "err"],
+      dir,
+    );
+    expect(status).not.toBe(0);
+    expect(output).toMatch(
+      /drag-only-in-the-drag-parts: packages\/lesson-kit\/src\/parts\/Drag\.tsx/,
+    );
+  });
+
   it("knip: an unused file and an unused dependency", () => {
     const dir = plant({
       "package.json": JSON.stringify({
