@@ -2,7 +2,9 @@
  * The lesson a child plays at /play/<assignment> (dl-5ssh.3.1), with no login: the question on screen
  * drawn by lesson-kit's family view inside the lesson frame, the paused screen, and the results with
  * the congratulation at the end. The close button's pause sheet ends for today by pausing the
- * attempt (LessonFrame.onStop), and the paused screen goes back to the same question.
+ * attempt (LessonFrame.onStop), and the paused screen goes back to the same question. Once it is
+ * finished, a card on the list opens /play/<assignment>/review/<seq>, the question again
+ * (dl-uukj.30.1); a review path on an attempt still being played goes back to the lesson.
  */
 
 import type { AttemptClient } from "@jadwigo/api-client";
@@ -19,8 +21,11 @@ import {
   ViewMode,
 } from "@jadwigo/lesson-kit";
 import { Button, Spinner } from "@jadwigo/ui";
-import { type ReactElement, type ReactNode, useMemo } from "react";
+import { type ReactElement, type ReactNode, useCallback, useEffect, useMemo } from "react";
+import { navigate, useLocation } from "../playground/route.ts";
+import { ChildReview } from "../review/ChildReview.tsx";
 import { Results } from "./Results.tsx";
+import { playPath, playRoute, reviewPath } from "./route.ts";
 import { currentOf, progressOf } from "./runner.ts";
 import { type Player, usePlayer } from "./usePlayer.ts";
 
@@ -125,6 +130,27 @@ export function PlayScreen({
 }): ReactElement {
   const player = usePlayer(assignmentId, client);
   const { stage } = player;
+  const { path, query } = useLocation();
+  const seq = playRoute(path)?.review;
+  // The page's own query (the language) rides along from the list to a step and back.
+  const search = query.toString();
+  const withQuery = useCallback(
+    (to: string): string => (search === "" ? to : `${to}?${search}`),
+    [search],
+  );
+  const toList = useCallback(
+    (options?: { replace: boolean }) => navigate(withQuery(playPath(assignmentId)), options),
+    [assignmentId, withQuery],
+  );
+  const open = useCallback(
+    (to: number) => navigate(withQuery(reviewPath(assignmentId, to))),
+    [assignmentId, withQuery],
+  );
+  const reviewing = seq !== undefined;
+  const live = stage.kind === "playing" || stage.kind === "paused";
+  useEffect(() => {
+    if (reviewing && live) toList({ replace: true });
+  }, [reviewing, live, toList]);
   switch (stage.kind) {
     case "loading":
       return (
@@ -167,7 +193,21 @@ export function PlayScreen({
     case "finished":
       return (
         <KidPage>
-          <Results results={stage.results} language={language} />
+          {seq === undefined ? (
+            <Results
+              results={stage.results}
+              language={language}
+              linkOf={(to) => withQuery(reviewPath(assignmentId, to))}
+            />
+          ) : (
+            <ChildReview
+              load={player.review}
+              seq={seq}
+              language={language}
+              onOpen={open}
+              onAll={toList}
+            />
+          )}
         </KidPage>
       );
     case "not_found":

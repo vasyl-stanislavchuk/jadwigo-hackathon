@@ -9,6 +9,8 @@
  *   the failure is transient. A refusal that says the page is behind re-reads the snapshot.
  * - The beat: a moved-on line stays for BEAT_MS, then the next question shows.
  * - Pause and resume are the attempt's own status (PATCH), so a reload keeps the pause.
+ * - The review (dl-uukj.30.1): once finished, every question again, fetched beside the results and
+ *   sent again the same way while the failure is transient.
  */
 
 import {
@@ -22,6 +24,7 @@ import {
   type AttemptAnswerRequest,
   type AttemptId,
   type AttemptResults,
+  type AttemptReview,
   type AttemptSnapshot,
   ErrorType,
   EventId,
@@ -44,8 +47,15 @@ type Stage =
   | { kind: "not_found" }
   | { kind: "failed" };
 
+/** A finished attempt's questions again, for the review step; failing it leaves the list as is. */
+export type Review =
+  | { kind: "loading" }
+  | { kind: "ready"; review: AttemptReview }
+  | { kind: "failed" };
+
 export interface Player {
   stage: Stage;
+  review: Review;
   state: RunnerState;
   commit(value: unknown, t1: Instant): void;
   skip(at: Instant): void;
@@ -99,6 +109,7 @@ export function usePlayer(assignmentId: AssignmentId, client?: AttemptClient): P
   const api = useMemo(() => client ?? createClient({ base: "" }), [client]);
   const [state, dispatch] = useReducer(runner, initialRunner);
   const [stage, setStage] = useState<Stage>({ kind: "loading" });
+  const [review, setReview] = useState<Review>({ kind: "loading" });
   const attempt = useRef<AttemptId | null>(null);
   const alive = useRef(true);
   /** When the question on screen was shown: asked_at and the latency are measured from it. */
@@ -123,6 +134,16 @@ export function usePlayer(assignmentId: AssignmentId, client?: AttemptClient): P
         })
         .catch(() => {
           if (alive.current) setStage({ kind: "failed" });
+        });
+      untilAnswered(
+        () => api.getReview(id),
+        () => alive.current,
+      )
+        .then((answer) => {
+          if (alive.current) setReview({ kind: "ready", review: answer });
+        })
+        .catch(() => {
+          if (alive.current) setReview({ kind: "failed" });
         });
     },
     [api],
@@ -283,6 +304,7 @@ export function usePlayer(assignmentId: AssignmentId, client?: AttemptClient): P
 
   return {
     stage,
+    review,
     state,
     commit,
     skip,
