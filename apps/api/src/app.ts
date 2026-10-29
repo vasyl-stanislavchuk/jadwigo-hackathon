@@ -14,7 +14,7 @@ import {
   getMe,
 } from "./people.ts";
 import { playgroundExamples } from "./playground.ts";
-import { type BankDeps, searchQuestions } from "./questions.ts";
+import { type BankDeps, type BucketDeps, questionBody, searchQuestions } from "./questions.ts";
 import { getParentReview, getReview } from "./review.ts";
 import { getResults, help, patchAttempt } from "./session.ts";
 
@@ -36,6 +36,8 @@ export interface AppDeps {
   readonly authenticate?: Authenticate;
   /** The bank the search route asks. With none, no bank is wired. */
   readonly bank?: BankDeps | undefined;
+  /** The content bucket the question body route reads. With none, that route answers 502. */
+  readonly bucket?: BucketDeps | undefined;
 }
 
 /**
@@ -51,7 +53,7 @@ export interface AppDeps {
  */
 export function createApp(
   store: Store | Promise<Store>,
-  { authenticate = signedOut, bank }: AppDeps = {},
+  { authenticate = signedOut, bank, bucket }: AppDeps = {},
 ): Router {
   const app = new Router();
 
@@ -118,6 +120,7 @@ export function createApp(
   on("getReview", (params) => run((s) => getReview(s, params.id)));
   // No store: the bank answers it (questions.ts).
   on("questionSearches", (_, body, headers) => searchQuestions(bank, headers, body));
+  on("questionBody", (params, _body, headers) => questionBody(bank, bucket, headers, params.id));
   // The token was verified before the unit opens; the member lookup and the route's reads and
   // writes are one unit, so the claim is one transaction.
   onSigned("getMe", (_params, _body, claims) => run((s) => getMe(s, claims)));

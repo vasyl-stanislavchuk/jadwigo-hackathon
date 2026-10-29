@@ -1,7 +1,15 @@
 import { timingSafeEqual } from "node:crypto";
 import { InvokeCommand, LambdaClient } from "@aws-sdk/client-lambda";
-import { ErrorType, Need, SearchEnvelope } from "@jadwigo/contracts";
-import { bankReadTokenParam, bankSearchAliasArn, type ReadParameter, readSsm } from "./config.ts";
+import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { BankQuestionId, ErrorType, Need, QuestionBody, SearchEnvelope } from "@jadwigo/contracts";
+import {
+  bankReadTokenParam,
+  bankSearchAliasArn,
+  CONTENT_BUCKET_PARAM,
+  contentBucket,
+  type ReadParameter,
+  readSsm,
+} from "./config.ts";
 import { ApiError, badRequest } from "./errors.ts";
 
 /**
@@ -54,6 +62,100 @@ export async function searchQuestions(
   if (!need.success) throw badRequest(need.error.issues);
   const reply = await invokeBank(bank, need.data);
   return publicEnvelope(reply);
+}
+
+/**
+ * What the question body route reads besides the read token, injected so tests run on a fake.
+ * `get` returns the object's text at `key` in the content bucket, or undefined when there is no
+ * such object; any other failure throws.
+ */
+export interface BucketDeps {
+  get(key: string): Promise<string | undefined>;
+}
+
+/**
+ * `GET /api/v1/questions/{id}`: one question's private body, key included, from the content
+ * bucket's derived layer `questions/khan/<id>.json`. Authorization runs first, exactly as for a
+ * search, so a caller without the read token is 401 whatever id it sends. Then the id must be a
+ * `BankQuestionId` (404 otherwise, before it reaches a key), the object must exist (404), the read
+ * must succeed (502) and the object must parse as a `QuestionBody` for that id (502).
+ */
+export async function questionBody(
+  bank: BankDeps | undefined,
+  bucket: BucketDeps | undefined,
+  headers: Headers,
+  id: string,
+): Promise<QuestionBody> {
+  if (bank === undefined) throw unavailable();
+  await authorizeRead(bank, headers);
+  const parsedId = BankQuestionId.safeParse(id);
+  if (!parsedId.success) throw noSuchQuestion();
+  if (bucket === undefined) throw unavailable();
+  let text: string | undefined;
+  try {
+    text = await bucket.get(`questions/khan/${parsedId.data}.json`);
+  } catch {
+    throw unavailable();
+  }
+  if (text === undefined) throw noSuchQuestion();
+  const body = QuestionBody.safeParse(parseJson(text));
+  if (!body.success || body.data.id !== parsedId.data) throw unavailable();
+  return body.data;
+}
+
+/** The client the bucket is read through: `S3Client` in the Lambda, a fake in tests. */
+export interface GetObjectClient {
+  send(
+    command: GetObjectCommand,
+  ): Promise<{ Body?: { transformToString(): Promise<string> } | undefined }>;
+}
+
+/**
+ * The content bucket in the Lambda: its name from `CONTENT_BUCKET`, else from the SSM parameter
+ * `/jadwigo/bank/content-bucket`, read once per cold start (again after a failed read), and each
+ * object through the SDK. A missing object (`NoSuchKey` or `AccessDenied`, a 404 or a 403) is undefined; a name that
+ * resolves to nothing, and every other failure, throws, which the route answers 502.
+ */
+export function lambdaBucket(
+  name = contentBucket(),
+  read: ReadParameter = readSsm,
+  client: GetObjectClient = new S3Client({}),
+): BucketDeps {
+  let bucket: Promise<string | undefined> | undefined;
+  const resolve = (): Promise<string | undefined> => {
+    if (name !== undefined) return Promise.resolve(name);
+    bucket ??= read(CONTENT_BUCKET_PARAM).then((value) => value?.trim() || undefined);
+    bucket.catch(() => {
+      bucket = undefined;
+    });
+    return bucket;
+  };
+  return {
+    async get(key) {
+      const Bucket = await resolve();
+      if (Bucket === undefined) throw new Error("no content bucket is named");
+      try {
+        const out = await client.send(new GetObjectCommand({ Bucket, Key: key }));
+        if (out.Body === undefined) throw new Error("the object has no body");
+        return await out.Body.transformToString();
+      } catch (error) {
+        if (missing(error)) return undefined;
+        throw error;
+      }
+    },
+  };
+}
+
+/**
+ * A missing key. The api role has `s3:GetObject` on `questions/*` and no `s3:ListBucket`, so S3
+ * answers a missing key 403 `AccessDenied`, not 404 `NoSuchKey`: both mean no such question. A
+ * grant that is missing altogether reads as 404 too, so a deployed route that 404s every id is
+ * the role's policy to check first.
+ */
+function missing(error: unknown): boolean {
+  const e = error as { name?: unknown; $metadata?: { httpStatusCode?: unknown } } | null;
+  const status = e?.$metadata?.httpStatusCode;
+  return e?.name === "NoSuchKey" || e?.name === "AccessDenied" || status === 404 || status === 403;
 }
 
 /** The client the bank is invoked through: `LambdaClient` in the Lambda, a fake in tests. */
@@ -196,4 +298,8 @@ function bankDetail(answer: unknown): string {
 
 function unavailable(): ApiError {
   return new ApiError(ErrorType.enum.BankUnavailable, "the question bank did not answer");
+}
+
+function noSuchQuestion(): ApiError {
+  return new ApiError(ErrorType.enum.NotFound, "no such question");
 }

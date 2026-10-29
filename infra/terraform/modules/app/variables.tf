@@ -78,3 +78,8 @@ variable "reserved_concurrency" {
     error_message = "reserved_concurrency is at least 1; 0 would stop the function."
   }
 }
+
+variable "content_bucket_param_arn" {
+  type        = string
+  description = "The SSM parameter the api reads the content bucket's name from (dl-n9fr.51)"
+}
