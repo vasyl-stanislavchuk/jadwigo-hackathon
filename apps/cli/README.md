@@ -1,8 +1,9 @@
 # jw, the jadwigo CLI
 
-`jw` searches the question bank, shows a question set and lists the needs the bank cannot meet.
-`jw mcp serve` offers the same 3 calls as MCP tools to Claude Code, Muse Code and Codex. The
-modules came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
+`jw` searches the question bank, shows a question set, lists the needs the bank cannot meet,
+reads one converted item, and drafts and checks a lesson from a parent's request. `jw mcp serve`
+offers the same 6 calls as MCP tools to Claude Code, Muse Code and Codex. The question modules
+came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
 
 ## Verbs
 
@@ -11,6 +12,9 @@ modules came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
 | `jw question search --words "dodawanie do 100" --grade 3` | The bank's search envelope | the bank URL and token, below |
 | `jw question show set_khan_2002` | One set page, checked against `src/jw/contracts/set.schema.json` | `JADWIGO_BANK_DIR` |
 | `jw question gaps --words "..." --skill <id> --grade 3` | Each need searched once, with `found`, `gap` or `degraded` | the bank URL and token |
+| `jw question item <item id>` | One converted item: its family step with key and help, credit and `based_on` | `JW_KHAN_CONVERTED` |
+| `jw lesson draft "6 zadań z mnożenia, klasa 3" --grade 3` | A lesson draft: drawn questions with keys and credit, help left empty | all of the above |
+| `jw lesson check <draft.json>` | The card, the lesson file's path and its `/play/` path, or errors by step id | `JADWIGO_REPO_DIR` and `bun` |
 
 - **Search** returns the envelope as the bank sent it. The `/api/v1` route answers stage `final`
   with every arm and takes no query fields, so `--stage` and `--arm` reach only the bank's own
@@ -45,6 +49,7 @@ values. Copy it into the file and fill what you use.
 | `JADWIGO_BANK_DIR` | A checkout of the bank repo, whose `sets/` `jw question show` reads | none |
 | `JADWIGO_KHAN_DIR` | The synced copy of the bank's Khan bucket | `~/.cache/jadwigo-bank/khan` |
 | `JW_KHAN_CONVERTED` | The converted items file `jw question item` reads | `<JADWIGO_KHAN_DIR>/converted/pl.json` |
+| `JADWIGO_REPO_DIR` | The jadwigo-hackathon checkout whose `packages/lesson-import/src/check.ts` `jw lesson check` runs | the checkout `jw` was installed from |
 
 The Khan copy is filled from the bucket by the bank repo. Run this in a checkout of `jadwigo-bank`:
 
@@ -79,13 +84,47 @@ the bank commit it was copied at.
 ## The MCP server
 
 `jw mcp serve` speaks MCP on stdio, on the `mcp` package 2.3 (`MCPServer`, FastMCP's new name). Its
-3 tools call the same functions as the verbs, so each tool's JSON is its verb's `--json`:
+6 tools call the same functions as the verbs, so each tool's JSON is its verb's `--json`:
 
 - `question_search(grade, words?, words_en?, skills?, mistakes?, language="pl", limit=20, arm?, stage?)`
 - `question_show(set_id)`
 - `question_gaps(grade, words?, skills?, language="pl", arm?)`
+- `question_item(item_id, language="pl")`: the composer's view of one item, key and help kept.
+  Never paste it where a child reads.
+- `lesson_draft(request, grade, language="pl", kind="practice", count?, skills?)`
+- `lesson_check(draft)`
 
 A failing call comes back as a tool error whose text is the verb's error and its hint.
+
+## Drafting a lesson
+
+The tools read, draw, assemble and check. They never write a word a child reads: the calling agent
+writes every question's help ladder and twin, in the lesson's language
+(`david-learns/decisions/2026-10-16-help-ladder-the-planner-writes-every-rung`).
+
+1. **Ask.** `lesson_draft` sends the request to the bank as a need, fetches each row's set page,
+   draws the questions with the provisional rule for the lesson kind (`src/jw/draw.py`, so
+   `rule_settled` is `false`), and loads each drawn item from `JW_KHAN_CONVERTED`. An item that
+   cannot load (waiting for its family step, or missing) goes to `left_out` with its reason, and
+   the draw runs again without it. Each question comes back with its step, key, the source
+   item's hints and worked lines as `material`, `credit`, `based_on`, `why_drawn`, and an empty
+   `help`: `look`, `boost`, `boost_by_mistake`, `almost`, `worked`, `twin`.
+2. **Write the rungs.** The agent fills every question's `help`: `look` and `boost` as `{"text"}`
+   cards, `boost_by_mistake` as `{mistake class: {"text"}}`, `almost` and `worked` as lists of
+   lines (`almost` is `worked` with its last line left blank), and `twin` as a question from the
+   same template with its own `say`, `data` and `key`.
+3. **Check.** `lesson_check` refuses an empty rung or twin, then builds the lesson file
+   (`packages/lesson-import/src/lesson-file.ts`), writes it to `<tmp>/jw-lessons/<id>.json`, and runs
+   `bun packages/lesson-import/src/check.ts <file> --json` in `JADWIGO_REPO_DIR`. `ok: true` brings
+   the card: per question its prompt, key, rungs, twin, source, licence and why it was drawn, and
+   what was left out. `ok: false` lists errors by step id; fix them and check again.
+4. **Import.** The owner reads the card and imports the file into jadwigo-dev from the repo root:
+   `make lesson-import FILE=<lesson_file> ENV=dev`. The lesson then plays at the card's `play_path`.
+
+In Claude Code, with the server registered as below, the owner asks in plain words:
+
+> Przygotuj lekcję: 6 zadań z mnożenia, klasa 3. Użyj lesson_draft, napisz wszystkie podpowiedzi i
+> bliźniaka po polsku, sprawdź lesson_check i pokaż mi kartę.
 
 ## Registering it
 
@@ -162,8 +201,21 @@ cd apps/cli && uv run --frozen pytest -q
 ```
 
 `tests/fake_bank.py` answers both search routes with `tests/fixtures/bank/envelope.json`.
-`tests/test_mcp.py` starts `jw mcp serve` under the `mcp` package's stdio client, lists the 3 tools
-and checks each tool's JSON against its verb's. `tests/test_muse.py` runs against a fake `muse` on
+`tests/test_mcp.py` starts `jw mcp serve` under the `mcp` package's stdio client, lists the 6 tools
+and checks each tool's JSON against its verb's. `tests/test_lesson.py` drafts "6 zadań z mnożenia,
+klasa 3" against the fake bank and the fixture items in `tests/fixtures/lesson/` (our own small
+bank, no Khan text), fills the rungs from `tests/fixtures/lesson/rungs.json`, and checks the lesson
+file with a stub and, when `bun` is on `PATH`, with the real `check.ts`.
+
+`evals/compose/eval_real_items.py` runs the same request on the owner's real Polish items. It is
+never collected by `pytest -q`; name it to run it:
+
+```sh
+JW_KHAN_CONVERTED=<converted-pl.json> JADWIGO_BANK_DIR=<jadwigo-bank checkout> \
+  uv run --frozen pytest -q evals/compose/eval_real_items.py
+```
+
+It is skipped, with the reason, when either path is missing. `tests/test_muse.py` runs against a fake `muse` on
 `PATH`, so no test calls a model. `tests/conftest.py` clears every key, points the bank file at a path that
 does not exist and the Khan default at a temporary folder, so no test reads your real token or
 your synced copy. `tests/test_settings.py` covers the loader.

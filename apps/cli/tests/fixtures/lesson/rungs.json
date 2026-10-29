@@ -1,0 +1,335 @@
+{
+  "$comment": "What a composing agent writes into each question's help, in Polish, for the fixture items. Fixture text, written by hand, not by a model.",
+  "rungs": {
+    "fxc101": {
+      "look": {
+        "text": "Przeczytaj zadanie jeszcze raz. Ile jest grup i ile w każdej grupie?"
+      },
+      "boost": {
+        "text": "To 3 razy po 6. Dodawaj po 6."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "6 + 3 to dodawanie. Tu liczymy 6 razy po 3."
+        }
+      },
+      "almost": ["6 + 6 = 12", "12 + 6 = 18", "6 · 3 = "],
+      "worked": ["6 + 6 = 12", "12 + 6 = 18", "6 · 3 = 18"],
+      "twin": {
+        "say": "Ile to jest 6 razy 4?",
+        "family": "enter",
+        "data": {
+          "stem": {
+            "text": "Oblicz: 6 · 4 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "6 · 4 = ?"
+          }
+        },
+        "key": {
+          "accept": ["24"]
+        }
+      }
+    },
+    "fxc102": {
+      "look": {
+        "text": "Przeczytaj zadanie jeszcze raz. Ile jest grup i ile w każdej grupie?"
+      },
+      "boost": {
+        "text": "To 4 razy po 6. Dodawaj po 6."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "6 + 4 to dodawanie. Tu liczymy 6 razy po 4."
+        }
+      },
+      "almost": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze raz.", "6 · 4 = "],
+      "worked": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze raz.", "6 · 4 = 24"],
+      "twin": {
+        "say": "Ile to jest 6 razy 5?",
+        "family": "enter",
+        "data": {
+          "stem": {
+            "text": "Oblicz: 6 · 5 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "6 · 5 = ?"
+          }
+        },
+        "key": {
+          "accept": ["30"]
+        }
+      }
+    },
+    "fxc103": {
+      "look": {
+        "text": "Przeczytaj zadanie jeszcze raz. Ile jest grup i ile w każdej grupie?"
+      },
+      "boost": {
+        "text": "To 7 razy po 6. Dodawaj po 6."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "6 + 7 to dodawanie. Tu liczymy 6 razy po 7."
+        }
+      },
+      "almost": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze 4 razy.", "6 · 7 = "],
+      "worked": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze 4 razy.", "6 · 7 = 42"],
+      "twin": {
+        "say": "Ile to jest 6 razy 8?",
+        "family": "enter",
+        "data": {
+          "stem": {
+            "text": "Oblicz: 6 · 8 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "6 · 8 = ?"
+          }
+        },
+        "key": {
+          "accept": ["48"]
+        }
+      }
+    },
+    "fxc202": {
+      "look": {
+        "text": "Przeczytaj zadanie jeszcze raz. Ile jest grup i ile w każdej grupie?"
+      },
+      "boost": {
+        "text": "To 5 razy po 6. Dodawaj po 6."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "5 + 6 to dodawanie. Tu liczymy 5 razy po 6."
+        }
+      },
+      "almost": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze 2 razy.", "5 · 6 = "],
+      "worked": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze 2 razy.", "5 · 6 = 30"],
+      "twin": {
+        "say": "Ile to jest 6 razy 6?",
+        "family": "enter",
+        "data": {
+          "stem": {
+            "text": "Oblicz: 6 · 6 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "6 · 6 = ?"
+          }
+        },
+        "key": {
+          "accept": ["36"]
+        }
+      }
+    },
+    "fxc203": {
+      "look": {
+        "text": "Przeczytaj zadanie jeszcze raz. Ile jest grup i ile w każdej grupie?"
+      },
+      "boost": {
+        "text": "To 9 razy po 6. Dodawaj po 6."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "9 + 6 to dodawanie. Tu liczymy 9 razy po 6."
+        }
+      },
+      "almost": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze 6 razy.", "9 · 6 = "],
+      "worked": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze 6 razy.", "9 · 6 = 54"],
+      "twin": {
+        "say": "Ile to jest 10 razy 6?",
+        "family": "enter",
+        "data": {
+          "stem": {
+            "text": "Oblicz: 10 · 6 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "10 · 6 = ?"
+          }
+        },
+        "key": {
+          "accept": ["60"]
+        }
+      }
+    },
+    "fxc301": {
+      "look": {
+        "text": "Przeczytaj zadanie jeszcze raz. Ile jest grup i ile w każdej grupie?"
+      },
+      "boost": {
+        "text": "To 4 razy po 6. Dodawaj po 6."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "4 + 6 to dodawanie. Tu liczymy 4 razy po 6."
+        }
+      },
+      "almost": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze raz.", "4 · 6 = "],
+      "worked": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze raz.", "4 · 6 = 24"],
+      "twin": {
+        "say": "Ile to jest 5 razy 6?",
+        "family": "enter",
+        "data": {
+          "stem": {
+            "text": "Oblicz: 5 · 6 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "5 · 6 = ?"
+          }
+        },
+        "key": {
+          "accept": ["30"]
+        }
+      }
+    },
+    "fxc302": {
+      "look": {
+        "text": "Przeczytaj zadanie jeszcze raz. Ile jest grup i ile w każdej grupie?"
+      },
+      "boost": {
+        "text": "To 8 razy po 6. Dodawaj po 6."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "8 + 6 to dodawanie. Tu liczymy 8 razy po 6."
+        }
+      },
+      "almost": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze 5 razy.", "8 · 6 = "],
+      "worked": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze 5 razy.", "8 · 6 = 48"],
+      "twin": {
+        "say": "Ile to jest 9 razy 6?",
+        "family": "enter",
+        "data": {
+          "stem": {
+            "text": "Oblicz: 9 · 6 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "9 · 6 = ?"
+          }
+        },
+        "key": {
+          "accept": ["54"]
+        }
+      }
+    },
+    "fxc303": {
+      "look": {
+        "text": "Przeczytaj zadanie jeszcze raz. Ile jest grup i ile w każdej grupie?"
+      },
+      "boost": {
+        "text": "To 10 razy po 6. Dodawaj po 6."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "10 + 6 to dodawanie. Tu liczymy 10 razy po 6."
+        }
+      },
+      "almost": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze 7 razy.", "10 · 6 = "],
+      "worked": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze 7 razy.", "10 · 6 = 60"],
+      "twin": {
+        "say": "Ile to jest 11 razy 6?",
+        "family": "enter",
+        "data": {
+          "stem": {
+            "text": "Oblicz: 11 · 6 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "11 · 6 = ?"
+          }
+        },
+        "key": {
+          "accept": ["66"]
+        }
+      }
+    },
+    "fxc401": {
+      "look": {
+        "text": "Przeczytaj zadanie jeszcze raz. Ile jest grup i ile w każdej grupie?"
+      },
+      "boost": {
+        "text": "To 8 razy po 6. Dodawaj po 6."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "6 + 8 to dodawanie. Tu liczymy 6 razy po 8."
+        }
+      },
+      "almost": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze 5 razy.", "6 · 8 = "],
+      "worked": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze 5 razy.", "6 · 8 = 48"],
+      "twin": {
+        "say": "Ile to jest 6 razy 9?",
+        "family": "enter",
+        "data": {
+          "stem": {
+            "text": "Oblicz: 6 · 9 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "6 · 9 = ?"
+          }
+        },
+        "key": {
+          "accept": ["54"]
+        }
+      }
+    },
+    "fxc402": {
+      "look": {
+        "text": "Przeczytaj zadanie jeszcze raz. Ile jest grup i ile w każdej grupie?"
+      },
+      "boost": {
+        "text": "To 9 razy po 6. Dodawaj po 6."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "6 + 9 to dodawanie. Tu liczymy 6 razy po 9."
+        }
+      },
+      "almost": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze 6 razy.", "6 · 9 = "],
+      "worked": ["6 + 6 = 12", "12 + 6 = 18", "Dodaj 6 jeszcze 6 razy.", "6 · 9 = 54"],
+      "twin": {
+        "say": "Ile to jest 6 razy 10?",
+        "family": "enter",
+        "data": {
+          "stem": {
+            "text": "Oblicz: 6 · 10 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "6 · 10 = ?"
+          }
+        },
+        "key": {
+          "accept": ["60"]
+        }
+      }
+    }
+  }
+}

@@ -67,6 +67,11 @@ KHAN_SYNC_COMMAND = "uv run python -m tools.khan.sync down"
 JW_KHAN_CONVERTED = "JW_KHAN_CONVERTED"
 CONVERTED_DEFAULT = Path("converted") / "pl.json"  # relative to the Khan dir
 
+# The jadwigo-hackathon checkout whose packages/lesson-import/src/check.ts the lesson_check tool
+# runs with bun (dl-e8ov.5.38.4). Unset: the checkout this jw was installed from (`repo_dir`).
+JADWIGO_REPO_DIR = "JADWIGO_REPO_DIR"
+LESSON_CHECK_SCRIPT = Path("packages") / "lesson-import" / "src" / "check.ts"  # in the repo
+
 # Every key an operator may fill, in the order .env.example and the README list them.
 KEYS = (
     JW_API_URL,
@@ -77,6 +82,7 @@ KEYS = (
     JADWIGO_BANK_DIR,
     JADWIGO_KHAN_DIR,
     JW_KHAN_CONVERTED,
+    JADWIGO_REPO_DIR,
 )
 
 
@@ -140,6 +146,16 @@ def khan_dir() -> Path:
     """The synced Khan copy: JADWIGO_KHAN_DIR, else ~/.cache/jadwigo-bank/khan."""
     configured = setting(JADWIGO_KHAN_DIR)
     return Path(configured).expanduser() if configured else DEFAULT_KHAN_DIR
+
+
+def repo_dir() -> Path | None:
+    """The jadwigo checkout: JADWIGO_REPO_DIR, else the folder above this file that holds
+    packages/lesson-import, else None (a jw installed outside a checkout)."""
+    configured = setting(JADWIGO_REPO_DIR)
+    if configured:
+        return Path(configured).expanduser()
+    here = Path(__file__).resolve()
+    return next((p for p in here.parents if (p / "packages" / "lesson-import").is_dir()), None)
 
 
 def bank_timeout() -> float:

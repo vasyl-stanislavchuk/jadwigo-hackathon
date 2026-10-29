@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "need": {
+    "words": "6 zadań z mnożenia, klasa 3",
+    "language": "pl",
+    "grade": "3",
+    "limit": 20
+  },
+  "arm": "B1",
+  "stage": "final",
+  "timing_ms": {
+    "embed": 41.2,
+    "vectors": 18.5,
+    "rows": 6.1,
+    "keyword": 9.4,
+    "rerank": 212.0,
+    "total": 290.3
+  },
+  "cache": "miss",
+  "rows": [
+    {
+      "id": "set_khan_fx0003",
+      "rank": 1,
+      "score": 0.912,
+      "arm": "B1",
+      "vector_score": 0.781,
+      "bm25_score": 7.42,
+      "rerank_score": 0.912,
+      "best_view": "meaning_pl",
+      "view_scores": {
+        "title": 0.702,
+        "meaning_pl": 0.781,
+        "meaning_en": 0.744
+      },
+      "grade": "3",
+      "titles": {
+        "pl": "Mnożenie przez 6",
+        "en": "Multiply by 6"
+      },
+      "languages": ["pl", "en"],
+      "skill_ids": ["fixture.times-6"],
+      "curriculum_tags": ["pl-2017:II.3.2", "ccss:2.NBT.B.5"],
+      "problem_types": ["Rows of dots", "Bags of apples", "Hops of six"],
+      "question_types": ["production"],
+      "views": ["title", "samples", "meaning_pl", "meaning_en", "needs"],
+      "source": "khan",
+      "credit": "Fixture set, our own small bank, https://fixture.invalid/jw/set_khan_fx0003",
+      "enrichment": {
+        "summary": {
+          "pl": "Zmyślony zestaw: mnożenie przez 6.",
+          "en": "A made-up set: multiplying by 6."
+        },
+        "can_do": {
+          "pl": "Umiem pomnożyć przez 6.",
+          "en": "I can multiply by 6."
+        },
+        "mistake_classes": [
+          {
+            "id": "added_instead",
+            "pl": "dodaje zamiast mnożyć",
+            "en": "adds instead of multiplying",
+            "spot": "6 · 3 answered 9"
+          }
+        ],
+        "contexts": {
+          "pl": [],
+          "en": []
+        }
+      },
+      "content_hash": "3f1c8a0e5b7d2f94c6a1e0b8d7f3a2c95e4b6d1a0f8c7e2b9d3a5f6c1e0b7d48",
+      "media": [],
+      "items": 11
+    },
+    {
+      "id": "set_khan_xj1k2l3",
+      "rank": 2,
+      "score": 0.734,
+      "arm": "B1",
+      "vector_score": 0.702,
+      "bm25_score": null,
+      "rerank_score": 0.734,
+      "best_view": "meaning_en",
+      "view_scores": {
+        "title": 0.655,
+        "meaning_en": 0.702
+      },
+      "grade": "3",
+      "titles": {
+        "en": "Add and subtract within 1000"
+      },
+      "languages": ["en"],
+      "skill_ids": ["maths.add.within1000"],
+      "curriculum_tags": ["ccss:3.NBT.A.2"],
+      "problem_types": ["add-three-digit"],
+      "question_types": ["numeric-input"],
+      "views": ["title", "samples", "meaning_en", "needs"],
+      "source": "khan",
+      "credit": "Khan Academy, CC BY-NC-SA 4.0, https://www.khanacademy.org/math/cc-third-grade-math/addition-and-subtraction-3/e/add-within-1000",
+      "content_hash": "a9e2d47b1c0f6e8d3b5a7c2e9f1d4b6a8c0e3f5d7b9a1c2e4f6d8b0a3c5e7f91",
+      "media": [],
+      "items": 10
+    }
+  ],
+  "state": [
+    {
+      "arm": "A",
+      "state": "not_asked"
+    },
+    {
+      "arm": "A1",
+      "state": "not_asked"
+    },
+    {
+      "arm": "B",
+      "state": "not_asked"
+    },
+    {
+      "arm": "B1",
+      "state": "ok"
+    },
+    {
+      "arm": "C",
+      "state": "not_asked"
+    },
+    {
+      "arm": "C2",
+      "state": "not_asked"
+    }
+  ]
+}
