@@ -20,8 +20,8 @@ An unknown id, or one from another pod, is `404`.
 
 ## Parent routes: a Supabase Auth token
 
-An adult signs in to the app with a 6-digit code sent by email. Supabase Auth runs the sign-in
-and gives back a session. Its access token is what these routes take:
+An adult signs in to the app, and Supabase Auth runs the sign-in. However the adult signs in, the
+result is a Supabase session, and its access token is what these routes take:
 
 <AccessTable credential="supabase" />
 
@@ -39,9 +39,9 @@ curl https://app.jadwigo.pl/api/v1/me \
   `AccountMissing`. Call `POST /api/v1/accounts` once. It makes the account and its pod.
   A repeat call returns the same records, so a double tap or a reload is safe.
 
-## Bank route: the bank's read token
+## Bank routes: the bank's read token
 
-The question bank is searched with a shared read token, not a Supabase token:
+The question bank is searched and read with a shared read token, not a Supabase token:
 
 <AccessTable credential="bank" />
 
@@ -52,7 +52,15 @@ curl -X POST https://app.jadwigo.pl/api/v1/question-searches \
   -d @need.json
 ```
 
-- A missing, malformed or wrong token is `401` `Unauthorized`.
+A question's body carries its answer key, so it is behind the same token:
+
+```bash
+curl https://app.jadwigo.pl/api/v1/questions/$QUESTION_ID \
+  -H "Authorization: Bearer $JADWIGO_BANK_READ_TOKEN"
+```
+
+- A missing, malformed or wrong token is `401` `Unauthorized`, whatever the id.
+- With the token, an unknown question id is `404`.
 - When the server cannot reach the bank, the reply is `502` `BankUnavailable`. Try again later.
 - The read token is shared. It is a stopgap until each caller gets a token of its own.
 

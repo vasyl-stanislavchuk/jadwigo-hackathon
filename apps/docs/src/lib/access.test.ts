@@ -9,8 +9,11 @@ describe("routesTaking", () => {
     expect(total).toBe(Object.keys(ROUTES).length);
   });
 
-  it("names the question search as the one bank route", () => {
-    expect(routesTaking("bank").map((row) => row.path)).toEqual([ROUTES.questionSearches.path]);
+  it("names the question search and the question body as the bank routes", () => {
+    expect(routesTaking("bank").map((row) => row.path)).toEqual([
+      ROUTES.questionSearches.path,
+      ROUTES.questionBody.path,
+    ]);
   });
 
   it("asks a Supabase token of every token route", () => {
