@@ -15,6 +15,9 @@ export const ID_PREFIXES = {
   lesson_question_example: "lqx_",
   assignment: "asg_",
   attempt: "att_",
+  account: "acc_",
+  member: "mem_",
+  goal: "gol_",
 } as const;
 export type IdPrefix = (typeof ID_PREFIXES)[keyof typeof ID_PREFIXES];
 
@@ -103,6 +106,12 @@ export const AssignmentId = prefixedId<"AssignmentId">(ID_PREFIXES.assignment, "
 export type AssignmentId = z.infer<typeof AssignmentId>;
 export const AttemptId = prefixedId<"AttemptId">(ID_PREFIXES.attempt, "an attempt");
 export type AttemptId = z.infer<typeof AttemptId>;
+export const AccountId = prefixedId<"AccountId">(ID_PREFIXES.account, "an account");
+export type AccountId = z.infer<typeof AccountId>;
+export const MemberId = prefixedId<"MemberId">(ID_PREFIXES.member, "a member");
+export type MemberId = z.infer<typeof MemberId>;
+export const GoalId = prefixedId<"GoalId">(ID_PREFIXES.goal, "a goal");
+export type GoalId = z.infer<typeof GoalId>;
 
 /** The id the page mints for one write, so a replay is recognised. The bare uuid, no prefix. */
 export const EventId = z.string().regex(UUID, "an event id is a lowercase uuid").brand<"EventId">();
@@ -118,4 +127,7 @@ export const ID_SCHEMAS = {
   lesson_question_example_id: LessonQuestionExampleId,
   assignment_id: AssignmentId,
   attempt_id: AttemptId,
+  account_id: AccountId,
+  member_id: MemberId,
+  goal_id: GoalId,
 } as const;
