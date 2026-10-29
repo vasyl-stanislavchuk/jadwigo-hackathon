@@ -1,5 +1,6 @@
 # Pre-commit: Biome on the staged files and gitleaks on the staged diff. Both run through
 # `mise exec`, so a shell that never activated mise finds the bun and gitleaks mise.toml pins.
+# tools/src/gitleaks.ts adds the family-name rule from the owner's private-terms file.
 pre-commit:
   parallel: true
   jobs:
@@ -7,7 +8,7 @@ pre-commit:
       glob: "*.{ts,tsx,js,cjs,mjs,json,jsonc}"
       run: mise exec -- bunx biome check --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
     - name: gitleaks
-      run: mise exec -- gitleaks git --staged --redact --no-banner --config .gitleaks.toml
+      run: mise exec -- bun tools/src/gitleaks.ts git --staged --redact --no-banner
 
 # A merge, pull or branch switch that changes bun.lock reinstalls, so Biome and the rest of
 # node_modules match the lockfile they now run against.
