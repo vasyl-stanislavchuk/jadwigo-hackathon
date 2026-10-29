@@ -1,8 +1,9 @@
 """jw mcp serve: the question tools over MCP on stdio (dl-u1y5.23, moved from dl-e8ov.5.2.8).
 
-Three tools, each calling the function its `--json` verb prints, so a tool's JSON is the verb's
-JSON: question_search (`jw question search --json`), question_show (`jw question show --json`)
-and question_gaps (`jw question gaps --json`). The server finds the bank the way the verbs do
+Four tools, each calling the function its `--json` verb prints, so a tool's JSON is the verb's
+JSON: question_search (`jw question search --json`), question_show (`jw question show --json`),
+question_gaps (`jw question gaps --json`) and question_item (`jw question item --json`, read
+from JW_KHAN_CONVERTED, dl-e8ov.5.38.2). The server finds the bank the way the verbs do
 (`jw.settings_keys`: JW_API_URL, then JW_BANK_URL, then ~/.config/jadwigo-bank/bank.env) and reads
 pages from JADWIGO_BANK_DIR. Registration lines for Claude Code, Muse Code and Codex are in
 apps/cli/README.md.
@@ -19,11 +20,11 @@ import click
 from jw.commands import question
 from jw.errors import JwError
 
-TOOLS = ("question_search", "question_show", "question_gaps")
+TOOLS = ("question_search", "question_show", "question_gaps", "question_item")
 
 
 def build_server() -> Any:
-    """The MCP server with the three question tools. Imported lazily: only `serve` pays for it."""
+    """The MCP server with the four question tools. Imported lazily: only `serve` pays for it."""
     from mcp.server.mcpserver import MCPServer
     from mcp.server.mcpserver.exceptions import ToolError
 
@@ -98,6 +99,17 @@ def build_server() -> Any:
             arm=arm,
         )
 
+    @server.tool(name="question_item")
+    def question_item(item_id: str, language: str = "pl") -> dict[str, Any]:
+        """One converted item by its id: the composer's view, never shown to a child.
+
+        Returns the family step a lesson file's question takes (family, data, key, help), the
+        say line, the credit and based_on (`khan:<id>`). The key and help are in it, so use it to
+        draft a lesson and never paste it where a child reads. language is the item's language
+        (pl by default); an item in another language is an error.
+        """
+        return _call(question.item_view, item_id=item_id, language=language)
+
     return server
 
 
@@ -108,5 +120,5 @@ def group() -> None:
 
 @group.command()
 def serve() -> None:
-    """Serve question_search, question_show and question_gaps over MCP on stdio."""
+    """Serve question_search, question_show, question_gaps and question_item over MCP on stdio."""
     build_server().run("stdio")
