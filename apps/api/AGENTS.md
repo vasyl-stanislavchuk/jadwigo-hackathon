@@ -12,6 +12,9 @@ The one Lambda: a router, `authorize()` and the routes, with an entry per functi
 
 - Every route's input and output is a schema in `packages/contracts`; the handler parses, never trusts.
 - `authorize()` runs first on every route, and a pod only ever sees its own records.
+- `app.ts` runs each request as one `store.unit()`. A route goes on from the record `authorize()`
+  read and the rows its writes return, and reads the attempt again only after a race or a replay
+  (`src/roundtrips.int.test.ts` pins the round trips per request).
 - Read environment variables only in `src/config.ts` (the grit rule fails elsewhere).
 - `authorize()` (`src/authorize.ts`) binds an attempt to its caller by its id: whoever holds the attempt id may read and answer it, since only the start reply carries it (decision `2026-10-28-an-anonymous-attempt-is-bound-to-its-caller-by-its-id-whoever-ho`). It is one narrow seam, so a token can replace the id later. An unknown id, or another pod's, is 404.
 - The page reads `ended` through `pageEnded(ended, verdictsHeld(assignment, attempt))` in every reply (snapshot, answer, help, results), and the results route returns `pageAttemptResult` rows, never the `attempt_result` row. While verdicts are held, the answer reply's `correct`, `parts` and `reveal` are null.

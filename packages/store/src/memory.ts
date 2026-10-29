@@ -46,6 +46,7 @@ import {
   type NewLessonVersion,
   type NewPod,
   type OpenAssignment,
+  type OpenedAttempt,
   type Store,
   StoreError,
 } from "./store.ts";
@@ -167,6 +168,17 @@ export class InMemoryStore implements Store {
 
   async findAttemptPod(id: AttemptId): Promise<PodId | undefined> {
     return this.#attempts.get(id)?.pod_id;
+  }
+
+  async unit<T>(work: () => Promise<T>): Promise<T> {
+    return work();
+  }
+
+  async openAttempt(id: AttemptId): Promise<OpenedAttempt | undefined> {
+    const pod = await this.findAttemptPod(id);
+    if (pod === undefined) return undefined;
+    const record = await this.getAttempt(pod, id);
+    return { pod, record, assignment: await this.getAssignment(pod, record.attempt.assignment_id) };
   }
 
   async putPod(pod: NewPod): Promise<Pod> {

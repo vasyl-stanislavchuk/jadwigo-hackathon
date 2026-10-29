@@ -61,4 +61,6 @@ module "app" {
   ]
 
   jwt_issuer = "https://${var.supabase_ref}.supabase.co/auth/v1"
+
+  reserved_concurrency = var.app_reserved_concurrency
 }
