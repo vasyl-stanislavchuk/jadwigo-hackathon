@@ -120,6 +120,11 @@
     "why": ""
   },
   {
+    "path": "families/slots/SlotsTable.tsx",
+    "snippet": "[var(--jw-prompt-card,var(--card)",
+    "why": ""
+  },
+  {
     "path": "families/Stem.tsx",
     "snippet": "[length:var(--kid-math-size)",
     "why": ""
@@ -167,6 +172,11 @@
   {
     "path": "parts/ChoiceGroup.tsx",
     "snippet": "[length:var(--kid-answer-size)",
+    "why": ""
+  },
+  {
+    "path": "parts/ChoiceGroup.tsx",
+    "snippet": "[var(--jw-dur-mark,120ms)",
     "why": ""
   },
   {
@@ -232,6 +242,11 @@
   {
     "path": "parts/InlineTokens.tsx",
     "snippet": "[var(--kid-tap-min)",
+    "why": ""
+  },
+  {
+    "path": "parts/InlineTokens.tsx",
+    "snippet": "[var(--jw-dur-mark,120ms)",
     "why": ""
   },
   {
@@ -367,6 +382,21 @@
   {
     "path": "parts/tone.ts",
     "snippet": "-[0.375rem]",
+    "why": ""
+  },
+  {
+    "path": "parts/tone.ts",
+    "snippet": "[var(--kid-help-edge,var(--muted-foreground)",
+    "why": ""
+  },
+  {
+    "path": "parts/tone.ts",
+    "snippet": "[var(--kid-help,var(--muted)",
+    "why": ""
+  },
+  {
+    "path": "parts/tone.ts",
+    "snippet": "[var(--kid-help-ink,var(--foreground)",
     "why": ""
   }
 ]
