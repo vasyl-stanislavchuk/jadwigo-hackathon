@@ -89,7 +89,9 @@ The words themselves are in the root `GLOSSARY.md`. Rules marked **(tested)** fa
     times are ISO 8601 in UTC. A field the server owns (a verdict, `seq` for an added question, a
     timestamp) is refused when a client sends it.
 18. **Every input and output is a schema here**, and the route table is named once, in `src/routes.ts`.
-    `apps/api` and `packages/api-client` import it, and a handler parses and never trusts.
+    `apps/api` and `packages/api-client` import it, and a handler parses and never trusts. Each route
+    carries a `summary` and a `tag` (`ROUTE_TAGS`), and a `description` when a caller needs more: the
+    API reference at docs.jadwigo.pl is generated from them (`dl-5ssh.90`).
 19. **Writes from the page are idempotent by `event_id`.**
     - A replay with the same body returns the stored result.
     - The same `event_id` with another body is 409 `EventIdMismatch`.
