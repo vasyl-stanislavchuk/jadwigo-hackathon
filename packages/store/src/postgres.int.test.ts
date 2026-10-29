@@ -96,6 +96,60 @@ describe("PostgresStore's refusals", () => {
   });
 });
 
+describe("PostgresStore's claimed attempts", () => {
+  it("reads a claimed attempt back with claimed_by as an account id, from both pods", async () => {
+    // The claim is app.claim_attempt(), called as the owner with the claimer's pod set, until the
+    // store calls it (dl-e8ov.2.39).
+    const a = await seed(store);
+    const { attempt } = await store.startAttempt(a.pod, { assignment_id: a.assignment });
+    const home = crypto.randomUUID();
+    const account = crypto.randomUUID();
+    const learner = crypto.randomUUID();
+    const client = new pg.Client({ connectionString: databaseUrl() });
+    await client.connect();
+    try {
+      await client.query("begin");
+      await client.query("select set_config('app.pod_id', $1, true)", [home]);
+      await client.query("insert into pod (id, name, language) values ($1, 'Pod of moles', 'en')", [
+        home,
+      ]);
+      await client.query(
+        "insert into account (id, pod_id, sub) values ($1, $2, gen_random_uuid())",
+        [account, home],
+      );
+      await client.query(
+        "insert into member (pod_id, account_id, role) values ($1, $2, 'parent')",
+        [home, account],
+      );
+      await client.query(
+        "insert into learner (id, pod_id, handle, first_name) values ($1, $2, 'mole', 'Mole')",
+        [learner, home],
+      );
+      await client.query("select from app.claim_attempt($1, $2, $3)", [
+        uuidOf(ID_PREFIXES.attempt, attempt.id),
+        learner,
+        account,
+      ]);
+      await client.query("commit");
+    } finally {
+      await client.end();
+    }
+
+    const played = await store.getAttempt(a.pod, attempt.id);
+    expect(played.attempt).toMatchObject({
+      pod_id: a.pod,
+      learner_id: idOf(ID_PREFIXES.learner, learner),
+      claimed_by: idOf(ID_PREFIXES.account, account),
+      moved_by: null,
+    });
+    const claimer = PodId.parse(idOf(ID_PREFIXES.pod, home));
+    expect((await store.getAttempt(claimer, attempt.id)).attempt).toEqual(played.attempt);
+    const results = await store.getAttemptResult(claimer, attempt.id);
+    expect(results.map((r) => r.seq)).toEqual([1]);
+    expect(results).toEqual(await store.getAttemptResult(a.pod, attempt.id));
+  });
+});
+
 describe("Postgres", () => {
   it("runs 17, with the schema src/db/types.ts was generated from", async () => {
     const client = new pg.Client({ connectionString: databaseUrl() });

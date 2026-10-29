@@ -34,6 +34,14 @@ function relations(): Map<string, Map<string, string>> {
     }
     found.set(name, columns);
   }
+  // A column a later migration adds: `alter table <t>` and its `add column <c> <type>` lines.
+  for (const m of sql.matchAll(/^alter table (\w+)\n((?: {2}add .*\n?)+)/gm)) {
+    const [, name = "", body = ""] = m;
+    const columns = found.get(name);
+    for (const col of body.matchAll(/^ {2}add column (\w+) ([a-z_]+)/gm)) {
+      columns?.set(col[1] ?? "", col[2] ?? "");
+    }
+  }
   for (const m of sql.matchAll(/^create view (\w+) [\s\S]*?\nselect\n([\s\S]*?)\nfrom /gm)) {
     const [, name = "", body = ""] = m;
     const columns = new Map<string, string>();

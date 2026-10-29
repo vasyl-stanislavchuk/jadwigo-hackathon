@@ -95,6 +95,8 @@ const PREFIXES: Readonly<Record<string, IdPrefix>> = {
   twin: ID_PREFIXES.lesson_question,
   assignment_id: ID_PREFIXES.assignment,
   attempt_id: ID_PREFIXES.attempt,
+  claimed_by: ID_PREFIXES.account,
+  moved_by: ID_PREFIXES.account,
 };
 
 /**

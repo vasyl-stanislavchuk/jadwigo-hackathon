@@ -26,8 +26,14 @@ prod's major version, with no Docker: Postgres.app on port 5433 locally, and the
 - Every name follows `packages/contracts/RULES.md`; `packages/contracts/src/naming.test.ts` reads
   these migrations and fails the rules marked tested.
 - Every table carries `pod_id` and forces row-level security. Each policy compares it with
-  `app.current_pod_id()`, which the API sets per transaction after `authorize()`
-  (`set_config('app.pod_id', …, true)`).
+  `app.current_pod_id()`: the token's `pod_id` claim when the API has set `request.jwt.claims`
+  (what `auth.jwt()` reads), else `app.pod_id`, which the API sets per transaction after
+  `authorize()` (`set_config('app.pod_id', …, true)`).
+- A pod also reads, never writes, the attempts its learners claimed, and of the pod they were played
+  in only what each attempt points at: its version, that version's lesson and its assignment
+  (`claimed_read` policies, `20261029120000_parent_login.sql`). It reads no `lesson_question`, so
+  no answer key; `attempt_result` gives it each asked question's face through `app.asked_question()`.
+  A claim goes through `app.claim_attempt()`, never an update of `attempt`.
 - `apps/api` connects as `jadwigo_api`, which never owns a table and never bypasses row-level
   security. Its login is set per environment, outside migrations.
 - A migration under `supabase/` is a one-way door: say so in the PR.
