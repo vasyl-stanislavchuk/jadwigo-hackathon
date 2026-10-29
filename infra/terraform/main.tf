@@ -50,6 +50,7 @@ module "app" {
     # Lesson review (dl-uukj.30): a finished attempt's questions again, for the child.
     "GET /api/v1/attempts/{id}/review",
     "POST /api/v1/question-searches",
+    "GET /api/v1/questions/{id}",
     # Parent login (dl-e8ov.2.36): these 5 need a token. The JWT authorizer on them is
     # dl-e8ov.2.42; apply them only together with it, never alone.
     "GET /api/v1/me",
