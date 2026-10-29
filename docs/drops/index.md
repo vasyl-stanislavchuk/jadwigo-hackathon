@@ -6,6 +6,7 @@
 | --- | --- | --- |
 | [jadwigo-repo](https://drops.medallion.md/sites/jadwigo-repo/) | [`repo/`](repo/) | where things live in this repo and how agents work in it |
 | [jadwigo-identity](https://drops.medallion.md/sites/jadwigo-identity/) | [`identity/`](identity/) | Jadwigo's mission, value proposition, story and strategy: the options the owner picks from |
+| jadwigo-sign-in (not yet published) | [`sign-in/`](sign-in/) | Google and Facebook sign-in for parents on Supabase Auth: the design, the owner's steps, the open questions |
 
 ## Made before the repo
 

@@ -77,6 +77,8 @@ The token is `SUPABASE_ACCESS_TOKEN`, else the line in `~/.config/jadwigo/supaba
 curl on stdin and is never printed. Dev has no hosted app yet (`packages/config` names prod only), so
 its redirect list is any local port on `127.0.0.1` and `localhost`.
 
+Google and Facebook sign-in add their provider settings here (`dl-e8ov.2.52`). The owner's steps in Google Cloud, Meta and Supabase are `docs/runbooks/social-sign-in.md`.
+
 The state bucket `jadwigo-terraform-state-843109108289` is created by hand before the first `init` (`dl-5ssh.9`):
 
 ```sh
