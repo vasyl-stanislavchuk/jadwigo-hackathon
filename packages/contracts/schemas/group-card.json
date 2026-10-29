@@ -9,6 +9,16 @@
       "type": "string"
     },
     "picture": {
+      "$ref": "#/$defs/Picture"
+    }
+  },
+  "required": [
+    "id",
+    "label"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Picture": {
       "type": "object",
       "properties": {
         "src": {
@@ -28,88 +38,7 @@
           "const": true
         },
         "labels": {
-          "type": "object",
-          "properties": {
-            "range": {
-              "type": "array",
-              "prefixItems": [
-                {
-                  "type": "array",
-                  "prefixItems": [
-                    {
-                      "type": "number"
-                    },
-                    {
-                      "type": "number"
-                    }
-                  ],
-                  "items": false,
-                  "minItems": 2,
-                  "maxItems": 2
-                },
-                {
-                  "type": "array",
-                  "prefixItems": [
-                    {
-                      "type": "number"
-                    },
-                    {
-                      "type": "number"
-                    }
-                  ],
-                  "items": false,
-                  "minItems": 2,
-                  "maxItems": 2
-                }
-              ],
-              "items": false,
-              "minItems": 2,
-              "maxItems": 2
-            },
-            "items": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "content": {
-                    "type": "string"
-                  },
-                  "coordinates": {
-                    "type": "array",
-                    "prefixItems": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "number"
-                      }
-                    ],
-                    "items": false,
-                    "minItems": 2,
-                    "maxItems": 2
-                  },
-                  "alignment": {
-                    "type": "string"
-                  },
-                  "math": {
-                    "type": "boolean",
-                    "const": false
-                  }
-                },
-                "required": [
-                  "content",
-                  "coordinates",
-                  "alignment"
-                ],
-                "additionalProperties": false
-              }
-            }
-          },
-          "required": [
-            "range",
-            "items"
-          ],
-          "additionalProperties": false
+          "$ref": "#/$defs/PictureLabels"
         }
       },
       "required": [
@@ -119,11 +48,93 @@
         "height"
       ],
       "additionalProperties": false
+    },
+    "PictureLabels": {
+      "type": "object",
+      "properties": {
+        "range": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "items": false,
+              "minItems": 2,
+              "maxItems": 2
+            },
+            {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "items": false,
+              "minItems": 2,
+              "maxItems": 2
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PictureLabel"
+          }
+        }
+      },
+      "required": [
+        "range",
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "PictureLabel": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "coordinates": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "alignment": {
+          "type": "string"
+        },
+        "math": {
+          "type": "boolean",
+          "const": false
+        }
+      },
+      "required": [
+        "content",
+        "coordinates",
+        "alignment"
+      ],
+      "additionalProperties": false
     }
-  },
-  "required": [
-    "id",
-    "label"
-  ],
-  "additionalProperties": false
+  }
 }

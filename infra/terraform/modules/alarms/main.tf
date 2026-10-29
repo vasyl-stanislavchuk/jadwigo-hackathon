@@ -1,4 +1,4 @@
-# Six alarms and one topic, no dashboards (dl-5ssh.13). Standard-resolution metrics AWS publishes
+# Seven alarms and one topic, no dashboards (dl-5ssh.13). Standard-resolution metrics AWS publishes
 # anyway, so nothing costs while idle beyond the alarms themselves. The log groups are modules/app's.
 resource "aws_sns_topic" "alarms" {
   name = "${var.name}-alarms"
@@ -17,6 +17,9 @@ resource "aws_sns_topic_subscription" "owner" {
 
 locals {
   concurrency_alarm_at = floor(0.8 * var.lambda_concurrency_quota)
+  # The function's own cap (dl-5ssh.75) is far below the account's quota, so the account-wide alarm
+  # cannot fire from it; this one does, before the cap throttles (dl-5ssh.81).
+  api_concurrency_alarm_at = floor(0.8 * var.function_reserved_concurrency)
 
   lambda = { FunctionName = var.function_name }
   api    = { ApiId = var.api_id, Stage = "$default" }
@@ -45,6 +48,14 @@ locals {
       dimensions  = local.api
       statistic   = "Sum"
       threshold   = 1
+    }
+    "api-concurrency" = {
+      description = "The Lambda's concurrent executions near its reserved concurrency"
+      namespace   = "AWS/Lambda"
+      metric      = "ConcurrentExecutions"
+      dimensions  = local.lambda
+      statistic   = "Maximum"
+      threshold   = local.api_concurrency_alarm_at
     }
     "lambda-concurrency" = {
       description = "Account-wide concurrent executions near the quota"

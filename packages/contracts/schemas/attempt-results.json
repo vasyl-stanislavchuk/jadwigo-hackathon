@@ -3,29 +3,40 @@
   "type": "object",
   "properties": {
     "attempt": {
+      "$ref": "#/$defs/Attempt"
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/PageAttemptResult"
+      }
+    }
+  },
+  "required": [
+    "attempt",
+    "results"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Attempt": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "pattern": "^att_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+          "$ref": "#/$defs/AttemptId"
         },
         "pod_id": {
-          "type": "string",
-          "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+          "$ref": "#/$defs/PodId"
         },
         "assignment_id": {
-          "type": "string",
-          "pattern": "^asg_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+          "$ref": "#/$defs/AssignmentId"
         },
         "lesson_version_id": {
-          "type": "string",
-          "pattern": "^lesv_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+          "$ref": "#/$defs/LessonVersionId"
         },
         "learner_id": {
           "anyOf": [
             {
-              "type": "string",
-              "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+              "$ref": "#/$defs/LearnerId"
             },
             {
               "type": "null"
@@ -46,12 +57,7 @@
           ]
         },
         "status": {
-          "type": "string",
-          "enum": [
-            "in_progress",
-            "paused",
-            "finished"
-          ]
+          "$ref": "#/$defs/AttemptStatus"
         },
         "resume_at": {
           "anyOf": [
@@ -85,8 +91,7 @@
         "claimed_by": {
           "anyOf": [
             {
-              "type": "string",
-              "pattern": "^acc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+              "$ref": "#/$defs/AccountId"
             },
             {
               "type": "null"
@@ -108,8 +113,7 @@
         "moved_by": {
           "anyOf": [
             {
-              "type": "string",
-              "pattern": "^acc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+              "$ref": "#/$defs/AccountId"
             },
             {
               "type": "null"
@@ -144,67 +148,100 @@
       ],
       "additionalProperties": false
     },
-    "results": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "seq": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 9007199254740991
-          },
-          "lesson_question_id": {
-            "type": "string",
-            "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
-          },
-          "say": {
-            "type": "string"
-          },
-          "added": {
-            "type": "string",
-            "enum": [
-              "planned",
-              "twin"
-            ]
-          },
-          "ended": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "correct",
-                  "skipped",
-                  "missed",
-                  "done"
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "help_used": {
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 9007199254740991
-          }
+    "AttemptId": {
+      "type": "string",
+      "pattern": "^att_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "AssignmentId": {
+      "type": "string",
+      "pattern": "^asg_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LessonVersionId": {
+      "type": "string",
+      "pattern": "^lesv_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "AttemptStatus": {
+      "type": "string",
+      "enum": [
+        "in_progress",
+        "paused",
+        "finished"
+      ]
+    },
+    "AccountId": {
+      "type": "string",
+      "pattern": "^acc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "PageAttemptResult": {
+      "type": "object",
+      "properties": {
+        "seq": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
         },
-        "required": [
-          "seq",
-          "lesson_question_id",
-          "say",
-          "added",
-          "ended",
-          "help_used"
-        ],
-        "additionalProperties": false
-      }
+        "lesson_question_id": {
+          "$ref": "#/$defs/LessonQuestionId"
+        },
+        "say": {
+          "type": "string"
+        },
+        "added": {
+          "$ref": "#/$defs/Added"
+        },
+        "ended": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageEnded"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "help_used": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "seq",
+        "lesson_question_id",
+        "say",
+        "added",
+        "ended",
+        "help_used"
+      ],
+      "additionalProperties": false
+    },
+    "LessonQuestionId": {
+      "type": "string",
+      "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "Added": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "twin"
+      ]
+    },
+    "PageEnded": {
+      "type": "string",
+      "enum": [
+        "correct",
+        "skipped",
+        "missed",
+        "done"
+      ]
     }
-  },
-  "required": [
-    "attempt",
-    "results"
-  ],
-  "additionalProperties": false
+  }
 }

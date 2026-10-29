@@ -3,8 +3,7 @@
   "type": "object",
   "properties": {
     "lesson_version_id": {
-      "type": "string",
-      "pattern": "^lesv_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/LessonVersionId"
     },
     "position": {
       "type": "integer",
@@ -12,12 +11,10 @@
       "maximum": 9007199254740991
     },
     "pod_id": {
-      "type": "string",
-      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/PodId"
     },
     "lesson_question_id": {
-      "type": "string",
-      "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/LessonQuestionId"
     },
     "role": {
       "type": "string",
@@ -34,5 +31,19 @@
     "lesson_question_id",
     "role"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "LessonVersionId": {
+      "type": "string",
+      "pattern": "^lesv_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LessonQuestionId": {
+      "type": "string",
+      "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    }
+  }
 }

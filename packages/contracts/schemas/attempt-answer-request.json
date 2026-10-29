@@ -5,8 +5,7 @@
       "type": "object",
       "properties": {
         "event_id": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          "$ref": "#/$defs/EventId"
         },
         "seq": {
           "type": "integer",
@@ -24,269 +23,17 @@
           "maximum": 9007199254740991
         },
         "asked_at": {
-          "type": "string",
-          "format": "date-time",
-          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          "$ref": "#/$defs/SentAt"
         },
         "answered_at": {
-          "type": "string",
-          "format": "date-time",
-          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          "$ref": "#/$defs/SentAt"
         },
         "kind": {
           "type": "string",
           "const": "try"
         },
         "value": {
-          "anyOf": [
-            {
-              "type": "object",
-              "properties": {
-                "chosen": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              },
-              "required": [
-                "chosen"
-              ],
-              "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "properties": {
-                "entered": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "entered"
-              ],
-              "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "properties": {
-                "gaps": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                }
-              },
-              "required": [
-                "gaps"
-              ],
-              "additionalProperties": false
-            },
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "object",
-              "properties": {
-                "items": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  }
-                }
-              },
-              "required": [
-                "items"
-              ],
-              "additionalProperties": false
-            },
-            {
-              "anyOf": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "at": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "at"
-                  ],
-                  "additionalProperties": false
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "points": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "x": {
-                            "type": "number"
-                          },
-                          "y": {
-                            "type": "number"
-                          }
-                        },
-                        "required": [
-                          "x",
-                          "y"
-                        ],
-                        "additionalProperties": false
-                      }
-                    }
-                  },
-                  "required": [
-                    "points"
-                  ],
-                  "additionalProperties": false
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "rows": {
-                      "type": "number"
-                    },
-                    "cols": {
-                      "type": "number"
-                    },
-                    "split": {
-                      "type": "object",
-                      "properties": {
-                        "axis": {
-                          "type": "string",
-                          "enum": [
-                            "rows",
-                            "cols"
-                          ]
-                        },
-                        "at": {
-                          "type": "number"
-                        }
-                      },
-                      "required": [
-                        "axis",
-                        "at"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "rows",
-                    "cols"
-                  ],
-                  "additionalProperties": false
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "heights": {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {
-                        "type": "number"
-                      }
-                    }
-                  },
-                  "required": [
-                    "heights"
-                  ],
-                  "additionalProperties": false
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "hour_at": {
-                      "type": "number"
-                    },
-                    "m": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "hour_at",
-                    "m"
-                  ],
-                  "additionalProperties": false
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "enum": [
-                          "gr1",
-                          "gr2",
-                          "gr5",
-                          "gr10",
-                          "gr20",
-                          "gr50",
-                          "zl1",
-                          "zl2",
-                          "zl5",
-                          "zl10",
-                          "zl20",
-                          "zl50",
-                          "zl100",
-                          "zl200"
-                        ]
-                      }
-                    }
-                  },
-                  "required": [
-                    "items"
-                  ],
-                  "additionalProperties": false
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "shaded": {
-                      "type": "array",
-                      "items": {
-                        "type": "number"
-                      }
-                    }
-                  },
-                  "required": [
-                    "shaded"
-                  ],
-                  "additionalProperties": false
-                }
-              ]
-            },
-            {
-              "type": "object",
-              "properties": {
-                "text": {
-                  "type": "string"
-                },
-                "spoken": {
-                  "type": "boolean"
-                }
-              },
-              "required": [
-                "text"
-              ],
-              "additionalProperties": false
-            }
-          ]
+          "$ref": "#/$defs/AnswerValue"
         }
       },
       "required": [
@@ -305,8 +52,7 @@
       "type": "object",
       "properties": {
         "event_id": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          "$ref": "#/$defs/EventId"
         },
         "seq": {
           "type": "integer",
@@ -324,14 +70,10 @@
           "maximum": 9007199254740991
         },
         "asked_at": {
-          "type": "string",
-          "format": "date-time",
-          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          "$ref": "#/$defs/SentAt"
         },
         "answered_at": {
-          "type": "string",
-          "format": "date-time",
-          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          "$ref": "#/$defs/SentAt"
         },
         "kind": {
           "type": "string",
@@ -357,5 +99,300 @@
       ],
       "additionalProperties": false
     }
-  ]
+  ],
+  "$defs": {
+    "EventId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "SentAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    },
+    "AnswerValue": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ChooseValue"
+        },
+        {
+          "$ref": "#/$defs/EnterValue"
+        },
+        {
+          "$ref": "#/$defs/SlotsValue"
+        },
+        {
+          "$ref": "#/$defs/SequenceValue"
+        },
+        {
+          "$ref": "#/$defs/GroupValue"
+        },
+        {
+          "$ref": "#/$defs/PlaceValue"
+        },
+        {
+          "$ref": "#/$defs/ExplainValue"
+        }
+      ]
+    },
+    "ChooseValue": {
+      "type": "object",
+      "properties": {
+        "chosen": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "chosen"
+      ],
+      "additionalProperties": false
+    },
+    "EnterValue": {
+      "type": "object",
+      "properties": {
+        "entered": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "entered"
+      ],
+      "additionalProperties": false
+    },
+    "SlotsValue": {
+      "type": "object",
+      "properties": {
+        "gaps": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "gaps"
+      ],
+      "additionalProperties": false
+    },
+    "SequenceValue": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "GroupValue": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "PlaceValue": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "at": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "at"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "points": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Point"
+              }
+            }
+          },
+          "required": [
+            "points"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rows": {
+              "type": "number"
+            },
+            "cols": {
+              "type": "number"
+            },
+            "split": {
+              "$ref": "#/$defs/GridSplit"
+            }
+          },
+          "required": [
+            "rows",
+            "cols"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "heights": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "heights"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/ClockValue"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Denom"
+              }
+            }
+          },
+          "required": [
+            "items"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "shaded": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "shaded"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Point": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false
+    },
+    "GridSplit": {
+      "type": "object",
+      "properties": {
+        "axis": {
+          "type": "string",
+          "enum": [
+            "rows",
+            "cols"
+          ]
+        },
+        "at": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "axis",
+        "at"
+      ],
+      "additionalProperties": false
+    },
+    "ClockValue": {
+      "type": "object",
+      "properties": {
+        "hour_at": {
+          "type": "number"
+        },
+        "m": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "hour_at",
+        "m"
+      ],
+      "additionalProperties": false
+    },
+    "Denom": {
+      "type": "string",
+      "enum": [
+        "gr1",
+        "gr2",
+        "gr5",
+        "gr10",
+        "gr20",
+        "gr50",
+        "zl1",
+        "zl2",
+        "zl5",
+        "zl10",
+        "zl20",
+        "zl50",
+        "zl100",
+        "zl200"
+      ]
+    },
+    "ExplainValue": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "spoken": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    }
+  }
 }

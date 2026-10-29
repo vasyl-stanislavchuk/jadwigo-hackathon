@@ -9,26 +9,12 @@
       }
     },
     "form": {
-      "type": "string",
-      "enum": [
-        "sum",
-        "difference",
-        "product",
-        "quotient",
-        "any"
-      ]
+      "$ref": "#/$defs/RequiredForm"
     },
     "forms": {
       "type": "array",
       "items": {
-        "type": "string",
-        "enum": [
-          "integer",
-          "proper",
-          "improper",
-          "mixed",
-          "decimal"
-        ]
+        "$ref": "#/$defs/NumberForm"
       }
     },
     "exact_terms": {
@@ -75,6 +61,35 @@
       "type": "number"
     },
     "rule": {
+      "$ref": "#/$defs/RuleRef"
+    }
+  },
+  "required": [
+    "accept"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "RequiredForm": {
+      "type": "string",
+      "enum": [
+        "sum",
+        "difference",
+        "product",
+        "quotient",
+        "any"
+      ]
+    },
+    "NumberForm": {
+      "type": "string",
+      "enum": [
+        "integer",
+        "proper",
+        "improper",
+        "mixed",
+        "decimal"
+      ]
+    },
+    "RuleRef": {
       "oneOf": [
         {
           "type": "object",
@@ -121,13 +136,7 @@
               }
             },
             "op": {
-              "type": "string",
-              "enum": [
-                "add",
-                "sub",
-                "mul",
-                "div"
-              ]
+              "$ref": "#/$defs/Op"
             },
             "recent": {
               "type": "array",
@@ -179,10 +188,15 @@
           "additionalProperties": false
         }
       ]
+    },
+    "Op": {
+      "type": "string",
+      "enum": [
+        "add",
+        "sub",
+        "mul",
+        "div"
+      ]
     }
-  },
-  "required": [
-    "accept"
-  ],
-  "additionalProperties": false
+  }
 }

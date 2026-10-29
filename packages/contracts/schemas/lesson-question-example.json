@@ -3,22 +3,18 @@
   "type": "object",
   "properties": {
     "id": {
-      "type": "string",
-      "pattern": "^lqx_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/LessonQuestionExampleId"
     },
     "pod_id": {
-      "type": "string",
-      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/PodId"
     },
     "lesson_question_id": {
-      "type": "string",
-      "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      "$ref": "#/$defs/LessonQuestionId"
     },
     "twin": {
       "anyOf": [
         {
-          "type": "string",
-          "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+          "$ref": "#/$defs/LessonQuestionId"
         },
         {
           "type": "null"
@@ -26,12 +22,7 @@
       ]
     },
     "language": {
-      "type": "string",
-      "enum": [
-        "pl",
-        "en",
-        "uk"
-      ]
+      "$ref": "#/$defs/Language"
     },
     "slug": {
       "type": "string",
@@ -52,59 +43,7 @@
     "scenarios": {
       "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "try": {
-            "type": "string",
-            "minLength": 1
-          },
-          "value": {},
-          "outcome": {
-            "type": "string",
-            "enum": [
-              "correct",
-              "incorrect"
-            ]
-          },
-          "mistake_class": {
-            "anyOf": [
-              {
-                "type": "string",
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "marks": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "correct": {
-                  "type": "boolean"
-                }
-              },
-              "required": [
-                "id",
-                "correct"
-              ],
-              "additionalProperties": false
-            }
-          }
-        },
-        "required": [
-          "try",
-          "value",
-          "outcome",
-          "mistake_class",
-          "marks"
-        ],
-        "additionalProperties": false
+        "$ref": "#/$defs/ExampleScenario"
       }
     },
     "created_at": {
@@ -126,5 +65,85 @@
     "scenarios",
     "created_at"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "LessonQuestionExampleId": {
+      "type": "string",
+      "pattern": "^lqx_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LessonQuestionId": {
+      "type": "string",
+      "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en",
+        "uk"
+      ]
+    },
+    "ExampleScenario": {
+      "type": "object",
+      "properties": {
+        "try": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {},
+        "outcome": {
+          "type": "string",
+          "enum": [
+            "correct",
+            "incorrect"
+          ]
+        },
+        "mistake_class": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "marks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PartMark"
+          }
+        }
+      },
+      "required": [
+        "try",
+        "value",
+        "outcome",
+        "mistake_class",
+        "marks"
+      ],
+      "additionalProperties": false
+    },
+    "PartMark": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "correct": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "correct"
+      ],
+      "additionalProperties": false
+    }
+  }
 }

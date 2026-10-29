@@ -11,26 +11,12 @@
           }
         },
         "form": {
-          "type": "string",
-          "enum": [
-            "sum",
-            "difference",
-            "product",
-            "quotient",
-            "any"
-          ]
+          "$ref": "#/$defs/RequiredForm"
         },
         "forms": {
           "type": "array",
           "items": {
-            "type": "string",
-            "enum": [
-              "integer",
-              "proper",
-              "improper",
-              "mixed",
-              "decimal"
-            ]
+            "$ref": "#/$defs/NumberForm"
           }
         },
         "exact_terms": {
@@ -77,110 +63,7 @@
           "type": "number"
         },
         "rule": {
-          "oneOf": [
-            {
-              "type": "object",
-              "properties": {
-                "rule": {
-                  "type": "string",
-                  "const": "times_table"
-                },
-                "a": {
-                  "type": "number"
-                },
-                "b": {
-                  "type": "number"
-                },
-                "recent": {
-                  "type": "array",
-                  "items": {
-                    "type": "number"
-                  }
-                }
-              },
-              "required": [
-                "rule",
-                "a",
-                "b",
-                "recent"
-              ],
-              "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "properties": {
-                "rule": {
-                  "type": "string",
-                  "const": "fill_blank"
-                },
-                "template": {
-                  "type": "string"
-                },
-                "operands": {
-                  "type": "array",
-                  "items": {
-                    "type": "number"
-                  }
-                },
-                "op": {
-                  "type": "string",
-                  "enum": [
-                    "add",
-                    "sub",
-                    "mul",
-                    "div"
-                  ]
-                },
-                "recent": {
-                  "type": "array",
-                  "items": {
-                    "type": "number"
-                  }
-                }
-              },
-              "required": [
-                "rule",
-                "template",
-                "operands",
-                "op",
-                "recent"
-              ],
-              "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "properties": {
-                "rule": {
-                  "type": "string",
-                  "const": "number_line"
-                },
-                "mode": {
-                  "type": "string",
-                  "enum": [
-                    "place",
-                    "read"
-                  ]
-                },
-                "min": {
-                  "type": "number"
-                },
-                "max": {
-                  "type": "number"
-                },
-                "step": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "rule",
-                "mode",
-                "min",
-                "max",
-                "step"
-              ],
-              "additionalProperties": false
-            }
-          ]
+          "$ref": "#/$defs/RuleRef"
         },
         "kind": {
           "type": "string",
@@ -222,5 +105,136 @@
       ],
       "additionalProperties": false
     }
-  ]
+  ],
+  "$defs": {
+    "RequiredForm": {
+      "type": "string",
+      "enum": [
+        "sum",
+        "difference",
+        "product",
+        "quotient",
+        "any"
+      ]
+    },
+    "NumberForm": {
+      "type": "string",
+      "enum": [
+        "integer",
+        "proper",
+        "improper",
+        "mixed",
+        "decimal"
+      ]
+    },
+    "RuleRef": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "type": "string",
+              "const": "times_table"
+            },
+            "a": {
+              "type": "number"
+            },
+            "b": {
+              "type": "number"
+            },
+            "recent": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "rule",
+            "a",
+            "b",
+            "recent"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "type": "string",
+              "const": "fill_blank"
+            },
+            "template": {
+              "type": "string"
+            },
+            "operands": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "op": {
+              "$ref": "#/$defs/Op"
+            },
+            "recent": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "rule",
+            "template",
+            "operands",
+            "op",
+            "recent"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "type": "string",
+              "const": "number_line"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "place",
+                "read"
+              ]
+            },
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            },
+            "step": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "rule",
+            "mode",
+            "min",
+            "max",
+            "step"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Op": {
+      "type": "string",
+      "enum": [
+        "add",
+        "sub",
+        "mul",
+        "div"
+      ]
+    }
+  }
 }
