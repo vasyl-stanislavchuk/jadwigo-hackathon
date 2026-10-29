@@ -64,14 +64,14 @@ POLISH = [
     "kasia (małą literą) też jest imieniem.",
 ]
 ENGLISH = [
-    "Kasia's teacher says she rushes. Can David help Kasia?",
-    "Tell David that Tomek is coming.",
+    "Kasia's teacher says she rushes. Can Peter help Kasia?",
+    "Tell Peter that Tomek is coming.",
 ]
 
 
 @pytest.mark.parametrize("text", POLISH + ENGLISH)
 def test_names_are_replaced_in_polish_and_english(text: str) -> None:
-    names = ["Kasia", "Dawid", "Tomek", "David"]
+    names = ["Kasia", "Dawid", "Tomek", "Peter"]
     guarded = guard(text, names=names)
     assert leaks(guarded.text, names) == []
     assert "[NAME_1]" in guarded.text

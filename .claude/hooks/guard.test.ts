@@ -3,7 +3,7 @@
 // its own test strings. Run: bun test .claude/hooks
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { denial, EXEC_CLEARS, type HookInput } from "./guard.ts";
@@ -262,6 +262,141 @@ describe("guard: Bash", () => {
   test("a bare git push from main is denied, from a branch allowed", () => {
     expect(denial(bash("git push"), {}, onBranch("main"))).toMatch(/through a PR/);
     expect(denial(bash("git push"), {}, onBranch("dl-5ssh.34.3/ci"))).toBeUndefined();
+  });
+
+  describe("a push follows a cd only in the one allowlisted form (dl-5ssh.74)", () => {
+    const root = mkdtempSync(join(tmpdir(), "guard-cd-"));
+    const lane = join(root, "lane");
+    const checkout = join(root, "main-checkout");
+    mkdirSync(lane);
+    mkdirSync(checkout);
+    const branches: Record<string, string> = { [lane]: "dl-x.1/y", [checkout]: "main" };
+    const at = (cwd: string) => (command: string) =>
+      denial({ ...bash(command), cwd }, {}, (dir) => branches[dir ?? ""]);
+    const from = at(checkout);
+
+    test.each([
+      ["cd then push", `cd ${lane} && git push`],
+      ["a relative cd", "cd ../lane && git push -u origin"],
+      ["cd, push -u origin <feature>", `cd ${lane} && git push -u origin dl-x.1/y`],
+      ["cd, push --set-upstream origin", `cd ${lane} && git push --set-upstream origin`],
+      ["cd, push, then the tail trailer", `cd ${lane} && git push 2>&1 | tail -5`],
+      ["surrounding whitespace", `  cd ${lane} && git push\n`],
+    ])("allowed from a checkout on main: %s", (_name, command) => {
+      expect(from(command)).toBeUndefined();
+    });
+
+    test.each([
+      // The first cases, before the review rounds.
+      ["a bare push", "git push"],
+      ["cd, push origin main", `cd ${lane} && git push origin main`],
+      ["cd, -C back to main", `cd ${lane} && git -C ../main-checkout push`],
+      ["a quoted $X", 'cd "$X" && git push'],
+      ["a bare $X", "cd $X && git push"],
+      ["a missing folder", `cd ${root}/missing && git push`],
+      ["a folder that is no checkout", `cd ${root} && git push`],
+      // Round 1: a cd the push may not run after, quoted refspecs, more than one -C.
+      ["a cd in a subshell", `(cd ${lane}) && git push`],
+      ["a cd a failed && skips", `false && cd ${lane}; git push`],
+      ["a backgrounded cd", `cd ${lane} & git push`],
+      ["a cd after ||", `true || cd ${lane} && git push`],
+      ["cd - back", `cd ${lane} && cd - && git push`],
+      ["pushd back", `cd ${lane} && pushd ${checkout} && git push`],
+      ["popd back", `pushd ${lane} && popd && git push`],
+      ["builtin cd back", `cd ${lane} && builtin cd ${checkout} && git push`],
+      ["a cd inside braces", `cd ${lane} && { cd ${checkout}; } && git push`],
+      ["--git-dir names main's checkout", `cd ${lane} && git --git-dir=${checkout}/.git push`],
+      ["GIT_DIR names main's checkout", `cd ${lane} && GIT_DIR=${checkout}/.git git push`],
+      ["a double-quoted main", `cd ${lane} && git push origin "main"`],
+      ["a single-quoted HEAD:main", `cd ${lane} && git push origin 'HEAD:main'`],
+      ["a quoted refs/heads/main", `cd ${lane} && git push origin "HEAD:refs/heads/main"`],
+      ["git -C with a quoted folder", `cd ${lane} && git -C "${checkout}" push`],
+      ["git -C with a quoted dot and main", `cd ${lane} && git -C "." push origin main`],
+      ["-C main after -C lane", `git -C ${lane} -C ${checkout} push`],
+      ["-C relative to the one before", `git -C ${lane} -C ../main-checkout push`],
+      // Round 2: flags and config that push main from a feature checkout holding one.
+      ["cd, push --all", `cd ${lane} && git push --all`],
+      ["cd, push --branches", `cd ${lane} && git push --branches origin`],
+      ["cd, push --mirror", `cd ${lane} && git push --mirror`],
+      ["cd, push --tags", `cd ${lane} && git push --tags`],
+      ["-C, push --all", `git -C ${lane} push --all`],
+      ["-C, push --mirror", `git -C ${lane} push --mirror origin`],
+      ["cd, -c push.default=matching", `cd ${lane} && git -c push.default=matching push`],
+      ["cd, -c remote.origin.push", `cd ${lane} && git -c remote.origin.push=main:main push`],
+      ["-C, -c push.default", `git -C ${lane} -c push.default=matching push`],
+      ["cd, GIT_CONFIG_* env", `cd ${lane} && GIT_CONFIG_COUNT=1 git push`],
+      ["cd, --config-env", `cd ${lane} && git --config-env=push.default=PD push`],
+      // Round 4: escapes and wrappers.
+      ["an escaped quote hiding a push", 'echo \\"; git push origin main; echo \\"'],
+      ["an escaped quote after a cd", `cd ${lane} && echo \\"; git push origin main; echo \\"`],
+      ["an escaped heredoc marker", "echo \\<<EOF\ngit push origin main\nEOF"],
+      ["env cd", `env cd ${lane} && git push`],
+      ["nohup cd", `nohup cd ${lane} && git push`],
+      ["xargs cd", `xargs cd ${lane} && git push`],
+      // Outside the allowlist: -C is never followed, nor any other separator or quoting.
+      ["git -C a lane", `git -C ${lane} push`],
+      ["two -C", `git -C ${root} -C lane push`],
+      ["cd; push", `cd ${lane}; git push`],
+      ["a quoted feature refspec", `cd ${lane} && git push origin "dl-x.1/y"`],
+      ["a refspec with a colon", `cd ${lane} && git push origin dl-x.1/y:main`],
+      ["cd to main's checkout", `cd ${checkout} && git push`],
+      ["a second command after", `cd ${lane} && git push && git push origin main`],
+    ])("denied from a checkout on main: %s", (_name, command) => {
+      expect(from(command)).toMatch(/through a PR/);
+    });
+
+    test("an escaped quote hiding a push to main is denied from a feature checkout too", () => {
+      expect(at(lane)('echo \\"; git push origin main; echo \\"')).toMatch(/through a PR/);
+      expect(at(lane)("git push")).toBeUndefined();
+      // Prose about a push to main, escaped quotes and all, is still prose.
+      expect(at(lane)('git commit -m "never \\"git push origin main\\" by hand"')).toBeUndefined();
+      expect(at(lane)("git commit -m 'git push origin main is refused'")).toBeUndefined();
+    });
+  });
+
+  // The cases of the other rewrite (13ac6fc), on real folders: every one it denied stays denied.
+  test("only `cd <lane> && git push` from a session on main is judged by the lane's branch", () => {
+    const root = mkdtempSync(join(tmpdir(), "guard-cd-"));
+    const lane = join(root, "lane");
+    const missing = join(root, "missing");
+    mkdirSync(lane);
+    const branches: Record<string, string> = { [lane]: "dl-x.1/y" };
+    // The session's own folder is on main; only the lane folder knows another branch.
+    const branchOf = (cwd: string | undefined) => branches[cwd ?? ""] ?? (cwd ? undefined : "main");
+    const from = (command: string) => denial(bash(command), {}, branchOf);
+    expect(from(`cd ${lane} && git push`)).toBeUndefined();
+    expect(from(`cd ${lane} && git push -u origin dl-x.1/y`)).toBeUndefined();
+    for (const command of [
+      "git push",
+      `cd ${lane} && git push origin main`,
+      `cd ${lane} && git push origin HEAD:main`,
+      `cd ${lane} && git push origin "main"`,
+      `cd ${lane} && git push origin 'HEAD:main'`,
+      `(cd ${lane}) && git push`,
+      `false && cd ${lane}; git push`,
+      `cd ${lane} & git push`,
+      `cd ${lane}; git push`,
+      `cd ${lane} && cd - && git push`,
+      `cd ${lane} && pushd ${root} && git push`,
+      `git -C ${lane} -C ${root} push`,
+      `git -C ${lane} push`,
+      'cd "$X" && git push',
+      "cd $X && git push",
+      `cd ${missing} && git push`,
+      "cd lane && git push",
+      "cd ~/lane && git push",
+      `env cd ${lane} && git push`,
+      `nohup cd ${lane} && git push`,
+      `echo ${lane} | xargs cd && git push`,
+      `echo \\"; cd ${lane} && git push; echo \\"`,
+      `echo \\"; git push origin main; echo \\"`,
+      `cat <\\<EOF\ncd ${lane} && git push\nEOF\ngit push`,
+      `cat <<EOF\ncd ${lane} && git push\nEOF\ngit push`,
+      `cd ${lane} && git push && git push origin main`,
+      `cd ${lane} && git push 2>&1`,
+    ]) {
+      expect(from(command) ?? `allowed: ${command}`, command).toMatch(/through a PR/);
+    }
   });
 
   test("exec with a long run of -a stays linear (dl-5ssh.56)", () => {
