@@ -12,6 +12,7 @@ import starlightOpenAPI, { createOpenAPISidebarGroup } from "starlight-openapi";
 import { createStarlightTypeDocPlugin } from "starlight-typedoc";
 import { apiBase, servedHost, sidebar } from "./src/index.ts";
 import { API_REFERENCE_BASE } from "./src/lib/guides.ts";
+import { SIDEBAR_STATE } from "./src/styles/sidebar-toggle.ts";
 import { THEME_BRIDGE } from "./src/styles/theme-bridge.ts";
 
 // The API reference's sidebar group, which starlight-openapi fills from public/openapi.json.
@@ -55,10 +56,15 @@ export default defineConfig({
         return group;
       }),
       // The page-actions menu sits beside the title, with Copy for Muse added (dl-5ssh.90.32).
-      components: { PageTitle: "./src/components/PageTitle.astro" },
+      components: {
+        PageTitle: "./src/components/PageTitle.astro",
+        SiteTitle: "./src/components/SiteTitle.astro",
+      },
       // Agents find the API's OpenAPI document from any page, as they find a page's Markdown.
       head: [
         { tag: "script", content: THEME_BRIDGE },
+        // A sidebar the reader hid stays hidden from the first paint (src/components/SiteTitle.astro).
+        { tag: "script", content: SIDEBAR_STATE },
         {
           tag: "link",
           attrs: {
