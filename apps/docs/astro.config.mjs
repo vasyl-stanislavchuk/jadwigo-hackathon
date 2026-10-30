@@ -35,7 +35,12 @@ export default defineConfig({
           {
             base: API_REFERENCE_BASE,
             schema: "./public/openapi.json",
-            sidebar: { label: "API reference", group: apiGroup, collapsed: false },
+            sidebar: {
+              label: "API reference",
+              group: apiGroup,
+              collapsed: false,
+              operations: { badges: true },
+            },
           },
         ]),
         // Fails the build on a broken internal link, so a renamed page never strands one. It sees
