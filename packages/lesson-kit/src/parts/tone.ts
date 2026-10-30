@@ -7,7 +7,7 @@
  *
  * The marks rule (docs/18 §0): after a miss the result may mark each part, right or missed. A
  * marked part stays marked until the child changes it; a step marked as a whole clears on the
- * child's first change. Amber is also dashed, so the mark does not rest on colour alone.
+ * child's first change. The miss tone is also dashed, so the mark does not rest on colour alone.
  */
 
 import { cn } from "@jadwigo/ui";
@@ -88,7 +88,7 @@ export function wholeTone(feedback: Feedback | null, changed: ReadonlySet<string
   return feedback.parts === undefined && changed.size === 0 ? "try_again" : "idle";
 }
 
-/** The classes for a tone, from the kid tokens. Amber is dashed too. */
+/** The classes for a tone, from the kid tokens. The miss tone is dashed too. */
 export const TONE_CLASS: Record<Tone, string> = {
   idle: "",
   green: "border-kid-correct bg-kid-correct-soft text-kid-correct-ink",
