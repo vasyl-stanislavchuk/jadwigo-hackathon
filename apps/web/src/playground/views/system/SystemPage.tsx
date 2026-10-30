@@ -1,29 +1,49 @@
 /**
  * The System page (dl-uukj.29.30): /playground/system shows the whole Jadwigo design system, Zeszyt,
  * as the owner reviewed it in Claude Design (docs/plan/design-system/claude-design/), in the
- * components lessons actually use. The page sits inside [data-lesson-theme='zeszyt'], so every
- * swatch, specimen and part reads the real tokens of styles/foundation.css and styles/stage.css: a
- * value changed there shows here at once, and a part changed in code shows here as in a lesson.
+ * components lessons actually use. Every swatch, specimen and part reads the real tokens of
+ * styles/foundation.css and styles/stage.css: a value changed there shows here at once, and a part
+ * changed in code shows here as in a lesson.
+ *
+ * Two scopes (dl-uukj.32.12). The page's [theme] root declares Zeszyt's aliases over the
+ * playground's neutral chrome. The lesson's scope, [data-lesson-theme='zeszyt'], wraps every
+ * section but App pages, as `display: contents`: its rules and type reach the parts, while
+ * lesson.css's ground padding and corners, which are for a lesson's card, draw no box here. App
+ * pages sits outside it, as a parent's page does.
  *
  * Sections: the foundations (metaphor, colour, font, space and shape, motion), the components in
- * every state, the lesson frame (its rules, frames, footer and band, a step's life, help, the tray
- * and tools, scrolling, media, progress, pause and the end: system/frame/, dl-uukj.29.46), the
- * lesson screen (its zones and six states, drawn from a written example), the interface words and
- * the rules. Nothing on it plays or links a lesson.
+ * every state, tiles and still answers, the lesson frame (its rules, frames, footer and band, a
+ * step's life, help, the tray and tools, scrolling, media, progress, pause and the end:
+ * system/frame/, dl-uukj.29.46), the lesson screen (its zones and six states, drawn from a written
+ * example), app pages, the interface words, the rules and the gaps for the owner. Nothing on it
+ * plays or links a lesson.
  */
 
 import { type CopyKey, copy, type Language, TABLES } from "@jadwigo/copy";
 import { Tooltip } from "@jadwigo/lesson-kit";
-import { Button, cn, Sheet, SheetContent, SheetDescription, SheetTitle } from "@jadwigo/ui";
+import {
+  Button,
+  cn,
+  type MenuEntry,
+  type MenuItem,
+  SegmentedControl,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SideMenu,
+  Switch,
+} from "@jadwigo/ui";
 import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { type ReactNode, useContext, useEffect, useState } from "react";
+import { AppPages } from "./AppPages.tsx";
 import { DESIGN_LINES, METAPHOR, ZONES } from "./data.ts";
 import { Colour, Motion, SpaceAndShape, Sub, subId, Type } from "./Foundations.tsx";
 import { FRAME_SECTIONS, FrameSection } from "./frame/sections.tsx";
 import { Actions, Bands, Fields, Help, Icons, KeyboardFocus, Options, Tiles } from "./Gallery.tsx";
 import { SystemLanguage } from "./lang.ts";
+import { OwnerGaps, TilesAndStillAnswers } from "./Outcomes.tsx";
 import { Settings } from "./SettingsDemo.tsx";
-import { type MenuEntry, type MenuItem, SegmentedControl, SideMenu, Switch } from "./settings.tsx";
 
 type Mode = "light" | "dark";
 /** The page's sections in the menu's groups. Names are plain names, as the export groups them. */
@@ -60,6 +80,7 @@ export const MENU: readonly MenuEntry[] = [
   sub("Tiles"),
   sub("Icons"),
   page("Help ladder", "help"),
+  page("Tiles and still answers", "still-answers"),
   {
     id: "settings-group",
     label: "Settings controls",
@@ -79,6 +100,7 @@ export const MENU: readonly MenuEntry[] = [
     label: "Lesson screen",
     items: [sub("Six zones", "stage"), page("Six states", subId("The stage in six states"))],
   },
+  page("App pages", "app-pages"),
   { heading: "Words" },
   page("Interface words", "lines"),
   {
@@ -89,6 +111,8 @@ export const MENU: readonly MenuEntry[] = [
       page("Where we differ", subId("Where we differ from the export")),
     ],
   },
+  { heading: "For the owner" },
+  page("Gaps for the owner", "gaps"),
 ];
 
 /** Every page's anchor, in the order they sit on the page. */
@@ -139,29 +163,46 @@ const LANGUAGES = [
   { value: "en", label: "EN" },
 ] as const;
 
+/** The lesson's scope, drawing no box of its own: its rules, type and aliases reach what is inside,
+ * and lesson.css's ground padding and corners, a lesson card's, have nothing to draw on. */
+function LessonScope({ children }: { children: ReactNode }): JSX.Element {
+  return (
+    <div data-lesson-theme="zeszyt" className="contents">
+      {children}
+    </div>
+  );
+}
+
+/** `app` keeps the section's parts out of the lesson's scope, as a parent's page is; its title
+ * still reads like every other section's. */
 function Section({
   id,
   title,
   lead,
+  app = false,
   children,
 }: {
   id: string;
   title: string;
   lead: string;
+  app?: boolean;
   children: ReactNode;
 }): JSX.Element {
+  const head = (
+    <div className="flex flex-col gap-2">
+      <h2 id={`${id}-title`} className="text-3xl">
+        {title}
+      </h2>
+      <p className="text-lg text-muted-foreground">{lead}</p>
+    </div>
+  );
   return (
     <section
       id={id}
       className="flex scroll-mt-6 flex-col gap-6 border-t-2 border-border pt-8"
       aria-labelledby={`${id}-title`}
     >
-      <div className="flex flex-col gap-2">
-        <h2 id={`${id}-title`} className="text-3xl">
-          {title}
-        </h2>
-        <p className="text-lg text-muted-foreground">{lead}</p>
-      </div>
+      {app ? <LessonScope>{head}</LessonScope> : head}
       {children}
     </section>
   );
@@ -176,13 +217,7 @@ function Anatomy(): JSX.Element {
       <ol className="grid gap-3 md:grid-cols-3">
         {ZONES.map((z, i) => (
           <li key={z.title} className="flex gap-3 rounded-2xl border-2 border-border bg-card p-4">
-            <span
-              className="grid size-7 shrink-0 place-items-center rounded-full text-sm"
-              style={{
-                background: "var(--jw-pick-edge)",
-                color: "var(--jw-card)",
-              }}
-            >
+            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-jw-pick-edge text-sm text-jw-card">
               {i + 1}
             </span>
             <div className="flex flex-col gap-1">
@@ -277,7 +312,7 @@ const CHANGES = [
   "At night the solution’s band keeps its own tone, a step lighter than the flat page, so it still stands apart.",
   "No button or option draws a keyboard focus (owner, 2026-10-26), where the export draws a 2 px frame 7 px inside. Links keep the 3 px ink outline, 3 px out.",
   "Help’s “look here” ring is help’s yellow; the export has no such mark.",
-  "The settings controls (radio group, switch, segmented control, tabs, side menu) live with this page until a learner screen needs one.",
+  "The settings controls (radio group, switch, segmented control, tabs, side menu) live in @jadwigo/ui, for app pages and settings, never inside a lesson.",
 ];
 
 /** Whether the sidebar is open, remembered in this browser only. */
@@ -327,18 +362,19 @@ export function SystemPage(): JSX.Element {
   useSmoothJumps();
   return (
     <SystemLanguage.Provider value={language}>
-      <div {...{ theme: mode }} className="min-h-svh [--system-bar:4.125rem]" data-system-page>
-        {/* A lesson pads its root with 12 px of ground (theme/lesson.css); this page is not a lesson, so its
-                    header sits flush at the top and its line runs edge to edge. */}
-        <div
-          data-lesson-theme="zeszyt"
-          lang={language}
-          className="min-h-svh bg-background text-foreground"
-          style={{ padding: 0, borderRadius: 0 }}
-        >
+      {/* [theme] declares Zeszyt's aliases over the neutral chrome. This page is not a lesson, so the
+          lesson's scope draws no box (LessonScope): the header sits flush at the top and its line
+          runs edge to edge. */}
+      <div
+        {...{ theme: mode }}
+        lang={language}
+        className="min-h-svh bg-background text-foreground [--system-bar:4.125rem]"
+        data-system-page
+      >
+        <LessonScope>
           {/* --system-bar: the header's height, 64 px and its 2 px line, which the sidebar sits under. */}
           <div className="sticky top-0 z-30 border-b-2 border-border bg-background/95 backdrop-blur">
-            <div className="mx-auto flex h-16 max-w-[96rem] items-center gap-3 px-4 sm:px-8">
+            <div className="mx-auto flex h-16 max-w-384 items-center gap-3 px-4 sm:px-8">
               <Button
                 variant="outline"
                 className="min-h-11 px-3 text-base lg:hidden"
@@ -398,32 +434,38 @@ export function SystemPage(): JSX.Element {
               />
               <div data-system-mode={mode}>
                 <Switch
-                  label={<span className="hidden sm:inline">Dark</span>}
-                  checked={mode === "dark"}
-                  onChange={(on) => setMode(on ? "dark" : "light")}
                   size="sm"
-                />
+                  checked={mode === "dark"}
+                  onCheckedChange={(on) => setMode(on ? "dark" : "light")}
+                >
+                  <span className="hidden sm:inline">Dark</span>
+                  <span className="sr-only sm:hidden">Dark</span>
+                </Switch>
               </div>
             </div>
           </div>
-          <div className="mx-auto flex max-w-[96rem]">
+        </LessonScope>
+        <div className="mx-auto flex max-w-384">
+          <LessonScope>
             {/* The notebook's margin: a full-height column under the header with a line on its right,
-                            sliding shut to nothing. Its inner box keeps its width, so the menu never rewraps. */}
+                sliding shut to nothing. Its inner box keeps its width, so the menu never rewraps. */}
             <aside
               id="system-sidebar"
               aria-label="Sections"
               data-open={sidebar}
               {...(sidebar ? {} : { inert: "" })}
               className={cn(
-                "sticky top-[var(--system-bar)] hidden h-[calc(100svh-var(--system-bar))] shrink-0 self-start overflow-hidden transition-[width,border-color] duration-[var(--jw-dur-step)] ease-[var(--jw-ease-out)] lg:block",
-                sidebar ? "w-64 border-r-2 border-[var(--jw-line)]" : "w-0 border-r-0",
+                "sticky top-[var(--system-bar)] hidden h-[calc(100svh-var(--system-bar))] shrink-0 self-start overflow-hidden transition-[width,border-color] duration-jw-step ease-jw-out lg:block",
+                sidebar ? "w-64 border-r-2 border-jw-line" : "w-0 border-r-0",
               )}
             >
               <div className="h-full w-64 overflow-y-auto overscroll-contain py-6 pr-3 pl-4 [scrollbar-color:var(--jw-line)_transparent] [scrollbar-gutter:stable] [scrollbar-width:thin] sm:pl-8">
                 <SectionMenu active={active} />
               </div>
             </aside>
-            <main className="flex min-w-0 flex-1 flex-col gap-12 px-4 py-8 sm:px-8 lg:pl-10">
+          </LessonScope>
+          <main className="flex min-w-0 flex-1 flex-col gap-12 px-4 py-8 sm:px-8 lg:pl-10">
+            <LessonScope>
               <header className="flex flex-col gap-2">
                 <p className="text-sm text-muted-foreground">
                   Jadwigo · styles/foundation.css, styles/stage.css
@@ -553,6 +595,14 @@ export function SystemPage(): JSX.Element {
               </Section>
 
               <Section
+                id="still-answers"
+                title="Tiles and still answers"
+                lead="The readout a task shows, the tile an app page marks an outcome with, and the parts the kit has still to export."
+              >
+                <TilesAndStillAnswers />
+              </Section>
+
+              <Section
                 id="settings"
                 title="Settings controls"
                 lead="For settings and topic screens, never inside a lesson: a radio group, a switch, a segmented control, notebook tabs and a side menu. Chosen wears the pick, hover on a mouse is a quiet fill, and Tab shows the ink outline."
@@ -574,7 +624,18 @@ export function SystemPage(): JSX.Element {
                 <Anatomy />
                 <Bands />
               </Section>
+            </LessonScope>
 
+            <Section
+              id="app-pages"
+              title="App pages"
+              lead="A parent's page, drawn by @jadwigo/ui's parts outside the lesson's scope, as the app draws one: Page, Heading 1 to 3, Field with a text Input, a compact Card, the action Button at the control height, a Notice, a Link and the outcome tile. Beside it, the register's values, read live."
+              app
+            >
+              <AppPages mode={mode} />
+            </Section>
+
+            <LessonScope>
               <Section
                 id="lines"
                 title="Interface words"
@@ -605,8 +666,16 @@ export function SystemPage(): JSX.Element {
                   </Sub>
                 </div>
               </Section>
-            </main>
-          </div>
+
+              <Section
+                id="gaps"
+                title="Gaps for the owner"
+                lead="What making Zeszyt every page's look leaves open (dl-uukj.32.7). Each is the owner's to answer: a yes needs no issue, a change becomes one."
+              >
+                <OwnerGaps mode={mode} />
+              </Section>
+            </LessonScope>
+          </main>
         </div>
       </div>
     </SystemLanguage.Provider>

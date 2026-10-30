@@ -1,16 +1,17 @@
 /**
  * The System page (dl-uukj.29.46): every entry of its menu has a section on the page, the Lesson
  * frame group included, and the group's live parts render. The stage's states come from a written
- * example's scenarios, and no lesson plays or is linked. happy-dom lays nothing out, so the
- * observers the page uses are stubbed.
+ * example's scenarios, and no lesson plays or is linked. App pages sits outside the lesson's scope
+ * and draws the kit's parts; tiles and still answers, and the owner's gaps, have their sections
+ * (dl-uukj.32.12). happy-dom lays nothing out, so the observers the page uses are stubbed.
  */
 
 import { copy, TABLES } from "@jadwigo/copy";
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { AUTHORED, fakeApi } from "../../examples/fixture.ts";
 import { loadExamples, PlaygroundApi } from "../../examples/index.ts";
-import { DESIGN_LINES } from "./data.ts";
+import { APP_PAGE_ROLES, DESIGN_LINES, OWNER_GAPS } from "./data.ts";
 import { FRAME_KINDS, FRAME_RULES, MEASURES } from "./frame/data.ts";
 import { FRAME_SECTIONS } from "./frame/sections.tsx";
 import { stageExample, stageQuestion } from "./question.ts";
@@ -117,5 +118,75 @@ describe("the System page", () => {
     expect(tone("right", q.right)).toBe("green");
     expect(tone("solution", q.right)).toBe("green");
     expect(container.querySelector('a[href*="/lessons/"], iframe')).toBeNull();
+  });
+});
+
+describe("the System page's app pages, tiles and gaps (dl-uukj.32.12)", () => {
+  it("has App pages, Tiles and still answers, and Gaps for the owner in its menu", () => {
+    for (const id of ["app-pages", "still-answers", "gaps"]) expect(PAGE_IDS).toContain(id);
+  });
+
+  it("draws App pages outside the lesson's scope, with the rest of the page inside it", () => {
+    const { container } = render(page());
+    const app = container.querySelector("section#app-pages [data-app-pages]");
+    expect(app).not.toBeNull();
+    expect(app?.closest("[data-lesson-theme]")).toBeNull();
+    for (const id of ["metaphor", "components", "still-answers", "stage", "lines", "gaps"])
+      expect(
+        container.querySelector(`section#${id}`)?.closest("[data-lesson-theme]"),
+        id,
+      ).not.toBeNull();
+  });
+
+  it("builds the app page from the kit's parts, and lists every role of its register", () => {
+    render(page());
+    const specimen = screen.getByRole("region", { name: "A parent's page, drawn by the kit" });
+    const inside = within(specimen);
+    for (const level of [1, 2, 3])
+      expect(inside.getAllByRole("heading", { level })).toHaveLength(1);
+    expect(inside.getByRole("textbox", { name: "Adres e-mail" })).toBeTruthy();
+    expect(inside.getByRole("button", { name: "Wyślij kod" })).toBeTruthy();
+    expect(inside.getByRole("status").textContent).toContain("Kod wysłaliśmy");
+    expect(inside.getByRole("link", { name: "Wróć do listy lekcji" })).toBeTruthy();
+    expect(inside.getAllByRole("img").map((i) => i.getAttribute("aria-label"))).toEqual([
+      "6 × 7: Dobrze",
+      "8 × 9: Jeszcze nie",
+      "7 × 7: Pominięte",
+    ]);
+    const table = screen.getByRole("table", { name: "The app-page register, live" });
+    for (const r of APP_PAGE_ROLES)
+      expect(within(table).getByText(r.token, { selector: "code" })).toBeTruthy();
+  });
+
+  it("draws the readout and the outcome tile in 3 tones and 2 sizes, and names what waits on the kit", () => {
+    const { container } = render(page());
+    const section = container.querySelector("section#still-answers");
+    expect(section?.querySelectorAll("[data-task-target]")).toHaveLength(2);
+    const tiles = within(section as HTMLElement).getAllByRole("img");
+    expect(tiles.map((t) => t.getAttribute("data-outcome"))).toEqual([
+      "right",
+      "miss",
+      "plain",
+      "right",
+      "miss",
+      "plain",
+    ]);
+    expect(
+      [...(section?.querySelectorAll("[data-system-waiting]") ?? [])].map((w) =>
+        w.getAttribute("data-system-waiting"),
+      ),
+    ).toEqual(["The kid tile", "StillAnswer"]);
+  });
+
+  it("lists every gap the owner answers, each with the tokens it is about", () => {
+    const { container } = render(page());
+    const gaps = [...container.querySelectorAll("section#gaps [data-owner-gap]")];
+    expect(gaps.map((g) => g.getAttribute("data-owner-gap"))).toEqual(OWNER_GAPS.map((g) => g.id));
+    for (const [i, g] of OWNER_GAPS.entries())
+      expect(
+        [...(gaps[i]?.querySelectorAll("[data-live-value]") ?? [])].map((v) =>
+          v.getAttribute("data-live-value"),
+        ),
+      ).toEqual(g.tokens);
   });
 });
