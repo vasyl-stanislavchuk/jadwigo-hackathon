@@ -367,7 +367,7 @@ describe("auth.sh", () => {
     });
   });
 
-  it("Google is on in dev.json with its keychain secret; prod.json and Facebook wait (dl-e8ov.2.8)", () => {
+  it("Google (dl-e8ov.2.8) and Facebook (dl-e8ov.2.58) are on in dev.json with their keychain secrets; prod.json waits", () => {
     const read = (env: string) =>
       JSON.parse(readFileSync(join(repo, `infra/supabase-auth/${env}.json`), "utf8"));
     const dev = read("dev");
@@ -375,9 +375,14 @@ describe("auth.sh", () => {
       external_google_enabled: true,
       external_google_client_id: expect.stringMatching(/\.apps\.googleusercontent\.com$/),
       external_google_email_optional: false,
+      external_facebook_enabled: true,
+      external_facebook_client_id: expect.stringMatching(/^\d+$/),
+      external_facebook_email_optional: false,
     });
-    expect(dev.secrets).toEqual({ external_google_secret: "jadwigo-google-oauth-secret-dev" });
-    expect(Object.keys(dev.settings).filter((k) => k.startsWith("external_facebook_"))).toEqual([]);
+    expect(dev.secrets).toEqual({
+      external_google_secret: "jadwigo-google-oauth-secret-dev",
+      external_facebook_secret: "jadwigo-facebook-app-secret-dev",
+    });
     const prod = read("prod");
     expect(Object.keys(prod.settings).filter((k) => k.startsWith("external_"))).toEqual([]);
     expect(prod.secrets).toBeUndefined();
