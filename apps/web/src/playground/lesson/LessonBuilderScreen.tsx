@@ -34,14 +34,18 @@ export const LESSON_BUILDER_PATH = "/playground/lesson";
 
 /** The draft the dev server sends, and a pick that asks it for another; `message` is null until
  * the first one arrives, and stays null outside `vite` serve. */
-function useDraft(): { message: DraftMessage | null; pick(draft_id: string): void } {
-  const [message, setMessage] = useState<DraftMessage | null>(null);
+function useDraft(): {
+  message: DraftMessage | null;
+  previous: unknown;
+  pick(draft_id: string): void;
+} {
+  const [state, setState] = useState<DraftState>({ message: null, previous: null });
   const [picked, setPicked] = useState<string | null>(null);
   useEffect(() => {
     const hot = import.meta.hot;
     if (hot === undefined) return;
     const hello = () => hot.send(BUILDER_HELLO, { draft_id: picked } satisfies HelloMessage);
-    const onDraft = (m: DraftMessage) => setMessage((prev) => keepDrawn(prev, m));
+    const onDraft = (m: DraftMessage) => setState((prev) => nextDraftState(prev, m));
     hot.on(BUILDER_DRAFT, onDraft);
     hot.on("vite:ws:connect", hello);
     hello();
@@ -50,7 +54,22 @@ function useDraft(): { message: DraftMessage | null; pick(draft_id: string): voi
       hot.off("vite:ws:connect", hello);
     };
   }, [picked]);
-  return { message, pick: setPicked };
+  return { message: state.message, previous: state.previous, pick: setPicked };
+}
+
+/** The message drawn, and the same draft as it was before its last change (the Data view's diff);
+ * previous is null on a new draft or a pick. */
+interface DraftState {
+  message: DraftMessage | null;
+  previous: unknown;
+}
+
+export function nextDraftState(state: DraftState, m: DraftMessage): DraftState {
+  const message = keepDrawn(state.message, m);
+  const was = state.message;
+  if (was === null || was.draft_id !== message.draft_id) return { message, previous: null };
+  const changed = JSON.stringify(was.draft) !== JSON.stringify(message.draft);
+  return { message, previous: changed ? was.draft : state.previous };
 }
 
 /** A message whose draft or check could not be read keeps the last one read of the same draft,
@@ -66,10 +85,13 @@ const categoryOf = (raw: unknown): Category => (raw === "adult" ? "adult" : "chi
 /** The draft drawn: its parts and steps, or why it cannot be drawn yet. */
 function LessonDraft({
   message,
+  previous,
   showKey,
   report,
 }: {
   message: DraftMessage;
+  /** The same draft as this page saw it before its last change, or null (the Data view's diff). */
+  previous: unknown;
   showKey: boolean;
   /** Where each drawn step's render findings go; none outside `vite` serve. */
   report: ReturnType<typeof renderReport> | null;
@@ -90,6 +112,14 @@ function LessonDraft({
       </p>
     );
   const { file, skipped } = read;
+  const earlier = previous === null ? null : readDraft(previous);
+  const before = new Map(
+    earlier === null || "error" in earlier
+      ? []
+      : earlier.file.script.parts.flatMap((p) =>
+          p.steps.flatMap((s) => ("question" in s ? [[s.id, s] as const] : [])),
+        ),
+  );
   const language = languageOf(file.language);
   const category = categoryOf(file.category);
   const parts = lessonFileToSpecs(file, undefined, skipped);
@@ -128,6 +158,8 @@ function LessonDraft({
                 n={n}
                 path={step.path}
                 spec={step.spec}
+                source={step.source}
+                previous={before.get(step.step_id)}
                 onRendered={onRendered}
                 findings={of(step.step_id)}
                 showKey={showKey}
@@ -152,9 +184,12 @@ function LessonDraft({
 
 export function LessonBuilderScreen({
   initial = null,
+  initialPrevious = null,
 }: {
   /** A message to draw before the dev server sends one (the tests). */
   initial?: DraftMessage | null;
+  /** The draft before `initial`, for the Data view's diff (the tests). */
+  initialPrevious?: unknown;
 } = {}): ReactElement {
   const live = useDraft();
   // The render check posts to the dev server, so it runs only where one serves the page.
@@ -201,7 +236,12 @@ export function LessonBuilderScreen({
           drafted.
         </p>
       ) : (
-        <LessonDraft message={message} showKey={showKey} report={report} />
+        <LessonDraft
+          message={message}
+          previous={live.message === null ? initialPrevious : live.previous}
+          showKey={showKey}
+          report={report}
+        />
       )}
       <CommentsSlot
         {...(message === null || message.draft_id === null ? {} : { draft_id: message.draft_id })}
