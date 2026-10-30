@@ -11,6 +11,11 @@ there.
 - The install has run: `mise install && bun install --frozen-lockfile`.
 - `.env.local` exists in the main checkout (`cp .env.example .env.local`). md seeds it into every
   worktree.
+- For the parent's sign-in, `.env.local` has `JW_SUPABASE_KEY` filled. It is jadwigo-dev's
+  publishable key: in the Supabase dashboard, project jadwigo-dev, Project Settings → API Keys,
+  the key starting `sb_publishable_`. Every browser that opens the app holds it, so it is public,
+  but `.env.example` leaves it empty because gitleaks flags its shape (`dl-e8ov.2.82`). With it empty, `/parent` has no
+  sign-in. `JW_SUPABASE_URL` and `JW_SUPABASE_PROVIDERS` come filled from `.env.example`.
 - Lesson pictures need no step. The web dev server takes `VITE_MEDIA_URL` from
   `apps/web/.env.example` when it is unset (`dl-5ssh.97`).
 
