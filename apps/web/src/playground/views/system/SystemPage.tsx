@@ -15,7 +15,7 @@
  * every state, tiles and still answers, the lesson frame (its rules, frames, footer and band, a
  * step's life, help, the tray and tools, scrolling, media, progress, pause and the end:
  * system/frame/, dl-uukj.29.46), the lesson screen (its zones and six states, drawn from a written
- * example), app pages, the interface words, the rules and the gaps for the owner. Nothing on it
+ * example), app pages, the interface words and the rules. Nothing on it
  * plays or links a lesson.
  */
 
@@ -42,7 +42,7 @@ import { Colour, Motion, SpaceAndShape, Sub, subId, Type } from "./Foundations.t
 import { FRAME_SECTIONS, FrameSection } from "./frame/sections.tsx";
 import { Actions, Bands, Fields, Help, Icons, KeyboardFocus, Options, Tiles } from "./Gallery.tsx";
 import { SystemLanguage } from "./lang.ts";
-import { OwnerGaps, TilesAndStillAnswers } from "./Outcomes.tsx";
+import { TilesAndStillAnswers } from "./Outcomes.tsx";
 import { Settings } from "./SettingsDemo.tsx";
 
 type Mode = "light" | "dark";
@@ -111,8 +111,6 @@ export const MENU: readonly MenuEntry[] = [
       page("Where we differ", subId("Where we differ from the export")),
     ],
   },
-  { heading: "For the owner" },
-  page("Gaps for the owner", "gaps"),
 ];
 
 /** Every page's anchor, in the order they sit on the page. */
@@ -665,14 +663,6 @@ export function SystemPage(): JSX.Element {
                     </ul>
                   </Sub>
                 </div>
-              </Section>
-
-              <Section
-                id="gaps"
-                title="Gaps for the owner"
-                lead="What making Zeszyt every page's look left open (dl-uukj.32.7). The owner answered all four on 2026-10-30: the app-page scale, the outcomes and the readout are built above, and one answer waits on purpose."
-              >
-                <OwnerGaps mode={mode} />
               </Section>
             </LessonScope>
           </main>

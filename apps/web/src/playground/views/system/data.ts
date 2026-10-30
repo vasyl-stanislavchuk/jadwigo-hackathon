@@ -232,23 +232,3 @@ export const PARENT_OUTCOMES: readonly {
   tone: OUTCOME_TONE[outcome],
   icon: OUTCOME_ICON[outcome],
 }));
-
-/** What the Zeszyt-everywhere refactor left for the owner (dl-uukj.32.7). The owner answered all
- * four on 2026-10-30; the register, the outcomes and the readouts are built, and one answer waits
- * on purpose. `cite` is the issue that holds it; `token` names a value the page reads live beside
- * the gap. */
-export const OWNER_GAPS: readonly {
-  id: string;
-  title: string;
-  body: string;
-  cite: string;
-  tokens: readonly string[];
-}[] = [
-  {
-    id: "code-purples",
-    title: "The terminal card keeps its colours until a lesson shows a terminal",
-    body: "Decided and deferred: the --code-* tokens (packages/ui styles/tokens.css) keep the Grape scheme's dark purples on purpose, since no lesson has a terminal block yet. When one does, the card takes Zeszyt's night values, recorded in the deferred issue (decision 2026-10-30-the-terminal-card-keeps-its-colours-until-a-lesson-shows-a-termi). Until then, nobody removes them.",
-    cite: "dl-uukj.32.20",
-    tokens: ["--code-surface", "--code-text", "--code-cmd", "--code-placeholder"],
-  },
-];

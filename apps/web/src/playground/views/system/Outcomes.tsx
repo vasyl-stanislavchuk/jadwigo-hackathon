@@ -1,19 +1,18 @@
 /**
- * Two System page sections (dl-uukj.32.12). "Tiles and still answers": the readout a task shows
+ * A System page section (dl-uukj.32.12). "Tiles and still answers": the readout a task shows
  * (TaskTarget) at a laptop's 44 and a phone's 36 side by side, the outcome tile an app page draws
  * (OutcomeTile) in its 5 tones and 3 sizes with the parent's icon set (dl-uukj.32.19), and the
- * kit's parts still to come. "Gaps for the owner": what the Zeszyt-everywhere refactor left for the
- * owner (dl-uukj.32.7), now the one answer deferred, with the values it is about, read live.
+ * kit's parts still to come.
  */
 
 import { copy } from "@jadwigo/copy";
 import { TaskTarget } from "@jadwigo/lesson-kit";
 import { OutcomeTile } from "@jadwigo/ui";
-import { type CSSProperties, useLayoutEffect, useRef, useState } from "react";
-import { OWNER_GAPS, PARENT_OUTCOMES } from "./data.ts";
+import { type CSSProperties, useLayoutEffect, useState } from "react";
+import { PARENT_OUTCOMES } from "./data.ts";
 import { Sub } from "./Foundations.tsx";
 import { useSystemLanguage } from "./lang.ts";
-import { declaredAt, isColour, useLiveValues } from "./live.ts";
+import { declaredAt } from "./live.ts";
 
 const CARD = "flex min-w-0 flex-col gap-3 rounded-2xl border-2 border-border bg-card p-5";
 
@@ -156,46 +155,5 @@ export function TilesAndStillAnswers(): JSX.Element {
         </ul>
       </Sub>
     </div>
-  );
-}
-
-export function OwnerGaps({ mode }: { mode: string }): JSX.Element {
-  const root = useRef<HTMLOListElement>(null);
-  const values = useLiveValues(
-    root,
-    OWNER_GAPS.flatMap((g) => g.tokens),
-    mode,
-  );
-  return (
-    <ol ref={root} className="grid gap-4 md:grid-cols-2">
-      {OWNER_GAPS.map((g, i) => (
-        <li key={g.id} className={CARD} data-owner-gap={g.id}>
-          <span className="text-sm text-muted-foreground tabular-nums">
-            {i + 1} · {g.cite}
-          </span>
-          <span className="text-xl">{g.title}</span>
-          <span className="text-muted-foreground">{g.body}</span>
-          <ul className="flex flex-col gap-1 text-sm">
-            {g.tokens.map((t) => {
-              const value = values[t] ?? "";
-              return (
-                <li key={t} className="flex items-center gap-2" data-live-value={t}>
-                  {isColour(value) && (
-                    <span
-                      aria-hidden
-                      className="size-4 shrink-0 rounded-full border-2 border-border"
-                      // The swatch shows the value it names, read live: no utility per token.
-                      style={{ background: `var(${t})` }}
-                    />
-                  )}
-                  <code>{t}</code>
-                  <span className="tabular-nums">{value}</span>
-                </li>
-              );
-            })}
-          </ul>
-        </li>
-      ))}
-    </ol>
   );
 }
