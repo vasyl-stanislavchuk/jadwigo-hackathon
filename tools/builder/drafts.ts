@@ -36,6 +36,17 @@ export type Heartbeat = {
   loaded: boolean | null;
 };
 
+/**
+ * The session `make builder` started (JADWIGO_DRAFTS_DIR/session.json), rewritten at each launch.
+ * `transcript` is where Claude Code writes that session's log, which the activity panel tails.
+ */
+export type BuilderSession = {
+  session_id: string;
+  started_at: string;
+  cwd: string;
+  transcript: string;
+};
+
 // A draft id names files, so it never carries a path separator or starts with a dot.
 const DRAFT_ID = /^[A-Za-z0-9_-][A-Za-z0-9._-]{0,127}$/;
 
@@ -50,6 +61,7 @@ export const consumedFile = (dir: string, draftId: string) =>
   join(dir, `${draftId}.consumed.jsonl`);
 export const repliesFile = (dir: string, draftId: string) => join(dir, `${draftId}.replies.jsonl`);
 export const heartbeatFile = (dir: string) => join(dir, "channel.heartbeat.json");
+export const sessionFile = (dir: string) => join(dir, "session.json");
 
 /** Every parseable object row of a JSONL file; a torn last line, mid-append, is skipped. */
 export function readRows(path: string): Record<string, unknown>[] {
