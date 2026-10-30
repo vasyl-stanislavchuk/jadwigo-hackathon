@@ -312,6 +312,24 @@ def test_before_check_ts_sends_classes_they_are_unknown(bank: LessonBank, check_
     assert all(q["mistake_classes"] is None for q in view["questions"])
 
 
+def test_a_step_with_no_mistake_classes_is_not_asked_for_mistake_cards(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    # check.ts lists only the classes a step can emit (dl-e8ov.5.38.15): it may be none.
+    check_ts.answer["mistake_classes"] = {"q1": [], "q2": CLASSES}
+    view = _draft(count=2)
+    q1, q2 = view["questions"]
+    assert q1["mistake_classes"] == [] and "boost_by_mistake" not in q1["you_write"]
+    assert "boost_by_mistake" in q2["you_write"]
+    words = _words(view)
+    assert "boost_by_mistake" not in words["q1"]
+    assert lesson.check(view["draft_id"], words)["ok"] is True
+    del words["q2"]["boost_by_mistake"]
+    assert lesson.check(view["draft_id"], words)["errors"] == [
+        {"step_id": "q2", "message": "help.boost_by_mistake is empty; write it"}
+    ]
+
+
 def test_the_draft_verb_prints_the_draft(bank: LessonBank, check_ts: CheckTs) -> None:
     args = ["lesson", "draft", REQUEST, "--grade", "3", "--topic", TOPIC, "--json"]
     result = CliRunner().invoke(cli, [*args, "--no-names"])
