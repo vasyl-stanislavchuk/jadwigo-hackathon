@@ -80,9 +80,20 @@ def draft(
 @click.argument("words_file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option("--title", default=None, help="The lesson's title, in place of the request.")
 @click.option("--reasoning", default=None, help="Why the lesson is what it is, for the parent.")
+@click.option(
+    "--name",
+    "names",
+    multiple=True,
+    help="A name the family uses (repeatable); replaced in --title and --reasoning.",
+)
 @click.option("--json", "json_mode", is_flag=True, help="Print the check's answer.")
 def check(
-    draft_id: str, words_file: Path, title: str | None, reasoning: str | None, json_mode: bool
+    draft_id: str,
+    words_file: Path,
+    title: str | None,
+    reasoning: str | None,
+    names: tuple[str, ...],
+    json_mode: bool,
 ) -> None:
     """Check the draft DRAFT_ID with WORDS_FILE, a JSON object of each step's words by step id
     (the lesson_check tool's `help`), and print its card. The draft file is rewritten with the
@@ -93,7 +104,7 @@ def check(
         raise JwError(
             f"{words_file} is not JSON: {exc}", hint='Pass {"q1": {"twin": ...}, ...} as JSON.'
         ) from exc
-    result = lesson.check(draft_id, words, title, reasoning)
+    result = lesson.check(draft_id, words, title, reasoning, names=list(names))
     if json_mode:
         click.echo(json.dumps(result, ensure_ascii=False))
     elif result["ok"]:

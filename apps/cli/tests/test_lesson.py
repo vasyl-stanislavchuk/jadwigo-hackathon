@@ -641,12 +641,47 @@ def _on_disk(view: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any] | Non
     return file, json.loads(check_file.read_text(encoding="utf-8")) if check_file.exists() else None
 
 
-def test_the_drafts_dir_is_a_setting_with_a_stable_default(
+def test_the_drafts_dir_comes_from_the_environment_only_with_tilde_expanded(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    assert lesson.drafts_dir() == tmp_path / "drafts"  # the autouse fixture's setting
+    assert lesson.drafts_dir() == tmp_path / "drafts"  # the autouse fixture's environment
+    monkeypatch.setenv(JADWIGO_DRAFTS_DIR, "  ~/drafts \n")
+    assert lesson.drafts_dir() == Path.home() / "drafts"
+    # The operator's file never sets it: tools/builder/config.ts reads the environment only.
+    env_file = tmp_path / "bank.env"
+    env_file.write_text(f"{JADWIGO_DRAFTS_DIR}={tmp_path / 'from-file'}\n", encoding="utf-8")
+    env_file.chmod(0o600)
+    monkeypatch.setenv(settings_keys.JW_BANK_ENV_FILE, str(env_file))
     monkeypatch.delenv(JADWIGO_DRAFTS_DIR)
     assert lesson.drafts_dir() == Path.home() / ".local" / "state" / "jadwigo" / "drafts"
+    assert JADWIGO_DRAFTS_DIR not in settings_keys.KEYS
+
+
+def test_the_drafts_dir_is_this_users_only(bank: LessonBank, check_ts: CheckTs) -> None:
+    view = _draft(count=1)
+    for folder in (lesson.drafts_dir(), lesson.drafts_dir() / ".jw"):
+        assert folder.stat().st_mode & 0o777 == 0o700, folder
+    assert lesson.check(view["draft_id"], _words(view))["ok"] is True
+    assert lesson.drafts_dir().stat().st_mode & 0o777 == 0o700
+
+
+def test_title_and_reasoning_are_guarded_before_they_are_written(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    view = _draft(count=1)  # Kasia: an invented name, as tests/test_pii.py
+    result = lesson.check(
+        view["draft_id"],
+        _words(view),
+        title="Mnożenie dla Kasi",
+        reasoning="Kasia ćwiczy przez 6; pytania: rodzic@example.com",
+        names=["Kasia"],
+    )
+    assert result["ok"] is True, result
+    text = Path(result["draft_path"]).read_text(encoding="utf-8")
+    assert pii.leaks(text, ["Kasia"]) == [] and "rodzic@example.com" not in text
+    file = json.loads(text)
+    assert file["title"] == "Mnożenie dla [NAME_1]"
+    assert "[EMAIL_1]" in file["reasoning"]
 
 
 def test_lesson_draft_writes_the_lesson_file_with_its_empty_rungs(

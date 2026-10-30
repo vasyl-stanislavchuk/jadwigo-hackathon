@@ -103,8 +103,10 @@ agent writes only what the bank does not have.
 
 ### The draft on disk
 
-Both lesson tools write the draft into one directory, `JADWIGO_DRAFTS_DIR`. It defaults to
-`~/.local/state/jadwigo/drafts` on the server's machine. Each call writes 2 files there before it
+Both lesson tools write the draft into one directory, `JADWIGO_DRAFTS_DIR`, read from the server's
+environment only, with `~` expanded. It defaults to `~/.local/state/jadwigo/drafts` on the server's
+machine, and only its owner can read it. A `title` or `reasoning` you pass to `lesson_check` has
+the `names` you pass replaced before it is written. Each call writes 2 files there before it
 returns:
 
 - `<draft_id>.json` is the lesson file as far as it goes. `lesson_draft` writes the copy, with its

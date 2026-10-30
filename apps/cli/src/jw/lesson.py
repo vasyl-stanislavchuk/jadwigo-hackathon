@@ -345,6 +345,13 @@ def _state_path(where: Path, draft_id: str) -> Path:
     return where / STATE_DIR / f"{draft_id}.json"
 
 
+def _make_dirs(where: Path) -> None:
+    """The drafts directory and jw's record under it, readable by this user only: a draft holds a
+    parent's guarded request and the agent's words, and the directory outlives the session."""
+    where.mkdir(mode=0o700, parents=True, exist_ok=True)
+    (where / STATE_DIR).mkdir(mode=0o700, exist_ok=True)
+
+
 def _write_json(path: Path, value: Any) -> None:
     """Write `value` whole: to a sibling first, then renamed over `path`, so a reader watching the
     directory never sees half a file."""
@@ -573,6 +580,7 @@ def draft(
         "left_out": left_out,
         "draft_path": str(_lesson_path(where, draft_id)),
     }
+    _make_dirs(where)
     _check_copy(stored, where, runner)
     _write_json(_state_path(where, draft_id), stored)
     return _view(stored)
@@ -791,10 +799,14 @@ def check(
     title: str | None = None,
     reasoning: str | None = None,
     *,
+    names: Sequence[str] = (),
     runner: Runner | None = None,
     folder: Path | None = None,
 ) -> dict[str, Any]:
     """Put the agent's words on the draft kept under `draft_id` and run check.ts on the lesson.
+
+    `title` and `reasoning` pass through `pii.guard` with `names`, the family's names as for
+    `draft`, before they are written: a name, an email or a phone number never reaches the file.
 
     `words` maps each step id to what the agent wrote for it (the lesson_check tool's `help`):
     `twin`, `boost_by_mistake`, a rung the copy leaves empty, and `changes` to a copied part.
@@ -824,9 +836,11 @@ def check(
         steps[q["step_id"]], problems = _apply(q, given)
         errors += [{"step_id": q["step_id"], "message": p} for p in problems]
 
+    guard_names = pii.names_for(members=list(names))
     for field, value in (("title", title), ("reasoning", reasoning)):
         if value is not None and value.strip():
-            stored["lesson"][field] = value.strip()
+            stored["lesson"][field] = pii.guard(value.strip(), names=guard_names).text
+    _make_dirs(where)
     path = _lesson_path(where, draft_id)
     _write_json(path, _file(stored, steps))
     paths = {"lesson_file": str(path), "draft_path": str(path)}

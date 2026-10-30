@@ -50,7 +50,7 @@ values. Copy it into the file and fill what you use.
 | `JADWIGO_KHAN_DIR` | The synced copy of the bank's Khan bucket | `~/.cache/jadwigo-bank/khan` |
 | `JW_KHAN_CONVERTED` | The converted items file `jw question item` reads | `<JADWIGO_KHAN_DIR>/converted-pl.json`, the Polish file the bank's sync writes (`converted.json` beside it is English) |
 | `JADWIGO_REPO_DIR` | The jadwigo-hackathon checkout whose `packages/lesson-import/src/check.ts` `jw lesson check` runs | the checkout `jw` was installed from |
-| `JADWIGO_DRAFTS_DIR` | Where `jw lesson draft` and `jw lesson check` write each draft, `<draft_id>.json`, and its check, `<draft_id>.check.json` | `~/.local/state/jadwigo/drafts` |
+| `JADWIGO_DRAFTS_DIR` | Where `jw lesson draft` and `jw lesson check` write each draft, `<draft_id>.json`, and its check, `<draft_id>.check.json`. From the environment only, never from the file (see Drafting a lesson) | `~/.local/state/jadwigo/drafts` |
 
 The Khan copy is filled from the bucket by the bank repo. Run this in a checkout of `jadwigo-bank`:
 
@@ -109,6 +109,12 @@ copied. The calling agent writes only what the bank does not have, and changes a
 when the parent asks
 (`jadwigo-ai-workflows/decisions/2026-10-30-lesson-from-the-bank-copies-the-bank-question-whole-then-adapts`).
 
+Every call writes the draft into `JADWIGO_DRAFTS_DIR`, which jw reads from the environment only, with
+`~` expanded: never from `bank.env`. The lesson builder (`tools/builder`, the channel, the launcher
+and the web watcher) reads the same variable the same way, so set it in the environment both run
+in, or leave it unset for `~/.local/state/jadwigo/drafts`. jw makes the directory, and `.jw/` under
+it, readable by you only (mode 700).
+
 1. **Ask.** `names` is required: pass every name the family uses in the request (the child's,
    siblings', the parent's); the tool replaces them before anything leaves the machine, because
    the bank turns a need's words into model input
@@ -155,8 +161,9 @@ when the parent asks
    add `changes: [{"change", "why", "set": {path: value}}]`: `change` is `numbers`, `context`,
    `wording` or `tutor_notes`, and a path is `say` or a dotted path under `data`, `key`, `hints`,
    `worked` or `almost` (`hints.0.text`). Each change is recorded in `based_on.changes`.
-5. **Check.** `lesson_check(draft_id, help, title?, reasoning?)` takes those words by step id,
-   every step's on each call. It builds the lesson file
+5. **Check.** `lesson_check(draft_id, help, title?, reasoning?, names?)` takes those words by
+   step id, every step's on each call. `title` and `reasoning` pass through the same name guard as
+   the request, with `names`, before they are written. It builds the lesson file
    (`packages/lesson-import/src/lesson-file.ts`) and rewrites `<draft_id>.json` with it on every
    call, as far as the words go. It refuses a missing twin or rung; otherwise it runs
    `bun packages/lesson-import/src/check.ts <file> --json` in `JADWIGO_REPO_DIR`. Either way it
@@ -166,7 +173,7 @@ when the parent asks
    `ok: true` brings the card: per question its prompt, key, rungs, twin, source, licence, changes
    and why it was drawn, and what was left out. `ok: false` lists `findings` (and the old
    `errors`, for one release) by step id; fix them and check again. From a shell:
-   `jw lesson check <draft_id> words.json`, where `words.json` is the `help` object.
+   `jw lesson check <draft_id> words.json --name <name>`, where `words.json` is the `help` object.
 6. **Import, then play.** The owner reads the card and imports the file into jadwigo-dev from the
    repo root with the command the answer's `import_command` and the card's `next` name:
    `make lesson-import FILE=<lesson_file> ENV=dev`. Only then does the lesson play at the card's

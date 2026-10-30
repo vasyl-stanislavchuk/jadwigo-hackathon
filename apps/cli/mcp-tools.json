@@ -1,7 +1,7 @@
 {
   "tools": [
     {
-      "description": "Check a draft with your words on it, and return the card a parent reads.\n\n        draft_id is the one lesson_draft returned. help maps each step_id to your words for that\n        question, only what the bank lacks: twin (a question from the same template with its\n        own say, data and key), boost_by_mistake ({mistake class: {\"text\"}}, keys from the\n        step's mistake_classes), and a rung the copy leaves empty (look and boost as {\"text\"},\n        almost and worked as lists of lines). To change a copied part, only when the parent asks,\n        add changes: [{\"change\": numbers, context, wording or tutor_notes, \"why\", \"set\": {path:\n        value}}], where a path is say, or a dotted path under data, key, hints, worked or almost\n        (\"hints.0.text\"); each change is recorded in based_on.changes. Send every step's words\n        on each call. title and reasoning replace the draft's. Every call rewrites the draft file\n        (draft_path) with your words as far as they go, and writes its check beside it. ok true\n        returns the card (per question: prompt, key, rungs, twin, source, licence, changes, why\n        drawn; and what was left out, and next: the import step), the lesson_file path,\n        import_command, play_path and lesson_id. The play_path exists only after the import: tell\n        the parent to run import_command (make lesson-import FILE=<lesson_file> ENV=dev, in the\n        jadwigo checkout) first, then open the play_path. findings lists each problem: step_id,\n        path, level (error or warn), rule, text and fix; ok is false while one is an error. Fix\n        those and call lesson_check again.\n        ",
+      "description": "Check a draft with your words on it, and return the card a parent reads.\n\n        draft_id is the one lesson_draft returned. help maps each step_id to your words for that\n        question, only what the bank lacks: twin (a question from the same template with its\n        own say, data and key), boost_by_mistake ({mistake class: {\"text\"}}, keys from the\n        step's mistake_classes), and a rung the copy leaves empty (look and boost as {\"text\"},\n        almost and worked as lists of lines). To change a copied part, only when the parent asks,\n        add changes: [{\"change\": numbers, context, wording or tutor_notes, \"why\", \"set\": {path:\n        value}}], where a path is say, or a dotted path under data, key, hints, worked or almost\n        (\"hints.0.text\"); each change is recorded in based_on.changes. Send every step's words\n        on each call. title and reasoning replace the draft's; pass names as for lesson_draft,\n        and the tool replaces them in both before the draft is written. Every call rewrites the draft file\n        (draft_path) with your words as far as they go, and writes its check beside it. ok true\n        returns the card (per question: prompt, key, rungs, twin, source, licence, changes, why\n        drawn; and what was left out, and next: the import step), the lesson_file path,\n        import_command, play_path and lesson_id. The play_path exists only after the import: tell\n        the parent to run import_command (make lesson-import FILE=<lesson_file> ENV=dev, in the\n        jadwigo checkout) first, then open the play_path. findings lists each problem: step_id,\n        path, level (error or warn), rule, text and fix; ok is false while one is an error. Fix\n        those and call lesson_check again.\n        ",
       "inputSchema": {
         "properties": {
           "draft_id": {
@@ -15,6 +15,21 @@
             },
             "title": "Help",
             "type": "object"
+          },
+          "names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Names"
           },
           "reasoning": {
             "anyOf": [

@@ -182,6 +182,7 @@ def build_server() -> Any:
         help: dict[str, dict[str, Any]],
         title: str | None = None,
         reasoning: str | None = None,
+        names: list[str] | None = None,
     ) -> dict[str, Any]:
         """Check a draft with your words on it, and return the card a parent reads.
 
@@ -193,7 +194,8 @@ def build_server() -> Any:
         add changes: [{"change": numbers, context, wording or tutor_notes, "why", "set": {path:
         value}}], where a path is say, or a dotted path under data, key, hints, worked or almost
         ("hints.0.text"); each change is recorded in based_on.changes. Send every step's words
-        on each call. title and reasoning replace the draft's. Every call rewrites the draft file
+        on each call. title and reasoning replace the draft's; pass names as for lesson_draft,
+        and the tool replaces them in both before the draft is written. Every call rewrites the draft file
         (draft_path) with your words as far as they go, and writes its check beside it. ok true
         returns the card (per question: prompt, key, rungs, twin, source, licence, changes, why
         drawn; and what was left out, and next: the import step), the lesson_file path,
@@ -203,7 +205,14 @@ def build_server() -> Any:
         path, level (error or warn), rule, text and fix; ok is false while one is an error. Fix
         those and call lesson_check again.
         """
-        return _call(lesson.check, draft_id=draft_id, words=help, title=title, reasoning=reasoning)
+        return _call(
+            lesson.check,
+            draft_id=draft_id,
+            words=help,
+            title=title,
+            reasoning=reasoning,
+            names=names or [],
+        )
 
     return server
 
