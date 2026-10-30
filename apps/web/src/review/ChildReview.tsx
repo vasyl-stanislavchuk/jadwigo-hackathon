@@ -7,6 +7,7 @@
 import { copy, type Language } from "@jadwigo/copy";
 import { Button, Spinner } from "@jadwigo/ui";
 import { type ReactElement, useEffect } from "react";
+import { Column } from "../play/KidPage.tsx";
 import type { Review } from "../play/usePlayer.ts";
 import { ReviewStep } from "./ReviewStep.tsx";
 
@@ -34,19 +35,25 @@ export function ChildReview({
 
   if (load.kind === "loading") {
     return (
-      <div className="mx-auto flex max-w-2xl flex-col items-start gap-6 p-6 text-2xl">
+      <Column>
         <Spinner label={copy(language, "loading")} />
-      </div>
+      </Column>
     );
   }
   if (load.kind === "failed") {
     return (
-      <div className="mx-auto flex max-w-2xl flex-col items-start gap-6 p-6 text-2xl">
+      <Column>
         <p data-failed>{copy(language, "load_failed")}</p>
-        <Button type="button" variant="outline" data-review-all onClick={() => onAll()}>
+        <Button
+          type="button"
+          variant="outline"
+          size="control"
+          data-review-all
+          onClick={() => onAll()}
+        >
           {copy(language, "review_all")}
         </Button>
-      </div>
+      </Column>
     );
   }
   const question = questions[index];
