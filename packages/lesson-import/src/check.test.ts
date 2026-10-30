@@ -249,7 +249,7 @@ describe("check.ts --json", () => {
         {
           step_id: "s06",
           path: expect.stringMatching(/^script\.parts\[\d+\]\.steps\[\d+\]\.say$/),
-          level: "error",
+          level: "warn",
           rule: "key-in-say",
         },
       ]),
@@ -259,11 +259,71 @@ describe("check.ts --json", () => {
     expect(findings.find((f) => f.rule === "unknown-mistake-class")?.fix).toContain(
       "add_for_multiply",
     );
-    // jw's old errors: the 2 errors, by step; the warn is not one.
-    expect((out["errors"] as { step_id: string }[]).map((e) => e.step_id).sort()).toEqual([
-      "s03",
-      "s06",
+    // jw's old errors: the 1 error, by step; the 2 warns are not errors.
+    expect((out["errors"] as { step_id: string }[]).map((e) => e.step_id)).toEqual(["s03"]);
+  });
+
+  it("does not take an operand for the answer in key-in-say, and passes the file", () => {
+    // equal-groups s02 is an enter question; "10 − 5" with the answer 5 needs its 5.
+    for (const say of [
+      "Ile to jest 10 − 5? Napisz albo powiedz.",
+      "Ile to jest 5 × 1?",
+      "Ile to jest 5 razy 1?",
+      "Policz dalej: 1, 3, 5, …",
+    ]) {
+      const file = planted((step) => {
+        step["say"] = say;
+        (step.question as { key: { accept: string[] } }).key.accept = ["5"];
+      });
+      const { status, out } = check(file);
+      expect({ say, status, findings: out["findings"] }).toEqual({ say, status: 0, findings: [] });
+    }
+    const given = check(
+      planted((step) => {
+        step["say"] = "Ile to jest 10 − 5? To 5.";
+        (step.question as { key: { accept: string[] } }).key.accept = ["5"];
+      }),
+    );
+    expect(given.status).toBe(0);
+    expect(given.out["ok"]).toBe(true);
+    expect(given.out["findings"]).toEqual([
+      expect.objectContaining({ step_id: "s02", level: "warn", rule: "key-in-say" }),
     ]);
+  });
+
+  it("reads no rung of a file with no language", () => {
+    const raw = structuredClone(
+      LESSON_FILES.find((f) => (f as { id: string }).id === "equal-groups"),
+    ) as Record<string, unknown>;
+    delete raw["language"];
+    const file = join(mkdtempSync(join(tmpdir(), "lesson-check-")), "no-language.json");
+    writeFileSync(file, JSON.stringify(raw));
+    const findings = check(file).out["findings"] as Found[];
+    expect(findings.filter((f) => f.rule === "empty-rung")).toEqual([]);
+    expect(findings.map((f) => f.path)).toContain("language");
+  });
+
+  it("lets say quote the answer as an operand, never as the answer", () => {
+    const withSay = (say: string) =>
+      planted((step) => {
+        step["say"] = say;
+        Object.assign(step.question ?? {}, { key: { accept: ["5"] } });
+      });
+    for (const say of [
+      "Ile to jest 10 − 5? Napisz albo powiedz.",
+      "Ile to 5 × 1?",
+      "10 : 2 = ?",
+      "Ile to jest 5 razy 1?",
+      "Policz dalej: 1, 3, 5, …",
+    ]) {
+      const { out } = check(withSay(say));
+      expect([say, out["ok"], out["errors"]]).toEqual([say, true, []]);
+    }
+    for (const say of ["Ile to jest 10 − 5? To 5.", "10 − 5 = 5", "Odpowiedź: 5"]) {
+      const { out } = check(withSay(say));
+      const found = (out["findings"] as Found[]).map((f) => [f.rule, f.level]);
+      expect([say, out["ok"], found]).toEqual([say, true, [["key-in-say", "warn"]]]);
+    }
   });
 
   it("keeps going past a step that does not compile, to the next one", () => {

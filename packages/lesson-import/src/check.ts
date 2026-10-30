@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { QUESTION_TYPE_FAMILY } from "@jadwigo/contracts";
+import { Language, QUESTION_TYPE_FAMILY } from "@jadwigo/contracts";
 import type { z } from "zod";
 import { type CompileProblem, compileLessonFile, compileProblems } from "./compile.ts";
 import type { Finding } from "./findings.ts";
@@ -25,10 +25,11 @@ import { mistakeClassesByStep, mistakeClassesOf, unknownBoosts } from "./mistake
  *
  * - `findings` is everything the check finds, each with a path into the file and a fix a parent
  *   can follow (`findings.ts`, dl-a38n.14): every schema problem; every step that does not compile,
- *   the check going on to the next step; a help rung nothing fills (`empty-rung`, a warn); a
- *   `boost_by_mistake` key the question never gives (`unknown-mistake-class`, naming the valid
- *   ones); an answer the key accepts written into `say` (`key-in-say`). `ok` is "no error"; a warn
- *   does not fail the file.
+ *   the check going on to the next step; a help rung nothing fills (`empty-rung`, a warn, read
+ *   only when the file names its language); a `boost_by_mistake` key the question never gives
+ *   (`unknown-mistake-class`, naming the valid ones); an answer the key accepts written into `say`
+ *   outside a sum or a list (`key-in-say`, a warn: it is a heuristic). `ok` is "no error"; a warn
+ *   does not fail the file, so jw's plays-as-copied is never decided by one.
  * - `errors` is the error findings as jw read them before `findings`: one message by step id, a
  *   contract failure one message for the step, unknown boosts one message for the question. Kept
  *   for one release, until jw reads `findings` (dl-a38n.16).
@@ -378,19 +379,39 @@ function typedAnswers(question: Record<string, unknown>): string[] {
 }
 
 /**
- * Whether `say` holds `answer` as a word of its own. A one-letter answer counts only as a digit:
- * Polish has one-letter words (`u`, `w`, `o`) that a spelling gap's answer would match.
+ * An arithmetic operator, a sign or a word for one. `=` is not one, so an answer after it still
+ * gives the answer away.
+ */
+const OPERATOR = String.raw`(?:[+\-−–×·*:÷/]|(?<!\p{L})(?:x|razy|plus|minus|dodać|odjąć|przez|times)(?!\p{L}))`;
+/** What stands on an operator's other side in an expression: a number or the blank to fill. */
+const TERM = String.raw`[\p{N}?_□]`;
+/** An operand: after a term and an operator, or after a number and a comma (a list `1, 3, 5`). */
+const AFTER_OPERAND = new RegExp(String.raw`(?:${TERM}\s*${OPERATOR}|\p{N}\s*[,;])\s*$`, "iu");
+/** An operand: before an operator and a term, or before a comma and a number. */
+const BEFORE_OPERAND = new RegExp(String.raw`^\s*(?:${OPERATOR}\s*${TERM}|[,;]\s*\p{N})`, "iu");
+
+/**
+ * Whether `say` holds `answer` as a word of its own, other than as an operand: in "Ile to jest
+ * 10 − 5?" the 5 is the question, not its answer, and so is a number in a list the question
+ * continues. A one-letter answer counts only as a digit: Polish has one-letter words (`u`, `w`,
+ * `o`) that a spelling gap's answer would match.
  */
 function says(say: string, answer: string): boolean {
   const a = answer.trim();
   if (a === "" || (a.length === 1 && !/\p{N}/u.test(a))) return false;
   const escaped = a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, "iu").test(say);
+  const word = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, "giu");
+  for (const m of say.matchAll(word)) {
+    const before = say.slice(0, m.index);
+    const after = say.slice(m.index + m[0].length);
+    if (!AFTER_OPERAND.test(before) && !BEFORE_OPERAND.test(after)) return true;
+  }
+  return false;
 }
 
-/** A `say` line that gives the answer away. */
-function keyInSay(fileId: unknown, steps: readonly RawStep[]): Found {
-  const found: Found = { findings: [], errors: [] };
+/** A `say` line that seems to give the answer away. A warn: it is a heuristic. */
+function keyInSay(steps: readonly RawStep[]): Finding[] {
+  const findings: Finding[] = [];
   for (const q of steps.flatMap(questionsOf)) {
     if (typeof q.say !== "string") continue;
     const say = q.say;
@@ -400,21 +421,16 @@ function keyInSay(fileId: unknown, steps: readonly RawStep[]): Found {
     const sayPath = q.path.endsWith(".twin")
       ? `${q.path}.say`
       : q.path.replace(/\.question$/, ".say");
-    const text = `say gives the answer away: it holds ${answers}, which the key accepts.`;
-    found.findings.push({
+    findings.push({
       step_id: q.id,
       path: sayPath,
-      level: "error",
+      level: "warn",
       rule: "key-in-say",
-      text,
-      fix: `Rewrite say so it asks without ${answers}: the child works the answer out. (This check reads only typed answers, an enter key's or an enter gap's, as whole words; a one-letter answer only when it is a digit.)`,
-    });
-    found.errors.push({
-      step_id: q.id,
-      message: `lesson file ${String(fileId)}, step ${q.id}: ${text}`,
+      text: `say may give the answer away: it holds ${answers}, which the key accepts.`,
+      fix: `Rewrite say so it asks without ${answers}: the child works the answer out. (This check reads only typed answers, an enter key's or an enter gap's, as whole words, outside a sum or a list; a one-letter answer only when it is a digit.)`,
     });
   }
-  return found;
+  return findings;
 }
 
 function check(raw: unknown): CheckResult {
@@ -428,6 +444,8 @@ function check(raw: unknown): CheckResult {
   const id = (raw as { id?: unknown } | null)?.id;
   const mistake_classes = mistakeClassesByStep(raw);
   const steps = rawSteps(inItsLanguage(raw));
+  // With no language the lines are still `{pl, uk, en}`, never a rung's text: no rung is read.
+  const resolved = Language.safeParse((raw as { language?: unknown } | null)?.language).success;
   const parsed = safeParseLessonFile(raw);
   const found: Found[] = [];
   let questions = 0;
@@ -442,8 +460,9 @@ function check(raw: unknown): CheckResult {
   }
   // Stricter than the import, which keeps the playground's lessons as exported: a boost for a
   // class its question never gives never reaches the child (dl-e8ov.5.38.11).
-  found.push(unknownMistakeClasses(id, steps), keyInSay(id, steps));
-  found.push({ findings: steps.flatMap(emptyRungs), errors: [] });
+  found.push(unknownMistakeClasses(id, steps));
+  found.push({ findings: keyInSay(steps), errors: [] });
+  found.push({ findings: resolved ? steps.flatMap(emptyRungs) : [], errors: [] });
   const findings = found.flatMap((f) => f.findings);
   const errors = found.flatMap((f) => f.errors);
   const ok = !findings.some((f) => f.level === "error");
