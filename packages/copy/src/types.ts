@@ -471,6 +471,9 @@ export const COPY_KEYS = [
   "parent_continue_facebook",
   "parent_provider_no_email",
   "parent_provider_failed",
+  "parent_google_in_app",
+  "parent_copy_link",
+  "parent_link_copied",
   // end parent login
   // the home page's featured lessons (dl-5ssh.3.6)
   "home_title",

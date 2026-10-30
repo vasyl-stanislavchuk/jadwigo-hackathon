@@ -387,6 +387,14 @@ export const en: CopyTable = {
     text: "That sign-in didn't finish. Try again, or sign in with a code by email.",
     reviewed: false,
   },
+  // Google refuses to sign in inside Facebook's, Messenger's or Instagram's own browser
+  // (dl-e8ov.2.63). Drafts, for the owner.
+  parent_google_in_app: {
+    text: "Google can't sign you in inside this app. To continue with Google, open this page in your phone's browser.",
+    reviewed: false,
+  },
+  parent_copy_link: { text: "Copy the link", reviewed: false },
+  parent_link_copied: { text: "Copied. Paste it into your browser.", reviewed: false },
   // end parent login
   // the home page's featured lessons (dl-5ssh.3.6)
   home_title: { text: "Pick a lesson", reviewed: false },

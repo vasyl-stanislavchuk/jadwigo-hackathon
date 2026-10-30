@@ -3,7 +3,9 @@
  *
  *   signed out   email, then the 6-digit code, in this tab; or Google or Facebook, which leave the
  *                tab and come back to it with ?code= (dl-e8ov.2.51), or with an error the page
- *                answers with a line that offers the email code
+ *                answers with a line that offers the email code. In Facebook's, Messenger's or
+ *                Instagram's own browser, where Google refuses to sign in, a line and the link to
+ *                open in the phone's browser stand in Google's place (dl-e8ov.2.63)
  *   signed in    GET /me; with no account yet, POST /accounts once (it is idempotent)
  *     ?claim     the tab still holds an attempt of that assignment: pick the child, or add one,
  *                and POST /attempts/{id}/claims; the tab then forgets the attempt
@@ -65,6 +67,7 @@ import {
   type RedirectOutcome,
   withoutReturn,
 } from "./auth.ts";
+import { inAppBrowser } from "./inApp.ts";
 import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";
 import { cellsOf } from "./overview/grid.ts";
 import { OUTCOME_TONE, OutcomeIcon, TwinMark, tileLabel } from "./overview/outcome.tsx";
@@ -273,6 +276,7 @@ function SignIn({
   };
 
   const providers = auth.providers();
+  const inApp = inAppBrowser(navigator.userAgent);
 
   return (
     <ParentPage>
@@ -305,19 +309,23 @@ function SignIn({
               <p className="text-center text-jw-ink-soft">
                 {copy(language, "parent_or", {}, CATEGORY)}
               </p>
-              {providers.map((provider) => (
-                <Button
-                  key={provider}
-                  type="button"
-                  variant="outline"
-                  size="control"
-                  disabled={busy}
-                  onClick={() => continueWith(provider)}
-                  data-provider={provider}
-                >
-                  {copy(language, PROVIDER_LABEL[provider], {}, CATEGORY)}
-                </Button>
-              ))}
+              {providers.map((provider) =>
+                provider === "google" && inApp ? (
+                  <OpenInBrowser key={provider} language={language} />
+                ) : (
+                  <Button
+                    key={provider}
+                    type="button"
+                    variant="outline"
+                    size="control"
+                    disabled={busy}
+                    onClick={() => continueWith(provider)}
+                    data-provider={provider}
+                  >
+                    {copy(language, PROVIDER_LABEL[provider], {}, CATEGORY)}
+                  </Button>
+                ),
+              )}
             </div>
           )}
         </form>
@@ -343,6 +351,27 @@ function SignIn({
         </form>
       )}
     </ParentPage>
+  );
+}
+
+/** Google's place in an app's own browser: why there is no button, and this page's link to open
+ * in the phone's browser, where Google signs in. */
+function OpenInBrowser({ language }: { language: Language }): ReactElement {
+  const [copied, setCopied] = useState(false);
+  const link = new URL(withoutReturn(new URL(window.location.href)), window.location.origin).href;
+  const copyLink = (): void => {
+    navigator.clipboard?.writeText(link).then(
+      () => setCopied(true),
+      () => setCopied(false),
+    );
+  };
+  return (
+    <div className="flex w-full flex-col gap-3" data-open-in-browser>
+      <Notice>{copy(language, "parent_google_in_app", {}, CATEGORY)}</Notice>
+      <Button type="button" variant="outline" size="control" onClick={copyLink} data-copy-link>
+        {copy(language, copied ? "parent_link_copied" : "parent_copy_link", {}, CATEGORY)}
+      </Button>
+    </div>
   );
 }
 

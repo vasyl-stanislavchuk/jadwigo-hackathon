@@ -66,6 +66,8 @@ The [System page](https://app.jadwigo.pl/playground/system) in the app's playgro
 Zeszyt from the live tokens: the colours, the type, space and shape, motion, every component in
 every state, the lesson frame and the 6 states of a lesson screen. A value changed in the code
 shows there at once. Every question type plays in the [playground](https://app.jadwigo.pl/playground).
+The characters and their coloured-pencil style are on
+[Illustration and the cast](/design-system/illustration/).
 
 These docs describe the system and list its values. They do not embed it: the playground is the
 place to see a part move.

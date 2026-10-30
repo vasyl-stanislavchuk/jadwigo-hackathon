@@ -78,6 +78,15 @@ sign-in until the consent text (`dl-e8ov.2.9`) lands, and no provider button unt
 `dl-e8ov.2.58`. Its comment names the values for that day. `tools/src/web-build.test.ts` checks what
 the build receives.
 
+**The app's build settings are committed, in `web-build/<env>.env`** (`dl-e8ov.2.64`). They are the
+Supabase URL, its publishable key and the sign-in providers (`JW_SUPABASE_URL`, `JW_SUPABASE_KEY`,
+`JW_SUPABASE_PROVIDERS`, a comma list of `google` and `facebook`). A browser holds all of them, so none
+is secret. `web-build` sources the file over the shell's environment, so a build ships what is
+committed and nothing an exported variable left behind. `prod.env` leaves all 3 empty: prod has no
+sign-in until the consent text (`dl-e8ov.2.9`) lands, and no provider button until `dl-e8ov.2.8` and
+`dl-e8ov.2.58`. Its comment names the values for that day. `tools/src/web-build.test.ts` checks what
+the build receives.
+
 **The database URL never passes through Terraform.** The module creates the parameter with a write-only
 placeholder, so neither a tfvars file nor the state holds the value. The owner sets it after the first
 `apply`, and again after a password rotation, with jadwigo_api's transaction pooler URL (port 6543):
