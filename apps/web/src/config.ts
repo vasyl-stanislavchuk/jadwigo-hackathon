@@ -29,3 +29,10 @@ export function authConfig(
   const key = env["JW_SUPABASE_KEY"];
   return url && key ? { url, key } : null;
 }
+
+/** Where jw writes lesson drafts and the lesson builder reads them (dl-a38n, lead decision 1):
+ * JADWIGO_DRAFTS_DIR, else ~/.local/state/jadwigo/drafts, the jw setting's default. */
+export function draftsDir(env: Record<string, string | undefined> = process.env): string {
+  const dir = env["JADWIGO_DRAFTS_DIR"] || "~/.local/state/jadwigo/drafts";
+  return dir.startsWith("~/") ? `${env["HOME"] ?? ""}/${dir.slice(2)}` : dir;
+}
