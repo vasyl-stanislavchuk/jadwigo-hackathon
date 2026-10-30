@@ -57,7 +57,7 @@ describe("the conformance report", () => {
   it("prints the counts and the top shapes", () => {
     const lines = summaryLines(RESULTS, shapesOf(RESULTS), 1);
     expect(lines).toEqual([
-      "7 items checked, 6 fail to render right, 3 shapes",
+      "7 items checked, 6 fail a check (contract, key or render), 3 shapes",
       "  error render-split-inline on recognition: 2 sets, 3 items (e.g. a1, a2, b1)",
     ]);
   });

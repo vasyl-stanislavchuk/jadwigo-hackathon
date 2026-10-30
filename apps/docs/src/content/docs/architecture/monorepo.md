@@ -44,6 +44,7 @@ flowchart LR
   web --> config
   web --> contracts
   web --> copy
+  web --> core
   web --> lesson_import
   web --> lesson_kit
   web --> ui
