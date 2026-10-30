@@ -8,11 +8,12 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --config ../vitest.config.ts --project unit",
     "channel": "bun builder/channel.ts",
-    "builder": "bun builder/launch.ts"
+    "builder": "bun builder/launch.ts",
+    "conformance": "bun conformance/run.ts"
   },
   "//": {
     "@modelcontextprotocol/sdk": "the MCP server and stdio transport of the jadwigo-builder channel, tools/builder/channel.ts",
-    "@playwright/test": "renders the favicon PNGs from the brand SVGs in brand-icons.ts --write (Chromium)",
+    "@playwright/test": "renders the favicon PNGs from the brand SVGs in brand-icons.ts --write, and drives /playground/conformance in conformance/run.ts (Chromium)",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit test with the root vitest.config.ts"

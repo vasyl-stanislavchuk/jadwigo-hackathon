@@ -13,6 +13,7 @@
 import type { PlaygroundClient } from "@jadwigo/api-client";
 import { familyInfo, questionTypesOf } from "@jadwigo/lesson-kit";
 import { type ReactElement, useEffect } from "react";
+import { ConformanceScreen } from "./conformance/ConformanceScreen.tsx";
 import { PlaygroundApi } from "./examples/index.ts";
 import { LessonBuilderScreen } from "./lesson/LessonBuilderScreen.tsx";
 import "./tool/neutral.css";
@@ -84,6 +85,8 @@ function PlaygroundPages(): ReactElement {
   if (route?.page === "system") return <SystemPage />;
   // The lesson builder is the owner's tool too, with its own frame (dl-a38n).
   if (route?.page === "lesson") return <LessonBuilderScreen />;
+  // The bank's conformance run, driven by tools/conformance/run.ts (dl-a38n.31); dev only.
+  if (route?.page === "conformance" && import.meta.env.DEV) return <ConformanceScreen />;
   const { crumbs, body, controls } = view(route);
   return (
     <Shell crumbs={crumbs} controls={controls ?? true}>
