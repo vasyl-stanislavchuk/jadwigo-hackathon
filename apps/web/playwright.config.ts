@@ -17,8 +17,9 @@ const port = webPort();
 const laptop = { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } };
 /** The specs that need the api: the lesson player, its no-jump check, parent login, and the
  * lesson review (dl-uukj.30): the child's review.spec.ts, the parent's parent-review.spec.ts and
- * the lesson overview's parent-overview.spec.ts. */
-const API = /(play|no-jump|parent|review|parent-review|parent-overview)\.spec\.ts$/;
+ * the lesson overview's parent-overview.spec.ts; and Google and Facebook sign-in's
+ * social-sign-in.spec.ts (dl-e8ov.2.51). */
+const API = /(play|no-jump|parent|review|parent-review|parent-overview|social-sign-in)\.spec\.ts$/;
 const phone = { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } };
 
 export default defineConfig({
@@ -47,7 +48,11 @@ export default defineConfig({
       command: "bunx vite build && bunx vite preview",
       port,
       reuseExistingServer: false,
-      env: { JW_SUPABASE_URL: AUTH_ORIGIN, JW_SUPABASE_KEY: "e2e" },
+      env: {
+        JW_SUPABASE_URL: AUTH_ORIGIN,
+        JW_SUPABASE_KEY: "e2e",
+        JW_SUPABASE_PROVIDERS: "google,facebook",
+      },
       timeout: 120_000,
     },
     ...(playE2e()

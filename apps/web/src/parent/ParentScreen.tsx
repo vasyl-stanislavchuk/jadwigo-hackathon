@@ -1,7 +1,11 @@
 /**
  * The parent's screens at /parent (dl-e8ov.2.38, docs/research/parent-login.md):
  *
- *   signed out   email, then the 6-digit code, in this tab
+ *   signed out   email, then the 6-digit code, in this tab; or Google or Facebook, which leave the
+ *                tab and come back to it with ?code= (dl-e8ov.2.51), or with an error the page
+ *                answers with a line that offers the email code. In Facebook's, Messenger's or
+ *                Instagram's own browser, where Google refuses to sign in, a line and the link to
+ *                open in the phone's browser stand in Google's place (dl-e8ov.2.63)
  *   signed in    GET /me; with no account yet, POST /accounts once (it is idempotent)
  *     ?claim     the tab still holds an attempt of that assignment: pick the child, or add one,
  *                and POST /attempts/{id}/claims; the tab then forgets the attempt
@@ -56,7 +60,14 @@ import { NavLink } from "../nav/NavLink.tsx";
 import { storedAttempt } from "../play/storedAttempt.ts";
 import { AttemptReview } from "./AttemptReview.tsx";
 import { CATEGORY, pageLang } from "./adult.ts";
-import { type Auth, browserAuth } from "./auth.ts";
+import {
+  type Auth,
+  browserAuth,
+  type Provider,
+  type RedirectOutcome,
+  withoutReturn,
+} from "./auth.ts";
+import { inAppBrowser } from "./inApp.ts";
 import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";
 import { cellsOf } from "./overview/grid.ts";
 import { OUTCOME_TONE, OutcomeIcon, TwinMark, tileLabel } from "./overview/outcome.tsx";
@@ -119,13 +130,22 @@ export function ParentScreen({
   );
   const route = parentRoute(useLocation().path);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
+  const [returned, setReturned] = useState<CopyKey | null>(null);
   useEffect(() => {
     if (auth === null) return;
     let live = true;
-    auth.token().then(
-      (token) => live && setSignedIn(token !== null),
-      () => live && setSignedIn(false),
-    );
+    // A return from Google or Facebook first: its code becomes the session the token reads.
+    auth
+      .completeRedirect(new URL(window.location.href))
+      .catch((): RedirectOutcome => "failed")
+      .then((outcome) => {
+        if (live) setReturned(RETURN_LINE[outcome]);
+        return auth.token();
+      })
+      .then(
+        (token) => live && setSignedIn(token !== null),
+        () => live && setSignedIn(false),
+      );
     return () => {
       live = false;
     };
@@ -139,7 +159,17 @@ export function ParentScreen({
     );
   if (signedIn === null) return <Loading language={language} />;
   if (!signedIn)
-    return <SignIn auth={auth} language={language} onSignedIn={() => setSignedIn(true)} />;
+    return (
+      <SignIn
+        auth={auth}
+        language={language}
+        returned={returned}
+        onSignedIn={() => {
+          setReturned(null);
+          setSignedIn(true);
+        }}
+      />
+    );
   if (route?.kind === "attempt")
     return (
       <AttemptReview
@@ -163,15 +193,35 @@ export function ParentScreen({
   );
 }
 
+/** The line a provider's return leaves on the sign-in page, or null for none. */
+const RETURN_LINE: Record<RedirectOutcome, CopyKey | null> = {
+  "signed-in": null,
+  none: null,
+  // Supabase refuses an account with no email (a Facebook account made with a phone): the email
+  // code is the way in (docs/research/social-sign-in.md, "No email").
+  "no-email": "parent_provider_no_email",
+  failed: "parent_provider_failed",
+};
+
+/** Each provider's button. */
+const PROVIDER_LABEL: Record<Provider, CopyKey> = {
+  google: "parent_continue_google",
+  facebook: "parent_continue_facebook",
+};
+
 function SignIn({
   auth,
   language,
+  returned,
   onSignedIn,
 }: {
   auth: Auth;
   language: Language;
+  /** The line a provider's return left, or null. */
+  returned: CopyKey | null;
   onSignedIn: () => void;
 }): ReactElement {
+  const [providerProblem, setProviderProblem] = useState<CopyKey | null>(returned);
   const [email, setEmail] = useState("");
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [code, setCode] = useState("");
@@ -212,11 +262,32 @@ function SignIn({
       .finally(() => setBusy(false));
   };
 
+  /** Leaves for the provider, to come back to this page as it is: /parent, its claim and lang. */
+  const continueWith = (provider: Provider): void => {
+    if (busy) return;
+    setBusy(true);
+    setProviderProblem(null);
+    const here = new URL(window.location.href);
+    const returnTo = new URL(withoutReturn(here), here.origin).href;
+    auth.signInWith(provider, returnTo).catch(() => {
+      setProviderProblem("parent_provider_failed");
+      setBusy(false);
+    });
+  };
+
+  const providers = auth.providers();
+  const inApp = inAppBrowser(navigator.userAgent);
+
   return (
     <ParentPage>
       <Heading>{copy(language, "parent_title", {}, CATEGORY)}</Heading>
       <p>{copy(language, "parent_promise", {}, CATEGORY)}</p>
       <p>{copy(language, "parent_guardian", {}, CATEGORY)}</p>
+      {providerProblem !== null && (
+        <Notice role="alert" data-provider-problem>
+          {copy(language, providerProblem, {}, CATEGORY)}
+        </Notice>
+      )}
       {sentTo === null ? (
         <form onSubmit={send} className="flex w-full flex-col gap-4" data-email-step>
           <Field label={copy(language, "parent_email", {}, CATEGORY)} problem={problemLine}>
@@ -233,6 +304,30 @@ function SignIn({
           <Button type="submit" size="control" disabled={busy} data-send-code>
             {copy(language, "parent_send_code", {}, CATEGORY)}
           </Button>
+          {providers.length > 0 && (
+            <div className="flex w-full flex-col gap-3" data-providers>
+              <p className="text-center text-jw-ink-soft">
+                {copy(language, "parent_or", {}, CATEGORY)}
+              </p>
+              {providers.map((provider) =>
+                provider === "google" && inApp ? (
+                  <OpenInBrowser key={provider} language={language} />
+                ) : (
+                  <Button
+                    key={provider}
+                    type="button"
+                    variant="outline"
+                    size="control"
+                    disabled={busy}
+                    onClick={() => continueWith(provider)}
+                    data-provider={provider}
+                  >
+                    {copy(language, PROVIDER_LABEL[provider], {}, CATEGORY)}
+                  </Button>
+                ),
+              )}
+            </div>
+          )}
         </form>
       ) : (
         <form onSubmit={verify} className="flex w-full flex-col gap-4" data-code-step>
@@ -256,6 +351,27 @@ function SignIn({
         </form>
       )}
     </ParentPage>
+  );
+}
+
+/** Google's place in an app's own browser: why there is no button, and this page's link to open
+ * in the phone's browser, where Google signs in. */
+function OpenInBrowser({ language }: { language: Language }): ReactElement {
+  const [copied, setCopied] = useState(false);
+  const link = new URL(withoutReturn(new URL(window.location.href)), window.location.origin).href;
+  const copyLink = (): void => {
+    navigator.clipboard?.writeText(link).then(
+      () => setCopied(true),
+      () => setCopied(false),
+    );
+  };
+  return (
+    <div className="flex w-full flex-col gap-3" data-open-in-browser>
+      <Notice>{copy(language, "parent_google_in_app", {}, CATEGORY)}</Notice>
+      <Button type="button" variant="outline" size="control" onClick={copyLink} data-copy-link>
+        {copy(language, copied ? "parent_link_copied" : "parent_copy_link", {}, CATEGORY)}
+      </Button>
+    </div>
   );
 }
 

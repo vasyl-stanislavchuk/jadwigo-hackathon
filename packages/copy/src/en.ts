@@ -374,6 +374,27 @@ export const en: CopyTable = {
   parent_claim_preview: { text: "This lesson was a try-out, so it is not saved.", reviewed: false },
   parent_no_attempts: { text: "No lessons here yet.", reviewed: false },
   parent_sign_out: { text: "Sign out", reviewed: false },
+  // Google and Facebook under the email code (dl-e8ov.2.51): each button's words follow the
+  // provider's brand rules. Drafts, for the owner.
+  parent_or: { text: "or", reviewed: false },
+  parent_continue_google: { text: "Continue with Google", reviewed: false },
+  parent_continue_facebook: { text: "Continue with Facebook", reviewed: false },
+  parent_provider_no_email: {
+    text: "This Facebook account has no email address, so it can't sign in here. Sign in with a code by email instead.",
+    reviewed: false,
+  },
+  parent_provider_failed: {
+    text: "That sign-in didn't finish. Try again, or sign in with a code by email.",
+    reviewed: false,
+  },
+  // Google refuses to sign in inside Facebook's, Messenger's or Instagram's own browser
+  // (dl-e8ov.2.63). Drafts, for the owner.
+  parent_google_in_app: {
+    text: "Google can't sign you in inside this app. To continue with Google, open this page in your phone's browser.",
+    reviewed: false,
+  },
+  parent_copy_link: { text: "Copy the link", reviewed: false },
+  parent_link_copied: { text: "Copied. Paste it into your browser.", reviewed: false },
   // end parent login
   // the home page's featured lessons (dl-5ssh.3.6)
   home_title: { text: "Pick a lesson", reviewed: false },

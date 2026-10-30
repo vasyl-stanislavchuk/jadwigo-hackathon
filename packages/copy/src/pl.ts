@@ -395,6 +395,27 @@ export const pl: CopyTable = {
   },
   parent_no_attempts: { text: "Jeszcze nie ma tu lekcji.", reviewed: false },
   parent_sign_out: { text: "Wyloguj się", reviewed: false },
+  // Google and Facebook under the email code (dl-e8ov.2.51): each button's words follow the
+  // provider's brand rules. Drafts, for the owner.
+  parent_or: { text: "albo", reviewed: false },
+  parent_continue_google: { text: "Kontynuuj z Google", reviewed: false },
+  parent_continue_facebook: { text: "Kontynuuj z Facebookiem", reviewed: false },
+  parent_provider_no_email: {
+    text: "To konto na Facebooku nie ma adresu e-mail, więc nie można się nim tu zalogować. Zaloguj się kodem z e-maila.",
+    reviewed: false,
+  },
+  parent_provider_failed: {
+    text: "Logowanie się nie udało. Spróbuj jeszcze raz albo zaloguj się kodem z e-maila.",
+    reviewed: false,
+  },
+  // Google refuses to sign in inside Facebook's, Messenger's or Instagram's own browser
+  // (dl-e8ov.2.63). Drafts, for the owner.
+  parent_google_in_app: {
+    text: "W tej aplikacji Google nie pozwala się zalogować. Aby kontynuować z Google, otwórz tę stronę w przeglądarce telefonu.",
+    reviewed: false,
+  },
+  parent_copy_link: { text: "Skopiuj link", reviewed: false },
+  parent_link_copied: { text: "Skopiowano. Wklej go w przeglądarce.", reviewed: false },
   // end parent login
   // the home page's featured lessons (dl-5ssh.3.6)
   home_title: { text: "Wybierz lekcję", reviewed: false },

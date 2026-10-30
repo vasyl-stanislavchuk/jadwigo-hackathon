@@ -1,15 +1,22 @@
+import type { LessonFile } from "@jadwigo/lesson-import/file";
 import { LESSON_FILES } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
-import { type DraftLessonFile, lessonFileToSpecs } from "./adapter.ts";
-import { readDraft } from "./draft.ts";
+import { lessonFileToSpecs } from "./adapter.ts";
+import { type ReadDraft, readDraft } from "./draft.ts";
 
-function lessonFile(id: string): DraftLessonFile {
-  const read = readDraft(LESSON_FILES.find((f) => (f as { id?: unknown }).id === id));
-  if ("error" in read) throw new Error(read.error);
-  return read.file;
+/** The fixture as written, `{pl, uk, en}` lines and all, to plant a fault in before the parse. */
+const rawTimesFour = () =>
+  structuredClone(
+    LESSON_FILES.find((f) => (f as { id?: unknown }).id === "multiplication-times-four"),
+  ) as { script: { parts: { steps: Record<string, unknown>[] }[] } };
+
+function read(raw: unknown): ReadDraft {
+  const out = readDraft(raw);
+  if ("error" in out) throw new Error(out.error);
+  return out;
 }
 
-const timesFour = (): DraftLessonFile => lessonFile("multiplication-times-four");
+const timesFour = (): LessonFile => read(rawTimesFour()).file;
 
 describe("lessonFileToSpecs", () => {
   it("draws every question step of multiplication-times-four, its twin on rung 4", () => {
@@ -55,21 +62,42 @@ describe("lessonFileToSpecs", () => {
     );
   });
 
-  it("returns a planted unknown type or family as a skipped entry with its reason", () => {
-    const file = timesFour();
-    const [warmUp] = file.script.parts;
-    const [, s02, s03] = warmUp?.steps ?? [];
-    if (s02 === undefined || !("question" in s02) || s03 === undefined || !("question" in s03))
-      throw new Error("the fixture's warm-up changed");
-    s02.question_type = "riddle";
-    s03.question = { ...s03.question, family: "dance" };
+  it("draws a step the parse left out as a skipped entry at its place, with the reason", () => {
+    const raw = rawTimesFour();
+    const warmUp = raw.script.parts[0]?.steps ?? [];
+    const [, s02, s03] = warmUp;
+    if (s02 === undefined || s03 === undefined) throw new Error("the fixture's warm-up changed");
+    s02["question_type"] = "riddle";
+    s03["question"] = { ...(s03["question"] as object), family: "dance" };
 
-    const [part] = lessonFileToSpecs(file, "");
-    expect(part?.steps).toEqual([
-      { kind: "skipped", step_id: "s02", reason: "step s02: unknown question type riddle" },
-      { kind: "skipped", step_id: "s03", reason: "step s03: unknown family dance" },
+    const { file, skipped } = read(raw);
+    const [part] = lessonFileToSpecs(file, "", skipped);
+    expect(part?.steps.map((s) => [s.kind, s.step_id])).toEqual([
+      ["skipped", "s02"],
+      ["skipped", "s03"],
     ]);
+    const [first, second] = part?.steps ?? [];
+    expect(first?.kind === "skipped" && first.reason).toMatch(
+      /\(script\.parts\[0\]\.steps\[1\]\.question_type\)$/,
+    );
+    expect(second?.kind === "skipped" && second.reason).toMatch(
+      /\(script\.parts\[0\]\.steps\[2\]\.question\.family\)$/,
+    );
     expect(part?.specs).toEqual([]);
+    // The parts after it still draw, in order.
+    expect(lessonFileToSpecs(file, "", skipped)[2]?.specs.length).toBeGreaterThan(0);
+  });
+
+  it("names a skipped step with no id by its place in its part", () => {
+    const raw = rawTimesFour();
+    const s03 = raw.script.parts[0]?.steps[2];
+    if (s03 === undefined) throw new Error("the fixture's s03 changed");
+    delete s03["id"];
+    const { file, skipped } = read(raw);
+    expect(lessonFileToSpecs(file, "", skipped)[0]?.steps.map((s) => s.step_id)).toEqual([
+      "s02",
+      "warm_up[2]",
+    ]);
   });
 
   it("skips a step whose question type is another family's, or whose twin cannot be drawn", () => {

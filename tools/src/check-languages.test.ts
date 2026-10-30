@@ -48,7 +48,9 @@ describe("check-languages", () => {
       'site: { pending: "dl-w0b4.7" }',
       'site: "apps/site/src/content/en"',
     );
-    expect(checkLanguages(enSite, exists)).toEqual([
+    const noEnSite = (path: string) => path !== "apps/site/src/content/en" && exists(path);
+    expect(checkLanguages(enSite, exists)).toEqual([]);
+    expect(checkLanguages(enSite, noEnSite)).toEqual([
       "en is live and its site is missing: apps/site/src/content/en",
     ]);
   });

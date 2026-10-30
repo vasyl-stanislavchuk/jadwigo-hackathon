@@ -466,6 +466,14 @@ export const COPY_KEYS = [
   "parent_claim_preview",
   "parent_no_attempts",
   "parent_sign_out",
+  "parent_or",
+  "parent_continue_google",
+  "parent_continue_facebook",
+  "parent_provider_no_email",
+  "parent_provider_failed",
+  "parent_google_in_app",
+  "parent_copy_link",
+  "parent_link_copied",
   // end parent login
   // the home page's featured lessons (dl-5ssh.3.6)
   "home_title",

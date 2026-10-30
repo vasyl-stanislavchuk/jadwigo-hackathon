@@ -94,10 +94,10 @@ describe("LessonBuilderScreen with a draft", () => {
     if (s02 === undefined) throw new Error("the fixture's s02 changed");
     s02.question_type = "riddle";
     render(<LessonBuilderScreen initial={messageOf(draft)} />);
+    const card = screen.getByRole("region", { name: "Step s02" });
+    expect(card.hasAttribute("data-skipped")).toBe(true);
     expect(
-      within(screen.getByRole("region", { name: "Step s02" })).getByText(
-        "Not drawn: step s02: unknown question type riddle",
-      ),
+      within(card).getByText(/^Not drawn: .*\(script\.parts\[0\]\.steps\[1\]\.question_type\)$/),
     ).toBeTruthy();
     expect(screen.getByRole("region", { name: "Step s05" })).toBeTruthy();
   });
@@ -125,9 +125,9 @@ describe("LessonBuilderScreen with a draft", () => {
 
   it("says why a draft cannot be drawn yet", () => {
     render(<LessonBuilderScreen initial={messageOf({ title: "Half", language: "pl" })} />);
-    expect(screen.getByRole("alert").textContent).toBe(
-      "x cannot be drawn yet: the draft has no script.parts.",
-    );
+    const alert = screen.getByRole("alert").textContent ?? "";
+    expect(alert.startsWith("x cannot be drawn yet: lesson file undefined:")).toBe(true);
+    expect(alert).toContain("script");
   });
 });
 
