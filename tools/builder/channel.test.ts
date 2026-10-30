@@ -5,16 +5,9 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import type { JSONRPCNotification } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  askText,
-  channelLoaded,
-  channelNames,
-  createServer,
-  draftsWithAsks,
-  type Proc,
-  pollOnce,
-} from "./channel.ts";
+import { askText, createServer, draftsWithAsks, pollOnce } from "./channel.ts";
 import { type Ask, appendRow, asksFile, consumedFile, readRows, repliesFile } from "./drafts.ts";
+import { channelLoaded, channelNames, type Proc } from "./flag.ts";
 
 const ASK: Ask = {
   ask_ts: "2026-10-30T09:00:00.000Z",

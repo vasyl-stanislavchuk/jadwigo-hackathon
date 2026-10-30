@@ -3,7 +3,8 @@
 The live lesson builder (`dl-a38n`, design in `docs/research/live-lesson-builder.md`) shows a lesson
 draft at `/playground/lesson` while a Claude Code session drafts it through `jw mcp serve`. This
 folder holds the part that talks to that session: `channel.ts`, the `jadwigo-builder` MCP channel
-server. It reads and writes files under `JADWIGO_DRAFTS_DIR` and imports nothing of ours.
+server, and `launch.ts`, which `make builder` runs to start the session it talks to. Both read and
+write files under `JADWIGO_DRAFTS_DIR` and import nothing of ours.
 
 ## The files it shares
 
@@ -16,6 +17,7 @@ jw reads. Every `.jsonl` file is append-only and has one writer.
 | `<draft_id>.consumed.jsonl` | this channel, after it sent the ask | `{ask_ts, consumed_at}` |
 | `<draft_id>.replies.jsonl` | this channel's `reply` tool | `{ts, draft_id, in_reply_to, kind: progress\|done\|question\|note, text}` |
 | `channel.heartbeat.json` | this channel, every 5 s or sooner | `{at, pid, session_id, loaded}` |
+| `session.json` | `make builder`, at each launch | `{session_id, started_at, cwd, transcript}` |
 
 ## What the session sees
 
@@ -46,11 +48,21 @@ Register the server for your user once, from the checkout you build in (the owne
 claude mcp add-json --scope user jadwigo-builder '{"type":"stdio","command":"bun","args":["'"$PWD"'/tools/builder/channel.ts"]}'
 ```
 
-Then start a session with it:
+Then start the session from the repo root:
 
 ```bash
-claude --dangerously-load-development-channels=server:jadwigo-builder
+make builder                   # ARGS="--model opus" passes more to claude
 ```
+
+`make builder` (`launch.ts`) first asks `claude mcp get` for `jadwigo-builder` and `jadwigo`, and
+stops with the line to run when either is missing (jadwigo's is in `apps/cli/README.md`). Then it
+mints a session id, writes `session.json`, and starts
+`claude --session-id <id> --dangerously-load-development-channels=server:jadwigo-builder` with
+`JADWIGO_BUILDER_SESSION` and `JADWIGO_DRAFTS_DIR` exported and `ANTHROPIC_API_KEY` removed. Claude
+Code does not tell an MCP server its session id, so the launcher names it. Two seconds in, it reads
+the started `claude`'s command line with `ps`, and stops the session with a plain refusal when the
+flag is not there. `JADWIGO_CLAUDE_BIN` names another `claude`, which is how a test checks that
+refusal.
 
 The server is registered for every session, so it also starts in one without the flag. Claude Code
 drops every channel message there, so the server checks its `claude` parent's command line with

@@ -8,7 +8,6 @@
 // Channels are a research preview: the session must start with
 // --dangerously-load-development-channels=server:jadwigo-builder. README.md here is the install.
 // Run: bun tools/builder/channel.ts (Claude Code starts it; it speaks MCP on stdio)
-import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, watch, writeFileSync } from "node:fs";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -35,9 +34,8 @@ import {
   readAsks,
   repliesFile,
 } from "./drafts.ts";
+import { CHANNELS_FLAG, channelLoaded, psProc, SERVER_NAME } from "./flag.ts";
 
-export const SERVER_NAME = "jadwigo-builder";
-export const CHANNELS_FLAG = "--dangerously-load-development-channels";
 const CHANNEL_METHOD = "notifications/claude/channel";
 const POLL_MS = 5_000;
 // The page's append wakes the loop, so an ask reaches the turn in about a second, not up to five.
@@ -164,70 +162,6 @@ export function reply(dir: string, args: ReplyArgs): { ok: true; row: Reply } | 
   };
   appendRow(repliesFile(dir, draftId), row);
   return { ok: true, row };
-}
-
-/**
- * Every channel a `claude` command line loads, from both `FLAG v` and `FLAG=v`, with values that
- * run up to the next `-` token and may be comma lists.
- */
-export function channelNames(argv: string): Set<string> {
-  const names = new Set<string>();
-  let taking = false;
-  for (let token of argv.split(/\s+/)) {
-    if (token === CHANNELS_FLAG) {
-      taking = true;
-      continue;
-    }
-    if (token.startsWith(`${CHANNELS_FLAG}=`)) {
-      taking = true;
-      token = token.slice(CHANNELS_FLAG.length + 1);
-    } else if (token.startsWith("-")) {
-      taking = false;
-      continue;
-    }
-    if (taking) for (const part of token.split(",")) if (part) names.add(part);
-  }
-  return names;
-}
-
-export function loadsThisChannel(argv: string): boolean {
-  return channelNames(argv).has(`server:${SERVER_NAME}`);
-}
-
-export type Proc = { ppid: number; command: string };
-
-/** One process's parent and command line, or null when `ps` cannot say. */
-export function psProc(pid: number): Proc | null {
-  try {
-    const out = execFileSync("ps", ["-o", "ppid=,command=", "-p", String(pid)], {
-      encoding: "utf8",
-    }).trim();
-    const match = /^(\d+)\s+(.*)$/.exec(out);
-    return match ? { ppid: Number(match[1]), command: match[2] ?? "" } : null;
-  } catch {
-    return null;
-  }
-}
-
-const CLAUDE_COMMAND = /(^|\/)claude(\s|$)/;
-
-/**
- * Whether the `claude` that started this server loaded this channel, or null when nothing here can
- * tell. A session without the flag drops every channel message's content, so a server there
- * consumes nothing: an ask it sent would be an ask nobody read (md lost 7 that way on 2026-10-19).
- * Walks up from the parent a few steps, since a wrapper may sit between claude and bun.
- */
-export function channelLoaded(start: number, proc: (pid: number) => Proc | null): boolean | null {
-  let pid = start;
-  for (let step = 0; step < 4 && pid > 1; step += 1) {
-    const found = proc(pid);
-    if (!found) return null;
-    if (CLAUDE_COMMAND.test(found.command.split(/\s+/)[0] ?? "")) {
-      return loadsThisChannel(found.command);
-    }
-    pid = found.ppid;
-  }
-  return null;
 }
 
 const INSTRUCTIONS = [
