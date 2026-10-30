@@ -88,7 +88,7 @@ It ends with a Google OAuth client for each Supabase project and one Meta app fo
    ```
    infra/supabase-auth/auth.sh apply dev
    ```
-   You should see: `dev (jweuvslwntdimuwcvlzq): applied`, and a second `diff dev` prints `in step`. Supabase keeps only a hash of each secret, and the script compares the keychain value's hash with it, so a secret you rotate in the keychain shows as `(another value) -> (set)`.
+   You should see: `dev (jweuvslwntdimuwcvlzq): applied`, and a second `diff dev` prints `in step`. Supabase shows each secret only as an HMAC-SHA256 keyed by the project ref, and the script compares the keychain value's HMAC with it, so a secret you rotate in the keychain shows as `(another value) -> (set)`.
 3. **Try it.** Run `make dev`, open `/parent`, and select **Continue with Google**. Sign in with the email you already used for the email code.
    You should see: the parent home with the same children as before, not the "add a child" step.
 4. **Try Facebook** with a tester account from Meta step 12, in the same way.

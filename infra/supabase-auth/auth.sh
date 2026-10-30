@@ -12,7 +12,9 @@
 # Secrets (dl-e8ov.2.52): <env>.json's "secrets" names a macOS keychain item (account jadwigo) for
 # each secret setting, for example "external_google_secret": "jadwigo-google-oauth-secret-dev". The
 # value is read when needed, reaches curl on stdin inside the PATCH body, and is never printed: the
-# diff shows a secret as (not set), (another value), (set) or missing. A *_secret key in "settings"
+# diff shows a secret as (not set), (another value), (set) or missing. The Management API answers a
+# set secret as hex(HMAC-SHA256(key = the project ref, message = the secret)), which the script
+# computes from the keychain value on openssl's stdin to compare (dl-e8ov.2.84). A *_secret key in "settings"
 # is refused, and so is an *_email_optional that is not false: a sign-in with no email stays refused.
 # Bash 3.2, as macOS ships it.
 set -euo pipefail
@@ -62,8 +64,11 @@ keychain() {
   security find-generic-password -a jadwigo -s "$1" -w 2>/dev/null
 }
 
-sha256() {
-  if command -v shasum >/dev/null; then shasum -a 256; else sha256sum; fi | cut -d ' ' -f 1
+# hex(HMAC-SHA256) of stdin keyed by $1, the project ref: how GET /config/auth shows a set secret.
+# The secret arrives on stdin, never in argv; the ref in argv is not secret. LibreSSL and OpenSSL 3
+# both end the line with the hex.
+hmac_by_ref() {
+  openssl dgst -sha256 -hmac "$1" | awk '{print $NF}'
 }
 
 # "<key><TAB><keychain item>" for each secret an env file names.
@@ -137,10 +142,11 @@ for env in "$@"; do
   lines="$(jq -rn --argjson patch "$patch" --argjson have "$have" \
     '$patch | to_entries[] | "  \(.key): \($have[.key] | tojson) -> \(.value | tojson)"')"
 
-  # Secrets. GET /config/auth answers null for a secret never set, and for one that is set the
-  # SHA-256 hex of the value (what the supabase CLI's config push compares against). So null differs,
-  # a hash equal to the keychain value's is in step, and another hash differs. Anything else can't be
-  # compared and counts as in step, so a secret never makes every diff exit 2 forever.
+  # Secrets. GET /config/auth answers null for a secret never set, and for one that is set
+  # hex(HMAC-SHA256(key = the ref, message = the value)), read on jadwigo-dev after the owner's first
+  # apply (dl-e8ov.2.84). So null differs, the keychain value's HMAC is in step, and another 64-hex
+  # value differs. Anything else can't be compared and counts as in step, so a secret never makes
+  # every diff exit 2 forever.
   secret_objects=""
   env_missing=0
   while IFS="$tab" read -r key item; do
@@ -153,7 +159,7 @@ for env in "$@"; do
     live_secret="$(printf %s "$live" | jq -r --arg k "$key" '.[$k] // "" | ltrimstr("hash:")')"
     if [ -z "$live_secret" ]; then
       shown="(not set)"
-    elif [ "$live_secret" = "$(printf %s "$value" | sha256)" ] || [ "$live_secret" = "$value" ]; then
+    elif [ "$live_secret" = "$(printf %s "$value" | hmac_by_ref "$ref")" ]; then
       continue
     elif printf %s "$live_secret" | grep -Eq '^[0-9a-f]{64}$'; then
       shown="(another value)"
