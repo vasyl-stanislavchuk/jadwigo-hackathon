@@ -141,6 +141,9 @@ const ROLES = [
   "miss-act-edge",
   "rest",
   "rest-ink",
+  "brand-go",
+  "crown",
+  "crown-line",
 ];
 
 // Every pair a child reads: text on each surface, the main action, a picked option, help, each
@@ -171,6 +174,7 @@ const TEXT_PAIRS: [string, string][] = [
   ["jw-miss-ink", "jw-ground"],
   ["jw-on-miss-act", "jw-miss-act"],
   ["jw-rest-ink", "jw-rest"],
+  ["jw-brand-go", "jw-ground"],
 ];
 
 // The marks a child must see (lesson-frame/README.md §6): dots, ticks and lines drawn in a picture

@@ -277,6 +277,7 @@
     "tools": {
       "name": "@jadwigo/tools",
       "devDependencies": {
+        "@playwright/test": "catalog:",
         "@types/node": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:",
