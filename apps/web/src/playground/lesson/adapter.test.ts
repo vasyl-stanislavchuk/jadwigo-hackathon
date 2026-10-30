@@ -1,21 +1,12 @@
 import { LESSON_FILES } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
 import { type DraftLessonFile, lessonFileToSpecs } from "./adapter.ts";
-
-/** Every `{pl, uk, en}` line in `value` put in `language`, as lesson-import's parse does; a stand-in
- * for `parseLessonFile` until it is browser-safe (dl-a38n.11). */
-function resolve(value: unknown, language: string): unknown {
-  if (Array.isArray(value)) return value.map((v) => resolve(v, language));
-  if (value === null || typeof value !== "object") return value;
-  const keys = Object.keys(value);
-  if (keys.length === 3 && ["pl", "uk", "en"].every((l) => keys.includes(l)))
-    return (value as Record<string, unknown>)[language];
-  return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, resolve(v, language)]));
-}
+import { readDraft } from "./draft.ts";
 
 function lessonFile(id: string): DraftLessonFile {
-  const raw = LESSON_FILES.find((f) => (f as { id?: unknown }).id === id) as { language: string };
-  return resolve(raw, raw.language) as DraftLessonFile;
+  const read = readDraft(LESSON_FILES.find((f) => (f as { id?: unknown }).id === id));
+  if ("error" in read) throw new Error(read.error);
+  return read.file;
 }
 
 const timesFour = (): DraftLessonFile => lessonFile("multiplication-times-four");
