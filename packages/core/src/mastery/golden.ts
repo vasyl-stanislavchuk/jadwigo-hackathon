@@ -8,7 +8,7 @@ import {
   PodId,
   type SkillKind,
 } from "@jadwigo/contracts";
-import type { SkillEvent } from "./index.ts";
+import type { SkillEvent } from "./types.ts";
 
 /**
  * The fold's golden cases (dl-e8ov.2.4): each names one rule of the levels and holds the fold to
@@ -19,7 +19,7 @@ const POD = PodId.parse("pod_6et2fhbnwvb45aw9atcfzs33za");
 const LEARNER = LearnerId.parse(idOf(ID_PREFIXES.learner, "0f0e0d0c-0b0a-4908-8706-050403020100"));
 
 /** The attempt numbered `n`, as a branded id. */
-export function attempt(n: number): AttemptId {
+function attempt(n: number): AttemptId {
   const tail = n.toString(16).padStart(12, "0");
   return AttemptId.parse(idOf(ID_PREFIXES.attempt, `00000000-0000-4000-8000-${tail}`));
 }

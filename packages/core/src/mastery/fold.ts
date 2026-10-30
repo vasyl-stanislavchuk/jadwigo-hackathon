@@ -1,16 +1,16 @@
 import type { AttemptId, MasteryLevel, SkillKind } from "@jadwigo/contracts";
 import { warsawDay } from "./days.ts";
 import { AGAIN, GOOD, HARD, type Review, replay } from "./fsrs.ts";
-import type { SkillEvent, SkillMastery } from "./index.ts";
+import type { SkillEvent, SkillMastery } from "./types.ts";
 
 /**
  * What one question did for one skill, decided by its first try: right without help, right with
  * help, wrong (a held-verdict miss included), or only skipped.
  */
-export type Outcome = "clean" | "assisted" | "miss" | "skip";
+type Outcome = "clean" | "assisted" | "miss" | "skip";
 
 /** One (attempt, seq) of one skill, as the level machine reads it. */
-export interface Happening {
+interface Happening {
   readonly attempt_id: AttemptId;
   readonly seq: number;
   readonly outcome: Outcome;
@@ -50,7 +50,7 @@ function byTime(a: { ms: number; attempt_id: string }, b: { ms: number; attempt_
  * One happening per (attempt, seq), in answered order. The first judged try decides; a question
  * with only skip rows is a skip; a try the view left unjudged decides nothing.
  */
-export function happenings(events: readonly SkillEvent[]): Happening[] {
+function happenings(events: readonly SkillEvent[]): Happening[] {
   const groups = new Map<string, SkillEvent[]>();
   for (const event of events) {
     const key = `${event.attempt_id}#${event.seq}`;
@@ -97,7 +97,7 @@ function happening(event: SkillEvent, outcome: Outcome): Happening {
  * skills only). A miss drops one level, never below attempted, at most once per attempt; a drop
  * to proficient restarts the 2 days. Assisted and skip change nothing.
  */
-export function levelOf(all: readonly Happening[], kind: SkillKind): MasteryLevel {
+function levelOf(all: readonly Happening[], kind: SkillKind): MasteryLevel {
   let level: MasteryLevel = "not_started";
   const cleanDays = new Set<number>();
   let proficientDay = 0;

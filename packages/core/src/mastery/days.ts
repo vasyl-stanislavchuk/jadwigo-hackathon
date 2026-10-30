@@ -3,7 +3,7 @@
  * in (ruling 58's "2 different days"). A constant here, never the machine's zone and never the
  * pod's: `pod.time_zone` was dropped (jadwigo-hackathon notes, mastery caching).
  */
-export const LEARNER_TIME_ZONE = "Europe/Warsaw";
+const LEARNER_TIME_ZONE = "Europe/Warsaw";
 
 const DAY_FORMAT = new Intl.DateTimeFormat("en-CA", {
   timeZone: LEARNER_TIME_ZONE,
