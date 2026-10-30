@@ -119,7 +119,11 @@ def build_server() -> Any:
         language: str = "pl",
         arm: str | None = None,
     ) -> dict[str, Any]:
-        """Search each need once (one per words, one per skill) and say which find nothing."""
+        """Search each need once (one per words, one per skill) and say which find nothing.
+
+        A need whose every found set has no lesson-ready item in its language is a gap too, with
+        reason "no item is lesson-ready in <lang>"; not_ready lists such sets.
+        """
         return _call(
             question.gaps_report,
             grade=grade,
@@ -136,7 +140,9 @@ def build_server() -> Any:
         Returns the family step a lesson file's question takes (family, data, key, help), the
         say line, the credit and based_on (`khan:<id>`). The key and help are in it, so use it to
         draft a lesson and never paste it where a child reads. language is the item's language
-        (pl by default); an item in another language is an error.
+        (pl by default); an item in another language is an error. Only a lesson-ready item loads
+        (its status plays, checked for render, key and pictures); any other is an error saying
+        why: "renders wrong: <rule>", "not checked", "flagged: <reason>" or the converter's own.
         """
         return _call(question.item_view, item_id=item_id, language=language)
 
@@ -166,7 +172,10 @@ def build_server() -> Any:
         (the hints as text with their picture alts), rungs (what fills look, boost, almost and
         worked), you_write (what is left for you), mistake_classes (the keys boost_by_mistake
         may use; null when unknown) and why_drawn. left_out says why each set or item was not
-        used, and rule_settled is false (the draw rules are provisional). draft_path is the
+        used. Only lesson-ready items are copied, so an item's reason there is about the item:
+        "renders wrong: <rule>", "not checked", "flagged: <reason>", the converter's own, or for
+        a set "no item is lesson-ready in <lang>". rule_settled is false (the draw rules are
+        provisional). draft_path is the
         lesson file as copied, written in JADWIGO_DRAFTS_DIR before the call returns, with its
         check beside it. Write what you_write lists, in the lesson's language, then call
         lesson_check with the draft_id.
