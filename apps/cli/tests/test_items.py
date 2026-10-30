@@ -316,10 +316,13 @@ def test_with_no_bank_checkout_there_is_no_refusals_file(
     assert items.load_item("fxr1")["id"] == "fxr1"
 
 
-def test_items_keyed_by_id_read_like_a_list(planted: Path) -> None:
+def test_items_keyed_by_id_are_refused_naming_the_shape(planted: Path) -> None:
     payload = json.loads(planted.read_text("utf-8"))
     payload["items"] = {item["id"]: item for item in payload["items"]}
     _write(planted, payload)
     items._read.cache_clear()
 
-    assert items.load_item("fxr1")["id"] == "fxr1"
+    with pytest.raises(JwError) as caught:
+        items.load_item("fxr1")
+
+    assert "an object keyed by id, not a list" in str(caught.value)
