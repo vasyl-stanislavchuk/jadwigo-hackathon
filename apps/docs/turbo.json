@@ -8,7 +8,7 @@
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/packages/contracts/openapi.json",
         "$TURBO_ROOT$/apps/cli/mcp-tools.json",
-        "$TURBO_ROOT$/packages/ui/src/styles/foundation.css",
+        "$TURBO_ROOT$/packages/ui/src/styles/*.css",
         "$TURBO_ROOT$/packages/lesson-kit/src/families/questionTypes.ts"
       ]
     },
@@ -16,7 +16,7 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/apps/cli/mcp-tools.json",
-        "$TURBO_ROOT$/packages/ui/src/styles/foundation.css",
+        "$TURBO_ROOT$/packages/ui/src/styles/*.css",
         "$TURBO_ROOT$/packages/lesson-kit/src/families/questionTypes.ts",
         "$TURBO_ROOT$/apps/*/package.json",
         "$TURBO_ROOT$/packages/*/package.json"
