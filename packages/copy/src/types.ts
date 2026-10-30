@@ -520,7 +520,6 @@ export const COPY_KEYS = [
   "parent_review_try_line",
   "parent_overview_sheet_line",
   "parent_overview_ratio",
-  "parent_attempt_line",
   "parent_load_failed",
 ] as const;
 
