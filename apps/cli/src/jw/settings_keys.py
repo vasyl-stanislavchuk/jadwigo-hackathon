@@ -75,6 +75,13 @@ CONVERTED_DEFAULT = Path("converted-pl.json")  # relative to the Khan dir
 JADWIGO_REPO_DIR = "JADWIGO_REPO_DIR"
 LESSON_CHECK_SCRIPT = Path("packages") / "lesson-import" / "src" / "check.ts"  # in the repo
 
+# Where lesson_draft and lesson_check write each draft as a lesson file, <draft_id>.json, and its
+# check, <draft_id>.check.json, on every call (dl-a38n.16). The live lesson builder's page, its
+# channel and its launcher (tools/builder/config.ts) read the same directory, so it has one rule on
+# every side: the environment only, ~ expanded. It is not in KEYS: the operator's file never sets it.
+JADWIGO_DRAFTS_DIR = "JADWIGO_DRAFTS_DIR"
+DEFAULT_DRAFTS_DIR = Path.home() / ".local" / "state" / "jadwigo" / "drafts"
+
 # Every key an operator may fill, in the order .env.example and the README list them.
 KEYS = (
     JW_API_URL,
@@ -149,6 +156,13 @@ def khan_dir() -> Path:
     """The synced Khan copy: JADWIGO_KHAN_DIR, else ~/.cache/jadwigo-bank/khan."""
     configured = setting(JADWIGO_KHAN_DIR)
     return Path(configured).expanduser() if configured else DEFAULT_KHAN_DIR
+
+
+def drafts_dir() -> Path:
+    """The drafts directory: JADWIGO_DRAFTS_DIR from the environment, ~ expanded, else
+    ~/.local/state/jadwigo/drafts. Never the operator's file, which tools/builder does not read."""
+    configured = os.environ.get(JADWIGO_DRAFTS_DIR, "").strip()
+    return Path(configured).expanduser() if configured else DEFAULT_DRAFTS_DIR
 
 
 def repo_dir() -> Path | None:
