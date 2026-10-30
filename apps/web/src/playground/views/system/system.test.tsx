@@ -13,7 +13,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { AUTHORED, fakeApi } from "../../examples/fixture.ts";
 import { loadExamples, PlaygroundApi } from "../../examples/index.ts";
-import { APP_PAGE_ROLES, DESIGN_LINES, OWNER_GAPS, PARENT_OUTCOMES } from "./data.ts";
+import { APP_PAGE_ROLES, DESIGN_LINES, PARENT_OUTCOMES } from "./data.ts";
 import { FRAME_KINDS, FRAME_RULES, MEASURES } from "./frame/data.ts";
 import { FRAME_SECTIONS } from "./frame/sections.tsx";
 import { declaredAt } from "./live.ts";
@@ -138,9 +138,10 @@ describe("the System page", () => {
   });
 });
 
-describe("the System page's app pages, tiles and gaps (dl-uukj.32.12)", () => {
-  it("has App pages, Tiles and still answers, and Gaps for the owner in its menu", () => {
-    for (const id of ["app-pages", "still-answers", "gaps"]) expect(PAGE_IDS).toContain(id);
+describe("the System page's app pages and tiles (dl-uukj.32.12)", () => {
+  it("has App pages and Tiles and still answers in its menu, and no gaps for the owner", () => {
+    for (const id of ["app-pages", "still-answers"]) expect(PAGE_IDS).toContain(id);
+    expect(PAGE_IDS).not.toContain("gaps");
   });
 
   it("draws App pages outside the lesson's scope, with the rest of the page inside it", () => {
@@ -148,7 +149,7 @@ describe("the System page's app pages, tiles and gaps (dl-uukj.32.12)", () => {
     const app = container.querySelector("section#app-pages [data-app-pages]");
     expect(app).not.toBeNull();
     expect(app?.closest("[data-lesson-theme]")).toBeNull();
-    for (const id of ["metaphor", "components", "still-answers", "stage", "lines", "gaps"])
+    for (const id of ["metaphor", "components", "still-answers", "stage", "lines"])
       expect(
         container.querySelector(`section#${id}`)?.closest("[data-lesson-theme]"),
         id,
@@ -309,19 +310,5 @@ describe("the System page's app pages, tiles and gaps (dl-uukj.32.12)", () => {
       "--jw-page-body",
     ])
       expect(scale).toContain(token);
-  });
-
-  it("keeps one gap, the terminal card's colours, decided and deferred", () => {
-    expect(OWNER_GAPS.map((g) => [g.id, g.cite])).toEqual([["code-purples", "dl-uukj.32.20"]]);
-    const { container } = render(page());
-    const gaps = [...container.querySelectorAll("section#gaps [data-owner-gap]")];
-    expect(gaps.map((g) => g.getAttribute("data-owner-gap"))).toEqual(["code-purples"]);
-    expect(gaps[0]?.textContent).toContain("dl-uukj.32.20");
-    expect(gaps[0]?.textContent).toContain("deferred");
-    expect(
-      [...(gaps[0]?.querySelectorAll("[data-live-value]") ?? [])].map((v) =>
-        v.getAttribute("data-live-value"),
-      ),
-    ).toEqual(OWNER_GAPS[0]?.tokens);
   });
 });
