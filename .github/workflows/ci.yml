@@ -274,6 +274,7 @@ jobs:
       - name: The api on port 8787
         env:
           AUTH_JWKS_URL: http://127.0.0.1:54321/auth/v1/.well-known/jwks.json
+          AUTH_ISSUER: http://127.0.0.1:54321/auth/v1
         run: |
           PORT=8787 nohup bun apps/api/src/serve.ts > "$RUNNER_TEMP/api.log" 2>&1 &
           for _ in $(seq 1 30); do
