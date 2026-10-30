@@ -185,9 +185,12 @@ def test_the_workflows_words_check_and_have_no_finding(drafted: dict[str, Any]) 
     result = lesson.check(drafted["draft_id"], _words(drafted))
     assert words_check.findings(_lesson_file(result)) == []
     assert result["lesson_file"] in result["import_command"]
-    # The card shows each question's own twin, and no copied part was changed.
+    # The card shows each question's own twin. The agent changed no copied part: the only change is
+    # the multiplication rule jw adds by code to a plainly a×b question (dl-e8ov.5.38.14).
     twins = [q["twin"]["prompt"] for q in result["card"]["questions"]]
-    assert len(set(twins)) == 6 and all(not q["changes"] for q in result["card"]["questions"])
+    assert len(set(twins)) == 6
+    changes = [c for q in result["card"]["questions"] for c in q["changes"]]
+    assert all(c["why"].startswith("jw added the multiplication rule") for c in changes), changes
 
 
 def test_run_as_words_earn_every_finding_run_a_did(drafted: dict[str, Any]) -> None:
