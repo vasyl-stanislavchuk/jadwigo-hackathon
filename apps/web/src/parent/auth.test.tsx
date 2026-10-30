@@ -5,7 +5,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { returnOf, supabaseAuth, withoutReturn } from "./auth.ts";
+import { enabledIn, returnOf, supabaseAuth, withoutReturn } from "./auth.ts";
 
 const CLAIM = "claim=asg_0ectzj2evqb95a3v1v6wewjzy3&lang=pl";
 const at = (path: string): URL => new URL(path, "http://app.local");
@@ -100,5 +100,43 @@ describe("completeRedirect", () => {
     );
     expect(exchangeCodeForSession).not.toHaveBeenCalled();
     expect(window.location.search).toBe(`?${CLAIM}&code=abc`);
+  });
+});
+
+describe("enabledProviders", () => {
+  // The shape jadwigo-dev's GET /auth/v1/settings answers with, trimmed.
+  const settings = {
+    external: { google: true, facebook: false, email: true },
+    disable_signup: false,
+  };
+
+  it("keeps the build's providers the project has on, in the build's order", () => {
+    expect(enabledIn(settings, ["google", "facebook"])).toEqual(["google"]);
+    expect(
+      enabledIn({ external: { facebook: true, google: true } }, ["google", "facebook"]),
+    ).toEqual(["google", "facebook"]);
+    expect(enabledIn({ external: { google: true } }, [])).toEqual([]);
+    expect(enabledIn({}, ["google"])).toEqual([]);
+    expect(enabledIn(null, ["google"])).toEqual([]);
+  });
+
+  it("reads the settings once per page load", async () => {
+    const { supabase } = fakeSupabase();
+    const readSettings = vi.fn(async () => settings);
+    const auth = supabaseAuth(supabase, ["google", "facebook"], readSettings);
+    expect(await auth.enabledProviders()).toEqual(["google"]);
+    expect(await auth.enabledProviders()).toEqual(["google"]);
+    expect(readSettings).toHaveBeenCalledTimes(1);
+  });
+
+  it("is none when the read fails, and reads nothing when the build turns no provider on", async () => {
+    const { supabase } = fakeSupabase();
+    const failing = vi.fn(async () => {
+      throw new Error("offline");
+    });
+    expect(await supabaseAuth(supabase, ["google"], failing).enabledProviders()).toEqual([]);
+    const unused = vi.fn(async () => settings);
+    expect(await supabaseAuth(supabase, [], unused).enabledProviders()).toEqual([]);
+    expect(unused).not.toHaveBeenCalled();
   });
 });

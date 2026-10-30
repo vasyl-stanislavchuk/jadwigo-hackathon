@@ -62,7 +62,11 @@ const snapshot = {
 const me = (learners: LearnerSnapshot[]): Me =>
   ({ account, member, pod, learners }) as unknown as Me;
 
-function signedOutAuth(providers: readonly Provider[] = []): Auth & { signedIn: boolean } {
+function signedOutAuth(
+  providers: readonly Provider[] = [],
+  /** What the project's settings turn on: the build's list by default, or a failed read. */
+  enabled: readonly Provider[] | "unreadable" = providers,
+): Auth & { signedIn: boolean } {
   const auth = {
     signedIn: false,
     token: async () => (auth.signedIn ? "header.payload.signature" : null),
@@ -72,6 +76,10 @@ function signedOutAuth(providers: readonly Provider[] = []): Auth & { signedIn: 
       return auth.signedIn;
     }),
     providers: () => providers,
+    enabledProviders: vi.fn(async () => {
+      if (enabled === "unreadable") throw new Error("settings 503");
+      return providers.filter((provider) => enabled.includes(provider));
+    }),
     signInWith: vi.fn(async (_provider: Provider, _returnTo: string) => {}),
     // A provider's return as auth.ts reads it: a code signs in, an error says which.
     completeRedirect: vi.fn(async (url: URL): Promise<RedirectOutcome> => {
@@ -407,7 +415,7 @@ describe("ParentScreen", () => {
         client={client({})}
       />,
     );
-    await screen.findByText("Wyślij kod");
+    await screen.findByRole("button", { name: "Kontynuuj z Google" });
     const buttons = [...document.querySelectorAll<HTMLElement>("[data-provider]")];
     expect(buttons.map((b) => [b.dataset["provider"], b.textContent])).toEqual([
       ["google", "Kontynuuj z Google"],
@@ -497,7 +505,7 @@ describe("ParentScreen", () => {
         client={client({})}
       />,
     );
-    await screen.findByText("Wyślij kod");
+    await screen.findByRole("button", { name: "Kontynuuj z Facebookiem" });
     expect(document.querySelector('[data-provider="google"]')).toBeNull();
     expect(document.querySelector('[data-provider="facebook"]')).not.toBeNull();
     expect(document.querySelector("[data-email]")).not.toBeNull();
@@ -524,7 +532,7 @@ describe("ParentScreen", () => {
         client={client({})}
       />,
     );
-    await screen.findByText("Wyślij kod");
+    await screen.findByRole("button", { name: "Kontynuuj z Google" });
     expect(document.querySelector('[data-provider="google"]')).not.toBeNull();
     expect(document.querySelector("[data-open-in-browser]")).toBeNull();
   });
@@ -594,5 +602,45 @@ describe("ParentScreen", () => {
     );
     expect(exchangeCodeForSession).toHaveBeenCalledTimes(1);
     expect(window.location.search).toBe("");
+  });
+
+  it("shows a provider's button only when the project has that provider on", async () => {
+    const auth = signedOutAuth(["google", "facebook"], ["google"]);
+    render(
+      <ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={client({})} />,
+    );
+    await screen.findByRole("button", { name: "Kontynuuj z Google" });
+    expect(document.querySelector('[data-provider="facebook"]')).toBeNull();
+    expect(auth.enabledProviders).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows no provider button when the project has them off, and keeps the email code", async () => {
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={signedOutAuth(["google", "facebook"], [])}
+        client={client({})}
+      />,
+    );
+    await screen.findByText("Wyślij kod");
+    await act(async () => {});
+    expect(document.querySelector("[data-providers]")).toBeNull();
+    expect(document.querySelector("[data-email]")).not.toBeNull();
+  });
+
+  it("shows no provider button when the project's settings cannot be read", async () => {
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={signedOutAuth(["google", "facebook"], "unreadable")}
+        client={client({})}
+      />,
+    );
+    await screen.findByText("Wyślij kod");
+    await act(async () => {});
+    expect(document.querySelector("[data-providers]")).toBeNull();
+    expect(document.querySelector("[data-send-code]")).not.toBeNull();
   });
 });
