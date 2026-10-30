@@ -164,6 +164,29 @@ describe("dreamDigest, a fixture period", () => {
     ]);
   });
 
+  it("knows a speed skill from the catalogue: it moves to proficient, never to mastered", () => {
+    const speedy = [catalogueSkill(row7), catalogueSkill(row8, { kind: "speed" })];
+    const rows = [
+      row({ attempt: 3, seq: 1, at: "2026-10-26T09:00:00.000Z", correct: true, skill: row8 }),
+      row({ attempt: 4, seq: 1, at: "2026-10-27T09:00:00.000Z", correct: true, skill: row8 }),
+      row({ attempt: 5, seq: 1, at: "2026-10-29T09:00:00.000Z", correct: true, skill: row8 }),
+      row({ attempt: 5, seq: 2, at: "2026-10-29T09:01:00.000Z", correct: true, skill: row7 }),
+    ];
+    const mastery_after = foldLearner(rows, speedy, NOW);
+    const got = dreamDigest({
+      ...inputOf([], rows),
+      mastery_after,
+      brief: brief(GOALS, speedy, mastery_after, NOW),
+      skills: speedy,
+    }).digest;
+    expect(got.skills_moved.find((m) => m.skill_code === row8)).toEqual({
+      skill_code: row8,
+      from: "not_started",
+      to: "proficient",
+      attempt_id: attempt(4),
+    });
+  });
+
   it("says nothing recorded and asks when the period has no evidence", () => {
     const quiet = dreamDigest({
       ...inputOf(BEFORE, BEFORE),

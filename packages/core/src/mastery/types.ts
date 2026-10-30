@@ -45,10 +45,9 @@ export interface DigestInput {
   readonly period: ReportPeriod;
   /**
    * The catalogue the pod reads (`listSkills`), as `foldLearner` takes it: the digest resolves
-   * aliases and knows each code's kind from it. Optional until createReport passes it; without
-   * it, every code is its own skill and an accuracy one.
+   * aliases and knows each code's kind from it, so a speed skill never shows as a mastered mover.
    */
-  readonly skills?: readonly Skill[];
+  readonly skills: readonly Skill[];
 }
 
 /** One reviewed can-do line of a skill, in the language asked for. */

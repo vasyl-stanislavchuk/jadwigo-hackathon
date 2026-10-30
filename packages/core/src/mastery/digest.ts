@@ -61,7 +61,7 @@ function hashOf(period: readonly LearnerSkillEvidence[], skills: readonly Skill[
 }
 
 export function makeDigest(input: DigestInput): { digest: Digest; inputs_hash: string } {
-  const skills = input.skills ?? [];
+  const { skills } = input;
   const canonical = (code: SkillId) => canonicalOf(code, skills);
   const period = inPeriod(input);
   const from = Date.parse(input.period.starts_at);

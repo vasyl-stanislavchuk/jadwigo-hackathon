@@ -201,6 +201,7 @@ export async function makeReport(
     brief: read.brief,
     goals: read.goals,
     period: { starts_at, ends_at },
+    skills: read.catalogue,
   });
   await store.replaceMastery(pod, id, read.mastery);
   const reused = last !== undefined && last.inputs_hash === inputs_hash;
