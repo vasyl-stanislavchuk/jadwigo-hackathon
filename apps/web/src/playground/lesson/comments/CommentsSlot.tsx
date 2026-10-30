@@ -9,6 +9,7 @@ import { type FormEvent, type ReactElement, useState } from "react";
 import type { Ask } from "../../../../../../tools/builder/drafts.ts";
 import { Badge } from "../../tool/badge.tsx";
 import { Button } from "../../tool/button.tsx";
+import { WorkFold } from "../activity/WorkFold.tsx";
 import { useAsks } from "./source.ts";
 import {
   type Channel,
@@ -44,6 +45,7 @@ function ThreadView({ thread, channel }: { thread: Thread; channel: Channel }): 
         <div key={reply.ts} className="ml-4 flex flex-col gap-0.5 border-l-2 pl-3 text-sm">
           <span className="text-muted-foreground text-xs">{REPLY_LABEL[reply.kind]}</span>
           <p className="whitespace-pre-wrap">{reply.text}</p>
+          {reply.work && <WorkFold work={reply.work} />}
         </div>
       ))}
       <p role="status" className={cn("flex items-center gap-2 text-xs", TONE[turn.tone])}>

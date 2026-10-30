@@ -27,36 +27,44 @@ const ASK_PATH = "/@builder/ask";
 const ASKS_PATH = "/@builder/asks";
 const ASKS_EVENT = "builder:asks";
 
-let current: AsksPayload | null = null;
-const listeners = new Set<() => void>();
-let started = false;
-
-function set(payload: AsksPayload): void {
-  current = payload;
-  for (const listener of listeners) listener();
+/**
+ * One value the dev server keeps current: read once from `path`, then replaced by every `event`
+ * push. Every slot on the page shares it. Vitest gives a module HMR too, so a test never starts
+ * one; it hands its own source to a provider instead.
+ */
+export function hmrStore<T>(path: string, event: string) {
+  let current: T | null = null;
+  let started = false;
+  const listeners = new Set<() => void>();
+  const set = (value: T) => {
+    current = value;
+    for (const listener of listeners) listener();
+  };
+  const start = () => {
+    const hot = import.meta.hot;
+    if (started || !hot || import.meta.env.MODE === "test") return;
+    started = true;
+    hot.on(event, (value: T) => set(value));
+    void fetch(path)
+      .then((res) => (res.ok ? (res.json() as Promise<T>) : null))
+      .then((value) => {
+        if (value && current === null) set(value);
+      })
+      .catch(() => {
+        // The next push brings it.
+      });
+  };
+  return {
+    subscribe(listener: () => void): () => void {
+      listeners.add(listener);
+      start();
+      return () => listeners.delete(listener);
+    },
+    get: (): T | null => current,
+  };
 }
 
-function start(): void {
-  const hot = import.meta.hot;
-  // Vitest gives a module HMR too; a test hands its own source to AsksProvider instead.
-  if (started || !hot || import.meta.env.MODE === "test") return;
-  started = true;
-  hot.on(ASKS_EVENT, (payload: AsksPayload) => set(payload));
-  void fetch(ASKS_PATH)
-    .then((res) => (res.ok ? (res.json() as Promise<AsksPayload>) : null))
-    .then((payload) => {
-      if (payload && current === null) set(payload);
-    })
-    .catch(() => {
-      // The next push brings it.
-    });
-}
-
-function subscribe(listener: () => void): () => void {
-  listeners.add(listener);
-  start();
-  return () => listeners.delete(listener);
-}
+const asks = hmrStore<AsksPayload>(ASKS_PATH, ASKS_EVENT);
 
 async function send(ask: NewAsk): Promise<string | null> {
   try {
@@ -87,12 +95,8 @@ export function AsksProvider({
 
 export function useAsks(): AsksSource {
   const given = useContext(AsksContext);
-  const payload = useSyncExternalStore(
-    given ? noSubscribe : subscribe,
-    () => current,
-    () => null,
-  );
+  const payload = useSyncExternalStore(given ? noSubscribe : asks.subscribe, asks.get, () => null);
   return given ?? { payload, send };
 }
 
-const noSubscribe = () => () => {};
+export const noSubscribe = () => () => {};

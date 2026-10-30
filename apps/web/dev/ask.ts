@@ -27,7 +27,8 @@ import {
   readRows,
   repliesFile,
 } from "../../../tools/builder/drafts.ts";
-import { draftsDir } from "../src/config.ts";
+import { builderSession, draftsDir } from "../src/config.ts";
+import { activity } from "./activity.ts";
 
 const ASK_PATH = "/@builder/ask";
 const ASKS_PATH = "/@builder/asks";
@@ -273,6 +274,12 @@ export function ask(server: ViteDevServer): void {
   } catch (error) {
     server.config.logger.warn(`[builder] cannot watch ${dir}, rechecking every 5 s: ${error}`);
   }
+  activity(
+    server,
+    dir,
+    builderSession(),
+    (req) => admit({ ...gateOf(req), method: "GET" })?.error ?? "",
+  );
   const recheck = setInterval(push, RECHECK_MS);
   recheck.unref();
   server.httpServer?.on("close", () => clearInterval(recheck));

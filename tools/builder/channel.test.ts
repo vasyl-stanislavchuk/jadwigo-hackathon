@@ -1,12 +1,27 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import type { JSONRPCNotification } from "@modelcontextprotocol/sdk/types.js";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { askText, createServer, draftsWithAsks, pollOnce } from "./channel.ts";
-import { type Ask, appendRow, asksFile, consumedFile, readRows, repliesFile } from "./drafts.ts";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  askText,
+  createServer,
+  draftsWithAsks,
+  pollOnce,
+  reply,
+  sessionTranscript,
+} from "./channel.ts";
+import {
+  type Ask,
+  appendRow,
+  asksFile,
+  consumedFile,
+  readRows,
+  repliesFile,
+  sessionFile,
+} from "./drafts.ts";
 import { channelLoaded, channelNames, type Proc } from "./flag.ts";
 
 const ASK: Ask = {
@@ -146,6 +161,66 @@ describe("the reply tool", () => {
     expect((await call({ kind: "finished" })).isError).toBe(true);
     expect((await call({ draft_id: "../escape" })).isError).toBe(true);
     expect(readRows(repliesFile(dir, ASK.draft_id))).toEqual([]);
+  });
+});
+
+describe("the work frozen on an answer", () => {
+  const row = (iso: string, id: string, name: string, input: object) =>
+    JSON.stringify({
+      type: "assistant",
+      timestamp: iso,
+      message: { content: [{ type: "tool_use", id, name, input }] },
+    });
+
+  it("carries what the session did since it took the ask, written when it answers", async () => {
+    vi.setSystemTime(new Date("2026-10-30T09:00:01.000Z"));
+    appendRow(asksFile(dir, ASK.draft_id), ASK);
+    await pollOnce(dir, async () => {});
+    const transcript = join(dir, "s1.jsonl");
+    writeFileSync(
+      transcript,
+      [
+        row("2026-10-30T08:59:00.000Z", "a", "Read", { file_path: "/x/before.ts" }),
+        row("2026-10-30T09:00:02.000Z", "b", "Read", { file_path: "/x/lesson.json" }),
+        row("2026-10-30T09:00:03.000Z", "c", "mcp__jadwigo__lesson_check", {}),
+      ].join("\n"),
+    );
+    vi.setSystemTime(new Date("2026-10-30T09:00:09.000Z"));
+
+    const progress = reply(
+      dir,
+      { draft_id: ASK.draft_id, in_reply_to: ASK.ask_ts, kind: "progress", text: "On q2." },
+      () => transcript,
+    );
+    const done = reply(
+      dir,
+      { draft_id: ASK.draft_id, in_reply_to: ASK.ask_ts, text: "q2 is shorter." },
+      () => transcript,
+    );
+
+    expect("row" in progress && progress.row.work).toBeUndefined();
+    expect("row" in done && done.row.work).toEqual({
+      steps: [
+        { text: "Reading lesson.json", ok: true },
+        { text: "Check: running", ok: true },
+      ],
+      calls: 2,
+      failed: 0,
+      read: ["lesson.json"],
+      changed: [],
+    });
+    expect(readRows(repliesFile(dir, ASK.draft_id)).at(-1)?.["work"]).toBeDefined();
+  });
+
+  it("reads the transcript only of the session make builder named", () => {
+    mkdirSync(dirname(sessionFile(dir)), { recursive: true });
+    writeFileSync(
+      sessionFile(dir),
+      JSON.stringify({ session_id: "s1", started_at: "", cwd: "/x", transcript: "/t/s1.jsonl" }),
+    );
+    expect(sessionTranscript(dir, "s1")).toBe("/t/s1.jsonl");
+    expect(sessionTranscript(dir, "s2")).toBeNull();
+    expect(sessionTranscript(dir, "")).toBeNull();
   });
 });
 
