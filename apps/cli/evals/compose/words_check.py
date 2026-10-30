@@ -184,7 +184,7 @@ def findings(lesson_file: Mapping[str, Any]) -> list[str]:
                 if not _taught((int(a), int(b)), shown, _product(spec.get("data") or {})):
                     out.append(f"{sid}: {where} leans on {a} · {b}, which the question never shows")
             if where.startswith("boost_by_mistake"):
-                if text in seen:
+                if seen.get(text, sid) != sid:
                     out.append(f"{sid}: {where} is {seen[text]}'s card word for word")
                 seen.setdefault(text, sid)
                 if shown and not _numbers(text) & shown:
