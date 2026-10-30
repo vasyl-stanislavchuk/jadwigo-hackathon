@@ -33,12 +33,16 @@
     "@jadwigo/contracts": "ERROR_STATUS, ROUTES and ROUTE_TAGS: the guides' generated tables, the guide path test and the API reference's tags (src/lib); the schemas each MCP tool's output follows (src/lib/mcp-output.ts)",
     "@jadwigo/cli": "mcp-tools.json, read as a file by prepare.ts and the MCP pages; the edge makes turbo --affected rerun the docs on a CLI change; nothing imports it, so knip.json ignores it",
     "@jadwigo/lesson-kit": "QUESTION_TYPES, the source of the Question types page's table (src/lib/question-types.ts)",
-    "@jadwigo/ui": "foundation.css, Zeszyt's tokens, the source of the Tokens page's tables (src/lib/tokens.ts)"
+    "@jadwigo/ui": "foundation.css, Zeszyt's tokens, the source of the Tokens page's tables (src/lib/tokens.ts)",
+    "astro-mermaid": "turns each mermaid code block in the architecture pages into a diagram, drawn in the reader's browser (astro.config.mjs)",
+    "mermaid": "astro-mermaid's peer dependency: the library that draws the diagrams, bundled into the page's script",
+    "happy-dom": "the DOM mermaid needs to parse each diagram in src/lib/diagrams.test.ts"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",
     "@jadwigo/cli": "workspace:*",
     "@types/node": "catalog:",
+    "happy-dom": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
@@ -51,6 +55,8 @@
     "@jadwigo/lesson-kit": "workspace:*",
     "@jadwigo/ui": "workspace:*",
     "astro": "7.4.2",
+    "astro-mermaid": "2.1.0",
+    "mermaid": "12.2.0",
     "satteri": "0.10.5",
     "starlight-links-validator": "0.27.0",
     "starlight-llms-txt": "0.12.0",

@@ -1,8 +1,9 @@
 // One outcome as a tile (dl-uukj.32.3): a 40 px square (32 in a legend) with an icon and a tone, so
 // it reads without colour too. The right's tone is the kid green, the miss's the kid red; plain is
 // paper. It carries data-outcome, never data-tile: 11 lesson rules in foundation.css style
-// [data-tile]. Without asChild and with a label it is an image with that name; asChild hands the
-// tile to a link (the app's NavLink), which takes the icon and keeps its own children after it.
+// [data-tile]. It always has a name: without asChild it is an image with that name; asChild hands
+// the tile and the name to a link (the app's NavLink), which takes the icon and keeps its own
+// children after it. It was made for the parent's overview (its heatmap and legend).
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
@@ -44,19 +45,18 @@ function OutcomeTile({
     /** The caller's own outcome name (first_try, not_yet); the tone when absent. */
     outcome?: string;
     icon: ReactNode;
-    /** The tile's name: the question and its outcome. */
-    label?: string;
+    /** The tile's name, always: the question and its outcome. A tile is never colour and an icon alone. */
+    label: string;
     asChild?: boolean;
   }): ReactElement {
   const Comp = asChild ? Slot.Root : "span";
-  const named = label === undefined ? {} : { "aria-label": label };
-  const image = !asChild && label !== undefined ? { role: "img" } : {};
+  const image = asChild ? {} : { role: "img" };
   return (
     <Comp
       data-slot="outcome-tile"
       data-outcome={outcome ?? tone}
       className={cn(outcomeTileVariants({ tone, size }), className)}
-      {...named}
+      aria-label={label}
       {...image}
       {...props}
     >

@@ -36,7 +36,10 @@ export const SIDEBAR: readonly SidebarGroup[] = [
       "design-system/copy",
     ],
   },
-  { label: "Architecture", items: ["architecture"] },
+  {
+    label: "Architecture",
+    items: ["architecture", "architecture/monorepo", "architecture/contracts"],
+  },
 ];
 
 /** SIDEBAR in the shape Starlight's `sidebar` option takes. */
