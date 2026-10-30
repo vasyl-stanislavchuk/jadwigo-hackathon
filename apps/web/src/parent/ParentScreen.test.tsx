@@ -571,7 +571,32 @@ describe("ParentScreen", () => {
     expect(mark?.getAttribute("src")).toMatch(/facebook-f\.svg|^data:image\/svg\+xml/);
     expect(mark?.getAttribute("alt")).toBe("");
     expect(facebook.firstElementChild).toBe(mark);
-    // Google's font and colours stay on Google's button.
+    // Google's font stays on Google's button.
+    expect(facebook.style.fontFamily).toBe("");
+  });
+
+  it("gives Facebook's button Google's shape and text size, in the page's font", async () => {
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={signedOutAuth(["google", "facebook"])}
+        client={client({})}
+      />,
+    );
+    const facebook = await screen.findByRole("button", { name: "Kontynuuj z Facebookiem" });
+    const google = screen.getByRole("button", { name: "Kontynuuj z Google" });
+    const shape = (b: HTMLElement) => ({
+      className: b.className,
+      fill: b.style.backgroundColor,
+      stroke: b.style.borderColor,
+      ink: b.style.color,
+      weight: b.style.fontWeight,
+      size: b.style.fontSize,
+      line: b.style.lineHeight,
+    });
+    expect(shape(facebook)).toEqual(shape(google));
+    expect(google.style.fontFamily).toContain("Google Sans");
     expect(facebook.style.fontFamily).toBe("");
   });
 
