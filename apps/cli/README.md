@@ -13,7 +13,7 @@ came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
 | `jw question show set_khan_2002` | One set page, checked against `src/jw/contracts/set.schema.json` | `JADWIGO_BANK_DIR` |
 | `jw question gaps --words "..." --skill <id> --grade 3` | Each need searched once, with `found`, `gap` or `degraded` | the bank URL and token |
 | `jw question item <item id>` | One converted item: its family step with key and help, credit and `based_on` | `JW_KHAN_CONVERTED` |
-| `jw lesson draft "6 zadań z mnożenia, klasa 3" --grade 3 --name <name>` (or `--no-names`) | A lesson draft: drawn questions copied whole from the bank, kept under a `draft_id`, and what is left to write | all of the above, and `JADWIGO_REPO_DIR` and `bun` for the mistake classes |
+| `jw lesson draft "6 zadań z mnożenia, klasa 3" --grade 3 --topic mnożenie --name <name>` (or `--no-names`) | A lesson draft: drawn questions copied whole from the bank, kept under a `draft_id`, and what is left to write | all of the above, and `JADWIGO_REPO_DIR` and `bun` for the mistake classes |
 | `jw lesson check <draft_id> <words.json>` | The card, the lesson file's path and its `/play/` path, or errors by step id | `JADWIGO_REPO_DIR` and `bun` |
 
 - **Search** returns the envelope as the bank sent it. The `/api/v1` route answers stage `final`
@@ -113,7 +113,12 @@ when the parent asks
    the bank turns a need's words into model input
    (`jadwigo-hackathon/decisions/2026-10-29-lesson-draft-takes-the-family-s-names-from-the-calling-agent-and`).
    The draft's `request`, the lesson file's id, title and reasoning carry the placeholders
-   (`[NAME_1]`), never a name. `lesson_draft` then sends the guarded request to the bank as a need, fetches each row's set page,
+   (`[NAME_1]`), never a name. `topic` is required too: what the lesson is about in a few words,
+   which the calling agent distils from the request with no count, grade or name (`mnożenie`,
+   `dodawanie do 100`). The bank searches the topic, not the whole request, so a request's
+   framing ("Przygotuj lekcję dla …: 6 zadań …") does not narrow the search (`dl-e8ov.5.38.12`);
+   the request is kept as the draft's record and title. `lesson_draft` then sends the guarded
+   topic to the bank as a need's words, fetches each row's set page,
    draws the questions with the provisional rule for the lesson kind (`src/jw/draw.py`, so
    `rule_settled` is `false`), and loads each drawn item from `JW_KHAN_CONVERTED`. An item that
    cannot load (waiting for its family step, or missing) goes to `left_out` with its reason, and

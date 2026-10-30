@@ -42,6 +42,7 @@ BANK_DIR = ROOT / "tests" / "fixtures" / "bank"
 LESSON = ROOT / "tests" / "fixtures" / "lesson"
 ITEMS_FILE = LESSON / "converted.json"
 REQUEST = "6 zadań z mnożenia, klasa 3"
+TOPIC = "mnożenie"  # what the calling agent distils from REQUEST (dl-e8ov.5.38.12)
 TODAY = dt.date(2026, 10, 29)
 STEP_KEYS = {"id", "question_type", "skill_ids", "based_on", "say", "question", "credit"}
 
@@ -109,7 +110,7 @@ def check_ts(monkeypatch: pytest.MonkeyPatch) -> CheckTs:
 
 
 def _draft(**kwargs: Any) -> dict[str, Any]:
-    return lesson.draft(REQUEST, "3", names=[], today=TODAY, **kwargs)
+    return lesson.draft(REQUEST, "3", names=[], topic=TOPIC, today=TODAY, **kwargs)
 
 
 def _stored(view: dict[str, Any]) -> dict[str, Any]:
@@ -143,7 +144,10 @@ def test_draft_copies_6_questions_whole_and_keeps_them_by_draft_id(
 ) -> None:
     view = _draft()
 
-    assert bank.requests[-1].body["words"] == REQUEST
+    # The bank is asked for the topic; the request is kept as the draft's record.
+    assert bank.requests[-1].body["words"] == TOPIC
+    assert view["need"] == {"language": "pl", "grade": "3", "words": TOPIC}
+    assert view["request"] == REQUEST
     assert re.fullmatch(r"draft_[0-9a-f]{12}", view["draft_id"])
     assert view["rule_settled"] is False and view["rule"]["count"] == 6
     assert (view["title"], view["plays_as_copied"], view["copy_errors"]) == (REQUEST, True, [])
@@ -237,7 +241,7 @@ def test_the_copy_maps_hints_onto_rungs_as_the_player_does() -> None:
 
 def test_a_name_in_the_request_never_leaves_the_machine(bank: LessonBank, check_ts: CheckTs) -> None:
     named = "6 zadań z mnożenia dla Kasi, klasa 3"  # Kasia: an invented name, as tests/test_pii.py
-    view = lesson.draft(named, "3", names=["Kasia"], today=TODAY)
+    view = lesson.draft(named, "3", names=["Kasia"], topic="mnożenie dla Kasi", today=TODAY)
 
     sent = bank.requests[-1].body["words"]
     assert pii.leaks(sent, ["Kasia"]) == [] and "[NAME_1]" in sent
@@ -252,9 +256,18 @@ def test_a_name_in_the_request_never_leaves_the_machine(bank: LessonBank, check_
 
 def test_a_draft_without_names_is_refused(bank: LessonBank) -> None:
     with pytest.raises(JwError, match="names"):
-        lesson.draft(REQUEST, "3", names=None, today=TODAY)
+        lesson.draft(REQUEST, "3", names=None, topic=TOPIC, today=TODAY)
     with pytest.raises(TypeError):
-        lesson.draft(REQUEST, "3", today=TODAY)  # type: ignore[call-arg]
+        lesson.draft(REQUEST, "3", topic=TOPIC, today=TODAY)  # type: ignore[call-arg]
+    assert bank.requests == []
+
+
+def test_a_draft_without_a_topic_is_refused(bank: LessonBank) -> None:
+    with pytest.raises(JwError, match="topic") as caught:
+        lesson.draft(REQUEST, "3", names=[], topic="  ", today=TODAY)
+    assert "mnożenie" in caught.value.hint
+    with pytest.raises(TypeError):
+        lesson.draft(REQUEST, "3", names=[], today=TODAY)  # type: ignore[call-arg]
     assert bank.requests == []
 
 
@@ -266,6 +279,13 @@ def test_the_proposed_mark_is_stripped_from_skill_ids(bank: LessonBank, check_ts
     assert _stored(view)["questions"][0]["skill_ids"] == ["fixture.times-6"]
     step = check_ts.seen[0][1]["script"]["parts"][0]["steps"][0]
     assert step["skill_ids"] == ["fixture.times-6"]
+
+
+def test_an_item_of_several_skills_names_them_all() -> None:
+    ids, note = lesson._skills_ids(["proposed:maths.multiplication.row-3", "maths.x.y", "set_x"])
+    assert ids == ["maths.multiplication.row-3", "maths.x.y"]
+    assert note is not None and "set_x" in note
+    assert lesson._skill_label("proposed:maths.a.b, maths.c.d") == "maths.a.b (proposed), maths.c.d"
 
 
 def test_a_skill_that_is_no_skill_id_is_left_out_with_a_note() -> None:
@@ -300,7 +320,7 @@ def test_before_check_ts_sends_classes_they_are_unknown(bank: LessonBank, check_
 
 
 def test_the_draft_verb_prints_the_draft(bank: LessonBank, check_ts: CheckTs) -> None:
-    args = ["lesson", "draft", REQUEST, "--grade", "3", "--json"]
+    args = ["lesson", "draft", REQUEST, "--grade", "3", "--topic", TOPIC, "--json"]
     result = CliRunner().invoke(cli, [*args, "--no-names"])
     assert result.exit_code == 0, result.output
     printed = json.loads(result.output)
@@ -308,6 +328,8 @@ def test_the_draft_verb_prints_the_draft(bank: LessonBank, check_ts: CheckTs) ->
     assert _undated(printed) | {"title": REQUEST} == _undated(view)
     refused = CliRunner().invoke(cli, args)
     assert refused.exit_code == 2 and "--name" in refused.output
+    untopical = CliRunner().invoke(cli, ["lesson", "draft", REQUEST, "--grade", "3", "--no-names"])
+    assert untopical.exit_code == 2 and "--topic" in untopical.output
 
 
 # ---------------------------------------------------------------- check ------
