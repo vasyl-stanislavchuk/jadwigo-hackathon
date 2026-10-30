@@ -210,9 +210,9 @@ function entryClasses(
         ...near,
         ...(key.accents !== "ignore" ? ["missing_diacritics"] : []),
         ...(key.case !== "ignore" ? ["wrong_case"] : []),
-        ...(key.typo !== "accept" && key.accept.some((a) => [...a.trim()].length >= TYPO_MIN_LENGTH)
-          ? ["typo"]
-          : []),
+        // Listed under `typo: 'accept'` too: textClass folds an accept twice, so an accept ending
+        // in two marks (`Naprawdę?!`) still gives `typo` for a one-letter slip.
+        ...(key.accept.some((a) => [...a.trim()].length >= TYPO_MIN_LENGTH) ? ["typo"] : []),
       ];
     case "number":
       return [
