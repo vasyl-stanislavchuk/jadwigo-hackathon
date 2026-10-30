@@ -44,8 +44,8 @@ const REPO_LINK = /href="https?:\/\/(www\.)?github\.com\//;
 
 /**
  * Hosts not ours that a page may name, each with what names it. Every other host in the built
- * HTML must be `hosts.prod.app` or `hosts.prod.docs`, so a hand-written URL can't drift from
- * packages/config (dl-5ssh.90.19).
+ * HTML, text and JSON must be `hosts.prod.app` or `hosts.prod.docs`, so a hand-written URL can't
+ * drift from packages/config (dl-5ssh.90.19, dl-5ssh.90.24).
  */
 const THIRD_PARTY_HOSTS: Readonly<Record<string, string>> = {
   "json-schema.org": "the $schema id in each MCP tool's JSON Schema (mcp/*)",
@@ -53,7 +53,11 @@ const THIRD_PARTY_HOSTS: Readonly<Record<string, string>> = {
 };
 
 const OUR_HOSTS = new Set([hosts.prod.app, hosts.prod.docs]);
-const ANY_HOST = /https?:\/\/([A-Za-z0-9.-]+)/g;
+/**
+ * A host with its port, if any: `app.jadwigo.pl:8443` is a host of its own, not ours. The dot that
+ * ends a sentence in llms.txt is not part of the host.
+ */
+const ANY_HOST = /https?:\/\/([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*(?::\d+)?)/g;
 
 /** The hosts a page names that are neither ours nor allowlisted, each once. */
 export function strayHosts(html: string): string[] {
@@ -61,9 +65,13 @@ export function strayHosts(html: string): string[] {
   return [...named].filter((host) => !OUR_HOSTS.has(host) && !(host in THIRD_PARTY_HOSTS));
 }
 
-function htmlFiles(dir: string): string[] {
+/** What a reader or an agent reads: the pages, llms*.txt, openapi.json and mcp-tools.json. */
+const SCANNED = /\.(html|txt|json)$/;
+
+function scannedFiles(dir: string): string[] {
   return readdirSync(dir, { recursive: true, encoding: "utf8" })
-    .filter((path) => path.endsWith(".html"))
+    .filter((path) => SCANNED.test(path))
+    .sort()
     .map((path) => join(dir, path));
 }
 
@@ -98,7 +106,7 @@ export function checkDist(dist: string): string[] {
     else if (!readFileSync(path, "utf8").includes(text))
       problems.push(`dist/${file} lacks ${text}`);
   }
-  for (const path of htmlFiles(dist)) {
+  for (const path of scannedFiles(dist)) {
     const html = readFileSync(path, "utf8");
     const file = `dist/${relative(dist, path)}`;
     if (REPO_LINK.test(html)) problems.push(`${file} links into GitHub`);

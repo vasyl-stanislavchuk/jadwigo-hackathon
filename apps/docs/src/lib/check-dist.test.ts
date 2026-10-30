@@ -85,6 +85,20 @@ describe("checkDist", () => {
       "dist/guides/curl.html names api.jadwigo.pl, not app.jadwigo.pl or docs.jadwigo.pl",
     ]);
   });
+
+  it("fails a stray host in llms-full.txt and a port after our host in a page", () => {
+    writeGoodDist();
+    writeFileSync(join(dist, "llms-full.txt"), "Your first call: https://example.com/x");
+    writeFileSync(
+      join(dist, "guides/port.html"),
+      "<pre>curl https://app.jadwigo.pl:8443/api</pre>",
+    );
+    expect(checkDist(dist)).toEqual([
+      "dist/guides/port.html names app.jadwigo.pl:8443, not app.jadwigo.pl or docs.jadwigo.pl",
+      "dist/llms-full.txt names example.com, not app.jadwigo.pl or docs.jadwigo.pl",
+    ]);
+  });
+
   it("asks for a build when there is no dist/", () => {
     expect(checkDist(join(dist, "nope"))).toEqual([
       `${join(dist, "nope")} does not exist: run the build first`,
@@ -101,5 +115,10 @@ describe("strayHosts", () => {
   it("names a near miss and a plain http host once each", () => {
     const html = "https://app.jadwigo.pl.evil.test http://example.com http://example.com/2";
     expect(strayHosts(html)).toEqual(["app.jadwigo.pl.evil.test", "example.com"]);
+  });
+
+  it("names our host with a port, and leaves out the dot that ends a sentence", () => {
+    const html = "The base URL is https://app.jadwigo.pl. Not https://app.jadwigo.pl:8443/api.";
+    expect(strayHosts(html)).toEqual(["app.jadwigo.pl:8443"]);
   });
 });
