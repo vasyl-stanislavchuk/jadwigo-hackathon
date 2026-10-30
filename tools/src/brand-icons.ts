@@ -24,7 +24,11 @@ export const ICONS: ReadonlyArray<{ file: string; px: number; from: string; squa
 ];
 
 /** Each app's public/ folder that serves the icons. */
-export const TARGETS: readonly string[] = ["apps/web/public", "apps/site/public"];
+export const TARGETS: readonly string[] = [
+  "apps/web/public",
+  "apps/site/public",
+  "apps/docs/public",
+];
 
 const SOURCES = [...new Set(ICONS.map((i) => i.from))].sort();
 

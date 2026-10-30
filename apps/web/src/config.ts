@@ -29,3 +29,17 @@ export function authConfig(
   const key = env["JW_SUPABASE_KEY"];
   return url && key ? { url, key } : null;
 }
+
+/** Where jw writes lesson drafts and the lesson builder reads them (dl-a38n, lead decision 1):
+ * JADWIGO_DRAFTS_DIR, else ~/.local/state/jadwigo/drafts, the jw setting's default. */
+export function draftsDir(env: Record<string, string | undefined> = process.env): string {
+  const dir = env["JADWIGO_DRAFTS_DIR"] || "~/.local/state/jadwigo/drafts";
+  return dir.startsWith("~/") ? `${env["HOME"] ?? ""}/${dir.slice(2)}` : dir;
+}
+
+/** The Claude Code session `make builder` started (JADWIGO_BUILDER_SESSION), when this dev server
+ * runs in its environment; else "", and the drafts directory's .builder/session.json names it
+ * (dl-a38n.15). */
+export function builderSession(env: Record<string, string | undefined> = process.env): string {
+  return (env["JADWIGO_BUILDER_SESSION"] ?? "").trim();
+}

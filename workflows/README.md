@@ -33,5 +33,18 @@ a missing link, a wrong name, or a dev command filed here.
   (`dl-5ssh.34.23`).
 - **Every change is checked** on the evals for its journey before it ships.
 
-None exist yet. The first ones come with the ai-workflows epics (`dl-hin8`, `dl-u1y5`) and
-`jw` (`dl-5ssh.34.7`).
+## The workflows
+
+| Workflow | Use it when | Its eval |
+| --- | --- | --- |
+| [`jadwigo-lesson-compose`](jadwigo-lesson-compose/SKILL.md) | a parent asks for a lesson | `apps/cli/evals/compose/` |
+
+A workflow may run in an empty folder, with only the jadwigo MCP tools, so it keeps what the agent
+needs in its own folder and never sends the agent to source, a shell or the repo. The per-language
+parts (`_lang/pl`) wait on `dl-r772.34` and on `jw` assembling them (`dl-5ssh.34.23`); until then
+`jadwigo-lesson-compose` carries its Polish rules itself.
+
+**Its eval.** `apps/cli/evals/compose/test_compose_workflow.py` runs with `pytest -q`, no model:
+it checks the workflow's text, and puts the words it teaches, and run A's (`dl-e8ov.5.38.5`), on
+the canonical request through `lesson_check` and `words_check.py`. `eval_agent_words.py` is run by
+hand on the lesson file a real session wrote, because only a model writes an agent's words.
