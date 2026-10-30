@@ -34,6 +34,12 @@ prod's major version, with no Docker: Postgres.app on port 5433 locally, and the
   (`claimed_read` policies, `20261029120000_parent_login.sql`). It reads no `lesson_question`, so
   no answer key; `attempt_result` gives it each asked question's face through `app.asked_question()`.
   A claim goes through `app.claim_attempt()`, never an update of `attempt`.
+- Every pod also reads, never writes, Jadwigo's own pod's curriculum, topic and skill rows, the
+  shared catalogue (`shared_read` policies, `20261031120000_learner_knowledge.sql`;
+  `app.shared_pod_id()` is `FEATURED_POD_ID`). A pod's row may name a shared topic or curriculum,
+  never another pod's: a foreign key checks past row-level security, so restrictive policies do
+  (`20261031130000_learner_knowledge_fix.sql`). `learner_skill_evidence` runs as the caller and reads
+  a claimed attempt's skill codes through `app.asked_skills()`, never its `lesson_question` row.
 - Google and Facebook profile data is trimmed (`20261030120000_trim_profile.sql`,
   `docs/research/profile-trim.md`): triggers keep only the linking keys in `auth.users` and
   `auth.identities`, and the custom access token hook `app.custom_access_token` does the same to a
