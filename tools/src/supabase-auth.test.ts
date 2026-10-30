@@ -41,8 +41,11 @@ interface Request {
   readonly body: string;
 }
 
-/** The fake Management API: answers GET /projects/<ref>/config/auth with `live`, records every call. */
-async function fakeApi(live: Record<string, unknown>) {
+/**
+ * The fake Management API: answers GET /projects/<ref>/config/auth with `live`, and a read-only
+ * database query for to_regprocedure(<fn>) with whether <fn> is in `functions`; records every call.
+ */
+async function fakeApi(live: Record<string, unknown>, functions: readonly string[] = []) {
   const requests: Request[] = [];
   const server: Server = createServer((req, res) => {
     let body = "";
@@ -57,6 +60,12 @@ async function fakeApi(live: Record<string, unknown>) {
         body,
       });
       res.setHeader("Content-Type", "application/json");
+      if (req.url === `/v1/projects/${REF}/database/query`) {
+        const { query, parameters, read_only } = JSON.parse(body);
+        const asked = read_only === true && query.includes("to_regprocedure($1)");
+        res.end(JSON.stringify([{ present: asked && functions.includes(parameters[0]) }]));
+        return;
+      }
       res.end(req.method === "GET" ? JSON.stringify(live) : "{}");
     });
   });
@@ -273,6 +282,89 @@ describe("auth.sh", () => {
       expect(out.stderr).toContain("an *_email_optional that is not false");
     }
     expect(api.requests).toEqual([]);
+  });
+
+  describe("the custom access token hook (dl-e8ov.2.67)", () => {
+    const URI = "pg-functions://postgres/app/custom_access_token";
+    const FN = "app.custom_access_token(jsonb)";
+    const HOOK = {
+      settings: {
+        ...SETTINGS,
+        hook_custom_access_token_enabled: true,
+        hook_custom_access_token_uri: URI,
+      },
+    };
+    const hookOff = {
+      ...SETTINGS,
+      hook_custom_access_token_enabled: false,
+      hook_custom_access_token_uri: null,
+    };
+    const pushFirst = "make db-push ENV=dev first";
+
+    it("diff shows the 2 hook settings when the function is in the project", async () => {
+      const api = await fakeApi(hookOff, [FN]);
+      const out = await run(stage(HOOK, api.url), ["diff", "dev"]);
+      expect(out.stdout).toBe(
+        [
+          `dev (${REF}): would change`,
+          "  hook_custom_access_token_enabled: false -> true",
+          `  hook_custom_access_token_uri: null -> "${URI}"`,
+          "",
+        ].join("\n"),
+      );
+      expect(out.status).toBe(2);
+      const query = api.requests.find((r) => r.url.endsWith("/database/query"));
+      expect(JSON.parse(query?.body ?? "{}")).toEqual({
+        query: "select pg_catalog.to_regprocedure($1) is not null as present",
+        parameters: [FN],
+        read_only: true,
+      });
+    });
+
+    it("diff says the function is missing and exits 1 until it is pushed", async () => {
+      const api = await fakeApi(hookOff);
+      const out = await run(stage(HOOK, api.url), ["diff", "dev"]);
+      expect(out.stdout).toContain(
+        `  hook_custom_access_token_uri: ${FN} is not in the project; ${pushFirst}`,
+      );
+      expect(out.status).toBe(1);
+    });
+
+    it("apply sends nothing while the function is missing", async () => {
+      const api = await fakeApi(hookOff);
+      const out = await run(stage(HOOK, api.url), ["apply", "dev"]);
+      expect(out.status).toBe(1);
+      expect(out.stderr).toContain(`${FN} is not in the project; run ${pushFirst}`);
+      expect(api.requests.map((r) => r.method)).toEqual(["POST"]);
+    });
+
+    it("apply switches the hook on once the function is there", async () => {
+      const api = await fakeApi(hookOff, [FN]);
+      const out = await run(stage(HOOK, api.url), ["apply", "dev"]);
+      expect(out.status, out.stderr).toBe(0);
+      const patch = api.requests.find((r) => r.method === "PATCH");
+      expect(JSON.parse(patch?.body ?? "{}")).toEqual({
+        hook_custom_access_token_enabled: true,
+        hook_custom_access_token_uri: URI,
+      });
+    });
+
+    it("the hook on with a uri that is not pg-functions://postgres/<schema>/<function> is refused", async () => {
+      const api = await fakeApi(hookOff);
+      const bad = {
+        settings: { ...HOOK.settings, hook_custom_access_token_uri: "https://hook.invalid" },
+      };
+      const out = await run(stage(bad, api.url), ["diff", "dev"]);
+      expect(out.status).toBe(64);
+      expect(api.requests).toEqual([]);
+    });
+
+    it("the hook is on in dev.json only; prod.json waits for the provider switch-on", () => {
+      const read = (env: string) =>
+        JSON.parse(readFileSync(join(repo, `infra/supabase-auth/${env}.json`), "utf8")).settings;
+      expect(read("dev")).toMatchObject(HOOK.settings);
+      expect(read("prod").hook_custom_access_token_enabled).toBeUndefined();
+    });
   });
 
   it("the committed env files name no secret value and keep email_optional off", () => {

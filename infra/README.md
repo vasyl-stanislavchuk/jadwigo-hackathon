@@ -119,7 +119,12 @@ A secret reaches curl on stdin inside the PATCH body. The diff shows it as `(not
 `(another value) -> (set)` or `missing from the keychain`, never its value: the Management API answers
 a set secret with its SHA-256, which the script compares with the keychain value's. `diff` exits 1
 when an item is missing, and `apply` then sends nothing. The script refuses a `*_secret` key in
-`settings` and any `*_email_optional` that is not false. `tools/src/supabase-auth.test.ts` runs it
+`settings` and any `*_email_optional` that is not false. The custom access token hook
+(`hook_custom_access_token_*`, `dl-e8ov.2.67`) names a function a migration creates. While an env file
+turns the hook on, a read-only query through the Management API's `database/query` checks that the
+function is in that project. Until it is, `diff` exits 1 and `apply` sends nothing, so
+`make db-push ENV=<env>` comes first. `dev.json` has the hook on, and `prod.json` gains it with the
+provider switch-on. `tools/src/supabase-auth.test.ts` runs it
 against a fake Management API (`SUPABASE_API_URL`). The owner's steps in Google Cloud, Meta and
 Supabase are `docs/runbooks/social-sign-in.md`.
 

@@ -71,11 +71,19 @@ It ends with a Google OAuth client for each Supabase project and one Meta app fo
 
 `dl-e8ov.2.52` taught `infra/supabase-auth/auth.sh` to read the keychain items above. The client ids you recorded on `dl-e8ov.2.53` and `dl-e8ov.2.54` go into `dev.json` and `prod.json` as the first step of `dl-e8ov.2.8` and `dl-e8ov.2.58`, with a `secrets` block naming each keychain item (the shape is in `infra/README.md`). Until then the script leaves both providers alone.
 
+`dev.json` also turns on the custom access token hook, `app.custom_access_token`, which keeps the provider's name and avatar out of tokens (`dl-e8ov.2.67`, decision `dl-zt14`). A migration creates that function. If the hook were switched on before the function exists, every sign-in would fail. So the order on each project is:
+
+0. **Push the migrations first**, from your own terminal:
+   ```
+   make db-push ENV=dev
+   ```
+   You should see: `20261030120000_trim_profile.sql` among the migrations it pushes, or nothing left to push. Until then, `auth.sh diff dev` prints `hook_custom_access_token_uri: app.custom_access_token(jsonb) is not in the project; make db-push ENV=dev first` and exits 1, and `apply` sends nothing. It checks with a read-only query through the Management API.
+
 1. **See what would change** on dev:
    ```
    infra/supabase-auth/auth.sh diff dev
    ```
-   You should see: the `external_google_*` and `external_facebook_*` keys it would set, and each secret as `(not set) -> (set)`, never as a value. A line `missing from the keychain (<item>)` means that item isn't stored under account `jadwigo`: store it as in Google step 14 or Meta step 10, then run the diff again. The script exits 1 then, and `apply` sends nothing.
+   You should see: `hook_custom_access_token_enabled: false -> true` and its `uri`, the `external_google_*` and `external_facebook_*` keys it would set, and each secret as `(not set) -> (set)`, never as a value. A line `missing from the keychain (<item>)` means that item isn't stored under account `jadwigo`: store it as in Google step 14 or Meta step 10, then run the diff again. The script exits 1 then, and `apply` sends nothing.
 2. **Apply it** from your own terminal. The script refuses to run from an agent's shell:
    ```
    infra/supabase-auth/auth.sh apply dev
@@ -87,7 +95,7 @@ It ends with a Google OAuth client for each Supabase project and one Meta app fo
 5. **Try a Facebook account with no email**, if you have one.
    You should see: the line offering the email code, and no new pod. `B update dl-e8ov.2.58 --append-notes "<what you saw>"`.
 
-Prod is the same `auth.sh apply prod`, run only when `dl-e8ov.2.8` and `dl-e8ov.2.58` say it is time.
+Prod is the same, run only when `dl-e8ov.2.8` and `dl-e8ov.2.58` say it is time. `prod.json` gains the hook settings then, and `make db-push ENV=prod` comes before `auth.sh apply prod`.
 
 ## The custom domain
 

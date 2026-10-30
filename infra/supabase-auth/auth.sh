@@ -2,8 +2,8 @@
 # Supabase Auth settings as code (dl-e8ov.2.40): <env>.json beside this script holds a project's ref
 # and the settings we own; the rest of the project's auth config is left as Supabase has it.
 #   auth.sh diff [prod|dev ...]    GET each project's auth config and print what would change. Exits 2
-#                                  when something differs, 1 when a keychain item is missing, 0 when
-#                                  nothing differs. Read-only.
+#                                  when something differs, 1 when a keychain item or the token hook's
+#                                  function is missing, 0 when nothing differs. Read-only.
 #   auth.sh apply [prod|dev ...]   PATCH the differing settings. The owner runs it, from a terminal.
 # With no env named, both. The Management API token is SUPABASE_ACCESS_TOKEN, else read from
 # ~/.config/jadwigo/supabase.env; it goes to curl on stdin, never in argv, and is never printed.
@@ -73,6 +73,23 @@ secrets_of() {
 
 tab="$(printf '\t')"
 
+# The custom access token hook (dl-e8ov.2.67) names a Postgres function a migration creates. Turned on
+# before `make db-push ENV=<env>` has created it, Supabase would call a function that isn't there and
+# every sign-in would fail. So while <env>.json turns the hook on, the function must exist in that
+# project, which a read-only query through the Management API shows. Prints the function and succeeds
+# when it is missing; fails when the hook is off or the function is there.
+hook_function_missing() {
+  local file="$1" ref fn present
+  [ "$(jq -r '.settings.hook_custom_access_token_enabled // false' "$file")" = true ] || return 1
+  ref="$(jq -r .ref "$file")"
+  fn="$(jq -r '.settings.hook_custom_access_token_uri | ltrimstr("pg-functions://postgres/") | sub("/"; ".")' "$file")(jsonb)"
+  supa_body="$(jq -cn --arg f "$fn" '{query: "select pg_catalog.to_regprocedure($1) is not null as present", parameters: [$f], read_only: true}')"
+  present="$(supa -X POST "$api/projects/$ref/database/query" | jq -r '.[0].present')"
+  supa_body=""
+  [ "$present" = true ] && return 1
+  echo "$fn"
+}
+
 for env in "$@"; do
   file="$here/$env.json"
   [ -f "$file" ] || { echo "auth.sh: no $file" >&2; exit 64; }
@@ -80,6 +97,12 @@ for env in "$@"; do
       and ([.settings | to_entries[] | select(.key | endswith("_email_optional")) | .value] | all(. == false))' \
     "$file" >/dev/null; then
     echo "auth.sh: $file has a secret in settings or an *_email_optional that is not false" >&2
+    exit 64
+  fi
+  if ! jq -e '.settings.hook_custom_access_token_enabled != true
+      or (.settings.hook_custom_access_token_uri // "" | test("^pg-functions://postgres/[a-z_][a-z0-9_]*/[a-z_][a-z0-9_]*$"))' \
+    "$file" >/dev/null; then
+    echo "auth.sh: $file turns the token hook on without a pg-functions://postgres/<schema>/<function> uri" >&2
     exit 64
   fi
 done
@@ -93,6 +116,10 @@ if [ "$mode" = apply ]; then
         exit 1
       }
     done < <(secrets_of "$here/$env.json")
+    if fn="$(hook_function_missing "$here/$env.json")"; then
+      echo "auth.sh apply: $env: the token hook's function $fn is not in the project; run make db-push ENV=$env first. Nothing sent" >&2
+      exit 1
+    fi
   done
 fi
 
@@ -138,6 +165,11 @@ for env in "$@"; do
     secret_objects="$secret_objects$(printf %s "$value" | jq -Rsc --arg k "$key" '{($k): .}')
 "
   done < <(secrets_of "$file")
+  if fn="$(hook_function_missing "$file")"; then
+    lines="${lines:+$lines
+}  hook_custom_access_token_uri: $fn is not in the project; make db-push ENV=$env first"
+    env_missing=1
+  fi
 
   if [ -z "$lines" ]; then
     echo "$env ($ref): in step"
