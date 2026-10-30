@@ -14,7 +14,7 @@ Dotyczy to też konta, do którego loguje się przez Google albo Facebooka.
 
 ## Jak poprosić
 
-1. Napisz e-mail na adres **[CONTACT_EMAIL_TBD]**.
+1. Napisz e-mail na adres **[privacy@jadwigo.pl](mailto:privacy@jadwigo.pl)**.
 2. Wyślij go z adresu, którym logujesz się do Jadwigo. Po nim znajdziemy Twoje konto.
 3. W temacie wpisz „Usunięcie danych”. Nie musisz niczego wyjaśniać.
 

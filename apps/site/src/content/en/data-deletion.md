@@ -14,7 +14,7 @@ includes an account they sign in to with Google or Facebook.
 
 ## How to ask
 
-1. Write an email to **[CONTACT_EMAIL_TBD]**.
+1. Write an email to **[privacy@jadwigo.pl](mailto:privacy@jadwigo.pl)**.
 2. Send it from the address you sign in to Jadwigo with. That is how we find your account.
 3. Put "Data deletion" in the subject. You don't need to explain anything.
 

@@ -113,13 +113,33 @@ export function jsonLd(): Record<string, unknown> {
   };
 }
 
-/** A prod build stops on any page not yet reviewed by a native speaker. */
+/**
+ * A prod build stops on any page not yet reviewed by a native speaker, except a page with its own
+ * `path`: servedPathPages leaves that one out instead, so a draft never holds the landing page back.
+ */
 export function assertReviewed(pages: { id: string; data: Page }[], isProd: boolean): void {
   if (!isProd) return;
-  const unreviewed = pages.filter((p) => !p.data.reviewed).map((p) => p.id);
+  const unreviewed = pages.filter((p) => !p.data.reviewed && !p.data.path).map((p) => p.id);
   if (unreviewed.length > 0) {
     throw new Error(`Not reviewed, so not in a prod build: ${unreviewed.join(", ")}`);
   }
+}
+
+/**
+ * The pages src/pages/[...path].astro renders: every page with a `path`, and in a prod build only the
+ * reviewed ones. Each one left out is named in the build log (dl-w0b4.64).
+ */
+export function servedPathPages<T extends { id: string; data: Page }>(
+  pages: T[],
+  isProd: boolean,
+  log: (line: string) => void = console.warn,
+): T[] {
+  return pages.filter((p) => {
+    if (!p.data.path) return false;
+    if (!isProd || p.data.reviewed) return true;
+    log(`Not reviewed, so left out of the prod build: ${p.id} (${p.data.path}/)`);
+    return false;
+  });
 }
 
 export function robotsTxt(): string {

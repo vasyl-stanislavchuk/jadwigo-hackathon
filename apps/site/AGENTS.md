@@ -28,7 +28,8 @@ jadwigo.kids and English wait.
 
 - Hosts come from `packages/config`, never a hard-coded domain.
 - A page with `reviewed: false` builds in dev and stops a prod build. A native speaker reviews the
-  Polish before it is flipped.
+  Polish before it is flipped. A page with its own `path` is left out of a prod build instead, with
+  a log line, and `check:dist` requires it once its source says `reviewed: true` (`src/lib/dist.ts`).
 - The placeholder page says only "Jadwigo. Wkrótce."
   (`jadwigo-marketing/decisions/2026-10-27-the-jadwigo-pl-placeholder-says-jadwigo-wkrotce-and-is-built-in`),
   plus one link to the app, "Zagraj w lekcję", at `appUrl` from `hosts.prod.app` (`dl-e8ov.2.41`).
