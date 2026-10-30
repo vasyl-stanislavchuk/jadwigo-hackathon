@@ -5,11 +5,21 @@ the bucket's `khan/converted/pl.json`, bead dl-e8ov.5.38.1):
 `{"generated_by", "licence_note", "items": [...]}`. `load_item` returns the composer's view of one item: the family step with its key and help, the contract's `Credit`, and
 `based_on`. A child never sees it. Where the file comes from is `jw.settings_keys`
 (JW_KHAN_CONVERTED, else <JADWIGO_KHAN_DIR>/converted-pl.json, both read through `setting`).
+
+`load_item` hands out only a lesson-ready item (dl-a38n.32.9, decisions dl-kaxj and dl-be2l): its
+`status` is `{kind: "plays", rules_version, checked_at}`, stamped by the readiness check. Anything
+else raises `NotReady` with the reason a draft's `left_out` carries: `renders wrong: <rule>` (refused
+by a check), `not checked` (plays with no `checked_at`, or no status), `flagged: <reason>` (a person
+pulled it), or the converter's own reason (waiting). A missing verdict is refused, never served.
+The refusals file beside the converted file, `refusals/<lang>.json` (`{shapes, flags}`, jadwigo-bank
+schemas/refusals.schema.json), is read too, so a flag holds from the moment it is written, before
+the next conversion stamps it into the item.
 """
 
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from functools import cache
 from pathlib import Path
 from typing import Any
@@ -25,6 +35,20 @@ _FILE_HINT = (
     f"{settings_keys.DEFAULT_KHAN_DIR}) and fill it with `{settings_keys.KHAN_SYNC_COMMAND}` in "
     "the bank repo."
 )
+
+
+NOT_CHECKED = "not checked"
+RENDERS_WRONG = "renders wrong"
+FLAGGED = "flagged"
+REFUSALS_DIR = "refusals"  # beside the converted file: <dir>/refusals/<lang>.json
+
+
+class NotReady(JwError):
+    """An item that is in the file but not lesson-ready; `reason` is what left_out says."""
+
+    def __init__(self, item_id: str, reason: str, *, hint: str) -> None:
+        super().__init__(f"item {item_id} is not lesson-ready: {reason}", hint=hint)
+        self.reason = reason
 
 
 def converted_path() -> Path:
@@ -46,13 +70,64 @@ def _read(path: Path) -> tuple[dict[str, dict[str, Any]], str | None]:
         raise JwError(
             f"cannot read the converted items file {path}: {exc}", hint=_FILE_HINT
         ) from exc
-    if not isinstance(raw, dict) or not isinstance(raw.get("items"), list):
+    listed = raw.get("items") if isinstance(raw, dict) else None
+    if isinstance(listed, dict):  # keyed by id, as the readiness stamp may write it
+        listed = list(listed.values())
+    if not isinstance(listed, list):
         raise JwError(f"{path} has no items list", hint=_FILE_HINT)
-    items = {
-        str(item["id"]): item for item in raw["items"] if isinstance(item, dict) and "id" in item
-    }
+    items = {str(item["id"]): item for item in listed if isinstance(item, dict) and "id" in item}
     note = raw.get("licence_note")
     return items, note if isinstance(note, str) and note else None
+
+
+def refusals_path(language: str) -> Path:
+    """The refusals file the readiness stamp reads: <converted file's dir>/refusals/<lang>.json,
+    so <JADWIGO_KHAN_DIR>/refusals/<lang>.json by default."""
+    return converted_path().parent / REFUSALS_DIR / f"{language}.json"
+
+
+@cache
+def _read_refusals(path: Path, _stamp: tuple[int, int]) -> dict[str, Any]:
+    """The refusals file, read again whenever it changes, so a fresh flag holds at once."""
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise JwError(
+            f"cannot read the refusals file {path}: {exc}",
+            hint="Fix or remove it; `jw question flag` and `refusals assign` write it.",
+        ) from exc
+    if not isinstance(raw, dict):
+        raise JwError(f"{path} is not a refusals file", hint="It holds {shapes, flags}.")
+    return {"shapes": list(raw.get("shapes") or []), "flags": list(raw.get("flags") or [])}
+
+
+def refusals(language: str) -> dict[str, Any]:
+    """`{shapes, flags}` from the refusals file for `language`; both empty when there is none."""
+    path = refusals_path(language)
+    try:
+        stat = path.stat()
+    except FileNotFoundError:
+        return {"shapes": [], "flags": []}
+    return _read_refusals(path, (stat.st_mtime_ns, stat.st_size))
+
+
+def why_not_ready(status: Any, flag: Mapping[str, Any] | None = None) -> str | None:
+    """Why an item with this status (and this flag from the refusals file) is not lesson-ready,
+    or None when it is: plays, with checked_at."""
+    if flag is not None:
+        return f"{FLAGGED}: {flag.get('reason') or 'no reason given'}"
+    if not isinstance(status, Mapping):
+        return NOT_CHECKED
+    kind = status.get("kind")
+    if kind == "plays":
+        return None if status.get("checked_at") else NOT_CHECKED
+    if kind == "refused":
+        return f"{RENDERS_WRONG}: {status.get('rule') or 'a check'}"
+    if kind == "flagged":
+        return f"{FLAGGED}: {status.get('reason') or 'no reason given'}"
+    if kind == "waiting":
+        return str(status.get("reason") or status.get("issue") or "waiting for its family step")
+    return NOT_CHECKED
 
 
 def _credit(item: dict[str, Any], licence_note: str | None, path: Path) -> dict[str, Any]:
@@ -95,13 +170,22 @@ def load_item(item_id: str, language: str = "pl") -> dict[str, Any]:
             hint=f"Ask for --language {item.get('language')}, or set "
             f"{settings_keys.JW_KHAN_CONVERTED} to the {language} conversion.",
         )
+    flag = next(
+        (f for f in refusals(language)["flags"] if isinstance(f, dict) and f.get("id") == item_id),
+        None,
+    )
+    reason = why_not_ready(item.get("status"), flag)
+    if reason is not None:
+        raise NotReady(
+            item_id,
+            reason,
+            hint=f"Pick a lesson-ready item: status plays with checked_at in {path}, and no flag "
+            f"in {refusals_path(language)}.",
+        )
     spec = item.get("spec")
     if not isinstance(spec, dict) or not all(k in spec for k in ("family", "data", "key")):
-        # The conversion leaves a waiting item without a family step, and its status says why.
-        status = item.get("status") or {}
-        reason = status.get("reason") if isinstance(status, dict) else None
         raise JwError(
-            f"item {item_id} has no family step" + (f": {reason}" if reason else ""),
+            f"item {item_id} has no family step",
             hint=f"Pick an item whose status is plays in {path}.",
         )
     return {

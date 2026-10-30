@@ -1,0 +1,218 @@
+{
+  "description": {
+    "pl": "Zaznacz liczby parzyste.",
+    "en": "Mark the even numbers."
+  },
+  "enrichment": {
+    "can_do": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up can-do for the fixture",
+          "quote": "Even numbers",
+          "source": "set:set_khan_fx0009"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": {
+        "pl": "Zmyślony zestaw: tabliczka mnożenia przez 6.",
+        "en": "A made-up set: the 6 times table."
+      }
+    },
+    "contexts": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up: bare exercises",
+          "quote": "Liczby parzyste",
+          "source": "set:set_khan_fx0009"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": {
+        "pl": [],
+        "en": []
+      }
+    },
+    "curriculum_tags": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up tag for the fixture",
+          "quote": "Liczby parzyste",
+          "source": "set:set_khan_fx0009"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": ["pl-2017:II.3.3"]
+    },
+    "keywords": {
+      "agreement": 0.8,
+      "grounds": [
+        {
+          "claim": "made-up keywords",
+          "quote": "Liczby parzyste",
+          "source": "set:set_khan_fx0009"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": {
+        "pl": ["tabliczka mnożenia przez 6", "mnożenie przez 6"],
+        "en": ["6 times table", "multiply by 6"]
+      }
+    },
+    "mistake_classes": {
+      "agreement": 0.7,
+      "grounds": [
+        {
+          "claim": "made-up mistake class",
+          "quote": "Even numbers",
+          "source": "set:set_khan_fx0009"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": [
+        {
+          "id": "fixture-slip",
+          "pl": "Pomyłka w rachunku",
+          "en": "Slip in the sum",
+          "spot": "the answer is off by one"
+        }
+      ]
+    },
+    "prerequisites": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up: none",
+          "quote": "Even numbers",
+          "source": "set:set_khan_fx0009"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": []
+    },
+    "skill_ids": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up skill id",
+          "quote": "Even numbers",
+          "source": "set:set_khan_fx0009"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": ["fixture.even"]
+    },
+    "summary": {
+      "agreement": 1.0,
+      "grounds": [
+        {
+          "claim": "made-up summary",
+          "quote": "Even numbers",
+          "source": "set:set_khan_fx0009"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": {
+        "pl": "Zmyślony zestaw: tabliczka mnożenia przez 6.",
+        "en": "A made-up set: the 6 times table."
+      }
+    },
+    "synthetic_needs": {
+      "agreement": 0.7,
+      "grounds": [
+        {
+          "claim": "made-up needs",
+          "quote": "Liczby parzyste",
+          "source": "set:set_khan_fx0009"
+        }
+      ],
+      "made_by": "fixture:made-up",
+      "reviewed": false,
+      "value": [
+        {
+          "language": "pl",
+          "words": "tabliczka mnożenia przez 6"
+        },
+        {
+          "language": "en",
+          "words": "6 times table"
+        }
+      ]
+    }
+  },
+  "families": ["choose"],
+  "grade": "3",
+  "id": "set_khan_fx0009",
+  "items": {
+    "count": {
+      "pl": 5,
+      "en": 0,
+      "shared": 0
+    },
+    "ids": ["fxr1", "fxr2", "fxr3", "fxr4", "fxr5"]
+  },
+  "languages": {
+    "pl": true,
+    "en": false
+  },
+  "problem_types": [
+    {
+      "name": "Liczby parzyste",
+      "samples": [
+        {
+          "item_id": "fxr1",
+          "pl": "Zaznacz liczby parzyste."
+        },
+        {
+          "item_id": "fxr2",
+          "pl": "Zaznacz liczby parzyste."
+        },
+        {
+          "item_id": "fxr3",
+          "pl": "Zaznacz liczby parzyste."
+        }
+      ],
+      "count": {
+        "pl": 5
+      }
+    }
+  ],
+  "question_types": ["multi_select"],
+  "source": {
+    "credit": "z Khan Academy",
+    "exercise_id": "fx0009",
+    "licence": "CC BY-NC-SA 4.0",
+    "name": "khan",
+    "url": "https://fixture.invalid/jw/set_khan_fx0009"
+  },
+  "source_place": {
+    "ancestors": ["fxcourse", "fxunit"],
+    "course": "fixture-grade-3",
+    "lesson": "fixture-even",
+    "lesson_title": {
+      "pl": "Parzyste i nieparzyste",
+      "en": "Even and odd"
+    },
+    "order": 20,
+    "unit": "fixture-multiplication",
+    "unit_title": {
+      "pl": "Mnożenie",
+      "en": "Multiplication"
+    }
+  },
+  "subject": "math",
+  "titles": {
+    "pl": "Liczby parzyste",
+    "en": "Even numbers"
+  }
+}

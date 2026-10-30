@@ -36,7 +36,11 @@
       "unit_title": "Mnożenie",
       "order": "0001",
       "source_url": "https://example.test/items/item_a1",
-      "status": { "kind": "plays" }
+      "status": {
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
+      }
     },
     {
       "id": "item_a2",
@@ -72,7 +76,11 @@
       "unit_title": "Dodawanie",
       "order": "0002",
       "source_url": "https://example.test/items/item_a2",
-      "status": { "kind": "plays" }
+      "status": {
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
+      }
     },
     {
       "id": "item_e1",
@@ -107,7 +115,11 @@
       "unit_title": "Addition",
       "order": "0003",
       "source_url": "https://example.test/items/item_e1",
-      "status": { "kind": "plays" }
+      "status": {
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
+      }
     },
     {
       "id": "item_m1",
@@ -142,7 +154,11 @@
       "unit_title": "Addition",
       "order": "0004",
       "source_url": "https://example.test/items/item_m1",
-      "status": { "kind": "plays" }
+      "status": {
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
+      }
     }
   ]
 }

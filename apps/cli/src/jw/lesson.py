@@ -42,10 +42,12 @@ required, and replaces them with placeholders before the search
 The draft's `request`, the lesson file's id, title and reasoning are built from the guarded text;
 the raw request and the names are used in-process only and never stored, echoed or logged.
 
-An item `load_item` refuses (waiting for its family step, or missing from the file) goes to
-`left_out` with its reason, and the draw runs again with the refused ids in `flagged`, until every
+An item `load_item` refuses goes to `left_out` with its reason, and the draw runs again with the refused ids in `flagged`, until every
 drawn item loads or the sets run out. Drawing again, rather than over-drawing and trimming, keeps
-the draw's variety rule over the questions that are actually asked.
+the draw's variety rule over the questions that are actually asked. Only a lesson-ready item
+loads (dl-a38n.32.9, decisions dl-kaxj and dl-be2l), so the reason is `renders wrong: <rule>`,
+`not checked`, `flagged: <reason>` or the converter's own, as `jw.items.NotReady` gives it; an
+item missing from the file keeps the error's text.
 """
 
 from __future__ import annotations
@@ -282,6 +284,9 @@ def _draw_loading(
         for drawn in result.questions:
             try:
                 loaded.append((drawn, items.load_item(drawn.item_id, language)))
+            except items.NotReady as exc:
+                refused[drawn.item_id] = exc.reason
+                new = True
             except JwError as exc:
                 refused[drawn.item_id] = str(exc)
                 new = True

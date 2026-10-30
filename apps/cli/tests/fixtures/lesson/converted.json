@@ -62,7 +62,9 @@
       "order": "0001",
       "source_url": "https://fixture.invalid/jw/items/fxc101",
       "status": {
-        "kind": "plays"
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
       }
     },
     {
@@ -125,7 +127,9 @@
       "order": "0002",
       "source_url": "https://fixture.invalid/jw/items/fxc102",
       "status": {
-        "kind": "plays"
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
       }
     },
     {
@@ -188,7 +192,9 @@
       "order": "0003",
       "source_url": "https://fixture.invalid/jw/items/fxc103",
       "status": {
-        "kind": "plays"
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
       }
     },
     {
@@ -281,7 +287,9 @@
       "order": "0005",
       "source_url": "https://fixture.invalid/jw/items/fxc202",
       "status": {
-        "kind": "plays"
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
       }
     },
     {
@@ -344,7 +352,9 @@
       "order": "0006",
       "source_url": "https://fixture.invalid/jw/items/fxc203",
       "status": {
-        "kind": "plays"
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
       }
     },
     {
@@ -407,7 +417,9 @@
       "order": "0007",
       "source_url": "https://fixture.invalid/jw/items/fxc301",
       "status": {
-        "kind": "plays"
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
       }
     },
     {
@@ -470,7 +482,9 @@
       "order": "0008",
       "source_url": "https://fixture.invalid/jw/items/fxc302",
       "status": {
-        "kind": "plays"
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
       }
     },
     {
@@ -533,7 +547,9 @@
       "order": "0009",
       "source_url": "https://fixture.invalid/jw/items/fxc303",
       "status": {
-        "kind": "plays"
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
       }
     },
     {
@@ -596,7 +612,9 @@
       "order": "0010",
       "source_url": "https://fixture.invalid/jw/items/fxc401",
       "status": {
-        "kind": "plays"
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
       }
     },
     {
@@ -659,7 +677,9 @@
       "order": "0011",
       "source_url": "https://fixture.invalid/jw/items/fxc402",
       "status": {
-        "kind": "plays"
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
       }
     }
   ]

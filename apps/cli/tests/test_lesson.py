@@ -942,3 +942,79 @@ def test_the_real_check_ts_names_the_step_it_refuses(bank: LessonBank) -> None:
     result = lesson.check(view["draft_id"], words)
     assert result["ok"] is False
     assert [e["step_id"] for e in result["errors"]] == ["q3"]
+
+
+# ------------------------- dl-a38n.32.9: a draft copies only lesson-ready items ----
+
+READY = ROOT / "tests" / "fixtures" / "ready"
+READY_LEFT_OUT = {
+    "fxr2": "renders wrong: render-raw-tex",
+    "fxr3": "renders wrong: key-grades",
+    "fxr4": "renders wrong: render-picture-missing",
+    "fxr5": "not checked",
+}
+
+
+class ReadyBank(fake_bank.FakeBank):
+    """The fake bank, answering with the planted fixture's envelope (one set, 5 items)."""
+
+    def answer(self, need: Any, query: dict[str, str]) -> dict[str, Any]:
+        envelope: dict[str, Any] = json.loads(
+            (READY / "envelope.json").read_text(encoding="utf-8")
+        )
+        envelope["need"] = need
+        return envelope
+
+
+@pytest.fixture
+def ready_bank(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[Path]:
+    """The planted fixture's bank, its converted file copied into tmp_path; yields that file."""
+    fake = ReadyBank().start()
+    converted = tmp_path / "ready" / "converted-pl.json"
+    converted.parent.mkdir(parents=True)
+    shutil.copyfile(READY / "converted-pl.json", converted)
+    monkeypatch.setenv(JW_API_URL, fake.url)
+    monkeypatch.setenv(JADWIGO_BANK_DIR, str(READY))
+    monkeypatch.setenv(JW_KHAN_CONVERTED, str(converted))
+    yield converted
+    fake.stop()
+
+
+def _ready_draft() -> dict[str, Any]:
+    return lesson.draft(
+        "zadania z liczb parzystych", "3", names=[], topic="liczby parzyste", today=TODAY
+    )
+
+
+def test_a_draft_copies_the_ready_item_and_leaves_4_out_with_their_reasons(
+    ready_bank: Path, check_ts: CheckTs
+) -> None:
+    view = _ready_draft()
+
+    assert [q["item_id"] for q in view["questions"]] == ["fxr1"]
+    assert {item["id"]: item["reason"] for item in view["left_out"]} == READY_LEFT_OUT
+
+
+def test_a_flag_written_after_the_conversion_leaves_the_ready_item_out(
+    ready_bank: Path, check_ts: CheckTs
+) -> None:
+    flags = ready_bank.parent / "refusals" / "pl.json"
+    flags.parent.mkdir()
+    flag = {"id": "fxr1", "by": "lead", "reason": "the options repeat", "on": "2026-10-30"}
+    flags.write_text(json.dumps({"shapes": [], "flags": [flag]}), encoding="utf-8")
+
+    view = _ready_draft()
+
+    assert view["questions"] == []
+    left = {item["id"]: item["reason"] for item in view["left_out"]}
+    assert left == {**READY_LEFT_OUT, "fxr1": "flagged: the options repeat"}
+
+
+def test_the_draft_verb_prints_the_reasons_too(ready_bank: Path, check_ts: CheckTs) -> None:
+    args = ["lesson", "draft", "zadania z liczb parzystych", "--grade", "3"]
+    result = CliRunner().invoke(cli, [*args, "--topic", "liczby parzyste", "--no-names", "--json"])
+
+    assert result.exit_code == 0, result.output
+    view = json.loads(result.output)
+    assert [q["item_id"] for q in view["questions"]] == ["fxr1"]
+    assert {item["id"]: item["reason"] for item in view["left_out"]} == READY_LEFT_OUT

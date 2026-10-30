@@ -217,3 +217,102 @@ def test_the_verb_without_json_prints_a_summary() -> None:
 
     assert result.exit_code == 0, result.output
     assert result.output.startswith("item_a1  enter / production  (pl)")
+
+
+# ------------------------------------- dl-a38n.32.9: only a lesson-ready item loads ----
+
+READY = Path(__file__).resolve().parent / "fixtures" / "ready" / "converted-pl.json"
+LEFT_OUT = {
+    "fxr2": "renders wrong: render-raw-tex",
+    "fxr3": "renders wrong: key-grades",
+    "fxr4": "renders wrong: render-picture-missing",
+    "fxr5": "not checked",
+}
+
+
+@pytest.fixture
+def planted(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """The planted fixture copied into tmp_path, so a test may write refusals/ beside it."""
+    path = _write(tmp_path / "ready" / "converted-pl.json", json.loads(READY.read_text("utf-8")))
+    monkeypatch.setenv(JW_KHAN_CONVERTED, str(path))
+    return path
+
+
+def test_a_stamped_plays_item_loads(planted: Path) -> None:
+    view = items.load_item("fxr1")
+
+    assert view["family"] == "choose"
+    assert view["question"]["key"] == {"correct": ["o1", "o3"]}
+
+
+@pytest.mark.parametrize(("item_id", "reason"), sorted(LEFT_OUT.items()))
+def test_an_item_that_is_not_lesson_ready_is_refused_with_its_reason(
+    planted: Path, item_id: str, reason: str
+) -> None:
+    with pytest.raises(items.NotReady) as caught:
+        items.load_item(item_id)
+
+    assert caught.value.reason == reason
+    assert str(caught.value) == f"item {item_id} is not lesson-ready: {reason}"
+
+
+@pytest.mark.parametrize(
+    ("status", "reason"),
+    [
+        (None, "not checked"),
+        ({"kind": "plays", "rules_version": "fixture-1"}, "not checked"),
+        ({"kind": "something new"}, "not checked"),
+        ({"kind": "flagged", "by": "lead", "reason": "the picture shows 5 dots", "on": "2026-10-30"},
+         "flagged: the picture shows 5 dots"),
+        ({"kind": "waiting", "issue": "dl-x", "reason": "its parts mix families"},
+         "its parts mix families"),
+    ],
+)
+def test_every_other_status_says_why(
+    planted: Path, status: dict[str, Any] | None, reason: str
+) -> None:
+    payload = json.loads(planted.read_text("utf-8"))
+    if status is None:
+        del payload["items"][0]["status"]
+    else:
+        payload["items"][0]["status"] = status
+    _write(planted, payload)
+    items._read.cache_clear()
+
+    with pytest.raises(items.NotReady) as caught:
+        items.load_item("fxr1")
+
+    assert caught.value.reason == reason
+
+
+def test_a_flag_in_the_refusals_file_holds_before_the_next_conversion(planted: Path) -> None:
+    assert items.load_item("fxr1")["id"] == "fxr1"
+    flag = {"id": "fxr1", "by": "lead", "reason": "the options repeat", "on": "2026-10-30"}
+    _write(planted.parent / "refusals" / "pl.json", {"shapes": [], "flags": [flag]})
+
+    with pytest.raises(items.NotReady) as caught:
+        items.load_item("fxr1")
+
+    assert caught.value.reason == "flagged: the options repeat"
+    assert items.refusals_path("pl") == planted.parent / "refusals" / "pl.json"
+    # The English file is another language's: it does not pull the Polish variant.
+    _write(planted.parent / "refusals" / "pl.json", {"shapes": [], "flags": []})
+    _write(planted.parent / "refusals" / "en.json", {"shapes": [], "flags": [flag]})
+    assert items.load_item("fxr1")["id"] == "fxr1"
+
+
+def test_the_refusals_file_defaults_to_the_khan_dir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv(JW_KHAN_CONVERTED)
+
+    assert items.refusals_path("pl") == tmp_path / "khan" / "refusals" / "pl.json"
+
+
+def test_items_keyed_by_id_read_like_a_list(planted: Path) -> None:
+    payload = json.loads(planted.read_text("utf-8"))
+    payload["items"] = {item["id"]: item for item in payload["items"]}
+    _write(planted, payload)
+    items._read.cache_clear()
+
+    assert items.load_item("fxr1")["id"] == "fxr1"
