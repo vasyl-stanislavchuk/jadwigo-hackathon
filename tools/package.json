@@ -9,11 +9,13 @@
     "test": "vitest run --config ../vitest.config.ts --project unit"
   },
   "//": {
+    "@playwright/test": "renders the favicon PNGs from the brand SVGs in brand-icons.ts --write (Chromium)",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit test with the root vitest.config.ts"
   },
   "devDependencies": {
+    "@playwright/test": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

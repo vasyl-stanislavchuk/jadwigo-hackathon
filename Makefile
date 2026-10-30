@@ -18,7 +18,7 @@ ifneq (,$(wildcard $(HOME)/perl5/bin/pg_prove))
 export PATH := $(HOME)/perl5/bin:$(PATH)
 export PERL5LIB := $(HOME)/perl5/lib/perl5$(if $(PERL5LIB),:$(PERL5LIB))
 endif
-.PHONY: check check-all dev db migrate pgtap db-reset db-seed lesson-import api-dev api-bundle api-invoke db-push db-role skills drops
+.PHONY: check check-all dev db migrate pgtap db-reset db-seed lesson-import api-dev api-bundle api-invoke db-push db-role skills drops icons
 
 ## check: lint, typecheck and test what changed since main (turbo --affected), uv's pytest
 ## included, then the repo-wide checks turbo cannot scope: knip, dependency-cruiser, no-bank, worklog,
@@ -250,3 +250,8 @@ api-invoke: api-bundle
 ## drops: md drops check on every drop under docs/drops/
 drops:
 	for d in docs/drops/*/; do [ -d "$$d" ] && md drops check "$$d"; done; true
+
+## icons: render the crown favicon PNGs from packages/ui/src/brand into each app's public/
+## (tools/src/brand-icons.ts; make check fails when they are older than their SVGs)
+icons:
+	bun tools/src/brand-icons.ts --write

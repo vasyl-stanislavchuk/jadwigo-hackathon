@@ -1,0 +1,89 @@
+---
+// Starlight's site title with a button before it that hides or shows the left sidebar on a wide
+// screen (styles/sidebar-toggle.ts). A narrow screen keeps Starlight's own menu button instead.
+import Default from "@astrojs/starlight/components/SiteTitle.astro";
+---
+
+<button
+  type="button"
+  class="jw-sidebar-toggle"
+  aria-controls="starlight__sidebar"
+  aria-expanded="true"
+  aria-label="Hide the sidebar"
+  title="Hide the sidebar"
+>
+  <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="4" width="18" height="16" rx="3" />
+    <path d="M9 4v16" />
+  </svg>
+</button>
+
+<Default {...Astro.props}><slot /></Default>
+
+<script>
+  import { isCollapsed, toggleSidebar } from "../styles/sidebar-toggle.ts";
+
+  const root = document.documentElement;
+  const label = (collapsed: boolean) => (collapsed ? "Show the sidebar" : "Hide the sidebar");
+  for (const button of document.querySelectorAll<HTMLButtonElement>(".jw-sidebar-toggle")) {
+    const show = (collapsed: boolean) => {
+      button.setAttribute("aria-expanded", String(!collapsed));
+      button.setAttribute("aria-label", label(collapsed));
+      button.title = label(collapsed);
+    };
+    show(isCollapsed(root));
+    button.addEventListener("click", () => {
+      let storage: Storage | null = null;
+      try {
+        storage = window.localStorage;
+      } catch {
+        storage = null;
+      }
+      show(toggleSidebar(root, storage));
+    });
+  }
+</script>
+
+<style is:global>
+  .jw-sidebar-toggle {
+    display: none;
+  }
+
+  /* Only a page with a sidebar shows the button: the home page has none. */
+  @media (min-width: 50rem) {
+    [data-has-sidebar] .jw-sidebar-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-inline-end: var(--jw-space-3);
+      padding: var(--jw-space-1);
+      border: var(--jw-border) solid transparent;
+      border-radius: var(--jw-radius-small);
+      background: none;
+      color: var(--sl-color-gray-2);
+      cursor: pointer;
+    }
+
+    .jw-sidebar-toggle:hover {
+      border-color: var(--jw-line);
+      color: var(--sl-color-white);
+    }
+
+    /* Only the content's left offset goes: --sl-sidebar-width also sizes the right-hand contents. */
+    :root[data-sidebar="collapsed"][data-has-sidebar] {
+      --sl-content-inline-start: 0rem;
+    }
+
+    :root[data-sidebar="collapsed"] .sidebar-pane {
+      display: none;
+    }
+  }
+
+  /* Below the width that shows the right-hand contents, the freed room centres the page. */
+  @media (min-width: 50rem) and (max-width: 72rem) {
+    :root[data-sidebar="collapsed"][data-has-sidebar] .sl-container {
+      margin-inline: auto;
+    }
+  }
+</style>
