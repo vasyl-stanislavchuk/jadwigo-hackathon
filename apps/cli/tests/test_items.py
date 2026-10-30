@@ -162,23 +162,23 @@ def test_a_waiting_item_with_no_family_step_says_why(
 def test_the_setting_overrides_the_default_dir(tmp_path: Path) -> None:
     payload = _fixture()
     payload["items"][0]["spec"]["say"] = "from the default dir"
-    _write(tmp_path / "khan" / "converted" / "pl.json", payload)
+    _write(tmp_path / "khan" / "converted-pl.json", payload)
 
     assert items.converted_path() == FIXTURE
     assert items.load_item("item_a1")["say"] == "Ile to jest sześć razy cztery?"
 
 
-def test_unset_reads_converted_pl_in_the_default_khan_dir(
+def test_unset_reads_converted_pl_json_in_the_default_khan_dir(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.delenv(JW_KHAN_CONVERTED)
     khan = tmp_path / "khan"
     polish = _fixture()
-    polish["items"][0]["spec"]["say"] = "from converted/pl.json"
-    _write(khan / "converted" / "pl.json", polish)
+    polish["items"][0]["spec"]["say"] = "from converted-pl.json"
+    _write(khan / "converted-pl.json", polish)
 
-    assert items.converted_path() == khan / "converted" / "pl.json"
-    assert items.load_item("item_a1")["say"] == "from converted/pl.json"
+    assert items.converted_path() == khan / "converted-pl.json"
+    assert items.load_item("item_a1")["say"] == "from converted-pl.json"
 
 
 def test_the_file_is_read_once_per_process(monkeypatch: pytest.MonkeyPatch) -> None:

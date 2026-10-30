@@ -36,8 +36,9 @@ curl https://app.jadwigo.pl/api/v1/me \
 - A token whose `exp` has passed fails verification. Refresh the session and try again.
 - [`GET /api/v1/me`](/api/operations/getme/) reads the signed-in adult.
 - On the first sign-in there is no account yet, and the parent routes answer `409`
-  `AccountMissing`. Call [`POST /api/v1/accounts`](/api/operations/createaccount/) once. It makes the account and its pod.
-  A repeat call returns the same records, so a double tap or a reload is safe.
+  `AccountMissing`. Call [`POST /api/v1/accounts`](/api/operations/createaccount/) once. It
+  makes the account and its pod. A repeat call returns the same records, so a double tap or a
+  reload is safe.
 
 ## Bank routes: the bank's read token
 
