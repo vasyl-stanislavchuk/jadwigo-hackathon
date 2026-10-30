@@ -71,6 +71,7 @@
       },
       "devDependencies": {
         "@astrojs/check": "0.9.12",
+        "@jadwigo/api-client": "workspace:*",
         "@jadwigo/cli": "workspace:*",
         "@types/node": "catalog:",
         "happy-dom": "catalog:",
