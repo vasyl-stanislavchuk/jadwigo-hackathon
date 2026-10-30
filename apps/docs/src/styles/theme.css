@@ -118,26 +118,56 @@
   border-radius: var(--jw-radius-small);
 }
 
-/* A button sits on a hard edge, and sinks by it when pressed. */
+/* A button is drawn as @jadwigo/ui draws one (foundation.css, button.tsx): bold Andika, the control
+ * radius, a fill that runs to its edge, standing on a 4px edge it sinks into when pressed. */
 .sl-link-button {
-  border-width: var(--jw-border);
+  border: var(--jw-border) solid transparent;
   border-radius: var(--jw-radius-control);
+  background-clip: border-box;
+  font-weight: var(--jw-weight-strong);
   transition: transform var(--jw-dur-fast) var(--jw-ease-out);
+  /* Starlight grows a button to body size on a wide screen; a docs button stays small at every width. */
+  font-size: var(--sl-text-sm);
+  padding: var(--jw-space-2) var(--jw-space-4);
 }
 
+/* Previous and next are a quiet way on, not a headline: a smaller title, a tighter card, no blur. */
+.pagination-links a {
+  padding: var(--jw-space-3) var(--jw-space-4);
+  box-shadow: none;
+}
+
+.pagination-links .link-title {
+  font-size: var(--sl-text-lg);
+}
+
+/* The action: the action blue with no border of its own, on its darker edge. */
 .sl-link-button.primary,
 .sl-link-button.primary:hover {
   background-color: var(--jw-act);
-  border-color: var(--jw-act-edge);
+  border-color: transparent;
   color: var(--jw-on-act);
   box-shadow: 0 var(--jw-press) 0 var(--jw-act-edge);
 }
 
+/* Anything else is paper with a quiet 2px line, on an edge of the same line. */
 .sl-link-button.secondary {
   background-color: var(--jw-card);
-  border-color: var(--jw-line-strong);
+  border-color: var(--jw-line);
   color: var(--jw-ink);
-  box-shadow: 0 var(--jw-press) 0 var(--jw-line-strong);
+  box-shadow: 0 var(--jw-press) 0 var(--jw-line);
+}
+
+/* Hover, on a mouse only, as in the app: a line darkens, the action's fill lifts a touch. */
+@media (hover: hover) and (pointer: fine) {
+  .sl-link-button.secondary:hover {
+    border-color: var(--jw-line-strong);
+    color: var(--jw-ink);
+  }
+
+  .sl-link-button.primary:hover {
+    filter: brightness(1.05) saturate(1.05);
+  }
 }
 
 .sl-link-button:is(.primary, .secondary):active {

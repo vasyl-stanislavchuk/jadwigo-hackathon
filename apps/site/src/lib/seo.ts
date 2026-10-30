@@ -22,7 +22,15 @@ export type Page = z.infer<typeof pageSchema>;
 export type HeadTag =
   | { kind: "meta"; name: string; content: string }
   | { kind: "property"; property: string; content: string }
-  | { kind: "link"; rel: string; href: string };
+  | { kind: "link"; rel: string; href: string; type?: string; sizes?: string };
+
+/** The crown favicon (dl-w0b4.68): public/ is written by tools/src/brand-icons.ts. */
+const iconTags: readonly HeadTag[] = [
+  { kind: "link", rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+  { kind: "link", rel: "icon", href: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+  { kind: "link", rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+  { kind: "meta", name: "theme-color", content: "#2f63b8" },
+];
 
 /** The page's address on the apex, with a trailing slash, as the sitemap writes it. */
 export function canonical(path: string): string {
@@ -43,6 +51,7 @@ export function headTags(page: Page, path: string): HeadTag[] {
     { kind: "property", property: "og:url", content: url },
     { kind: "meta", name: "twitter:title", content: page.title },
     { kind: "meta", name: "twitter:description", content: page.description },
+    ...iconTags,
   ];
   if (page.ogImage) {
     const image = `${origin}${page.ogImage}`;

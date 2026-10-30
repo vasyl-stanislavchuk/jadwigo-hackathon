@@ -31,6 +31,11 @@ decision `jadwigo-platform/notes/2026-10-29-jadwigo-s-docs-are-a-starlight-site-
   `scripts/prepare.ts` writes before every build: the snapshot `packages/contracts/openapi.json` plus
   the server (`hosts.prod.app`) and the tag descriptions (`src/lib/openapi.ts`). It is served as is
   at `/openapi.json`. No page under `src/content/docs/api/` is written by hand.
+- The TypeScript client (`/typescript/`) is a hand-written intro, `typescript.md`, and the pages
+  `starlight-typedoc` writes into `src/content/docs/typescript/` (gitignored) from
+  `packages/api-client` and `packages/contracts`' `src/index.ts`, with each package's own tsconfig.
+  `typedoc.json` turns source links off, so no page links into the repo. A doc comment there is the
+  page's text.
 - `src/guides.test.ts`: every `/api/...` path a page names is in `ROUTES`, and every link into
   `/api/` is a page the reference builds (the links validator sees only content pages).
 - `public/openapi.json` and `public/mcp-tools.json` are copied in at build time from
@@ -43,6 +48,9 @@ decision `jadwigo-platform/notes/2026-10-29-jadwigo-s-docs-are-a-starlight-site-
   A table the code can make is generated from it, never typed by hand.
 - **Self-contained:** no page links into the GitHub repo (the owner, `dl-5ssh.90`). `check:dist` fails one.
 - A broken internal link fails the build (`starlight-links-validator`).
+- `lint` runs markdownlint over every page (`.markdownlint-cli2.jsonc`: one H1 from the title, no
+  skipped heading level, alt text on every image, prose wrapped at 100). `check:dist` runs Redocly
+  over the served `public/openapi.json` (`redocly.yaml`); fix a finding in `src/lib/openapi.ts`.
 - `llms.txt`, `llms-full.txt` and `llms-small.txt` are built for agents (`starlight-llms-txt`).
 - Hosts come from `packages/config`, never a hard-coded domain in code. Route paths and error types
   come from `packages/contracts`.

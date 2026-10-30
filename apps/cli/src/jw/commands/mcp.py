@@ -4,7 +4,9 @@ Six tools, each calling the function its `--json` verb prints, so a tool's JSON 
 JSON: question_search (`jw question search --json`), question_show (`jw question show --json`),
 question_gaps (`jw question gaps --json`), question_item (`jw question item --json`, read
 from JW_KHAN_CONVERTED, dl-e8ov.5.38.2), lesson_draft (`jw lesson draft --json`) and lesson_check
-(`jw lesson check --json`, which runs check.ts in JADWIGO_REPO_DIR, dl-e8ov.5.38.4). The server
+(`jw lesson check --json`, which runs check.ts in JADWIGO_REPO_DIR, dl-e8ov.5.38.4). A draft is
+kept on the server's machine under a draft_id, so neither lesson tool sends the whole draft
+through the client's tool-result limit (dl-e8ov.5.38.10). The server
 finds the bank the way the verbs do (`jw.settings_keys`: JW_API_URL, then JW_BANK_URL, then
 ~/.config/jadwigo-bank/bank.env) and reads pages from JADWIGO_BANK_DIR. Registration lines for
 Claude Code, Muse Code and Codex are in apps/cli/README.md.
@@ -41,12 +43,15 @@ def build_server() -> Any:
         name="jadwigo",
         instructions=(
             "Jadwigo's question bank and lesson drafts. To make a lesson from a parent's request: "
-            "call lesson_draft, write every question's help (look, boost, boost_by_mistake, "
-            "almost, worked and a twin) in the lesson's language, then call lesson_check with the "
-            "whole draft and fix any errors it lists by step id until it answers ok with a card "
-            "and a lesson_file. The tools never write a word a child reads; you do. "
-            "question_search, question_show, question_gaps and question_item look into the bank "
-            "directly: sets that meet a need, one set's page, needs it cannot meet, one item."
+            "call lesson_draft, which copies each drawn question whole from the bank, its help "
+            "included, and keeps the draft under a draft_id. Write only what each question's "
+            "you_write lists (the twin, boost_by_mistake for its mistake_classes, a rung the copy "
+            "leaves empty), in the lesson's language, and change a copied part only when the "
+            "parent asks. Then call lesson_check with the draft_id and those words by step id, and "
+            "fix any errors it lists by step id until it answers ok with a card and a "
+            "lesson_file. The lesson plays only after the import the card's next step names. question_search, question_show, question_gaps and question_item look "
+            "into the bank directly: sets that meet a need, one set's page, needs it cannot meet, "
+            "one item."
         ),
     )
 
@@ -129,30 +134,36 @@ def build_server() -> Any:
         request: str,
         grade: str,
         names: list[str],
+        topic: str,
         language: str = "pl",
         kind: str = "practice",
         count: int | None = None,
         skills: list[str] | None = None,
     ) -> dict[str, Any]:
-        """Draft a lesson for a parent's request: questions drawn from the bank, help left empty.
+        """Draft a lesson for a parent's request: questions drawn from the bank and copied whole.
 
         request is the parent's words ("6 zadań z mnożenia, klasa 3"); names is required: pass
         every name the family uses in the request (the child's, siblings', the parent's), or []
-        when there is none; the tool replaces them before anything leaves the machine. grade the bare grade
-        number; kind practice, review, check or diagnostic; count overrides the draw rule's count.
-        Each question carries its family step, key, the source item's hints and worked lines as
-        `material`, credit, based_on and why it was drawn; left_out says why each set or item was
-        not used, and rule_settled is false (the draw rules are provisional). You write each
-        question's `help` in the lesson's language: look and boost as {"text"} cards,
-        boost_by_mistake as {mistake class: {"text"}}, almost and worked as lists of lines (almost
-        is worked with its last line left blank), and twin as a question from the same template
-        with its own say, data and key. Then call lesson_check with the whole draft.
+        when there is none; the tool replaces them before anything leaves the machine. topic is
+        required: what the lesson is about in a few words, distilled from the request, with no
+        count, grade or name ("mnożenie", "dodawanie do 100"); the bank searches these words,
+        and the request is kept as the draft's record and title. grade the bare grade number; kind practice, review, check or diagnostic; count overrides the draw
+        rule's count. Each question is copied whole from the bank (family, data, key, say,
+        pictures, and the source's hints and worked lines as its help), so the lesson plays as
+        copied. The draft stays on this machine under draft_id; the result is a slim view of it.
+        Per question: step_id, prompt, data (pictures without their labels), key, copied_help
+        (the hints as text with their picture alts), rungs (what fills look, boost, almost and
+        worked), you_write (what is left for you), mistake_classes (the keys boost_by_mistake
+        may use; null when unknown) and why_drawn. left_out says why each set or item was not
+        used, and rule_settled is false (the draw rules are provisional). Write what you_write
+        lists, in the lesson's language, then call lesson_check with the draft_id.
         """
         return _call(
             lesson.draft,
             request=request,
             grade=grade,
             names=names,
+            topic=topic,
             language=language,
             kind=kind,
             count=count,
@@ -160,16 +171,31 @@ def build_server() -> Any:
         )
 
     @server.tool(name="lesson_check")
-    def lesson_check(draft: dict[str, Any]) -> dict[str, Any]:
-        """Check a draft whose help you have written, and return the card a parent reads.
+    def lesson_check(
+        draft_id: str,
+        help: dict[str, dict[str, Any]],
+        title: str | None = None,
+        reasoning: str | None = None,
+    ) -> dict[str, Any]:
+        """Check a draft with your words on it, and return the card a parent reads.
 
-        Pass the whole draft lesson_draft returned, with every question's help filled. It is
-        assembled into a lesson file and checked as the import would check it. ok true returns
-        the card (per question: prompt, key, rungs, twin, source, licence, why drawn; and what was
-        left out), the lesson_file path, play_path and lesson_id. ok false lists errors by step
-        id: fix those questions and call lesson_check again.
+        draft_id is the one lesson_draft returned. help maps each step_id to your words for that
+        question, only what the bank lacks: twin (a question from the same template with its
+        own say, data and key), boost_by_mistake ({mistake class: {"text"}}, keys from the
+        step's mistake_classes), and a rung the copy leaves empty (look and boost as {"text"},
+        almost and worked as lists of lines). To change a copied part, only when the parent asks,
+        add changes: [{"change": numbers, context, wording or tutor_notes, "why", "set": {path:
+        value}}], where a path is say, or a dotted path under data, key, hints, worked or almost
+        ("hints.0.text"); each change is recorded in based_on.changes. Send every step's words
+        on each call. title and reasoning replace the draft's. ok true returns the card (per
+        question: prompt, key, rungs, twin, source, licence, changes, why drawn; and what was
+        left out, and next: the import step), the lesson_file path, import_command, play_path and
+        lesson_id. The play_path exists only after the import: tell the parent to run
+        import_command (make lesson-import FILE=<lesson_file> ENV=dev, in the jadwigo checkout)
+        first, then open the play_path. ok false lists errors by step id: fix those and call
+        lesson_check again.
         """
-        return _call(lesson.check, filled=draft)
+        return _call(lesson.check, draft_id=draft_id, words=help, title=title, reasoning=reasoning)
 
     return server
 

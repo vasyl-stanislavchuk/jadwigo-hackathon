@@ -47,6 +47,7 @@ flowchart LR
   web --> lesson_kit
   web --> ui
   site --> config
+  site --> ui
   docs --> config
   docs --> contracts
   docs --> lesson_kit
@@ -56,6 +57,7 @@ flowchart LR
   bank --> contracts
   core --> contracts
   lesson_import --> contracts
+  lesson_import --> core
   lesson_import --> store
   lesson_kit --> contracts
   lesson_kit --> copy

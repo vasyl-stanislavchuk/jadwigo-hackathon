@@ -13,8 +13,8 @@ came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
 | `jw question show set_khan_2002` | One set page, checked against `src/jw/contracts/set.schema.json` | `JADWIGO_BANK_DIR` |
 | `jw question gaps --words "..." --skill <id> --grade 3` | Each need searched once, with `found`, `gap` or `degraded` | the bank URL and token |
 | `jw question item <item id>` | One converted item: its family step with key and help, credit and `based_on` | `JW_KHAN_CONVERTED` |
-| `jw lesson draft "6 zadań z mnożenia, klasa 3" --grade 3 --name <name>` (or `--no-names`) | A lesson draft: drawn questions with keys and credit, help left empty | all of the above |
-| `jw lesson check <draft.json>` | The card, the lesson file's path and its `/play/` path, or errors by step id | `JADWIGO_REPO_DIR` and `bun` |
+| `jw lesson draft "6 zadań z mnożenia, klasa 3" --grade 3 --topic mnożenie --name <name>` (or `--no-names`) | A lesson draft: drawn questions copied whole from the bank, kept under a `draft_id`, and what is left to write | all of the above, and `JADWIGO_REPO_DIR` and `bun` for the mistake classes |
+| `jw lesson check <draft_id> <words.json>` | The card, the lesson file's path, the import command and then its `/play/` path, or errors by step id | `JADWIGO_REPO_DIR` and `bun` |
 
 - **Search** returns the envelope as the bank sent it. The `/api/v1` route answers stage `final`
   with every arm and takes no query fields, so `--stage` and `--arm` reach only the bank's own
@@ -48,7 +48,7 @@ values. Copy it into the file and fill what you use.
 | `JW_BANK_TIMEOUT_SECS` | Seconds one search may take before it comes back degraded | `10` |
 | `JADWIGO_BANK_DIR` | A checkout of the bank repo, whose `sets/` `jw question show` reads | none |
 | `JADWIGO_KHAN_DIR` | The synced copy of the bank's Khan bucket | `~/.cache/jadwigo-bank/khan` |
-| `JW_KHAN_CONVERTED` | The converted items file `jw question item` reads | `<JADWIGO_KHAN_DIR>/converted/pl.json` |
+| `JW_KHAN_CONVERTED` | The converted items file `jw question item` reads | `<JADWIGO_KHAN_DIR>/converted-pl.json`, the Polish file the bank's sync writes (`converted.json` beside it is English) |
 | `JADWIGO_REPO_DIR` | The jadwigo-hackathon checkout whose `packages/lesson-import/src/check.ts` `jw lesson check` runs | the checkout `jw` was installed from |
 
 The Khan copy is filled from the bucket by the bank repo. Run this in a checkout of `jadwigo-bank`:
@@ -103,52 +103,91 @@ rewrite it with `JW_UPDATE_SNAPSHOTS=1 uv run --frozen pytest -q tests/test_mcp_
 
 ## Drafting a lesson
 
-The tools read, draw, assemble and check. They never write a word a child reads: the calling agent
-writes every question's help ladder and twin, in the lesson's language
-(`david-learns/decisions/2026-10-16-help-ladder-the-planner-writes-every-rung`).
+A lesson from the bank copies each drawn question whole, its help text included, and plays as
+copied. The calling agent writes only what the bank does not have, and changes a copied part only
+when the parent asks
+(`jadwigo-ai-workflows/decisions/2026-10-30-lesson-from-the-bank-copies-the-bank-question-whole-then-adapts`).
 
 1. **Ask.** `names` is required: pass every name the family uses in the request (the child's,
    siblings', the parent's); the tool replaces them before anything leaves the machine, because
    the bank turns a need's words into model input
    (`jadwigo-hackathon/decisions/2026-10-29-lesson-draft-takes-the-family-s-names-from-the-calling-agent-and`).
    The draft's `request`, the lesson file's id, title and reasoning carry the placeholders
-   (`[NAME_1]`), never a name. `lesson_draft` then sends the guarded request to the bank as a need, fetches each row's set page,
+   (`[NAME_1]`), never a name. `topic` is required too: what the lesson is about in a few words,
+   which the calling agent distils from the request with no count, grade or name (`mnożenie`,
+   `dodawanie do 100`). The bank searches the topic, not the whole request, so a request's
+   framing ("Przygotuj lekcję dla …: 6 zadań …") does not narrow the search (`dl-e8ov.5.38.12`);
+   the request is kept as the draft's record and title. `lesson_draft` then sends the guarded
+   topic to the bank as a need's words, fetches each row's set page,
    draws the questions with the provisional rule for the lesson kind (`src/jw/draw.py`, so
    `rule_settled` is `false`), and loads each drawn item from `JW_KHAN_CONVERTED`. An item that
    cannot load (waiting for its family step, or missing) goes to `left_out` with its reason, and
-   the draw runs again without it. Each question comes back with its step, key, the source
-   item's hints and worked lines as `material`, `credit`, `based_on`, `why_drawn`, and an empty
-   `help`: `look`, `boost`, `boost_by_mistake`, `almost`, `worked`, `twin`.
-2. **Write the rungs.** The agent fills every question's `help`: `look` and `boost` as `{"text"}`
-   cards, `boost_by_mistake` as `{mistake class: {"text"}}`, `almost` and `worked` as lists of
-   lines (`almost` is `worked` with its last line left blank), and `twin` as a question from the
-   same template with its own `say`, `data` and `key`.
-3. **Check.** `lesson_check` refuses an empty rung or twin, then builds the lesson file
-   (`packages/lesson-import/src/lesson-file.ts`), writes it to `<tmp>/jw-lessons/<id>.json`, and runs
-   `bun packages/lesson-import/src/check.ts <file> --json` in `JADWIGO_REPO_DIR`. `ok: true` brings
-   the card: per question its prompt, key, rungs, twin, source, licence and why it was drawn, and
-   what was left out. `ok: false` lists errors by step id; fix them and check again.
-4. **Import.** The owner reads the card and imports the file into jadwigo-dev from the repo root:
-   `make lesson-import FILE=<lesson_file> ENV=dev`. The lesson then plays at the card's `play_path`.
+   the draw runs again without it.
+2. **Copy.** Each question is copied whole: family, data, key, `say`, pictures with their alt
+   text and labels, and the source's help (its hints with their pictures, and its worked lines).
+   The player maps the hints onto the ladder: the first two on `look` and `boost`, the rest
+   before the last on `almost`, the last on `worked`, and a hint that prints the answer waits for
+   `almost`. When no hint reaches `almost`, the copy writes it as `worked` with its last line
+   blank. One change is made by code: an `enter` question that is plainly a×b (its figure reads
+   `a · b =`, and its key accepts one whole number, a×b, and names no rule) gets the
+   multiplication rule on its key, `{"rule": "times_table", "a", "b", "recent": []}`, recorded as
+   a `tutor_notes` entry in `based_on.changes`, so its misses name their class (`add_for_multiply`,
+   `neighbour_row`, ...)
+   (`jadwigo-ai-workflows/decisions/2026-10-30-jw-adds-the-multiplication-mistake-rule-by-code-to-a-copied-axb`).
+   Every other key stays as the bank has it. The draft is kept in `<tmp>/jw-drafts/<draft_id>.json`, and the lesson as copied, with
+   no twin yet, is run through `check.ts` once: `plays_as_copied` says whether it passed, and
+   each question's `mistake_classes` are the classes `check.ts` names for its step (`null` until
+   `check.ts` sends them, `dl-e8ov.5.38.11`, or when no checkout or `bun` is found).
+3. **Read the slim view.** `lesson_draft` returns the draft's `draft_id`, `title`, `reasoning` and
+   `left_out`, and per question its `step_id`, `prompt`, `data` (pictures without their labels),
+   `key`, `copied_help` (the hints as text, with their picture alts), `rungs` (what fills each
+   rung), `you_write` and `mistake_classes`. For the canonical request it is about 11,000
+   characters, under a client's tool-result limit.
+4. **Write what is missing.** Per step, what its `you_write` lists, in the lesson's language:
+   `twin`, a question from the same template with its own `say`, `data` and `key`;
+   `boost_by_mistake` as `{mistake class: {"text"}}`, keys from `mistake_classes`; and a rung the
+   copy leaves empty (`look` and `boost` as `{"text"}` cards, `almost` and `worked` as lists of
+   lines). A rung the copy fills is refused. To change a copied part, only when the parent asks,
+   add `changes: [{"change", "why", "set": {path: value}}]`: `change` is `numbers`, `context`,
+   `wording` or `tutor_notes`, and a path is `say` or a dotted path under `data`, `key`, `hints`,
+   `worked` or `almost` (`hints.0.text`). Each change is recorded in `based_on.changes`.
+5. **Check.** `lesson_check(draft_id, help, title?, reasoning?)` takes those words by step id,
+   every step's on each call. It refuses a missing twin or rung, then builds the lesson file
+   (`packages/lesson-import/src/lesson-file.ts`), writes it to `<tmp>/jw-lessons/<id>.json`, and
+   runs `bun packages/lesson-import/src/check.ts <file> --json` in `JADWIGO_REPO_DIR`. `ok: true`
+   brings the card: per question its prompt, key, rungs, twin, source, licence, changes and why
+   it was drawn, and what was left out. `ok: false` lists errors by step id; fix them and check
+   again. From a shell: `jw lesson check <draft_id> words.json`, where `words.json` is the `help`
+   object.
+6. **Import, then play.** The owner reads the card and imports the file into jadwigo-dev from the
+   repo root with the command the answer's `import_command` and the card's `next` name:
+   `make lesson-import FILE=<lesson_file> ENV=dev`. Only then does the lesson play at the card's
+   `play_path`; before the import that path does not exist (`dl-e8ov.5.38.13`).
 
 In Claude Code, with the server registered as below, the owner asks in plain words:
 
 > Przygotuj lekcję dla <imię dziecka>: 6 zadań z mnożenia, klasa 3. Użyj lesson_draft i podaj w names
-> wszystkie imiona z prośby (<imię dziecka>, rodzeństwa, moje), napisz wszystkie podpowiedzi i
-> bliźniaka po polsku, sprawdź lesson_check i pokaż mi kartę.
+> wszystkie imiona z prośby (<imię dziecka>, rodzeństwa, moje), dopisz po polsku to, czego bank
+> nie ma (you_write), sprawdź lesson_check i pokaż mi kartę.
 
 ## Registering it
 
 These lines run the server from a checkout through `uv`, with the URL and token in
 `~/.config/jadwigo-bank/bank.env`. `JADWIGO_BANK_DIR` can sit in that file too, in place of the `env` entry. Replace the paths with your checkouts.
 
-**Claude Code.** The flags were confirmed against `claude mcp add --help`.
+**Claude Code.** The name comes before the `-e` flags: `-e` takes every value up to `--`, so a
+name after it is read as one more variable (`Invalid environment variable format: jadwigo`). Each
+variable gets its own `-e`. `JW_KHAN_CONVERTED` names the Polish items file while the synced copy
+has none (`dl-e8ov.5.38.8`).
 
 ```sh
-claude mcp add --scope user --transport stdio \
+claude mcp add --scope user --transport stdio jadwigo \
   -e JADWIGO_BANK_DIR=/Users/vasyl/projects/jadwigo-bank \
-  jadwigo -- uv --directory /Users/vasyl/projects/jadwigo-hackathon/apps/cli run jw mcp serve
+  -e JW_KHAN_CONVERTED=/Users/vasyl/projects/david-learns/media/khan/converted-pl.json \
+  -- uv --directory /Users/vasyl/projects/jadwigo-hackathon/apps/cli run jw mcp serve
 ```
+
+`claude mcp list` then shows `jadwigo`, and `claude mcp remove jadwigo -s user` takes it away.
 
 Or check it in for a project as `.mcp.json`:
 
@@ -159,7 +198,10 @@ Or check it in for a project as `.mcp.json`:
       "type": "stdio",
       "command": "uv",
       "args": ["--directory", "/Users/vasyl/projects/jadwigo-hackathon/apps/cli", "run", "jw", "mcp", "serve"],
-      "env": { "JADWIGO_BANK_DIR": "/Users/vasyl/projects/jadwigo-bank" }
+      "env": {
+        "JADWIGO_BANK_DIR": "/Users/vasyl/projects/jadwigo-bank",
+        "JW_KHAN_CONVERTED": "/Users/vasyl/projects/david-learns/media/khan/converted-pl.json"
+      }
     }
   }
 }

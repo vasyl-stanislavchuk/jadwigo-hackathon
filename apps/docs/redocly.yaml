@@ -1,0 +1,9 @@
+# Redocly lint over public/openapi.json, the document the site serves and the API reference is
+# built from (dl-5ssh.90.40). check:dist runs it after the build's prepare step has written it.
+# Every recommended rule fails as an error, so a warning cannot slip through.
+extends:
+  - recommended-strict
+rules:
+  # Off: the public document states no licence for now
+  # (jadwigo-platform/notes/2026-10-30-the-public-openapi-document-states-no-licence-for-now).
+  info-license: off
