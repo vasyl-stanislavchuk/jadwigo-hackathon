@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "jadwigo-bank/set",
-  "$comment": "Pinned copy of jadwigo-bank schemas/set.schema.json at bank commit 16f03f3. The bank's copy is the source of truth: change it there first, then re-copy here and update this commit.",
+  "$comment": "Pinned copy of jadwigo-bank schemas/set.schema.json at bank commit fe69bb5. The bank's copy is the source of truth: change it there first, then re-copy here and update this commit.",
   "title": "Question set page",
   "description": "One question set, the unit search returns (david-learns/decisions/2026-10-25-the-question-bank-is-searched-for-question-sets-by-agents-sendin). Source fields are copied from the source and never rewritten. Enrichment fields are written by a pass and carry who made them and whether a person reviewed them.",
   "type": "object",
@@ -180,6 +180,19 @@
             },
             "shared": {
               "type": "integer"
+            },
+            "ready": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "pl": {
+                  "type": "integer"
+                },
+                "en": {
+                  "type": "integer"
+                }
+              },
+              "description": "How many items are lesson-ready per language: status.kind is plays after the readiness check. Absent before the first stamped conversion."
             }
           }
         },
@@ -193,8 +206,28 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        },
+        "ready_ids": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "pl": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "en": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The lesson-ready item ids per language, a subset of ids. A set with none in any language is not indexed."
         }
-      }
+      },
+      "description": "The set's items by id, with the counts per language. ready_ids and count.ready are written by the conversion's readiness stamp (dl-a38n.32, decision dl-kaxj): only an item whose status is plays in that language is listed; a draw copies from these, never from ids."
     },
     "enrichment": {
       "type": "object",
