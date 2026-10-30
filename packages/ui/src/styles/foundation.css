@@ -73,6 +73,9 @@
   --jw-p-sun-600: #a07c14;
   --jw-p-sun-800: #5a4300;
   --jw-p-sun-900: #3a3016;
+  /* The crown's yellow: the logo, the favicon and the queen's crown, never a lesson control
+     * (decision 2026-10-30-jadwigo-wears-lockup-4a-an-andika-wordmark-with-a-crown-tipped-o). */
+  --jw-p-crown: #f5c84b;
   /* Green for right. */
   --jw-p-green-50: #e2f5e0;
   --jw-p-green-100: #e3eedc;
@@ -155,6 +158,10 @@
   /* At rest: the solution's band after "Jeszcze nie wiem". */
   --jw-rest: var(--jw-p-white);
   --jw-rest-ink: var(--jw-p-paper-900);
+  /* The brand: the wordmark's "go", the crown and its outline (packages/ui src/brand). */
+  --jw-brand-go: var(--jw-p-ink-650);
+  --jw-crown: var(--jw-p-crown);
+  --jw-crown-line: var(--jw-p-paper-900);
 }
 
 /* ---- 2. Roles, by night ----------------------------------------------------------------------- */
@@ -195,6 +202,10 @@
   --jw-miss-act-edge: var(--jw-p-red-900);
   --jw-rest: var(--jw-p-night-75);
   --jw-rest-ink: var(--jw-p-night-900);
+  /* By night the crown has no outline: its line takes the crown's own yellow. */
+  --jw-brand-go: var(--jw-p-ink-400);
+  --jw-crown: var(--jw-p-crown);
+  --jw-crown-line: var(--jw-p-crown);
 }
 
 /* ---- Type, shape, space and motion (the same by day and by night) ----------------------------- */

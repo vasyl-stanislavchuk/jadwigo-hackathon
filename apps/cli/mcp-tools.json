@@ -1,16 +1,47 @@
 {
   "tools": [
     {
-      "description": "Check a draft whose help you have written, and return the card a parent reads.\n\n        Pass the whole draft lesson_draft returned, with every question's help filled. It is\n        assembled into a lesson file and checked as the import would check it. ok true returns\n        the card (per question: prompt, key, rungs, twin, source, licence, why drawn; and what was\n        left out), the lesson_file path, play_path and lesson_id. ok false lists errors by step\n        id: fix those questions and call lesson_check again.\n        ",
+      "description": "Check a draft with your words on it, and return the card a parent reads.\n\n        draft_id is the one lesson_draft returned. help maps each step_id to your words for that\n        question, only what the bank lacks: twin (a question from the same template with its\n        own say, data and key), boost_by_mistake ({mistake class: {\"text\"}}, keys from the\n        step's mistake_classes), and a rung the copy leaves empty (look and boost as {\"text\"},\n        almost and worked as lists of lines). To change a copied part, only when the parent asks,\n        add changes: [{\"change\": numbers, context, wording or tutor_notes, \"why\", \"set\": {path:\n        value}}], where a path is say, or a dotted path under data, key, hints, worked or almost\n        (\"hints.0.text\"); each change is recorded in based_on.changes. Send every step's words\n        on each call. title and reasoning replace the draft's. ok true returns the card (per\n        question: prompt, key, rungs, twin, source, licence, changes, why drawn; and what was\n        left out), the lesson_file path, play_path and lesson_id. ok false lists errors by step\n        id: fix those and call lesson_check again.\n        ",
       "inputSchema": {
         "properties": {
-          "draft": {
-            "additionalProperties": true,
-            "title": "Draft",
+          "draft_id": {
+            "title": "Draft Id",
+            "type": "string"
+          },
+          "help": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Help",
             "type": "object"
+          },
+          "reasoning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Reasoning"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Title"
           }
         },
-        "required": ["draft"],
+        "required": ["draft_id", "help"],
         "title": "lesson_checkArguments",
         "type": "object"
       },
@@ -22,7 +53,7 @@
       }
     },
     {
-      "description": "Draft a lesson for a parent's request: questions drawn from the bank, help left empty.\n\n        request is the parent's words (\"6 zadań z mnożenia, klasa 3\"); names is required: pass\n        every name the family uses in the request (the child's, siblings', the parent's), or []\n        when there is none; the tool replaces them before anything leaves the machine. grade the bare grade\n        number; kind practice, review, check or diagnostic; count overrides the draw rule's count.\n        Each question carries its family step, key, the source item's hints and worked lines as\n        `material`, credit, based_on and why it was drawn; left_out says why each set or item was\n        not used, and rule_settled is false (the draw rules are provisional). You write each\n        question's `help` in the lesson's language: look and boost as {\"text\"} cards,\n        boost_by_mistake as {mistake class: {\"text\"}}, almost and worked as lists of lines (almost\n        is worked with its last line left blank), and twin as a question from the same template\n        with its own say, data and key. Then call lesson_check with the whole draft.\n        ",
+      "description": "Draft a lesson for a parent's request: questions drawn from the bank and copied whole.\n\n        request is the parent's words (\"6 zadań z mnożenia, klasa 3\"); names is required: pass\n        every name the family uses in the request (the child's, siblings', the parent's), or []\n        when there is none; the tool replaces them before anything leaves the machine. grade the\n        bare grade number; kind practice, review, check or diagnostic; count overrides the draw\n        rule's count. Each question is copied whole from the bank (family, data, key, say,\n        pictures, and the source's hints and worked lines as its help), so the lesson plays as\n        copied. The draft stays on this machine under draft_id; the result is a slim view of it.\n        Per question: step_id, prompt, data (pictures without their labels), key, copied_help\n        (the hints as text with their picture alts), rungs (what fills look, boost, almost and\n        worked), you_write (what is left for you), mistake_classes (the keys boost_by_mistake\n        may use; null when unknown) and why_drawn. left_out says why each set or item was not\n        used, and rule_settled is false (the draw rules are provisional). Write what you_write\n        lists, in the lesson's language, then call lesson_check with the draft_id.\n        ",
       "inputSchema": {
         "properties": {
           "count": {

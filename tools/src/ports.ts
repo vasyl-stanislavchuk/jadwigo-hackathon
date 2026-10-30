@@ -1,6 +1,13 @@
-// Ports come from md's environment. The main checkout runs on the defaults .md/repo.toml declares;
-// every md worktree gets its own numbers, exported by `md run` under the same names. Inside a
-// worktree an unset port is an error, never a silent fallback onto the main checkout's port.
+// Ports come from md's environment. The main checkout runs on the defaults .md/repo.toml declares
+// under [review.ports] (DEV_PORTS, kept equal by ports.test.ts); every md worktree gets its own
+// numbers, exported by `md run` under the same names. Inside a worktree an unset port is an error,
+// never a silent fallback onto the main checkout's port.
+
+/**
+ * The main checkout's ports. The api's is not 8787, which other local tools hold (dl-5ssh.98), and
+ * neither sits in md's worktree ranges (8100 and 3100 up).
+ */
+export const DEV_PORTS = { WEB_PORT: 5173, API_PORT: 8730 } as const;
 
 export function port(
   name: string,
@@ -21,4 +28,14 @@ export function port(
     throw new Error(`${name}=${raw} is not a port.`);
   }
   return value;
+}
+
+/**
+ * The local api's port, which the web dev server's /api proxy follows: md's API_PORT. A bare `PORT`
+ * still counts when API_PORT is unset, for the callers that pass one (CI's browser job,
+ * `make api-dev`).
+ */
+export function apiPort(env: Record<string, string | undefined> = process.env): number {
+  if (!env["API_PORT"] && env["PORT"]) return port("PORT", DEV_PORTS.API_PORT, env);
+  return port("API_PORT", DEV_PORTS.API_PORT, env);
 }

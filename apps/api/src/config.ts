@@ -1,5 +1,6 @@
 /** The api's one read of the environment. */
 import { GetParameterCommand, SSMClient } from "@aws-sdk/client-ssm";
+import { apiPort } from "../../../tools/src/ports.ts";
 
 /** The database the routes use, or undefined to serve from an in-memory store. Blank counts as unset. */
 export function databaseUrl(): string | undefined {
@@ -55,9 +56,10 @@ export async function lambdaDatabaseUrl(read: ReadParameter = readSsm): Promise<
   return checkedDatabaseUrl(value, `the SSM parameter ${name}`);
 }
 
-/** The local server's port: md's environment sets `PORT` per worktree (tools/src/ports.ts). */
+/** The local server's port: md's `API_PORT` per worktree, else the main checkout's default
+ * (tools/src/ports.ts). */
 export function port(): number {
-  return Number(process.env["PORT"] || 8787);
+  return apiPort(process.env);
 }
 
 /**
