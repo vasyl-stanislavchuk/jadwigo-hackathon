@@ -14,7 +14,7 @@ import {
   ErrorType,
   FEATURED_POD_ID,
   Goal,
-  type GoalId,
+  GoalId,
   ID_PREFIXES,
   type IdPrefix,
   idOf,
@@ -23,8 +23,8 @@ import {
   type LearnerAttempts,
   LearnerId,
   LearnerReport,
-  type LearnerReportId,
-  type LearnerSkillEvidence,
+  LearnerReportId,
+  LearnerSkillEvidence,
   LearnerSkillMastery,
   type LearnerSnapshot,
   Lesson,
@@ -41,9 +41,11 @@ import {
   Member,
   Pod,
   PodId,
+  ProposalDecision,
+  ReportNarrative,
   SentAt,
   Skill,
-  type SkillId,
+  SkillId,
   type Uuid,
   uuidOf,
   valueFor,
@@ -250,6 +252,10 @@ export function refusal(error: unknown): unknown {
       // 20261029100000_answer_question_open.sql): the store's check lost a race.
       if (error.constraint === "attempt_answer_question_open") {
         return new StoreError(ErrorType.enum.QuestionNotOpen, error.message);
+      }
+      // app.learner_report_once refuses a 2nd narrative: the store's check lost a race.
+      if (error.message.includes("already has its narrative")) {
+        return new StoreError(ErrorType.enum.WriteOnce, error.message);
       }
       // The claim trigger names its refusal in the detail.
       if (error.detail === "AttemptClaimed" || error.detail === "AttemptPreview") {
@@ -1917,11 +1923,32 @@ class PostgresStore implements Store {
     });
   }
 
-  // The learner knowledge base. Step 0 builds the reads; the writes and the evidence wait for the
-  // store-api lane of wave dl-e8ov.5-1, and throw until it lands.
+  // The learner knowledge base (wave 1 of epic dl-e8ov.5). Every call here runs under a savepoint
+  // when a unit is open (`#guarded`), so a caller that catches a failure, as the mastery rebuild
+  // after a finish does, keeps its unit's transaction usable.
+
+  /**
+   * A call's work as `#in` runs it, under a savepoint when a unit is open: a statement that fails
+   * rolls back to it, so the unit goes on when the caller catches the failure. In a unit of its
+   * own the transaction is the savepoint.
+   */
+  async #guarded<T>(pod: PodId | null, work: (tx: Tx) => Promise<T>): Promise<T> {
+    if (!this.#units.getStore()) return this.#in(pod, work);
+    return this.#in(pod, async (tx) => {
+      await sql`savepoint knowledge`.execute(tx);
+      try {
+        const result = await work(tx);
+        await sql`release savepoint knowledge`.execute(tx);
+        return result;
+      } catch (error) {
+        await sql`rollback to savepoint knowledge`.execute(tx);
+        throw error;
+      }
+    });
+  }
 
   async findLearnerPod(id: LearnerId): Promise<PodId | undefined> {
-    return this.#in(null, async (tx) => {
+    return this.#guarded(null, async (tx) => {
       const { rows } = await sql<{ pod: string | null }>`
         select app.learner_pod(${uuidOf(ID_PREFIXES.learner, id)}) as pod
       `.execute(tx);
@@ -1933,15 +1960,15 @@ class PostgresStore implements Store {
   async listSkills(pod: PodId): Promise<readonly Skill[]> {
     const own = uuidOf(ID_PREFIXES.pod, pod);
     const shared = uuidOf(ID_PREFIXES.pod, FEATURED_POD_ID);
-    return this.#in(pod, async (tx) => {
+    return this.#guarded(pod, async (tx) => {
       await this.#pod(tx, pod);
       // pod_scope reads the pod's own rows and shared_read the shared pod's; a code the pod holds
-      // wins over the shared row.
+      // wins over the shared row. By code in byte order, as JavaScript sorts strings.
       const rows = await tx
         .selectFrom("skill")
         .selectAll()
         .where("pod_id", "in", [own, shared])
-        .orderBy("code")
+        .orderBy(sql`code collate "C"`)
         .orderBy(sql`pod_id = ${own}`, "desc")
         .execute();
       const byCode = new Map<string, Skill>();
@@ -1952,37 +1979,168 @@ class PostgresStore implements Store {
     });
   }
 
-  async putSkills(_pod: PodId, _skills: readonly NewSkill[]): Promise<readonly Skill[]> {
-    throw new Error("not built: putSkills (store-api lane)");
+  async putSkills(pod: PodId, skills: readonly NewSkill[]): Promise<readonly Skill[]> {
+    const own = uuidOf(ID_PREFIXES.pod, pod);
+    return this.#guarded(pod, async (tx) => {
+      await this.#pod(tx, pod);
+      const now = new Date().toISOString();
+      const valid = skills.map((skill) =>
+        parse(Skill, { ...skill, pod_id: pod, created_at: now }, "the skill"),
+      );
+      if (valid.length > 0) {
+        // Once per code: a code the pod holds keeps its stored row, as content does.
+        await tx
+          .insertInto("skill")
+          .values(
+            valid.map((s) => ({
+              pod_id: own,
+              code: s.code,
+              topic_id: s.topic_id === null ? null : uuidOf(ID_PREFIXES.topic, s.topic_id),
+              kind: s.kind,
+              status: s.status,
+              can_do: json(s.can_do),
+              aliases: s.aliases,
+              prerequisites: s.prerequisites,
+              source: s.source,
+            })),
+          )
+          .onConflict((oc) => oc.columns(["pod_id", "code"]).doNothing())
+          .execute();
+      }
+      return this.#ownSkills(
+        tx,
+        own,
+        valid.map((s) => s.code),
+      );
+    });
   }
 
-  async ensureSkills(_pod: PodId, _codes: readonly SkillId[]): Promise<readonly Skill[]> {
-    throw new Error("not built: ensureSkills (store-api lane)");
+  /** The pod's own rows for `codes`, in the order given; a code with no row is NotFound. */
+  async #ownSkills(tx: Tx, own: string, codes: readonly SkillId[]): Promise<Skill[]> {
+    if (codes.length === 0) return [];
+    const rows = await tx
+      .selectFrom("skill")
+      .selectAll()
+      .where("pod_id", "=", own)
+      .where("code", "in", [...new Set(codes)])
+      .execute();
+    const byCode = new Map(rows.map((row) => [row.code, read(Skill, row)]));
+    return codes.map((code) => {
+      const row = byCode.get(code);
+      if (!row) throw notFound(`the skill ${code}`);
+      return row;
+    });
+  }
+
+  async ensureSkills(pod: PodId, codes: readonly SkillId[]): Promise<readonly Skill[]> {
+    return this.#guarded(pod, async (tx) => {
+      await this.#pod(tx, pod);
+      return this.#ensureSkills(tx, uuidOf(ID_PREFIXES.pod, pod), codes);
+    });
+  }
+
+  /**
+   * Copies each code the pod has no row for from the shared catalogue in one statement, or writes
+   * it a draft, then reads the pod's rows. A code the pod holds is left as it is.
+   */
+  async #ensureSkills(tx: Tx, own: string, codes: readonly SkillId[]): Promise<Skill[]> {
+    if (codes.length === 0) return [];
+    const shared = uuidOf(ID_PREFIXES.pod, FEATURED_POD_ID);
+    await sql`
+      insert into skill (pod_id, code, topic_id, kind, status, can_do, aliases, prerequisites, source)
+      select ${own}::uuid, c.code, s.topic_id, coalesce(s.kind, 'accuracy'),
+        coalesce(s.status, 'draft'), s.can_do, coalesce(s.aliases, '{}'),
+        coalesce(s.prerequisites, '{}'), coalesce(s.source, 'pod')
+      from unnest(${[...new Set(codes)]}::text[]) as c(code)
+      left join skill as s on s.pod_id = ${shared}::uuid and s.code = c.code
+      on conflict (pod_id, code) do nothing
+    `.execute(tx);
+    return this.#ownSkills(tx, own, codes);
   }
 
   async getLearnerEvidence(
-    _pod: PodId,
-    _learner: LearnerId,
+    pod: PodId,
+    learner: LearnerId,
   ): Promise<readonly LearnerSkillEvidence[]> {
-    throw new Error("not built: getLearnerEvidence (store-api lane)");
+    return this.#guarded(pod, async (tx) => {
+      await this.#learner(tx, learner);
+      // Row-level security on the tables the view joins reads the pod's own attempts and those its
+      // learners claimed (security_invoker).
+      const rows = await tx
+        .selectFrom("learner_skill_evidence")
+        .selectAll()
+        .where("learner_id", "=", uuidOf(ID_PREFIXES.learner, learner))
+        .execute();
+      // Sorted here, by the wire ids, as InMemoryStore sorts them.
+      return rows
+        .map((row) => read(LearnerSkillEvidence, row))
+        .sort(
+          (a, b) =>
+            a.answered_at.localeCompare(b.answered_at) ||
+            byText(a.attempt_id, b.attempt_id) ||
+            a.seq - b.seq ||
+            a.try_no - b.try_no ||
+            byText(a.skill_code, b.skill_code),
+        );
+    });
   }
 
   async replaceMastery(
-    _pod: PodId,
-    _learner: LearnerId,
-    _rows: readonly NewLearnerSkillMastery[],
+    pod: PodId,
+    learner: LearnerId,
+    rows: readonly NewLearnerSkillMastery[],
   ): Promise<readonly LearnerSkillMastery[]> {
-    throw new Error("not built: replaceMastery (store-api lane)");
+    const learnerId = uuidOf(ID_PREFIXES.learner, learner);
+    return this.#guarded(pod, async (tx) => {
+      await this.#learner(tx, learner);
+      const computed_at = new Date().toISOString();
+      const valid = rows.map((row) =>
+        parse(
+          LearnerSkillMastery,
+          { ...row, pod_id: pod, learner_id: learner, computed_at },
+          "a mastery row",
+        ),
+      );
+      if (new Set(valid.map((r) => r.skill_code)).size !== valid.length) {
+        throw new StoreError(ErrorType.enum.BadRequest, "a skill code repeats in the mastery rows");
+      }
+      // jadwigo_api may not update a learner, so `for update` cannot hold it: 2 rebuilds of one
+      // learner take its lock in turn, and the 2nd's delete sees the 1st's rows.
+      await sql`select pg_advisory_xact_lock(hashtextextended(${learnerId}::text, 0))`.execute(tx);
+      await tx.deleteFrom("learner_skill_mastery").where("learner_id", "=", learnerId).execute();
+      if (valid.length === 0) return [];
+      const written = await tx
+        .insertInto("learner_skill_mastery")
+        .values(
+          valid.map((r) => ({
+            pod_id: uuidOf(ID_PREFIXES.pod, pod),
+            learner_id: learnerId,
+            skill_code: r.skill_code,
+            level: r.level,
+            needs_attention: r.needs_attention,
+            tries: r.tries,
+            last_answered_at: r.last_answered_at,
+            due_at: r.due_at,
+            card: json(r.card),
+            computed_at: r.computed_at,
+          })),
+        )
+        .returningAll()
+        .execute();
+      return written
+        .map((row) => read(LearnerSkillMastery, row))
+        .sort((a, b) => byText(a.skill_code, b.skill_code));
+    });
   }
 
   async getMastery(pod: PodId, learner: LearnerId): Promise<readonly LearnerSkillMastery[]> {
-    return this.#in(pod, async (tx) => {
+    return this.#guarded(pod, async (tx) => {
       await this.#learner(tx, learner);
       const rows = await tx
         .selectFrom("learner_skill_mastery")
         .selectAll()
         .where("learner_id", "=", uuidOf(ID_PREFIXES.learner, learner))
-        .orderBy("skill_code")
+        .orderBy(sql`skill_code collate "C"`)
         .execute();
       return rows.map((row) => read(LearnerSkillMastery, row));
     });
@@ -1999,7 +2157,7 @@ class PostgresStore implements Store {
   }
 
   async listGoals(pod: PodId, learner: LearnerId): Promise<readonly GoalWithSkills[]> {
-    return this.#in(pod, async (tx) => {
+    return this.#guarded(pod, async (tx) => {
       await this.#learner(tx, learner);
       const goals = await tx
         .selectFrom("goal")
@@ -2025,31 +2183,150 @@ class PostgresStore implements Store {
         goal: read(Goal, row, ID_PREFIXES.goal),
         skill_codes: links
           .filter((l) => l.goal_id === row.id)
-          .map((l) => l.skill_code)
-          .sort(),
+          .map((l) => SkillId.parse(l.skill_code))
+          .sort(byText),
       }));
     });
   }
 
-  async addGoal(_pod: PodId, _learner: LearnerId, _goal: NewGoal): Promise<GoalWithSkills> {
-    throw new Error("not built: addGoal (store-api lane)");
+  /** A goal with its skill codes, by code. */
+  async #goalWithSkills(tx: Tx, row: object & { id: string }): Promise<GoalWithSkills> {
+    const links = await tx
+      .selectFrom("goal_skill")
+      .select("skill_code")
+      .where("goal_id", "=", row.id)
+      .execute();
+    return {
+      goal: read(Goal, row, ID_PREFIXES.goal),
+      skill_codes: links.map((l) => SkillId.parse(l.skill_code)).sort(byText),
+    };
+  }
+
+  /** Links each code to the goal once; the codes are the pod's rows already. */
+  async #linkSkills(tx: Tx, own: string, goal: string, codes: readonly SkillId[]): Promise<void> {
+    if (codes.length === 0) return;
+    await tx
+      .insertInto("goal_skill")
+      .values(codes.map((skill_code) => ({ pod_id: own, goal_id: goal, skill_code })))
+      .onConflict((oc) => oc.columns(["goal_id", "skill_code"]).doNothing())
+      .execute();
+  }
+
+  async addGoal(pod: PodId, learner: LearnerId, goal: NewGoal): Promise<GoalWithSkills> {
+    const own = uuidOf(ID_PREFIXES.pod, pod);
+    return this.#guarded(pod, async (tx) => {
+      await this.#learner(tx, learner);
+      const valid = parse(
+        Goal,
+        {
+          id: mint(GoalId, ID_PREFIXES.goal),
+          pod_id: pod,
+          learner_id: learner,
+          name: goal.name,
+          words: goal.words ?? null,
+          lesson_language: goal.lesson_language ?? "pl",
+          status: "active",
+          created_at: new Date().toISOString(),
+        },
+        "the goal",
+      );
+      const codes = [...new Set(goal.skill_codes)];
+      await this.#ensureSkills(tx, own, codes);
+      const row = await tx
+        .insertInto("goal")
+        .values({
+          id: uuidOf(ID_PREFIXES.goal, valid.id),
+          pod_id: own,
+          learner_id: uuidOf(ID_PREFIXES.learner, learner),
+          name: valid.name,
+          words: valid.words,
+          lesson_language: valid.lesson_language,
+          // A goal's own instant, so 2 goals added in one unit keep their order.
+          created_at: sql<Date>`clock_timestamp()`,
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      await this.#linkSkills(tx, own, row.id, codes);
+      return this.#goalWithSkills(tx, row);
+    });
   }
 
   async updateGoal(
-    _pod: PodId,
-    _learner: LearnerId,
-    _goal: GoalId,
-    _change: GoalChange,
+    pod: PodId,
+    learner: LearnerId,
+    goal: GoalId,
+    change: GoalChange,
   ): Promise<GoalWithSkills> {
-    throw new Error("not built: updateGoal (store-api lane)");
+    const own = uuidOf(ID_PREFIXES.pod, pod);
+    const goalId = uuidOf(ID_PREFIXES.goal, goal);
+    return this.#guarded(pod, async (tx) => {
+      // Held to the end of the unit, so 2 patches of one goal's skills take turns.
+      let row = await tx
+        .selectFrom("goal")
+        .selectAll()
+        .where("id", "=", goalId)
+        .where("learner_id", "=", uuidOf(ID_PREFIXES.learner, learner))
+        .forUpdate()
+        .executeTakeFirst();
+      if (!row) throw notFound("the goal");
+      if (change.status !== undefined && change.status !== row.status) {
+        row = await tx
+          .updateTable("goal")
+          .set({ status: change.status })
+          .where("id", "=", goalId)
+          .returningAll()
+          .executeTakeFirstOrThrow();
+      }
+      if (change.skill_codes !== undefined) {
+        const codes = [...new Set(change.skill_codes)];
+        await this.#ensureSkills(tx, own, codes);
+        await tx.deleteFrom("goal_skill").where("goal_id", "=", goalId).execute();
+        await this.#linkSkills(tx, own, goalId, codes);
+      }
+      return this.#goalWithSkills(tx, row);
+    });
   }
 
-  async putReport(_pod: PodId, _report: NewLearnerReport): Promise<LearnerReport> {
-    throw new Error("not built: putReport (store-api lane)");
+  async putReport(pod: PodId, report: NewLearnerReport): Promise<LearnerReport> {
+    return this.#guarded(pod, async (tx) => {
+      await this.#learner(tx, report.learner_id);
+      if (Date.parse(report.period_ends_at) < Date.parse(report.period_starts_at)) {
+        throw new StoreError(ErrorType.enum.BadRequest, "a report's period ends after it starts");
+      }
+      const valid = parse(
+        LearnerReport,
+        {
+          ...report,
+          id: mint(LearnerReportId, ID_PREFIXES.learner_report),
+          pod_id: pod,
+          narrative: null,
+          decisions: [],
+          created_at: new Date().toISOString(),
+        },
+        "the report",
+      );
+      const row = await tx
+        .insertInto("learner_report")
+        .values({
+          id: uuidOf(ID_PREFIXES.learner_report, valid.id),
+          pod_id: uuidOf(ID_PREFIXES.pod, pod),
+          learner_id: uuidOf(ID_PREFIXES.learner, valid.learner_id),
+          period_starts_at: valid.period_starts_at,
+          period_ends_at: valid.period_ends_at,
+          inputs_hash: valid.inputs_hash,
+          reused: valid.reused,
+          digest: JSON.stringify(valid.digest),
+          // The report's own instant, so 2 written in one unit list newest first.
+          created_at: sql<Date>`clock_timestamp()`,
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      return read(LearnerReport, row, ID_PREFIXES.learner_report);
+    });
   }
 
   async listReports(pod: PodId, learner: LearnerId): Promise<readonly LearnerReport[]> {
-    return this.#in(pod, async (tx) => {
+    return this.#guarded(pod, async (tx) => {
       await this.#learner(tx, learner);
       const rows = await tx
         .selectFrom("learner_report")
@@ -2064,13 +2341,81 @@ class PostgresStore implements Store {
   }
 
   async updateReport(
-    _pod: PodId,
-    _learner: LearnerId,
-    _report: LearnerReportId,
-    _change: ReportChange,
+    pod: PodId,
+    learner: LearnerId,
+    report: LearnerReportId,
+    change: ReportChange,
   ): Promise<LearnerReport> {
-    throw new Error("not built: updateReport (store-api lane)");
+    const reportId = uuidOf(ID_PREFIXES.learner_report, report);
+    return this.#guarded(pod, async (tx) => {
+      // Held to the end of the unit: the narrative and the decisions are checked against it.
+      const row = await tx
+        .selectFrom("learner_report")
+        .selectAll()
+        .where("id", "=", reportId)
+        .where("learner_id", "=", uuidOf(ID_PREFIXES.learner, learner))
+        .forUpdate()
+        .executeTakeFirst();
+      if (!row) throw notFound("the report");
+      const stored = read(LearnerReport, row, ID_PREFIXES.learner_report);
+      const proposals = new Set(stored.digest.proposals.map((p) => p.id));
+      for (const decision of change.decisions ?? []) {
+        if (!proposals.has(decision.proposal_id)) {
+          throw new StoreError(
+            ErrorType.enum.BadRequest,
+            `the report has no proposal ${decision.proposal_id}`,
+          );
+        }
+      }
+      let narrative = stored.narrative;
+      if (change.narrative !== undefined) {
+        const given = parse(ReportNarrative, change.narrative, "the narrative");
+        if (narrative !== null && canonical(narrative) !== canonical(given)) {
+          throw new StoreError(ErrorType.enum.WriteOnce, "this report already has its narrative");
+        }
+        narrative = given;
+      }
+      const added = change.decisions ?? [];
+      const writesNarrative = stored.narrative === null && narrative !== null;
+      if (!writesNarrative && added.length === 0) return stored;
+      const decided_at = new Date().toISOString();
+      const decisions: ProposalDecision[] = [
+        ...stored.decisions,
+        ...added.map((d) => parse(ProposalDecision, { ...d, decided_at }, "a decision")),
+      ];
+      const updated = await tx
+        .updateTable("learner_report")
+        .set({
+          ...(writesNarrative ? { narrative: json(narrative) } : {}),
+          ...(added.length > 0 ? { decisions: JSON.stringify(decisions) } : {}),
+        })
+        .where("id", "=", reportId)
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      return read(LearnerReport, updated, ID_PREFIXES.learner_report);
+    });
   }
+}
+
+/** Strings in code-unit order, as `Array.prototype.sort` puts them. */
+function byText(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/** A JSON value with its keys sorted, so 2 reads of one value compare equal whatever jsonb's key order. */
+function canonical(value: unknown): string {
+  const sorted = (v: unknown): unknown =>
+    Array.isArray(v)
+      ? v.map(sorted)
+      : v !== null && typeof v === "object"
+        ? Object.fromEntries(
+            Object.entries(v)
+              .filter(([, inner]) => inner !== undefined)
+              .sort(([a], [b]) => byText(a, b))
+              .map(([k, inner]) => [k, sorted(inner)]),
+          )
+        : v;
+  return JSON.stringify(sorted(value));
 }
 
 /**

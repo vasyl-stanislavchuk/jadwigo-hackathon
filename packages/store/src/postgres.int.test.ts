@@ -6,6 +6,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { databaseUrl } from "./config.ts";
 import { introspect } from "./db/introspect.ts";
 import { COLUMNS } from "./db/types.ts";
+import { learnerKnowledgeContract } from "./knowledge.contract.ts";
 import { createPostgresStore, refusal } from "./postgres.ts";
 import { seed, storeContract } from "./store.contract.ts";
 import { StoreError } from "./store.ts";
@@ -14,6 +15,7 @@ const store = createPostgresStore(databaseUrl());
 afterAll(() => store.close());
 
 storeContract("PostgresStore", () => store);
+learnerKnowledgeContract("PostgresStore", () => store);
 
 describe("PostgresStore's units", () => {
   it("rolls back every write in a unit that throws, and maps a refusal inside one", async () => {
