@@ -1,7 +1,20 @@
 /**
  * The MCP pages, made from `mcp-tools.json`, the tool list `jw mcp serve` gives a client
- * (`dl-5ssh.90.8`). Each tool becomes one page: its description, its inputs and its output.
+ * (`dl-5ssh.90.8`). Each tool becomes one page: how it is called, its description, its inputs, its
+ * output and where to go next (`dl-5ssh.90.31`).
  */
+
+/** Where the MCP overview shows how to register the server, which every tool page links to. */
+export const REGISTER_HREF = "/mcp/#register-the-server";
+
+/** The closing section of every tool page. */
+const NEXT = [
+  "## Next",
+  "",
+  "- [Every tool](/mcp/#every-tool): the other tools the server gives an agent.",
+  "- [Use with agents](/guides/agents/): what else these docs publish for an agent.",
+  "",
+];
 
 /** A JSON Schema, as far as these pages read one. */
 export interface JsonSchema {
@@ -144,7 +157,12 @@ export interface ToolPage {
 export function toolPage(tool: McpTool, output: McpOutput | undefined): ToolPage {
   const { summary, body } = splitDoc(tool.description);
   const rows = inputRows(tool);
-  const lines = [escapeProse(summary), ""];
+  const lines = [
+    `\`${tool.name}\` is a tool of \`jw mcp serve\`, Jadwigo's MCP server. An agent calls it once the server is [registered](${REGISTER_HREF}).`,
+    "",
+    escapeProse(summary),
+    "",
+  ];
   if (body !== "") lines.push(escapeProse(body), "");
 
   lines.push("## Inputs", "");
@@ -187,5 +205,6 @@ export function toolPage(tool: McpTool, output: McpOutput | undefined): ToolPage
       );
     }
   }
+  lines.push(...NEXT);
   return { id: `mcp/${tool.name}`, title: tool.name, description: summary, body: lines.join("\n") };
 }

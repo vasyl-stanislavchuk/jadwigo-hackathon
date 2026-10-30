@@ -3,7 +3,11 @@ title: Question types
 description: The interaction families and every question type, each linked to the playground.
 ---
 
+import Generated from "../../../components/Generated.astro";
 import QuestionTypeTable from "../../../components/QuestionTypeTable.astro";
+
+This page is for anyone writing a lesson or building a question: how a question is put together,
+and every question type there is.
 
 A question is built in 2 steps. A lesson author picks an **interaction family**: what the learner
 does, such as choose, type or put in order. Then a **question type** of that family sets its
@@ -21,11 +25,19 @@ it looks. So 2 question types of one family are checked the same way.
 ## After a miss
 
 A question type either marks the parts the learner missed, so they fix only those, or marks the
-whole step. A miss is shown in red pen, and the words a child reads never call it wrong.
+whole step. A miss is shown in red pen, and the words follow the rule in
+[Copy](/design-system/copy/#a-child-never-reads-a-bare-wrong).
 
 ## Every question type
 
-This table is generated from the lesson kit's catalog when the docs are built. Each name links to
-its page in the [playground](https://app.jadwigo.pl/playground), where it plays in both languages.
+Each name links to its page in the [playground](https://app.jadwigo.pl/playground), where it
+plays in both languages.
 
 <QuestionTypeTable />
+
+<Generated from="the lesson kit's catalog" />
+
+## Next
+
+- [Copy](/design-system/copy/): the words a question shows, in Polish and English.
+- [Primitives](/design-system/primitives/): the components a question type draws on.

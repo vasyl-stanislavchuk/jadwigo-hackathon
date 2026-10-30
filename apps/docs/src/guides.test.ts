@@ -37,6 +37,11 @@ describe("unknownApiPaths", () => {
   it("lets a version prefix and a docs link pass", () => {
     expect(unknownApiPaths("under `/api/v1/`, see [it](/api/operations/getme/)")).toEqual([]);
   });
+
+  it("reads a hero action's link as a docs link", () => {
+    expect(unknownApiPaths("actions:\n    - text: API reference\n      link: /api/\n")).toEqual([]);
+    expect(unknownApiLinks("      link: /api/operations/nope/")).toEqual(["/api/operations/nope/"]);
+  });
 });
 
 describe("unknownApiLinks", () => {

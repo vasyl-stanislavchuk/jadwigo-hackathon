@@ -3,6 +3,9 @@ title: Architecture
 description: The whole system on one page, the app, the API, the database and the question bank, and how a request moves through them.
 ---
 
+This page is for anyone who wants the whole system on one page: its parts, where each runs, and
+how a request moves through them.
+
 Jadwigo is one web app, one API and one database, with 2 static sites beside them. Everything runs
 in AWS in Frankfurt (`eu-central-1`), and the database and sign-in are a Supabase project in the
 same region.
@@ -102,7 +105,7 @@ A merge to `main` deploys nothing. The owner deploys by hand: the API's code, th
 the marketing site and these docs each have their own step. Infrastructure is Terraform, applied
 by hand too.
 
-## Read on
+## Next
 
 - [Monorepo](/architecture/monorepo/): the apps and packages, and who may import whom.
 - [Contracts and generated docs](/architecture/contracts/): how one route table feeds the API,

@@ -3,39 +3,15 @@ title: Monorepo
 description: The apps and packages Jadwigo is built from, what each is for, and which way imports may go.
 ---
 
+This page is for anyone finding their way around Jadwigo's code: the apps and packages it is built
+from, which way imports may go, and the rules the build holds.
+
 All of Jadwigo's code lives in one repository: TypeScript apps and packages in one workspace,
 and a Python command-line tool beside them. A change to a schema and every caller it breaks land
 in the same pull request.
 
-## Apps
-
-An app runs. Nothing imports an app.
-
-| App | What it is |
-| --- | --- |
-| `api` | The one Lambda: the router, `authorize()` and the routes. |
-| `web` | The app at app.jadwigo.pl: the lesson player and the parent's screens. |
-| `site` | The marketing site at jadwigo.pl. |
-| `docs` | This site, docs.jadwigo.pl. |
-| `cli` | `jw`, in Python: question search for lesson authors, and its MCP server. It imports none of the TypeScript code and talks to the API over HTTP. |
-
-## Packages
-
-A package is imported. Each has one job and one public entry, which is all other code imports.
-
-| Package | What it holds |
-| --- | --- |
-| `contracts` | Zod schemas for everything that crosses a boundary: ids, records, the answer wire, the route table and the errors. |
-| `core` | Grading, numbers and mastery, as pure functions. |
-| `store` | The `Store` interface, an in-memory store and a Postgres store, and one contract suite both pass. |
-| `api-client` | The typed client the web app calls the API with. Its types come from the contracts, never written by hand. |
-| `config` | The hosts and languages of every environment, in one place. A domain name written anywhere else is a bug. |
-| `lesson-kit` | The interaction families and the lesson blocks built on them. |
-| `ui` | The design tokens and the shadcn/ui primitives. See [Design system](/design-system/). |
-| `copy` | Every string a person reads, in Polish and English. |
-| `lesson-import` | Compiles a lesson file from the playground into lesson questions and a published version. |
-| `bank` | Code to read, search and import the question bank. Never the questions themselves. |
-| `testing` | Fixtures, factories and the unit setup, for test files only. |
+An app runs, and nothing imports an app. A package is imported. Each package has one job and one
+public entry, which is all other code imports.
 
 ## Who imports whom
 
@@ -112,3 +88,35 @@ violation to prove the check still catches it.
   file over 1 MB.
 - **Unit tests run offline.** A unit test fails on a network call, on real AWS and on an unpinned
   clock. Anything that needs those is an integration test.
+
+## Every app
+
+| App | What it is |
+| --- | --- |
+| `api` | The one Lambda: the router, `authorize()` and the routes. |
+| `web` | The app at app.jadwigo.pl: the lesson player and the parent's screens. |
+| `site` | The marketing site at jadwigo.pl. |
+| `docs` | This site, docs.jadwigo.pl. |
+| `cli` | `jw`, in Python: question search for lesson authors, and its MCP server. It imports none of the TypeScript code and talks to the API over HTTP. |
+
+## Every package
+
+| Package | What it holds |
+| --- | --- |
+| `contracts` | Zod schemas for everything that crosses a boundary: ids, records, the answer wire, the route table and the errors. |
+| `core` | Grading, numbers and mastery, as pure functions. |
+| `store` | The `Store` interface, an in-memory store and a Postgres store, and one contract suite both pass. |
+| `api-client` | The typed client the web app calls the API with. Its types come from the contracts, never written by hand. |
+| `config` | The hosts and languages of every environment, in one place. A domain name written anywhere else is a bug. |
+| `lesson-kit` | The interaction families and the lesson blocks built on them. |
+| `ui` | The design tokens and the shadcn/ui primitives. See [Design system](/design-system/). |
+| `copy` | Every string a person reads, in Polish and English. |
+| `lesson-import` | Compiles a lesson file from the playground into lesson questions and a published version. |
+| `bank` | Code to read, search and import the question bank. Never the questions themselves. |
+| `testing` | Fixtures, factories and the unit setup, for test files only. |
+
+## Next
+
+- [Contracts and generated docs](/architecture/contracts/): how the `contracts` package feeds the
+  rest.
+- [Design system](/design-system/): what the `ui` package draws.
