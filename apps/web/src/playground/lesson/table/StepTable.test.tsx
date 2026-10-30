@@ -1,4 +1,4 @@
-import type { Finding } from "@jadwigo/lesson-import";
+import type { Finding } from "@jadwigo/lesson-import/file";
 import { LESSON_FILES } from "@jadwigo/testing";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";

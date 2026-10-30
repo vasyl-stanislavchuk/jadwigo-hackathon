@@ -1,9 +1,9 @@
-import type { Finding } from "@jadwigo/lesson-import";
+import type { Finding } from "@jadwigo/lesson-import/file";
 import { LESSON_FILES } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
 import { lessonFileToSpecs } from "../adapter.ts";
 import { readDraft } from "../draft.ts";
-import { findingsOf, worstOf } from "./findings.ts";
+import { findingsOf } from "./findings.ts";
 import { stepRows } from "./model.ts";
 
 const finding = (step_id: string | null, level: Finding["level"]): Finding => ({
@@ -18,7 +18,7 @@ const finding = (step_id: string | null, level: Finding["level"]): Finding => ({
 function equalGroups() {
   const read = readDraft(LESSON_FILES.find((f) => (f as { id?: unknown }).id === "equal-groups"));
   if ("error" in read) throw new Error(read.error);
-  return lessonFileToSpecs(read.file, "");
+  return lessonFileToSpecs(read.file, "", read.skipped);
 }
 
 describe("findingsOf", () => {
@@ -30,12 +30,6 @@ describe("findingsOf", () => {
     ]);
     expect(findingsOf(null)).toEqual([]);
     expect(findingsOf("half")).toEqual([]);
-  });
-
-  it("names the worst level as lesson-import's worstLevel does", () => {
-    expect(worstOf([])).toBeNull();
-    expect(worstOf([finding("a", "warn")])).toBe("warn");
-    expect(worstOf([finding("a", "warn"), finding("a", "error")])).toBe("error");
   });
 });
 

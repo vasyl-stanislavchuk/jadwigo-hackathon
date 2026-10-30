@@ -108,6 +108,7 @@
         "@jadwigo/config": "workspace:*",
         "@jadwigo/contracts": "workspace:*",
         "@jadwigo/copy": "workspace:*",
+        "@jadwigo/lesson-import": "workspace:*",
         "@jadwigo/lesson-kit": "workspace:*",
         "@jadwigo/ui": "workspace:*",
         "@supabase/supabase-js": "2.118.0",
@@ -118,7 +119,6 @@
         "react-dom": "catalog:",
       },
       "devDependencies": {
-        "@jadwigo/lesson-import": "workspace:*",
         "@jadwigo/testing": "workspace:*",
         "@playwright/test": "catalog:",
         "@tailwindcss/vite": "catalog:",

@@ -1,12 +1,17 @@
 /**
  * What the draft watcher (dev/draft-watch.ts) sends the lesson builder over Vite's HMR socket, and
- * the draft read in its own language. Shared by the dev server and the page, so it imports nothing.
+ * the draft read in its own language. Shared by the dev server and the page, so it imports only
+ * lesson-import's browser-safe entry.
  *
  *   page    -> builder:hello {draft_id}   on load, on a pick and on every reconnect
  *   server  -> builder:draft DraftMessage  to that page at once, and again on every change in the dir
  */
 
-import type { DraftLessonFile } from "./adapter.ts";
+import {
+  type LessonFile,
+  parseLessonFileLenient,
+  type SkippedStep,
+} from "@jadwigo/lesson-import/file";
 
 export const BUILDER_DRAFT = "builder:draft";
 export const BUILDER_HELLO = "builder:hello";
@@ -55,21 +60,19 @@ function inLanguage(value: unknown, language: string): unknown {
   return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, inLanguage(v, language)]));
 }
 
-/**
- * A draft as the adapter reads it, in its own language, or why it cannot be read yet. Only the
- * frame is checked (a language and parts with steps); every step is the adapter's to judge, and
- * `parseLessonFile` takes over once it is browser-safe (dl-a38n.11).
- */
-export function readDraft(raw: unknown): { file: DraftLessonFile } | { error: string } {
+/** A draft as the adapter reads it: lesson-import's lenient parse, which puts every line in the
+ * draft's language and leaves out, with the reason, each step that does not parse. */
+export type ReadDraft = { file: LessonFile; skipped: SkippedStep[] };
+
+/** A draft read, or why it cannot be read yet: its frame (id, title, language, parts) does not
+ * parse. A step that does not parse is not a reason; it comes back in `skipped`. */
+export function readDraft(raw: unknown): ReadDraft | { error: string } {
   if (raw === null || typeof raw !== "object") return { error: "the draft is not an object" };
-  const language = (raw as { language?: unknown }).language;
-  if (typeof language !== "string") return { error: "the draft has no language" };
-  const file = inLanguage(raw, language) as DraftLessonFile;
-  const parts = (file as { script?: { parts?: unknown } }).script?.parts;
-  if (!Array.isArray(parts)) return { error: "the draft has no script.parts" };
-  if (!parts.every((p) => Array.isArray((p as { steps?: unknown } | null)?.steps)))
-    return { error: "a part of the draft has no steps" };
-  return { file };
+  try {
+    return parseLessonFileLenient(raw);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : String(e) };
+  }
 }
 
 /** A draft's title in its own language, for the picker; "" when it has none yet. */
