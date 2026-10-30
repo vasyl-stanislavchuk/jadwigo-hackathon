@@ -69,3 +69,5 @@ decided by one set of render rules, the same the builder runs on a draft (`dl-a3
 The render rules do not exist on `main` yet (`dl-a38n.28` open): build the hooks against the
 sidecar's shape and stop before the backfill. A contract snapshot must move: ask the platform lead.
 The Python service needs a migration of its index: say so on the bead with the exact command.
+
+> Superseded on 2026-10-30 by the wave plan `docs/worklog/dl-a38n.32/2026-10-30-wave-1.md`: `packages/bank` has no import and search rows are sets, so steps 1 and 2 above do not fit the code. The rule stands; the gate is built at the source. Decisions `dl-kaxj` and `dl-be2l`.
