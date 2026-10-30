@@ -3,9 +3,9 @@
 How jadwigo works, and how work on it is organized. Decisions are not here: they live in the md
 context brain, and the docs cite them by slug (`md context decisions --project jadwigo-platform --current`).
 
-The product's reference, for people and agents who call it, is a site: `apps/docs`, published at
-docs.jadwigo.pl. Its API, MCP and design-system pages are generated from the code, so they are
-not written here (`dl-5ssh.90`).
+The product's reference, for people and agents who call it, is a site: `apps/docs`, to be
+published at docs.jadwigo.pl (the first publish is the owner's, `dl-5ssh.90.12`). Its API, MCP and
+design-system pages are generated from the code, so they are not written here (`dl-5ssh.90`).
 
 | Folder | What it holds | Its rules |
 | --- | --- | --- |
