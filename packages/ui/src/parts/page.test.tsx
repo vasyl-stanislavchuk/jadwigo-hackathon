@@ -53,4 +53,13 @@ describe("Page", () => {
     expect(main.classList.contains("gap-4")).toBe(true);
     expect(main.classList.contains("gap-6")).toBe(false);
   });
+
+  // tailwind-merge drops a leading written before a font size, so the page's leading comes after its
+  // size and survives the caller's class (dl-uukj.32.17).
+  it("keeps the page body and its leading beside the caller's class", () => {
+    render(<Page className="min-w-0">Twoje dzieci</Page>);
+    const main = screen.getByRole("main");
+    for (const c of ["min-w-0", "text-jw-page-body", "leading-jw-page"])
+      expect(main.classList.contains(c), c).toBe(true);
+  });
 });
