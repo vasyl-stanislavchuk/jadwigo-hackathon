@@ -68,12 +68,14 @@ web-deploy:
 
 # apps/web's build with the environment's public settings, web-build/<env>.env: the Supabase URL, its
 # publishable key and the sign-in providers (dl-e8ov.2.64). The file's values win over the shell's, so
-# what is committed is what ships. It uploads nothing; the deploy above runs it first.
+# what is committed is what ships. It uploads nothing; the deploy above runs it first. WEB_BUILD_FLAGS
+# go to vite build: the test builds into a directory of its own (dl-e8ov.2.74).
 WEB_BUILD_ENV ?= web-build/$(ENV).env
+WEB_BUILD_FLAGS ?=
 
 web-build:
 	test -f $(WEB_BUILD_ENV)
-	set -a && . $(abspath $(WEB_BUILD_ENV)) && set +a && cd $(WEB) && bun run build
+	set -a && . $(abspath $(WEB_BUILD_ENV)) && set +a && cd $(WEB) && bun run build $(WEB_BUILD_FLAGS)
 
 # The docs at docs.<apex> (dl-5ssh.90): apps/docs's Starlight build, checked, to the docs bucket, then
 # invalidate. As for the site, hashed files under _astro/ cache for a year and the rest 5 minutes,
@@ -114,6 +116,8 @@ validate:
 	terraform -chdir=terraform init -backend=false -input=false >/dev/null && terraform -chdir=terraform validate -no-tests
 
 # terraform/tests/*.tftest.hcl against mock providers: no credentials, no AWS call. init fetches the
-# providers the lock file pins, once; after that it runs offline (dl-5ssh.90.17).
+# providers the lock file pins, once; after that it runs offline (dl-5ssh.90.17). prod.tfvars is the
+# root's input, so a run that plans the root (tests/root_auth_domain.tftest.hcl) reads what an apply
+# would; a run of one module ignores it (dl-e8ov.2.77).
 test:
-	terraform -chdir=terraform init -backend=false -input=false >/dev/null && terraform -chdir=terraform test
+	terraform -chdir=terraform init -backend=false -input=false >/dev/null && terraform -chdir=terraform test -var-file=environments/prod.tfvars
