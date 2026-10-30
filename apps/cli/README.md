@@ -48,7 +48,7 @@ values. Copy it into the file and fill what you use.
 | `JW_BANK_TIMEOUT_SECS` | Seconds one search may take before it comes back degraded | `10` |
 | `JADWIGO_BANK_DIR` | A checkout of the bank repo, whose `sets/` `jw question show` reads | none |
 | `JADWIGO_KHAN_DIR` | The synced copy of the bank's Khan bucket | `~/.cache/jadwigo-bank/khan` |
-| `JW_KHAN_CONVERTED` | The converted items file `jw question item` reads | `<JADWIGO_KHAN_DIR>/converted/pl.json` |
+| `JW_KHAN_CONVERTED` | The converted items file `jw question item` reads | `<JADWIGO_KHAN_DIR>/converted-pl.json`, the Polish file the bank's sync writes (`converted.json` beside it is English) |
 | `JADWIGO_REPO_DIR` | The jadwigo-hackathon checkout whose `packages/lesson-import/src/check.ts` `jw lesson check` runs | the checkout `jw` was installed from |
 
 The Khan copy is filled from the bucket by the bank repo. Run this in a checkout of `jadwigo-bank`:
@@ -162,13 +162,19 @@ In Claude Code, with the server registered as below, the owner asks in plain wor
 These lines run the server from a checkout through `uv`, with the URL and token in
 `~/.config/jadwigo-bank/bank.env`. `JADWIGO_BANK_DIR` can sit in that file too, in place of the `env` entry. Replace the paths with your checkouts.
 
-**Claude Code.** The flags were confirmed against `claude mcp add --help`.
+**Claude Code.** The name comes before the `-e` flags: `-e` takes every value up to `--`, so a
+name after it is read as one more variable (`Invalid environment variable format: jadwigo`). Each
+variable gets its own `-e`. `JW_KHAN_CONVERTED` names the Polish items file while the synced copy
+has none (`dl-e8ov.5.38.8`).
 
 ```sh
-claude mcp add --scope user --transport stdio \
+claude mcp add --scope user --transport stdio jadwigo \
   -e JADWIGO_BANK_DIR=/Users/vasyl/projects/jadwigo-bank \
-  jadwigo -- uv --directory /Users/vasyl/projects/jadwigo-hackathon/apps/cli run jw mcp serve
+  -e JW_KHAN_CONVERTED=/Users/vasyl/projects/david-learns/media/khan/converted-pl.json \
+  -- uv --directory /Users/vasyl/projects/jadwigo-hackathon/apps/cli run jw mcp serve
 ```
+
+`claude mcp list` then shows `jadwigo`, and `claude mcp remove jadwigo -s user` takes it away.
 
 Or check it in for a project as `.mcp.json`:
 
@@ -179,7 +185,10 @@ Or check it in for a project as `.mcp.json`:
       "type": "stdio",
       "command": "uv",
       "args": ["--directory", "/Users/vasyl/projects/jadwigo-hackathon/apps/cli", "run", "jw", "mcp", "serve"],
-      "env": { "JADWIGO_BANK_DIR": "/Users/vasyl/projects/jadwigo-bank" }
+      "env": {
+        "JADWIGO_BANK_DIR": "/Users/vasyl/projects/jadwigo-bank",
+        "JW_KHAN_CONVERTED": "/Users/vasyl/projects/david-learns/media/khan/converted-pl.json"
+      }
     }
   }
 }
