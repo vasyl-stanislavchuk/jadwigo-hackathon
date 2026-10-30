@@ -2,11 +2,21 @@ import { ReportDigest } from "@jadwigo/contracts";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { attempt, catalogueSkill, goal, row } from "./golden.ts";
-import { brief, type DigestInput, dreamDigest, foldLearner } from "./index.ts";
+import {
+  brief,
+  DIGEST_RULES_VERSION,
+  type DigestInput,
+  dreamDigest,
+  foldLearner,
+} from "./index.ts";
+import { sha256Hex } from "./sha256.ts";
 
 const row7 = "maths.multiplication.row-7";
 const row8 = "maths.multiplication.row-8";
-const SKILLS = [catalogueSkill(row7), catalogueSkill(row8)];
+const SKILLS = [
+  catalogueSkill(row7, { aliases: ["curriculum.math.multiplication.row-7"] }),
+  catalogueSkill(row8),
+];
 const GOALS = [goal(1, [row7, row8]), goal(2, [])];
 const PERIOD = { starts_at: "2026-10-25T23:00:00.000Z", ends_at: "2026-10-31T12:00:00.000Z" };
 const NOW = new Date(PERIOD.ends_at);
@@ -42,6 +52,7 @@ function inputOf(before: typeof BEFORE, all: typeof BEFORE): DigestInput {
     brief: brief(GOALS, SKILLS, mastery_after, NOW),
     goals: GOALS,
     period: PERIOD,
+    skills: SKILLS,
   };
 }
 
@@ -93,21 +104,87 @@ describe("dreamDigest, a fixture period", () => {
     expect(digest.brief).toBe(input.brief);
   });
 
-  it("hashes what it read: same evidence and goals, same hash, whatever the period or order", () => {
-    expect(inputs_hash).toMatch(/^[0-9a-f]{64}$/);
-    const again = dreamDigest({
-      ...input,
-      evidence_after: [...input.evidence_after].reverse(),
-      period: { starts_at: PERIOD.ends_at, ends_at: "2026-11-02T12:00:00.000Z" },
-    });
-    expect(again.inputs_hash).toBe(inputs_hash);
+  it("hashes the rules version, the period's evidence and the catalogue's codes, nothing else", () => {
+    const period = DURING.map((e) =>
+      [e.attempt_id, e.seq, e.try_no, e.skill_code].join("|"),
+    ).sort();
+    expect(inputs_hash).toBe(
+      sha256Hex(
+        JSON.stringify({ rules: DIGEST_RULES_VERSION, evidence: period, skills: [row7, row8] }),
+      ),
+    );
+    expect(DIGEST_RULES_VERSION).toBe(1);
+    const reordered = { ...input, evidence_after: [...input.evidence_after].reverse(), goals: [] };
+    expect(dreamDigest(reordered).inputs_hash).toBe(inputs_hash);
     const more = row({ attempt: 6, at: "2026-10-31T09:00:00.000Z", correct: true, skill: row8 });
     expect(
       dreamDigest({ ...input, evidence_after: [...input.evidence_after, more] }).inputs_hash,
     ).not.toBe(inputs_hash);
-    expect(dreamDigest({ ...input, goals: [GOALS[0] ?? goal(1, [])] }).inputs_hash).not.toBe(
-      inputs_hash,
-    );
+    expect(
+      dreamDigest({ ...input, skills: [...SKILLS, catalogueSkill("maths.x.y")] }).inputs_hash,
+    ).not.toBe(inputs_hash);
+  });
+
+  it("names the first attempt after which the level is the new one, and folds aliases into it", () => {
+    // × 8 reaches familiar on attempt 3, drops on 4, is familiar again on 5: the mover is 3.
+    // The alias row on attempt 3 counts for × 7, and the skip-only day 30 October is no day played.
+    const rows = [
+      row({ attempt: 3, seq: 1, at: "2026-10-26T09:00:00.000Z", correct: true, skill: row8 }),
+      row({
+        attempt: 3,
+        seq: 2,
+        at: "2026-10-26T09:01:00.000Z",
+        correct: false,
+        skill: "curriculum.math.multiplication.row-7",
+      }),
+      row({ attempt: 4, seq: 1, at: "2026-10-27T09:00:00.000Z", correct: false, skill: row8 }),
+      row({ attempt: 5, seq: 1, at: "2026-10-28T09:00:00.000Z", correct: true, skill: row8 }),
+      row({
+        attempt: 6,
+        seq: 1,
+        at: "2026-10-30T09:00:00.000Z",
+        correct: null,
+        skip: true,
+        skill: row8,
+      }),
+    ];
+    const got = dreamDigest(inputOf([], rows)).digest;
+    expect(got.counts).toEqual({ attempts: 4, questions: 5, days_played: 3 });
+    expect(got.skills_moved).toEqual([
+      { skill_code: row7, from: "not_started", to: "attempted", attempt_id: attempt(3) },
+      { skill_code: row8, from: "not_started", to: "familiar", attempt_id: attempt(3) },
+    ]);
+    expect(got.mistakes).toEqual([
+      {
+        mistake_class: "off_by_one",
+        times: 2,
+        skill_codes: [row7, row8],
+        citations: [att(3), att(4)],
+      },
+    ]);
+  });
+
+  it("knows a speed skill from the catalogue: it moves to proficient, never to mastered", () => {
+    const speedy = [catalogueSkill(row7), catalogueSkill(row8, { kind: "speed" })];
+    const rows = [
+      row({ attempt: 3, seq: 1, at: "2026-10-26T09:00:00.000Z", correct: true, skill: row8 }),
+      row({ attempt: 4, seq: 1, at: "2026-10-27T09:00:00.000Z", correct: true, skill: row8 }),
+      row({ attempt: 5, seq: 1, at: "2026-10-29T09:00:00.000Z", correct: true, skill: row8 }),
+      row({ attempt: 5, seq: 2, at: "2026-10-29T09:01:00.000Z", correct: true, skill: row7 }),
+    ];
+    const mastery_after = foldLearner(rows, speedy, NOW);
+    const got = dreamDigest({
+      ...inputOf([], rows),
+      mastery_after,
+      brief: brief(GOALS, speedy, mastery_after, NOW),
+      skills: speedy,
+    }).digest;
+    expect(got.skills_moved.find((m) => m.skill_code === row8)).toEqual({
+      skill_code: row8,
+      from: "not_started",
+      to: "proficient",
+      attempt_id: attempt(4),
+    });
   });
 
   it("says nothing recorded and asks when the period has no evidence", () => {

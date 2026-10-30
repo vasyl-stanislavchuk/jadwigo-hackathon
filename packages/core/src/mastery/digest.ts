@@ -5,10 +5,12 @@ import type {
   LearnerSkillEvidence,
   MasteryLevel,
   ReportDigest,
+  Skill,
   SkillId,
 } from "@jadwigo/contracts";
 import { statusOf } from "./brief.ts";
 import { warsawDay } from "./days.ts";
+import { canonicalOf, eventsBySkill } from "./events.ts";
 import { happenings, levelSteps, rank } from "./fold.ts";
 import { sha256Hex } from "./sha256.ts";
 import type { DigestInput } from "./types.ts";
@@ -32,44 +34,35 @@ function inPeriod(input: DigestInput): LearnerSkillEvidence[] {
   });
 }
 
-/**
- * Each skill's level steps over all the evidence to the period's end, read from its own code's
- * rows. The digest has no catalogue, so an alias's rows are not folded into its canonical code
- * here, and every skill is stepped as an accuracy skill (a drop from mastered cannot happen to a
- * speed skill anyway, since it never gets there).
- */
-function stepsBySkill(evidence: readonly LearnerSkillEvidence[]) {
-  const codesOf = new Map<AttemptId, Set<SkillId>>();
-  for (const e of evidence) {
-    const codes = codesOf.get(e.attempt_id) ?? new Set<SkillId>();
-    codes.add(e.skill_code);
-    codesOf.set(e.attempt_id, codes);
-  }
-  const rows = new Map<SkillId, LearnerSkillEvidence[]>();
-  for (const e of evidence) rows.set(e.skill_code, [...(rows.get(e.skill_code) ?? []), e]);
+/** Each canonical skill's level steps over all the evidence to the period's end, as the fold steps them. */
+function stepsBySkill(evidence: readonly LearnerSkillEvidence[], skills: readonly Skill[]) {
   const steps = new Map<SkillId, ReturnType<typeof levelSteps>>();
-  for (const [code, list] of rows) {
-    const events = list.map((e) => ({
-      ...e,
-      mixed: (codesOf.get(e.attempt_id)?.size ?? 0) >= 2 || e.lesson_kind === "review",
-    }));
-    steps.set(code, levelSteps(happenings(events), "accuracy"));
-  }
+  for (const { skill_code, kind, events } of eventsBySkill(evidence, skills))
+    steps.set(skill_code, levelSteps(happenings(events), kind));
   return steps;
 }
 
-/** The hash of what the digest read: the evidence's identities and codes, and the goals' skills. */
-function hashOf(input: DigestInput): string {
-  const evidence = input.evidence_after
-    .map((e) => [e.attempt_id, e.seq, e.try_no, e.kind, e.skill_code].join("|"))
+/**
+ * Bumped whenever a rule of the fold, the brief or the digest changes, so a report after the fix
+ * hashes differently and createReport writes a new digest instead of reusing the old one.
+ */
+export const DIGEST_RULES_VERSION = 1;
+
+/**
+ * The hash of what the digest read: the rules version, the period's evidence by (attempt, seq,
+ * try, code), sorted, and the catalogue's codes, sorted. The same evidence gives the same hash.
+ */
+function hashOf(period: readonly LearnerSkillEvidence[], skills: readonly Skill[]): string {
+  const evidence = period
+    .map((e) => [e.attempt_id, e.seq, e.try_no, e.skill_code].join("|"))
     .sort(compare);
-  const goals = input.goals
-    .map((g) => [g.goal.id, g.goal.status, ...[...g.skill_codes].sort(compare)].join("|"))
-    .sort(compare);
-  return sha256Hex(JSON.stringify({ evidence, goals }));
+  const codes = skills.map((s) => s.code).sort(compare);
+  return sha256Hex(JSON.stringify({ rules: DIGEST_RULES_VERSION, evidence, skills: codes }));
 }
 
 export function makeDigest(input: DigestInput): { digest: Digest; inputs_hash: string } {
+  const { skills } = input;
+  const canonical = (code: SkillId) => canonicalOf(code, skills);
   const period = inPeriod(input);
   const from = Date.parse(input.period.starts_at);
   const to = Date.parse(input.period.ends_at);
@@ -78,27 +71,31 @@ export function makeDigest(input: DigestInput): { digest: Digest; inputs_hash: s
   const counts = {
     attempts: new Set(period.map((e) => e.attempt_id)).size,
     questions: new Set(period.map((e) => `${e.attempt_id}#${e.seq}`)).size,
-    days_played: new Set(period.map((e) => warsawDay(e.answered_at))).size,
+    days_played: new Set(
+      period.filter((e) => e.kind === "try").map((e) => warsawDay(e.answered_at)),
+    ).size,
   };
 
   const before = new Map(input.mastery_before.map((m) => [m.skill_code, m]));
   const after = [...input.mastery_after].sort((a, b) => compare(a.skill_code, b.skill_code));
-  const steps = stepsBySkill(input.evidence_after);
+  const steps = stepsBySkill(input.evidence_after, skills);
 
-  // A skill moved when its level differs from the last report's; the attempt that moved it is the
-  // period's last attempt whose step changed its level, else the period's last attempt on it.
+  // A skill moved when its level differs from the last report's. The attempt that moved it is the
+  // first attempt in the period after which the folded level equals the new level, the period's
+  // attempts taken in order of their last answer on the skill; else the period's last attempt on it.
   const skills_moved: Digest["skills_moved"] = [];
   for (const m of after) {
     const from_level: MasteryLevel = before.get(m.skill_code)?.level ?? "not_started";
     if (from_level === m.level) continue;
-    const mine = (steps.get(m.skill_code) ?? []).filter((s) => inside(s.happening.ms));
-    let previous: MasteryLevel = "not_started";
-    let mover: AttemptId | undefined;
+    const levelAfter = new Map<AttemptId, { ms: number; level: MasteryLevel }>();
     for (const s of steps.get(m.skill_code) ?? []) {
-      if (inside(s.happening.ms) && s.level !== previous) mover = s.happening.attempt_id;
-      previous = s.level;
+      if (!inside(s.happening.ms)) continue;
+      levelAfter.set(s.happening.attempt_id, { ms: s.happening.ms, level: s.level });
     }
-    mover ??= mine.at(-1)?.happening.attempt_id;
+    const ordered = [...levelAfter.entries()].sort(
+      ([a, x], [b, y]) => x.ms - y.ms || compare(a, b),
+    );
+    const mover = ordered.find(([, x]) => x.level === m.level)?.[0] ?? ordered.at(-1)?.[0];
     if (mover === undefined) continue;
     skills_moved.push({
       skill_code: m.skill_code,
@@ -112,7 +109,7 @@ export function makeDigest(input: DigestInput): { digest: Digest; inputs_hash: s
   const needs_attention: Digest["needs_attention"] = after
     .filter((m) => m.needs_attention)
     .map((m) => {
-      const mine = misses.filter((e) => e.skill_code === m.skill_code);
+      const mine = misses.filter((e) => canonical(e.skill_code) === m.skill_code);
       const classes = new Set(
         mine.flatMap((e) => (e.mistake_class === null ? [] : [e.mistake_class])),
       );
@@ -136,7 +133,7 @@ export function makeDigest(input: DigestInput): { digest: Digest; inputs_hash: s
       attempts: new Set<AttemptId>(),
     };
     entry.answers.add(`${e.attempt_id}#${e.seq}#${e.try_no}`);
-    entry.codes.add(e.skill_code);
+    entry.codes.add(canonical(e.skill_code));
     entry.attempts.add(e.attempt_id);
     byClass.set(e.mistake_class, entry);
   }
@@ -208,5 +205,5 @@ export function makeDigest(input: DigestInput): { digest: Digest; inputs_hash: s
     proposals,
     asks,
   };
-  return { digest, inputs_hash: hashOf(input) };
+  return { digest, inputs_hash: hashOf(period, skills) };
 }

@@ -18,6 +18,9 @@ async function rebuildMastery(
 ): Promise<readonly LearnerSkillMastery[] | undefined> {
   const pod = await store.findLearnerPod(learner);
   if (pod === undefined) return undefined;
+  // Held to the end of the unit before the evidence is read: a 2nd rebuild of the learner waits,
+  // then reads this one's committed answers, so it never replaces them with a partial fold.
+  await store.lockLearner(pod, learner);
   const evidence = await store.getLearnerEvidence(pod, learner);
   const skills = await store.listSkills(pod);
   const rows = foldLearner(evidence, skills, now);

@@ -185,6 +185,8 @@ export async function makeReport(
   id: LearnerId,
   now: Date,
 ): Promise<LearnerReport> {
+  // The learner is held before its evidence is read, as the rebuild holds it (`rebuildMastery`).
+  await store.lockLearner(pod, id);
   const last = (await store.listReports(pod, id))[0];
   const read = await folded(store, pod, id, now);
   const ends_at = now.toISOString();
@@ -201,6 +203,7 @@ export async function makeReport(
     brief: read.brief,
     goals: read.goals,
     period: { starts_at, ends_at },
+    skills: read.catalogue,
   });
   await store.replaceMastery(pod, id, read.mastery);
   const reused = last !== undefined && last.inputs_hash === inputs_hash;

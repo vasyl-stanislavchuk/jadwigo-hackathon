@@ -246,6 +246,12 @@ export function refusal(error: unknown): unknown {
       return new StoreError(ErrorType.enum.WriteOnce, error.message);
     case "23503": // foreign_key_violation: the row it names is not in the pod
       return new StoreError(ErrorType.enum.NotFound, error.message);
+    case "42501": // a row-level security check: the row names one the pod does not read
+      // (20261031130000_learner_knowledge_fix.sql: a skill's topic, a learner's curriculum).
+      if (error.message.includes("row-level security")) {
+        return new StoreError(ErrorType.enum.NotFound, error.message);
+      }
+      return error;
     case "P0002": // no_data_found: app.claim_attempt's learner, account or attempt
       return new StoreError(ErrorType.enum.NotFound, error.message);
     case "23502": // not_null_violation
@@ -2219,9 +2225,8 @@ class PostgresStore implements Store {
       if (new Set(valid.map((r) => r.skill_code)).size !== valid.length) {
         throw new StoreError(ErrorType.enum.BadRequest, "a skill code repeats in the mastery rows");
       }
-      // jadwigo_api may not update a learner, so `for update` cannot hold it: 2 rebuilds of one
-      // learner take its lock in turn, and the 2nd's delete sees the 1st's rows.
-      await sql`select pg_advisory_xact_lock(hashtextextended(${learnerId}::text, 0))`.execute(tx);
+      // Held already when the rebuild called lockLearner first; taking it again is a no-op.
+      await holdLearner(tx, learnerId);
       await tx.deleteFrom("learner_skill_mastery").where("learner_id", "=", learnerId).execute();
       if (valid.length === 0) return [];
       const written = await tx
@@ -2245,6 +2250,13 @@ class PostgresStore implements Store {
       return written
         .map((row) => read(LearnerSkillMastery, row))
         .sort((a, b) => byText(a.skill_code, b.skill_code));
+    });
+  }
+
+  async lockLearner(pod: PodId, learner: LearnerId): Promise<void> {
+    return this.#guarded(pod, async (tx) => {
+      await this.#learner(tx, learner);
+      await holdLearner(tx, uuidOf(ID_PREFIXES.learner, learner));
     });
   }
 
@@ -2406,7 +2418,7 @@ class PostgresStore implements Store {
     return this.#guarded(pod, async (tx) => {
       await this.#learner(tx, report.learner_id);
       if (Date.parse(report.period_ends_at) < Date.parse(report.period_starts_at)) {
-        throw new StoreError(ErrorType.enum.BadRequest, "a report's period ends after it starts");
+        throw new StoreError(ErrorType.enum.BadRequest, "a report's period ends before it starts");
       }
       const valid = parse(
         LearnerReport,
@@ -2510,6 +2522,15 @@ class PostgresStore implements Store {
       return read(LearnerReport, updated, ID_PREFIXES.learner_report);
     });
   }
+}
+
+/**
+ * Takes the learner's lock to the end of the transaction. jadwigo_api may not update a learner, so
+ * `for update` cannot hold the row: an advisory lock on its uuid does. Re-entrant within one
+ * transaction, so `lockLearner` then `replaceMastery` take it once.
+ */
+async function holdLearner(tx: Tx, learner: string): Promise<void> {
+  await sql`select pg_advisory_xact_lock(hashtextextended(${learner}::text, 0))`.execute(tx);
 }
 
 /** Strings in code-unit order, as `Array.prototype.sort` puts them. */

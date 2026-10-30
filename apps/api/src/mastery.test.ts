@@ -57,6 +57,38 @@ describe("rebuildAfter", () => {
     }
   });
 
+  it("holds the learner before it reads the evidence, so overlapping rebuilds take turns", async () => {
+    const store = new InMemoryStore();
+    const s = seeded(store);
+    const headers = bearerOf(signToken({ sub: randomUUID() }));
+    await s.call<Me>("POST", pathOf("createAccount", {}), { language: "pl" }, headers);
+    const child = await s.call<LearnerSnapshot>(
+      "POST",
+      pathOf("createLearner", {}),
+      { first_name: "Fox" },
+      headers,
+    );
+    const calls: string[] = [];
+    const watched = new Proxy(store, {
+      get(target, name, receiver) {
+        const value = Reflect.get(target, name, receiver);
+        if (typeof value !== "function") return value;
+        return (...args: unknown[]) => {
+          calls.push(String(name));
+          return value.apply(target, args);
+        };
+      },
+    });
+    const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      await rebuildAfter(watched, child.body.learner.id, new Date());
+    } finally {
+      logged.mockRestore();
+    }
+    // The fold is planted to throw, so the rebuild stops before replaceMastery.
+    expect(calls).toEqual(["findLearnerPod", "lockLearner", "getLearnerEvidence", "listSkills"]);
+  });
+
   it("feeds a real attempt's learner only", () => {
     const learner = LearnerId.parse(idOf(ID_PREFIXES.learner, randomUUID()));
     expect(learnerFed({ mode: "real", learner_id: learner })).toBe(learner);

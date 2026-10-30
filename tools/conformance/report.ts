@@ -30,6 +30,8 @@ export interface Sidecar {
   >;
   readonly rules_version: string;
   readonly ran_at: string;
+  /** The language the items were drawn in (dl-a38n.32.3): one sidecar per converted file. */
+  readonly lang: string;
 }
 
 /** A failing shape: one rule on one question type, with the sets and items it touches. */
@@ -51,12 +53,13 @@ export function sidecarOf(
   results: readonly ItemResult[],
   rulesVersion: string,
   ranAt: string,
+  lang: string,
 ): Sidecar {
   const items: Record<string, Sidecar["items"][string]> = {};
   for (const r of [...results].sort((a, b) => (a.item_id < b.item_id ? -1 : 1))) {
     items[r.item_id] = { render_ok: renderOk(r), findings: r.findings };
   }
-  return { items, rules_version: rulesVersion, ran_at: ranAt };
+  return { items, rules_version: rulesVersion, ran_at: ranAt, lang };
 }
 
 /** Each failing shape, the one serving the most sets first, then the most items, then by name. */

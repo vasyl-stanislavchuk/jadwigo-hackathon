@@ -1,11 +1,4 @@
 export {
-  type Catalogue,
-  catalogue,
-  type SeedCurriculum,
-  type SeedSkill,
-  type SeedTopic,
-} from "./curriculum/index.ts";
-export {
   canAsk,
   type Given,
   gateOpen,
@@ -23,6 +16,7 @@ export { mistakeClassesOf } from "./families/rules.ts";
 export {
   brief,
   canDoLines,
+  DIGEST_RULES_VERSION,
   type DigestInput,
   dreamDigest,
   type FoldedMastery,

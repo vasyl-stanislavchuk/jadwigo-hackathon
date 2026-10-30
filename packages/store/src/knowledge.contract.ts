@@ -339,6 +339,15 @@ export function learnerKnowledgeContract(name: string, make: () => Promise<Store
       const other = await family(store);
       await expect(store.putTopics(other.pod, topics)).rejects.toMatchObject(NOT_FOUND);
     });
+
+    it("holds a learner of the pod, and refuses another pod's", async () => {
+      const store = await make();
+      const a = await family(store);
+      const other = await family(store);
+
+      await expect(store.unit(() => store.lockLearner(a.pod, a.learner))).resolves.toBeUndefined();
+      await expect(store.lockLearner(other.pod, a.learner)).rejects.toMatchObject(NOT_FOUND);
+    });
   });
 }
 

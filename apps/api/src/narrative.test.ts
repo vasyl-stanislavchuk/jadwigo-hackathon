@@ -52,10 +52,28 @@ describe("narrativeProblems", () => {
     ]);
   });
 
-  it("refuses a level name in any of its Polish forms", () => {
-    for (const headline of ["Opanował siódemki.", "Liczy biegle.", "Jest zaznajomiony z tym."]) {
-      expect(narrativeProblems(narrative(headline), DIGEST)).toHaveLength(1);
+  it("refuses a level name in any of its Polish and English forms", () => {
+    for (const headline of [
+      "Opanował siódemki.",
+      "Liczy biegle.",
+      "Jest zaznajomiony z tym.",
+      "Podjęto próbę mnożenia.",
+      "Mnożenie nie rozpoczęte.",
+      "Nierozpoczęte dzielenie.",
+      "Mnożenie próbowane raz.",
+      "Proficiency in groups.",
+      "Not started yet.",
+      "Attempted the sevens.",
+    ]) {
+      expect([headline, narrativeProblems(narrative(headline), DIGEST)]).toEqual([
+        headline,
+        [expect.stringMatching(/^the text names a level: /)],
+      ]);
     }
+  });
+
+  it("lets a word that only holds a level name pass, as the cli lane's mirror does", () => {
+    expect(narrativeProblems(narrative("Próbujemy dalej, bez pośpiechu."), DIGEST)).toEqual([]);
   });
 
   it("refuses a citation the digest does not hold", () => {
