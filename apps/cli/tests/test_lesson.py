@@ -183,6 +183,13 @@ def test_the_proposed_mark_is_stripped_from_skill_ids(bank: LessonBank) -> None:
     assert step["skill_ids"] == ["fixture.times-6"]
 
 
+def test_an_item_of_several_skills_names_them_all() -> None:
+    ids, note = lesson._skills_ids(["proposed:maths.multiplication.row-3", "maths.x.y", "set_x"])
+    assert ids == ["maths.multiplication.row-3", "maths.x.y"]
+    assert note is not None and "set_x" in note
+    assert lesson._skill_label("proposed:maths.a.b, maths.c.d") == "maths.a.b (proposed), maths.c.d"
+
+
 def test_a_skill_that_is_no_skill_id_is_left_out_with_a_note() -> None:
     assert lesson._skill_ids("maths.add.within100") == (["maths.add.within100"], None)
     ids, note = lesson._skill_ids("set_khan_fx0003")  # the draw's fallback when a set names none

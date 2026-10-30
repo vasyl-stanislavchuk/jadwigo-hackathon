@@ -164,3 +164,42 @@ def test_an_unknown_kind_is_refused() -> None:
 
 def test_the_module_docstring_says_the_table_is_the_owners() -> None:
     assert "owner's to settle" in (draw_module.__doc__ or "")
+
+
+def _two_rows(pages: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """The times-6 page made a set of 2 skills, as a real `Mnożenie przez 3 i 6` set is: rows of
+    3 and hops of 6 by their names, and bags named by neither."""
+    page = copy.deepcopy(pages[TIMES_6])
+    page["enrichment"]["skill_ids"]["value"] = ["fixture.row-3", "fixture.row-6"]
+    names = ["Mult by 3, first factor", "Bags of apples", "Mult by 6, second factor"]
+    for ptype, name in zip(page["problem_types"], names, strict=True):
+        ptype["name"] = name
+    return {**pages, TIMES_6: page}
+
+
+def test_a_set_of_several_skills_tags_each_problem_type_by_its_own() -> None:
+    # dl-n9fr.55: every item of such a set read the first skill, row-3, a 6·6 one too.
+    result = draw(_pointed([TIMES_6]), _two_rows(_pages()), kind="practice", today=TODAY)
+    by_type = {q.problem_type: (q.skill, q.skills) for q in result.questions}
+    assert by_type["Mult by 3, first factor"] == ("fixture.row-3", ("fixture.row-3",))
+    assert by_type["Mult by 6, second factor"] == ("fixture.row-6", ("fixture.row-6",))
+    # A name that names no one skill carries them all, never only the first.
+    assert by_type["Bags of apples"] == (
+        "fixture.row-3, fixture.row-6", ("fixture.row-3", "fixture.row-6")
+    )
+
+
+def test_a_problem_types_own_skill_ids_win() -> None:
+    pages = _two_rows(_pages())
+    pages[TIMES_6]["problem_types"][1]["skill_ids"] = ["fixture.row-6"]
+    result = draw(_pointed([TIMES_6]), pages, kind="practice", today=TODAY)
+    assert {q.skill for q in result.questions if q.problem_type == "Bags of apples"} == {
+        "fixture.row-6"
+    }
+
+
+def test_a_number_two_skills_carry_names_neither() -> None:
+    assert draw_module._type_skills(["m.row-6", "m.times-6"], {"name": "Mult by 6"}) == (
+        "m.row-6", "m.times-6"
+    )
+    assert draw_module._type_skills(["m.row-3"], None) == ("m.row-3",)
