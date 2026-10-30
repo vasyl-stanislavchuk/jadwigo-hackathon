@@ -7,7 +7,7 @@
 -- attempt at it is claimed by pod B's learner, another stays anonymous. Pod A has its own
 -- catalogue, a goal, mastery and a report. Pod D is a 3rd pod with nothing.
 begin;
-select plan(58);
+select plan(64);
 \ir _fixture.sql
 
 insert into pod (id, name, language) values
@@ -420,6 +420,23 @@ select is(
   '(1) pod B''s delete of pod A''s goal skills and mastery removed nothing');
 reset role;
 
+-- The report's other columns are written once for every role, the migration's owner included.
+select throws_ok($$
+  update learner_report set digest = '{"skills": [1]}' where id = '00000000-0000-4000-8000-0000000008a2'
+$$, '23001', 'on report 00000000-0000-4000-8000-0000000008a2, only narrative and decisions may change',
+  'as the migration owner, an update of a report''s digest is refused');
+select throws_ok($$
+  update learner_report set inputs_hash = 'i2', reused = true, period_starts_at = now(), period_ends_at = now()
+  where id = '00000000-0000-4000-8000-0000000008a2'
+$$, '23001', null, 'and of its inputs_hash, reused and period');
+select throws_ok($$
+  update learner_report set learner_id = '00000000-0000-4000-8000-0000000001b1',
+    pod_id = '00000000-0000-4000-8000-00000000000b' where id = '00000000-0000-4000-8000-0000000008a2'
+$$, '23001', null, 'and of its learner and pod');
+select lives_ok($$
+  update learner_report set decisions = decisions || '[{"take": 3}]' where id = '00000000-0000-4000-8000-0000000008a2'
+$$, 'the owner still appends a decision');
+
 -- The indexes the evidence view and the fold lean on.
 select ok(
   exists (select from pg_indexes where schemaname = 'public' and tablename = 'attempt_answer'
@@ -429,6 +446,16 @@ select ok(
   exists (select from pg_indexes where schemaname = 'public' and tablename = 'attempt'
     and indexdef like '%(learner_id)%'),
   'attempt has an index on learner_id');
+select ok(
+  exists (select from pg_indexes where schemaname = 'public' and tablename = 'lesson_goal'
+    and indexdef like '%(goal_id)%'),
+  'lesson_goal has an index on goal_id, for a goal''s lessons');
+select ok(
+  exists (select from pg_indexes where schemaname = 'public' and tablename = 'skill'
+    and indexdef like '%(topic_id)%')
+  and exists (select from pg_indexes where schemaname = 'public' and tablename = 'goal_topic'
+    and indexdef like '%(topic_id)%'),
+  'skill and goal_topic have an index on topic_id, for a topic''s skills and goals');
 
 select * from finish();
 rollback;
