@@ -1,0 +1,29 @@
+---
+// The lesson frame's tokens, from @jadwigo/ui's stage.css at build time: each with every rule that
+// sets it, and the comment beside its first.
+import { stage } from "../lib/tokens.ts";
+
+const tokens = stage();
+---
+
+<table>
+  <thead>
+    <tr><th>Token</th><th>Set on, and to</th><th>For</th></tr>
+  </thead>
+  <tbody>
+    {tokens.map((t) => (
+      <tr>
+        <td><code>--{t.name}</code></td>
+        <td>
+          {t.set.map(({ on, value }, i) => (
+            <>
+              {i > 0 && <br />}
+              <code>{on}</code>: <code>{value}</code>
+            </>
+          ))}
+        </td>
+        <td>{t.note}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
