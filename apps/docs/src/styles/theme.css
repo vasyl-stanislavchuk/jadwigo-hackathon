@@ -123,6 +123,19 @@
   border-width: var(--jw-border);
   border-radius: var(--jw-radius-control);
   transition: transform var(--jw-dur-fast) var(--jw-ease-out);
+  /* Starlight grows a button to body size on a wide screen; a docs button stays small at every width. */
+  font-size: var(--sl-text-sm);
+  padding: var(--jw-space-2) var(--jw-space-4);
+}
+
+/* Previous and next are a quiet way on, not a headline: a smaller title, a tighter card, no blur. */
+.pagination-links a {
+  padding: var(--jw-space-3) var(--jw-space-4);
+  box-shadow: none;
+}
+
+.pagination-links .link-title {
+  font-size: var(--sl-text-lg);
 }
 
 .sl-link-button.primary,

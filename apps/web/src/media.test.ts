@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mediaSrc, mediaUrl, withMedia } from "./media.ts";
+import { devMediaUrl, mediaSrc, mediaUrl, withMedia } from "./media.ts";
 
 const BASE = "https://dx5i3bka3zn5f.cloudfront.net";
 const REF = "49eb6e79d51b5bc51d51bccdcd8c6f9d5c62e3126fa866e64e7a543dbd7bb6ed.png";
@@ -59,5 +59,19 @@ describe("withMedia", () => {
     });
     expect(data.stem.pictures[0]?.src).toBe(REF);
     expect(withMedia(null, BASE)).toBeNull();
+  });
+});
+
+describe("devMediaUrl", () => {
+  const example = `# a comment\nVITE_MEDIA_URL=${BASE}\n`;
+
+  it("takes the URL set, else the one .env.example names", () => {
+    expect(devMediaUrl("https://elsewhere.test", example)).toBe("https://elsewhere.test");
+    expect(devMediaUrl(undefined, example)).toBe(BASE);
+  });
+
+  it("keeps a URL set blank on purpose blank, and is blank when the example names none", () => {
+    expect(devMediaUrl("", example)).toBe("");
+    expect(devMediaUrl(undefined, "# nothing here\n")).toBe("");
   });
 });

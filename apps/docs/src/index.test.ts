@@ -19,6 +19,7 @@ describe("SIDEBAR", () => {
       "Start here",
       "Use with agents",
       "API reference",
+      "TypeScript client",
       "Design system",
       "Architecture",
     ]);
@@ -36,6 +37,12 @@ describe("SIDEBAR", () => {
       { slug: "guides/agents" },
       { slug: "mcp" },
       { label: "MCP tools", items: [{ autogenerate: { directory: "mcp" } }] },
+    ]);
+  });
+
+  it("opens the TypeScript client with its intro, before the groups starlight-typedoc fills", () => {
+    expect(sidebar.find((group) => group.label === "TypeScript client")?.items).toEqual([
+      { slug: "typescript" },
     ]);
   });
 });
