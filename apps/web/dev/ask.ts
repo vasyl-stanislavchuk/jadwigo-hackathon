@@ -19,6 +19,7 @@ import {
   appendRow,
   asksFile,
   consumedFile,
+  draftIdOf,
   type Heartbeat,
   heartbeatFile,
   isDraftId,
@@ -154,16 +155,12 @@ function readHeartbeat(dir: string): Heartbeat | null {
   }
 }
 
-const CHECK = ".check.json";
-
-/** The draft jw wrote last: the newest <draft_id>.json but the check files, as the page lists them
- * (dev/draft-watch.ts). */
+/** The draft jw wrote last: the newest <draft_id>.json, as the page lists them (draftIdOf). */
 function newestDraft(dir: string): string | null {
   let best: { id: string; at: number } | null = null;
   for (const name of readdirSync(dir)) {
-    if (!name.endsWith(".json") || name.endsWith(CHECK)) continue;
-    const id = name.slice(0, -".json".length);
-    if (!isDraftId(id)) continue;
+    const id = draftIdOf(name);
+    if (!id) continue;
     const at = statSync(join(dir, name)).mtimeMs;
     if (!best || at > best.at) best = { id, at };
   }

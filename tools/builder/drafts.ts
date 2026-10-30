@@ -57,6 +57,22 @@ export function isDraftId(value: string): boolean {
   return DRAFT_ID.test(value);
 }
 
+// Files beside each draft that are not drafts: jw's check file and the page's render file
+// (dl-a38n.28).
+const BESIDE = [".check.json", ".render.json"];
+
+/**
+ * The draft id that one file in the drafts directory holds, or null: `<draft_id>.json`, never
+ * dotfiles, check files or render files. The page's listing (apps/web/dev/draft-watch.ts) skips
+ * the same.
+ */
+export function draftIdOf(name: string): string | null {
+  if (name.startsWith(".") || !name.endsWith(".json")) return null;
+  if (BESIDE.some((suffix) => name.endsWith(suffix))) return null;
+  const id = name.slice(0, -".json".length);
+  return isDraftId(id) ? id : null;
+}
+
 export const ASKS_SUFFIX = ".asks.jsonl";
 
 export const asksFile = (dir: string, draftId: string) => join(dir, `${draftId}${ASKS_SUFFIX}`);
