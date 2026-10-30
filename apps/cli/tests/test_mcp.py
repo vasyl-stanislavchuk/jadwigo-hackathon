@@ -214,5 +214,7 @@ def test_a_client_with_no_shell_drafts_fills_and_checks_a_lesson_by_draft_id(
     assert checked["ok"] is True, checked
     assert checked["play_path"].startswith("/play/") and checked["questions"] == 6
     assert Path(checked["lesson_file"]).parent == tmp_path / "jw-lessons"
+    assert checked["import_command"] == f"make lesson-import FILE={checked['lesson_file']} ENV=dev"
+    assert checked["card"]["next"]["then_play"] == checked["play_path"]
     assert all(q["rungs"]["look"] and q["twin"]["key"] for q in checked["card"]["questions"])
     assert "no draft draft_000000000000" in unknown

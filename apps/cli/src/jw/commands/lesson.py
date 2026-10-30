@@ -95,7 +95,7 @@ def check(
         click.echo(json.dumps(result, ensure_ascii=False))
     elif result["ok"]:
         click.echo(lesson.card_text(result["card"]))
-        click.echo(f"lesson file: {result['lesson_file']}\nplay: {result['play_path']}")
+        click.echo(f"lesson file: {result['lesson_file']}")
     else:
         for error in result["errors"]:
             click.echo(f"step {error['step_id']}: {error['message']}")
