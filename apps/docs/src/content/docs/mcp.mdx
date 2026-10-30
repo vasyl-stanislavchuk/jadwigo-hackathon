@@ -51,13 +51,14 @@ codex mcp add jadwigo \
   -- uv --directory /path/to/jadwigo/apps/cli run jw mcp serve
 ```
 
-### Muse Code
+### Muse Code :badge[Unconfirmed]{variant=caution}
 
 Muse has no `mcp add` command. A stdio server is an entry under `mcpServers` in
-`~/.config/muse/settings.json`, whose top level also needs `"schema_version": 1`. The entry's
-field names are not confirmed yet: Muse does not warn on a wrong one.
+`~/.config/muse/settings.json`, whose top level also needs `"schema_version": 1` (line 2 below).
+The entry's field names, on lines 5 to 8, are not confirmed yet: Muse does not warn on a wrong
+one. Lines 6 to 8, folded, are the same `command`, `args` and `env` as in `.mcp.json` above.
 
-```json
+```json showLineNumbers collapse={6-8}
 {
   "schema_version": 1,
   "mcpServers": {
