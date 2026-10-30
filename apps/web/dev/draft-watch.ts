@@ -22,6 +22,7 @@ import {
   type HelloMessage,
   titleOf,
 } from "../src/playground/lesson/draft.ts";
+import { RENDER, readRender, render } from "./render.ts";
 
 const DEBOUNCE_MS = 100;
 const CHECK = ".check.json";
@@ -48,7 +49,13 @@ export function listDrafts(dir: string): DraftSummary[] {
     readdirSync(dir)
       // jw writes `.<name>.part` and renames it into place, and keeps its own record under `.jw/`
       // (dl-a38n.16): neither is a draft, and the rename is the change the watcher sees.
-      .filter((name) => name.endsWith(".json") && !name.endsWith(CHECK) && !name.startsWith("."))
+      .filter(
+        (name) =>
+          name.endsWith(".json") &&
+          !name.endsWith(CHECK) &&
+          !name.endsWith(RENDER) &&
+          !name.startsWith("."),
+      )
       .map((name) => {
         const draft_id = name.slice(0, -".json".length);
         const read = readJson(draftPath(dir, draft_id));
@@ -67,7 +74,7 @@ export function draftMessage(dir: string, pick: string | null): DraftMessage {
   const drafts = listDrafts(dir);
   const shown = drafts.find((d) => d.draft_id === pick) ?? drafts[0];
   if (shown === undefined)
-    return { dir, drafts, draft_id: null, draft: null, check: null, error: null };
+    return { dir, drafts, draft_id: null, draft: null, check: null, render: null, error: null };
   const draft = readJson(draftPath(dir, shown.draft_id));
   const check = readJson(checkPath(dir, shown.draft_id));
   return {
@@ -76,6 +83,7 @@ export function draftMessage(dir: string, pick: string | null): DraftMessage {
     draft_id: shown.draft_id,
     draft: "value" in draft ? draft.value : null,
     check: "value" in check ? check.value : null,
+    render: readRender(dir, shown.draft_id),
     error: "error" in draft ? draft.error : "error" in check ? check.error : null,
   };
 }
@@ -94,9 +102,10 @@ function watchDir(dir: string, changed: () => void, wait = DEBOUNCE_MS): () => v
   };
 }
 
-/** Called by the builder plugin. Nothing starts until the server listens: builder-plugin.test.ts
- * hands the hooks a bare object, and a server that never listens needs no watcher. */
+/** Called by the builder plugin. The render endpoint is added at once, before Vite's own 404; the
+ * watcher starts when the server listens, so a server that never listens needs none. */
 export function draftWatch(server: ViteDevServer, dir: string = draftsDir()): void {
+  render(server, dir);
   server.httpServer?.once("listening", () => {
     const pages = new Map<WebSocketClient, string | null>();
     const send = (client: WebSocketClient, pick: string | null) =>

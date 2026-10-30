@@ -39,6 +39,8 @@ export interface DraftMessage {
   draft: unknown;
   /** `<draft_id>.check.json` as written, or null when the draft was never checked. */
   check: unknown;
+  /** `<draft_id>.render.json`, the page's render findings (dev/render.ts), or null. */
+  render: unknown;
   /** Why the draft or its check could not be read (half-written, not JSON), or null. */
   error: string | null;
 }
