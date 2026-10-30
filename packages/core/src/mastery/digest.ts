@@ -45,19 +45,26 @@ function stepsBySkill(evidence: readonly LearnerSkillEvidence[], skills: readonl
 /**
  * Bumped whenever a rule of the fold, the brief or the digest changes, so a report after the fix
  * hashes differently and createReport writes a new digest instead of reusing the old one.
+ * 2: the hash reads what the levels depend on, not the period (dl-liwi.35).
  */
-export const DIGEST_RULES_VERSION = 1;
+export const DIGEST_RULES_VERSION = 2;
 
 /**
- * The hash of what the digest read: the rules version, the period's evidence by (attempt, seq,
- * try, code), sorted, and the catalogue's codes, sorted. The same evidence gives the same hash.
+ * The hash of what the digest's levels and brief depend on, never the period: the rules version,
+ * the `after` mastery rows by canonical code (level, needs_attention, tries, last_answered_at,
+ * due_at), the goals (id, status, skill codes) and the catalogue's codes, each sorted. So a report
+ * with no new evidence since the last one hashes the same, whatever its period, and any new try
+ * changes `tries` or `last_answered_at`.
  */
-function hashOf(period: readonly LearnerSkillEvidence[], skills: readonly Skill[]): string {
-  const evidence = period
-    .map((e) => [e.attempt_id, e.seq, e.try_no, e.skill_code].join("|"))
+function hashOf(input: DigestInput): string {
+  const mastery = [...input.mastery_after]
+    .sort((a, b) => compare(a.skill_code, b.skill_code))
+    .map((m) => [m.skill_code, m.level, m.needs_attention, m.tries, m.last_answered_at, m.due_at]);
+  const goals = input.goals
+    .map((g) => [g.goal.id, g.goal.status, ...[...g.skill_codes].sort(compare)].join("|"))
     .sort(compare);
-  const codes = skills.map((s) => s.code).sort(compare);
-  return sha256Hex(JSON.stringify({ rules: DIGEST_RULES_VERSION, evidence, skills: codes }));
+  const skills = input.skills.map((s) => s.code).sort(compare);
+  return sha256Hex(JSON.stringify({ rules: DIGEST_RULES_VERSION, mastery, goals, skills }));
 }
 
 export function makeDigest(input: DigestInput): { digest: Digest; inputs_hash: string } {
@@ -205,5 +212,5 @@ export function makeDigest(input: DigestInput): { digest: Digest; inputs_hash: s
     proposals,
     asks,
   };
-  return { digest, inputs_hash: hashOf(period, skills) };
+  return { digest, inputs_hash: hashOf(input) };
 }
