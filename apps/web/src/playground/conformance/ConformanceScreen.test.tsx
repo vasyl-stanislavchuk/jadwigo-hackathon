@@ -2,6 +2,7 @@ import { render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NO_MEDIA_URL } from "../../media.ts";
 import { ConformanceScreen } from "./ConformanceScreen.tsx";
+import { PLANTED, plantedFile } from "./planted.ts";
 
 // Made-up items in the conversion's shape: no bank item is ever in git (AGENTS.md fence 8).
 const ENTER = {
@@ -42,5 +43,27 @@ describe("the conformance page", () => {
     expect(state?.total).toBe(23);
     expect(state?.results.map((r) => r.item_id)).toEqual(items(23).map((i) => i.id));
     expect(state?.results.flatMap((r) => r.findings.map((f) => f.rule))).toEqual([]);
+  });
+
+  it("gives each planted item its reason, and the ready one none", async () => {
+    vi.stubEnv("VITE_MEDIA_URL", "https://media.invalid");
+    vi.stubGlobal("fetch", () => Promise.resolve(Response.json(plantedFile())));
+    render(<ConformanceScreen />);
+    await waitFor(() => expect(window.__jadwigoConformance?.done).toBe(true), { timeout: 5_000 });
+    const rules = Object.fromEntries(
+      (window.__jadwigoConformance?.results ?? []).map((r) => [
+        r.item_id,
+        r.findings.map((f) => f.rule),
+      ]),
+    );
+    expect(rules).toEqual({
+      [PLANTED.ready.id]: [],
+      [PLANTED.tex.id]: [],
+      [PLANTED.key.id]: ["key-grades"],
+      [PLANTED.picture.id]: ["render-picture-missing"],
+      // "not checked" is the status's, which jw reads; the page finds nothing to refuse.
+      [PLANTED.unchecked.id]: [],
+      [PLANTED.loose.id]: ["unknown-field"],
+    });
   });
 });

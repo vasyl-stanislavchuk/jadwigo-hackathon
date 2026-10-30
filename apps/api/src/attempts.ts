@@ -25,6 +25,7 @@ import {
 import { authorize, type Scope } from "./authorize.ts";
 import { lessonQuestion, nextQuestion } from "./course.ts";
 import { ApiError, badRequest } from "./errors.ts";
+import { learnerFed, rebuildAfter } from "./mastery.ts";
 import { pageQuestion, revealOf, snapshot, verdictOf } from "./page.ts";
 
 /** Fields the server writes on an answer. The page sending one is `ServerFieldSupplied`. */
@@ -199,7 +200,12 @@ export async function goOn(
       const asked = await store.askQuestion(scope.pod, id, next, { seq: last.seq + 1 });
       return { ...record, questions: [...record.questions, asked] };
     }
-    return { ...record, attempt: await store.finishAttempt(scope.pod, id) };
+    const finished = await store.finishAttempt(scope.pod, id);
+    // A real attempt with a learner rebuilds that learner's mastery, in the learner's own pod. A
+    // rebuild that fails is logged and never refuses the finish.
+    const learner = learnerFed(finished);
+    if (learner !== undefined) await rebuildAfter(store, learner, new Date());
+    return { ...record, attempt: finished };
   } catch (error) {
     // A request racing this one went on first: its question is open, or the attempt finished.
     const won =

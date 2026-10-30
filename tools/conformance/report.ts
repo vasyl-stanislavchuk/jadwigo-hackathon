@@ -116,7 +116,7 @@ export function summaryLines(
 ): string[] {
   const failing = results.filter((r) => !renderOk(r)).length;
   const lines = [
-    `${results.length} items checked, ${failing} fail to render right, ${shapes.length} shapes`,
+    `${results.length} items checked, ${failing} fail a check (contract, key or render), ${shapes.length} shapes`,
   ];
   for (const s of shapes.slice(0, top)) {
     lines.push(

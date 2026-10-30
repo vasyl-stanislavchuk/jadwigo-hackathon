@@ -13,6 +13,7 @@ import {
   type LearnerSkills,
   type PodId,
   ReportCreate,
+  type ReportNarrative,
   ReportPatch,
   type Skills,
 } from "@jadwigo/contracts";
@@ -21,7 +22,8 @@ import type { Store } from "@jadwigo/store";
 import type { Claims } from "./auth.ts";
 import { authorizeMember } from "./authorize.ts";
 import { ApiError, badRequest } from "./errors.ts";
-import { rebuildMastery } from "./mastery.ts";
+import { rebuildAfter } from "./mastery.ts";
+import { narrativeProblems } from "./narrative.ts";
 
 /**
  * The learner knowledge base's routes (wave 1 of epic dl-e8ov.5): a learner of the caller's pod,
@@ -110,12 +112,15 @@ export async function createGoal(
   const catalogue = await store.listSkills(pod);
   await store.addGoal(pod, id, {
     name: parsed.data.name,
+    // Lessons are in Polish only for now, so a goal's lessons are Polish whatever the pod's
+    // language (jadwigo-hackathon/decisions/2026-10-29-lessons-are-in-polish-only-for-now-other-lesson-languages-are-pa).
+    lesson_language: "pl",
     // An empty `words` is none: the column refuses an empty string.
     words: parsed.data.words || null,
     skill_codes: parsed.data.skill_codes.map((code) => resolveSkill(code, catalogue)),
   });
   // A new goal's skills join the fold. A fold that fails is logged and never refuses the goal.
-  await rebuildMastery(store, id, new Date()).catch(logFoldFailure);
+  await rebuildAfter(store, id, new Date());
   return { goals: (await folded(store, pod, id, new Date())).views };
 }
 
@@ -166,16 +171,32 @@ export async function createReport(
   const { pod } = await learnerOf(store, claims, id);
   const parsed = ReportCreate.safeParse(raw ?? {});
   if (!parsed.success) throw badRequest(parsed.error.issues);
-  const now = new Date();
-  const before = await store.getMastery(pod, id);
+  return makeReport(store, pod, id, new Date());
+}
+
+/**
+ * A report on a learner of `pod` over the evidence since its last report: the folds, the brief and
+ * the digest run before anything is written, then the mastery cache is replaced with the fold and
+ * the report written. `createReport` and the dream script (`src/dream.ts`) both call it.
+ */
+export async function makeReport(
+  store: Store,
+  pod: PodId,
+  id: LearnerId,
+  now: Date,
+): Promise<LearnerReport> {
   const last = (await store.listReports(pod, id))[0];
-  const starts_at = last?.period_ends_at ?? new Date(0).toISOString();
-  const ends_at = now.toISOString();
   const read = await folded(store, pod, id, now);
+  const ends_at = now.toISOString();
+  // The period runs from the last report's end, or the learner's first evidence, to now. The
+  // digest replays it: `before` is the fold of what was answered before it starts, `after` the
+  // fold of everything, whatever the cache held.
+  const starts_at = last?.period_ends_at ?? read.evidence[0]?.answered_at ?? ends_at;
+  const earlier = read.evidence.filter((e) => e.answered_at < starts_at);
   const { digest, inputs_hash } = dreamDigest({
-    evidence_before: read.evidence.filter((e) => e.answered_at < starts_at),
+    evidence_before: earlier,
     evidence_after: read.evidence,
-    mastery_before: before,
+    mastery_before: foldLearner(earlier, read.catalogue, now),
     mastery_after: read.mastery,
     brief: read.brief,
     goals: read.goals,
@@ -204,20 +225,34 @@ export async function patchReport(
   const { pod, account } = await learnerOf(store, claims, id);
   const parsed = ReportPatch.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
+  if (parsed.data.narrative !== undefined) {
+    await checkNarrative(store, pod, id, report, parsed.data.narrative);
+  }
   return store.updateReport(pod, id, report, {
     narrative: parsed.data.narrative,
     decisions: parsed.data.decisions?.map((d) => ({ ...d, decided_by: account })),
   });
 }
 
-/** One JSON line on stderr for a mastery rebuild that failed: the error's name and message only. */
-function logFoldFailure(error: unknown): undefined {
-  const failure =
-    error instanceof Error
-      ? { name: error.name, message: error.message }
-      : { name: typeof error, message: String(error) };
-  console.error(
-    JSON.stringify({ level: "ERROR", message: "mastery rebuild failed", error: failure }),
-  );
-  return undefined;
+/**
+ * Refuses a narrative its report's digest does not hold up (`narrativeProblems`), `BadRequest`
+ * with every problem named. A report outside the learner's newest `LIMITS.reportsPerLearner` is
+ * `NotFound`: a narrative is written soon after its report.
+ */
+export async function checkNarrative(
+  store: Store,
+  pod: PodId,
+  id: LearnerId,
+  report: LearnerReportId,
+  narrative: ReportNarrative,
+): Promise<void> {
+  const stored = (await store.listReports(pod, id)).find((r) => r.id === report);
+  if (stored === undefined) throw new ApiError(ErrorType.enum.NotFound, "no such report");
+  const problems = narrativeProblems(narrative, stored.digest);
+  if (problems.length > 0) {
+    throw new ApiError(
+      ErrorType.enum.BadRequest,
+      `the narrative does not hold: ${problems.join("; ")}`,
+    );
+  }
 }
