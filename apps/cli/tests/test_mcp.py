@@ -226,3 +226,78 @@ def test_a_client_with_no_shell_drafts_fills_and_checks_a_lesson_by_draft_id(
     assert checked["card"]["next"]["then_play"] == checked["play_path"]
     assert all(q["rungs"]["look"] and q["twin"]["key"] for q in checked["card"]["questions"])
     assert "no draft draft_000000000000" in unknown
+
+
+@pytest.mark.skipif(shutil.which("bun") is None, reason="bun is not on PATH")
+def test_lesson_edit_changes_one_rung_and_answers_with_that_steps_findings_only(
+    tmp_path: Path,
+) -> None:
+    """dl-a38n.29: one step patched through the server, the draft file changed, and only that
+    step's findings back, while another step is broken."""
+    fake = LessonBank().start()
+    rungs = json.loads((LESSON / "rungs.json").read_text(encoding="utf-8"))["rungs"]
+    drafts = tmp_path / "drafts"
+    env = {
+        **_env(fake.url),
+        JW_KHAN_CONVERTED: str(LESSON / "converted.json"),
+        JADWIGO_DRAFTS_DIR: str(drafts),
+        "PATH": str(Path(shutil.which("bun") or "bun").parent),
+    }
+    boost = {"text": "Policz, ile jest grup, i dodaj je po kolei."}
+
+    async def call() -> tuple[Any, ...]:
+        params = StdioServerParameters(command=str(JW), args=["mcp", "serve"], env=env,
+                                       cwd=str(ROOT))
+        async with stdio_client(params) as (read, write), ClientSession(read, write) as session:
+            await session.initialize()
+
+            async def tool(name: str, arguments: dict[str, Any]) -> Any:
+                result = await session.call_tool(name, arguments)
+                text = "".join(getattr(c, "text", "") for c in result.content)
+                return text if result.is_error else json.loads(text)
+
+            draft = await tool("lesson_draft", {"request": "6 zadań z mnożenia, klasa 3",
+                                                "grade": "3", "names": [], "topic": "mnożenie"})
+            draft_id = draft["draft_id"]
+            words = {
+                q["step_id"]: {k: rungs[q["item_id"]][k] for k in q["you_write"]}
+                for q in draft["questions"]
+            }
+            checked = await tool("lesson_check", {"draft_id": draft_id, "help": words})
+            before = await tool("lesson_show", {"draft_id": draft_id, "step_id": "q2"})
+            broken = await tool("lesson_edit", {
+                "draft_id": draft_id, "step_id": "q3", "why": "Rodzic prosi o inną liczbę.",
+                "change": "numbers", "patch": {"question": {"key": {"accept": "18"}}},
+            })
+            edited = await tool("lesson_edit", {
+                "draft_id": draft_id, "step_id": "q2",
+                "patch": {"question": {"help": {"boost": boost}}},
+            })
+            after = await tool("lesson_show", {"draft_id": draft_id})
+            return checked, before, broken, edited, after
+
+    try:
+        checked, before, broken, edited, after = anyio.run(call)
+    finally:
+        fake.stop()
+    assert checked["ok"] is True, checked
+    (shown,) = before["steps"]
+    assert shown["step"]["id"] == "q2" and shown["findings"] == []
+    assert shown["step"]["question"]["help"]["boost"] != boost
+    # q3 is broken on purpose: its own answer says so, and q2's answer does not carry it.
+    assert broken["ok"] is False and broken["lesson_ok"] is False
+    assert {f["step_id"] for f in broken["findings"]} == {"q3"}
+    assert edited["ok"] is True and edited["lesson_ok"] is False
+    assert edited["findings"] == [] and edited["step_id"] == "q2"
+    assert edited["card"]["rungs"]["boost"] == boost["text"]
+    file = json.loads(Path(edited["draft_path"]).read_text(encoding="utf-8"))
+    steps = {s["id"]: s for s in file["script"]["parts"][0]["steps"]}
+    assert steps["q2"]["question"]["help"]["boost"] == boost
+    # A rung the agent writes is no change to the bank's copy; a new key is, with its why.
+    assert steps["q2"]["based_on"] == shown["step"]["based_on"]
+    assert steps["q3"]["based_on"]["changes"][-1] == (
+        {"change": "numbers", "why": "Rodzic prosi o inną liczbę.", "reviewed": False}
+    )
+    assert [s["step"]["id"] for s in after["steps"]] == [f"q{n}" for n in range(1, 7)]
+    assert any(f["step_id"] == "q3" for s in after["steps"] for f in s["findings"])
+    assert after["render"] is None  # no page drew it

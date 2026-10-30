@@ -15,6 +15,8 @@ came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
 | `jw question item <item id>` | One converted item: its family step with key and help, credit and `based_on` | `JW_KHAN_CONVERTED` |
 | `jw lesson draft "6 zadań z mnożenia, klasa 3" --grade 3 --topic mnożenie --name <name>` (or `--no-names`) | A lesson draft: drawn questions copied whole from the bank, kept under a `draft_id` and written to `JADWIGO_DRAFTS_DIR`, and what is left to write | all of the above, and `JADWIGO_REPO_DIR` and `bun` for the mistake classes |
 | `jw lesson check <draft_id> <words.json>` | The card, the lesson file's path, the import command and then its `/play/` path, or findings by step id; the draft file rewritten either way | `JADWIGO_REPO_DIR` and `bun` |
+| `jw lesson edit <draft_id> <step_id> <patch.json> [--why ... --change ...]` | One step changed by a JSON merge patch and checked: that step's findings, render findings and card | `JADWIGO_REPO_DIR` and `bun` |
+| `jw lesson show <draft_id> [<step_id>]` | The draft file's step, or every step, as data, with its latest findings | `JADWIGO_DRAFTS_DIR` |
 
 - **Search** returns the envelope as the bank sent it. The `/api/v1` route answers stage `final`
   with every arm and takes no query fields, so `--stage` and `--arm` reach only the bank's own
@@ -174,7 +176,24 @@ it, readable by you only (mode 700).
    and why it was drawn, and what was left out. `ok: false` lists `findings` (and the old
    `errors`, for one release) by step id; fix them and check again. From a shell:
    `jw lesson check <draft_id> words.json --name <name>`, where `words.json` is the `help` object.
-6. **Import, then play.** The owner reads the card and imports the file into jadwigo-dev from the
+   Each answer also carries `render`: the findings the lesson builder's page wrote when it drew
+   the draft, `<draft_id>.render.json` (`dl-a38n.28`), with `rendered_at` and `stale` (drawn
+   before this call's write), or `null` when no page has drawn it.
+6. **Change one step.** `lesson_show(draft_id, step_id?)` returns the draft file's step, or every
+   step, as data, with its latest findings and render findings. `lesson_edit(draft_id, step_id,
+   patch, why?, change?)` applies `patch`, a JSON merge patch (RFC 7386) on that step: an object
+   merges, `null` removes a part, anything else replaces it. It may set `say` and `question`'s
+   `data`, `key` and `help` (the twin is `help.twin`), and takes the same bare strings as
+   `lesson_check`. A change to a part the bank's copy has (`say`, `data`, `key`, `hints`,
+   `worked`, a copied `almost`) needs `why` and is appended to `based_on.changes` with `change`
+   (`wording` by default); a rung, twin or mistake card the agent writes needs none. It rewrites
+   `<draft_id>.json` and `<draft_id>.check.json`, and answers for that step alone: `ok` (no error
+   for it), its `findings`, `render`, its `card`, and `lesson_ok` for the whole lesson. A refused
+   patch changes nothing and comes back as findings with rule `edit`. `lesson_check` rebuilds
+   every step from the bank's copy and the words it is sent, so it replaces these edits. From a
+   shell: `jw lesson edit <draft_id> q2 patch.json --why "..."` and `jw lesson show <draft_id> q2`
+   (`dl-a38n.29`).
+7. **Import, then play.** The owner reads the card and imports the file into jadwigo-dev from the
    repo root with the command the answer's `import_command` and the card's `next` name:
    `make lesson-import FILE=<lesson_file> ENV=dev`. Only then does the lesson play at the card's
    `play_path`; before the import that path does not exist (`dl-e8ov.5.38.13`).

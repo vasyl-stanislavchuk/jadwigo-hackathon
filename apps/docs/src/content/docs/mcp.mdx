@@ -98,7 +98,13 @@ agent writes only what the bank does not have.
 3. **Check.** Call [`lesson_check`](/mcp/lesson_check/) with the `draft_id` and your words by step
    id. Fix each error in its `findings` by step id, and check again until it answers `ok` with a
    card.
-4. **Import, then play.** The card's `next` names the import: `make lesson-import
+4. **Change one step.** Read it with [`lesson_show`](/mcp/lesson_show/) and patch it with
+   [`lesson_edit`](/mcp/lesson_edit/). The patch is a JSON merge patch on the step: an object
+   merges, `null` removes a part, anything else replaces it. A change to the bank's copy (`say`,
+   `data`, `key`, `hints`, `worked`) needs a `why`, and it is recorded in `based_on.changes`. The
+   answer is that step's findings and card. A later `lesson_check` rebuilds every step from the
+   words it is sent, so it replaces these edits.
+5. **Import, then play.** The card's `next` names the import: `make lesson-import
    FILE=<lesson_file> ENV=dev` in the jadwigo checkout. The `play_path` exists only after it runs.
 
 ### The draft on disk
@@ -114,6 +120,11 @@ returns:
   The result names it `draft_path`.
 - `<draft_id>.check.json` is the check beside it: `ok`, `findings`, `mistake_classes` by step id,
   and `checked_at`.
+
+`lesson_edit` rewrites both too. The lesson builder's page writes a third file when it draws the
+draft, `<draft_id>.render.json`: what it found wrong on the page. `lesson_check`, `lesson_edit`
+and `lesson_show` return its findings as `render`, with `rendered_at`, and `stale` when the page
+drew an older version. `render` is null when no page has drawn the draft.
 
 A finding has a `step_id`, a `path` into the lesson file, a `level` (`error` or `warn`), a `rule`,
 its `text` and a `fix`. `ok` is true while no finding is an error. The live lesson builder reads
