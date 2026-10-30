@@ -14,6 +14,10 @@ begin
   if not exists (select from pg_roles where rolname = 'authenticator') then
     create role authenticator noinherit nologin;
   end if;
+  -- Supabase Auth's own role: it owns the auth tables and runs the custom access token hook.
+  if not exists (select from pg_roles where rolname = 'supabase_auth_admin') then
+    create role supabase_auth_admin noinherit nologin;
+  end if;
 end
 $$;
 
@@ -53,3 +57,35 @@ language sql stable
 as $$
   select nullif(auth.jwt() ->> 'email', '')
 $$;
+
+-- The 2 auth tables a migration hangs a trigger on (dl-e8ov.2.66), with the columns Supabase Auth
+-- writes on a sign-in and the ones our tests read: a subset of Supabase's, same names and types.
+-- identities.email is generated from identity_data as in Supabase Auth's migration
+-- 20221215195800_add_identities_email_column, and identity linking looks users up by it.
+create table if not exists auth.users (
+  id uuid primary key,
+  aud varchar(255),
+  role varchar(255),
+  email varchar(255),
+  raw_app_meta_data jsonb,
+  raw_user_meta_data jsonb,
+  last_sign_in_at timestamptz,
+  created_at timestamptz,
+  updated_at timestamptz
+);
+
+create table if not exists auth.identities (
+  id uuid primary key default gen_random_uuid(),
+  provider_id text not null,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  identity_data jsonb not null,
+  provider text not null,
+  last_sign_in_at timestamptz,
+  created_at timestamptz,
+  updated_at timestamptz,
+  email text generated always as (lower(identity_data ->> 'email')) stored,
+  unique (provider_id, provider)
+);
+
+grant usage on schema auth to supabase_auth_admin;
+grant all on auth.users, auth.identities to supabase_auth_admin;
