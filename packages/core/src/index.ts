@@ -16,6 +16,7 @@ export { mistakeClassesOf } from "./families/rules.ts";
 export {
   brief,
   canDoLines,
+  DIGEST_RULES_VERSION,
   type DigestInput,
   dreamDigest,
   type FoldedMastery,

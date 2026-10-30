@@ -4,6 +4,7 @@ import type {
   Goal,
   LearnerSkillEvidence,
   LearnerSkillMastery,
+  Skill,
   SkillId,
 } from "@jadwigo/contracts";
 
@@ -42,6 +43,12 @@ export interface DigestInput {
   readonly brief: Brief;
   readonly goals: readonly GoalWithSkills[];
   readonly period: ReportPeriod;
+  /**
+   * The catalogue the pod reads (`listSkills`), as `foldLearner` takes it: the digest resolves
+   * aliases and knows each code's kind from it. Optional until createReport passes it; without
+   * it, every code is its own skill and an accuracy one.
+   */
+  readonly skills?: readonly Skill[];
 }
 
 /** One reviewed can-do line of a skill, in the language asked for. */
