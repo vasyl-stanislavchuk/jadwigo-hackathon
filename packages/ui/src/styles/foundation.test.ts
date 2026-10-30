@@ -452,6 +452,34 @@ describe("the child sizes", () => {
   it("never narrows a tap target", () => {
     expect(CSS).not.toMatch(/--kid-(tap-min|key-size|commit-height):/);
   });
+
+  // Decision 2026-10-30-a-task-s-readout-is-44-px-on-a-laptop-and-36-px-on-a-phone: the readout
+  // keeps one step above the prompt in both frames, set wherever the phone sizes are.
+  it("draws a task's readout at 44 px on a laptop and 36 px on a phone, above the prompt", () => {
+    expect(declared(TOKENS)["jw-size-target"]).toBe("2.75rem");
+    expect(rem("jw-size-target")).toEqual([44, 36, 36]);
+    expect(Math.min(...rem("jw-size-target"))).toBeGreaterThan(Math.max(...rem("jw-size-prompt")));
+  });
+});
+
+describe("the adult sizes on an app page", () => {
+  const rem = (name: string) =>
+    [...CSS.matchAll(new RegExp(`--${name}:\\s*([\\d.]+)rem`, "g"))].map((m) => Number(m[1]) * 16);
+
+  // Decision 2026-10-30-app-pages-take-an-adult-type-scale-h1-28-h2-22-body-17-and-the-a.
+  it("sets 28, 22 and 17 at :root, and 26 and 20 on a phone", () => {
+    expect(declared(TOKENS)["jw-page-h1"]).toBe("1.75rem");
+    expect(declared(TOKENS)["jw-page-h2"]).toBe("1.375rem");
+    expect(declared(TOKENS)["jw-page-body"]).toBe("1.0625rem");
+    expect(declared(TOKENS)["jw-page-leading"]).toBe("1.5");
+    expect(rem("jw-page-h1")).toEqual([28, 26]);
+    expect(rem("jw-page-h2")).toEqual([22, 20]);
+  });
+
+  it("keeps the adult scale off a lesson's own rules", () => {
+    const lesson = [...CSS.matchAll(/\[data-lesson-theme[^{]*\{([^}]*)\}/g)].map((m) => m[1] ?? "");
+    for (const body of lesson) expect(body).not.toMatch(/--jw-page-/);
+  });
 });
 
 describe("the footer line", () => {

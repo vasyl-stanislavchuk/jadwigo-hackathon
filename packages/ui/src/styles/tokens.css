@@ -13,8 +13,10 @@
 :host {
   /* ---- Colour: the terminal card (dl-i952.19) ------------------------------ */
   /* Always dark, in both themes (owner, 2026-10-08), so [theme='dark'] never redefines them. They
-     * are the dark roles of Grape, the palette before Zeszyt (seed #7c3aed), kept as they are:
-     * dl-uukj.32 leaves the terminal card's palette for later. Each pair holds 4.5:1 on the surface.
+     * are the dark roles of Grape, the palette before Zeszyt (seed #7c3aed), kept on purpose until a
+     * lesson ships a terminal stem: then they take Zeszyt's night primitives, values in dl-uukj.32.20
+     * (decision 2026-10-30-the-terminal-card-keeps-its-colours-until-a-lesson-shows-a-termi). Do not
+     * remove them before. Each pair holds 4.5:1 on the surface.
      * The page reads them as bg-[var(--code-surface)] and so on: no utility of their own, since a
      * utility must have a light and a dark value. */
   --code-surface: #15121c; /* surface (dark) */

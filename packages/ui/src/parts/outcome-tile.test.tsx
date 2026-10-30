@@ -28,8 +28,10 @@ describe("OutcomeTile", () => {
 
   it.each([
     ["right", "bg-kid-correct-soft"],
+    ["right-soft", "bg-jw-card"],
     ["miss", "bg-kid-try-again-soft"],
     ["plain", "bg-jw-card"],
+    ["empty", "bg-jw-card"],
   ] as const)(
     "tone %s reads %s, and data-outcome names the tone when no outcome is given",
     (tone, fill) => {
@@ -39,6 +41,22 @@ describe("OutcomeTile", () => {
       expect(tile.classList.contains(fill)).toBe(true);
     },
   );
+
+  it("draws a right that took tries on the green edge with paper inside", () => {
+    render(
+      <OutcomeTile tone="right-soft" icon={<Check aria-hidden="true" />} label="po próbach" />,
+    );
+    const tile = screen.getByRole("img", { name: "po próbach" });
+    expect(tile.classList.contains("border-kid-correct")).toBe(true);
+    expect(tile.classList.contains("bg-kid-correct-soft")).toBe(false);
+  });
+
+  it("draws nothing to show on a dashed placeholder edge", () => {
+    render(<OutcomeTile tone="empty" icon={<Minus aria-hidden="true" />} label="nie zadane" />);
+    const tile = screen.getByRole("img", { name: "nie zadane" });
+    expect(tile.classList.contains("border-dashed")).toBe(true);
+    expect(tile.classList.contains("border-jw-placeholder")).toBe(true);
+  });
 
   it("never carries data-tile", () => {
     const { container } = render(
@@ -51,6 +69,13 @@ describe("OutcomeTile", () => {
     render(<OutcomeTile tone="plain" size="sm" icon={<Minus aria-hidden="true" />} label="x" />);
     const tile = screen.getByRole("img", { name: "x" });
     expect(tile.classList.contains("size-8")).toBe(true);
+    expect(tile.classList.contains("size-10")).toBe(false);
+  });
+
+  it("is 28 in a list row", () => {
+    render(<OutcomeTile tone="plain" size="xs" icon={<Minus aria-hidden="true" />} label="x" />);
+    const tile = screen.getByRole("img", { name: "x" });
+    expect(tile.classList.contains("size-7")).toBe(true);
     expect(tile.classList.contains("size-10")).toBe(false);
   });
 

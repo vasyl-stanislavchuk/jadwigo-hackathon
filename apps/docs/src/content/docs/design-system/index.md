@@ -39,7 +39,8 @@ So a part never names a colour. To change what a pick looks like, change the rol
 To change a shade everywhere, change its primitive.
 
 Beside the tiers sit the type, shape, space and motion steps (`--jw-size-*`, `--jw-space-*`,
-`--jw-dur-*`). They are the same in light and dark.
+`--jw-dur-*`), and the adult's type scale for app pages (`--jw-page-*`). They are the same in
+light and dark.
 
 The [Tokens](/design-system/tokens/) page lists every one, generated from the stylesheet when
 these docs are built.

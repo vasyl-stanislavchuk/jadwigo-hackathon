@@ -30,8 +30,10 @@ const seconds = (ms: number): number => Math.round(ms / 1000);
 /** The Badge that wears each tone: the right's green, the miss's red, or an outline. */
 const BADGE: Record<Tone, "correct" | "try-again" | "outline"> = {
   right: "correct",
+  "right-soft": "correct",
   miss: "try-again",
   plain: "outline",
+  empty: "outline",
 };
 
 export function QuestionSheet({

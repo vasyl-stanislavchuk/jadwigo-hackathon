@@ -125,6 +125,10 @@
   --text-jw-key-sign: var(--jw-size-key-sign);
   --text-jw-key-strip: var(--jw-size-key-strip);
   --text-jw-unit: var(--jw-size-unit);
+  --text-jw-page-h1: var(--jw-page-h1);
+  --text-jw-page-h2: var(--jw-page-h2);
+  --text-jw-page-body: var(--jw-page-body);
+  --leading-jw-page: var(--jw-page-leading);
 
   /* Sizes: min-h-kid-tap, size-kid-key, h-kid-commit, gap-kid-choice, min-h-jw-control. */
   --spacing-kid-tap: var(--kid-tap-min);
