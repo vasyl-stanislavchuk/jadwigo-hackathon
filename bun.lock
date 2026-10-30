@@ -190,6 +190,7 @@
       "name": "@jadwigo/lesson-import",
       "dependencies": {
         "@jadwigo/contracts": "workspace:*",
+        "@jadwigo/core": "workspace:*",
         "@jadwigo/store": "workspace:*",
         "zod": "catalog:",
       },
