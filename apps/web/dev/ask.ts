@@ -153,16 +153,16 @@ function readHeartbeat(dir: string): Heartbeat | null {
   }
 }
 
-// <draft_id>.json; a check, heartbeat or session file has a dot or a reserved name before .json.
-const DRAFT_FILE = /^([^.]+)\.json$/;
-const NOT_DRAFTS = new Set(["session"]);
+const CHECK = ".check.json";
 
-/** The draft jw wrote last, by the file's modification time. */
+/** The draft jw wrote last: the newest <draft_id>.json but the check files, as the page lists them
+ * (dev/draft-watch.ts). */
 function newestDraft(dir: string): string | null {
   let best: { id: string; at: number } | null = null;
   for (const name of readdirSync(dir)) {
-    const id = DRAFT_FILE.exec(name)?.[1];
-    if (!id || NOT_DRAFTS.has(id) || !isDraftId(id)) continue;
+    if (!name.endsWith(".json") || name.endsWith(CHECK)) continue;
+    const id = name.slice(0, -".json".length);
+    if (!isDraftId(id)) continue;
     const at = statSync(join(dir, name)).mtimeMs;
     if (!best || at > best.at) best = { id, at };
   }

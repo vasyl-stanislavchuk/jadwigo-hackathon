@@ -9,15 +9,16 @@ write files under `JADWIGO_DRAFTS_DIR` and import nothing of ours.
 ## The files it shares
 
 All of them sit in `JADWIGO_DRAFTS_DIR`, default `~/.local/state/jadwigo/drafts`, the same setting
-jw reads. Every `.jsonl` file is append-only and has one writer.
+jw reads. Every `.jsonl` file is append-only and has one writer. The builder's own two files sit
+in `.builder/`, so the page, which lists every `<draft_id>.json`, never takes one for a draft.
 
 | File | Written by | One row |
 | --- | --- | --- |
 | `<draft_id>.asks.jsonl` | the page, through the web dev server | `{ask_ts, draft_id, step_id, intent: change\|question\|note, text, author}` |
 | `<draft_id>.consumed.jsonl` | this channel, after it sent the ask | `{ask_ts, consumed_at}` |
 | `<draft_id>.replies.jsonl` | this channel's `reply` tool | `{ts, draft_id, in_reply_to, kind: progress\|done\|question\|note, text}` |
-| `channel.heartbeat.json` | this channel, every 5 s or sooner | `{at, pid, session_id, loaded}` |
-| `session.json` | `make builder`, at each launch | `{session_id, started_at, cwd, transcript}` |
+| `.builder/channel.heartbeat.json` | this channel, every 5 s or sooner | `{at, pid, session_id, loaded}` |
+| `.builder/session.json` | `make builder`, at each launch | `{session_id, started_at, cwd, transcript}` |
 
 ## What the session sees
 
@@ -56,7 +57,7 @@ make builder                   # ARGS="--model opus" passes more to claude
 
 `make builder` (`launch.ts`) first asks `claude mcp get` for `jadwigo-builder` and `jadwigo`, and
 stops with the line to run when either is missing (jadwigo's is in `apps/cli/README.md`). Then it
-mints a session id, writes `session.json`, and starts
+mints a session id, writes `.builder/session.json`, and starts
 `claude --session-id <id> --dangerously-load-development-channels=server:jadwigo-builder` with
 `JADWIGO_BUILDER_SESSION` and `JADWIGO_DRAFTS_DIR` exported and `ANTHROPIC_API_KEY` removed. Claude
 Code does not tell an MCP server its session id, so the launcher names it. Two seconds in, it reads

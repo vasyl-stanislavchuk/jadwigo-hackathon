@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -119,8 +119,8 @@ describe("snapshot", () => {
     writeFileSync(join(dir, "d1.json"), "{}");
     writeFileSync(join(dir, "d2.json"), "{}");
     writeFileSync(join(dir, "d2.check.json"), "{}");
-    writeFileSync(join(dir, "session.json"), "{}");
     utimesSync(join(dir, "d1.json"), 1, 1);
+    mkdirSync(join(dir, ".builder"));
     writeFileSync(
       heartbeatFile(dir),
       JSON.stringify({ at: new Date().toISOString(), pid: 1, session_id: "s", loaded: true }),

@@ -9,6 +9,7 @@
 // --dangerously-load-development-channels=server:jadwigo-builder. README.md here is the install.
 // Run: bun tools/builder/channel.ts (Claude Code starts it; it speaks MCP on stdio)
 import { existsSync, mkdirSync, readdirSync, watch, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -292,8 +293,9 @@ async function main() {
 }
 
 function writeHeartbeat(dir: string, beat: Heartbeat) {
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(heartbeatFile(dir), `${JSON.stringify(beat)}\n`);
+  const path = heartbeatFile(dir);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(beat)}\n`);
 }
 
 if (import.meta.main) {
