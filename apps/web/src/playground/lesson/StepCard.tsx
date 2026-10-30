@@ -1,13 +1,14 @@
 /**
  * One step of the draft as the builder draws it: its say, the family view in preview mode with the
  * key behind the page's switch, the rungs strip, and "Try it", which plays the step through the
- * playground's TryExample with its help released on the client, and the check's findings on it. A step the adapter skipped is a
- * card with its reason, so the rest of the lesson still draws. The chrome is English, as the
+ * playground's TryExample with its help released on the client, the check's findings on it, and
+ * "Data", the step's JSON beside the drawing (data/). A step the adapter skipped is a card with its
+ * reason, so the rest of the lesson still draws. The chrome is English, as the
  * playground's is; every word a child would read is the draft's own.
  */
 
 import type { Category, Language } from "@jadwigo/copy";
-import type { Finding } from "@jadwigo/lesson-import/file";
+import type { Finding, QuestionStep } from "@jadwigo/lesson-import/file";
 import {
   type Clock,
   type FamilySpec,
@@ -23,6 +24,7 @@ import type { WrittenExample } from "../examples/index.ts";
 import { TryExample } from "../panels/TryExample.tsx";
 import { Badge } from "../tool/badge.tsx";
 import { Button } from "../tool/button.tsx";
+import { StepData } from "./data/StepData.tsx";
 import { useRenderCheck } from "./render/useRenderCheck.ts";
 import { rungsOf } from "./rungs.ts";
 import { CommentsSlot } from "./slots.ts";
@@ -69,6 +71,8 @@ export function StepCard({
   language,
   category,
   onRendered,
+  source,
+  previous,
 }: {
   /** The step's place in the lesson, from 1. */
   n: number;
@@ -84,7 +88,11 @@ export function StepCard({
   category: Category;
   /** Where the render rules' findings for the drawn preview go; none, and they do not run. */
   onRendered?: ((step_id: string, findings: Finding[]) => void) | undefined;
+  /** The step as the draft holds it, and as the draft before held it (Data). */
+  source: QuestionStep;
+  previous?: QuestionStep | undefined;
 }): ReactElement {
+  const [showData, setShowData] = useState(false);
   const [trying, setTrying] = useState(false);
   const [round, setRound] = useState(0);
   const drawn = useRef<HTMLDivElement>(null);
@@ -113,6 +121,14 @@ export function StepCard({
           variant="outline"
           size="sm"
           className="ml-auto"
+          aria-pressed={showData}
+          onClick={() => setShowData(!showData)}
+        >
+          Data
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           aria-pressed={trying}
           onClick={() => {
             setTrying(!trying);
@@ -127,6 +143,15 @@ export function StepCard({
       </p>
       <RungsStrip spec={spec} />
       <FindingList findings={findings} label={`Findings on ${spec.id}`} />
+      {showData && (
+        <StepData
+          source={source}
+          path={path}
+          findings={findings}
+          previous={previous}
+          showKey={showKey}
+        />
+      )}
       <div ref={drawn} className="kid-step min-w-0 rounded-xl border bg-background p-4">
         <LessonTheme>
           {trying ? (

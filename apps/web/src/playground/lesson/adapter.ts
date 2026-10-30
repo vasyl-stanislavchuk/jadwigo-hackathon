@@ -34,6 +34,8 @@ type BuiltStep =
       path: string;
       skill_ids: string[];
       spec: FamilySpec;
+      /** The step as the draft holds it, for the Data view. */
+      source: QuestionStep;
     }
   | { kind: "skipped"; step_id: string; reason: string };
 
@@ -88,7 +90,14 @@ function buildStep(step: QuestionStep, path: string, media: string): BuiltStep {
     key: step.question.key,
     ...(step.question.help === undefined ? {} : { help }),
   } as FamilySpec;
-  return { kind: "question", step_id: step.id, path, skill_ids: step.skill_ids, spec };
+  return {
+    kind: "question",
+    step_id: step.id,
+    path,
+    skill_ids: step.skill_ids,
+    spec,
+    source: step,
+  };
 }
 
 /** A step the parse left out, as a card: its id, or its place when it has none, and why. */
