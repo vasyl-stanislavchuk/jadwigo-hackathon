@@ -12,7 +12,9 @@ import {
   AttemptResult,
   Ended,
   ErrorType,
+  FEATURED_POD_ID,
   Goal,
+  type GoalId,
   ID_PREFIXES,
   type IdPrefix,
   idOf,
@@ -20,6 +22,10 @@ import {
   Learner,
   type LearnerAttempts,
   LearnerId,
+  LearnerReport,
+  type LearnerReportId,
+  type LearnerSkillEvidence,
+  LearnerSkillMastery,
   type LearnerSnapshot,
   Lesson,
   LessonId,
@@ -36,6 +42,8 @@ import {
   Pod,
   PodId,
   SentAt,
+  Skill,
+  type SkillId,
   type Uuid,
   uuidOf,
   valueFor,
@@ -48,6 +56,8 @@ import { handleFor } from "./handle.ts";
 import {
   type AttemptRecord,
   type ExampleWithQuestions,
+  type GoalChange,
+  type GoalWithSkills,
   type HelpTwin,
   type LessonVersionWithQuestions,
   type MemberScope,
@@ -56,15 +66,20 @@ import {
   type NewAttemptAnswer,
   type NewAttemptQuestion,
   type NewClaim,
+  type NewGoal,
   type NewLearner,
+  type NewLearnerReport,
+  type NewLearnerSkillMastery,
   type NewLearnerWithGoals,
   type NewLesson,
   type NewLessonQuestion,
   type NewLessonQuestionExample,
   type NewLessonVersion,
   type NewPod,
+  type NewSkill,
   type OpenAssignment,
   type OpenedAttempt,
+  type ReportChange,
   type Store,
   StoreError,
 } from "./store.ts";
@@ -112,6 +127,9 @@ const PREFIXES: Readonly<Record<string, IdPrefix>> = {
   account_id: ID_PREFIXES.account,
   claimed_by: ID_PREFIXES.account,
   moved_by: ID_PREFIXES.account,
+  goal_id: ID_PREFIXES.goal,
+  curriculum_id: ID_PREFIXES.curriculum,
+  topic_id: ID_PREFIXES.topic,
 };
 
 /**
@@ -450,6 +468,10 @@ class PostgresStore implements Store {
             Learner,
             {
               age_group: null,
+              country: null,
+              curriculum_id: null,
+              school_grade: null,
+              school_language: null,
               created_at: new Date().toISOString(),
               ...learner,
               id: wire,
@@ -465,6 +487,13 @@ class PostgresStore implements Store {
               handle: valid.handle,
               first_name: valid.first_name,
               age_group: valid.age_group,
+              country: valid.country,
+              curriculum_id:
+                valid.curriculum_id === null
+                  ? null
+                  : uuidOf(ID_PREFIXES.curriculum, valid.curriculum_id),
+              school_grade: valid.school_grade,
+              school_language: valid.school_language,
             })
             .onConflict((oc) => oc.column("id").doNothing())
             .returningAll()
@@ -1713,6 +1742,10 @@ class PostgresStore implements Store {
           handle: handleFor(learner.first_name, new Set(handles.map((h) => h.handle))),
           first_name: learner.first_name,
           age_group: learner.age_group ?? null,
+          country: null,
+          curriculum_id: null,
+          school_grade: null,
+          school_language: null,
           created_at: new Date().toISOString(),
         },
         "the learner",
@@ -1882,6 +1915,161 @@ class PostgresStore implements Store {
         })),
       };
     });
+  }
+
+  // The learner knowledge base. Step 0 builds the reads; the writes and the evidence wait for the
+  // store-api lane of wave dl-e8ov.5-1, and throw until it lands.
+
+  async findLearnerPod(id: LearnerId): Promise<PodId | undefined> {
+    return this.#in(null, async (tx) => {
+      const { rows } = await sql<{ pod: string | null }>`
+        select app.learner_pod(${uuidOf(ID_PREFIXES.learner, id)}) as pod
+      `.execute(tx);
+      const pod = rows[0]?.pod;
+      return pod ? PodId.parse(idOf(ID_PREFIXES.pod, pod)) : undefined;
+    });
+  }
+
+  async listSkills(pod: PodId): Promise<readonly Skill[]> {
+    const own = uuidOf(ID_PREFIXES.pod, pod);
+    const shared = uuidOf(ID_PREFIXES.pod, FEATURED_POD_ID);
+    return this.#in(pod, async (tx) => {
+      await this.#pod(tx, pod);
+      // pod_scope reads the pod's own rows and shared_read the shared pod's; a code the pod holds
+      // wins over the shared row.
+      const rows = await tx
+        .selectFrom("skill")
+        .selectAll()
+        .where("pod_id", "in", [own, shared])
+        .orderBy("code")
+        .orderBy(sql`pod_id = ${own}`, "desc")
+        .execute();
+      const byCode = new Map<string, Skill>();
+      for (const row of rows) {
+        if (!byCode.has(row.code)) byCode.set(row.code, read(Skill, row));
+      }
+      return [...byCode.values()];
+    });
+  }
+
+  async putSkills(_pod: PodId, _skills: readonly NewSkill[]): Promise<readonly Skill[]> {
+    throw new Error("not built: putSkills (store-api lane)");
+  }
+
+  async ensureSkills(_pod: PodId, _codes: readonly SkillId[]): Promise<readonly Skill[]> {
+    throw new Error("not built: ensureSkills (store-api lane)");
+  }
+
+  async getLearnerEvidence(
+    _pod: PodId,
+    _learner: LearnerId,
+  ): Promise<readonly LearnerSkillEvidence[]> {
+    throw new Error("not built: getLearnerEvidence (store-api lane)");
+  }
+
+  async replaceMastery(
+    _pod: PodId,
+    _learner: LearnerId,
+    _rows: readonly NewLearnerSkillMastery[],
+  ): Promise<readonly LearnerSkillMastery[]> {
+    throw new Error("not built: replaceMastery (store-api lane)");
+  }
+
+  async getMastery(pod: PodId, learner: LearnerId): Promise<readonly LearnerSkillMastery[]> {
+    return this.#in(pod, async (tx) => {
+      await this.#learner(tx, learner);
+      const rows = await tx
+        .selectFrom("learner_skill_mastery")
+        .selectAll()
+        .where("learner_id", "=", uuidOf(ID_PREFIXES.learner, learner))
+        .orderBy("skill_code")
+        .execute();
+      return rows.map((row) => read(LearnerSkillMastery, row));
+    });
+  }
+
+  /** A learner of the unit's pod, or NotFound: row-level security hides another pod's. */
+  async #learner(tx: Tx, learner: LearnerId): Promise<void> {
+    const row = await tx
+      .selectFrom("learner")
+      .select("id")
+      .where("id", "=", uuidOf(ID_PREFIXES.learner, learner))
+      .executeTakeFirst();
+    if (!row) throw notFound("the learner");
+  }
+
+  async listGoals(pod: PodId, learner: LearnerId): Promise<readonly GoalWithSkills[]> {
+    return this.#in(pod, async (tx) => {
+      await this.#learner(tx, learner);
+      const goals = await tx
+        .selectFrom("goal")
+        .selectAll()
+        .where("learner_id", "=", uuidOf(ID_PREFIXES.learner, learner))
+        .orderBy("created_at")
+        .orderBy("id")
+        .execute();
+      const links =
+        goals.length === 0
+          ? []
+          : await tx
+              .selectFrom("goal_skill")
+              .select(["goal_id", "skill_code"])
+              .where(
+                "goal_id",
+                "in",
+                goals.map((g) => g.id),
+              )
+              .execute();
+      // goal_skill keeps no order of its own: a goal's codes are listed by code.
+      return goals.map((row) => ({
+        goal: read(Goal, row, ID_PREFIXES.goal),
+        skill_codes: links
+          .filter((l) => l.goal_id === row.id)
+          .map((l) => l.skill_code)
+          .sort(),
+      }));
+    });
+  }
+
+  async addGoal(_pod: PodId, _learner: LearnerId, _goal: NewGoal): Promise<GoalWithSkills> {
+    throw new Error("not built: addGoal (store-api lane)");
+  }
+
+  async updateGoal(
+    _pod: PodId,
+    _learner: LearnerId,
+    _goal: GoalId,
+    _change: GoalChange,
+  ): Promise<GoalWithSkills> {
+    throw new Error("not built: updateGoal (store-api lane)");
+  }
+
+  async putReport(_pod: PodId, _report: NewLearnerReport): Promise<LearnerReport> {
+    throw new Error("not built: putReport (store-api lane)");
+  }
+
+  async listReports(pod: PodId, learner: LearnerId): Promise<readonly LearnerReport[]> {
+    return this.#in(pod, async (tx) => {
+      await this.#learner(tx, learner);
+      const rows = await tx
+        .selectFrom("learner_report")
+        .selectAll()
+        .where("learner_id", "=", uuidOf(ID_PREFIXES.learner, learner))
+        .orderBy("created_at", "desc")
+        .orderBy("id", "desc")
+        .limit(LIMITS.reportsPerLearner)
+        .execute();
+      return rows.map((row) => read(LearnerReport, row, ID_PREFIXES.learner_report));
+    });
+  }
+
+  async updateReport(
+    _pod: PodId,
+    _learner: LearnerId,
+    _report: LearnerReportId,
+    _change: ReportChange,
+  ): Promise<LearnerReport> {
+    throw new Error("not built: updateReport (store-api lane)");
   }
 }
 

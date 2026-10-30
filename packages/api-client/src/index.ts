@@ -4,6 +4,7 @@ export type {
   Client,
   ClientOptions,
   FeaturedClient,
+  LearnerKnowledgeClient,
   ParentClient,
   PlaygroundClient,
 } from "./client.ts";

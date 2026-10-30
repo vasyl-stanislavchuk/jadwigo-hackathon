@@ -13,15 +13,18 @@ import {
   AccountId,
   AssignmentId,
   AttemptId,
+  CurriculumId,
   EventId,
   GoalId,
   LearnerId,
+  LearnerReportId,
   LessonId,
   LessonQuestionExampleId,
   LessonQuestionId,
   LessonVersionId,
   MemberId,
   PodId,
+  TopicId,
   Uuid,
 } from "./ids.ts";
 
@@ -91,6 +94,14 @@ export const Learner = z.object({
   handle: z.string().min(1),
   first_name: z.string().min(1),
   age_group: z.string().nullable(),
+  /** The learner's school, inferred or told (migration 20261031120000_learner_knowledge.sql). */
+  country: z
+    .string()
+    .regex(/^[A-Z]{2}$/, "a country is 2 capital letters")
+    .nullable(),
+  curriculum_id: CurriculumId.nullable(),
+  school_grade: z.int().min(0).nullable(),
+  school_language: Language.nullable(),
   created_at: At,
 });
 export type Learner = z.infer<typeof Learner>;
@@ -123,12 +134,23 @@ export const Member = z.object({
 });
 export type Member = z.infer<typeof Member>;
 
-/** A goal stub: a name for one learner. Skills and stages attach later. */
+/** Where a goal stands for the parent: on, set aside, reached, or given up. */
+export const GoalStatus = z.enum(["active", "paused", "reached", "dropped"]);
+export type GoalStatus = z.infer<typeof GoalStatus>;
+
+/**
+ * A goal for one learner: the adult's name for it, their own words, the language its lessons are
+ * in, and where it stands. Its skills are `goal_skill` rows. Goals have no stages.
+ */
 export const Goal = z.object({
   id: GoalId,
   pod_id: PodId,
   learner_id: LearnerId,
   name: z.string().min(1),
+  /** The parent's own words for what they want, kept as they wrote them. */
+  words: z.string().min(1).nullable(),
+  lesson_language: Language,
+  status: GoalStatus,
   created_at: At,
 });
 export type Goal = z.infer<typeof Goal>;
@@ -392,6 +414,346 @@ export const AttemptResult = z.object({
 });
 export type AttemptResult = z.infer<typeof AttemptResult>;
 
+// The learner knowledge base (migration 20261031120000_learner_knowledge.sql, epic dl-e8ov.5).
+// The shared catalogue (curriculum, topic, skill) lives in Jadwigo's own pod, which every pod
+// reads (decision jadwigo-hackathon 2026-10-30, the shared curriculum lives in shared Postgres
+// tables). Code computes every level and the brief; the AI only writes a report's narrative.
+
+/** A curriculum: the podstawa programowa of one country, in one version and language. */
+export const Curriculum = z.object({
+  id: CurriculumId,
+  pod_id: PodId,
+  code: z.string().min(1),
+  name: z.string().min(1),
+  country: z.string().regex(/^[A-Z]{2}$/, "a country is 2 capital letters"),
+  version: z.string().min(1),
+  language: Language,
+  source_url: z.url().nullable(),
+  created_at: At,
+});
+export type Curriculum = z.infer<typeof Curriculum>;
+
+/** One outcome of a curriculum, such as `II.3.3`, in the law's own words. */
+export const Topic = z.object({
+  id: TopicId,
+  pod_id: PodId,
+  curriculum_id: CurriculumId,
+  code: z.string().min(1),
+  area: z.string().min(1),
+  text: z.string().min(1),
+  created_at: At,
+});
+export type Topic = z.infer<typeof Topic>;
+
+/** What a skill measures: a right answer, or a right answer in time (`fast_ms` waits on the owner). */
+export const SkillKind = z.enum(["accuracy", "speed"]);
+export type SkillKind = z.infer<typeof SkillKind>;
+/** A catalogue skill's standing: a person read it, the bank proposes it, a pod drafted it, or it is gone. */
+export const SkillStatus = z.enum(["reviewed", "proposed", "draft", "retired"]);
+export type SkillStatus = z.infer<typeof SkillStatus>;
+
+/**
+ * One "can do" line in one language: the child's "Umiem…" and the parent's sentence. Only a line
+ * a person has read (`reviewed`) is ever shown.
+ */
+export const CanDoLine = z.object({
+  child: z.string().min(1),
+  parent: z.string().min(1),
+  reviewed: z.boolean(),
+});
+export type CanDoLine = z.infer<typeof CanDoLine>;
+/** A skill's can-do lines, by language; a language with none is absent. */
+export const CanDo = z.partialRecord(Language, CanDoLine);
+export type CanDo = z.infer<typeof CanDo>;
+
+/**
+ * A skill, keyed by its pod and code (RULES.md rule 8): no uuid, no prefix, since the code is the
+ * `SkillId` lessons already carry. Jadwigo's pod's rows are the templates; a pod's own row is a
+ * copy of one, or a draft, and wins for that pod. `aliases` are the other dialects' codes for it.
+ */
+export const Skill = z.object({
+  pod_id: PodId,
+  code: SkillId,
+  topic_id: TopicId.nullable(),
+  kind: SkillKind,
+  status: SkillStatus,
+  can_do: CanDo.nullable(),
+  aliases: z.array(SkillId),
+  prerequisites: z.array(SkillId),
+  /** Where the row came from: `bank`, `lesson-import`, `parent`. */
+  source: z.string().min(1),
+  created_at: At,
+});
+export type Skill = z.infer<typeof Skill>;
+
+/** One skill of a goal, a skill row of the goal's own pod. */
+export const GoalSkill = z.object({
+  pod_id: PodId,
+  goal_id: GoalId,
+  skill_code: SkillId,
+});
+export type GoalSkill = z.infer<typeof GoalSkill>;
+
+/** One curriculum topic a goal covers; the topic is usually the shared pod's. */
+export const GoalTopic = z.object({
+  pod_id: PodId,
+  goal_id: GoalId,
+  topic_id: TopicId,
+});
+export type GoalTopic = z.infer<typeof GoalTopic>;
+
+/** One goal a lesson serves. */
+export const LessonGoal = z.object({
+  pod_id: PodId,
+  lesson_id: LessonId,
+  goal_id: GoalId,
+});
+export type LessonGoal = z.infer<typeof LessonGoal>;
+
+/** How far a learner is with a skill. Code computes it; the parent never sees Khan's level names. */
+export const MasteryLevel = z.enum([
+  "not_started",
+  "attempted",
+  "familiar",
+  "proficient",
+  "mastered",
+]);
+export type MasteryLevel = z.infer<typeof MasteryLevel>;
+
+/** An FSRS card under py-fsrs's names, so the Python side reads the same JSON. */
+export const FsrsCard = z.object({
+  /** 1 learning, 2 review, 3 relearning. */
+  state: z.int().min(1).max(3),
+  step: z.int().min(0).nullable(),
+  stability: z.number().nullable(),
+  difficulty: z.number().nullable(),
+  due: At,
+  last_review: At.nullable(),
+});
+export type FsrsCard = z.infer<typeof FsrsCard>;
+
+/**
+ * One row of the mastery cache: a learner's level on one skill code, rebuilt whole by the fold
+ * after each finished or claimed attempt (decision jadwigo-learner-knowledge 2026-10-30, mastery is
+ * folded on read from the evidence view and also kept in a cache).
+ */
+export const LearnerSkillMastery = z.object({
+  pod_id: PodId,
+  learner_id: LearnerId,
+  skill_code: SkillId,
+  level: MasteryLevel,
+  needs_attention: z.boolean(),
+  tries: z.int().min(0),
+  last_answered_at: At.nullable(),
+  due_at: At.nullable(),
+  card: FsrsCard.nullable(),
+  computed_at: At,
+});
+export type LearnerSkillMastery = z.infer<typeof LearnerSkillMastery>;
+
+/**
+ * One row of the `learner_skill_evidence` view: an answer of a real attempt with a learner, a
+ * skip or a judged try, once per skill code its question carries. `pod_id` is the attempt's pod,
+ * which for a claimed featured attempt is Jadwigo's, not the learner's.
+ */
+export const LearnerSkillEvidence = z.object({
+  pod_id: PodId,
+  learner_id: LearnerId,
+  attempt_id: AttemptId,
+  seq: Count,
+  try_no: Count,
+  kind: AnswerKind,
+  skill_code: SkillId,
+  answered_at: At,
+  correct: z.boolean().nullable(),
+  help_used: z.int().min(0),
+  latency_ms: z.int().min(0),
+  mistake_class: z.string().nullable(),
+  added: Added,
+  lesson_kind: LessonKind,
+  hold_verdicts: z.boolean(),
+});
+export type LearnerSkillEvidence = z.infer<typeof LearnerSkillEvidence>;
+
+// The report's jsonb: code's digest, the AI's narrative, the parent's decisions. Here rather than
+// in wire.ts because `learner_report` holds them, as `lesson_question` holds `Credit`.
+
+/** The brief's lists: what to teach again, review, start, check again, and what school covers. */
+export const BriefList = z.enum(["reteach", "review", "new", "recheck", "school"]);
+export type BriefList = z.infer<typeof BriefList>;
+
+/** One skill on one list of the brief, the goals it serves, and why code put it there. */
+export const BriefEntry = z.object({
+  skill_code: SkillId,
+  list: BriefList,
+  goal_ids: z.array(GoalId),
+  why: z.enum([
+    "needs_attention",
+    "review_due",
+    "prerequisites_met",
+    "second_day_owed",
+    "school_tag",
+  ]),
+});
+export type BriefEntry = z.infer<typeof BriefEntry>;
+
+/**
+ * What the next lesson should hold, worked out by code from the goals, skills and mastery.
+ * `school` says `nothing_recorded` until a parent tells what school covers: an empty section is
+ * said, never guessed at.
+ */
+export const Brief = z.object({
+  computed_at: At,
+  entries: z.array(BriefEntry),
+  school: z.literal("nothing_recorded").or(z.array(BriefEntry)),
+});
+export type Brief = z.infer<typeof Brief>;
+
+/** What a sentence of the narrative rests on: an attempt, a skill code or a goal of the digest. */
+export const Citation = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("attempt"), attempt_id: AttemptId }),
+  z.object({ kind: z.literal("skill"), skill_code: SkillId }),
+  z.object({ kind: z.literal("goal"), goal_id: GoalId }),
+]);
+export type Citation = z.infer<typeof Citation>;
+
+/** A proposal's id within its report: `p1` to `p9`. */
+export const ProposalId = z.string().regex(/^p[1-9]$/, "a proposal id is p and one digit");
+export type ProposalId = z.infer<typeof ProposalId>;
+
+/** The 2 standing questions every report answers: where each skill stands, and what comes next. */
+export const StandingQuestion = z.enum(["skills_standing", "next_focus"]);
+export type StandingQuestion = z.infer<typeof StandingQuestion>;
+
+/**
+ * Where a goal stands, as the parent reads it: never a level name, never a number. Here beside
+ * `Goal`, since both the digest and the wire's `GoalView` name it.
+ */
+export const GoalProgress = z.enum(["not_started", "needs_attention", "on_its_way", "good"]);
+export type GoalProgress = z.infer<typeof GoalProgress>;
+
+/**
+ * Code's half of a report, deterministic from the evidence: counts, the skills that moved, what
+ * needs attention, the mistakes, the brief, each goal's standing, a verdict on each standing
+ * question, at most 3 focus proposals and at most 2 asks. Codes, counts and ids only: no name, no
+ * `player_name`, no answer.
+ */
+export const ReportDigest = z.object({
+  shape: z.literal("digest/1"),
+  counts: z.object({
+    attempts: z.int().min(0),
+    questions: z.int().min(0),
+    days_played: z.int().min(0),
+  }),
+  skills_moved: z.array(
+    z.object({ skill_code: SkillId, from: MasteryLevel, to: MasteryLevel, attempt_id: AttemptId }),
+  ),
+  needs_attention: z.array(
+    z.object({
+      skill_code: SkillId,
+      mistake_classes: z.array(z.string()),
+      citations: z.array(Citation),
+    }),
+  ),
+  mistakes: z.array(
+    z.object({
+      mistake_class: z.string(),
+      times: z.int().min(1),
+      skill_codes: z.array(SkillId),
+      citations: z.array(Citation),
+    }),
+  ),
+  brief: Brief,
+  goals: z.array(z.object({ goal_id: GoalId, status: GoalProgress })),
+  standing: z.array(
+    z.object({
+      question: StandingQuestion,
+      verdict: z.enum(["on_track", "watch", "stuck", "nothing_recorded"]),
+      citations: z.array(Citation),
+    }),
+  ),
+  proposals: z
+    .array(
+      z.object({
+        id: ProposalId,
+        kind: z.literal("focus"),
+        list: BriefList,
+        skill_codes: z.array(SkillId).min(1),
+        citations: z.array(Citation),
+      }),
+    )
+    .max(3),
+  asks: z
+    .array(
+      z.object({
+        id: z.string(),
+        about: z.enum(["goal_without_skills", "no_evidence_in_period", "school_context"]),
+      }),
+    )
+    .max(2),
+});
+export type ReportDigest = z.infer<typeof ReportDigest>;
+
+/**
+ * The AI's half of a report (`/jadwigo-report-write`), written once: every sentence cites the
+ * digest, gives no number the digest did not, and names no level.
+ */
+export const ReportNarrative = z.object({
+  language: Language,
+  headline: z.string().min(1).max(140),
+  direction_now: z.string().min(1).max(500),
+  answers: z.array(
+    z.object({
+      question: StandingQuestion,
+      answer: z.string().min(1).max(600),
+      citations: z.array(Citation).min(1),
+    }),
+  ),
+  proposals: z
+    .array(
+      z.object({
+        proposal_id: ProposalId,
+        claim: z.string().max(200),
+        rationale: z.string().max(400),
+        citations: z.array(Citation).min(1),
+      }),
+    )
+    .max(3),
+  asks: z.array(z.object({ ask: z.string().max(200), why: z.string().max(300) })).max(2),
+  /** The workflow and model that wrote it. */
+  made_by: z.string().min(1),
+});
+export type ReportNarrative = z.infer<typeof ReportNarrative>;
+
+/** A parent's decision on one proposal of a report. Proposals change nothing until one is accepted. */
+export const ProposalDecision = z.object({
+  proposal_id: ProposalId,
+  decision: z.enum(["accepted", "dismissed"]),
+  decided_at: At,
+  decided_by: AccountId,
+});
+export type ProposalDecision = z.infer<typeof ProposalDecision>;
+
+/**
+ * A report on one learner over a period: code's `digest`, the AI's `narrative` (null until it is
+ * written, then never changed) and the parent's `decisions` (appended). `reused` is a copy of the
+ * last digest when the evidence has not changed (`inputs_hash`).
+ */
+export const LearnerReport = z.object({
+  id: LearnerReportId,
+  pod_id: PodId,
+  learner_id: LearnerId,
+  period_starts_at: At,
+  period_ends_at: At,
+  inputs_hash: z.string().min(1),
+  reused: z.boolean(),
+  digest: ReportDigest,
+  narrative: ReportNarrative.nullable(),
+  decisions: z.array(ProposalDecision),
+  created_at: At,
+});
+export type LearnerReport = z.infer<typeof LearnerReport>;
+
 /** Every record, by its table name, for the naming test. */
 export const RECORDS = {
   pod: Pod,
@@ -413,4 +775,13 @@ export const RECORDS = {
   attempt_question: AttemptQuestion,
   attempt_answer: AttemptAnswer,
   attempt_result: AttemptResult,
+  curriculum: Curriculum,
+  topic: Topic,
+  skill: Skill,
+  goal_skill: GoalSkill,
+  goal_topic: GoalTopic,
+  lesson_goal: LessonGoal,
+  learner_skill_mastery: LearnerSkillMastery,
+  learner_skill_evidence: LearnerSkillEvidence,
+  learner_report: LearnerReport,
 } as const;

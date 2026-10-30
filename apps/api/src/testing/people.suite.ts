@@ -67,7 +67,7 @@ export function peopleSuite(name: string, makeStore: () => Store): void {
     }
 
     it("refuses every token route without a token, or with a bad one, as 401 NotSignedIn", async () => {
-      expect(TOKEN_ROUTES).toHaveLength(7);
+      expect(TOKEN_ROUTES).toHaveLength(15);
       const tokens = [
         undefined,
         signToken({}, true),
@@ -86,7 +86,9 @@ export function peopleSuite(name: string, makeStore: () => Store): void {
                   ? idOf(ID_PREFIXES.learner, randomUUID())
                   : IDS.id,
               )
-              .replace("{attempt}", IDS.id),
+              .replace("{attempt}", IDS.id)
+              .replace("{goal}", idOf(ID_PREFIXES.goal, randomUUID()))
+              .replace("{report}", idOf(ID_PREFIXES.learner_report, randomUUID())),
             {},
             token === undefined ? {} : bearerOf(token),
           );
