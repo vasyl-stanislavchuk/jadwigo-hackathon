@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
+import { hosts } from "@jadwigo/config";
 import { ERROR_STATUS, ROUTES } from "@jadwigo/contracts";
 import { QUESTION_TYPES } from "@jadwigo/lesson-kit/question-types";
 import { apiBase, servedHost } from "../index.ts";
@@ -36,6 +37,25 @@ export const MUST: readonly (readonly [file: string, text: string])[] = [
 
 /** The public docs are self-contained: no page links into the repo (dl-5ssh.90, the owner). */
 const REPO_LINK = /href="https?:\/\/(www\.)?github\.com\//;
+
+/**
+ * Hosts not ours that a page may name, each with what names it. Every other host in the built
+ * HTML must be `hosts.prod.app` or `hosts.prod.docs`, so a hand-written URL can't drift from
+ * packages/config (dl-5ssh.90.19).
+ */
+const THIRD_PARTY_HOSTS: Readonly<Record<string, string>> = {
+  "json-schema.org": "the $schema id in each MCP tool's JSON Schema (mcp/*)",
+  "ui.shadcn.com": "the credit for the neutral components (design-system/primitives)",
+};
+
+const OUR_HOSTS = new Set([hosts.prod.app, hosts.prod.docs]);
+const ANY_HOST = /https?:\/\/([A-Za-z0-9.-]+)/g;
+
+/** The hosts a page names that are neither ours nor allowlisted, each once. */
+export function strayHosts(html: string): string[] {
+  const named = new Set([...html.matchAll(ANY_HOST)].map((match) => match[1] ?? ""));
+  return [...named].filter((host) => !OUR_HOSTS.has(host) && !(host in THIRD_PARTY_HOSTS));
+}
 
 function htmlFiles(dir: string): string[] {
   return readdirSync(dir, { recursive: true, encoding: "utf8" })
@@ -75,8 +95,11 @@ export function checkDist(dist: string): string[] {
       problems.push(`dist/${file} lacks ${text}`);
   }
   for (const path of htmlFiles(dist)) {
-    if (REPO_LINK.test(readFileSync(path, "utf8")))
-      problems.push(`dist/${relative(dist, path)} links into GitHub`);
+    const html = readFileSync(path, "utf8");
+    const file = `dist/${relative(dist, path)}`;
+    if (REPO_LINK.test(html)) problems.push(`${file} links into GitHub`);
+    for (const host of strayHosts(html))
+      problems.push(`${file} names ${host}, not ${hosts.prod.app} or ${hosts.prod.docs}`);
   }
   return problems;
 }
