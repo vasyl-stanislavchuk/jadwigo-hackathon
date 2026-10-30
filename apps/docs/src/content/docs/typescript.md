@@ -38,4 +38,5 @@ passes for one. Reach for them when you build a request body or check a value be
 
 - [api-client](/typescript/api-client/): `createClient` and the calls it gives.
 - [Your first call](/guides/first-call/): the same calls with `curl`.
-- [Contracts and generated docs](/architecture/contracts/): how one route table feeds the API and this client.
+- [Contracts and generated docs](/architecture/contracts/): how one route table feeds the API
+  and this client.
