@@ -320,7 +320,13 @@ def refusals_assign(rule: str, question_type: str, bead: str, language: str) -> 
 @click.argument("reason", required=False, default="")
 @LANGUAGE
 @click.option("--clear", is_flag=True, help="Remove the flag instead.")
-@click.option("--by", default=refusals.DEFAULT_BY, show_default=True, help="Who pulls it: a role.")
+@click.option(
+    "--by",
+    default=refusals.DEFAULT_BY,
+    show_default=True,
+    type=click.Choice(refusals.ROLES),
+    help="Who pulls it: a role, never a name.",
+)
 @click.option("--issue", default=None, help="The bead that tracks the fix, when there is one.")
 def flag(
     item_id: str, reason: str, language: str, clear: bool, by: str, issue: str | None

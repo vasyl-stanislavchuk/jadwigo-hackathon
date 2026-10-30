@@ -18,6 +18,7 @@ from click.testing import CliRunner
 
 from jw import bank_client, items, lesson, refusals
 from jw.cli import main
+from jw.errors import JwError
 from jw.settings_keys import (
     JADWIGO_BANK_DIR,
     JADWIGO_DRAFTS_DIR,
@@ -185,6 +186,54 @@ def test_flag_refuses_an_unknown_id_an_empty_reason_and_a_missing_checkout(
         refusals.assign("key-grades", "multi_select", "dl-fixture-1")
     # Reading needs no checkout: no file is an empty one.
     assert _report()["ready"] == 1
+
+
+@pytest.mark.parametrize("by", ["", "Some Person"])
+def test_flag_takes_a_role_never_a_name(checkout: Path, by: str) -> None:
+    result = CliRunner().invoke(main, ["question", "flag", "fxr1", "why", "--by", by])
+
+    assert result.exit_code == 2
+    assert "is not one of 'owner', 'lead', 'teacher', 'agent'" in result.output
+    assert not (checkout / "refusals" / "pl.json").exists()
+    with pytest.raises(JwError, match="is not a role"):
+        refusals.flag("fxr1", "why", by=by)
+
+
+def test_flag_by_another_role(checkout: Path) -> None:
+    _run("flag", "fxr1", "the options repeat", "--by", "teacher")
+
+    flags = json.loads((checkout / "refusals" / "pl.json").read_text("utf-8"))["flags"]
+    assert [f["by"] for f in flags] == ["teacher"]
+
+
+def test_nothing_is_written_that_the_banks_schema_refuses(checkout: Path) -> None:
+    path = checkout / "refusals" / "pl.json"
+    path.parent.mkdir()
+    broken = {"id": "fxr2", "by": "", "reason": "x", "on": "2026-10-30"}
+    path.write_text(json.dumps({"shapes": [], "flags": [broken]}), encoding="utf-8")
+    before = path.read_text("utf-8")
+
+    for args in (["flag", "fxr1", "why"], ["refusals", "assign", "key-grades", "-", "dl-x"]):
+        result = CliRunner().invoke(main, ["question", *args])
+        assert result.exit_code == 1, args
+        assert "would not match refusals.schema.json at flags/0/by" in result.output
+    assert path.read_text("utf-8") == before
+
+
+def test_the_pinned_refusals_schema_names_its_bank_commit() -> None:
+    assert "at bank commit " in json.loads(refusals.SCHEMA.read_text("utf-8"))["$comment"]
+
+
+def test_a_converted_file_keyed_by_id_is_refused(checkout: Path) -> None:
+    converted = checkout / "converted-pl.json"
+    payload = json.loads(converted.read_text("utf-8"))
+    payload["items"] = {item["id"]: item for item in payload["items"]}
+    converted.write_text(json.dumps(payload), encoding="utf-8")
+
+    result = CliRunner().invoke(main, ["question", "refusals"])
+
+    assert result.exit_code == 1
+    assert "an object keyed by id, not a list" in result.output
 
 
 class _ReadyBank(fake_bank.FakeBank):

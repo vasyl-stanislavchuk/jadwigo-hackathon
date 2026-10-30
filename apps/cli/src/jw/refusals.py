@@ -22,15 +22,28 @@ from __future__ import annotations
 import datetime as dt
 import json
 from collections.abc import Mapping
+from functools import cache
 from pathlib import Path
 from typing import Any
+
+from jsonschema import Draft202012Validator
+from jsonschema.exceptions import best_match
 
 from jw import bank_client, items, settings_keys
 from jw.errors import JwError
 
 FLAGGED_RULE = "flagged"
 EXAMPLES = 3
-DEFAULT_BY = "owner"  # a role, never a person's name: the file is committed in the bank repo
+# Who may pull an item: a role, never a person's name, because the file is committed in the bank
+# repo and its schema refuses an empty `by`.
+ROLES = ("owner", "lead", "teacher", "agent")
+DEFAULT_BY = "owner"
+SCHEMA = Path(__file__).resolve().parent / "contracts" / "refusals.schema.json"
+
+
+@cache
+def _validator() -> Draft202012Validator:
+    return Draft202012Validator(json.loads(SCHEMA.read_text(encoding="utf-8")))
 
 
 def owner_of(rule: str) -> str:
@@ -76,7 +89,11 @@ def _items(converted: Path) -> list[dict[str, Any]]:
         )
     listed = raw.get("items") if isinstance(raw, dict) else None
     if isinstance(listed, dict):
-        listed = list(listed.values())
+        raise JwError(
+            f"{converted} holds items as an object keyed by id, not a list",
+            hint="The converted file is {generated_by, licence_note, items: [...]}; re-run the "
+            "conversion.",
+        )
     if not isinstance(listed, list):
         raise JwError(f"{converted} has no items list", hint="Re-run the conversion.")
     return [i for i in listed if isinstance(i, dict) and "id" in i]
@@ -132,9 +149,20 @@ def _load(language: str) -> dict[str, Any]:
 
 
 def _save(language: str, refusals: Mapping[str, Any]) -> Path:
+    """Write the refusals file, only when the whole of it matches the pinned schema: the nightly
+    stamp validates it and would stop on a file that does not."""
     path = require_path(language)
-    path.parent.mkdir(parents=True, exist_ok=True)
     body = {"shapes": list(refusals["shapes"]), "flags": list(refusals["flags"])}
+    problem = best_match(_validator().iter_errors(body))
+    if problem is not None:
+        where = "/".join(str(p) for p in problem.absolute_path) or "the file"
+        raise JwError(
+            f"the refusals file would not match refusals.schema.json at {where}: "
+            f"{problem.message}",
+            hint=f"Nothing was written to {path}. Fix the entry there by hand if it was already "
+            "wrong, then run the command again.",
+        )
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(body, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return path
 
@@ -267,6 +295,8 @@ def flag(
     today: dt.date | None = None,
 ) -> Path:
     """Pull `item_id` in `language`: one flag in the refusals file, replacing an earlier one."""
+    if by not in ROLES:
+        raise JwError(f"{by!r} is not a role", hint=f"Pass --by one of {', '.join(ROLES)}.")
     reason = (reason or "").strip()
     if not reason:
         raise JwError(
