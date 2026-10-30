@@ -38,6 +38,7 @@ a missing link, a wrong name, or a dev command filed here.
 | Workflow | Use it when | Its eval |
 | --- | --- | --- |
 | [`jadwigo-lesson-compose`](jadwigo-lesson-compose/SKILL.md) | a parent asks for a lesson | `apps/cli/evals/compose/` |
+| [`jadwigo-report-write`](jadwigo-report-write/SKILL.md) | a learner's report needs its narrative for the parent, after `make dream` | `apps/cli/evals/report/` |
 
 A workflow may run in an empty folder, with only the jadwigo MCP tools, so it keeps what the agent
 needs in its own folder and never sends the agent to source, a shell or the repo. The per-language
