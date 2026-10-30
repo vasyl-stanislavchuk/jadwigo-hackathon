@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv, type Plugin } from "vite";
+import { builderPlugin } from "./dev/builder-plugin.ts";
 import { apiTarget, authConfig, webPort } from "./src/config.ts";
 import { devMediaUrl, NO_MEDIA_URL } from "./src/media.ts";
 
@@ -53,7 +54,13 @@ export default defineConfig(({ command, mode }) => {
         )
       : undefined;
   return {
-    plugins: [react(), tailwindcss(), ...(media === undefined ? [] : [mediaGuard(media)])],
+    // The lesson builder's dev-server side applies on `serve` only (dev/builder-plugin.ts, dl-a38n).
+    plugins: [
+      react(),
+      tailwindcss(),
+      builderPlugin(),
+      ...(media === undefined ? [] : [mediaGuard(media)]),
+    ],
     define: {
       // The parent's sign-in, or null for none (src/parent/auth.ts).
       __JW_AUTH__: JSON.stringify(authConfig()),

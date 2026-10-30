@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { lambdaDatabaseUrl } from "./config.ts";
+import { authIssuer, lambdaDatabaseUrl } from "./config.ts";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -68,5 +68,14 @@ describe("lambdaDatabaseUrl", () => {
   it("refuses a URL that is not postgres, naming DATABASE_URL", async () => {
     vi.stubEnv("DATABASE_URL", "https://u:secret@h/postgres");
     await expect(lambdaDatabaseUrl(vi.fn())).rejects.toThrow(/^DATABASE_URL is not a postgres/);
+  });
+});
+
+describe("authIssuer", () => {
+  it("is AUTH_ISSUER trimmed, and undefined when it is unset or blank", () => {
+    vi.stubEnv("AUTH_ISSUER", " https://ref.supabase.co/auth/v1 ");
+    expect(authIssuer()).toBe("https://ref.supabase.co/auth/v1");
+    vi.stubEnv("AUTH_ISSUER", " ");
+    expect(authIssuer()).toBeUndefined();
   });
 });

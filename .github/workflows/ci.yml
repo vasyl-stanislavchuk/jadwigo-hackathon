@@ -23,6 +23,7 @@ jobs:
     timeout-minutes: 3
     outputs:
       code: ${{ steps.diff.outputs.code }}
+      workflows: ${{ steps.diff.outputs.workflows }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -38,18 +39,23 @@ jobs:
         run: |
           if [ "$EVENT" = pull_request ]; then base="$PR_BASE"; head="$PR_HEAD"; else base="$BEFORE"; head="$GITHUB_SHA"; fi
           if [ -z "$base" ] || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
-            echo "no usable base, so everything runs"; echo "code=true" >> "$GITHUB_OUTPUT"; exit 0
+            echo "no usable base, so everything runs"; echo "code=true" >> "$GITHUB_OUTPUT"
+            echo "workflows=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
           code=false
+          workflows=false
           while IFS= read -r f; do
             case "$f" in
               # The docs site's pages are its source: a .md under apps/docs is built (dl-5ssh.90.10).
               apps/docs/*) code=true; echo "docs site change: $f" ;;
+              # A product workflow is .md, yet the cli's compose eval reads it (dl-5ssh.103).
+              workflows/*) workflows=true; echo "workflow change: $f" ;;
               docs/*|*.md) ;;
               *) code=true; echo "code change: $f" ;;
             esac
           done < <(git diff --name-only "$base" "$head")
           echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "workflows=$workflows" >> "$GITHUB_OUTPUT"
 
   lint:
     needs: changes
@@ -80,9 +86,11 @@ jobs:
       - uses: ./.github/actions/setup
       - run: bunx turbo run typecheck --affected
 
+  # turbo --affected picks packages by the files inside them, so a change under workflows/ alone
+  # picks none; the cli tests, whose compose eval reads workflows/, run by name then (dl-5ssh.103).
   unit:
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -91,7 +99,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: ./.github/actions/setup
-      - run: bunx turbo run test --affected
+      - if: needs.changes.outputs.code == 'true'
+        run: bunx turbo run test --affected
+      - name: The cli tests and the workflow links, on a workflows/ change
+        if: needs.changes.outputs.workflows == 'true'
+        run: |
+          bunx turbo run test --filter=@jadwigo/cli
+          bun tools/src/check-workflows.ts
 
   integration:
     needs: changes
@@ -274,6 +288,7 @@ jobs:
       - name: The api on port 8787
         env:
           AUTH_JWKS_URL: http://127.0.0.1:54321/auth/v1/.well-known/jwks.json
+          AUTH_ISSUER: http://127.0.0.1:54321/auth/v1
         run: |
           PORT=8787 nohup bun apps/api/src/serve.ts > "$RUNNER_TEMP/api.log" 2>&1 &
           for _ in $(seq 1 30); do

@@ -19,3 +19,18 @@ variable "dmarc_policy" {
     error_message = "dmarc_policy is none, quarantine or reject."
   }
 }
+
+variable "workspace" {
+  description = "Google Workspace mail per apex, beside SES (workspace/): each record stays off until its input is set (dl-e8ov.2.71)"
+  type = map(object({
+    site_verification = optional(string)
+    mx                = optional(bool, false)
+    dkim              = optional(string)
+  }))
+  default = {}
+
+  validation {
+    condition     = alltrue([for d in keys(var.workspace) : contains(var.domains, d)])
+    error_message = "workspace names only apexes in domains: the module looks their zones up there."
+  }
+}

@@ -13,6 +13,7 @@ import type { z } from "zod";
 import { FEATURED_POD, featuredAssignmentId, lessonIdFor, lessonQuestionIdFor } from "./ids.ts";
 import {
   type FileQuestion,
+  type LessonFile,
   parseLessonFile,
   type QuestionStep,
   questionSteps,
@@ -64,12 +65,60 @@ function dropped(given: unknown, kept: unknown, path = ""): string[] {
   );
 }
 
+/**
+ * Why a step does not compile, as `compileProblems` reports it: the step (null for the file's own),
+ * where under the step (`question.help`, a twin's `question.help.twin`), a rule a reader can cite,
+ * the message `compileLessonFile` throws, and each problem a contract schema found with its path
+ * under `at`.
+ */
+export interface CompileProblem {
+  readonly step_id: string | null;
+  readonly at: string;
+  readonly rule: string;
+  readonly message: string;
+  readonly issues: readonly { readonly path: string; readonly message: string }[];
+}
+
+/** A throw site's problem, carried through `body` to `compileProblems`. */
+class StepError extends Error {
+  constructor(
+    message: string,
+    readonly at: string,
+    readonly rule: string,
+    readonly issues: CompileProblem["issues"] = [],
+  ) {
+    super(message);
+  }
+}
+
+/** A Zod path as the file writes it: `data.options[2].text`. */
+function pathOf(path: readonly PropertyKey[]): string {
+  return path
+    .map((k, i) => (typeof k === "number" ? `[${k}]` : i === 0 ? String(k) : `.${String(k)}`))
+    .join("");
+}
+
 /** Parses with a contract schema, and refuses a field the schema would silently drop. */
-export function strictly<S extends z.ZodType>(schema: S, value: unknown, at: string): z.infer<S> {
+export function strictly<S extends z.ZodType>(
+  schema: S,
+  value: unknown,
+  at: string,
+  where = "",
+): z.infer<S> {
   const parsed = schema.safeParse(value);
-  if (!parsed.success) throw new Error(`${at}: ${parsed.error.message}`);
+  if (!parsed.success) {
+    const issues = parsed.error.issues.map((i) => ({ path: pathOf(i.path), message: i.message }));
+    throw new StepError(`${at}: ${parsed.error.message}`, where, "contract", issues);
+  }
   const lost = dropped(value, parsed.data);
-  if (lost.length > 0) throw new Error(`${at}: the contract has no field for ${lost.join(", ")}`);
+  if (lost.length > 0) {
+    throw new StepError(
+      `${at}: the contract has no field for ${lost.join(", ")}`,
+      where,
+      "unknown-field",
+      lost.map((path) => ({ path, message: "the contract has no field for this" })),
+    );
+  }
   return parsed.data;
 }
 
@@ -86,12 +135,20 @@ function skillIds(
     const mapped = skillIdOf(id);
     const other = seen.get(mapped);
     if (other !== undefined && other !== id) {
-      throw new Error(`lesson file ${fileId}: skill ids ${other} and ${id} both become ${mapped}`);
+      throw new StepError(
+        `lesson file ${fileId}: skill ids ${other} and ${id} both become ${mapped}`,
+        "skill_ids",
+        "skill-id-collision",
+      );
     }
     seen.set(mapped, id);
     const parsed = SkillId.safeParse(mapped);
     if (!parsed.success)
-      throw new Error(`lesson file ${fileId}: ${id} is not a skill id (${mapped})`);
+      throw new StepError(
+        `lesson file ${fileId}: ${id} is not a skill id (${mapped})`,
+        "skill_ids",
+        "skill-id",
+      );
     return parsed.data;
   });
 }
@@ -110,17 +167,19 @@ function body(
   const at = `lesson file ${fileId}, step ${stepId}`;
   const { help, ...spec } = question;
   if (QUESTION_TYPE_FAMILY[step.question_type] !== spec.family) {
-    throw new Error(
+    throw new StepError(
       `${at}: ${step.question_type} is a ${QUESTION_TYPE_FAMILY[step.question_type]} question, not ${spec.family}`,
+      "question_type",
+      "question-type-family",
     );
   }
-  const family = strictly(FamilyQuestion, spec, at);
+  const family = strictly(FamilyQuestion, spec, at, "question");
   const { twin: _twin, ...ladder } = help ?? {};
   return {
     ...family,
     question_type: step.question_type,
     say,
-    help: strictly(Help, ladder, `${at} help`),
+    help: strictly(Help, ladder, `${at} help`, "question.help"),
     skill_ids: skillIds(fileId, step.skill_ids),
     ...rest,
   } as Body;
@@ -148,66 +207,139 @@ function withId(
  * `based_on`, as the playground shows none on it.
  */
 export function compileLessonFile(raw: unknown, pod: PodId = FEATURED_POD.id): CompiledLesson {
-  const file = parseLessonFile(raw);
+  return compile(parseLessonFile(raw), pod, (problem) => {
+    throw new Error(problem.message);
+  });
+}
+
+/**
+ * Every reason a parsed file does not compile, in the order `compileLessonFile` meets them: it
+ * throws the first, this keeps going to the next step (dl-a38n.14). Empty when the file compiles.
+ */
+export function compileProblems(file: LessonFile, pod: PodId = FEATURED_POD.id): CompileProblem[] {
+  const problems: CompileProblem[] = [];
+  compile(file, pod, (problem) => {
+    problems.push(problem);
+  });
+  return problems;
+}
+
+/** A twin's place under its step: its question is `question.help.twin`, its ladder its `help`. */
+const UNDER_TWIN: Record<string, string> = {
+  question: "question.help.twin",
+  "question.help": "question.help.twin.help",
+};
+
+/** Runs `run`, reporting a throw as the step's problem; null when it threw. */
+function attempt<T>(
+  stepId: string | null,
+  run: () => T,
+  report: (problem: CompileProblem) => void,
+  twin = false,
+): T | null {
+  try {
+    return run();
+  } catch (e) {
+    if (!(e instanceof StepError)) throw e;
+    const at = twin ? (UNDER_TWIN[e.at] ?? e.at) : e.at;
+    report({ step_id: stepId, at, rule: e.rule, message: e.message, issues: e.issues });
+    return null;
+  }
+}
+
+function compile(
+  file: LessonFile,
+  pod: PodId,
+  report: (problem: CompileProblem) => void,
+): CompiledLesson {
   const steps = questionSteps(file);
-  if (steps.length === 0) throw new Error(`lesson file ${file.id}: no question to ask`);
+  if (steps.length === 0) {
+    report({
+      step_id: null,
+      at: "script",
+      rule: "no-question",
+      message: `lesson file ${file.id}: no question to ask`,
+      issues: [],
+    });
+  }
   // The server never asks an explain question in v0, but an attempt starts at position 1 whatever
   // its family, so a lesson that opens with one would stick (dl-e8ov.2.32.28, decision
   // 2026-10-28-in-v0-the-server-never-asks-an-explain-question-a-lesson-plays-i).
   const first = steps[0];
   if (first?.question.family === "explain") {
-    throw new Error(
-      `lesson file ${file.id}, step ${first.id}: a v0 lesson cannot open with an explain question, which is never asked`,
-    );
+    report({
+      step_id: first.id,
+      at: "question.family",
+      rule: "explain-first",
+      message: `lesson file ${file.id}, step ${first.id}: a v0 lesson cannot open with an explain question, which is never asked`,
+      issues: [],
+    });
   }
   const shared = { subject: file.subject, grade: null };
 
   const planned: CompiledQuestion[] = [];
   const spares: CompiledQuestion[] = [];
   for (const step of steps) {
-    const question = withId(
-      pod,
-      file.id,
+    const content = attempt(
       step.id,
-      body(file.id, step.id, step, step.question, step.say, {
-        ...shared,
-        twin_of: null,
-        based_on: step.based_on,
-        credit: step.credit ?? null,
-      }),
+      () =>
+        body(file.id, step.id, step, step.question, step.say, {
+          ...shared,
+          twin_of: null,
+          based_on: step.based_on,
+          credit: step.credit ?? null,
+        }),
+      report,
     );
+    if (content === null) continue;
+    const question = withId(pod, file.id, step.id, content);
     planned.push({ step_id: step.id, role: "planned", question });
 
     const twin = step.question.help?.["twin"];
     if (twin === undefined) continue;
     const { say, ...twinQuestion } = twin as FileQuestion & { say: string };
-    if (twinQuestion.help?.["twin"] !== undefined) {
-      throw new Error(`lesson file ${file.id}, step ${step.id}: a twin has no twin of its own`);
-    }
     const twinStep = `${step.id}t`;
-    spares.push({
-      step_id: twinStep,
-      role: "spare",
-      question: withId(
-        pod,
-        file.id,
-        twinStep,
+    if (twinQuestion.help?.["twin"] !== undefined) {
+      report({
+        step_id: twinStep,
+        at: "question.help.twin.help.twin",
+        rule: "twin-of-twin",
+        message: `lesson file ${file.id}, step ${step.id}: a twin has no twin of its own`,
+        issues: [],
+      });
+      continue;
+    }
+    const twinContent = attempt(
+      twinStep,
+      () =>
         body(file.id, twinStep, step, twinQuestion, say, {
           ...shared,
           twin_of: question.id,
           based_on: null,
           credit: null,
         }),
-      ),
+      report,
+      true,
+    );
+    if (twinContent === null) continue;
+    spares.push({
+      step_id: twinStep,
+      role: "spare",
+      question: withId(pod, file.id, twinStep, twinContent),
     });
   }
 
   const skills = [
     ...new Set(
-      skillIds(
-        file.id,
-        steps.flatMap((s) => s.skill_ids),
-      ),
+      attempt(
+        null,
+        () =>
+          skillIds(
+            file.id,
+            steps.flatMap((s) => s.skill_ids),
+          ),
+        report,
+      ) ?? [],
     ),
   ];
   const lessonId = lessonIdFor(pod, file.id);

@@ -10,6 +10,18 @@ import "../styles/llm-actions.css";
 <div class="jw-page-title">
   <Default {...Astro.props}><slot /></Default>
   <PageActions />
+  <button
+    type="button"
+    class="jw-toc-toggle"
+    aria-expanded="true"
+    aria-label="Hide the contents"
+    title="Hide the contents"
+  >
+    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="16" rx="3" />
+      <path d="M15 4v16" />
+    </svg>
+  </button>
 </div>
 
 <style>
@@ -24,6 +36,83 @@ import "../styles/llm-actions.css";
     min-width: 0;
   }
 </style>
+
+<style is:global>
+  /* The right-hand contents is narrower than Starlight's 18.75rem, which the left sidebar keeps. */
+  :root {
+    --docs-toc-width: 15rem;
+  }
+
+  .jw-toc-toggle {
+    display: none;
+  }
+
+  /* The contents shows from 72rem; so does its button, which also brings a hidden one back. */
+  @media (min-width: 72rem) {
+    :root[data-has-toc] .jw-toc-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      padding: var(--jw-space-1);
+      margin-block-start: var(--jw-space-1);
+      border: var(--jw-border) solid transparent;
+      border-radius: var(--jw-radius-small);
+      background: none;
+      color: var(--sl-color-gray-2);
+      cursor: pointer;
+    }
+
+    .jw-toc-toggle:hover {
+      border-color: var(--jw-line);
+      color: var(--sl-color-white);
+    }
+
+    /* A fixed column: Starlight pads it with the page's spare room to keep the text centred; here
+     * the spare room goes either side of the text instead. */
+    :root[data-has-toc] .right-sidebar-container {
+      width: var(--docs-toc-width);
+    }
+
+    :root[data-has-sidebar][data-has-toc] .main-pane {
+      width: calc(100% - var(--docs-toc-width));
+      --sl-content-margin-inline: auto;
+    }
+
+    :root[data-toc="collapsed"] .right-sidebar-container {
+      display: none;
+    }
+
+    :root[data-toc="collapsed"][data-has-toc] .main-pane {
+      width: 100%;
+      --sl-content-margin-inline: auto;
+    }
+  }
+</style>
+
+<script>
+  import { isCollapsed, toggleSidebar } from "../styles/sidebar-toggle.ts";
+
+  const root = document.documentElement;
+  const tocLabel = (collapsed: boolean) => (collapsed ? "Show the contents" : "Hide the contents");
+  for (const button of document.querySelectorAll<HTMLButtonElement>(".jw-toc-toggle")) {
+    const show = (collapsed: boolean) => {
+      button.setAttribute("aria-expanded", String(!collapsed));
+      button.setAttribute("aria-label", tocLabel(collapsed));
+      button.title = tocLabel(collapsed);
+    };
+    show(isCollapsed(root, "toc"));
+    button.addEventListener("click", () => {
+      let storage: Storage | null = null;
+      try {
+        storage = window.localStorage;
+      } catch {
+        storage = null;
+      }
+      show(toggleSidebar(root, storage, "toc"));
+    });
+  }
+</script>
 
 <script>
   import { musePrompt } from "../lib/muse.ts";
