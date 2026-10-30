@@ -31,6 +31,8 @@ export default defineConfig({
     starlight({
       title: "Jadwigo docs",
       description: "How to call Jadwigo's API and MCP server, and how its design system is built.",
+      // The crown favicon (dl-5ssh.90.34); public/ holds what tools/src/brand-icons.ts writes.
+      favicon: "/favicon.svg",
       // The app's design system: Andika, Zeszyt's roles, and the --sl-* names mapped onto them
       // (src/styles/theme.css). Its night roles sit on [theme="dark"], which the bridge copies
       // from Starlight's data-theme before the first paint.
@@ -49,6 +51,11 @@ export default defineConfig({
       // Agents find the API's OpenAPI document from any page, as they find a page's Markdown.
       head: [
         { tag: "script", content: THEME_BRIDGE },
+        {
+          tag: "link",
+          attrs: { rel: "icon", href: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+        },
+        { tag: "link", attrs: { rel: "apple-touch-icon", href: "/apple-touch-icon.png" } },
         {
           tag: "link",
           attrs: {
