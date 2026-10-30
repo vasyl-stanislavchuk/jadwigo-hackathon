@@ -6,6 +6,9 @@
 //                                          against (AUTH_JWKS_URL); its tokens' iss is
 //                                          <origin>/auth/v1, the value CI passes the api as
 //                                          AUTH_ISSUER (dl-e8ov.2.68)
+//   GET  /auth/v1/settings                the project's public settings: Google and Facebook on, as
+//                                          /parent reads them before it shows their buttons
+//                                          (dl-e8ov.2.83)
 //   POST /auth/v1/otp                     "sends" a code: every code is 123456
 //   POST /auth/v1/verify                  turns 123456 into a session whose access token is shaped
 //                                          like Supabase's (iss, aud and role authenticated, sub,
@@ -130,6 +133,12 @@ createServer(async (req, res) => {
   if (req.method === "OPTIONS") return send(res, 204, null);
   if (req.method === "GET" && path === "/auth/v1/.well-known/jwks.json")
     return send(res, 200, jwks);
+  if (req.method === "GET" && path === "/auth/v1/settings")
+    return send(res, 200, {
+      external: { email: true, google: true, facebook: true },
+      disable_signup: false,
+      mailer_autoconfirm: false,
+    });
   if (req.method === "POST" && path === "/auth/v1/otp") {
     const { email } = await bodyOf(req);
     return typeof email === "string" ? send(res, 200, {}) : send(res, 400, { msg: "no email" });

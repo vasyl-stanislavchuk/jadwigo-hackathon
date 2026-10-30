@@ -281,7 +281,19 @@ function SignIn({
     });
   };
 
-  const providers = auth.providers();
+  // A provider's button shows once the project says it is on: none while that is read, or if it
+  // cannot be (dl-e8ov.2.83). The email code is always there.
+  const [providers, setProviders] = useState<readonly Provider[]>([]);
+  useEffect(() => {
+    let live = true;
+    auth.enabledProviders().then(
+      (enabled) => live && setProviders(enabled),
+      () => live && setProviders([]),
+    );
+    return () => {
+      live = false;
+    };
+  }, [auth]);
   const inApp = inAppBrowser(navigator.userAgent);
 
   return (

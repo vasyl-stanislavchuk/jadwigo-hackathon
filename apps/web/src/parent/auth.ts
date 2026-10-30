@@ -34,8 +34,13 @@ export interface Auth {
   sendCode(email: string): Promise<void>;
   /** Turns the code into a session; false when the code does not match. */
   verifyCode(email: string, code: string): Promise<boolean>;
-  /** The providers whose buttons show, in the screen's order (src/config.ts PROVIDERS). */
+  /** The providers the build turns on, in the screen's order (src/config.ts PROVIDERS). */
   providers(): readonly Provider[];
+  /** Those of them the Supabase project has on too (its public /auth/v1/settings), read once per
+   * page load; none when the read fails. The build's list and the project's settings are 2
+   * switches that can drift, and a provider the project has off answers with a raw JSON 400
+   * (dl-e8ov.2.83). */
+  enabledProviders(): Promise<readonly Provider[]>;
   /** Sends the tab to the provider, to come back to `returnTo`. */
   signInWith(provider: Provider, returnTo: string): Promise<void>;
   /** Reads a provider's return off `url` (`?code=`, or `error` in the query or the hash), takes it
@@ -87,8 +92,29 @@ export function withoutReturn(url: URL): string {
   return `${url.pathname}${search}${hash.size > 0 ? `#${hash}` : ""}`;
 }
 
-/** The sign-in over a Supabase client, with the providers the build turns on. */
-export function supabaseAuth(supabase: SupabaseClient, providers: readonly Provider[]): Auth {
+/** Supabase Auth's public settings: which external providers the project has on. */
+export type ReadSettings = () => Promise<unknown>;
+
+/** The providers of `providers` that `settings` (GET /auth/v1/settings) names true under
+ * `external`. */
+export function enabledIn(settings: unknown, providers: readonly Provider[]): Provider[] {
+  const external =
+    typeof settings === "object" && settings !== null && "external" in settings
+      ? settings.external
+      : null;
+  if (typeof external !== "object" || external === null) return [];
+  const on = external as Record<string, unknown>;
+  return providers.filter((provider) => on[provider] === true);
+}
+
+/** The sign-in over a Supabase client, with the providers the build turns on and the read of the
+ * project's settings. */
+export function supabaseAuth(
+  supabase: SupabaseClient,
+  providers: readonly Provider[],
+  readSettings: ReadSettings = () => Promise.reject(new Error("no settings")),
+): Auth {
+  let enabled: Promise<readonly Provider[]> | undefined;
   // Each code is spent once: a remount that reads the same code again gets the first exchange's
   // outcome, never a second exchange that would fail.
   const exchanges = new Map<string, Promise<RedirectOutcome>>();
@@ -109,6 +135,16 @@ export function supabaseAuth(supabase: SupabaseClient, providers: readonly Provi
       return error === null && data.session !== null;
     },
     providers: () => providers,
+    enabledProviders() {
+      enabled ??=
+        providers.length === 0
+          ? Promise.resolve([])
+          : readSettings().then(
+              (settings) => enabledIn(settings, providers),
+              () => [],
+            );
+      return enabled;
+    },
     async signInWith(provider, returnTo) {
       // The providers' default scopes: Google's email and profile, Facebook's email.
       const { error } = await supabase.auth.signInWithOAuth({
@@ -161,6 +197,13 @@ export function browserAuth(): Auth | null {
               },
             }),
             config.providers ?? [],
+            async () => {
+              const reply = await fetch(`${config.url}/auth/v1/settings`, {
+                headers: { apikey: config.key },
+              });
+              if (!reply.ok) throw new Error(`settings ${reply.status}`);
+              return reply.json();
+            },
           );
   }
   return shared;
