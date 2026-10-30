@@ -1,0 +1,41 @@
+{
+  "language": "pl",
+  "headline": "Mnożenie przez 6 idzie do przodu. Przy mnożeniu przez 7 zdarza się dodawanie zamiast mnożenia.",
+  "direction_now": "W 2 dniach dziecko odpowiedziało na 18 pytań. Mnożenie przez 6 ruszyło: pierwsze odpowiedzi bez podpowiedzi już są. Przy mnożeniu przez 7 dziecko 3 razy dodało liczby zamiast je pomnożyć, więc na tym warto się teraz skupić.",
+  "answers": [
+    {
+      "question": "skills_standing",
+      "answer": "Mnożenie przez 6 idzie do przodu. Mnożenie przez 7 wymaga uwagi: dziecko dodaje liczby, gdy trzeba je pomnożyć.",
+      "citations": [
+        { "kind": "attempt", "attempt_id": "att_59s346q3d25vt4f5v37e3s3e28" },
+        { "kind": "skill", "skill_code": "maths.multiplication.row-7" }
+      ]
+    },
+    {
+      "question": "next_focus",
+      "answer": "Cel idzie we właściwą stronę. Następna lekcja wraca do mnożenia przez 7 i sprawdza mnożenie przez 6 drugiego dnia.",
+      "citations": [{ "kind": "goal", "goal_id": "gol_4rp1xpa7z3dj8fssz5awsh8vht" }]
+    }
+  ],
+  "proposals": [
+    {
+      "proposal_id": "p1",
+      "claim": "Powtórzyć mnożenie przez 7, z grupami po 7 na obrazku.",
+      "rationale": "Dziecko 3 razy dodało liczby zamiast je pomnożyć. Grupy pokazują, że to mnożenie.",
+      "citations": [{ "kind": "attempt", "attempt_id": "att_4t97kb6cq643dzvmxxqkfbf5kz" }]
+    },
+    {
+      "proposal_id": "p2",
+      "claim": "Sprawdzić mnożenie przez 6 jeszcze raz, innego dnia.",
+      "rationale": "Pierwsze odpowiedzi bez podpowiedzi już są. Drugi dzień pokaże, czy zostają.",
+      "citations": [{ "kind": "skill", "skill_code": "maths.multiplication.row-6" }]
+    }
+  ],
+  "asks": [
+    {
+      "ask": "Co dziecko ćwiczy teraz w szkole?",
+      "why": "Następna lekcja może wtedy iść obok tego, co jest na zajęciach."
+    }
+  ],
+  "made_by": "jadwigo-report-write/fixture"
+}
