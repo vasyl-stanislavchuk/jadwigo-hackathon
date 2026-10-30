@@ -86,14 +86,17 @@ A lesson from the bank copies each question whole, its help included, and plays 
 agent writes only what the bank does not have.
 
 1. **Draft.** Call [`lesson_draft`](/mcp/lesson_draft/) with the parent's request. Pass every name
-   the family uses in `names`. The tool replaces them before anything leaves the machine. The
-   draft stays on the server's machine under a `draft_id`, and a short view of it comes back.
+   the family uses in `names`. The tool replaces them before anything leaves the machine. Pass
+   the `topic` in a few words, with no count, grade or name (`mnożenie`): the bank searches it.
+   The draft stays on the server's machine under a `draft_id`, and a short view of it comes back.
 2. **Write what is missing.** Each question's `you_write` lists it: the `twin`,
    `boost_by_mistake` for its `mistake_classes`, and any rung the copy leaves empty. Write it in
    the lesson's language. Change a copied part only when the parent asks, as a change in
    `changes`.
 3. **Check.** Call [`lesson_check`](/mcp/lesson_check/) with the `draft_id` and your words by step
    id. Fix each error it lists by step id, and check again until it answers `ok` with a card.
+4. **Import, then play.** The card's `next` names the import: `make lesson-import
+   FILE=<lesson_file> ENV=dev` in the jadwigo checkout. The `play_path` exists only after it runs.
 
 ## Every tool
 

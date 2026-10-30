@@ -6,7 +6,7 @@ jadwigo.kids and English wait.
 
 - **Not here:** Anything behind a login; that is `apps/web`.
 - **Owner:** the marketing workstream (`docs/workstreams/marketing.md`). **Filled by:** `dl-w0b4.1` and the issues it blocks.
-- **Imports:** packages: `config` (hosts), later `ui` and `copy`.
+- **Imports:** packages: `config` (hosts) and `ui` (the brand SVGs, `@jadwigo/ui/brand/*`), later `copy`.
 - **Public surface:** `src/index.ts`. Other files are private to this package.
 - **Test:** `bunx turbo run lint typecheck test build --filter=./apps/site`, then `bun run check:dist`.
 - **Deploy:** the owner runs `make -C infra site-deploy` (build, `check:dist`, sync to the bucket, invalidate). A merge deploys nothing.
@@ -28,3 +28,6 @@ jadwigo.kids and English wait.
 - The placeholder page says only "Jadwigo. Wkrótce."
   (`jadwigo-marketing/decisions/2026-10-27-the-jadwigo-pl-placeholder-says-jadwigo-wkrotce-and-is-built-in`),
   plus one link to the app, "Zagraj w lekcję", at `appUrl` from `hosts.prod.app` (`dl-e8ov.2.41`).
+  Its heading is the crown wordmark, not the word in text (`dl-w0b4.68`), with no tagline.
+- `public/` holds the favicon files `tools/src/brand-icons.ts` writes. Edit their sources in
+  `packages/ui/src/brand`, then run `make icons`.

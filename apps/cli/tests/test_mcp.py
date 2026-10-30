@@ -190,7 +190,7 @@ def test_a_client_with_no_shell_drafts_fills_and_checks_a_lesson_by_draft_id(
                 return text if result.is_error else json.loads(text)
 
             draft = await tool("lesson_draft", {"request": "6 zadań z mnożenia, klasa 3",
-                                                "grade": "3", "names": []})
+                                                "grade": "3", "names": [], "topic": "mnożenie"})
             words = {
                 q["step_id"]: {k: rungs[q["item_id"]][k] for k in q["you_write"]}
                 for q in draft["questions"]
@@ -207,11 +207,14 @@ def test_a_client_with_no_shell_drafts_fills_and_checks_a_lesson_by_draft_id(
         fake.stop()
     assert len(json.dumps(draft, ensure_ascii=False)) < 20_000
     assert draft["plays_as_copied"] is True and len(draft["questions"]) == 6
+    assert draft["need"]["words"] == "mnożenie"
     assert Path(draft["draft_file"]).parent == tmp_path / "jw-drafts"
     assert refused["ok"] is False
     assert refused["errors"] == [{"step_id": "q1", "message": "help.twin is empty; write it"}]
     assert checked["ok"] is True, checked
     assert checked["play_path"].startswith("/play/") and checked["questions"] == 6
     assert Path(checked["lesson_file"]).parent == tmp_path / "jw-lessons"
+    assert checked["import_command"] == f"make lesson-import FILE={checked['lesson_file']} ENV=dev"
+    assert checked["card"]["next"]["then_play"] == checked["play_path"]
     assert all(q["rungs"]["look"] and q["twin"]["key"] for q in checked["card"]["questions"])
     assert "no draft draft_000000000000" in unknown

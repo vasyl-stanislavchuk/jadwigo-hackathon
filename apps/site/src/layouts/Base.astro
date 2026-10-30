@@ -1,14 +1,18 @@
 ---
-// Every page's frame: Polish, the head from lib/seo.ts, and the placeholder's look.
+// Every page's frame: Polish, the head from lib/seo.ts, and the placeholder's look. With `logo`, the
+// heading is the crown wordmark (dl-w0b4.68, decision jadwigo-marketing/decisions/2026-10-30-jadwigo-
+// wears-lockup-4a-an-andika-wordmark-with-a-crown-tipped-o); its SVG names it "Jadwigo".
 import { getCollection } from "astro:content";
+import wordmark from "@jadwigo/ui/brand/wordmark.svg?raw";
 import { assertReviewed, headTags, jsonLd, type Page } from "../lib/seo.ts";
 
 interface Props {
   page: Page;
   path: string;
+  logo?: boolean;
 }
 
-const { page, path } = Astro.props;
+const { page, path, logo = false } = Astro.props;
 assertReviewed(await getCollection("pages"), import.meta.env.PROD);
 const tags = headTags(page, path);
 ---
@@ -26,7 +30,7 @@ const tags = headTags(page, path);
         ) : t.kind === "property" ? (
           <meta property={t.property} content={t.content} />
         ) : (
-          <link rel={t.rel} href={t.href} />
+          <link rel={t.rel} href={t.href} type={t.type} sizes={t.sizes} />
         ),
       )
     }
@@ -47,12 +51,34 @@ const tags = headTags(page, path);
         background: #2b2a28; color: #fbf8f2; text-decoration: none; font-weight: 600;
       }
       .play a:hover, .play a:focus-visible { background: #4a4740; }
+      /* The wordmark is 1.8em tall, the crown's room included. Hover 5a: only the crown tips, about the
+         bottom-left corner of its box (packages/ui src/brand/README.md); a tap plays it once. */
+      .logo { line-height: 0; }
+      .logo svg { height: 1.8em; width: auto; }
+      .logo .crown { transform-origin: -12.5px 2.15px; transition: transform 320ms cubic-bezier(.34, 1.8, .5, 1); }
+      .logo:hover .crown, .logo.tip .crown { transform: translateY(-12.5px) rotate(-18deg); }
+      @media (prefers-reduced-motion: reduce) {
+        .logo .crown, .logo:hover .crown, .logo.tip .crown { transition: none; transform: none; }
+      }
     </style>
   </head>
   <body>
     <main>
-      <h1>{page.heading}</h1>
+      {logo ? <h1 class="logo" set:html={wordmark} /> : <h1>{page.heading}</h1>}
       <slot />
     </main>
+    {
+      logo && (
+        <script is:inline>
+          // On a touch screen there is no hover: a tap lifts the crown, holds it 200 ms, and lets it fall back.
+          document.querySelector(".logo")?.addEventListener("pointerdown", (e) => {
+            if (e.pointerType !== "touch") return;
+            const logo = e.currentTarget;
+            logo.classList.add("tip");
+            setTimeout(() => logo.classList.remove("tip"), 520);
+          });
+        </script>
+      )
+    }
   </body>
 </html>

@@ -3,9 +3,10 @@
 
 Two steps, each one MCP tool and one `jw lesson` verb:
 
-1. `draft(request, grade, ..., names=[...])` guards the request (`jw.pii.guard`), searches the bank
-   with the guarded words as a need, fetches each row's set page, draws the questions (`jw.draw`,
-   the provisional practice rule, `rule_settled` false), and loads each drawn item's family step
+1. `draft(request, grade, ..., names=[...], topic=...)` guards the request and the topic
+   (`jw.pii.guard`), searches the bank with the guarded topic as a need's words, fetches each
+   row's set page, draws the questions (`jw.draw`, the provisional practice rule,
+   `rule_settled` false), and loads each drawn item's family step
    (`jw.items.load_item`). Each question is copied whole: family, data, key, say, pictures, and
    the source's help (hints with their pictures, worked lines), so the copy plays as is
    (jadwigo-ai-workflows/decisions/2026-10-30-lesson-from-the-bank-copies-the-bank-question-whole-then-adapts).
@@ -71,6 +72,7 @@ DRAFT_ID_RE = re.compile(r"^draft_[0-9a-f]{12}$")
 # The bank's enrichment marks a skill id it has not settled; the mark is not part of the id.
 PROPOSED = "proposed:"
 CHECK_TIMEOUT_SECS = 120
+IMPORT_TARGET = "lesson-import"  # the Makefile target that imports a lesson file
 
 # What `check` runs: argv in, an object with `returncode`, `stdout` and `stderr` out.
 Runner = Callable[[list[str]], Any]
@@ -177,9 +179,9 @@ def _alts(pictures: Any) -> list[str]:
 # ---------------------------------------------------------------- the draft ------
 
 
-def _need(request: str, grade: str, language: str, skills: Sequence[str]) -> dict[str, Any]:
-    """The need the bank is asked (`contracts/need.schema.json`): the guarded request's words."""
-    need: dict[str, Any] = {"language": language, "grade": grade, "words": request}
+def _need(topic: str, grade: str, language: str, skills: Sequence[str]) -> dict[str, Any]:
+    """The need the bank is asked (`contracts/need.schema.json`): the guarded topic's words."""
+    need: dict[str, Any] = {"language": language, "grade": grade, "words": topic}
     if skills:
         need["skills"] = list(skills)
     return need
@@ -253,11 +255,24 @@ def _skill_ids(skill: str) -> tuple[list[str], str | None]:
     return [], f"{skill} is not a skill id, so this step names no skill"
 
 
+def _skills_ids(skills: Sequence[str]) -> tuple[list[str], str | None]:
+    """`_skill_ids` over each of the drawn item's skills, with one note for those left out."""
+    ids: list[str] = []
+    notes: list[str] = []
+    for skill in skills:
+        found, note = _skill_ids(skill)
+        ids += [s for s in found if s not in ids]
+        if note:
+            notes.append(note)
+    return ids, "; ".join(notes) or None
+
+
 def _skill_label(skill: str) -> str:
-    """The skill as the card names it: a proposed one says so."""
-    if skill.startswith(PROPOSED):
-        return f"{skill.removeprefix(PROPOSED)} (proposed)"
-    return skill
+    """The skill as the card names it, each of several apart: a proposed one says so."""
+    return ", ".join(
+        f"{s.removeprefix(PROPOSED)} (proposed)" if s.startswith(PROPOSED) else s
+        for s in skill.split(", ")
+    )
 
 
 def drafts_dir() -> Path:
@@ -313,7 +328,7 @@ def _slim(q: Mapping[str, Any]) -> dict[str, Any]:
 
 def _view(stored: Mapping[str, Any]) -> dict[str, Any]:
     """What lesson_draft returns: the draft's own fields and each question slim."""
-    keys = ("draft_id", "request", "grade", "language", "kind", "rule", "rule_settled")
+    keys = ("draft_id", "request", "need", "grade", "language", "kind", "rule", "rule_settled")
     return {
         **{k: stored[k] for k in keys},
         "title": stored["lesson"]["title"],
@@ -335,6 +350,7 @@ def draft(
     skills: Sequence[str] = (),
     *,
     names: Sequence[str] | None,
+    topic: str,
     today: dt.date | None = None,
     runner: Runner | None = None,
     folder: Path | None = None,
@@ -344,15 +360,25 @@ def draft(
 
     `names` is every name the family uses in the request (the child's, siblings', the parent's),
     required: an empty list says there are none. They are replaced before anything leaves.
+    `topic` is what the lesson is about in a few words, distilled from the request by the calling
+    agent ("mnożenie"), with no count, grade or name: it is the need's words the bank searches
+    (dl-e8ov.5.38.12). The request is kept, guarded, as the draft's record and title.
     """
     if names is None:
         raise JwError(
             "a lesson draft needs the family's names",
             hint="Pass names: every name the family uses in the request, or [] when there is none.",
         )
-    request = pii.guard(request.strip(), names=pii.names_for(members=names)).text
+    family = pii.names_for(members=names)
+    request = pii.guard(request.strip(), names=family).text
     if not request:
         raise JwError("a lesson draft needs a request", hint="Say what the lesson is for.")
+    topic = pii.guard((topic or "").strip(), names=family).text
+    if not topic:
+        raise JwError(
+            "a lesson draft needs a topic",
+            hint='Pass topic: what the lesson is about in a few words, such as "mnożenie".',
+        )
     if kind not in DRAW_RULES:
         raise JwError(
             f"unknown lesson kind {kind!r}", hint=f"Use one of {', '.join(DRAW_RULES)}."
@@ -360,9 +386,9 @@ def draft(
     if count is not None and count < 1:
         raise JwError("count must be at least 1", hint="Leave it out for the rule's count.")
     day = today or dt.date.today()
-    need = _need(request, grade, language, skills)
+    need = _need(topic, grade, language, skills)
     envelope = question.search_envelope(
-        grade=grade, words=request, skills=list(skills), language=language
+        grade=grade, words=topic, skills=list(skills), language=language
     )
     pages = _pages(envelope)
     result, loaded, refused = _draw_loading(
@@ -372,7 +398,7 @@ def draft(
     questions: list[dict[str, Any]] = []
     for n, (drawn, view) in enumerate(loaded, start=1):
         spec = view["question"]
-        skill_ids, skill_note = _skill_ids(drawn.skill)
+        skill_ids, skill_note = _skills_ids(drawn.skills or (drawn.skill,))
         questions.append(
             {
                 "step_id": f"q{n}",
@@ -662,7 +688,8 @@ def check(
     `words` maps each step id to what the agent wrote for it (the lesson_check tool's `help`):
     `twin`, `boost_by_mistake`, a rung the copy leaves empty, and `changes` to a copied part.
     Every step's words are sent on each call. Returns `{"ok": true, "card", "lesson_file",
-    "play_path", "lesson_id", "questions"}`, or `{"ok": false, "errors": [{"step_id", "message"}],
+    "import_command", "play_path", "lesson_id", "questions"}`, the card's `next` saying the import
+    comes before the play path, or `{"ok": false, "errors": [{"step_id", "message"}],
     "lesson_file"}`. A missing twin or rung is an error here, before check.ts runs.
     """
     stored = load_draft(draft_id, folder)
@@ -693,13 +720,31 @@ def check(
     answer = _run_check(file, path, runner)
     if not answer.get("ok"):
         return {"ok": False, "errors": answer.get("errors") or [], "lesson_file": str(path)}
+    play_path = answer.get("play_path")
+    import_step = _import_step(path, play_path)
     return {
         "ok": True,
-        "card": card({**stored, "questions": [steps[s] for s in known]}),
+        "card": {**card({**stored, "questions": [steps[s] for s in known]}), "next": import_step},
         "lesson_file": str(path),
-        "play_path": answer.get("play_path"),
+        "import_command": import_step["command"],
+        "play_path": play_path,
         "lesson_id": answer.get("lesson_id"),
         "questions": answer.get("questions"),
+    }
+
+
+def _import_step(path: Path, play_path: Any) -> dict[str, Any]:
+    """What comes after a clean check: the import into jadwigo-dev, then the play path, which
+    exists only once the import has run (dl-e8ov.5.38.13)."""
+    repo = settings_keys.repo_dir()
+    command = f"make {IMPORT_TARGET} FILE={path} ENV=dev"
+    return {
+        "command": command,
+        "run_in": str(repo) if repo else None,
+        "then_play": play_path,
+        "says": f"Import the lesson first: {command}, from the jadwigo checkout"
+        + (f" ({repo})" if repo else "")
+        + f". Only then does it play at {play_path}; before the import that path does not exist.",
     }
 
 
@@ -795,4 +840,7 @@ def card_text(card_: Mapping[str, Any]) -> str:
     if left:
         lines.append("left out:")
         lines += [f"   {item['id']}: {item['reason']}" for item in left]
+    step = card_.get("next")
+    if step:
+        lines += [f"next: {step['says']}"]
     return "\n".join(lines)
