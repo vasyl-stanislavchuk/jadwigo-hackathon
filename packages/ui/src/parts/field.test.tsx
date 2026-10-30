@@ -49,6 +49,18 @@ describe("Field", () => {
     expect(input.getAttribute("aria-describedby")).toBe(`hint ${screen.getByRole("alert").id}`);
   });
 
+  it("treats an empty problem as none: no alert, and the control stays valid", () => {
+    render(
+      <Field label="Kod" problem="">
+        <Input kind="text" />
+      </Field>,
+    );
+    const input = screen.getByRole("textbox", { name: "Kod" });
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(input.hasAttribute("aria-invalid")).toBe(false);
+    expect(input.hasAttribute("aria-describedby")).toBe(false);
+  });
+
   it("gives two fields on one page different ids", () => {
     render(
       <>
