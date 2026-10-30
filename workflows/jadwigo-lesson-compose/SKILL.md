@@ -114,20 +114,20 @@ are lists of lines.
 
 ### Mistake cards (`boost_by_mistake`)
 
-A card answers one kind of miss on this question: `{"<class>": {"text": "..."}}`. Its keys come
-only from the question's `mistake_classes`. Write a card for each class the question's `key`
-itself can give, and no other:
+A card answers one kind of miss on this question: `{"<class>": {"text": "..."}}`. Write one card
+for each class in that question's `mistake_classes`, and no other key. When the list is empty or
+`null`, write no cards (`you_write` then does not ask for them). The classes you may meet on a
+multiplication question:
 
-- a class named in the key's `near` table (`{"9": "added_instead"}`);
-- when the key names a `times_table` rule (the tool adds it to a plainly a×b question):
-  `neighbour_row` (one row off: 6 · 6 or 6 · 8 for 6 · 7), `add_for_multiply` (added the
-  numbers: 13 for 6 · 7), `off_by_small` (1 or 2 away), and for a 2-digit answer with 2 different
-  digits `digit_reversal` (24 for 42) and `same_decade` (the right tens, the wrong units);
-- when the key names neither, one card for `other_wrong`.
+- a class from the key's `near` table, such as `added_instead` (the child added the numbers);
+- from the multiplication rule, which the tool adds to a plainly a×b question: `neighbour_row`
+  (one row off: 6 · 6 or 6 · 8 for 6 · 7), `add_for_multiply` (added the numbers: 13 for 6 · 7),
+  `off_by_small` (1 or 2 away), `digit_reversal` (24 for 42), `same_decade` (the right tens, the
+  wrong units), `neighbour_fact_swap` (the answer to a fact asked just before).
 
 Each card speaks to that miss on that question, with its numbers: for 6 · 7 and `add_for_multiply`,
 `6 + 7 to dodawanie. Tu jest 7 grup po 6.` A card never prints the answer (the player drops one
-that does). When `mistake_classes` is `null`, write no cards.
+that does).
 
 ### Polish for a child of 6 to 9
 
@@ -177,8 +177,8 @@ whether anything should change. A change the parent asks for goes back through s
 The lesson is checked, not imported. Give the parent what the result names, and stop:
 
 - the lesson file, `lesson_file`;
-- the command to import it, run by the owner from the jadwigo-hackathon checkout:
-  `make lesson-import FILE=<lesson_file> ENV=dev`;
+- the command to import it, `import_command`, exactly as the result gives it, for the owner to
+  run. Do not write or change the command yourself;
 - where it plays after the import, `play_path`.
 
 Do not run the import yourself.

@@ -80,7 +80,8 @@ def test_the_workflow_has_the_steps_run_a_needed() -> None:
         ("7", "Show the parent the card"),
         ("8", "Hand over the import"),
     ]
-    for must in ("you_write", "mistake_classes", "dictionary form", "`changes`", "Do not run the import"):
+    for must in ("you_write", "mistake_classes", "dictionary form", "`changes`", "`import_command`",
+                 "write no cards", "Do not run the import"):
         assert must in text, must
 
 
@@ -127,10 +128,11 @@ def drafted(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
 
 
 def _check_ts(argv: list[str]) -> Any:
-    """check.ts stubbed: ok, with each step's near classes and 2 of its family's."""
+    """check.ts stubbed: ok, with each step's mistake classes, its key's near table's (the per-step
+    list of dl-e8ov.5.38.15)."""
     file = json.loads(Path(argv[2]).read_text(encoding="utf-8"))
     classes = {
-        s["id"]: sorted({*(s["question"]["key"].get("near") or {}).values(), "other_wrong", "typo"})
+        s["id"]: sorted(set((s["question"]["key"].get("near") or {}).values()))
         for s in file["script"]["parts"][0]["steps"]
     }
     answer = {"ok": True, "errors": [], "play_path": "/play/asg_fixture", "lesson_id": "les_fixture",
