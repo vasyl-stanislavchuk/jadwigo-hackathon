@@ -38,7 +38,7 @@ import { letterUnits } from "../letters.ts";
  */
 
 /** The shortest accepted form a one-letter slip is counted against. */
-export const TYPO_MIN_LENGTH = 4;
+const TYPO_MIN_LENGTH = 4;
 
 const trimEnds = (s: string): string => s.replace(/^\s+|\s+$/g, "");
 
@@ -126,6 +126,17 @@ export function otherForm(
   if (comparable(entered) === "" || !key.accept.some((a) => textMatches(key, a, entered)))
     return null;
   return key.accept.find((a) => !textMatches(key, a, entered)) ?? null;
+}
+
+/**
+ * Whether `textClass` can call a miss on this accepted form `typo` (dl-e8ov.5.38.15), for the
+ * classes a step lists: it measures the form as `textClass` passes it to `isTypo`, folded twice.
+ * Under `typo: 'accept'` a slip is right, unless that second fold changed the form.
+ */
+export function canSlip(key: TextKey, accept: string): boolean {
+  const once = keyFold(key, accept);
+  const twice = keyFold(key, comparable(accept));
+  return [...twice].length >= TYPO_MIN_LENGTH && (key.typo !== "accept" || twice !== once);
 }
 
 /** The class of a missed text, or null when none of the text classes fits. */

@@ -130,10 +130,7 @@ describe("mistakeClassesOf (dl-e8ov.5.38.15)", () => {
         }),
       );
     expect(text({})).toEqual(["missing_diacritics", "other_wrong", "typo", "wrong_case"]);
-    expect(text({ case: "ignore", accents: "ignore", typo: "accept" })).toEqual([
-      "other_wrong",
-      "typo",
-    ]);
+    expect(text({ case: "ignore", accents: "ignore", typo: "accept" })).toEqual(["other_wrong"]);
   });
 
   it("lists typo on a typo: 'accept' key whose judge still gives it", () => {
@@ -147,6 +144,20 @@ describe("mistakeClassesOf (dl-e8ov.5.38.15)", () => {
     };
     expect(judge(q, { entered: "Naprawde" }).mistake_class).toBe("typo");
     expect(mistakeClassesOf(q)).toContain("typo");
+  });
+
+  it("measures a form for typo as the judge does, folded", () => {
+    const text = (accept: string, key: object = {}) =>
+      mistakeClassesOf(
+        FamilyQuestion.parse({
+          family: "enter",
+          data: { input: "text", entry: "keyboard" },
+          key: { accept: [accept], ...key },
+        }),
+      );
+    expect(text("İst", { case: "ignore" })).toContain("typo");
+    expect(text("Kot.")).not.toContain("typo");
+    expect(text("Kotek", { typo: "accept" })).not.toContain("typo");
   });
 
   it("holds every class a judged number miss gets on a rule key", () => {
@@ -256,6 +267,9 @@ const enterQ = (input: string, key: object, data: object = {}) =>
 enterQ("text", { accept: ["żółw"], near: { zulw: "u_for_o" } });
 enterQ("text", { accept: ["Kot"], case: "ignore", typo: "accept" });
 enterQ("text", { accept: ["Naprawdę?!"], typo: "accept" });
+enterQ("text", { accept: ["İst"], case: "ignore" });
+enterQ("text", { accept: ["Kot."] });
+enterQ("text", { accept: ["\u0344ab"] });
 enterQ("expression", { accept: ["2×5"], form: "product" });
 enterQ("expression", { accept: ["2×5"], form: "sum" });
 enterQ("expression", { accept: ["6=2×3"], sides: "kept" });

@@ -7,7 +7,7 @@ import type {
   Simplify,
 } from "@jadwigo/contracts";
 import { isEquation } from "./enter/expression.ts";
-import { TYPO_MIN_LENGTH } from "./enter/text.ts";
+import { canSlip } from "./enter/text.ts";
 
 /**
  * The mistake-class rules for numbers, shared by every family that takes one: a port of
@@ -210,9 +210,7 @@ function entryClasses(
         ...near,
         ...(key.accents !== "ignore" ? ["missing_diacritics"] : []),
         ...(key.case !== "ignore" ? ["wrong_case"] : []),
-        // Listed under `typo: 'accept'` too: textClass folds an accept twice, so an accept ending
-        // in two marks (`Naprawdę?!`) still gives `typo` for a one-letter slip.
-        ...(key.accept.some((a) => [...a.trim()].length >= TYPO_MIN_LENGTH) ? ["typo"] : []),
+        ...(key.accept.some((a) => canSlip(key, a)) ? ["typo"] : []),
       ];
     case "number":
       return [
@@ -263,7 +261,9 @@ function gapClasses(
 ): string[] {
   if (key === undefined) return [];
   if (key.kind === "enter")
-    return input === null ? [] : entryClasses(input, key, undefined, simplify);
+    return input === null
+      ? Object.values(key.near ?? {})
+      : entryClasses(input, key, undefined, simplify);
   return Object.values(key.near ?? {});
 }
 
