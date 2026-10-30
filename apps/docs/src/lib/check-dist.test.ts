@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { apiBase } from "../index.ts";
-import { checkDist, MUST } from "./check-dist.ts";
+import { checkDist, MUST, strayHosts } from "./check-dist.ts";
 import { API_PAGES } from "./guides.ts";
 
 const snapshot = new URL("../../../../packages/contracts/openapi.json", import.meta.url);
@@ -69,12 +69,37 @@ describe("checkDist", () => {
   it("fails a page that links into GitHub", () => {
     writeGoodDist();
     writeFileSync(join(dist, "guides/leak.html"), '<a href="https://github.com/x/y">code</a>');
-    expect(checkDist(dist)).toEqual(["dist/guides/leak.html links into GitHub"]);
+    expect(checkDist(dist)).toEqual([
+      "dist/guides/leak.html links into GitHub",
+      "dist/guides/leak.html names github.com, not app.jadwigo.pl or docs.jadwigo.pl",
+    ]);
   });
 
+  it("fails a page that names a host not in packages/config", () => {
+    writeGoodDist();
+    writeFileSync(
+      join(dist, "guides/curl.html"),
+      "<pre>curl https://api.jadwigo.pl/api/health https://app.jadwigo.pl/api/health</pre>",
+    );
+    expect(checkDist(dist)).toEqual([
+      "dist/guides/curl.html names api.jadwigo.pl, not app.jadwigo.pl or docs.jadwigo.pl",
+    ]);
+  });
   it("asks for a build when there is no dist/", () => {
     expect(checkDist(join(dist, "nope"))).toEqual([
       `${join(dist, "nope")} does not exist: run the build first`,
     ]);
+  });
+});
+
+describe("strayHosts", () => {
+  it("passes our hosts and the allowlisted ones, each named once", () => {
+    const html = `${apiBase} https://docs.jadwigo.pl/x https://json-schema.org/draft https://ui.shadcn.com`;
+    expect(strayHosts(html)).toEqual([]);
+  });
+
+  it("names a near miss and a plain http host once each", () => {
+    const html = "https://app.jadwigo.pl.evil.test http://example.com http://example.com/2";
+    expect(strayHosts(html)).toEqual(["app.jadwigo.pl.evil.test", "example.com"]);
   });
 });
