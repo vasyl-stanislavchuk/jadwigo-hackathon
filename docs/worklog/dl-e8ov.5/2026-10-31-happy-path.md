@@ -97,12 +97,53 @@ a 2nd, different narrative                         dream: this report already ha
 the saved narrative again                          exit 0
 ```
 
+## The rerun on main
+
+Main gained the 4 lanes as squash merges (#342, #343, #348) and the dream target's fix (#350,
+`dl-e8ov.5.65`). `lane/lk-happy` merged it at 68772d5, taking main's side on every conflict; it
+differs from main only in this lane's 7 files. Then, on the lane database:
+
+```text
+$ bun install --frozen-lockfile
+Checked 1070 installs across 1278 packages (no changes)
+$ make check
+ Tasks:    48 successful, 48 total                      (exit 0)
+$ DATABASE_URL=postgresql://localhost:5433/jadwigo_lane_lk_happy make migrate
+$ DATABASE_URL=postgresql://localhost:5433/jadwigo_lane_lk_happy bunx turbo run test:int --filter=./apps/api
+  ❯ src/journey.int.test.ts:204:31   expect(again.body.reused).toBe(true)   received false
+  Tests  1 failed | 68 passed (69)
+```
+
+`make migrate` reset the database, so a new throwaway learner was seeded the same way, and
+`make dream` ran 3 times with no evidence between, now on the lane database:
+
+```text
+$ DATABASE_URL=postgresql://localhost:5433/jadwigo_lane_lk_happy make dream LEARNER=lrn_50fd7qvbme89fsrp9a55ytmjnz
+dream: on the local database jadwigo_lane_lk_happy
+run 1  rpt_439hvqkrec9pyt07ad58dtcq0m  reused false  hash 3a60a0ac…  counts 2 attempts, 4 questions, 2 days
+       skills_moved row-7 not_started->proficient, row-8 not_started->attempted; proposals p1 reteach, p2 new
+run 2  rpt_2ttrqssggw9yg850bbag7ak7de  reused false  hash b5c953e7…  counts 0, 0, 0; skills_moved []
+run 3  rpt_2ca88d7fw197qv08yzv2xb5p9m  reused true   hash b5c953e7…  counts 0, 0, 0
+dream: next, in Claude Code, run /jadwigo-report-write on <DREAM_DIR>/lrn_50fd7qvbme89fsrp9a55ytmjnz-20261030T225734Z.json
+```
+
+Run 1's digest is the one above, the same numbers. Run 2 is the defect `dl-liwi.35`: #348's
+`inputs_hash` covers only the evidence inside the period, and a report's period starts where the
+last one ended. So the first report after one with evidence always has an empty period, a new hash
+and a zero-count digest; only the one after it is reused. The route says a report with no new
+evidence is a copy of the last one, `reused: true`. Before #348 (lane tip c5882e8) the journey
+passed. The narrative above was saved on the first learner, which the reset removed; it was not
+written again.
+
 ## What moved, what was a gap, what to change
 
 - **Moved:** every route of the loop works on Postgres end to end: goals, the fold on read, the
-  brief, the report and its reuse, the pod fence, a claim, the dream and the narrative save.
-- **Gap, filed:** `dl-e8ov.5.65`, `make dream` and `make dream-save` overwrite `DATABASE_URL`, so a
-  lane cannot dream on its own database.
+  brief, the report, the pod fence, a claim, the dream and the narrative save. Reuse worked on the
+  lane tips and broke on main (`dl-liwi.35`).
+- **Gap, fixed:** `dl-e8ov.5.65`, `make dream` and `make dream-save` overwrote `DATABASE_URL`, so a
+  lane could not dream on its own database. #350 fixed it; the rerun above dreams on the lane's.
+- **Gap, open:** `dl-liwi.35`, a report with no new evidence since the last one is not reused on
+  main, so the journey fails at `journey.int.test.ts:204` until it is fixed.
 - **The issue's wording, not a defect:** the issue expected row-7 on review or recheck after day 2.
   Core puts a proficient skill on review only once its FSRS date is due, so it is on no list until
   then. The test now checks that it is on no list today and on review at its `due_at`.
