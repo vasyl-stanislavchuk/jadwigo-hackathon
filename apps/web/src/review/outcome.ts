@@ -3,9 +3,10 @@
  * parent's attempt page and the parent's overview (dl-uukj.32 wave 2 step 0): the word for it (a
  * `play_ended_*` key; the adult table has the parent's words), the child's soft icon (a star for
  * right, a sprout for one still growing, a check for one done while verdicts were held, never a
- * cross: wave 1 plan of `dl-uukj.30`), and its tone. A tone is the pair of colours a tile wears:
- * the player's own right, the miss colour of decision 2026-10-24, or plain. The utilities are
- * Zeszyt's (`bg-kid-correct-soft` and the rest, packages/ui styles/tailwind.css).
+ * cross: wave 1 plan of `dl-uukj.30`), and its tone: the player's own right, the miss colour of
+ * decision 2026-10-24, or plain. The tones are drawn by OutcomeTile and Badge in @jadwigo/ui, the
+ * one colour map; the app keeps only the mapping from how a question ended to a tone
+ * (dl-uukj.32.11).
  */
 
 import type { PageEnded } from "@jadwigo/contracts";
@@ -40,11 +41,4 @@ export const ENDED_TONE: Record<EndedOrOpen, Tone> = {
   skipped: "plain",
   done: "plain",
   open: "plain",
-};
-
-/** A tone's border, ground and ink, as Zeszyt's utilities. */
-export const TONE_CLASS: Record<Tone, string> = {
-  right: "border-kid-correct bg-kid-correct-soft text-kid-correct-ink",
-  miss: "border-kid-try-again bg-kid-try-again-soft text-kid-try-again-ink",
-  plain: "border-border bg-background text-foreground",
 };

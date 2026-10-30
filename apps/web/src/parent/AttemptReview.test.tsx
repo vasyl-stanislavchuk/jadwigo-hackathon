@@ -187,9 +187,10 @@ describe("AttemptReview", () => {
     expect(tiles().map((t) => t.dataset["ended"])).toEqual(["correct", "missed", "skipped"]);
     expect(tiles().map((t) => t.dataset["tile"])).toEqual(["1", "2", "3"]);
     expect(tiles()[1]?.textContent).toContain("Ile to jest dwa razy pięć? (2)");
-    expect(tiles()[0]?.className).toContain("bg-kid-correct-soft");
-    expect(tiles()[1]?.className).toContain("bg-kid-try-again-soft");
-    expect(tiles()[2]?.className).not.toMatch(/kid-(correct|try-again)/);
+    // Each tile's outcome tile wears the tone of how it ended: right, the miss, plain for a skip.
+    expect(
+      tiles().map((t) => t.querySelector("[data-outcome]")?.getAttribute("data-outcome")),
+    ).toEqual(["right", "miss", "plain"]);
   });
 
   it("opens a right question's step with its one try", async () => {
@@ -269,7 +270,9 @@ describe("AttemptReview", () => {
         },
       }),
     );
-    expect(document.querySelector("[data-failed]")).not.toBeNull();
+    expect(document.querySelector("[data-failed]")?.textContent).toBe(
+      "Nie udało się wczytać. Odśwież stronę, żeby spróbować ponownie.",
+    );
     expect(document.querySelector("[data-parent-home]")).not.toBeNull();
   });
 

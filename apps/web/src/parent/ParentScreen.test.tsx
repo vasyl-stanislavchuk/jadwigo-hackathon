@@ -238,6 +238,23 @@ describe("ParentScreen", () => {
     expect(storedAttempt.get(ASSIGNMENT)).toBe(ATTEMPT);
   });
 
+  it("tells the adult, in the adult's words, that the home did not load", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const api = client({
+      getMe: async () => {
+        throw new Error("offline");
+      },
+    });
+    render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
+    const failed = await screen.findByRole("alert");
+    expect(failed.hasAttribute("data-failed")).toBe(true);
+    expect(failed.textContent).toBe(
+      "Nie udało się wczytać. Odśwież stronę, żeby spróbować ponownie.",
+    );
+    expect(document.body.textContent).not.toContain("Poproś rodzica o pomoc");
+  });
+
   it("makes the account when GET /me answers AccountMissing", async () => {
     const auth = signedOutAuth();
     auth.signedIn = true;
@@ -285,7 +302,7 @@ describe("ParentScreen", () => {
 
     await press("a[data-attempt-link]");
     expect(window.location.pathname).toBe(`/parent/attempts/${ATTEMPT}`);
-    await screen.findByText("Coś się zacięło. Poproś rodzica o pomoc.");
+    await screen.findByText("Nie udało się wczytać. Odśwież stronę, żeby spróbować ponownie.");
     expect(getParentReview).toHaveBeenCalledWith(LEARNER, ATTEMPT);
   });
 
@@ -316,7 +333,7 @@ describe("ParentScreen", () => {
 
     await press("a[data-overview-link]");
     expect(window.location.pathname).toBe(`/parent/assignments/${ASSIGNMENT}`);
-    await screen.findByText("Coś się zacięło. Poproś rodzica o pomoc.");
+    await screen.findByText("Nie udało się wczytać. Odśwież stronę, żeby spróbować ponownie.");
     expect(getAssignmentAttempts).toHaveBeenCalledWith(ASSIGNMENT);
   });
 });
