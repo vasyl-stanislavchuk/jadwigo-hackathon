@@ -39,3 +39,20 @@ export function diagramEdges(markdown: string): string[] {
     .map(([, from = "", to = ""]) => `${from.replaceAll("_", "-")} --> ${to.replaceAll("_", "-")}`)
     .sort();
 }
+
+/**
+ * What keeps the Monorepo page's diagram (`markdown`) from matching the workspace: each edge the
+ * workspace has and the diagram lacks, and each the diagram draws and the workspace no longer has.
+ * `check:dist` runs it in CI's docs-site job on every code change, because `turbo --affected` does
+ * not select the docs test when only another package's package.json changes.
+ */
+export function checkWorkspaceDiagram(markdown: string, root: string = ROOT): string[] {
+  const drawn = new Set(diagramEdges(markdown));
+  const real = new Set(workspaceEdges(root));
+  return [
+    ...[...real].filter((e) => !drawn.has(e)).map((e) => `the Monorepo diagram lacks ${e}`),
+    ...[...drawn]
+      .filter((e) => !real.has(e))
+      .map((e) => `the Monorepo diagram draws ${e}, which no package.json has`),
+  ];
+}
