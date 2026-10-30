@@ -1,20 +1,28 @@
 ---
-// Every page's frame: Polish, the head from lib/seo.ts, and the placeholder's look.
+// Every page's frame: Polish, the head from lib/seo.ts, and the placeholder's look. With `logo`, the
+// heading is the crown wordmark (dl-w0b4.68, decision jadwigo-marketing/decisions/2026-10-30-jadwigo-
+// wears-lockup-4a-an-andika-wordmark-with-a-crown-tipped-o); its SVG names it "Jadwigo". With `prose`,
+// the words read top to bottom in a column, as the privacy pages do (dl-w0b4.64).
 import { getCollection } from "astro:content";
+import wordmark from "@jadwigo/ui/brand/wordmark.svg?raw";
 import { assertReviewed, headTags, jsonLd, type Page } from "../lib/seo.ts";
 
 interface Props {
   page: Page;
   path: string;
+  logo?: boolean;
+  prose?: boolean;
 }
 
-const { page, path } = Astro.props;
+const { page, path, logo = false, prose = false } = Astro.props;
+const lang = page.lang ?? "pl";
+const otherLanguage = lang === "pl" ? "English" : "Polski";
 assertReviewed(await getCollection("pages"), import.meta.env.PROD);
 const tags = headTags(page, path);
 ---
 
 <!doctype html>
-<html lang="pl">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -26,7 +34,7 @@ const tags = headTags(page, path);
         ) : t.kind === "property" ? (
           <meta property={t.property} content={t.content} />
         ) : (
-          <link rel={t.rel} href={t.href} />
+          <link rel={t.rel} href={t.href} type={t.type} sizes={t.sizes} hreflang={t.hreflang} />
         ),
       )
     }
@@ -47,12 +55,50 @@ const tags = headTags(page, path);
         background: #2b2a28; color: #fbf8f2; text-decoration: none; font-weight: 600;
       }
       .play a:hover, .play a:focus-visible { background: #4a4740; }
+      /* The wordmark is 1.8em tall, the crown's room included. Hover 5a: only the crown tips, about the
+         bottom-left corner of its box (packages/ui src/brand/README.md); a tap plays it once. */
+      .logo { line-height: 0; }
+      .logo svg { height: 1.8em; width: auto; }
+      .logo .crown { transform-origin: -12.5px 2.15px; transition: transform 320ms cubic-bezier(.34, 1.8, .5, 1); }
+      .logo:hover .crown, .logo.tip .crown { transform: translateY(-12.5px) rotate(-18deg); }
+      @media (prefers-reduced-motion: reduce) {
+        .logo .crown, .logo:hover .crown, .logo.tip .crown { transition: none; transform: none; }
+      }
+      body.prose { display: block; }
+      .prose main { max-width: 40rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; line-height: 1.6; }
+      .prose h1 { font-size: clamp(1.8rem, 6vw, 2.5rem); letter-spacing: -0.01em; }
+      .prose h2 { font-size: 1.3rem; margin: 2rem 0 0.5rem; }
+      .prose p, .prose li { font-size: 1.05rem; text-align: left; color: #2b2a28; }
+      .prose p { margin: 0.75rem 0 0; }
+      .prose a { color: #2f63b8; }
+      .prose .lang { margin: 0 0 1.5rem; font-size: 0.95rem; }
+      .prose .draft {
+        margin: 1rem 0 1.5rem; padding: 0.75rem 1rem; border-radius: 0.5rem;
+        background: #fdf0d5; color: #5a4a1e; font-size: 0.95rem;
+      }
     </style>
   </head>
-  <body>
+  <body class={prose ? "prose" : undefined}>
     <main>
-      <h1>{page.heading}</h1>
+      {prose && page.translation && (
+        <p class="lang"><a href={`${page.translation}/`} hreflang={lang === "pl" ? "en" : "pl"}>{otherLanguage}</a></p>
+      )}
+      {logo ? <h1 class="logo" set:html={wordmark} /> : <h1>{page.heading}</h1>}
+      {page.draftNote && <p class="draft" role="note">{page.draftNote}</p>}
       <slot />
     </main>
+    {
+      logo && (
+        <script is:inline>
+          // On a touch screen there is no hover: a tap lifts the crown, holds it 200 ms, and lets it fall back.
+          document.querySelector(".logo")?.addEventListener("pointerdown", (e) => {
+            if (e.pointerType !== "touch") return;
+            const logo = e.currentTarget;
+            logo.classList.add("tip");
+            setTimeout(() => logo.classList.remove("tip"), 520);
+          });
+        </script>
+      )
+    }
   </body>
 </html>

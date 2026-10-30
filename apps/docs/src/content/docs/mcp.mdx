@@ -60,13 +60,14 @@ codex mcp add jadwigo \
   -- uv --directory /path/to/jadwigo/apps/cli run jw mcp serve
 ```
 
-### Muse Code
+### Muse Code :badge[Unconfirmed]{variant=caution}
 
 Muse has no `mcp add` command. A stdio server is an entry under `mcpServers` in
-`~/.config/muse/settings.json`, whose top level also needs `"schema_version": 1`. The entry's
-field names are not confirmed yet: Muse does not warn on a wrong one.
+`~/.config/muse/settings.json`, whose top level also needs `"schema_version": 1` (line 2 below).
+The entry's field names, on lines 5 to 8, are not confirmed yet: Muse does not warn on a wrong
+one. Lines 6 to 8, folded, are the same `command`, `args` and `env` as in `.mcp.json` above.
 
-```json
+```json showLineNumbers collapse={6-8}
 {
   "schema_version": 1,
   "mcpServers": {
@@ -95,6 +96,8 @@ agent writes only what the bank does not have.
    `changes`.
 3. **Check.** Call [`lesson_check`](/mcp/lesson_check/) with the `draft_id` and your words by step
    id. Fix each error it lists by step id, and check again until it answers `ok` with a card.
+4. **Import, then play.** The card's `next` names the import: `make lesson-import
+   FILE=<lesson_file> ENV=dev` in the jadwigo checkout. The `play_path` exists only after it runs.
 
 ## Every tool
 

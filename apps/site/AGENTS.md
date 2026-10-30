@@ -6,15 +6,19 @@ jadwigo.kids and English wait.
 
 - **Not here:** Anything behind a login; that is `apps/web`.
 - **Owner:** the marketing workstream (`docs/workstreams/marketing.md`). **Filled by:** `dl-w0b4.1` and the issues it blocks.
-- **Imports:** packages: `config` (hosts), later `ui` and `copy`.
+- **Imports:** packages: `config` (hosts) and `ui` (the brand SVGs, `@jadwigo/ui/brand/*`), later `copy`.
 - **Public surface:** `src/index.ts`. Other files are private to this package.
 - **Test:** `bunx turbo run lint typecheck test build --filter=./apps/site`, then `bun run check:dist`.
 - **Deploy:** the owner runs `make -C infra site-deploy` (build, `check:dist`, sync to the bucket, invalidate). A merge deploys nothing.
 
 ## How it is laid out
 
-- `src/content/pl/*.md`: each page's words, one file per page. Frontmatter: `title`, `description`,
-  `heading`, `ogImage` (optional, a path under `public/`) and `reviewed`. The schema is `pageSchema` in `src/lib/seo.ts`.
+- `src/content/<lang>/*.md`: each page's words, one file per page; the entry id is its path (`pl/index`).
+  Frontmatter: `title`, `description`, `heading`, `ogImage` (optional, a path under `public/`) and
+  `reviewed`; optional `lang`, `path`, `translation` and `draftNote`. The schema is `pageSchema` in `src/lib/seo.ts`.
+- `src/pages/[...path].astro`: renders every page that names a `path`. A `path` is a stable URL, so
+  never move one: the privacy pages' paths are in the Meta app's settings (dl-w0b4.64).
+- English carries only the privacy pages (`src/content/en/`); the rest of the site waits on `dl-w0b4.7`.
 - `src/lib/seo.ts`: the head every page carries (canonical on the apex, Open Graph, Twitter, JSON-LD),
   `robots.txt`, and `assertReviewed`. Pure, so `seo.test.ts` checks it without a build.
 - `src/layouts/Base.astro`: the frame every page renders in. `src/pages/`: the routes.
@@ -24,7 +28,11 @@ jadwigo.kids and English wait.
 
 - Hosts come from `packages/config`, never a hard-coded domain.
 - A page with `reviewed: false` builds in dev and stops a prod build. A native speaker reviews the
-  Polish before it is flipped.
+  Polish before it is flipped. A page with its own `path` is left out of a prod build instead, with
+  a log line, and `check:dist` requires it once its source says `reviewed: true` (`src/lib/dist.ts`).
 - The placeholder page says only "Jadwigo. Wkrótce."
   (`jadwigo-marketing/decisions/2026-10-27-the-jadwigo-pl-placeholder-says-jadwigo-wkrotce-and-is-built-in`),
   plus one link to the app, "Zagraj w lekcję", at `appUrl` from `hosts.prod.app` (`dl-e8ov.2.41`).
+  Its heading is the crown wordmark, not the word in text (`dl-w0b4.68`), with no tagline.
+- `public/` holds the favicon files `tools/src/brand-icons.ts` writes. Edit their sources in
+  `packages/ui/src/brand`, then run `make icons`.

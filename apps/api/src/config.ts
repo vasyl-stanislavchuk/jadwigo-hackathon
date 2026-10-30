@@ -72,6 +72,16 @@ export function authJwksUrl(): string | undefined {
 }
 
 /**
+ * The `iss` a token verified against `AUTH_JWKS_URL` must carry, exactly: the Supabase project's
+ * Auth issuer, as its tokens state it (`https://<ref>.supabase.co/auth/v1`, or the custom domain's
+ * once Auth runs on `auth.jadwigo.pl`, `dl-e8ov.2.65`). Never inferred from the JWKS URL. Unset or
+ * blank, no token verifies against the JWKS.
+ */
+export function authIssuer(): string | undefined {
+  return process.env["AUTH_ISSUER"]?.trim() || undefined;
+}
+
+/**
  * The bank Lambda's `live` alias ARN the search route invokes, which Terraform sets from the
  * bank root's SSM handshake (`dl-5ssh.57`). Undefined when unset or blank: no bank is wired.
  */

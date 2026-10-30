@@ -1,0 +1,39 @@
+---
+// One group of the tokens Zeszyt does not set, from @jadwigo/ui's tokens.css or kids.css at build
+// time: a value in light and dark (one column when the two are always the same), and the comment
+// beside it in the stylesheet.
+import { type ExtraGroup, extras, isColour, kids, type Row } from "../lib/tokens.ts";
+
+interface Props {
+  group: ExtraGroup | "kids";
+}
+
+const { group } = Astro.props;
+const rows: readonly Row[] = group === "kids" ? kids() : extras()[group];
+const themed = rows.some((r) => r.dark !== r.light);
+const noted = rows.some((r) => r.note !== "");
+---
+
+<table>
+  <thead>
+    <tr>
+      <th>Token</th>
+      {themed ? (<><th>Light</th><th>Dark</th></>) : <th>Value</th>}
+      {noted && <th>For</th>}
+    </tr>
+  </thead>
+  <tbody>
+    {rows.map((r) => (
+      <tr>
+        <td><code>--{r.name}</code></td>
+        {(themed ? [r.light, r.dark] : [r.light]).map((value) => (
+          <td>
+            {isColour(value) && <span class="token-swatch" style={{ background: value }} />}
+            <code>{value}</code>
+          </td>
+        ))}
+        {noted && <td>{r.note}</td>}
+      </tr>
+    ))}
+  </tbody>
+</table>

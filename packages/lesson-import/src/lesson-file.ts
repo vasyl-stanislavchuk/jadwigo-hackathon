@@ -79,6 +79,7 @@ export type QuestionStep = z.infer<typeof QuestionStep>;
 
 /** A teaching step: a stem to look at. A v0 lesson is questions only, so it is dropped. */
 const TeachingStep = z.object({ id: z.string().min(1), teach: z.looseObject({}) });
+export type TeachingStep = z.infer<typeof TeachingStep>;
 
 export const LessonFile = z.object({
   id: z
@@ -100,6 +101,10 @@ export const LessonFile = z.object({
   }),
 });
 export type LessonFile = z.infer<typeof LessonFile>;
+/** A part of the script: its name and its steps in order. */
+export type LessonPart = LessonFile["script"]["parts"][number];
+/** A step of a part: a question step, or a teaching step the import drops. */
+export type LessonStep = LessonPart["steps"][number];
 
 /** The file in its own language, checked. */
 export function parseLessonFile(raw: unknown): LessonFile {
