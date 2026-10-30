@@ -137,7 +137,8 @@ export function ConformanceScreen(): ReactElement {
       if (!live) return;
       const found = drawn.map((spec) => {
         const root = roots.current.get(spec.id);
-        const findings = root === undefined ? [] : renderFindings(root, spec);
+        const findings =
+          root === undefined ? [] : renderFindings(root, { step_id: spec.id, path: "" });
         return resultOf(prepared.byId.get(spec.id), spec.id, findings);
       });
       const next = start + BATCH;
