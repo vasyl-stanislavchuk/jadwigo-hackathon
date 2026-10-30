@@ -114,6 +114,8 @@ validate:
 	terraform -chdir=terraform init -backend=false -input=false >/dev/null && terraform -chdir=terraform validate -no-tests
 
 # terraform/tests/*.tftest.hcl against mock providers: no credentials, no AWS call. init fetches the
-# providers the lock file pins, once; after that it runs offline (dl-5ssh.90.17).
+# providers the lock file pins, once; after that it runs offline (dl-5ssh.90.17). prod.tfvars is the
+# root's input, so a run that plans the root (tests/root_auth_domain.tftest.hcl) reads what an apply
+# would; a run of one module ignores it (dl-e8ov.2.77).
 test:
-	terraform -chdir=terraform init -backend=false -input=false >/dev/null && terraform -chdir=terraform test
+	terraform -chdir=terraform init -backend=false -input=false >/dev/null && terraform -chdir=terraform test -var-file=environments/prod.tfvars
