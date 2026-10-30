@@ -72,11 +72,11 @@ function Swatch({ role, values }: { role: Role; values: Record<string, string> }
   return (
     <div className="flex items-stretch gap-3" data-role={role.name}>
       <div
-        className="grid w-28 shrink-0 place-items-center rounded-[var(--jw-radius-small)] border-2 border-border text-lg"
+        className="grid min-h-16 w-28 shrink-0 place-items-center rounded-jw-small border-2 border-border text-lg"
+        // The swatch shows the role it names, read live: one inline style per role, no utility each.
         style={{
           background: `var(--jw-${role.name})`,
           color: role.ink ? `var(--jw-${role.ink})` : "transparent",
-          minHeight: "4rem",
         }}
       >
         {role.ink ? "Aa 7×8" : ""}
@@ -192,8 +192,8 @@ export function Type(): JSX.Element {
           lead="Tabular lining figures everywhere: a column sum lines up, an answer never changes width. × is text in the face."
         >
           <div
-            className="grid grid-cols-2 gap-4 rounded-2xl border-2 border-border bg-card p-6 tabular-nums"
-            style={{ fontSize: "var(--jw-size-math)", fontWeight: "var(--jw-weight-strong)" }}
+            className="grid grid-cols-2 gap-4 rounded-2xl border-2 border-border bg-card p-6 text-jw-math tabular-nums"
+            style={{ fontWeight: "var(--jw-weight-strong)" }}
           >
             <span>1 7 4 9</span>
             <span>I l 1 | 7</span>
@@ -202,10 +202,7 @@ export function Type(): JSX.Element {
           </div>
         </Sub>
         <Sub title="Letters" lead="Every Polish letter, capitals too.">
-          <div
-            className="flex flex-col gap-2 rounded-2xl border-2 border-border bg-card p-6"
-            style={{ fontSize: "var(--jw-size-option)" }}
-          >
+          <div className="flex flex-col gap-2 rounded-2xl border-2 border-border bg-card p-6 text-jw-option">
             <span>ą ć ę ł ń ó ś ź ż</span>
             <span>Ą Ć Ę Ł Ń Ó Ś Ź Ż</span>
             <span>Zażółć gęślą jaźń</span>
@@ -227,8 +224,8 @@ export function SpaceAndShape(): JSX.Element {
             <div key={n} className="flex items-center gap-3">
               <code className="w-28 text-sm">--jw-space-{n}</code>
               <span
-                className="h-4 rounded-sm"
-                style={{ width: `var(--jw-space-${n})`, background: "var(--jw-pick-edge)" }}
+                className="h-4 rounded-sm bg-jw-pick-edge"
+                style={{ width: `var(--jw-space-${n})` }}
               />
             </div>
           ))}
@@ -240,17 +237,13 @@ export function SpaceAndShape(): JSX.Element {
       >
         <div className="flex flex-wrap items-end gap-6 rounded-2xl border-2 border-border bg-card p-6">
           <figure className="flex flex-col items-start gap-2">
-            <div
-              className="h-20 w-36 border-2 border-border bg-background"
-              style={{ borderRadius: "var(--jw-radius-card)" }}
-            />
+            <div className="h-20 w-36 rounded-jw-card border-2 border-border bg-background" />
             <figcaption className="text-sm text-muted-foreground">A card, 16 px</figcaption>
           </figure>
           <figure className="flex flex-col items-start gap-2">
             <div
-              className="grid h-14 w-14 place-items-center border-2 border-border bg-card text-xl"
+              className="grid h-14 w-14 place-items-center rounded-jw-small border-2 border-border bg-card text-xl"
               style={{
-                borderRadius: "var(--jw-radius-small)",
                 boxShadow: "0 var(--jw-press) 0 var(--jw-line)",
               }}
             >
@@ -262,10 +255,8 @@ export function SpaceAndShape(): JSX.Element {
           </figure>
           <figure className="flex flex-col items-start gap-2">
             <div
-              className="grid h-14 w-14 place-items-center border-2 bg-card text-xl"
+              className="grid h-14 w-14 place-items-center rounded-jw-small border-2 border-jw-line bg-card text-xl"
               style={{
-                borderRadius: "var(--jw-radius-small)",
-                borderColor: "var(--jw-line)",
                 transform: "translateY(var(--jw-press))",
               }}
             >
@@ -285,10 +276,7 @@ export function SpaceAndShape(): JSX.Element {
             <figcaption className="text-sm text-muted-foreground">--kid-tap-min, 56</figcaption>
           </figure>
           <figure className="flex flex-col items-start gap-2">
-            <Button
-              variant="outline"
-              className="min-h-[var(--kid-key-size)] min-w-[var(--kid-key-size)] text-2xl"
-            >
+            <Button variant="outline" className="min-h-kid-key min-w-kid-key text-2xl">
               8
             </Button>
             <figcaption className="text-sm text-muted-foreground">--kid-key-size, 72</figcaption>
@@ -350,10 +338,8 @@ export function Motion(): JSX.Element {
             className="flex items-center gap-4 rounded-2xl border-2 border-border bg-card p-5"
           >
             <span
-              className="h-12 w-12 shrink-0 rounded-[var(--jw-radius-small)] border-2 border-dashed"
+              className="h-12 w-12 shrink-0 rounded-jw-small border-2 border-dashed border-jw-miss-edge bg-jw-miss"
               style={{
-                borderColor: "var(--jw-miss-edge)",
-                background: "var(--jw-miss)",
                 animation: `${m.keyframes} var(--jw-${m.token}) var(--jw-ease-out) both`,
               }}
             />

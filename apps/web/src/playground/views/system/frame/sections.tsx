@@ -119,7 +119,7 @@ function Frames(): JSX.Element {
         lead="CSS px at 1×, from the frame’s handoff (lesson-frame/README.md §2)."
       >
         <div className={cn(CARD, "overflow-x-auto")}>
-          <table className="w-full min-w-[56rem] text-left text-sm">
+          <table className="w-full min-w-224 text-left text-sm">
             <thead>
               <tr className="border-b-2 border-border">
                 <th className="p-3" />
@@ -166,7 +166,7 @@ function FooterAndBand(): JSX.Element {
             <figcaption className="text-sm text-muted-foreground">{s.title}</figcaption>
             <div className="flex flex-wrap items-start gap-4">
               <div
-                className="kid-step w-[24.375rem] max-w-full shrink-0 rounded-2xl border-2 border-border bg-background p-4"
+                className="kid-step w-97.5 max-w-full shrink-0 rounded-2xl border-2 border-border bg-background p-4"
                 data-frame-cell="phone"
                 data-frame-preview="phone"
               >
@@ -175,7 +175,7 @@ function FooterAndBand(): JSX.Element {
               {/* The laptop's column keeps its width, as the laptop's 720 px column. */}
               <div className="max-w-full overflow-x-auto pb-2">
                 <div
-                  className="kid-step w-[48rem] rounded-2xl border-2 border-border bg-background p-4"
+                  className="kid-step w-192 rounded-2xl border-2 border-border bg-background p-4"
                   data-frame-cell="laptop"
                   data-frame-preview="laptop"
                 >
@@ -301,10 +301,7 @@ function Media(): JSX.Element {
           title="Formulas"
           lead="× = + − are Andika text and never break across a line. KaTeX draws only fractions, powers and roots, its digits in Andika."
         >
-          <div
-            className={cn(CARD, "flex flex-col gap-4 p-5 text-[length:var(--jw-size-math)]")}
-            data-system-formulas
-          >
+          <div className={cn(CARD, "flex flex-col gap-4 p-5 text-jw-math")} data-system-formulas>
             <RichText inline text="$4 \times 6 = 24$" />
             <RichText inline text="$\frac{3}{4}$ i $2^{3}$ i $\sqrt{49}$" />
           </div>
