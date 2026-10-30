@@ -1,9 +1,13 @@
 ---
 title: Errors
-description: The one error envelope every route uses, and every error type with its status.
+description: The one error envelope every route uses, what to do for each status, and every error type.
 ---
 
 import ErrorTable from "../../../components/ErrorTable.astro";
+import Generated from "../../../components/Generated.astro";
+
+This guide is for anyone handling a refusal from Jadwigo's API: the one shape every error has, and
+what to do for each status.
 
 Every refusal has one shape:
 
@@ -19,12 +23,6 @@ Every refusal has one shape:
 - `type` is a fixed name. Branch on it.
 - `message` is for a person. It may change, so never parse it. It never names a token.
 
-## Every error type
-
-This table is generated from the API's own list when the docs are built, so it is always complete.
-
-<ErrorTable />
-
 ## What to do
 
 - **`400`**: fix the request. `message` names the first field that failed, as `field: problem`.
@@ -37,4 +35,16 @@ This table is generated from the API's own list when the docs are built, so it i
 - **`429`**: the attempt is past a limit, such as 200 answers. Start a new attempt.
 - **`502`**: the question bank did not answer. Try again later.
 
-A `500` is not on this list. It means the API failed on its side. Try the request again later.
+A `500` is not in the table below. It means the API failed on its side. Try the request again
+later.
+
+## Every error type
+
+<ErrorTable />
+
+<Generated from="the API's own list of errors" />
+
+## Next
+
+- [API reference](/api/): every route, its body and its reply.
+- [Use with agents](/guides/agents/): point an AI agent at the same API.

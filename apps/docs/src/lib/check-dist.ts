@@ -5,6 +5,7 @@ import { ERROR_STATUS, ROUTES } from "@jadwigo/contracts";
 import { QUESTION_TYPES } from "@jadwigo/lesson-kit/question-types";
 import { apiBase, servedHost } from "../index.ts";
 import { API_PAGES } from "./guides.ts";
+import { REGISTER_HREF } from "./mcp.ts";
 import { type OpenApiDocument, operationCount } from "./openapi.ts";
 import { gallery } from "./question-types.ts";
 import { foundation } from "./tokens.ts";
@@ -13,15 +14,20 @@ import { foundation } from "./tokens.ts";
 export const MUST: readonly (readonly [file: string, text: string])[] = [
   ["index.html", '<html lang="en"'],
   ["index.html", `<link rel="canonical" href="https://${servedHost}/"`],
+  ["index.html", 'href="/guides/agents/"'],
   ["guides/introduction/index.html", apiBase],
   ["guides/authentication/index.html", ROUTES.getMe.path],
   ["guides/authentication/index.html", ROUTES.questionSearches.path],
   ["guides/authentication/index.html", ROUTES.questionBody.path],
   ["guides/errors/index.html", `<code>${Object.keys(ERROR_STATUS).at(-1)}</code>`],
+  ["guides/errors/index.html", 'class="generated'],
   ["guides/first-call/index.html", ROUTES.featuredLessons.path],
   ["mcp/index.html", "MCP"],
   ["mcp/index.html", 'href="/mcp/question_item/"'],
+  // Registration comes first on the MCP page, and every tool page links back to it (dl-5ssh.90.31).
+  ["mcp/index.html", 'id="muse-code"'],
   ["mcp/question_item/index.html", ">item_id</code>"],
+  ["mcp/question_item/index.html", `href="${REGISTER_HREF}"`],
   ["mcp-tools.json", '"name": "question_item"'],
   ["design-system/index.html", gallery],
   ["design-system/tokens/index.html", `<code>--${foundation().roles.at(-1)?.name}</code>`],

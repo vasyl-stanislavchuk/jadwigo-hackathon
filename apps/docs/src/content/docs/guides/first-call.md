@@ -3,7 +3,8 @@ title: Your first call
 description: Check the API is up, find a featured lesson, start an attempt and read it back.
 ---
 
-These calls need no credential. Each one is a single `curl`.
+This guide is for anyone trying Jadwigo's API for the first time: 5 calls, from checking it is up
+to answering a question. They need no credential, and each one is a single `curl`.
 
 ## 1. Check the API is up
 
@@ -81,5 +82,6 @@ stored result, so a retry after a dropped connection is safe. Its
 
 ## Next
 
-- [Authentication](/guides/authentication/) for the routes a parent calls.
-- [Errors](/guides/errors/) for what a refusal looks like.
+- [Errors](/guides/errors/): what a refusal looks like, and what to do about it.
+- [API reference](/api/): every route, its body and its reply.
+- [Use with agents](/guides/agents/): point an AI agent at the same API.

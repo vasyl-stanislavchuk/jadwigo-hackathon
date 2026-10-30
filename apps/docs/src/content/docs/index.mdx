@@ -8,17 +8,25 @@ hero:
     - text: Read the guides
       link: /guides/introduction/
       icon: right-arrow
+    - text: API reference
+      link: /api/
+      icon: document
+      variant: secondary
+    - text: Use with agents
+      link: /guides/agents/
+      icon: rocket
+      variant: secondary
 ---
 
 import { CardGrid, LinkCard } from "@astrojs/starlight/components";
 
-Jadwigo is a learning app for children in the first school grades, in Polish and English.
-These pages are for the people and agents who build on it.
+These docs are for the people and agents who build on Jadwigo, a learning app for children in the
+first school grades, in Polish and English.
 
 <CardGrid>
-  <LinkCard title="Guides" href="/guides/introduction/" description="What the API is, how to sign a request, your first call, and the errors." />
+  <LinkCard title="Start here" href="/guides/introduction/" description="What the API is, how to sign a request, your first call, and the errors." />
+  <LinkCard title="Use with agents" href="/guides/agents/" description="What an agent can read here, and the tools Jadwigo's MCP server gives it." />
   <LinkCard title="API reference" href="/api/" description="Every route, generated from the code." />
-  <LinkCard title="MCP" href="/mcp/" description="The tools Jadwigo's MCP server gives an agent." />
   <LinkCard title="Design system" href="/design-system/" description="Tokens, question types and the parts a lesson is built from." />
   <LinkCard title="Architecture" href="/architecture/" description="How the pieces fit." />
 </CardGrid>

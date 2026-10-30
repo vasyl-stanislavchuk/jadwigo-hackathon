@@ -3,9 +3,13 @@ title: Primitives
 description: The shadcn/ui components every screen builds on, reshaped for a child, and when to use each.
 ---
 
-The UI package carries a small set of neutral components. Each is a [shadcn/ui](https://ui.shadcn.com)
-component on Radix, reshaped for a child. Lessons, parent screens and the playground build on
-them, so a rule set here holds everywhere.
+This page is for anyone building a screen: the small set of components every screen builds on,
+the rules they keep, and when to use each.
+
+Each primitive is a [shadcn/ui](https://ui.shadcn.com) component on Radix, reshaped for a child.
+Lessons, parent screens and the playground build on them, so a rule set here holds everywhere.
+The interaction families draw their own parts, such as options, tiles, keypads and the verdict
+band, on top of these.
 
 See each one drawn in every state on the
 [System page](https://app.jadwigo.pl/playground/system), under Components.
@@ -25,7 +29,7 @@ See each one drawn in every state on the
   at leading 1.5. The learner's page (`Page width="kid"`) and anything outside a `Page` keep the
   lesson's sizes. `Page` sets the register for everything inside it, a sheet it opens included.
 
-## The primitives
+## Every primitive
 
 | Primitive | Use it for | Not for |
 | --- | --- | --- |
@@ -43,5 +47,7 @@ See each one drawn in every state on the
 | **Sheet** | A panel that slides in from one edge, such as the parent's question sheet. It closes on Escape, a tap outside or its close button. | A message that must be read before going on. |
 | **Table** | Rows of data on a parent screen. The wrapper scrolls sideways, so a wide grid never scrolls a phone's page. | A layout. |
 
-The interaction families draw their own parts, such as options, tiles, keypads and the verdict
-band, on top of these. Those parts are shown on the System page too.
+## Next
+
+- [Question types](/design-system/question-types/): the interaction families built on these.
+- [Tokens](/design-system/tokens/): the values these components read.

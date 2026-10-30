@@ -1,0 +1,21 @@
+---
+// The note under a generated table: what the build made it from, so the page itself can open with
+// what it is for (dl-5ssh.90.31). A slot adds one more sentence, such as where the source is served.
+interface Props {
+  /** What the table is generated from, as a reader would name it: "the API's own route table". */
+  from: string;
+}
+
+const { from } = Astro.props;
+---
+
+<p class="generated">
+  Generated from {from} when these docs are built, so it never drifts from the code. <slot />
+</p>
+
+<style>
+  .generated {
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+</style>
