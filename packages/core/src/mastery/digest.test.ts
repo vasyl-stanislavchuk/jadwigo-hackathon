@@ -104,25 +104,44 @@ describe("dreamDigest, a fixture period", () => {
     expect(digest.brief).toBe(input.brief);
   });
 
-  it("hashes the rules version, the period's evidence and the catalogue's codes, nothing else", () => {
-    const period = DURING.map((e) =>
-      [e.attempt_id, e.seq, e.try_no, e.skill_code].join("|"),
+  it("hashes the rules version, the after mastery, the goals and the catalogue codes, not the period", () => {
+    const mastery = [...input.mastery_after]
+      .sort((a, b) => (a.skill_code < b.skill_code ? -1 : 1))
+      .map((m) => [
+        m.skill_code,
+        m.level,
+        m.needs_attention,
+        m.tries,
+        m.last_answered_at,
+        m.due_at,
+      ]);
+    const goals = GOALS.map((g) =>
+      [g.goal.id, g.goal.status, ...[...g.skill_codes].sort()].join("|"),
     ).sort();
     expect(inputs_hash).toBe(
       sha256Hex(
-        JSON.stringify({ rules: DIGEST_RULES_VERSION, evidence: period, skills: [row7, row8] }),
+        JSON.stringify({ rules: DIGEST_RULES_VERSION, mastery, goals, skills: [row7, row8] }),
       ),
     );
-    expect(DIGEST_RULES_VERSION).toBe(1);
-    const reordered = { ...input, evidence_after: [...input.evidence_after].reverse(), goals: [] };
+    expect(DIGEST_RULES_VERSION).toBe(2);
+    const reordered = { ...input, evidence_after: [...input.evidence_after].reverse() };
     expect(dreamDigest(reordered).inputs_hash).toBe(inputs_hash);
-    const more = row({ attempt: 6, at: "2026-10-31T09:00:00.000Z", correct: true, skill: row8 });
-    expect(
-      dreamDigest({ ...input, evidence_after: [...input.evidence_after, more] }).inputs_hash,
-    ).not.toBe(inputs_hash);
+    expect(dreamDigest({ ...input, goals: [] }).inputs_hash).not.toBe(inputs_hash);
     expect(
       dreamDigest({ ...input, skills: [...SKILLS, catalogueSkill("maths.x.y")] }).inputs_hash,
     ).not.toBe(inputs_hash);
+  });
+
+  it("reuses across periods: no new evidence gives the same hash with an empty period, one more try does not (dl-liwi.35)", () => {
+    const all = [...BEFORE, ...DURING];
+    const next = { starts_at: PERIOD.ends_at, ends_at: "2026-11-02T12:00:00.000Z" };
+    const quiet = dreamDigest({ ...inputOf(all, all), period: next });
+    expect(quiet.digest.counts).toEqual({ attempts: 0, questions: 0, days_played: 0 });
+    expect(quiet.inputs_hash).toBe(inputs_hash);
+    const more = row({ attempt: 6, at: "2026-11-01T09:00:00.000Z", correct: true, skill: row8 });
+    const busy = dreamDigest({ ...inputOf(all, [...all, more]), period: next });
+    expect(busy.digest.counts.attempts).toBe(1);
+    expect(busy.inputs_hash).not.toBe(inputs_hash);
   });
 
   it("names the first attempt after which the level is the new one, and folds aliases into it", () => {
