@@ -26,9 +26,11 @@ export function useLiveValues(
 export const isColour = (value: string): boolean => /^(#|rgb|hsl|oklch|color\()/i.test(value);
 
 /** A custom property as the stylesheets declare it at :root, outside any @media block, or inside the
- * phone's (width < 37.5rem) when `phone` is set: read from the CSSOM, so the page can draw a laptop's
- * and a phone's size side by side in one window without a copy of either. "" when no sheet declares
- * it (a unit test loads none). */
+ * phone's (width < 37.5rem) when `phone` is set, read from the CSSOM's rules. A computed style
+ * cannot give it: in a laptop-wide window the phone block does not apply, so getComputedStyle
+ * returns the laptop's value. Reading the rule lets the page draw a laptop's and a phone's size side
+ * by side in one window without a copy of either. "" when no sheet declares it (a unit test loads
+ * none). */
 export function declaredAt(token: string, phone: boolean): string {
   const want = phone ? "phone" : "root";
   let found = "";

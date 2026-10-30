@@ -6,6 +6,8 @@
  * (dl-uukj.32.12), and they show the owner's answers to those gaps (dl-uukj.32.19). happy-dom lays nothing out, so the observers the page uses are stubbed.
  */
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { copy, TABLES } from "@jadwigo/copy";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
@@ -16,6 +18,20 @@ import { FRAME_KINDS, FRAME_RULES, MEASURES } from "./frame/data.ts";
 import { FRAME_SECTIONS } from "./frame/sections.tsx";
 import { stageExample, stageQuestion } from "./question.ts";
 import { MENU, PAGE_IDS, SystemPage } from "./SystemPage.tsx";
+
+/** Zeszyt's stylesheet as written, and the readout its phone block declares: the System page must
+ * draw the phone's sample at exactly that, never at a size of its own. */
+const FOUNDATION = readFileSync(
+  join(import.meta.dirname, "../../../../../../packages/ui/src/styles/foundation.css"),
+  "utf-8",
+);
+const PHONE_TARGET = /--jw-size-target:\s*([^;]+);/
+  .exec(
+    /@media \(width < 37\.5rem\)\s*\{\s*:root\s*\{([^}]*)\}/.exec(
+      FOUNDATION.replace(/\/\*[\s\S]*?\*\//g, ""),
+    )?.[1] ?? "",
+  )?.[1]
+  ?.trim();
 
 const API = fakeApi();
 const page = () => (
@@ -205,15 +221,14 @@ describe("the System page's app pages, tiles and gaps (dl-uukj.32.12)", () => {
   it("draws the readout pair, the outcome tile in 5 tones and 3 sizes, and names what waits on the kit", () => {
     const { container } = render(page());
     const section = container.querySelector("section#still-answers") as HTMLElement;
+    // No stylesheet in happy-dom: the window's readout is drawn, and the phone's said in words.
     expect(
       [...section.querySelectorAll("[data-readout]")].map((r) => [
         r.getAttribute("data-readout"),
         r.querySelectorAll("[data-task-target]").length,
       ]),
-    ).toEqual([
-      ["laptop", 1],
-      ["phone", 1],
-    ]);
+    ).toEqual([["laptop", 1]]);
+    expect(section.querySelector("[data-readout-words]")?.textContent).toContain("36 on a phone");
     expect(PARENT_OUTCOMES.map((o) => [o.outcome, o.tone])).toEqual([
       ["first_try", "right"],
       ["got_there", "right-soft"],
@@ -243,6 +258,25 @@ describe("the System page's app pages, tiles and gaps (dl-uukj.32.12)", () => {
         w.getAttribute("data-system-waiting"),
       ),
     ).toEqual(["The kid tile", "StillAnswer"]);
+  });
+
+  it("draws the phone's readout at the value foundation.css's phone block declares", () => {
+    expect(PHONE_TARGET).toMatch(/rem$/);
+    const sheet = document.createElement("style");
+    sheet.textContent = FOUNDATION;
+    document.head.append(sheet);
+    try {
+      const { container } = render(page());
+      const phone = container.querySelector('[data-readout="phone"]');
+      expect(phone?.querySelector("[data-task-target]")).not.toBeNull();
+      expect(
+        phone?.querySelector<HTMLElement>("div")?.style.getPropertyValue("--jw-size-target"),
+      ).toBe(PHONE_TARGET);
+      expect(phone?.querySelector("figcaption")?.textContent).toBe(`${PHONE_TARGET}, on a phone`);
+      expect(container.querySelector("[data-readout-words]")).toBeNull();
+    } finally {
+      sheet.remove();
+    }
   });
 
   it("puts the readout and the adult's sizes in the type scale", () => {

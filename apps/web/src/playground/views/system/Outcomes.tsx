@@ -17,49 +17,12 @@ import { declaredAt, isColour, useLiveValues } from "./live.ts";
 
 const CARD = "flex min-w-0 flex-col gap-3 rounded-2xl border-2 border-border bg-card p-5";
 
-/** The readout's pair (decision 2026-10-30-a-task-s-readout-is-44-px-on-a-laptop-and-36-px-on-a-
- * phone): each drawn at the size the stylesheet declares for its frame, whatever the window. */
-const READOUTS = [
-  { frame: "laptop", word: "On a laptop", phone: false },
-  { frame: "phone", word: "On a phone", phone: true },
-] as const;
-
 /** The tile's smaller sizes, after the legend's 40: a lesson card's, a question sheet's row. */
 const ROWS = [
   { size: "sm", px: 32 },
   { size: "xs", px: 28 },
 ] as const;
 
-function Readouts(): JSX.Element {
-  const [sizes, setSizes] = useState<Record<string, string>>({});
-  // The sheets are the page's own and fixed once it has loaded.
-  useLayoutEffect(() => {
-    setSizes(
-      Object.fromEntries(READOUTS.map((r) => [r.frame, declaredAt("--jw-size-target", r.phone)])),
-    );
-  }, []);
-  return (
-    <div className="flex flex-wrap items-end gap-8">
-      {READOUTS.map((r) => {
-        const size = sizes[r.frame] ?? "";
-        return (
-          <figure key={r.frame} className="flex flex-col gap-2" data-readout={r.frame}>
-            <div
-              // The frame's own value, read from the stylesheet, so a phone's 36 shows in a laptop's
-              // window; TaskTarget reads the token as it always does.
-              style={size === "" ? undefined : ({ "--jw-size-target": size } as CSSProperties)}
-            >
-              <TaskTarget>6 · 8 = ?</TaskTarget>
-            </div>
-            <figcaption className="text-sm text-muted-foreground">
-              {r.word} · <code>--jw-size-target</code> <span className="tabular-nums">{size}</span>
-            </figcaption>
-          </figure>
-        );
-      })}
-    </div>
-  );
-}
 /** A part the kit has not exported yet: named, never drawn by hand. */
 const WAITING = [
   {
@@ -71,6 +34,48 @@ const WAITING = [
     what: "An answer held still once its step ends, beside the solution (the kit's step 6, dl-uukj.32.4).",
   },
 ] as const;
+
+/** One readout, at `size` when the stylesheet gave one: the wrapper sets the token, and TaskTarget
+ * reads it as it always does. Its caption names the value it read, so a drift shows on the page. */
+function Readout({ frame, size }: { frame: "laptop" | "phone"; size: string }): JSX.Element {
+  return (
+    <figure className="flex flex-col gap-2" data-readout={frame}>
+      <div style={size === "" ? undefined : ({ "--jw-size-target": size } as CSSProperties)}>
+        <TaskTarget>6 · 8 = ?</TaskTarget>
+      </div>
+      <figcaption className="text-sm text-muted-foreground tabular-nums">
+        {size === "" ? <code>--jw-size-target</code> : size}, on a {frame}
+      </figcaption>
+    </figure>
+  );
+}
+
+/** The readout's pair (decision 2026-10-30-a-task-s-readout-is-44-px-on-a-laptop-and-36-px-on-a-
+ * phone), each at the value the stylesheet declares for its frame, whatever the window. Without the
+ * phone block (no stylesheet, a unit test) only the window's readout is drawn and the phone's is
+ * said in words: the page never writes a size of its own. */
+function Readouts(): JSX.Element {
+  const [sizes, setSizes] = useState({ laptop: "", phone: "" });
+  // The sheets are the page's own and fixed once it has loaded.
+  useLayoutEffect(() => {
+    setSizes({
+      laptop: declaredAt("--jw-size-target", false),
+      phone: declaredAt("--jw-size-target", true),
+    });
+  }, []);
+  return (
+    <div className="flex flex-wrap items-end gap-8">
+      <Readout frame="laptop" size={sizes.laptop} />
+      {sizes.phone === "" ? (
+        <p className="text-sm text-muted-foreground" data-readout-words>
+          36 on a phone: the stylesheet’s phone block was not found, so it is not drawn here.
+        </p>
+      ) : (
+        <Readout frame="phone" size={sizes.phone} />
+      )}
+    </div>
+  );
+}
 
 /** Every outcome at the legend's size with its word and tone, then the row at each size. */
 function OutcomeLegend(): JSX.Element {
