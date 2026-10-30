@@ -1,8 +1,11 @@
 import { readFileSync } from "node:fs";
-import { compileLessonFile } from "./compile.ts";
+import { Language, QUESTION_TYPE_FAMILY } from "@jadwigo/contracts";
+import type { z } from "zod";
+import { type CompileProblem, compileLessonFile, compileProblems } from "./compile.ts";
+import type { Finding } from "./findings.ts";
 import { DRAFTS_POD, featuredAssignmentId, lessonIdFor } from "./ids.ts";
-import { LessonFile } from "./lesson-file.ts";
-import { mistakeClassesByStep, unknownBoosts } from "./mistakes.ts";
+import { inItsLanguage, LessonFile, safeParseLessonFile } from "./lesson-file.ts";
+import { mistakeClassesByStep, mistakeClassesOf, unknownBoosts } from "./mistakes.ts";
 
 /**
  * Checks one lesson file without writing anything (dl-e8ov.5.38.3): `bun run check <file> [--json]`
@@ -13,12 +16,23 @@ import { mistakeClassesByStep, unknownBoosts } from "./mistakes.ts";
  * With `--json` it prints one object, a contract with `jw` (Python reads it):
  *
  *     {"ok": boolean,
+ *      "findings": [{"step_id", "path", "level": "error" | "warn", "rule", "text", "fix"}],
  *      "errors": [{"step_id": string | null, "message": string}],
  *      "play_path": "/play/<assignment id>" | null,
  *      "lesson_id": "<lesson id>" | null,
  *      "questions": number,
  *      "mistake_classes": {<step id>: [string, ...]}}
  *
+ * - `findings` is everything the check finds, each with a path into the file and a fix a parent
+ *   can follow (`findings.ts`, dl-a38n.14): every schema problem; every step that does not compile,
+ *   the check going on to the next step; a help rung nothing fills (`empty-rung`, a warn, read
+ *   only when the file names its language); a `boost_by_mistake` key the question never gives
+ *   (`unknown-mistake-class`, naming the valid ones); an answer the key accepts written into `say`
+ *   outside a sum or a list (`key-in-say`, a warn: it is a heuristic). `ok` is "no error"; a warn
+ *   does not fail the file, so jw's plays-as-copied is never decided by one.
+ * - `errors` is the error findings as jw read them before `findings`: one message by step id, a
+ *   contract failure one message for the step, unknown boosts one message for the question. Kept
+ *   for one release, until jw reads `findings` (dl-a38n.16).
  * - `step_id` is the step's `id` in the file (a twin's ends `t`, as compile names it), or null when
  *   the problem is the file's own (its title, its id, the JSON itself).
  * - `play_path` and `lesson_id` are the assignment's path and the lesson's id in the drafts pod,
@@ -28,14 +42,11 @@ import { mistakeClassesByStep, unknownBoosts } from "./mistakes.ts";
  * - `questions` counts the planned questions a learner is asked, twins not counted; 0 when the file
  *   does not compile.
  * - `mistake_classes` names, for each question step (a twin under its own step id), every class
- *   its judge can give a miss: its family's (packages/core `MISTAKE_CLASSES`) and its key's `near`
- *   tables, sorted (dl-e8ov.5.38.11). These are all a `boost_by_mistake` key may name, and one it
- *   does not is an error by step id that lists them, once the file compiles; the import itself
- *   does not refuse one. Read from the file as given, so it is there when the file fails too;
- *   empty only when no step can be read.
- *
- * A parse failure reports every problem the schema finds, one error each. Compile stops at its first
- * throw, so once the file parses one run reports at most one compile error: fix it and run again.
+ *   its judge can give a miss on that step's own data and key (packages/core `mistakeClassesOf`,
+ *   dl-e8ov.5.38.15): the classes for its input and kind, its `near` tables, a rule's classes only
+ *   when its key names the rule, and `other_wrong`, sorted. These are all a `boost_by_mistake` key
+ *   may name; the import itself does not refuse one. Read from the file as given, so it is there
+ *   when the file fails too; a step whose question does not parse is left out.
  */
 
 interface CheckError {
@@ -45,11 +56,28 @@ interface CheckError {
 
 interface CheckResult {
   readonly ok: boolean;
+  readonly findings: readonly Finding[];
   readonly errors: readonly CheckError[];
   readonly play_path: string | null;
   readonly lesson_id: string | null;
   readonly questions: number;
   readonly mistake_classes: Readonly<Record<string, readonly string[]>>;
+}
+
+/** What one check found: its findings, and the same errors as jw's old messages. */
+interface Found {
+  findings: Finding[];
+  errors: CheckError[];
+}
+
+const record = (v: unknown): Record<string, unknown> | null =>
+  v !== null && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+
+/** A Zod path as the file writes it: `script.parts[0].steps[2].question_type`. */
+function pathOf(path: readonly PropertyKey[]): string {
+  return path
+    .map((k, i) => (typeof k === "number" ? `[${k}]` : i === 0 ? String(k) : `.${String(k)}`))
+    .join("");
 }
 
 /** The step at `script.parts[i].steps[j]` of the file as given, by its id. */
@@ -61,25 +89,349 @@ function stepIdAt(raw: unknown, path: string): string | null {
   return typeof id === "string" ? id : `script.parts[${at[1]}].steps[${at[2]}]`;
 }
 
-/** A thrown parse or compile error, split into one error per problem with its step id. */
-function errorsOf(raw: unknown, message: string): CheckError[] {
-  // compile.ts: `lesson file <id>, step <step>[ help]: ...`
-  const step = /^lesson file [^,:]*, step (\S+?)(?: help)?:/.exec(message);
-  if (step !== null) return [{ step_id: step[1] ?? null, message }];
-  // parseLessonFile: `lesson file <id>: ✖ <problem>\n  → at <path>` for each problem.
-  const head = /^lesson file [^:]*: /.exec(message);
-  if (head === null || !message.includes("✖")) return [{ step_id: null, message }];
-  return message
-    .slice(head[0].length)
-    .split(/^✖ /m)
-    .filter((p) => p.trim() !== "")
-    .map((problem) => {
-      const path = /→ at (\S+)/.exec(problem)?.[1] ?? "";
-      return {
-        step_id: stepIdAt(raw, path),
-        message: `${head[0]}${problem.trim().replace(/\s*\n\s*/g, " ")}`,
-      };
+/** A question step of the file as given, with its path: what the step rules read. */
+interface RawStep {
+  readonly id: string;
+  readonly path: string;
+  readonly say: unknown;
+  readonly question: Record<string, unknown>;
+}
+
+function rawSteps(file: unknown): RawStep[] {
+  const parts = record(record(file)?.["script"])?.["parts"];
+  return (Array.isArray(parts) ? parts : []).flatMap((part, i) => {
+    const steps = record(part)?.["steps"];
+    return (Array.isArray(steps) ? steps : []).flatMap((step, j) => {
+      const s = record(step);
+      const question = record(s?.["question"]);
+      const id = s?.["id"];
+      if (typeof id !== "string" || question === null) return [];
+      return [{ id, path: `script.parts[${i}].steps[${j}]`, say: s?.["say"], question }];
     });
+  });
+}
+
+/** A field the file leaves out (Zod reports no input unless asked, so its message says so). */
+const missing = (issue: z.core.$ZodIssue): boolean =>
+  issue.code === "invalid_type" && /received undefined/.test(issue.message);
+
+const article = (word: string): string => `${/^[aeiou]/.test(word) ? "an" : "a"} ${word}`;
+
+/** A Zod issue's fix, in words a parent can follow. */
+function fixOf(file: unknown, issue: z.core.$ZodIssue, path: string): string {
+  const field = path === "" ? "the file" : path;
+  switch (issue.code) {
+    case "invalid_value":
+      if (issue.path.at(-1) === "question_type") {
+        // The step's family narrows the list to the question types that family draws.
+        const family = record(record(valueAt(file, issue.path.slice(0, -1)))?.["question"])?.[
+          "family"
+        ];
+        const types = Object.entries(QUESTION_TYPE_FAMILY)
+          .filter(([, f]) => f === family)
+          .map(([t]) => JSON.stringify(t));
+        if (types.length > 0) {
+          return `Set ${field} to one of the ${String(family)} question types: ${types.join(", ")}.`;
+        }
+      }
+      return `Set ${field} to one of: ${issue.values.map((v) => JSON.stringify(v)).join(", ")}.`;
+    case "invalid_type":
+      return missing(issue)
+        ? `Add ${field}: it is required, ${article(issue.expected)}.`
+        : `Make ${field} ${article(issue.expected)}.`;
+    case "too_small":
+      return `Write something in ${field}: it cannot be empty.`;
+    case "unrecognized_keys":
+      return `Remove ${issue.keys.join(", ")} from ${field}: it has no such field.`;
+    default:
+      return `Change ${field}: ${issue.message}.`;
+  }
+}
+
+/** The value at a Zod path in `root`. */
+function valueAt(root: unknown, path: readonly PropertyKey[]): unknown {
+  return path.reduce<unknown>(
+    (at, k) =>
+      at !== null && typeof at === "object" ? (at as Record<PropertyKey, unknown>)[k] : undefined,
+    root,
+  );
+}
+
+/**
+ * A union's issues: those of the option that came closest, so the fix names the real field. An
+ * option is further off for each field the file leaves out, and a step that holds a `question` is
+ * a question step, never a teaching step that lacks `teach`.
+ */
+function flat(file: unknown, issues: readonly z.core.$ZodIssue[]): z.core.$ZodIssue[] {
+  const distance = (option: readonly z.core.$ZodIssue[]) =>
+    option.length + 100 * option.filter(missing).length;
+  return issues.flatMap((issue) => {
+    if (issue.code !== "invalid_union" || issue.errors.length === 0) return [issue];
+    const value = record(valueAt(file, issue.path));
+    const options =
+      value !== null && "question" in value
+        ? issue.errors.filter((o) => !o.some((i) => i.path[0] === "teach"))
+        : issue.errors;
+    const closest = (options.length > 0 ? options : issue.errors).reduce((a, b) =>
+      distance(b) < distance(a) ? b : a,
+    );
+    return flat(
+      file,
+      closest.map((i) => ({ ...i, path: [...issue.path, ...i.path] })),
+    );
+  });
+}
+
+/** Every problem the schema finds, one finding and one jw error each. */
+function schemaFindings(raw: unknown, fileId: unknown, issues: readonly z.core.$ZodIssue[]): Found {
+  const found: Found = { findings: [], errors: [] };
+  const file = inItsLanguage(raw);
+  for (const issue of flat(file, issues)) {
+    const path = pathOf(issue.path);
+    const step_id = stepIdAt(raw, path);
+    found.findings.push({
+      step_id,
+      path,
+      level: "error",
+      rule: "schema",
+      text: issue.message,
+      fix: fixOf(file, issue, path),
+    });
+    const at = path === "" ? "" : ` at ${path}`;
+    found.errors.push({ step_id, message: `lesson file ${String(fileId)}: ${issue.message}${at}` });
+  }
+  return found;
+}
+
+/** What to do about each compile rule. */
+const COMPILE_FIX: Record<string, string> = {
+  "no-question": "Add at least one question step to a part.",
+  "explain-first":
+    "Move an explain question later: open the lesson with a question the child answers.",
+  "question-type-family":
+    "Set question_type to one of this family's question types, or change the family to the one the question type names.",
+  contract: "Change the field to the shape its family takes.",
+  "unknown-field": "Remove the field: the lesson file has no place for it.",
+  "skill-id":
+    "Write the skill id as lowercase words joined by dots, like math.multiplication.row-2.",
+  "skill-id-collision":
+    "Rename one of the 2 skills: without its marks it reads the same as the other.",
+  "twin-of-twin": "Remove the twin's own twin: only the step's question has one.",
+};
+
+/** Where a compile problem is in the file: the step's path, then `at` under it. */
+function compileFindings(steps: readonly RawStep[], problems: readonly CompileProblem[]): Found {
+  const found: Found = { findings: [], errors: [] };
+  const seen = new Set<string>();
+  for (const p of problems) {
+    if (seen.has(p.message)) continue;
+    seen.add(p.message);
+    // A twin's problem is named `<step id>t` and sits under its step's `question.help.twin`.
+    const ownId = p.at.startsWith("question.help.twin") ? p.step_id?.slice(0, -1) : p.step_id;
+    const stepPath = steps.find((s) => s.id === ownId)?.path;
+    const base =
+      stepPath === undefined
+        ? p.at === "skill_ids"
+          ? "script.parts[*].steps[*].skill_ids"
+          : p.at
+        : `${stepPath}.${p.at}`;
+    const fix = COMPILE_FIX[p.rule] ?? "Change the step so it compiles.";
+    const text = p.message.replace(/^lesson file [^:]*: /, "");
+    const each = p.issues.length > 0 ? p.issues : [{ path: "", message: text }];
+    for (const issue of each) {
+      found.findings.push({
+        step_id: p.step_id,
+        path: issue.path === "" ? base : `${base}.${issue.path}`,
+        level: "error",
+        rule: p.rule,
+        text: p.issues.length > 0 ? `${issue.message} at ${issue.path || base}` : text,
+        fix,
+      });
+    }
+    found.errors.push({ step_id: p.step_id, message: p.message });
+  }
+  return found;
+}
+
+/** A help card with nothing to read on it. */
+function emptyCard(card: unknown): boolean {
+  const c = record(card);
+  return c === null || (typeof c["text"] === "string" ? c["text"].trim() === "" : true);
+}
+
+function emptyLines(lines: unknown): boolean {
+  return !Array.isArray(lines) || lines.every((l) => typeof l !== "string" || l.trim() === "");
+}
+
+/** The rungs a step needs filled, as jw's `NEEDED`: the player skips an empty `almost`. */
+const RUNGS = [
+  {
+    rung: "look",
+    n: 1,
+    empty: emptyCard,
+    write: "one line that says where to look, without the answer",
+  },
+  {
+    rung: "boost",
+    n: 2,
+    empty: emptyCard,
+    write: "a nudge toward the way to solve it, without the answer",
+  },
+  {
+    rung: "worked",
+    n: 4,
+    empty: emptyLines,
+    write: "the solution, one line per step, the last line the answer",
+  },
+] as const;
+
+/** A rung nothing fills: neither its own field nor Khan's `hints`. Warns, as jw drafts them empty. */
+function emptyRungs(step: RawStep): Finding[] {
+  const help = record(step.question["help"]) ?? {};
+  const hints = help["hints"];
+  if (Array.isArray(hints) && hints.length > 0) return [];
+  const rungs = RUNGS.filter(
+    ({ rung }) => !(rung === "worked" && step.question["family"] === "explain"),
+  )
+    .filter(({ rung, empty }) => empty(help[rung]))
+    .map(({ rung, n, write }) => ({
+      step_id: step.id,
+      path: `${step.path}.question.help.${rung}`,
+      level: "warn" as const,
+      rule: "empty-rung",
+      text: `Rung ${n} (${rung}) is empty, so a child who asks for help here gets nothing.`,
+      fix: `Write ${rung}: ${write}.`,
+    }));
+  const cards = Object.entries(record(help["boost_by_mistake"]) ?? {})
+    .filter(([, card]) => emptyCard(card))
+    .map(([cls]) => ({
+      step_id: step.id,
+      path: `${step.path}.question.help.boost_by_mistake.${cls}`,
+      level: "warn" as const,
+      rule: "empty-rung",
+      text: `The boost card for ${cls} is empty, so a child who makes that mistake gets nothing.`,
+      fix: `Write the card for ${cls}: what that mistake usually means and one nudge, or remove the key.`,
+    }));
+  return [...rungs, ...cards];
+}
+
+/** A question and a twin of a step as the boost and say rules read them, with their paths. */
+function questionsOf(
+  step: RawStep,
+): { id: string; path: string; say: unknown; question: Record<string, unknown> }[] {
+  const out = [
+    { id: step.id, path: `${step.path}.question`, say: step.say, question: step.question },
+  ];
+  const twin = record(record(step.question["help"])?.["twin"]);
+  if (twin !== null) {
+    out.push({
+      id: `${step.id}t`,
+      path: `${step.path}.question.help.twin`,
+      say: twin["say"],
+      question: { family: step.question["family"], ...twin },
+    });
+  }
+  return out;
+}
+
+/** Each `boost_by_mistake` key the question never gives, naming the classes it does. */
+function unknownMistakeClasses(fileId: unknown, steps: readonly RawStep[]): Found {
+  const found: Found = { findings: [], errors: [] };
+  for (const q of steps.flatMap(questionsOf)) {
+    const classes = mistakeClassesOf(q.question);
+    if (classes === null) continue; // an unknown family is a schema finding already
+    const boosts = record(record(q.question["help"])?.["boost_by_mistake"]) ?? undefined;
+    const unknown = unknownBoosts(q.question, boosts);
+    if (unknown === null) continue;
+    const valid = classes.length > 0 ? classes.join(", ") : "none";
+    for (const cls of Object.keys(boosts ?? {}).filter((k) => !classes.includes(k))) {
+      found.findings.push({
+        step_id: q.id,
+        path: `${q.path}.help.boost_by_mistake.${cls}`,
+        level: "error",
+        rule: "unknown-mistake-class",
+        text: `boost_by_mistake names ${cls}, a mistake this ${String(q.question["family"])} question never gives, so the card never shows.`,
+        fix: `Rename ${cls} to one of ${valid}, or remove the card.`,
+      });
+    }
+    found.errors.push({
+      step_id: q.id,
+      message: `lesson file ${String(fileId)}, step ${q.id} help: ${unknown}`,
+    });
+  }
+  return found;
+}
+
+/** The typed answers a key accepts: an enter key's `accept`, and each enter gap's in slots. */
+function typedAnswers(question: Record<string, unknown>): string[] {
+  const key = record(question["key"]);
+  const accepted = (k: Record<string, unknown> | null): string[] => {
+    const accept = k?.["accept"];
+    return Array.isArray(accept) ? accept.filter((a): a is string => typeof a === "string") : [];
+  };
+  if (question["family"] === "enter") return accepted(key);
+  if (question["family"] === "slots") {
+    return Object.values(record(key?.["gaps"]) ?? {})
+      .map(record)
+      .filter((gap) => gap?.["kind"] === "enter")
+      .flatMap(accepted);
+  }
+  return [];
+}
+
+/**
+ * An arithmetic operator, a sign or a word for one. `=` is not one, so an answer after it still
+ * gives the answer away.
+ */
+const OPERATOR = String.raw`(?:[+\-−–×·*:÷/]|(?<!\p{L})(?:x|razy|plus|minus|dodać|odjąć|przez|times)(?!\p{L}))`;
+/** What stands on an operator's other side in an expression: a number or the blank to fill. */
+const TERM = String.raw`[\p{N}?_□]`;
+/** An operand: after a term and an operator, or after a number and a comma (a list `1, 3, 5`). */
+const AFTER_OPERAND = new RegExp(String.raw`(?:${TERM}\s*${OPERATOR}|\p{N}\s*[,;])\s*$`, "iu");
+/** An operand: before an operator and a term, or before a comma and a number. */
+const BEFORE_OPERAND = new RegExp(String.raw`^\s*(?:${OPERATOR}\s*${TERM}|[,;]\s*\p{N})`, "iu");
+
+/**
+ * Whether `say` holds `answer` as a word of its own, other than as an operand: in "Ile to jest
+ * 10 − 5?" the 5 is the question, not its answer, and so is a number in a list the question
+ * continues. A one-letter answer counts only as a digit: Polish has one-letter words (`u`, `w`,
+ * `o`) that a spelling gap's answer would match.
+ */
+function says(say: string, answer: string): boolean {
+  const a = answer.trim();
+  if (a === "" || (a.length === 1 && !/\p{N}/u.test(a))) return false;
+  const escaped = a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const word = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, "giu");
+  for (const m of say.matchAll(word)) {
+    const before = say.slice(0, m.index);
+    const after = say.slice(m.index + m[0].length);
+    if (!AFTER_OPERAND.test(before) && !BEFORE_OPERAND.test(after)) return true;
+  }
+  return false;
+}
+
+/** A `say` line that seems to give the answer away. A warn: it is a heuristic. */
+function keyInSay(steps: readonly RawStep[]): Finding[] {
+  const findings: Finding[] = [];
+  for (const q of steps.flatMap(questionsOf)) {
+    if (typeof q.say !== "string") continue;
+    const say = q.say;
+    const given = typedAnswers(q.question).filter((a) => says(say, a));
+    if (given.length === 0) continue;
+    const answers = given.map((a) => `"${a}"`).join(", ");
+    const sayPath = q.path.endsWith(".twin")
+      ? `${q.path}.say`
+      : q.path.replace(/\.question$/, ".say");
+    findings.push({
+      step_id: q.id,
+      path: sayPath,
+      level: "warn",
+      rule: "key-in-say",
+      text: `say may give the answer away: it holds ${answers}, which the key accepts.`,
+      fix: `Rewrite say so it asks without ${answers}: the child works the answer out. (This check reads only typed answers, an enter key's or an enter gap's, as whole words, outside a sum or a list; a one-letter answer only when it is a digit.)`,
+    });
+  }
+  return findings;
 }
 
 function check(raw: unknown): CheckResult {
@@ -90,28 +442,32 @@ function check(raw: unknown): CheckResult {
         lesson_id: lessonIdFor(DRAFTS_POD.id, fileId.data) as string,
       }
     : { play_path: null, lesson_id: null };
+  const id = (raw as { id?: unknown } | null)?.id;
   const mistake_classes = mistakeClassesByStep(raw);
-  try {
-    const compiled = compileLessonFile(raw);
-    const questions = compiled.questions.filter((q) => q.role === "planned").length;
-    // Stricter than the import, which keeps the playground's lessons as exported: a boost for a
-    // class its question never gives never reaches the child (dl-e8ov.5.38.11).
-    const errors = compiled.questions.flatMap(({ step_id, question }) => {
-      const unknown = unknownBoosts(question, question.help?.boost_by_mistake);
-      return unknown === null
-        ? []
-        : [
-            {
-              step_id,
-              message: `lesson file ${String(fileId.data)}, step ${step_id} help: ${unknown}`,
-            },
-          ];
-    });
-    return { ok: errors.length === 0, errors, ...known, questions, mistake_classes };
-  } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    return { ok: false, errors: errorsOf(raw, message), ...known, questions: 0, mistake_classes };
+  const steps = rawSteps(inItsLanguage(raw));
+  // With no language the lines are still `{pl, uk, en}`, never a rung's text: no rung is read.
+  const resolved = Language.safeParse((raw as { language?: unknown } | null)?.language).success;
+  const parsed = safeParseLessonFile(raw);
+  const found: Found[] = [];
+  let questions = 0;
+  if (!parsed.success) {
+    found.push(schemaFindings(raw, id, parsed.issues));
+  } else {
+    const problems = compileProblems(parsed.data);
+    found.push(compileFindings(steps, problems));
+    if (problems.length === 0) {
+      questions = compileLessonFile(raw).questions.filter((q) => q.role === "planned").length;
+    }
   }
+  // Stricter than the import, which keeps the playground's lessons as exported: a boost for a
+  // class its question never gives never reaches the child (dl-e8ov.5.38.11).
+  found.push(unknownMistakeClasses(id, steps));
+  found.push({ findings: keyInSay(steps), errors: [] });
+  found.push({ findings: resolved ? steps.flatMap(emptyRungs) : [], errors: [] });
+  const findings = found.flatMap((f) => f.findings);
+  const errors = found.flatMap((f) => f.errors);
+  const ok = !findings.some((f) => f.level === "error");
+  return { ok, findings, errors, ...known, questions, mistake_classes };
 }
 
 function read(file: string): unknown {
@@ -133,6 +489,16 @@ try {
   const message = `${file}: ${e instanceof Error ? e.message : String(e)}`;
   result = {
     ok: false,
+    findings: [
+      {
+        step_id: null,
+        path: "",
+        level: "error",
+        rule: "json",
+        text: message,
+        fix: "Make the file valid JSON: check for a missing comma, quote or bracket near the place named.",
+      },
+    ],
     errors: [{ step_id: null, message }],
     play_path: null,
     lesson_id: null,
@@ -142,11 +508,16 @@ try {
 }
 if (json) {
   process.stdout.write(`${JSON.stringify(result)}\n`);
-} else if (result.ok) {
-  process.stdout.write(`${file}: ok, ${result.questions} questions, play ${result.play_path}\n`);
 } else {
-  for (const { step_id, message } of result.errors) {
-    process.stdout.write(`${file}: ${step_id === null ? "" : `step ${step_id}: `}${message}\n`);
+  for (const f of result.findings) {
+    const step = f.step_id === null ? "" : `step ${f.step_id}: `;
+    process.stdout.write(
+      `${file}: ${step}${f.level} ${f.rule} at ${f.path}: ${f.text}\n  fix: ${f.fix}\n`,
+    );
+  }
+  if (result.ok) {
+    process.stdout.write(`${file}: ok, ${result.questions} questions, play ${result.play_path}\n`);
   }
 }
-process.exit(result.ok ? 0 : 1);
+// Not process.exit: it can cut a long answer off before a pipe has read it all.
+process.exitCode = result.ok ? 0 : 1;

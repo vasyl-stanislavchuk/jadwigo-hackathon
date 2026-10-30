@@ -7,7 +7,7 @@ prod's major version, with no Docker: Postgres.app on port 5433 locally, and the
 | Path | What it is |
 | --- | --- |
 | `migrations/<timestamp>_<name>.sql` | One migration per change, applied in name order. Never edited once merged: a change is a new migration. |
-| `tests/shim.sql` | What a Supabase project has before any migration: the roles `anon`, `authenticated`, `authenticator` and `service_role`, the `auth` schema, and `auth.uid()`, `auth.jwt()`, `auth.role()` and `auth.email()`. Applied before the migrations, never to a real project. |
+| `tests/shim.sql` | What a Supabase project has before any migration: the roles `anon`, `authenticated`, `authenticator`, `service_role` and `supabase_auth_admin`, the `auth` schema, `auth.uid()`, `auth.jwt()`, `auth.role()` and `auth.email()`, and the columns of `auth.users` and `auth.identities` a sign-in writes. Applied before the migrations, never to a real project. |
 | `tests/*.test.sql` | pgTAP tests. Each runs in a transaction it rolls back, on the fixture in `tests/_fixture.sql`. |
 
 ## Commands
@@ -34,6 +34,10 @@ prod's major version, with no Docker: Postgres.app on port 5433 locally, and the
   (`claimed_read` policies, `20261029120000_parent_login.sql`). It reads no `lesson_question`, so
   no answer key; `attempt_result` gives it each asked question's face through `app.asked_question()`.
   A claim goes through `app.claim_attempt()`, never an update of `attempt`.
+- Google and Facebook profile data is trimmed (`20261030120000_trim_profile.sql`,
+  `docs/research/profile-trim.md`): triggers keep only the linking keys in `auth.users` and
+  `auth.identities`, and the custom access token hook `app.custom_access_token` does the same to a
+  token's `user_metadata`. A claim the token needs, such as `pod_id`, joins that hook.
 - `apps/api` connects as `jadwigo_api`, which never owns a table and never bypasses row-level
   security. Its login is set per environment, outside migrations.
 - A migration under `supabase/` is a one-way door: say so in the PR.

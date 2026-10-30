@@ -6,12 +6,13 @@ import { GOLDEN_CASES } from "@jadwigo/testing";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { judge } from "./judge.ts";
+import type { Question } from "./question.ts";
 import {
   applyRule,
   classify,
   classifyNumberLine,
   isNum,
-  MISTAKE_CLASSES,
+  mistakeClassesOf,
   withinTolerance,
 } from "./rules.ts";
 
@@ -69,27 +70,97 @@ describe("classify", () => {
   });
 });
 
-describe("MISTAKE_CLASSES (dl-e8ov.5.38.11)", () => {
-  it("holds every class a judge gave the golden corpus that the question's key does not name", () => {
+describe("mistakeClassesOf (dl-e8ov.5.38.15)", () => {
+  const questionOf = (c: (typeof GOLDEN_CASES)[number]) => ({
+    ...FamilyQuestion.parse(c.question),
+    question_type: QuestionType.parse(c.question.question_type),
+  });
+
+  it("holds every class a judge gave the golden corpus, the step's and each part's", () => {
     const unlisted = new Set<string>();
     for (const c of GOLDEN_CASES) {
-      const q = {
-        ...FamilyQuestion.parse(c.question),
-        question_type: QuestionType.parse(c.question.question_type),
-      };
+      const q = questionOf(c);
       if (q.family === "explain") continue;
       const v = judge(q, c.value);
-      // A class the key names (a near table) is the step's own, added to the family's list.
-      const named = JSON.stringify(q.key);
-      for (const cls of [v.mistake_class, ...v.parts.map((p) => p.mistake_class)]) {
-        if (cls === null || MISTAKE_CLASSES[q.family].includes(cls)) continue;
-        if (!named.includes(JSON.stringify(cls))) unlisted.add(`${q.family} ${cls}`);
-      }
+      const listed = mistakeClassesOf(q);
+      for (const cls of [v.mistake_class, ...v.parts.map((p) => p.mistake_class)])
+        if (cls !== null && !listed.includes(cls)) unlisted.add(`${c.question_id} ${cls}`);
     }
     expect([...unlisted]).toEqual([]);
   });
 
-  it("holds every class a number rule gives, in each family that reads one", () => {
+  const enter = (key: object, data: object = {}) =>
+    FamilyQuestion.parse({
+      family: "enter",
+      data: { input: "number", entry: "keypad", ...data },
+      key: { accept: ["24"], ...key },
+    });
+
+  it("gives a bare whole-number key only other_wrong, and its near table's classes", () => {
+    expect(mistakeClassesOf(enter({}))).toEqual(["other_wrong"]);
+    expect(mistakeClassesOf(enter({ near: { "42": "digits_swapped" } }))).toEqual([
+      "digits_swapped",
+      "other_wrong",
+    ]);
+  });
+
+  it("gives a times_table key classify()'s classes, and never a text or fraction class", () => {
+    const rule = { rule: "times_table", a: 4, b: 6, recent: [] };
+    const listed = mistakeClassesOf(enter({ rule }));
+    expect(listed).toEqual([
+      "add_for_multiply",
+      "digit_reversal",
+      "neighbour_row",
+      "off_by_small",
+      "other_wrong",
+      "same_decade",
+    ]);
+    expect(mistakeClassesOf(enter({ rule: { ...rule, recent: [20] } }))).toContain(
+      "neighbour_fact_swap",
+    );
+  });
+
+  it("gives a text key its slips, as far as the key counts them", () => {
+    const text = (key: object) =>
+      mistakeClassesOf(
+        FamilyQuestion.parse({
+          family: "enter",
+          data: { input: "text", entry: "keyboard" },
+          key: { accept: ["żółw"], ...key },
+        }),
+      );
+    expect(text({})).toEqual(["missing_diacritics", "other_wrong", "typo", "wrong_case"]);
+    expect(text({ case: "ignore", accents: "ignore", typo: "accept" })).toEqual(["other_wrong"]);
+  });
+
+  it("lists typo on a typo: 'accept' key whose judge still gives it", () => {
+    const q = {
+      ...FamilyQuestion.parse({
+        family: "enter",
+        data: { input: "text", entry: "keyboard" },
+        key: { accept: ["Naprawdę?!"], typo: "accept" },
+      }),
+      question_type: "short_text" as const,
+    };
+    expect(judge(q, { entered: "Naprawde" }).mistake_class).toBe("typo");
+    expect(mistakeClassesOf(q)).toContain("typo");
+  });
+
+  it("measures a form for typo as the judge does, folded", () => {
+    const text = (accept: string, key: object = {}) =>
+      mistakeClassesOf(
+        FamilyQuestion.parse({
+          family: "enter",
+          data: { input: "text", entry: "keyboard" },
+          key: { accept: [accept], ...key },
+        }),
+      );
+    expect(text("İst", { case: "ignore" })).toContain("typo");
+    expect(text("Kot.")).not.toContain("typo");
+    expect(text("Kotek", { typo: "accept" })).not.toContain("typo");
+  });
+
+  it("holds every class a judged number miss gets on a rule key", () => {
     const rule = fc.oneof(
       fc.record({
         rule: fc.constant("times_table" as const),
@@ -104,33 +175,297 @@ describe("MISTAKE_CLASSES (dl-e8ov.5.38.11)", () => {
         op: fc.constantFrom("add" as const, "sub" as const, "mul" as const),
         recent: fc.array(fc.integer({ min: 0, max: 144 }), { maxLength: 3 }),
       }),
-      fc.record({
-        rule: fc.constant("number_line" as const),
-        mode: fc.constantFrom("place" as const, "read" as const),
-        min: fc.constant(0),
-        max: fc.constantFrom(10, 20, 100),
-        step: fc.constantFrom(1, 2, 5, 10),
-      }),
     );
     fc.assert(
       fc.property(
         rule,
-        fc.integer({ min: 0, max: 100 }),
+        fc.integer({ min: 0, max: 144 }),
         fc.integer({ min: -10, max: 200 }),
         (r, answer, value) => {
-          const key = r.rule === "times_table" ? r.a * r.b : answer;
-          if (value === key) return;
-          const cls = applyRule(r, value, key, 0);
-          for (const family of ["enter", "slots", "place"] as const)
-            expect(MISTAKE_CLASSES[family]).toContain(cls);
+          const accept = String(r.rule === "times_table" ? r.a * r.b : answer);
+          const q = {
+            ...enter({ accept: [accept], rule: r }),
+            question_type: "production" as const,
+          };
+          const v = judge(q, { entered: String(value) });
+          if (v.mistake_class !== null) expect(mistakeClassesOf(q)).toContain(v.mistake_class);
         },
       ),
     );
   });
 
-  it("lists each class once a family, and none for explain, which has no judge", () => {
-    for (const classes of Object.values(MISTAKE_CLASSES))
-      expect(new Set(classes).size).toBe(classes.length);
-    expect(MISTAKE_CLASSES.explain).toEqual([]);
+  it("gives explain none, as it has no judge", () => {
+    expect(mistakeClassesOf({ family: "explain", data: {}, key: {} } as never)).toEqual([]);
   });
+});
+
+/** Our own small questions, one per judge path the golden corpus never reaches, cast past the
+ * presentational fields no judge reads. */
+const opts = (ids: string[]) => ids.map((id) => ({ id, content: { kind: "text", text: id } }));
+const OWN: { q: Question; value: fc.Arbitrary<unknown> }[] = [];
+const own = (q: object, value: fc.Arbitrary<unknown>) =>
+  OWN.push({ q: { question_type: "production", ...q } as unknown as Question, value });
+
+const pick = (ids: string[]) => fc.subarray(ids).map((chosen) => ({ chosen }));
+own(
+  {
+    family: "choose",
+    data: { options: opts(["a", "b", "c", "d"]), select: "many", layout: "grid" },
+    key: { correct: ["a", "b"], near: { c: "half_pick" } },
+  },
+  pick(["a", "b", "c", "d"]),
+);
+own(
+  {
+    family: "choose",
+    data: { options: opts(["n1", "n2", "n3"]), select: "many", layout: "inline" },
+    key: { correct: ["n1", "n2"] },
+  },
+  pick(["n1", "n2", "n3"]),
+);
+
+/** A typed entry near the key's forms: the forms, their case and marks changed, one letter off,
+ * numbers around them, and a few expressions and fractions. */
+function entered(accept: string[]): fc.Arbitrary<{ entered: string }> {
+  const forms = accept.flatMap((a) => [
+    a,
+    a.toUpperCase(),
+    a.toLowerCase(),
+    a.normalize("NFD").replace(/\p{M}/gu, ""),
+    `${a}x`,
+    a.slice(1),
+  ]);
+  const pool = [
+    ...forms,
+    "",
+    "abc",
+    "2×5",
+    "5×2",
+    "3×5",
+    "4+4",
+    "2+2+2+2+2",
+    "5+5",
+    "10",
+    "6=2×3",
+    "2×3=6",
+    "6=2×4",
+    "7=2×3",
+  ];
+  return fc
+    .oneof(
+      fc.constantFrom(...pool),
+      fc.constantFrom("1/2", "2/4", "3/2", "2/3", "1 1/2", "1 2/4", "6/4", "4/6"),
+      fc.integer({ min: -5, max: 120 }).map(String),
+    )
+    .map((e) => ({ entered: e }));
+}
+const enterQ = (input: string, key: object, data: object = {}) =>
+  own(
+    { family: "enter", data: { input, entry: "keyboard", ...data }, key },
+    entered((key as { accept: string[] }).accept),
+  );
+enterQ("text", { accept: ["żółw"], near: { zulw: "u_for_o" } });
+enterQ("text", { accept: ["Kot"], case: "ignore", typo: "accept" });
+enterQ("text", { accept: ["Naprawdę?!"], typo: "accept" });
+enterQ("text", { accept: ["İst"], case: "ignore" });
+enterQ("text", { accept: ["Kot."] });
+enterQ("text", { accept: ["\u0344ab"] });
+enterQ("expression", { accept: ["2×5"], form: "product" });
+enterQ("expression", { accept: ["2×5"], form: "sum" });
+enterQ("expression", { accept: ["6=2×3"], sides: "kept" });
+enterQ("fraction", { accept: ["3/2"], forms: ["mixed"] }, { simplify: "enforced" });
+enterQ("fraction", { accept: ["1/2"] }, { simplify: "enforced" });
+enterQ(
+  "number",
+  { accept: ["7"] },
+  { figure: { kind: "ruler", unit: "cm", length: 10, pixels_per_unit: 20, picture: {} } },
+);
+
+own(
+  {
+    family: "slots",
+    data: {
+      template: "3 × 4 = {g1}, {g2}, {g3}",
+      gaps: [
+        { id: "g1", kind: "enter", input: "number" },
+        { id: "g2", kind: "enter", input: "text" },
+        { id: "g3", kind: "choose", options: opts(["x", "y"]) },
+      ],
+    },
+    key: {
+      gaps: {
+        g1: {
+          kind: "enter",
+          accept: ["12"],
+          rule: { rule: "times_table", a: 3, b: 4, recent: [] },
+        },
+        g2: { kind: "enter", accept: ["dwanaście"] },
+        g3: { kind: "choose", correct: ["x"], near: { y: "picked_y" } },
+      },
+    },
+  },
+  fc
+    .record({
+      g1: fc.constantFrom("12", "13", "7", "21", "dwanaście", "", "x"),
+      g2: fc.constantFrom("dwanaście", "dwanascie", "Dwanaście", "12", "dwanascie!", "trzy"),
+      g3: fc.constantFrom("x", "y", "12"),
+    })
+    .map((gaps) => ({ gaps })),
+);
+
+const ids = ["i1", "i2", "i3", "i4"];
+own(
+  {
+    family: "sequence",
+    data: { items: ids.map((id) => ({ id, text: id })) },
+    key: { orders: [ids] },
+  },
+  fc.oneof(fc.shuffledSubarray(ids, { minLength: 4 }), fc.shuffledSubarray(ids)),
+);
+own(
+  {
+    family: "sequence",
+    data: {
+      items: [],
+      tiles: ["1", "2", "3", "+"].map((t, i) => ({ id: `t${i}`, text: t })),
+      slots: 3,
+    },
+    key: { orders: [["t0", "t3", "t1"]] },
+  },
+  fc.array(fc.constantFrom("t0", "t1", "t2", "t3"), { maxLength: 4 }),
+);
+own(
+  {
+    family: "group",
+    data: {
+      groups: [
+        { id: "even", label: "" },
+        { id: "odd", label: "" },
+      ],
+      items: [
+        { id: "n2", label: "" },
+        { id: "n3", label: "" },
+      ],
+      each_item: "one",
+    },
+    key: { items: { n2: ["even"], n3: ["odd"] }, near: { n3: { even: "odd_for_even" } } },
+  },
+  fc
+    .record({ n2: fc.subarray(["even", "odd"]), n3: fc.subarray(["even", "odd"]) })
+    .map((items) => ({ items })),
+);
+
+const place = (data: object, key: object, value: fc.Arbitrary<unknown>) =>
+  own({ family: "place", data, key }, value);
+const tens = { rule: "number_line", mode: "place", min: 0, max: 100, step: 10 } as const;
+place(
+  { surface: "number_line", min: 0, max: 100, step: 10 },
+  { surface: "number_line", value: 40, tolerance: 2, rule: tens },
+  fc.integer({ min: -10, max: 110 }).map((at) => ({ at })),
+);
+place(
+  { surface: "number_line", min: 0, max: 100, step: 10 },
+  { surface: "number_line", value: 40, tolerance: 2 },
+  fc.integer({ min: -10, max: 110 }).map((at) => ({ at })),
+);
+const square = (x: number, y: number) => [
+  { x, y },
+  { x: x + 10, y },
+  { x: x + 10, y: y + 10 },
+  { x, y: y + 10 },
+];
+place(
+  { surface: "image" },
+  {
+    surface: "image",
+    targets: [
+      { id: "a", polygon: square(0, 0) },
+      { id: "b", polygon: square(20, 0) },
+    ],
+    near: [{ id: "c", polygon: square(40, 0), mistake_class: "tapped_c" }],
+    require_all: true,
+  },
+  fc
+    .array(fc.record({ x: fc.integer({ min: 0, max: 60 }), y: fc.integer({ min: 0, max: 12 }) }), {
+      minLength: 1,
+      maxLength: 3,
+    })
+    .map((points) => ({ points })),
+);
+const gridValue = fc.record({
+  rows: fc.integer({ min: 1, max: 6 }),
+  cols: fc.integer({ min: 1, max: 6 }),
+});
+place(
+  { surface: "grid" },
+  { surface: "grid", rows: 3, cols: 4, either_order: true, off_by_one: true },
+  gridValue,
+);
+place(
+  { surface: "grid", split: "one" },
+  { surface: "grid", rows: 3, cols: 4, either_order: false, split: {} },
+  fc.record({
+    rows: fc.integer({ min: 2, max: 4 }),
+    cols: fc.integer({ min: 3, max: 5 }),
+    split: fc.option(
+      fc.record({ at: fc.integer({ min: 0, max: 5 }), axis: fc.constantFrom("rows", "cols") }),
+      { nil: undefined },
+    ),
+  }),
+);
+place(
+  { surface: "bars", step: 1 },
+  { surface: "bars", heights: { a: 3, b: 5 } },
+  fc
+    .record({ a: fc.integer({ min: 0, max: 8 }), b: fc.integer({ min: 0, max: 8 }) })
+    .map((heights) => ({ heights })),
+);
+const clockValue = fc.record({
+  hour_at: fc.integer({ min: 0, max: 59 }),
+  m: fc.integer({ min: 0, max: 59 }),
+});
+place(
+  { surface: "clock", minute_step: 5, hands: "free" },
+  { surface: "clock", h: 3, m: 30 },
+  clockValue,
+);
+place(
+  { surface: "clock", minute_step: 15, hands: "geared" },
+  { surface: "clock", h: 9, m: 15 },
+  clockValue,
+);
+place(
+  { surface: "coins", bank: ["gr2", "gr5", "gr50", "zl1", "zl2", "zl5"] },
+  { surface: "coins", amount_gr: 700, fewest: true },
+  fc
+    .oneof(
+      fc.constant(["gr5", "gr2"]),
+      fc.array(fc.constantFrom("gr2", "gr5", "gr50", "zl1", "zl2", "zl5"), {
+        minLength: 1,
+        maxLength: 6,
+      }),
+    )
+    .map((items) => ({ items })),
+);
+place(
+  { surface: "fraction", parts: 6, contiguous: true },
+  { surface: "fraction", count: 2 },
+  fc.uniqueArray(fc.integer({ min: 0, max: 5 })).map((shaded) => ({ shaded })),
+);
+
+describe("mistakeClassesOf on our own questions", () => {
+  it.each(OWN.map((o, i) => [i, o.q.family, o] as const))(
+    "%i %s: every class a judge gives a value is listed",
+    (_, __, { q, value }) => {
+      const listed = mistakeClassesOf(q);
+      fc.assert(
+        fc.property(value, (v) => {
+          const verdict = judge(q, v);
+          for (const cls of [verdict.mistake_class, ...verdict.parts.map((p) => p.mistake_class)])
+            if (cls !== null) expect(listed).toContain(cls);
+        }),
+        { numRuns: 400 },
+      );
+    },
+  );
 });

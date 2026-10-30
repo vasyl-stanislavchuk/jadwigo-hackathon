@@ -43,3 +43,19 @@ describe("toggleSidebar", () => {
     expect(toggleSidebar(root, null)).toBe(false);
   });
 });
+
+describe("the right-hand contents", () => {
+  afterEach(() => {
+    root.removeAttribute("data-toc");
+  });
+
+  it("hides and shows apart from the left sidebar, and is restored before the first paint", () => {
+    expect(toggleSidebar(root, localStorage, "toc")).toBe(true);
+    expect(root.getAttribute("data-toc")).toBe("collapsed");
+    expect(isCollapsed(root, "sidebar")).toBe(false);
+    root.removeAttribute("data-toc");
+    new Function(SIDEBAR_STATE)();
+    expect(isCollapsed(root, "toc")).toBe(true);
+    expect(isCollapsed(root, "sidebar")).toBe(false);
+  });
+});

@@ -13,3 +13,9 @@ app_reserved_concurrency = 150
 # `infra/supabase-auth/domain.sh status` after the owner creates the domain; none are needed before.
 auth_domain     = "auth.jadwigo.pl"
 auth_domain_txt = {}
+
+# Google Workspace mail on jadwigo.pl (dl-e8ov.2.71, docs/runbooks/google-workspace.md). Each line is
+# the owner's, in the runbook's order: the verification token, then mx = true, then dkim.
+mail_workspace = {
+  "jadwigo.pl" = {}
+}
