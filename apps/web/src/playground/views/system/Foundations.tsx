@@ -140,24 +140,67 @@ export function Colour(): JSX.Element {
   );
 }
 
+/** The type scale: the child's sizes a lesson reads, the task's readout, then the adult's on an app
+ * page (decision 2026-10-30-app-pages-take-an-adult-type-scale-h1-28-h2-22-body-17-and-the-a). */
 const SCALE: readonly {
+  /** The custom property, with its dashes. */
   token: string;
   use: string;
   sample: string;
   strong?: boolean;
-  math?: boolean;
+  /** The line height, when it is a token's: the page scale's leading. */
+  leading?: string;
 }[] = [
-  { token: "instruction", use: "Instruction", sample: "Napisz albo powiedz wynik.", strong: true },
-  { token: "prompt", use: "Prompt", sample: "Ile to jest 8 × 9?", strong: true },
-  { token: "option", use: "Options and answers", sample: "żółw · źrebię · 72", strong: true },
-  { token: "math", use: "Maths", sample: "347 + 285 = 632", strong: true, math: true },
-  { token: "verdict", use: "The band’s verdict", sample: "Tak, właśnie tak!", strong: true },
   {
-    token: "body",
+    token: "--jw-size-instruction",
+    use: "Instruction",
+    sample: "Napisz albo powiedz wynik.",
+    strong: true,
+  },
+  { token: "--jw-size-prompt", use: "Prompt", sample: "Ile to jest 8 × 9?", strong: true },
+  {
+    token: "--jw-size-option",
+    use: "Options and answers",
+    sample: "żółw · źrebię · 72",
+    strong: true,
+  },
+  { token: "--jw-size-math", use: "Maths", sample: "347 + 285 = 632", strong: true },
+  {
+    token: "--jw-size-target",
+    use: "A task’s readout, 44 (36 on a phone)",
+    sample: "6 · 8 = ?",
+    strong: true,
+  },
+  {
+    token: "--jw-size-verdict",
+    use: "The band’s verdict",
+    sample: "Tak, właśnie tak!",
+    strong: true,
+  },
+  {
+    token: "--jw-size-body",
     use: "Help, hints, the band’s second line",
     sample: "8 × 9 to tyle co 8 × 10, tylko bez jednej ósemki.",
   },
-  { token: "small", use: "Small print", sample: "Zadanie z Khan Academy" },
+  { token: "--jw-size-small", use: "Small print", sample: "Zadanie z Khan Academy" },
+  {
+    token: "--jw-page-h1",
+    use: "An app page’s title, 28 (26 on a phone)",
+    sample: "Konto rodzica",
+    strong: true,
+  },
+  {
+    token: "--jw-page-h2",
+    use: "An app page’s part, 22 (20 on a phone)",
+    sample: "Ostatnie lekcje",
+    strong: true,
+  },
+  {
+    token: "--jw-page-body",
+    use: "An app page’s body, a third heading, a label, 17",
+    sample: "Zapiszemy lekcje dziecka na Twoim koncie, żeby następne do niego pasowały.",
+    leading: "--jw-page-leading",
+  },
 ];
 
 export function Type(): JSX.Element {
@@ -169,15 +212,20 @@ export function Type(): JSX.Element {
       >
         <div className="flex flex-col gap-4 rounded-2xl border-2 border-border bg-card p-6">
           {SCALE.map((s) => (
-            <div key={s.token} className="grid gap-1 md:grid-cols-[14rem_1fr] md:items-baseline">
+            <div
+              key={s.token}
+              className="grid gap-1 md:grid-cols-[14rem_1fr] md:items-baseline"
+              data-scale={s.token}
+            >
               <span className="text-sm text-muted-foreground">
-                {s.use} · <code>--jw-size-{s.token}</code>
+                {s.use} · <code>{s.token}</code>
               </span>
               <span
+                className="tabular-nums"
                 style={{
-                  fontSize: `var(--jw-size-${s.token})`,
+                  fontSize: `var(${s.token})`,
                   fontWeight: s.strong ? "var(--jw-weight-strong)" : "var(--jw-weight-text)",
-                  lineHeight: 1.25,
+                  lineHeight: s.leading ? `var(${s.leading})` : 1.25,
                 }}
               >
                 {s.sample}

@@ -3,7 +3,7 @@
  * frame group included, and the group's live parts render. The stage's states come from a written
  * example's scenarios, and no lesson plays or is linked. App pages sits outside the lesson's scope
  * and draws the kit's parts; tiles and still answers, and the owner's gaps, have their sections
- * (dl-uukj.32.12). happy-dom lays nothing out, so the observers the page uses are stubbed.
+ * (dl-uukj.32.12), and they show the owner's answers to those gaps (dl-uukj.32.19). happy-dom lays nothing out, so the observers the page uses are stubbed.
  */
 
 import { copy, TABLES } from "@jadwigo/copy";
@@ -11,7 +11,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { AUTHORED, fakeApi } from "../../examples/fixture.ts";
 import { loadExamples, PlaygroundApi } from "../../examples/index.ts";
-import { APP_PAGE_ROLES, DESIGN_LINES, OWNER_GAPS } from "./data.ts";
+import { APP_PAGE_ROLES, DESIGN_LINES, OWNER_GAPS, PARENT_OUTCOMES } from "./data.ts";
 import { FRAME_KINDS, FRAME_RULES, MEASURES } from "./frame/data.ts";
 import { FRAME_SECTIONS } from "./frame/sections.tsx";
 import { stageExample, stageQuestion } from "./question.ts";
@@ -138,55 +138,139 @@ describe("the System page's app pages, tiles and gaps (dl-uukj.32.12)", () => {
       ).not.toBeNull();
   });
 
-  it("builds the app page from the kit's parts, and lists every role of its register", () => {
+  it("builds the app pages from the kit's parts, and lists every role of the adult's register", () => {
     render(page());
-    const specimen = screen.getByRole("region", { name: "A parent's page, drawn by the kit" });
-    const inside = within(specimen);
+    const lesson = within(
+      screen.getByRole("region", { name: "A parent's page, drawn by the kit" }),
+    );
     for (const level of [1, 2, 3])
-      expect(inside.getAllByRole("heading", { level })).toHaveLength(1);
-    expect(inside.getByRole("textbox", { name: "Adres e-mail" })).toBeTruthy();
-    expect(inside.getByRole("button", { name: "Wyślij kod" })).toBeTruthy();
-    expect(inside.getByRole("status").textContent).toContain("Kod wysłaliśmy");
-    expect(inside.getByRole("link", { name: "Wróć do listy lekcji" })).toBeTruthy();
-    expect(inside.getAllByRole("img").map((i) => i.getAttribute("aria-label"))).toEqual([
-      "6 × 7: Dobrze",
+      expect(lesson.getAllByRole("heading", { level })).toHaveLength(1);
+    expect(lesson.getByRole("textbox", { name: "Adres e-mail" })).toBeTruthy();
+    expect(lesson.getByRole("button", { name: "Wyślij kod" })).toBeTruthy();
+    expect(lesson.getByRole("status").textContent).toContain("Kod wysłaliśmy");
+    expect(lesson.getByRole("link", { name: "Wróć do listy lekcji" })).toBeTruthy();
+    // The parent's icon set and words, never the child's star and sprout.
+    expect(lesson.getAllByRole("img").map((i) => i.getAttribute("aria-label"))).toEqual([
+      "6 × 7: Od razu",
       "8 × 9: Jeszcze nie",
       "7 × 7: Pominięte",
     ]);
     const table = screen.getByRole("table", { name: "The app-page register, live" });
     for (const r of APP_PAGE_ROLES)
       expect(within(table).getByText(r.token, { selector: "code" })).toBeTruthy();
+    // The owner's adult scale (dl-uukj.32.19), with the rest of the register kept.
+    expect(APP_PAGE_ROLES.map((r) => r.token)).toEqual([
+      "--page-prose-max",
+      "--jw-page-h1",
+      "--jw-page-h2",
+      "--jw-page-body",
+      "--jw-page-leading",
+      "--jw-size-small",
+      "--jw-control-height",
+      "--jw-control-height-sm",
+      "--jw-card",
+      "--jw-ink",
+      "--jw-line",
+      "--jw-act",
+      "--jw-radius-small",
+    ]);
   });
 
-  it("draws the readout and the outcome tile in 3 tones and 2 sizes, and names what waits on the kit", () => {
-    const { container } = render(page());
-    const section = container.querySelector("section#still-answers");
-    expect(section?.querySelectorAll("[data-task-target]")).toHaveLength(2);
-    const tiles = within(section as HTMLElement).getAllByRole("img");
+  it("draws the parent's home card of option 1b: a title link, a date, small tiles, the overview link", () => {
+    render(page());
+    const home = within(
+      screen.getByRole("region", { name: "The parent's home, drawn by the kit" }),
+    );
+    expect(home.getByRole("heading", { level: 1 }).textContent).toBe("Konto rodzica");
+    expect(home.getByRole("heading", { level: 2 }).textContent).toBe("Uczestnik 1");
+    const card = home.getByRole("link", { name: "Równe grupy" }).closest("[data-home-card]");
+    expect(card).not.toBeNull();
+    const inCard = within(card as HTMLElement);
+    expect(inCard.getByText("30 października 2026")).toBeTruthy();
+    const tiles = inCard.getAllByRole("img");
     expect(tiles.map((t) => t.getAttribute("data-outcome"))).toEqual([
-      "right",
-      "miss",
-      "plain",
-      "right",
-      "miss",
-      "plain",
+      "first_try",
+      "got_there",
+      "not_yet",
+      "first_try",
+      "skipped",
+      "not_asked",
+    ]);
+    expect(tiles.every((t) => t.className.split(" ").includes("size-8"))).toBe(true);
+    expect(inCard.getByRole("link", { name: "Wszystkie podejścia do tej lekcji" })).toBeTruthy();
+    for (const name of ["Dodaj dziecko", "Wyloguj się"])
+      expect(home.getByRole("button", { name }).getAttribute("data-variant")).toBe("outline");
+  });
+
+  it("draws the readout pair, the outcome tile in 5 tones and 3 sizes, and names what waits on the kit", () => {
+    const { container } = render(page());
+    const section = container.querySelector("section#still-answers") as HTMLElement;
+    expect(
+      [...section.querySelectorAll("[data-readout]")].map((r) => [
+        r.getAttribute("data-readout"),
+        r.querySelectorAll("[data-task-target]").length,
+      ]),
+    ).toEqual([
+      ["laptop", 1],
+      ["phone", 1],
+    ]);
+    expect(PARENT_OUTCOMES.map((o) => [o.outcome, o.tone])).toEqual([
+      ["first_try", "right"],
+      ["got_there", "right-soft"],
+      ["not_yet", "miss"],
+      ["skipped", "plain"],
+      ["open", "plain"],
+      ["not_asked", "empty"],
+    ]);
+    expect(new Set(PARENT_OUTCOMES.map((o) => o.tone))).toEqual(
+      new Set(["right", "right-soft", "miss", "plain", "empty"]),
+    );
+    const outcomes = PARENT_OUTCOMES.map((o) => o.outcome);
+    const tiles = within(section).getAllByRole("img");
+    expect(tiles.map((t) => t.getAttribute("data-outcome"))).toEqual([
+      ...outcomes,
+      ...outcomes,
+      ...outcomes,
+    ]);
+    // 40 in the legend, then a row at 32 and one at 28.
+    expect(tiles.map((t) => t.className.match(/(?:^|\s)size-(\d+)(?:\s|$)/)?.[1])).toEqual([
+      ...outcomes.map(() => "10"),
+      ...outcomes.map(() => "8"),
+      ...outcomes.map(() => "7"),
     ]);
     expect(
-      [...(section?.querySelectorAll("[data-system-waiting]") ?? [])].map((w) =>
+      [...section.querySelectorAll("[data-system-waiting]")].map((w) =>
         w.getAttribute("data-system-waiting"),
       ),
     ).toEqual(["The kid tile", "StillAnswer"]);
   });
 
-  it("lists every gap the owner answers, each with the tokens it is about", () => {
+  it("puts the readout and the adult's sizes in the type scale", () => {
+    const { container } = render(page());
+    const scale = [...container.querySelectorAll("[data-scale]")].map((s) =>
+      s.getAttribute("data-scale"),
+    );
+    for (const token of [
+      "--jw-size-math",
+      "--jw-size-target",
+      "--jw-page-h1",
+      "--jw-page-h2",
+      "--jw-page-body",
+    ])
+      expect(scale).toContain(token);
+  });
+
+  it("keeps one gap, the terminal card's colours, decided and deferred", () => {
+    expect(OWNER_GAPS.map((g) => [g.id, g.cite])).toEqual([["code-purples", "dl-uukj.32.20"]]);
     const { container } = render(page());
     const gaps = [...container.querySelectorAll("section#gaps [data-owner-gap]")];
-    expect(gaps.map((g) => g.getAttribute("data-owner-gap"))).toEqual(OWNER_GAPS.map((g) => g.id));
-    for (const [i, g] of OWNER_GAPS.entries())
-      expect(
-        [...(gaps[i]?.querySelectorAll("[data-live-value]") ?? [])].map((v) =>
-          v.getAttribute("data-live-value"),
-        ),
-      ).toEqual(g.tokens);
+    expect(gaps.map((g) => g.getAttribute("data-owner-gap"))).toEqual(["code-purples"]);
+    expect(gaps[0]?.textContent).toContain("dl-uukj.32.20");
+    expect(gaps[0]?.textContent).toContain("deferred");
+    expect(
+      [...(gaps[0]?.querySelectorAll("[data-live-value]") ?? [])].map((v) =>
+        v.getAttribute("data-live-value"),
+      ),
+    ).toEqual(OWNER_GAPS[0]?.tokens);
   });
 });
