@@ -16,6 +16,7 @@ import { loadExamples, PlaygroundApi } from "../../examples/index.ts";
 import { APP_PAGE_ROLES, DESIGN_LINES, OWNER_GAPS, PARENT_OUTCOMES } from "./data.ts";
 import { FRAME_KINDS, FRAME_RULES, MEASURES } from "./frame/data.ts";
 import { FRAME_SECTIONS } from "./frame/sections.tsx";
+import { declaredAt } from "./live.ts";
 import { stageExample, stageQuestion } from "./question.ts";
 import { MENU, PAGE_IDS, SystemPage } from "./SystemPage.tsx";
 
@@ -221,14 +222,16 @@ describe("the System page's app pages, tiles and gaps (dl-uukj.32.12)", () => {
   it("draws the readout pair, the outcome tile in 5 tones and 3 sizes, and names what waits on the kit", () => {
     const { container } = render(page());
     const section = container.querySelector("section#still-answers") as HTMLElement;
-    // No stylesheet in happy-dom: the window's readout is drawn, and the phone's said in words.
+    // No stylesheet in happy-dom: the window's readout alone, never a "phone" sample at its size.
     expect(
       [...section.querySelectorAll("[data-readout]")].map((r) => [
         r.getAttribute("data-readout"),
         r.querySelectorAll("[data-task-target]").length,
       ]),
     ).toEqual([["laptop", 1]]);
-    expect(section.querySelector("[data-readout-words]")?.textContent).toContain("36 on a phone");
+    expect(section.querySelector("[data-readout-words]")?.textContent).toContain(
+      "could not be read from the stylesheet",
+    );
     expect(PARENT_OUTCOMES.map((o) => [o.outcome, o.tone])).toEqual([
       ["first_try", "right"],
       ["got_there", "right-soft"],
@@ -258,6 +261,20 @@ describe("the System page's app pages, tiles and gaps (dl-uukj.32.12)", () => {
         w.getAttribute("data-system-waiting"),
       ),
     ).toEqual(["The kid tile", "StillAnswer"]);
+  });
+
+  it("reads the readout's laptop and phone values from foundation.css as the browser parses it", () => {
+    // happy-dom's CSSOM parses the phone block's @media rule, so the reader runs on the real file.
+    const sheet = document.createElement("style");
+    sheet.textContent = FOUNDATION;
+    document.head.append(sheet);
+    try {
+      expect(declaredAt("--jw-size-target", true)).toBe("2.25rem");
+      expect(declaredAt("--jw-size-target", false)).toBe("2.75rem");
+    } finally {
+      sheet.remove();
+    }
+    expect(declaredAt("--jw-size-target", true)).toBe("");
   });
 
   it("draws the phone's readout at the value foundation.css's phone block declares", () => {

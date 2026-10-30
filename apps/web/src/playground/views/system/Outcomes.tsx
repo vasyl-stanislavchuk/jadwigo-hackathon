@@ -52,8 +52,8 @@ function Readout({ frame, size }: { frame: "laptop" | "phone"; size: string }): 
 
 /** The readout's pair (decision 2026-10-30-a-task-s-readout-is-44-px-on-a-laptop-and-36-px-on-a-
  * phone), each at the value the stylesheet declares for its frame, whatever the window. Without the
- * phone block (no stylesheet, a unit test) only the window's readout is drawn and the phone's is
- * said in words: the page never writes a size of its own. */
+ * phone block (no stylesheet, a unit test) only the window's readout is drawn, with a line saying
+ * the phone's could not be read: the page never writes a size of its own, not even in words. */
 function Readouts(): JSX.Element {
   const [sizes, setSizes] = useState({ laptop: "", phone: "" });
   // The sheets are the page's own and fixed once it has loaded.
@@ -68,7 +68,7 @@ function Readouts(): JSX.Element {
       <Readout frame="laptop" size={sizes.laptop} />
       {sizes.phone === "" ? (
         <p className="text-sm text-muted-foreground" data-readout-words>
-          36 on a phone: the stylesheet’s phone block was not found, so it is not drawn here.
+          The phone’s value could not be read from the stylesheet, so it is not drawn here.
         </p>
       ) : (
         <Readout frame="phone" size={sizes.phone} />
