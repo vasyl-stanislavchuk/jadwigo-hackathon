@@ -9,7 +9,7 @@ export PATH := $(MISE_BIN_PATHS)$(PATH)
 ENV ?= prod
 TF := AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform
 
-.PHONY: init plan apply output site-deploy deploy api-deploy web-deploy docs-deploy auth-diff auth-apply fmt validate test
+.PHONY: init plan apply output site-deploy deploy api-deploy web-deploy web-build docs-deploy auth-diff auth-apply fmt validate test
 
 init:
 	$(TF) init -input=false -reconfigure -backend-config=environments/$(ENV).backend.hcl
@@ -59,12 +59,21 @@ api-deploy:
 # the rest (index.html first) 5 minutes, so a deploy shows within minutes.
 web-deploy:
 	@$(NOT_FROM_AGENT)
-	cd $(WEB) && bun run build
+	$(MAKE) web-build
 	test -f $(WEB)/dist/index.html
 	bucket=$$($(TF) output -raw app_bucket) && dist_id=$$($(TF) output -raw app_distribution_id) && \
 	{ [ ! -d $(WEB)/dist/assets ] || $(AWS) s3 sync $(WEB)/dist/assets s3://$$bucket/assets --cache-control "public, max-age=31536000, immutable"; } && \
 	$(AWS) s3 sync $(WEB)/dist s3://$$bucket --delete --exclude "assets/*" --cache-control "public, max-age=300" && \
 	$(AWS) cloudfront create-invalidation --distribution-id $$dist_id --paths "/*"
+
+# apps/web's build with the environment's public settings, web-build/<env>.env: the Supabase URL, its
+# publishable key and the sign-in providers (dl-e8ov.2.64). The file's values win over the shell's, so
+# what is committed is what ships. It uploads nothing; the deploy above runs it first.
+WEB_BUILD_ENV ?= web-build/$(ENV).env
+
+web-build:
+	test -f $(WEB_BUILD_ENV)
+	set -a && . $(abspath $(WEB_BUILD_ENV)) && set +a && cd $(WEB) && bun run build
 
 # The docs at docs.<apex> (dl-5ssh.90): apps/docs's Starlight build, checked, to the docs bucket, then
 # invalidate. As for the site, hashed files under _astro/ cache for a year and the rest 5 minutes,

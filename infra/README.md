@@ -57,10 +57,20 @@ A merge deploys nothing. The owner deploys by hand
 | `make -C infra apply` | init, then apply prod | the owner |
 | `make -C infra site-deploy` | build `apps/site`, check `dist/`, sync it to the bucket, invalidate | the owner |
 | `make -C infra docs-deploy` | build `apps/docs`, check `dist/`, sync it to the docs bucket, invalidate (`docs/runbooks/docs-publish.md`) | the owner |
-| `make -C infra deploy` | `api-deploy` (`make api-bundle`, zip, `update-function-code`, wait), then `web-deploy` (build `apps/web`, sync to the app bucket, invalidate) | the owner |
+| `make -C infra deploy` | `api-deploy` (`make api-bundle`, zip, `update-function-code`, wait), then `web-deploy` (`web-build`, sync to the app bucket, invalidate) | the owner |
 | `make -n -C infra deploy` | print both halves, running nothing | anyone |
+| `make -C infra web-build` | build `apps/web` with `web-build/<env>.env`'s public settings, uploading nothing | anyone |
 | `make -C infra auth-diff` | read both Supabase projects' auth config and print what `supabase-auth/<env>.json` would change; exits 2 if anything would | anyone with the token |
 | `make -C infra auth-apply` | write those settings through the Management API | the owner |
+
+**The app's build settings are committed, in `web-build/<env>.env`** (`dl-e8ov.2.64`). They are the
+Supabase URL, its publishable key and the sign-in providers (`JW_SUPABASE_URL`, `JW_SUPABASE_KEY`,
+`JW_SUPABASE_PROVIDERS`, a comma list of `google` and `facebook`). A browser holds all of them, so none
+is secret. `web-build` sources the file over the shell's environment, so a build ships what is
+committed and nothing an exported variable left behind. `prod.env` leaves all 3 empty: prod has no
+sign-in until the consent text (`dl-e8ov.2.9`) lands, and no provider button until `dl-e8ov.2.8` and
+`dl-e8ov.2.58`. Its comment names the values for that day. `tools/src/web-build.test.ts` checks what
+the build receives.
 
 **The database URL never passes through Terraform.** The module creates the parameter with a write-only
 placeholder, so neither a tfvars file nor the state holds the value. The owner sets it after the first
