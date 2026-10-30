@@ -127,6 +127,28 @@ describe("foldLearner", () => {
     ]);
   });
 
+  it("counts the brain-path alias curriculum.math.multiplication.row-7 for maths.multiplication.row-7", () => {
+    const aliased = [
+      skill("maths.multiplication.row-7", "accuracy", ["curriculum.math.multiplication.row-7"]),
+    ];
+    const got = foldLearner(
+      [
+        row({
+          attempt: 1,
+          at: "2026-11-04T09:00:00.000Z",
+          correct: true,
+          skill: "curriculum.math.multiplication.row-7",
+        }),
+        row({ attempt: 2, at: "2026-11-05T09:00:00.000Z", correct: true }),
+      ],
+      aliased,
+      NOW,
+    );
+    expect(got.map((m) => [m.skill_code, m.level])).toEqual([
+      ["maths.multiplication.row-7", "proficient"],
+    ]);
+  });
+
   it("calls an attempt mixed when it holds 2 canonical codes, or is a review lesson", () => {
     const base = [
       row({ attempt: 1, at: "2026-10-26T09:00:00.000Z", correct: true }),
