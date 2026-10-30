@@ -253,11 +253,24 @@ def _skill_ids(skill: str) -> tuple[list[str], str | None]:
     return [], f"{skill} is not a skill id, so this step names no skill"
 
 
+def _skills_ids(skills: Sequence[str]) -> tuple[list[str], str | None]:
+    """`_skill_ids` over each of the drawn item's skills, with one note for those left out."""
+    ids: list[str] = []
+    notes: list[str] = []
+    for skill in skills:
+        found, note = _skill_ids(skill)
+        ids += [s for s in found if s not in ids]
+        if note:
+            notes.append(note)
+    return ids, "; ".join(notes) or None
+
+
 def _skill_label(skill: str) -> str:
-    """The skill as the card names it: a proposed one says so."""
-    if skill.startswith(PROPOSED):
-        return f"{skill.removeprefix(PROPOSED)} (proposed)"
-    return skill
+    """The skill as the card names it, each of several apart: a proposed one says so."""
+    return ", ".join(
+        f"{s.removeprefix(PROPOSED)} (proposed)" if s.startswith(PROPOSED) else s
+        for s in skill.split(", ")
+    )
 
 
 def drafts_dir() -> Path:
@@ -372,7 +385,7 @@ def draft(
     questions: list[dict[str, Any]] = []
     for n, (drawn, view) in enumerate(loaded, start=1):
         spec = view["question"]
-        skill_ids, skill_note = _skill_ids(drawn.skill)
+        skill_ids, skill_note = _skills_ids(drawn.skills or (drawn.skill,))
         questions.append(
             {
                 "step_id": f"q{n}",
