@@ -152,14 +152,14 @@ describe("1.4 the whole-set mark is drawn outside", () => {
     again(miss([{ id: "o2", correct: false }]));
     expect(boxes()).toEqual(untouched);
     again(miss(), 3);
-    expect(group().getAttribute("data-whole")).toBe("amber");
+    expect(group().getAttribute("data-whole")).toBe("try_again");
     expect(boxes()).toEqual(untouched);
     again(praise, 3, false);
     expect(group().getAttribute("data-whole")).toBe("green");
     expect(boxes()).toEqual(untouched);
     // The mark is an outline 6 px out, with no border, padding or fill of its own.
-    for (const tone of ["amber", "green"] as const) {
-      if (tone === "amber") again(miss(), 4);
+    for (const tone of ["try_again", "green"] as const) {
+      if (tone === "try_again") again(miss(), 4);
       else again(praise, 4, false);
       const cls = [...group().classList];
       expect(cls).toEqual(expect.arrayContaining(["outline-2", "outline-offset-6", "rounded-2xl"]));

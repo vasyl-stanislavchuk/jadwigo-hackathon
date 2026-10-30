@@ -211,7 +211,7 @@ describe("Choose: pictures as options", () => {
     fireEvent.click(sum, { detail: 0 });
     fireEvent.click(screen.getByRole("checkbox", { name: /five horses/ }), { detail: 0 });
     again(miss([{ id: "o4", correct: false }]));
-    expect(screen.getByRole("checkbox", { name: /five horses/ }).dataset["tone"]).toBe("amber");
+    expect(screen.getByRole("checkbox", { name: /five horses/ }).dataset["tone"]).toBe("try_again");
     expect(sum.dataset["tone"]).toBe("idle");
     expect(screen.getByText("tried")).toBeTruthy();
     expect(
@@ -220,7 +220,7 @@ describe("Choose: pictures as options", () => {
     again(miss(), 3);
     expect(
       document.querySelector('[data-area="answer"] > [data-whole]')?.getAttribute("data-whole"),
-    ).toBe("amber");
+    ).toBe("try_again");
     expect(options().every((el) => el.dataset["tone"] === "idle")).toBe(true);
   });
 
@@ -257,7 +257,7 @@ describe("Choose: pictures as options", () => {
     );
     expect(screen.queryByRole("radio")).toBeNull();
     const items = [...document.querySelectorAll<HTMLElement>("li[data-tone]")];
-    expect(items.map((el) => el.dataset["tone"])).toEqual(["green", "amber", "idle"]);
+    expect(items.map((el) => el.dataset["tone"])).toEqual(["green", "try_again", "idle"]);
     expect(must(items[0]).querySelector("img")?.getAttribute("width")).toBe("380");
     expect(screen.getByText("The answer")).toBeTruthy();
     expect(screen.getByText("Your answer")).toBeTruthy();

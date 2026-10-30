@@ -116,15 +116,15 @@ describe("away and back after a miss", () => {
     key("Enter");
     onCommit.miss();
     // Just after the miss: the ink edge and caret (active), the answer selected.
-    expect(look()).toEqual({ active: "true", selected: true, away: false, tone: "amber" });
+    expect(look()).toEqual({ active: "true", selected: true, away: false, tone: "try_again" });
     page();
-    // Away: no active look, no selection drawn, the dashed miss mark (tone amber).
-    expect(look()).toEqual({ active: null, selected: false, away: true, tone: "amber" });
+    // Away: no active look, no selection drawn, the dashed miss mark (tone red).
+    expect(look()).toEqual({ active: null, selected: false, away: true, tone: "try_again" });
     expect(document.activeElement).not.toBe(box());
     fireEvent.pointerDown(box());
     fireEvent.click(box());
     // Back: exactly as just after the miss.
-    expect(look()).toEqual({ active: "true", selected: true, away: false, tone: "amber" });
+    expect(look()).toEqual({ active: "true", selected: true, away: false, tone: "try_again" });
     key("0");
     expect(box().textContent).toBe("0");
     expect(look().tone).toBe("idle");

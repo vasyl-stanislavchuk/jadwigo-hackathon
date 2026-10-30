@@ -144,7 +144,7 @@ describe("Review", () => {
     for (const id of ["untouched", "picked", "missed", "right", "solution"])
       expect(states.querySelector(`[data-state="${id}"]`), id).not.toBeNull();
     expect(states.querySelector('[data-state="incomplete"]')).toBeNull();
-    expect(states.querySelector('[data-state="missed"] [data-tone="amber"]')).not.toBeNull();
+    expect(states.querySelector('[data-state="missed"] [data-tone="try_again"]')).not.toBeNull();
   });
 
   it("greys a level the type cannot show, and keeps it in place", () => {

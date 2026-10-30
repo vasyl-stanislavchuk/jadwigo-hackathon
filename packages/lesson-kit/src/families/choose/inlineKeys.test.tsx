@@ -159,7 +159,7 @@ describe("mark the numbers: §3.3 keys", () => {
     space(must(tokens()[0]));
     space(must(tokens()[2]));
     again(miss([{ id: "o3", correct: false }]));
-    expect(must(tokens()[2]).dataset["tone"]).toBe("amber");
+    expect(must(tokens()[2]).dataset["tone"]).toBe("try_again");
     expect(band()).toBe("miss");
     fireEvent.keyDown(must(tokens()[2]), { key: "ArrowLeft" });
     expect(band()).toBe("miss");

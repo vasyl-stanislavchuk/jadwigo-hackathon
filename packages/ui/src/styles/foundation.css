@@ -402,7 +402,7 @@
 
 /* ---- Behaviour: what can be pressed ------------------------------------------------------------- */
 /* Options, keys and tiles: paper with a 2px line, standing on a 4px edge of the same line. A radio
- * marked data-plain is a flat settings control (playground/views/system/settings.tsx) and stays off
+ * marked data-plain is a flat settings control (the settings controls of @jadwigo/ui, which the System page draws) and stays off
  * these rules. A one-answer option is a label around its sr-only radio (ChoiceList.tsx), so the
  * label carries the option's rules (dl-uukj.29.49). */
 [data-lesson-theme="zeszyt"]
@@ -450,7 +450,7 @@
   --jw-edge: var(--jw-right-edge);
 }
 
-[data-lesson-theme="zeszyt"] [data-tone="amber"]:not([data-status]) {
+[data-lesson-theme="zeszyt"] [data-tone="try_again"]:not([data-status]) {
   --jw-edge: transparent;
 }
 
@@ -483,7 +483,7 @@
   box-shadow: 0 var(--jw-press) 0 var(--jw-right-edge);
 }
 
-[data-lesson-theme="zeszyt"] [data-tone="amber"]:not([data-status]) {
+[data-lesson-theme="zeszyt"] [data-tone="try_again"]:not([data-status]) {
   box-shadow: none;
 }
 
@@ -503,7 +503,7 @@
     ):not(
       [aria-disabled="true"],
       [data-tone="green"],
-      [data-tone="amber"],
+      [data-tone="try_again"],
       [class~="bg-primary/10"],
       [data-picked],
       [data-solution]
@@ -821,7 +821,7 @@
     [role="textbox"][data-field],
     button[data-field],
     button[data-box]
-  )[data-tone="amber"]:is(:focus, [data-active="true"]) {
+  )[data-tone="try_again"]:is(:focus, [data-active="true"]) {
   outline: none;
   border-style: solid;
   border-color: var(--jw-focus);
@@ -857,7 +857,8 @@
   box-shadow: none;
 }
 
-[data-lesson-theme="zeszyt"] button[data-menu][data-tone="amber"]:is(:focus, [data-menu-focused]) {
+[data-lesson-theme="zeszyt"]
+  button[data-menu][data-tone="try_again"]:is(:focus, [data-menu-focused]) {
   border-style: solid;
   border-color: var(--jw-focus);
   background-color: var(--jw-miss);
@@ -983,7 +984,7 @@
 /* ---- Behaviour: motion ------------------------------------------------------------------------ */
 /* A miss is marked, not shaken: the dashed edge fades in where the eye should go (LessonTheme turns
  * the shake off). A right answer's tick arrives. Nothing counts anything. */
-[data-lesson-theme="zeszyt"] [data-tone="amber"]:not([data-status]) {
+[data-lesson-theme="zeszyt"] [data-tone="try_again"]:not([data-status]) {
   animation: jw-mark-in var(--jw-dur-mark) ease-out;
 }
 

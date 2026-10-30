@@ -78,7 +78,7 @@ export function BarsStill({
     Object.fromEntries(
       data.categories.map((c) => [
         c.id,
-        against === null ? "idle" : heights[c.id] === against[c.id] ? "green" : "amber",
+        against === null ? "idle" : heights[c.id] === against[c.id] ? "green" : "try_again",
       ]),
     );
   return (

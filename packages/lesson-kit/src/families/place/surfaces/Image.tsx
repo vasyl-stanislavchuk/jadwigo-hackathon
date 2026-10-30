@@ -31,7 +31,7 @@ type ImageData = DataOf<typeof Surface.Image>;
 const MARKER_TONE: Record<Tone, string> = {
   idle: "bg-primary",
   green: "bg-kid-correct",
-  amber: "bg-kid-try-again",
+  try_again: "bg-kid-try-again",
   missing: "bg-primary",
 };
 

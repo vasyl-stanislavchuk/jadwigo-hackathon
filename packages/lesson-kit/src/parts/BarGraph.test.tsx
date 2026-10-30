@@ -114,7 +114,7 @@ describe("BarGraph", () => {
       <BarGraph
         data={data}
         heights={{ a: 4, b: 2 }}
-        tones={{ a: "green", b: "amber" }}
+        tones={{ a: "green", b: "try_again" }}
         tone="idle"
         {...words}
         given={new Set(["a"])}
@@ -129,7 +129,7 @@ describe("BarGraph", () => {
     expect(onChange).not.toHaveBeenCalled();
     const pears = screen.getByRole("slider", { name: "Bar: pears" });
     expect(pears.dataset["helpFocus"]).toBe("true");
-    expect(pears.dataset["tone"]).toBe("amber");
+    expect(pears.dataset["tone"]).toBe("try_again");
     expect(given.dataset["tone"]).toBe("green");
   });
 

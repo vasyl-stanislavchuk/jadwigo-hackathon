@@ -55,7 +55,7 @@ export const STATUS: Record<StepStatus, StatusRow> = {
   checking: { icon: "spinner", words: "checking", tone: "idle" },
   // The band's discs (lesson frame README §3): a check, a pencil to fix the marked part, an eye on the solution.
   right: { icon: Check, words: "list", tone: "green" },
-  not_yet: { icon: Pencil, words: "list", tone: "amber" },
+  not_yet: { icon: Pencil, words: "list", tone: "try_again" },
   boost: { icon: Lightbulb, words: "hint", tone: "idle" },
   worked: { icon: Lightbulb, words: "worked_solution", tone: "idle" },
   moved_on: { icon: Eye, words: "moved_on", tone: "idle" },

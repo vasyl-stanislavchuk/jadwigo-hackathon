@@ -114,7 +114,7 @@ describe("the System page", () => {
       container
         .querySelectorAll(`[data-system-band="${state}"] li[data-tone]`)
         [q.options.findIndex((o) => o.id === option)]?.getAttribute("data-tone");
-    expect(tone("miss", q.miss)).toBe("amber");
+    expect(tone("miss", q.miss)).toBe("try_again");
     expect(tone("right", q.right)).toBe("green");
     expect(tone("solution", q.right)).toBe("green");
     expect(container.querySelector('a[href*="/lessons/"], iframe')).toBeNull();

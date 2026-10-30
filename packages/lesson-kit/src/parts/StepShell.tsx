@@ -563,7 +563,7 @@ export function StepShell({
       (keys !== null && keys.fields.length > 0)
     )
       return;
-    scrollToShow(answerArea.current?.querySelector('[data-tone="amber"]') ?? null);
+    scrollToShow(answerArea.current?.querySelector('[data-tone="try_again"]') ?? null);
     // Once per verdict.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input.feedback]);

@@ -214,7 +214,7 @@ export function Options(): JSX.Element {
     { label: "Picked: chosen, not judged", items: [item("a", "24", "idle")], chosen: ["a"] },
     {
       label: "A miss: dashed, with a word",
-      items: [item("a", "20", "amber", { note: "sprawdzone" })],
+      items: [item("a", "20", "try_again", { note: "sprawdzone" })],
       chosen: ["a"],
     },
     { label: "Right", items: [item("a", "24", "green")], chosen: ["a"] },
@@ -354,7 +354,7 @@ export function Fields(): JSX.Element {
         <Field text="" tone="idle" label="Empty" />
         <Field text="żółw" tone="idle" label="Written (click in, select a letter)" />
         <Field text="" tone="missing" label="Missing: Check found it empty" />
-        <Field text="żułw" tone="amber" label="A miss: the answer stays" />
+        <Field text="żułw" tone="try_again" label="A miss: the answer stays" />
         <Field text="żółw" tone="green" label="Right" />
         <Spec label="A miss in a word marks only the letters to fix">
           <span className="text-jw-option font-bold tracking-wide">
@@ -442,7 +442,7 @@ const BANKS = [
     tone: "idle",
     missing: true,
   },
-  { label: "A miss", placed: ["t1", "t3", "t2"], tone: "amber", missing: false },
+  { label: "A miss", placed: ["t1", "t3", "t2"], tone: "try_again", missing: false },
   { label: "Right", placed: ["t1", "t2", "t3"], tone: "green", missing: false },
 ] as const satisfies readonly {
   label: string;
@@ -508,7 +508,7 @@ function options(q: StageQuestion, state: BandState, picked: string | null): Cho
         : marked && mark !== undefined
           ? mark.correct
             ? "green"
-            : "amber"
+            : "try_again"
           : state === "right" && o.id === picked
             ? "green"
             : "idle";

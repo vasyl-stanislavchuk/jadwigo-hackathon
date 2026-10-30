@@ -273,17 +273,17 @@ describe("option tones", () => {
     expect(edgeOf("label[data-checked]")).toBe("var(--jw-pick-edge)");
     expect(edgeOf("[role='checkbox'][aria-checked='true']")).toBe("var(--jw-pick-edge)");
     expect(edgeOf("[data-tone='green']")).toBe("var(--jw-right-edge)");
-    expect(edgeOf("[data-tone='amber']")).toBe("transparent");
+    expect(edgeOf("[data-tone='try_again']")).toBe("transparent");
     // The miss and the right come after the pick at the same weight, so they win on a picked option.
     const pick = rules().findIndex(
       (r) =>
         r.selectors.some((x) => x.includes("label[data-checked]")) && /--jw-edge:/.test(r.body),
     );
-    const amber = rules().findIndex(
+    const red = rules().findIndex(
       (r) =>
-        r.selectors.some((x) => x.includes("[data-tone='amber']")) && /--jw-edge:/.test(r.body),
+        r.selectors.some((x) => x.includes("[data-tone='try_again']")) && /--jw-edge:/.test(r.body),
     );
-    expect(amber).toBeGreaterThan(pick);
+    expect(red).toBeGreaterThan(pick);
   });
 
   // The badge takes its option's edge colour and ink in every tone but rest: "1" is blue on a
@@ -496,7 +496,7 @@ function block(...parts: string[]): Record<string, string> {
 // selected in the pick; away it is only marked, dashed red (tone.ts); right is green and flat.
 describe("a typed field's states", () => {
   const active = block("[data-lesson-theme='zeszyt'] [data-active='true']");
-  const marked = block("[data-tone='amber']:is(:focus, [data-active='true'])");
+  const marked = block("[data-tone='try_again']:is(:focus, [data-active='true'])");
   const right = block("[data-box])[data-tone='green']");
 
   it("draws the active field on paper inside the ink edge, never the pick's fill", () => {
@@ -515,7 +515,7 @@ describe("a typed field's states", () => {
   it("covers a typed field, the keypad's field, a keypad box and a fraction box", () => {
     const sel = [...CSS.matchAll(/([^{}]+)\{/g)]
       .map((m) => m[1] ?? "")
-      .find((x) => x.includes("[data-tone='amber']:is(:focus"));
+      .find((x) => x.includes("[data-tone='try_again']:is(:focus"));
     for (const kind of [
       "input:not(",
       "[role='textbox'][data-field]",

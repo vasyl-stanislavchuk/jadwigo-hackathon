@@ -247,7 +247,7 @@ describe("a column sum on the keys", () => {
     key("1");
     expect(cell(CARRY).textContent).toBe("1");
     expect(band()).toBe("none");
-    expect(cell(TENS).getAttribute("data-tone")).toBe("amber");
+    expect(cell(TENS).getAttribute("data-tone")).toBe("try_again");
     moveTo(TENS);
     key("8");
     expect(cell(TENS).textContent).toBe("8");

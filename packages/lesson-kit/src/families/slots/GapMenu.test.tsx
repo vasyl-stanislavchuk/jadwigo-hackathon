@@ -131,7 +131,7 @@ describe("a chosen gap opens its list under itself (addendum 2.2)", () => {
         { id: "g2", correct: true },
       ],
     } as unknown as Feedback);
-    expect(menu().getAttribute("data-tone")).toBe("amber");
+    expect(menu().getAttribute("data-tone")).toBe("try_again");
     expect(menu().hasAttribute("data-menu-focused")).toBe(true);
     // Nothing in it is selected: a dropdown has nothing to type over.
     expect(menu().querySelector("[data-selection]")).toBeNull();

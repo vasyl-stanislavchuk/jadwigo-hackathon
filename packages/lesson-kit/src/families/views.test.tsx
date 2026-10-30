@@ -120,17 +120,17 @@ describe("Choose, several options", () => {
     fireEvent.click(screen.getByRole("button", { name: "Check" }), { detail: 0 });
     expect(must(onCommit.mock.calls[0])[0].value).toEqual({ chosen: ["o1", "o2"] });
     act(() => again(miss([{ id: "o2", correct: false }]), 2));
-    expect(screen.getByRole("checkbox", { name: /7/ }).dataset["tone"]).toBe("amber");
+    expect(screen.getByRole("checkbox", { name: /7/ }).dataset["tone"]).toBe("try_again");
     expect(screen.getByRole("checkbox", { name: /12/ }).dataset["tone"]).toBe("idle");
     expect(screen.getByRole("checkbox", { name: /12/ }).getAttribute("aria-checked")).toBe("true");
     expect(screen.getByText("tried")).toBeTruthy();
   });
 
-  it("a miss with no marks turns the whole set amber", () => {
+  it("a miss with no marks turns the whole set red", () => {
     const { again } = play(ChooseView as never, pageSpec(many) as PageSpecOf<typeof Family.Choose>);
     act(() => again(miss(), 2));
     // The whole-set mark is an outline outside the set (Choose addendum 1.4).
-    expect(document.querySelector('[data-whole="amber"]')).not.toBeNull();
+    expect(document.querySelector('[data-whole="try_again"]')).not.toBeNull();
   });
 
   it("after moving on, the right options show the solution and the pick keeps its mark", () => {
@@ -140,7 +140,7 @@ describe("Choose, several options", () => {
     expect(screen.queryByRole("checkbox")).toBeNull();
     expect(document.querySelectorAll("[data-solution]")).toHaveLength(2);
     expect(screen.getAllByText("Solution")).toHaveLength(2);
-    expect(screen.getByText("7").closest("li")?.getAttribute("data-tone")).toBe("amber");
+    expect(screen.getByText("7").closest("li")?.getAttribute("data-tone")).toBe("try_again");
   });
 });
 
@@ -168,7 +168,7 @@ describe("Gaps", () => {
     );
     const g1 = screen.getByRole("textbox", { name: "Gap 1" }) as HTMLInputElement;
     expect(g1.value).toBe("show");
-    expect(g1.dataset["tone"]).toBe("amber");
+    expect(g1.dataset["tone"]).toBe("try_again");
     // A right gap stays as it was typed, paper: green only when the whole step is right.
     expect(screen.getByRole("button", { name: "Gap 2" }).dataset["tone"]).toBe("idle");
     fireEvent.change(g1, { target: { value: "update" } });
@@ -233,10 +233,10 @@ describe("the step layout (docs/17 §2f)", () => {
     },
   );
 
-  it("shows no green or amber before a verdict: choosing is not judging", () => {
+  it("shows no green or red before a verdict: choosing is not judging", () => {
     play(ChooseView as never, pageSpec(many) as PageSpecOf<typeof Family.Choose>);
     fireEvent.click(screen.getByRole("checkbox", { name: /12/ }), { detail: 0 });
-    expect(document.querySelector('[data-tone="green"], [data-tone="amber"]')).toBeNull();
+    expect(document.querySelector('[data-tone="green"], [data-tone="try_again"]')).toBeNull();
   });
 
   it("puts the boost under the Check after a miss", () => {
@@ -263,7 +263,7 @@ describe("the step layout (docs/17 §2f)", () => {
 });
 
 describe("Enter", () => {
-  it("keeps the text after a miss, amber until the first change", () => {
+  it("keeps the text after a miss, red until the first change", () => {
     const { onCommit, again } = play(
       EnterView as never,
       pageSpec(enter) as PageSpecOf<typeof Family.Enter>,
@@ -274,7 +274,7 @@ describe("Enter", () => {
     expect(must(onCommit.mock.calls[0])[0].value).toEqual({ entered: "bd list" });
     act(() => again(miss(), 2));
     expect(field.value).toBe("bd list");
-    expect(field.dataset["tone"]).toBe("amber");
+    expect(field.dataset["tone"]).toBe("try_again");
   });
 });
 
@@ -308,7 +308,7 @@ describe("the still modes", () => {
         verdict={{ correct: false, mistake_class: "other_wrong", parts: [] }}
       />,
     );
-    expect(screen.getByText("show").dataset["tone"]).toBe("amber");
+    expect(screen.getByText("show").dataset["tone"]).toBe("try_again");
     expect(screen.getByText("update").dataset["tone"]).toBe("green");
   });
 });

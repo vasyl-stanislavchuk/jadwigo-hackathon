@@ -235,7 +235,7 @@ describe("the solution keeps the child's field (addendum 2.8)", () => {
     expect(field()).toBe(inLine);
     expect(field().closest("[data-inline-line]")).not.toBeNull();
     expect(field().textContent).toBe("63");
-    expect(field().getAttribute("data-tone")).toBe("amber");
+    expect(field().getAttribute("data-tone")).toBe("try_again");
     expect(field().hasAttribute("data-active")).toBe(false);
     expect(document.body.textContent).not.toContain("Twoja odpowiedź");
     // The card's last line is the answer (a Polish page draws × as ·, notation.ts).

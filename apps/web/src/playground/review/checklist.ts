@@ -43,7 +43,7 @@ const CHECKLIST: ChecklistLine[] = [
   },
   {
     id: "miss-marks",
-    text: "After a miss the answer stays, the missed parts are marked amber, and a mark clears when that part changes.",
+    text: "After a miss the answer stays, the missed parts are marked red, and a mark clears when that part changes.",
     source:
       "decision 2026-10-12-exercise-types-are-interaction-families-with-question-types (the marks rule)",
     status: () => ({ status: "check", note: 'See "After a miss" under Every state.' }),

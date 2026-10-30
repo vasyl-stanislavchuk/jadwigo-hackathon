@@ -8,7 +8,7 @@
  *
  * Play: the cards start in the order the step lists them, which an author writes unsolved
  * (validate.ts warns otherwise). After a miss the order stays as the learner left it and the whole
- * list is amber until the next move: a position is never marked, because that would say where a
+ * list is red until the next move: a position is never marked, because that would say where a
  * card belongs (the marks rule).
  *
  * Help (families/help.ts): rung 1 outlines the cards, tiles or places it names, and rung 2 fixes
@@ -205,7 +205,7 @@ function TilesStill({
           tiles={data.tiles}
           order={shown}
           slots={slots}
-          tone={right === null ? "idle" : same ? "green" : "amber"}
+          tone={right === null ? "idle" : same ? "green" : "try_again"}
           label={copy(language, "answer_yours")}
         />
       )}
@@ -271,7 +271,7 @@ function SequenceStill({
         <OrderList
           data={data}
           order={shown}
-          tone={right === null ? "idle" : same ? "green" : "amber"}
+          tone={right === null ? "idle" : same ? "green" : "try_again"}
           label={copy(language, "answer_yours")}
         />
       )}

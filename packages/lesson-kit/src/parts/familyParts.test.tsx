@@ -34,23 +34,23 @@ describe("tone after a verdict", () => {
     ],
   };
 
-  it("a marked part is green or amber, an unmarked one idle, and a changed one idle again", () => {
+  it("a marked part is green or red, an unmarked one idle, and a changed one idle again", () => {
     expect(partTone("g1", miss, none)).toBe("green");
-    expect(partTone("g2", miss, none)).toBe("amber");
+    expect(partTone("g2", miss, none)).toBe("try_again");
     expect(partTone("g3", miss, none)).toBe("idle");
     expect(partTone("g2", miss, new Set(["g2"]))).toBe("idle");
   });
 
   it("among several fields only the missed one is marked: a right one stays paper until the whole step is right (Slots addendum 2.1)", () => {
     expect(fieldTone("g1", miss, none)).toBe("idle");
-    expect(fieldTone("g2", miss, none)).toBe("amber");
+    expect(fieldTone("g2", miss, none)).toBe("try_again");
     expect(fieldTone("g2", miss, new Set(["g2"]))).toBe("idle");
     expect(fieldTone("g1", { kind: "praise", index: 0 }, none)).toBe("green");
   });
 
-  it("a miss with no marks is amber as a whole until the first change", () => {
+  it("a miss with no marks is red as a whole until the first change", () => {
     const whole = { kind: "try_again" as const, index: 0 };
-    expect(wholeTone(whole, none)).toBe("amber");
+    expect(wholeTone(whole, none)).toBe("try_again");
     expect(wholeTone(whole, new Set(["x"]))).toBe("idle");
     expect(wholeTone(miss, none)).toBe("idle");
     expect(partTone("g1", whole, none)).toBe("idle");
@@ -107,7 +107,7 @@ function TypedField({ onSubmit }: { onSubmit(): void }): JSX.Element {
       code
       max={20}
       state={state}
-      tone="amber"
+      tone="try_again"
       locked={false}
       onChange={setState}
       onSubmit={onSubmit}
@@ -122,7 +122,7 @@ describe("Entry", () => {
     const field = screen.getByRole("textbox");
     expect(field.getAttribute("autocorrect")).toBe("off");
     expect(field.getAttribute("spellcheck")).toBe("false");
-    expect(field.dataset["tone"]).toBe("amber");
+    expect(field.dataset["tone"]).toBe("try_again");
     fireEvent.change(field, { target: { value: "bd ready" } });
     fireEvent.keyDown(field, { key: "Enter" });
     expect(onSubmit).toHaveBeenCalledTimes(1);
@@ -140,7 +140,7 @@ describe("ChoiceGroup", () => {
       return (
         <ChoiceGroup
           label="Pick"
-          items={items({ c: "amber" })}
+          items={items({ c: "try_again" })}
           select="many"
           layout="list"
           chosen={chosen}
@@ -160,7 +160,7 @@ describe("ChoiceGroup", () => {
     expect(boxes[0]?.getAttribute("aria-checked")).toBe("true");
     fireEvent.click(first, { detail: 0 });
     expect(boxes[0]?.getAttribute("aria-checked")).toBe("false");
-    expect(boxes[2]?.dataset["tone"]).toBe("amber");
+    expect(boxes[2]?.dataset["tone"]).toBe("try_again");
   });
 
   it("one: a radio group in the step frame, and a locked group takes no pick", () => {

@@ -36,7 +36,7 @@ interface Props {
   data: LineData & { labelled: readonly number[] };
   marker: number | null;
   tone: Tone;
-  /** placed, missed (the last miss, amber) or the read-mode marker. */
+  /** placed, missed (the last miss, red) or the read-mode marker. */
   markerState?: string | undefined;
   /** Arcs from min to the marker, one per step (docs/17 §3 jump arcs). */
   arcs: boolean;
@@ -56,7 +56,7 @@ interface Props {
 const MARKER: Record<Tone, string> = {
   idle: "fill-primary",
   green: "fill-kid-correct",
-  amber: "fill-kid-try-again",
+  try_again: "fill-kid-try-again",
   missing: "fill-primary",
 };
 /** The read-mode marker is part of the question, not the child's ink (Enter addendum 10b). */

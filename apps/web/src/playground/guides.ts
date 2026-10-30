@@ -37,7 +37,7 @@ export const GUIDES: Record<FamilyName, FamilyGuide> = {
     judging:
       "One option: right when it is the correct one; a distractor carries the mistake it was built from. Several: every option is its own part, a distractor picked or a right option missed; nothing is subtracted.",
     after_a_miss:
-      'The option tried stays amber with the word "tried". With several, only the distractors picked are marked; a miss that is only a missed option marks the whole set, because marking it would show it is right.',
+      'The option tried stays red with the word "tried". With several, only the distractors picked are marked; a miss that is only a missed option marks the whole set, because marking it would show it is right.',
     classtime:
       "BOOLEAN, SINGLE_CHOICE and MULTIPLE_CHOICE. dl names options by id, not by position, so a shuffle never changes what an answer means.",
     roadmap: {
@@ -71,7 +71,7 @@ export const GUIDES: Record<FamilyName, FamilyGuide> = {
     judging:
       "A number is right within the key's tolerance; text is right when it equals a form listed before the task, ignoring spaces at its ends and, only where the key says so, case or accents. A word one letter off, or right but for its accents, is named as such. An expression is right when its value matches and it has the form the key asks for, so 5 × 2 counts for 2 × 5 and 2 + 2 + 2 + 2 + 2 does not. A miss takes the author's named class, then the number rule (times tables, a missing number, a number line), or for an expression its shape (a sum where a product was asked, the result typed instead of the expression) before its value.",
     after_a_miss:
-      "The answer stays so the learner can fix it, amber until the first change. The right answer is never shown until the step ends.",
+      "The answer stays so the learner can fix it, red until the first change. The right answer is never shown until the step ends.",
     classtime:
       "TEXT. ClassTime learns its key from the teacher after the answer; dl writes every accepted form before the task and never normalises the learner's answer.",
     roadmap: {
@@ -102,7 +102,7 @@ export const GUIDES: Record<FamilyName, FamilyGuide> = {
     judging:
       'Every gap is its own part. A typed gap follows Enter\'s rules; a chosen gap is right when it is the accepted option. An answer that belongs in another gap is "gap_swap".',
     after_a_miss:
-      "Every gap is marked: right ones green so the learner keeps them, missed ones amber. Each mark clears when that gap changes.",
+      "Every gap is marked: right ones green so the learner keeps them, missed ones red. Each mark clears when that gap changes.",
     classtime:
       "GAP and CLOZE in one family: a gap is typed (BLANK) or chosen (CHOICES), and a text may mix them.",
     roadmap: {
@@ -139,7 +139,7 @@ export const GUIDES: Record<FamilyName, FamilyGuide> = {
     judging:
       "Right when the order is one of the accepted orders. A miss gets one class for the whole order: reversed, two neighbours swapped, one card misplaced, or another order. With tiles, the places are judged by what their tiles say, and a miss can also be a tile that does not belong or a tile left out.",
     after_a_miss:
-      "The order stays as the learner left it and the whole list is amber until the next move. A position is never marked: that would say where a card belongs.",
+      "The order stays as the learner left it and the whole list is red until the next move. A position is never marked: that would say where a card belongs.",
     classtime:
       "SORTER. ClassTime stores one order as its authored order; dl lists every accepted order. Khan Academy's orderer is the tile bank.",
     roadmap: {
@@ -183,7 +183,7 @@ export const GUIDES: Record<FamilyName, FamilyGuide> = {
     judging:
       "A line: within the tolerance, else the number-line rule (off by a tick, the scale misread, the direction reversed). A picture: every tap is a part, inside a target region or a named tempting one. A grid: rows and cols, either way round, and with a split, the split as a second part. A graph: every bar is a part, right within the tolerance, one step off, or further off. A clock: each hand is a part, the hour hand right within half the gap between two numbers. Coins: any set with the right total, or the fewest when the key asks. A shape: any parts of the right count.",
     after_a_miss:
-      "The marker, taps, rectangle, bars, hands, coins or shading stay. The line, the tray and the shape are amber as a whole, and a grid marks its size and its split apart. Each tap on a picture, each bar on a graph and each hand of a clock is marked, because a marked bar still has to be counted again.",
+      "The marker, taps, rectangle, bars, hands, coins or shading stay. The line, the tray and the shape are red as a whole, and a grid marks its size and its split apart. Each tap on a picture, each bar on a graph and each hand of a clock is marked, because a marked bar still has to be counted again.",
     classtime:
       "HOTSPOT for pictures, in fractions of the picture rather than pixels. ClassTime has no number line or array.",
     roadmap: {
@@ -236,7 +236,7 @@ export const GUIDES: Record<FamilyName, FamilyGuide> = {
     judging:
       "The tutor judges each criterion, written and cited before the task, and keeps the version it used. Code only records the verdict per criterion. A typed explanation in a lesson is judged after the lesson, in /dl-debrief, and the judgement reaches the report (decision 2026-10-16-typed-explanations-judged-after-the-lesson). The playground judges nothing: it shows the written scenarios.",
     after_a_miss:
-      "The text stays to add to. Each criterion is a dot under the text, green or amber, with none of its words: the criteria are never shown to the learner. No twin: the last rung of help is an example explanation.",
+      "The text stays to add to. Each criterion is a dot under the text, green or red, with none of its words: the criteria are never shown to the learner. No twin: the last rung of help is an example explanation.",
     classtime:
       "ESSAY and the live app's AI-graded free text against a versioned rubric, which is close to dl's rule that criteria come first.",
     roadmap: {

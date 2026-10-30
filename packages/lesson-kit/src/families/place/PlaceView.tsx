@@ -13,7 +13,7 @@
  *   coin to take it back.
  * - Fraction.tsx, a shape cut into equal parts (dl-w3.61.7): tap or Space shades a part.
  * Check commits. After a miss the marker, the taps, the rectangle or the bars stay where they were:
- * the line and the grid are amber as a whole until the next move, each tap on a picture and each
+ * the line and the grid are red as a whole until the next move, each tap on a picture and each
  * bar on a graph is marked (the marks rule). Keyboard: the line and every bar take arrow keys and
  * the grid is buttons; a picture by keyboard is on the family's roadmap (docs/18).
  *
