@@ -3,7 +3,7 @@ import { QUESTION_TYPE_FAMILY } from "@jadwigo/contracts";
 import type { z } from "zod";
 import { type CompileProblem, compileLessonFile, compileProblems } from "./compile.ts";
 import type { Finding } from "./findings.ts";
-import { FEATURED_POD, featuredAssignmentId, lessonIdFor } from "./ids.ts";
+import { DRAFTS_POD, featuredAssignmentId, lessonIdFor } from "./ids.ts";
 import { inItsLanguage, LessonFile, safeParseLessonFile } from "./lesson-file.ts";
 import { mistakeClassesByStep, mistakeClassesOf, unknownBoosts } from "./mistakes.ts";
 
@@ -34,8 +34,9 @@ import { mistakeClassesByStep, mistakeClassesOf, unknownBoosts } from "./mistake
  *   for one release, until jw reads `findings` (dl-a38n.16).
  * - `step_id` is the step's `id` in the file (a twin's ends `t`, as compile names it), or null when
  *   the problem is the file's own (its title, its id, the JSON itself).
- * - `play_path` and `lesson_id` are the featured assignment's path and the lesson's id in Jadwigo's
- *   pod, known before any import because ids are named from the file id (`ids.ts`). Both are null
+ * - `play_path` and `lesson_id` are the assignment's path and the lesson's id in the drafts pod,
+ *   where `make lesson-import` puts the file (`DRAFTS_POD`, dl-e8ov.2.59), known before any import
+ *   because ids are named from the file id (`ids.ts`). Both are null
  *   only when the file has no usable id.
  * - `questions` counts the planned questions a learner is asked, twins not counted; 0 when the file
  *   does not compile.
@@ -420,8 +421,8 @@ function check(raw: unknown): CheckResult {
   const fileId = LessonFile.shape.id.safeParse((raw as { id?: unknown } | null)?.id);
   const known = fileId.success
     ? {
-        play_path: `/play/${featuredAssignmentId(fileId.data)}`,
-        lesson_id: lessonIdFor(FEATURED_POD.id, fileId.data) as string,
+        play_path: `/play/${featuredAssignmentId(fileId.data, DRAFTS_POD.id)}`,
+        lesson_id: lessonIdFor(DRAFTS_POD.id, fileId.data) as string,
       }
     : { play_path: null, lesson_id: null };
   const id = (raw as { id?: unknown } | null)?.id;

@@ -48,6 +48,9 @@ decision `jadwigo-platform/notes/2026-10-29-jadwigo-s-docs-are-a-starlight-site-
   A table the code can make is generated from it, never typed by hand.
 - **Self-contained:** no page links into the GitHub repo (the owner, `dl-5ssh.90`). `check:dist` fails one.
 - A broken internal link fails the build (`starlight-links-validator`).
+- `lint` runs markdownlint over every page (`.markdownlint-cli2.jsonc`: one H1 from the title, no
+  skipped heading level, alt text on every image, prose wrapped at 100). `check:dist` runs Redocly
+  over the served `public/openapi.json` (`redocly.yaml`); fix a finding in `src/lib/openapi.ts`.
 - `llms.txt`, `llms-full.txt` and `llms-small.txt` are built for agents (`starlight-llms-txt`).
 - Hosts come from `packages/config`, never a hard-coded domain in code. Route paths and error types
   come from `packages/contracts`.

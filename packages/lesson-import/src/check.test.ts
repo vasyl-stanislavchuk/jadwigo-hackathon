@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { QUESTION_TYPE_FAMILY } from "@jadwigo/contracts";
 import { LESSON_FILES } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
-import { featuredAssignmentId } from "./ids.ts";
+import { DRAFTS_POD, featuredAssignmentId } from "./ids.ts";
 
 const script = fileURLToPath(new URL("./check.ts", import.meta.url));
 const lessons = fileURLToPath(new URL("../../testing/src/lessons/", import.meta.url));
@@ -70,7 +70,7 @@ describe("check.ts --json", () => {
         ok: true,
         errors: [],
       });
-      expect(out["play_path"]).toBe(`/play/${featuredAssignmentId(id)}`);
+      expect(out["play_path"]).toBe(`/play/${featuredAssignmentId(id, DRAFTS_POD.id)}`);
       expect(out["lesson_id"]).toMatch(/^les_/);
       expect(out["questions"]).toBeGreaterThan(0);
     }
@@ -182,7 +182,7 @@ describe("check.ts --json", () => {
     expect(out["errors"]).toEqual([
       { step_id: "s02", message: expect.stringContaining("is a") as unknown },
     ]);
-    expect(out["play_path"]).toBe(`/play/${featuredAssignmentId("equal-groups")}`);
+    expect(out["play_path"]).toBe(`/play/${featuredAssignmentId("equal-groups", DRAFTS_POD.id)}`);
   });
 
   it("fails a help field the contract lacks, naming the step", () => {

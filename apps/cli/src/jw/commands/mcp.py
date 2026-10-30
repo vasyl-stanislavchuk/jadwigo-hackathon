@@ -134,6 +134,7 @@ def build_server() -> Any:
         request: str,
         grade: str,
         names: list[str],
+        topic: str,
         language: str = "pl",
         kind: str = "practice",
         count: int | None = None,
@@ -143,8 +144,10 @@ def build_server() -> Any:
 
         request is the parent's words ("6 zadań z mnożenia, klasa 3"); names is required: pass
         every name the family uses in the request (the child's, siblings', the parent's), or []
-        when there is none; the tool replaces them before anything leaves the machine. grade the
-        bare grade number; kind practice, review, check or diagnostic; count overrides the draw
+        when there is none; the tool replaces them before anything leaves the machine. topic is
+        required: what the lesson is about in a few words, distilled from the request, with no
+        count, grade or name ("mnożenie", "dodawanie do 100"); the bank searches these words,
+        and the request is kept as the draft's record and title. grade the bare grade number; kind practice, review, check or diagnostic; count overrides the draw
         rule's count. Each question is copied whole from the bank (family, data, key, say,
         pictures, and the source's hints and worked lines as its help), so the lesson plays as
         copied. The draft stays on this machine under draft_id; the result is a slim view of it.
@@ -160,6 +163,7 @@ def build_server() -> Any:
             request=request,
             grade=grade,
             names=names,
+            topic=topic,
             language=language,
             kind=kind,
             count=count,

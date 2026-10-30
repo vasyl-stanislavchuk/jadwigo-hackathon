@@ -23,6 +23,7 @@ is left out with that reason.
 from __future__ import annotations
 
 import datetime as dt
+import re
 from collections import deque
 from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass, field
@@ -114,8 +115,9 @@ class Drawn:
     set_id: str
     problem_type: str | None
     text: str | None  # the sample's text in the lesson language, when the page has it
-    skill: str
+    skill: str  # the item's skill ids joined by ", ", as one label
     reason: str
+    skills: tuple[str, ...] = ()  # the item's skill ids, each as the bank wrote it
 
 
 @dataclass(frozen=True)
@@ -143,15 +145,38 @@ class _Candidate:
     rank: int
     problem_type: str | None
     text: str | None
-    skill: str
+    skills: tuple[str, ...]
     order: int  # the set's place in its course, for easy_first
 
+    @property
+    def skill(self) -> str:
+        return ", ".join(self.skills)
 
-def _skill(row: Mapping[str, Any] | None, page: Mapping[str, Any]) -> str:
+
+def _set_skills(row: Mapping[str, Any] | None, page: Mapping[str, Any]) -> list[str]:
+    """The set's skill ids: the row's, else the page's enrichment, else the set id itself."""
     skills = list((row or {}).get("skill_ids") or [])
     if not skills:
         skills = list(((page.get("enrichment") or {}).get("skill_ids") or {}).get("value") or [])
-    return str(skills[0]) if skills else str(page["id"])
+    return [str(s) for s in skills] or [str(page["id"])]
+
+
+def _numbers(text: str) -> set[str]:
+    return set(re.findall(r"\d+", text))
+
+
+def _type_skills(set_skills: list[str], ptype: Mapping[str, Any] | None) -> tuple[str, ...]:
+    """A problem type's skill ids (dl-n9fr.55): its own `skill_ids` when the page gives them, else
+    the one set skill whose last part carries a number the type's name carries ("Mult by 6" is
+    `row-6`), else every skill of the set, never only the first."""
+    if ptype is None:
+        return tuple(set_skills)
+    own = [str(s) for s in ptype.get("skill_ids") or []]
+    if own:
+        return tuple(own)
+    named = _numbers(str(ptype.get("name") or ""))
+    matched = [s for s in set_skills if named & _numbers(s.rsplit(".", 1)[-1])]
+    return (matched[0],) if len(matched) == 1 else tuple(set_skills)
 
 
 def _plays(page: Mapping[str, Any], language: str) -> str | None:
@@ -186,10 +211,11 @@ def _candidates(
         if why_not:
             left.append(Left(set_id, why_not))
             continue
-        skill = _skill(by_id.get(set_id), page)
+        skills = _set_skills(by_id.get(set_id), page)
         order = int((page.get("source_place") or {}).get("order") or 0)
         typed: set[str] = set()
         for ptype in page.get("problem_types") or []:
+            typed_skills = _type_skills(skills, ptype)
             for sample in ptype.get("samples") or []:
                 item = str(sample["item_id"])
                 typed.add(item)
@@ -200,7 +226,9 @@ def _candidates(
                     left.append(Left(item, f"the sample has no {language} text"))
                     continue
                 out.append(
-                    _Candidate(item, set_id, rank, ptype["name"], sample[language], skill, order)
+                    _Candidate(
+                        item, set_id, rank, ptype["name"], sample[language], typed_skills, order
+                    )
                 )
         for item in (page.get("items") or {}).get("ids") or []:
             if item in typed:
@@ -208,7 +236,7 @@ def _candidates(
             if item in flagged:
                 left.append(Left(item, "its media is flagged (raster words or no alt)"))
                 continue
-            out.append(_Candidate(item, set_id, rank, None, None, skill, order))
+            out.append(_Candidate(item, set_id, rank, None, None, tuple(skills), order))
     return out
 
 
@@ -255,6 +283,7 @@ def _interleave(cands: list[_Candidate], rule: DrawRule, reasons: Mapping[str, s
                     head.skill,
                     f"{reasons[head.item_id]}; problem type {ptype}; set {head.set_id} "
                     f"(rank {head.rank}); skill {head.skill}",
+                    head.skills,
                 )
             )
             progressed = True
