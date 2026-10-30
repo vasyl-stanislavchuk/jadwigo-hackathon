@@ -45,7 +45,8 @@
     "@jadwigo/ui": "foundation.css, Zeszyt's tokens, the source of the Tokens page's tables (src/lib/tokens.ts)",
     "astro-mermaid": "turns each mermaid code block in the architecture pages into a diagram, drawn in the reader's browser (astro.config.mjs)",
     "mermaid": "astro-mermaid's peer dependency: the library that draws the diagrams, bundled into the page's script",
-    "happy-dom": "the DOM mermaid needs to parse each diagram in src/lib/diagrams.test.ts"
+    "happy-dom": "the DOM mermaid needs to parse each diagram in src/lib/diagrams.test.ts, and the DOM src/theme.test.ts runs the theme bridge in",
+    "@fontsource/andika": "Andika, the docs' face for body and headings, loaded through customCss in astro.config.mjs"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",
@@ -60,6 +61,7 @@
     "@astrojs/markdown-satteri": "0.4.5",
     "@astrojs/mdx": "8.1.1",
     "@astrojs/starlight": "0.42.6",
+    "@fontsource/andika": "catalog:",
     "@jadwigo/config": "workspace:*",
     "@jadwigo/contracts": "workspace:*",
     "@jadwigo/lesson-kit": "workspace:*",

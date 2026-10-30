@@ -1,6 +1,7 @@
 // The living docs at docs.jadwigo.pl (dl-5ssh.90), decision
 // jadwigo-platform/notes/2026-10-29-jadwigo-s-docs-are-a-starlight-site-at-docs-jadwigo-pl-generated.
 // English. Self-contained: no page links into the repo.
+import { fileURLToPath } from "node:url";
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
 import mermaid from "astro-mermaid";
@@ -10,6 +11,7 @@ import starlightLlmsTxt from "starlight-llms-txt";
 import starlightOpenAPI, { createOpenAPISidebarGroup } from "starlight-openapi";
 import { apiBase, servedHost, sidebar } from "./src/index.ts";
 import { API_REFERENCE_BASE } from "./src/lib/guides.ts";
+import { THEME_BRIDGE } from "./src/styles/theme-bridge.ts";
 
 // The API reference's sidebar group, which starlight-openapi fills from public/openapi.json.
 const apiGroup = createOpenAPISidebarGroup();
@@ -29,11 +31,24 @@ export default defineConfig({
     starlight({
       title: "Jadwigo docs",
       description: "How to call Jadwigo's API and MCP server, and how its design system is built.",
+      // The app's design system: Andika, Zeszyt's roles, and the --sl-* names mapped onto them
+      // (src/styles/theme.css). Its night roles sit on [theme="dark"], which the bridge copies
+      // from Starlight's data-theme before the first paint.
+      // Andika's files are resolved here, not named, so knip sees the dependency.
+      customCss: [
+        fileURLToPath(import.meta.resolve("@fontsource/andika/400.css")),
+        fileURLToPath(import.meta.resolve("@fontsource/andika/700.css")),
+        fileURLToPath(import.meta.resolve("@fontsource/andika/400-italic.css")),
+        fileURLToPath(import.meta.resolve("@fontsource/andika/700-italic.css")),
+        "@jadwigo/ui/foundation.css",
+        "./src/styles/theme.css",
+      ],
       sidebar: sidebar.map((group) => (group.label === "API reference" ? apiGroup : group)),
       // The page-actions menu sits beside the title, with Copy for Muse added (dl-5ssh.90.32).
       components: { PageTitle: "./src/components/PageTitle.astro" },
       // Agents find the API's OpenAPI document from any page, as they find a page's Markdown.
       head: [
+        { tag: "script", content: THEME_BRIDGE },
         {
           tag: "link",
           attrs: {
