@@ -22,7 +22,8 @@
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit test with the root vitest.config.ts",
-    "@jadwigo/config": "hosts.prod, the host this app serves (src/index.ts, astro.config.mjs)"
+    "@jadwigo/config": "hosts.prod, the host this app serves (src/index.ts, astro.config.mjs)",
+    "@jadwigo/ui": "the crown wordmark the landing page's heading inlines (src/layouts/Base.astro)"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",
@@ -33,6 +34,7 @@
   "dependencies": {
     "@astrojs/sitemap": "3.7.4",
     "@jadwigo/config": "workspace:*",
+    "@jadwigo/ui": "workspace:*",
     "astro": "7.4.2"
   }
 }

@@ -80,6 +80,7 @@
       "dependencies": {
         "@astrojs/sitemap": "3.7.4",
         "@jadwigo/config": "workspace:*",
+        "@jadwigo/ui": "workspace:*",
         "astro": "7.4.2",
       },
       "devDependencies": {

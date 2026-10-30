@@ -47,6 +47,7 @@ flowchart LR
   web --> lesson_kit
   web --> ui
   site --> config
+  site --> ui
   docs --> config
   docs --> contracts
   docs --> lesson_kit

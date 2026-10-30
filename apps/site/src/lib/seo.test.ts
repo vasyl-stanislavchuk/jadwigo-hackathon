@@ -50,6 +50,15 @@ describe("headTags", () => {
     expect(find(tags, "og:locale")).toMatchObject({ content: "pl_PL" });
   });
 
+  it("carries the crown favicon: the SVG, a 32 px PNG and the apple-touch-icon", () => {
+    const tags = headTags(page, "/");
+    expect(tags.filter((t) => t.kind === "link" && t.rel === "icon")).toEqual([
+      { kind: "link", rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { kind: "link", rel: "icon", href: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+    ]);
+    expect(find(tags, "apple-touch-icon")).toMatchObject({ href: "/apple-touch-icon.png" });
+  });
+
   it("adds the image and the large card only when the page names one", () => {
     expect(find(headTags(page, "/"), "og:image")).toBeUndefined();
     const tags = headTags({ ...page, ogImage: "/og.png" }, "/");
