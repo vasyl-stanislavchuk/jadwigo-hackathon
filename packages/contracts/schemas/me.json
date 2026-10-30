@@ -203,6 +203,49 @@
             "null"
           ]
         },
+        "country": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "curriculum_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CurriculumId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "school_grade": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "school_language": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Language"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "created_at": {
           "type": "string",
           "format": "date-time",
@@ -215,6 +258,10 @@
         "handle",
         "first_name",
         "age_group",
+        "country",
+        "curriculum_id",
+        "school_grade",
+        "school_language",
         "created_at"
       ],
       "additionalProperties": false
@@ -222,6 +269,10 @@
     "LearnerId": {
       "type": "string",
       "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "CurriculumId": {
+      "type": "string",
+      "pattern": "^crc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
     },
     "Goal": {
       "type": "object",
@@ -239,6 +290,23 @@
           "type": "string",
           "minLength": 1
         },
+        "words": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lesson_language": {
+          "$ref": "#/$defs/Language"
+        },
+        "status": {
+          "$ref": "#/$defs/GoalStatus"
+        },
         "created_at": {
           "type": "string",
           "format": "date-time",
@@ -250,6 +318,9 @@
         "pod_id",
         "learner_id",
         "name",
+        "words",
+        "lesson_language",
+        "status",
         "created_at"
       ],
       "additionalProperties": false
@@ -257,6 +328,15 @@
     "GoalId": {
       "type": "string",
       "pattern": "^gol_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "GoalStatus": {
+      "type": "string",
+      "enum": [
+        "active",
+        "paused",
+        "reached",
+        "dropped"
+      ]
     }
   }
 }

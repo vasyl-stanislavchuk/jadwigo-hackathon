@@ -1,16 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { idOf } from "./ids.ts";
-import { AttemptResult } from "./records.ts";
+import { AttemptResult, ProposalId, ReportNarrative } from "./records.ts";
 import { ROUTES } from "./routes.ts";
 import {
   AccountCreate,
   AttemptAnswerRequest,
   AttemptClaim,
+  GoalPatch,
   LearnerCreate,
   PageAttemptResult,
   ParentReviewQuestion,
   pageAttemptResult,
   pageEnded,
+  ReportCreate,
+  ReportPatch,
   ReviewQuestion,
   SentAt,
   verdictsHeld,
@@ -172,7 +175,7 @@ describe("lesson review", () => {
 });
 
 describe("parent login", () => {
-  it("needs a token on the 7 parent routes only; the login-free routes stay open", () => {
+  it("needs a token on the 15 parent routes only; the login-free routes stay open", () => {
     const token = Object.entries(ROUTES)
       .filter(([, route]) => route.auth === "token")
       .map(([, route]) => `${route.method} ${route.path}`)
@@ -181,10 +184,18 @@ describe("parent login", () => {
       "GET /api/v1/assignments/{id}/attempts",
       "GET /api/v1/learners/{id}/attempts",
       "GET /api/v1/learners/{id}/attempts/{attempt}/review",
+      "GET /api/v1/learners/{id}/goals",
+      "GET /api/v1/learners/{id}/reports",
+      "GET /api/v1/learners/{id}/skills",
       "GET /api/v1/me",
+      "GET /api/v1/skills",
+      "PATCH /api/v1/learners/{id}/goals/{goal}",
+      "PATCH /api/v1/learners/{id}/reports/{report}",
       "POST /api/v1/accounts",
       "POST /api/v1/attempts/{id}/claims",
       "POST /api/v1/learners",
+      "POST /api/v1/learners/{id}/goals",
+      "POST /api/v1/learners/{id}/reports",
     ]);
   });
 
@@ -214,5 +225,57 @@ describe("parent login", () => {
   it("makes an account from the page's language and nothing else", () => {
     expect(AccountCreate.safeParse({ language: "pl" }).success).toBe(true);
     expect(AccountCreate.safeParse({ language: "pl", sub: "x" }).success).toBe(false);
+  });
+});
+
+describe("the learner knowledge base", () => {
+  const narrative = {
+    language: "pl",
+    headline: "Tabliczka mnożenia przez 7 idzie dobrze.",
+    direction_now: "Utrwalamy mnożenie przez 7.",
+    answers: [
+      {
+        question: "next_focus",
+        answer: "Mnożenie przez 7.",
+        citations: [{ kind: "skill", skill_code: "maths.multiplication.row-7" }],
+      },
+    ],
+    proposals: [],
+    asks: [],
+    made_by: "jadwigo-report-write",
+  };
+
+  it("patches a goal or a report only with at least one field, and refuses what the server owns", () => {
+    expect(GoalPatch.safeParse({}).success).toBe(false);
+    expect(GoalPatch.safeParse({ status: "paused" }).success).toBe(true);
+    expect(GoalPatch.safeParse({ words: null }).success).toBe(true);
+    expect(GoalPatch.safeParse({ status: "paused", pod_id: "x" }).success).toBe(false);
+    expect(ReportPatch.safeParse({}).success).toBe(false);
+    expect(ReportPatch.safeParse({ narrative }).success).toBe(true);
+    const decision = { proposal_id: "p1", decision: "accepted" };
+    expect(ReportPatch.safeParse({ decisions: [decision] }).success).toBe(true);
+    expect(
+      ReportPatch.safeParse({ decisions: [{ ...decision, decided_at: "2026-10-30T08:00:00Z" }] })
+        .success,
+    ).toBe(false);
+    expect(ReportCreate.safeParse({ digest: {} }).success).toBe(false);
+  });
+
+  it("keeps a narrative short, cited and free of fields the digest owns", () => {
+    expect(ReportNarrative.safeParse(narrative).success).toBe(true);
+    expect(ReportNarrative.safeParse({ ...narrative, headline: "x".repeat(141) }).success).toBe(
+      false,
+    );
+    const uncited = [{ ...narrative.answers[0], citations: [] }];
+    expect(ReportNarrative.safeParse({ ...narrative, answers: uncited }).success).toBe(false);
+    expect(ReportNarrative.safeParse({ ...narrative, inputs_hash: "h" }).success).toBe(false);
+    const asks = Array.from({ length: 3 }, () => ({ ask: "?", why: "!" }));
+    expect(ReportNarrative.safeParse({ ...narrative, asks }).success).toBe(false);
+  });
+
+  it("names a proposal p1 to p9", () => {
+    expect(ProposalId.safeParse("p1").success).toBe(true);
+    for (const id of ["p0", "p10", "P1", "1"])
+      expect(ProposalId.safeParse(id).success, id).toBe(false);
   });
 });

@@ -1,0 +1,523 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "learner": {
+      "$ref": "#/$defs/Learner"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "pod_id": {
+            "$ref": "#/$defs/PodId"
+          },
+          "learner_id": {
+            "$ref": "#/$defs/LearnerId"
+          },
+          "skill_code": {
+            "$ref": "#/$defs/SkillId"
+          },
+          "level": {
+            "$ref": "#/$defs/MasteryLevel"
+          },
+          "needs_attention": {
+            "type": "boolean"
+          },
+          "tries": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "last_answered_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "computed_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "pod_id",
+          "learner_id",
+          "skill_code",
+          "level",
+          "needs_attention",
+          "tries",
+          "last_answered_at",
+          "due_at",
+          "computed_at"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "catalogue": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Skill"
+      }
+    },
+    "goals": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/GoalView"
+      }
+    },
+    "brief": {
+      "$ref": "#/$defs/Brief"
+    }
+  },
+  "required": [
+    "learner",
+    "skills",
+    "catalogue",
+    "goals",
+    "brief"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Learner": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/LearnerId"
+        },
+        "pod_id": {
+          "$ref": "#/$defs/PodId"
+        },
+        "handle": {
+          "type": "string",
+          "minLength": 1
+        },
+        "first_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "age_group": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "country": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "curriculum_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CurriculumId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "school_grade": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "school_language": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Language"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        }
+      },
+      "required": [
+        "id",
+        "pod_id",
+        "handle",
+        "first_name",
+        "age_group",
+        "country",
+        "curriculum_id",
+        "school_grade",
+        "school_language",
+        "created_at"
+      ],
+      "additionalProperties": false
+    },
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "CurriculumId": {
+      "type": "string",
+      "pattern": "^crc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en",
+        "uk"
+      ]
+    },
+    "SkillId": {
+      "type": "string",
+      "pattern": "^[a-z]+(\\.[a-z0-9-]+)+$"
+    },
+    "MasteryLevel": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "attempted",
+        "familiar",
+        "proficient",
+        "mastered"
+      ]
+    },
+    "Skill": {
+      "type": "object",
+      "properties": {
+        "pod_id": {
+          "$ref": "#/$defs/PodId"
+        },
+        "code": {
+          "$ref": "#/$defs/SkillId"
+        },
+        "topic_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TopicId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "kind": {
+          "$ref": "#/$defs/SkillKind"
+        },
+        "status": {
+          "$ref": "#/$defs/SkillStatus"
+        },
+        "can_do": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CanDo"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
+        },
+        "prerequisites": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        }
+      },
+      "required": [
+        "pod_id",
+        "code",
+        "topic_id",
+        "kind",
+        "status",
+        "can_do",
+        "aliases",
+        "prerequisites",
+        "source",
+        "created_at"
+      ],
+      "additionalProperties": false
+    },
+    "TopicId": {
+      "type": "string",
+      "pattern": "^top_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "SkillKind": {
+      "type": "string",
+      "enum": [
+        "accuracy",
+        "speed"
+      ]
+    },
+    "SkillStatus": {
+      "type": "string",
+      "enum": [
+        "reviewed",
+        "proposed",
+        "draft",
+        "retired"
+      ]
+    },
+    "CanDo": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/Language"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/CanDoLine"
+      }
+    },
+    "CanDoLine": {
+      "type": "object",
+      "properties": {
+        "child": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parent": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "child",
+        "parent",
+        "reviewed"
+      ],
+      "additionalProperties": false
+    },
+    "GoalView": {
+      "type": "object",
+      "properties": {
+        "goal": {
+          "$ref": "#/$defs/Goal"
+        },
+        "skill_codes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
+        },
+        "status": {
+          "$ref": "#/$defs/GoalProgress"
+        },
+        "can_do_now": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
+        },
+        "needs_attention": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
+        },
+        "next": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
+        }
+      },
+      "required": [
+        "goal",
+        "skill_codes",
+        "status",
+        "can_do_now",
+        "needs_attention",
+        "next"
+      ],
+      "additionalProperties": false
+    },
+    "Goal": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/GoalId"
+        },
+        "pod_id": {
+          "$ref": "#/$defs/PodId"
+        },
+        "learner_id": {
+          "$ref": "#/$defs/LearnerId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "words": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lesson_language": {
+          "$ref": "#/$defs/Language"
+        },
+        "status": {
+          "$ref": "#/$defs/GoalStatus"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        }
+      },
+      "required": [
+        "id",
+        "pod_id",
+        "learner_id",
+        "name",
+        "words",
+        "lesson_language",
+        "status",
+        "created_at"
+      ],
+      "additionalProperties": false
+    },
+    "GoalId": {
+      "type": "string",
+      "pattern": "^gol_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "GoalStatus": {
+      "type": "string",
+      "enum": [
+        "active",
+        "paused",
+        "reached",
+        "dropped"
+      ]
+    },
+    "GoalProgress": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "needs_attention",
+        "on_its_way",
+        "good"
+      ]
+    },
+    "Brief": {
+      "type": "object",
+      "properties": {
+        "made_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/BriefEntry"
+          }
+        },
+        "nothing_recorded": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/BriefList"
+          }
+        }
+      },
+      "required": [
+        "made_at",
+        "entries",
+        "nothing_recorded"
+      ],
+      "additionalProperties": false
+    },
+    "BriefEntry": {
+      "type": "object",
+      "properties": {
+        "list": {
+          "$ref": "#/$defs/BriefList"
+        },
+        "skill_code": {
+          "$ref": "#/$defs/SkillId"
+        },
+        "goal_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/GoalId"
+          }
+        }
+      },
+      "required": [
+        "list",
+        "skill_code",
+        "goal_ids"
+      ],
+      "additionalProperties": false
+    },
+    "BriefList": {
+      "type": "string",
+      "enum": [
+        "reteach",
+        "review",
+        "new",
+        "recheck",
+        "school"
+      ]
+    }
+  }
+}

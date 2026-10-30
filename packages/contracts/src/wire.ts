@@ -24,15 +24,24 @@ import {
   Attempt,
   AttemptAnswer,
   AttemptResult,
+  Brief,
   Ended,
   Goal,
+  GoalProgress,
+  GoalStatus,
   Language,
   Learner,
+  LearnerReport,
+  LearnerSkillMastery,
   LessonQuestion,
   LessonQuestionExample,
   Member,
   Placed,
   Pod,
+  ProposalId,
+  ReportNarrative,
+  Skill,
+  SkillId,
   SkipReason,
 } from "./records.ts";
 
@@ -491,6 +500,104 @@ export const ParentAttemptReview = z.object({
 });
 export type ParentAttemptReview = z.infer<typeof ParentAttemptReview>;
 
+// The learner knowledge base (wave 1 of epic dl-e8ov.5). Every route below needs a token and reads
+// one learner of the caller's pod. Code computes every level, status and list; the parent sees
+// counts and words, never a level name, a score or a percentage.
+
+/**
+ * One goal as the parent's learner page shows it: its skills, where it stands, and 3 lists of
+ * skill codes: what the learner can do now, what needs attention, and what comes next. The page
+ * words each code from the catalogue's reviewed can-do lines.
+ */
+export const GoalView = z.object({
+  goal: Goal,
+  skill_codes: z.array(SkillId),
+  status: GoalProgress,
+  can_do_now: z.array(SkillId),
+  needs_attention: z.array(SkillId),
+  next: z.array(SkillId),
+});
+export type GoalView = z.infer<typeof GoalView>;
+
+/**
+ * `GET /api/v1/learners/{id}/skills`: the learner's mastery rows (no FSRS card), the catalogue the
+ * pod reads (its own rows and the shared ones its own do not replace), each goal's view and the
+ * brief, folded on read.
+ */
+export const LearnerSkills = z.object({
+  learner: Learner,
+  skills: z.array(LearnerSkillMastery.omit({ card: true })),
+  catalogue: z.array(Skill),
+  goals: z.array(GoalView),
+  brief: Brief,
+});
+export type LearnerSkills = z.infer<typeof LearnerSkills>;
+
+/** `GET /api/v1/skills`: the catalogue the caller's pod reads, by code. */
+export const Skills = z.object({ skills: z.array(Skill) });
+export type Skills = z.infer<typeof Skills>;
+
+/** `POST /api/v1/learners/{id}/goals`: a goal in the parent's words, with the skills it is made of. */
+export const GoalCreate = z.strictObject({
+  name: z.string().trim().min(1).max(120),
+  words: z.string().trim().min(1).max(1000).optional(),
+  skill_codes: z.array(SkillId).max(50),
+});
+export type GoalCreate = z.infer<typeof GoalCreate>;
+
+/**
+ * `PATCH /api/v1/learners/{id}/goals/{goal}`: a goal's name, words, status or skills. At least one
+ * field; `skill_codes` replaces the goal's skills whole, and `words: null` clears them.
+ */
+export const GoalPatch = z
+  .strictObject({
+    name: z.string().trim().min(1).max(120).optional(),
+    words: z.string().trim().min(1).max(1000).nullable().optional(),
+    status: GoalStatus.optional(),
+    skill_codes: z.array(SkillId).max(50).optional(),
+  })
+  .refine((patch) => Object.keys(patch).length > 0, "a patch changes at least one field");
+export type GoalPatch = z.infer<typeof GoalPatch>;
+
+/** `GET /api/v1/learners/{id}/goals`, and the reply to a goal's create or patch: oldest first. */
+export const LearnerGoals = z.object({
+  learner: Learner,
+  goals: z.array(z.object({ goal: Goal, skill_codes: z.array(SkillId) })),
+});
+export type LearnerGoals = z.infer<typeof LearnerGoals>;
+
+/**
+ * `POST /api/v1/learners/{id}/reports`: no fields. Code writes the digest from the evidence; the
+ * narrative is null until `/jadwigo-report-write` patches it in.
+ */
+export const ReportCreate = z.strictObject({});
+export type ReportCreate = z.infer<typeof ReportCreate>;
+
+/**
+ * `PATCH /api/v1/learners/{id}/reports/{report}`: the narrative, once, or the parent's decisions on
+ * proposals the digest made. At least one field. The server stamps who decided and when.
+ */
+export const ReportPatch = z
+  .strictObject({
+    narrative: ReportNarrative.optional(),
+    decisions: z
+      .array(
+        z.strictObject({ proposal_id: ProposalId, decision: z.enum(["accepted", "dismissed"]) }),
+      )
+      .min(1)
+      .max(3)
+      .optional(),
+  })
+  .refine((patch) => Object.keys(patch).length > 0, "a patch changes at least one field");
+export type ReportPatch = z.infer<typeof ReportPatch>;
+
+/** `GET /api/v1/learners/{id}/reports`: the learner's reports, newest first, at most `LIMITS.reportsPerLearner`. */
+export const LearnerReports = z.object({
+  learner: Learner,
+  reports: z.array(LearnerReport),
+});
+export type LearnerReports = z.infer<typeof LearnerReports>;
+
 /**
  * The login-free tier's invisible limits (decision
  * `2026-10-26-the-login-free-lesson-is-protected-by-invisible-limits-only-per`): nothing is shown
@@ -507,6 +614,8 @@ export const LIMITS = {
   attemptsPerAssignment: 100,
   bodyBytes: 16_384,
   enteredChars: 200,
+  /** The reports one learner's list returns (`getLearnerReports`), newest first. */
+  reportsPerLearner: 50,
 } as const;
 
 /** A lesson anyone may play now, from the landing page. */

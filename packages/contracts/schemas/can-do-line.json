@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "child": {
+      "type": "string",
+      "minLength": 1
+    },
+    "parent": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reviewed": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "child",
+    "parent",
+    "reviewed"
+  ],
+  "additionalProperties": false
+}
