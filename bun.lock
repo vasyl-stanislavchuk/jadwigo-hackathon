@@ -78,7 +78,7 @@
         "@astrojs/check": "0.9.12",
         "@jadwigo/api-client": "workspace:*",
         "@jadwigo/cli": "workspace:*",
-        "@redocly/cli": "2.70.0",
+        "@redocly/cli": "2.71.0",
         "@types/node": "catalog:",
         "happy-dom": "catalog:",
         "markdownlint-cli2": "0.24.0",
@@ -978,7 +978,7 @@
 
     "@readme/openapi-schemas": ["@readme/openapi-schemas@3.1.0", "", {}, "sha512-9FC/6ho8uFa8fV50+FPy/ngWN53jaUu4GRXlAjcxIRrzhltJnpKkBG2Tp0IDraFJeWrOpk84RJ9EMEEYzaI1Bw=="],
 
-    "@redocly/cli": ["@redocly/cli@2.70.0", "", { "bin": { "openapi": "bin/cli.js", "redocly": "bin/cli.js" } }, "sha512-eZEIQlfAVRFCK0je6pTorg2nbGdfQ7U+eFg3wr46YwDXDwwGU2W+q7chbiZiDSrlVoJsxAd5uEwEx83tlaTTsA=="],
+    "@redocly/cli": ["@redocly/cli@2.71.0", "", { "bin": { "openapi": "bin/cli.js", "redocly": "bin/cli.js" } }, "sha512-QaAo5zdmvtK2GCJzLNZYCn5q3tm2MYImvRt/kDJdwd/zYJsTjNrGl+aindv63tFBrh0FWckXeUnOM5aM+7NQuA=="],
 
     "@rolldown/binding-android-arm-eabi": ["@rolldown/binding-android-arm-eabi@1.2.14", "", { "os": "android", "cpu": "arm" }, "sha512-aWR+XKH9+rW7m5fWq/5360J3mHycrx/o6xZM2DQFdJnTMdyP7/WzxPjhtLbVWdKo2y612/4U1bWqb3HQhiF7vg=="],
 

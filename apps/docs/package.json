@@ -63,7 +63,7 @@
     "@astrojs/check": "0.9.12",
     "@jadwigo/api-client": "workspace:*",
     "@jadwigo/cli": "workspace:*",
-    "@redocly/cli": "2.70.0",
+    "@redocly/cli": "2.71.0",
     "@types/node": "catalog:",
     "happy-dom": "catalog:",
     "markdownlint-cli2": "0.24.0",
