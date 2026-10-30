@@ -20,12 +20,16 @@ export interface SidebarGroup {
  */
 export const SIDEBAR: readonly SidebarGroup[] = [
   {
-    label: "Guides",
+    label: "Start here",
     items: ["guides/introduction", "guides/authentication", "guides/first-call", "guides/errors"],
+  },
+  {
+    label: "Use with agents",
+    items: ["guides/agents", "mcp"],
+    generated: { label: "MCP tools", directory: "mcp" },
   },
   // Filled by starlight-openapi from public/openapi.json (astro.config.mjs).
   { label: "API reference", items: [] },
-  { label: "MCP", items: ["mcp"], generated: { label: "Tools", directory: "mcp" } },
   {
     label: "Design system",
     items: [
