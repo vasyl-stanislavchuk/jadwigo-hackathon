@@ -5,7 +5,9 @@
  */
 
 import { type CopyKey, TABLES } from "@jadwigo/copy";
-import { Check, Contrast, Dot, Ellipsis, type LucideIcon, Minus, Redo2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { OUTCOMES, type Outcome } from "../../../parent/overview/grid.ts";
+import { OUTCOME_ICON, OUTCOME_TONE, OUTCOME_WORD } from "../../../parent/overview/outcome.tsx";
 import type { Tone } from "../../../review/outcome.ts";
 
 export interface Role {
@@ -217,21 +219,19 @@ export const APP_PAGE_ROLES: readonly AppPageRole[] = [
 
 /** One way a question ended, as the parent's pages draw it (decision
  * 2026-10-30-the-parent-s-outcomes-a-soft-green-for-got-there-a-dashed-tile-f): its word, one of the
- * five tones OutcomeTile wears, and its icon from the parent's one set. The System page keeps its
- * own copy of the set: it never reads the parent's screens. */
+ * five tones OutcomeTile wears, and its icon from the parent's one set. Read from the parent's own
+ * maps (parent/overview/outcome.tsx), so the System page cannot drift from the screens. */
 export const PARENT_OUTCOMES: readonly {
-  outcome: string;
+  outcome: Outcome;
   word: CopyKey;
   tone: Tone;
   icon: LucideIcon;
-}[] = [
-  { outcome: "first_try", word: "parent_outcome_first_try", tone: "right", icon: Check },
-  { outcome: "got_there", word: "parent_outcome_got_there", tone: "right-soft", icon: Contrast },
-  { outcome: "not_yet", word: "parent_outcome_not_yet", tone: "miss", icon: Minus },
-  { outcome: "skipped", word: "parent_outcome_skipped", tone: "plain", icon: Redo2 },
-  { outcome: "open", word: "parent_outcome_open", tone: "plain", icon: Ellipsis },
-  { outcome: "not_asked", word: "parent_outcome_not_asked", tone: "empty", icon: Dot },
-];
+}[] = OUTCOMES.map((outcome) => ({
+  outcome,
+  word: OUTCOME_WORD[outcome],
+  tone: OUTCOME_TONE[outcome],
+  icon: OUTCOME_ICON[outcome],
+}));
 
 /** What the Zeszyt-everywhere refactor left for the owner (dl-uukj.32.7). The owner answered all
  * four on 2026-10-30; the register, the outcomes and the readouts are built, and one answer waits

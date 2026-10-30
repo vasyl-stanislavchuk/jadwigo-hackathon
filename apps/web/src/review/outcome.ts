@@ -1,12 +1,11 @@
 /**
- * How a question ended, in one place for the child's end list, the child's review step, the
- * parent's attempt page and the parent's overview (dl-uukj.32 wave 2 step 0): the word for it (a
- * `play_ended_*` key; the adult table has the parent's words), the child's soft icon (a star for
- * right, a sprout for one still growing, a check for one done while verdicts were held, never a
- * cross: wave 1 plan of `dl-uukj.30`), and its tone: the player's own right, the miss colour of
- * decision 2026-10-24, or plain. The tones are drawn by OutcomeTile and Badge in @jadwigo/ui, the
- * one colour map; the app keeps only the mapping from how a question ended to a tone
- * (dl-uukj.32.11).
+ * How a question ended, for the child's end list and the child's review step (dl-uukj.32 wave 2
+ * step 0): the word for it (a `play_ended_*` key) and the child's soft icon (a star for right, a
+ * sprout for one still growing, a check for one done while verdicts were held, never a cross: wave
+ * 1 plan of `dl-uukj.30`). The parent's pages read their own outcomes, words, icons and tones
+ * (parent/overview/outcome.tsx, decision
+ * 2026-10-30-the-parent-s-outcomes-a-soft-green-for-got-there-a-dashed-tile-f); `Tone` is the one
+ * list of the colours OutcomeTile in @jadwigo/ui draws.
  */
 
 import type { PageEnded } from "@jadwigo/contracts";
@@ -36,11 +35,3 @@ export const ENDED_ICON: Record<EndedOrOpen, LucideIcon> = {
  * draw right-soft (right after tries or help) and empty (not asked), decision
  * 2026-10-30-the-parent-s-outcomes-a-soft-green-for-got-there-a-dashed-tile-f. */
 export type Tone = "right" | "right-soft" | "miss" | "plain" | "empty";
-
-export const ENDED_TONE: Record<EndedOrOpen, Tone> = {
-  correct: "right",
-  missed: "miss",
-  skipped: "plain",
-  done: "plain",
-  open: "plain",
-};
