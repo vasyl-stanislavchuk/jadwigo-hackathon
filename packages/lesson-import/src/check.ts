@@ -407,7 +407,7 @@ function keyInSay(fileId: unknown, steps: readonly RawStep[]): Found {
       level: "error",
       rule: "key-in-say",
       text,
-      fix: `Rewrite say so it asks without ${answers}: the child works the answer out.`,
+      fix: `Rewrite say so it asks without ${answers}: the child works the answer out. (This check reads only typed answers, an enter key's or an enter gap's, as whole words; a one-letter answer only when it is a digit.)`,
     });
     found.errors.push({
       step_id: q.id,
