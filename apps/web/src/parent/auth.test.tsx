@@ -53,7 +53,7 @@ describe("withoutReturn", () => {
 describe("completeRedirect", () => {
   it("swaps a code for a session once, however often it is read", async () => {
     const { supabase, exchangeCodeForSession } = fakeSupabase();
-    const auth = supabaseAuth(supabase, []);
+    const auth = supabaseAuth(supabase, ["google"]);
     const url = at(`/parent?${CLAIM}&code=abc`);
     expect(await Promise.all([auth.completeRedirect(url), auth.completeRedirect(url)])).toEqual([
       "signed-in",
@@ -66,14 +66,14 @@ describe("completeRedirect", () => {
 
   it("fails when the exchange is refused", async () => {
     const { supabase } = fakeSupabase(new Error("invalid flow state"));
-    expect(await supabaseAuth(supabase, []).completeRedirect(at("/parent?code=abc"))).toBe(
+    expect(await supabaseAuth(supabase, ["google"]).completeRedirect(at("/parent?code=abc"))).toBe(
       "failed",
     );
   });
 
   it("tells no email from any other error, and clears the hash", async () => {
     const { supabase, exchangeCodeForSession } = fakeSupabase();
-    const auth = supabaseAuth(supabase, []);
+    const auth = supabaseAuth(supabase, ["google"]);
     expect(
       await auth.completeRedirect(
         at(`/parent?${CLAIM}#error=server_error&error_description=Error+getting+user+email+from+x`),
@@ -87,6 +87,18 @@ describe("completeRedirect", () => {
   it("does nothing on a page opened, not returned to", async () => {
     const { supabase } = fakeSupabase();
     window.history.replaceState(null, "", `/parent?${CLAIM}`);
-    expect(await supabaseAuth(supabase, []).completeRedirect(at(`/parent?${CLAIM}`))).toBe("none");
+    expect(await supabaseAuth(supabase, ["google"]).completeRedirect(at(`/parent?${CLAIM}`))).toBe(
+      "none",
+    );
+  });
+
+  it("leaves a ?code= alone when the build turns no provider on", async () => {
+    const { supabase, exchangeCodeForSession } = fakeSupabase();
+    window.history.replaceState(null, "", `/parent?${CLAIM}&code=abc`);
+    expect(await supabaseAuth(supabase, []).completeRedirect(at(`/parent?${CLAIM}&code=abc`))).toBe(
+      "none",
+    );
+    expect(exchangeCodeForSession).not.toHaveBeenCalled();
+    expect(window.location.search).toBe(`?${CLAIM}&code=abc`);
   });
 });
