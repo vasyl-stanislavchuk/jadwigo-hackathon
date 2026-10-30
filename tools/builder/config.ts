@@ -25,3 +25,27 @@ export function claudeBin(env: Env = process.env): string {
 export function claudeConfigDir(env: Env = process.env): string {
   return (env["CLAUDE_CONFIG_DIR"] ?? "").trim() || join(homedir(), ".claude");
 }
+
+/** The Claude Code profile `claude` reads its user-scope MCP servers from, and how it was chosen. */
+export function claudeProfile(env: Env = process.env): { file: string; from: string } {
+  const dir = (env["CLAUDE_CONFIG_DIR"] ?? "").trim();
+  return dir
+    ? { file: join(dir, ".claude.json"), from: `CLAUDE_CONFIG_DIR=${dir}` }
+    : { file: join(homedir(), ".claude.json"), from: "the default, as CLAUDE_CONFIG_DIR is unset" };
+}
+
+/**
+ * The builder session's environment: this one, without ANTHROPIC_API_KEY (the subscription runs
+ * the session; a key would bill it instead), with the session id and the drafts directory named.
+ */
+export function sessionEnv(
+  sessionId: string,
+  drafts: string,
+  env: Env = process.env,
+): Record<string, string | undefined> {
+  const copy: Record<string, string | undefined> = { ...env };
+  delete copy["ANTHROPIC_API_KEY"];
+  copy["JADWIGO_BUILDER_SESSION"] = sessionId;
+  copy["JADWIGO_DRAFTS_DIR"] = drafts;
+  return copy;
+}
