@@ -2,6 +2,7 @@ import type {
   Brief,
   CanDoLine,
   GoalProgress,
+  GoalView,
   Language,
   LearnerGoals,
   LearnerSkillEvidence,
@@ -103,6 +104,18 @@ export function goalStatus(
   _mastery: readonly FoldedMastery[],
 ): GoalProgress {
   return notBuilt("goalStatus");
+}
+
+/**
+ * A goal as the parent's learner page shows it: `goalStatus`, and its skills sorted into what the
+ * learner can do now, what needs attention, and what the brief puts next.
+ */
+export function goalView(
+  _goal: GoalWithSkills,
+  _mastery: readonly FoldedMastery[],
+  _brief: Brief,
+): GoalView {
+  return notBuilt("goalView");
 }
 
 /** The reviewed can-do lines of the skills the learner can do, in `language`. */

@@ -37,6 +37,7 @@ describe("the mastery stubs of step 0", () => {
       "foldLearner",
       "brief",
       "goalStatus",
+      "goalView",
       "canDoLines",
       "dreamDigest",
     ]) {

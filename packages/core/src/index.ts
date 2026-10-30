@@ -22,6 +22,7 @@ export {
   foldLearner,
   type GoalWithSkills,
   goalStatus,
+  goalView,
   masteryOf,
   type ReportPeriod,
   resolveSkill,
