@@ -37,7 +37,7 @@ describe("the generated types (src/db/types.ts)", () => {
     it("allows null in a column exactly where the record does", () => {
       // A view's columns are all nullable in the catalog, and `data` and `key` are unknown to the
       // record (their family's schema checks them), so neither says anything here.
-      if (table === "attempt_result") return;
+      if (table === "attempt_result" || table === "learner_skill_evidence") return;
       for (const [name, field] of Object.entries(shape)) {
         if (field.safeParse(Symbol()).success) continue;
         expect(cols[name]?.nullable, name).toBe(field.safeParse(null).success);
@@ -75,6 +75,17 @@ describe("the generated types (src/db/types.ts)", () => {
     >();
     expectTypeOf<Keys<"attempt_result">>().toEqualTypeOf<
       keyof typeof RECORDS.attempt_result.shape
+    >();
+    expectTypeOf<Keys<"skill">>().toEqualTypeOf<keyof typeof RECORDS.skill.shape>();
+    expectTypeOf<Keys<"goal">>().toEqualTypeOf<keyof typeof RECORDS.goal.shape>();
+    expectTypeOf<Keys<"learner_skill_mastery">>().toEqualTypeOf<
+      keyof typeof RECORDS.learner_skill_mastery.shape
+    >();
+    expectTypeOf<Keys<"learner_report">>().toEqualTypeOf<
+      keyof typeof RECORDS.learner_report.shape
+    >();
+    expectTypeOf<Keys<"learner_skill_evidence">>().toEqualTypeOf<
+      keyof typeof RECORDS.learner_skill_evidence.shape
     >();
   });
 });
