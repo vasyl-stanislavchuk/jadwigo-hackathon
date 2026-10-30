@@ -35,7 +35,7 @@ function stillLoading(item_id: string, img: HTMLImageElement, waitMs: number): F
     path: "spec",
     level: "error",
     rule: "render-picture-missing",
-    text: `A picture did not load in ${waitMs / 1000} s: ${src.length > 40 ? `${src.slice(0, 39)}…` : src}.`,
+    text: `A picture was still loading after the ${waitMs / 1000} s wait: ${src.length > 40 ? `${src.slice(0, 39)}…` : src}.`,
     fix: "The media pipeline must serve the picture's ref (<sha>.<ext>) at the media URL; check VITE_MEDIA_URL and that the ref was uploaded.",
   };
 }
@@ -43,27 +43,41 @@ function stillLoading(item_id: string, img: HTMLImageElement, waitMs: number): F
 /** One frame drawn. */
 const frame = (): Promise<void> => new Promise((done) => requestAnimationFrame(() => done()));
 
-/** Every picture under `roots` loaded or failed, or the wait ran out: the ones still loading. */
+/** The pictures under `roots` still loading. */
+const loadingIn = (roots: readonly Element[]): HTMLImageElement[] =>
+  roots.flatMap((r) => [...r.querySelectorAll("img")]).filter((i) => !i.complete);
+
+/**
+ * Every picture under `roots` loaded or failed, or the wait ran out: the ones still loading. A
+ * picture that mounts while others load (a state change, a late part) is waited for too: after
+ * each round the roots are read again, until none is loading or the one wait runs out.
+ */
 export async function settle(
   roots: readonly Element[],
   waitMs: number = PICTURE_WAIT_MS,
 ): Promise<HTMLImageElement[]> {
-  const pending = roots.flatMap((r) => [...r.querySelectorAll("img")]).filter((i) => !i.complete);
-  if (pending.length === 0) return [];
-  const each = pending.map(
-    (img) =>
-      new Promise<void>((done) => {
-        img.addEventListener("load", () => done(), { once: true });
-        img.addEventListener("error", () => done(), { once: true });
-      }),
-  );
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const wait = new Promise<void>((done) => {
-    timer = setTimeout(done, waitMs);
-  });
-  await Promise.race([Promise.all(each), wait]);
-  clearTimeout(timer);
-  return pending.filter((img) => !img.complete);
+  const deadline = performance.now() + waitMs;
+  let pending = loadingIn(roots);
+  while (pending.length > 0) {
+    const left = deadline - performance.now();
+    if (left <= 0) return pending;
+    const each = pending.map(
+      (img) =>
+        new Promise<void>((done) => {
+          img.addEventListener("load", () => done(), { once: true });
+          img.addEventListener("error", () => done(), { once: true });
+        }),
+    );
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const wait = new Promise<void>((done) => {
+      timer = setTimeout(done, left);
+    });
+    await Promise.race([Promise.all(each), wait]);
+    clearTimeout(timer);
+    await frame();
+    pending = loadingIn(roots);
+  }
+  return [];
 }
 
 /**
@@ -81,7 +95,7 @@ export async function checkBatch(
     const root = roots.get(id);
     return root === undefined ? [] : [root];
   });
-  const loading = new Set(await settle(mounted, waitMs));
+  await settle(mounted, waitMs);
   await frame();
   const out = new Map<string, Finding[]>();
   for (const id of ids) {
@@ -95,7 +109,9 @@ export async function checkBatch(
       out.set(id, [unplayable(id, `its view threw: ${threw}`)]);
       continue;
     }
-    const stuck = [...root.querySelectorAll("img")].filter((img) => loading.has(img));
+    // Read at rule time: one that loaded or failed since the wait is the rules' to judge, and one
+    // still loading now (whenever it mounted) counts as not loaded.
+    const stuck = [...root.querySelectorAll("img")].filter((img) => !img.complete);
     out.set(id, [
       ...renderFindings(root, { step_id: id, path: "spec" }),
       ...stuck.map((img) => stillLoading(id, img, waitMs)),

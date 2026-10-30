@@ -51,7 +51,7 @@ describe("a conformance batch, failing closed", () => {
     expect(await settle([el], 5)).toEqual([img]);
     const found = await checkBatch(["item-slow"], new Map([["item-slow", el]]), 5);
     expect(rules(found, "item-slow")).toEqual(["render-picture-missing"]);
-    expect(found.get("item-slow")?.[0]?.text).toContain("did not load in");
+    expect(found.get("item-slow")?.[0]?.text).toContain("still loading after");
   });
 
   it("waits for a picture that loads, and finds nothing", async () => {
@@ -79,5 +79,50 @@ describe("a conformance batch, failing closed", () => {
     expect(rules(found, "item-throws")).toEqual(["render-unplayable"]);
     expect(found.get("item-throws")?.[0]?.text).toContain("no data.options");
     quiet.mockRestore();
+  });
+
+  it("waits for a picture that mounts while another loads", async () => {
+    const el = root('<img alt="" src="https://media.invalid/first.png">');
+    const first = el.querySelector("img") as HTMLImageElement;
+    let firstDone = false;
+    Object.defineProperty(first, "complete", { get: () => firstDone });
+    const late = document.createElement("img");
+    let lateDone = false;
+    Object.defineProperty(late, "complete", { get: () => lateDone });
+    Object.defineProperty(late, "naturalWidth", { get: () => (lateDone ? 10 : 0) });
+    setTimeout(() => {
+      // The first one fails as a second mounts, still loading; it arrives a little later.
+      el.append(late);
+      firstDone = true;
+      first.dispatchEvent(new Event("error"));
+      setTimeout(() => {
+        lateDone = true;
+        late.dispatchEvent(new Event("load"));
+      }, 20);
+    }, 1);
+    expect(await settle([el], 1_000)).toEqual([]);
+    expect(lateDone).toBe(true);
+  });
+
+  it("judges a picture by how it stands when the rules run: one finding each, never a stale one", async () => {
+    // Failed outright: the render rule's one finding, not a second for still loading.
+    const failed = root('<img alt="" src="https://media.invalid/gone.png">');
+    // Still loading through the whole wait: not loaded.
+    const slow = root('<img alt="" src="https://media.invalid/slow.png">');
+    Object.defineProperty(slow.querySelector("img") as HTMLImageElement, "complete", {
+      value: false,
+    });
+    const found = await checkBatch(
+      ["item-failed", "item-slow"],
+      new Map([
+        ["item-failed", failed],
+        ["item-slow", slow],
+      ]),
+      5,
+    );
+    expect(rules(found, "item-failed")).toEqual(["render-picture-missing"]);
+    expect(found.get("item-failed")?.[0]?.text).toContain("did not load:");
+    expect(rules(found, "item-slow")).toEqual(["render-picture-missing"]);
+    expect(found.get("item-slow")?.[0]?.text).toContain("still loading after");
   });
 });
