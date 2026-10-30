@@ -968,15 +968,15 @@ class ReadyBank(fake_bank.FakeBank):
 
 @pytest.fixture
 def ready_bank(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[Path]:
-    """The planted fixture's bank, its converted file copied into tmp_path; yields that file."""
+    """The planted fixture's bank, copied into tmp_path/ready: its set pages are the bank
+    checkout (JADWIGO_BANK_DIR), so a test may write refusals/ there. Yields that directory."""
     fake = ReadyBank().start()
-    converted = tmp_path / "ready" / "converted-pl.json"
-    converted.parent.mkdir(parents=True)
-    shutil.copyfile(READY / "converted-pl.json", converted)
+    checkout = tmp_path / "ready"
+    shutil.copytree(READY, checkout)
     monkeypatch.setenv(JW_API_URL, fake.url)
-    monkeypatch.setenv(JADWIGO_BANK_DIR, str(READY))
-    monkeypatch.setenv(JW_KHAN_CONVERTED, str(converted))
-    yield converted
+    monkeypatch.setenv(JADWIGO_BANK_DIR, str(checkout))
+    monkeypatch.setenv(JW_KHAN_CONVERTED, str(checkout / "converted-pl.json"))
+    yield checkout
     fake.stop()
 
 
@@ -998,7 +998,7 @@ def test_a_draft_copies_the_ready_item_and_leaves_4_out_with_their_reasons(
 def test_a_flag_written_after_the_conversion_leaves_the_ready_item_out(
     ready_bank: Path, check_ts: CheckTs
 ) -> None:
-    flags = ready_bank.parent / "refusals" / "pl.json"
+    flags = ready_bank / "refusals" / "pl.json"
     flags.parent.mkdir()
     flag = {"id": "fxr1", "by": "lead", "reason": "the options repeat", "on": "2026-10-30"}
     flags.write_text(json.dumps({"shapes": [], "flags": [flag]}), encoding="utf-8")

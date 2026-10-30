@@ -16,7 +16,7 @@ from click.testing import CliRunner
 from jw import items, settings_keys
 from jw.cli import main as cli
 from jw.errors import JwError
-from jw.settings_keys import JW_KHAN_CONVERTED
+from jw.settings_keys import JADWIGO_BANK_DIR, JW_KHAN_CONVERTED
 
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "items" / "converted.json"
 
@@ -232,9 +232,11 @@ LEFT_OUT = {
 
 @pytest.fixture
 def planted(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """The planted fixture copied into tmp_path, so a test may write refusals/ beside it."""
+    """The planted fixture copied into tmp_path, and an empty bank checkout (JADWIGO_BANK_DIR)
+    beside it, so a test may write its refusals/."""
     path = _write(tmp_path / "ready" / "converted-pl.json", json.loads(READY.read_text("utf-8")))
     monkeypatch.setenv(JW_KHAN_CONVERTED, str(path))
+    monkeypatch.setenv(JADWIGO_BANK_DIR, str(tmp_path / "bank"))
     return path
 
 
@@ -288,25 +290,28 @@ def test_every_other_status_says_why(
 def test_a_flag_in_the_refusals_file_holds_before_the_next_conversion(planted: Path) -> None:
     assert items.load_item("fxr1")["id"] == "fxr1"
     flag = {"id": "fxr1", "by": "lead", "reason": "the options repeat", "on": "2026-10-30"}
-    _write(planted.parent / "refusals" / "pl.json", {"shapes": [], "flags": [flag]})
+    refusals = planted.parent.parent / "bank" / "refusals"
+    _write(refusals / "pl.json", {"shapes": [], "flags": [flag]})
 
     with pytest.raises(items.NotReady) as caught:
         items.load_item("fxr1")
 
     assert caught.value.reason == "flagged: the options repeat"
-    assert items.refusals_path("pl") == planted.parent / "refusals" / "pl.json"
+    assert items.refusals_path("pl") == refusals / "pl.json"
     # The English file is another language's: it does not pull the Polish variant.
-    _write(planted.parent / "refusals" / "pl.json", {"shapes": [], "flags": []})
-    _write(planted.parent / "refusals" / "en.json", {"shapes": [], "flags": [flag]})
+    _write(refusals / "pl.json", {"shapes": [], "flags": []})
+    _write(refusals / "en.json", {"shapes": [], "flags": [flag]})
     assert items.load_item("fxr1")["id"] == "fxr1"
 
 
-def test_the_refusals_file_defaults_to_the_khan_dir(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_with_no_bank_checkout_there_is_no_refusals_file(
+    planted: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.delenv(JW_KHAN_CONVERTED)
+    monkeypatch.delenv(JADWIGO_BANK_DIR)
 
-    assert items.refusals_path("pl") == tmp_path / "khan" / "refusals" / "pl.json"
+    assert items.refusals_path("pl") is None
+    assert items.refusals("pl") == {"shapes": [], "flags": []}
+    assert items.load_item("fxr1")["id"] == "fxr1"
 
 
 def test_items_keyed_by_id_read_like_a_list(planted: Path) -> None:
