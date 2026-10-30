@@ -10,8 +10,8 @@
     "dev": "bun scripts/prepare.ts && astro dev",
     "build": "bun scripts/prepare.ts && astro build",
     "preview": "astro preview",
-    "check:dist": "bun scripts/check-dist.ts",
-    "lint": "biome check .",
+    "check:dist": "bun scripts/check-dist.ts && REDOCLY_TELEMETRY=off REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly lint public/openapi.json",
+    "lint": "biome check . && markdownlint-cli2",
     "pretypecheck": "bun scripts/prepare.ts",
     "typecheck": "astro check && tsc -p tsconfig.json",
     "test": "vitest run --config ../../vitest.config.ts --project unit"
@@ -34,6 +34,8 @@
     "remark-stringify": "an optional peer of starlight-llm-actions that its renderMarkdown 'simple' needs to flatten a rendered page to Markdown; the plugin loads it at build time",
     "hast-util-select": "an optional peer of starlight-llm-actions that its renderMarkdown 'simple' needs to flatten a rendered page to Markdown; the plugin loads it at build time",
     "unist-util-remove": "an optional peer of starlight-llm-actions that its renderMarkdown 'simple' needs to flatten a rendered page to Markdown; the plugin loads it at build time",
+    "markdownlint-cli2": "lints every page under src/content/docs in this package's lint script (.markdownlint-cli2.jsonc)",
+    "@redocly/cli": "lints the served public/openapi.json in check:dist (redocly.yaml)",
     "@astrojs/check": "type-checks the .astro and .mdx files in this package's typecheck script",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
@@ -51,8 +53,10 @@
   "devDependencies": {
     "@astrojs/check": "0.9.12",
     "@jadwigo/cli": "workspace:*",
+    "@redocly/cli": "2.70.0",
     "@types/node": "catalog:",
     "happy-dom": "catalog:",
+    "markdownlint-cli2": "0.24.0",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },

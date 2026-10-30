@@ -1,0 +1,15 @@
+// markdownlint over every docs page (dl-5ssh.90.40), run by this package's lint script, so CI's lint
+// job and make check run it. Every rule is on at its default except the ones below. The frontmatter
+// title is the page's H1 (front_matter_title, on by default), so MD025 fails a second H1 in the
+// body and MD001 fails a heading that skips a level from there. MD045 fails an image without alt.
+{
+  "globs": ["src/content/docs/**/*.{md,mdx}"],
+  "config": {
+    // Prose wraps at 100, as in the rest of the repo. A table row and a code line cannot wrap
+    // without breaking, so they may run longer.
+    "MD013": { "line_length": 100, "tables": false, "code_blocks": false },
+    // Off: an .mdx page renders its tables and cards as Astro components (<LinkCard>, <TokenTable>),
+    // which markdownlint reads as inline HTML. It cannot tell a component from a raw tag.
+    "MD033": false
+  }
+}
