@@ -18,7 +18,7 @@ ifneq (,$(wildcard $(HOME)/perl5/bin/pg_prove))
 export PATH := $(HOME)/perl5/bin:$(PATH)
 export PERL5LIB := $(HOME)/perl5/lib/perl5$(if $(PERL5LIB),:$(PERL5LIB))
 endif
-.PHONY: check check-all dev db migrate pgtap db-reset db-seed lesson-import api-dev api-bundle api-invoke db-push db-role skills drops icons
+.PHONY: check check-all dev db migrate pgtap db-reset db-seed lesson-import api-dev api-bundle api-invoke db-push db-role skills drops icons builder
 
 ## check: lint, typecheck and test what changed since main (turbo --affected), uv's pytest
 ## included, then the repo-wide checks turbo cannot scope: knip, dependency-cruiser, no-bank, worklog,
@@ -35,9 +35,11 @@ check-all:
 	bunx turbo run lint typecheck test test:int
 	bun run lint:repo
 
-## dev: every app's dev server (ports from md's environment, tools/src/ports.ts)
+## dev: every app's dev server, on md's ports (tools/src/ports.ts). Turbo's strict env mode passes a
+## task only the variables turbo.json names, which would drop WEB_PORT, API_PORT and the worktree's
+## name, so dev runs loose: it is never cached, so nothing hashes its environment (dl-5ssh.98).
 dev:
-	bunx turbo run dev
+	bunx turbo run dev --env-mode=loose
 
 ## skills: link the product AI workflows (workflows/jadwigo-*) into .claude/skills and .agents/skills,
 ## and the dev and marketing commands (.agents/skills/dev-*, mk-*) into .claude/skills. The links are committed;
@@ -255,3 +257,10 @@ drops:
 ## (tools/src/brand-icons.ts; make check fails when they are older than their SVGs)
 icons:
 	bun tools/src/brand-icons.ts --write
+
+## builder: the Claude Code session the live lesson builder talks to (dl-a38n.10): mints a session id,
+## writes JADWIGO_DRAFTS_DIR/session.json, and starts claude with the jadwigo-builder channel loaded.
+## It stops a claude that comes up without the channel flag, and prints the registration line for a
+## server Claude Code does not have yet (tools/builder/README.md). ARGS passes more to claude.
+builder:
+	bun tools/builder/launch.ts $(ARGS)
