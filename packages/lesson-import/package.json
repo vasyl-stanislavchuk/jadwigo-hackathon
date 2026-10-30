@@ -4,12 +4,13 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./file": "./src/file.ts"
   },
   "scripts": {
     "lint": "biome check .",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run --config ../../vitest.config.ts --project unit",
+    "test": "vitest run --config ../../vitest.config.ts --project unit --project dom",
     "seed": "bun src/seed.ts",
     "check": "bun src/check.ts",
     "import": "bun src/import-file.ts",
@@ -21,6 +22,7 @@
     "@jadwigo/store": "the Store an import writes through, InMemoryStore in its tests",
     "@jadwigo/testing": "the exported lesson files this package's tests import",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
+    "happy-dom": "the DOM the dom Vitest project runs src/file.test.tsx in, the browser-safe parse (dl-a38n.11)",
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit test with the root vitest.config.ts",
     "zod": "the schema of an exported lesson file, and the contract parses an import checks against"
@@ -34,6 +36,7 @@
   "devDependencies": {
     "@jadwigo/testing": "workspace:*",
     "@types/node": "catalog:",
+    "happy-dom": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
