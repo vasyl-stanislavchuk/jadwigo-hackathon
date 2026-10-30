@@ -32,8 +32,10 @@ export const ENDED_ICON: Record<EndedOrOpen, LucideIcon> = {
   open: Circle,
 };
 
-/** The colours a tile or a cell wears: right, a miss, or plain for the rest. */
-export type Tone = "right" | "miss" | "plain";
+/** The colours a tile or a cell wears: right, a miss, or plain for the rest; the parent's pages also
+ * draw right-soft (right after tries or help) and empty (not asked), decision
+ * 2026-10-30-the-parent-s-outcomes-a-soft-green-for-got-there-a-dashed-tile-f. */
+export type Tone = "right" | "right-soft" | "miss" | "plain" | "empty";
 
 export const ENDED_TONE: Record<EndedOrOpen, Tone> = {
   correct: "right",

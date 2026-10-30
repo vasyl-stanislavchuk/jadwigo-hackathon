@@ -53,6 +53,9 @@ describe("cn", () => {
     ["text-jw-option text-jw-key-strip", "text-jw-key-strip"],
     ["text-jw-small text-jw-unit", "text-jw-unit"],
     ["text-jw-prompt text-jw-target", "text-jw-target"],
+    ["text-jw-prompt text-jw-page-h1", "text-jw-page-h1"],
+    ["text-jw-body text-jw-page-body", "text-jw-page-body"],
+    ["leading-tight leading-jw-page", "leading-jw-page"],
   ])("lets the later named utility win: %s", (pair, winner) => {
     expect(cn(pair)).toBe(winner);
   });

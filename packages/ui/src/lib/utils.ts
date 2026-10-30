@@ -5,8 +5,8 @@ import { extendTailwindMerge } from "tailwind-merge";
 // The named utilities of @theme inline (styles/tailwind.css) that tailwind-merge cannot guess
 // (dl-uukj.32): text-kid-* and text-jw-<size> are font sizes, not colours; min-h-kid-tap and
 // min-h-jw-control are the same group, so the later one wins; the same for the radii, the shadow,
-// the durations and the easing. Without this, cn() keeps both classes of a pair and Tailwind's own
-// order picks, so a key could draw 56 instead of 72.
+// the durations, the easing and the page leading. Without this, cn() keeps both classes of a pair
+// and Tailwind's own order picks, so a key could draw 56 instead of 72.
 const SIZES = [
   "kid-say",
   "kid-answer",
@@ -22,6 +22,9 @@ const SIZES = [
   "jw-key-sign",
   "jw-key-strip",
   "jw-unit",
+  "jw-page-h1",
+  "jw-page-h2",
+  "jw-page-body",
 ];
 const SPACING = [
   "kid-tap",
@@ -40,6 +43,7 @@ const twMerge = extendTailwindMerge({
       radius: ["jw-card", "jw-control", "jw-small"],
       shadow: ["jw-act"],
       ease: ["jw-out"],
+      leading: ["jw-page"],
     },
     classGroups: {
       "font-size": [{ text: SIZES }],

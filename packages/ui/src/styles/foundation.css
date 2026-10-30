@@ -220,9 +220,17 @@
   --jw-size-key-sign: 1.75rem; /* 28px: a sign on the pad */
   --jw-size-key-strip: 1.625rem; /* 26px: a sign in the strip under a field */
   --jw-size-unit: 1.625rem; /* 26px: the unit beside a typed field (zł, cm) */
-  /* The big readout a task shows beside its figure (TaskTarget, dl-uukj.32): one size for the sites
-     * that wrote 2.5rem or 3rem by hand. */
-  --jw-size-target: 2.5rem; /* 40px */
+  /* The big readout a task shows beside its figure (TaskTarget, dl-uukj.32): 44 on a laptop and 36
+     * on a phone, the same step above the prompt in both frames (decision 2026-10-30-a-task-s-readout-
+     * is-44-px-on-a-laptop-and-36-px-on-a-phone). */
+  --jw-size-target: 2.75rem; /* 44px */
+  /* The adult's scale on an app page, the parent's screens (decision 2026-10-30-app-pages-take-an-
+     * adult-type-scale-h1-28-h2-22-body-17-and-the-a). Page and the parts read it through the
+     * register (packages/ui lib/register.tsx); a lesson keeps the child's scale above. */
+  --jw-page-h1: 1.75rem; /* 28px */
+  --jw-page-h2: 1.375rem; /* 22px */
+  --jw-page-body: 1.0625rem; /* 17px: body, a third heading, a label */
+  --jw-page-leading: 1.5;
   /* A settings or navigation control outside a lesson: 48, as decision 2026-10-25-settings-and-
      * navigation-controls says; a lesson answer keeps --kid-tap-min (56). */
   --jw-control-height: 3rem; /* 48px */
@@ -275,6 +283,9 @@
     --jw-size-option: 1.5rem; /* 24px, the kid minimum */
     --jw-size-math: 1.875rem; /* 30px */
     --jw-size-verdict: 1.25rem; /* 20px */
+    --jw-size-target: 2.25rem; /* 36px */
+    --jw-page-h1: 1.625rem; /* 26px */
+    --jw-page-h2: 1.25rem; /* 20px */
   }
 }
 
@@ -284,6 +295,7 @@
   --jw-size-option: 1.5rem; /* 24px, the kid minimum */
   --jw-size-math: 1.875rem; /* 30px */
   --jw-size-verdict: 1.25rem; /* 20px */
+  --jw-size-target: 2.25rem; /* 36px */
 }
 
 /* ---- 3. Aliases: what the existing parts read ------------------------------------------------- */
