@@ -15,6 +15,7 @@ const messageOf = (draft: unknown, extra: Partial<DraftMessage> = {}): DraftMess
   draft_id: "x",
   draft,
   check: null,
+  render: null,
   error: null,
   ...extra,
 });

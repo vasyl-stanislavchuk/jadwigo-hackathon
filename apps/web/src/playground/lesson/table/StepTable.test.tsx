@@ -33,6 +33,7 @@ const message: DraftMessage = {
   draft_id: "x",
   draft: equalGroups,
   check: { ok: false, findings: [error, warn] },
+  render: null,
   error: null,
 };
 
