@@ -9,6 +9,7 @@
 // The report is the one POST /api/v1/learners/{id}/reports writes (`makeReport`), and the
 // narrative is checked as PATCH .../reports/{report} checks it (`checkNarrative`). Each run is one
 // unit, in the learner's own pod. The output is the report's JSON: codes, counts and ids, no name.
+// It runs only on a local jadwigo* database, whatever DATABASE_URL names.
 import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import {
@@ -40,6 +41,25 @@ async function dream(
   });
 }
 
+/**
+ * The URL when it names a jadwigo* database on this machine, else a refusal that never prints the
+ * URL (it may hold a password). The dream never runs on jadwigo-dev or prod in this wave: the
+ * Makefile's `make dream` checks the same, and this holds for a direct run too.
+ */
+function localDatabase(url: string | undefined): string {
+  if (url === undefined) throw new Error("DATABASE_URL is unset: see .env.example");
+  if (!LOCAL_DATABASE.test(url)) {
+    throw new Error(
+      "DATABASE_URL is not postgresql://[user[:password]@]localhost[:port]/jadwigo…: the dream runs only on a local jadwigo* database",
+    );
+  }
+  return url;
+}
+
+/** The Makefile's DREAM check, as one pattern: no query string, no other host, no other database. */
+const LOCAL_DATABASE =
+  /^postgres(ql)?:\/\/([A-Za-z0-9._~%+=:-]+@)?(localhost|127\.0\.0\.1)(:[0-9]+)?\/jadwigo[A-Za-z0-9_]*$/;
+
 async function main(): Promise<void> {
   const { values, positionals } = parseArgs({
     allowPositionals: true,
@@ -48,8 +68,7 @@ async function main(): Promise<void> {
   const learner = LearnerId.safeParse(positionals[0]);
   if (!learner.success || positionals.length !== 1) throw new Error(USAGE);
   if (values.report !== undefined && values.narrative === undefined) throw new Error(USAGE);
-  const url = databaseUrl();
-  if (url === undefined) throw new Error("DATABASE_URL is unset: see .env.example");
+  const url = localDatabase(databaseUrl());
   const store = createPostgresStore(url);
   try {
     const report = await dream(store, learner.data, {

@@ -15,7 +15,7 @@ const CHECKED = {
   checked_at: "2026-10-30T00:00:00Z",
 };
 
-function item(id: string, data: unknown, key: unknown, status: unknown = CHECKED) {
+function item<D>(id: string, data: D, key: unknown, status: unknown = CHECKED) {
   return {
     id,
     language: "pl",

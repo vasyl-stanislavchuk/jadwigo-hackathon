@@ -528,6 +528,14 @@ export interface Store {
     learner: LearnerId,
     rows: readonly NewLearnerSkillMastery[],
   ): Promise<readonly LearnerSkillMastery[]>;
+  /**
+   * Holds a learner of `pod` to the end of the open unit, so the evidence read after it and the
+   * mastery written from that evidence are one step: 2 rebuilds of one learner take turns, and the
+   * 2nd reads the 1st's committed answers. `replaceMastery` takes the same hold. Outside a unit it
+   * holds nothing past the call. A learner outside `pod` is `NotFound`. Added by the store-api lane
+   * of wave dl-e8ov.5-1 on the review of #342, the lead approving.
+   */
+  lockLearner(pod: PodId, learner: LearnerId): Promise<void>;
   /** A learner's mastery rows, by skill code. A learner outside `pod` is `NotFound`. */
   getMastery(pod: PodId, learner: LearnerId): Promise<readonly LearnerSkillMastery[]>;
   /**

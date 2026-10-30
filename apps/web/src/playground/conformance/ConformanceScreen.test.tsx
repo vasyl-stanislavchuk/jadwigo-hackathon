@@ -7,6 +7,7 @@ import { PLANTED, plantedFile } from "./planted.ts";
 // Made-up items in the conversion's shape: no bank item is ever in git (AGENTS.md fence 8).
 const ENTER = {
   id: "item-enter",
+  language: "pl",
   exercise: "made-up-exercise",
   spec: {
     family: "enter",
@@ -64,6 +65,48 @@ describe("the conformance page", () => {
       // "not checked" is the status's, which jw reads; the page finds nothing to refuse.
       [PLANTED.unchecked.id]: [],
       [PLANTED.loose.id]: ["unknown-field"],
+    });
+  });
+
+  it("draws each item in its own language, and refuses one the app does not speak", async () => {
+    vi.stubEnv("VITE_MEDIA_URL", "https://media.invalid");
+    // A "none of these" option draws the app's own words, which follow the language.
+    const data = {
+      ...PLANTED.ready.spec.data,
+      options: [...PLANTED.ready.spec.data.options, { id: "o3", content: { kind: "none" } }],
+    };
+    const item = { ...PLANTED.ready, spec: { ...PLANTED.ready.spec, data } };
+    const variants = [
+      { ...item, id: "variant-pl", language: "pl" },
+      { ...item, id: "variant-en", language: "en" },
+      { ...item, id: "variant-de", language: "de" },
+    ];
+    // The page draws a batch and moves on, so the copy is read while the batch is up.
+    const drawn = new Map<string, string>();
+    const observer = new MutationObserver(() => {
+      for (const el of document.querySelectorAll("[data-item]")) {
+        const id = el.getAttribute("data-item");
+        if (id !== null && el.textContent) drawn.set(id, el.textContent);
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    vi.stubGlobal("fetch", () => Promise.resolve(Response.json({ items: variants })));
+    render(<ConformanceScreen />);
+    await waitFor(() => expect(window.__jadwigoConformance?.done).toBe(true), { timeout: 5_000 });
+    observer.disconnect();
+    expect(drawn.get("variant-pl")).toBeTruthy();
+    expect(drawn.get("variant-en")).toBeTruthy();
+    expect(drawn.get("variant-en")).not.toEqual(drawn.get("variant-pl"));
+    const rules = Object.fromEntries(
+      (window.__jadwigoConformance?.results ?? []).map((r) => [
+        r.item_id,
+        r.findings.map((f) => f.rule),
+      ]),
+    );
+    expect(rules).toEqual({
+      "variant-pl": [],
+      "variant-en": [],
+      "variant-de": ["render-unplayable"],
     });
   });
 });
