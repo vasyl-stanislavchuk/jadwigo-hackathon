@@ -8,13 +8,19 @@ import { API_PAGES, API_REFERENCE_BASE } from "./guides.ts";
 import { REGISTER_HREF } from "./mcp.ts";
 import { type OpenApiDocument, operationCount } from "./openapi.ts";
 import { gallery } from "./question-types.ts";
-import { foundation } from "./tokens.ts";
+import { shown } from "./tokens.ts";
 
 /** A file the built site must have, and a text it must carry. */
 export const MUST: readonly (readonly [file: string, text: string])[] = [
   ["index.html", '<html lang="en"'],
   ["index.html", `<link rel="canonical" href="https://${servedHost}/"`],
   ["index.html", 'href="/guides/agents/"'],
+  ["index.html", '<link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml"'],
+  ["index.html", '<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32"'],
+  ["index.html", '<link rel="apple-touch-icon" href="/apple-touch-icon.png"'],
+  ["favicon.svg", "<svg"],
+  ["favicon-32.png", "PNG"],
+  ["apple-touch-icon.png", "PNG"],
   ["guides/introduction/index.html", apiBase],
   ["guides/authentication/index.html", ROUTES.getMe.path],
   ["guides/authentication/index.html", ROUTES.questionSearches.path],
@@ -30,7 +36,10 @@ export const MUST: readonly (readonly [file: string, text: string])[] = [
   ["mcp/question_item/index.html", `href="${REGISTER_HREF}"`],
   ["mcp-tools.json", '"name": "question_item"'],
   ["design-system/index.html", gallery],
-  ["design-system/tokens/index.html", `<code>--${foundation().roles.at(-1)?.name}</code>`],
+  // Every token the app's stylesheets set, but a part's own helpers (tokens.ts INTERNAL).
+  ...[...new Set(Object.values(shown()).flatMap((names) => [...names]))].map(
+    (name) => ["design-system/tokens/index.html", `<code>--${name}</code>`] as const,
+  ),
   ["design-system/question-types/index.html", `<code>${QUESTION_TYPES.at(-1)?.name}</code>`],
   // Mermaid draws in the browser (astro-mermaid), so the HTML carries each diagram's source.
   ["architecture/index.html", '<pre class="mermaid"'],

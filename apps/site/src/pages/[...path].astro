@@ -1,0 +1,24 @@
+---
+// Every content page that names its own `path`: the privacy pages today (dl-w0b4.64). The path is
+// the page's stable URL, so a link handed to Meta or Google keeps working. A prod build leaves out
+// the ones not yet reviewed (servedPathPages) and builds the rest of the site.
+import { type CollectionEntry, getCollection, render } from "astro:content";
+import Base from "../layouts/Base.astro";
+import { servedPathPages } from "../lib/seo.ts";
+
+export async function getStaticPaths() {
+  const pages = servedPathPages(await getCollection("pages"), import.meta.env.PROD);
+  return pages.map((entry) => ({ params: { path: entry.data.path?.slice(1) }, props: { entry } }));
+}
+
+interface Props {
+  entry: CollectionEntry<"pages">;
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<Base page={entry.data} path={entry.data.path ?? "/"} prose>
+  <Content />
+</Base>

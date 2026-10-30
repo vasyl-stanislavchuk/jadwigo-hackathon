@@ -1,0 +1,275 @@
+{
+  "$comment": "What a composing agent following workflows/jadwigo-lesson-compose/SKILL.md writes for each fixture item of tests/fixtures/lesson, by item id: the twin, the boost and the mistake card its key's near table names. Fixture text, written by hand, not by a model.",
+  "words": {
+    "fxc101": {
+      "twin": {
+        "say": "Ile kropek jest w czterech rzędach po sześć?",
+        "data": {
+          "stem": {
+            "text": "Policz kropki w rzędach: 6 · 4 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "6 · 4 = ?"
+          }
+        },
+        "key": {
+          "accept": ["24"]
+        }
+      },
+      "boost": {
+        "text": "Są 3 rzędy, w każdym 6 kropek. Dodaj 6 trzy razy."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "6 + 3 to dodawanie. Tu są 3 rzędy po 6 kropek."
+        }
+      }
+    },
+    "fxc102": {
+      "twin": {
+        "say": "Ile kropek jest w pięciu rzędach po sześć?",
+        "data": {
+          "stem": {
+            "text": "Policz kropki w rzędach: 6 · 5 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "6 · 5 = ?"
+          }
+        },
+        "key": {
+          "accept": ["30"]
+        }
+      },
+      "boost": {
+        "text": "Policz rzędy: są 4. W każdym jest 6 kropek, więc dodawaj po 6."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "Wyszło 10, bo 6 i 4 zostały dodane. Tu masz 4 rzędy i w każdym 6 kropek."
+        }
+      }
+    },
+    "fxc103": {
+      "twin": {
+        "say": "Ile kropek jest w ośmiu rzędach po sześć?",
+        "data": {
+          "stem": {
+            "text": "Policz kropki w rzędach: 6 · 8 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "6 · 8 = ?"
+          }
+        },
+        "key": {
+          "accept": ["48"]
+        }
+      },
+      "boost": {
+        "text": "Jest 7 rzędów po 6 kropek. Dodawaj po 6, aż policzysz wszystkie rzędy."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "13 to 6 + 7. Tu trzeba wziąć 6 aż 7 razy."
+        }
+      }
+    },
+    "fxc202": {
+      "twin": {
+        "say": "W czterech torbach jest po sześć jabłek. Ile razem?",
+        "data": {
+          "stem": {
+            "text": "W 4 torbach jest po 6 jabłek. Ile razem?"
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "4 · 6 = ?"
+          }
+        },
+        "key": {
+          "accept": ["24"]
+        }
+      },
+      "boost": {
+        "text": "Każda torba ma 6 jabłek. Policz jabłka w 5 torbach, torba po torbie."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "11 to 5 + 6. Masz 5 toreb i w każdej 6 jabłek, więc dodaj 6 pięć razy."
+        }
+      }
+    },
+    "fxc203": {
+      "twin": {
+        "say": "W siedmiu torbach jest po sześć jabłek. Ile razem?",
+        "data": {
+          "stem": {
+            "text": "W 7 torbach jest po 6 jabłek. Ile razem?"
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "7 · 6 = ?"
+          }
+        },
+        "key": {
+          "accept": ["42"]
+        }
+      },
+      "boost": {
+        "text": "Jest 9 toreb. Do każdej włożono 6 jabłek. Ile razy dodasz 6?"
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "15 to 9 + 6, tak się dodaje. Tu każda z 9 toreb ma po 6 jabłek."
+        }
+      }
+    },
+    "fxc301": {
+      "twin": {
+        "say": "Skaczesz po sześć. Gdzie jesteś po trzech skokach?",
+        "data": {
+          "stem": {
+            "text": "Skacz po 6: ile po 3 skokach?"
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "3 · 6 = ?"
+          }
+        },
+        "key": {
+          "accept": ["18"]
+        }
+      },
+      "boost": {
+        "text": "Każdy skok to 6 dalej. Zacznij od 0 i skocz 4 razy."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "10 to 4 + 6. Ty skaczesz 4 razy, za każdym razem o 6."
+        }
+      }
+    },
+    "fxc302": {
+      "twin": {
+        "say": "Skaczesz po sześć. Gdzie jesteś po siedmiu skokach?",
+        "data": {
+          "stem": {
+            "text": "Skacz po 6: ile po 7 skokach?"
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "7 · 6 = ?"
+          }
+        },
+        "key": {
+          "accept": ["42"]
+        }
+      },
+      "boost": {
+        "text": "Skacz od 0 po 6. Licz skoki na palcach, aż będzie ich 8."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "14 wychodzi z 8 + 6. Tu jest 8 skoków, każdy o 6."
+        }
+      }
+    },
+    "fxc303": {
+      "twin": {
+        "say": "Skaczesz po sześć. Gdzie jesteś po dziewięciu skokach?",
+        "data": {
+          "stem": {
+            "text": "Skacz po 6: ile po 9 skokach?"
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "9 · 6 = ?"
+          }
+        },
+        "key": {
+          "accept": ["54"]
+        }
+      },
+      "boost": {
+        "text": "Licz po 6: 6, 12, 18 i dalej. Zrób tak 10 skoków."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "16 to 10 + 6. Tu masz 10 skoków, każdy o 6."
+        }
+      }
+    },
+    "fxc401": {
+      "twin": {
+        "say": "Ile to jest sześć razy siedem?",
+        "data": {
+          "stem": {
+            "text": "Oblicz: 6 · 7 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "6 · 7 = ?"
+          }
+        },
+        "key": {
+          "accept": ["42"]
+        }
+      },
+      "boost": {
+        "text": "6 · 8 to 8 razy po 6. Dodawaj po 6."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "14 to 6 + 8. Tu mnożysz: 8 razy po 6."
+        }
+      }
+    },
+    "fxc402": {
+      "twin": {
+        "say": "Ile to jest sześć razy sześć?",
+        "data": {
+          "stem": {
+            "text": "Oblicz: 6 · 6 ="
+          },
+          "input": "number",
+          "entry": "keypad",
+          "figure": {
+            "kind": "expression",
+            "text": "6 · 6 = ?"
+          }
+        },
+        "key": {
+          "accept": ["36"]
+        }
+      },
+      "boost": {
+        "text": "6 · 9 to 9 razy po 6. Możesz wziąć 6 · 10 i odjąć jedno 6."
+      },
+      "boost_by_mistake": {
+        "added_instead": {
+          "text": "15 to 6 + 9. Tu potrzebujesz 9 razy po 6."
+        }
+      }
+    }
+  }
+}

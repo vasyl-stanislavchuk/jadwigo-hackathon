@@ -8,3 +8,9 @@ supabase_ref = "xhzkmpainwzrfktxffjv"
 # jadwigo-prod is Supabase Pro on Micro compute: its pooler accepts 200 clients (Management API
 # billing/addons, connections_pooler, read 2026-10-29). 150 leaves 50 for make api-dev and the seeds.
 app_reserved_concurrency = 150
+
+# Google Workspace mail on jadwigo.pl (dl-e8ov.2.71, docs/runbooks/google-workspace.md). Each line is
+# the owner's, in the runbook's order: the verification token, then mx = true, then dkim.
+mail_workspace = {
+  "jadwigo.pl" = {}
+}

@@ -1,0 +1,21 @@
+---
+// Tailwind's names for the tokens, from @jadwigo/ui's tailwind.css @theme at build time.
+import { theme } from "../lib/tokens.ts";
+
+const utilities = theme();
+---
+
+<table>
+  <thead>
+    <tr><th>Utility</th><th>Theme name</th><th>Reads</th></tr>
+  </thead>
+  <tbody>
+    {utilities.map((u) => (
+      <tr>
+        <td><code>{u.utility}</code></td>
+        <td><code>--{u.name}</code></td>
+        <td><code>{u.reads}</code></td>
+      </tr>
+    ))}
+  </tbody>
+</table>

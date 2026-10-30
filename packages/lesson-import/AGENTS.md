@@ -8,7 +8,7 @@ lesson question examples, which `GET /api/v1/playground-examples/{language}` ser
 - **Not here:** The lesson files themselves (david-learns exports them), judging (`packages/core`), SQL (`packages/store`).
 - **Owner:** the platform workstream (`docs/workstreams/platform.md`). **Filled by:** `dl-e8ov.2.32.5`.
 - **Imports:** `contracts`, `core` (only `MISTAKE_CLASSES`, `dl-e8ov.5.38.11`), `store`.
-- **Public surface:** `src/index.ts`. Other files are private to this package.
+- **Public surface:** `src/index.ts`, and `src/file.ts` as `@jadwigo/lesson-import/file`: the browser-safe entry with `parseLessonFile` and the lesson file types, which imports nothing that needs Node (no `compile.ts`, `ids.ts` or `node:*`; `dl-a38n.11`). Other files are private to this package.
 - **Test:** `bunx turbo run lint typecheck test --filter=./packages/lesson-import`
 
 ## Rules here
@@ -20,4 +20,4 @@ lesson question examples, which `GET /api/v1/playground-examples/{language}` ser
 - Skill ids are mapped into the contract's `SkillId` (`skillIdOf`), because the playground names some by brain page (`curriculum/math/...`) and one in Polish (`l-ł`). Two ids that map to one fail the import (the lead's call on `dl-e8ov.2.32.5`, until the bank's skill ids settle).
 - The fixtures in `packages/testing/src/lessons/` are exported by david-learns `frontend/src/playground/sim/exportLessonFiles.ts`, never edited by hand. `bun run seed` imports them through `createPostgresStore`.
 - The written examples in `src/playground/*.ts` are edited here, in both languages; `make db-seed` writes them. Each language's examples are replaced whole on every seed (`replaceExamples`), and their questions are named `question/playground/<type>/<language>/<slug>/<content hash>` (a twin's slug ends `t`). They carry no subject or skill, so each is written as `math` with no skill ids.
-- `src/check.ts` (jw's `lesson_check`) is stricter than the import: it refuses a `boost_by_mistake` key the step's question never gives (its family's `MISTAKE_CLASSES` and its key's `near` classes, `src/mistakes.ts`), while the import takes the playground's lessons as exported (`dl-e8ov.5.38.11`).
+- `src/check.ts` (jw's `lesson_check`) is stricter than the import: it refuses a `boost_by_mistake` key the step's question never gives (its family's `MISTAKE_CLASSES` and its key's `near` classes, `src/mistakes.ts`), while the import takes the playground's lessons as exported (`dl-e8ov.5.38.11`). Its `--json` answer lists every finding, each with a path, a level, a rule and a fix, going past a step that fails to the next, and keeps the old `errors` beside them for one release, until jw reads `findings` (`dl-a38n.14`).

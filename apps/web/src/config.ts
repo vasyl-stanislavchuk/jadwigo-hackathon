@@ -1,4 +1,5 @@
 // The one place apps/web reads its environment (lint/no-raw-process-env.grit).
+import { draftsDir as builderDraftsDir } from "../../../tools/builder/config.ts";
 import { apiPort, DEV_PORTS, port } from "../../../tools/src/ports.ts";
 
 /** The dev server's port: md's WEB_PORT in a worktree, 5173 in the main checkout. */
@@ -28,4 +29,17 @@ export function authConfig(
   const url = env["JW_SUPABASE_URL"];
   const key = env["JW_SUPABASE_KEY"];
   return url && key ? { url, key } : null;
+}
+
+/** Where jw writes lesson drafts and the lesson builder reads them (dl-a38n, lead decision 1):
+ * tools/builder's resolver, so jw's default lives in one place. */
+export function draftsDir(env: Record<string, string | undefined> = process.env): string {
+  return builderDraftsDir(env);
+}
+
+/** The Claude Code session `make builder` started (JADWIGO_BUILDER_SESSION), when this dev server
+ * runs in its environment; else "", and the drafts directory's .builder/session.json names it
+ * (dl-a38n.15). */
+export function builderSession(env: Record<string, string | undefined> = process.env): string {
+  return (env["JADWIGO_BUILDER_SESSION"] ?? "").trim();
 }
