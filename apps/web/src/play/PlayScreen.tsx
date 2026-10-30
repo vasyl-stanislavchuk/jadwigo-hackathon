@@ -19,12 +19,14 @@ import {
   ViewMode,
 } from "@jadwigo/lesson-kit";
 import { Button, Spinner } from "@jadwigo/ui";
-import { type ReactElement, useCallback, useEffect, useMemo } from "react";
+import { type ReactElement, useCallback, useEffect, useMemo, useState } from "react";
 import { withMedia } from "../media.ts";
 import { navigate, useLocation } from "../nav/location.ts";
 import { ChildReview } from "../review/ChildReview.tsx";
 import { specOf } from "../review/ReviewStep.tsx";
 import { Column, KidPage } from "./KidPage.tsx";
+import { Queen } from "./Queen.tsx";
+import { queenDue } from "./queen.ts";
 import { Results } from "./Results.tsx";
 import { playPath, playRoute, reviewPath } from "./route.ts";
 import { currentOf, progressOf } from "./runner.ts";
@@ -127,6 +129,9 @@ export function PlayScreen({
     (to: number) => navigate(withQuery(reviewPath(assignmentId, to))),
     [assignmentId, withQuery],
   );
+  // Once she is gone (the clip ended, a tap) she stays gone; queenDue holds for one praise only.
+  const [queenGone, setQueenGone] = useState(false);
+  const hideQueen = useCallback(() => setQueenGone(true), []);
   const reviewing = seq !== undefined;
   const live = stage.kind === "playing" || stage.kind === "paused";
   useEffect(() => {
@@ -151,6 +156,7 @@ export function PlayScreen({
           ) : (
             <Question player={player} language={language} />
           )}
+          {queenDue(player.state) && !queenGone && <Queen onDone={hideQueen} />}
         </KidPage>
       );
     case "paused":
