@@ -543,5 +543,6 @@ describe("ParentScreen", () => {
     expect(mark?.getAttribute("alt")).toBe("");
     expect(google.firstElementChild).toBe(mark);
     expect(google.style.backgroundColor).not.toBe("");
+    expect(google.style.fontFamily).toContain("Google Sans");
   });
 });

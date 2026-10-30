@@ -7,23 +7,30 @@
  * "Theme=Light, Show text=No, Shape=Square, Platform=Android+Web.svg"): the button's frame removed
  * and the viewBox narrowed to the G's 20 x 20, nothing in the G itself changed. It stays an <img>
  * of that file, since the G is a gradient Figma drew inside a foreignObject that JSX would have to
- * redraw. The rules' font, Google Sans, is not ours; the button keeps the page's.
+ * redraw. Its words are in the rules' font, Google Sans Medium at 14/20 (OFL 1.1, from
+ * @fontsource/google-sans): the @font-face is global, but only this button names the family, so no
+ * other text changes, and the browser fetches only the subsets the button's words use.
  *
  * The colours are the providers', not Zeszyt roles, so they are written here once
  * (parent/tokens.allow.json says why). Facebook keeps the house outline button until Meta's
  * approved "f" is in hand.
  */
 
+import "@fontsource/google-sans/500.css";
 import { Button } from "@jadwigo/ui";
 import type { CSSProperties, ReactElement } from "react";
 import type { Provider } from "./auth.ts";
 import googleG from "./google-g.svg";
 
-/** Google's light theme: fill, stroke and text. */
+/** Google's light theme: fill, stroke and text, in Google Sans Medium 14/20. */
 const GOOGLE_LIGHT: CSSProperties = {
   backgroundColor: "#FFFFFF",
   borderColor: "#747775",
   color: "#1F1F1F",
+  fontFamily: "'Google Sans', sans-serif",
+  fontWeight: 500,
+  fontSize: "0.875rem",
+  lineHeight: "1.25rem",
 };
 
 const MARK: Partial<Record<Provider, { src: string; look: CSSProperties }>> = {
