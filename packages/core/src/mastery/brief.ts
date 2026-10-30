@@ -11,7 +11,7 @@ import type {
   SkillId,
 } from "@jadwigo/contracts";
 import { rank } from "./fold.ts";
-import type { FoldedMastery, GoalWithSkills, SkillCanDo } from "./index.ts";
+import type { FoldedMastery, GoalWithSkills, SkillCanDo } from "./types.ts";
 
 /** A skill's row, or the row of a skill with no evidence. */
 function rowOf(mastery: ReadonlyMap<SkillId, FoldedMastery>, code: SkillId) {

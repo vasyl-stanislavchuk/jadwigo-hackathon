@@ -10,8 +10,8 @@ import type {
 import { statusOf } from "./brief.ts";
 import { warsawDay } from "./days.ts";
 import { happenings, levelSteps, rank } from "./fold.ts";
-import type { DigestInput } from "./index.ts";
 import { sha256Hex } from "./sha256.ts";
+import type { DigestInput } from "./types.ts";
 
 type Digest = ReportDigest;
 

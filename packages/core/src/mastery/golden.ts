@@ -11,7 +11,7 @@ import {
   type Skill,
   type SkillKind,
 } from "@jadwigo/contracts";
-import type { FoldedMastery, GoalWithSkills, SkillEvent } from "./index.ts";
+import type { FoldedMastery, GoalWithSkills, SkillEvent } from "./types.ts";
 
 /**
  * The fold's golden cases (dl-e8ov.2.4): each names one rule of the levels and holds the fold to

@@ -1,16 +1,16 @@
 import type { AttemptId, MasteryLevel, SkillKind } from "@jadwigo/contracts";
 import { warsawDay } from "./days.ts";
 import { AGAIN, GOOD, HARD, type Review, replay } from "./fsrs.ts";
-import type { SkillEvent, SkillMastery } from "./index.ts";
+import type { SkillEvent, SkillMastery } from "./types.ts";
 
 /**
  * What one question did for one skill, decided by its first try: right without help, right with
  * help, wrong (a held-verdict miss included), or only skipped.
  */
-export type Outcome = "clean" | "assisted" | "miss" | "skip";
+type Outcome = "clean" | "assisted" | "miss" | "skip";
 
 /** One (attempt, seq) of one skill, as the level machine reads it. */
-export interface Happening {
+interface Happening {
   readonly attempt_id: AttemptId;
   readonly seq: number;
   readonly outcome: Outcome;
@@ -97,7 +97,7 @@ function happening(event: SkillEvent, outcome: Outcome): Happening {
  * skills only). A miss drops one level, never below attempted, at most once per attempt; a drop
  * to proficient restarts the 2 days. Assisted and skip change nothing.
  */
-export function levelOf(all: readonly Happening[], kind: SkillKind): MasteryLevel {
+function levelOf(all: readonly Happening[], kind: SkillKind): MasteryLevel {
   return levelSteps(all, kind).at(-1)?.level ?? "not_started";
 }
 
