@@ -1,4 +1,4 @@
-import type { RouteTag } from "@jadwigo/contracts";
+import type { RouteName, RouteTag } from "@jadwigo/contracts";
 
 /** What each section of the API reference holds, shown on its tag page. */
 const TAG_DESCRIPTIONS: Readonly<Record<RouteTag, string>> = {
@@ -23,6 +23,68 @@ export const REFERENCE_TAG_ORDER: readonly RouteTag[] = [
   "bank",
 ];
 
+/** Each section's name in the reference, in Title Case; the document's tags stay lowercase. */
+export const TAG_TITLES: Readonly<Record<RouteTag, string>> = {
+  health: "Health",
+  lessons: "Lessons",
+  attempts: "Attempts",
+  parents: "Parents",
+  bank: "Bank",
+};
+
+/**
+ * Each operation's short name in the sidebar and on its page, a verb first. The route's own
+ * summary, a full sentence, opens the operation's description instead.
+ */
+const OPERATION_TITLES: Readonly<Record<RouteName, string>> = {
+  health: "Check the API is up",
+  featuredLessons: "List featured lessons",
+  playgroundExamples: "List playground examples",
+  startAttempt: "Start an attempt",
+  getAttempt: "Read an attempt",
+  patchAttempt: "Pause or resume an attempt",
+  answer: "Send an answer",
+  help: "Ask for help",
+  getResults: "Read the results",
+  getReview: "Review a finished attempt",
+  getAssignmentAttempts: "List an assignment's attempts",
+  createAccount: "Create the account",
+  getMe: "Read the signed-in adult",
+  createLearner: "Add a child",
+  claimAttempt: "Claim an attempt",
+  getLearnerAttempts: "List a child's attempts",
+  getParentReview: "Review a child's attempt",
+  questionSearches: "Search the bank",
+  questionBody: "Read a question",
+};
+
+/**
+ * The order operations are listed in within their section: the order a client calls them. The
+ * reference lists a section's operations in path order, so paths are sorted by the first of their
+ * operations here; 2 operations on one path stay together.
+ */
+export const OPERATION_ORDER: readonly RouteName[] = [
+  "health",
+  "featuredLessons",
+  "playgroundExamples",
+  "startAttempt",
+  "getAssignmentAttempts",
+  "getAttempt",
+  "patchAttempt",
+  "answer",
+  "help",
+  "getResults",
+  "getReview",
+  "createAccount",
+  "getMe",
+  "createLearner",
+  "claimAttempt",
+  "getLearnerAttempts",
+  "getParentReview",
+  "questionSearches",
+  "questionBody",
+];
+
 /** The parts of an OpenAPI document this file reads and writes; the rest passes through as is. */
 export interface OpenApiDocument {
   readonly openapi: string;
@@ -42,14 +104,70 @@ export function operationCount(document: OpenApiDocument): number {
   );
 }
 
+interface Operation {
+  readonly operationId?: string;
+  readonly summary?: string;
+  readonly description?: string;
+  readonly tags?: readonly string[];
+  readonly [key: string]: unknown;
+}
+
+function isTag(name: string): name is RouteTag {
+  return Object.hasOwn(TAG_TITLES, name);
+}
+
+function isRouteName(name: string): name is RouteName {
+  return Object.hasOwn(OPERATION_TITLES, name);
+}
+
+/** One operation as the reference shows it: a short title, its sentence first, its tag titled. */
+function servedOperation(operation: Operation): Operation {
+  const id = operation.operationId ?? "";
+  if (!isRouteName(id)) return operation;
+  const description = [operation.summary, operation.description].filter(Boolean).join("\n\n");
+  return {
+    ...operation,
+    summary: OPERATION_TITLES[id],
+    ...(description ? { description } : {}),
+    tags: (operation.tags ?? []).map((tag) => (isTag(tag) ? TAG_TITLES[tag] : tag)),
+  };
+}
+
+/** Where a path sits in the reference: the place of its first operation in OPERATION_ORDER. */
+function pathRank(item: Readonly<Record<string, unknown>>): number {
+  const ranks = Object.entries(item)
+    .filter(([key]) => METHODS.has(key))
+    .map(([, operation]) =>
+      OPERATION_ORDER.indexOf((operation as Operation).operationId as RouteName),
+    )
+    .filter((rank) => rank >= 0);
+  return ranks.length > 0 ? Math.min(...ranks) : OPERATION_ORDER.length;
+}
+
 /**
  * The document docs.jadwigo.pl serves: the committed snapshot, which names no server, plus the
- * one server it is called at and a description on every tag, in REFERENCE_TAG_ORDER.
+ * one server it is called at, a titled and described section per tag in REFERENCE_TAG_ORDER, a
+ * short title on every operation, and paths in OPERATION_ORDER. The snapshot itself is unchanged.
  */
 export function servedDocument(snapshot: OpenApiDocument, apiBase: string): OpenApiDocument {
+  const paths = Object.entries(snapshot.paths)
+    .sort(([, a], [, b]) => pathRank(a) - pathRank(b))
+    .map(([path, item]) => [
+      path,
+      Object.fromEntries(
+        Object.entries(item).map(([key, value]) => [
+          key,
+          METHODS.has(key) ? servedOperation(value as Operation) : value,
+        ]),
+      ),
+    ]);
   return {
     ...snapshot,
     servers: [{ url: apiBase }],
-    tags: REFERENCE_TAG_ORDER.map((name) => ({ name, description: TAG_DESCRIPTIONS[name] })),
+    tags: REFERENCE_TAG_ORDER.map((name) => ({
+      name: TAG_TITLES[name],
+      description: TAG_DESCRIPTIONS[name],
+    })),
+    paths: Object.fromEntries(paths),
   };
 }
