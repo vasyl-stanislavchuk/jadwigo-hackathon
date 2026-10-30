@@ -36,7 +36,7 @@ export const TAG_TITLES: Readonly<Record<RouteTag, string>> = {
  * Each operation's short name in the sidebar and on its page, a verb first. The route's own
  * summary, a full sentence, opens the operation's description instead.
  */
-export const OPERATION_TITLES: Readonly<Record<RouteName, string>> = {
+const OPERATION_TITLES: Readonly<Record<RouteName, string>> = {
   health: "Check the API is up",
   featuredLessons: "List featured lessons",
   playgroundExamples: "List playground examples",
