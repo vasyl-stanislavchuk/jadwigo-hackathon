@@ -118,7 +118,10 @@ beforeEach(() => {
   window.sessionStorage.clear();
   window.history.replaceState(null, "", "/parent");
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 describe("ParentScreen", () => {
   it("says sign-in is off when the build has no Supabase project", () => {
@@ -475,5 +478,52 @@ describe("ParentScreen", () => {
     expect((await screen.findByRole("alert")).textContent).toBe(
       "That sign-in didn't finish. Try again, or sign in with a code by email.",
     );
+  });
+
+  it("puts a line and this page's link in Google's place inside Facebook's own browser", async () => {
+    vi.spyOn(navigator, "userAgent", "get").mockReturnValue(
+      "Mozilla/5.0 (Linux; Android 14; Pixel 8; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/128.0.6613.127 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/480.0.0.42.109;]",
+    );
+    const writeText = vi.fn(async (_text: string) => {});
+    vi.spyOn(navigator, "clipboard", "get").mockReturnValue({ writeText } as unknown as Clipboard);
+    window.history.replaceState(null, "", `/parent?claim=${ASSIGNMENT}`);
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams(`claim=${ASSIGNMENT}`)}
+        auth={signedOutAuth(["google", "facebook"])}
+        client={client({})}
+      />,
+    );
+    await screen.findByText("Wyślij kod");
+    expect(document.querySelector('[data-provider="google"]')).toBeNull();
+    expect(document.querySelector('[data-provider="facebook"]')).not.toBeNull();
+    expect(document.querySelector("[data-email]")).not.toBeNull();
+    expect(
+      screen.getByText(
+        "W tej aplikacji Google nie pozwala się zalogować. Aby kontynuować z Google, otwórz tę stronę w przeglądarce telefonu.",
+      ),
+    ).toBeTruthy();
+
+    await press("[data-copy-link]");
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/parent?claim=${ASSIGNMENT}`);
+    expect(await screen.findByText("Skopiowano. Wklej go w przeglądarce.")).toBeTruthy();
+  });
+
+  it("keeps the Google button in Safari", async () => {
+    vi.spyOn(navigator, "userAgent", "get").mockReturnValue(
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+    );
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={signedOutAuth(["google", "facebook"])}
+        client={client({})}
+      />,
+    );
+    await screen.findByText("Wyślij kod");
+    expect(document.querySelector('[data-provider="google"]')).not.toBeNull();
+    expect(document.querySelector("[data-open-in-browser]")).toBeNull();
   });
 });

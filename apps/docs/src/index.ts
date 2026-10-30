@@ -40,6 +40,7 @@ export const SIDEBAR: readonly SidebarGroup[] = [
       "design-system/primitives",
       "design-system/question-types",
       "design-system/copy",
+      "design-system/illustration",
     ],
   },
   {
