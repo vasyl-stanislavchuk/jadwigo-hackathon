@@ -592,6 +592,9 @@ function LiveStageOn({ q }: { q: StageQuestion }): JSX.Element {
                   items={options(q, state, picked)}
                   select="one"
                   layout="grid"
+                  // A laptop's choose step wears the key badges 1 to 4 (ChooseView), and the tile
+                  // keeps their room in its corner (styles/stage.css): without them it stands empty.
+                  numberKeys
                   chosen={picked === null ? [] : [picked]}
                   locked={ended}
                   clock={browserClock}
@@ -656,6 +659,8 @@ function ShellOn({ state, q }: { state: BandState; q: StageQuestion }): JSX.Elem
               layout="grid"
               chosen={picked === null ? [] : [picked]}
               items={options(q, state, picked)}
+              // The badges the live step wears, so the frozen tile draws them in the corner it keeps.
+              numberKeys
             />
           }
           action={{ ready: state !== "waiting", press: NOOP }}
