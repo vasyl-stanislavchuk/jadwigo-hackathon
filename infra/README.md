@@ -56,7 +56,7 @@ A merge deploys nothing. The owner deploys by hand
 | Command | What it does | Who |
 | --- | --- | --- |
 | `make -C infra fmt validate` | format check and validate, no AWS | anyone, CI |
-| `make -C infra test` | `terraform/tests/` against mock providers, no AWS: `modules/site` keeps jadwigo.pl's names and gives the docs theirs (`dl-5ssh.90.17`) | anyone |
+| `make -C infra test` | `terraform/tests/` against mock providers, no AWS: `modules/site` keeps jadwigo.pl's names and gives the docs theirs (`dl-5ssh.90.17`), and the root planned with `prod.tfvars` puts `auth.jadwigo.pl` in jadwigo.pl's zone (`dl-e8ov.2.77`) | anyone |
 | `make -C infra plan` | init against the state bucket, then plan prod | the owner |
 | `make -C infra apply` | init, then apply prod | the owner |
 | `make -C infra site-deploy` | build `apps/site`, check `dist/`, sync it to the bucket, invalidate | the owner |
@@ -68,15 +68,6 @@ A merge deploys nothing. The owner deploys by hand
 | `make -C infra auth-apply` | write those settings through the Management API | the owner |
 | `supabase-auth/domain.sh status` | prod's custom domain `auth.jadwigo.pl`: its state and the TXT records for `prod.tfvars` | anyone with the token |
 | `supabase-auth/domain.sh create`, `reverify`, `activate`, `issuer` | create the paid domain, verify it, switch Auth onto it, and check a real token's `iss` and signing key against the authorizer (`docs/runbooks/social-sign-in.md`, "The custom domain") | the owner |
-
-**The app's build settings are committed, in `web-build/<env>.env`** (`dl-e8ov.2.64`). They are the
-Supabase URL, its publishable key and the sign-in providers (`JW_SUPABASE_URL`, `JW_SUPABASE_KEY`,
-`JW_SUPABASE_PROVIDERS`, a comma list of `google` and `facebook`). A browser holds all of them, so none
-is secret. `web-build` sources the file over the shell's environment, so a build ships what is
-committed and nothing an exported variable left behind. `prod.env` leaves all 3 empty: prod has no
-sign-in until the consent text (`dl-e8ov.2.9`) lands, and no provider button until `dl-e8ov.2.8` and
-`dl-e8ov.2.58`. Its comment names the values for that day. `tools/src/web-build.test.ts` checks what
-the build receives.
 
 **The app's build settings are committed, in `web-build/<env>.env`** (`dl-e8ov.2.64`). They are the
 Supabase URL, its publishable key and the sign-in providers (`JW_SUPABASE_URL`, `JW_SUPABASE_KEY`,
