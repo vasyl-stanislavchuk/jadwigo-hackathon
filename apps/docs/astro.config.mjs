@@ -38,6 +38,8 @@ export default defineConfig({
     starlight({
       title: "Jadwigo docs",
       description: "How to call Jadwigo's API and MCP server, and how its design system is built.",
+      // The crown favicon (dl-5ssh.90.34); public/ holds what tools/src/brand-icons.ts writes.
+      favicon: "/favicon.svg",
       // The app's design system: Andika, Zeszyt's roles, and the --sl-* names mapped onto them
       // (src/styles/theme.css). Its night roles sit on [theme="dark"], which the bridge copies
       // from Starlight's data-theme before the first paint.
@@ -68,6 +70,11 @@ export default defineConfig({
         { tag: "script", content: SIDEBAR_STATE },
         // Search opened before Pagefind's box exists still lands the cursor in it (search-focus.ts).
         { tag: "script", content: SEARCH_FOCUS },
+        {
+          tag: "link",
+          attrs: { rel: "icon", href: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+        },
+        { tag: "link", attrs: { rel: "apple-touch-icon", href: "/apple-touch-icon.png" } },
         {
           tag: "link",
           attrs: {
