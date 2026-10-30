@@ -39,7 +39,11 @@ files agents read: `/llms.txt`, `/openapi.json` and `/mcp-tools.json`.
    make -C infra apply
    ```
 
-   The certificate and the distribution take 10 to 15 minutes. Until step 3, the docs answer 404.
+   The certificate and the distribution take 10 to 15 minutes. Until step 3 the bucket is empty, and
+   every path, `/` included, answers `403` with S3's XML `AccessDenied`: CloudFront may not list the
+   bucket, so a missing file reads as denied, and the `/404.html` it falls back to is missing too.
+   That is expected, not a broken policy. If it still answers `403` after step 3, check that the bucket
+   has `index.html` (`aws --profile sergii s3 ls s3://jadwigo-docs-prod-843109108289/index.html`).
 
 3. Publish:
 
