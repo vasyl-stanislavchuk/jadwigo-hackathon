@@ -81,7 +81,22 @@ The token is `SUPABASE_ACCESS_TOKEN`, else the line in `~/.config/jadwigo/supaba
 curl on stdin and is never printed. Dev has no hosted app yet (`packages/config` names prod only), so
 its redirect list is any local port on `127.0.0.1` and `localhost`.
 
-Google and Facebook sign-in add their provider settings here (`dl-e8ov.2.52`). The owner's steps in Google Cloud, Meta and Supabase are `docs/runbooks/social-sign-in.md`.
+Google and Facebook sign-in add their provider settings here (`dl-e8ov.2.52`). The client ids and the
+`enabled` flags sit in `settings`. A provider's secret never sits in a file: the env file's `secrets`
+names a keychain item (account `jadwigo`) for each one, and the script reads it when it needs it:
+
+```json
+"settings": { "external_google_enabled": true, "external_google_client_id": "<id>", "external_google_email_optional": false },
+"secrets": { "external_google_secret": "jadwigo-google-oauth-secret-dev" }
+```
+
+A secret reaches curl on stdin inside the PATCH body. The diff shows it as `(not set) -> (set)`,
+`(another value) -> (set)` or `missing from the keychain`, never its value: the Management API answers
+a set secret with its SHA-256, which the script compares with the keychain value's. `diff` exits 1
+when an item is missing, and `apply` then sends nothing. The script refuses a `*_secret` key in
+`settings` and any `*_email_optional` that is not false. `tools/src/supabase-auth.test.ts` runs it
+against a fake Management API (`SUPABASE_API_URL`). The owner's steps in Google Cloud, Meta and
+Supabase are `docs/runbooks/social-sign-in.md`.
 
 The state bucket `jadwigo-terraform-state-843109108289` is created by hand before the first `init` (`dl-5ssh.9`):
 
