@@ -8,9 +8,9 @@
 // Run: bun tools/builder/launch.ts [claude args...]
 import { execFile, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { claudeBin, claudeConfigDir, draftsDir } from "./config.ts";
+import { claudeBin, claudeConfigDir, claudeProfile, draftsDir, sessionEnv } from "./config.ts";
 import { type BuilderSession, sessionFile } from "./drafts.ts";
 import { CHANNELS_FLAG, claudeBelow, loadsThisChannel, psTable, SERVER_NAME } from "./flag.ts";
 
@@ -61,29 +61,82 @@ export function registerLine(repo: string): string {
   return `claude mcp add-json --scope user ${SERVER_NAME} '${config}'`;
 }
 
+/** What `claude mcp get <name>` said: not there, or there with its Args line. */
+export type Registration = { found: false } | { found: true; args: string };
+
+/** The Args line of `claude mcp get`'s answer. */
+export function argsOf(output: string): string {
+  return /^\s*Args:\s*(.*)$/m.exec(output)?.[1]?.trim() ?? "";
+}
+
 /**
- * Why the session cannot work, or "" when it can. Each line is one the owner acts on: a server that
- * is not registered is never started, so the page's comments would go nowhere.
+ * jw's own registration line, as apps/cli/README.md writes it under "Registering it" (the name
+ * before its -e flags, dl-e8ov.5.38.9), so the launcher's hint and the README never drift.
  */
-export function missing(registered: { builder: boolean; jadwigo: boolean }, repo: string): string {
+export function jadwigoLine(readme: string): string {
+  const block = /```sh\n(claude mcp add [\s\S]*?)\n```/.exec(readme)?.[1];
+  return block ?? "";
+}
+
+const indent = (text: string) =>
+  text
+    .split("\n")
+    .map((line) => `  ${line}`)
+    .join("\n");
+
+/**
+ * Why the session cannot work, or "" when it can, then any note to act on later. Each line is one
+ * the owner acts on: a server that is not registered is never started, so the page's comments
+ * would go nowhere. A registration lives in one Claude Code profile, so the refusal names the one
+ * it checked.
+ */
+export function registrationHints(
+  regs: { builder: Registration; jadwigo: Registration },
+  repo: string,
+  readme: string,
+  profile: { file: string; from: string },
+): { refuse: string; note: string } {
   const lines: string[] = [];
-  if (!registered.builder) {
+  if (!regs.builder.found) {
     lines.push(
-      `${SERVER_NAME} is not registered with Claude Code, so comments from the page would reach no one.`,
-      "Register it once, then run make builder again:",
+      `${SERVER_NAME} is not registered, so comments from the page would reach no one. Register it:`,
       "",
-      `  ${registerLine(repo)}`,
+      indent(registerLine(repo)),
       "",
     );
   }
-  if (!registered.jadwigo) {
+  if (!regs.jadwigo.found) {
+    const line = jadwigoLine(readme);
     lines.push(
-      "jadwigo (jw mcp serve) is not registered with Claude Code, so the session cannot draft a lesson.",
-      `Register it with the line in ${join(repo, "apps", "cli", "README.md")}, under "Registering it".`,
+      "jadwigo (jw mcp serve) is not registered, so the session cannot draft a lesson. Register it",
+      `as ${join(repo, "apps", "cli", "README.md")} does, with your paths:`,
+      "",
+      indent(line || `the line under "Registering it" in apps/cli/README.md`),
       "",
     );
   }
-  return lines.join("\n");
+  const refuse = lines.length
+    ? [
+        `make builder checked the Claude Code profile at ${profile.file} (${profile.from}).`,
+        "A registration counts only in the profile the session runs in: run these lines in this same",
+        "terminal, or set CLAUDE_CONFIG_DIR to the profile that has them, then run make builder again.",
+        "",
+        ...lines,
+      ].join("\n")
+    : "";
+  const channel = join(repo, "tools", "builder", "channel.ts");
+  const note =
+    regs.builder.found && !regs.builder.args.includes(channel)
+      ? [
+          `${SERVER_NAME} runs ${regs.builder.args || "another server"}, not this checkout's ${channel}.`,
+          "To point it here, remove it first (add-json does not overwrite a name), then add it:",
+          "",
+          `  claude mcp remove --scope user ${SERVER_NAME}`,
+          indent(registerLine(repo)),
+          "",
+        ].join("\n")
+      : "";
+  return { refuse, note };
 }
 
 /** The refusal for a started claude, or "" when it loaded the channel or no claude was found. */
@@ -96,36 +149,35 @@ export function refusal(command: string | null): string {
   ].join("\n");
 }
 
-/** Whether `claude mcp get <name>` finds the server; exit 0 means registered. */
-function registered(bin: string, name: string): Promise<boolean> {
+/** What `claude mcp get <name>` says; exit 0 means registered. */
+function registration(bin: string, name: string): Promise<Registration> {
   return new Promise((done) => {
-    execFile(bin, ["mcp", "get", name], { cwd: REPO }, (error) => done(!error));
+    execFile(bin, ["mcp", "get", name], { cwd: REPO }, (error, stdout) =>
+      done(error ? { found: false } : { found: true, args: argsOf(String(stdout)) }),
+    );
   });
 }
 
 async function main() {
   const bin = claudeBin();
   const [builder, jadwigo] = await Promise.all([
-    registered(bin, SERVER_NAME),
-    registered(bin, "jadwigo"),
+    registration(bin, SERVER_NAME),
+    registration(bin, "jadwigo"),
   ]);
-  const why = missing({ builder, jadwigo }, REPO);
-  if (why) {
-    console.error(why);
+  const readme = readFileSync(join(REPO, "apps", "cli", "README.md"), "utf8");
+  const hints = registrationHints({ builder, jadwigo }, REPO, readme, claudeProfile());
+  if (hints.refuse) {
+    console.error(hints.refuse);
     process.exit(1);
   }
+  if (hints.note) console.error(hints.note);
 
   const dir = draftsDir();
   const sessionId = randomUUID();
   const path = writeSession(dir, sessionRecord(sessionId, REPO, claudeConfigDir(), new Date()));
   console.error(`make builder: session ${sessionId}, written to ${path}`);
 
-  // The subscription runs the session: an API key in the environment would bill it instead.
-  const env: Record<string, string | undefined> = { ...process.env };
-  delete env["ANTHROPIC_API_KEY"];
-  env["JADWIGO_BUILDER_SESSION"] = sessionId;
-  env["JADWIGO_DRAFTS_DIR"] = dir;
-
+  const env = sessionEnv(sessionId, dir);
   const child = spawn(bin, claudeArgs(sessionId, process.argv.slice(2)), {
     cwd: REPO,
     env,
