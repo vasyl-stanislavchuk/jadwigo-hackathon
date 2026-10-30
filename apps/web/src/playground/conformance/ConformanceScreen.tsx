@@ -9,8 +9,11 @@
  * no media URL the page refuses to run, since every picture would read as missing. Before any of
  * that, each item is compiled strictly (`contract`, strict.ts) and its key's own answer judged
  * (`key-grades`, keys.ts, dl-a38n.32.2): a finding of either comes first in the item's findings.
+ * Each item is drawn in its own language (dl-a38n.32.3), one lesson file per language; an item
+ * that names none the app speaks is `render-unplayable`.
  */
 
+import type { Language } from "@jadwigo/copy";
 import { type Finding, parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import {
   type Clock,
@@ -26,7 +29,15 @@ import { mediaUrl, NO_MEDIA_URL } from "../../media.ts";
 import { lessonFileToSpecs } from "../lesson/adapter.ts";
 import { checkBatch, unplayable } from "./batch.ts";
 import { ItemBoundary } from "./ItemBoundary.tsx";
-import { type ConvertedItem, ITEMS_PATH, itemsOf, lessonFileOf, plays, setIdOf } from "./items.ts";
+import {
+  type ConvertedItem,
+  ITEMS_PATH,
+  itemsOf,
+  languageOf,
+  lessonFileOf,
+  plays,
+  setIdOf,
+} from "./items.ts";
 import { keyFindings } from "./keys.ts";
 import { compileStrictly } from "./strict.ts";
 
@@ -66,9 +77,15 @@ function compiled(item: ConvertedItem): Finding[] {
   return question === null ? findings : keyFindings(item.id, question);
 }
 
+/** A spec to draw, in the language of the item it came from. */
+interface Drawn {
+  readonly spec: FamilySpec;
+  readonly language: Language;
+}
+
 /** Every item that plays, each as a spec to draw or a verdict already reached. */
 function prepare(items: readonly ConvertedItem[]): {
-  specs: FamilySpec[];
+  specs: Drawn[];
   early: ItemResult[];
   byId: Map<string, ConvertedItem>;
   before: Map<string, Finding[]>;
@@ -76,19 +93,31 @@ function prepare(items: readonly ConvertedItem[]): {
   const playing = items.filter(plays);
   const byId = new Map(playing.map((i) => [i.id, i]));
   const before = new Map(playing.map((i) => [i.id, compiled(i)]));
-  const { file, skipped } = parseLessonFileLenient(lessonFileOf(playing));
-  const steps = lessonFileToSpecs(file, undefined, skipped).flatMap((p) => p.steps);
-  const specs: FamilySpec[] = [];
+  const specs: Drawn[] = [];
   const early: ItemResult[] = [];
-  for (const step of steps) {
-    if (step.kind === "question") specs.push(step.spec);
-    else
+  const byLanguage = new Map<Language, ConvertedItem[]>();
+  for (const item of playing) {
+    const language = languageOf(item);
+    if (language === null) {
+      const reason = `its language ${JSON.stringify(item.language ?? null)} is not one the app speaks.`;
       early.push(
-        resultOf(byId.get(step.step_id), step.step_id, [
-          ...(before.get(step.step_id) ?? []),
-          unplayable(step.step_id, step.reason),
-        ]),
+        resultOf(item, item.id, [...(before.get(item.id) ?? []), unplayable(item.id, reason)]),
       );
+    } else byLanguage.set(language, [...(byLanguage.get(language) ?? []), item]);
+  }
+  for (const [language, group] of byLanguage) {
+    const { file, skipped } = parseLessonFileLenient(lessonFileOf(group, language));
+    const steps = lessonFileToSpecs(file, undefined, skipped).flatMap((p) => p.steps);
+    for (const step of steps) {
+      if (step.kind === "question") specs.push({ spec: step.spec, language });
+      else
+        early.push(
+          resultOf(byId.get(step.step_id), step.step_id, [
+            ...(before.get(step.step_id) ?? []),
+            unplayable(step.step_id, step.reason),
+          ]),
+        );
+    }
   }
   return { specs, early, byId, before };
 }
@@ -140,7 +169,7 @@ export function ConformanceScreen(): ReactElement {
     const drawn = prepared.specs.slice(start, start + BATCH);
     if (drawn.length === 0) return;
     let live = true;
-    const ids = drawn.map((spec) => spec.id);
+    const ids = drawn.map((d) => d.spec.id);
     void checkBatch(ids, roots.current).then((findings) => {
       if (!live) return;
       const found = ids.map((id) =>
@@ -177,7 +206,7 @@ export function ConformanceScreen(): ReactElement {
         </p>
       </header>
       <div className="grid gap-3 md:grid-cols-2">
-        {batch.map((spec) => (
+        {batch.map(({ spec, language }) => (
           <section
             key={spec.id}
             aria-label={`Item ${spec.id}`}
@@ -192,7 +221,7 @@ export function ConformanceScreen(): ReactElement {
               <LessonTheme>
                 <FamilyView
                   spec={pageSpec(spec) as never}
-                  language="pl"
+                  language={language}
                   category="child"
                   clock={clock}
                   mode={ViewMode.Preview}
