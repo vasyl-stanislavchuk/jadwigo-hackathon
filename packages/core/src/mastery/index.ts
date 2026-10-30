@@ -1,5 +1,4 @@
 import type {
-  AttemptId,
   Brief,
   GoalProgress,
   GoalView,
@@ -10,6 +9,12 @@ import type {
   SkillId,
   SkillKind,
 } from "@jadwigo/contracts";
+import { linesOf, makeBrief, statusOf, viewOf } from "./brief.ts";
+import { makeDigest } from "./digest.ts";
+
+export { DIGEST_RULES_VERSION } from "./digest.ts";
+
+import { canonicalOf, eventsBySkill } from "./events.ts";
 import { foldSkill } from "./fold.ts";
 import type {
   DigestInput,
@@ -36,17 +41,12 @@ export type {
   SkillMastery,
 } from "./types.ts";
 
-function notBuilt(name: string): never {
-  throw new Error(`not built: core lane (${name})`);
-}
-
 /**
  * The canonical code for `code`: itself when a skill has it, the skill whose `aliases` hold it,
  * else `code` unchanged. An unknown code is kept under its own string, never dropped.
  */
 export function resolveSkill(code: SkillId, skills: readonly Skill[]): SkillId {
-  if (skills.some((s) => s.code === code)) return code;
-  return skills.find((s) => s.aliases.includes(code))?.code ?? code;
+  return canonicalOf(code, skills);
 }
 
 /** One skill's level, `needs_attention`, tries, dates and FSRS card from its events. */
@@ -64,53 +64,25 @@ export function foldLearner(
   skills: readonly Skill[],
   now: Date,
 ): FoldedMastery[] {
-  const canonical = new Map<SkillId, SkillId>();
-  const resolved = evidence.map((row) => {
-    let code = canonical.get(row.skill_code);
-    if (code === undefined) {
-      code = resolveSkill(row.skill_code, skills);
-      canonical.set(row.skill_code, code);
-    }
-    return { ...row, skill_code: code };
-  });
-  const codesOf = new Map<AttemptId, Set<SkillId>>();
-  const reviewed = new Set<AttemptId>();
-  for (const row of resolved) {
-    const codes = codesOf.get(row.attempt_id) ?? new Set<SkillId>();
-    codes.add(row.skill_code);
-    codesOf.set(row.attempt_id, codes);
-    if (row.lesson_kind === "review") reviewed.add(row.attempt_id);
-  }
-  const bySkill = new Map<SkillId, SkillEvent[]>();
-  for (const row of resolved) {
-    const mixed = (codesOf.get(row.attempt_id)?.size ?? 0) >= 2 || reviewed.has(row.attempt_id);
-    const events = bySkill.get(row.skill_code) ?? [];
-    events.push({ ...row, mixed });
-    bySkill.set(row.skill_code, events);
-  }
-  return [...bySkill.keys()].sort().map((skill_code) => {
-    // A code no catalogue skill holds has no kind; it is read as an accuracy skill.
-    const kind = skills.find((s) => s.code === skill_code)?.kind ?? "accuracy";
-    return { skill_code, ...masteryOf(bySkill.get(skill_code) ?? [], kind, now) };
-  });
+  return eventsBySkill(evidence, skills).map(({ skill_code, kind, events }) => ({
+    skill_code,
+    ...masteryOf(events, kind, now),
+  }));
 }
 
 /** What the next lesson should hold: reteach, review, new, recheck and school (nothing recorded). */
 export function brief(
-  _goals: readonly GoalWithSkills[],
-  _skills: readonly Skill[],
-  _mastery: readonly FoldedMastery[],
-  _now: Date,
+  goals: readonly GoalWithSkills[],
+  skills: readonly Skill[],
+  mastery: readonly FoldedMastery[],
+  now: Date,
 ): Brief {
-  return notBuilt("brief");
+  return makeBrief(goals, skills, mastery, now);
 }
 
 /** Where a goal stands for the parent, from its skills' mastery. */
-export function goalStatus(
-  _goal: GoalWithSkills,
-  _mastery: readonly FoldedMastery[],
-): GoalProgress {
-  return notBuilt("goalStatus");
+export function goalStatus(goal: GoalWithSkills, mastery: readonly FoldedMastery[]): GoalProgress {
+  return statusOf(goal, mastery);
 }
 
 /**
@@ -118,26 +90,26 @@ export function goalStatus(
  * learner can do now, what needs attention, and what the brief puts next.
  */
 export function goalView(
-  _goal: GoalWithSkills,
-  _mastery: readonly FoldedMastery[],
-  _brief: Brief,
+  goal: GoalWithSkills,
+  mastery: readonly FoldedMastery[],
+  brief: Brief,
 ): GoalView {
-  return notBuilt("goalView");
+  return viewOf(goal, mastery, brief);
 }
 
 /** The reviewed can-do lines of the skills the learner can do, in `language`. */
 export function canDoLines(
-  _mastery: readonly FoldedMastery[],
-  _skills: readonly Skill[],
-  _language: Language,
+  mastery: readonly FoldedMastery[],
+  skills: readonly Skill[],
+  language: Language,
 ): SkillCanDo[] {
-  return notBuilt("canDoLines");
+  return linesOf(mastery, skills, language);
 }
 
 /** Code's half of a report, and the hash of what it read: the same inputs give the same hash. */
-export function dreamDigest(_input: DigestInput): {
+export function dreamDigest(input: DigestInput): {
   readonly digest: ReportDigest;
   readonly inputs_hash: string;
 } {
-  return notBuilt("dreamDigest");
+  return makeDigest(input);
 }
