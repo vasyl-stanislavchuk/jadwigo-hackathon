@@ -6,7 +6,9 @@
  * `window.__jadwigoConformance.done`, and reads the results. It fails closed (dl-a38n.32.1): an
  * item the adapter cannot draw, the page never mounts or whose view throws is an error finding of
  * its own, `render-unplayable`; a batch's pictures settle before the rules run (batch.ts); and with
- * no media URL the page refuses to run, since every picture would read as missing.
+ * no media URL the page refuses to run, since every picture would read as missing. Before any of
+ * that, each item is compiled strictly (`contract`, strict.ts) and its key's own answer judged
+ * (`key-grades`, keys.ts, dl-a38n.32.2): a finding of either comes first in the item's findings.
  */
 
 import { type Finding, parseLessonFileLenient } from "@jadwigo/lesson-import/file";
@@ -25,6 +27,8 @@ import { lessonFileToSpecs } from "../lesson/adapter.ts";
 import { checkBatch, unplayable } from "./batch.ts";
 import { ItemBoundary } from "./ItemBoundary.tsx";
 import { type ConvertedItem, ITEMS_PATH, itemsOf, lessonFileOf, plays, setIdOf } from "./items.ts";
+import { keyFindings } from "./keys.ts";
+import { compileStrictly } from "./strict.ts";
 
 export const CONFORMANCE_PATH = "/playground/conformance";
 
@@ -56,14 +60,22 @@ declare global {
   }
 }
 
+/** The checks made before an item is drawn: the strict compile, then whether its key grades. */
+function compiled(item: ConvertedItem): Finding[] {
+  const { question, findings } = compileStrictly(item);
+  return question === null ? findings : keyFindings(item.id, question);
+}
+
 /** Every item that plays, each as a spec to draw or a verdict already reached. */
 function prepare(items: readonly ConvertedItem[]): {
   specs: FamilySpec[];
   early: ItemResult[];
   byId: Map<string, ConvertedItem>;
+  before: Map<string, Finding[]>;
 } {
   const playing = items.filter(plays);
   const byId = new Map(playing.map((i) => [i.id, i]));
+  const before = new Map(playing.map((i) => [i.id, compiled(i)]));
   const { file, skipped } = parseLessonFileLenient(lessonFileOf(playing));
   const steps = lessonFileToSpecs(file, undefined, skipped).flatMap((p) => p.steps);
   const specs: FamilySpec[] = [];
@@ -72,10 +84,13 @@ function prepare(items: readonly ConvertedItem[]): {
     if (step.kind === "question") specs.push(step.spec);
     else
       early.push(
-        resultOf(byId.get(step.step_id), step.step_id, [unplayable(step.step_id, step.reason)]),
+        resultOf(byId.get(step.step_id), step.step_id, [
+          ...(before.get(step.step_id) ?? []),
+          unplayable(step.step_id, step.reason),
+        ]),
       );
   }
-  return { specs, early, byId };
+  return { specs, early, byId, before };
 }
 
 function resultOf(
@@ -129,11 +144,10 @@ export function ConformanceScreen(): ReactElement {
     void checkBatch(ids, roots.current).then((findings) => {
       if (!live) return;
       const found = ids.map((id) =>
-        resultOf(
-          prepared.byId.get(id),
-          id,
-          findings.get(id) ?? [unplayable(id, "it was not checked.")],
-        ),
+        resultOf(prepared.byId.get(id), id, [
+          ...(prepared.before.get(id) ?? []),
+          ...(findings.get(id) ?? [unplayable(id, "it was not checked.")]),
+        ]),
       );
       const next = start + BATCH;
       setState((s) => ({
