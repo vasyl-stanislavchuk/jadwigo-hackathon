@@ -60,6 +60,7 @@ function RungsStrip({ spec }: { spec: FamilySpec }): ReactElement {
 
 export function StepCard({
   n,
+  draft_id,
   spec,
   findings,
   showKey,
@@ -68,6 +69,8 @@ export function StepCard({
 }: {
   /** The step's place in the lesson, from 1. */
   n: number;
+  /** The draft on the page, so a comment goes to it and not to the newest. */
+  draft_id: string;
   spec: FamilySpec;
   /** The check's findings on this step, pinned under it. */
   findings: readonly Finding[];
@@ -134,16 +137,18 @@ export function StepCard({
           )}
         </LessonTheme>
       </div>
-      <CommentsSlot step_id={spec.id} />
+      <CommentsSlot draft_id={draft_id} step_id={spec.id} />
     </section>
   );
 }
 
 export function SkippedCard({
+  draft_id,
   step_id,
   reason,
   findings,
 }: {
+  draft_id: string;
   step_id: string;
   reason: string;
   findings: readonly Finding[];
@@ -159,7 +164,7 @@ export function SkippedCard({
       <h3 className="font-semibold">{step_id}</h3>
       <p className="text-muted-foreground text-sm">Not drawn: {reason}</p>
       <FindingList findings={findings} label={`Findings on ${step_id}`} />
-      <CommentsSlot step_id={step_id} />
+      <CommentsSlot draft_id={draft_id} step_id={step_id} />
     </section>
   );
 }

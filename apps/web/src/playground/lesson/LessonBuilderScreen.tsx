@@ -76,6 +76,7 @@ function LessonDraft({
         appears here as it is drafted.
       </p>
     );
+  const { draft_id } = message;
   const read = readDraft(message.draft);
   if ("error" in read)
     return (
@@ -111,6 +112,7 @@ function LessonDraft({
             return step.kind === "question" ? (
               <StepCard
                 key={step.step_id}
+                draft_id={draft_id}
                 n={n}
                 spec={step.spec}
                 findings={of(step.step_id)}
@@ -121,6 +123,7 @@ function LessonDraft({
             ) : (
               <SkippedCard
                 key={step.step_id}
+                draft_id={draft_id}
                 step_id={step.step_id}
                 reason={step.reason}
                 findings={of(step.step_id)}
@@ -182,7 +185,9 @@ export function LessonBuilderScreen({
       ) : (
         <LessonDraft message={message} showKey={showKey} />
       )}
-      <CommentsSlot />
+      <CommentsSlot
+        {...(message === null || message.draft_id === null ? {} : { draft_id: message.draft_id })}
+      />
       <ActivitySlot />
     </div>
   );
