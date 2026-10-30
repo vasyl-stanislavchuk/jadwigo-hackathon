@@ -11,7 +11,7 @@ import type { Store } from "@jadwigo/store";
  * Called inside the request's unit after a real attempt with a learner finishes, after a claim,
  * and in `createGoal` (`rebuildAfter`), and its steps run in `createReport`.
  */
-export async function rebuildMastery(
+async function rebuildMastery(
   store: Store,
   learner: LearnerId,
   now: Date,
