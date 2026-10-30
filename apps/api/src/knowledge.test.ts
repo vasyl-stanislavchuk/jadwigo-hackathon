@@ -1,22 +1,27 @@
-// The learner knowledge routes on InMemoryStore (step 0 of wave dl-e8ov.5-1). The routes that fold
-// (skills, goals, reports' create) wait on core's stubs, and PostgresStore's methods on the
-// store-api lane, which adds the route suite on both stores; this pins what step 0 serves.
+// The learner knowledge routes on InMemoryStore: the route suite, with core's fold, brief and digest
+// stood in by testing/fold.ts (src/knowledge.int.test.ts runs it on PostgresStore), and what
+// only the in-memory store can set up.
 import { randomUUID } from "node:crypto";
 import {
   type ErrorEnvelope,
   FEATURED_POD_ID,
-  ID_PREFIXES,
-  idOf,
   type LearnerReports,
   type LearnerSnapshot,
   type Me,
-  type RouteName,
   type Skills,
 } from "@jadwigo/contracts";
 import { InMemoryStore } from "@jadwigo/store";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { pathOf, seeded } from "./testing/client.ts";
+import { knowledgeSuite } from "./testing/knowledge.suite.ts";
 import { bearerOf, signToken } from "./testing/token.ts";
+
+vi.mock("@jadwigo/core", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@jadwigo/core")>()),
+  ...(await import("./testing/fold.ts")).STAND_IN_CORE,
+}));
+
+knowledgeSuite("InMemoryStore", () => new InMemoryStore());
 
 async function family(store = new InMemoryStore()) {
   const s = seeded(store);
@@ -70,39 +75,5 @@ describe("the learner knowledge routes on InMemoryStore", () => {
       pathOf("getLearnerReports", { id: f.learner }),
     );
     expect(reports).toEqual({ status: 200, body: { reports: [] } });
-  });
-
-  it("answers another pod's learner 404 on every learner route", async () => {
-    const owner = await family();
-    const other = await family(owner.store);
-    const routes: [RouteName, string, unknown][] = [
-      ["getLearnerSkills", "GET", undefined],
-      ["getLearnerGoals", "GET", undefined],
-      ["createGoal", "POST", { name: "x", skill_codes: [] }],
-      ["getLearnerReports", "GET", undefined],
-      ["createReport", "POST", {}],
-    ];
-    for (const [route, method, body] of routes) {
-      const reply = await other.call<ErrorEnvelope>(
-        method,
-        pathOf(route, { id: owner.learner }),
-        body,
-      );
-      expect([route, reply.status, reply.body.error.type]).toEqual([route, 404, "NotFound"]);
-    }
-    const goal = idOf(ID_PREFIXES.goal, randomUUID());
-    const report = idOf(ID_PREFIXES.learner_report, randomUUID());
-    const patches: [RouteName, Record<string, string>, unknown][] = [
-      ["patchGoal", { id: owner.learner, goal }, { status: "paused" }],
-      [
-        "patchReport",
-        { id: owner.learner, report },
-        { decisions: [{ proposal_id: "p1", decision: "accepted" }] },
-      ],
-    ];
-    for (const [route, params, body] of patches) {
-      const reply = await other.call<ErrorEnvelope>("PATCH", pathOf(route, params), body);
-      expect([route, reply.status, reply.body.error.type]).toEqual([route, 404, "NotFound"]);
-    }
   });
 });

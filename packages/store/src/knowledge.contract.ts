@@ -292,10 +292,78 @@ export function learnerKnowledgeContract(name: string, make: () => Promise<Store
       ).rejects.toMatchObject(NOT_FOUND);
       await expect(store.putReport(other.pod, report(a.learner))).rejects.toMatchObject(NOT_FOUND);
     });
+
+    it("writes a curriculum once per code and version, each pod its own", async () => {
+      const store = await make();
+      const a = await family(store);
+      const b = await family(store);
+      const curriculum = curriculumOf(crypto.randomUUID().slice(0, 8));
+
+      const written = await store.putCurriculum(a.pod, curriculum);
+      expect(written).toMatchObject({ ...curriculum, pod_id: a.pod });
+      expect(await store.putCurriculum(a.pod, curriculum)).toEqual(written);
+      const next = await store.putCurriculum(a.pod, { ...curriculum, version: "2024" });
+      expect(next.id).not.toBe(written.id);
+      const theirs = await store.putCurriculum(b.pod, curriculum);
+      expect([theirs.pod_id, theirs.id === written.id]).toEqual([b.pod, false]);
+    });
+
+    it("writes a curriculum's topics once each, in order, and refuses another pod's curriculum", async () => {
+      const store = await make();
+      const a = await family(store);
+      const curriculum = await store.putCurriculum(
+        a.pod,
+        curriculumOf(crypto.randomUUID().slice(0, 8)),
+      );
+      const topics = [
+        {
+          curriculum_id: curriculum.id,
+          code: "II.3.3",
+          area: "II.3",
+          text: "Mnoży w zakresie 100.",
+        },
+        { curriculum_id: curriculum.id, code: "II.4.1", area: "II.4", text: "Mierzy długość." },
+      ];
+
+      const written = await store.putTopics(a.pod, topics);
+      expect(written.map((t) => [t.code, t.pod_id, t.curriculum_id])).toEqual([
+        ["II.3.3", a.pod, curriculum.id],
+        ["II.4.1", a.pod, curriculum.id],
+      ]);
+      expect(
+        await store.putTopics(
+          a.pod,
+          [topics[1], topics[0]].flatMap((t) => (t ? [t] : [])),
+        ),
+      ).toEqual([written[1], written[0]]);
+      const other = await family(store);
+      await expect(store.putTopics(other.pod, topics)).rejects.toMatchObject(NOT_FOUND);
+    });
+
+    it("holds a learner of the pod, and refuses another pod's", async () => {
+      const store = await make();
+      const a = await family(store);
+      const other = await family(store);
+
+      await expect(store.unit(() => store.lockLearner(a.pod, a.learner))).resolves.toBeUndefined();
+      await expect(store.lockLearner(other.pod, a.learner)).rejects.toMatchObject(NOT_FOUND);
+    });
   });
 }
 
 const NOT_FOUND = { type: "NotFound" };
+
+/** A made-up curriculum under a code no other run holds. */
+function curriculumOf(run: string) {
+  return {
+    code: `test-podstawa-${run}`,
+    name: "Podstawa programowa, klasy 1-3",
+    country: "PL",
+    version: "2017",
+    language: "pl" as const,
+    source_url: null,
+  };
+}
 
 const CAN_DO = {
   pl: { child: "Umiem mnożyć przez 7.", parent: "Mnoży przez 7.", reviewed: false },

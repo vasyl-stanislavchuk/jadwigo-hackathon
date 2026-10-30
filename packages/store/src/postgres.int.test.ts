@@ -1,11 +1,12 @@
 // PostgresStore against the database `make migrate` built: Postgres.app 17 on port 5433 locally,
 // the PGDG packages in CI. The contract suite is the one InMemoryStore passes in store.test.ts.
-import { AttemptId, ID_PREFIXES, idOf, PodId, uuidOf } from "@jadwigo/contracts";
+import { AttemptId, ID_PREFIXES, idOf, PodId, TopicId, Uuid, uuidOf } from "@jadwigo/contracts";
 import pg from "pg";
 import { afterAll, describe, expect, it } from "vitest";
 import { databaseUrl } from "./config.ts";
 import { introspect } from "./db/introspect.ts";
 import { COLUMNS } from "./db/types.ts";
+import { learnerKnowledgeContract } from "./knowledge.contract.ts";
 import { createPostgresStore, refusal } from "./postgres.ts";
 import { seed, storeContract } from "./store.contract.ts";
 import { StoreError } from "./store.ts";
@@ -14,6 +15,7 @@ const store = createPostgresStore(databaseUrl());
 afterAll(() => store.close());
 
 storeContract("PostgresStore", () => store);
+learnerKnowledgeContract("PostgresStore", () => store);
 
 describe("PostgresStore's units", () => {
   it("rolls back every write in a unit that throws, and maps a refusal inside one", async () => {
@@ -46,6 +48,86 @@ describe("PostgresStore's units", () => {
     });
     release();
     await expect(late).rejects.toThrow("outlived its unit");
+  });
+
+  it("keeps a unit going after a learner knowledge call it caught failed in the database", async () => {
+    // The mastery rebuild after a finish catches its failure (apps/api/src/mastery.ts): each
+    // learner knowledge call runs under a savepoint, so the unit's transaction stays usable.
+    const pod = PodId.parse(idOf(ID_PREFIXES.pod, crypto.randomUUID()));
+    const code = `test.lk${crypto.randomUUID().slice(0, 8)}.unit`;
+    const listed = await store.unit(async () => {
+      await store.putPod({ id: pod, name: "Pod of moles", language: "en" });
+      // A topic no row has: the foreign key refuses it in the database, past every check in code.
+      const failed = await store
+        .putSkills(pod, [
+          {
+            code,
+            topic_id: TopicId.parse(idOf(ID_PREFIXES.topic, crypto.randomUUID())),
+            kind: "accuracy",
+            status: "draft",
+            can_do: null,
+            aliases: [],
+            prerequisites: [],
+            source: "pod",
+          },
+        ])
+        .catch((error: unknown) => error);
+      expect(failed).toMatchObject({ type: "NotFound" });
+      await store.ensureSkills(pod, [code]);
+      return store.listSkills(pod);
+    });
+    expect(listed.filter((s) => s.code === code).map((s) => [s.pod_id, s.status])).toEqual([
+      [pod, "draft"],
+    ]);
+  });
+
+  it("holds a learner to the end of a unit: a 2nd unit's lock waits, then reads the 1st's rows", async () => {
+    // The mastery rebuild takes this lock before it reads the evidence (apps/api/src/mastery.ts),
+    // so 2 finishes for one learner never replace each other's mastery with a partial fold.
+    const { pod } = await store.createAccount(Uuid.parse(crypto.randomUUID()), "pl");
+    const { learner } = await store.addLearner(pod, { first_name: "Mole", goals: [] });
+    const code = `test.lk${crypto.randomUUID().slice(0, 8)}.lock`;
+    const order: string[] = [];
+    let release = () => {};
+    const gate = new Promise<void>((r) => {
+      release = r;
+    });
+    let locked = () => {};
+    const firstHolds = new Promise<void>((r) => {
+      locked = r;
+    });
+    const first = store.unit(async () => {
+      await store.lockLearner(pod, learner.id);
+      order.push("1st holds");
+      locked();
+      await gate;
+      await store.replaceMastery(pod, learner.id, [
+        {
+          skill_code: code,
+          level: "attempted",
+          needs_attention: false,
+          tries: 1,
+          last_answered_at: null,
+          due_at: null,
+          card: null,
+        },
+      ]);
+      order.push("1st wrote");
+    });
+    await firstHolds;
+    const second = store.unit(async () => {
+      await store.lockLearner(pod, learner.id);
+      order.push("2nd holds");
+      return store.getMastery(pod, learner.id);
+    });
+    // Long enough for the 2nd unit to be waiting on the lock, were it free it would hold by now.
+    await new Promise((r) => setTimeout(r, 200));
+    expect(order).toEqual(["1st holds"]);
+    release();
+    await first;
+    const read = await second;
+    expect(order).toEqual(["1st holds", "1st wrote", "2nd holds"]);
+    expect(read.map((m) => m.skill_code)).toEqual([code]);
   });
 
   it("runs a unit on one connection, so a pool of 1 serves nested calls", async () => {

@@ -9,6 +9,7 @@ import type {
   AttemptId,
   AttemptQuestion,
   AttemptResult,
+  Curriculum,
   Ended,
   ErrorType,
   Goal,
@@ -40,6 +41,7 @@ import type {
   ReportNarrative,
   Skill,
   SkillId,
+  Topic,
   Uuid,
 } from "@jadwigo/contracts";
 
@@ -174,6 +176,12 @@ export interface NewClaim {
 }
 
 // The learner knowledge base (migration 20261031120000_learner_knowledge.sql, epic dl-e8ov.5)
+
+/** A curriculum as the seed writes it: the store mints its id and stamps `created_at`. */
+export type NewCurriculum = Omit<Curriculum, "id" | "pod_id" | "created_at">;
+
+/** A curriculum's topic as the seed writes it: the store mints its id and stamps `created_at`. */
+export type NewTopic = Omit<Topic, "id" | "pod_id" | "created_at">;
 
 /** A catalogue skill as a seed or a pod writes it: the store stamps `created_at`. */
 export type NewSkill = Omit<Skill, "pod_id" | "created_at">;
@@ -487,6 +495,17 @@ export interface Store {
    */
   putSkills(pod: PodId, skills: readonly NewSkill[]): Promise<readonly Skill[]>;
   /**
+   * Writes a curriculum into `pod`, once per code and version (its key): a pair the pod holds
+   * returns the stored row, as `putSkills` does. The curriculum seed writes the shared one into
+   * Jadwigo's pod with it. Added by the store-api lane of wave dl-e8ov.5-1, the lead approving.
+   */
+  putCurriculum(pod: PodId, curriculum: NewCurriculum): Promise<Curriculum>;
+  /**
+   * Writes topics into `pod`, once per curriculum and code (their key), in the order given: a
+   * topic the pod holds returns the stored row. A curriculum outside `pod` is `NotFound`.
+   */
+  putTopics(pod: PodId, topics: readonly NewTopic[]): Promise<readonly Topic[]>;
+  /**
    * Makes sure `pod` has a row for each code, and returns them in the order given: a code the pod
    * holds stays as it is; one the shared catalogue holds is copied once (its kind, status, topic,
    * can-do lines, aliases and prerequisites, `source` kept); an unknown one becomes a `draft`.
@@ -509,6 +528,14 @@ export interface Store {
     learner: LearnerId,
     rows: readonly NewLearnerSkillMastery[],
   ): Promise<readonly LearnerSkillMastery[]>;
+  /**
+   * Holds a learner of `pod` to the end of the open unit, so the evidence read after it and the
+   * mastery written from that evidence are one step: 2 rebuilds of one learner take turns, and the
+   * 2nd reads the 1st's committed answers. `replaceMastery` takes the same hold. Outside a unit it
+   * holds nothing past the call. A learner outside `pod` is `NotFound`. Added by the store-api lane
+   * of wave dl-e8ov.5-1 on the review of #342, the lead approving.
+   */
+  lockLearner(pod: PodId, learner: LearnerId): Promise<void>;
   /** A learner's mastery rows, by skill code. A learner outside `pod` is `NotFound`. */
   getMastery(pod: PodId, learner: LearnerId): Promise<readonly LearnerSkillMastery[]>;
   /**

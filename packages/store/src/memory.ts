@@ -9,6 +9,8 @@ import {
   AttemptId,
   AttemptQuestion,
   type AttemptResult,
+  Curriculum,
+  CurriculumId,
   Ended,
   ErrorType,
   FEATURED_POD_ID,
@@ -45,6 +47,8 @@ import {
   SentAt,
   Skill,
   type SkillId,
+  Topic,
+  TopicId,
   type Uuid,
   valueFor,
 } from "@jadwigo/contracts";
@@ -64,6 +68,7 @@ import {
   type NewAttemptAnswer,
   type NewAttemptQuestion,
   type NewClaim,
+  type NewCurriculum,
   type NewGoal,
   type NewLearner,
   type NewLearnerReport,
@@ -75,6 +80,7 @@ import {
   type NewLessonVersion,
   type NewPod,
   type NewSkill,
+  type NewTopic,
   type OpenAssignment,
   type OpenedAttempt,
   type ReportChange,
@@ -161,6 +167,10 @@ export class InMemoryStore implements Store {
   readonly #asked = new Map<string, AttemptQuestion[]>();
   /** By event id: the key a replay is matched on, across every pod. */
   readonly #answers = new Map<string, AttemptAnswer>();
+  /** By `<pod> <code> <version>`: a curriculum's key. */
+  readonly #curricula = new Map<string, Curriculum>();
+  /** By `<curriculum id> <code>`: a topic's key. */
+  readonly #topics = new Map<string, Topic>();
   /** By `<pod> <code>`: a skill is keyed by its pod and code. */
   readonly #skills = new Map<string, Skill>();
   /** By goal id: its skill codes, in the order linked. */
@@ -1055,6 +1065,51 @@ export class InMemoryStore implements Store {
     return [...byCode.values()].sort((a, b) => (a.code < b.code ? -1 : 1));
   }
 
+  async putCurriculum(pod: PodId, curriculum: NewCurriculum): Promise<Curriculum> {
+    this.#pod(pod);
+    const key = `${pod} ${curriculum.code} ${curriculum.version}`;
+    const stored = this.#curricula.get(key);
+    if (stored) return stored;
+    const row = frozen(
+      parse(
+        Curriculum,
+        {
+          ...curriculum,
+          id: mint(CurriculumId, ID_PREFIXES.curriculum),
+          pod_id: pod,
+          created_at: this.#at(),
+        },
+        "the curriculum",
+      ),
+    );
+    this.#curricula.set(key, row);
+    return row;
+  }
+
+  async putTopics(pod: PodId, topics: readonly NewTopic[]): Promise<readonly Topic[]> {
+    this.#pod(pod);
+    const curricula = new Set(
+      [...this.#curricula.values()].filter((c) => c.pod_id === pod).map((c) => c.id),
+    );
+    for (const topic of topics) {
+      if (!curricula.has(topic.curriculum_id)) throw notFound("the curriculum");
+    }
+    return topics.map((topic) => {
+      const key = `${topic.curriculum_id} ${topic.code}`;
+      const stored = this.#topics.get(key);
+      if (stored) return stored;
+      const row = frozen(
+        parse(
+          Topic,
+          { ...topic, id: mint(TopicId, ID_PREFIXES.topic), pod_id: pod, created_at: this.#at() },
+          "the topic",
+        ),
+      );
+      this.#topics.set(key, row);
+      return row;
+    });
+  }
+
   async putSkills(pod: PodId, skills: readonly NewSkill[]): Promise<readonly Skill[]> {
     this.#pod(pod);
     const rows = skills.map((skill) => {
@@ -1176,6 +1231,11 @@ export class InMemoryStore implements Store {
     return written;
   }
 
+  async lockLearner(pod: PodId, learner: LearnerId): Promise<void> {
+    // Each call here is already one unit, and nothing runs between them: the check is all.
+    this.#inPod(this.#learners, pod, learner, "the learner");
+  }
+
   async getMastery(pod: PodId, learner: LearnerId): Promise<readonly LearnerSkillMastery[]> {
     this.#inPod(this.#learners, pod, learner, "the learner");
     return [...(this.#mastery.get(learner) ?? [])];
@@ -1248,7 +1308,7 @@ export class InMemoryStore implements Store {
   async putReport(pod: PodId, report: NewLearnerReport): Promise<LearnerReport> {
     this.#inPod(this.#learners, pod, report.learner_id, "the learner");
     if (Date.parse(report.period_ends_at) < Date.parse(report.period_starts_at)) {
-      throw new StoreError(ErrorType.enum.BadRequest, "a report's period ends after it starts");
+      throw new StoreError(ErrorType.enum.BadRequest, "a report's period ends before it starts");
     }
     const row = frozen(
       parse(
