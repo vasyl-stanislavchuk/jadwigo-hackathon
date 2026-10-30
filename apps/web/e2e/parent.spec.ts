@@ -32,8 +32,12 @@ async function playToTheEnd(page: Page): Promise<void> {
   await expect(results).toBeVisible();
 }
 
-/** The role the sign-in button fills with: Zeszyt's ink blue, the Button's primary (dl-uukj.32.11). */
-const SEND_CODE_FILL = "--jw-focus";
+/**
+ * The role the sign-in button fills with: Zeszyt's action blue, which @jadwigo/ui's default Button
+ * wears on every page since epic dl-uukj.32 (dl-uukj.32.3). The button is a 48 control (decision
+ * dl-og82), outside any lesson theme.
+ */
+const SEND_CODE_FILL = "--jw-act";
 
 /**
  * The send-code button's fill, the fill its role resolves to, and its font. A role's value is a
