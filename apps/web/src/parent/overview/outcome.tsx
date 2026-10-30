@@ -17,7 +17,7 @@ import type { Tone } from "../../review/outcome.ts";
 import { CATEGORY } from "../adult.ts";
 import type { Cell, Outcome, Row } from "./grid.ts";
 
-const OUTCOME_WORD: Record<Outcome, CopyKey> = {
+export const OUTCOME_WORD: Record<Outcome, CopyKey> = {
   first_try: "parent_outcome_first_try",
   got_there: "parent_outcome_got_there",
   not_yet: "parent_outcome_not_yet",
@@ -26,7 +26,7 @@ const OUTCOME_WORD: Record<Outcome, CopyKey> = {
   not_asked: "parent_outcome_not_asked",
 };
 
-const OUTCOME_ICON: Record<Outcome, LucideIcon> = {
+export const OUTCOME_ICON: Record<Outcome, LucideIcon> = {
   first_try: Check,
   got_there: Contrast,
   not_yet: Minus,

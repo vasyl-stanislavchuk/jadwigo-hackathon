@@ -631,6 +631,5 @@ export const en: CopyTable = {
   parent_review_try_line: { text: "{time} · {help}", reviewed: false },
   parent_overview_sheet_line: { text: "{tries} · {help} · {time}", reviewed: false },
   parent_overview_ratio: { text: "{n}/{m}", reviewed: false },
-  parent_attempt_line: { text: "{say}: {ended}", reviewed: false },
   parent_load_failed: { text: "This didn't load. Reload the page to try again.", reviewed: false },
 };
