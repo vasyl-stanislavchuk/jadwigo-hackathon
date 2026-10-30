@@ -118,7 +118,8 @@ export function supabaseAuth(supabase: SupabaseClient, providers: readonly Provi
       if (error) throw error;
     },
     completeRedirect(url) {
-      const back = returnOf(url);
+      // With no provider turned on, a ?code= is not a return: the page stays as it was.
+      const back = providers.length === 0 ? ({ kind: "none" } as const) : returnOf(url);
       if (back.kind === "none") return Promise.resolve("none");
       window.history.replaceState(window.history.state, "", withoutReturn(url));
       if (back.kind === "error")
