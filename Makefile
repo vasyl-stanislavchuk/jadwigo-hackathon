@@ -191,13 +191,14 @@ DREAM = case "$(LEARNER)" in lrn_*[!0-9a-z]*|lrn_) echo "$@: LEARNER is lrn_ and
 	case "$(or $(ENV),local)" in local) ;; *) echo "$@: only ENV=local; the dream does not run on jadwigo-$(ENV) in this wave"; exit 1;; esac; \
 	db_url="$${DATABASE_URL:-postgresql://localhost:$${PGPORT:-5433}/jadwigo}"; \
 	case "$$db_url" in postgres://*|postgresql://*) ;; *) echo "$@: DATABASE_URL is not a postgres:// URL"; exit 1;; esac; \
-	case "$$db_url" in *\?*) echo "$@: DATABASE_URL has a query string, whose host= or port= would override its host; give a plain URL"; exit 1;; esac; \
+	case "$$db_url" in *[?\#]*) echo "$@: DATABASE_URL has a query string or a fragment, which can name another host; give a plain URL"; exit 1;; esac; \
 	rest="$${db_url\#*://}"; host="$${rest%%/*}"; host="$${host\#\#*@}"; host="$${host%%:*}"; \
 	case "$$host" in localhost|127.0.0.1) ;; '') echo "$@: DATABASE_URL names no host, so pg would read PGHOST; name localhost"; exit 1;; *) echo "$@: DATABASE_URL names $$host; the dream runs only on a localhost database"; exit 1;; esac; \
 	db="$${rest\#*/}"; db="$${db%%\?*}"; \
 	case "$$rest" in */*) ;; *) db=;; esac; \
 	case "$$db" in */*) db=;; esac; \
 	case "$$db" in jadwigo*) ;; *) echo "$@: DATABASE_URL names database '$$db'; the dream runs only on a jadwigo* database"; exit 1;; esac; \
+	printf '%s\n' "$$db_url" | grep -Eq '^postgres(ql)?://([A-Za-z0-9._~%+=:-]+@)?(localhost|127\.0\.0\.1)(:[0-9]+)?/jadwigo[A-Za-z0-9_]*$$' || { echo "$@: DATABASE_URL is not postgresql://[user[:password]@]localhost[:port]/jadwigo…"; exit 1; }; \
 	export DATABASE_URL="$$db_url"; echo "$@: on the local database $$db" >&2; \
 	test -f apps/api/src/dream.ts || { echo "$@: apps/api/src/dream.ts is not here yet (dl-e8ov.5.44)"; exit 1; }
 dream:
