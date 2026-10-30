@@ -7,6 +7,7 @@
 
 import type { PageAttemptResult } from "@jadwigo/contracts";
 import { copy, type Language } from "@jadwigo/copy";
+import { Card, CardContent, Link } from "@jadwigo/ui";
 import type { ReactElement } from "react";
 import { NavLink } from "../nav/NavLink.tsx";
 import { ENDED_ICON, ENDED_WORD } from "./outcome.ts";
@@ -34,30 +35,33 @@ export function ReviewList({
             data-added={row.added}
             data-help-used={row.help_used}
           >
-            <NavLink
-              href={linkOf(row.seq)}
-              data-review-card
-              className="flex items-start gap-4 rounded-xl border p-4 hover:bg-muted"
-            >
-              <span data-review-number className="text-xl font-semibold">
-                {i + 1}
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col gap-1">
-                <span>{row.say}</span>
-                <span className="inline-flex items-center gap-2 font-semibold">
-                  <Icon aria-hidden className="size-4" />
-                  {copy(language, ENDED_WORD[ended])}
+            {/* The card is one target: the link's box stretches over it (after:inset-0). */}
+            <Card size="compact" className="relative has-[a:hover]:bg-muted">
+              <CardContent className="flex-row items-start gap-4">
+                <span data-review-number className="text-jw-instruction font-bold">
+                  {i + 1}
                 </span>
-                {row.added === "twin" && (
-                  <span className="text-sm">{copy(language, "play_results_twin")}</span>
-                )}
-                {row.help_used > 0 && (
-                  <span className="text-sm">
-                    {copy(language, "play_results_help", { n: row.help_used })}
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                  <Link asChild className="after:absolute after:inset-0">
+                    <NavLink href={linkOf(row.seq)} data-review-card>
+                      {row.say}
+                    </NavLink>
+                  </Link>
+                  <span className="inline-flex items-center gap-2 font-bold">
+                    <Icon aria-hidden className="size-4" />
+                    {copy(language, ENDED_WORD[ended])}
                   </span>
-                )}
-              </span>
-            </NavLink>
+                  {row.added === "twin" && (
+                    <span className="text-jw-small">{copy(language, "play_results_twin")}</span>
+                  )}
+                  {row.help_used > 0 && (
+                    <span className="text-jw-small">
+                      {copy(language, "play_results_help", { n: row.help_used })}
+                    </span>
+                  )}
+                </span>
+              </CardContent>
+            </Card>
           </li>
         );
       })}

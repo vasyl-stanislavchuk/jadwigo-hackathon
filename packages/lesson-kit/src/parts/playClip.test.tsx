@@ -166,7 +166,7 @@ describe("PlayClip", () => {
     const buttons = screen.getAllByRole("button");
     const play = must(buttons[0]);
     const slow = must(buttons[1]);
-    expect(play.className).toContain("min-h-[var(--kid-tap-min)]");
+    expect(play.className).toMatch(/(^|\s)min-h-kid-tap(\s|$)/);
     expect(play.getAttribute("data-clip")).toBe("normal");
     // stage.css sizes [data-clip='slow'] at 48 px, beside the 56 px play.
     expect(slow.getAttribute("data-clip")).toBe("slow");

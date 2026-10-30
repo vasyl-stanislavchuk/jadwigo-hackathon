@@ -21,7 +21,7 @@ function Switch({
       data-size={size}
       className={cn(
         "group/switch inline-flex w-full items-center justify-between gap-4 rounded-lg font-semibold outline-none select-none disabled:pointer-events-none disabled:opacity-50",
-        size === "default" ? "min-h-[var(--kid-tap-min)] px-1 text-xl" : ["px-3", ROW[size]],
+        size === "default" ? "min-h-kid-tap px-1 text-xl" : ["px-3", ROW[size]],
         className,
       )}
       {...props}
@@ -34,7 +34,7 @@ function Switch({
       >
         <SwitchPrimitive.Thumb
           data-slot="switch-thumb"
-          className="block size-6 translate-x-0.5 rounded-full bg-muted-foreground transition-[translate,background-color] data-[state=checked]:translate-x-[1.5rem] data-[state=checked]:bg-primary-foreground"
+          className="block size-6 translate-x-0.5 rounded-full bg-muted-foreground transition-[translate,background-color] data-[state=checked]:translate-x-6 data-[state=checked]:bg-primary-foreground"
         />
       </span>
     </SwitchPrimitive.Root>
