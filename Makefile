@@ -177,7 +177,9 @@ else
 endif
 
 ## dream LEARNER=<id> [ENV=local]: the dream on demand (decision jadwigo-hackathon 2026-10-30, the
-## dream runs on demand), on the local jadwigo database: apps/api/src/dream.ts works out a report for
+## dream runs on demand), on the database DATABASE_URL names (the environment's, else .env.local's,
+## as make migrate reads it), or the local jadwigo database when it is unset; a URL that is not a
+## localhost jadwigo* database is refused (dl-e8ov.5.65). apps/api/src/dream.ts works out a report for
 ## the learner, code's digest with a null narrative, and prints it. The report also lands in
 ## DREAM_DIR, and the last line says to run /jadwigo-report-write on it. Only ENV=local: this wave
 ## the dream never runs on jadwigo-dev or prod, and the narrative only on a throwaway learner.
@@ -187,8 +189,18 @@ endif
 DREAM_DIR ?= $(or $(TMPDIR),/tmp)/jadwigo-dream
 DREAM = case "$(LEARNER)" in lrn_*[!0-9a-z]*|lrn_) echo "$@: LEARNER is lrn_ and lowercase letters and digits"; exit 1;; lrn_*) ;; *) echo "$@: LEARNER=<learner id, lrn_…> is required"; exit 1;; esac; \
 	case "$(or $(ENV),local)" in local) ;; *) echo "$@: only ENV=local; the dream does not run on jadwigo-$(ENV) in this wave"; exit 1;; esac; \
-	test -f apps/api/src/dream.ts || { echo "$@: apps/api/src/dream.ts is not here yet (dl-e8ov.5.44)"; exit 1; }; \
-	export DATABASE_URL=postgresql://localhost:$${PGPORT:-5433}/jadwigo
+	db_url="$${DATABASE_URL:-postgresql://localhost:$${PGPORT:-5433}/jadwigo}"; \
+	case "$$db_url" in postgres://*|postgresql://*) ;; *) echo "$@: DATABASE_URL is not a postgres:// URL"; exit 1;; esac; \
+	case "$$db_url" in *[?\#]*) echo "$@: DATABASE_URL has a query string or a fragment, which can name another host; give a plain URL"; exit 1;; esac; \
+	rest="$${db_url\#*://}"; host="$${rest%%/*}"; host="$${host\#\#*@}"; host="$${host%%:*}"; \
+	case "$$host" in localhost|127.0.0.1) ;; '') echo "$@: DATABASE_URL names no host, so pg would read PGHOST; name localhost"; exit 1;; *) echo "$@: DATABASE_URL names $$host; the dream runs only on a localhost database"; exit 1;; esac; \
+	db="$${rest\#*/}"; db="$${db%%\?*}"; \
+	case "$$rest" in */*) ;; *) db=;; esac; \
+	case "$$db" in */*) db=;; esac; \
+	case "$$db" in jadwigo*) ;; *) echo "$@: DATABASE_URL names database '$$db'; the dream runs only on a jadwigo* database"; exit 1;; esac; \
+	printf '%s\n' "$$db_url" | grep -Eq '^postgres(ql)?://([A-Za-z0-9._~%+=:-]+@)?(localhost|127\.0\.0\.1)(:[0-9]+)?/jadwigo[A-Za-z0-9_]*$$' || { echo "$@: DATABASE_URL is not postgresql://[user[:password]@]localhost[:port]/jadwigo…"; exit 1; }; \
+	export DATABASE_URL="$$db_url"; echo "$@: on the local database $$db" >&2; \
+	test -f apps/api/src/dream.ts || { echo "$@: apps/api/src/dream.ts is not here yet (dl-e8ov.5.44)"; exit 1; }
 dream:
 	@$(DREAM); \
 	mkdir -p "$(DREAM_DIR)"; out="$(DREAM_DIR)/$(LEARNER)-$$(date -u +%Y%m%dT%H%M%SZ).json"; \
