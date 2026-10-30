@@ -50,6 +50,18 @@ export const FEATURED_POD: NewPod = {
   language: "pl",
 };
 
+/**
+ * The pod a single draft is imported into (`make lesson-import`, `jw lesson_check`'s play path), so
+ * a test draft plays at its own path but never joins `GET /api/v1/featured-lessons`, which lists the
+ * featured pod's assignments only (dl-e8ov.2.59). Named under `IMPORT_NAMESPACE` like the featured
+ * pod, and fixed for good the same way.
+ */
+export const DRAFTS_POD: NewPod = {
+  id: PodId.parse(idOf(ID_PREFIXES.pod, uuidV5(IMPORT_NAMESPACE, "pod/jadwigo-drafts"))),
+  name: "Jadwigo drafts",
+  language: "pl",
+};
+
 function named(pod: PodId, name: string): Uuid {
   return uuidV5(uuidOf(ID_PREFIXES.pod, pod), name);
 }

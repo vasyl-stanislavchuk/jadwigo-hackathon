@@ -70,8 +70,8 @@ The diagram is drawn in your browser from its text.
 - **Supabase Auth**: signs a parent in with a 6-digit email code. The token is RS256, so API
   Gateway can verify it with no shared secret.
 - **Question bank**: the credited question sets lessons are composed from. It lives outside the
-  repo. The API reaches it in 2 ways: it invokes the bank's search function for a search, and reads a
-  question's body from the content bucket. Nothing else calls the bank directly.
+  repo. The API reaches it in 2 ways: it invokes the bank's search function for a search, and reads
+  a question's body from the content bucket. Nothing else calls the bank directly.
 - **jw**: the command-line tool for lesson authors, with an MCP server (`jw mcp serve`) for AI
   agents. It talks to the API over HTTPS like any other caller, with the bank read token for the 2
   bank routes. See [MCP](/mcp/).
