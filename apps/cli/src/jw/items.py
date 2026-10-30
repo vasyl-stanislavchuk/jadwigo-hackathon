@@ -10,10 +10,11 @@ the bucket's `khan/converted/pl.json`, bead dl-e8ov.5.38.1):
 `status` is `{kind: "plays", rules_version, checked_at}`, stamped by the readiness check.
 Anything else raises `NotReady` with the reason a draft's `left_out` carries: `renders wrong:
 <rule>` (refused by a check), `not checked` (plays with no `checked_at`, or no status),
-`flagged: <reason>` (a person pulled it), or the converter's own reason (waiting). A missing verdict is refused, never served.
-The refusals file beside the converted file, `refusals/<lang>.json` (`{shapes, flags}`, jadwigo-bank
-schemas/refusals.schema.json), is read too, so a flag holds from the moment it is written, before
-the next conversion stamps it into the item.
+`flagged: <reason>` (a person pulled it), or the converter's own reason (waiting). A missing
+verdict is refused, never served. The refusals file in the bank checkout,
+`<JADWIGO_BANK_DIR>/refusals/<lang>.json` (`{shapes, flags}`, jadwigo-bank
+schemas/refusals.schema.json, the file the bank's stamp reads), is read too, so a flag holds from
+the moment it is written, before the next conversion stamps it into the item.
 """
 
 from __future__ import annotations
@@ -40,7 +41,7 @@ _FILE_HINT = (
 NOT_CHECKED = "not checked"
 RENDERS_WRONG = "renders wrong"
 FLAGGED = "flagged"
-REFUSALS_DIR = "refusals"  # beside the converted file: <dir>/refusals/<lang>.json
+REFUSALS_DIR = "refusals"  # in the bank checkout: <JADWIGO_BANK_DIR>/refusals/<lang>.json
 
 
 class NotReady(JwError):
@@ -80,10 +81,13 @@ def _read(path: Path) -> tuple[dict[str, dict[str, Any]], str | None]:
     return items, note if isinstance(note, str) and note else None
 
 
-def refusals_path(language: str) -> Path:
-    """The refusals file the readiness stamp reads: <converted file's dir>/refusals/<lang>.json,
-    so <JADWIGO_KHAN_DIR>/refusals/<lang>.json by default."""
-    return converted_path().parent / REFUSALS_DIR / f"{language}.json"
+def refusals_path(language: str) -> Path | None:
+    """The refusals file the readiness stamp reads, <JADWIGO_BANK_DIR>/refusals/<lang>.json, or
+    None when JADWIGO_BANK_DIR is unset."""
+    bank_dir = settings_keys.setting(settings_keys.JADWIGO_BANK_DIR)
+    if not bank_dir:
+        return None
+    return Path(bank_dir).expanduser() / REFUSALS_DIR / f"{language}.json"
 
 
 @cache
@@ -104,6 +108,8 @@ def _read_refusals(path: Path, _stamp: tuple[int, int]) -> dict[str, Any]:
 def refusals(language: str) -> dict[str, Any]:
     """`{shapes, flags}` from the refusals file for `language`; both empty when there is none."""
     path = refusals_path(language)
+    if path is None:
+        return {"shapes": [], "flags": []}
     try:
         stat = path.stat()
     except FileNotFoundError:
@@ -192,7 +198,7 @@ def load_item(item_id: str, language: str = "pl") -> dict[str, Any]:
             item_id,
             reason,
             hint=f"Pick a lesson-ready item: status plays with checked_at in {path}, and no flag "
-            f"in {refusals_path(language)}.",
+            f"in {refusals_path(language) or 'the refusals file'}.",
         )
     spec = item.get("spec")
     if not isinstance(spec, dict) or not all(k in spec for k in ("family", "data", "key")):
