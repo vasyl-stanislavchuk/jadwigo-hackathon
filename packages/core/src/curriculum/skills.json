@@ -1,0 +1,1722 @@
+[
+  {
+    "code": "draft.ortografia.capitals",
+    "topic": null,
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "draft.ortografia.ch-h",
+    "topic": null,
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "draft.ortografia.ending-decides",
+    "topic": null,
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "draft.ortografia.final-e-nasal",
+    "topic": null,
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "draft.ortografia.l-l",
+    "topic": null,
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "draft.ortografia.nie",
+    "topic": null,
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "draft.ortografia.o-alternating",
+    "topic": null,
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "draft.ortografia.proof-word",
+    "topic": null,
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "draft.ortografia.rz-after-consonant",
+    "topic": null,
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "draft.ortografia.rz-alternating",
+    "topic": null,
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "draft.ortografia.soft-hushing",
+    "topic": null,
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "draft.ortografia.voicing",
+    "topic": null,
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "maths.addition-subtraction.missing-value-within-1000",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.addition.add-on-number-line-within-1000",
+    "topic": "II.3.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.addition.add-within-100",
+    "topic": "II.3.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": ["maths.add.within100"],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "maths.addition.add-within-1000",
+    "topic": "II.3.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": ["maths.add.within1000"],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.addition.add-within-20",
+    "topic": "II.3.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": ["maths.add.within20"],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "maths.addition.break-apart-by-place-value",
+    "topic": "II.3.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.addition.compensation-with-tens-and-hundreds",
+    "topic": "II.3.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.addition.select-strategy-within-1000",
+    "topic": "II.3.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.alfik.clocks-and-calendars",
+    "topic": "II.6.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem liczyć czas na zegarze i w kalendarzu.",
+        "parent": "Rozwiązuje zadania o godzinach, dniach tygodnia i datach.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.alfik.clocks-and-calendars"],
+    "prerequisites": ["maths.alfik.reading-the-task", "maths.time.clock-five-minutes"],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.alfik.number-puzzles",
+    "topic": "II.4.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem rozwiązywać łamigłówki liczbowe.",
+        "parent": "Rozwiązuje zagadki z liczbami, cyframi i działaniami.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.alfik.number-puzzles"],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.alfik.reading-the-task",
+    "topic": "II.4.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem uważnie przeczytać zadanie.",
+        "parent": "Czyta treść zadania i wie, o co ono pyta.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.alfik.reading-the-task"],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.alfik.shapes-and-space",
+    "topic": "II.5.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem liczyć kształty i myśleć o przestrzeni.",
+        "parent": "Rozwiązuje zadania o figurach, kratkach, sześcianach i kolejności.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.alfik.shapes-and-space"],
+    "prerequisites": ["maths.alfik.reading-the-task"],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.alfik.word-problems",
+    "topic": "II.4.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem rozwiązywać zadania z treścią.",
+        "parent": "Rozwiązuje zadania tekstowe: dzielenie po równo, cięcia i kawałki, liczenie wstecz.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.alfik.word-problems"],
+    "prerequisites": ["maths.alfik.reading-the-task"],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.area.compare-areas-by-multiplication",
+    "topic": "II.5.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.area.decompose-figures",
+    "topic": "II.5.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.area.distributive-property",
+    "topic": "II.5.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.area.missing-side-length",
+    "topic": "II.5.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.arithmetic.order-of-operations",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.arithmetic.two-step-expressions",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.data.bar-graph-two-step",
+    "topic": "II.3.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.data.choose-graph-scale",
+    "topic": "II.6.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.data.create-bar-graphs",
+    "topic": "II.6.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.data.interpret-picture-graphs",
+    "topic": "II.6.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.data.line-plots-with-fractions",
+    "topic": "II.5.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.data.picture-graph",
+    "topic": "II.6.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": ["curriculum.math.data.picture-graph"],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "maths.data.read-bar-graphs",
+    "topic": "II.2.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.data.read-line-plots-with-fractions",
+    "topic": "II.2.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.data.read-pictographs",
+    "topic": "II.2.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.data.scaled-picture-graphs",
+    "topic": "II.6.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.arrays",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.basic-facts",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.divide-by-10",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.divide-by-2",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.divide-by-3",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.divide-by-4",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.divide-by-5",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.divide-by-6",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.divide-by-7",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.divide-by-8",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.divide-by-9",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.divide-by-one",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.division-in-contexts",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.equal-groups-visual-models",
+    "topic": "II.4.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.inverse-relation",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.match-story-to-expression",
+    "topic": "II.4.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.missing-dividend-divisor",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.missing-number-equations",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.partition-and-measurement",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.relate-to-multiplication",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.division.visual-models",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.estimation.estimate-difference-within-1000",
+    "topic": "II.6.6",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.estimation.estimate-sums-within-1000",
+    "topic": "II.6.6",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.estimation.two-step-word-problems",
+    "topic": "II.6.6",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.compare-different-wholes",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.compare-fractions-to-one",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.compare-on-number-line",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.compare-same-denominator",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.compare-same-numerator",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.compare-same-numerator-or-denominator",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.compare-with-visual-models",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.count-parts-across-wholes",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.equal-parts",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.equal-shares",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": ["curriculum.math.fractions.equal-shares"],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "maths.fractions.equivalent-fraction-models",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.equivalent-fractions",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.equivalent-on-number-line",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.fractions-greater-than-one-on-number-line",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.fractions-in-context",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.fractions-on-number-line",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.halves-and-quarters-in-measurement",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.locate-whole-on-number-line",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.numerator-denominator-meaning",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.recognize-fractions-greater-than-one",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.recognize-shaded-fraction",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.unit-fractions",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": ["maths.fractions.unit"],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.unit-fractions-on-number-line",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.fractions.whole-numbers-as-fractions",
+    "topic": "II.6.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.geometry.area-counting-unit-squares",
+    "topic": "II.5.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.geometry.area-from-partial-array",
+    "topic": "II.5.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.geometry.area-of-rectangles",
+    "topic": "II.5.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.geometry.area-perimeter-word-problems",
+    "topic": "II.5.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.geometry.area-rectangle-by-multiplication",
+    "topic": "II.5.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.geometry.compare-area-and-perimeter",
+    "topic": "II.5.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.geometry.compare-area-with-unit-squares",
+    "topic": "II.5.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.geometry.count-unit-squares-to-find-area",
+    "topic": "II.5.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.geometry.decompose-figures-for-area",
+    "topic": "II.5.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.geometry.missing-side-from-perimeter",
+    "topic": "II.5.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.geometry.perimeter-by-counting-units",
+    "topic": "II.5.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.geometry.perimeter-with-missing-side",
+    "topic": "II.5.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.geometry.rectangles-with-given-area",
+    "topic": "II.5.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.measure.length-cm",
+    "topic": "II.5.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": ["curriculum.math.measure.length-cm"],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "maths.measurement.choose-mass-unit",
+    "topic": "II.6.7",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.measurement.estimate-liquid-volume",
+    "topic": "II.6.7",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.measurement.estimate-mass",
+    "topic": "II.6.7",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.measurement.mass-word-problems",
+    "topic": "II.6.7",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.measurement.measure-to-half-quarter",
+    "topic": "II.5.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.measurement.measure-to-quarter-unit",
+    "topic": "II.5.2",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.measurement.volume-word-problems",
+    "topic": "II.6.7",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.money.count-and-pay",
+    "topic": "II.6.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": ["curriculum.math.money.count-and-pay"],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "maths.multiplication-division.fact-families",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.array-representation",
+    "topic": "II.4.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.associative-2-digit-by-1-digit",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.associative-grouping",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.equal-groups",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": ["maths.mul.equal-groups"],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.equal-groups-as-multiplication",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.equal-groups-from-picture",
+    "topic": "II.2.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.equal-groups-representation",
+    "topic": "II.3.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.missing-factor",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.missing-factor-in-array",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.mistakes",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem znaleźć i poprawić pomyłkę w mnożeniu.",
+        "parent": "Rozpoznaje typowe pomyłki w tabliczce mnożenia i je poprawia.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.multiplication.mistakes"],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.multiply-by-tens",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.multiply-by-zero",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.multiply-with-arrays",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.number-line-representation",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.one-digit-facts",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": ["maths.multiply.facts"],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.patterns-in-tables",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.repeated-addition",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.row-1",
+    "topic": "II.3.3",
+    "kind": "speed",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem mnożyć przez 1.",
+        "parent": "Mnoży przez 1 w zakresie tabliczki mnożenia, od 1×1 do 1×10.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.multiplication.row-1"],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.row-10",
+    "topic": "II.3.3",
+    "kind": "speed",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem mnożyć przez 10.",
+        "parent": "Mnoży przez 10 w zakresie tabliczki mnożenia, od 10×1 do 10×10.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.multiplication.row-10"],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.row-2",
+    "topic": "II.3.3",
+    "kind": "speed",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem mnożyć przez 2.",
+        "parent": "Mnoży przez 2 w zakresie tabliczki mnożenia, od 2×1 do 2×10.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.multiplication.row-2", "maths.mul.2x2", "maths.mul.2x5"],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.row-3",
+    "topic": "II.3.3",
+    "kind": "speed",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem mnożyć przez 3.",
+        "parent": "Mnoży przez 3 w zakresie tabliczki mnożenia, od 3×1 do 3×10.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.multiplication.row-3", "maths.mul.3x4"],
+    "prerequisites": [
+      "maths.multiplication.row-1",
+      "maths.multiplication.row-2",
+      "maths.multiplication.row-5",
+      "maths.multiplication.row-10"
+    ],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.row-4",
+    "topic": "II.3.3",
+    "kind": "speed",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem mnożyć przez 4.",
+        "parent": "Mnoży przez 4 w zakresie tabliczki mnożenia, od 4×1 do 4×10.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.multiplication.row-4"],
+    "prerequisites": [
+      "maths.multiplication.row-1",
+      "maths.multiplication.row-2",
+      "maths.multiplication.row-5",
+      "maths.multiplication.row-10",
+      "maths.multiplication.strategy-doubling"
+    ],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.row-5",
+    "topic": "II.3.3",
+    "kind": "speed",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem mnożyć przez 5.",
+        "parent": "Mnoży przez 5 w zakresie tabliczki mnożenia, od 5×1 do 5×10.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.multiplication.row-5"],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.row-6",
+    "topic": "II.3.3",
+    "kind": "speed",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem mnożyć przez 6.",
+        "parent": "Mnoży przez 6 w zakresie tabliczki mnożenia, od 6×1 do 6×10.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.multiplication.row-6", "fixture.times-6"],
+    "prerequisites": [
+      "maths.multiplication.row-3",
+      "maths.multiplication.row-4",
+      "maths.multiplication.row-9",
+      "maths.multiplication.strategy-commutativity"
+    ],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.row-7",
+    "topic": "II.3.3",
+    "kind": "speed",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem mnożyć przez 7.",
+        "parent": "Mnoży przez 7 w zakresie tabliczki mnożenia, od 7×1 do 7×10.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.multiplication.row-7"],
+    "prerequisites": [
+      "maths.multiplication.row-3",
+      "maths.multiplication.row-4",
+      "maths.multiplication.row-9",
+      "maths.multiplication.strategy-commutativity"
+    ],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.row-8",
+    "topic": "II.3.3",
+    "kind": "speed",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem mnożyć przez 8.",
+        "parent": "Mnoży przez 8 w zakresie tabliczki mnożenia, od 8×1 do 8×10.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.multiplication.row-8"],
+    "prerequisites": [
+      "maths.multiplication.row-3",
+      "maths.multiplication.row-4",
+      "maths.multiplication.row-9",
+      "maths.multiplication.strategy-commutativity",
+      "maths.multiplication.strategy-doubling"
+    ],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.row-9",
+    "topic": "II.3.3",
+    "kind": "speed",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem mnożyć przez 9.",
+        "parent": "Mnoży przez 9 w zakresie tabliczki mnożenia, od 9×1 do 9×10.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.multiplication.row-9"],
+    "prerequisites": [
+      "maths.multiplication.row-1",
+      "maths.multiplication.row-2",
+      "maths.multiplication.row-5",
+      "maths.multiplication.row-10"
+    ],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.skip-counting-by-group-size",
+    "topic": "II.2.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.strategy-commutativity",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem zamienić czynniki, żeby policzyć łatwiej.",
+        "parent": "Wie, że a×b to to samo co b×a, i korzysta z łatwiejszej pary.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.multiplication.strategy-commutativity"],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.strategy-distributive",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.multiplication.strategy-doubling",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": {
+      "pl": {
+        "child": "Umiem mnożyć przez podwajanie.",
+        "parent": "Mnoży przez 4 i 8, podwajając wynik dwa albo trzy razy.",
+        "reviewed": false
+      }
+    },
+    "aliases": ["curriculum.math.multiplication.strategy-doubling"],
+    "prerequisites": ["maths.multiplication.row-2"],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.parity.even-odd-patterns",
+    "topic": "II.3.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.patterns.hundreds-chart",
+    "topic": "II.2.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.place-value.tens-and-ones",
+    "topic": "II.2.3",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.rounding.build-number-from-digit-clues",
+    "topic": "II.6.6",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.rounding.inverse-rounding-to-10-or-100",
+    "topic": "II.6.6",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.rounding.round-to-nearest-10-and-100",
+    "topic": "II.6.6",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.rounding.round-to-nearest-ten-hundred-on-number-line",
+    "topic": "II.6.6",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.subtraction.break-apart-place-value",
+    "topic": "II.3.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.subtraction.mental-strategies-within-1000",
+    "topic": "II.3.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.subtraction.regrouping-across-zero",
+    "topic": "II.3.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.subtraction.same-difference-strategy",
+    "topic": "II.3.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.subtraction.subtract-on-number-line",
+    "topic": "II.3.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.subtraction.within-1000-with-regrouping",
+    "topic": "II.3.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": [],
+    "prerequisites": [],
+    "source": "bank:enrichment"
+  },
+  {
+    "code": "maths.time.clock-five-minutes",
+    "topic": "II.6.4",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": ["curriculum.math.time.clock-five-minutes"],
+    "prerequisites": [],
+    "source": "fixture"
+  },
+  {
+    "code": "maths.word-problems.multiply-divide",
+    "topic": "II.4.1",
+    "kind": "accuracy",
+    "status": "proposed",
+    "can_do": null,
+    "aliases": ["curriculum.math.word-problems.multiply-divide"],
+    "prerequisites": [],
+    "source": "fixture"
+  }
+]
