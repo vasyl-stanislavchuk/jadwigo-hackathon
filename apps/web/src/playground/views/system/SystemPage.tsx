@@ -629,7 +629,7 @@ export function SystemPage(): JSX.Element {
             <Section
               id="app-pages"
               title="App pages"
-              lead="A parent's page, drawn by @jadwigo/ui's parts outside the lesson's scope, as the app draws one: Page, Heading 1 to 3, Field with a text Input, a compact Card, the action Button at the control height, a Notice, a Link and the outcome tile. Beside it, the register's values, read live."
+              lead="A parent's pages, drawn by @jadwigo/ui's parts outside the lesson's scope, as the app draws them, on the adult's type scale: the home with a lesson card of small outcome tiles, then a finished lesson with Page, Heading 1 to 3, Field with a text Input, a compact Card, the action Button at the control height, a Notice, a Link and the outcome tile. Beside them, the register's values, read live."
               app
             >
               <AppPages mode={mode} />
@@ -670,7 +670,7 @@ export function SystemPage(): JSX.Element {
               <Section
                 id="gaps"
                 title="Gaps for the owner"
-                lead="What making Zeszyt every page's look leaves open (dl-uukj.32.7). Each is the owner's to answer: a yes needs no issue, a change becomes one."
+                lead="What making Zeszyt every page's look left open (dl-uukj.32.7). The owner answered all four on 2026-10-30: the app-page scale, the outcomes and the readout are built above, and one answer waits on purpose."
               >
                 <OwnerGaps mode={mode} />
               </Section>

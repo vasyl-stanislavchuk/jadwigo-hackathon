@@ -1,6 +1,8 @@
 /**
- * The System page's App pages section (dl-uukj.32.12): a parent's page as the app draws it, from
- * @jadwigo/ui's parts, with the app-page register's values read live beside it.
+ * The System page's App pages section (dl-uukj.32.12): a parent's pages as the app draws them, from
+ * @jadwigo/ui's parts, with the app-page register's values read live beside them. The parent's
+ * home shows option 1b of the owner's answers (dl-uukj.32.19): one compact card per finished
+ * lesson, with a row of small outcome tiles in the parent's icon set.
  *
  * It sits outside [data-lesson-theme], so none of the lesson's behaviour rules reach it: what shows
  * here is what an app page shows at :root. The System page's [theme] wrapper declares Zeszyt's
@@ -8,6 +10,7 @@
  * Zeszyt's face back from the chrome's.
  */
 
+import { copy } from "@jadwigo/copy";
 import {
   Button,
   Card,
@@ -24,41 +27,102 @@ import {
 } from "@jadwigo/ui";
 import { Info } from "lucide-react";
 import { useRef } from "react";
-import { ENDED_ICON, ENDED_TONE, type EndedOrOpen } from "../../../review/outcome.ts";
-import { APP_PAGE_ROLES } from "./data.ts";
+import { APP_PAGE_ROLES, PARENT_OUTCOMES } from "./data.ts";
 import { isColour, useLiveValues } from "./live.ts";
 
-/** The specimen's questions: one per tone a tile wears. */
-const QUESTIONS: readonly { say: string; ended: EndedOrOpen; word: string }[] = [
-  { say: "6 × 7", ended: "correct", word: "Dobrze" },
-  { say: "8 × 9", ended: "missed", word: "Jeszcze nie" },
-  { say: "7 × 7", ended: "skipped", word: "Pominięte" },
+/** A parent outcome's word, in the adult's Polish. */
+const word = (key: (typeof PARENT_OUTCOMES)[number]["word"]): string =>
+  copy("pl", key, {}, "adult");
+
+const outcome = (name: string): (typeof PARENT_OUTCOMES)[number] => {
+  const found = PARENT_OUTCOMES.find((o) => o.outcome === name);
+  if (found === undefined) throw new Error(`no parent outcome ${name}`);
+  return found;
+};
+
+/** The home card's lesson: one tile per question, in the order they were asked. */
+const HOME_TILES = ["first_try", "got_there", "not_yet", "first_try", "skipped", "not_asked"].map(
+  (name, i) => ({ n: i + 1, ...outcome(name) }),
+);
+
+/** The finished lesson's questions: one per tone a tile wears there. */
+const QUESTIONS = [
+  { say: "6 × 7", ...outcome("first_try") },
+  { say: "8 × 9", ...outcome("not_yet") },
+  { say: "7 × 7", ...outcome("skipped") },
 ];
 
-/** A parent's page, from the kit's parts alone. */
-function Specimen(): JSX.Element {
+const FRAME = "min-w-0 rounded-2xl border-2 border-border bg-jw-ground";
+
+/** The parent's home, option 1b: a child's name, then a compact card per finished lesson. */
+function Home(): JSX.Element {
   return (
-    <div className="min-w-0 rounded-2xl border-2 border-border bg-jw-ground">
+    <div className={FRAME}>
+      <Page width="prose" role="region" aria-label="The parent's home, drawn by the kit">
+        <Heading level={1}>Konto rodzica</Heading>
+        <Heading level={2}>Uczestnik 1</Heading>
+        <Card size="compact" data-home-card>
+          <CardContent className="flex flex-col items-start gap-2">
+            <Link href="#app-pages">Równe grupy</Link>
+            <p className="text-jw-small text-jw-ink-soft">30 października 2026</p>
+            <ul className="flex flex-wrap gap-2 pt-1" aria-label="Równe grupy: pytania">
+              {HOME_TILES.map((t) => {
+                const Icon = t.icon;
+                return (
+                  <li key={t.n}>
+                    <OutcomeTile
+                      tone={t.tone}
+                      outcome={t.outcome}
+                      size="sm"
+                      icon={<Icon aria-hidden />}
+                      label={`Pytanie ${t.n}: ${word(t.word)}`}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+            <Link href="#app-pages" size="small">
+              {copy("pl", "parent_overview_link", {}, "adult")}
+            </Link>
+          </CardContent>
+        </Card>
+        <div className="flex flex-wrap gap-3">
+          <Button variant="outline" size="control">
+            Dodaj dziecko
+          </Button>
+          <Button variant="outline" size="control">
+            Wyloguj się
+          </Button>
+        </div>
+      </Page>
+    </div>
+  );
+}
+
+/** A finished lesson and the sign-in form, from the kit's parts alone. */
+function Lesson(): JSX.Element {
+  return (
+    <div className={FRAME}>
       <Page width="prose" role="region" aria-label="A parent's page, drawn by the kit">
         <Heading level={1}>Tabliczka mnożenia</Heading>
         <p>Ostatnia próba: 3 pytania, 1 od razu.</p>
         <Heading level={2}>Pytania</Heading>
         <ul className="flex flex-col gap-3">
           {QUESTIONS.map((q) => {
-            const Icon = ENDED_ICON[q.ended];
+            const Icon = q.icon;
             return (
               <li key={q.say}>
                 <Card size="compact">
                   <CardHeader className="flex items-center gap-3">
                     <OutcomeTile
-                      tone={ENDED_TONE[q.ended]}
-                      outcome={q.ended}
+                      tone={q.tone}
+                      outcome={q.outcome}
                       icon={<Icon aria-hidden />}
-                      label={`${q.say}: ${q.word}`}
+                      label={`${q.say}: ${word(q.word)}`}
                     />
                     <CardTitle>{q.say}</CardTitle>
                   </CardHeader>
-                  <CardContent>{q.word}</CardContent>
+                  <CardContent>{word(q.word)}</CardContent>
                 </Card>
               </li>
             );
@@ -91,7 +155,10 @@ export function AppPages({ mode }: { mode: string }): JSX.Element {
       data-app-pages
       className="grid gap-6 font-sans xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]"
     >
-      <Specimen />
+      <div className="flex min-w-0 flex-col gap-6">
+        <Home />
+        <Lesson />
+      </div>
       <table className="h-fit w-full text-left text-sm" aria-label="The app-page register, live">
         <thead className="text-muted-foreground">
           <tr>
