@@ -7,8 +7,13 @@
  * press and focus), the ink caret and the keyboard's focus frame. The app loads the
  * stylesheets with @jadwigo/ui/styles.css. Ported from david-learns
  * frontend/src/playground/theme/LessonTheme.tsx, which also loaded the stylesheets and the font.
+ *
+ * It also sets the lesson register (@jadwigo/ui lib/register.tsx), so a lesson drawn inside a
+ * parent's page (a try on the attempt page) keeps the lesson's sizes and controls rather than the
+ * page's adult ones (dl-uukj.32.22).
  */
 
+import { RegisterProvider } from "@jadwigo/ui";
 import { type ReactNode, useEffect } from "react";
 import { installInkCaret } from "./inkCaret.ts";
 import { installKeyboardFocus } from "./keyboardFocus.ts";
@@ -21,5 +26,9 @@ export function LessonTheme({ children }: { children: ReactNode }): JSX.Element 
     installInkCaret();
     installKeyboardFocus();
   }, []);
-  return <div data-lesson-theme="zeszyt">{children}</div>;
+  return (
+    <div data-lesson-theme="zeszyt">
+      <RegisterProvider value="lesson">{children}</RegisterProvider>
+    </div>
+  );
 }
