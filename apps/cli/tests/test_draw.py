@@ -258,6 +258,18 @@ def test_a_set_with_none_ready_in_the_lessons_language_is_left_out(language: str
     ]
 
 
+def test_count_ready_without_ready_ids_falls_back_to_the_ids() -> None:
+    pages = _pages()
+    pages[NUMBER_LINE]["items"]["count"]["ready"] = {"pl": 3}
+    assert "ready_ids" not in pages[NUMBER_LINE]["items"]
+
+    result = draw(_pointed([NUMBER_LINE]), pages, kind="practice", today=TODAY)
+
+    assert draw_module.ready_ids(pages[NUMBER_LINE], "pl") is None
+    assert len(result.questions) == DRAW_RULES["practice"].count
+    assert not any(left.reason == draw_module.NOT_READY_ITEM for left in result.left_out)
+
+
 def test_count_ready_zero_leaves_the_set_out_even_without_ids() -> None:
     pages = _pages()
     pages[NUMBER_LINE]["items"]["count"]["ready"] = {"pl": 0, "en": 3}
