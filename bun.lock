@@ -109,6 +109,7 @@
         "@jadwigo/config": "workspace:*",
         "@jadwigo/contracts": "workspace:*",
         "@jadwigo/copy": "workspace:*",
+        "@jadwigo/core": "workspace:*",
         "@jadwigo/lesson-import": "workspace:*",
         "@jadwigo/lesson-kit": "workspace:*",
         "@jadwigo/ui": "workspace:*",

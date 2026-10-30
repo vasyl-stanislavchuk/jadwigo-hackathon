@@ -14,8 +14,11 @@
  * Facebook (developers.facebook.com/docs/facebook-login/userexperience, Meta's brand resources):
  * the approved "f", unmodified, before the label, at least 16 wide. facebook-f.svg is the Primary
  * Logo from Meta's Facebook Brand Asset Pack (Facebook_Logo_Primary.ai), turned into SVG by
- * pdftocairo with its paths and colours as they were, the artboard trimmed to the mark. The button
- * keeps the house outline, which is the paper the blue circle sits on.
+ * pdftocairo with its paths and colours as they were, the artboard trimmed to the mark.
+ *
+ * The 2 buttons share one shape, Google's (owner, dl-e8ov.2.85: "same shape, own font"): the same
+ * fill, stroke, text colour, height, corner, padding, mark size, gap and 14/20 medium text. Only the
+ * family differs: Google Sans on Google's, as its rules ask, the page's Andika on Facebook's.
  *
  * Google's colours are not Zeszyt roles, so they are written here once (parent/tokens.allow.json
  * says why).
@@ -28,20 +31,19 @@ import type { Provider } from "./auth.ts";
 import facebookF from "./facebook-f.svg";
 import googleG from "./google-g.svg";
 
-/** Google's light theme: fill, stroke and text, in Google Sans Medium 14/20. */
-const GOOGLE_LIGHT: CSSProperties = {
+/** Google's light theme: fill, stroke and text, medium 14/20. Both buttons wear it. */
+const PROVIDER_SHAPE: CSSProperties = {
   backgroundColor: "#FFFFFF",
   borderColor: "#747775",
   color: "#1F1F1F",
-  fontFamily: "'Google Sans', sans-serif",
   fontWeight: 500,
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
 };
 
-const MARK: Record<Provider, { src: string; look?: CSSProperties }> = {
-  google: { src: googleG, look: GOOGLE_LIGHT },
-  facebook: { src: facebookF },
+const MARK: Record<Provider, { src: string; look: CSSProperties }> = {
+  google: { src: googleG, look: { ...PROVIDER_SHAPE, fontFamily: "'Google Sans', sans-serif" } },
+  facebook: { src: facebookF, look: PROVIDER_SHAPE },
 };
 
 export function ProviderButton({
