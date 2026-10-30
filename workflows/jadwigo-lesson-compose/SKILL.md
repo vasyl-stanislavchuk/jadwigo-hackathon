@@ -58,6 +58,8 @@ Call `lesson_draft` with:
 
 - `request`: the parent's words as they wrote them, names included. The tool replaces the names
   before anything leaves the machine.
+- `topic`: what the lesson is about in a few words, taken from the request, with no count, grade
+  or name (`mnożenie`, `dodawanie do 100`). The bank searches these words.
 - `grade`, `names`, and `count` when the parent gave one. Leave `language` at `pl` and `kind` at
   `practice` unless the parent asked for a review or a check.
 
@@ -174,11 +176,12 @@ whether anything should change. A change the parent asks for goes back through s
 
 ## 8. Hand over the import
 
-The lesson is checked, not imported. Give the parent what the result names, and stop:
+The lesson is checked, not imported. Give the parent what the result names, in this order, and
+stop:
 
 - the lesson file, `lesson_file`;
 - the command to import it, `import_command`, exactly as the result gives it, for the owner to
-  run. Do not write or change the command yourself;
-- where it plays after the import, `play_path`.
+  run first. Do not write or change the command yourself;
+- where it plays once it is imported, `play_path`. It does not exist before the import.
 
 Do not run the import yourself.

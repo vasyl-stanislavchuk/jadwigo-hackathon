@@ -42,6 +42,7 @@ REPO = CLI.parents[1]
 SKILL = REPO / "workflows" / "jadwigo-lesson-compose" / "SKILL.md"
 LESSON = CLI / "tests" / "fixtures" / "lesson"
 REQUEST = "6 zadań z mnożenia, klasa 3, dla Zosi. Tomek i Anna też chcą."
+TOPIC = "mnożenie"  # what the workflow distils from the request
 NAMES = ["Zosia", "Tomek", "Anna"]  # made up; never a real family's names
 TODAY = dt.date(2026, 10, 30)
 REAL_RUN = lesson._run  # check.ts for real, before the fixture stubs it
@@ -80,7 +81,7 @@ def test_the_workflow_has_the_steps_run_a_needed() -> None:
         ("7", "Show the parent the card"),
         ("8", "Hand over the import"),
     ]
-    for must in ("you_write", "mistake_classes", "dictionary form", "`changes`", "`import_command`",
+    for must in ("you_write", "mistake_classes", "dictionary form", "`changes`", "`topic`", "`import_command`",
                  "write no cards", "Do not run the import"):
         assert must in text, must
 
@@ -124,7 +125,7 @@ def drafted(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
     monkeypatch.setattr(lesson, "_out_dir", lambda: tmp_path / "lessons")
     monkeypatch.setattr(lesson.shutil, "which", lambda _name: "bun")
     monkeypatch.setattr(lesson, "_run", lambda _repo: _check_ts)
-    return lesson.draft(REQUEST, "3", names=NAMES, today=TODAY)
+    return lesson.draft(REQUEST, "3", names=NAMES, topic=TOPIC, today=TODAY)
 
 
 def _check_ts(argv: list[str]) -> Any:
@@ -183,6 +184,7 @@ def test_the_canonical_request_is_drafted_without_a_name(drafted: dict[str, Any]
 def test_the_workflows_words_check_and_have_no_finding(drafted: dict[str, Any]) -> None:
     result = lesson.check(drafted["draft_id"], _words(drafted))
     assert words_check.findings(_lesson_file(result)) == []
+    assert result["lesson_file"] in result["import_command"]
     # The card shows each question's own twin, and no copied part was changed.
     twins = [q["twin"]["prompt"] for q in result["card"]["questions"]]
     assert len(set(twins)) == 6 and all(not q["changes"] for q in result["card"]["questions"])
