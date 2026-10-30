@@ -3,6 +3,7 @@
 // replies. Each file has one writer, and every JSONL file is append-only.
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import type { Work } from "./activity.ts";
 
 const INTENTS = ["change", "question", "note"] as const;
 export type Intent = (typeof INTENTS)[number];
@@ -26,6 +27,8 @@ export type Reply = {
   in_reply_to: string;
   kind: ReplyKind;
   text: string;
+  /** On an answer (done or question): what the session did for it, frozen when it replied. */
+  work?: Work;
 };
 
 /** What the channel says about itself, rewritten on every poll; the page calls it gone when stale. */
@@ -34,6 +37,17 @@ export type Heartbeat = {
   pid: number;
   session_id: string;
   loaded: boolean | null;
+};
+
+/**
+ * The session `make builder` started (JADWIGO_DRAFTS_DIR/.builder/session.json), rewritten at each launch.
+ * `transcript` is where Claude Code writes that session's log, which the activity panel tails.
+ */
+export type BuilderSession = {
+  session_id: string;
+  started_at: string;
+  cwd: string;
+  transcript: string;
 };
 
 // A draft id names files, so it never carries a path separator or starts with a dot.
@@ -49,7 +63,9 @@ export const asksFile = (dir: string, draftId: string) => join(dir, `${draftId}$
 export const consumedFile = (dir: string, draftId: string) =>
   join(dir, `${draftId}.consumed.jsonl`);
 export const repliesFile = (dir: string, draftId: string) => join(dir, `${draftId}.replies.jsonl`);
-export const heartbeatFile = (dir: string) => join(dir, "channel.heartbeat.json");
+// The builder's own files sit in a hidden folder, so the page never lists one as a draft.
+export const heartbeatFile = (dir: string) => join(dir, ".builder", "channel.heartbeat.json");
+export const sessionFile = (dir: string) => join(dir, ".builder", "session.json");
 
 /** Every parseable object row of a JSONL file; a torn last line, mid-append, is skipped. */
 export function readRows(path: string): Record<string, unknown>[] {

@@ -3,7 +3,7 @@ import { InMemoryStore } from "@jadwigo/store";
 import { FIXED_NOW, LESSON_FILES } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
 import { compileLessonFile, contentHash } from "./compile.ts";
-import { FEATURED_POD, featuredAssignmentId, uuidV5 } from "./ids.ts";
+import { DRAFTS_POD, FEATURED_POD, featuredAssignmentId, uuidV5 } from "./ids.ts";
 import { importLessonFile } from "./import.ts";
 import { skillIdOf } from "./lesson-file.ts";
 
@@ -43,6 +43,11 @@ describe("uuid v5", () => {
     expect(uuidV5("6ba7b810-9dad-11d1-80b4-00c04fd430c8" as never, "www.example.com")).toBe(
       "2ed6657d-e927-568b-95e1-2665a8aea6a2",
     );
+  });
+
+  it("names the drafts pod for good, apart from the featured pod (dl-e8ov.2.59)", () => {
+    expect(DRAFTS_POD.id).toBe("pod_7gm7asmg77br3apenacgwc289n");
+    expect(DRAFTS_POD.id).not.toBe(FEATURED_POD.id);
   });
 });
 
@@ -254,5 +259,16 @@ describe("importing a lesson file", () => {
     expect(result.lesson.pod_id).toBe(pod.id);
     expect(result.assignment.id).toBe(featuredAssignmentId("equal-groups", pod.id));
     expect(result.assignment.id).not.toBe(featuredAssignmentId("equal-groups"));
+  });
+
+  it("keeps a draft off the featured pod's open assignments, and its play path still starts (dl-e8ov.2.59)", async () => {
+    const store = newStore();
+    await importLessonFile(store, file("fives-everywhere"));
+    const draft = await importLessonFile(store, file("equal-groups"), DRAFTS_POD);
+    const featured = (await store.listOpenAssignments(FEATURED_POD.id)).map((o) => o.assignment.id);
+    expect(featured).toEqual([featuredAssignmentId("fives-everywhere")]);
+    expect(await store.findAssignmentPod(draft.assignment.id)).toBe(DRAFTS_POD.id);
+    const record = await store.startAttempt(DRAFTS_POD.id, { assignment_id: draft.assignment.id });
+    expect(record.attempt.lesson_version_id).toBe(draft.version.id);
   });
 });

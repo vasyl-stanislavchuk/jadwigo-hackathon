@@ -1,0 +1,22 @@
+---
+// The stylesheets the app loads and how many of their tokens the Tokens page shows, from
+// packages/ui/src/styles at build time.
+import { SHEETS, shown } from "../lib/tokens.ts";
+
+const page = shown();
+---
+
+<table>
+  <thead>
+    <tr><th>Stylesheet</th><th>What it holds</th><th>Tokens</th></tr>
+  </thead>
+  <tbody>
+    {Object.entries(SHEETS).map(([file, about]) => (
+      <tr>
+        <td><code>{file}</code></td>
+        <td>{about}</td>
+        <td>{page[file]?.size ?? 0}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>

@@ -90,7 +90,9 @@ def test_a_real_multiplication_draft_checks(
     assert rows, f"no grade 3 multiplication set in {BANK_DIR} holds a converted item"
     monkeypatch.setattr(question, "search_envelope", lambda **_: {"rows": rows})
 
-    draft = lesson.draft(REQUEST, "3", names=[], today=TODAY, folder=tmp_path)
+    draft = lesson.draft(
+        REQUEST, "3", names=[], topic="mnożenie", today=TODAY, folder=tmp_path
+    )
     assert draft["rule_settled"] is False
     assert draft["plays_as_copied"] is True, draft["copy_errors"]
     assert len(draft["questions"]) == 6, draft["left_out"]

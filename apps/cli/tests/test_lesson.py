@@ -46,6 +46,7 @@ BANK_DIR = ROOT / "tests" / "fixtures" / "bank"
 LESSON = ROOT / "tests" / "fixtures" / "lesson"
 ITEMS_FILE = LESSON / "converted.json"
 REQUEST = "6 zadań z mnożenia, klasa 3"
+TOPIC = "mnożenie"  # what the calling agent distils from REQUEST (dl-e8ov.5.38.12)
 TODAY = dt.date(2026, 10, 29)
 STEP_KEYS = {"id", "question_type", "skill_ids", "based_on", "say", "question", "credit"}
 
@@ -112,7 +113,7 @@ def check_ts(monkeypatch: pytest.MonkeyPatch) -> CheckTs:
 
 
 def _draft(**kwargs: Any) -> dict[str, Any]:
-    return lesson.draft(REQUEST, "3", names=[], today=TODAY, **kwargs)
+    return lesson.draft(REQUEST, "3", names=[], topic=TOPIC, today=TODAY, **kwargs)
 
 
 def _stored(view: dict[str, Any]) -> dict[str, Any]:
@@ -133,6 +134,19 @@ def _words(view: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _rule(a: int, b: int) -> dict[str, Any]:
+    return {"rule": "times_table", "a": a, "b": b, "recent": []}
+
+
+def _rule_change(rule: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "change": "tutor_notes",
+        "why": f"jw added the multiplication rule ({rule['a']} × {rule['b']}) to the key by code, "
+        "so a miss names its mistake class",
+        "reviewed": False,
+    }
+
+
 def _converted(item_id: str) -> dict[str, Any]:
     raw = json.loads(ITEMS_FILE.read_text(encoding="utf-8"))
     return next(i for i in raw["items"] if i["id"] == item_id)
@@ -146,7 +160,10 @@ def test_draft_copies_6_questions_whole_and_keeps_them_by_draft_id(
 ) -> None:
     view = _draft()
 
-    assert bank.requests[-1].body["words"] == REQUEST
+    # The bank is asked for the topic; the request is kept as the draft's record.
+    assert bank.requests[-1].body["words"] == TOPIC
+    assert view["need"] == {"language": "pl", "grade": "3", "words": TOPIC}
+    assert view["request"] == REQUEST
     assert re.fullmatch(r"draft_[0-9a-f]{12}", view["draft_id"])
     assert view["rule_settled"] is False and view["rule"]["count"] == 6
     assert (view["title"], view["plays_as_copied"], view["copy_errors"]) == (REQUEST, True, [])
@@ -158,7 +175,9 @@ def test_draft_copies_6_questions_whole_and_keeps_them_by_draft_id(
     for q in questions:
         source = _converted(q["item_id"])["spec"]
         assert q["say"] == source["say"] and q["data"] == source["data"]
-        assert q["key"] == source["key"]
+        # The copy's key, with the multiplication rule jw adds to a plainly a×b question.
+        a, b = (int(n) for n in source["data"]["figure"]["text"].split(" = ")[0].split(" · "))
+        assert q["key"] == {**source["key"], "rule": _rule(a, b)}
         # The worked line differs from the hints' text, so it is shown too.
         assert q["copied_help"] == source["help"]
         assert q["rungs"] == {"look": "hint 1", "boost": None, "almost": None,
@@ -179,8 +198,11 @@ def test_draft_copies_6_questions_whole_and_keeps_them_by_draft_id(
     assert "set_khan_fx0003" in stored["lesson"]["reasoning"]
     for q in stored["questions"]:
         source = _converted(q["item_id"])["spec"]
-        assert q["question"] == {k: source[k] for k in ("family", "data", "key", "help")}
-        assert q["based_on"] == {"question": f"khan:{q['item_id']}", "changes": []}
+        assert {k: q["question"][k] for k in ("family", "data", "help")} == {
+            k: source[k] for k in ("family", "data", "help")
+        }
+        assert q["based_on"]["question"] == f"khan:{q['item_id']}"
+        assert q["based_on"]["changes"] == [_rule_change(q["question"]["key"]["rule"])]
         assert q["credit"]["source"] and q["credit"]["licence"]
 
     # check.ts ran once on the lesson as copied: every step, its copied help, no twin yet.
@@ -238,9 +260,44 @@ def test_the_copy_maps_hints_onto_rungs_as_the_player_does() -> None:
     assert lesson._copied_help({"family": "enter", "data": {}, "key": {}}) == {}
 
 
+def test_only_a_plainly_a_times_b_question_gets_the_rule() -> None:
+    def q(figure: str, accept: list[str], family: str = "enter", **key: Any) -> dict[str, Any]:
+        return {
+            "question": {"family": family, "data": {"figure": {"kind": "expression",
+                                                              "text": figure}},
+                         "key": {"accept": accept, **key}},
+            "based_on": {"question": "khan:x", "changes": []},
+        }
+
+    khan = q("$\\huge\\blueD{6} \\cdot \\greenD{6} = {?}$", ["36"])
+    lesson._add_times_rule(khan)
+    assert khan["question"]["key"]["rule"] == _rule(6, 6)
+    assert khan["based_on"]["changes"] == [_rule_change(_rule(6, 6))]
+    bare = q("$4 \\times 6 = $", ["24"])
+    lesson._add_times_rule(bare)
+    assert bare["question"]["key"]["rule"] == _rule(4, 6)
+
+    for other in (
+        q("6 · 3 = ?", ["19"]),  # the key is not the product
+        q("6 · 3 = ?", ["18", "18,0"]),  # more than one accepted form
+        q("6 + 3 = ?", ["9"]),  # not a product
+        q("6 · 3 · 2 = ?", ["36"]),
+        q("$\\text{Ile to} 6 \\cdot 3$", ["18"]),  # words around it
+        q("6 · 3 = ?", ["18"], family="slots"),
+        q("6 · 3 = ?", ["18"], rule={"rule": "times_table", "a": 3, "b": 6, "recent": [12]}),
+    ):
+        before = copy.deepcopy(other)
+        lesson._add_times_rule(other)
+        assert other == before
+    unfigured = {"question": {"family": "enter", "data": {}, "key": {"accept": ["18"]}},
+                 "based_on": {"question": "khan:x", "changes": []}}
+    lesson._add_times_rule(unfigured)
+    assert "rule" not in unfigured["question"]["key"]
+
+
 def test_a_name_in_the_request_never_leaves_the_machine(bank: LessonBank, check_ts: CheckTs) -> None:
     named = "6 zadań z mnożenia dla Kasi, klasa 3"  # Kasia: an invented name, as tests/test_pii.py
-    view = lesson.draft(named, "3", names=["Kasia"], today=TODAY)
+    view = lesson.draft(named, "3", names=["Kasia"], topic="mnożenie dla Kasi", today=TODAY)
 
     sent = bank.requests[-1].body["words"]
     assert pii.leaks(sent, ["Kasia"]) == [] and "[NAME_1]" in sent
@@ -258,9 +315,18 @@ def test_a_name_in_the_request_never_leaves_the_machine(bank: LessonBank, check_
 
 def test_a_draft_without_names_is_refused(bank: LessonBank) -> None:
     with pytest.raises(JwError, match="names"):
-        lesson.draft(REQUEST, "3", names=None, today=TODAY)
+        lesson.draft(REQUEST, "3", names=None, topic=TOPIC, today=TODAY)
     with pytest.raises(TypeError):
-        lesson.draft(REQUEST, "3", today=TODAY)  # type: ignore[call-arg]
+        lesson.draft(REQUEST, "3", topic=TOPIC, today=TODAY)  # type: ignore[call-arg]
+    assert bank.requests == []
+
+
+def test_a_draft_without_a_topic_is_refused(bank: LessonBank) -> None:
+    with pytest.raises(JwError, match="topic") as caught:
+        lesson.draft(REQUEST, "3", names=[], topic="  ", today=TODAY)
+    assert "mnożenie" in caught.value.hint
+    with pytest.raises(TypeError):
+        lesson.draft(REQUEST, "3", names=[], today=TODAY)  # type: ignore[call-arg]
     assert bank.requests == []
 
 
@@ -272,6 +338,13 @@ def test_the_proposed_mark_is_stripped_from_skill_ids(bank: LessonBank, check_ts
     assert _stored(view)["questions"][0]["skill_ids"] == ["fixture.times-6"]
     step = check_ts.seen[0][1]["script"]["parts"][0]["steps"][0]
     assert step["skill_ids"] == ["fixture.times-6"]
+
+
+def test_an_item_of_several_skills_names_them_all() -> None:
+    ids, note = lesson._skills_ids(["proposed:maths.multiplication.row-3", "maths.x.y", "set_x"])
+    assert ids == ["maths.multiplication.row-3", "maths.x.y"]
+    assert note is not None and "set_x" in note
+    assert lesson._skill_label("proposed:maths.a.b, maths.c.d") == "maths.a.b (proposed), maths.c.d"
 
 
 def test_a_skill_that_is_no_skill_id_is_left_out_with_a_note() -> None:
@@ -305,8 +378,26 @@ def test_before_check_ts_sends_classes_they_are_unknown(bank: LessonBank, check_
     assert all(q["mistake_classes"] is None for q in view["questions"])
 
 
+def test_a_step_with_no_mistake_classes_is_not_asked_for_mistake_cards(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    # check.ts lists only the classes a step can emit (dl-e8ov.5.38.15): it may be none.
+    check_ts.answer["mistake_classes"] = {"q1": [], "q2": CLASSES}
+    view = _draft(count=2)
+    q1, q2 = view["questions"]
+    assert q1["mistake_classes"] == [] and "boost_by_mistake" not in q1["you_write"]
+    assert "boost_by_mistake" in q2["you_write"]
+    words = _words(view)
+    assert "boost_by_mistake" not in words["q1"]
+    assert lesson.check(view["draft_id"], words)["ok"] is True
+    del words["q2"]["boost_by_mistake"]
+    assert lesson.check(view["draft_id"], words)["errors"] == [
+        {"step_id": "q2", "message": "help.boost_by_mistake is empty; write it"}
+    ]
+
+
 def test_the_draft_verb_prints_the_draft(bank: LessonBank, check_ts: CheckTs) -> None:
-    args = ["lesson", "draft", REQUEST, "--grade", "3", "--json"]
+    args = ["lesson", "draft", REQUEST, "--grade", "3", "--topic", TOPIC, "--json"]
     result = CliRunner().invoke(cli, [*args, "--no-names"])
     assert result.exit_code == 0, result.output
     printed = json.loads(result.output)
@@ -314,6 +405,8 @@ def test_the_draft_verb_prints_the_draft(bank: LessonBank, check_ts: CheckTs) ->
     assert _undated(printed) | {"title": REQUEST} == _undated(view)
     refused = CliRunner().invoke(cli, args)
     assert refused.exit_code == 2 and "--name" in refused.output
+    untopical = CliRunner().invoke(cli, ["lesson", "draft", REQUEST, "--grade", "3", "--no-names"])
+    assert untopical.exit_code == 2 and "--topic" in untopical.output
 
 
 # ---------------------------------------------------------------- check ------
@@ -353,7 +446,8 @@ def test_check_puts_the_agents_words_on_the_copy_and_returns_the_card(
         assert help_["boost"] == words[q["step_id"]]["boost"]
         assert set(help_["boost_by_mistake"]) == {"added_instead"}
         assert {"say", "family", "data", "key"} <= set(help_["twin"])
-        assert step["based_on"]["changes"] == [] and step["credit"]["licence"]
+        assert step["based_on"]["changes"] == [_rule_change(step["question"]["key"]["rule"])]
+        assert step["credit"]["licence"]
 
     card = result["card"]
     first = card["questions"][0]
@@ -376,6 +470,19 @@ def test_check_puts_the_agents_words_on_the_copy_and_returns_the_card(
     text = lesson.card_text(card)
     assert text.startswith("1. ") and "left out:" in text and "fxc201" in text
     assert "skill: fixture.times-6 (proposed)" in text
+
+    # The import comes before the play path, which does not exist until it has run.
+    command = f"make lesson-import FILE={result['lesson_file']} ENV=dev"
+    assert result["import_command"] == command
+    assert card["next"] == {
+        "command": command,
+        "run_in": str(REPO),
+        "then_play": "/play/asg_fixture",
+        "says": f"Import the lesson first: {command}, from the jadwigo checkout ({REPO}). Only "
+        "then does it play at /play/asg_fixture; before the import that path does not exist.",
+    }
+    assert list(result).index("import_command") < list(result).index("play_path")
+    assert text.endswith(f"next: {card['next']['says']}")
 
 
 def test_check_accepts_bare_strings_and_a_nested_twin(bank: LessonBank, check_ts: CheckTs) -> None:
@@ -413,12 +520,13 @@ def test_a_change_to_a_copied_part_is_recorded_in_based_on(
     assert step["say"] == "Ile razem?"
     assert step["question"]["help"]["hints"][0]["text"] == "Policz grupy."
     assert step["based_on"]["changes"] == [
-        {"change": "wording", "why": "Rodzic prosi o prostsze słowa.", "reviewed": False}
+        _rule_change(step["question"]["key"]["rule"]),
+        {"change": "wording", "why": "Rodzic prosi o prostsze słowa.", "reviewed": False},
     ]
     assert result["card"]["questions"][0]["changes"] == step["based_on"]["changes"]
     assert "changed (wording): Rodzic prosi" in lesson.card_text(result["card"])
     # The draft kept is the bank's copy still.
-    assert _stored(view)["questions"][0]["based_on"]["changes"] == []
+    assert len(_stored(view)["questions"][0]["based_on"]["changes"]) == 1
 
 
 def test_the_agents_words_are_refused_by_step_id_before_check_ts_runs(
@@ -507,7 +615,8 @@ def test_the_check_verb_reads_the_words_from_a_file(
     assert result.exit_code == 0, result.output
     assert json.loads(result.output) == lesson.check(view["draft_id"], _words(view))
     plain = CliRunner().invoke(cli, ["lesson", "check", view["draft_id"], str(words)])
-    assert plain.output.startswith("1. ") and "play: /play/asg_fixture" in plain.output
+    assert plain.output.startswith("1. ") and "next: Import the lesson first: make" in plain.output
+    assert plain.output.index("make lesson-import") < plain.output.index("/play/asg_fixture")
 
 
 def test_the_repo_dir_defaults_to_this_checkout_and_names_its_setting(

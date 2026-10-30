@@ -56,16 +56,19 @@ DEFAULT_BANK_ENV_FILE = Path.home() / ".config" / "jadwigo-bank" / "bank.env"
 # draw read set pages from. The search route returns rows, not pages, and no page route exists yet.
 JADWIGO_BANK_DIR = "JADWIGO_BANK_DIR"
 
-# The synced copy of the bank's Khan bucket, laid out as the bucket is (converted/pl.json,
-# converted/en.json, raw/, media/). KHAN_SYNC_COMMAND, run in the bank repo, writes it.
+# The synced copy of the bank's Khan bucket. KHAN_SYNC_COMMAND, run in the bank repo, writes it in
+# the pull's own layout, not the bucket's: the bucket's khan/converted/pl.json lands as
+# converted-pl.json, and khan/converted/en.json as converted.json (TOP_FILES in jadwigo-bank
+# tools/khan/sync.py), beside raw/, media/ and picks.json.
 JADWIGO_KHAN_DIR = "JADWIGO_KHAN_DIR"
 DEFAULT_KHAN_DIR = Path.home() / ".cache" / "jadwigo-bank" / "khan"
 KHAN_SYNC_COMMAND = "uv run python -m tools.khan.sync down"
 
 # The converted Khan items file, read by `jw question item` and the question_item tool
-# (dl-e8ov.5.38.2). Unset: <JADWIGO_KHAN_DIR>/converted/pl.json.
+# (dl-e8ov.5.38.2). Unset: <JADWIGO_KHAN_DIR>/converted-pl.json, the Polish file the sync writes
+# (dl-e8ov.5.38.8); converted.json beside it is the English one.
 JW_KHAN_CONVERTED = "JW_KHAN_CONVERTED"
-CONVERTED_DEFAULT = Path("converted") / "pl.json"  # relative to the Khan dir
+CONVERTED_DEFAULT = Path("converted-pl.json")  # relative to the Khan dir
 
 # The jadwigo-hackathon checkout whose packages/lesson-import/src/check.ts the lesson_check tool
 # runs with bun (dl-e8ov.5.38.4). Unset: the checkout this jw was installed from (`repo_dir`).

@@ -26,6 +26,11 @@ def group() -> None:
 @group.command(cls=_EmitErrorsCommand)
 @click.argument("request")
 @click.option("--grade", required=True, help="The bare grade number, e.g. 3.")
+@click.option(
+    "--topic",
+    required=True,
+    help="What the lesson is about in a few words (mnożenie): the bank searches these.",
+)
 @click.option("--language", default="pl", show_default=True, type=click.Choice(["pl", "en", "uk"]))
 @click.option("--kind", default="practice", show_default=True, type=click.Choice(list(DRAW_RULES)))
 @click.option("--count", default=None, type=click.IntRange(min=1), help="Questions to draw.")
@@ -41,6 +46,7 @@ def group() -> None:
 def draft(
     request: str,
     grade: str,
+    topic: str,
     language: str,
     kind: str,
     count: int | None,
@@ -53,7 +59,9 @@ def draft(
     and written to JADWIGO_DRAFTS_DIR as <draft_id>.json."""
     if not names and not no_names:
         raise click.UsageError("pass every name the family uses with --name, or --no-names")
-    result = lesson.draft(request, grade, language, kind, count, skills, names=list(names))
+    result = lesson.draft(
+        request, grade, language, kind, count, skills, names=list(names), topic=topic
+    )
     if json_mode:
         click.echo(json.dumps(result, ensure_ascii=False))
         return
@@ -90,7 +98,7 @@ def check(
         click.echo(json.dumps(result, ensure_ascii=False))
     elif result["ok"]:
         click.echo(lesson.card_text(result["card"]))
-        click.echo(f"lesson file: {result['lesson_file']}\nplay: {result['play_path']}")
+        click.echo(f"lesson file: {result['lesson_file']}")
     else:
         for finding in result["findings"]:
             click.echo(f"step {finding['step_id']} ({finding['rule']}): {finding['text']}")
