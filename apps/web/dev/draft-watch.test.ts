@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
-import { mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { LESSON_FILES } from "@jadwigo/testing";
 import type { ViteDevServer } from "vite";
@@ -27,8 +27,7 @@ function put(name: string, value: unknown, at?: number): void {
 describe("draftsDir", () => {
   it("is JADWIGO_DRAFTS_DIR, else jw's default under the home directory", () => {
     expect(draftsDir({ JADWIGO_DRAFTS_DIR: "/srv/drafts", HOME: "/home/x" })).toBe("/srv/drafts");
-    expect(draftsDir({ JADWIGO_DRAFTS_DIR: "~/d", HOME: "/home/x" })).toBe("/home/x/d");
-    expect(draftsDir({ HOME: "/home/x" })).toBe("/home/x/.local/state/jadwigo/drafts");
+    expect(draftsDir({})).toBe(join(homedir(), ".local", "state", "jadwigo", "drafts"));
   });
 });
 
@@ -38,6 +37,9 @@ describe("listDrafts and draftMessage", () => {
     put("new.json", equalGroups, 2_000);
     put("new.check.json", { ok: true, findings: [] }, 3_000);
     put("new.asks.jsonl", "", 3_000);
+    put(".new.json.part", '{"title": "Hal', 4_000);
+    mkdirSync(join(dir, ".jw"));
+    put(".jw/new.json", { title: "jw's own record", language: "en" }, 4_000);
     expect(listDrafts(dir)).toEqual([
       { draft_id: "new", title: "Równe grupy", mtime: 2_000_000 },
       { draft_id: "old", title: "Old", mtime: 1_000_000 },

@@ -1,9 +1,10 @@
 // Run before every upload (make -C infra site-deploy): the built site carries what search engines
 // and link previews read, or nothing is synced to the bucket.
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { type DistCheck, parsePathPage, pathPageChecks } from "../src/lib/dist.ts";
 
 const dist = new URL("../dist/", import.meta.url);
-const must = [
+const landing = [
   ["index.html", '<html lang="pl"'],
   ["index.html", '<link rel="canonical" href="https://jadwigo.pl/"'],
   ["index.html", 'property="og:title"'],
@@ -23,10 +24,26 @@ const must = [
   ["sitemap-0.xml", "<loc>https://jadwigo.pl/</loc>"],
 ] as const;
 
+// The pages with their own `path`, the privacy pages today (dl-w0b4.64): each is required once its
+// source says reviewed: true, and none may carry the contact placeholder. The deletion pages' URLs
+// are in the Meta app's Settings Basic, so their paths never move.
+const content = new URL("../src/content/", import.meta.url);
+const sources = readdirSync(content, { recursive: true, encoding: "utf8" })
+  .filter((f) => f.endsWith(".md"))
+  .flatMap((f) => parsePathPage(readFileSync(new URL(f, content), "utf8")) ?? []);
+const paged = pathPageChecks(sources);
+const must: readonly DistCheck[] = [...landing, ...paged.must];
+const mustNot = paged.mustNot;
+
 const missing = must.filter(([file, text]) => {
   const path = new URL(file, dist);
   return !existsSync(path) || !readFileSync(path, "utf8").includes(text);
 });
+const present = mustNot.filter(([file, text]) => {
+  const path = new URL(file, dist);
+  return existsSync(path) && readFileSync(path, "utf8").includes(text);
+});
 for (const [file, text] of missing) console.error(`dist/${file} lacks ${text}`);
-if (missing.length > 0) process.exit(1);
-console.warn(`dist/ carries all ${must.length} checks`);
+for (const [file, text] of present) console.error(`dist/${file} still carries ${text}`);
+if (missing.length > 0 || present.length > 0) process.exit(1);
+console.warn(`dist/ carries all ${must.length} checks and none of ${mustNot.length} placeholders`);

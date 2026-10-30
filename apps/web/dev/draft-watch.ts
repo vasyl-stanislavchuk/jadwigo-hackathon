@@ -44,18 +44,22 @@ function readJson(path: string): { value: unknown } | { error: string } {
 /** Every draft in `dir`, newest first: each `<draft_id>.json` but the check files. */
 export function listDrafts(dir: string): DraftSummary[] {
   if (!existsSync(dir)) return [];
-  return readdirSync(dir)
-    .filter((name) => name.endsWith(".json") && !name.endsWith(CHECK))
-    .map((name) => {
-      const draft_id = name.slice(0, -".json".length);
-      const read = readJson(draftPath(dir, draft_id));
-      return {
-        draft_id,
-        title: "value" in read ? titleOf(read.value) : "",
-        mtime: statSync(draftPath(dir, draft_id)).mtimeMs,
-      };
-    })
-    .sort((a, b) => b.mtime - a.mtime || a.draft_id.localeCompare(b.draft_id));
+  return (
+    readdirSync(dir)
+      // jw writes `.<name>.part` and renames it into place, and keeps its own record under `.jw/`
+      // (dl-a38n.16): neither is a draft, and the rename is the change the watcher sees.
+      .filter((name) => name.endsWith(".json") && !name.endsWith(CHECK) && !name.startsWith("."))
+      .map((name) => {
+        const draft_id = name.slice(0, -".json".length);
+        const read = readJson(draftPath(dir, draft_id));
+        return {
+          draft_id,
+          title: "value" in read ? titleOf(read.value) : "",
+          mtime: statSync(draftPath(dir, draft_id)).mtimeMs,
+        };
+      })
+      .sort((a, b) => b.mtime - a.mtime || a.draft_id.localeCompare(b.draft_id))
+  );
 }
 
 /** What a page that picked `pick` (null: the newest) is sent. */

@@ -21,19 +21,39 @@ function check(file: string): { status: number | null; out: Record<string, unkno
 
 type Step = Record<string, unknown> & { question?: { family?: string; help?: object } };
 
-/** A copy of equal-groups with `change` applied to step s02 and `title`, written to a temp file. */
-function planted(change: (step: Step) => void, title?: string): string {
-  const raw = structuredClone(
-    LESSON_FILES.find((f) => (f as { id: string }).id === "equal-groups"),
-  ) as { script: { parts: { steps: Step[] }[] } };
-  const step = raw.script.parts.flatMap((p) => p.steps).find((s) => s["id"] === "s02");
-  if (step === undefined) throw new Error("no step s02 in equal-groups");
-  change(step);
+/** A copy of lesson file `id` with `change` applied to its question steps by id, written to a temp file. */
+function plantedIn(
+  id: string,
+  change: (steps: Record<string, Step>) => void,
+  title?: string,
+): string {
+  const raw = structuredClone(LESSON_FILES.find((f) => (f as { id: string }).id === id)) as {
+    script: { parts: { steps: Step[] }[] };
+  };
+  const steps = Object.fromEntries(
+    raw.script.parts.flatMap((p) => p.steps).map((s) => [s["id"] as string, s]),
+  );
+  change(steps);
   if (title !== undefined) Object.assign(raw, { title });
   const file = join(mkdtempSync(join(tmpdir(), "lesson-check-")), "planted.json");
   writeFileSync(file, JSON.stringify(raw));
   return file;
 }
+
+/** A copy of equal-groups with `change` applied to step s02 and `title`, written to a temp file. */
+function planted(change: (step: Step) => void, title?: string): string {
+  return plantedIn(
+    "equal-groups",
+    (steps) => {
+      const step = steps["s02"];
+      if (step === undefined) throw new Error("no step s02 in equal-groups");
+      change(step);
+    },
+    title,
+  );
+}
+
+type Found = { step_id: string | null; path: string; level: string; rule: string; fix: string };
 
 describe("check.ts --json", () => {
   const names = readdirSync(lessons).filter((f) => f.endsWith(".json"));
@@ -76,6 +96,7 @@ describe("check.ts --json", () => {
     const { out } = check(join(lessons, "equal-groups.json"));
     expect(Object.keys(out).sort()).toEqual([
       "errors",
+      "findings",
       "lesson_id",
       "mistake_classes",
       "ok",
@@ -183,6 +204,157 @@ describe("check.ts --json", () => {
     expect(status).toBe(1);
     const steps = (out["errors"] as { step_id: string | null }[]).map((e) => e.step_id);
     expect(steps.sort()).toEqual([null, "s02"].sort());
+  });
+
+  it("answers ok with no findings on a good file", () => {
+    const { status, out } = check(join(lessons, "equal-groups.json"));
+    expect({ status, ok: out["ok"], findings: out["findings"] }).toEqual({
+      status: 0,
+      ok: true,
+      findings: [],
+    });
+  });
+
+  it("lists every problem of a file, each with its path and a fix", () => {
+    // multiplication-times-four's first 3 questions: s02 (enter), s03 (choose), s06 (enter, 28).
+    const file = plantedIn("multiplication-times-four", (steps) => {
+      const help = (id: string) => steps[id]?.question?.help as Record<string, unknown>;
+      help("s02")["boost"] = { text: "" };
+      help("s03")["boost_by_mistake"] = { off_by_ten: { text: "Policz jeszcze raz." } };
+      const s06 = steps["s06"];
+      if (s06 !== undefined) s06["say"] = "Ile jest kwiatków razem? To 28.";
+    });
+    const { status, out } = check(file);
+    expect(status).toBe(1);
+    expect(out["ok"]).toBe(false);
+    const findings = out["findings"] as Found[];
+    expect(
+      findings.map(({ step_id, path, level, rule }) => ({ step_id, path, level, rule })),
+    ).toEqual(
+      expect.arrayContaining([
+        {
+          step_id: "s02",
+          path: expect.stringMatching(
+            /^script\.parts\[\d+\]\.steps\[\d+\]\.question\.help\.boost$/,
+          ),
+          level: "warn",
+          rule: "empty-rung",
+        },
+        {
+          step_id: "s03",
+          path: expect.stringMatching(/\.question\.help\.boost_by_mistake\.off_by_ten$/),
+          level: "error",
+          rule: "unknown-mistake-class",
+        },
+        {
+          step_id: "s06",
+          path: expect.stringMatching(/^script\.parts\[\d+\]\.steps\[\d+\]\.say$/),
+          level: "warn",
+          rule: "key-in-say",
+        },
+      ]),
+    );
+    expect(findings).toHaveLength(3);
+    for (const f of findings) expect(f.fix.length).toBeGreaterThan(10);
+    expect(findings.find((f) => f.rule === "unknown-mistake-class")?.fix).toContain(
+      "add_for_multiply",
+    );
+    // jw's old errors: the 1 error, by step; the 2 warns are not errors.
+    expect((out["errors"] as { step_id: string }[]).map((e) => e.step_id)).toEqual(["s03"]);
+  });
+
+  it("does not take an operand for the answer in key-in-say, and passes the file", () => {
+    // equal-groups s02 is an enter question; "10 − 5" with the answer 5 needs its 5.
+    for (const say of [
+      "Ile to jest 10 − 5? Napisz albo powiedz.",
+      "Ile to jest 5 × 1?",
+      "Ile to jest 5 razy 1?",
+      "Policz dalej: 1, 3, 5, …",
+    ]) {
+      const file = planted((step) => {
+        step["say"] = say;
+        (step.question as { key: { accept: string[] } }).key.accept = ["5"];
+      });
+      const { status, out } = check(file);
+      expect({ say, status, findings: out["findings"] }).toEqual({ say, status: 0, findings: [] });
+    }
+    const given = check(
+      planted((step) => {
+        step["say"] = "Ile to jest 10 − 5? To 5.";
+        (step.question as { key: { accept: string[] } }).key.accept = ["5"];
+      }),
+    );
+    expect(given.status).toBe(0);
+    expect(given.out["ok"]).toBe(true);
+    expect(given.out["findings"]).toEqual([
+      expect.objectContaining({ step_id: "s02", level: "warn", rule: "key-in-say" }),
+    ]);
+  });
+
+  it("reads no rung of a file with no language", () => {
+    const raw = structuredClone(
+      LESSON_FILES.find((f) => (f as { id: string }).id === "equal-groups"),
+    ) as Record<string, unknown>;
+    delete raw["language"];
+    const file = join(mkdtempSync(join(tmpdir(), "lesson-check-")), "no-language.json");
+    writeFileSync(file, JSON.stringify(raw));
+    const findings = check(file).out["findings"] as Found[];
+    expect(findings.filter((f) => f.rule === "empty-rung")).toEqual([]);
+    expect(findings.map((f) => f.path)).toContain("language");
+  });
+
+  it("lets say quote the answer as an operand, never as the answer", () => {
+    const withSay = (say: string) =>
+      planted((step) => {
+        step["say"] = say;
+        Object.assign(step.question ?? {}, { key: { accept: ["5"] } });
+      });
+    for (const say of [
+      "Ile to jest 10 − 5? Napisz albo powiedz.",
+      "Ile to 5 × 1?",
+      "10 : 2 = ?",
+      "Ile to jest 5 razy 1?",
+      "Policz dalej: 1, 3, 5, …",
+    ]) {
+      const { out } = check(withSay(say));
+      expect([say, out["ok"], out["errors"]]).toEqual([say, true, []]);
+    }
+    for (const say of ["Ile to jest 10 − 5? To 5.", "10 − 5 = 5", "Odpowiedź: 5"]) {
+      const { out } = check(withSay(say));
+      const found = (out["findings"] as Found[]).map((f) => [f.rule, f.level]);
+      expect([say, out["ok"], found]).toEqual([say, true, [["key-in-say", "warn"]]]);
+    }
+  });
+
+  it("keeps going past a step that does not compile, to the next one", () => {
+    const file = plantedIn("equal-groups", (steps) => {
+      for (const id of ["s02", "s05"]) {
+        const step = steps[id];
+        const other = Object.entries(QUESTION_TYPE_FAMILY).find(
+          ([, f]) => f !== step?.question?.family,
+        );
+        if (step === undefined || other === undefined) throw new Error(`no step ${id}`);
+        step["question_type"] = other[0];
+      }
+    });
+    const { out } = check(file);
+    const findings = out["findings"] as Found[];
+    expect(findings.map((f) => [f.step_id, f.rule])).toEqual([
+      ["s02", "question-type-family"],
+      ["s05", "question-type-family"],
+    ]);
+    expect(findings[0]?.path).toMatch(/\.question_type$/);
+  });
+
+  it("names a schema problem's field and the values it takes", () => {
+    const file = planted((step) => {
+      step["question_type"] = "not-a-type";
+    });
+    const findings = check(file).out["findings"] as Found[];
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({ step_id: "s02", rule: "schema", level: "error" });
+    expect(findings[0]?.path).toMatch(/\.question_type$/);
+    expect(findings[0]?.fix).toMatch(/^Set .*question_type to one of the enter question types: "/);
   });
 
   it("fails a file that is not JSON, with no step", () => {

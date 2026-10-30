@@ -70,3 +70,15 @@ resource "aws_route53_record" "dmarc" {
   ttl     = 1800
   records = ["v=DMARC1; p=${var.dmarc_policy}; adkim=r; aspf=r"]
 }
+
+# Google Workspace mail beside SES on the apexes that name it (dl-e8ov.2.71, workspace/main.tf).
+module "workspace" {
+  source   = "./workspace"
+  for_each = var.workspace
+
+  domain            = each.key
+  zone_id           = data.aws_route53_zone.this[each.key].zone_id
+  site_verification = each.value.site_verification
+  mx                = each.value.mx
+  dkim              = each.value.dkim
+}

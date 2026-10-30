@@ -69,18 +69,18 @@ It ends with a Google OAuth client for each Supabase project and one Meta app fo
 
 ## Supabase
 
-These steps wait for `dl-e8ov.2.52`. That issue teaches `infra/supabase-auth/auth.sh` to read the 4 keychain items above and puts the client ids in `dev.json` and `prod.json`.
+`dl-e8ov.2.52` taught `infra/supabase-auth/auth.sh` to read the keychain items above. The client ids you recorded on `dl-e8ov.2.53` and `dl-e8ov.2.54` go into `dev.json` and `prod.json` as the first step of `dl-e8ov.2.8` and `dl-e8ov.2.58`, with a `secrets` block naming each keychain item (the shape is in `infra/README.md`). Until then the script leaves both providers alone.
 
 1. **See what would change** on dev:
    ```
    infra/supabase-auth/auth.sh diff dev
    ```
-   You should see: the `external_google_*` and `external_facebook_*` keys it would set. Each secret shows only as set, never as a value.
+   You should see: the `external_google_*` and `external_facebook_*` keys it would set, and each secret as `(not set) -> (set)`, never as a value. A line `missing from the keychain (<item>)` means that item isn't stored under account `jadwigo`: store it as in Google step 14 or Meta step 10, then run the diff again. The script exits 1 then, and `apply` sends nothing.
 2. **Apply it** from your own terminal. The script refuses to run from an agent's shell:
    ```
    infra/supabase-auth/auth.sh apply dev
    ```
-   You should see: `dev (jweuvslwntdimuwcvlzq): applied`, and a second `diff dev` prints `in step`.
+   You should see: `dev (jweuvslwntdimuwcvlzq): applied`, and a second `diff dev` prints `in step`. Supabase keeps only a hash of each secret, and the script compares the keychain value's hash with it, so a secret you rotate in the keychain shows as `(another value) -> (set)`.
 3. **Try it.** Run `make dev`, open `/parent`, and select **Continue with Google**. Sign in with the email you already used for the email code.
    You should see: the parent home with the same children as before, not the "add a child" step.
 4. **Try Facebook** with a tester account from Meta step 12, in the same way.
