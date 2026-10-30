@@ -75,17 +75,15 @@ function strictly<S extends typeof FamilyQuestion | typeof Help>(
   return { data: parsed.data as ReturnType<S["parse"]> };
 }
 
+type Body = { question: StrictQuestion; findings: [] } | { question: null; findings: Finding[] };
+
+/** The item's question and its twin's, the twin null when it has none, or why they do not compile. */
 type Compiled =
-  | { question: StrictQuestion; findings: [] }
+  | { question: StrictQuestion; twin: StrictQuestion | null; findings: [] }
   | { question: null; findings: Finding[] };
 
 /** One question (the item's own, or its twin) as compile.ts's `body` checks it, under `at`. */
-function body(
-  item_id: string,
-  type: QuestionType,
-  raw: Record<string, unknown>,
-  at: string,
-): Compiled {
+function body(item_id: string, type: QuestionType, raw: Record<string, unknown>, at: string): Body {
   const { help: rawHelp, ...spec } = raw;
   const family = QUESTION_TYPE_FAMILY[type];
   if (family !== spec["family"]) {
@@ -129,11 +127,13 @@ export function compileStrictly(item: ConvertedItem): Compiled {
     },
     "spec",
   );
+  if (own.question === null) return own;
+  const alone = { question: own.question, twin: null, findings: [] as [] };
   const twin = (spec.help as { twin?: unknown } | undefined)?.twin;
-  if (own.question === null || twin === null || typeof twin !== "object") return own;
+  if (twin === null || typeof twin !== "object") return alone;
   const { say: _say, ...twinQuestion } = twin as Record<string, unknown>;
   // A twin's own twin is compile.ts's `twin-of-twin`, which this page does not mirror.
-  if ((twinQuestion["help"] as { twin?: unknown } | undefined)?.twin !== undefined) return own;
+  if ((twinQuestion["help"] as { twin?: unknown } | undefined)?.twin !== undefined) return alone;
   const second = body(item.id, type.data, twinQuestion, "spec.help.twin");
-  return second.question === null ? second : own;
+  return second.question === null ? second : { ...alone, twin: second.question };
 }

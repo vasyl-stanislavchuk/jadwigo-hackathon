@@ -60,10 +60,13 @@ declare global {
   }
 }
 
-/** The checks made before an item is drawn: the strict compile, then whether its key grades. */
+/** The checks made before an item is drawn: the strict compile, then whether its key grades, and
+ * its twin's, which the import writes as a spare question a child is asked. */
 function compiled(item: ConvertedItem): Finding[] {
-  const { question, findings } = compileStrictly(item);
-  return question === null ? findings : keyFindings(item.id, question);
+  const result = compileStrictly(item);
+  if (result.question === null) return result.findings;
+  const twin = result.twin === null ? [] : keyFindings(item.id, result.twin, "spec.help.twin");
+  return [...keyFindings(item.id, result.question), ...twin];
 }
 
 /** Every item that plays, each as a spec to draw or a verdict already reached. */
