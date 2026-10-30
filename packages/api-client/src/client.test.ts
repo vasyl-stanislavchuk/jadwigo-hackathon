@@ -1,4 +1,4 @@
-import { AssignmentId, AttemptId, EventId, LearnerId, ROUTES } from "@jadwigo/contracts";
+import { AssignmentId, AttemptId, EventId, GoalId, LearnerId, ROUTES } from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
 import { ApiError, createClient, pathOf, TransientError } from "./client.ts";
 
@@ -433,6 +433,52 @@ describe("the parent's calls", () => {
     const { fetch, sent } = stub(200, snapshot);
     await createClient({ base: "", fetch, token: signedIn }).getAttempt(ATTEMPT);
     expect(sent[0]?.authorization).toBeUndefined();
+  });
+});
+
+describe("the learner knowledge calls", () => {
+  const LEARNER = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
+  const GOAL = GoalId.parse("gol_2h4m8gyw0fb1cvz2nkqw0px8fq");
+  const signedIn = async (): Promise<string> => "header.payload.signature";
+  const learner = {
+    id: LEARNER,
+    pod_id: "pod_6et2fhbnwvb45aw9atcfzs33za",
+    handle: "fox",
+    first_name: "Fox",
+    age_group: null,
+    country: null,
+    curriculum_id: null,
+    school_grade: null,
+    school_language: null,
+    created_at: AT,
+  };
+
+  it("patches a goal at the route's path with the token, and parses the goals", async () => {
+    const { fetch, sent } = stub(200, { learner, goals: [] });
+    const reply = await createClient({ base: "", fetch, token: signedIn }).patchGoal(
+      LEARNER,
+      GOAL,
+      { status: "paused" },
+    );
+    expect(sent).toEqual([
+      {
+        url: `/api/v1/learners/${LEARNER}/goals/${GOAL}`,
+        method: "PATCH",
+        body: { status: "paused" },
+        authorization: "Bearer header.payload.signature",
+      },
+    ]);
+    expect(reply.learner.id).toBe(LEARNER);
+  });
+
+  it("makes a report with an empty body, and refuses a reply its schema does not accept", async () => {
+    const { fetch, sent } = stub(201, { id: "rpt_x" });
+    const refused = await createClient({ base: "", fetch, token: signedIn })
+      .createReport(LEARNER)
+      .catch((e: unknown) => e);
+    expect(sent).toMatchObject([{ url: `/api/v1/learners/${LEARNER}/reports`, body: {} }]);
+    expect(refused).not.toBeInstanceOf(ApiError);
+    expect(refused).toBeInstanceOf(Error);
   });
 });
 
