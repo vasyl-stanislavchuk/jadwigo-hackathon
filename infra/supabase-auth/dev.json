@@ -5,6 +5,12 @@
     "uri_allow_list": "http://127.0.0.1:*/**,http://localhost:*/**",
     "mailer_otp_length": 6,
     "hook_custom_access_token_enabled": true,
-    "hook_custom_access_token_uri": "pg-functions://postgres/app/custom_access_token"
+    "hook_custom_access_token_uri": "pg-functions://postgres/app/custom_access_token",
+    "external_google_enabled": true,
+    "external_google_client_id": "892975669695-9b1iltqbhb9qqgo3bh84tlfes4930j6o.apps.googleusercontent.com",
+    "external_google_email_optional": false
+  },
+  "secrets": {
+    "external_google_secret": "jadwigo-google-oauth-secret-dev"
   }
 }

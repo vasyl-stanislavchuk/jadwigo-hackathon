@@ -367,6 +367,22 @@ describe("auth.sh", () => {
     });
   });
 
+  it("Google is on in dev.json with its keychain secret; prod.json and Facebook wait (dl-e8ov.2.8)", () => {
+    const read = (env: string) =>
+      JSON.parse(readFileSync(join(repo, `infra/supabase-auth/${env}.json`), "utf8"));
+    const dev = read("dev");
+    expect(dev.settings).toMatchObject({
+      external_google_enabled: true,
+      external_google_client_id: expect.stringMatching(/\.apps\.googleusercontent\.com$/),
+      external_google_email_optional: false,
+    });
+    expect(dev.secrets).toEqual({ external_google_secret: "jadwigo-google-oauth-secret-dev" });
+    expect(Object.keys(dev.settings).filter((k) => k.startsWith("external_facebook_"))).toEqual([]);
+    const prod = read("prod");
+    expect(Object.keys(prod.settings).filter((k) => k.startsWith("external_"))).toEqual([]);
+    expect(prod.secrets).toBeUndefined();
+  });
+
   it("the committed env files name no secret value and keep email_optional off", () => {
     for (const env of ["dev", "prod"]) {
       const file = JSON.parse(readFileSync(join(repo, `infra/supabase-auth/${env}.json`), "utf8"));
