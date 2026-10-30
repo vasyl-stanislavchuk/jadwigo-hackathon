@@ -9,7 +9,8 @@ worth publishing (`dl-5ssh.90`). The owner runs it: a merge publishes nothing
 a CloudFront distribution that maps a page path to its `index.html`, and an A and AAAA alias record.
 `make -C infra docs-deploy` builds `apps/docs`, checks `dist/`, syncs it to the bucket and invalidates.
 Hashed files under `_astro/` cache for a year, everything else for 5 minutes, which includes the
-files agents read: `/llms.txt`, `/openapi.json` and `/mcp-tools.json`.
+files agents read: `/llms.txt`, `/openapi.json` and `/mcp-tools.json`. Each page's Markdown
+(`/guides/first-call.md`) goes up in a second pass as `text/markdown; charset=utf-8`.
 
 ## Before
 
@@ -61,6 +62,8 @@ After a docs change, only step 3 is needed.
 - `curl -sI https://docs.jadwigo.pl/` answers `HTTP/2 200` with `content-type: text/html`.
 - `curl -sI https://docs.jadwigo.pl/llms.txt` answers `200` with `cache-control: public, max-age=300`.
 - `curl -sI https://docs.jadwigo.pl/openapi.json` answers `200` with `content-type: application/json`.
+- `curl -sI https://docs.jadwigo.pl/guides/first-call.md` answers `200` with
+  `content-type: text/markdown; charset=utf-8`.
 - `curl -sI https://docs.jadwigo.pl/no-such-page` answers `404`, the docs' own 404 page.
 - `curl -sI https://jadwigo.pl/` still answers `200`: the marketing site is untouched.
 

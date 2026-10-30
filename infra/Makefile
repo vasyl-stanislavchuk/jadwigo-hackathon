@@ -69,7 +69,9 @@ web-deploy:
 # The docs at docs.<apex> (dl-5ssh.90): apps/docs's Starlight build, checked, to the docs bucket, then
 # invalidate. As for the site, hashed files under _astro/ cache for a year and the rest 5 minutes,
 # which keeps the pages and the files agents read (openapi.json, mcp-tools.json, llms.txt) short.
-# docs/runbooks/docs-publish.md is the owner's order.
+# docs/runbooks/docs-publish.md is the owner's order. Each page's Markdown goes up in a pass of its
+# own, typed with a charset: `aws s3 sync` would send a bare text/markdown, which a browser reads
+# as windows-1252 (dl-5ssh.90.32).
 DOCS := ../apps/docs
 
 docs-deploy:
@@ -77,7 +79,8 @@ docs-deploy:
 	cd $(DOCS) && bun run build && bun run check:dist
 	bucket=$$($(TF) output -raw docs_bucket) && dist_id=$$($(TF) output -raw docs_distribution_id) && \
 	{ [ ! -d $(DOCS)/dist/_astro ] || $(AWS) s3 sync $(DOCS)/dist/_astro s3://$$bucket/_astro --cache-control "public, max-age=31536000, immutable"; } && \
-	$(AWS) s3 sync $(DOCS)/dist s3://$$bucket --delete --exclude "_astro/*" --cache-control "public, max-age=300" && \
+	$(AWS) s3 sync $(DOCS)/dist s3://$$bucket --delete --exclude "_astro/*" --exclude "*.md" --cache-control "public, max-age=300" && \
+	$(AWS) s3 sync $(DOCS)/dist s3://$$bucket --delete --exclude "*" --include "*.md" --content-type "text/markdown; charset=utf-8" --cache-control "public, max-age=300" && \
 	$(AWS) cloudfront create-invalidation --distribution-id $$dist_id --paths "/*"
 
 # Supabase Auth settings for jadwigo-prod and jadwigo-dev (dl-e8ov.2.40): site URL, redirect URLs,

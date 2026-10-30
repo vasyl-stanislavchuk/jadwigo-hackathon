@@ -25,6 +25,15 @@
     "@astrojs/markdown-satteri": "starlight-openapi's peer dependency for rendering the OpenAPI descriptions",
     "satteri": "left external in the Vite build (astro.config.mjs) so its native binding resolves from apps/docs/node_modules; knip.json ignores it",
     "starlight-llms-txt": "writes llms.txt, llms-full.txt and llms-small.txt for agents (astro.config.mjs)",
+    "starlight-llm-actions": "the page-actions menu, each page's .md and its rel=alternate link (astro.config.mjs, src/components/PageTitle.astro)",
+    "@astrojs/mdx": "an optional peer of starlight-llm-actions that its renderMarkdown 'simple' needs to flatten a rendered page to Markdown; the plugin loads it at build time",
+    "unified": "an optional peer of starlight-llm-actions that its renderMarkdown 'simple' needs to flatten a rendered page to Markdown; the plugin loads it at build time",
+    "rehype-parse": "an optional peer of starlight-llm-actions that its renderMarkdown 'simple' needs to flatten a rendered page to Markdown; the plugin loads it at build time",
+    "rehype-remark": "an optional peer of starlight-llm-actions that its renderMarkdown 'simple' needs to flatten a rendered page to Markdown; the plugin loads it at build time",
+    "remark-gfm": "an optional peer of starlight-llm-actions that its renderMarkdown 'simple' needs to flatten a rendered page to Markdown; the plugin loads it at build time",
+    "remark-stringify": "an optional peer of starlight-llm-actions that its renderMarkdown 'simple' needs to flatten a rendered page to Markdown; the plugin loads it at build time",
+    "hast-util-select": "an optional peer of starlight-llm-actions that its renderMarkdown 'simple' needs to flatten a rendered page to Markdown; the plugin loads it at build time",
+    "unist-util-remove": "an optional peer of starlight-llm-actions that its renderMarkdown 'simple' needs to flatten a rendered page to Markdown; the plugin loads it at build time",
     "@astrojs/check": "type-checks the .astro and .mdx files in this package's typecheck script",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
@@ -49,6 +58,7 @@
   "dependencies": {
     "@astrojs/markdown-remark": "7.3.4",
     "@astrojs/markdown-satteri": "0.4.5",
+    "@astrojs/mdx": "8.1.1",
     "@astrojs/starlight": "0.42.6",
     "@jadwigo/config": "workspace:*",
     "@jadwigo/contracts": "workspace:*",
@@ -56,10 +66,18 @@
     "@jadwigo/ui": "workspace:*",
     "astro": "7.4.2",
     "astro-mermaid": "2.1.0",
+    "hast-util-select": "6.0.4",
     "mermaid": "12.2.0",
+    "rehype-parse": "9.0.1",
+    "rehype-remark": "10.0.1",
+    "remark-gfm": "4.0.1",
+    "remark-stringify": "11.0.0",
     "satteri": "0.10.5",
     "starlight-links-validator": "0.27.0",
+    "starlight-llm-actions": "0.13.0",
     "starlight-llms-txt": "0.12.0",
-    "starlight-openapi": "0.27.0"
+    "starlight-openapi": "0.27.0",
+    "unified": "11.0.5",
+    "unist-util-remove": "4.0.0"
   }
 }

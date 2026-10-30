@@ -27,6 +27,12 @@ function writeGoodDist(): void {
     mkdirSync(dirname(join(dist, file)), { recursive: true });
     writeFileSync(join(dist, file), texts.join("\n"));
   }
+  // Every page but the API reference's has its Markdown beside it.
+  for (const file of byFile.keys()) {
+    if (!file.endsWith("index.html")) continue;
+    const markdown = file === "index.html" ? "index.md" : `${dirname(file)}.md`;
+    if (!byFile.has(markdown)) writeFileSync(join(dist, markdown), "# A page");
+  }
 }
 
 beforeEach(() => {
@@ -96,6 +102,22 @@ describe("checkDist", () => {
     expect(checkDist(dist)).toEqual([
       "dist/guides/port.html names app.jadwigo.pl:8443, not app.jadwigo.pl or docs.jadwigo.pl",
       "dist/llms-full.txt names example.com, not app.jadwigo.pl or docs.jadwigo.pl",
+    ]);
+  });
+
+  it("fails a page with no Markdown beside it, but not an API reference page", () => {
+    writeGoodDist();
+    rmSync(join(dist, "mcp/question_item.md"));
+    expect(checkDist(dist)).toEqual([
+      "dist/mcp/question_item.md is missing: its page has no Markdown",
+    ]);
+  });
+
+  it("fails a stray host in a page's Markdown", () => {
+    writeGoodDist();
+    writeFileSync(join(dist, "guides/errors.md"), "curl https://api.jadwigo.pl/api/health");
+    expect(checkDist(dist)).toEqual([
+      "dist/guides/errors.md names api.jadwigo.pl, not app.jadwigo.pl or docs.jadwigo.pl",
     ]);
   });
 

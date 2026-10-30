@@ -5,6 +5,7 @@ import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
 import mermaid from "astro-mermaid";
 import starlightLinksValidator from "starlight-links-validator";
+import starlightLlmActions from "starlight-llm-actions";
 import starlightLlmsTxt from "starlight-llms-txt";
 import starlightOpenAPI, { createOpenAPISidebarGroup } from "starlight-openapi";
 import { apiBase, servedHost, sidebar } from "./src/index.ts";
@@ -29,6 +30,19 @@ export default defineConfig({
       title: "Jadwigo docs",
       description: "How to call Jadwigo's API and MCP server, and how its design system is built.",
       sidebar: sidebar.map((group) => (group.label === "API reference" ? apiGroup : group)),
+      // The page-actions menu sits beside the title, with Copy for Muse added (dl-5ssh.90.32).
+      components: { PageTitle: "./src/components/PageTitle.astro" },
+      // Agents find the API's OpenAPI document from any page, as they find a page's Markdown.
+      head: [
+        {
+          tag: "link",
+          attrs: {
+            rel: "alternate",
+            type: "application/vnd.oai.openapi+json",
+            href: "/openapi.json",
+          },
+        },
+      ],
       plugins: [
         // Pages under /api/ from the snapshot (scripts/prepare.ts); /openapi.json is served as is.
         starlightOpenAPI([
@@ -49,11 +63,57 @@ export default defineConfig({
           errorOnLocalLinks: true,
           exclude: [`/${API_REFERENCE_BASE}/`, `/${API_REFERENCE_BASE}/operations/**`],
         }),
+        // A static Markdown copy of every content page at <page>.md, flattened from the rendered
+        // page, a <link rel="alternate"> to it, and the menu: Copy and View as Markdown, Open in
+        // Claude and ChatGPT. llms.txt stays starlight-llms-txt's.
+        starlightLlmActions({
+          renderMarkdown: "simple",
+          linkAlternate: true,
+          llmsTxt: false,
+          actions: {
+            copyMarkdown: true,
+            viewMarkdown: true,
+            printPdf: false,
+            openIn: {
+              providers: {
+                claude: true,
+                chatgpt: true,
+                copilot: false,
+                gemini: false,
+                perplexity: false,
+              },
+            },
+          },
+        }),
         starlightLlmsTxt({
           projectName: "Jadwigo",
           description:
             "Jadwigo is a learning app for children in the first school grades, in Polish and English.",
-          details: `The API's base URL is ${apiBase}. Every route is under /api/v1, except /api/health. The OpenAPI 3.1 document for every route is https://${servedHost}/openapi.json.`,
+          details: `The API's base URL is ${apiBase}. Every route is under /api/v1, except /api/health. The OpenAPI 3.1 document for every route is https://${servedHost}/openapi.json. Every page is also served as Markdown at its URL with .md in place of the trailing slash.`,
+          promote: ["index*", "guides/agents", "guides/first-call"],
+          customSets: [
+            {
+              label: "API",
+              description:
+                "calling the API: the base URL, signing in, the first call and its errors",
+              paths: [
+                "guides/introduction",
+                "guides/authentication",
+                "guides/first-call",
+                "guides/errors",
+              ],
+            },
+            {
+              label: "MCP",
+              description: "the MCP server jw mcp serve: registering it and every tool",
+              paths: ["guides/agents", "mcp", "mcp/**"],
+            },
+            {
+              label: "Design system",
+              description: "the tokens, primitives, question types and copy the app is built from",
+              paths: ["design-system", "design-system/**"],
+            },
+          ],
         }),
       ],
     }),
