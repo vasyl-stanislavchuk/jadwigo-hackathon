@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "pod_id": {
+      "$ref": "#/$defs/PodId"
+    },
+    "goal_id": {
+      "$ref": "#/$defs/GoalId"
+    },
+    "topic_id": {
+      "$ref": "#/$defs/TopicId"
+    }
+  },
+  "required": [
+    "pod_id",
+    "goal_id",
+    "topic_id"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "GoalId": {
+      "type": "string",
+      "pattern": "^gol_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "TopicId": {
+      "type": "string",
+      "pattern": "^top_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    }
+  }
+}

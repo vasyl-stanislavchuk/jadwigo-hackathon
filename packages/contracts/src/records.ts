@@ -494,6 +494,22 @@ export const GoalSkill = z.object({
 });
 export type GoalSkill = z.infer<typeof GoalSkill>;
 
+/** One curriculum topic a goal covers; the topic is usually the shared pod's. */
+export const GoalTopic = z.object({
+  pod_id: PodId,
+  goal_id: GoalId,
+  topic_id: TopicId,
+});
+export type GoalTopic = z.infer<typeof GoalTopic>;
+
+/** One goal a lesson serves. */
+export const LessonGoal = z.object({
+  pod_id: PodId,
+  lesson_id: LessonId,
+  goal_id: GoalId,
+});
+export type LessonGoal = z.infer<typeof LessonGoal>;
+
 /** How far a learner is with a skill. Code computes it; the parent never sees Khan's level names. */
 export const MasteryLevel = z.enum([
   "not_started",
@@ -740,6 +756,8 @@ export const RECORDS = {
   topic: Topic,
   skill: Skill,
   goal_skill: GoalSkill,
+  goal_topic: GoalTopic,
+  lesson_goal: LessonGoal,
   learner_skill_mastery: LearnerSkillMastery,
   learner_skill_evidence: LearnerSkillEvidence,
   learner_report: LearnerReport,
