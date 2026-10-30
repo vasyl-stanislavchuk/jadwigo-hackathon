@@ -15,6 +15,9 @@ Postgres 17, signing with an RS256 key, and the Ireland project `jadwigo.pl`
 The Ireland project was checked empty and deleted. Steps 5 and 6 are done for good; the rest stays
 here for recreating a project.
 
+Prod's Auth custom domain, `auth.jadwigo.pl` (`dl-e8ov.2.65`), has its own steps in
+`social-sign-in.md`, "The custom domain". A recreated prod project needs them again, with the new ref.
+
 ## Before
 
 - **A Supabase personal access token in the keychain.** The checks below read it. Create one at

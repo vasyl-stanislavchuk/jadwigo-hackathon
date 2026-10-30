@@ -89,6 +89,38 @@ It ends with a Google OAuth client for each Supabase project and one Meta app fo
 
 Prod is the same `auth.sh apply prod`, run only when `dl-e8ov.2.8` and `dl-e8ov.2.58` say it is time.
 
+## The custom domain
+
+Prod's Auth answers on `auth.jadwigo.pl`, so Google's consent screen and Facebook's dialog name Jadwigo's host and not `xhzkmpainwzrfktxffjv.supabase.co`. This is decision `jadwigo-platform/decisions/2026-10-30-prod-supabase-auth-runs-on-the-custom-domain-auth-jadwigo-pl-so` (`dl-ahol`), built in `dl-e8ov.2.65`. Dev keeps its `supabase.co` host. The add-on costs $10 a month and switches on at step 2. `infra/supabase-auth/domain.sh` runs each step through the Management API. It refuses to run from an agent's shell, except `status`.
+
+1. **Add the CNAME.** `infra/terraform/environments/prod.tfvars` names `auth_domain = "auth.jadwigo.pl"`. Run:
+   ```
+   make -C infra plan
+   make -C infra apply
+   ```
+   You should see: the plan adds `module.auth_domain[0].aws_route53_record.cname`, `auth.jadwigo.pl` CNAME `xhzkmpainwzrfktxffjv.supabase.co`, and nothing else from this change. `dig +short CNAME auth.jadwigo.pl` prints `xhzkmpainwzrfktxffjv.supabase.co.`
+2. **Create the domain on Supabase:**
+   ```
+   infra/supabase-auth/domain.sh create
+   ```
+   You should see: `auth.jadwigo.pl: created on xhzkmpainwzrfktxffjv`, `status: 2_initiated`, and an `auth_domain_txt = { … }` block with 1 or 2 TXT records. None of them is secret.
+3. **Add the TXT records.** Replace `auth_domain_txt = {}` in `prod.tfvars` with that block. Then run `make -C infra plan` and `make -C infra apply` again, and land the `prod.tfvars` change in a PR.
+   You should see: the plan adds only `module.auth_domain[0].aws_route53_record.txt[…]`, one for each record in the block.
+4. **Verify.** Run `infra/supabase-auth/domain.sh reverify` every few minutes until it prints `status: 4_origin_setup_completed`. Supabase's certificate can take a while. If `verification error` or `ssl error` lines repeat for an hour, compare the records with `dig +short TXT <name>`.
+5. **Check the callbacks.** The Google prod client (Google step 16) and the Meta app (Meta step 7) must already list `https://auth.jadwigo.pl/auth/v1/callback`. Activation moves the providers' callbacks onto it.
+6. **Activate:**
+   ```
+   infra/supabase-auth/domain.sh activate
+   ```
+   You should see: `auth.jadwigo.pl: activated on xhzkmpainwzrfktxffjv`, and `status: 5_services_reconfigured` on a later `domain.sh status`. The `supabase.co` host keeps answering as well.
+7. **Check the token issuer.** This step sends you an email code. Use an email that already has an account on prod. The script does not create a new account.
+   ```
+   infra/supabase-auth/domain.sh issuer
+   ```
+   You should see: `iss: https://xhzkmpainwzrfktxffjv.supabase.co/auth/v1`, `alg: RS256`, `the JWKS key for that kid: RSA RS256` and `matches the authorizer`. Record the result: `B update dl-e8ov.2.65 --append-notes "issuer check: iss <iss>, alg <alg>, kid <kid>: <matches or DIFFERS>"`. On `DIFFERS`, stop. Deploy nothing and tell the lead: either the authorizer's `jwt_issuer` changes, or the signing key is not RS256 (`supabase-projects.md` step 2).
+
+Then `infra/web-build/prod.env` can name `JW_SUPABASE_URL=https://auth.jadwigo.pl`, once `dl-e8ov.2.9` lets prod have sign-in at all.
+
 ## After
 
 - `B show dl-e8ov.2.53` and `B show dl-e8ov.2.54` carry the client ids in their notes.
@@ -101,3 +133,4 @@ Prod is the same `auth.sh apply prod`, run only when `dl-e8ov.2.8` and `dl-e8ov.
 - **A Google client or the Meta app:** delete it in its console. This is two-way while nobody signs in with it. Once parents use it, deleting it locks out anyone with no other way in, so switch it off in Supabase first.
 - **Brand verification and App Review:** one-way in practice. The name and logo you submitted are on record with Google and Meta, and changing them means a new review.
 - **The keychain items:** `security delete-generic-password -a jadwigo -s <item>`.
+- **The custom domain:** before step 6, delete it under Project Settings → Custom Domains. That stops the add-on, and you can remove `auth_domain` from `prod.tfvars` and apply again. This is two-way. After step 6, parents' sign-ins go through `auth.jadwigo.pl`. Removing the domain then breaks every callback that names it, so treat it as one-way once anyone signs in.

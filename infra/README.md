@@ -62,6 +62,8 @@ A merge deploys nothing. The owner deploys by hand
 | `make -C infra web-build` | build `apps/web` with `web-build/<env>.env`'s public settings, uploading nothing | anyone |
 | `make -C infra auth-diff` | read both Supabase projects' auth config and print what `supabase-auth/<env>.json` would change; exits 2 if anything would | anyone with the token |
 | `make -C infra auth-apply` | write those settings through the Management API | the owner |
+| `supabase-auth/domain.sh status` | prod's custom domain `auth.jadwigo.pl`: its state and the TXT records for `prod.tfvars` | anyone with the token |
+| `supabase-auth/domain.sh create`, `reverify`, `activate`, `issuer` | create the paid domain, verify it, switch Auth onto it, and check a real token's `iss` and signing key against the authorizer (`docs/runbooks/social-sign-in.md`, "The custom domain") | the owner |
 
 **The app's build settings are committed, in `web-build/<env>.env`** (`dl-e8ov.2.64`). They are the
 Supabase URL, its publishable key and the sign-in providers (`JW_SUPABASE_URL`, `JW_SUPABASE_KEY`,
