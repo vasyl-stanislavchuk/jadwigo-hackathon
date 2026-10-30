@@ -98,13 +98,30 @@ function happening(event: SkillEvent, outcome: Outcome): Happening {
  * to proficient restarts the 2 days. Assisted and skip change nothing.
  */
 export function levelOf(all: readonly Happening[], kind: SkillKind): MasteryLevel {
+  return levelSteps(all, kind).at(-1)?.level ?? "not_started";
+}
+
+/** One step of the level machine: the happening, the level after it, and whether it dropped. */
+export interface LevelStep {
+  readonly happening: Happening;
+  readonly level: MasteryLevel;
+  readonly dropped: boolean;
+}
+
+/** The level after each happening in turn, under `levelOf`'s rules. */
+export function levelSteps(all: readonly Happening[], kind: SkillKind): LevelStep[] {
+  const steps: LevelStep[] = [];
   let level: MasteryLevel = "not_started";
   const cleanDays = new Set<number>();
   let proficientDay = 0;
   const dropped = new Set<AttemptId>();
   for (const h of all) {
-    if (h.outcome === "skip") continue;
+    if (h.outcome === "skip") {
+      steps.push({ happening: h, level, dropped: false });
+      continue;
+    }
     if (level === "not_started") level = "attempted";
+    let drop = false;
     const day = warsawDay(h.at);
     if (h.outcome === "clean") {
       cleanDays.add(day);
@@ -125,11 +142,13 @@ export function levelOf(all: readonly Happening[], kind: SkillKind): MasteryLeve
       if (level !== "attempted" && !dropped.has(h.attempt_id)) {
         level = oneDown(level);
         dropped.add(h.attempt_id);
+        drop = true;
         if (level === "proficient") proficientDay = day;
       }
     }
+    steps.push({ happening: h, level, dropped: drop });
   }
-  return level;
+  return steps;
 }
 
 /** Each attempt that judged the skill: its non-skip happenings, its worst one, its last answer. */

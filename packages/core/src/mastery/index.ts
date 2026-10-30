@@ -13,6 +13,8 @@ import type {
   SkillId,
   SkillKind,
 } from "@jadwigo/contracts";
+import { linesOf, makeBrief, statusOf, viewOf } from "./brief.ts";
+import { makeDigest } from "./digest.ts";
 import { foldSkill } from "./fold.ts";
 
 /**
@@ -60,10 +62,6 @@ export interface DigestInput {
 export interface SkillCanDo {
   readonly skill_code: SkillId;
   readonly line: CanDoLine;
-}
-
-function notBuilt(name: string): never {
-  throw new Error(`not built: core lane (${name})`);
 }
 
 /**
@@ -123,20 +121,17 @@ export function foldLearner(
 
 /** What the next lesson should hold: reteach, review, new, recheck and school (nothing recorded). */
 export function brief(
-  _goals: readonly GoalWithSkills[],
-  _skills: readonly Skill[],
-  _mastery: readonly FoldedMastery[],
-  _now: Date,
+  goals: readonly GoalWithSkills[],
+  skills: readonly Skill[],
+  mastery: readonly FoldedMastery[],
+  now: Date,
 ): Brief {
-  return notBuilt("brief");
+  return makeBrief(goals, skills, mastery, now);
 }
 
 /** Where a goal stands for the parent, from its skills' mastery. */
-export function goalStatus(
-  _goal: GoalWithSkills,
-  _mastery: readonly FoldedMastery[],
-): GoalProgress {
-  return notBuilt("goalStatus");
+export function goalStatus(goal: GoalWithSkills, mastery: readonly FoldedMastery[]): GoalProgress {
+  return statusOf(goal, mastery);
 }
 
 /**
@@ -144,26 +139,26 @@ export function goalStatus(
  * learner can do now, what needs attention, and what the brief puts next.
  */
 export function goalView(
-  _goal: GoalWithSkills,
-  _mastery: readonly FoldedMastery[],
-  _brief: Brief,
+  goal: GoalWithSkills,
+  mastery: readonly FoldedMastery[],
+  brief: Brief,
 ): GoalView {
-  return notBuilt("goalView");
+  return viewOf(goal, mastery, brief);
 }
 
 /** The reviewed can-do lines of the skills the learner can do, in `language`. */
 export function canDoLines(
-  _mastery: readonly FoldedMastery[],
-  _skills: readonly Skill[],
-  _language: Language,
+  mastery: readonly FoldedMastery[],
+  skills: readonly Skill[],
+  language: Language,
 ): SkillCanDo[] {
-  return notBuilt("canDoLines");
+  return linesOf(mastery, skills, language);
 }
 
 /** Code's half of a report, and the hash of what it read: the same inputs give the same hash. */
-export function dreamDigest(_input: DigestInput): {
+export function dreamDigest(input: DigestInput): {
   readonly digest: ReportDigest;
   readonly inputs_hash: string;
 } {
-  return notBuilt("dreamDigest");
+  return makeDigest(input);
 }

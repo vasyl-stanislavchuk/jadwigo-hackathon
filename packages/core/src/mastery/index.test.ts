@@ -30,7 +30,7 @@ const code = fc
   .map((parts) => `x.${parts.join(".")}`);
 
 describe("the mastery stubs of step 0", () => {
-  it("are exported from core's index, and the unbuilt ones say so", () => {
+  it("are exported from core's index", () => {
     for (const name of [
       "resolveSkill",
       "masteryOf",
@@ -43,7 +43,6 @@ describe("the mastery stubs of step 0", () => {
     ]) {
       expect(typeof (core as Record<string, unknown>)[name], name).toBe("function");
     }
-    expect(() => core.brief([], CATALOGUE, [], new Date(0))).toThrow("not built: core lane");
   });
 });
 

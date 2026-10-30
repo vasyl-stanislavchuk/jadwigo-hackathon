@@ -1,14 +1,17 @@
 import {
   AttemptId,
+  type Goal,
+  GoalId,
   ID_PREFIXES,
   idOf,
   LearnerId,
   type LearnerSkillEvidence,
   type MasteryLevel,
   PodId,
+  type Skill,
   type SkillKind,
 } from "@jadwigo/contracts";
-import type { SkillEvent } from "./index.ts";
+import type { FoldedMastery, GoalWithSkills, SkillEvent } from "./index.ts";
 
 /**
  * The fold's golden cases (dl-e8ov.2.4): each names one rule of the levels and holds the fold to
@@ -282,3 +285,60 @@ export const GOLDEN: readonly GoldenCase[] = [
     tries: 1,
   },
 ];
+
+/** The goal numbered `n`, over `codes`. */
+export function goal(
+  n: number,
+  codes: readonly string[],
+  status: Goal["status"] = "active",
+): GoalWithSkills {
+  const tail = n.toString(16).padStart(12, "0");
+  return {
+    goal: {
+      id: GoalId.parse(idOf(ID_PREFIXES.goal, `00000000-0000-4000-9000-${tail}`)),
+      pod_id: POD,
+      learner_id: LEARNER,
+      name: `Goal ${n}`,
+      words: null,
+      lesson_language: "pl",
+      status,
+      created_at: "2026-10-01T08:00:00.000Z",
+    },
+    skill_codes: [...codes],
+  };
+}
+
+/** A catalogue skill. */
+export function catalogueSkill(code: string, more: Partial<Skill> = {}): Skill {
+  return {
+    pod_id: POD,
+    code,
+    topic_id: null,
+    kind: "accuracy",
+    status: "reviewed",
+    can_do: null,
+    aliases: [],
+    prerequisites: [],
+    source: "bank",
+    created_at: "2026-10-01T08:00:00.000Z",
+    ...more,
+  };
+}
+
+/** A folded mastery row. */
+export function masteryRow(
+  code: string,
+  level: MasteryLevel,
+  more: Partial<FoldedMastery> = {},
+): FoldedMastery {
+  return {
+    skill_code: code,
+    level,
+    needs_attention: false,
+    tries: level === "not_started" ? 0 : 1,
+    last_answered_at: level === "not_started" ? null : "2026-10-26T09:00:00.000Z",
+    due_at: null,
+    card: null,
+    ...more,
+  };
+}
