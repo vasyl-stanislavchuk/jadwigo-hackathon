@@ -17,17 +17,23 @@ See each one drawn in every state on the
   never holds a literal colour or size.
 - **Green and red keep their meaning.** "On" or "chosen" is the pick's blue, never green. Green is
   kept for a right answer, and red only marks a miss.
-- **No focus ring drawn on a button or an option.** The keyboard still moves the focus.
+- **No focus ring drawn on a button or an option in a lesson.** The keyboard still moves the focus.
+  On an app page (a parent's page, `Page width="prose"`) parents tab through forms, so a button
+  and an outcome tile drawn as a link show a 3 px outline of the focus ink, 3 px out, on
+  `:focus-visible` only, and a typed field's edge turns the focus ink.
+- **Two registers.** An app page reads the adult type scale: H1 28, H2 22, body, labels and H3 17
+  at leading 1.5. The learner's page (`Page width="kid"`) and anything outside a `Page` keep the
+  lesson's sizes. `Page` sets the register for everything inside it, a sheet it opens included.
 
 ## The primitives
 
 | Primitive | Use it for | Not for |
 | --- | --- | --- |
-| **Button** | The one thing to press now: Check, Next, Start. Variants: default, secondary, outline and ghost. There is no red variant and no link variant. | A link to another page, or a choice between options. |
+| **Button** | The one thing to press now: Check, Next, Start. Variants: default, secondary, outline and ghost. There is no red variant and no link variant. The default is the action on its pressed edge everywhere. On an app page the control size is 48 high at 17 bold, 24 px in, and outline is white on a 2 px line. | A link to another page, or a choice between options. |
 | **Toggle** | One option a child can turn on or off. "On" means chosen, not right. | An answer that is checked at once. |
 | **Toggle group** | A one-of choice with a few options, such as Tak or Nie. The options stand apart, so each is easy to hit. | A long list. |
 | **Switch** | A setting that takes effect at once, such as sound on or off. The words and the track are one target. | A lesson answer. |
-| **Input** | One typed number or short word, with answer-sized digits. A refused character shows the ink ring, never red. | A grade on the answer: that is the band's job. |
+| **Input** | One typed number or short word, with answer-sized digits. A refused character shows the ink ring, never red. The text kind is an adult's field, 48 high; on an app page it is 17 and has no soft focus ring, only its edge turning the focus ink. | A grade on the answer: that is the band's job. |
 | **Slider** | The number line's fallback: a value on a line, moved by a press anywhere on it or by the arrow keys. | An exact count. |
 | **Card** | A surface that holds one thing: a question, an example, a summary. | A layout grid. |
 | **Badge** | A short label, such as a status. It is not a control. Its correct and try-again variants use the verdict colours. | Something to press. |

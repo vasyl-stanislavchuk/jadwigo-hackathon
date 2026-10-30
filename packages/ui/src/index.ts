@@ -1,7 +1,8 @@
 // Zeszyt's styles live in ./styles/tailwind.css (exported as "@jadwigo/ui/styles.css"); the app
 // imports it once. What follows is the code: cn(), the theme helpers, the primitives, and the parts
-// an app page is built from (dl-uukj.32.3).
+// an app page is built from (dl-uukj.32.3), and the register they draw in (dl-uukj.32.17).
 
+export { type Register, RegisterProvider, useRegister } from "./lib/register.tsx";
 export { followSystemTheme, heldTheme, holdTheme, type Theme } from "./lib/theme.ts";
 export { cn } from "./lib/utils.ts";
 export { Field } from "./parts/field.tsx";

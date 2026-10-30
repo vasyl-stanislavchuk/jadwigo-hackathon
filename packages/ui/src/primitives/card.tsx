@@ -1,7 +1,8 @@
 // shadcn/ui card (radix-vega, shadcn@4.21.1), with ui-* colours and kid type sizes (dl-0ax3).
 // size="compact" is a card in a list on an app page (dl-uukj.32.3): a tighter inset and gap, at
-// the body size.
+// the body size, the page body size in the "app" register (dl-uukj.32.17).
 import type * as React from "react";
+import { BODY, useRegister } from "../lib/register.tsx";
 import { cn } from "../lib/utils.ts";
 
 function Card({
@@ -9,13 +10,14 @@ function Card({
   size = "default",
   ...props
 }: React.ComponentProps<"div"> & { size?: "default" | "compact" }) {
+  const body = BODY[useRegister()];
   return (
     <div
       data-slot="card"
       data-size={size}
       className={cn(
         "group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-xl bg-card py-(--card-spacing) text-xl text-card-foreground shadow-xs ring-1 ring-border [--card-spacing:--spacing(6)] has-[>img:first-child]:pt-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
-        size === "compact" && "[--card-spacing:--spacing(4)] text-jw-body",
+        size === "compact" && ["[--card-spacing:--spacing(4)]", body],
         className,
       )}
       {...props}

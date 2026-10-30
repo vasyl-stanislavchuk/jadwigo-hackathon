@@ -1,9 +1,11 @@
 // One labelled control with the line that says what is wrong with it (dl-uukj.32.3). Field gives
 // the control its id, ties the label to it and, while there is a problem, marks it invalid and
 // points aria-describedby at the problem line, a role="alert" so a screen reader says it at once.
-// A problem is not a miss: it is said in the ink with a mark, never in the miss's red.
+// A problem is not a miss: it is said in the ink with a mark, never in the miss's red. On an app
+// page (dl-uukj.32.17) the line is at the page body size.
 import { CircleAlert } from "lucide-react";
 import { cloneElement, type ReactElement, type ReactNode, useId } from "react";
+import { BODY, useRegister } from "../lib/register.tsx";
 import { cn } from "../lib/utils.ts";
 import { Label } from "./label.tsx";
 
@@ -27,6 +29,7 @@ function Field({
   className?: string;
 }): ReactElement {
   const own = useId();
+  const size = BODY[useRegister()];
   const id = children.props.id ?? `${own}-control`;
   const problemId = `${own}-problem`;
   // An empty problem is none: no alert, and the control stays valid.
@@ -48,7 +51,7 @@ function Field({
           role="alert"
           id={problemId}
           data-slot="field-problem"
-          className="flex items-start gap-2 text-jw-body text-jw-ink"
+          className={cn("flex items-start gap-2 text-jw-ink", size)}
         >
           <CircleAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
           <span>{problem}</span>

@@ -3,21 +3,32 @@
 // app page (dl-uukj.32.3): an email, a code, a name, 48 high (--jw-control-height, decision
 // dl-og82) at the body size with proportional digits, on Zeszyt's paper and line. aria-invalid (a
 // refused character or a field's problem, never a graded answer) shows the primary ring, not the
-// try-again red, because red only ever marks a miss (dl-uukj.29.16).
+// try-again red, because red only ever marks a miss (dl-uukj.29.16). On an app page (the "app"
+// register, dl-uukj.32.17) kind="text" is at the page body size and drops the soft focus ring: its
+// edge turning the focus ink is the focus. A number field keeps the ring in either register.
 import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
+import { type Register, useRegister } from "../lib/register.tsx";
 import { cn } from "../lib/utils.ts";
 
+const RING = "focus-visible:ring-4 focus-visible:ring-ring/50";
+
 const inputVariants = cva(
-  "w-full border-2 border-input bg-background px-4 text-foreground transition-[color,border-color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-primary aria-invalid:ring-4 aria-invalid:ring-primary/30",
+  "w-full border-2 border-input bg-background px-4 text-foreground transition-[color,border-color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-primary aria-invalid:ring-4 aria-invalid:ring-primary/30",
   {
     variants: {
       kind: {
         number: "min-h-kid-tap rounded-lg text-kid-answer font-semibold tabular-nums",
         text: "min-h-jw-control rounded-jw-small border-jw-line bg-jw-card text-jw-body text-jw-ink proportional-nums placeholder:text-jw-placeholder focus-visible:border-jw-focus",
       },
+      register: { app: "", lesson: "" } satisfies Record<Register, string>,
     },
-    defaultVariants: { kind: "number" },
+    compoundVariants: [
+      { kind: "number", class: RING },
+      { kind: "text", register: "lesson", class: RING },
+      { kind: "text", register: "app", class: "text-jw-page-body" },
+    ],
+    defaultVariants: { kind: "number", register: "lesson" },
   },
 );
 
@@ -26,13 +37,14 @@ function Input({
   type,
   kind = "number",
   ...props
-}: React.ComponentProps<"input"> & VariantProps<typeof inputVariants>) {
+}: React.ComponentProps<"input"> & Omit<VariantProps<typeof inputVariants>, "register">) {
+  const register = useRegister();
   return (
     <input
       type={type}
       data-slot="input"
       data-kind={kind}
-      className={cn(inputVariants({ kind }), className)}
+      className={cn(inputVariants({ kind, register }), className)}
       {...props}
     />
   );
