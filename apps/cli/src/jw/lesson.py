@@ -66,6 +66,10 @@ AGENT_KEYS = (*RUNGS, "boost_by_mistake", "twin", "changes")
 # A change sets one of these copied parts of a step, or a part under one, by a dotted path.
 EDITABLE = ("say", "data", "key", "hints", "worked", "almost")
 CHANGE_KINDS = ("numbers", "context", "wording", "tutor_notes")  # BasedOn in records.ts
+TIMES_RULE = "times_table"  # RuleRef's multiplication rule, packages/contracts stem.ts
+# The change kind the rule is recorded under: BasedOn has no kind for a key's rule, and the rule
+# only classifies misses for the help, which is closest to the notes a tutor reads.
+RULE_CHANGE = "tutor_notes"
 CATEGORY = "child"  # a drafted lesson is for a child; the set pages carry no category
 SKILL_ID_RE = re.compile(r"^[a-z]+(\.[a-z0-9-]+)+$")  # SkillId in packages/contracts records.ts
 DRAFT_ID_RE = re.compile(r"^draft_[0-9a-f]{12}$")
@@ -158,6 +162,45 @@ def _copied_rungs(q: Mapping[str, Any]) -> dict[str, str | None]:
         "almost": hints(3) or ("worked, its last line blank" if help_.get("almost") else None),
         "worked": " and ".join(p for p in (worked, hints(4)) if p) or None,
     }
+
+
+def _factors(figure: Any) -> tuple[int, int] | None:
+    """The 2 whole numbers of a figure that reads plainly `a · b =` (Khan's TeX colours and sizes
+    dropped, an `?` after the `=` allowed), or None."""
+    text = (figure or {}).get("text") if isinstance(figure, Mapping) else None
+    if not isinstance(text, str):
+        return None
+    plain = text.replace("\\cdot", "·").replace("\\times", "×")
+    plain = re.sub(r"\\[A-Za-z]+|[${}]", " ", plain)
+    found = re.fullmatch(r"\s*(\d+)\s*[·×]\s*(\d+)\s*=\s*\??\s*", plain)
+    return (int(found[1]), int(found[2])) if found else None
+
+
+def _add_times_rule(q: dict[str, Any]) -> None:
+    """Add the multiplication rule to a copied question that is plainly a×b, by code, as a change in
+    `based_on.changes` (jadwigo-ai-workflows/decisions/2026-10-30-jw-adds-the-multiplication-
+    mistake-rule-by-code-to-a-copied-axb): an enter question whose figure is `a · b` and whose key
+    accepts one whole number, a×b, and names no rule yet. Its misses then name their class
+    (`add_for_multiply`, `neighbour_row`, ...). Anything else stays as the bank has it."""
+    spec = q["question"]
+    key = spec.get("key")
+    factors = _factors((spec.get("data") or {}).get("figure"))
+    if spec.get("family") != "enter" or factors is None or not isinstance(key, Mapping):
+        return
+    accept = key.get("accept") or []
+    a, b = factors
+    if "rule" in key or len(accept) != 1 or str(accept[0]).strip() != str(a * b):
+        return
+    spec["key"] = {**key, "rule": {"rule": TIMES_RULE, "a": a, "b": b, "recent": []}}
+    q["based_on"] = copy.deepcopy(q["based_on"])
+    q["based_on"]["changes"].append(
+        {
+            "change": RULE_CHANGE,
+            "why": f"jw added the multiplication rule ({a} × {b}) to the key by code, so a miss "
+            "names its mistake class",
+            "reviewed": False,
+        }
+    )
 
 
 def _slim_pictures(value: Any) -> Any:
@@ -421,6 +464,7 @@ def draft(
         )
         if skill_note:
             questions[-1]["skill_note"] = skill_note
+        _add_times_rule(questions[-1])
     # A refused item's left_out line says why load_item refused it, not that it was flagged.
     left_out = [
         {"id": left.id, "reason": refused.get(left.id, left.reason)} for left in result.left_out
