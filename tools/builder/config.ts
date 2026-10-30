@@ -6,9 +6,20 @@ import { join } from "node:path";
 
 type Env = Record<string, string | undefined>;
 
+/** HOME as jw's expanduser reads it: the environment's HOME, else the account's home. */
+function home(env: Env): string {
+  return (env["HOME"] ?? "").trim() || homedir();
+}
+
+/**
+ * JADWIGO_DRAFTS_DIR from the environment, trimmed, with a leading ~ or ~/ expanded to HOME as jw
+ * expands it (dl-a38n.21), so jw, the channel, the launcher and the web watcher share one directory.
+ */
 export function draftsDir(env: Env = process.env): string {
   const set = (env["JADWIGO_DRAFTS_DIR"] ?? "").trim();
-  return set || join(homedir(), ".local", "state", "jadwigo", "drafts");
+  if (!set) return join(home(env), ".local", "state", "jadwigo", "drafts");
+  if (set === "~") return home(env);
+  return set.startsWith("~/") ? join(home(env), set.slice(2)) : set;
 }
 
 /** The session `make builder` minted. Claude Code does not tell an MCP server its own session id. */
