@@ -42,6 +42,7 @@ Milestone 1, free tier (the order is in `docs/README.md`). jadwigo.pl is live in
 - `dl-w0b4.7, dl-w0b4.9` (deferred while jadwigo.kids waits): who jadwigo.kids serves, and what a visitor sees of the other domain
 - `dl-w0b4.8, .11, .12, .17` (deferred until the jadwigo.pl site skeleton (`dl-w0b4.1`)): featured-lesson approval, PostHog and consent, social accounts
 - `dl-w0b4.29`: who Jadwigo is for first, until the pilot verdict (`docs/research/jadwigo-go-to-market.md`)
-- `dl-w0b4.30`: which message leads on jadwigo.pl. Identity (`dl-w0b4.27`) and illustration (`dl-w0b4.18`) wait on it
+- `dl-w0b4.30`: which message leads on jadwigo.pl. The look, the name story and the cast are decided (2026-10-30, `dl-w0b4.35`, `.37`, `.38`), and don't wait on it
+- `dl-w0b4.69`, then `dl-w0b4.18`: the owner runs the mascot style batch, then shortlists 3 styles from the comparison drop (`docs/research/jadwigo-mascot-style.md`)
 - `dl-w0b4.31`: how the pilot invitation reaches the class's parents
 - `dl-w0b4.32`: whether jadwigo.pl collects parents' emails before launch

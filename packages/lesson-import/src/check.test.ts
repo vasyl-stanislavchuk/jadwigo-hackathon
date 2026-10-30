@@ -10,6 +10,8 @@ import { featuredAssignmentId } from "./ids.ts";
 
 const script = fileURLToPath(new URL("./check.ts", import.meta.url));
 const lessons = fileURLToPath(new URL("../../testing/src/lessons/", import.meta.url));
+/** The playground's spelling lessons, whose boosts check refuses (dl-e8ov.5.38.11). */
+const SPELLING = ["polish-spelling-practice", "spelling-diagnostic"];
 
 /** `bun packages/lesson-import/src/check.ts <file> --json`, as jw runs it: the exit code and the JSON. */
 function check(file: string): { status: number | null; out: Record<string, unknown> } {
@@ -36,11 +38,12 @@ function planted(change: (step: Step) => void, title?: string): string {
 describe("check.ts --json", () => {
   const names = readdirSync(lessons).filter((f) => f.endsWith(".json"));
 
-  it("passes every fixture lesson file, with its play path", () => {
+  it("passes every fixture lesson file but the 2 spelling lessons, with its play path", () => {
     expect(names).toHaveLength(5);
     for (const name of names) {
       const { status, out } = check(join(lessons, name));
       const id = name.replace(/\.json$/, "");
+      if (SPELLING.includes(id)) continue;
       expect({ name, status, ok: out["ok"], errors: out["errors"] }).toEqual({
         name,
         status: 0,
@@ -53,15 +56,96 @@ describe("check.ts --json", () => {
     }
   });
 
+  it("fails the 2 spelling lessons on their boost cards no judge gives, and on nothing else", () => {
+    // The playground writes one set of spelling cards on every step, and each step's near table
+    // names one or two of them: the rest never show (dl-e8ov.5.38.11). The import still takes them.
+    for (const id of SPELLING) {
+      const { status, out } = check(join(lessons, `${id}.json`));
+      expect(status).toBe(1);
+      const errors = out["errors"] as { step_id: string | null; message: string }[];
+      expect(errors.length).toBeGreaterThan(0);
+      for (const e of errors) {
+        expect(e.step_id).toMatch(/^s\d+t?$/);
+        expect(e.message).toContain("boost_by_mistake names");
+      }
+      expect(out["questions"]).toBeGreaterThan(0);
+    }
+  });
+
   it("prints exactly the keys jw reads", () => {
     const { out } = check(join(lessons, "equal-groups.json"));
     expect(Object.keys(out).sort()).toEqual([
       "errors",
       "lesson_id",
+      "mistake_classes",
       "ok",
       "play_path",
       "questions",
     ]);
+  });
+
+  it("lists each question step's mistake classes, its family's and its own near table's", () => {
+    const { out } = check(join(lessons, "equal-groups.json"));
+    const classes = out["mistake_classes"] as Record<string, string[]>;
+    expect(Object.keys(classes).sort()).toEqual(
+      ["s02", "s02t", "s05", "s05t", "s06", "s06t", "s07", "s07t"].sort(),
+    );
+    expect(classes["s02"]).toEqual(
+      expect.arrayContaining(["off_by_small", "neighbour_row", "other_wrong"]),
+    );
+    expect(classes["s06"]).toEqual(expect.arrayContaining(["reversed", "swapped_neighbours"]));
+    expect(classes["s07"]).toContain("false_reject");
+    expect(classes["s07"]).not.toContain("off_by_small");
+    for (const list of Object.values(classes)) expect(list).toEqual([...list].sort());
+  });
+
+  it("fails a boost for a class the step never gives, naming the step and its classes", () => {
+    const file = planted((step) => {
+      const help = step.question?.help as { boost_by_mistake?: object } | undefined;
+      if (help !== undefined)
+        help.boost_by_mistake = { off_by_one: { text: "Policz jeszcze raz." } };
+    });
+    const { status, out } = check(file);
+    expect(status).toBe(1);
+    expect(out["ok"]).toBe(false);
+    expect(out["errors"]).toEqual([
+      {
+        step_id: "s02",
+        message: expect.stringMatching(
+          /names off_by_one, .*its classes are .*off_by_small/,
+        ) as unknown,
+      },
+    ]);
+    expect((out["mistake_classes"] as Record<string, string[]>)["s02"]).toContain("off_by_small");
+  });
+
+  it("takes a boost for a class the step's own near table names", () => {
+    const file = planted((step) => {
+      const q = step.question as { key: { near: Record<string, string> }; help: object };
+      q.key.near["11"] = "counted_one_more";
+      q.help = { ...q.help, boost_by_mistake: { counted_one_more: { text: "Policz kropki." } } };
+    });
+    const { status, out } = check(file);
+    expect({ status, errors: out["errors"] }).toEqual({ status: 0, errors: [] });
+    expect((out["mistake_classes"] as Record<string, string[]>)["s02"]).toContain(
+      "counted_one_more",
+    );
+  });
+
+  it("fails a twin's boost under the twin's step id", () => {
+    const file = planted((step) => {
+      const twin = (step.question as { help: { twin: { help?: object } } }).help.twin;
+      twin.help = { ...twin.help, boost_by_mistake: { reversed: { text: "Od lewej." } } };
+    });
+    const { status, out } = check(file);
+    expect(status).toBe(1);
+    expect((out["errors"] as { step_id: string }[]).map((e) => e.step_id)).toEqual(["s02t"]);
+  });
+
+  it("lists the mistake classes when the file fails to parse too", () => {
+    const { out } = check(planted(() => {}, ""));
+    expect(out["ok"]).toBe(false);
+    expect((out["mistake_classes"] as Record<string, string[]>)["s02"]).toContain("off_by_small");
   });
 
   it("fails a step whose question_type is another family's, naming the step", () => {

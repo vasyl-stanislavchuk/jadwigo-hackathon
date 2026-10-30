@@ -7,10 +7,10 @@
 The file name does not start with `test_`, so `pytest -q` never collects it; naming it runs it.
 It is skipped, with the reason, when either path is missing. It asks for "6 zadań z mnożenia,
 klasa 3" against the multiplication sets of the bank checkout whose items are in the converted
-file (the search is stubbed with those sets, so no bank URL or token is read), fills every rung
-with one placeholder line and each twin with the question itself, and runs the real check.ts.
-It shows the real items compile as the import compiles them; it says nothing about the rungs, which
-a composing agent writes. Nothing it reads is written into the repo: the lesson file goes to a
+file (the search is stubbed with those sets, so no bank URL or token is read), copies each drawn
+question whole, writes what each step's you_write lists (one placeholder line, and the question
+itself as the twin), and runs the real check.ts. It shows the real items play as copied and
+compile as the import compiles them; it says nothing about the agent's words. Nothing it reads is written into the repo: the lesson file goes to a
 temporary folder.
 """
 
@@ -63,18 +63,23 @@ def _multiplication_rows() -> list[dict[str, Any]]:
     return [{"id": set_id, "rank": n} for n, (_, set_id) in enumerate(found[:3], start=1)]
 
 
-def _fill(draft: dict[str, Any]) -> dict[str, Any]:
-    for q in draft["questions"]:
-        worked = list(q["material"]["worked"]) or ["(rozwiązanie)"]
-        q["help"] = {
-            "look": {"text": "Przeczytaj zadanie jeszcze raz."},
-            "boost": {"text": "Pomyśl, ile jest grup i ile w każdej."},
-            "boost_by_mistake": {"any": {"text": "Sprawdź jeszcze raz."}},
-            "almost": [*worked[:-1], ""],
-            "worked": worked,
-            "twin": {"say": q["say"], **q["question"]},
-        }
-    return draft
+def _words(draft: dict[str, Any], folder: Path) -> dict[str, Any]:
+    stored = lesson.load_draft(draft["draft_id"], folder)
+    placeholder = {
+        "look": {"text": "Przeczytaj zadanie jeszcze raz."},
+        "boost": {"text": "Pomyśl, ile jest grup i ile w każdej."},
+        "worked": ["(rozwiązanie)"],
+    }
+    words: dict[str, Any] = {}
+    for q, kept in zip(draft["questions"], stored["questions"], strict=True):
+        twin = {"say": kept["say"], **{k: kept["question"][k] for k in ("family", "data", "key")}}
+        words[q["step_id"]] = {"twin": twin, **{r: placeholder[r] for r in q["you_write"]
+                                                if r in placeholder}}
+        if "boost_by_mistake" in q["you_write"]:
+            words[q["step_id"]]["boost_by_mistake"] = {
+                q["mistake_classes"][0]: {"text": "Sprawdź jeszcze raz."}
+            }
+    return words
 
 
 def test_a_real_multiplication_draft_checks(
@@ -85,15 +90,19 @@ def test_a_real_multiplication_draft_checks(
     assert rows, f"no grade 3 multiplication set in {BANK_DIR} holds a converted item"
     monkeypatch.setattr(question, "search_envelope", lambda **_: {"rows": rows})
 
-    draft = lesson.draft(REQUEST, "3", names=[], today=TODAY)
+    draft = lesson.draft(REQUEST, "3", names=[], today=TODAY, folder=tmp_path)
     assert draft["rule_settled"] is False
+    assert draft["plays_as_copied"] is True, draft["copy_errors"]
     assert len(draft["questions"]) == 6, draft["left_out"]
-    assert all(q["credit"]["source"] and q["credit"]["licence"] for q in draft["questions"])
+    assert len(json.dumps(draft, ensure_ascii=False)) < 20_000
+    assert all(q["copied_help"]["hints"] for q in draft["questions"])
     assert all(q["why_drawn"] for q in draft["questions"])
-    assert all(q["skill_ids"] and ":" not in q["skill_ids"][0] for q in draft["questions"])
     assert all(left["reason"] for left in draft["left_out"])
+    stored = lesson.load_draft(draft["draft_id"], tmp_path)
+    assert all(q["credit"]["source"] and q["credit"]["licence"] for q in stored["questions"])
+    assert all(q["skill_ids"] and ":" not in q["skill_ids"][0] for q in stored["questions"])
 
-    result = lesson.check(_fill(draft), out_dir=tmp_path)
+    result = lesson.check(draft["draft_id"], _words(draft, tmp_path), out_dir=tmp_path, folder=tmp_path)
     assert result["ok"] is True, result["errors"]
     assert result["play_path"].startswith("/play/")
     print(lesson.card_text(result["card"]))

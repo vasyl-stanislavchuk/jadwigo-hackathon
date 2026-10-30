@@ -9,7 +9,9 @@
         "$TURBO_ROOT$/packages/contracts/openapi.json",
         "$TURBO_ROOT$/apps/cli/mcp-tools.json",
         "$TURBO_ROOT$/packages/ui/src/styles/foundation.css",
-        "$TURBO_ROOT$/packages/lesson-kit/src/families/questionTypes.ts"
+        "$TURBO_ROOT$/packages/lesson-kit/src/families/questionTypes.ts",
+        "$TURBO_ROOT$/packages/api-client/src/**",
+        "$TURBO_ROOT$/packages/contracts/src/**"
       ]
     },
     "test": {
