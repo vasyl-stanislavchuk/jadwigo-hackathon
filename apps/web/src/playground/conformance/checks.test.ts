@@ -4,10 +4,12 @@ import { keyFindings } from "./keys.ts";
 import { PLANTED } from "./planted.ts";
 import { compileStrictly } from "./strict.ts";
 
-/** What the page finds on an item before drawing it: the strict compile, then the key. */
+/** What the page finds on an item before drawing it: the strict compile, then the key and the twin's. */
 function before(item: ConvertedItem) {
-  const { question, findings } = compileStrictly(item);
-  return question === null ? findings : keyFindings(item.id, question);
+  const result = compileStrictly(item);
+  if (result.question === null) return result.findings;
+  const twin = result.twin === null ? [] : keyFindings(item.id, result.twin, "spec.help.twin");
+  return [...keyFindings(item.id, result.question), ...twin];
 }
 
 describe("the checks before an item is drawn", () => {
@@ -65,6 +67,25 @@ describe("the checks before an item is drawn", () => {
     ]);
     const loose = { ...PLANTED.ready, spec: { ...PLANTED.ready.spec, help: { nope: 1 } } };
     expect(before(loose).map((f) => f.path)).toEqual(["spec.help.nope"]);
+  });
+
+  it("grades the twin's key too, since the import asks it as a spare question", () => {
+    const twin = {
+      say: "Wybierz.",
+      family: "choose",
+      data: PLANTED.ready.spec.data,
+      key: { correct: ["o9"] },
+    };
+    const badTwinKey = {
+      ...PLANTED.ready,
+      spec: { ...PLANTED.ready.spec, help: { twin } },
+    };
+    expect(compileStrictly(badTwinKey).findings).toEqual([]);
+    const found = before(badTwinKey);
+    expect(found.map((f) => [f.rule, f.level, f.path])).toEqual([
+      ["key-grades", "error", "spec.help.twin.key"],
+    ]);
+    expect(found[0]?.text).toContain('"o9"');
   });
 
   it("leaves the picture, TeX and not-checked items to the page and to jw", () => {

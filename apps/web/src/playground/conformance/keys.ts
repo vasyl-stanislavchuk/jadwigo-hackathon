@@ -18,8 +18,9 @@ function keyShape(key: unknown): string {
   return text.length > 80 ? `${text.slice(0, 79)}…` : text;
 }
 
-/** The finding when the key's own answer does not grade, or none. */
-export function keyFindings(item_id: string, question: StrictQuestion): Finding[] {
+/** The finding when the key's own answer does not grade, or none: `at` is the question's place,
+ * `spec` for the item's own and `spec.help.twin` for its twin. */
+export function keyFindings(item_id: string, question: StrictQuestion, at = "spec"): Finding[] {
   let why: string | null;
   try {
     const verdict = judge(question, solutionOf(question));
@@ -31,7 +32,7 @@ export function keyFindings(item_id: string, question: StrictQuestion): Finding[
   return [
     {
       step_id: item_id,
-      path: "spec.key",
+      path: `${at}.key`,
       level: "error",
       rule: "key-grades",
       text: `The ${question.family} key's own answer does not grade (${why}); the key is ${keyShape(question.key)}.`,
