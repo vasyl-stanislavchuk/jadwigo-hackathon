@@ -246,6 +246,12 @@ export function refusal(error: unknown): unknown {
       return new StoreError(ErrorType.enum.WriteOnce, error.message);
     case "23503": // foreign_key_violation: the row it names is not in the pod
       return new StoreError(ErrorType.enum.NotFound, error.message);
+    case "42501": // a row-level security check: the row names one the pod does not read
+      // (20261031130000_learner_knowledge_fix.sql: a skill's topic, a learner's curriculum).
+      if (error.message.includes("row-level security")) {
+        return new StoreError(ErrorType.enum.NotFound, error.message);
+      }
+      return error;
     case "P0002": // no_data_found: app.claim_attempt's learner, account or attempt
       return new StoreError(ErrorType.enum.NotFound, error.message);
     case "23502": // not_null_violation
