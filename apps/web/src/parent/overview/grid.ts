@@ -64,12 +64,19 @@ export type Row = {
 
 export type Grid = { columns: Column[]; rows: Row[] };
 
-/** How one row went on its own, its twins aside. */
+/**
+ * How one row went on its own, its twins aside. A skip after a wrong try is not yet, whichever
+ * way it was skipped ("Jeszcze nie wiem" or "Dalej bez odpowiedzi"); only a skip with no try is
+ * skipped. `tries` counts real tries, never the skip, and a right try ends the question, so a
+ * skipped row with tries had a wrong one (decision
+ * 2026-10-30-the-parent-s-outcomes-a-soft-green-for-got-there-a-dashed-tile-f).
+ */
 export function rowOutcome(row: AttemptResult): Exclude<Outcome, "not_asked"> {
   if (row.ended === null) return "open";
   if (row.ended === "correct")
     return row.first_try_correct && row.help_used === 0 ? "first_try" : "got_there";
-  return row.ended === "missed" ? "not_yet" : "skipped";
+  if (row.ended === "missed") return "not_yet";
+  return row.tries > 0 ? "not_yet" : "skipped";
 }
 
 /** A planned row's cell, with the twins added for it. */
@@ -121,6 +128,14 @@ function plannedOf(
     byQuestion.set(row.lesson_question_id, { planned: row, twins: twinsBySeq.get(row.seq) ?? [] });
   }
   return byQuestion;
+}
+
+/** One attempt's cells, a planned question each in seq order, its twins folded in as the grid
+ * folds them: the parent home's tile row is the heatmap's row. */
+export function cellsOf(results: AttemptResult[]): (Cell & { planned: AttemptResult })[] {
+  return [...plannedOf(results).values()]
+    .sort((a, b) => a.planned.seq - b.planned.seq)
+    .map(({ planned, twins }) => ({ ...cellOf(planned, twins), planned }));
 }
 
 export function buildGrid(attempts: AssignmentAttempt[]): Grid {

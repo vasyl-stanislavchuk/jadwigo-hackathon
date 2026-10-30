@@ -58,7 +58,8 @@ function question(
       say: asked.say,
       family: "enter",
       question_type: asked.question_type,
-      tries: tries.length,
+      // Real tries only, as attempt_result counts them: a skip is never a try.
+      tries: tries.filter((t) => t.kind === "try").length,
       first_try_correct: tries[0]?.correct === true,
       correct: ended === "correct",
       mistake_classes: [],
@@ -187,10 +188,43 @@ describe("AttemptReview", () => {
     expect(tiles().map((t) => t.dataset["ended"])).toEqual(["correct", "missed", "skipped"]);
     expect(tiles().map((t) => t.dataset["tile"])).toEqual(["1", "2", "3"]);
     expect(tiles()[1]?.textContent).toContain("Ile to jest dwa razy pięć? (2)");
-    // Each tile's outcome tile wears the tone of how it ended: right, the miss, plain for a skip.
+    // Each tile's outcome is the overview's, in the parent's icon set: a skip with no try is skipped.
     expect(
       tiles().map((t) => t.querySelector("[data-outcome]")?.getAttribute("data-outcome")),
-    ).toEqual(["right", "miss", "plain"]);
+    ).toEqual(["first_try", "not_yet", "skipped"]);
+    for (const tile of tiles()) {
+      const outcome = tile.querySelector("[data-outcome]")?.getAttribute("data-outcome");
+      expect(tile.querySelector(`[data-icon="${outcome}"]`)).not.toBeNull();
+    }
+    expect(tiles()[1]?.textContent).toContain("Jeszcze nie");
+  });
+
+  it("counts a wrong try, then not sure, as not yet; data-ended stays what was stored", async () => {
+    const wrongThenNotSure = question(
+      1,
+      "skipped",
+      [
+        attempt({ value: { entered: "7" }, correct: false, mistake_class: "add_for_multiply" }),
+        attempt({
+          try_no: 2,
+          kind: "skip",
+          value: null,
+          correct: null,
+          skip_reason: "dont_know",
+        }),
+      ],
+      30_000,
+    );
+    await draw(
+      client({ getParentReview: async () => ({ ...REVIEW, questions: [wrongThenNotSure] }) }),
+    );
+    const [tile] = tiles();
+    expect(tile?.dataset["ended"]).toBe("skipped");
+    expect(tile?.querySelector("[data-outcome]")?.getAttribute("data-outcome")).toBe("not_yet");
+    await press('[data-tile="1"]');
+    const badge = document.querySelector("[data-review-ended]");
+    expect(badge?.textContent).toBe("Jeszcze nie");
+    expect(badge?.querySelector('[data-icon="not_yet"]')).not.toBeNull();
   });
 
   it("opens a right question's step with its one try", async () => {

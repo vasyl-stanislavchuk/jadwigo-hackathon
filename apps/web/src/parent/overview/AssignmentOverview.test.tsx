@@ -29,9 +29,10 @@ function client(reply: AssignmentAttempts): ParentClient {
 }
 
 const missed = { ended: "missed", correct: false, first_try_correct: false } as const;
-const skipped = { ended: "skipped", correct: false, first_try_correct: false } as const;
+const skipped = { ended: "skipped", correct: false, first_try_correct: false, tries: 0 } as const;
 
-/** 2 attempts over 6 questions: every outcome once, a twin folded into question 3. */
+/** 2 attempts over 6 questions: a twin folded into question 3, and question 5 a wrong try then
+ * "Jeszcze nie wiem", which counts as not yet (a skip with no try is grid.test.ts's). */
 const POD_OF_2 = overview([
   played(
     1,
@@ -41,7 +42,7 @@ const POD_OF_2 = overview([
       result(1, 3, 3, skipped),
       twin(1, 4, 7, 3, { say: "Ile to 4 + 4?" }),
       result(1, 5, 4, missed),
-      result(1, 6, 5, { ...skipped, skip_reason: "dont_know" }),
+      result(1, 6, 5, { ...skipped, tries: 1, skip_reason: "dont_know" }),
     ],
     { name: "Ola" },
   ),
@@ -95,7 +96,7 @@ describe("AssignmentOverview", () => {
       "got_there",
       "got_there",
       "not_yet",
-      "skipped",
+      "not_yet",
       "not_asked",
     ]);
     expect(cells(2).map((c) => c.getAttribute("data-cell"))).toEqual([
@@ -114,7 +115,7 @@ describe("AssignmentOverview", () => {
       "Pytanie 2: Po próbach lub z pomocą",
       "Pytanie 3: Po próbach lub z pomocą, Było też podobne pytanie",
       "Pytanie 4: Jeszcze nie",
-      "Pytanie 5: Pominięte",
+      "Pytanie 5: Jeszcze nie",
       "Pytanie 6: Nie zadane",
     ]);
     expect(cells(2)[5]?.getAttribute("aria-label")).toBe("Pytanie 6: W trakcie");
@@ -155,6 +156,12 @@ describe("AssignmentOverview", () => {
         item.querySelector(`[data-icon="${item.getAttribute("data-legend-outcome")}"]`),
       ).not.toBeNull();
     expect(legend.querySelector("[data-legend-twin] [data-twin-mark]")).not.toBeNull();
+    // The new tones: got there on white inside the right edge, not asked on a dashed edge.
+    const tile = (outcome: string): string =>
+      legend.querySelector(`[data-legend-outcome="${outcome}"] [data-outcome]`)?.className ?? "";
+    expect(tile("got_there")).toContain("bg-jw-card");
+    expect(tile("got_there")).toContain("border-kid-correct");
+    expect(tile("not_asked")).toContain("border-dashed");
   });
 
   it("opens a column's sheet: the question, then each attempt with its numbers and its twin nested", async () => {

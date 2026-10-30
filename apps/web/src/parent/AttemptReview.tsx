@@ -5,12 +5,13 @@
  *   header   the lesson's title, the day, the time it took, the questions asked and how many were
  *            right on the first try: counts, never a percentage (no XP or percentage for anyone,
  *            decisions 2026-10-18 and 2026-10-03)
- *   grid     a tile per question with its seq and say, and an outcome tile in the tone of how it
- *            ended (src/review/outcome.ts): green for right, the miss red for a miss (decision
- *            2026-10-24-a-miss-is-marked-in-red), plain for a skip
+ *   grid     a tile per question with its seq and say, and its outcome as the overview counts it
+ *            (overview/grid.ts rowOutcome), in the parent's icon set and tones (overview/outcome.tsx):
+ *            a skip after a wrong try is not yet, only a skip with no try is skipped (decision
+ *            2026-10-30-the-parent-s-outcomes-a-soft-green-for-got-there-a-dashed-tile-f)
  *   step     a tile opens the shared review step (src/review/ReviewStep.tsx) in the adult's lines,
- *            with the tries under it: each answer drawn beside the right one, its time, the help it
- *            had, and the mistake or the skip in plain words
+ *            with the same outcome as its badge and the tries under it: each answer drawn beside
+ *            the right one, its time, the help it had, and the mistake or the skip in plain words
  */
 
 import { ApiError, type ParentClient } from "@jadwigo/api-client";
@@ -27,9 +28,10 @@ import { type Clock, FamilyView, type Instant, LessonTheme, ViewMode } from "@ja
 import { Card, CardContent, Heading, Link, Notice, OutcomeTile, Page, Spinner } from "@jadwigo/ui";
 import { type ReactElement, type ReactNode, useEffect, useState } from "react";
 import { NavLink } from "../nav/NavLink.tsx";
-import { ENDED_ICON, ENDED_TONE, ENDED_WORD } from "../review/outcome.ts";
 import { ReviewStep, specOf } from "../review/ReviewStep.tsx";
 import { CATEGORY, pageLang } from "./adult.ts";
+import { rowOutcome } from "./overview/grid.ts";
+import { OUTCOME_TONE, OutcomeIcon, OutcomeWord, outcomeWord } from "./overview/outcome.tsx";
 import { assignmentPath, parentPath } from "./route.ts";
 
 const SKIPPED: Record<SkipReason, CopyKey> = {
@@ -141,6 +143,13 @@ export function AttemptReview({
           language={language}
           category={CATEGORY}
           onAll={() => setOpen(null)}
+          badge={
+            <OutcomeWord
+              outcome={rowOutcome(question.result)}
+              language={language}
+              data-review-ended
+            />
+          }
           {...(open > 0 ? { onPrev: () => setOpen(open - 1) } : {})}
           {...(open < questions.length - 1 ? { onNext: () => setOpen(open + 1) } : {})}
         >
@@ -176,7 +185,8 @@ function ReviewPage({ children }: { children: ReactNode }): ReactElement {
   );
 }
 
-/** A question on the grid: its outcome as a tile (an icon in its tone), its seq, say and word. */
+/** A question on the grid: its outcome as a tile (the parent's icon in its tone), its seq, say and
+ * word; data-ended stays the stored value. */
 function QuestionTile({
   question,
   language,
@@ -186,8 +196,8 @@ function QuestionTile({
   language: Language;
   onOpen: () => void;
 }): ReactElement {
-  const Icon = ENDED_ICON[question.ended];
-  const word = copy(language, ENDED_WORD[question.ended], {}, CATEGORY);
+  const outcome = rowOutcome(question.result);
+  const word = outcomeWord(language, outcome);
   return (
     <button
       type="button"
@@ -197,8 +207,9 @@ function QuestionTile({
       onClick={onOpen}
     >
       <OutcomeTile
-        tone={ENDED_TONE[question.ended]}
-        icon={<Icon aria-hidden="true" />}
+        tone={OUTCOME_TONE[outcome]}
+        outcome={outcome}
+        icon={<OutcomeIcon outcome={outcome} />}
         label={word}
       />
       <span className="flex min-w-0 flex-col gap-1">

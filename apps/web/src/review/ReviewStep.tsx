@@ -81,6 +81,8 @@ function Still({
  *   family view read that register (dl-uukj.32 wave 2 step 0).
  * - `onPrev`, `onNext`: move to the neighbour; absent at either end, and then its arrow is not drawn.
  * - `onAll`: back to the whole list ("Wszystkie pytania").
+ * - `badge`: how it went, in place of the child's badge (the child's icon and word); the parent's
+ *   page passes its own outcome, in the parent's icon set.
  * - `children`: drawn under the solution block; the parent puts its tries there.
  */
 export function ReviewStep({
@@ -92,6 +94,7 @@ export function ReviewStep({
   onPrev,
   onNext,
   onAll,
+  badge,
   children,
 }: {
   question: ReviewQuestion;
@@ -102,6 +105,7 @@ export function ReviewStep({
   onPrev?: () => void;
   onNext?: () => void;
   onAll: () => void;
+  badge?: ReactNode;
   children?: ReactNode;
 }): ReactElement {
   const { ended, answer, reveal } = question;
@@ -159,10 +163,12 @@ export function ReviewStep({
       </header>
 
       <p className="flex flex-wrap items-center gap-2">
-        <Badge variant="outline" data-review-ended>
-          <Icon aria-hidden />
-          {copy(language, ENDED_WORD[ended], {}, category)}
-        </Badge>
+        {badge ?? (
+          <Badge variant="outline" data-review-ended>
+            <Icon aria-hidden />
+            {copy(language, ENDED_WORD[ended], {}, category)}
+          </Badge>
+        )}
         {question.added === "twin" && (
           <span data-review-twin className="text-jw-small">
             {copy(language, "play_results_twin", {}, category)}

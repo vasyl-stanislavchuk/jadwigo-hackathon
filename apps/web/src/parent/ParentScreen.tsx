@@ -6,7 +6,10 @@
  *     ?claim     the tab still holds an attempt of that assignment: pick the child, or add one,
  *                and POST /attempts/{id}/claims; the tab then forgets the attempt
  *     no child   add one: a first name (goals and the age group wait on the owner)
- *     home       each child, with their lessons, newest first, each a link to its attempt page
+ *     home       each child, with their lessons, newest first: each a card with a link to its
+ *                attempt page, the day, a tile per question as the overview's heatmap draws that
+ *                attempt's row, and a link to the overview (decision 2026-10-30-app-pages-take-an-
+ *                adult-type-scale-h1-28-h2-22-body-17-and-the-a)
  *   /parent/attempts/<attempt>, signed in: that lesson, question by question (AttemptReview.tsx)
  *   /parent/assignments/<assignment>, signed in: every attempt at that lesson against its
  *                questions (overview/AssignmentOverview.tsx)
@@ -19,6 +22,7 @@ import { ApiError, type Client, createClient, type ParentClient } from "@jadwigo
 import type {
   AssignmentId,
   AttemptId,
+  AttemptResult,
   Learner,
   LearnerAttempts,
   LearnerId,
@@ -34,6 +38,7 @@ import {
   Input,
   Link,
   Notice,
+  OutcomeTile,
   Page,
   Spinner,
 } from "@jadwigo/ui";
@@ -49,11 +54,12 @@ import {
 import { navigate, useLocation } from "../nav/location.ts";
 import { NavLink } from "../nav/NavLink.tsx";
 import { storedAttempt } from "../play/storedAttempt.ts";
-import { ENDED_WORD } from "../review/outcome.ts";
 import { AttemptReview } from "./AttemptReview.tsx";
 import { CATEGORY, pageLang } from "./adult.ts";
 import { type Auth, browserAuth } from "./auth.ts";
 import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";
+import { cellsOf } from "./overview/grid.ts";
+import { OUTCOME_TONE, OutcomeIcon, TwinMark, tileLabel } from "./overview/outcome.tsx";
 import {
   assignmentPath,
   attemptPath,
@@ -501,6 +507,7 @@ function LearnerCard({
                   <span className="text-jw-small text-jw-ink-soft">
                     {day.format(new Date(attempt.started_at))}
                   </span>
+                  <Tiles results={results} language={language} />
                   <Link asChild size="small">
                     <NavLink
                       href={assignmentPath({ assignment: attempt.assignment_id, lang: pageLang() })}
@@ -509,21 +516,6 @@ function LearnerCard({
                       {copy(language, "parent_overview_link", {}, CATEGORY)}
                     </NavLink>
                   </Link>
-                  <ol className="flex flex-col gap-1">
-                    {results.map((row) => (
-                      <li key={row.seq} data-seq={row.seq} data-ended={row.ended ?? "open"}>
-                        {copy(
-                          language,
-                          "parent_attempt_line",
-                          {
-                            say: row.say,
-                            ended: copy(language, ENDED_WORD[row.ended ?? "open"], {}, CATEGORY),
-                          },
-                          CATEGORY,
-                        )}
-                      </li>
-                    ))}
-                  </ol>
                 </CardContent>
               </Card>
             </li>
@@ -531,5 +523,41 @@ function LearnerCard({
         </ol>
       )}
     </li>
+  );
+}
+
+/** A lesson's tiles: one per planned question, its twins folded in, as the heatmap draws its row.
+ * Each keeps the stored ended on its item. */
+function Tiles({
+  results,
+  language,
+}: {
+  results: AttemptResult[];
+  language: Language;
+}): ReactElement {
+  return (
+    <ol className="flex flex-wrap gap-2 pt-1" data-lesson-tiles>
+      {cellsOf(results).map((cell, index) => (
+        <li
+          key={cell.planned.seq}
+          data-seq={cell.planned.seq}
+          data-ended={cell.planned.ended ?? "open"}
+        >
+          <OutcomeTile
+            size="sm"
+            tone={OUTCOME_TONE[cell.outcome]}
+            outcome={cell.outcome}
+            icon={<OutcomeIcon outcome={cell.outcome} />}
+            label={tileLabel(language, index + 1, cell)}
+          >
+            {cell.twin && (
+              <span className="absolute top-0.5 right-0.5">
+                <TwinMark />
+              </span>
+            )}
+          </OutcomeTile>
+        </li>
+      ))}
+    </ol>
   );
 }
