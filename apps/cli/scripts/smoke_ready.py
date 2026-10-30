@@ -111,8 +111,7 @@ def _fixture(source: Path) -> Iterator[None]:
 def _converted() -> dict[str, dict[str, Any]]:
     """The converted file's items by id, read here apart from jw's own gate."""
     raw = json.loads(items.converted_path().read_text(encoding="utf-8"))
-    listed = raw["items"].values() if isinstance(raw["items"], dict) else raw["items"]
-    return {str(i["id"]): i for i in listed}
+    return {str(i["id"]): i for i in raw["items"]}
 
 
 def _ready(item_id: str, by_id: dict[str, dict[str, Any]], flagged: set[str]) -> str | None:
