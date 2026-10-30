@@ -8,8 +8,8 @@
 // Channels are a research preview: the session must start with
 // --dangerously-load-development-channels=server:jadwigo-builder. README.md here is the install.
 // Run: bun tools/builder/channel.ts (Claude Code starts it; it speaks MCP on stdio)
-import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, watch, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, watch, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -18,11 +18,13 @@ import {
   type Request,
   type Result,
 } from "@modelcontextprotocol/sdk/types.js";
+import { mapTranscript, readTail, type Work, workSummary } from "./activity.ts";
 import { builderSession, draftsDir } from "./config.ts";
 import {
   ASKS_SUFFIX,
   type Ask,
   appendRow,
+  type BuilderSession,
   consumedFile,
   consumedTs,
   type Heartbeat,
@@ -33,11 +35,12 @@ import {
   type Reply,
   type ReplyKind,
   readAsks,
+  readRows,
   repliesFile,
+  sessionFile,
 } from "./drafts.ts";
+import { CHANNELS_FLAG, channelLoaded, psProc, SERVER_NAME } from "./flag.ts";
 
-export const SERVER_NAME = "jadwigo-builder";
-export const CHANNELS_FLAG = "--dangerously-load-development-channels";
 const CHANNEL_METHOD = "notifications/claude/channel";
 const POLL_MS = 5_000;
 // The page's append wakes the loop, so an ask reaches the turn in about a second, not up to five.
@@ -139,7 +142,63 @@ export type ReplyArgs = {
  * The reply tool: one row on the draft's replies file, or the reason it was refused. A reply names
  * an ask the page sent, so an answer always sits under the comment it answers.
  */
-export function reply(dir: string, args: ReplyArgs): { ok: true; row: Reply } | { error: string } {
+/** Where the builder session's transcript is, or null when this server cannot be sure whose it is. */
+export type TranscriptOf = () => string | null;
+
+/**
+ * The transcript `make builder` named in session.json, only when this server runs in that session:
+ * any other session's work would be someone else's.
+ */
+export function sessionTranscript(dir: string, session: string): string | null {
+  if (!session) return null;
+  try {
+    const record = JSON.parse(readFileSync(sessionFile(dir), "utf8")) as Partial<BuilderSession>;
+    return record.session_id === session && typeof record.transcript === "string"
+      ? record.transcript
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+const ANSWERS = new Set(["done", "question"]);
+
+/** Where the work for an answer starts: the session taking the ask, or its last answer since. */
+function workSince(dir: string, draftId: string, askTs: string): string | null {
+  const marks = [
+    ...readRows(consumedFile(dir, draftId))
+      .filter((row) => row["ask_ts"] === askTs)
+      .map((row) => row["consumed_at"]),
+    ...readRows(repliesFile(dir, draftId))
+      .filter((row) => row["in_reply_to"] === askTs && ANSWERS.has(String(row["kind"])))
+      .map((row) => row["ts"]),
+  ].filter((mark): mark is string => typeof mark === "string");
+  return marks.sort().at(-1) ?? null;
+}
+
+/**
+ * What the session did for this answer, from its transcript, at the moment it answers. Only an
+ * answer (done or question) carries it, and none when the transcript shows nothing in the window.
+ */
+function workFor(
+  dir: string,
+  draftId: string,
+  askTs: string,
+  kind: ReplyKind,
+  transcript: string | null,
+  until: string,
+): Work | null {
+  if (!ANSWERS.has(kind) || !transcript) return null;
+  const since = workSince(dir, draftId, askTs);
+  if (!since) return null;
+  return workSummary(mapTranscript(readTail(transcript), transcript), since, until);
+}
+
+export function reply(
+  dir: string,
+  args: ReplyArgs,
+  transcriptOf: TranscriptOf = () => null,
+): { ok: true; row: Reply } | { error: string } {
   const draftId = typeof args.draft_id === "string" ? args.draft_id.trim() : "";
   const inReplyTo = typeof args.in_reply_to === "string" ? args.in_reply_to.trim() : "";
   const text = typeof args.text === "string" ? args.text : "";
@@ -155,79 +214,18 @@ export function reply(dir: string, args: ReplyArgs): { ok: true; row: Reply } | 
       error: `draft ${draftId} has no ask ${inReplyTo}; pass the ask_ts from the channel tag`,
     };
   }
+  const ts = new Date().toISOString();
+  const work = workFor(dir, draftId, inReplyTo, kind as ReplyKind, transcriptOf(), ts);
   const row: Reply = {
-    ts: new Date().toISOString(),
+    ts,
     draft_id: draftId,
     in_reply_to: inReplyTo,
     kind: kind as ReplyKind,
     text,
+    ...(work ? { work } : {}),
   };
   appendRow(repliesFile(dir, draftId), row);
   return { ok: true, row };
-}
-
-/**
- * Every channel a `claude` command line loads, from both `FLAG v` and `FLAG=v`, with values that
- * run up to the next `-` token and may be comma lists.
- */
-export function channelNames(argv: string): Set<string> {
-  const names = new Set<string>();
-  let taking = false;
-  for (let token of argv.split(/\s+/)) {
-    if (token === CHANNELS_FLAG) {
-      taking = true;
-      continue;
-    }
-    if (token.startsWith(`${CHANNELS_FLAG}=`)) {
-      taking = true;
-      token = token.slice(CHANNELS_FLAG.length + 1);
-    } else if (token.startsWith("-")) {
-      taking = false;
-      continue;
-    }
-    if (taking) for (const part of token.split(",")) if (part) names.add(part);
-  }
-  return names;
-}
-
-export function loadsThisChannel(argv: string): boolean {
-  return channelNames(argv).has(`server:${SERVER_NAME}`);
-}
-
-export type Proc = { ppid: number; command: string };
-
-/** One process's parent and command line, or null when `ps` cannot say. */
-export function psProc(pid: number): Proc | null {
-  try {
-    const out = execFileSync("ps", ["-o", "ppid=,command=", "-p", String(pid)], {
-      encoding: "utf8",
-    }).trim();
-    const match = /^(\d+)\s+(.*)$/.exec(out);
-    return match ? { ppid: Number(match[1]), command: match[2] ?? "" } : null;
-  } catch {
-    return null;
-  }
-}
-
-const CLAUDE_COMMAND = /(^|\/)claude(\s|$)/;
-
-/**
- * Whether the `claude` that started this server loaded this channel, or null when nothing here can
- * tell. A session without the flag drops every channel message's content, so a server there
- * consumes nothing: an ask it sent would be an ask nobody read (md lost 7 that way on 2026-10-19).
- * Walks up from the parent a few steps, since a wrapper may sit between claude and bun.
- */
-export function channelLoaded(start: number, proc: (pid: number) => Proc | null): boolean | null {
-  let pid = start;
-  for (let step = 0; step < 4 && pid > 1; step += 1) {
-    const found = proc(pid);
-    if (!found) return null;
-    if (CLAUDE_COMMAND.test(found.command.split(/\s+/)[0] ?? "")) {
-      return loadsThisChannel(found.command);
-    }
-    pid = found.ppid;
-  }
-  return null;
 }
 
 const INSTRUCTIONS = [
@@ -238,7 +236,10 @@ const INSTRUCTIONS = [
   "done when it lands or is answered, note for something they should know. The page shows the reply under the comment.",
 ].join(" ");
 
-export function createServer(dir: string): Server<Request, ChannelNotification, Result> {
+export function createServer(
+  dir: string,
+  transcriptOf: TranscriptOf = () => null,
+): Server<Request, ChannelNotification, Result> {
   const server = new Server<Request, ChannelNotification, Result>(
     { name: SERVER_NAME, version: "0.1.0" },
     {
@@ -276,7 +277,7 @@ export function createServer(dir: string): Server<Request, ChannelNotification, 
         isError: true,
       };
     }
-    const result = reply(dir, (request.params.arguments ?? {}) as ReplyArgs);
+    const result = reply(dir, (request.params.arguments ?? {}) as ReplyArgs, transcriptOf);
     if ("error" in result) {
       return { content: [{ type: "text", text: result.error }], isError: true };
     }
@@ -331,7 +332,7 @@ async function main() {
         "would drop every comment. Nothing is sent or consumed; start the session with make builder.",
     );
   }
-  const server = createServer(dir);
+  const server = createServer(dir, () => sessionTranscript(dir, builderSession()));
   await server.connect(new StdioServerTransport());
   const sleep = wakeOnAsks(dir);
   for (;;) {
@@ -358,8 +359,9 @@ async function main() {
 }
 
 function writeHeartbeat(dir: string, beat: Heartbeat) {
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(heartbeatFile(dir), `${JSON.stringify(beat)}\n`);
+  const path = heartbeatFile(dir);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(beat)}\n`);
 }
 
 if (import.meta.main) {

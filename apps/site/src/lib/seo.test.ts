@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { assertReviewed, canonical, headTags, jsonLd, type Page, robotsTxt } from "./seo.ts";
+import {
+  assertReviewed,
+  canonical,
+  headTags,
+  jsonLd,
+  type Page,
+  pageSchema,
+  robotsTxt,
+} from "./seo.ts";
 
 const page: Page = {
   title: "Jadwigo",
@@ -50,6 +58,30 @@ describe("headTags", () => {
     expect(find(tags, "og:locale")).toMatchObject({ content: "pl_PL" });
   });
 
+  it("carries the crown favicon: the SVG, a 32 px PNG and the apple-touch-icon", () => {
+    const tags = headTags(page, "/");
+    expect(tags.filter((t) => t.kind === "link" && t.rel === "icon")).toEqual([
+      { kind: "link", rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { kind: "link", rel: "icon", href: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+    ]);
+    expect(find(tags, "apple-touch-icon")).toMatchObject({ href: "/apple-touch-icon.png" });
+  });
+
+  it("names the page's language in og:locale, Polish when left out", () => {
+    expect(find(headTags({ ...page, lang: "en" }, "/en/privacy"), "og:locale")).toMatchObject({
+      content: "en_GB",
+    });
+  });
+
+  it("links the page's translation as an hreflang alternate, both ways", () => {
+    expect(find(headTags(page, "/"), "alternate")).toBeUndefined();
+    const tags = headTags({ ...page, translation: "/en/privacy" }, "/prywatnosc");
+    expect(tags.filter((t) => t.kind === "link" && t.rel === "alternate")).toEqual([
+      { kind: "link", rel: "alternate", href: "https://jadwigo.pl/prywatnosc/", hreflang: "pl" },
+      { kind: "link", rel: "alternate", href: "https://jadwigo.pl/en/privacy/", hreflang: "en" },
+    ]);
+  });
+
   it("adds the image and the large card only when the page names one", () => {
     expect(find(headTags(page, "/"), "og:image")).toBeUndefined();
     const tags = headTags({ ...page, ogImage: "/og.png" }, "/");
@@ -76,6 +108,16 @@ describe("assertReviewed", () => {
 
   it("lets a dev build show the draft", () => {
     expect(() => assertReviewed([draft], false)).not.toThrow();
+  });
+});
+
+describe("pageSchema", () => {
+  it("takes a stable path of lowercase segments, and refuses a trailing slash or a capital", () => {
+    expect(pageSchema.safeParse({ ...page, path: "/prywatnosc/usuwanie-danych" }).success).toBe(
+      true,
+    );
+    expect(pageSchema.safeParse({ ...page, path: "/prywatnosc/" }).success).toBe(false);
+    expect(pageSchema.safeParse({ ...page, path: "/Privacy" }).success).toBe(false);
   });
 });
 

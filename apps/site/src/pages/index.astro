@@ -3,12 +3,12 @@ import { getEntry, render } from "astro:content";
 import { appUrl } from "../index.ts";
 import Base from "../layouts/Base.astro";
 
-const entry = await getEntry("pages", "index");
+const entry = await getEntry("pages", "pl/index");
 if (!entry) throw new Error("src/content/pl/index.md is missing");
 const { Content } = await render(entry);
 ---
 
-<Base page={entry.data} path="/">
+<Base page={entry.data} path="/" logo>
   <Content />
   {entry.data.play && <p class="play"><a href={appUrl}>{entry.data.play}</a></p>}
 </Base>

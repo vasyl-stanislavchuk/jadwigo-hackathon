@@ -84,8 +84,9 @@ docs-deploy:
 	$(AWS) cloudfront create-invalidation --distribution-id $$dist_id --paths "/*"
 
 # Supabase Auth settings for jadwigo-prod and jadwigo-dev (dl-e8ov.2.40): site URL, redirect URLs,
-# OTP length, from supabase-auth/<env>.json. auth-diff only reads; it exits 2 when a project would
-# change. auth-apply writes them, and is the owner's, from a terminal.
+# OTP length, and the Google and Facebook providers with their secrets from the keychain (dl-e8ov.2.52),
+# from supabase-auth/<env>.json. auth-diff only reads; it exits 2 when a project would change and 1 when
+# a keychain item is missing. auth-apply writes them, and is the owner's, from a terminal.
 auth-diff:
 	supabase-auth/auth.sh diff
 

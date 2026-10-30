@@ -1,7 +1,7 @@
 import { createPostgresStore, type Store } from "@jadwigo/store";
 import { createApp } from "./app.ts";
-import { type Authenticate, lambdaAuth } from "./auth.ts";
-import { authJwksUrl, lambdaDatabaseUrl } from "./config.ts";
+import { type Authenticate, jwksUrlAuth, lambdaAuth } from "./auth.ts";
+import { authIssuer, authJwksUrl, lambdaDatabaseUrl } from "./config.ts";
 import { type BankDeps, type BucketDeps, lambdaBank, lambdaBucket } from "./questions.ts";
 
 export { createApp } from "./app.ts";
@@ -43,12 +43,13 @@ const lambdaDeps: HandlerDeps = {
  * fault from an app fault. A failed open is retried on the first request after a capped wait.
  * The search route's bank is the alias in `BANK_SEARCH_ALIAS_ARN`, or none when it is unset.
  * The question body route's bucket is `CONTENT_BUCKET`, else the one SSM names, built once per cold start.
- * API Gateway's authorizer verifies the token routes' tokens; `AUTH_JWKS_URL` is for a local invoke.
+ * API Gateway's authorizer verifies the token routes' tokens; `AUTH_JWKS_URL` and `AUTH_ISSUER`
+ * are for a local invoke.
  */
 export function createHandler(
   deps: HandlerDeps = lambdaDeps,
   bank: BankDeps | undefined = lambdaBank(),
-  authenticate: Authenticate = lambdaAuth(authJwksUrl()),
+  authenticate: Authenticate = lambdaAuth(jwksUrlAuth(authJwksUrl(), authIssuer())),
   bucket: BucketDeps = lambdaBucket(),
 ) {
   let store: Promise<Store> | undefined;
