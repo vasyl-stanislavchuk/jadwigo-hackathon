@@ -4,7 +4,7 @@
  * lesson as a whole (step_id null).
  */
 
-import type { Finding } from "@jadwigo/lesson-import";
+import type { Finding } from "@jadwigo/lesson-import/file";
 import { cn } from "@jadwigo/ui";
 import type { ReactElement } from "react";
 

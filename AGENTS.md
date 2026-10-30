@@ -54,7 +54,7 @@ tracker. A workstream owns a scope on it: its epics, and the label every open is
 | `packages/contracts` | Zod schemas: ids, family schemas, records, the attempt wire, the `/api/v1` route table, errors; `RULES.md`; JSON Schema snapshots | Zod only | platform |
 | `packages/core` | grading, numbers, mastery: pure functions | contracts | learner-knowledge |
 | `packages/store` | the `Store` interface, in-memory and Postgres, and the contract suite both pass | contracts, core, config | platform |
-| `packages/lesson-import` | compiles a playground lesson file into lesson questions and a published version (`dl-e8ov.2.32.5`) | contracts, store | platform |
+| `packages/lesson-import` | compiles a playground lesson file into lesson questions and a published version (`dl-e8ov.2.32.5`) | contracts, core, store | platform |
 | `packages/bank` | bank code: read, search, import. Never questions | contracts | question-bank |
 | `packages/api-client` | the typed client web, cli and MCP share | contracts | platform |
 | `packages/lesson-kit` | interaction families and lesson blocks | contracts, core, ui, copy | learner-experience |

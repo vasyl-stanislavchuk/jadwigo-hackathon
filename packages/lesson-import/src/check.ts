@@ -42,10 +42,11 @@ import { mistakeClassesByStep, mistakeClassesOf, unknownBoosts } from "./mistake
  * - `questions` counts the planned questions a learner is asked, twins not counted; 0 when the file
  *   does not compile.
  * - `mistake_classes` names, for each question step (a twin under its own step id), every class
- *   its judge can give a miss: its family's (packages/core `MISTAKE_CLASSES`) and its key's `near`
- *   tables, sorted (dl-e8ov.5.38.11). These are all a `boost_by_mistake` key may name; the import
- *   itself does not refuse one. Read from the file as given, so it is there when the file fails
- *   too; empty only when no step can be read.
+ *   its judge can give a miss on that step's own data and key (packages/core `mistakeClassesOf`,
+ *   dl-e8ov.5.38.15): the classes for its input and kind, its `near` tables, a rule's classes only
+ *   when its key names the rule, and `other_wrong`, sorted. These are all a `boost_by_mistake` key
+ *   may name; the import itself does not refuse one. Read from the file as given, so it is there
+ *   when the file fails too; a step whose question does not parse is left out.
  */
 
 interface CheckError {

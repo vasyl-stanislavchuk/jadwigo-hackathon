@@ -31,7 +31,7 @@ function isTr(value: unknown): value is Record<(typeof LANGUAGES)[number], strin
 }
 
 /** Any value with every `{pl, uk, en}` line inside resolved to `language`, as `sim/localize.ts` does. */
-function resolve(value: unknown, language: Language): unknown {
+export function resolve(value: unknown, language: Language): unknown {
   if (isTr(value)) return value[language];
   if (Array.isArray(value)) return value.map((v) => resolve(v, language));
   if (value !== null && typeof value === "object") {
@@ -141,6 +141,69 @@ export function parseLessonFile(raw: unknown): LessonFile {
     throw new Error(`lesson file ${String(id)}: ${z.prettifyError(parsed.error)}`);
   }
   return parsed.data;
+}
+
+/** The file around its steps: what the lenient parse needs whole before it reads a step. */
+const LessonFrame = LessonFile.extend({
+  script: z.object({
+    parts: z.array(z.object({ part: z.string(), steps: z.array(z.unknown()) })),
+  }),
+});
+
+/** A step the lenient parse left out: where it is, its id when it has one, and zod's first problem. */
+export interface SkippedStep {
+  readonly part: number;
+  readonly index: number;
+  readonly step_id: string | null;
+  /** The problem's path into the file, e.g. `script.parts[1].steps[2].question_type`. */
+  readonly path: string;
+  readonly message: string;
+}
+
+/** A Zod path as the file writes it: `script.parts[1].steps[2].question.family`. */
+function pathOf(path: readonly PropertyKey[]): string {
+  return path
+    .map((k, i) => (typeof k === "number" ? `[${k}]` : i === 0 ? String(k) : `.${String(k)}`))
+    .join("");
+}
+
+/**
+ * The file in its own language with every step that parses, and the ones that do not as skipped
+ * entries with zod's path and message (dl-a38n.20): an unknown question_type or family loses its
+ * step, never the draft, as an unknown block in an md drop draws a card and the page goes on. A
+ * step with a `question` is read as a question step, any other as a teaching step. Throws, as
+ * `parseLessonFile` does, only when the file around the steps does not parse.
+ */
+export function parseLessonFileLenient(raw: unknown): {
+  file: LessonFile;
+  skipped: SkippedStep[];
+} {
+  const language = Language.parse((raw as { language?: unknown } | null)?.language);
+  const frame = LessonFrame.safeParse(resolve(raw, language));
+  if (!frame.success) {
+    const id = (raw as { id?: unknown }).id;
+    throw new Error(`lesson file ${String(id)}: ${z.prettifyError(frame.error)}`);
+  }
+  const skipped: SkippedStep[] = [];
+  const parts = frame.data.script.parts.map(({ part, steps }, p) => ({
+    part,
+    steps: steps.flatMap((step, index): LessonStep[] => {
+      const isQuestion = step !== null && typeof step === "object" && "question" in step;
+      const parsed = (isQuestion ? QuestionStep : TeachingStep).safeParse(step);
+      if (parsed.success) return [parsed.data];
+      const id = (step as { id?: unknown } | null)?.id;
+      const first = parsed.error.issues[0];
+      skipped.push({
+        part: p,
+        index,
+        step_id: typeof id === "string" ? id : null,
+        path: pathOf(["script", "parts", p, "steps", index, ...(first?.path ?? [])]),
+        message: parsed.error.issues.map((i) => i.message).join("; "),
+      });
+      return [];
+    }),
+  }));
+  return { file: { ...frame.data, script: { parts } }, skipped };
 }
 
 /** The question steps in script order: every step but the teaching ones. */
