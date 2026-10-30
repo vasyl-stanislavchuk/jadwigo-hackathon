@@ -72,8 +72,12 @@ def _read(path: Path) -> tuple[dict[str, dict[str, Any]], str | None]:
             f"cannot read the converted items file {path}: {exc}", hint=_FILE_HINT
         ) from exc
     listed = raw.get("items") if isinstance(raw, dict) else None
-    if isinstance(listed, dict):  # keyed by id, as the readiness stamp may write it
-        listed = list(listed.values())
+    if isinstance(listed, dict):
+        raise JwError(
+            f"{path} holds items as an object keyed by id, not a list",
+            hint="The converted file is {generated_by, licence_note, items: [...]}; re-run the "
+            "conversion.",
+        )
     if not isinstance(listed, list):
         raise JwError(f"{path} has no items list", hint=_FILE_HINT)
     items = {str(item["id"]): item for item in listed if isinstance(item, dict) and "id" in item}
