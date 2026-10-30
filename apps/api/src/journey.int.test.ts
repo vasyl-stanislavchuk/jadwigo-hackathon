@@ -17,6 +17,7 @@ import {
   SkillId,
   type Skills,
 } from "@jadwigo/contracts";
+import { brief } from "@jadwigo/core";
 import { createPostgresStore, type Store } from "@jadwigo/store";
 import { finishedAttempt } from "@jadwigo/testing";
 import { afterAll, describe, expect, it } from "vitest";
@@ -153,9 +154,24 @@ describe("the learner knowledge happy path on PostgresStore", () => {
       needs_attention: true,
     });
     expect(listsOf(afterDay2.body, ROW_8)).toContain("reteach");
-    expect(
-      listsOf(afterDay2.body, ROW_7).some((list) => list === "review" || list === "recheck"),
-    ).toBe(true);
+    // Row-7 is proficient, so recheck (familiar, 2nd day owed) no longer holds, and review holds
+    // once its FSRS date is due (packages/core brief.ts): on no list now, on review at due_at.
+    expect(listsOf(afterDay2.body, ROW_7)).toEqual([]);
+    const row7Due = levelOf(afterDay2.body, ROW_7)?.due_at;
+    if (row7Due == null) throw new Error("a proficient row-7 has no due_at");
+    expect(Date.parse(row7Due)).toBeGreaterThan(Date.now());
+    const atDue = brief(
+      afterDay2.body.goals.map((g) => ({ goal: g.goal, skill_codes: g.skill_codes })),
+      afterDay2.body.catalogue,
+      afterDay2.body.skills.map(({ pod_id: _p, learner_id: _l, computed_at: _c, ...row }) => ({
+        ...row,
+        card: null,
+      })),
+      new Date(row7Due),
+    );
+    expect(atDue.entries.filter((e) => e.skill_code === ROW_7).map((e) => e.list)).toEqual([
+      "review",
+    ]);
 
     // A report: code's digest over both days.
     const report = await p.call<LearnerReport>("POST", pathOf("createReport", { id: L }), {});
@@ -163,12 +179,22 @@ describe("the learner knowledge happy path on PostgresStore", () => {
     expect(report.body).toMatchObject({ learner_id: L, reused: false, narrative: null });
     const { digest } = report.body;
     expect(digest.counts).toMatchObject({ attempts: 2, days_played: 2 });
-    expect(digest.skills_moved).toContainEqual({
-      skill_code: ROW_7,
-      from: "familiar",
-      to: "proficient",
-      attempt_id: day2.record.attempt.id,
-    });
+    // A move is against the last report's levels (packages/core digest.ts); this is the first
+    // report, so both days are its period and row-7 moved from not started, by the day-2 attempt.
+    expect(digest.skills_moved).toEqual([
+      {
+        skill_code: ROW_7,
+        from: "not_started",
+        to: "proficient",
+        attempt_id: day2.record.attempt.id,
+      },
+      {
+        skill_code: ROW_8,
+        from: "not_started",
+        to: "attempted",
+        attempt_id: day2.record.attempt.id,
+      },
+    ]);
     expect(digest.proposals.length).toBeLessThanOrEqual(3);
     expect(digest.needs_attention.map((n) => n.skill_code)).toContain(ROW_8);
 
