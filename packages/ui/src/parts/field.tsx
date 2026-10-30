@@ -29,7 +29,8 @@ function Field({
   const own = useId();
   const id = children.props.id ?? `${own}-control`;
   const problemId = `${own}-problem`;
-  const wrong = problem !== undefined && problem !== null && problem !== false;
+  // An empty problem is none: no alert, and the control stays valid.
+  const wrong = problem !== undefined && problem !== null && problem !== false && problem !== "";
   const described = [children.props["aria-describedby"], wrong ? problemId : undefined]
     .filter((v): v is string => v !== undefined)
     .join(" ");
