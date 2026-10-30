@@ -14,8 +14,16 @@ describe("Page", () => {
     const main = screen.getByRole("main");
     expect(main.textContent).toBe("Twoje dzieci");
     expect(main.getAttribute("data-width")).toBe("prose");
-    for (const c of ["max-w-(--page-prose-max)", "mx-auto", "p-6", "text-jw-body"])
+    // The adult body size at leading 1.5 (dl-uukj.32.17), not the lesson's body.
+    for (const c of [
+      "max-w-(--page-prose-max)",
+      "mx-auto",
+      "p-6",
+      "text-jw-page-body",
+      "leading-jw-page",
+    ])
       expect(main.classList.contains(c), c).toBe(true);
+    expect(main.classList.contains("text-jw-body")).toBe(false);
     expect(main.hasAttribute("data-learner-view")).toBe(false);
     expect(main.classList.contains("kid-page")).toBe(false);
   });

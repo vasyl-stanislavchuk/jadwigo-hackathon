@@ -6,10 +6,12 @@
 // data-outcome, never data-tile: 11 lesson rules in foundation.css style [data-tile]. It always has
 // a name: without asChild it is an image with that name; asChild hands the tile and the name to a
 // link (the app's NavLink), which takes the icon and keeps its own children after it. It was made
-// for the parent's overview (its heatmap and legend).
+// for the parent's overview (its heatmap and legend). As a link on an app page (dl-uukj.32.17) it
+// takes the page's focus outline; elsewhere a link keeps the focus the styles give it.
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
+import { PAGE_FOCUS, useRegister } from "../lib/register.tsx";
 import { cn } from "../lib/utils.ts";
 
 const outcomeTileVariants = cva(
@@ -57,11 +59,13 @@ function OutcomeTile({
   }): ReactElement {
   const Comp = asChild ? Slot.Root : "span";
   const image = asChild ? {} : { role: "img" };
+  const register = useRegister();
+  const focus = asChild && register === "app" ? PAGE_FOCUS : undefined;
   return (
     <Comp
       data-slot="outcome-tile"
       data-outcome={outcome ?? tone}
-      className={cn(outcomeTileVariants({ tone, size }), className)}
+      className={cn(outcomeTileVariants({ tone, size }), focus, className)}
       aria-label={label}
       {...image}
       {...props}
