@@ -68,6 +68,7 @@ describe("listDrafts and draftMessage", () => {
       draft_id: null,
       draft: null,
       check: null,
+      render: null,
       error: null,
     });
     put("x.json", '{"title": "Hal');
@@ -94,7 +95,8 @@ describe("draftWatch", () => {
         if (event === BUILDER_DRAFT) sent.push(payload);
       },
     };
-    const server = { httpServer, ws } as unknown as ViteDevServer;
+    const middlewares = { use() {} };
+    const server = { httpServer, ws, middlewares } as unknown as ViteDevServer;
     return { server, httpServer, hello, page, sent };
   }
 

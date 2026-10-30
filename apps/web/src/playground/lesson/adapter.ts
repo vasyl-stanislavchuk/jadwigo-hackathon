@@ -27,7 +27,14 @@ interface Question {
 
 /** One question step of a part, in script order: drawn, or skipped with the reason. */
 type BuiltStep =
-  | { kind: "question"; step_id: string; skill_ids: string[]; spec: FamilySpec }
+  | {
+      kind: "question";
+      step_id: string;
+      /** Where the step is in the file, `script.parts[p].steps[i]`: a render finding's path. */
+      path: string;
+      skill_ids: string[];
+      spec: FamilySpec;
+    }
   | { kind: "skipped"; step_id: string; reason: string };
 
 /** A part of the lesson: its steps in order, and the ones the kit draws as specs. */
@@ -52,7 +59,7 @@ function unplayable(question_type: string, question: Question, what: string): st
   return null;
 }
 
-function buildStep(step: QuestionStep, media: string): BuiltStep {
+function buildStep(step: QuestionStep, path: string, media: string): BuiltStep {
   const skipped = (reason: string): BuiltStep => ({ kind: "skipped", step_id: step.id, reason });
   const why = unplayable(step.question_type, step.question, `step ${step.id}`);
   if (why !== null) return skipped(why);
@@ -81,7 +88,7 @@ function buildStep(step: QuestionStep, media: string): BuiltStep {
     key: step.question.key,
     ...(step.question.help === undefined ? {} : { help }),
   } as FamilySpec;
-  return { kind: "question", step_id: step.id, skill_ids: step.skill_ids, spec };
+  return { kind: "question", step_id: step.id, path, skill_ids: step.skill_ids, spec };
 }
 
 /** A step the parse left out, as a card: its id, or its place when it has none, and why. */
@@ -111,7 +118,8 @@ export function lessonFileToSpecs(
         continue;
       }
       const step = kept.shift();
-      if (step !== undefined && isQuestion(step)) built.push(buildStep(step, media));
+      if (step !== undefined && isQuestion(step))
+        built.push(buildStep(step, `script.parts[${p}].steps[${index}]`, media));
     }
     return {
       part,

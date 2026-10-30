@@ -1,7 +1,7 @@
 /**
  * The lesson builder at /playground/lesson (dl-a38n): the newest draft in JADWIGO_DRAFTS_DIR,
  * part by part and step by step, drawn in the kit's preview mode with the check's findings
- * pinned to each step, and above them the step table with one row per step (table/). The draft arrives over Vite's HMR socket from dev/draft-watch.ts
+ * pinned to each step (the check's, and the render check's from render/), and above them the step table with one row per step (table/). The draft arrives over Vite's HMR socket from dev/draft-watch.ts
  * (`builder:draft`, draft.ts), and the page redraws on every change with no reload. Lane web
  * fills the draft and the steps (adapter.ts, StepCard.tsx), lane bridge fills comments/ and
  * activity/ through the two slots.
@@ -10,6 +10,7 @@
  * the API: the page reads only what the dev server sends.
  */
 import type { Category, Language } from "@jadwigo/copy";
+import type { Finding } from "@jadwigo/lesson-import/file";
 import { type ReactElement, useEffect, useState } from "react";
 import { Label } from "../tool/label.tsx";
 import { Switch } from "../tool/switch.tsx";
@@ -21,6 +22,7 @@ import {
   type HelloMessage,
   readDraft,
 } from "./draft.ts";
+import { postRender, renderReport } from "./render/report.ts";
 import { SkippedCard, StepCard } from "./StepCard.tsx";
 import { ActivitySlot, CommentsSlot } from "./slots.ts";
 import { FindingList } from "./table/FindingList.tsx";
@@ -65,9 +67,12 @@ const categoryOf = (raw: unknown): Category => (raw === "adult" ? "adult" : "chi
 function LessonDraft({
   message,
   showKey,
+  report,
 }: {
   message: DraftMessage;
   showKey: boolean;
+  /** Where each drawn step's render findings go; none outside `vite` serve. */
+  report: ReturnType<typeof renderReport> | null;
 }): ReactElement {
   if (message.draft_id === null)
     return (
@@ -88,7 +93,14 @@ function LessonDraft({
   const language = languageOf(file.language);
   const category = categoryOf(file.category);
   const parts = lessonFileToSpecs(file, undefined, skipped);
-  const findings = findingsOf(message.check);
+  const findings = [...findingsOf(message.check), ...findingsOf(message.render)];
+  const drawnIds = parts.flatMap((p) =>
+    p.steps.flatMap((s) => (s.kind === "question" ? [s.step_id] : [])),
+  );
+  const onRendered =
+    report === null
+      ? undefined
+      : (step_id: string, found: Finding[]) => report(draft_id, drawnIds, step_id, found);
   const of = (step_id: string) => findings.filter((f) => f.step_id === step_id);
   let n = 0;
   return (
@@ -114,7 +126,9 @@ function LessonDraft({
                 key={step.step_id}
                 draft_id={draft_id}
                 n={n}
+                path={step.path}
                 spec={step.spec}
+                onRendered={onRendered}
                 findings={of(step.step_id)}
                 showKey={showKey}
                 language={language}
@@ -143,6 +157,10 @@ export function LessonBuilderScreen({
   initial?: DraftMessage | null;
 } = {}): ReactElement {
   const live = useDraft();
+  // The render check posts to the dev server, so it runs only where one serves the page.
+  const [report] = useState(() =>
+    import.meta.hot === undefined ? null : renderReport(postRender),
+  );
   const message = live.message ?? initial;
   const [showKey, setShowKey] = useState(false);
   return (
@@ -183,7 +201,7 @@ export function LessonBuilderScreen({
           drafted.
         </p>
       ) : (
-        <LessonDraft message={message} showKey={showKey} />
+        <LessonDraft message={message} showKey={showKey} report={report} />
       )}
       <CommentsSlot
         {...(message === null || message.draft_id === null ? {} : { draft_id: message.draft_id })}
