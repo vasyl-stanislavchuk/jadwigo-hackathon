@@ -15,6 +15,20 @@ export function mediaUrl(): string {
   return String(import.meta.env["VITE_MEDIA_URL"] ?? "").replace(/\/+$/, "");
 }
 
+/**
+ * The media URL the dev server runs with (vite.config.ts, dl-5ssh.97): the one set in the
+ * environment or a .env file, else the one `apps/web/.env.example` names, so a fresh checkout's
+ * pictures load with no hand step. One set blank on purpose stays blank, and the dev server says so.
+ */
+export function devMediaUrl(set: string | undefined, example: string): string {
+  if (set !== undefined) return set.trim();
+  return /^VITE_MEDIA_URL=(.*)$/m.exec(example)?.[1]?.trim() ?? "";
+}
+
+/** What the dev server says, in its log and the page's console, when it runs with no media URL. */
+export const NO_MEDIA_URL =
+  "VITE_MEDIA_URL is blank, so lesson pictures stay same-origin and do not load. Set it in apps/web/.env.local (apps/web/.env.example has the URL).";
+
 /** A bare picture ref: the sha256 of the bytes (40 to 64 hex digits) and the file's extension. */
 const REF = /^[0-9a-f]{40,64}\.[a-z0-9]{2,5}$/;
 /** The prototype's address for the same file (david-learns' /media/khan/ proxy, to_family.py). */
