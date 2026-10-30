@@ -12,9 +12,13 @@ import { MCP_OUTPUT } from "./lib/mcp-output.ts";
 
 const content = fileURLToPath(new URL("./content/docs/", import.meta.url));
 
-/** The hand-written pages, but not a splash page (the home and the 404), which has no body to order. */
+/**
+ * The hand-written pages, but not a splash page (the home and the 404), which has no body to order.
+ * Nor the TypeScript client's pages under typescript/, which starlight-typedoc writes at build time
+ * from the packages' doc comments (dl-5ssh.90.39); its hand-written intro, typescript.md, is in.
+ */
 const pages = readdirSync(content, { recursive: true, encoding: "utf8" })
-  .filter((path) => /\.mdx?$/.test(path))
+  .filter((path) => /\.mdx?$/.test(path) && !path.startsWith(join("typescript", "")))
   .map((path) => [path, readFileSync(join(content, path), "utf8")] as const)
   .filter(([, text]) => !/^template:\s*splash$/m.test(text));
 
