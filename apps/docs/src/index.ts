@@ -30,6 +30,8 @@ export const SIDEBAR: readonly SidebarGroup[] = [
   },
   // Filled by starlight-openapi from public/openapi.json (astro.config.mjs).
   { label: "API reference", items: [] },
+  // The intro, then a group per package that starlight-typedoc fills (astro.config.mjs).
+  { label: "TypeScript client", items: ["typescript"] },
   {
     label: "Design system",
     items: [
