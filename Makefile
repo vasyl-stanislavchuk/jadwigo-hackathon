@@ -35,9 +35,11 @@ check-all:
 	bunx turbo run lint typecheck test test:int
 	bun run lint:repo
 
-## dev: every app's dev server (ports from md's environment, tools/src/ports.ts)
+## dev: every app's dev server, on md's ports (tools/src/ports.ts). Turbo's strict env mode passes a
+## task only the variables turbo.json names, which would drop WEB_PORT, API_PORT and the worktree's
+## name, so dev runs loose: it is never cached, so nothing hashes its environment (dl-5ssh.98).
 dev:
-	bunx turbo run dev
+	bunx turbo run dev --env-mode=loose
 
 ## skills: link the product AI workflows (workflows/jadwigo-*) into .claude/skills and .agents/skills,
 ## and the dev and marketing commands (.agents/skills/dev-*, mk-*) into .claude/skills. The links are committed;

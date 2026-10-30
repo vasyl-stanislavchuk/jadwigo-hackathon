@@ -1,5 +1,18 @@
 # md's committed layer (medallion-dev-cli docs/repo-registry/contract.md). md reads it from main.
-# [review] joins once apps/web serves (dl-5ssh.34.6).
+
+# The ports md exports to `md run`, under these names: the main checkout runs on these numbers,
+# every other worktree on its own slot. tools/src/ports.ts reads them (DEV_PORTS, kept equal by
+# ports.test.ts). The api is not on 8787, which other local tools hold (dl-5ssh.98).
+[review]
+app = "http://127.0.0.1:${API_PORT}"
+vite = "http://127.0.0.1:${WEB_PORT}"
+frontend = "apps/web"
+vite_config = "vite.config.ts"
+entry = "src/main.tsx"
+
+[review.ports]
+WEB_PORT = 5173
+API_PORT = 8730
 
 [run.dev]
 command = "make dev"
