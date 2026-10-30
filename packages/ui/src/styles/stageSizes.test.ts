@@ -28,6 +28,24 @@ const rule = (selector: string): string => {
 };
 
 describe("sizes per answer kind", () => {
+  // Decision 2026-10-30-four-answer-tiles-stand-in-one-row-only-when-each-can-hold-its-k: four
+  // options stand in one row only where each tile holds its badge at its side, else in two rows.
+  it("lays a grid of four out in 4 columns from 40.25rem of its own width, and in 2 below", () => {
+    const grid = rule(".kid-choice-grid");
+    expect(grid).toContain("calc(25% - var(--kid-choice-gap))");
+    expect(grid).toContain("calc((40.25rem - 100%) * 999)");
+    expect(grid).toContain("calc(50% - var(--kid-choice-gap))");
+    expect(grid).toContain("auto-fill");
+  });
+
+  it("puts a grid's key badge at the tile's side from 19.75rem, as it does for two", () => {
+    const side = STAGE.slice(STAGE.indexOf("@container kid-choices (min-width: 19.75rem)"));
+    expect(side).toMatch(
+      /^@container kid-choices \(min-width: 19\.75rem\) \{[^@]*side-2[^@]*side-4/,
+    );
+    expect(STAGE).not.toContain("@container kid-choices (min-width: 40.25rem)");
+  });
+
   it("Sprawdź and Dalej are 22 px in every frame", () => {
     expect(rule("[data-bar] .kid-action")).toContain("font-size: 1.375rem");
   });

@@ -312,13 +312,34 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
   color: inherit;
 }
 
+/* A grid of four options stands in one row only where each tile can hold its key badge at its side,
+ * and in two rows of two otherwise (decision 2026-10-30-four-answer-tiles-stand-in-one-row-only-
+ * when-each-can-hold-its-k, dl-uukj.32.25). The grid's own width decides, not the window's:
+ * at 40.25rem (644px) or more each of four tiles is at least 152px; below it a column is half the
+ * width. The minimum is a quarter or a half by that width (a clamp that flips at 40.25rem), and
+ * auto-fill lays as many columns as fit, so it is always 4 or 2, never 3. */
+.kid-choice-grid {
+  grid-template-columns: repeat(
+      auto-fill,
+      minmax(
+        clamp(
+          calc(25% - var(--kid-choice-gap)),
+          calc((40.25rem - 100%) * 999),
+          calc(50% - var(--kid-choice-gap))
+        ),
+        1fr
+      )
+    );
+}
+
 /* In a centred tile (grid, binary) the badge leaves the flow, so the answer stays centred (Choose
- * addendum 1.6). By default it sits in the tile's top-left corner (8, 8) over 44px of padding, as a
- * dot array's always does. A tile wide enough (about 152px, so the answer keeps 40px clear between
- * the badges' room) takes it at its side instead: absolute at left 20, centred on the tile's height,
- * the content padded 12 56. The set of tiles is the container that decides, so a narrow column
- * (4 tiles of 120px) never squeezes "3 · 4" onto two lines. The tile's size is the same in every
- * state, so nothing moves. */
+ * addendum 1.6). A tile wide enough (about 152px, so the answer keeps 40px clear between the
+ * badges' room) takes it at its side: absolute at left 20, centred on the tile's height, the content
+ * padded 12 56. Two tiles side by side are that wide from 19.75rem, and a grid of four is (in two
+ * rows, or in one from 40.25rem, above). Narrower than that, and always on a dot array, which is too
+ * wide for the side, the badge sits in the tile's top-left corner (8, 8) over 44px of padding. The
+ * set of tiles is the container that decides. The tile's size is the same in every state, so
+ * nothing moves. */
 .kid-step-shell[data-frame="laptop"]
   :is([role="radiogroup"], [role="group"], ul):has(> [data-badge-at]) {
   container: kid-choices / inline-size;
@@ -338,27 +359,12 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
 
 @container kid-choices (min-width: 19.75rem) {
   .kid-step-shell[data-frame="laptop"]
-    :is([data-option], [data-still-option])[data-badge-at="side-2"] {
+    :is([data-option], [data-still-option]):is([data-badge-at="side-2"], [data-badge-at="side-4"]) {
     padding: 0.75rem 3.5rem;
   }
 
   .kid-step-shell[data-frame="laptop"]
-    :is([data-option], [data-still-option])[data-badge-at="side-2"]
-    > [data-key-badge] {
-    left: 1.25rem;
-    top: 50%;
-    margin-top: -1rem;
-  }
-}
-
-@container kid-choices (min-width: 40.25rem) {
-  .kid-step-shell[data-frame="laptop"]
-    :is([data-option], [data-still-option])[data-badge-at="side-4"] {
-    padding: 0.75rem 3.5rem;
-  }
-
-  .kid-step-shell[data-frame="laptop"]
-    :is([data-option], [data-still-option])[data-badge-at="side-4"]
+    :is([data-option], [data-still-option]):is([data-badge-at="side-2"], [data-badge-at="side-4"])
     > [data-key-badge] {
     left: 1.25rem;
     top: 50%;

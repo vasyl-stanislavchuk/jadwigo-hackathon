@@ -67,7 +67,9 @@ const onEdge = (item: ChoiceItem, layout: ChoiceLayout): boolean =>
 const LAYOUT: Record<ChoiceLayout, string> = {
   list: "flex flex-col gap-[var(--kid-choice-gap)]",
   lettered: "flex flex-col gap-[var(--kid-choice-gap)]",
-  grid: "grid grid-cols-2 gap-[var(--kid-choice-gap)] sm:grid-cols-4",
+  // Two columns, or four where each tile holds its key badge at its side: .kid-choice-grid in
+  // styles/stage.css decides by the grid's own width, not the window's.
+  grid: "kid-choice-grid grid grid-cols-2 gap-[var(--kid-choice-gap)]",
   binary: "grid grid-cols-2 gap-[var(--kid-choice-gap)]",
 };
 
