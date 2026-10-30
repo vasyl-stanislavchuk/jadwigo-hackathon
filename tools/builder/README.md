@@ -16,7 +16,7 @@ in `.builder/`, so the page, which lists every `<draft_id>.json`, never takes on
 | --- | --- | --- |
 | `<draft_id>.asks.jsonl` | the page, through the web dev server | `{ask_ts, draft_id, step_id, intent: change\|question\|note, text, author}` |
 | `<draft_id>.consumed.jsonl` | this channel, after it sent the ask | `{ask_ts, consumed_at}` |
-| `<draft_id>.replies.jsonl` | this channel's `reply` tool | `{ts, draft_id, in_reply_to, kind: progress\|done\|question\|note, text}` |
+| `<draft_id>.replies.jsonl` | this channel's `reply` tool | `{ts, draft_id, in_reply_to, kind: progress\|done\|question\|note, text, work?}` |
 | `.builder/channel.heartbeat.json` | this channel, every 5 s or sooner | `{at, pid, session_id, loaded}` |
 | `.builder/session.json` | `make builder`, at each launch | `{session_id, started_at, cwd, transcript}` |
 
@@ -37,6 +37,21 @@ The session answers with the one tool, `reply {draft_id, in_reply_to, kind, text
 `in_reply_to` is the ask's `ask_ts`. A reply to an ask the draft does not have is refused, so every
 answer sits under the comment it answers. A comment never edits the lesson: the session changes the
 draft through the jadwigo MCP, and the page redraws from the file.
+
+## What the session did
+
+`activity.ts` reads the builder session's own transcript (`.builder/session.json` names it), never
+what the session says it did, and words each tool call as one plain line: "Reading lesson.json",
+"Searching the code", "Editing notes.md", "Running a command" (never the command's text), "Drew 6
+questions from 2 sets" and "Check: 2 errors, 1 warning" (from the jadwigo tools' results), "Replied".
+Only basenames reach the page. A repeat folds into one line, but a failed call never folds into a
+success, and it reads "Couldn't …". The rules are md's (`share_review_ops.py`).
+
+The web dev server (`apps/web/dev/activity.ts`) pushes the newest 20 lines to the page's activity
+panel. When the session answers a comment (`done` or `question`), the channel freezes what it did
+since it took the comment onto the reply as `work: {steps, calls, failed, read, changed}`, because
+the transcript keeps growing after it. It does that only in the session `make builder` named, and an
+answer whose window shows nothing carries no `work`.
 
 ## Install
 

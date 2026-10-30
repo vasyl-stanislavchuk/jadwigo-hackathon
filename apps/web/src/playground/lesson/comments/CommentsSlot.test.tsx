@@ -57,6 +57,32 @@ describe("CommentsSlot", () => {
     expect(status.textContent).toContain("Claude's turn: working on it");
   });
 
+  it("shows the work frozen on an answer under it, closed when nothing failed", () => {
+    renderWith(
+      payload({
+        replies: [
+          {
+            ts: "2026-10-30T09:01:00.000Z",
+            draft_id: "d-add-to-20",
+            in_reply_to: ASK.ask_ts,
+            kind: "done",
+            text: "The boost on q2 is one sentence now.",
+            work: {
+              steps: [{ text: "Check: 0 errors, 0 warnings", ok: true }],
+              calls: 1,
+              failed: 0,
+              read: [],
+              changed: [],
+            },
+          },
+        ],
+      }),
+    );
+    const fold = screen.getByText("What Claude did · 1 step").closest("details");
+    expect(fold?.open).toBe(false);
+    expect(screen.getByRole("status").textContent).toContain("done");
+  });
+
   it("says plainly that Claude did not see a comment when no session is running", () => {
     renderWith(payload({ channel: "gone", consumed: [] }));
     expect(screen.getByRole("status").textContent).toContain("Claude did not see your comment");

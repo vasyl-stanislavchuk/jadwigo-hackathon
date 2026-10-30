@@ -3,6 +3,7 @@
 // replies. Each file has one writer, and every JSONL file is append-only.
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import type { Work } from "./activity.ts";
 
 const INTENTS = ["change", "question", "note"] as const;
 export type Intent = (typeof INTENTS)[number];
@@ -26,6 +27,8 @@ export type Reply = {
   in_reply_to: string;
   kind: ReplyKind;
   text: string;
+  /** On an answer (done or question): what the session did for it, frozen when it replied. */
+  work?: Work;
 };
 
 /** What the channel says about itself, rewritten on every poll; the page calls it gone when stale. */
