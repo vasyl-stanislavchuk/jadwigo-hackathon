@@ -1,11 +1,14 @@
 ---
 title: Introduction
-description: What Jadwigo's API is, where it lives, and the words it uses.
+description: What Jadwigo's API is, where it lives, how it behaves and the words it uses.
 ---
+
+This guide is for anyone who calls Jadwigo's API: where it lives, how it behaves, and the words
+the other guides use.
 
 Jadwigo is a learning app for children in the first school grades, in Polish and English.
 A child plays a lesson. A parent sees what the child played. Everything the app does goes
-through one HTTP API, and these guides show how to call it.
+through one HTTP API.
 
 ## Base URL
 
@@ -31,7 +34,7 @@ A breaking change to a route adds `/api/v2/` beside it. The old route stays unti
   returns the stored result.
 - **One error shape.** Every refusal is `{"error": {"type", "message"}}`. See [Errors](/guides/errors/).
 
-## The words
+## Every word the API uses
 
 | Word | What it means |
 | --- | --- |
@@ -46,6 +49,6 @@ A breaking change to a route adds `/api/v2/` beside it. The old route stays unti
 
 ## Next
 
-1. [Authentication](/guides/authentication/): which routes need a credential, and which one.
-2. [Your first call](/guides/first-call/): start an attempt and read it back.
-3. [Errors](/guides/errors/): every error the API sends.
+- [Authentication](/guides/authentication/): which routes need a credential, and which one.
+- [Your first call](/guides/first-call/): start an attempt and read it back.
+- [Errors](/guides/errors/): what a refusal looks like, and what to do about it.

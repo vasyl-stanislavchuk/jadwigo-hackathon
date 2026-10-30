@@ -3,6 +3,9 @@ title: Contracts and generated docs
 description: How one route table in the contracts feeds the API, its client, the infrastructure and this site, so the docs never drift.
 ---
 
+This page is for anyone changing a route, an error or a token: how one definition in the code
+reaches the API, its client, the infrastructure and these docs, so none of them drifts.
+
 Every route, record and error is defined once, as a Zod schema in the `contracts` package. The
 route table, `ROUTES`, names each route's method, path, credential, body and reply. Everything
 else is built from it or checked against it.
@@ -58,6 +61,16 @@ flowchart TB
   check --> publish
 ```
 
+The rule that keeps the loop closed: a change to a route, an MCP tool or a design token brings its
+docs in the same pull request. For a generated table that is free, since the next build redraws
+it. A written page is updated by hand.
+
+Before a publish, `check-dist` reads the built site. It fails when a page or a generated table is
+missing, or when any page links into the source repository: these docs restate what a reader
+needs and stand on their own.
+
+## Every generated table
+
 | What changes | Where it shows here |
 | --- | --- |
 | A route, its body or its reply | [API reference](/api/), from the OpenAPI document |
@@ -67,10 +80,7 @@ flowchart TB
 | A design token | [Tokens](/design-system/tokens/), from the stylesheet |
 | A question type | [Question types](/design-system/question-types/), from the lesson kit's catalog |
 
-The rule that keeps the loop closed: a change to a route, an MCP tool or a design token brings its
-docs in the same pull request. For a generated table that is free, since the next build redraws
-it. A written page is updated by hand.
+## Next
 
-Before a publish, `check-dist` reads the built site. It fails when a page or a generated table is
-missing, or when any page links into the source repository: these docs restate what a reader
-needs and stand on their own.
+- [Monorepo](/architecture/monorepo/): the packages and the rules the build holds.
+- [API reference](/api/): the reference the route table generates.

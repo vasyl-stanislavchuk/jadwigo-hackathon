@@ -21,8 +21,8 @@ const VERSION_PREFIX = /^\/api\/v\d+\/$/;
 /** An API path written in a page, cut where the path ends. */
 const API_PATH = /\/api\/[A-Za-z0-9_\-{}$.…/]*/g;
 
-/** A link into the docs' own /api/ pages: a markdown target or an href. */
-const DOCS_LINK = /(?:\]\(|href=")(\/api\/[^)"#\s]*)/g;
+/** A link into the docs' own /api/ pages: a markdown target, an href or a hero action's `link:`. */
+const DOCS_LINK = /(?:\]\(|href="|^\s*link: )(\/api\/[^)"#\s]*)/gm;
 
 /** True when `written` (with `{x}`, `$X` or `…` for a segment) is a path in ROUTES. */
 function isRoutePath(written: string): boolean {

@@ -3,41 +3,54 @@ title: Tokens
 description: Every Zeszyt token, primitive, role and alias, with its value in light and dark.
 ---
 
+import Generated from "../../../components/Generated.astro";
 import TokenTable from "../../../components/TokenTable.astro";
 
-These tables are generated from Zeszyt's stylesheet when the docs are built. A token renamed or
-changed in the code shows here on the next build, with no edit to this page.
+A token is a named value, a colour, a size or a duration, that every part of the app reads in
+place of a literal. This page is for anyone styling a part or checking what a token comes to: it
+lists every one, with its value in light and dark.
 
-The [Overview](/design-system/) explains the 3 tiers. The
-[System page](https://app.jadwigo.pl/playground/system) shows them drawn on real parts.
+The [Design system](/design-system/#3-tiers-of-tokens) overview explains the 3 tiers they come in.
 
-## Roles
+## Sizes on a phone and on a parent's page
 
-What each colour means, and the value it comes to in each theme. "From" names
-the primitive the role reads.
-
-<TokenTable tier="roles" />
-
-## Aliases
-
-The names the components read. Each one reads a role, so it follows the theme.
-
-<TokenTable tier="aliases" />
-
-## Primitives
-
-The only literal colours. Nothing outside the roles reads them.
-
-<TokenTable tier="primitives" />
-
-## Type, shape, space and motion
-
-The same in light and dark. On a phone, under 600 px wide, the type steps take smaller values:
-the prompt stays at 28 px or more and an option at 24 px or more, and a task's readout
-(`--jw-size-target`) goes from 44 px to 36 px. Under reduced motion every duration is 0.
+The type, shape, space and motion steps are the same in light and dark. On a phone, under 600 px
+wide, the type steps take smaller values: the prompt stays at 28 px or more and an option at
+24 px or more, and a task's readout (`--jw-size-target`) goes from 44 px to 36 px. Under reduced
+motion every duration is 0.
 
 The `--jw-page-*` steps are the adult's scale on an app page, the parent's screens: a first
 heading of 28 px (26 on a phone), a second of 22 px (20 on a phone), and body text, a third
 heading and a label at 17 px with a line height of 1.5. A lesson keeps the child's scale.
 
+## Every role
+
+What each colour means, and the value it comes to in each theme. "From" names the primitive the
+role reads.
+
+<TokenTable tier="roles" />
+
+## Every alias
+
+The names the components read. Each one reads a role, so it follows the theme.
+
+<TokenTable tier="aliases" />
+
+## Every primitive
+
+The only literal colours. Nothing outside the roles reads them.
+
+<TokenTable tier="primitives" />
+
+## Every type, shape, space and motion step
+
 <TokenTable tier="scales" />
+
+<Generated from="Zeszyt's stylesheet">
+  A token renamed or changed in the code shows here on the next build.
+</Generated>
+
+## Next
+
+- [Primitives](/design-system/primitives/): the components that read these tokens.
+- [System page](https://app.jadwigo.pl/playground/system): every token drawn on real parts.

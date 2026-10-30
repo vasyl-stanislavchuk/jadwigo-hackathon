@@ -4,6 +4,7 @@ import {
   inputRows,
   type McpTool,
   mcpTools,
+  REGISTER_HREF,
   splitDoc,
   toolPage,
   typeName,
@@ -119,6 +120,17 @@ describe("toolPage", () => {
     expect(page.body).toContain("One &lt;item&gt;, `as <is>`.");
     expect(page.body).toContain("<code>Shape</code>, the whole <code>&lt;result&gt;</code>");
     expect(page.body).toContain('"title": "Shape"');
+  });
+
+  it("opens with how the tool is called, then its summary, and ends with Next", () => {
+    const { body } = toolPage(tool, undefined);
+    expect(body).toMatch(/^`question_item` is a tool of `jw mcp serve`/);
+    expect(body).toContain(`[registered](${REGISTER_HREF})`);
+    const order = ["registered", "One item by its id.", "## Inputs", "## Output", "## Next"];
+    const at = order.map((text) => body.indexOf(text));
+    expect(at.every((i) => i >= 0)).toBe(true);
+    expect(at).toEqual([...at].sort((a, b) => a - b));
+    expect(body.slice(body.indexOf("## Next"))).not.toMatch(/\n## /);
   });
 
   it("says when a tool's output is not documented yet", () => {

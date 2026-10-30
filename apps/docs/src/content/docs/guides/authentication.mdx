@@ -1,18 +1,20 @@
 ---
 title: Authentication
-description: Open routes, the Supabase token parent routes need, and the bank's read token.
+description: Which credential each route takes, how to send it, and what a refusal means.
 ---
 
 import AccessTable from "../../../components/AccessTable.astro";
+import Generated from "../../../components/Generated.astro";
 
-A route takes one of 3 credentials: none, a Supabase Auth token, or the bank's read token.
-The tables on this page are generated from the API's own route table, so they never drift.
+This guide is for anyone who calls a route that needs a credential: which one it takes, how to
+send it, and what the API answers when it is missing.
+
+A route takes one of 3 credentials: none, a Supabase Auth token, or the bank's read token. The
+tables at the end list every route under its credential.
 
 ## Open routes: no credential
 
-A child plays without signing in. These routes take no token:
-
-<AccessTable credential="open" />
+A child plays without signing in, so the routes a lesson needs take no token.
 
 An attempt route is bound by its attempt id. Whoever holds the id may read and answer that
 attempt. Only the reply that starts an attempt carries its id, so keep it safe and never log it.
@@ -21,11 +23,8 @@ An unknown id, or one from another pod, is `404`.
 ## Parent routes: a Supabase Auth token
 
 An adult signs in to the app, and Supabase Auth runs the sign-in. However the adult signs in, the
-result is a Supabase session, and its access token is what these routes take:
-
-<AccessTable credential="supabase" />
-
-Send the token as a bearer token:
+result is a Supabase session, and its access token is what these routes take. Send it as a bearer
+token:
 
 ```bash
 curl https://app.jadwigo.pl/api/v1/me \
@@ -42,11 +41,8 @@ curl https://app.jadwigo.pl/api/v1/me \
 
 ## Bank routes: the bank's read token
 
-The [bank section](/api/operations/tags/bank/) of the API reference has both routes.
-
-The question bank is searched and read with a shared read token, not a Supabase token:
-
-<AccessTable credential="bank" />
+The question bank is searched and read with a shared read token, not a Supabase token. The
+[bank section](/api/operations/tags/bank/) of the API reference has both routes.
 
 ```bash
 curl -X POST https://app.jadwigo.pl/api/v1/question-searches \
@@ -68,3 +64,24 @@ curl https://app.jadwigo.pl/api/v1/questions/$QUESTION_ID \
 - The read token is shared. It is a stopgap until each caller gets a token of its own.
 
 No error message ever names a token.
+
+## Every route and its credential
+
+### No credential
+
+<AccessTable credential="open" />
+
+### A Supabase Auth token
+
+<AccessTable credential="supabase" />
+
+### The bank's read token
+
+<AccessTable credential="bank" />
+
+<Generated from="the API's own route table" />
+
+## Next
+
+- [Your first call](/guides/first-call/): start an attempt with no credential at all.
+- [Errors](/guides/errors/): every error the API sends, with its status.

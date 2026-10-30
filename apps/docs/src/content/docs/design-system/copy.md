@@ -3,6 +3,9 @@ title: Copy
 description: Every string a person reads, in Polish and English, for a child and for an adult.
 ---
 
+This page is for anyone writing a line the app shows or reads aloud: where the words live, who
+they are written for, and the rules every line keeps.
+
 Every word the app shows or reads aloud lives in one place: the copy tables. A component never
 holds a sentence of its own. It asks for a line by its key, in a language, for a reader.
 
@@ -33,10 +36,8 @@ A line is written for a reader:
 
 A miss is information, not failure. The page says "not yet" and invites another look:
 
-| Instead of | A child reads |
-| --- | --- |
-| Wrong. | Let's try that one again. |
-| Incorrect, try again. | Take another look, you can do it. |
+- Instead of "Wrong.", a child reads "Let's try that one again."
+- Instead of "Incorrect, try again.", a child reads "Take another look, you can do it."
 
 A test checks every line, and every plural form, against a list of harsh words in both languages,
 such as "wrong", "mistake", "fail", "źle" and "błąd". A line with one fails the build.
@@ -53,3 +54,8 @@ The same care holds beyond the words:
 2. Keep it short and kind. Say what to do next, not what went wrong.
 3. Add an adult line only when the child's line does not fit an adult.
 4. Never put a real name or a real learner's data in a line or an example.
+
+## Next
+
+- [Question types](/design-system/question-types/): where most of these lines are read.
+- [Design system](/design-system/): the colours and rules the words sit beside.
