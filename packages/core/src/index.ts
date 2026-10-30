@@ -12,4 +12,5 @@ export {
 } from "./families/help.ts";
 export { judge, pageMarks, solutionOf } from "./families/judge.ts";
 export { type Marks, QUESTION_TYPE_MARKS, type Question } from "./families/question.ts";
+export { MISTAKE_CLASSES } from "./families/rules.ts";
 export { clampScore } from "./score.ts";

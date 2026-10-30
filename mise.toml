@@ -6,6 +6,6 @@ bun = "1.4.4"
 uv = "0.13.5"
 gitleaks = "8.30.1"
 # make db-push, db-reset ENV=dev and db-role: links and migrates the Supabase projects (never `supabase start`)
-supabase = "2.121.0"
+supabase = "2.122.0"
 # make -C infra fmt validate plan apply; moves with required_version in infra/terraform/versions.tf (renovate.json)
 terraform = "1.17.0"

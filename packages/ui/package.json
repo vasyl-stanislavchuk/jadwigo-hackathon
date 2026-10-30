@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./styles.css": "./src/styles/tailwind.css",
-    "./foundation.css": "./src/styles/foundation.css"
+    "./foundation.css": "./src/styles/foundation.css",
+    "./brand/*": "./src/brand/*"
   },
   "scripts": {
     "lint": "biome check .",
