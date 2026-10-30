@@ -1,5 +1,4 @@
 // The one place apps/web reads its environment (lint/no-raw-process-env.grit).
-import { builderSession, draftsDir } from "../../../tools/builder/config.ts";
 import { apiPort, DEV_PORTS, port } from "../../../tools/src/ports.ts";
 
 /** The dev server's port: md's WEB_PORT in a worktree, 5173 in the main checkout. */
@@ -31,12 +30,9 @@ export function authConfig(
   return url && key ? { url, key } : null;
 }
 
-/** The live lesson builder's dev-server side (dev/builder-plugin.ts, dl-a38n): JADWIGO_DRAFTS_DIR,
- * the directory jw writes drafts to (default ~/.local/state/jadwigo/drafts), and the session
- * `make builder` started, when this server runs in its environment (else session.json names it). */
-export function builderEnv(env: Record<string, string | undefined> = process.env): {
-  draftsDir: string;
-  session: string;
-} {
-  return { draftsDir: draftsDir(env), session: builderSession(env) };
+/** Where jw writes lesson drafts and the lesson builder reads them (dl-a38n, lead decision 1):
+ * JADWIGO_DRAFTS_DIR, else ~/.local/state/jadwigo/drafts, the jw setting's default. */
+export function draftsDir(env: Record<string, string | undefined> = process.env): string {
+  const dir = env["JADWIGO_DRAFTS_DIR"] || "~/.local/state/jadwigo/drafts";
+  return dir.startsWith("~/") ? `${env["HOME"] ?? ""}/${dir.slice(2)}` : dir;
 }

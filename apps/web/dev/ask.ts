@@ -27,7 +27,7 @@ import {
   readRows,
   repliesFile,
 } from "../../../tools/builder/drafts.ts";
-import { builderEnv } from "../src/config.ts";
+import { draftsDir } from "../src/config.ts";
 
 const ASK_PATH = "/@builder/ask";
 const ASKS_PATH = "/@builder/asks";
@@ -225,7 +225,7 @@ function gateOf(req: IncomingMessage): GateRequest {
 }
 
 export function ask(server: ViteDevServer): void {
-  const dir = builderEnv().draftsDir;
+  const dir = draftsDir();
   let lastAsk = 0;
   let lastSent = "";
 

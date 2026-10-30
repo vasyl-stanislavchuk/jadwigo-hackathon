@@ -1,4 +1,4 @@
-import type { RuleRef } from "@jadwigo/contracts";
+import type { Family, RuleRef } from "@jadwigo/contracts";
 
 /**
  * The mistake-class rules for numbers, shared by every family that takes one: a port of
@@ -142,3 +142,92 @@ export function applyRule(
       return classifyNumberLine(rule, answer, tolerance, value);
   }
 }
+
+/** Every class a number rule gives, `other_wrong` for a value it cannot place. */
+const RULE_CLASSES = [
+  "neighbour_row",
+  "neighbour_fact_swap",
+  "add_for_multiply",
+  "off_by_small",
+  "digit_reversal",
+  "same_decade",
+  "inverse_confusion",
+  "off_by_tick",
+  "scale_misread",
+  "wrong_direction",
+] as const;
+
+/** What an Enter field or a typed gap gives on its own: text, fraction and expression misses. */
+const ENTRY_CLASSES = [
+  "missing_diacritics",
+  "wrong_case",
+  "typo",
+  "unsimplified",
+  "wrong_form",
+  "fraction_flipped",
+  "not_an_expression",
+  "not_an_equation",
+  "equation_sides_swapped",
+  "sum_for_product",
+  "product_for_sum",
+  "number_for_expression",
+  "value_off",
+] as const;
+
+/**
+ * The mistake classes each family's judge can give a miss besides the author's own `near` tables,
+ * which a step adds to these: what a `boost_by_mistake` key may name (dl-e8ov.5.38.11). A family
+ * whose key may name a number rule (Enter, a typed gap, Place's number line) lists every rule's
+ * classes, named or not. Explain has no judge, so it gives none. The golden corpus holds every
+ * class a judge gave to this list (rules.test.ts).
+ */
+export const MISTAKE_CLASSES: Readonly<Record<Family, readonly string[]>> = {
+  choose: [
+    "other_wrong",
+    "wrong_pick",
+    "missed_option",
+    "took_unneeded_number",
+    "missed_needed_number",
+  ],
+  enter: ["other_wrong", ...ENTRY_CLASSES, "off_by_one_unit", "unit_mixed", ...RULE_CLASSES],
+  slots: ["other_wrong", ...ENTRY_CLASSES, "fact_error", "gap_swap", ...RULE_CLASSES],
+  sequence: [
+    "other_wrong",
+    "other_order",
+    "reversed",
+    "swapped_neighbours",
+    "one_misplaced",
+    "extra_tile",
+    "missing_tile",
+  ],
+  group: ["other_wrong", "not_placed", "wrong_group"],
+  place: [
+    "other_wrong",
+    "bar_wrong",
+    "bar_off_by_step",
+    "grid_off_by_one",
+    "missed_region",
+    "target_missed",
+    "hands_swapped",
+    "hour_hand_not_moved",
+    "half_past_wrong_hour",
+    "wrong_hour",
+    "minute_off_by_step",
+    "wrong_minute",
+    "not_fewest",
+    "zloty_grosze_mixed",
+    "one_coin_off",
+    "too_much",
+    "too_little",
+    "parts_apart",
+    "shaded_the_rest",
+    "shaded_whole",
+    "off_by_one_part",
+    "wrong_count",
+    "wrong_size",
+    "no_split",
+    "split_not_helpful",
+    ...RULE_CLASSES,
+  ],
+  explain: [],
+};
