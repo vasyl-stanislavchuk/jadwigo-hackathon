@@ -19,12 +19,18 @@ export function Legend({ language }: { language: Language }): ReactElement {
               tone={OUTCOME_TONE[outcome]}
               outcome={outcome}
               icon={<OutcomeIcon outcome={outcome} />}
+              label={outcomeWord(language, outcome)}
             />
             {outcomeWord(language, outcome)}
           </li>
         ))}
         <li className="flex items-center gap-2" data-legend-twin>
-          <OutcomeTile size="sm" tone="plain" icon={<TwinMark />} />
+          <OutcomeTile
+            size="sm"
+            tone="plain"
+            icon={<TwinMark />}
+            label={copy(language, "parent_overview_twin", {}, CATEGORY)}
+          />
           {copy(language, "parent_overview_twin", {}, CATEGORY)}
         </li>
       </ul>

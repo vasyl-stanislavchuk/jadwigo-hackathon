@@ -187,6 +187,7 @@ function QuestionTile({
   onOpen: () => void;
 }): ReactElement {
   const Icon = ENDED_ICON[question.ended];
+  const word = copy(language, ENDED_WORD[question.ended], {}, CATEGORY);
   return (
     <button
       type="button"
@@ -195,13 +196,15 @@ function QuestionTile({
       data-ended={question.ended}
       onClick={onOpen}
     >
-      <OutcomeTile tone={ENDED_TONE[question.ended]} icon={<Icon aria-hidden="true" />} />
+      <OutcomeTile
+        tone={ENDED_TONE[question.ended]}
+        icon={<Icon aria-hidden="true" />}
+        label={word}
+      />
       <span className="flex min-w-0 flex-col gap-1">
         <span className="text-jw-small font-bold">{question.seq}</span>
         <span>{question.say}</span>
-        <span className="text-jw-small text-jw-ink-soft">
-          {copy(language, ENDED_WORD[question.ended], {}, CATEGORY)}
-        </span>
+        <span className="text-jw-small text-jw-ink-soft">{word}</span>
       </span>
     </button>
   );
