@@ -377,15 +377,29 @@ function typedAnswers(question: Record<string, unknown>): string[] {
   return [];
 }
 
+/** An arithmetic operator; `=` is not one, so the answer after it still gives the answer away. */
+const OPERATOR = "[+\\-−×·*:÷/]";
+/** What stands on an operator's other side in an expression: a number or the blank to fill. */
+const TERM = "[\\p{N}?_□]";
+const AFTER_OPERAND = new RegExp(`${TERM}\\s*${OPERATOR}\\s*$`, "u");
+const BEFORE_OPERAND = new RegExp(`^\\s*${OPERATOR}\\s*${TERM}`, "u");
+
 /**
- * Whether `say` holds `answer` as a word of its own. A one-letter answer counts only as a digit:
+ * Whether `say` holds `answer` as a word of its own, other than as an operand: in "Ile to jest
+ * 10 − 5?" the 5 is the question, not its answer. A one-letter answer counts only as a digit:
  * Polish has one-letter words (`u`, `w`, `o`) that a spelling gap's answer would match.
  */
 function says(say: string, answer: string): boolean {
   const a = answer.trim();
   if (a === "" || (a.length === 1 && !/\p{N}/u.test(a))) return false;
   const escaped = a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, "iu").test(say);
+  const word = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, "giu");
+  for (const m of say.matchAll(word)) {
+    const before = say.slice(0, m.index);
+    const after = say.slice(m.index + m[0].length);
+    if (!AFTER_OPERAND.test(before) && !BEFORE_OPERAND.test(after)) return true;
+  }
+  return false;
 }
 
 /** A `say` line that gives the answer away. */

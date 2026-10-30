@@ -266,6 +266,23 @@ describe("check.ts --json", () => {
     ]);
   });
 
+  it("lets say quote the answer as an operand, never as the answer", () => {
+    const withSay = (say: string) =>
+      planted((step) => {
+        step["say"] = say;
+        Object.assign(step.question ?? {}, { key: { accept: ["5"] } });
+      });
+    for (const say of ["Ile to jest 10 − 5? Napisz albo powiedz.", "Ile to 5 × 1?", "10 : 2 = ?"]) {
+      const { out } = check(withSay(say));
+      expect([say, out["ok"], out["errors"]]).toEqual([say, true, []]);
+    }
+    for (const say of ["Ile to jest 10 − 5? To 5.", "10 − 5 = 5", "Odpowiedź: 5"]) {
+      const { out } = check(withSay(say));
+      const rules = (out["findings"] as Found[]).map((f) => f.rule);
+      expect([say, out["ok"], rules]).toEqual([say, false, ["key-in-say"]]);
+    }
+  });
+
   it("keeps going past a step that does not compile, to the next one", () => {
     const file = plantedIn("equal-groups", (steps) => {
       for (const id of ["s02", "s05"]) {
