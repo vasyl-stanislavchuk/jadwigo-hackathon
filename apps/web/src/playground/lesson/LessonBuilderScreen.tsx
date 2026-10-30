@@ -1,7 +1,7 @@
 /**
  * The lesson builder at /playground/lesson (dl-a38n): the newest draft in JADWIGO_DRAFTS_DIR,
  * part by part and step by step, drawn in the kit's preview mode with the check's findings
- * pinned to each step. The draft arrives over Vite's HMR socket from dev/draft-watch.ts
+ * pinned to each step, and above them the step table with one row per step (table/). The draft arrives over Vite's HMR socket from dev/draft-watch.ts
  * (`builder:draft`, draft.ts), and the page redraws on every change with no reload. Lane web
  * fills the draft and the steps (adapter.ts, StepCard.tsx), lane bridge fills comments/ and
  * activity/ through the two slots.
@@ -23,6 +23,10 @@ import {
 } from "./draft.ts";
 import { SkippedCard, StepCard } from "./StepCard.tsx";
 import { ActivitySlot, CommentsSlot } from "./slots.ts";
+import { FindingList } from "./table/FindingList.tsx";
+import { findingsOf } from "./table/findings.ts";
+import { stepRows } from "./table/model.ts";
+import { StepTable } from "./table/StepTable.tsx";
 
 export const LESSON_BUILDER_PATH = "/playground/lesson";
 
@@ -82,11 +86,16 @@ function LessonDraft({
   const { file } = read;
   const language = languageOf(file.language);
   const category = categoryOf((file as { category?: unknown }).category);
+  const parts = lessonFileToSpecs(file);
+  const findings = findingsOf(message.check);
+  const of = (step_id: string) => findings.filter((f) => f.step_id === step_id);
   let n = 0;
   return (
     <div className="flex flex-col gap-6">
       <h2 className="text-base font-medium">{file.title}</h2>
-      {lessonFileToSpecs(file).map(({ part, steps }, i) => (
+      <FindingList findings={findings.filter((f) => f.step_id === null)} label="Lesson findings" />
+      <StepTable rows={stepRows(parts, findings)} showKey={showKey} />
+      {parts.map(({ part, steps }, i) => (
         <section
           // A part's name may repeat in a draft; its place does not.
           key={`${i}-${part}`}
@@ -104,12 +113,18 @@ function LessonDraft({
                 key={step.step_id}
                 n={n}
                 spec={step.spec}
+                findings={of(step.step_id)}
                 showKey={showKey}
                 language={language}
                 category={category}
               />
             ) : (
-              <SkippedCard key={step.step_id} step_id={step.step_id} reason={step.reason} />
+              <SkippedCard
+                key={step.step_id}
+                step_id={step.step_id}
+                reason={step.reason}
+                findings={of(step.step_id)}
+              />
             );
           })}
         </section>
