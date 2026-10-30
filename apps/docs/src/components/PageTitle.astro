@@ -1,0 +1,116 @@
+---
+// Starlight's page title with starlight-llm-actions' menu beside it (dl-5ssh.90.32). Overriding
+// PageTitle turns off the plugin's own injection, so the menu is placed here, and Copy for Muse
+// joins it: Muse Code is a terminal agent with no URL to open, so it gets a prompt to paste.
+import Default from "@astrojs/starlight/components/PageTitle.astro";
+import PageActions from "starlight-llm-actions/components/PageActions.astro";
+import "../styles/llm-actions.css";
+---
+
+<div class="jw-page-title">
+  <Default {...Astro.props}><slot /></Default>
+  <PageActions />
+</div>
+
+<style>
+  .jw-page-title {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .jw-page-title :global(h1) {
+    flex: 1;
+    min-width: 0;
+  }
+</style>
+
+<script>
+  import { musePrompt } from "../lib/muse.ts";
+
+  const MUSE_ICON =
+    '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1"/><path d="M4 6l2 2-2 2"/><path d="M8 10h4"/></svg>';
+
+  /**
+   * Adds Copy for Muse to the end of the plugin's menu. The item is a clone of the plugin's own,
+   * so it wears the menu's scoped styles. The plugin listed its items before this runs, so the
+   * arrow keys are handled here over every item, Muse included.
+   */
+  function addMuse(container: HTMLElement): void {
+    const menu = container.querySelector<HTMLElement>(".page-actions-menu");
+    const model = menu?.querySelector<HTMLElement>(".page-actions-item");
+    const divider = menu?.querySelector<HTMLElement>(".section-divider");
+    const label = menu?.querySelector<HTMLElement>(".section-label");
+    if (!menu || !model || menu.querySelector('[data-action="muse"]')) return;
+
+    const item = model.cloneNode(true) as HTMLElement;
+    // On an API reference page the first item is a provider's: keep none of its data.
+    for (const name of item.getAttributeNames()) {
+      if (name.startsWith("data-") && !name.startsWith("data-astro-")) item.removeAttribute(name);
+    }
+    item.setAttribute("data-action", "muse");
+    item.querySelector(".item-external")?.remove();
+    const icon = item.querySelector(".item-icon");
+    if (icon) icon.innerHTML = MUSE_ICON;
+    const title = item.querySelector(".item-title");
+    if (title) title.textContent = "Copy for Muse";
+    const desc = item.querySelector(".item-desc");
+    if (desc) desc.textContent = "Copy a prompt for Muse Code";
+    if (divider) menu.append(divider.cloneNode(true));
+    if (label) {
+      const terminal = label.cloneNode(true) as HTMLElement;
+      terminal.textContent = "Terminal";
+      menu.append(terminal);
+    }
+    menu.append(item);
+
+    item.addEventListener("click", () => {
+      const prompt = musePrompt(container.getAttribute("data-markdown-href") ?? "");
+      navigator.clipboard
+        .writeText(prompt)
+        .then(() => toast("Copied a prompt for Muse"))
+        .catch(() => toast("Failed to copy"));
+      container.querySelector<HTMLElement>(".page-actions-trigger")?.click();
+    });
+
+    container.addEventListener(
+      "keydown",
+      (event) => {
+        if (container.getAttribute("data-state") !== "open") return;
+        const items = [...container.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+        const at = items.indexOf(document.activeElement as HTMLElement);
+        const next = {
+          ArrowDown: (at + 1) % items.length,
+          ArrowUp: (at - 1 + items.length) % items.length,
+          Home: 0,
+          End: items.length - 1,
+        }[event.key];
+        if (next === undefined) return;
+        event.preventDefault();
+        event.stopPropagation();
+        items[next]?.focus();
+      },
+      { capture: true },
+    );
+  }
+
+  /** The plugin's toast, whose styles are global. */
+  function toast(message: string): void {
+    document.querySelector(".page-actions-toast")?.remove();
+    const note = document.createElement("div");
+    note.className = "page-actions-toast";
+    note.setAttribute("role", "status");
+    note.setAttribute("aria-live", "polite");
+    note.textContent = message;
+    document.body.append(note);
+    requestAnimationFrame(() => requestAnimationFrame(() => note.classList.add("visible")));
+    setTimeout(() => {
+      note.classList.remove("visible");
+      setTimeout(() => note.remove(), 300);
+    }, 3000);
+  }
+
+  for (const container of document.querySelectorAll<HTMLElement>(".page-actions")) {
+    addMuse(container);
+  }
+</script>

@@ -1,0 +1,16 @@
+/*
+ * The page-actions menu (starlight-llm-actions) in Jadwigo's roles. Each falls back to the
+ * plugin's own Starlight default until foundation.css is loaded. The wrapper class outranks the
+ * plugin's scoped defaults.
+ */
+.jw-page-title .sl-llm-actions.page-actions {
+  --llm-bg: var(--jw-card, var(--sl-color-bg-nav));
+  --llm-text: var(--jw-ink, var(--sl-color-text));
+  --llm-text-muted: var(--jw-ink-soft, var(--sl-color-gray-3));
+  --llm-border: var(--jw-line, var(--sl-color-hairline));
+  --llm-accent: var(--jw-focus, var(--sl-color-accent));
+  --llm-font: var(--jw-font, var(--sl-font-system));
+  --llm-radius: var(--jw-radius-small, 0.375rem);
+  --llm-trigger-border: 1px solid var(--jw-line-strong, var(--sl-color-hairline));
+  --llm-item-hover-bg: var(--jw-act-quiet, var(--llm-border));
+}

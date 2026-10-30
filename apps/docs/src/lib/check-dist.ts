@@ -1,10 +1,10 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { hosts } from "@jadwigo/config";
 import { ERROR_STATUS, ROUTES } from "@jadwigo/contracts";
 import { QUESTION_TYPES } from "@jadwigo/lesson-kit/question-types";
 import { apiBase, servedHost } from "../index.ts";
-import { API_PAGES } from "./guides.ts";
+import { API_PAGES, API_REFERENCE_BASE } from "./guides.ts";
 import { REGISTER_HREF } from "./mcp.ts";
 import { type OpenApiDocument, operationCount } from "./openapi.ts";
 import { gallery } from "./question-types.ts";
@@ -40,6 +40,13 @@ export const MUST: readonly (readonly [file: string, text: string])[] = [
   ["404.html", "Page not found"],
   ["llms.txt", `https://${servedHost}/llms-full.txt`],
   ["llms.txt", `https://${servedHost}/openapi.json`],
+  ["llms.txt", `https://${servedHost}/_llms-txt/mcp.txt`],
+  [
+    "guides/first-call/index.html",
+    '<link rel="alternate" type="text/markdown" href="/guides/first-call.md"',
+  ],
+  ["guides/first-call/index.html", 'type="application/vnd.oai.openapi+json" href="/openapi.json"'],
+  ["guides/first-call.md", "# Your first call"],
   ["llms-full.txt", "Your first call"],
   ["sitemap-index.xml", `https://${servedHost}/sitemap-0.xml`],
   ["pagefind/pagefind.js", ""],
@@ -54,8 +61,11 @@ const REPO_LINK = /href="https?:\/\/(www\.)?github\.com\//;
  * drift from packages/config (dl-5ssh.90.19, dl-5ssh.90.24).
  */
 const THIRD_PARTY_HOSTS: Readonly<Record<string, string>> = {
+  "chatgpt.com": "Open in ChatGPT in every page's actions menu (starlight-llm-actions)",
+  "claude.ai": "Open in Claude in every page's actions menu (starlight-llm-actions)",
   "json-schema.org": "the $schema id in each MCP tool's JSON Schema (mcp/*)",
   "ui.shadcn.com": "the credit for the neutral components (design-system/primitives)",
+  "www.w3.org": "the SVG namespace of the actions menu's icons (starlight-llm-actions)",
 };
 
 const OUR_HOSTS = new Set([hosts.prod.app, hosts.prod.docs]);
@@ -71,8 +81,11 @@ export function strayHosts(html: string): string[] {
   return [...named].filter((host) => !OUR_HOSTS.has(host) && !(host in THIRD_PARTY_HOSTS));
 }
 
-/** What a reader or an agent reads: the pages, llms*.txt, openapi.json and mcp-tools.json. */
-const SCANNED = /\.(html|txt|json)$/;
+/**
+ * What a reader or an agent reads: the pages and their Markdown, llms*.txt, openapi.json and
+ * mcp-tools.json.
+ */
+const SCANNED = /\.(html|md|txt|json)$/;
 
 function scannedFiles(dir: string): string[] {
   return readdirSync(dir, { recursive: true, encoding: "utf8" })
@@ -102,10 +115,24 @@ function checkApi(dist: string): string[] {
   return problems;
 }
 
+/**
+ * Every built page but the API reference's, which starlight-llm-actions can't see (agents read
+ * /openapi.json there), has its Markdown beside it: `guides/first-call/index.html` has
+ * `guides/first-call.md` (dl-5ssh.90.32).
+ */
+function checkMarkdown(dist: string): string[] {
+  return readdirSync(dist, { recursive: true, encoding: "utf8" })
+    .filter((path) => path.endsWith("index.html") && !path.startsWith(`${API_REFERENCE_BASE}/`))
+    .sort()
+    .map((path) => (path === "index.html" ? "index.md" : `${dirname(path)}.md`))
+    .filter((markdown) => !existsSync(join(dist, markdown)))
+    .map((markdown) => `dist/${markdown} is missing: its page has no Markdown`);
+}
+
 /** Every problem with the built site at `dist`, one line each; none when it may be published. */
 export function checkDist(dist: string): string[] {
   if (!existsSync(dist)) return [`${dist} does not exist: run the build first`];
-  const problems = checkApi(dist);
+  const problems = [...checkApi(dist), ...checkMarkdown(dist)];
   for (const [file, text] of MUST) {
     const path = join(dist, file);
     if (!existsSync(path)) problems.push(`dist/${file} is missing`);

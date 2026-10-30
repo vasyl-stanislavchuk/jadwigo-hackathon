@@ -43,6 +43,7 @@
       "dependencies": {
         "@astrojs/markdown-remark": "7.3.4",
         "@astrojs/markdown-satteri": "0.4.5",
+        "@astrojs/mdx": "8.1.1",
         "@astrojs/starlight": "0.42.6",
         "@fontsource/andika": "catalog:",
         "@jadwigo/config": "workspace:*",
@@ -51,11 +52,19 @@
         "@jadwigo/ui": "workspace:*",
         "astro": "7.4.2",
         "astro-mermaid": "2.1.0",
+        "hast-util-select": "6.0.4",
         "mermaid": "12.2.0",
+        "rehype-parse": "9.0.1",
+        "rehype-remark": "10.0.1",
+        "remark-gfm": "4.0.1",
+        "remark-stringify": "11.0.0",
         "satteri": "0.10.5",
         "starlight-links-validator": "0.27.0",
+        "starlight-llm-actions": "0.13.0",
         "starlight-llms-txt": "0.12.0",
         "starlight-openapi": "0.27.0",
+        "unified": "11.0.5",
+        "unist-util-remove": "4.0.0",
       },
       "devDependencies": {
         "@astrojs/check": "0.9.12",
@@ -2230,6 +2239,8 @@
     "split2": ["split2@4.2.0", "", {}, "sha512-UcjcJOWknrNkF6PLX83qcHM6KHgVKNkV62Y8a5uYDVv9ydGQVwAHMKqHdJje1VTWpljG0WYpCDhrCdAOYH4TWg=="],
 
     "starlight-links-validator": ["starlight-links-validator@0.27.0", "", { "dependencies": { "@astrojs/markdown-satteri": "^0.4.0", "github-slugger": "^2.0.0", "hast-util-from-html": "^2.0.3", "is-absolute-url": "^5.0.0", "mdast-util-mdx-jsx": "^3.2.0", "mdast-util-to-hast": "^13.2.1", "picomatch": "^4.0.3", "satteri": "^0.10.3", "terminal-link": "^5.0.0", "unist-util-visit": "^5.1.0", "yaml": "^2.8.3" }, "peerDependencies": { "@astrojs/starlight": ">=0.42.0", "astro": ">=7.2.10" } }, "sha512-UvPl8L9hfWR+yWbLOEtljLmpJCGcM6AVseVy5IO9dmqdOjW4R+Y8FaYyVA5axCC8RvxM5xU7M1WTerpwU8rYbw=="],
+
+    "starlight-llm-actions": ["starlight-llm-actions@0.13.0", "", { "dependencies": { "picomatch": "^4", "zod": "^4.4.3" }, "peerDependencies": { "@astrojs/mdx": ">=4.0.0", "@astrojs/starlight": ">=0.36.0", "astro": ">=5.6.0", "hast-util-select": ">=6.0.0", "rehype-parse": ">=9.0.0", "rehype-remark": ">=10.0.0", "remark-gfm": ">=4.0.0", "remark-stringify": ">=11.0.0", "unified": ">=11.0.0", "unist-util-remove": ">=4.0.0", "vite": ">=5.0.0" }, "optionalPeers": ["@astrojs/mdx", "hast-util-select", "rehype-parse", "rehype-remark", "remark-gfm", "remark-stringify", "unified", "unist-util-remove"] }, "sha512-U2Aw6iegQr9i6uQ4bteMcwcUtZ0qKgZOUA0vm3td1OL/Es0StC+ixB2yNkFswl9cXNDX1CElgx+YsivENePzGw=="],
 
     "starlight-llms-txt": ["starlight-llms-txt@0.12.0", "", { "dependencies": { "@astrojs/mdx": "^8.0.1", "@types/hast": "^3.0.5", "@types/micromatch": "^4.0.10", "github-slugger": "^2.0.0", "hast-util-select": "^6.0.4", "micromatch": "^4.0.8", "rehype-parse": "^9.0.1", "rehype-remark": "^10.0.1", "remark-gfm": "^4.0.1", "remark-stringify": "^11.0.0", "unified": "^11.0.5", "unist-util-remove": "^4.0.0" }, "peerDependencies": { "@astrojs/starlight": ">=0.41.0", "astro": "^7.0.0" } }, "sha512-ya4c0ZoiPUXuHDzd3AYCKh78Y3II3EToSE9Yp6uVN0c2UUKoNpqTjijhW86W/4toZzSUhWSnxeYs7QBcXNIPGg=="],
 
