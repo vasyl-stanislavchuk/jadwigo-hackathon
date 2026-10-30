@@ -18,7 +18,7 @@ const LINES_MAX = 20;
 // How often the transcript's size is looked at: a call shows on the page within about a second.
 const LOOK_MS = 1_000;
 
-export type Mark = "done" | "current" | "failed";
+type Mark = "done" | "current" | "failed";
 
 export type ActivityPayload = {
   session_id: string | null;

@@ -30,7 +30,7 @@ const BANK = "mcp__jadwigo__question_";
 const REPLY = "mcp__jadwigo-builder__reply";
 
 /** One line of what the session did, folded. `open` while its call has no result yet. */
-export type Step = { at: string; text: string; failed: boolean; open: boolean };
+type Step = { at: string; text: string; failed: boolean; open: boolean };
 
 export type Activity = {
   steps: Step[];
@@ -98,7 +98,7 @@ function checkLine(result: Record<string, unknown> | null): string | null {
 }
 
 /** The line a call shows, and the file it read or changed. A call nobody needs to see gives "". */
-export function describe(
+function describe(
   tool: string,
   input: Record<string, unknown>,
   result: Record<string, unknown> | null,
@@ -123,7 +123,7 @@ export function describe(
 }
 
 /** The words for a call that errored, from the line it would have shown. */
-export function failedLine(tool: string, text: string): string {
+function failedLine(tool: string, text: string): string {
   if (text.startsWith("Reading ")) return `Couldn't read ${text.slice("Reading ".length)}`;
   if (text.startsWith("Editing ")) return `Couldn't edit ${text.slice("Editing ".length)}`;
   if (tool === DRAFT) return "Couldn't draw the questions";
