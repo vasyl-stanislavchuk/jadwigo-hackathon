@@ -1,0 +1,30 @@
+---
+// The Errors guide's table, generated from ERROR_STATUS in @jadwigo/contracts at build time.
+import { errorRows } from "../lib/errors.ts";
+
+const rows = errorRows();
+---
+
+<table>
+  <thead>
+    <tr><th>Status</th><th>Error types</th><th>What it means</th></tr>
+  </thead>
+  <tbody>
+    {
+      rows.map((row) => (
+        <tr>
+          <td><code>{row.status}</code></td>
+          <td>
+            {row.types.map((type, i) => (
+              <>
+                {i > 0 && ", "}
+                <code>{type}</code>
+              </>
+            ))}
+          </td>
+          <td>{row.meaning}</td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>

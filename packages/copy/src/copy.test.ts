@@ -175,6 +175,14 @@ const CATEGORY_AWARE_KEYS: readonly CopyKey[] = [
   "voice_speaking",
   "tutor_resting",
   "tap_to_hear",
+  // the parent's review and end list (dl-uukj.32 wave 2): ReviewStep, ReviewList, AttemptReview
+  "play_ended_correct",
+  "play_ended_missed",
+  "play_ended_skipped",
+  "play_ended_done",
+  "play_ended_open",
+  "review_no_answer",
+  "review_praise",
 ];
 
 describe("category tables (dl-i952.17)", () => {

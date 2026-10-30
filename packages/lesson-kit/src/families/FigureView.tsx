@@ -140,7 +140,7 @@ export function FigureView({
                 <RichText
                   inline
                   text={`$\\frac{${f.n}}{${f.d}}$`}
-                  className="min-w-[var(--kid-tap-min)] text-2xl font-bold"
+                  className="min-w-kid-tap text-2xl font-bold"
                 />
               )}
               <FractionShape

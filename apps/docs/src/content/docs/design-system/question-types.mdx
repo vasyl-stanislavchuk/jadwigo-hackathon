@@ -1,0 +1,31 @@
+---
+title: Question types
+description: The interaction families and every question type, each linked to the playground.
+---
+
+import QuestionTypeTable from "../../../components/QuestionTypeTable.astro";
+
+A question is built in 2 steps. A lesson author picks an **interaction family**: what the learner
+does, such as choose, type or put in order. Then a **question type** of that family sets its
+options, such as a true-or-false layout or a typed number on a keypad.
+
+The family decides the shape of the answer and how it is checked. The question type decides how
+it looks. So 2 question types of one family are checked the same way.
+
+## Status
+
+- **refined**: its design is settled.
+- **draft**: it plays, but it is still being worked on.
+- **idea**: it is only proposed.
+
+## After a miss
+
+A question type either marks the parts the learner missed, so they fix only those, or marks the
+whole step. A miss is shown in red pen, and the words a child reads never call it wrong.
+
+## Every question type
+
+This table is generated from the lesson kit's catalog when the docs are built. Each name links to
+its page in the [playground](https://app.jadwigo.pl/playground), where it plays in both languages.
+
+<QuestionTypeTable />

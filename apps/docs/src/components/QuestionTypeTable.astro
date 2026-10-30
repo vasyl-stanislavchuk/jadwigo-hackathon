@@ -1,0 +1,36 @@
+---
+// Every question type by family, generated from QUESTION_TYPES in @jadwigo/lesson-kit at build time.
+import { familyGroups, playgroundUrl } from "../lib/question-types.ts";
+
+const groups = familyGroups();
+---
+
+{
+  groups.map((group) => (
+    <>
+      <h3 id={`family-${group.name}`}>
+        {group.label} <code>{group.name}</code>
+      </h3>
+      <p>{group.does}</p>
+      <table>
+        <thead>
+          <tr><th>Question type</th><th>What the learner does</th><th>Status</th><th>After a miss</th></tr>
+        </thead>
+        <tbody>
+          {group.types.map((type) => (
+            <tr>
+              <td>
+                <a href={playgroundUrl(type)}>{type.label}</a>
+                <br />
+                <code>{type.name}</code>
+              </td>
+              <td>{type.does}</td>
+              <td>{type.status}</td>
+              <td>{type.marks === "parts" ? "marks the missed parts" : "marks the whole step"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  ))
+}

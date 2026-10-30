@@ -21,10 +21,13 @@ test.beforeEach(async ({ page }) => {
 });
 
 /** The playground controls: a column beside the page on a laptop, a drawer on a phone that starts
- * closed. Opens it when it is closed. */
+ * closed. Opens it when it is closed. The playground loads on demand (App.tsx, dl-uukj.32), so the
+ * shell is awaited first: before it renders, the column is not there yet and is not closed. */
 async function controls(page: Page): Promise<Locator> {
+  const toggle = page.getByRole("button", { name: "Controls" });
+  await toggle.waitFor();
   const aside = page.getByRole("complementary", { name: "Playground controls" });
-  if (!(await aside.isVisible())) await page.getByRole("button", { name: "Controls" }).click();
+  if (!(await aside.isVisible())) await toggle.click();
   await expect(aside).toBeVisible();
   return aside;
 }

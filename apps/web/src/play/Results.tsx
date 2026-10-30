@@ -10,12 +10,13 @@
 
 import type { AttemptResults } from "@jadwigo/contracts";
 import { copy, type Language } from "@jadwigo/copy";
-import { Button } from "@jadwigo/ui";
+import { Button, Heading } from "@jadwigo/ui";
 import type { ReactElement } from "react";
+import { NavLink } from "../nav/NavLink.tsx";
 import { browserAuth } from "../parent/auth.ts";
 import { parentPath } from "../parent/route.ts";
-import { NavLink } from "../playground/shell/NavLink.tsx";
 import { ReviewList } from "../review/ReviewList.tsx";
+import { Column } from "./KidPage.tsx";
 
 export function Results({
   results,
@@ -29,18 +30,16 @@ export function Results({
 }): ReactElement {
   const rows = results?.results ?? [];
   return (
-    <section data-results className="kid-results mx-auto flex max-w-2xl flex-col gap-6 p-6">
-      <h1 data-congrats className="text-3xl font-semibold">
-        {copy(language, "play_congrats")}
-      </h1>
-      <h2 className="text-xl">{copy(language, "play_results_title")}</h2>
+    <Column data-results className="items-stretch">
+      <Heading data-congrats>{copy(language, "play_congrats")}</Heading>
+      <Heading level={2}>{copy(language, "play_results_title")}</Heading>
       {rows.length === 0 ? (
         <p>{copy(language, "play_results_none")}</p>
       ) : (
         <ReviewList rows={rows} language={language} linkOf={linkOf} />
       )}
       <SaveProgress results={results} language={language} />
-    </section>
+    </Column>
   );
 }
 
@@ -60,9 +59,9 @@ function SaveProgress({
   if (attempt.mode === "preview" || attempt.learner_id !== null) return null;
   const lang = new URLSearchParams(window.location.search).get("lang");
   return (
-    <aside data-save className="flex flex-col items-start gap-3 border-t pt-6">
+    <aside data-save className="flex flex-col items-start gap-3 border-t border-jw-line pt-6">
       <p>{copy(language, "play_save_note")}</p>
-      <Button asChild variant="outline">
+      <Button asChild variant="outline" size="control">
         <NavLink href={parentPath({ claim: attempt.assignment_id, lang })} data-save-link>
           {copy(language, "play_save")}
         </NavLink>

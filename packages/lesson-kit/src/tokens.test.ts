@@ -2,7 +2,7 @@
 // literal colour, no pixel or rem size, no palette class and no var() in a part, a family view or the
 // stage. The rules are @jadwigo/testing's (dl-uukj.32, grown from this file's first version, ported
 // from david-learns frontend/src/levels.test.ts); the allowlist beside this file is what the kit lane
-// is still removing, and NumberLineSvg's SVG units stay with their reason.
+// is still removing, and an entry that stays for good (SVG units inside a viewBox) carries its reason.
 import { join } from "node:path";
 import { checkTokens } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";

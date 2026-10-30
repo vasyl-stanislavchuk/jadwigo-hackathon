@@ -15,8 +15,8 @@ const toggleVariants = cva(
         ghost: "border-transparent bg-transparent text-foreground",
       },
       size: {
-        default: "min-h-[var(--kid-tap-min)] min-w-[var(--kid-tap-min)] px-5",
-        key: "min-h-[var(--kid-key-size)] min-w-[var(--kid-key-size)] px-6 text-kid-answer",
+        default: "min-h-kid-tap min-w-kid-tap px-5",
+        key: "min-h-kid-key min-w-kid-key px-6 text-kid-answer",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

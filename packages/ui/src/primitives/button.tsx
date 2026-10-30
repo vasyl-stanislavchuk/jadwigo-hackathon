@@ -26,9 +26,9 @@ const buttonVariants = cva(
         ghost: "text-foreground hover:bg-muted",
       },
       size: {
-        default: "min-h-[var(--kid-tap-min)] min-w-[var(--kid-tap-min)] px-5",
-        commit: "min-h-[var(--kid-commit-height)] min-w-[var(--kid-commit-height)] px-8",
-        icon: "min-h-[var(--kid-tap-min)] min-w-[var(--kid-tap-min)]",
+        default: "min-h-kid-tap min-w-kid-tap px-5",
+        commit: "min-h-kid-commit min-w-kid-commit px-8",
+        icon: "min-h-kid-tap min-w-kid-tap",
         // A settings or navigation control on an app page: 48 (--jw-control-height, dl-og82), at the
         // body size. A lesson keeps the kid sizes above.
         control:

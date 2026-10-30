@@ -100,9 +100,9 @@ export const TONE_CLASS: Record<Tone, string> = {
  */
 const WHOLE_CLASS: Record<Tone, string> = {
   idle: "",
-  green: "outline-solid outline-2 outline-offset-[0.375rem] outline-kid-correct",
-  amber: "outline-dashed outline-2 outline-offset-[0.375rem] outline-kid-try-again",
-  missing: "outline-dashed outline-2 outline-offset-[0.375rem] outline-primary",
+  green: "outline-solid outline-2 outline-offset-6 outline-kid-correct",
+  amber: "outline-dashed outline-2 outline-offset-6 outline-kid-try-again",
+  missing: "outline-dashed outline-2 outline-offset-6 outline-primary",
 };
 
 /** A group's whole-set mark as props: the outline, and `data-whole` naming it for a test or a

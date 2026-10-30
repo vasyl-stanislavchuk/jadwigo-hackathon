@@ -22,7 +22,7 @@ import { shiftInto, Tooltip } from "./Tooltip.tsx";
 afterEach(cleanup);
 
 const clock: Clock = { now: (): Instant => ({ perf: 1, wall: "2026-10-06T00:00:00.000Z" }) };
-const KID_SIZE = /min-h-\[var\(--kid-(tap-min|commit-height|key-size)\)\]/;
+const KID_SIZE = /\bmin-h-kid-(tap|commit|key)\b/;
 
 describe("shiftInto", () => {
   it("leaves a bubble inside the window where it is", () =>
@@ -61,7 +61,7 @@ describe("TaskPrompt", () => {
   it("shows the task at the say size", () => {
     render(<TaskPrompt text="Ile to jest 7 × 8?" />);
     const p = screen.getByText("Ile to jest 7 × 8?");
-    expect(p.className).toMatch(/text-\[length:var\(--kid-say-size\)\]/);
+    expect(p.className).toMatch(/text-kid-say/);
   });
 });
 
@@ -162,7 +162,7 @@ describe("TerminalCard", () => {
   it("keeps the 56 px tap target, with the hover fill an inset pill", () => {
     render(<TerminalCard card={lab} language="en" />);
     const button = screen.getByRole("button", { name: "Copy: bd -C $DL_LAB ready" });
-    expect(button.className).toMatch(/min-h-\[var\(--kid-tap-min\)\]/);
+    expect(button.className).toMatch(/(^|\s)min-h-kid-tap(\s|$)/);
     expect(button.className).toMatch(/before:inset-x-1\.5/);
     expect(button.className).toMatch(/before:inset-y-2/);
     expect(button.className).toMatch(/before:rounded-sm/);
@@ -407,12 +407,12 @@ describe("Keypad", () => {
       <Keypad language="pl" clock={clock} signKeys={signKeys(["×", "+"])} onEvent={vi.fn()} />,
     );
     const seven = screen.getByRole("button", { name: "7" });
-    expect(seven.className).toContain("min-h-[var(--kid-key-size)]");
-    expect(seven.className).toContain("text-[1.875rem]");
-    expect(seven.className).toContain("rounded-[0.625rem]");
+    expect(seven.className).toContain("min-h-kid-key");
+    expect(seven.className).toContain("text-jw-key");
+    expect(seven.className).toContain("rounded-jw-small");
     const times = must(container.querySelector<HTMLElement>('[data-sign="×"]'));
-    expect(times.className).toContain("min-h-[var(--kid-tap-min)]");
-    expect(times.className).toContain("text-[1.75rem]");
+    expect(times.className).toContain("min-h-kid-tap");
+    expect(times.className).toContain("text-jw-key-sign");
     expect(must(container.querySelector("[data-keypad]")).className).toContain("gap-2");
   });
 });

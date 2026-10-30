@@ -7,26 +7,11 @@
 import { createClient, type FeaturedClient } from "@jadwigo/api-client";
 import type { FeaturedLesson } from "@jadwigo/contracts";
 import { copy, type Language } from "@jadwigo/copy";
-import { LessonTheme } from "@jadwigo/lesson-kit";
-import { Button, Spinner } from "@jadwigo/ui";
-import { type ReactElement, type ReactNode, useEffect, useMemo, useState } from "react";
-import { NavLink } from "../playground/shell/NavLink.tsx";
+import { Button, Heading, Spinner } from "@jadwigo/ui";
+import { type ReactElement, useEffect, useMemo, useState } from "react";
+import { NavLink } from "../nav/NavLink.tsx";
+import { Column, KidPage } from "./KidPage.tsx";
 import { playPath } from "./route.ts";
-
-/** The kid page the player draws too (PlayScreen.tsx), kept apart from the player's own files. */
-function KidPage({ children }: { children: ReactNode }): ReactElement {
-  return (
-    <main className="kid-page" data-learner-view data-play>
-      <LessonTheme>{children}</LessonTheme>
-    </main>
-  );
-}
-
-function Message({ children }: { children: ReactNode }): ReactElement {
-  return (
-    <div className="mx-auto flex max-w-2xl flex-col items-start gap-6 p-6 text-2xl">{children}</div>
-  );
-}
 
 type Home = { kind: "loading" } | { kind: "ready"; lessons: FeaturedLesson[] } | { kind: "failed" };
 
@@ -62,25 +47,24 @@ export function HomeScreen({
     case "loading":
       return (
         <KidPage>
-          <Message>
+          <Column>
             <Spinner label={copy(language, "loading")} />
-            <p>{copy(language, "loading")}</p>
-          </Message>
+          </Column>
         </KidPage>
       );
     case "failed":
       return (
         <KidPage>
-          <Message>
+          <Column>
             <p data-failed>{copy(language, "load_failed")}</p>
-          </Message>
+          </Column>
         </KidPage>
       );
     case "ready":
       return (
         <KidPage>
-          <Message>
-            <h1 className="text-3xl font-bold">{copy(language, "home_title")}</h1>
+          <Column>
+            <Heading>{copy(language, "home_title")}</Heading>
             {home.lessons.length === 0 ? (
               <p data-home-empty>{copy(language, "home_empty")}</p>
             ) : (
@@ -90,7 +74,7 @@ export function HomeScreen({
                     <Button
                       asChild
                       size="commit"
-                      className="kid-action w-full justify-start text-left text-2xl whitespace-normal"
+                      className="w-full justify-start text-left text-jw-option whitespace-normal"
                     >
                       <NavLink
                         href={`${playPath(lesson.assignment_id)}${search}`}
@@ -104,7 +88,7 @@ export function HomeScreen({
                 ))}
               </ul>
             )}
-          </Message>
+          </Column>
         </KidPage>
       );
   }

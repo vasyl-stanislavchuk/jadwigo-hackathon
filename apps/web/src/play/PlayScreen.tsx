@@ -14,37 +14,23 @@ import {
   browserClock,
   FamilyView,
   LessonFrame,
-  LessonTheme,
-  type PageFamilySpec,
   press,
   StepFrame,
   ViewMode,
 } from "@jadwigo/lesson-kit";
 import { Button, Spinner } from "@jadwigo/ui";
-import { type ReactElement, type ReactNode, useCallback, useEffect, useMemo } from "react";
-import { navigate, useLocation } from "../playground/route.ts";
+import { type ReactElement, useCallback, useEffect, useMemo } from "react";
+import { withMedia } from "../media.ts";
+import { navigate, useLocation } from "../nav/location.ts";
 import { ChildReview } from "../review/ChildReview.tsx";
+import { specOf } from "../review/ReviewStep.tsx";
+import { Column, KidPage } from "./KidPage.tsx";
 import { Results } from "./Results.tsx";
 import { playPath, playRoute, reviewPath } from "./route.ts";
 import { currentOf, progressOf } from "./runner.ts";
 import { type Player, usePlayer } from "./usePlayer.ts";
 
 const CATEGORY: Category = "child";
-
-/** The page a learner sees: Zeszyt's kid page, with no tool chrome around it. */
-function KidPage({ children }: { children: ReactNode }): ReactElement {
-  return (
-    <main className="kid-page" data-learner-view data-play>
-      <LessonTheme>{children}</LessonTheme>
-    </main>
-  );
-}
-
-function Message({ children }: { children: ReactNode }): ReactElement {
-  return (
-    <div className="mx-auto flex max-w-2xl flex-col items-start gap-6 p-6 text-2xl">{children}</div>
-  );
-}
 
 function Question({
   player,
@@ -57,13 +43,8 @@ function Question({
   const question = currentOf(state);
   const frame = useMemo(() => ({ onStop: player.pause }), [player.pause]);
   if (question === null) return null;
-  const spec = {
-    id: `q${question.seq}`,
-    say: question.say,
-    question_type: question.question_type,
-    family: question.question.family,
-    data: question.question.data,
-  } as PageFamilySpec;
+  // The page's half of the question, its picture refs already media URLs (src/media.ts).
+  const spec = specOf(question);
   const live = state.phase === "live";
   const clock = browserClock;
   return (
@@ -91,7 +72,7 @@ function Question({
               }),
             },
             ladder: {
-              help: state.help,
+              help: withMedia(state.help),
               ask:
                 state.help === null || state.help.more
                   ? { enabled: live, press: press(clock, () => player.askHelp()) }
@@ -111,9 +92,9 @@ function Question({
 export function LessonNotFound({ language }: { language: Language }): ReactElement {
   return (
     <KidPage>
-      <Message>
+      <Column>
         <p data-not-found>{copy(language, "play_not_found")}</p>
-      </Message>
+      </Column>
     </KidPage>
   );
 }
@@ -155,19 +136,18 @@ export function PlayScreen({
     case "loading":
       return (
         <KidPage>
-          <Message>
+          <Column>
             <Spinner label={copy(language, "loading")} />
-            <p>{copy(language, "loading")}</p>
-          </Message>
+          </Column>
         </KidPage>
       );
     case "playing":
       return (
         <KidPage>
           {player.state.phase === "resyncing" || currentOf(player.state) === null ? (
-            <Message>
+            <Column>
               <Spinner label={copy(language, "loading")} />
-            </Message>
+            </Column>
           ) : (
             <Question player={player} language={language} />
           )}
@@ -176,18 +156,18 @@ export function PlayScreen({
     case "paused":
       return (
         <KidPage>
-          <Message>
+          <Column>
             <p data-paused>{copy(language, "play_paused")}</p>
             <Button
               type="button"
               size="commit"
-              className="kid-action text-2xl"
+              className="text-jw-option"
               data-resume
               onClick={player.resume}
             >
               {copy(language, "play_paused_back")}
             </Button>
-          </Message>
+          </Column>
         </KidPage>
       );
     case "finished":
@@ -215,9 +195,9 @@ export function PlayScreen({
     case "failed":
       return (
         <KidPage>
-          <Message>
+          <Column>
             <p data-failed>{copy(language, "load_failed")}</p>
-          </Message>
+          </Column>
         </KidPage>
       );
   }

@@ -48,7 +48,7 @@ file before the call runs and refuses an inline `--body`, `--fill` or a body wit
 Call these one-way, whatever the diff looks like. `AGENTS.md` keeps the list:
 
 - a migration under `supabase/`
-- a change to a `packages/contracts/schemas/*.json` snapshot
+- a change to a `packages/contracts/schemas/*.json` snapshot, or to `packages/contracts/openapi.json`
 - anything that deletes, moves or exports learner data
 - `infra/bootstrap/`, and anything that changes IAM
 - a deploy, a publish, an email: anything that leaves the machine

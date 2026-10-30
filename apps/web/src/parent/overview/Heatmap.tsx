@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@jadwigo/ui";
 import type { ReactElement, ReactNode } from "react";
-import { NavLink } from "../../playground/shell/NavLink.tsx";
+import { NavLink } from "../../nav/NavLink.tsx";
 import { attemptPath } from "../route.ts";
 import type { Cell, Column, Grid, Row } from "./grid.ts";
 import {

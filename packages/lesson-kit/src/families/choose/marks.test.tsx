@@ -162,9 +162,7 @@ describe("1.4 the whole-set mark is drawn outside", () => {
       if (tone === "amber") again(miss(), 4);
       else again(praise, 4, false);
       const cls = [...group().classList];
-      expect(cls).toEqual(
-        expect.arrayContaining(["outline-2", "outline-offset-[0.375rem]", "rounded-2xl"]),
-      );
+      expect(cls).toEqual(expect.arrayContaining(["outline-2", "outline-offset-6", "rounded-2xl"]));
       expect(cls.filter((c) => /^(?:p[xytrbl]?-|border|bg-)/.test(c))).toEqual([]);
       expect(cls.filter((c) => !/^outline/.test(c)).join(" ")).toBe(plain);
     }
