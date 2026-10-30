@@ -14,7 +14,7 @@ import type { PlaceData, PlaceKey, Verdict } from "@jadwigo/contracts";
  * - `off_by_one_part`: one part more or fewer (a miscount).
  * - `parts_apart`: the right number, apart, when they must touch.
  * - `wrong_count`: anything else.
- * The step is marked as a whole: amber falls on the shape, not on a part, since no single part is
+ * The step is marked as a whole: the miss tone falls on the shape, not on a part, since no single part is
  * the miss.
  *
  * Only the judge's half is here; the checks stay with validation.
