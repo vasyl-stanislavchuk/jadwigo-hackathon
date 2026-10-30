@@ -185,6 +185,8 @@ export async function makeReport(
   id: LearnerId,
   now: Date,
 ): Promise<LearnerReport> {
+  // The learner is held before its evidence is read, as the rebuild holds it (`rebuildMastery`).
+  await store.lockLearner(pod, id);
   const last = (await store.listReports(pod, id))[0];
   const read = await folded(store, pod, id, now);
   const ends_at = now.toISOString();

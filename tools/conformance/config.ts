@@ -44,3 +44,38 @@ export function devMediaUrl(env: Env, envFiles: readonly string[], example: stri
   if (fromFiles.length > 0) return fromFiles[fromFiles.length - 1] ?? "";
   return mediaLine(example) ?? "";
 }
+
+/** The languages the app speaks (packages/copy), the ones `--lang` takes. */
+const LANGS = ["pl", "en"] as const;
+type Lang = (typeof LANGS)[number];
+
+/**
+ * The language a run checks, and the items it serves (dl-a38n.32.3). With `--lang`, the items in
+ * that language and those that name none, each then set to it; without, the items' own language,
+ * refused when they mix languages or one names none. Every item is drawn in its own copy.
+ */
+export function itemsInLanguage(
+  items: readonly unknown[],
+  flag: string | undefined,
+): { lang: Lang; items: unknown[]; left_out: number } | { error: string } {
+  const languageOf = (i: unknown): unknown => (i as { language?: unknown } | null)?.language;
+  if (flag !== undefined) {
+    if (!(LANGS as readonly string[]).includes(flag))
+      return { error: `--lang takes ${LANGS.join(" or ")}, not ${flag}` };
+    const kept = items
+      .filter((i) => languageOf(i) === undefined || languageOf(i) === flag)
+      .map((i) => ({ ...(i as object), language: flag }));
+    return { lang: flag as Lang, items: kept, left_out: items.length - kept.length };
+  }
+  const named = new Set(items.map(languageOf));
+  if (named.has(undefined))
+    return { error: "some items name no language: pass --lang pl or --lang en" };
+  if (named.size !== 1)
+    return {
+      error: `the items mix languages (${[...named].map(String).sort().join(", ")}): pass --lang to check one`,
+    };
+  const [only] = [...named];
+  if (!(LANGS as readonly unknown[]).includes(only))
+    return { error: `the items are in ${String(only)}, which the app does not speak` };
+  return { lang: only as Lang, items: [...items], left_out: 0 };
+}

@@ -1231,6 +1231,11 @@ export class InMemoryStore implements Store {
     return written;
   }
 
+  async lockLearner(pod: PodId, learner: LearnerId): Promise<void> {
+    // Each call here is already one unit, and nothing runs between them: the check is all.
+    this.#inPod(this.#learners, pod, learner, "the learner");
+  }
+
   async getMastery(pod: PodId, learner: LearnerId): Promise<readonly LearnerSkillMastery[]> {
     this.#inPod(this.#learners, pod, learner, "the learner");
     return [...(this.#mastery.get(learner) ?? [])];
@@ -1303,7 +1308,7 @@ export class InMemoryStore implements Store {
   async putReport(pod: PodId, report: NewLearnerReport): Promise<LearnerReport> {
     this.#inPod(this.#learners, pod, report.learner_id, "the learner");
     if (Date.parse(report.period_ends_at) < Date.parse(report.period_starts_at)) {
-      throw new StoreError(ErrorType.enum.BadRequest, "a report's period ends after it starts");
+      throw new StoreError(ErrorType.enum.BadRequest, "a report's period ends before it starts");
     }
     const row = frozen(
       parse(

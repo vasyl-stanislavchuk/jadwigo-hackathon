@@ -34,29 +34,21 @@ export function narrativeProblems(narrative: ReportNarrative, digest: ReportDige
     for (const number of text.match(/\d+/g) ?? []) {
       if (!numbers.has(Number(number))) problems.push(`the number ${number} is not in the digest`);
     }
-    const lower = text.toLowerCase();
-    for (const [level, pattern] of LEVEL_WORDS) {
-      if (pattern.test(lower)) problems.push(`the text names a level: ${level}`);
+    for (const [level] of text.matchAll(LEVEL)) {
+      problems.push(`the text names a level: ${level}`);
     }
   }
   return [...new Set(problems)];
 }
 
 /**
- * Level names in English and Polish, the Polish ones by the stems of their forms (`opanowane`,
- * `opanował`, `biegle`, `biegłość`). A stem matches inside a longer word too: `nieopanowane` names
- * a level all the same.
+ * The level names (MasteryLevel) and their Polish forms, any case: "opanowane", "biegle",
+ * "zaznajomiony", "podjęto próbę", "nie rozpoczęto" in every form. The same pattern as the cli
+ * lane's mirror, apps/cli/evals/report/narrative_check.py, so the eval and this check agree. A
+ * word stands alone: a letter, digit or underscore on either side makes it another word.
  */
-const LEVEL_WORDS: readonly (readonly [string, RegExp])[] = [
-  ["mastered", /mastered|mastery/u],
-  ["proficient", /proficien/u],
-  ["familiar", /(?<!\p{L})familiar/u],
-  ["attempted", /(?<!\p{L})attempted/u],
-  ["not started", /not_started|not started/u],
-  ["opanowane", /opanowan|opanował/u],
-  ["biegle", /(?<!\p{L})biegł|(?<!\p{L})biegle/u],
-  ["zaznajomiony", /zaznajomion/u],
-];
+const LEVEL =
+  /(?<![\p{L}\p{N}_])(mastered|proficient|proficiency|familiar|attempted|not[ _-]started|opanow\p{L}*|biegł\p{L}*|biegl\p{L}*|zaznajom\p{L}*|nie\s*rozpocz\p{L}*|nierozpocz\p{L}*|podję\p{L}*\s+prób\p{L}*|podjet\p{L}*\s+prob\p{L}*|próbowan\p{L}*)(?![\p{L}\p{N}_])/giu;
 
 /** Each citation as one string, by its kind and what it names. */
 function citationKey(citation: Citation): string {
