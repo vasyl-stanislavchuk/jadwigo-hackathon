@@ -171,20 +171,20 @@ describe("Group in two columns", () => {
       },
       2,
     );
-    expect(rightCard("27").dataset["tone"]).toBe("amber");
+    expect(rightCard("27").dataset["tone"]).toBe("try_again");
     expect(rightCard("6 × 7").dataset["tone"]).toBe("green");
-    expect(rightCard("32").dataset["tone"]).toBe("amber");
+    expect(rightCard("32").dataset["tone"]).toBe("try_again");
     const rows = screen.getAllByRole("listitem");
     expect(
       within(must(rows[0]))
         .getByText("6 × 7")
         .parentElement?.closest("[data-tone]")
         ?.getAttribute("data-tone"),
-    ).toBe("amber");
+    ).toBe("try_again");
     // Swapping the second and third rows changes those two pairs only; the first keeps its mark.
     tap(screen.getByRole("button", { name: "Move up: 32" }));
     expect(rightColumn()).toEqual(["27", "32", "6 × 7"]);
-    expect(rightCard("27").dataset["tone"]).toBe("amber");
+    expect(rightCard("27").dataset["tone"]).toBe("try_again");
     expect(rightCard("32").dataset["tone"]).toBe("idle");
     expect(rightCard("6 × 7").dataset["tone"]).toBe("idle");
   });
@@ -192,8 +192,8 @@ describe("Group in two columns", () => {
   it("with two pairs the whole column is marked, not each pair", () => {
     const { rerender } = draw(two);
     rerender({ kind: "try_again", index: 0 }, 2);
-    expect(rightCard("6 × 7").dataset["tone"]).toBe("amber");
-    expect(rightCard("27").dataset["tone"]).toBe("amber");
+    expect(rightCard("6 × 7").dataset["tone"]).toBe("try_again");
+    expect(rightCard("27").dataset["tone"]).toBe("try_again");
   });
 
   it("a pair rung 2 gives is pinned at its row, locked, and committed with the rest", () => {
@@ -249,7 +249,7 @@ describe("Group in two columns", () => {
     expect(screen.getByText("The answer")).toBeTruthy();
     const rows = screen.getAllByRole("listitem");
     expect(rows).toHaveLength(6);
-    expect(must(rows[0]).dataset["tone"]).toBe("amber");
+    expect(must(rows[0]).dataset["tone"]).toBe("try_again");
     expect(must(rows[1]).dataset["tone"]).toBe("green");
     expect(must(rows[3]).dataset["tone"]).toBe("green");
   });

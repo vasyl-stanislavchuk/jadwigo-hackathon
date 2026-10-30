@@ -91,8 +91,8 @@ export function ClockStill({
     good === null
       ? {}
       : {
-          h: Math.abs(h.hourAt - good.hourAt) < 2.5 ? "green" : "amber",
-          m: h.minute === good.minute ? "green" : "amber",
+          h: Math.abs(h.hourAt - good.hourAt) < 2.5 ? "green" : "try_again",
+          m: h.minute === good.minute ? "green" : "try_again",
         };
   return (
     <div className="flex flex-col gap-4">

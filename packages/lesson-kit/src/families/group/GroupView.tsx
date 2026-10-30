@@ -298,7 +298,7 @@ function GroupStill({
               data={data}
               placement={shown.items}
               label={copy(language, "answer_yours")}
-              tone={(item) => (right === null ? "idle" : itemRight(item) ? "green" : "amber")}
+              tone={(item) => (right === null ? "idle" : itemRight(item) ? "green" : "try_again")}
             />
           )}
           {right !== null && !allRight && (
@@ -331,7 +331,7 @@ function GroupStill({
               placement={shown.items}
               label={copy(language, "answer_yours")}
               tone={(item, group) =>
-                right === null ? "idle" : rightFor(item, group) ? "green" : "amber"
+                right === null ? "idle" : rightFor(item, group) ? "green" : "try_again"
               }
             />
           )}

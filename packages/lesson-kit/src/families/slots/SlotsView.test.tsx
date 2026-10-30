@@ -514,7 +514,7 @@ describe('Gaps: the solution after "I don\'t know yet" (dl-uukj.29.52)', () => {
     expect([gap(1), gap(2), gap(3)].map((g) => [g.textContent?.trim(), g.dataset["tone"]])).toEqual(
       [
         ["5", "idle"],
-        ["16", "amber"],
+        ["16", "try_again"],
         ["", "idle"],
       ],
     );

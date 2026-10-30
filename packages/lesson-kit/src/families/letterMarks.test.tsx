@@ -78,7 +78,7 @@ describe("the Enter field after a slip", () => {
     expect(onCommit).toHaveBeenCalledOnce();
     onCommit.verdict(letters(19, [9]));
     expect(marked()).toEqual(["s"]);
-    // Paper, not the miss's fill: no amber tone, never away-dashed, and the focus (the ink edge) on it.
+    // Paper, not the miss's fill: no red tone, never away-dashed, and the focus (the ink edge) on it.
     expect(field.getAttribute("data-tone")).toBe("idle");
     expect(document.activeElement).toBe(field);
     expect(field.hasAttribute("data-letter-marked")).toBe(true);
@@ -105,7 +105,7 @@ describe("the Enter field after a slip", () => {
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "koło" } });
     other.verdict(null);
     expect(marked()).toEqual([]);
-    expect(screen.getByRole("textbox").getAttribute("data-tone")).toBe("amber");
+    expect(screen.getByRole("textbox").getAttribute("data-tone")).toBe("try_again");
   });
 });
 
@@ -212,7 +212,7 @@ describe("a Gaps fraction gap to write more simply (Enter addendum 3.4)", () => 
     expect(document.body.textContent).toContain("prościej");
     expect(
       document.querySelectorAll(
-        ':is([data-tone="amber"], [data-tone="missing"]):not([role="status"])',
+        ':is([data-tone="try_again"], [data-tone="missing"]):not([role="status"])',
       ),
     ).toHaveLength(0);
     expect(boxes.every((b) => b.getAttribute("data-tone") === "idle")).toBe(true);
@@ -231,7 +231,7 @@ describe("a Gaps number box after a miss: away and back (Enter addendum 2.3)", (
     fireEvent.click(box);
     fireEvent.keyDown(document.body, { key: "4" });
     onCommit.verdict([{ id: "a", correct: false }]);
-    expect(box.getAttribute("data-tone")).toBe("amber");
+    expect(box.getAttribute("data-tone")).toBe("try_again");
     expect(box.getAttribute("data-active")).toBe("true");
     expect(box.hasAttribute("data-selected")).toBe(true);
     fireEvent.pointerDown(document.body);

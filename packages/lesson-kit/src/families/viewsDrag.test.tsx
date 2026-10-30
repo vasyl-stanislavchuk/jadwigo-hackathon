@@ -78,7 +78,7 @@ describe("Sequence", () => {
     }
   });
 
-  it("tap-tap reorders, Check commits the order, and a miss keeps it with the whole list amber", () => {
+  it("tap-tap reorders, Check commits the order, and a miss keeps it with the whole list red", () => {
     const onCommit = vi.fn();
     const { rerender } = render(<SequenceView {...props(null, 1, onCommit)} />);
     tap("10");
@@ -90,7 +90,7 @@ describe("Sequence", () => {
       .getAllByRole("button", { pressed: false })
       .filter((b) => b.dataset["tone"] !== undefined);
     expect(cards.map((c) => c.textContent)).toEqual(["10", "30", "20"]);
-    expect(cards.every((c) => c.dataset["tone"] === "amber")).toBe(true);
+    expect(cards.every((c) => c.dataset["tone"] === "try_again")).toBe(true);
   });
 
   it("the up and down buttons reorder on their own, and the ends cannot move further (docs/17 §2f rule 9)", () => {
@@ -181,7 +181,7 @@ describe("Group", () => {
       ),
     );
     expect(screen.getByRole("button", { name: "one" }).dataset["tone"]).toBe("green");
-    expect(screen.getByRole("button", { name: "two" }).dataset["tone"]).toBe("amber");
+    expect(screen.getByRole("button", { name: "two" }).dataset["tone"]).toBe("try_again");
   });
 });
 
@@ -344,7 +344,7 @@ describe("Explain", () => {
     });
     act(() => rerender(<ExplainView {...props({ kind: "try_again", index: 0 }, 2)} />));
     expect(field.value).toBe("  Because  the order  does not matter ");
-    expect(field.dataset["tone"]).toBe("amber");
+    expect(field.dataset["tone"]).toBe("try_again");
   });
 });
 
@@ -432,7 +432,7 @@ describe("Place on bars (dl-w3.51.3)", () => {
       ),
     );
     expect(screen.getByRole("slider", { name: "Bar: apples" }).dataset["tone"]).toBe("green");
-    expect(screen.getByRole("slider", { name: "Bar: pears" }).dataset["tone"]).toBe("amber");
+    expect(screen.getByRole("slider", { name: "Bar: pears" }).dataset["tone"]).toBe("try_again");
     expect(screen.getByRole("slider", { name: "Bar: pears" }).getAttribute("aria-valuenow")).toBe(
       "3",
     );
@@ -495,7 +495,7 @@ describe("Place on bars (dl-w3.51.3)", () => {
     const graphs = screen.getAllByRole("group", { name: "Graph from 0 to 10" });
     expect(graphs).toHaveLength(2);
     const bars = must(graphs[0]).querySelectorAll<HTMLElement>('[data-testid="bar"]');
-    expect([bars[0]?.dataset["tone"], bars[1]?.dataset["tone"]]).toEqual(["green", "amber"]);
+    expect([bars[0]?.dataset["tone"], bars[1]?.dataset["tone"]]).toEqual(["green", "try_again"]);
     expect(
       must(graphs[1]).querySelectorAll<HTMLElement>('[data-testid="bar"]')[1]?.dataset["value"],
     ).toBe("4");

@@ -139,7 +139,7 @@ describe("the clock in play", () => {
         2,
       ),
     );
-    expect(face().querySelector('[data-hand="h"]')?.getAttribute("data-tone")).toBe("amber");
+    expect(face().querySelector('[data-hand="h"]')?.getAttribute("data-tone")).toBe("try_again");
     expect(face().querySelector('[data-hand="m"]')?.getAttribute("data-tone")).toBe("green");
     expect(face().dataset["minute"]).toBe("55");
     fireEvent.keyDown(hand("Hour hand"), { key: "ArrowRight" });

@@ -1,7 +1,7 @@
 /**
  * Place on a number line (number_line_place): tap or drag to place the marker, arrow keys to step
  * it; it snaps to the line's finest position (a tick, or a finer `snap`), which may be a fraction
- * (dl-w3.55). After a miss the marker stays where it was and the line is amber as a whole until the
+ * (dl-w3.55). After a miss the marker stays where it was and the line is red as a whole until the
  * next move. Moved out of PlaceView.tsx (dl-w3.61.1).
  *
  * Khan's tick control (dl-w3.70.19): with `divisions` a stepper above the line sets how many equal
@@ -123,7 +123,7 @@ export function LineStill({
           <NumberLineSvg
             data={lineShowing(data, mine)}
             marker={mine}
-            tone={good === null ? "idle" : mine === good ? "green" : "amber"}
+            tone={good === null ? "idle" : mine === good ? "green" : "try_again"}
             markerState="placed"
             arcs={false}
             label={axis}

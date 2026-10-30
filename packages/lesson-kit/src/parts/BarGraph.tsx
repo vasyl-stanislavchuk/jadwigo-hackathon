@@ -13,7 +13,7 @@
  * plot, cropped to it, and the labels line up with it in percent. On a short graph the scale
  * labels thin out so they never touch.
  *
- * Tones come from tone.ts: a right bar is green with a solid outline, a missed one amber with a
+ * Tones come from tone.ts: a right bar is green with a solid outline, a missed one red with a
  * dashed outline (never colour alone), a bar the help ladder gave away is muted and locked, and a
  * bar rung 1 points at wears the dotted focus ring.
  */
@@ -78,13 +78,13 @@ interface Props {
 const FILL: Record<Tone, string> = {
   idle: "fill-primary",
   green: "fill-kid-correct",
-  amber: "fill-kid-try-again",
+  try_again: "fill-kid-try-again",
   missing: "fill-primary",
 };
 const INK: Record<Tone, string> = {
   idle: "text-primary",
   green: "text-kid-correct",
-  amber: "text-kid-try-again",
+  try_again: "text-kid-try-again",
   missing: "text-primary",
 };
 /** A line graph's point: big enough to see under a finger; the whole column is still the target. */
@@ -92,7 +92,7 @@ const POINT_R = 18;
 const OUTLINE: Record<Tone, string | null> = {
   idle: null,
   green: "stroke-kid-correct",
-  amber: "stroke-kid-try-again",
+  try_again: "stroke-kid-try-again",
   missing: null,
 };
 
@@ -230,7 +230,7 @@ export function BarGraph({
               rx={16}
               className={cn("fill-none", OUTLINE[tone])}
               strokeWidth={4}
-              strokeDasharray={tone === "amber" ? "14 10" : undefined}
+              strokeDasharray={tone === "try_again" ? "14 10" : undefined}
             />
           )}
           {grid.map((v) => (
@@ -378,7 +378,7 @@ export function BarGraph({
                     rx={12}
                     className={cn("fill-none", OUTLINE[t])}
                     strokeWidth={4}
-                    strokeDasharray={t === "amber" ? "14 10" : undefined}
+                    strokeDasharray={t === "try_again" ? "14 10" : undefined}
                   />
                 )}
                 {data.kind === "bar" && h > 0 && (

@@ -4,7 +4,7 @@
  * the clock is fixed, a commit does nothing, and the feedback is written in, never judged.
  *
  * The miss state takes the example's first `incorrect` scenario with its written marks, so the
- * amber marks show as in a lesson, and its mistake class picks the help written for it. The right
+ * red marks show as in a lesson, and its mistake class picks the help written for it. The right
  * and solution states seed the answer from the key (lesson-kit solutionOf): the step is closed in
  * both, so the key may be on the page.
  */

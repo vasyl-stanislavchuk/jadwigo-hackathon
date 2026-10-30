@@ -680,7 +680,7 @@ describe("the state table", () => {
     }
   });
 
-  it("never uses amber for a missing part: it is not a verdict", () => {
+  it("never uses red for a missing part: it is not a verdict", () => {
     expect(STATUS.incomplete.tone).toBe("missing");
   });
 
@@ -782,7 +782,7 @@ function Demo({
           <input
             aria-label={`Pole ${i + 1}`}
             data-field={String(i)}
-            data-tone={marked(i) ? "amber" : "idle"}
+            data-tone={marked(i) ? "try_again" : "idle"}
             value={vals[i]}
             readOnly={right}
             onChange={(e) => set(i, e.target.value)}
@@ -908,7 +908,7 @@ describe("the keyboard demo with fields of any length (§3.4, §3.5)", () => {
     expect(band()).toBe("none");
     expect(ready()).toBe(true);
     expect(pole(1).getAttribute("data-tone")).toBe("idle");
-    expect(pole(3).getAttribute("data-tone")).toBe("amber");
+    expect(pole(3).getAttribute("data-tone")).toBe("try_again");
     key("Enter");
     expect(focused()).toBe("Pole 2");
     key("Enter");
@@ -1035,7 +1035,7 @@ describe("the step ends, help comes, and the live region", () => {
       <input
         aria-label="answer"
         data-field="a"
-        data-tone={marked ? "amber" : "idle"}
+        data-tone={marked ? "try_again" : "idle"}
         defaultValue={value}
       />
     ),
@@ -1158,7 +1158,7 @@ describe("a word on a touch phone", () => {
       <input
         aria-label="answer"
         data-field="a"
-        data-tone={marked ? "amber" : "idle"}
+        data-tone={marked ? "try_again" : "idle"}
         defaultValue="kot"
       />
     ),

@@ -1,7 +1,7 @@
 /**
  * Part: the colour a step, or one part of it, wears after the runner's verdict (docs/17 §2a):
- * green for right, the theme's red for not yet (dl-uukj.29.16; the tone is still named `amber` in
- * code). Only the colour: the words, the sound and the beat
+ * green for right, the theme's red for not yet (dl-uukj.29.16; the tone is `try_again` in code,
+ * renamed from amber in dl-uukj.29.18). Only the colour: the words, the sound and the beat
  * stay the runner's. Moved here from blocks/fill_blank/logic.ts when the interaction families came
  * (dl-w3.37.10), so every block and family view reads the same rule; fill_blank re-exports it.
  *
@@ -15,9 +15,13 @@ import { useCallback, useState } from "react";
 import type { Feedback, FeedbackKind } from "../stage/types.ts";
 
 /** `missing` is not a verdict: it marks a part left empty when Check was pressed too soon
- * (docs/17 §2f rule 8). It is a dashed outline in the primary colour, never amber. */
-export type Tone = "idle" | "green" | "amber" | "missing";
-const TONE: Record<FeedbackKind, Tone> = { praise: "green", try_again: "amber", moved_on: "idle" };
+ * (docs/17 §2f rule 8). It is a dashed outline in the primary colour, never red. */
+export type Tone = "idle" | "green" | "try_again" | "missing";
+const TONE: Record<FeedbackKind, Tone> = {
+  praise: "green",
+  try_again: "try_again",
+  moved_on: "idle",
+};
 
 /** The runner praised the answer: the step is right. */
 export function praised(feedback: Feedback | null): boolean {
@@ -26,7 +30,7 @@ export function praised(feedback: Feedback | null): boolean {
 
 /** The runner asked for another try: the step is missed, for now. */
 export function missed(feedback: Feedback | null): boolean {
-  return toneOf(feedback) === "amber";
+  return toneOf(feedback) === "try_again";
 }
 
 /** The whole step's tone. */
@@ -44,7 +48,7 @@ export function prefersReducedMotion(): boolean {
 }
 
 /**
- * One part's tone: green when the step was right or the result marked the part right, amber when
+ * One part's tone: green when the step was right or the result marked the part right, red when
  * it marked the part missed, and idle once the child changed it or when the result marked no
  * parts (the step is then marked as a whole: see wholeTone).
  */
@@ -58,7 +62,7 @@ export function partTone(
   if (changed.has(id)) return "idle";
   const mark = feedback.parts?.find((p) => p.id === id);
   if (mark === undefined) return "idle";
-  return mark.correct ? "green" : "amber";
+  return mark.correct ? "green" : "try_again";
 }
 
 /**
@@ -76,19 +80,19 @@ export function fieldTone(
   return tone === "green" && feedback?.kind !== "praise" ? "idle" : tone;
 }
 
-/** The tone of the step around its parts: amber after a miss that marked no part, until the
+/** The tone of the step around its parts: red after a miss that marked no part, until the
  * child changes anything; green when right. */
 export function wholeTone(feedback: Feedback | null, changed: ReadonlySet<string>): Tone {
   if (feedback === null || feedback.kind === "moved_on") return "idle";
   if (feedback.kind === "praise") return "green";
-  return feedback.parts === undefined && changed.size === 0 ? "amber" : "idle";
+  return feedback.parts === undefined && changed.size === 0 ? "try_again" : "idle";
 }
 
 /** The classes for a tone, from the kid tokens. Amber is dashed too. */
 export const TONE_CLASS: Record<Tone, string> = {
   idle: "",
   green: "border-kid-correct bg-kid-correct-soft text-kid-correct-ink",
-  amber: "border-dashed border-kid-try-again bg-kid-try-again-soft text-kid-try-again-ink",
+  try_again: "border-dashed border-kid-try-again bg-kid-try-again-soft text-kid-try-again-ink",
   missing: "border-dashed border-primary",
 };
 
@@ -101,7 +105,7 @@ export const TONE_CLASS: Record<Tone, string> = {
 const WHOLE_CLASS: Record<Tone, string> = {
   idle: "",
   green: "outline-solid outline-2 outline-offset-6 outline-kid-correct",
-  amber: "outline-dashed outline-2 outline-offset-6 outline-kid-try-again",
+  try_again: "outline-dashed outline-2 outline-offset-6 outline-kid-try-again",
   missing: "outline-dashed outline-2 outline-offset-6 outline-primary",
 };
 
@@ -153,7 +157,7 @@ export const MARK_FADE =
  * the next key replaces them. The system's highlight by default; Zeszyt draws it in the pick's
  * fill and ink, as an input's own selection (foundation.css, `data-selection`, dl-uukj.29.99), on
  * the paper of the active field (Enter addendum 2.1, 2.3). Away after a miss the field drops the
- * selection's look for the miss mark (TONE_CLASS amber) and keeps the selection itself.
+ * selection's look for the miss mark (TONE_CLASS red) and keeps the selection itself.
  */
 export const SELECTION = {
   "data-selection": "",

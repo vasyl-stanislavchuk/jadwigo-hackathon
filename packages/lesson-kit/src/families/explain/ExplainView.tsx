@@ -7,8 +7,8 @@
  * The learner never sees the criteria, and there is no solution to show. The soft minimum
  * (model.ts): an empty field is incomplete, a short one gets one gentle ask for more, and the next
  * press commits as written. After a miss the text stays to add to; each criterion's mark is a dot
- * under the field (green met, amber not yet), with no words from the key, and the dots clear on
- * the first change. A miss that marked nothing turns the field amber instead.
+ * under the field (green met, red not yet), with no words from the key, and the dots clear on
+ * the first change. A miss that marked nothing turns the field red instead.
  *
  * Review lists the criteria with their marks, for a parent. A preview shows them only when asked.
  */
@@ -174,7 +174,7 @@ function CriteriaList({
     <ol data-criteria className="flex flex-col gap-2 text-base">
       {criteria.map((c) => {
         const part = parts?.find((p) => p.id === c.id) ?? null;
-        const tone: Tone = part === null ? "idle" : part.correct ? "green" : "amber";
+        const tone: Tone = part === null ? "idle" : part.correct ? "green" : "try_again";
         return (
           <li
             key={c.id}

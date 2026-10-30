@@ -251,11 +251,11 @@ describe("§3.3 after a miss", () => {
     const { again } = draw(one);
     tap(label(0));
     again(miss([{ id: "o1", correct: false }]));
-    expect(label(0).dataset["tone"]).toBe("amber");
+    expect(label(0).dataset["tone"]).toBe("try_again");
     expect(band()).toBe("miss");
     fireEvent.keyDown(must(radios()[0]), { key: "Tab" });
     tap(label(0));
-    expect(label(0).dataset["tone"]).toBe("amber");
+    expect(label(0).dataset["tone"]).toBe("try_again");
     expect(band()).toBe("miss");
     // The band holds the footer: there is no Sprawdź to press until another pick.
     expect(document.querySelector("[data-check]")).toBeNull();
@@ -296,7 +296,7 @@ describe("§3.3 after a miss", () => {
     expect(band()).toBe("miss");
     fireEvent.click(must(boxes()[1]), { detail: 0 });
     expect(must(boxes()[1]).dataset["tone"]).toBe("idle");
-    expect(must(boxes()[2]).dataset["tone"]).toBe("amber");
+    expect(must(boxes()[2]).dataset["tone"]).toBe("try_again");
     expect(band()).toBe("none");
     expect(ready()).toBe(true);
   });

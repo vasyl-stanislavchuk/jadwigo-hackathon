@@ -14,7 +14,7 @@
  * phone a figure's face is 200 px (stage.css), on a laptop at most 384.
  *
  * Tones are per hand, from tone.ts: a right hand is green with a solid ring at its tip, a missed one
- * amber with a dashed ring (never colour alone). A hand rung 1 points at wears a dotted ring.
+ * red with a dashed ring (never colour alone). A hand rung 1 points at wears a dotted ring.
  */
 
 import { cn } from "@jadwigo/ui";
@@ -46,13 +46,13 @@ const FONT = FACE.font;
 const HAND_STROKE: Record<Tone, string> = {
   idle: "",
   green: "stroke-kid-correct",
-  amber: "stroke-kid-try-again",
+  try_again: "stroke-kid-try-again",
   missing: "",
 };
 const RING: Record<Tone, string | null> = {
   idle: null,
   green: "stroke-kid-correct",
-  amber: "stroke-kid-try-again",
+  try_again: "stroke-kid-try-again",
   missing: "stroke-primary",
 };
 
@@ -127,7 +127,7 @@ function HandShape({
           r={11}
           className={cn("fill-none", RING[tone])}
           strokeWidth={3}
-          strokeDasharray={tone === "amber" || tone === "missing" ? "5 4" : undefined}
+          strokeDasharray={tone === "try_again" || tone === "missing" ? "5 4" : undefined}
         />
       )}
       {helped && (
@@ -222,12 +222,12 @@ export function ClockFace({
           "fill-card",
           tone === "green"
             ? "stroke-kid-correct"
-            : tone === "amber"
+            : tone === "try_again"
               ? "stroke-kid-try-again"
               : "stroke-foreground",
         )}
         strokeWidth={4}
-        strokeDasharray={tone === "amber" ? "12 8" : undefined}
+        strokeDasharray={tone === "try_again" ? "12 8" : undefined}
       />
       {Array.from({ length: 60 }, (_, i) => {
         const hour = i % 5 === 0;

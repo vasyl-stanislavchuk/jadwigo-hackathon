@@ -6,7 +6,7 @@
  * (`letters: 'pl'`, dl-uukj.28) has the row of Polish letters under its field.
  *
  * Play: the answer is kept after a miss so the learner can fix it (the miss rule); the field is
- * amber until the first change, then idle again, and selected meanwhile so the next key replaces
+ * red until the first change, then idle again, and selected meanwhile so the next key replaces
  * it (paper-behaviour README §3.5). t1 is the first input of the attempt.
  *
  * Layout (Enter addendum 2.2, 2.4, 2.8, 3.1; dl-uukj.29.106): a maths line ending in "= ?" takes
@@ -196,7 +196,7 @@ function EnterStill({
       {shown !== null && (
         <Answer
           text={shown.entered}
-          tone={right === null ? "idle" : same ? "green" : "amber"}
+          tone={right === null ? "idle" : same ? "green" : "try_again"}
           label={copy(language, "answer_yours")}
           code={data.code}
           fraction={fraction}
@@ -301,7 +301,7 @@ function EnterPlay(props: PlayProps<F>): JSX.Element {
   const tone: Tone = solved
     ? state.text === ""
       ? "idle"
-      : "amber"
+      : "try_again"
     : missing?.reason === "fraction_simplify"
       ? wholeTone(feedback, changed)
       : orMissing(wholeTone(feedback, changed), null, missing);
@@ -318,7 +318,7 @@ function EnterPlay(props: PlayProps<F>): JSX.Element {
         kind: max === 1 ? "slot" : "field",
         maxLength: max,
         value: state.text,
-        marked: tone === "amber" || letterMarks.size > 0,
+        marked: tone === "try_again" || letterMarks.size > 0,
         ...(data.input === "text"
           ? { word: true, missedRun: missedRun(state.text, letterMarks) }
           : {}),
@@ -401,7 +401,7 @@ function EnterPlay(props: PlayProps<F>): JSX.Element {
           state={state}
           tone={tone}
           selected={selected && !solved}
-          away={solved || (away && tone === "amber")}
+          away={solved || (away && tone === "try_again")}
           // A measurement: the child types the number, the unit stands after the field (addendum 3.8).
           unit={rulerFigure?.unit}
           marks={letterMarks}

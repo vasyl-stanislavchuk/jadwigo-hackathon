@@ -118,7 +118,7 @@ function SlotsGivenUp({
               <FractionBoxes
                 text={mine}
                 whole={wholeOf(gap, mine)}
-                tone={notYet ? "amber" : "idle"}
+                tone={notYet ? "try_again" : "idle"}
                 label={label}
                 labels={boxLabels(language)}
               />
@@ -127,7 +127,7 @@ function SlotsGivenUp({
             <StillGap
               gap={gap}
               value={mine}
-              tone={notYet ? "amber" : "idle"}
+              tone={notYet ? "try_again" : "idle"}
               label={label}
               language={language}
             />
@@ -230,7 +230,7 @@ export function SlotsStill({
                   <FractionBoxes
                     text={mine ?? ""}
                     whole={wholeOf(gap, mine ?? "")}
-                    tone={good === null ? "idle" : "amber"}
+                    tone={good === null ? "idle" : "try_again"}
                     label={good === null ? label : copy(language, "answer_yours")}
                     labels={boxLabels(language)}
                   />
@@ -259,14 +259,14 @@ export function SlotsStill({
               />
             );
           // The right answer in the gap's play box, green; a different answer of the
-          // child's still shows small above it, amber.
+          // child's still shows small above it, red.
           return (
             <span className="inline-flex flex-col items-center gap-1 align-middle">
               {mine !== null && !same && (
                 <span
                   role="group"
-                  data-tone="amber"
-                  className={cn(BOX, "text-base", TONE_CLASS.amber)}
+                  data-tone="try_again"
+                  className={cn(BOX, "text-base", TONE_CLASS.try_again)}
                   aria-label={copy(language, "answer_yours")}
                 >
                   {labelOf(gap, mine) || " "}

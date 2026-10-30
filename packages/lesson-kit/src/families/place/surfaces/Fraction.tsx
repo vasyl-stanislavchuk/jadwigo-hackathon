@@ -2,7 +2,7 @@
  * Place on a fraction shape (fraction_shade, dl-w3.61.7): a bar, a circle or a rectangle cut into
  * equal parts; a tap, or Space or Enter on the focused part, shades it or clears it. The fraction
  * to shade stands big above the shape. Any parts that make the count are right (place/fraction.ts),
- * so the step is marked as a whole: after a miss the shading stays and the shape is amber until the
+ * so the step is marked as a whole: after a miss the shading stays and the shape is red until the
  * next tap. Nothing moves while the child shades: the shape is drawn at its size from the start.
  */
 
@@ -105,7 +105,7 @@ export function FractionStill({
           <Shape
             data={data}
             shaded={mine}
-            tone={good === null ? "idle" : same ? "green" : "amber"}
+            tone={good === null ? "idle" : same ? "green" : "try_again"}
             language={language}
           />
         </div>

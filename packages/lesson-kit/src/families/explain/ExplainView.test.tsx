@@ -2,7 +2,7 @@
  * The Explain view in play and in review (dl-w3.51.11): an empty field is incomplete, a short one
  * gets one ask for more and then commits as written, a miss marks each criterion as a dot with
  * none of the key's words, the dots clear on the first change, a miss with no marks turns the
- * field amber, and a parent's review lists the criteria with their marks.
+ * field red, and a parent's review lists the criteria with their marks.
  */
 
 import { copy } from "@jadwigo/copy";
@@ -135,7 +135,10 @@ describe("Explain in play", () => {
     expect(p.field().value).toBe("Bo wychodzi tyle samo.");
     expect(p.field().dataset["tone"]).toBe("idle");
     const dots = p.container.querySelectorAll("[data-pieces] [data-part]");
-    expect([...dots].map((d) => (d as HTMLElement).dataset["tone"])).toEqual(["green", "amber"]);
+    expect([...dots].map((d) => (d as HTMLElement).dataset["tone"])).toEqual([
+      "green",
+      "try_again",
+    ]);
     expect(p.container.textContent).not.toContain("Says the product");
     expect(p.container.textContent).not.toContain("CCSS");
     fireEvent.change(p.field(), { target: { value: "Bo wychodzi tyle samo. To te same kropki." } });
@@ -146,11 +149,11 @@ describe("Explain in play", () => {
     ).toEqual(["idle", "idle"]);
   });
 
-  it("a miss that marked nothing turns the whole field amber until the first change", () => {
+  it("a miss that marked nothing turns the whole field red until the first change", () => {
     const p = play();
     fireEvent.change(p.field(), { target: { value: "Bo wychodzi tyle samo." } });
     p.again(miss(), 2);
-    expect(p.field().dataset["tone"]).toBe("amber");
+    expect(p.field().dataset["tone"]).toBe("try_again");
     expect(p.container.querySelector("[data-pieces]")).toBeNull();
     fireEvent.change(p.field(), { target: { value: "Bo wychodzi tyle samo, bo" } });
     expect(p.field().dataset["tone"]).toBe("idle");
@@ -185,7 +188,7 @@ describe("Explain in the still modes", () => {
     );
     expect(container.textContent).toContain("Bo wychodzi tyle samo.");
     const rows = [...container.querySelectorAll("[data-criteria] [data-part]")] as HTMLElement[];
-    expect(rows.map((r) => r.dataset["tone"])).toEqual(["green", "amber"]);
+    expect(rows.map((r) => r.dataset["tone"])).toEqual(["green", "try_again"]);
     expect(container.textContent).toContain("Gives a reason with an array or groups.");
   });
 

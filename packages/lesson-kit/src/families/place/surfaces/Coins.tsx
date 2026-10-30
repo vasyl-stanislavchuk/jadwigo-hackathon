@@ -4,7 +4,7 @@
  * coin to put one in the first empty place; tap a coin in the tray to take it back, which leaves
  * its place empty. Every coin is a button, so the keyboard works the same (Tab, then Enter or
  * Space). With `total: 'shown'` a line under the tray says what lies in it; the line is there
- * from the start either way, so the page never shifts. After a miss the tray is amber as a whole
+ * from the start either way, so the page never shifts. After a miss the tray is red as a whole
  * until the next move: a marked coin would say which one to change.
  */
 
@@ -173,7 +173,7 @@ export function CoinsStill({
         ? "green"
         : totalGr(mine) === totalGr(good)
           ? "idle"
-          : "amber";
+          : "try_again";
   return (
     <div className="flex flex-col gap-4">
       <Amount data={data} />

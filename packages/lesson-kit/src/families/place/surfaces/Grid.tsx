@@ -1,6 +1,6 @@
 /**
  * Place on a grid (spatial_build): tap a dot to build the rectangle from the corner to it; the grid
- * is buttons, so it takes the keyboard. After a miss the rectangle stays and the grid is amber as a
+ * is buttons, so it takes the keyboard. After a miss the rectangle stays and the grid is red as a
  * whole until the next move. Moved out of PlaceView.tsx (dl-w3.61.1).
  *
  * area_model (dl-w3.61.7) adds a split: a strip of buttons above the grid (between columns) and one
@@ -204,7 +204,7 @@ function SplitButton({
         chosen
           ? tone === "idle"
             ? "bg-foreground"
-            : tone === "amber"
+            : tone === "try_again"
               ? "bg-kid-try-again"
               : "bg-kid-correct"
           : "bg-muted-foreground/30",
@@ -363,7 +363,7 @@ export function GridStill({
           <Grid
             data={data}
             rect={mine}
-            tone={good === null ? "idle" : same ? "green" : "amber"}
+            tone={good === null ? "idle" : same ? "green" : "try_again"}
             language={language}
           />
         </div>

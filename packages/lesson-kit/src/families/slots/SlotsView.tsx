@@ -313,7 +313,7 @@ function SlotsPlay(props: PlayProps<F>): JSX.Element {
       id,
       missing,
     );
-    return t === "amber" && lettersOf(id).size > 0 ? "idle" : t;
+    return t === "try_again" && lettersOf(id).size > 0 ? "idle" : t;
   };
   // The fields the step keys walk (stepKeys.ts), in fill order: every gap still open.
   const byId = new Map(data.gaps.map((g) => [g.id, g]));
@@ -331,7 +331,7 @@ function SlotsPlay(props: PlayProps<F>): JSX.Element {
         kind: isSlot(gap) ? "slot" : "field",
         maxLength,
         value: values[id] ?? "",
-        marked: tone(id) === "amber" || lettersOf(id).size > 0,
+        marked: tone(id) === "try_again" || lettersOf(id).size > 0,
         ...(text ? { word: true, missedRun: missedRun(values[id] ?? "", lettersOf(id)) } : {}),
         ...(optionalGap(data, id) ? { optional: true } : {}),
         ...(gap.kind === Family.Enter && gap.range ? { range: gap.range } : {}),

@@ -265,7 +265,7 @@ function ChooseStill({
                 : isRight(o.id)
                   ? "green"
                   : picked(o.id)
-                    ? "amber"
+                    ? "try_again"
                     : "idle",
           }))}
           chosen={shown?.chosen ?? []}
@@ -286,7 +286,7 @@ function ChooseStill({
             bare && right !== null
               ? items(
                   props,
-                  (id) => (!isRight(id) && picked(id) ? "amber" : "idle"),
+                  (id) => (!isRight(id) && picked(id) ? "try_again" : "idle"),
                   () => undefined,
                 ).map((i) =>
                   isRight(i.id) ? { ...i, solution: copy(language, "ds_solution_label") } : i,
@@ -294,7 +294,13 @@ function ChooseStill({
               : items(
                   props,
                   (id) =>
-                    right === null ? "idle" : isRight(id) ? "green" : picked(id) ? "amber" : "idle",
+                    right === null
+                      ? "idle"
+                      : isRight(id)
+                        ? "green"
+                        : picked(id)
+                          ? "try_again"
+                          : "idle",
                   (id) =>
                     right !== null && isRight(id)
                       ? copy(language, "answer_right")

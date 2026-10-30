@@ -95,7 +95,7 @@ describe("money_pay view", () => {
   const tap = (name: string) =>
     fireEvent.click(screen.getByRole("button", { name }), { detail: 0 });
 
-  it("adds by tap, takes back without moving the others, commits the tray, and keeps it amber after a miss", () => {
+  it("adds by tap, takes back without moving the others, commits the tray, and keeps it red after a miss", () => {
     const onCommit = vi.fn();
     const spec = pageSpec(pay()) as PageSpecOf<typeof Family.Place>;
     const out = render(
@@ -121,7 +121,7 @@ describe("money_pay view", () => {
         </StepFrame>,
       ),
     );
-    expect(document.querySelector<HTMLElement>("[data-tray]")?.dataset["tone"]).toBe("amber");
+    expect(document.querySelector<HTMLElement>("[data-tray]")?.dataset["tone"]).toBe("try_again");
     tap("Put 1 zł in the tray");
     expect(document.querySelector<HTMLElement>("[data-tray]")?.dataset["tone"]).toBe("idle");
   });
