@@ -11,7 +11,7 @@
 // Chromium comes from Playwright: `bunx playwright install chromium` once per machine.
 import { type ChildProcess, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { basename, dirname, join, resolve } from "node:path";
 import { chromium } from "@playwright/test";
@@ -20,8 +20,16 @@ import { type ItemResult, shapesOf, sidecarOf, summaryLines } from "./report.ts"
 
 const REPO = resolve(dirname(new URL(import.meta.url).pathname), "..", "..");
 const WEB = join(REPO, "apps", "web");
-/** The render rules the page runs; their hash is the sidecar's rules_version. */
-const RULES = join(WEB, "src", "playground", "lesson", "render", "rules.ts");
+/** The page's checks: the render rules and the conformance page itself (its strict compile, key
+ * check and batch). Their hash is the sidecar's rules_version, so a change to any re-runs the bank. */
+const PAGE = join(WEB, "src", "playground", "conformance");
+const RULES = [
+  join(WEB, "src", "playground", "lesson", "render", "rules.ts"),
+  ...readdirSync(PAGE)
+    .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
+    .sort()
+    .map((f) => join(PAGE, f)),
+];
 /** apps/web's ITEMS_PATH and CONFORMANCE_PATH (src/playground/conformance/); tools imports nothing of ours. */
 const ITEMS_PATH = "/@conformance/items.json";
 const PAGE_PATH = "/playground/conformance";
@@ -110,7 +118,9 @@ async function main(): Promise<number> {
   const file = JSON.parse(readFileSync(items, "utf8")) as { items?: unknown[] };
   if (!Array.isArray(file.items)) throw new Error(`${items} has no items list`);
   const served = limit > 0 ? { ...file, items: file.items.slice(0, limit) } : file;
-  const rulesVersion = `sha256:${createHash("sha256").update(readFileSync(RULES)).digest("hex").slice(0, 12)}`;
+  const hash = createHash("sha256");
+  for (const path of RULES) hash.update(readFileSync(path));
+  const rulesVersion = `sha256:${hash.digest("hex").slice(0, 12)}`;
 
   const port = await freePort();
   const web = await startWeb(port, await freePort(), media);
