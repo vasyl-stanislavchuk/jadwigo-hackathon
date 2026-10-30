@@ -69,6 +69,7 @@ import {
   withoutReturn,
 } from "./auth.ts";
 import { inAppBrowser } from "./inApp.ts";
+import { LearnerKnowledge } from "./learner/LearnerKnowledge.tsx";
 import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";
 import { cellsOf } from "./overview/grid.ts";
 import { OUTCOME_TONE, OutcomeIcon, TwinMark, tileLabel } from "./overview/outcome.tsx";
@@ -611,6 +612,7 @@ function LearnerCard({
   return (
     <li className="flex flex-col gap-4" data-learner-card={learner.id}>
       <Heading level={2}>{learner.first_name}</Heading>
+      <LearnerKnowledge api={api} learner={learner.id} language={language} />
       {attempts === null && <Spinner label={copy(language, "loading", {}, CATEGORY)} />}
       {attempts === "failed" && <Failed language={language} />}
       {Array.isArray(attempts) && attempts.length === 0 && (
