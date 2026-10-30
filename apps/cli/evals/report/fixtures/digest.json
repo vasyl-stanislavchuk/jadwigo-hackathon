@@ -1,0 +1,81 @@
+{
+  "shape": "digest/1",
+  "counts": { "attempts": 4, "questions": 18, "days_played": 2 },
+  "skills_moved": [
+    {
+      "skill_code": "maths.multiplication.row-6",
+      "from": "attempted",
+      "to": "familiar",
+      "attempt_id": "att_59s346q3d25vt4f5v37e3s3e28"
+    }
+  ],
+  "needs_attention": [
+    {
+      "skill_code": "maths.multiplication.row-7",
+      "mistake_classes": ["add_for_multiply"],
+      "citations": [
+        { "kind": "attempt", "attempt_id": "att_4t97kb6cq643dzvmxxqkfbf5kz" },
+        { "kind": "skill", "skill_code": "maths.multiplication.row-7" }
+      ]
+    }
+  ],
+  "mistakes": [
+    {
+      "mistake_class": "add_for_multiply",
+      "times": 3,
+      "skill_codes": ["maths.multiplication.row-7"],
+      "citations": [{ "kind": "attempt", "attempt_id": "att_4t97kb6cq643dzvmxxqkfbf5kz" }]
+    }
+  ],
+  "brief": {
+    "computed_at": "2026-10-30T18:00:00.000Z",
+    "entries": [
+      {
+        "skill_code": "maths.multiplication.row-7",
+        "list": "reteach",
+        "goal_ids": ["gol_4rp1xpa7z3dj8fssz5awsh8vht"],
+        "why": "needs_attention"
+      },
+      {
+        "skill_code": "maths.multiplication.row-6",
+        "list": "recheck",
+        "goal_ids": ["gol_4rp1xpa7z3dj8fssz5awsh8vht"],
+        "why": "second_day_owed"
+      }
+    ],
+    "school": "nothing_recorded"
+  },
+  "goals": [{ "goal_id": "gol_4rp1xpa7z3dj8fssz5awsh8vht", "status": "on_its_way" }],
+  "standing": [
+    {
+      "question": "skills_standing",
+      "verdict": "watch",
+      "citations": [
+        { "kind": "attempt", "attempt_id": "att_59s346q3d25vt4f5v37e3s3e28" },
+        { "kind": "skill", "skill_code": "maths.multiplication.row-7" }
+      ]
+    },
+    {
+      "question": "next_focus",
+      "verdict": "on_track",
+      "citations": [{ "kind": "goal", "goal_id": "gol_4rp1xpa7z3dj8fssz5awsh8vht" }]
+    }
+  ],
+  "proposals": [
+    {
+      "id": "p1",
+      "kind": "focus",
+      "list": "reteach",
+      "skill_codes": ["maths.multiplication.row-7"],
+      "citations": [{ "kind": "attempt", "attempt_id": "att_4t97kb6cq643dzvmxxqkfbf5kz" }]
+    },
+    {
+      "id": "p2",
+      "kind": "focus",
+      "list": "recheck",
+      "skill_codes": ["maths.multiplication.row-6"],
+      "citations": [{ "kind": "attempt", "attempt_id": "att_59s346q3d25vt4f5v37e3s3e28" }]
+    }
+  ],
+  "asks": [{ "id": "a1", "about": "school_context" }]
+}
