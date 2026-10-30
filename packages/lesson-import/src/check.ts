@@ -378,29 +378,35 @@ function typedAnswers(question: Record<string, unknown>): string[] {
   return [];
 }
 
-/** An operator a number takes part in: a sign, or a word for one in the lesson languages. */
-const OPERATOR = String.raw`[-+−–×*·:/÷=<>]|(?<![\p{L}])(?:x|razy|plus|minus|dodać|odjąć|przez|times|and|i)`;
-/** Before an occurrence: an operator, or a number and a comma (a list such as `2, 4, 6`). */
-const OPERAND_BEFORE = new RegExp(`(?:${OPERATOR}|\\p{N}\\s*[,;])\\s*$`, "iu");
-/** After an occurrence: an operator, or a comma and a number. */
-const OPERAND_AFTER = new RegExp(`^\\s*(?:(?:${OPERATOR})(?![\\p{L}])|[,;]\\s*\\p{N})`, "iu");
+/**
+ * An arithmetic operator, a sign or a word for one. `=` is not one, so an answer after it still
+ * gives the answer away.
+ */
+const OPERATOR = String.raw`(?:[+\-−–×·*:÷/]|(?<!\p{L})(?:x|razy|plus|minus|dodać|odjąć|przez|times)(?!\p{L}))`;
+/** What stands on an operator's other side in an expression: a number or the blank to fill. */
+const TERM = String.raw`[\p{N}?_□]`;
+/** An operand: after a term and an operator, or after a number and a comma (a list `1, 3, 5`). */
+const AFTER_OPERAND = new RegExp(String.raw`(?:${TERM}\s*${OPERATOR}|\p{N}\s*[,;])\s*$`, "iu");
+/** An operand: before an operator and a term, or before a comma and a number. */
+const BEFORE_OPERAND = new RegExp(String.raw`^\s*(?:${OPERATOR}\s*${TERM}|[,;]\s*\p{N})`, "iu");
 
 /**
- * Whether `say` holds `answer` as a word of its own, outside a sum or a list. A one-letter answer
- * counts only as a digit: Polish has one-letter words (`u`, `w`, `o`) that a spelling gap's answer
- * would match. A number that is also an operand (`10 − 5` with the answer 5, `5 × 1`, `7 + 0`, a
- * number line's `2, 4, 6`) does not count: the question needs it.
+ * Whether `say` holds `answer` as a word of its own, other than as an operand: in "Ile to jest
+ * 10 − 5?" the 5 is the question, not its answer, and so is a number in a list the question
+ * continues. A one-letter answer counts only as a digit: Polish has one-letter words (`u`, `w`,
+ * `o`) that a spelling gap's answer would match.
  */
 function says(say: string, answer: string): boolean {
   const a = answer.trim();
   if (a === "" || (a.length === 1 && !/\p{N}/u.test(a))) return false;
   const escaped = a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const word = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, "giu");
-  return [...say.matchAll(word)].some((m) => {
+  for (const m of say.matchAll(word)) {
     const before = say.slice(0, m.index);
     const after = say.slice(m.index + m[0].length);
-    return !OPERAND_BEFORE.test(before) && !OPERAND_AFTER.test(after);
-  });
+    if (!AFTER_OPERAND.test(before) && !BEFORE_OPERAND.test(after)) return true;
+  }
+  return false;
 }
 
 /** A `say` line that seems to give the answer away. A warn: it is a heuristic. */
