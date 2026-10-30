@@ -68,7 +68,13 @@ function OptionContent({
   const c = option.content;
   switch (c.kind) {
     case "text":
-      return <RichText inline text={c.text} />;
+      // One element: the option's host stacks its content and its note in a column, so bare runs
+      // ("has $2$ bunches") would each become a flex item on a line of their own (dl-a38n.27).
+      return (
+        <span>
+          <RichText inline text={c.text} />
+        </span>
+      );
     case "number":
       return <span className="tabular-nums">{notationText(String(c.number), language)}</span>;
     case "bool":
