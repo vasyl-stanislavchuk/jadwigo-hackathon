@@ -4,7 +4,7 @@
  * Each choice lives on an <html> attribute, which the CSS reads, and in localStorage, which may be
  * missing or refuse a write; then the panel just shows.
  */
-export const PANELS = {
+const PANELS = {
   sidebar: { attribute: "data-sidebar", key: "jw-docs-sidebar" },
   toc: { attribute: "data-toc", key: "jw-docs-toc" },
 } as const;
