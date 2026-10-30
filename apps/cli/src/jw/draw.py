@@ -195,14 +195,12 @@ def not_ready_reason(language: str) -> str:
 
 
 def ready_ids(page: Mapping[str, Any], language: str) -> list[str] | None:
-    """The page's lesson-ready item ids in `language`, or None for a page the readiness stamp did
-    not build (no `ready_ids` and no `count.ready`): then every id is drawn and load_item judges."""
-    page_items = page.get("items") or {}
-    ready = page_items.get("ready_ids")
+    """The page's lesson-ready item ids in `language`, or None for a page with no `ready_ids`
+    (built before the stamp, or counted but not listed): then every id is drawn and load_item
+    judges each one, its refusal the reason in left_out."""
+    ready = (page.get("items") or {}).get("ready_ids")
     if isinstance(ready, Mapping):
         return [str(i) for i in ready.get(language) or []]
-    if isinstance((page_items.get("count") or {}).get("ready"), Mapping):
-        return []  # counted but not listed: nothing to draw by id
     return None
 
 

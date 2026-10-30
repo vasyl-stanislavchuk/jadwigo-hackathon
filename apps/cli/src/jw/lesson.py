@@ -296,10 +296,12 @@ def _draw_loading(
 
 
 def _not_ready(left: Left, language: str) -> str:
-    """The draw's reason, or for an item the page does not list as ready, load_item's own."""
+    """The draw's reason, or for an item the page does not list as ready, load_item's own; when
+    the converted file finds it ready, the page is older than the stamp, and the reason says so."""
     if left.reason != NOT_READY_ITEM:
         return left.reason
-    return items.why_not(left.id, language) or left.reason
+    why = items.why_not(left.id, language)
+    return why or f"its set page does not list it as lesson-ready in {language}"
 
 
 def _slug(text: str) -> str:
