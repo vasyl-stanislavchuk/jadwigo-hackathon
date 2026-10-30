@@ -4,14 +4,13 @@
 import { createServer } from "node:http";
 import { createPostgresStore, InMemoryStore } from "@jadwigo/store";
 import { createApp } from "./app.ts";
-import { fetchJwks, issuerOf, jwksAuth, signedOut } from "./auth.ts";
-import { authJwksUrl, databaseUrl, port } from "./config.ts";
+import { jwksUrlAuth } from "./auth.ts";
+import { authIssuer, authJwksUrl, databaseUrl, port } from "./config.ts";
 
 const url = databaseUrl();
-const jwks = authJwksUrl();
-// The token routes verify against AUTH_JWKS_URL (the dev project's JWKS); unset, they are all 401.
-const authenticate =
-  jwks === undefined ? signedOut : jwksAuth(() => fetchJwks(jwks), { issuer: issuerOf(jwks) });
+// The token routes verify against AUTH_JWKS_URL (the dev project's JWKS) and AUTH_ISSUER; with
+// either unset, they are all 401.
+const authenticate = jwksUrlAuth(authJwksUrl(), authIssuer());
 const app = createApp(url === undefined ? new InMemoryStore() : createPostgresStore(url), {
   authenticate,
 });

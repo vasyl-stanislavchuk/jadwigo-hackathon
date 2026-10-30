@@ -23,16 +23,20 @@ export interface TokenClaims {
   readonly email?: string;
   readonly aud?: string;
   readonly iss?: string;
-  /** Seconds from now. */
-  readonly expiresIn?: number;
+  /** Seconds from now; null leaves `exp` out. */
+  readonly expiresIn?: number | null;
+  /** Seconds from now; no `nbf` when it is not given. */
+  readonly notBeforeIn?: number;
   readonly alg?: string;
-  readonly kid?: string;
+  /** null leaves `kid` out of the header. */
+  readonly kid?: string | null;
 }
 
 /** A signed token. `other: true` signs with a key the JWKS does not hold. */
 export function signToken(claims: TokenClaims = {}, other = false): string {
   const now = Math.floor(Date.now() / 1000);
-  const header = { alg: claims.alg ?? "RS256", typ: "JWT", kid: claims.kid ?? KID };
+  const kid = claims.kid === undefined ? KID : claims.kid;
+  const header = { alg: claims.alg ?? "RS256", typ: "JWT", ...(kid === null ? {} : { kid }) };
   const payload = {
     iss: claims.iss ?? TEST_ISSUER,
     aud: claims.aud ?? "authenticated",
@@ -40,7 +44,8 @@ export function signToken(claims: TokenClaims = {}, other = false): string {
     sub: claims.sub ?? randomUUID(),
     email: claims.email ?? "parent@example.com",
     iat: now,
-    exp: now + (claims.expiresIn ?? 3600),
+    ...(claims.expiresIn === null ? {} : { exp: now + (claims.expiresIn ?? 3600) }),
+    ...(claims.notBeforeIn === undefined ? {} : { nbf: now + claims.notBeforeIn }),
   };
   const encode = (part: object) => Buffer.from(JSON.stringify(part)).toString("base64url");
   const signed = `${encode(header)}.${encode(payload)}`;

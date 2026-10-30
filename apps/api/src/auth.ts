@@ -14,12 +14,18 @@ export interface Claims {
 export type Authenticate = (req: Request, event: unknown) => Promise<Claims | undefined>;
 
 /** A public key of a JWKS, as Supabase publishes it. */
-export type Jwk = JsonWebKey & { readonly kid?: string };
+export type Jwk = JsonWebKey & { readonly kid?: string; readonly alg?: string };
 
 /** Supabase's tokens for a signed-in user carry this audience. */
 const AUDIENCE = "authenticated";
 /** Clock skew allowed on `exp` and `nbf`, in seconds. */
 const LEEWAY_S = 30;
+/** The JWKS is read again at most this often for a token whose `kid` it lacks: a rotated key. */
+const RELOAD_MS = 60_000;
+/** After a failed read of the JWKS, the next token may try again this soon. */
+const RETRY_MS = 5_000;
+/** A JWKS read that takes longer has failed. */
+const FETCH_TIMEOUT_MS = 3_000;
 
 /** No token is ever accepted: a server with no way to verify one. */
 export const signedOut: Authenticate = async () => undefined;
@@ -51,14 +57,25 @@ function claimsOf(payload: Record<string, unknown>): Claims | undefined {
 }
 
 /**
+ * The RSA key in `keys` a token's `kid` names, or the only key when it names none. A key whose
+ * `alg` is not RS256 never verifies one: Supabase's JWKS also lists an ES256 key, and the projects
+ * sign with RS256 (decision `2026-10-27-jadwigo-s-supabase-projects-are-recreated-in-frankfurt-and-sign`).
+ */
+function signingKey(keys: readonly Jwk[], kid: unknown): Jwk | undefined {
+  const key =
+    kid === undefined ? (keys.length === 1 ? keys[0] : undefined) : keys.find((k) => k.kid === kid);
+  return key?.kty === "RSA" && (key.alg === undefined || key.alg === "RS256") ? key : undefined;
+}
+
+/**
  * Verifies an RS256 token against `keys`: its signature by the key its `kid` names, `exp` and
- * `nbf` against `now`, the `authenticated` audience, and `issuer` when one is given. Anything
- * else, `alg: none` and HS256 included, is refused.
+ * `nbf` against `now`, the `authenticated` audience, and `issuer`, exactly. Anything else, `alg:
+ * none`, HS256 and ES256 included, is refused.
  */
 export function verifyToken(
   token: string,
   keys: readonly Jwk[],
-  options: { readonly issuer?: string | undefined; readonly now: number },
+  options: { readonly issuer: string; readonly now: number },
 ): Claims | undefined {
   const parts = token.split(".");
   if (parts.length !== 3) return undefined;
@@ -66,10 +83,7 @@ export function verifyToken(
   const header = decodeJson(head);
   const payload = decodeJson(body);
   if (!header || !payload || header["alg"] !== "RS256") return undefined;
-  const kid = header["kid"];
-  const key = keys.find(
-    (k) => k.kty === "RSA" && (kid === undefined ? keys.length === 1 : k.kid === kid),
-  );
+  const key = signingKey(keys, header["kid"]);
   if (!key) return undefined;
   let valid = false;
   try {
@@ -90,52 +104,94 @@ export function verifyToken(
   if (typeof nbf === "number" && nbf - LEEWAY_S > now) return undefined;
   const aud = payload["aud"];
   if (!(aud === AUDIENCE || (Array.isArray(aud) && aud.includes(AUDIENCE)))) return undefined;
-  if (options.issuer !== undefined && payload["iss"] !== options.issuer) return undefined;
+  if (payload["iss"] !== options.issuer) return undefined;
   return claimsOf(payload);
 }
 
+/** Whether the token's header names a `kid` that `keys` lack, as after Supabase rotates its key. */
+function namesUnknownKid(token: string, keys: readonly Jwk[]): boolean {
+  const kid = decodeJson(token.split(".")[0] ?? "")?.["kid"];
+  return typeof kid === "string" && !keys.some((k) => k.kid === kid);
+}
+
 /**
- * Verifies the bearer token against a JWKS that `load` reads. The keys are kept; a token whose
- * `kid` they lack reloads them, at most once a minute, so a rotated key is picked up.
+ * Verifies the bearer token against a JWKS that `load` reads, and its `iss` against `issuer`. The
+ * keys are kept; a token whose `kid` they lack reloads them, at most once a minute, so a rotated
+ * key is picked up and a forged `kid` cannot make every request a fetch. A failed read is logged
+ * and refuses the token (401, never 500); the next token tries again after 5 s.
  */
 export function jwksAuth(
   load: () => Promise<readonly Jwk[]>,
-  options: { readonly issuer?: string | undefined } = {},
+  options: { readonly issuer: string },
 ): Authenticate {
   let keys: readonly Jwk[] | undefined;
-  let loadedAt = Number.NEGATIVE_INFINITY;
-  const reload = async () => {
-    keys = await load();
-    loadedAt = Date.now();
-    return keys;
+  let nextLoadAt = Number.NEGATIVE_INFINITY;
+  let loading: Promise<void> | undefined;
+  const reload = (): Promise<void> => {
+    if (loading === undefined) {
+      loading = load()
+        .then(
+          (loaded) => {
+            keys = loaded;
+            nextLoadAt = Date.now() + RELOAD_MS;
+          },
+          (error: unknown) => {
+            nextLoadAt = Date.now() + RETRY_MS;
+            logJwksFailure(error);
+          },
+        )
+        .finally(() => {
+          loading = undefined;
+        });
+    }
+    return loading;
   };
   return async (req) => {
     const token = bearer(req);
     if (token === undefined) return undefined;
-    const now = Date.now();
-    const verifyWith = (with_: readonly Jwk[]) =>
-      verifyToken(token, with_, { issuer: options.issuer, now });
-    const claims = verifyWith(keys ?? (await reload()));
-    if (claims || now - loadedAt < 60_000) return claims;
-    return verifyWith(await reload());
+    const stale = keys === undefined || namesUnknownKid(token, keys);
+    if (stale && Date.now() >= nextLoadAt) await reload();
+    if (keys === undefined) return undefined;
+    return verifyToken(token, keys, { issuer: options.issuer, now: Date.now() });
   };
 }
 
-/** The keys at a JWKS URL. */
-export async function fetchJwks(url: string): Promise<readonly Jwk[]> {
-  const reply = await fetch(url);
+/** One JSON line at level ERROR: a failed JWKS read answers 401, so only the log tells why. */
+function logJwksFailure(error: unknown): void {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(JSON.stringify({ level: "ERROR", message: "JWKS read failed", error: message }));
+}
+
+/** The keys at a JWKS URL. A read slower than 3 s fails. */
+async function fetchJwks(url: string): Promise<readonly Jwk[]> {
+  const reply = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
   if (!reply.ok) throw new Error(`the JWKS at ${url} answered ${reply.status}`);
   const body = (await reply.json()) as { keys?: unknown };
   return Array.isArray(body.keys) ? (body.keys as Jwk[]) : [];
 }
 
 /**
- * Supabase's issuer for a JWKS URL it publishes: `https://<ref>.supabase.co/auth/v1` for
- * `https://<ref>.supabase.co/auth/v1/.well-known/jwks.json`. Undefined for any other shape.
+ * Bearer tokens verified against the JWKS at `jwksUrl`, carrying exactly `issuer`. Both are
+ * settings (`AUTH_JWKS_URL`, `AUTH_ISSUER`): the issuer is never read off the URL, since Auth on a
+ * custom domain may not match it. With either unset no token verifies, and a URL with no issuer
+ * logs why.
  */
-export function issuerOf(jwksUrl: string): string | undefined {
-  const suffix = "/.well-known/jwks.json";
-  return jwksUrl.endsWith(suffix) ? jwksUrl.slice(0, -suffix.length) : undefined;
+export function jwksUrlAuth(
+  jwksUrl: string | undefined,
+  issuer: string | undefined,
+  load: (url: string) => Promise<readonly Jwk[]> = fetchJwks,
+): Authenticate {
+  if (jwksUrl === undefined) return signedOut;
+  if (issuer === undefined) {
+    console.error(
+      JSON.stringify({
+        level: "ERROR",
+        message: "AUTH_JWKS_URL is set without AUTH_ISSUER: every token route answers 401",
+      }),
+    );
+    return signedOut;
+  }
+  return jwksAuth(() => load(jwksUrl), { issuer });
 }
 
 /**
@@ -152,13 +208,9 @@ export function gatewayClaims(event: unknown): Claims | undefined {
 }
 
 /**
- * The Lambda's: the gateway authorizer's claims, else, when `AUTH_JWKS_URL` is set, the bearer
- * token verified against it. Never a test key: with neither, every token route is 401.
+ * The Lambda's: the gateway authorizer's claims, else the bearer token verified as `fromJwks`
+ * does (`jwksUrlAuth`). Never a test key: with neither, every token route is 401.
  */
-export function lambdaAuth(jwksUrl: string | undefined): Authenticate {
-  const fromJwks =
-    jwksUrl === undefined
-      ? signedOut
-      : jwksAuth(() => fetchJwks(jwksUrl), { issuer: issuerOf(jwksUrl) });
+export function lambdaAuth(fromJwks: Authenticate): Authenticate {
   return async (req, event) => gatewayClaims(event) ?? fromJwks(req, event);
 }
