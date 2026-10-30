@@ -47,7 +47,11 @@ export default defineConfig({
       command: "bunx vite build && bunx vite preview",
       port,
       reuseExistingServer: false,
-      env: { JW_SUPABASE_URL: AUTH_ORIGIN, JW_SUPABASE_KEY: "e2e" },
+      env: {
+        JW_SUPABASE_URL: AUTH_ORIGIN,
+        JW_SUPABASE_KEY: "e2e",
+        JW_SUPABASE_PROVIDERS: "google,facebook",
+      },
       timeout: 120_000,
     },
     ...(playE2e()
