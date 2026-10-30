@@ -16,13 +16,29 @@ export const pageSchema = z.object({
   /** The words of the page's one link to the app (appUrl), when it has one. */
   play: z.string().min(1).optional(),
   reviewed: z.boolean(),
+  /** The page's language. Polish when left out. */
+  lang: z.enum(["pl", "en"]).optional(),
+  /** The page's stable URL, for a page src/pages/[...path].astro renders. The landing page has none. */
+  path: z
+    .string()
+    .regex(/^(\/[a-z0-9-]+)+$/)
+    .optional(),
+  /** The path of the same page in the other language: a visible link and an hreflang alternate. */
+  translation: z
+    .string()
+    .regex(/^(\/[a-z0-9-]+)+$/)
+    .optional(),
+  /** A line shown above the words while the lawyer has not read them (dl-e8ov.2.9). */
+  draftNote: z.string().min(1).optional(),
 });
 export type Page = z.infer<typeof pageSchema>;
 
 export type HeadTag =
   | { kind: "meta"; name: string; content: string }
   | { kind: "property"; property: string; content: string }
-  | { kind: "link"; rel: string; href: string; type?: string; sizes?: string };
+  | { kind: "link"; rel: string; href: string; type?: string; sizes?: string; hreflang?: string };
+
+const locales = { pl: "pl_PL", en: "en_GB" } as const;
 
 /** The crown favicon (dl-w0b4.68): public/ is written by tools/src/brand-icons.ts. */
 const iconTags: readonly HeadTag[] = [
@@ -40,12 +56,13 @@ export function canonical(path: string): string {
 
 export function headTags(page: Page, path: string): HeadTag[] {
   const url = canonical(path);
+  const lang = page.lang ?? "pl";
   const tags: HeadTag[] = [
     { kind: "meta", name: "description", content: page.description },
     { kind: "link", rel: "canonical", href: url },
     { kind: "property", property: "og:type", content: "website" },
     { kind: "property", property: "og:site_name", content: siteName },
-    { kind: "property", property: "og:locale", content: "pl_PL" },
+    { kind: "property", property: "og:locale", content: locales[lang] },
     { kind: "property", property: "og:title", content: page.title },
     { kind: "property", property: "og:description", content: page.description },
     { kind: "property", property: "og:url", content: url },
@@ -53,6 +70,13 @@ export function headTags(page: Page, path: string): HeadTag[] {
     { kind: "meta", name: "twitter:description", content: page.description },
     ...iconTags,
   ];
+  if (page.translation) {
+    const other = lang === "pl" ? "en" : "pl";
+    tags.push(
+      { kind: "link", rel: "alternate", href: url, hreflang: lang },
+      { kind: "link", rel: "alternate", href: canonical(page.translation), hreflang: other },
+    );
+  }
   if (page.ogImage) {
     const image = `${origin}${page.ogImage}`;
     tags.push(

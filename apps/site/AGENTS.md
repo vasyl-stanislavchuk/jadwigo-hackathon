@@ -13,8 +13,12 @@ jadwigo.kids and English wait.
 
 ## How it is laid out
 
-- `src/content/pl/*.md`: each page's words, one file per page. Frontmatter: `title`, `description`,
-  `heading`, `ogImage` (optional, a path under `public/`) and `reviewed`. The schema is `pageSchema` in `src/lib/seo.ts`.
+- `src/content/<lang>/*.md`: each page's words, one file per page; the entry id is its path (`pl/index`).
+  Frontmatter: `title`, `description`, `heading`, `ogImage` (optional, a path under `public/`) and
+  `reviewed`; optional `lang`, `path`, `translation` and `draftNote`. The schema is `pageSchema` in `src/lib/seo.ts`.
+- `src/pages/[...path].astro`: renders every page that names a `path`. A `path` is a stable URL, so
+  never move one: the privacy pages' paths are in the Meta app's settings (dl-w0b4.64).
+- English carries only the privacy pages (`src/content/en/`); the rest of the site waits on `dl-w0b4.7`.
 - `src/lib/seo.ts`: the head every page carries (canonical on the apex, Open Graph, Twitter, JSON-LD),
   `robots.txt`, and `assertReviewed`. Pure, so `seo.test.ts` checks it without a build.
 - `src/layouts/Base.astro`: the frame every page renders in. `src/pages/`: the routes.
