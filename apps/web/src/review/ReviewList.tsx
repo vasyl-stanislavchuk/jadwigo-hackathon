@@ -8,8 +8,8 @@
 import type { PageAttemptResult } from "@jadwigo/contracts";
 import { copy, type Language } from "@jadwigo/copy";
 import type { ReactElement } from "react";
-import { NavLink } from "../playground/shell/NavLink.tsx";
-import { ENDED_ICON, ENDED_WORD } from "./ended.ts";
+import { NavLink } from "../nav/NavLink.tsx";
+import { ENDED_ICON, ENDED_WORD } from "./outcome.ts";
 
 export function ReviewList({
   rows,

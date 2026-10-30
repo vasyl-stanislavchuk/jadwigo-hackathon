@@ -32,8 +32,9 @@ jobs:
       - uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
         with:
           cache: true
-      - name: fmt and validate
-        run: make -C infra fmt validate
+      # test: terraform/tests/ against mock providers, no AWS (dl-5ssh.90.17).
+      - name: fmt, validate and test
+        run: make -C infra fmt validate test
       # Child modules inherit the root's versions, so tflint's missing-constraint warnings there are by design.
       - name: tflint
         run: mise exec tflint@0.65.0 -- tflint --chdir=infra/terraform --recursive --minimum-failure-severity=error

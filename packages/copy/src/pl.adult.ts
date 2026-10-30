@@ -28,4 +28,13 @@ export const plAdult: PartialCopyTable = {
     text: "Ta lekcja jest zakończona. Możesz zacząć ją od nowa.",
     reviewed: false,
   },
+  // The parent's lines on a finished lesson (dl-uukj.32 wave 2): the child's say "udało się" and
+  // "jeszcze się uczymy" to the child; the adult reads how it went, in the adult's own words.
+  play_ended_correct: { text: "Dobrze", reviewed: false },
+  play_ended_missed: { text: "Jeszcze nie", reviewed: false },
+  play_ended_skipped: { text: "Pominięte", reviewed: false },
+  play_ended_done: { text: "Zrobione", reviewed: false },
+  play_ended_open: { text: "W trakcie", reviewed: false },
+  review_no_answer: { text: "Bez odpowiedzi. Niżej dobra odpowiedź.", reviewed: false },
+  review_praise: { text: "Dlaczego tak:", reviewed: false },
 };

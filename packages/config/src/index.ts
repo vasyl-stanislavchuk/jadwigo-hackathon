@@ -2,8 +2,8 @@
 export const ENVIRONMENTS = ["prod"] as const;
 export type Environment = (typeof ENVIRONMENTS)[number];
 
-export const hosts: Record<Environment, { site: string; app: string }> = {
-  prod: { site: "jadwigo.pl", app: "app.jadwigo.pl" },
+export const hosts: Record<Environment, { site: string; app: string; docs: string }> = {
+  prod: { site: "jadwigo.pl", app: "app.jadwigo.pl", docs: "docs.jadwigo.pl" },
 };
 
 export {

@@ -25,7 +25,8 @@ import { type CopyKey, copy, type Language, mistakeCopyKey } from "@jadwigo/copy
 import { type Clock, FamilyView, type Instant, LessonTheme, ViewMode } from "@jadwigo/lesson-kit";
 import { Spinner } from "@jadwigo/ui";
 import { type ReactElement, type ReactNode, useEffect, useState } from "react";
-import { NavLink } from "../playground/shell/NavLink.tsx";
+import { NavLink } from "../nav/NavLink.tsx";
+import { ENDED_TONE, TONE_CLASS } from "../review/outcome.ts";
 import { ReviewStep, specOf } from "../review/ReviewStep.tsx";
 import { assignmentPath, parentPath } from "./route.ts";
 
@@ -40,11 +41,11 @@ const ENDED: Record<ParentReviewQuestion["ended"], CopyKey> = {
   skipped: "play_ended_skipped",
 };
 
-/** A tile's colours by how its question ended: the player's own right and miss (packages/ui kids.css). */
+/** A tile's colours by how its question ended: the one tone table every screen shares (src/review/outcome.ts). */
 const TILE: Record<ParentReviewQuestion["ended"], string> = {
-  correct: "border-kid-correct bg-kid-correct-soft text-kid-correct-ink",
-  missed: "border-kid-try-again bg-kid-try-again-soft text-kid-try-again-ink",
-  skipped: "border-border bg-background",
+  correct: TONE_CLASS[ENDED_TONE.correct],
+  missed: TONE_CLASS[ENDED_TONE.missed],
+  skipped: TONE_CLASS[ENDED_TONE.skipped],
 };
 
 const SKIPPED: Record<SkipReason, CopyKey> = {

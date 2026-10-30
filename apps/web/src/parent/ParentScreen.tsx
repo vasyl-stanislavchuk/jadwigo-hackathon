@@ -35,9 +35,9 @@ import {
   useMemo,
   useState,
 } from "react";
+import { navigate, useLocation } from "../nav/location.ts";
+import { NavLink } from "../nav/NavLink.tsx";
 import { storedAttempt } from "../play/storedAttempt.ts";
-import { navigate, useLocation } from "../playground/route.ts";
-import { NavLink } from "../playground/shell/NavLink.tsx";
 import { AttemptReview } from "./AttemptReview.tsx";
 import { type Auth, browserAuth } from "./auth.ts";
 import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";

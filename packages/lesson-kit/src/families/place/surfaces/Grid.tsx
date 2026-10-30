@@ -155,7 +155,7 @@ function Grid({
       {splits && (
         <p
           data-split-sum
-          className="min-h-[var(--kid-tap-min)] text-2xl font-bold tabular-nums"
+          className="min-h-kid-tap text-2xl font-bold tabular-nums"
           aria-live="polite"
         >
           {splitSum(rect) ?? (

@@ -5,8 +5,9 @@
  */
 
 import type { Language } from "@jadwigo/copy";
+import { LANGUAGES } from "../nav/location.ts";
 
-export const LANGUAGES: readonly Language[] = ["pl", "en"];
+export { LANGUAGES };
 
 /** A line in each language. */
 export type Tr = { readonly pl: string; readonly en: string };

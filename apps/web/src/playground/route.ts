@@ -14,14 +14,12 @@
  *   ?theme=light|dark         the review tab holds the page at one theme
  *   ?<switch>=<value>         every playground switch in switches.ts
  *
- * Moving around is client-side (pushState), so the query rides along: a language picked on one
- * family stays on the next. Links stay real links.
+ * Moving around is client-side (pushState, src/nav/location.ts), so the query rides along: a
+ * language picked on one family stays on the next. Links stay real links (src/nav/NavLink.tsx).
  */
 
-import type { Category, Language } from "@jadwigo/copy";
+import type { Category } from "@jadwigo/copy";
 import { FAMILIES, type FamilyName } from "@jadwigo/lesson-kit";
-import { useSyncExternalStore } from "react";
-import { LANGUAGES } from "./localize.ts";
 import { SWITCHES, switchOf } from "./switches.ts";
 
 export interface PlaygroundRoute {
@@ -57,36 +55,11 @@ export function playgroundRoute(path: string): PlaygroundRoute | null {
   return { family: first, question_type: second ?? null, example: third ?? null };
 }
 
-// ---- the live URL ----------------------------------------------------------------------------
+// ---- the live URL: the app's own (src/nav/location.ts), re-exported for the playground -------
 
-const CHANGE = "playground:navigate";
+export { navigate, queryLanguage, useLocation } from "../nav/location.ts";
 
-function subscribe(listener: () => void): () => void {
-  window.addEventListener("popstate", listener);
-  window.addEventListener(CHANGE, listener);
-  return () => {
-    window.removeEventListener("popstate", listener);
-    window.removeEventListener(CHANGE, listener);
-  };
-}
-
-const href = (): string => window.location.pathname + window.location.search;
-
-/** The current path and query, re-rendering on every move. */
-export function useLocation(): { path: string; query: URLSearchParams } {
-  const current = useSyncExternalStore(subscribe, href, href);
-  const url = new URL(current, "http://playground.local");
-  return { path: url.pathname, query: url.searchParams };
-}
-
-/** Go to a playground URL without a reload. */
-export function navigate(to: string, { replace = false }: { replace?: boolean } = {}): void {
-  if (to === href()) return;
-  if (replace) window.history.replaceState(null, "", to);
-  else window.history.pushState(null, "", to);
-  window.dispatchEvent(new Event(CHANGE));
-  if (!replace) window.scrollTo({ top: 0 });
-}
+import { navigate } from "../nav/location.ts";
 
 /** The query keys that follow you from view to view: the learner, the view, and every switch. */
 const STICKY: readonly string[] = ["lang", "who", "level", "theme", ...SWITCHES.map((s) => s.name)];
@@ -130,11 +103,6 @@ const CATEGORIES: readonly Category[] = ["child", "adult"];
 /** A question type page's tabs. Details holds the type's facts, its modes and its data. */
 export type Tab = "try" | "review" | "details";
 const TABS: readonly Tab[] = ["try", "review", "details"];
-
-export function queryLanguage(query: URLSearchParams): Language | null {
-  const value = query.get("lang");
-  return LANGUAGES.find((l) => l === value) ?? null;
-}
 
 export function queryCategory(query: URLSearchParams): Category | null {
   const value = query.get("who");

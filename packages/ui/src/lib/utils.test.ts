@@ -33,6 +33,7 @@ describe("cn", () => {
 
   it("keeps a Zeszyt size beside a Zeszyt colour", () => {
     expect(cn("text-jw-body", "text-jw-ink")).toBe("text-jw-body text-jw-ink");
+    expect(cn("text-jw-key", "text-jw-ink-soft")).toBe("text-jw-key text-jw-ink-soft");
   });
 
   it.each([
@@ -47,6 +48,11 @@ describe("cn", () => {
     ["duration-jw-fast duration-200", "duration-200"],
     ["ease-out ease-jw-out", "ease-jw-out"],
     ["text-xl text-jw-body", "text-jw-body"],
+    ["text-[1.875rem] text-jw-key", "text-jw-key"],
+    ["text-jw-key text-jw-key-sign", "text-jw-key-sign"],
+    ["text-jw-option text-jw-key-strip", "text-jw-key-strip"],
+    ["text-jw-small text-jw-unit", "text-jw-unit"],
+    ["text-jw-prompt text-jw-target", "text-jw-target"],
   ])("lets the later named utility win: %s", (pair, winner) => {
     expect(cn(pair)).toBe(winner);
   });

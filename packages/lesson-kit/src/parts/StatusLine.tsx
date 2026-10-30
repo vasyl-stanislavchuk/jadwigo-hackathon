@@ -25,10 +25,7 @@ export function StatusLine({
   const also = alsoWords({ ...input, language, category });
   const Icon = row.icon;
   return (
-    <div
-      data-area="status"
-      className="kid-status flex min-h-[var(--kid-status-height)] items-center"
-    >
+    <div data-area="status" className="kid-status flex min-h-kid-status items-center">
       <p
         role="status"
         aria-live="polite"

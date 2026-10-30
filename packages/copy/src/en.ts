@@ -626,4 +626,11 @@ export const en: CopyTable = {
   parent_mistake_unequal_parts: { text: "Unequal parts", reviewed: false },
   parent_mistake_criterion_missed: { text: "One of the conditions left out", reviewed: false },
   // end lesson review
+  // Zeszyt everywhere (dl-uukj.32 wave 2): what the parent screens joined in code, as one line each
+  close: { text: "Close", reviewed: false },
+  parent_review_try_line: { text: "{time} · {help}", reviewed: false },
+  parent_overview_sheet_line: { text: "{tries} · {help} · {time}", reviewed: false },
+  parent_overview_ratio: { text: "{n}/{m}", reviewed: false },
+  parent_attempt_line: { text: "{say}: {ended}", reviewed: false },
+  parent_load_failed: { text: "This didn't load. Reload the page to try again.", reviewed: false },
 };

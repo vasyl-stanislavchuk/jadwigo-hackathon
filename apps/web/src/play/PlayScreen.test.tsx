@@ -116,6 +116,29 @@ describe("PlayScreen", () => {
     expect(storedAttempt.get(ASSIGNMENT)).toBe(FRESH);
   });
 
+  it("draws a Khan picture ref from the media URL (dl-n9fr.52)", async () => {
+    vi.stubEnv("VITE_MEDIA_URL", "https://dx5i3bka3zn5f.cloudfront.net");
+    const ref = "49eb6e79d51b5bc51d51bccdcd8c6f9d5c62e3126fa866e64e7a543dbd7bb6ed.png";
+    const pictured = {
+      ...(question(1) as PageAttemptQuestion),
+      question: {
+        family: "enter",
+        data: {
+          input: "number",
+          entry: "keypad",
+          stem: { pictures: [{ src: ref, alt: "A number chart", width: 400, height: 360 }] },
+        },
+      },
+    };
+    const startAttempt = vi.fn(async () => snapshot(FRESH, "in_progress", [pictured]));
+    render(
+      <PlayScreen assignmentId={ASSIGNMENT} language="pl" client={client({ startAttempt })} />,
+    );
+    const picture = (await screen.findAllByAltText("A number chart"))[0];
+    expect(picture?.getAttribute("src")).toBe(`https://dx5i3bka3zn5f.cloudfront.net/${ref}`);
+    vi.unstubAllEnvs();
+  });
+
   it("waits on the paused screen after a reload, and resumes on the same question", async () => {
     storedAttempt.set(ASSIGNMENT, ATTEMPT);
     const patchAttempt = vi.fn(async () =>
