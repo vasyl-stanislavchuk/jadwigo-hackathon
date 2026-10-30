@@ -43,7 +43,7 @@ describe("the mastery stubs of step 0", () => {
     ]) {
       expect(typeof (core as Record<string, unknown>)[name], name).toBe("function");
     }
-    expect(() => core.foldLearner([], CATALOGUE, new Date(0))).toThrow("not built: core lane");
+    expect(() => core.brief([], CATALOGUE, [], new Date(0))).toThrow("not built: core lane");
   });
 });
 

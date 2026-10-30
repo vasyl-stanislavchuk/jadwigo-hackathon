@@ -1,4 +1,5 @@
 import type {
+  AttemptId,
   Brief,
   CanDoLine,
   Goal,
@@ -12,6 +13,7 @@ import type {
   SkillId,
   SkillKind,
 } from "@jadwigo/contracts";
+import { foldSkill } from "./fold.ts";
 
 /**
  * The learner knowledge base's pure functions (wave 1 of epic dl-e8ov.5). Step 0 lands the
@@ -75,20 +77,48 @@ export function resolveSkill(code: SkillId, skills: readonly Skill[]): SkillId {
 
 /** One skill's level, `needs_attention`, tries, dates and FSRS card from its events. */
 export function masteryOf(
-  _events: readonly SkillEvent[],
-  _kind: SkillKind,
+  events: readonly SkillEvent[],
+  kind: SkillKind,
   _now: Date,
 ): SkillMastery {
-  return notBuilt("masteryOf");
+  return foldSkill(events, kind);
 }
 
 /** Every skill code the learner has evidence on, resolved to its canonical code, folded. */
 export function foldLearner(
-  _evidence: readonly LearnerSkillEvidence[],
-  _skills: readonly Skill[],
-  _now: Date,
+  evidence: readonly LearnerSkillEvidence[],
+  skills: readonly Skill[],
+  now: Date,
 ): FoldedMastery[] {
-  return notBuilt("foldLearner");
+  const canonical = new Map<SkillId, SkillId>();
+  const resolved = evidence.map((row) => {
+    let code = canonical.get(row.skill_code);
+    if (code === undefined) {
+      code = resolveSkill(row.skill_code, skills);
+      canonical.set(row.skill_code, code);
+    }
+    return { ...row, skill_code: code };
+  });
+  const codesOf = new Map<AttemptId, Set<SkillId>>();
+  const reviewed = new Set<AttemptId>();
+  for (const row of resolved) {
+    const codes = codesOf.get(row.attempt_id) ?? new Set<SkillId>();
+    codes.add(row.skill_code);
+    codesOf.set(row.attempt_id, codes);
+    if (row.lesson_kind === "review") reviewed.add(row.attempt_id);
+  }
+  const bySkill = new Map<SkillId, SkillEvent[]>();
+  for (const row of resolved) {
+    const mixed = (codesOf.get(row.attempt_id)?.size ?? 0) >= 2 || reviewed.has(row.attempt_id);
+    const events = bySkill.get(row.skill_code) ?? [];
+    events.push({ ...row, mixed });
+    bySkill.set(row.skill_code, events);
+  }
+  return [...bySkill.keys()].sort().map((skill_code) => {
+    // A code no catalogue skill holds has no kind; it is read as an accuracy skill.
+    const kind = skills.find((s) => s.code === skill_code)?.kind ?? "accuracy";
+    return { skill_code, ...masteryOf(bySkill.get(skill_code) ?? [], kind, now) };
+  });
 }
 
 /** What the next lesson should hold: reteach, review, new, recheck and school (nothing recorded). */
