@@ -123,7 +123,13 @@ when the parent asks
    The player maps the hints onto the ladder: the first two on `look` and `boost`, the rest
    before the last on `almost`, the last on `worked`, and a hint that prints the answer waits for
    `almost`. When no hint reaches `almost`, the copy writes it as `worked` with its last line
-   blank. The draft is kept in `<tmp>/jw-drafts/<draft_id>.json`, and the lesson as copied, with
+   blank. One change is made by code: an `enter` question that is plainly a×b (its figure reads
+   `a · b =`, and its key accepts one whole number, a×b, and names no rule) gets the
+   multiplication rule on its key, `{"rule": "times_table", "a", "b", "recent": []}`, recorded as
+   a `tutor_notes` entry in `based_on.changes`, so its misses name their class (`add_for_multiply`,
+   `neighbour_row`, ...)
+   (`jadwigo-ai-workflows/decisions/2026-10-30-jw-adds-the-multiplication-mistake-rule-by-code-to-a-copied-axb`).
+   Every other key stays as the bank has it. The draft is kept in `<tmp>/jw-drafts/<draft_id>.json`, and the lesson as copied, with
    no twin yet, is run through `check.ts` once: `plays_as_copied` says whether it passed, and
    each question's `mistake_classes` are the classes `check.ts` names for its step (`null` until
    `check.ts` sends them, `dl-e8ov.5.38.11`, or when no checkout or `bun` is found).
