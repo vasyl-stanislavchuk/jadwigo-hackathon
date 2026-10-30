@@ -540,30 +540,28 @@ export type Skills = z.infer<typeof Skills>;
 /** `POST /api/v1/learners/{id}/goals`: a goal in the parent's words, with the skills it is made of. */
 export const GoalCreate = z.strictObject({
   name: z.string().trim().min(1).max(120),
-  words: z.string().trim().min(1).max(1000).optional(),
+  words: z.string().trim().max(1000).optional(),
   skill_codes: z.array(SkillId).max(50),
 });
 export type GoalCreate = z.infer<typeof GoalCreate>;
 
 /**
- * `PATCH /api/v1/learners/{id}/goals/{goal}`: a goal's name, words, status or skills. At least one
- * field; `skill_codes` replaces the goal's skills whole, and `words: null` clears them.
+ * `PATCH /api/v1/learners/{id}/goals/{goal}`: a goal's status or skills, at least one;
+ * `skill_codes` replaces the goal's skills whole.
  */
 export const GoalPatch = z
   .strictObject({
-    name: z.string().trim().min(1).max(120).optional(),
-    words: z.string().trim().min(1).max(1000).nullable().optional(),
     status: GoalStatus.optional(),
     skill_codes: z.array(SkillId).max(50).optional(),
   })
-  .refine((patch) => Object.keys(patch).length > 0, "a patch changes at least one field");
+  .refine(
+    (patch) => patch.status !== undefined || patch.skill_codes !== undefined,
+    "a patch changes the status or the skills",
+  );
 export type GoalPatch = z.infer<typeof GoalPatch>;
 
 /** `GET /api/v1/learners/{id}/goals`, and the reply to a goal's create or patch: oldest first. */
-export const LearnerGoals = z.object({
-  learner: Learner,
-  goals: z.array(z.object({ goal: Goal, skill_codes: z.array(SkillId) })),
-});
+export const LearnerGoals = z.object({ goals: z.array(GoalView) });
 export type LearnerGoals = z.infer<typeof LearnerGoals>;
 
 /**
@@ -584,18 +582,16 @@ export const ReportPatch = z
       .array(
         z.strictObject({ proposal_id: ProposalId, decision: z.enum(["accepted", "dismissed"]) }),
       )
-      .min(1)
-      .max(3)
       .optional(),
   })
-  .refine((patch) => Object.keys(patch).length > 0, "a patch changes at least one field");
+  .refine(
+    (patch) => patch.narrative !== undefined || patch.decisions !== undefined,
+    "a patch writes the narrative or decisions",
+  );
 export type ReportPatch = z.infer<typeof ReportPatch>;
 
 /** `GET /api/v1/learners/{id}/reports`: the learner's reports, newest first, at most `LIMITS.reportsPerLearner`. */
-export const LearnerReports = z.object({
-  learner: Learner,
-  reports: z.array(LearnerReport),
-});
+export const LearnerReports = z.object({ reports: z.array(LearnerReport) });
 export type LearnerReports = z.infer<typeof LearnerReports>;
 
 /**

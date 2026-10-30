@@ -2,143 +2,61 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
-    "learner": {
-      "$ref": "#/$defs/Learner"
-    },
     "goals": {
       "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "goal": {
-            "$ref": "#/$defs/Goal"
-          },
-          "skill_codes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/SkillId"
-            }
-          }
-        },
-        "required": [
-          "goal",
-          "skill_codes"
-        ],
-        "additionalProperties": false
+        "$ref": "#/$defs/GoalView"
       }
     }
   },
   "required": [
-    "learner",
     "goals"
   ],
   "additionalProperties": false,
   "$defs": {
-    "Learner": {
+    "GoalView": {
       "type": "object",
       "properties": {
-        "id": {
-          "$ref": "#/$defs/LearnerId"
+        "goal": {
+          "$ref": "#/$defs/Goal"
         },
-        "pod_id": {
-          "$ref": "#/$defs/PodId"
+        "skill_codes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
         },
-        "handle": {
-          "type": "string",
-          "minLength": 1
+        "status": {
+          "$ref": "#/$defs/GoalProgress"
         },
-        "first_name": {
-          "type": "string",
-          "minLength": 1
+        "can_do_now": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
         },
-        "age_group": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "needs_attention": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
         },
-        "country": {
-          "anyOf": [
-            {
-              "type": "string",
-              "pattern": "^[A-Z]{2}$"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "curriculum_id": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/CurriculumId"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "school_grade": {
-          "anyOf": [
-            {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 9007199254740991
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "school_language": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/Language"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "created_at": {
-          "type": "string",
-          "format": "date-time",
-          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        "next": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
         }
       },
       "required": [
-        "id",
-        "pod_id",
-        "handle",
-        "first_name",
-        "age_group",
-        "country",
-        "curriculum_id",
-        "school_grade",
-        "school_language",
-        "created_at"
+        "goal",
+        "skill_codes",
+        "status",
+        "can_do_now",
+        "needs_attention",
+        "next"
       ],
       "additionalProperties": false
-    },
-    "LearnerId": {
-      "type": "string",
-      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
-    },
-    "PodId": {
-      "type": "string",
-      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
-    },
-    "CurriculumId": {
-      "type": "string",
-      "pattern": "^crc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
-    },
-    "Language": {
-      "type": "string",
-      "enum": [
-        "pl",
-        "en",
-        "uk"
-      ]
     },
     "Goal": {
       "type": "object",
@@ -195,6 +113,22 @@
       "type": "string",
       "pattern": "^gol_[0-7][0-9a-hjkmnp-tv-z]{25}$"
     },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en",
+        "uk"
+      ]
+    },
     "GoalStatus": {
       "type": "string",
       "enum": [
@@ -207,6 +141,15 @@
     "SkillId": {
       "type": "string",
       "pattern": "^[a-z]+(\\.[a-z0-9-]+)+$"
+    },
+    "GoalProgress": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "needs_attention",
+        "on_its_way",
+        "good"
+      ]
     }
   }
 }

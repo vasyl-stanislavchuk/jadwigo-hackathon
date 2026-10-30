@@ -1231,8 +1231,6 @@ export class InMemoryStore implements Store {
         Goal,
         {
           ...stored,
-          ...(change.name === undefined ? {} : { name: change.name }),
-          ...(change.words === undefined ? {} : { words: change.words }),
           ...(change.status === undefined ? {} : { status: change.status }),
         },
         "the goal",

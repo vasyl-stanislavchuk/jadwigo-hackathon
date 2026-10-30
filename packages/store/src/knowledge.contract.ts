@@ -1,7 +1,7 @@
 import {
   type AccountId,
   type AssignmentId,
-  type AttemptId,
+  AttemptId,
   EventId,
   FEATURED_POD_ID,
   ID_PREFIXES,
@@ -224,11 +224,10 @@ export function learnerKnowledgeContract(name: string, make: () => Promise<Store
 
       const changed = await store.updateGoal(a.pod, a.learner, added.goal.id, {
         status: "paused",
-        words: null,
         skill_codes: [codes.overridden],
       });
       expect(changed).toEqual({
-        goal: { ...added.goal, status: "paused", words: null },
+        goal: { ...added.goal, status: "paused" },
         skill_codes: [codes.overridden],
       });
       const listed = await store.listGoals(a.pod, a.learner);
@@ -469,13 +468,24 @@ function mastery(skill_code: SkillId, level: "attempted" | "familiar" | "profici
 const DIGEST: ReportDigest = {
   shape: "digest/1",
   counts: { attempts: 1, questions: 2, days_played: 1 },
-  skills_moved: [{ skill_code: "maths.multiplication.row-7", from: "attempted", to: "familiar" }],
+  skills_moved: [
+    {
+      skill_code: "maths.multiplication.row-7",
+      from: "attempted",
+      to: "familiar",
+      attempt_id: AttemptId.parse(
+        idOf(ID_PREFIXES.attempt, "00000000-0000-4000-8000-0000000000a1"),
+      ),
+    },
+  ],
   needs_attention: [],
   mistakes: [],
   brief: {
-    made_at: "2026-09-01T09:00:00.000Z",
-    entries: [{ list: "review", skill_code: "maths.multiplication.row-7", goal_ids: [] }],
-    nothing_recorded: ["reteach", "new", "recheck", "school"],
+    computed_at: "2026-09-01T09:00:00.000Z",
+    entries: [
+      { skill_code: "maths.multiplication.row-7", list: "review", goal_ids: [], why: "review_due" },
+    ],
+    school: "nothing_recorded",
   },
   goals: [],
   standing: [{ question: "next_focus", verdict: "on_track", citations: [] }],

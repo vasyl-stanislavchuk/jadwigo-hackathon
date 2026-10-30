@@ -440,21 +440,8 @@ describe("the learner knowledge calls", () => {
   const LEARNER = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
   const GOAL = GoalId.parse("gol_2h4m8gyw0fb1cvz2nkqw0px8fq");
   const signedIn = async (): Promise<string> => "header.payload.signature";
-  const learner = {
-    id: LEARNER,
-    pod_id: "pod_6et2fhbnwvb45aw9atcfzs33za",
-    handle: "fox",
-    first_name: "Fox",
-    age_group: null,
-    country: null,
-    curriculum_id: null,
-    school_grade: null,
-    school_language: null,
-    created_at: AT,
-  };
-
   it("patches a goal at the route's path with the token, and parses the goals", async () => {
-    const { fetch, sent } = stub(200, { learner, goals: [] });
+    const { fetch, sent } = stub(200, { goals: [] });
     const reply = await createClient({ base: "", fetch, token: signedIn }).patchGoal(
       LEARNER,
       GOAL,
@@ -468,7 +455,7 @@ describe("the learner knowledge calls", () => {
         authorization: "Bearer header.payload.signature",
       },
     ]);
-    expect(reply.learner.id).toBe(LEARNER);
+    expect(reply.goals).toEqual([]);
   });
 
   it("makes a report with an empty body, and refuses a reply its schema does not accept", async () => {

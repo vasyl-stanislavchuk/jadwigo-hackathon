@@ -1,13 +1,12 @@
 // The learner knowledge routes on InMemoryStore (step 0 of wave dl-e8ov.5-1). The routes that fold
-// wait on core's stubs, and PostgresStore's methods on the store-api lane, which adds the route
-// suite on both stores; this pins what step 0 serves.
+// (skills, goals, reports' create) wait on core's stubs, and PostgresStore's methods on the
+// store-api lane, which adds the route suite on both stores; this pins what step 0 serves.
 import { randomUUID } from "node:crypto";
 import {
   type ErrorEnvelope,
   FEATURED_POD_ID,
   ID_PREFIXES,
   idOf,
-  type LearnerGoals,
   type LearnerReports,
   type LearnerSnapshot,
   type Me,
@@ -32,7 +31,7 @@ async function family(store = new InMemoryStore()) {
 }
 
 describe("the learner knowledge routes on InMemoryStore", () => {
-  it("adds, lists and patches a learner's goals, each code resolved and made sure of", async () => {
+  it("lists the catalogue and the reports, and refuses an empty goal patch", async () => {
     const store = new InMemoryStore();
     await store.putPod({ id: FEATURED_POD_ID, name: "Jadwigo", language: "pl" });
     await store.putSkills(FEATURED_POD_ID, [
@@ -48,43 +47,29 @@ describe("the learner knowledge routes on InMemoryStore", () => {
       },
     ]);
     const f = await family(store);
-
-    const made = await f.call<LearnerGoals>("POST", pathOf("createGoal", { id: f.learner }), {
+    const pod = await store.findLearnerPod(f.learner);
+    if (pod === undefined) throw new Error("the learner has no pod");
+    const { goal } = await store.addGoal(pod, f.learner, {
       name: "Row of 7",
-      words: "The 7s by Christmas.",
-      skill_codes: ["maths.mul.7x", "test.unknown.code"],
+      skill_codes: ["test.unknown.code"],
     });
-    expect(made.status).toBe(201);
-    expect(made.body.goals).toMatchObject([
-      {
-        goal: { name: "Row of 7", status: "active", words: "The 7s by Christmas." },
-        skill_codes: ["maths.multiplication.row-7", "test.unknown.code"],
-      },
-    ]);
-    const goal = made.body.goals[0]?.goal.id ?? "";
-    const patched = await f.call<LearnerGoals>(
-      "PATCH",
-      pathOf("patchGoal", { id: f.learner, goal }),
-      { status: "paused" },
-    );
-    expect(patched.body.goals[0]?.goal.status).toBe("paused");
-    const empty = await f.call<ErrorEnvelope>(
-      "PATCH",
-      pathOf("patchGoal", { id: f.learner, goal }),
-      {},
-    );
-    expect([empty.status, empty.body.error.type]).toEqual([400, "BadRequest"]);
 
     const skills = await f.call<Skills>("GET", pathOf("listSkills", {}));
     expect(skills.body.skills.map((s) => [s.code, s.status])).toEqual([
       ["maths.multiplication.row-7", "reviewed"],
       ["test.unknown.code", "draft"],
     ]);
+    const empty = await f.call<ErrorEnvelope>(
+      "PATCH",
+      pathOf("patchGoal", { id: f.learner, goal: goal.id }),
+      {},
+    );
+    expect([empty.status, empty.body.error.type]).toEqual([400, "BadRequest"]);
     const reports = await f.call<LearnerReports>(
       "GET",
       pathOf("getLearnerReports", { id: f.learner }),
     );
-    expect(reports).toMatchObject({ status: 200, body: { reports: [] } });
+    expect(reports).toEqual({ status: 200, body: { reports: [] } });
   });
 
   it("answers another pod's learner 404 on every learner route", async () => {

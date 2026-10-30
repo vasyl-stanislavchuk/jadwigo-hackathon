@@ -1,10 +1,10 @@
 import type {
   Brief,
   CanDoLine,
+  Goal,
   GoalProgress,
   GoalView,
   Language,
-  LearnerGoals,
   LearnerSkillEvidence,
   LearnerSkillMastery,
   ReportDigest,
@@ -20,7 +20,10 @@ import type {
  */
 
 /** A goal with the codes of its skills, as the store lists them. */
-export type GoalWithSkills = LearnerGoals["goals"][number];
+export interface GoalWithSkills {
+  readonly goal: Goal;
+  readonly skill_codes: readonly SkillId[];
+}
 
 /** A mastery row as the fold makes it: the store adds the pod, the learner and `computed_at`. */
 export type FoldedMastery = Omit<LearnerSkillMastery, "pod_id" | "learner_id" | "computed_at">;

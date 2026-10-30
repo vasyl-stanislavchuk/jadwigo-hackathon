@@ -582,23 +582,30 @@ export type LearnerSkillEvidence = z.infer<typeof LearnerSkillEvidence>;
 export const BriefList = z.enum(["reteach", "review", "new", "recheck", "school"]);
 export type BriefList = z.infer<typeof BriefList>;
 
-/** One skill on one list of the brief, with the goals it serves. */
+/** One skill on one list of the brief, the goals it serves, and why code put it there. */
 export const BriefEntry = z.object({
-  list: BriefList,
   skill_code: SkillId,
+  list: BriefList,
   goal_ids: z.array(GoalId),
+  why: z.enum([
+    "needs_attention",
+    "review_due",
+    "prerequisites_met",
+    "second_day_owed",
+    "school_tag",
+  ]),
 });
 export type BriefEntry = z.infer<typeof BriefEntry>;
 
 /**
- * What the next lesson should hold, worked out by code from the goals, skills and mastery. A list
- * with no entry is named in `nothing_recorded`: an empty list is said, never guessed at
- * (`school` stays there until a parent tells it).
+ * What the next lesson should hold, worked out by code from the goals, skills and mastery.
+ * `school` says `nothing_recorded` until a parent tells what school covers: an empty section is
+ * said, never guessed at.
  */
 export const Brief = z.object({
-  made_at: At,
+  computed_at: At,
   entries: z.array(BriefEntry),
-  nothing_recorded: z.array(BriefList),
+  school: z.literal("nothing_recorded").or(z.array(BriefEntry)),
 });
 export type Brief = z.infer<typeof Brief>;
 
@@ -618,14 +625,18 @@ export type ProposalId = z.infer<typeof ProposalId>;
 export const StandingQuestion = z.enum(["skills_standing", "next_focus"]);
 export type StandingQuestion = z.infer<typeof StandingQuestion>;
 
-/** Where a goal stands, as the parent reads it: never a level name, never a number. */
+/**
+ * Where a goal stands, as the parent reads it: never a level name, never a number. Here beside
+ * `Goal`, since both the digest and the wire's `GoalView` name it.
+ */
 export const GoalProgress = z.enum(["not_started", "needs_attention", "on_its_way", "good"]);
 export type GoalProgress = z.infer<typeof GoalProgress>;
 
 /**
- * Code's half of a report, deterministic from the evidence: counts, the skills that moved, the
- * mistakes, the brief, each goal's standing, a verdict on each standing question, at most 3 focus
- * proposals and at most 2 asks. Codes, counts and ids only: no name, no `player_name`, no answer.
+ * Code's half of a report, deterministic from the evidence: counts, the skills that moved, what
+ * needs attention, the mistakes, the brief, each goal's standing, a verdict on each standing
+ * question, at most 3 focus proposals and at most 2 asks. Codes, counts and ids only: no name, no
+ * `player_name`, no answer.
  */
 export const ReportDigest = z.object({
   shape: z.literal("digest/1"),
@@ -634,10 +645,23 @@ export const ReportDigest = z.object({
     questions: z.int().min(0),
     days_played: z.int().min(0),
   }),
-  skills_moved: z.array(z.object({ skill_code: SkillId, from: MasteryLevel, to: MasteryLevel })),
-  needs_attention: z.array(SkillId),
+  skills_moved: z.array(
+    z.object({ skill_code: SkillId, from: MasteryLevel, to: MasteryLevel, attempt_id: AttemptId }),
+  ),
+  needs_attention: z.array(
+    z.object({
+      skill_code: SkillId,
+      mistake_classes: z.array(z.string()),
+      citations: z.array(Citation),
+    }),
+  ),
   mistakes: z.array(
-    z.object({ skill_code: SkillId, mistake_class: z.string().min(1), count: z.int().min(1) }),
+    z.object({
+      mistake_class: z.string(),
+      times: z.int().min(1),
+      skill_codes: z.array(SkillId),
+      citations: z.array(Citation),
+    }),
   ),
   brief: Brief,
   goals: z.array(z.object({ goal_id: GoalId, status: GoalProgress })),
@@ -662,8 +686,8 @@ export const ReportDigest = z.object({
   asks: z
     .array(
       z.object({
-        kind: z.enum(["school", "goal_words", "unknown_skill"]),
-        citations: z.array(Citation),
+        id: z.string(),
+        about: z.enum(["goal_without_skills", "no_evidence_in_period", "school_context"]),
       }),
     )
     .max(2),
@@ -672,15 +696,14 @@ export type ReportDigest = z.infer<typeof ReportDigest>;
 
 /**
  * The AI's half of a report (`/jadwigo-report-write`), written once: every sentence cites the
- * digest, gives no number the digest did not, and names no level. Strict, so a field the digest
- * owns is refused.
+ * digest, gives no number the digest did not, and names no level.
  */
-export const ReportNarrative = z.strictObject({
+export const ReportNarrative = z.object({
   language: Language,
   headline: z.string().min(1).max(140),
   direction_now: z.string().min(1).max(500),
   answers: z.array(
-    z.strictObject({
+    z.object({
       question: StandingQuestion,
       answer: z.string().min(1).max(600),
       citations: z.array(Citation).min(1),
@@ -688,15 +711,15 @@ export const ReportNarrative = z.strictObject({
   ),
   proposals: z
     .array(
-      z.strictObject({
+      z.object({
         proposal_id: ProposalId,
-        claim: z.string().min(1),
-        rationale: z.string().min(1),
+        claim: z.string().max(200),
+        rationale: z.string().max(400),
         citations: z.array(Citation).min(1),
       }),
     )
     .max(3),
-  asks: z.array(z.strictObject({ ask: z.string().min(1), why: z.string().min(1) })).max(2),
+  asks: z.array(z.object({ ask: z.string().max(200), why: z.string().max(300) })).max(2),
   /** The workflow and model that wrote it. */
   made_by: z.string().min(1),
 });
@@ -706,8 +729,8 @@ export type ReportNarrative = z.infer<typeof ReportNarrative>;
 export const ProposalDecision = z.object({
   proposal_id: ProposalId,
   decision: z.enum(["accepted", "dismissed"]),
-  decided_by: AccountId,
   decided_at: At,
+  decided_by: AccountId,
 });
 export type ProposalDecision = z.infer<typeof ProposalDecision>;
 

@@ -2201,7 +2201,7 @@
       "Brief": {
         "type": "object",
         "properties": {
-          "made_at": {
+          "computed_at": {
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
@@ -2212,40 +2212,59 @@
               "$ref": "#/components/schemas/BriefEntry"
             }
           },
-          "nothing_recorded": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BriefList"
-            }
+          "school": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "nothing_recorded"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/BriefEntry"
+                }
+              }
+            ]
           }
         },
         "required": [
-          "made_at",
+          "computed_at",
           "entries",
-          "nothing_recorded"
+          "school"
         ],
         "additionalProperties": false
       },
       "BriefEntry": {
         "type": "object",
         "properties": {
-          "list": {
-            "$ref": "#/components/schemas/BriefList"
-          },
           "skill_code": {
             "$ref": "#/components/schemas/SkillId"
+          },
+          "list": {
+            "$ref": "#/components/schemas/BriefList"
           },
           "goal_ids": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/GoalId"
             }
+          },
+          "why": {
+            "type": "string",
+            "enum": [
+              "needs_attention",
+              "review_due",
+              "prerequisites_met",
+              "second_day_owed",
+              "school_tag"
+            ]
           }
         },
         "required": [
-          "list",
           "skill_code",
-          "goal_ids"
+          "list",
+          "goal_ids",
+          "why"
         ],
         "additionalProperties": false
       },
@@ -3594,7 +3613,6 @@
           },
           "words": {
             "type": "string",
-            "minLength": 1,
             "maxLength": 1000
           },
           "skill_codes": {
@@ -3618,23 +3636,6 @@
       "GoalPatch": {
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 120
-          },
-          "words": {
-            "anyOf": [
-              {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 1000
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "status": {
             "$ref": "#/components/schemas/GoalStatus"
           },
@@ -4388,34 +4389,14 @@
       "LearnerGoals": {
         "type": "object",
         "properties": {
-          "learner": {
-            "$ref": "#/components/schemas/Learner"
-          },
           "goals": {
             "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "goal": {
-                  "$ref": "#/components/schemas/Goal"
-                },
-                "skill_codes": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SkillId"
-                  }
-                }
-              },
-              "required": [
-                "goal",
-                "skill_codes"
-              ],
-              "additionalProperties": false
+              "$ref": "#/components/schemas/GoalView"
             }
           }
         },
         "required": [
-          "learner",
           "goals"
         ],
         "additionalProperties": false
@@ -4500,9 +4481,6 @@
       "LearnerReports": {
         "type": "object",
         "properties": {
-          "learner": {
-            "$ref": "#/components/schemas/Learner"
-          },
           "reports": {
             "type": "array",
             "items": {
@@ -4511,7 +4489,6 @@
           }
         },
         "required": [
-          "learner",
           "reports"
         ],
         "additionalProperties": false
@@ -7199,20 +7176,20 @@
               "dismissed"
             ]
           },
-          "decided_by": {
-            "$ref": "#/components/schemas/AccountId"
-          },
           "decided_at": {
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "decided_by": {
+            "$ref": "#/components/schemas/AccountId"
           }
         },
         "required": [
           "proposal_id",
           "decision",
-          "decided_by",
-          "decided_at"
+          "decided_at",
+          "decided_by"
         ],
         "additionalProperties": false
       },
@@ -7554,12 +7531,16 @@
                 },
                 "to": {
                   "$ref": "#/components/schemas/MasteryLevel"
+                },
+                "attempt_id": {
+                  "$ref": "#/components/schemas/AttemptId"
                 }
               },
               "required": [
                 "skill_code",
                 "from",
-                "to"
+                "to",
+                "attempt_id"
               ],
               "additionalProperties": false
             }
@@ -7567,7 +7548,30 @@
           "needs_attention": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/SkillId"
+              "type": "object",
+              "properties": {
+                "skill_code": {
+                  "$ref": "#/components/schemas/SkillId"
+                },
+                "mistake_classes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "citations": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Citation"
+                  }
+                }
+              },
+              "required": [
+                "skill_code",
+                "mistake_classes",
+                "citations"
+              ],
+              "additionalProperties": false
             }
           },
           "mistakes": {
@@ -7575,23 +7579,32 @@
             "items": {
               "type": "object",
               "properties": {
-                "skill_code": {
-                  "$ref": "#/components/schemas/SkillId"
-                },
                 "mistake_class": {
-                  "type": "string",
-                  "minLength": 1
+                  "type": "string"
                 },
-                "count": {
+                "times": {
                   "type": "integer",
                   "minimum": 1,
                   "maximum": 9007199254740991
+                },
+                "skill_codes": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SkillId"
+                  }
+                },
+                "citations": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Citation"
+                  }
                 }
               },
               "required": [
-                "skill_code",
                 "mistake_class",
-                "count"
+                "times",
+                "skill_codes",
+                "citations"
               ],
               "additionalProperties": false
             }
@@ -7696,24 +7709,21 @@
             "items": {
               "type": "object",
               "properties": {
-                "kind": {
+                "id": {
+                  "type": "string"
+                },
+                "about": {
                   "type": "string",
                   "enum": [
-                    "school",
-                    "goal_words",
-                    "unknown_skill"
+                    "goal_without_skills",
+                    "no_evidence_in_period",
+                    "school_context"
                   ]
-                },
-                "citations": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Citation"
-                  }
                 }
               },
               "required": [
-                "kind",
-                "citations"
+                "id",
+                "about"
               ],
               "additionalProperties": false
             }
@@ -7789,11 +7799,11 @@
                 },
                 "claim": {
                   "type": "string",
-                  "minLength": 1
+                  "maxLength": 200
                 },
                 "rationale": {
                   "type": "string",
-                  "minLength": 1
+                  "maxLength": 400
                 },
                 "citations": {
                   "minItems": 1,
@@ -7820,11 +7830,11 @@
               "properties": {
                 "ask": {
                   "type": "string",
-                  "minLength": 1
+                  "maxLength": 200
                 },
                 "why": {
                   "type": "string",
-                  "minLength": 1
+                  "maxLength": 300
                 }
               },
               "required": [
@@ -7891,8 +7901,7 @@
                 "question",
                 "answer",
                 "citations"
-              ],
-              "additionalProperties": false
+              ]
             }
           },
           "proposals": {
@@ -7906,11 +7915,11 @@
                 },
                 "claim": {
                   "type": "string",
-                  "minLength": 1
+                  "maxLength": 200
                 },
                 "rationale": {
                   "type": "string",
-                  "minLength": 1
+                  "maxLength": 400
                 },
                 "citations": {
                   "minItems": 1,
@@ -7925,8 +7934,7 @@
                 "claim",
                 "rationale",
                 "citations"
-              ],
-              "additionalProperties": false
+              ]
             }
           },
           "asks": {
@@ -7937,18 +7945,17 @@
               "properties": {
                 "ask": {
                   "type": "string",
-                  "minLength": 1
+                  "maxLength": 200
                 },
                 "why": {
                   "type": "string",
-                  "minLength": 1
+                  "maxLength": 300
                 }
               },
               "required": [
                 "ask",
                 "why"
-              ],
-              "additionalProperties": false
+              ]
             }
           },
           "made_by": {
@@ -7964,8 +7971,7 @@
           "proposals",
           "asks",
           "made_by"
-        ],
-        "additionalProperties": false
+        ]
       },
       "ReportPatchInput": {
         "type": "object",
@@ -7974,8 +7980,6 @@
             "$ref": "#/components/schemas/ReportNarrativeInput"
           },
           "decisions": {
-            "minItems": 1,
-            "maxItems": 3,
             "type": "array",
             "items": {
               "type": "object",

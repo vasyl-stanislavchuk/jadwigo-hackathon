@@ -6,8 +6,6 @@
       "$ref": "#/$defs/ReportNarrative"
     },
     "decisions": {
-      "minItems": 1,
-      "maxItems": 3,
       "type": "array",
       "items": {
         "type": "object",
@@ -89,11 +87,11 @@
               },
               "claim": {
                 "type": "string",
-                "minLength": 1
+                "maxLength": 200
               },
               "rationale": {
                 "type": "string",
-                "minLength": 1
+                "maxLength": 400
               },
               "citations": {
                 "minItems": 1,
@@ -120,11 +118,11 @@
             "properties": {
               "ask": {
                 "type": "string",
-                "minLength": 1
+                "maxLength": 200
               },
               "why": {
                 "type": "string",
-                "minLength": 1
+                "maxLength": 300
               }
             },
             "required": [

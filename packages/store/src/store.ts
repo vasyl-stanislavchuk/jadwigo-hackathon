@@ -11,12 +11,12 @@ import type {
   AttemptResult,
   Ended,
   ErrorType,
+  Goal,
   GoalId,
   GoalStatus,
   Language,
   Learner,
   LearnerAttempts,
-  LearnerGoals,
   LearnerId,
   LearnerReport,
   LearnerReportId,
@@ -179,7 +179,10 @@ export interface NewClaim {
 export type NewSkill = Omit<Skill, "pod_id" | "created_at">;
 
 /** A goal with the codes of its skills, as the parent's routes read it. */
-export type GoalWithSkills = LearnerGoals["goals"][number];
+export interface GoalWithSkills {
+  readonly goal: Goal;
+  readonly skill_codes: SkillId[];
+}
 
 /** A goal as a parent adds one. Its skill codes are copied into the pod first (`ensureSkills`). */
 export interface NewGoal {
@@ -191,8 +194,6 @@ export interface NewGoal {
 
 /** What a goal's patch changes; `skill_codes` replaces its skills whole. */
 export interface GoalChange {
-  readonly name?: string | undefined;
-  readonly words?: string | null | undefined;
   readonly status?: GoalStatus | undefined;
   readonly skill_codes?: readonly SkillId[] | undefined;
 }
@@ -522,7 +523,7 @@ export interface Store {
    */
   addGoal(pod: PodId, learner: LearnerId, goal: NewGoal): Promise<GoalWithSkills>;
   /**
-   * Changes a goal's name, words or status, and replaces its skills when `skill_codes` is given
+   * Changes a goal's status, and replaces its skills when `skill_codes` is given
    * (made sure of first, as `addGoal` does). A goal outside the learner or `pod` is `NotFound`.
    */
   updateGoal(

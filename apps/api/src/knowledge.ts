@@ -43,6 +43,20 @@ async function learnerOf(
   return { pod, account, learner };
 }
 
+/**
+ * A learner's catalogue, goals, folded mastery and brief, read and folded in one go: the fold
+ * reads the evidence, never the cache alone.
+ */
+async function folded(store: Store, pod: PodId, id: LearnerId, now: Date) {
+  const catalogue = await store.listSkills(pod);
+  const goals = await store.listGoals(pod, id);
+  const evidence = await store.getLearnerEvidence(pod, id);
+  const mastery = foldLearner(evidence, catalogue, now);
+  const made = brief(goals, catalogue, mastery, now);
+  const views = goals.map((goal) => goalView(goal, mastery, made));
+  return { catalogue, goals, evidence, mastery, brief: made, views };
+}
+
 /** `GET /api/v1/learners/{id}/skills`: folded on read from the evidence, never from the cache alone. */
 export async function getLearnerSkills(
   store: Store,
@@ -51,23 +65,19 @@ export async function getLearnerSkills(
 ): Promise<LearnerSkills> {
   const { pod, learner } = await learnerOf(store, claims, id);
   const now = new Date();
-  const catalogue = await store.listSkills(pod);
-  const goals = await store.listGoals(pod, id);
-  const evidence = await store.getLearnerEvidence(pod, id);
-  const folded = foldLearner(evidence, catalogue, now);
-  const made = brief(goals, catalogue, folded, now);
+  const read = await folded(store, pod, id, now);
   const computed_at = now.toISOString();
   return {
     learner,
-    skills: folded.map(({ card: _card, ...row }) => ({
+    skills: read.mastery.map(({ card: _card, ...row }) => ({
       ...row,
       pod_id: pod,
       learner_id: id,
       computed_at,
     })),
-    catalogue: [...catalogue],
-    goals: goals.map((goal) => goalView(goal, folded, made)),
-    brief: made,
+    catalogue: [...read.catalogue],
+    goals: read.views,
+    brief: read.brief,
   };
 }
 
@@ -83,8 +93,8 @@ export async function getLearnerGoals(
   claims: Claims,
   id: LearnerId,
 ): Promise<LearnerGoals> {
-  const { pod, learner } = await learnerOf(store, claims, id);
-  return { learner, goals: [...(await store.listGoals(pod, id))] };
+  const { pod } = await learnerOf(store, claims, id);
+  return { goals: (await folded(store, pod, id, new Date())).views };
 }
 
 /** `POST /api/v1/learners/{id}/goals`: each code resolved to its canonical one first. */
@@ -94,18 +104,19 @@ export async function createGoal(
   id: LearnerId,
   raw: unknown,
 ): Promise<LearnerGoals> {
-  const { pod, learner } = await learnerOf(store, claims, id);
+  const { pod } = await learnerOf(store, claims, id);
   const parsed = GoalCreate.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
   const catalogue = await store.listSkills(pod);
   await store.addGoal(pod, id, {
     name: parsed.data.name,
-    words: parsed.data.words ?? null,
+    // An empty `words` is none: the column refuses an empty string.
+    words: parsed.data.words || null,
     skill_codes: parsed.data.skill_codes.map((code) => resolveSkill(code, catalogue)),
   });
   // A new goal's skills join the fold. A fold that fails is logged and never refuses the goal.
   await rebuildMastery(store, id, new Date()).catch(logFoldFailure);
-  return { learner, goals: [...(await store.listGoals(pod, id))] };
+  return { goals: (await folded(store, pod, id, new Date())).views };
 }
 
 /** `PATCH /api/v1/learners/{id}/goals/{goal}`. */
@@ -116,18 +127,18 @@ export async function patchGoal(
   goal: GoalId,
   raw: unknown,
 ): Promise<LearnerGoals> {
-  const { pod, learner } = await learnerOf(store, claims, id);
+  const { pod } = await learnerOf(store, claims, id);
   const parsed = GoalPatch.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
-  const { skill_codes, ...rest } = parsed.data;
+  const { skill_codes, status } = parsed.data;
   const catalogue = skill_codes === undefined ? [] : await store.listSkills(pod);
   await store.updateGoal(pod, id, goal, {
-    ...rest,
+    status,
     ...(skill_codes === undefined
       ? {}
       : { skill_codes: skill_codes.map((code) => resolveSkill(code, catalogue)) }),
   });
-  return { learner, goals: [...(await store.listGoals(pod, id))] };
+  return { goals: (await folded(store, pod, id, new Date())).views };
 }
 
 /** `GET /api/v1/learners/{id}/reports`: newest first. */
@@ -136,8 +147,8 @@ export async function getLearnerReports(
   claims: Claims,
   id: LearnerId,
 ): Promise<LearnerReports> {
-  const { pod, learner } = await learnerOf(store, claims, id);
-  return { learner, reports: [...(await store.listReports(pod, id))] };
+  const { pod } = await learnerOf(store, claims, id);
+  return { reports: [...(await store.listReports(pod, id))] };
 }
 
 /**
@@ -156,25 +167,21 @@ export async function createReport(
   const parsed = ReportCreate.safeParse(raw ?? {});
   if (!parsed.success) throw badRequest(parsed.error.issues);
   const now = new Date();
-  const catalogue = await store.listSkills(pod);
-  const goals = await store.listGoals(pod, id);
-  const evidence = await store.getLearnerEvidence(pod, id);
   const before = await store.getMastery(pod, id);
   const last = (await store.listReports(pod, id))[0];
   const starts_at = last?.period_ends_at ?? new Date(0).toISOString();
   const ends_at = now.toISOString();
-  const after = foldLearner(evidence, catalogue, now);
-  const made = brief(goals, catalogue, after, now);
+  const read = await folded(store, pod, id, now);
   const { digest, inputs_hash } = dreamDigest({
-    evidence_before: evidence.filter((e) => e.answered_at < starts_at),
-    evidence_after: evidence,
+    evidence_before: read.evidence.filter((e) => e.answered_at < starts_at),
+    evidence_after: read.evidence,
     mastery_before: before,
-    mastery_after: after,
-    brief: made,
-    goals,
+    mastery_after: read.mastery,
+    brief: read.brief,
+    goals: read.goals,
     period: { starts_at, ends_at },
   });
-  await store.replaceMastery(pod, id, after);
+  await store.replaceMastery(pod, id, read.mastery);
   const reused = last !== undefined && last.inputs_hash === inputs_hash;
   return store.putReport(pod, {
     learner_id: id,

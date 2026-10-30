@@ -248,7 +248,8 @@ describe("the learner knowledge base", () => {
   it("patches a goal or a report only with at least one field, and refuses what the server owns", () => {
     expect(GoalPatch.safeParse({}).success).toBe(false);
     expect(GoalPatch.safeParse({ status: "paused" }).success).toBe(true);
-    expect(GoalPatch.safeParse({ words: null }).success).toBe(true);
+    expect(GoalPatch.safeParse({ skill_codes: [] }).success).toBe(true);
+    expect(GoalPatch.safeParse({ name: "x" }).success).toBe(false);
     expect(GoalPatch.safeParse({ status: "paused", pod_id: "x" }).success).toBe(false);
     expect(ReportPatch.safeParse({}).success).toBe(false);
     expect(ReportPatch.safeParse({ narrative }).success).toBe(true);
@@ -261,14 +262,13 @@ describe("the learner knowledge base", () => {
     expect(ReportCreate.safeParse({ digest: {} }).success).toBe(false);
   });
 
-  it("keeps a narrative short, cited and free of fields the digest owns", () => {
+  it("keeps a narrative short and cited, with at most 2 asks", () => {
     expect(ReportNarrative.safeParse(narrative).success).toBe(true);
     expect(ReportNarrative.safeParse({ ...narrative, headline: "x".repeat(141) }).success).toBe(
       false,
     );
     const uncited = [{ ...narrative.answers[0], citations: [] }];
     expect(ReportNarrative.safeParse({ ...narrative, answers: uncited }).success).toBe(false);
-    expect(ReportNarrative.safeParse({ ...narrative, inputs_hash: "h" }).success).toBe(false);
     const asks = Array.from({ length: 3 }, () => ({ ask: "?", why: "!" }));
     expect(ReportNarrative.safeParse({ ...narrative, asks }).success).toBe(false);
   });

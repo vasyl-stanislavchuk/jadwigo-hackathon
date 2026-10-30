@@ -269,12 +269,12 @@ end
 $$;
 
 -- The API reads and adds the catalogue, goals' links and reports; it replaces a learner's mastery
--- rows whole; it changes a goal's name, words and status, a goal's skills, and a report's
+-- rows whole; it changes a goal's status, a goal's skills, and a report's
 -- narrative and decisions, nothing else.
 grant select, insert on curriculum, topic, skill, goal_skill, goal_topic, lesson_goal,
   learner_report to jadwigo_api;
 grant select, insert, delete on learner_skill_mastery to jadwigo_api;
 grant delete on goal_skill to jadwigo_api;
-grant update (name, words, status) on goal to jadwigo_api;
+grant update (status) on goal to jadwigo_api;
 grant update (narrative, decisions) on learner_report to jadwigo_api;
 grant select on learner_skill_evidence to jadwigo_api;
