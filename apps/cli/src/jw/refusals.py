@@ -25,7 +25,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from jw import items, settings_keys
+from jw import bank_client, items, settings_keys
 from jw.errors import JwError
 
 FLAGGED_RULE = "flagged"
@@ -109,10 +109,10 @@ def _refusal(
 
 
 def require_path(language: str) -> Path:
-    """The refusals file to write, or a JwError naming JADWIGO_BANK_DIR."""
+    """The refusals file to write, or BankDirNotConfigured, as `jw question show` raises it."""
     path = items.refusals_path(language)
     if path is None:
-        raise JwError(
+        raise bank_client.BankDirNotConfigured(
             f"{settings_keys.JADWIGO_BANK_DIR} is not set",
             hint=f"Set {settings_keys.JADWIGO_BANK_DIR} to the jadwigo-bank checkout; its "
             "refusals/<lang>.json is the file the stamp reads.",

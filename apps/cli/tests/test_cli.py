@@ -16,7 +16,7 @@ import fake_bank
 import pytest
 from click.testing import CliRunner
 
-from jw import items, lesson, refusals
+from jw import bank_client, items, lesson, refusals
 from jw.cli import main
 from jw.settings_keys import (
     JADWIGO_BANK_DIR,
@@ -181,6 +181,10 @@ def test_flag_refuses_an_unknown_id_an_empty_reason_and_a_missing_checkout(
     result = CliRunner().invoke(main, ["question", "flag", "fxr1", "why"])
     assert result.exit_code == 1
     assert JADWIGO_BANK_DIR in result.output
+    with pytest.raises(bank_client.BankDirNotConfigured):
+        refusals.assign("key-grades", "multi_select", "dl-fixture-1")
+    # Reading needs no checkout: no file is an empty one.
+    assert _report()["ready"] == 1
 
 
 class _ReadyBank(fake_bank.FakeBank):
