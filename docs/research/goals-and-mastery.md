@@ -2,6 +2,27 @@
 
 Issue: `dl-e8ov.5.37`, under the goals-loop epic `dl-e8ov.5` (milestone 2 in `docs/README.md`)
 
+> **Amended 2026-10-30 by the lead of wave 1 (`dl-e8ov.5.1`)** to the owner's decisions since this
+> note and to `docs/research/curriculum-and-skills.md` (`dl-e8ov.5.39`):
+> - owner question 1 is answered: the shared curriculum lives in shared Postgres tables in Jadwigo's
+>   pod, seeded from versioned files in the repo
+>   (`jadwigo-hackathon/decisions/2026-10-30-the-shared-curriculum-lives-in-shared-postgres-tables-seeded-fro`);
+> - `skill` is keyed `(pod_id, code)` with no uuid and no `skl_` prefix (the code is what
+>   `lesson_question.skill_ids` carries), with `status` reviewed, proposed, draft or retired,
+>   `aliases` and `prerequisites`, and no `maps_to`: a mapping is an alias on the pod's copy;
+>   `curriculum` gains `code` and `source_url`; `topic` has `code`, `area` and `text`;
+> - owner question 3 is answered: mastery is folded on read and kept in `learner_skill_mastery`
+>   (`jadwigo-learner-knowledge/decisions/2026-10-30-mastery-is-folded-on-read-from-the-evidence-view-and-also-kept-i`);
+> - owner question 2 is answered yes (tags may span subjects), question 5 is parked with other lesson
+>   languages, question 6 is no level names for parents, question 7 was dropped by the owner
+>   (ruling 58's 2 days stay; the day is a Europe/Warsaw calendar day as a core constant), and
+>   question 4 is parked;
+> - the evidence view reads `lesson_question.skill_ids` through a one-column security definer,
+>   `app.asked_skills()`, because the parent's pod cannot read `lesson_question`.
+>
+> The migration is `supabase/migrations/20261031120000_learner_knowledge.sql`; where this note and
+> the migration differ, the migration wins.
+
 ## The answer in 5 lines
 
 1. A goal is the parent's words plus a set of skills, with no stages. Skills come from a shared curriculum catalogue or, before the catalogue covers them, from draft skills private to the pod.

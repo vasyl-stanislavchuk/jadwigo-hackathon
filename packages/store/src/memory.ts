@@ -11,6 +11,7 @@ import {
   type AttemptResult,
   Ended,
   ErrorType,
+  FEATURED_POD_ID,
   Goal,
   GoalId,
   ID_PREFIXES,
@@ -20,6 +21,10 @@ import {
   Learner,
   type LearnerAttempts,
   LearnerId,
+  LearnerReport,
+  LearnerReportId,
+  type LearnerSkillEvidence,
+  LearnerSkillMastery,
   type LearnerSnapshot,
   Lesson,
   LessonId,
@@ -36,7 +41,10 @@ import {
   MemberId,
   Pod,
   PodId,
+  type ProposalDecision,
   SentAt,
+  Skill,
+  type SkillId,
   type Uuid,
   valueFor,
 } from "@jadwigo/contracts";
@@ -46,6 +54,8 @@ import { attemptResults } from "./result.ts";
 import {
   type AttemptRecord,
   type ExampleWithQuestions,
+  type GoalChange,
+  type GoalWithSkills,
   type HelpTwin,
   type LessonVersionWithQuestions,
   type MemberScope,
@@ -54,15 +64,20 @@ import {
   type NewAttemptAnswer,
   type NewAttemptQuestion,
   type NewClaim,
+  type NewGoal,
   type NewLearner,
+  type NewLearnerReport,
+  type NewLearnerSkillMastery,
   type NewLearnerWithGoals,
   type NewLesson,
   type NewLessonQuestion,
   type NewLessonQuestionExample,
   type NewLessonVersion,
   type NewPod,
+  type NewSkill,
   type OpenAssignment,
   type OpenedAttempt,
+  type ReportChange,
   type Store,
   StoreError,
 } from "./store.ts";
@@ -146,6 +161,14 @@ export class InMemoryStore implements Store {
   readonly #asked = new Map<string, AttemptQuestion[]>();
   /** By event id: the key a replay is matched on, across every pod. */
   readonly #answers = new Map<string, AttemptAnswer>();
+  /** By `<pod> <code>`: a skill is keyed by its pod and code. */
+  readonly #skills = new Map<string, Skill>();
+  /** By goal id: its skill codes, in the order linked. */
+  readonly #goalSkills = new Map<string, SkillId[]>();
+  /** By learner id: the mastery cache, by skill code. */
+  readonly #mastery = new Map<string, LearnerSkillMastery[]>();
+  /** By id, in the order written. */
+  readonly #reports = new Map<string, LearnerReport>();
 
   constructor(options: { now?: () => Date } = {}) {
     this.#now = options.now ?? (() => new Date());
@@ -216,7 +239,17 @@ export class InMemoryStore implements Store {
     const row = frozen(
       parse(
         Learner,
-        { age_group: null, created_at: this.#at(), ...learner, id, pod_id: pod },
+        {
+          age_group: null,
+          country: null,
+          curriculum_id: null,
+          school_grade: null,
+          school_language: null,
+          created_at: this.#at(),
+          ...learner,
+          id,
+          pod_id: pod,
+        },
         "the learner",
       ),
     );
@@ -922,6 +955,9 @@ export class InMemoryStore implements Store {
             pod_id: pod,
             learner_id: row.id,
             name,
+            words: null,
+            lesson_language: "pl",
+            status: "active",
             created_at: this.#at(),
           },
           "the goal",
@@ -1000,6 +1036,280 @@ export class InMemoryStore implements Store {
         results: this.#results(attempt.id),
       }));
     return { assignment, title: lesson.title, language: lesson.language, attempts };
+  }
+
+  // The learner knowledge base
+
+  async findLearnerPod(id: LearnerId): Promise<PodId | undefined> {
+    return this.#learners.get(id)?.pod_id;
+  }
+
+  async listSkills(pod: PodId): Promise<readonly Skill[]> {
+    this.#pod(pod);
+    const byCode = new Map<string, Skill>();
+    for (const skill of this.#skills.values()) {
+      if (skill.pod_id === FEATURED_POD_ID && !byCode.has(skill.code))
+        byCode.set(skill.code, skill);
+      if (skill.pod_id === pod) byCode.set(skill.code, skill);
+    }
+    return [...byCode.values()].sort((a, b) => (a.code < b.code ? -1 : 1));
+  }
+
+  async putSkills(pod: PodId, skills: readonly NewSkill[]): Promise<readonly Skill[]> {
+    this.#pod(pod);
+    const rows = skills.map((skill) => {
+      const stored = this.#skills.get(`${pod} ${skill.code}`);
+      return (
+        stored ??
+        frozen(parse(Skill, { ...skill, pod_id: pod, created_at: this.#at() }, "the skill"))
+      );
+    });
+    for (const row of rows) this.#skills.set(`${pod} ${row.code}`, row);
+    return rows;
+  }
+
+  async ensureSkills(pod: PodId, codes: readonly SkillId[]): Promise<readonly Skill[]> {
+    this.#pod(pod);
+    const rows = codes.map((code) => {
+      const stored = this.#skills.get(`${pod} ${code}`);
+      if (stored) return stored;
+      const shared = this.#skills.get(`${FEATURED_POD_ID} ${code}`);
+      const row = frozen(
+        parse(
+          Skill,
+          {
+            ...(shared ?? {
+              code,
+              topic_id: null,
+              kind: "accuracy",
+              status: "draft",
+              can_do: null,
+              aliases: [],
+              prerequisites: [],
+              source: "pod",
+            }),
+            pod_id: pod,
+            created_at: this.#at(),
+          },
+          "the skill",
+        ),
+      );
+      this.#skills.set(`${pod} ${code}`, row);
+      return row;
+    });
+    return rows;
+  }
+
+  async getLearnerEvidence(
+    pod: PodId,
+    learner: LearnerId,
+  ): Promise<readonly LearnerSkillEvidence[]> {
+    this.#inPod(this.#learners, pod, learner, "the learner");
+    // Row-level security by hand: the learner is the pod's, so the pod reads each of its attempts,
+    // its own or one it claimed (claimed_read), and app.asked_skills lets it read their skill codes.
+    const rows: LearnerSkillEvidence[] = [];
+    for (const attempt of this.#attempts.values()) {
+      if (attempt.learner_id !== learner || attempt.mode !== "real") continue;
+      const assignment = this.#assignments.get(attempt.assignment_id);
+      const version = this.#versions.get(attempt.lesson_version_id);
+      const lesson = version && this.#lessons.get(version.lesson_id);
+      if (!assignment || !lesson) throw notFound("the attempt's lesson");
+      const asked = this.#asked.get(attempt.id) ?? [];
+      for (const answer of this.#answers.values()) {
+        if (answer.attempt_id !== attempt.id) continue;
+        if (answer.kind !== "skip" && answer.correct === null) continue;
+        const question = asked.find((q) => q.seq === answer.seq);
+        const skillIds = question && this.#questions.get(question.lesson_question_id)?.skill_ids;
+        for (const skill_code of skillIds ?? []) {
+          rows.push({
+            pod_id: attempt.pod_id,
+            learner_id: learner,
+            attempt_id: attempt.id,
+            seq: answer.seq,
+            try_no: answer.try_no,
+            kind: answer.kind,
+            skill_code,
+            answered_at: answer.answered_at,
+            correct: answer.correct,
+            help_used: answer.help_used,
+            latency_ms: answer.latency_ms,
+            mistake_class: answer.mistake_class,
+            added: question?.added ?? "planned",
+            lesson_kind: lesson.kind,
+            hold_verdicts: assignment.hold_verdicts,
+          });
+        }
+      }
+    }
+    return rows.sort(
+      (a, b) =>
+        a.answered_at.localeCompare(b.answered_at) ||
+        (a.attempt_id < b.attempt_id ? -1 : a.attempt_id > b.attempt_id ? 1 : 0) ||
+        a.seq - b.seq ||
+        a.try_no - b.try_no ||
+        (a.skill_code < b.skill_code ? -1 : a.skill_code > b.skill_code ? 1 : 0),
+    );
+  }
+
+  async replaceMastery(
+    pod: PodId,
+    learner: LearnerId,
+    rows: readonly NewLearnerSkillMastery[],
+  ): Promise<readonly LearnerSkillMastery[]> {
+    this.#inPod(this.#learners, pod, learner, "the learner");
+    const computed_at = this.#at();
+    const written = rows
+      .map((row) =>
+        frozen(
+          parse(
+            LearnerSkillMastery,
+            { ...row, pod_id: pod, learner_id: learner, computed_at },
+            "a mastery row",
+          ),
+        ),
+      )
+      .sort((a, b) => (a.skill_code < b.skill_code ? -1 : 1));
+    if (new Set(written.map((r) => r.skill_code)).size !== written.length) {
+      throw new StoreError(ErrorType.enum.BadRequest, "a skill code repeats in the mastery rows");
+    }
+    this.#mastery.set(learner, written);
+    return written;
+  }
+
+  async getMastery(pod: PodId, learner: LearnerId): Promise<readonly LearnerSkillMastery[]> {
+    this.#inPod(this.#learners, pod, learner, "the learner");
+    return [...(this.#mastery.get(learner) ?? [])];
+  }
+
+  async listGoals(pod: PodId, learner: LearnerId): Promise<readonly GoalWithSkills[]> {
+    this.#inPod(this.#learners, pod, learner, "the learner");
+    return [...this.#goals.values()]
+      .filter((g) => g.learner_id === learner)
+      .sort(byAge)
+      .map((goal) => this.#withSkills(goal));
+  }
+
+  #withSkills(goal: Goal): GoalWithSkills {
+    return { goal, skill_codes: [...(this.#goalSkills.get(goal.id) ?? [])].sort() };
+  }
+
+  async addGoal(pod: PodId, learner: LearnerId, goal: NewGoal): Promise<GoalWithSkills> {
+    this.#inPod(this.#learners, pod, learner, "the learner");
+    const row = frozen(
+      parse(
+        Goal,
+        {
+          id: mint(GoalId, ID_PREFIXES.goal),
+          pod_id: pod,
+          learner_id: learner,
+          name: goal.name,
+          words: goal.words ?? null,
+          lesson_language: goal.lesson_language ?? "pl",
+          status: "active",
+          created_at: this.#at(),
+        },
+        "the goal",
+      ),
+    );
+    const codes = [...new Set(goal.skill_codes)];
+    await this.ensureSkills(pod, codes);
+    this.#goals.set(row.id, row);
+    this.#goalSkills.set(row.id, codes);
+    return this.#withSkills(row);
+  }
+
+  async updateGoal(
+    pod: PodId,
+    learner: LearnerId,
+    goal: GoalId,
+    change: GoalChange,
+  ): Promise<GoalWithSkills> {
+    const stored = this.#inPod(this.#goals, pod, goal, "the goal");
+    if (stored.learner_id !== learner) throw notFound("the goal");
+    const row = frozen(
+      parse(
+        Goal,
+        {
+          ...stored,
+          ...(change.status === undefined ? {} : { status: change.status }),
+        },
+        "the goal",
+      ),
+    );
+    if (change.skill_codes !== undefined) {
+      const codes = [...new Set(change.skill_codes)];
+      await this.ensureSkills(pod, codes);
+      this.#goalSkills.set(row.id, codes);
+    }
+    this.#goals.set(row.id, row);
+    return this.#withSkills(row);
+  }
+
+  async putReport(pod: PodId, report: NewLearnerReport): Promise<LearnerReport> {
+    this.#inPod(this.#learners, pod, report.learner_id, "the learner");
+    if (Date.parse(report.period_ends_at) < Date.parse(report.period_starts_at)) {
+      throw new StoreError(ErrorType.enum.BadRequest, "a report's period ends after it starts");
+    }
+    const row = frozen(
+      parse(
+        LearnerReport,
+        {
+          ...report,
+          id: mint(LearnerReportId, ID_PREFIXES.learner_report),
+          pod_id: pod,
+          narrative: null,
+          decisions: [],
+          created_at: this.#at(),
+        },
+        "the report",
+      ),
+    );
+    this.#reports.set(row.id, row);
+    return row;
+  }
+
+  async listReports(pod: PodId, learner: LearnerId): Promise<readonly LearnerReport[]> {
+    this.#inPod(this.#learners, pod, learner, "the learner");
+    // Newest first; 2 written at the same instant, the later written first.
+    return [...this.#reports.values()]
+      .filter((r) => r.learner_id === learner)
+      .reverse()
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .slice(0, LIMITS.reportsPerLearner);
+  }
+
+  async updateReport(
+    pod: PodId,
+    learner: LearnerId,
+    report: LearnerReportId,
+    change: ReportChange,
+  ): Promise<LearnerReport> {
+    const stored = this.#inPod(this.#reports, pod, report, "the report");
+    if (stored.learner_id !== learner) throw notFound("the report");
+    const proposals = new Set(stored.digest.proposals.map((p) => p.id));
+    for (const decision of change.decisions ?? []) {
+      if (!proposals.has(decision.proposal_id)) {
+        throw new StoreError(
+          ErrorType.enum.BadRequest,
+          `the report has no proposal ${decision.proposal_id}`,
+        );
+      }
+    }
+    let narrative = stored.narrative;
+    if (change.narrative !== undefined) {
+      if (narrative !== null && JSON.stringify(narrative) !== JSON.stringify(change.narrative)) {
+        throw new StoreError(ErrorType.enum.WriteOnce, "this report already has its narrative");
+      }
+      narrative = change.narrative;
+    }
+    const decided_at = this.#at();
+    const decisions: ProposalDecision[] = [
+      ...stored.decisions,
+      ...(change.decisions ?? []).map((d) => ({ ...d, decided_at })),
+    ];
+    const row = frozen(parse(LearnerReport, { ...stored, narrative, decisions }, "the report"));
+    this.#reports.set(row.id, row);
+    return row;
   }
 
   /** An attempt's `attempt_result` rows, in `seq` order. */

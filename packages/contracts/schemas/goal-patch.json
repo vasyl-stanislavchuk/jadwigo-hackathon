@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "status": {
+      "$ref": "#/$defs/GoalStatus"
+    },
+    "skill_codes": {
+      "maxItems": 50,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SkillId"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "GoalStatus": {
+      "type": "string",
+      "enum": [
+        "active",
+        "paused",
+        "reached",
+        "dropped"
+      ]
+    },
+    "SkillId": {
+      "type": "string",
+      "pattern": "^[a-z]+(\\.[a-z0-9-]+)+$"
+    }
+  }
+}

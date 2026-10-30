@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "skills": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Skill"
+      }
+    }
+  },
+  "required": [
+    "skills"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Skill": {
+      "type": "object",
+      "properties": {
+        "pod_id": {
+          "$ref": "#/$defs/PodId"
+        },
+        "code": {
+          "$ref": "#/$defs/SkillId"
+        },
+        "topic_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TopicId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "kind": {
+          "$ref": "#/$defs/SkillKind"
+        },
+        "status": {
+          "$ref": "#/$defs/SkillStatus"
+        },
+        "can_do": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CanDo"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
+        },
+        "prerequisites": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        }
+      },
+      "required": [
+        "pod_id",
+        "code",
+        "topic_id",
+        "kind",
+        "status",
+        "can_do",
+        "aliases",
+        "prerequisites",
+        "source",
+        "created_at"
+      ],
+      "additionalProperties": false
+    },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "SkillId": {
+      "type": "string",
+      "pattern": "^[a-z]+(\\.[a-z0-9-]+)+$"
+    },
+    "TopicId": {
+      "type": "string",
+      "pattern": "^top_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "SkillKind": {
+      "type": "string",
+      "enum": [
+        "accuracy",
+        "speed"
+      ]
+    },
+    "SkillStatus": {
+      "type": "string",
+      "enum": [
+        "reviewed",
+        "proposed",
+        "draft",
+        "retired"
+      ]
+    },
+    "CanDo": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/Language"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/CanDoLine"
+      }
+    },
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en",
+        "uk"
+      ]
+    },
+    "CanDoLine": {
+      "type": "object",
+      "properties": {
+        "child": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parent": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "child",
+        "parent",
+        "reviewed"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

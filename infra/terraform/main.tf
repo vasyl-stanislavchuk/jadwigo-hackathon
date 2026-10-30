@@ -79,6 +79,15 @@ module "app" {
     "GET /api/v1/learners/{id}/attempts/{attempt}/review",
     # The lesson overview (dl-uukj.30 wave 2): one assignment's attempts; a token route.
     "GET /api/v1/assignments/{id}/attempts",
+    # The learner knowledge base (dl-e8ov.5.1): a learner's skills, goals and reports; token routes.
+    "GET /api/v1/learners/{id}/skills",
+    "GET /api/v1/skills",
+    "GET /api/v1/learners/{id}/goals",
+    "POST /api/v1/learners/{id}/goals",
+    "PATCH /api/v1/learners/{id}/goals/{goal}",
+    "GET /api/v1/learners/{id}/reports",
+    "POST /api/v1/learners/{id}/reports",
+    "PATCH /api/v1/learners/{id}/reports/{report}",
   ]
 
   # The routes above whose ROUTES auth is "token": only these carry the JWT authorizer
@@ -91,6 +100,14 @@ module "app" {
     "GET /api/v1/learners/{id}/attempts",
     "GET /api/v1/learners/{id}/attempts/{attempt}/review",
     "GET /api/v1/assignments/{id}/attempts",
+    "GET /api/v1/learners/{id}/skills",
+    "GET /api/v1/skills",
+    "GET /api/v1/learners/{id}/goals",
+    "POST /api/v1/learners/{id}/goals",
+    "PATCH /api/v1/learners/{id}/goals/{goal}",
+    "GET /api/v1/learners/{id}/reports",
+    "POST /api/v1/learners/{id}/reports",
+    "PATCH /api/v1/learners/{id}/reports/{report}",
   ]
 
   jwt_issuer = "https://${var.supabase_ref}.supabase.co/auth/v1"

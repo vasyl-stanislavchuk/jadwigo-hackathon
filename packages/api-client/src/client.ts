@@ -30,18 +30,29 @@ import {
   ErrorEnvelope,
   type ErrorType,
   type Featured,
+  type GoalCreate,
+  type GoalId,
+  type GoalPatch,
   type HelpRequest,
   type HelpResult,
   type Language,
   type LearnerAttempts,
   type LearnerCreate,
+  type LearnerGoals,
   type LearnerId,
+  type LearnerReport,
+  type LearnerReportId,
+  type LearnerReports,
+  type LearnerSkills,
   type LearnerSnapshot,
   type Me,
   type ParentAttemptReview,
   type PlaygroundExamples,
+  type ReportCreate,
+  type ReportPatch,
   ROUTES,
   type Route,
+  type Skills,
 } from "@jadwigo/contracts";
 import { apiUrl } from "./url.ts";
 
@@ -107,8 +118,34 @@ export interface ParentClient {
   getAssignmentAttempts(assignmentId: AssignmentId): Promise<AssignmentAttempts>;
 }
 
+/**
+ * The learner knowledge base's calls (wave 1 of epic dl-e8ov.5). Each needs a token. Apart from
+ * `ParentClient`, so a view that needs only the parent's calls, or a test's fake of them, is not
+ * made to carry these too.
+ */
+export interface LearnerKnowledgeClient {
+  /** Where the learner stands on each skill, each goal's lists and the brief, folded on read. */
+  getLearnerSkills(learnerId: LearnerId): Promise<LearnerSkills>;
+  listSkills(): Promise<Skills>;
+  getLearnerGoals(learnerId: LearnerId): Promise<LearnerGoals>;
+  createGoal(learnerId: LearnerId, body: GoalCreate): Promise<LearnerGoals>;
+  patchGoal(learnerId: LearnerId, goalId: GoalId, body: GoalPatch): Promise<LearnerGoals>;
+  getLearnerReports(learnerId: LearnerId): Promise<LearnerReports>;
+  createReport(learnerId: LearnerId, body?: ReportCreate): Promise<LearnerReport>;
+  /** The narrative once (`WriteOnce` after), or the parent's decisions on its proposals. */
+  patchReport(
+    learnerId: LearnerId,
+    reportId: LearnerReportId,
+    body: ReportPatch,
+  ): Promise<LearnerReport>;
+}
+
 /** Every `/api/v1` call this client makes. */
-export type Client = AttemptClient & FeaturedClient & ParentClient & PlaygroundClient;
+export type Client = AttemptClient &
+  FeaturedClient &
+  ParentClient &
+  LearnerKnowledgeClient &
+  PlaygroundClient;
 
 /** A route's path with its `{name}` params filled in. */
 export function pathOf(route: Route, params: Record<string, string | number>): string {
@@ -192,5 +229,15 @@ export function createClient({
     getAssignmentAttempts: (assignmentId) =>
       call(ROUTES.getAssignmentAttempts, { id: assignmentId }, undefined),
     playgroundExamples: (language) => call(ROUTES.playgroundExamples, { language }, undefined),
+    getLearnerSkills: (learnerId) => call(ROUTES.getLearnerSkills, { id: learnerId }, undefined),
+    listSkills: () => call(ROUTES.listSkills, {}, undefined),
+    getLearnerGoals: (learnerId) => call(ROUTES.getLearnerGoals, { id: learnerId }, undefined),
+    createGoal: (learnerId, body) => call(ROUTES.createGoal, { id: learnerId }, body),
+    patchGoal: (learnerId, goalId, body) =>
+      call(ROUTES.patchGoal, { id: learnerId, goal: goalId }, body),
+    getLearnerReports: (learnerId) => call(ROUTES.getLearnerReports, { id: learnerId }, undefined),
+    createReport: (learnerId, body = {}) => call(ROUTES.createReport, { id: learnerId }, body),
+    patchReport: (learnerId, reportId, body) =>
+      call(ROUTES.patchReport, { id: learnerId, report: reportId }, body),
   };
 }

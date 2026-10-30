@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "skill_code": {
+      "$ref": "#/$defs/SkillId"
+    },
+    "list": {
+      "$ref": "#/$defs/BriefList"
+    },
+    "goal_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/GoalId"
+      }
+    },
+    "why": {
+      "type": "string",
+      "enum": [
+        "needs_attention",
+        "review_due",
+        "prerequisites_met",
+        "second_day_owed",
+        "school_tag"
+      ]
+    }
+  },
+  "required": [
+    "skill_code",
+    "list",
+    "goal_ids",
+    "why"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "SkillId": {
+      "type": "string",
+      "pattern": "^[a-z]+(\\.[a-z0-9-]+)+$"
+    },
+    "BriefList": {
+      "type": "string",
+      "enum": [
+        "reteach",
+        "review",
+        "new",
+        "recheck",
+        "school"
+      ]
+    },
+    "GoalId": {
+      "type": "string",
+      "pattern": "^gol_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    }
+  }
+}

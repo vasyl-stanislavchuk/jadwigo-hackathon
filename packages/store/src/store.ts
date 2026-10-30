@@ -11,10 +11,17 @@ import type {
   AttemptResult,
   Ended,
   ErrorType,
+  Goal,
+  GoalId,
+  GoalStatus,
   Language,
   Learner,
   LearnerAttempts,
   LearnerId,
+  LearnerReport,
+  LearnerReportId,
+  LearnerSkillEvidence,
+  LearnerSkillMastery,
   LearnerSnapshot,
   Lesson,
   LessonId,
@@ -28,6 +35,11 @@ import type {
   Placed,
   Pod,
   PodId,
+  ProposalDecision,
+  ReportDigest,
+  ReportNarrative,
+  Skill,
+  SkillId,
   Uuid,
 } from "@jadwigo/contracts";
 
@@ -49,7 +61,16 @@ export class StoreError extends Error {
 type New<T, Filled extends keyof T> = Omit<T, Filled | "pod_id"> & Partial<Pick<T, Filled>>;
 
 export type NewPod = Omit<Pod, "created_at">;
-export type NewLearner = New<Learner, "id" | "created_at" | "age_group">;
+export type NewLearner = New<
+  Learner,
+  | "id"
+  | "created_at"
+  | "age_group"
+  | "country"
+  | "curriculum_id"
+  | "school_grade"
+  | "school_language"
+>;
 export type NewLesson = New<Lesson, "id" | "created_at" | "status" | "reasoning" | "kind">;
 /** Distributive over the family union, so `family`, `data` and `key` stay linked. */
 export type NewLessonQuestion = LessonQuestion extends infer Q
@@ -150,6 +171,53 @@ export interface NewClaim {
   readonly attempt: AttemptId;
   readonly learner: LearnerId;
   readonly account: AccountId;
+}
+
+// The learner knowledge base (migration 20261031120000_learner_knowledge.sql, epic dl-e8ov.5)
+
+/** A catalogue skill as a seed or a pod writes it: the store stamps `created_at`. */
+export type NewSkill = Omit<Skill, "pod_id" | "created_at">;
+
+/** A goal with the codes of its skills, as the parent's routes read it. */
+export interface GoalWithSkills {
+  readonly goal: Goal;
+  readonly skill_codes: SkillId[];
+}
+
+/** A goal as a parent adds one. Its skill codes are copied into the pod first (`ensureSkills`). */
+export interface NewGoal {
+  readonly name: string;
+  readonly words?: string | null | undefined;
+  readonly lesson_language?: Language | undefined;
+  readonly skill_codes: readonly SkillId[];
+}
+
+/** What a goal's patch changes; `skill_codes` replaces its skills whole. */
+export interface GoalChange {
+  readonly status?: GoalStatus | undefined;
+  readonly skill_codes?: readonly SkillId[] | undefined;
+}
+
+/** A mastery row as the fold makes it: the store adds the pod, the learner and `computed_at`. */
+export type NewLearnerSkillMastery = Omit<
+  LearnerSkillMastery,
+  "pod_id" | "learner_id" | "computed_at"
+>;
+
+/** A report as code writes it: the digest, no narrative, no decisions yet. */
+export interface NewLearnerReport {
+  readonly learner_id: LearnerId;
+  readonly period_starts_at: string;
+  readonly period_ends_at: string;
+  readonly inputs_hash: string;
+  readonly reused: boolean;
+  readonly digest: ReportDigest;
+}
+
+/** What a report's patch writes: the narrative once, and decisions appended; the store stamps `decided_at`. */
+export interface ReportChange {
+  readonly narrative?: ReportNarrative | undefined;
+  readonly decisions?: readonly Omit<ProposalDecision, "decided_at">[] | undefined;
 }
 
 /** Everything one attempt has recorded: the evidence a snapshot is built from. */
@@ -397,6 +465,89 @@ export interface Store {
    * assignment nor any attempt on it.
    */
   getAssignmentAttempts(pod: PodId, assignment: AssignmentId): Promise<AssignmentAttempts>;
+
+  // The learner knowledge base (migration 20261031120000_learner_knowledge.sql). The store keeps
+  // no course logic here either: the fold, the brief and the digest are packages/core's, run by
+  // apps/api before it writes.
+
+  /**
+   * The pod that holds a learner, or undefined for an unknown id. Not scoped, like the other
+   * lookups (`app.learner_pod`): a featured attempt is finished under Jadwigo's pod, and the
+   * mastery rebuild after it runs under its learner's.
+   */
+  findLearnerPod(id: LearnerId): Promise<PodId | undefined>;
+  /**
+   * The catalogue `pod` reads, by code: its own rows, and the shared pod's (`FEATURED_POD_ID`,
+   * the `shared_read` policy) whose code it has no row for. Never another pod's.
+   */
+  listSkills(pod: PodId): Promise<readonly Skill[]>;
+  /**
+   * Writes skills into `pod`, once per code: a code the pod holds returns the stored row, as
+   * content does. The curriculum seed writes the shared catalogue into Jadwigo's pod with it.
+   */
+  putSkills(pod: PodId, skills: readonly NewSkill[]): Promise<readonly Skill[]>;
+  /**
+   * Makes sure `pod` has a row for each code, and returns them in the order given: a code the pod
+   * holds stays as it is; one the shared catalogue holds is copied once (its kind, status, topic,
+   * can-do lines, aliases and prerequisites, `source` kept); an unknown one becomes a `draft`.
+   * The caller resolves aliases first (`resolveSkill` in packages/core).
+   */
+  ensureSkills(pod: PodId, codes: readonly SkillId[]): Promise<readonly Skill[]>;
+  /**
+   * The `learner_skill_evidence` rows of a learner of `pod`, ordered by `answered_at`, then
+   * attempt, `seq`, `try_no` and skill code: one row per answer and skill code its question
+   * carries, for real attempts only, a skip or a judged try (a try no judge marked gives none).
+   * A claimed attempt played in another pod is read here too. A learner outside `pod` is `NotFound`.
+   */
+  getLearnerEvidence(pod: PodId, learner: LearnerId): Promise<readonly LearnerSkillEvidence[]>;
+  /**
+   * Replaces a learner's mastery rows whole, in one unit with the learner held, so 2 rebuilds at
+   * once leave one of the 2 sets, never a mix. `computed_at` is now. Returns them by skill code.
+   */
+  replaceMastery(
+    pod: PodId,
+    learner: LearnerId,
+    rows: readonly NewLearnerSkillMastery[],
+  ): Promise<readonly LearnerSkillMastery[]>;
+  /** A learner's mastery rows, by skill code. A learner outside `pod` is `NotFound`. */
+  getMastery(pod: PodId, learner: LearnerId): Promise<readonly LearnerSkillMastery[]>;
+  /**
+   * A learner's goals with their skill codes (each once, by code), oldest first. A learner
+   * outside `pod` is `NotFound`.
+   */
+  listGoals(pod: PodId, learner: LearnerId): Promise<readonly GoalWithSkills[]>;
+  /**
+   * Adds a goal to a learner of `pod` in one unit: its skill codes are made sure of first
+   * (`ensureSkills`), then linked, each once. `status` is `active`, and
+   * `lesson_language` is `pl` unless given.
+   */
+  addGoal(pod: PodId, learner: LearnerId, goal: NewGoal): Promise<GoalWithSkills>;
+  /**
+   * Changes a goal's status, and replaces its skills when `skill_codes` is given
+   * (made sure of first, as `addGoal` does). A goal outside the learner or `pod` is `NotFound`.
+   */
+  updateGoal(
+    pod: PodId,
+    learner: LearnerId,
+    goal: GoalId,
+    change: GoalChange,
+  ): Promise<GoalWithSkills>;
+  /** Writes a report on a learner of `pod`: narrative null, no decisions. */
+  putReport(pod: PodId, report: NewLearnerReport): Promise<LearnerReport>;
+  /** A learner's reports, newest first, at most `LIMITS.reportsPerLearner`. */
+  listReports(pod: PodId, learner: LearnerId): Promise<readonly LearnerReport[]>;
+  /**
+   * Writes a report's narrative once (the same narrative again returns the report; another is
+   * `WriteOnce`) and appends the parent's decisions, each stamped `decided_at` now. A decision on a
+   * proposal the digest does not have is `BadRequest`, checked before anything is written. A
+   * report outside the learner or `pod` is `NotFound`.
+   */
+  updateReport(
+    pod: PodId,
+    learner: LearnerId,
+    report: LearnerReportId,
+    change: ReportChange,
+  ): Promise<LearnerReport>;
 
   /**
    * The `attempt_result` view's rows, in `seq` order (access pattern 8): the parent's full rows.

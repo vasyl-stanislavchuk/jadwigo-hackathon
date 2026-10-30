@@ -15,6 +15,23 @@
       "type": "string",
       "minLength": 1
     },
+    "words": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "lesson_language": {
+      "$ref": "#/$defs/Language"
+    },
+    "status": {
+      "$ref": "#/$defs/GoalStatus"
+    },
     "created_at": {
       "type": "string",
       "format": "date-time",
@@ -26,6 +43,9 @@
     "pod_id",
     "learner_id",
     "name",
+    "words",
+    "lesson_language",
+    "status",
     "created_at"
   ],
   "additionalProperties": false,
@@ -41,6 +61,23 @@
     "LearnerId": {
       "type": "string",
       "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en",
+        "uk"
+      ]
+    },
+    "GoalStatus": {
+      "type": "string",
+      "enum": [
+        "active",
+        "paused",
+        "reached",
+        "dropped"
+      ]
     }
   }
 }
