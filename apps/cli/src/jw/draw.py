@@ -18,6 +18,12 @@ What a page can tell the draw today: an item's problem type is known only for th
 lists (up to 3 per problem type); the other item ids have no problem type on the page, so they are
 drawn only after the typed ones run out. A row without a fetched page has no item ids at all, and
 is left out with that reason.
+
+Only lesson-ready items are drawn (dl-a38n.32.10, decisions dl-kaxj and dl-be2l): a page the
+readiness stamp built carries `items.ready_ids[lang]` and `items.count.ready[lang]`, and the draw
+takes its ids from there; a set with none ready in the lesson's language is left out with
+`no item is lesson-ready in <lang>`. A page built before the stamp has neither, so the draw falls
+back to `items.ids`, and `jw.items.load_item` then refuses each item as `not checked`: fail-closed.
 """
 
 from __future__ import annotations
@@ -179,6 +185,38 @@ def _type_skills(set_skills: list[str], ptype: Mapping[str, Any] | None) -> tupl
     return (matched[0],) if len(matched) == 1 else tuple(set_skills)
 
 
+# An item the page does not list as ready; `jw.lesson` replaces it with load_item's own reason.
+NOT_READY_ITEM = "not lesson-ready"
+
+
+def not_ready_reason(language: str) -> str:
+    """Why a set with no lesson-ready item in `language` gives nothing."""
+    return f"no item is lesson-ready in {language}"
+
+
+def ready_ids(page: Mapping[str, Any], language: str) -> list[str] | None:
+    """The page's lesson-ready item ids in `language`, or None for a page the readiness stamp did
+    not build (no `ready_ids` and no `count.ready`): then every id is drawn and load_item judges."""
+    page_items = page.get("items") or {}
+    ready = page_items.get("ready_ids")
+    if isinstance(ready, Mapping):
+        return [str(i) for i in ready.get(language) or []]
+    if isinstance((page_items.get("count") or {}).get("ready"), Mapping):
+        return []  # counted but not listed: nothing to draw by id
+    return None
+
+
+def ready_count(page: Mapping[str, Any], language: str) -> int | None:
+    """How many items are lesson-ready in `language`: `count.ready[lang]`, else the length of
+    `ready_ids[lang]`, else None for a page built before the stamp."""
+    page_items = page.get("items") or {}
+    counted = (page_items.get("count") or {}).get("ready")
+    if isinstance(counted, Mapping):
+        return int(counted.get(language) or 0)
+    listed = ready_ids(page, language)
+    return None if listed is None else len(listed)
+
+
 def _plays(page: Mapping[str, Any], language: str) -> str | None:
     """Why the set does not play in `language`, or None when it does."""
     if not (page.get("languages") or {}).get(language):
@@ -188,6 +226,8 @@ def _plays(page: Mapping[str, Any], language: str) -> str | None:
         return f"no items in {language}"
     if (page.get("items") or {}).get("plays_share") == 0:
         return "no item plays (plays_share 0)"
+    if ready_count(page, language) == 0:
+        return not_ready_reason(language)
     return None
 
 
@@ -213,12 +253,17 @@ def _candidates(
             continue
         skills = _set_skills(by_id.get(set_id), page)
         order = int((page.get("source_place") or {}).get("order") or 0)
+        ready = ready_ids(page, language)
+        ids = [str(i) for i in (page.get("items") or {}).get("ids") or []]
         typed: set[str] = set()
         for ptype in page.get("problem_types") or []:
             typed_skills = _type_skills(skills, ptype)
             for sample in ptype.get("samples") or []:
                 item = str(sample["item_id"])
                 typed.add(item)
+                if ready is not None and item not in ready:
+                    left.append(Left(item, NOT_READY_ITEM))
+                    continue
                 if item in flagged:
                     left.append(Left(item, "its media is flagged (raster words or no alt)"))
                     continue
@@ -230,8 +275,11 @@ def _candidates(
                         item, set_id, rank, ptype["name"], sample[language], typed_skills, order
                     )
                 )
-        for item in (page.get("items") or {}).get("ids") or []:
+        for item in [*ids, *(i for i in ready or [] if i not in ids)]:
             if item in typed:
+                continue
+            if ready is not None and item not in ready:
+                left.append(Left(item, NOT_READY_ITEM))
                 continue
             if item in flagged:
                 left.append(Left(item, "its media is flagged (raster words or no alt)"))

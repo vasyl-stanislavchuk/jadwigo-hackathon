@@ -262,8 +262,10 @@ def test_an_item_that_is_not_lesson_ready_is_refused_with_its_reason(
         (None, "not checked"),
         ({"kind": "plays", "rules_version": "fixture-1"}, "not checked"),
         ({"kind": "something new"}, "not checked"),
-        ({"kind": "flagged", "by": "lead", "reason": "the picture shows 5 dots", "on": "2026-10-30"},
-         "flagged: the picture shows 5 dots"),
+        (
+            {"kind": "flagged", "by": "lead", "reason": "the picture shows 5 dots", "on": "x"},
+            "flagged: the picture shows 5 dots",
+        ),
         ({"kind": "waiting", "issue": "dl-x", "reason": "its parts mix families"},
          "its parts mix families"),
     ],

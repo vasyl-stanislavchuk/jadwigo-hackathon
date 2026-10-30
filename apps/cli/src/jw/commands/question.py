@@ -201,7 +201,8 @@ def gaps(
     for row in report["needs"]:
         need = row["need"]
         what = need.get("words") or ", ".join(need.get("skills") or [])
-        click.echo(f"{row['verdict']:<9} {row['rows']:>3} rows  {what}")
+        why = f"  ({row['reason']})" if row.get("reason") else ""
+        click.echo(f"{row['verdict']:<9} {row['rows']:>3} rows  {what}{why}")
 
 
 @group.command(cls=_EmitErrorsCommand)

@@ -22,6 +22,7 @@ from click.testing import CliRunner
 from jw import bank_client
 from jw.cli import main as cli
 from jw.settings_keys import (
+    JADWIGO_BANK_DIR,
     JW_API_URL,
     JW_BANK_ENV_FILE,
     JW_BANK_READ_TOKEN,
@@ -286,3 +287,72 @@ def test_the_files_token_is_in_no_argv_and_no_output(tmp_path: Path) -> None:
         assert TOKEN not in run.stdout and TOKEN not in run.stderr
         bank_client.validate_envelope(json.loads(run.stdout))
     assert json.loads(failed.stdout)["state"][0]["detail"] == "the bank answered HTTP 500"
+
+
+# ---------------- dl-a38n.32.10: a found set with nothing lesson-ready is a gap ----
+
+READY = Path(__file__).resolve().parent / "fixtures" / "ready"
+
+
+class ReadyBank(fake_bank.FakeBank):
+    """The fake bank, answering with the planted fixture's one set, set_khan_fx0009, whose page
+    lists 1 lesson-ready item in Polish and none in English."""
+
+    def answer(self, need: Any, query: dict[str, str]) -> dict[str, Any]:
+        envelope: dict[str, Any] = json.loads((READY / "envelope.json").read_text("utf-8"))
+        envelope["need"] = need
+        return envelope
+
+
+@pytest.fixture
+def ready_bank(monkeypatch: pytest.MonkeyPatch) -> Iterator[Any]:
+    fake = ReadyBank().start()
+    monkeypatch.setenv(JW_API_URL, fake.url)
+    monkeypatch.setenv(JADWIGO_BANK_DIR, str(READY))
+    yield fake
+    fake.stop()
+
+
+def _gap_need(language: str) -> dict[str, Any]:
+    return {"language": language, "grade": "3", "words": "liczby parzyste"}
+
+
+def test_a_set_with_a_ready_item_in_the_needs_language_fills_it(ready_bank: Any) -> None:
+    (row,) = bank_client.gaps([_gap_need("pl")])["needs"]
+
+    assert row["verdict"] == "found"
+    assert "not_ready" not in row and "reason" not in row
+
+
+def test_a_set_with_none_ready_in_the_needs_language_is_a_gap_with_the_reason(
+    ready_bank: Any,
+) -> None:
+    report = bank_client.gaps([_gap_need("en"), _gap_need("pl")])
+
+    english, polish = report["needs"]
+    assert english["verdict"] == "gap"
+    assert english["reason"] == "no item is lesson-ready in en"
+    assert english["not_ready"] == ["set_khan_fx0009"]
+    assert english["rows"] == 1
+    assert polish["verdict"] == "found"
+    assert report["gaps"] == 1
+
+
+def test_with_no_page_to_read_a_found_set_still_counts(
+    ready_bank: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv(JADWIGO_BANK_DIR)
+
+    (row,) = bank_client.gaps([_gap_need("en")])["needs"]
+
+    assert row["verdict"] == "found"
+
+
+def test_the_gaps_verb_prints_the_reason(ready_bank: Any) -> None:
+    args = ["question", "gaps", "--words", "liczby parzyste", "--grade", "3", "--language", "en"]
+    result = CliRunner().invoke(cli, args)
+
+    assert result.exit_code == 0, result.output
+    assert result.output.strip() == (
+        "gap         1 rows  liczby parzyste  (no item is lesson-ready in en)"
+    )

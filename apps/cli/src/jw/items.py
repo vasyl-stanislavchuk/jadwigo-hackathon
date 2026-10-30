@@ -7,10 +7,10 @@ the bucket's `khan/converted/pl.json`, bead dl-e8ov.5.38.1):
 (JW_KHAN_CONVERTED, else <JADWIGO_KHAN_DIR>/converted-pl.json, both read through `setting`).
 
 `load_item` hands out only a lesson-ready item (dl-a38n.32.9, decisions dl-kaxj and dl-be2l): its
-`status` is `{kind: "plays", rules_version, checked_at}`, stamped by the readiness check. Anything
-else raises `NotReady` with the reason a draft's `left_out` carries: `renders wrong: <rule>` (refused
-by a check), `not checked` (plays with no `checked_at`, or no status), `flagged: <reason>` (a person
-pulled it), or the converter's own reason (waiting). A missing verdict is refused, never served.
+`status` is `{kind: "plays", rules_version, checked_at}`, stamped by the readiness check.
+Anything else raises `NotReady` with the reason a draft's `left_out` carries: `renders wrong:
+<rule>` (refused by a check), `not checked` (plays with no `checked_at`, or no status),
+`flagged: <reason>` (a person pulled it), or the converter's own reason (waiting). A missing verdict is refused, never served.
 The refusals file beside the converted file, `refusals/<lang>.json` (`{shapes, flags}`, jadwigo-bank
 schemas/refusals.schema.json), is read too, so a flag holds from the moment it is written, before
 the next conversion stamps it into the item.
@@ -150,6 +150,18 @@ def _credit(item: dict[str, Any], licence_note: str | None, path: Path) -> dict[
     if source.get("url"):
         credit["url"] = source["url"]
     return credit
+
+
+def why_not(item_id: str, language: str = "pl") -> str | None:
+    """Why `load_item` would refuse this item, or None: the reason a draft's left_out names for
+    an item its set page does not list as ready."""
+    try:
+        load_item(item_id, language)
+    except NotReady as exc:
+        return exc.reason
+    except JwError as exc:
+        return str(exc)
+    return None
 
 
 def load_item(item_id: str, language: str = "pl") -> dict[str, Any]:

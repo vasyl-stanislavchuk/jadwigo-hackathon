@@ -42,12 +42,13 @@ required, and replaces them with placeholders before the search
 The draft's `request`, the lesson file's id, title and reasoning are built from the guarded text;
 the raw request and the names are used in-process only and never stored, echoed or logged.
 
-An item `load_item` refuses goes to `left_out` with its reason, and the draw runs again with the refused ids in `flagged`, until every
-drawn item loads or the sets run out. Drawing again, rather than over-drawing and trimming, keeps
-the draw's variety rule over the questions that are actually asked. Only a lesson-ready item
-loads (dl-a38n.32.9, decisions dl-kaxj and dl-be2l), so the reason is `renders wrong: <rule>`,
-`not checked`, `flagged: <reason>` or the converter's own, as `jw.items.NotReady` gives it; an
-item missing from the file keeps the error's text.
+An item `load_item` refuses goes to `left_out` with its reason, and the draw runs again with the
+refused ids in `flagged`, until every drawn item loads or the sets run out. Drawing again, rather
+than over-drawing and trimming, keeps the draw's variety rule over the questions that are actually
+asked. Only a lesson-ready item loads (dl-a38n.32.9, decisions dl-kaxj and dl-be2l), so the reason
+is `renders wrong: <rule>`, `not checked`, `flagged: <reason>` or the converter's own, as
+`jw.items.NotReady` gives it; an item missing from the file keeps the error's text. An item its set
+page does not list as ready (dl-a38n.32.10) is left out by the draw, with load_item's reason too.
 """
 
 from __future__ import annotations
@@ -68,7 +69,7 @@ from typing import Any
 
 from jw import bank_client, items, pii, settings_keys
 from jw.commands import question
-from jw.draw import DRAW_RULES, Draw, draw
+from jw.draw import DRAW_RULES, NOT_READY_ITEM, Draw, Left, draw
 from jw.errors import JwError
 
 RUNGS = ("look", "boost", "almost", "worked")
@@ -292,6 +293,13 @@ def _draw_loading(
                 new = True
         if not new:
             return result, loaded, refused
+
+
+def _not_ready(left: Left, language: str) -> str:
+    """The draw's reason, or for an item the page does not list as ready, load_item's own."""
+    if left.reason != NOT_READY_ITEM:
+        return left.reason
+    return items.why_not(left.id, language) or left.reason
 
 
 def _slug(text: str) -> str:
@@ -579,9 +587,11 @@ def draft(
         if skill_note:
             questions[-1]["skill_note"] = skill_note
         _add_times_rule(questions[-1])
-    # A refused item's left_out line says why load_item refused it, not that it was flagged.
+    # A refused item's left_out line says why load_item refused it, not that it was flagged; an
+    # item its page does not list as ready says why the converted file holds it back.
     left_out = [
-        {"id": left.id, "reason": refused.get(left.id, left.reason)} for left in result.left_out
+        {"id": left.id, "reason": refused.get(left.id) or _not_ready(left, language)}
+        for left in result.left_out
     ]
 
     used_sets = list(dict.fromkeys(q["set_id"] for q in questions))
