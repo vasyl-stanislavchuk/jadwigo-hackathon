@@ -36,3 +36,10 @@ export function authConfig(
 export function draftsDir(env: Record<string, string | undefined> = process.env): string {
   return builderDraftsDir(env);
 }
+
+/** The Claude Code session `make builder` started (JADWIGO_BUILDER_SESSION), when this dev server
+ * runs in its environment; else "", and the drafts directory's .builder/session.json names it
+ * (dl-a38n.15). */
+export function builderSession(env: Record<string, string | undefined> = process.env): string {
+  return (env["JADWIGO_BUILDER_SESSION"] ?? "").trim();
+}

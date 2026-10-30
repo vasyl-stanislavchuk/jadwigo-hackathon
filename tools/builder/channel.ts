@@ -8,7 +8,8 @@
 // Channels are a research preview: the session must start with
 // --dangerously-load-development-channels=server:jadwigo-builder. README.md here is the install.
 // Run: bun tools/builder/channel.ts (Claude Code starts it; it speaks MCP on stdio)
-import { existsSync, mkdirSync, readdirSync, watch, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, watch, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -17,11 +18,13 @@ import {
   type Request,
   type Result,
 } from "@modelcontextprotocol/sdk/types.js";
+import { mapTranscript, readTail, type Work, workSummary } from "./activity.ts";
 import { builderSession, draftsDir } from "./config.ts";
 import {
   ASKS_SUFFIX,
   type Ask,
   appendRow,
+  type BuilderSession,
   consumedFile,
   consumedTs,
   type Heartbeat,
@@ -32,7 +35,9 @@ import {
   type Reply,
   type ReplyKind,
   readAsks,
+  readRows,
   repliesFile,
+  sessionFile,
 } from "./drafts.ts";
 import { CHANNELS_FLAG, channelLoaded, psProc, SERVER_NAME } from "./flag.ts";
 
@@ -137,7 +142,63 @@ export type ReplyArgs = {
  * The reply tool: one row on the draft's replies file, or the reason it was refused. A reply names
  * an ask the page sent, so an answer always sits under the comment it answers.
  */
-export function reply(dir: string, args: ReplyArgs): { ok: true; row: Reply } | { error: string } {
+/** Where the builder session's transcript is, or null when this server cannot be sure whose it is. */
+export type TranscriptOf = () => string | null;
+
+/**
+ * The transcript `make builder` named in session.json, only when this server runs in that session:
+ * any other session's work would be someone else's.
+ */
+export function sessionTranscript(dir: string, session: string): string | null {
+  if (!session) return null;
+  try {
+    const record = JSON.parse(readFileSync(sessionFile(dir), "utf8")) as Partial<BuilderSession>;
+    return record.session_id === session && typeof record.transcript === "string"
+      ? record.transcript
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+const ANSWERS = new Set(["done", "question"]);
+
+/** Where the work for an answer starts: the session taking the ask, or its last answer since. */
+function workSince(dir: string, draftId: string, askTs: string): string | null {
+  const marks = [
+    ...readRows(consumedFile(dir, draftId))
+      .filter((row) => row["ask_ts"] === askTs)
+      .map((row) => row["consumed_at"]),
+    ...readRows(repliesFile(dir, draftId))
+      .filter((row) => row["in_reply_to"] === askTs && ANSWERS.has(String(row["kind"])))
+      .map((row) => row["ts"]),
+  ].filter((mark): mark is string => typeof mark === "string");
+  return marks.sort().at(-1) ?? null;
+}
+
+/**
+ * What the session did for this answer, from its transcript, at the moment it answers. Only an
+ * answer (done or question) carries it, and none when the transcript shows nothing in the window.
+ */
+function workFor(
+  dir: string,
+  draftId: string,
+  askTs: string,
+  kind: ReplyKind,
+  transcript: string | null,
+  until: string,
+): Work | null {
+  if (!ANSWERS.has(kind) || !transcript) return null;
+  const since = workSince(dir, draftId, askTs);
+  if (!since) return null;
+  return workSummary(mapTranscript(readTail(transcript), transcript), since, until);
+}
+
+export function reply(
+  dir: string,
+  args: ReplyArgs,
+  transcriptOf: TranscriptOf = () => null,
+): { ok: true; row: Reply } | { error: string } {
   const draftId = typeof args.draft_id === "string" ? args.draft_id.trim() : "";
   const inReplyTo = typeof args.in_reply_to === "string" ? args.in_reply_to.trim() : "";
   const text = typeof args.text === "string" ? args.text : "";
@@ -153,12 +214,15 @@ export function reply(dir: string, args: ReplyArgs): { ok: true; row: Reply } | 
       error: `draft ${draftId} has no ask ${inReplyTo}; pass the ask_ts from the channel tag`,
     };
   }
+  const ts = new Date().toISOString();
+  const work = workFor(dir, draftId, inReplyTo, kind as ReplyKind, transcriptOf(), ts);
   const row: Reply = {
-    ts: new Date().toISOString(),
+    ts,
     draft_id: draftId,
     in_reply_to: inReplyTo,
     kind: kind as ReplyKind,
     text,
+    ...(work ? { work } : {}),
   };
   appendRow(repliesFile(dir, draftId), row);
   return { ok: true, row };
@@ -172,7 +236,10 @@ const INSTRUCTIONS = [
   "done when it lands or is answered, note for something they should know. The page shows the reply under the comment.",
 ].join(" ");
 
-export function createServer(dir: string): Server<Request, ChannelNotification, Result> {
+export function createServer(
+  dir: string,
+  transcriptOf: TranscriptOf = () => null,
+): Server<Request, ChannelNotification, Result> {
   const server = new Server<Request, ChannelNotification, Result>(
     { name: SERVER_NAME, version: "0.1.0" },
     {
@@ -210,7 +277,7 @@ export function createServer(dir: string): Server<Request, ChannelNotification, 
         isError: true,
       };
     }
-    const result = reply(dir, (request.params.arguments ?? {}) as ReplyArgs);
+    const result = reply(dir, (request.params.arguments ?? {}) as ReplyArgs, transcriptOf);
     if ("error" in result) {
       return { content: [{ type: "text", text: result.error }], isError: true };
     }
@@ -265,7 +332,7 @@ async function main() {
         "would drop every comment. Nothing is sent or consumed; start the session with make builder.",
     );
   }
-  const server = createServer(dir);
+  const server = createServer(dir, () => sessionTranscript(dir, builderSession()));
   await server.connect(new StdioServerTransport());
   const sleep = wakeOnAsks(dir);
   for (;;) {
@@ -292,8 +359,9 @@ async function main() {
 }
 
 function writeHeartbeat(dir: string, beat: Heartbeat) {
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(heartbeatFile(dir), `${JSON.stringify(beat)}\n`);
+  const path = heartbeatFile(dir);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(beat)}\n`);
 }
 
 if (import.meta.main) {

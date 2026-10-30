@@ -14,7 +14,7 @@ came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
 | `jw question gaps --words "..." --skill <id> --grade 3` | Each need searched once, with `found`, `gap` or `degraded` | the bank URL and token |
 | `jw question item <item id>` | One converted item: its family step with key and help, credit and `based_on` | `JW_KHAN_CONVERTED` |
 | `jw lesson draft "6 zadań z mnożenia, klasa 3" --grade 3 --topic mnożenie --name <name>` (or `--no-names`) | A lesson draft: drawn questions copied whole from the bank, kept under a `draft_id`, and what is left to write | all of the above, and `JADWIGO_REPO_DIR` and `bun` for the mistake classes |
-| `jw lesson check <draft_id> <words.json>` | The card, the lesson file's path and its `/play/` path, or errors by step id | `JADWIGO_REPO_DIR` and `bun` |
+| `jw lesson check <draft_id> <words.json>` | The card, the lesson file's path, the import command and then its `/play/` path, or errors by step id | `JADWIGO_REPO_DIR` and `bun` |
 
 - **Search** returns the envelope as the bank sent it. The `/api/v1` route answers stage `final`
   with every arm and takes no query fields, so `--stage` and `--arm` reach only the bank's own
@@ -128,7 +128,13 @@ when the parent asks
    The player maps the hints onto the ladder: the first two on `look` and `boost`, the rest
    before the last on `almost`, the last on `worked`, and a hint that prints the answer waits for
    `almost`. When no hint reaches `almost`, the copy writes it as `worked` with its last line
-   blank. The draft is kept in `<tmp>/jw-drafts/<draft_id>.json`, and the lesson as copied, with
+   blank. One change is made by code: an `enter` question that is plainly a×b (its figure reads
+   `a · b =`, and its key accepts one whole number, a×b, and names no rule) gets the
+   multiplication rule on its key, `{"rule": "times_table", "a", "b", "recent": []}`, recorded as
+   a `tutor_notes` entry in `based_on.changes`, so its misses name their class (`add_for_multiply`,
+   `neighbour_row`, ...)
+   (`jadwigo-ai-workflows/decisions/2026-10-30-jw-adds-the-multiplication-mistake-rule-by-code-to-a-copied-axb`).
+   Every other key stays as the bank has it. The draft is kept in `<tmp>/jw-drafts/<draft_id>.json`, and the lesson as copied, with
    no twin yet, is run through `check.ts` once: `plays_as_copied` says whether it passed, and
    each question's `mistake_classes` are the classes `check.ts` names for its step (`null` until
    `check.ts` sends them, `dl-e8ov.5.38.11`, or when no checkout or `bun` is found).
@@ -153,8 +159,10 @@ when the parent asks
    it was drawn, and what was left out. `ok: false` lists errors by step id; fix them and check
    again. From a shell: `jw lesson check <draft_id> words.json`, where `words.json` is the `help`
    object.
-6. **Import.** The owner reads the card and imports the file into jadwigo-dev from the repo root:
-   `make lesson-import FILE=<lesson_file> ENV=dev`. The lesson then plays at the card's `play_path`.
+6. **Import, then play.** The owner reads the card and imports the file into jadwigo-dev from the
+   repo root with the command the answer's `import_command` and the card's `next` name:
+   `make lesson-import FILE=<lesson_file> ENV=dev`. Only then does the lesson play at the card's
+   `play_path`; before the import that path does not exist (`dl-e8ov.5.38.13`).
 
 In Claude Code, with the server registered as below, the owner asks in plain words:
 

@@ -50,7 +50,7 @@ describe("the session", () => {
     );
     const path = writeSession(join(dir, "drafts"), record);
 
-    expect(path).toBe(join(dir, "drafts", "session.json"));
+    expect(path).toBe(join(dir, "drafts", ".builder", "session.json"));
     expect(JSON.parse(readFileSync(path, "utf8"))).toEqual({
       session_id: id,
       started_at: new Date().toISOString(),

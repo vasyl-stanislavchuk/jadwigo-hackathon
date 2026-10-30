@@ -1,16 +1,30 @@
 ---
 title: Tokens
-description: Every Zeszyt token, primitive, role and alias, with its value in light and dark.
+description: Every token in every stylesheet the app loads, Zeszyt's tiers, the lesson's sizes, the maths, money and terminal card palettes and Tailwind's names for them, with values in light and dark.
 ---
 
 import Generated from "../../../components/Generated.astro";
+import TokenGroupTable from "../../../components/TokenGroupTable.astro";
+import TokenSheetTable from "../../../components/TokenSheetTable.astro";
+import TokenStageTable from "../../../components/TokenStageTable.astro";
 import TokenTable from "../../../components/TokenTable.astro";
+import TokenUtilityTable from "../../../components/TokenUtilityTable.astro";
 
 A token is a named value, a colour, a size or a duration, that every part of the app reads in
 place of a literal. This page is for anyone styling a part or checking what a token comes to: it
-lists every one, with its value in light and dark.
+lists every token in every stylesheet the app loads, with its value in light and dark.
 
-The [Design system](/design-system/#3-tiers-of-tokens) overview explains the 3 tiers they come in.
+The [Design system](/design-system/#3-tiers-of-tokens) overview explains the 3 tiers Zeszyt's
+colours come in.
+
+## Where the tokens are set
+
+The app loads one stylesheet, which brings in the others. Most of what a page shows is Zeszyt's
+(`foundation.css`): its roles, aliases and primitives, and its type, shape, space and motion
+steps. The rest are Tailwind's type steps and a few layout sizes (`tokens.css`), the lesson's
+sizes (`kids.css` and `stage.css`), 3 palettes of their own (`tokens.css`), and Tailwind's names
+for all of them (`tailwind.css`). A few properties a rule sets only for its own part, such as the
+edge a picked option stands on, are not tokens and are not listed.
 
 ## Sizes on a phone and on a parent's page
 
@@ -22,6 +36,52 @@ motion every duration is 0.
 The `--jw-page-*` steps are the adult's scale on an app page, the parent's screens: a first
 heading of 28 px (26 on a phone), a second of 22 px (20 on a phone), and body text, a third
 heading and a label at 17 px with a line height of 1.5. A lesson keeps the child's scale.
+
+Tailwind's own type steps (`text-xl` and the rest) are set outside Tailwind's theme layer, so they
+win over its defaults: `text-xl` is 20 px here.
+
+## The lesson's sizes
+
+2 stylesheets size the lesson, and they apply in different places.
+
+- **The minimum sizes** (`kids.css`) are set at the root, so they hold everywhere: a tap target
+  anywhere in a lesson is at least `--kid-tap-min`. A block may make its own controls bigger,
+  never smaller.
+- **The lesson frame's sizes** (`stage.css`) are set on the frame around a step
+  (`.kid-step-shell`), again for each frame shape it picks by input and screen (`data-frame`:
+  phone, tablet, tablet-sideways, phone-sideways, laptop), or on one part. Outside a step they are
+  unset. The top bar's height is the exception: it is set at the root, since the page scrolls
+  around the bar. The docked tools' height, `--kid-tray-height`, is measured and set by the
+  frame's code, not by a stylesheet.
+
+## The special palettes
+
+3 palettes sit outside Zeszyt's roles, each for one kind of content, and each colour holds 4.5:1
+on its ground.
+
+- **Maths text**: the 10 colours a maths prompt can paint a number or a word in. Khan's colour
+  macros (`\blueD`, `\greenD` and the rest) fold into these. Each has a light tone for the white
+  paper and a dark one for the night page.
+- **Money**: drawn coins and notes, never pictures of real money. Grosze coins are copper, złoty
+  coins gold, notes a pale green paper, each in a day and a night tone. The sizes go by value:
+  small grosze, larger grosze, złoty coins, notes.
+- **The terminal card**, where a command is shown to copy, is **always dark**, in both themes, so
+  its colours have one value each. They are the palette from before Zeszyt, kept on purpose until
+  a lesson shows a terminal. A page reads them directly: they have no Tailwind utility, since a
+  utility has a light and a dark value.
+
+## Tailwind's names
+
+A part writes a Tailwind utility, never a `var()` in a class, and each utility reads one token. A
+colour makes every colour utility (`bg-jw-act`, `text-jw-act`, `border-jw-act`); a size makes
+every sizing and spacing one (`min-h-kid-tap`, `size-kid-key`, `gap-kid-choice`). Each resolves
+where it is used, so it follows the theme wherever `[theme='dark']` is set.
+
+## Every stylesheet
+
+What each stylesheet holds, and how many of its tokens this page lists.
+
+<TokenSheetTable />
 
 ## Every role
 
@@ -46,8 +106,52 @@ The only literal colours. Nothing outside the roles reads them.
 
 <TokenTable tier="scales" />
 
-<Generated from="Zeszyt's stylesheet">
-  A token renamed or changed in the code shows here on the next build.
+## Every Tailwind type step
+
+Tailwind's names, compact. The face is Zeszyt's (`--font-sans`, above); mono is for ids and code.
+
+<TokenGroupTable group="type" />
+
+## Every layout size and curve
+
+The other radii and every duration are Zeszyt's, above.
+
+<TokenGroupTable group="layout" />
+
+## Every minimum size in a lesson
+
+Set at the root: they hold everywhere.
+
+<TokenGroupTable group="kids" />
+
+## Every size of the lesson frame
+
+Each row lists every rule that sets the token, the first being its default.
+
+<TokenStageTable />
+
+## Every maths text colour
+
+<TokenGroupTable group="maths" />
+
+## Every money colour and size
+
+<TokenGroupTable group="money" />
+
+## Every terminal card colour
+
+Always dark, in both themes.
+
+<TokenGroupTable group="terminal" />
+
+## Every Tailwind utility
+
+One utility each name makes, and the token it reads.
+
+<TokenUtilityTable />
+
+<Generated from="the app's stylesheets">
+  A token added, renamed or changed in the code shows here on the next build.
 </Generated>
 
 ## Next
