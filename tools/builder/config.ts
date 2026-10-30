@@ -6,9 +6,20 @@ import { join } from "node:path";
 
 type Env = Record<string, string | undefined>;
 
+/** HOME as jw's expanduser reads it: the environment's HOME, else the account's home. */
+function home(env: Env): string {
+  return (env["HOME"] ?? "").trim() || homedir();
+}
+
+/**
+ * JADWIGO_DRAFTS_DIR from the environment, trimmed, with a leading ~ or ~/ expanded to HOME as jw
+ * expands it (dl-a38n.21), so jw, the channel, the launcher and the web watcher share one directory.
+ */
 export function draftsDir(env: Env = process.env): string {
   const set = (env["JADWIGO_DRAFTS_DIR"] ?? "").trim();
-  return set || join(homedir(), ".local", "state", "jadwigo", "drafts");
+  if (!set) return join(home(env), ".local", "state", "jadwigo", "drafts");
+  if (set === "~") return home(env);
+  return set.startsWith("~/") ? join(home(env), set.slice(2)) : set;
 }
 
 /** The session `make builder` minted. Claude Code does not tell an MCP server its own session id. */
@@ -24,4 +35,28 @@ export function claudeBin(env: Env = process.env): string {
 /** Where Claude Code keeps its transcripts: CLAUDE_CONFIG_DIR, else ~/.claude. */
 export function claudeConfigDir(env: Env = process.env): string {
   return (env["CLAUDE_CONFIG_DIR"] ?? "").trim() || join(homedir(), ".claude");
+}
+
+/** The Claude Code profile `claude` reads its user-scope MCP servers from, and how it was chosen. */
+export function claudeProfile(env: Env = process.env): { file: string; from: string } {
+  const dir = (env["CLAUDE_CONFIG_DIR"] ?? "").trim();
+  return dir
+    ? { file: join(dir, ".claude.json"), from: `CLAUDE_CONFIG_DIR=${dir}` }
+    : { file: join(homedir(), ".claude.json"), from: "the default, as CLAUDE_CONFIG_DIR is unset" };
+}
+
+/**
+ * The builder session's environment: this one, without ANTHROPIC_API_KEY (the subscription runs
+ * the session; a key would bill it instead), with the session id and the drafts directory named.
+ */
+export function sessionEnv(
+  sessionId: string,
+  drafts: string,
+  env: Env = process.env,
+): Record<string, string | undefined> {
+  const copy: Record<string, string | undefined> = { ...env };
+  delete copy["ANTHROPIC_API_KEY"];
+  copy["JADWIGO_BUILDER_SESSION"] = sessionId;
+  copy["JADWIGO_DRAFTS_DIR"] = drafts;
+  return copy;
 }

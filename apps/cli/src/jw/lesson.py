@@ -28,7 +28,9 @@ Both files are written on every call, before the call returns, so the live lesso
 their mistake classes, the request, the draw) is kept apart, in `<JADWIGO_DRAFTS_DIR>/.jw/`. A
 finding is `{step_id, path, level, rule, text, fix}` (`packages/lesson-import/src/findings.ts`):
 check.ts's own when it sends them (dl-a38n.14), else each of its errors as one with rule `compile`;
-words jw refuses before check.ts runs are findings with rule `words`.
+words jw refuses before check.ts runs are findings with rule `words`. The page's own findings, from
+drawing the draft (`<draft_id>.render.json`, dl-a38n.28), come back beside them as `render`.
+One step is changed and shown by `jw.lesson_edit` (dl-a38n.29).
 
 A word a child reads is the bank's, copied, or the calling agent's, in the lesson's language; the
 tools copy, draw, assemble and check. A tool's own text (errors, `reasoning`) is in English.
@@ -339,6 +341,35 @@ def _lesson_path(where: Path, draft_id: str) -> Path:
 
 def _check_path(where: Path, draft_id: str) -> Path:
     return where / f"{draft_id}.check.json"
+
+
+def _render_path(where: Path, draft_id: str) -> Path:
+    return where / f"{draft_id}.render.json"
+
+
+def render_of(where: Path, draft_id: str, step_id: str | None = None) -> dict[str, Any] | None:
+    """The page's own check of the draft as it drew it, `<draft_id>.render.json` (dl-a38n.28),
+    or None when the page has not written one. `stale` is true when it was drawn before the draft
+    file's last write: right after a write it is the draw of the version before. `step_id` keeps
+    only that step's findings."""
+    path = _render_path(where, draft_id)
+    try:
+        raw: Any = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, ValueError):
+        return None
+    if not isinstance(raw, Mapping) or raw.get("draft_id") != draft_id:
+        return None
+    findings = [f for f in raw.get("findings") or [] if isinstance(f, Mapping)]
+    if step_id is not None:
+        findings = [f for f in findings if f.get("step_id") == step_id]
+    rendered_at = raw.get("rendered_at")
+    stale = True
+    try:
+        drawn = dt.datetime.fromisoformat(str(rendered_at)).timestamp()
+        stale = drawn < _lesson_path(where, draft_id).stat().st_mtime
+    except (ValueError, OSError):
+        pass
+    return {"findings": findings, "rendered_at": rendered_at, "stale": stale}
 
 
 def _state_path(where: Path, draft_id: str) -> Path:
@@ -815,7 +846,11 @@ def check(
     "lesson_file", "draft_path", "import_command", "play_path", "lesson_id", "questions"}`, the
     card's `next` saying the import comes before the play path, or `{"ok": false, "findings",
     "errors": [{"step_id", "message"}], "lesson_file", "draft_path"}`. A missing twin or rung is
-    an error here (rule `words`), before check.ts runs.
+    an error here (rule `words`), before check.ts runs. Both carry `render` (`render_of`): the
+    page's findings from its last draw, or None.
+
+    It rebuilds every step from the bank's copy and the words sent, so it replaces what
+    `lesson_edit.edit` changed; after it, change one step with `edit`.
     """
     where = folder or drafts_dir()
     stored = load_draft(draft_id, where)
@@ -851,19 +886,22 @@ def check(
             for e in errors
         ]
         _write_check(where, stored, False, findings)
-        return {"ok": False, "findings": findings, "errors": errors, **paths}
+        return {"ok": False, "findings": findings, "errors": errors, **paths,
+                "render": render_of(where, draft_id)}
 
     answer = _run_check(path, runner)
     findings = _findings(answer)
     _write_check(where, stored, bool(answer.get("ok")), findings, answer.get("mistake_classes"))
     if not answer.get("ok"):
-        return {"ok": False, "findings": findings, "errors": answer.get("errors") or [], **paths}
+        return {"ok": False, "findings": findings, "errors": answer.get("errors") or [], **paths,
+                "render": render_of(where, draft_id)}
     play_path = answer.get("play_path")
     import_step = _import_step(path, play_path)
     return {
         "ok": True,
         "card": {**card({**stored, "questions": [steps[s] for s in known]}), "next": import_step},
         "findings": findings,
+        "render": render_of(where, draft_id),
         **paths,
         "import_command": import_step["command"],
         "play_path": play_path,

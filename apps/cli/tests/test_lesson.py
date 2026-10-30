@@ -29,7 +29,7 @@ import fake_bank
 import pytest
 from click.testing import CliRunner
 
-from jw import lesson, pii, settings_keys
+from jw import lesson, lesson_edit, pii, settings_keys
 from jw.cli import main as cli
 from jw.errors import JwError
 from jw.settings_keys import (
@@ -540,7 +540,7 @@ def test_the_agents_words_are_refused_by_step_id_before_check_ts_runs(
     words["q6"]["changes"] = [{"change": "style", "why": "", "set": {"stem.text": "x"}}]
     words["q9"] = {"twin": {}}
     result = lesson.check(view["draft_id"], words)
-    assert set(result) == {"ok", "findings", "errors", "lesson_file", "draft_path"}
+    assert set(result) == {"ok", "findings", "errors", "lesson_file", "draft_path", "render"}
     assert result["ok"] is False and len(result["findings"]) == len(result["errors"])
     assert len(check_ts.seen) == 1  # the draft's own run only
     messages = [(e["step_id"], e["message"]) for e in result["errors"]]
@@ -752,6 +752,169 @@ def test_lesson_check_rewrites_the_file_on_every_call_and_writes_its_findings(
     assert checked is not None
     assert (checked["ok"], checked["findings"]) == (True, findings)
     assert checked["mistake_classes"]["q1"] == ["added_instead"]
+
+
+# ---------------------------------------------------------------- one step: edit and show --
+
+
+def _file_now(view: dict[str, Any]) -> dict[str, Any]:
+    return json.loads(Path(view["draft_path"]).read_text(encoding="utf-8"))
+
+
+def _render(view: dict[str, Any], findings: list[dict[str, Any]], at: dt.datetime) -> None:
+    """What the page writes after it draws the draft (dl-a38n.28)."""
+    (lesson.drafts_dir() / f"{view['draft_id']}.render.json").write_text(
+        json.dumps({"draft_id": view["draft_id"], "findings": findings,
+                    "rendered_at": at.isoformat()}),
+        encoding="utf-8",
+    )
+
+
+RENDER = [
+    {"step_id": "q1", "path": "script.parts[0].steps[0].question.data", "level": "error",
+     "rule": "tex-split", "text": "An option draws one fragment per line.",
+     "fix": "Write the option as one TeX run."},
+    {"step_id": "q2", "path": "script.parts[0].steps[1]", "level": "warn", "rule": "overflow",
+     "text": "The stem is wider than the card.", "fix": "Shorten the stem."},
+]
+
+
+def test_lesson_edit_patches_one_step_and_answers_for_it_alone(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    view = _draft()
+    lesson.check(view["draft_id"], _words(view))
+    other = copy.deepcopy(_file_now(view)["script"]["parts"][0]["steps"][2])
+    before_q2 = copy.deepcopy(_file_now(view)["script"]["parts"][0]["steps"][1])
+    check_ts.answer = {**OK, "ok": False, "findings": [
+        {"step_id": "q3", "path": "x", "level": "error", "rule": "r", "text": "t", "fix": "f"},
+        {"step_id": "q2", "path": "y", "level": "warn", "rule": "w", "text": "t", "fix": "f"},
+    ]}
+    result = lesson_edit.edit(
+        view["draft_id"], "q2",
+        {"question": {"help": {"boost": "Policz grupy po kolei.", "worked": None}},
+         "say": "Ile razem?"},
+        why="Rodzic prosi o prostsze słowa.",
+    )
+    assert (result["ok"], result["lesson_ok"], result["step_id"]) == (True, False, "q2")
+    assert [f["rule"] for f in result["findings"]] == ["w"]  # q3's error is not q2's
+    assert result["card"]["prompt"].startswith("Ile razem?")
+    assert result["card"]["rungs"]["boost"] == "Policz grupy po kolei."
+    assert result["render"] is None
+
+    steps = _file_now(view)["script"]["parts"][0]["steps"]
+    assert steps[2] == other and check_ts.seen[-1][1] == _file_now(view)
+    help_ = steps[1]["question"]["help"]
+    assert help_["boost"] == {"text": "Policz grupy po kolei."} and "worked" not in help_
+    # say and worked are the copy's: one change, recorded with its why after what was there.
+    assert steps[1]["based_on"]["changes"][-1] == (
+        {"change": "wording", "why": "Rodzic prosi o prostsze słowa.", "reviewed": False}
+    )
+    assert len(steps[1]["based_on"]["changes"]) == len(before_q2["based_on"]["changes"]) + 1
+    checked = json.loads((lesson.drafts_dir() / f"{view['draft_id']}.check.json").read_text())
+    assert checked["ok"] is False and len(checked["findings"]) == 2
+
+
+def test_lesson_edit_refuses_a_patch_and_changes_nothing(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    view = _draft()
+    before = _file_now(view)
+    runs = len(check_ts.seen)
+    result = lesson_edit.edit(
+        view["draft_id"], "q1",
+        {"id": "q9", "credit": {}, "say": None, "question": {"family": "choose",
+                                                              "data": {"stem": {"text": "x"}}}},
+    )
+    assert result["ok"] is False and result["lesson_ok"] is None
+    assert [f["text"] for f in result["findings"]] == [
+        "id: a patch sets say, question.data, question.key or question.help",
+        "credit: a patch sets say, question.data, question.key or question.help",
+        "say: a step needs it; set it instead of removing it",
+        "question.family: a patch sets say, question.data, question.key or question.help",
+        "say, question.data: a change to the bank's copy says why (the parent's ask)",
+    ]
+    assert {f["rule"] for f in result["findings"]} == {"edit"}
+    assert result["findings"][0]["path"] == "script.parts[0].steps[0]"
+    assert _file_now(view) == before and len(check_ts.seen) == runs
+    with pytest.raises(JwError, match="no step q9"):
+        lesson_edit.edit(view["draft_id"], "q9", {"say": "x"})
+    with pytest.raises(JwError, match="a patch is an object"):
+        lesson_edit.edit(view["draft_id"], "q1", {})
+
+
+def test_lesson_edit_writes_a_twin_and_mistake_cards_without_a_why(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    view = _draft(count=1)
+    twin = _words(view)["q1"]["twin"]
+    result = lesson_edit.edit(view["draft_id"], "q1", {"question": {"help": {
+        "twin": {"say": twin["say"], "question": {k: twin[k] for k in ("data", "key")}},
+        "boost_by_mistake": {"added_instead": "Tu mnożymy, nie dodajemy."},
+    }}})
+    assert result["ok"] is True, result
+    help_ = _file_now(view)["script"]["parts"][0]["steps"][0]["question"]["help"]
+    assert help_["twin"]["family"] == "enter" and "question" not in help_["twin"]
+    assert help_["boost_by_mistake"] == {"added_instead": {"text": "Tu mnożymy, nie dodajemy."}}
+    assert result["card"]["twin"]["key"] == twin["key"]
+
+
+def test_the_page_render_findings_come_back_beside_the_checks(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    view = _draft()
+    assert lesson.check(view["draft_id"], _words(view))["render"] is None
+    long_ago = dt.datetime(2026, 10, 30, 8, 0, tzinfo=dt.UTC)
+    _render(view, RENDER, long_ago)
+
+    result = lesson.check(view["draft_id"], _words(view))
+    assert result["render"] == {"findings": RENDER, "rendered_at": long_ago.isoformat(),
+                                "stale": True}  # drawn before this call's write
+    edited = lesson_edit.edit(view["draft_id"], "q2", {"question": {"help": {"boost": "Krok."}}})
+    assert edited["render"]["findings"] == [RENDER[1]]
+
+    later = dt.datetime.now(dt.UTC) + dt.timedelta(seconds=5)
+    _render(view, RENDER, later)
+    shown = lesson_edit.show(view["draft_id"], "q1")
+    assert shown["render"] == {"findings": [RENDER[0]], "rendered_at": later.isoformat(),
+                               "stale": False}
+    # Another draft's render file, or one that is not JSON, is none.
+    _render({**view, "draft_id": "draft_000000000000"}, RENDER, later)
+    (lesson.drafts_dir() / f"{view['draft_id']}.render.json").write_text("{", encoding="utf-8")
+    assert lesson.render_of(lesson.drafts_dir(), view["draft_id"]) is None
+
+
+def test_lesson_show_returns_the_draft_file_as_it_stands(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    view = _draft()
+    shown = lesson_edit.show(view["draft_id"])
+    file = _file_now(view)
+    assert shown["draft_path"] == view["draft_path"] and shown["title"] == file["title"]
+    assert [s["step"] for s in shown["steps"]] == file["script"]["parts"][0]["steps"]
+    assert all(s["findings"] == [] for s in shown["steps"])
+    (one,) = lesson_edit.show(view["draft_id"], "q4")["steps"]
+    assert one["step"]["id"] == "q4"
+    with pytest.raises(JwError, match="no step q7"):
+        lesson_edit.show(view["draft_id"], "q7")
+
+
+def test_the_edit_and_show_verbs_print_what_the_tools_return(
+    bank: LessonBank, check_ts: CheckTs, tmp_path: Path
+) -> None:
+    view = _draft()
+    patch = tmp_path / "patch.json"
+    patch.write_text(json.dumps({"question": {"help": {"boost": "Krok po kroku."}}}),
+                     encoding="utf-8")
+    result = CliRunner().invoke(cli, ["lesson", "edit", view["draft_id"], "q1", str(patch),
+                                      "--json"])
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output)["card"]["rungs"]["boost"] == "Krok po kroku."
+    plain = CliRunner().invoke(cli, ["lesson", "edit", view["draft_id"], "q1", str(patch)])
+    assert plain.output.startswith("q1: ok") and "draft file:" in plain.output
+    shown = CliRunner().invoke(cli, ["lesson", "show", view["draft_id"], "q1"])
+    assert shown.exit_code == 0, shown.output
+    assert json.loads(shown.output) == lesson_edit.show(view["draft_id"], "q1")
 
 
 # ---------------------------------------------------------------- the real check.ts --

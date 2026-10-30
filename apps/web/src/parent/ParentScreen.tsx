@@ -53,6 +53,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { navigate, useLocation } from "../nav/location.ts";
@@ -132,12 +133,16 @@ export function ParentScreen({
   const route = parentRoute(useLocation().path);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [returned, setReturned] = useState<CopyKey | null>(null);
+  // The URL the page opened at. completeRedirect takes the return off the address bar, so a second
+  // run of the effect (dev StrictMode) reads it here, gets the first exchange's outcome, and still
+  // shows its line.
+  const arrivedAt = useRef(window.location.href);
   useEffect(() => {
     if (auth === null) return;
     let live = true;
     // A return from Google or Facebook first: its code becomes the session the token reads.
     auth
-      .completeRedirect(new URL(window.location.href))
+      .completeRedirect(new URL(arrivedAt.current))
       .catch((): RedirectOutcome => "failed")
       .then((outcome) => {
         if (live) setReturned(RETURN_LINE[outcome]);

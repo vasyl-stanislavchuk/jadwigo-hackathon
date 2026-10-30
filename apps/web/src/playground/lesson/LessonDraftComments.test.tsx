@@ -32,6 +32,7 @@ describe("comments follow the draft on the page", () => {
       draft_id: "older",
       draft: equalGroups,
       check: null,
+      render: null,
       error: null,
     };
     render(<LessonBuilderScreen initial={message} />);

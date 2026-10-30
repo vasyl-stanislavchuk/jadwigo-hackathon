@@ -18,11 +18,12 @@ import {
   StepFrame,
   ViewMode,
 } from "@jadwigo/lesson-kit";
-import { type ReactElement, useState } from "react";
+import { type ReactElement, useRef, useState } from "react";
 import type { WrittenExample } from "../examples/index.ts";
 import { TryExample } from "../panels/TryExample.tsx";
 import { Badge } from "../tool/badge.tsx";
 import { Button } from "../tool/button.tsx";
+import { useRenderCheck } from "./render/useRenderCheck.ts";
 import { rungsOf } from "./rungs.ts";
 import { CommentsSlot } from "./slots.ts";
 import { FindingList } from "./table/FindingList.tsx";
@@ -61,25 +62,39 @@ function RungsStrip({ spec }: { spec: FamilySpec }): ReactElement {
 export function StepCard({
   n,
   draft_id,
+  path,
   spec,
   findings,
   showKey,
   language,
   category,
+  onRendered,
 }: {
   /** The step's place in the lesson, from 1. */
   n: number;
   /** The draft on the page, so a comment goes to it and not to the newest. */
   draft_id: string;
+  /** Where the step is in the lesson file, for its render findings. */
+  path: string;
   spec: FamilySpec;
-  /** The check's findings on this step, pinned under it. */
+  /** The check's and the render check's findings on this step, pinned under it. */
   findings: readonly Finding[];
   showKey: boolean;
   language: Language;
   category: Category;
+  /** Where the render rules' findings for the drawn preview go; none, and they do not run. */
+  onRendered?: ((step_id: string, findings: Finding[]) => void) | undefined;
 }): ReactElement {
   const [trying, setTrying] = useState(false);
   const [round, setRound] = useState(0);
+  const drawn = useRef<HTMLDivElement>(null);
+  // The rules read the preview; while the step is tried, its last findings stand.
+  useRenderCheck(
+    drawn,
+    { step_id: spec.id, path },
+    [spec, showKey],
+    trying ? undefined : onRendered,
+  );
   return (
     <section
       id={spec.id}
@@ -112,7 +127,7 @@ export function StepCard({
       </p>
       <RungsStrip spec={spec} />
       <FindingList findings={findings} label={`Findings on ${spec.id}`} />
-      <div className="kid-step min-w-0 rounded-xl border bg-background p-4">
+      <div ref={drawn} className="kid-step min-w-0 rounded-xl border bg-background p-4">
         <LessonTheme>
           {trying ? (
             <StepFrame key={`${spec.id}|${round}`} stepId={spec.id}>

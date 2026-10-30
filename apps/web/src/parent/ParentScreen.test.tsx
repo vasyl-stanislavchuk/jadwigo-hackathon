@@ -17,10 +17,12 @@ import {
   type LearnerSnapshot,
   type Me,
 } from "@jadwigo/contracts";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { storedAttempt } from "../play/storedAttempt.ts";
-import { type Auth, type Provider, type RedirectOutcome, returnOf } from "./auth.ts";
+import { type Auth, type Provider, type RedirectOutcome, returnOf, supabaseAuth } from "./auth.ts";
 import { result, twin } from "./overview/fixtures.ts";
 import { ParentScreen } from "./ParentScreen.tsx";
 
@@ -563,5 +565,34 @@ describe("ParentScreen", () => {
     expect(facebook.firstElementChild).toBe(mark);
     // Google's font and colours stay on Google's button.
     expect(facebook.style.fontFamily).toBe("");
+  });
+
+  it("shows the failed line in StrictMode too, where the effect runs twice on the first mount", async () => {
+    window.history.replaceState(null, "", "/parent?code=spent");
+    const exchangeCodeForSession = vi.fn(async (_code: string) => ({
+      data: {},
+      error: new Error("invalid flow state"),
+    }));
+    const supabase = {
+      auth: {
+        exchangeCodeForSession,
+        getSession: async () => ({ data: { session: null }, error: null }),
+      },
+    } as unknown as SupabaseClient;
+    render(
+      <StrictMode>
+        <ParentScreen
+          language="en"
+          query={new URLSearchParams()}
+          auth={supabaseAuth(supabase, ["google"])}
+          client={client({})}
+        />
+      </StrictMode>,
+    );
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "That sign-in didn't finish. Try again, or sign in with a code by email.",
+    );
+    expect(exchangeCodeForSession).toHaveBeenCalledTimes(1);
+    expect(window.location.search).toBe("");
   });
 });
