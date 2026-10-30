@@ -133,7 +133,7 @@ A missing or bad token on a token route is 401 `NotSignedIn`, a new error type. 
 ## Local development with no Supabase
 
 - `packages/testing` holds a fixed RS256 test key pair, with its public half as a JWKS. It is a test key, made for this repo, and never a Supabase key. A helper signs tokens shaped like Supabase's: `iss`, `aud: "authenticated"`, `role: "authenticated"`, `sub` (a uuid), `email` and `exp`.
-- `apps/api` reads the JWKS from `AUTH_JWKS_URL` in `src/config.ts`. Unset locally, it uses the test key's JWKS. In AWS, the authorizer has already verified the token.
+- `apps/api` reads the JWKS from `AUTH_JWKS_URL` and the issuer a token must carry from `AUTH_ISSUER`, both in `src/config.ts`. The issuer is never inferred from the URL. With `AUTH_JWKS_URL` unset, or set without `AUTH_ISSUER`, every token route is 401, and so is a token when the JWKS cannot be read (`dl-e8ov.2.44`). The tests sign with the test key's JWKS and issuer. In AWS, the authorizer has already verified the token.
 - `apps/web` in local and e2e mode skips supabase-js's network call. The Playwright test writes a session holding a token signed by the test key, as supabase-js stores one, so the page behaves as if the code had been typed.
 - pgTAP sets `request.jwt.claims` as `shim.sql` expects, which is how `auth.jwt()` is faked today.
 

@@ -1,0 +1,4 @@
+# The MCP tools group (SIDEBAR in src/index.ts), read by starlight-auto-sidebar. The tool pages are
+# generated from mcp-tools.json, so their order is set here, not in a page's frontmatter: by name,
+# which keeps the lesson_ tools and the question_ tools each together.
+sort: label
