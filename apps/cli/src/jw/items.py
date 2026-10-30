@@ -1,10 +1,10 @@
 """Converted items by id, read from a file outside git (dl-e8ov.5.38.2).
 
-The file is the Khan pull's conversion to family steps (`converted/pl.json` in the synced bucket
-copy, bead dl-e8ov.5.38.1): `{"generated_by", "licence_note", "items": [...]}`. `load_item` returns the
-composer's view of one item: the family step with its key and help, the contract's `Credit`, and
+The file is the Khan pull's conversion to family steps (`converted-pl.json` in the synced copy,
+the bucket's `khan/converted/pl.json`, bead dl-e8ov.5.38.1):
+`{"generated_by", "licence_note", "items": [...]}`. `load_item` returns the composer's view of one item: the family step with its key and help, the contract's `Credit`, and
 `based_on`. A child never sees it. Where the file comes from is `jw.settings_keys`
-(JW_KHAN_CONVERTED, else <JADWIGO_KHAN_DIR>/converted/pl.json, both read through `setting`).
+(JW_KHAN_CONVERTED, else <JADWIGO_KHAN_DIR>/converted-pl.json, both read through `setting`).
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ _FILE_HINT = (
 
 
 def converted_path() -> Path:
-    """The converted items file: JW_KHAN_CONVERTED, else <JADWIGO_KHAN_DIR>/converted/pl.json."""
+    """The converted items file: JW_KHAN_CONVERTED, else <JADWIGO_KHAN_DIR>/converted-pl.json."""
     configured = settings_keys.setting(settings_keys.JW_KHAN_CONVERTED)
     if configured:
         return Path(configured).expanduser()

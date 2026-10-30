@@ -12,6 +12,7 @@ import starlightOpenAPI, { createOpenAPISidebarGroup } from "starlight-openapi";
 import { createStarlightTypeDocPlugin } from "starlight-typedoc";
 import { apiBase, servedHost, sidebar } from "./src/index.ts";
 import { API_REFERENCE_BASE } from "./src/lib/guides.ts";
+import { SEARCH_FOCUS } from "./src/styles/search-focus.ts";
 import { SIDEBAR_STATE } from "./src/styles/sidebar-toggle.ts";
 import { THEME_BRIDGE } from "./src/styles/theme-bridge.ts";
 
@@ -67,6 +68,8 @@ export default defineConfig({
         { tag: "script", content: THEME_BRIDGE },
         // A sidebar the reader hid stays hidden from the first paint (src/components/SiteTitle.astro).
         { tag: "script", content: SIDEBAR_STATE },
+        // Search opened before Pagefind's box exists still lands the cursor in it (search-focus.ts).
+        { tag: "script", content: SEARCH_FOCUS },
         {
           tag: "link",
           attrs: { rel: "icon", href: "/favicon-32.png", type: "image/png", sizes: "32x32" },
