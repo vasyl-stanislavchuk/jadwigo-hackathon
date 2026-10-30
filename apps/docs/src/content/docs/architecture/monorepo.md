@@ -56,6 +56,7 @@ flowchart LR
   bank --> contracts
   core --> contracts
   lesson_import --> contracts
+  lesson_import --> core
   lesson_import --> store
   lesson_kit --> contracts
   lesson_kit --> copy
