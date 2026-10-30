@@ -230,19 +230,24 @@ reaches a lesson.
 A refused item is fixed at its source, one shape at a time: a shape is one rule on one question
 type. The refusals file, `<JADWIGO_BANK_DIR>/refusals/<lang>.json`, is committed in the bank repo
 and read by its stamp: `{shapes: [{rule, question_type, issue}], flags: [{id, by, reason, issue?,
-on}]}`. It holds ids, rules, beads and reasons only, never a question's text.
+on}]}`. It holds ids, rules, beads and reasons only, never a question's text. jw checks the whole
+file against the bank's schema, pinned in `src/jw/contracts/refusals.schema.json`, before it
+writes, and writes nothing that does not match.
 
 1. `jw question refusals --new` lists the shapes no bead tracks, each with its count, 3 example
    ids and its owner: `render-picture-missing` to the media pipeline, any other `render-*` to
    lesson-kit, `contract` and `key-grades` to the converter, `flagged` to whoever flagged it. It
    reads the stamped statuses and the conformance sidecar beside the converted file
-   (`converted-pl.render.json`), so a run newer than the stamp shows at once.
+   (`converted-pl.render.json`), so a run newer than the stamp shows in this report at once.
+   `jw lesson draft` reads only the stamp, so it still serves such an item until the next stamp
+   refuses it; a flag holds back at once.
 2. The lead files one bead per shape, then `jw question refusals assign <rule> <question_type>
    <bead>` (`-` for no question type). The next stamp carries the bead into each refused item.
    jw never files a bead.
 3. `jw question flag <id> --lang pl "<why>"` pulls an item the checks missed. jw reads the flag at
-   once, so the next draft leaves the item out with no re-run. `by` is a role, `owner` unless
-   `--by` names another, never a person's name. `jw question flag <id> --clear` puts it back.
+   once, so the next draft leaves the item out with no re-run. `by` is a role: `--by` takes
+   `owner` (the default), `lead`, `teacher` or `agent`, never a person's name.
+   `jw question flag <id> --clear` puts it back.
 4. A fix lands, the nightly stamp flips the items back to `plays`, and `jw question refusals
    --since <bead>` says per shape of that bead which items are still refused, or that every one
    plays now.
