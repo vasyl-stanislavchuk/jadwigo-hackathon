@@ -1,0 +1,9 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "disableSources": true,
+  "disableGit": true,
+  "excludeExternals": true,
+  "excludeReferences": true,
+  "sort": ["kind", "alphabetical"],
+  "entryFileName": "index.md"
+}

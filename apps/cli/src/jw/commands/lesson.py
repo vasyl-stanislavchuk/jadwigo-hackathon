@@ -1,4 +1,4 @@
-"""jw lesson verbs: draft a lesson from a request, check a filled draft (dl-e8ov.5.38.4).
+"""jw lesson verbs: draft a lesson from a request, check it with the agent's words (dl-e8ov.5.38.4).
 
 Each `--json` verb prints what one function in `jw.lesson` returns, and the lesson_draft and
 lesson_check MCP tools call the same functions, so a verb and its tool cannot drift apart.
@@ -49,29 +49,40 @@ def draft(
     no_names: bool,
     json_mode: bool,
 ) -> None:
-    """Draft a lesson for REQUEST: drawn questions with keys and credit, help left to write."""
+    """Draft a lesson for REQUEST: drawn questions copied whole from the bank, kept by draft id."""
     if not names and not no_names:
         raise click.UsageError("pass every name the family uses with --name, or --no-names")
     result = lesson.draft(request, grade, language, kind, count, skills, names=list(names))
     if json_mode:
         click.echo(json.dumps(result, ensure_ascii=False))
         return
-    lines = [f"{result['lesson_file_skeleton']['id']}  ({result['kind']}, rule not settled)"]
-    lines += [f"  {q['step_id']}  {q['item_id']}  {q['say']}" for q in result["questions"]]
+    lines = [f"{result['draft_id']}  {result['title']}  ({result['kind']}, rule not settled)"]
+    lines += [
+        f"  {q['step_id']}  {q['item_id']}  {q['prompt']}  (write: {', '.join(q['you_write'])})"
+        for q in result["questions"]
+    ]
     lines += [f"  left out {left['id']}: {left['reason']}" for left in result["left_out"]]
     click.echo("\n".join(lines))
 
 
 @group.command(cls=_EmitErrorsCommand)
-@click.argument("draft_file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.argument("draft_id")
+@click.argument("words_file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option("--title", default=None, help="The lesson's title, in place of the request.")
+@click.option("--reasoning", default=None, help="Why the lesson is what it is, for the parent.")
 @click.option("--json", "json_mode", is_flag=True, help="Print the check's answer.")
-def check(draft_file: Path, json_mode: bool) -> None:
-    """Check DRAFT_FILE, a draft with every question's help written, and print its card."""
+def check(
+    draft_id: str, words_file: Path, title: str | None, reasoning: str | None, json_mode: bool
+) -> None:
+    """Check the draft DRAFT_ID with WORDS_FILE, a JSON object of each step's words by step id
+    (the lesson_check tool's `help`), and print its card."""
     try:
-        filled: Any = json.loads(draft_file.read_text(encoding="utf-8"))
+        words: Any = json.loads(words_file.read_text(encoding="utf-8"))
     except ValueError as exc:
-        raise JwError(f"{draft_file} is not JSON: {exc}", hint="Pass the draft as JSON.") from exc
-    result = lesson.check(filled)
+        raise JwError(
+            f"{words_file} is not JSON: {exc}", hint='Pass {"q1": {"twin": ...}, ...} as JSON.'
+        ) from exc
+    result = lesson.check(draft_id, words, title, reasoning)
     if json_mode:
         click.echo(json.dumps(result, ensure_ascii=False))
     elif result["ok"]:

@@ -31,6 +31,11 @@ decision `jadwigo-platform/notes/2026-10-29-jadwigo-s-docs-are-a-starlight-site-
   `scripts/prepare.ts` writes before every build: the snapshot `packages/contracts/openapi.json` plus
   the server (`hosts.prod.app`) and the tag descriptions (`src/lib/openapi.ts`). It is served as is
   at `/openapi.json`. No page under `src/content/docs/api/` is written by hand.
+- The TypeScript client (`/typescript/`) is a hand-written intro, `typescript.md`, and the pages
+  `starlight-typedoc` writes into `src/content/docs/typescript/` (gitignored) from
+  `packages/api-client` and `packages/contracts`' `src/index.ts`, with each package's own tsconfig.
+  `typedoc.json` turns source links off, so no page links into the repo. A doc comment there is the
+  page's text.
 - `src/guides.test.ts`: every `/api/...` path a page names is in `ROUTES`, and every link into
   `/api/` is a page the reference builds (the links validator sees only content pages).
 - `public/openapi.json` and `public/mcp-tools.json` are copied in at build time from
