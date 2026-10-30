@@ -140,6 +140,25 @@ describe("check.ts --json", () => {
     expect((out["mistake_classes"] as Record<string, string[]>)["s02"]).toContain("off_by_small");
   });
 
+  it("fails a rule class's boost on a step whose key names no rule (dl-e8ov.5.38.15)", () => {
+    const file = planted((step) => {
+      const q = step.question as { key: Record<string, unknown> };
+      delete q.key["rule"];
+      delete q.key["near"];
+    });
+    const { status, out } = check(file);
+    expect(status).toBe(1);
+    expect(out["errors"]).toEqual([
+      {
+        step_id: "s02",
+        message: expect.stringContaining(
+          "names add_for_multiply, which this enter question never gives; its classes are other_wrong",
+        ) as unknown,
+      },
+    ]);
+    expect((out["mistake_classes"] as Record<string, string[]>)["s02"]).toEqual(["other_wrong"]);
+  });
+
   it("takes a boost for a class the step's own near table names", () => {
     const file = planted((step) => {
       const q = step.question as { key: { near: Record<string, string> }; help: object };
@@ -307,7 +326,10 @@ describe("check.ts --json", () => {
     const withSay = (say: string) =>
       planted((step) => {
         step["say"] = say;
+        // A bare key gives no rule class, so its add_for_multiply card goes too (dl-e8ov.5.38.15).
         Object.assign(step.question ?? {}, { key: { accept: ["5"] } });
+        const help = step.question?.help as { boost_by_mistake?: object } | undefined;
+        if (help !== undefined) delete help.boost_by_mistake;
       });
     for (const say of [
       "Ile to jest 10 − 5? Napisz albo powiedz.",
