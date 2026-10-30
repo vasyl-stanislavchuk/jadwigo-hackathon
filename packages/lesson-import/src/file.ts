@@ -12,5 +12,6 @@ export {
   parseLessonFile,
   type QuestionStep,
   questionSteps,
+  safeParseLessonFile,
   type TeachingStep,
 } from "./lesson-file.ts";

@@ -106,6 +106,32 @@ export type LessonPart = LessonFile["script"]["parts"][number];
 /** A step of a part: a question step, or a teaching step the import drops. */
 export type LessonStep = LessonPart["steps"][number];
 
+/** The file with every `{pl, uk, en}` line in its language, or as given when it names none. */
+export function inItsLanguage(raw: unknown): unknown {
+  const language = Language.safeParse((raw as { language?: unknown } | null)?.language);
+  return language.success ? resolve(raw, language.data) : raw;
+}
+
+/**
+ * The file in its own language, or every problem the schema finds with its path into the file:
+ * what `check.ts` reports one finding each, where `parseLessonFile` throws them as one message.
+ */
+export function safeParseLessonFile(
+  raw: unknown,
+): { success: true; data: LessonFile } | { success: false; issues: z.core.$ZodIssue[] } {
+  const language = Language.safeParse((raw as { language?: unknown } | null)?.language);
+  if (!language.success) {
+    return {
+      success: false,
+      issues: language.error.issues.map((i) => ({ ...i, path: ["language", ...i.path] })),
+    };
+  }
+  const parsed = LessonFile.safeParse(resolve(raw, language.data));
+  return parsed.success
+    ? { success: true, data: parsed.data }
+    : { success: false, issues: parsed.error.issues };
+}
+
 /** The file in its own language, checked. */
 export function parseLessonFile(raw: unknown): LessonFile {
   const language = Language.parse((raw as { language?: unknown } | null)?.language);
