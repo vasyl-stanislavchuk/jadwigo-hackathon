@@ -1,12 +1,13 @@
 /**
  * One step of the draft as the builder draws it: its say, the family view in preview mode with the
  * key behind the page's switch, the rungs strip, and "Try it", which plays the step through the
- * playground's TryExample with its help released on the client. A step the adapter skipped is a
+ * playground's TryExample with its help released on the client, and the check's findings on it. A step the adapter skipped is a
  * card with its reason, so the rest of the lesson still draws. The chrome is English, as the
  * playground's is; every word a child would read is the draft's own.
  */
 
 import type { Category, Language } from "@jadwigo/copy";
+import type { Finding } from "@jadwigo/lesson-import";
 import {
   type Clock,
   type FamilySpec,
@@ -24,6 +25,7 @@ import { Badge } from "../tool/badge.tsx";
 import { Button } from "../tool/button.tsx";
 import { rungsOf } from "./rungs.ts";
 import { CommentsSlot } from "./slots.ts";
+import { FindingList } from "./table/FindingList.tsx";
 
 const clock: Clock = { now: (): Instant => ({ perf: 0, wall: "2026-10-30T00:00:00.000Z" }) };
 
@@ -59,6 +61,7 @@ function RungsStrip({ spec }: { spec: FamilySpec }): ReactElement {
 export function StepCard({
   n,
   spec,
+  findings,
   showKey,
   language,
   category,
@@ -66,6 +69,8 @@ export function StepCard({
   /** The step's place in the lesson, from 1. */
   n: number;
   spec: FamilySpec;
+  /** The check's findings on this step, pinned under it. */
+  findings: readonly Finding[];
   showKey: boolean;
   language: Language;
   category: Category;
@@ -103,6 +108,7 @@ export function StepCard({
         {spec.say}
       </p>
       <RungsStrip spec={spec} />
+      <FindingList findings={findings} label={`Findings on ${spec.id}`} />
       <div className="kid-step min-w-0 rounded-xl border bg-background p-4">
         <LessonTheme>
           {trying ? (
@@ -136,9 +142,11 @@ export function StepCard({
 export function SkippedCard({
   step_id,
   reason,
+  findings,
 }: {
   step_id: string;
   reason: string;
+  findings: readonly Finding[];
 }): ReactElement {
   return (
     <section
@@ -150,6 +158,7 @@ export function SkippedCard({
     >
       <h3 className="font-semibold">{step_id}</h3>
       <p className="text-muted-foreground text-sm">Not drawn: {reason}</p>
+      <FindingList findings={findings} label={`Findings on ${step_id}`} />
       <CommentsSlot step_id={step_id} />
     </section>
   );
