@@ -408,6 +408,14 @@ export const pl: CopyTable = {
     text: "Logowanie się nie udało. Spróbuj jeszcze raz albo zaloguj się kodem z e-maila.",
     reviewed: false,
   },
+  // Google refuses to sign in inside Facebook's, Messenger's or Instagram's own browser
+  // (dl-e8ov.2.63). Drafts, for the owner.
+  parent_google_in_app: {
+    text: "W tej aplikacji Google nie pozwala się zalogować. Aby kontynuować z Google, otwórz tę stronę w przeglądarce telefonu.",
+    reviewed: false,
+  },
+  parent_copy_link: { text: "Skopiuj link", reviewed: false },
+  parent_link_copied: { text: "Skopiowano. Wklej go w przeglądarce.", reviewed: false },
   // end parent login
   // the home page's featured lessons (dl-5ssh.3.6)
   home_title: { text: "Wybierz lekcję", reviewed: false },
