@@ -49,7 +49,7 @@ def build_server() -> Any:
             "leaves empty), in the lesson's language, and change a copied part only when the "
             "parent asks. Then call lesson_check with the draft_id and those words by step id, and "
             "fix any errors it lists by step id until it answers ok with a card and a "
-            "lesson_file. question_search, question_show, question_gaps and question_item look "
+            "lesson_file. The lesson plays only after the import the card's next step names. question_search, question_show, question_gaps and question_item look "
             "into the bank directly: sets that meet a need, one set's page, needs it cannot meet, "
             "one item."
         ),
@@ -189,8 +189,11 @@ def build_server() -> Any:
         ("hints.0.text"); each change is recorded in based_on.changes. Send every step's words
         on each call. title and reasoning replace the draft's. ok true returns the card (per
         question: prompt, key, rungs, twin, source, licence, changes, why drawn; and what was
-        left out), the lesson_file path, play_path and lesson_id. ok false lists errors by step
-        id: fix those and call lesson_check again.
+        left out, and next: the import step), the lesson_file path, import_command, play_path and
+        lesson_id. The play_path exists only after the import: tell the parent to run
+        import_command (make lesson-import FILE=<lesson_file> ENV=dev, in the jadwigo checkout)
+        first, then open the play_path. ok false lists errors by step id: fix those and call
+        lesson_check again.
         """
         return _call(lesson.check, draft_id=draft_id, words=help, title=title, reasoning=reasoning)
 

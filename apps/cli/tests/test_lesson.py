@@ -319,6 +319,24 @@ def test_before_check_ts_sends_classes_they_are_unknown(bank: LessonBank, check_
     assert all(q["mistake_classes"] is None for q in view["questions"])
 
 
+def test_a_step_with_no_mistake_classes_is_not_asked_for_mistake_cards(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    # check.ts lists only the classes a step can emit (dl-e8ov.5.38.15): it may be none.
+    check_ts.answer["mistake_classes"] = {"q1": [], "q2": CLASSES}
+    view = _draft(count=2)
+    q1, q2 = view["questions"]
+    assert q1["mistake_classes"] == [] and "boost_by_mistake" not in q1["you_write"]
+    assert "boost_by_mistake" in q2["you_write"]
+    words = _words(view)
+    assert "boost_by_mistake" not in words["q1"]
+    assert lesson.check(view["draft_id"], words)["ok"] is True
+    del words["q2"]["boost_by_mistake"]
+    assert lesson.check(view["draft_id"], words)["errors"] == [
+        {"step_id": "q2", "message": "help.boost_by_mistake is empty; write it"}
+    ]
+
+
 def test_the_draft_verb_prints_the_draft(bank: LessonBank, check_ts: CheckTs) -> None:
     args = ["lesson", "draft", REQUEST, "--grade", "3", "--topic", TOPIC, "--json"]
     result = CliRunner().invoke(cli, [*args, "--no-names"])
@@ -393,6 +411,19 @@ def test_check_puts_the_agents_words_on_the_copy_and_returns_the_card(
     text = lesson.card_text(card)
     assert text.startswith("1. ") and "left out:" in text and "fxc201" in text
     assert "skill: fixture.times-6 (proposed)" in text
+
+    # The import comes before the play path, which does not exist until it has run.
+    command = f"make lesson-import FILE={result['lesson_file']} ENV=dev"
+    assert result["import_command"] == command
+    assert card["next"] == {
+        "command": command,
+        "run_in": str(REPO),
+        "then_play": "/play/asg_fixture",
+        "says": f"Import the lesson first: {command}, from the jadwigo checkout ({REPO}). Only "
+        "then does it play at /play/asg_fixture; before the import that path does not exist.",
+    }
+    assert list(result).index("import_command") < list(result).index("play_path")
+    assert text.endswith(f"next: {card['next']['says']}")
 
 
 def test_check_accepts_bare_strings_and_a_nested_twin(bank: LessonBank, check_ts: CheckTs) -> None:
@@ -518,7 +549,8 @@ def test_the_check_verb_reads_the_words_from_a_file(
     assert result.exit_code == 0, result.output
     assert json.loads(result.output) == lesson.check(view["draft_id"], _words(view))
     plain = CliRunner().invoke(cli, ["lesson", "check", view["draft_id"], str(words)])
-    assert plain.output.startswith("1. ") and "play: /play/asg_fixture" in plain.output
+    assert plain.output.startswith("1. ") and "next: Import the lesson first: make" in plain.output
+    assert plain.output.index("make lesson-import") < plain.output.index("/play/asg_fixture")
 
 
 def test_the_repo_dir_defaults_to_this_checkout_and_names_its_setting(

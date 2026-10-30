@@ -72,6 +72,7 @@ DRAFT_ID_RE = re.compile(r"^draft_[0-9a-f]{12}$")
 # The bank's enrichment marks a skill id it has not settled; the mark is not part of the id.
 PROPOSED = "proposed:"
 CHECK_TIMEOUT_SECS = 120
+IMPORT_TARGET = "lesson-import"  # the Makefile target that imports a lesson file
 
 # What `check` runs: argv in, an object with `returncode`, `stdout` and `stderr` out.
 Runner = Callable[[list[str]], Any]
@@ -687,7 +688,8 @@ def check(
     `words` maps each step id to what the agent wrote for it (the lesson_check tool's `help`):
     `twin`, `boost_by_mistake`, a rung the copy leaves empty, and `changes` to a copied part.
     Every step's words are sent on each call. Returns `{"ok": true, "card", "lesson_file",
-    "play_path", "lesson_id", "questions"}`, or `{"ok": false, "errors": [{"step_id", "message"}],
+    "import_command", "play_path", "lesson_id", "questions"}`, the card's `next` saying the import
+    comes before the play path, or `{"ok": false, "errors": [{"step_id", "message"}],
     "lesson_file"}`. A missing twin or rung is an error here, before check.ts runs.
     """
     stored = load_draft(draft_id, folder)
@@ -718,13 +720,31 @@ def check(
     answer = _run_check(file, path, runner)
     if not answer.get("ok"):
         return {"ok": False, "errors": answer.get("errors") or [], "lesson_file": str(path)}
+    play_path = answer.get("play_path")
+    import_step = _import_step(path, play_path)
     return {
         "ok": True,
-        "card": card({**stored, "questions": [steps[s] for s in known]}),
+        "card": {**card({**stored, "questions": [steps[s] for s in known]}), "next": import_step},
         "lesson_file": str(path),
-        "play_path": answer.get("play_path"),
+        "import_command": import_step["command"],
+        "play_path": play_path,
         "lesson_id": answer.get("lesson_id"),
         "questions": answer.get("questions"),
+    }
+
+
+def _import_step(path: Path, play_path: Any) -> dict[str, Any]:
+    """What comes after a clean check: the import into jadwigo-dev, then the play path, which
+    exists only once the import has run (dl-e8ov.5.38.13)."""
+    repo = settings_keys.repo_dir()
+    command = f"make {IMPORT_TARGET} FILE={path} ENV=dev"
+    return {
+        "command": command,
+        "run_in": str(repo) if repo else None,
+        "then_play": play_path,
+        "says": f"Import the lesson first: {command}, from the jadwigo checkout"
+        + (f" ({repo})" if repo else "")
+        + f". Only then does it play at {play_path}; before the import that path does not exist.",
     }
 
 
@@ -820,4 +840,7 @@ def card_text(card_: Mapping[str, Any]) -> str:
     if left:
         lines.append("left out:")
         lines += [f"   {item['id']}: {item['reason']}" for item in left]
+    step = card_.get("next")
+    if step:
+        lines += [f"next: {step['says']}"]
     return "\n".join(lines)
