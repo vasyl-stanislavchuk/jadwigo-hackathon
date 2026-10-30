@@ -6,9 +6,13 @@
 // It proves what a redirect could break: an email signed in with the code and then with Google is
 // one parent with the same children; the attempt id the tab holds in sessionStorage survives the
 // round trip, so the claim still finds it; and a Facebook account with no email gets the line that
-// offers the email code, and no account. It runs only in the `api` project (JW_E2E_API=1), with the
-// api started as e2e/parent.spec.ts's header says, and needs JW_SUPABASE_PROVIDERS, which
-// playwright.config.ts sets for its build.
+// offers the email code, and no account. It runs only in the `api` project (JW_E2E_API=1), and needs
+// JW_SUPABASE_PROVIDERS, which playwright.config.ts sets for its build. Locally, with the api
+// started as:
+//
+//   DATABASE_URL=postgresql://localhost:5433/jadwigo_e2e PORT=8787 \
+//     AUTH_JWKS_URL=http://127.0.0.1:54321/auth/v1/.well-known/jwks.json \
+//     AUTH_ISSUER=http://127.0.0.1:54321/auth/v1 bun apps/api/src/serve.ts &
 import { type APIRequestContext, expect, type Page, test } from "@playwright/test";
 import { AUTH_ORIGIN } from "./auth-origin.ts";
 

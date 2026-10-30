@@ -3,8 +3,9 @@
 // nothing private is written anywhere) and serves, on 127.0.0.1:54321:
 //
 //   GET  /auth/v1/.well-known/jwks.json   the key's public half, which apps/api verifies tokens
-//                                          against (AUTH_JWKS_URL); the issuer is /auth/v1, as
-//                                          apps/api's issuerOf() derives it
+//                                          against (AUTH_JWKS_URL); its tokens' iss is
+//                                          <origin>/auth/v1, the value CI passes the api as
+//                                          AUTH_ISSUER (dl-e8ov.2.68)
 //   POST /auth/v1/otp                     "sends" a code: every code is 123456
 //   POST /auth/v1/verify                  turns 123456 into a session whose access token is shaped
 //                                          like Supabase's (iss, aud and role authenticated, sub,
