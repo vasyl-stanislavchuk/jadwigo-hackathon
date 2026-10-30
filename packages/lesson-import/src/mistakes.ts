@@ -1,5 +1,5 @@
 import { FamilyQuestion, Language } from "@jadwigo/contracts";
-import { mistakeClassesOf } from "@jadwigo/core";
+import { mistakeClassesOf as coreMistakeClassesOf } from "@jadwigo/core";
 import { resolve } from "./lesson-file.ts";
 
 /**
@@ -12,12 +12,18 @@ import { resolve } from "./lesson-file.ts";
 const record = (v: unknown): Record<string, unknown> | null =>
   v !== null && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
 
-/** A question's classes, or null when it is not a family question the contract parses. */
-function classesOf(question: Record<string, unknown>, language: Language): string[] | null {
-  const { family, data, key } = record(resolve(question, language)) ?? {};
+/**
+ * A question's classes, its lines already in the file's language, or null when it is not a family
+ * question the contract parses.
+ */
+export function mistakeClassesOf(question: unknown): string[] | null {
+  const { family, data, key } = record(question) ?? {};
   const parsed = FamilyQuestion.safeParse({ family, data, key });
-  return parsed.success ? mistakeClassesOf(parsed.data) : null;
+  return parsed.success ? coreMistakeClassesOf(parsed.data) : null;
 }
+
+const classesOf = (question: Record<string, unknown>, language: Language): string[] | null =>
+  mistakeClassesOf(resolve(question, language));
 
 /**
  * Each question step's classes by step id, a twin's under its own (`<step id>t`, as compile names
@@ -47,12 +53,13 @@ export function mistakeClassesByStep(raw: unknown): Record<string, string[]> {
 
 /** The boost keys a question never gives, as one sentence naming the ones it does, or null. */
 export function unknownBoosts(
-  question: FamilyQuestion,
+  question: unknown,
   boostByMistake: object | undefined,
 ): string | null {
-  const classes = mistakeClassesOf(question);
+  const classes = mistakeClassesOf(question) ?? [];
   const unknown = Object.keys(boostByMistake ?? {}).filter((k) => !classes.includes(k));
   if (unknown.length === 0) return null;
+  const family = String(record(question)?.["family"]);
   const valid = classes.length > 0 ? classes.join(", ") : "none";
-  return `boost_by_mistake names ${unknown.join(", ")}, which this ${question.family} question never gives; its classes are ${valid}`;
+  return `boost_by_mistake names ${unknown.join(", ")}, which this ${family} question never gives; its classes are ${valid}`;
 }
