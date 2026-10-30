@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { compileLessonFile } from "./compile.ts";
-import { FEATURED_POD, featuredAssignmentId, lessonIdFor } from "./ids.ts";
+import { DRAFTS_POD, featuredAssignmentId, lessonIdFor } from "./ids.ts";
 import { LessonFile } from "./lesson-file.ts";
 import { mistakeClassesByStep, unknownBoosts } from "./mistakes.ts";
 
@@ -85,8 +85,8 @@ function check(raw: unknown): CheckResult {
   const fileId = LessonFile.shape.id.safeParse((raw as { id?: unknown } | null)?.id);
   const known = fileId.success
     ? {
-        play_path: `/play/${featuredAssignmentId(fileId.data)}`,
-        lesson_id: lessonIdFor(FEATURED_POD.id, fileId.data) as string,
+        play_path: `/play/${featuredAssignmentId(fileId.data, DRAFTS_POD.id)}`,
+        lesson_id: lessonIdFor(DRAFTS_POD.id, fileId.data) as string,
       }
     : { play_path: null, lesson_id: null };
   const mistake_classes = mistakeClassesByStep(raw);
