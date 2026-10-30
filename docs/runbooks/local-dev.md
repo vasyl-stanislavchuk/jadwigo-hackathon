@@ -16,6 +16,9 @@ there.
   the key starting `sb_publishable_`. Every browser that opens the app holds it, so it is public,
   but `.env.example` leaves it empty because gitleaks flags its shape (`dl-e8ov.2.82`). With it empty, `/parent` has no
   sign-in. `JW_SUPABASE_URL` and `JW_SUPABASE_PROVIDERS` come filled from `.env.example`.
+- The api checks that token with `AUTH_JWKS_URL` and `AUTH_ISSUER`, both filled from
+  `.env.example` for jadwigo-dev. Both are required: without them every token route answers 401
+  and `/parent` shows `parent_load_failed` after sign-in.
 - Lesson pictures need no step. The web dev server takes `VITE_MEDIA_URL` from
   `apps/web/.env.example` when it is unset (`dl-5ssh.97`).
 
