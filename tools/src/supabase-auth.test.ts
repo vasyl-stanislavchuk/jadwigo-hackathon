@@ -3,7 +3,7 @@
 // reaches Supabase or the keychain. A secret shows only as set or missing: never in stdout, stderr
 // or any argv. apply is refused under CLAUDECODE and while a keychain item is missing.
 import { spawn, spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import {
   chmodSync,
   copyFileSync,
@@ -31,6 +31,8 @@ const SETTINGS = {
   mailer_otp_length: 6,
 };
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
+// How GET /config/auth shows a set secret: HMAC-SHA256 keyed by the project ref (dl-e8ov.2.84).
+const hmacByRef = (s: string) => createHmac("sha256", REF).update(s).digest("hex");
 const which = (tool: string) =>
   spawnSync("sh", ["-c", `command -v ${tool}`], { encoding: "utf8" }).stdout.trim();
 
@@ -218,17 +220,20 @@ describe("auth.sh", () => {
     expectNoSecret(out);
   });
 
-  it("diff: the project's hash of the keychain value is in step; another hash differs", async () => {
-    const same = await fakeApi(googleLive(sha256(SECRET)));
+  it("diff: the project's HMAC of the keychain value, keyed by the ref, is in step; another differs", async () => {
+    const same = await fakeApi(googleLive(hmacByRef(SECRET)));
     const inStep = await run(stage(GOOGLE, same.url, { [ITEM]: SECRET }), ["diff", "dev"]);
     expect(inStep.stdout).toBe(`dev (${REF}): in step\n`);
     expect(inStep.status).toBe(0);
+    expectNoSecret(inStep);
 
-    const other = await fakeApi(googleLive(sha256("an older secret")));
-    const differs = await run(stage(GOOGLE, other.url, { [ITEM]: SECRET }), ["diff", "dev"]);
-    expect(differs.stdout).toContain("  external_google_secret: (another value) -> (set)");
-    expect(differs.status).toBe(2);
-    expectNoSecret(differs);
+    for (const live of [hmacByRef("an older secret"), sha256(SECRET)]) {
+      const other = await fakeApi(googleLive(live));
+      const differs = await run(stage(GOOGLE, other.url, { [ITEM]: SECRET }), ["diff", "dev"]);
+      expect(differs.stdout).toContain("  external_google_secret: (another value) -> (set)");
+      expect(differs.status).toBe(2);
+      expectNoSecret(differs);
+    }
   });
 
   it("diff: a missing keychain item says missing and exits 1", async () => {

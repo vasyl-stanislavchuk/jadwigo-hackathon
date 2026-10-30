@@ -108,7 +108,8 @@ names a keychain item (account `jadwigo`) for each one, and the script reads it 
 
 A secret reaches curl on stdin inside the PATCH body. The diff shows it as `(not set) -> (set)`,
 `(another value) -> (set)` or `missing from the keychain`, never its value: the Management API answers
-a set secret with its SHA-256, which the script compares with the keychain value's. `diff` exits 1
+a set secret as its HMAC-SHA256 keyed by the project ref, which the script computes from the keychain
+value on openssl's stdin and compares (`dl-e8ov.2.84`). `diff` exits 1
 when an item is missing, and `apply` then sends nothing. The script refuses a `*_secret` key in
 `settings` and any `*_email_optional` that is not false. The custom access token hook
 (`hook_custom_access_token_*`, `dl-e8ov.2.67`) names a function a migration creates. While an env file
