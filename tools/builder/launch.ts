@@ -1,5 +1,5 @@
 // `make builder` (dl-a38n.10): starts the Claude Code session the live lesson builder talks to.
-// It mints the session id, writes it to JADWIGO_DRAFTS_DIR/session.json for the web dev server,
+// It mints the session id, writes it to JADWIGO_DRAFTS_DIR/.builder/session.json for the web dev server,
 // and runs claude --session-id <id> --dangerously-load-development-channels=server:jadwigo-builder
 // with JADWIGO_BUILDER_SESSION exported to the channel. Claude Code does not tell an MCP server its
 // session id, so the launcher names it (md's annotate launch, commands/annotate.py).
@@ -41,8 +41,8 @@ export function sessionRecord(
 }
 
 export function writeSession(dir: string, record: BuilderSession): string {
-  mkdirSync(dir, { recursive: true });
   const path = sessionFile(dir);
+  mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`);
   return path;
 }
