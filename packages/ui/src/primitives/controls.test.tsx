@@ -188,6 +188,23 @@ describe("SideMenu", () => {
     expect(screen.queryByRole("group", { name: "Kontrolki" })).toBeNull();
   });
 
+  it("names a category's group by its row, also when the label is not plain text", () => {
+    const rich: MenuEntry[] = [
+      {
+        id: "kit",
+        label: (
+          <>
+            Zestaw <em>dorosłych</em>
+          </>
+        ),
+        items: [{ id: "page", label: "Strona" }],
+      },
+    ];
+    render(<SideMenu label="System" items={rich} current="page" />);
+    const group = screen.getByRole("group", { name: "Zestaw dorosłych" });
+    expect(within(group).getByRole("button", { name: "Strona" })).toBeTruthy();
+  });
+
   it("calls onPick with the row's id", () => {
     const onPick = vi.fn();
     render(<SideMenu label="System" items={items} current="radio" onPick={onPick} />);
