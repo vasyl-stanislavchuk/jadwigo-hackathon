@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "jadwigo-bank/refusals",
+  "$comment": "Pinned copy of jadwigo-bank schemas/refusals.schema.json at bank commit 8e33c51. The bank's copy is the source of truth: change it there first, then re-copy here and update this commit.",
+  "title": "Refusals",
+  "description": "What people know about the items that do not play, per language: `refusals/<lang>.json at the bank repo root (what jw reads as <JADWIGO_BANK_DIR>/refusals/<lang>.json)` (dl-a38n.32.5, decisions dl-kaxj and dl-be2l). Each shape names the bead that fixes it; each flag pulls one item a person found wrong. Ids and reasons only, never question text, so it is safe in git.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["shapes", "flags"],
+  "properties": {
+    "shapes": {
+      "type": "array",
+      "description": "A failing shape (one rule on one question type) and the bead that tracks its fix. A refused item in this shape carries the issue in its status.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule", "question_type", "issue"],
+        "properties": {
+          "rule": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The render or check rule, as the conformance sidecar names it, e.g. render-overflow, key-grades"
+          },
+          "question_type": {
+            "type": ["string", "null"],
+            "description": "The spec's question_type; null for an item with none"
+          },
+          "issue": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The bead id that fixes this shape"
+          }
+        }
+      }
+    },
+    "flags": {
+      "type": "array",
+      "description": "An item a person pulled: it is flagged whatever the checks say, until the flag is removed.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "by", "reason", "on"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The converted item's id"
+          },
+          "by": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Who pulled it: a role or session, never a family member's name"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Why, in a few words, without quoting the question"
+          },
+          "issue": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The bead that tracks the fix, when there is one"
+          },
+          "on": {
+            "type": "string",
+            "format": "date",
+            "description": "The day it was pulled, YYYY-MM-DD"
+          }
+        }
+      }
+    }
+  }
+}
