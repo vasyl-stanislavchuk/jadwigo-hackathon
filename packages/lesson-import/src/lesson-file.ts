@@ -31,7 +31,7 @@ function isTr(value: unknown): value is Record<(typeof LANGUAGES)[number], strin
 }
 
 /** Any value with every `{pl, uk, en}` line inside resolved to `language`, as `sim/localize.ts` does. */
-function resolve(value: unknown, language: Language): unknown {
+export function resolve(value: unknown, language: Language): unknown {
   if (isTr(value)) return value[language];
   if (Array.isArray(value)) return value.map((v) => resolve(v, language));
   if (value !== null && typeof value === "object") {

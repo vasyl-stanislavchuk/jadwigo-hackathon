@@ -1,64 +1,62 @@
-import { MISTAKE_CLASSES } from "@jadwigo/core";
 import { describe, expect, it } from "vitest";
-import { mistakeClassesOf, unknownBoosts } from "./mistakes.ts";
+import { mistakeClassesByStep } from "./mistakes.ts";
 
-const plus = (family: keyof typeof MISTAKE_CLASSES, own: string[]) =>
-  [...new Set([...MISTAKE_CLASSES[family], ...own])].sort();
-
-describe("mistakeClassesOf (dl-e8ov.5.38.11)", () => {
-  it("adds the classes each family's near table names, in that family's shape", () => {
-    expect(
-      mistakeClassesOf({ family: "choose", key: { correct: ["a"], near: { b: "took_half" } } }),
-    ).toEqual(plus("choose", ["took_half"]));
-    expect(
-      mistakeClassesOf({
-        family: "group",
-        key: { groups: {}, near: { i1: { g2: "even_for_odd" } } },
-      }),
-    ).toEqual(plus("group", ["even_for_odd"]));
-    expect(
-      mistakeClassesOf({
-        family: "place",
-        key: { regions: [], near: [{ id: "r", mistake_class: "left_for_right" }] },
-      }),
-    ).toEqual(plus("place", ["left_for_right"]));
-    expect(
-      mistakeClassesOf({
-        family: "slots",
-        key: { gaps: { g1: { kind: "enter", accept: ["4"], near: { "5": "forgot_carry" } } } },
-      }),
-    ).toEqual(plus("slots", ["forgot_carry"]));
-    expect(mistakeClassesOf({ family: "sequence", key: { orders: [] } })).toEqual(
-      plus("sequence", []),
-    );
-  });
-
-  it("is null for a family the contract does not know, and reads a key of any shape", () => {
-    expect(mistakeClassesOf({ family: "draw", key: {} })).toBeNull();
-    expect(mistakeClassesOf({ family: "enter", key: { near: ["x"] } })).toEqual(plus("enter", []));
-    expect(mistakeClassesOf({ family: "enter" })).toEqual(plus("enter", []));
-  });
+/** A one-part lesson file of our own, each step a question with the given family, data and key. */
+const lesson = (steps: { id: string; question: object }[], language = "pl") => ({
+  language,
+  script: { parts: [{ part: "p", steps }] },
+});
+const number = (key: object) => ({
+  family: "enter",
+  data: { input: "number", entry: "keypad" },
+  key: { accept: ["24"], ...key },
 });
 
-describe("unknownBoosts", () => {
-  const enter = { family: "enter", key: { accept: ["12"], near: { "21": "digit_reversal" } } };
-
-  it("is null when every key is a class the question gives", () => {
-    expect(
-      unknownBoosts(enter, { off_by_small: { text: "x" }, digit_reversal: { text: "y" } }),
-    ).toBeNull();
-    expect(unknownBoosts(enter, undefined)).toBeNull();
-  });
-
-  it("names each unknown key and every class the question gives", () => {
-    const message = unknownBoosts(enter, { off_by_one: { text: "x" } });
-    expect(message).toContain("names off_by_one, which this enter question never gives");
-    expect(message).toContain(plus("enter", ["digit_reversal"]).join(", "));
-  });
-
-  it("names none for explain, which has no judge", () => {
-    expect(unknownBoosts({ family: "explain", key: {} }, { other_wrong: { text: "x" } })).toContain(
-      "its classes are none",
+describe("mistakeClassesByStep (dl-e8ov.5.38.15)", () => {
+  it("lists each step's own classes: a bare number key only other_wrong, a rule's only on its step", () => {
+    const rule = { rule: "times_table", a: 4, b: 6, recent: [] };
+    const out = mistakeClassesByStep(
+      lesson([
+        { id: "q1", question: number({}) },
+        { id: "q2", question: number({ rule, near: { "42": "digits_swapped" } }) },
+      ]),
     );
+    expect(out["q1"]).toEqual(["other_wrong"]);
+    expect(out["q2"]).toEqual(
+      expect.arrayContaining(["digits_swapped", "off_by_small", "neighbour_row"]),
+    );
+    expect(out["q2"]).not.toContain("wrong_case");
+  });
+
+  it("names a twin under its own step id, with its own key", () => {
+    const twin = {
+      data: { input: "number", entry: "keypad" },
+      key: { accept: ["5"], near: { "6": "one_more" } },
+    };
+    const out = mistakeClassesByStep(
+      lesson([{ id: "q1", question: { ...number({}), help: { twin } } }]),
+    );
+    expect(out["q1t"]).toEqual(["one_more", "other_wrong"]);
+  });
+
+  it("resolves the file's lines to its language before it reads a question", () => {
+    const question = {
+      family: "enter",
+      data: { input: "text", entry: "keyboard" },
+      key: {
+        accept: [{ pl: "kot", uk: "кіт", en: "cat" }],
+        case: "ignore",
+        accents: "ignore",
+        typo: "accept",
+      },
+    };
+    expect(mistakeClassesByStep(lesson([{ id: "q1", question }], "en"))["q1"]).toEqual([
+      "other_wrong",
+    ]);
+  });
+
+  it("leaves out a step whose question does not parse, and reads a file of any shape", () => {
+    expect(mistakeClassesByStep(lesson([{ id: "q1", question: { family: "draw" } }]))).toEqual({});
+    expect(mistakeClassesByStep(null)).toEqual({});
   });
 });

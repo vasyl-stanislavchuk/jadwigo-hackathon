@@ -38,7 +38,7 @@ import { letterUnits } from "../letters.ts";
  */
 
 /** The shortest accepted form a one-letter slip is counted against. */
-const TYPO_MIN_LENGTH = 4;
+export const TYPO_MIN_LENGTH = 4;
 
 const trimEnds = (s: string): string => s.replace(/^\s+|\s+$/g, "");
 

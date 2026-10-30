@@ -119,6 +119,25 @@ describe("check.ts --json", () => {
     expect((out["mistake_classes"] as Record<string, string[]>)["s02"]).toContain("off_by_small");
   });
 
+  it("fails a rule class's boost on a step whose key names no rule (dl-e8ov.5.38.15)", () => {
+    const file = planted((step) => {
+      const q = step.question as { key: Record<string, unknown> };
+      delete q.key["rule"];
+      delete q.key["near"];
+    });
+    const { status, out } = check(file);
+    expect(status).toBe(1);
+    expect(out["errors"]).toEqual([
+      {
+        step_id: "s02",
+        message: expect.stringContaining(
+          "names add_for_multiply, which this enter question never gives; its classes are other_wrong",
+        ) as unknown,
+      },
+    ]);
+    expect((out["mistake_classes"] as Record<string, string[]>)["s02"]).toEqual(["other_wrong"]);
+  });
+
   it("takes a boost for a class the step's own near table names", () => {
     const file = planted((step) => {
       const q = step.question as { key: { near: Record<string, string> }; help: object };

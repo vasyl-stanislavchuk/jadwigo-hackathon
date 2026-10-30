@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import type { FamilyQuestion } from "@jadwigo/contracts";
 import { compileLessonFile } from "./compile.ts";
 import { DRAFTS_POD, featuredAssignmentId, lessonIdFor } from "./ids.ts";
 import { LessonFile } from "./lesson-file.ts";
@@ -28,11 +29,12 @@ import { mistakeClassesByStep, unknownBoosts } from "./mistakes.ts";
  * - `questions` counts the planned questions a learner is asked, twins not counted; 0 when the file
  *   does not compile.
  * - `mistake_classes` names, for each question step (a twin under its own step id), every class
- *   its judge can give a miss: its family's (packages/core `MISTAKE_CLASSES`) and its key's `near`
- *   tables, sorted (dl-e8ov.5.38.11). These are all a `boost_by_mistake` key may name, and one it
- *   does not is an error by step id that lists them, once the file compiles; the import itself
- *   does not refuse one. Read from the file as given, so it is there when the file fails too;
- *   empty only when no step can be read.
+ *   its judge can give a miss on that step's own data and key (packages/core `mistakeClassesOf`,
+ *   dl-e8ov.5.38.15): the classes for its input and kind, its `near` tables, a rule's classes only
+ *   when its key names the rule, and `other_wrong`, sorted. These are all a `boost_by_mistake` key
+ *   may name, and one it does not is an error by step id that lists them, once the file compiles;
+ *   the import itself does not refuse one. Read from the file as given, so it is there when the
+ *   file fails too; a step whose question does not parse is left out.
  *
  * A parse failure reports every problem the schema finds, one error each. Compile stops at its first
  * throw, so once the file parses one run reports at most one compile error: fix it and run again.
@@ -97,7 +99,7 @@ function check(raw: unknown): CheckResult {
     // Stricter than the import, which keeps the playground's lessons as exported: a boost for a
     // class its question never gives never reaches the child (dl-e8ov.5.38.11).
     const errors = compiled.questions.flatMap(({ step_id, question }) => {
-      const unknown = unknownBoosts(question, question.help?.boost_by_mistake);
+      const unknown = unknownBoosts(question as FamilyQuestion, question.help?.boost_by_mistake);
       return unknown === null
         ? []
         : [
