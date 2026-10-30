@@ -13,8 +13,8 @@ came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
 | `jw question show set_khan_2002` | One set page, checked against `src/jw/contracts/set.schema.json` | `JADWIGO_BANK_DIR` |
 | `jw question gaps --words "..." --skill <id> --grade 3` | Each need searched once, with `found`, `gap` or `degraded` | the bank URL and token |
 | `jw question item <item id>` | One converted item: its family step with key and help, credit and `based_on` | `JW_KHAN_CONVERTED` |
-| `jw lesson draft "6 zadań z mnożenia, klasa 3" --grade 3 --name <name>` (or `--no-names`) | A lesson draft: drawn questions copied whole from the bank, kept under a `draft_id`, and what is left to write | all of the above, and `JADWIGO_REPO_DIR` and `bun` for the mistake classes |
-| `jw lesson check <draft_id> <words.json>` | The card, the lesson file's path and its `/play/` path, or errors by step id | `JADWIGO_REPO_DIR` and `bun` |
+| `jw lesson draft "6 zadań z mnożenia, klasa 3" --grade 3 --name <name>` (or `--no-names`) | A lesson draft: drawn questions copied whole from the bank, kept under a `draft_id` and written to `JADWIGO_DRAFTS_DIR`, and what is left to write | all of the above, and `JADWIGO_REPO_DIR` and `bun` for the mistake classes |
+| `jw lesson check <draft_id> <words.json>` | The card, the lesson file's path and its `/play/` path, or findings by step id; the draft file rewritten either way | `JADWIGO_REPO_DIR` and `bun` |
 
 - **Search** returns the envelope as the bank sent it. The `/api/v1` route answers stage `final`
   with every arm and takes no query fields, so `--stage` and `--arm` reach only the bank's own
@@ -50,6 +50,7 @@ values. Copy it into the file and fill what you use.
 | `JADWIGO_KHAN_DIR` | The synced copy of the bank's Khan bucket | `~/.cache/jadwigo-bank/khan` |
 | `JW_KHAN_CONVERTED` | The converted items file `jw question item` reads | `<JADWIGO_KHAN_DIR>/converted/pl.json` |
 | `JADWIGO_REPO_DIR` | The jadwigo-hackathon checkout whose `packages/lesson-import/src/check.ts` `jw lesson check` runs | the checkout `jw` was installed from |
+| `JADWIGO_DRAFTS_DIR` | Where `jw lesson draft` and `jw lesson check` write each draft, `<draft_id>.json`, and its check, `<draft_id>.check.json` | `~/.local/state/jadwigo/drafts` |
 
 The Khan copy is filled from the bucket by the bank repo. Run this in a checkout of `jadwigo-bank`:
 
@@ -123,10 +124,13 @@ when the parent asks
    The player maps the hints onto the ladder: the first two on `look` and `boost`, the rest
    before the last on `almost`, the last on `worked`, and a hint that prints the answer waits for
    `almost`. When no hint reaches `almost`, the copy writes it as `worked` with its last line
-   blank. The draft is kept in `<tmp>/jw-drafts/<draft_id>.json`, and the lesson as copied, with
-   no twin yet, is run through `check.ts` once: `plays_as_copied` says whether it passed, and
-   each question's `mistake_classes` are the classes `check.ts` names for its step (`null` until
-   `check.ts` sends them, `dl-e8ov.5.38.11`, or when no checkout or `bun` is found).
+   blank. The lesson as copied, with no twin yet, is written to
+   `<JADWIGO_DRAFTS_DIR>/<draft_id>.json` (the result's `draft_path`) before the call returns, and
+   run through `check.ts` once: `plays_as_copied` says whether it passed, its check is written
+   beside it as `<draft_id>.check.json`, and each question's `mistake_classes` are the classes
+   `check.ts` names for its step (`null` until `check.ts` sends them, `dl-e8ov.5.38.11`, or when
+   no checkout or `bun` is found; then no check file is written). jw's own record of the draft is
+   kept apart, in `<JADWIGO_DRAFTS_DIR>/.jw/<draft_id>.json`.
 3. **Read the slim view.** `lesson_draft` returns the draft's `draft_id`, `title`, `reasoning` and
    `left_out`, and per question its `step_id`, `prompt`, `data` (pictures without their labels),
    `key`, `copied_help` (the hints as text, with their picture alts), `rungs` (what fills each
@@ -141,12 +145,16 @@ when the parent asks
    `wording` or `tutor_notes`, and a path is `say` or a dotted path under `data`, `key`, `hints`,
    `worked` or `almost` (`hints.0.text`). Each change is recorded in `based_on.changes`.
 5. **Check.** `lesson_check(draft_id, help, title?, reasoning?)` takes those words by step id,
-   every step's on each call. It refuses a missing twin or rung, then builds the lesson file
-   (`packages/lesson-import/src/lesson-file.ts`), writes it to `<tmp>/jw-lessons/<id>.json`, and
-   runs `bun packages/lesson-import/src/check.ts <file> --json` in `JADWIGO_REPO_DIR`. `ok: true`
-   brings the card: per question its prompt, key, rungs, twin, source, licence, changes and why
-   it was drawn, and what was left out. `ok: false` lists errors by step id; fix them and check
-   again. From a shell: `jw lesson check <draft_id> words.json`, where `words.json` is the `help`
+   every step's on each call. It builds the lesson file
+   (`packages/lesson-import/src/lesson-file.ts`) and rewrites `<draft_id>.json` with it on every
+   call, as far as the words go. It refuses a missing twin or rung; otherwise it runs
+   `bun packages/lesson-import/src/check.ts <file> --json` in `JADWIGO_REPO_DIR`. Either way it
+   rewrites `<draft_id>.check.json`: `{ok, findings, mistake_classes, checked_at}`. A finding is
+   `{step_id, path, level, rule, text, fix}`: `check.ts`'s own when it sends them (`dl-a38n.14`),
+   else each of its errors as one with rule `compile`; a refused word is one with rule `words`.
+   `ok: true` brings the card: per question its prompt, key, rungs, twin, source, licence, changes
+   and why it was drawn, and what was left out. `ok: false` lists `findings` (and the old
+   `errors`, for one release) by step id; fix them and check again. From a shell: `jw lesson check <draft_id> words.json`, where `words.json` is the `help`
    object.
 6. **Import.** The owner reads the card and imports the file into jadwigo-dev from the repo root:
    `make lesson-import FILE=<lesson_file> ENV=dev`. The lesson then plays at the card's `play_path`.

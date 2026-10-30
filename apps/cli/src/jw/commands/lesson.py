@@ -49,7 +49,8 @@ def draft(
     no_names: bool,
     json_mode: bool,
 ) -> None:
-    """Draft a lesson for REQUEST: drawn questions copied whole from the bank, kept by draft id."""
+    """Draft a lesson for REQUEST: drawn questions copied whole from the bank, kept by draft id
+    and written to JADWIGO_DRAFTS_DIR as <draft_id>.json."""
     if not names and not no_names:
         raise click.UsageError("pass every name the family uses with --name, or --no-names")
     result = lesson.draft(request, grade, language, kind, count, skills, names=list(names))
@@ -62,6 +63,7 @@ def draft(
         for q in result["questions"]
     ]
     lines += [f"  left out {left['id']}: {left['reason']}" for left in result["left_out"]]
+    lines.append(f"draft file: {result['draft_path']}")
     click.echo("\n".join(lines))
 
 
@@ -75,7 +77,8 @@ def check(
     draft_id: str, words_file: Path, title: str | None, reasoning: str | None, json_mode: bool
 ) -> None:
     """Check the draft DRAFT_ID with WORDS_FILE, a JSON object of each step's words by step id
-    (the lesson_check tool's `help`), and print its card."""
+    (the lesson_check tool's `help`), and print its card. The draft file is rewritten with the
+    words and its check written beside it, whatever the check says."""
     try:
         words: Any = json.loads(words_file.read_text(encoding="utf-8"))
     except ValueError as exc:
@@ -89,7 +92,8 @@ def check(
         click.echo(lesson.card_text(result["card"]))
         click.echo(f"lesson file: {result['lesson_file']}\nplay: {result['play_path']}")
     else:
-        for error in result["errors"]:
-            click.echo(f"step {error['step_id']}: {error['message']}")
+        for finding in result["findings"]:
+            click.echo(f"step {finding['step_id']} ({finding['rule']}): {finding['text']}")
+        click.echo(f"draft file: {result['draft_path']}")
     if not result["ok"]:
         raise SystemExit(1)

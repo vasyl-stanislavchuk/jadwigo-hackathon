@@ -6,7 +6,9 @@ question_gaps (`jw question gaps --json`), question_item (`jw question item --js
 from JW_KHAN_CONVERTED, dl-e8ov.5.38.2), lesson_draft (`jw lesson draft --json`) and lesson_check
 (`jw lesson check --json`, which runs check.ts in JADWIGO_REPO_DIR, dl-e8ov.5.38.4). A draft is
 kept on the server's machine under a draft_id, so neither lesson tool sends the whole draft
-through the client's tool-result limit (dl-e8ov.5.38.10). The server
+through the client's tool-result limit (dl-e8ov.5.38.10), and both write it as a lesson file,
+<draft_id>.json, with its check, <draft_id>.check.json, into JADWIGO_DRAFTS_DIR on every call
+(dl-a38n.16). The server
 finds the bank the way the verbs do (`jw.settings_keys`: JW_API_URL, then JW_BANK_URL, then
 ~/.config/jadwigo-bank/bank.env) and reads pages from JADWIGO_BANK_DIR. Registration lines for
 Claude Code, Muse Code and Codex are in apps/cli/README.md.
@@ -44,12 +46,12 @@ def build_server() -> Any:
         instructions=(
             "Jadwigo's question bank and lesson drafts. To make a lesson from a parent's request: "
             "call lesson_draft, which copies each drawn question whole from the bank, its help "
-            "included, and keeps the draft under a draft_id. Write only what each question's "
+            "included, keeps the draft under a draft_id and writes it to draft_path. Write only what each question's "
             "you_write lists (the twin, boost_by_mistake for its mistake_classes, a rung the copy "
             "leaves empty), in the lesson's language, and change a copied part only when the "
             "parent asks. Then call lesson_check with the draft_id and those words by step id, and "
-            "fix any errors it lists by step id until it answers ok with a card and a "
-            "lesson_file. question_search, question_show, question_gaps and question_item look "
+            "fix what its findings list by step id until it answers ok with a card. Each call "
+            "rewrites the draft file, so the lesson can be watched as it is built. question_search, question_show, question_gaps and question_item look "
             "into the bank directly: sets that meet a need, one set's page, needs it cannot meet, "
             "one item."
         ),
@@ -152,8 +154,10 @@ def build_server() -> Any:
         (the hints as text with their picture alts), rungs (what fills look, boost, almost and
         worked), you_write (what is left for you), mistake_classes (the keys boost_by_mistake
         may use; null when unknown) and why_drawn. left_out says why each set or item was not
-        used, and rule_settled is false (the draw rules are provisional). Write what you_write
-        lists, in the lesson's language, then call lesson_check with the draft_id.
+        used, and rule_settled is false (the draw rules are provisional). draft_path is the
+        lesson file as copied, written in JADWIGO_DRAFTS_DIR before the call returns, with its
+        check beside it. Write what you_write lists, in the lesson's language, then call
+        lesson_check with the draft_id.
         """
         return _call(
             lesson.draft,
@@ -183,10 +187,12 @@ def build_server() -> Any:
         add changes: [{"change": numbers, context, wording or tutor_notes, "why", "set": {path:
         value}}], where a path is say, or a dotted path under data, key, hints, worked or almost
         ("hints.0.text"); each change is recorded in based_on.changes. Send every step's words
-        on each call. title and reasoning replace the draft's. ok true returns the card (per
-        question: prompt, key, rungs, twin, source, licence, changes, why drawn; and what was
-        left out), the lesson_file path, play_path and lesson_id. ok false lists errors by step
-        id: fix those and call lesson_check again.
+        on each call. title and reasoning replace the draft's. Every call rewrites the draft file
+        (draft_path) with your words as far as they go, and writes its check beside it. ok true
+        returns the card (per question: prompt, key, rungs, twin, source, licence, changes, why
+        drawn; and what was left out), the lesson_file path, play_path and lesson_id. findings
+        lists each problem: step_id, path, level (error or warn), rule, text and fix; ok is
+        false while one is an error. Fix those and call lesson_check again.
         """
         return _call(lesson.check, draft_id=draft_id, words=help, title=title, reasoning=reasoning)
 

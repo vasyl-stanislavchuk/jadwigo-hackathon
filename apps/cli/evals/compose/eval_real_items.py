@@ -102,7 +102,7 @@ def test_a_real_multiplication_draft_checks(
     assert all(q["credit"]["source"] and q["credit"]["licence"] for q in stored["questions"])
     assert all(q["skill_ids"] and ":" not in q["skill_ids"][0] for q in stored["questions"])
 
-    result = lesson.check(draft["draft_id"], _words(draft, tmp_path), out_dir=tmp_path, folder=tmp_path)
+    result = lesson.check(draft["draft_id"], _words(draft, tmp_path), folder=tmp_path)
     assert result["ok"] is True, result["errors"]
     assert result["play_path"].startswith("/play/")
     print(lesson.card_text(result["card"]))

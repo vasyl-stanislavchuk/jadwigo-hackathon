@@ -79,12 +79,30 @@ agent writes only what the bank does not have.
 1. **Draft.** Call [`lesson_draft`](/mcp/lesson_draft/) with the parent's request. Pass every name
    the family uses in `names`. The tool replaces them before anything leaves the machine. The
    draft stays on the server's machine under a `draft_id`, and a short view of it comes back.
+   The draft is on disk from this first call (see below).
 2. **Write what is missing.** Each question's `you_write` lists it: the `twin`,
    `boost_by_mistake` for its `mistake_classes`, and any rung the copy leaves empty. Write it in
    the lesson's language. Change a copied part only when the parent asks, as a change in
    `changes`.
 3. **Check.** Call [`lesson_check`](/mcp/lesson_check/) with the `draft_id` and your words by step
-   id. Fix each error it lists by step id, and check again until it answers `ok` with a card.
+   id. Fix each error in its `findings` by step id, and check again until it answers `ok` with a
+   card.
+
+### The draft on disk
+
+Both lesson tools write the draft into one directory, `JADWIGO_DRAFTS_DIR`. It defaults to
+`~/.local/state/jadwigo/drafts` on the server's machine. Each call writes 2 files there before it
+returns:
+
+- `<draft_id>.json` is the lesson file as far as it goes. `lesson_draft` writes the copy, with its
+  empty rungs. Every `lesson_check` call rewrites it with your words, even when it refuses them.
+  The result names it `draft_path`.
+- `<draft_id>.check.json` is the check beside it: `ok`, `findings`, `mistake_classes` by step id,
+  and `checked_at`.
+
+A finding has a `step_id`, a `path` into the lesson file, a `level` (`error` or `warn`), a `rule`,
+its `text` and a `fix`. `ok` is true while no finding is an error. The live lesson builder reads
+these files, so a draft renders while you write it.
 
 ## Every tool
 

@@ -7,7 +7,10 @@ and one row with no page. The items are tests/fixtures/lesson/converted.json, ou
 written for these tests (no Khan text), one of them waiting; each playing item has 2 hints and 1
 worked line. The words a composing agent would write are taken from tests/fixtures/lesson/rungs.json,
 Polish fixture text written by hand. check.ts runs on a stub in the unit tests and for real in the
-tests marked for bun. Drafts and lesson files go to the test's tmp_path.
+tests marked for bun. The drafts directory (JADWIGO_DRAFTS_DIR) is the test's tmp_path.
+
+dl-a38n.16: each call writes the draft as a lesson file, <draft_id>.json, and its check,
+<draft_id>.check.json, into that directory, empty rungs allowed.
 """
 
 from __future__ import annotations
@@ -31,6 +34,7 @@ from jw.cli import main as cli
 from jw.errors import JwError
 from jw.settings_keys import (
     JADWIGO_BANK_DIR,
+    JADWIGO_DRAFTS_DIR,
     JADWIGO_REPO_DIR,
     JW_API_URL,
     JW_KHAN_CONVERTED,
@@ -96,8 +100,7 @@ class CheckTs:
 
 @pytest.fixture(autouse=True)
 def _folders(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(lesson, "drafts_dir", lambda: tmp_path / "drafts")
-    monkeypatch.setattr(lesson, "_out_dir", lambda: tmp_path / "lessons")
+    monkeypatch.setenv(JADWIGO_DRAFTS_DIR, str(tmp_path / "drafts"))
 
 
 @pytest.fixture
@@ -118,7 +121,7 @@ def _stored(view: dict[str, Any]) -> dict[str, Any]:
 
 def _undated(view: dict[str, Any]) -> dict[str, Any]:
     """A view made in another call without what differs between calls: its draft id and file."""
-    return {k: v for k, v in view.items() if k not in ("draft_id", "draft_file")}
+    return {k: v for k, v in view.items() if k not in ("draft_id", "draft_path")}
 
 
 def _words(view: dict[str, Any]) -> dict[str, Any]:
@@ -170,7 +173,7 @@ def test_draft_copies_6_questions_whole_and_keeps_them_by_draft_id(
 
     # The draft kept on this machine holds each question whole, help and credit included.
     stored = _stored(view)
-    assert Path(view["draft_file"]) == lesson.drafts_dir() / f"{view['draft_id']}.json"
+    assert Path(view["draft_path"]) == lesson.drafts_dir() / f"{view['draft_id']}.json"
     assert stored["lesson"]["id"] == "6-zadan-z-mnozenia-klasa-3-2026-10-29"
     assert (stored["lesson"]["category"], stored["lesson"]["subject"]) == ("child", "math")
     assert "set_khan_fx0003" in stored["lesson"]["reasoning"]
@@ -182,7 +185,7 @@ def test_draft_copies_6_questions_whole_and_keeps_them_by_draft_id(
 
     # check.ts ran once on the lesson as copied: every step, its copied help, no twin yet.
     ((argv, file),) = check_ts.seen
-    assert argv[3] == "--json" and argv[2].endswith(f"{view['draft_id']}.copied.json")
+    assert argv[3] == "--json" and Path(argv[2]) == Path(view["draft_path"])
     steps = file["script"]["parts"][0]["steps"]
     assert [s["id"] for s in steps] == [q["step_id"] for q in questions]
     assert all(set(s) == STEP_KEYS and "twin" not in s["question"]["help"] for s in steps)
@@ -246,7 +249,10 @@ def test_a_name_in_the_request_never_leaves_the_machine(bank: LessonBank, check_
                  stored["lesson"]["reasoning"]):
         assert pii.leaks(text, ["Kasia"]) == [], text
     assert pii.leaks(json.dumps(view, ensure_ascii=False), ["Kasia"]) == []
-    assert pii.leaks(Path(view["draft_file"]).read_text(encoding="utf-8"), ["Kasia"]) == []
+    draft_id = view["draft_id"]
+    for path in (Path(view["draft_path"]), lesson.drafts_dir() / ".jw" / f"{draft_id}.json",
+                 lesson.drafts_dir() / f"{draft_id}.check.json"):
+        assert pii.leaks(path.read_text(encoding="utf-8"), ["Kasia"]) == [], path
     assert len(view["questions"]) == 6
 
 
@@ -324,10 +330,9 @@ def test_check_puts_the_agents_words_on_the_copy_and_returns_the_card(
     assert len(check_ts.seen) == 2  # the copy at draft time, then the lesson
     argv, file = check_ts.seen[-1]
     assert argv[0] == "bun" and argv[1].endswith("packages/lesson-import/src/check.ts")
-    assert Path(result["lesson_file"]) == lesson._out_dir() / (
-        "6-zadan-z-mnozenia-klasa-3-2026-10-29.json"
-    )
-    assert Path(argv[2]) == Path(result["lesson_file"])
+    assert Path(result["lesson_file"]) == lesson.drafts_dir() / f"{view['draft_id']}.json"
+    assert Path(argv[2]) == Path(result["lesson_file"]) == Path(result["draft_path"])
+    assert result["findings"] == []
     assert (result["play_path"], result["lesson_id"], result["questions"]) == (
         "/play/asg_fixture", "les_fixture", 6
     )
@@ -427,7 +432,8 @@ def test_the_agents_words_are_refused_by_step_id_before_check_ts_runs(
     words["q6"]["changes"] = [{"change": "style", "why": "", "set": {"stem.text": "x"}}]
     words["q9"] = {"twin": {}}
     result = lesson.check(view["draft_id"], words)
-    assert result == {"ok": False, "errors": result["errors"], "lesson_file": None}
+    assert set(result) == {"ok", "findings", "errors", "lesson_file", "draft_path"}
+    assert result["ok"] is False and len(result["findings"]) == len(result["errors"])
     assert len(check_ts.seen) == 1  # the draft's own run only
     messages = [(e["step_id"], e["message"]) for e in result["errors"]]
     assert messages[0] == ("q9", "no step q9 in " + view["draft_id"] + "; its steps are "
@@ -476,6 +482,11 @@ def test_an_answer_with_errors_comes_back_by_step_id(bank: LessonBank, check_ts:
     result = lesson.check(view["draft_id"], _words(view))
     assert result["ok"] is False
     assert result["errors"] == errors
+    # Before check.ts sends findings (dl-a38n.14), each error is one with rule compile.
+    assert result["findings"] == [
+        {"step_id": "q2", "path": "", "level": "error", "rule": "compile",
+         "text": errors[0]["message"], "fix": errors[0]["message"]}
+    ]
     assert Path(result["lesson_file"]).is_file()
 
 
@@ -508,6 +519,95 @@ def test_the_repo_dir_defaults_to_this_checkout_and_names_its_setting(
     with pytest.raises(JwError) as caught:
         lesson.check_script()
     assert JADWIGO_REPO_DIR in caught.value.hint
+
+
+# ---------------------------------------------------------------- the drafts directory --
+
+
+def _on_disk(view: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    """The lesson file and its check, as the builder's page reads them."""
+    where = lesson.drafts_dir()
+    file = json.loads((where / f"{view['draft_id']}.json").read_text(encoding="utf-8"))
+    check_file = where / f"{view['draft_id']}.check.json"
+    return file, json.loads(check_file.read_text(encoding="utf-8")) if check_file.exists() else None
+
+
+def test_the_drafts_dir_is_a_setting_with_a_stable_default(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    assert lesson.drafts_dir() == tmp_path / "drafts"  # the autouse fixture's setting
+    monkeypatch.delenv(JADWIGO_DRAFTS_DIR)
+    assert lesson.drafts_dir() == Path.home() / ".local" / "state" / "jadwigo" / "drafts"
+
+
+def test_lesson_draft_writes_the_lesson_file_with_its_empty_rungs(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    view = _draft()
+    file, checked = _on_disk(view)
+
+    # The lesson file as copied, the one check.ts ran on: no twin, no boost yet.
+    assert file == check_ts.seen[0][1]
+    steps = file["script"]["parts"][0]["steps"]
+    assert [s["id"] for s in steps] == [q["step_id"] for q in view["questions"]]
+    assert all("twin" not in s["question"]["help"] and "boost" not in s["question"]["help"]
+               for s in steps)
+    assert checked is not None
+    assert set(checked) == {"ok", "findings", "mistake_classes", "checked_at"}
+    assert (checked["ok"], checked["findings"]) == (True, [])
+    assert checked["mistake_classes"] == {f"q{n}": CLASSES for n in range(1, 7)}
+    assert dt.datetime.fromisoformat(checked["checked_at"]).tzinfo is not None
+    # jw's own record is kept apart, so the directory's top level is the page's.
+    assert sorted(p.name for p in lesson.drafts_dir().iterdir()) == sorted(
+        [".jw", f"{view['draft_id']}.json", f"{view['draft_id']}.check.json"]
+    )
+
+
+def test_without_check_ts_the_draft_file_is_written_all_the_same(
+    bank: LessonBank, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv(JADWIGO_REPO_DIR, str(tmp_path / "no-checkout"))
+    file, checked = _on_disk(view := _draft())
+    assert len(file["script"]["parts"][0]["steps"]) == len(view["questions"]) == 6
+    assert checked is None
+
+
+def test_lesson_check_rewrites_the_file_on_every_call_and_writes_its_findings(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    view = _draft()
+    words = _words(view)
+    short = {**words, "q2": {k: v for k, v in words["q2"].items() if k != "boost"}}
+
+    refused = lesson.check(view["draft_id"], short, title="Mnożenie przez 6")
+    file, checked = _on_disk(view)
+    # Refused before check.ts, and still written as far as the words go.
+    assert len(check_ts.seen) == 1
+    assert file["title"] == "Mnożenie przez 6"
+    steps = {s["id"]: s["question"]["help"] for s in file["script"]["parts"][0]["steps"]}
+    assert steps["q1"]["boost"] == words["q1"]["boost"] and "twin" in steps["q2"]
+    assert "boost" not in steps["q2"]
+    assert checked is not None and checked["ok"] is False
+    assert checked["findings"] == refused["findings"] == [
+        {"step_id": "q2", "path": "script.parts[0].steps[1]", "level": "error", "rule": "words",
+         "text": "help.boost is empty; write it", "fix": "help.boost is empty; write it"}
+    ]
+
+    findings = [
+        {"step_id": "q3", "path": "script.parts[0].steps[2].question.help.twin.say",
+         "level": "warn", "rule": "long-say", "text": "The twin's say is long.",
+         "fix": "Say it in fewer words."}
+    ]
+    check_ts.answer = {**OK, "findings": findings,
+                       "mistake_classes": {f"q{n}": ["added_instead"] for n in range(1, 7)}}
+    result = lesson.check(view["draft_id"], words)
+    file, checked = _on_disk(view)
+    assert result["ok"] is True and result["findings"] == findings
+    assert file == check_ts.seen[-1][1] and "boost" in file["script"]["parts"][0]["steps"][1][
+        "question"]["help"]
+    assert checked is not None
+    assert (checked["ok"], checked["findings"]) == (True, findings)
+    assert checked["mistake_classes"]["q1"] == ["added_instead"]
 
 
 # ---------------------------------------------------------------- the real check.ts --

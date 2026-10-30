@@ -24,7 +24,13 @@ from mcp.client.stdio import StdioServerParameters, stdio_client
 
 from jw.cli import main as cli
 from jw.commands.mcp import TOOLS
-from jw.settings_keys import JADWIGO_BANK_DIR, JW_API_URL, JW_BANK_ENV_FILE, JW_KHAN_CONVERTED
+from jw.settings_keys import (
+    JADWIGO_BANK_DIR,
+    JADWIGO_DRAFTS_DIR,
+    JW_API_URL,
+    JW_BANK_ENV_FILE,
+    JW_KHAN_CONVERTED,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 BANK_DIR = ROOT / "tests" / "fixtures" / "bank"
@@ -174,7 +180,7 @@ def test_a_client_with_no_shell_drafts_fills_and_checks_a_lesson_by_draft_id(
     env = {
         **_env(fake.url),
         JW_KHAN_CONVERTED: str(LESSON / "converted.json"),
-        "TMPDIR": str(tmp_path),  # the server keeps its drafts and lesson files here
+        JADWIGO_DRAFTS_DIR: str(tmp_path / "drafts"),  # the server writes its drafts here
         "PATH": str(Path(shutil.which("bun") or "bun").parent),
     }
 
@@ -207,11 +213,13 @@ def test_a_client_with_no_shell_drafts_fills_and_checks_a_lesson_by_draft_id(
         fake.stop()
     assert len(json.dumps(draft, ensure_ascii=False)) < 20_000
     assert draft["plays_as_copied"] is True and len(draft["questions"]) == 6
-    assert Path(draft["draft_file"]).parent == tmp_path / "jw-drafts"
+    assert Path(draft["draft_path"]) == tmp_path / "drafts" / f"{draft['draft_id']}.json"
     assert refused["ok"] is False
     assert refused["errors"] == [{"step_id": "q1", "message": "help.twin is empty; write it"}]
+    assert [(f["step_id"], f["rule"]) for f in refused["findings"]] == [("q1", "words")]
     assert checked["ok"] is True, checked
     assert checked["play_path"].startswith("/play/") and checked["questions"] == 6
-    assert Path(checked["lesson_file"]).parent == tmp_path / "jw-lessons"
+    assert checked["lesson_file"] == checked["draft_path"] == draft["draft_path"]
+    assert json.loads((tmp_path / "drafts" / f"{draft['draft_id']}.check.json").read_text())["ok"]
     assert all(q["rungs"]["look"] and q["twin"]["key"] for q in checked["card"]["questions"])
     assert "no draft draft_000000000000" in unknown

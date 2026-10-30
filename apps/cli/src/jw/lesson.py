@@ -9,16 +9,25 @@ Two steps, each one MCP tool and one `jw lesson` verb:
    (`jw.items.load_item`). Each question is copied whole: family, data, key, say, pictures, and
    the source's help (hints with their pictures, worked lines), so the copy plays as is
    (jadwigo-ai-workflows/decisions/2026-10-30-lesson-from-the-bank-copies-the-bank-question-whole-then-adapts).
-   The draft is kept on this machine under a `draft_id`, its as-copied lesson file is run through
-   check.ts once for each step's mistake classes, and a slim view comes back: per question its
+   The draft is kept on this machine under a `draft_id`: its lesson file as copied is written to
+   `<JADWIGO_DRAFTS_DIR>/<draft_id>.json` and run through check.ts once for each step's mistake
+   classes, its check written beside it as `<draft_id>.check.json`, and a slim view comes back: per question its
    prompt, data with picture alts, key, the copied help as text, which rung each copied part
    fills, what the agent still writes, and the mistake classes its `boost_by_mistake` may name.
 2. `check(draft_id, words={step_id: {...}}, title?, reasoning?)` takes only the agent's words:
    what the bank lacks (the twin, `boost_by_mistake`, a rung the copy leaves empty) and, on the
    parent's request, `changes` to a copied part, each one recorded in `based_on.changes`. It
-   assembles the lesson file (`packages/lesson-import/src/lesson-file.ts`), writes it, runs
-   `bun packages/lesson-import/src/check.ts <file> --json` in the jadwigo checkout
-   (`JADWIGO_REPO_DIR`), and returns the card a parent reads, or the errors by step id.
+   assembles the lesson file (`packages/lesson-import/src/lesson-file.ts`), rewrites
+   `<draft_id>.json` with it as far as it goes, runs `bun packages/lesson-import/src/check.ts
+   <file> --json` in the jadwigo checkout (`JADWIGO_REPO_DIR`), writes `<draft_id>.check.json`,
+   and returns the card a parent reads, or the findings by step id.
+
+Both files are written on every call, before the call returns, so the live lesson builder's page
+(dl-a38n) renders the draft from the first call. jw's own record of a draft (the questions with
+their mistake classes, the request, the draw) is kept apart, in `<JADWIGO_DRAFTS_DIR>/.jw/`. A
+finding is `{step_id, path, level, rule, text, fix}` (`packages/lesson-import/src/findings.ts`):
+check.ts's own when it sends them (dl-a38n.14), else each of its errors as one with rule `compile`;
+words jw refuses before check.ts runs are findings with rule `words`.
 
 A word a child reads is the bank's, copied, or the calling agent's, in the lesson's language; the
 tools copy, draw, assemble and check. A tool's own text (errors, `reasoning`) is in English.
@@ -42,11 +51,11 @@ import copy
 import dataclasses
 import datetime as dt
 import json
+import os
 import re
 import secrets
 import shutil
 import subprocess
-import tempfile
 import unicodedata
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
@@ -71,6 +80,7 @@ DRAFT_ID_RE = re.compile(r"^draft_[0-9a-f]{12}$")
 # The bank's enrichment marks a skill id it has not settled; the mark is not part of the id.
 PROPOSED = "proposed:"
 CHECK_TIMEOUT_SECS = 120
+STATE_DIR = ".jw"  # jw's own record of each draft, under the drafts directory
 
 # What `check` runs: argv in, an object with `returncode`, `stdout` and `stderr` out.
 Runner = Callable[[list[str]], Any]
@@ -261,8 +271,68 @@ def _skill_label(skill: str) -> str:
 
 
 def drafts_dir() -> Path:
-    """Where drafts are kept between lesson_draft and lesson_check: jw's tmp dir."""
-    return Path(tempfile.gettempdir()) / "jw-drafts"
+    """Where drafts are written: JADWIGO_DRAFTS_DIR, else ~/.local/state/jadwigo/drafts."""
+    return settings_keys.drafts_dir()
+
+
+def _lesson_path(where: Path, draft_id: str) -> Path:
+    return where / f"{draft_id}.json"
+
+
+def _check_path(where: Path, draft_id: str) -> Path:
+    return where / f"{draft_id}.check.json"
+
+
+def _state_path(where: Path, draft_id: str) -> Path:
+    return where / STATE_DIR / f"{draft_id}.json"
+
+
+def _write_json(path: Path, value: Any) -> None:
+    """Write `value` whole: to a sibling first, then renamed over `path`, so a reader watching the
+    directory never sees half a file."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    part = path.with_name(f".{path.name}.part")
+    part.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    os.replace(part, path)
+
+
+def _finding(step_id: str | None, rule: str, message: str, path: str = "") -> dict[str, Any]:
+    """One error as a finding (`Finding` in packages/lesson-import/src/findings.ts)."""
+    return {"step_id": step_id, "path": path, "level": "error", "rule": rule, "text": message,
+            "fix": message}
+
+
+def _findings(answer: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """check.ts's findings, or, before it sends them (dl-a38n.14), its errors as findings."""
+    findings = answer.get("findings")
+    if isinstance(findings, list):
+        return list(findings)
+    return [
+        _finding(e.get("step_id"), "compile", str(e.get("message", "")))
+        for e in answer.get("errors") or []
+    ]
+
+
+def _write_check(
+    where: Path,
+    stored: Mapping[str, Any],
+    ok: bool,
+    findings: list[dict[str, Any]],
+    classes: Any = None,
+) -> None:
+    """`<draft_id>.check.json`: `{ok, findings, mistake_classes, checked_at}`. The classes are
+    check.ts's when it sent them, else the draft's (null for a step whose classes are unknown)."""
+    if not isinstance(classes, Mapping):
+        classes = {q["step_id"]: q.get("mistake_classes") for q in stored["questions"]}
+    _write_json(
+        _check_path(where, stored["draft_id"]),
+        {
+            "ok": ok,
+            "findings": findings,
+            "mistake_classes": dict(classes),
+            "checked_at": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
+        },
+    )
 
 
 def _to_write(step: Mapping[str, Any]) -> list[str]:
@@ -322,7 +392,7 @@ def _view(stored: Mapping[str, Any]) -> dict[str, Any]:
         "copy_errors": stored["copy_errors"],
         "questions": [_slim(q) for q in stored["questions"]],
         "left_out": stored["left_out"],
-        "draft_file": stored["draft_file"],
+        "draft_path": stored["draft_path"],
     }
 
 
@@ -340,7 +410,8 @@ def draft(
     folder: Path | None = None,
 ) -> dict[str, Any]:
     """A lesson draft for `request`: drawn questions copied whole from the bank, kept under a
-    `draft_id` in `folder` (jw's tmp dir), and the slim view of it.
+    `draft_id` in `folder` (JADWIGO_DRAFTS_DIR), and the slim view of it. The lesson file as
+    copied, empty rungs and all, is `<draft_id>.json` there before this returns.
 
     `names` is every name the family uses in the request (the child's, siblings', the parent's),
     required: an empty list says there are none. They are replaced before anything leaves.
@@ -430,23 +501,23 @@ def draft(
         },
         "questions": questions,
         "left_out": left_out,
-        "draft_file": str(where / f"{draft_id}.json"),
+        "draft_path": str(_lesson_path(where, draft_id)),
     }
-    _check_copy(stored, where / f"{draft_id}.copied.json", runner)
-    where.mkdir(parents=True, exist_ok=True)
-    Path(stored["draft_file"]).write_text(
-        json.dumps(stored, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
+    _check_copy(stored, where, runner)
+    _write_json(_state_path(where, draft_id), stored)
     return _view(stored)
 
 
-def _check_copy(stored: dict[str, Any], path: Path, runner: Runner | None) -> None:
-    """Run check.ts on the lesson as copied, before any twin: whether it plays as is, and each
-    step's mistake classes (check.ts's `mistake_classes`, dl-e8ov.5.38.11). Without a checkout or
-    bun, or before check.ts sends classes, they stay unknown (None)."""
+def _check_copy(stored: dict[str, Any], where: Path, runner: Runner | None) -> None:
+    """Write the lesson as copied, before any twin, and run check.ts on it: whether it plays as
+    is, and each step's mistake classes (check.ts's `mistake_classes`, dl-e8ov.5.38.11), written
+    to the check file too. Without a checkout or bun the file is written all the same, no check
+    file is, and the classes stay unknown (None); before check.ts sends classes, likewise."""
     stored["plays_as_copied"], stored["copy_errors"] = None, []
+    path = Path(stored["draft_path"])
+    _write_json(path, _file(stored, {}))
     try:
-        answer = _run_check(_file(stored, {}), path, runner)
+        answer = _run_check(path, runner)
     except JwError:
         return
     stored["plays_as_copied"] = bool(answer.get("ok"))
@@ -455,6 +526,7 @@ def _check_copy(stored: dict[str, Any], path: Path, runner: Runner | None) -> No
     if isinstance(classes, Mapping):
         for q in stored["questions"]:
             q["mistake_classes"] = list(classes.get(q["step_id"]) or [])
+    _write_check(where, stored, stored["plays_as_copied"], _findings(answer), classes)
 
 
 def load_draft(draft_id: str, folder: Path | None = None) -> dict[str, Any]:
@@ -464,7 +536,9 @@ def load_draft(draft_id: str, folder: Path | None = None) -> dict[str, Any]:
     if not DRAFT_ID_RE.match(draft_id or ""):
         raise JwError(f"{draft_id!r} is not a draft id", hint=hint)
     try:
-        stored: dict[str, Any] = json.loads((where / f"{draft_id}.json").read_text(encoding="utf-8"))
+        stored: dict[str, Any] = json.loads(
+            _state_path(where, draft_id).read_text(encoding="utf-8")
+        )
     except FileNotFoundError as exc:
         raise JwError(f"no draft {draft_id} in {where}", hint=hint) from exc
     return stored
@@ -616,8 +690,8 @@ def _run(repo: Path) -> Runner:
     return run
 
 
-def _run_check(file: Mapping[str, Any], path: Path, runner: Runner | None) -> dict[str, Any]:
-    """Write `file` to `path`, run check.ts on it, and return its JSON answer."""
+def _run_check(path: Path, runner: Runner | None) -> dict[str, Any]:
+    """Run check.ts on the lesson file at `path` and return its JSON answer."""
     repo, script = check_script()
     bun = "bun"
     if runner is None:
@@ -629,8 +703,6 @@ def _run_check(file: Mapping[str, Any], path: Path, runner: Runner | None) -> di
                 f"{settings_keys.JADWIGO_REPO_DIR} to a checkout where it runs.",
             )
         bun, runner = found, _run(repo)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(file, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     done = runner([bun, str(script), str(path), "--json"])
     try:
         answer: dict[str, Any] = json.loads(done.stdout)
@@ -643,10 +715,6 @@ def _run_check(file: Mapping[str, Any], path: Path, runner: Runner | None) -> di
     return answer
 
 
-def _out_dir() -> Path:
-    return Path(tempfile.gettempdir()) / "jw-lessons"
-
-
 def check(
     draft_id: str,
     words: Mapping[str, Mapping[str, Any]],
@@ -654,18 +722,20 @@ def check(
     reasoning: str | None = None,
     *,
     runner: Runner | None = None,
-    out_dir: Path | None = None,
     folder: Path | None = None,
 ) -> dict[str, Any]:
     """Put the agent's words on the draft kept under `draft_id` and run check.ts on the lesson.
 
     `words` maps each step id to what the agent wrote for it (the lesson_check tool's `help`):
     `twin`, `boost_by_mistake`, a rung the copy leaves empty, and `changes` to a copied part.
-    Every step's words are sent on each call. Returns `{"ok": true, "card", "lesson_file",
-    "play_path", "lesson_id", "questions"}`, or `{"ok": false, "errors": [{"step_id", "message"}],
-    "lesson_file"}`. A missing twin or rung is an error here, before check.ts runs.
+    Every step's words are sent on each call. `<draft_id>.json` is rewritten with them first, as
+    far as they go, and `<draft_id>.check.json` after. Returns `{"ok": true, "card", "findings",
+    "lesson_file", "draft_path", "play_path", "lesson_id", "questions"}`, or `{"ok": false,
+    "findings", "errors": [{"step_id", "message"}], "lesson_file", "draft_path"}`. A missing twin
+    or rung is an error here (rule `words`), before check.ts runs.
     """
-    stored = load_draft(draft_id, folder)
+    where = folder or drafts_dir()
+    stored = load_draft(draft_id, where)
     if not isinstance(words, Mapping):
         raise JwError("help maps step ids to their words", hint='Pass {"q1": {"twin": ...}, ...}.')
     known = [q["step_id"] for q in stored["questions"]]
@@ -682,21 +752,32 @@ def check(
             continue
         steps[q["step_id"]], problems = _apply(q, given)
         errors += [{"step_id": q["step_id"], "message": p} for p in problems]
-    if errors:
-        return {"ok": False, "errors": errors, "lesson_file": None}
 
     for field, value in (("title", title), ("reasoning", reasoning)):
         if value is not None and value.strip():
             stored["lesson"][field] = value.strip()
-    file = _file(stored, steps)
-    path = (out_dir or _out_dir()) / f"{file['id']}.json"
-    answer = _run_check(file, path, runner)
+    path = _lesson_path(where, draft_id)
+    _write_json(path, _file(stored, steps))
+    paths = {"lesson_file": str(path), "draft_path": str(path)}
+    if errors:
+        at = {s: f"script.parts[0].steps[{n}]" for n, s in enumerate(known)}
+        findings = [
+            _finding(e["step_id"], "words", e["message"], at.get(e["step_id"], ""))
+            for e in errors
+        ]
+        _write_check(where, stored, False, findings)
+        return {"ok": False, "findings": findings, "errors": errors, **paths}
+
+    answer = _run_check(path, runner)
+    findings = _findings(answer)
+    _write_check(where, stored, bool(answer.get("ok")), findings, answer.get("mistake_classes"))
     if not answer.get("ok"):
-        return {"ok": False, "errors": answer.get("errors") or [], "lesson_file": str(path)}
+        return {"ok": False, "findings": findings, "errors": answer.get("errors") or [], **paths}
     return {
         "ok": True,
         "card": card({**stored, "questions": [steps[s] for s in known]}),
-        "lesson_file": str(path),
+        "findings": findings,
+        **paths,
         "play_path": answer.get("play_path"),
         "lesson_id": answer.get("lesson_id"),
         "questions": answer.get("questions"),
