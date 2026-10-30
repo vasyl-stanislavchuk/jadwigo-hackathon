@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { compileLessonFile } from "./compile.ts";
 import { FEATURED_POD, featuredAssignmentId, lessonIdFor } from "./ids.ts";
 import { LessonFile } from "./lesson-file.ts";
+import { mistakeClassesByStep, unknownBoosts } from "./mistakes.ts";
 
 /**
  * Checks one lesson file without writing anything (dl-e8ov.5.38.3): `bun run check <file> [--json]`
@@ -15,7 +16,8 @@ import { LessonFile } from "./lesson-file.ts";
  *      "errors": [{"step_id": string | null, "message": string}],
  *      "play_path": "/play/<assignment id>" | null,
  *      "lesson_id": "<lesson id>" | null,
- *      "questions": number}
+ *      "questions": number,
+ *      "mistake_classes": {<step id>: [string, ...]}}
  *
  * - `step_id` is the step's `id` in the file (a twin's ends `t`, as compile names it), or null when
  *   the problem is the file's own (its title, its id, the JSON itself).
@@ -24,6 +26,12 @@ import { LessonFile } from "./lesson-file.ts";
  *   only when the file has no usable id.
  * - `questions` counts the planned questions a learner is asked, twins not counted; 0 when the file
  *   does not compile.
+ * - `mistake_classes` names, for each question step (a twin under its own step id), every class
+ *   its judge can give a miss: its family's (packages/core `MISTAKE_CLASSES`) and its key's `near`
+ *   tables, sorted (dl-e8ov.5.38.11). These are all a `boost_by_mistake` key may name, and one it
+ *   does not is an error by step id that lists them, once the file compiles; the import itself
+ *   does not refuse one. Read from the file as given, so it is there when the file fails too;
+ *   empty only when no step can be read.
  *
  * A parse failure reports every problem the schema finds, one error each. Compile stops at its first
  * throw, so once the file parses one run reports at most one compile error: fix it and run again.
@@ -40,6 +48,7 @@ interface CheckResult {
   readonly play_path: string | null;
   readonly lesson_id: string | null;
   readonly questions: number;
+  readonly mistake_classes: Readonly<Record<string, readonly string[]>>;
 }
 
 /** The step at `script.parts[i].steps[j]` of the file as given, by its id. */
@@ -80,13 +89,27 @@ function check(raw: unknown): CheckResult {
         lesson_id: lessonIdFor(FEATURED_POD.id, fileId.data) as string,
       }
     : { play_path: null, lesson_id: null };
+  const mistake_classes = mistakeClassesByStep(raw);
   try {
     const compiled = compileLessonFile(raw);
     const questions = compiled.questions.filter((q) => q.role === "planned").length;
-    return { ok: true, errors: [], ...known, questions };
+    // Stricter than the import, which keeps the playground's lessons as exported: a boost for a
+    // class its question never gives never reaches the child (dl-e8ov.5.38.11).
+    const errors = compiled.questions.flatMap(({ step_id, question }) => {
+      const unknown = unknownBoosts(question, question.help?.boost_by_mistake);
+      return unknown === null
+        ? []
+        : [
+            {
+              step_id,
+              message: `lesson file ${String(fileId.data)}, step ${step_id} help: ${unknown}`,
+            },
+          ];
+    });
+    return { ok: errors.length === 0, errors, ...known, questions, mistake_classes };
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    return { ok: false, errors: errorsOf(raw, message), ...known, questions: 0 };
+    return { ok: false, errors: errorsOf(raw, message), ...known, questions: 0, mistake_classes };
   }
 }
 
@@ -113,6 +136,7 @@ try {
     play_path: null,
     lesson_id: null,
     questions: 0,
+    mistake_classes: {},
   };
 }
 if (json) {
