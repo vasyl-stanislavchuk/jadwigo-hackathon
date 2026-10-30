@@ -7,7 +7,9 @@
 //   <name>.conformance.json   the report: every item's findings, and the failing shapes by sets served
 // It fails closed (dl-a38n.32.1): with a blank media URL it refuses to start (NO_MEDIA_URL), and the
 // page settles every picture before the rules run and marks an item it never drew render-unplayable.
-// Run: bun tools/conformance/run.ts [--items <converted-pl.json>] [--limit N] [--top N]
+// Each item is drawn in its own language (dl-a38n.32.3): --lang pl|en checks that language's items
+// (and those naming none), else the items' own, refused when they mix; the sidecar names it (lang).
+// Run: bun tools/conformance/run.ts [--items <converted-pl.json>] [--lang pl|en] [--limit N] [--top N]
 // Chromium comes from Playwright: `bunx playwright install chromium` once per machine.
 import { type ChildProcess, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -15,7 +17,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { basename, dirname, join, resolve } from "node:path";
 import { chromium } from "@playwright/test";
-import { devMediaUrl, itemsPath, NO_MEDIA_URL, serverEnv } from "./config.ts";
+import { devMediaUrl, itemsInLanguage, itemsPath, NO_MEDIA_URL, serverEnv } from "./config.ts";
 import { type ItemResult, shapesOf, sidecarOf, summaryLines } from "./report.ts";
 
 const REPO = resolve(dirname(new URL(import.meta.url).pathname), "..", "..");
@@ -117,7 +119,14 @@ async function main(): Promise<number> {
   const top = Number(flag(args, "--top") ?? "10");
   const file = JSON.parse(readFileSync(items, "utf8")) as { items?: unknown[] };
   if (!Array.isArray(file.items)) throw new Error(`${items} has no items list`);
-  const served = limit > 0 ? { ...file, items: file.items.slice(0, limit) } : file;
+  const chosen = itemsInLanguage(file.items, flag(args, "--lang"));
+  if ("error" in chosen) throw new Error(`${items}: ${chosen.error}`);
+  const { lang } = chosen;
+  if (chosen.left_out > 0)
+    process.stderr.write(
+      `${chosen.left_out} items in another language left out (--lang ${lang})\n`,
+    );
+  const served = { ...file, items: limit > 0 ? chosen.items.slice(0, limit) : chosen.items };
   const hash = createHash("sha256");
   for (const path of RULES) hash.update(readFileSync(path));
   const rulesVersion = `sha256:${hash.digest("hex").slice(0, 12)}`;
@@ -156,7 +165,7 @@ async function main(): Promise<number> {
     const out = outputsOf(items);
     writeFileSync(
       out.sidecar,
-      `${JSON.stringify(sidecarOf(state.results, rulesVersion, ranAt), null, 2)}\n`,
+      `${JSON.stringify(sidecarOf(state.results, rulesVersion, ranAt, lang), null, 2)}\n`,
     );
     writeFileSync(
       out.report,
@@ -165,6 +174,7 @@ async function main(): Promise<number> {
           items_file: items,
           rules_version: rulesVersion,
           ran_at: ranAt,
+          lang,
           shapes,
           items: state.results,
         },
@@ -172,6 +182,7 @@ async function main(): Promise<number> {
         2,
       )}\n`,
     );
+    process.stdout.write(`lang ${lang}\n`);
     for (const line of summaryLines(state.results, shapes, top)) process.stdout.write(`${line}\n`);
     if (pageErrors.length > 0) {
       process.stdout.write(`${pageErrors.length} page errors, the first: ${pageErrors[0]}\n`);

@@ -44,14 +44,16 @@ describe("the conformance report", () => {
   });
 
   it("writes each item's verdict to the sidecar: render_ok unless an error", () => {
-    const sidecar = sidecarOf(RESULTS, "sha256:abc", "2026-10-30T12:00:00.000Z");
+    const sidecar = sidecarOf(RESULTS, "sha256:abc", "2026-10-30T12:00:00.000Z", "pl");
     expect(Object.keys(sidecar.items)).toEqual(["a1", "a2", "b1", "c1", "c2", "c3", "d1"]);
     expect(sidecar.items["a1"]?.render_ok).toBe(false);
     expect(sidecar.items["d1"]).toEqual({ render_ok: true, findings: [] });
     expect(
-      sidecarOf([result("w", null, "x", [finding("r", "warn")])], "", "").items["w"]?.render_ok,
+      sidecarOf([result("w", null, "x", [finding("r", "warn")])], "", "", "pl").items["w"]
+        ?.render_ok,
     ).toBe(true);
     expect(sidecar.rules_version).toBe("sha256:abc");
+    expect(sidecar.lang).toBe("pl");
   });
 
   it("prints the counts and the top shapes", () => {

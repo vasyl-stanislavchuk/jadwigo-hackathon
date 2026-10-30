@@ -17,10 +17,12 @@
     "vitest": "runs this package's unit test with the root vitest.config.ts",
     "fast-check": "the property tests in src/*.test.ts and src/families/*.test.ts",
     "@jadwigo/contracts": "the family question, value, verdict and help types the judges and the help release read",
-    "@jadwigo/testing": "the playground's golden corpus that src/families/golden.test.ts holds the judges to"
+    "@jadwigo/testing": "the playground's golden corpus that src/families/golden.test.ts holds the judges to",
+    "ts-fsrs": "the FSRS scheduler masteryOf replays each skill's reviews through (src/mastery/fsrs.ts)"
   },
   "dependencies": {
-    "@jadwigo/contracts": "workspace:*"
+    "@jadwigo/contracts": "workspace:*",
+    "ts-fsrs": "5.4.2"
   },
   "devDependencies": {
     "@types/node": "catalog:",
