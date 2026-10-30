@@ -162,7 +162,7 @@ describe("TerminalCard", () => {
   it("keeps the 56 px tap target, with the hover fill an inset pill", () => {
     render(<TerminalCard card={lab} language="en" />);
     const button = screen.getByRole("button", { name: "Copy: bd -C $DL_LAB ready" });
-    expect(button.className).toMatch(/min-h-\[var\(--kid-tap-min\)\]/);
+    expect(button.className).toMatch(/(^|\s)min-h-kid-tap(\s|$)/);
     expect(button.className).toMatch(/before:inset-x-1\.5/);
     expect(button.className).toMatch(/before:inset-y-2/);
     expect(button.className).toMatch(/before:rounded-sm/);

@@ -3,7 +3,7 @@
 // levels at most. The current page wears the pick; its category turns bold and opens, also when the
 // current page changes (a scroll-spy). Rows are 48 px, sub-rows 44 px with smaller words.
 import { ChevronRight } from "lucide-react";
-import { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactElement, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { cn } from "../lib/utils.ts";
 import { FOCUS, ROW } from "./choice.ts";
 
@@ -47,6 +47,7 @@ function SideMenu({
   title?: string;
   className?: string;
 }): ReactElement {
+  const own = useId();
   const categories = items.filter((it): it is MenuItem => "id" in it && it.items !== undefined);
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(categories.map((c) => [c.id, c.open === true || holds(c, current)])),
@@ -128,6 +129,7 @@ function SideMenu({
         <div key={it.id} className="flex flex-col">
           <button
             type="button"
+            id={`${own}-${it.id}`}
             aria-expanded={isOpen}
             className={look}
             onClick={() => {
@@ -141,7 +143,7 @@ function SideMenu({
             // biome-ignore lint/a11y/useSemanticElements: a group of menu rows, not a form: a fieldset would draw a form group
             <div
               role="group"
-              aria-label={typeof it.label === "string" ? it.label : undefined}
+              aria-labelledby={`${own}-${it.id}`}
               className="mb-1 ml-5.5 flex flex-col gap-0.5 border-l-2 border-jw-line pl-2.5"
             >
               {it.items?.map((c) => row(c, true))}

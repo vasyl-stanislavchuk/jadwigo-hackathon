@@ -12,8 +12,8 @@ describe("Heading", () => {
     [2, "text-jw-instruction"],
     [3, "text-jw-body"],
   ] as const)("level %i is a heading of that level on %s, bold", (level, size) => {
-    render(<Heading level={level}>Lekcje Ani</Heading>);
-    const heading = screen.getByRole("heading", { level, name: "Lekcje Ani" });
+    render(<Heading level={level}>Twoje lekcje</Heading>);
+    const heading = screen.getByRole("heading", { level, name: "Twoje lekcje" });
     expect(heading.tagName).toBe(`H${level}`);
     expect(heading.classList.contains(size)).toBe(true);
     expect(heading.classList.contains("font-bold")).toBe(true);

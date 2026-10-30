@@ -13,7 +13,7 @@ const inputVariants = cva(
   {
     variants: {
       kind: {
-        number: "min-h-[var(--kid-tap-min)] rounded-lg text-kid-answer font-semibold tabular-nums",
+        number: "min-h-kid-tap rounded-lg text-kid-answer font-semibold tabular-nums",
         text: "min-h-jw-control rounded-jw-small border-jw-line bg-jw-card text-jw-body text-jw-ink proportional-nums placeholder:text-jw-placeholder focus-visible:border-jw-focus",
       },
     },
