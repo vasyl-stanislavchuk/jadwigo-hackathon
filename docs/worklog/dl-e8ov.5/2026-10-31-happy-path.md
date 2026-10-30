@@ -135,15 +135,52 @@ evidence is a copy of the last one, `reused: true`. Before #348 (lane tip c5882e
 passed. The narrative above was saved on the first learner, which the reset removed; it was not
 written again.
 
+## The full pass, with the fix for `dl-liwi.35`
+
+`lane/lk-happy` merged `origin/lane/lk-core-4` (fdc1dfe, PR #351): `inputs_hash` now reads the
+after-mastery rows, the goals, the catalogue codes and `DIGEST_RULES_VERSION` 2, not the period.
+On the lane database, reset again:
+
+```text
+$ DATABASE_URL=postgresql://localhost:5433/jadwigo_lane_lk_happy make migrate
+$ DATABASE_URL=postgresql://localhost:5433/jadwigo_lane_lk_happy bunx turbo run test:int --filter=./apps/api --force
+  ✓ src/journey.int.test.ts (1 test)
+  Test Files  4 passed (4)
+       Tests  69 passed (69)
+```
+
+A fresh throwaway learner, the same 2 goals and 2 days, then `make dream` twice:
+
+```text
+$ DATABASE_URL=postgresql://localhost:5433/jadwigo_lane_lk_happy make dream LEARNER=lrn_7k4t8wg7599gfs5wqvv4gnb9gr
+dream: on the local database jadwigo_lane_lk_happy
+run 1  rpt_7wyx0h7hxm9svs1svsgy0mwa00  reused false  hash 04f6034a…  counts 2 attempts, 4 questions, 2 days
+       skills_moved row-7 not_started->proficient, row-8 not_started->attempted
+       brief row-8 reteach, the spelling draft new; proposals p1 reteach, p2 new; goals needs_attention, not_started
+run 2  rpt_0xfx99chx093htffmr86z0ta0t  reused true   hash 04f6034a…  the same digest
+dream: next, in Claude Code, run /jadwigo-report-write on <DREAM_DIR>/lrn_7k4t8wg7599gfs5wqvv4gnb9gr-20261030T230234Z.json
+```
+
+`/jadwigo-report-write` was followed again on run 2's report, the same narrative with the new
+draft code cited, and saved by the target itself:
+
+```text
+$ DATABASE_URL=postgresql://localhost:5433/jadwigo_lane_lk_happy make dream-save LEARNER=lrn_7k4t8wg7599gfs5wqvv4gnb9gr FILE=<DREAM_DIR>/lrn_7k4t8wg7599gfs5wqvv4gnb9gr-20261030T230234Z.narrative.json
+exit 0
+rpt_0xfx99chx093htffmr86z0ta0t  reused true
+headline: Mnożenie przez 7 idzie do przodu, a mnożenie przez 8 wymaga teraz uwagi.
+made_by: jadwigo-report-write/claude-opus-5-5
+```
+
 ## What moved, what was a gap, what to change
 
 - **Moved:** every route of the loop works on Postgres end to end: goals, the fold on read, the
-  brief, the report, the pod fence, a claim, the dream and the narrative save. Reuse worked on the
-  lane tips and broke on main (`dl-liwi.35`).
+  brief, the report, the pod fence, a claim, the dream and the narrative save. Reuse broke on main
+  (`dl-liwi.35`) and works again with #351.
 - **Gap, fixed:** `dl-e8ov.5.65`, `make dream` and `make dream-save` overwrote `DATABASE_URL`, so a
   lane could not dream on its own database. #350 fixed it; the rerun above dreams on the lane's.
-- **Gap, open:** `dl-liwi.35`, a report with no new evidence since the last one is not reused on
-  main, so the journey fails at `journey.int.test.ts:204` until it is fixed.
+- **Gap, fixed:** `dl-liwi.35`, a report with no new evidence since the last one was not reused on
+  main, and the journey failed at `journey.int.test.ts:204`. #351 fixed it, and the full pass above runs with it.
 - **The issue's wording, not a defect:** the issue expected row-7 on review or recheck after day 2.
   Core puts a proficient skill on review only once its FSRS date is due, so it is on no list until
   then. The test now checks that it is on no list today and on review at its `due_at`.
