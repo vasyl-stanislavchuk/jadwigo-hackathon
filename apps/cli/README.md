@@ -48,7 +48,7 @@ values. Copy it into the file and fill what you use.
 | `JW_BANK_TIMEOUT_SECS` | Seconds one search may take before it comes back degraded | `10` |
 | `JADWIGO_BANK_DIR` | A checkout of the bank repo, whose `sets/` `jw question show` reads | none |
 | `JADWIGO_KHAN_DIR` | The synced copy of the bank's Khan bucket | `~/.cache/jadwigo-bank/khan` |
-| `JW_KHAN_CONVERTED` | The converted items file `jw question item` reads | `<JADWIGO_KHAN_DIR>/converted/pl.json` |
+| `JW_KHAN_CONVERTED` | The converted items file `jw question item` reads | `<JADWIGO_KHAN_DIR>/converted-pl.json`, the Polish file the bank's sync writes (`converted.json` beside it is English) |
 | `JADWIGO_REPO_DIR` | The jadwigo-hackathon checkout whose `packages/lesson-import/src/check.ts` `jw lesson check` runs | the checkout `jw` was installed from |
 
 The Khan copy is filled from the bucket by the bank repo. Run this in a checkout of `jadwigo-bank`:
