@@ -1,12 +1,12 @@
 /**
  * The System page's settings controls (the fourth export's forms and navigation), each one live,
- * with the export's own examples. playground/views/system/settings.tsx draws them.
+ * with the export's own examples. @jadwigo/ui draws them (dl-uukj.32.3), as an app page does.
  */
 
+import { RadioGroup, SegmentedControl, SideMenu, Switch, Tabs } from "@jadwigo/ui";
 import { BookOpen, Calculator, Moon, Palette, Volume2 } from "lucide-react";
 import { useState } from "react";
 import { Sub } from "./Foundations.tsx";
-import { RadioGroup, SegmentedControl, SideMenu, Switch, Tabs } from "./settings.tsx";
 
 const Card = ({ children }: { children: React.ReactNode }) => (
   <div className="flex min-w-0 flex-col gap-3 rounded-2xl border-2 border-border bg-background p-5">
@@ -47,8 +47,12 @@ export function Settings(): JSX.Element {
           lead="On or off, at once. The row toggles; Space toggles from the keyboard. The knob slides, at once under reduced motion."
         >
           <Card>
-            <Switch label="Dźwięk" checked={sound} onChange={setSound} />
-            <Switch label="Tryb nocny" checked={night} onChange={setNight} />
+            <Switch size="md" checked={sound} onCheckedChange={setSound}>
+              Dźwięk
+            </Switch>
+            <Switch size="md" checked={night} onCheckedChange={setNight}>
+              Tryb nocny
+            </Switch>
           </Card>
         </Sub>
         <Sub

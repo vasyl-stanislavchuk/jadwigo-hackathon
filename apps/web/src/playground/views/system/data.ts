@@ -179,3 +179,65 @@ export const METAPHOR: readonly {
       "Scores, timers, streaks, confetti. A page is finished when the work is right, not when time runs out.",
   },
 ];
+
+/** One role of the app-page register: the part that reads it, the custom property, and what it
+ * sets. The System page's App pages section reads each value live from outside the lesson scope,
+ * as a parent's page resolves it at :root. */
+export interface AppPageRole {
+  part: string;
+  /** The custom property, with its dashes. */
+  token: string;
+  what: string;
+}
+
+/** The app-page register (dl-uukj.32.3): derived from the decisions in force, not yet decided as a
+ * whole. "Gaps for the owner" asks the owner to confirm or veto it (dl-uukj.32.7). */
+export const APP_PAGE_ROLES: readonly AppPageRole[] = [
+  { part: "Page", token: "--page-prose-max", what: "The one centred column's width" },
+  { part: "Heading 1", token: "--jw-size-prompt", what: "A page's title, bold" },
+  { part: "Heading 2", token: "--jw-size-instruction", what: "A part of the page, bold" },
+  { part: "Heading 3, body", token: "--jw-size-body", what: "Every line, a label, a field" },
+  { part: "Small print", token: "--jw-size-small", what: "A small link, a note under a line" },
+  { part: "A control", token: "--jw-control-height", what: "The action, a field, a settings row" },
+  { part: "A toolbar control", token: "--jw-control-height-sm", what: "A control in a sub-row" },
+  { part: "Paper", token: "--jw-card", what: "A field's and a card's ground" },
+  { part: "Ink", token: "--jw-ink", what: "Every word" },
+  { part: "Line", token: "--jw-line", what: "A field's, a card's and a notice's edge" },
+  { part: "The action", token: "--jw-act", what: "The one button to press" },
+  { part: "Corners", token: "--jw-radius-small", what: "A field's and a tile's corners" },
+];
+
+/** What the Zeszyt-everywhere refactor leaves for the owner (dl-uukj.32.7): each is answered on
+ * this page; a yes needs no issue, a change becomes one. `token` names a value the page reads live
+ * beside the gap. */
+export const OWNER_GAPS: readonly {
+  id: string;
+  title: string;
+  body: string;
+  tokens: readonly string[];
+}[] = [
+  {
+    id: "code-purples",
+    title: "The terminal card's colours are still Grape's",
+    body: "The --code-* tokens (packages/ui styles/tokens.css) still hold the Grape scheme's dark purples. Zeszyt has no dark code card of its own yet.",
+    tokens: ["--code-surface", "--code-text", "--code-cmd", "--code-placeholder"],
+  },
+  {
+    id: "readouts",
+    title: "The readouts that were 3rem are 2.5rem now",
+    body: "A task's big readout (FigureView's expression, the number line's target) reads --jw-size-target, 40 px. Before, FigureView and Line drew 48.",
+    tokens: ["--jw-size-target"],
+  },
+  {
+    id: "outcomes",
+    title: "The overview draws 6 outcomes on 3 colours",
+    body: "First try, got there, not yet, skipped, open and not asked share right, miss and plain, by design: icons tell them apart, so the page reads without colour too.",
+    tokens: ["--kid-correct", "--kid-try-again", "--jw-card"],
+  },
+  {
+    id: "register",
+    title: "The app-page register is derived, not decided",
+    body: "h1 on the prompt size, h2 on the instruction size, body on the body size, controls 48, the action's blue button on white paper (App pages, above). It follows from decisions in force; the owner confirms or vetoes it here.",
+    tokens: ["--jw-size-prompt", "--jw-size-instruction", "--jw-size-body", "--jw-control-height"],
+  },
+];

@@ -75,10 +75,10 @@ function Panel({ children, cols = 3 }: { children: ReactNode; cols?: 2 | 3 | 4 }
 function Live({ label, children }: { label: string; children: ReactNode }): JSX.Element {
   return (
     <figure
-      className="flex min-w-0 flex-col gap-3 rounded-2xl border-2 border-dashed border-[var(--jw-pick-edge)] bg-background p-6"
+      className="flex min-w-0 flex-col gap-3 rounded-2xl border-2 border-dashed border-jw-pick-edge bg-background p-6"
       data-system-live
     >
-      <figcaption className="text-sm font-bold text-[var(--jw-pick-ink)]">{label}</figcaption>
+      <figcaption className="text-sm font-bold text-jw-pick-ink">{label}</figcaption>
       {children}
     </figure>
   );
@@ -146,7 +146,7 @@ export function Actions(): JSX.Element {
         </Spec>
         <Spec label="The help note’s two actions: more help, and the way to the solution" wide>
           <aside data-help data-help-ladder className="flex w-full flex-col gap-3 p-4">
-            <Button variant="outline" data-help-more className="text-[length:var(--jw-size-body)]">
+            <Button variant="outline" data-help-more className="text-jw-body">
               <HelpIcon aria-hidden /> {copy(LANG, "help_more")}
             </Button>
             <Button variant="ghost" className="kid-quiet kid-move-on">
@@ -251,12 +251,11 @@ export function Options(): JSX.Element {
         <Spec label="The solution, after “Jeszcze nie wiem”">
           <div
             data-solution
-            className="flex min-h-[4.5rem] w-full items-center justify-between rounded-[var(--jw-radius-control)] px-5 text-[length:var(--jw-size-option)] font-bold"
+            className="flex min-h-18 w-full items-center justify-between rounded-jw-control px-5 text-jw-option font-bold"
           >
             24
             <span data-solution-label className="flex items-center gap-1.5 font-normal">
-              <SolutionIcon aria-hidden className="size-[1.125rem]" />{" "}
-              {copy(LANG, "ds_solution_label")}
+              <SolutionIcon aria-hidden className="size-4.5" /> {copy(LANG, "ds_solution_label")}
             </span>
           </div>
         </Spec>
@@ -358,7 +357,7 @@ export function Fields(): JSX.Element {
         <Field text="żułw" tone="amber" label="A miss: the answer stays" />
         <Field text="żółw" tone="green" label="Right" />
         <Spec label="A miss in a word marks only the letters to fix">
-          <span className="text-[length:var(--jw-size-option)] font-bold tracking-wide">
+          <span className="text-jw-option font-bold tracking-wide">
             ż
             <span data-mark="miss" className="px-0.5">
               u
@@ -367,12 +366,7 @@ export function Fields(): JSX.Element {
           </span>
         </Spec>
         <Spec label="The placeholder colour (--jw-placeholder), 4.5:1 on a card">
-          <span
-            className="text-[length:var(--jw-size-option)]"
-            style={{ color: "var(--jw-placeholder)" }}
-          >
-            Napisz słowo
-          </span>
+          <span className="text-jw-option text-jw-placeholder">Napisz słowo</span>
         </Spec>
       </Panel>
     </Sub>
@@ -782,7 +776,7 @@ export function Help(): JSX.Element {
       title="The help note"
       lead="One note that grows: Więcej pomocy adds the next clue under the last, older clues turn muted, and the counter reads the clues the step has. Jeszcze nie wiem, at its end, is the only way out of a step."
     >
-      <div className="flex max-w-[45rem] flex-col gap-3" data-system-ladder="note">
+      <div className="flex max-w-180 flex-col gap-3" data-system-ladder="note">
         <HelpLadder
           language={LANG}
           cards={steps.slice(0, shown)}
