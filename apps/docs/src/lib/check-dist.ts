@@ -41,6 +41,7 @@ export const MUST: readonly (readonly [file: string, text: string])[] = [
     (name) => ["design-system/tokens/index.html", `<code>--${name}</code>`] as const,
   ),
   ["design-system/question-types/index.html", `<code>${QUESTION_TYPES.at(-1)?.name}</code>`],
+  ["design-system/illustration/index.html", "Klasa Królowej"],
   // Mermaid draws in the browser (astro-mermaid), so the HTML carries each diagram's source.
   ["architecture/index.html", '<pre class="mermaid"'],
   ["architecture/index.html", "Supabase Auth"],
