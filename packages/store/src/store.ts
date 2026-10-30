@@ -9,6 +9,7 @@ import type {
   AttemptId,
   AttemptQuestion,
   AttemptResult,
+  Curriculum,
   Ended,
   ErrorType,
   Goal,
@@ -40,6 +41,7 @@ import type {
   ReportNarrative,
   Skill,
   SkillId,
+  Topic,
   Uuid,
 } from "@jadwigo/contracts";
 
@@ -174,6 +176,12 @@ export interface NewClaim {
 }
 
 // The learner knowledge base (migration 20261031120000_learner_knowledge.sql, epic dl-e8ov.5)
+
+/** A curriculum as the seed writes it: the store mints its id and stamps `created_at`. */
+export type NewCurriculum = Omit<Curriculum, "id" | "pod_id" | "created_at">;
+
+/** A curriculum's topic as the seed writes it: the store mints its id and stamps `created_at`. */
+export type NewTopic = Omit<Topic, "id" | "pod_id" | "created_at">;
 
 /** A catalogue skill as a seed or a pod writes it: the store stamps `created_at`. */
 export type NewSkill = Omit<Skill, "pod_id" | "created_at">;
@@ -486,6 +494,17 @@ export interface Store {
    * content does. The curriculum seed writes the shared catalogue into Jadwigo's pod with it.
    */
   putSkills(pod: PodId, skills: readonly NewSkill[]): Promise<readonly Skill[]>;
+  /**
+   * Writes a curriculum into `pod`, once per code and version (its key): a pair the pod holds
+   * returns the stored row, as `putSkills` does. The curriculum seed writes the shared one into
+   * Jadwigo's pod with it. Added by the store-api lane of wave dl-e8ov.5-1, the lead approving.
+   */
+  putCurriculum(pod: PodId, curriculum: NewCurriculum): Promise<Curriculum>;
+  /**
+   * Writes topics into `pod`, once per curriculum and code (their key), in the order given: a
+   * topic the pod holds returns the stored row. A curriculum outside `pod` is `NotFound`.
+   */
+  putTopics(pod: PodId, topics: readonly NewTopic[]): Promise<readonly Topic[]>;
   /**
    * Makes sure `pod` has a row for each code, and returns them in the order given: a code the pod
    * holds stays as it is; one the shared catalogue holds is copied once (its kind, status, topic,

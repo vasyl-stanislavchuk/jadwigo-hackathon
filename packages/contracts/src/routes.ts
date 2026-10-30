@@ -335,7 +335,7 @@ export const ROUTES = {
     response: LearnerGoals,
     status: 200,
     auth: "token",
-    summary: "Changes a goal's name, words, status or skills.",
+    summary: "Changes a goal's status or skills.",
     tag: "parents",
     description: "`skill_codes` replaces the goal's skills whole.",
   },

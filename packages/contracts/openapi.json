@@ -950,7 +950,7 @@
     "/api/v1/learners/{id}/goals/{goal}": {
       "patch": {
         "operationId": "patchGoal",
-        "summary": "Changes a goal's name, words, status or skills.",
+        "summary": "Changes a goal's status or skills.",
         "description": "`skill_codes` replaces the goal's skills whole.",
         "tags": [
           "parents"

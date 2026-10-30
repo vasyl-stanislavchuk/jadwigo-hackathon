@@ -10,6 +10,8 @@ import {
   AttemptId,
   AttemptQuestion,
   AttemptResult,
+  Curriculum,
+  CurriculumId,
   Ended,
   ErrorType,
   FEATURED_POD_ID,
@@ -46,6 +48,8 @@ import {
   SentAt,
   Skill,
   SkillId,
+  Topic,
+  TopicId,
   type Uuid,
   uuidOf,
   valueFor,
@@ -68,6 +72,7 @@ import {
   type NewAttemptAnswer,
   type NewAttemptQuestion,
   type NewClaim,
+  type NewCurriculum,
   type NewGoal,
   type NewLearner,
   type NewLearnerReport,
@@ -79,6 +84,7 @@ import {
   type NewLessonVersion,
   type NewPod,
   type NewSkill,
+  type NewTopic,
   type OpenAssignment,
   type OpenedAttempt,
   type ReportChange,
@@ -1976,6 +1982,115 @@ class PostgresStore implements Store {
         if (!byCode.has(row.code)) byCode.set(row.code, read(Skill, row));
       }
       return [...byCode.values()];
+    });
+  }
+
+  async putCurriculum(pod: PodId, curriculum: NewCurriculum): Promise<Curriculum> {
+    const own = uuidOf(ID_PREFIXES.pod, pod);
+    return this.#guarded(pod, async (tx) => {
+      await this.#pod(tx, pod);
+      const valid = parse(
+        Curriculum,
+        {
+          ...curriculum,
+          id: mint(CurriculumId, ID_PREFIXES.curriculum),
+          pod_id: pod,
+          created_at: new Date().toISOString(),
+        },
+        "the curriculum",
+      );
+      const { row } = await this.#once(
+        () =>
+          tx
+            .selectFrom("curriculum")
+            .selectAll()
+            .where("pod_id", "=", own)
+            .where("code", "=", valid.code)
+            .where("version", "=", valid.version)
+            .executeTakeFirst(),
+        () =>
+          tx
+            .insertInto("curriculum")
+            .values({
+              id: uuidOf(ID_PREFIXES.curriculum, valid.id),
+              pod_id: own,
+              code: valid.code,
+              name: valid.name,
+              country: valid.country,
+              version: valid.version,
+              language: valid.language,
+              source_url: valid.source_url,
+            })
+            .onConflict((oc) => oc.columns(["pod_id", "code", "version"]).doNothing())
+            .returningAll()
+            .executeTakeFirst(),
+      );
+      return read(Curriculum, row, ID_PREFIXES.curriculum);
+    });
+  }
+
+  async putTopics(pod: PodId, topics: readonly NewTopic[]): Promise<readonly Topic[]> {
+    const own = uuidOf(ID_PREFIXES.pod, pod);
+    return this.#guarded(pod, async (tx) => {
+      await this.#pod(tx, pod);
+      if (topics.length === 0) return [];
+      const now = new Date().toISOString();
+      const valid = topics.map((topic) =>
+        parse(
+          Topic,
+          { ...topic, id: mint(TopicId, ID_PREFIXES.topic), pod_id: pod, created_at: now },
+          "the topic",
+        ),
+      );
+      const curricula = [
+        ...new Set(valid.map((t) => uuidOf(ID_PREFIXES.curriculum, t.curriculum_id))),
+      ];
+      // Row-level security reads only the pod's own curricula (and the shared pod's, which a
+      // write into another pod may not name): a curriculum outside `pod` is NotFound.
+      const held = await tx
+        .selectFrom("curriculum")
+        .select("id")
+        .where("pod_id", "=", own)
+        .where("id", "in", curricula)
+        .execute();
+      if (held.length !== curricula.length) throw notFound("the curriculum");
+      // Once per curriculum and code: a topic the pod holds keeps its stored row.
+      await tx
+        .insertInto("topic")
+        .values(
+          valid.map((t) => ({
+            id: uuidOf(ID_PREFIXES.topic, t.id),
+            pod_id: own,
+            curriculum_id: uuidOf(ID_PREFIXES.curriculum, t.curriculum_id),
+            code: t.code,
+            area: t.area,
+            text: t.text,
+          })),
+        )
+        .onConflict((oc) => oc.columns(["curriculum_id", "code"]).doNothing())
+        .execute();
+      const rows = await tx
+        .selectFrom("topic")
+        .selectAll()
+        .where("pod_id", "=", own)
+        .where("curriculum_id", "in", curricula)
+        .where(
+          "code",
+          "in",
+          valid.map((t) => t.code),
+        )
+        .execute();
+      const byKey = new Map(
+        rows.map((row) => [
+          `${row.curriculum_id} ${row.code}`,
+          read(Topic, row, ID_PREFIXES.topic),
+        ]),
+      );
+      return valid.map((t) => {
+        const row = byKey.get(`${uuidOf(ID_PREFIXES.curriculum, t.curriculum_id)} ${t.code}`);
+        if (!row) throw taken();
+        return row;
+      });
     });
   }
 

@@ -181,7 +181,9 @@ export function knowledgeSuite(name: string, makeStore: () => Store): void {
       const s = seeded(makeStore());
       const f = await family(s);
       const { codes } = await playAndClaim(s, f);
+      // The digest replays the period from the evidence, whatever the cache holds.
       await s.store.replaceMastery(f.pod, f.learner, []);
+      const firstAnswer = (await s.store.getLearnerEvidence(f.pod, f.learner))[0]?.answered_at;
 
       const first = await f.call<LearnerReport>(
         "POST",
@@ -195,7 +197,7 @@ export function knowledgeSuite(name: string, makeStore: () => Store): void {
         reused: false,
         narrative: null,
         decisions: [],
-        period_starts_at: new Date(0).toISOString(),
+        period_starts_at: firstAnswer,
       });
       expect(first.body.digest.skills_moved.map((m) => [m.skill_code, m.from, m.to])).toEqual(
         codes.map((code) => [code, "not_started", "familiar"]),

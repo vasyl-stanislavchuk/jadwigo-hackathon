@@ -2,24 +2,27 @@ import type { Citation, ReportDigest, ReportNarrative } from "@jadwigo/contracts
 
 /**
  * What the narrative may say, checked before it is written (`patchReport` and the dream script):
- * every citation names something the digest holds, every number in its text is one the digest
- * gives, every proposal it words is one the digest made, and it names no level. Code computes every
+ * every citation names an attempt, skill code or goal found anywhere in the digest, every number in
+ * its text is one the digest gives, every proposal it words is one the digest made (at most 3, and
+ * at most 2 asks), and it names no level. Code computes every
  * level, and the parent never reads one (decision
  * jadwigo-hackathon/2026-10-29-parents-never-see-khan-s-level-names-khan-questions-keep-their-c).
  * Returns the problems found, none when the narrative may be written.
  */
 export function narrativeProblems(narrative: ReportNarrative, digest: ReportDigest): string[] {
   const problems: string[] = [];
-  const known = citable(digest);
+  const known = stringsOf(digest);
   const citations: Citation[] = [
     ...narrative.answers.flatMap((a) => a.citations),
     ...narrative.proposals.flatMap((p) => p.citations),
   ];
   for (const citation of citations) {
-    if (!known.has(citationKey(citation))) {
+    if (!known.has(citedId(citation))) {
       problems.push(`the citation ${citationKey(citation)} is not in the digest`);
     }
   }
+  if (narrative.proposals.length > 3) problems.push("the narrative words more than 3 proposals");
+  if (narrative.asks.length > 2) problems.push("the narrative asks more than 2 things");
   const proposals = new Set(digest.proposals.map((p) => p.id));
   for (const proposal of narrative.proposals) {
     if (!proposals.has(proposal.proposal_id)) {
@@ -67,6 +70,28 @@ function citationKey(citation: Citation): string {
   }
 }
 
+/** The attempt id, skill code or goal id a citation names. */
+function citedId(citation: Citation): string {
+  switch (citation.kind) {
+    case "attempt":
+      return citation.attempt_id;
+    case "skill":
+      return citation.skill_code;
+    case "goal":
+      return citation.goal_id;
+  }
+}
+
+/** Every string anywhere in the digest: a citation holds when what it names is among them. */
+function stringsOf(value: unknown, into = new Set<string>()): Set<string> {
+  if (typeof value === "string") into.add(value);
+  else if (Array.isArray(value)) for (const inner of value) stringsOf(inner, into);
+  else if (value !== null && typeof value === "object") {
+    for (const inner of Object.values(value)) stringsOf(inner, into);
+  }
+  return into;
+}
+
 /** Every attempt, skill code and goal the digest names, as citation keys. */
 function citable(digest: ReportDigest): Set<string> {
   const keys = new Set<string>();
@@ -104,19 +129,15 @@ function citable(digest: ReportDigest): Set<string> {
 }
 
 /**
- * The numbers the narrative may give: the digest's counts, each mistake's times, the length of
- * each of its lists, and the digits inside a skill code it names (`row-7` is the 7s).
+ * The numbers the narrative may give: the digest's counts, each mistake's times, and the digits
+ * inside a skill code it names (`row-7` is the 7s). The cli lane's Python mirror keeps the same
+ * rules (`/jadwigo-report-write`).
  */
 function numbersOf(digest: ReportDigest): Set<number> {
   const numbers = new Set<number>([
     digest.counts.attempts,
     digest.counts.questions,
     digest.counts.days_played,
-    digest.skills_moved.length,
-    digest.needs_attention.length,
-    digest.mistakes.length,
-    digest.goals.length,
-    digest.proposals.length,
     ...digest.mistakes.map((m) => m.times),
   ]);
   for (const key of citable(digest)) {

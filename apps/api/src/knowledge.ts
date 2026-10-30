@@ -112,6 +112,9 @@ export async function createGoal(
   const catalogue = await store.listSkills(pod);
   await store.addGoal(pod, id, {
     name: parsed.data.name,
+    // Lessons are in Polish only for now, so a goal's lessons are Polish whatever the pod's
+    // language (jadwigo-hackathon/decisions/2026-10-29-lessons-are-in-polish-only-for-now-other-lesson-languages-are-pa).
+    lesson_language: "pl",
     // An empty `words` is none: the column refuses an empty string.
     words: parsed.data.words || null,
     skill_codes: parsed.data.skill_codes.map((code) => resolveSkill(code, catalogue)),
@@ -172,7 +175,7 @@ export async function createReport(
 }
 
 /**
- * A report on a learner of `pod` over the evidence since its last report: the fold, the brief and
+ * A report on a learner of `pod` over the evidence since its last report: the folds, the brief and
  * the digest run before anything is written, then the mastery cache is replaced with the fold and
  * the report written. `createReport` and the dream script (`src/dream.ts`) both call it.
  */
@@ -182,15 +185,18 @@ export async function makeReport(
   id: LearnerId,
   now: Date,
 ): Promise<LearnerReport> {
-  const before = await store.getMastery(pod, id);
   const last = (await store.listReports(pod, id))[0];
-  const starts_at = last?.period_ends_at ?? new Date(0).toISOString();
-  const ends_at = now.toISOString();
   const read = await folded(store, pod, id, now);
+  const ends_at = now.toISOString();
+  // The period runs from the last report's end, or the learner's first evidence, to now. The
+  // digest replays it: `before` is the fold of what was answered before it starts, `after` the
+  // fold of everything, whatever the cache held.
+  const starts_at = last?.period_ends_at ?? read.evidence[0]?.answered_at ?? ends_at;
+  const earlier = read.evidence.filter((e) => e.answered_at < starts_at);
   const { digest, inputs_hash } = dreamDigest({
-    evidence_before: read.evidence.filter((e) => e.answered_at < starts_at),
+    evidence_before: earlier,
     evidence_after: read.evidence,
-    mastery_before: before,
+    mastery_before: foldLearner(earlier, read.catalogue, now),
     mastery_after: read.mastery,
     brief: read.brief,
     goals: read.goals,
