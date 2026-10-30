@@ -21,6 +21,7 @@ import type { Store } from "@jadwigo/store";
 import type { Claims } from "./auth.ts";
 import { authorizeMember } from "./authorize.ts";
 import { ApiError, badRequest } from "./errors.ts";
+import { rebuildMastery } from "./mastery.ts";
 
 /**
  * The learner knowledge base's routes (wave 1 of epic dl-e8ov.5): a learner of the caller's pod,
@@ -102,6 +103,8 @@ export async function createGoal(
     words: parsed.data.words ?? null,
     skill_codes: parsed.data.skill_codes.map((code) => resolveSkill(code, catalogue)),
   });
+  // A new goal's skills join the fold. A fold that fails is logged and never refuses the goal.
+  await rebuildMastery(store, id, new Date()).catch(logFoldFailure);
   return { learner, goals: [...(await store.listGoals(pod, id))] };
 }
 
@@ -198,4 +201,16 @@ export async function patchReport(
     narrative: parsed.data.narrative,
     decisions: parsed.data.decisions?.map((d) => ({ ...d, decided_by: account })),
   });
+}
+
+/** One JSON line on stderr for a mastery rebuild that failed: the error's name and message only. */
+function logFoldFailure(error: unknown): undefined {
+  const failure =
+    error instanceof Error
+      ? { name: error.name, message: error.message }
+      : { name: typeof error, message: String(error) };
+  console.error(
+    JSON.stringify({ level: "ERROR", message: "mastery rebuild failed", error: failure }),
+  );
+  return undefined;
 }
