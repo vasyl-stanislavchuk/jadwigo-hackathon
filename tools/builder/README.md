@@ -71,7 +71,11 @@ make builder                   # ARGS="--model opus" passes more to claude
 ```
 
 `make builder` (`launch.ts`) first asks `claude mcp get` for `jadwigo-builder` and `jadwigo`, and
-stops with the line to run when either is missing (jadwigo's is in `apps/cli/README.md`). Then it
+stops with the line to run when either is missing (jadwigo's quoted from `apps/cli/README.md`),
+naming the Claude Code profile it checked: a registration counts only in the profile the session
+runs in (`CLAUDE_CONFIG_DIR`, else `~/.claude.json`). When `jadwigo-builder` runs another checkout's
+`channel.ts`, it prints `claude mcp remove --scope user jadwigo-builder` before the add line, since
+`add-json` does not overwrite a name, and starts the session anyway. Then it
 mints a session id, writes `.builder/session.json`, and starts
 `claude --session-id <id> --dangerously-load-development-channels=server:jadwigo-builder` with
 `JADWIGO_BUILDER_SESSION` and `JADWIGO_DRAFTS_DIR` exported and `ANTHROPIC_API_KEY` removed. Claude

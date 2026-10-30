@@ -134,6 +134,15 @@ describe("snapshot", () => {
     expect(payload.replies.map((reply) => reply.text)).toEqual(["Shortened."]);
   });
 
+  it("never takes render files, check files or dotfiles for the newest draft", () => {
+    writeFileSync(join(dir, "d1.json"), "{}");
+    utimesSync(join(dir, "d1.json"), 1, 1);
+    writeFileSync(join(dir, "d1.render.json"), "{}");
+    writeFileSync(join(dir, "d1.check.json"), "{}");
+    writeFileSync(join(dir, ".hidden.json"), "{}");
+    expect(snapshot(dir, new Date()).newest_draft).toBe("d1");
+  });
+
   it("answers an empty page when the directory does not exist yet", () => {
     expect(snapshot(join(dir, "missing"), new Date())).toEqual({
       channel: "gone",

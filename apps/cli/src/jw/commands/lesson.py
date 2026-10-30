@@ -12,7 +12,7 @@ from typing import Any
 
 import click
 
-from jw import lesson
+from jw import lesson, lesson_edit
 from jw.commands.question import _EmitErrorsCommand
 from jw.draw import DRAW_RULES
 from jw.errors import JwError
@@ -20,7 +20,7 @@ from jw.errors import JwError
 
 @click.group()
 def group() -> None:
-    """Lessons: draft, check."""
+    """Lessons: draft, check, edit, show."""
 
 
 @group.command(cls=_EmitErrorsCommand)
@@ -116,3 +116,48 @@ def check(
         click.echo(f"draft file: {result['draft_path']}")
     if not result["ok"]:
         raise SystemExit(1)
+
+
+@group.command(cls=_EmitErrorsCommand)
+@click.argument("draft_id")
+@click.argument("step_id")
+@click.argument("patch_file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option("--why", default=None, help="Why a copied part changes (the parent's ask).")
+@click.option(
+    "--change",
+    default=lesson_edit.CHANGE_DEFAULT,
+    show_default=True,
+    type=click.Choice(list(lesson.CHANGE_KINDS)),
+    help="The kind of change to the bank's copy.",
+)
+@click.option("--json", "json_mode", is_flag=True, help="Print the step's answer.")
+def edit(
+    draft_id: str, step_id: str, patch_file: Path, why: str | None, change: str, json_mode: bool
+) -> None:
+    """Change step STEP_ID of the draft DRAFT_ID by PATCH_FILE, a JSON merge patch on the step
+    (the lesson_edit tool's `patch`), check the lesson, and print that step's findings."""
+    try:
+        patch: Any = json.loads(patch_file.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        raise JwError(
+            f"{patch_file} is not JSON: {exc}",
+            hint='Pass {"question": {"help": {"boost": {"text": ...}}}} as JSON.',
+        ) from exc
+    result = lesson_edit.edit(draft_id, step_id, patch, why, change)
+    if json_mode:
+        click.echo(json.dumps(result, ensure_ascii=False))
+    else:
+        click.echo(f"{step_id}: {'ok' if result['ok'] else 'not ok'}  {result['card']['prompt']}")
+        for finding in result["findings"]:
+            click.echo(f"  {finding['level']} ({finding['rule']}): {finding['text']}")
+        click.echo(f"draft file: {result['draft_path']}")
+    if not result["ok"]:
+        raise SystemExit(1)
+
+
+@group.command(cls=_EmitErrorsCommand)
+@click.argument("draft_id")
+@click.argument("step_id", required=False)
+def show(draft_id: str, step_id: str | None) -> None:
+    """Print step STEP_ID of the draft DRAFT_ID, or every step, as JSON (the lesson_show tool)."""
+    click.echo(json.dumps(lesson_edit.show(draft_id, step_id), ensure_ascii=False))
