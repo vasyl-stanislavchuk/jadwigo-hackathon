@@ -35,7 +35,7 @@
     "class-variance-authority": "the variants of the playground's tool buttons, badges and toggles (src/playground/tool)",
     "happy-dom": "the DOM the dom Vitest project runs *.test.tsx in",
     "lucide-react": "the icons in the playground's tool chrome and tab headers",
-    "radix-ui": "the behaviour under the playground's neutral tool chrome (src/playground/tool): sidebar, tabs, select, sheet, tooltip",
+    "radix-ui": "the behaviour under the playground's neutral tool chrome (src/playground/tool): sidebar, tabs, select, tooltip",
     "react": "the app's components in src/**/*.tsx",
     "react-dom": "mounts the app (src/main.tsx)",
     "typescript": "tsc for this package's typecheck script",

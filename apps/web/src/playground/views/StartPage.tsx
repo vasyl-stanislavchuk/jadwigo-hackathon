@@ -93,7 +93,7 @@ export function StartPage(): ReactElement {
           written in the example.
         </p>
         {examples.kind === "failed" ? (
-          <p className="text-destructive" data-examples-failed>
+          <p data-examples-failed>
             The written examples could not be read from the API. Reload to try again.
           </p>
         ) : null}

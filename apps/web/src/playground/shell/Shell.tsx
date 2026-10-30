@@ -6,7 +6,7 @@
 
 import { cn } from "@jadwigo/ui";
 import { PanelRight } from "lucide-react";
-import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Button } from "../tool/button.tsx";
 import { Separator } from "../tool/separator.tsx";
 import {
@@ -51,10 +51,7 @@ export function Shell({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <SidebarProvider
-        className="playground-shell text-sm"
-        style={{ "--sidebar-width": "19rem" } as CSSProperties}
-      >
+      <SidebarProvider className="playground-shell text-sm">
         <NavSidebar />
         <SidebarInset className="min-w-0">
           {/* data-credit-ceiling and data-credit-room: where a question's credit card may open
