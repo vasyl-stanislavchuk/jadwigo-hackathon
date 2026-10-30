@@ -32,6 +32,29 @@ async function playToTheEnd(page: Page): Promise<void> {
   await expect(results).toBeVisible();
 }
 
+/** The role the sign-in button fills with: Zeszyt's ink blue, the Button's primary (dl-uukj.32.11). */
+const SEND_CODE_FILL = "--jw-focus";
+
+/**
+ * The send-code button's fill, the fill its role resolves to, and its font. A role's value is a
+ * var() chain down to a primitive's literal, so a probe element resolves it to the same rgb() a
+ * computed background-color reads.
+ */
+const sendCodeLook = (page: Page): Promise<{ fill: string; role: string; font: string }> =>
+  page.evaluate((role) => {
+    const button = document.querySelector("[data-send-code]");
+    if (button === null) throw new Error("no [data-send-code]");
+    const probe = document.createElement("span");
+    probe.style.backgroundColor = getComputedStyle(document.documentElement)
+      .getPropertyValue(role)
+      .trim();
+    document.body.append(probe);
+    const resolved = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    const look = getComputedStyle(button);
+    return { fill: look.backgroundColor, role: resolved, font: look.fontFamily };
+  }, SEND_CODE_FILL);
+
 const storedAttempts = (page: Page): Promise<string[]> =>
   page.evaluate(() =>
     Object.keys(window.sessionStorage).filter((key) => key.startsWith("jw.play.attempt.")),
@@ -45,6 +68,20 @@ test("an adult saves a finished lesson: email code, account, a child, the claim,
   expect(await storedAttempts(page)).toHaveLength(1);
   await page.locator("[data-save-link]").click();
   await expect(page).toHaveURL(/\/parent\?claim=asg_[0-9a-z]{26}/);
+
+  // The sign-in page is Zeszyt at a phone's width and a laptop's: the button in its blue, in Andika.
+  await expect(page.locator("[data-send-code]")).toBeVisible();
+  for (const size of [
+    { width: 390, height: 844 },
+    { width: 1280, height: 800 },
+  ]) {
+    await page.setViewportSize(size);
+    const look = await sendCodeLook(page);
+    // An unset role resolves to transparent, which would match nothing on purpose.
+    expect(look.role).not.toBe("rgba(0, 0, 0, 0)");
+    expect(look.fill).toBe(look.role);
+    expect(look.font).toMatch(/^"?Andika/);
+  }
 
   await page.locator("[data-email]").fill(email);
   await page.locator("[data-send-code]").click();

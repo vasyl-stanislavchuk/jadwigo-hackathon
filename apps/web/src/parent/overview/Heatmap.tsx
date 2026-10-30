@@ -8,6 +8,8 @@
 
 import { copy, type Language } from "@jadwigo/copy";
 import {
+  Link,
+  OutcomeTile,
   Table,
   TableBody,
   TableCell,
@@ -16,19 +18,12 @@ import {
   TableHeader,
   TableRow,
 } from "@jadwigo/ui";
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 import { NavLink } from "../../nav/NavLink.tsx";
+import { CATEGORY, pageLang } from "../adult.ts";
 import { attemptPath } from "../route.ts";
 import type { Cell, Column, Grid, Row } from "./grid.ts";
-import {
-  CATEGORY,
-  OUTCOME_TILE,
-  OutcomeIcon,
-  outcomeWord,
-  pageLang,
-  rowName,
-  TwinMark,
-} from "./outcome.tsx";
+import { OUTCOME_TONE, OutcomeIcon, outcomeWord, rowName, TwinMark } from "./outcome.tsx";
 
 /** The attempt page of a row, or null while the attempt is unfinished. */
 export const reviewOf = (row: Row): string | null =>
@@ -43,8 +38,12 @@ function cellLabel(language: Language, column: Column, cell: Cell): string {
   return `${question}: ${outcomeWord(language, cell.outcome)}${twin}`;
 }
 
-/** The first column stays put while the grid scrolls sideways. */
-const STICKY = "sticky left-0 z-10 bg-background";
+/** The first column stays put while the grid scrolls sideways, on the page's own paper. */
+const STICKY = "sticky left-0 z-10 bg-jw-ground";
+
+/** A count out of a total, "n/m": counts, never a percentage. */
+const ratio = (language: Language, n: number, m: number): string =>
+  copy(language, "parent_overview_ratio", { n, m }, CATEGORY);
 
 export function Heatmap({
   grid,
@@ -58,16 +57,16 @@ export function Heatmap({
   const firstTry = copy(language, "parent_outcome_first_try", {}, CATEGORY);
   return (
     <div className="w-full min-w-0 max-w-full" data-overview-grid>
-      <Table className="w-max border-separate border-spacing-1 text-base">
+      <Table className="w-max border-separate border-spacing-1 text-jw-body text-jw-ink">
         <TableHeader>
           <TableRow>
             <TableHead className={STICKY} />
-            <TableHead className="px-2 text-sm font-normal">{firstTry}</TableHead>
+            <TableHead className="px-2 text-jw-small font-normal">{firstTry}</TableHead>
             {grid.columns.map((column, index) => (
               <TableHead key={column.key} className="p-0" data-column={column.number}>
                 <button
                   type="button"
-                  className="size-10 rounded-md font-semibold underline"
+                  className="size-10 rounded-jw-small font-bold text-jw-ink underline decoration-2 underline-offset-4"
                   aria-label={copy(
                     language,
                     "parent_overview_question",
@@ -89,19 +88,22 @@ export function Heatmap({
         </TableBody>
         <TableFooter>
           <TableRow data-footer>
-            <TableHead scope="row" className={`${STICKY} pr-2 text-left text-sm font-normal`}>
+            <TableHead scope="row" className={`${STICKY} pr-2 text-left text-jw-small font-normal`}>
               {firstTry}
             </TableHead>
             <TableCell />
-            {grid.columns.map((column) => (
-              <TableCell
-                key={column.key}
-                className="text-center text-sm"
-                data-column-count={`${column.firstTry}/${column.reached}`}
-              >
-                {column.firstTry}/{column.reached}
-              </TableCell>
-            ))}
+            {grid.columns.map((column) => {
+              const count = ratio(language, column.firstTry, column.reached);
+              return (
+                <TableCell
+                  key={column.key}
+                  className="text-center text-jw-small"
+                  data-column-count={count}
+                >
+                  {count}
+                </TableCell>
+              );
+            })}
           </TableRow>
         </TableFooter>
       </Table>
@@ -120,22 +122,22 @@ function GridRow({
 }): ReactElement {
   const href = reviewOf(row);
   const name = rowName(language, row);
+  const count = ratio(language, row.firstTry, row.asked);
   return (
     <TableRow data-row={row.attempt.id}>
-      <TableHead scope="row" className={`${STICKY} max-w-40 truncate pr-2 text-left font-semibold`}>
+      <TableHead scope="row" className={`${STICKY} max-w-40 truncate pr-2 text-left font-bold`}>
         {href === null ? (
           name
         ) : (
-          <NavLink href={href} className="underline" data-row-link>
-            {name}
-          </NavLink>
+          <Link asChild>
+            <NavLink href={href} data-row-link>
+              {name}
+            </NavLink>
+          </Link>
         )}
       </TableHead>
-      <TableCell
-        className="px-2 text-center text-sm"
-        data-row-count={`${row.firstTry}/${row.asked}`}
-      >
-        {row.firstTry}/{row.asked}
+      <TableCell className="px-2 text-center text-jw-small" data-row-count={count}>
+        {count}
       </TableCell>
       {row.cells.map((cell, index) => {
         const column = columns[index];
@@ -159,31 +161,27 @@ function CellBox({
   label: string;
   href: string | null;
 }): ReactElement {
-  const className = `relative flex size-10 items-center justify-center rounded-md border-2 ${OUTCOME_TILE[cell.outcome]}`;
-  const inside: ReactNode = (
-    <>
-      <OutcomeIcon outcome={cell.outcome} />
-      {cell.twin && (
-        <span className="absolute top-0.5 right-0.5">
-          <TwinMark />
-        </span>
-      )}
-    </>
+  const twin = cell.twin && (
+    <span className="absolute top-0.5 right-0.5">
+      <TwinMark />
+    </span>
   );
+  const tile = {
+    tone: OUTCOME_TONE[cell.outcome],
+    outcome: cell.outcome,
+    icon: <OutcomeIcon outcome={cell.outcome} />,
+    label,
+  };
   // A cell the attempt never asked has nothing to show on its page.
   return href === null || cell.outcome === "not_asked" ? (
-    <span role="img" aria-label={label} className={className} data-cell={cell.outcome}>
-      {inside}
-    </span>
+    <OutcomeTile {...tile} data-cell={cell.outcome}>
+      {twin}
+    </OutcomeTile>
   ) : (
-    <NavLink
-      href={href}
-      aria-label={label}
-      className={className}
-      data-cell={cell.outcome}
-      data-cell-link
-    >
-      {inside}
-    </NavLink>
+    <OutcomeTile {...tile} asChild>
+      <NavLink href={href} data-cell={cell.outcome} data-cell-link>
+        {twin}
+      </NavLink>
+    </OutcomeTile>
   );
 }
