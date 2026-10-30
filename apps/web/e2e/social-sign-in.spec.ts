@@ -117,3 +117,42 @@ test("a Facebook account with no email is offered the email code and makes no ac
   await expect(page).toHaveURL(/\/parent$/);
   expect(api).toEqual([]);
 });
+
+test("the 2 provider buttons share one shape at a phone's width, the long Polish label on one line", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/parent");
+  const google = page.locator('[data-provider="google"]');
+  const facebook = page.locator('[data-provider="facebook"]');
+  await expect(facebook).toHaveText("Kontynuuj z Facebookiem");
+  const look = (button: typeof google) =>
+    button.evaluate((b) => {
+      const css = getComputedStyle(b);
+      const mark = b.querySelector("img")?.getBoundingClientRect();
+      // The label's lines: a wrap would draw 2 boxes, which a 48 min-height could hide.
+      const words = document.createRange();
+      words.selectNodeContents(b.lastChild ?? b);
+      const lines = new Set([...words.getClientRects()].map((r) => Math.round(r.top))).size;
+      return {
+        height: b.getBoundingClientRect().height,
+        radius: css.borderRadius,
+        stroke: `${css.borderTopWidth} ${css.borderTopStyle} ${css.borderTopColor}`,
+        fill: css.backgroundColor,
+        padding: `${css.paddingLeft} ${css.paddingRight}`,
+        gap: css.columnGap,
+        size: css.fontSize,
+        weight: css.fontWeight,
+        mark: `${mark?.width}x${mark?.height}`,
+        overflows: b.scrollWidth > b.clientWidth,
+        lines,
+        font: css.fontFamily,
+      };
+    });
+  const [g, f] = [await look(google), await look(facebook)];
+  expect({ ...f, font: "" }).toEqual({ ...g, font: "" });
+  expect(f.overflows).toBe(false);
+  expect(f.lines).toBe(1);
+  expect(g.font).toMatch(/Google Sans/);
+  expect(f.font).toMatch(/^"?Andika/);
+});

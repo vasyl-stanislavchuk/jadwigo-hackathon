@@ -2,16 +2,16 @@
   {
     "path": "ProviderButton.tsx",
     "snippet": "#FFFFFF",
-    "why": "Google's sign-in button, light theme fill, fixed by its branding rules (developers.google.com/identity/branding-guidelines), not a Zeszyt role (dl-e8ov.2.72)"
+    "why": "Google's sign-in button, light theme fill, fixed by its branding rules (developers.google.com/identity/branding-guidelines), not a Zeszyt role (dl-e8ov.2.72); Facebook's button shares it (dl-e8ov.2.85)"
   },
   {
     "path": "ProviderButton.tsx",
     "snippet": "#747775",
-    "why": "Google's sign-in button, light theme stroke, fixed by its branding rules, not a Zeszyt role (dl-e8ov.2.72)"
+    "why": "Google's sign-in button, light theme stroke, fixed by its branding rules, not a Zeszyt role (dl-e8ov.2.72); Facebook's button shares it (dl-e8ov.2.85)"
   },
   {
     "path": "ProviderButton.tsx",
     "snippet": "#1F1F1F",
-    "why": "Google's sign-in button, light theme text, fixed by its branding rules, not a Zeszyt role (dl-e8ov.2.72)"
+    "why": "Google's sign-in button, light theme text, fixed by its branding rules, not a Zeszyt role (dl-e8ov.2.72); Facebook's button shares it (dl-e8ov.2.85)"
   }
 ]
