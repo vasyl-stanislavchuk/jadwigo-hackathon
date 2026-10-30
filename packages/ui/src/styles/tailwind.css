@@ -109,6 +109,9 @@
   --color-jw-miss-act-edge: var(--jw-miss-act-edge);
   --color-jw-rest: var(--jw-rest);
   --color-jw-rest-ink: var(--jw-rest-ink);
+  --color-jw-brand-go: var(--jw-brand-go);
+  --color-jw-crown: var(--jw-crown);
+  --color-jw-crown-line: var(--jw-crown-line);
   --color-kid-selected: var(--kid-selected);
   --color-kid-selected-soft: var(--kid-selected-soft);
   --color-kid-selected-ink: var(--kid-selected-ink);

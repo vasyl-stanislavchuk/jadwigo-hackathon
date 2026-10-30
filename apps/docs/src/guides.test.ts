@@ -6,8 +6,12 @@ import { describe, expect, it } from "vitest";
 import { operationHref, unknownApiLinks, unknownApiPaths } from "./lib/guides.ts";
 
 const content = fileURLToPath(new URL("./content/docs/", import.meta.url));
+/**
+ * Every page but the TypeScript client's under typescript/, which starlight-typedoc writes at build
+ * time from the packages' doc comments, where `/api/v1` names the client's prefix (dl-5ssh.90.39).
+ */
 const pages = readdirSync(content, { recursive: true, encoding: "utf8" })
-  .filter((path) => /\.mdx?$/.test(path))
+  .filter((path) => /\.mdx?$/.test(path) && !path.startsWith(join("typescript", "")))
   .map((path) => [path, readFileSync(join(content, path), "utf8")] as const);
 
 describe("the pages", () => {

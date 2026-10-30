@@ -132,10 +132,10 @@ def test_no_value_reaches_a_log_or_an_error(
     assert all(HIDDEN not in record.getMessage() for record in caplog.records)
 
 
-def test_the_converted_default_is_pl_json_in_the_synced_copy(file_with, tmp_path: Path) -> None:
-    assert items.converted_path() == settings_keys.DEFAULT_KHAN_DIR / "converted" / "pl.json"
+def test_the_converted_default_is_the_polish_file_the_sync_writes(file_with, tmp_path: Path) -> None:
+    assert items.converted_path() == settings_keys.DEFAULT_KHAN_DIR / "converted-pl.json"
     file_with(f"{JADWIGO_KHAN_DIR}={tmp_path / 'synced'}\n")
-    assert items.converted_path() == tmp_path / "synced" / "converted" / "pl.json"
+    assert items.converted_path() == tmp_path / "synced" / "converted-pl.json"
     file_with(f"{JADWIGO_KHAN_DIR}={tmp_path / 'synced'}\n{JW_KHAN_CONVERTED}=~/elsewhere.json\n")
     assert items.converted_path() == Path("~/elsewhere.json").expanduser()
 
@@ -150,7 +150,7 @@ def test_the_real_defaults_name_the_cache_and_the_config_dir() -> None:
 def test_an_absent_converted_file_names_the_setting_and_the_sync() -> None:
     with pytest.raises(JwError) as raised:
         items.load_item("item_a1")
-    assert str(settings_keys.DEFAULT_KHAN_DIR / "converted" / "pl.json") in str(raised.value)
+    assert str(settings_keys.DEFAULT_KHAN_DIR / "converted-pl.json") in str(raised.value)
     assert JW_KHAN_CONVERTED in raised.value.hint
     assert JADWIGO_KHAN_DIR in raised.value.hint
     assert "uv run python -m tools.khan.sync down" in raised.value.hint
