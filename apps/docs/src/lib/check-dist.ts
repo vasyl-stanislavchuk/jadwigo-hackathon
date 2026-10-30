@@ -25,7 +25,11 @@ export const MUST: readonly (readonly [file: string, text: string])[] = [
   ["design-system/index.html", gallery],
   ["design-system/tokens/index.html", `<code>--${foundation().roles.at(-1)?.name}</code>`],
   ["design-system/question-types/index.html", `<code>${QUESTION_TYPES.at(-1)?.name}</code>`],
-  ["architecture/index.html", "Architecture"],
+  // Mermaid draws in the browser (astro-mermaid), so the HTML carries each diagram's source.
+  ["architecture/index.html", '<pre class="mermaid"'],
+  ["architecture/index.html", "Supabase Auth"],
+  ["architecture/monorepo/index.html", "lesson_kit --&gt; ui"],
+  ["architecture/contracts/index.html", '<pre class="mermaid"'],
   ["404.html", "Page not found"],
   ["llms.txt", `https://${servedHost}/llms-full.txt`],
   ["llms.txt", `https://${servedHost}/openapi.json`],
