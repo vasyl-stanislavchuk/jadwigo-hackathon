@@ -1,5 +1,6 @@
 {
   "ref": "xhzkmpainwzrfktxffjv",
+  "custom_domain": "auth.jadwigo.pl",
   "settings": {
     "site_url": "https://app.jadwigo.pl",
     "uri_allow_list": "https://app.jadwigo.pl/**",
