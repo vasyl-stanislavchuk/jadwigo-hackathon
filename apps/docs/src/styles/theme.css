@@ -1,0 +1,201 @@
+/* The docs wear the app's design system (decision
+ * jadwigo-platform/notes/2026-10-30-docs-jadwigo-pl-wears-the-app-s-design-system-in-andika-day-and,
+ * dl-5ssh.90.30): Andika for body and headings, code in the system mono, the day roles in light and
+ * the night roles in dark.
+ *
+ * Every colour here is a Zeszyt role, --jw-* from @jadwigo/ui foundation.css, never a literal:
+ * src/theme.test.ts fails a hex, an rgb() or hsl(), or a --jw-* name foundation.css does not set, and
+ * holds each text pair these rules make to 4.5:1 by day and night. The roles turn dark on
+ * [theme="dark"], which styles/theme-bridge.ts copies from Starlight's data-theme, so each mapping
+ * is written once and serves both themes.
+ *
+ * Starlight's own rules sit in cascade layers, and these do not, so a plain :root wins over its
+ * :root[data-theme="light"]. The rest are notebook touches, calm enough for developer docs: the
+ * card's radius, 2px lines, a hard edge under a button, and no blurred shadow anywhere. */
+
+:root {
+  --sl-font: var(--jw-font);
+  /* Code keeps Starlight's system mono. @jadwigo/ui's --font-mono, the same stack, sits in
+     * tokens.css, which the package does not export. */
+
+  /* Starlight's grey scale runs from the strongest text (white) to the page (black) in both
+     * themes, so the roles go in once. */
+  --sl-color-white: var(--jw-ink);
+  --sl-color-gray-1: var(--jw-ink-soft);
+  --sl-color-gray-2: var(--jw-ink-soft);
+  --sl-color-gray-3: var(--jw-placeholder);
+  --sl-color-gray-4: var(--jw-placeholder);
+  --sl-color-gray-5: var(--jw-line);
+  --sl-color-gray-6: var(--jw-act-quiet);
+  --sl-color-gray-7: var(--jw-act-quiet);
+  --sl-color-black: var(--jw-ground);
+
+  /* The accent is the ink blue: links, the current page, the focus ring. */
+  --sl-color-accent-low: var(--jw-pick);
+  --sl-color-accent: var(--jw-focus);
+  --sl-color-accent-high: var(--jw-pick-ink);
+
+  /* Each hue keeps its one meaning. A note is quiet paper, a tip is the picked blue, a caution is
+     * help's yellow, a danger is the red pen. Green is right, and no aside is right. */
+  --sl-color-blue-low: var(--jw-act-quiet);
+  --sl-color-blue: var(--jw-line-strong);
+  --sl-color-blue-high: var(--jw-ink);
+  --sl-color-purple-low: var(--jw-pick);
+  --sl-color-purple: var(--jw-pick-edge);
+  --sl-color-purple-high: var(--jw-pick-ink);
+  --sl-color-orange-low: var(--jw-help);
+  --sl-color-orange: var(--jw-help-edge);
+  --sl-color-orange-high: var(--jw-help-ink);
+  --sl-color-red-low: var(--jw-miss);
+  --sl-color-red: var(--jw-miss-edge);
+  --sl-color-red-high: var(--jw-miss-ink);
+  --sl-color-green-low: var(--jw-right);
+  --sl-color-green: var(--jw-right-edge);
+  --sl-color-green-high: var(--jw-right-ink);
+
+  /* Starlight sets these apart for light and dark; the roles already differ, so one each. */
+  --sl-color-text: var(--jw-ink-soft);
+  --sl-color-text-accent: var(--jw-focus);
+  --sl-color-text-invert: var(--jw-on-focus);
+  --sl-color-bg: var(--jw-ground);
+  --sl-color-bg-nav: var(--jw-ground);
+  --sl-color-bg-sidebar: var(--jw-ground);
+  --sl-color-bg-inline-code: var(--jw-act-quiet);
+  --sl-color-bg-accent: var(--jw-focus);
+  --sl-color-hairline-light: var(--jw-line);
+  --sl-color-hairline: var(--jw-line);
+  --sl-color-hairline-shade: var(--jw-line);
+  --sl-color-backdrop-overlay: color-mix(in srgb, var(--jw-ink) 40%, transparent);
+
+  --sl-shadow-sm: none;
+  --sl-shadow-md: none;
+  --sl-shadow-lg: none;
+
+  /* Badges, the API reference's method badges among them: a fill, its edge and its ink. */
+  --sl-badge-default-bg: var(--jw-pick);
+  --sl-badge-default-border: var(--jw-pick-edge);
+  --sl-badge-default-text: var(--jw-pick-ink);
+  --sl-badge-note-bg: var(--jw-act-quiet);
+  --sl-badge-note-border: var(--jw-line-strong);
+  --sl-badge-note-text: var(--jw-on-act-quiet);
+  --sl-badge-tip-bg: var(--jw-pick);
+  --sl-badge-tip-border: var(--jw-pick-edge);
+  --sl-badge-tip-text: var(--jw-pick-ink);
+  --sl-badge-caution-bg: var(--jw-help);
+  --sl-badge-caution-border: var(--jw-help-edge);
+  --sl-badge-caution-text: var(--jw-help-ink);
+  --sl-badge-danger-bg: var(--jw-miss);
+  --sl-badge-danger-border: var(--jw-miss-edge);
+  --sl-badge-danger-text: var(--jw-miss-ink);
+  --sl-badge-success-bg: var(--jw-right);
+  --sl-badge-success-border: var(--jw-right-edge);
+  --sl-badge-success-text: var(--jw-right-ink);
+}
+
+/* The page you are on is the one picked, as an option is in a lesson. */
+.sidebar-content a[aria-current="page"],
+.sidebar-content a[aria-current="page"]:is(:hover, :focus) {
+  background-color: var(--jw-pick);
+  color: var(--jw-pick-ink);
+}
+
+/* Cards and the boxes like them: the card's radius and a 2px line. */
+.sl-link-card,
+.card,
+.pagination-links a,
+.sl-markdown-content details {
+  border: var(--jw-border) solid var(--jw-line);
+  border-radius: var(--jw-radius-card);
+}
+
+/* An aside is drawn in its own edge, all the way round, as help and a miss are in a lesson. */
+.starlight-aside {
+  border: var(--jw-border) solid var(--sl-color-asides-border);
+  border-radius: var(--jw-radius-card);
+}
+
+.sl-markdown-content code:not(:where(.not-content *)) {
+  border-radius: var(--jw-radius-small);
+}
+
+/* A button sits on a hard edge, and sinks by it when pressed. */
+.sl-link-button {
+  border-width: var(--jw-border);
+  border-radius: var(--jw-radius-control);
+  transition: transform var(--jw-dur-fast) var(--jw-ease-out);
+}
+
+.sl-link-button.primary,
+.sl-link-button.primary:hover {
+  background-color: var(--jw-act);
+  border-color: var(--jw-act-edge);
+  color: var(--jw-on-act);
+  box-shadow: 0 var(--jw-press) 0 var(--jw-act-edge);
+}
+
+.sl-link-button.secondary {
+  background-color: var(--jw-card);
+  border-color: var(--jw-line-strong);
+  color: var(--jw-ink);
+  box-shadow: 0 var(--jw-press) 0 var(--jw-line-strong);
+}
+
+.sl-link-button:is(.primary, .secondary):active {
+  transform: translateY(var(--jw-press));
+  box-shadow: none;
+}
+
+/* The API reference's method badges, on the operation page and in the sidebar: a read is the
+ * picked blue, a write is help's yellow, a delete is the red pen. starlight-openapi's rules are not
+ * layered, so these name :root to outrank them. */
+:root .sl-openapi-operation-method-badge {
+  border: var(--jw-border) solid var(--sl-badge-note-border);
+  background-color: var(--sl-badge-note-bg);
+  color: var(--sl-badge-note-text);
+  border-radius: var(--jw-radius-small);
+}
+
+:root .sl-openapi-operation-method-badge.get {
+  border-color: var(--jw-pick-edge);
+  background-color: var(--jw-pick);
+  color: var(--jw-pick-ink);
+}
+
+:root .sl-openapi-operation-method-badge:is(.post, .put, .patch) {
+  border-color: var(--jw-help-edge);
+  background-color: var(--jw-help);
+  color: var(--jw-help-ink);
+}
+
+:root .sl-openapi-operation-method-badge.delete {
+  border-color: var(--jw-miss-edge);
+  background-color: var(--jw-miss);
+  color: var(--jw-miss-ink);
+}
+
+:root .sidebar-content a:not([aria-current="page"]) .sl-badge[class*="sl-openapi-method-"] {
+  --sl-color-bg-badge: var(--jw-act-quiet);
+  --sl-color-border-badge: var(--jw-line-strong);
+  --sl-color-text-badge: var(--jw-on-act-quiet);
+}
+
+:root .sidebar-content a:not([aria-current="page"]) .sl-badge.sl-openapi-method-get {
+  --sl-color-bg-badge: var(--jw-pick);
+  --sl-color-border-badge: var(--jw-pick-edge);
+  --sl-color-text-badge: var(--jw-pick-ink);
+}
+
+:root
+  .sidebar-content
+  a:not([aria-current="page"])
+  .sl-badge:is(.sl-openapi-method-post, .sl-openapi-method-put, .sl-openapi-method-patch) {
+  --sl-color-bg-badge: var(--jw-help);
+  --sl-color-border-badge: var(--jw-help-edge);
+  --sl-color-text-badge: var(--jw-help-ink);
+}
+
+:root .sidebar-content a:not([aria-current="page"]) .sl-badge.sl-openapi-method-delete {
+  --sl-color-bg-badge: var(--jw-miss);
+  --sl-color-border-badge: var(--jw-miss-edge);
+  --sl-color-text-badge: var(--jw-miss-ink);
+}
