@@ -526,4 +526,22 @@ describe("ParentScreen", () => {
     expect(document.querySelector('[data-provider="google"]')).not.toBeNull();
     expect(document.querySelector("[data-open-in-browser]")).toBeNull();
   });
+
+  it("puts Google's G before the button's words, which stay its accessible name", async () => {
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={signedOutAuth(["google", "facebook"])}
+        client={client({})}
+      />,
+    );
+    const google = await screen.findByRole("button", { name: "Kontynuuj z Google" });
+    const mark = google.querySelector('img[data-provider-mark="google"]');
+    expect(mark?.getAttribute("src")).toMatch(/google-g\.svg/);
+    // The G is decorative: the words name the button, once.
+    expect(mark?.getAttribute("alt")).toBe("");
+    expect(google.firstElementChild).toBe(mark);
+    expect(google.style.backgroundColor).not.toBe("");
+  });
 });

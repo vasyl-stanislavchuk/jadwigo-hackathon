@@ -71,6 +71,7 @@ import { inAppBrowser } from "./inApp.ts";
 import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";
 import { cellsOf } from "./overview/grid.ts";
 import { OUTCOME_TONE, OutcomeIcon, TwinMark, tileLabel } from "./overview/outcome.tsx";
+import { ProviderButton } from "./ProviderButton.tsx";
 import {
   assignmentPath,
   attemptPath,
@@ -313,17 +314,13 @@ function SignIn({
                 provider === "google" && inApp ? (
                   <OpenInBrowser key={provider} language={language} />
                 ) : (
-                  <Button
+                  <ProviderButton
                     key={provider}
-                    type="button"
-                    variant="outline"
-                    size="control"
+                    provider={provider}
+                    label={copy(language, PROVIDER_LABEL[provider], {}, CATEGORY)}
                     disabled={busy}
                     onClick={() => continueWith(provider)}
-                    data-provider={provider}
-                  >
-                    {copy(language, PROVIDER_LABEL[provider], {}, CATEGORY)}
-                  </Button>
+                  />
                 ),
               )}
             </div>
