@@ -259,6 +259,8 @@
     "packages/testing": {
       "name": "@jadwigo/testing",
       "devDependencies": {
+        "@jadwigo/contracts": "workspace:*",
+        "@jadwigo/store": "workspace:*",
         "@types/node": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:",
