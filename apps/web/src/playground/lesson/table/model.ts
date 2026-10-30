@@ -5,11 +5,10 @@
  * of them. md drops' table is the model for the ideas: typed columns, a tone per row, a row anchor.
  */
 
-import type { Finding, FindingLevel } from "@jadwigo/lesson-import";
+import { type Finding, type FindingLevel, worstLevel } from "@jadwigo/lesson-import/file";
 import type { FamilySpec } from "@jadwigo/lesson-kit";
 import type { PartSpecs } from "../adapter.ts";
 import { rungsOf } from "../rungs.ts";
-import { worstOf } from "./findings.ts";
 
 export interface StepRow {
   n: number;
@@ -52,7 +51,7 @@ export function stepRows(parts: readonly PartSpecs[], findings: readonly Finding
         step_id: step.step_id,
         part,
         findings: mine.length,
-        tone: worstOf(mine),
+        tone: worstLevel(mine),
       };
       if (step.kind === "skipped")
         return {
