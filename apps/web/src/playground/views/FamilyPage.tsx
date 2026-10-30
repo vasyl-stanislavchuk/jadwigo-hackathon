@@ -140,7 +140,7 @@ export function FamilyPage({
         {loaded.kind === "loading" ? (
           <Spinner label={copy(language, "loading")} />
         ) : (
-          <p className="text-destructive">{copy(language, "load_failed")}</p>
+          <p>{copy(language, "load_failed")}</p>
         )}
       </div>
     );

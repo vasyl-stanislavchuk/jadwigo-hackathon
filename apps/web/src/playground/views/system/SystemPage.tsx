@@ -14,10 +14,9 @@
 
 import { type CopyKey, copy, type Language, TABLES } from "@jadwigo/copy";
 import { Tooltip } from "@jadwigo/lesson-kit";
-import { Button, cn } from "@jadwigo/ui";
+import { Button, cn, Sheet, SheetContent, SheetDescription, SheetTitle } from "@jadwigo/ui";
 import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { type ReactNode, useContext, useEffect, useState } from "react";
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from "../../tool/sheet.tsx";
 import { DESIGN_LINES, METAPHOR, ZONES } from "./data.ts";
 import { Colour, Motion, SpaceAndShape, Sub, subId, Type } from "./Foundations.tsx";
 import { FRAME_SECTIONS, FrameSection } from "./frame/sections.tsx";
@@ -353,6 +352,7 @@ export function SystemPage(): JSX.Element {
               <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
                 <SheetContent
                   side="left"
+                  closeLabel="Close"
                   data-lesson-theme="zeszyt"
                   className="overflow-y-auto bg-background p-4"
                 >

@@ -1,31 +1,36 @@
 /** The overview's legend: the 6 outcomes, each with its icon and colour, and the twin mark. */
 
 import { copy, type Language } from "@jadwigo/copy";
+import { Heading, OutcomeTile } from "@jadwigo/ui";
 import type { ReactElement } from "react";
+import { CATEGORY } from "../adult.ts";
 import { OUTCOMES } from "./grid.ts";
-import { CATEGORY, OUTCOME_TILE, OutcomeIcon, outcomeWord, TwinMark } from "./outcome.tsx";
+import { OUTCOME_TONE, OutcomeIcon, outcomeWord, TwinMark } from "./outcome.tsx";
 
 export function Legend({ language }: { language: Language }): ReactElement {
   return (
     <section className="flex w-full flex-col gap-2" data-legend>
-      <h2 className="text-xl font-semibold">
-        {copy(language, "parent_overview_legend", {}, CATEGORY)}
-      </h2>
-      <ul className="flex flex-wrap gap-x-4 gap-y-2 text-base">
+      <Heading level={2}>{copy(language, "parent_overview_legend", {}, CATEGORY)}</Heading>
+      <ul className="flex flex-wrap gap-x-4 gap-y-2">
         {OUTCOMES.map((outcome) => (
           <li key={outcome} className="flex items-center gap-2" data-legend-outcome={outcome}>
-            <span
-              className={`flex size-8 items-center justify-center rounded-md border-2 ${OUTCOME_TILE[outcome]}`}
-            >
-              <OutcomeIcon outcome={outcome} />
-            </span>
+            <OutcomeTile
+              size="sm"
+              tone={OUTCOME_TONE[outcome]}
+              outcome={outcome}
+              icon={<OutcomeIcon outcome={outcome} />}
+              label={outcomeWord(language, outcome)}
+            />
             {outcomeWord(language, outcome)}
           </li>
         ))}
         <li className="flex items-center gap-2" data-legend-twin>
-          <span className="flex size-8 items-center justify-center rounded-md border-2 border-border">
-            <TwinMark />
-          </span>
+          <OutcomeTile
+            size="sm"
+            tone="plain"
+            icon={<TwinMark />}
+            label={copy(language, "parent_overview_twin", {}, CATEGORY)}
+          />
           {copy(language, "parent_overview_twin", {}, CATEGORY)}
         </li>
       </ul>

@@ -15,14 +15,14 @@
 import type { ParentClient } from "@jadwigo/api-client";
 import type { AssignmentAttempts, AssignmentId } from "@jadwigo/contracts";
 import { copy, type Language } from "@jadwigo/copy";
-import { Spinner } from "@jadwigo/ui";
+import { Heading, Link, Notice, Page, Spinner } from "@jadwigo/ui";
 import { type ReactElement, type ReactNode, useEffect, useMemo, useState } from "react";
 import { NavLink } from "../../nav/NavLink.tsx";
+import { CATEGORY, pageLang } from "../adult.ts";
 import { parentPath } from "../route.ts";
 import { buildGrid, type Grid } from "./grid.ts";
 import { Heatmap } from "./Heatmap.tsx";
 import { Legend } from "./Legend.tsx";
-import { CATEGORY, pageLang } from "./outcome.tsx";
 import { QuestionSheet } from "./QuestionSheet.tsx";
 
 type View =
@@ -58,29 +58,33 @@ export function AssignmentOverview({
   }, [api, assignment]);
 
   const back = (
-    <NavLink href={parentPath({ lang: pageLang() })} className="underline" data-parent-home>
-      {copy(language, "parent_review_back", {}, CATEGORY)}
-    </NavLink>
+    <Link asChild className="self-start">
+      <NavLink href={parentPath({ lang: pageLang() })} data-parent-home>
+        {copy(language, "parent_review_back", {}, CATEGORY)}
+      </NavLink>
+    </Link>
   );
 
   if (view.kind === "loading")
     return (
-      <Page>
-        <Spinner label={copy(language, "loading")} />
-      </Page>
+      <OverviewPage>
+        <Spinner label={copy(language, "loading", {}, CATEGORY)} />
+      </OverviewPage>
     );
   if (view.kind === "failed")
     return (
-      <Page>
-        <p data-failed>{copy(language, "load_failed")}</p>
+      <OverviewPage>
+        <Notice role="alert" data-failed>
+          {copy(language, "parent_load_failed", {}, CATEGORY)}
+        </Notice>
         {back}
-      </Page>
+      </OverviewPage>
     );
   return (
-    <Page>
+    <OverviewPage>
       {back}
       <Ready overview={view.overview} language={language} />
-    </Page>
+    </OverviewPage>
   );
 }
 
@@ -110,15 +114,12 @@ function Ready({
   );
 }
 
-function Page({ children }: { children: ReactNode }): ReactElement {
+/** The overview: the app page's prose column, which the grid never widens (it scrolls inside). */
+function OverviewPage({ children }: { children: ReactNode }): ReactElement {
   return (
-    <main
-      data-parent
-      data-assignment-overview
-      className="mx-auto flex w-full max-w-3xl min-w-0 flex-col items-start gap-6 p-4 text-lg sm:p-6"
-    >
+    <Page width="prose" className="min-w-0" data-parent data-assignment-overview>
       {children}
-    </main>
+    </Page>
   );
 }
 
@@ -133,8 +134,10 @@ function Header({
 }): ReactElement {
   return (
     <header className="flex flex-col gap-2" data-overview-header>
-      <p className="text-sm">{copy(language, "parent_overview_title", {}, CATEGORY)}</p>
-      <h1 className="text-3xl font-semibold">{title}</h1>
+      <p className="text-jw-small text-jw-ink-soft">
+        {copy(language, "parent_overview_title", {}, CATEGORY)}
+      </p>
+      <Heading>{title}</Heading>
       <p data-attempts={grid.rows.length}>
         {copy(language, "parent_overview_attempts", { n: grid.rows.length }, CATEGORY)}
       </p>

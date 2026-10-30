@@ -11,7 +11,8 @@
  *   /parent/assignments/<assignment>, signed in: every attempt at that lesson against its
  *                questions (overview/AssignmentOverview.tsx)
  *
- * The page is for the adult, so it has no lesson frame around it.
+ * The page is for the adult, so it has no lesson frame around it: an app page on the kit (Page,
+ * Heading, Field, Card, Notice), in the adult's lines (dl-uukj.32 wave 2).
  */
 
 import { ApiError, type Client, createClient, type ParentClient } from "@jadwigo/api-client";
@@ -24,21 +25,33 @@ import type {
   Me,
 } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
-import { Button, Input, Spinner } from "@jadwigo/ui";
+import {
+  Button,
+  Card,
+  CardContent,
+  Field,
+  Heading,
+  Input,
+  Link,
+  Notice,
+  Page,
+  Spinner,
+} from "@jadwigo/ui";
 import {
   type FormEvent,
   type ReactElement,
   type ReactNode,
   useCallback,
   useEffect,
-  useId,
   useMemo,
   useState,
 } from "react";
 import { navigate, useLocation } from "../nav/location.ts";
 import { NavLink } from "../nav/NavLink.tsx";
 import { storedAttempt } from "../play/storedAttempt.ts";
+import { ENDED_WORD } from "../review/outcome.ts";
 import { AttemptReview } from "./AttemptReview.tsx";
+import { CATEGORY, pageLang } from "./adult.ts";
 import { type Auth, browserAuth } from "./auth.ts";
 import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";
 import {
@@ -50,21 +63,29 @@ import {
   parentRoute,
 } from "./route.ts";
 
-const isApiError = (error: unknown): error is ApiError => error instanceof ApiError;
-
-function Page({ children }: { children: ReactNode }): ReactElement {
+/** The parent's page: the app page's prose column. */
+function ParentPage({ children }: { children: ReactNode }): ReactElement {
   return (
-    <main data-parent className="mx-auto flex max-w-2xl flex-col items-start gap-6 p-6 text-lg">
+    <Page width="prose" data-parent>
       {children}
-    </main>
+    </Page>
   );
 }
 
 function Loading({ language }: { language: Language }): ReactElement {
   return (
-    <Page>
-      <Spinner label={copy(language, "loading")} />
-    </Page>
+    <ParentPage>
+      <Spinner label={copy(language, "loading", {}, CATEGORY)} />
+    </ParentPage>
+  );
+}
+
+/** The line that says a page could not load: what stops the adult, with what to do. */
+function Failed({ language }: { language: Language }): ReactElement {
+  return (
+    <Notice role="alert" data-failed>
+      {copy(language, "parent_load_failed", {}, CATEGORY)}
+    </Notice>
   );
 }
 
@@ -106,9 +127,9 @@ export function ParentScreen({
 
   if (auth === null)
     return (
-      <Page>
-        <p data-parent-off>{copy(language, "parent_off")}</p>
-      </Page>
+      <ParentPage>
+        <Notice data-parent-off>{copy(language, "parent_off", {}, CATEGORY)}</Notice>
+      </ParentPage>
     );
   if (signedIn === null) return <Loading language={language} />;
   if (!signedIn)
@@ -150,8 +171,11 @@ function SignIn({
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<CopyKey | null>(null);
-  const emailId = useId();
-  const codeId = useId();
+  // The one problem there is, said under the step's own field.
+  const problemLine =
+    problem === null ? undefined : (
+      <span data-problem>{copy(language, problem, {}, CATEGORY)}</span>
+    );
 
   const send = (event: FormEvent): void => {
     event.preventDefault();
@@ -183,52 +207,49 @@ function SignIn({
   };
 
   return (
-    <Page>
-      <h1 className="text-3xl font-semibold">{copy(language, "parent_title")}</h1>
-      <p>{copy(language, "parent_promise")}</p>
-      <p>{copy(language, "parent_guardian")}</p>
+    <ParentPage>
+      <Heading>{copy(language, "parent_title", {}, CATEGORY)}</Heading>
+      <p>{copy(language, "parent_promise", {}, CATEGORY)}</p>
+      <p>{copy(language, "parent_guardian", {}, CATEGORY)}</p>
       {sentTo === null ? (
-        <form onSubmit={send} className="flex w-full flex-col gap-3" data-email-step>
-          <label htmlFor={emailId}>{copy(language, "parent_email")}</label>
-          <Input
-            id={emailId}
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            data-email
-          />
-          <Button type="submit" disabled={busy} data-send-code>
-            {copy(language, "parent_send_code")}
+        <form onSubmit={send} className="flex w-full flex-col gap-4" data-email-step>
+          <Field label={copy(language, "parent_email", {}, CATEGORY)} problem={problemLine}>
+            <Input
+              kind="text"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              data-email
+            />
+          </Field>
+          <Button type="submit" size="control" disabled={busy} data-send-code>
+            {copy(language, "parent_send_code", {}, CATEGORY)}
           </Button>
         </form>
       ) : (
-        <form onSubmit={verify} className="flex w-full flex-col gap-3" data-code-step>
-          <p>{copy(language, "parent_code_sent", { email: sentTo })}</p>
-          <label htmlFor={codeId}>{copy(language, "parent_code")}</label>
-          <Input
-            id={codeId}
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            pattern="[0-9]{6}"
-            maxLength={6}
-            required
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            data-code
-          />
-          <Button type="submit" disabled={busy} data-sign-in>
-            {copy(language, "parent_sign_in")}
+        <form onSubmit={verify} className="flex w-full flex-col gap-4" data-code-step>
+          <Notice>{copy(language, "parent_code_sent", { email: sentTo }, CATEGORY)}</Notice>
+          <Field label={copy(language, "parent_code", {}, CATEGORY)} problem={problemLine}>
+            <Input
+              kind="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              required
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              data-code
+            />
+          </Field>
+          <Button type="submit" size="control" disabled={busy} data-sign-in>
+            {copy(language, "parent_sign_in", {}, CATEGORY)}
           </Button>
         </form>
       )}
-      {problem !== null && (
-        <p role="alert" data-problem>
-          {copy(language, problem)}
-        </p>
-      )}
-    </Page>
+    </ParentPage>
   );
 }
 
@@ -257,7 +278,7 @@ async function meOf(api: ParentClient, language: Language): Promise<Me> {
   try {
     me = await api.getMe();
   } catch (error) {
-    if (!(isApiError(error) && error.type === "AccountMissing")) throw error;
+    if (!(error instanceof ApiError && error.type === "AccountMissing")) throw error;
   }
   return me?.account ? me : api.createAccount({ language });
 }
@@ -294,15 +315,13 @@ function SignedIn({
       // 201 for a first claim and for a replay by the same account for the same learner.
       await api.claimAttempt(pending.attempt, { learner_id: learner });
     } catch (error) {
-      const refused = isApiError(error) ? CLAIM_REFUSED[error.type ?? ""] : undefined;
+      const refused = error instanceof ApiError ? CLAIM_REFUSED[error.type ?? ""] : undefined;
       if (refused === undefined) throw error;
       if (refused !== null) setNotice(refused);
     }
     storedAttempt.clear(pending.assignment);
     setPending(null);
-    navigate(parentPath({ lang: new URLSearchParams(window.location.search).get("lang") }), {
-      replace: true,
-    });
+    navigate(parentPath({ lang: pageLang() }), { replace: true });
   };
 
   const run = (work: () => Promise<void>): void => {
@@ -320,35 +339,56 @@ function SignedIn({
   if (view.kind === "loading") return <Loading language={language} />;
   if (view.kind === "failed")
     return (
-      <Page>
-        <p data-failed>{copy(language, "load_failed")}</p>
-      </Page>
+      <ParentPage>
+        <Failed language={language} />
+      </ParentPage>
     );
 
   const learners = view.me.learners.map((s) => s.learner);
   const signOut = (
-    <Button type="button" variant="outline" onClick={onSignOut} data-sign-out>
-      {copy(language, "parent_sign_out")}
+    <Button
+      type="button"
+      variant="outline"
+      size="control"
+      className="self-start"
+      onClick={onSignOut}
+      data-sign-out
+    >
+      {copy(language, "parent_sign_out", {}, CATEGORY)}
+    </Button>
+  );
+
+  const addAnother = (
+    <Button
+      type="button"
+      variant="outline"
+      size="control"
+      className="self-start"
+      onClick={() => setAdding(true)}
+      data-add-another
+    >
+      {copy(language, "parent_add_child", {}, CATEGORY)}
     </Button>
   );
 
   if (learners.length === 0 || adding)
     return (
-      <Page>
+      <ParentPage>
         <AddChild language={language} onAdd={addChild} />
         {signOut}
-      </Page>
+      </ParentPage>
     );
 
   if (pending !== null)
     return (
-      <Page>
-        <h1 className="text-3xl font-semibold">{copy(language, "parent_whose")}</h1>
+      <ParentPage>
+        <Heading>{copy(language, "parent_whose", {}, CATEGORY)}</Heading>
         <ul className="flex w-full flex-col gap-3" data-whose>
           {learners.map((learner) => (
             <li key={learner.id}>
               <Button
                 type="button"
+                size="control"
                 className="w-full"
                 data-learner={learner.id}
                 onClick={() => run(() => keepFor(learner.id))}
@@ -358,26 +398,22 @@ function SignedIn({
             </li>
           ))}
         </ul>
-        <Button type="button" variant="outline" onClick={() => setAdding(true)} data-add-another>
-          {copy(language, "parent_add_child")}
-        </Button>
-      </Page>
+        {addAnother}
+      </ParentPage>
     );
 
   return (
-    <Page>
-      <h1 className="text-3xl font-semibold">{copy(language, "parent_title")}</h1>
-      {notice !== null && <p role="status">{copy(language, notice)}</p>}
-      <ul className="flex w-full flex-col gap-6" data-home>
+    <ParentPage>
+      <Heading>{copy(language, "parent_title", {}, CATEGORY)}</Heading>
+      {notice !== null && <Notice>{copy(language, notice, {}, CATEGORY)}</Notice>}
+      <ul className="flex w-full flex-col gap-8" data-home>
         {learners.map((learner) => (
           <LearnerCard key={learner.id} api={api} learner={learner} language={language} />
         ))}
       </ul>
-      <Button type="button" variant="outline" onClick={() => setAdding(true)} data-add-another>
-        {copy(language, "parent_add_child")}
-      </Button>
+      {addAnother}
       {signOut}
-    </Page>
+    </ParentPage>
   );
 }
 
@@ -389,38 +425,31 @@ function AddChild({
   onAdd: (firstName: string) => void;
 }): ReactElement {
   const [name, setName] = useState("");
-  const nameId = useId();
   const submit = (event: FormEvent): void => {
     event.preventDefault();
     const firstName = name.trim();
     if (firstName !== "") onAdd(firstName);
   };
   return (
-    <form onSubmit={submit} className="flex w-full flex-col gap-3" data-add-child>
-      <h1 className="text-3xl font-semibold">{copy(language, "parent_add_child")}</h1>
-      <label htmlFor={nameId}>{copy(language, "parent_first_name")}</label>
-      <Input
-        id={nameId}
-        required
-        maxLength={60}
-        autoComplete="off"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        data-first-name
-      />
-      <Button type="submit" data-add>
-        {copy(language, "parent_add")}
+    <form onSubmit={submit} className="flex w-full flex-col gap-4" data-add-child>
+      <Heading>{copy(language, "parent_add_child", {}, CATEGORY)}</Heading>
+      <Field label={copy(language, "parent_first_name", {}, CATEGORY)}>
+        <Input
+          kind="text"
+          required
+          maxLength={60}
+          autoComplete="off"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          data-first-name
+        />
+      </Field>
+      <Button type="submit" size="control" data-add>
+        {copy(language, "parent_add", {}, CATEGORY)}
       </Button>
     </form>
   );
 }
-
-const ENDED: Record<"correct" | "missed" | "skipped" | "open", CopyKey> = {
-  correct: "play_ended_correct",
-  missed: "play_ended_missed",
-  skipped: "play_ended_skipped",
-  open: "play_ended_open",
-};
 
 function LearnerCard({
   api,
@@ -444,50 +473,59 @@ function LearnerCard({
   }, [api, learner.id]);
   const day = new Intl.DateTimeFormat(language, { dateStyle: "long" });
   return (
-    <li className="flex flex-col gap-3" data-learner-card={learner.id}>
-      <h2 className="text-2xl font-semibold">{learner.first_name}</h2>
-      {attempts === null && <Spinner label={copy(language, "loading")} />}
-      {attempts === "failed" && <p data-failed>{copy(language, "load_failed")}</p>}
+    <li className="flex flex-col gap-4" data-learner-card={learner.id}>
+      <Heading level={2}>{learner.first_name}</Heading>
+      {attempts === null && <Spinner label={copy(language, "loading", {}, CATEGORY)} />}
+      {attempts === "failed" && <Failed language={language} />}
       {Array.isArray(attempts) && attempts.length === 0 && (
-        <p>{copy(language, "parent_no_attempts")}</p>
+        <p>{copy(language, "parent_no_attempts", {}, CATEGORY)}</p>
       )}
       {Array.isArray(attempts) && attempts.length > 0 && (
         <ol className="flex flex-col gap-4">
           {attempts.map(({ attempt, title, results }) => (
-            <li
-              key={attempt.id}
-              data-attempt={attempt.id}
-              className="flex flex-col gap-2 rounded-xl border p-4"
-            >
-              <NavLink
-                href={attemptPath({
-                  attempt: attempt.id,
-                  learner: learner.id,
-                  lang: new URLSearchParams(window.location.search).get("lang"),
-                })}
-                className="font-semibold underline"
-                data-attempt-link
-              >
-                {title}
-              </NavLink>
-              <span className="text-sm">{day.format(new Date(attempt.started_at))}</span>
-              <NavLink
-                href={assignmentPath({
-                  assignment: attempt.assignment_id,
-                  lang: new URLSearchParams(window.location.search).get("lang"),
-                })}
-                className="text-sm underline"
-                data-overview-link
-              >
-                {copy(language, "parent_overview_link", {}, "adult")}
-              </NavLink>
-              <ol className="flex flex-col gap-1">
-                {results.map((row) => (
-                  <li key={row.seq} data-seq={row.seq} data-ended={row.ended ?? "open"}>
-                    {row.say}: {copy(language, ENDED[row.ended ?? "open"])}
-                  </li>
-                ))}
-              </ol>
+            <li key={attempt.id} data-attempt={attempt.id}>
+              <Card size="compact">
+                <CardContent className="items-start gap-2">
+                  <Link asChild>
+                    <NavLink
+                      href={attemptPath({
+                        attempt: attempt.id,
+                        learner: learner.id,
+                        lang: pageLang(),
+                      })}
+                      data-attempt-link
+                    >
+                      {title}
+                    </NavLink>
+                  </Link>
+                  <span className="text-jw-small text-jw-ink-soft">
+                    {day.format(new Date(attempt.started_at))}
+                  </span>
+                  <Link asChild size="small">
+                    <NavLink
+                      href={assignmentPath({ assignment: attempt.assignment_id, lang: pageLang() })}
+                      data-overview-link
+                    >
+                      {copy(language, "parent_overview_link", {}, CATEGORY)}
+                    </NavLink>
+                  </Link>
+                  <ol className="flex flex-col gap-1">
+                    {results.map((row) => (
+                      <li key={row.seq} data-seq={row.seq} data-ended={row.ended ?? "open"}>
+                        {copy(
+                          language,
+                          "parent_attempt_line",
+                          {
+                            say: row.say,
+                            ended: copy(language, ENDED_WORD[row.ended ?? "open"], {}, CATEGORY),
+                          },
+                          CATEGORY,
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </CardContent>
+              </Card>
             </li>
           ))}
         </ol>
