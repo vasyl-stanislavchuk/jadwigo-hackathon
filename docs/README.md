@@ -3,6 +3,10 @@
 How jadwigo works, and how work on it is organized. Decisions are not here: they live in the md
 context brain, and the docs cite them by slug (`md context decisions --project jadwigo-platform --current`).
 
+The product's reference, for people and agents who call it, is a site: `apps/docs`, published at
+docs.jadwigo.pl. Its API, MCP and design-system pages are generated from the code, so they are
+not written here (`dl-5ssh.90`).
+
 | Folder | What it holds | Its rules |
 | --- | --- | --- |
 | [`workstreams/`](workstreams/) | one page per workstream: goal, scope epics, owned directories, how to run and test, done at the next milestone, who it meets | these sections on every page |
