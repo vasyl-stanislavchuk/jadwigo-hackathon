@@ -168,6 +168,33 @@ describe("ReviewStep", () => {
     expect(onPrev).toHaveBeenCalledTimes(1);
   });
 
+  it("draws a badge in place of the child's when one is passed, and the child's otherwise", () => {
+    const { rerender } = render(
+      <ReviewStep
+        question={reviewQuestion(2, "missed")}
+        index={0}
+        total={1}
+        language="pl"
+        category="adult"
+        onAll={() => undefined}
+        badge={<span data-own-badge>Jeszcze nie</span>}
+      />,
+    );
+    expect($("[data-own-badge]")).not.toBeNull();
+    expect($("[data-review-ended]")).toBeNull();
+    rerender(
+      <ReviewStep
+        question={reviewQuestion(2, "missed")}
+        index={0}
+        total={1}
+        language="pl"
+        onAll={() => undefined}
+      />,
+    );
+    expect($("[data-own-badge]")).toBeNull();
+    expect($("[data-review-ended]")?.textContent).toBe("Jeszcze się uczymy");
+  });
+
   it("draws the parent's block under the solution", () => {
     render(
       <ReviewStep

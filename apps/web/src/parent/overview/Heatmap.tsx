@@ -23,20 +23,13 @@ import { NavLink } from "../../nav/NavLink.tsx";
 import { CATEGORY, pageLang } from "../adult.ts";
 import { attemptPath } from "../route.ts";
 import type { Cell, Column, Grid, Row } from "./grid.ts";
-import { OUTCOME_TONE, OutcomeIcon, outcomeWord, rowName, TwinMark } from "./outcome.tsx";
+import { OUTCOME_TONE, OutcomeIcon, rowName, TwinMark, tileLabel } from "./outcome.tsx";
 
 /** The attempt page of a row, or null while the attempt is unfinished. */
 export const reviewOf = (row: Row): string | null =>
   row.attempt.status === "finished"
     ? attemptPath({ attempt: row.attempt.id, learner: row.attempt.learner_id, lang: pageLang() })
     : null;
-
-/** A cell's accessible name: the question, its outcome, and the twin when one was folded in. */
-function cellLabel(language: Language, column: Column, cell: Cell): string {
-  const question = copy(language, "parent_overview_question", { n: column.number }, CATEGORY);
-  const twin = cell.twin ? `, ${copy(language, "parent_overview_twin", {}, CATEGORY)}` : "";
-  return `${question}: ${outcomeWord(language, cell.outcome)}${twin}`;
-}
 
 /** The first column stays put while the grid scrolls sideways, on the page's own paper. */
 const STICKY = "sticky left-0 z-10 bg-jw-ground";
@@ -144,7 +137,7 @@ function GridRow({
         if (column === undefined) return null;
         return (
           <TableCell key={column.key} className="p-0">
-            <CellBox cell={cell} label={cellLabel(language, column, cell)} href={href} />
+            <CellBox cell={cell} label={tileLabel(language, column.number, cell)} href={href} />
           </TableCell>
         );
       })}

@@ -7,7 +7,6 @@
 import type { AttemptResult } from "@jadwigo/contracts";
 import { copy, type Language } from "@jadwigo/copy";
 import {
-  Badge,
   Heading,
   Link,
   Sheet,
@@ -18,23 +17,13 @@ import {
 } from "@jadwigo/ui";
 import type { ReactElement } from "react";
 import { NavLink } from "../../nav/NavLink.tsx";
-import type { Tone } from "../../review/outcome.ts";
 import { CATEGORY } from "../adult.ts";
-import type { Column, Outcome, Row } from "./grid.ts";
+import type { Column, Row } from "./grid.ts";
 import { rowOutcome } from "./grid.ts";
 import { reviewOf } from "./Heatmap.tsx";
-import { OUTCOME_TONE, OutcomeIcon, outcomeWord, rowName, TwinMark } from "./outcome.tsx";
+import { OutcomeWord, rowName, TwinMark } from "./outcome.tsx";
 
 const seconds = (ms: number): number => Math.round(ms / 1000);
-
-/** The Badge that wears each tone: the right's green, the miss's red, or an outline. */
-const BADGE: Record<Tone, "correct" | "try-again" | "outline"> = {
-  right: "correct",
-  "right-soft": "correct",
-  miss: "try-again",
-  plain: "outline",
-  empty: "outline",
-};
 
 export function QuestionSheet({
   column,
@@ -67,7 +56,7 @@ export function QuestionSheet({
             </SheetTitle>
             <SheetDescription className="text-jw-body text-jw-ink">{column.say}</SheetDescription>
           </SheetHeader>
-          <ol className="flex flex-col gap-3">
+          <ol className="flex flex-col">
             {rows.map((row) => (
               <SheetLine key={row.attempt.id} row={row} index={index} language={language} />
             ))}
@@ -90,54 +79,46 @@ function SheetLine({
   const cell = row.cells[index];
   if (cell === undefined) return null;
   const href = reviewOf(row);
+  // A row as the owner drew it (decision
+  // 2026-10-30-the-parent-s-outcomes-a-soft-green-for-got-there-a-dashed-tile-f): the name in a 72 px
+  // column, then the tile with its word and the line; rows are split by a 2 px line on top.
   return (
     <li
-      className="flex flex-col items-start gap-2 rounded-jw-card border-2 border-jw-line bg-jw-card p-3"
+      className="flex items-start gap-3 border-t-2 border-jw-line py-3"
       data-sheet-line={row.attempt.id}
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="font-bold">{rowName(language, row)}</span>
-        <OutcomeBadge outcome={cell.outcome} language={language} />
+      <span className="w-18 shrink-0 font-bold break-words">{rowName(language, row)}</span>
+      <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
+        <OutcomeWord outcome={cell.outcome} language={language} data-sheet-outcome={cell.outcome} />
+        {cell.planned !== null && <Numbers result={cell.planned} language={language} />}
+        {cell.twins.length > 0 && (
+          <ol className="mt-2 flex flex-col gap-2 border-l-2 border-jw-line pl-3" data-sheet-twins>
+            {cell.twins.map((t) => (
+              <li key={t.seq} className="flex flex-col items-start gap-1" data-sheet-twin={t.seq}>
+                <span className="flex items-center gap-2 text-jw-small text-jw-ink-soft">
+                  <TwinMark />
+                  {copy(language, "parent_overview_twin", {}, CATEGORY)}
+                </span>
+                <span>{t.say}</span>
+                <OutcomeWord
+                  outcome={rowOutcome(t)}
+                  language={language}
+                  data-sheet-outcome={rowOutcome(t)}
+                />
+                <Numbers result={t} language={language} />
+              </li>
+            ))}
+          </ol>
+        )}
+        {href !== null && cell.planned !== null && (
+          <Link asChild className="mt-1">
+            <NavLink href={href} data-sheet-link>
+              {copy(language, "parent_overview_see_tries", {}, CATEGORY)}
+            </NavLink>
+          </Link>
+        )}
       </div>
-      {cell.planned !== null && <Numbers result={cell.planned} language={language} />}
-      {cell.twins.length > 0 && (
-        <ol className="flex flex-col gap-2 border-l-2 border-jw-line pl-3" data-sheet-twins>
-          {cell.twins.map((t) => (
-            <li key={t.seq} className="flex flex-col items-start gap-1" data-sheet-twin={t.seq}>
-              <span className="flex items-center gap-2 text-jw-small text-jw-ink-soft">
-                <TwinMark />
-                {copy(language, "parent_overview_twin", {}, CATEGORY)}
-              </span>
-              <span>{t.say}</span>
-              <OutcomeBadge outcome={rowOutcome(t)} language={language} />
-              <Numbers result={t} language={language} />
-            </li>
-          ))}
-        </ol>
-      )}
-      {href !== null && cell.planned !== null && (
-        <Link asChild>
-          <NavLink href={href} data-sheet-link>
-            {copy(language, "parent_overview_see_tries", {}, CATEGORY)}
-          </NavLink>
-        </Link>
-      )}
     </li>
-  );
-}
-
-function OutcomeBadge({
-  outcome,
-  language,
-}: {
-  outcome: Outcome;
-  language: Language;
-}): ReactElement {
-  return (
-    <Badge variant={BADGE[OUTCOME_TONE[outcome]]} data-sheet-outcome={outcome}>
-      <OutcomeIcon outcome={outcome} />
-      {outcomeWord(language, outcome)}
-    </Badge>
   );
 }
 
@@ -150,7 +131,7 @@ function Numbers({
   language: Language;
 }): ReactElement {
   return (
-    <p className="text-jw-small text-jw-ink-soft" data-sheet-numbers>
+    <p className="text-jw-small text-jw-ink-soft tabular-nums" data-sheet-numbers>
       {copy(
         language,
         "parent_overview_sheet_line",

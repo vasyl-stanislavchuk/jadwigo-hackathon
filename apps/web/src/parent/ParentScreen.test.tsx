@@ -1,7 +1,7 @@
 /**
  * The parent's screens against doubles of the sign-in and the API (no network): the email code
  * signs in, the first sign-in makes the account, a child is added, the tab's attempt is claimed
- * for them and forgotten, and the parent home lists it.
+ * for them and forgotten, and the parent home lists it, each lesson a row of outcome tiles.
  */
 
 import { ApiError, type ParentClient } from "@jadwigo/api-client";
@@ -19,6 +19,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { storedAttempt } from "../play/storedAttempt.ts";
 import type { Auth } from "./auth.ts";
+import { result, twin } from "./overview/fixtures.ts";
 import { ParentScreen } from "./ParentScreen.tsx";
 
 const AT = "2026-10-28T14:02:06.274Z";
@@ -269,7 +270,7 @@ describe("ParentScreen", () => {
     expect(api.createAccount).toHaveBeenCalledTimes(1);
   });
 
-  it("links each lesson on the home to its attempt page, keeping its list, and opens it", async () => {
+  it("draws each lesson on the home as a row of tiles, links it to its attempt page, and opens it", async () => {
     const auth = signedOutAuth();
     auth.signedIn = true;
     const attempts = {
@@ -279,8 +280,16 @@ describe("ParentScreen", () => {
           attempt: { id: ATTEMPT, started_at: AT },
           title: "Równe grupy",
           results: [
-            { seq: 1, say: "Ile to 3 razy 4?", ended: "correct" },
-            { seq: 2, say: "Ile to 2 razy 5?", ended: "missed" },
+            result(1, 1, 1),
+            result(1, 2, 2, { ended: "missed", correct: false, first_try_correct: false }),
+            result(1, 3, 3, {
+              ended: "skipped",
+              correct: false,
+              first_try_correct: false,
+              tries: 0,
+              skip_reason: "dont_know",
+            }),
+            twin(1, 4, 7, 3),
           ],
         },
       ],
@@ -296,7 +305,26 @@ describe("ParentScreen", () => {
     render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
     await screen.findByText("Równe grupy");
     const lesson = document.querySelector(`li[data-attempt="${ATTEMPT}"]`);
-    expect(lesson?.querySelectorAll("li[data-seq]")).toHaveLength(2);
+    // A tile per planned question, the twin folded into its question's tile as the heatmap does,
+    // each keeping the stored ended; the text lines are gone.
+    const items = [...(lesson?.querySelectorAll<HTMLElement>("li[data-seq]") ?? [])];
+    expect(items.map((i) => [i.dataset["seq"], i.dataset["ended"]])).toEqual([
+      ["1", "correct"],
+      ["2", "missed"],
+      ["3", "skipped"],
+    ]);
+    expect(
+      items.map((i) => i.querySelector("[data-outcome]")?.getAttribute("data-outcome")),
+    ).toEqual(["first_try", "not_yet", "got_there"]);
+    for (const item of items)
+      expect(
+        item.querySelector(
+          `[data-icon="${item.querySelector("[data-outcome]")?.getAttribute("data-outcome")}"]`,
+        ),
+      ).not.toBeNull();
+    expect(screen.getByRole("img", { name: "Pytanie 2: Jeszcze nie" })).toBeTruthy();
+    expect(items[2]?.querySelector("[data-twin-mark]")).not.toBeNull();
+    expect(lesson?.textContent).not.toContain("Ile to");
     const link = lesson?.querySelector("a[data-attempt-link]");
     expect(link?.getAttribute("href")).toBe(`/parent/attempts/${ATTEMPT}?learner=${LEARNER}`);
 

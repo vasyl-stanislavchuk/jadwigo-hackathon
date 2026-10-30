@@ -1,10 +1,10 @@
 import type { AttemptResult } from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
 import { played, questionId, result, twin } from "./fixtures.ts";
-import { buildGrid, type Outcome } from "./grid.ts";
+import { buildGrid, cellsOf, type Outcome } from "./grid.ts";
 
 /** One attempt's rows, the cell of question 1 they make. */
-const cellOf = (rows: AttemptResult[]) => buildGrid([played(1, rows)]).rows[0]?.cells[0];
+const firstCell = (rows: AttemptResult[]) => buildGrid([played(1, rows)]).rows[0]?.cells[0];
 
 describe("buildGrid: one cell's outcome", () => {
   const cases: { name: string; rows: AttemptResult[]; outcome: Outcome; twin: boolean }[] = [
@@ -33,16 +33,45 @@ describe("buildGrid: one cell's outcome", () => {
       twin: false,
     },
     {
-      name: "skipped, no twin",
+      name: "not sure with no try, no twin",
       rows: [
         result(1, 1, 1, {
           ended: "skipped",
           correct: false,
           first_try_correct: false,
+          tries: 0,
           skip_reason: "dont_know",
         }),
       ],
       outcome: "skipped",
+      twin: false,
+    },
+    {
+      name: "a wrong try, then not sure",
+      rows: [
+        result(1, 1, 1, {
+          ended: "skipped",
+          correct: false,
+          first_try_correct: false,
+          tries: 1,
+          skip_reason: "dont_know",
+        }),
+      ],
+      outcome: "not_yet",
+      twin: false,
+    },
+    {
+      name: "a wrong try, then asked to skip",
+      rows: [
+        result(1, 1, 1, {
+          ended: "skipped",
+          correct: false,
+          first_try_correct: false,
+          tries: 1,
+          skip_reason: "asked_to_skip",
+        }),
+      ],
+      outcome: "not_yet",
       twin: false,
     },
     {
@@ -54,7 +83,7 @@ describe("buildGrid: one cell's outcome", () => {
     {
       name: "skipped, its twin right",
       rows: [
-        result(1, 1, 1, { ended: "skipped", correct: false, first_try_correct: false }),
+        result(1, 1, 1, { ended: "skipped", correct: false, first_try_correct: false, tries: 0 }),
         twin(1, 2, 7, 1),
       ],
       outcome: "got_there",
@@ -63,8 +92,8 @@ describe("buildGrid: one cell's outcome", () => {
     {
       name: "skipped, its twin skipped too",
       rows: [
-        result(1, 1, 1, { ended: "skipped", correct: false, first_try_correct: false }),
-        twin(1, 2, 7, 1, { ended: "skipped", correct: false, first_try_correct: false }),
+        result(1, 1, 1, { ended: "skipped", correct: false, first_try_correct: false, tries: 0 }),
+        twin(1, 2, 7, 1, { ended: "skipped", correct: false, first_try_correct: false, tries: 0 }),
       ],
       outcome: "not_yet",
       twin: true,
@@ -72,8 +101,8 @@ describe("buildGrid: one cell's outcome", () => {
     {
       name: "skipped, a twin of its twin right",
       rows: [
-        result(1, 1, 1, { ended: "skipped", correct: false, first_try_correct: false }),
-        twin(1, 2, 7, 1, { ended: "skipped", correct: false, first_try_correct: false }),
+        result(1, 1, 1, { ended: "skipped", correct: false, first_try_correct: false, tries: 0 }),
+        twin(1, 2, 7, 1, { ended: "skipped", correct: false, first_try_correct: false, tries: 0 }),
         twin(1, 3, 8, 2),
       ],
       outcome: "got_there",
@@ -82,7 +111,7 @@ describe("buildGrid: one cell's outcome", () => {
     {
       name: "skipped, a review_round twin right after other questions",
       rows: [
-        result(1, 1, 1, { ended: "skipped", correct: false, first_try_correct: false }),
+        result(1, 1, 1, { ended: "skipped", correct: false, first_try_correct: false, tries: 0 }),
         result(1, 2, 2),
         twin(1, 3, 7, 1, { placed: "review_round" }),
       ],
@@ -92,7 +121,7 @@ describe("buildGrid: one cell's outcome", () => {
   ];
 
   it.each(cases)("$name: $outcome", ({ rows, outcome, twin: folded }) => {
-    expect(cellOf(rows)).toMatchObject({ outcome, twin: folded });
+    expect(firstCell(rows)).toMatchObject({ outcome, twin: folded });
   });
 
   it("is not_asked where the attempt never asked the column's question", () => {
@@ -106,14 +135,39 @@ describe("buildGrid: one cell's outcome", () => {
   it("never makes a twin a column, and nests every folded twin in its cell", () => {
     const grid = buildGrid([
       played(1, [
-        result(1, 1, 1, { ended: "skipped", correct: false, first_try_correct: false }),
-        twin(1, 2, 7, 1, { ended: "skipped", correct: false, first_try_correct: false }),
+        result(1, 1, 1, { ended: "skipped", correct: false, first_try_correct: false, tries: 0 }),
+        twin(1, 2, 7, 1, { ended: "skipped", correct: false, first_try_correct: false, tries: 0 }),
         twin(1, 3, 8, 2),
         result(1, 4, 2),
       ]),
     ]);
     expect(grid.columns.map((c) => c.key)).toEqual([questionId(1), questionId(2)]);
     expect(grid.rows[0]?.cells[0]?.twins.map((t) => t.seq)).toEqual([2, 3]);
+  });
+});
+
+describe("cellsOf: one attempt's tile row", () => {
+  it("is the heatmap's row: a cell per planned question in seq order, twins folded in", () => {
+    const rows = [
+      result(1, 2, 2, { ended: "missed", correct: false, first_try_correct: false }),
+      result(1, 1, 1, {
+        ended: "skipped",
+        correct: false,
+        first_try_correct: false,
+        tries: 0,
+      }),
+      twin(1, 3, 7, 1),
+      result(1, 4, 3),
+    ];
+    const cells = cellsOf(rows);
+    expect(cells.map((c) => [c.planned.seq, c.outcome, c.twin])).toEqual([
+      [1, "got_there", true],
+      [2, "not_yet", false],
+      [4, "first_try", false],
+    ]);
+    expect(cells.map((c) => c.outcome)).toEqual(
+      buildGrid([played(1, rows)]).rows[0]?.cells.map((c) => c.outcome),
+    );
   });
 });
 
