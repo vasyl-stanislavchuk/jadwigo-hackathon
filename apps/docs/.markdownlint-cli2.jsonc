@@ -4,6 +4,9 @@
 // body and MD001 fails a heading that skips a level from there. MD045 fails an image without alt.
 {
   "globs": ["src/content/docs/**/*.{md,mdx}"],
+  // starlight-typedoc writes these at build time and git ignores them; markdownlint-cli2 does not
+  // read .gitignore, so without this a lint after a build fails on typedoc's long lines.
+  "ignores": ["src/content/docs/typescript/**"],
   "config": {
     // Prose wraps at 100, as in the rest of the repo. A table row and a code line cannot wrap
     // without breaking, so they may run longer.
