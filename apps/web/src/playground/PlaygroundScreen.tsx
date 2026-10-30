@@ -14,6 +14,7 @@ import type { PlaygroundClient } from "@jadwigo/api-client";
 import { familyInfo, questionTypesOf } from "@jadwigo/lesson-kit";
 import { type ReactElement, useEffect } from "react";
 import { PlaygroundApi } from "./examples/index.ts";
+import { LessonBuilderScreen } from "./lesson/LessonBuilderScreen.tsx";
 import "./tool/neutral.css";
 import { linkTo, type PlaygroundRoute, playgroundRoute, useLocation } from "./route.ts";
 import { type Crumb, Shell } from "./shell/Shell.tsx";
@@ -81,6 +82,8 @@ function PlaygroundPages(): ReactElement {
   const route = playgroundRoute(path);
   // The System page draws in Zeszyt itself, so it skips the neutral shell.
   if (route?.page === "system") return <SystemPage />;
+  // The lesson builder is the owner's tool too, with its own frame (dl-a38n).
+  if (route?.page === "lesson") return <LessonBuilderScreen />;
   const { crumbs, body, controls } = view(route);
   return (
     <Shell crumbs={crumbs} controls={controls ?? true}>
