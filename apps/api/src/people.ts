@@ -16,6 +16,7 @@ import type { Store } from "@jadwigo/store";
 import type { Claims } from "./auth.ts";
 import { authorizeMember } from "./authorize.ts";
 import { ApiError, badRequest } from "./errors.ts";
+import { learnerFed, rebuildAfter } from "./mastery.ts";
 
 /** Before the first sign-in has made an account. */
 const NO_ACCOUNT: Me = { account: null, member: null, pod: null, learners: [] };
@@ -71,6 +72,10 @@ export async function claimAttempt(
   });
   if (!attempt.learner_id || !attempt.claimed_by || !attempt.claimed_at)
     throw new ApiError(ErrorType.enum.AttemptClaimed, "this attempt has no claim");
+  // The claimed attempt's evidence joins the learner's mastery. A rebuild that fails is logged
+  // and never refuses the claim.
+  const learner = learnerFed(attempt);
+  if (learner !== undefined) await rebuildAfter(store, learner, new Date());
   return {
     attempt_id: attempt.id,
     learner_id: attempt.learner_id,
