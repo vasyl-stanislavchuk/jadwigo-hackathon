@@ -14,8 +14,14 @@ describe("apiBase", () => {
 });
 
 describe("SIDEBAR", () => {
-  it("lists the guides first and every slug once", () => {
-    expect(SIDEBAR[0]?.label).toBe("Guides");
+  it("reads in the order a newcomer needs, every slug once", () => {
+    expect(SIDEBAR.map((group) => group.label)).toEqual([
+      "Start here",
+      "Use with agents",
+      "API reference",
+      "Design system",
+      "Architecture",
+    ]);
     const slugs = SIDEBAR.flatMap((group) => group.items);
     expect(new Set(slugs).size).toBe(slugs.length);
   });
@@ -25,10 +31,11 @@ describe("SIDEBAR", () => {
     expect(sidebar[0]?.items[0]).toEqual({ slug: "guides/introduction" });
   });
 
-  it("lists the MCP tool pages the build generates after the overview", () => {
-    expect(sidebar.find((group) => group.label === "MCP")?.items).toEqual([
+  it("lists the MCP tool pages the build generates after the agents page and the MCP overview", () => {
+    expect(sidebar.find((group) => group.label === "Use with agents")?.items).toEqual([
+      { slug: "guides/agents" },
       { slug: "mcp" },
-      { label: "Tools", items: [{ autogenerate: { directory: "mcp" } }] },
+      { label: "MCP tools", items: [{ autogenerate: { directory: "mcp" } }] },
     ]);
   });
 });

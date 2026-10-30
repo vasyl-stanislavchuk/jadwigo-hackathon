@@ -1,4 +1,4 @@
-import { ROUTE_TAGS, type RouteTag } from "@jadwigo/contracts";
+import type { RouteTag } from "@jadwigo/contracts";
 
 /** What each section of the API reference holds, shown on its tag page. */
 const TAG_DESCRIPTIONS: Readonly<Record<RouteTag, string>> = {
@@ -10,6 +10,18 @@ const TAG_DESCRIPTIONS: Readonly<Record<RouteTag, string>> = {
   bank: "The question bank: search it, and read one question. Every route takes the bank's read token.",
   health: "Whether the API is up.",
 };
+
+/**
+ * The order the API reference lists its sections in: the order the first-call guide meets them.
+ * Only the served document is reordered; the committed snapshot keeps ROUTE_TAGS order.
+ */
+export const REFERENCE_TAG_ORDER: readonly RouteTag[] = [
+  "health",
+  "lessons",
+  "attempts",
+  "parents",
+  "bank",
+];
 
 /** The parts of an OpenAPI document this file reads and writes; the rest passes through as is. */
 export interface OpenApiDocument {
@@ -32,12 +44,12 @@ export function operationCount(document: OpenApiDocument): number {
 
 /**
  * The document docs.jadwigo.pl serves: the committed snapshot, which names no server, plus the
- * one server it is called at and a description on every tag, in ROUTE_TAGS order.
+ * one server it is called at and a description on every tag, in REFERENCE_TAG_ORDER.
  */
 export function servedDocument(snapshot: OpenApiDocument, apiBase: string): OpenApiDocument {
   return {
     ...snapshot,
     servers: [{ url: apiBase }],
-    tags: ROUTE_TAGS.map((name) => ({ name, description: TAG_DESCRIPTIONS[name] })),
+    tags: REFERENCE_TAG_ORDER.map((name) => ({ name, description: TAG_DESCRIPTIONS[name] })),
   };
 }
