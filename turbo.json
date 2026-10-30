@@ -16,6 +16,9 @@
     "lint": {},
     "typecheck": {},
     "test": {},
+    "@jadwigo/cli#test": {
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/workflows/**"]
+    },
     "test:int": {
       "cache": false
     },
