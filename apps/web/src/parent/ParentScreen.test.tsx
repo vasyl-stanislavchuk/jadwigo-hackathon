@@ -545,4 +545,23 @@ describe("ParentScreen", () => {
     expect(google.style.backgroundColor).not.toBe("");
     expect(google.style.fontFamily).toContain("Google Sans");
   });
+
+  it("puts Meta's f before the Facebook button's words, which stay its accessible name", async () => {
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={signedOutAuth(["google", "facebook"])}
+        client={client({})}
+      />,
+    );
+    const facebook = await screen.findByRole("button", { name: "Kontynuuj z Facebookiem" });
+    const mark = facebook.querySelector('img[data-provider-mark="facebook"]');
+    // Under 4 KB, Vite inlines the file as a data URL.
+    expect(mark?.getAttribute("src")).toMatch(/facebook-f\.svg|^data:image\/svg\+xml/);
+    expect(mark?.getAttribute("alt")).toBe("");
+    expect(facebook.firstElementChild).toBe(mark);
+    // Google's font and colours stay on Google's button.
+    expect(facebook.style.fontFamily).toBe("");
+  });
 });
