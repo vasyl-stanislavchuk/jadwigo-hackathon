@@ -26,7 +26,16 @@ export const SIDEBAR: readonly SidebarGroup[] = [
   // Filled by starlight-openapi from public/openapi.json (astro.config.mjs).
   { label: "API reference", items: [] },
   { label: "MCP", items: ["mcp"], generated: { label: "Tools", directory: "mcp" } },
-  { label: "Design system", items: ["design-system"] },
+  {
+    label: "Design system",
+    items: [
+      "design-system",
+      "design-system/tokens",
+      "design-system/primitives",
+      "design-system/question-types",
+      "design-system/copy",
+    ],
+  },
   { label: "Architecture", items: ["architecture"] },
 ];
 

@@ -1,0 +1,91 @@
+---
+// One tier of Zeszyt's tokens, generated from @jadwigo/ui/foundation.css at build time.
+import { foundation, isColour, type Token } from "../lib/tokens.ts";
+
+interface Props {
+  tier: "primitives" | "roles" | "scales" | "aliases";
+}
+
+const { tier } = Astro.props;
+const tokens = foundation();
+/** The token a value reads, `var(--jw-p-white)` as `--jw-p-white`, or the value itself. */
+const reads = (as: string) => /^var\((--[\w-]+)\)$/.exec(as)?.[1] ?? as;
+const rows: readonly Token[] = tier === "primitives" ? [] : tokens[tier];
+---
+
+{
+  tier === "primitives" ? (
+    <table>
+      <thead>
+        <tr><th>Primitive</th><th>Value</th></tr>
+      </thead>
+      <tbody>
+        {tokens.primitives.map((p) => (
+          <tr>
+            <td><code>--{p.name}</code></td>
+            <td>
+              <span class="token-swatch" style={{ background: p.value }} />
+              <code>{p.value}</code>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ) : tier === "scales" ? (
+    <table>
+      <thead>
+        <tr><th>Token</th><th>Value</th></tr>
+      </thead>
+      <tbody>
+        {rows.map((t) => (
+          <tr>
+            <td><code>--{t.name}</code></td>
+            <td><code>{t.light}</code></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ) : (
+    <table>
+      <thead>
+        <tr>
+          <th>{tier === "roles" ? "Role" : "Alias"}</th>
+          <th>Light</th>
+          <th>Dark</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((t) => (
+          <tr>
+            <td><code>--{t.name}</code></td>
+            {[
+              [t.light, t.lightAs],
+              [t.dark, t.darkAs || t.lightAs],
+            ].map(([value = "", as = ""]) => (
+              <td>
+                {isColour(value) && <span class="token-swatch" style={{ background: value }} />}
+                <code>{value}</code>
+                <br />
+                <small>
+                  from <code>{reads(as)}</code>
+                </small>
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
+<style is:global>
+  .token-swatch {
+    display: inline-block;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-inline-end: 0.5rem;
+    vertical-align: middle;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.25rem;
+  }
+</style>

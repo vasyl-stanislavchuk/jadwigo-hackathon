@@ -1,0 +1,39 @@
+---
+title: Tokens
+description: Every Zeszyt token, primitive, role and alias, with its value in light and dark.
+---
+
+import TokenTable from "../../../components/TokenTable.astro";
+
+These tables are generated from Zeszyt's stylesheet when the docs are built. A token renamed or
+changed in the code shows here on the next build, with no edit to this page.
+
+The [Overview](/design-system/) explains the 3 tiers. The
+[System page](https://app.jadwigo.pl/playground/system) shows them drawn on real parts.
+
+## Roles
+
+What each colour means, and the value it comes to in each theme. "From" names
+the primitive the role reads.
+
+<TokenTable tier="roles" />
+
+## Aliases
+
+The names the components read. Each one reads a role, so it follows the theme.
+
+<TokenTable tier="aliases" />
+
+## Primitives
+
+The only literal colours. Nothing outside the roles reads them.
+
+<TokenTable tier="primitives" />
+
+## Type, shape, space and motion
+
+The same in light and dark. On a phone, under 600 px wide, the type steps take smaller values:
+the prompt stays at 28 px or more and an option at 24 px or more. Under reduced motion every
+duration is 0.
+
+<TokenTable tier="scales" />
