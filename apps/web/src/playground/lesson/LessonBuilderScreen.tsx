@@ -84,10 +84,10 @@ function LessonDraft({
         {message.draft_id} cannot be drawn yet: {read.error}.
       </p>
     );
-  const { file } = read;
+  const { file, skipped } = read;
   const language = languageOf(file.language);
-  const category = categoryOf((file as { category?: unknown }).category);
-  const parts = lessonFileToSpecs(file);
+  const category = categoryOf(file.category);
+  const parts = lessonFileToSpecs(file, undefined, skipped);
   const findings = findingsOf(message.check);
   const of = (step_id: string) => findings.filter((f) => f.step_id === step_id);
   let n = 0;

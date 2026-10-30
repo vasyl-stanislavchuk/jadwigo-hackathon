@@ -5,9 +5,9 @@
  * write, and a half-written one must not take the page down.
  */
 
-import type { Finding, FindingLevel } from "@jadwigo/lesson-import";
+import { FINDING_LEVELS, type Finding } from "@jadwigo/lesson-import/file";
 
-const LEVELS: readonly string[] = ["error", "warn"] satisfies FindingLevel[];
+const LEVELS: readonly string[] = FINDING_LEVELS;
 
 const isFinding = (f: unknown): f is Finding => {
   if (f === null || typeof f !== "object") return false;
@@ -43,11 +43,4 @@ export function findingsOf(check: unknown): Finding[] {
       } satisfies Finding,
     ];
   });
-}
-
-/** The worst level among `findings`, or null for none: lesson-import's `worstLevel`, which the
- * page cannot import until the package has a browser-safe entry (dl-a38n.11). */
-export function worstOf(findings: readonly Finding[]): FindingLevel | null {
-  if (findings.some((f) => f.level === "error")) return "error";
-  return findings.length > 0 ? "warn" : null;
 }

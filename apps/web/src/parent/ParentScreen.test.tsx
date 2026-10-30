@@ -1,7 +1,9 @@
 /**
  * The parent's screens against doubles of the sign-in and the API (no network): the email code
  * signs in, the first sign-in makes the account, a child is added, the tab's attempt is claimed
- * for them and forgotten, and the parent home lists it, each lesson a row of outcome tiles.
+ * for them and forgotten, and the parent home lists it, each lesson a row of outcome tiles. Google
+ * and Facebook show only when the build turns them on, and a return from either signs in or says
+ * why it could not.
  */
 
 import { ApiError, type ParentClient } from "@jadwigo/api-client";
@@ -18,7 +20,7 @@ import {
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { storedAttempt } from "../play/storedAttempt.ts";
-import type { Auth } from "./auth.ts";
+import { type Auth, type Provider, type RedirectOutcome, returnOf } from "./auth.ts";
 import { result, twin } from "./overview/fixtures.ts";
 import { ParentScreen } from "./ParentScreen.tsx";
 
@@ -58,7 +60,7 @@ const snapshot = {
 const me = (learners: LearnerSnapshot[]): Me =>
   ({ account, member, pod, learners }) as unknown as Me;
 
-function signedOutAuth(): Auth & { signedIn: boolean } {
+function signedOutAuth(providers: readonly Provider[] = []): Auth & { signedIn: boolean } {
   const auth = {
     signedIn: false,
     token: async () => (auth.signedIn ? "header.payload.signature" : null),
@@ -66,6 +68,16 @@ function signedOutAuth(): Auth & { signedIn: boolean } {
     verifyCode: vi.fn(async (_email: string, code: string) => {
       auth.signedIn = code === "123456";
       return auth.signedIn;
+    }),
+    providers: () => providers,
+    signInWith: vi.fn(async (_provider: Provider, _returnTo: string) => {}),
+    // A provider's return as auth.ts reads it: a code signs in, an error says which.
+    completeRedirect: vi.fn(async (url: URL): Promise<RedirectOutcome> => {
+      const back = returnOf(url);
+      if (back.kind === "code") auth.signedIn = true;
+      if (back.kind === "error")
+        return back.description.includes("Error getting user email") ? "no-email" : "failed";
+      return back.kind === "code" ? "signed-in" : "none";
     }),
     signOut: async () => {
       auth.signedIn = false;
@@ -363,5 +375,105 @@ describe("ParentScreen", () => {
     expect(window.location.pathname).toBe(`/parent/assignments/${ASSIGNMENT}`);
     await screen.findByText("Nie udało się wczytać. Odśwież stronę, żeby spróbować ponownie.");
     expect(getAssignmentAttempts).toHaveBeenCalledWith(ASSIGNMENT);
+  });
+
+  it("shows no provider button when the build turns none on", async () => {
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={signedOutAuth()}
+        client={client({})}
+      />,
+    );
+    await screen.findByText("Wyślij kod");
+    expect(document.querySelector("[data-providers]")).toBeNull();
+    expect(screen.queryByText("albo")).toBeNull();
+  });
+
+  it("lists Google, then Facebook, under the email code, and leaves for the provider from this page", async () => {
+    window.history.replaceState(null, "", `/parent?claim=${ASSIGNMENT}&lang=pl`);
+    const auth = signedOutAuth(["google", "facebook"]);
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams(`claim=${ASSIGNMENT}&lang=pl`)}
+        auth={auth}
+        client={client({})}
+      />,
+    );
+    await screen.findByText("Wyślij kod");
+    const buttons = [...document.querySelectorAll<HTMLElement>("[data-provider]")];
+    expect(buttons.map((b) => [b.dataset["provider"], b.textContent])).toEqual([
+      ["google", "Kontynuuj z Google"],
+      ["facebook", "Kontynuuj z Facebookiem"],
+    ]);
+    // The email code comes first.
+    const send = document.querySelector("[data-send-code]");
+    const after = (send?.compareDocumentPosition(buttons[0] as Node) ?? 0) & 4;
+    expect(after).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+
+    await press('[data-provider="google"]');
+    expect(auth.signInWith).toHaveBeenCalledWith(
+      "google",
+      `${window.location.origin}/parent?claim=${ASSIGNMENT}&lang=pl`,
+    );
+  });
+
+  it("signs in from a provider's ?code= return, then goes on to GET /me and the claim's child", async () => {
+    storedAttempt.set(ASSIGNMENT, ATTEMPT);
+    window.history.replaceState(null, "", `/parent?claim=${ASSIGNMENT}&code=abc123`);
+    const auth = signedOutAuth(["google"]);
+    const getMe = vi.fn(async () => NOBODY);
+    const api = client({ getMe, createAccount: vi.fn(async () => me([])) });
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams(`claim=${ASSIGNMENT}&code=abc123`)}
+        auth={auth}
+        client={api}
+      />,
+    );
+    await screen.findByText("Imię dziecka");
+    expect(auth.completeRedirect).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(auth.completeRedirect).mock.calls[0]?.[0].searchParams.get("code")).toBe(
+      "abc123",
+    );
+    expect(getMe).toHaveBeenCalled();
+    expect(api.createAccount).toHaveBeenCalledWith({ language: "pl" });
+    expect(storedAttempt.get(ASSIGNMENT)).toBe(ATTEMPT);
+  });
+
+  it("offers the email code when the provider gave no email", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/parent?error=server_error&error_description=Error+getting+user+email+from+external+provider",
+    );
+    const auth = signedOutAuth(["google", "facebook"]);
+    render(
+      <ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={client({})} />,
+    );
+    const line = await screen.findByRole("alert");
+    expect(line.hasAttribute("data-provider-problem")).toBe(true);
+    expect(line.textContent).toBe(
+      "To konto na Facebooku nie ma adresu e-mail, więc nie można się nim tu zalogować. Zaloguj się kodem z e-maila.",
+    );
+    expect(document.querySelector("[data-email]")).not.toBeNull();
+  });
+
+  it("says kindly that a provider's sign-in did not finish, for any other error", async () => {
+    window.history.replaceState(null, "", "/parent#error=access_denied&error_description=denied");
+    render(
+      <ParentScreen
+        language="en"
+        query={new URLSearchParams()}
+        auth={signedOutAuth(["google"])}
+        client={client({})}
+      />,
+    );
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "That sign-in didn't finish. Try again, or sign in with a code by email.",
+    );
   });
 });

@@ -1,7 +1,7 @@
 {
   "tools": [
     {
-      "description": "Check a draft with your words on it, and return the card a parent reads.\n\n        draft_id is the one lesson_draft returned. help maps each step_id to your words for that\n        question, only what the bank lacks: twin (a question from the same template with its\n        own say, data and key), boost_by_mistake ({mistake class: {\"text\"}}, keys from the\n        step's mistake_classes), and a rung the copy leaves empty (look and boost as {\"text\"},\n        almost and worked as lists of lines). To change a copied part, only when the parent asks,\n        add changes: [{\"change\": numbers, context, wording or tutor_notes, \"why\", \"set\": {path:\n        value}}], where a path is say, or a dotted path under data, key, hints, worked or almost\n        (\"hints.0.text\"); each change is recorded in based_on.changes. Send every step's words\n        on each call. title and reasoning replace the draft's. ok true returns the card (per\n        question: prompt, key, rungs, twin, source, licence, changes, why drawn; and what was\n        left out, and next: the import step), the lesson_file path, import_command, play_path and\n        lesson_id. The play_path exists only after the import: tell the parent to run\n        import_command (make lesson-import FILE=<lesson_file> ENV=dev, in the jadwigo checkout)\n        first, then open the play_path. ok false lists errors by step id: fix those and call\n        lesson_check again.\n        ",
+      "description": "Check a draft with your words on it, and return the card a parent reads.\n\n        draft_id is the one lesson_draft returned. help maps each step_id to your words for that\n        question, only what the bank lacks: twin (a question from the same template with its\n        own say, data and key), boost_by_mistake ({mistake class: {\"text\"}}, keys from the\n        step's mistake_classes), and a rung the copy leaves empty (look and boost as {\"text\"},\n        almost and worked as lists of lines). To change a copied part, only when the parent asks,\n        add changes: [{\"change\": numbers, context, wording or tutor_notes, \"why\", \"set\": {path:\n        value}}], where a path is say, or a dotted path under data, key, hints, worked or almost\n        (\"hints.0.text\"); each change is recorded in based_on.changes. Send every step's words\n        on each call. title and reasoning replace the draft's; pass names as for lesson_draft,\n        and the tool replaces them in both before the draft is written. Every call rewrites the draft file\n        (draft_path) with your words as far as they go, and writes its check beside it. ok true\n        returns the card (per question: prompt, key, rungs, twin, source, licence, changes, why\n        drawn; and what was left out, and next: the import step), the lesson_file path,\n        import_command, play_path and lesson_id. The play_path exists only after the import: tell\n        the parent to run import_command (make lesson-import FILE=<lesson_file> ENV=dev, in the\n        jadwigo checkout) first, then open the play_path. findings lists each problem: step_id,\n        path, level (error or warn), rule, text and fix; ok is false while one is an error. Fix\n        those and call lesson_check again.\n        ",
       "inputSchema": {
         "properties": {
           "draft_id": {
@@ -15,6 +15,21 @@
             },
             "title": "Help",
             "type": "object"
+          },
+          "names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Names"
           },
           "reasoning": {
             "anyOf": [
@@ -53,7 +68,7 @@
       }
     },
     {
-      "description": "Draft a lesson for a parent's request: questions drawn from the bank and copied whole.\n\n        request is the parent's words (\"6 zadań z mnożenia, klasa 3\"); names is required: pass\n        every name the family uses in the request (the child's, siblings', the parent's), or []\n        when there is none; the tool replaces them before anything leaves the machine. topic is\n        required: what the lesson is about in a few words, distilled from the request, with no\n        count, grade or name (\"mnożenie\", \"dodawanie do 100\"); the bank searches these words,\n        and the request is kept as the draft's record and title. grade the bare grade number; kind practice, review, check or diagnostic; count overrides the draw\n        rule's count. Each question is copied whole from the bank (family, data, key, say,\n        pictures, and the source's hints and worked lines as its help), so the lesson plays as\n        copied. The draft stays on this machine under draft_id; the result is a slim view of it.\n        Per question: step_id, prompt, data (pictures without their labels), key, copied_help\n        (the hints as text with their picture alts), rungs (what fills look, boost, almost and\n        worked), you_write (what is left for you), mistake_classes (the keys boost_by_mistake\n        may use; null when unknown) and why_drawn. left_out says why each set or item was not\n        used, and rule_settled is false (the draw rules are provisional). Write what you_write\n        lists, in the lesson's language, then call lesson_check with the draft_id.\n        ",
+      "description": "Draft a lesson for a parent's request: questions drawn from the bank and copied whole.\n\n        request is the parent's words (\"6 zadań z mnożenia, klasa 3\"); names is required: pass\n        every name the family uses in the request (the child's, siblings', the parent's), or []\n        when there is none; the tool replaces them before anything leaves the machine. topic is\n        required: what the lesson is about in a few words, distilled from the request, with no\n        count, grade or name (\"mnożenie\", \"dodawanie do 100\"); the bank searches these words,\n        and the request is kept as the draft's record and title. grade the bare grade number; kind practice, review, check or diagnostic; count overrides the draw\n        rule's count. Each question is copied whole from the bank (family, data, key, say,\n        pictures, and the source's hints and worked lines as its help), so the lesson plays as\n        copied. The draft stays on this machine under draft_id; the result is a slim view of it.\n        Per question: step_id, prompt, data (pictures without their labels), key, copied_help\n        (the hints as text with their picture alts), rungs (what fills look, boost, almost and\n        worked), you_write (what is left for you), mistake_classes (the keys boost_by_mistake\n        may use; null when unknown) and why_drawn. left_out says why each set or item was not\n        used, and rule_settled is false (the draw rules are provisional). draft_path is the\n        lesson file as copied, written in JADWIGO_DRAFTS_DIR before the call returns, with its\n        check beside it. Write what you_write lists, in the lesson's language, then call\n        lesson_check with the draft_id.\n        ",
       "inputSchema": {
         "properties": {
           "count": {

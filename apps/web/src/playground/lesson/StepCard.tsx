@@ -7,7 +7,7 @@
  */
 
 import type { Category, Language } from "@jadwigo/copy";
-import type { Finding } from "@jadwigo/lesson-import";
+import type { Finding } from "@jadwigo/lesson-import/file";
 import {
   type Clock,
   type FamilySpec,

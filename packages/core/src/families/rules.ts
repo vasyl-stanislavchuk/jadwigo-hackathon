@@ -1,4 +1,13 @@
-import type { Family, RuleRef } from "@jadwigo/contracts";
+import type {
+  EnterKey,
+  FamilyQuestion,
+  Figure,
+  GapKey,
+  RuleRef,
+  Simplify,
+} from "@jadwigo/contracts";
+import { isEquation } from "./enter/expression.ts";
+import { canSlip } from "./enter/text.ts";
 
 /**
  * The mistake-class rules for numbers, shared by every family that takes one: a port of
@@ -143,91 +152,227 @@ export function applyRule(
   }
 }
 
-/** Every class a number rule gives, `other_wrong` for a value it cannot place. */
-const RULE_CLASSES = [
-  "neighbour_row",
-  "neighbour_fact_swap",
-  "add_for_multiply",
-  "off_by_small",
-  "digit_reversal",
-  "same_decade",
-  "inverse_confusion",
-  "off_by_tick",
-  "scale_misread",
-  "wrong_direction",
-] as const;
+/** The classes `keyOnlyClass` can give a miss on this key. */
+function keyOnlyClasses(key: number): string[] {
+  const twoDigit = key >= 10 && key <= 99 && floorDiv(key, 10) !== mod(key, 10);
+  return [
+    "off_by_small",
+    ...(twoDigit ? ["digit_reversal"] : []),
+    ...(key >= 10 ? ["same_decade"] : []),
+  ];
+}
 
-/** What an Enter field or a typed gap gives on its own: text, fraction and expression misses. */
-const ENTRY_CLASSES = [
-  "missing_diacritics",
-  "wrong_case",
-  "typo",
-  "unsimplified",
-  "wrong_form",
-  "fraction_flipped",
-  "not_an_expression",
-  "not_an_equation",
-  "equation_sides_swapped",
-  "sum_for_product",
-  "product_for_sum",
-  "number_for_expression",
-  "value_off",
-] as const;
+/** The classes `classify()` can give a miss on a×b. */
+function classifyClasses(a: number, b: number, recent: readonly number[]): string[] {
+  return [
+    "neighbour_row",
+    ...(recent.length > 0 ? ["neighbour_fact_swap"] : []),
+    ...(a + b !== a * b ? ["add_for_multiply"] : []),
+    ...keyOnlyClasses(a * b),
+  ];
+}
+
+/** The classes `applyRule` can give a miss on this rule, `answer` the key's first value. */
+function ruleClasses(rule: RuleRef, answer: number): string[] {
+  switch (rule.rule) {
+    case "times_table":
+      return classifyClasses(rule.a, rule.b, rule.recent);
+    case "fill_blank": {
+      const product = productBlank(rule);
+      const inverse = inverseCandidates(rule);
+      inverse.delete(answer);
+      return [
+        ...(product !== null && product[0] * product[1] === answer
+          ? classifyClasses(product[0], product[1], rule.recent)
+          : keyOnlyClasses(answer)),
+        ...(inverse.size > 0 ? ["inverse_confusion"] : []),
+      ];
+    }
+    case "number_line":
+      return ["off_by_tick", "scale_misread", "wrong_direction"];
+  }
+}
+
+const WHOLE = /^-?[0-9]+$/;
+
+/** What `enterClass` can give a typed entry on this key: an Enter field, or a typed gap. */
+function entryClasses(
+  input: "number" | "text" | "expression" | "fraction",
+  key: EnterKey,
+  figure?: Figure,
+  simplify?: Simplify,
+): string[] {
+  const near = Object.values(key.near ?? {});
+  const first = key.accept[0] ?? "";
+  switch (input) {
+    case "text":
+      return [
+        ...near,
+        ...(key.accents !== "ignore" ? ["missing_diacritics"] : []),
+        ...(key.case !== "ignore" ? ["wrong_case"] : []),
+        ...(key.accept.some((a) => canSlip(key, a)) ? ["typo"] : []),
+      ];
+    case "number":
+      return [
+        ...near,
+        ...(key.rule !== undefined && WHOLE.test(first)
+          ? ruleClasses(key.rule, Number.parseInt(first, 10))
+          : []),
+        ...(figure?.kind === "ruler" ? ["off_by_one_unit", "unit_mixed"] : []),
+      ];
+    case "expression": {
+      if (isEquation(first))
+        return [
+          ...near,
+          "not_an_expression",
+          "not_an_equation",
+          ...(key.sides === "kept" ? ["equation_sides_swapped"] : []),
+          "sum_for_product",
+          "product_for_sum",
+          "number_for_expression",
+          "wrong_form",
+          "value_off",
+        ];
+      const shaped = key.form !== undefined && key.form !== "any";
+      return [
+        ...near,
+        "not_an_expression",
+        ...(shaped ? ["number_for_expression", "wrong_form"] : []),
+        ...(key.form === "product" ? ["sum_for_product"] : []),
+        ...(key.form === "sum" ? ["product_for_sum"] : []),
+        "value_off",
+      ];
+    }
+    case "fraction":
+      return [
+        ...near,
+        ...(key.exact_terms || (key.forms ?? []).length > 0 ? ["wrong_form"] : []),
+        ...(simplify === "enforced" && !key.exact_terms ? ["unsimplified"] : []),
+        "fraction_flipped",
+      ];
+  }
+}
+
+/** What a gap's own judging can give: Enter's classes for a typed gap, the near table for a chosen one. */
+function gapClasses(
+  input: "number" | "text" | "fraction" | null,
+  key: GapKey | undefined,
+  simplify?: Simplify,
+): string[] {
+  if (key === undefined) return [];
+  if (key.kind === "enter")
+    return input === null
+      ? Object.values(key.near ?? {})
+      : entryClasses(input, key, undefined, simplify);
+  return Object.values(key.near ?? {});
+}
+
+/** The classes a family judge can give a miss on this question, before `other_wrong`. */
+function judgedClasses(q: FamilyQuestion): string[] {
+  switch (q.family) {
+    case "choose": {
+      const right = new Set(q.key.correct);
+      const near = q.key.near ?? {};
+      const wrong = q.data.options.filter((o) => !right.has(o.id));
+      const own = wrong.flatMap((o) => (Object.hasOwn(near, o.id) ? [near[o.id] ?? ""] : []));
+      if (q.data.select === "one") return own;
+      const unnamed = wrong.some((o) => !Object.hasOwn(near, o.id));
+      return q.data.layout === "inline"
+        ? [...own, ...(unnamed ? ["took_unneeded_number"] : []), "missed_needed_number"]
+        : [...own, ...(unnamed ? ["wrong_pick"] : []), "missed_option"];
+    }
+    case "enter":
+      return entryClasses(q.data.input, q.key, q.data.figure, q.data.simplify);
+    case "slots": {
+      const gaps = q.data.gaps.flatMap((gap) =>
+        gapClasses(
+          gap.kind === "enter" ? gap.input : null,
+          q.key.gaps[gap.id],
+          gap.kind === "enter" ? gap.simplify : undefined,
+        ),
+      );
+      const others = q.data.column ? ["fact_error"] : q.data.gaps.length > 1 ? ["gap_swap"] : [];
+      return [...gaps, ...others];
+    }
+    case "sequence": {
+      const length = q.key.orders[0]?.length ?? 0;
+      return [
+        "other_order",
+        "swapped_neighbours",
+        ...(length > 2 ? ["one_misplaced", "reversed"] : []),
+        ...(q.data.tiles !== undefined ? ["extra_tile", "missing_tile"] : []),
+      ];
+    }
+    case "group":
+      return [
+        "not_placed",
+        "wrong_group",
+        ...Object.values(q.key.near ?? {}).flatMap((byGroup) => Object.values(byGroup)),
+      ];
+    case "place": {
+      const key = q.key;
+      switch (key.surface) {
+        case "number_line":
+          return key.rule ? ruleClasses(key.rule, key.value) : [];
+        case "image":
+          return [
+            "missed_region",
+            ...(key.near ?? []).map((r) => r.mistake_class),
+            ...(key.require_all && key.targets.length > 1 ? ["target_missed"] : []),
+          ];
+        case "grid":
+          return key.split !== undefined
+            ? ["wrong_size", "no_split", "split_not_helpful"]
+            : key.off_by_one
+              ? ["grid_off_by_one"]
+              : [];
+        case "bars":
+          return ["bar_wrong", "bar_off_by_step"];
+        case "clock": {
+          const free = q.data.surface === "clock" && q.data.hands === "free";
+          return [
+            "hands_swapped",
+            "wrong_hour",
+            ...(key.m === 30 ? ["half_past_wrong_hour"] : []),
+            ...(free && key.m >= 30 ? ["hour_hand_not_moved"] : []),
+            "minute_off_by_step",
+            "wrong_minute",
+          ];
+        }
+        case "coins":
+          return [
+            ...(key.fewest ? ["not_fewest"] : []),
+            "zloty_grosze_mixed",
+            "one_coin_off",
+            "too_much",
+            "too_little",
+          ];
+        case "fraction": {
+          const drawn = q.data.surface === "fraction" ? q.data : null;
+          return [
+            ...(drawn?.contiguous ? ["parts_apart"] : []),
+            ...(drawn !== null ? ["shaded_the_rest", "shaded_whole"] : []),
+            "off_by_one_part",
+            "wrong_count",
+          ];
+        }
+      }
+      return [];
+    }
+    case "explain":
+      return [];
+  }
+}
 
 /**
- * The mistake classes each family's judge can give a miss besides the author's own `near` tables,
- * which a step adds to these: what a `boost_by_mistake` key may name (dl-e8ov.5.38.11). A family
- * whose key may name a number rule (Enter, a typed gap, Place's number line) lists every rule's
- * classes, named or not. Explain has no judge, so it gives none. The golden corpus holds every
- * class a judge gave to this list (rules.test.ts).
+ * The mistake classes the family judge can give a miss on this question, read from its own data
+ * and key (dl-e8ov.5.38.15): what a `boost_by_mistake` key may name, since a card for any other
+ * class never shows. The classes that apply to its input and kind (a whole-number key never gives
+ * `wrong_case`), its `near` tables, the named rule's classes only when its key names one, and
+ * `other_wrong`, which every judge gives a value it cannot read. Explain has no judge, so none.
+ * Sorted, each once. The golden corpus holds every class a judge gave to this list (rules.test.ts).
  */
-export const MISTAKE_CLASSES: Readonly<Record<Family, readonly string[]>> = {
-  choose: [
-    "other_wrong",
-    "wrong_pick",
-    "missed_option",
-    "took_unneeded_number",
-    "missed_needed_number",
-  ],
-  enter: ["other_wrong", ...ENTRY_CLASSES, "off_by_one_unit", "unit_mixed", ...RULE_CLASSES],
-  slots: ["other_wrong", ...ENTRY_CLASSES, "fact_error", "gap_swap", ...RULE_CLASSES],
-  sequence: [
-    "other_wrong",
-    "other_order",
-    "reversed",
-    "swapped_neighbours",
-    "one_misplaced",
-    "extra_tile",
-    "missing_tile",
-  ],
-  group: ["other_wrong", "not_placed", "wrong_group"],
-  place: [
-    "other_wrong",
-    "bar_wrong",
-    "bar_off_by_step",
-    "grid_off_by_one",
-    "missed_region",
-    "target_missed",
-    "hands_swapped",
-    "hour_hand_not_moved",
-    "half_past_wrong_hour",
-    "wrong_hour",
-    "minute_off_by_step",
-    "wrong_minute",
-    "not_fewest",
-    "zloty_grosze_mixed",
-    "one_coin_off",
-    "too_much",
-    "too_little",
-    "parts_apart",
-    "shaded_the_rest",
-    "shaded_whole",
-    "off_by_one_part",
-    "wrong_count",
-    "wrong_size",
-    "no_split",
-    "split_not_helpful",
-    ...RULE_CLASSES,
-  ],
-  explain: [],
-};
+export function mistakeClassesOf(question: FamilyQuestion): string[] {
+  if (question.family === "explain") return [];
+  return [...new Set(["other_wrong", ...judgedClasses(question)])].sort();
+}
