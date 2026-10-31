@@ -21,7 +21,7 @@
       }
     },
     {
-      "description": "Check a draft with your words on it, and return the card a parent reads.\n\n        draft_id is the one lesson_draft returned. help maps each step_id to your words for that\n        question, only what its you_write lists: twin (when the bank has no sibling item for it:\n        a question from the same template with its own say, data and key), boost_by_mistake\n        ({mistake class: {\"text\"}}, for the classes in cards_to_write; the item's own cards\n        stay), and a rung the copy leaves empty (look and boost as {\"text\"}, almost and worked\n        as lists of lines). To change a copied part, only when the parent asks, add changes:\n        [{\"change\": numbers, context, wording or tutor_notes, \"why\", \"set\": {path: value}}],\n        where a path is say, or a dotted path under data, key, hints, worked or almost\n        (\"hints.0.text\"); each change is recorded in based_on.changes. Send only the steps you\n        change: a step left out keeps what the draft holds (its words, the bank's twin,\n        lesson_edit's changes), and help {} checks the draft as it stands. Every word but a key\n        has the names you pass replaced, as for lesson_draft; title and reasoning replace the\n        draft's. Every call rewrites the draft file (draft_path) with your words as far as they\n        go, and writes its check beside it. ok true returns the card (per question: prompt and\n        key as plain text, twin {prompt, key, source}, source, licence, and changes when there\n        are any; and next: publish with lesson_publish), warns ({rule: count}), the lesson_file\n        path, play_path and lesson_id. full true adds each rung and why it was drawn to the\n        card; verbose true lists every finding instead of warns. ok false lists findings, each\n        a step_id, path, level (error or warn), rule, text and fix; ok is false while one is an\n        error. Fix those and call lesson_check again.\n        ",
+      "description": "Check a draft with your words on it, and return the card a parent reads.\n\n        draft_id is the one lesson_draft returned. help maps each step_id to your words for that\n        question, only what its you_write lists: twin (when the bank has no sibling item for it:\n        a question from the same template with its own say, data and key), boost_by_mistake\n        ({mistake class: {\"text\"}}, for the classes in cards_to_write; the item's own cards\n        stay), and a rung the copy leaves empty (look and boost as {\"text\"}, almost and worked\n        as lists of lines). To change a copied part, only when the parent asks, add changes:\n        [{\"change\": numbers, context, wording or tutor_notes, \"why\", \"set\": {path: value}}],\n        where a path is say, or a dotted path under data, key, hints, worked or almost\n        (\"hints.0.text\"); each change is recorded in based_on.changes. Send only the steps you\n        change: a step left out keeps what the draft holds (its words, the bank's twin,\n        lesson_edit's changes), and help {} checks the draft as it stands. names is required, as\n        for lesson_draft (every name the family uses, or []): they are replaced in every word but\n        an answer key, keys included, and again in the steps the draft holds; title and\n        reasoning replace the draft's. Every call rewrites the draft file (draft_path) with your words as far as they\n        go, and writes its check beside it. ok true returns the card (per question: prompt and\n        key as plain text, twin {prompt, key, source}, source, licence, and changes when there\n        are any; and next: publish with lesson_publish), warns ({rule: count}), the lesson_file\n        path, play_path and lesson_id. full true adds each rung and why it was drawn to the\n        card; verbose true lists every finding instead of warns. ok false lists findings, each\n        a step_id, path, level (error or warn), rule, text and fix; ok is false while one is an\n        error. Fix those and call lesson_check again.\n        ",
       "inputSchema": {
         "properties": {
           "draft_id": {
@@ -42,19 +42,11 @@
             "type": "object"
           },
           "names": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Names"
+            "items": {
+              "type": "string"
+            },
+            "title": "Names",
+            "type": "array"
           },
           "reasoning": {
             "anyOf": [
@@ -86,7 +78,7 @@
             "type": "boolean"
           }
         },
-        "required": ["draft_id", "help"],
+        "required": ["draft_id", "help", "names"],
         "title": "lesson_checkArguments",
         "type": "object"
       },
@@ -175,7 +167,7 @@
       }
     },
     {
-      "description": "Change one step of a draft and get that step's findings back, without resending the rest.\n\n        patch is a JSON merge patch on the step as lesson_show returns it: an object merges into\n        what is there, null removes a part, anything else replaces it. It may set say and\n        question's data, key and help (look, boost, almost, worked, hints, boost_by_mistake and\n        twin, under question.help). A change to a part the bank's copy has (say, data, key, hints,\n        worked, a copied almost) needs why, the parent's ask; it is recorded in based_on.changes\n        with change (numbers, context, wording or tutor_notes; wording by default). A rung, twin\n        or mistake card you write needs no why. The draft file is rewritten, check.ts runs on the\n        whole lesson and its check file is rewritten. Returns ok (no error for this step),\n        step_id, findings for this step only, render (the page's findings for it from its last\n        draw, stale when drawn before this write; null without the page), the step's card,\n        lesson_ok (the whole lesson's check) and draft_path. A patch that is not an object, or\n        sets a part as the wrong kind, is refused with rule edit and changes nothing. Pass names\n        as for lesson_draft: they are replaced in every word but a key, and in why. A later\n        lesson_check keeps this edit unless it is sent words for this step.\n        ",
+      "description": "Change one step of a draft and get that step's findings back, without resending the rest.\n\n        patch is a JSON merge patch on the step as lesson_show returns it: an object merges into\n        what is there, null removes a part, anything else replaces it. It may set say and\n        question's data, key and help (look, boost, almost, worked, hints, boost_by_mistake and\n        twin, under question.help). A change to a part the bank's copy has (say, data, key, hints,\n        worked, a copied almost) needs why, the parent's ask; it is recorded in based_on.changes\n        with change (numbers, context, wording or tutor_notes; wording by default). A rung, twin\n        or mistake card you write needs no why. The draft file is rewritten, check.ts runs on the\n        whole lesson and its check file is rewritten. Returns ok (no error for this step),\n        step_id, findings for this step only, render (the page's findings for it from its last\n        draw, stale when drawn before this write; null without the page), the step's card,\n        lesson_ok (the whole lesson's check) and draft_path. A patch that is not an object, or\n        sets a part as the wrong kind, is refused with rule edit and changes nothing. names is\n        required, as for lesson_draft (every name the family uses, or []): they are replaced in\n        every word but an answer key, keys included, and in why. A later\n        lesson_check keeps this edit unless it is sent words for this step.\n        ",
       "inputSchema": {
         "properties": {
           "change": {
@@ -188,19 +180,11 @@
             "type": "string"
           },
           "names": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Names"
+            "items": {
+              "type": "string"
+            },
+            "title": "Names",
+            "type": "array"
           },
           "patch": {
             "additionalProperties": true,
@@ -224,7 +208,7 @@
             "title": "Why"
           }
         },
-        "required": ["draft_id", "step_id", "patch"],
+        "required": ["draft_id", "step_id", "patch", "names"],
         "title": "lesson_edit_toolArguments",
         "type": "object"
       },

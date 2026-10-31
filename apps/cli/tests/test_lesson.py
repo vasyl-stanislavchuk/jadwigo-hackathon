@@ -661,10 +661,14 @@ def test_the_check_verb_reads_the_words_from_a_file(
     view = _draft()
     words = tmp_path / "words.json"
     words.write_text(json.dumps(_words(view), ensure_ascii=False), encoding="utf-8")
-    result = CliRunner().invoke(cli, ["lesson", "check", view["draft_id"], str(words), "--json"])
+    result = CliRunner().invoke(
+        cli, ["lesson", "check", view["draft_id"], str(words), "--no-names", "--json"]
+    )
     assert result.exit_code == 0, result.output
     assert json.loads(result.output) == lesson.check(view["draft_id"], _words(view))
-    plain = CliRunner().invoke(cli, ["lesson", "check", view["draft_id"], str(words)])
+    plain = CliRunner().invoke(cli, ["lesson", "check", view["draft_id"], str(words), "--no-names"])
+    refused = CliRunner().invoke(cli, ["lesson", "check", view["draft_id"], str(words)])
+    assert refused.exit_code == 2 and "--name" in refused.output
     assert plain.output.startswith("1. ") and "next: Publish it with lesson_publish" in plain.output
     assert "make lesson-import" not in plain.output
 
@@ -960,10 +964,13 @@ def test_the_edit_and_show_verbs_print_what_the_tools_return(
     patch.write_text(json.dumps({"question": {"help": {"boost": "Krok po kroku."}}}),
                      encoding="utf-8")
     result = CliRunner().invoke(cli, ["lesson", "edit", view["draft_id"], "q1", str(patch),
-                                      "--json"])
+                                      "--no-names", "--json"])
     assert result.exit_code == 0, result.output
     assert json.loads(result.output)["card"]["rungs"]["boost"] == "Krok po kroku."
-    plain = CliRunner().invoke(cli, ["lesson", "edit", view["draft_id"], "q1", str(patch)])
+    plain = CliRunner().invoke(cli, ["lesson", "edit", view["draft_id"], "q1", str(patch),
+                                     "--no-names"])
+    refused = CliRunner().invoke(cli, ["lesson", "edit", view["draft_id"], "q1", str(patch)])
+    assert refused.exit_code == 2 and "--name" in refused.output
     assert plain.output.startswith("q1: ok") and "draft file:" in plain.output
     shown = CliRunner().invoke(cli, ["lesson", "show", view["draft_id"], "q1"])
     assert shown.exit_code == 0, shown.output
@@ -1252,3 +1259,37 @@ def test_a_clean_machine_draws_from_the_bank_jw_bank_pull_cloned(
     finally:
         fake.stop()
     assert len(view["questions"]) == 6 and view["plays_as_copied"] is True
+
+
+def test_a_name_as_a_key_or_in_an_edit_without_names_never_reaches_the_draft(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    """dl-a38n.62: keys are words too, and a step edited without names is guarded again on the
+    next check that has them. Kasia: an invented name, as tests/test_pii.py."""
+    view = _draft()
+    words = _words(view)
+    words["q1"]["boost_by_mistake"] = {"Kasia": {"text": "Policz grupy."}}
+    words["Kasia"] = {"boost": {"text": "x"}}  # a step id that is a name, echoed in an error
+    result = lesson.check(view["draft_id"], words, names=["Kasia"])
+    path = Path(result["draft_path"])
+    check_file = lesson.drafts_dir() / f"{view['draft_id']}.check.json"
+    for text in (path.read_text(encoding="utf-8"), check_file.read_text(encoding="utf-8"),
+                 json.dumps(result, ensure_ascii=False)):
+        assert pii.leaks(text, ["Kasia"]) == []
+    assert any("[NAME_1]" in e["message"] for e in result["errors"])
+
+    assert lesson.check(view["draft_id"], _words(view), names=["Kasia"])["ok"] is True
+    # An edit with no names stores the name; a later check with the names, sent nothing for that
+    # step, guards it again before it is written or checked.
+    lesson_edit.edit(view["draft_id"], "q2", {"question": {"help": {"boost": "Kasiu, policz."}},
+                                             "say": "Ile ma Kasia?"}, why="Prośba rodzica.")
+    assert pii.leaks(path.read_text(encoding="utf-8"), ["Kasia"]) != []
+    checked = lesson.check(view["draft_id"], {}, names=["Kasia"])
+    assert checked["ok"] is True
+    assert pii.leaks(path.read_text(encoding="utf-8"), ["Kasia"]) == []
+    assert pii.leaks(json.dumps(checked, ensure_ascii=False), ["Kasia"]) == []
+
+    # lesson_edit guards a key of its patch, and its refusal echoes no name.
+    refused = lesson_edit.edit(view["draft_id"], "q3", {"Kasia": "x"}, names=["Kasia"])
+    assert refused["ok"] is False and pii.leaks(json.dumps(refused, ensure_ascii=False),
+                                                ["Kasia"]) == []

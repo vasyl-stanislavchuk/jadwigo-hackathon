@@ -1021,15 +1021,28 @@ UNGUARDED = ("key", "src")
 
 
 def guard_words(value: Any, family: Any) -> Any:
-    """Every string an agent wrote, through `pii.guard` (dl-a38n.36), but a key or a picture
-    address: a parent's ask or a step's words may hold a child's name."""
+    """Every string an agent wrote, through `pii.guard` (dl-a38n.36), but an answer key or a
+    picture address: a parent's ask or a step's words may hold a child's name. A mapping's keys
+    are guarded too (dl-a38n.62): `{"<name>": ...}` is words as much as its value."""
     if isinstance(value, str):
         return pii.guard(value, names=family).text
     if isinstance(value, list):
         return [guard_words(v, family) for v in value]
     if isinstance(value, Mapping):
-        return {k: v if k in UNGUARDED else guard_words(v, family) for k, v in value.items()}
+        return {
+            guard_words(str(k), family): v if k in UNGUARDED else guard_words(v, family)
+            for k, v in value.items()
+        }
     return value
+
+
+def _guard_step(q: dict[str, Any], family: Any) -> dict[str, Any]:
+    """A step as the draft file holds it, its words guarded again (dl-a38n.62): one edited with
+    no names, or before the family's names were known, keeps none on a later check. With no
+    names there is nothing new to find, and the bank's copy is left as it is."""
+    if not family:
+        return q
+    return {**q, **{k: guard_words(q.get(k), family) for k in ("say", "question", "based_on")}}
 
 
 def _file(stored: Mapping[str, Any], steps: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
@@ -1156,13 +1169,15 @@ def _check(
     stored = load_draft(draft_id, where)
     if not isinstance(words, Mapping):
         raise JwError("help maps step ids to their words", hint='Pass {"q1": {"twin": ...}, ...}.')
+    guard_names = pii.names_for(members=list(names))
+    # Guarded before anything reads them, keys included, so no message echoes a name (dl-a38n.62).
+    words = guard_words(words, guard_names)
     known = [q["step_id"] for q in stored["questions"]]
     errors = [
         {"step_id": s, "message": f"no step {s} in {draft_id}; its steps are {', '.join(known)}"}
         for s in words
         if s not in known
     ]
-    guard_names = pii.names_for(members=list(names))
     path = _lesson_path(where, draft_id)
     as_filed = _file_steps(path)
     steps: dict[str, dict[str, Any]] = {}
@@ -1170,7 +1185,8 @@ def _check(
         sid = q["step_id"]
         if sid not in words:
             # Left out: the step as the file holds it, its words, bank twin and edits kept.
-            steps[sid] = from_file(q, as_filed[sid]) if sid in as_filed else dict(q)
+            steps[sid] = _guard_step(from_file(q, as_filed[sid]) if sid in as_filed else dict(q),
+                                     guard_names)
             errors += [{"step_id": sid, "message": f"help.{key} is empty; write it"}
                        for key in _missing(steps[sid])]
             continue
@@ -1178,7 +1194,7 @@ def _check(
         if not isinstance(given, Mapping):
             errors.append({"step_id": sid, "message": "a step's words are an object"})
             continue
-        steps[sid], problems = _apply(q, guard_words(given, guard_names))
+        steps[sid], problems = _apply(q, given)
         errors += [{"step_id": sid, "message": p} for p in problems]
 
     for field, value in (("title", title), ("reasoning", reasoning)):
