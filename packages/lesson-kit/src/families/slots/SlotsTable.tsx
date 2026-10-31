@@ -12,6 +12,11 @@
  * this part turns it. A wider table breaks out to 1120 on a laptop (styles/stage.css `data-wide`),
  * and a table still wider than its room (a phone's column, or a stage too narrow to break out, as
  * the playground's 518 column) scrolls sideways, with a 40 px fade at its right edge.
+ *
+ * A table with no header is a layout, not a data table (dl-w3.81, the owner's choice): Khan writes
+ * one only to line things up, most often an equation chain. It draws with no lines and no card,
+ * the columns as wide as their content and 8 apart, each cell padded 4, column 1 to the right and the rest to the left,
+ * and a chain's later steps sit under its first `=` (tableLayout.ts).
  */
 
 import { cn } from "@jadwigo/ui";
@@ -21,6 +26,7 @@ import { RichText } from "../../parts/RichText.tsx";
 import { Family } from "../names.ts";
 import { type Gap, MARKER, type SlotsTable as TableData } from "./model.ts";
 import type { Slot } from "./slot.ts";
+import { chainRows, isLayout } from "./tableLayout.ts";
 
 /** A cell's width, laptop then phone; a turned table's two columns; the cell's least height. */
 const WIDTH = { laptop: 88, phone: 80 } as const;
@@ -66,7 +72,8 @@ export function SlotsTable({
 }): JSX.Element {
   const phone = usePhoneCells();
   const byId = new Map(gaps.map((g) => [g.id, g]));
-  const headed = table.header.some((c) => c.trim() !== "");
+  const layout = isLayout(table);
+  const headed = !layout;
   const n = Math.max(table.header.length, ...table.rows.map((r) => r.length));
   const turned = phone && table.rows.length === 1 && n > 4;
   const width = WIDTH[phone ? "phone" : "laptop"];
@@ -97,7 +104,7 @@ export function SlotsTable({
       });
     }
   } else {
-    const rows = headed ? [table.header, ...table.rows] : table.rows;
+    const rows = headed ? [table.header, ...table.rows] : chainRows(table);
     rows.forEach((r, i) => {
       for (let j = 0; j < n; j++)
         cells.push({
@@ -115,7 +122,9 @@ export function SlotsTable({
     ? headed
       ? `${track(TURNED.head)} ${track(TURNED.body)}`
       : track(TURNED.body)
-    : `repeat(${n}, ${track(width)})`;
+    : layout
+      ? `repeat(${n}, max-content)`
+      : `repeat(${n}, ${track(width)})`;
   // Whether the table is wider than the room it has (the column on a phone, the 1120 breakout or
   // a narrower stage on a laptop), so it scrolls sideways under a fade.
   const scroller = useRef<HTMLDivElement>(null);
@@ -144,7 +153,11 @@ export function SlotsTable({
           role="table"
           data-table
           data-turned={turned || undefined}
-          className="grid w-max overflow-hidden rounded-jw-small border-2 border-border bg-card leading-tight font-bold tabular-nums"
+          data-layout={layout || undefined}
+          className={cn(
+            "grid w-max leading-tight font-bold tabular-nums",
+            layout ? "gap-x-2" : "overflow-hidden rounded-jw-small border-2 border-border bg-card",
+          )}
           style={{ gridTemplateColumns: columns }}
         >
           {cells.map((c) => {
@@ -156,12 +169,13 @@ export function SlotsTable({
                 role={c.head ? (turned ? "rowheader" : "columnheader") : "cell"}
                 data-cell={gap ?? undefined}
                 className={cn(
-                  "flex items-center justify-center",
+                  "flex items-center",
+                  layout ? (c.col === 1 ? "justify-end" : "justify-start") : "justify-center",
                   c.head ? "text-center text-balance" : "whitespace-nowrap",
-                  !c.lastCol && "border-r-2 border-border",
-                  !c.lastRow && "border-b-2 border-border",
-                  c.head ? "bg-background" : "bg-card",
-                  gap !== null ? "px-1 py-1" : "px-2.5 py-1.5",
+                  !layout && !c.lastCol && "border-r-2 border-border",
+                  !layout && !c.lastRow && "border-b-2 border-border",
+                  !layout && (c.head ? "bg-background" : "bg-card"),
+                  gap !== null || layout ? "px-1 py-1" : "px-2.5 py-1.5",
                 )}
                 style={{
                   gridRow: c.row,
