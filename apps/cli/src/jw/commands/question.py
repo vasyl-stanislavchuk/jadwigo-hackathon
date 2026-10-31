@@ -198,7 +198,8 @@ def search(
 @click.argument("set_id")
 @click.option("--json", "json_mode", is_flag=True, help="Print the set page.")
 def show(set_id: str, json_mode: bool) -> None:
-    """Show one question set page (read from JADWIGO_BANK_DIR)."""
+    """Show one question set page (read from the bank checkout: JADWIGO_BANK_DIR, else the clone
+    `jw bank pull` makes)."""
     page = show_page(set_id)
     if json_mode:
         click.echo(json.dumps(page, ensure_ascii=False))

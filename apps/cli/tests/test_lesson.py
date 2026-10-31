@@ -1233,3 +1233,22 @@ def test_an_item_the_page_holds_back_but_the_file_finds_ready_says_the_page_is_w
     left = {item["id"]: item["reason"] for item in view["left_out"]}
     assert left["fxr1"] == "its set page does not list it as lesson-ready in pl"
     assert left["fxr5"] == "not checked"
+
+
+def test_a_clean_machine_draws_from_the_bank_jw_bank_pull_cloned(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, check_ts: CheckTs
+) -> None:
+    """dl-a38n.60 (wave 3, lead decision 8): JADWIGO_BANK_DIR unset, the draw reads the set pages
+    from settings_keys.bank_dir()'s default, where `jw bank pull` clones the bank."""
+    fake = LessonBank().start()
+    try:
+        monkeypatch.setenv(JW_API_URL, fake.url)
+        monkeypatch.setenv(JW_KHAN_CONVERTED, str(ITEMS_FILE))
+        monkeypatch.delenv(JADWIGO_BANK_DIR, raising=False)
+        clone = tmp_path / "share" / "jadwigo" / "bank"
+        shutil.copytree(BANK_DIR, clone)
+        monkeypatch.setattr(settings_keys, "DEFAULT_BANK_DIR", clone)
+        view = _draft()
+    finally:
+        fake.stop()
+    assert len(view["questions"]) == 6 and view["plays_as_copied"] is True

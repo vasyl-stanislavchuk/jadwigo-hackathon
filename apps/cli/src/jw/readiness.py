@@ -233,11 +233,10 @@ def _rules_version(converted: Path) -> str | None:
 
 
 def _sets_from_pages() -> dict[str, Any] | None:
-    """{indexed, skipped_no_ready: [set_id, ...]} from the set pages in JADWIGO_BANK_DIR: a page
+    """{indexed, skipped_no_ready: [set_id, ...]} from the set pages in the bank checkout: a page
     whose ready count is 0 in every language is skipped; one built before the stamp is indexed."""
-    root = settings_keys.setting(settings_keys.JADWIGO_BANK_DIR)
-    sets = Path(root).expanduser() / "sets" if root else None
-    if sets is None or not sets.is_dir():
+    sets = settings_keys.bank_dir() / "sets"
+    if not sets.is_dir():
         return None
     indexed = 0
     skipped: list[str] = []
