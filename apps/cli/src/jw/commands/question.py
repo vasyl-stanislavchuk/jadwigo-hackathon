@@ -1,4 +1,6 @@
-"""jw question verbs: search the bank, show a set, list gaps (dl-u1y5.23), read an item.
+"""jw question verbs: search the bank, show a set, list gaps (dl-u1y5.23), read an item, and the
+refusals loop: list what is not lesson-ready by shape, assign a shape its bead, flag an item
+(dl-a38n.32.11, `jw.refusals`).
 
 Moved from david-learns `dl question` (dl-e8ov.5.2.7, dl-e8ov.5.2.8). Each `--json` verb prints
 what one function below returns, and `jw mcp serve` calls the same functions, so a verb and its
@@ -12,7 +14,7 @@ from typing import Any
 
 import click
 
-from jw import bank_client, items
+from jw import bank_client, items, refusals
 from jw.errors import JwError, emit
 
 
@@ -26,9 +28,19 @@ class _EmitErrorsCommand(click.Command):
             emit(error=exc, json_mode=ctx.params.get("json_mode", False))
 
 
+class _EmitErrorsGroup(click.Group):
+    """A group that is also a verb: the JwError envelope, as `_EmitErrorsCommand` prints it."""
+
+    def invoke(self, ctx: click.Context) -> Any:
+        try:
+            return super().invoke(ctx)
+        except JwError as exc:
+            emit(error=exc, json_mode=ctx.params.get("json_mode", False))
+
+
 @click.group()
 def group() -> None:
-    """Question bank: search, show, gaps, item."""
+    """Question bank: search, show, gaps, item, refusals, flag."""
 
 
 # ------------------------------------------------- the functions verbs and tools share ----
@@ -223,3 +235,106 @@ def item(item_id: str, language: str, json_mode: bool) -> None:
         f"  credit: {view['credit']['source']} {view['credit']['ref']}",
     ]
     click.echo("\n".join(lines))
+
+
+LANGUAGE = click.option(
+    "--lang", "language", default="pl", show_default=True, type=click.Choice(["pl", "en"])
+)
+
+
+def _refusals_text(report: dict[str, Any]) -> str:
+    rows = [
+        (
+            r["rule"],
+            r["question_type"] or "-",
+            str(r["items"]),
+            r["owner"],
+            r["issue"] or "-",
+            ", ".join(r["examples"]),
+        )
+        for r in report["shapes"]
+    ]
+    header = ("rule", "question_type", "items", "owner", "issue", "examples")
+    widths = [max(len(cells[i]) for cells in [header, *rows]) for i in range(len(header))]
+    lines = [
+        f"{report['language']}: {report['items']} items, {report['ready']} lesson-ready, "
+        f"{report['not_checked']} not checked, {report['waiting']} waiting ({report['file']})"
+    ]
+    if rows:
+        lines += [
+            "  ".join(cell.ljust(w) for cell, w in zip(cells, widths, strict=True)).rstrip()
+            for cells in [header, *rows]
+        ]
+    else:
+        lines.append("no shapes")
+    since = report.get("since")
+    if since is not None:
+        lines.append(f"since {since['bead']}:")
+        for shape in since["shapes"]:
+            what = f"{shape['rule']} / {shape['question_type'] or '-'}"
+            if shape["plays_now"]:
+                lines.append(f"  {what}: empty, every item plays now")
+            else:
+                ids = ", ".join(shape["still_refused"])
+                lines.append(f"  {what}: {len(shape['still_refused'])} still refused ({ids})")
+        if not since["shapes"]:
+            lines.append("  no shape names this bead")
+    return "\n".join(lines)
+
+
+@group.group(cls=_EmitErrorsGroup, invoke_without_command=True, name="refusals")
+@LANGUAGE
+@click.option("--new", is_flag=True, help="Only the shapes no bead tracks yet.")
+@click.option(
+    "--since", default=None, metavar="BEAD", help="The shapes a bead tracks, and what still fails."
+)
+@click.option("--json", "json_mode", is_flag=True, help="Print the report.")
+@click.pass_context
+def refusals_group(
+    ctx: click.Context, language: str, new: bool, since: str | None, json_mode: bool
+) -> None:
+    """What is not lesson-ready, by shape (a rule on a question type), with who fixes it."""
+    if ctx.invoked_subcommand is not None:
+        return
+    report = refusals.report(language, new=new, since=since)
+    if json_mode:
+        click.echo(json.dumps(report, ensure_ascii=False))
+        return
+    click.echo(_refusals_text(report))
+
+
+@refusals_group.command(cls=_EmitErrorsCommand, name="assign")
+@click.argument("rule")
+@click.argument("question_type")
+@click.argument("bead")
+@LANGUAGE
+def refusals_assign(rule: str, question_type: str, bead: str, language: str) -> None:
+    """Write BEAD as the issue of the shape RULE on QUESTION_TYPE ("-" for none)."""
+    qtype = None if question_type == "-" else question_type
+    path = refusals.assign(rule, qtype, bead, language)
+    click.echo(f"{rule} / {question_type}: {bead}, in {path}")
+
+
+@group.command(cls=_EmitErrorsCommand)
+@click.argument("item_id")
+@click.argument("reason", required=False, default="")
+@LANGUAGE
+@click.option("--clear", is_flag=True, help="Remove the flag instead.")
+@click.option(
+    "--by",
+    default=refusals.DEFAULT_BY,
+    show_default=True,
+    type=click.Choice(refusals.ROLES),
+    help="Who pulls it: a role, never a name.",
+)
+@click.option("--issue", default=None, help="The bead that tracks the fix, when there is one.")
+def flag(
+    item_id: str, reason: str, language: str, clear: bool, by: str, issue: str | None
+) -> None:
+    """Pull ITEM_ID from lessons in --lang, saying why (REASON), or --clear the flag."""
+    if clear:
+        path = refusals.clear(item_id, language)
+        click.echo(f"{item_id}: flag cleared in {path}")
+        return
+    path = refusals.flag(item_id, reason, language, by=by, issue=issue)
+    click.echo(f"{item_id}: flagged in {path}; the next draft leaves it out")
