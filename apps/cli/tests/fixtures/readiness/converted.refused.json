@@ -1,0 +1,31 @@
+{
+  "generated_by": "tests/fixtures/readiness (hand-written for dl-a38n.32.36: the converter's refusals, in the shape tools/khan writes)",
+  "items": [
+    {
+      "id": "fxr1",
+      "reason": "refused: fxr1: a hint picture has no alt text yet (media/khan/alt.json)",
+      "sets": ["set_khan_fx0009"]
+    },
+    {
+      "id": "fxr2",
+      "reason": "refused: fxr2: a hint picture has no alt text yet (media/khan/alt.json)",
+      "sets": ["set_khan_fx0009"]
+    },
+    {
+      "id": "fxr3",
+      "reason": "refused: fxr3: a hint picture has no alt text yet (media/khan/alt.json)",
+      "sets": ["set_khan_fx0009"]
+    },
+    {
+      "id": "fxe1",
+      "reason": "refused: fxe1: web+graphie://fixture.invalid/graphie/fx1 was not pulled; run media.py",
+      "sets": ["set_khan_fx0010"]
+    },
+    {
+      "id": "fxe2",
+      "reason": "refused: fxe2: https://fixture.invalid/media/fx2.png was not pulled; run media.py",
+      "sets": ["set_khan_fx0010"]
+    },
+    { "id": "fxr4", "reason": "dl-fixture-wait", "sets": ["set_khan_fx0009"] }
+  ]
+}

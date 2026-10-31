@@ -122,7 +122,9 @@ def build_server() -> Any:
         """Search each need once (one per words, one per skill) and say which find nothing.
 
         A need whose every found set has no lesson-ready item in its language is a gap too, with
-        reason "no item is lesson-ready in <lang>"; not_ready lists such sets.
+        reason "no item is lesson-ready in <lang>", followed, when the converted files can say, by
+        "; most: <cause>, <n> of <m> items (<bead>)": the cause most of those sets' items share
+        and the bead fixing it. not_ready lists such sets.
         """
         return _call(
             question.gaps_report,

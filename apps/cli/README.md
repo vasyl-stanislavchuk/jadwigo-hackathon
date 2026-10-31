@@ -14,7 +14,8 @@ question modules came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
 | `jw question show set_khan_2002` | One set page, checked against `src/jw/contracts/set.schema.json` | `JADWIGO_BANK_DIR` |
 | `jw question gaps --words "..." --skill <id> --grade 3` | Each need searched once, with `found`, `gap` or `degraded` | the bank URL and token |
 | `jw question item <item id>` | One converted item: its family step with key and help, credit and `based_on`; only a lesson-ready one | `JW_KHAN_CONVERTED`, and the flags in `JADWIGO_BANK_DIR` |
-| `jw question refusals [--lang pl] [--new] [--since <bead>]` | What is not lesson-ready, by shape: rule, question type, count, 3 example ids, owner, bead | `JW_KHAN_CONVERTED`, its `.render.json`, `JADWIGO_BANK_DIR` |
+| `jw question refusals [--lang pl] [--new] [--since <bead>]` | What is not lesson-ready, by shape: rule (or the converter's cause), question type, count, 3 example ids, owner, bead | `JW_KHAN_CONVERTED`, its `.render.json` and `.refused.json`, `JADWIGO_BANK_DIR` |
+| `jw question readiness [--lang pl\|en] [--from-files]` | Per language: items, ready, waiting by reason, refused by cause, flagged, not checked, each cause with its bead, what was re-admitted since the previous run, and the sets indexed and skipped | `<JADWIGO_KHAN_DIR>/readiness.json`, else the files `refusals` reads |
 | `jw question refusals assign <rule> <question_type> <bead>` | Writes the shape's bead into the refusals file | `JADWIGO_BANK_DIR` |
 | `jw question flag <item id> --lang pl "<why>"` (or `--clear`) | Pulls one item from lessons at once, or puts it back | `JADWIGO_BANK_DIR` |
 | `jw lesson draft "6 zadań z mnożenia, klasa 3" --grade 3 --topic mnożenie --name <name>` (or `--no-names`) | A lesson draft: drawn questions copied whole from the bank, kept under a `draft_id` and written to `JADWIGO_DRAFTS_DIR`, and what is left to write | all of the above, and `JADWIGO_REPO_DIR` and `bun` for the mistake classes |
@@ -32,7 +33,8 @@ question modules came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
   abstained. A bank that could not be asked is `degraded`, not a gap. A need whose every found
   set has no lesson-ready item in its language is a gap too, with `reason` `no item is
   lesson-ready in <lang>`, and `not_ready` lists those sets (their pages, in `JADWIGO_BANK_DIR`,
-  say `count.ready`).
+  say `count.ready`). When the converted files are here, the reason goes on with the cause most
+  of those sets' items share: `; most: <cause>, <n> of <m> items (<bead>)`.
 
 ## Settings
 
@@ -239,6 +241,11 @@ writes, and writes nothing that does not match.
    lesson-kit, `contract` and `key-grades` to the converter, `flagged` to whoever flagged it. It
    reads the stamped statuses and the conformance sidecar beside the converted file
    (`converted-pl.render.json`), so a run newer than the stamp shows in this report at once.
+   It reads the converter's refusals too (`converted-pl.refused.json`, `converted.refused.json`
+   for English: `{items: [{id, reason, sets}]}`), the items refused before conversion. Each is a
+   shape on no question type, owned by the converter, named by its cause: the reason without the
+   item's id, a picture URL that was not pulled as `a picture was not pulled`, a stopped set as
+   `set stopped`, a twin difference as `pl differs from en (family)` or `(numbers, pictures)`.
    `jw lesson draft` reads only the stamp, so it still serves such an item until the next stamp
    refuses it; a flag holds back at once.
 2. The lead files one bead per shape, then `jw question refusals assign <rule> <question_type>
@@ -251,6 +258,29 @@ writes, and writes nothing that does not match.
 4. A fix lands, the nightly stamp flips the items back to `plays`, and `jw question refusals
    --since <bead>` says per shape of that bead which items are still refused, or that every one
    plays now.
+
+### Readiness
+
+`jw question readiness` is the owner's count, per language (both unless `--lang` names one):
+items, lesson-ready, waiting by reason, refused by cause (a rule of the gate, or the converter's
+cause as above), flagged and not checked; each cause with its owner and its bead, and what the
+last run re-admitted, by cause (wave plan `docs/worklog/dl-a38n.32/2026-10-31-wave-2.md`,
+`dl-a38n.32.36`; decisions `dl-kaxj`, `dl-be2l`, `dl-e7yv`). It reads
+`<JADWIGO_KHAN_DIR>/readiness.json`, which the bank's `make ready` writes:
+
+```json
+{"generated_at": "...", "rules_version": "...",
+ "languages": {"pl": {"items": 0, "ready": 0, "waiting": {"<reason>": 0}, "refused": {"<cause>": 0},
+                      "flagged": 0, "readmitted": {"<cause>": 0},
+                      "issues": {"<cause>": "<bead>"}, "not_checked": 0}},
+ "sets": {"indexed": 0, "skipped_no_ready": 0}}
+```
+
+`issues` and `not_checked` may be left out. A language the file does not hold, or every language
+with `--from-files`, is counted from the converted file, its sidecar and the converter's
+refusals; only a run knows what it re-admitted, so that report says it is unknown. A cause's bead
+comes from `refusals assign` (`jw question refusals assign "<cause>" - <bead>` for a converter
+cause), from `issues`, or from the bead an item's status carries.
 
 In Claude Code, with the server registered as below, the owner asks in plain words:
 

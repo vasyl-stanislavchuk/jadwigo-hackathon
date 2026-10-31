@@ -1,0 +1,25 @@
+{
+  "generated_by": "tests/fixtures/readiness (hand-written for dl-a38n.32.36: the English side of the planted set set_khan_fx0009; ids and statuses only, no question text)",
+  "licence_note": "Fixture licence note: our own small bank, written for these tests.",
+  "items": [
+    {
+      "id": "fxr4",
+      "language": "en",
+      "status": {
+        "kind": "waiting",
+        "reason": "refused: fxr4: a question in several parts whose parts mix families waits",
+        "issue": "dl-fixture-wait"
+      }
+    },
+    { "id": "fxr5", "language": "en", "status": { "kind": "plays" } },
+    {
+      "id": "fxe9",
+      "language": "en",
+      "status": {
+        "kind": "plays",
+        "rules_version": "fixture-2",
+        "checked_at": "2026-10-31T09:00:00Z"
+      }
+    }
+  ]
+}

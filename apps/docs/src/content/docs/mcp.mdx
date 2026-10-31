@@ -119,9 +119,13 @@ item the draft did not use is in `left_out` with a reason about the item, never 
 - The converter's own reason: the bank cannot make it yet.
 - `no item is lesson-ready in <lang>`: a whole set has none in the lesson's language.
 
-[`question_gaps`](/mcp/question_gaps/) counts such a set as a gap, and
+[`question_gaps`](/mcp/question_gaps/) counts such a set as a gap, and its reason goes on to name
+the cause most of the set's items share and the bead fixing it, as in `no item is lesson-ready in
+pl; most: a picture was not pulled, 12 of 12 items (<bead>)`.
 [`question_item`](/mcp/question_item/) answers with the same reason as an error. Fixing a refused
-item happens at its source, with `jw question refusals` and `jw question flag` on the command line.
+item happens at its source, on the command line: `jw question readiness` counts, per language,
+what is ready, waiting and refused, by cause and with each cause's bead; `jw question refusals`
+lists the shapes, the converter's refusals among them; and `jw question flag` pulls one item.
 
 ### The draft on disk
 
