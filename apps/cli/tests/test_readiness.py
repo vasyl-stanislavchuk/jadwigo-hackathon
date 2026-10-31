@@ -164,8 +164,7 @@ def test_readiness_reads_readiness_json_when_it_has_the_language(khan: Path) -> 
         {"kind": "twin numbers", "items": 5},
         {"kind": "twin pictures", "items": 2},
     ]
-    # readiness.json has no English block, so English is counted from the files.
-    assert (en["source"], en["items"]) == ("computed", 8)
+    assert (en["source"], en["items"]) == ("readiness.json", 0)
 
     text = _run("readiness", "--lang", "pl")
     for row in pl["refused"]["by_cause"]:
@@ -179,6 +178,16 @@ def test_readiness_reads_readiness_json_when_it_has_the_language(khan: Path) -> 
     assert _json("readiness", "--lang", "pl", "--from-files")["languages"][0]["source"] == (
         "computed"
     )
+
+
+def test_a_language_readiness_json_lacks_is_counted_from_the_files(khan: Path) -> None:
+    raw = json.loads((READINESS / "readiness.json").read_text("utf-8"))
+    del raw["languages"]["en"]
+    (khan / "readiness.json").write_text(json.dumps(raw), encoding="utf-8")
+
+    _pl, en = _json("readiness")["languages"]
+
+    assert (en["source"], en["items"]) == ("computed", 8)
 
 
 def test_a_language_with_nothing_to_read_says_so(khan: Path) -> None:

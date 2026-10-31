@@ -1,4 +1,5 @@
 {
+  "generated_by": "tools/khan/stamp.py",
   "generated_at": "2026-10-31T12:00:00Z",
   "rules_version": "fixture-2",
   "languages": {
@@ -28,10 +29,29 @@
       "warnings": {
         "twin numbers": 5,
         "twin pictures": 2
+      },
+      "rules_version": "fixture-2",
+      "not_ready": {
+        "fxp1": "web+graphie://fixture.invalid/graphie/fx1 was not pulled; run media.py",
+        "fxp2": "no Polish raw item",
+        "fxp3": "render-picture-missing"
       }
+    },
+    "en": {
+      "items": 0,
+      "ready": 0,
+      "not_checked": 0,
+      "waiting": {},
+      "refused": {},
+      "flagged": 0,
+      "warnings": {},
+      "readmitted": {},
+      "rules_version": "fixture-2",
+      "not_ready": {}
     }
   },
   "sets": {
+    "total": 4,
     "indexed": 3,
     "skipped_no_ready": ["set_khan_fx0010"]
   }
