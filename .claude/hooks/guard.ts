@@ -232,10 +232,15 @@ function prodDbDenial(cmd: string, bare: string, commands: string[][]): string |
  * The root Makefile's release runs infra/release.sh: migrations, apply and every deploy (dl-5ssh.34.67).
  */
 const DEPLOY_WORD = /^((api-|web-|site-|docs-)?deploy|deploy-all|release)$/;
-const DEPLOY_TARGET =
-  /(^|[\s'",[(])((api-|web-|site-|docs-)?deploy|deploy-all|release)(?=[\s'",)\]]|$)/;
+const DEPLOY_TARGET = /(^|[\s'",[(])((api-|web-|site-|docs-)?deploy|deploy-all)(?=[\s'",)\]]|$)/;
+/** make release inside a wrapper's script; `gh release list` beside a make is not one. */
+const WRAPPED_RELEASE = /\bg?make\b[^|;&'"]*?\srelease(?=[\s'",)\]]|$)/;
 /** release's one confirmation, which only infra/release.sh sets after the owner types prod. */
 const RELEASE_TOKEN = /\bJW_RELEASE_CONFIRMED\s*=/;
+const RELEASE_SCRIPT = /\brelease\.sh\b/;
+/** Programs that only read or list a file: naming release.sh to them runs nothing. */
+const READS_ONLY =
+  /^(cat|less|more|head|tail|sed|grep|rg|wc|diff|git|ls|stat|file|bat|shellcheck|cd|echo|printf|true|test|\[)$/;
 /** make's options that take a value; a cluster such as -Cn names directory n, not a dry run. */
 const MAKE_VALUE_FLAGS = "CfIjloWE";
 
@@ -262,11 +267,15 @@ function deployDenial(cmd: string, commands: string[][]): string | undefined {
   if (RELEASE_TOKEN.test(cmd)) {
     return "JW_RELEASE_CONFIRMED is make release's one typed prod, set by infra/release.sh only. Prod releases are the owner's, typed at their own terminal.";
   }
-  for (const words of commands) {
-    const script = words.findIndex((w) => base(w) === "release.sh");
-    if (script === 0 || (script > 0 && /^(ba|z|da|k)?sh$/.test(base(words[script - 1] ?? "")))) {
-      return "infra/release.sh is make release, which is the owner's, typed at their own terminal (`!` in Claude Code). From a session, `make -n release` shows what it would run.";
+  // Any way of running release.sh (a shell, source, ., a wrapper's script, a pipe into sh) is
+  // denied; a command that names it is allowed only when every program in it just reads.
+  if (RELEASE_SCRIPT.test(cmd)) {
+    const program = (words: string[]) => base(words.find((w) => !/^\w+=/.test(w)) ?? "");
+    if (!commands.every((words) => READS_ONLY.test(program(words)))) {
+      return "infra/release.sh is make release, which is the owner's, typed at their own terminal (`!` in Claude Code). From a session, read it (cat, sed, grep, git) or run `make -n release`.";
     }
+  }
+  for (const words of commands) {
     const at = words.findIndex((w) => /^g?make$/.test(base(w)));
     if (at >= 0) {
       const make = words.slice(at + 1);
@@ -277,7 +286,7 @@ function deployDenial(cmd: string, commands: string[][]): string | undefined {
     const wrapped = words.some(
       (w) => WRAPPERS.test(base(w)) || PTY_WRAPPERS.test(base(w)) || base(w) === "eval",
     );
-    if (wrapped && MAKE.test(cmd) && DEPLOY_TARGET.test(cmd)) {
+    if (wrapped && MAKE.test(cmd) && (DEPLOY_TARGET.test(cmd) || WRAPPED_RELEASE.test(cmd))) {
       return "a wrapper around make release, deploy, deploy-all, api-deploy, web-deploy, site-deploy or docs-deploy still deploys, which is the owner's, typed at their own terminal.";
     }
   }

@@ -60,6 +60,8 @@ interface Options {
   readonly planJson?: string;
   readonly migrations?: number;
   readonly dirty?: boolean;
+  /** A local commit origin/main does not have. */
+  readonly ahead?: boolean;
 }
 
 function stage(o: Options = {}) {
@@ -87,6 +89,7 @@ function stage(o: Options = {}) {
   git(work, "push", "-q", "origin", "HEAD:main");
   git(work, "branch", "-q", "--set-upstream-to=origin/main");
   if (o.dirty) writeFileSync(join(work, "stray"), "x");
+  if (o.ahead) git(work, "commit", "-q", "--allow-empty", "-m", "unpushed");
 
   const stub = (name: string, body: string) => {
     writeFileSync(join(bin, name), `#!/bin/sh\n${body}\n`);
@@ -145,6 +148,14 @@ describe("make release", { timeout: 60_000 }, () => {
     expect(agent.status).not.toBe(0);
     expect(agent.output).toContain("run it from your own terminal");
     expect(calls(s)).toBe("");
+  });
+
+  it("refuses a HEAD that is not origin/main", () => {
+    const s = stage({ ahead: true });
+    const run = atTerminal(s, "prod");
+    expect(run.status).not.toBe(0);
+    expect(run.output).toContain("HEAD is not origin/main");
+    expect(calls(s)).not.toContain("make");
   });
 
   it("refuses a checkout with local changes", () => {
