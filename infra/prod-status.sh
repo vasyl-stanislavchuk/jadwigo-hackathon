@@ -11,12 +11,13 @@ SITE=${JW_SITE_URL:-https://jadwigo.pl}
 DOCS=${JW_DOCS_URL:-https://docs.jadwigo.pl}
 FN=${JW_API_FUNCTION:-jadwigo-api-prod}
 REF=${JW_REF:-origin/main}
-PROFILE=${JADWIGO_AWS_PROFILE:-sergii}
 behind=0
 
 case $REF in origin/*) git fetch -q origin "${REF#origin/}" 2>/dev/null || echo "prod-status: no fetch; comparing to the local $REF" ;; esac
 # Paths below are the repo's, wherever make or a shell started this.
 cd "$(git rev-parse --show-toplevel)" || exit 1
+# The profile is written once, in infra/aws.mk.
+PROFILE=${JADWIGO_AWS_PROFILE:-$(sed -n 's/^AWS_PROFILE := *//p' infra/aws.mk)}
 git rev-parse -q --verify "$REF^{commit}" >/dev/null || { echo "prod-status: no commit $REF"; exit 1; }
 
 # The first line of a stamp file, or nothing.
