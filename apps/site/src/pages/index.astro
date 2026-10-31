@@ -1,14 +1,109 @@
 ---
-import { getEntry, render } from "astro:content";
-import { appUrl } from "../index.ts";
+// The landing page (dl-5ssh.4.1): the hero speaks to the parent and the child, then how it works,
+// what a family gets, the lessons anyone can play without a login, and who builds it. The words are
+// in src/content/pl/index.md (head and h1) and src/content/pl/landing.yaml (the sections).
+import { getCollection, getEntry } from "astro:content";
+import { appUrl, parentUrl } from "../index.ts";
 import Base from "../layouts/Base.astro";
+import { servedPathPages } from "../lib/seo.ts";
 
 const entry = await getEntry("pages", "pl/index");
-if (!entry) throw new Error("src/content/pl/index.md is missing");
-const { Content } = await render(entry);
+const words = (await getEntry("landing", "pl"))?.data;
+if (!entry || !words) throw new Error("src/content/pl/index.md or landing.yaml is missing");
+// The O nas page is a draft until the school consents (dl-w0b4.42): link it only once it is served.
+const aboutServed = servedPathPages(
+  await getCollection("pages"),
+  import.meta.env.PROD,
+  () => {},
+).some((p) => p.data.path === "/o-nas");
+const nav = [
+  { href: "#jak-to-dziala", label: words.steps.heading },
+  { href: "#lekcje", label: words.lessons.heading },
+  { href: "#o-nas", label: words.about.heading },
+];
 ---
 
-<Base page={entry.data} path="/" logo>
-  <Content />
-  {entry.data.play && <p class="play"><a href={appUrl}>{entry.data.play}</a></p>}
+<Base page={entry.data} path="/" nav={nav}>
+  <section class="hero wrap" aria-labelledby="hero-title">
+    <h1 id="hero-title">{entry.data.heading}</h1>
+    <p class="lead">{words.hero.lead}</p>
+    <p class="child">{words.hero.child}</p>
+    <p class="actions">
+      <a class="btn" href={parentUrl}>{words.hero.homework}</a>
+      <a class="btn quiet" href="#lekcje">{words.hero.play}</a>
+    </p>
+  </section>
+  <div class="cast wrap">
+    <img src="/cast.webp" width="1800" height="620" alt={words.hero.art} fetchpriority="high" />
+  </div>
+
+  <section id="jak-to-dziala" class="wrap band" aria-labelledby="steps-title">
+    <h2 id="steps-title">{words.steps.heading}</h2>
+    <ol class="steps">
+      {
+        words.steps.items.map((s) => (
+          <li>
+            <h3>{s.title}</h3>
+            <p>{s.text}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <section class="wrap band" aria-labelledby="promises-title">
+    <h2 id="promises-title">{words.promises.heading}</h2>
+    <ul class="promises">
+      {
+        words.promises.items.map((p) => (
+          <li>
+            <h3>{p.title}</h3>
+            <p>{p.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section id="lekcje" class="wrap band" aria-labelledby="lessons-title">
+    <h2 id="lessons-title">{words.lessons.heading}</h2>
+    <p class="section-lead">{words.lessons.text}</p>
+    <p class="actions"><a class="btn" href={appUrl}>{words.lessons.open}</a></p>
+  </section>
+
+  <section id="o-nas" class="wrap band about" aria-labelledby="about-title">
+    <h2 id="about-title">{words.about.heading}</h2>
+    <p class="section-lead">{words.about.text}</p>
+    {aboutServed && <p class="actions"><a href="/o-nas/">{words.about.more}</a></p>}
+  </section>
 </Base>
+
+<style>
+  .hero { padding-top: clamp(2.5rem, 7vw, 5rem); max-width: 48rem; margin-left: auto; margin-right: auto; text-align: center; }
+  .hero h1 { font-size: clamp(2rem, 5.5vw, 3.25rem); letter-spacing: -0.01em; }
+  .lead { font-size: clamp(1.15rem, 2.6vw, 1.4rem); margin-top: 1.25rem; }
+  .child { color: var(--jw-ink-soft); margin-top: 0.75rem; }
+  .actions { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1.75rem; }
+  .hero .actions { justify-content: center; }
+  .cast { margin-top: 2.5rem; }
+  .cast img { display: block; width: 100%; height: auto; border-radius: var(--jw-radius-card); }
+
+  .band { padding-top: clamp(3rem, 8vw, 5rem); }
+  .section-lead { margin-top: 0.75rem; max-width: 40rem; font-size: 1.15rem; }
+
+  .steps, .promises { list-style: none; padding: 0; margin: 1.75rem 0 0; display: grid; gap: 1.25rem; }
+  .steps { counter-reset: step; }
+  .steps li { counter-increment: step; position: relative; padding-top: 3.5rem; }
+  .steps li::before {
+    content: counter(step); position: absolute; top: 0; left: 0;
+    width: 2.75rem; height: 2.75rem; border-radius: 50%; display: grid; place-items: center;
+    background: var(--jw-pick); color: var(--jw-pick-ink); border: 2px solid var(--jw-pick-edge); font-weight: 700;
+  }
+  .steps p, .promises p { margin-top: 0.4rem; color: var(--jw-ink-soft); }
+  .promises li { border: 1px solid var(--jw-line); border-radius: var(--jw-radius-card); padding: 1.25rem; }
+  @media (min-width: 48rem) {
+    .steps { grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+    .promises { grid-template-columns: repeat(2, 1fr); }
+  }
+  .about a { font-weight: 700; }
+</style>

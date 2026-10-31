@@ -1,0 +1,45 @@
+# The landing page's section words (src/lib/landing.ts). Copy says what Jadwigo does, never a slogan;
+# numbers are digits; the child is "ty", the parent "Ty" (jadwigo-marketing decisions of 2026-10-27).
+# The hero follows the owner's direction on dl-w0b4.30 (2026-10-31): family as partner, homework first.
+pl:
+  hero:
+    lead: Pokaż nam ostatnią pracę domową. Zobaczymy, co było trudne, i ułożymy z tego krótką lekcję.
+    child: A dziecko? Może się pomylić, poprosić o więcej albo powiedzieć, że na dziś wystarczy.
+    homework: Pokaż pracę domową
+    play: Zagraj w lekcję teraz
+    art: Królowa Jadwiga i jej klasa, Ola, Tymek, Zoja i Marko, narysowani kredkami
+  steps:
+    heading: Jak to działa
+    items:
+      - title: Pokazujesz pracę domową
+        text: Robisz zdjęcie zadania, z którym dziecko miało kłopot. Albo wybierasz klasę i przedmiot.
+      - title: Dziecko rozwiązuje krótką lekcję
+        text: Zadania idą krok po kroku. Gdy coś nie wychodzi, czeka podpowiedź.
+      - title: Widzisz, co dalej
+        text: Po lekcji Jadwigo zapisuje, co poszło dobrze, gdzie była trudność i w czym dziecko się myliło. Z tego układa następną lekcję.
+  promises:
+    heading: Co dostajecie
+    items:
+      - title: Bez punktów, zegarów i rankingów
+        text: Dziecko uczy się we własnym tempie. Nikt go nie pogania.
+      - title: Zadania ze źródłem
+        text: Zadania z Alfika Matematycznego i Khan Academy, zawsze z podanym źródłem.
+      - title: Dane należą do Ciebie
+        text: Odpowiedzi dziecka widzisz tylko Ty. Nie trafiają do modeli, które się na nich uczą.
+      - title: Bezpłatnie i bez reklam
+        text: Lekcje i podsumowania dla rodzica nic nie kosztują.
+  lessons:
+    heading: Lekcje na start
+    text: Bez logowania, od razu w przeglądarce. Wybierz lekcję i zagrajcie razem.
+    open: Zobacz lekcje
+  about:
+    heading: O nas
+    text: Jadwigo budujemy jako rodzina, mama, tata i nasz syn. Najpierw dla niego, teraz dla jego klasy.
+    more: Nasza historia
+  nav:
+    signIn: Zaloguj się
+    home: Jadwigo, strona główna
+  footer:
+    privacy: Prywatność
+    deletion: Usuwanie danych
+    made: Jadwigo powstało podczas hackathonu Meta.
