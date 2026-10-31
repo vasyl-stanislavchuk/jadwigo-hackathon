@@ -98,11 +98,30 @@ def test_stamps_disagree_and_pages_unstamped(machine: Path) -> None:
 
 
 def test_a_stamped_page_that_agrees_is_ok(machine: Path) -> None:
+    stamp = "sha256:r1@2026-10-31T10:00:00Z"  # the latest check over the ready items
+    khan = machine.parent / "khan"
+    (khan / "readiness.json").write_text(
+        json.dumps({"rules_version": "sha256:r1", "stamp_id": stamp})
+    )
     page = machine / "sets" / "khan" / "khan-add-10.json"
-    stamp = {"rules_version": "sha256:r1", "stamp_id": "s-7"}
     page.write_text(json.dumps({"id": "khan-add-10", "items": {"ready_stamp": stamp}}))
     stamps = _check(doctor.run("pl", get=lambda url: 200, search=_search("x")), 3)
+    assert [line["name"] for line in stamps["lines"]] == ["rules_version", "stamp_id"]
     assert [line["status"] for line in stamps["lines"]] == [doctor.OK, doctor.OK]
+    assert stamps["lines"][1]["detail"] == f"{stamp} in readiness.json, converted file, pages"
+
+
+def test_a_page_from_another_stamp_fails(machine: Path) -> None:
+    page = machine / "sets" / "khan" / "khan-add-10.json"
+    page.write_text(
+        json.dumps(
+            {"id": "khan-add-10", "items": {"ready_stamp": "sha256:r0@2026-10-30T09:00:00Z"}}
+        )
+    )
+    stamps = _check(doctor.run("pl", get=lambda url: 200, search=_search("x")), 3)
+    by_name = {line["name"]: line for line in stamps["lines"]}
+    assert by_name["stamp_id"]["status"] == doctor.FAIL
+    assert "pages sha256:r0@2026-10-30T09:00:00Z" in by_name["stamp_id"]["detail"]
 
 
 def test_bank_rev_compares_the_service_with_the_local_manifest(machine: Path) -> None:

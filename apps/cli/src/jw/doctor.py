@@ -267,7 +267,27 @@ def _versions(values: Iterable[Any]) -> list[str]:
     return sorted({str(v) for v in values if v})
 
 
-def stamp_check(pages: list[dict[str, Any]], converted: Mapping[str, Any] | None) -> dict[str, Any]:
+def _ready_statuses(items_by_id: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    return [
+        i["status"]
+        for i in items_by_id.values()
+        if isinstance(i.get("status"), Mapping) and items.why_not_ready(i["status"]) is None
+    ]
+
+
+def converted_stamp(statuses: list[Mapping[str, Any]]) -> str | None:
+    """The stamp the converted files carry, as the bank names it (jadwigo-bank
+    tools/build_sets.py stamp_id): `<rules_version>@<checked_at>` over every ready item, the
+    rules joined by `+` when they differ and the latest check. None when no item is ready."""
+    if not statuses:
+        return None
+    versions = "+".join(sorted({str(s.get("rules_version")) for s in statuses}))
+    return f"{versions}@{max(str(s['checked_at']) for s in statuses)}"
+
+
+def stamp_check(
+    pages: list[dict[str, Any]], converted: Mapping[str, Any] | None, language: str = "pl"
+) -> dict[str, Any]:
     ready_file = readiness.readiness_path()
     try:
         ready_raw = json.loads(ready_file.read_text(encoding="utf-8"))
@@ -280,20 +300,25 @@ def stamp_check(pages: list[dict[str, Any]], converted: Mapping[str, Any] | None
             "stamp_id": _versions([ready_raw.get("stamp_id")]),
         }
     if converted is not None:
-        statuses = [
-            i.get("status") for i in converted.values() if isinstance(i.get("status"), Mapping)
-        ]
+        # The bank's stamp covers both languages' files; the other one counts when it is here.
+        statuses = _ready_statuses(converted)
+        own = refusals.converted_file(language)
+        for path in {refusals.converted_file(lang) for lang in ("pl", "en")} - {own}:
+            other = _converted_items(path)
+            if other is not None:
+                statuses += _ready_statuses(other)
         sources["converted file"] = {
             "rules_version": _versions(s.get("rules_version") for s in statuses),
-            "stamp_id": _versions(s.get("stamp_id") for s in statuses),
+            "stamp_id": _versions([converted_stamp(statuses)]),
         }
+    # A page's ready_stamp is the stamp id itself, `<rules_version>@<checked_at>` (set.schema.json).
     page_stamps = [(p.get("items") or {}).get("ready_stamp") for p in pages]
-    page_stamps = [s for s in page_stamps if isinstance(s, Mapping)]
+    page_stamps = [s for s in page_stamps if isinstance(s, str) and "@" in s]
     lines: list[dict[str, str]] = []
     if page_stamps:
         sources["pages"] = {
-            "rules_version": _versions(s.get("rules_version") for s in page_stamps),
-            "stamp_id": _versions(s.get("stamp_id") for s in page_stamps),
+            "rules_version": _versions(s.rsplit("@", 1)[0] for s in page_stamps),
+            "stamp_id": _versions(page_stamps),
         }
     else:
         lines.append(
@@ -459,7 +484,7 @@ def run(
     checks = [
         settings_check(language),
         ready_check(language, pages, converted),
-        stamp_check(pages, converted),
+        stamp_check(pages, converted, language),
         bank_rev_check(search, bank),
         services_check(get),
     ]
