@@ -34,6 +34,7 @@ function draw(render_: unknown) {
     draft: raw,
     check: null,
     render: render_,
+    publish: null,
     error: null,
   };
   render(<LessonBuilderScreen initial={message} />);
