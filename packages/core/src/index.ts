@@ -1,4 +1,11 @@
 export {
+  type Catalogue,
+  catalogue,
+  type SeedCurriculum,
+  type SeedSkill,
+  type SeedTopic,
+} from "./curriculum/index.ts";
+export {
   canAsk,
   type Given,
   gateOpen,
