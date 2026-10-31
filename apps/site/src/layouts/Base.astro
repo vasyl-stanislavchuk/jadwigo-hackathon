@@ -10,7 +10,14 @@ import "@jadwigo/ui/foundation.css";
 import { getCollection, getEntry } from "astro:content";
 import wordmark from "@jadwigo/ui/brand/wordmark.svg?raw";
 import { parentUrl } from "../index.ts";
-import { assertReviewed, headTags, jsonLd, type Page, servedPathPages } from "../lib/seo.ts";
+import {
+  assertReviewed,
+  type Faq,
+  headTags,
+  jsonLd,
+  type Page,
+  servedPathPages,
+} from "../lib/seo.ts";
 
 interface Props {
   page: Page;
@@ -18,9 +25,11 @@ interface Props {
   prose?: boolean;
   /** The landing page's section anchors, shown in the header's nav. */
   nav?: { href: string; label: string }[];
+  /** The page's questions and answers, for its FAQPage structured data. */
+  faq?: Faq[];
 }
 
-const { page, path, prose = false, nav = [] } = Astro.props;
+const { page, path, prose = false, nav = [], faq = [] } = Astro.props;
 const lang = page.lang ?? "pl";
 const otherLanguage = lang === "pl" ? "English" : "Polski";
 const pages = await getCollection("pages");
@@ -56,7 +65,7 @@ const footerLinks = [
       )
     }
     <link rel="sitemap" href="/sitemap-index.xml" />
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd())} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd(faq))} />
     <style is:global>
       *, *::before, *::after { box-sizing: border-box; }
       html { scroll-behavior: smooth; }

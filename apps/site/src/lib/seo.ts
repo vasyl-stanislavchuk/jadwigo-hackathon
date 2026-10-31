@@ -90,8 +90,25 @@ export function headTags(page: Page, path: string): HeadTag[] {
   return tags;
 }
 
-/** Structured data for the organisation and the website, one graph per page. */
-export function jsonLd(): Record<string, unknown> {
+/** One question and its answer, for a page's FAQPage node. */
+export type Faq = { q: string; a: string };
+
+/** Structured data for the organisation and the website, one graph per page; with `faq`, a FAQPage
+ * node for that page's questions too. */
+export function jsonLd(faq: readonly Faq[] = []): Record<string, unknown> {
+  const faqNode =
+    faq.length > 0
+      ? [
+          {
+            "@type": "FAQPage",
+            mainEntity: faq.map(({ q, a }) => ({
+              "@type": "Question",
+              name: q,
+              acceptedAnswer: { "@type": "Answer", text: a },
+            })),
+          },
+        ]
+      : [];
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -100,6 +117,7 @@ export function jsonLd(): Record<string, unknown> {
         "@id": `${origin}/#organization`,
         name: siteName,
         url: `${origin}/`,
+        logo: `${origin}/icon-512.png`,
       },
       {
         "@type": "WebSite",
@@ -109,6 +127,7 @@ export function jsonLd(): Record<string, unknown> {
         inLanguage: "pl",
         publisher: { "@id": `${origin}/#organization` },
       },
+      ...faqNode,
     ],
   };
 }

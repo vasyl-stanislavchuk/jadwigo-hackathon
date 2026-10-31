@@ -126,3 +126,23 @@ describe("robotsTxt", () => {
     expect(robotsTxt()).toContain("Sitemap: https://jadwigo.pl/sitemap-index.xml");
   });
 });
+
+describe("jsonLd with questions", () => {
+  it("adds a FAQPage node only when the page passes its questions", () => {
+    const types = (g: Record<string, unknown>) =>
+      (g["@graph"] as { "@type": string }[]).map((n) => n["@type"]);
+    expect(types(jsonLd())).not.toContain("FAQPage");
+    const graph = jsonLd([{ q: "Ile to kosztuje?", a: "Nic." }]);
+    expect(types(graph)).toContain("FAQPage");
+    const faq = (graph["@graph"] as { "@type": string; mainEntity?: unknown }[]).find(
+      (n) => n["@type"] === "FAQPage",
+    );
+    expect(faq?.mainEntity).toEqual([
+      {
+        "@type": "Question",
+        name: "Ile to kosztuje?",
+        acceptedAnswer: { "@type": "Answer", text: "Nic." },
+      },
+    ]);
+  });
+});
