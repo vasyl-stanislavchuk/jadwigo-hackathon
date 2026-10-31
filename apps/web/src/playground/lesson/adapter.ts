@@ -2,7 +2,7 @@
  * A lesson file as the builder draws it (dl-a38n.1): each part's question steps as `FamilySpec`s,
  * the way `specOf` (panels/question.ts) makes one from a written example. A question step keeps
  * its id, say, question type, family, data, key and help; its twin becomes help rung 4 with its own
- * id (`<step>-twin`) and the step's question type; every picture goes through `withMedia`. A
+ * id (`<step>t`, as the compile names it) and the step's question type; every picture goes through `withMedia`. A
  * teaching step is left out. A step the parse left out (lesson-import's `parseLessonFileLenient`:
  * an unknown family or question type, a missing field) or the kit cannot draw (a family its question
  * type does not take, no data or key, a twin it cannot draw) comes back as a skipped entry with its
@@ -61,6 +61,20 @@ function unplayable(question_type: string, question: Question, what: string): st
   return null;
 }
 
+/** A twin's id: its step's id and `t`, as lesson-import's compile names the spare question. */
+const twinId = (step_id: string): string => `${step_id}t`;
+
+/** A drawn step's twin as a row of its own (dl-a38n.47): its id, its path
+ * in the file and its spec, so the render rules and the findings reach it as they reach a step. */
+export function twinRow(step: {
+  path: string;
+  spec: FamilySpec;
+}): { step_id: string; path: string; spec: FamilySpec } | null {
+  const twin = step.spec.help?.twin;
+  if (twin === undefined) return null;
+  return { step_id: twin.id, path: `${step.path}.question.help.twin`, spec: twin as FamilySpec };
+}
+
 function buildStep(step: QuestionStep, path: string, media: string): BuiltStep {
   const skipped = (reason: string): BuiltStep => ({ kind: "skipped", step_id: step.id, reason });
   const why = unplayable(step.question_type, step.question, `step ${step.id}`);
@@ -73,7 +87,7 @@ function buildStep(step: QuestionStep, path: string, media: string): BuiltStep {
     const twinWhy = unplayable(step.question_type, question, `step ${step.id} twin`);
     if (twinWhy !== null) return skipped(twinWhy);
     help["twin"] = {
-      id: `${step.id}-twin`,
+      id: twinId(step.id),
       question_type: step.question_type,
       say: typeof say === "string" ? say : "",
       family: question.family,

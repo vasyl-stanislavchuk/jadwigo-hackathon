@@ -39,10 +39,11 @@ describe("stepRows", () => {
       finding("s05", "error"),
       finding("s05", "warn"),
       finding("s07", "warn"),
+      finding("s02t", "warn"),
       finding(null, "warn"),
     ]);
     expect(rows.map((r) => [r.n, r.step_id, r.family, r.findings, r.tone])).toEqual([
-      [1, "s02", "enter", 0, null],
+      [1, "s02", "enter", 1, "warn"],
       [2, "s05", "enter", 2, "error"],
       [3, "s06", "sequence", 0, null],
       [4, "s07", "choose", 1, "warn"],

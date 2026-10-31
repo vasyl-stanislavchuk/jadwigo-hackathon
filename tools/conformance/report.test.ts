@@ -47,7 +47,7 @@ describe("the conformance report", () => {
     const sidecar = sidecarOf(RESULTS, "sha256:abc", "2026-10-30T12:00:00.000Z", "pl");
     expect(Object.keys(sidecar.items)).toEqual(["a1", "a2", "b1", "c1", "c2", "c3", "d1"]);
     expect(sidecar.items["a1"]?.render_ok).toBe(false);
-    expect(sidecar.items["d1"]).toEqual({ render_ok: true, findings: [] });
+    expect(sidecar.items["d1"]).toEqual({ render_ok: true, findings: [], lang: "pl" });
     expect(
       sidecarOf([result("w", null, "x", [finding("r", "warn")])], "", "", "pl").items["w"]
         ?.render_ok,

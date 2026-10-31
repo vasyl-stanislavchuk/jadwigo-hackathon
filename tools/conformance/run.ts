@@ -3,12 +3,14 @@
 // bank's items file, which is never in git). It starts the web dev server on a free port, opens
 // /playground/conformance in headless Chromium, serves the items file to the page with
 // page.route, waits for the page's verdicts, and writes beside the items file:
-//   <name>.render.json        the sidecar: {items: {<id>: {render_ok, findings}}, rules_version, ran_at}
+//   <name>.render.json        the sidecar: {items: {<id>: {render_ok, findings, lang}}, rules_version,
+//                             ran_at, lang}
 //   <name>.conformance.json   the report: every item's findings, and the failing shapes by sets served
 // It fails closed (dl-a38n.32.1): with a blank media URL it refuses to start (NO_MEDIA_URL), and the
 // page settles every picture before the rules run and marks an item it never drew render-unplayable.
-// Each item is drawn in its own language (dl-a38n.32.3): --lang pl|en checks that language's items
-// (and those naming none), else the items' own, refused when they mix; the sidecar names it (lang).
+// Each item is drawn in its own language (dl-a38n.32.3): --lang pl|en checks only the items naming
+// that language, leaving out and counting those naming another or none (dl-a38n.32.22), else the
+// items' own, refused when they mix; the sidecar names the language, on the file and per verdict.
 // Run: bun tools/conformance/run.ts [--items <converted-pl.json>] [--lang pl|en] [--limit N] [--top N]
 // Chromium comes from Playwright: `bunx playwright install chromium` once per machine.
 import { type ChildProcess, spawn } from "node:child_process";
@@ -125,6 +127,10 @@ async function main(): Promise<number> {
   if (chosen.left_out > 0)
     process.stderr.write(
       `${chosen.left_out} items in another language left out (--lang ${lang})\n`,
+    );
+  if (chosen.unnamed > 0)
+    process.stderr.write(
+      `${chosen.unnamed} items naming no language left out, never checked (--lang ${lang})\n`,
     );
   const served = { ...file, items: limit > 0 ? chosen.items.slice(0, limit) : chosen.items };
   const hash = createHash("sha256");
