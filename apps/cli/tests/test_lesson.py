@@ -471,17 +471,9 @@ def test_check_puts_the_agents_words_on_the_copy_and_returns_the_card(
     assert text.startswith("1. ") and "left out:" in text and "fxc201" in text
     assert "skill: fixture.times-6 (proposed)" in text
 
-    # The import comes before the play path, which does not exist until it has run.
-    command = f"make lesson-import FILE={result['lesson_file']} ENV=dev"
-    assert result["import_command"] == command
-    assert card["next"] == {
-        "command": command,
-        "run_in": str(REPO),
-        "then_play": "/play/asg_fixture",
-        "says": f"Import the lesson first: {command}, from the jadwigo checkout ({REPO}). Only "
-        "then does it play at /play/asg_fixture; before the import that path does not exist.",
-    }
-    assert list(result).index("import_command") < list(result).index("play_path")
+    # What comes next is the publish tool, never a command the parent types (dl-a38n.39).
+    assert "import_command" not in result
+    assert card["next"] == lesson.NEXT and card["next"]["call"] == "lesson_publish"
     assert text.endswith(f"next: {card['next']['says']}")
 
 
@@ -615,8 +607,8 @@ def test_the_check_verb_reads_the_words_from_a_file(
     assert result.exit_code == 0, result.output
     assert json.loads(result.output) == lesson.check(view["draft_id"], _words(view))
     plain = CliRunner().invoke(cli, ["lesson", "check", view["draft_id"], str(words)])
-    assert plain.output.startswith("1. ") and "next: Import the lesson first: make" in plain.output
-    assert plain.output.index("make lesson-import") < plain.output.index("/play/asg_fixture")
+    assert plain.output.startswith("1. ") and "next: Publish it with lesson_publish" in plain.output
+    assert "make lesson-import" not in plain.output
 
 
 def test_the_repo_dir_defaults_to_this_checkout_and_names_its_setting(

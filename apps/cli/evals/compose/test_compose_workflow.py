@@ -79,10 +79,10 @@ def test_the_workflow_has_the_steps_run_a_needed() -> None:
         ("5", "Check"),
         ("6", "Fix what the check finds"),
         ("7", "Show the parent the card"),
-        ("8", "Hand over the import"),
+        ("8", "Publish and hand over the link"),
     ]
-    for must in ("you_write", "mistake_classes", "dictionary form", "`changes`", "`topic`", "`import_command`",
-                 "write no cards", "Do not run the import"):
+    for must in ("you_write", "mistake_classes", "dictionary form", "`changes`", "`topic`", "`lesson_publish(draft_id)`",
+                 "write no cards", "never with `make`, never to dev, never to prod", "`play_url`"):
         assert must in text, must
 
 
@@ -183,7 +183,7 @@ def test_the_canonical_request_is_drafted_without_a_name(drafted: dict[str, Any]
 def test_the_workflows_words_check_and_have_no_finding(drafted: dict[str, Any]) -> None:
     result = lesson.check(drafted["draft_id"], _words(drafted))
     assert words_check.findings(_lesson_file(result)) == []
-    assert result["lesson_file"] in result["import_command"]
+    assert result["card"]["next"]["call"] == "lesson_publish" and "import_command" not in result
     # The card shows each question's own twin. The agent changed no copied part: the only change is
     # the multiplication rule jw adds by code to a plainly a×b question (dl-e8ov.5.38.14).
     twins = [q["twin"]["prompt"] for q in result["card"]["questions"]]

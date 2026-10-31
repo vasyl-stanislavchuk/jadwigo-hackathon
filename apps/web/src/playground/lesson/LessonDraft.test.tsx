@@ -16,6 +16,7 @@ const messageOf = (draft: unknown, extra: Partial<DraftMessage> = {}): DraftMess
   draft,
   check: null,
   render: null,
+  publish: null,
   error: null,
   ...extra,
 });
