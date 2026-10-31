@@ -1370,17 +1370,26 @@ _TEX_SYMBOLS = {
     r"\geq": "≥", r"\lt": "<", r"\gt": ">", r"\neq": "≠", r"\ne": "≠", r"\approx": "≈",
     r"\pm": "±", r"\%": "%", r"\degree": "°", r"\circ": "°", r"\dots": "…", r"\ldots": "…",
     r"\cdots": "…", r"\,": " ", r"\;": " ", r"\quad": " ", r"\qquad": " ", r"\ ": " ",
-    r"\log": "log", r"\ln": "ln", r"\pi": "π",
+    r"\log": "log", r"\ln": "ln", r"\pi": "π", r"\sqrt": "√",
 }
 # Characters TeX escapes, kept as they are: they stand in a private-use character while the `$`
 # and braces of the maths go.
 _TEX_KEPT = {r"\$": "\ue000", r"\{": "\ue001", r"\}": "\ue002"}
 _TEX_FRAC = re.compile(r"\\[dt]?frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}")
 _TEX_FRAC_DIGITS = re.compile(r"\\[dt]?frac\s*(\d)\s*(\d)")
+_TEX_COLOR_ARG = re.compile(r"\\(?:textcolor|color)\s*\{[^{}]*\}")
 _TEX_SQRT = re.compile(r"\\sqrt\s*\{([^{}]*)\}")
 _TEX_SCRIPT = re.compile(r"([_^])\{([^{}]*)\}")
-_TEX_WRAP = re.compile(r"\\[A-Za-z]+\s*\{([^{}]*)\}")
-_TEX_WORD = re.compile(r"\\[A-Za-z]+")
+_TEX_WRAP = re.compile(r"\\([A-Za-z]+)\s*\{([^{}]*)\}")
+_TEX_WORD = re.compile(r"\\([A-Za-z]+)")
+# Commands that only style what follows (size, colour, spacing, text mode): they go. Any other
+# command keeps its name, so a card never silently loses a word it does not know.
+_TEX_STYLE = re.compile(
+    r"(?:Huge|huge|LARGE|Large|large|normalsize|small|footnotesize|scriptsize|tiny"
+    r"|displaystyle|textstyle|scriptstyle|left|right|big|Big|bigg|Bigg|limits|nolimits"
+    r"|text|textbf|textit|mathrm|mathbf|mathit|boldsymbol|operatorname|color|textcolor"
+    r"|(?:blue|red|green|gold|purple|teal|maroon|orange|pink|gray|grey|black|white|mint)[A-E]?)"
+)
 
 
 def _grouped(part: str) -> str:
@@ -1392,13 +1401,15 @@ def _grouped(part: str) -> str:
 def tex_plain(text: Any) -> Any:
     """`text` with its TeX made plain: `$\\Huge{\\blue{6} \\cdot 4} = $` reads `6 · 4 =`.
     Fractions become `a/b` (a part of more than one term in brackets), a root `√x`, a symbol or
-    relation its character (`\\lt` `<`), colour and size wrappers keep what they wrap, any other
-    command goes, the `$` around maths go, and an escaped `\\$` stays a `$`."""
+    relation its character (`\\lt` `<`), a styling command (size, colour, text mode) goes and
+    keeps what it wraps, any other command keeps its name (`\\overline{AB}` reads `overline
+    AB`), so no meaning silently drops; the `$` around maths go, and an escaped `\\$` stays."""
     if not isinstance(text, str) or "\\" not in text and "$" not in text:
         return text
     out = text
     for tex, kept in _TEX_KEPT.items():
         out = out.replace(tex, kept)
+    out = _TEX_COLOR_ARG.sub("", out)  # \textcolor{red}{7}: the colour's name is no word
     for _ in range(8):  # nested wrappers, from the inside out
         before = out
         out = _TEX_FRAC.sub(lambda m: f"{_grouped(m[1])}/{_grouped(m[2])}", out)
@@ -1407,14 +1418,16 @@ def tex_plain(text: Any) -> Any:
         out = _TEX_SCRIPT.sub(r"\1\2 ", out)
         for tex, plain in sorted(_TEX_SYMBOLS.items(), key=lambda kv: -len(kv[0])):
             out = re.sub(re.escape(tex) + r"(?![A-Za-z])", plain, out)
-        out = _TEX_WRAP.sub(r"\1", out)
+        out = _TEX_WRAP.sub(lambda m: m[2] if _TEX_STYLE.fullmatch(m[1]) else f"{m[1]} {m[2]}",
+                            out)
         if out == before:
             break
-    out = _TEX_WORD.sub("", out).replace("$", "")
+    out = _TEX_WORD.sub(lambda m: "" if _TEX_STYLE.fullmatch(m[1]) else m[1], out)
+    out = out.replace("$", "")
     out = re.sub(r"[{}]", "", out)
     for tex, kept in _TEX_KEPT.items():
         out = out.replace(kept, tex[1:])
-    return re.sub(r"\s+", " ", out).strip()
+    return re.sub(r"\s+", " ", out).replace("√ ", "√").strip()
 
 
 def _key_text(key: Any) -> str:

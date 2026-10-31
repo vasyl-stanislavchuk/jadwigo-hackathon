@@ -199,6 +199,10 @@ def test_the_draft_and_the_check_stay_within_their_budgets(
         ("$\\frac12$", "1/2"),
         ("Kosztuje \\$5.", "Kosztuje $5."),
         ("$\\log_{2}8$", "log_2 8"),
+        ("$\\sqrt 2$", "√2"),
+        ("$\\overline{AB}$", "overline AB"),
+        ("$\\alpha + 1$", "alpha + 1"),
+        ("$\\textcolor{red}{7}$", "7"),
         ("Ile kropek?", "Ile kropek?"),
     ],
 )

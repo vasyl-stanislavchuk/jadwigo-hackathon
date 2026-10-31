@@ -182,8 +182,8 @@ def build_server() -> Any:
         with its credit, when the bank has one (twin_source "bank khan:<id>"); the item's own
         mistake cards are kept. The draft stays on this machine under draft_id; the result is a
         slim view of it. Per question: step_id, item_id, say, data (pictures without their
-        labels or address), key (without the rule jw adds by code), you_write (what is left for you: twin only without a
-        bank twin), cards_to_write (the classes whose mistake card the item lacks, when
+        labels or address), key (without the rule jw adds by code), you_write (what is left
+        for you: twin only without a bank twin), cards_to_write (the classes whose mistake card the item lacks, when
         you_write names boost_by_mistake), twin_source, mistake_classes (the keys
         boost_by_mistake may use; null when unknown), why_drawn (its problem type), and, only
         when you_write names a rung, copied_help (the hints as text with their picture alts)
@@ -192,8 +192,10 @@ def build_server() -> Any:
         present, says this machine's bank copy is out of step: tell the owner to run jw doctor
         and jw bank pull. rule_settled is false (the draw rules are provisional). draft_path is
         the lesson file as copied, written in JADWIGO_DRAFTS_DIR before the call returns, with
-        its check beside it. verbose true returns every question and left_out whole. Write what
-        you_write lists, in the lesson's language, then call lesson_check with the draft_id.
+        its check beside it. verbose true returns every question whole (family, the full key,
+        set, skill, question type, the draw's whole reason, copied_help and rungs) and left_out
+        whole. Write what you_write lists, in the lesson's language, then call lesson_check
+        with the draft_id.
         """
         return _call(
             lesson.draft,
