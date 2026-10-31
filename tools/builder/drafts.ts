@@ -133,7 +133,7 @@ export function consumedTs(dir: string, draftId: string): Set<string> {
 
 // The channel rewrites its heartbeat at least every 5 seconds; 3 missed beats is a channel gone
 // (apps/web/dev/ask.ts reads it the same way).
-export const STALE_MS = 15_000;
+const STALE_MS = 15_000;
 
 export function readHeartbeat(dir: string): Heartbeat | null {
   try {
