@@ -1,17 +1,17 @@
 ---
 name: jadwigo-lesson-compose
-description: "Use when a parent asks for a lesson for their child (\"6 zadań z mnożenia, klasa 3\", \"przygotuj lekcję z dodawania\"): drafts it from the question bank with the jadwigo MCP tools lesson_draft and lesson_check, writes only what the bank lacks (each question's twin and mistake cards) in short, kind Polish, and shows the parent the card and the command that imports it. Needs only the jadwigo MCP server; it works in an empty folder."
+description: "Use when a parent asks for a lesson for their child (\"6 zadań z mnożenia, klasa 3\", \"przygotuj lekcję z dodawania\"): drafts it from the question bank with the jadwigo MCP tools lesson_draft and lesson_check, writes only what the bank lacks (each question's twin and mistake cards) in short, kind Polish, publishes it locally with lesson_publish, and gives the parent the card and the play link. Needs only the jadwigo MCP server; it works in an empty folder."
 ---
 
 # Compose a lesson from the bank
 
-A parent asks for a lesson. You turn the request into a lesson that plays, through 2 tools of the
+A parent asks for a lesson. You turn the request into a lesson that plays, through 3 tools of the
 `jadwigo` MCP server: `lesson_draft` draws the questions from the bank and copies each one whole,
-and `lesson_check` puts your words on the copy, checks the lesson and returns the card the parent
-reads.
+`lesson_check` puts your words on the copy, checks the lesson and returns the card the parent
+reads, and `lesson_publish` publishes the checked lesson locally and returns the link it plays at.
 
 This workflow may run in a folder with nothing in it. Everything you need is in this file, in what
-the parent tells you, and in what the 2 tools return. Do not look for source code, files, scripts
+the parent tells you, and in what the 3 tools return. Do not look for source code, files, scripts
 or a repository, and do not run shell commands. If the `jadwigo` tools are not offered to you, say
 so to the parent and stop.
 
@@ -34,8 +34,9 @@ Two decisions are in force:
   through `lesson_check`.
 - Write a script, a loop or a template that fills the questions. You write each question's words
   by hand, one question at a time, after reading that question.
-- Import, publish, deploy or send anything, or start anything that costs money. That is the
-  parent's step: you hand them the command.
+- Import or publish any other way than `lesson_publish`, or anywhere but local. You never run
+  `make` or an import command, and never publish to jadwigo-dev or prod: those are the owner's.
+  You never deploy, send anything, or start anything that costs money.
 - Put a family member's name in anything you write for the lesson.
 
 ## 1. Ask what is missing
@@ -174,14 +175,18 @@ answer, each rung, the twin with its answer, the source and licence, and any cha
 Then `left_out` with each reason, and one line that the draw rule is still provisional. Ask
 whether anything should change. A change the parent asks for goes back through steps 4 to 6.
 
-## 8. Hand over the import
+## 8. Publish and hand over the link
 
-The lesson is checked, not imported. Give the parent what the result names, in this order, and
-stop:
+Once `lesson_check` answers `ok: true`, call `lesson_publish(draft_id)` without asking. It publishes
+only to `local`, the database the owner's `make dev` serves; leave `target` out. It refuses a
+lesson whose last check is not ok, so publish only after a clean check.
 
-- the lesson file, `lesson_file`;
-- the command to import it, `import_command`, exactly as the result gives it, for the owner to
-  run first. Do not write or change the command yourself;
-- where it plays once it is imported, `play_path`. It does not exist before the import.
+- `ok: true`: give the parent the `play_url`, exactly as the result gives it, and what was
+  verified: the api answered, a preview attempt started with every question (`plan_questions`),
+  and the play page answered.
+- `ok: false`: say which check in `verified` failed, as the tool gave it, and stop. Do not retry
+  more than once.
+- A refusal (the tool's error): show it to the parent as it is and stop. When it names a command
+  for the owner, pass it on for the owner to run; you never run it.
 
-Do not run the import yourself.
+Publish only with `lesson_publish`: never with `make`, never to dev, never to prod.
