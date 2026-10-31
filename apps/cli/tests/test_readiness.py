@@ -74,6 +74,10 @@ def _json(*args: str) -> dict[str, Any]:
         # readiness.json's keys: the id gone, the `refused: ` prefix and a placeholder kept
         (f"refused: {ALT}", ALT),
         ("refused: <picture> was not pulled; run media.py", NOT_PULLED),
+        # a part's own name goes too (dl-a38n.32.55): one cause for every part
+        (f"refused: x1: part 1: x1-p1: {ALT}", ALT),
+        (f"refused: part 2: -p2: {ALT}", ALT),
+        ("x1-p2: pl differs from en (family, key)", "pl differs from en (family)"),
     ],
 )
 def test_a_converter_reason_becomes_its_cause_and_stays_one(reason: str, cause: str) -> None:
