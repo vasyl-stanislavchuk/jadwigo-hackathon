@@ -171,9 +171,9 @@ def require_path(language: str) -> Path:
     path = items.refusals_path(language)
     if path is None:
         raise bank_client.BankDirNotConfigured(
-            f"{settings_keys.JADWIGO_BANK_DIR} is not set",
-            hint=f"Set {settings_keys.JADWIGO_BANK_DIR} to the jadwigo-bank checkout; its "
-            "refusals/<lang>.json is the file the stamp reads.",
+            f"no bank checkout at {settings_keys.bank_dir()}",
+            hint=f"Run `jw bank pull`, or set {settings_keys.JADWIGO_BANK_DIR} to the jadwigo-bank "
+            "checkout; its refusals/<lang>.json is the file the stamp reads.",
         )
     return path
 

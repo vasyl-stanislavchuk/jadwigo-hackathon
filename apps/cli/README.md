@@ -29,7 +29,8 @@ question modules came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
   with every arm and takes no query fields, so `--stage` and `--arm` reach only the bank's own
   route (`JW_BANK_URL`), where `--stage first` asks for ids and titles fast. A bank that is down, slow or wrong comes back
   as an envelope whose arms are all `degraded`, never as a crash.
-- **Show** reads set pages from a local checkout of the bank repo, `<JADWIGO_BANK_DIR>/sets/**`.
+- **Show** reads set pages from a local checkout of the bank repo, `<JADWIGO_BANK_DIR>/sets/**`,
+  else the clone `jw bank pull` makes; with neither, it says to run `jw bank pull`.
   The search route returns rows, not pages, and no page route exists yet.
 - **Gaps** is the caller's view: a need is a gap when every arm that was asked came back empty or
   abstained. A bank that could not be asked is `degraded`, not a gap. A need whose every found
@@ -59,7 +60,7 @@ values. Copy it into the file and fill what you use.
 | `JW_BANK_URL` | The bank's own search URL, `<JW_BANK_URL>/questions/search` | none |
 | `JW_BANK_TOKEN` | The bearer token for `JW_BANK_URL`, from Secrets Manager `jadwigo-bank/api-token` | none |
 | `JW_BANK_TIMEOUT_SECS` | Seconds one search may take before it comes back degraded | `10` |
-| `JADWIGO_BANK_DIR` | A checkout of the bank repo, whose `sets/` `jw question show` reads, and whose `refusals/<lang>.json` holds the flags and the shapes' beads | none |
+| `JADWIGO_BANK_DIR` | A checkout of the bank repo, whose `sets/` `jw question show` and the draw read, and whose `refusals/<lang>.json` holds the flags and the shapes' beads | `~/.local/share/jadwigo/bank`, where `jw bank pull` clones it (`dl-a38n.60`) |
 | `JADWIGO_KHAN_DIR` | The synced copy of the bank's Khan bucket | `~/.cache/jadwigo-bank/khan` |
 | `JW_KHAN_CONVERTED` | The converted items file `jw question item` reads | `<JADWIGO_KHAN_DIR>/converted-pl.json`, the Polish file the bank's sync writes (`converted.json` beside it is English) |
 | `JADWIGO_REPO_DIR` | The jadwigo-hackathon checkout whose `packages/lesson-import/src/check.ts` `jw lesson check` runs | the checkout `jw` was installed from |

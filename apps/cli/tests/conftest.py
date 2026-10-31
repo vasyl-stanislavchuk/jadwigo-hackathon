@@ -20,3 +20,5 @@ def _no_bank_settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv(JW_BANK_ENV_FILE, str(tmp_path / "no-bank.env"))
     monkeypatch.setattr(settings_keys, "DEFAULT_KHAN_DIR", tmp_path / "no-khan")
+    # Nor the real bank clone `jw bank pull` makes (dl-a38n.60).
+    monkeypatch.setattr(settings_keys, "DEFAULT_BANK_DIR", tmp_path / "no-bank")

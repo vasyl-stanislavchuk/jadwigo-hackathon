@@ -92,12 +92,12 @@ def _read(path: Path) -> tuple[dict[str, dict[str, Any]], str | None]:
 
 
 def refusals_path(language: str) -> Path | None:
-    """The refusals file the readiness stamp reads, <JADWIGO_BANK_DIR>/refusals/<lang>.json, or
-    None when JADWIGO_BANK_DIR is unset."""
-    bank_dir = settings_keys.setting(settings_keys.JADWIGO_BANK_DIR)
-    if not bank_dir:
+    """The refusals file the readiness stamp reads, <bank checkout>/refusals/<lang>.json, or None
+    when there is no bank checkout (`settings_keys.bank_dir()`, dl-a38n.60)."""
+    bank_dir = settings_keys.bank_dir()
+    if not bank_dir.is_dir():
         return None
-    return Path(bank_dir).expanduser() / REFUSALS_DIR / f"{language}.json"
+    return bank_dir / REFUSALS_DIR / f"{language}.json"
 
 
 @cache
