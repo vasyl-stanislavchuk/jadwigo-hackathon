@@ -275,8 +275,9 @@ def build_server() -> Any:
         owner's (the refusal names the command for them) and the live app is never published
         from here. It imports the draft, then checks that the local api answers, that a preview
         attempt starts with every question planned, and that the play page answers. Returns ok
-        (imported and every check passed), play_url (absolute: give it to the parent), verified
-        (each check's status), lesson_id, version, assignment_id, timings and publish_path.
+        (every check passed), play_url (absolute: give it to the parent), verified (api_health,
+        attempt_started and play_page, each {ok, status, detail}; a detail says what failed),
+        verified_at, lesson_id, version, assignment_id, timings and publish_path.
         """
         return _call(lesson_publish.publish, draft_id=draft_id, target=target)
 

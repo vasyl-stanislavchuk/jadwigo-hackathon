@@ -186,7 +186,7 @@
       }
     },
     {
-      "description": "Publish a checked draft into the local database make dev serves, and check it plays.\n\n        Call it once lesson_check (or lesson_edit) answered ok, without asking: it refuses a\n        draft whose last check is not ok or is older than the draft. target is local; dev is the\n        owner's (the refusal names the command for them) and the live app is never published\n        from here. It imports the draft, then checks that the local api answers, that a preview\n        attempt starts with every question planned, and that the play page answers. Returns ok\n        (imported and every check passed), play_url (absolute: give it to the parent), verified\n        (each check's status), lesson_id, version, assignment_id, timings and publish_path.\n        ",
+      "description": "Publish a checked draft into the local database make dev serves, and check it plays.\n\n        Call it once lesson_check (or lesson_edit) answered ok, without asking: it refuses a\n        draft whose last check is not ok or is older than the draft. target is local; dev is the\n        owner's (the refusal names the command for them) and the live app is never published\n        from here. It imports the draft, then checks that the local api answers, that a preview\n        attempt starts with every question planned, and that the play page answers. Returns ok\n        (every check passed), play_url (absolute: give it to the parent), verified (api_health,\n        attempt_started and play_page, each {ok, status, detail}; a detail says what failed),\n        verified_at, lesson_id, version, assignment_id, timings and publish_path.\n        ",
       "inputSchema": {
         "properties": {
           "draft_id": {

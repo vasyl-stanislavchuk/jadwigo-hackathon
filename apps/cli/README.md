@@ -218,10 +218,14 @@ it, readable by you only (mode 700).
    The api is `JW_LOCAL_API_URL`, else `http://127.0.0.1:<API_PORT>`, and the web
    `JW_LOCAL_WEB_URL`, else `http://127.0.0.1:<WEB_PORT>`. The ports are md's, else the main
    checkout's 8730 and 5173 (`.md/repo.toml`, `tools/src/ports.ts`). All four are read from the
-   environment only. The answer is `ok` (imported and every check passed), the absolute
-   `play_url`, `verified` (each status), `lesson_id`, `version`, `assignment_id` and `timings`. The
-   same record is written beside the draft as `<draft_id>.publish.json`, mode 600, with the
-   guarded `request`, `target` and `published_at`. `target=dev` refuses and names the owner's
+   environment only. The answer is `ok` (every check ok), the absolute `play_url`, `verified`
+   keyed by check (`api_health`, `attempt_started`, `play_page`), each `{ok, status, detail}`
+   (`status` null when nothing answered; `attempt_started` is ok when the status is 201, the plan
+   has the imported questions and the version is the one published, and its `detail` says which
+   failed), `verified_at`, `lesson_id`, `version`, `assignment_id` and `timings`. The same record
+   is written beside the draft as `<draft_id>.publish.json`, mode 600, with the guarded
+   `request`, `target` and `published_at`: the form the lesson builder's page reads
+   (`dl-a38n.48`). `target=dev` refuses and names the owner's
    command, `make lesson-import FILE=<path> ENV=dev`; the live app always refuses. From a shell:
    `jw lesson publish <draft_id> --json`.
 
