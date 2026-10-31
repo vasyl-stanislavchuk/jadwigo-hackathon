@@ -175,6 +175,33 @@ describe("the prod db targets", { timeout: 60_000 }, () => {
     expect(status, output).toBe(0);
   });
 
+  // make release types prod once and sets JW_RELEASE_CONFIRMED=prod for its steps (dl-5ssh.34.67).
+  it("JW_RELEASE_CONFIRMED=prod never passes the gate without a terminal", () => {
+    const s = stage();
+    for (const target of ["db-seed", "db-push", "db-role"]) {
+      const run = fromPipe(s, target, [], { JW_RELEASE_CONFIRMED: "prod" });
+      expect(run.status).not.toBe(0);
+      expect(run.output).toContain("run it from your own terminal");
+    }
+    const agent = fromPipe(s, "db-role", [], { JW_RELEASE_CONFIRMED: "prod", CLAUDECODE: "1" });
+    expect(agent.output).toContain("run it from your own terminal");
+    expect(calls(s)).not.toContain("supabase");
+  });
+
+  it("JW_RELEASE_CONFIRMED=prod at a terminal skips only the typed word", () => {
+    const s = stage();
+    const released = { ...s, env: { ...s.env, JW_RELEASE_CONFIRMED: "prod" } };
+    const role = atTerminal(released, "db-role", "never-typed");
+    expect(role.output).not.toContain("Type prod");
+    expect(role.output).toContain("confirmed once by make release");
+    expect(role.status, role.output).toBe(0);
+    const push = atTerminal(released, "db-push", "never-typed");
+    expect(push.output).not.toContain("Type prod");
+    expect(push.status, push.output).toBe(0);
+    expect(calls(s)).toContain("supabase db push --linked --dry-run");
+    expect(calls(s)).toMatch(/supabase db push --linked\n/);
+  });
+
   it("db-seed ENV=prod: once prod is typed, the seed sees no SUPABASE_* or JADWIGO_API_* variable", () => {
     const s = stage();
     const { status, output } = atTerminal(s, "db-seed", "prod");

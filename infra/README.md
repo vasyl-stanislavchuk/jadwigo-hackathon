@@ -63,6 +63,7 @@ A merge deploys nothing. The owner deploys by hand
 | `make -C infra docs-deploy` | build `apps/docs`, check `dist/`, sync it to the docs bucket, invalidate (`docs/runbooks/docs-publish.md`) | the owner |
 | `make -C infra deploy` | `api-deploy` (`make api-bundle`, zip, `update-function-code`, wait), then `web-deploy` (`web-build`, sync to the app bucket, invalidate) | the owner |
 | `make -n -C infra deploy` | print both halves, running nothing | anyone |
+| `make release` (from the repo root) | the whole release of `origin/main`, asking once: it previews the migrations, a saved plan and `prod-status`, asks you to type prod, then runs `db-push`, `db-role`, `db-seed`, the saved plan, `api-deploy` with a health check, `web-deploy`, `site-deploy` and `docs-deploy`. It stops before asking when the plan destroys or replaces anything (`dl-5ssh.34.67`) | the owner |
 | `make -C infra deploy-all` | every service's code: `api-deploy`, `web-deploy`, `site-deploy`, `docs-deploy`. No migration and no apply: run those first when a PR needs them (`dl-5ssh.34.65`) | the owner |
 | `make -C infra prod-status` | read-only: each service's live commit (each deploy writes `version.txt`, or `version/api.txt` and `version/web.txt` on app.jadwigo.pl) and how many commits on `origin/main` touch it since | anyone |
 | `make -C infra web-build` | build `apps/web` with `web-build/<env>.env`'s public settings, uploading nothing | anyone |

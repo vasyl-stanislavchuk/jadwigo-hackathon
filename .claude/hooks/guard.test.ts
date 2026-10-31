@@ -222,6 +222,16 @@ const cases: Array<[name: string, want: "allow" | "DENY", command: string]> = [
   ["bash -c make deploy-all", "DENY", "bash -c 'make -C infra deploy-all'"],
   ["make -n -C infra deploy-all", "allow", "make -n -C infra deploy-all"],
   ["make -C infra prod-status", "allow", "make -C infra prod-status"],
+  // make release: migrations, apply and every deploy, asking once (dl-5ssh.34.67)
+  ["make release", "DENY", "make release"],
+  ["env -i make release", "DENY", "env -i HOME=$HOME PATH=$PATH make release"],
+  ["bash -c make release", "DENY", "bash -c 'make release'"],
+  ["make -n release", "allow", "make -n release"],
+  ["release.sh directly", "DENY", "sh infra/release.sh"],
+  ["release.sh by path", "DENY", "./infra/release.sh"],
+  ["release.sh read", "allow", "sed -n 1,20p infra/release.sh"],
+  ["the release token", "DENY", "JW_RELEASE_CONFIRMED=prod make db-seed ENV=dev"],
+  ["the release token exported", "DENY", "export JW_RELEASE_CONFIRMED=prod"],
   ["make -C infra plan", "allow", "make -C infra plan"],
   ["make api-bundle", "allow", "make api-bundle"],
   [
