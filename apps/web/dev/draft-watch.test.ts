@@ -69,6 +69,7 @@ describe("listDrafts and draftMessage", () => {
       draft: null,
       check: null,
       render: null,
+      publish: null,
       error: null,
     });
     put("x.json", '{"title": "Hal');

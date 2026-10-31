@@ -89,6 +89,7 @@ describe("renderFindings", () => {
           draft: raw,
           check: null,
           render: null,
+          publish: null,
           error: null,
         }}
       />,
