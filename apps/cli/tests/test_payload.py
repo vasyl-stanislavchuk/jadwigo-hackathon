@@ -192,6 +192,13 @@ def test_the_draft_and_the_check_stay_within_their_budgets(
         ("$4 \\times 6 = $", "4 × 6 ="),
         ("$5\\text{ cm}$", "5 cm"),
         ("$12 \\div 3 \\neq 5$", "12 : 3 ≠ 5"),
+        ("$3 \\lt 5$", "3 < 5"),
+        ("$x \\gt 2$", "x > 2"),
+        ("$\\sqrt{16}$", "√16"),
+        ("$\\frac{1+2}{3}$", "(1+2)/3"),
+        ("$\\frac12$", "1/2"),
+        ("Kosztuje \\$5.", "Kosztuje $5."),
+        ("$\\log_{2}8$", "log_2 8"),
         ("Ile kropek?", "Ile kropek?"),
     ],
 )
