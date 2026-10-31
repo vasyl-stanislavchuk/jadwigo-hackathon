@@ -360,3 +360,24 @@ It is skipped, with the reason, when either path is missing. `tests/test_muse.py
 `PATH`, so no test calls a model. `tests/conftest.py` clears every key, points the bank file at a path that
 does not exist and the Khan default at a temporary folder, so no test reads your real token or
 your synced copy. `tests/test_settings.py` covers the loader.
+
+### The nightly happy-path run
+
+`scripts/smoke_ready.py` holds the whole path, bank to a child's screen, for 3 fixed Polish needs
+(`dl-a38n.32.13`): it runs `lesson_draft`, checks that every drawn step's `based_on` item is
+lesson-ready in the converted file (`plays` with `checked_at`, and no flag) and that
+`plays_as_copied` is true, fills what `you_write` lists with plain words, runs `lesson_check`, and
+imports the lesson file into the in-memory store (`InMemoryStore`, with bun in
+`packages/lesson-import`). It prints one line per need and exits 1 on any miss.
+
+```sh
+cd apps/cli
+uv run --frozen python scripts/smoke_ready.py                # the planted fixture, a fake bank
+uv run --frozen python scripts/smoke_ready.py --fixture DIR  # another fixture laid out the same way
+uv run --frozen python scripts/smoke_ready.py --live         # nightly: the bank jw's settings name
+```
+
+The nightly run is `--live`, after the stamp, with the bank URL and token, `JADWIGO_BANK_DIR` and
+`JW_KHAN_CONVERTED` set as for `jw lesson draft`. It needs bun and a jadwigo checkout. It is never
+part of `make check`: it is not a test, and `pytest -q` does not collect `scripts/`. On the planted
+fixture it passes; with `fxr1` flagged it fails, since nothing lesson-ready is left to draw.
