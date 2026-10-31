@@ -26,7 +26,12 @@ export interface ItemResult {
 export interface Sidecar {
   readonly items: Record<
     string,
-    { readonly render_ok: boolean; readonly findings: readonly Finding[] }
+    {
+      readonly render_ok: boolean;
+      readonly findings: readonly Finding[];
+      /** The language this verdict was drawn in (dl-a38n.32.22): a reader checks it per item. */
+      readonly lang: string;
+    }
   >;
   readonly rules_version: string;
   readonly ran_at: string;
@@ -57,7 +62,7 @@ export function sidecarOf(
 ): Sidecar {
   const items: Record<string, Sidecar["items"][string]> = {};
   for (const r of [...results].sort((a, b) => (a.item_id < b.item_id ? -1 : 1))) {
-    items[r.item_id] = { render_ok: renderOk(r), findings: r.findings };
+    items[r.item_id] = { render_ok: renderOk(r), findings: r.findings, lang };
   }
   return { items, rules_version: rulesVersion, ran_at: ranAt, lang };
 }
