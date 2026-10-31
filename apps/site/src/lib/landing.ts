@@ -38,10 +38,6 @@ export const landingSchema = z.object({
       )
       .min(1),
   }),
-  faq: z.object({
-    heading: z.string().min(1),
-    items: z.array(z.object({ q: z.string().min(1), a: z.string().min(1) })).min(1),
-  }),
   about: z.object({ heading: z.string().min(1), text: z.string().min(1), more: z.string().min(1) }),
   nav: z.object({ signIn: z.string().min(1), home: z.string().min(1) }),
   footer: z.object({

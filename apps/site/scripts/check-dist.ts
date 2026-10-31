@@ -23,7 +23,6 @@ const landing = [
   ["index.html", 'id="jak-to-dziala"'],
   ["index.html", 'id="lekcje"'],
   ["index.html", 'id="porownanie"'],
-  ["index.html", '"@type":"FAQPage"'],
   ["index.html", '<img src="/cast.webp"'],
   ["cast.webp", "WEBP"],
   ["404.html", "Tej strony tu nie ma."],
