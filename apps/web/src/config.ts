@@ -7,6 +7,18 @@ export function webPort(env: Record<string, string | undefined> = process.env): 
   return port("WEB_PORT", DEV_PORTS.WEB_PORT, env);
 }
 
+/** The lesson builder's dev server in the e2e (playwright.config.ts, dl-a38n.34): md's
+ * BUILDER_PORT, a port of its own; 5174 in the main checkout. */
+export function builderPort(env: Record<string, string | undefined> = process.env): number {
+  return port("BUILDER_PORT", DEV_PORTS.BUILDER_PORT, env);
+}
+
+/** Whether this process is a Playwright worker, which loads the config again: only the main
+ * process prepares and removes the builder's drafts dir. */
+export function playwrightWorker(env: Record<string, string | undefined> = process.env): boolean {
+  return env["TEST_WORKER_INDEX"] !== undefined;
+}
+
 /** Where the dev and preview servers send /api (vite.config.ts): JW_API_URL, else the local api on
  * the port it listens on (tools/src/ports.ts apiPort). In production /api is the same origin as the
  * page, with no proxy. */

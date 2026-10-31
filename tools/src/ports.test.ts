@@ -33,6 +33,17 @@ describe("apiPort", () => {
   });
 });
 
+describe("BUILDER_PORT", () => {
+  it("is a port of its own, read like WEB_PORT, and never WEB_PORT + 1 by default", () => {
+    expect(port("BUILDER_PORT", DEV_PORTS.BUILDER_PORT, {})).toBe(5174);
+    expect(port("BUILDER_PORT", DEV_PORTS.BUILDER_PORT, { BUILDER_PORT: "8302" })).toBe(8302);
+    expect(() =>
+      port("BUILDER_PORT", DEV_PORTS.BUILDER_PORT, { MEDALLION_DEV_WORKSPACE_NAME: "lane-a" }),
+    ).toThrow(/BUILDER_PORT is unset/);
+    expect(new Set(Object.values(DEV_PORTS)).size).toBe(Object.keys(DEV_PORTS).length);
+  });
+});
+
 describe(".md/repo.toml", () => {
   it("declares exactly DEV_PORTS under [review.ports], so md exports what the apps read", () => {
     const toml = readFileSync(new URL("../../.md/repo.toml", import.meta.url), "utf8");
