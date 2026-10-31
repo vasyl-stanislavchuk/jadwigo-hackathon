@@ -69,18 +69,3 @@ pl:
         around: zestawów do nauki, często zadanych przez nauczyciela całej klasie
         jadwigo: cele wybrane przez rodzica, połączone w jednej lekcji
         source: https://help.quizlet.com/hc/en-au/articles/39836814088845-Using-Assignments
-  faq:
-    heading: Pytania
-    items:
-      - q: Ile to kosztuje?
-        a: Nic. Jadwigo jest bezpłatne i bez reklam.
-      - q: Dla kogo jest Jadwigo?
-        a: Dla dzieci z pierwszych klas szkoły podstawowej i ich rodziców. Zaczynamy od matematyki i ortografii.
-      - q: Czy dziecko potrzebuje konta?
-        a: Nie. Konto zakłada rodzic. Dziecko gra lekcje, które rodzic mu otworzy, albo lekcje na start, bez logowania.
-      - q: Co dzieje się z danymi dziecka?
-        a: Należą do Ciebie. Widzisz je tylko Ty i nie trafiają do modeli, które się na nich uczą. O usunięcie danych poprosisz pod adresem privacy@jadwigo.pl.
-      - q: Na czym działa Jadwigo?
-        a: W przeglądarce, na telefonie, tablecie i komputerze. Nie trzeba nic instalować.
-      - q: Kiedy będzie można pokazać pracę domową?
-        a: Pracujemy nad tym teraz. Zalogowani rodzice dowiedzą się pierwsi.

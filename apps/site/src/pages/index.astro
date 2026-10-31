@@ -22,11 +22,10 @@ const nav = [
   { href: "#lekcje", label: words.lessons.heading },
   { href: "#porownanie", label: words.compare.nav },
   { href: "#o-nas", label: words.about.heading },
-  { href: "#pytania", label: words.faq.heading },
 ];
 ---
 
-<Base page={entry.data} path="/" nav={nav} faq={words.faq.items}>
+<Base page={entry.data} path="/" nav={nav}>
   <section class="hero wrap" aria-labelledby="hero-title">
     <h1 id="hero-title">{entry.data.heading}</h1>
     <p class="lead">{words.hero.lead}</p>
@@ -105,19 +104,6 @@ const nav = [
     {aboutServed && <p class="actions"><a href="/o-nas/">{words.about.more}</a></p>}
   </section>
 
-  <section id="pytania" class="wrap band" aria-labelledby="faq-title">
-    <h2 id="faq-title">{words.faq.heading}</h2>
-    <div class="faq">
-      {
-        words.faq.items.map((f) => (
-          <details>
-            <summary>{f.q}</summary>
-            <p>{f.a}</p>
-          </details>
-        ))
-      }
-    </div>
-  </section>
 </Base>
 
 <style>
@@ -162,8 +148,4 @@ const nav = [
     .compare td::before { content: attr(data-label); display: block; font-size: 0.85rem; font-weight: 400; color: var(--jw-ink-soft); }
   }
 
-  .faq { margin-top: 1.5rem; max-width: 48rem; }
-  .faq details { border-bottom: 1px solid var(--jw-line); }
-  .faq summary { cursor: pointer; font-weight: 700; padding: 1rem 0; min-height: 48px; }
-  .faq details p { padding: 0 0 1rem; color: var(--jw-ink-soft); }
 </style>
