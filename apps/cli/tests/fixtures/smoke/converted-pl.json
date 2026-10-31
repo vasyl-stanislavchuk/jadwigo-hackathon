@@ -1,0 +1,273 @@
+{
+  "generated_by": "tests/fixtures/smoke (hand-written for dl-a38n.41, from tests/fixtures/ready: one set and one ready item per need; our own small bank, no Khan text)",
+  "licence_note": "Fixture licence note: our own small bank, written for these tests.",
+  "items": [
+    {
+      "id": "fxs1",
+      "family": "choose",
+      "problem_type": "Tabliczka",
+      "grade": 3,
+      "language": "pl",
+      "planted": "ready: compiles and grades",
+      "question": {
+        "text": "Zaznacz liczby, które są w tabliczce mnożenia przez 6.",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxs1",
+        "family": "choose",
+        "phase": "practice",
+        "question_type": "multi_select",
+        "say": "Zaznacz liczby, które są w tabliczce mnożenia przez 6.",
+        "data": {
+          "stem": {
+            "text": "Zaznacz liczby, które są w tabliczce mnożenia przez 6."
+          },
+          "options": [
+            {
+              "id": "o1",
+              "content": {
+                "kind": "text",
+                "text": "6"
+              }
+            },
+            {
+              "id": "o2",
+              "content": {
+                "kind": "text",
+                "text": "9"
+              }
+            },
+            {
+              "id": "o3",
+              "content": {
+                "kind": "text",
+                "text": "12"
+              }
+            },
+            {
+              "id": "o4",
+              "content": {
+                "kind": "text",
+                "text": "15"
+              }
+            }
+          ],
+          "select": "many",
+          "layout": "list"
+        },
+        "key": {
+          "correct": ["o1", "o3"]
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "Sprawdź każdą liczbę po kolei."
+            },
+            {
+              "text": "Pasują 6 i 12."
+            }
+          ],
+          "worked": ["Pasują 6 i 12."]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxs1",
+        "url": "https://fixture.invalid/jw/items/fxs1",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-30"
+      },
+      "exercise": "liczby-parzyste",
+      "exercise_title": "Liczby parzyste",
+      "lesson_title": "Parzyste i nieparzyste",
+      "unit_title": "Liczby",
+      "order": "0001",
+      "source_url": "https://fixture.invalid/jw/items/fxs1",
+      "status": {
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
+      }
+    },
+    {
+      "id": "fxs2",
+      "family": "choose",
+      "problem_type": "Pełne dziesiątki",
+      "grade": 3,
+      "language": "pl",
+      "planted": "ready: compiles and grades",
+      "question": {
+        "text": "Zaznacz pełne dziesiątki.",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxs2",
+        "family": "choose",
+        "phase": "practice",
+        "question_type": "multi_select",
+        "say": "Zaznacz pełne dziesiątki.",
+        "data": {
+          "stem": {
+            "text": "Zaznacz pełne dziesiątki."
+          },
+          "options": [
+            {
+              "id": "o1",
+              "content": {
+                "kind": "text",
+                "text": "40"
+              }
+            },
+            {
+              "id": "o2",
+              "content": {
+                "kind": "text",
+                "text": "51"
+              }
+            },
+            {
+              "id": "o3",
+              "content": {
+                "kind": "text",
+                "text": "60"
+              }
+            },
+            {
+              "id": "o4",
+              "content": {
+                "kind": "text",
+                "text": "73"
+              }
+            }
+          ],
+          "select": "many",
+          "layout": "list"
+        },
+        "key": {
+          "correct": ["o1", "o3"]
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "Sprawdź każdą liczbę po kolei."
+            },
+            {
+              "text": "Pasują 40 i 60."
+            }
+          ],
+          "worked": ["Pasują 40 i 60."]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxs2",
+        "url": "https://fixture.invalid/jw/items/fxs2",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-30"
+      },
+      "exercise": "liczby-parzyste",
+      "exercise_title": "Liczby parzyste",
+      "lesson_title": "Parzyste i nieparzyste",
+      "unit_title": "Liczby",
+      "order": "0001",
+      "source_url": "https://fixture.invalid/jw/items/fxs2",
+      "status": {
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
+      }
+    },
+    {
+      "id": "fxr1",
+      "family": "choose",
+      "problem_type": "Liczby parzyste",
+      "grade": 3,
+      "language": "pl",
+      "planted": "ready: compiles and grades",
+      "question": {
+        "text": "Zaznacz liczby parzyste.",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxr1",
+        "family": "choose",
+        "phase": "practice",
+        "question_type": "multi_select",
+        "say": "Zaznacz liczby parzyste.",
+        "data": {
+          "stem": {
+            "text": "Zaznacz liczby parzyste."
+          },
+          "options": [
+            {
+              "id": "o1",
+              "content": {
+                "kind": "text",
+                "text": "2"
+              }
+            },
+            {
+              "id": "o2",
+              "content": {
+                "kind": "text",
+                "text": "3"
+              }
+            },
+            {
+              "id": "o3",
+              "content": {
+                "kind": "text",
+                "text": "4"
+              }
+            },
+            {
+              "id": "o4",
+              "content": {
+                "kind": "text",
+                "text": "7"
+              }
+            }
+          ],
+          "select": "many",
+          "layout": "list"
+        },
+        "key": {
+          "correct": ["o1", "o3"]
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "Liczba parzysta dzieli się przez 2."
+            },
+            {
+              "text": "Parzyste są 2 i 4."
+            }
+          ],
+          "worked": ["2 : 2 = 1 i 4 : 2 = 2, więc 2 i 4 są parzyste."]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxr1",
+        "url": "https://fixture.invalid/jw/items/fxr1",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-30"
+      },
+      "exercise": "liczby-parzyste",
+      "exercise_title": "Liczby parzyste",
+      "lesson_title": "Parzyste i nieparzyste",
+      "unit_title": "Liczby",
+      "order": "0001",
+      "source_url": "https://fixture.invalid/jw/items/fxr1",
+      "status": {
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
+      }
+    }
+  ]
+}

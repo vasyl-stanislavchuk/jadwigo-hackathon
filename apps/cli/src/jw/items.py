@@ -60,6 +60,12 @@ def converted_path() -> Path:
     return settings_keys.khan_dir() / settings_keys.CONVERTED_DEFAULT
 
 
+def clear_cache() -> None:
+    """Forget the converted file read so far, so the next load reads it again: for a long-running
+    caller (smoke_ready, a test) that rewrites or switches the file."""
+    _read.cache_clear()
+
+
 @cache
 def _read(path: Path) -> tuple[dict[str, dict[str, Any]], str | None]:
     """The file's items by id and its licence note; read once per path per process."""

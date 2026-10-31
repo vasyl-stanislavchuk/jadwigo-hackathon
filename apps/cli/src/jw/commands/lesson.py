@@ -20,7 +20,7 @@ from jw.errors import JwError
 
 @click.group()
 def group() -> None:
-    """Lessons: draft, check, edit, show, publish."""
+    """Lessons: draft, check, edit, show, publish, timing."""
 
 
 @group.command(cls=_EmitErrorsCommand)
@@ -42,6 +42,7 @@ def group() -> None:
     help="A name the family uses in REQUEST (repeatable); replaced before anything leaves.",
 )
 @click.option("--no-names", is_flag=True, help="Say the request names nobody.")
+@click.option("--verbose", is_flag=True, help="Each question and left_out whole.")
 @click.option("--json", "json_mode", is_flag=True, help="Print the draft.")
 def draft(
     request: str,
@@ -53,6 +54,7 @@ def draft(
     skills: tuple[str, ...],
     names: tuple[str, ...],
     no_names: bool,
+    verbose: bool,
     json_mode: bool,
 ) -> None:
     """Draft a lesson for REQUEST: drawn questions copied whole from the bank, kept by draft id
@@ -60,17 +62,26 @@ def draft(
     if not names and not no_names:
         raise click.UsageError("pass every name the family uses with --name, or --no-names")
     result = lesson.draft(
-        request, grade, language, kind, count, skills, names=list(names), topic=topic
+        request, grade, language, kind, count, skills, names=list(names), topic=topic,
+        verbose=verbose,
     )
     if json_mode:
         click.echo(json.dumps(result, ensure_ascii=False))
         return
     lines = [f"{result['draft_id']}  {result['title']}  ({result['kind']}, rule not settled)"]
     lines += [
-        f"  {q['step_id']}  {q['item_id']}  {q['prompt']}  (write: {', '.join(q['you_write'])})"
+        f"  {q['step_id']}  {q['item_id']}  {lesson.tex_plain(q['say'])}  "
+        f"(write: {', '.join(q['you_write']) or 'nothing'})"
         for q in result["questions"]
     ]
-    lines += [f"  left out {left['id']}: {left['reason']}" for left in result["left_out"]]
+    left = result["left_out"]
+    if verbose:
+        lines += [f"  left out {item['id']}: {item['reason']}" for item in left]
+    else:
+        lines += [f"  left out {c['count']}: {c['cause']} ({', '.join(c['examples'])})"
+                  for c in left["by_cause"]]
+    if result.get("setup_warning"):
+        lines.append(f"setup: {result['setup_warning']}")
     lines.append(f"draft file: {result['draft_path']}")
     click.echo("\n".join(lines))
 
@@ -86,6 +97,8 @@ def draft(
     multiple=True,
     help="A name the family uses (repeatable); replaced in --title and --reasoning.",
 )
+@click.option("--full", is_flag=True, help="The card with each rung and why it was drawn.")
+@click.option("--verbose", is_flag=True, help="Every finding, warnings one by one.")
 @click.option("--json", "json_mode", is_flag=True, help="Print the check's answer.")
 def check(
     draft_id: str,
@@ -93,6 +106,8 @@ def check(
     title: str | None,
     reasoning: str | None,
     names: tuple[str, ...],
+    full: bool,
+    verbose: bool,
     json_mode: bool,
 ) -> None:
     """Check the draft DRAFT_ID with WORDS_FILE, a JSON object of each step's words by step id
@@ -104,7 +119,9 @@ def check(
         raise JwError(
             f"{words_file} is not JSON: {exc}", hint='Pass {"q1": {"twin": ...}, ...} as JSON.'
         ) from exc
-    result = lesson.check(draft_id, words, title, reasoning, names=list(names))
+    result = lesson.check(
+        draft_id, words, title, reasoning, names=list(names), full=full, verbose=verbose
+    )
     if json_mode:
         click.echo(json.dumps(result, ensure_ascii=False))
     elif result["ok"]:
@@ -200,3 +217,12 @@ def publish(draft_id: str, target: str, json_mode: bool) -> None:
         )
     if not result["ok"]:
         raise SystemExit(1)
+
+
+@group.command(cls=_EmitErrorsCommand)
+@click.argument("draft_id")
+@click.option("--json", "json_mode", is_flag=True, help="Print the split as JSON.")
+def timing(draft_id: str, json_mode: bool) -> None:
+    """Print how long each tool call on DRAFT_ID took, and the model's time between them."""
+    split = lesson.timing(draft_id)
+    click.echo(json.dumps(split, ensure_ascii=False) if json_mode else lesson.timing_text(split))
