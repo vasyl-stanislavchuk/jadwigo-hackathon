@@ -156,7 +156,6 @@ def test_services_name_db_reset_for_a_500(machine: Path) -> None:
 
 def test_settings_name_what_is_missing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("JADWIGO_DRAFTS_DIR", str(tmp_path / "drafts"))
-    monkeypatch.setattr(doctor.settings_keys, "DEFAULT_BANK_DIR", tmp_path / "no-bank")
     settings = doctor.settings_check("pl")
     by_name = {line["name"]: line for line in settings["lines"]}
     assert by_name["bank checkout"]["status"] == doctor.FAIL
@@ -175,3 +174,24 @@ def test_the_cli_prints_the_same_json_and_exits_1_on_a_failure(
     printed = json.loads(result.output)
     assert [c["n"] for c in printed["checks"]] == [1, 2, 3, 4, 5]
     assert printed["status"] == doctor.FAIL
+
+
+def test_a_loose_bank_env_is_a_fail_line_with_its_fix_not_a_crash(
+    machine: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    env = tmp_path / "bank.env"
+    env.write_text("JW_BANK_TIMEOUT_SECS=10\n")
+    env.chmod(0o644)
+    monkeypatch.setenv("JW_BANK_ENV_FILE", str(env))
+    monkeypatch.delenv("JADWIGO_BANK_DIR")
+    monkeypatch.setattr(doctor, "http_status", lambda url: 200)
+    monkeypatch.setattr(doctor.bank_client, "search", _search("x"))
+    result = CliRunner().invoke(main, ["doctor", "--json"])
+    assert result.exit_code == 1
+    printed = json.loads(result.output)
+    assert [c["n"] for c in printed["checks"]] == [1, 2, 3, 4, 5]
+    settings = printed["checks"][0]["lines"][0]
+    assert settings["status"] == doctor.FAIL
+    assert "can be read by other users" in settings["detail"]
+    assert settings["fix"].startswith(f"chmod 600 {env}")
+    assert _check(printed, 5)["status"] == doctor.OK

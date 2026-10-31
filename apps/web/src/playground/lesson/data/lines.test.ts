@@ -80,6 +80,7 @@ describe("nextDraftState", () => {
     draft,
     check: null,
     render: null,
+    publish: null,
     error: null,
   });
 

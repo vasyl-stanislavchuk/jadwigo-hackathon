@@ -64,11 +64,8 @@ def _check(n: int, name: str, lines: list[dict[str, str]]) -> dict[str, Any]:
 
 
 def _bank_dir() -> Path | None:
-    """JADWIGO_BANK_DIR, else the default `jw bank pull` clones into, when it is there."""
-    configured = settings_keys.bank_dir()
-    if settings_keys.setting(settings_keys.JADWIGO_BANK_DIR) or configured.is_dir():
-        return configured
-    return None
+    configured = settings_keys.setting(settings_keys.JADWIGO_BANK_DIR)
+    return Path(configured).expanduser() if configured else None
 
 
 def _converted_line(path: Path) -> dict[str, str]:
@@ -471,22 +468,57 @@ def services_check(get: Get, env: Mapping[str, str] | None = None) -> dict[str, 
 # ---------------------------------------------------------------- all five
 
 
+def _failed(n: int, name: str, error: JwError) -> dict[str, Any]:
+    """A check that could not run, as a fail line with the error's own fix."""
+    return _check(n, name, [_line(name, FAIL, str(error), error.hint or "")])
+
+
+def _loose_env() -> JwError | None:
+    """The refusal every setting read raises while bank.env is readable by others, read first so
+    each check can say it rather than crash."""
+    try:
+        settings_keys.read_env_file()
+    except JwError as exc:
+        return exc
+    return None
+
+
 def run(
     language: str = "pl", *, get: Get | None = None, search: Search | None = None
 ) -> dict[str, Any]:
     """The 5 checks and the worst status among them. `get` and `search` default to the real HTTP
-    GET and bank search, looked up at call time."""
+    GET and bank search, looked up at call time. A check that cannot read its settings (a loose
+    bank.env) fails with the reason and its fix; the others still run."""
     get = get or http_status
     search = search or bank_client.search
-    bank = _bank_dir()
-    pages = _pages(bank)
-    converted = _converted_items(refusals.converted_file(language))
-    checks = [
-        settings_check(language),
-        ready_check(language, pages, converted),
-        stamp_check(pages, converted, language),
-        bank_rev_check(search, bank),
-        services_check(get),
-    ]
+    loose = _loose_env()
+    checks: list[dict[str, Any]] = []
+    if loose is not None:
+        checks.append(
+            _check(1, "settings", [_line("bank.env", FAIL, str(loose), loose.hint or "")])
+        )
+    else:
+        checks.append(_guarded(1, "settings", lambda: settings_check(language)))
+    try:
+        bank = _bank_dir()
+        pages = _pages(bank)
+        converted = _converted_items(refusals.converted_file(language))
+    except JwError as exc:
+        checks += [_failed(2, "ready ids", exc), _failed(3, "stamps", exc)]
+        checks.append(_guarded(4, "bank_rev", lambda: bank_rev_check(search, None)))
+    else:
+        checks += [
+            _guarded(2, "ready ids", lambda: ready_check(language, pages, converted)),
+            _guarded(3, "stamps", lambda: stamp_check(pages, converted, language)),
+            _guarded(4, "bank_rev", lambda: bank_rev_check(search, bank)),
+        ]
+    checks.append(_guarded(5, "services", lambda: services_check(get)))
     status = max((c["status"] for c in checks), key=_RANK.__getitem__)
     return {"status": status, "language": language, "checks": checks}
+
+
+def _guarded(n: int, name: str, check: Callable[[], dict[str, Any]]) -> dict[str, Any]:
+    try:
+        return check()
+    except JwError as exc:
+        return _failed(n, name, exc)

@@ -2,9 +2,10 @@
 
 `publish(draft_id, target="local")` is the lesson_publish tool and `jw lesson publish`. It refuses a
 draft whose last check is not ok or is older than the draft file, then runs
-`make -s lesson-import FILE=<draft file> JSON=1` in the jadwigo checkout (`JADWIGO_REPO_DIR`), the
-way `lesson.check` runs check.ts, and reads the one JSON object it prints: `{file, lesson_id,
-version, version_id, published, assignment_id, play_path, questions}`. Then it checks the lesson
+`make -s lesson-import FILE=<draft file> JSON=1 ENV=` in the jadwigo checkout (`JADWIGO_REPO_DIR`),
+with ENV and MAKEFLAGS dropped from make's environment so nothing steers it to jadwigo-dev, and
+reads the one JSON object it prints: `{file, lesson_id, version, version_id, published,
+assignment_id, play_path, questions}`, refusing one without a play path. Then it checks the lesson
 plays, against the dev servers:
 
 1. `GET <api>/api/health` answers 200;
@@ -32,6 +33,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import os
+import subprocess
 import time
 import urllib.error
 import urllib.request
@@ -124,11 +126,33 @@ def _checked(where: Path, draft_id: str, path: Path) -> None:
         raise JwError(f"{draft_id} changed after its last check", hint=hint)
 
 
+# What would steer make away from the local database: the Makefile imports into jadwigo-dev when
+# ENV is set, and make reads a variable from MAKEFLAGS too. Neither reaches the import.
+MAKE_STEERING = ("ENV", "MAKEFLAGS", "MFLAGS", "GNUMAKEFLAGS")
+
+
+def make_env() -> dict[str, str]:
+    """jw's environment without what would point the import elsewhere (MAKE_STEERING)."""
+    return {k: v for k, v in os.environ.items() if k not in MAKE_STEERING}
+
+
+def _run_make(repo: Path) -> lesson.Runner:
+    def run(argv: list[str]) -> Any:
+        return subprocess.run(
+            argv, cwd=repo, env=make_env(), capture_output=True, text=True,
+            timeout=IMPORT_TIMEOUT_SECS, check=False,
+        )
+
+    return run
+
+
 def _import(path: Path, runner: lesson.Runner | None) -> dict[str, Any]:
-    """`make -s lesson-import FILE=<path> JSON=1` in the checkout, and the JSON object it prints."""
+    """`make -s lesson-import FILE=<path> JSON=1 ENV=` in the checkout, and the JSON object it
+    prints. `ENV=` on make's command line beats ENV from the environment or MAKEFLAGS, and the
+    child's environment has neither (`make_env`): a local publish never reaches jadwigo-dev."""
     repo, _ = lesson.check_script()
-    run = runner or lesson._run(repo)
-    argv = ["make", "-s", IMPORT_TARGET, f"FILE={path}", "JSON=1"]
+    run = runner or _run_make(repo)
+    argv = ["make", "-s", IMPORT_TARGET, f"FILE={path}", "JSON=1", "ENV="]
     done = run(argv)
     lines = [line for line in (done.stdout or "").splitlines() if line.strip().startswith("{")]
     hint = (
@@ -142,6 +166,14 @@ def _import(path: Path, runner: lesson.Runner | None) -> dict[str, Any]:
         imported: dict[str, Any] = json.loads(lines[-1])
     except ValueError as exc:
         raise JwError(f"the import printed no JSON object: {lines[-1][:200]}", hint=hint) from exc
+    missing = [k for k in ("assignment_id", "play_path", "version_id") if not imported.get(k)]
+    play_path = str(imported.get("play_path") or "")
+    if missing or not play_path.startswith("/play/"):
+        raise JwError(
+            f"the import's answer has no {', '.join(missing) or 'play path'}: {lines[-1][:200]}",
+            hint=f"`{' '.join(argv)}` in {repo} prints one object with assignment_id, version_id "
+            "and play_path (/play/<id>); a make that predates its JSON=1 does not.",
+        )
     return imported
 
 
