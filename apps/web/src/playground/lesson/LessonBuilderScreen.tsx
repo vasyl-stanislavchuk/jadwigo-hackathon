@@ -22,6 +22,8 @@ import {
   type HelloMessage,
   readDraft,
 } from "./draft.ts";
+import { publishOf } from "./publish/model.ts";
+import { PublishState } from "./publish/PublishState.tsx";
 import { postRender, renderReport } from "./render/report.ts";
 import { SkippedCard, StepCard, TwinCard } from "./StepCard.tsx";
 import { ActivitySlot, CommentsSlot } from "./slots.ts";
@@ -141,6 +143,12 @@ function LessonDraft({
   return (
     <div className="flex flex-col gap-6">
       <h2 className="text-base font-medium">{file.title}</h2>
+      <PublishState
+        state={publishOf(
+          message.publish,
+          message.drafts.find((d) => d.draft_id === draft_id)?.mtime ?? null,
+        )}
+      />
       <FindingList findings={findings.filter((f) => f.step_id === null)} label="Lesson findings" />
       <StepTable rows={stepRows(parts, findings)} showKey={showKey} />
       {parts.map(({ part, steps }, i) => (

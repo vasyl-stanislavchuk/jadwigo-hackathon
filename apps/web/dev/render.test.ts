@@ -53,4 +53,14 @@ describe("the render file", () => {
     expect(draftMessage(dir, null).render).toEqual(readRender(dir, "d1"));
     expect(readRender(dir, "nope")).toBeNull();
   });
+
+  it("sends jw's publish file with its draft, and lists neither as a draft (dl-a38n.48)", () => {
+    writeFileSync(join(dir, "d1.json"), JSON.stringify({ title: "T", language: "pl" }));
+    const publish = { draft_id: "d1", play_url: "http://127.0.0.1:5173/play/a1", verified: [] };
+    writeFileSync(join(dir, "d1.publish.json"), JSON.stringify(publish));
+    expect(listDrafts(dir).map((d) => d.draft_id)).toEqual(["d1"]);
+    expect(draftMessage(dir, null).publish).toEqual(publish);
+    writeFileSync(join(dir, "d1.publish.json"), '{"draft_id": "d1", "pla');
+    expect(draftMessage(dir, null).publish).toBeNull();
+  });
 });

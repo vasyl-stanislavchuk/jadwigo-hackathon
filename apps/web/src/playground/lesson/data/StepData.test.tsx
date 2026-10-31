@@ -39,6 +39,7 @@ function draw(previous: Raw | null) {
     draft: now,
     check: { ok: false, findings: [finding] },
     render: null,
+    publish: null,
     error: null,
   };
   render(<LessonBuilderScreen initial={message} initialPrevious={previous} />);
