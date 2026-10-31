@@ -328,6 +328,12 @@ export const en: CopyTable = {
   play_congrats: { text: "Well done! That's all for today.", reviewed: false },
   play_results_title: { text: "The questions in this lesson", reviewed: false },
   play_results_none: { text: "The lesson's questions will show here.", reviewed: false },
+  play_summary_all: { text: "You got them all! Have a look at your answers.", reviewed: false },
+  play_summary_some: {
+    text: "Some of these we will practise again. See what the right answers look like.",
+    reviewed: false,
+  },
+  play_review_walk: { text: "Look at the answers", reviewed: false },
   play_ended_correct: { text: "You got it", reviewed: false },
   play_ended_missed: { text: "Still learning this one", reviewed: false },
   play_ended_skipped: { text: "We will come back to it", reviewed: false },
