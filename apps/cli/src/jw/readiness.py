@@ -2,14 +2,15 @@
 
 `jw question readiness` answers the owner's question for one language or both: items, ready, not
 checked, flagged, waiting by reason, refused by cause (a rule of the gate, or the converter's
-reason as `jw.refusals.cause_of` names it), each cause with the bead that fixes it, and what was
-re-admitted since the previous run. Wave plan docs/worklog/dl-a38n.32/2026-10-31-wave-2.md;
+reason as `jw.refusals.cause_of` names it), each cause with the bead that fixes it, the twin
+warnings by kind, what was re-admitted since the previous run, and the sets skipped by id. Wave plan docs/worklog/dl-a38n.32/2026-10-31-wave-2.md;
 decisions dl-kaxj, dl-be2l and dl-e7yv.
 
 It reads `readiness.json` beside the converted files (`<JADWIGO_KHAN_DIR>/readiness.json`, which
-the bank's `make ready` writes: `{generated_at, rules_version, languages: {<lang>: {items, ready,
-waiting: {reason: n}, refused: {cause: n}, flagged, readmitted: {cause: n}, issues?: {cause:
-bead}, not_checked?}}, sets: {indexed, skipped_no_ready}}`) when it has the language, and
+the bank's `make ready` writes, dl-a38n.32.29, schemas/readiness.schema.json there:
+`{generated_at, rules_version, languages: {<lang>: {items, ready, waiting: {reason: n}, refused:
+{rule or converter reason: n}, flagged, warnings: {kind: n}, readmitted: {cause: n}, issues?:
+{cause: bead}, not_checked?}}, sets: {indexed: n, skipped_no_ready: [set_id, ...]}}`) when it has the language, and
 otherwise computes the same counts from the converted file, its sidecar and the converter's
 refusals (`jw.refusals.classify`); only a run can say what it re-admitted, so a computed report
 leaves that unknown. The beads come from the refusals file (`jw question refusals assign <cause>
@@ -27,7 +28,7 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
-from jw import refusals, settings_keys
+from jw import items, refusals, settings_keys
 from jw.errors import JwError
 
 READINESS_FILE = "readiness.json"
@@ -96,6 +97,7 @@ def _report(
     refused: Mapping[str, int],
     beads: Mapping[str, Iterable[str | None]],
     readmitted: Mapping[str, int] | None,
+    warnings: Mapping[str, int] | None,
     generated_at: str | None,
     rules_version: str | None,
     sets: Mapping[str, Any] | None,
@@ -124,7 +126,24 @@ def _report(
             {"cause": c, "items": n}
             for c, n in sorted(readmitted.items(), key=lambda kv: (-kv[1], kv[0]))
         ],
-        "sets": dict(sets) if isinstance(sets, Mapping) else None,
+        "warnings": None
+        if warnings is None
+        else [
+            {"kind": k, "items": n}
+            for k, n in sorted(warnings.items(), key=lambda kv: (-kv[1], kv[0]))
+        ],
+        "sets": _sets(sets),
+    }
+
+
+def _sets(sets: Any) -> dict[str, Any] | None:
+    """{indexed, skipped_no_ready: [set_id, ...]}; a count where the ids should be stays a count."""
+    if not isinstance(sets, Mapping):
+        return None
+    skipped = sets.get("skipped_no_ready")
+    return {
+        "indexed": sets.get("indexed"),
+        "skipped_no_ready": [str(i) for i in skipped] if isinstance(skipped, list) else skipped,
     }
 
 
@@ -139,6 +158,7 @@ def _from_file(raw: Mapping[str, Any], language: str, path: Path) -> dict[str, A
             beads.setdefault(refusals.cause_of(str(cause)), []).append(str(bead))
             beads.setdefault(str(cause), []).append(str(bead))
     readmitted = block.get("readmitted")
+    warnings = block.get("warnings")
 
     def number(key: str) -> int:
         value = block.get(key)
@@ -153,6 +173,9 @@ def _from_file(raw: Mapping[str, Any], language: str, path: Path) -> dict[str, A
         refused=_counts(block.get("refused")),
         beads=beads,
         readmitted=_counts(readmitted) if isinstance(readmitted, Mapping) else None,
+        warnings={str(k): v for k, v in warnings.items() if isinstance(v, int) and v > 0}
+        if isinstance(warnings, Mapping)
+        else None,
         generated_at=raw.get("generated_at"),
         rules_version=raw.get("rules_version"),
         sets=raw.get("sets"),
@@ -189,6 +212,7 @@ def _computed(language: str) -> dict[str, Any]:
         refused=refused,
         beads=beads,
         readmitted=None,
+        warnings=None,
         generated_at=None,
         rules_version=_rules_version(converted),
         sets=_sets_from_pages(),
@@ -206,14 +230,15 @@ def _rules_version(converted: Path) -> str | None:
     return None
 
 
-def _sets_from_pages() -> dict[str, int] | None:
-    """{indexed, skipped_no_ready} from the set pages in JADWIGO_BANK_DIR: a page whose ready
-    count is 0 in every language is skipped; one built before the stamp is indexed."""
+def _sets_from_pages() -> dict[str, Any] | None:
+    """{indexed, skipped_no_ready: [set_id, ...]} from the set pages in JADWIGO_BANK_DIR: a page
+    whose ready count is 0 in every language is skipped; one built before the stamp is indexed."""
     root = settings_keys.setting(settings_keys.JADWIGO_BANK_DIR)
     sets = Path(root).expanduser() / "sets" if root else None
     if sets is None or not sets.is_dir():
         return None
-    indexed = skipped = 0
+    indexed = 0
+    skipped: list[str] = []
     for path in sorted(sets.rglob("*.json")):
         try:
             page = json.loads(path.read_text(encoding="utf-8"))
@@ -224,7 +249,7 @@ def _sets_from_pages() -> dict[str, int] | None:
             continue
         ready = (page_items.get("count") or {}).get("ready")
         if isinstance(ready, Mapping) and not any(ready.values()):
-            skipped += 1
+            skipped.append(str(page.get("id") or path.stem))
         else:
             indexed += 1
     return {"indexed": indexed, "skipped_no_ready": skipped}
@@ -268,7 +293,9 @@ def reports(languages: Iterable[str] | None = None, *, computed: bool = False) -
     return {"languages": out}
 
 
-def _stamp(path: Path) -> tuple[int, int] | None:
+def _stamp(path: Path | None) -> tuple[int, int] | None:
+    if path is None:
+        return None
     try:
         stat = path.stat()
     except OSError:
@@ -298,6 +325,7 @@ def item_causes(language: str) -> dict[str, tuple[str, str | None]]:
             converted,
             refusals.refused_path(converted),
             refusals.sidecar_path(converted),
+            items.refusals_path(language),
         )
     )
     return _causes(language, stamps)

@@ -118,7 +118,8 @@ def test_readiness_computed_from_the_files_counts_every_cause_with_its_bead(khan
     }
     assert en["readmitted"] is None
     assert en["rules_version"] == "fixture-2"
-    assert en["sets"] == {"indexed": 1, "skipped_no_ready": 0}
+    assert en["sets"] == {"indexed": 1, "skipped_no_ready": []}
+    assert en["warnings"] is None
 
     text = _run("readiness", "--lang", "en")
     assert "en: 8 items, 1 lesson-ready, 1 waiting, 5 refused, 0 flagged, 1 not checked" in text
@@ -155,7 +156,11 @@ def test_readiness_reads_readiness_json_when_it_has_the_language(khan: Path) -> 
         {"cause": "set stopped", "items": 4},
         {"cause": "pl differs from en (numbers, pictures)", "items": 3},
     ]
-    assert pl["sets"] == {"indexed": 3, "skipped_no_ready": 1}
+    assert pl["sets"] == {"indexed": 3, "skipped_no_ready": ["set_khan_fx0010"]}
+    assert pl["warnings"] == [
+        {"kind": "twin numbers", "items": 5},
+        {"kind": "twin pictures", "items": 2},
+    ]
     # readiness.json has no English block, so English is counted from the files.
     assert (en["source"], en["items"]) == ("computed", 8)
 
@@ -164,7 +169,9 @@ def test_readiness_reads_readiness_json_when_it_has_the_language(khan: Path) -> 
         assert f"{row['items']:>5}  {row['cause']}" in text
     assert "re-admitted since the previous run: 7" in text
     assert "        4  set stopped" in text
-    assert "sets: 3 indexed, 1 skipped with no ready item" in text
+    assert "sets: 3 indexed, 1 skipped with no ready item: set_khan_fx0010" in text
+    assert "warnings, by kind: 7" in text
+    assert "        5  twin numbers" in text
 
     assert _json("readiness", "--lang", "pl", "--from-files")["languages"][0]["source"] == (
         "computed"
@@ -232,3 +239,22 @@ def test_a_gap_of_a_set_with_nothing_ready_names_the_dominant_cause(ready_bank: 
 
     args = ["question", "gaps", "--words", "liczby parzyste", "--grade", "3", "--language", "en"]
     assert f"most: {ALT}, 3 of 5 items)" in CliRunner().invoke(main, args).output
+
+
+def test_a_first_run_re_admitted_nothing(khan: Path) -> None:
+    raw = json.loads((READINESS / "readiness.json").read_text("utf-8"))
+    raw["languages"]["pl"]["readmitted"] = {}
+    (khan / "readiness.json").write_text(json.dumps(raw), encoding="utf-8")
+
+    (pl,) = _json("readiness", "--lang", "pl")["languages"]
+
+    assert pl["readmitted"] == []
+    assert "re-admitted since the previous run: 0" in _run("readiness", "--lang", "pl")
+
+
+def test_a_flag_changes_the_dominant_cause_at_once(khan: Path) -> None:
+    assert readiness.dominant_cause(["fxr5"], "en") == "not checked, 1 of 1 items"
+
+    _run("flag", "fxr5", "the options repeat", "--lang", "en")
+
+    assert readiness.dominant_cause(["fxr5"], "en") == "flagged, 1 of 1 items"
