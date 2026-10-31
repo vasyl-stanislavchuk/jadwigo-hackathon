@@ -15,11 +15,13 @@ const publish = {
   version: 1,
   assignment_id: "asg_1",
   play_url: "http://127.0.0.1:5173/play/asg_1",
-  verified: [
-    { name: "health", ok: true, status: 200 },
-    { name: "attempt", ok: true, status: 201 },
-    { name: "play page", ok: true, status: 200 },
-  ],
+  verified: {
+    api_health: { ok: true, status: 200, detail: "" },
+    attempt_started: { ok: true, status: 201, detail: "" },
+    play_page: { ok: true, status: 200, detail: "" },
+  },
+  verified_at: AT,
+  ok: true,
   target: "local",
   published_at: AT,
   timings: {},
@@ -52,9 +54,9 @@ describe("the publish state", () => {
         c.getAttribute("data-ok"),
       ]),
     ).toEqual([
-      ["health", "true"],
-      ["attempt", "true"],
-      ["play page", "true"],
+      ["api_health", "true"],
+      ["attempt_started", "true"],
+      ["play_page", "true"],
     ]);
     expect(within(state).queryByRole("status")).toBeNull();
   });
@@ -68,10 +70,19 @@ describe("the publish state", () => {
   });
 
   it("does not call a publish with a failed check verified, and says when there is none", () => {
-    const failed = { ...publish, verified: [{ name: "attempt", ok: false, status: 500 }] };
+    const failed = {
+      ...publish,
+      ok: false,
+      verified: {
+        ...publish.verified,
+        attempt_started: { ok: false, status: 500, detail: "the api answered 500" },
+      },
+    };
     const state = draw(Date.parse(AT) - 5_000, failed);
     expect(state.textContent).toContain("Published, not verified");
-    expect(state.querySelector("[data-check='attempt']")?.textContent).toBe("✗ attempt · 500");
+    expect(state.querySelector("[data-check='attempt_started']")?.textContent).toBe(
+      "✗ attempt_started · 500 · the api answered 500",
+    );
     cleanup();
     expect(draw(0, null).textContent).toContain("Not published yet");
   });

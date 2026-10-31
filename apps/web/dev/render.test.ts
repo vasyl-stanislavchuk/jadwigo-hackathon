@@ -56,7 +56,12 @@ describe("the render file", () => {
 
   it("sends jw's publish file with its draft, and lists neither as a draft (dl-a38n.48)", () => {
     writeFileSync(join(dir, "d1.json"), JSON.stringify({ title: "T", language: "pl" }));
-    const publish = { draft_id: "d1", play_url: "http://127.0.0.1:5173/play/a1", verified: [] };
+    const publish = {
+      draft_id: "d1",
+      play_url: "http://127.0.0.1:5173/play/a1",
+      verified: {},
+      ok: false,
+    };
     writeFileSync(join(dir, "d1.publish.json"), JSON.stringify(publish));
     expect(listDrafts(dir).map((d) => d.draft_id)).toEqual(["d1"]);
     expect(draftMessage(dir, null).publish).toEqual(publish);

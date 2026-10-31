@@ -32,7 +32,8 @@ export function PublishState({ state }: { state: State | null }): ReactElement {
         to {state.target}
         {state.lesson_id !== null && ` as ${state.lesson_id}`}
         {state.version !== null && ` v${state.version}`}
-        {state.published_at !== null && ` at ${state.published_at}`}.
+        {state.published_at !== null && ` at ${state.published_at}`}
+        {state.verified_at !== null && `, checked at ${state.verified_at}`}.
       </p>
       {state.play_url !== null && (
         <p>
