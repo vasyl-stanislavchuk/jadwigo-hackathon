@@ -6,6 +6,10 @@ const lesson = (assignment_id: string, title: string) => ({
   lesson_id: "les_2gj7s52rxqa5a9nkemj9dxbmpz",
   title,
   language: "pl",
+  subject: "math",
+  grade: null,
+  question_count: 4,
+  first_say: "Ile to jest 2 razy 5?",
 });
 const answer =
   (body: unknown, status = 200) =>
@@ -27,6 +31,13 @@ describe("featuredLessons", () => {
     const got = await featuredLessons(answer(body));
     expect(got.from).toBe("api");
     expect(got.lessons.map((l) => l.title)).toEqual(["Równe grupy"]);
+  });
+
+  it("falls back to the snapshot when the API is older than the card's fields", async () => {
+    const old = {
+      lessons: [{ ...lesson("asg_0ectzj2evqb95a3v1v6wewjzy3", "Równe grupy"), subject: undefined }],
+    };
+    expect((await featuredLessons(answer(old))).from).toBe("snapshot");
   });
 
   it("falls back to the snapshot when the fetch fails or answers badly", async () => {
