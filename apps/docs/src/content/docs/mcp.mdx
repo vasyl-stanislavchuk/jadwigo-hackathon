@@ -107,6 +107,22 @@ agent writes only what the bank does not have.
 5. **Import, then play.** The card's `next` names the import: `make lesson-import
    FILE=<lesson_file> ENV=dev` in the jadwigo checkout. The `play_path` exists only after it runs.
 
+### Lesson-ready questions
+
+A draft copies only a lesson-ready question: the bank checked that it compiles, that its key
+grades its own answer, that every picture loads and that the page draws it without an error. Each
+item the draft did not use is in `left_out` with a reason about the item, never the child:
+
+- `renders wrong: <rule>`: a check failed, such as `render-raw-tex` or `key-grades`.
+- `not checked`: the bank has no verdict on it yet, so it waits.
+- `flagged: <reason>`: a person pulled it.
+- The converter's own reason: the bank cannot make it yet.
+- `no item is lesson-ready in <lang>`: a whole set has none in the lesson's language.
+
+[`question_gaps`](/mcp/question_gaps/) counts such a set as a gap, and
+[`question_item`](/mcp/question_item/) answers with the same reason as an error. Fixing a refused
+item happens at its source, with `jw question refusals` and `jw question flag` on the command line.
+
 ### The draft on disk
 
 Both lesson tools write the draft into one directory, `JADWIGO_DRAFTS_DIR`, read from the server's

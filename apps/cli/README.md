@@ -1,9 +1,10 @@
 # jw, the jadwigo CLI
 
 `jw` searches the question bank, shows a question set, lists the needs the bank cannot meet,
-reads one converted item, and drafts and checks a lesson from a parent's request. `jw mcp serve`
-offers the same 6 calls as MCP tools to Claude Code, Muse Code and Codex. The question modules
-came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
+reads one converted item, drafts and checks a lesson from a parent's request, and lists what is
+not lesson-ready so it gets fixed. `jw mcp serve` offers the question and lesson calls as MCP
+tools to Claude Code, Muse Code and Codex; the refusals verbs stay on the command line. The
+question modules came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
 
 ## Verbs
 
@@ -12,7 +13,10 @@ came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
 | `jw question search --words "dodawanie do 100" --grade 3` | The bank's search envelope | the bank URL and token, below |
 | `jw question show set_khan_2002` | One set page, checked against `src/jw/contracts/set.schema.json` | `JADWIGO_BANK_DIR` |
 | `jw question gaps --words "..." --skill <id> --grade 3` | Each need searched once, with `found`, `gap` or `degraded` | the bank URL and token |
-| `jw question item <item id>` | One converted item: its family step with key and help, credit and `based_on` | `JW_KHAN_CONVERTED` |
+| `jw question item <item id>` | One converted item: its family step with key and help, credit and `based_on`; only a lesson-ready one | `JW_KHAN_CONVERTED`, and the flags in `JADWIGO_BANK_DIR` |
+| `jw question refusals [--lang pl] [--new] [--since <bead>]` | What is not lesson-ready, by shape: rule, question type, count, 3 example ids, owner, bead | `JW_KHAN_CONVERTED`, its `.render.json`, `JADWIGO_BANK_DIR` |
+| `jw question refusals assign <rule> <question_type> <bead>` | Writes the shape's bead into the refusals file | `JADWIGO_BANK_DIR` |
+| `jw question flag <item id> --lang pl "<why>"` (or `--clear`) | Pulls one item from lessons at once, or puts it back | `JADWIGO_BANK_DIR` |
 | `jw lesson draft "6 zadań z mnożenia, klasa 3" --grade 3 --topic mnożenie --name <name>` (or `--no-names`) | A lesson draft: drawn questions copied whole from the bank, kept under a `draft_id` and written to `JADWIGO_DRAFTS_DIR`, and what is left to write | all of the above, and `JADWIGO_REPO_DIR` and `bun` for the mistake classes |
 | `jw lesson check <draft_id> <words.json>` | The card, the lesson file's path, the import command and then its `/play/` path, or findings by step id; the draft file rewritten either way | `JADWIGO_REPO_DIR` and `bun` |
 | `jw lesson edit <draft_id> <step_id> <patch.json> [--why ... --change ...]` | One step changed by a JSON merge patch and checked: that step's findings, render findings and card | `JADWIGO_REPO_DIR` and `bun` |
@@ -25,7 +29,10 @@ came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
 - **Show** reads set pages from a local checkout of the bank repo, `<JADWIGO_BANK_DIR>/sets/**`.
   The search route returns rows, not pages, and no page route exists yet.
 - **Gaps** is the caller's view: a need is a gap when every arm that was asked came back empty or
-  abstained. A bank that could not be asked is `degraded`, not a gap.
+  abstained. A bank that could not be asked is `degraded`, not a gap. A need whose every found
+  set has no lesson-ready item in its language is a gap too, with `reason` `no item is
+  lesson-ready in <lang>`, and `not_ready` lists those sets (their pages, in `JADWIGO_BANK_DIR`,
+  say `count.ready`).
 
 ## Settings
 
@@ -48,7 +55,7 @@ values. Copy it into the file and fill what you use.
 | `JW_BANK_URL` | The bank's own search URL, `<JW_BANK_URL>/questions/search` | none |
 | `JW_BANK_TOKEN` | The bearer token for `JW_BANK_URL`, from Secrets Manager `jadwigo-bank/api-token` | none |
 | `JW_BANK_TIMEOUT_SECS` | Seconds one search may take before it comes back degraded | `10` |
-| `JADWIGO_BANK_DIR` | A checkout of the bank repo, whose `sets/` `jw question show` reads | none |
+| `JADWIGO_BANK_DIR` | A checkout of the bank repo, whose `sets/` `jw question show` reads, and whose `refusals/<lang>.json` holds the flags and the shapes' beads | none |
 | `JADWIGO_KHAN_DIR` | The synced copy of the bank's Khan bucket | `~/.cache/jadwigo-bank/khan` |
 | `JW_KHAN_CONVERTED` | The converted items file `jw question item` reads | `<JADWIGO_KHAN_DIR>/converted-pl.json`, the Polish file the bank's sync writes (`converted.json` beside it is English) |
 | `JADWIGO_REPO_DIR` | The jadwigo-hackathon checkout whose `packages/lesson-import/src/check.ts` `jw lesson check` runs | the checkout `jw` was installed from |
@@ -129,9 +136,9 @@ it, readable by you only (mode 700).
    the request is kept as the draft's record and title. `lesson_draft` then sends the guarded
    topic to the bank as a need's words, fetches each row's set page,
    draws the questions with the provisional rule for the lesson kind (`src/jw/draw.py`, so
-   `rule_settled` is `false`), and loads each drawn item from `JW_KHAN_CONVERTED`. An item that
-   cannot load (waiting for its family step, or missing) goes to `left_out` with its reason, and
-   the draw runs again without it.
+   `rule_settled` is `false`) from each set's lesson-ready ids, and loads each drawn item from
+   `JW_KHAN_CONVERTED`. An item that is not lesson-ready (see below) goes to `left_out` with its
+   reason, and the draw runs again without it.
 2. **Copy.** Each question is copied whole: family, data, key, `say`, pictures with their alt
    text and labels, and the source's help (its hints with their pictures, and its worked lines).
    The player maps the hints onto the ladder: the first two on `look` and `boost`, the rest
@@ -197,6 +204,53 @@ it, readable by you only (mode 700).
    repo root with the command the answer's `import_command` and the card's `next` name:
    `make lesson-import FILE=<lesson_file> ENV=dev`. Only then does the lesson play at the card's
    `play_path`; before the import that path does not exist (`dl-e8ov.5.38.13`).
+
+### Lesson-ready
+
+A draft copies a bank question whole, so it copies only one that already renders right (decisions
+`dl-kaxj` and `dl-be2l`). An item is lesson-ready when the bank's conversion stamped its status
+`{kind: "plays", rules_version, checked_at}`: it compiles strictly, its key grades its own
+solution, every picture loads, the page found no error drawing it, and it has a licence. jw
+refuses every other item, and a draft's `left_out` says why, about the item and never the child:
+
+| `left_out` reason | The item's status |
+|---|---|
+| `renders wrong: <rule>` | `refused`: a check failed (`render-*`, `contract`, `key-grades`) |
+| `not checked` | `plays` with no `checked_at`, or no status: no verdict yet, so it is held back |
+| `flagged: <reason>` | `flagged`, or a flag in the refusals file |
+| the converter's own reason | `waiting`: the converter cannot make it yet |
+| `no item is lesson-ready in <lang>` | a set whose page lists no ready id in the lesson's language |
+
+The draw takes each set's `items.ready_ids[lang]`. A page built before the stamp has none, so the
+draw falls back to `items.ids`, and every item there loads as `not checked`: nothing unchecked
+reaches a lesson.
+
+### The refusals loop
+
+A refused item is fixed at its source, one shape at a time: a shape is one rule on one question
+type. The refusals file, `<JADWIGO_BANK_DIR>/refusals/<lang>.json`, is committed in the bank repo
+and read by its stamp: `{shapes: [{rule, question_type, issue}], flags: [{id, by, reason, issue?,
+on}]}`. It holds ids, rules, beads and reasons only, never a question's text. jw checks the whole
+file against the bank's schema, pinned in `src/jw/contracts/refusals.schema.json`, before it
+writes, and writes nothing that does not match.
+
+1. `jw question refusals --new` lists the shapes no bead tracks, each with its count, 3 example
+   ids and its owner: `render-picture-missing` to the media pipeline, any other `render-*` to
+   lesson-kit, `contract` and `key-grades` to the converter, `flagged` to whoever flagged it. It
+   reads the stamped statuses and the conformance sidecar beside the converted file
+   (`converted-pl.render.json`), so a run newer than the stamp shows in this report at once.
+   `jw lesson draft` reads only the stamp, so it still serves such an item until the next stamp
+   refuses it; a flag holds back at once.
+2. The lead files one bead per shape, then `jw question refusals assign <rule> <question_type>
+   <bead>` (`-` for no question type). The next stamp carries the bead into each refused item.
+   jw never files a bead.
+3. `jw question flag <id> --lang pl "<why>"` pulls an item the checks missed. jw reads the flag at
+   once, so the next draft leaves the item out with no re-run. `by` is a role: `--by` takes
+   `owner` (the default), `lead`, `teacher` or `agent`, never a person's name.
+   `jw question flag <id> --clear` puts it back.
+4. A fix lands, the nightly stamp flips the items back to `plays`, and `jw question refusals
+   --since <bead>` says per shape of that bead which items are still refused, or that every one
+   plays now.
 
 In Claude Code, with the server registered as below, the owner asks in plain words:
 
