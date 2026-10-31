@@ -41,6 +41,8 @@ export interface DraftMessage {
   check: unknown;
   /** `<draft_id>.render.json`, the page's render findings (dev/render.ts), or null. */
   render: unknown;
+  /** `<draft_id>.publish.json`, jw's last `lesson_publish` of the draft, or null (dl-a38n.48). */
+  publish: unknown;
   /** Why the draft or its check could not be read (half-written, not JSON), or null. */
   error: string | null;
 }

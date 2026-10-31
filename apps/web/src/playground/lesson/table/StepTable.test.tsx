@@ -34,6 +34,7 @@ const message: DraftMessage = {
   draft: equalGroups,
   check: { ok: false, findings: [error, warn] },
   render: null,
+  publish: null,
   error: null,
 };
 

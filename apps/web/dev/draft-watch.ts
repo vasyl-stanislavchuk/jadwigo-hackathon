@@ -33,6 +33,7 @@ const CLOSING = 2;
 
 const draftPath = (dir: string, id: string): string => join(dir, `${id}.json`);
 const checkPath = (dir: string, id: string): string => join(dir, `${id}${CHECK}`);
+const publishPath = (dir: string, id: string): string => join(dir, `${id}${PUBLISH}`);
 
 /** The file's JSON, null when it is not there, or the reason it does not parse. */
 function readJson(path: string): { value: unknown } | { error: string } {
@@ -77,7 +78,16 @@ export function draftMessage(dir: string, pick: string | null): DraftMessage {
   const drafts = listDrafts(dir);
   const shown = drafts.find((d) => d.draft_id === pick) ?? drafts[0];
   if (shown === undefined)
-    return { dir, drafts, draft_id: null, draft: null, check: null, render: null, error: null };
+    return {
+      dir,
+      drafts,
+      draft_id: null,
+      draft: null,
+      check: null,
+      render: null,
+      publish: null,
+      error: null,
+    };
   const draft = readJson(draftPath(dir, shown.draft_id));
   const check = readJson(checkPath(dir, shown.draft_id));
   return {
@@ -87,6 +97,11 @@ export function draftMessage(dir: string, pick: string | null): DraftMessage {
     draft: "value" in draft ? draft.value : null,
     check: "value" in check ? check.value : null,
     render: readRender(dir, shown.draft_id),
+    // A publish file that does not parse is no publish: jw rewrites it whole on the next publish.
+    publish: (() => {
+      const read = readJson(publishPath(dir, shown.draft_id));
+      return "value" in read ? read.value : null;
+    })(),
     error: "error" in draft ? draft.error : "error" in check ? check.error : null,
   };
 }
