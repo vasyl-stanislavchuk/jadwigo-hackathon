@@ -174,7 +174,12 @@ def _lesson_file(result: dict[str, Any]) -> dict[str, Any]:
 
 def test_the_canonical_request_is_drafted_without_a_name(drafted: dict[str, Any]) -> None:
     assert len(drafted["questions"]) == 6 and drafted["plays_as_copied"] is True
-    assert all(q["you_write"] == ["twin", "boost", "boost_by_mistake"] for q in drafted["questions"])
+    # A step whose set has a sibling item gets it as its twin (dl-a38n.40); the rest ask for one.
+    assert all(
+        q["you_write"] == ([] if "twin_source" in q else ["twin"]) + ["boost", "boost_by_mistake"]
+        for q in drafted["questions"]
+    )
+    assert any(q.get("twin_source", "").startswith("bank khan:") for q in drafted["questions"])
     shown = json.dumps(drafted, ensure_ascii=False)
     for form in ("Zosia", "Zosi", "Tomek", "Anna"):
         assert form not in shown, form

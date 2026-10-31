@@ -86,7 +86,9 @@ then write what its `you_write` lists, in Polish. No two questions get the same 
 ### The twin (`twin`)
 
 The twin is a second question the child gets after a miss, so it must be the same task with other
-numbers. Write it as `{"say", "data", "key"}`.
+numbers. When the bank has one, the tool already copied a sibling question as the twin
+(`twin_source: bank khan:<id>`) and `you_write` does not list `twin`: keep it, and write none.
+Only when `you_write` lists `twin`, write it as `{"say", "data", "key"}`.
 
 - **Same representation.** Copy the question's `data` and change only the numbers in it: the same
   fields, the same `stem` and `figure` shape, the same `figure.kind`, the same `input` and `entry`.
@@ -117,9 +119,10 @@ are lists of lines.
 
 ### Mistake cards (`boost_by_mistake`)
 
-A card answers one kind of miss on this question: `{"<class>": {"text": "..."}}`. Write one card
-for each class in that question's `mistake_classes`, and no other key. When the list is empty or
-`null`, write no cards (`you_write` then does not ask for them). The classes you may meet on a
+A card answers one kind of miss on this question: `{"<class>": {"text": "..."}}`. The bank may
+already hold cards for some classes; the tool keeps them. Write one card for each class in that
+question's `cards_to_write`, and no other key. When `you_write` does not name `boost_by_mistake`,
+or `mistake_classes` is empty or `null`, write no cards. The classes you may meet on a
 multiplication question:
 
 - a class from the key's `near` table, such as `added_instead` (the child added the numbers);
@@ -143,8 +146,10 @@ that does).
 
 ## 5. Check
 
-Call `lesson_check(draft_id, help)`, where `help` maps every `step_id` to its words, every step on
-every call:
+Call `lesson_check(draft_id, help, names)`, where `help` maps each `step_id` you wrote for to its
+words. A step you leave out keeps what the draft already holds (the bank's twin and cards
+included), so a step whose `you_write` is empty needs no entry. Pass the same `names` as to
+`lesson_draft`: the tool replaces them in every word you send.
 
 ```json
 {
@@ -164,8 +169,8 @@ under `data`, `key`, `hints`, `worked` or `almost`.
 
 ## 6. Fix what the check finds
 
-`ok: false` lists errors by `step_id` (a twin's ends in `t`). Fix exactly those steps, keep the
-others as they were, and call `lesson_check` again with every step. If the same error comes back 3
+`ok: false` lists errors by `step_id` (a twin's ends in `t`). Fix exactly those steps and call
+`lesson_check` again with only those steps' words: the others stay as they were. If the same error comes back 3
 times with nothing new to try, stop and show the parent the error as the tool gave it.
 
 ## 7. Show the parent the card
