@@ -88,12 +88,16 @@ const footerLinks = [
         position: sticky; top: 0; z-index: 10;
         background: var(--jw-ground); border-bottom: 1px solid var(--jw-line);
       }
-      .site-header .wrap { display: flex; align-items: center; gap: 0.5rem 1rem; padding-top: 0.75rem; padding-bottom: 0.5rem; }
+      /* The wordmark's box is 180 units: the crown's room above, the "g" reaching its foot. The bottom
+         padding is the top's plus the crown's spare room, so the space under the logo matches the
+         space over the crown. */
+      .site-header { --logo-h: 3rem; }
+      .site-header .wrap { display: flex; align-items: center; gap: 0.5rem 1rem; padding-top: 0.75rem; padding-bottom: 1rem; }
       /* Hover 5a: only the crown tips, about the bottom-left corner of its box (packages/ui src/brand/
          README.md); a tap plays it once. The wordmark's box is 180 units tall, the crown's room included. */
       .logo { display: inline-flex; line-height: 0; }
-      .logo svg { height: 3rem; width: auto; overflow: visible; }
-      @media (min-width: 52rem) { .logo svg { height: 3.25rem; } }
+      .logo svg { height: var(--logo-h); width: auto; overflow: visible; }
+      @media (min-width: 52rem) { .site-header { --logo-h: 3.25rem; } }
       .logo .crown { transform-origin: -12.5px 2.15px; transition: transform 320ms cubic-bezier(.34, 1.8, .5, 1); }
       .logo:hover .crown, .logo:focus-visible .crown, .logo.tip .crown { transform: translateY(-12.5px) rotate(-18deg); }
       @media (prefers-reduced-motion: reduce) {
@@ -110,13 +114,18 @@ const footerLinks = [
       }
       .site-nav a:hover { background: var(--jw-act-quiet); }
       .site-nav a[aria-current] { background: var(--jw-pick); color: var(--jw-pick-ink); }
-      .site-header .btn { margin-left: auto; padding: 0 1.1rem; min-height: 44px; }
+      /* The sign-in is the nav's size, not a hero button's: the same text, a 40 px body. */
+      .site-header .btn { margin-left: auto; padding: 0 0.95rem; min-height: 40px; font-size: 1rem; box-shadow: 0 3px 0 var(--jw-line); }
       @media (min-width: 52rem) {
         .site-header .wrap { flex-wrap: nowrap; }
         .site-nav { order: 0; width: auto; margin-left: auto; overflow: visible; gap: 0.5rem; }
         .site-nav a { padding: 0 0.85rem; font-size: 1rem; }
         /* The one button stands a little apart from the pages, so it reads as an action, not a page. */
         .site-nav + .btn { margin-left: 1rem; }
+        /* The links and the button stand on the wordmark's baseline, not its box's middle: the baseline
+           (y 91 of -65..115) is 0.367 of the logo's height below the middle, less a 1rem text's baseline drop. A
+           translate, so the header's height does not move. */
+        .site-nav, .site-nav + .btn { translate: 0 calc(var(--logo-h) * 0.367 - 0.42rem); }
       }
 
       .site-footer { border-top: 1px solid var(--jw-line); margin-top: 4rem; padding: 2rem 0 3rem; color: var(--jw-ink-soft); }
