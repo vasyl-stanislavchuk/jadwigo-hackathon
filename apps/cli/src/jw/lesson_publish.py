@@ -19,7 +19,9 @@ declare. The web server listens on 127.0.0.1 only (apps/web/vite.config.ts), so 
 `localhost`, which is ::1 first on macOS. All four are read from the environment only.
 
 The record is `<draft_id>.publish.json` beside the draft, mode 600: `{draft_id, request (guarded),
-lesson_id, version, assignment_id, play_url, verified, target, published_at, timings}`.
+lesson_id, version, assignment_id, play_url, ok, verified, verified_at, target, published_at,
+timings}`, `verified` keyed by check (`api_health`, `attempt_started`, `play_page`), each `{ok,
+status, detail}`, and `ok` that every check is ok: the form the builder's page reads (dl-a38n.48).
 
 Only `local`: jadwigo-dev is the owner's (`make lesson-import FILE=<path> ENV=dev`, which the
 refusal names), and prod is never published from here (owner's decision `dl-diel`).
@@ -143,33 +145,47 @@ def _import(path: Path, runner: lesson.Runner | None) -> dict[str, Any]:
     return imported
 
 
-def _verify(imported: Mapping[str, Any], http: Http) -> dict[str, Any]:
-    """Whether the published lesson plays: the api's health, a preview attempt, the play page."""
+def _check(ok: bool, status: int | None, detail: str) -> dict[str, Any]:
+    return {"ok": ok, "status": status, "detail": detail}
+
+
+def _verify(imported: Mapping[str, Any], http: Http) -> dict[str, dict[str, Any]]:
+    """Whether the published lesson plays, one check each, as `<draft_id>.publish.json` writes it
+    and the lesson builder's page reads it (dl-a38n.48): `{api_health, attempt_started,
+    play_page}`, each `{ok, status, detail}`, `status` None when nothing answered."""
     api, web = api_url(), web_url()
     assignment = imported["assignment_id"]
-    health, _ = http("GET", api + HEALTH_PATH, None)
-    started, snapshot = http("POST", api + ATTEMPTS_PATH.format(id=assignment), {"mode": "preview"})
+
+    health_url = api + HEALTH_PATH
+    health, _ = http("GET", health_url, None)
+    api_health = _check(health == 200, health, f"GET {health_url} answered {health or 'nothing'}")
+
+    attempts_url = api + ATTEMPTS_PATH.format(id=assignment)
+    started, snapshot = http("POST", attempts_url, {"mode": "preview"})
     reply = snapshot if isinstance(snapshot, dict) else {}
     plan = reply.get("plan")
+    planned = len(plan) if isinstance(plan, list) else None
     version = (reply.get("attempt") or {}).get("lesson_version_id")
-    page, _ = http("GET", web + PLAY_PATH.format(id=assignment), None)
-    out = {
-        "api": api,
-        "web": web,
-        "api_health": health,
-        "attempt_started": started,
-        "plan_questions": len(plan) if isinstance(plan, list) else None,
-        "version_matches": version == imported.get("version_id"),
-        "play_page": page,
-    }
-    out["ok"] = (
-        health == 200
-        and started == 201
-        and out["plan_questions"] == imported.get("questions")
-        and out["version_matches"]
-        and page == 200
+    wrong = []
+    if started != 201:
+        wrong.append(f"POST {attempts_url} answered {started or 'nothing'}, not 201")
+    elif planned != imported.get("questions"):
+        wrong.append(f"the plan has {planned} questions, the import {imported.get('questions')}")
+    if started == 201 and version != imported.get("version_id"):
+        wrong.append(
+            f"the attempt plays version {version}, the import published {imported.get('version_id')}"
+            " (is make dev serving the database the import wrote to?)"
+        )
+    attempt_started = _check(
+        not wrong,
+        started,
+        "; ".join(wrong) or f"a preview attempt started with {planned} questions of version {version}",
     )
-    return out
+
+    page_url = web + PLAY_PATH.format(id=assignment)
+    page, _ = http("GET", page_url, None)
+    play_page = _check(page == 200, page, f"GET {page_url} answered {page or 'nothing'}")
+    return {"api_health": api_health, "attempt_started": attempt_started, "play_page": play_page}
 
 
 def publish(
@@ -193,14 +209,17 @@ def publish(
     imported_at = time.monotonic()
     verified = _verify(imported, http or _http)
     done = time.monotonic()
+    ok = all(c["ok"] for c in verified.values())
     record = {
         "draft_id": draft_id,
         "request": stored.get("request"),
         "lesson_id": imported.get("lesson_id"),
         "version": imported.get("version"),
         "assignment_id": imported.get("assignment_id"),
-        "play_url": verified["web"] + str(imported.get("play_path")),
+        "play_url": web_url() + str(imported.get("play_path")),
+        "ok": ok,
         "verified": verified,
+        "verified_at": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
         "target": target,
         "published_at": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
         "timings": {
@@ -211,4 +230,4 @@ def publish(
     }
     publish_path = where / f"{draft_id}.publish.json"
     lesson._write_json(publish_path, record, mode=0o600)
-    return {"ok": bool(verified["ok"]), **record, "publish_path": str(publish_path)}
+    return {**record, "publish_path": str(publish_path)}

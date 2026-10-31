@@ -7,6 +7,7 @@ The draft here is written by hand, the way lesson_draft and lesson_check leave i
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import os
 import threading
@@ -142,11 +143,13 @@ def test_publish_imports_the_checked_draft_and_checks_it_plays(
     assert (result["lesson_id"], result["version"], result["assignment_id"]) == (
         "les_fixture", 2, "asg_fixture"
     )
+    # The form the builder's page reads (dl-a38n.48): one {ok, status, detail} per check.
     verified = result["verified"]
-    assert (verified["api_health"], verified["attempt_started"], verified["play_page"]) == (
-        200, 201, 200
-    )
-    assert verified["plan_questions"] == IMPORTED["questions"] and verified["version_matches"]
+    assert list(verified) == ["api_health", "attempt_started", "play_page"]
+    assert all(set(c) == {"ok", "status", "detail"} and c["ok"] for c in verified.values())
+    assert [c["status"] for c in verified.values()] == [200, 201, 200]
+    assert "6 questions of version lv_fixture" in verified["attempt_started"]["detail"]
+    assert dt.datetime.fromisoformat(result["verified_at"]).tzinfo is not None
     assert ("POST", "/api/v1/assignments/asg_fixture/attempts", {"mode": "preview"}) in servers.seen
     assert set(result["timings"]) == {"import_s", "verify_s", "total_s"}
 
@@ -155,7 +158,9 @@ def test_publish_imports_the_checked_draft_and_checks_it_plays(
     assert record_path.stat().st_mode & 0o777 == 0o600
     record = json.loads(record_path.read_text(encoding="utf-8"))
     assert set(record) == {"draft_id", "request", "lesson_id", "version", "assignment_id",
-                           "play_url", "verified", "target", "published_at", "timings"}
+                           "play_url", "ok", "verified", "verified_at", "target", "published_at",
+                           "timings"}
+    assert record["ok"] is True
     assert (record["request"], record["target"]) == ("6 zadań z mnożenia, klasa 3", "local")
     assert {k: result[k] for k in record} == record
 
@@ -200,13 +205,18 @@ def test_a_lesson_that_does_not_play_is_not_ok(
     servers.plan, servers.version_id = 5, "lv_other"
     result = lesson_publish.publish(DRAFT_ID)
     assert result["ok"] is False
-    assert result["verified"]["plan_questions"] == 5
-    assert result["verified"]["version_matches"] is False
+    attempt = result["verified"]["attempt_started"]
+    assert (attempt["ok"], attempt["status"]) == (False, 201)
+    assert "the plan has 5 questions, the import 6" in attempt["detail"]
+    assert "version lv_other, the import published lv_fixture" in attempt["detail"]
+    assert result["verified"]["api_health"]["ok"] and result["verified"]["play_page"]["ok"]
     # Nothing listening: each check says None, and the record is still written.
     servers.httpd.shutdown()
     servers.httpd.server_close()
     result = lesson_publish.publish(DRAFT_ID)
-    assert result["ok"] is False and result["verified"]["api_health"] is None
+    assert result["ok"] is False
+    assert result["verified"]["api_health"] == {
+        "ok": False, "status": None, "detail": f"GET {servers.url}/api/health answered nothing"}
     assert Path(result["publish_path"]).is_file()
 
 

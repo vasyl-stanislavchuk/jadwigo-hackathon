@@ -192,11 +192,8 @@ def publish(draft_id: str, target: str, json_mode: bool) -> None:
     if json_mode:
         click.echo(json.dumps(result, ensure_ascii=False))
     else:
-        verified = result["verified"]
         click.echo(f"{'ok' if result['ok'] else 'not verified'}: {result['play_url']}")
-        click.echo(
-            f"  api {verified['api_health']}, attempt {verified['attempt_started']} with "
-            f"{verified['plan_questions']} questions, play page {verified['play_page']}"
-        )
+        for name, check in result["verified"].items():
+            click.echo(f"  {'ok ' if check['ok'] else 'NO '} {name}: {check['detail']}")
     if not result["ok"]:
         raise SystemExit(1)
