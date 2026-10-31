@@ -24,7 +24,7 @@
         "pl differs from en (numbers, pictures)": 3
       },
       "issues": {
-        "a question in several parts whose parts mix families waits": "dl-fixture-wait"
+        "a question in several parts whose parts mix families waits": "dl-fixturewait"
       },
       "warnings": {
         "twin numbers": 5,

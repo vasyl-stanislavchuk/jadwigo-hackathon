@@ -110,7 +110,7 @@ def test_readiness_computed_from_the_files_counts_every_cause_with_its_bead(khan
     assert (en["items"], en["ready"], en["not_checked"], en["flagged"]) == (8, 1, 1, 0)
     assert en["waiting"] == {
         "items": 1,
-        "by_reason": [{"reason": MIXED, "items": 1, "issue": "dl-fixture-wait"}],
+        "by_reason": [{"reason": MIXED, "items": 1, "issue": "dl-fixturewait"}],
     }
     assert en["refused"] == {
         "items": 5,
@@ -128,7 +128,7 @@ def test_readiness_computed_from_the_files_counts_every_cause_with_its_bead(khan
     assert "en: 8 items, 1 lesson-ready, 1 waiting, 5 refused, 0 flagged, 1 not checked" in text
     assert f"        3  {ALT}  [converter]  dl-fixture-alt" in text
     assert f"        2  {NOT_PULLED}  [converter]  no bead" in text
-    assert f"        1  {MIXED}  dl-fixture-wait" in text
+    assert f"        1  {MIXED}  dl-fixturewait" in text
     assert "re-admitted since the previous run: unknown" in text
 
 
@@ -154,7 +154,7 @@ def test_readiness_reads_readiness_json_when_it_has_the_language(khan: Path) -> 
         ("render-picture-missing", 2, "media", "dl-fixture-media"),
         ("pl differs from en (family)", 1, "converter", None),
     ]
-    assert pl["waiting"]["by_reason"] == [{"reason": MIXED, "items": 2, "issue": "dl-fixture-wait"}]
+    assert pl["waiting"]["by_reason"] == [{"reason": MIXED, "items": 2, "issue": "dl-fixturewait"}]
     assert pl["readmitted"] == [
         {"cause": "set stopped", "items": 4},
         {"cause": "pl differs from en (numbers, pictures)", "items": 3},
@@ -220,7 +220,7 @@ def test_the_dominant_cause_names_its_share_and_bead(khan: Path) -> None:
     assert readiness.dominant_cause(ids, "en") == f"{ALT}, 3 of 5 items (dl-fixture-alt)"
     assert (
         readiness.dominant_cause(["fxr4"], "en")
-        == f"waiting: {MIXED}, 1 of 1 items (dl-fixture-wait)"
+        == f"waiting: {MIXED}, 1 of 1 items (dl-fixturewait)"
     )
     assert readiness.dominant_cause(["fxe9"], "en") is None
     assert readiness.dominant_cause(ids, "uk") is None
