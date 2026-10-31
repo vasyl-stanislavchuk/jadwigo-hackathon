@@ -22,6 +22,7 @@
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit test with the root vitest.config.ts",
+    "@jadwigo/contracts": "the featured-lessons route and its schema, read at build time (src/lib/featured.ts)",
     "@jadwigo/config": "hosts.prod, the host this app serves (src/index.ts, astro.config.mjs)",
     "@jadwigo/ui": "the crown wordmark in the header and the Zeszyt tokens, foundation.css (src/layouts/Base.astro)",
     "@fontsource/andika": "Andika, the Zeszyt type every page is set in (src/layouts/Base.astro)"
@@ -36,6 +37,7 @@
     "@astrojs/sitemap": "3.7.4",
     "@fontsource/andika": "catalog:",
     "@jadwigo/config": "workspace:*",
+    "@jadwigo/contracts": "workspace:*",
     "@jadwigo/ui": "workspace:*",
     "astro": "7.4.2"
   }

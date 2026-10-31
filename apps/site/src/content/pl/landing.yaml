@@ -31,7 +31,8 @@ pl:
   lessons:
     heading: Lekcje na start
     text: Bez logowania, od razu w przeglądarce. Wybierz lekcję i zagrajcie razem.
-    open: Zobacz lekcje
+    play: Zagraj
+    all: Wszystkie lekcje
   about:
     heading: O nas
     text: Jadwigo budujemy jako rodzina, mama, tata i nasz syn. Najpierw dla niego, teraz dla jego klasy.

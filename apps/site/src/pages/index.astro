@@ -3,6 +3,7 @@
 // what a family gets, the lessons anyone can play without a login, and who builds it. The words are
 // in src/content/pl/index.md (head and h1) and src/content/pl/landing.yaml (the sections).
 import { getCollection, getEntry } from "astro:content";
+import Gallery from "../components/Gallery.astro";
 import { appUrl, parentUrl } from "../index.ts";
 import Base from "../layouts/Base.astro";
 import { servedPathPages } from "../lib/seo.ts";
@@ -68,7 +69,8 @@ const nav = [
   <section id="lekcje" class="wrap band" aria-labelledby="lessons-title">
     <h2 id="lessons-title">{words.lessons.heading}</h2>
     <p class="section-lead">{words.lessons.text}</p>
-    <p class="actions"><a class="btn" href={appUrl}>{words.lessons.open}</a></p>
+    <Gallery play={words.lessons.play} />
+    <p class="actions"><a class="btn quiet" href={appUrl}>{words.lessons.all}</a></p>
   </section>
 
   <section id="o-nas" class="wrap band about" aria-labelledby="about-title">

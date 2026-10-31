@@ -18,7 +18,8 @@ export const landingSchema = z.object({
   lessons: z.object({
     heading: z.string().min(1),
     text: z.string().min(1),
-    open: z.string().min(1),
+    play: z.string().min(1),
+    all: z.string().min(1),
   }),
   about: z.object({ heading: z.string().min(1), text: z.string().min(1), more: z.string().min(1) }),
   nav: z.object({ signIn: z.string().min(1), home: z.string().min(1) }),
