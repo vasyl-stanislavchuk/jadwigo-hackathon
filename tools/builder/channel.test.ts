@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -7,17 +8,20 @@ import type { JSONRPCNotification } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   askText,
+  type ChannelState,
   createServer,
   draftsWithAsks,
   pollOnce,
   reply,
   sessionTranscript,
+  tick,
 } from "./channel.ts";
 import {
   type Ask,
   appendRow,
   asksFile,
   consumedFile,
+  readHeartbeat,
   readRows,
   repliesFile,
   sessionFile,
@@ -260,5 +264,57 @@ describe("the channel flag", () => {
     expect(channelLoaded(40, ps)).toBe(true);
     expect(channelLoaded(20, ps)).toBe(false);
     expect(channelLoaded(99, ps)).toBe(null);
+  });
+});
+
+describe("one channel per drafts directory", () => {
+  const at = (s: number) => new Date(Date.UTC(2026, 9, 31, 10, 0, s));
+  const channel = (pid: number): ChannelState => ({
+    pid,
+    session: `s-${pid}`,
+    loaded: true,
+    lastBeat: null,
+    standingDown: false,
+  });
+
+  it("lets only the first live channel consume; the other stands down until it is gone", async () => {
+    const a = channel(101);
+    const b = channel(202);
+    let aAlive = true;
+    const alive = (pid: number) => (pid === 101 ? aAlive : true);
+    const heardBy: number[] = [];
+    const notifyAs = (pid: number) => async () => {
+      heardBy.push(pid);
+    };
+
+    expect(await tick(dir, a, notifyAs(101), at(0), alive)).toBe("served");
+    expect(await tick(dir, b, notifyAs(202), at(1), alive)).toBe("stood_down");
+    appendRow(asksFile(dir, ASK.draft_id), ASK);
+    expect(await tick(dir, b, notifyAs(202), at(2), alive)).toBe("stood_down");
+    expect(await tick(dir, a, notifyAs(101), at(3), alive)).toBe("served");
+    expect(await tick(dir, b, notifyAs(202), at(4), alive)).toBe("stood_down");
+    expect(heardBy).toEqual([101]);
+    expect(readRows(consumedFile(dir, ASK.draft_id))).toHaveLength(1);
+    expect(readHeartbeat(dir)?.pid).toBe(101);
+
+    aAlive = false;
+    expect(await tick(dir, b, notifyAs(202), at(5), alive)).toBe("served");
+    expect(readHeartbeat(dir)?.pid).toBe(202);
+  });
+
+  it("exits when its session closes stdio, so no orphan is left polling", async () => {
+    const child = spawn("bun", [join(import.meta.dirname, "channel.ts")], {
+      env: { ...process.env, JADWIGO_DRAFTS_DIR: dir },
+      stdio: ["pipe", "ignore", "ignore"],
+    });
+    child.stdin.end();
+    const code = await new Promise<number | null>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("still running after 10 s")), 10_000);
+      child.on("exit", (exit) => {
+        clearTimeout(timer);
+        resolve(exit);
+      });
+    });
+    expect(code).toBe(0);
   });
 });

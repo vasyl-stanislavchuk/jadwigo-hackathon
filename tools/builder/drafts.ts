@@ -130,3 +130,45 @@ export function readAsks(dir: string, draftId: string): Ask[] {
 export function consumedTs(dir: string, draftId: string): Set<string> {
   return new Set(readRows(consumedFile(dir, draftId)).map((row) => text(row["ask_ts"])));
 }
+
+// The channel rewrites its heartbeat at least every 5 seconds; 3 missed beats is a channel gone
+// (apps/web/dev/ask.ts reads it the same way).
+export const STALE_MS = 15_000;
+
+export function readHeartbeat(dir: string): Heartbeat | null {
+  try {
+    const beat: unknown = JSON.parse(readFileSync(heartbeatFile(dir), "utf8"));
+    if (!beat || typeof beat !== "object") return null;
+    const { at, pid } = beat as Partial<Heartbeat>;
+    return typeof at === "string" && typeof pid === "number" ? (beat as Heartbeat) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Whether a process is running: signal 0 checks without sending anything. */
+export function pidAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as { code?: string }).code === "EPERM";
+  }
+}
+
+/**
+ * The heartbeat of another channel that is serving this directory now, or null: fresh, written by
+ * a running process other than `self`, from a session that loaded the channel (dl-a38n.38). Two
+ * channels on one directory would each consume asks, so a comment reaches only one session.
+ */
+export function otherLiveChannel(
+  beat: Heartbeat | null,
+  self: number,
+  now: Date,
+  alive: (pid: number) => boolean = pidAlive,
+): Heartbeat | null {
+  if (!beat || beat.pid === self || beat.loaded === false) return null;
+  const at = Date.parse(beat.at);
+  if (!Number.isFinite(at) || now.getTime() - at > STALE_MS) return null;
+  return alive(beat.pid) ? beat : null;
+}
