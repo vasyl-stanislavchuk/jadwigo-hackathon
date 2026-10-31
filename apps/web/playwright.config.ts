@@ -12,14 +12,16 @@
 //
 // The lesson builder's test (e2e/lesson-builder.spec.ts, dl-a38n.34) needs what a build never
 // carries: the dev server's builder plugin and its HMR. So the "builder" project has a dev server of
-// its own on the next port, reading a temp copy of e2e/drafts made here, so the render findings the
-// page posts never land in the repo. It needs no api, and runs wherever the others do, CI included.
-import { cpSync, mkdtempSync } from "node:fs";
+// its own on md's BUILDER_PORT, reading a copy of e2e/drafts in one temp dir per worktree port, so
+// the render findings the page posts never land in the repo. The main process makes the copy and
+// removes it on exit; a worker, which loads this file again, leaves it alone. It needs no api, and
+// runs wherever the others do, CI included.
+import { cpSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 import { AUTH_ORIGIN } from "./e2e/auth-origin.ts";
-import { playE2e, webPort } from "./src/config.ts";
+import { builderPort, playE2e, playwrightWorker, webPort } from "./src/config.ts";
 
 const port = webPort();
 const laptop = { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } };
@@ -31,10 +33,14 @@ const API = /(play|no-jump|parent|review|parent-review|parent-overview|social-si
 const phone = { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } };
 /** The spec that needs the builder's dev server: only the "builder" project runs it. */
 const BUILDER = /lesson-builder\.spec\.ts$/;
-/** The builder's dev server, beside the preview one. */
-const builderPort = port + 1;
-const drafts = mkdtempSync(join(tmpdir(), "jw-e2e-drafts-"));
-cpSync(join(import.meta.dirname, "e2e", "drafts"), drafts, { recursive: true });
+/** The builder's dev server, beside the preview one, on a port of its own. */
+const builder = builderPort();
+const drafts = join(tmpdir(), `jw-e2e-drafts-${builder}`);
+if (!playwrightWorker()) {
+  rmSync(drafts, { recursive: true, force: true });
+  cpSync(join(import.meta.dirname, "e2e", "drafts"), drafts, { recursive: true });
+  process.on("exit", () => rmSync(drafts, { recursive: true, force: true }));
+}
 
 export default defineConfig({
   testDir: "e2e",
@@ -48,7 +54,7 @@ export default defineConfig({
     {
       name: "builder",
       testMatch: BUILDER,
-      use: { ...laptop, baseURL: `http://127.0.0.1:${builderPort}` },
+      use: { ...laptop, baseURL: `http://127.0.0.1:${builder}` },
     },
     ...(playE2e()
       ? [
@@ -65,9 +71,9 @@ export default defineConfig({
   webServer: [
     {
       command: "bunx vite",
-      port: builderPort,
+      port: builder,
       reuseExistingServer: false,
-      env: { WEB_PORT: String(builderPort), JADWIGO_DRAFTS_DIR: drafts },
+      env: { WEB_PORT: String(builder), JADWIGO_DRAFTS_DIR: drafts },
       timeout: 120_000,
     },
     {
