@@ -449,6 +449,51 @@ describe("check.ts --json", () => {
     });
   });
 
+  describe("a key that does not grade its own answer", () => {
+    type Choose = { key: { correct: string[] }; help: { twin: { key: { correct: string[] } } } };
+    const s07 = (steps: Record<string, Step>) => steps["s07"] as Step & { question: Choose };
+    const keyFindings = (change: (steps: Record<string, Step>) => void) => {
+      const { status, out } = check(plantedIn("equal-groups", change));
+      const found = (out["findings"] as Found[]).filter((f) => f.rule === "key-grades");
+      return { status, found, errors: out["errors"] as { step_id: string }[] };
+    };
+
+    it("fails a twin whose key names an option the twin does not have, at the twin's key", () => {
+      const { status, found, errors } = keyFindings((steps) => {
+        s07(steps).question.help.twin.key.correct = ["missing"];
+      });
+      expect(status).toBe(1);
+      expect(found).toEqual([
+        expect.objectContaining({
+          step_id: "s07t",
+          path: expect.stringMatching(
+            /^script\.parts\[\d+\]\.steps\[\d+\]\.question\.help\.twin\.key$/,
+          ),
+          level: "error",
+          rule: "key-grades",
+        }),
+      ]);
+      expect(errors.map((e) => e.step_id)).toEqual(["s07t"]);
+    });
+
+    it("fails a changed question whose key no longer grades, and leaves an unchanged one to the bank", () => {
+      const broken = (steps: Record<string, Step>) => {
+        s07(steps).question.key.correct = ["missing"];
+      };
+      expect(keyFindings(broken).found).toEqual([]);
+      const { found } = keyFindings((steps) => {
+        broken(steps);
+        s07(steps)["based_on"] = {
+          question: "authored:equal-groups",
+          changes: [{ change: "numbers", why: "the parent asked for 4 × 2", reviewed: false }],
+        };
+      });
+      expect(found.map((f) => [f.step_id, f.path.replace(/.*\.question/, "question")])).toEqual([
+        ["s07", "question.key"],
+      ]);
+    });
+  });
+
   it("keeps going past a step that does not compile, to the next one", () => {
     const file = plantedIn("equal-groups", (steps) => {
       for (const id of ["s02", "s05"]) {
