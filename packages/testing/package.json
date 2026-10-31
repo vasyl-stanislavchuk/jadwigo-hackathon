@@ -1,6 +1,6 @@
 {
   "name": "@jadwigo/testing",
-  "description": "Shared test setup: the unit guard on network, AWS and the clock; factories later. Tests only",
+  "description": "Shared test setup: the unit guard on network, AWS and the clock; fixtures and factories. Tests only",
   "private": true,
   "type": "module",
   "exports": {
@@ -12,11 +12,15 @@
     "test": "vitest run --config ../../vitest.config.ts --project unit"
   },
   "//": {
+    "@jadwigo/contracts": "the ids and records the finished-attempt factory writes (src/factories/attempt.ts)",
+    "@jadwigo/store": "the Store the finished-attempt factory plays through, InMemoryStore in its test",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit test with the root vitest.config.ts"
   },
   "devDependencies": {
+    "@jadwigo/contracts": "workspace:*",
+    "@jadwigo/store": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
