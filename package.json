@@ -59,11 +59,11 @@
     "vitest": "the test runner every package's test script calls with the root vitest.config.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.2",
+    "@biomejs/biome": "2.6.3",
     "@types/bun": "1.4.4",
     "@types/node": "catalog:",
     "dependency-cruiser": "18.7.0",
-    "knip": "6.42.1",
+    "knip": "6.43.0",
     "lefthook": "2.2.2",
     "turbo": "2.11.10",
     "typescript": "catalog:",
