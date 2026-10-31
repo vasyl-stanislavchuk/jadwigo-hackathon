@@ -1,6 +1,26 @@
 {
   "tools": [
     {
+      "description": "Check whether this machine can draft, check and publish a lesson, and say what to fix.\n\n        Five checks, each ok, warn or fail: settings (the bank checkout, the converted items\n        file, readiness.json, bank.env at mode 600, check.ts and bun, the drafts directory),\n        ready ids (every set page's ready ids are lesson-ready in the converted file; the stale\n        ones counted with 3 examples), stamps (readiness.json, the converted file and the pages\n        name one stamp), bank_rev (the search service's build against the local index) and\n        services (the local api and web dev server answer). Returns status (the worst) and\n        checks, each {n, name, status, lines: [{name, status, detail, fix}]}. Call it when\n        another tool fails on a setting, a missing file or a service; it changes nothing.\n        ",
+      "inputSchema": {
+        "properties": {
+          "language": {
+            "default": "pl",
+            "title": "Language",
+            "type": "string"
+          }
+        },
+        "title": "doctor_toolArguments",
+        "type": "object"
+      },
+      "name": "doctor",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "doctor_toolDictOutput",
+        "type": "object"
+      }
+    },
+    {
       "description": "Check a draft with your words on it, and return the card a parent reads.\n\n        draft_id is the one lesson_draft returned. help maps each step_id to your words for that\n        question, only what its you_write lists: twin (when the bank has no sibling item for it:\n        a question from the same template with its own say, data and key), boost_by_mistake\n        ({mistake class: {\"text\"}}, for the classes in cards_to_write; the item's own cards\n        stay), and a rung the copy leaves empty (look and boost as {\"text\"}, almost and worked\n        as lists of lines). To change a copied part, only when the parent asks, add changes:\n        [{\"change\": numbers, context, wording or tutor_notes, \"why\", \"set\": {path: value}}],\n        where a path is say, or a dotted path under data, key, hints, worked or almost\n        (\"hints.0.text\"); each change is recorded in based_on.changes. Send only the steps you\n        change: a step left out keeps what the draft holds (its words, the bank's twin,\n        lesson_edit's changes), and help {} checks the draft as it stands. Every word but a key\n        has the names you pass replaced, as for lesson_draft; title and reasoning replace the\n        draft's. Every call rewrites the\n        draft file (draft_path) with your words as far as they go, and writes its check beside\n        it. ok true returns the card (per question: prompt, key, rungs, twin, source, licence,\n        changes, why drawn; what was left out; and next: publish with lesson_publish), the\n        lesson_file path, play_path and lesson_id. findings lists each problem: step_id, path,\n        level (error or warn), rule, text and fix; ok is false while one is an error. Fix those\n        and call lesson_check again.\n        ",
       "inputSchema": {
         "properties": {

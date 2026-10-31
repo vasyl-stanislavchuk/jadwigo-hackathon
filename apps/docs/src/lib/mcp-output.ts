@@ -7,6 +7,9 @@ import type { McpOutput } from "./mcp.ts";
  * mcp-output.test.ts fails while a tool in mcp-tools.json has no line here.
  */
 export const MCP_OUTPUT: Readonly<Record<string, McpOutput>> = {
+  doctor: {
+    says: "Whether this machine can draft, check and publish a lesson: `status` (the worst of `ok`, `warn` and `fail`), `language`, and `checks`, the 5 checks in order (settings, ready ids, stamps, bank_rev, services), each `n`, `name`, `status` and `lines`, one per thing checked with its `name`, `status`, `detail` and the `fix` to run when it is not ok. It changes nothing.",
+  },
   question_search: {
     says: "The bank's search envelope: question sets ranked best first in `rows`, and in `state` one row per arm saying how it answered.",
     schema: { name: "SearchEnvelope", covers: "the whole result", schema: SearchEnvelope },
