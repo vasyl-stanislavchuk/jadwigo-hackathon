@@ -12,10 +12,12 @@ type Audience = "learners" | "anyone";
 type Category = "child" | "adult";
 type Ended = "correct" | "skipped" | "missed";
 type Family = "choose" | "enter" | "slots" | "sequence" | "group" | "place" | "explain";
+type GoalStatus = "active" | "paused" | "reached" | "dropped";
 type Identity = "pick" | "type" | "none";
 type Language = "pl" | "en" | "uk";
 type LessonKind = "practice" | "review" | "check" | "diagnostic";
 type LessonStatus = "draft" | "published" | "archived";
+type MasteryLevel = "not_started" | "attempted" | "familiar" | "proficient" | "mastered";
 type MemberRole = "parent" | "self";
 type Placed = "now" | "review_round";
 type QuestionRole = "planned" | "spare";
@@ -49,6 +51,8 @@ type QuestionType =
   | "fraction_shade"
   | "area_model"
   | "explain";
+type SkillKind = "accuracy" | "speed";
+type SkillStatus = "reviewed" | "proposed" | "draft" | "retired";
 type SkipReason = "dont_know" | "asked_to_skip" | "help_twin";
 type Subject = "math" | "polish" | "english";
 
@@ -145,12 +149,39 @@ interface AttemptResultTable {
   ended: Ended | null;
 }
 
+interface CurriculumTable {
+  id: Generated<string>;
+  pod_id: string;
+  code: string;
+  name: string;
+  country: string;
+  version: string;
+  language: Language;
+  source_url: string | null;
+  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
 interface GoalTable {
   id: Generated<string>;
   pod_id: string;
   learner_id: string;
   name: string;
   created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+  words: string | null;
+  lesson_language: Generated<Language>;
+  status: Generated<GoalStatus>;
+}
+
+interface GoalSkillTable {
+  pod_id: string;
+  goal_id: string;
+  skill_code: string;
+}
+
+interface GoalTopicTable {
+  pod_id: string;
+  goal_id: string;
+  topic_id: string;
 }
 
 interface LearnerTable {
@@ -160,6 +191,55 @@ interface LearnerTable {
   first_name: string;
   age_group: string | null;
   created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+  country: string | null;
+  curriculum_id: string | null;
+  school_grade: number | null;
+  school_language: Language | null;
+}
+
+interface LearnerReportTable {
+  id: Generated<string>;
+  pod_id: string;
+  learner_id: string;
+  period_starts_at: ColumnType<Date, Date | string, Date | string>;
+  period_ends_at: ColumnType<Date, Date | string, Date | string>;
+  inputs_hash: string;
+  reused: Generated<boolean>;
+  digest: ColumnType<unknown, string, string>;
+  narrative: ColumnType<unknown | null, string | null, string | null>;
+  decisions: ColumnType<unknown, string | undefined, string>;
+  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
+interface LearnerSkillEvidenceTable {
+  pod_id: string | null;
+  learner_id: string | null;
+  attempt_id: string | null;
+  seq: number | null;
+  try_no: number | null;
+  kind: AnswerKind | null;
+  skill_code: string | null;
+  answered_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
+  correct: boolean | null;
+  help_used: number | null;
+  latency_ms: number | null;
+  mistake_class: string | null;
+  added: Added | null;
+  lesson_kind: LessonKind | null;
+  hold_verdicts: boolean | null;
+}
+
+interface LearnerSkillMasteryTable {
+  pod_id: string;
+  learner_id: string;
+  skill_code: string;
+  level: MasteryLevel;
+  needs_attention: Generated<boolean>;
+  tries: Generated<number>;
+  last_answered_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
+  due_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
+  card: ColumnType<unknown | null, string | null, string | null>;
+  computed_at: ColumnType<Date, Date | string | undefined, Date | string>;
 }
 
 interface LessonTable {
@@ -175,6 +255,12 @@ interface LessonTable {
   grade: number | null;
   skill_ids: Generated<string[]>;
   created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
+interface LessonGoalTable {
+  pod_id: string;
+  lesson_id: string;
+  goal_id: string;
 }
 
 interface LessonQuestionTable {
@@ -242,6 +328,29 @@ interface PodTable {
   created_at: ColumnType<Date, Date | string | undefined, Date | string>;
 }
 
+interface SkillTable {
+  pod_id: string;
+  code: string;
+  topic_id: string | null;
+  kind: Generated<SkillKind>;
+  status: SkillStatus;
+  can_do: ColumnType<unknown | null, string | null, string | null>;
+  aliases: Generated<string[]>;
+  prerequisites: Generated<string[]>;
+  source: string;
+  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
+interface TopicTable {
+  id: Generated<string>;
+  pod_id: string;
+  curriculum_id: string;
+  code: string;
+  area: string;
+  text: string;
+  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
 export interface DB {
   account: AccountTable;
   assignment: AssignmentTable;
@@ -249,15 +358,24 @@ export interface DB {
   attempt_answer: AttemptAnswerTable;
   attempt_question: AttemptQuestionTable;
   attempt_result: AttemptResultTable;
+  curriculum: CurriculumTable;
   goal: GoalTable;
+  goal_skill: GoalSkillTable;
+  goal_topic: GoalTopicTable;
   learner: LearnerTable;
+  learner_report: LearnerReportTable;
+  learner_skill_evidence: LearnerSkillEvidenceTable;
+  learner_skill_mastery: LearnerSkillMasteryTable;
   lesson: LessonTable;
+  lesson_goal: LessonGoalTable;
   lesson_question: LessonQuestionTable;
   lesson_question_example: LessonQuestionExampleTable;
   lesson_version: LessonVersionTable;
   lesson_version_question: LessonVersionQuestionTable;
   member: MemberTable;
   pod: PodTable;
+  skill: SkillTable;
+  topic: TopicTable;
 }
 
 export const COLUMNS = {
@@ -428,12 +546,46 @@ export const COLUMNS = {
       labels: ["correct", "skipped", "missed"],
     },
   },
+  curriculum: {
+    id: { type: "uuid", nullable: false, generated: true, labels: null },
+    pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    code: { type: "text", nullable: false, generated: false, labels: null },
+    name: { type: "text", nullable: false, generated: false, labels: null },
+    country: { type: "text", nullable: false, generated: false, labels: null },
+    version: { type: "text", nullable: false, generated: false, labels: null },
+    language: { type: "language", nullable: false, generated: false, labels: ["pl", "en", "uk"] },
+    source_url: { type: "text", nullable: true, generated: false, labels: null },
+    created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+  },
   goal: {
     id: { type: "uuid", nullable: false, generated: true, labels: null },
     pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
     learner_id: { type: "uuid", nullable: false, generated: false, labels: null },
     name: { type: "text", nullable: false, generated: false, labels: null },
     created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+    words: { type: "text", nullable: true, generated: false, labels: null },
+    lesson_language: {
+      type: "language",
+      nullable: false,
+      generated: true,
+      labels: ["pl", "en", "uk"],
+    },
+    status: {
+      type: "goal_status",
+      nullable: false,
+      generated: true,
+      labels: ["active", "paused", "reached", "dropped"],
+    },
+  },
+  goal_skill: {
+    pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    goal_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    skill_code: { type: "text", nullable: false, generated: false, labels: null },
+  },
+  goal_topic: {
+    pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    goal_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    topic_id: { type: "uuid", nullable: false, generated: false, labels: null },
   },
   learner: {
     id: { type: "uuid", nullable: false, generated: true, labels: null },
@@ -442,6 +594,67 @@ export const COLUMNS = {
     first_name: { type: "text", nullable: false, generated: false, labels: null },
     age_group: { type: "text", nullable: true, generated: false, labels: null },
     created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+    country: { type: "text", nullable: true, generated: false, labels: null },
+    curriculum_id: { type: "uuid", nullable: true, generated: false, labels: null },
+    school_grade: { type: "int4", nullable: true, generated: false, labels: null },
+    school_language: {
+      type: "language",
+      nullable: true,
+      generated: false,
+      labels: ["pl", "en", "uk"],
+    },
+  },
+  learner_report: {
+    id: { type: "uuid", nullable: false, generated: true, labels: null },
+    pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    learner_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    period_starts_at: { type: "timestamptz", nullable: false, generated: false, labels: null },
+    period_ends_at: { type: "timestamptz", nullable: false, generated: false, labels: null },
+    inputs_hash: { type: "text", nullable: false, generated: false, labels: null },
+    reused: { type: "bool", nullable: false, generated: true, labels: null },
+    digest: { type: "jsonb", nullable: false, generated: false, labels: null },
+    narrative: { type: "jsonb", nullable: true, generated: false, labels: null },
+    decisions: { type: "jsonb", nullable: false, generated: true, labels: null },
+    created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+  },
+  learner_skill_evidence: {
+    pod_id: { type: "uuid", nullable: true, generated: false, labels: null },
+    learner_id: { type: "uuid", nullable: true, generated: false, labels: null },
+    attempt_id: { type: "uuid", nullable: true, generated: false, labels: null },
+    seq: { type: "int4", nullable: true, generated: false, labels: null },
+    try_no: { type: "int4", nullable: true, generated: false, labels: null },
+    kind: { type: "answer_kind", nullable: true, generated: false, labels: ["try", "skip"] },
+    skill_code: { type: "text", nullable: true, generated: false, labels: null },
+    answered_at: { type: "timestamptz", nullable: true, generated: false, labels: null },
+    correct: { type: "bool", nullable: true, generated: false, labels: null },
+    help_used: { type: "int4", nullable: true, generated: false, labels: null },
+    latency_ms: { type: "int4", nullable: true, generated: false, labels: null },
+    mistake_class: { type: "text", nullable: true, generated: false, labels: null },
+    added: { type: "added", nullable: true, generated: false, labels: ["planned", "twin"] },
+    lesson_kind: {
+      type: "lesson_kind",
+      nullable: true,
+      generated: false,
+      labels: ["practice", "review", "check", "diagnostic"],
+    },
+    hold_verdicts: { type: "bool", nullable: true, generated: false, labels: null },
+  },
+  learner_skill_mastery: {
+    pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    learner_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    skill_code: { type: "text", nullable: false, generated: false, labels: null },
+    level: {
+      type: "mastery_level",
+      nullable: false,
+      generated: false,
+      labels: ["not_started", "attempted", "familiar", "proficient", "mastered"],
+    },
+    needs_attention: { type: "bool", nullable: false, generated: true, labels: null },
+    tries: { type: "int4", nullable: false, generated: true, labels: null },
+    last_answered_at: { type: "timestamptz", nullable: true, generated: false, labels: null },
+    due_at: { type: "timestamptz", nullable: true, generated: false, labels: null },
+    card: { type: "jsonb", nullable: true, generated: false, labels: null },
+    computed_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
   },
   lesson: {
     id: { type: "uuid", nullable: false, generated: true, labels: null },
@@ -471,6 +684,11 @@ export const COLUMNS = {
     grade: { type: "int4", nullable: true, generated: false, labels: null },
     skill_ids: { type: "_text", nullable: false, generated: true, labels: null },
     created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+  },
+  lesson_goal: {
+    pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    lesson_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    goal_id: { type: "uuid", nullable: false, generated: false, labels: null },
   },
   lesson_question: {
     id: { type: "uuid", nullable: false, generated: true, labels: null },
@@ -579,6 +797,32 @@ export const COLUMNS = {
     id: { type: "uuid", nullable: false, generated: true, labels: null },
     name: { type: "text", nullable: false, generated: false, labels: null },
     language: { type: "language", nullable: false, generated: false, labels: ["pl", "en", "uk"] },
+    created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+  },
+  skill: {
+    pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    code: { type: "text", nullable: false, generated: false, labels: null },
+    topic_id: { type: "uuid", nullable: true, generated: false, labels: null },
+    kind: { type: "skill_kind", nullable: false, generated: true, labels: ["accuracy", "speed"] },
+    status: {
+      type: "skill_status",
+      nullable: false,
+      generated: false,
+      labels: ["reviewed", "proposed", "draft", "retired"],
+    },
+    can_do: { type: "jsonb", nullable: true, generated: false, labels: null },
+    aliases: { type: "_text", nullable: false, generated: true, labels: null },
+    prerequisites: { type: "_text", nullable: false, generated: true, labels: null },
+    source: { type: "text", nullable: false, generated: false, labels: null },
+    created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+  },
+  topic: {
+    id: { type: "uuid", nullable: false, generated: true, labels: null },
+    pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    curriculum_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    code: { type: "text", nullable: false, generated: false, labels: null },
+    area: { type: "text", nullable: false, generated: false, labels: null },
+    text: { type: "text", nullable: false, generated: false, labels: null },
     created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
   },
 } as const satisfies Columns;

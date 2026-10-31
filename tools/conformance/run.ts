@@ -5,21 +5,33 @@
 // page.route, waits for the page's verdicts, and writes beside the items file:
 //   <name>.render.json        the sidecar: {items: {<id>: {render_ok, findings}}, rules_version, ran_at}
 //   <name>.conformance.json   the report: every item's findings, and the failing shapes by sets served
-// Run: bun tools/conformance/run.ts [--items <converted-pl.json>] [--limit N] [--top N]
+// It fails closed (dl-a38n.32.1): with a blank media URL it refuses to start (NO_MEDIA_URL), and the
+// page settles every picture before the rules run and marks an item it never drew render-unplayable.
+// Each item is drawn in its own language (dl-a38n.32.3): --lang pl|en checks that language's items
+// (and those naming none), else the items' own, refused when they mix; the sidecar names it (lang).
+// Run: bun tools/conformance/run.ts [--items <converted-pl.json>] [--lang pl|en] [--limit N] [--top N]
 // Chromium comes from Playwright: `bunx playwright install chromium` once per machine.
 import { type ChildProcess, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { basename, dirname, join, resolve } from "node:path";
 import { chromium } from "@playwright/test";
-import { itemsPath, serverEnv } from "./config.ts";
+import { devMediaUrl, itemsInLanguage, itemsPath, NO_MEDIA_URL, serverEnv } from "./config.ts";
 import { type ItemResult, shapesOf, sidecarOf, summaryLines } from "./report.ts";
 
 const REPO = resolve(dirname(new URL(import.meta.url).pathname), "..", "..");
 const WEB = join(REPO, "apps", "web");
-/** The render rules the page runs; their hash is the sidecar's rules_version. */
-const RULES = join(WEB, "src", "playground", "lesson", "render", "rules.ts");
+/** The page's checks: the render rules and the conformance page itself (its strict compile, key
+ * check and batch). Their hash is the sidecar's rules_version, so a change to any re-runs the bank. */
+const PAGE = join(WEB, "src", "playground", "conformance");
+const RULES = [
+  join(WEB, "src", "playground", "lesson", "render", "rules.ts"),
+  ...readdirSync(PAGE)
+    .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
+    .sort()
+    .map((f) => join(PAGE, f)),
+];
 /** apps/web's ITEMS_PATH and CONFORMANCE_PATH (src/playground/conformance/); tools imports nothing of ours. */
 const ITEMS_PATH = "/@conformance/items.json";
 const PAGE_PATH = "/playground/conformance";
@@ -62,8 +74,18 @@ function freePort(): Promise<number> {
   });
 }
 
-async function startWeb(port: number, apiPort: number): Promise<ChildProcess> {
-  const env = { ...serverEnv(port), API_PORT: String(apiPort) };
+/** The media URL the dev server will run with, read as vite.config.ts reads it. */
+function webMediaUrl(): string {
+  const read = (name: string): string => {
+    const path = join(WEB, name);
+    return existsSync(path) ? readFileSync(path, "utf8") : "";
+  };
+  const files = [".env", ".env.local", ".env.development", ".env.development.local"].map(read);
+  return devMediaUrl(process.env, files, read(".env.example"));
+}
+
+async function startWeb(port: number, apiPort: number, media: string): Promise<ChildProcess> {
+  const env = { ...serverEnv(port), API_PORT: String(apiPort), VITE_MEDIA_URL: media };
   const child = spawn("bunx", ["vite"], { cwd: WEB, env, stdio: ["ignore", "pipe", "pipe"] });
   let output = "";
   child.stdout?.on("data", (d: Buffer) => {
@@ -90,16 +112,27 @@ async function startWeb(port: number, apiPort: number): Promise<ChildProcess> {
 
 async function main(): Promise<number> {
   const args = process.argv.slice(2);
+  const media = webMediaUrl();
+  if (media === "") throw new Error(NO_MEDIA_URL);
   const items = resolve(flag(args, "--items") ?? itemsPath());
   const limit = Number(flag(args, "--limit") ?? "0");
   const top = Number(flag(args, "--top") ?? "10");
   const file = JSON.parse(readFileSync(items, "utf8")) as { items?: unknown[] };
   if (!Array.isArray(file.items)) throw new Error(`${items} has no items list`);
-  const served = limit > 0 ? { ...file, items: file.items.slice(0, limit) } : file;
-  const rulesVersion = `sha256:${createHash("sha256").update(readFileSync(RULES)).digest("hex").slice(0, 12)}`;
+  const chosen = itemsInLanguage(file.items, flag(args, "--lang"));
+  if ("error" in chosen) throw new Error(`${items}: ${chosen.error}`);
+  const { lang } = chosen;
+  if (chosen.left_out > 0)
+    process.stderr.write(
+      `${chosen.left_out} items in another language left out (--lang ${lang})\n`,
+    );
+  const served = { ...file, items: limit > 0 ? chosen.items.slice(0, limit) : chosen.items };
+  const hash = createHash("sha256");
+  for (const path of RULES) hash.update(readFileSync(path));
+  const rulesVersion = `sha256:${hash.digest("hex").slice(0, 12)}`;
 
   const port = await freePort();
-  const web = await startWeb(port, await freePort());
+  const web = await startWeb(port, await freePort(), media);
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
@@ -124,13 +157,15 @@ async function main(): Promise<number> {
     if (state === undefined || !state.done)
       throw new Error(`the page did not finish in ${RUN_MS} ms`);
     if (state.error) throw new Error(`the page could not run: ${state.error}`);
+    if (state.results.length !== state.total)
+      throw new Error(`the page checked ${state.results.length} of ${state.total} items`);
 
     const ranAt = new Date().toISOString();
     const shapes = shapesOf(state.results);
     const out = outputsOf(items);
     writeFileSync(
       out.sidecar,
-      `${JSON.stringify(sidecarOf(state.results, rulesVersion, ranAt), null, 2)}\n`,
+      `${JSON.stringify(sidecarOf(state.results, rulesVersion, ranAt, lang), null, 2)}\n`,
     );
     writeFileSync(
       out.report,
@@ -139,6 +174,7 @@ async function main(): Promise<number> {
           items_file: items,
           rules_version: rulesVersion,
           ran_at: ranAt,
+          lang,
           shapes,
           items: state.results,
         },
@@ -146,6 +182,7 @@ async function main(): Promise<number> {
         2,
       )}\n`,
     );
+    process.stdout.write(`lang ${lang}\n`);
     for (const line of summaryLines(state.results, shapes, top)) process.stdout.write(`${line}\n`);
     if (pageErrors.length > 0) {
       process.stdout.write(`${pageErrors.length} page errors, the first: ${pageErrors[0]}\n`);

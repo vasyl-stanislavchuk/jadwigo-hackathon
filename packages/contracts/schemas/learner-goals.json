@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "goals": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/GoalView"
+      }
+    }
+  },
+  "required": [
+    "goals"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "GoalView": {
+      "type": "object",
+      "properties": {
+        "goal": {
+          "$ref": "#/$defs/Goal"
+        },
+        "skill_codes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
+        },
+        "status": {
+          "$ref": "#/$defs/GoalProgress"
+        },
+        "can_do_now": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
+        },
+        "needs_attention": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
+        },
+        "next": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
+        }
+      },
+      "required": [
+        "goal",
+        "skill_codes",
+        "status",
+        "can_do_now",
+        "needs_attention",
+        "next"
+      ],
+      "additionalProperties": false
+    },
+    "Goal": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/GoalId"
+        },
+        "pod_id": {
+          "$ref": "#/$defs/PodId"
+        },
+        "learner_id": {
+          "$ref": "#/$defs/LearnerId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "words": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lesson_language": {
+          "$ref": "#/$defs/Language"
+        },
+        "status": {
+          "$ref": "#/$defs/GoalStatus"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        }
+      },
+      "required": [
+        "id",
+        "pod_id",
+        "learner_id",
+        "name",
+        "words",
+        "lesson_language",
+        "status",
+        "created_at"
+      ],
+      "additionalProperties": false
+    },
+    "GoalId": {
+      "type": "string",
+      "pattern": "^gol_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en",
+        "uk"
+      ]
+    },
+    "GoalStatus": {
+      "type": "string",
+      "enum": [
+        "active",
+        "paused",
+        "reached",
+        "dropped"
+      ]
+    },
+    "SkillId": {
+      "type": "string",
+      "pattern": "^[a-z]+(\\.[a-z0-9-]+)+$"
+    },
+    "GoalProgress": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "needs_attention",
+        "on_its_way",
+        "good"
+      ]
+    }
+  }
+}

@@ -3,10 +3,17 @@
  * converted item that plays through the lesson builder's parse and adapter, in pages of BATCH, and
  * runs the builder's render rules (`renderFindings`, lesson/render/rules.ts) on each drawn item in
  * the real DOM. `tools/conformance/run.ts` serves the items at ITEMS_PATH, waits for
- * `window.__jadwigoConformance.done`, and reads the results. An item the adapter cannot draw is an
- * error finding of its own, `render-unplayable`, with the adapter's reason.
+ * `window.__jadwigoConformance.done`, and reads the results. It fails closed (dl-a38n.32.1): an
+ * item the adapter cannot draw, the page never mounts or whose view throws is an error finding of
+ * its own, `render-unplayable`; a batch's pictures settle before the rules run (batch.ts); and with
+ * no media URL the page refuses to run, since every picture would read as missing. Before any of
+ * that, each item is compiled strictly (`contract`, strict.ts) and its key's own answer judged
+ * (`key-grades`, keys.ts, dl-a38n.32.2): a finding of either comes first in the item's findings.
+ * Each item is drawn in its own language (dl-a38n.32.3), one lesson file per language; an item
+ * that names none the app speaks is `render-unplayable`.
  */
 
+import type { Language } from "@jadwigo/copy";
 import { type Finding, parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import {
   type Clock,
@@ -18,9 +25,21 @@ import {
   ViewMode,
 } from "@jadwigo/lesson-kit";
 import { type ReactElement, useEffect, useRef, useState } from "react";
+import { mediaUrl, NO_MEDIA_URL } from "../../media.ts";
 import { lessonFileToSpecs } from "../lesson/adapter.ts";
-import { renderFindings } from "../lesson/render/rules.ts";
-import { type ConvertedItem, ITEMS_PATH, itemsOf, lessonFileOf, plays, setIdOf } from "./items.ts";
+import { checkBatch, unplayable } from "./batch.ts";
+import { ItemBoundary } from "./ItemBoundary.tsx";
+import {
+  type ConvertedItem,
+  ITEMS_PATH,
+  itemsOf,
+  languageOf,
+  lessonFileOf,
+  plays,
+  setIdOf,
+} from "./items.ts";
+import { keyFindings } from "./keys.ts";
+import { compileStrictly } from "./strict.ts";
 
 export const CONFORMANCE_PATH = "/playground/conformance";
 
@@ -52,38 +71,58 @@ declare global {
   }
 }
 
-/** An item the adapter could not draw: an error, since a copy of it would not draw either. */
-function unplayable(item_id: string, reason: string): Finding {
-  return {
-    step_id: item_id,
-    path: "",
-    level: "error",
-    rule: "render-unplayable",
-    text: `The item does not draw: ${reason}`,
-    fix: "Convert the item to a question its family draws (its question type, data and key), or leave it out of the bank.",
-  };
+/** The checks made before an item is drawn: the strict compile, then whether its key grades, and
+ * its twin's, which the import writes as a spare question a child is asked. */
+function compiled(item: ConvertedItem): Finding[] {
+  const result = compileStrictly(item);
+  if (result.question === null) return result.findings;
+  const twin = result.twin === null ? [] : keyFindings(item.id, result.twin, "spec.help.twin");
+  return [...keyFindings(item.id, result.question), ...twin];
+}
+
+/** A spec to draw, in the language of the item it came from. */
+interface Drawn {
+  readonly spec: FamilySpec;
+  readonly language: Language;
 }
 
 /** Every item that plays, each as a spec to draw or a verdict already reached. */
 function prepare(items: readonly ConvertedItem[]): {
-  specs: FamilySpec[];
+  specs: Drawn[];
   early: ItemResult[];
   byId: Map<string, ConvertedItem>;
+  before: Map<string, Finding[]>;
 } {
   const playing = items.filter(plays);
   const byId = new Map(playing.map((i) => [i.id, i]));
-  const { file, skipped } = parseLessonFileLenient(lessonFileOf(playing));
-  const steps = lessonFileToSpecs(file, undefined, skipped).flatMap((p) => p.steps);
-  const specs: FamilySpec[] = [];
+  const before = new Map(playing.map((i) => [i.id, compiled(i)]));
+  const specs: Drawn[] = [];
   const early: ItemResult[] = [];
-  for (const step of steps) {
-    if (step.kind === "question") specs.push(step.spec);
-    else
+  const byLanguage = new Map<Language, ConvertedItem[]>();
+  for (const item of playing) {
+    const language = languageOf(item);
+    if (language === null) {
+      const reason = `its language ${JSON.stringify(item.language ?? null)} is not one the app speaks.`;
       early.push(
-        resultOf(byId.get(step.step_id), step.step_id, [unplayable(step.step_id, step.reason)]),
+        resultOf(item, item.id, [...(before.get(item.id) ?? []), unplayable(item.id, reason)]),
       );
+    } else byLanguage.set(language, [...(byLanguage.get(language) ?? []), item]);
   }
-  return { specs, early, byId };
+  for (const [language, group] of byLanguage) {
+    const { file, skipped } = parseLessonFileLenient(lessonFileOf(group, language));
+    const steps = lessonFileToSpecs(file, undefined, skipped).flatMap((p) => p.steps);
+    for (const step of steps) {
+      if (step.kind === "question") specs.push({ spec: step.spec, language });
+      else
+        early.push(
+          resultOf(byId.get(step.step_id), step.step_id, [
+            ...(before.get(step.step_id) ?? []),
+            unplayable(step.step_id, step.reason),
+          ]),
+        );
+    }
+  }
+  return { specs, early, byId, before };
 }
 
 function resultOf(
@@ -101,10 +140,6 @@ function resultOf(
   };
 }
 
-/** Two frames: the batch is laid out and painted before a rule measures it. */
-const painted = (): Promise<void> =>
-  new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-
 export function ConformanceScreen(): ReactElement {
   const [prepared, setPrepared] = useState<ReturnType<typeof prepare> | null>(null);
   const [start, setStart] = useState(0);
@@ -112,6 +147,10 @@ export function ConformanceScreen(): ReactElement {
   const roots = useRef(new Map<string, HTMLElement>());
 
   useEffect(() => {
+    if (mediaUrl() === "") {
+      setState({ done: true, total: 0, results: [], error: NO_MEDIA_URL });
+      return;
+    }
     fetch(ITEMS_PATH)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${ITEMS_PATH}: ${r.status}`))))
       .then((file: unknown) => {
@@ -133,15 +172,15 @@ export function ConformanceScreen(): ReactElement {
     const drawn = prepared.specs.slice(start, start + BATCH);
     if (drawn.length === 0) return;
     let live = true;
-    void painted().then(() => {
+    const ids = drawn.map((d) => d.spec.id);
+    void checkBatch(ids, roots.current).then((findings) => {
       if (!live) return;
-      const found = drawn.map((spec) => {
-        const root = roots.current.get(spec.id);
-        // A finding's path is into the item's family step, `spec` in the converted file.
-        const findings =
-          root === undefined ? [] : renderFindings(root, { step_id: spec.id, path: "spec" });
-        return resultOf(prepared.byId.get(spec.id), spec.id, findings);
-      });
+      const found = ids.map((id) =>
+        resultOf(prepared.byId.get(id), id, [
+          ...(prepared.before.get(id) ?? []),
+          ...(findings.get(id) ?? [unplayable(id, "it was not checked.")]),
+        ]),
+      );
       const next = start + BATCH;
       setState((s) => ({
         ...s,
@@ -170,7 +209,7 @@ export function ConformanceScreen(): ReactElement {
         </p>
       </header>
       <div className="grid gap-3 md:grid-cols-2">
-        {batch.map((spec) => (
+        {batch.map(({ spec, language }) => (
           <section
             key={spec.id}
             aria-label={`Item ${spec.id}`}
@@ -181,17 +220,19 @@ export function ConformanceScreen(): ReactElement {
               else roots.current.set(spec.id, el);
             }}
           >
-            <LessonTheme>
-              <FamilyView
-                spec={pageSpec(spec) as never}
-                language="pl"
-                category="child"
-                clock={clock}
-                mode={ViewMode.Preview}
-                answerKey={spec.key as never}
-                showKey={false}
-              />
-            </LessonTheme>
+            <ItemBoundary>
+              <LessonTheme>
+                <FamilyView
+                  spec={pageSpec(spec) as never}
+                  language={language}
+                  category="child"
+                  clock={clock}
+                  mode={ViewMode.Preview}
+                  answerKey={spec.key as never}
+                  showKey={false}
+                />
+              </LessonTheme>
+            </ItemBoundary>
           </section>
         ))}
       </div>

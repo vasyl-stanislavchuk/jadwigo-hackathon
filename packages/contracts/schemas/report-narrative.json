@@ -1,0 +1,206 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "language": {
+      "$ref": "#/$defs/Language"
+    },
+    "headline": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 140
+    },
+    "direction_now": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "answers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "$ref": "#/$defs/StandingQuestion"
+          },
+          "answer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          },
+          "citations": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Citation"
+            }
+          }
+        },
+        "required": [
+          "question",
+          "answer",
+          "citations"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "proposals": {
+      "maxItems": 3,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "proposal_id": {
+            "$ref": "#/$defs/ProposalId"
+          },
+          "claim": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "rationale": {
+            "type": "string",
+            "maxLength": 400
+          },
+          "citations": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Citation"
+            }
+          }
+        },
+        "required": [
+          "proposal_id",
+          "claim",
+          "rationale",
+          "citations"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "asks": {
+      "maxItems": 2,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ask": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "why": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "ask",
+          "why"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "made_by": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "language",
+    "headline",
+    "direction_now",
+    "answers",
+    "proposals",
+    "asks",
+    "made_by"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en",
+        "uk"
+      ]
+    },
+    "StandingQuestion": {
+      "type": "string",
+      "enum": [
+        "skills_standing",
+        "next_focus"
+      ]
+    },
+    "Citation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "attempt"
+            },
+            "attempt_id": {
+              "$ref": "#/$defs/AttemptId"
+            }
+          },
+          "required": [
+            "kind",
+            "attempt_id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "skill"
+            },
+            "skill_code": {
+              "$ref": "#/$defs/SkillId"
+            }
+          },
+          "required": [
+            "kind",
+            "skill_code"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "goal"
+            },
+            "goal_id": {
+              "$ref": "#/$defs/GoalId"
+            }
+          },
+          "required": [
+            "kind",
+            "goal_id"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "AttemptId": {
+      "type": "string",
+      "pattern": "^att_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "SkillId": {
+      "type": "string",
+      "pattern": "^[a-z]+(\\.[a-z0-9-]+)+$"
+    },
+    "GoalId": {
+      "type": "string",
+      "pattern": "^gol_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "ProposalId": {
+      "type": "string",
+      "pattern": "^p[1-9]$"
+    }
+  }
+}

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { Need, QuestionBody, SearchEnvelope } from "./bank.ts";
-import { AssignmentId, AttemptId, LearnerId } from "./ids.ts";
-import { Language } from "./records.ts";
+import { AssignmentId, AttemptId, GoalId, LearnerId, LearnerReportId } from "./ids.ts";
+import { Language, LearnerReport } from "./records.ts";
 import {
   AccountCreate,
   AssignmentAttempts,
@@ -15,15 +15,23 @@ import {
   AttemptStart,
   Claim,
   Featured,
+  GoalCreate,
+  GoalPatch,
   Health,
   HelpRequest,
   HelpResult,
   LearnerAttempts,
   LearnerCreate,
+  LearnerGoals,
+  LearnerReports,
+  LearnerSkills,
   LearnerSnapshot,
   Me,
   ParentAttemptReview,
   PlaygroundExamples,
+  ReportCreate,
+  ReportPatch,
+  Skills,
 } from "./wire.ts";
 
 /**
@@ -267,6 +275,107 @@ export const ROUTES = {
     summary: "Reads a finished attempt of the caller's learner, with every try.",
     tag: "parents",
     description: "409 `AttemptNotFinished` before the attempt ends.",
+  },
+  // The learner knowledge base (wave 1 of epic dl-e8ov.5): a learner of the caller's pod.
+  getLearnerSkills: {
+    method: "GET",
+    path: "/api/v1/learners/{id}/skills",
+    params: z.object({ id: LearnerId }),
+    body: null,
+    response: LearnerSkills,
+    status: 200,
+    auth: "token",
+    summary: "Reads where a learner stands on each skill, each goal's lists and the brief.",
+    tag: "parents",
+    description:
+      "Folded on read from the learner's evidence: code computes every level, status and list. No level name, score or percentage is ever shown to the parent.",
+  },
+  listSkills: {
+    method: "GET",
+    path: "/api/v1/skills",
+    params: z.object({}),
+    body: null,
+    response: Skills,
+    status: 200,
+    auth: "token",
+    summary: "Lists the skill catalogue the caller's pod reads.",
+    tag: "parents",
+    description:
+      "The pod's own skills and the shared catalogue's, a pod's own row winning for its code.",
+  },
+  getLearnerGoals: {
+    method: "GET",
+    path: "/api/v1/learners/{id}/goals",
+    params: z.object({ id: LearnerId }),
+    body: null,
+    response: LearnerGoals,
+    status: 200,
+    auth: "token",
+    summary: "Lists a learner's goals with their skills, oldest first.",
+    tag: "parents",
+  },
+  createGoal: {
+    method: "POST",
+    path: "/api/v1/learners/{id}/goals",
+    params: z.object({ id: LearnerId }),
+    body: GoalCreate,
+    response: LearnerGoals,
+    status: 201,
+    auth: "token",
+    summary: "Adds a goal to a learner, in the parent's words, with its skills.",
+    tag: "parents",
+    description:
+      "A skill code the pod has no row for is copied from the shared catalogue, or kept as a draft when the catalogue has none.",
+  },
+  patchGoal: {
+    method: "PATCH",
+    path: "/api/v1/learners/{id}/goals/{goal}",
+    params: z.object({ id: LearnerId, goal: GoalId }),
+    body: GoalPatch,
+    response: LearnerGoals,
+    status: 200,
+    auth: "token",
+    summary: "Changes a goal's status or skills.",
+    tag: "parents",
+    description: "`skill_codes` replaces the goal's skills whole.",
+  },
+  getLearnerReports: {
+    method: "GET",
+    path: "/api/v1/learners/{id}/reports",
+    params: z.object({ id: LearnerId }),
+    body: null,
+    response: LearnerReports,
+    status: 200,
+    auth: "token",
+    summary: "Lists a learner's reports, newest first.",
+    tag: "parents",
+  },
+  createReport: {
+    method: "POST",
+    path: "/api/v1/learners/{id}/reports",
+    params: z.object({ id: LearnerId }),
+    body: ReportCreate,
+    response: LearnerReport,
+    status: 201,
+    auth: "token",
+    summary: "Makes a report on a learner from the evidence: code's digest, no narrative yet.",
+    tag: "parents",
+    description:
+      "Rebuilds the learner's mastery first. When the evidence has not changed since the last report, the new one is a copy of its digest, `reused: true`.",
+  },
+  patchReport: {
+    method: "PATCH",
+    path: "/api/v1/learners/{id}/reports/{report}",
+    params: z.object({ id: LearnerId, report: LearnerReportId }),
+    body: ReportPatch,
+    response: LearnerReport,
+    status: 200,
+    auth: "token",
+    summary:
+      "Writes a report's narrative once, or records the parent's decisions on its proposals.",
+    tag: "parents",
+    description:
+      "A 2nd narrative is 409 `WriteOnce`; a decision on a proposal the digest does not have is 400 `BadRequest`.",
   },
   /** A bank search: the need in, the envelope out (`src/bank.ts`). */
   questionSearches: {

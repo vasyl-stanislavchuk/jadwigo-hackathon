@@ -6,6 +6,16 @@ import { type Authenticate, type Claims, signedOut } from "./auth.ts";
 import { ApiError, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
 import {
+  createGoal,
+  createReport,
+  getLearnerGoals,
+  getLearnerReports,
+  getLearnerSkills,
+  listSkills,
+  patchGoal,
+  patchReport,
+} from "./knowledge.ts";
+import {
   claimAttempt,
   createAccount,
   createLearner,
@@ -138,6 +148,30 @@ export function createApp(
   // Reads under the caller's pod to find the attempt, then under the attempt's own pod.
   onSigned("getParentReview", (params, _body, claims) =>
     run((s) => getParentReview(s, claims, params.id, params.attempt)),
+  );
+
+  // The learner knowledge base (wave 1 of epic dl-e8ov.5): a learner of the caller's pod.
+  onSigned("getLearnerSkills", (params, _body, claims) =>
+    run((s) => getLearnerSkills(s, claims, params.id)),
+  );
+  onSigned("listSkills", (_params, _body, claims) => run((s) => listSkills(s, claims)));
+  onSigned("getLearnerGoals", (params, _body, claims) =>
+    run((s) => getLearnerGoals(s, claims, params.id)),
+  );
+  onSigned("createGoal", (params, body, claims) =>
+    run((s) => createGoal(s, claims, params.id, body)),
+  );
+  onSigned("patchGoal", (params, body, claims) =>
+    run((s) => patchGoal(s, claims, params.id, params.goal, body)),
+  );
+  onSigned("getLearnerReports", (params, _body, claims) =>
+    run((s) => getLearnerReports(s, claims, params.id)),
+  );
+  onSigned("createReport", (params, body, claims) =>
+    run((s) => createReport(s, claims, params.id, body)),
+  );
+  onSigned("patchReport", (params, body, claims) =>
+    run((s) => patchReport(s, claims, params.id, params.report, body)),
   );
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));

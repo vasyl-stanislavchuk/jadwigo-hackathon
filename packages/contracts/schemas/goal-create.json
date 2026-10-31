@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "words": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "skill_codes": {
+      "maxItems": 50,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SkillId"
+      }
+    }
+  },
+  "required": [
+    "name",
+    "skill_codes"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "SkillId": {
+      "type": "string",
+      "pattern": "^[a-z]+(\\.[a-z0-9-]+)+$"
+    }
+  }
+}
