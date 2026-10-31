@@ -50,22 +50,33 @@ const LANGS = ["pl", "en"] as const;
 type Lang = (typeof LANGS)[number];
 
 /**
- * The language a run checks, and the items it serves (dl-a38n.32.3). With `--lang`, the items in
- * that language and those that name none, each then set to it; without, the items' own language,
- * refused when they mix languages or one names none. Every item is drawn in its own copy.
+ * The language a run checks, and the items it serves (dl-a38n.32.3). With `--lang`, only the items
+ * that name that language: an item naming none, or another, is left out and counted, never drawn
+ * in the flag's language and marked ready for a language it does not name (dl-a38n.32.22). A
+ * `--lang` that keeps no item is an error, so a run in the wrong language never overwrites the
+ * file's sidecar with an empty one. Without `--lang`, the items' own language, refused when they
+ * mix languages or one names none. Every item is drawn in its own copy.
  */
 export function itemsInLanguage(
   items: readonly unknown[],
   flag: string | undefined,
-): { lang: Lang; items: unknown[]; left_out: number } | { error: string } {
+): { lang: Lang; items: unknown[]; left_out: number; unnamed: number } | { error: string } {
   const languageOf = (i: unknown): unknown => (i as { language?: unknown } | null)?.language;
   if (flag !== undefined) {
     if (!(LANGS as readonly string[]).includes(flag))
       return { error: `--lang takes ${LANGS.join(" or ")}, not ${flag}` };
-    const kept = items
-      .filter((i) => languageOf(i) === undefined || languageOf(i) === flag)
-      .map((i) => ({ ...(i as object), language: flag }));
-    return { lang: flag as Lang, items: kept, left_out: items.length - kept.length };
+    const kept = items.filter((i) => languageOf(i) === flag);
+    const unnamed = items.filter((i) => languageOf(i) === undefined).length;
+    if (kept.length === 0)
+      return {
+        error: `no item names ${flag} (${unnamed} name no language): nothing to check with --lang ${flag}`,
+      };
+    return {
+      lang: flag as Lang,
+      items: kept,
+      left_out: items.length - kept.length - unnamed,
+      unnamed,
+    };
   }
   const named = new Set(items.map(languageOf));
   if (named.has(undefined))
@@ -77,5 +88,5 @@ export function itemsInLanguage(
   const [only] = [...named];
   if (!(LANGS as readonly unknown[]).includes(only))
     return { error: `the items are in ${String(only)}, which the app does not speak` };
-  return { lang: only as Lang, items: [...items], left_out: 0 };
+  return { lang: only as Lang, items: [...items], left_out: 0, unnamed: 0 };
 }

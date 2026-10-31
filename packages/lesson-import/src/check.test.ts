@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { QUESTION_TYPE_FAMILY } from "@jadwigo/contracts";
 import { LESSON_FILES } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
+import { signatureOf } from "./check.ts";
 import { DRAFTS_POD, featuredAssignmentId } from "./ids.ts";
 
 const script = fileURLToPath(new URL("./check.ts", import.meta.url));
@@ -53,7 +54,14 @@ function planted(change: (step: Step) => void, title?: string): string {
   );
 }
 
-type Found = { step_id: string | null; path: string; level: string; rule: string; fix: string };
+type Found = {
+  step_id: string | null;
+  path: string;
+  level: string;
+  rule: string;
+  text: string;
+  fix: string;
+};
 
 describe("check.ts --json", () => {
   const names = readdirSync(lessons).filter((f) => f.endsWith(".json"));
@@ -346,6 +354,99 @@ describe("check.ts --json", () => {
       const found = (out["findings"] as Found[]).map((f) => [f.rule, f.level]);
       expect([say, out["ok"], found]).toEqual([say, true, [["key-in-say", "warn"]]]);
     }
+  });
+
+  it("reads a question's representation signature (wave-3 lead decision 3)", () => {
+    const picture = (src: string) => ({ src, alt: "kropki", width: 120 });
+    expect(
+      signatureOf({
+        input: "number",
+        stem: { image: "/a.png", text: "?" },
+        figure: { kind: "array", pictures: [picture("/b.png")] },
+        options: [
+          { id: "o1", content: { kind: "text", text: "1" } },
+          { id: "o2", content: { kind: "picture", picture: picture("/c.png") } },
+        ],
+      }),
+    ).toEqual({
+      pictures: 3,
+      srcs: ["/a.png", "/b.png", "/c.png"],
+      figures: ["array"],
+      options: ["picture", "text"],
+      inputs: ["number"],
+    });
+    expect(signatureOf({ stem: { image: picture("/a.png") } }).pictures).toBe(1);
+    expect(signatureOf(undefined)).toEqual({
+      pictures: 0,
+      srcs: [],
+      figures: [],
+      options: [],
+      inputs: [],
+    });
+  });
+
+  describe("a twin that asks another way", () => {
+    type Twin = { data: Record<string, unknown>; key: Record<string, unknown> };
+    const twinOf = (step: Step) => (step.question as { help: { twin: Twin } }).help.twin;
+    const dataOf = (step: Step) => (step.question as { data: Record<string, unknown> }).data;
+    const withPicture = (data: Record<string, unknown>, src: string) =>
+      Object.assign(data, {
+        stem: { text: "?", pictures: [{ src, alt: "kropki", width: 120, height: 60 }] },
+      });
+    const twinFindings = (change: (step: Step) => void) => {
+      const { out } = check(planted(change));
+      return (out["findings"] as Found[]).filter((f) => f.rule.startsWith("twin-"));
+    };
+
+    it("is an error when the twin loses the original's pictures", () => {
+      const found = twinFindings((step) => withPicture(dataOf(step), "/dots-2x5.png"));
+      expect(found).toEqual([
+        expect.objectContaining({
+          step_id: "s02t",
+          path: expect.stringMatching(/^script\.parts\[\d+\]\.steps\[\d+\]\.question\.help\.twin$/),
+          level: "error",
+          rule: "twin-representation",
+          text: expect.stringContaining("1 pictures and the twin none"),
+        }),
+      ]);
+    });
+
+    it("is an error when the twin's figure is another kind", () => {
+      const found = twinFindings((step) => {
+        twinOf(step).data["figure"] = { kind: "number_line", text: "2 × 4" };
+      });
+      expect(found.map((f) => [f.step_id, f.level, f.rule])).toEqual([
+        ["s02t", "error", "twin-representation"],
+      ]);
+      expect(found[0]?.text).toContain("number_line, the original's expression");
+    });
+
+    it("warns when the twin draws the original's pictures with another key", () => {
+      const found = twinFindings((step) => {
+        withPicture(dataOf(step), "/dots-2x5.png");
+        withPicture(twinOf(step).data, "/dots-2x5.png");
+      });
+      expect(found).toEqual([
+        expect.objectContaining({
+          step_id: "s02t",
+          path: expect.stringMatching(/\.question\.help\.twin\.data$/),
+          level: "warn",
+          rule: "twin-same-picture",
+        }),
+      ]);
+    });
+
+    it("passes a twin with its own picture of the same kind, and fails the file only on the error", () => {
+      expect(
+        twinFindings((step) => {
+          withPicture(dataOf(step), "/dots-2x5.png");
+          withPicture(twinOf(step).data, "/dots-2x4.png");
+        }),
+      ).toEqual([]);
+      const { status, out } = check(planted((step) => withPicture(dataOf(step), "/dots-2x5.png")));
+      expect(status).toBe(1);
+      expect((out["errors"] as { step_id: string }[]).map((e) => e.step_id)).toEqual(["s02t"]);
+    });
   });
 
   it("keeps going past a step that does not compile, to the next one", () => {
