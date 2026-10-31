@@ -152,7 +152,13 @@ function CardFace({ card }: { card: GroupCard }): JSX.Element {
           />
         </span>
       )}
-      {card.label.trim() !== "" && <RichText inline text={card.label} />}
+      {/* One element: the face is a column, so bare runs ("$7$ tenths") would each become a flex
+          item on a line of its own (dl-a38n.32.35, as dl-a38n.27 for Choose). */}
+      {card.label.trim() !== "" && (
+        <span>
+          <RichText inline text={card.label} />
+        </span>
+      )}
     </span>
   );
 }
