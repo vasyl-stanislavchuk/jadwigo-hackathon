@@ -182,6 +182,74 @@ export function StepCard({
   );
 }
 
+/**
+ * A step's twin as a row of its own under the step (dl-a38n.47): the question rung 4 asks, drawn in
+ * preview with the key behind the page's switch. It has its own id (`<step>t`) and path
+ * (`…question.help.twin`), so the render rules read it, its findings pin here and post with the
+ * steps', and a comment on it names the twin.
+ */
+export function TwinCard({
+  n,
+  draft_id,
+  step_id,
+  path,
+  spec,
+  findings,
+  showKey,
+  language,
+  category,
+  onRendered,
+}: {
+  /** Its step's place in the lesson, from 1. */
+  n: number;
+  draft_id: string;
+  step_id: string;
+  path: string;
+  spec: FamilySpec;
+  findings: readonly Finding[];
+  showKey: boolean;
+  language: Language;
+  category: Category;
+  onRendered?: ((step_id: string, findings: Finding[]) => void) | undefined;
+}): ReactElement {
+  const drawn = useRef<HTMLDivElement>(null);
+  useRenderCheck(drawn, { step_id, path }, [spec, showKey], onRendered);
+  return (
+    <section
+      id={step_id}
+      aria-label={`Twin ${step_id}`}
+      data-step={step_id}
+      data-twin
+      className="ml-6 flex scroll-mt-4 flex-col gap-3 rounded-2xl border border-dashed bg-card p-4"
+    >
+      <header className="flex flex-wrap items-baseline gap-2">
+        <h3 className="font-semibold">
+          {n}t. {step_id}
+        </h3>
+        <span className="text-muted-foreground text-xs">twin, help rung 4 · {path}</span>
+      </header>
+      <p className="text-sm" data-say>
+        {spec.say}
+      </p>
+      <FindingList findings={findings} label={`Findings on ${step_id}`} />
+      <div ref={drawn} className="kid-step min-w-0 rounded-xl border bg-background p-4">
+        <LessonTheme>
+          <FamilyView
+            spec={pageSpec(spec) as never}
+            language={language}
+            category={category}
+            clock={clock}
+            mode={ViewMode.Preview}
+            answerKey={spec.key as never}
+            showKey={showKey}
+          />
+        </LessonTheme>
+      </div>
+      <CommentsSlot draft_id={draft_id} step_id={step_id} />
+    </section>
+  );
+}
+
 export function SkippedCard({
   draft_id,
   step_id,
