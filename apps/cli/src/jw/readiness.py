@@ -82,7 +82,9 @@ def _rows(
         row: dict[str, Any] = {key: name, "items": n}
         if owners:
             row["owner"] = _owner(name)
-        row["issue"] = _beads(beads.get(name, ()))
+        # A reason that is itself a bead (the converter keys a waiting item by its issue) is its bead.
+        own = [name] if refusals.BEAD.match(name) else []
+        row["issue"] = _beads([*beads.get(name, ()), *own])
         rows.append(row)
     return rows
 

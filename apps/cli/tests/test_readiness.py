@@ -71,6 +71,9 @@ def _json(*args: str) -> dict[str, Any]:
         ("pl differs from en (family, key, numbers)", "pl differs from en (family)"),
         ("no Polish raw item", "no Polish raw item"),
         ("render-picture-missing", "render-picture-missing"),
+        # readiness.json's keys: the id gone, the `refused: ` prefix and a placeholder kept
+        (f"refused: {ALT}", ALT),
+        ("refused: <picture> was not pulled; run media.py", NOT_PULLED),
     ],
 )
 def test_a_converter_reason_becomes_its_cause_and_stays_one(reason: str, cause: str) -> None:
@@ -244,11 +247,16 @@ def test_a_gap_of_a_set_with_nothing_ready_names_the_dominant_cause(ready_bank: 
 def test_a_first_run_re_admitted_nothing(khan: Path) -> None:
     raw = json.loads((READINESS / "readiness.json").read_text("utf-8"))
     raw["languages"]["pl"]["readmitted"] = {}
+    raw["languages"]["pl"]["waiting"] = {"dl-fx9.1": 2}
     (khan / "readiness.json").write_text(json.dumps(raw), encoding="utf-8")
 
     (pl,) = _json("readiness", "--lang", "pl")["languages"]
 
     assert pl["readmitted"] == []
+    # A waiting item keyed by its bead carries that bead.
+    assert pl["waiting"]["by_reason"] == [
+        {"reason": "dl-fx9.1", "items": 2, "issue": "dl-fx9.1"}
+    ]
     assert "re-admitted since the previous run: 0" in _run("readiness", "--lang", "pl")
 
 
