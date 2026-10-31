@@ -78,9 +78,11 @@ import {
   assignmentPath,
   attemptPath,
   claimOf,
+  emailOf,
   learnerOf,
   parentPath,
   parentRoute,
+  providerOf,
 } from "./route.ts";
 
 /** The parent's page: the app page's prose column. */
@@ -171,6 +173,7 @@ export function ParentScreen({
         auth={auth}
         language={language}
         returned={returned}
+        handoff={{ provider: providerOf(query), email: emailOf(query) }}
         onSignedIn={() => {
           setReturned(null);
           setSignedIn(true);
@@ -220,16 +223,19 @@ function SignIn({
   auth,
   language,
   returned,
+  handoff,
   onSignedIn,
 }: {
   auth: Auth;
   language: Language;
   /** The line a provider's return left, or null. */
   returned: CopyKey | null;
+  /** What jadwigo.pl/zaloguj asked for: a provider to start, or an address to send the code to. */
+  handoff: { provider: Provider | null; email: string | null };
   onSignedIn: () => void;
 }): ReactElement {
   const [providerProblem, setProviderProblem] = useState<CopyKey | null>(returned);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(handoff.email ?? "");
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -242,7 +248,10 @@ function SignIn({
 
   const send = (event: FormEvent): void => {
     event.preventDefault();
-    const to = email.trim();
+    sendTo(email.trim());
+  };
+
+  const sendTo = (to: string): void => {
     if (to === "" || busy) return;
     setBusy(true);
     setProblem(null);
@@ -296,6 +305,27 @@ function SignIn({
     };
   }, [auth]);
   const inApp = inAppBrowser(navigator.userAgent);
+
+  // The hand-over from jadwigo.pl/zaloguj runs once: its parameters leave the address bar first, so
+  // a reload or a provider's return never starts it again. A provider starts only once its button
+  // would show, and not after a return that failed.
+  const handedOver = useRef(false);
+  useEffect(() => {
+    if (handedOver.current || (handoff.provider === null && handoff.email === null)) return;
+    const here = new URL(window.location.href);
+    window.history.replaceState(window.history.state, "", withoutReturn(here));
+    if (handoff.email !== null) {
+      handedOver.current = true;
+      sendTo(handoff.email);
+      return;
+    }
+    const provider = handoff.provider;
+    if (provider === null || returned !== null || !providers.includes(provider)) return;
+    if (provider === "google" && inApp) return;
+    handedOver.current = true;
+    continueWith(provider);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: runs once the providers are read
+  }, [providers]);
 
   return (
     <ParentPage>

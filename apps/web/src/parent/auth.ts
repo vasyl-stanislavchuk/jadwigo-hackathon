@@ -58,6 +58,8 @@ const NO_EMAIL = "Error getting user email";
 
 /** The parameters a return adds to the URL, which the page drops once it has read them. */
 const RETURN_PARAMS = ["code", "error", "error_code", "error_description"];
+/** What jadwigo.pl/zaloguj hands over (route.ts providerOf, emailOf): read once, then dropped too. */
+const HANDOFF_PARAMS = ["provider", "email"];
 
 /** A provider's return, read off the URL: a code, an error, or nothing. */
 export type Return =
@@ -84,7 +86,7 @@ export function returnOf(url: URL): Return {
 export function withoutReturn(url: URL): string {
   const query = new URLSearchParams(url.search);
   const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
-  for (const name of RETURN_PARAMS) {
+  for (const name of [...RETURN_PARAMS, ...HANDOFF_PARAMS]) {
     query.delete(name);
     hash.delete(name);
   }

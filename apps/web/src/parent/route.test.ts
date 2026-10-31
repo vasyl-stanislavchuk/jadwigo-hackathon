@@ -4,10 +4,12 @@ import {
   assignmentPath,
   attemptPath,
   claimOf,
+  emailOf,
   isParentPath,
   learnerOf,
   parentPath,
   parentRoute,
+  providerOf,
 } from "./route.ts";
 
 const ASSIGNMENT = AssignmentId.parse("asg_0ectzj2evqb95a3v1v6wewjzy3");
@@ -103,5 +105,20 @@ describe("learnerOf", () => {
     expect(learnerOf(new URLSearchParams(`learner=${LEARNER}`))).toBe(LEARNER);
     expect(learnerOf(new URLSearchParams())).toBeNull();
     expect(learnerOf(new URLSearchParams(`learner=${ATTEMPT}`))).toBeNull();
+  });
+});
+
+describe("the hand-over from jadwigo.pl/zaloguj", () => {
+  it("reads only Google or Facebook as a provider", () => {
+    expect(providerOf(new URLSearchParams("provider=google"))).toBe("google");
+    expect(providerOf(new URLSearchParams("provider=facebook"))).toBe("facebook");
+    expect(providerOf(new URLSearchParams("provider=github"))).toBeNull();
+    expect(providerOf(new URLSearchParams(""))).toBeNull();
+  });
+
+  it("reads an address that looks like one, trimmed", () => {
+    expect(emailOf(new URLSearchParams("email=%20mama%40example.com%20"))).toBe("mama@example.com");
+    expect(emailOf(new URLSearchParams("email=not-an-email"))).toBeNull();
+    expect(emailOf(new URLSearchParams(""))).toBeNull();
   });
 });
