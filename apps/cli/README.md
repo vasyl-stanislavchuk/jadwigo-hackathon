@@ -225,8 +225,11 @@ it, readable by you only (mode 700).
 7. **Publish, then play.** A clean check's card says `next`: call `lesson_publish(draft_id)`
    (`dl-a38n.39`; the owner's decision `dl-diel`: the AI publishes locally without asking once the
    check is ok). It refuses a draft whose `<draft_id>.check.json` is not ok or is older than the
-   draft, runs `make -s lesson-import FILE=<draft file> JSON=1` in `JADWIGO_REPO_DIR` (the local
-   `jadwigo` database `make dev` serves), and checks the lesson plays:
+   draft, runs `make -s lesson-import FILE=<draft file> JSON=1 ENV=` in `JADWIGO_REPO_DIR` (the
+   local `jadwigo` database `make dev` serves; `ENV=` on the command line, and `ENV` and
+   `MAKEFLAGS` dropped from make's environment, so a parent's `ENV=dev` never sends a local
+   publish to jadwigo-dev), refuses an answer without its `assignment_id`, `version_id` or
+   `/play/` path, and checks the lesson plays:
    - `GET <api>/api/health` answers 200;
    - `POST <api>/api/v1/assignments/<id>/attempts` with `{"mode": "preview"}` answers 201, with
      one plan entry per imported question and the version the import published;

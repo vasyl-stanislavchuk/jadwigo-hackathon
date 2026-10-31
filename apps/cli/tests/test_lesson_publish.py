@@ -93,22 +93,25 @@ def servers(monkeypatch: pytest.MonkeyPatch) -> Iterator[Servers]:
 
 
 class Make:
-    """`make -s lesson-import` stubbed: each argv, and what it prints."""
+    """`make -s lesson-import` stubbed at subprocess.run, so jw's own runner runs: each argv, the
+    environment it was given, and what it prints."""
 
     def __init__(self) -> None:
         self.seen: list[list[str]] = []
+        self.envs: list[dict[str, str]] = []
         self.returncode = 0
         self.stdout = "bun run v1\n" + json.dumps(IMPORTED) + "\n"
 
-    def run(self, argv: list[str]) -> Any:
+    def run(self, argv: list[str], **kwargs: Any) -> Any:
         self.seen.append(argv)
+        self.envs.append(kwargs["env"])
         return SimpleNamespace(returncode=self.returncode, stdout=self.stdout, stderr="db is down")
 
 
 @pytest.fixture
 def make(monkeypatch: pytest.MonkeyPatch) -> Make:
     stub = Make()
-    monkeypatch.setattr(lesson, "_run", lambda _repo: stub.run)
+    monkeypatch.setattr(lesson_publish.subprocess, "run", stub.run)
     return stub
 
 
@@ -137,7 +140,7 @@ def test_publish_imports_the_checked_draft_and_checks_it_plays(
     result = lesson_publish.publish(DRAFT_ID)
 
     assert make.seen == [["make", "-s", "lesson-import", f"FILE={drafts / f'{DRAFT_ID}.json'}",
-                          "JSON=1"]]
+                          "JSON=1", "ENV="]]
     assert result["ok"] is True
     assert result["play_url"] == servers.url + "/play/asg_fixture"
     assert (result["lesson_id"], result["version"], result["assignment_id"]) == (
@@ -244,3 +247,32 @@ def test_the_publish_verb_prints_the_record(drafts: Path, make: Make, servers: S
     assert plain.output.startswith(f"ok: {servers.url}/play/asg_fixture")
     refused = CliRunner().invoke(cli, ["lesson", "publish", DRAFT_ID, "--target", "dev"])
     assert refused.exit_code != 0 and "ENV=dev" in refused.output
+
+
+def test_env_from_the_parent_never_steers_a_local_publish_to_dev(
+    drafts: Path, make: Make, servers: Servers, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The Makefile imports into jadwigo-dev when ENV is set, from the environment or MAKEFLAGS: a
+    local publish passes ENV= on make's command line, which beats both, and drops them from the
+    child's environment."""
+    monkeypatch.setenv("ENV", "dev")
+    monkeypatch.setenv("MAKEFLAGS", "ENV=dev")
+    monkeypatch.setenv("GNUMAKEFLAGS", "ENV=dev")
+    result = lesson_publish.publish(DRAFT_ID)
+    assert result["ok"] is True and result["target"] == "local"
+    ((argv,), (env,)) = (make.seen, make.envs)
+    assert argv[-1] == "ENV=" and "ENV=dev" not in argv
+    assert not {"ENV", "MAKEFLAGS", "MFLAGS", "GNUMAKEFLAGS"} & set(env)
+    assert env["PATH"] == os.environ["PATH"]  # everything else passes through
+
+
+@pytest.mark.parametrize("missing", ["play_path", "assignment_id", "version_id"])
+def test_an_import_answer_without_a_play_path_is_refused(
+    drafts: Path, make: Make, servers: Servers, missing: str
+) -> None:
+    make.stdout = json.dumps({**IMPORTED, missing: None}) + "\n"
+    with pytest.raises(JwError, match=f"the import's answer has no {missing}") as caught:
+        lesson_publish.publish(DRAFT_ID)
+    assert caught.value.hint is not None and "JSON=1" in caught.value.hint
+    assert not (drafts / f"{DRAFT_ID}.publish.json").exists()  # no ...5173None in a record
+    assert servers.seen == []
