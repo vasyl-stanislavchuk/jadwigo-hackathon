@@ -9,6 +9,14 @@
 // build's Supabase project (JW_SUPABASE_URL, src/config.ts) is e2e/auth-server.ts, a stand-in this
 // config starts beside the page, so the results offer "save your progress" and the email code
 // signs in with no Supabase; the api reads that stand-in's JWKS (AUTH_JWKS_URL).
+//
+// The lesson builder's test (e2e/lesson-builder.spec.ts, dl-a38n.34) needs what a build never
+// carries: the dev server's builder plugin and its HMR. So the "builder" project has a dev server of
+// its own on the next port, reading a temp copy of e2e/drafts made here, so the render findings the
+// page posts never land in the repo. It needs no api, and runs wherever the others do, CI included.
+import { cpSync, mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 import { AUTH_ORIGIN } from "./e2e/auth-origin.ts";
 import { playE2e, webPort } from "./src/config.ts";
@@ -21,6 +29,12 @@ const laptop = { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 
  * social-sign-in.spec.ts (dl-e8ov.2.51). */
 const API = /(play|no-jump|parent|review|parent-review|parent-overview|social-sign-in)\.spec\.ts$/;
 const phone = { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } };
+/** The spec that needs the builder's dev server: only the "builder" project runs it. */
+const BUILDER = /lesson-builder\.spec\.ts$/;
+/** The builder's dev server, beside the preview one. */
+const builderPort = port + 1;
+const drafts = mkdtempSync(join(tmpdir(), "jw-e2e-drafts-"));
+cpSync(join(import.meta.dirname, "e2e", "drafts"), drafts, { recursive: true });
 
 export default defineConfig({
   testDir: "e2e",
@@ -29,8 +43,13 @@ export default defineConfig({
   reporter: [["list"]],
   use: { baseURL: `http://127.0.0.1:${port}` },
   projects: [
-    { name: "phone", testIgnore: API, use: phone },
-    { name: "laptop", testIgnore: API, use: laptop },
+    { name: "phone", testIgnore: [API, BUILDER], use: phone },
+    { name: "laptop", testIgnore: [API, BUILDER], use: laptop },
+    {
+      name: "builder",
+      testMatch: BUILDER,
+      use: { ...laptop, baseURL: `http://127.0.0.1:${builderPort}` },
+    },
     ...(playE2e()
       ? [
           { name: "api", testMatch: API, use: laptop },
@@ -44,6 +63,13 @@ export default defineConfig({
       : []),
   ],
   webServer: [
+    {
+      command: "bunx vite",
+      port: builderPort,
+      reuseExistingServer: false,
+      env: { WEB_PORT: String(builderPort), JADWIGO_DRAFTS_DIR: drafts },
+      timeout: 120_000,
+    },
     {
       command: "bunx vite build && bunx vite preview",
       port,
