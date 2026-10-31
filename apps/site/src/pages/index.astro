@@ -1,41 +1,61 @@
 ---
-// The landing page (dl-5ssh.4.1, dl-5ssh.4.7): one line for the parent, the homework button, and
-// the lessons anyone can play right away, big. Everything else is its own page in the header. The
-// words are in src/content/pl/index.md (head and h1) and src/content/pl/landing.yaml.
+// The landing page (dl-5ssh.4.1, dl-5ssh.4.7, dl-5ssh.4.9): the h1 beside one question a visitor can
+// answer, the lessons anyone can play right away, and one line for the parent. Everything else is its
+// own page in the header. The words are in src/content/pl/index.md (head and h1) and
+// src/content/pl/landing.yaml.
 import { getEntry } from "astro:content";
 import Gallery from "../components/Gallery.astro";
+import HeroQuestion from "../components/HeroQuestion.astro";
+import { appUrl } from "../index.ts";
 import Base from "../layouts/Base.astro";
 
 const entry = await getEntry("pages", "pl/index");
 const words = (await getEntry("landing", "pl"))?.data;
 if (!entry || !words) throw new Error("src/content/pl/index.md or landing.yaml is missing");
+// "Zagraj w lekcję" continues the lesson the hero's question comes from (playUrl in lib/featured.ts).
+const play = new URL(`play/${words.hero.question.lesson}`, appUrl).href;
 ---
 
 <Base page={entry.data} path="/">
   <section class="hero wrap" aria-labelledby="hero-title">
     <h1 id="hero-title">{entry.data.heading}</h1>
-    <p class="lead">{words.hero.lead}</p>
+    <HeroQuestion />
     <p class="actions">
       <a class="btn" href="/praca-domowa/">{words.hero.homework}</a>
-      <a class="btn quiet" href="#lekcje">{words.hero.play}</a>
+      <a class="btn quiet" href={play}>{words.hero.play}</a>
     </p>
   </section>
 
-  <section id="lekcje" class="lessons" aria-labelledby="lessons-title">
-    <div class="wrap">
-      <h2 id="lessons-title">{words.lessons.heading}</h2>
-      <p>{words.lessons.text} <a href="/lekcje/">{words.lessons.all} →</a></p>
-    </div>
+  <section id="lekcje" class="lessons wrap" aria-labelledby="lessons-title">
+    <h2 id="lessons-title">{words.lessons.heading}</h2>
+    <p>{words.lessons.text} <a href="/lekcje/">{words.lessons.all}</a></p>
     <Gallery />
+  </section>
+
+  <section class="after wrap">
+    <p>{words.after.text} <a href="/jak-to-dziala/">{words.after.link}</a></p>
   </section>
 </Base>
 
 <style>
-  .hero { padding-top: clamp(2.5rem, 7vw, 4.5rem); max-width: 44rem; margin: 0 auto; text-align: center; }
-  .hero h1 { font-size: clamp(2.2rem, 6vw, 3.5rem); letter-spacing: -0.01em; }
-  .lead { font-size: clamp(1.15rem, 2.6vw, 1.4rem); margin-top: 1rem; }
-  .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin-top: 1.75rem; }
-  .lessons { margin-top: clamp(3rem, 8vw, 4.5rem); }
-  .lessons p { margin-top: 0.5rem; color: var(--jw-ink-soft); }
-  .lessons p a { font-weight: 700; }
+  /* A phone reads h1, the question, then the buttons. From 52rem the h1 and buttons stand left and
+     the question right, both on the page's left edge, never centred. */
+  .hero {
+    display: grid; gap: 2rem; align-items: center;
+    padding-top: clamp(2.5rem, 7vw, 5rem);
+    grid-template-areas: "title" "sheet" "actions";
+  }
+  .hero h1 { grid-area: title; max-width: 11ch; font-size: clamp(2.6rem, 7vw, 4.25rem); line-height: 1.05; letter-spacing: -0.015em; }
+  .hero :global(.sheet) { grid-area: sheet; }
+  .actions { grid-area: actions; display: flex; flex-wrap: wrap; gap: 1rem; }
+  @media (min-width: 52rem) {
+    .hero { grid-template-columns: 1fr 1.1fr; grid-template-areas: "title sheet" "actions sheet"; column-gap: 4rem; row-gap: 2rem; }
+    .hero h1 { align-self: end; }
+    .actions { align-self: start; }
+  }
+  .lessons { margin-top: clamp(3.5rem, 9vw, 6rem); }
+  .lessons > p { margin-top: 0.5rem; color: var(--jw-ink-soft); }
+  .lessons > p a, .after a { font-weight: 700; }
+  .after { margin-top: 2.5rem; }
+  .after p { font-size: 1.2rem; }
 </style>

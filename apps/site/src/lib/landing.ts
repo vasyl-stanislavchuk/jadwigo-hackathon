@@ -1,6 +1,7 @@
 // The site's words beyond each page's frontmatter: one entry per section, read from
 // src/content/pl/landing.yaml so a native speaker edits words, not markup. The index page's
 // `reviewed` flag in src/content/pl/index.md covers these words too.
+import { ID_PREFIXES } from "@jadwigo/contracts";
 import { z } from "astro/zod";
 
 const text = z.string().min(1);
@@ -9,7 +10,27 @@ const item = z.object({ title: text, text });
 const head = { title: text, description: text, heading: text };
 
 export const landingSchema = z.object({
-  hero: z.object({ lead: text, homework: text, play: text }),
+  // The hero's question (owner, 2026-10-31): the first question of one featured lesson, answered on
+  // the page. `lesson` is that lesson's assignment id, so "play" continues it.
+  hero: z.object({
+    homework: text,
+    play: text,
+    question: z
+      .object({
+        lesson: z.string().startsWith(ID_PREFIXES.assignment),
+        say: text,
+        choices: z.array(text).min(2).max(4),
+        answer: text,
+        right: text,
+        hint: text,
+        // After a right answer and Jadwiga's clip: the invitation to a parent account (/zaloguj).
+        signUp: z.object({ text, button: text }),
+      })
+      .refine((q) => q.choices.includes(q.answer), {
+        message: "answer must be one of the choices",
+      }),
+  }),
+  after: z.object({ text, link: text }),
   links: z.array(z.object({ href: z.string().regex(/^(\/[a-z0-9-]+)+$/), label: text })).min(1),
   steps: z.object({ ...head, items: z.array(item).length(3) }),
   promises: z.object({ heading: text, items: z.array(item).min(1) }),

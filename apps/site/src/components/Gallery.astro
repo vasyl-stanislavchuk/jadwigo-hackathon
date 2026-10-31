@@ -1,17 +1,12 @@
 ---
 // The featured lessons as big cards (dl-5ssh.4.3, dl-5ssh.4.7): who a lesson fits and how long it is
 // on top, its first question written large on a notebook page as the teaser, one click to play in
-// the app with no login. `moving` drifts the row sideways and stops while a pointer or the keyboard
-// is on it; under reduced motion, or as a grid, it stands still.
+// the app with no login. A still grid: the drifting row went with dl-5ssh.4.9, since the hero holds
+// the page's one moving moment.
 import { getEntry } from "astro:content";
 import { featuredLessons, playUrl } from "../lib/featured.ts";
 import { firstSentence, plural } from "../lib/landing.ts";
 
-interface Props {
-  layout?: "moving" | "grid";
-}
-
-const { layout = "moving" } = Astro.props;
 const words = (await getEntry("landing", "pl"))?.data.lessons;
 if (!words) throw new Error("src/content/pl/landing.yaml has no lessons words");
 const { lessons, from } = await featuredLessons();
@@ -27,63 +22,42 @@ const cards = lessons.map((l) => ({
     l.question_count > 0 ? plural(l.question_count, words.questions) : null,
   ].filter((m): m is string => m !== null),
 }));
-// A moving row repeats a short list until a track holds 6 cards, and the loop needs the track twice.
-// Every repeat is hidden from screen readers and the tab order, so each lesson is read and reached once.
-const moving = layout === "moving" && cards.length >= 2;
-const perTrack = moving ? Math.max(6, cards.length) : cards.length;
-const slots = Array.from({ length: perTrack }, (_, i) => ({ i, repeat: i >= cards.length }));
-const tracks = moving ? [false, true] : [false];
 ---
 
-<div class:list={["gallery", layout, { moving }]}>
-  <div class="belt">
-    {
-      tracks.map((copy) => (
-        <ul class="track" aria-hidden={copy ? "true" : undefined}>
-          {slots.map(({ i, repeat }) => {
-            const c = cards[i % cards.length];
-            const hidden = copy || repeat;
-            return (
-              c && (
-                <li class:list={["card", { repeat }]} aria-hidden={!copy && repeat ? "true" : undefined}>
-                  <a href={c.href} tabindex={hidden ? -1 : undefined}>
-                    <span class="meta">
-                      {c.meta.map((m) => (
-                        <span class="chip">{m}</span>
-                      ))}
-                    </span>
-                    {c.teaser && <span class="page">{c.teaser}</span>}
-                    <span class="foot">
-                      <span class="title">{c.title}</span>
-                      <span class="go">{words.play} →</span>
-                    </span>
-                  </a>
-                </li>
-              )
-            );
-          })}
-        </ul>
-      ))
-    }
-  </div>
-</div>
+<ul class="gallery">
+  {
+    cards.map((c) => (
+      <li class="card">
+        <a href={c.href}>
+          <span class="meta">
+            {c.meta.map((m) => (
+              <span class="chip">{m}</span>
+            ))}
+          </span>
+          {c.teaser && <span class="page">{c.teaser}</span>}
+          <span class="foot">
+            <span class="title">{c.title}</span>
+            <span class="go">{words.play} →</span>
+          </span>
+        </a>
+      </li>
+    ))
+  }
+</ul>
 
 <style>
-  .gallery { margin-top: 1.5rem; padding: 0.5rem 0 1.25rem; }
-  .moving { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent); }
-  .belt { display: flex; width: max-content; }
-  .grid .belt { width: auto; }
-  .track { display: flex; gap: 1.25rem; list-style: none; margin: 0; padding: 0 1.25rem 0 0; }
-  .grid .track { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); width: 100%; padding: 0; }
+  .gallery {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); gap: 1.25rem;
+    list-style: none; margin: 1.5rem 0 0; padding: 0 0 1.25rem;
+  }
 
   .card a {
     display: flex; flex-direction: column; gap: 1rem; height: 100%;
-    width: min(22rem, 80vw); min-height: 22rem; padding: 1.25rem;
+    min-height: 22rem; padding: 1.25rem;
     border: 2px solid var(--jw-line); border-radius: var(--jw-radius-card);
     background: var(--jw-card); color: var(--jw-ink); text-decoration: none;
     box-shadow: 0 6px 0 var(--jw-line); transition: transform 120ms, border-color 120ms;
   }
-  .grid .card a { width: auto; }
   .card a:hover { border-color: var(--jw-pick-edge); transform: translateY(-3px); }
   .meta { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .chip {
@@ -101,13 +75,4 @@ const tracks = moving ? [false, true] : [false];
   .foot { display: flex; align-items: end; justify-content: space-between; gap: 1rem; }
   .title { font-size: 1.15rem; font-weight: 700; line-height: 1.3; }
   .go { flex: none; font-weight: 700; color: var(--jw-brand-go); }
-
-  .moving .belt { animation: drift 50s linear infinite; }
-  .moving:hover .belt, .moving:focus-within .belt { animation-play-state: paused; }
-  @keyframes drift { to { transform: translateX(-50%); } }
-  @media (prefers-reduced-motion: reduce) {
-    .moving { overflow-x: auto; mask-image: none; }
-    .moving .belt { animation: none; }
-    .moving .track[aria-hidden], .moving .repeat { display: none; }
-  }
 </style>
