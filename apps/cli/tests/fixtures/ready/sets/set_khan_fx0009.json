@@ -157,9 +157,17 @@
     "count": {
       "pl": 5,
       "en": 0,
-      "shared": 0
+      "shared": 0,
+      "ready": {
+        "pl": 1,
+        "en": 0
+      }
     },
-    "ids": ["fxr1", "fxr2", "fxr3", "fxr4", "fxr5"]
+    "ids": ["fxr1", "fxr2", "fxr3", "fxr4", "fxr5"],
+    "ready_ids": {
+      "pl": ["fxr1"],
+      "en": []
+    }
   },
   "languages": {
     "pl": true,

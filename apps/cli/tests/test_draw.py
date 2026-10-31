@@ -203,3 +203,80 @@ def test_a_number_two_skills_carry_names_neither() -> None:
         "m.row-6", "m.times-6"
     )
     assert draw_module._type_skills(["m.row-3"], None) == ("m.row-3",)
+
+
+# --------------------------- dl-a38n.32.10: the draw takes the page's ready ids ----
+
+
+def _stamped(ready: list[str], language: str = "pl") -> dict[str, dict[str, Any]]:
+    """The fixture pages, the number-line set stamped with `ready` as its lesson-ready ids."""
+    pages = _pages()
+    page_items = pages[NUMBER_LINE]["items"]
+    page_items["ready_ids"] = {language: ready}
+    page_items["count"]["ready"] = {language: len(ready)}
+    return pages
+
+
+def test_a_stamped_page_draws_only_its_ready_ids() -> None:
+    pages = _pages()
+    ids = pages[NUMBER_LINE]["items"]["ids"]
+    ready = ids[::2]
+
+    result = draw(_pointed([NUMBER_LINE]), _stamped(ready), kind="practice", today=TODAY)
+
+    assert result.questions
+    assert {q.item_id for q in result.questions} <= set(ready)
+    held = {left.id: left.reason for left in result.left_out}
+    assert set(held) == set(ids) - set(ready)
+    assert set(held.values()) == {draw_module.NOT_READY_ITEM}
+
+
+def test_a_page_built_before_the_stamp_falls_back_to_its_ids() -> None:
+    pages = _pages()
+    assert "ready_ids" not in pages[NUMBER_LINE]["items"]
+
+    result = draw(_pointed([NUMBER_LINE]), pages, kind="practice", today=TODAY)
+
+    assert len(result.questions) == DRAW_RULES["practice"].count
+    assert draw_module.ready_ids(pages[NUMBER_LINE], "pl") is None
+    assert not any(left.reason == draw_module.NOT_READY_ITEM for left in result.left_out)
+
+
+@pytest.mark.parametrize("language", ["pl", "en"])
+def test_a_set_with_none_ready_in_the_lessons_language_is_left_out(language: str) -> None:
+    # Ready in the other language only: nothing here plays as a lesson in this one.
+    other = "en" if language == "pl" else "pl"
+    pages = _stamped(_pages()[NUMBER_LINE]["items"]["ids"], other)
+
+    result = draw(
+        _pointed([NUMBER_LINE]), pages, kind="practice", today=TODAY, language=language
+    )
+
+    assert result.questions == []
+    assert [(left.id, left.reason) for left in result.left_out] == [
+        (NUMBER_LINE, f"no item is lesson-ready in {language}")
+    ]
+
+
+def test_count_ready_without_ready_ids_falls_back_to_the_ids() -> None:
+    pages = _pages()
+    pages[NUMBER_LINE]["items"]["count"]["ready"] = {"pl": 3}
+    assert "ready_ids" not in pages[NUMBER_LINE]["items"]
+
+    result = draw(_pointed([NUMBER_LINE]), pages, kind="practice", today=TODAY)
+
+    assert draw_module.ready_ids(pages[NUMBER_LINE], "pl") is None
+    assert len(result.questions) == DRAW_RULES["practice"].count
+    assert not any(left.reason == draw_module.NOT_READY_ITEM for left in result.left_out)
+
+
+def test_count_ready_zero_leaves_the_set_out_even_without_ids() -> None:
+    pages = _pages()
+    pages[NUMBER_LINE]["items"]["count"]["ready"] = {"pl": 0, "en": 3}
+
+    result = draw(_pointed([NUMBER_LINE, ADD]), pages, kind="practice", today=TODAY)
+
+    assert (NUMBER_LINE, "no item is lesson-ready in pl") in [
+        (left.id, left.reason) for left in result.left_out
+    ]
+    assert {q.set_id for q in result.questions} == {ADD}

@@ -37,6 +37,7 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 from referencing import Registry, Resource
 
+from jw import draw
 from jw.errors import JwError
 from jw.settings_keys import (
     API_SEARCH_PATH,
@@ -279,29 +280,53 @@ def gaps(needs: list[dict[str, Any]], *, arm: str | None = None, limit: int = 5)
     `abstained`). A need whose arms are all `degraded` is not a gap: the bank could not be asked,
     and the row says so. The bank's own stored gap count (empty rows per skill, type or mistake,
     with no learner or pod) has no route yet; this is the caller's view of the same thing.
+
+    A found set with no lesson-ready item in the need's language does not fill it (dl-a38n.32.10,
+    decisions dl-kaxj and dl-be2l): when `JADWIGO_BANK_DIR` has its page and the page's
+    `count.ready[lang]` is 0, the set is listed in `not_ready`, and a need whose every found set is
+    so is a gap with `reason: no item is lesson-ready in <lang>`. A set whose page is missing, or
+    was built before the readiness stamp, counts as found.
     """
     out = []
     for need in needs:
         envelope = search(need, arm=arm, limit=limit)
         asked = [s for s in envelope["state"] if s["state"] != "not_asked"]
-        if envelope["rows"]:
+        language = str(need.get("language") or "pl")
+        not_ready = [str(r["id"]) for r in envelope["rows"] if _none_ready(str(r["id"]), language)]
+        reason = None
+        if envelope["rows"] and len(not_ready) == len(envelope["rows"]):
+            verdict, reason = "gap", draw.not_ready_reason(language)
+        elif envelope["rows"]:
             verdict = "found"
         elif asked and all(s["state"] == "degraded" for s in asked):
             verdict = "degraded"
         else:
             verdict = "gap"
-        out.append(
-            {
-                "need": envelope.get("need", need),
-                "verdict": verdict,
-                "rows": len(envelope["rows"]),
-                "top": [r["id"] for r in envelope["rows"][:3]],
-                "state": asked,
-            }
-        )
+        row: dict[str, Any] = {
+            "need": envelope.get("need", need),
+            "verdict": verdict,
+            "rows": len(envelope["rows"]),
+            "top": [r["id"] for r in envelope["rows"][:3]],
+            "state": asked,
+        }
+        if not_ready:
+            row["not_ready"] = not_ready
+        if reason:
+            row["reason"] = reason
+        out.append(row)
     return {
         "version": 1,
         "needs": out,
         "gaps": sum(1 for row in out if row["verdict"] == "gap"),
         "degraded": sum(1 for row in out if row["verdict"] == "degraded"),
     }
+
+
+def _none_ready(set_id: str, language: str) -> bool:
+    """Whether the set's page says no item is lesson-ready in `language`; False when there is no
+    page to read, or it was built before the readiness stamp."""
+    try:
+        page = show_set(set_id)
+    except JwError:
+        return False
+    return draw.ready_count(page, language) == 0

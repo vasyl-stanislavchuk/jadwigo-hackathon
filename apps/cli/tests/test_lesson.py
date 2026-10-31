@@ -1018,3 +1018,19 @@ def test_the_draft_verb_prints_the_reasons_too(ready_bank: Path, check_ts: Check
     view = json.loads(result.output)
     assert [q["item_id"] for q in view["questions"]] == ["fxr1"]
     assert {item["id"]: item["reason"] for item in view["left_out"]} == READY_LEFT_OUT
+
+
+def test_an_item_the_page_holds_back_but_the_file_finds_ready_says_the_page_is_why(
+    ready_bank: Path, check_ts: CheckTs
+) -> None:
+    page = ready_bank / "sets" / "set_khan_fx0009.json"
+    stamped = json.loads(page.read_text(encoding="utf-8"))
+    stamped["items"]["ready_ids"]["pl"] = []
+    stamped["items"]["count"]["ready"]["pl"] = 1  # a page older than the stamp
+    page.write_text(json.dumps(stamped), encoding="utf-8")
+
+    view = _ready_draft()
+
+    left = {item["id"]: item["reason"] for item in view["left_out"]}
+    assert left["fxr1"] == "its set page does not list it as lesson-ready in pl"
+    assert left["fxr5"] == "not checked"
