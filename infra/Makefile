@@ -9,7 +9,7 @@ export PATH := $(MISE_BIN_PATHS)$(PATH)
 ENV ?= prod
 TF := AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform
 
-.PHONY: init plan apply output site-deploy deploy api-deploy web-deploy web-build docs-deploy auth-diff auth-apply fmt validate test
+.PHONY: init plan apply output site-deploy deploy deploy-all prod-status api-deploy web-deploy web-build docs-deploy auth-diff auth-apply fmt validate test
 
 init:
 	$(TF) init -input=false -reconfigure -backend-config=environments/$(ENV).backend.hcl
@@ -27,9 +27,15 @@ output:
 # after an apply; a merge deploys nothing. Hashed assets under _astro/ cache for a year, the rest 5 minutes.
 SITE := ../apps/site
 AWS := aws --profile $(AWS_PROFILE)
+# Each deploy writes the commit it ships, "<sha> <UTC time>[ dirty]", which `make prod-status` reads
+# back (dl-5ssh.34.65): version.txt in the site and the docs, version/web.txt and version/api.txt on
+# app.<apex>. The recipe's shell runs it, so it names the checkout the build came from.
+STAMP = printf '%s %s%s\n' "$$(git rev-parse HEAD)" "$$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$$([ -z "$$(git status --porcelain)" ] || echo ' dirty')"
 
 site-deploy:
+	@$(NOT_FROM_AGENT)
 	cd $(SITE) && bun run build && bun run check:dist
+	$(STAMP) > $(SITE)/dist/version.txt
 	bucket=$$($(TF) output -raw site_bucket) && dist_id=$$($(TF) output -raw site_distribution_id) && \
 	{ [ ! -d $(SITE)/dist/_astro ] || $(AWS) s3 sync $(SITE)/dist/_astro s3://$$bucket/_astro --cache-control "public, max-age=31536000, immutable"; } && \
 	$(AWS) s3 sync $(SITE)/dist s3://$$bucket --delete --exclude "_astro/*" --cache-control "public, max-age=300" && \
@@ -46,6 +52,17 @@ NOT_FROM_AGENT = if [ -n "$$CLAUDECODE" ]; then echo "$@: the owner deploys, fro
 
 deploy: api-deploy web-deploy
 
+# Every service's code to prod: the api, the web app, the site and the docs. Each half can be undone by
+# deploying again. It runs no migration and no Terraform apply: those are one-way or need a reviewed
+# plan, so they stay their own gated steps (the root Makefile's db-push, then plan and apply here),
+# run first when `make prod-status` or a PR says so.
+deploy-all: api-deploy web-deploy site-deploy docs-deploy
+
+# Read-only: each service's live commit and how many commits on origin/main touch it since
+# (prod-status.sh). Safe from any shell. JADWIGO_AWS_PROFILE reads the Lambda through aws.mk's profile.
+prod-status:
+	@JADWIGO_AWS_PROFILE=$(AWS_PROFILE) JW_API_FUNCTION=jadwigo-api-$(ENV) sh prod-status.sh
+
 # The bundle (`make api-bundle`), zipped, as the function's code; then wait until it is live.
 api-deploy:
 	@$(NOT_FROM_AGENT)
@@ -54,6 +71,9 @@ api-deploy:
 	fn=$$($(TF) output -raw api_function_name) && \
 	$(AWS) lambda update-function-code --function-name $$fn --zip-file fileb://$(API_ZIP) --architectures arm64 >/dev/null && \
 	$(AWS) lambda wait function-updated-v2 --function-name $$fn && echo "api-deploy: $$fn is live"
+	bucket=$$($(TF) output -raw app_bucket) && dist_id=$$($(TF) output -raw app_distribution_id) && \
+	$(STAMP) | $(AWS) s3 cp - s3://$$bucket/version/api.txt --content-type "text/plain; charset=utf-8" --cache-control "public, max-age=60" && \
+	$(AWS) cloudfront create-invalidation --distribution-id $$dist_id --paths "/version/api.txt" >/dev/null
 
 # apps/web's build to the app bucket, then invalidate. Hashed files under assets/ cache for a year,
 # the rest (index.html first) 5 minutes, so a deploy shows within minutes.
@@ -61,9 +81,10 @@ web-deploy:
 	@$(NOT_FROM_AGENT)
 	$(MAKE) web-build
 	test -f $(WEB)/dist/index.html
+	mkdir -p $(WEB)/dist/version && $(STAMP) > $(WEB)/dist/version/web.txt
 	bucket=$$($(TF) output -raw app_bucket) && dist_id=$$($(TF) output -raw app_distribution_id) && \
 	{ [ ! -d $(WEB)/dist/assets ] || $(AWS) s3 sync $(WEB)/dist/assets s3://$$bucket/assets --cache-control "public, max-age=31536000, immutable"; } && \
-	$(AWS) s3 sync $(WEB)/dist s3://$$bucket --delete --exclude "assets/*" --cache-control "public, max-age=300" && \
+	$(AWS) s3 sync $(WEB)/dist s3://$$bucket --delete --exclude "assets/*" --exclude "version/api.txt" --cache-control "public, max-age=300" && \
 	$(AWS) cloudfront create-invalidation --distribution-id $$dist_id --paths "/*"
 
 # apps/web's build with the environment's public settings, web-build/<env>.env: the Supabase URL, its
@@ -88,6 +109,7 @@ DOCS := ../apps/docs
 docs-deploy:
 	@$(NOT_FROM_AGENT)
 	cd $(DOCS) && bun run build && bun run check:dist
+	$(STAMP) > $(DOCS)/dist/version.txt
 	bucket=$$($(TF) output -raw docs_bucket) && dist_id=$$($(TF) output -raw docs_distribution_id) && \
 	{ [ ! -d $(DOCS)/dist/_astro ] || $(AWS) s3 sync $(DOCS)/dist/_astro s3://$$bucket/_astro --cache-control "public, max-age=31536000, immutable"; } && \
 	$(AWS) s3 sync $(DOCS)/dist s3://$$bucket --delete --exclude "_astro/*" --exclude "*.md" --cache-control "public, max-age=300" && \

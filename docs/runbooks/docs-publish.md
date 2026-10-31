@@ -15,7 +15,7 @@ files agents read: `/llms.txt`, `/openapi.json` and `/mcp-tools.json`. Each page
 ## Before
 
 - You are in a terminal, not an agent's shell: `docs-deploy` refuses when `CLAUDECODE` is set.
-- The AWS profile works: `aws --profile sergii sts get-caller-identity` prints account `843109108289`.
+- The AWS profile works: `aws --profile jadwigo sts get-caller-identity` prints account `843109108289`.
 - The docs build here: `cd apps/docs && bun run build && bun run check:dist` ends with no error.
 - `main` has `module "docs"`: `grep -n 'module "docs"' infra/terraform/main.tf` prints a line.
 
@@ -44,7 +44,7 @@ files agents read: `/llms.txt`, `/openapi.json` and `/mcp-tools.json`. Each page
    every path, `/` included, answers `403` with S3's XML `AccessDenied`: CloudFront may not list the
    bucket, so a missing file reads as denied, and the `/404.html` it falls back to is missing too.
    That is expected, not a broken policy. If it still answers `403` after step 3, check that the bucket
-   has `index.html` (`aws --profile sergii s3 ls s3://jadwigo-docs-prod-843109108289/index.html`).
+   has `index.html` (`aws --profile jadwigo s3 ls s3://jadwigo-docs-prod-843109108289/index.html`).
 
 3. Publish:
 
@@ -71,6 +71,6 @@ After a docs change, only step 3 is needed.
 
 - A bad publish: check out the last good commit and run step 3 again. The invalidation clears the
   5-minute files; old hashed files under `_astro/` stay in the bucket and do no harm.
-- The whole edge: empty the bucket (`aws --profile sergii s3 rm s3://jadwigo-docs-prod-843109108289 --recursive`),
+- The whole edge: empty the bucket (`aws --profile jadwigo s3 rm s3://jadwigo-docs-prod-843109108289 --recursive`),
   remove `module "docs"` and its outputs, then plan and apply. One-way for the URL: anyone who copied
   a docs link sees an error until it is back.
