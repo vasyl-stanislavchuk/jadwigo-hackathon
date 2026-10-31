@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 import {
+  BasedOn,
+  Credit,
   FamilyQuestion,
   Help,
   type LessonId,
@@ -203,8 +205,9 @@ function withId(
  * Compiles a lesson file into what the import writes, in the file's own language. Teaching steps,
  * `can_do`, each step's `reason` and `scenarios` are dropped (decision
  * `2026-10-27-the-v0-attempt-rules-questions-only-on-the-wire-the-api-v1-route`), and each
- * `help.twin` becomes a spare lesson question with `twin_of`. A twin carries no credit or
- * `based_on`, as the playground shows none on it.
+ * `help.twin` becomes a spare lesson question with `twin_of`. A twin keeps its own `credit` and
+ * `based_on` when it has them, so a sibling bank item taken as the twin carries its attribution into
+ * the stored question (dl-a38n.46), and null when not, as the playground writes none.
  */
 export function compileLessonFile(raw: unknown, pod: PodId = FEATURED_POD.id): CompiledLesson {
   return compile(parseLessonFile(raw), pod, (problem) => {
@@ -297,7 +300,12 @@ function compile(
 
     const twin = step.question.help?.["twin"];
     if (twin === undefined) continue;
-    const { say, ...twinQuestion } = twin as FileQuestion & { say: string };
+    const {
+      say,
+      credit: twinCredit,
+      based_on: twinBasedOn,
+      ...twinQuestion
+    } = twin as FileQuestion & { say: string; credit?: unknown; based_on?: unknown };
     const twinStep = `${step.id}t`;
     if (twinQuestion.help?.["twin"] !== undefined) {
       report({
@@ -315,8 +323,18 @@ function compile(
         body(file.id, twinStep, step, twinQuestion, say, {
           ...shared,
           twin_of: question.id,
-          based_on: null,
-          credit: null,
+          based_on: strictly(
+            BasedOn.nullable(),
+            twinBasedOn ?? null,
+            `lesson file ${file.id}, step ${twinStep} based_on`,
+            "question",
+          ),
+          credit: strictly(
+            Credit.nullable(),
+            twinCredit ?? null,
+            `lesson file ${file.id}, step ${twinStep} credit`,
+            "question",
+          ),
         }),
       report,
       true,
