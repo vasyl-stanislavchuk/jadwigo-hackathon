@@ -37,7 +37,7 @@ describe("lessonFileToSpecs", () => {
         continue;
       }
       expect(spec?.help?.twin, step.id).toMatchObject({
-        id: `${step.id}-twin`,
+        id: `${step.id}t`,
         question_type: spec?.question_type,
         family: spec?.family,
       });
