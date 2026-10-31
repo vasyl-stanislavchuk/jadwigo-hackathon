@@ -37,7 +37,7 @@ test("Choose, recognition: an option with inline TeX is one sentence, not one li
   page,
 }) => {
   await page.goto("/playground/choose/recognition");
-  const formulas = page.locator("[data-example] li [data-formula]");
+  const formulas = page.locator("[data-example] [data-option] [data-formula]");
   await expect(formulas.first()).toBeVisible();
   const drawn = await formulas.evaluateAll((spans) =>
     spans.map((span) => {
