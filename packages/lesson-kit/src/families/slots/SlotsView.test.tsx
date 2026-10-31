@@ -300,6 +300,52 @@ describe("Gaps: a table of cells (fill_table, dl-w3.51.5)", () => {
     expect(document.querySelector('[role="cell"] [data-tex]')).not.toBeNull();
   });
 
+  it("draws a table with no header as a layout, a chain's steps under its first = (dl-w3.81)", () => {
+    play({
+      template: "",
+      table: {
+        header: ["", ""],
+        rows: [
+          ["$8 \\cdot 9$", "$= (5 \\cdot$ {g1} $) + (3 \\cdot 9)$"],
+          ["$= 45 + 27$", ""],
+          ["$=$ {g2}", ""],
+        ],
+      },
+      gaps: [number("g1"), number("g2")],
+    });
+    const table = must(document.querySelector<HTMLElement>("[data-table]"));
+    expect(table.hasAttribute("data-layout")).toBe(true);
+    expect(table.className).not.toContain("border");
+    expect(table.style.gridTemplateColumns).toBe("repeat(2, max-content)");
+    const cells = [...table.querySelectorAll<HTMLElement>('[role="cell"]')];
+    // Row by row: the left side, then each step in column 2.
+    expect(cells.map((c) => c.style.gridColumn)).toEqual(["1", "2", "1", "2", "1", "2"]);
+    expect(cells.map((c) => c.textContent === "")).toEqual([
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+    ]);
+    expect(gap(1).closest('[role="cell"]')).toBe(cells[1]);
+    expect(gap(2).closest('[role="cell"]')).toBe(cells[5]);
+    expect(cells[0]?.className).toContain("justify-end");
+    expect(cells[1]?.className).toContain("justify-start");
+    for (const cell of cells) expect(cell.className).not.toContain("border");
+  });
+
+  it("keeps the grid for a table with a header", () => {
+    play({
+      template: "",
+      table: { header: ["a", "b"], rows: [["1", "{g1}"]] },
+      gaps: [number("g1")],
+    });
+    const table = must(document.querySelector<HTMLElement>("[data-table]"));
+    expect(table.hasAttribute("data-layout")).toBe(false);
+    expect(table.className).toContain("border-2");
+  });
+
   it("every cell is at least 72 tall, more than a tap target (addendum 4.2)", () => {
     play({
       template: "",
