@@ -91,6 +91,7 @@ Not in the repo, on purpose: decisions (the md context brain), the question bank
 | Integration tests | `make migrate`, then `bunx turbo run test:int` (`DATABASE_URL` from `.env.local`: Postgres.app 17 on port 5433) |
 | Migrations and their pgTAP tests | `make migrate && make pgtap` (plain Postgres, no Docker) |
 | Drops | `make drops` (`md drops check` on each); build one with `/dev-drop` |
+| What is live on prod | `make -C infra prod-status` (read-only). Releasing is the owner's: `make release`, one typed prod |
 | Workflow and dev command links | `make skills` |
 
 Run the tests your change touches. CI runs the rest. Playwright is CI's job.

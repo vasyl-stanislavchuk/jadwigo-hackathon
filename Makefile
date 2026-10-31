@@ -18,7 +18,7 @@ ifneq (,$(wildcard $(HOME)/perl5/bin/pg_prove))
 export PATH := $(HOME)/perl5/bin:$(PATH)
 export PERL5LIB := $(HOME)/perl5/lib/perl5$(if $(PERL5LIB),:$(PERL5LIB))
 endif
-.PHONY: check check-all dev db migrate pgtap db-reset db-seed lesson-import api-dev api-bundle api-invoke db-push db-role skills drops icons builder
+.PHONY: check check-all dev db migrate pgtap db-reset db-seed lesson-import api-dev api-bundle api-invoke db-push db-role release skills drops icons builder
 
 ## check: lint, typecheck and test what changed since main (turbo --affected), uv's pytest
 ## included, then the repo-wide checks turbo cannot scope: knip, dependency-cruiser, no-bank, worklog,
@@ -101,10 +101,15 @@ SUPABASE_LINK = case "$(ENV)" in dev|prod) ;; *) echo "$@: ENV=dev or ENV=prod";
 # typed on the command line or exported. This gate stops a plain agent shell, not a determined one:
 # a pty wrapper (script, expect, python's pty) gives it a terminal and can type prod. In Claude Code
 # .claude/hooks/guard.ts denies that, and clearing CLAUDECODE (dl-5ssh.45); a Codex shell has no guard.
+# `make release` asks for prod once and then sets JW_RELEASE_CONFIRMED=prod for its steps
+# (dl-5ssh.34.67), which skips only the typed word: the terminal and CLAUDECODE checks still run
+# first, so it gives an agent's shell nothing. Nothing else sets it, and the guard denies a session that does.
 PROD_GATE = if [ "$(ENV)" = prod ]; then \
 	  if [ -n "$$CLAUDECODE" ] || [ ! -t 0 ]; then echo "$@ ENV=prod: run it from your own terminal, where it asks you to type prod"; exit 1; fi; \
+	  if [ "$${JW_RELEASE_CONFIRMED:-}" = prod ]; then echo "$@ ENV=prod: confirmed once by make release"; else \
 	  printf '%s on jadwigo-prod? Type prod to go on: ' "$@"; read answer; \
 	  if [ "$$answer" != prod ]; then echo "$@: nothing done on jadwigo-prod"; exit 1; fi; \
+	  fi; \
 	fi
 
 # jadwigo_api's session pooler URL (port 5432) in url, from the pooler-url supabase link wrote, refused
@@ -228,9 +233,18 @@ api-dev:
 	env -i PATH="$$PATH" HOME="$$HOME" USER="$$USER" TMPDIR="$${TMPDIR:-/tmp}" PORT="$${PORT:-8787}" PGPASSWORD="$$API_PASSWORD" DATABASE_URL="$$url" \
 	  bun run --cwd apps/api dev
 
+## release: origin/main to prod, asking once (infra/release.sh, dl-5ssh.34.67). It previews the
+## migrations, a saved Terraform plan and prod-status, asks you to type prod, then pushes the
+## migrations, checks jadwigo_api's login, seeds, applies the saved plan and deploys the api, the web,
+## the site and the docs. It stops before asking when the plan destroys or replaces anything. Your own
+## terminal only; the guard denies it from a session, and `make -n release` shows the one command.
+release:
+	@sh infra/release.sh
+
 ## db-push ENV=dev|prod: show the migrations ENV's project lacks (a dry run), then push them only when
 ## you type the ENV's name. For dev only, CONFIRM=dev on the command line answers where there is no
-## keyboard (`!` in Claude Code); prod runs only from your own terminal (PROD_GATE asks first).
+## keyboard (`!` in Claude Code); prod runs only from your own terminal (PROD_GATE asks first), and
+## under `make release` the one prod typed there answers both prompts.
 ## DRY_RUN=1 stops after the dry run. One-way: a pushed migration stays.
 db-push:
 	@$(PROD_GATE)
@@ -238,6 +252,7 @@ db-push:
 	supabase db push --linked --dry-run || exit 1; \
 	if [ -n "$(DRY_RUN)" ]; then exit 0; fi; \
 	answer=; if [ "$(ENV)" = dev ] && [ "$(origin CONFIRM)" = "command line" ]; then answer="$(CONFIRM)"; fi; \
+	if [ "$(ENV)" = prod ] && [ "$${JW_RELEASE_CONFIRMED:-}" = prod ]; then answer=prod; fi; \
 	if [ -z "$$answer" ]; then printf 'Push these to jadwigo-%s? Type %s to push: ' "$(ENV)" "$(ENV)"; read answer; fi; \
 	if [ "$$answer" != "$(ENV)" ]; then echo "db-push: nothing pushed"; exit 1; fi; \
 	supabase db push --linked
