@@ -207,6 +207,16 @@ function Runs({
             return <Tex key={i} tex={r.tex} display={r.display || props.display === true} />;
           case "slot":
             return <Fragment key={i}>{slot(r.id)}</Fragment>;
+          case "image":
+            // In the line, beside its words and TeX (an option's `$A$ ![…](…)`), never a block.
+            return (
+              <img
+                key={i}
+                src={r.src}
+                alt={r.alt}
+                className="inline-block max-w-full rounded-lg align-middle"
+              />
+            );
           case "term":
             return (
               <Term

@@ -33,6 +33,45 @@ describe("RichText", () => {
     expect(img.className).toMatch(/max-w-full/);
   });
 
+  it("draws an item that is only a picture line as the picture, not its markdown (dl-a38n.32.40)", () => {
+    const { container } = render(
+      <RichText inline text="![The shortest ribbon.]( /media/khan/0a1b2c.svg)" />,
+    );
+    const img = must(container.querySelector("img"));
+    expect(img.getAttribute("alt")).toBe("The shortest ribbon.");
+    expect(img.getAttribute("src")).toBe("/media/khan/0a1b2c.svg");
+    expect(container.textContent).not.toContain("![");
+  });
+
+  it("draws pictures inside a line inline, beside their TeX, never as markdown (dl-a38n.32.40)", () => {
+    const { container } = render(
+      <span>
+        <RichText
+          inline
+          text="$A$ ![A bar in 3 parts.](/media/khan/1.svg)$=$![A bar in 6 parts.](/media/khan/2.svg)"
+        />
+      </span>,
+    );
+    const host = must(container.firstElementChild);
+    const imgs = [...host.querySelectorAll("img")];
+    expect(imgs.map((i) => i.getAttribute("alt"))).toEqual([
+      "A bar in 3 parts.",
+      "A bar in 6 parts.",
+    ]);
+    expect(imgs.map((i) => i.getAttribute("src"))).toEqual([
+      "/media/khan/1.svg",
+      "/media/khan/2.svg",
+    ]);
+    // Each picture sits in the line itself, beside the TeX: no block wrapper, no break.
+    for (const img of imgs) {
+      expect(img.parentElement).toBe(host);
+      expect(img.className).toMatch(/inline-block/);
+      expect(img.className).toMatch(/align-middle/);
+    }
+    expect(host.querySelector("br, p, div")).toBeNull();
+    expect(host.textContent).not.toMatch(/!\[|\]\(/);
+  });
+
   it("paints \\blueD with the tex-blue class and raises no KaTeX error", () => {
     const { container } = render(<RichText text="so $\blueD{4} \times \greenD{3}$" />);
     expect(container.querySelector(".katex")).not.toBeNull();

@@ -54,9 +54,23 @@ export function mediaSrc(src: string, base: string = mediaUrl()): string {
  * Stem `image`, a Picture's `src`, a help card's `picture`). */
 const PICTURE_KEYS = new Set(["src", "image", "picture"]);
 
+/** A markdown image in lesson text, `![alt](address)`, the address alone in group 2. Perseus
+ * writes a space inside the parentheses (`]( web+graphie://…)`); lesson-kit's RichText reads the
+ * same form (richTextParse.ts). */
+const MARKDOWN_IMAGE = /(!\[[^\]\n]*\]\([^\S\n]*)([^)\s]+)(?=[^\S\n]*\))/g;
+
+/** A lesson string with the address of every markdown image in it through `mediaSrc`. */
+function textWithMedia(text: string, base: string): string {
+  return text.includes("![")
+    ? text.replace(MARKDOWN_IMAGE, (_all, head: string, src: string) => head + mediaSrc(src, base))
+    : text;
+}
+
 /**
  * A copy of a question's data (or its released help) with every picture address through
- * `mediaSrc`. Only string values under `src`, `image` and `picture` change; nothing else is read.
+ * `mediaSrc`: a string under `src`, `image` or `picture`, and the address of a markdown image
+ * inside any other string (an option's or a sequence item's text, dl-a38n.32.40). Nothing else
+ * changes.
  */
 export function withMedia<T>(value: T, base: string = mediaUrl()): T {
   const walk = (v: unknown): unknown => {
@@ -65,7 +79,11 @@ export function withMedia<T>(value: T, base: string = mediaUrl()): T {
     return Object.fromEntries(
       Object.entries(v).map(([k, x]) => [
         k,
-        typeof x === "string" && PICTURE_KEYS.has(k) ? mediaSrc(x, base) : walk(x),
+        typeof x === "string"
+          ? PICTURE_KEYS.has(k)
+            ? mediaSrc(x, base)
+            : textWithMedia(x, base)
+          : walk(x),
       ]),
     );
   };

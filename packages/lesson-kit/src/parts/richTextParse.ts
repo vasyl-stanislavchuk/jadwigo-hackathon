@@ -21,7 +21,12 @@
  * https://github.com/Khan/perseus/tree/main/packages/perseus/src/widgets/definition). The meaning
  * is kept as a string and parsed again when drawn, so it may hold TeX. A link to anywhere else,
  * `[text](https://…)`, is its text with the URL dropped: lesson text never leads a child off the
- * page. An inline image `![alt](src)` stays text, as before.
+ * page.
+ *
+ * An image `![alt](src)` on its own line is a block; one inside a line (an option's `$A$ ![…](…)`, two
+ * pictures around `$=$`) is an `image` run, drawn inline (dl-a38n.32.40). The address may carry
+ * spaces inside its parentheses, as Perseus writes `]( web+graphie://…)`. The app maps an address
+ * to where pictures live before the kit sees the text (apps/web/src/media.ts `withMedia`).
  */
 
 export type Inline =
@@ -32,6 +37,7 @@ export type Inline =
   | { kind: "tex"; tex: string; display: boolean }
   | { kind: "slot"; id: string }
   | { kind: "term"; word: string; meaning: string }
+  | { kind: "image"; alt: string; src: string }
   | { kind: "break" };
 
 export type Block =
@@ -47,7 +53,9 @@ export interface RichTextOptions {
 
 /** The id a slot marker may carry: the same shape as a gap marker (families/slots/model.ts). */
 const SLOT = /^\{([a-z][a-z0-9_]*)\}/;
-const IMAGE_LINE = /^!\[([^\]]*)\]\(([^)\s]+)\)$/;
+const IMAGE_LINE = /^!\[([^\]]*)\]\(\s*([^)\s]+)\s*\)$/;
+/** An image inside a line: the same form, held to the line. */
+const IMAGE = /^!\[([^\]\n]*)\]\([^\S\n]*([^)\s]+)[^\S\n]*\)/;
 // A table's delimiter row, in every form Perseus writes: `-|-`, `:-|`, `---|---`, `| - | - |`.
 const TABLE_DELIM = /^[\s|:-]*-[\s|:-]*$/;
 const BULLET = /^- (.*)$/;
@@ -258,6 +266,15 @@ export function parseInline(text: string, options: RichTextOptions = {}, bold = 
         flush();
         runs.push({ kind: "italic", runs: parseInline(text.slice(i + 1, end), options, false) });
         i = end + 1;
+        continue;
+      }
+    }
+    if (c === "!" && text[i + 1] === "[") {
+      const m = IMAGE.exec(text.slice(i));
+      if (m) {
+        flush();
+        runs.push({ kind: "image", alt: m[1] ?? "", src: m[2] ?? "" });
+        i += m[0].length;
         continue;
       }
     }
