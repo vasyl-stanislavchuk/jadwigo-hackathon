@@ -31,7 +31,6 @@ describe("firstSentence", () => {
 describe("the hero question", () => {
   const question = landingSchema.shape.hero.shape.question;
   const q = {
-    lesson: "asg_x",
     say: "Ile to jest 2 razy 7?",
     choices: ["12", "14"],
     answer: "14",

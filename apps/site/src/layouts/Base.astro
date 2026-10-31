@@ -58,6 +58,7 @@ const footerLinks = [
     <style is:global>
       *, *::before, *::after { box-sizing: border-box; }
       html { scroll-behavior: smooth; }
+      [id] { scroll-margin-top: 7rem; } /* an anchor lands below the sticky header */
       @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
       body {
         margin: 0; background: var(--jw-ground); color: var(--jw-ink);
@@ -81,28 +82,41 @@ const footerLinks = [
       .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--jw-act-edge); }
       .btn.quiet { background: var(--jw-act-quiet); color: var(--jw-ink); box-shadow: 0 4px 0 var(--jw-line); }
 
-      .site-header { border-bottom: 1px solid var(--jw-line); }
-      .site-header .wrap { display: flex; align-items: center; gap: 1rem; min-height: 4.5rem; }
+      /* The header stays in reach on a long page: sticky, on the page's own white, its hairline below.
+         The crown gets room above the wordmark so it never touches the top edge (dl-5ssh.4.9). */
+      .site-header {
+        position: sticky; top: 0; z-index: 10;
+        background: var(--jw-ground); border-bottom: 1px solid var(--jw-line);
+      }
+      .site-header .wrap { display: flex; align-items: center; gap: 0.5rem 1rem; padding-top: 0.75rem; padding-bottom: 0.5rem; }
       /* Hover 5a: only the crown tips, about the bottom-left corner of its box (packages/ui src/brand/
          README.md); a tap plays it once. The wordmark's box is 180 units tall, the crown's room included. */
       .logo { display: inline-flex; line-height: 0; }
-      .logo svg { height: 3.25rem; width: auto; overflow: visible; }
-      @media (min-width: 52rem) { .logo svg { height: 3.75rem; } }
+      .logo svg { height: 3rem; width: auto; overflow: visible; }
+      @media (min-width: 52rem) { .logo svg { height: 3.25rem; } }
       .logo .crown { transform-origin: -12.5px 2.15px; transition: transform 320ms cubic-bezier(.34, 1.8, .5, 1); }
       .logo:hover .crown, .logo:focus-visible .crown, .logo.tip .crown { transform: translateY(-12.5px) rotate(-18deg); }
       @media (prefers-reduced-motion: reduce) {
         .logo .crown, .logo:hover .crown, .logo:focus-visible .crown, .logo.tip .crown { transition: none; transform: none; }
       }
       .site-header .wrap { flex-wrap: wrap; }
-      /* On a phone the pages sit in a row under the logo, scrolling sideways if they must. */
-      .site-nav { display: flex; order: 3; width: 100%; gap: 1rem; overflow-x: auto; white-space: nowrap; font-size: 0.95rem; }
-      .site-nav a { color: var(--jw-ink); text-decoration: none; font-weight: 700; padding: 0.5rem 0; }
-      .site-nav a:hover, .site-nav a[aria-current] { color: var(--jw-brand-go); }
-      .site-header .btn { margin-left: auto; padding: 0.5rem 1.1rem; min-height: 44px; }
+      /* Each page link is a 44 px pill: hover wears the quiet fill, the page you are on wears the pick,
+         as a picked answer does in the app. On a phone the pills sit in a row under the logo and
+         scroll sideways if they must; the row starts flush with the logo, its first pill's text aligned. */
+      .site-nav { display: flex; order: 3; width: calc(100% + 0.6rem); margin-left: -0.6rem; gap: 0.25rem; overflow-x: auto; white-space: nowrap; }
+      .site-nav a {
+        display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.6rem; font-size: 0.95rem;
+        border-radius: var(--jw-radius-control); color: var(--jw-ink); text-decoration: none; font-weight: 700;
+      }
+      .site-nav a:hover { background: var(--jw-act-quiet); }
+      .site-nav a[aria-current] { background: var(--jw-pick); color: var(--jw-pick-ink); }
+      .site-header .btn { margin-left: auto; padding: 0 1.1rem; min-height: 44px; }
       @media (min-width: 52rem) {
         .site-header .wrap { flex-wrap: nowrap; }
-        .site-nav { order: 0; width: auto; margin-left: auto; gap: 1.25rem; font-size: 1rem; }
-        .site-nav + .btn { margin-left: 0; }
+        .site-nav { order: 0; width: auto; margin-left: auto; overflow: visible; gap: 0.5rem; }
+        .site-nav a { padding: 0 0.85rem; font-size: 1rem; }
+        /* The one button stands a little apart from the pages, so it reads as an action, not a page. */
+        .site-nav + .btn { margin-left: 1rem; }
       }
 
       .site-footer { border-top: 1px solid var(--jw-line); margin-top: 4rem; padding: 2rem 0 3rem; color: var(--jw-ink-soft); }

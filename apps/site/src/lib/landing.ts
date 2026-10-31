@@ -1,7 +1,6 @@
 // The site's words beyond each page's frontmatter: one entry per section, read from
 // src/content/pl/landing.yaml so a native speaker edits words, not markup. The index page's
 // `reviewed` flag in src/content/pl/index.md covers these words too.
-import { ID_PREFIXES } from "@jadwigo/contracts";
 import { z } from "astro/zod";
 
 const text = z.string().min(1);
@@ -11,13 +10,11 @@ const head = { title: text, description: text, heading: text };
 
 export const landingSchema = z.object({
   // The hero's question (owner, 2026-10-31): the first question of one featured lesson, answered on
-  // the page. `lesson` is that lesson's assignment id, so "play" continues it.
+  // the page. `play` names the way into the lessons on other pages (/jak-to-dziala).
   hero: z.object({
-    homework: text,
     play: text,
     question: z
       .object({
-        lesson: z.string().startsWith(ID_PREFIXES.assignment),
         say: text,
         choices: z.array(text).min(2).max(4),
         answer: text,

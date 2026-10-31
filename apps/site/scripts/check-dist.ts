@@ -17,7 +17,7 @@ const landing: readonly DistCheck[] = [
   ["favicon.svg", "<svg"],
   ["favicon-32.png", "PNG"],
   ["apple-touch-icon.png", "PNG"],
-  ["index.html", '<a class="btn" href="/praca-domowa/"'],
+  ["index.html", '<p class="say" id="hero-say"'],
   ["index.html", 'id="lekcje"'],
   ["index.html", 'href="https://app.jadwigo.pl/play/asg_'],
   // Each header link is its own page, built and in the sitemap (owner, 2026-10-31).
