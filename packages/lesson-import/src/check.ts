@@ -4,6 +4,7 @@ import type { z } from "zod";
 import { type CompileProblem, compileLessonFile, compileProblems } from "./compile.ts";
 import type { Finding } from "./findings.ts";
 import { DRAFTS_POD, featuredAssignmentId, lessonIdFor } from "./ids.ts";
+import { type KeyProblem, keyProblems } from "./keys.ts";
 import { inItsLanguage, LessonFile, safeParseLessonFile } from "./lesson-file.ts";
 import { mistakeClassesByStep, mistakeClassesOf, unknownBoosts } from "./mistakes.ts";
 
@@ -574,6 +575,22 @@ function keyInSay(steps: readonly RawStep[]): Finding[] {
   return findings;
 }
 
+/** A key that does not grade its own solution (`key-grades`, keys.ts), at the key's path. */
+function keyGrades(steps: readonly RawStep[], problems: readonly KeyProblem[]): Finding[] {
+  return problems.map((p) => {
+    const own = p.twin ? p.step_id.slice(0, -1) : p.step_id;
+    const at = steps.find((s) => s.id === own)?.path ?? "script";
+    return {
+      step_id: p.step_id,
+      path: `${at}.question${p.twin ? ".help.twin" : ""}.key`,
+      level: "error",
+      rule: "key-grades",
+      text: `The ${p.twin ? "twin's " : ""}key does not grade its own answer: ${p.reason}.`,
+      fix: "Make the key name only what the question has (its option ids, gaps, items) and an answer the question accepts, so the right answer is judged right.",
+    };
+  });
+}
+
 /** Findings with each error also as jw's old message, so `errors` agrees with `ok`. */
 function errorsAsJw(fileId: unknown, findings: readonly Finding[]): Found {
   return {
@@ -609,7 +626,9 @@ function check(raw: unknown): CheckResult {
     const problems = compileProblems(parsed.data);
     found.push(compileFindings(steps, problems));
     if (problems.length === 0) {
-      questions = compileLessonFile(raw).questions.filter((q) => q.role === "planned").length;
+      const compiled = compileLessonFile(raw).questions;
+      questions = compiled.filter((q) => q.role === "planned").length;
+      found.push(errorsAsJw(id, keyGrades(steps, keyProblems(compiled))));
     }
   }
   // Stricter than the import, which keeps the playground's lessons as exported: a boost for a
