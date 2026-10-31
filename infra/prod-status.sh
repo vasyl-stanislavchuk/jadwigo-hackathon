@@ -3,7 +3,8 @@
 # Each deploy writes the commit it shipped: version/api.txt and version/web.txt on app.<apex>,
 # version.txt on the site and the docs, as "<sha> <UTC time>[ dirty]". For each service this prints that
 # commit, or the last-modified date before the first stamped deploy, and how many commits on main touch
-# the service's paths since: 0 means up to date. It writes nothing, and a failed probe prints "unknown".
+# the service's paths since: 0 means up to date. It changes nothing remote (its only write is the
+# local `git fetch` of origin/main), and a failed probe prints "unknown".
 # Env: JW_APP_URL, JW_SITE_URL, JW_DOCS_URL, JW_API_FUNCTION, JW_REF (default origin/main), JADWIGO_AWS_PROFILE (not AWS_PROFILE: an exported one must not win silently, as in aws.mk).
 set -u
 APP=${JW_APP_URL:-https://app.jadwigo.pl}

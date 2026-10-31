@@ -216,6 +216,12 @@ const cases: Array<[name: string, want: "allow" | "DENY", command: string]> = [
   ["env -u CLAUDECODE make docs-deploy", "DENY", "env -u CLAUDECODE make -C infra docs-deploy"],
   ["bash -c make docs-deploy", "DENY", "bash -c 'make -C infra docs-deploy'"],
   ["make -n -C infra docs-deploy", "allow", "make -n -C infra docs-deploy"],
+  // deploy-all runs all 4 halves (dl-5ssh.34.65)
+  ["make -C infra deploy-all", "DENY", "make -C infra deploy-all"],
+  ["env -i make deploy-all", "DENY", "env -i HOME=$HOME PATH=$PATH make -C infra deploy-all"],
+  ["bash -c make deploy-all", "DENY", "bash -c 'make -C infra deploy-all'"],
+  ["make -n -C infra deploy-all", "allow", "make -n -C infra deploy-all"],
+  ["make -C infra prod-status", "allow", "make -C infra prod-status"],
   ["make -C infra plan", "allow", "make -C infra plan"],
   ["make api-bundle", "allow", "make api-bundle"],
   [
