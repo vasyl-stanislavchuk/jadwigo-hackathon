@@ -155,7 +155,15 @@ it, readable by you only (mode 700).
    a `tutor_notes` entry in `based_on.changes`, so its misses name their class (`add_for_multiply`,
    `neighbour_row`, ...)
    (`jadwigo-ai-workflows/decisions/2026-10-30-jw-adds-the-multiplication-mistake-rule-by-code-to-a-copied-axb`).
-   Every other key stays as the bank has it. The lesson as copied, with no twin yet, is written to
+   Every other key stays as the bank has it. Each question's twin is a sibling bank item when the
+   set has one (`dl-a38n.40`; wave 3, lead decision 3; owner's decision `dl-zj7c`): a
+   lesson-ready item of the same set with the same `problem_type`, family and `question_type`,
+   the same representation signature (`lesson.signature`: the picture count at any depth plus a
+   `stem.image`, the figure kinds, the option content kinds, the input kind) and another key, not
+   in the lesson nor a twin already. It is picked deterministically from the draft id and copied
+   whole into `help.twin` with its hints, `credit` and `based_on: {question: "khan:<id>"}`, and
+   gets the multiplication rule like any copy. The item's own `help.boost_by_mistake` cards
+   are kept (decision 4). The lesson as copied, bank twins included, is written to
    `<JADWIGO_DRAFTS_DIR>/<draft_id>.json` (the result's `draft_path`) before the call returns, and
    run through `check.ts` once: `plays_as_copied` says whether it passed, its check is written
    beside it as `<draft_id>.check.json`, and each question's `mistake_classes` are the classes
@@ -165,26 +173,33 @@ it, readable by you only (mode 700).
 3. **Read the slim view.** `lesson_draft` returns the draft's `draft_id`, `title`, `reasoning` and
    `left_out`, and per question its `step_id`, `prompt`, `data` (pictures without their labels),
    `key`, `copied_help` (the hints as text, with their picture alts), `rungs` (what fills each
-   rung), `you_write` and `mistake_classes`. For the canonical request it is about 11,000
-   characters, under a client's tool-result limit.
+   rung), `you_write`, `cards_to_write`, `twin_source` and `mistake_classes`. For the canonical
+   request it is about 11,000 characters, under a client's tool-result limit.
 4. **Write what is missing.** Per step, what its `you_write` lists, in the lesson's language:
-   `twin`, a question from the same template with its own `say`, `data` and `key`;
-   `boost_by_mistake` as `{mistake class: {"text"}}`, keys from `mistake_classes`; and a rung the
+   `twin` (only without a bank twin), a question from the same template with its own `say`,
+   `data` and `key`; `boost_by_mistake` as `{mistake class: {"text"}}`, for the classes in
+   `cards_to_write`, merged with the item's own cards; and a rung the
    copy leaves empty (`look` and `boost` as `{"text"}` cards, `almost` and `worked` as lists of
    lines). A rung the copy fills is refused. To change a copied part, only when the parent asks,
    add `changes: [{"change", "why", "set": {path: value}}]`: `change` is `numbers`, `context`,
    `wording` or `tutor_notes`, and a path is `say` or a dotted path under `data`, `key`, `hints`,
    `worked` or `almost` (`hints.0.text`). Each change is recorded in `based_on.changes`.
 5. **Check.** `lesson_check(draft_id, help, title?, reasoning?, names?)` takes those words by
-   step id, every step's on each call. `title` and `reasoning` pass through the same name guard as
-   the request, with `names`, before they are written. It builds the lesson file
+   step id and rebuilds only the steps it is sent, from the bank's copy and those words; a step
+   left out keeps what the draft file holds (its words, the bank twin, `lesson_edit` changes), so
+   `help={}` checks the draft as it stands (`dl-a38n.40`). Every string in `help` but a `key`,
+   and `title` and `reasoning`, pass through the same name guard as the request, with `names`,
+   before they are written (`dl-a38n.36`). It builds the lesson file
    (`packages/lesson-import/src/lesson-file.ts`) and rewrites `<draft_id>.json` with it on every
-   call, as far as the words go. It refuses a missing twin or rung; otherwise it runs
+   call, as far as the words go. It refuses a missing twin or rung, and mistake cards only when
+   a step has none at all (the player falls back to `look` for a class with no card); otherwise
+   it runs
    `bun packages/lesson-import/src/check.ts <file> --json` in `JADWIGO_REPO_DIR`. Either way it
    rewrites `<draft_id>.check.json`: `{ok, findings, mistake_classes, checked_at}`. A finding is
    `{step_id, path, level, rule, text, fix}`: `check.ts`'s own when it sends them (`dl-a38n.14`),
    else each of its errors as one with rule `compile`; a refused word is one with rule `words`.
-   `ok: true` brings the card: per question its prompt, key, rungs, twin, source, licence, changes
+   `ok: true` brings the card: per question its prompt, key, rungs, twin and `twin_source`
+   (`bank khan:<id>` or `written`), source, licence, changes
    and why it was drawn, and what was left out. `ok: false` lists `findings` (and the old
    `errors`, for one release) by step id; fix them and check again. From a shell:
    `jw lesson check <draft_id> words.json --name <name>`, where `words.json` is the `help` object.
@@ -201,8 +216,10 @@ it, readable by you only (mode 700).
    (`wording` by default); a rung, twin or mistake card the agent writes needs none. It rewrites
    `<draft_id>.json` and `<draft_id>.check.json`, and answers for that step alone: `ok` (no error
    for it), its `findings`, `render`, its `card`, and `lesson_ok` for the whole lesson. A refused
-   patch changes nothing and comes back as findings with rule `edit`. `lesson_check` rebuilds
-   every step from the bank's copy and the words it is sent, so it replaces these edits. From a
+   patch changes nothing and comes back as findings with rule `edit`, refused before anything
+   merges: a patch or a part of it of the wrong kind (`question` not an object, `say` not a
+   string) included (`dl-a38n.35`). Its words but a key, and `why`, pass the name guard with
+   `names`. A later `lesson_check` keeps the edit unless it is sent words for that step. From a
    shell: `jw lesson edit <draft_id> q2 patch.json --why "..."` and `jw lesson show <draft_id> q2`
    (`dl-a38n.29`).
 7. **Publish, then play.** A clean check's card says `next`: call `lesson_publish(draft_id)`

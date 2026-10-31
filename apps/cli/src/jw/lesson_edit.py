@@ -1,7 +1,8 @@
 """One step of a draft, changed and shown (dl-a38n.29): the lesson_edit and lesson_show tools.
 
-`lesson.check` takes every step's words on each call and rebuilds the whole lesson from the bank's
-copy. `edit(draft_id, step_id, patch)` changes one step of the draft file as it stands instead:
+`lesson.check` rebuilds the steps it is sent words for from the bank's copy. `edit(draft_id,
+step_id, patch)` changes one step of the draft file as it stands instead, and a later check that
+is not sent words for that step keeps the change (dl-a38n.40):
 `patch` is a JSON merge patch (RFC 7386) on the step, over `say` and `question` (its `data`, `key`
 and `help`, the twin included as `help.twin`). An object merges into what is there, `null`
 removes a part, anything else replaces it. A change to a part the bank's copy has (`say`, `data`,
@@ -19,11 +20,11 @@ from __future__ import annotations
 
 import copy
 import json
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from jw import lesson
+from jw import lesson, pii
 from jw.errors import JwError
 
 # The parts of a step a patch may set; the rest (id, question_type, skill_ids, based_on, credit,
@@ -33,6 +34,8 @@ PATCHABLE = {"say": None, "question": {"data": None, "key": None, "help": None}}
 COPIED = (("say",), ("question", "data"), ("question", "key"), ("question", "help", "hints"),
           ("question", "help", "worked"), ("question", "help", "almost"))
 CHANGE_DEFAULT = "wording"
+# The parts a patch replaces whole or merges into, which are objects in a step (dl-a38n.35).
+OBJECTS = ("question.data", "question.key", "question.help")
 
 
 def _merge(target: Any, patch: Any) -> Any:
@@ -57,6 +60,10 @@ def _refused(patch: Mapping[str, Any], allowed: Mapping[str, Any], at: str = "")
             out.append(f"{path}: a patch sets say, question.data, question.key or question.help")
         elif value is None and path in ("say", "question", "question.data", "question.key"):
             out.append(f"{path}: a step needs it; set it instead of removing it")
+        elif path == "say" and not isinstance(value, str):
+            out.append("say: a string")
+        elif path in OBJECTS and value is not None and not isinstance(value, Mapping):
+            out.append(f"{path}: an object")
         elif allowed[key] is not None:
             if isinstance(value, Mapping):
                 out += _refused(value, allowed[key], f"{path}.")
@@ -120,9 +127,7 @@ def _find(file: Mapping[str, Any], draft_id: str, step_id: str) -> tuple[int, in
 def _question(stored: Mapping[str, Any], step: Mapping[str, Any]) -> dict[str, Any]:
     """The step as `lesson.card` reads a question: jw's record of it, with the file's parts."""
     q = next((q for q in stored["questions"] if q["step_id"] == step.get("id")), {})
-    return {**q, "step_id": step.get("id"), "say": step.get("say"),
-            "question": step.get("question") or {}, "based_on": step.get("based_on"),
-            "credit": step.get("credit") or q.get("credit")}
+    return {**lesson.from_file(q, step), "step_id": step.get("id")}
 
 
 def _step_card(stored: Mapping[str, Any], step: Mapping[str, Any]) -> dict[str, Any]:
@@ -139,6 +144,27 @@ def _latest(where: Path, draft_id: str) -> list[dict[str, Any]]:
     return [f for f in raw.get("findings") or [] if isinstance(f, Mapping)]
 
 
+def _refusal(
+    stored: Mapping[str, Any],
+    step: Mapping[str, Any],
+    step_id: str,
+    problems: list[str],
+    at: str,
+    where: Path,
+    draft_id: str,
+) -> dict[str, Any]:
+    """A refused patch's answer: nothing written, each problem a finding with rule `edit`."""
+    return {
+        "ok": False,
+        "step_id": step_id,
+        "findings": [lesson._finding(step_id, "edit", m, at) for m in problems],
+        "render": lesson.render_of(where, draft_id, step_id),
+        "card": _step_card(stored, step),
+        "lesson_ok": None,
+        "draft_path": str(lesson._lesson_path(where, draft_id)),
+    }
+
+
 def edit(
     draft_id: str,
     step_id: str,
@@ -146,6 +172,7 @@ def edit(
     why: str | None = None,
     change: str = CHANGE_DEFAULT,
     *,
+    names: Sequence[str] = (),
     runner: lesson.Runner | None = None,
     folder: Path | None = None,
 ) -> dict[str, Any]:
@@ -154,7 +181,9 @@ def edit(
 
     `ok` is that no finding for this step is an error; `lesson_ok` is check.ts's answer for the
     whole lesson. A patch refused here (a part it may not set, a copied part changed without a
-    `why`) changes nothing and comes back as findings with rule `edit`.
+    `why`) changes nothing and comes back as findings with rule `edit`, before anything merges
+    (dl-a38n.35). Every string in the patch but a key, and `why`, goes through `pii.guard` with
+    `names`, the family's names as for lesson_draft (dl-a38n.36).
     """
     where = folder or lesson.drafts_dir()
     stored, file = _load(draft_id, where)
@@ -164,6 +193,11 @@ def edit(
     at = f"script.parts[{p}].steps[{n}]"
     path = lesson._lesson_path(where, draft_id)
     problems = _refused(patch, PATCHABLE)
+    if problems:
+        return _refusal(stored, step, step_id, problems, at, where, draft_id)
+    family = pii.names_for(members=list(names))
+    patch = lesson.guard_words(patch, family)
+    why = pii.guard(why, names=family).text if why else why
 
     edited = _merge(copy.deepcopy(step), patch)
     help_ = (edited.get("question") or {}).get("help")
@@ -181,10 +215,7 @@ def edit(
                 f"{', '.join(moved)}: a change to the bank's copy says why (the parent's ask)"
             )
     if problems:
-        findings = [lesson._finding(step_id, "edit", m, at) for m in problems]
-        return {"ok": False, "step_id": step_id, "findings": findings,
-                "render": lesson.render_of(where, draft_id, step_id),
-                "card": _step_card(stored, step), "lesson_ok": None, "draft_path": str(path)}
+        return _refusal(stored, step, step_id, problems, at, where, draft_id)
 
     if moved:
         based_on = dict(edited.get("based_on") or {})

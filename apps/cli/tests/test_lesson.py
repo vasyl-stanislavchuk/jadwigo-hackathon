@@ -147,6 +147,19 @@ def _rule_change(rule: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _written(view: dict[str, Any], step_id: str, key: str) -> Any:
+    """What the agent would write for `key` on a step, from rungs.json, whether or not its
+    you_write asks for it (a bank twin leaves `twin` out)."""
+    rungs: dict[str, Any] = json.loads((LESSON / "rungs.json").read_text(encoding="utf-8"))
+    item = next(q["item_id"] for q in view["questions"] if q["step_id"] == step_id)
+    return copy.deepcopy(rungs["rungs"][item][key])
+
+
+# The fixture's sibling twins (dl-a38n.40): fxc101's Rows of dots sibling not in the lesson is
+# fxc103, fxc301's Hops of six one fxc303; fxc102, fxc302 and both Bags of apples have none left.
+BANK_TWINS = {"q1": "fxc103", "q3": "fxc303"}
+
+
 def _converted(item_id: str) -> dict[str, Any]:
     raw = json.loads(ITEMS_FILE.read_text(encoding="utf-8"))
     return next(i for i in raw["items"] if i["id"] == item_id)
@@ -182,7 +195,13 @@ def test_draft_copies_6_questions_whole_and_keeps_them_by_draft_id(
         assert q["copied_help"] == source["help"]
         assert q["rungs"] == {"look": "hint 1", "boost": None, "almost": None,
                               "worked": "worked lines and hint 2"}
-        assert q["you_write"] == ["twin", "boost", "boost_by_mistake"]
+        if q["step_id"] in BANK_TWINS:
+            assert q["twin_source"] == f"bank khan:{BANK_TWINS[q['step_id']]}"
+            assert q["you_write"] == ["boost", "boost_by_mistake"]
+        else:
+            assert "twin_source" not in q
+            assert q["you_write"] == ["twin", "boost", "boost_by_mistake"]
+        assert q["cards_to_write"] == CLASSES  # the fixture items carry no cards yet
         assert q["mistake_classes"] == CLASSES
         assert q["why_drawn"].startswith("unseen")
 
@@ -198,19 +217,33 @@ def test_draft_copies_6_questions_whole_and_keeps_them_by_draft_id(
     assert "set_khan_fx0003" in stored["lesson"]["reasoning"]
     for q in stored["questions"]:
         source = _converted(q["item_id"])["spec"]
+        twin = q["question"]["help"].pop("twin", None)
         assert {k: q["question"][k] for k in ("family", "data", "help")} == {
             k: source[k] for k in ("family", "data", "help")
         }
+        # A bank twin: its sibling whole, with its hints, credit and source, shown alike.
+        assert (twin is not None) == (q["step_id"] in BANK_TWINS)
+        if twin is not None:
+            sibling = _converted(BANK_TWINS[q["step_id"]])
+            assert (twin["say"], twin["data"]) == (sibling["spec"]["say"], sibling["spec"]["data"])
+            assert twin["help"] == {"hints": sibling["spec"]["help"]["hints"]}
+            assert twin["key"]["accept"] == sibling["spec"]["key"]["accept"] != (
+                source["key"]["accept"])
+            assert twin["based_on"]["question"] == f"khan:{sibling['id']}"
+            assert twin["credit"] == sibling["credit"]
+            assert sibling["problem_type"] == _converted(q["item_id"])["problem_type"]
+            assert lesson.signature(twin["data"]) == lesson.signature(source["data"])
         assert q["based_on"]["question"] == f"khan:{q['item_id']}"
         assert q["based_on"]["changes"] == [_rule_change(q["question"]["key"]["rule"])]
         assert q["credit"]["source"] and q["credit"]["licence"]
 
-    # check.ts ran once on the lesson as copied: every step, its copied help, no twin yet.
+    # check.ts ran once on the lesson as copied: every step, its copied help, the bank's twins.
     ((argv, file),) = check_ts.seen
     assert argv[3] == "--json" and Path(argv[2]) == Path(view["draft_path"])
     steps = file["script"]["parts"][0]["steps"]
     assert [s["id"] for s in steps] == [q["step_id"] for q in questions]
-    assert all(set(s) == STEP_KEYS and "twin" not in s["question"]["help"] for s in steps)
+    assert all(set(s) == STEP_KEYS and ("twin" in s["question"]["help"]) == (s["id"] in BANK_TWINS)
+               for s in steps)
 
 
 def test_the_slim_view_leaves_picture_labels_and_duplicate_worked_lines_out() -> None:
@@ -368,7 +401,8 @@ def test_without_check_ts_the_draft_says_its_classes_are_unknown(
     view = _draft()
     assert view["plays_as_copied"] is None
     assert all(q["mistake_classes"] is None for q in view["questions"])
-    assert all(q["you_write"] == ["twin", "boost"] for q in view["questions"])
+    assert all(q["you_write"] == ([] if "twin_source" in q else ["twin"]) + ["boost"]
+               for q in view["questions"])
 
 
 def test_before_check_ts_sends_classes_they_are_unknown(bank: LessonBank, check_ts: CheckTs) -> None:
@@ -451,8 +485,12 @@ def test_check_puts_the_agents_words_on_the_copy_and_returns_the_card(
 
     card = result["card"]
     first = card["questions"][0]
-    assert set(first) == {"n", "step_id", "skill", "prompt", "key", "rungs", "twin", "source",
-                          "licence", "changes", "why_drawn"}
+    assert set(first) == {"n", "step_id", "skill", "prompt", "key", "rungs", "twin", "twin_source",
+                          "source", "licence", "changes", "why_drawn"}
+    assert [q["twin_source"] for q in card["questions"]] == [
+        f"bank khan:{BANK_TWINS[s]}" if s in BANK_TWINS else "written" for s in
+        (q["step_id"] for q in card["questions"])
+    ]
     assert first["skill"] == "fixture.times-6 (proposed)"
     hints = view["questions"][0]["copied_help"]["hints"]
     assert first["rungs"] == {
@@ -481,7 +519,7 @@ def test_check_accepts_bare_strings_and_a_nested_twin(bank: LessonBank, check_ts
     view = _draft(count=1)
     words = _words(view)["q1"]
     words["boost"] = words["boost"]["text"]
-    twin = words["twin"]
+    twin = _written(view, "q1", "twin")  # a written twin takes the bank twin's place
     words["twin"] = {"say": twin["say"], "question": {k: twin[k] for k in ("data", "key")}}
     lesson.check(view["draft_id"], {"q1": words})
     help_ = check_ts.seen[-1][1]["script"]["parts"][0]["steps"][0]["question"]["help"]
@@ -682,12 +720,12 @@ def test_lesson_draft_writes_the_lesson_file_with_its_empty_rungs(
     view = _draft()
     file, checked = _on_disk(view)
 
-    # The lesson file as copied, the one check.ts ran on: no twin, no boost yet.
+    # The lesson file as copied, the one check.ts ran on: the bank's twins, no boost yet.
     assert file == check_ts.seen[0][1]
     steps = file["script"]["parts"][0]["steps"]
     assert [s["id"] for s in steps] == [q["step_id"] for q in view["questions"]]
-    assert all("twin" not in s["question"]["help"] and "boost" not in s["question"]["help"]
-               for s in steps)
+    assert all(("twin" in s["question"]["help"]) == (s["id"] in BANK_TWINS)
+               and "boost" not in s["question"]["help"] for s in steps)
     assert checked is not None
     assert set(checked) == {"ok", "findings", "mistake_classes", "checked_at"}
     assert (checked["ok"], checked["findings"]) == (True, [])
@@ -824,7 +862,6 @@ def test_lesson_edit_refuses_a_patch_and_changes_nothing(
         "credit: a patch sets say, question.data, question.key or question.help",
         "say: a step needs it; set it instead of removing it",
         "question.family: a patch sets say, question.data, question.key or question.help",
-        "say, question.data: a change to the bank's copy says why (the parent's ask)",
     ]
     assert {f["rule"] for f in result["findings"]} == {"edit"}
     assert result["findings"][0]["path"] == "script.parts[0].steps[0]"
@@ -838,14 +875,18 @@ def test_lesson_edit_refuses_a_patch_and_changes_nothing(
 def test_lesson_edit_writes_a_twin_and_mistake_cards_without_a_why(
     bank: LessonBank, check_ts: CheckTs
 ) -> None:
-    view = _draft(count=1)
-    twin = _words(view)["q1"]["twin"]
-    result = lesson_edit.edit(view["draft_id"], "q1", {"question": {"help": {
+    view = _draft(count=2)
+    twin = _written(view, "q2", "twin")
+    # q2's twin is its bank sibling: null removes it, so the written one is not merged into it.
+    assert view["questions"][1]["twin_source"].startswith("bank khan:")
+    assert lesson_edit.edit(view["draft_id"], "q2", {"question": {"help": {"twin": None}}})["ok"]
+    result = lesson_edit.edit(view["draft_id"], "q2", {"question": {"help": {
         "twin": {"say": twin["say"], "question": {k: twin[k] for k in ("data", "key")}},
         "boost_by_mistake": {"added_instead": "Tu mnożymy, nie dodajemy."},
     }}})
     assert result["ok"] is True, result
-    help_ = _file_now(view)["script"]["parts"][0]["steps"][0]["question"]["help"]
+    assert result["card"]["twin_source"] == "written"
+    help_ = _file_now(view)["script"]["parts"][0]["steps"][1]["question"]["help"]
     assert help_["twin"]["family"] == "enter" and "question" not in help_["twin"]
     assert help_["boost_by_mistake"] == {"added_instead": {"text": "Tu mnożymy, nie dodajemy."}}
     assert result["card"]["twin"]["key"] == twin["key"]
@@ -907,6 +948,149 @@ def test_the_edit_and_show_verbs_print_what_the_tools_return(
     shown = CliRunner().invoke(cli, ["lesson", "show", view["draft_id"], "q1"])
     assert shown.exit_code == 0, shown.output
     assert json.loads(shown.output) == lesson_edit.show(view["draft_id"], "q1")
+
+
+# ---------------------------------------------------------------- wave 3: twins, cards, increments --
+
+
+def test_the_representation_signature_counts_what_a_twin_must_keep() -> None:
+    picture = {"src": "/m/a.svg", "alt": "Kropki", "width": 3}
+    data = {
+        "stem": {"text": "Ile?", "image": "/m/stem.svg", "pictures": [picture]},
+        "figure": {"kind": "array", "rows": 3},
+        "groups": [{"figure": {"kind": "dots"}, "pictures": [picture, picture]}],
+        "options": [{"content": {"kind": "number"}}, {"content": {"kind": "tex"}},
+                    {"content": {"kind": "number"}}],
+        "input": {"kind": "number"},
+    }
+    assert lesson.signature(data) == (4, ("array", "dots"), ("number", "tex"), "number")
+    assert lesson.signature({"input": "number"}) == (0, (), (), "number")
+    fewer = copy.deepcopy(data)
+    fewer["groups"][0]["pictures"].pop()
+    assert lesson.signature(fewer) != lesson.signature(data)
+
+
+def test_a_sibling_twin_keeps_the_representation_and_takes_another_key(
+    bank: LessonBank, check_ts: CheckTs, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    load = lesson.items.load_item
+
+    def other_figure(item_id: str, language: str = "pl") -> dict[str, Any]:
+        view = load(item_id, language)
+        if item_id == "fxc103":  # the only Rows of dots sibling, now drawn another way
+            view["question"]["data"]["figure"] = {"kind": "array", "rows": 6}
+        return view
+
+    monkeypatch.setattr(lesson.items, "load_item", other_figure)
+    view = _draft()
+    assert "twin_source" not in view["questions"][0] and "twin" in view["questions"][0]["you_write"]
+    assert view["questions"][2]["twin_source"] == "bank khan:fxc303"
+
+
+def test_the_items_own_mistake_cards_stay_and_only_the_rest_are_asked_for(
+    bank: LessonBank, check_ts: CheckTs, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    load = lesson.items.load_item
+    card = {"text": "Dodałeś zamiast mnożyć. Policz grupy."}
+
+    def with_a_card(item_id: str, language: str = "pl") -> dict[str, Any]:
+        view = load(item_id, language)
+        view["question"]["help"] = {**view["question"]["help"],
+                                    "boost_by_mistake": {"added_instead": card}}
+        return view
+
+    monkeypatch.setattr(lesson.items, "load_item", with_a_card)
+    view = _draft(count=1)
+    (q,) = view["questions"]
+    assert q["cards_to_write"] == ["off_by_small"] and "boost_by_mistake" in q["you_write"]
+    # The agent writes off_by_small's card; the item's added_instead card is kept beside it.
+    words = {"q1": {"boost": _written(view, "q1", "boost"),
+                    "boost_by_mistake": {"off_by_small": {"text": "Prawie. Policz jeszcze raz."}}}}
+    assert lesson.check(view["draft_id"], words)["ok"] is True
+    cards = _file_now(view)["script"]["parts"][0]["steps"][0]["question"]["help"]["boost_by_mistake"]
+    assert cards == {"added_instead": card, "off_by_small": {"text": "Prawie. Policz jeszcze raz."}}
+    # A step with some cards is not refused for a class without one: the player shows look.
+    words["q1"].pop("boost_by_mistake")
+    assert lesson.check(view["draft_id"], words)["ok"] is True
+
+
+def test_lesson_check_rebuilds_only_the_steps_it_is_sent(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    view = _draft()
+    assert lesson.check(view["draft_id"], _words(view))["ok"] is True
+    filed = _file_now(view)
+    # Nothing sent: the draft as it stands, which needs nothing, checks ok and is unchanged.
+    assert lesson.check(view["draft_id"], {})["ok"] is True
+    assert _file_now(view) == filed
+
+    # An edit survives a later check that does not send that step.
+    edited = lesson_edit.edit(view["draft_id"], "q2",
+                              {"question": {"help": {"boost": "Policz worki po kolei."}}})
+    assert edited["ok"] is True
+    words = _words(view)
+    words["q1"]["boost"] = {"text": "Nowa podpowiedź dla q1."}
+    result = lesson.check(view["draft_id"], {"q1": words["q1"]})
+    assert result["ok"] is True
+    steps = {s["id"]: s for s in _file_now(view)["script"]["parts"][0]["steps"]}
+    assert steps["q2"]["question"]["help"]["boost"] == {"text": "Policz worki po kolei."}
+    assert steps["q1"]["question"]["help"]["boost"] == {"text": "Nowa podpowiedź dla q1."}
+    assert steps["q3"] == filed["script"]["parts"][0]["steps"][2]  # the bank twin kept
+    assert result["card"]["questions"][1]["rungs"]["boost"] == "Policz worki po kolei."
+
+    # A step left out that still lacks words is refused for them.
+    fresh = _draft()
+    refused = lesson.check(fresh["draft_id"], {})
+    assert refused["ok"] is False
+    assert ("q2", "help.twin is empty; write it") in [
+        (e["step_id"], e["message"]) for e in refused["errors"]
+    ]
+
+
+def test_every_agent_word_is_guarded(bank: LessonBank, check_ts: CheckTs) -> None:
+    view = _draft()  # Kasia: an invented name, as tests/test_pii.py
+    words = _words(view)
+    words["q1"]["boost"] = {"text": "Kasiu, policz grupy."}
+    words["q2"]["changes"] = [{"change": "context", "why": "Kasia lubi jabłka.",
+                               "set": {"say": "Ile jabłek ma Kasia?"}}]
+    result = lesson.check(view["draft_id"], words, names=["Kasia"])
+    assert result["ok"] is True, result
+    text = Path(result["draft_path"]).read_text(encoding="utf-8")
+    assert pii.leaks(text, ["Kasia"]) == [] and "[NAME_1]" in text
+    file = json.loads(text)
+    q1, q2 = file["script"]["parts"][0]["steps"][:2]
+    assert q1["question"]["help"]["boost"]["text"] == "[NAME_1], policz grupy."
+    assert q2["based_on"]["changes"][-1]["why"] == "[NAME_1] lubi jabłka."
+    assert q1["question"]["key"]["accept"] == _converted(view["questions"][0]["item_id"])["spec"][
+        "key"]["accept"]  # a key is never guarded
+
+    edited = lesson_edit.edit(
+        view["draft_id"], "q3", {"say": "Kasia skacze po 6."}, why="Prośba: imię Kasi.",
+        names=["Kasia"],
+    )
+    assert edited["ok"] is True
+    text = Path(edited["draft_path"]).read_text(encoding="utf-8")
+    assert pii.leaks(text, ["Kasia"]) == []
+
+
+@pytest.mark.parametrize(
+    ("patch", "message"),
+    [
+        ({"question": "x"}, "question: an object of data, key, help"),
+        ({"question": {"help": "x"}}, "question.help: an object"),
+        ({"question": {"data": ["x"]}}, "question.data: an object"),
+        ({"say": 3}, "say: a string"),
+    ],
+)
+def test_lesson_edit_refuses_a_non_object_patch_before_merging(
+    bank: LessonBank, check_ts: CheckTs, patch: dict[str, Any], message: str
+) -> None:
+    view = _draft(count=1)
+    before = _file_now(view)
+    result = lesson_edit.edit(view["draft_id"], "q1", patch)
+    assert result["ok"] is False and result["lesson_ok"] is None
+    assert [(f["rule"], f["text"]) for f in result["findings"]] == [("edit", message)]
+    assert _file_now(view) == before
 
 
 # ---------------------------------------------------------------- the real check.ts --

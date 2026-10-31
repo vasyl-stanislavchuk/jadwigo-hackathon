@@ -130,9 +130,21 @@ def check(
     type=click.Choice(list(lesson.CHANGE_KINDS)),
     help="The kind of change to the bank's copy.",
 )
+@click.option(
+    "--name",
+    "names",
+    multiple=True,
+    help="A name the family uses (repeatable); replaced in the patch's words and --why.",
+)
 @click.option("--json", "json_mode", is_flag=True, help="Print the step's answer.")
 def edit(
-    draft_id: str, step_id: str, patch_file: Path, why: str | None, change: str, json_mode: bool
+    draft_id: str,
+    step_id: str,
+    patch_file: Path,
+    why: str | None,
+    change: str,
+    names: tuple[str, ...],
+    json_mode: bool,
 ) -> None:
     """Change step STEP_ID of the draft DRAFT_ID by PATCH_FILE, a JSON merge patch on the step
     (the lesson_edit tool's `patch`), check the lesson, and print that step's findings."""
@@ -143,7 +155,7 @@ def edit(
             f"{patch_file} is not JSON: {exc}",
             hint='Pass {"question": {"help": {"boost": {"text": ...}}}} as JSON.',
         ) from exc
-    result = lesson_edit.edit(draft_id, step_id, patch, why, change)
+    result = lesson_edit.edit(draft_id, step_id, patch, why, change, names=list(names))
     if json_mode:
         click.echo(json.dumps(result, ensure_ascii=False))
     else:

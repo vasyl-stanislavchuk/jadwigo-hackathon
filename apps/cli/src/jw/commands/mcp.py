@@ -173,10 +173,15 @@ def build_server() -> Any:
         and the request is kept as the draft's record and title. grade the bare grade number; kind practice, review, check or diagnostic; count overrides the draw
         rule's count. Each question is copied whole from the bank (family, data, key, say,
         pictures, and the source's hints and worked lines as its help), so the lesson plays as
-        copied. The draft stays on this machine under draft_id; the result is a slim view of it.
+        copied. Its twin is a sibling item of the same set, problem type and look, with another
+        answer, copied whole with its credit, when the bank has one (twin_source "bank
+        khan:<id>"); the item's own mistake cards are kept. The draft stays on this machine
+        under draft_id; the result is a slim view of it.
         Per question: step_id, prompt, data (pictures without their labels), key, copied_help
         (the hints as text with their picture alts), rungs (what fills look, boost, almost and
-        worked), you_write (what is left for you), mistake_classes (the keys boost_by_mistake
+        worked), you_write (what is left for you: twin only without a bank twin),
+        cards_to_write (the classes whose mistake card the item lacks, when you_write names
+        boost_by_mistake), twin_source, mistake_classes (the keys boost_by_mistake
         may use; null when unknown) and why_drawn. left_out says why each set or item was not
         used. Only lesson-ready items are copied, so an item's reason there is about the item:
         "renders wrong: <rule>", "not checked", "flagged: <reason>", the converter's own, or for
@@ -209,15 +214,18 @@ def build_server() -> Any:
         """Check a draft with your words on it, and return the card a parent reads.
 
         draft_id is the one lesson_draft returned. help maps each step_id to your words for that
-        question, only what the bank lacks: twin (a question from the same template with its
-        own say, data and key), boost_by_mistake ({mistake class: {"text"}}, keys from the
-        step's mistake_classes), and a rung the copy leaves empty (look and boost as {"text"},
-        almost and worked as lists of lines). To change a copied part, only when the parent asks,
-        add changes: [{"change": numbers, context, wording or tutor_notes, "why", "set": {path:
-        value}}], where a path is say, or a dotted path under data, key, hints, worked or almost
-        ("hints.0.text"); each change is recorded in based_on.changes. Send every step's words
-        on each call. title and reasoning replace the draft's; pass names as for lesson_draft,
-        and the tool replaces them in both before the draft is written. Every call rewrites the
+        question, only what its you_write lists: twin (when the bank has no sibling item for it:
+        a question from the same template with its own say, data and key), boost_by_mistake
+        ({mistake class: {"text"}}, for the classes in cards_to_write; the item's own cards
+        stay), and a rung the copy leaves empty (look and boost as {"text"}, almost and worked
+        as lists of lines). To change a copied part, only when the parent asks, add changes:
+        [{"change": numbers, context, wording or tutor_notes, "why", "set": {path: value}}],
+        where a path is say, or a dotted path under data, key, hints, worked or almost
+        ("hints.0.text"); each change is recorded in based_on.changes. Send only the steps you
+        change: a step left out keeps what the draft holds (its words, the bank's twin,
+        lesson_edit's changes), and help {} checks the draft as it stands. Every word but a key
+        has the names you pass replaced, as for lesson_draft; title and reasoning replace the
+        draft's. Every call rewrites the
         draft file (draft_path) with your words as far as they go, and writes its check beside
         it. ok true returns the card (per question: prompt, key, rungs, twin, source, licence,
         changes, why drawn; what was left out; and next: publish with lesson_publish), the
@@ -241,6 +249,7 @@ def build_server() -> Any:
         patch: dict[str, Any],
         why: str | None = None,
         change: str = lesson_edit.CHANGE_DEFAULT,
+        names: list[str] | None = None,
     ) -> dict[str, Any]:
         """Change one step of a draft and get that step's findings back, without resending the rest.
 
@@ -254,8 +263,10 @@ def build_server() -> Any:
         whole lesson and its check file is rewritten. Returns ok (no error for this step),
         step_id, findings for this step only, render (the page's findings for it from its last
         draw, stale when drawn before this write; null without the page), the step's card,
-        lesson_ok (the whole lesson's check) and draft_path. A lesson_check call rebuilds every
-        step from the words it is sent, replacing these edits.
+        lesson_ok (the whole lesson's check) and draft_path. A patch that is not an object, or
+        sets a part as the wrong kind, is refused with rule edit and changes nothing. Pass names
+        as for lesson_draft: they are replaced in every word but a key, and in why. A later
+        lesson_check keeps this edit unless it is sent words for this step.
         """
         return _call(
             lesson_edit.edit,
@@ -264,6 +275,7 @@ def build_server() -> Any:
             patch=patch,
             why=why,
             change=change,
+            names=names or [],
         )
 
     @server.tool(name="lesson_publish")
