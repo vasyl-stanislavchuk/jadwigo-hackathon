@@ -60,6 +60,35 @@ describe("withMedia", () => {
     expect(data.stem.pictures[0]?.src).toBe(REF);
     expect(withMedia(null, BASE)).toBeNull();
   });
+
+  it("rewrites the address of a markdown image inside any text, and only that (dl-a38n.32.40)", () => {
+    const data = {
+      items: [{ id: "i1", text: `![The shortest ribbon.]( /media/khan/${REF})` }],
+      options: [
+        {
+          content: {
+            kind: "text",
+            text: `$A$ ![A bar in 3 parts.](${REF})$=$![A bar in 6 parts.](media:${REF})`,
+          },
+        },
+        { content: { kind: "text", text: "![A dog.](https://cdn.example.test/dog.png) and $2$" } },
+      ],
+      say: `Not a picture: [${REF}](x) and ${REF}`,
+    };
+    expect(withMedia(data, BASE)).toEqual({
+      items: [{ id: "i1", text: `![The shortest ribbon.]( ${BASE}/${REF})` }],
+      options: [
+        {
+          content: {
+            kind: "text",
+            text: `$A$ ![A bar in 3 parts.](${BASE}/${REF})$=$![A bar in 6 parts.](${BASE}/${REF})`,
+          },
+        },
+        { content: { kind: "text", text: "![A dog.](https://cdn.example.test/dog.png) and $2$" } },
+      ],
+      say: `Not a picture: [${REF}](x) and ${REF}`,
+    });
+  });
 });
 
 describe("devMediaUrl", () => {

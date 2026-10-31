@@ -136,7 +136,25 @@ describe("blocks", () => {
     expect(parseRichText("![four dots](/media/khan/a.png)")).toEqual([
       { kind: "image", alt: "four dots", src: "/media/khan/a.png" },
     ]);
-    expect(parseRichText("see ![x](a.png) here")).toEqual([para(text("see ![x](a.png) here"))]);
+    // Perseus writes a space inside the parentheses: `]( web+graphie://…)`.
+    expect(parseRichText("![four dots]( /media/khan/a.png )")).toEqual([
+      { kind: "image", alt: "four dots", src: "/media/khan/a.png" },
+    ]);
+  });
+
+  it("an image inside a line is an inline run, beside its words and TeX (dl-a38n.32.40)", () => {
+    const img = (alt: string, src: string) => ({ kind: "image" as const, alt, src });
+    expect(parseRichText("see ![x](a.png) here")).toEqual([
+      para(text("see "), img("x", "a.png"), text(" here")),
+    ]);
+    expect(parseRichText("$A$ ![a line in 4 parts]( /media/khan/b.svg)")).toEqual([
+      para(tex("A"), text(" "), img("a line in 4 parts", "/media/khan/b.svg")),
+    ]);
+    expect(parseRichText("![two halves](c.svg)$=$![one whole](d.svg)")).toEqual([
+      para(img("two halves", "c.svg"), tex("="), img("one whole", "d.svg")),
+    ]);
+    expect(parseRichText("$![x](a.png)$")).toEqual([para(tex("![x](a.png)"))]);
+    expect(parseRichText("an ![open](a.png")).toEqual([para(text("an ![open](a.png"))]);
   });
 
   it.each([
@@ -243,9 +261,13 @@ describe("glossary terms and links (dl-w3.56)", () => {
     ]);
   });
 
-  it("never inside TeX, never an inline image, never a Perseus placeholder, never unclosed", () => {
+  it("never inside TeX, never an image, never a Perseus placeholder, never unclosed", () => {
     expect(parseInline("$[a](def: b)$")).toEqual([tex("[a](def: b)")]);
-    expect(parseInline("see ![x](a.png) here")).toEqual([text("see ![x](a.png) here")]);
+    expect(parseInline("see ![x](a.png) here")).toEqual([
+      text("see "),
+      { kind: "image", alt: "x", src: "a.png" },
+      text(" here"),
+    ]);
     expect(parseInline("[[☃ radio 1]]")).toEqual([text("[[☃ radio 1]]")]);
     expect(parseInline("[open](def: never closed")).toEqual([text("[open](def: never closed")]);
     expect(parseInline("a [b] c (d)")).toEqual([text("a [b] c (d)")]);
