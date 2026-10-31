@@ -12,7 +12,7 @@ from typing import Any
 
 import click
 
-from jw import lesson, lesson_edit
+from jw import lesson, lesson_edit, lesson_publish
 from jw.commands.question import _EmitErrorsCommand
 from jw.draw import DRAW_RULES
 from jw.errors import JwError
@@ -20,7 +20,7 @@ from jw.errors import JwError
 
 @click.group()
 def group() -> None:
-    """Lessons: draft, check, edit, show."""
+    """Lessons: draft, check, edit, show, publish."""
 
 
 @group.command(cls=_EmitErrorsCommand)
@@ -161,3 +161,30 @@ def edit(
 def show(draft_id: str, step_id: str | None) -> None:
     """Print step STEP_ID of the draft DRAFT_ID, or every step, as JSON (the lesson_show tool)."""
     click.echo(json.dumps(lesson_edit.show(draft_id, step_id), ensure_ascii=False))
+
+
+@group.command(cls=_EmitErrorsCommand)
+@click.argument("draft_id")
+@click.option(
+    "--target",
+    default="local",
+    show_default=True,
+    type=click.Choice(list(lesson_publish.TARGETS)),
+    help="Only local publishes; dev names the owner's command, prod refuses.",
+)
+@click.option("--json", "json_mode", is_flag=True, help="Print the publish record.")
+def publish(draft_id: str, target: str, json_mode: bool) -> None:
+    """Publish the checked draft DRAFT_ID into the local database `make dev` serves, check that it
+    plays, and print its play URL (the lesson_publish tool)."""
+    result = lesson_publish.publish(draft_id, target)
+    if json_mode:
+        click.echo(json.dumps(result, ensure_ascii=False))
+    else:
+        verified = result["verified"]
+        click.echo(f"{'ok' if result['ok'] else 'not verified'}: {result['play_url']}")
+        click.echo(
+            f"  api {verified['api_health']}, attempt {verified['attempt_started']} with "
+            f"{verified['plan_questions']} questions, play page {verified['play_page']}"
+        )
+    if not result["ok"]:
+        raise SystemExit(1)

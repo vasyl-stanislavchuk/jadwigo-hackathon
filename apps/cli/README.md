@@ -19,9 +19,10 @@ question modules came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
 | `jw question refusals assign <rule> <question_type> <bead>` | Writes the shape's bead into the refusals file | `JADWIGO_BANK_DIR` |
 | `jw question flag <item id> --lang pl "<why>"` (or `--clear`) | Pulls one item from lessons at once, or puts it back | `JADWIGO_BANK_DIR` |
 | `jw lesson draft "6 zadań z mnożenia, klasa 3" --grade 3 --topic mnożenie --name <name>` (or `--no-names`) | A lesson draft: drawn questions copied whole from the bank, kept under a `draft_id` and written to `JADWIGO_DRAFTS_DIR`, and what is left to write | all of the above, and `JADWIGO_REPO_DIR` and `bun` for the mistake classes |
-| `jw lesson check <draft_id> <words.json>` | The card, the lesson file's path, the import command and then its `/play/` path, or findings by step id; the draft file rewritten either way | `JADWIGO_REPO_DIR` and `bun` |
+| `jw lesson check <draft_id> <words.json>` | The card, the lesson file's path and its `/play/` path, or findings by step id; the draft file rewritten either way | `JADWIGO_REPO_DIR` and `bun` |
 | `jw lesson edit <draft_id> <step_id> <patch.json> [--why ... --change ...]` | One step changed by a JSON merge patch and checked: that step's findings, render findings and card | `JADWIGO_REPO_DIR` and `bun` |
 | `jw lesson show <draft_id> [<step_id>]` | The draft file's step, or every step, as data, with its latest findings | `JADWIGO_DRAFTS_DIR` |
+| `jw lesson publish <draft_id>` | The checked draft imported into the local database `make dev` serves, checked to play, and its absolute `play_url` | `JADWIGO_REPO_DIR`, `make dev` running |
 
 - **Search** returns the envelope as the bank sent it. The `/api/v1` route answers stage `final`
   with every arm and takes no query fields, so `--stage` and `--arm` reach only the bank's own
@@ -96,7 +97,7 @@ the bank commit it was copied at.
 ## The MCP server
 
 `jw mcp serve` speaks MCP on stdio, on the `mcp` package 2.3 (`MCPServer`, FastMCP's new name). Its
-6 tools call the same functions as the verbs, so each tool's JSON is its verb's `--json`:
+9 tools call the same functions as the verbs, so each tool's JSON is its verb's `--json`:
 
 - `question_search(grade, words?, words_en?, skills?, mistakes?, language="pl", limit=20, arm?, stage?)`
 - `question_show(set_id)`
@@ -104,7 +105,9 @@ the bank commit it was copied at.
 - `question_item(item_id, language="pl")`: the composer's view of one item, key and help kept.
   Never paste it where a child reads.
 - `lesson_draft(request, grade, names, language="pl", kind="practice", count?, skills?)`
-- `lesson_check(draft)`
+- `lesson_check(draft_id, help, title?, reasoning?, names?)`
+- `lesson_edit(draft_id, step_id, patch, why?, change?)` and `lesson_show(draft_id, step_id?)`
+- `lesson_publish(draft_id, target="local")`
 
 A failing call comes back as a tool error whose text is the verb's error and its hint.
 
@@ -202,10 +205,25 @@ it, readable by you only (mode 700).
    every step from the bank's copy and the words it is sent, so it replaces these edits. From a
    shell: `jw lesson edit <draft_id> q2 patch.json --why "..."` and `jw lesson show <draft_id> q2`
    (`dl-a38n.29`).
-7. **Import, then play.** The owner reads the card and imports the file into jadwigo-dev from the
-   repo root with the command the answer's `import_command` and the card's `next` name:
-   `make lesson-import FILE=<lesson_file> ENV=dev`. Only then does the lesson play at the card's
-   `play_path`; before the import that path does not exist (`dl-e8ov.5.38.13`).
+7. **Publish, then play.** A clean check's card says `next`: call `lesson_publish(draft_id)`
+   (`dl-a38n.39`; the owner's decision `dl-diel`: the AI publishes locally without asking once the
+   check is ok). It refuses a draft whose `<draft_id>.check.json` is not ok or is older than the
+   draft, runs `make -s lesson-import FILE=<draft file> JSON=1` in `JADWIGO_REPO_DIR` (the local
+   `jadwigo` database `make dev` serves), and checks the lesson plays:
+   - `GET <api>/api/health` answers 200;
+   - `POST <api>/api/v1/assignments/<id>/attempts` with `{"mode": "preview"}` answers 201, with
+     one plan entry per imported question and the version the import published;
+   - `GET <web>/play/<id>` answers 200.
+
+   The api is `JW_LOCAL_API_URL`, else `http://127.0.0.1:<API_PORT>`, and the web
+   `JW_LOCAL_WEB_URL`, else `http://127.0.0.1:<WEB_PORT>`. The ports are md's, else the main
+   checkout's 8730 and 5173 (`.md/repo.toml`, `tools/src/ports.ts`). All four are read from the
+   environment only. The answer is `ok` (imported and every check passed), the absolute
+   `play_url`, `verified` (each status), `lesson_id`, `version`, `assignment_id` and `timings`. The
+   same record is written beside the draft as `<draft_id>.publish.json`, mode 600, with the
+   guarded `request`, `target` and `published_at`. `target=dev` refuses and names the owner's
+   command, `make lesson-import FILE=<path> ENV=dev`; the live app always refuses. From a shell:
+   `jw lesson publish <draft_id> --json`.
 
 ### Lesson-ready
 
@@ -377,7 +395,7 @@ cd apps/cli && uv run --frozen pytest -q
 ```
 
 `tests/fake_bank.py` answers both search routes with `tests/fixtures/bank/envelope.json`.
-`tests/test_mcp.py` starts `jw mcp serve` under the `mcp` package's stdio client, lists the 6 tools
+`tests/test_mcp.py` starts `jw mcp serve` under the `mcp` package's stdio client, lists the 9 tools
 and checks each tool's JSON against its verb's. `tests/test_lesson.py` drafts "6 zadań z mnożenia,
 klasa 3" against the fake bank and the fixture items in `tests/fixtures/lesson/` (our own small
 bank, no Khan text), fills the rungs from `tests/fixtures/lesson/rungs.json`, and checks the lesson

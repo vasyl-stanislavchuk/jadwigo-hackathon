@@ -1,12 +1,14 @@
 """jw mcp serve: the question and lesson tools over MCP on stdio (dl-u1y5.23, moved from dl-e8ov.5.2.8).
 
-Eight tools, each calling the function its `--json` verb prints, so a tool's JSON is the verb's
+Nine tools, each calling the function its `--json` verb prints, so a tool's JSON is the verb's
 JSON: question_search (`jw question search --json`), question_show (`jw question show --json`),
 question_gaps (`jw question gaps --json`), question_item (`jw question item --json`, read
 from JW_KHAN_CONVERTED, dl-e8ov.5.38.2), lesson_draft (`jw lesson draft --json`), lesson_check
 (`jw lesson check --json`, which runs check.ts in JADWIGO_REPO_DIR, dl-e8ov.5.38.4), and
 lesson_edit and lesson_show (`jw lesson edit --json`, `jw lesson show`: one step changed by a JSON
-merge patch and checked, or shown as it stands, dl-a38n.29). A draft is
+merge patch and checked, or shown as it stands, dl-a38n.29), and lesson_publish (`jw lesson
+publish --json`: the checked draft imported into the local database and played once,
+dl-a38n.39). A draft is
 kept on the server's machine under a draft_id, so neither lesson tool sends the whole draft
 through the client's tool-result limit (dl-e8ov.5.38.10), and both write it as a lesson file,
 <draft_id>.json, with its check, <draft_id>.check.json, into JADWIGO_DRAFTS_DIR on every call
@@ -25,7 +27,7 @@ from typing import Any
 
 import click
 
-from jw import lesson, lesson_edit
+from jw import lesson, lesson_edit, lesson_publish
 from jw.commands import question
 from jw.errors import JwError
 
@@ -38,11 +40,12 @@ TOOLS = (
     "lesson_check",
     "lesson_edit",
     "lesson_show",
+    "lesson_publish",
 )
 
 
 def build_server() -> Any:
-    """The MCP server with the eight tools. Imported lazily: only `serve` pays for it."""
+    """The MCP server with the nine tools. Imported lazily: only `serve` pays for it."""
     from mcp.server.mcpserver import MCPServer
     from mcp.server.mcpserver.exceptions import ToolError
 
@@ -51,18 +54,19 @@ def build_server() -> Any:
         instructions=(
             "Jadwigo's question bank and lesson drafts. To make a lesson from a parent's request: "
             "call lesson_draft, which copies each drawn question whole from the bank, its help "
-            "included, keeps the draft under a draft_id and writes it to draft_path. Write only what each question's "
-            "you_write lists (the twin, boost_by_mistake for its mistake_classes, a rung the copy "
-            "leaves empty), in the lesson's language, and change a copied part only when the "
-            "parent asks. Then call lesson_check with the draft_id and those words by step id, and "
-            "fix what its findings list by step id until it answers ok with a card and a "
-            "lesson_file. Each call rewrites the draft file, so the lesson can be watched as it "
+            "included, keeps the draft under a draft_id and writes it to draft_path. Write only "
+            "what each question's you_write lists (the twin, boost_by_mistake for its "
+            "mistake_classes, a rung the copy leaves empty), in the lesson's language, and change a "
+            "copied part only when the parent asks. Then call lesson_check with the draft_id and "
+            "those words by step id, and fix what its findings list by step id until it answers "
+            "ok with a card. Each call rewrites the draft file, so the lesson can be watched as it "
             "is built. To change one step after that, read it with lesson_show and patch it with "
-            "lesson_edit, which answers with that step's findings and card. "
-            "The lesson plays only after the import the card's next step names. "
-            "question_search, question_show, question_gaps and question_item look "
-            "into the bank directly: sets that meet a need, one set's page, needs it cannot meet, "
-            "one item."
+            "lesson_edit, which answers with that step's findings and card. question_search, "
+            "question_show, question_gaps and question_item look into the bank directly: sets "
+            "that meet a need, one set's page, needs it cannot meet, one item. Once a check "
+            "answers ok, call lesson_publish with the draft_id, without asking: it imports the "
+            "lesson into the local database, checks that it plays, and returns the play_url to "
+            "give the parent."
         ),
     )
 
@@ -213,15 +217,13 @@ def build_server() -> Any:
         value}}], where a path is say, or a dotted path under data, key, hints, worked or almost
         ("hints.0.text"); each change is recorded in based_on.changes. Send every step's words
         on each call. title and reasoning replace the draft's; pass names as for lesson_draft,
-        and the tool replaces them in both before the draft is written. Every call rewrites the draft file
-        (draft_path) with your words as far as they go, and writes its check beside it. ok true
-        returns the card (per question: prompt, key, rungs, twin, source, licence, changes, why
-        drawn; and what was left out, and next: the import step), the lesson_file path,
-        import_command, play_path and lesson_id. The play_path exists only after the import: tell
-        the parent to run import_command (make lesson-import FILE=<lesson_file> ENV=dev, in the
-        jadwigo checkout) first, then open the play_path. findings lists each problem: step_id,
-        path, level (error or warn), rule, text and fix; ok is false while one is an error. Fix
-        those and call lesson_check again.
+        and the tool replaces them in both before the draft is written. Every call rewrites the
+        draft file (draft_path) with your words as far as they go, and writes its check beside
+        it. ok true returns the card (per question: prompt, key, rungs, twin, source, licence,
+        changes, why drawn; what was left out; and next: publish with lesson_publish), the
+        lesson_file path, play_path and lesson_id. findings lists each problem: step_id, path,
+        level (error or warn), rule, text and fix; ok is false while one is an error. Fix those
+        and call lesson_check again.
         """
         return _call(
             lesson.check,
@@ -263,6 +265,20 @@ def build_server() -> Any:
             why=why,
             change=change,
         )
+
+    @server.tool(name="lesson_publish")
+    def lesson_publish_tool(draft_id: str, target: str = "local") -> dict[str, Any]:
+        """Publish a checked draft into the local database make dev serves, and check it plays.
+
+        Call it once lesson_check (or lesson_edit) answered ok, without asking: it refuses a
+        draft whose last check is not ok or is older than the draft. target is local; dev is the
+        owner's (the refusal names the command for them) and the live app is never published
+        from here. It imports the draft, then checks that the local api answers, that a preview
+        attempt starts with every question planned, and that the play page answers. Returns ok
+        (imported and every check passed), play_url (absolute: give it to the parent), verified
+        (each check's status), lesson_id, version, assignment_id, timings and publish_path.
+        """
+        return _call(lesson_publish.publish, draft_id=draft_id, target=target)
 
     @server.tool(name="lesson_show")
     def lesson_show(draft_id: str, step_id: str | None = None) -> dict[str, Any]:
