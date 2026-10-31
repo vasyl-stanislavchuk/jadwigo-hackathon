@@ -1,24 +1,41 @@
 ---
-// Every page's frame: Polish, the head from lib/seo.ts, and the placeholder's look. With `logo`, the
-// heading is the crown wordmark (dl-w0b4.68, decision jadwigo-marketing/decisions/2026-10-30-jadwigo-
-// wears-lockup-4a-an-andika-wordmark-with-a-crown-tipped-o); its SVG names it "Jadwigo". With `prose`,
-// the words read top to bottom in a column, as the privacy pages do (dl-w0b4.64).
-import { getCollection } from "astro:content";
+// Every page's frame: Polish, the head from lib/seo.ts, Zeszyt's tokens and Andika, a header with the
+// crown wordmark (decision jadwigo-marketing/decisions/2026-10-30-jadwigo-wears-lockup-4a-an-andika-
+// wordmark-with-a-crown-tipped-o) and a footer. With `prose`, the words read top to bottom in a
+// column under the page's heading, as the privacy pages do (dl-w0b4.64). Without it, the page brings
+// its own sections and its own h1 (the landing page, dl-5ssh.4.1).
+import "@fontsource/andika/400.css";
+import "@fontsource/andika/700.css";
+import "@jadwigo/ui/foundation.css";
+import { getCollection, getEntry } from "astro:content";
 import wordmark from "@jadwigo/ui/brand/wordmark.svg?raw";
-import { assertReviewed, headTags, jsonLd, type Page } from "../lib/seo.ts";
+import { parentUrl } from "../index.ts";
+import { assertReviewed, headTags, jsonLd, type Page, servedPathPages } from "../lib/seo.ts";
 
 interface Props {
   page: Page;
   path: string;
-  logo?: boolean;
   prose?: boolean;
+  /** The landing page's section anchors, shown in the header's nav. */
+  nav?: { href: string; label: string }[];
 }
 
-const { page, path, logo = false, prose = false } = Astro.props;
+const { page, path, prose = false, nav = [] } = Astro.props;
 const lang = page.lang ?? "pl";
 const otherLanguage = lang === "pl" ? "English" : "Polski";
-assertReviewed(await getCollection("pages"), import.meta.env.PROD);
+const pages = await getCollection("pages");
+assertReviewed(pages, import.meta.env.PROD);
 const tags = headTags(page, path);
+const words = (await getEntry("landing", "pl"))?.data;
+if (!words) throw new Error("src/content/pl/landing.yaml has no `pl` entry");
+// The footer links only the Polish pages this build serves: a draft page is never linked.
+const served = new Set(
+  servedPathPages(pages, import.meta.env.PROD, () => {}).map((p) => p.data.path),
+);
+const footerLinks = [
+  { href: "/prywatnosc", label: words.footer.privacy },
+  { href: "/prywatnosc/usuwanie-danych", label: words.footer.deletion },
+].filter((l) => served.has(l.href));
 ---
 
 <!doctype html>
@@ -41,64 +58,104 @@ const tags = headTags(page, path);
     <link rel="sitemap" href="/sitemap-index.xml" />
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd())} />
     <style is:global>
-      html, body { height: 100%; margin: 0; }
+      *, *::before, *::after { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
       body {
-        display: grid; place-items: center;
-        background: #fbf8f2; color: #2b2a28;
-        font-family: ui-rounded, "Segoe UI", system-ui, sans-serif;
+        margin: 0; background: var(--jw-ground); color: var(--jw-ink);
+        font-family: var(--jw-font); font-size: 1.0625rem; line-height: 1.55;
       }
-      h1 { font-size: clamp(2.5rem, 8vw, 4.5rem); margin: 0; letter-spacing: -0.02em; }
-      p { font-size: clamp(1.1rem, 3vw, 1.5rem); margin: 0.5rem 0 0; text-align: center; color: #6b665e; }
-      .play { margin-top: 2rem; }
-      .play a {
-        display: inline-block; padding: 0.75rem 1.75rem; border-radius: 999px;
-        background: #2b2a28; color: #fbf8f2; text-decoration: none; font-weight: 600;
+      a { color: var(--jw-brand-go); }
+      a:focus-visible, button:focus-visible { outline: 3px solid var(--jw-focus); outline-offset: 3px; border-radius: 6px; }
+      .wrap { max-width: 72rem; margin: 0 auto; padding: 0 1rem; }
+      h1, h2, h3 { font-weight: 700; line-height: 1.2; margin: 0; }
+      h2 { font-size: clamp(1.5rem, 3.5vw, 2rem); }
+      h3 { font-size: 1.2rem; }
+      p { margin: 0; }
+
+      /* The one action a visitor can press, in the app's action look: ink-blue fill and a pressed edge. */
+      .btn {
+        display: inline-flex; align-items: center; justify-content: center; min-height: 48px;
+        padding: 0.7rem 1.4rem; border-radius: var(--jw-radius-control); font-weight: 700;
+        text-decoration: none; color: var(--jw-on-act); background: var(--jw-act);
+        box-shadow: 0 4px 0 var(--jw-act-edge); transition: transform 80ms, box-shadow 80ms;
       }
-      .play a:hover, .play a:focus-visible { background: #4a4740; }
-      /* The wordmark is 1.8em tall, the crown's room included. Hover 5a: only the crown tips, about the
-         bottom-left corner of its box (packages/ui src/brand/README.md); a tap plays it once. */
-      .logo { line-height: 0; }
-      .logo svg { height: 1.8em; width: auto; }
+      .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--jw-act-edge); }
+      .btn.quiet { background: var(--jw-act-quiet); color: var(--jw-ink); box-shadow: 0 4px 0 var(--jw-line); }
+
+      .site-header { border-bottom: 1px solid var(--jw-line); }
+      .site-header .wrap { display: flex; align-items: center; gap: 1rem; min-height: 4.5rem; }
+      /* Hover 5a: only the crown tips, about the bottom-left corner of its box (packages/ui src/brand/
+         README.md); a tap plays it once. The wordmark's box is 180 units tall, the crown's room included. */
+      .logo { display: inline-flex; line-height: 0; }
+      .logo svg { height: 3.25rem; width: auto; }
+      @media (min-width: 52rem) { .logo svg { height: 3.75rem; } }
       .logo .crown { transform-origin: -12.5px 2.15px; transition: transform 320ms cubic-bezier(.34, 1.8, .5, 1); }
-      .logo:hover .crown, .logo.tip .crown { transform: translateY(-12.5px) rotate(-18deg); }
+      .logo:hover .crown, .logo:focus-visible .crown, .logo.tip .crown { transform: translateY(-12.5px) rotate(-18deg); }
       @media (prefers-reduced-motion: reduce) {
-        .logo .crown, .logo:hover .crown, .logo.tip .crown { transition: none; transform: none; }
+        .logo .crown, .logo:hover .crown, .logo:focus-visible .crown, .logo.tip .crown { transition: none; transform: none; }
       }
-      body.prose { display: block; }
-      .prose main { max-width: 40rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; line-height: 1.6; }
-      .prose h1 { font-size: clamp(1.8rem, 6vw, 2.5rem); letter-spacing: -0.01em; }
+      .site-nav { display: none; gap: 1.25rem; margin-left: auto; }
+      .site-nav a { color: var(--jw-ink); text-decoration: none; font-weight: 700; padding: 0.5rem 0; }
+      .site-nav a:hover { color: var(--jw-brand-go); }
+      .site-header .btn { margin-left: auto; padding: 0.5rem 1.1rem; min-height: 44px; }
+      @media (min-width: 52rem) {
+        .site-nav { display: flex; }
+        .site-header .btn { margin-left: 0; }
+      }
+
+      .site-footer { border-top: 1px solid var(--jw-line); margin-top: 4rem; padding: 2rem 0 3rem; color: var(--jw-ink-soft); }
+      .site-footer .wrap { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; align-items: center; }
+      .site-footer a { color: var(--jw-ink-soft); }
+
+      .prose main { max-width: 40rem; margin: 0 auto; padding: 2.5rem 1rem 0; }
+      .prose h1 { font-size: clamp(1.8rem, 6vw, 2.5rem); }
       .prose h2 { font-size: 1.3rem; margin: 2rem 0 0.5rem; }
-      .prose p, .prose li { font-size: 1.05rem; text-align: left; color: #2b2a28; }
       .prose p { margin: 0.75rem 0 0; }
-      .prose a { color: #2f63b8; }
       .prose .lang { margin: 0 0 1.5rem; font-size: 0.95rem; }
       .prose .draft {
         margin: 1rem 0 1.5rem; padding: 0.75rem 1rem; border-radius: 0.5rem;
-        background: #fdf0d5; color: #5a4a1e; font-size: 0.95rem;
+        background: var(--jw-help); color: var(--jw-help-ink); font-size: 0.95rem;
       }
     </style>
   </head>
   <body class={prose ? "prose" : undefined}>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="logo" href="/" aria-label={words.nav.home} set:html={wordmark} />
+        {
+          nav.length > 0 && (
+            <nav class="site-nav" aria-label="Strona">
+              {nav.map((n) => <a href={n.href}>{n.label}</a>)}
+            </nav>
+          )
+        }
+        <a class="btn quiet" href={parentUrl}>{words.nav.signIn}</a>
+      </div>
+    </header>
     <main>
       {prose && page.translation && (
         <p class="lang"><a href={`${page.translation}/`} hreflang={lang === "pl" ? "en" : "pl"}>{otherLanguage}</a></p>
       )}
-      {logo ? <h1 class="logo" set:html={wordmark} /> : <h1>{page.heading}</h1>}
+      {prose && <h1>{page.heading}</h1>}
       {page.draftNote && <p class="draft" role="note">{page.draftNote}</p>}
       <slot />
     </main>
-    {
-      logo && (
-        <script is:inline>
-          // On a touch screen there is no hover: a tap lifts the crown, holds it 200 ms, and lets it fall back.
-          document.querySelector(".logo")?.addEventListener("pointerdown", (e) => {
-            if (e.pointerType !== "touch") return;
-            const logo = e.currentTarget;
-            logo.classList.add("tip");
-            setTimeout(() => logo.classList.remove("tip"), 520);
-          });
-        </script>
-      )
-    }
+    <footer class="site-footer">
+      <div class="wrap">
+        <span>© Jadwigo</span>
+        {footerLinks.map((l) => <a href={`${l.href}/`}>{l.label}</a>)}
+        <span>{words.footer.made}</span>
+      </div>
+    </footer>
+    <script is:inline>
+      // On a touch screen there is no hover: a tap lifts the crown, holds it 200 ms, and lets it fall back.
+      document.querySelector(".logo")?.addEventListener("pointerdown", (e) => {
+        if (e.pointerType !== "touch") return;
+        const logo = e.currentTarget;
+        logo.classList.add("tip");
+        setTimeout(() => logo.classList.remove("tip"), 520);
+      });
+    </script>
   </body>
 </html>
