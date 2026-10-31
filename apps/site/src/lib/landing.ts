@@ -21,6 +21,23 @@ export const landingSchema = z.object({
     play: z.string().min(1),
     all: z.string().min(1),
   }),
+  compare: z.object({
+    heading: z.string().min(1),
+    nav: z.string().min(1),
+    text: z.string().min(1),
+    columns: z.tuple([z.string().min(1), z.string().min(1), z.string().min(1)]),
+    source: z.string().min(1),
+    rows: z
+      .array(
+        z.object({
+          app: z.string().min(1),
+          around: z.string().min(1),
+          jadwigo: z.string().min(1),
+          source: z.string().url(),
+        }),
+      )
+      .min(1),
+  }),
   about: z.object({ heading: z.string().min(1), text: z.string().min(1), more: z.string().min(1) }),
   nav: z.object({ signIn: z.string().min(1), home: z.string().min(1) }),
   footer: z.object({

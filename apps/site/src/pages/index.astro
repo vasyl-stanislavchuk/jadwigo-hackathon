@@ -20,6 +20,7 @@ const aboutServed = servedPathPages(
 const nav = [
   { href: "#jak-to-dziala", label: words.steps.heading },
   { href: "#lekcje", label: words.lessons.heading },
+  { href: "#porownanie", label: words.compare.nav },
   { href: "#o-nas", label: words.about.heading },
 ];
 ---
@@ -73,11 +74,36 @@ const nav = [
     <p class="actions"><a class="btn quiet" href={appUrl}>{words.lessons.all}</a></p>
   </section>
 
+  <section id="porownanie" class="wrap band" aria-labelledby="compare-title">
+    <h2 id="compare-title">{words.compare.heading}</h2>
+    <p class="section-lead">{words.compare.text}</p>
+    <table class="compare">
+      <thead>
+        <tr>{words.compare.columns.map((c) => <th scope="col">{c}</th>)}</tr>
+      </thead>
+      <tbody>
+        {
+          words.compare.rows.map((r) => (
+            <tr>
+              <th scope="row" data-label={words.compare.columns[0]}>
+                {r.app}{" "}
+                <a class="source" href={r.source} rel="noopener">({words.compare.source})</a>
+              </th>
+              <td data-label={words.compare.columns[1]}>{r.around}</td>
+              <td data-label={words.compare.columns[2]}>{r.jadwigo}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </section>
+
   <section id="o-nas" class="wrap band about" aria-labelledby="about-title">
     <h2 id="about-title">{words.about.heading}</h2>
     <p class="section-lead">{words.about.text}</p>
     {aboutServed && <p class="actions"><a href="/o-nas/">{words.about.more}</a></p>}
   </section>
+
 </Base>
 
 <style>
@@ -108,4 +134,18 @@ const nav = [
     .promises { grid-template-columns: repeat(2, 1fr); }
   }
   .about a { font-weight: 700; }
+
+  .compare { width: 100%; margin-top: 1.75rem; border-collapse: collapse; }
+  .compare th, .compare td { text-align: left; vertical-align: top; padding: 1rem; border-bottom: 1px solid var(--jw-line); }
+  .compare thead th { color: var(--jw-ink-soft); font-size: 0.95rem; }
+  .compare td:last-child { font-weight: 700; }
+  .compare .source { font-weight: 400; font-size: 0.85rem; white-space: nowrap; }
+  /* On a phone each app is a card: its name, then each cell under its column's label. */
+  @media (max-width: 47.99rem) {
+    .compare thead { display: none; }
+    .compare tr { display: block; border: 1px solid var(--jw-line); border-radius: var(--jw-radius-card); margin-bottom: 1rem; padding: 0.5rem 0; }
+    .compare th, .compare td { display: block; border: 0; padding: 0.4rem 1rem; }
+    .compare td::before { content: attr(data-label); display: block; font-size: 0.85rem; font-weight: 400; color: var(--jw-ink-soft); }
+  }
+
 </style>

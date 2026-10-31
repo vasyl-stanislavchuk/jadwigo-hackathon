@@ -22,6 +22,7 @@ const landing = [
   ["index.html", 'href="https://app.jadwigo.pl/play/asg_'],
   ["index.html", 'id="jak-to-dziala"'],
   ["index.html", 'id="lekcje"'],
+  ["index.html", 'id="porownanie"'],
   ["index.html", '<img src="/cast.webp"'],
   ["cast.webp", "WEBP"],
   ["404.html", "Tej strony tu nie ma."],
