@@ -1,38 +1,62 @@
 ---
-// The featured lessons as a moving row of cards (dl-5ssh.4.3): one click opens a lesson in the app,
-// with no login. The row drifts sideways and stops while a pointer or the keyboard is on it; under
-// reduced motion, or with too few cards to fill a loop, it stands still and scrolls by hand.
+// The featured lessons as big cards (dl-5ssh.4.3, dl-5ssh.4.7): who a lesson fits and how long it is
+// on top, its first question written large on a notebook page as the teaser, one click to play in
+// the app with no login. `moving` drifts the row sideways and stops while a pointer or the keyboard
+// is on it; under reduced motion, or as a grid, it stands still.
+import { getEntry } from "astro:content";
 import { featuredLessons, playUrl } from "../lib/featured.ts";
+import { firstSentence, plural } from "../lib/landing.ts";
 
 interface Props {
-  play: string;
+  layout?: "moving" | "grid";
 }
 
-const { play } = Astro.props;
+const { layout = "moving" } = Astro.props;
+const words = (await getEntry("landing", "pl"))?.data.lessons;
+if (!words) throw new Error("src/content/pl/landing.yaml has no lessons words");
 const { lessons, from } = await featuredLessons();
 console.warn(`Featured lessons for the gallery: ${lessons.length}, from the ${from}`);
-// A short list repeats until a track holds 6 cards, and the loop needs the track twice. Every repeat
-// is hidden from screen readers and the tab order, so each lesson is read and reached once.
-const moving = lessons.length >= 2;
-const perTrack = moving ? Math.max(6, lessons.length) : lessons.length;
-const cards = Array.from({ length: perTrack }, (_, i) => ({ i, repeat: i >= lessons.length }));
+
+const cards = lessons.map((l) => ({
+  href: playUrl(l),
+  title: l.title,
+  teaser: l.first_say === null ? null : firstSentence(l.first_say),
+  meta: [
+    words.subjects[l.subject],
+    l.grade === null ? null : `${words.grade} ${l.grade}`,
+    l.question_count > 0 ? plural(l.question_count, words.questions) : null,
+  ].filter((m): m is string => m !== null),
+}));
+// A moving row repeats a short list until a track holds 6 cards, and the loop needs the track twice.
+// Every repeat is hidden from screen readers and the tab order, so each lesson is read and reached once.
+const moving = layout === "moving" && cards.length >= 2;
+const perTrack = moving ? Math.max(6, cards.length) : cards.length;
+const slots = Array.from({ length: perTrack }, (_, i) => ({ i, repeat: i >= cards.length }));
 const tracks = moving ? [false, true] : [false];
 ---
 
-<div class:list={["gallery", { moving }]}>
+<div class:list={["gallery", layout, { moving }]}>
   <div class="belt">
     {
       tracks.map((copy) => (
         <ul class="track" aria-hidden={copy ? "true" : undefined}>
-          {cards.map(({ i, repeat }) => {
-            const l = lessons[i % lessons.length];
+          {slots.map(({ i, repeat }) => {
+            const c = cards[i % cards.length];
             const hidden = copy || repeat;
             return (
-              l && (
-                <li class:list={["card", `tint-${i % 3}`, { repeat }]} aria-hidden={!copy && repeat ? "true" : undefined}>
-                  <a href={playUrl(l)} tabindex={hidden ? -1 : undefined}>
-                    <span class="title">{l.title}</span>
-                    <span class="go">{play} →</span>
+              c && (
+                <li class:list={["card", { repeat }]} aria-hidden={!copy && repeat ? "true" : undefined}>
+                  <a href={c.href} tabindex={hidden ? -1 : undefined}>
+                    <span class="meta">
+                      {c.meta.map((m) => (
+                        <span class="chip">{m}</span>
+                      ))}
+                    </span>
+                    {c.teaser && <span class="page">{c.teaser}</span>}
+                    <span class="foot">
+                      <span class="title">{c.title}</span>
+                      <span class="go">{words.play} →</span>
+                    </span>
                   </a>
                 </li>
               )
@@ -45,24 +69,40 @@ const tracks = moving ? [false, true] : [false];
 </div>
 
 <style>
-  .gallery { margin-top: 1.75rem; overflow-x: auto; padding: 0.5rem 0 1rem; }
+  .gallery { margin-top: 1.5rem; padding: 0.5rem 0 1.25rem; }
+  .moving { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent); }
   .belt { display: flex; width: max-content; }
-  .track { display: flex; gap: 1rem; list-style: none; margin: 0; padding: 0 1rem 0 0; }
-  .card a {
-    display: flex; flex-direction: column; justify-content: space-between; gap: 1.5rem;
-    width: 16rem; min-height: 10rem; padding: 1.25rem; border-radius: var(--jw-radius-card);
-    border: 1px solid var(--jw-line); background: var(--jw-card); color: var(--jw-ink);
-    text-decoration: none; box-shadow: 0 4px 0 var(--jw-line);
-  }
-  .card a:hover { border-color: var(--jw-pick-edge); }
-  .tint-0 a { background: var(--jw-pick); }
-  .tint-1 a { background: var(--jw-act-quiet); }
-  .tint-2 a { background: var(--jw-card); }
-  .title { font-size: 1.2rem; font-weight: 700; line-height: 1.25; }
-  .go { font-weight: 700; color: var(--jw-brand-go); }
+  .grid .belt { width: auto; }
+  .track { display: flex; gap: 1.25rem; list-style: none; margin: 0; padding: 0 1.25rem 0 0; }
+  .grid .track { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); width: 100%; padding: 0; }
 
-  .moving { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); }
-  .moving .belt { animation: drift 40s linear infinite; }
+  .card a {
+    display: flex; flex-direction: column; gap: 1rem; height: 100%;
+    width: min(22rem, 80vw); min-height: 22rem; padding: 1.25rem;
+    border: 2px solid var(--jw-line); border-radius: var(--jw-radius-card);
+    background: var(--jw-card); color: var(--jw-ink); text-decoration: none;
+    box-shadow: 0 6px 0 var(--jw-line); transition: transform 120ms, border-color 120ms;
+  }
+  .grid .card a { width: auto; }
+  .card a:hover { border-color: var(--jw-pick-edge); transform: translateY(-3px); }
+  .meta { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .chip {
+    padding: 0.25rem 0.75rem; border-radius: var(--jw-radius-chip); font-size: 0.95rem; font-weight: 700;
+    background: var(--jw-pick); color: var(--jw-pick-ink);
+  }
+  .chip + .chip { background: var(--jw-act-quiet); color: var(--jw-ink); }
+  /* The teaser: the first question as the child sees it, large, on a lined exercise-book page. */
+  .page {
+    flex: 1; display: flex; align-items: center; padding: 1rem 1.25rem; border-radius: var(--jw-radius-small);
+    font-size: 1.6rem; font-weight: 700; line-height: 2.2rem; color: var(--jw-ink);
+    background: repeating-linear-gradient(to bottom, transparent 0 calc(2.2rem - 1px), var(--jw-line) calc(2.2rem - 1px) 2.2rem),
+      var(--jw-act-quiet);
+  }
+  .foot { display: flex; align-items: end; justify-content: space-between; gap: 1rem; }
+  .title { font-size: 1.15rem; font-weight: 700; line-height: 1.3; }
+  .go { flex: none; font-weight: 700; color: var(--jw-brand-go); }
+
+  .moving .belt { animation: drift 50s linear infinite; }
   .moving:hover .belt, .moving:focus-within .belt { animation-play-state: paused; }
   @keyframes drift { to { transform: translateX(-50%); } }
   @media (prefers-reduced-motion: reduce) {

@@ -1,14 +1,20 @@
-# The landing page's section words (src/lib/landing.ts). Copy says what Jadwigo does, never a slogan;
-# numbers are digits; the child is "ty", the parent "Ty" (jadwigo-marketing decisions of 2026-10-27).
-# The hero follows the owner's direction on dl-w0b4.30 (2026-10-31): family as partner, homework first.
+# The site's words beyond each page's frontmatter (src/lib/landing.ts). Copy says what Jadwigo does,
+# never a slogan; numbers are digits; the child is "ty", the parent "Ty" (decisions of 2026-10-27).
+# The hero follows the owner's direction on dl-w0b4.30 and their review of 2026-10-31: half the words.
 pl:
   hero:
-    lead: Pokaż nam ostatnią pracę domową. Zobaczymy, co było trudne, i ułożymy z tego krótką lekcję.
-    child: A dziecko? Może się pomylić, poprosić o więcej albo powiedzieć, że na dziś wystarczy.
+    lead: Pokaż ostatnią pracę domową, a ułożymy lekcję z tego, co trudne.
     homework: Pokaż pracę domową
-    play: Zagraj w lekcję teraz
-    art: Królowa Jadwiga i jej klasa, Ola, Tymek, Zoja i Marko, narysowani kredkami
+    play: Zagraj w lekcję
+  # Every page in the header, in order (owner, 2026-10-31: each link its own page).
+  links:
+    - { href: /lekcje, label: Lekcje }
+    - { href: /jak-to-dziala, label: Jak to działa }
+    - { href: /porownanie, label: Porównanie }
+    - { href: /o-nas, label: O nas }
   steps:
+    title: Jak działa Jadwigo
+    description: Pokazujesz pracę domową, dziecko rozwiązuje krótką lekcję, a Ty widzisz, co poszło dobrze i co dalej.
     heading: Jak to działa
     items:
       - title: Pokazujesz pracę domową
@@ -29,15 +35,16 @@ pl:
       - title: Bezpłatnie i bez reklam
         text: Lekcje i podsumowania dla rodzica nic nie kosztują.
   lessons:
+    title: Lekcje na start · Jadwigo
+    description: Krótkie lekcje matematyki i polskiego dla klas 1–3. Bez logowania, od razu w przeglądarce.
     heading: Lekcje na start
-    text: Bez logowania, od razu w przeglądarce. Wybierz lekcję i zagrajcie razem.
+    text: Bez logowania. Kliknij i grajcie.
     play: Zagraj
     all: Wszystkie lekcje
-  about:
-    heading: O nas
-    text: Jadwigo budujemy jako rodzina, mama, tata i nasz syn. Najpierw dla niego, teraz dla jego klasy.
-    more: Nasza historia
-  # /zaloguj (dl-5ssh.4.2): the ways in, in the decided order, handed over to the app's /parent.
+    # A card's labels: the subject, "klasa 2", and the question count in its 3 Polish forms (1, 2–4, 5+).
+    subjects: { math: Matematyka, polish: Polski, english: Angielski }
+    grade: klasa
+    questions: [pytanie, pytania, pytań]
   signIn:
     title: Zaloguj się · Jadwigo
     description: Zaloguj się albo załóż konto rodzica w Jadwigo kodem z e-maila, przez Google albo przez Facebooka.
@@ -52,6 +59,7 @@ pl:
   nav:
     signIn: Zaloguj się
     home: Jadwigo, strona główna
+    label: Strony
   footer:
     privacy: Prywatność
     deletion: Usuwanie danych
@@ -60,7 +68,8 @@ pl:
   # mistakes", and never "no other app": both are out of public copy.
   compare:
     heading: Czym różni się Jadwigo
-    nav: Porównanie
+    title: Jadwigo a Khan Academy, Duolingo, Kahoot i Quizlet
+    description: Czym Jadwigo różni się od Khan Academy, Duolingo, Kahoota i Quizletu, z linkiem do źródła przy każdej aplikacji.
     text: Każda z tych aplikacji jest zbudowana wokół czegoś innego niż jedno dziecko i jego rodzic.
     columns: [Aplikacja, Zbudowana wokół, Jadwigo]
     source: źródło

@@ -1,0 +1,53 @@
+---
+// /porownanie (dl-5ssh.4.4, dl-5ssh.4.7): Jadwigo next to Khan Academy, Duolingo, Kahoot and Quizlet,
+// each row with its source (docs/drops/identity/compare.md).
+import { getEntry } from "astro:content";
+import Base from "../layouts/Base.astro";
+
+const words = (await getEntry("landing", "pl"))?.data.compare;
+if (!words) throw new Error("src/content/pl/landing.yaml has no compare words");
+const page = { ...words, reviewed: true };
+---
+
+<Base page={page} path="/porownanie">
+  <section class="wrap top" aria-labelledby="page-title">
+    <h1 id="page-title">{words.heading}</h1>
+    <p class="lead">{words.text}</p>
+    <table class="compare">
+      <thead>
+        <tr>{words.columns.map((c) => <th scope="col">{c}</th>)}</tr>
+      </thead>
+      <tbody>
+        {
+          words.rows.map((r) => (
+            <tr>
+              <th scope="row" data-label={words.columns[0]}>
+                {r.app} <a class="source" href={r.source} rel="noopener">({words.source})</a>
+              </th>
+              <td data-label={words.columns[1]}>{r.around}</td>
+              <td data-label={words.columns[2]}>{r.jadwigo}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </section>
+</Base>
+
+<style>
+  .top { padding-top: clamp(2rem, 6vw, 3.5rem); }
+  h1 { font-size: clamp(2rem, 5vw, 2.75rem); }
+  .lead { margin-top: 0.75rem; max-width: 40rem; font-size: 1.15rem; }
+  .compare { width: 100%; margin-top: 1.75rem; border-collapse: collapse; }
+  .compare th, .compare td { text-align: left; vertical-align: top; padding: 1rem; border-bottom: 1px solid var(--jw-line); }
+  .compare thead th { color: var(--jw-ink-soft); font-size: 0.95rem; }
+  .compare td:last-child { font-weight: 700; }
+  .compare .source { font-weight: 400; font-size: 0.85rem; white-space: nowrap; }
+  /* On a phone each app is a card: its name, then each cell under its column's label. */
+  @media (max-width: 47.99rem) {
+    .compare thead { display: none; }
+    .compare tr { display: block; border: 1px solid var(--jw-line); border-radius: var(--jw-radius-card); margin-bottom: 1rem; padding: 0.5rem 0; }
+    .compare th, .compare td { display: block; border: 0; padding: 0.4rem 1rem; }
+    .compare td::before { content: attr(data-label); display: block; font-size: 0.85rem; font-weight: 400; color: var(--jw-ink-soft); }
+  }
+</style>
