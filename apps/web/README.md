@@ -25,7 +25,9 @@ A ref reaches the player in 3 spellings, and `mediaSrc` maps each to the same ad
 `<sha>.<ext>`, `media:<sha>.<ext>`, and the prototype's `/media/khan/<sha>.<ext>`. An absolute
 `http(s)://` address, a `data:` URL and any other path are left as they are. The player and the
 review rewrite a question's data and its released help with `withMedia` before lesson-kit sees a
-step, so the kit's parts keep taking a plain `src`.
+step, so the kit's parts keep taking a plain `src`. `withMedia` maps a string under `src`, `image`
+or `picture`, and the address of every markdown image `![alt](address)` inside any other string,
+alone on a line or inside one (an option's `$A$ ![…](…)`, `dl-a38n.32.40`).
 
 The dev server's own settings (`WEB_PORT`, `JW_API_URL`, `JW_SUPABASE_URL`, `JW_SUPABASE_KEY`,
 `JW_E2E_API`) are read in `src/config.ts`.
