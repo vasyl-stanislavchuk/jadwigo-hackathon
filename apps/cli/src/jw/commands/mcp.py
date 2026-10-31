@@ -182,8 +182,8 @@ def build_server() -> Any:
         a sibling item of the same set, problem type and look, with another answer, copied whole
         with its credit, when the bank has one (twin_source "bank khan:<id>"); the item's own
         mistake cards are kept. The draft stays on this machine under draft_id; the result is a
-        slim view of it. Per question: step_id, item_id, family, say, data (pictures without
-        their labels or address), key, you_write (what is left for you: twin only without a
+        slim view of it. Per question: step_id, item_id, say, data (pictures without their
+        labels or address), key (without the rule jw adds by code), you_write (what is left for you: twin only without a
         bank twin), cards_to_write (the classes whose mistake card the item lacks, when
         you_write names boost_by_mistake), twin_source, mistake_classes (the keys
         boost_by_mistake may use; null when unknown), why_drawn (its problem type), and, only

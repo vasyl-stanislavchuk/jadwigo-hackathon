@@ -1383,32 +1383,53 @@ def _plain(value: Any) -> Any:
 # keeps its TeX: the player draws it.
 _TEX_SYMBOLS = {
     r"\cdot": "·", r"\times": "×", r"\div": ":", r"\le": "≤", r"\leq": "≤", r"\ge": "≥",
-    r"\geq": "≥", r"\neq": "≠", r"\ne": "≠", r"\approx": "≈", r"\pm": "±", r"\%": "%",
-    r"\degree": "°", r"\circ": "°", r"\dots": "…", r"\ldots": "…", r"\cdots": "…", r"\,": " ",
-    r"\;": " ", r"\quad": " ", r"\qquad": " ", r"\ ": " ", r"\$": "$", r"\{": "{", r"\}": "}",
+    r"\geq": "≥", r"\lt": "<", r"\gt": ">", r"\neq": "≠", r"\ne": "≠", r"\approx": "≈",
+    r"\pm": "±", r"\%": "%", r"\degree": "°", r"\circ": "°", r"\dots": "…", r"\ldots": "…",
+    r"\cdots": "…", r"\,": " ", r"\;": " ", r"\quad": " ", r"\qquad": " ", r"\ ": " ",
+    r"\log": "log", r"\ln": "ln", r"\pi": "π",
 }
+# Characters TeX escapes, kept as they are: they stand in a private-use character while the `$`
+# and braces of the maths go.
+_TEX_KEPT = {r"\$": "\ue000", r"\{": "\ue001", r"\}": "\ue002"}
 _TEX_FRAC = re.compile(r"\\[dt]?frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}")
+_TEX_FRAC_DIGITS = re.compile(r"\\[dt]?frac\s*(\d)\s*(\d)")
+_TEX_SQRT = re.compile(r"\\sqrt\s*\{([^{}]*)\}")
+_TEX_SCRIPT = re.compile(r"([_^])\{([^{}]*)\}")
 _TEX_WRAP = re.compile(r"\\[A-Za-z]+\s*\{([^{}]*)\}")
 _TEX_WORD = re.compile(r"\\[A-Za-z]+")
 
 
+def _grouped(part: str) -> str:
+    """A fraction's or a root's part in brackets when it is more than one term: `(1+2)/3`."""
+    part = part.strip()
+    return f"({part})" if re.search(r"[\s+\-−·×:/]", part) else part
+
+
 def tex_plain(text: Any) -> Any:
     """`text` with its TeX made plain: `$\\Huge{\\blue{6} \\cdot 4} = $` reads `6 · 4 =`.
-    Fractions become `a/b`, colour and size wrappers keep what they wrap, a symbol becomes its
-    character, any other command goes, and the `$` around maths go."""
+    Fractions become `a/b` (a part of more than one term in brackets), a root `√x`, a symbol or
+    relation its character (`\\lt` `<`), colour and size wrappers keep what they wrap, any other
+    command goes, the `$` around maths go, and an escaped `\\$` stays a `$`."""
     if not isinstance(text, str) or "\\" not in text and "$" not in text:
         return text
     out = text
+    for tex, kept in _TEX_KEPT.items():
+        out = out.replace(tex, kept)
     for _ in range(8):  # nested wrappers, from the inside out
         before = out
-        out = _TEX_FRAC.sub(r"\1/\2", out)
+        out = _TEX_FRAC.sub(lambda m: f"{_grouped(m[1])}/{_grouped(m[2])}", out)
+        out = _TEX_FRAC_DIGITS.sub(r"\1/\2", out)
+        out = _TEX_SQRT.sub(lambda m: f"√{_grouped(m[1])}", out)
+        out = _TEX_SCRIPT.sub(r"\1\2 ", out)
         for tex, plain in sorted(_TEX_SYMBOLS.items(), key=lambda kv: -len(kv[0])):
             out = re.sub(re.escape(tex) + r"(?![A-Za-z])", plain, out)
         out = _TEX_WRAP.sub(r"\1", out)
         if out == before:
             break
     out = _TEX_WORD.sub("", out).replace("$", "")
-    out = re.sub(r"(?<!\\)[{}]", "", out)
+    out = re.sub(r"[{}]", "", out)
+    for tex, kept in _TEX_KEPT.items():
+        out = out.replace(kept, tex[1:])
     return re.sub(r"\s+", " ", out).strip()
 
 
