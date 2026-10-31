@@ -9,6 +9,8 @@
 import { ApiError, type AttemptClient, TransientError } from "@jadwigo/api-client";
 import {
   AssignmentId,
+  type AttemptAnswerRequest,
+  AttemptAnswerResult,
   AttemptId,
   type AttemptResults,
   AttemptSnapshot,
@@ -346,6 +348,108 @@ describe("PlayScreen", () => {
       );
       expect(await screen.findAllByText("Ile to jest dwa razy pięć? (1)")).not.toHaveLength(0);
       expect(window.location.pathname).toBe(playPath(ASSIGNMENT));
+    });
+  });
+
+  /**
+   * The queen (dl-7wlo.41): she plays at the praise that ends the lesson's first run of three
+   * clean rights, wherever in the lesson it falls, and never again in it. Answers go through the
+   * page (an option, Sprawdź, Dalej), so removing her from PlayScreen fails these tests.
+   */
+  describe("the queen", () => {
+    const chosen = (seq: number): unknown => ({
+      ...(question(seq) as PageAttemptQuestion),
+      question: {
+        family: "choose",
+        data: {
+          options: [
+            { id: "o1", content: { kind: "number", number: 10 } },
+            { id: "o2", content: { kind: "number", number: 12 } },
+          ],
+          select: "one",
+          layout: "grid",
+        },
+      },
+    });
+
+    /** A double that marks the first try at each seq in `misses` wrong, and every other try right. */
+    function lesson(misses: readonly number[]): AttemptClient {
+      return client({
+        startAttempt: async () => snapshot(FRESH, "in_progress", [chosen(1)]),
+        answer: async (_id, body: AttemptAnswerRequest) => {
+          const right = !(misses.includes(body.seq) && body.try_no === 1);
+          return AttemptAnswerResult.parse({
+            event_id: body.event_id,
+            seq: body.seq,
+            try_no: body.try_no,
+            replayed: false,
+            correct: right,
+            parts: right ? null : [],
+            reveal: right ? {} : null,
+            ended: right ? "correct" : null,
+            next: right ? chosen(body.seq + 1) : null,
+            attempt_status: "in_progress",
+          });
+        },
+      });
+    }
+
+    const queen = (): Element | null => document.querySelector("[data-queen]");
+
+    /** Pick an option and press Sprawdź, as a keyboard does (no pointerdown, which hides her). */
+    async function answer(seq: number, pick = "10"): Promise<void> {
+      const option = await screen.findByText(pick);
+      await act(async () => fireEvent.click(option));
+      await act(async () =>
+        fireEvent.click(document.querySelector("[data-check]") as Element, { detail: 0 }),
+      );
+      expect(screen.getAllByText(`Ile to jest dwa razy pięć? (${seq})`)).not.toHaveLength(0);
+    }
+
+    async function next(): Promise<void> {
+      await act(async () =>
+        fireEvent.click(document.querySelector("[data-next]") as Element, { detail: 0 }),
+      );
+    }
+
+    beforeEach(() => {
+      vi.stubGlobal("matchMedia", (query: string) => ({ matches: false, media: query }));
+    });
+    afterEach(() => vi.unstubAllGlobals());
+
+    it("plays at a later run of three after a miss, goes on Dalej, and not again", async () => {
+      render(<PlayScreen assignmentId={ASSIGNMENT} language="pl" client={lesson([2])} />);
+      await answer(1);
+      await next();
+      await answer(2); // a miss: the run starts again
+      await answer(2, "12"); // a changed answer brings Sprawdź back
+      await next();
+      for (const seq of [3, 4]) {
+        await answer(seq);
+        expect(queen()).toBeNull();
+        await next();
+      }
+      await answer(5);
+      expect(queen()).not.toBeNull();
+      await next();
+      expect(queen()).toBeNull();
+      for (const seq of [6, 7, 8]) {
+        await answer(seq);
+        expect(queen()).toBeNull();
+        await next();
+      }
+    });
+
+    it("a tap hides her", async () => {
+      render(<PlayScreen assignmentId={ASSIGNMENT} language="pl" client={lesson([])} />);
+      for (const seq of [1, 2]) {
+        await answer(seq);
+        await next();
+      }
+      await answer(3);
+      expect(queen()).not.toBeNull();
+      await act(async () => fireEvent.pointerDown(document.body));
+      expect(queen()).toBeNull();
     });
   });
 });
