@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-10-31T12:00:00Z",
+  "rules_version": "fixture-2",
+  "languages": {
+    "pl": {
+      "items": 40,
+      "ready": 21,
+      "not_checked": 1,
+      "flagged": 1,
+      "waiting": { "a question in several parts whose parts mix families waits": 2 },
+      "refused": {
+        "a hint picture has no alt text yet (media/khan/alt.json)": 6,
+        "refused: fxp1: web+graphie://fixture.invalid/graphie/fx1 was not pulled; run media.py": 3,
+        "https://fixture.invalid/media/fx2.png was not pulled; run media.py": 1,
+        "no Polish raw item": 2,
+        "pl differs from en (family, key)": 1,
+        "render-picture-missing": 2
+      },
+      "readmitted": {
+        "set set_khan_fx0009 stopped: 2 of 9 items pl differs from en": 4,
+        "pl differs from en (numbers, pictures)": 3
+      },
+      "issues": { "a question in several parts whose parts mix families waits": "dl-fixture-wait" }
+    }
+  },
+  "sets": { "indexed": 3, "skipped_no_ready": 1 }
+}

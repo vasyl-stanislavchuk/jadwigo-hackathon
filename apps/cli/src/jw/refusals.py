@@ -11,7 +11,10 @@ dl-be2l).
 
 The shapes come from the converted file (each item's stamped `status`) and the conformance sidecar
 beside it (`<items stem>.render.json`, `tools/conformance/report.ts`), so a run newer than the stamp
-shows at once. The refusals file is `<JADWIGO_BANK_DIR>/refusals/<lang>.json`, in the shape the
+shows at once, and from the converter's own refusals beside them (`<items stem>.refused.json`,
+`{items: [{id, reason, sets}]}`: the items refused before conversion, which never reach the
+converted file). A converter refusal is a shape too, owned by the converter: its reason with what
+differs per item taken out (`cause_of`), on no question type (dl-a38n.32.36). The refusals file is `<JADWIGO_BANK_DIR>/refusals/<lang>.json`, in the shape the
 bank pins (jadwigo-bank schemas/refusals.schema.json): `{shapes: [{rule, question_type, issue}],
 flags: [{id, by, reason, issue?, on}]}`. It holds ids and reasons only, never question text, so it
 is safe in git. These commands never write a bead.
@@ -21,7 +24,9 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import re
 from collections.abc import Mapping
+from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 from typing import Any
@@ -33,6 +38,7 @@ from jw import bank_client, items, settings_keys
 from jw.errors import JwError
 
 FLAGGED_RULE = "flagged"
+CONVERTER = "converter"
 EXAMPLES = 3
 # Who may pull an item: a role, never a person's name, because the file is committed in the bank
 # repo and its schema refuses an empty `by`.
@@ -70,7 +76,38 @@ def sidecar_path(converted: Path) -> Path:
     return converted.with_name(f"{converted.stem}.render.json")
 
 
-def _read_json(path: Path, what: str) -> Any:
+def refused_path(converted: Path) -> Path:
+    """converted-pl.json -> converted-pl.refused.json, the converter's refusals beside it."""
+    return converted.with_name(f"{converted.stem}.refused.json")
+
+
+_ITEM_PREFIX = re.compile(r"^refused:\s*[\w.-]+:\s*")
+_NOT_PULLED = re.compile(r"^\S+://\S+ was not pulled\b")
+_SET_STOPPED = re.compile(r"^set \S+ stopped\b")
+_TWIN = re.compile(r"^(\w+) differs from (\w+) \(([^)]*)\)")
+_BEAD = re.compile(r"^[a-z]+-[a-z0-9]+(\.\d+)*$")
+
+
+def cause_of(reason: str) -> str:
+    """The cause a converter refusal names, with what differs per item taken out, so the items one
+    fix re-admits count together: the `refused: <id>: ` prefix goes, a picture URL that was not
+    pulled is "a picture was not pulled", a stopped set is "set stopped", and a twin difference is
+    "pl differs from en (family)" when the family differs, else "(numbers, pictures)". Applying
+    it twice changes nothing, so a cause readiness.json already wrote stays as it is."""
+    text = _ITEM_PREFIX.sub("", str(reason).strip())
+    if _NOT_PULLED.match(text):
+        return "a picture was not pulled"
+    if _SET_STOPPED.match(text):
+        return "set stopped"
+    twin = _TWIN.match(text)
+    if twin:
+        parts = {part.strip() for part in twin.group(3).split(",")}
+        what = "family" if "family" in parts else "numbers, pictures"
+        return f"{twin.group(1)} differs from {twin.group(2)} ({what})"
+    return text
+
+
+def read_json(path: Path, what: str) -> Any:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
@@ -80,7 +117,7 @@ def _read_json(path: Path, what: str) -> Any:
 
 
 def _items(converted: Path) -> list[dict[str, Any]]:
-    raw = _read_json(converted, "converted items file")
+    raw = read_json(converted, "converted items file")
     if raw is None:
         raise JwError(
             f"no converted items file at {converted}",
@@ -140,12 +177,15 @@ def require_path(language: str) -> Path:
 def _load(language: str) -> dict[str, Any]:
     """The refusals file as it is on disk, or an empty one."""
     path = items.refusals_path(language)
-    raw = _read_json(path, "refusals file") if path is not None else None
+    raw = read_json(path, "refusals file") if path is not None else None
     if raw is None:
         return {"shapes": [], "flags": []}
     if not isinstance(raw, dict):
         raise JwError(f"{path} is not a refusals file", hint="It holds {shapes, flags}.")
-    return {"shapes": list(raw.get("shapes") or []), "flags": list(raw.get("flags") or [])}
+    return {
+        "shapes": list(raw.get("shapes") or []),
+        "flags": list(raw.get("flags") or []),
+    }
 
 
 def _save(language: str, refusals: Mapping[str, Any]) -> Path:
@@ -157,8 +197,7 @@ def _save(language: str, refusals: Mapping[str, Any]) -> Path:
     if problem is not None:
         where = "/".join(str(p) for p in problem.absolute_path) or "the file"
         raise JwError(
-            f"the refusals file would not match refusals.schema.json at {where}: "
-            f"{problem.message}",
+            f"the refusals file would not match refusals.schema.json at {where}: {problem.message}",
             hint=f"Nothing was written to {path}. Fix the entry there by hand if it was already "
             "wrong, then run the command again.",
         )
@@ -167,42 +206,103 @@ def _save(language: str, refusals: Mapping[str, Any]) -> Path:
     return path
 
 
-def report(
-    language: str = "pl", *, new: bool = False, since: str | None = None
-) -> dict[str, Any]:
+@dataclass(frozen=True)
+class Verdict:
+    """One item's place in the report: `kind` is ready, not_checked, waiting, refused or flagged;
+    `cause` the rule, the converter's cause or the waiting reason."""
+
+    id: str
+    kind: str
+    cause: str | None = None
+    issue: str | None = None
+    question_type: str | None = None
+    owner: str | None = None
+    converter: bool = False
+
+
+def _converter_refused(converted: Path) -> list[dict[str, Any]]:
+    """The converter's refusals beside the converted file, or none when it wrote no file."""
+    raw = read_json(refused_path(converted), "converter refusals file")
+    listed = raw.get("items") if isinstance(raw, Mapping) else raw
+    if not isinstance(listed, list):
+        return []
+    return [r for r in listed if isinstance(r, Mapping) and r.get("id")]
+
+
+def classify(language: str) -> tuple[Path, list[Verdict]]:
+    """Every item of `language`, converted or refused before conversion, with its verdict."""
+    converted = converted_file(language)
+    listed = _items(converted)
+    sidecar = read_json(sidecar_path(converted), "conformance sidecar") or {}
+    verdicts = (sidecar.get("items") if isinstance(sidecar, Mapping) else None) or {}
+    flags = {
+        str(f["id"]): f for f in _load(language)["flags"] if isinstance(f, Mapping) and "id" in f
+    }
+    out: list[Verdict] = []
+    for item in listed:
+        item_id = str(item["id"])
+        qtype = _question_type(item)
+        found = _refusal(item, verdicts.get(item_id), flags.get(item_id))
+        if found is not None:
+            rule, issue, by = found
+            if rule == FLAGGED_RULE:
+                out.append(Verdict(item_id, "flagged", rule, issue, qtype, by))
+            else:
+                out.append(Verdict(item_id, "refused", rule, issue, qtype, owner_of(rule)))
+            continue
+        status = item.get("status") if isinstance(item.get("status"), Mapping) else {}
+        if items.why_not_ready(status) is None:
+            out.append(Verdict(item_id, "ready", question_type=qtype))
+        elif status.get("kind") == "waiting":
+            reason = cause_of(str(items.why_not_ready(status)))
+            out.append(Verdict(item_id, "waiting", reason, status.get("issue"), qtype))
+        else:
+            out.append(Verdict(item_id, "not_checked", items.NOT_CHECKED, question_type=qtype))
+    seen = {v.id for v in out}
+    for entry in _converter_refused(converted):
+        item_id = str(entry["id"])
+        if item_id in seen:  # the converter lists its waiting items too; the stamp has them
+            continue
+        seen.add(item_id)
+        reason = str(entry.get("reason") or "refused by the converter")
+        issue = reason if _BEAD.match(reason) else None
+        out.append(
+            Verdict(
+                item_id,
+                "refused",
+                cause_of(reason),
+                issue,
+                None,
+                CONVERTER,
+                converter=True,
+            )
+        )
+    return converted, out
+
+
+def assigned_shapes(language: str) -> dict[tuple[str, str | None], str]:
+    """(rule, question_type) -> the bead `refusals assign` wrote for it."""
+    return {
+        (str(s.get("rule")), s.get("question_type")): str(s.get("issue"))
+        for s in _load(language)["shapes"]
+        if isinstance(s, Mapping) and s.get("issue")
+    }
+
+
+def report(language: str = "pl", *, new: bool = False, since: str | None = None) -> dict[str, Any]:
     """`jw question refusals --json`: the shapes of what is not lesson-ready in `language`.
 
     `new` keeps only shapes with no issue. `since` names a bead: the shapes assigned to it, and per
     shape the items still refused under it, so the lead sees whether its fix emptied the shape.
     """
-    converted = converted_file(language)
-    listed = _items(converted)
-    sidecar = _read_json(sidecar_path(converted), "conformance sidecar") or {}
-    verdicts = sidecar.get("items") if isinstance(sidecar, Mapping) else None
-    refusals = _load(language)
-    assigned = {
-        (str(s.get("rule")), s.get("question_type")): str(s.get("issue"))
-        for s in refusals["shapes"]
-        if isinstance(s, Mapping) and s.get("issue")
-    }
-    flags = {str(f["id"]): f for f in refusals["flags"] if isinstance(f, Mapping) and "id" in f}
+    converted, verdicts = classify(language)
+    assigned = assigned_shapes(language)
     shapes: dict[tuple[str, str | None], dict[str, Any]] = {}
-    ready = not_checked = waiting = 0
-    for item in listed:
-        item_id = str(item["id"])
-        found = _refusal(item, (verdicts or {}).get(item_id), flags.get(item_id))
-        if found is None:
-            status = item.get("status")
-            kind = status.get("kind") if isinstance(status, Mapping) else None
-            if items.why_not_ready(status) is None:
-                ready += 1
-            elif kind == "waiting":
-                waiting += 1
-            else:
-                not_checked += 1
+    for verdict in verdicts:
+        if verdict.kind not in ("refused", "flagged"):
             continue
-        rule, issue, by = found
-        qtype = _question_type(item)
+        rule = str(verdict.cause)
+        qtype = verdict.question_type
         shape = shapes.setdefault(
             (rule, qtype),
             {
@@ -215,13 +315,13 @@ def report(
             },
         )
         shape["items"] += 1
-        shape["ids"].append(item_id)
-        shape["issue"] = shape["issue"] or issue
-        owner = by if rule == FLAGGED_RULE else owner_of(rule)
-        if owner and owner not in shape["owners"]:
-            shape["owners"].append(owner)
+        shape["ids"].append(verdict.id)
+        shape["issue"] = shape["issue"] or verdict.issue
+        if verdict.owner and verdict.owner not in shape["owners"]:
+            shape["owners"].append(verdict.owner)
     ordered = sorted(
-        shapes.values(), key=lambda s: (-s["items"], s["rule"], s["question_type"] or "")
+        shapes.values(),
+        key=lambda s: (-s["items"], s["rule"], s["question_type"] or ""),
     )
     rows = [
         {
@@ -235,13 +335,18 @@ def report(
         for shape in ordered
         if not (new and shape["issue"])
     ]
+
+    def count(kind: str) -> int:
+        return sum(1 for v in verdicts if v.kind == kind)
+
     out: dict[str, Any] = {
         "language": language,
         "file": str(converted),
-        "items": len(listed),
-        "ready": ready,
-        "not_checked": not_checked,
-        "waiting": waiting,
+        "items": len(verdicts),
+        "ready": count("ready"),
+        "not_checked": count("not_checked"),
+        "waiting": count("waiting"),
+        "refused_before_conversion": sum(1 for v in verdicts if v.converter),
         "shapes": rows,
     }
     if since is not None:
@@ -262,7 +367,12 @@ def _since(
     for rule, qtype in dict.fromkeys(mine):
         still = list((shapes.get((rule, qtype)) or {}).get("ids") or [])
         rows.append(
-            {"rule": rule, "question_type": qtype, "still_refused": still, "plays_now": not still}
+            {
+                "rule": rule,
+                "question_type": qtype,
+                "still_refused": still,
+                "plays_now": not still,
+            }
         )
     return {"bead": bead, "shapes": rows}
 
@@ -300,7 +410,8 @@ def flag(
     reason = (reason or "").strip()
     if not reason:
         raise JwError(
-            "a flag needs a reason", hint="Say why in a few words, without quoting the question."
+            "a flag needs a reason",
+            hint="Say why in a few words, without quoting the question.",
         )
     _known(item_id, language)
     refusals = _load(language)

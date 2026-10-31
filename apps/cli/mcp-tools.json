@@ -218,7 +218,7 @@
       }
     },
     {
-      "description": "Search each need once (one per words, one per skill) and say which find nothing.\n\n        A need whose every found set has no lesson-ready item in its language is a gap too, with\n        reason \"no item is lesson-ready in <lang>\"; not_ready lists such sets.\n        ",
+      "description": "Search each need once (one per words, one per skill) and say which find nothing.\n\n        A need whose every found set has no lesson-ready item in its language is a gap too, with\n        reason \"no item is lesson-ready in <lang>\", followed, when the converted files can say, by\n        \"; most: <cause>, <n> of <m> items (<bead>)\": the cause most of those sets' items share\n        and the bead fixing it. not_ready lists such sets.\n        ",
       "inputSchema": {
         "properties": {
           "arm": {

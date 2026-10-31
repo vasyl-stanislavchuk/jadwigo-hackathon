@@ -15,7 +15,7 @@ export const MCP_OUTPUT: Readonly<Record<string, McpOutput>> = {
     says: "One question set's public page, as the bank writes it: `id`, `subject`, `grade`, `languages`, `titles`, `description`, the problem and question types, the `families` its items play in, the `items` and the `enrichment` a pass added. It carries no key.",
   },
   question_gaps: {
-    says: "`version` 1, and in `needs` one row per need asked: the `need`, a `verdict` (`found`, `gap` or `degraded`), `rows` (how many sets came back), `top` (the first 3 set ids) and `state` (the arms that were asked). `gaps` and `degraded` count the rows with that verdict. A need is `degraded` when no arm could be asked, which is not a gap. A need whose every found set has no lesson-ready item in its language is a gap too, with `reason` (`no item is lesson-ready in <lang>`) and `not_ready`, the ids of those sets.",
+    says: "`version` 1, and in `needs` one row per need asked: the `need`, a `verdict` (`found`, `gap` or `degraded`), `rows` (how many sets came back), `top` (the first 3 set ids) and `state` (the arms that were asked). `gaps` and `degraded` count the rows with that verdict. A need is `degraded` when no arm could be asked, which is not a gap. A need whose every found set has no lesson-ready item in its language is a gap too, with `reason` (`no item is lesson-ready in <lang>`, then, when the converted files can say, `; most: <cause>, <n> of <m> items (<bead>)`: the cause most of those sets' items share and the bead fixing it) and `not_ready`, the ids of those sets.",
     schema: { name: "Need", covers: "the shape of each row's `need`", schema: Need },
   },
   question_item: {
