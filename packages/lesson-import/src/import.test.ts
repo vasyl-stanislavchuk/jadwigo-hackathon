@@ -103,6 +103,40 @@ describe("compiling a lesson file", () => {
     expect(byStep.get("s02")?.credit).toBeNull();
   });
 
+  it("carries a twin's own credit and based_on onto its spare, so a sibling bank twin keeps its attribution", () => {
+    const raw = file("equal-groups");
+    const credit = {
+      source: "khan",
+      ref: "made-up-sibling",
+      licence: "cc-by-nc-sa-3.0",
+      original_lang: "pl",
+      checked: "2026-10-31",
+    };
+    const based_on = { question: "khan:made-up-sibling", changes: [] };
+    const twin = (step(raw, "s02")["question"] as { help: { twin: Record<string, unknown> } }).help
+      .twin;
+    Object.assign(twin, { credit, based_on });
+    const compiled = compileLessonFile(raw);
+    const byStep = new Map(compiled.questions.map((q) => [q.step_id, q]));
+    expect(byStep.get("s02t")?.role).toBe("spare");
+    expect(byStep.get("s02t")?.question.credit).toEqual(credit);
+    expect(byStep.get("s02t")?.question.based_on).toEqual(based_on);
+    // The other twins have none in the file, and keep null; the step's own question is unchanged.
+    expect(byStep.get("s05t")?.question.credit).toBeNull();
+    expect(byStep.get("s05t")?.question.based_on).toBeNull();
+    expect(byStep.get("s02")?.question).toEqual(
+      compileLessonFile(file("equal-groups")).questions.find((q) => q.step_id === "s02")?.question,
+    );
+  });
+
+  it("refuses a twin's credit the contract does not take, naming the step", () => {
+    const raw = file("equal-groups");
+    const twin = (step(raw, "s02")["question"] as { help: { twin: Record<string, unknown> } }).help
+      .twin;
+    twin["credit"] = { source: "khan" };
+    expect(() => compileLessonFile(raw)).toThrow(/step s02t credit/);
+  });
+
   it("gives the lesson the union of its questions' skill ids, in the contract's form", () => {
     const compiled = compileLessonFile(file("fives-everywhere"));
     expect(compiled.lesson.skill_ids).toContain("curriculum.math.multiplication.row-5");
