@@ -43,6 +43,7 @@ import {
   Skill,
   SkillId,
   SkipReason,
+  Subject,
 } from "./records.ts";
 
 /**
@@ -614,12 +615,22 @@ export const LIMITS = {
   reportsPerLearner: 50,
 } as const;
 
-/** A lesson anyone may play now, from the landing page. */
+/**
+ * A lesson anyone may play now, from the landing page, with what its card shows (owner,
+ * 2026-10-31, dl-5ssh.4.6): who it fits, how long it is, and the first question's spoken line. No
+ * key and no answer: `first_say` is what the player reads aloud before the child answers.
+ */
 export const FeaturedLesson = z.object({
   assignment_id: AssignmentId,
   lesson_id: LessonId,
   title: z.string().min(1),
   language: Language,
+  subject: Subject,
+  grade: z.int().min(0).nullable(),
+  /** The planned questions of the version an attempt would play; 0 when none is published. */
+  question_count: z.int().min(0),
+  /** The first planned question's `say`, or null when there is none or it is empty. */
+  first_say: z.string().min(1).nullable(),
 });
 export type FeaturedLesson = z.infer<typeof FeaturedLesson>;
 
