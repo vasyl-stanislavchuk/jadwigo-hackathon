@@ -1,0 +1,829 @@
+{
+  "id": "e2e-render-findings",
+  "title": {
+    "pl": "Równe grupy",
+    "uk": "Рівні групи",
+    "en": "Equal groups"
+  },
+  "flavour": "child-pl-maths",
+  "language": "pl",
+  "category": "child",
+  "subject": "math",
+  "reasoning": {
+    "pl": "Mnożenie jako równe grupy: najpierw obrazek, potem dodawanie, potem mnożenie. Lekcja przykładowa na plac zabaw, nie z danych żadnego ucznia.",
+    "uk": "Множення як рівні групи: спершу малюнок, потім додавання, потім множення. Зразковий урок для пісочниці, не з даних жодного учня.",
+    "en": "Multiplication as equal groups: first a picture, then a sum, then a product. A sample lesson for the playground, from no learner’s record."
+  },
+  "can_do": [
+    {
+      "id": "maths.mul.equal-groups",
+      "text": {
+        "pl": "Umiem zapisać równe grupy jako mnożenie.",
+        "uk": "Я вмію записати рівні групи як множення.",
+        "en": "I can write equal groups as a multiplication."
+      }
+    },
+    {
+      "id": "maths.mul.3x4",
+      "text": {
+        "pl": "Wiem, ile to jest 3 × 4.",
+        "uk": "Я знаю, скільки буде 3 × 4.",
+        "en": "I know what 3 × 4 is."
+      }
+    }
+  ],
+  "reviewed": false,
+  "script": {
+    "parts": [
+      {
+        "part": "warm_up",
+        "steps": [
+          {
+            "id": "s01",
+            "skill_ids": [],
+            "based_on": {
+              "question": "authored:equal-groups",
+              "changes": []
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Powitanie i plan lekcji.",
+                "uk": "Привітання і план уроку.",
+                "en": "A hello and the plan."
+              }
+            },
+            "say": {
+              "pl": "Cześć! Dziś układamy rzeczy w równe grupy. Zaczniemy od rozgrzewki.",
+              "uk": "Привіт! Сьогодні складаємо речі в рівні групи. Почнімо з розминки.",
+              "en": "Hi! Today we put things into equal groups. We start with a warm-up."
+            },
+            "teach": {
+              "text": {
+                "pl": "Cześć! Dziś układamy rzeczy w równe grupy.",
+                "uk": "Привіт! Сьогодні складаємо речі в рівні групи.",
+                "en": "Hi! Today we put things into equal groups."
+              }
+            }
+          },
+          {
+            "id": "s02",
+            "question_type": "production",
+            "skill_ids": ["maths.mul.2x5"],
+            "based_on": {
+              "question": "authored:equal-groups",
+              "changes": []
+            },
+            "reason": {
+              "brief": "review",
+              "why": {
+                "pl": "Łatwy fakt na start, z pamięci.",
+                "uk": "Легкий факт на початок, з памʼяті.",
+                "en": "An easy fact to recall first."
+              }
+            },
+            "say": {
+              "pl": "Ile to jest dwa razy pięć? Napisz albo powiedz.",
+              "uk": "Скільки буде два помножити на пʼять? Напиши або скажи.",
+              "en": "What is two times five? Type or say it."
+            },
+            "question": {
+              "family": "enter",
+              "data": {
+                "input": "number",
+                "entry": "keypad",
+                "voice": true,
+                "figure": {
+                  "kind": "expression",
+                  "text": "2 × 5 = ?"
+                }
+              },
+              "key": {
+                "accept": ["10"],
+                "near": {
+                  "7": "add_for_multiply",
+                  "8": "neighbour_row",
+                  "12": "neighbour_row"
+                },
+                "rule": {
+                  "rule": "times_table",
+                  "a": 2,
+                  "b": 5,
+                  "recent": []
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Dwa razy pięć to dwie grupy po pięć.",
+                    "uk": "Два помножити на пʼять це дві групи по пʼять.",
+                    "en": "Two times five is two groups of five."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Policz piątkami: pięć i jeszcze pięć.",
+                    "uk": "Лічи пʼятірками: пʼять і ще пʼять.",
+                    "en": "Count in fives: five, and five more."
+                  }
+                },
+                "boost_by_mistake": {
+                  "add_for_multiply": {
+                    "text": {
+                      "pl": "2 + 5 to dodawanie. Tu są dwie grupy, w każdej po pięć.",
+                      "uk": "2 + 5 це додавання. Тут дві групи, у кожній по пʼять.",
+                      "en": "2 + 5 is adding. Here there are two groups, five in each."
+                    }
+                  }
+                },
+                "worked": [
+                  {
+                    "pl": "2 × 5 to dwie piątki",
+                    "uk": "2 × 5 це дві пʼятірки",
+                    "en": "2 × 5 is two fives"
+                  },
+                  "5 + 5 = 10"
+                ],
+                "twin": {
+                  "say": {
+                    "pl": "Ile to jest dwa razy cztery? Napisz albo powiedz.",
+                    "uk": "Скільки буде два помножити на чотири? Напиши або скажи.",
+                    "en": "What is two times four? Type or say it."
+                  },
+                  "family": "enter",
+                  "data": {
+                    "input": "number",
+                    "entry": "keypad",
+                    "voice": true,
+                    "figure": {
+                      "kind": "expression",
+                      "text": "2 × 4 = ?"
+                    }
+                  },
+                  "key": {
+                    "accept": ["8"],
+                    "near": {
+                      "6": "add_for_multiply"
+                    },
+                    "rule": {
+                      "rule": "times_table",
+                      "a": 2,
+                      "b": 4,
+                      "recent": []
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz 10",
+                  "uk": "Запиши 10",
+                  "en": "Type 10"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "entered": "10"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz 7 (dodane zamiast pomnożonych)",
+                  "uk": "Запиши 7 (додано замість множення)",
+                  "en": "Type 7 (added, not multiplied)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "add_for_multiply",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka o grupach",
+                  "uk": "лишається на кроці, підказка про групи",
+                  "en": "stays on the step, the hint about groups"
+                },
+                "value": {
+                  "entered": "7"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz 12 (rząd obok)",
+                  "uk": "Запиши 12 (сусідній рядок)",
+                  "en": "Type 12 (the row next door)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "neighbour_row",
+                "shows": {
+                  "pl": "zostaje na kroku, pierwsza wskazówka",
+                  "uk": "лишається на кроці, перша підказка",
+                  "en": "stays on the step, the first hint"
+                },
+                "value": {
+                  "entered": "12"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "part": "teach",
+        "steps": [
+          {
+            "id": "s03",
+            "skill_ids": ["maths.mul.equal-groups"],
+            "based_on": {
+              "question": "authored:equal-groups",
+              "changes": []
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Obrazek przed zapisem.",
+                "uk": "Малюнок перед записом.",
+                "en": "The picture before the notation."
+              }
+            },
+            "say": {
+              "pl": "Popatrz: trzy rzędy, w każdym po cztery kropki. To trzy razy cztery.",
+              "uk": "Подивись: три ряди, у кожному по чотири крапки. Це три помножити на чотири.",
+              "en": "Look: three rows, four dots in each. That is three times four."
+            },
+            "teach": {
+              "text": {
+                "pl": "3 grupy po 4",
+                "uk": "3 групи по 4",
+                "en": "3 groups of 4"
+              },
+              "figure": {
+                "kind": "dots",
+                "rows": 3,
+                "cols": 4,
+                "alt": {
+                  "pl": "3 grupy po 4",
+                  "uk": "3 групи по 4",
+                  "en": "3 groups of 4"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "part": "practise",
+        "steps": [
+          {
+            "id": "s05",
+            "question_type": "production",
+            "skill_ids": ["maths.mul.3x4"],
+            "based_on": {
+              "question": "authored:equal-groups",
+              "changes": []
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Ten sam fakt, teraz z pamięci.",
+                "uk": "Той самий факт, тепер з памʼяті.",
+                "en": "The same fact, now from memory."
+              }
+            },
+            "say": {
+              "pl": "Ile to jest trzy razy cztery? Napisz albo powiedz. $3 \\times 4",
+              "uk": "Скільки буде три помножити на чотири? Напиши або скажи. $3 \\times 4",
+              "en": "What is three times four? Type or say it. $3 \\times 4"
+            },
+            "question": {
+              "family": "enter",
+              "data": {
+                "input": "number",
+                "entry": "keypad",
+                "voice": true,
+                "figure": {
+                  "kind": "expression",
+                  "text": "3 × 4 = ?"
+                }
+              },
+              "key": {
+                "accept": ["12"],
+                "near": {
+                  "7": "add_for_multiply",
+                  "8": "neighbour_row",
+                  "16": "neighbour_row",
+                  "21": "digit_reversal"
+                },
+                "rule": {
+                  "rule": "times_table",
+                  "a": 3,
+                  "b": 4,
+                  "recent": []
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Przypomnij sobie kropki: trzy rzędy po cztery.",
+                    "uk": "Згадай крапки: три ряди по чотири.",
+                    "en": "Think of the dots: three rows of four."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Policz czwórkami: cztery, osiem i jeszcze jedna czwórka.",
+                    "uk": "Лічи четвірками: чотири, вісім і ще одна четвірка.",
+                    "en": "Count in fours: four, eight, and one more four."
+                  }
+                },
+                "boost_by_mistake": {
+                  "add_for_multiply": {
+                    "text": {
+                      "pl": "3 + 4 to dodawanie. Tu są trzy grupy, w każdej po cztery.",
+                      "uk": "3 + 4 це додавання. Тут три групи, у кожній по чотири.",
+                      "en": "3 + 4 is adding. Here there are three groups, four in each."
+                    }
+                  },
+                  "neighbour_row": {
+                    "text": {
+                      "pl": "Blisko! To wynik z rzędu obok. Ile czwórek tu jest?",
+                      "uk": "Близько! Це відповідь із сусіднього рядка. Скільки тут четвірок?",
+                      "en": "Close! That is the answer from the row next door. How many fours are there here?"
+                    }
+                  }
+                },
+                "worked": [
+                  {
+                    "pl": "3 × 4 to trzy czwórki",
+                    "uk": "3 × 4 це три четвірки",
+                    "en": "3 × 4 is three fours"
+                  },
+                  "4 + 4 = 8",
+                  "8 + 4 = 12"
+                ],
+                "twin": {
+                  "say": {
+                    "pl": "Ile to jest trzy razy pięć? Napisz albo powiedz.",
+                    "uk": "Скільки буде три помножити на пʼять? Напиши або скажи.",
+                    "en": "What is three times five? Type or say it."
+                  },
+                  "family": "enter",
+                  "data": {
+                    "input": "number",
+                    "entry": "keypad",
+                    "voice": true,
+                    "figure": {
+                      "kind": "expression",
+                      "text": "3 × 5 = ?"
+                    },
+                    "stem": {
+                      "text": "Policz kropki.",
+                      "image": {
+                        "src": "0000000000000000000000000000000000000000000000000000000000000000.png",
+                        "alt": "kropki"
+                      }
+                    }
+                  },
+                  "key": {
+                    "accept": ["15"],
+                    "near": {
+                      "8": "add_for_multiply"
+                    },
+                    "rule": {
+                      "rule": "times_table",
+                      "a": 3,
+                      "b": 5,
+                      "recent": []
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Wpisz 12",
+                  "uk": "Запиши 12",
+                  "en": "Type 12"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "entered": "12"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz 7 (dodane zamiast pomnożonych)",
+                  "uk": "Запиши 7 (додано замість множення)",
+                  "en": "Type 7 (added, not multiplied)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "add_for_multiply",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka o grupach",
+                  "uk": "лишається на кроці, підказка про групи",
+                  "en": "stays on the step, the hint about groups"
+                },
+                "value": {
+                  "entered": "7"
+                }
+              },
+              {
+                "try": {
+                  "pl": "Wpisz 16 (rząd obok)",
+                  "uk": "Запиши 16 (сусідній рядок)",
+                  "en": "Type 16 (the row next door)"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "neighbour_row",
+                "shows": {
+                  "pl": "zostaje na kroku, pierwsza wskazówka",
+                  "uk": "лишається на кроці, перша підказка",
+                  "en": "stays on the step, the first hint"
+                },
+                "value": {
+                  "entered": "16"
+                }
+              }
+            ]
+          },
+          {
+            "id": "s06",
+            "question_type": "order",
+            "skill_ids": ["maths.mul.2x2", "maths.mul.2x5", "maths.mul.3x4"],
+            "based_on": {
+              "question": "authored:equal-groups",
+              "changes": []
+            },
+            "reason": {
+              "brief": "review",
+              "why": {
+                "pl": "Trzy fakty obok siebie, żeby je porównać.",
+                "uk": "Три факти поруч, щоб їх порівняти.",
+                "en": "Three facts side by side, to compare them."
+              }
+            },
+            "say": {
+              "pl": "Ułóż wyniki od najmniejszego do największego.",
+              "uk": "Розстав результати від найменшого до найбільшого.",
+              "en": "Put the answers in order, smallest first."
+            },
+            "question": {
+              "family": "sequence",
+              "data": {
+                "items": [
+                  {
+                    "id": "i1",
+                    "text": "3 × 4"
+                  },
+                  {
+                    "id": "i2",
+                    "text": "2 × 2"
+                  },
+                  {
+                    "id": "i3",
+                    "text": "2 × 5"
+                  }
+                ],
+                "first_label": {
+                  "pl": "najmniejszy",
+                  "uk": "найменший",
+                  "en": "smallest"
+                },
+                "last_label": {
+                  "pl": "największy",
+                  "uk": "найбільший",
+                  "en": "largest"
+                }
+              },
+              "key": {
+                "orders": [["i2", "i3", "i1"]]
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Najpierw policz każdy wynik, potem porównaj.",
+                    "uk": "Спершу порахуй кожну відповідь, потім порівняй.",
+                    "en": "Work out each answer first, then compare."
+                  },
+                  "focus": ["i1", "i2", "i3"]
+                },
+                "boost": {
+                  "text": {
+                    "pl": "2 × 2 ma najmniejszy wynik. Stoi już na górze. Który z pozostałych jest mniejszy?",
+                    "uk": "2 × 2 має найменшу відповідь. Вона вже вгорі. Яка з решти менша?",
+                    "en": "2 × 2 has the smallest answer. It is at the top for you. Which of the other two is smaller?"
+                  }
+                },
+                "give": ["i2"],
+                "boost_by_mistake": {
+                  "reversed": {
+                    "text": {
+                      "pl": "Najmniejszy idzie pierwszy, na górze.",
+                      "uk": "Найменший іде першим, угорі.",
+                      "en": "The smallest goes first, at the top."
+                    }
+                  },
+                  "swapped_neighbours": {
+                    "text": {
+                      "pl": "Dwie sąsiednie karty są zamienione. Porównaj każdą parę.",
+                      "uk": "Дві сусідні картки помінялися місцями. Порівняй кожну пару.",
+                      "en": "Two cards next to each other are swapped. Compare each pair."
+                    }
+                  }
+                },
+                "worked": ["2 × 2 = 4", "2 × 5 = 10", "3 × 4 = 12"],
+                "twin": {
+                  "say": {
+                    "pl": "Ułóż wyniki od najmniejszego do największego.",
+                    "uk": "Розстав результати від найменшого до найбільшого.",
+                    "en": "Put the answers in order, smallest first."
+                  },
+                  "family": "sequence",
+                  "data": {
+                    "items": [
+                      {
+                        "id": "i1",
+                        "text": "3 × 3"
+                      },
+                      {
+                        "id": "i2",
+                        "text": "2 × 3"
+                      },
+                      {
+                        "id": "i3",
+                        "text": "2 × 4"
+                      }
+                    ],
+                    "first_label": {
+                      "pl": "najmniejszy",
+                      "uk": "найменший",
+                      "en": "smallest"
+                    },
+                    "last_label": {
+                      "pl": "największy",
+                      "uk": "найбільший",
+                      "en": "largest"
+                    }
+                  },
+                  "key": {
+                    "orders": [["i2", "i3", "i1"]]
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Ułóż 2 × 2, 2 × 5, 3 × 4",
+                  "uk": "Розстав 2 × 2, 2 × 5, 3 × 4",
+                  "en": "Order 2 × 2, 2 × 5, 3 × 4"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": ["i2", "i3", "i1"]
+              },
+              {
+                "try": {
+                  "pl": "Ułóż od największego",
+                  "uk": "Розстав від найбільшого",
+                  "en": "Order largest first"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "reversed",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": ["i1", "i3", "i2"]
+              },
+              {
+                "try": {
+                  "pl": "Zamień 2 × 2 i 2 × 5",
+                  "uk": "Поміняй 2 × 2 і 2 × 5",
+                  "en": "Swap 2 × 2 and 2 × 5"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "swapped_neighbours",
+                "shows": {
+                  "pl": "zostaje na kroku, wskazówka",
+                  "uk": "лишається на кроці, підказка",
+                  "en": "stays on the step, a hint"
+                },
+                "value": ["i3", "i2", "i1"]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "part": "wrap_up",
+        "steps": [
+          {
+            "id": "s07",
+            "question_type": "true_false",
+            "skill_ids": ["maths.mul.equal-groups"],
+            "based_on": {
+              "question": "authored:equal-groups",
+              "changes": []
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Spokojne sprawdzenie na koniec: kolejność czynników.",
+                "uk": "Спокійна перевірка наприкінці: порядок множників.",
+                "en": "A calm check to end on: the order of the factors."
+              }
+            },
+            "say": {
+              "pl": "Czy to prawda? Cztery razy trzy to tyle samo, co trzy razy cztery.",
+              "uk": "Чи це правда? Чотири помножити на три це стільки ж, скільки три помножити на чотири.",
+              "en": "Is it true? Four times three is the same as three times four."
+            },
+            "question": {
+              "family": "choose",
+              "data": {
+                "stem": {
+                  "text": {
+                    "pl": "4 × 3 to tyle samo, co 3 × 4.",
+                    "uk": "4 × 3 це стільки ж, скільки 3 × 4.",
+                    "en": "4 × 3 is the same as 3 × 4."
+                  }
+                },
+                "options": [
+                  {
+                    "id": "true",
+                    "content": {
+                      "kind": "bool",
+                      "bool": true
+                    }
+                  },
+                  {
+                    "id": "false",
+                    "content": {
+                      "kind": "bool",
+                      "bool": false
+                    }
+                  }
+                ],
+                "select": "one",
+                "layout": "binary"
+              },
+              "key": {
+                "correct": ["true"],
+                "near": {
+                  "false": "false_reject"
+                }
+              },
+              "help": {
+                "look": {
+                  "text": {
+                    "pl": "Pomyśl o kropkach z obrazka.",
+                    "uk": "Згадай крапки з малюнка.",
+                    "en": "Think of the dots in the picture."
+                  }
+                },
+                "boost": {
+                  "text": {
+                    "pl": "Obróć obrazek: trzy rzędy po cztery stają się czterema rzędami po trzy. Kropek jest tyle samo?",
+                    "uk": "Поверни малюнок: три ряди по чотири стають чотирма рядами по три. Крапок стільки ж?",
+                    "en": "Turn the picture: three rows of four become four rows of three. Are there as many dots?"
+                  }
+                },
+                "worked": [
+                  "3 × 4 = 12",
+                  "4 × 3 = 12",
+                  {
+                    "pl": "Wyniki są równe, więc to prawda",
+                    "uk": "Відповіді рівні, тож це правда",
+                    "en": "The answers are equal, so it is true"
+                  }
+                ],
+                "twin": {
+                  "say": {
+                    "pl": "Czy to prawda? Dwa plus pięć to tyle samo, co dwa razy pięć.",
+                    "uk": "Чи це правда? Два плюс пʼять це стільки ж, скільки два помножити на пʼять.",
+                    "en": "Is it true? Two plus five is the same as two times five."
+                  },
+                  "family": "choose",
+                  "data": {
+                    "stem": {
+                      "text": {
+                        "pl": "2 + 5 to tyle samo, co 2 × 5.",
+                        "uk": "2 + 5 це стільки ж, скільки 2 × 5.",
+                        "en": "2 + 5 is the same as 2 × 5."
+                      }
+                    },
+                    "options": [
+                      {
+                        "id": "true",
+                        "content": {
+                          "kind": "bool",
+                          "bool": true
+                        }
+                      },
+                      {
+                        "id": "false",
+                        "content": {
+                          "kind": "bool",
+                          "bool": false
+                        }
+                      }
+                    ],
+                    "select": "one",
+                    "layout": "binary"
+                  },
+                  "key": {
+                    "correct": ["false"],
+                    "near": {
+                      "true": "add_for_multiply"
+                    }
+                  }
+                }
+              }
+            },
+            "scenarios": [
+              {
+                "try": {
+                  "pl": "Dotknij {yes}",
+                  "uk": "Торкнися {yes}",
+                  "en": "Tap {yes}"
+                },
+                "outcome": "correct",
+                "mistake_class": null,
+                "shows": {
+                  "pl": "pochwała, potem dalej",
+                  "uk": "похвала, потім далі",
+                  "en": "praise, then on"
+                },
+                "value": {
+                  "chosen": ["true"]
+                }
+              },
+              {
+                "try": {
+                  "pl": "Dotknij {no}",
+                  "uk": "Торкнися {no}",
+                  "en": "Tap {no}"
+                },
+                "outcome": "incorrect",
+                "mistake_class": "false_reject",
+                "shows": {
+                  "pl": "zostaje na kroku, pierwsza wskazówka",
+                  "uk": "лишається на кроці, перша підказка",
+                  "en": "stays on the step, the first hint"
+                },
+                "value": {
+                  "chosen": ["false"]
+                }
+              }
+            ]
+          },
+          {
+            "id": "s08",
+            "skill_ids": [],
+            "based_on": {
+              "question": "authored:equal-groups",
+              "changes": []
+            },
+            "reason": {
+              "brief": "new",
+              "why": {
+                "pl": "Ciepłe zakończenie.",
+                "uk": "Тепле завершення.",
+                "en": "A warm close."
+              }
+            },
+            "say": {
+              "pl": "Dziś ćwiczyliśmy równe grupy. Dziękuję za wspólną pracę!",
+              "uk": "Сьогодні ми вправлялися з рівними групами. Дякую за спільну роботу!",
+              "en": "Today we practised equal groups. Thank you for working with me!"
+            },
+            "teach": {
+              "text": {
+                "pl": "Dziękuję za wspólną pracę!",
+                "uk": "Дякую за спільну роботу!",
+                "en": "Thank you for working with me!"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -225,7 +225,8 @@ def test_a_lesson_that_does_not_play_is_not_ok(
 
 def test_the_hosts_mirror_the_main_checkouts_ports(monkeypatch: pytest.MonkeyPatch) -> None:
     ports = tomllib.loads((REPO / ".md" / "repo.toml").read_text(encoding="utf-8"))
-    assert lesson_publish.DEV_PORTS == ports["review"]["ports"]
+    # Only the ports jw uses: the table also declares the e2e builder's BUILDER_PORT (dl-a38n.34).
+    assert {k: ports["review"]["ports"][k] for k in lesson_publish.DEV_PORTS} == lesson_publish.DEV_PORTS
     for name in ("API_PORT", "WEB_PORT", lesson_publish.JW_LOCAL_API_URL,
                  lesson_publish.JW_LOCAL_WEB_URL):
         monkeypatch.delenv(name, raising=False)
