@@ -362,6 +362,146 @@ function unknownMistakeClasses(fileId: unknown, steps: readonly RawStep[]): Foun
   return found;
 }
 
+/** A question's representation: what a twin must keep so it asks the same way (`signatureOf`). */
+export interface Signature {
+  /** Picture objects (`src`, `alt` and `width`) at any depth, plus a `stem.image` that is not one. */
+  readonly pictures: number;
+  /** Every picture's `src`, sorted: a twin with the same ones draws the original's pictures. */
+  readonly srcs: readonly string[];
+  /** The `kind` under each `figure` key at any depth, sorted, once each. */
+  readonly figures: readonly string[];
+  /** The `content.kind` of each option at any depth, sorted, once each. */
+  readonly options: readonly string[];
+  /** The `input` kind at any depth, sorted, once each. */
+  readonly inputs: readonly string[];
+}
+
+/**
+ * The representation signature of a question's data: the wave-3 plan's lead decision 3
+ * (docs/worklog/dl-a38n/2026-10-31-wave-3.md), held here authoritatively and mirrored in jw's
+ * sibling twin draw (apps/cli/src/jw/lesson.py). The count of picture objects (`src` + `alt` +
+ * `width`) at any depth plus `stem.image`; the figure `kind` under any `figure` key; the sorted set
+ * of option `content.kind`; the `input` kind.
+ */
+export function signatureOf(data: unknown): Signature {
+  const srcs: string[] = [];
+  const figures = new Set<string>();
+  const options = new Set<string>();
+  const inputs = new Set<string>();
+  let pictures = 0;
+  const isPicture = (v: Record<string, unknown>): boolean =>
+    "src" in v && "alt" in v && "width" in v;
+  const walk = (value: unknown, key: string | null): void => {
+    if (Array.isArray(value)) {
+      for (const v of value) {
+        if (key === "options") {
+          const kind = record(record(v)?.["content"])?.["kind"];
+          if (typeof kind === "string") options.add(kind);
+        }
+        walk(v, null);
+      }
+      return;
+    }
+    const v = record(value);
+    if (v === null) return;
+    if (key === "figure" && typeof v["kind"] === "string") figures.add(v["kind"]);
+    if (isPicture(v)) {
+      pictures += 1;
+      if (typeof v["src"] === "string") srcs.push(v["src"]);
+    }
+    if (key === "stem") {
+      const image = v["image"];
+      const picture = record(image);
+      if (image !== undefined && image !== null && (picture === null || !isPicture(picture))) {
+        pictures += 1;
+        const src = typeof image === "string" ? image : picture?.["src"];
+        if (typeof src === "string") srcs.push(src);
+      }
+    }
+    for (const [k, child] of Object.entries(v)) {
+      if (k === "input" && typeof child === "string") inputs.add(child);
+      walk(child, k);
+    }
+  };
+  walk(data, null);
+  return {
+    pictures,
+    srcs: srcs.sort(),
+    figures: [...figures].sort(),
+    options: [...options].sort(),
+    inputs: [...inputs].sort(),
+  };
+}
+
+/** JSON with its keys sorted, so 2 keys compare by content and not by the order they were written in. */
+function canonical(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  const v = record(value);
+  if (v === null) return JSON.stringify(value) ?? "null";
+  return `{${Object.keys(v)
+    .sort()
+    .map((k) => `${JSON.stringify(k)}:${canonical(v[k])}`)
+    .join(",")}}`;
+}
+
+const listed = (xs: readonly string[]): string => (xs.length > 0 ? xs.join(", ") : "none");
+
+/**
+ * A twin that asks another way than its original (`twin-representation`, an error): the original
+ * has pictures and the twin none, or their figure kinds or option content kinds differ. A twin that
+ * draws the original's very pictures with another key (`twin-same-picture`, a warn): the child sees
+ * one picture with 2 answers. The family is compile's (`question-type-family`).
+ */
+function twinRepresentation(steps: readonly RawStep[]): Finding[] {
+  const findings: Finding[] = [];
+  for (const step of steps) {
+    const twin = record(record(step.question["help"])?.["twin"]);
+    if (twin === null) continue;
+    const path = `${step.path}.question.help.twin`;
+    const original = signatureOf(step.question["data"]);
+    const copy = signatureOf(twin["data"]);
+    const lost: string[] = [];
+    if (original.pictures > 0 && copy.pictures === 0) {
+      lost.push(`the original has ${original.pictures} pictures and the twin none`);
+    }
+    if (canonical(original.figures) !== canonical(copy.figures)) {
+      lost.push(
+        `its figure is ${listed(copy.figures)}, the original's ${listed(original.figures)}`,
+      );
+    }
+    if (canonical(original.options) !== canonical(copy.options)) {
+      lost.push(
+        `its options are ${listed(copy.options)}, the original's ${listed(original.options)}`,
+      );
+    }
+    if (lost.length > 0) {
+      findings.push({
+        step_id: `${step.id}t`,
+        path,
+        level: "error",
+        rule: "twin-representation",
+        text: `The twin asks another way than its question: ${lost.join("; ")}.`,
+        fix: "Give the twin the same kind of picture, figure and options as its question, with other numbers; or take a sibling item from the same set as the twin.",
+      });
+    }
+    if (
+      original.srcs.length > 0 &&
+      canonical(original.srcs) === canonical(copy.srcs) &&
+      canonical(step.question["key"]) !== canonical(twin["key"])
+    ) {
+      findings.push({
+        step_id: `${step.id}t`,
+        path: `${path}.data`,
+        level: "warn",
+        rule: "twin-same-picture",
+        text: "The twin draws its question's pictures with another answer, so the picture shows the other question.",
+        fix: "Give the twin pictures that match its own numbers, or a sibling item from the same set with its own pictures.",
+      });
+    }
+  }
+  return findings;
+}
+
 /** The typed answers a key accepts: an enter key's `accept`, and each enter gap's in slots. */
 function typedAnswers(question: Record<string, unknown>): string[] {
   const key = record(question["key"]);
@@ -434,6 +574,19 @@ function keyInSay(steps: readonly RawStep[]): Finding[] {
   return findings;
 }
 
+/** Findings with each error also as jw's old message, so `errors` agrees with `ok`. */
+function errorsAsJw(fileId: unknown, findings: readonly Finding[]): Found {
+  return {
+    findings: [...findings],
+    errors: findings
+      .filter((f) => f.level === "error")
+      .map((f) => ({
+        step_id: f.step_id,
+        message: `lesson file ${String(fileId)}, step ${f.step_id}: ${f.text}`,
+      })),
+  };
+}
+
 function check(raw: unknown): CheckResult {
   const fileId = LessonFile.shape.id.safeParse((raw as { id?: unknown } | null)?.id);
   const known = fileId.success
@@ -463,6 +616,7 @@ function check(raw: unknown): CheckResult {
   // class its question never gives never reaches the child (dl-e8ov.5.38.11).
   found.push(unknownMistakeClasses(id, steps));
   found.push({ findings: keyInSay(steps), errors: [] });
+  found.push(errorsAsJw(id, twinRepresentation(steps)));
   found.push({ findings: resolved ? steps.flatMap(emptyRungs) : [], errors: [] });
   const findings = found.flatMap((f) => f.findings);
   const errors = found.flatMap((f) => f.errors);
@@ -474,50 +628,58 @@ function read(file: string): unknown {
   return JSON.parse(readFileSync(file, "utf8"));
 }
 
-const args = process.argv.slice(2);
-const json = args.includes("--json");
-const files = args.filter((a) => a !== "--json");
-if (files.length !== 1 || files[0] === undefined) {
-  process.stderr.write("usage: bun run check <lesson file> [--json]\n");
-  process.exit(2);
-}
-const file = files[0];
-let result: CheckResult;
-try {
-  result = check(read(file));
-} catch (e) {
-  const message = `${file}: ${e instanceof Error ? e.message : String(e)}`;
-  result = {
-    ok: false,
-    findings: [
-      {
-        step_id: null,
-        path: "",
-        level: "error",
-        rule: "json",
-        text: message,
-        fix: "Make the file valid JSON: check for a missing comma, quote or bracket near the place named.",
-      },
-    ],
-    errors: [{ step_id: null, message }],
-    play_path: null,
-    lesson_id: null,
-    questions: 0,
-    mistake_classes: {},
-  };
-}
-if (json) {
-  process.stdout.write(`${JSON.stringify(result)}\n`);
-} else {
-  for (const f of result.findings) {
-    const step = f.step_id === null ? "" : `step ${f.step_id}: `;
-    process.stdout.write(
-      `${file}: ${step}${f.level} ${f.rule} at ${f.path}: ${f.text}\n  fix: ${f.fix}\n`,
-    );
+/** The command line: one file, `--json` for jw. Run only as a script, so a test can import the rules. */
+function main(): void {
+  const args = process.argv.slice(2);
+  const json = args.includes("--json");
+  const files = args.filter((a) => a !== "--json");
+  if (files.length !== 1 || files[0] === undefined) {
+    process.stderr.write("usage: bun run check <lesson file> [--json]\n");
+    process.exitCode = 2;
+    return;
   }
-  if (result.ok) {
-    process.stdout.write(`${file}: ok, ${result.questions} questions, play ${result.play_path}\n`);
+  const file = files[0];
+  let result: CheckResult;
+  try {
+    result = check(read(file));
+  } catch (e) {
+    const message = `${file}: ${e instanceof Error ? e.message : String(e)}`;
+    result = {
+      ok: false,
+      findings: [
+        {
+          step_id: null,
+          path: "",
+          level: "error",
+          rule: "json",
+          text: message,
+          fix: "Make the file valid JSON: check for a missing comma, quote or bracket near the place named.",
+        },
+      ],
+      errors: [{ step_id: null, message }],
+      play_path: null,
+      lesson_id: null,
+      questions: 0,
+      mistake_classes: {},
+    };
   }
+  if (json) {
+    process.stdout.write(`${JSON.stringify(result)}\n`);
+  } else {
+    for (const f of result.findings) {
+      const step = f.step_id === null ? "" : `step ${f.step_id}: `;
+      process.stdout.write(
+        `${file}: ${step}${f.level} ${f.rule} at ${f.path}: ${f.text}\n  fix: ${f.fix}\n`,
+      );
+    }
+    if (result.ok) {
+      process.stdout.write(
+        `${file}: ok, ${result.questions} questions, play ${result.play_path}\n`,
+      );
+    }
+  }
+  // Not process.exit: it can cut a long answer off before a pipe has read it all.
+  process.exitCode = result.ok ? 0 : 1;
 }
-// Not process.exit: it can cut a long answer off before a pipe has read it all.
-process.exitCode = result.ok ? 0 : 1;
+
+if (import.meta.main) main();
