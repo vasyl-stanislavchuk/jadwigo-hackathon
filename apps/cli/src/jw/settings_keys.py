@@ -55,6 +55,9 @@ DEFAULT_BANK_ENV_FILE = Path.home() / ".config" / "jadwigo-bank" / "bank.env"
 # A local checkout of the bank repo (or a folder of its set pages) that `jw question show` and the
 # draw read set pages from. The search route returns rows, not pages, and no page route exists yet.
 JADWIGO_BANK_DIR = "JADWIGO_BANK_DIR"
+# Unset, `jw bank pull` clones BANK_REPO here and `bank_dir()` names it (dl-a38n.43).
+DEFAULT_BANK_DIR = Path.home() / ".local" / "share" / "jadwigo" / "bank"
+BANK_REPO = "https://github.com/vasyl-stanislavchuk/jadwigo-bank.git"
 
 # The synced copy of the bank's Khan bucket. KHAN_SYNC_COMMAND, run in the bank repo, writes it in
 # the pull's own layout, not the bucket's: the bucket's khan/converted/pl.json lands as
@@ -156,6 +159,13 @@ def khan_dir() -> Path:
     """The synced Khan copy: JADWIGO_KHAN_DIR, else ~/.cache/jadwigo-bank/khan."""
     configured = setting(JADWIGO_KHAN_DIR)
     return Path(configured).expanduser() if configured else DEFAULT_KHAN_DIR
+
+
+def bank_dir() -> Path:
+    """The bank checkout: JADWIGO_BANK_DIR, else ~/.local/share/jadwigo/bank, where `jw bank
+    pull` clones it."""
+    configured = setting(JADWIGO_BANK_DIR)
+    return Path(configured).expanduser() if configured else DEFAULT_BANK_DIR
 
 
 def drafts_dir() -> Path:
