@@ -1366,11 +1366,11 @@ def _plain(value: Any) -> Any:
 # TeX a Khan item writes, as plain characters a parent reads (dl-e8ov.5.38.6). The lesson file
 # keeps its TeX: the player draws it.
 _TEX_SYMBOLS = {
-    r"\cdot": "·", r"\times": "×", r"\div": ":", r"\le": "≤", r"\leq": "≤", r"\ge": "≥",
+    r"\cdot": " · ", r"\times": " × ", r"\div": " : ", r"\le": "≤", r"\leq": "≤", r"\ge": "≥",
     r"\geq": "≥", r"\lt": "<", r"\gt": ">", r"\neq": "≠", r"\ne": "≠", r"\approx": "≈",
     r"\pm": "±", r"\%": "%", r"\degree": "°", r"\circ": "°", r"\dots": "…", r"\ldots": "…",
     r"\cdots": "…", r"\,": " ", r"\;": " ", r"\quad": " ", r"\qquad": " ", r"\ ": " ",
-    r"\log": "log", r"\ln": "ln", r"\pi": "π", r"\sqrt": "√",
+    r"\log": "log", r"\ln": "ln", r"\pi": "π",
 }
 # Characters TeX escapes, kept as they are: they stand in a private-use character while the `$`
 # and braces of the maths go.
@@ -1396,7 +1396,8 @@ _TEX_STYLE = re.compile(
 def _grouped(part: str) -> str:
     """A fraction's or a root's part in brackets when it is more than one term: `(1+2)/3`."""
     part = part.strip()
-    return f"({part})" if re.search(r"[\s+\-−·×:/]", part) else part
+    # A command still in it (`2\cdot3`) is an operator not yet made plain.
+    return f"({part})" if re.search(r"[\s+\-−·×:/\\]", part) else part
 
 
 def tex_plain(text: Any) -> Any:
@@ -1423,6 +1424,8 @@ def tex_plain(text: Any) -> Any:
                             out)
         if out == before:
             break
+    # A bare root, `\sqrt 2`, once the braced ones have their brackets (_TEX_SQRT, in the loop).
+    out = re.sub(r"\\sqrt(?![A-Za-z])", "√", out)
     out = _TEX_WORD.sub(lambda m: "" if _TEX_STYLE.fullmatch(m[1]) else m[1], out)
     out = out.replace("$", "")
     out = re.sub(r"[{}]", "", out)
