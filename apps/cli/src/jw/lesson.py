@@ -56,6 +56,7 @@ from __future__ import annotations
 import copy
 import dataclasses
 import datetime as dt
+import hashlib
 import json
 import os
 import re
@@ -69,7 +70,7 @@ from typing import Any
 
 from jw import bank_client, items, pii, settings_keys
 from jw.commands import question
-from jw.draw import DRAW_RULES, NOT_READY_ITEM, Draw, Left, draw
+from jw.draw import DRAW_RULES, NOT_READY_ITEM, Draw, Left, draw, ready_ids
 from jw.errors import JwError
 
 RUNGS = ("look", "boost", "almost", "worked")
@@ -237,6 +238,112 @@ def _slim_pictures(value: Any) -> Any:
 
 def _alts(pictures: Any) -> list[str]:
     return [str(p.get("alt")) for p in pictures or [] if isinstance(p, Mapping) and p.get("alt")]
+
+
+def _walk(value: Any) -> Any:
+    """Every (key, value) pair in `value`, at any depth."""
+    if isinstance(value, Mapping):
+        for key, inner in value.items():
+            yield key, inner
+            yield from _walk(inner)
+    elif isinstance(value, list):
+        for inner in value:
+            yield from _walk(inner)
+
+
+def _pictures(value: Any) -> int:
+    """The picture objects (`src`, `alt` and `width`) in `value`, at any depth."""
+    if isinstance(value, list):
+        return sum(_pictures(v) for v in value)
+    if isinstance(value, Mapping):
+        here = 1 if all(k in value for k in ("src", "alt", "width")) else 0
+        return here + sum(_pictures(v) for v in value.values())
+    return 0
+
+
+def signature(data: Any) -> tuple[int, tuple[str, ...], tuple[str, ...], str | None]:
+    """How a question shows itself, which a twin keeps (wave 3, lead decision 3; check.ts holds the
+    same definition): the picture count (objects with `src`, `alt` and `width`, at any depth) plus
+    one for a `stem.image`; the figure `kind` under any `figure` key; the sorted set of option
+    `content.kind`; and the `input` kind."""
+    pictures = _pictures(data)
+    stem = data.get("stem") if isinstance(data, Mapping) else None
+    if isinstance(stem, Mapping) and stem.get("image"):
+        pictures += 1
+    figures = sorted(
+        {str(v["kind"]) for k, v in _walk(data) if k == "figure" and isinstance(v, Mapping)
+         and "kind" in v}
+    )
+    options = sorted(
+        {
+            str(o["content"]["kind"])
+            for k, v in _walk(data) if k == "options" and isinstance(v, list)
+            for o in v
+            if isinstance(o, Mapping) and isinstance(o.get("content"), Mapping)
+            and "kind" in o["content"]
+        }
+    )
+    raw = data.get("input") if isinstance(data, Mapping) else None
+    entry = raw.get("kind") if isinstance(raw, Mapping) else raw
+    return pictures, tuple(figures), tuple(options), None if entry is None else str(entry)
+
+
+def _sibling_twin(
+    original: Mapping[str, Any],
+    page: Mapping[str, Any] | None,
+    taken: set[str],
+    language: str,
+    seed: str,
+) -> dict[str, Any] | None:
+    """The twin from the bank (wave 3, lead decision 3, owner's decision `dl-zj7c`): a lesson-ready
+    item of the same set with the same problem type, family, question type and representation
+    signature, and another key, not in the lesson nor a twin already. The first in id order from
+    a point the draft id picks, so a draft draws the same twins again. None when there is none."""
+    if page is None:
+        return None
+    ids = ready_ids(page, language)
+    if ids is None:
+        ids = [str(i) for i in (page.get("items") or {}).get("ids") or []]
+    pool = sorted(i for i in set(ids) if i not in taken)
+    if not pool:
+        return None
+    start = int(hashlib.sha256(seed.encode()).hexdigest(), 16) % len(pool)
+    spec = original["question"]
+    for item_id in pool[start:] + pool[:start]:
+        try:
+            view = items.load_item(item_id, language)
+        except JwError:
+            continue
+        twin = view["question"]
+        if (
+            view.get("problem_type") != original.get("problem_type")
+            or twin["family"] != spec["family"]
+            or view.get("question_type") != original.get("question_type")
+            or signature(twin["data"]) != signature(spec["data"])
+            or twin["key"] == spec["key"]
+        ):
+            continue
+        hints = [h for h in (twin.get("help") or {}).get("hints") or []]
+        out: dict[str, Any] = {
+            "say": view["say"],
+            "family": twin["family"],
+            "data": twin["data"],
+            "key": twin["key"],
+            "help": {"hints": copy.deepcopy(hints)} if hints else {},
+            "credit": view["credit"],
+            "based_on": {"question": f"khan:{item_id}", "changes": []},
+        }
+        held = {"question": out, "based_on": out["based_on"]}
+        _add_times_rule(held)
+        out["based_on"] = held["based_on"]
+        return out
+    return None
+
+
+def _twin_source(twin: Mapping[str, Any]) -> str:
+    """Where a step's twin came from, for the card: `bank khan:<id>` or `written`."""
+    source = str((twin.get("based_on") or {}).get("question") or "")
+    return f"bank {source}" if source.startswith(("khan:", "bank:")) else "written"
 
 
 # ---------------------------------------------------------------- the draft ------
@@ -460,9 +567,23 @@ def _to_write(step: Mapping[str, Any]) -> list[str]:
     rungs = _copied_rungs(step["question"])
     out = [] if help_.get("twin") else ["twin"]
     out += [r for r in NEEDED if rungs[r] is None]
-    if step.get("mistake_classes") and not help_.get("boost_by_mistake"):
+    if _cards_to_write(step):
         out.append("boost_by_mistake")
     return out
+
+
+def _missing(step: Mapping[str, Any]) -> list[str]:
+    """What the check refuses a step for lacking: what `_to_write` lists, but mistake cards only
+    when the step has none at all. A class with no card falls back to `look` in the player."""
+    cards = (step["question"].get("help") or {}).get("boost_by_mistake")
+    return [k for k in _to_write(step) if k != "boost_by_mistake" or not cards]
+
+
+def _cards_to_write(step: Mapping[str, Any]) -> list[str]:
+    """The mistake classes whose card the item lacks: the bank pass writes them onto the item
+    (wave 3, lead decision 4), and the agent writes only the rest."""
+    cards = (step["question"].get("help") or {}).get("boost_by_mistake") or {}
+    return [c for c in step.get("mistake_classes") or [] if c not in cards]
 
 
 def _slim(q: Mapping[str, Any]) -> dict[str, Any]:
@@ -494,6 +615,10 @@ def _slim(q: Mapping[str, Any]) -> dict[str, Any]:
         "mistake_classes": q.get("mistake_classes"),
         "why_drawn": q["why_drawn"],
     }
+    if "boost_by_mistake" in out["you_write"]:
+        out["cards_to_write"] = _cards_to_write(q)
+    if help_.get("twin"):
+        out["twin_source"] = _twin_source(help_["twin"])
     if q.get("skill_note"):
         out["skill_note"] = q["skill_note"]
     return out
@@ -569,6 +694,8 @@ def draft(
         envelope, pages, kind=kind, language=language, count=count, today=day
     )
 
+    draft_id = f"draft_{secrets.token_hex(6)}"
+    taken = {drawn.item_id for drawn, _ in loaded}
     questions: list[dict[str, Any]] = []
     for n, (drawn, view) in enumerate(loaded, start=1):
         spec = view["question"]
@@ -596,6 +723,12 @@ def draft(
         if skill_note:
             questions[-1]["skill_note"] = skill_note
         _add_times_rule(questions[-1])
+        twin = _sibling_twin(
+            {**view, "question": spec}, pages.get(drawn.set_id), taken, language, draft_id
+        )
+        if twin is not None:
+            taken.add(twin["based_on"]["question"].removeprefix("khan:"))
+            questions[-1]["question"]["help"]["twin"] = twin
     # A refused item's left_out line says why load_item refused it, not that it was flagged; an
     # item its page does not list as ready says why the converted file holds it back.
     left_out = [
@@ -612,7 +745,6 @@ def draft(
         "from the bank."
     )
     where = folder or drafts_dir()
-    draft_id = f"draft_{secrets.token_hex(6)}"
     stored: dict[str, Any] = {
         "draft_id": draft_id,
         "request": request,
@@ -770,10 +902,13 @@ def _apply(q: Mapping[str, Any], given: Mapping[str, Any]) -> tuple[dict[str, An
             continue
         help_[rung] = _card(given[rung]) if rung in ("look", "boost") else _lines(given[rung])
     if not _empty(given.get("boost_by_mistake")):
-        help_["boost_by_mistake"] = {k: _card(v) for k, v in given["boost_by_mistake"].items()}
+        help_["boost_by_mistake"] = {
+            **(help_.get("boost_by_mistake") or {}),
+            **{k: _card(v) for k, v in given["boost_by_mistake"].items()},
+        }
     if not _empty(given.get("twin")):
         help_["twin"] = _twin(given["twin"], spec["family"])
-    problems += [f"help.{key} is empty; write it" for key in _to_write(step)]
+    problems += [f"help.{key} is empty; write it" for key in _missing(step)]
     return step, problems
 
 
@@ -788,6 +923,43 @@ def _step(q: Mapping[str, Any]) -> dict[str, Any]:
         "question": q["question"],
         "credit": q["credit"],
     }
+
+
+def from_file(q: Mapping[str, Any], step: Mapping[str, Any]) -> dict[str, Any]:
+    """jw's record of a question with the draft file's step on it: its say, question, based_on and
+    credit as the file holds them now (after lesson_edit, or a check that left the step out)."""
+    return {**q, "say": step.get("say"), "question": step.get("question") or {},
+            "based_on": step.get("based_on"), "credit": step.get("credit") or q.get("credit")}
+
+
+def _file_steps(path: Path) -> dict[str, dict[str, Any]]:
+    """The draft file's question steps by id, or none when it cannot be read."""
+    try:
+        file: Any = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, ValueError):
+        return {}
+    parts = (file.get("script") or {}).get("parts") or [] if isinstance(file, Mapping) else []
+    return {
+        str(step["id"]): step
+        for part in parts for step in part.get("steps") or []
+        if isinstance(step, Mapping) and "id" in step and "question" in step
+    }
+
+
+# The parts of an agent's words the guard leaves alone: an answer and a picture's address.
+UNGUARDED = ("key", "src")
+
+
+def guard_words(value: Any, family: Any) -> Any:
+    """Every string an agent wrote, through `pii.guard` (dl-a38n.36), but a key or a picture
+    address: a parent's ask or a step's words may hold a child's name."""
+    if isinstance(value, str):
+        return pii.guard(value, names=family).text
+    if isinstance(value, list):
+        return [guard_words(v, family) for v in value]
+    if isinstance(value, Mapping):
+        return {k: v if k in UNGUARDED else guard_words(v, family) for k, v in value.items()}
+    return value
 
 
 def _file(stored: Mapping[str, Any], steps: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
@@ -873,8 +1045,10 @@ def check(
     an error here (rule `words`), before check.ts runs. Both carry `render` (`render_of`): the
     page's findings from its last draw, or None.
 
-    It rebuilds every step from the bank's copy and the words sent, so it replaces what
-    `lesson_edit.edit` changed; after it, change one step with `edit`.
+    Only the steps in `words` are rebuilt, from the bank's copy and the words sent; a step left out
+    keeps what the draft file holds (its words, the bank's twin, `lesson_edit.edit`'s changes), so
+    `words={}` checks the file as it stands. Every string in `words` but a key goes through
+    `pii.guard` with `names` (`guard_words`).
     """
     where = folder or drafts_dir()
     stored = load_draft(draft_id, where)
@@ -886,21 +1060,29 @@ def check(
         for s in words
         if s not in known
     ]
+    guard_names = pii.names_for(members=list(names))
+    path = _lesson_path(where, draft_id)
+    as_filed = _file_steps(path)
     steps: dict[str, dict[str, Any]] = {}
     for q in stored["questions"]:
-        given = words.get(q["step_id"]) or {}
-        if not isinstance(given, Mapping):
-            errors.append({"step_id": q["step_id"], "message": "a step's words are an object"})
+        sid = q["step_id"]
+        if sid not in words:
+            # Left out: the step as the file holds it, its words, bank twin and edits kept.
+            steps[sid] = from_file(q, as_filed[sid]) if sid in as_filed else dict(q)
+            errors += [{"step_id": sid, "message": f"help.{key} is empty; write it"}
+                       for key in _missing(steps[sid])]
             continue
-        steps[q["step_id"]], problems = _apply(q, given)
-        errors += [{"step_id": q["step_id"], "message": p} for p in problems]
+        given = words.get(sid) or {}
+        if not isinstance(given, Mapping):
+            errors.append({"step_id": sid, "message": "a step's words are an object"})
+            continue
+        steps[sid], problems = _apply(q, guard_words(given, guard_names))
+        errors += [{"step_id": sid, "message": p} for p in problems]
 
-    guard_names = pii.names_for(members=list(names))
     for field, value in (("title", title), ("reasoning", reasoning)):
         if value is not None and value.strip():
             stored["lesson"][field] = pii.guard(value.strip(), names=guard_names).text
     _make_dirs(where)
-    path = _lesson_path(where, draft_id)
     _write_json(path, _file(stored, steps))
     paths = {"lesson_file": str(path), "draft_path": str(path)}
     if errors:
@@ -985,6 +1167,7 @@ def card(filled: Mapping[str, Any]) -> dict[str, Any]:
                 "key": spec.get("key"),
                 "rungs": _rungs(spec),
                 "twin": {"prompt": _prompt(twin.get("say"), twin.get("data")), "key": twin.get("key")},
+                "twin_source": _twin_source(twin) if twin else None,
                 "source": source,
                 "licence": credit.get("licence"),
                 "changes": list((q.get("based_on") or {}).get("changes") or []),

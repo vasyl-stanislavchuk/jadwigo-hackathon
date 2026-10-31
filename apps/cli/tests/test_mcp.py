@@ -201,7 +201,7 @@ def test_a_client_with_no_shell_drafts_fills_and_checks_a_lesson_by_draft_id(
                 q["step_id"]: {k: rungs[q["item_id"]][k] for k in q["you_write"]}
                 for q in draft["questions"]
             }
-            short = {**words, "q1": {k: v for k, v in words["q1"].items() if k != "twin"}}
+            short = {**words, "q1": {k: v for k, v in words["q1"].items() if k != "boost"}}
             refused = await tool("lesson_check", {"draft_id": draft["draft_id"], "help": short})
             checked = await tool("lesson_check", {"draft_id": draft["draft_id"], "help": words})
             unknown = await tool("lesson_check", {"draft_id": "draft_000000000000", "help": {}})
@@ -216,7 +216,7 @@ def test_a_client_with_no_shell_drafts_fills_and_checks_a_lesson_by_draft_id(
     assert draft["need"]["words"] == "mnożenie"
     assert Path(draft["draft_path"]) == tmp_path / "drafts" / f"{draft['draft_id']}.json"
     assert refused["ok"] is False
-    assert refused["errors"] == [{"step_id": "q1", "message": "help.twin is empty; write it"}]
+    assert refused["errors"] == [{"step_id": "q1", "message": "help.boost is empty; write it"}]
     assert [(f["step_id"], f["rule"]) for f in refused["findings"]] == [("q1", "words")]
     assert checked["ok"] is True, checked
     assert checked["play_path"].startswith("/play/") and checked["questions"] == 6
