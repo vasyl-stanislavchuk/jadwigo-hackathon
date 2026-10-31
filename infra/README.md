@@ -63,6 +63,8 @@ A merge deploys nothing. The owner deploys by hand
 | `make -C infra docs-deploy` | build `apps/docs`, check `dist/`, sync it to the docs bucket, invalidate (`docs/runbooks/docs-publish.md`) | the owner |
 | `make -C infra deploy` | `api-deploy` (`make api-bundle`, zip, `update-function-code`, wait), then `web-deploy` (`web-build`, sync to the app bucket, invalidate) | the owner |
 | `make -n -C infra deploy` | print both halves, running nothing | anyone |
+| `make -C infra deploy-all` | every service's code: `api-deploy`, `web-deploy`, `site-deploy`, `docs-deploy`. No migration and no apply: run those first when a PR needs them (`dl-5ssh.34.65`) | the owner |
+| `make -C infra prod-status` | read-only: each service's live commit (each deploy writes `version.txt`, or `version/api.txt` and `version/web.txt` on app.jadwigo.pl) and how many commits on `origin/main` touch it since | anyone |
 | `make -C infra web-build` | build `apps/web` with `web-build/<env>.env`'s public settings, uploading nothing | anyone |
 | `make -C infra auth-diff` | read both Supabase projects' auth config and print what `supabase-auth/<env>.json` would change; exits 2 if anything would | anyone with the token |
 | `make -C infra auth-apply` | write those settings through the Management API | the owner |
