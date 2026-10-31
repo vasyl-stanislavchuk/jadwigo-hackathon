@@ -4,7 +4,7 @@
 // in src/content/pl/index.md (head and h1) and src/content/pl/landing.yaml (the sections).
 import { getCollection, getEntry } from "astro:content";
 import Gallery from "../components/Gallery.astro";
-import { appUrl, parentUrl } from "../index.ts";
+import { appUrl } from "../index.ts";
 import Base from "../layouts/Base.astro";
 import { servedPathPages } from "../lib/seo.ts";
 
@@ -31,7 +31,7 @@ const nav = [
     <p class="lead">{words.hero.lead}</p>
     <p class="child">{words.hero.child}</p>
     <p class="actions">
-      <a class="btn" href={parentUrl}>{words.hero.homework}</a>
+      <a class="btn" href="/praca-domowa/">{words.hero.homework}</a>
       <a class="btn quiet" href="#lekcje">{words.hero.play}</a>
     </p>
   </section>
