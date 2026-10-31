@@ -18,7 +18,7 @@
   },
   "//": {
     "@jadwigo/contracts": "the lesson question, version and assignment records an import writes",
-    "@jadwigo/core": "MISTAKE_CLASSES, the classes a family's judge gives, which a boost_by_mistake key is checked against (dl-e8ov.5.38.11); catalogue(), the shared curriculum the seed writes (dl-e8ov.5.71)",
+    "@jadwigo/core": "MISTAKE_CLASSES, the classes a family's judge gives, which a boost_by_mistake key is checked against (dl-e8ov.5.38.11); catalogue(), the shared curriculum the seed writes (dl-e8ov.5.71); judge and solutionOf, so check.ts grades a twin's key (key-grades, dl-a38n wave 3)",
     "@jadwigo/store": "the Store an import writes through, InMemoryStore in its tests",
     "@jadwigo/testing": "the exported lesson files this package's tests import",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",

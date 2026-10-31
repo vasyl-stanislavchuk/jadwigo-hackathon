@@ -26,6 +26,8 @@ import { RENDER, readRender, render } from "./render.ts";
 
 const DEBOUNCE_MS = 100;
 const CHECK = ".check.json";
+/** jw's publish file beside a draft (dl-a38n wave 3); the publish state reads it, never the list. */
+const PUBLISH = ".publish.json";
 /** WebSocket.CLOSING: a page that went away. */
 const CLOSING = 2;
 
@@ -54,6 +56,7 @@ export function listDrafts(dir: string): DraftSummary[] {
           name.endsWith(".json") &&
           !name.endsWith(CHECK) &&
           !name.endsWith(RENDER) &&
+          !name.endsWith(PUBLISH) &&
           !name.startsWith("."),
       )
       .map((name) => {

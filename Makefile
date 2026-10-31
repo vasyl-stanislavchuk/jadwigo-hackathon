@@ -35,11 +35,21 @@ check-all:
 	bunx turbo run lint typecheck test test:int
 	bun run lint:repo
 
-## dev: every app's dev server, on md's ports (tools/src/ports.ts). Turbo's strict env mode passes a
-## task only the variables turbo.json names, which would drop WEB_PORT, API_PORT and the worktree's
-## name, so dev runs loose: it is never cached, so nothing hashes its environment (dl-5ssh.98).
+## The one local database for dev and imports: `jadwigo` on Postgres.app (PGPORT, 5433 in
+## .env.example). `.env.local`'s DATABASE_URL names `jadwigo_test`, which the integration tests own
+## and re-seed, so `make dev`, `make db-reset` and `make lesson-import` never read it (dl-5ssh.112).
+## LOCAL_DB_GATE refuses anything but a localhost jadwigo* database, so an override cannot point
+## a dev server or an import at a remote.
+LOCAL_DATABASE_URL ?= postgresql://localhost:$(or $(PGPORT),5433)/jadwigo
+LOCAL_DB_GATE = printf '%s\n' "$(LOCAL_DATABASE_URL)" | grep -Eq '^postgres(ql)?://([A-Za-z0-9._~%+=:-]+@)?(localhost|127\.0\.0\.1)(:[0-9]+)?/jadwigo[A-Za-z0-9_]*$$' || { echo "$@: LOCAL_DATABASE_URL is not postgresql://[user[:password]@]localhost[:port]/jadwigo…"; exit 1; }
+
+## dev: every app's dev server, on md's ports (tools/src/ports.ts) and the local jadwigo database.
+## Turbo's strict env mode passes a task only the variables turbo.json names, which would drop
+## WEB_PORT, API_PORT and the worktree's name, so dev runs loose: it is never cached, so nothing
+## hashes its environment (dl-5ssh.98).
 dev:
-	bunx turbo run dev --env-mode=loose
+	@$(LOCAL_DB_GATE)
+	DATABASE_URL=$(LOCAL_DATABASE_URL) bunx turbo run dev --env-mode=loose
 
 ## skills: link the product AI workflows (workflows/jadwigo-*) into .claude/skills and .agents/skills,
 ## and the dev and marketing commands (.agents/skills/dev-*, mk-*) into .claude/skills. The links are committed;
@@ -144,7 +154,8 @@ AS_API = env -i PATH="$$PATH" HOME="$$HOME" USER="$$USER" TMPDIR="$${TMPDIR:-/tm
 ## ENV=dev resets jadwigo-dev instead (supabase db reset --linked, which asks first). Never prod.
 db-reset:
 ifeq ($(ENV),)
-	$(MAKE) migrate db-seed DATABASE_URL=postgresql://localhost:$${PGPORT:-5433}/jadwigo
+	@$(LOCAL_DB_GATE)
+	$(MAKE) migrate db-seed DATABASE_URL=$(LOCAL_DATABASE_URL)
 else
 	@if [ "$(ENV)" != dev ]; then echo "db-reset: only ENV=dev; prod is never reset"; exit 1; fi
 	@$(SUPABASE_LINK); supabase db reset --linked
@@ -167,18 +178,21 @@ else
 	$(AS_API) bun run --cwd packages/lesson-import seed
 endif
 
-## lesson-import FILE=<path>: one lesson file into the local jadwigo database, printing its
-## /play/<assignment> path (dl-e8ov.5.38.3); check it first with `bun run --cwd packages/lesson-import
-## check <path>`. ENV=dev imports into jadwigo-dev instead, as jadwigo_api the way db-seed does. Only
-## dev: prod imports are the owner's, by hand. Safe to rerun: the same content publishes nothing new.
+## lesson-import FILE=<path> [JSON=1]: one lesson file into the local jadwigo database, the one
+## `make dev` serves, printing its /play/<assignment> path (dl-e8ov.5.38.3), or with JSON=1 one
+## JSON object (jw's lesson_publish reads it, dl-a38n wave 3); check it first with `bun run --cwd
+## packages/lesson-import check <path>`. ENV=dev imports into jadwigo-dev instead, as jadwigo_api
+## the way db-seed does. Only dev: prod imports are the owner's, by hand. Safe to rerun: the same
+## content publishes nothing new.
 lesson-import:
 	@test -n "$(FILE)" || { echo "lesson-import: FILE=<lesson file> is required"; exit 1; }
 ifeq ($(ENV),)
-	DATABASE_URL=postgresql://localhost:$${PGPORT:-5433}/jadwigo bun run --cwd packages/lesson-import import "$(abspath $(FILE))"
+	@$(LOCAL_DB_GATE)
+	DATABASE_URL=$(LOCAL_DATABASE_URL) bun run --cwd packages/lesson-import import "$(abspath $(FILE))" $(if $(JSON),--json)
 else
 	@if [ "$(ENV)" != dev ]; then echo "lesson-import: only ENV=dev; prod imports are the owner's, by hand"; exit 1; fi
 	@$(API_SESSION); \
-	$(AS_API) bun run --cwd packages/lesson-import import "$(abspath $(FILE))"
+	$(AS_API) bun run --cwd packages/lesson-import import "$(abspath $(FILE))" $(if $(JSON),--json)
 endif
 
 ## dream LEARNER=<id> [ENV=local]: the dream on demand (decision jadwigo-hackathon 2026-10-30, the

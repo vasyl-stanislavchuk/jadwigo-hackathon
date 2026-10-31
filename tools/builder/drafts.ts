@@ -57,9 +57,11 @@ export function isDraftId(value: string): boolean {
   return DRAFT_ID.test(value);
 }
 
-// Files beside each draft that are not drafts: jw's check file and the page's render file
-// (dl-a38n.28).
-const BESIDE = [".check.json", ".render.json"];
+// Files beside each draft that are not drafts: jw's check file, the page's render file
+// (dl-a38n.28) and jw's publish file (dl-a38n wave 3: `<draft_id>.publish.json`, written by
+// `lesson_publish` as `{draft_id, request, lesson_id, version, assignment_id, play_url, verified,
+// target, published_at, timings}`; the page shows it as the publish state).
+const BESIDE = [".check.json", ".render.json", ".publish.json"];
 
 /**
  * The draft id that one file in the drafts directory holds, or null: `<draft_id>.json`, never

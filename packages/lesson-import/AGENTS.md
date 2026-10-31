@@ -7,7 +7,7 @@ lesson question examples, which `GET /api/v1/playground-examples/{language}` ser
 
 - **Not here:** The lesson files themselves (david-learns exports them), judging (`packages/core`), SQL (`packages/store`).
 - **Owner:** the platform workstream (`docs/workstreams/platform.md`). **Filled by:** `dl-e8ov.2.32.5`.
-- **Imports:** `contracts`, `core` (only `mistakeClassesOf`, `dl-e8ov.5.38.11`, `dl-e8ov.5.38.15`), `store`.
+- **Imports:** `contracts`, `core` (`mistakeClassesOf`, `dl-e8ov.5.38.11`, `dl-e8ov.5.38.15`; and `judge` with `solutionOf`, so `check.ts` can grade a twin's key and a key an agent changed, the `key-grades` rule of `dl-a38n` wave 3), `store`.
 - **Public surface:** `src/index.ts`, and `src/file.ts` as `@jadwigo/lesson-import/file`: the browser-safe entry with `parseLessonFile` and the lesson file types, which imports nothing that needs Node (no `compile.ts`, `ids.ts` or `node:*`; `dl-a38n.11`). Other files are private to this package.
 - **Test:** `bunx turbo run lint typecheck test --filter=./packages/lesson-import`
 
