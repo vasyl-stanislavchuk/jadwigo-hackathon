@@ -20,16 +20,16 @@ there against `jadwigo-api-dev` and the `jadwigo-dev-api-errors` alarm.
 ## Before
 
 - The alarms module (`dl-5ssh.13`, PR #101) is applied, and its mail address is confirmed:
-  `aws --profile sergii sns list-subscriptions-by-topic --topic-arn "$(AWS_PROFILE=sergii terraform -chdir=infra/terraform output -raw alarm_topic_arn)"`
+  `aws --profile jadwigo sns list-subscriptions-by-topic --topic-arn "$(AWS_PROFILE=jadwigo terraform -chdir=infra/terraform output -raw alarm_topic_arn)"`
   shows the subscription with an ARN, not `PendingConfirmation`.
-- The function exists: `aws --profile sergii lambda get-function --function-name jadwigo-api-prod --query Configuration.State` prints `"Active"`.
+- The function exists: `aws --profile jadwigo lambda get-function --function-name jadwigo-api-prod --query Configuration.State` prints `"Active"`.
 
 ## Steps
 
 1. Invoke the function once with an event no router accepts:
 
    ```sh
-   aws --profile sergii lambda invoke --function-name jadwigo-api-prod \
+   aws --profile jadwigo lambda invoke --function-name jadwigo-api-prod \
      --cli-binary-format raw-in-base64-out --payload '{"jadwigo_smoke":"force-error"}' /dev/stdout
    ```
 
@@ -38,7 +38,7 @@ there against `jadwigo-api-dev` and the `jadwigo-dev-api-errors` alarm.
 
 ## After
 
-- Within about 5 minutes (one period), `aws --profile sergii cloudwatch describe-alarms --alarm-names jadwigo-prod-api-errors --query 'MetricAlarms[0].StateValue'` prints `"ALARM"`, and the alarm mail arrives.
+- Within about 5 minutes (one period), `aws --profile jadwigo cloudwatch describe-alarms --alarm-names jadwigo-prod-api-errors --query 'MetricAlarms[0].StateValue'` prints `"ALARM"`, and the alarm mail arrives.
 - About 5 minutes later, with no more errors, it goes back to `"OK"` and a 2nd mail says so.
 
 ## Undo

@@ -95,7 +95,7 @@ marked "du" are from `du -sh` on the folder named. Paths under `khan/` are relat
 | 18 | `bank.env` | `~/.config/jadwigo-bank/bank.env`, mode 600 | 4 keys: `JW_BANK_URL`, `JW_BANK_TOKEN`, `JW_API_URL`, `JW_BANK_READ_TOKEN` | `apps/cli/src/jw/bank_client.py:103` through `settings_keys.py:37`, for `jw question` and `jw mcp serve` | the CLI and the MCP server find no bank when the environment is unset | the operator's settings file (section 3.4) | none for the file; its values are filled from SSM and Secrets Manager |
 | 19 | `read.env` | `~/.config/jadwigo-bank/read.env`, mode 600 | 2 keys: `JW_API_URL`, `JW_BANK_READ_TOKEN` | no reader in either repo (`git grep read.env`) | nothing found | folded into `bank.env`, then removed | none |
 | 20 | `muse.env` | `~/.config/jadwigo-bank/muse.env`, mode 600 | 1 key: `META_API_KEY` | `jadwigo-bank/tools/muse_call.py:46`; `apps/cli/src/jw/muse.py:8` | enrichment, needs and labels | Secrets Manager `jadwigo-bank/meta-api-key`, which already exists | `muse_call.py:46` reads the secret when the file is absent |
-| 21 | The embedding and rerank keys for tools | md's work brain: `~/.config/medallion-dev/context/brain/.gbrain/env` and `config.json` | 2 keys: `OPENAI_API_KEY`, `VOYAGE_API_KEY` | `jadwigo-bank/tools/with_keys.py:19`, `:24` and `:30`, in front of `bank_index`, `bank_gate` and `golden_sets pool` | index builds, the gate and pooling on any machine without md | Secrets Manager `jadwigo-bank/openai-api-key` and `voyage-api-key`, which already exist | `with_keys.py` reads the 2 secrets through the `sergii` profile when the brain files are absent |
+| 21 | The embedding and rerank keys for tools | md's work brain: `~/.config/medallion-dev/context/brain/.gbrain/env` and `config.json` | 2 keys: `OPENAI_API_KEY`, `VOYAGE_API_KEY` | `jadwigo-bank/tools/with_keys.py:19`, `:24` and `:30`, in front of `bank_index`, `bank_gate` and `golden_sets pool` | index builds, the gate and pooling on any machine without md | Secrets Manager `jadwigo-bank/openai-api-key` and `voyage-api-key`, which already exist | `with_keys.py` reads the 2 secrets through the `jadwigo` profile when the brain files are absent |
 | 22 | The bank's Terraform state | `jadwigo-bank/infra/terraform.tfstate` and `.backup`, `.terraform/` | 51,096 and 52,624 bytes (ls) | `terraform plan` and `apply` in `jadwigo-bank/infra`; `infra/versions.tf:4` says "Local state for now" | no other machine can plan; a lost laptop orphans every bank resource | an S3 backend (owner decision 5) | a `backend "s3" {}` block in `versions.tf` and `terraform init -migrate-state` |
 | 23 | The bank's 4 secrets | Secrets Manager, `jadwigo-bank/{openai-api-key,voyage-api-key,meta-api-key,api-token}` | 4 (`infra/secrets.tf`) | `jadwigo-bank/service/config.py:8` to `:12` | the search function | already home; values set by hand | none |
 | 24 | The read token | SSM `/jadwigo/prod/bank-read-token` | 1 (`infra/terraform/modules/app/bank.tf:20`) | `apps/api` at run time through `BANK_READ_TOKEN_PARAM` (`api.tf:100`) | `POST /api/v1/question-searches` refuses every caller | already home; value set by hand | none |
@@ -149,7 +149,7 @@ Rows 13, 14, 15, 23, 24 and 25 need no move. They are listed so the inventory is
   `read.env`. The CI gate also needs `OPENAI_API_KEY` and `VOYAGE_API_KEY` as repository secrets
   once the bank repo has a remote (`dl-n9fr.15` notes).
 - **The change.** In `jadwigo-bank`, `with_keys.py` and `muse_call.py` fall back to Secrets Manager
-  through the `sergii` profile when their files are absent. They never print a value and still
+  through the `jadwigo` profile when their files are absent. They never print a value and still
   strip `ANTHROPIC_API_KEY`. No new secret is created.
 - **By hand.** The owner confirms the 2 vendor keys in Secrets Manager are the ones the tools should
   use, and adds the 2 repository secrets once the remote exists.
@@ -356,7 +356,7 @@ below. This note edits no bead.
     },
     {
       "title": "jadwigo-bank: with_keys and muse_call read the OpenAI, Voyage and Meta keys from Secrets Manager when their local files are absent",
-      "scope": "tools/with_keys.py and tools/muse_call.py fall back to jadwigo-bank/openai-api-key, voyage-api-key and meta-api-key through the sergii profile; values go to the child only, never printed; ANTHROPIC_API_KEY still stripped",
+      "scope": "tools/with_keys.py and tools/muse_call.py fall back to jadwigo-bank/openai-api-key, voyage-api-key and meta-api-key through the jadwigo profile; values go to the child only, never printed; ANTHROPIC_API_KEY still stripped",
       "done_when": "uv run pytest -q passes with a fake Secrets Manager client, and a run with the brain files moved aside builds a hashing index",
       "depends_on": [],
       "labels": ["project:jadwigo-question-bank"]
