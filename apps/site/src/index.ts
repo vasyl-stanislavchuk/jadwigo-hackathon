@@ -8,3 +8,7 @@ export const appUrl = `https://${hosts.prod.app}/`;
 
 /** The parent's sign-in, which also registers: the email code, then Google, then Facebook (dl-e8ov.2.51). */
 export const parentUrl = `${appUrl}parent`;
+
+/** jadwigo.pl/zaloguj's hand-over to the app (dl-5ssh.4.2): /parent?provider= starts that provider. */
+export const providerUrl = (provider: "google" | "facebook"): string =>
+  `${parentUrl}?${new URLSearchParams({ provider })}`;

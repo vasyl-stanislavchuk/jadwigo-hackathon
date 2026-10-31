@@ -9,7 +9,6 @@ import "@fontsource/andika/700.css";
 import "@jadwigo/ui/foundation.css";
 import { getCollection, getEntry } from "astro:content";
 import wordmark from "@jadwigo/ui/brand/wordmark.svg?raw";
-import { parentUrl } from "../index.ts";
 import { assertReviewed, headTags, jsonLd, type Page, servedPathPages } from "../lib/seo.ts";
 
 interface Props {
@@ -130,7 +129,7 @@ const footerLinks = [
             </nav>
           )
         }
-        <a class="btn quiet" href={parentUrl}>{words.nav.signIn}</a>
+        <a class="btn quiet" href="/zaloguj/">{words.nav.signIn}</a>
       </div>
     </header>
     <main>
