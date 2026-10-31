@@ -137,6 +137,7 @@ def test_services_name_db_reset_for_a_500(machine: Path) -> None:
 
 def test_settings_name_what_is_missing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("JADWIGO_DRAFTS_DIR", str(tmp_path / "drafts"))
+    monkeypatch.setattr(doctor.settings_keys, "DEFAULT_BANK_DIR", tmp_path / "no-bank")
     settings = doctor.settings_check("pl")
     by_name = {line["name"]: line for line in settings["lines"]}
     assert by_name["bank checkout"]["status"] == doctor.FAIL

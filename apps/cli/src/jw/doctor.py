@@ -64,8 +64,11 @@ def _check(n: int, name: str, lines: list[dict[str, str]]) -> dict[str, Any]:
 
 
 def _bank_dir() -> Path | None:
-    configured = settings_keys.setting(settings_keys.JADWIGO_BANK_DIR)
-    return Path(configured).expanduser() if configured else None
+    """JADWIGO_BANK_DIR, else the default `jw bank pull` clones into, when it is there."""
+    configured = settings_keys.bank_dir()
+    if settings_keys.setting(settings_keys.JADWIGO_BANK_DIR) or configured.is_dir():
+        return configured
+    return None
 
 
 def _converted_line(path: Path) -> dict[str, str]:
