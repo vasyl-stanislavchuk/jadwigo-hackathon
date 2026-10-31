@@ -11,6 +11,11 @@ there.
 - The install has run: `mise install && bun install --frozen-lockfile`.
 - `.env.local` exists in the main checkout (`cp .env.example .env.local`). md seeds it into every
   worktree.
+- The local `jadwigo` database is built: `make db` once per machine, then `make db-reset` (the
+  shim, every migration, the seed). `make dev` serves that database and `make lesson-import`
+  writes into it, so an imported lesson's play path answers on the running web. `.env.local`'s
+  `DATABASE_URL` names `jadwigo_test`, which the integration tests own and re-seed; nothing in
+  the dev loop reads it (`dl-5ssh.112`).
 - For the parent's sign-in, `.env.local` has `JW_SUPABASE_KEY` filled. It is jadwigo-dev's
   publishable key: in the Supabase dashboard, project jadwigo-dev, Project Settings → API Keys,
   the key starting `sb_publishable_`. Every browser that opens the app holds it, so it is public,

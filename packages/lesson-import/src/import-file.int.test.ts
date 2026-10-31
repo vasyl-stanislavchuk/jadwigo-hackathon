@@ -16,8 +16,8 @@ const fixture = fileURLToPath(
 const store = createPostgresStore(databaseUrl());
 afterAll(() => store.close());
 
-function runImport(): { status: number | null; line: string } {
-  const run = spawnSync("bun", ["run", "import", fixture], {
+function runImport(...flags: string[]): { status: number | null; line: string } {
+  const run = spawnSync("bun", ["run", "import", fixture, ...flags], {
     cwd: pkg,
     encoding: "utf8",
     env: { ...process.env, DATABASE_URL: databaseUrl() },
@@ -58,5 +58,20 @@ describe("bun run import <file>", () => {
   it("publishes nothing new when the same file is imported again", () => {
     runImport();
     expect(runImport().line).toMatch(/ unchanged, play \/play\/asg_\w+$/);
+  });
+
+  it("--json prints the same as one object, with the planned question count", () => {
+    runImport();
+    const out = JSON.parse(runImport("--json").line) as Record<string, unknown>;
+    const assignmentId = featuredAssignmentId("multiplication-times-four", DRAFTS_POD.id);
+    expect(out).toMatchObject({
+      file: fixture,
+      published: false,
+      assignment_id: assignmentId,
+      play_path: `/play/${assignmentId}`,
+    });
+    expect(out["lesson_id"]).toMatch(/^les_\w+$/);
+    expect(out["version_id"]).toMatch(/^lesv_\w+$/);
+    expect(out["questions"]).toBeGreaterThan(0);
   });
 });
