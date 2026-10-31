@@ -263,20 +263,25 @@ writes, and writes nothing that does not match.
 
 `jw question readiness` is the owner's count, per language (both unless `--lang` names one):
 items, lesson-ready, waiting by reason, refused by cause (a rule of the gate, or the converter's
-cause as above), flagged and not checked; each cause with its owner and its bead, and what the
-last run re-admitted, by cause (wave plan `docs/worklog/dl-a38n.32/2026-10-31-wave-2.md`,
-`dl-a38n.32.36`; decisions `dl-kaxj`, `dl-be2l`, `dl-e7yv`). It reads
+cause as above), flagged and not checked; each cause with its owner and its bead, the twin
+warnings by kind, what the last run re-admitted, by cause, and the sets skipped by id (wave
+plan `docs/worklog/dl-a38n.32/2026-10-31-wave-2.md`, `dl-a38n.32.36`, `dl-a38n.32.44`;
+decisions `dl-kaxj`, `dl-be2l`, `dl-e7yv`). It reads
 `<JADWIGO_KHAN_DIR>/readiness.json`, which the bank's `make ready` writes:
 
 ```json
 {"generated_at": "...", "rules_version": "...",
- "languages": {"pl": {"items": 0, "ready": 0, "waiting": {"<reason>": 0}, "refused": {"<cause>": 0},
-                      "flagged": 0, "readmitted": {"<cause>": 0},
+ "languages": {"pl": {"items": 0, "ready": 0, "waiting": {"<reason>": 0},
+                      "refused": {"<rule or converter reason>": 0}, "flagged": 0,
+                      "warnings": {"<kind>": 0}, "readmitted": {"<cause>": 0},
                       "issues": {"<cause>": "<bead>"}, "not_checked": 0}},
- "sets": {"indexed": 0, "skipped_no_ready": 0}}
+ "sets": {"indexed": 0, "skipped_no_ready": ["<set_id>"]}}
 ```
 
-`issues` and `not_checked` may be left out. A language the file does not hold, or every language
+The bank pins it in `schemas/readiness.schema.json` (`dl-a38n.32.29`). `warnings` counts the
+twin's number and picture differences, which warn and no longer refuse (`dl-e7yv`); `readmitted` is
+`{}` on a first run; the report prints each skipped set by id. `issues` and `not_checked` may be
+left out. A language the file does not hold, or every language
 with `--from-files`, is counted from the converted file, its sidecar and the converter's
 refusals; only a run knows what it re-admitted, so that report says it is unknown. A cause's bead
 comes from `refusals assign` (`jw question refusals assign "<cause>" - <bead>` for a converter

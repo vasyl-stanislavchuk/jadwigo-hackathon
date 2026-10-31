@@ -85,7 +85,7 @@ placeholder, so neither a tfvars file nor the state holds the value. The owner s
 `apply`, and again after a password rotation, with jadwigo_api's transaction pooler URL (port 6543):
 
 ```sh
-aws --profile sergii ssm put-parameter --region eu-central-1 --name /jadwigo/prod/database-url \
+aws --profile jadwigo ssm put-parameter --region eu-central-1 --name /jadwigo/prod/database-url \
   --type SecureString --overwrite --value "postgresql://jadwigo_api.<ref>:<password>@<pooler-host>:6543/postgres"
 ```
 
@@ -125,9 +125,9 @@ Supabase are `docs/runbooks/social-sign-in.md`.
 The state bucket `jadwigo-terraform-state-843109108289` is created by hand before the first `init` (`dl-5ssh.9`):
 
 ```sh
-aws --profile sergii s3 mb s3://jadwigo-terraform-state-843109108289 --region eu-central-1
-aws --profile sergii s3api put-bucket-versioning --bucket jadwigo-terraform-state-843109108289 --versioning-configuration Status=Enabled
-aws --profile sergii s3api put-public-access-block --bucket jadwigo-terraform-state-843109108289 \
+aws --profile jadwigo s3 mb s3://jadwigo-terraform-state-843109108289 --region eu-central-1
+aws --profile jadwigo s3api put-bucket-versioning --bucket jadwigo-terraform-state-843109108289 --versioning-configuration Status=Enabled
+aws --profile jadwigo s3api put-public-access-block --bucket jadwigo-terraform-state-843109108289 \
   --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
 ```
 

@@ -83,7 +83,7 @@
     "@jadwigo/lesson-kit": "workspace:*",
     "@jadwigo/ui": "workspace:*",
     "astro": "7.4.2",
-    "astro-mermaid": "2.1.0",
+    "astro-mermaid": "2.2.0",
     "hast-util-select": "6.0.4",
     "mermaid": "12.2.0",
     "rehype-parse": "9.0.1",

@@ -18,8 +18,8 @@ Decisions: `jadwigo-question-bank/decisions/2026-10-29-the-monorepo-s-terraform-
 
 1. The branch is merged: `git log --oneline -1 -- infra/terraform/modules/content` prints a `dl-n9fr.43.2` commit.
 2. The profile reaches the account:
-   `aws --profile sergii sts get-caller-identity --query Account --output text` prints `843109108289`.
-3. The bucket name is free: `aws --profile sergii s3api head-bucket --bucket jadwigo-content-843109108289`
+   `aws --profile jadwigo sts get-caller-identity --query Account --output text` prints `843109108289`.
+3. The bucket name is free: `aws --profile jadwigo s3api head-bucket --bucket jadwigo-content-843109108289`
    answers `Not Found` (404). A 403 means another account holds the name; stop and pick another
    `bucket_name`.
 4. The alarm address is in `infra/terraform/owner.auto.tfvars` (`infra/README.md`, Alarms). Without it
@@ -60,12 +60,12 @@ Decisions: `jadwigo-question-bank/decisions/2026-10-29-the-monorepo-s-terraform-
 
    ```sh
    make -C infra init
-   AWS_PROFILE=sergii mise exec -- terraform -chdir=infra/terraform plan \
+   AWS_PROFILE=jadwigo mise exec -- terraform -chdir=infra/terraform plan \
      -var-file=environments/prod.tfvars -out=content.tfplan
    ```
 
    Check it against "Before" step 5.
-2. **Apply it:** `AWS_PROFILE=sergii mise exec -- terraform -chdir=infra/terraform apply content.tfplan`.
+2. **Apply it:** `AWS_PROFILE=jadwigo mise exec -- terraform -chdir=infra/terraform apply content.tfplan`.
    The distribution takes 5 to 15 minutes. It ends `Apply complete! Resources: 12 added, 1 changed`
    (16 and 2 with main's unapplied work). Then:
 
@@ -84,7 +84,7 @@ Decisions: `jadwigo-question-bank/decisions/2026-10-29-the-monorepo-s-terraform-
 
    ```sh
    cd ~/projects/jadwigo-bank
-   export JADWIGO_KHAN_BUCKET=$(aws --profile sergii ssm get-parameter --region eu-central-1 \
+   export JADWIGO_KHAN_BUCKET=$(aws --profile jadwigo ssm get-parameter --region eu-central-1 \
      --name /jadwigo/bank/content-bucket --query Parameter.Value --output text)
    export JADWIGO_KHAN_DIR=~/projects/david-learns/media/khan
    uv run python -m tools.khan.sync up --dry-run
@@ -101,10 +101,10 @@ Decisions: `jadwigo-question-bank/decisions/2026-10-29-the-monorepo-s-terraform-
 - The parameters read the names:
 
   ```sh
-  aws --profile sergii ssm get-parameter --region eu-central-1 --name /jadwigo/bank/content-bucket \
+  aws --profile jadwigo ssm get-parameter --region eu-central-1 --name /jadwigo/bank/content-bucket \
     --query Parameter.Value --output text
   # jadwigo-content-843109108289
-  MEDIA=$(aws --profile sergii ssm get-parameter --region eu-central-1 --name /jadwigo/bank/media-url \
+  MEDIA=$(aws --profile jadwigo ssm get-parameter --region eu-central-1 --name /jadwigo/bank/media-url \
     --query Parameter.Value --output text); echo "$MEDIA"
   # https://<id>.cloudfront.net
   ```
@@ -112,7 +112,7 @@ Decisions: `jadwigo-question-bank/decisions/2026-10-29-the-monorepo-s-terraform-
 - A picture loads by sha, once uploaded. Take one key name, which is a sha and not item text:
 
   ```sh
-  KEY=$(aws --profile sergii s3api list-objects-v2 --bucket jadwigo-content-843109108289 \
+  KEY=$(aws --profile jadwigo s3api list-objects-v2 --bucket jadwigo-content-843109108289 \
     --prefix khan/media/ --max-keys 1 --query 'Contents[0].Key' --output text)
   curl -sI "$MEDIA/${KEY#khan/media/}" | head -1
   # HTTP/2 200
@@ -132,7 +132,7 @@ Decisions: `jadwigo-question-bank/decisions/2026-10-29-the-monorepo-s-terraform-
 - The api role reads the 2 prefixes and no other:
 
   ```sh
-  aws --profile sergii iam simulate-principal-policy \
+  aws --profile jadwigo iam simulate-principal-policy \
     --policy-source-arn arn:aws:iam::843109108289:role/jadwigo-api-prod \
     --action-names s3:GetObject \
     --resource-arns arn:aws:s3:::jadwigo-content-843109108289/questions/khan/x.json \
@@ -152,7 +152,7 @@ destroys what depends on the module, and the api role's policy reads the bucket'
    deletion. From `~/projects/jadwigo-bank`, which has boto3:
 
    ```sh
-   uv run python -c "import boto3; boto3.Session(profile_name='sergii').resource('s3').Bucket('jadwigo-content-843109108289').object_versions.delete()"
+   uv run python -c "import boto3; boto3.Session(profile_name='jadwigo').resource('s3').Bucket('jadwigo-content-843109108289').object_versions.delete()"
    ```
 
 2. **Revert the `dl-n9fr.43.2` commit**, then plan. Expect `0 to add, 1 to change, 12 to destroy`: the

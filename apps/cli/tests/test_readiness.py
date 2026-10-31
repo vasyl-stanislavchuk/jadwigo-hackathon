@@ -71,6 +71,13 @@ def _json(*args: str) -> dict[str, Any]:
         ("pl differs from en (family, key, numbers)", "pl differs from en (family)"),
         ("no Polish raw item", "no Polish raw item"),
         ("render-picture-missing", "render-picture-missing"),
+        # readiness.json's keys: the id gone, the `refused: ` prefix and a placeholder kept
+        (f"refused: {ALT}", ALT),
+        ("refused: <picture> was not pulled; run media.py", NOT_PULLED),
+        # a part's own name goes too (dl-a38n.32.55): one cause for every part
+        (f"refused: x1: part 1: x1-p1: {ALT}", ALT),
+        (f"refused: part 2: -p2: {ALT}", ALT),
+        ("x1-p2: pl differs from en (family, key)", "pl differs from en (family)"),
     ],
 )
 def test_a_converter_reason_becomes_its_cause_and_stays_one(reason: str, cause: str) -> None:
@@ -107,7 +114,7 @@ def test_readiness_computed_from_the_files_counts_every_cause_with_its_bead(khan
     assert (en["items"], en["ready"], en["not_checked"], en["flagged"]) == (8, 1, 1, 0)
     assert en["waiting"] == {
         "items": 1,
-        "by_reason": [{"reason": MIXED, "items": 1, "issue": "dl-fixture-wait"}],
+        "by_reason": [{"reason": MIXED, "items": 1, "issue": "dl-fixturewait"}],
     }
     assert en["refused"] == {
         "items": 5,
@@ -118,13 +125,14 @@ def test_readiness_computed_from_the_files_counts_every_cause_with_its_bead(khan
     }
     assert en["readmitted"] is None
     assert en["rules_version"] == "fixture-2"
-    assert en["sets"] == {"indexed": 1, "skipped_no_ready": 0}
+    assert en["sets"] == {"indexed": 1, "skipped_no_ready": []}
+    assert en["warnings"] is None
 
     text = _run("readiness", "--lang", "en")
     assert "en: 8 items, 1 lesson-ready, 1 waiting, 5 refused, 0 flagged, 1 not checked" in text
     assert f"        3  {ALT}  [converter]  dl-fixture-alt" in text
     assert f"        2  {NOT_PULLED}  [converter]  no bead" in text
-    assert f"        1  {MIXED}  dl-fixture-wait" in text
+    assert f"        1  {MIXED}  dl-fixturewait" in text
     assert "re-admitted since the previous run: unknown" in text
 
 
@@ -150,25 +158,40 @@ def test_readiness_reads_readiness_json_when_it_has_the_language(khan: Path) -> 
         ("render-picture-missing", 2, "media", "dl-fixture-media"),
         ("pl differs from en (family)", 1, "converter", None),
     ]
-    assert pl["waiting"]["by_reason"] == [{"reason": MIXED, "items": 2, "issue": "dl-fixture-wait"}]
+    assert pl["waiting"]["by_reason"] == [{"reason": MIXED, "items": 2, "issue": "dl-fixturewait"}]
     assert pl["readmitted"] == [
         {"cause": "set stopped", "items": 4},
         {"cause": "pl differs from en (numbers, pictures)", "items": 3},
     ]
-    assert pl["sets"] == {"indexed": 3, "skipped_no_ready": 1}
-    # readiness.json has no English block, so English is counted from the files.
-    assert (en["source"], en["items"]) == ("computed", 8)
+    assert pl["sets"] == {"indexed": 3, "skipped_no_ready": ["set_khan_fx0010"]}
+    assert pl["warnings"] == [
+        {"kind": "twin numbers", "items": 5},
+        {"kind": "twin pictures", "items": 2},
+    ]
+    assert (en["source"], en["items"]) == ("readiness.json", 0)
 
     text = _run("readiness", "--lang", "pl")
     for row in pl["refused"]["by_cause"]:
         assert f"{row['items']:>5}  {row['cause']}" in text
     assert "re-admitted since the previous run: 7" in text
     assert "        4  set stopped" in text
-    assert "sets: 3 indexed, 1 skipped with no ready item" in text
+    assert "sets: 3 indexed, 1 skipped with no ready item: set_khan_fx0010" in text
+    assert "warnings, by kind: 7" in text
+    assert "        5  twin numbers" in text
 
     assert _json("readiness", "--lang", "pl", "--from-files")["languages"][0]["source"] == (
         "computed"
     )
+
+
+def test_a_language_readiness_json_lacks_is_counted_from_the_files(khan: Path) -> None:
+    raw = json.loads((READINESS / "readiness.json").read_text("utf-8"))
+    del raw["languages"]["en"]
+    (khan / "readiness.json").write_text(json.dumps(raw), encoding="utf-8")
+
+    _pl, en = _json("readiness")["languages"]
+
+    assert (en["source"], en["items"]) == ("computed", 8)
 
 
 def test_a_language_with_nothing_to_read_says_so(khan: Path) -> None:
@@ -201,7 +224,7 @@ def test_the_dominant_cause_names_its_share_and_bead(khan: Path) -> None:
     assert readiness.dominant_cause(ids, "en") == f"{ALT}, 3 of 5 items (dl-fixture-alt)"
     assert (
         readiness.dominant_cause(["fxr4"], "en")
-        == f"waiting: {MIXED}, 1 of 1 items (dl-fixture-wait)"
+        == f"waiting: {MIXED}, 1 of 1 items (dl-fixturewait)"
     )
     assert readiness.dominant_cause(["fxe9"], "en") is None
     assert readiness.dominant_cause(ids, "uk") is None
@@ -232,3 +255,27 @@ def test_a_gap_of_a_set_with_nothing_ready_names_the_dominant_cause(ready_bank: 
 
     args = ["question", "gaps", "--words", "liczby parzyste", "--grade", "3", "--language", "en"]
     assert f"most: {ALT}, 3 of 5 items)" in CliRunner().invoke(main, args).output
+
+
+def test_a_first_run_re_admitted_nothing(khan: Path) -> None:
+    raw = json.loads((READINESS / "readiness.json").read_text("utf-8"))
+    raw["languages"]["pl"]["readmitted"] = {}
+    raw["languages"]["pl"]["waiting"] = {"dl-fx9.1": 2}
+    (khan / "readiness.json").write_text(json.dumps(raw), encoding="utf-8")
+
+    (pl,) = _json("readiness", "--lang", "pl")["languages"]
+
+    assert pl["readmitted"] == []
+    # A waiting item keyed by its bead carries that bead.
+    assert pl["waiting"]["by_reason"] == [
+        {"reason": "dl-fx9.1", "items": 2, "issue": "dl-fx9.1"}
+    ]
+    assert "re-admitted since the previous run: 0" in _run("readiness", "--lang", "pl")
+
+
+def test_a_flag_changes_the_dominant_cause_at_once(khan: Path) -> None:
+    assert readiness.dominant_cause(["fxr5"], "en") == "not checked, 1 of 1 items"
+
+    _run("flag", "fxr5", "the options repeat", "--lang", "en")
+
+    assert readiness.dominant_cause(["fxr5"], "en") == "flagged, 1 of 1 items"

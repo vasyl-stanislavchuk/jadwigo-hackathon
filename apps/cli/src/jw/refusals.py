@@ -81,20 +81,24 @@ def refused_path(converted: Path) -> Path:
     return converted.with_name(f"{converted.stem}.refused.json")
 
 
-_ITEM_PREFIX = re.compile(r"^refused:\s*[\w.-]+:\s*")
-_NOT_PULLED = re.compile(r"^\S+://\S+ was not pulled\b")
+_ITEM_PREFIX = re.compile(r"^refused:\s*(?:[\w.-]+:\s+)?")
+# A part of a question played as its parts names itself before its cause: `part 1: <id>-p1: `,
+# `<id>-p1: `, or `part 1: -p1: ` once a report took the id out (dl-a38n.32.55).
+_PART_PREFIX = re.compile(r"^(?:part \d+:\s*)?[\w.-]*-p\d+:\s*")
+_NOT_PULLED = re.compile(r"^\S+ was not pulled\b")
 _SET_STOPPED = re.compile(r"^set \S+ stopped\b")
 _TWIN = re.compile(r"^(\w+) differs from (\w+) \(([^)]*)\)")
-_BEAD = re.compile(r"^[a-z]+-[a-z0-9]+(\.\d+)*$")
+BEAD = re.compile(r"^[a-z]+-[a-z0-9]+(\.\d+)*$")
 
 
 def cause_of(reason: str) -> str:
     """The cause a converter refusal names, with what differs per item taken out, so the items one
-    fix re-admits count together: the `refused: <id>: ` prefix goes, a picture URL that was not
+    fix re-admits count together: the `refused: <id>: ` (or bare `refused: `) prefix goes, a picture URL that was not
     pulled is "a picture was not pulled", a stopped set is "set stopped", and a twin difference is
-    "pl differs from en (family)" when the family differs, else "(numbers, pictures)". Applying
-    it twice changes nothing, so a cause readiness.json already wrote stays as it is."""
-    text = _ITEM_PREFIX.sub("", str(reason).strip())
+    "pl differs from en (family)" when the family differs, else "(numbers, pictures)"; a part's
+    own `part k: <id>-pN: ` goes too, so every part with one cause counts once. Applying it twice
+    changes nothing, so a cause readiness.json already wrote stays as it is."""
+    text = _PART_PREFIX.sub("", _ITEM_PREFIX.sub("", str(reason).strip()))
     if _NOT_PULLED.match(text):
         return "a picture was not pulled"
     if _SET_STOPPED.match(text):
@@ -265,7 +269,7 @@ def classify(language: str) -> tuple[Path, list[Verdict]]:
             continue
         seen.add(item_id)
         reason = str(entry.get("reason") or "refused by the converter")
-        issue = reason if _BEAD.match(reason) else None
+        issue = reason if BEAD.match(reason) else None
         out.append(
             Verdict(
                 item_id,

@@ -26,6 +26,6 @@
       "reason": "refused: fxe2: https://fixture.invalid/media/fx2.png was not pulled; run media.py",
       "sets": ["set_khan_fx0010"]
     },
-    { "id": "fxr4", "reason": "dl-fixture-wait", "sets": ["set_khan_fx0009"] }
+    { "id": "fxr4", "reason": "dl-fixturewait", "sets": ["set_khan_fx0009"] }
   ]
 }
