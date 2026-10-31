@@ -1,6 +1,6 @@
 """jw mcp serve: the question and lesson tools over MCP on stdio (dl-u1y5.23, moved from dl-e8ov.5.2.8).
 
-Nine tools, each calling the function its `--json` verb prints, so a tool's JSON is the verb's
+Ten tools, each calling the function its `--json` verb prints, so a tool's JSON is the verb's
 JSON: question_search (`jw question search --json`), question_show (`jw question show --json`),
 question_gaps (`jw question gaps --json`), question_item (`jw question item --json`, read
 from JW_KHAN_CONVERTED, dl-e8ov.5.38.2), lesson_draft (`jw lesson draft --json`), lesson_check
@@ -8,7 +8,8 @@ from JW_KHAN_CONVERTED, dl-e8ov.5.38.2), lesson_draft (`jw lesson draft --json`)
 lesson_edit and lesson_show (`jw lesson edit --json`, `jw lesson show`: one step changed by a JSON
 merge patch and checked, or shown as it stands, dl-a38n.29), and lesson_publish (`jw lesson
 publish --json`: the checked draft imported into the local database and played once,
-dl-a38n.39). A draft is
+dl-a38n.39), and doctor (`jw doctor --json`: whether this machine can draft, check and publish,
+and the fix for each line that is not ok, dl-a38n.42). A draft is
 kept on the server's machine under a draft_id, so neither lesson tool sends the whole draft
 through the client's tool-result limit (dl-e8ov.5.38.10), and both write it as a lesson file,
 <draft_id>.json, with its check, <draft_id>.check.json, into JADWIGO_DRAFTS_DIR on every call
@@ -27,7 +28,7 @@ from typing import Any
 
 import click
 
-from jw import lesson, lesson_edit, lesson_publish
+from jw import doctor, lesson, lesson_edit, lesson_publish
 from jw.commands import question
 from jw.errors import JwError
 
@@ -41,11 +42,12 @@ TOOLS = (
     "lesson_edit",
     "lesson_show",
     "lesson_publish",
+    "doctor",
 )
 
 
 def build_server() -> Any:
-    """The MCP server with the nine tools. Imported lazily: only `serve` pays for it."""
+    """The MCP server with the ten tools. Imported lazily: only `serve` pays for it."""
     from mcp.server.mcpserver import MCPServer
     from mcp.server.mcpserver.exceptions import ToolError
 
@@ -66,7 +68,8 @@ def build_server() -> Any:
             "that meet a need, one set's page, needs it cannot meet, one item. Once a check "
             "answers ok, call lesson_publish with the draft_id, without asking: it imports the "
             "lesson into the local database, checks that it plays, and returns the play_url to "
-            "give the parent."
+            "give the parent. When a tool fails on a setting, a missing file or a service, call "
+            "doctor and tell the parent the fix it names."
         ),
     )
 
@@ -299,6 +302,21 @@ def build_server() -> Any:
         verified_at, lesson_id, version, assignment_id, timings and publish_path.
         """
         return _call(lesson_publish.publish, draft_id=draft_id, target=target)
+
+    @server.tool(name="doctor")
+    def doctor_tool(language: str = "pl") -> dict[str, Any]:
+        """Check whether this machine can draft, check and publish a lesson, and say what to fix.
+
+        Five checks, each ok, warn or fail: settings (the bank checkout, the converted items
+        file, readiness.json, bank.env at mode 600, check.ts and bun, the drafts directory),
+        ready ids (every set page's ready ids are lesson-ready in the converted file; the stale
+        ones counted with 3 examples), stamps (readiness.json, the converted file and the pages
+        name one stamp), bank_rev (the search service's build against the local index) and
+        services (the local api and web dev server answer). Returns status (the worst) and
+        checks, each {n, name, status, lines: [{name, status, detail, fix}]}. Call it when
+        another tool fails on a setting, a missing file or a service; it changes nothing.
+        """
+        return _call(doctor.run, language=language)
 
     @server.tool(name="lesson_show")
     def lesson_show(draft_id: str, step_id: str | None = None) -> dict[str, Any]:
