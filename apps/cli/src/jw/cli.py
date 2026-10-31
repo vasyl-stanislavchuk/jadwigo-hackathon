@@ -3,7 +3,7 @@
 import click
 
 from jw import __version__
-from jw.commands import lesson, mcp, question
+from jw.commands import bank, doctor, lesson, mcp, question
 
 
 @click.group()
@@ -15,3 +15,5 @@ def main() -> None:
 main.add_command(question.group, name="question")
 main.add_command(mcp.group, name="mcp")
 main.add_command(lesson.group, name="lesson")
+main.add_command(doctor.command, name="doctor")
+main.add_command(bank.group, name="bank")

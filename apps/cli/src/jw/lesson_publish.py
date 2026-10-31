@@ -1,0 +1,265 @@
+"""A checked draft, published into the local database `make dev` serves and played once (dl-a38n.39).
+
+`publish(draft_id, target="local")` is the lesson_publish tool and `jw lesson publish`. It refuses a
+draft whose last check is not ok or is older than the draft file, then runs
+`make -s lesson-import FILE=<draft file> JSON=1 ENV=` in the jadwigo checkout (`JADWIGO_REPO_DIR`),
+with ENV and MAKEFLAGS dropped from make's environment so nothing steers it to jadwigo-dev, and
+reads the one JSON object it prints: `{file, lesson_id, version, version_id, published,
+assignment_id, play_path, questions}`, refusing one without a play path. Then it checks the lesson
+plays, against the dev servers:
+
+1. `GET <api>/api/health` answers 200;
+2. `POST <api>/api/v1/assignments/<id>/attempts` with `{"mode": "preview"}` answers 201, with a
+   plan of `questions` entries and the version the import published;
+3. `GET <web>/play/<id>` answers 200.
+
+The api is `JW_LOCAL_API_URL`, else `http://127.0.0.1:<API_PORT>`; the web is `JW_LOCAL_WEB_URL`,
+else `http://127.0.0.1:<WEB_PORT>`. The ports are md's (`API_PORT`, `WEB_PORT`, exported by
+`md run`), else the main checkout's, which `.md/repo.toml` and `tools/src/ports.ts` DEV_PORTS
+declare. The web server listens on 127.0.0.1 only (apps/web/vite.config.ts), so it is never
+`localhost`, which is ::1 first on macOS. All four are read from the environment only.
+
+The record is `<draft_id>.publish.json` beside the draft, mode 600: `{draft_id, request (guarded),
+lesson_id, version, assignment_id, play_url, ok, verified, verified_at, target, published_at,
+timings}`, `verified` keyed by check (`api_health`, `attempt_started`, `play_page`), each `{ok,
+status, detail}`, and `ok` that every check is ok: the form the builder's page reads (dl-a38n.48).
+
+Only `local`: jadwigo-dev is the owner's (`make lesson-import FILE=<path> ENV=dev`, which the
+refusal names), and prod is never published from here (owner's decision `dl-diel`).
+"""
+
+from __future__ import annotations
+
+import datetime as dt
+import json
+import os
+import subprocess
+import time
+import urllib.error
+import urllib.request
+from collections.abc import Callable, Mapping
+from pathlib import Path
+from typing import Any
+
+from jw import lesson
+from jw.errors import JwError
+
+TARGETS = ("local", "dev", "prod")
+IMPORT_TARGET = "lesson-import"  # the Makefile target
+# The main checkout's ports: .md/repo.toml [review.ports] and tools/src/ports.ts DEV_PORTS.
+DEV_PORTS = {"WEB_PORT": 5173, "API_PORT": 8730}
+JW_LOCAL_API_URL = "JW_LOCAL_API_URL"
+JW_LOCAL_WEB_URL = "JW_LOCAL_WEB_URL"
+HEALTH_PATH = "/api/health"  # ROUTES.health in packages/contracts
+ATTEMPTS_PATH = "/api/v1/assignments/{id}/attempts"  # ROUTES.startAttempt
+PLAY_PATH = "/play/{id}"
+IMPORT_TIMEOUT_SECS = 120
+HTTP_TIMEOUT_SECS = 5
+
+# What `publish` asks over HTTP: method, url, JSON body or None in; status (None when nothing
+# answered) and the JSON reply (None when it was not JSON) out.
+Http = Callable[[str, str, Any], tuple[int | None, Any]]
+
+
+def _url(name: str, port: str) -> str:
+    configured = os.environ.get(name, "").strip()
+    if configured:
+        return configured.rstrip("/")
+    raw = os.environ.get(port, "").strip()
+    return f"http://127.0.0.1:{raw or DEV_PORTS[port]}"
+
+
+def api_url() -> str:
+    return _url(JW_LOCAL_API_URL, "API_PORT")
+
+
+def web_url() -> str:
+    return _url(JW_LOCAL_WEB_URL, "WEB_PORT")
+
+
+def _http(method: str, url: str, body: Any = None) -> tuple[int | None, Any]:
+    data = None if body is None else json.dumps(body).encode()
+    request = urllib.request.Request(url, data=data, method=method)
+    if data is not None:
+        request.add_header("Content-Type", "application/json")
+    try:
+        with urllib.request.urlopen(request, timeout=HTTP_TIMEOUT_SECS) as reply:  # noqa: S310
+            status, raw = reply.status, reply.read()
+    except urllib.error.HTTPError as exc:
+        status, raw = exc.code, exc.read()
+    except (urllib.error.URLError, OSError):
+        return None, None
+    try:
+        return status, json.loads(raw)
+    except ValueError:
+        return status, None
+
+
+def owner_command(path: Path) -> str:
+    return f"make {IMPORT_TARGET} FILE={path} ENV=dev"
+
+
+def _refuse_target(target: str, path: Path) -> None:
+    if target == "local":
+        return
+    if target == "dev":
+        raise JwError(
+            "publishing to jadwigo-dev is the owner's step",
+            hint=f"The owner runs, from the jadwigo checkout: {owner_command(path)}",
+        )
+    if target == "prod":
+        raise JwError("prod is never published from here", hint="Publish with target local.")
+    raise JwError(f"unknown target {target!r}", hint=f"Use one of {', '.join(TARGETS)}.")
+
+
+def _checked(where: Path, draft_id: str, path: Path) -> None:
+    """A clean check of the draft as it stands, or a JwError saying what to do."""
+    check_path = lesson._check_path(where, draft_id)
+    hint = "Call lesson_check (or lesson_edit) until it answers ok, then publish."
+    try:
+        checked: Any = json.loads(check_path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, ValueError) as exc:
+        raise JwError(f"{draft_id} has no check yet", hint=hint) from exc
+    if not checked.get("ok"):
+        raise JwError(f"{draft_id}'s last check is not ok", hint=hint)
+    if check_path.stat().st_mtime < path.stat().st_mtime:
+        raise JwError(f"{draft_id} changed after its last check", hint=hint)
+
+
+# What would steer make away from the local database: the Makefile imports into jadwigo-dev when
+# ENV is set, and make reads a variable from MAKEFLAGS too. Neither reaches the import.
+MAKE_STEERING = ("ENV", "MAKEFLAGS", "MFLAGS", "GNUMAKEFLAGS")
+
+
+def make_env() -> dict[str, str]:
+    """jw's environment without what would point the import elsewhere (MAKE_STEERING)."""
+    return {k: v for k, v in os.environ.items() if k not in MAKE_STEERING}
+
+
+def _run_make(repo: Path) -> lesson.Runner:
+    def run(argv: list[str]) -> Any:
+        return subprocess.run(
+            argv, cwd=repo, env=make_env(), capture_output=True, text=True,
+            timeout=IMPORT_TIMEOUT_SECS, check=False,
+        )
+
+    return run
+
+
+def _import(path: Path, runner: lesson.Runner | None) -> dict[str, Any]:
+    """`make -s lesson-import FILE=<path> JSON=1 ENV=` in the checkout, and the JSON object it
+    prints. `ENV=` on make's command line beats ENV from the environment or MAKEFLAGS, and the
+    child's environment has neither (`make_env`): a local publish never reaches jadwigo-dev."""
+    repo, _ = lesson.check_script()
+    run = runner or _run_make(repo)
+    argv = ["make", "-s", IMPORT_TARGET, f"FILE={path}", "JSON=1", "ENV="]
+    done = run(argv)
+    lines = [line for line in (done.stdout or "").splitlines() if line.strip().startswith("{")]
+    hint = (
+        f"Is the local database up (`make db-reset` once, then `make dev`)? Run `{' '.join(argv)}` "
+        f"in {repo} to see it."
+    )
+    if done.returncode != 0 or not lines:
+        tail = (done.stderr or done.stdout or "").strip()[-400:]
+        raise JwError(f"the import failed (exit {done.returncode}): {tail}", hint=hint)
+    try:
+        imported: dict[str, Any] = json.loads(lines[-1])
+    except ValueError as exc:
+        raise JwError(f"the import printed no JSON object: {lines[-1][:200]}", hint=hint) from exc
+    missing = [k for k in ("assignment_id", "play_path", "version_id") if not imported.get(k)]
+    play_path = str(imported.get("play_path") or "")
+    if missing or not play_path.startswith("/play/"):
+        raise JwError(
+            f"the import's answer has no {', '.join(missing) or 'play path'}: {lines[-1][:200]}",
+            hint=f"`{' '.join(argv)}` in {repo} prints one object with assignment_id, version_id "
+            "and play_path (/play/<id>); a make that predates its JSON=1 does not.",
+        )
+    return imported
+
+
+def _check(ok: bool, status: int | None, detail: str) -> dict[str, Any]:
+    return {"ok": ok, "status": status, "detail": detail}
+
+
+def _verify(imported: Mapping[str, Any], http: Http) -> dict[str, dict[str, Any]]:
+    """Whether the published lesson plays, one check each, as `<draft_id>.publish.json` writes it
+    and the lesson builder's page reads it (dl-a38n.48): `{api_health, attempt_started,
+    play_page}`, each `{ok, status, detail}`, `status` None when nothing answered."""
+    api, web = api_url(), web_url()
+    assignment = imported["assignment_id"]
+
+    health_url = api + HEALTH_PATH
+    health, _ = http("GET", health_url, None)
+    api_health = _check(health == 200, health, f"GET {health_url} answered {health or 'nothing'}")
+
+    attempts_url = api + ATTEMPTS_PATH.format(id=assignment)
+    started, snapshot = http("POST", attempts_url, {"mode": "preview"})
+    reply = snapshot if isinstance(snapshot, dict) else {}
+    plan = reply.get("plan")
+    planned = len(plan) if isinstance(plan, list) else None
+    version = (reply.get("attempt") or {}).get("lesson_version_id")
+    wrong = []
+    if started != 201:
+        wrong.append(f"POST {attempts_url} answered {started or 'nothing'}, not 201")
+    elif planned != imported.get("questions"):
+        wrong.append(f"the plan has {planned} questions, the import {imported.get('questions')}")
+    if started == 201 and version != imported.get("version_id"):
+        wrong.append(
+            f"the attempt plays version {version}, the import published {imported.get('version_id')}"
+            " (is make dev serving the database the import wrote to?)"
+        )
+    attempt_started = _check(
+        not wrong,
+        started,
+        "; ".join(wrong) or f"a preview attempt started with {planned} questions of version {version}",
+    )
+
+    page_url = web + PLAY_PATH.format(id=assignment)
+    page, _ = http("GET", page_url, None)
+    play_page = _check(page == 200, page, f"GET {page_url} answered {page or 'nothing'}")
+    return {"api_health": api_health, "attempt_started": attempt_started, "play_page": play_page}
+
+
+def publish(
+    draft_id: str,
+    target: str = "local",
+    *,
+    runner: lesson.Runner | None = None,
+    http: Http | None = None,
+    folder: Path | None = None,
+) -> dict[str, Any]:
+    """Publish the checked draft locally and check it plays. Returns the publish record with `ok`
+    (imported and every check passed) and `publish_path`."""
+    started = time.monotonic()
+    where = folder or lesson.drafts_dir()
+    stored = lesson.load_draft(draft_id, where)
+    path = lesson._lesson_path(where, draft_id)
+    _refuse_target(target, path)
+    _checked(where, draft_id, path)
+
+    imported = _import(path, runner)
+    imported_at = time.monotonic()
+    verified = _verify(imported, http or _http)
+    done = time.monotonic()
+    ok = all(c["ok"] for c in verified.values())
+    record = {
+        "draft_id": draft_id,
+        "request": stored.get("request"),
+        "lesson_id": imported.get("lesson_id"),
+        "version": imported.get("version"),
+        "assignment_id": imported.get("assignment_id"),
+        "play_url": web_url() + str(imported.get("play_path")),
+        "ok": ok,
+        "verified": verified,
+        "verified_at": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
+        "target": target,
+        "published_at": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
+        "timings": {
+            "import_s": round(imported_at - started, 2),
+            "verify_s": round(done - imported_at, 2),
+            "total_s": round(done - started, 2),
+        },
+    }
+    publish_path = where / f"{draft_id}.publish.json"
+    lesson._write_json(publish_path, record, mode=0o600)
+    return {**record, "publish_path": str(publish_path)}
