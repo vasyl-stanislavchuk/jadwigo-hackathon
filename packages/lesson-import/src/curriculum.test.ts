@@ -1,7 +1,8 @@
 import { FEATURED_POD_ID } from "@jadwigo/contracts";
+import { catalogue } from "@jadwigo/core";
 import { InMemoryStore } from "@jadwigo/store";
 import { describe, expect, it } from "vitest";
-import { type SeedCatalogue, seedCatalogue } from "./curriculum.ts";
+import { fromCatalogue, type SeedCatalogue, seedCatalogue } from "./curriculum.ts";
 
 /** A made-up catalogue: 2 topics, 3 skills, one with an alias and one with no topic. */
 const CATALOGUE: SeedCatalogue = {
@@ -89,5 +90,30 @@ describe("seedCatalogue", () => {
     ).rejects.toThrow("IX.9");
     // Not even the shared pod was written.
     await expect(store.listSkills(FEATURED_POD_ID)).rejects.toMatchObject({ type: "NotFound" });
+  });
+});
+
+describe("fromCatalogue", () => {
+  it("seeds packages/core's real catalogue: every topic and skill once, each skill under its topic, and a 2nd run changes nothing", async () => {
+    const core = catalogue();
+    const store = new InMemoryStore();
+    const first = await seedCatalogue(store, fromCatalogue(core));
+    expect(first.topics).toBe(core.topics.length);
+    expect([...first.skills].sort()).toEqual(core.skills.map((s) => s.code).sort());
+
+    const topics = await store.putTopics(
+      FEATURED_POD_ID,
+      core.topics.map((t) => ({ ...t, curriculum_id: first.curriculum })),
+    );
+    const topicOf = new Map(topics.map((t) => [t.id, t.code]));
+    const written = new Map(
+      (await store.listSkills(FEATURED_POD_ID)).map((s) => [
+        s.code,
+        s.topic_id === null ? null : (topicOf.get(s.topic_id) ?? "missing"),
+      ]),
+    );
+    for (const skill of core.skills) expect(written.get(skill.code)).toBe(skill.topic_code);
+
+    expect(await seedCatalogue(store, fromCatalogue(core))).toEqual(first);
   });
 });

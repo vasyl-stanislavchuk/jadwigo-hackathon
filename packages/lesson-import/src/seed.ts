@@ -1,9 +1,10 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { catalogue } from "@jadwigo/core";
 import { createPostgresStore } from "@jadwigo/store";
 import { databaseUrl } from "./config.ts";
-import { type SeedCatalogue, seedCatalogue } from "./curriculum.ts";
+import { fromCatalogue, seedCatalogue } from "./curriculum.ts";
 import { importLessonFile } from "./import.ts";
 import { importExamples } from "./playground/import.ts";
 
@@ -30,14 +31,8 @@ const examples = await importExamples(store);
 for (const [language, rows] of Object.entries(examples)) {
   process.stdout.write(`playground examples: ${rows.length} in ${language}\n`);
 }
-// packages/core's catalogue() (dl-liwi.15) is not merged yet: that lane's merge replaces this one
-// line, reading catalogue() into a SeedCatalogue. Until then the curriculum is not seeded.
-const catalogue: SeedCatalogue | undefined = undefined;
-if (catalogue === undefined) {
-  process.stdout.write("curriculum: no catalogue yet (dl-liwi.15), not seeded\n");
-} else {
-  const seeded = await seedCatalogue(store, catalogue);
-  process.stdout.write(
-    `curriculum ${seeded.curriculum}: ${seeded.topics} topics, ${seeded.skills.length} skills\n`,
-  );
-}
+// The shared catalogue from packages/core (dl-liwi.15), written once per key (dl-e8ov.5.71).
+const seeded = await seedCatalogue(store, fromCatalogue(catalogue()));
+process.stdout.write(
+  `curriculum ${seeded.curriculum}: ${seeded.topics} topics, ${seeded.skills.length} skills\n`,
+);

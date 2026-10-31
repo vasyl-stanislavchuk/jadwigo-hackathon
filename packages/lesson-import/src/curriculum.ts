@@ -1,4 +1,5 @@
 import type { CurriculumId, SkillId, Topic } from "@jadwigo/contracts";
+import type { Catalogue } from "@jadwigo/core";
 import type { NewCurriculum, NewSkill, Store } from "@jadwigo/store";
 import { FEATURED_POD } from "./ids.ts";
 
@@ -11,6 +12,18 @@ export interface SeedCatalogue {
   readonly curriculum: NewCurriculum;
   readonly topics: readonly Pick<Topic, "code" | "area" | "text">[];
   readonly skills: readonly (Omit<NewSkill, "topic_id"> & { readonly topic: string | null })[];
+}
+
+/**
+ * packages/core's `catalogue()` in the shape the writer takes: each skill's `topic_code` becomes
+ * its `topic`. Nothing else changes, so a row core parsed is the row the seed writes.
+ */
+export function fromCatalogue(catalogue: Catalogue): SeedCatalogue {
+  return {
+    curriculum: catalogue.curriculum,
+    topics: catalogue.topics,
+    skills: catalogue.skills.map(({ topic_code, ...skill }) => ({ ...skill, topic: topic_code })),
+  };
 }
 
 /** What a seed wrote: the curriculum's id, and its topics and skills, each counted once. */
