@@ -196,3 +196,18 @@ def test_a_loose_bank_env_is_a_fail_line_with_its_fix_not_a_crash(
     assert "can be read by other users" in settings["detail"]
     assert settings["fix"].startswith(f"chmod 600 {env}")
     assert _check(printed, 5)["status"] == doctor.OK
+
+
+def test_the_mcp_tool_returns_the_verb_s_json(
+    machine: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import anyio
+
+    from jw.commands.mcp import build_server
+
+    monkeypatch.setattr(doctor, "http_status", lambda url: 200)
+    monkeypatch.setattr(doctor.bank_client, "search", _search("x"))
+    verb = json.loads(CliRunner().invoke(main, ["doctor", "--json"]).output)
+    result = anyio.run(build_server().call_tool, "doctor", {"language": "pl"})
+    assert not result.is_error
+    assert result.structured_content == verb
