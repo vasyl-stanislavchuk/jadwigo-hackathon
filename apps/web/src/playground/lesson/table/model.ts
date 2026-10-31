@@ -7,7 +7,7 @@
 
 import { type Finding, type FindingLevel, worstLevel } from "@jadwigo/lesson-import/file";
 import type { FamilySpec } from "@jadwigo/lesson-kit";
-import type { PartSpecs } from "../adapter.ts";
+import { type PartSpecs, twinRow } from "../adapter.ts";
 import { rungsOf } from "../rungs.ts";
 
 export interface StepRow {
@@ -45,7 +45,9 @@ export function stepRows(parts: readonly PartSpecs[], findings: readonly Finding
   return parts.flatMap(({ part, steps }) =>
     steps.map((step) => {
       n += 1;
-      const mine = findings.filter((f) => f.step_id === step.step_id);
+      // A twin's findings (`<step>t`, dl-a38n.47) count on its step's row: it is the step's rung 4.
+      const twin = step.kind === "question" ? twinRow(step)?.step_id : undefined;
+      const mine = findings.filter((f) => f.step_id === step.step_id || f.step_id === twin);
       const common = {
         n,
         step_id: step.step_id,

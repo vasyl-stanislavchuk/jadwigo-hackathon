@@ -31,10 +31,13 @@ import {
   heartbeatFile,
   type Intent,
   isDraftId,
+  otherLiveChannel,
+  pidAlive,
   REPLY_KINDS,
   type Reply,
   type ReplyKind,
   readAsks,
+  readHeartbeat,
   readRows,
   repliesFile,
   sessionFile,
@@ -323,6 +326,53 @@ function wakeOnAsks(dir: string): () => Promise<void> {
     });
 }
 
+/** What one channel process knows about itself across polls. */
+export type ChannelState = {
+  pid: number;
+  session: string;
+  loaded: boolean | null;
+  /** When this channel last wrote the heartbeat, or null before its first. */
+  lastBeat: string | null;
+  standingDown: boolean;
+};
+
+/**
+ * One turn of the loop. While another live channel's heartbeat is newer than this one's own last
+ * write, it stands down: it neither consumes nor writes the heartbeat, and says so once
+ * (dl-a38n.38). Otherwise it writes its heartbeat, then sends what is waiting.
+ */
+export async function tick(
+  dir: string,
+  state: ChannelState,
+  notify: Notify,
+  now: Date = new Date(),
+  alive: (pid: number) => boolean = pidAlive,
+): Promise<"served" | "stood_down" | "silent"> {
+  const other = otherLiveChannel(readHeartbeat(dir), state.pid, now, alive);
+  if (other && (state.lastBeat === null || other.at > state.lastBeat)) {
+    if (!state.standingDown) {
+      console.error(
+        `${SERVER_NAME}: channel pid ${other.pid} (session ${other.session_id || "unnamed"}) serves ` +
+          `${dir}; this one stands down so a comment reaches one session. End that session to use this one.`,
+      );
+    }
+    state.standingDown = true;
+    return "stood_down";
+  }
+  state.standingDown = false;
+  // Every claude on this machine starts this server, since it is registered for the user. One
+  // without the flag says so only when make builder started it; any other stays silent, so it
+  // never overwrites the builder session's heartbeat.
+  if (state.loaded !== false || state.session) {
+    const at = now.toISOString();
+    writeHeartbeat(dir, { at, pid: state.pid, session_id: state.session, loaded: state.loaded });
+    state.lastBeat = at;
+  }
+  if (state.loaded === false) return "silent";
+  await pollOnce(dir, notify);
+  return "served";
+}
+
 async function main() {
   const dir = draftsDir();
   const loaded = channelLoaded(process.ppid, psProc);
@@ -333,23 +383,21 @@ async function main() {
     );
   }
   const server = createServer(dir, () => sessionTranscript(dir, builderSession()));
+  // A session that ended leaves no reader on stdio; the channel goes with it, never an orphan.
+  server.onclose = () => process.exit(0);
+  process.stdin.on("end", () => process.exit(0));
   await server.connect(new StdioServerTransport());
   const sleep = wakeOnAsks(dir);
+  const state: ChannelState = {
+    pid: process.pid,
+    session: builderSession(),
+    loaded,
+    lastBeat: null,
+    standingDown: false,
+  };
   for (;;) {
     try {
-      // Every claude on this machine starts this server, since it is registered for the user. One
-      // without the flag says so only when make builder started it; any other stays silent, so
-      // it never overwrites the builder session's heartbeat.
-      const session = builderSession();
-      if (loaded !== false || session) {
-        writeHeartbeat(dir, {
-          at: new Date().toISOString(),
-          pid: process.pid,
-          session_id: session,
-          loaded,
-        });
-      }
-      if (loaded !== false) await pollOnce(dir, (n) => server.notification(n));
+      await tick(dir, state, (n) => server.notification(n));
     } catch (error) {
       // A failed poll is a poll; the next is at most 5 seconds away.
       console.error(`${SERVER_NAME}: poll failed: ${error}`);
