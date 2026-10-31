@@ -91,7 +91,12 @@ DRAFT_ID_RE = re.compile(r"^draft_[0-9a-f]{12}$")
 PROPOSED = "proposed:"
 CHECK_TIMEOUT_SECS = 120
 STATE_DIR = ".jw"  # jw's own record of each draft, under the drafts directory
-IMPORT_TARGET = "lesson-import"  # the Makefile target that imports a lesson file
+# What a clean check says comes next (dl-a38n.39): publishing, by the tool, never by hand.
+NEXT = {
+    "call": "lesson_publish",
+    "says": "Publish it with lesson_publish(draft_id): it imports the lesson into the local "
+    "database `make dev` serves, checks that it plays, and returns its play_url.",
+}
 
 # What `check` runs: argv in, an object with `returncode`, `stdout` and `stderr` out.
 Runner = Callable[[list[str]], Any]
@@ -398,12 +403,14 @@ def _make_dirs(where: Path) -> None:
     (where / STATE_DIR).mkdir(mode=0o700, exist_ok=True)
 
 
-def _write_json(path: Path, value: Any) -> None:
+def _write_json(path: Path, value: Any, mode: int | None = None) -> None:
     """Write `value` whole: to a sibling first, then renamed over `path`, so a reader watching the
-    directory never sees half a file."""
+    directory never sees half a file. `mode` sets the file's permissions before it is renamed."""
     path.parent.mkdir(parents=True, exist_ok=True)
     part = path.with_name(f".{path.name}.part")
     part.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    if mode is not None:
+        part.chmod(mode)
     os.replace(part, path)
 
 
@@ -860,8 +867,8 @@ def check(
     `twin`, `boost_by_mistake`, a rung the copy leaves empty, and `changes` to a copied part.
     Every step's words are sent on each call. `<draft_id>.json` is rewritten with them first, as
     far as they go, and `<draft_id>.check.json` after. Returns `{"ok": true, "card", "findings",
-    "lesson_file", "draft_path", "import_command", "play_path", "lesson_id", "questions"}`, the
-    card's `next` saying the import comes before the play path, or `{"ok": false, "findings",
+    "lesson_file", "draft_path", "play_path", "lesson_id", "questions"}`, the card's `next`
+    saying to publish with lesson_publish (`jw.lesson_publish`), or `{"ok": false, "findings",
     "errors": [{"step_id", "message"}], "lesson_file", "draft_path"}`. A missing twin or rung is
     an error here (rule `words`), before check.ts runs. Both carry `render` (`render_of`): the
     page's findings from its last draw, or None.
@@ -913,32 +920,15 @@ def check(
         return {"ok": False, "findings": findings, "errors": answer.get("errors") or [], **paths,
                 "render": render_of(where, draft_id)}
     play_path = answer.get("play_path")
-    import_step = _import_step(path, play_path)
     return {
         "ok": True,
-        "card": {**card({**stored, "questions": [steps[s] for s in known]}), "next": import_step},
+        "card": {**card({**stored, "questions": [steps[s] for s in known]}), "next": NEXT},
         "findings": findings,
         "render": render_of(where, draft_id),
         **paths,
-        "import_command": import_step["command"],
         "play_path": play_path,
         "lesson_id": answer.get("lesson_id"),
         "questions": answer.get("questions"),
-    }
-
-
-def _import_step(path: Path, play_path: Any) -> dict[str, Any]:
-    """What comes after a clean check: the import into jadwigo-dev, then the play path, which
-    exists only once the import has run (dl-e8ov.5.38.13)."""
-    repo = settings_keys.repo_dir()
-    command = f"make {IMPORT_TARGET} FILE={path} ENV=dev"
-    return {
-        "command": command,
-        "run_in": str(repo) if repo else None,
-        "then_play": play_path,
-        "says": f"Import the lesson first: {command}, from the jadwigo checkout"
-        + (f" ({repo})" if repo else "")
-        + f". Only then does it play at {play_path}; before the import that path does not exist.",
     }
 
 

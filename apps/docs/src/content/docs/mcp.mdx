@@ -104,8 +104,12 @@ agent writes only what the bank does not have.
    `data`, `key`, `hints`, `worked`) needs a `why`, and it is recorded in `based_on.changes`. The
    answer is that step's findings and card. A later `lesson_check` rebuilds every step from the
    words it is sent, so it replaces these edits.
-5. **Import, then play.** The card's `next` names the import: `make lesson-import
-   FILE=<lesson_file> ENV=dev` in the jadwigo checkout. The `play_path` exists only after it runs.
+5. **Publish, then play.** Once a check answers `ok`, call [`lesson_publish`](/mcp/lesson_publish/)
+   with the `draft_id`, without asking. It imports the lesson into the local database `make dev`
+   serves. Then it checks that the api answers, that a preview attempt starts with every question,
+   and that the play page answers. It returns the absolute `play_url` for the parent. It publishes
+   only locally: for jadwigo-dev it refuses and names the owner's command, and the live app is
+   never published from here.
 
 ### Lesson-ready questions
 
@@ -144,7 +148,9 @@ returns:
 `lesson_edit` rewrites both too. The lesson builder's page writes a third file when it draws the
 draft, `<draft_id>.render.json`: what it found wrong on the page. `lesson_check`, `lesson_edit`
 and `lesson_show` return its findings as `render`, with `rendered_at`, and `stale` when the page
-drew an older version. `render` is null when no page has drawn the draft.
+drew an older version. `render` is null when no page has drawn the draft. `lesson_publish` writes
+`<draft_id>.publish.json`, readable by its owner only: the same record it returns, with the
+`play_url` and what was verified.
 
 A finding has a `step_id`, a `path` into the lesson file, a `level` (`error` or `warn`), a `rule`,
 its `text` and a `fix`. `ok` is true while no finding is an error. The live lesson builder reads
