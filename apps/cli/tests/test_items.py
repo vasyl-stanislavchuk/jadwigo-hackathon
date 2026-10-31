@@ -16,7 +16,7 @@ from click.testing import CliRunner
 from jw import items, settings_keys
 from jw.cli import main as cli
 from jw.errors import JwError
-from jw.settings_keys import JW_KHAN_CONVERTED
+from jw.settings_keys import JADWIGO_BANK_DIR, JW_KHAN_CONVERTED
 
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "items" / "converted.json"
 
@@ -217,3 +217,110 @@ def test_the_verb_without_json_prints_a_summary() -> None:
 
     assert result.exit_code == 0, result.output
     assert result.output.startswith("item_a1  enter / production  (pl)")
+
+
+# ------------------------------------- dl-a38n.32.9: only a lesson-ready item loads ----
+
+READY = Path(__file__).resolve().parent / "fixtures" / "ready" / "converted-pl.json"
+LEFT_OUT = {
+    "fxr2": "renders wrong: render-raw-tex",
+    "fxr3": "renders wrong: key-grades",
+    "fxr4": "renders wrong: render-picture-missing",
+    "fxr5": "not checked",
+}
+
+
+@pytest.fixture
+def planted(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """The planted fixture copied into tmp_path, and an empty bank checkout (JADWIGO_BANK_DIR)
+    beside it, so a test may write its refusals/."""
+    path = _write(tmp_path / "ready" / "converted-pl.json", json.loads(READY.read_text("utf-8")))
+    monkeypatch.setenv(JW_KHAN_CONVERTED, str(path))
+    monkeypatch.setenv(JADWIGO_BANK_DIR, str(tmp_path / "bank"))
+    return path
+
+
+def test_a_stamped_plays_item_loads(planted: Path) -> None:
+    view = items.load_item("fxr1")
+
+    assert view["family"] == "choose"
+    assert view["question"]["key"] == {"correct": ["o1", "o3"]}
+
+
+@pytest.mark.parametrize(("item_id", "reason"), sorted(LEFT_OUT.items()))
+def test_an_item_that_is_not_lesson_ready_is_refused_with_its_reason(
+    planted: Path, item_id: str, reason: str
+) -> None:
+    with pytest.raises(items.NotReady) as caught:
+        items.load_item(item_id)
+
+    assert caught.value.reason == reason
+    assert str(caught.value) == f"item {item_id} is not lesson-ready: {reason}"
+
+
+@pytest.mark.parametrize(
+    ("status", "reason"),
+    [
+        (None, "not checked"),
+        ({"kind": "plays", "rules_version": "fixture-1"}, "not checked"),
+        ({"kind": "something new"}, "not checked"),
+        ({"kind": "flagged", "by": "lead", "reason": "the picture shows 5 dots", "on": "2026-10-30"},
+         "flagged: the picture shows 5 dots"),
+        ({"kind": "waiting", "issue": "dl-x", "reason": "its parts mix families"},
+         "its parts mix families"),
+    ],
+)
+def test_every_other_status_says_why(
+    planted: Path, status: dict[str, Any] | None, reason: str
+) -> None:
+    payload = json.loads(planted.read_text("utf-8"))
+    if status is None:
+        del payload["items"][0]["status"]
+    else:
+        payload["items"][0]["status"] = status
+    _write(planted, payload)
+    items._read.cache_clear()
+
+    with pytest.raises(items.NotReady) as caught:
+        items.load_item("fxr1")
+
+    assert caught.value.reason == reason
+
+
+def test_a_flag_in_the_refusals_file_holds_before_the_next_conversion(planted: Path) -> None:
+    assert items.load_item("fxr1")["id"] == "fxr1"
+    flag = {"id": "fxr1", "by": "lead", "reason": "the options repeat", "on": "2026-10-30"}
+    refusals = planted.parent.parent / "bank" / "refusals"
+    _write(refusals / "pl.json", {"shapes": [], "flags": [flag]})
+
+    with pytest.raises(items.NotReady) as caught:
+        items.load_item("fxr1")
+
+    assert caught.value.reason == "flagged: the options repeat"
+    assert items.refusals_path("pl") == refusals / "pl.json"
+    # The English file is another language's: it does not pull the Polish variant.
+    _write(refusals / "pl.json", {"shapes": [], "flags": []})
+    _write(refusals / "en.json", {"shapes": [], "flags": [flag]})
+    assert items.load_item("fxr1")["id"] == "fxr1"
+
+
+def test_with_no_bank_checkout_there_is_no_refusals_file(
+    planted: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv(JADWIGO_BANK_DIR)
+
+    assert items.refusals_path("pl") is None
+    assert items.refusals("pl") == {"shapes": [], "flags": []}
+    assert items.load_item("fxr1")["id"] == "fxr1"
+
+
+def test_items_keyed_by_id_are_refused_naming_the_shape(planted: Path) -> None:
+    payload = json.loads(planted.read_text("utf-8"))
+    payload["items"] = {item["id"]: item for item in payload["items"]}
+    _write(planted, payload)
+    items._read.cache_clear()
+
+    with pytest.raises(JwError) as caught:
+        items.load_item("fxr1")
+
+    assert "an object keyed by id, not a list" in str(caught.value)

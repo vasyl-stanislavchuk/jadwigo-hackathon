@@ -1,0 +1,466 @@
+{
+  "generated_by": "tests/fixtures/ready (hand-written for dl-a38n.32.9: the planted fixture of wave dl-a38n.32-1; our own small bank, no Khan text)",
+  "licence_note": "Fixture licence note: our own small bank, written for these tests.",
+  "items": [
+    {
+      "id": "fxr1",
+      "family": "choose",
+      "problem_type": "Liczby parzyste",
+      "grade": 3,
+      "language": "pl",
+      "planted": "ready: compiles and grades",
+      "question": {
+        "text": "Zaznacz liczby parzyste.",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxr1",
+        "family": "choose",
+        "phase": "practice",
+        "question_type": "multi_select",
+        "say": "Zaznacz liczby parzyste.",
+        "data": {
+          "stem": {
+            "text": "Zaznacz liczby parzyste."
+          },
+          "options": [
+            {
+              "id": "o1",
+              "content": {
+                "kind": "text",
+                "text": "2"
+              }
+            },
+            {
+              "id": "o2",
+              "content": {
+                "kind": "text",
+                "text": "3"
+              }
+            },
+            {
+              "id": "o3",
+              "content": {
+                "kind": "text",
+                "text": "4"
+              }
+            },
+            {
+              "id": "o4",
+              "content": {
+                "kind": "text",
+                "text": "7"
+              }
+            }
+          ],
+          "select": "many",
+          "layout": "list"
+        },
+        "key": {
+          "correct": ["o1", "o3"]
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "Liczba parzysta dzieli się przez 2."
+            },
+            {
+              "text": "Parzyste są 2 i 4."
+            }
+          ],
+          "worked": ["2 : 2 = 1 i 4 : 2 = 2, więc 2 i 4 są parzyste."]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxr1",
+        "url": "https://fixture.invalid/jw/items/fxr1",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-30"
+      },
+      "exercise": "liczby-parzyste",
+      "exercise_title": "Liczby parzyste",
+      "lesson_title": "Parzyste i nieparzyste",
+      "unit_title": "Liczby",
+      "order": "0001",
+      "source_url": "https://fixture.invalid/jw/items/fxr1",
+      "status": {
+        "kind": "plays",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
+      }
+    },
+    {
+      "id": "fxr2",
+      "family": "choose",
+      "problem_type": "Liczby parzyste",
+      "grade": 3,
+      "language": "pl",
+      "planted": "inline TeX in an option",
+      "question": {
+        "text": "Zaznacz liczby parzyste.",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxr2",
+        "family": "choose",
+        "phase": "practice",
+        "question_type": "multi_select",
+        "say": "Zaznacz liczby parzyste.",
+        "data": {
+          "stem": {
+            "text": "Zaznacz liczby parzyste."
+          },
+          "options": [
+            {
+              "id": "o1",
+              "content": {
+                "kind": "text",
+                "text": "$2+2$"
+              }
+            },
+            {
+              "id": "o2",
+              "content": {
+                "kind": "text",
+                "text": "3"
+              }
+            },
+            {
+              "id": "o3",
+              "content": {
+                "kind": "text",
+                "text": "4"
+              }
+            },
+            {
+              "id": "o4",
+              "content": {
+                "kind": "text",
+                "text": "7"
+              }
+            }
+          ],
+          "select": "many",
+          "layout": "list"
+        },
+        "key": {
+          "correct": ["o1", "o3"]
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "Liczba parzysta dzieli się przez 2."
+            },
+            {
+              "text": "Parzyste są 2 i 4."
+            }
+          ],
+          "worked": ["2 : 2 = 1 i 4 : 2 = 2, więc 2 i 4 są parzyste."]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxr2",
+        "url": "https://fixture.invalid/jw/items/fxr2",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-30"
+      },
+      "exercise": "liczby-parzyste",
+      "exercise_title": "Liczby parzyste",
+      "lesson_title": "Parzyste i nieparzyste",
+      "unit_title": "Liczby",
+      "order": "0002",
+      "source_url": "https://fixture.invalid/jw/items/fxr2",
+      "status": {
+        "kind": "refused",
+        "rule": "render-raw-tex",
+        "text": "An option shows TeX as raw text.",
+        "fix": "Render the option's inline TeX.",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
+      }
+    },
+    {
+      "id": "fxr3",
+      "family": "choose",
+      "problem_type": "Liczby parzyste",
+      "grade": 3,
+      "language": "pl",
+      "planted": "a key naming an option that is not there",
+      "question": {
+        "text": "Zaznacz liczby parzyste.",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxr3",
+        "family": "choose",
+        "phase": "practice",
+        "question_type": "multi_select",
+        "say": "Zaznacz liczby parzyste.",
+        "data": {
+          "stem": {
+            "text": "Zaznacz liczby parzyste."
+          },
+          "options": [
+            {
+              "id": "o1",
+              "content": {
+                "kind": "text",
+                "text": "2"
+              }
+            },
+            {
+              "id": "o2",
+              "content": {
+                "kind": "text",
+                "text": "3"
+              }
+            },
+            {
+              "id": "o3",
+              "content": {
+                "kind": "text",
+                "text": "4"
+              }
+            },
+            {
+              "id": "o4",
+              "content": {
+                "kind": "text",
+                "text": "7"
+              }
+            }
+          ],
+          "select": "many",
+          "layout": "list"
+        },
+        "key": {
+          "correct": ["o1", "o9"]
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "Liczba parzysta dzieli się przez 2."
+            },
+            {
+              "text": "Parzyste są 2 i 4."
+            }
+          ],
+          "worked": ["2 : 2 = 1 i 4 : 2 = 2, więc 2 i 4 są parzyste."]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxr3",
+        "url": "https://fixture.invalid/jw/items/fxr3",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-30"
+      },
+      "exercise": "liczby-parzyste",
+      "exercise_title": "Liczby parzyste",
+      "lesson_title": "Parzyste i nieparzyste",
+      "unit_title": "Liczby",
+      "order": "0003",
+      "source_url": "https://fixture.invalid/jw/items/fxr3",
+      "status": {
+        "kind": "refused",
+        "rule": "key-grades",
+        "text": "The key names o9, which is not an option.",
+        "fix": "Key only option ids the item has.",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
+      }
+    },
+    {
+      "id": "fxr4",
+      "family": "choose",
+      "problem_type": "Liczby parzyste",
+      "grade": 3,
+      "language": "pl",
+      "planted": "a picture no media URL serves",
+      "question": {
+        "text": "Zaznacz liczby parzyste.",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxr4",
+        "family": "choose",
+        "phase": "practice",
+        "question_type": "multi_select",
+        "say": "Zaznacz liczby parzyste.",
+        "data": {
+          "stem": {
+            "text": "Zaznacz liczby parzyste.",
+            "pictures": [
+              {
+                "src": "fixture-no-such-picture",
+                "alt": "Cztery kropki w rzędzie.",
+                "width": 200,
+                "height": 60
+              }
+            ]
+          },
+          "options": [
+            {
+              "id": "o1",
+              "content": {
+                "kind": "text",
+                "text": "2"
+              }
+            },
+            {
+              "id": "o2",
+              "content": {
+                "kind": "text",
+                "text": "3"
+              }
+            },
+            {
+              "id": "o3",
+              "content": {
+                "kind": "text",
+                "text": "4"
+              }
+            },
+            {
+              "id": "o4",
+              "content": {
+                "kind": "text",
+                "text": "7"
+              }
+            }
+          ],
+          "select": "many",
+          "layout": "list"
+        },
+        "key": {
+          "correct": ["o1", "o3"]
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "Liczba parzysta dzieli się przez 2."
+            },
+            {
+              "text": "Parzyste są 2 i 4."
+            }
+          ],
+          "worked": ["2 : 2 = 1 i 4 : 2 = 2, więc 2 i 4 są parzyste."]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxr4",
+        "url": "https://fixture.invalid/jw/items/fxr4",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-30"
+      },
+      "exercise": "liczby-parzyste",
+      "exercise_title": "Liczby parzyste",
+      "lesson_title": "Parzyste i nieparzyste",
+      "unit_title": "Liczby",
+      "order": "0004",
+      "source_url": "https://fixture.invalid/jw/items/fxr4",
+      "status": {
+        "kind": "refused",
+        "rule": "render-picture-missing",
+        "text": "A picture does not load.",
+        "fix": "Serve the picture's media, or drop it.",
+        "rules_version": "fixture-1",
+        "checked_at": "2026-10-30T09:00:00Z"
+      }
+    },
+    {
+      "id": "fxr5",
+      "family": "choose",
+      "problem_type": "Liczby parzyste",
+      "grade": 3,
+      "language": "pl",
+      "planted": "plays, never checked",
+      "question": {
+        "text": "Zaznacz liczby parzyste.",
+        "pictures": []
+      },
+      "spec": {
+        "id": "fxr5",
+        "family": "choose",
+        "phase": "practice",
+        "question_type": "multi_select",
+        "say": "Zaznacz liczby parzyste.",
+        "data": {
+          "stem": {
+            "text": "Zaznacz liczby parzyste."
+          },
+          "options": [
+            {
+              "id": "o1",
+              "content": {
+                "kind": "text",
+                "text": "2"
+              }
+            },
+            {
+              "id": "o2",
+              "content": {
+                "kind": "text",
+                "text": "3"
+              }
+            },
+            {
+              "id": "o3",
+              "content": {
+                "kind": "text",
+                "text": "4"
+              }
+            },
+            {
+              "id": "o4",
+              "content": {
+                "kind": "text",
+                "text": "7"
+              }
+            }
+          ],
+          "select": "many",
+          "layout": "list"
+        },
+        "key": {
+          "correct": ["o1", "o3"]
+        },
+        "help": {
+          "hints": [
+            {
+              "text": "Liczba parzysta dzieli się przez 2."
+            },
+            {
+              "text": "Parzyste są 2 i 4."
+            }
+          ],
+          "worked": ["2 : 2 = 1 i 4 : 2 = 2, więc 2 i 4 są parzyste."]
+        }
+      },
+      "credit": {
+        "source": "bank",
+        "ref": "fxr5",
+        "url": "https://fixture.invalid/jw/items/fxr5",
+        "licence": "Fixture licence: our own small bank, written for these tests",
+        "original_lang": "pl",
+        "checked": "2026-10-30"
+      },
+      "exercise": "liczby-parzyste",
+      "exercise_title": "Liczby parzyste",
+      "lesson_title": "Parzyste i nieparzyste",
+      "unit_title": "Liczby",
+      "order": "0005",
+      "source_url": "https://fixture.invalid/jw/items/fxr5",
+      "status": {
+        "kind": "plays"
+      }
+    }
+  ]
+}
