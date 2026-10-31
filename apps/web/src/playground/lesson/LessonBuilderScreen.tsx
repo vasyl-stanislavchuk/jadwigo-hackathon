@@ -11,10 +11,10 @@
  */
 import type { Category, Language } from "@jadwigo/copy";
 import type { Finding } from "@jadwigo/lesson-import/file";
-import { type ReactElement, useEffect, useState } from "react";
+import { Fragment, type ReactElement, useEffect, useState } from "react";
 import { Label } from "../tool/label.tsx";
 import { Switch } from "../tool/switch.tsx";
-import { lessonFileToSpecs } from "./adapter.ts";
+import { lessonFileToSpecs, twinRow } from "./adapter.ts";
 import {
   BUILDER_DRAFT,
   BUILDER_HELLO,
@@ -23,7 +23,7 @@ import {
   readDraft,
 } from "./draft.ts";
 import { postRender, renderReport } from "./render/report.ts";
-import { SkippedCard, StepCard } from "./StepCard.tsx";
+import { SkippedCard, StepCard, TwinCard } from "./StepCard.tsx";
 import { ActivitySlot, CommentsSlot } from "./slots.ts";
 import { FindingList } from "./table/FindingList.tsx";
 import { findingsOf } from "./table/findings.ts";
@@ -124,8 +124,13 @@ function LessonDraft({
   const category = categoryOf(file.category);
   const parts = lessonFileToSpecs(file, undefined, skipped);
   const findings = [...findingsOf(message.check), ...findingsOf(message.render)];
+  // Each drawn step, and its twin as a row of its own (dl-a38n.47): every one reports its render.
   const drawnIds = parts.flatMap((p) =>
-    p.steps.flatMap((s) => (s.kind === "question" ? [s.step_id] : [])),
+    p.steps.flatMap((s) => {
+      if (s.kind !== "question") return [];
+      const twin = twinRow(s);
+      return twin === null ? [s.step_id] : [s.step_id, twin.step_id];
+    }),
   );
   const onRendered =
     report === null
@@ -151,29 +156,47 @@ function LessonDraft({
           )}
           {steps.map((step) => {
             n += 1;
-            return step.kind === "question" ? (
-              <StepCard
-                key={step.step_id}
-                draft_id={draft_id}
-                n={n}
-                path={step.path}
-                spec={step.spec}
-                source={step.source}
-                previous={before.get(step.step_id)}
-                onRendered={onRendered}
-                findings={of(step.step_id)}
-                showKey={showKey}
-                language={language}
-                category={category}
-              />
-            ) : (
-              <SkippedCard
-                key={step.step_id}
-                draft_id={draft_id}
-                step_id={step.step_id}
-                reason={step.reason}
-                findings={of(step.step_id)}
-              />
+            if (step.kind !== "question")
+              return (
+                <SkippedCard
+                  key={step.step_id}
+                  draft_id={draft_id}
+                  step_id={step.step_id}
+                  reason={step.reason}
+                  findings={of(step.step_id)}
+                />
+              );
+            const twin = twinRow(step);
+            return (
+              <Fragment key={step.step_id}>
+                <StepCard
+                  draft_id={draft_id}
+                  n={n}
+                  path={step.path}
+                  spec={step.spec}
+                  source={step.source}
+                  previous={before.get(step.step_id)}
+                  onRendered={onRendered}
+                  findings={of(step.step_id)}
+                  showKey={showKey}
+                  language={language}
+                  category={category}
+                />
+                {twin !== null && (
+                  <TwinCard
+                    n={n}
+                    draft_id={draft_id}
+                    step_id={twin.step_id}
+                    path={twin.path}
+                    spec={twin.spec}
+                    findings={of(twin.step_id)}
+                    showKey={showKey}
+                    language={language}
+                    category={category}
+                    onRendered={onRendered}
+                  />
+                )}
+              </Fragment>
             );
           })}
         </section>

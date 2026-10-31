@@ -11,8 +11,22 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { claudeBin, claudeConfigDir, claudeProfile, draftsDir, sessionEnv } from "./config.ts";
-import { type BuilderSession, sessionFile } from "./drafts.ts";
-import { CHANNELS_FLAG, claudeBelow, loadsThisChannel, psTable, SERVER_NAME } from "./flag.ts";
+import {
+  type BuilderSession,
+  type Heartbeat,
+  otherLiveChannel,
+  pidAlive,
+  readHeartbeat,
+  sessionFile,
+} from "./drafts.ts";
+import {
+  CHANNELS_FLAG,
+  claudeBelow,
+  loadsThisChannel,
+  psProc,
+  psTable,
+  SERVER_NAME,
+} from "./flag.ts";
 
 // The equals form: the flag takes many values, and as two tokens it would take what follows too.
 export const CHANNEL_ARG = `${CHANNELS_FLAG}=server:${SERVER_NAME}`;
@@ -158,6 +172,32 @@ function registration(bin: string, name: string): Promise<Registration> {
   });
 }
 
+/**
+ * The refusal when another builder session already serves this drafts directory, or "": two
+ * sessions there split the page's comments between them (dl-a38n.38). `parentOf` finds the
+ * channel's claude, which is the process to end.
+ */
+export function busyRefusal(
+  dir: string,
+  beat: Heartbeat | null,
+  now: Date,
+  alive: (pid: number) => boolean = pidAlive,
+  parentOf: (pid: number) => number | null = (pid) => psProc(pid)?.ppid ?? null,
+): string {
+  const other = otherLiveChannel(beat, process.pid, now, alive);
+  if (!other) return "";
+  const ago = Math.max(0, Math.round((now.getTime() - Date.parse(other.at)) / 1000));
+  const claude = parentOf(other.pid);
+  return [
+    `make builder: another builder session already serves ${dir}:`,
+    `  channel pid ${other.pid}, session ${other.session_id || "unnamed"}, heartbeat ${ago} s ago.`,
+    "Two sessions on one drafts directory split the page's comments between them.",
+    claude
+      ? `End that session first: /exit in its terminal, or kill ${claude} (its claude), then run make builder again.`
+      : "End that session first (/exit in its terminal), then run make builder again.",
+  ].join("\n");
+}
+
 async function main() {
   const bin = claudeBin();
   const [builder, jadwigo] = await Promise.all([
@@ -173,6 +213,11 @@ async function main() {
   if (hints.note) console.error(hints.note);
 
   const dir = draftsDir();
+  const busy = busyRefusal(dir, readHeartbeat(dir), new Date());
+  if (busy) {
+    console.error(busy);
+    process.exit(1);
+  }
   const sessionId = randomUUID();
   const path = writeSession(dir, sessionRecord(sessionId, REPO, claudeConfigDir(), new Date()));
   console.error(`make builder: session ${sessionId}, written to ${path}`);

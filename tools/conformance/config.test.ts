@@ -39,7 +39,12 @@ describe("the conformance runner's settings", () => {
     const pl = { id: "a", language: "pl" };
     const en = { id: "b", language: "en" };
     const none = { id: "c" };
-    expect(itemsInLanguage([pl], undefined)).toEqual({ lang: "pl", items: [pl], left_out: 0 });
+    expect(itemsInLanguage([pl], undefined)).toEqual({
+      lang: "pl",
+      items: [pl],
+      left_out: 0,
+      unnamed: 0,
+    });
     expect(itemsInLanguage([pl, en], undefined)).toEqual({
       error: "the items mix languages (en, pl): pass --lang to check one",
     });
@@ -48,10 +53,27 @@ describe("the conformance runner's settings", () => {
     });
     expect(itemsInLanguage([pl, en, none], "en")).toEqual({
       lang: "en",
-      items: [en, { id: "c", language: "en" }],
+      items: [en],
       left_out: 1,
+      unnamed: 1,
     });
     expect(itemsInLanguage([pl], "uk")).toEqual({ error: "--lang takes pl or en, not uk" });
+  });
+
+  it("never draws an item in a language it does not name (dl-a38n.32.22)", () => {
+    const pl = { id: "a", language: "pl" };
+    const none = { id: "c" };
+    // Polish items run with --lang en: none is checked, and the old sidecar is left alone.
+    expect(itemsInLanguage([pl, pl], "en")).toEqual({
+      error: "no item names en (0 name no language): nothing to check with --lang en",
+    });
+    expect(itemsInLanguage([none], "pl")).toEqual({
+      error: "no item names pl (1 name no language): nothing to check with --lang pl",
+    });
+    const run = itemsInLanguage([pl, none], "pl");
+    expect(run).toEqual({ lang: "pl", items: [pl], left_out: 0, unnamed: 1 });
+    // The item is served as the file holds it: the runner never writes a language onto it.
+    expect("error" in run ? [] : run.items).toEqual([{ id: "a", language: "pl" }]);
     expect(itemsInLanguage([{ id: "d", language: "uk" }], undefined)).toEqual({
       error: "the items are in uk, which the app does not speak",
     });

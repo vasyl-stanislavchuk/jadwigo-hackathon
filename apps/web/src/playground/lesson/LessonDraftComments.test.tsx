@@ -37,7 +37,10 @@ describe("comments follow the draft on the page", () => {
     };
     render(<LessonBuilderScreen initial={message} />);
     const steps = slots.props.filter((p) => p.step_id !== undefined);
-    expect(new Set(steps.map((p) => p.step_id))).toEqual(new Set(["s02", "s05", "s06", "s07"]));
+    // Each step and its twin, drawn as a row of its own (dl-a38n.47).
+    expect(new Set(steps.map((p) => p.step_id))).toEqual(
+      new Set(["s02", "s02t", "s05", "s05t", "s06", "s06t", "s07", "s07t"]),
+    );
     expect(slots.props.every((p) => p.draft_id === "older")).toBe(true);
     expect(slots.props.some((p) => p.step_id === undefined)).toBe(true);
   });

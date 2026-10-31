@@ -7,6 +7,7 @@ import { claudeProfile, sessionEnv } from "./config.ts";
 import { claudeBelow, type Proc } from "./flag.ts";
 import {
   argsOf,
+  busyRefusal,
   CHANNEL_ARG,
   claudeArgs,
   jadwigoLine,
@@ -191,5 +192,37 @@ describe("the session's profile and environment (config.ts)", () => {
       JADWIGO_DRAFTS_DIR: "/home/someone/x",
     });
     expect(env.ANTHROPIC_API_KEY).toBe("sk-test");
+  });
+});
+
+describe("one builder session per drafts directory", () => {
+  const now = new Date("2026-10-31T10:00:10.000Z");
+  const beat = { at: "2026-10-31T10:00:06.000Z", pid: 21391, session_id: "s-old", loaded: true };
+
+  it("refuses while another live session's heartbeat is fresh, naming it and how to end it", () => {
+    const text = busyRefusal(
+      "/d",
+      beat,
+      now,
+      () => true,
+      () => 21380,
+    );
+    expect(text).toBe(
+      [
+        "make builder: another builder session already serves /d:",
+        "  channel pid 21391, session s-old, heartbeat 4 s ago.",
+        "Two sessions on one drafts directory split the page's comments between them.",
+        "End that session first: /exit in its terminal, or kill 21380 (its claude), then run make builder again.",
+      ].join("\n"),
+    );
+  });
+
+  it("starts over a stale beat, a dead pid or a session without the channel", () => {
+    expect(busyRefusal("/d", { ...beat, at: "2026-10-31T09:59:50.000Z" }, now, () => true)).toBe(
+      "",
+    );
+    expect(busyRefusal("/d", beat, now, () => false)).toBe("");
+    expect(busyRefusal("/d", { ...beat, loaded: false }, now, () => true)).toBe("");
+    expect(busyRefusal("/d", null, now)).toBe("");
   });
 });
