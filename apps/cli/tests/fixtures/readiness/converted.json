@@ -8,7 +8,7 @@
       "status": {
         "kind": "waiting",
         "reason": "refused: fxr4: a question in several parts whose parts mix families waits",
-        "issue": "dl-fixture-wait"
+        "issue": "dl-fixturewait"
       }
     },
     { "id": "fxr5", "language": "en", "status": { "kind": "plays" } },

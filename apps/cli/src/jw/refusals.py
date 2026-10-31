@@ -81,16 +81,16 @@ def refused_path(converted: Path) -> Path:
     return converted.with_name(f"{converted.stem}.refused.json")
 
 
-_ITEM_PREFIX = re.compile(r"^refused:\s*[\w.-]+:\s*")
-_NOT_PULLED = re.compile(r"^\S+://\S+ was not pulled\b")
+_ITEM_PREFIX = re.compile(r"^refused:\s*(?:[\w.-]+:\s+)?")
+_NOT_PULLED = re.compile(r"^\S+ was not pulled\b")
 _SET_STOPPED = re.compile(r"^set \S+ stopped\b")
 _TWIN = re.compile(r"^(\w+) differs from (\w+) \(([^)]*)\)")
-_BEAD = re.compile(r"^[a-z]+-[a-z0-9]+(\.\d+)*$")
+BEAD = re.compile(r"^[a-z]+-[a-z0-9]+(\.\d+)*$")
 
 
 def cause_of(reason: str) -> str:
     """The cause a converter refusal names, with what differs per item taken out, so the items one
-    fix re-admits count together: the `refused: <id>: ` prefix goes, a picture URL that was not
+    fix re-admits count together: the `refused: <id>: ` (or bare `refused: `) prefix goes, a picture URL that was not
     pulled is "a picture was not pulled", a stopped set is "set stopped", and a twin difference is
     "pl differs from en (family)" when the family differs, else "(numbers, pictures)". Applying
     it twice changes nothing, so a cause readiness.json already wrote stays as it is."""
@@ -265,7 +265,7 @@ def classify(language: str) -> tuple[Path, list[Verdict]]:
             continue
         seen.add(item_id)
         reason = str(entry.get("reason") or "refused by the converter")
-        issue = reason if _BEAD.match(reason) else None
+        issue = reason if BEAD.match(reason) else None
         out.append(
             Verdict(
                 item_id,

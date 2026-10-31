@@ -401,11 +401,18 @@ def _readiness_text(report: dict[str, Any]) -> str:
         total = sum(r["items"] for r in readmitted)
         lines.append(f"  re-admitted since the previous run: {total}")
         lines += [f"    {r['items']:>5}  {r['cause']}" for r in readmitted]
+    warnings = report["warnings"]
+    if warnings:
+        lines.append(f"  warnings, by kind: {sum(w['items'] for w in warnings)}")
+        lines += [f"    {w['items']:>5}  {w['kind']}" for w in warnings]
     sets = report["sets"]
     if sets:
+        skipped = sets.get("skipped_no_ready")
+        ids = skipped if isinstance(skipped, list) else []
+        count = len(ids) if isinstance(skipped, list) else skipped
         lines.append(
-            f"  sets: {sets.get('indexed')} indexed, {sets.get('skipped_no_ready')} skipped "
-            "with no ready item"
+            f"  sets: {sets.get('indexed')} indexed, {count} skipped with no ready item"
+            + (f": {', '.join(ids)}" if ids else "")
         )
     return "\n".join(lines)
 
