@@ -1575,7 +1575,7 @@
     "kind": "accuracy",
     "status": "proposed",
     "can_do": null,
-    "aliases": [],
+    "aliases": ["fixture.even"],
     "prerequisites": [],
     "source": "bank:enrichment"
   },
