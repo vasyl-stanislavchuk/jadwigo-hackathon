@@ -258,7 +258,7 @@ def bank(checkout: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Ite
 
 def test_a_flag_holds_in_the_next_draft_with_no_re_run(bank: None) -> None:
     draft = ["lesson", "draft", "zadania z liczb parzystych", "--grade", "3"]
-    draft += ["--topic", "liczby parzyste", "--no-names", "--json"]
+    draft += ["--topic", "liczby parzyste", "--no-names", "--verbose", "--json"]
 
     before = json.loads(CliRunner().invoke(main, draft).output)
     _run("flag", "fxr1", "the options repeat")

@@ -69,19 +69,27 @@ Call `lesson_draft` with:
 The result keeps the draft under `draft_id`. Read, before you write anything:
 
 - `plays_as_copied` and `copy_errors`: whether the lesson already plays as the bank has it.
-- `left_out`: each set or question not used, and why. You will show it to the parent.
+- `left_out`: how many sets or questions were not used, by cause, with a few examples. You will
+  show it to the parent.
+- `setup_warning`, when there is one: this machine's copy of the bank is out of step. Tell the
+  parent, as the tool words it, and go on.
 - `rule_settled: false`: the draw rule is provisional. Say so on the card, once.
-- Per question (`step_id`, `q1` to `q6`):
-  - `say`, `prompt`, `data`, `key`: the question as the child sees it, and its answer.
-  - `copied_help` and `rungs`: the bank's hints and worked lines, and which rung each one fills
-    (`look`, `boost`, `almost`, `worked`). A rung that names a hint is filled. Leave it alone.
-  - `you_write`: exactly what is left for you on this question. Nothing else.
-  - `mistake_classes`: the classes a `boost_by_mistake` card may be keyed by, or `null`.
+- Per question (`step_id`, `q1` onwards):
+  - `say`, `data`, `key`: the question as the child sees it, and its answer.
+  - `twin_source`: where its twin came from, when the bank had one.
+  - `you_write`: exactly what is left for you on this question. Nothing else. When it is empty,
+    the question needs nothing from you.
+  - `copied_help` and `rungs`, only when `you_write` names a rung: the bank's hints and worked
+    lines, and which rung each one fills (`look`, `boost`, `almost`, `worked`). A rung that
+    names a hint is filled. Leave it alone.
+  - `mistake_classes` and `cards_to_write`: the classes a `boost_by_mistake` card may be keyed
+    by, and those still without a card.
 
 ## 4. Write each question's words
 
-Take the questions one by one. For each, read its `say`, `data`, `key` and `copied_help` again,
-then write what its `you_write` lists, in Polish. No two questions get the same text.
+Take the questions one by one. For each, read its `say`, `data`, `key` and, when it is there,
+`copied_help` again, then write what its `you_write` lists, in Polish. No two questions get the
+same text.
 
 ### The twin (`twin`)
 
@@ -175,10 +183,12 @@ times with nothing new to try, stop and show the parent the error as the tool ga
 
 ## 7. Show the parent the card
 
-`ok: true` returns the `card`. Show it in the parent's language, per question: the prompt, the
-answer, each rung, the twin with its answer, the source and licence, and any change with its why.
-Then `left_out` with each reason, and one line that the draw rule is still provisional. Ask
-whether anything should change. A change the parent asks for goes back through steps 4 to 6.
+`ok: true` returns the `card`, its text already plain. Show it in the parent's language, per
+question: the prompt, the answer, the twin with its answer and where it came from, the source,
+and any change with its why; then the licence once. Then the draft's `left_out`, by cause, and one
+line that the draw rule is still provisional. When the parent wants to see each hint, call
+`lesson_check(draft_id, {}, full: true)`: the card then carries each rung. Ask whether anything
+should change. A change the parent asks for goes back through steps 4 to 6.
 
 ## 8. Publish and hand over the link
 

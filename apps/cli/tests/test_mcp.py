@@ -223,7 +223,7 @@ def test_a_client_with_no_shell_drafts_fills_and_checks_a_lesson_by_draft_id(
     assert checked["lesson_file"] == checked["draft_path"] == draft["draft_path"]
     assert json.loads((tmp_path / "drafts" / f"{draft['draft_id']}.check.json").read_text())["ok"]
     assert checked["card"]["next"]["call"] == "lesson_publish" and "import_command" not in checked
-    assert all(q["rungs"]["look"] and q["twin"]["key"] for q in checked["card"]["questions"])
+    assert all(q["prompt"] and q["twin"]["key"] for q in checked["card"]["questions"])
     assert "no draft draft_000000000000" in unknown
 
 
