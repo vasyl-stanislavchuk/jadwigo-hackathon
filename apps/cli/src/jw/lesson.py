@@ -1380,7 +1380,8 @@ _TEX_FRAC_DIGITS = re.compile(r"\\[dt]?frac\s*(\d)\s*(\d)")
 _TEX_COLOR_ARG = re.compile(r"\\(?:textcolor|color)\s*\{[^{}]*\}")
 _TEX_SQRT = re.compile(r"\\sqrt\s*\{([^{}]*)\}")
 _TEX_SCRIPT = re.compile(r"([_^])\{([^{}]*)\}")
-_TEX_WRAP = re.compile(r"\\([A-Za-z]+)\s*\{([^{}]*)\}")
+# Not a fraction or a root: `\dfrac{1}{\blue{4}}` waits until its colour goes, then reads 1/4.
+_TEX_WRAP = re.compile(r"\\(?!(?:[dt]?frac|sqrt)(?![A-Za-z]))([A-Za-z]+)\s*\{([^{}]*)\}")
 _TEX_WORD = re.compile(r"\\([A-Za-z]+)")
 # Commands that only style what follows (size, colour, spacing, text mode): they go. Any other
 # command keeps its name, so a card never silently loses a word it does not know.
