@@ -1,0 +1,73 @@
+---
+// The featured lessons as a moving row of cards (dl-5ssh.4.3): one click opens a lesson in the app,
+// with no login. The row drifts sideways and stops while a pointer or the keyboard is on it; under
+// reduced motion, or with too few cards to fill a loop, it stands still and scrolls by hand.
+import { featuredLessons, playUrl } from "../lib/featured.ts";
+
+interface Props {
+  play: string;
+}
+
+const { play } = Astro.props;
+const { lessons, from } = await featuredLessons();
+console.warn(`Featured lessons for the gallery: ${lessons.length}, from the ${from}`);
+// A short list repeats until a track holds 6 cards, and the loop needs the track twice. Every repeat
+// is hidden from screen readers and the tab order, so each lesson is read and reached once.
+const moving = lessons.length >= 2;
+const perTrack = moving ? Math.max(6, lessons.length) : lessons.length;
+const cards = Array.from({ length: perTrack }, (_, i) => ({ i, repeat: i >= lessons.length }));
+const tracks = moving ? [false, true] : [false];
+---
+
+<div class:list={["gallery", { moving }]}>
+  <div class="belt">
+    {
+      tracks.map((copy) => (
+        <ul class="track" aria-hidden={copy ? "true" : undefined}>
+          {cards.map(({ i, repeat }) => {
+            const l = lessons[i % lessons.length];
+            const hidden = copy || repeat;
+            return (
+              l && (
+                <li class:list={["card", `tint-${i % 3}`, { repeat }]} aria-hidden={!copy && repeat ? "true" : undefined}>
+                  <a href={playUrl(l)} tabindex={hidden ? -1 : undefined}>
+                    <span class="title">{l.title}</span>
+                    <span class="go">{play} →</span>
+                  </a>
+                </li>
+              )
+            );
+          })}
+        </ul>
+      ))
+    }
+  </div>
+</div>
+
+<style>
+  .gallery { margin-top: 1.75rem; overflow-x: auto; padding: 0.5rem 0 1rem; }
+  .belt { display: flex; width: max-content; }
+  .track { display: flex; gap: 1rem; list-style: none; margin: 0; padding: 0 1rem 0 0; }
+  .card a {
+    display: flex; flex-direction: column; justify-content: space-between; gap: 1.5rem;
+    width: 16rem; min-height: 10rem; padding: 1.25rem; border-radius: var(--jw-radius-card);
+    border: 1px solid var(--jw-line); background: var(--jw-card); color: var(--jw-ink);
+    text-decoration: none; box-shadow: 0 4px 0 var(--jw-line);
+  }
+  .card a:hover { border-color: var(--jw-pick-edge); }
+  .tint-0 a { background: var(--jw-pick); }
+  .tint-1 a { background: var(--jw-act-quiet); }
+  .tint-2 a { background: var(--jw-card); }
+  .title { font-size: 1.2rem; font-weight: 700; line-height: 1.25; }
+  .go { font-weight: 700; color: var(--jw-brand-go); }
+
+  .moving { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); }
+  .moving .belt { animation: drift 40s linear infinite; }
+  .moving:hover .belt, .moving:focus-within .belt { animation-play-state: paused; }
+  @keyframes drift { to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) {
+    .moving { overflow-x: auto; mask-image: none; }
+    .moving .belt { animation: none; }
+    .moving .track[aria-hidden], .moving .repeat { display: none; }
+  }
+</style>
