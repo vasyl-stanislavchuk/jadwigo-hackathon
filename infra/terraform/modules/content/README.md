@@ -34,7 +34,7 @@ Keyed by source first, so a second library sits beside Khan under its own prefix
 
 The api role's grant is in `modules/app/bank.tf`: `s3:GetObject` on `questions/*` and `khan/converted/*`.
 It has no `s3:ListBucket`, so a key that is not there answers 403, not 404. The bank's search function
-gets nothing. The `sergii` profile, which the sync runs as, keeps its full access.
+gets nothing. The `jadwigo` profile, which the sync runs as, keeps its full access.
 
 Terraform owns no object in the bucket. `tools/khan/sync.py up` in jadwigo-bank fills it.
 `docs/runbooks/content-bucket.md` is the apply, the upload, the checks and the undo.

@@ -21,7 +21,7 @@ bank root has written the parameter, a plan here stops with
 1. Both branches are merged: `git -C ~/projects/jadwigo-bank log --oneline -1 -- infra/ssm.tf` and
    `git log --oneline -1 -- infra/terraform/modules/app/bank.tf` each print a `dl-5ssh.57` commit.
 2. The profile reaches the account:
-   `aws --profile sergii sts get-caller-identity --query Account --output text` prints `843109108289`.
+   `aws --profile jadwigo sts get-caller-identity --query Account --output text` prints `843109108289`.
 3. The bank's bundle is the one the live version runs, so its plan carries no function change. In
    `~/projects/jadwigo-bank/infra`, `ls build/service` lists the bundle. Rebuild it only if a plan
    in step 1 below shows `aws_lambda_function.search` changing and you mean to ship a new version.
@@ -69,7 +69,7 @@ bank root has written the parameter, a plan here stops with
    ```sh
    umask 077
    openssl rand -base64 32 | tr -d '\n' > bank-read.token
-   aws --profile sergii ssm put-parameter --region eu-central-1 --name /jadwigo/prod/bank-read-token \
+   aws --profile jadwigo ssm put-parameter --region eu-central-1 --name /jadwigo/prod/bank-read-token \
      --type SecureString --overwrite --value file://bank-read.token
    ```
 
@@ -84,7 +84,7 @@ bank root has written the parameter, a plan here stops with
 - The grant is in place:
 
   ```sh
-  aws --profile sergii iam simulate-principal-policy \
+  aws --profile jadwigo iam simulate-principal-policy \
     --policy-source-arn arn:aws:iam::843109108289:role/jadwigo-api-prod \
     --action-names lambda:InvokeFunction \
     --resource-arns arn:aws:lambda:eu-central-1:843109108289:function:jadwigo-bank-search:live \
@@ -93,7 +93,7 @@ bank root has written the parameter, a plan here stops with
 
   prints `allowed`.
 - The function carries both names:
-  `aws --profile sergii lambda get-function-configuration --region eu-central-1 --function-name jadwigo-api-prod --query 'Environment.Variables' --output json`
+  `aws --profile jadwigo lambda get-function-configuration --region eu-central-1 --function-name jadwigo-api-prod --query 'Environment.Variables' --output json`
   shows `BANK_SEARCH_ALIAS_ARN` ending in `:jadwigo-bank-search:live` and `BANK_READ_TOKEN_PARAM`.
 - The route answers a need through the alias: a `POST https://app.jadwigo.pl/api/v1/question-searches`
   with a need body and the read token, as `apps/api`'s route reads it (`dl-n9fr.33`), returns 200 with

@@ -1,7 +1,7 @@
 # dl-n9fr: wave 5, lane bucket, dl-n9fr.43.2: the content bucket module in the monorepo root
 
 - **Landed:** `16aad98` on `lane/content-bucket`, with this note in the commit after it; not pushed. `modules/content` creates the private bucket, CloudFront over `khan/media/` only, and the 2 SSM parameters.
-- **Plan ran** read-only through `sergii`: `Plan: 16 to add, 2 to change, 0 to destroy.` This lane's part is 12 to add and 1 to change; the rest is main's unapplied work.
+- **Plan ran** read-only through `jadwigo`: `Plan: 16 to add, 2 to change, 0 to destroy.` This lane's part is 12 to add and 1 to change; the rest is main's unapplied work.
 - **Main's unapplied work in the same plan:** 3 route keys (the 2 review routes and `GET /api/v1/assignments/{id}/attempts`), their 3 stage throttles, and the `api-concurrency` alarm. Applying this root applies those too.
 - **Checks pass:** `make -C infra fmt validate`, tflint 0.65.0, trivy 0.76.1 with CI's ignore list (0 findings), `check-bootstrap.ts` and `check-infra-routes.ts`.
 - **Apply needs the alarm address:** no checkout has `infra/terraform/owner.auto.tfvars`, so the plan warns `Check block assertion failed`. State holds no subscription today, since the plan destroys nothing.
@@ -60,8 +60,8 @@ From the repo root once the branch is merged, with `owner.auto.tfvars` in place:
 
 ```sh
 make -C infra init
-AWS_PROFILE=sergii mise exec -- terraform -chdir=infra/terraform plan -var-file=environments/prod.tfvars -out=content.tfplan
-AWS_PROFILE=sergii mise exec -- terraform -chdir=infra/terraform apply content.tfplan
+AWS_PROFILE=jadwigo mise exec -- terraform -chdir=infra/terraform plan -var-file=environments/prod.tfvars -out=content.tfplan
+AWS_PROFILE=jadwigo mise exec -- terraform -chdir=infra/terraform apply content.tfplan
 ```
 
 Expect `Apply complete! Resources: 16 added, 2 changed, 0 destroyed`. Then follow the sync in the runbook's Steps 4, which reads `JADWIGO_KHAN_BUCKET` from `/jadwigo/bank/content-bucket`.
