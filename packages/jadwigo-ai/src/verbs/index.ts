@@ -136,13 +136,13 @@ export function createVerbs(deps: VerbDeps): Verbs {
     run: (context, input) => {
       const key = `${context.run_id} ${context.call_id}`;
       const known = done.get(key);
-      if (known !== undefined) return known.then(structuredClone);
+      if (known !== undefined) return known.then((e) => structuredClone(e));
       // Async, so a refusal thrown before the body's first await rejects like any other.
       const effect = (async () => body(context, input))();
       done.set(key, effect);
       // A refusal is not remembered: the model may correct the input under a new call id anyway.
       effect.catch(() => done.delete(key));
-      return effect.then(structuredClone);
+      return effect.then((e) => structuredClone(e));
     },
   });
   return {

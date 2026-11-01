@@ -46,8 +46,10 @@ flowchart LR
   web --> contracts
   web --> copy
   web --> core
+  web --> jadwigo_ai
   web --> lesson_import
   web --> lesson_kit
+  web --> store
   web --> ui
   site --> config
   site --> contracts
