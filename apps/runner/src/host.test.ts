@@ -156,7 +156,7 @@ describe("the step host", () => {
     expect(report.failed).toMatchObject([{ run_id: run, attempt: 1, read_ct: 1 }]);
     expect(report.dead_letters).toBe(2);
     expect(t.warnings).toEqual([
-      `agent_step: step for ${run} attempt 1 (msg ${report.failed[0]?.msg_id}, read 1) threw Error: the model is down`,
+      `agent_step: step for ${run} attempt 1 (msg ${report.failed[0]?.msg_id}, read 1) threw Error`,
       "agent_step_dlq: 2 steps dead-lettered",
     ]);
   });

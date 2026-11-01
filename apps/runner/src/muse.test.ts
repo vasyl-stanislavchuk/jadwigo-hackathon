@@ -41,10 +41,20 @@ function recorder() {
 }
 
 describe("the host's model", () => {
-  it("sends runStep's private-tier call to the contributor model by default", async () => {
+  it("answers a contributor-tier request with the contributor model", async () => {
     const r = recorder();
-    await expect(liveMuse(CONTRIBUTOR, r.runtime).respond(REQUEST)).rejects.toThrow();
+    await expect(
+      liveMuse(CONTRIBUTOR, r.runtime).respond({ ...REQUEST, tier: "contributor" }),
+    ).rejects.toThrow();
     expect(r.bodies[0]?.["model"]).toBe(CONTRIBUTOR_MODEL);
+  });
+
+  it("never answers a private-tier request with the contributor model", async () => {
+    const r = recorder();
+    await expect(liveMuse(CONTRIBUTOR, r.runtime).respond(REQUEST)).rejects.toBeInstanceOf(
+      MuseRefused,
+    );
+    expect(r.bodies).toEqual([]);
   });
 
   it("refuses an untagged call in GuardedMuse, before anything is sent", async () => {

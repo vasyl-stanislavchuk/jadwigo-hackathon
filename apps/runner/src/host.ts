@@ -134,11 +134,14 @@ function reportStuck(stuck: Stuck, warn: (line: string) => void): void {
 }
 
 /**
- * A thrown step by its ids and the error's name and first line: a driver's or the model's message,
- * never the step's payload. 200 characters at most, so a long one cannot carry a prompt.
+ * A thrown step by its ids and the error's name, with its `type` when it has one (`MuseRefused`,
+ * `StoreError`): never its message, which may quote a prompt, a row or a URL.
  */
 function failure(error: unknown, step: FailedStep): string {
-  const name = error instanceof Error ? error.name : "Error";
-  const message = (error instanceof Error ? error.message : String(error)).split("\n")[0] ?? "";
-  return `agent_step: step for ${step.run_id} attempt ${step.attempt} (msg ${step.msg_id}, read ${step.read_ct}) threw ${name}: ${message.slice(0, 200)}`;
+  const name = error instanceof Error ? error.name : typeof error;
+  const type =
+    typeof error === "object" && error !== null && "type" in error && typeof error.type === "string"
+      ? ` (${error.type})`
+      : "";
+  return `agent_step: step for ${step.run_id} attempt ${step.attempt} (msg ${step.msg_id}, read ${step.read_ct}) threw ${name}${type}`;
 }

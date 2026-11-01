@@ -13,7 +13,7 @@ const warn = (line: string) => console.warn(line);
 
 const host = createHost(async () => {
   const [url, muse] = await Promise.all([runnerDatabaseUrl(), museConfig()]);
-  return postgresEngineHost(url, liveMuse(muse, realRuntime), warn);
+  return postgresEngineHost(url, liveMuse(muse, realRuntime), warn, muse.tier);
 });
 
 export const handler = createRunnerHandler(host, warn);
