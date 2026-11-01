@@ -51,50 +51,43 @@ function Question({
   const clock = browserClock;
   return (
     <LessonFrame.Provider value={frame}>
-      {/* The lesson region speaks the lesson's language, which may differ from the screens'
-          (dl-9t2o.3): a screen reader reads an English question in English on a Polish page. */}
-      <div
-        className="contents"
-        data-lesson-region
-        {...(player.lessonLanguage === null ? {} : { lang: player.lessonLanguage })}
-      >
-        <StepFrame key={question.seq} stepId={spec.id}>
-          <FamilyView
-            // A new question is a new view: nothing typed or placed carries over.
-            key={question.seq}
-            mode={ViewMode.Play}
-            spec={spec as never}
-            language={language}
-            category={CATEGORY}
-            clock={clock}
-            live={live}
-            attemptNo={state.attemptNo}
-            feedback={state.feedback}
-            workedSolution={state.workedSolution}
-            onCommit={(c) => player.commit(c.value, c.t1)}
-            around={{
-              checking: state.phase === "sending",
-              moveOn: {
-                enabled: live,
-                press: press(clock, (at) => {
-                  if (live) player.skip(at);
-                }),
-              },
-              ladder: {
-                help: withMedia(state.help),
-                ask:
-                  state.help === null || state.help.more
-                    ? { enabled: live, press: press(clock, () => player.askHelp()) }
-                    : null,
-                refused: state.helpRefused,
-              },
-              next:
-                state.phase === "feedback" ? { press: press(clock, () => player.next()) } : null,
-              progress: progressOf(state),
-            }}
-          />
-        </StepFrame>
-      </div>
+      {/* The question's own text speaks the lesson's language, which may differ from the
+          screens' (dl-9t2o.3); the controls keep the page's (dl-uukj.38). */}
+      <StepFrame key={question.seq} stepId={spec.id} lessonLanguage={player.lessonLanguage}>
+        <FamilyView
+          // A new question is a new view: nothing typed or placed carries over.
+          key={question.seq}
+          mode={ViewMode.Play}
+          spec={spec as never}
+          language={language}
+          category={CATEGORY}
+          clock={clock}
+          live={live}
+          attemptNo={state.attemptNo}
+          feedback={state.feedback}
+          workedSolution={state.workedSolution}
+          onCommit={(c) => player.commit(c.value, c.t1)}
+          around={{
+            checking: state.phase === "sending",
+            moveOn: {
+              enabled: live,
+              press: press(clock, (at) => {
+                if (live) player.skip(at);
+              }),
+            },
+            ladder: {
+              help: withMedia(state.help),
+              ask:
+                state.help === null || state.help.more
+                  ? { enabled: live, press: press(clock, () => player.askHelp()) }
+                  : null,
+              refused: state.helpRefused,
+            },
+            next: state.phase === "feedback" ? { press: press(clock, () => player.next()) } : null,
+            progress: progressOf(state),
+          }}
+        />
+      </StepFrame>
     </LessonFrame.Provider>
   );
 }
