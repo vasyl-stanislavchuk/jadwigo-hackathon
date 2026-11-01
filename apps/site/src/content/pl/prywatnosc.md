@@ -47,7 +47,8 @@ odpowiedzi i imię dziecka, żeby przygotować lekcję albo podsumowanie.
 ## Asystent AI i modele Meta
 
 Asystent AI Jadwigo działa na modelach AI firmy Meta. Gdy rodzic pisze do asystenta, wysyłamy do
-firmy Meta wiadomości rodzica i dane dziecka, których asystent potrzebuje: imię, cele, odpowiedzi i błędy.
+firmy Meta wiadomości rodzica i dane dziecka, których asystent potrzebuje: imię, cele, postępy, odpowiedzi, błędy
+i przerobione lekcje.
 Meta przetwarza je na własnych zasadach. W samej lekcji, którą dziecko przerabia, nie ma jego
 imienia.
 

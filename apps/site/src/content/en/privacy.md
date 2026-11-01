@@ -47,8 +47,8 @@ answers and first name to prepare it.
 ## The AI assistant and Meta's models
 
 Jadwigo's AI assistant runs on AI models made by Meta. When you write to the assistant, we send Meta
-your messages and the data about your child the assistant needs: first name, goals, answers and
-mistakes. Meta processes them under Meta's own terms. The lesson your child works through doesn't
+your messages and the data about your child that the assistant needs: first name, goals, progress, answers,
+mistakes and the lessons your child has worked through. Meta processes them under Meta's own terms. The lesson your child works through doesn't
 contain your child's name.
 
 ## Who processes the data
