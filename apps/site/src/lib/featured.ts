@@ -44,14 +44,17 @@ export function assertLanguage(lessons: FeaturedLesson[], lang: FeaturedLesson["
     );
 }
 
-/** The lessons a page in `lang` shows: the featured list in its language, checked, with the source logged. */
+/**
+ * The lessons a page in `lang` shows: the featured list filtered to its language, with the source
+ * logged. The filter is the guarantee: a lesson in another language is left out of the page.
+ * Gallery.astro's assertLanguage guards the cards, on the list a page hands it.
+ */
 export async function pageLessons(
   lang: FeaturedLesson["language"],
   get: (url: string) => Promise<Response> = fetch,
 ): Promise<FeaturedLesson[]> {
   const { lessons, from } = await featuredLessons(get);
   const mine = lessonsIn(lessons, lang);
-  assertLanguage(mine, lang);
   console.warn(`Featured ${lang} lessons: ${mine.length} of ${lessons.length}, from the ${from}`);
   return mine;
 }
