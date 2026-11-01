@@ -806,5 +806,13 @@
   "chat_edit_step": "Change this step",
   "chat_edit_prompt": "What should change in this step, and why?",
   "chat_edit_send": "Send the change",
-  "chat_edit_cancel": "Cancel"
+  "chat_edit_cancel": "Cancel",
+  "chat_rate_ask": "How did it go?",
+  "chat_rate_good": "Good",
+  "chat_rate_bad": "Not great",
+  "chat_rate_retry": "Try again",
+  "chat_rate_missing": "What was missing?",
+  "chat_rate_send": "Send the rating",
+  "chat_rate_thanks": "Thank you, your rating is saved.",
+  "chat_rate_failed": "Your rating wasn't saved. Try again."
 }

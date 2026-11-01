@@ -585,5 +585,13 @@
   "chat_edit_step": true,
   "chat_edit_prompt": true,
   "chat_edit_send": true,
-  "chat_edit_cancel": true
+  "chat_edit_cancel": true,
+  "chat_rate_ask": false,
+  "chat_rate_good": false,
+  "chat_rate_bad": false,
+  "chat_rate_retry": false,
+  "chat_rate_missing": false,
+  "chat_rate_send": false,
+  "chat_rate_thanks": false,
+  "chat_rate_failed": false
 }

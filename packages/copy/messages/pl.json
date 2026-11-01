@@ -826,5 +826,13 @@
   "chat_edit_step": "Zmień ten krok",
   "chat_edit_prompt": "Co zmienić w tym kroku i dlaczego?",
   "chat_edit_send": "Wyślij zmianę",
-  "chat_edit_cancel": "Anuluj"
+  "chat_edit_cancel": "Anuluj",
+  "chat_rate_ask": "Jak poszło?",
+  "chat_rate_good": "Dobrze",
+  "chat_rate_bad": "Słabo",
+  "chat_rate_retry": "Spróbuj jeszcze raz",
+  "chat_rate_missing": "Czego zabrakło?",
+  "chat_rate_send": "Wyślij ocenę",
+  "chat_rate_thanks": "Dziękujemy, ocena jest zapisana.",
+  "chat_rate_failed": "Nie udało się zapisać oceny. Spróbuj jeszcze raz."
 }
