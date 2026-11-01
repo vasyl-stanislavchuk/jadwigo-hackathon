@@ -57,24 +57,19 @@ function useViewportHeight(): number | null {
 
 type PaneName = "chat" | "lesson";
 
-interface Drawn {
-  key: string | null;
-  file: unknown;
-  /** The lesson file drawn before this one, or null on the first. */
-  previous: unknown;
-}
-
 /**
- * The steps the latest revision changed against the lesson this page drew before it (dl-z5ja.30).
- * The page remembers that one itself, since the fold keeps only each turn's highest revision, so a
- * reload starts with nothing highlighted.
+ * The steps the latest revision changed (dl-z5ja.30): against the revision before it in the same
+ * turn (`RunView.previous_lesson`, dl-z5ja.68), else against the turn before's lesson. Read from
+ * the log, so a reload highlights the same steps the live page did.
  */
-function useChangedSteps(turns: readonly Turn[]): ReadonlySet<string> {
-  const key = lessonKey(turns);
-  const file = lessonOf(turns)?.lesson_file ?? null;
-  const [drawn, setDrawn] = useState<Drawn>({ key, file, previous: null });
-  if (drawn.key !== key) setDrawn({ key, file, previous: drawn.file });
-  return useMemo(() => changedSteps(drawn.previous, drawn.file), [drawn]);
+function changedOf(turns: readonly Turn[]): ReadonlySet<string> {
+  for (let i = turns.length - 1; i >= 0; i -= 1) {
+    const view = turns[i]?.view;
+    if (!view?.lesson) continue;
+    const before = view.previous_lesson ?? lessonOf(turns.slice(0, i));
+    return changedSteps(before?.lesson_file ?? null, view.lesson.lesson_file);
+  }
+  return new Set();
 }
 
 /** The 2 panes for a conversation's state: what the tests draw from the golden logs. */
@@ -94,7 +89,7 @@ function ChatView({
   onNew?: () => void;
 }): ReactElement {
   const turns = turnsOf(state);
-  const changed = useChangedSteps(turns);
+  const changed = changedOf(turns);
   return (
     <ChatLayout
       language={language}

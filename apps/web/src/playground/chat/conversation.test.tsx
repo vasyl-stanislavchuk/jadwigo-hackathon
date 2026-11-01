@@ -193,19 +193,27 @@ describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
     });
   }
 
-  it("a reload highlights nothing; a revision that lands live marks only the step it changed", async () => {
+  it("a revision that lands live marks only the step it changed, and a reload marks it again", async () => {
     const events = eventsOf("happy-turn");
     const t = fakeTransport(events);
     render(<ChatScreen transport={t.transport} />);
     expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    // Revisions 1 and 2 hold the same steps, so nothing is marked yet.
     expect(document.querySelector("[data-changed]")).toBeNull();
-    await act(async () => t.push([thirdRevision(events)]));
+    const third = thirdRevision(events);
+    await act(async () => t.push([third]));
     expect(screen.getByText("Wersja 3")).toBeTruthy();
-    const marked = [...document.querySelectorAll("[data-changed]")];
-    expect(marked.map((m) => m.getAttribute("data-step"))).toEqual(["s02"]);
-    expect(marked[0]?.textContent).toContain("Zmienione przez asystenta");
+    const marked = () => [...document.querySelectorAll("[data-changed]")];
+    expect(marked().map((m) => m.getAttribute("data-step"))).toEqual(["s02"]);
+    expect(marked()[0]?.textContent).toContain("Zmienione przez asystenta");
     // Nothing writes an undo yet (dl-z5ja.42), so Cofnij is not drawn.
     expect(screen.queryByRole("button", { name: "Cofnij" })).toBeNull();
+
+    // A reload reads revision 2 from the log as previous_lesson (dl-z5ja.68): the same mark.
+    cleanup();
+    render(<ChatScreen transport={fakeTransport([...events, third]).transport} />);
+    expect(await screen.findByText("Wersja 3")).toBeTruthy();
+    expect(marked().map((m) => m.getAttribute("data-step"))).toEqual(["s02"]);
   });
 
   it("Cofnij takes back the last AI revision once a handler is wired", () => {
