@@ -1,8 +1,11 @@
 """One step of a draft, changed and shown (dl-a38n.29): the lesson_edit and lesson_show tools.
 
 `lesson.check` rebuilds the steps it is sent words for from the bank's copy. `edit(draft_id,
-step_id, patch)` changes one step of the draft file as it stands instead, and a later check that
-is not sent words for that step keeps the change (dl-a38n.40):
+step_id, patch)` changes one step of the draft file as it stands instead, and a later check keeps
+the change (dl-a38n.40): one not sent words for that step keeps the step as filed, and one sent
+words for it puts the patch back on the rebuilt step, less the parts those words set (the patch
+is kept in jw's record for that, dl-u1y5.39). `move(draft_id, step_id, before=|after=)` puts a
+step elsewhere in the order, which every later check keeps:
 `patch` is a JSON merge patch (RFC 7386) on the step, over `say` and `question` (its `data`, `key`
 and `help`, the twin included as `help.twin`). An object merges into what is there, `null`
 removes a part, anything else replaces it. A change to a part the bank's copy has (`say`, `data`,
@@ -38,7 +41,7 @@ CHANGE_DEFAULT = "wording"
 OBJECTS = ("question.data", "question.key", "question.help")
 
 
-def _merge(target: Any, patch: Any) -> Any:
+def merge(target: Any, patch: Any) -> Any:
     """RFC 7386: an object patch merges key by key, `null` removes, any other value replaces."""
     if not isinstance(patch, Mapping):
         return copy.deepcopy(patch)
@@ -47,7 +50,7 @@ def _merge(target: Any, patch: Any) -> Any:
         if value is None:
             out.pop(key, None)
         else:
-            out[key] = _merge(out.get(key), value)
+            out[key] = merge(out.get(key), value)
     return out
 
 
@@ -220,7 +223,7 @@ def _edit(
     if problems:
         return _refusal(stored, step, step_id, problems, at, where, draft_id)
 
-    edited = _merge(copy.deepcopy(step), patch)
+    edited = merge(copy.deepcopy(step), patch)
     help_ = (edited.get("question") or {}).get("help")
     if isinstance(help_, dict):
         _tidy_help(help_, str(edited["question"].get("family") or ""))
@@ -238,14 +241,23 @@ def _edit(
     if problems:
         return _refusal(stored, step, step_id, problems, at, where, draft_id)
 
-    if moved:
+    record = {"change": change, "why": str(why).strip(), "reviewed": False} if moved else None
+    if record:
         based_on = dict(edited.get("based_on") or {})
-        based_on["changes"] = [*(based_on.get("changes") or []),
-                               {"change": change, "why": str(why).strip(), "reviewed": False}]
+        based_on["changes"] = [*(based_on.get("changes") or []), record]
         edited["based_on"] = based_on
     file["script"]["parts"][p]["steps"][n] = edited
     lesson._make_dirs(where)
     lesson._write_json(path, file)
+    # Kept in jw's record, so a later check that sends words for this step puts the patch back
+    # on the rebuilt step, less the parts those words set (dl-u1y5.39).
+    if copy_q is not None:
+        kept = copy.deepcopy(dict(patch))
+        kept_help = (kept.get("question") or {}).get("help")
+        if isinstance(kept_help, dict):
+            _tidy_help(kept_help, str(edited["question"].get("family") or ""))
+        copy_q.setdefault("edits", []).append({"patch": kept, "record": record})
+        lesson._write_json(lesson._state_path(where, draft_id), stored)
 
     answer = lesson._run_check(path, runner)
     findings = lesson._findings(answer)
@@ -258,6 +270,76 @@ def _edit(
         "findings": mine,
         "render": lesson.render_of(where, draft_id, step_id),
         "card": _step_card(stored, edited),
+        "lesson_ok": bool(answer.get("ok")),
+        "draft_path": str(path),
+    }
+
+
+def move(
+    draft_id: str,
+    step_id: str,
+    *,
+    before: str | None = None,
+    after: str | None = None,
+    runner: lesson.Runner | None = None,
+    folder: Path | None = None,
+) -> dict[str, Any]:
+    """`_move`, stamped in the draft's timings."""
+    called_at = lesson.now()
+    where = folder or lesson.drafts_dir()
+    try:
+        return _move(draft_id, step_id, before, after, runner=runner, where=where)
+    finally:
+        lesson.stamp(where, draft_id, "lesson_move", called_at)
+
+
+def _move(
+    draft_id: str,
+    step_id: str,
+    before: str | None,
+    after: str | None,
+    *,
+    runner: lesson.Runner | None,
+    where: Path,
+) -> dict[str, Any]:
+    """Move step `step_id` to just before `before` or just after `after` (dl-u1y5.39), so a lesson
+    can go from easy to harder. Step ids stay as they are; the order is kept in jw's record and in
+    the draft file, and every later check keeps it. check.ts runs on the lesson. Returns `{ok,
+    order, findings, lesson_ok, draft_path}`, `ok` being check.ts's answer."""
+    stored, file = _load(draft_id, where)
+    if (before is None) == (after is None):
+        raise JwError("a move names one place", hint="Pass before or after, not both.")
+    target = str(before if before is not None else after)
+    known = [q["step_id"] for q in stored["questions"]]
+    for sid in (step_id, target):
+        if sid not in known:
+            raise JwError(f"no step {sid} in {draft_id}", hint=f"Its steps are {', '.join(known)}.")
+    if step_id == target:
+        raise JwError("a step cannot move next to itself", hint="Name another step.")
+    questions = list(stored["questions"])
+    moving = next(q for q in questions if q["step_id"] == step_id)
+    questions.remove(moving)
+    at = next(n for n, q in enumerate(questions) if q["step_id"] == target)
+    questions.insert(at if before is not None else at + 1, moving)
+    stored["questions"] = questions
+    order = [q["step_id"] for q in questions]
+    lesson._write_json(lesson._state_path(where, draft_id), stored)
+
+    for part in (file.get("script") or {}).get("parts") or []:
+        steps = part.get("steps") or []
+        rank = {sid: n for n, sid in enumerate(order)}
+        part["steps"] = sorted(steps, key=lambda st: rank.get(str(st.get("id")), len(rank)))
+    path = lesson._lesson_path(where, draft_id)
+    lesson._make_dirs(where)
+    lesson._write_json(path, file)
+    answer = lesson._run_check(path, runner)
+    findings = lesson._findings(answer)
+    lesson._write_check(where, stored, bool(answer.get("ok")), findings,
+                        answer.get("mistake_classes"))
+    return {
+        "ok": bool(answer.get("ok")),
+        "order": order,
+        "findings": findings,
         "lesson_ok": bool(answer.get("ok")),
         "draft_path": str(path),
     }

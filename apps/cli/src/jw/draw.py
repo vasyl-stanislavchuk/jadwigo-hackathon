@@ -269,12 +269,15 @@ def _candidates(
                 if item in flagged:
                     left.append(Left(item, "its media is flagged (raster words or no alt)"))
                     continue
-                if not sample.get(language):
+                if not sample.get(language) and ready is None:
                     left.append(Left(item, f"the sample has no {language} text"))
                     continue
+                # A page that lists the item as ready in the language vouches for it, though its
+                # sample text is missing (dl-u1y5.39): the item's own text is load_item's.
                 out.append(
                     _Candidate(
-                        item, set_id, rank, ptype["name"], sample[language], typed_skills, order
+                        item, set_id, rank, ptype["name"], sample.get(language), typed_skills,
+                        order,
                     )
                 )
         for item in [*ids, *(i for i in ready or [] if i not in ids)]:

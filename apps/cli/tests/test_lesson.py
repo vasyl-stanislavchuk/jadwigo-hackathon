@@ -811,9 +811,12 @@ def test_pinned_sets_ask_the_bank_nothing(two_sets: Path, check_ts: CheckTs, ban
 
 
 def test_a_pinned_set_with_no_page_is_an_error(two_sets: Path, check_ts: CheckTs) -> None:
-    with pytest.raises(JwError, match="set_khan_nope"):
+    with pytest.raises(JwError, match="set_khan_nope") as caught:
         lesson.draft(REQUEST, "3", names=[], topic=TOPIC, today=TODAY,
                      sets=["set_khan_fx0003", "set_khan_nope"])
+    # dl-u1y5.39: it names the bank checkout it read, and that checkout's revision.
+    assert f"in {BANK_DIR} (" in str(caught.value)
+    assert "JADWIGO_BANK_DIR" in (caught.value.hint or "")
 
 
 @pytest.mark.parametrize("kept", [["enter.production"], ["production"], ["enter.p*"]])
@@ -1437,3 +1440,122 @@ def test_an_item_missing_from_the_converted_file_says_it_is_not_converted(
     )
     monkeypatch.setattr(lesson.items, "why_not", lambda _id, _lang: "not checked")
     assert lesson._not_ready(Left("x1", NOT_READY_ITEM), "pl") == "not checked"
+
+
+# dl-u1y5.39: lesson-tool friction from drafting the featured lessons.
+
+
+def _order(view: dict[str, Any]) -> list[str]:
+    return [s["id"] for s in _file_now(view)["script"]["parts"][0]["steps"]]
+
+
+def test_lesson_move_puts_a_step_before_or_after_another_and_checks_keep_it(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    view = _draft()
+    assert lesson.check(view["draft_id"], _words(view))["ok"] is True
+    moved = lesson_edit.move(view["draft_id"], "q5", before="q2")
+    assert moved["ok"] is True and moved["order"] == ["q1", "q5", "q2", "q3", "q4", "q6"]
+    assert _order(view) == moved["order"]
+    after = lesson_edit.move(view["draft_id"], "q1", after="q6")
+    assert after["order"] == ["q5", "q2", "q3", "q4", "q6", "q1"]
+    # A later check, with every step's words or none, keeps the order.
+    assert lesson.check(view["draft_id"], _words(view))["ok"] is True
+    assert _order(view) == after["order"]
+    assert lesson.check(view["draft_id"], {})["ok"] is True
+    assert _order(view) == after["order"]
+    assert [q["step_id"] for q in _stored(view)["questions"]] == after["order"]
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [({}, "one place"), ({"before": "q2", "after": "q3"}, "one place"),
+     ({"before": "q9"}, "no step q9"), ({"before": "q1"}, "next to itself")],
+)
+def test_lesson_move_refuses_a_bad_place(
+    bank: LessonBank, check_ts: CheckTs, kwargs: dict[str, str], message: str
+) -> None:
+    view = _draft()
+    with pytest.raises(JwError, match=message):
+        lesson_edit.move(view["draft_id"], "q1", **kwargs)
+
+
+def test_jw_lesson_move(bank: LessonBank, check_ts: CheckTs) -> None:
+    view = _draft()
+    lesson.check(view["draft_id"], _words(view))
+    out = CliRunner().invoke(cli, ["lesson", "move", view["draft_id"], "q3", "--before", "q1",
+                                   "--json"])
+    assert out.exit_code == 0, out.output
+    assert json.loads(out.output)["order"][:2] == ["q3", "q1"]
+    usage = CliRunner().invoke(cli, ["lesson", "move", view["draft_id"], "q3"])
+    assert usage.exit_code == 2 and "--before" in usage.output
+
+
+def test_a_check_without_title_or_reasoning_keeps_the_ones_written(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    view = _draft()
+    lesson.check(view["draft_id"], _words(view), title="Mnożenie przez 6", reasoning="Na środę.")
+    lesson.check(view["draft_id"], _words(view))
+    file = check_ts.seen[-1][1]
+    assert (file["title"], file["reasoning"]) == ("Mnożenie przez 6", "Na środę.")
+    lesson.check(view["draft_id"], {}, reasoning="Na piątek.")
+    assert check_ts.seen[-1][1]["reasoning"] == "Na piątek."
+
+
+def test_an_edit_survives_a_check_that_sends_words_for_its_step_but_not_its_part(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    view = _draft()
+    words = _words(view)
+    assert lesson.check(view["draft_id"], words)["ok"] is True
+    edited = lesson_edit.edit(view["draft_id"], "q2", {
+        "say": "Ile jest jabłek we wszystkich workach?",
+        "question": {"help": {"boost": "Policz worki po kolei."}},
+    }, why="Rodzic prosi o jabłka.")
+    assert edited["ok"] is True
+    # q2's words go again, its boost among them: the boost is the words', the say stays edited.
+    words["q2"]["boost"] = {"text": "Dodawaj po 6."}
+    assert lesson.check(view["draft_id"], words)["ok"] is True
+    q2 = next(s for s in _file_now(view)["script"]["parts"][0]["steps"] if s["id"] == "q2")
+    assert q2["say"] == "Ile jest jabłek we wszystkich workach?"
+    assert q2["question"]["help"]["boost"] == {"text": "Dodawaj po 6."}
+    assert q2["based_on"]["changes"][-1] == {
+        "change": "wording", "why": "Rodzic prosi o jabłka.", "reviewed": False,
+    }
+    # Words that change the same part win over the edit.
+    words["q2"]["changes"] = [{"change": "wording", "why": "Krócej.", "set": {"say": "Ile jabłek?"}}]
+    assert lesson.check(view["draft_id"], words)["ok"] is True
+    q2 = next(s for s in _file_now(view)["script"]["parts"][0]["steps"] if s["id"] == "q2")
+    assert q2["say"] == "Ile jabłek?"
+
+
+def _choose(texts: list[str], correct: str = "o2") -> dict[str, Any]:
+    return {
+        "family": "choose",
+        "data": {"select": "one", "options": [
+            {"id": f"o{n}", "content": {"kind": "text", "text": t}} for n, t in enumerate(texts, 1)
+        ]},
+        "key": {"correct": [correct]},
+    }
+
+
+def test_a_choose_twin_is_another_answer_by_its_content_not_its_option_id() -> None:
+    assert lesson._answer(_choose(["7", "8"])) != lesson._answer(_choose(["8", "9"]))
+    assert lesson._answer(_choose(["7", "8"])) == lesson._answer(_choose(["9", "8"]))
+    assert lesson._answer({"family": "enter", "key": {"accept": ["5"]}}) == {"accept": ["5"]}
+
+
+def test_a_twin_is_found_among_ready_siblings_with_the_same_option_ids(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """dl-u1y5.39: x46e7ba151e0a979f's sibling xc1373608e96550cf keys `o3` too, with another sum."""
+    original = {"problem_type": "Which equation", "question_type": "recognition",
+                "question": _choose(["63 + 18 = 73", "63 + 18 = 81"])}
+    sibling = {"say": "Które równanie?", "problem_type": "Which equation",
+               "question_type": "recognition", "question": _choose(["56 + 28 = 100", "56 + 28 = 84"]),
+               "credit": {"source": "bank"}}
+    monkeypatch.setattr(lesson.items, "load_item", lambda _id, _lang: copy.deepcopy(sibling))
+    page = {"items": {"ids": ["a", "b"], "ready_ids": {"pl": ["a", "b"]}}}
+    twin = lesson._sibling_twin(original, page, {"a"}, "pl", "draft_x")
+    assert twin is not None and twin["based_on"]["question"] == "khan:b"
