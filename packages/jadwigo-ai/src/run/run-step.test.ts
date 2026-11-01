@@ -27,6 +27,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { MuseClient, MuseRequest, MuseResponse } from "../muse/client.ts";
 import { InMemoryRunQueue } from "../queue/memory.ts";
 import { STEP_VISIBILITY_S } from "../queue/types.ts";
+import { createVerbs, fixtureBank } from "../verbs/index.ts";
 import {
   type Verb,
   type VerbContext,
@@ -292,6 +293,8 @@ async function setup(script: readonly Reply[], verbs: Verbs = fakeVerbs(), cap_u
   };
 }
 
+const DRAFT_INPUT = { request: "a short lesson", grade: "1", names: [], topic: "addition" };
+
 function newEventId(): EventId {
   return EventId.parse(crypto.randomUUID());
 }
@@ -458,6 +461,33 @@ describe("runStep and drain", () => {
       e.type === "lesson_revision" ? [e.payload.revision] : [],
     );
     expect(revisions).toEqual([1, 2]);
+  });
+
+  it("copies a verb's view into its tool_result, as lesson_check's findings", async () => {
+    // lesson_check names the run's draft, known once the parent has spoken.
+    const check: Record<string, unknown> = { help: {}, names: [] };
+    const t = await setup(
+      [
+        { calls: [{ verb: "lesson_draft", input: DRAFT_INPUT }] },
+        { calls: [{ verb: "lesson_check", input: check }] },
+        { text: "Ready." },
+      ],
+      createVerbs({ bank: fixtureBank() }),
+    );
+    const run = await t.say("Adding within 20, grade 1.");
+    check["draft_id"] = run;
+    await drain(t.deps);
+
+    const results = (await t.log(run)).flatMap((e) =>
+      e.type === "tool_result" ? [e.payload] : [],
+    );
+    expect(results.find((r) => r.verb === "lesson_draft")).not.toHaveProperty("view");
+    const checked = results.find((r) => r.verb === "lesson_check");
+    expect(checked?.error).toBeNull();
+    expect(checked?.view).toEqual({
+      kind: "lesson_check",
+      data: { publishable: expect.any(Boolean), findings: expect.any(Array) },
+    });
   });
 
   it("writes a VerbError as the tool's error for the model to read", async () => {
