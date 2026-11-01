@@ -13,6 +13,7 @@ import { parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import { InMemoryStore } from "@jadwigo/store";
 import { FIXED_NOW } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
+import type { MuseClient, MuseRequest } from "./muse/client.ts";
 import { ScriptedMuse, type ScriptedReply } from "./muse/scripted.ts";
 import { InMemoryRunQueue } from "./queue/memory.ts";
 import { STEP_VISIBILITY_S } from "./queue/types.ts";
@@ -31,7 +32,11 @@ import type { Verb, VerbContext, VerbEffect, Verbs } from "./verbs/types.ts";
  * lands: the store (dl-z5ja.14), fold (dl-z5ja.13) and verbs (dl-z5ja.15) lanes first, the runner
  * (dl-z5ja.16) last, when the set ends empty.
  */
-const EXPECTED_RED = new Set<string>([]);
+const EXPECTED_RED = new Set<string>([
+  // Wave 2 step 0 (dl-z5ja.51, Lead decisions 21 and 22); the runner lane's dl-z5ja.42 removes both.
+  "a steer survives a redelivered step",
+  "a steer during the final call keeps the turn open one more step",
+]);
 
 /** `it`, or `it.fails` while the name is in EXPECTED_RED. */
 function frozen(name: string, body: () => Promise<void>): void {
@@ -272,6 +277,69 @@ describe("the engine keeps PostHog's production lessons", () => {
       expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
     },
   );
+
+  frozen("a steer survives a redelivered step", async () => {
+    const STEER = "Shorter, please: 5 questions.";
+    const t = await setup(
+      [draft(), { text: "Done: 5 questions." }],
+      fakeVerbs({ lesson_draft: async () => void (await t.steer(STEER)) }),
+      // The step that took the steer dies during its model call, before Muse answers.
+      { museDiesOn: (request) => request.call_no === 2 },
+    );
+    const run = await t.say("Adding within 20, grade 1.");
+    await drain(t.deps); // step 2 takes the steer off the inbox and dies in call 2
+    t.tick(STEP_VISIBILITY_S * 1000 + 1000);
+    await drain(t.deps); // the redelivery makes call 2 again
+
+    const events = await t.log(run);
+    const steers = events.filter((e) => e.type === "steer");
+    expect(steers.map((e) => e.payload)).toEqual([{ text: STEER, source: "chat" }]);
+    expect(steers[0]?.seq).toBeLessThan(
+      seqOf(events, (e) => e.type === "model_response" && e.payload.call_no === 2),
+    );
+    expect(sent(t.muse, 2)).toContain(STEER);
+    expect(foldRun(events).chat).toContainEqual(
+      expect.objectContaining({ from: "parent", text: STEER, steer: { source: "chat" } }),
+    );
+    expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
+  });
+
+  frozen("a steer during the final call keeps the turn open one more step", async () => {
+    const STEER = "I rewrote question 2 myself.";
+    const t = await setup(
+      [draft(), { text: "Here it is." }, { text: "Kept your question 2." }],
+      fakeVerbs(),
+      {
+        onMuse: async (request) => {
+          if (request.call_no === 2) {
+            await t.steer(STEER, { source: "lesson_edit", question_ids: ["s02"] });
+          }
+        },
+      },
+    );
+    const run = await t.say("Adding within 20, grade 1.");
+    await drain(t.deps);
+
+    const events = await t.log(run);
+    expect(t.muse.calls).toHaveLength(3);
+    expect(sent(t.muse, 3)).toContain(STEER);
+    const steer = seqOf(events, (e) => e.type === "steer");
+    expect(steer).toBeGreaterThan(
+      seqOf(events, (e) => e.type === "model_response" && e.payload.call_no === 2),
+    );
+    expect(steer).toBeLessThan(
+      seqOf(events, (e) => e.type === "model_response" && e.payload.call_no === 3),
+    );
+    expect(events.filter((e) => e.type === "turn_complete")).toHaveLength(1);
+    expect(foldRun(events).chat).toContainEqual(
+      expect.objectContaining({
+        from: "parent",
+        text: STEER,
+        steer: { source: "lesson_edit", question_ids: ["s02"] },
+      }),
+    );
+    expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
+  });
 });
 
 // The world each scenario runs in.
@@ -301,9 +369,16 @@ function edit(cost_usd = 0.02): ScriptedReply {
 
 interface Options {
   cap_usd?: number;
+  /** Runs before Muse answers each call: the scenarios' way to act while a call is out. */
+  onMuse?: (request: MuseRequest) => Promise<void>;
+  /** Muse's call throws once, as a dying process would, on the first request this matches. */
+  museDiesOn?: (request: MuseRequest) => boolean;
   /** The store throws once, as a dying process would, on the first append this matches. */
   crashOn?: (events: readonly NewRunEvent[]) => boolean;
 }
+
+/** A steer's optional fields, as the inbox takes them. */
+type SteerFrom = Omit<Extract<InboxEntry, { kind: "steer" }>["payload"], "text">;
 
 async function setup(
   script: readonly ScriptedReply[],
@@ -316,7 +391,18 @@ async function setup(
     ? new CrashingStore(now, options.crashOn)
     : new InMemoryStore({ now });
   const muse = new ScriptedMuse(script);
-  const deps: EngineDeps = { store, muse, verbs, queue: new InMemoryRunQueue(now), now };
+  let died = false;
+  const client: MuseClient = {
+    respond: async (request) => {
+      await options.onMuse?.(request);
+      if (!died && options.museDiesOn?.(request)) {
+        died = true;
+        throw new Error("the process died during the model call");
+      }
+      return muse.respond(request);
+    },
+  };
+  const deps: EngineDeps = { store, muse: client, verbs, queue: new InMemoryRunQueue(now), now };
   const member = await store.createAccount(Uuid.parse(crypto.randomUUID()), "pl");
   const conversation = (
     await store.createConversation(member.pod, {
@@ -348,6 +434,8 @@ async function setup(
     },
     send,
     say: (text: string) => send({ event_id: eventId(), kind: "message", payload: { text } }),
+    steer: (text: string, from: SteerFrom = {}) =>
+      send({ event_id: eventId(), kind: "steer", payload: { text, ...from } }),
     log: (run: RunId) => store.listRunEvents(member.pod, run, 0),
   };
 }
