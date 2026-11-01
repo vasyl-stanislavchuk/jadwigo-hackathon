@@ -5,6 +5,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest";
 import { ChatScreen } from "./ChatScreen.tsx";
 import { conversationReducer, EMPTY, lessonOf, turnsOf } from "./conversation.ts";
+import { LessonPane } from "./LessonPane.tsx";
 import type { EngineTransport } from "./useConversation.ts";
 
 afterEach(cleanup);
@@ -170,5 +171,57 @@ describe("ChatScreen's phone switch (dl-z5ja.28)", () => {
     expect(document.querySelector("[data-pane='lesson']")?.getAttribute("data-front")).toBe("true");
     fireEvent.click(screen.getByRole("tab", { name: "Rozmowa" }));
     expect(lessonTab.querySelector("[data-badge]")).toBeNull();
+  });
+});
+
+describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
+  /** A 3rd revision of the happy turn's lesson with step s02's words changed, as the next event. */
+  function thirdRevision(events: readonly RunEvent[]): RunEvent {
+    const second = events.findLast((e) => e.type === "lesson_revision");
+    if (second?.type !== "lesson_revision") throw new Error("no lesson_revision");
+    const file = structuredClone(second.payload.lesson_file) as {
+      script: { parts: { steps: { id: string; say?: unknown }[] }[] };
+    };
+    for (const part of file.script.parts)
+      for (const step of part.steps) if (step.id === "s02") step.say = { pl: "Ile jest grup?" };
+    return RunEvent.parse({
+      ...second,
+      seq: Math.max(...events.map((e) => e.seq)) + 1,
+      event_id: "00000000-0000-4000-8000-000000000301",
+      payload: { ...second.payload, revision: 3, lesson_file: file },
+    });
+  }
+
+  it("a reload highlights nothing; a revision that lands live marks only the step it changed", async () => {
+    const events = eventsOf("happy-turn");
+    const t = fakeTransport(events);
+    render(<ChatScreen transport={t.transport} />);
+    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    expect(document.querySelector("[data-changed]")).toBeNull();
+    await act(async () => t.push([thirdRevision(events)]));
+    expect(screen.getByText("Wersja 3")).toBeTruthy();
+    const marked = [...document.querySelectorAll("[data-changed]")];
+    expect(marked.map((m) => m.getAttribute("data-step"))).toEqual(["s02"]);
+    expect(marked[0]?.textContent).toContain("Zmienione przez asystenta");
+    // Nothing writes an undo yet (dl-z5ja.42), so Cofnij is not drawn.
+    expect(screen.queryByRole("button", { name: "Cofnij" })).toBeNull();
+  });
+
+  it("Cofnij takes back the last AI revision once a handler is wired", () => {
+    const events = eventsOf("happy-turn");
+    const lesson = foldRun(events).lesson;
+    let undone = 0;
+    render(
+      <LessonPane
+        language="pl"
+        lesson={lesson}
+        changed={new Set(["s02"])}
+        onUndo={() => {
+          undone += 1;
+        }}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Cofnij" }));
+    expect(undone).toBe(1);
   });
 });

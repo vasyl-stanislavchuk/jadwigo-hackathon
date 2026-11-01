@@ -24,10 +24,16 @@ const clock: Clock = { now: (): Instant => ({ perf: 0, wall: "2026-11-01T00:00:0
 export function LessonPane({
   language,
   lesson,
+  changed = new Set(),
+  onUndo,
 }: {
   /** The parent's language, for the pane's own words. */
   language: Language;
   lesson: RunView["lesson"];
+  /** The steps the last AI revision changed (`revisions.ts`), highlighted (dl-z5ja.30). */
+  changed?: ReadonlySet<string>;
+  /** Takes back the last AI revision; "Cofnij" shows only when it is given. */
+  onUndo?: (() => void) | undefined;
 }): ReactElement {
   const say = (key: Parameters<typeof copy>[1], vars: Record<string, string | number> = {}) =>
     copy(language, key, vars, "adult");
@@ -39,7 +45,7 @@ export function LessonPane({
           {say("chat_lesson_empty")}
         </p>
       ) : (
-        <Revision lesson={lesson} say={say} />
+        <Revision lesson={lesson} say={say} changed={changed} onUndo={onUndo} />
       )}
     </section>
   );
@@ -48,9 +54,13 @@ export function LessonPane({
 function Revision({
   lesson,
   say,
+  changed,
+  onUndo,
 }: {
   lesson: NonNullable<RunView["lesson"]>;
   say: (key: Parameters<typeof copy>[1], vars?: Record<string, string | number>) => string;
+  changed: ReadonlySet<string>;
+  onUndo: (() => void) | undefined;
 }): ReactElement {
   const read = readDraft(lesson.lesson_file);
   if ("error" in read)
@@ -70,6 +80,16 @@ function Revision({
         <span className="text-muted-foreground text-xs">
           {say("chat_lesson_revision", { n: lesson.revision })}
         </span>
+        {changed.size > 0 && onUndo && (
+          <button
+            type="button"
+            data-undo
+            onClick={onUndo}
+            className="ml-auto rounded-md border px-2 py-0.5 text-sm"
+          >
+            {say("chat_undo")}
+          </button>
+        )}
       </div>
       <ol className="flex flex-col gap-4">
         {steps.map((step) =>
@@ -78,8 +98,14 @@ function Revision({
               key={step.step_id}
               aria-label={say("chat_lesson_step", { step: step.step_id })}
               data-step={step.step_id}
-              className="rounded-md border p-3"
+              data-changed={changed.has(step.step_id) || undefined}
+              className={
+                changed.has(step.step_id)
+                  ? "rounded-md border-2 border-primary p-3"
+                  : "rounded-md border p-3"
+              }
             >
+              {changed.has(step.step_id) && <Changed say={say} />}
               <LessonTheme>
                 <FamilyView
                   spec={pageSpec(step.spec) as never}
@@ -96,13 +122,24 @@ function Revision({
             <li
               key={step.step_id}
               data-step={step.step_id}
+              data-changed={changed.has(step.step_id) || undefined}
               className="text-muted-foreground text-sm"
             >
+              {changed.has(step.step_id) && <Changed say={say} />}
               {say("chat_lesson_step_hidden", { step: step.step_id })}
             </li>
           ),
         )}
       </ol>
     </div>
+  );
+}
+
+/** The mark on a step the last AI revision changed: words, not only a coloured edge. */
+function Changed({ say }: { say: (key: Parameters<typeof copy>[1]) => string }): ReactElement {
+  return (
+    <p data-changed-mark className="text-primary mb-2 text-xs font-medium">
+      {say("chat_revision_by_ai")}
+    </p>
   );
 }

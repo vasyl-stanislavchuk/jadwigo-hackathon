@@ -16,6 +16,7 @@ import { ChatPane } from "./ChatPane.tsx";
 import { type ConversationState, lessonOf, type Turn, turnsOf } from "./conversation.ts";
 import { newConversationId } from "./ids.ts";
 import { LessonPane } from "./LessonPane.tsx";
+import { changedSteps } from "./revisions.ts";
 import { type EngineTransport, hotTransport, useConversation } from "./useConversation.ts";
 
 const STORED = "jadwigo.playground.chat.conversation";
@@ -56,6 +57,26 @@ function useViewportHeight(): number | null {
 
 type PaneName = "chat" | "lesson";
 
+interface Drawn {
+  key: string | null;
+  file: unknown;
+  /** The lesson file drawn before this one, or null on the first. */
+  previous: unknown;
+}
+
+/**
+ * The steps the latest revision changed against the lesson this page drew before it (dl-z5ja.30).
+ * The page remembers that one itself, since the fold keeps only each turn's highest revision, so a
+ * reload starts with nothing highlighted.
+ */
+function useChangedSteps(turns: readonly Turn[]): ReadonlySet<string> {
+  const key = lessonKey(turns);
+  const file = lessonOf(turns)?.lesson_file ?? null;
+  const [drawn, setDrawn] = useState<Drawn>({ key, file, previous: null });
+  if (drawn.key !== key) setDrawn({ key, file, previous: drawn.file });
+  return useMemo(() => changedSteps(drawn.previous, drawn.file), [drawn]);
+}
+
 /** The 2 panes for a conversation's state: what the tests draw from the golden logs. */
 function ChatView({
   language,
@@ -71,6 +92,7 @@ function ChatView({
   onNew?: () => void;
 }): ReactElement {
   const turns = turnsOf(state);
+  const changed = useChangedSteps(turns);
   return (
     <ChatLayout
       language={language}
@@ -87,7 +109,7 @@ function ChatView({
           onStop={onStop}
         />
       }
-      lesson={<LessonPane language={language} lesson={lessonOf(turns)} />}
+      lesson={<LessonPane language={language} lesson={lessonOf(turns)} changed={changed} />}
       lessonKey={lessonKey(turns)}
     />
   );
