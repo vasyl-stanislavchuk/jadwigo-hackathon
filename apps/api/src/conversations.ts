@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import {
+  type AccountId,
   type Conversation,
   ConversationCreate,
   ConversationId,
@@ -9,6 +10,7 @@ import {
   type EventId,
   ID_PREFIXES,
   idOf,
+  LIMITS,
   type PodId,
   type Run,
   type RunAccepted,
@@ -33,11 +35,59 @@ import { ApiError, badRequest } from "./errors.ts";
  * run's pod up by its id (`findRunPod`); the API's role may not.
  */
 
+/** What a message would add to: the parent's recent messages and the pod's spend today. */
+export interface MessageUsage {
+  /** The parent's messages to the AI at or after `minuteSince`. */
+  readonly messages: number;
+  /** The sum of `cap_usd` over the runs the pod opened at or after `daySince`. */
+  readonly cap_usd: number;
+}
+
+/** Reads `MessageUsage` in the request's unit, scoped to the pod (dl-z5ja.62). */
+export type ReadMessageUsage = (
+  store: Store,
+  pod: PodId,
+  account: AccountId,
+  since: { readonly minuteSince: string; readonly daySince: string },
+) => Promise<MessageUsage>;
+
 /** What the message routes need besides the store. */
 export interface EngineRouteDeps {
   /** Where a new step goes: pgmq's `agent_step` in AWS, sent as `jadwigo_api`. */
   readonly queue: RunQueue;
+  /** What the limits count. With none, every message fails: an unknown balance is never spent. */
+  readonly usage: ReadMessageUsage;
   readonly now: () => Date;
+}
+
+/**
+ * The 2 limits on a message (dl-z5ja.62, `docs/research/posthog-ai-production.md` section 4): a
+ * parent's `LIMITS.messagesPerMinute`, and the pod's `LIMITS.podDailyCapUsd` over the runs it
+ * opened since 00:00 UTC. Either one past is 429 `MessageLimit`, before anything is written.
+ */
+async function checkLimits(
+  store: Store,
+  deps: EngineRouteDeps,
+  pod: PodId,
+  account: AccountId,
+): Promise<void> {
+  const now = deps.now();
+  const day = new Date(now);
+  day.setUTCHours(0, 0, 0, 0);
+  const used = await deps.usage(store, pod, account, {
+    minuteSince: new Date(now.getTime() - 60_000).toISOString(),
+    daySince: day.toISOString(),
+  });
+  if (used.messages >= LIMITS.messagesPerMinute)
+    throw new ApiError(
+      ErrorType.enum.MessageLimit,
+      "too many messages in a minute: wait a moment and send it again",
+    );
+  if (used.cap_usd >= LIMITS.podDailyCapUsd)
+    throw new ApiError(
+      ErrorType.enum.MessageLimit,
+      "today's AI budget for this family is used up: try again tomorrow",
+    );
 }
 
 /** The API never runs a step, so its engine has no Muse and no verbs: `acceptMessage` reads neither. */
@@ -103,6 +153,7 @@ export async function postMessage(
   const parsed = ConversationMessage.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
   const { event_id, text } = parsed.data;
+  await checkLimits(store, deps, pod, account);
   const { run, inbox } = await acceptMessage(engine(store, deps), {
     pod,
     created_by: account,

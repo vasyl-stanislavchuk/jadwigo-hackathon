@@ -11,6 +11,7 @@ import {
   listConversationRuns,
   listRunEvents,
   postMessage,
+  type ReadMessageUsage,
 } from "./conversations.ts";
 import { ApiError, badRequest, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
@@ -64,9 +65,17 @@ export interface AppDeps {
    * its unit rolls back, so nothing waits in an inbox with no step to take it.
    */
   readonly queue?: RunQueue | undefined;
-  /** The engine's clock for a run's deadlines. */
+  /**
+   * What a message's limits count (dl-z5ja.62). With none, every message fails and its unit rolls
+   * back: a budget the API cannot read is never spent.
+   */
+  readonly usage?: ReadMessageUsage | undefined;
+  /** The engine's clock for a run's deadlines and the limits' windows. */
   readonly now?: () => Date;
 }
+
+const NO_USAGE: ReadMessageUsage = () =>
+  Promise.reject(new Error("no message usage is wired: a message is never sent unchecked"));
 
 /** No queue is wired: every send fails, and the unit that asked rolls back. */
 const NO_QUEUE: RunQueue = {
@@ -89,10 +98,10 @@ const NO_QUEUE: RunQueue = {
  */
 export function createApp(
   store: Store | Promise<Store>,
-  { authenticate = signedOut, bank, bucket, queue, now = () => new Date() }: AppDeps = {},
+  { authenticate = signedOut, bank, bucket, queue, usage, now = () => new Date() }: AppDeps = {},
 ): Router {
   const app = new Router();
-  const engine: EngineRouteDeps = { queue: queue ?? NO_QUEUE, now };
+  const engine: EngineRouteDeps = { queue: queue ?? NO_QUEUE, usage: usage ?? NO_USAGE, now };
 
   const register = <N extends RouteName>(name: N, handle: Handle<N>): void => {
     const route: Route = ROUTES[name];

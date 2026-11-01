@@ -8,6 +8,7 @@ import {
   type ConversationRuns,
   type ErrorEnvelope,
   EventId,
+  LIMITS,
   type Me,
   type PodId,
   type RunAccepted,
@@ -17,6 +18,7 @@ import {
 import type { RunQueue } from "@jadwigo/jadwigo-ai";
 import type { Store } from "@jadwigo/store";
 import { beforeEach, describe, expect, it } from "vitest";
+import type { MessageUsage } from "../conversations.ts";
 import { pathOf, type Seeded, seeded } from "./client.ts";
 import { bearerOf, signToken } from "./token.ts";
 
@@ -36,9 +38,20 @@ export function conversationSuite(
   describe(`the conversation routes on ${name}`, () => {
     let s: Seeded;
     let q: Queued;
+    /** What the limits read: under both unless a test plants more. */
+    let used: MessageUsage;
+    let asked: { pod: PodId; minuteSince: string; daySince: string }[];
     beforeEach(() => {
       q = makeQueue();
-      s = seeded(makeStore(), { queue: q.queue });
+      used = { messages: 0, cap_usd: 0 };
+      asked = [];
+      s = seeded(makeStore(), {
+        queue: q.queue,
+        usage: async (_store, pod, _account, since) => {
+          asked.push({ pod, ...since });
+          return used;
+        },
+      });
     });
 
     /** A signed-in parent with an account, so a pod of its own. */
@@ -122,6 +135,40 @@ export function conversationSuite(
       );
       expect(runs.status).toBe(200);
       expect(runs.body.runs.map((r) => r.id)).toEqual([run.id]);
+    });
+
+    // dl-z5ja.62: both limits are read before anything is written, and either one past is 429.
+    it("refuses a message past the parent's minute or the pod's day as 429 MessageLimit", async () => {
+      const a = await parent();
+      const conversation = await a.conversation();
+      const planted: [string, MessageUsage][] = [
+        ["minute", { messages: LIMITS.messagesPerMinute, cap_usd: 0 }],
+        ["day", { messages: 0, cap_usd: LIMITS.podDailyCapUsd }],
+      ];
+      for (const [limit, usage] of planted) {
+        used = usage;
+        const refused = await a.say(conversation.id, `Over the ${limit}`);
+        expect(refused.status, limit).toBe(429);
+        expect((refused.body as unknown as ErrorEnvelope).error.type, limit).toBe("MessageLimit");
+      }
+      const runs = await a.call<ConversationRuns>(
+        "GET",
+        pathOf("listConversationRuns", { id: conversation.id }),
+      );
+      expect(runs.body.runs).toEqual([]);
+
+      used = { messages: LIMITS.messagesPerMinute - 1, cap_usd: LIMITS.podDailyCapUsd - 0.5 };
+      const under = await a.say(conversation.id, "Under both");
+      expect(under.status).toBe(201);
+      expect(await q.stepsFor(under.body.run.id)).toBe(1);
+
+      // The windows: the last 60 s, and the UTC day so far, for the caller's pod.
+      const last = asked.at(-1);
+      expect(last?.pod).toBe(a.pod);
+      expect(last?.daySince).toMatch(/T00:00:00\.000Z$/);
+      const minute = Date.now() - Date.parse(last?.minuteSince ?? "");
+      expect(minute).toBeGreaterThanOrEqual(60_000);
+      expect(minute).toBeLessThan(70_000);
     });
 
     it("refuses a message the server would own, or an empty one", async () => {
