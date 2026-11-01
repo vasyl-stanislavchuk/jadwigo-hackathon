@@ -12,7 +12,10 @@ export interface InvokeClient {
   }>;
 }
 
-/** The codes the converter refuses with (dl-z5ja.11.8); anything else it fails with is unavailable. */
+/**
+ * The codes a file is refused with (dl-z5ja.11.8, #600). `bad_event` is ours, not the parent's
+ * file (the event named the wrong key, id, type or bucket), so it is `unavailable`, and logged.
+ */
 const REFUSALS: ReadonlySet<string> = new Set(["too_many_pages", "encrypted", "unreadable"]);
 
 /**
@@ -22,16 +25,18 @@ const REFUSALS: ReadonlySet<string> = new Set(["too_many_pages", "encrypted", "u
  * `{pages: [{key, width, height, bytes}]}`, the JPEGs it wrote under
  * `pods/<pod>/attachments/<id>/p<n>.jpg`; the engine checks every key before it reads one.
  *
- * A refusal the converter raises (its code as the error's type or message, or `{error: code}`) is
- * that refusal. With no function named, an error the function did not raise on purpose (a timeout,
- * a crash) or an answer of another shape, the file is `unavailable`: the parent is told, and the
- * turn goes on. A failure to reach Lambda at all throws, and the step is retried.
+ * A refusal is a FunctionError with `errorType: "Refused"` and the code, exactly, as its
+ * `errorMessage`. With no function named, `bad_event`, any other error (S3, a missing binary, a
+ * timeout) or an answer of another shape, the file is `unavailable`: the parent is told, and the
+ * turn goes on. A failure to reach Lambda at all throws, and the step is retried. `warn` gets the
+ * code of a `bad_event` or of another error type, and nothing else.
  */
 export function lambdaConverter(
   name = converterFunction(),
   bucketName = uploadsBucket(),
   read: ReadParameter = readSsm,
   client: InvokeClient = new LambdaClient({}),
+  warn: (line: string) => void = (line) => console.warn(line),
 ): Converter {
   const bucket = uploadsBucketOf(bucketName, read);
   return {
@@ -55,7 +60,7 @@ export function lambdaConverter(
         }),
       );
       const answer = parsed(out.Payload);
-      if (out.FunctionError !== undefined) return { refused: refusalIn(answer) };
+      if (out.FunctionError !== undefined) return { refused: refusalIn(answer, warn) };
       return pagesIn(answer);
     },
   };
@@ -70,23 +75,26 @@ function parsed(payload: Uint8Array | undefined): unknown {
   }
 }
 
-/** A raised refusal's code: Python's `errorType` or `errorMessage`, when it is one of the codes. */
-function refusalIn(answer: unknown): ConvertRefusal {
+/** A raised refusal's code, read from `errorMessage` only when `errorType` is `Refused`. */
+function refusalIn(answer: unknown, warn: (line: string) => void): ConvertRefusal {
   const e = (answer ?? {}) as { errorType?: unknown; errorMessage?: unknown };
-  for (const said of [e.errorType, e.errorMessage]) {
-    if (typeof said === "string" && REFUSALS.has(said)) return said as ConvertRefusal;
+  if (e.errorType === "Refused" && typeof e.errorMessage === "string") {
+    if (REFUSALS.has(e.errorMessage)) return e.errorMessage as ConvertRefusal;
+    // The code only: a message is never logged, since it could name a file.
+    warn(`converter refused: ${e.errorMessage === "bad_event" ? "bad_event" : "unknown code"}`);
+    return "unavailable";
   }
+  warn(
+    `converter failed: ${typeof e.errorType === "string" ? e.errorType.slice(0, 64) : "no error type"}`,
+  );
   return "unavailable";
 }
 
 const count = (n: unknown): n is number => typeof n === "number" && Number.isInteger(n) && n > 0;
 
-/** The pages of a successful answer, or the refusal it returned as `{error: code}`. */
+/** The pages of a successful answer; any other shape is unavailable. */
 function pagesIn(answer: unknown): Converted {
-  const a = (answer ?? {}) as { pages?: unknown; error?: unknown };
-  if (typeof a.error === "string") {
-    return { refused: REFUSALS.has(a.error) ? (a.error as ConvertRefusal) : "unavailable" };
-  }
+  const a = (answer ?? {}) as { pages?: unknown };
   if (!Array.isArray(a.pages)) return { refused: "unavailable" };
   const pages = [];
   for (const page of a.pages as unknown[]) {

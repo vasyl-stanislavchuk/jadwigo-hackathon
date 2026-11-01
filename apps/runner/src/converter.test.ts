@@ -47,13 +47,18 @@ describe("the runner's converter (dl-z5ja.11.7)", () => {
       bytes: 300_000,
     }));
     const lambda = stub(async () => ({ Payload: json({ pages }) }));
-    const converter = lambdaConverter("made-up-converter", "made-up-uploads", noSsm, lambda.client);
+    const converter = lambdaConverter(
+      "arn:aws:lambda:eu-central-1:000000000000:function:made-up-converter",
+      "made-up-uploads",
+      noSsm,
+      lambda.client,
+    );
     expect(await converter.pages(PDF, POD)).toEqual({
       pages: pages.map(({ key, ...size }) => ({ storage_path: key, ...size })),
     });
     expect(lambda.sent).toEqual([
       {
-        FunctionName: "made-up-converter",
+        FunctionName: "arn:aws:lambda:eu-central-1:000000000000:function:made-up-converter",
         InvocationType: "RequestResponse",
         event: {
           bucket: "made-up-uploads",
@@ -66,28 +71,50 @@ describe("the runner's converter (dl-z5ja.11.7)", () => {
     ]);
   });
 
-  it("reads a raised refusal's code from its type or its message, or an {error} answer", async () => {
-    const answers: [Answer, string][] = [
-      [
-        {
-          FunctionError: "Unhandled",
-          Payload: json({ errorType: "encrypted", errorMessage: "x" }),
-        },
-        "encrypted",
-      ],
-      [
-        {
-          FunctionError: "Unhandled",
-          Payload: json({ errorType: "Refused", errorMessage: "too_many_pages" }),
-        },
-        "too_many_pages",
-      ],
-      [{ Payload: json({ error: "unreadable" }) }, "unreadable"],
-    ];
-    for (const [answer, code] of answers) {
-      const converter = lambdaConverter("c", "b", noSsm, stub(async () => answer).client);
+  const refused = (code: string): Answer => ({
+    FunctionError: "Unhandled",
+    Payload: json({ errorType: "Refused", errorMessage: code }),
+  });
+
+  for (const code of ["too_many_pages", "encrypted", "unreadable"]) {
+    it(`reads the refusal ${code} from errorMessage when errorType is Refused`, async () => {
+      const lines: string[] = [];
+      const converter = lambdaConverter(
+        "c",
+        "b",
+        noSsm,
+        stub(async () => refused(code)).client,
+        (l) => lines.push(l),
+      );
       expect(await converter.pages(PDF, POD)).toEqual({ refused: code });
-    }
+      expect(lines).toEqual([]);
+    });
+  }
+
+  it("reads bad_event, our own bug, as unavailable, and logs only its code", async () => {
+    const lines: string[] = [];
+    const converter = lambdaConverter(
+      "c",
+      "b",
+      noSsm,
+      stub(async () => refused("bad_event")).client,
+      (l) => lines.push(l),
+    );
+    expect(await converter.pages(PDF, POD)).toEqual({ refused: "unavailable" });
+    expect(lines).toEqual(["converter refused: bad_event"]);
+  });
+
+  it("never reads a code from another error type, and logs only that type", async () => {
+    const lines: string[] = [];
+    const answer = {
+      FunctionError: "Unhandled",
+      Payload: json({ errorType: "ClientError", errorMessage: "encrypted" }),
+    };
+    const converter = lambdaConverter("c", "b", noSsm, stub(async () => answer).client, (l) =>
+      lines.push(l),
+    );
+    expect(await converter.pages(PDF, POD)).toEqual({ refused: "unavailable" });
+    expect(lines).toEqual(["converter failed: ClientError"]);
   });
 
   it("is unavailable with no function named, on a timeout or crash, or an answer of another shape", async () => {
@@ -103,9 +130,10 @@ describe("the runner's converter (dl-z5ja.11.7)", () => {
       },
       { Payload: json({ pages: [{ key: "k", width: 0, height: 1, bytes: 1 }] }) },
       { Payload: new TextEncoder().encode("not json") },
+      { Payload: json({ error: "encrypted" }) },
       {},
     ]) {
-      const converter = lambdaConverter("c", "b", noSsm, stub(async () => answer).client);
+      const converter = lambdaConverter("c", "b", noSsm, stub(async () => answer).client, () => {});
       expect(await converter.pages(PDF, POD)).toEqual({ refused: "unavailable" });
     }
   });
