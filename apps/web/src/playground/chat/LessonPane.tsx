@@ -76,7 +76,7 @@ function Revision({
           step.kind === "question" ? (
             <li
               key={step.step_id}
-              aria-label={`Step ${step.step_id}`}
+              aria-label={say("chat_lesson_step", { step: step.step_id })}
               data-step={step.step_id}
               className="rounded-md border p-3"
             >

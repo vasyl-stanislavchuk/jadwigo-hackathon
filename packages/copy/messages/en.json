@@ -7,5 +7,11 @@
   "site_switch_label": "Page language",
   "site_note_text": "This page is also in English.",
   "site_note_go": "Open in English",
-  "site_note_dismiss": "No, thanks"
+  "site_note_dismiss": "No, thanks",
+  "site_nav_home": "Jadwigo, home page",
+  "site_nav_label": "Pages",
+  "site_nav_sign_in": "Sign in",
+  "site_footer_privacy": "Privacy",
+  "site_footer_deletion": "Data deletion",
+  "site_footer_made": "Jadwigo was built at the Meta hackathon."
 }

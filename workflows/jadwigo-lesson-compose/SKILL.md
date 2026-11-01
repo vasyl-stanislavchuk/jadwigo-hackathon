@@ -74,6 +74,9 @@ The result keeps the draft under `draft_id`. Read, before you write anything:
 - `setup_warning`, when there is one: this machine's copy of the bank is out of step. Tell the
   parent, as the tool words it, and go on.
 - `rule_settled: false`: the draw rule is provisional. Say so on the card, once.
+- `language_fallback`, when there is one: nothing was checked in the language asked for, so the
+  lesson is in its questions' original language (`offered`), and `language` says so. Tell the
+  parent, as its `reason` words it, before you go on, and write every line in `offered`.
 - Per question (`step_id`, `q1` onwards):
   - `say`, `data`, `key`: the question as the child sees it, and its answer.
   - `twin_source`: where its twin came from, when the bank had one.

@@ -1,4 +1,5 @@
 import type { NumberForm } from "@jadwigo/contracts";
+import { DECIMAL_SEPARATORS } from "../lang/language.ts";
 
 /**
  * Exact numbers for the Enter judge (dl-w3.70.7): a decimal as a child types it, read as a
@@ -23,7 +24,8 @@ export interface Exact {
  * cap keeps every scaled integer exact. */
 const MAX_DIGITS = 12;
 
-const DECIMAL = /^(-?)([0-9]*)(?:[.,]([0-9]*))?$/;
+/** Digits with at most one separator, any language's (lang/language.ts, dl-5ssh.34.24). */
+const DECIMAL = new RegExp(`^(-?)([0-9]*)(?:[${DECIMAL_SEPARATORS.join("")}]([0-9]*))?$`);
 
 function gcd(a: number, b: number): number {
   let x = Math.abs(a);
