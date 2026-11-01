@@ -465,6 +465,52 @@ export function runContract(name: string, make: () => Promise<Store> | Store): v
         expect((await store.getConversation(a.pod, conversation.id)).archived_at).toBeNull();
       },
     );
+
+    // dl-z5ja.110, wave 4 lead decision 37: a rating in its own table, one per run and account.
+    frozen(
+      "rates a run once per account: a re-rate replaces the verdict and the note",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const run = await store.createRun(a.pod, newRun(a.account, null));
+        expect(await store.listRunRatings(a.pod, run.id)).toEqual([]);
+
+        const bad = await store.rateRun(a.pod, run.id, a.account, {
+          verdict: "bad",
+          note: "Too many questions.",
+        });
+        expect(bad).toMatchObject({
+          pod_id: a.pod,
+          run_id: run.id,
+          account_id: a.account,
+          verdict: "bad",
+          note: "Too many questions.",
+        });
+        expect(bad.id).toMatch(/^rtg_/);
+
+        const good = await store.rateRun(a.pod, run.id, a.account, { verdict: "good", note: null });
+        expect(good).toEqual({ ...bad, verdict: "good", note: null });
+        expect(await store.listRunRatings(a.pod, run.id)).toEqual([good]);
+      },
+    );
+
+    frozen(
+      "refuses a note with good as BadRequest, and another pod's run as NotFound",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const b = await scope(store);
+        const run = await store.createRun(a.pod, newRun(a.account, null));
+        await expect(
+          store.rateRun(a.pod, run.id, a.account, { verdict: "good", note: "Nice." }),
+        ).rejects.toMatchObject({ type: "BadRequest" });
+        await expect(
+          store.rateRun(b.pod, run.id, b.account, { verdict: "good", note: null }),
+        ).rejects.toMatchObject(NOT_FOUND);
+        await expect(store.listRunRatings(b.pod, run.id)).rejects.toMatchObject(NOT_FOUND);
+        expect(await store.listRunRatings(a.pod, run.id)).toEqual([]);
+      },
+    );
   });
 }
 

@@ -9,6 +9,7 @@ import {
   type RunEventType,
   RunInbox,
   RunInboxKind,
+  RunRating,
 } from "./run.ts";
 
 /** A row's JSON column: the event's or the inbox row's payload, shaped by its `type` or `kind`. */
@@ -34,4 +35,5 @@ export const RECORDS = {
     payload: Payload,
   }),
   run_inbox: RunInbox.options[0].extend({ kind: RunInboxKind, payload: Payload }),
+  run_rating: RunRating,
 } as const;
