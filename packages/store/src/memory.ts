@@ -1474,9 +1474,36 @@ export class InMemoryStore implements Store {
     const row = frozen(
       parse(
         Conversation,
-        { ...conversation, pod_id: pod, created_at: this.#at() },
+        { ...conversation, pod_id: pod, created_at: this.#at(), archived_at: null },
         "the conversation",
       ),
+    );
+    this.#conversations.set(row.id, row);
+    return row;
+  }
+
+  async getConversation(pod: PodId, conversation: ConversationId): Promise<Conversation> {
+    return this.#inPod(this.#conversations, pod, conversation, "the conversation");
+  }
+
+  async listConversations(
+    pod: PodId,
+    { includeArchived = false }: { readonly includeArchived?: boolean } = {},
+  ): Promise<readonly Conversation[]> {
+    return [...this.#conversations.values()]
+      .filter((c) => c.pod_id === pod && (includeArchived || c.archived_at === null))
+      .sort((a, b) => b.created_at.localeCompare(a.created_at) || (a.id < b.id ? 1 : -1));
+  }
+
+  async archiveConversation(
+    pod: PodId,
+    conversation: ConversationId,
+    at: string,
+  ): Promise<Conversation> {
+    const stored = this.#inPod(this.#conversations, pod, conversation, "the conversation");
+    if (stored.archived_at !== null) return stored;
+    const row = frozen(
+      parse(Conversation, { ...stored, archived_at: utc(at) }, "the conversation"),
     );
     this.#conversations.set(row.id, row);
     return row;
