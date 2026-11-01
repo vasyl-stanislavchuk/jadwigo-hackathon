@@ -62,6 +62,7 @@ import {
   RunEvent,
   type RunId,
   RunInbox,
+  type RunWorkflow,
 } from "@jadwigo/contracts/run";
 import {
   CompiledQuery,
@@ -2611,6 +2612,17 @@ class PostgresStore implements Store {
         const run = runOf(row);
         return { pod: run.pod_id, run };
       });
+    });
+  }
+
+  async spentUsd(workflows: readonly RunWorkflow[], since: string): Promise<number> {
+    const at = utc(since);
+    return this.#in(null, async (tx) => {
+      // muse_ledger.spent_usd reads past row-level security: every pod's model calls.
+      const { rows } = await sql<{ spent: string }>`
+        select muse_ledger.spent_usd(${[...workflows]}::run_workflow[], ${at}::timestamptz) as spent
+      `.execute(tx);
+      return Number(rows[0]?.spent ?? Number.NaN);
     });
   }
 

@@ -61,6 +61,7 @@ import {
   type RunId,
   RunInbox,
   type RunStatus,
+  type RunWorkflow,
 } from "@jadwigo/contracts/run";
 import { byTypeThenPosition, checkExamples } from "./example.ts";
 import { handleFor } from "./handle.ts";
@@ -1432,6 +1433,18 @@ export class InMemoryStore implements Store {
     return [...this.#runs.values()]
       .filter((r) => !ENDED.has(r.status) && (due(r.idle_deadline_at) || due(r.max_deadline_at)))
       .map((run) => ({ pod: run.pod_id, run }));
+  }
+
+  async spentUsd(workflows: readonly RunWorkflow[], since: string): Promise<number> {
+    const from = Date.parse(utc(since));
+    let total = 0;
+    for (const run of this.#runs.values()) {
+      if (!workflows.includes(run.workflow)) continue;
+      for (const event of this.#runEvents.get(run.id) ?? [])
+        if (event.type === "model_response" && Date.parse(event.created_at) >= from)
+          total += event.payload.cost_usd;
+    }
+    return total;
   }
 
   async createConversation(pod: PodId, conversation: NewConversation): Promise<Conversation> {
