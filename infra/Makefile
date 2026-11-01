@@ -9,7 +9,7 @@ export PATH := $(MISE_BIN_PATHS)$(PATH)
 ENV ?= prod
 TF := AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform
 
-.PHONY: init plan apply output site-deploy deploy deploy-all prod-status api-deploy web-deploy web-build docs-deploy auth-diff auth-apply fmt validate test
+.PHONY: init plan apply output site-deploy deploy deploy-all prod-status api-deploy web-deploy web-build docs-deploy auth-diff auth-apply fmt validate test probe-step-host-plan probe-step-host-apply probe-step-host-destroy
 
 init:
 	$(TF) init -input=false -reconfigure -backend-config=environments/$(ENV).backend.hcl
@@ -127,6 +127,26 @@ auth-apply:
 	@$(NOT_FROM_AGENT)
 	supabase-auth/auth.sh apply
 
+# The step-host probe's Lambda on jadwigo-dev (dl-z5ja.5): a root of its own, terraform/probes/step-host,
+# whose state sits beside prod's under its own key, so neither plan ever reads the other. The owner
+# applies it before `make step-probe HOST=lambda ENV=dev` and destroys it once the numbers are on the
+# issue. Plan reads only; apply and destroy are the owner's, from a terminal.
+PROBE_TF := AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform/probes/step-host
+
+probe-step-host-plan:
+	$(PROBE_TF) init -input=false
+	$(PROBE_TF) plan
+
+probe-step-host-apply:
+	@$(NOT_FROM_AGENT)
+	$(PROBE_TF) init -input=false
+	$(PROBE_TF) apply
+
+probe-step-host-destroy:
+	@$(NOT_FROM_AGENT)
+	$(PROBE_TF) init -input=false
+	$(PROBE_TF) destroy
+
 # No AWS: what CI and `make check` can run.
 fmt:
 	terraform -chdir=terraform fmt -check -recursive
@@ -136,6 +156,7 @@ fmt:
 # resource each time. `test` below reads, validates and runs those files instead.
 validate:
 	terraform -chdir=terraform init -backend=false -input=false >/dev/null && terraform -chdir=terraform validate -no-tests
+	terraform -chdir=terraform/probes/step-host init -backend=false -input=false >/dev/null && terraform -chdir=terraform/probes/step-host validate
 
 # terraform/tests/*.tftest.hcl against mock providers: no credentials, no AWS call. init fetches the
 # providers the lock file pins, once; after that it runs offline (dl-5ssh.90.17). prod.tfvars is the
