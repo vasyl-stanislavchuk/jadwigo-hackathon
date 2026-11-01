@@ -48,6 +48,10 @@
         "MessageLimitDay",
         "AiConsentMissing",
         "ConversationArchived",
+        "AttachmentMismatch",
+        "AttachmentAttached",
+        "AttachmentExpired",
+        "AttachmentLimitDay",
         "Unauthorized",
         "BankUnavailable"
       ]

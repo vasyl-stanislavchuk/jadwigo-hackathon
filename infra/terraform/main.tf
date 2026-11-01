@@ -101,6 +101,9 @@ module "app" {
     "POST /api/v1/runs/{id}/cancellations",
     # A parent's Good or Bad on a turn (dl-z5ja.110); a token route.
     "POST /api/v1/runs/{id}/ratings",
+    # A message's photos (dl-z5ja.11): an upload form, then a link to the stored copy; token routes.
+    "POST /api/v1/attachments",
+    "GET /api/v1/attachments/{id}",
   ]
 
   # The routes above whose ROUTES auth is "token": only these carry the JWT authorizer
@@ -130,6 +133,8 @@ module "app" {
     "GET /api/v1/runs/{id}/events",
     "POST /api/v1/runs/{id}/cancellations",
     "POST /api/v1/runs/{id}/ratings",
+    "POST /api/v1/attachments",
+    "GET /api/v1/attachments/{id}",
   ]
 
   jwt_issuer = "https://${var.supabase_ref}.supabase.co/auth/v1"

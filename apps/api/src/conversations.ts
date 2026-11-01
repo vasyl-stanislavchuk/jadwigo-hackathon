@@ -185,6 +185,9 @@ export async function postMessage(
   await requireConsent(store, pod);
   await requireLive(store, pod, id);
   if (parsed.data.kind === "steer") return steer(store, deps, pod, account, id, parsed.data);
+  // Photos are taken from dl-z5ja.11.3 on; until then a message never lands without its photos.
+  if (parsed.data.attachment_ids !== undefined)
+    throw new ApiError(ErrorType.enum.AttachmentMismatch, "photos cannot be sent yet");
   const { event_id, text } = parsed.data;
   // One unit: the reads below, the write and the refusal. A refused message throws after
   // acceptMessage wrote, so on Postgres the unit rolls the row back and its held send is
