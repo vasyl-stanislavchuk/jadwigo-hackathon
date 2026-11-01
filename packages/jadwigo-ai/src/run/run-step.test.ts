@@ -1243,6 +1243,43 @@ describe("the answer check: one correction per turn", () => {
     });
   });
 
+  it("re-checks a refused answer only against the log up to its call (dl-z5ja.102)", async () => {
+    let t: Awaited<ReturnType<typeof setup>>;
+    t = await setup([{ text: "All 9 done." }, { text: "Ready." }]);
+    const scripted = t.deps.muse;
+    t.deps.muse = {
+      respond: async (request) => {
+        // The parent's words arrive after the model answered: they name the 9 it invented.
+        if (request.call_no === 1) await t.say("Make it 9 questions.");
+        return scripted.respond(request);
+      },
+    };
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+
+    expect(t.muse.calls).toHaveLength(2);
+    expect(t.muse.calls[1]?.instructions).toContain("was not sent to the parent");
+    expect(JSON.stringify(t.muse.calls[1]?.input)).toContain("Make it 9 questions.");
+    const agent = (await t.log(run)).flatMap((e) =>
+      e.type === "message" && e.payload.from === "agent" ? [e.payload.text] : [],
+    );
+    expect(agent).toEqual(["Ready."]);
+  });
+
+  it("counts the parent's words from an earlier turn as given (Lead decision 38)", async () => {
+    const t = await setup([{ text: "Sure." }, { text: "All 9 done." }]);
+    await t.say("Make it 9 questions.");
+    await drain(t.deps);
+    const run = await t.say("Is it done?");
+    await drain(t.deps);
+
+    expect(t.muse.calls).toHaveLength(2);
+    const agent = (await t.log(run)).flatMap((e) =>
+      e.type === "message" && e.payload.from === "agent" ? [e.payload.text] : [],
+    );
+    expect(agent).toEqual(["All 9 done."]);
+  });
+
   it("writes the error before the budget stops a refused answer's correction", async () => {
     const t = await setup([{ text: "All 9 done.", cost_usd: 0.095 }], fakeVerbs(), 0.1);
     const run = await t.say("Halves.");
