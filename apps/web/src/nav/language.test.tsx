@@ -96,6 +96,80 @@ describe("the pod's language across a reload (dl-uukj.37)", () => {
   });
 });
 
+describe("a pod language the browser could not write (dl-uukj.40)", () => {
+  const PLAY = "/play/asg_0ectzj2evqb95a3v1v6wewjzy3";
+  const real = window.localStorage;
+  /** A browser storage that holds what it is given and refuses writes once told to. */
+  function fakeStorage(): Storage & { refuse: { set: boolean; remove: boolean } } {
+    const held = new Map<string, string>();
+    const full = () => {
+      throw new DOMException("The quota has been exceeded.", "QuotaExceededError");
+    };
+    const refuse = { set: false, remove: false };
+    return {
+      refuse,
+      get length() {
+        return held.size;
+      },
+      key: (i: number) => [...held.keys()][i] ?? null,
+      getItem: (k: string) => held.get(k) ?? null,
+      setItem: (k: string, v: string) => (refuse.set ? full() : void held.set(k, v)),
+      removeItem: (k: string) => (refuse.remove ? full() : void held.delete(k)),
+      clear: () => held.clear(),
+    };
+  }
+  const useStorage = (storage: Storage) =>
+    Object.defineProperty(window, "localStorage", { configurable: true, value: storage });
+
+  beforeEach(() => {
+    real.clear();
+    document.documentElement.lang = "pl";
+    window.history.replaceState(null, "", PLAY);
+  });
+  afterEach(() => {
+    cleanup();
+    useStorage(real);
+    act(() => setPodLanguage(null));
+    window.history.replaceState(null, "", "/");
+  });
+
+  it("lets the /me that just answered win when storage is full, and drops the stale value", () => {
+    const storage = fakeStorage();
+    useStorage(storage);
+    act(() => setPodLanguage("en"));
+    storage.refuse.set = true;
+    render(<Probe />);
+    expect(document.documentElement.lang).toBe("en");
+    act(() => setPodLanguage("pl"));
+    expect(document.documentElement.lang).toBe("pl");
+    // The stale en is gone, so a reload reads no pod language rather than the old one.
+    expect(storage.getItem("jw.pod-language")).toBeNull();
+  });
+
+  it("keeps the page's value even when storage refuses to drop the stale one", () => {
+    const storage = fakeStorage();
+    useStorage(storage);
+    act(() => setPodLanguage("en"));
+    storage.refuse.set = true;
+    storage.refuse.remove = true;
+    render(<Probe />);
+    act(() => setPodLanguage("pl"));
+    expect(storage.getItem("jw.pod-language")).toBe("en");
+    expect(document.documentElement.lang).toBe("pl");
+  });
+
+  it("reads storage alone once a write succeeds: another tab's sign-out reaches this one", () => {
+    act(() => setPodLanguage("en"));
+    render(<Probe />);
+    expect(document.documentElement.lang).toBe("en");
+    act(() => {
+      window.localStorage.removeItem("jw.pod-language");
+      window.dispatchEvent(new Event("storage"));
+    });
+    expect(document.documentElement.lang).toBe("pl");
+  });
+});
+
 describe("the app's <html lang>", () => {
   beforeEach(() => {
     window.localStorage.clear();
