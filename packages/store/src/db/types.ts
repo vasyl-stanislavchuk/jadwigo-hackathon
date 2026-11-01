@@ -354,6 +354,7 @@ interface PodTable {
   name: string;
   language: Language;
   created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+  ai_consent_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
 }
 
 interface RunTable {
@@ -876,6 +877,7 @@ export const COLUMNS = {
     name: { type: "text", nullable: false, generated: false, labels: null },
     language: { type: "language", nullable: false, generated: false, labels: ["pl", "en"] },
     created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+    ai_consent_at: { type: "timestamptz", nullable: true, generated: false, labels: null },
   },
   run: {
     id: { type: "uuid", nullable: false, generated: false, labels: null },

@@ -93,6 +93,19 @@ function conversationIdFor(pod: PodId, event_id: EventId): ConversationId {
   return ConversationId.parse(idOf(ID_PREFIXES.conversation, uuid));
 }
 
+/**
+ * A conversation is started and spoken to only once a parent has given the pod's consent to the
+ * AI (dl-z5ja.112, wave 4 lead decision 39): until then, or after a withdrawal, 409
+ * `AiConsentMissing`, before anything is written. A Stop and the reads still answer.
+ */
+async function requireConsent(store: Store, pod: PodId): Promise<void> {
+  if ((await store.getPod(pod)).ai_consent_at === null)
+    throw new ApiError(
+      ErrorType.enum.AiConsentMissing,
+      "turn the AI on for this family before the first message",
+    );
+}
+
 function mismatch(): ApiError {
   return new ApiError(ErrorType.enum.EventIdMismatch, "this event id was sent with another body");
 }
@@ -106,6 +119,7 @@ export async function createConversation(
   const { pod, account } = await authorizeMember(store, claims);
   const parsed = ConversationCreate.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
+  await requireConsent(store, pod);
   const title = parsed.data.title ?? null;
   const conversation = await store.createConversation(pod, {
     id: conversationIdFor(pod, parsed.data.event_id),
@@ -131,6 +145,7 @@ export async function postMessage(
   const { pod, account } = await authorizeMember(store, claims);
   const parsed = ConversationMessage.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
+  await requireConsent(store, pod);
   if (parsed.data.kind === "steer") return steer(store, deps, pod, account, id, parsed.data);
   const { event_id, text } = parsed.data;
   // One unit: the reads below, the write and the refusal. A refused message throws after

@@ -63,6 +63,7 @@ import {
   type RunId,
   RunInbox,
   RunRating,
+  type RunWorkflow,
 } from "@jadwigo/contracts/run";
 import {
   CompiledQuery,
@@ -513,7 +514,11 @@ class PostgresStore implements Store {
       const { row } = await this.#once(
         () => tx.selectFrom("pod").selectAll().where("id", "=", id).executeTakeFirst(),
         () => {
-          const valid = parse(Pod, { ...pod, created_at: new Date().toISOString() }, "the pod");
+          const valid = parse(
+            Pod,
+            { ...pod, created_at: new Date().toISOString(), ai_consent_at: null },
+            "the pod",
+          );
           return tx
             .insertInto("pod")
             .values({ id, name: valid.name, language: valid.language })
@@ -1745,6 +1750,33 @@ class PostgresStore implements Store {
     });
   }
 
+  async getPod(pod: PodId): Promise<Pod> {
+    return this.#in(pod, async (tx) => {
+      const row = await tx
+        .selectFrom("pod")
+        .selectAll()
+        .where("id", "=", uuidOf(ID_PREFIXES.pod, pod))
+        .executeTakeFirst();
+      if (!row) throw notFound("the pod");
+      return read(Pod, row, ID_PREFIXES.pod);
+    });
+  }
+
+  async setAiConsent(pod: PodId, consented: boolean): Promise<Pod> {
+    return this.#in(pod, async (tx) => {
+      const row = await tx
+        .updateTable("pod")
+        .set({
+          ai_consent_at: consented ? sql<Date>`coalesce(ai_consent_at, now())` : null,
+        })
+        .where("id", "=", uuidOf(ID_PREFIXES.pod, pod))
+        .returningAll()
+        .executeTakeFirst();
+      if (!row) throw notFound("the pod");
+      return read(Pod, row, ID_PREFIXES.pod);
+    });
+  }
+
   async getMe(pod: PodId, account: AccountId): Promise<Me> {
     const accountId = uuidOf(ID_PREFIXES.account, account);
     return this.#in(pod, async (tx) => {
@@ -2613,6 +2645,17 @@ class PostgresStore implements Store {
         const run = runOf(row);
         return { pod: run.pod_id, run };
       });
+    });
+  }
+
+  async spentUsd(workflows: readonly RunWorkflow[], since: string): Promise<number> {
+    const at = utc(since);
+    return this.#in(null, async (tx) => {
+      // muse_ledger.spent_usd reads past row-level security: every pod's model calls.
+      const { rows } = await sql<{ spent: string }>`
+        select muse_ledger.spent_usd(${[...workflows]}::run_workflow[], ${at}::timestamptz) as spent
+      `.execute(tx);
+      return Number(rows[0]?.spent ?? Number.NaN);
     });
   }
 

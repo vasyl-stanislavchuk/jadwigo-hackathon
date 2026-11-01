@@ -13,6 +13,7 @@ import {
   idOf,
   LIMITS,
   type Me,
+  type Pod,
   type PodId,
   type RunAccepted,
   type RunEvents,
@@ -49,16 +50,20 @@ export function conversationSuite(
     });
 
     /** A signed-in parent with an account, so a pod of its own. */
-    async function parent() {
+    async function parent({ consented = true }: { readonly consented?: boolean } = {}) {
       const headers = bearerOf(signToken({ sub: randomUUID() }));
       const call = <T>(method: string, path: string, body?: unknown) =>
         s.call<T>(method, path, body, headers);
       const me = await call<Me>("POST", pathOf("createAccount", {}), { language: "pl" });
       expect(me.status).toBe(201);
       const pod = me.body.pod?.id as PodId;
+      const consent = (ai_consented: boolean) =>
+        call<Pod>("PATCH", pathOf("patchPod", { id: pod }), { ai_consented });
+      if (consented) expect((await consent(true)).status).toBe(200);
       return {
         call,
         pod,
+        consent,
         async conversation(title?: string): Promise<Conversation> {
           const reply = await call<Conversation>("POST", pathOf("createConversation", {}), {
             event_id: event(),
@@ -440,6 +445,71 @@ export function conversationSuite(
       expect(reply.status).toBe(404);
       expect(reply.body.error.type).toBe("NotFound");
       expect(await s.store.listRunRatings(a.pod, run.id)).toEqual([]);
+    });
+
+    // dl-z5ja.112: consent is the pod's, kept on the server, so no client can skip it.
+    it("refuses a conversation and a message with 409 AiConsentMissing until consent, and again after it is withdrawn", async () => {
+      const a = await parent({ consented: false });
+      const before = await a.call<ErrorEnvelope>("POST", pathOf("createConversation", {}), {
+        event_id: event(),
+      });
+      expect(before.status).toBe(409);
+      expect(before.body.error.type).toBe("AiConsentMissing");
+
+      const given = await a.consent(true);
+      expect(given.status).toBe(200);
+      expect(given.body).toMatchObject({ id: a.pod });
+      expect(given.body.ai_consent_at).toEqual(expect.any(String));
+      const me = await a.call<Me>("GET", pathOf("getMe", {}));
+      expect(me.body.pod?.ai_consent_at).toBe(given.body.ai_consent_at);
+      // Giving it again keeps the first time.
+      expect((await a.consent(true)).body.ai_consent_at).toBe(given.body.ai_consent_at);
+
+      const conversation = await a.conversation();
+      const sent = await a.say(conversation.id, "A lesson on adding to 10, please");
+      expect(sent.status).toBe(201);
+      const { run } = sent.body;
+
+      const withdrawn = await a.consent(false);
+      expect(withdrawn.status).toBe(200);
+      expect(withdrawn.body.ai_consent_at).toBeNull();
+      const refused = [
+        a.call<ErrorEnvelope>("POST", pathOf("createConversation", {}), { event_id: event() }),
+        a.call<ErrorEnvelope>("POST", pathOf("postMessage", { id: conversation.id }), {
+          event_id: event(),
+          text: "One more",
+        }),
+        a.call<ErrorEnvelope>("POST", pathOf("postMessage", { id: conversation.id }), {
+          event_id: event(),
+          kind: "steer",
+          text: "A steer",
+        }),
+      ];
+      for (const reply of await Promise.all(refused)) {
+        expect(reply.status).toBe(409);
+        expect(reply.body.error.type).toBe("AiConsentMissing");
+      }
+      // Nothing was written or enqueued, and the parent may still read the turn and stop it.
+      expect(await s.store.listRuns(a.pod, conversation.id)).toHaveLength(1);
+      expect(await q.stepsFor(run.id)).toBe(1);
+      const runs = await a.call("GET", pathOf("listConversationRuns", { id: conversation.id }));
+      expect(runs.status).toBe(200);
+      const stop = await a.call("POST", pathOf("cancelRun", { id: run.id }), { event_id: event() });
+      expect(stop.status).toBe(201);
+    });
+
+    it("sets only the caller's own pod's consent: another pod's id is 404, a bad body 400", async () => {
+      const a = await parent({ consented: false });
+      const b = await parent({ consented: false });
+      const other = await a.call<ErrorEnvelope>("PATCH", pathOf("patchPod", { id: b.pod }), {
+        ai_consented: true,
+      });
+      expect(other.status).toBe(404);
+      expect(other.body.error.type).toBe("NotFound");
+      expect((await s.store.getPod(b.pod)).ai_consent_at).toBeNull();
+      for (const body of [{}, { ai_consented: "yes" }, { ai_consented: true, ai_consent_at: null }])
+        expect((await a.call("PATCH", pathOf("patchPod", { id: a.pod }), body)).status).toBe(400);
+      expect((await s.store.getPod(a.pod)).ai_consent_at).toBeNull();
     });
 
     it("answers 409 AccountMissing to a signed-in user with no account yet", async () => {

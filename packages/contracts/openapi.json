@@ -568,6 +568,62 @@
         }
       }
     },
+    "/api/v1/pods/{id}": {
+      "patch": {
+        "operationId": "patchPod",
+        "summary": "Gives or withdraws the pod's consent to the AI.",
+        "description": "`ai_consented: true` stamps `ai_consent_at`, and giving it again keeps the first time; `false` sets it to null. While it is null the conversation routes answer 409 `AiConsentMissing`. Another pod's id is 404.",
+        "tags": [
+          "parents"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PodId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PodPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pod"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/api/v1/learners": {
       "post": {
         "operationId": "createLearner",
@@ -3649,6 +3705,7 @@
           "AnswerLimit",
           "MessageLimitMinute",
           "MessageLimitDay",
+          "AiConsentMissing",
           "Unauthorized",
           "BankUnavailable"
         ]
@@ -8256,19 +8313,45 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "ai_consent_at": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "id",
           "name",
           "language",
-          "created_at"
+          "created_at",
+          "ai_consent_at"
         ],
         "additionalProperties": false
       },
       "PodId": {
         "type": "string",
         "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "PodPatch": {
+        "type": "object",
+        "properties": {
+          "ai_consented": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ai_consented"
+        ],
+        "additionalProperties": false
       },
       "Point": {
         "type": "object",
@@ -10903,7 +10986,7 @@
     },
     "responses": {
       "Error": {
-        "description": "An error: `{error: {type, message}}`. The type names the cause, and answers with one status:\n\n- 400: `BadRequest`, `ServerFieldSupplied`\n- 401: `NotSignedIn`, `Unauthorized`\n- 404: `NotFound`\n- 409: `AccountMissing`, `AttemptClaimed`, `AttemptPreview`, `AssignmentClosed`, `AttemptFinished`, `AttemptNotFinished`, `AttemptPaused`, `QuestionNotOpen`, `TryOutOfOrder`, `AnswerConflict`, `EventIdMismatch`, `WriteOnce`\n- 429: `AnswerLimit`, `MessageLimitMinute`, `MessageLimitDay`\n- 502: `BankUnavailable`",
+        "description": "An error: `{error: {type, message}}`. The type names the cause, and answers with one status:\n\n- 400: `BadRequest`, `ServerFieldSupplied`\n- 401: `NotSignedIn`, `Unauthorized`\n- 404: `NotFound`\n- 409: `AccountMissing`, `AttemptClaimed`, `AttemptPreview`, `AssignmentClosed`, `AttemptFinished`, `AttemptNotFinished`, `AttemptPaused`, `QuestionNotOpen`, `TryOutOfOrder`, `AnswerConflict`, `EventIdMismatch`, `WriteOnce`, `AiConsentMissing`\n- 429: `AnswerLimit`, `MessageLimitMinute`, `MessageLimitDay`\n- 502: `BankUnavailable`",
         "content": {
           "application/json": {
             "schema": {

@@ -11,6 +11,25 @@ A conversation holds runs, one run per turn. A run's work is an append-only log 
 numbered by `seq` from 1. The API never waits for the AI: a message is stored and its run is queued,
 and the reply comes at once. The AI's answer arrives later, as events on the run.
 
+## 0. Turn the AI on for the family
+
+[Reference](/api/operations/patchpod/).
+
+```bash
+curl -X PATCH https://app.jadwigo.pl/api/v1/pods/$POD_ID \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"ai_consented": true}'
+```
+
+A parent gives consent once, for the whole family's pod, after the client has shown what the AI
+reads and where it goes. The pod's id is in [`GET /api/v1/me`](/api/operations/getme/). The reply is
+the pod, with `ai_consent_at` set; sending it again keeps the first time.
+
+Until then, starting a conversation or sending a message is `409` `AiConsentMissing`, and nothing
+is stored. `{"ai_consented": false}` withdraws it: `ai_consent_at` is null again, and the same
+`409` comes back. A turn already running can still be read and stopped.
+
 ## 1. Start a conversation
 
 [Reference](/api/operations/createconversation/).

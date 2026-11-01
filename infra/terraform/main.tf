@@ -72,6 +72,8 @@ module "app" {
     # dl-e8ov.2.42; apply them only together with it, never alone.
     "GET /api/v1/me",
     "POST /api/v1/accounts",
+    # A pod's consent to the AI (dl-z5ja.112): a token route.
+    "PATCH /api/v1/pods/{id}",
     "POST /api/v1/learners",
     "POST /api/v1/attempts/{id}/claims",
     "GET /api/v1/learners/{id}/attempts",
@@ -103,6 +105,7 @@ module "app" {
   token_routes = [
     "GET /api/v1/me",
     "POST /api/v1/accounts",
+    "PATCH /api/v1/pods/{id}",
     "POST /api/v1/learners",
     "POST /api/v1/attempts/{id}/claims",
     "GET /api/v1/learners/{id}/attempts",
