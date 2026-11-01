@@ -1,60 +1,55 @@
-// The landing page's words beyond its frontmatter: one entry per section, read from
-// src/content/pl/landing.yaml so a native speaker edits words, not markup. The page's `reviewed`
-// flag in src/content/pl/index.md covers these words too.
+// The site's words beyond each page's frontmatter: one entry per section, read from
+// src/content/pl/landing.yaml so a native speaker edits words, not markup. The index page's
+// `reviewed` flag in src/content/pl/index.md covers these words too.
 import { z } from "astro/zod";
 
-const item = z.object({ title: z.string().min(1), text: z.string().min(1) });
+const text = z.string().min(1);
+const item = z.object({ title: text, text });
+/** A page built from these words: its head and its h1. */
+const head = { title: text, description: text, heading: text };
 
 export const landingSchema = z.object({
-  hero: z.object({
-    lead: z.string().min(1),
-    child: z.string().min(1),
-    homework: z.string().min(1),
-    play: z.string().min(1),
-    art: z.string().min(1),
-  }),
-  steps: z.object({ heading: z.string().min(1), items: z.array(item).length(3) }),
-  promises: z.object({ heading: z.string().min(1), items: z.array(item).min(1) }),
+  hero: z.object({ lead: text, homework: text, play: text }),
+  links: z.array(z.object({ href: z.string().regex(/^(\/[a-z0-9-]+)+$/), label: text })).min(1),
+  steps: z.object({ ...head, items: z.array(item).length(3) }),
+  promises: z.object({ heading: text, items: z.array(item).min(1) }),
   lessons: z.object({
-    heading: z.string().min(1),
-    text: z.string().min(1),
-    play: z.string().min(1),
-    all: z.string().min(1),
+    ...head,
+    text,
+    play: text,
+    all: text,
+    subjects: z.object({ math: text, polish: text, english: text }),
+    grade: text,
+    questions: z.tuple([text, text, text]),
   }),
   compare: z.object({
-    heading: z.string().min(1),
-    nav: z.string().min(1),
-    text: z.string().min(1),
-    columns: z.tuple([z.string().min(1), z.string().min(1), z.string().min(1)]),
-    source: z.string().min(1),
-    rows: z
-      .array(
-        z.object({
-          app: z.string().min(1),
-          around: z.string().min(1),
-          jadwigo: z.string().min(1),
-          source: z.string().url(),
-        }),
-      )
-      .min(1),
+    ...head,
+    text,
+    columns: z.tuple([text, text, text]),
+    source: text,
+    rows: z.array(z.object({ app: text, around: text, jadwigo: text, source: z.url() })).min(1),
   }),
-  about: z.object({ heading: z.string().min(1), text: z.string().min(1), more: z.string().min(1) }),
   signIn: z.object({
-    title: z.string().min(1),
-    description: z.string().min(1),
-    heading: z.string().min(1),
-    lead: z.string().min(1),
-    email: z.string().min(1),
-    send: z.string().min(1),
-    note: z.string().min(1),
-    or: z.string().min(1),
-    google: z.string().min(1),
-    facebook: z.string().min(1),
+    ...head,
+    lead: text,
+    email: text,
+    send: text,
+    note: text,
+    or: text,
+    google: text,
+    facebook: text,
   }),
-  nav: z.object({ signIn: z.string().min(1), home: z.string().min(1) }),
-  footer: z.object({
-    privacy: z.string().min(1),
-    deletion: z.string().min(1),
-    made: z.string().min(1),
-  }),
+  nav: z.object({ signIn: text, home: text, label: text }),
+  footer: z.object({ privacy: text, deletion: text, made: text }),
 });
+
+/** Polish plural of a count: 1 pytanie, 2–4 (not 12–14) pytania, else pytań. */
+export function plural(n: number, [one, few, many]: readonly [string, string, string]): string {
+  if (n === 1) return `${n} ${one}`;
+  const tens = n % 100;
+  const units = n % 10;
+  return `${n} ${units >= 2 && units <= 4 && (tens < 12 || tens > 14) ? few : many}`;
+}
+
+/** The first sentence of a spoken line, for a card's teaser: "Ile to jest 2 razy 7?" */
+export const firstSentence = (line: string): string => line.match(/^.*?[?.!](?=\s|$)/)?.[0] ?? line;

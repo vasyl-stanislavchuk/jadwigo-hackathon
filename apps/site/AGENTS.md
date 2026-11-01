@@ -13,7 +13,6 @@ jadwigo.kids and English wait.
 
 ## How it is laid out
 
-- `public/cast.webp`: the cast (Klasa Królowej), a copy of `apps/docs/src/assets/illustration/cast.webp`.
 - `src/content/<lang>/*.md`: each page's words, one file per page; the entry id is its path (`pl/index`).
   Frontmatter: `title`, `description`, `heading`, `ogImage` (optional, a path under `public/`) and
   `reviewed`; optional `lang`, `path`, `translation` and `draftNote`. The schema is `pageSchema` in `src/lib/seo.ts`.
@@ -36,8 +35,8 @@ jadwigo.kids and English wait.
   Its head and h1 are in `src/content/pl/index.md`, its section words in `src/content/pl/landing.yaml`
   (`src/lib/landing.ts` is the schema), and the index's `reviewed` covers both. Copy says what Jadwigo
   does, never a slogan; numbers are digits; "diagnostic" is never shown.
-- The header carries the crown wordmark (`dl-w0b4.68`) as a link home, and the sign-in link to
-  `parentUrl` (`src/index.ts`). Links to the app come from `hosts.prod.app`, never typed.
+- The header carries the crown wordmark (`dl-w0b4.68`) as a link home, a link to each page in
+  `landing.yaml`'s `links` (each its own page, never an anchor), and "Zaloguj się" to `/zaloguj`. Links to the app come from `hosts.prod.app`, never typed.
 - Colours and type come from `@jadwigo/ui/foundation.css` (Zeszyt) and Andika. Crown yellow is for
   the brand only.
 - A link to a page with a `path` appears only when the build serves that page (`servedPathPages`),

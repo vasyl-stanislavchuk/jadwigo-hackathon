@@ -3,7 +3,8 @@
 // crown wordmark (decision jadwigo-marketing/decisions/2026-10-30-jadwigo-wears-lockup-4a-an-andika-
 // wordmark-with-a-crown-tipped-o) and a footer. With `prose`, the words read top to bottom in a
 // column under the page's heading, as the privacy pages do (dl-w0b4.64). Without it, the page brings
-// its own sections and its own h1 (the landing page, dl-5ssh.4.1).
+// its own sections and its own h1 (the landing page, dl-5ssh.4.1). The header links every page in
+// landing.yaml's `links`, each its own page (owner, 2026-10-31).
 import "@fontsource/andika/400.css";
 import "@fontsource/andika/700.css";
 import "@jadwigo/ui/foundation.css";
@@ -15,11 +16,9 @@ interface Props {
   page: Page;
   path: string;
   prose?: boolean;
-  /** The landing page's section anchors, shown in the header's nav. */
-  nav?: { href: string; label: string }[];
 }
 
-const { page, path, prose = false, nav = [] } = Astro.props;
+const { page, path, prose = false } = Astro.props;
 const lang = page.lang ?? "pl";
 const otherLanguage = lang === "pl" ? "English" : "Polski";
 const pages = await getCollection("pages");
@@ -87,19 +86,22 @@ const footerLinks = [
       /* Hover 5a: only the crown tips, about the bottom-left corner of its box (packages/ui src/brand/
          README.md); a tap plays it once. The wordmark's box is 180 units tall, the crown's room included. */
       .logo { display: inline-flex; line-height: 0; }
-      .logo svg { height: 3.25rem; width: auto; }
+      .logo svg { height: 3.25rem; width: auto; overflow: visible; }
       @media (min-width: 52rem) { .logo svg { height: 3.75rem; } }
       .logo .crown { transform-origin: -12.5px 2.15px; transition: transform 320ms cubic-bezier(.34, 1.8, .5, 1); }
       .logo:hover .crown, .logo:focus-visible .crown, .logo.tip .crown { transform: translateY(-12.5px) rotate(-18deg); }
       @media (prefers-reduced-motion: reduce) {
         .logo .crown, .logo:hover .crown, .logo:focus-visible .crown, .logo.tip .crown { transition: none; transform: none; }
       }
-      .site-nav { display: none; gap: 1.25rem; margin-left: auto; }
+      .site-header .wrap { flex-wrap: wrap; }
+      /* On a phone the pages sit in a row under the logo, scrolling sideways if they must. */
+      .site-nav { display: flex; order: 3; width: 100%; gap: 1rem; overflow-x: auto; white-space: nowrap; font-size: 0.95rem; }
       .site-nav a { color: var(--jw-ink); text-decoration: none; font-weight: 700; padding: 0.5rem 0; }
-      .site-nav a:hover { color: var(--jw-brand-go); }
+      .site-nav a:hover, .site-nav a[aria-current] { color: var(--jw-brand-go); }
       .site-header .btn { margin-left: auto; padding: 0.5rem 1.1rem; min-height: 44px; }
       @media (min-width: 52rem) {
-        .site-nav { display: flex; }
+        .site-header .wrap { flex-wrap: nowrap; }
+        .site-nav { order: 0; width: auto; margin-left: auto; gap: 1.25rem; font-size: 1rem; }
         .site-nav + .btn { margin-left: 0; }
       }
 
@@ -131,11 +133,13 @@ const footerLinks = [
       <div class="wrap">
         <a class="logo" href="/" aria-label={words.nav.home} set:html={wordmark} />
         {
-          nav.length > 0 && (
-            <nav class="site-nav" aria-label="Strona">
-              {nav.map((n) => <a href={n.href}>{n.label}</a>)}
-            </nav>
-          )
+          <nav class="site-nav" aria-label={words.nav.label}>
+            {words.links.map((n) => (
+              <a href={`${n.href}/`} aria-current={path === n.href ? "page" : undefined}>
+                {n.label}
+              </a>
+            ))}
+          </nav>
         }
         <a class="btn quiet" href="/zaloguj/">{words.nav.signIn}</a>
       </div>

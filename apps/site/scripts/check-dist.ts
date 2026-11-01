@@ -4,7 +4,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { type DistCheck, parsePathPage, pathPageChecks } from "../src/lib/dist.ts";
 
 const dist = new URL("../dist/", import.meta.url);
-const landing = [
+const landing: readonly DistCheck[] = [
   ["index.html", '<html lang="pl"'],
   ["index.html", '<link rel="canonical" href="https://jadwigo.pl/"'],
   ["index.html", 'property="og:title"'],
@@ -18,14 +18,16 @@ const landing = [
   ["favicon-32.png", "PNG"],
   ["apple-touch-icon.png", "PNG"],
   ["index.html", '<a class="btn" href="/praca-domowa/"'],
-  ["index.html", 'href="/o-nas/"'],
-  ["index.html", '<a class="btn quiet" href="https://app.jadwigo.pl/"'],
-  ["index.html", 'href="https://app.jadwigo.pl/play/asg_'],
-  ["index.html", 'id="jak-to-dziala"'],
   ["index.html", 'id="lekcje"'],
-  ["index.html", 'id="porownanie"'],
-  ["index.html", '<img src="/cast.webp"'],
-  ["cast.webp", "WEBP"],
+  ["index.html", 'href="https://app.jadwigo.pl/play/asg_'],
+  // Each header link is its own page, built and in the sitemap (owner, 2026-10-31).
+  ...["lekcje", "jak-to-dziala", "porownanie", "o-nas"].flatMap((p): DistCheck[] => [
+    ["index.html", `href="/${p}/"`],
+    [`${p}/index.html`, "<h1"],
+    ["sitemap-0.xml", `<loc>https://jadwigo.pl/${p}/</loc>`],
+  ]),
+  ["lekcje/index.html", 'href="https://app.jadwigo.pl/play/asg_'],
+  ["porownanie/index.html", "Khan Academy"],
   ["zaloguj/index.html", '<form action="https://app.jadwigo.pl/parent" method="get"'],
   ["zaloguj/index.html", 'href="https://app.jadwigo.pl/parent?provider=google"'],
   ["zaloguj/index.html", 'href="https://app.jadwigo.pl/parent?provider=facebook"'],
@@ -35,7 +37,7 @@ const landing = [
   ["robots.txt", "Sitemap: https://jadwigo.pl/sitemap-index.xml"],
   ["sitemap-index.xml", "https://jadwigo.pl/sitemap-0.xml"],
   ["sitemap-0.xml", "<loc>https://jadwigo.pl/</loc>"],
-] as const;
+];
 
 // The pages with their own `path`, the privacy pages today (dl-w0b4.64): each is required once its
 // source says reviewed: true, and none may carry the contact placeholder. The deletion pages' URLs
