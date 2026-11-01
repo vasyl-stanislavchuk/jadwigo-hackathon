@@ -146,6 +146,11 @@ describe("ChatScreen on a transport", () => {
     expect(await screen.findByText("Your lesson is ready on the right.")).toBeTruthy();
     expect(t.calls).toEqual(["runs", `subscribe ${t.run.id}`, `events ${t.run.id} after 0`]);
     expect(screen.getByText("Wersja 2")).toBeTruthy();
+    // Each question step is named in the parent's language (dl-z5ja.45).
+    const steps = document.querySelectorAll("[data-step][aria-label]");
+    expect(steps.length).toBeGreaterThan(0);
+    for (const step of steps)
+      expect(step.getAttribute("aria-label")).toBe(`Krok ${step.getAttribute("data-step")}`);
     await act(async () => t.push(events));
     expect(screen.getAllByText("Your lesson is ready on the right.")).toHaveLength(1);
   });
