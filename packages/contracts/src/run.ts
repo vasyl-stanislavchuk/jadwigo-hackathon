@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   AccountId,
+  AttachmentId,
   ConversationId,
   EventId,
   LearnerId,
@@ -165,12 +166,59 @@ export const Run = z.object({
 });
 export type Run = z.infer<typeof Run>;
 
-/** A file the parent attached, as a storage reference. Never the bytes (homework epic dl-z5ja.11). */
+/**
+ * What a parent may attach to a message. JPEG only: the page re-encodes every photo it is given,
+ * an iPhone's HEIC included, before it uploads, so the store, the API's check and the model see one
+ * kind (dl-z5ja.11, wave 5 decision 49). PDF and DOCX are later issues (dl-z5ja.11.7, .8).
+ */
+export const AttachmentMediaType = z.enum(["image/jpeg"]);
+export type AttachmentMediaType = z.infer<typeof AttachmentMediaType>;
+
+/**
+ * `pending` from `POST /api/v1/attachments` until a message carries it; `attached` once the
+ * message's check has copied it under the pod. A pending one expires at `expires_at`.
+ */
+export const AttachmentState = z.enum(["pending", "attached"]);
+export type AttachmentState = z.infer<typeof AttachmentState>;
+
+/**
+ * A photo a parent attached (homework epic dl-z5ja.11), scoped to the pod: it may come before any
+ * conversation, and for no learner. The bytes live in S3, never here. Its table and RLS land with
+ * dl-e8ov.2.22, which adds it to `RECORDS`. `event_id` is the create's, so a resend makes nothing
+ * new. `storage_path` and `attached_at` are set when a message's check copies it under the pod.
+ */
 export const Attachment = z.object({
-  storage_path: z.string().min(1),
-  media_type: z.string().min(1),
+  id: AttachmentId,
+  pod_id: PodId,
+  account_id: AccountId,
+  event_id: EventId,
+  state: AttachmentState,
+  media_type: AttachmentMediaType,
+  bytes: z.int().min(1),
+  width: z.int().min(1),
+  height: z.int().min(1),
+  conversation_id: ConversationId.nullable(),
+  storage_path: z.string().min(1).nullable(),
+  created_at: At,
+  expires_at: At.nullable(),
+  attached_at: At.nullable(),
 });
 export type Attachment = z.infer<typeof Attachment>;
+
+/**
+ * An attached photo as a message carries it: a storage reference the runner reads, never the
+ * bytes. The page shows it through `GET /api/v1/attachments/{id}`, so a message shows what the AI
+ * received (PostHog's ThreadAttachments, docs/research/posthog-ai-ux-patterns.md section 11).
+ */
+export const MessageAttachment = z.object({
+  attachment_id: AttachmentId,
+  storage_path: z.string().min(1),
+  media_type: AttachmentMediaType,
+  bytes: z.int().min(1),
+  width: z.int().min(1),
+  height: z.int().min(1),
+});
+export type MessageAttachment = z.infer<typeof MessageAttachment>;
 
 /**
  * The engine's own error types, beside a verb's refusals (`unknown-draft`, ...), which stay free
@@ -321,7 +369,7 @@ export const MessageEvent = event(
   z.object({
     from: z.enum(["parent", "agent"]),
     text: z.string(),
-    attachments: z.array(Attachment).optional(),
+    attachments: z.array(MessageAttachment).optional(),
     /** A parent's message only: the page it was sent from. */
     context: MessageContext.optional(),
     /** What an agent's claim about a learner rests on (seam 2). */
@@ -487,7 +535,7 @@ export const RunInbox = z.discriminatedUnion("kind", [
     kind: z.literal("message"),
     payload: z.object({
       text: z.string(),
-      attachments: z.array(Attachment).optional(),
+      attachments: z.array(MessageAttachment).optional(),
       context: MessageContext.optional(),
     }),
   }),

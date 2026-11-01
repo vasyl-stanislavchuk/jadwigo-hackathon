@@ -38,6 +38,15 @@ module "content" {
   source = "./modules/content"
 }
 
+# A message's photos (dl-z5ja.11.2): private, unversioned, pending/ expiring after a day, and a CORS
+# POST from the app's origin only (wave 5 decision 43). The api and the runner get their grants below.
+module "uploads" {
+  source = "./modules/uploads"
+
+  bucket_name     = "jadwigo-uploads-${var.environment}-843109108289"
+  allowed_origins = ["https://${var.app_domain}"]
+}
+
 # The service at app.<apex>: apps/web, and /api/* to the one Lambda (dl-5ssh.3.3).
 module "app" {
   source = "./modules/app"
@@ -101,6 +110,9 @@ module "app" {
     "POST /api/v1/runs/{id}/cancellations",
     # A parent's Good or Bad on a turn (dl-z5ja.110); a token route.
     "POST /api/v1/runs/{id}/ratings",
+    # A message's photos (dl-z5ja.11): an upload form, then a link to the stored copy; token routes.
+    "POST /api/v1/attachments",
+    "GET /api/v1/attachments/{id}",
   ]
 
   # The routes above whose ROUTES auth is "token": only these carry the JWT authorizer
@@ -130,6 +142,8 @@ module "app" {
     "GET /api/v1/runs/{id}/events",
     "POST /api/v1/runs/{id}/cancellations",
     "POST /api/v1/runs/{id}/ratings",
+    "POST /api/v1/attachments",
+    "GET /api/v1/attachments/{id}",
   ]
 
   jwt_issuer = "https://${var.supabase_ref}.supabase.co/auth/v1"
@@ -143,6 +157,10 @@ module "app" {
   # The message and Stop routes poke the step host's live alias after a commit (dl-z5ja.88): the api
   # role gains lambda:InvokeFunction on that alias only.
   runner_alias_arn = module.runner.live_alias_arn
+
+  # The api role presigns, checks, copies and deletes a message's photos (modules/app/uploads.tf).
+  uploads_bucket_name      = module.uploads.bucket_name
+  uploads_bucket_param_arn = module.uploads.bucket_param_arn
 }
 
 # The engine's step host (dl-z5ja.20): apps/runner, its own release target (`make -C infra
@@ -160,6 +178,9 @@ module "runner" {
   # Created disabled: the owner sets runner_schedule_enabled = true in prod.tfvars and applies
   # again after the first `make -C infra runner-deploy`, so it never invokes the placeholder.
   schedule_enabled = var.runner_schedule_enabled
+
+  # The step host reads the photos a message carries, under pods/*/attachments/ only (dl-z5ja.11.2).
+  uploads_bucket_name = module.uploads.bucket_name
 
   environment_variables = {
     JADWIGO_MUSE_KEY_PARAM     = "/jadwigo/${var.environment}/muse-api-key"

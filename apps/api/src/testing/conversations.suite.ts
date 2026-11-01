@@ -263,6 +263,46 @@ export function conversationSuite(
       expect(await q.stepsFor(run.id)).toBe(1);
     });
 
+    // dl-z5ja.116: the pane's patch and the revision it was made on reach the runner's inbox.
+    it("carries a lesson_edit steer's patch and base_revision into the inbox, once by event_id", async () => {
+      const a = await parent();
+      const conversation = await a.conversation();
+      const path = pathOf("postMessage", { id: conversation.id });
+      const { run } = (await a.say(conversation.id, "A lesson on adding to 10")).body;
+      const patch = { title: "Adding to 10", questions: [{ id: "q2", say: "How many pears?" }] };
+      const steer = {
+        event_id: event(),
+        kind: "steer",
+        source: "lesson_edit",
+        question_ids: ["q2"],
+        text: "Edited question q2",
+        patch,
+        base_revision: 3,
+      };
+      expect((await a.call<RunAccepted>("POST", path, steer)).status).toBe(201);
+      // A resend lands once, whatever order the patch's keys come back in.
+      const reordered = { ...steer, patch: { questions: patch.questions, title: patch.title } };
+      expect((await a.call<RunAccepted>("POST", path, reordered)).status).toBe(201);
+      for (const changed of [
+        { ...steer, patch: { title: "Adding to 20" } },
+        { ...steer, base_revision: 4 },
+      ]) {
+        const reply = await a.call<ErrorEnvelope>("POST", path, changed);
+        expect(reply.status).toBe(409);
+        expect(reply.body.error.type).toBe("EventIdMismatch");
+      }
+
+      const steers = (await s.store.takeRunInbox(a.pod, run.id)).filter((r) => r.kind === "steer");
+      expect(steers).toHaveLength(1);
+      expect(steers[0]?.payload).toEqual({
+        text: "Edited question q2",
+        source: "lesson_edit",
+        question_ids: ["q2"],
+        patch,
+        base_revision: 3,
+      });
+    });
+
     it("refuses a message the server would own, or an empty one", async () => {
       const a = await parent();
       const conversation = await a.conversation();
@@ -576,6 +616,31 @@ export function conversationSuite(
       }
       expect(await s.store.listRuns(a.pod, conversation.id)).toHaveLength(1);
       expect(await q.stepsFor(run.id)).toBe(1);
+    });
+
+    // Step 0 of wave 5 (dl-z5ja.11.1): the contract takes photos before the API does, so a
+    // message with photos is refused whole until dl-z5ja.11.3, never kept without them.
+    it("refuses a message with photos until they are taken, and the photo routes answer 404", async () => {
+      const a = await parent();
+      const conversation = await a.conversation();
+      const photo = "atch_6et2fhbnwvb45aw9atcfzs33za";
+      const sent = await a.call<ErrorEnvelope>(
+        "POST",
+        pathOf("postMessage", { id: conversation.id }),
+        { event_id: event(), text: "", attachment_ids: [photo] },
+      );
+      expect(sent.status).toBe(409);
+      expect(sent.body.error.type).toBe("AttachmentMismatch");
+      expect(await s.store.listRuns(a.pod, conversation.id)).toHaveLength(0);
+      const created = await a.call<ErrorEnvelope>("POST", pathOf("createAttachment", {}), {
+        event_id: event(),
+        media_type: "image/jpeg",
+        bytes: 1000,
+        width: 10,
+        height: 10,
+      });
+      expect(created.status).toBe(404);
+      expect((await a.call("GET", pathOf("getAttachment", { id: photo }))).status).toBe(404);
     });
 
     it("answers 404 NotFound to archiving another pod's conversation, and leaves it live", async () => {

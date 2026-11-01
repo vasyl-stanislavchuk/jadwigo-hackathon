@@ -229,7 +229,7 @@
             "attachments": {
               "type": "array",
               "items": {
-                "$ref": "#/$defs/Attachment"
+                "$ref": "#/$defs/MessageAttachment"
               }
             },
             "context": {
@@ -267,23 +267,54 @@
       "type": "string",
       "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
     },
-    "Attachment": {
+    "MessageAttachment": {
       "type": "object",
       "properties": {
+        "attachment_id": {
+          "$ref": "#/$defs/AttachmentId"
+        },
         "storage_path": {
           "type": "string",
           "minLength": 1
         },
         "media_type": {
-          "type": "string",
-          "minLength": 1
+          "$ref": "#/$defs/AttachmentMediaType"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
         }
       },
       "required": [
+        "attachment_id",
         "storage_path",
-        "media_type"
+        "media_type",
+        "bytes",
+        "width",
+        "height"
       ],
       "additionalProperties": false
+    },
+    "AttachmentId": {
+      "type": "string",
+      "pattern": "^atch_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "AttachmentMediaType": {
+      "type": "string",
+      "enum": [
+        "image/jpeg"
+      ]
     },
     "MessageContext": {
       "anyOf": [

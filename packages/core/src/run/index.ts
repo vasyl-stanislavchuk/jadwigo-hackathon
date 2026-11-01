@@ -1,9 +1,9 @@
 import type { Citation } from "@jadwigo/contracts";
 import {
-  type Attachment,
   BUDGET_STEER_SHARE,
   BUDGET_STOP_SHARE,
   type ChooseForm,
+  type MessageAttachment,
   type PlanEntry,
   type Run,
   type RunError,
@@ -36,7 +36,7 @@ export type ChatItem =
       seq: number;
       from: "parent" | "agent";
       text: string;
-      attachments: readonly Attachment[];
+      attachments: readonly MessageAttachment[];
       citations?: readonly Citation[];
       /**
        * Present only on a parent's steer (dl-z5ja.51): words sent while the turn ran, or an edit
