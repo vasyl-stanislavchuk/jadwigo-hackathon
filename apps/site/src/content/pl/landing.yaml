@@ -37,6 +37,18 @@ pl:
     heading: O nas
     text: Jadwigo budujemy jako rodzina, mama, tata i nasz syn. Najpierw dla niego, teraz dla jego klasy.
     more: Nasza historia
+  # /zaloguj (dl-5ssh.4.2): the ways in, in the decided order, handed over to the app's /parent.
+  signIn:
+    title: Zaloguj się · Jadwigo
+    description: Zaloguj się albo załóż konto rodzica w Jadwigo kodem z e-maila, przez Google albo przez Facebooka.
+    heading: Zaloguj się
+    lead: Konto zakłada rodzic. Logowanie i zakładanie konta to ten sam krok, więc jeśli nie masz jeszcze konta, powstanie od razu.
+    email: Twój e-mail
+    send: Wyślij kod
+    note: Wyślemy kod z 6 cyfr. Wpiszesz go na następnej stronie.
+    or: albo
+    google: Kontynuuj z Google
+    facebook: Kontynuuj z Facebookiem
   nav:
     signIn: Zaloguj się
     home: Jadwigo, strona główna

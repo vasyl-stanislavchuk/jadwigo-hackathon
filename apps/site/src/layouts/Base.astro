@@ -9,7 +9,6 @@ import "@fontsource/andika/700.css";
 import "@jadwigo/ui/foundation.css";
 import { getCollection, getEntry } from "astro:content";
 import wordmark from "@jadwigo/ui/brand/wordmark.svg?raw";
-import { parentUrl } from "../index.ts";
 import { assertReviewed, headTags, jsonLd, type Page, servedPathPages } from "../lib/seo.ts";
 
 interface Props {
@@ -101,7 +100,7 @@ const footerLinks = [
       .site-header .btn { margin-left: auto; padding: 0.5rem 1.1rem; min-height: 44px; }
       @media (min-width: 52rem) {
         .site-nav { display: flex; }
-        .site-header .btn { margin-left: 0; }
+        .site-nav + .btn { margin-left: 0; }
       }
 
       .site-footer { border-top: 1px solid var(--jw-line); margin-top: 4rem; padding: 2rem 0 3rem; color: var(--jw-ink-soft); }
@@ -112,6 +111,14 @@ const footerLinks = [
       .prose h1 { font-size: clamp(1.8rem, 6vw, 2.5rem); }
       .prose h2 { font-size: 1.3rem; margin: 2rem 0 0.5rem; }
       .prose p { margin: 0.75rem 0 0; }
+      .prose ol { padding-left: 1.25rem; }
+      .prose li { margin-top: 0.4rem; }
+      /* A photo still to come: a dashed frame with its label, until the picture is chosen. */
+      .prose .frame {
+        display: grid; place-items: center; aspect-ratio: 16 / 9; max-height: 16rem; width: 100%; margin: 1.5rem 0;
+        border: 2px dashed var(--jw-line-strong); border-radius: var(--jw-radius-card);
+        background: var(--jw-act-quiet); color: var(--jw-ink-soft); text-align: center; padding: 1rem;
+      }
       .prose .lang { margin: 0 0 1.5rem; font-size: 0.95rem; }
       .prose .draft {
         margin: 1rem 0 1.5rem; padding: 0.75rem 1rem; border-radius: 0.5rem;
@@ -130,7 +137,7 @@ const footerLinks = [
             </nav>
           )
         }
-        <a class="btn quiet" href={parentUrl}>{words.nav.signIn}</a>
+        <a class="btn quiet" href="/zaloguj/">{words.nav.signIn}</a>
       </div>
     </header>
     <main>

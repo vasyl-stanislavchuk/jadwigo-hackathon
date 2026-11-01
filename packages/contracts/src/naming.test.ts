@@ -4,6 +4,7 @@ import { z } from "zod";
 import { EventId, ID_SCHEMAS } from "./ids.ts";
 import { RECORDS } from "./records.ts";
 import { ROUTE_TAGS, ROUTES } from "./routes.ts";
+import * as run from "./run.ts";
 import * as wire from "./wire.ts";
 
 /**
@@ -115,6 +116,30 @@ describe("RULES.md, names", () => {
       ...Object.values(ROUTES).flatMap((r) => r.path.split("/")),
     ];
     for (const name of names) expect(refusedWords(name), name).toEqual([]);
+  });
+
+  it("rule 3 holds in run.ts, which joins RECORDS with its migration (dl-z5ja.7)", () => {
+    const fields = (schema: z.ZodType): string[] => {
+      const s = unwrap(schema);
+      if (s instanceof z.ZodObject) {
+        return Object.entries(s.shape as Record<string, z.ZodType>).flatMap(([key, field]) => [
+          key,
+          ...fields(field),
+        ]);
+      }
+      if (s instanceof z.ZodDiscriminatedUnion)
+        return s.options.flatMap((o) => fields(o as z.ZodType));
+      if (s instanceof z.ZodArray) return fields(s.element as z.ZodType);
+      return [];
+    };
+    const names = (Object.values(run) as unknown[])
+      .filter((v): v is z.ZodType => v instanceof z.ZodType)
+      .flatMap(fields);
+    expect(names).toContain("max_deadline_at");
+    for (const name of names) {
+      expect(refusedWords(name), name).toEqual([]);
+      expect(name, name).toMatch(/^[a-z][a-z0-9_]*$/);
+    }
   });
 
   it("rule 4: a foreign key is <record>_id and names a record", () => {

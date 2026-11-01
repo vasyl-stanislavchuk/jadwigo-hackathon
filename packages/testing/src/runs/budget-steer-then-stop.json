@@ -1,0 +1,306 @@
+{
+  "name": "budget-steer-then-stop",
+  "about": "Cap 0.10: at 60% the agent is steered to finish with what it has; at 95% no further model call is made.",
+  "events": [
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 1,
+      "event_id": "00000000-0000-4000-8016-000000000001",
+      "type": "message",
+      "payload": {
+        "from": "parent",
+        "text": "Shapes for grade 1."
+      },
+      "created_at": "2026-09-01T08:00:01.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 2,
+      "event_id": "00000000-0000-4000-8016-000000000002",
+      "type": "status",
+      "payload": {
+        "status": "in_progress"
+      },
+      "created_at": "2026-09-01T08:00:02.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 3,
+      "event_id": "00000000-0000-4000-8016-000000000003",
+      "type": "model_response",
+      "payload": {
+        "response_id": "resp_1",
+        "call_no": 1,
+        "text": null,
+        "tool_calls": [
+          {
+            "call_id": "call_1",
+            "verb": "lesson_draft",
+            "input": {
+              "request": "shapes",
+              "grade": "1",
+              "names": [],
+              "topic": "geometry"
+            }
+          }
+        ],
+        "usage": {
+          "input_tokens": 3000,
+          "output_tokens": 200,
+          "cached_tokens": 0
+        },
+        "cost_usd": 0.06
+      },
+      "created_at": "2026-09-01T08:00:03.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 4,
+      "event_id": "00000000-0000-4000-8016-000000000004",
+      "type": "usage",
+      "payload": {
+        "spent_usd": 0.06,
+        "cap_usd": 0.1
+      },
+      "created_at": "2026-09-01T08:00:04.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 5,
+      "event_id": "00000000-0000-4000-8016-000000000005",
+      "type": "tool_call",
+      "payload": {
+        "call_id": "call_1",
+        "verb": "lesson_draft",
+        "input": {
+          "request": "shapes",
+          "grade": "1",
+          "names": [],
+          "topic": "geometry"
+        }
+      },
+      "created_at": "2026-09-01T08:00:05.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 6,
+      "event_id": "00000000-0000-4000-8016-000000000006",
+      "type": "tool_result",
+      "payload": {
+        "call_id": "call_1",
+        "verb": "lesson_draft",
+        "output": {
+          "draft_id": "drf_demo"
+        },
+        "error": null
+      },
+      "created_at": "2026-09-01T08:00:06.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 7,
+      "event_id": "00000000-0000-4000-8016-000000000007",
+      "type": "lesson_revision",
+      "payload": {
+        "revision": 1,
+        "call_id": "call_1",
+        "lesson_file": {
+          "id": "draft-demo",
+          "title": {
+            "en": "Shapes"
+          },
+          "language": "en",
+          "parts": []
+        }
+      },
+      "created_at": "2026-09-01T08:00:07.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 8,
+      "event_id": "00000000-0000-4000-8016-000000000008",
+      "type": "budget_steer",
+      "payload": {
+        "level": "steer",
+        "spent_usd": 0.06,
+        "cap_usd": 0.1
+      },
+      "created_at": "2026-09-01T08:00:08.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 9,
+      "event_id": "00000000-0000-4000-8016-000000000009",
+      "type": "model_response",
+      "payload": {
+        "response_id": "resp_2",
+        "call_no": 2,
+        "text": null,
+        "tool_calls": [
+          {
+            "call_id": "call_2",
+            "verb": "lesson_check",
+            "input": {
+              "draft_id": "drf_demo",
+              "help": {}
+            }
+          }
+        ],
+        "usage": {
+          "input_tokens": 2000,
+          "output_tokens": 100,
+          "cached_tokens": 0
+        },
+        "cost_usd": 0.035
+      },
+      "created_at": "2026-09-01T08:00:09.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 10,
+      "event_id": "00000000-0000-4000-8016-00000000000a",
+      "type": "usage",
+      "payload": {
+        "spent_usd": 0.095,
+        "cap_usd": 0.1
+      },
+      "created_at": "2026-09-01T08:00:10.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 11,
+      "event_id": "00000000-0000-4000-8016-00000000000b",
+      "type": "tool_call",
+      "payload": {
+        "call_id": "call_2",
+        "verb": "lesson_check",
+        "input": {
+          "draft_id": "drf_demo",
+          "help": {}
+        }
+      },
+      "created_at": "2026-09-01T08:00:11.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 12,
+      "event_id": "00000000-0000-4000-8016-00000000000c",
+      "type": "tool_result",
+      "payload": {
+        "call_id": "call_2",
+        "verb": "lesson_check",
+        "output": {
+          "findings": []
+        },
+        "error": null
+      },
+      "created_at": "2026-09-01T08:00:12.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 13,
+      "event_id": "00000000-0000-4000-8016-00000000000d",
+      "type": "budget_steer",
+      "payload": {
+        "level": "stop",
+        "spent_usd": 0.095,
+        "cap_usd": 0.1
+      },
+      "created_at": "2026-09-01T08:00:13.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 14,
+      "event_id": "00000000-0000-4000-8016-00000000000e",
+      "type": "message",
+      "payload": {
+        "from": "agent",
+        "text": "I stopped here to stay within the budget. The lesson so far is on the right."
+      },
+      "created_at": "2026-09-01T08:00:14.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 15,
+      "event_id": "00000000-0000-4000-8016-00000000000f",
+      "type": "status",
+      "payload": {
+        "status": "completed"
+      },
+      "created_at": "2026-09-01T08:00:15.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 16,
+      "event_id": "00000000-0000-4000-8016-000000000010",
+      "type": "turn_complete",
+      "payload": {},
+      "created_at": "2026-09-01T08:00:16.000Z"
+    }
+  ],
+  "expected": {
+    "chat": [
+      {
+        "kind": "message",
+        "seq": 1,
+        "from": "parent",
+        "text": "Shapes for grade 1.",
+        "attachments": []
+      },
+      {
+        "kind": "tool",
+        "seq": 5,
+        "call_id": "call_1",
+        "verb": "lesson_draft",
+        "state": "done",
+        "error": null
+      },
+      {
+        "kind": "steer",
+        "seq": 8,
+        "level": "steer",
+        "spent_usd": 0.06,
+        "cap_usd": 0.1
+      },
+      {
+        "kind": "tool",
+        "seq": 11,
+        "call_id": "call_2",
+        "verb": "lesson_check",
+        "state": "done",
+        "error": null
+      },
+      {
+        "kind": "steer",
+        "seq": 13,
+        "level": "stop",
+        "spent_usd": 0.095,
+        "cap_usd": 0.1
+      },
+      {
+        "kind": "message",
+        "seq": 14,
+        "from": "agent",
+        "text": "I stopped here to stay within the budget. The lesson so far is on the right.",
+        "attachments": []
+      }
+    ],
+    "lesson": {
+      "revision": 1,
+      "lesson_file": {
+        "id": "draft-demo",
+        "title": {
+          "en": "Shapes"
+        },
+        "language": "en",
+        "parts": []
+      }
+    },
+    "status": "completed",
+    "turn_open": false,
+    "spent_usd": 0.095,
+    "cap_usd": 0.1,
+    "budget": "stop",
+    "cursor": 16
+  }
+}

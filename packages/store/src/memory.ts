@@ -52,9 +52,20 @@ import {
   type Uuid,
   valueFor,
 } from "@jadwigo/contracts";
+import {
+  Conversation,
+  type ConversationId,
+  type NewRunEvent,
+  Run,
+  RunEvent,
+  type RunId,
+  RunInbox,
+  type RunStatus,
+} from "@jadwigo/contracts/run";
 import { byTypeThenPosition, checkExamples } from "./example.ts";
 import { handleFor } from "./handle.ts";
 import { attemptResults } from "./result.ts";
+import type { Fenced, NewConversation, NewRun, NewRunInbox, RunChange } from "./run.ts";
 import {
   type AttemptRecord,
   type ExampleWithQuestions,
@@ -87,6 +98,9 @@ import {
   type Store,
   StoreError,
 } from "./store.ts";
+
+/** A run in one of these has ended: the sweep never reads it again. */
+const ENDED: ReadonlySet<RunStatus> = new Set(["completed", "failed", "cancelled"]);
 
 /** A Zod schema as this file uses it: parse, and say why not. */
 interface Schema<T> {
@@ -179,6 +193,13 @@ export class InMemoryStore implements Store {
   readonly #mastery = new Map<string, LearnerSkillMastery[]>();
   /** By id, in the order written. */
   readonly #reports = new Map<string, LearnerReport>();
+  readonly #conversations = new Map<string, Conversation>();
+  /** By id, in the order created. */
+  readonly #runs = new Map<string, Run>();
+  /** By run id, in `seq` order. */
+  readonly #runEvents = new Map<string, RunEvent[]>();
+  /** By event id, in the order written: the key a resent message is matched on. */
+  readonly #inbox = new Map<string, RunInbox>();
 
   constructor(options: { now?: () => Date } = {}) {
     this.#now = options.now ?? (() => new Date());
@@ -1380,6 +1401,151 @@ export class InMemoryStore implements Store {
     return [
       ...attemptResults(this.#asked.get(attempt) ?? [], answers, (id) => this.#questions.get(id)),
     ];
+  }
+
+  // The engine's records (dl-z5ja.12 step 0, filled by dl-z5ja.14).
+
+  async findRunPod(id: RunId): Promise<PodId | undefined> {
+    return this.#runs.get(id)?.pod_id;
+  }
+
+  async listRunsDue(now: string): Promise<readonly { pod: PodId; run: Run }[]> {
+    const at = Date.parse(now);
+    const due = (deadline: string | null) => deadline !== null && Date.parse(deadline) <= at;
+    return [...this.#runs.values()]
+      .filter((r) => !ENDED.has(r.status) && (due(r.idle_deadline_at) || due(r.max_deadline_at)))
+      .map((run) => ({ pod: run.pod_id, run }));
+  }
+
+  async createConversation(pod: PodId, conversation: NewConversation): Promise<Conversation> {
+    this.#pod(pod);
+    const stored = this.#taken(this.#conversations, pod, conversation.id);
+    if (stored) return stored;
+    const row = frozen(
+      parse(
+        Conversation,
+        { ...conversation, pod_id: pod, created_at: this.#at() },
+        "the conversation",
+      ),
+    );
+    this.#conversations.set(row.id, row);
+    return row;
+  }
+
+  async createRun(pod: PodId, run: NewRun): Promise<Run> {
+    this.#pod(pod);
+    const stored = this.#taken(this.#runs, pod, run.id);
+    if (stored) return stored;
+    if (run.conversation_id !== null) {
+      this.#inPod(this.#conversations, pod, run.conversation_id, "the conversation");
+    }
+    if (run.resumes_run_id !== null) {
+      this.#inPod(this.#runs, pod, run.resumes_run_id, "the run it resumes");
+    }
+    const row = frozen(
+      parse(
+        Run,
+        {
+          ...run,
+          pod_id: pod,
+          status: "queued",
+          attempt: 1,
+          cancel_requested_at: null,
+          spent_usd: 0,
+          created_at: this.#at(),
+          completed_at: null,
+        },
+        "the run",
+      ),
+    );
+    this.#runs.set(row.id, row);
+    this.#runEvents.set(row.id, []);
+    return row;
+  }
+
+  async listRuns(pod: PodId, conversation: ConversationId): Promise<readonly Run[]> {
+    this.#inPod(this.#conversations, pod, conversation, "the conversation");
+    // The map keeps creation order, and the sort is stable: runs at one instant stay in it.
+    return [...this.#runs.values()].filter((r) => r.conversation_id === conversation).sort(byAge);
+  }
+
+  async getRun(pod: PodId, run: RunId): Promise<Run> {
+    return this.#inPod(this.#runs, pod, run, "the run");
+  }
+
+  async updateRun(
+    pod: PodId,
+    run: RunId,
+    attempt: number,
+    change: RunChange,
+  ): Promise<Fenced<Run>> {
+    const stored = this.#inPod(this.#runs, pod, run, "the run");
+    if (stored.attempt !== attempt) return { stale: true, value: stored };
+    const row = frozen(parse(Run, { ...stored, ...change }, "the run"));
+    this.#runs.set(row.id, row);
+    return { stale: false, value: row };
+  }
+
+  async appendRunEvents(
+    pod: PodId,
+    run: RunId,
+    attempt: number,
+    events: readonly NewRunEvent[],
+  ): Promise<Fenced<readonly RunEvent[]>> {
+    const stored = this.#inPod(this.#runs, pod, run, "the run");
+    if (events.some((e) => e.run_id !== run)) {
+      throw new StoreError(ErrorType.enum.BadRequest, "an event belongs to another run");
+    }
+    if (stored.attempt !== attempt) return { stale: true, value: [] };
+    const log = this.#runEvents.get(run) ?? [];
+    const held = new Map(log.map((e) => [e.event_id, e]));
+    // Every row is checked before any is kept, so a refused batch appends nothing.
+    const created_at = this.#at();
+    const fresh: RunEvent[] = [];
+    const answer = events.map((event) => {
+      const kept = held.get(event.event_id);
+      if (kept) return kept;
+      const row = frozen(
+        parse(RunEvent, { ...event, seq: log.length + fresh.length + 1, created_at }, "the event"),
+      );
+      held.set(row.event_id, row);
+      fresh.push(row);
+      return row;
+    });
+    this.#runEvents.set(run, [...log, ...fresh]);
+    return { stale: false, value: answer };
+  }
+
+  async listRunEvents(pod: PodId, run: RunId, afterSeq: number): Promise<readonly RunEvent[]> {
+    this.#inPod(this.#runs, pod, run, "the run");
+    return (this.#runEvents.get(run) ?? []).filter((e) => e.seq > afterSeq);
+  }
+
+  async putRunInbox(pod: PodId, entry: NewRunInbox): Promise<RunInbox> {
+    this.#inPod(this.#runs, pod, entry.run_id, "the run");
+    const stored = this.#taken(this.#inbox, pod, entry.event_id);
+    if (stored) return stored;
+    const row = frozen(
+      parse(
+        RunInbox,
+        { ...entry, pod_id: pod, status: "pending", created_at: this.#at() },
+        "the inbox row",
+      ),
+    );
+    this.#inbox.set(row.event_id, row);
+    return row;
+  }
+
+  async takeRunInbox(pod: PodId, run: RunId): Promise<readonly RunInbox[]> {
+    this.#inPod(this.#runs, pod, run, "the run");
+    const taken: RunInbox[] = [];
+    for (const row of this.#inbox.values()) {
+      if (row.run_id !== run || row.status !== "pending") continue;
+      const delivered = frozen({ ...row, status: "delivered" as const });
+      this.#inbox.set(row.event_id, delivered);
+      taken.push(delivered);
+    }
+    return taken;
   }
 }
 
