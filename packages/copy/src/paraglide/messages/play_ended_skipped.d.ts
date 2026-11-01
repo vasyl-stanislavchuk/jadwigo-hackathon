@@ -4,7 +4,7 @@
 * | category | output |
 * | --- | --- |
 * | "adult" | "Skipped" |
-* | * | "We will come back to it" |
+* | * | "We will come back to it." |
 *
 * @param {Play_Ended_SkippedInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

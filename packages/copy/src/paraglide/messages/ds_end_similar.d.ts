@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Similar ones to practise" |
+* | "Similar ones to practice" |
 *
 * @param {Ds_End_SimilarInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

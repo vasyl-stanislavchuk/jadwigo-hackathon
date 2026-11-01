@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Subtracted where a sum was asked" |
+* | "Subtracted where a sum was asked for" |
 *
 * @param {Parent_Mistake_Subtracted_For_SumInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

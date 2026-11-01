@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Coins and notes" |
+* | "Coins and bills" |
 *
 * @param {Coins_BankInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

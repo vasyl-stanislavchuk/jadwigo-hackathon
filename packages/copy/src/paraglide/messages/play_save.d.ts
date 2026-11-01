@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Save the progress" |
+* | "Save your progress" |
 *
 * @param {Play_SaveInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "For a grown-up: sign in, and this lesson stays on the child's account." |
+* | "For a grown-up: sign in, and this lesson stays on your child's account." |
 *
 * @param {Play_Save_NoteInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

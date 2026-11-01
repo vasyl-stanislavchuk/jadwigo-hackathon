@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "The hour hand left on the full hour" |
+* | "The hour hand left on the hour" |
 *
 * @param {Parent_Mistake_Hour_Hand_Not_MovedInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

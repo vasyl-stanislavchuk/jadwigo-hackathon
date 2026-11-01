@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Have a go first. Then I can show you more." |
+* | "Try it first. Then I can show you more." |
 *
 * @param {Help_Try_FirstInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Almost there: you write the last line" |
+* | "Almost there. Now write the last line yourself." |
 *
 * @param {Help_AlmostInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

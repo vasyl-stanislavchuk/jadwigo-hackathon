@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "The answers in two gaps swapped" |
+* | "A swap of the answers in 2 blanks" |
 *
 * @param {Parent_Mistake_Gap_SwapInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
