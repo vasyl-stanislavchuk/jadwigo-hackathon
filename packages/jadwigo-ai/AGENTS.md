@@ -34,7 +34,8 @@ for, and every effect is a run event the page folds into its 2 panes.
 - Wave 1 makes no network call and no paid call. `HttpMuse` is `dl-z5ja.18`.
 - A run sends the parent's own child's data to the model on purpose, names included, and only on
   the tier that does not train on it (`private`). A call on the `contributor` tier, which trains,
-  carries no learner's name (`jadwigo-hackathon/notes/2026-11-01-learner-data-reaches-the-model-by-design-for-the-parent-s-own-re`).
+  carries no learner data: at most the bank search words of a request, with names stripped by
+  `jw.pii.guard` (draft decision `dl-2uq1`, `jadwigo-hackathon/notes/2026-11-01-learner-data-reaches-the-model-by-design-for-the-parent-s-own-re`).
 - Learner data reaches a prompt only through a verb that takes its pod from `VerbContext`. Text a
   child or a photo wrote goes inside the untrusted-content fence (`dl-z5ja.47`).
 - Real learner data never goes into a fixture or a test, and nothing here writes a learner's
