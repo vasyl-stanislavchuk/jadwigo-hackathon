@@ -5,6 +5,8 @@
  * transport is the dev server's (`hotTransport`) and a test's stand-in, the same interface.
  */
 
+import { ApiError } from "@jadwigo/api-client";
+import { ErrorType } from "@jadwigo/contracts";
 import type { ConversationId, Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import {
@@ -27,6 +29,10 @@ import {
   type SendAnswer,
   type SendBody,
 } from "./wire.ts";
+
+/** Whether a send was refused by the message limit, read by the error's type, never its text. */
+const limited = (e: unknown): boolean =>
+  e instanceof ApiError && e.type === ErrorType.enum.MessageLimit;
 
 export interface EngineTransport {
   /** Live pushes for one run; answers the unsubscribe. */
@@ -153,7 +159,9 @@ export function useConversation(
           dispatch({ type: "send_failed", failed: false });
           return follow(run);
         })
-        .catch(() => dispatch({ type: "send_failed", failed: true }));
+        .catch((e: unknown) =>
+          dispatch({ type: "send_failed", failed: true, limited: limited(e) }),
+        );
     },
     [transport, conversation, follow],
   );

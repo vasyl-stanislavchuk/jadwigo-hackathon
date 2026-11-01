@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "The conversation waited a long time, so the turn ended. Write to carry on." |
+* | "The wait for the next step ran too long, so the turn ended. The lesson so far is saved: say what to do next." |
 *
 * @param {Chat_Limit_IdleInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

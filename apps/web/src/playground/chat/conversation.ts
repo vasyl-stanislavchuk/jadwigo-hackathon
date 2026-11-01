@@ -35,6 +35,8 @@ export interface ConversationState {
   stopping: boolean;
   /** The last send did not reach the server. */
   sendFailed: boolean;
+  /** The last send was refused by the message limit (`MessageLimit`, dl-z5ja.62): no retry. */
+  sendLimited: boolean;
 }
 
 export type ConversationAction =
@@ -46,7 +48,7 @@ export type ConversationAction =
   | { type: "restored" }
   | { type: "queued"; text: string }
   | { type: "stop" }
-  | { type: "send_failed"; failed: boolean };
+  | { type: "send_failed"; failed: boolean; limited?: boolean };
 
 export const EMPTY: ConversationState = {
   runs: [],
@@ -54,6 +56,7 @@ export const EMPTY: ConversationState = {
   connection: "live",
   stopping: false,
   sendFailed: false,
+  sendLimited: false,
 };
 
 /** The highest `seq` merged: where the next fetch starts. */
@@ -124,7 +127,7 @@ export function conversationReducer(
     case "stop":
       return { ...state, stopping: turnOpen(state) };
     case "send_failed":
-      return { ...state, sendFailed: action.failed };
+      return { ...state, sendFailed: action.failed, sendLimited: action.limited ?? false };
   }
 }
 

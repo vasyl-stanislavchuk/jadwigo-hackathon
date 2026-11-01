@@ -332,7 +332,7 @@ describe("the engine's limits in plain words (dl-z5ja.28, dl-z5ja.83)", () => {
     });
     const row = document.querySelector("[data-row='error']");
     expect(row?.querySelector("p")?.textContent).toBe(
-      "Rozmowa długo czekała, więc tura się zakończyła. Napisz, aby iść dalej.",
+      "Na następny krok trzeba było czekać zbyt długo, więc tura się zakończyła. Lekcja do tej pory jest zapisana: napisz, co dalej.",
     );
     expect(row?.textContent).not.toContain("10 minutes");
     expect(row?.textContent).not.toContain("Próbuję jeszcze raz.");
@@ -351,5 +351,16 @@ describe("the engine's limits in plain words (dl-z5ja.28, dl-z5ja.83)", () => {
     expect(document.querySelector("[data-row='error'] p")?.textContent).toBe(
       "Coś się zacięło: the turn ran past its 30 minutes",
     );
+  });
+});
+
+describe("the message limit (dl-z5ja.62)", () => {
+  it("says it in one honest line, with no retry", () => {
+    pane({ sendFailed: true, sendLimited: true });
+    expect(document.querySelector("[data-row='send-limited']")?.textContent).toBe(
+      "Na razie asystent nie przyjmie więcej wiadomości. Spróbuj ponownie później.",
+    );
+    expect(document.querySelector("[data-row='send-failed']")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Spróbuj ponownie" })).toBeNull();
   });
 });
