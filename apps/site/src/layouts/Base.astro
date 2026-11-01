@@ -14,6 +14,7 @@ import "@jadwigo/ui/foundation.css";
 import { getCollection, getEntry } from "astro:content";
 import { m } from "@jadwigo/copy/messages";
 import wordmark from "@jadwigo/ui/brand/wordmark.svg?raw";
+import LanguageNote from "../components/LanguageNote.astro";
 import { strictBuild } from "../lib/build.ts";
 import {
   footerPaths,
@@ -203,6 +204,7 @@ const footerLinks = [
         <a class="btn quiet" href={`${twinPath("signIn", lang)}/`}>{m.site_nav_sign_in({}, locale)}</a>
       </div>
     </header>
+    {twin && <LanguageNote lang={lang} twin={other} href={twin === "/" ? "/" : `${twin}/`} />}
     <main>
       {prose && <h1>{page.heading}</h1>}
       {page.draftNote && <p class="draft" role="note">{page.draftNote}</p>}
