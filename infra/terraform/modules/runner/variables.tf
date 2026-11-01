@@ -55,3 +55,9 @@ variable "schedule" {
   type        = bool
   default     = false
 }
+
+variable "schedule_enabled" {
+  description = "Whether the schedule runs. Off by default: until the first runner-deploy ships code, it would invoke a placeholder that throws once a minute. The owner flips it after that deploy"
+  type        = bool
+  default     = false
+}

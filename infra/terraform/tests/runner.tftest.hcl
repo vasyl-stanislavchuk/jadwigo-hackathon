@@ -96,6 +96,11 @@ run "the_step_host_reads_its_muse_key" {
   }
 
   assert {
+    condition     = aws_scheduler_schedule.drain[0].state == "DISABLED"
+    error_message = "the schedule is created disabled, so it never invokes the placeholder before the first deploy"
+  }
+
+  assert {
     condition     = aws_lambda_function_event_invoke_config.live.maximum_retry_attempts == 0
     error_message = "an async poke is never retried: the step waits in agent_step for the next drain"
   }

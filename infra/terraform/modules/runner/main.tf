@@ -175,6 +175,7 @@ resource "aws_scheduler_schedule" "drain" {
 
   name                = "${local.name}-drain"
   schedule_expression = "rate(1 minute)"
+  state               = var.schedule_enabled ? "ENABLED" : "DISABLED"
 
   flexible_time_window {
     mode = "OFF"

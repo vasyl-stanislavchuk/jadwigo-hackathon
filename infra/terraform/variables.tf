@@ -56,3 +56,9 @@ variable "runner_muse_private_model" {
   type        = string
   default     = ""
 }
+
+variable "runner_schedule_enabled" {
+  description = "Whether the step host's every-minute drain runs. False until the first runner-deploy has shipped code; the owner flips it then (dl-z5ja.20)"
+  type        = bool
+  default     = false
+}

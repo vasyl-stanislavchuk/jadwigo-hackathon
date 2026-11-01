@@ -121,7 +121,7 @@ module "app" {
 
 # The engine's step host (dl-z5ja.20): apps/runner, its own release target (`make -C infra
 # runner-deploy`), apart from the api. The api pokes its live alias after each pgmq.send, and the
-# schedule drains every minute behind it. Its pool holds 2 connections per instance, 10 at the
+# schedule drains every minute behind it once enabled. Its pool holds 2 connections per instance, 10 at the
 # reserved 5, inside the 50 the api's 150 leave of the pooler's 200.
 module "runner" {
   source = "./modules/runner"
@@ -130,6 +130,10 @@ module "runner" {
   handler       = "index.handler"
   schedule      = true
   secret_params = ["muse-api-key"]
+
+  # Created disabled: the owner sets runner_schedule_enabled = true in prod.tfvars and applies
+  # again after the first `make -C infra runner-deploy`, so it never invokes the placeholder.
+  schedule_enabled = var.runner_schedule_enabled
 
   environment_variables = {
     JADWIGO_MUSE_KEY_PARAM     = "/jadwigo/${var.environment}/muse-api-key"
