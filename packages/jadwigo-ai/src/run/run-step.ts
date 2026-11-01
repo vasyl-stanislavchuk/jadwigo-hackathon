@@ -231,12 +231,12 @@ export function acceptMessage(
   };
   return store.unit(async () => {
     // A page the pod does not hold is refused before anything is written or asked (dl-z5ja.107).
-    // A resend of a message the turn already logged answers its stored row, even when its page has
-    // gone since (dl-z5ja.117): it was checked when it first came.
+    // A resend answers its stored row, pending or taken, even when its page has gone since
+    // (dl-z5ja.117, dl-z5ja.132): it was checked when it first came.
     if (
       context &&
       (await pageLine(store, pod, message.created_by, context)) === null &&
-      !(await logged(store, pod, conversation_id, entry.event_id))
+      (await store.findRunInbox(pod, entry.event_id)) === undefined
     ) {
       throw new StoreError(ErrorType.enum.NotFound, "the page the message names is not in the pod");
     }
@@ -1081,20 +1081,6 @@ async function priorTurns(
 function pageOf(log: readonly RunEvent[]): MessageContext | null {
   const said = log.findLast((e) => e.type === "message" && e.payload.from === "parent");
   return said?.type === "message" ? (said.payload.context ?? null) : null;
-}
-
-/** Whether a run of the conversation logged the event `event_id`: the message was taken before. */
-async function logged(
-  store: Store,
-  pod: PodId,
-  conversation: ConversationId,
-  event_id: EventId,
-): Promise<boolean> {
-  for (const run of await store.listRuns(pod, conversation)) {
-    const log = await store.listRunEvents(pod, run.id, 0);
-    if (log.some((e) => e.event_id === event_id)) return true;
-  }
-  return false;
 }
 
 /**

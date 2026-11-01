@@ -207,6 +207,9 @@ class RunMemoryStore extends InMemoryStore {
     });
     return Promise.resolve(taken);
   }
+  override findRunInbox(pod: PodId, event_id: EventId) {
+    return Promise.resolve(this.inbox.find((r) => r.pod_id === pod && r.event_id === event_id));
+  }
 }
 
 interface Reply {
@@ -1653,6 +1656,27 @@ describe("the message's page (dl-z5ja.107)", () => {
     expect(again.run.id).toBe(first.run.id);
     expect(again.inbox.event_id).toBe(entry.event_id);
     // A new message naming it is refused.
+    await expect(t.send({ ...entry, event_id: newEventId() })).rejects.toMatchObject({
+      type: "NotFound",
+    });
+  });
+
+  it("answers a pending resend its stored row after the page has gone (dl-z5ja.132)", async () => {
+    const t = await setup([{ text: "Sure." }]);
+    const { learner } = await t.store.addLearner(t.member.pod, { first_name: "Mole" });
+    const entry = {
+      event_id: newEventId(),
+      kind: "message" as const,
+      payload: { text: "Hi.", context: { learner_id: learner.id } },
+    };
+    const first = await t.send(entry);
+    // Not drained: the row is still pending in the inbox when the learner leaves the pod's list.
+    const me = t.store.getMe.bind(t.store);
+    t.store.getMe = async (pod, account) => ({ ...(await me(pod, account)), learners: [] });
+
+    const again = await t.send(entry);
+    expect(again.run.id).toBe(first.run.id);
+    expect(again.inbox).toEqual(first.inbox);
     await expect(t.send({ ...entry, event_id: newEventId() })).rejects.toMatchObject({
       type: "NotFound",
     });
