@@ -334,7 +334,13 @@ export function acceptMessage(
       // A step for a run this call opened (a racing caller's too: one of the 2 steps runs stale or
       // claims nothing to pay for, dl-z5ja.41), or for one it woke from awaiting_input.
       const woke = woken.changed && waiting && woken.run.status === "queued";
-      if (opened || woke) await queue.send({ run_id: woken.run.id, attempt: woken.run.attempt });
+      // A parent's patch always gets a step of its own (#575's review): a step that is ending the
+      // turn may have taken its inbox already, and a patch must never be stranded behind it. The
+      // extra step takes it, or finds the turn ended and applies it there; racing steps pay once.
+      const patched = inbox.kind === "steer" && inbox.payload.patch !== undefined;
+      if (opened || woke || patched) {
+        await queue.send({ run_id: woken.run.id, attempt: woken.run.attempt });
+      }
       return { run: woken.run, inbox };
     }
     throw new Error(

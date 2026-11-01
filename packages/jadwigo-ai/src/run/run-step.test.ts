@@ -1750,6 +1750,32 @@ describe("a parent's patch (dl-z5ja.76)", () => {
     ]);
   });
 
+  it("is applied when it comes while the turn is ending, past its last take (#575's review)", async () => {
+    const t = await setup([drafting(), { text: "Done." }], real());
+    // The parent's patch is accepted just as the step writes turn_complete: after finish's take.
+    const append = t.store.appendRunEvents.bind(t.store);
+    let sent = false;
+    t.store.appendRunEvents = async (pod, id, attempt, events) => {
+      if (!sent && events.some((e) => e.type === "turn_complete")) {
+        sent = true;
+        await t.send(steer({ title: "Mine" }));
+      }
+      return append(pod, id, attempt, events);
+    };
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+
+    expect(sent).toBe(true);
+    expect((await t.run(run)).status).toBe("completed");
+    const events = await t.log(run);
+    expect(events.find((e) => e.type === "patch_resolved")?.payload).toMatchObject({
+      applied: true,
+      revision: 2,
+    });
+    expect(t.store.inbox.filter((r) => r.status === "pending")).toEqual([]);
+    expect(t.muse.calls).toHaveLength(2);
+  });
+
   it("leaves an ended turn's other inbox rows unlogged", async () => {
     const t = await setup([{ text: "Done." }]);
     const run = await t.say("Halves.");
