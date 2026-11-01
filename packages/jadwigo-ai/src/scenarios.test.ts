@@ -705,6 +705,72 @@ describe("the engine keeps PostHog's production lessons", () => {
     },
   );
 
+  // #575's review (dl-z5ja.130): a logged patch with no resolution is pending, never refused.
+  frozen("a patch logged but not yet resolved is told as pending to the next turn", async () => {
+    const TITLE = "Moja lekcja";
+    const t = await setup(
+      [draft(), { text: "Gotowe." }, { text: "Dobrze." }],
+      createVerbs({ bank: fixtureBank() }),
+      {
+        // The patch step dies after its take, before its revision: the steer is logged, unresolved.
+        crashOn: (events) =>
+          events.some(
+            (e) =>
+              e.type === "lesson_revision" &&
+              (e.payload.lesson_file as { title?: unknown }).title === TITLE,
+          ),
+      },
+    );
+    await t.say("Dodawanie do 20, klasa 1.");
+    await drain(t.deps);
+    await t.steer("Zmieniłam tytuł.", {
+      source: "lesson_edit",
+      question_ids: ["s01"],
+      patch: { title: TITLE },
+      base_revision: 1,
+    });
+    await drain(t.deps);
+    await t.say("Co dalej?");
+    await drain(t.deps);
+
+    const told = t.muse.calls[2]?.instructions ?? "";
+    expect(told).toContain("not applied yet");
+    expect(told).not.toContain("the lesson changed after they made it");
+  });
+
+  // #575's review: a patch that comes after the turn's last take is applied, not stranded.
+  frozen(
+    "a patch sent while the turn ends is applied, not stranded on the ended turn",
+    async () => {
+      const TITLE = "Moja lekcja";
+      let t: Awaited<ReturnType<typeof setup>>;
+      t = await setup([draft(), { text: "Gotowe." }], createVerbs({ bank: fixtureBank() }), {
+        // The step that ends the turn dies at its end; the parent's patch comes in before it is redone.
+        crashOn: (events) => events.some((e) => e.type === "turn_complete"),
+      });
+      const run = await t.say("Dodawanie do 20, klasa 1.");
+      await drain(t.deps);
+      expect((await t.store.getRun(t.pod, run)).status).toBe("in_progress");
+      await t.steer("Zmieniłam tytuł.", {
+        source: "lesson_edit",
+        question_ids: ["s01"],
+        patch: { title: TITLE },
+        base_revision: 1,
+      });
+      t.tick(STEP_VISIBILITY_S * 1000 + 1000);
+      await drain(t.deps);
+
+      const events = await t.log(run);
+      expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
+      expect(foldRun(events).lesson?.lesson_file).toMatchObject({ title: TITLE });
+      expect(events.find((e) => e.type === "patch_resolved")?.payload).toMatchObject({
+        applied: true,
+        revision: 2,
+      });
+      expect(t.muse.calls).toHaveLength(2);
+    },
+  );
+
   frozen("a patch whose step dies after the take is applied on its redelivery", async () => {
     const TITLE = "Moja lekcja";
     const t = await setup([draft(), { text: "Gotowe." }], createVerbs({ bank: fixtureBank() }), {

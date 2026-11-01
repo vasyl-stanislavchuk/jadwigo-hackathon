@@ -469,7 +469,7 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
         await w.append([
           agentMessage(w, refused, await w.id("call", last.payload.call_no, "message")),
         ]);
-        if (!parentSpokeAfter(w.log, last.seq)) return endTurn(w, "completed", deps.now());
+        if (!parentSpokeAfter(w.log, last.seq)) return finish(deps, w);
       } else if (await corrected(w, last)) {
         return endUnchecked(deps, w, last, refusal);
       } else {
@@ -477,11 +477,11 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       }
     } else if (last && last.payload.tool_calls.length === 0 && !parentSpokeAfter(w.log, last.seq)) {
       // The answer is recorded and nothing came after it: a redelivery ends the turn on it.
-      return endTurn(w, "completed", deps.now());
+      return finish(deps, w);
     }
 
     // Nothing from the parent: a turn a resend opened and no message joined (dl-z5ja.85).
-    if (!parentSpokeAfter(w.log, 0)) return endTurn(w, "completed", deps.now());
+    if (!parentSpokeAfter(w.log, 0)) return finish(deps, w);
 
     const spent = spentOf(w.log);
     const level = budgetGuard(spent, run.cap_usd);
@@ -513,7 +513,7 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
           payload: { from: "agent", text: STOP_TEXT },
         },
       ]);
-      return endTurn(w, "completed", deps.now());
+      return finish(deps, w);
     }
     const instructions = [INSTRUCTIONS];
     if (correction) instructions.push(correctionNote(correction.text, correction.refusal));
@@ -627,11 +627,11 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       // A message that came in during the call keeps the turn open for one more step.
       // So does a steer: it is logged, and the next call is built with it (Lead decision 22).
       const late = await takeInbox(deps.store, w);
-      if (late.messages + late.steers > 0) {
+      if (late.messages + late.steers - late.patches > 0) {
         await deps.queue.send({ run_id: run.id, attempt: w.attempt });
         return "continue";
       }
-      return endTurn(w, "completed", deps.now());
+      return finish(deps, w);
     }
     pending = [...response.tool_calls];
   }
@@ -806,7 +806,7 @@ async function endUnchecked(
     await deps.queue.send({ run_id: w.run, attempt: w.attempt });
     return "continue";
   }
-  return endTurn(w, "completed", deps.now());
+  return finish(deps, w);
 }
 
 /**
@@ -911,12 +911,16 @@ function steerEvent(run: RunId, row: Extract<RunInbox, { kind: "steer" }>): NewR
  * the turn is built from the logged steers, so a redelivered step keeps them (dl-z5ja.42). A cancel
  * is already on the run row.
  */
-async function takeInbox(store: Store, w: Writer): Promise<{ messages: number; steers: number }> {
+async function takeInbox(
+  store: Store,
+  w: Writer,
+): Promise<{ messages: number; steers: number; patches: number }> {
   return store.unit(async () => {
     const rows = await store.takeRunInbox(w.pod, w.run);
     const events: NewRunEvent[] = [];
     let messages = 0;
     let steers = 0;
+    let patches = 0;
     for (const row of rows) {
       if (row.kind === "message") {
         messages += 1;
@@ -947,11 +951,12 @@ async function takeInbox(store: Store, w: Writer): Promise<{ messages: number; s
         });
       } else if (row.kind === "steer") {
         steers += 1;
+        if (row.payload.patch !== undefined) patches += 1;
         events.push(steerEvent(w.run, row));
       }
     }
     await w.append(events);
-    return { messages, steers };
+    return { messages, steers, patches };
   });
 }
 
@@ -960,6 +965,24 @@ async function cancelRequested(w: Writer): Promise<boolean> {
 }
 
 /** Ends the turn: its status, then `turn_complete`, then the row. Each write is idempotent. */
+/**
+ * Completes the turn, in one unit with a last take of its inbox (dl-z5ja.130 review): a parent's
+ * patch that came after the step's last take is applied now, with no model call, instead of being
+ * stranded on an ended turn. A message or a chat steer that came then keeps the turn going for one
+ * more step, as the late take before the end already does.
+ */
+async function finish(deps: EngineDeps, w: Writer): Promise<RunStepOutcome> {
+  return deps.store.unit(async () => {
+    const late = await takeInbox(deps.store, w);
+    await applyPatches(w);
+    if (late.messages + late.steers - late.patches > 0) {
+      await deps.queue.send({ run_id: w.run, attempt: w.attempt });
+      return "continue";
+    }
+    return endTurn(w, "completed", deps.now());
+  });
+}
+
 async function endTurn(
   w: Writer,
   status: "completed" | "failed" | "cancelled",
@@ -1046,11 +1069,17 @@ function unresolved(response: ModelResponse, log: readonly RunEvent[]): ToolCall
   return response.payload.tool_calls.filter((call) => !done.has(call.call_id));
 }
 
-/** A parent's message or steer logged after `seq`: the turn has more to answer. */
+/**
+ * A parent's message or steer logged after `seq`: the turn has more to answer. A steer carrying a
+ * patch is not: the runner applies it with no model call (dl-z5ja.76), and the next call that is
+ * made for something else is told of it.
+ */
 function parentSpokeAfter(log: readonly RunEvent[], seq: number): boolean {
   return log.some(
     (e) =>
-      e.seq > seq && (e.type === "steer" || (e.type === "message" && e.payload.from === "parent")),
+      e.seq > seq &&
+      ((e.type === "steer" && e.payload.patch === undefined) ||
+        (e.type === "message" && e.payload.from === "parent")),
   );
 }
 
@@ -1077,7 +1106,11 @@ function steerLine(steer: SteerEvent, log: readonly RunEvent[]): string {
   if (resolved?.applied && resolved.revision !== undefined) {
     return `${line}\nTheir change is already in the lesson, as revision ${resolved.revision}: keep it, and do not make it again.`;
   }
-  const why = resolved?.reason ? NOT_APPLIED[resolved.reason] : NOT_APPLIED.stale_base;
+  // Logged and not resolved yet: pending, never refused (a step that threw after its take).
+  if (!resolved) {
+    return `${line}\nTheir change is not applied yet: the runner applies it, so do not make it yourself.`;
+  }
+  const why = resolved.reason ? NOT_APPLIED[resolved.reason] : NOT_APPLIED.stale_base;
   return `${line}\nTheir change was not applied: ${why}. Make it with lesson_edit if it still fits.`;
 }
 

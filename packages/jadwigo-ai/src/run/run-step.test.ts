@@ -1620,7 +1620,7 @@ describe("a parent's patch (dl-z5ja.76)", () => {
   const drafting = (): Reply => ({ calls: [{ verb: "lesson_draft", input: DRAFT_INPUT }] });
   const real = () => createVerbs({ bank: fixtureBank() });
 
-  it("is left as words, told it was not applied, when there is no lesson yet", async () => {
+  it("is resolved no_lesson with no model call, and told when a call is made", async () => {
     let t: Awaited<ReturnType<typeof setup>>;
     t = await setup([{ text: "Noted." }, { text: "Sure." }]);
     const scripted = t.deps.muse;
@@ -1634,7 +1634,15 @@ describe("a parent's patch (dl-z5ja.76)", () => {
     await drain(t.deps);
     const events = await t.log(run);
     expect(events.some((e) => e.type === "lesson_revision")).toBe(false);
-    expect(t.muse.calls[1]?.instructions).toContain("Their change was not applied");
+    expect(events.find((e) => e.type === "patch_resolved")?.payload).toMatchObject({
+      applied: false,
+      reason: "no_lesson",
+    });
+    // A patch asks for no model call of its own; the next call that is made is told why.
+    expect(t.muse.calls).toHaveLength(1);
+    await t.say("And now?");
+    await drain(t.deps);
+    expect(t.muse.calls[1]?.instructions).toContain("there was no lesson yet to change");
   });
 
   it("is applied once when the step that applies it is delivered again", async () => {
