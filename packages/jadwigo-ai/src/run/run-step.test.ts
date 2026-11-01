@@ -449,18 +449,38 @@ describe("runStep and drain", () => {
     ]);
   });
 
-  it("sends every call to the private tier, and each model_response records its model and tier", async () => {
+  it("asks for contributor when the host names no tier, and records it with the model", async () => {
     const t = await setup([{ calls: [{ verb: "lesson_draft" }] }, { text: "Ready." }]);
     const run = await t.say("Halves.");
     await drain(t.deps);
-    expect(t.muse.calls.map((c) => c.tier)).toEqual(["private", "private"]);
+    expect(t.muse.calls.map((c) => c.tier)).toEqual(["contributor", "contributor"]);
     const recorded = (await t.log(run)).flatMap((e) =>
       e.type === "model_response" ? [[e.payload.model, e.payload.tier]] : [],
     );
     expect(recorded).toEqual([
-      ["fake", "private"],
-      ["fake", "private"],
+      ["fake", "contributor"],
+      ["fake", "contributor"],
     ]);
+  });
+
+  it("asks for the host's tier, and records the tier the client says answered", async () => {
+    const t = await setup([{ text: "Ready." }, { text: "Again." }]);
+    t.deps.tier = "private";
+    const first = await t.say("Halves.");
+    await drain(t.deps);
+    expect(t.muse.calls[0]?.tier).toBe("private");
+    // A client that names the tier it answered with (MuseResponse.tier, dl-z5ja.18).
+    const scripted = t.deps.muse;
+    t.deps.muse = {
+      respond: async (request) => ({ ...(await scripted.respond(request)), tier: "contributor" }),
+    };
+    const second = await t.say("Quarters.");
+    await drain(t.deps);
+    const tierOf = async (run: RunId) =>
+      (await t.log(run)).flatMap((e) => (e.type === "model_response" ? [e.payload.tier] : []));
+    expect(await tierOf(first)).toEqual(["private"]);
+    expect(t.muse.calls[1]?.tier).toBe("private");
+    expect(await tierOf(second)).toEqual(["contributor"]);
   });
 
   it("carries an approval's feedback and answers from the inbox into approval_resolved", async () => {
