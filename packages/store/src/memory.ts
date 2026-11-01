@@ -65,7 +65,15 @@ import {
 import { byTypeThenPosition, checkExamples } from "./example.ts";
 import { handleFor } from "./handle.ts";
 import { attemptResults } from "./result.ts";
-import type { Fenced, NewConversation, NewRun, NewRunInbox, RunChange } from "./run.ts";
+import type {
+  Fenced,
+  MessageUsage,
+  NewConversation,
+  NewRun,
+  NewRunInbox,
+  RunChange,
+  UsageSince,
+} from "./run.ts";
 import {
   type AttemptRecord,
   type ExampleWithQuestions,
@@ -1534,6 +1542,23 @@ export class InMemoryStore implements Store {
     );
     this.#inbox.set(row.event_id, row);
     return row;
+  }
+
+  async messageUsage(pod: PodId, account: AccountId, since: UsageSince): Promise<MessageUsage> {
+    this.#pod(pod);
+    const minute = Date.parse(since.minuteSince);
+    const day = Date.parse(since.daySince);
+    let messages = 0;
+    for (const row of this.#inbox.values()) {
+      if (row.pod_id !== pod || row.kind !== "message") continue;
+      if (Date.parse(row.created_at) < minute) continue;
+      if (this.#runs.get(row.run_id)?.created_by === account) messages += 1;
+    }
+    let cap_usd = 0;
+    for (const run of this.#runs.values()) {
+      if (run.pod_id === pod && Date.parse(run.created_at) >= day) cap_usd += run.cap_usd;
+    }
+    return { messages, cap_usd };
   }
 
   async takeRunInbox(pod: PodId, run: RunId): Promise<readonly RunInbox[]> {
