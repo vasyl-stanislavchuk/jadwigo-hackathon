@@ -68,7 +68,15 @@ import pg from "pg";
 import { COLUMNS, type DB } from "./db/types.ts";
 import { byTypeThenPosition, checkExamples } from "./example.ts";
 import { handleFor } from "./handle.ts";
-import type { Fenced, NewConversation, NewRun, NewRunInbox, RunChange } from "./run.ts";
+import type {
+  Fenced,
+  MessageUsage,
+  NewConversation,
+  NewRun,
+  NewRunInbox,
+  RunChange,
+  UsageSince,
+} from "./run.ts";
 import {
   type AttemptRecord,
   type ExampleWithQuestions,
@@ -2855,6 +2863,33 @@ class PostgresStore implements Store {
       // pod's row is hidden by RLS, so its conflict already ends in `taken()` inside `#once`.
       if (row.run_id !== stored.id) throw taken();
       return read(RunInbox, row);
+    });
+  }
+
+  async messageUsage(pod: PodId, account: AccountId, since: UsageSince): Promise<MessageUsage> {
+    const minute = utc(since.minuteSince);
+    const day = utc(since.daySince);
+    return this.#in(pod, async (tx) => {
+      await this.#pod(tx, pod);
+      // Row-level security keeps both reads in the pod; no index yet, a pod's rows are few.
+      const sent = await tx
+        .selectFrom("run_inbox")
+        .innerJoin("run", (join) =>
+          join
+            .onRef("run.pod_id", "=", "run_inbox.pod_id")
+            .onRef("run.id", "=", "run_inbox.run_id"),
+        )
+        .select((eb) => eb.fn.countAll<string>().as("n"))
+        .where("run_inbox.kind", "=", "message")
+        .where("run.created_by", "=", uuidOf(ID_PREFIXES.account, account))
+        .where("run_inbox.created_at", ">=", new Date(minute))
+        .executeTakeFirstOrThrow();
+      const caps = await tx
+        .selectFrom("run")
+        .select((eb) => eb.fn.coalesce(eb.fn.sum<number>("cap_usd"), eb.lit(0)).as("usd"))
+        .where("created_at", ">=", new Date(day))
+        .executeTakeFirstOrThrow();
+      return { messages: Number(sent.n), cap_usd: Number(caps.usd) };
     });
   }
 

@@ -114,7 +114,22 @@ export const Attachment = z.object({
 });
 export type Attachment = z.infer<typeof Attachment>;
 
+/**
+ * The engine's own error types, beside a verb's refusals (`unknown-draft`, ...), which stay free
+ * strings. They never reach the API's `{error}` envelope, so they are not `ErrorType`s. The page
+ * draws its limit lines from them (dl-z5ja.83). Not a schema, so no snapshot holds it: `RunError.type`
+ * stays a string, and the 3 event snapshots that embed it do not move.
+ */
+export const RUN_ERROR_TYPE = {
+  /** A step ran past its visibility timeout and was delivered again (`retryable`). */
+  stepTimedOut: "StepTimedOut",
+  /** The turn ran past `max_deadline_at` (not `retryable`). */
+  runTimedOut: "RunTimedOut",
+} as const;
+export type RunErrorType = (typeof RUN_ERROR_TYPE)[keyof typeof RUN_ERROR_TYPE];
+
 export const RunError = z.object({
+  /** A verb's refusal, or one of `RUN_ERROR_TYPE`. */
   type: z.string().min(1),
   message: z.string(),
 });
