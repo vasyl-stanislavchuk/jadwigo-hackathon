@@ -4,10 +4,16 @@
 // the ones not yet reviewed (servedPathPages) and builds the rest of the site.
 import { type CollectionEntry, getCollection, render } from "astro:content";
 import Base from "../layouts/Base.astro";
+import { strictBuild } from "../lib/build.ts";
+import { languageOf, servedLanguages } from "../lib/i18n.ts";
 import { servedPathPages } from "../lib/seo.ts";
 
 export async function getStaticPaths() {
-  const pages = servedPathPages(await getCollection("pages"), import.meta.env.PROD);
+  // Only the pages in a language the build serves: no English page reaches a strict build before
+  // English is live (dl-w0b4.81).
+  const languages = servedLanguages(strictBuild);
+  const all = (await getCollection("pages")).filter((p) => languages.includes(languageOf(p.data)));
+  const pages = servedPathPages(all, strictBuild);
   return pages.map((entry) => ({ params: { path: entry.data.path?.slice(1) }, props: { entry } }));
 }
 

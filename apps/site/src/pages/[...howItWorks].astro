@@ -1,14 +1,25 @@
 ---
-// /jak-to-dziala (dl-5ssh.4.7): the 3 steps, then what a family gets.
-import { getEntry } from "astro:content";
+// /jak-to-dziala and /en/how-it-works (dl-5ssh.4.7, dl-w0b4.81): the 3 steps, then what a family gets.
+import type { Language } from "@jadwigo/config";
 import Base from "../layouts/Base.astro";
+import { strictBuild } from "../lib/build.ts";
+import { otherLanguage, twinPath, twinStaticPaths } from "../lib/i18n.ts";
+import { landingReviewed, landingWords } from "../lib/words.ts";
 
-const words = (await getEntry("landing", "pl"))?.data;
-if (!words) throw new Error("src/content/pl/landing.yaml is missing");
-const page = { ...words.steps, reviewed: true };
+export const getStaticPaths = () => twinStaticPaths("howItWorks", strictBuild);
+
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+const words = await landingWords(lang);
+const reviewed = await landingReviewed(lang);
+const translation = twinPath("howItWorks", otherLanguage(lang));
+const page = { ...words.steps, lang, reviewed, translation };
 ---
 
-<Base page={page} path="/jak-to-dziala">
+<Base page={page} path={twinPath("howItWorks", lang)}>
   <section class="wrap top" aria-labelledby="page-title">
     <h1 id="page-title">{words.steps.heading}</h1>
     <ol class="steps">
@@ -34,7 +45,7 @@ const page = { ...words.steps, reviewed: true };
         ))
       }
     </ul>
-    <p class="actions"><a class="btn" href="/lekcje/">{words.hero.play}</a></p>
+    <p class="actions"><a class="btn" href={`${twinPath("lessons", lang)}/`}>{words.hero.play}</a></p>
   </section>
 </Base>
 
