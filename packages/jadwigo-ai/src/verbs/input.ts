@@ -70,6 +70,13 @@ export class Input {
     return v;
   }
 
+  /** A true-or-false switch, false when absent. */
+  flag(key: string): boolean {
+    const v = this.raw[key] ?? false;
+    if (typeof v !== "boolean") this.#refuse(key, "true or false");
+    return v;
+  }
+
   object(key: string): Json {
     const v = this.raw[key];
     if (!isObject(v)) this.#refuse(key, "an object, and required");
