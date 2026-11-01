@@ -16,10 +16,11 @@ type PluralForms = Partial<Record<"zero" | "one" | "two" | "few" | "many", strin
 };
 
 /**
- * One line. `reviewed` stays false until a parent has read it (pl always ships
- * false). A `{slot}` named in `plural` is filled with the form chosen by the number in
- * `vars[count]` — each counted noun has its own rule, so "7 rzędów po 8 kropek" and
- * "2 rzędy po 3 kropki" both come out right.
+ * One line. `reviewed` is true once the reviewer for its language passes it; the review
+ * sidecars hold the flag and tools/src/check-copy.ts gates on it (dl-9t2o.10). A `{slot}`
+ * named in `plural` is filled with the form chosen by the number in `vars[count]` — each
+ * counted noun has its own rule, so "7 rzędów po 8 kropek" and "2 rzędy po 3 kropki" both
+ * come out right.
  */
 export interface CopyEntry {
   text: string;
