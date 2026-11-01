@@ -400,7 +400,10 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     if (last && refused !== null) {
       // The last answer failed the answer check, so it was never written. Its one correction comes
       // first, even when the parent spoke since: the call reads the parent's new words as well.
-      const refusal = check(refused);
+      // A redelivery checks it again against what the model had read, the log up to its call:
+      // words the parent wrote after it give nothing the answer could have read (dl-z5ja.102).
+      const until = await callEndSeq(w, last);
+      const refusal = refusalOf(refused, [...prior.said, ...w.log.filter((e) => e.seq <= until)]);
       if (refusal === null) {
         await w.append([
           agentMessage(w, refused, await w.id("call", last.payload.call_no, "message")),
@@ -586,6 +589,20 @@ async function refusedText(w: Writer, response: ModelResponse): Promise<string |
     await w.id("call", call_no, "unchecked"),
   ]);
   return w.log.some((e) => written.has(e.event_id)) ? null : words;
+}
+
+/**
+ * The last `seq` the call `response` recorded: its `model_response`, its `usage` and its
+ * `tool_call`s, appended together. Events after it came in once the model had answered.
+ */
+async function callEndSeq(w: Writer, response: ModelResponse): Promise<number> {
+  const { call_no, tool_calls } = response.payload;
+  const own = new Set([
+    await w.id("call", call_no, "response"),
+    await w.id("call", call_no, "usage"),
+    ...(await Promise.all(tool_calls.map((call) => w.id("tool", call.call_id, "call")))),
+  ]);
+  return w.log.reduce((end, e) => (own.has(e.event_id) ? Math.max(end, e.seq) : end), response.seq);
 }
 
 /**
