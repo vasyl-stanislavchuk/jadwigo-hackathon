@@ -12,7 +12,7 @@ type ToolItem = Extract<ChatItem, { kind: "tool" }>;
 const RUN_ID = RunId.parse("run_00000000000000000000000001");
 
 const FINDINGS = {
-  ok: false,
+  publishable: false,
   findings: [
     {
       step_id: "s02",
@@ -87,7 +87,10 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
   });
 
   it("says a clean check passed", () => {
-    draw([tool(1, { view: { kind: "lesson_check", data: { ok: true, findings: [] } } })], "en");
+    draw(
+      [tool(1, { view: { kind: "lesson_check", data: { publishable: true, findings: [] } } })],
+      "en",
+    );
     const widget = screen.getByRole("region", { name: "Checking the lesson" });
     expect(widget.textContent).toContain("The lesson passed its checks.");
   });
@@ -109,7 +112,7 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
 
   it("falls back to the plain card on a malformed view, and on a view naming another verb", () => {
     draw([
-      tool(1, { view: { kind: "lesson_check", data: { ok: "yes", findings: [] } } }),
+      tool(1, { view: { kind: "lesson_check", data: { publishable: "yes", findings: [] } } }),
       tool(2, { verb: "question_search", view: { kind: "lesson_check", data: FINDINGS } }),
     ]);
     expect(document.querySelector("[data-widget]")).toBeNull();
@@ -153,14 +156,14 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
     );
   });
 
-  it("draws lesson_edit's step and its findings", () => {
+  it("draws the steps lesson_edit changed", () => {
     draw([
       tool(1, {
         verb: "lesson_edit",
-        view: { kind: "lesson_edit", data: { ok: true, step_id: "s01", findings: [] } },
+        view: { kind: "lesson_edit", data: { changed_step_ids: ["s01"] } },
       }),
     ]);
     const widget = screen.getByRole("region", { name: "Zmieniam lekcję" });
-    expect(widget.querySelector("[data-edited-step='s01']")?.textContent).toContain("Krok s01");
+    expect(widget.querySelector("[data-edited-step='s01']")?.textContent).toBe("Krok s01");
   });
 });

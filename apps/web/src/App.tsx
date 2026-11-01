@@ -1,5 +1,6 @@
 import { lazy, type ReactElement, Suspense, useEffect } from "react";
-import { navigate, queryLanguage, useLocation } from "./nav/location.ts";
+import { useDocumentLang, useScreenLanguage } from "./nav/language.ts";
+import { navigate, useLocation } from "./nav/location.ts";
 import { ParentScreen } from "./parent/ParentScreen.tsx";
 import { isParentPath } from "./parent/route.ts";
 import { HomeScreen } from "./play/HomeScreen.tsx";
@@ -17,6 +18,9 @@ import { playRoute } from "./play/route.ts";
  *                      2026-10-28-the-question-type-gallery-ships-at-app-jadwigo-pl-playground-wit)
  *
  * Any other path goes to /.
+ *
+ * The screens speak ?lang, then the parent's pick, then the pod's language, then Polish
+ * (nav/language.ts, dl-uukj.33), and <html lang> says which.
  */
 // The playground is the owner's tool at an unlisted path: its code, its System page and its
 // neutral stylesheet load only when the path is /playground (dl-uukj.32 wave 2 step 0).
@@ -31,6 +35,8 @@ export function App(): ReactElement | null {
   const home = path === "/";
   const play = inPlayground || inParent || home ? null : playRoute(path);
   const elsewhere = !inPlayground && !inParent && !home && play === null;
+  const language = useScreenLanguage(query);
+  useDocumentLang(language);
   useEffect(() => {
     if (elsewhere) navigate(`/${window.location.search}`, { replace: true });
   }, [elsewhere]);
@@ -40,7 +46,6 @@ export function App(): ReactElement | null {
         <PlaygroundScreen />
       </Suspense>
     );
-  const language = queryLanguage(query) ?? "pl";
   if (inParent) return <ParentScreen language={language} query={query} />;
   if (home) return <HomeScreen language={language} query={query} />;
   if (play === null) return null;

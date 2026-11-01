@@ -1,4 +1,11 @@
-import type { HelpCard, HintCard, ReleasedHelp, Verdict } from "@jadwigo/contracts";
+import {
+  type HelpCard,
+  type HintCard,
+  Language,
+  type ReleasedHelp,
+  type Verdict,
+} from "@jadwigo/contracts";
+import { writeDecimal } from "../lang/language.ts";
 import { solutionOf } from "./judge.ts";
 import type { Question } from "./question.ts";
 import { slotIndex, tileMode } from "./sequence.ts";
@@ -166,13 +173,15 @@ export function answerWords(question: Question): string[] {
   } else if (question.family === "enter") {
     walk(solutionOf(question));
   }
-  // A decimal answer prints either way, `0.29` or `0,29` (dl-w3.70.7), and a fraction as Khan's
+  // A decimal answer prints either way, `0.29` or `0,29` (dl-w3.70.7), as each language writes it
+  // (dl-5ssh.34.24), and a fraction as Khan's
   // TeX prints it, `\dfrac{3}{4}` or `2\dfrac{1}{4}` (dl-w3.70.16).
   return out
     .filter((w) => w.trim() !== "")
     .flatMap((w) => {
       const t = w.trim();
-      if (/^-?[0-9]*\.[0-9]+$/.test(t)) return [w, w.replace(".", ",")];
+      if (/^-?[0-9]*\.[0-9]+$/.test(t))
+        return [...new Set([w, ...Language.options.map((l) => writeDecimal(t, l))])];
       const f = /^(?:([0-9]+) )?([0-9]+)\/([0-9]+)$/.exec(t);
       if (f === null) return [w];
       const [, whole = "", num = "", den = ""] = f;

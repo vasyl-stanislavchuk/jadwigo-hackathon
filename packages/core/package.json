@@ -18,10 +18,12 @@
     "fast-check": "the property tests in src/*.test.ts and src/families/*.test.ts",
     "@jadwigo/contracts": "the family question, value, verdict and help types the judges and the help release read",
     "@jadwigo/testing": "the playground's golden corpus that src/families/golden.test.ts holds the judges to",
-    "ts-fsrs": "the FSRS scheduler masteryOf replays each skill's reviews through (src/mastery/fsrs.ts)"
+    "ts-fsrs": "the FSRS scheduler masteryOf replays each skill's reviews through (src/mastery/fsrs.ts)",
+    "n2words": "the Polish nominative and the English number words src/lang/*/number-words.ts write and read back"
   },
   "dependencies": {
     "@jadwigo/contracts": "workspace:*",
+    "n2words": "6.3.0",
     "ts-fsrs": "5.4.2"
   },
   "devDependencies": {

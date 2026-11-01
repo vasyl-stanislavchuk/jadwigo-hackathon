@@ -1,4 +1,5 @@
 import type { EnterKey } from "@jadwigo/contracts";
+import { FOLDING } from "../../lang/language.ts";
 import { letterUnits } from "../letters.ts";
 
 /**
@@ -57,14 +58,17 @@ function nearClass(key: Pick<EnterKey, "near">, entry: string): string | undefin
   return Object.entries(key.near).find(([form]) => comparable(form) === entry)?.[1];
 }
 
-/** Letters with their accents taken off: NFD, combining marks dropped, and the Polish ł (which has
- * no decomposition) read as l. */
+/** The letters NFD leaves whole, in any language's folding table (lang/language.ts). */
+const UNDECOMPOSED = new RegExp(`[${Object.keys(FOLDING).join("")}]`, "gu");
+
+/** Letters with their accents taken off: NFD, combining marks dropped, and a letter NFD leaves
+ * whole (the Polish ł) read through the languages' folding tables. The judge has no language, so
+ * it folds with every language's table (dl-5ssh.34.24). */
 export function foldAccents(s: string): string {
   return s
     .normalize("NFD")
     .replace(/\p{M}/gu, "")
-    .replace(/ł/g, "l")
-    .replace(/Ł/g, "L")
+    .replace(UNDECOMPOSED, (c) => FOLDING[c] ?? c)
     .normalize("NFC");
 }
 
