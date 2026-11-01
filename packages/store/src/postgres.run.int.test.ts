@@ -238,3 +238,46 @@ describe("PostgresStore's lesson revision lock (dl-z5ja.134)", () => {
     }
   });
 });
+
+describe("PostgresStore's run lock (#575's review)", () => {
+  it("holds another unit's updateRun until the unit that locked the run ends", async () => {
+    const a = await scope();
+    const run = await api.createRun(a.pod, newRun(a.account, null));
+    const order: string[] = [];
+    let release = () => {};
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let locked = () => {};
+    const isLocked = new Promise<void>((resolve) => {
+      locked = resolve;
+    });
+    // An accept: the run's row locked, its attempt read, the unit still open.
+    const accept = api.unit(async () => {
+      expect((await api.lockRun(a.pod, run.id)).attempt).toBe(1);
+      locked();
+      await held;
+      order.push("accepted");
+    });
+    await isLocked;
+    // An ender's claim, from a unit of its own: it waits for the accept.
+    const claim = api.updateRun(a.pod, run.id, 1, { attempt: 2 }).then((claimed) => {
+      order.push("claimed");
+      return claimed;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(order).toEqual([]);
+    release();
+    await accept;
+    expect((await claim).stale).toBe(false);
+    expect(order).toEqual(["accepted", "claimed"]);
+  });
+
+  it("locks only its own pod's run", async () => {
+    const a = await scope();
+    const b = await scope();
+    const run = await api.createRun(a.pod, newRun(a.account, null));
+    expect(await api.lockRun(a.pod, run.id)).toEqual(await api.getRun(a.pod, run.id));
+    await expect(api.lockRun(b.pod, run.id)).rejects.toMatchObject({ type: "NotFound" });
+  });
+});

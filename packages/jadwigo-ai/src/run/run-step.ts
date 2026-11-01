@@ -275,13 +275,17 @@ export function acceptMessage(
 
       if (entry.kind !== "message" && !open) {
         // Nothing is running: a cancel, a steer or an approval lands on the last turn and changes nothing.
-        const last = runs.at(-1);
-        if (!last) {
+        const listed = runs.at(-1);
+        if (!listed) {
           throw new StoreError(
             ErrorType.enum.BadRequest,
             `the conversation has no run for a ${entry.kind}`,
           );
         }
+        // The row is locked from here to the unit's end, so no ender moves its attempt or takes its
+        // inbox in between (#575's review); one that ran first is seen here.
+        const last = await store.lockRun(pod, listed.id);
+        if (!isEnded(last.status)) continue;
         const inbox = await put(last.id);
         // A parent's patch is applied on the last turn by a step of its own, with no model call
         // (dl-z5ja.76): the lesson pane's edit and its Cofnij land when nothing is running.
@@ -312,6 +316,11 @@ export function acceptMessage(
         opened = run.status === "queued";
       }
 
+      // Locked as above: an ender (the sweep's close, a step's finish) waits for this unit, or has
+      // ended the turn already, and then the entry goes to the ended turn on the next try.
+      const locked = await store.lockRun(pod, open.id);
+      if (isEnded(locked.status)) continue;
+      open = locked;
       const inbox = await put(open.id);
       if (inbox.run_id !== open.id) {
         // A resend of a message an earlier turn already holds. A run this call opened gets its step
@@ -979,6 +988,9 @@ async function cancelRequested(w: Writer): Promise<boolean> {
  */
 async function finish(deps: EngineDeps, w: Writer): Promise<RunStepOutcome> {
   return deps.store.unit(async () => {
+    // Locked before the last take, so a parent's patch is either taken here or accepted after the
+    // turn has ended, never between the two (#575's review).
+    await deps.store.lockRun(w.pod, w.run);
     const late = await takeInbox(deps.store, w);
     await applyPatches(w);
     if (late.messages + late.steers - late.patches > 0) {
@@ -1527,22 +1539,28 @@ async function closeDue(
   due: "idle" | "max",
   now: Date,
 ): Promise<{ events: number } | null> {
-  const attempt = run.attempt + 1;
-  const claimed = await store.updateRun(pod, run.id, run.attempt, { attempt });
-  if (claimed.stale) return null;
-  const log = [...(await store.listRunEvents(pod, run.id, 0))];
-  const w = new Writer(store, pod, run.id, attempt, log);
-  try {
-    await takeInbox(store, w);
-    await applyPatches(w);
-    if (due === "max") {
-      await endPastMax(w, run.attempt, now);
-    } else {
-      await endPastIdle(w, run.attempt, now);
+  // One unit, the run's row locked first: the claim, the take and the end land together, so a
+  // parent's patch accepted meanwhile waits and then finds the turn ended (#575's review).
+  return store.unit(async () => {
+    const locked = await store.lockRun(pod, run.id);
+    if (locked.attempt !== run.attempt) return null;
+    const attempt = run.attempt + 1;
+    const claimed = await store.updateRun(pod, run.id, run.attempt, { attempt });
+    if (claimed.stale) return null;
+    const log = [...(await store.listRunEvents(pod, run.id, 0))];
+    const w = new Writer(store, pod, run.id, attempt, log);
+    try {
+      await takeInbox(store, w);
+      await applyPatches(w);
+      if (due === "max") {
+        await endPastMax(w, run.attempt, now);
+      } else {
+        await endPastIdle(w, run.attempt, now);
+      }
+    } catch (error) {
+      if (error instanceof StaleAttempt) return null;
+      throw error;
     }
-  } catch (error) {
-    if (error instanceof StaleAttempt) return null;
-    throw error;
-  }
-  return { events: w.appended };
+    return { events: w.appended };
+  });
 }

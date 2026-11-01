@@ -1578,6 +1578,10 @@ export class InMemoryStore implements Store {
     return this.#inPod(this.#runs, pod, run, "the run");
   }
 
+  async lockRun(pod: PodId, run: RunId): Promise<Run> {
+    return this.getRun(pod, run);
+  }
+
   async updateRun(
     pod: PodId,
     run: RunId,
