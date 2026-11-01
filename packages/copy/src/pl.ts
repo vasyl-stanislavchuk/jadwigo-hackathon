@@ -856,5 +856,10 @@ export const pl: CopyTable = {
       },
     },
   },
+  // the chat page on the conversation routes (dl-z5ja.65)
+  chat_sign_in: {
+    text: "Najpierw zaloguj się na stronie rodzica, a potem wróć do rozmowy.",
+    reviewed: false,
+  },
   // end the chat page
 };

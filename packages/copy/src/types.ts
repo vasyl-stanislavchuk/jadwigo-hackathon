@@ -673,6 +673,7 @@ export const COPY_KEYS = [
   "chat_switch",
   "chat_consent",
   "chat_check_findings",
+  "chat_sign_in",
   // end the chat page
 ] as const;
 
