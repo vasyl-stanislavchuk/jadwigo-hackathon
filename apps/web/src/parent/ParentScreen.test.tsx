@@ -474,6 +474,37 @@ describe("ParentScreen", () => {
     ).toBe("Odejmowanie przez 10");
   });
 
+  it("adds the child once when the read after it fails and Dodaj is pressed again", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    let learners: LearnerSnapshot[] = [];
+    let reads = 0;
+    const api = client({
+      getMe: async () => {
+        reads += 1;
+        if (reads === 2) throw new Error("offline");
+        return me(learners);
+      },
+      createLearner: vi.fn(async () => {
+        learners = [snapshot];
+        return snapshot;
+      }),
+    });
+    render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
+    await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    await press("[data-dla]");
+    await act(async () => fireEvent.click(within(screen.getByRole("menu")).getByRole("menuitem")));
+    const dialog = screen.getByRole("dialog", { name: "Dodaj dziecko" });
+    fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "Ola" } });
+    await press("[data-add-child-dialog] [data-add]");
+    expect(screen.getByRole("dialog", { name: "Dodaj dziecko" })).toBeDefined();
+    await press("[data-add-child-dialog] [data-add]");
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(api.createLearner).toHaveBeenCalledTimes(1);
+    expect(document.querySelector(`[data-child-row="${LEARNER}"]`)).not.toBeNull();
+  });
+
   it("opens Dodaj dziecko from the sidebar's + and gives the focus back to it on Anuluj", async () => {
     const auth = signedOutAuth();
     auth.signedIn = true;

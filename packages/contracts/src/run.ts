@@ -193,6 +193,12 @@ export const RUN_ERROR_TYPE = {
    * a number, status or level no tool result gave. Not `retryable`; the turn ends completed.
    */
   answerUnchecked: "AnswerUnchecked",
+  /**
+   * A verb's lesson change was refused: the conversation's lesson moved after the verb read it,
+   * by the parent's own edit or another turn (lead decision 48, dl-z5ja.76). Written as the
+   * `tool_result`'s error, so the model reads the lesson again; the turn goes on.
+   */
+  lessonChanged: "LessonChanged",
 } as const;
 export type RunErrorType = (typeof RUN_ERROR_TYPE)[keyof typeof RUN_ERROR_TYPE];
 
@@ -265,6 +271,20 @@ const SteerSource = z.enum(["chat", "lesson_edit"]);
  * (the id `lesson_edit` and `lesson_check` call `step_id`). Never empty when present.
  */
 const SteerQuestionIds = z.array(z.string().min(1)).min(1);
+/**
+ * A parent's own edit of the lesson file, as a JSON merge patch (RFC 7386): a key set to `null` is
+ * removed, an object merges, any other value replaces (Lead decision 41, dl-z5ja.76). The runner
+ * applies it as a `lesson_revision` with no model call, so the parent's edit wins by construction,
+ * and the pane's Cofnij is one more patch the same way.
+ */
+export const LessonPatch = z.record(z.string(), z.unknown());
+export type LessonPatch = z.infer<typeof LessonPatch>;
+/**
+ * The lesson revision a parent's patch was made on. The runner applies the patch only while that
+ * is still the latest: a merge patch replaces arrays whole, so on a newer revision it would undo
+ * what changed since (dl-z5ja.76). Not exported on its own: the steer snapshots carry it.
+ */
+const PatchBase = Count;
 
 const Base = {
   run_id: RunId,
@@ -333,6 +353,10 @@ export const ToolResultEvent = event(
   }),
 );
 /** The whole lesson file after an edit, not a patch: the fold keeps the highest `revision`. */
+/**
+ * The lesson file after a change. `call_id` names what made it: the verb's tool call, or, for a
+ * parent's `patch` (dl-z5ja.76), the `event_id` of the steer that carried it.
+ */
 export const LessonRevisionEvent = event(
   "lesson_revision",
   z.object({ revision: Count, call_id: z.string().min(1), lesson_file: Json }),
@@ -369,6 +393,9 @@ const SteerEvent = event(
     text: z.string(),
     source: SteerSource,
     question_ids: SteerQuestionIds.optional(),
+    /** A `lesson_edit` steer's change, applied as the `lesson_revision` that names this event. */
+    patch: LessonPatch.optional(),
+    base_revision: PatchBase.optional(),
   }),
 );
 /**
@@ -466,6 +493,8 @@ export const RunInbox = z.discriminatedUnion("kind", [
       /** `chat` when absent: a steer from before dl-z5ja.51 named none. */
       source: SteerSource.optional(),
       question_ids: SteerQuestionIds.optional(),
+      patch: LessonPatch.optional(),
+      base_revision: PatchBase.optional(),
     }),
   }),
   z.object({

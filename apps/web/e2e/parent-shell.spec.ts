@@ -4,6 +4,7 @@
 // with the email code against e2e/auth-server.ts (every code is 123456), with no child: a child is
 // never a gate. Runs in the `api` project (JW_E2E_API=1), as parent.spec.ts says how.
 import { expect, type Page, test } from "@playwright/test";
+import { agreeToAi } from "./consent.ts";
 
 async function signIn(page: Page): Promise<void> {
   await page.goto("/parent");
@@ -19,6 +20,8 @@ const box = async (page: Page, selector: string) => {
   if (found === null) throw new Error(`${selector} is not drawn`);
   return found;
 };
+
+test.beforeEach(({ page }) => agreeToAi(page));
 
 test("one 56 px line runs across the logo row and the top bar, which holds the breadcrumb only", async ({
   page,

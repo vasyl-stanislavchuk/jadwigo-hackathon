@@ -7,6 +7,8 @@
  *                Instagram's own browser, where Google refuses to sign in, a line and the link to
  *                open in the phone's browser stand in Google's place (dl-e8ov.2.63)
  *   signed in    GET /me; with no account yet, POST /accounts once (it is idempotent)
+ *     consent    while the pod has no ai_consent_at, the AI's consent screen, once (dl-z5ja.32,
+ *                dl-xo0q); "Nie teraz" steps past it for this visit
  *     ?claim     the tab still holds an attempt of that assignment: pick the child, or add one,
  *                and POST /attempts/{id}/claims; the tab then forgets the attempt
  *     the shell  every signed-in page sits in the parent app's frame (shell/ParentShell.tsx, decision
@@ -27,7 +29,13 @@
  * Heading, Field, Card, Notice), in the adult's lines (dl-uukj.32 wave 2).
  */
 
-import { ApiError, type Client, createClient, type ParentClient } from "@jadwigo/api-client";
+import {
+  ApiError,
+  type Client,
+  createClient,
+  type ParentClient,
+  type PodClient,
+} from "@jadwigo/api-client";
 import type { AssignmentId, AttemptId, LearnerId, Me } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { Button, type Crumb, Field, Heading, Input, Notice, Page, Spinner } from "@jadwigo/ui";
@@ -44,6 +52,7 @@ import {
 import { setPodLanguage } from "../nav/language.ts";
 import { navigate, useLocation } from "../nav/location.ts";
 import { storedAttempt } from "../play/storedAttempt.ts";
+import { ConsentScreen } from "../playground/chat/ConsentScreen.tsx";
 import { AttemptReview } from "./AttemptReview.tsx";
 import { CATEGORY, pageLang } from "./adult.ts";
 import {
@@ -102,6 +111,7 @@ export function ParentScreen({
   query,
   auth = browserAuth(),
   client,
+  pods,
 }: {
   language: Language;
   query: URLSearchParams;
@@ -109,16 +119,18 @@ export function ParentScreen({
   auth?: Auth | null;
   /** The API, for tests; the page's own origin, with the sign-in's token, when absent. */
   client?: ParentClient;
+  /**
+   * The pod's consent to the AI (dl-z5ja.32), for tests; the page's own client when `client` is
+   * absent. With a test's `client` and no `pods`, the consent screen is not asked.
+   */
+  pods?: PodClient;
 }): ReactElement {
-  const api = useMemo<ParentClient>(
-    () =>
-      client ??
-      (createClient({
-        base: "",
-        token: () => auth?.token() ?? Promise.resolve(null),
-      }) satisfies Client),
-    [client, auth],
+  const own = useMemo<Client>(
+    () => createClient({ base: "", token: () => auth?.token() ?? Promise.resolve(null) }),
+    [auth],
   );
+  const api: ParentClient = client ?? own;
+  const podApi: PodClient | null = pods ?? (client ? null : own);
   const route = parentRoute(useLocation().path);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [returned, setReturned] = useState<CopyKey | null>(null);
@@ -169,6 +181,7 @@ export function ParentScreen({
   return (
     <SignedIn
       api={api}
+      pods={podApi}
       language={language}
       route={route ?? { kind: "home" }}
       learner={learnerOf(query)}
@@ -436,6 +449,7 @@ async function meOf(api: ParentClient, language: Language): Promise<Me> {
 
 function SignedIn({
   api,
+  pods,
   language,
   route,
   learner,
@@ -444,6 +458,7 @@ function SignedIn({
   onSignOut,
 }: {
   api: ParentClient;
+  pods: PodClient | null;
   language: Language;
   route: ParentRoute;
   /** The attempt page's ?learner. */
@@ -460,6 +475,8 @@ function SignedIn({
   const [forLearner, setForLearner] = useState<LearnerId | null>(forAtFirst);
   const [soon, setSoon] = useState(false);
   const [notice, setNotice] = useState<CopyKey | null>(null);
+  /** "Nie teraz" on the consent screen: asked again on the next visit, not on this one. */
+  const [later, setLater] = useState(false);
 
   // The first sign-in's language is the one on screen then; a later pick moves the screens without
   // reading /me again.
@@ -506,11 +523,25 @@ function SignedIn({
       await keepFor(learner.id);
     });
 
+  /** The child the dialog created, until /me reads it back (see addFromDialog). */
+  const createdChild = useRef<{
+    firstName: string;
+    learner: Awaited<ReturnType<ParentClient["createLearner"]>>["learner"];
+  } | null>(null);
+
   /** Dodaj dziecko's dialog: adds the child and reads /me again with the page left as it was (the
    * box keeps its words). From Dla, Dla shows the child; with a claim waiting, it is kept for them. */
   const addFromDialog = async ({ firstName }: { firstName: string }): Promise<void> => {
-    const { learner } = await api.createLearner({ first_name: firstName });
+    // A child created on a press whose /me read then failed is kept: pressing Dodaj again reads /me
+    // again and never makes a second child of the same name.
+    const kept = createdChild.current;
+    const learner =
+      kept !== null && kept.firstName === firstName
+        ? kept.learner
+        : (await api.createLearner({ first_name: firstName })).learner;
+    createdChild.current = { firstName, learner };
     const me = await meOf(api, languageNow.current);
+    createdChild.current = null;
     setView({ kind: "ready", me });
     if (adding === "dla") setForLearner(learner.id);
     if (pending !== null) run(() => keepFor(learner.id));
@@ -521,6 +552,21 @@ function SignedIn({
     return (
       <ParentPage>
         <Failed language={language} />
+      </ParentPage>
+    );
+
+  const pod = view.me.pod;
+  if (pods !== null && pod !== null && (pod.ai_consent_at ?? null) === null && !later)
+    return (
+      <ParentPage>
+        <ConsentScreen
+          language={language}
+          onAgree={async () => {
+            await pods.patchPod(pod.id, { ai_consented: true });
+            load();
+          }}
+          onLater={() => setLater(true)}
+        />
       </ParentPage>
     );
 

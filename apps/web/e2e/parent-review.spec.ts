@@ -8,6 +8,7 @@
 // miss is the one that ends right on its second try. It runs only in the `api` project
 // (JW_E2E_API=1), with the api and e2e/auth-server.ts started as parent.spec.ts's header says.
 import { expect, type Page, test } from "@playwright/test";
+import { agreeToAi } from "./consent.ts";
 
 /** Types `value` into the question's first field, replacing what is there, and presses Sprawdź. */
 async function answer(page: Page, value: string): Promise<void> {
@@ -53,6 +54,8 @@ async function saveForAChild(page: Page): Promise<void> {
   await page.locator("[data-add]").click();
   await claimed;
 }
+
+test.beforeEach(({ page }) => agreeToAi(page));
 
 test("a parent opens a saved lesson, sees a tile per question, and the tries of the one with a miss", async ({
   page,
