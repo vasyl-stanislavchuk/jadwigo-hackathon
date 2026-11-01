@@ -28,6 +28,10 @@ inside the repo, and the outside sense gets a qualifier.
 | **correct** | the verdict on a try, and how an attempt question ends | "right" |
 | **question bank** | the credited question sets lessons are composed from. Lives outside git | fixtures |
 | **free tier** | anyone plays a featured lesson with no login | |
+| **conversation** | a parent's chat with Jadwigo AI, holding its runs in order. A conversation id is `cnv_…` | a session |
+| **run** | one turn of a conversation: what the engine does from a parent's message until the turn ends. Queued, in progress, awaiting input, then completed, failed or cancelled. A run id is `run_…` | a job, a session |
+| **run event** | one effect of a run, appended once and never changed: a message, a model response, a tool call or result, a lesson revision, a status. Numbered by `seq` per run; the page folds them into its 2 panes | a log line |
+| **run inbox** | what arrives for a run while it is busy: a follow-up message, a steer, an approval, a cancel. Each is delivered once, in order, at the run's next step | a queue |
 
 ## How we build
 

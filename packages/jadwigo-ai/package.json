@@ -1,0 +1,36 @@
+{
+  "name": "@jadwigo/jadwigo-ai",
+  "description": "The Jadwigo AI engine: a parent's chat becomes a lesson. Runs, steps, the Muse client, the lesson verbs as function tools, the run queue (dl-z5ja)",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --config ../../vitest.config.ts --project unit"
+  },
+  "//": {
+    "@jadwigo/contracts": "the run, run event and run inbox records at @jadwigo/contracts/run, and the ids",
+    "@jadwigo/core": "foldRun, budgetGuard and deadlineDue, which runStep and sweep call",
+    "@jadwigo/store": "the Store a run is kept in, InMemoryStore in wave 1",
+    "@jadwigo/lesson-import": "check() for lesson_check, and parseLessonFile for the verbs that write a lesson file",
+    "@jadwigo/testing": "the lesson files the scenarios draft from",
+    "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
+    "typescript": "tsc for this package's typecheck script",
+    "vitest": "runs this package's unit test with the root vitest.config.ts"
+  },
+  "dependencies": {
+    "@jadwigo/contracts": "workspace:*",
+    "@jadwigo/core": "workspace:*",
+    "@jadwigo/lesson-import": "workspace:*",
+    "@jadwigo/store": "workspace:*"
+  },
+  "devDependencies": {
+    "@jadwigo/testing": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

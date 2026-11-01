@@ -13,6 +13,7 @@
 import type { PlaygroundClient } from "@jadwigo/api-client";
 import { familyInfo, questionTypesOf } from "@jadwigo/lesson-kit";
 import { type ReactElement, useEffect } from "react";
+import { ChatScreen } from "./chat/ChatScreen.tsx";
 import { ConformanceScreen } from "./conformance/ConformanceScreen.tsx";
 import { PlaygroundApi } from "./examples/index.ts";
 import { LessonBuilderScreen } from "./lesson/LessonBuilderScreen.tsx";
@@ -87,6 +88,8 @@ function PlaygroundPages(): ReactElement {
   if (route?.page === "lesson") return <LessonBuilderScreen />;
   // The bank's conformance run, driven by tools/conformance/run.ts (dl-a38n.31); dev only.
   if (route?.page === "conformance" && import.meta.env.DEV) return <ConformanceScreen />;
+  // A parent's chat becomes a lesson, the engine running in the dev server (dl-z5ja.17); dev only.
+  if (route?.page === "chat" && import.meta.env.DEV) return <ChatScreen />;
   const { crumbs, body, controls } = view(route);
   return (
     <Shell crumbs={crumbs} controls={controls ?? true}>
