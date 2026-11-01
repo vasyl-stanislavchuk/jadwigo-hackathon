@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { QUESTION_TYPE_FAMILY } from "@jadwigo/contracts";
 import { LESSON_FILES } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
-import { signatureOf } from "./check.ts";
+import { check as checkInProcess, signatureOf } from "./check.ts";
 import { DRAFTS_POD, featuredAssignmentId } from "./ids.ts";
 
 const script = fileURLToPath(new URL("./check.ts", import.meta.url));
@@ -532,5 +532,13 @@ describe("check.ts --json", () => {
     expect(status).toBe(1);
     expect(out).toMatchObject({ ok: false, play_path: null, lesson_id: null, questions: 0 });
     expect((out["errors"] as { step_id: unknown }[])[0]?.step_id).toBeNull();
+  });
+});
+
+describe("check, in-process (dl-z5ja.12)", () => {
+  it("answers what --json prints for the same file", () => {
+    const file = LESSON_FILES.find((f) => (f as { id?: unknown }).id === "equal-groups");
+    const { out } = check(join(lessons, "equal-groups.json"));
+    expect(JSON.parse(JSON.stringify(checkInProcess(file)))).toEqual(out);
   });
 });
