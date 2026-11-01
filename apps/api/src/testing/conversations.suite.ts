@@ -38,6 +38,8 @@ export function conversationSuite(
   name: string,
   makeStore: () => Store,
   makeQueue: () => Queued,
+  /** The store rolls a unit back on a throw (Postgres): a refused message then leaves nothing. */
+  { units = false }: { readonly units?: boolean } = {},
 ): void {
   describe(`the conversation routes on ${name}`, () => {
     let s: Seeded;
@@ -133,17 +135,26 @@ export function conversationSuite(
       expect(runs.body.runs.map((r) => r.id)).toEqual([run.id]);
     });
 
-    // dl-z5ja.62: both limits count real rows through store.messageUsage, before anything is written.
+    // dl-z5ja.62: both limits count real rows through store.messageUsage, in the message's own unit.
     it("refuses the parent's message past 10 in a minute as 429 MessageLimit", async () => {
       const a = await parent();
       const conversation = await a.conversation();
       const usage = vi.spyOn(s.store, "messageUsage");
       // The 1st opens the turn; the rest wait in its inbox, each one counted.
-      for (let n = 0; n < LIMITS.messagesPerMinute; n++)
-        expect((await a.say(conversation.id, `Message ${n + 1}`)).status).toBe(201);
-      const refused = await a.say(conversation.id, "One too many");
+      const sent = Array.from({ length: LIMITS.messagesPerMinute }, () => event());
+      for (const [n, event_id] of sent.entries())
+        expect((await a.say(conversation.id, `Message ${n + 1}`, event_id)).status).toBe(201);
+      const eleventh = event();
+      const refused = await a.say(conversation.id, "One too many", eleventh);
       expect(refused.status).toBe(429);
       expect((refused.body as unknown as ErrorEnvelope).error.type).toBe("MessageLimit");
+
+      // The steward's review of #464: a resend of a stored message lands once, past the limit too.
+      const tenth = sent.at(-1) as EventId;
+      const resent = await a.say(conversation.id, `Message ${sent.length}`, tenth);
+      expect(resent.status).toBe(201);
+      // Rolled back, the refused 11th was never stored, so its own resend is refused again.
+      if (units) expect((await a.say(conversation.id, "One too many", eleventh)).status).toBe(429);
       const [run] = (
         await a.call<ConversationRuns>(
           "GET",
@@ -151,6 +162,7 @@ export function conversationSuite(
         )
       ).body.runs;
       expect(await q.stepsFor(run?.id as RunId)).toBe(1);
+      expect(resent.body.run.id).toBe(run?.id);
 
       // The windows: the last 60 s, and the UTC day so far, for the caller's pod.
       const [pod, , since] = usage.mock.calls.at(-1) ?? [];
@@ -187,7 +199,12 @@ export function conversationSuite(
       expect(under.status).toBe(201);
       expect(under.body.run.id).not.toBe(spent.id);
 
-      // That new turn's own cap of 1 USD brings the day to the cap: the next message is refused.
+      // The day is now at the cap, yet a message that joins the open turn opens no run: it passes.
+      const joined = await a.say(conversation.id, "One more thing for this lesson");
+      expect(joined.status).toBe(201);
+      expect(joined.body.run.id).toBe(under.body.run.id);
+
+      // A new turn would take the day past the cap by its own 1 USD: refused.
       await s.store.updateRun(a.pod, under.body.run.id, under.body.run.attempt, {
         status: "completed",
         completed_at: new Date().toISOString(),
@@ -199,7 +216,7 @@ export function conversationSuite(
         "GET",
         pathOf("listConversationRuns", { id: conversation.id }),
       );
-      expect(runs.body.runs).toHaveLength(2);
+      if (units) expect(runs.body.runs).toHaveLength(2);
     });
 
     it("refuses a message the server would own, or an empty one", async () => {
