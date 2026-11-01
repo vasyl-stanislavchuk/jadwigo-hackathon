@@ -53,4 +53,8 @@ prod's major version, with no Docker: Postgres.app on port 5433 locally, and the
   table, never bypasses row-level security, and executes only the `app` functions a migration grants
   it by name. `USAGE` on `app` lets it call anything left to PUBLIC, so a migration that adds an `app`
   function revokes it from `public` (and from `jadwigo_api` unless the API calls it).
+- A run's Realtime channel is the private topic `run:<wire run id>`. A signed-in user joins it only
+  when their token's pod owns the run: the `run_join` select policy on `realtime.messages` asks
+  `realtime_join.can_join_run()`, the one function `authenticated` may call
+  (`20261101180000_run_join_policy.sql`).
 - A migration under `supabase/` is a one-way door: say so in the PR.
