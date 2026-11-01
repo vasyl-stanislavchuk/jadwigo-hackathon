@@ -27,7 +27,8 @@ export type ToolState = "pending" | "running" | "failed" | "done" | "rejected";
 
 /**
  * One row of the chat pane, in `seq` order of the event that opened it. The optional fields
- * (`citations`, `view`, `choose`, `feedback`, `answers`) are present only when the log carries them.
+ * (`citations`, `steer`, `view`, `choose`, `feedback`, `answers`) are present only when the log
+ * carries them.
  */
 export type ChatItem =
   | {
@@ -37,6 +38,11 @@ export type ChatItem =
       text: string;
       attachments: readonly Attachment[];
       citations?: readonly Citation[];
+      /**
+       * Present only on a parent's steer (dl-z5ja.51): words sent while the turn ran, or an edit
+       * in the lesson pane naming the questions it changed.
+       */
+      steer?: SteerMark;
     }
   | {
       kind: "tool";
@@ -62,6 +68,10 @@ export type ChatItem =
       answers?: readonly string[];
     }
   | { kind: "error"; seq: number; error: RunError; attempt: number; retryable: boolean };
+
+type SteerPayload = Extract<RunEvent, { type: "steer" }>["payload"];
+/** Where a steer came from, and the questions a lesson edit names. */
+type SteerMark = Pick<SteerPayload, "source" | "question_ids">;
 
 export type BudgetLevel = "none" | "steer" | "stop";
 
@@ -157,6 +167,18 @@ export function foldRun(events: readonly RunEvent[]): RunView {
           text,
           attachments: attachments ?? [],
           ...(citations ? { citations } : {}),
+        });
+        break;
+      }
+      case "steer": {
+        const { text, source, question_ids } = e.payload;
+        chat.push({
+          kind: "message",
+          seq: e.seq,
+          from: "parent",
+          text,
+          attachments: [],
+          steer: { source, ...(question_ids ? { question_ids } : {}) },
         });
         break;
       }
