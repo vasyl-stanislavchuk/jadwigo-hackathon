@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "A sum where a product was asked" |
+* | "A sum where a product was asked for" |
 *
 * @param {Parent_Mistake_Sum_For_ProductInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

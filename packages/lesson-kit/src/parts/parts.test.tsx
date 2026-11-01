@@ -155,7 +155,7 @@ describe("TerminalCard", () => {
     expect(buttons[0]?.dataset["copy"]).toBe("0");
     expect(container.querySelectorAll("[data-placeholder-note]")).toHaveLength(1);
     expect(must(container.querySelector("[data-placeholder-note]")).textContent).toBe(
-      "Type the id bd printed in place of the part in angle brackets",
+      "In place of the part in angle brackets, type the ID that bd printed.",
     );
   });
 

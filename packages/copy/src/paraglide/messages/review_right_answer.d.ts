@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "This is what the right answer looks like:" |
+* | "This is what the right answer looks like." |
 *
 * @param {Review_Right_AnswerInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "That's fine. See how it goes." |
+* | "That's fine. Let's look at how it works." |
 *
 * @param {Moved_On_CalmInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

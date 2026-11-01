@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Times table, row {row}" |
+* | "Times table: the {row}s" |
 *
 * @param {Table_RowInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -18,6 +18,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 */
 export const table_row = /** @type {((inputs: Table_RowInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Table_RowInputs, { locale?: "pl" | "en" }, {}>} */ ((i, options = {}) => {
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ (`Times table, row ${i?.row}`)
+	if (locale === "en") return /** @type {LocalizedString} */ (`Times table: the ${i?.row}s`)
 	return /** @type {LocalizedString} */ (`Tabliczka mnożenia, rząd ${i?.row}`)
 });

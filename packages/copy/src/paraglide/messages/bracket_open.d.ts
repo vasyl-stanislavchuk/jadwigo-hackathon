@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Open bracket" |
+* | "Open parenthesis" |
 *
 * @param {Bracket_OpenInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

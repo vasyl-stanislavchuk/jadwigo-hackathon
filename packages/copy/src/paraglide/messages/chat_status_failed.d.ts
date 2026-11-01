@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "That didn't work this time" |
+* | "That didn't work this time." |
 *
 * @param {Chat_Status_FailedInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

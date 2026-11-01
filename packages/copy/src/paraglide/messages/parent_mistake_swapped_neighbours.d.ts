@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Two neighbours swapped" |
+* | "A swap of 2 items next to each other" |
 *
 * @param {Parent_Mistake_Swapped_NeighboursInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
