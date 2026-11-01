@@ -34,7 +34,7 @@ STAMP = printf '%s %s%s\n' "$$(git rev-parse HEAD)" "$$(date -u +%Y-%m-%dT%H:%M:
 
 site-deploy:
 	@$(NOT_FROM_AGENT)
-	cd $(SITE) && bun run build && bun run check:dist
+	cd $(SITE) && bun run build && bun run check:dist && bun run check:hreflang dist
 	$(STAMP) > $(SITE)/dist/version.txt
 	bucket=$$($(TF) output -raw site_bucket) && dist_id=$$($(TF) output -raw site_distribution_id) && \
 	{ [ ! -d $(SITE)/dist/_astro ] || $(AWS) s3 sync $(SITE)/dist/_astro s3://$$bucket/_astro --cache-control "public, max-age=31536000, immutable"; } && \

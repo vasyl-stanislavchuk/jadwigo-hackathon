@@ -8,9 +8,9 @@ const source = readFileSync(`${ROOT}packages/config/src/languages.ts`, "utf8");
 const exists = (path: string) => existsSync(`${ROOT}${path}`);
 
 describe("check-languages", () => {
-  it("passes on the repo as it is, with pl live and en in the studio", () => {
+  it("passes on the repo as it is, with pl and en live", () => {
     expect(checkLanguages(source, exists)).toEqual([]);
-    expect(languages(source).map((l) => `${l.code} ${l.status}`)).toEqual(["pl live", "en studio"]);
+    expect(languages(source).map((l) => `${l.code} ${l.status}`)).toEqual(["pl live", "en live"]);
     expect(neededParts(source).get("live")).toEqual([
       "copy",
       "checklist",
@@ -39,8 +39,10 @@ describe("check-languages", () => {
 
   it("needs no site in the studio, but does once the language goes live", () => {
     const noEnSite = (path: string) => path !== "apps/site/src/content/en" && exists(path);
-    expect(checkLanguages(source, noEnSite)).toEqual([]);
-    const live = source.replace('status: "studio"', 'status: "live"');
+    // en went live in dl-5ssh.34.70, so the studio case is planted.
+    const live = source;
+    const studio = source.replace(/(code: "en",[\s\S]*?)status: "live"/, '$1status: "studio"');
+    expect(checkLanguages(studio, noEnSite)).toEqual([]);
     expect(checkLanguages(live, exists)).toEqual([]);
     expect(checkLanguages(live, noEnSite)).toEqual([
       "en is live and its site is missing: apps/site/src/content/en",
@@ -55,7 +57,7 @@ describe("check-languages", () => {
     expect(checkLanguages(vague, exists)).toContain(
       `pl's number_words is pending on "later", which is not an issue id`,
     );
-    const odd = source.replace('status: "studio"', 'status: "beta"');
+    const odd = source.replace(/(code: "en",[\s\S]*?)status: "live"/, '$1status: "beta"');
     expect(checkLanguages(odd, exists)).toContain('en: unknown status "beta"');
   });
 

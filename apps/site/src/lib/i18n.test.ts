@@ -16,9 +16,9 @@ describe("servedLanguages", () => {
     expect(prefixedLanguages(false)).toEqual(["en"]);
   });
 
-  it("serves only the live ones in a strict build, so English waits for dl-5ssh.34.70", () => {
-    expect(servedLanguages(true)).toEqual(["pl"]);
-    expect(prefixedLanguages(true)).toEqual([]);
+  it("serves the live ones in a strict build: pl and, since dl-5ssh.34.70, en", () => {
+    expect(servedLanguages(true)).toEqual(["pl", "en"]);
+    expect(prefixedLanguages(true)).toEqual(["en"]);
   });
 });
 
@@ -37,11 +37,12 @@ describe("twinStaticPaths", () => {
     ]);
   });
 
-  it("builds only the Polish page in a strict build", () => {
+  it("builds both pages in a strict build, now that en is live (dl-5ssh.34.70)", () => {
     expect(twinStaticPaths("signIn", true)).toEqual([
       { params: { signIn: "zaloguj" }, props: { lang: "pl" } },
+      { params: { signIn: "en/sign-in" }, props: { lang: "en" } },
     ]);
-    expect(servedTwinPaths(true)).not.toContain("/en/sign-in");
+    expect(servedTwinPaths(true)).toContain("/en/sign-in");
     expect(servedTwinPaths(false)).toContain("/en/sign-in");
   });
 });
