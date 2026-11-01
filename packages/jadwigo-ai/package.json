@@ -9,7 +9,8 @@
   "scripts": {
     "lint": "biome check .",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run --config ../../vitest.config.ts --project unit"
+    "test": "vitest run --config ../../vitest.config.ts --project unit",
+    "test:int": "vitest run --config ../../vitest.config.ts --project integration"
   },
   "//": {
     "@jadwigo/contracts": "the run, run event and run inbox records at @jadwigo/contracts/run, and the ids",
@@ -19,7 +20,9 @@
     "@jadwigo/testing": "the lesson files the scenarios draft from",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
-    "vitest": "runs this package's unit test with the root vitest.config.ts"
+    "vitest": "runs this package's unit test with the root vitest.config.ts",
+    "pg": "the integration test of PgmqRunQueue (src/queue/pgmq.int.test.ts); the queue itself takes a pool-shaped interface",
+    "@types/pg": "types for pg in the queue's integration test"
   },
   "dependencies": {
     "@jadwigo/contracts": "workspace:*",
@@ -30,6 +33,8 @@
   "devDependencies": {
     "@jadwigo/testing": "workspace:*",
     "@types/node": "catalog:",
+    "@types/pg": "8.23.1",
+    "pg": "8.23.1",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
