@@ -42,8 +42,9 @@ make lesson-import FILE=$DRAFTS/draft_0f25b23f6747.json ENV=dev
 make lesson-import FILE=$DRAFTS/draft_367bcbea90d6.json ENV=dev
 ```
 
-Play each on dev, then the same 3 with `ENV=prod` and approve them as featured (`dl-w0b4.85`
-lists them on `/en/lessons`).
+Play each on dev, then import the same 3 into prod from your own terminal, as
+`docs/runbooks/lesson-import.md` says. Running the prod import is the approval: the lessons are
+featured at once, and `dl-w0b4.85` lists them on `/en/lessons`.
 
 ## Drafting English today
 
