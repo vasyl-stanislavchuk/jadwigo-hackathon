@@ -137,6 +137,9 @@ describe("patches (dl-z5ja.111)", () => {
     expect(patchOutcome([{ events: [...events, steerFor(events, body(ok, 1))] }], id)).toBe(
       "refused",
     );
+    // A later turn's revision past the base: the conversation moved on, so it never lands.
+    const later = revisionFor([...events, steer], ok, 3);
+    expect(patchOutcome([{ events: [...events, steer] }, { events: [later] }], id)).toBe("refused");
     // A steer logged without its patch (a route that dropped it) is never applied.
     const dropped = {
       ...body(ok, 2),

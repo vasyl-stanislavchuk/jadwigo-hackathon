@@ -144,26 +144,24 @@ function readable(file: unknown): boolean {
 }
 
 /**
- * What became of the patch steer sent as `event_id` (dl-z5ja.111), read from the runs' logs by the
- * runner's own rule (dl-z5ja.76): it lands as the `lesson_revision` that names it, only while the
- * lesson is still at its `base_revision` and the merged file reads whole. The runner writes no
- * event for a refusal, so the pane reads one where that rule fails at the steer's place in the log.
- * Until the steer is logged, or while its revision is still to come, it is pending.
+ * What became of the patch steer sent as `event_id` (dl-z5ja.111), read from the conversation's
+ * logs by the runner's rule (dl-z5ja.76, lead decision 48): it lands as the `lesson_revision` that
+ * names it, only while the conversation's latest lesson, across every turn, is still its
+ * `base_revision` and the merged file reads whole. Revisions only grow, so once any other revision
+ * is past that base the patch can never land. The runner logs no refusal yet (a `patch_resolved`
+ * event will, then this reads that instead), so the pane reads one where that rule fails. Until
+ * the steer is logged, or while its revision is still to come, it is pending.
  */
 export function patchOutcome(runs: readonly Logged[], event_id: string): PatchOutcome {
-  for (let i = 0; i < runs.length; i += 1) {
-    const events = runs[i]?.events ?? [];
-    const steer = events.find((e) => e.type === "steer" && e.event_id === event_id);
-    if (steer?.type !== "steer") continue;
-    const { patch, base_revision } = steer.payload;
-    // Logged without its patch (a route that dropped it): nothing will apply it.
-    if (patch === undefined) return "refused";
-    if (events.some((e) => e.type === "lesson_revision" && e.payload.call_id === event_id))
-      return "applied";
-    const earlier = runs.slice(0, i).flatMap((r) => r.events);
-    const lesson = latest(events.filter((e) => e.seq < steer.seq)) ?? latest(earlier);
-    if (lesson === null || lesson.revision !== base_revision) return "refused";
-    return readable(applyPatch(lesson.lesson_file, patch)) ? "pending" : "refused";
-  }
-  return "pending";
+  const all = runs.flatMap((r) => r.events);
+  const steer = all.find((e) => e.type === "steer" && e.event_id === event_id);
+  if (steer?.type !== "steer") return "pending";
+  if (all.some((e) => e.type === "lesson_revision" && e.payload.call_id === event_id))
+    return "applied";
+  const { patch, base_revision } = steer.payload;
+  // Logged without its patch (a route that dropped it): nothing will apply it.
+  if (patch === undefined || base_revision === undefined) return "refused";
+  const lesson = latest(all);
+  if (lesson === null || lesson.revision !== base_revision) return "refused";
+  return readable(applyPatch(lesson.lesson_file, patch)) ? "pending" : "refused";
 }

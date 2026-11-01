@@ -6,7 +6,8 @@
  * id is in the tab's session storage) and draws it again from the log.
  */
 
-import { ConversationId } from "@jadwigo/contracts/run";
+import type { RunRatingClient } from "@jadwigo/api-client";
+import { ConversationId, type RunId, type RunRatingCreate } from "@jadwigo/contracts/run";
 import { copy, type Language } from "@jadwigo/copy";
 import { cn } from "@jadwigo/ui";
 import { type ReactElement, useEffect, useMemo, useState } from "react";
@@ -68,6 +69,7 @@ function ChatView({
   onStop,
   onEdit,
   onNew,
+  onRate,
 }: {
   language: Language;
   state: ConversationState;
@@ -75,6 +77,8 @@ function ChatView({
   onStop(): void;
   onEdit?: (text: string, question_ids: string[], change?: LessonChange) => unknown;
   onNew?: () => void;
+  /** Rates a completed turn by its run (dl-z5ja.63). */
+  onRate?: ((run: RunId, body: RunRatingCreate) => Promise<unknown>) | undefined;
 }): ReactElement {
   const turns = turnsOf(state);
   /** The last Cofnij's patch steer, followed to its revision or its refusal (dl-z5ja.111). */
@@ -120,6 +124,7 @@ function ChatView({
           sendLimit={state.sendLimit}
           onSend={onSend}
           onStop={onStop}
+          onRate={onRate}
         />
       }
       lesson={
@@ -231,11 +236,14 @@ function ChatLayout({
 
 function LiveChat({
   transport,
+  ratings,
   conversation,
   language,
   onNew,
 }: {
   transport: EngineTransport;
+  /** The rating route, on the routes transport only (dl-z5ja.63). */
+  ratings: RunRatingClient | null;
   conversation: ConversationId;
   language: Language;
   onNew(): void;
@@ -249,6 +257,7 @@ function LiveChat({
       onStop={stop}
       onEdit={edit}
       onNew={onNew}
+      onRate={ratings === null ? undefined : (run, body) => ratings.rateRun(run, body)}
     />
   );
 }
@@ -260,21 +269,35 @@ function LiveChat({
  */
 function useEngine(
   given: EngineTransport | undefined,
+  givenRatings: RunRatingClient | undefined,
   engine: string | null,
-): { transport: EngineTransport; signIn: (() => Promise<string | null>) | null } | null {
+): {
+  transport: EngineTransport;
+  signIn: (() => Promise<string | null>) | null;
+  ratings: RunRatingClient | null;
+} | null {
   return useMemo(() => {
-    if (given) return { transport: given, signIn: null };
+    if (given) return { transport: given, signIn: null, ratings: givenRatings ?? null };
     const hot = engine === "api" ? null : hotTransport();
-    if (hot) return { transport: hot, signIn: null };
+    if (hot) return { transport: hot, signIn: null, ratings: null };
     const api = apiTransport();
-    return api === null ? null : { transport: api.transport, signIn: () => api.auth.token() };
-  }, [given, engine]);
+    return api === null
+      ? null
+      : { transport: api.transport, signIn: () => api.auth.token(), ratings: api.client };
+  }, [given, givenRatings, engine]);
 }
 
-export function ChatScreen({ transport }: { transport?: EngineTransport } = {}): ReactElement {
+export function ChatScreen({
+  transport,
+  ratings,
+}: {
+  transport?: EngineTransport;
+  /** A test's rating route, beside its transport. */
+  ratings?: RunRatingClient;
+} = {}): ReactElement {
   const { query } = useLocation();
   const language = queryLanguage(query) ?? "pl";
-  const live = useEngine(transport, query.get("engine"));
+  const live = useEngine(transport, ratings, query.get("engine"));
   const [conversation, setConversation] = useState<ConversationId>(storedConversation);
   /** Null until known; the routes refuse a parent who is not signed in. */
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
@@ -295,6 +318,7 @@ export function ChatScreen({ transport }: { transport?: EngineTransport } = {}):
     <LiveChat
       key={conversation}
       transport={live.transport}
+      ratings={live.ratings}
       conversation={conversation}
       language={language}
       onNew={startNew}

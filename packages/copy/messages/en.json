@@ -790,7 +790,6 @@
   "chat_announce_needs_you": "The assistant is waiting for your answer.",
   "chat_announce_stopped": "Saved, stopped.",
   "chat_switch": "Conversation or lesson",
-  "chat_consent": "The assistant reads only what your request about your child needs, names included. The model it runs on does not learn from it.",
   "chat_check_findings": [
     {
       "declarations": ["input n", "local notes_noun = n: plural"],
@@ -825,6 +824,14 @@
   "parent_history_empty": "Every lesson done will appear here, with its result question by question.",
   "parent_crumb_result": "Lesson result",
   "parent_crumb_overview": "Lesson overview",
+  "chat_rate_ask": "How did it go?",
+  "chat_rate_good": "Good",
+  "chat_rate_bad": "Not great",
+  "chat_rate_retry": "Try again",
+  "chat_rate_missing": "What was missing?",
+  "chat_rate_send": "Send the rating",
+  "chat_rate_thanks": "Thank you, your rating is saved.",
+  "chat_rate_failed": "Your rating wasn't saved. Try again.",
   "chat_edit_words": "What this step says to the child",
   "chat_edit_saved": "Your change is in the lesson now.",
   "chat_edit_saving": "Saving your change to the lesson…",

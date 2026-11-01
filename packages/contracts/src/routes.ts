@@ -11,7 +11,7 @@ import {
   RunId,
 } from "./ids.ts";
 import { Language, LearnerReport, Pod } from "./records.ts";
-import { Conversation } from "./run.ts";
+import { Conversation, RunRating, RunRatingCreate } from "./run.ts";
 import {
   AccountCreate,
   AssignmentAttempts,
@@ -26,7 +26,9 @@ import {
   Claim,
   ConversationCreate,
   ConversationMessage,
+  ConversationPatch,
   ConversationRuns,
+  Conversations,
   Featured,
   GoalCreate,
   GoalPatch,
@@ -443,6 +445,31 @@ export const ROUTES = {
     description:
       "Idempotent by `event_id`: a resend makes nothing new and returns the same conversation.",
   },
+  listConversations: {
+    method: "GET",
+    path: "/api/v1/conversations",
+    params: z.object({}),
+    body: null,
+    response: Conversations,
+    status: 200,
+    auth: "token",
+    summary: "Lists the caller's pod's conversations, newest first.",
+    tag: "conversations",
+    description: "An archived conversation is left out: it is kept for the pod, never listed.",
+  },
+  patchConversation: {
+    method: "PATCH",
+    path: "/api/v1/conversations/{id}",
+    params: z.object({ id: ConversationId }),
+    body: ConversationPatch,
+    response: Conversation,
+    status: 200,
+    auth: "token",
+    summary: "Archives a conversation: the parent's delete.",
+    tag: "conversations",
+    description:
+      "Idempotent: archiving again keeps the first `archived_at`. Nothing is deleted; the conversation and its runs stay with the pod. A message to it after is 409 `ConversationArchived`.",
+  },
   postMessage: {
     method: "POST",
     path: "/api/v1/conversations/{id}/messages",
@@ -493,6 +520,19 @@ export const ROUTES = {
     tag: "conversations",
     description:
       "Idempotent by `event_id`. A run that has already ended is returned as it is. The run stops at its next step, so read its events for `cancelled`.",
+  },
+  rateRun: {
+    method: "POST",
+    path: "/api/v1/runs/{id}/ratings",
+    params: z.object({ id: RunId }),
+    body: RunRatingCreate,
+    response: RunRating,
+    status: 201,
+    auth: "token",
+    summary: "Rates a turn Good or Bad, with an optional note on Bad.",
+    tag: "conversations",
+    description:
+      "One rating per run and parent: rating again replaces the verdict and the note. Try again is no route: send the last message again.",
   },
   /** A bank search: the need in, the envelope out (`src/bank.ts`). */
   questionSearches: {

@@ -33,6 +33,7 @@ Every refusal has one shape:
 - **`409`**: read the record again and act on what it says now. An attempt that is paused,
   finished or claimed refuses a write that no longer fits. `AiConsentMissing`: the family has not
   turned the AI on, or turned it off; ask the parent to give consent first.
+  `ConversationArchived`: the parent archived the conversation; start a new one.
 - **`429`**: the request is past a limit. `AnswerLimit`: the attempt holds 200 answers, so start a
   new attempt. `MessageLimitMinute`: too many messages to the AI in a minute; wait a moment.
   `MessageLimitDay`: the family's AI budget for the day is used up; try again tomorrow.

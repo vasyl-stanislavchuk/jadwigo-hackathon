@@ -5,11 +5,11 @@
  * highlights nothing rather than guessing.
  */
 
+import { toolViewData } from "@jadwigo/contracts";
 import type { LessonPatch } from "@jadwigo/contracts/run";
 import type { Turn } from "./conversation.ts";
 import { lessonOf } from "./conversation.ts";
 import { revertPatch } from "./patches.ts";
-import { editView } from "./widgets/parse.ts";
 
 type Fields = Record<string, unknown>;
 
@@ -61,7 +61,7 @@ export function changedOf(turns: readonly Turn[]): ReadonlySet<string> {
       writer.verb === "lesson_edit" &&
       writer.view?.kind === "lesson_edit"
     ) {
-      const edit = editView(writer.view.data);
+      const edit = toolViewData("lesson_edit", writer.view.data);
       if (edit !== null) return new Set(edit.changed_step_ids);
     }
     const before = view.previous_lesson ?? lessonOf(turns.slice(0, i));
