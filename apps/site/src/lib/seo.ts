@@ -38,7 +38,8 @@ export type HeadTag =
   | { kind: "property"; property: string; content: string }
   | { kind: "link"; rel: string; href: string; type?: string; sizes?: string; hreflang?: string };
 
-const locales = { pl: "pl_PL", en: "en_GB" } as const;
+// Jadwigo's English is US English (decision draft dl-rok6).
+const locales = { pl: "pl_PL", en: "en_US" } as const;
 
 /** The crown favicon (dl-w0b4.68): public/ is written by tools/src/brand-icons.ts. */
 const iconTags: readonly HeadTag[] = [

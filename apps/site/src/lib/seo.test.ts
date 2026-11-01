@@ -69,7 +69,7 @@ describe("headTags", () => {
 
   it("names the page's language in og:locale, Polish when left out", () => {
     expect(find(headTags({ ...page, lang: "en" }, "/en/privacy"), "og:locale")).toMatchObject({
-      content: "en_GB",
+      content: "en_US",
     });
   });
 

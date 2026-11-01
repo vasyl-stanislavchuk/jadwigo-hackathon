@@ -16,6 +16,7 @@ import { ChatPane } from "./ChatPane.tsx";
 import { type ConversationState, lessonOf, type Turn, turnsOf } from "./conversation.ts";
 import { newConversationId } from "./ids.ts";
 import { LessonPane } from "./LessonPane.tsx";
+import { apiTransport } from "./realtime.ts";
 import { type EngineTransport, hotTransport, useConversation } from "./useConversation.ts";
 
 const STORED = "jadwigo.playground.chat.conversation";
@@ -199,12 +200,39 @@ function LiveChat({
   return <ChatView language={language} state={state} onSend={send} onStop={stop} onNew={onNew} />;
 }
 
+/**
+ * The page's transport: a test's, else the dev server's (`make dev`), else the conversation routes
+ * and Realtime of the build's Supabase project (dl-z5ja.65). `?engine=api` takes the routes on the
+ * dev server too, through its `/api` proxy. Null when there is neither.
+ */
+function useEngine(
+  given: EngineTransport | undefined,
+  engine: string | null,
+): { transport: EngineTransport; signIn: (() => Promise<string | null>) | null } | null {
+  return useMemo(() => {
+    if (given) return { transport: given, signIn: null };
+    const hot = engine === "api" ? null : hotTransport();
+    if (hot) return { transport: hot, signIn: null };
+    const api = apiTransport();
+    return api === null ? null : { transport: api.transport, signIn: () => api.auth.token() };
+  }, [given, engine]);
+}
+
 export function ChatScreen({ transport }: { transport?: EngineTransport } = {}): ReactElement {
   const { query } = useLocation();
   const language = queryLanguage(query) ?? "pl";
-  const live = useMemo(() => transport ?? hotTransport(), [transport]);
+  const live = useEngine(transport, query.get("engine"));
   const [conversation, setConversation] = useState<ConversationId>(storedConversation);
+  /** Null until known; the routes refuse a parent who is not signed in. */
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
+  const signIn = live?.signIn ?? null;
+  useEffect(() => {
+    if (signIn === null) return;
+    void signIn().then((token) => setSignedIn(token !== null));
+  }, [signIn]);
   if (live === null) return <p className="p-4">{copy(language, "chat_dev_only", {}, "adult")}</p>;
+  if (signIn !== null && signedIn === false)
+    return <p className="p-4">{copy(language, "chat_sign_in", {}, "adult")}</p>;
   const startNew = () => {
     const minted = newConversationId();
     window.sessionStorage.setItem(STORED, minted);
@@ -213,7 +241,7 @@ export function ChatScreen({ transport }: { transport?: EngineTransport } = {}):
   return (
     <LiveChat
       key={conversation}
-      transport={live}
+      transport={live.transport}
       conversation={conversation}
       language={language}
       onNew={startNew}

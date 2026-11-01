@@ -852,5 +852,10 @@ export const en: CopyTable = {
     reviewed: false,
     plural: { notes_noun: { count: "n", forms: { one: "note", other: "notes" } } },
   },
+  // the chat page on the conversation routes (dl-z5ja.65)
+  chat_sign_in: {
+    text: "Sign in on the parent page first, then come back to the conversation.",
+    reviewed: false,
+  },
   // end the chat page
 };

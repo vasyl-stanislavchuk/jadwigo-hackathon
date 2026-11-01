@@ -28,6 +28,7 @@ import {
   type AttemptSnapshot,
   ErrorType,
   EventId,
+  type Language,
 } from "@jadwigo/contracts";
 import type { Instant } from "@jadwigo/lesson-kit";
 import { browserClock } from "@jadwigo/lesson-kit";
@@ -57,6 +58,8 @@ export interface Player {
   stage: Stage;
   review: Review;
   state: RunnerState;
+  /** The lesson's language from the last snapshot (dl-9t2o.3), or null before the first. */
+  lessonLanguage: Language | null;
   commit(value: unknown, t1: Instant): void;
   skip(at: Instant): void;
   askHelp(): void;
@@ -110,6 +113,7 @@ export function usePlayer(assignmentId: AssignmentId, client?: AttemptClient): P
   const [state, dispatch] = useReducer(runner, initialRunner);
   const [stage, setStage] = useState<Stage>({ kind: "loading" });
   const [review, setReview] = useState<Review>({ kind: "loading" });
+  const [lessonLanguage, setLessonLanguage] = useState<Language | null>(null);
   const attempt = useRef<AttemptId | null>(null);
   const alive = useRef(true);
   /** When the question on screen was shown: asked_at and the latency are measured from it. */
@@ -153,6 +157,7 @@ export function usePlayer(assignmentId: AssignmentId, client?: AttemptClient): P
   const take = useCallback(
     (snapshot: AttemptSnapshot) => {
       attempt.current = snapshot.attempt.id;
+      setLessonLanguage(snapshot.language);
       dispatch({ type: "loaded", snapshot });
       if (snapshot.attempt.status === "finished") finish(snapshot.attempt.id);
       else setStage({ kind: snapshot.attempt.status === "paused" ? "paused" : "playing" });
@@ -306,6 +311,7 @@ export function usePlayer(assignmentId: AssignmentId, client?: AttemptClient): P
     stage,
     review,
     state,
+    lessonLanguage,
     commit,
     skip,
     askHelp,

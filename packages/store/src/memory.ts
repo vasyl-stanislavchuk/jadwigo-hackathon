@@ -152,6 +152,11 @@ function mint<T>(schema: Schema<T>, prefix: IdPrefix): T {
   return parse(schema, idOf(prefix, crypto.randomUUID()), "a minted id");
 }
 
+/** An inbox row's key: its pod and its event_id, which is unique per pod (dl-z5ja.86). */
+function inboxKey(pod: PodId, event_id: string): string {
+  return `${pod}:${event_id}`;
+}
+
 function notFound(what: string): StoreError {
   return new StoreError(ErrorType.enum.NotFound, `${what} was not found`);
 }
@@ -206,7 +211,10 @@ export class InMemoryStore implements Store {
   readonly #runs = new Map<string, Run>();
   /** By run id, in `seq` order. */
   readonly #runEvents = new Map<string, RunEvent[]>();
-  /** By event id, in the order written: the key a resent message is matched on. */
+  /**
+   * By `inboxKey(pod, event_id)`, in the order written: the key a resent message is matched on.
+   * An event_id is unique per pod (dl-z5ja.86).
+   */
   readonly #inbox = new Map<string, RunInbox>();
 
   constructor(options: { now?: () => Date } = {}) {
@@ -1532,8 +1540,9 @@ export class InMemoryStore implements Store {
 
   async putRunInbox(pod: PodId, entry: NewRunInbox): Promise<RunInbox> {
     this.#inPod(this.#runs, pod, entry.run_id, "the run");
-    const stored = this.#taken(this.#inbox, pod, entry.event_id);
-    // A replay is the same run's: an event_id is unique across runs (dl-z5ja.36).
+    // Unique per pod, not across pods (dl-z5ja.86): another pod's row is never this one.
+    const stored = this.#inbox.get(inboxKey(pod, entry.event_id));
+    // A replay is the same run's: an event_id is unique across a pod's runs (dl-z5ja.36).
     if (stored && stored.run_id !== entry.run_id) {
       throw new StoreError(ErrorType.enum.WriteOnce, "that id is already taken");
     }
@@ -1545,7 +1554,7 @@ export class InMemoryStore implements Store {
         "the inbox row",
       ),
     );
-    this.#inbox.set(row.event_id, row);
+    this.#inbox.set(inboxKey(pod, row.event_id), row);
     return row;
   }
 
@@ -1572,7 +1581,7 @@ export class InMemoryStore implements Store {
     for (const row of this.#inbox.values()) {
       if (row.run_id !== run || row.status !== "pending") continue;
       const delivered = frozen({ ...row, status: "delivered" as const });
-      this.#inbox.set(row.event_id, delivered);
+      this.#inbox.set(inboxKey(row.pod_id, row.event_id), delivered);
       taken.push(delivered);
     }
     return taken;
