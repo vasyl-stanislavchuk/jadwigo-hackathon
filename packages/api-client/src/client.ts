@@ -121,8 +121,6 @@ export interface PlaygroundClient {
 export interface ParentClient {
   getMe(): Promise<Me>;
   createAccount(body: AccountCreate): Promise<Me>;
-  /** Gives (`ai_consented: true`) or withdraws the pod's consent to the AI (dl-z5ja.112). */
-  patchPod(podId: PodId, body: PodPatch): Promise<Pod>;
   createLearner(body: LearnerCreate): Promise<LearnerSnapshot>;
   claimAttempt(attemptId: AttemptId, body: AttemptClaim): Promise<Claim>;
   getLearnerAttempts(learnerId: LearnerId): Promise<LearnerAttempts>;
@@ -154,6 +152,12 @@ export interface LearnerKnowledgeClient {
   ): Promise<LearnerReport>;
 }
 
+/** The pod's own settings: its consent to the AI (dl-z5ja.112). Needs a token. */
+export interface PodClient {
+  /** Gives (`ai_consented: true`) or withdraws the pod's consent to the AI. */
+  patchPod(podId: PodId, body: PodPatch): Promise<Pod>;
+}
+
 /**
  * The AI engine's conversation calls (epic dl-z5ja, dl-z5ja.21). Each needs a token. A message or
  * a Stop answers with its run before the AI has answered; the run's events carry the answer.
@@ -179,6 +183,7 @@ export type Client = AttemptClient &
   ParentClient &
   LearnerKnowledgeClient &
   PlaygroundClient &
+  PodClient &
   ConversationClient;
 
 /** A route's path with its `{name}` params filled in. */
