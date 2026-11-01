@@ -37,6 +37,18 @@ def group() -> None:
 @click.option("--count", default=None, type=click.IntRange(min=1), help="Questions to draw.")
 @click.option("--skill", "skills", multiple=True, help="Skill id (repeatable).")
 @click.option(
+    "--set",
+    "sets",
+    multiple=True,
+    help="A set id to draw from, with no search (repeatable); the same ids for pl and en.",
+)
+@click.option(
+    "--question-type",
+    "question_types",
+    multiple=True,
+    help="Keep only items of this type (repeatable): slots.fill_gaps, group.*, choose.",
+)
+@click.option(
     "--name",
     "names",
     multiple=True,
@@ -53,6 +65,8 @@ def draft(
     kind: str,
     count: int | None,
     skills: tuple[str, ...],
+    sets: tuple[str, ...],
+    question_types: tuple[str, ...],
     names: tuple[str, ...],
     no_names: bool,
     verbose: bool,
@@ -64,7 +78,7 @@ def draft(
         raise click.UsageError("pass every name the family uses with --name, or --no-names")
     result = lesson.draft(
         request, grade, language, kind, count, skills, names=list(names), topic=topic,
-        verbose=verbose,
+        sets=list(sets), question_types=list(question_types), verbose=verbose,
     )
     if json_mode:
         click.echo(json.dumps(result, ensure_ascii=False))

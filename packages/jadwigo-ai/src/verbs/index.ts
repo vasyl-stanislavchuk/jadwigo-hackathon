@@ -85,6 +85,10 @@ export const TOOLS: Readonly<Record<VerbName, MuseTool>> = {
         count: { anyOf: [{ type: "integer", minimum: 1, maximum: 20 }, { type: "null" }] },
         skills: strsOrNull,
         verbose: detail,
+        // jw pins sets and keeps only some question types (dl-u1y5.37); the engine refuses both
+        // until it draws that way too (lesson.ts).
+        sets: strsOrNull,
+        question_types: strsOrNull,
       },
       ["request", "grade", "names", "topic"],
     ),

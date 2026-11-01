@@ -166,6 +166,8 @@ def build_server() -> Any:
         kind: str = "practice",
         count: int | None = None,
         skills: list[str] | None = None,
+        sets: list[str] | None = None,
+        question_types: list[str] | None = None,
         verbose: bool = False,
     ) -> dict[str, Any]:
         """Draft a lesson for a parent's request: questions drawn from the bank and copied whole.
@@ -176,7 +178,12 @@ def build_server() -> Any:
         required: what the lesson is about in a few words, distilled from the request, with no
         count, grade or name ("mnożenie", "dodawanie do 100"); the bank searches these words,
         and the request is kept as the draft's record and title. grade the bare grade number;
-        kind practice, review, check or diagnostic; count overrides the draw rule's count. Each
+        kind practice, review, check or diagnostic; count overrides the draw rule's count. sets
+        pins the set ids to draw from (set_khan_...), with no search: only those sets, taken in
+        turn and each varied by problem type; the same ids draw the pl and en lessons alike.
+        question_types keeps only items whose own type matches one: family.question_type
+        ("slots.fill_gaps"), a family ("choose", "group.*") or a question type ("fill_gaps");
+        the rest are left out with that reason. Each
         question is copied whole from the bank (family, data, key, say, pictures, and the
         source's hints and worked lines as its help), so the lesson plays as copied. Its twin is
         a sibling item of the same set, problem type and look, with another answer, copied whole
@@ -208,6 +215,8 @@ def build_server() -> Any:
             kind=kind,
             count=count,
             skills=skills or [],
+            sets=sets or [],
+            question_types=question_types or [],
             verbose=verbose,
         )
 
