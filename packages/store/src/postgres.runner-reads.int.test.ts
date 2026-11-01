@@ -36,15 +36,19 @@ describe("PostgresStore as jadwigo_runner reads what a step reads (dl-z5ja.125)"
     expect((await runner.listReports(a.pod, a.learner)).map((r) => r.id)).toEqual([a.report]);
   });
 
-  // Still refused: these reads go through app.shared_pod_id(), app.asked_skills() or
-  // app.asked_question(), which the frozen run.test.sql keeps from jadwigo_runner. The lead decides
-  // (dl-z5ja.125); this case turns red, on purpose, once the runner may execute them.
-  it("is still refused the reads that call app.shared_pod_id, app.asked_skills or app.asked_question", async () => {
+  // Wave 4 lead decision 45: the reads that go through app.shared_pod_id, app.asked_skills or
+  // app.asked_question, which jadwigo_runner may now execute.
+  it("reads the skills, evidence and results that go through the 3 read functions", async () => {
     const a = await learnerRecords(api);
-    await expect(runner.listSkills(a.pod)).rejects.toThrow(/shared_pod_id/);
-    await expect(runner.getLearnerEvidence(a.pod, a.learner)).rejects.toThrow(/asked_skills/);
-    await expect(runner.getAttemptResult(a.pod, a.attempt)).rejects.toThrow(/asked_question/);
-    await expect(runner.getLearnerAttempts(a.pod, a.learner)).rejects.toThrow(/asked_question/);
+    for (const [name, read] of [
+      ["listSkills", (s: typeof api) => s.listSkills(a.pod)],
+      ["getLearnerEvidence", (s: typeof api) => s.getLearnerEvidence(a.pod, a.learner)],
+      ["getAttemptResult", (s: typeof api) => s.getAttemptResult(a.pod, a.attempt)],
+      ["getLearnerAttempts", (s: typeof api) => s.getLearnerAttempts(a.pod, a.learner)],
+    ] as const)
+      expect(await read(runner), name).toEqual(await read(api));
+    expect((await runner.getLearnerEvidence(a.pod, a.learner)).length).toBeGreaterThan(0);
+    expect((await runner.listSkills(a.pod)).map((s) => s.code)).toContain(a.codes.shared);
   });
 
   it("reads none of another pod's records", async () => {
@@ -58,5 +62,9 @@ describe("PostgresStore as jadwigo_runner reads what a step reads (dl-z5ja.125)"
     });
     await expect(runner.getAttempt(b.pod, a.attempt)).rejects.toMatchObject({ type: "NotFound" });
     await expect(runner.listReports(b.pod, a.learner)).rejects.toMatchObject({ type: "NotFound" });
+    await expect(runner.getAttemptResult(b.pod, a.attempt)).rejects.toMatchObject({
+      type: "NotFound",
+    });
+    expect((await runner.listSkills(b.pod)).map((s) => s.code)).not.toContain(a.codes.own);
   });
 });

@@ -22,7 +22,7 @@ select ok(
 select is(
   (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'app' and has_function_privilege('jadwigo_runner', p.oid, 'execute')),
-  4, 'and gains no app function'
+  7, 'and executes the 7 app functions run.test.sql names, no more'
 );
 
 -- Pod A's runner reads pod A's rows and none of pod B's.
