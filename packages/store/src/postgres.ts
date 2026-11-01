@@ -841,6 +841,19 @@ class PostgresStore implements Store {
     });
   }
 
+  async getLesson(pod: PodId, id: LessonId): Promise<Lesson | undefined> {
+    return this.#in(pod, async (tx) => {
+      // pod_id too: claimed_read lets a pod read a claimed attempt's lesson of another pod.
+      const row = await tx
+        .selectFrom("lesson")
+        .selectAll()
+        .where("id", "=", uuidOf(ID_PREFIXES.lesson, id))
+        .where("pod_id", "=", uuidOf(ID_PREFIXES.pod, pod))
+        .executeTakeFirst();
+      return row && read(Lesson, row, ID_PREFIXES.lesson);
+    });
+  }
+
   async getLatestLessonVersion(pod: PodId, lesson: LessonId): Promise<LessonVersion | undefined> {
     return this.#in(pod, async (tx) => {
       const latest = await this.#latest(tx, uuidOf(ID_PREFIXES.lesson, lesson));
