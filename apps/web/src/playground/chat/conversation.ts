@@ -35,9 +35,15 @@ export interface ConversationState {
   stopping: boolean;
   /** The last send did not reach the server. */
   sendFailed: boolean;
-  /** The last send was refused by the message limit (`MessageLimit`, dl-z5ja.62): no retry. */
-  sendLimited: boolean;
+  /**
+   * Which message limit refused the last send, by the error's type (dl-z5ja.62, .96, .100): the
+   * per-minute one or the day's. Either way there is no retry.
+   */
+  sendLimit: SendLimit | null;
 }
+
+/** The two message limits a send can hit: `MessageLimitMinute` and `MessageLimitDay`. */
+export type SendLimit = "minute" | "day";
 
 export type ConversationAction =
   | { type: "run"; run: Run }
@@ -48,7 +54,7 @@ export type ConversationAction =
   | { type: "restored" }
   | { type: "queued"; text: string }
   | { type: "stop" }
-  | { type: "send_failed"; failed: boolean; limited?: boolean };
+  | { type: "send_failed"; failed: boolean; limit?: SendLimit | null };
 
 export const EMPTY: ConversationState = {
   runs: [],
@@ -56,7 +62,7 @@ export const EMPTY: ConversationState = {
   connection: "live",
   stopping: false,
   sendFailed: false,
-  sendLimited: false,
+  sendLimit: null,
 };
 
 /** The highest `seq` merged: where the next fetch starts. */
@@ -127,7 +133,7 @@ export function conversationReducer(
     case "stop":
       return { ...state, stopping: turnOpen(state) };
     case "send_failed":
-      return { ...state, sendFailed: action.failed, sendLimited: action.limited ?? false };
+      return { ...state, sendFailed: action.failed, sendLimit: action.limit ?? null };
   }
 }
 

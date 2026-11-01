@@ -181,8 +181,8 @@ describe("ChatScreen's phone switch (dl-z5ja.28)", () => {
   });
 });
 
-describe("a send the message limit refuses (dl-z5ja.62)", () => {
-  it("is marked limited by the error's type, and any other failure is not", async () => {
+describe("a send a message limit refuses (dl-z5ja.62, .100)", () => {
+  it("is marked with its limit by the error's type, and any other failure with none", async () => {
     const conversation = ConversationId.parse("cnv_00000000000000000000000001");
     const refusing = (error: Error): EngineTransport => ({
       ...fakeTransport(eventsOf("happy-turn")).transport,
@@ -191,17 +191,22 @@ describe("a send the message limit refuses (dl-z5ja.62)", () => {
         throw error;
       },
     });
-    const limit = refusing(new ApiError("too many messages", 429, ErrorType.enum.MessageLimit));
-    const { result } = renderHook(() => useConversation(limit, conversation));
-    await act(async () => {});
-    await act(async () => result.current.send("Jeszcze jedno."));
-    expect(result.current.state).toMatchObject({ sendFailed: true, sendLimited: true });
-    cleanup();
+    for (const [type, limit] of [
+      [ErrorType.enum.MessageLimitMinute, "minute"],
+      [ErrorType.enum.MessageLimitDay, "day"],
+    ] as const) {
+      const refused = refusing(new ApiError("too many messages", 429, type));
+      const { result } = renderHook(() => useConversation(refused, conversation));
+      await act(async () => {});
+      await act(async () => result.current.send("Jeszcze jedno."));
+      expect(result.current.state).toMatchObject({ sendFailed: true, sendLimit: limit });
+      cleanup();
+    }
     const down = refusing(new Error("offline"));
     const other = renderHook(() => useConversation(down, conversation));
     await act(async () => {});
     await act(async () => other.result.current.send("Jeszcze jedno."));
-    expect(other.result.current.state).toMatchObject({ sendFailed: true, sendLimited: false });
+    expect(other.result.current.state).toMatchObject({ sendFailed: true, sendLimit: null });
   });
 });
 
