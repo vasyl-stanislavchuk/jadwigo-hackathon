@@ -20,15 +20,16 @@ import {
   type ToolCall,
 } from "@jadwigo/contracts/run";
 import { type AnswerMiss, budgetGuard, checkAnswer, deadlineDue } from "@jadwigo/core";
+import { parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import { type NewRunInbox, type RunChange, type Store, StoreError } from "@jadwigo/store";
 import { FENCE_RULE, fence, neutralise } from "../fence/index.ts";
 import { type MuseClient, MuseFailed, type MuseInput, type MuseResponse } from "../muse/client.ts";
 import type { RunQueue } from "../queue/types.ts";
 import { type QueuedStep, STEP_VISIBILITY_S } from "../queue/types.ts";
+import { mergePatch } from "../verbs/input.ts";
 import type { Verbs } from "../verbs/types.ts";
 import { type VerbContext, type VerbEffect, VerbError } from "../verbs/types.ts";
 import { eventIdFor, turnRunIdFor } from "./ids.ts";
-import { mergePatch } from "./merge-patch.ts";
 
 /**
  * The engine's loop (Lead decisions 5-9, 13): a message lands in the run inbox, a step is one Muse
@@ -846,7 +847,7 @@ async function runTool(
  */
 /** A steer row as its event: `chat` when it names no source, its patch kept as it came. */
 function steerEvent(run: RunId, row: Extract<RunInbox, { kind: "steer" }>): NewRunEvent {
-  const { text, source, question_ids, patch } = row.payload;
+  const { text, source, question_ids, patch, base_revision } = row.payload;
   return {
     type: "steer",
     run_id: run,
@@ -856,6 +857,7 @@ function steerEvent(run: RunId, row: Extract<RunInbox, { kind: "steer" }>): NewR
       source: source ?? "chat",
       ...(question_ids === undefined ? {} : { question_ids }),
       ...(patch === undefined ? {} : { patch }),
+      ...(base_revision === undefined ? {} : { base_revision }),
     },
   };
 }
@@ -1019,8 +1021,11 @@ function steerLine(steer: SteerEvent, log: readonly RunEvent[]): string {
   const ids = payload.question_ids?.map(neutralise).join(", ");
   const named = ids ? ` (questions ${ids})` : "";
   const line = `The parent edited the lesson themselves${named}:\n${words}`;
+  if (payload.patch === undefined) return line;
   const applied = revisionOf(log, steer);
-  if (applied === null) return line;
+  if (applied === null) {
+    return `${line}\nTheir change was not applied: the lesson changed after they made it, or it would not read as a lesson. Make it with lesson_edit if it still fits.`;
+  }
   return `${line}\nTheir change is already in the lesson, as revision ${applied}: keep it, and do not make it again.`;
 }
 
@@ -1034,17 +1039,24 @@ function revisionOf(log: readonly RunEvent[], steer: SteerEvent): number | null 
 
 /**
  * Applies each logged steer's patch not yet applied, oldest first, as a `lesson_revision` on the
- * lesson as it stands: the log's, else the turn before's (`base`). No model call is made. A patch
- * with no lesson to change is left as words only. Each revision's `event_id` comes from its steer,
- * so a redelivered step never applies one twice.
+ * lesson as it stands: the log's, else the turn before's (`base`). No model call is made. Each
+ * revision's `event_id` comes from its steer, so a redelivered step never applies one twice.
+ *
+ * A patch lands only on the revision it was made on: a merge patch replaces arrays whole, so on a
+ * newer one it would undo what changed since. And only when the page's lenient parse reads every
+ * step of the result, as a verb's change must (`writable` in `verbs/lesson.ts`). Either way a patch
+ * not applied stays words for the model, told it was not applied; revisions only grow, so it never
+ * applies later.
  */
 async function applyPatches(w: Writer, base: VerbContext["lesson"]): Promise<number> {
   let applied = 0;
   for (const steer of steersOf(w.log)) {
-    const { patch } = steer.payload;
+    const { patch, base_revision } = steer.payload;
     if (patch === undefined || revisionOf(w.log, steer) !== null) continue;
     const lesson = lessonOf(w.log) ?? base;
-    if (!lesson) continue;
+    if (!lesson || lesson.revision !== base_revision) continue;
+    const lesson_file = mergePatch(lesson.lesson_file, patch);
+    if (!readable(lesson_file)) continue;
     await w.append([
       {
         type: "lesson_revision",
@@ -1053,13 +1065,22 @@ async function applyPatches(w: Writer, base: VerbContext["lesson"]): Promise<num
         payload: {
           revision: lesson.revision + 1,
           call_id: steer.event_id,
-          lesson_file: mergePatch(lesson.lesson_file, patch),
+          lesson_file,
         },
       },
     ]);
     applied += 1;
   }
   return applied;
+}
+
+/** Whether `file` is a lesson file the page's lenient parse reads whole, every step of it. */
+function readable(file: unknown): file is Record<string, unknown> {
+  try {
+    return parseLessonFileLenient(file).skipped.length === 0;
+  } catch {
+    return false;
+  }
 }
 
 /**

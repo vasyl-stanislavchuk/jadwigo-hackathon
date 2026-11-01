@@ -215,6 +215,12 @@ const SteerQuestionIds = z.array(z.string().min(1)).min(1);
  */
 export const LessonPatch = z.record(z.string(), z.unknown());
 export type LessonPatch = z.infer<typeof LessonPatch>;
+/**
+ * The lesson revision a parent's patch was made on. The runner applies the patch only while that
+ * is still the latest: a merge patch replaces arrays whole, so on a newer revision it would undo
+ * what changed since (dl-z5ja.76). Not exported on its own: the steer snapshots carry it.
+ */
+const PatchBase = Count;
 
 const Base = {
   run_id: RunId,
@@ -325,6 +331,7 @@ const SteerEvent = event(
     question_ids: SteerQuestionIds.optional(),
     /** A `lesson_edit` steer's change, applied as the `lesson_revision` that names this event. */
     patch: LessonPatch.optional(),
+    base_revision: PatchBase.optional(),
   }),
 );
 /** The agent's checklist for a long turn (seam 4). Each one replaces the last whole. */
@@ -407,6 +414,7 @@ export const RunInbox = z.discriminatedUnion("kind", [
       source: SteerSource.optional(),
       question_ids: SteerQuestionIds.optional(),
       patch: LessonPatch.optional(),
+      base_revision: PatchBase.optional(),
     }),
   }),
   z.object({

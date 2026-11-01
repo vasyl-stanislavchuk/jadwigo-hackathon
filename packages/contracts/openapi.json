@@ -3232,6 +3232,11 @@
           "patch": {
             "$ref": "#/components/schemas/LessonPatch"
           },
+          "base_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
           "context": {
             "$ref": "#/components/schemas/MessageContext"
           }
@@ -9606,6 +9611,11 @@
                   },
                   "patch": {
                     "$ref": "#/components/schemas/LessonPatch"
+                  },
+                  "base_revision": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
                   }
                 },
                 "required": [

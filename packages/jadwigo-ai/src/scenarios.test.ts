@@ -493,15 +493,23 @@ describe("the engine keeps PostHog's production lessons", () => {
   frozen(
     "a parent's patch lands as a revision with no model call, and Cofnij is one more patch",
     async () => {
-      const t = await setup([draft(), { text: "Your lesson is ready." }, { text: "Kept it." }]);
-      const run = await t.say("Adding within 20, grade 1.");
+      const t = await setup(
+        [draft(), { text: "Gotowe." }, { text: "Dobrze." }],
+        createVerbs({ bank: fixtureBank() }),
+      );
+      const run = await t.say("Dodawanie do 20, klasa 1.");
       await drain(t.deps);
       const drafted = foldRun(await t.log(run)).lesson;
+      expect(drafted?.revision).toBe(1);
       expect(t.muse.calls).toHaveLength(2);
 
       // The turn has ended: the pane's edit lands on it by a step of its own, and no call is made.
-      const edit = { title: { en: "Mine now" } };
-      await t.steer("I renamed it.", { source: "lesson_edit", question_ids: ["s01"], patch: edit });
+      await t.steer("Zmieniłam tytuł.", {
+        source: "lesson_edit",
+        question_ids: ["s01"],
+        patch: { title: "Moja lekcja" },
+        base_revision: 1,
+      });
       await drain(t.deps);
       const edited = await t.log(run);
       expect(t.muse.calls).toHaveLength(2);
@@ -510,12 +518,17 @@ describe("the engine keeps PostHog's production lessons", () => {
         type: "lesson_revision",
         payload: { revision: 2, call_id: steer?.event_id },
       });
-      expect(foldRun(edited).lesson?.lesson_file).toMatchObject({ title: { en: "Mine now" } });
+      expect(foldRun(edited).lesson?.lesson_file).toMatchObject({ title: "Moja lekcja" });
       expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
 
       // Cofnij: the pane sends the patch back, and the lesson is the draft again, one step on.
-      const before = { title: (drafted?.lesson_file as { title?: unknown } | undefined)?.title };
-      await t.steer("Undo.", { source: "lesson_edit", question_ids: ["s01"], patch: before });
+      const title = (drafted?.lesson_file as { title?: unknown } | undefined)?.title;
+      await t.steer("Cofnij.", {
+        source: "lesson_edit",
+        question_ids: ["s01"],
+        patch: { title },
+        base_revision: 2,
+      });
       await drain(t.deps);
       const undone = foldRun(await t.log(run)).lesson;
       expect(undone?.revision).toBe(3);
@@ -523,7 +536,7 @@ describe("the engine keeps PostHog's production lessons", () => {
       expect(t.muse.calls).toHaveLength(2);
 
       // The next turn's call is told which questions the parent changed, and that it is done.
-      await t.say("Thanks.");
+      await t.say("Dziękuję.");
       await drain(t.deps);
       const told = t.muse.calls[2]?.instructions ?? "";
       expect(told).toContain("questions s01");
@@ -533,30 +546,79 @@ describe("the engine keeps PostHog's production lessons", () => {
   );
 
   frozen("a parent's patch mid-turn is applied before the next call, and wins", async () => {
-    const MINE = { title: { en: "Mine now" } };
+    const verbs = createVerbs({ bank: fixtureBank() });
     let t: Awaited<ReturnType<typeof setup>>;
-    t = await setup([draft(), edit(), { text: "Kept your title." }], fakeVerbs(), {
+    t = await setup([draft(), check(), { text: "Zostawiłam twój tytuł." }], verbs, {
       onMuse: async (request) => {
         if (request.call_no !== 2) return;
-        await t.steer("Renamed.", { source: "lesson_edit", question_ids: ["s01"], patch: MINE });
+        await t.steer("Zmieniłam tytuł.", {
+          source: "lesson_edit",
+          question_ids: ["s01"],
+          patch: { title: "Moja lekcja" },
+          base_revision: 1,
+        });
       },
     });
-    const run = await t.say("Adding within 20, grade 1.");
+    const run = await t.say("Dodawanie do 20, klasa 1.");
     await drain(t.deps);
 
     const events = await t.log(run);
+    const steer = events.find((e) => e.type === "steer");
     const patched = seqOf(
       events,
-      (e) =>
-        e.type === "lesson_revision" && e.payload.call_id !== "call_1" && e.payload.revision === 3,
+      (e) => e.type === "lesson_revision" && e.payload.call_id === steer?.event_id,
     );
     expect(patched).toBeLessThan(
       seqOf(events, (e) => e.type === "model_response" && e.payload.call_no === 3),
     );
     expect(t.muse.calls).toHaveLength(3);
-    expect(t.muse.calls[2]?.instructions).toContain("already in the lesson, as revision 3");
-    expect(foldRun(events).lesson?.lesson_file).toMatchObject({ title: { en: "Mine now" } });
+    expect(t.muse.calls[2]?.instructions).toContain("already in the lesson, as revision 2");
+    expect(foldRun(events).lesson?.lesson_file).toMatchObject({ title: "Moja lekcja" });
   });
+
+  frozen(
+    "a patch made on an older revision is not applied, so it undoes nothing the AI changed",
+    async () => {
+      const SAY = "Zacznij od 7 i dolicz 5.";
+      const verbs = createVerbs({ bank: fixtureBank() });
+      const aiEdit: ScriptedReply = {
+        tool_calls: [
+          {
+            verb: "lesson_edit",
+            input: (r) => ({
+              draft_id: r.run_id,
+              names: [],
+              step_id: "s02",
+              patch: { say: SAY },
+              why: "shorter",
+            }),
+          },
+        ],
+      };
+      let t: Awaited<ReturnType<typeof setup>>;
+      t = await setup([draft(), aiEdit, { text: "Dobrze." }], verbs, {
+        onMuse: async (request) => {
+          if (request.call_no !== 2) return;
+          // The pane still shows revision 1; the AI's edit makes revision 2 before this is taken.
+          await t.steer("Zmieniłam tytuł.", {
+            source: "lesson_edit",
+            question_ids: ["s01"],
+            patch: { title: "Moja lekcja" },
+            base_revision: 1,
+          });
+        },
+      });
+      const run = await t.say("Dodawanie do 20, klasa 1.");
+      await drain(t.deps);
+
+      const events = await t.log(run);
+      const lesson = foldRun(events).lesson;
+      expect(lesson?.revision).toBe(2);
+      expect(stepSay(lesson?.lesson_file, "s02")).toBe(SAY);
+      expect(lesson?.lesson_file).not.toMatchObject({ title: "Moja lekcja" });
+      expect(t.muse.calls[2]?.instructions).toContain("Their change was not applied");
+    },
+  );
 
   // Lead decision 36 (wave 4, dl-z5ja.107): the side panel's page travels on the message.
   frozen(
