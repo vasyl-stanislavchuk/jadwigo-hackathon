@@ -13,6 +13,10 @@ app_reserved_concurrency = 150
 # (decision dl-uxnj); each run's own cap_usd still holds per turn.
 runner_muse_cap_usd = "30"
 
+# The every-minute drain of agent_step, the safety net behind the api's poke (dl-z5ja.20). On once the
+# runner was deployed and make engine-smoke ENV=prod passed (dl-5ssh.34.71.4).
+runner_schedule_enabled = true
+
 # The converter's image (dl-z5ja.11.8): blank makes its ECR repo only. The owner sets the tag
 # `make -C apps/converter push` prints, then applies again; the runner then invokes it.
 converter_image_tag = ""
