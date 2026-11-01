@@ -2,7 +2,7 @@
 -- own conversations, runs, run events and inbox; a run event is never updated or deleted; seq is
 -- gapless; and deleting a pod clears its runs. Made-up rows only.
 begin;
-select plan(27);
+select plan(29);
 \ir _fixture.sql
 
 insert into account (id, pod_id, sub) values
@@ -44,6 +44,17 @@ select results_eq(
     where relname in ('conversation', 'run', 'run_event', 'run_inbox') order by relname$$,
   $$values ('conversation', true), ('run', true), ('run_event', true), ('run_inbox', true)$$,
   'every engine table forces row-level security'
+);
+
+select ok(
+  not has_function_privilege('jadwigo_runner', 'app.claim_attempt(uuid, uuid, uuid)', 'execute'),
+  'jadwigo_runner cannot call a parent-facing app function'
+);
+select is(
+  (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'app' and has_function_privilege('jadwigo_runner', p.oid, 'execute')),
+  3,
+  'jadwigo_runner executes only app.current_pod_id, app.run_pod and app.runs_due'
 );
 
 -- Pod A's runner sees pod A only.

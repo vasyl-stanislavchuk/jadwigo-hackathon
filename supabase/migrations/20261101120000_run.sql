@@ -200,9 +200,15 @@ begin
 end
 $$;
 
+-- Least privilege: USAGE on app, which every pod_scope policy's app.current_pod_id() needs, and
+-- EXECUTE only on what the runner calls. No default privileges, so a later app function is not
+-- the runner's unless a migration grants it; the parent-facing ones (app.claim_attempt and the
+-- rest) never are. PUBLIC's EXECUTE on app functions is revoked again here, since USAGE on app
+-- would otherwise let the runner call any function a later migration left to PUBLIC.
 grant usage on schema public, app to jadwigo_runner;
-alter default privileges in schema app grant execute on functions to jadwigo_runner;
-grant execute on all functions in schema app to jadwigo_runner;
+revoke execute on all functions in schema app from public;
+grant execute on function app.current_pod_id(), app.run_pod(uuid), app.runs_due(timestamptz)
+  to jadwigo_runner;
 
 -- The API writes the conversation, the run, the inbox and the parent's own events, and sets
 -- cancel_requested_at; the step consumer appends events and moves the run and the inbox on. Both go
@@ -223,5 +229,4 @@ end
 $$;
 
 -- New functions are executable by PUBLIC: the 2 trigger functions are only the triggers'.
-revoke execute on function app.run_event_kept(), app.run_event_next()
-  from public, jadwigo_api, jadwigo_runner;
+revoke execute on function app.run_event_kept(), app.run_event_next() from public, jadwigo_api;
