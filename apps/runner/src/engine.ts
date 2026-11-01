@@ -45,6 +45,7 @@ export function postgresEngineHost(
     engine,
     max_steps: MAX_STEPS,
     stuck: () => queue.stuck(),
+    dead_letters: async () => (await queue.deadLetters()).length,
     warn,
     close: async () => {
       await Promise.all([store.close(), pool.end()]);

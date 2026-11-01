@@ -16,8 +16,10 @@ export interface MuseRuntime {
 
 /**
  * The host's model: `HttpMuse` against `/v1/responses` inside `GuardedMuse` (the tag, the cache key,
- * the lane's cap and a ledger row per call carrying the run id). runStep sends every call on the
- * private tier, so a host with no private model refuses every call until the owner names one.
+ * the lane's cap and a ledger row per call carrying the run id). runStep asks for the private tier
+ * on every call; the host's tier says which model answers it. On `contributor`, the default, the
+ * contributor model takes those calls as they are, names included, as the owner decided on
+ * 2026-11-01. On `private`, the model `JADWIGO_MUSE_PRIVATE_MODEL` names does.
  *
  * The ledger is this process's: the lane's cap holds per cold start, and each run's own `cap_usd`
  * holds per turn through `budgetGuard`. A ledger that outlives the process is not built yet.
@@ -27,7 +29,10 @@ export function liveMuse(config: MuseConfig, runtime: MuseRuntime): MuseClient {
   const http = new HttpMuse({
     fetch: runtime.fetch,
     api_key: config.api_key,
-    models: { contributor: CONTRIBUTOR_MODEL, private: config.private_model },
+    models: {
+      contributor: CONTRIBUTOR_MODEL,
+      private: config.tier === "contributor" ? CONTRIBUTOR_MODEL : config.private_model,
+    },
     budget: laneBudget(ledger, config.lane_cap_usd),
     sleep: runtime.sleep,
     now: runtime.now,

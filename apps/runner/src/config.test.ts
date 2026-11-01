@@ -6,6 +6,7 @@ const KEYS = [
   "JADWIGO_MUSE_KEY_PARAM",
   "JADWIGO_MUSE_CAP_USD",
   "JADWIGO_MUSE_PRIVATE_MODEL",
+  "JADWIGO_MUSE_TIER",
   "DATABASE_URL",
   "RUNNER_DATABASE_URL",
   "JADWIGO_RUNNER_DB_URL_PARAM",
@@ -34,7 +35,12 @@ describe("the runner's settings", () => {
       return Promise.resolve(" a-key ");
     });
 
-    expect(config).toEqual({ api_key: "a-key", lane_cap_usd: 0.5, private_model: null });
+    expect(config).toEqual({
+      api_key: "a-key",
+      lane_cap_usd: 0.5,
+      tier: "contributor",
+      private_model: null,
+    });
     expect(asked).toEqual(["/jadwigo/dev/muse-api-key"]);
   });
 
@@ -45,9 +51,20 @@ describe("the runner's settings", () => {
     await expect(museConfig()).rejects.toThrow("no call without a cap");
   });
 
-  it("names the private tier's model only when the owner set it", async () => {
-    env({ META_API_KEY: "a-key", JADWIGO_MUSE_CAP_USD: "1", JADWIGO_MUSE_PRIVATE_MODEL: "m" });
-    expect((await museConfig()).private_model).toBe("m");
+  it("runs on the contributor tier unless set to private, which needs its model named", async () => {
+    env({ META_API_KEY: "a-key", JADWIGO_MUSE_CAP_USD: "1" });
+    expect((await museConfig()).tier).toBe("contributor");
+    env({ META_API_KEY: "a-key", JADWIGO_MUSE_CAP_USD: "1", JADWIGO_MUSE_TIER: "private" });
+    await expect(museConfig()).rejects.toThrow("JADWIGO_MUSE_PRIVATE_MODEL");
+    env({
+      META_API_KEY: "a-key",
+      JADWIGO_MUSE_CAP_USD: "1",
+      JADWIGO_MUSE_TIER: "private",
+      JADWIGO_MUSE_PRIVATE_MODEL: "m",
+    });
+    expect(await museConfig()).toMatchObject({ tier: "private", private_model: "m" });
+    env({ META_API_KEY: "a-key", JADWIGO_MUSE_CAP_USD: "1", JADWIGO_MUSE_TIER: "public" });
+    await expect(museConfig()).rejects.toThrow("contributor or private");
   });
 
   it("takes the Edge secret before DATABASE_URL, and SSM last", async () => {

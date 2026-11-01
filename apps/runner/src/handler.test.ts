@@ -11,6 +11,8 @@ const REPORT: HostReport = {
   wall_ms: 300,
   cpu_ms: 80,
   stuck: { oldest_ready_step_age_s: null, runs_past_deadline: [] },
+  failed: [],
+  dead_letters: 0,
 };
 const RUN = "run_0000000000000000000000000a";
 

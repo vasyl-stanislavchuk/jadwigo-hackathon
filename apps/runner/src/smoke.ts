@@ -82,9 +82,11 @@ async function main(argv: readonly string[]): Promise<boolean> {
       const thrown: string[] = [];
       const model = dry ? new ProbeMuse() : liveMuse(await museConfig(), realRuntime);
       const seeded = await seed(deps, PARENT_TEXT);
-      const host = postgresEngineHost(apiDatabaseUrl(), recording(model, thrown), (line) =>
-        console.warn(line),
-      );
+      // A step that threw anywhere, not only in the model, fails the smoke too.
+      const host = postgresEngineHost(apiDatabaseUrl(), recording(model, thrown), (line) => {
+        if (line.includes(" threw ")) thrown.push(line);
+        else console.warn(line);
+      });
       const started = performance.now();
       try {
         await createHost(() => Promise.resolve(host))();

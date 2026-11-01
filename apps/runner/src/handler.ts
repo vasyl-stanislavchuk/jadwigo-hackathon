@@ -35,6 +35,8 @@ export function createRunnerHandler(
         cpu_ms: report.cpu_ms,
         oldest_ready_step_age_s: report.stuck?.oldest_ready_step_age_s ?? null,
         runs_past_deadline: report.stuck?.runs_past_deadline.length ?? 0,
+        failed: report.failed.map((f) => f.run_id),
+        dead_letters: report.dead_letters,
       }),
     );
     return report;

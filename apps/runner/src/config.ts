@@ -64,11 +64,19 @@ export function probeHost(): string {
   return setting("PROBE_HOST") ?? "local";
 }
 
-/** What the host's `HttpMuse` needs: the Meta key, the lane's cap and the no-training tier's model. */
+/** The model tier a learner turn runs on: the contributor model unless the host is set otherwise. */
+type MuseTier = "contributor" | "private";
+
+/** What the host's `HttpMuse` needs: the Meta key, the lane's cap, the tier and its model. */
 export interface MuseConfig {
   api_key: string;
   lane_cap_usd: number;
-  /** Null until the owner names the private tier's model (`dl-z5ja.3`); a private call is refused. */
+  /**
+   * `JADWIGO_MUSE_TIER`, `contributor` by default: the owner's decision of 2026-11-01 lets learner
+   * turns, names included, run on any Meta model (noted on dl-z5ja.20; dl-z5ja.22 closed).
+   */
+  tier: MuseTier;
+  /** `JADWIGO_MUSE_PRIVATE_MODEL`, which the `private` tier needs; null when unnamed. */
   private_model: string | null;
 }
 
@@ -91,5 +99,13 @@ export async function museConfig(read: ReadParameter = readSsm): Promise<MuseCon
       "JADWIGO_MUSE_CAP_USD is unset or not a positive number: no call without a cap",
     );
   }
-  return { api_key, lane_cap_usd, private_model: setting("JADWIGO_MUSE_PRIVATE_MODEL") ?? null };
+  const tier = setting("JADWIGO_MUSE_TIER") ?? "contributor";
+  if (tier !== "contributor" && tier !== "private") {
+    throw new Error(`JADWIGO_MUSE_TIER is ${tier}: contributor or private`);
+  }
+  const private_model = setting("JADWIGO_MUSE_PRIVATE_MODEL") ?? null;
+  if (tier === "private" && private_model === null) {
+    throw new Error("JADWIGO_MUSE_TIER is private: name its model in JADWIGO_MUSE_PRIVATE_MODEL");
+  }
+  return { api_key, lane_cap_usd, tier, private_model };
 }

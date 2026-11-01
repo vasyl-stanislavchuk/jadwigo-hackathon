@@ -40,8 +40,19 @@ variable "runner_muse_cap_usd" {
   default     = "1"
 }
 
+variable "runner_muse_tier" {
+  description = "The model tier the step host's learner turns run on: contributor (the owner's decision of 2026-11-01, noted on dl-z5ja.20) or private, which needs runner_muse_private_model"
+  type        = string
+  default     = "contributor"
+
+  validation {
+    condition     = contains(["contributor", "private"], var.runner_muse_tier)
+    error_message = "runner_muse_tier is contributor or private"
+  }
+}
+
 variable "runner_muse_private_model" {
-  description = "The no-training tier's model the step host calls (dl-z5ja.3 names it). Blank until then, and every private-tier call is refused before anything is sent"
+  description = "The no-training tier's model, used only when runner_muse_tier is private (dl-z5ja.3 names it); blank otherwise"
   type        = string
   default     = ""
 }

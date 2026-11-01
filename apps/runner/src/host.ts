@@ -1,5 +1,5 @@
 import type { RunStepOutput } from "@jadwigo/contracts/run";
-import { drain, type EngineDeps } from "@jadwigo/jadwigo-ai";
+import { drain, type EngineDeps, type FailedStep } from "@jadwigo/jadwigo-ai";
 
 /**
  * The step host (dl-z5ja.20): a thin wrapper around `drain` from `@jadwigo/jadwigo-ai`. Each
@@ -45,6 +45,8 @@ export interface HostDeps {
   max_steps: number;
   /** The queue's stuck-run read, when the queue has one. */
   stuck?: () => Promise<Stuck>;
+  /** How many steps sit in the dead-letter queue, when the queue can say. */
+  dead_letters?: () => Promise<number>;
   /** Where a stuck queue is reported. Ids only: never a message, a name or a payload. */
   warn: (line: string) => void;
 }
@@ -61,6 +63,9 @@ export interface HostReport {
   wall_ms: number;
   cpu_ms: number | null;
   stuck: Stuck | null;
+  /** Steps that threw in this invoke: they stay queued, and come back after their visibility. */
+  failed: readonly FailedStep[];
+  dead_letters: number | null;
 }
 
 const LOADED_MS = performance.now();
@@ -89,9 +94,18 @@ export function createHost(
       deps = undefined;
       throw error;
     }
-    const outputs = await drain(host.engine, { max_steps: host.max_steps });
+    const failed: FailedStep[] = [];
+    const outputs = await drain(host.engine, {
+      max_steps: host.max_steps,
+      onError: (error, step) => {
+        failed.push(step);
+        host.warn(failure(error, step));
+      },
+    });
     const stuck = host.stuck ? await host.stuck() : null;
     if (stuck) reportStuck(stuck, host.warn);
+    const dead_letters = host.dead_letters ? await host.dead_letters() : null;
+    if (dead_letters) host.warn(`agent_step_dlq: ${dead_letters} steps dead-lettered`);
     const cpu1 = meter.cpu();
     return {
       cold: wasCold,
@@ -102,6 +116,8 @@ export function createHost(
       wall_ms: Math.round(meter.wall() - wall0),
       cpu_ms: cpu0 === null || cpu1 === null ? null : Math.round(cpu1 - cpu0),
       stuck,
+      failed,
+      dead_letters,
     };
   };
 }
@@ -115,4 +131,14 @@ function reportStuck(stuck: Stuck, warn: (line: string) => void): void {
     const ids = stuck.runs_past_deadline.map((r) => r.run_id).join(", ");
     warn(`agent_step: ${stuck.runs_past_deadline.length} runs past their deadline: ${ids}`);
   }
+}
+
+/**
+ * A thrown step by its ids and the error's name and first line: a driver's or the model's message,
+ * never the step's payload. 200 characters at most, so a long one cannot carry a prompt.
+ */
+function failure(error: unknown, step: FailedStep): string {
+  const name = error instanceof Error ? error.name : "Error";
+  const message = (error instanceof Error ? error.message : String(error)).split("\n")[0] ?? "";
+  return `agent_step: step for ${step.run_id} attempt ${step.attempt} (msg ${step.msg_id}, read ${step.read_ct}) threw ${name}: ${message.slice(0, 200)}`;
 }

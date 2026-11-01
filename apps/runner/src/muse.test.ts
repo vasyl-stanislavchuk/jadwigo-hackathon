@@ -1,7 +1,8 @@
 import { RunId } from "@jadwigo/contracts/run";
-import { MuseRefused } from "@jadwigo/jadwigo-ai";
+import { CONTRIBUTOR_MODEL, MuseRefused } from "@jadwigo/jadwigo-ai";
 import { FIXED_NOW } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
+import type { MuseConfig } from "./config.ts";
 import { liveMuse } from "./muse.ts";
 
 const REQUEST = {
@@ -16,37 +17,41 @@ const REQUEST = {
   names: [],
 };
 
-describe("the host's model", () => {
-  it("refuses a private-tier call before sending anything while no private model is named", async () => {
-    const sent: string[] = [];
-    const muse = liveMuse(
-      { api_key: "a-key", lane_cap_usd: 1, private_model: null },
-      {
-        fetch: (url) => {
-          sent.push(url);
-          return Promise.reject(new Error("no network in a unit test"));
-        },
-        now: () => FIXED_NOW,
-        sleep: () => Promise.resolve(),
-      },
-    );
+const CONTRIBUTOR: MuseConfig = {
+  api_key: "a-key",
+  lane_cap_usd: 1,
+  tier: "contributor",
+  private_model: null,
+};
 
-    await expect(muse.respond(REQUEST)).rejects.toBeInstanceOf(MuseRefused);
-    expect(sent).toEqual([]);
+/** A fetch that records each body it was sent and answers nothing: no network in a unit test. */
+function recorder() {
+  const bodies: Record<string, unknown>[] = [];
+  return {
+    bodies,
+    runtime: {
+      fetch: (_url: string, init: RequestInit) => {
+        bodies.push(JSON.parse(String(init.body)));
+        return Promise.resolve(new Response("refused", { status: 400 }));
+      },
+      now: () => FIXED_NOW,
+      sleep: () => Promise.resolve(),
+    },
+  };
+}
+
+describe("the host's model", () => {
+  it("sends runStep's private-tier call to the contributor model by default", async () => {
+    const r = recorder();
+    await expect(liveMuse(CONTRIBUTOR, r.runtime).respond(REQUEST)).rejects.toThrow();
+    expect(r.bodies[0]?.["model"]).toBe(CONTRIBUTOR_MODEL);
   });
 
-  it("refuses an untagged call in GuardedMuse, before HttpMuse sees it", async () => {
-    const muse = liveMuse(
-      { api_key: "a-key", lane_cap_usd: 1, private_model: null },
-      {
-        fetch: () => Promise.reject(new Error("unused")),
-        now: () => FIXED_NOW,
-        sleep: () => Promise.resolve(),
-      },
-    );
-
-    await expect(muse.respond({ ...REQUEST, tag: "untagged" })).rejects.toMatchObject({
-      type: "untagged",
-    });
+  it("refuses an untagged call in GuardedMuse, before anything is sent", async () => {
+    const r = recorder();
+    await expect(
+      liveMuse(CONTRIBUTOR, r.runtime).respond({ ...REQUEST, tag: "untagged" }),
+    ).rejects.toBeInstanceOf(MuseRefused);
+    expect(r.bodies).toEqual([]);
   });
 });
