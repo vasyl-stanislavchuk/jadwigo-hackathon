@@ -45,7 +45,7 @@ import {
   SkipReason,
   Subject,
 } from "./records.ts";
-import { Conversation, Run, RunEvent } from "./run.ts";
+import { Conversation, MessageContext, Run, RunEvent } from "./run.ts";
 
 /**
  * What crosses `/api/v1` during an attempt (decision
@@ -664,10 +664,19 @@ export const ConversationMessage = z
     source: z.enum(["chat", "lesson_edit"]).optional(),
     /** The lesson file's questions a `lesson_edit` steer names, by their `id`. Never empty. */
     question_ids: z.array(z.string().min(1)).min(1).optional(),
+    /**
+     * A message's page (dl-z5ja.107): the learner page or the lesson screen it was sent from, as
+     * one id. A steer joins a running turn and carries none (Lead decision 36).
+     */
+    context: MessageContext.optional(),
   })
   .refine((m) => m.kind === "steer" || (m.source === undefined && m.question_ids === undefined), {
     message: "source and question_ids come only with a steer",
     path: ["kind"],
+  })
+  .refine((m) => m.kind !== "steer" || m.context === undefined, {
+    message: "context comes only with a message",
+    path: ["context"],
   });
 export type ConversationMessage = z.infer<typeof ConversationMessage>;
 
