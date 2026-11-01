@@ -54,16 +54,16 @@ import {
   uuidOf,
   valueFor,
 } from "@jadwigo/contracts";
-import type {
+import {
   Conversation,
-  ConversationId,
-  NewRunEvent,
+  type ConversationId,
+  type NewRunEvent,
   Run,
   RunEvent,
-  RunId,
+  type RunId,
   RunInbox,
 } from "@jadwigo/contracts/run";
-import { Kysely, PostgresDialect, type Selectable, sql } from "kysely";
+import { Kysely, PostgresDialect, type Selectable, sql, type Updateable } from "kysely";
 import pg from "pg";
 import { COLUMNS, type DB } from "./db/types.ts";
 import { byTypeThenPosition, checkExamples } from "./example.ts";
@@ -101,8 +101,6 @@ import {
   type Store,
   StoreError,
 } from "./store.ts";
-
-const WAITS_RUN = "waits on dl-z5ja.7";
 
 /** A Zod schema as this file uses it: parse a row read back, or check a record before writing it. */
 interface Schema<T> {
@@ -150,6 +148,10 @@ const PREFIXES: Readonly<Record<string, IdPrefix>> = {
   goal_id: ID_PREFIXES.goal,
   curriculum_id: ID_PREFIXES.curriculum,
   topic_id: ID_PREFIXES.topic,
+  created_by: ID_PREFIXES.account,
+  conversation_id: ID_PREFIXES.conversation,
+  run_id: ID_PREFIXES.run,
+  resumes_run_id: ID_PREFIXES.run,
 };
 
 /**
@@ -293,7 +295,7 @@ export function refusal(error: unknown): unknown {
 
 /**
  * The Store on Postgres, through Kysely. Each call is one transaction, or a part of the open
- * unit's, run as the `jadwigo_api` role with `app.pod_id` set to the pod it is scoped to, so
+ * unit's, run as the `jadwigo_api` role (or `jadwigo_runner`, for the step consumer) with `app.pod_id` set to the pod it is scoped to, so
  * row-level security holds every read and write to that pod. The rules are
  * checked in code first, under row locks, in the order InMemoryStore checks them: the attempt
  * row for asking, answering, pausing and finishing; the attempt question for help, ending and
@@ -304,8 +306,16 @@ class PostgresStore implements Store {
   readonly #units = new AsyncLocalStorage<Unit>();
   /** Published versions by pod and id, oldest first. */
   readonly #versions = new Map<string, LessonVersionWithQuestions>();
+  /** The role every unit runs as: never the owner, never one that bypasses row-level security. */
+  readonly #role: DatabaseRole;
 
-  constructor(databaseUrl: string, { onQuery, ...options }: PoolOptions = {}) {
+  constructor(
+    databaseUrl: string,
+    { onQuery, role = "jadwigo_api", ...options }: PoolOptions = {},
+  ) {
+    // The role is spliced into `set local role`, so only a name from the fixed list gets there.
+    if (!DATABASE_ROLES.includes(role)) throw new Error(`${role} is not a store role`);
+    this.#role = role;
     const pool = new pg.Pool({ connectionString: databaseUrl, ...options });
     // An idle connection that drops (Supavisor closes it, or the socket dies while a Lambda is
     // frozen) emits 'error' on the pool; with no listener that is an uncaught exception. The pool
@@ -360,8 +370,8 @@ class PostgresStore implements Store {
   }
 
   /**
-   * One transaction on one connection, run as the `jadwigo_api` role (`set local role`, so the
-   * login must be a member of it) with `app.pod_id` set when `pod` is given. Its calls find it
+   * One transaction on one connection, run as the store's role, `jadwigo_api` unless it was given
+   * `jadwigo_runner` (`set local role`, so the login must be a member of it), with `app.pod_id` set when `pod` is given. Its calls find it
    * through `#units`, so a request on a pool of 1 never waits on a 2nd connection.
    */
   async #open<T>(pod: string | null, work: (tx: Tx) => Promise<T>): Promise<T> {
@@ -371,7 +381,7 @@ class PostgresStore implements Store {
       const unit: Unit = { tx, pod, versions: new Map(), closed: false };
       try {
         // Inside the try, so a failed role or pod never hands the pool an aborted transaction.
-        await sql.raw(`begin; set local role jadwigo_api${setPod}`).execute(tx);
+        await sql.raw(`begin; set local role ${this.#role}${setPod}`).execute(tx);
         const result = await this.#units.run(unit, () => work(tx));
         await sql`commit`.execute(tx);
         // Only a committed read is kept: a version published in a unit that rolls back is not.
@@ -2535,46 +2545,355 @@ class PostgresStore implements Store {
     });
   }
 
-  // The engine's records (dl-z5ja.12 step 0): the store lane (dl-z5ja.14) fills these.
+  // The engine's records (dl-z5ja.19, on the dl-z5ja.7 tables). The run row is the lock: every
+  // write fenced on `attempt` takes it `for update` first, so 2 steps of one run never interleave
+  // and `seq` stays the run's max + 1 with no gap.
 
-  findRunPod(_id: RunId): Promise<PodId | undefined> {
-    return Promise.reject(new Error(WAITS_RUN));
+  async findRunPod(id: RunId): Promise<PodId | undefined> {
+    return this.#in(null, async (tx) => {
+      const { rows } = await sql<{ pod: string | null }>`
+        select app.run_pod(${uuidOf(ID_PREFIXES.run, id)}) as pod
+      `.execute(tx);
+      const pod = rows[0]?.pod;
+      return pod ? PodId.parse(idOf(ID_PREFIXES.pod, pod)) : undefined;
+    });
   }
-  listRunsDue(_now: string): Promise<readonly { pod: PodId; run: Run }[]> {
-    return Promise.reject(new Error(WAITS_RUN));
+
+  async listRunsDue(now: string): Promise<readonly { pod: PodId; run: Run }[]> {
+    const at = utc(now);
+    return this.#in(null, async (tx) => {
+      // app.runs_due reads past row-level security, as the pg_cron sweep does: every pod's runs.
+      const { rows } = await sql<Selectable<DB["run"]>>`
+        select * from app.runs_due(${at}::timestamptz)
+      `.execute(tx);
+      return rows.map((row) => {
+        const run = runOf(row);
+        return { pod: run.pod_id, run };
+      });
+    });
   }
-  createConversation(_pod: PodId, _conversation: NewConversation): Promise<Conversation> {
-    return Promise.reject(new Error(WAITS_RUN));
+
+  async createConversation(pod: PodId, conversation: NewConversation): Promise<Conversation> {
+    const id = uuidOf(ID_PREFIXES.conversation, conversation.id);
+    return this.#in(pod, async (tx) => {
+      await this.#pod(tx, pod);
+      const { row } = await this.#once(
+        () => tx.selectFrom("conversation").selectAll().where("id", "=", id).executeTakeFirst(),
+        () => {
+          const valid = parse(
+            Conversation,
+            { ...conversation, pod_id: pod, created_at: new Date().toISOString() },
+            "the conversation",
+          );
+          return tx
+            .insertInto("conversation")
+            .values({
+              id,
+              pod_id: uuidOf(ID_PREFIXES.pod, pod),
+              created_by: uuidOf(ID_PREFIXES.account, valid.created_by),
+              title: valid.title,
+            })
+            .onConflict((oc) => oc.column("id").doNothing())
+            .returningAll()
+            .executeTakeFirst();
+        },
+      );
+      return read(Conversation, row, ID_PREFIXES.conversation);
+    });
   }
-  createRun(_pod: PodId, _run: NewRun): Promise<Run> {
-    return Promise.reject(new Error(WAITS_RUN));
+
+  async createRun(pod: PodId, run: NewRun): Promise<Run> {
+    const id = uuidOf(ID_PREFIXES.run, run.id);
+    return this.#in(pod, async (tx) => {
+      await this.#pod(tx, pod);
+      const { row } = await this.#once(
+        () => tx.selectFrom("run").selectAll().where("id", "=", id).executeTakeFirst(),
+        async () => {
+          // Row-level security hides another pod's conversation and run, so each reads NotFound.
+          const conversation =
+            run.conversation_id === null
+              ? null
+              : uuidOf(ID_PREFIXES.conversation, run.conversation_id);
+          if (conversation !== null) {
+            const found = await tx
+              .selectFrom("conversation")
+              .select("id")
+              .where("id", "=", conversation)
+              .executeTakeFirst();
+            if (!found) throw notFound("the conversation");
+          }
+          const resumes =
+            run.resumes_run_id === null ? null : uuidOf(ID_PREFIXES.run, run.resumes_run_id);
+          if (resumes !== null) {
+            const found = await tx
+              .selectFrom("run")
+              .select("id")
+              .where("id", "=", resumes)
+              .executeTakeFirst();
+            if (!found) throw notFound("the run it resumes");
+          }
+          const valid = parse(
+            Run,
+            {
+              ...run,
+              pod_id: pod,
+              status: "queued",
+              attempt: 1,
+              cancel_requested_at: null,
+              spent_usd: 0,
+              created_at: new Date().toISOString(),
+              completed_at: null,
+            },
+            "the run",
+          );
+          return tx
+            .insertInto("run")
+            .values({
+              id,
+              pod_id: uuidOf(ID_PREFIXES.pod, pod),
+              created_by: uuidOf(ID_PREFIXES.account, valid.created_by),
+              conversation_id: conversation,
+              workflow: valid.workflow,
+              resumes,
+              idle_deadline_at: valid.idle_deadline_at,
+              max_deadline_at: valid.max_deadline_at,
+              cap_usd: valid.cap_usd,
+              // The statement's own clock, not the transaction's: 2 runs created in one unit keep
+              // the order they were written in, as a conversation lists its turns.
+              created_at: sql<Date>`clock_timestamp()`,
+            })
+            .onConflict((oc) => oc.column("id").doNothing())
+            .returningAll()
+            .executeTakeFirst();
+        },
+      );
+      return runOf(row);
+    });
   }
-  listRuns(_pod: PodId, _conversation: ConversationId): Promise<readonly Run[]> {
-    return Promise.reject(new Error(WAITS_RUN));
+
+  async listRuns(pod: PodId, conversation: ConversationId): Promise<readonly Run[]> {
+    const id = uuidOf(ID_PREFIXES.conversation, conversation);
+    return this.#in(pod, async (tx) => {
+      const found = await tx
+        .selectFrom("conversation")
+        .select("id")
+        .where("id", "=", id)
+        .executeTakeFirst();
+      if (!found) throw notFound("the conversation");
+      const rows = await tx
+        .selectFrom("run")
+        .selectAll()
+        .where("conversation_id", "=", id)
+        .orderBy("created_at")
+        .orderBy("id")
+        .execute();
+      return rows.map(runOf);
+    });
   }
-  getRun(_pod: PodId, _run: RunId): Promise<Run> {
-    return Promise.reject(new Error(WAITS_RUN));
+
+  async getRun(pod: PodId, run: RunId): Promise<Run> {
+    return this.#in(pod, async (tx) => runOf(await this.#run(tx, run, false)));
   }
-  updateRun(_pod: PodId, _run: RunId, _attempt: number, _change: RunChange): Promise<Fenced<Run>> {
-    return Promise.reject(new Error(WAITS_RUN));
+
+  async updateRun(
+    pod: PodId,
+    run: RunId,
+    attempt: number,
+    change: RunChange,
+  ): Promise<Fenced<Run>> {
+    return this.#in(pod, async (tx) => {
+      const stored = runOf(await this.#run(tx, run, true));
+      if (stored.attempt !== attempt) return { stale: true, value: stored };
+      const valid = parse(Run, { ...stored, ...change }, "the run");
+      // Each column takes the checked record's value: a Run field and its column share a type.
+      const set: Updateable<DB["run"]> = Object.fromEntries(
+        RUN_CHANGE.filter((key) => key in change).map((key) => [key, valid[key]]),
+      );
+      if (Object.keys(set).length === 0) return { stale: false, value: stored };
+      // The row is locked, so the attempt read above is still the stored one; the where clause
+      // holds the fence in the statement as well.
+      const updated = await tx
+        .updateTable("run")
+        .set(set)
+        .where("id", "=", uuidOf(ID_PREFIXES.run, run))
+        .where("attempt", "=", attempt)
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      return { stale: false, value: runOf(updated) };
+    });
   }
-  appendRunEvents(
-    _pod: PodId,
-    _run: RunId,
-    _attempt: number,
-    _events: readonly NewRunEvent[],
+
+  async appendRunEvents(
+    pod: PodId,
+    run: RunId,
+    attempt: number,
+    events: readonly NewRunEvent[],
   ): Promise<Fenced<readonly RunEvent[]>> {
-    return Promise.reject(new Error(WAITS_RUN));
+    const runId = uuidOf(ID_PREFIXES.run, run);
+    return this.#in(pod, async (tx) => {
+      const stored = await this.#run(tx, run, true);
+      if (events.some((e) => e.run_id !== run)) {
+        throw new StoreError(ErrorType.enum.BadRequest, "an event belongs to another run");
+      }
+      if (stored.attempt !== attempt) return { stale: true, value: [] };
+      if (events.length === 0) return { stale: false, value: [] };
+
+      // Under the run's lock no other writer appends to this run, so the rows read here and the
+      // max seq stay true until the insert.
+      const held = new Map<string, RunEvent>();
+      const kept = await tx
+        .selectFrom("run_event")
+        .selectAll()
+        .where("run_id", "=", runId)
+        .where(
+          "event_id",
+          "in",
+          events.map((e) => e.event_id),
+        )
+        .execute();
+      for (const row of kept) held.set(row.event_id, read(RunEvent, row));
+      const last = await tx
+        .selectFrom("run_event")
+        .select(sql<number>`coalesce(max(seq), 0)`.as("seq"))
+        .where("run_id", "=", runId)
+        .executeTakeFirstOrThrow();
+
+      // Every row is checked before any is written, so a refused batch appends nothing.
+      const created_at = new Date().toISOString();
+      const fresh: RunEvent[] = [];
+      for (const event of events) {
+        if (held.has(event.event_id)) continue;
+        const row = parse(
+          RunEvent,
+          { ...event, seq: last.seq + fresh.length + 1, created_at },
+          "the event",
+        );
+        held.set(row.event_id, row);
+        fresh.push(row);
+      }
+      if (fresh.length > 0) {
+        const inserted = await tx
+          .insertInto("run_event")
+          .values(
+            fresh.map((e) => ({
+              run_id: runId,
+              seq: e.seq,
+              event_id: e.event_id,
+              pod_id: stored.pod_id,
+              type: e.type,
+              payload: json(e.payload) ?? "{}",
+            })),
+          )
+          .returningAll()
+          .execute();
+        for (const row of inserted) held.set(row.event_id, read(RunEvent, row));
+      }
+      return {
+        stale: false,
+        value: events.map((e) => {
+          const row = held.get(e.event_id);
+          if (!row) throw new Error(`event ${e.event_id} was neither kept nor written`);
+          return row;
+        }),
+      };
+    });
   }
-  listRunEvents(_pod: PodId, _run: RunId, _afterSeq: number): Promise<readonly RunEvent[]> {
-    return Promise.reject(new Error(WAITS_RUN));
+
+  async listRunEvents(pod: PodId, run: RunId, afterSeq: number): Promise<readonly RunEvent[]> {
+    return this.#in(pod, async (tx) => {
+      await this.#run(tx, run, false);
+      const rows = await tx
+        .selectFrom("run_event")
+        .selectAll()
+        .where("run_id", "=", uuidOf(ID_PREFIXES.run, run))
+        .where("seq", ">", afterSeq)
+        .orderBy("seq")
+        .execute();
+      return rows.map((row) => read(RunEvent, row));
+    });
   }
-  putRunInbox(_pod: PodId, _entry: NewRunInbox): Promise<RunInbox> {
-    return Promise.reject(new Error(WAITS_RUN));
+
+  async putRunInbox(pod: PodId, entry: NewRunInbox): Promise<RunInbox> {
+    return this.#in(pod, async (tx) => {
+      const stored = await this.#run(tx, entry.run_id, false);
+      const { row } = await this.#once(
+        () =>
+          tx
+            .selectFrom("run_inbox")
+            .selectAll()
+            .where("event_id", "=", entry.event_id)
+            .executeTakeFirst(),
+        () => {
+          const valid = parse(
+            RunInbox,
+            { ...entry, pod_id: pod, status: "pending", created_at: new Date().toISOString() },
+            "the inbox row",
+          );
+          return tx
+            .insertInto("run_inbox")
+            .values({
+              event_id: valid.event_id,
+              run_id: stored.id,
+              pod_id: stored.pod_id,
+              kind: valid.kind,
+              payload: json(valid.payload) ?? "{}",
+              // The statement's clock, so rows put in one unit are taken in the order they came.
+              created_at: sql<Date>`clock_timestamp()`,
+            })
+            .onConflict((oc) => oc.column("event_id").doNothing())
+            .returningAll()
+            .executeTakeFirst();
+        },
+      );
+      return read(RunInbox, row);
+    });
   }
-  takeRunInbox(_pod: PodId, _run: RunId): Promise<readonly RunInbox[]> {
-    return Promise.reject(new Error(WAITS_RUN));
+
+  async takeRunInbox(pod: PodId, run: RunId): Promise<readonly RunInbox[]> {
+    return this.#in(pod, async (tx) => {
+      await this.#run(tx, run, false);
+      // The update locks each pending row; a 2nd take waiting on it finds the row delivered and
+      // passes it by, so each row is taken once.
+      const rows = await tx
+        .updateTable("run_inbox")
+        .set({ status: "delivered" })
+        .where("run_id", "=", uuidOf(ID_PREFIXES.run, run))
+        .where("status", "=", "pending")
+        .returningAll()
+        .execute();
+      return rows
+        .sort(
+          (a, b) =>
+            a.created_at.getTime() - b.created_at.getTime() || byText(a.event_id, b.event_id),
+        )
+        .map((row) => read(RunInbox, row));
+    });
   }
+
+  /** The run's row in the unit's pod, locked to the end of the unit when `lock`; else NotFound. */
+  async #run(tx: Tx, run: RunId, lock: boolean): Promise<Selectable<DB["run"]>> {
+    const query = tx.selectFrom("run").selectAll().where("id", "=", uuidOf(ID_PREFIXES.run, run));
+    const row = await (lock ? query.forUpdate() : query).executeTakeFirst();
+    if (!row) throw notFound("the run");
+    return row;
+  }
+}
+
+/** What `updateRun` may write: run.ts's `RunChange`, the columns the `run_change` trigger allows. */
+const RUN_CHANGE = [
+  "status",
+  "attempt",
+  "cancel_requested_at",
+  "idle_deadline_at",
+  "cap_usd",
+  "spent_usd",
+  "completed_at",
+] as const satisfies readonly (keyof RunChange)[];
+
+/** A run row as its record. The table names the resumed run `resumes`; the record `resumes_run_id`. */
+function runOf(row: Selectable<DB["run"]>): Run {
+  const { resumes, ...rest } = row;
+  return read(Run, { ...rest, resumes_run_id: resumes }, ID_PREFIXES.run);
 }
 
 /**
@@ -2607,6 +2926,10 @@ function canonical(value: unknown): string {
   return JSON.stringify(sorted(value));
 }
 
+/** The roles a store may run as. Both own no table and never bypass row-level security. */
+const DATABASE_ROLES = ["jadwigo_api", "jadwigo_runner"] as const;
+type DatabaseRole = (typeof DATABASE_ROLES)[number];
+
 /**
  * The pool's options. The Lambda passes `max: 1`: one execution serves one request at a time, and
  * Supavisor's transaction pooler (port 6543) shares the server connections. Kysely sends unnamed
@@ -2616,6 +2939,11 @@ function canonical(value: unknown): string {
  */
 interface PoolOptions {
   readonly max?: number;
+  /**
+   * The role each unit sets: `jadwigo_api` for the API, `jadwigo_runner` for the step consumer
+   * (wave plan `docs/worklog/dl-z5ja/2026-10-31-wave-1.md`, Lead decision 7; dl-z5ja.7).
+   */
+  readonly role?: DatabaseRole;
   readonly connectionTimeoutMillis?: number;
   /** Called once per statement sent, each a round trip: a test counts what a request costs. */
   readonly onQuery?: (text: string) => void;

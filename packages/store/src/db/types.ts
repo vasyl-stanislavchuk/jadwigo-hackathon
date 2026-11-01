@@ -51,6 +51,24 @@ type QuestionType =
   | "fraction_shade"
   | "area_model"
   | "explain";
+type RunEventType =
+  | "message"
+  | "model_response"
+  | "tool_call"
+  | "tool_result"
+  | "lesson_revision"
+  | "approval_request"
+  | "approval_resolved"
+  | "plan"
+  | "status"
+  | "usage"
+  | "budget_steer"
+  | "turn_complete"
+  | "error";
+type RunInboxKind = "message" | "steer" | "approval" | "cancel";
+type RunInboxStatus = "pending" | "delivered";
+type RunStatus = "queued" | "in_progress" | "awaiting_input" | "completed" | "failed" | "cancelled";
+type RunWorkflow = "jadwigo-lesson-compose";
 type SkillKind = "accuracy" | "speed";
 type SkillStatus = "reviewed" | "proposed" | "draft" | "retired";
 type SkipReason = "dont_know" | "asked_to_skip" | "help_twin";
@@ -147,6 +165,14 @@ interface AttemptResultTable {
   skip_reason: SkipReason | null;
   time_ms: number | null;
   ended: Ended | null;
+}
+
+interface ConversationTable {
+  id: string;
+  pod_id: string;
+  created_by: string;
+  title: string | null;
+  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
 }
 
 interface CurriculumTable {
@@ -328,6 +354,44 @@ interface PodTable {
   created_at: ColumnType<Date, Date | string | undefined, Date | string>;
 }
 
+interface RunTable {
+  id: string;
+  pod_id: string;
+  created_by: string;
+  conversation_id: string | null;
+  workflow: RunWorkflow;
+  resumes: string | null;
+  status: Generated<RunStatus>;
+  attempt: Generated<number>;
+  cancel_requested_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
+  idle_deadline_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
+  max_deadline_at: ColumnType<Date, Date | string, Date | string>;
+  cap_usd: number;
+  spent_usd: Generated<number>;
+  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+  completed_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
+}
+
+interface RunEventTable {
+  run_id: string;
+  seq: number;
+  event_id: string;
+  pod_id: string;
+  type: RunEventType;
+  payload: ColumnType<unknown, string, string>;
+  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
+interface RunInboxTable {
+  event_id: string;
+  run_id: string;
+  pod_id: string;
+  kind: RunInboxKind;
+  payload: ColumnType<unknown, string, string>;
+  status: Generated<RunInboxStatus>;
+  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
 interface SkillTable {
   pod_id: string;
   code: string;
@@ -358,6 +422,7 @@ export interface DB {
   attempt_answer: AttemptAnswerTable;
   attempt_question: AttemptQuestionTable;
   attempt_result: AttemptResultTable;
+  conversation: ConversationTable;
   curriculum: CurriculumTable;
   goal: GoalTable;
   goal_skill: GoalSkillTable;
@@ -374,6 +439,9 @@ export interface DB {
   lesson_version_question: LessonVersionQuestionTable;
   member: MemberTable;
   pod: PodTable;
+  run: RunTable;
+  run_event: RunEventTable;
+  run_inbox: RunInboxTable;
   skill: SkillTable;
   topic: TopicTable;
 }
@@ -545,6 +613,13 @@ export const COLUMNS = {
       generated: false,
       labels: ["correct", "skipped", "missed"],
     },
+  },
+  conversation: {
+    id: { type: "uuid", nullable: false, generated: false, labels: null },
+    pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    created_by: { type: "uuid", nullable: false, generated: false, labels: null },
+    title: { type: "text", nullable: true, generated: false, labels: null },
+    created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
   },
   curriculum: {
     id: { type: "uuid", nullable: false, generated: true, labels: null },
@@ -797,6 +872,80 @@ export const COLUMNS = {
     id: { type: "uuid", nullable: false, generated: true, labels: null },
     name: { type: "text", nullable: false, generated: false, labels: null },
     language: { type: "language", nullable: false, generated: false, labels: ["pl", "en", "uk"] },
+    created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+  },
+  run: {
+    id: { type: "uuid", nullable: false, generated: false, labels: null },
+    pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    created_by: { type: "uuid", nullable: false, generated: false, labels: null },
+    conversation_id: { type: "uuid", nullable: true, generated: false, labels: null },
+    workflow: {
+      type: "run_workflow",
+      nullable: false,
+      generated: false,
+      labels: ["jadwigo-lesson-compose"],
+    },
+    resumes: { type: "uuid", nullable: true, generated: false, labels: null },
+    status: {
+      type: "run_status",
+      nullable: false,
+      generated: true,
+      labels: ["queued", "in_progress", "awaiting_input", "completed", "failed", "cancelled"],
+    },
+    attempt: { type: "int4", nullable: false, generated: true, labels: null },
+    cancel_requested_at: { type: "timestamptz", nullable: true, generated: false, labels: null },
+    idle_deadline_at: { type: "timestamptz", nullable: true, generated: false, labels: null },
+    max_deadline_at: { type: "timestamptz", nullable: false, generated: false, labels: null },
+    cap_usd: { type: "float8", nullable: false, generated: false, labels: null },
+    spent_usd: { type: "float8", nullable: false, generated: true, labels: null },
+    created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+    completed_at: { type: "timestamptz", nullable: true, generated: false, labels: null },
+  },
+  run_event: {
+    run_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    seq: { type: "int4", nullable: false, generated: false, labels: null },
+    event_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    type: {
+      type: "run_event_type",
+      nullable: false,
+      generated: false,
+      labels: [
+        "message",
+        "model_response",
+        "tool_call",
+        "tool_result",
+        "lesson_revision",
+        "approval_request",
+        "approval_resolved",
+        "plan",
+        "status",
+        "usage",
+        "budget_steer",
+        "turn_complete",
+        "error",
+      ],
+    },
+    payload: { type: "jsonb", nullable: false, generated: false, labels: null },
+    created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+  },
+  run_inbox: {
+    event_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    run_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    kind: {
+      type: "run_inbox_kind",
+      nullable: false,
+      generated: false,
+      labels: ["message", "steer", "approval", "cancel"],
+    },
+    payload: { type: "jsonb", nullable: false, generated: false, labels: null },
+    status: {
+      type: "run_inbox_status",
+      nullable: false,
+      generated: true,
+      labels: ["pending", "delivered"],
+    },
     created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
   },
   skill: {
