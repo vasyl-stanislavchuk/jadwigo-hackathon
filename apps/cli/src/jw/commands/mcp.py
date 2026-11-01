@@ -215,9 +215,9 @@ def build_server() -> Any:
     def lesson_check(
         draft_id: str,
         help: dict[str, dict[str, Any]],
+        names: list[str],
         title: str | None = None,
         reasoning: str | None = None,
-        names: list[str] | None = None,
         full: bool = False,
         verbose: bool = False,
     ) -> dict[str, Any]:
@@ -233,9 +233,10 @@ def build_server() -> Any:
         where a path is say, or a dotted path under data, key, hints, worked or almost
         ("hints.0.text"); each change is recorded in based_on.changes. Send only the steps you
         change: a step left out keeps what the draft holds (its words, the bank's twin,
-        lesson_edit's changes), and help {} checks the draft as it stands. Every word but a key
-        has the names you pass replaced, as for lesson_draft; title and reasoning replace the
-        draft's. Every call rewrites the draft file (draft_path) with your words as far as they
+        lesson_edit's changes), and help {} checks the draft as it stands. names is required, as
+        for lesson_draft (every name the family uses, or []): they are replaced in every word but
+        an answer key, keys included, and again in the steps the draft holds; title and
+        reasoning replace the draft's. Every call rewrites the draft file (draft_path) with your words as far as they
         go, and writes its check beside it. ok true returns the card (per question: prompt and
         key as plain text, twin {prompt, key, source}, source, licence, and changes when there
         are any; and next: publish with lesson_publish), warns ({rule: count}), the lesson_file
@@ -250,7 +251,7 @@ def build_server() -> Any:
             words=help,
             title=title,
             reasoning=reasoning,
-            names=names or [],
+            names=names,
             full=full,
             verbose=verbose,
         )
@@ -260,9 +261,9 @@ def build_server() -> Any:
         draft_id: str,
         step_id: str,
         patch: dict[str, Any],
+        names: list[str],
         why: str | None = None,
         change: str = lesson_edit.CHANGE_DEFAULT,
-        names: list[str] | None = None,
     ) -> dict[str, Any]:
         """Change one step of a draft and get that step's findings back, without resending the rest.
 
@@ -277,8 +278,9 @@ def build_server() -> Any:
         step_id, findings for this step only, render (the page's findings for it from its last
         draw, stale when drawn before this write; null without the page), the step's card,
         lesson_ok (the whole lesson's check) and draft_path. A patch that is not an object, or
-        sets a part as the wrong kind, is refused with rule edit and changes nothing. Pass names
-        as for lesson_draft: they are replaced in every word but a key, and in why. A later
+        sets a part as the wrong kind, is refused with rule edit and changes nothing. names is
+        required, as for lesson_draft (every name the family uses, or []): they are replaced in
+        every word but an answer key, keys included, and in why. A later
         lesson_check keeps this edit unless it is sent words for this step.
         """
         return _call(
@@ -288,7 +290,7 @@ def build_server() -> Any:
             patch=patch,
             why=why,
             change=change,
-            names=names or [],
+            names=names,
         )
 
     @server.tool(name="lesson_publish")
