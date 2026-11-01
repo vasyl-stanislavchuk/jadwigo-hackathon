@@ -184,7 +184,16 @@
         "call_id": "call_1",
         "verb": "lesson_draft",
         "state": "done",
-        "error": null
+        "error": null,
+        "input": {
+          "request": "halves",
+          "grade": "2",
+          "names": [],
+          "topic": "fractions"
+        },
+        "output": {
+          "draft_id": "drf_demo"
+        }
       }
     ],
     "lesson": {
@@ -198,6 +207,7 @@
         "parts": []
       }
     },
+    "previous_lesson": null,
     "status": "in_progress",
     "turn_open": true,
     "spent_usd": 0.01,

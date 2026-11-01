@@ -3,6 +3,7 @@ title: Pokaż pracę domową · Jadwigo
 description: Wkrótce zrobisz zdjęcie pracy domowej, a Jadwigo ułoży krótką lekcję z tego, co było trudne.
 heading: Pokaż pracę domową
 path: /praca-domowa
+translation: /en/homework
 reviewed: true
 draftNote: Pracujemy nad tym teraz.
 ---

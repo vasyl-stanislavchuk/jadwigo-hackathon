@@ -3,6 +3,7 @@ title: O nas · Jadwigo
 description: Jadwigo budujemy jako rodzina, mama, tata i nasz syn. Najpierw dla niego, teraz dla jego klasy.
 heading: O nas
 path: /o-nas
+translation: /en/about
 reviewed: true
 draftNote: Ta strona jeszcze rośnie. Zdjęcia i więcej naszej historii wkrótce.
 ---

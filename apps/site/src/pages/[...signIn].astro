@@ -1,38 +1,53 @@
 ---
+import type { Language } from "@jadwigo/config";
 // The parent's way in on jadwigo.pl (dl-5ssh.4.2): the email code, then Google, then Facebook, the
 // order of jadwigo-platform/decisions/2026-10-30-the-parent-sign-in-screen-lists-the-email-code-first-
 // then-google. Nothing signs in here: each way hands over to the app's /parent, which reads
 // ?email= and ?provider= (apps/web/src/parent/route.ts). Signing in and registering are one step.
-import { getEntry } from "astro:content";
+// An English page adds lang=en to each, the form as a hidden field (dl-w0b4.81).
 import facebook from "../assets/facebook-f.svg?raw";
 import google from "../assets/google-g.svg?raw";
 import { parentUrl, providerUrl } from "../index.ts";
 import Base from "../layouts/Base.astro";
+import { strictBuild } from "../lib/build.ts";
+import { otherLanguage, twinPath, twinStaticPaths, withLang } from "../lib/i18n.ts";
+import { landingReviewed, landingWords } from "../lib/words.ts";
 
-const words = (await getEntry("landing", "pl"))?.data.signIn;
-if (!words) throw new Error("src/content/pl/landing.yaml has no signIn words");
+export const getStaticPaths = () => twinStaticPaths("signIn", strictBuild);
+
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+const words = (await landingWords(lang)).signIn;
+const reviewed = await landingReviewed(lang);
+const translation = twinPath("signIn", otherLanguage(lang));
 const page = {
   title: words.title,
   description: words.description,
   heading: words.heading,
-  reviewed: true,
+  lang,
+  reviewed,
+  translation,
 };
 ---
 
-<Base page={page} path="/zaloguj">
+<Base page={page} path={twinPath("signIn", lang)}>
   <section class="sign-in wrap" aria-labelledby="sign-in-title">
     <h1 id="sign-in-title">{words.heading}</h1>
     <p class="lead">{words.lead}</p>
     <form action={parentUrl} method="get" class="email">
       <label for="email">{words.email}</label>
       <input id="email" name="email" type="email" autocomplete="email" required />
+      {lang !== "pl" && <input type="hidden" name="lang" value={lang} />}
       <button class="btn" type="submit">{words.send}</button>
       <p class="note">{words.note}</p>
     </form>
     <p class="or">{words.or}</p>
     <p class="providers">
-      <a class="provider" href={providerUrl("google")}><span set:html={google} />{words.google}</a>
-      <a class="provider" href={providerUrl("facebook")}><span set:html={facebook} />{words.facebook}</a>
+      <a class="provider" href={withLang(providerUrl("google"), lang)}><span set:html={google} />{words.google}</a>
+      <a class="provider" href={withLang(providerUrl("facebook"), lang)}><span set:html={facebook} />{words.facebook}</a>
     </p>
   </section>
 </Base>

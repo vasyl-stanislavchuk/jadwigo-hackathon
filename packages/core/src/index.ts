@@ -54,6 +54,7 @@ export {
   type ChatItem,
   deadlineDue,
   foldRun,
+  type LessonAt,
   mergeLive,
   type RunView,
   type ToolState,
