@@ -824,5 +824,12 @@
   "parent_lessons_empty": "The lessons you make will appear here.",
   "parent_history_empty": "Every lesson done will appear here, with its result question by question.",
   "parent_crumb_result": "Lesson result",
-  "parent_crumb_overview": "Lesson overview"
+  "parent_crumb_overview": "Lesson overview",
+  "parent_child_tabs": "The child's pages",
+  "parent_tab_overview": "Overview",
+  "parent_tab_skills": "Skills",
+  "parent_new_lesson_for": "New lesson for {name}",
+  "parent_child_skills_empty": "The child's goals will appear here: what they can do, what you are working on and what comes next.",
+  "parent_child_lessons_empty": "The lessons given to this child will appear here.",
+  "parent_child_history_empty": "Every lesson this child does will appear here, with its result question by question."
 }

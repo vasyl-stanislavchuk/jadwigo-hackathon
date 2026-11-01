@@ -603,5 +603,12 @@
   "parent_lessons_empty": false,
   "parent_history_empty": false,
   "parent_crumb_result": false,
-  "parent_crumb_overview": false
+  "parent_crumb_overview": false,
+  "parent_child_tabs": false,
+  "parent_tab_overview": false,
+  "parent_tab_skills": false,
+  "parent_new_lesson_for": false,
+  "parent_child_skills_empty": false,
+  "parent_child_lessons_empty": false,
+  "parent_child_history_empty": false
 }

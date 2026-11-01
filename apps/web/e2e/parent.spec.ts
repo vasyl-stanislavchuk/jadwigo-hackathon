@@ -109,10 +109,11 @@ test("an adult saves a finished lesson: email code, account, a child, the claim,
   await expect(lesson).toHaveCount(1);
   await expect(lesson.getByText("Równe grupy")).toBeVisible();
   await expect(lesson.locator("li[data-seq]").first()).toHaveAttribute("data-ended", "skipped");
-  await expect(page).toHaveURL(/\/parent$/);
+  // The kept lesson opens on that child's page (dl-uukj.47.3).
+  await expect(page).toHaveURL(/\/parent\/children\/lrn_[0-9a-z]{26}$/);
   expect(await storedAttempts(page)).toEqual([]);
 
-  // A reload keeps the session (supabase-js's storage) and the home, with no second claim to make.
+  // A reload keeps the session (supabase-js's storage) and the page, with no second claim to make.
   await page.reload();
   await expect(page.locator("[data-learner-card]").locator("li[data-attempt]")).toHaveCount(1);
 });
