@@ -3,23 +3,31 @@
 // on top, its first question written large on a notebook page as the teaser, one click to play in
 // the app with no login. A still grid: the drifting row went with dl-5ssh.4.9, since the hero holds
 // the page's one moving moment.
-import { getEntry } from "astro:content";
+import type { Language } from "@jadwigo/config";
 import { featuredLessons, playUrl } from "../lib/featured.ts";
+import { withLang } from "../lib/i18n.ts";
 import { firstSentence, plural } from "../lib/landing.ts";
+import { landingWords } from "../lib/words.ts";
 
-const words = (await getEntry("landing", "pl"))?.data.lessons;
-if (!words) throw new Error("src/content/pl/landing.yaml has no lessons words");
+interface Props {
+  lang: Language;
+}
+
+// The card labels are in the page's language; the lessons themselves are the featured list's until
+// dl-w0b4.85 gives each language its own, and each card opens the app in the page's language.
+const { lang } = Astro.props;
+const words = (await landingWords(lang)).lessons;
 const { lessons, from } = await featuredLessons();
 console.warn(`Featured lessons for the gallery: ${lessons.length}, from the ${from}`);
 
 const cards = lessons.map((l) => ({
-  href: playUrl(l),
+  href: withLang(playUrl(l), lang),
   title: l.title,
   teaser: l.first_say === null ? null : firstSentence(l.first_say),
   meta: [
     words.subjects[l.subject],
     l.grade === null ? null : `${words.grade} ${l.grade}`,
-    l.question_count > 0 ? plural(l.question_count, words.questions) : null,
+    l.question_count > 0 ? plural(l.question_count, words.questions, lang) : null,
   ].filter((m): m is string => m !== null),
 }));
 ---

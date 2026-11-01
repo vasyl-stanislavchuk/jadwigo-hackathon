@@ -105,6 +105,8 @@ export interface NewLessonVersion {
 /** A published version with its list, each row joined to its lesson question. */
 export interface LessonVersionWithQuestions {
   readonly version: LessonVersion;
+  /** The lesson's language, which the page sets as the lesson region's `lang` (dl-9t2o.3). */
+  readonly language: Lesson["language"];
   readonly questions: readonly (LessonVersionQuestion & { readonly question: LessonQuestion })[];
 }
 

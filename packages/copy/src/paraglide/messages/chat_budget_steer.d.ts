@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Half the budget is used, so I'm finishing the lesson with what I have." |
+* | "I'm finishing the lesson with what I have, to stay within the limit." |
 *
 * @param {Chat_Budget_SteerInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

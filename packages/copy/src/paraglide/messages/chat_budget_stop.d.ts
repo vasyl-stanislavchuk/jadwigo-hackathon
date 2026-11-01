@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "The budget is nearly used up, so this is where I stop." |
+* | "Saved, stopped: I'm not going further, to stay within the limit." |
 *
 * @param {Chat_Budget_StopInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

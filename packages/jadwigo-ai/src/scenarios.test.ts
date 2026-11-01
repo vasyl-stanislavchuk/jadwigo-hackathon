@@ -13,6 +13,7 @@ import { parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import { InMemoryStore } from "@jadwigo/store";
 import { FIXED_NOW } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
+import type { MuseClient, MuseRequest } from "./muse/client.ts";
 import { ScriptedMuse, type ScriptedReply } from "./muse/scripted.ts";
 import { InMemoryRunQueue } from "./queue/memory.ts";
 import { STEP_VISIBILITY_S } from "./queue/types.ts";
@@ -272,6 +273,168 @@ describe("the engine keeps PostHog's production lessons", () => {
       expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
     },
   );
+
+  frozen("a due run enqueued by the sweep ends without a model call", async () => {
+    // Muse is scripted with no reply, so any call fails the scenario.
+    const idle = await setup([]);
+    const quiet = await idle.say("Something about money.");
+    idle.tick(RUN_IDLE_MS);
+    // The pg_cron sweep's step: the run's current attempt (app.enqueue_runs_due).
+    const waiting = await idle.store.getRun(idle.pod, quiet);
+    await idle.deps.queue.send({ run_id: quiet, attempt: waiting.attempt });
+    const outputs = await drain(idle.deps);
+    expect(outputs.map((o) => o.outcome)).toContain("turn_complete");
+    expect(idle.muse.calls).toHaveLength(0);
+    expect((await idle.store.getRun(idle.pod, quiet)).status).toBe("completed");
+    const closed = await idle.log(quiet);
+    expect(closed.map((e) => e.type)).toEqual(["message", "status", "turn_complete"]);
+
+    const busy = await setup([]);
+    const long = await busy.say("A long one.");
+    const started = await busy.store.getRun(busy.pod, long);
+    await busy.store.updateRun(busy.pod, long, started.attempt, {
+      idle_deadline_at: new Date(busy.now().getTime() + 2 * RUN_MAX_MS).toISOString(),
+    });
+    busy.tick(RUN_MAX_MS);
+    expect((await drain(busy.deps)).map((o) => o.outcome)).toEqual(["failed"]);
+    expect(busy.muse.calls).toHaveLength(0);
+    expect((await busy.store.getRun(busy.pod, long)).status).toBe("failed");
+    const failed = await busy.log(long);
+    expect(failed.find((e) => e.type === "error")?.payload).toMatchObject({
+      error: { type: "RunTimedOut" },
+      retryable: false,
+    });
+    expect(failed.at(-1)?.type).toBe("turn_complete");
+  });
+
+  frozen("a steer survives a redelivered step", async () => {
+    const STEER = "Shorter, please: 5 questions.";
+    const t = await setup(
+      [draft(), { text: "Done: 5 questions." }],
+      fakeVerbs({ lesson_draft: async () => void (await t.steer(STEER)) }),
+      // The step that took the steer dies during its model call, before Muse answers.
+      { museDiesOn: (request) => request.call_no === 2 },
+    );
+    const run = await t.say("Adding within 20, grade 1.");
+    await drain(t.deps); // step 2 takes the steer off the inbox and dies in call 2
+    t.tick(STEP_VISIBILITY_S * 1000 + 1000);
+    await drain(t.deps); // the redelivery makes call 2 again
+
+    const events = await t.log(run);
+    const steers = events.filter((e) => e.type === "steer");
+    expect(steers.map((e) => e.payload)).toEqual([{ text: STEER, source: "chat" }]);
+    expect(steers[0]?.seq).toBeLessThan(
+      seqOf(events, (e) => e.type === "model_response" && e.payload.call_no === 2),
+    );
+    expect(sent(t.muse, 2)).toContain(STEER);
+    expect(foldRun(events).chat).toContainEqual(
+      expect.objectContaining({ from: "parent", text: STEER, steer: { source: "chat" } }),
+    );
+    expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
+  });
+
+  frozen("a steer during the final call keeps the turn open one more step", async () => {
+    const STEER = "I rewrote question 2 myself.";
+    const t = await setup(
+      [draft(), { text: "Here it is." }, { text: "Kept your question 2." }],
+      fakeVerbs(),
+      {
+        onMuse: async (request) => {
+          if (request.call_no === 2) {
+            await t.steer(STEER, { source: "lesson_edit", question_ids: ["s02"] });
+          }
+        },
+      },
+    );
+    const run = await t.say("Adding within 20, grade 1.");
+    await drain(t.deps);
+
+    const events = await t.log(run);
+    expect(t.muse.calls).toHaveLength(3);
+    expect(sent(t.muse, 3)).toContain(STEER);
+    const steer = seqOf(events, (e) => e.type === "steer");
+    expect(steer).toBeGreaterThan(
+      seqOf(events, (e) => e.type === "model_response" && e.payload.call_no === 2),
+    );
+    expect(steer).toBeLessThan(
+      seqOf(events, (e) => e.type === "model_response" && e.payload.call_no === 3),
+    );
+    expect(events.filter((e) => e.type === "turn_complete")).toHaveLength(1);
+    expect(foldRun(events).chat).toContainEqual(
+      expect.objectContaining({
+        from: "parent",
+        text: STEER,
+        steer: { source: "lesson_edit", question_ids: ["s02"] },
+      }),
+    );
+    expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
+  });
+
+  frozen(
+    "a parent's lesson edit mid-turn reaches the next call, and the AI's revision keeps it",
+    async () => {
+      const WORDS = "I wrote question 2 myself: count on from 7.";
+      const SAY = "Start at 7 and count on 5.";
+      const steerOnCall1 =
+        (t: { steer: (text: string, from?: SteerFrom) => Promise<RunId> }) =>
+        async (request: MuseRequest) => {
+          if (request.call_no === 1) {
+            await t.steer(WORDS, { source: "lesson_edit", question_ids: ["s02"] });
+          }
+        };
+      const verbs = createVerbs({ bank: fixtureBank() });
+
+      // The model honours the edit: a lesson_edit on s02 in the parent's words.
+      let kept: Awaited<ReturnType<typeof setup>>;
+      kept = await setup(
+        [
+          draft(),
+          {
+            tool_calls: [
+              {
+                verb: "lesson_edit",
+                input: (r) => ({
+                  draft_id: r.run_id,
+                  names: [],
+                  step_id: "s02",
+                  patch: { say: SAY },
+                  why: WORDS,
+                }),
+              },
+            ],
+          },
+          { text: "Kept your question 2." },
+        ],
+        verbs,
+        { onMuse: (request) => steerOnCall1(kept)(request) },
+      );
+      const run = await kept.say("Adding within 20, grade 1.");
+      await drain(kept.deps);
+
+      const events = await kept.log(run);
+      expect(sent(kept.muse, 1)).not.toContain(WORDS);
+      const second = kept.muse.calls.find((c) => c.call_no === 2);
+      expect(second?.instructions).toContain("questions s02");
+      expect(second?.instructions).toContain(WORDS);
+      expect(seqOf(events, (e) => e.type === "steer")).toBeLessThan(
+        seqOf(events, (e) => e.type === "model_response" && e.payload.call_no === 2),
+      );
+      expect(stepSay(foldRun(events).lesson?.lesson_file, "s02")).toBe(SAY);
+      expect((await kept.store.getRun(kept.pod, run)).status).toBe("completed");
+
+      // The model ignores it: the engine still named the question to it.
+      let ignored: Awaited<ReturnType<typeof setup>>;
+      ignored = await setup([draft(), { text: "Done." }], verbs, {
+        onMuse: (request) => steerOnCall1(ignored)(request),
+      });
+      const other = await ignored.say("Adding within 20, grade 1.");
+      await drain(ignored.deps);
+      const named = ignored.muse.calls.find((c) => c.call_no === 2);
+      expect(named?.instructions).toContain("questions s02");
+      expect(named?.instructions).toContain(WORDS);
+      expect(stepSay(foldRun(await ignored.log(other)).lesson?.lesson_file, "s02")).not.toBe(SAY);
+    },
+  );
 });
 
 // The world each scenario runs in.
@@ -301,9 +464,16 @@ function edit(cost_usd = 0.02): ScriptedReply {
 
 interface Options {
   cap_usd?: number;
+  /** Runs before Muse answers each call: the scenarios' way to act while a call is out. */
+  onMuse?: (request: MuseRequest) => Promise<void>;
+  /** Muse's call throws once, as a dying process would, on the first request this matches. */
+  museDiesOn?: (request: MuseRequest) => boolean;
   /** The store throws once, as a dying process would, on the first append this matches. */
   crashOn?: (events: readonly NewRunEvent[]) => boolean;
 }
+
+/** A steer's optional fields, as the inbox takes them. */
+type SteerFrom = Omit<Extract<InboxEntry, { kind: "steer" }>["payload"], "text">;
 
 async function setup(
   script: readonly ScriptedReply[],
@@ -316,7 +486,18 @@ async function setup(
     ? new CrashingStore(now, options.crashOn)
     : new InMemoryStore({ now });
   const muse = new ScriptedMuse(script);
-  const deps: EngineDeps = { store, muse, verbs, queue: new InMemoryRunQueue(now), now };
+  let died = false;
+  const client: MuseClient = {
+    respond: async (request) => {
+      await options.onMuse?.(request);
+      if (!died && options.museDiesOn?.(request)) {
+        died = true;
+        throw new Error("the process died during the model call");
+      }
+      return muse.respond(request);
+    },
+  };
+  const deps: EngineDeps = { store, muse: client, verbs, queue: new InMemoryRunQueue(now), now };
   const member = await store.createAccount(Uuid.parse(crypto.randomUUID()), "pl");
   const conversation = (
     await store.createConversation(member.pod, {
@@ -348,6 +529,8 @@ async function setup(
     },
     send,
     say: (text: string) => send({ event_id: eventId(), kind: "message", payload: { text } }),
+    steer: (text: string, from: SteerFrom = {}) =>
+      send({ event_id: eventId(), kind: "steer", payload: { text, ...from } }),
     log: (run: RunId) => store.listRunEvents(member.pod, run, 0),
   };
 }
@@ -413,6 +596,14 @@ function seqOf(events: readonly RunEvent[], match: (e: RunEvent) => boolean): nu
   const found = events.find(match);
   if (!found) throw new Error("no such event in the log");
   return found.seq;
+}
+
+/** What a lesson file's step says, by its id. */
+function stepSay(lesson_file: unknown, id: string): unknown {
+  const parts = (
+    lesson_file as { script?: { parts?: { steps?: { id: string; say?: unknown }[] }[] } }
+  )?.script?.parts;
+  return parts?.flatMap((p) => p.steps ?? []).find((s) => s.id === id)?.say;
 }
 
 /** Everything the model was sent on call `call_no`, as one string to search. */

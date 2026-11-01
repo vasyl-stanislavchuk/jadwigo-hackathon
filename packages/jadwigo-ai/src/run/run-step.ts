@@ -3,6 +3,7 @@ import {
   type ConversationId,
   type ModelTier,
   type NewRunEvent,
+  RUN_ERROR_TYPE,
   RUN_IDLE_MS,
   RUN_IDLE_PUSH_MS,
   RUN_MAX_MS,
@@ -24,7 +25,7 @@ import type { RunQueue } from "../queue/types.ts";
 import { type QueuedStep, STEP_VISIBILITY_S } from "../queue/types.ts";
 import type { Verbs } from "../verbs/types.ts";
 import { type VerbContext, type VerbEffect, VerbError } from "../verbs/types.ts";
-import { eventIdFor, runIdFor } from "./ids.ts";
+import { eventIdFor, turnRunIdFor } from "./ids.ts";
 
 /**
  * The engine's loop (Lead decisions 5-9, 13): a message lands in the run inbox, a step is one Muse
@@ -61,17 +62,6 @@ export interface AcceptMessage {
 /** A turn's budget when the caller names none. */
 const DEFAULT_CAP_USD = 1;
 
-/**
- * The run's own error types, which never reach the API's `{error}` envelope, so they are not
- * `ErrorType`s. They belong beside `RunError` in `@jadwigo/contracts/run` (a note to the lead).
- */
-const RUN_ERROR = {
-  /** A step ran past its visibility timeout and was delivered again. */
-  stepTimedOut: "StepTimedOut",
-  /** The turn ran past `max_deadline_at`. */
-  runTimedOut: "RunTimedOut",
-} as const;
-
 const WORKFLOW = "jadwigo-lesson-compose";
 const TAG = "product:lesson-compose";
 const INSTRUCTIONS = [
@@ -82,7 +72,7 @@ const INSTRUCTIONS = [
 const PROMPT_CACHE_KEY = `${WORKFLOW}:1`;
 /**
  * Every call goes to the tier that trains on nothing it is sent: a run's prompt carries the
- * parent's words and the learner's names (draft decision dl-2uq1). Each `model_response` records it.
+ * parent's words and the learner's names (decision dl-2uq1, accepted 2026-11-01). Each `model_response` records it.
  */
 const TIER: ModelTier = "private";
 const STEER =
@@ -118,9 +108,24 @@ class Writer {
     readonly store: Store,
     readonly pod: PodId,
     readonly run: RunId,
-    readonly attempt: number,
+    public attempt: number,
     readonly log: RunEvent[],
   ) {}
+
+  /**
+   * Claims the run for one paid call (dl-z5ja.41): moves `attempt` on, a compare and set only one
+   * caller holding this attempt wins, then reads the log back as stored, so the call is built from
+   * what every caller wrote before it. The loser goes stale and pays nothing.
+   */
+  async claim(): Promise<Run> {
+    const next = this.attempt + 1;
+    const claimed = await this.store.updateRun(this.pod, this.run, this.attempt, { attempt: next });
+    if (claimed.stale) throw new StaleAttempt();
+    this.attempt = next;
+    const stored = await this.store.listRunEvents(this.pod, this.run, 0);
+    this.log.splice(0, this.log.length, ...stored);
+    return claimed.value;
+  }
 
   async append(events: readonly NewRunEvent[]): Promise<void> {
     if (events.length === 0) return;
@@ -187,30 +192,66 @@ export function acceptMessage(
 ): Promise<{ run: Run; inbox: RunInbox }> {
   const { store, queue } = deps;
   const { pod, conversation_id, entry } = message;
-  return store.unit(async () => {
-    const runs = await store.listRuns(pod, conversation_id);
-    const open = runs.findLast((r) => !isEnded(r.status));
-
-    if (entry.kind !== "message" && !open) {
-      // Nothing is running: a cancel, a steer or an approval lands on the last turn and changes nothing.
-      const last = runs.at(-1);
-      if (!last) {
-        throw new StoreError(
-          ErrorType.enum.BadRequest,
-          `the conversation has no run for a ${entry.kind}`,
-        );
-      }
-      return { run: last, inbox: await store.putRunInbox(pod, { ...entry, run_id: last.id }) };
+  // Each resend answers the stored row, and the engine acts on that row's kind, never the resend's
+  // (dl-z5ja.73): an event_id kept as a message and resent as a cancel is refused, not obeyed.
+  const put = async (run_id: RunId): Promise<RunInbox> => {
+    const inbox = await store.putRunInbox(pod, { ...entry, run_id });
+    if (inbox.kind !== entry.kind) {
+      throw new StoreError(
+        ErrorType.enum.BadRequest,
+        `event ${entry.event_id} is a ${inbox.kind}, not a ${entry.kind}`,
+      );
     }
+    return inbox;
+  };
+  return store.unit(async () => {
+    for (let tries = 0; tries < 5; tries++) {
+      const runs = await store.listRuns(pod, conversation_id);
+      let open = runs.findLast((r) => !isEnded(r.status));
 
-    if (open) {
-      const inbox = await store.putRunInbox(pod, { ...entry, run_id: open.id });
+      if (entry.kind !== "message" && !open) {
+        // Nothing is running: a cancel, a steer or an approval lands on the last turn and changes nothing.
+        const last = runs.at(-1);
+        if (!last) {
+          throw new StoreError(
+            ErrorType.enum.BadRequest,
+            `the conversation has no run for a ${entry.kind}`,
+          );
+        }
+        return { run: last, inbox: await put(last.id) };
+      }
+
+      // No open run: the next turn's, named by its number in the conversation (dl-z5ja.85). The store
+      // writes a run once, so 2 first messages racing open one run and both land in its inbox.
+      let opened = false;
+      if (!open) {
+        const now = deps.now().getTime();
+        const run = await store.createRun(pod, {
+          id: await turnRunIdFor(conversation_id, runs.length),
+          created_by: message.created_by,
+          conversation_id,
+          workflow: WORKFLOW,
+          resumes: null,
+          cap_usd: message.cap_usd ?? DEFAULT_CAP_USD,
+          idle_deadline_at: at(now + RUN_IDLE_MS),
+          max_deadline_at: at(now + RUN_MAX_MS),
+        });
+        // A racing message's turn that has already ended: this one opens the turn after it.
+        if (isEnded(run.status)) continue;
+        open = run;
+        opened = run.status === "queued";
+      }
+
+      const inbox = await put(open.id);
       if (inbox.run_id !== open.id) {
-        // A resend of a message an earlier turn already holds.
+        // A resend of a message an earlier turn already holds. A run this call opened gets its step
+        // all the same: it ends the turn without a model call unless a racing message joined it.
+        if (opened) await queue.send({ run_id: open.id, attempt: open.attempt });
         return { run: await store.getRun(pod, inbox.run_id), inbox };
       }
       const now = deps.now().getTime();
       const cancel = entry.kind === "cancel";
+      const waiting = open.status === "awaiting_input";
       const woken = await updateLatest(store, pod, open, (run) => {
         const change: RunChange = {};
         if (cancel && run.cancel_requested_at === null) change.cancel_requested_at = at(now);
@@ -220,37 +261,15 @@ export function acceptMessage(
         }
         return Object.keys(change).length > 0 ? change : null;
       });
-      if (woken.changed && open.status === "awaiting_input" && woken.run.status === "queued") {
-        await queue.send({ run_id: woken.run.id, attempt: woken.run.attempt });
-      }
+      // A step for a run this call opened (a racing caller's too: one of the 2 steps runs stale or
+      // claims nothing to pay for, dl-z5ja.41), or for one it woke from awaiting_input.
+      const woke = woken.changed && waiting && woken.run.status === "queued";
+      if (opened || woke) await queue.send({ run_id: woken.run.id, attempt: woken.run.attempt });
       return { run: woken.run, inbox };
     }
-
-    const id = await runIdFor(entry.event_id);
-    const resent = runs.find((r) => r.id === id);
-    if (resent)
-      return { run: resent, inbox: await store.putRunInbox(pod, { ...entry, run_id: id }) };
-
-    const now = deps.now().getTime();
-    const run = await store.createRun(pod, {
-      id,
-      created_by: message.created_by,
-      conversation_id,
-      workflow: WORKFLOW,
-      resumes: null,
-      cap_usd: message.cap_usd ?? DEFAULT_CAP_USD,
-      idle_deadline_at: at(now + RUN_IDLE_MS),
-      max_deadline_at: at(now + RUN_MAX_MS),
-    });
-    const inbox = await store.putRunInbox(pod, { ...entry, run_id: run.id });
-    if (inbox.run_id !== run.id) {
-      // A resend of a mid-turn message whose turn has ended: the new run has nothing to do.
-      const w = new Writer(store, pod, run.id, run.attempt, []);
-      await endTurn(w, "completed", deps.now());
-      return { run: await store.getRun(pod, inbox.run_id), inbox };
-    }
-    await queue.send({ run_id: run.id, attempt: run.attempt });
-    return { run, inbox };
+    throw new Error(
+      `conversation ${conversation_id} kept opening turns while a message was accepted`,
+    );
   });
 }
 
@@ -293,6 +312,15 @@ export async function runStep(input: RunStepInput, deps: EngineDeps): Promise<Ru
   if (ended) return { outcome: ended, events: 0 };
   if (found.run.attempt !== input.attempt) return { outcome: "continue", events: 0 };
 
+  // A due run takes the sweep's path before any model call: the pg_cron sweep enqueues a step for
+  // every run past a deadline (`app.enqueue_runs_due`), and that step only closes it (dl-z5ja.60).
+  const due = deadlineDue(found.run, deps.now());
+  if (due) {
+    const closed = await closeDue(deps.store, found.pod, found.run, due, deps.now());
+    if (!closed) return { outcome: "continue", events: 0 };
+    return { outcome: due === "max" ? "failed" : "turn_complete", events: closed.events };
+  }
+
   const log = [...(await deps.store.listRunEvents(found.pod, found.run.id, 0))];
   const w = new Writer(deps.store, found.pod, found.run.id, input.attempt, log);
   try {
@@ -312,18 +340,15 @@ interface Scope {
 
 async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepOutcome> {
   let run = scope.run;
-  const { steers } = await takeInbox(deps.store, w);
+  await takeInbox(deps.store, w);
   const now = deps.now();
-
-  if (deadlineDue(run, now) === "max") {
-    await endPastMax(w, run.attempt, now);
-    return "failed";
-  }
 
   const start: RunChange = {};
   if (run.status !== "in_progress") start.status = "in_progress";
   const idle = run.idle_deadline_at === null ? null : Date.parse(run.idle_deadline_at);
-  if (idle === null || idle - now.getTime() < RUN_IDLE_MS - RUN_IDLE_PUSH_MS) {
+  const ahead = idle === null ? null : idle - now.getTime();
+  // Pushed at most every RUN_IDLE_PUSH_MS; a verb hold left by a step that died is taken back.
+  if (ahead === null || ahead < RUN_IDLE_MS - RUN_IDLE_PUSH_MS || ahead > RUN_IDLE_MS) {
     start.idle_deadline_at = at(now.getTime() + RUN_IDLE_MS);
   }
   if (start.status) {
@@ -349,6 +374,9 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       // The answer is recorded and nothing came after it: a redelivery ends the turn on it.
       return endTurn(w, "completed", deps.now());
     }
+
+    // Nothing from the parent: a turn a resend opened and no message joined (dl-z5ja.85).
+    if (!parentSpokeAfter(w.log, 0)) return endTurn(w, "completed", deps.now());
 
     const spent = spentOf(w.log);
     const level = budgetGuard(spent, run.cap_usd);
@@ -381,9 +409,15 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       ]);
       instructions.push(STEER);
     }
-    for (const text of steers) instructions.push(`The parent adds: ${text}`);
+    for (const steer of steersOf(w.log)) instructions.push(steerLine(steer));
 
     const call_no = (last?.payload.call_no ?? 0) + 1;
+    run = await w.claim();
+    if (responsesOf(w.log).some((e) => e.payload.call_no >= call_no)) {
+      // Another caller recorded this call first: the next step reuses its answer.
+      await deps.queue.send({ run_id: run.id, attempt: w.attempt });
+      return "continue";
+    }
     const response = await deps.muse.respond({
       run_id: run.id,
       call_no,
@@ -441,8 +475,9 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
 
     if (response.tool_calls.length === 0) {
       // A message that came in during the call keeps the turn open for one more step.
+      // So does a steer: it is logged, and the next call is built with it (Lead decision 22).
       const late = await takeInbox(deps.store, w);
-      if (late.messages > 0) {
+      if (late.messages + late.steers > 0) {
         await deps.queue.send({ run_id: run.id, attempt: w.attempt });
         return "continue";
       }
@@ -451,12 +486,25 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     pending = [...response.tool_calls];
   }
 
+  if (pending.length > 0) await holdIdle(w, run);
   for (const call of pending) {
     if (await cancelRequested(w)) return endCancelled(deps, w);
     await runTool(deps, w, scope, call, lessonOf(w.log) ?? prior.lesson);
   }
+  await w.update({ idle_deadline_at: at(deps.now().getTime() + RUN_IDLE_MS) });
   await deps.queue.send({ run_id: run.id, attempt: w.attempt });
   return "continue";
+}
+
+/**
+ * Stops the idle clock while the step's verbs run (dl-z5ja.43): `idle_deadline_at` moves to
+ * `max_deadline_at`, so the sweep (`listRunsDue`, `app.runs_due` on Postgres) closes the run only on
+ * its 30 minutes, however long a verb takes. The step sets it back to now + RUN_IDLE_MS once the
+ * verbs are done, and a step that died holding it has it taken back by the next step's start.
+ */
+async function holdIdle(w: Writer, run: Run): Promise<void> {
+  if (run.idle_deadline_at === run.max_deadline_at) return;
+  await w.update({ idle_deadline_at: run.max_deadline_at });
 }
 
 async function runTool(
@@ -487,7 +535,14 @@ async function runTool(
       type: "tool_result",
       run_id: scope.run.id,
       event_id: await w.id("tool", call.call_id, "result"),
-      payload: { call_id: call.call_id, verb: call.verb, output: effect?.output ?? null, error },
+      payload: {
+        call_id: call.call_id,
+        verb: call.verb,
+        output: effect?.output ?? null,
+        error,
+        // The verb's result typed for its widget, which the fold draws (dl-z5ja.70).
+        ...(effect?.view === undefined ? {} : { view: effect.view }),
+      },
     },
   ];
   if (effect?.lesson_file) {
@@ -507,18 +562,17 @@ async function runTool(
 
 /**
  * Takes the run's pending inbox and writes what the log keeps, in one unit, so a stale or failed
- * append gives the rows back on Postgres. A message's event keeps the inbox row's `event_id`, which
- * the page minted. A steer joins this step's instructions; a cancel is already on the run row.
+ * append gives the rows back on Postgres. A message's or a steer's event keeps the inbox row's
+ * `event_id`, which the page minted. A steer is logged (Lead decision 21), and every later call of
+ * the turn is built from the logged steers, so a redelivered step keeps them (dl-z5ja.42). A cancel
+ * is already on the run row.
  */
-async function takeInbox(
-  store: Store,
-  w: Writer,
-): Promise<{ messages: number; steers: readonly string[] }> {
+async function takeInbox(store: Store, w: Writer): Promise<{ messages: number; steers: number }> {
   return store.unit(async () => {
     const rows = await store.takeRunInbox(w.pod, w.run);
     const events: NewRunEvent[] = [];
-    const steers: string[] = [];
     let messages = 0;
+    let steers = 0;
     for (const row of rows) {
       if (row.kind === "message") {
         messages += 1;
@@ -547,7 +601,18 @@ async function takeInbox(
           },
         });
       } else if (row.kind === "steer") {
-        steers.push(row.payload.text);
+        steers += 1;
+        const { text, source, question_ids } = row.payload;
+        events.push({
+          type: "steer",
+          run_id: w.run,
+          event_id: row.event_id,
+          payload: {
+            text,
+            source: source ?? "chat",
+            ...(question_ids === undefined ? {} : { question_ids }),
+          },
+        });
       }
     }
     await w.append(events);
@@ -590,7 +655,7 @@ async function endPastMax(w: Writer, attempt: number, now: Date): Promise<void> 
       run_id: w.run,
       event_id: await w.id("error", "max"),
       payload: {
-        error: { type: RUN_ERROR.runTimedOut, message: "the turn ran past its 30 minutes" },
+        error: { type: RUN_ERROR_TYPE.runTimedOut, message: "the turn ran past its 30 minutes" },
         attempt,
         retryable: false,
       },
@@ -613,8 +678,26 @@ function unresolved(response: ModelResponse, log: readonly RunEvent[]): ToolCall
   return response.payload.tool_calls.filter((call) => !done.has(call.call_id));
 }
 
+/** A parent's message or steer logged after `seq`: the turn has more to answer. */
 function parentSpokeAfter(log: readonly RunEvent[], seq: number): boolean {
-  return log.some((e) => e.seq > seq && e.type === "message" && e.payload.from === "parent");
+  return log.some(
+    (e) =>
+      e.seq > seq && (e.type === "steer" || (e.type === "message" && e.payload.from === "parent")),
+  );
+}
+
+type SteerEvent = Extract<RunEvent, { type: "steer" }>;
+
+/** The turn's logged steers, oldest first. */
+function steersOf(log: readonly RunEvent[]): SteerEvent[] {
+  return log.filter((e): e is SteerEvent => e.type === "steer").sort((a, b) => a.seq - b.seq);
+}
+
+/** A steer as a line of the call's instructions. */
+function steerLine({ payload }: SteerEvent): string {
+  if (payload.source === "chat") return `The parent adds: ${payload.text}`;
+  const named = payload.question_ids ? ` (questions ${payload.question_ids.join(", ")})` : "";
+  return `The parent edited the lesson themselves${named}: ${payload.text}`;
 }
 
 /** What the run has paid, from the log: each `model_response` counted once. */
@@ -698,6 +781,12 @@ async function namesOf(store: Store, scope: Scope): Promise<string[]> {
   return [...new Set(names)];
 }
 
+/** A step that threw in `drain`: the run and attempt it carried, and its place in the queue. */
+export interface FailedStep extends RunStepInput {
+  msg_id: number;
+  read_ct: number;
+}
+
 /**
  * The consumer's loop, in-process: reads visible steps and runs each until none is visible. A step
  * that throws stays in the queue and comes back after its visibility timeout, as on pgmq; one that
@@ -706,10 +795,13 @@ async function namesOf(store: Store, scope: Scope): Promise<string[]> {
  * A step read a 2nd time is a redelivery: before running it, `drain` claims the run by moving its
  * `attempt` on, so the step that stalled goes stale, and logs the retry as an `error` row naming the
  * attempt that stalled.
+ *
+ * A step that throws is handed to `onError` with what it carried and its `msg_id`, so the host can
+ * log it by run id (dl-z5ja.82); it stays in the queue either way.
  */
 export async function drain(
   deps: EngineDeps,
-  options: { max_steps?: number } = {},
+  options: { max_steps?: number; onError?: (error: unknown, step: FailedStep) => void } = {},
 ): Promise<readonly RunStepOutput[]> {
   const max = options.max_steps ?? 100;
   const outputs: RunStepOutput[] = [];
@@ -720,17 +812,22 @@ export async function drain(
       const input = queued.read_ct > 1 ? await claim(deps, queued) : queued.message;
       outputs.push(await runStep(input, deps));
       await deps.queue.archive(queued.msg_id);
-    } catch {
+    } catch (error) {
       // The step stays in the queue, hidden until its visibility timeout, then delivered again.
+      options.onError?.(error, {
+        ...queued.message,
+        msg_id: queued.msg_id,
+        read_ct: queued.read_ct,
+      });
     }
   }
   return outputs;
 }
 
 /**
- * Claims a redelivered step's run. Each earlier redelivery moved the attempt on by one, so read
- * `read_ct` expects the run at `attempt + read_ct - 2` and takes it to the next. A run at any other
- * attempt has moved on without this message, which then runs stale and writes nothing.
+ * Claims a redelivered step's run from whatever attempt holds it now, since each paid call and each
+ * earlier redelivery moved the attempt on (dl-z5ja.41). The step that stalled holding it goes stale.
+ * An ended run is left alone, and the message then runs stale and writes nothing.
  */
 async function claim(deps: EngineDeps, queued: QueuedStep): Promise<RunStepInput> {
   const { store } = deps;
@@ -738,8 +835,8 @@ async function claim(deps: EngineDeps, queued: QueuedStep): Promise<RunStepInput
   const pod = await store.findRunPod(message.run_id);
   if (!pod) return message;
   const run = await store.getRun(pod, message.run_id);
-  const held = message.attempt + queued.read_ct - 2;
-  if (isEnded(run.status) || run.attempt !== held) return message;
+  if (isEnded(run.status) || run.attempt < message.attempt) return message;
+  const held = run.attempt;
   const attempt = held + 1;
   const claimed = await store.updateRun(pod, run.id, held, { attempt });
   if (claimed.stale) return message;
@@ -751,7 +848,7 @@ async function claim(deps: EngineDeps, queued: QueuedStep): Promise<RunStepInput
       event_id: await w.id("retry", held),
       payload: {
         error: {
-          type: RUN_ERROR.stepTimedOut,
+          type: RUN_ERROR_TYPE.stepTimedOut,
           message: "the step ran past its visibility timeout and was retried",
         },
         attempt: held,
@@ -775,23 +872,39 @@ export async function sweep(deps: EngineDeps, now: Date): Promise<{ idle: RunId[
   for (const { pod, run } of await store.listRunsDue(now.toISOString())) {
     const due = deadlineDue(run, now);
     if (!due) continue;
-    const attempt = run.attempt + 1;
-    const claimed = await store.updateRun(pod, run.id, run.attempt, { attempt });
-    if (claimed.stale) continue;
-    const log = [...(await store.listRunEvents(pod, run.id, 0))];
-    const w = new Writer(store, pod, run.id, attempt, log);
-    try {
-      await takeInbox(store, w);
-      if (due === "max") {
-        await endPastMax(w, run.attempt, now);
-      } else {
-        await endTurn(w, "completed", now);
-      }
-    } catch (error) {
-      if (error instanceof StaleAttempt) continue;
-      throw error;
-    }
-    ended[due].push(run.id);
+    if (await closeDue(store, pod, run, due, now)) ended[due].push(run.id);
   }
   return ended;
+}
+
+/**
+ * Closes one due run, as the sweep does and as a step for a due run does: claims it by moving its
+ * `attempt` on, so a step still running goes stale, takes the inbox, then fails it past
+ * `max_deadline_at` with an `error` event, or closes its turn past only `idle_deadline_at`. No
+ * model call. Answers the events it wrote, or null when another claim won the run.
+ */
+async function closeDue(
+  store: Store,
+  pod: PodId,
+  run: Run,
+  due: "idle" | "max",
+  now: Date,
+): Promise<{ events: number } | null> {
+  const attempt = run.attempt + 1;
+  const claimed = await store.updateRun(pod, run.id, run.attempt, { attempt });
+  if (claimed.stale) return null;
+  const log = [...(await store.listRunEvents(pod, run.id, 0))];
+  const w = new Writer(store, pod, run.id, attempt, log);
+  try {
+    await takeInbox(store, w);
+    if (due === "max") {
+      await endPastMax(w, run.attempt, now);
+    } else {
+      await endTurn(w, "completed", now);
+    }
+  } catch (error) {
+    if (error instanceof StaleAttempt) return null;
+    throw error;
+  }
+  return { events: w.appended };
 }

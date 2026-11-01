@@ -1,6 +1,7 @@
 // The site's words beyond each page's frontmatter: one entry per section, read from
-// src/content/pl/landing.yaml so a native speaker edits words, not markup. The index page's
-// `reviewed` flag in src/content/pl/index.md covers these words too.
+// src/content/<lang>/landing.yaml so a native speaker edits words, not markup. Each language's
+// file has the same shape (dl-w0b4.81), and its index page's `reviewed` flag
+// (src/content/<lang>/index.md) covers these words too.
 import { z } from "astro/zod";
 
 const text = z.string().min(1);
@@ -57,13 +58,19 @@ export const landingSchema = z.object({
     google: text,
     facebook: text,
   }),
-  nav: z.object({ signIn: text, home: text, label: text }),
-  footer: z.object({ privacy: text, deletion: text, made: text }),
 });
 
-/** Polish plural of a count: 1 pytanie, 2–4 (not 12–14) pytania, else pytań. */
-export function plural(n: number, [one, few, many]: readonly [string, string, string]): string {
+/**
+ * A count with its noun. Polish has 3 forms: 1 pytanie, 2–4 (not 12–14) pytania, else pytań. English
+ * uses the first for 1 and the second for every other count ("1 question", "5 questions").
+ */
+export function plural(
+  n: number,
+  [one, few, many]: readonly [string, string, string],
+  lang: "pl" | "en" = "pl",
+): string {
   if (n === 1) return `${n} ${one}`;
+  if (lang === "en") return `${n} ${few}`;
   const tens = n % 100;
   const units = n % 10;
   return `${n} ${units >= 2 && units <= 4 && (tens < 12 || tens > 14) ? few : many}`;

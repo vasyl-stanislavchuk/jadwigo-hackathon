@@ -10,9 +10,10 @@
 import type { RunId, RunStatus, VerbName } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
-import { type FormEvent, type ReactElement, useState } from "react";
+import { type FormEvent, type ReactElement, useEffect, useRef, useState } from "react";
 import { Button } from "../tool/button.tsx";
 import { isOpen, type Turn } from "./conversation.ts";
+import { toolResult } from "./widgets/Widgets.tsx";
 
 const TOOL_KEY: Record<VerbName, CopyKey> = {
   lesson_draft: "chat_tool_lesson_draft",
@@ -49,8 +50,6 @@ function rowsOf(chat: readonly ChatItem[]): Row[] {
   return rows;
 }
 
-const usd = (n: number): string => n.toFixed(2);
-
 function ToolLine({ tool, language }: { tool: ToolItem; language: Language }): ReactElement {
   const what = copy(language, TOOL_KEY[tool.verb], {}, "adult");
   const how =
@@ -60,39 +59,58 @@ function ToolLine({ tool, language }: { tool: ToolItem; language: Language }): R
         ? copy(language, "chat_tool_running", {}, "adult")
         : tool.state === "pending"
           ? copy(language, "chat_tool_pending", {}, "adult")
-          : null;
+          : tool.state === "rejected"
+            ? copy(language, "chat_tool_rejected", {}, "adult")
+            : null;
+  const result = toolResult(tool, language);
   return (
     <li data-tool={tool.verb} data-state={tool.state}>
       {what}
       {how === null ? null : `: ${how}`}
+      {result !== null && (result.kind === "plain" || !result.keepVisible) && result.element}
     </li>
   );
 }
 
-/** Tool lines folded under one line; a stuck one stays in view under the fold. */
+/**
+ * Tool lines folded under one line; a stuck one stays in view under the fold, and so does each
+ * widget its registry entry keeps visible (dl-z5ja.24). The plain card stays inside the fold.
+ */
 function ToolGroup({ tools, language }: { tools: ToolItem[]; language: Language }): ReactElement {
   const stuck = tools.filter((t) => t.state === "failed");
   const latest = tools.at(-1);
   const head = latest === undefined ? "" : copy(language, TOOL_KEY[latest.verb], {}, "adult");
+  const shown = tools.flatMap((t) => {
+    const result = toolResult(t, language);
+    return result?.kind === "widget" && result.keepVisible
+      ? [{ call_id: t.call_id, element: result.element }]
+      : [];
+  });
   return (
     <div className="flex flex-col gap-1 text-sm">
       <details className="text-muted-foreground">
         <summary>
           {head} · {copy(language, "chat_tool_count", { n: tools.length }, "adult")}
         </summary>
-        <ul aria-label="Tool lines" className="ml-4 list-disc">
+        <ul aria-label={copy(language, "chat_tool_lines", {}, "adult")} className="ml-4 list-disc">
           {tools.map((t) => (
             <ToolLine key={t.call_id} tool={t} language={language} />
           ))}
         </ul>
       </details>
       {stuck.length > 0 && (
-        <ul aria-label="Stuck tool lines" className="font-medium">
+        <ul
+          aria-label={copy(language, "chat_tool_lines_stuck", {}, "adult")}
+          className="font-medium"
+        >
           {stuck.map((t) => (
             <ToolLine key={t.call_id} tool={t} language={language} />
           ))}
         </ul>
       )}
+      {shown.map((w) => (
+        <div key={w.call_id}>{w.element}</div>
+      ))}
     </div>
   );
 }
@@ -156,17 +174,8 @@ function RowView({ row, run, language }: { row: Row; run: RunId; language: Langu
             row.level === "steer" ? "chat_budget_steer" : "chat_budget_stop",
             {},
             "adult",
-          )}{" "}
-          <span className="text-muted-foreground">
-            (
-            {copy(
-              language,
-              "chat_budget_spent",
-              { spent: usd(row.spent_usd), cap: usd(row.cap_usd) },
-              "adult",
-            )}
-            )
-          </span>
+          )}
+          {row.level === "stop" && ` ${copy(language, "chat_budget_steer_note", {}, "adult")}`}
         </p>
       );
     case "approval": {
@@ -186,6 +195,48 @@ function RowView({ row, run, language }: { row: Row; run: RunId; language: Langu
       return <ErrorRow item={row} run={run} language={language} />;
   }
 }
+
+/**
+ * What the live region says (dl-z5ja.28): only when the turn finishes, stops or needs the parent,
+ * never each step, so a screen reader is not read every tool line. Empty while the page restores.
+ */
+function announcementOf(last: Turn | undefined, restoring: boolean): CopyKey | null {
+  if (last === undefined || restoring) return null;
+  const status = last.view.status ?? last.run.status;
+  const waiting = last.view.chat.some((i) => i.kind === "approval" && i.decision === null);
+  if (isOpen(last))
+    return status === "awaiting_input" || waiting ? "chat_announce_needs_you" : null;
+  if (status === "cancelled") return "chat_announce_stopped";
+  if (status === "failed") return "chat_turn_unfinished";
+  return "chat_announce_done";
+}
+
+/** The parent's words that opened a turn: what "Spróbuj ponownie" sends again. */
+function parentTextOf(turn: Turn): string | null {
+  for (const item of turn.view.chat)
+    if (item.kind === "message" && item.from === "parent") return item.text;
+  return null;
+}
+
+/** The browser's word on the network, kept current. */
+function useOnline(): boolean {
+  const [online, setOnline] = useState(() => navigator.onLine);
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
+  return online;
+}
+
+/** Smooth unless the parent asked the system for less motion. */
+const scrollBehavior = (): ScrollBehavior =>
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
 
 export interface ChatPaneProps {
   language: Language;
@@ -209,6 +260,14 @@ export function ChatPane({
   onStop,
 }: ChatPaneProps): ReactElement {
   const [draft, setDraft] = useState("");
+  /** The last words sent, so a send that did not reach the server can go again. */
+  const [lastSent, setLastSent] = useState<string | null>(null);
+  const online = useOnline();
+  const end = useRef<HTMLDivElement>(null);
+  const rowCount = turns.reduce((n, t) => n + t.view.chat.length, 0);
+  useEffect(() => {
+    if (rowCount > 0) end.current?.scrollIntoView?.({ block: "end", behavior: scrollBehavior() });
+  }, [rowCount]);
   const last = turns.at(-1);
   const open = last !== undefined && isOpen(last);
   const status: RunStatus | null =
@@ -219,8 +278,16 @@ export function ChatPane({
     const trimmed = text.trim();
     if (trimmed === "") return;
     onSend(trimmed);
+    setLastSent(trimmed);
     setDraft("");
   };
+  /** Sends words again, leaving whatever the parent is typing alone. */
+  const resend = (text: string) => {
+    onSend(text);
+    setLastSent(text);
+  };
+  const announce = announcementOf(last, restoring);
+  const retryText = last !== undefined && status === "failed" ? parentTextOf(last) : null;
   const submit = (e: FormEvent) => {
     e.preventDefault();
     send(draft);
@@ -234,7 +301,7 @@ export function ChatPane({
           {say("chat_restoring")}
         </p>
       )}
-      <ol aria-label="Messages" className="flex flex-1 flex-col gap-3 overflow-y-auto">
+      <ol aria-label={say("chat_messages")} className="flex flex-1 flex-col gap-3 overflow-y-auto">
         {turns.map((turn) =>
           rowsOf(turn.view.chat).map((row) => (
             <li key={`${turn.run.id}-${row.seq}`} className="flex flex-col">
@@ -243,6 +310,7 @@ export function ChatPane({
           )),
         )}
       </ol>
+      <div ref={end} aria-hidden />
       {turns.length === 0 && !restoring && (
         <div data-row="empty" className="flex flex-col gap-2">
           <p className="text-muted-foreground">{say("chat_empty")}</p>
@@ -267,13 +335,35 @@ export function ChatPane({
           ))}
         </ul>
       )}
-      <p role="status" aria-live="polite" data-status={status ?? "none"} className="text-sm">
+      {retryText !== null && (
+        <div data-row="retry-turn" className="flex items-center gap-2 text-sm">
+          <p>{say("chat_turn_unfinished")}</p>
+          <Button variant="outline" size="sm" onClick={() => resend(retryText)}>
+            {say("chat_retry_turn")}
+          </Button>
+        </div>
+      )}
+      {/* The run's state as words, never a coloured dot alone. */}
+      <p data-status={status ?? "none"} className="text-sm">
         {status === null ? "" : say(STATUS_KEY[status])}
       </p>
-      {sendFailed && (
-        <p role="alert" className="text-sm">
-          {say("chat_send_again")}
+      <p role="status" aria-live="polite" data-live className="sr-only">
+        {announce === null ? "" : say(announce)}
+      </p>
+      {!online && (
+        <p data-row="offline" className="text-sm">
+          {say("chat_offline")}
         </p>
+      )}
+      {sendFailed && (
+        <div role="alert" data-row="send-failed" className="flex items-center gap-2 text-sm">
+          <p>{say("chat_send_again")}</p>
+          {lastSent !== null && (
+            <Button variant="outline" size="sm" onClick={() => resend(lastSent)}>
+              {say("chat_retry_turn")}
+            </Button>
+          )}
+        </div>
       )}
       <form onSubmit={submit} className="flex items-end gap-2">
         <label className="flex flex-1 flex-col gap-1 text-sm">
@@ -287,6 +377,11 @@ export function ChatPane({
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 send(draft);
+              }
+              // Stop from the keyboard, where the parent already is (dl-z5ja.28).
+              if (e.key === "Escape" && open && !stopping) {
+                e.preventDefault();
+                onStop();
               }
             }}
           />

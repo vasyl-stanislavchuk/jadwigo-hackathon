@@ -1,0 +1,73 @@
+---
+// /jak-to-dziala and /en/how-it-works (dl-5ssh.4.7, dl-w0b4.81): the 3 steps, then what a family gets.
+import type { Language } from "@jadwigo/config";
+import Base from "../layouts/Base.astro";
+import { strictBuild } from "../lib/build.ts";
+import { otherLanguage, twinPath, twinStaticPaths } from "../lib/i18n.ts";
+import { landingReviewed, landingWords } from "../lib/words.ts";
+
+export const getStaticPaths = () => twinStaticPaths("howItWorks", strictBuild);
+
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+const words = await landingWords(lang);
+const reviewed = await landingReviewed(lang);
+const translation = twinPath("howItWorks", otherLanguage(lang));
+const page = { ...words.steps, lang, reviewed, translation };
+---
+
+<Base page={page} path={twinPath("howItWorks", lang)}>
+  <section class="wrap top" aria-labelledby="page-title">
+    <h1 id="page-title">{words.steps.heading}</h1>
+    <ol class="steps">
+      {
+        words.steps.items.map((s) => (
+          <li>
+            <h2>{s.title}</h2>
+            <p>{s.text}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+  <section class="wrap band" aria-labelledby="promises-title">
+    <h2 id="promises-title" class="section">{words.promises.heading}</h2>
+    <ul class="promises">
+      {
+        words.promises.items.map((p) => (
+          <li>
+            <h3>{p.title}</h3>
+            <p>{p.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="actions"><a class="btn" href={`${twinPath("lessons", lang)}/`}>{words.hero.play}</a></p>
+  </section>
+</Base>
+
+<style>
+  .top { padding-top: clamp(2rem, 6vw, 3.5rem); }
+  h1 { font-size: clamp(2rem, 5vw, 2.75rem); }
+  .band { padding-top: clamp(3rem, 8vw, 4.5rem); }
+  .section { font-size: clamp(1.5rem, 3.5vw, 2rem); }
+  .steps, .promises { list-style: none; padding: 0; margin: 1.75rem 0 0; display: grid; gap: 1.25rem; }
+  .steps { counter-reset: step; }
+  .steps li { counter-increment: step; position: relative; padding-top: 3.5rem; }
+  .steps li::before {
+    content: counter(step); position: absolute; top: 0; left: 0;
+    width: 2.75rem; height: 2.75rem; border-radius: 50%; display: grid; place-items: center;
+    background: var(--jw-pick); color: var(--jw-pick-ink); border: 2px solid var(--jw-pick-edge); font-weight: 700;
+  }
+  .steps h2 { font-size: 1.2rem; }
+  .steps p, .promises p { margin-top: 0.4rem; color: var(--jw-ink-soft); }
+  .promises li { border: 1px solid var(--jw-line); border-radius: var(--jw-radius-card); padding: 1.25rem; }
+  .actions { margin-top: 2rem; }
+  @media (min-width: 48rem) {
+    .steps { grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+    .promises { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>

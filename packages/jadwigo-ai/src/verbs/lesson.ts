@@ -1,9 +1,10 @@
 import { isDeepStrictEqual } from "node:util";
 import { ID_PREFIXES, uuidOf } from "@jadwigo/contracts";
-import { type CheckResult, check } from "@jadwigo/lesson-import/check";
+import type { ToolView } from "@jadwigo/contracts/run";
 import { type Finding, parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import type { BankLanguage, BankPort, BankQuery } from "./bank.ts";
 import { Input, isObject, type Json, mergePatch } from "./input.ts";
+import { type Review, review } from "./review.ts";
 import type { VerbContext, VerbEffect } from "./types.ts";
 import { VerbError } from "./types.ts";
 
@@ -100,10 +101,29 @@ function writable(file: Json): Json {
 }
 
 /** A step's findings: its own and its twin's (compile names a twin `<id>t`). */
-function findingsFor(result: CheckResult, step_id: string): Finding[] {
-  return result.findings.filter((f) => f.step_id === step_id || f.step_id === `${step_id}t`);
+function findingsFor(findings: readonly Finding[], step_id: string): Finding[] {
+  return findings.filter((f) => f.step_id === step_id || f.step_id === `${step_id}t`);
 }
 
+/**
+ * A verb that writes a lesson revision answers whether a parent may publish it (`review.ts`): no
+ * error finding, check()'s or the harsh-word check's.
+ */
+function revised(checked: Review, effect: VerbEffect): VerbEffect {
+  return { ...effect, output: { ...effect.output, publishable: checked.publishable } };
+}
+
+/**
+ * The view of a verb that writes a revision (`dl-z5ja.69`): the steps it changed. The kind is the
+ * verb's name, the only kind `ToolView` parses; the page reads the revision's number from the
+ * `lesson_revision` event the runner writes.
+ */
+function revisionView(
+  kind: "lesson_draft" | "lesson_edit",
+  changed_step_ids: readonly string[],
+): ToolView {
+  return { kind, data: { changed_step_ids: [...changed_step_ids] } };
+}
 /** What the model and the parent read of a step: its words and its key, not the whole JSON. */
 function card(step: Step) {
   const question = isObject(step["question"]) ? step["question"] : {};
@@ -117,11 +137,10 @@ function card(step: Step) {
   };
 }
 
-function checked(file: Json) {
-  const result = check(file);
+function checked({ result, findings, publishable }: Review) {
   return {
-    ok: result.ok,
-    findings: result.findings,
+    ok: publishable,
+    findings,
     play_path: result.play_path,
     lesson_id: result.lesson_id,
     questions: result.questions,
@@ -185,7 +204,8 @@ export async function lessonDraft(
     kind,
     script: { parts: [{ part: PART[language], steps: drawn }] },
   });
-  return {
+  const checks = review(lesson_file);
+  return revised(checks, {
     output: {
       draft_id: context.run_id,
       title,
@@ -200,25 +220,31 @@ export async function lessonDraft(
       })),
       left_out: [],
       rule_settled: false,
+      findings: checks.findings,
     },
     lesson_file,
-  };
+    view: revisionView(
+      "lesson_draft",
+      drawn.map((s) => s.id),
+    ),
+  });
 }
 
 export function lessonShow(context: VerbContext, raw: Json): Promise<VerbEffect> {
   const input = new Input("lesson_show", raw, ["draft_id", "step_id"]);
   const file = draftOf(context, input);
   const step_id = input.optionalString("step_id");
-  const result = check(file);
+  const checks = review(file);
   const shown = step_id === null ? steps(file) : [stepOf(file, step_id)];
   return Promise.resolve({
     output: {
       draft_id: context.run_id,
       revision: context.lesson?.revision ?? null,
       title: file["title"] ?? null,
-      steps: shown.map((step) => ({ step, findings: findingsFor(result, step.id) })),
-      lesson_ok: result.ok,
+      steps: shown.map((step) => ({ step, findings: findingsFor(checks.findings, step.id) })),
+      lesson_ok: checks.publishable,
     },
+    view: { kind: "lesson_show", data: { lesson: file } },
   });
 }
 
@@ -273,13 +299,21 @@ export function lessonCheck(context: VerbContext, raw: Json): Promise<VerbEffect
   if (title !== null) file["title"] = title;
   if (reasoning !== null) file["reasoning"] = reasoning;
   const changed = Object.keys(help).length > 0 || title !== null || reasoning !== null;
-  const result = checked(changed ? writable(file) : file);
+  const checks = review(changed ? writable(file) : file);
+  const result = checked(checks);
   const output = {
     draft_id: context.run_id,
     ...result,
     card: result.ok ? { title: file["title"] ?? null, steps: steps(file).map(card) } : null,
   };
-  return Promise.resolve(changed ? { output, lesson_file: file } : { output });
+  // The chat pane draws each finding on its question from the view (dl-z5ja.69's lesson_check shape).
+  const view = {
+    kind: "lesson_check" as const,
+    data: { publishable: result.ok, findings: result.findings },
+  };
+  return Promise.resolve(
+    changed ? revised(checks, { output, lesson_file: file, view }) : { output, view },
+  );
 }
 
 /** The parts a patch may set: `say`, and the question's `data`, `key` and `help`. */
@@ -371,19 +405,22 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
     ];
   }
   const lesson_file = writable(withStep(file, edited));
-  const result = check(lesson_file);
-  const findings = findingsFor(result, step_id);
-  return Promise.resolve({
-    output: {
-      draft_id: context.run_id,
-      ok: !findings.some((f) => f.level === "error"),
-      step_id,
-      findings,
-      card: card(edited),
-      lesson_ok: result.ok,
-    },
-    lesson_file,
-  });
+  const checks = review(lesson_file);
+  const findings = findingsFor(checks.findings, step_id);
+  return Promise.resolve(
+    revised(checks, {
+      output: {
+        draft_id: context.run_id,
+        ok: !findings.some((f) => f.level === "error"),
+        step_id,
+        findings,
+        card: card(edited),
+        lesson_ok: checks.publishable,
+      },
+      lesson_file,
+      view: revisionView("lesson_edit", changes ? [step_id] : []),
+    }),
+  );
 }
 
 export async function questionSearch(bank: BankPort, raw: Json): Promise<VerbEffect> {
@@ -409,5 +446,5 @@ export async function questionSearch(bank: BankPort, raw: Json): Promise<VerbEff
     limit: input.optionalInt("limit", 1, 50) ?? 20,
   };
   const { sets } = await bank.search(query);
-  return { output: { sets } };
+  return { output: { sets }, view: { kind: "question_search", data: { sets } } };
 }

@@ -4,13 +4,34 @@
 // wordmark-with-a-crown-tipped-o) and a footer. With `prose`, the words read top to bottom in a
 // column under the page's heading, as the privacy pages do (dl-w0b4.64). Without it, the page brings
 // its own sections and its own h1 (the landing page, dl-5ssh.4.1). The header links every page in
-// landing.yaml's `links`, each its own page (owner, 2026-10-31).
+// landing.yaml's `links`, each its own page (owner, 2026-10-31). The frame's own words (the logo's
+// and the nav's labels, the sign-in, the footer, the other language's name) are the site_* Paraglide
+// messages in the page's language (dl-w0b4.82). The header's switch links the page's twin in the
+// other language, when the build serves it (dl-w0b4.81).
 import "@fontsource/andika/400.css";
 import "@fontsource/andika/700.css";
 import "@jadwigo/ui/foundation.css";
 import { getCollection, getEntry } from "astro:content";
+import { m } from "@jadwigo/copy/messages";
 import wordmark from "@jadwigo/ui/brand/wordmark.svg?raw";
-import { assertReviewed, headTags, jsonLd, type Page, servedPathPages } from "../lib/seo.ts";
+import LanguageNote from "../components/LanguageNote.astro";
+import { strictBuild } from "../lib/build.ts";
+import {
+  footerPaths,
+  languageOf,
+  otherLanguage,
+  servedLanguages,
+  servedTwinPaths,
+  twinPath,
+} from "../lib/i18n.ts";
+import {
+  assertReviewed,
+  headTags,
+  jsonLd,
+  type Page,
+  servedPathPages,
+  xDefaultTag,
+} from "../lib/seo.ts";
 
 interface Props {
   page: Page;
@@ -19,20 +40,31 @@ interface Props {
 }
 
 const { page, path, prose = false } = Astro.props;
-const lang = page.lang ?? "pl";
-const otherLanguage = lang === "pl" ? "English" : "Polski";
-const pages = await getCollection("pages");
-assertReviewed(pages, import.meta.env.PROD);
-const tags = headTags(page, path);
-const words = (await getEntry("landing", "pl"))?.data;
-if (!words) throw new Error("src/content/pl/landing.yaml has no `pl` entry");
-// The footer links only the Polish pages this build serves: a draft page is never linked.
-const served = new Set(
-  servedPathPages(pages, import.meta.env.PROD, () => {}).map((p) => p.data.path),
-);
+const lang = languageOf(page);
+const other = otherLanguage(lang);
+const locale = { locale: lang } as const;
+const languages = servedLanguages(strictBuild);
+// Only the pages of the languages this build serves count: an English draft holds back no Polish build.
+const pages = (await getCollection("pages")).filter((p) => languages.includes(languageOf(p.data)));
+assertReviewed(pages, strictBuild);
+const landing = (await getEntry("landing", lang))?.data;
+if (!landing) throw new Error(`src/content/${lang}/landing.yaml is missing`);
+// Every path this build serves. A link, the switch or an hreflang alternate names only one of these,
+// so a draft or a language not yet live is never linked.
+const served = new Set<string>([
+  ...servedPathPages(pages, strictBuild, () => {}).flatMap((p) => p.data.path ?? []),
+  ...servedTwinPaths(strictBuild),
+]);
+const twin = page.translation && served.has(page.translation) ? page.translation : undefined;
+const { translation: _all, ...rest } = page;
+const shown = twin ? { ...rest, translation: twin } : rest;
+const tags = [...headTags(shown, path), ...xDefaultTag(shown, path)];
+const links = landing.links.filter((l) => served.has(l.href));
+const home = twinPath("index", lang);
+const footer = footerPaths(lang);
 const footerLinks = [
-  { href: "/prywatnosc", label: words.footer.privacy },
-  { href: "/prywatnosc/usuwanie-danych", label: words.footer.deletion },
+  { href: footer.privacy, label: m.site_footer_privacy({}, locale) },
+  { href: footer.deletion, label: m.site_footer_deletion({}, locale) },
 ].filter((l) => served.has(l.href));
 ---
 
@@ -54,7 +86,7 @@ const footerLinks = [
       )
     }
     <link rel="sitemap" href="/sitemap-index.xml" />
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd())} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd(lang))} />
     <style is:global>
       *, *::before, *::after { box-sizing: border-box; }
       html { scroll-behavior: smooth; }
@@ -115,17 +147,24 @@ const footerLinks = [
       .site-nav a:hover { background: var(--jw-act-quiet); }
       .site-nav a[aria-current] { background: var(--jw-pick); color: var(--jw-pick-ink); }
       /* The sign-in is the nav's size, not a hero button's: the same text, a 40 px body. */
+      /* The language switch: a quiet text link beside the sign-in, the other language's name in itself. */
+      .site-header .switch {
+        display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.5rem; margin-left: auto;
+        color: var(--jw-ink-soft); font-size: 0.95rem; text-decoration: none; font-weight: 700;
+      }
+      .site-header .switch:hover { color: var(--jw-ink); text-decoration: underline; }
+      .site-header .switch + .btn { margin-left: 0.25rem; }
       .site-header .btn { margin-left: auto; padding: 0 0.95rem; min-height: 40px; font-size: 1rem; box-shadow: 0 3px 0 var(--jw-line); }
       @media (min-width: 52rem) {
         .site-header .wrap { flex-wrap: nowrap; }
         .site-nav { order: 0; width: auto; margin-left: auto; overflow: visible; gap: 0.5rem; }
         .site-nav a { padding: 0 0.85rem; font-size: 1rem; }
         /* The one button stands a little apart from the pages, so it reads as an action, not a page. */
-        .site-nav + .btn { margin-left: 1rem; }
+        .site-nav + .btn, .site-nav + .switch { margin-left: 1rem; }
         /* The links and the button stand on the wordmark's baseline, not its box's middle: the baseline
            (y 91 of -65..115) is 0.367 of the logo's height below the middle, less a 1rem text's baseline drop. A
            translate, so the header's height does not move. */
-        .site-nav, .site-nav + .btn { translate: 0 calc(var(--logo-h) * 0.367 - 0.42rem); }
+        .site-nav, .site-header .switch, .site-header .btn { translate: 0 calc(var(--logo-h) * 0.367 - 0.42rem); }
       }
 
       .site-footer { border-top: 1px solid var(--jw-line); margin-top: 4rem; padding: 2rem 0 3rem; color: var(--jw-ink-soft); }
@@ -144,7 +183,6 @@ const footerLinks = [
         border: 2px dashed var(--jw-line-strong); border-radius: var(--jw-radius-card);
         background: var(--jw-act-quiet); color: var(--jw-ink-soft); text-align: center; padding: 1rem;
       }
-      .prose .lang { margin: 0 0 1.5rem; font-size: 0.95rem; }
       .prose .draft {
         margin: 1rem 0 1.5rem; padding: 0.75rem 1rem; border-radius: 0.5rem;
         background: var(--jw-help); color: var(--jw-help-ink); font-size: 0.95rem;
@@ -154,23 +192,28 @@ const footerLinks = [
   <body class={prose ? "prose" : undefined}>
     <header class="site-header">
       <div class="wrap">
-        <a class="logo" href="/" aria-label={words.nav.home} set:html={wordmark} />
+        <a class="logo" href={home === "/" ? "/" : `${home}/`} aria-label={m.site_nav_home({}, locale)} set:html={wordmark} />
         {
-          <nav class="site-nav" aria-label={words.nav.label}>
-            {words.links.map((n) => (
+          <nav class="site-nav" aria-label={m.site_nav_label({}, locale)}>
+            {links.map((n) => (
               <a href={`${n.href}/`} aria-current={path === n.href ? "page" : undefined}>
                 {n.label}
               </a>
             ))}
           </nav>
         }
-        <a class="btn quiet" href="/zaloguj/">{words.nav.signIn}</a>
+        {
+          twin && (
+            <a class="switch" href={twin === "/" ? "/" : `${twin}/`} hreflang={other} lang={other} aria-label={m.site_switch_label({}, locale)}>
+              {m.site_language_name({}, { locale: other })}
+            </a>
+          )
+        }
+        <a class="btn quiet" href={`${twinPath("signIn", lang)}/`}>{m.site_nav_sign_in({}, locale)}</a>
       </div>
     </header>
+    {twin && <LanguageNote lang={lang} twin={other} href={twin === "/" ? "/" : `${twin}/`} />}
     <main>
-      {prose && page.translation && (
-        <p class="lang"><a href={`${page.translation}/`} hreflang={lang === "pl" ? "en" : "pl"}>{otherLanguage}</a></p>
-      )}
       {prose && <h1>{page.heading}</h1>}
       {page.draftNote && <p class="draft" role="note">{page.draftNote}</p>}
       <slot />
@@ -179,7 +222,7 @@ const footerLinks = [
       <div class="wrap">
         <span>© Jadwigo</span>
         {footerLinks.map((l) => <a href={`${l.href}/`}>{l.label}</a>)}
-        <span>{words.footer.made}</span>
+        <span>{m.site_footer_made({}, locale)}</span>
       </div>
     </footer>
     <script is:inline>

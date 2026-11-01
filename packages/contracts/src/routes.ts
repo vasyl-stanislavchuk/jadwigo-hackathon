@@ -1,7 +1,16 @@
 import { z } from "zod";
 import { Need, QuestionBody, SearchEnvelope } from "./bank.ts";
-import { AssignmentId, AttemptId, GoalId, LearnerId, LearnerReportId } from "./ids.ts";
+import {
+  AssignmentId,
+  AttemptId,
+  ConversationId,
+  GoalId,
+  LearnerId,
+  LearnerReportId,
+  RunId,
+} from "./ids.ts";
 import { Language, LearnerReport } from "./records.ts";
+import { Conversation } from "./run.ts";
 import {
   AccountCreate,
   AssignmentAttempts,
@@ -14,6 +23,9 @@ import {
   AttemptSnapshot,
   AttemptStart,
   Claim,
+  ConversationCreate,
+  ConversationMessage,
+  ConversationRuns,
   Featured,
   GoalCreate,
   GoalPatch,
@@ -31,6 +43,9 @@ import {
   PlaygroundExamples,
   ReportCreate,
   ReportPatch,
+  RunAccepted,
+  RunCancel,
+  RunEvents,
   Skills,
 } from "./wire.ts";
 
@@ -42,6 +57,11 @@ export interface Route {
   readonly method: "GET" | "POST" | "PATCH";
   readonly path: string;
   readonly params: z.ZodType;
+  /**
+   * The query string's parameters, when the route reads any: a `z.object()` of optional fields,
+   * each parsed from its string as `params` are.
+   */
+  readonly query?: z.ZodObject;
   readonly body: z.ZodType | null;
   readonly response: z.ZodType;
   /** The status of a successful reply. */
@@ -61,10 +81,26 @@ export interface Route {
 }
 
 /** The API reference's sections, in the order docs.jadwigo.pl shows them (dl-5ssh.90). */
-export const ROUTE_TAGS = ["attempts", "parents", "lessons", "bank", "health"] as const;
+export const ROUTE_TAGS = [
+  "attempts",
+  "parents",
+  "conversations",
+  "lessons",
+  "bank",
+  "health",
+] as const;
 export type RouteTag = (typeof ROUTE_TAGS)[number];
 
 const Seq = z.coerce.number().pipe(z.int().min(1));
+/**
+ * A run event cursor: the last `seq` the caller holds, 0 before the first. Digits only, so "",
+ * "-0", "0x10" and "1e3" are refused, and at most `run_event.seq`'s Postgres `integer`.
+ */
+const After = z
+  .string()
+  .regex(/^\d+$/, "a cursor is a whole number")
+  .transform(Number)
+  .pipe(z.int().min(0).max(2_147_483_647));
 
 export const ROUTES = {
   health: {
@@ -376,6 +412,72 @@ export const ROUTES = {
     tag: "parents",
     description:
       "A 2nd narrative is 409 `WriteOnce`; a decision on a proposal the digest does not have is 400 `BadRequest`.",
+  },
+  // The AI engine's conversations (epic dl-z5ja, dl-z5ja.21): a parent's chat, one run per turn.
+  // The API only writes the inbox row and enqueues the step; the step host runs it.
+  createConversation: {
+    method: "POST",
+    path: "/api/v1/conversations",
+    params: z.object({}),
+    body: ConversationCreate,
+    response: Conversation,
+    status: 201,
+    auth: "token",
+    summary: "Starts a conversation with the AI in the caller's pod.",
+    tag: "conversations",
+    description:
+      "Idempotent by `event_id`: a resend makes nothing new and returns the same conversation.",
+  },
+  postMessage: {
+    method: "POST",
+    path: "/api/v1/conversations/{id}/messages",
+    params: z.object({ id: ConversationId }),
+    body: ConversationMessage,
+    response: RunAccepted,
+    status: 201,
+    auth: "token",
+    summary: "Sends the parent's message, on the open turn or a new one.",
+    tag: "conversations",
+    description:
+      "Idempotent by `event_id`: a resend returns the run that holds the message, and the same `event_id` with other text is 409 `EventIdMismatch`. The reply comes before the AI answers: read the run's events for its answer.",
+  },
+  listConversationRuns: {
+    method: "GET",
+    path: "/api/v1/conversations/{id}/runs",
+    params: z.object({ id: ConversationId }),
+    body: null,
+    response: ConversationRuns,
+    status: 200,
+    auth: "token",
+    summary: "Lists a conversation's runs, one per turn, oldest first.",
+    tag: "conversations",
+  },
+  listRunEvents: {
+    method: "GET",
+    path: "/api/v1/runs/{id}/events",
+    params: z.object({ id: RunId }),
+    query: z.object({ after: After.optional() }),
+    body: null,
+    response: RunEvents,
+    status: 200,
+    auth: "token",
+    summary: "Lists a run's events after a cursor, in `seq` order.",
+    tag: "conversations",
+    description:
+      "`after` is the last `seq` the caller holds, 0 or left out for the whole log. The events are append-only, so a cursor never misses one.",
+  },
+  cancelRun: {
+    method: "POST",
+    path: "/api/v1/runs/{id}/cancellations",
+    params: z.object({ id: RunId }),
+    body: RunCancel,
+    response: RunAccepted,
+    status: 201,
+    auth: "token",
+    summary: "Asks a run to stop at its next step.",
+    tag: "conversations",
+    description:
+      "Idempotent by `event_id`. A run that has already ended is returned as it is. The run stops at its next step, so read its events for `cancelled`.",
   },
   /** A bank search: the need in, the envelope out (`src/bank.ts`). */
   questionSearches: {

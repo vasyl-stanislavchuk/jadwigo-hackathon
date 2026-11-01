@@ -56,6 +56,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { setPodLanguage } from "../nav/language.ts";
 import { navigate, useLocation } from "../nav/location.ts";
 import { NavLink } from "../nav/NavLink.tsx";
 import { storedAttempt } from "../play/storedAttempt.ts";
@@ -69,6 +70,7 @@ import {
   withoutReturn,
 } from "./auth.ts";
 import { inAppBrowser } from "./inApp.ts";
+import { LanguagePick } from "./LanguagePick.tsx";
 import { LearnerKnowledge } from "./learner/LearnerKnowledge.tsx";
 import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";
 import { cellsOf } from "./overview/grid.ts";
@@ -197,7 +199,10 @@ export function ParentScreen({
       language={language}
       claim={claimOf(query)}
       onSignOut={() => {
-        auth.signOut().finally(() => setSignedIn(false));
+        auth.signOut().finally(() => {
+          setPodLanguage(null);
+          setSignedIn(false);
+        });
       }}
     />
   );
@@ -332,6 +337,9 @@ function SignIn({
       <Heading>{copy(language, "parent_title", {}, CATEGORY)}</Heading>
       <p>{copy(language, "parent_promise", {}, CATEGORY)}</p>
       <p>{copy(language, "parent_guardian", {}, CATEGORY)}</p>
+      {/* The pick the first sign-in sends as the pod's language: the screens' own, so Polish
+          unless the parent came in English or picks it here (dl-uukj.33). */}
+      <LanguagePick language={language} />
       {providerProblem !== null && (
         <Notice role="alert" data-provider-problem>
           {copy(language, providerProblem, {}, CATEGORY)}
@@ -466,12 +474,20 @@ function SignedIn({
   const [adding, setAdding] = useState(false);
   const [notice, setNotice] = useState<CopyKey | null>(null);
 
+  // The first sign-in's language is the one on screen then; a later pick moves the screens without
+  // reading /me again.
+  const languageNow = useRef(language);
+  languageNow.current = language;
   const load = useCallback(() => {
-    meOf(api, language).then(
-      (me) => setView({ kind: "ready", me }),
+    meOf(api, languageNow.current).then(
+      (me) => {
+        // The pod's language stands third, after ?lang and the parent's pick (nav/language.ts).
+        setPodLanguage(me.pod?.language ?? null);
+        setView({ kind: "ready", me });
+      },
       () => setView({ kind: "failed" }),
     );
-  }, [api, language]);
+  }, [api]);
   useEffect(load, [load]);
 
   /** Keeps the tab's attempt for `learner`, then forgets it here: after a 201, or a refusal that
@@ -579,6 +595,8 @@ function SignedIn({
         ))}
       </ul>
       {addAnother}
+      {/* Moves the screens; the pod's own language waits for wave 2's PATCH route. */}
+      <LanguagePick language={language} />
       {signOut}
     </ParentPage>
   );
