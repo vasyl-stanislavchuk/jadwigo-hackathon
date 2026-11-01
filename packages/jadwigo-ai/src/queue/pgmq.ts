@@ -15,7 +15,7 @@ import { MAX_READS, type QueuedStep, type RunQueue } from "./types.ts";
  */
 
 /** A connection from the pool, as `pg.PoolClient` has it. */
-interface PgmqClient {
+export interface PgmqClient {
   query<R>(text: string, values?: readonly unknown[]): Promise<{ rows: R[] }>;
   release(): void;
 }
