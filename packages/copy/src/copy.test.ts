@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import reviewPl from "../messages/review.pl.json" with { type: "json" };
 import { harshWordsIn } from "./harsh.ts";
 import { CATEGORY_TABLES, copy, copyAt, lookup, mistakeCopyKey, TABLES } from "./index.ts";
 import {
@@ -22,10 +23,19 @@ describe("copy tables", () => {
     }
   });
 
-  it("ship every pl line with reviewed: false", () => {
+  // A pl line is reviewed only when the AI reviewer passed it against the cited checklist and its
+  // flag in messages/review.pl.json is true (decision david-learns/decisions/2026-10-04-polish-lines-
+  // are-reviewed-by-an-ai-skill-against-a-cited-checkli; check-copy is the gate since #434). "Every
+  // pl line ships false" came before that decision and the flags (dl-uukj.42).
+  it("ship a pl line as reviewed only when its flag in messages/review.pl.json is true", () => {
+    const flags = reviewPl as Record<string, unknown>;
     for (const [key, value] of Object.entries(TABLES.pl)) {
+      const flag = flags[key];
+      const anyTrue =
+        flag === true ||
+        (typeof flag === "object" && flag !== null && Object.values(flag).includes(true));
       for (const entry of entries(value)) {
-        expect(entry.reviewed, `pl.${key}`).toBe(false);
+        if (entry.reviewed) expect(anyTrue, `pl.${key}`).toBe(true);
       }
     }
   });
