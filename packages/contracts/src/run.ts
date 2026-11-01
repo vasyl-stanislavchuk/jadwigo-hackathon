@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AccountId, ConversationId, EventId, PodId, RunId } from "./ids.ts";
+import { AccountId, ConversationId, EventId, PodId, RunId, RunRatingId } from "./ids.ts";
 import { Citation } from "./records.ts";
 
 /**
@@ -69,6 +69,40 @@ export const Conversation = z.object({
   created_at: At,
 });
 export type Conversation = z.infer<typeof Conversation>;
+
+/** A parent's verdict on a turn (dl-z5ja.110). */
+export const RunRatingVerdict = z.enum(["good", "bad"]);
+export type RunRatingVerdict = z.infer<typeof RunRatingVerdict>;
+
+/**
+ * A parent's rating of one turn (wave 4 lead decision 37, dl-z5ja.110): Good or Bad, with an
+ * optional note on Bad ("what was missing?"). One per run and account; a re-rate replaces the
+ * verdict and the note, and `created_at` stays the first rating's. It lives in its own pod-scoped
+ * table, never an analytics event, since a note may hold learner data.
+ */
+export const RunRating = z.object({
+  id: RunRatingId,
+  pod_id: PodId,
+  run_id: RunId,
+  account_id: AccountId,
+  verdict: RunRatingVerdict,
+  note: z.string().nullable(),
+  created_at: At,
+});
+export type RunRating = z.infer<typeof RunRating>;
+
+/**
+ * `POST /api/v1/runs/{id}/ratings`: Good, or Bad with an optional note. The server fills the run,
+ * the account and the time.
+ */
+export const RunRatingCreate = z.discriminatedUnion("verdict", [
+  z.strictObject({ verdict: z.literal("good") }),
+  z.strictObject({
+    verdict: z.literal("bad"),
+    note: z.string().trim().min(1).max(2000).optional(),
+  }),
+]);
+export type RunRatingCreate = z.infer<typeof RunRatingCreate>;
 
 export const RunStatus = z.enum([
   "queued",

@@ -1,6 +1,6 @@
 ---
 title: Conversations with the AI
-description: Start a conversation, send a message, read the AI's answer as run events, and stop a turn.
+description: Start a conversation, send a message, read the AI's answer as run events, stop a turn, and rate it.
 ---
 
 This guide is for a client that runs a parent's chat with Jadwigo's AI: the chat on the left that
@@ -76,6 +76,21 @@ curl -X POST https://app.jadwigo.pl/api/v1/runs/$RUN_ID/cancellations \
 
 The run stops at its next step, and its events then show it `cancelled`. A run that has already
 ended comes back as it is.
+
+## 5. Rate a turn
+
+[Reference](/api/operations/raterun/).
+
+```bash
+curl -X POST https://app.jadwigo.pl/api/v1/runs/$RUN_ID/ratings \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"verdict": "bad", "note": "It asked about subtraction"}'
+```
+
+A parent rates a turn `good` or `bad`, and may say what was missing on `bad`. Each parent has one
+rating per run: rating again replaces it. The rating stays with the family's pod and is never sent
+to analytics, since a note may name the child. Try again is no route: send the last message again.
 
 ## Whose records a caller sees
 

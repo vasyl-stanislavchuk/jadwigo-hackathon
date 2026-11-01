@@ -7,6 +7,8 @@ import type {
   RunEvent,
   RunId,
   RunInbox,
+  RunRating,
+  RunRatingVerdict,
   RunWorkflow,
 } from "@jadwigo/contracts/run";
 
@@ -24,6 +26,12 @@ export interface NewConversation {
   id: ConversationId;
   created_by: AccountId;
   title: string | null;
+}
+
+/** A parent's rating as `rateRun` takes it: a note only with `bad` (dl-z5ja.110). */
+export interface NewRunRating {
+  verdict: RunRatingVerdict;
+  note: string | null;
 }
 
 /** A run starts `queued` at attempt 1, nothing spent, not cancelled, not completed. */
@@ -133,4 +141,12 @@ export interface RunStore {
    * daily cap (dl-z5ja.72). Scoped to `pod`; `NotFound` for an unknown pod. A bounds is inclusive.
    */
   messageUsage(pod: PodId, account: AccountId, since: UsageSince): Promise<MessageUsage>;
+  /**
+   * A parent's rating of a run of `pod` (dl-z5ja.110): one per run and account, so a re-rate
+   * replaces the verdict and the note and keeps the row's id and `created_at`. A note with `good`
+   * is `BadRequest`. `NotFound` for a run outside `pod`.
+   */
+  rateRun(pod: PodId, run: RunId, account: AccountId, rating: NewRunRating): Promise<RunRating>;
+  /** The ratings of a run of `pod`, oldest first. `NotFound` for a run outside `pod`. */
+  listRunRatings(pod: PodId, run: RunId): Promise<readonly RunRating[]>;
 }

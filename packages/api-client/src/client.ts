@@ -61,6 +61,8 @@ import {
   type RunCancel,
   type RunEvents,
   type RunId,
+  type RunRating,
+  type RunRatingCreate,
   type Skills,
 } from "@jadwigo/contracts";
 import { apiUrl } from "./url.ts";
@@ -168,13 +170,20 @@ export interface ConversationClient {
   cancelRun(runId: RunId, body: RunCancel): Promise<RunAccepted>;
 }
 
+/** A parent's Good or Bad on a turn (dl-z5ja.110). Needs a token. */
+export interface RunRatingClient {
+  /** One per run and parent: rating again replaces the verdict and the note. */
+  rateRun(runId: RunId, body: RunRatingCreate): Promise<RunRating>;
+}
+
 /** Every `/api/v1` call this client makes. */
 export type Client = AttemptClient &
   FeaturedClient &
   ParentClient &
   LearnerKnowledgeClient &
   PlaygroundClient &
-  ConversationClient;
+  ConversationClient &
+  RunRatingClient;
 
 /** A route's path with its `{name}` params filled in. */
 export function pathOf(route: Route, params: Record<string, string | number>): string {
@@ -284,5 +293,6 @@ export function createClient({
     listRunEvents: (runId, after) =>
       call(ROUTES.listRunEvents, { id: runId }, undefined, { after }),
     cancelRun: (runId, body) => call(ROUTES.cancelRun, { id: runId }, body),
+    rateRun: (runId, body) => call(ROUTES.rateRun, { id: runId }, body),
   };
 }

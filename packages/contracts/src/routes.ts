@@ -10,7 +10,7 @@ import {
   RunId,
 } from "./ids.ts";
 import { Language, LearnerReport } from "./records.ts";
-import { Conversation } from "./run.ts";
+import { Conversation, RunRating, RunRatingCreate } from "./run.ts";
 import {
   AccountCreate,
   AssignmentAttempts,
@@ -478,6 +478,19 @@ export const ROUTES = {
     tag: "conversations",
     description:
       "Idempotent by `event_id`. A run that has already ended is returned as it is. The run stops at its next step, so read its events for `cancelled`.",
+  },
+  rateRun: {
+    method: "POST",
+    path: "/api/v1/runs/{id}/ratings",
+    params: z.object({ id: RunId }),
+    body: RunRatingCreate,
+    response: RunRating,
+    status: 201,
+    auth: "token",
+    summary: "Rates a turn Good or Bad, with an optional note on Bad.",
+    tag: "conversations",
+    description:
+      "One rating per run and parent: rating again replaces the verdict and the note. Try again is no route: send the last message again.",
   },
   /** A bank search: the need in, the envelope out (`src/bank.ts`). */
   questionSearches: {
