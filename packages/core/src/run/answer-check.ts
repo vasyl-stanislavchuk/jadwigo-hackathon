@@ -2,8 +2,9 @@ import type { RunEvent } from "@jadwigo/contracts/run";
 
 /**
  * The answer check (`dl-z5ja.26`, wave 2 lead decision 23): before the runner writes an agent
- * `message`, every number and status word in its text must be one a `tool_result` of the same turn
- * gave, and it names no mastery level in any language. Code computes every number, status and
+ * `message`, every status word in its text must be one a `tool_result` of the same turn gave,
+ * every number one a `tool_result` gave or the parent wrote in that turn, and it names no mastery
+ * level in any language. Code computes every number, status and
  * level; the model only words them. On a miss the runner asks Muse to correct the message once,
  * then writes an `error` event. Pure: the caller passes the turn's events.
  *
@@ -24,7 +25,7 @@ export type StatusWord =
   | "second_day_owed"
   | "school_tag";
 
-/** What the message says that no tool result of its turn gave. */
+/** What the message says that no tool result of its turn gave (nor the parent, for a number). */
 export type AnswerMiss =
   /** A number, as written in the message. */
   | { kind: "number"; said: string }
@@ -66,16 +67,27 @@ function words(alternatives: string): RegExp {
 }
 
 /**
- * The numbers and status words in `text` that no `tool_result` in `turn` gave, and every level
- * name it holds, in the order they appear, each once. Empty when the message may be written.
+ * The numbers and status words in `text` that the turn did not give, and every level name it
+ * holds, in the order they appear, each once. Empty when the message may be written.
  *
  * A tool result gives what its `output` and `view.data` hold anywhere: each number, each array's
  * length (a draft of 8 questions gives 8), each number written inside a string (an id, a step
  * label), and each string as a status code. A failed result (`output` null) gives nothing.
+ *
+ * The parent gives numbers, never status words: each number in the text of the turn's parent
+ * `message` events and in its `steer` events (text and `question_ids`). A parent who asks for 5
+ * questions and hears "Done: 5 questions now" hears an echo, not a claim about the child: "if you
+ * didn't query it, don't claim it" (lead's call on `dl-z5ja.26`). A status word only the parent
+ * wrote is still a miss: code assigns it.
  */
 export function checkAnswer(text: string, turn: readonly RunEvent[]): AnswerMiss[] {
   const given = { numbers: new Set<number>(), strings: new Set<string>() };
   for (const event of turn) {
+    if (event.type === "message" && event.payload.from === "parent") {
+      numbersIn(event.payload.text, given.numbers);
+    } else if (isSteer(event)) {
+      collect(event.payload, { numbers: given.numbers, strings: new Set<string>() });
+    }
     if (event.type !== "tool_result" || event.payload.output === null) continue;
     collect(event.payload.output, given);
     if (event.payload.view !== undefined) collect(event.payload.view.data, given);
@@ -107,6 +119,19 @@ export function checkAnswer(text: string, turn: readonly RunEvent[]): AnswerMiss
     });
 }
 
+/**
+ * A logged steer (`dl-z5ja.51` adds the event to `RunEvent`), read by its shape so this check
+ * holds before and after the union carries it. Its payload's strings are its text, its `source`
+ * and its `question_ids`; only the numbers in them are taken.
+ */
+function isSteer(event: RunEvent): event is RunEvent & { payload: Record<string, unknown> } {
+  return (event as { type: string }).type === "steer";
+}
+
+function numbersIn(text: string, into: Set<number>): void {
+  for (const digits of text.match(NUMBER) ?? []) into.add(numberOf(digits));
+}
+
 function numberOf(written: string): number {
   return Number(written.replace(",", "."));
 }
@@ -115,7 +140,7 @@ function collect(value: unknown, given: { numbers: Set<number>; strings: Set<str
   if (typeof value === "number") given.numbers.add(Math.abs(value));
   else if (typeof value === "string") {
     given.strings.add(value);
-    for (const digits of value.match(NUMBER) ?? []) given.numbers.add(numberOf(digits));
+    numbersIn(value, given.numbers);
   } else if (Array.isArray(value)) {
     given.numbers.add(value.length);
     for (const inner of value) collect(inner, given);

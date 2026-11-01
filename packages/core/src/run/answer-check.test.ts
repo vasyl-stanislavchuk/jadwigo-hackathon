@@ -1,4 +1,5 @@
 import { RunEvent } from "@jadwigo/contracts/run";
+import { RUN_LOGS } from "@jadwigo/testing";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { checkAnswer } from "./answer-check.ts";
@@ -78,15 +79,43 @@ describe("checkAnswer (dl-z5ja.26)", () => {
     );
   });
 
-  it("takes nothing from a failed result, a parent's message or another event", () => {
+  it("takes nothing from a failed result, an agent's message or another event", () => {
     const turn = [
-      at(1, "message", { from: "parent", text: "Make it 5 questions." }),
+      at(1, "message", { from: "agent", text: "I will make 5 questions." }),
       result(2, null),
       at(3, "usage", { spent_usd: 0.04, cap_usd: 0.1 }),
     ];
     expect(checkAnswer("Done: 5 questions, step 4 fixed.", turn)).toEqual([
       { kind: "number", said: "5" },
       { kind: "number", said: "4" },
+    ]);
+  });
+
+  it("passes a number only the parent wrote, and still refuses one nobody wrote", () => {
+    const turn = [at(1, "message", { from: "parent", text: "Make it 5 questions, not 8." }), DRAFT];
+    expect(checkAnswer("Done: 5 questions now.", turn)).toEqual([]);
+    expect(checkAnswer("Done: 6 questions now.", turn)).toEqual([{ kind: "number", said: "6" }]);
+  });
+
+  it("takes a steer's numbers, from its text and its question ids (dl-z5ja.51's event)", () => {
+    const steer = {
+      ...BASE,
+      seq: 3,
+      event_id: "00000000-0000-4000-8fff-000000000003",
+      type: "steer",
+      payload: {
+        text: "Swap question 7 for an easier one.",
+        source: "lesson_edit",
+        question_ids: ["q_42"],
+      },
+    } as unknown as RunEvent;
+    expect(checkAnswer("I swapped question 7 (q_42).", [DRAFT, steer])).toEqual([]);
+  });
+
+  it("refuses a status word the parent wrote but no tool result gave", () => {
+    const asked = [at(1, "message", { from: "parent", text: "Does it need attention?" })];
+    expect(checkAnswer("It needs attention.", asked)).toEqual([
+      { kind: "status", said: "needs attention", code: "needs_attention" },
     ]);
   });
 
@@ -107,6 +136,18 @@ describe("checkAnswer (dl-z5ja.26)", () => {
       { kind: "number", said: "7" },
       { kind: "level", said: "mastered" },
     ]);
+  });
+});
+
+describe("checkAnswer, the golden logs", () => {
+  it("passes every agent message they hold", () => {
+    for (const log of RUN_LOGS) {
+      const events = log.events.map((e) => RunEvent.parse(e));
+      for (const event of events) {
+        if (event.type !== "message" || event.payload.from !== "agent") continue;
+        expect([log.name, checkAnswer(event.payload.text, events)]).toEqual([log.name, []]);
+      }
+    }
   });
 });
 
