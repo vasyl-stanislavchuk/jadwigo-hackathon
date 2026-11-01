@@ -131,6 +131,7 @@ export class HttpMuse implements MuseClient {
         const response = await this.#attempt(model, sent, guard, live);
         return {
           ...response,
+          tier: model === this.#o.models.contributor ? "contributor" : "private",
           usage: add(usage, response.usage),
           cost_usd: round6(spent + response.cost_usd),
         };

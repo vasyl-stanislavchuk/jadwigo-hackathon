@@ -112,9 +112,9 @@ describe("HttpMuse speaks /v1/responses", () => {
       { status: 200, body: textAnswer(["a"]) },
       { status: 200, body: textAnswer(["b"]) },
     ]);
-    await http.respond(contributor());
-    await http.respond(requestFor(runId(), 1));
+    const answers = [await http.respond(contributor()), await http.respond(requestFor(runId(), 1))];
     expect(sent.map((s) => s.body["model"])).toEqual([CONTRIBUTOR_MODEL, PRIVATE_MODEL]);
+    expect(answers.map((r) => r.tier)).toEqual(["contributor", "private"]);
   });
 
   it("reads the text, the usage and the cost from the stream, split at any byte", async () => {
@@ -124,6 +124,7 @@ describe("HttpMuse speaks /v1/responses", () => {
       expect(r).toEqual({
         response_id: "resp_rec_1",
         model: CONTRIBUTOR_MODEL,
+        tier: "contributor",
         text: "Brawo, ząbki!",
         tool_calls: [],
         usage: { input_tokens: 1200, output_tokens: 300, cached_tokens: 200 },
@@ -255,6 +256,7 @@ describe("HttpMuse routes the private tier and refuses what it cannot cap", () =
     const r = await http.respond(requestFor(runId(), 1));
     expect(sent[0]?.body["model"]).toBe(CONTRIBUTOR_MODEL);
     expect(r.model).toBe(CONTRIBUTOR_MODEL);
+    expect(r.tier).toBe("contributor"); // the tier that answered, not the one asked for
   });
 
   it("does not use a private model it has no price for", async () => {

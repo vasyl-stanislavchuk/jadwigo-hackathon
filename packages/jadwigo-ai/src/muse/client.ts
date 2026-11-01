@@ -49,6 +49,12 @@ export interface MuseResponse {
   response_id: string;
   /** The model that answered, as its provider names it; `ScriptedMuse` answers `scripted`. */
   model: string;
+  /**
+   * The tier that answered, which can differ from the one asked for: `HttpMuse` serves `private`
+   * on the contributor model until a private model is named (bead dl-uafq). Absent from a client
+   * with no tiers, such as `ScriptedMuse`; the runner then records the tier it asked for.
+   */
+  tier?: ModelTier;
   text: string | null;
   tool_calls: readonly ToolCall[];
   usage: ModelUsage;
