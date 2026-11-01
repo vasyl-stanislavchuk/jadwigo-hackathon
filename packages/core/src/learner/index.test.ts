@@ -10,6 +10,7 @@ import {
   idOf,
   type LearnerAttempt,
   LearnerId,
+  LearnerMistakesView,
   type LearnerReport,
   LearnerReportId,
   LessonIdeasView,
@@ -299,10 +300,60 @@ describe("learnerMistakes", () => {
     expect(learnerMistakes([first, second], answers, 1).mistakes).toEqual(mistakes);
   });
 
+  it("leaves out a question the child never answered, and one whose try no judge could mark", () => {
+    // The steward's input on #558: no try, not skipped.
+    const unanswered = played(1, "2026-11-03T09:00:00.000Z", [
+      result(1),
+      result(2, { tries: 0, first_try_correct: false, correct: false, ended: null, time_ms: 0 }),
+    ]);
+    expect(learnerMistakes([unanswered], new Map([[attempt(1), []]]), 10).questions).toEqual([]);
+    const unjudged = played(2, "2026-11-03T09:00:00.000Z", [
+      result(1, { tries: 1, first_try_correct: false, correct: false, ended: null }),
+    ]);
+    expect(learnerMistakes([unjudged], new Map(), 10)).toEqual({ mistakes: [], questions: [] });
+  });
+
+  it("drops an empty mistake class, so the view still parses", () => {
+    const blank = played(1, "2026-11-03T09:00:00.000Z", [
+      result(1, {
+        first_try_correct: false,
+        mistake_classes: ["", " ", "swapped"],
+        ended: "missed",
+      }),
+      result(2, { tries: 1, first_try_correct: true, mistake_classes: [""] }),
+    ]);
+    const { mistakes, questions } = learnerMistakes([blank], new Map(), 10);
+    expect(questions.map((q) => [q.seq, q.mistake_classes])).toEqual([[1, ["swapped"]]]);
+    expect(mistakes.map((m) => m.mistake_class)).toEqual(["swapped"]);
+    const learner = { id: LEARNER, first_name: "Ola" };
+    expect(() => LearnerMistakesView.parse({ learner, mistakes, questions })).not.toThrow();
+  });
+
   it("words an answer as the child gave it", () => {
     expect(answerText({ entered: "12" })).toBe("12");
     expect(answerText({ text: "bo dodałam" })).toBe("bo dodałam");
     expect(answerText({ chosen: ["a", "c"] })).toBe("a, c");
+  });
+});
+
+describe("curriculumTopics, by Polish word forms", () => {
+  it("finds the addition topics from 'dodawanie' through 'dodawania' and 'dodaje'", () => {
+    const seed = catalogue();
+    const codes = curriculumTopics(seed, ["dodawanie"], []).map((t) => t.code);
+    for (const t of seed.topics) {
+      const has = /\bdoda\p{L}*/u.test(t.text.toLowerCase());
+      expect(codes.includes(t.code), `${t.code}`).toBe(has);
+    }
+    expect(codes.length).toBeGreaterThan(0);
+  });
+
+  it("meets a code only as itself, and short words alone meet no topic", () => {
+    const seed = catalogue();
+    const one = seed.topics[0];
+    if (one === undefined) throw new Error("the seed has topics");
+    expect(curriculumTopics(seed, [one.code], []).map((t) => t.code)).toEqual([one.code]);
+    expect(curriculumTopics(seed, ["i do"], [])).toEqual([]);
+    expect(curriculumTopics(seed, ["", "  "], [])).toHaveLength(seed.topics.length);
   });
 });
 

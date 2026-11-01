@@ -160,6 +160,9 @@ describe("learner_mistakes and learner_week", () => {
     const out = effect.output as { questions: { child_answers: string | null }[] };
     expect(out.questions[0]?.child_answers).toContain('<jadwigo_untrusted source="child">');
     expect(out.questions[0]?.child_answers).toContain("7");
+    const said = (effect.output as { questions: { say: string }[] }).questions[0]?.say;
+    expect(said?.startsWith('<jadwigo_untrusted source="lesson">')).toBe(true);
+    expect(view?.questions[0]?.say).not.toContain("jadwigo_untrusted");
     expect(JSON.stringify(effect.output)).not.toMatch(NEVER);
   });
 
@@ -169,6 +172,9 @@ describe("learner_mistakes and learner_week", () => {
     const view = toolViewData("learner_week", ToolView.parse(effect.view).data);
     expect(view?.weeks.map((w) => w.lessons)).toEqual([0, 1]);
     expect(view?.lessons.map((l) => [l.title, l.questions])).toEqual([["Made-up adding", 2]]);
+    const titles = (effect.output as { lessons: { title: string }[] }).lessons.map((l) => l.title);
+    expect(titles[0]).toContain('<jadwigo_untrusted source="lesson">');
+    expect(titles[0]).toContain("Made-up adding");
     expect(JSON.stringify(effect.output)).not.toMatch(NEVER);
   });
 });
@@ -187,5 +193,9 @@ describe("curriculum_topics", () => {
     const found = toolViewData("curriculum_topics", ToolView.parse(some.view).data);
     expect(found?.learner?.first_name).toBe("Ola");
     expect(found?.topics.length).toBeLessThan(every?.topics.length ?? 0);
+    // 'dodawanie' meets the topics that say 'dodawania' and 'dodaje'.
+    expect(found?.topics.map((t) => t.code)).toEqual(
+      expect.arrayContaining(["II.3.1", "II.3.2", "II.3.4"]),
+    );
   });
 });

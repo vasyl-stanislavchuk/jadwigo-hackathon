@@ -210,7 +210,11 @@ export async function learnerWeek(
   const reports = await reads.listReports(c.pod, learner.id);
   const { weeks, lessons } = learnerWeeks(attempts, reports, now, count);
   return {
-    output: { learner: ref, weeks, lessons },
+    output: {
+      learner: ref,
+      weeks,
+      lessons: lessons.map((l) => ({ ...l, title: fence(l.title, "lesson") })),
+    },
     view: toolView("learner_week", { learner: ref, weeks, lessons }),
   };
 }
@@ -225,10 +229,11 @@ export async function learnerMistakesVerb(
   const { learner, ref } = await learnerOf(reads, c, input);
   const { attempts } = await reads.getLearnerAttempts(c.pod, learner.id);
   const answers = new Map<AttemptId, readonly AttemptAnswer[]>();
-  for (const { attempt } of attempts.slice(0, ANSWER_READS)) {
-    // A claimed attempt played in another pod is read through the learner, never through
-    // `getAttempt` of that pod: its answers are left out rather than read across pods.
-    if (attempt.pod_id !== c.pod) continue;
+  // The newest real attempts of the run's pod: a preview is never the learner's, and a claimed
+  // attempt played in another pod is read through the learner, never through `getAttempt` of that
+  // pod, so its answers are left out rather than read across pods.
+  const own = attempts.filter((a) => a.attempt.mode === "real" && a.attempt.pod_id === c.pod);
+  for (const { attempt } of own.slice(0, ANSWER_READS)) {
     answers.set(attempt.id, (await reads.getAttempt(c.pod, attempt.id)).answers);
   }
   const { mistakes, questions } = learnerMistakes(attempts, answers, limit);
@@ -236,18 +241,14 @@ export async function learnerMistakesVerb(
     output: {
       learner: ref,
       mistakes,
-      questions: questions.map(({ answers: given, ...q }) => ({
+      questions: questions.map(({ answers: given, say, ...q }) => ({
         ...q,
+        say: fence(say, "lesson"),
         child_answers: given.length === 0 ? null : fence(given.join("\n"), "child"),
       })),
     },
     view: toolView("learner_mistakes", { learner: ref, mistakes, questions }),
   };
-}
-
-/** A need's words, each 3 letters or more: a short word ("i", "do") would match every topic. */
-function wordsOf(words: string | null): string[] {
-  return (words ?? "").split(/[\s,;]+/).filter((w) => w.length >= 3);
 }
 
 export async function curriculumTopicsVerb(
@@ -256,7 +257,7 @@ export async function curriculumTopicsVerb(
   raw: Json,
 ): Promise<VerbEffect> {
   const input = new Input("curriculum_topics", raw, ["learner_id", "words"]);
-  const words = wordsOf(input.optionalString("words"));
+  const words = [input.optionalString("words") ?? ""];
   const named =
     input.optionalString("learner_id") === null ? null : await learnerOf(reads, c, input);
   const goals = named === null ? [] : await reads.listGoals(c.pod, named.learner.id);

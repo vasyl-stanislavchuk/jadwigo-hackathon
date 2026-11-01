@@ -199,12 +199,18 @@ export function learnerMistakes(
     const given = answers.get(attempt.id) ?? [];
     for (const r of [...results].sort((a, b) => a.seq - b.seq)) {
       const skipped = r.skip_reason !== null;
-      if (r.first_try_correct && r.mistake_classes.length === 0 && !skipped) continue;
+      // An empty class names nothing: it is dropped, never shown as a mistake.
+      const classes = r.mistake_classes.filter((c) => c.trim() !== "");
+      // Missed means the child did something: skipped it, made a classed mistake, or answered a
+      // first try a judge marked wrong. A question never answered (no try) or whose try no judge
+      // could mark (not ended) is not missed.
+      const judgedWrong = r.tries > 0 && r.ended !== null && !r.first_try_correct;
+      if (!skipped && classes.length === 0 && !judgedWrong) continue;
       missed.push({
         attempt_id: attempt.id,
         seq: r.seq,
         say: r.say,
-        mistake_classes: [...r.mistake_classes].sort(compare),
+        mistake_classes: [...classes].sort(compare),
         tries: r.tries,
         skipped,
         answers: given
@@ -234,23 +240,53 @@ export function learnerMistakes(
   return { mistakes, questions: missed.slice(0, limit) };
 }
 
+/** The letters-and-digits words of `text`, lower case. */
+function wordsIn(text: string): string[] {
+  return text.toLowerCase().match(/[\p{L}\p{N}.]+/gu) ?? [];
+}
+
+/** How many letters 2 words share from their start. */
+function sharedStart(a: string, b: string): number {
+  let n = 0;
+  while (n < a.length && n < b.length && a[n] === b[n]) n += 1;
+  return n;
+}
+
+/** The fewest letters 2 words must share from their start to be forms of one word. */
+export const STEM_LETTERS = 4;
+
 /**
- * The curriculum's topics whose code, area or text holds any of `words` (every topic for none),
- * each with the catalogue skills under it, an alias counting as its skill, and the learner's goals
- * that hold any of them, in the curriculum's order.
+ * Whether a need's word meets a topic's word. Polish bends a word at its end (`dodawanie`,
+ * `dodawania`, `dodaje`), so 2 words of 4 letters or more meet when they share their first 4; a
+ * shorter word, or a code such as `II.3.3`, meets only itself.
+ */
+function meets(need: string, word: string): boolean {
+  if (need.length < STEM_LETTERS || word.length < STEM_LETTERS || /\d/.test(need + word)) {
+    return need === word;
+  }
+  return sharedStart(need, word) >= STEM_LETTERS;
+}
+
+/**
+ * The curriculum's topics with a word that meets any of `words` (`meets`: a code itself, a Polish
+ * word by its first 4 letters), every topic for none; each with the catalogue skills under it, an
+ * alias counting as its skill, and the learner's goals that hold any of them, in the curriculum's
+ * order. A need's word under 3 letters is dropped ("i" and "do" would meet too much), so a need
+ * of short words alone meets no topic rather than every one.
  */
 export function curriculumTopics(
   catalogue: Catalogue,
   words: readonly string[],
   goals: readonly GoalWithSkills[],
 ): CurriculumTopicRow[] {
-  const needles = words.map((w) => w.trim().toLowerCase()).filter((w) => w !== "");
+  const asked = words.some((w) => w.trim() !== "");
+  const needles = words.flatMap(wordsIn).filter((w) => w.length >= 3);
   return catalogue.topics
-    .filter(
-      (t) =>
-        needles.length === 0 ||
-        needles.some((w) => `${t.code} ${t.area} ${t.text}`.toLowerCase().includes(w)),
-    )
+    .filter((t) => {
+      if (!asked) return true;
+      const own = wordsIn(`${t.code} ${t.area} ${t.text}`);
+      return needles.some((need) => own.some((word) => meets(need, word)));
+    })
     .map((t) => {
       const under = catalogue.skills.filter((s) => s.topic_code === t.code);
       const known = new Set(under.flatMap((s) => [s.code, ...s.aliases]));
