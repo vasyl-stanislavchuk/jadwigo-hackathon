@@ -30,6 +30,7 @@ export {
   authorizeRun,
   drain,
   type EngineDeps,
+  type EngineWarning,
   type FailedStep,
   type InboxEntry,
   runStep,
