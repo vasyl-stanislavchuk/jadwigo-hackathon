@@ -109,7 +109,7 @@ describe("a verb is idempotent by call_id", () => {
   it("an edit replayed on the lesson it already wrote writes the same file", async () => {
     const { lesson_file, run } = await drafted();
     const patch = { question: { help: { look: { text: "Policz na palcach." } } } };
-    const input = { draft_id: run, step_id: "s01", patch, why: "the parent asked" };
+    const input = { draft_id: run, names: [], step_id: "s01", patch, why: "the parent asked" };
     const once = await createVerbs({ bank: fixtureBank() }).lesson_edit.run(
       contextFor(run, "call_2", { revision: 1, lesson_file }),
       input,
@@ -142,6 +142,7 @@ describe("lesson_check", () => {
     ].entries()) {
       const refused = verbs.lesson_check.run(at(`call_copied_${n}`), {
         draft_id: run,
+        names: [],
         help: { s01: words },
       });
       await expect(refused).rejects.toMatchObject({ type: "copied-rung" });
@@ -149,13 +150,14 @@ describe("lesson_check", () => {
     }
     const bare = await verbs.lesson_edit.run(at("call_bare"), {
       draft_id: run,
+      names: [],
       step_id: "s01",
       patch: { question: { help: { worked: null } } },
       why: "the parent asked for another worked example",
     });
     const filled = await verbs.lesson_check.run(
       contextFor(run, "call_fill", { revision: 2, lesson_file: bare.lesson_file ?? lesson_file }),
-      { draft_id: run, help: { s01: { worked: ["7 + 3 = 10", "10 + 2 = 12"] } } },
+      { draft_id: run, names: [], help: { s01: { worked: ["7 + 3 = 10", "10 + 2 = 12"] } } },
     );
     expect(stepsOf(filled.lesson_file)[0]).toMatchObject({
       question: { help: { worked: ["7 + 3 = 10", "10 + 2 = 12"] } },
@@ -164,7 +166,11 @@ describe("lesson_check", () => {
 
   it("answers check()'s findings and a card, and writes nothing for help {}", async () => {
     const { verbs, run, at } = await drafted();
-    const effect = await verbs.lesson_check.run(at("call_2"), { draft_id: run, help: {} });
+    const effect = await verbs.lesson_check.run(at("call_2"), {
+      draft_id: run,
+      names: [],
+      help: {},
+    });
     expect(effect.lesson_file).toBeUndefined();
     expect(effect.output).toMatchObject({ ok: true, findings: [], questions: 6 });
     expect((effect.output["card"] as { steps: unknown[] }).steps).toHaveLength(6);
@@ -174,6 +180,7 @@ describe("lesson_check", () => {
     const { verbs, run, at } = await drafted();
     const effect = await verbs.lesson_check.run(at("call_2"), {
       draft_id: run,
+      names: [],
       help: { s02: { boost_by_mistake: { other_wrong: { text: "Policz jeszcze raz." } } } },
       title: "Dodawanie do 20",
     });
@@ -188,6 +195,7 @@ describe("lesson_check", () => {
     const { verbs, run, at } = await drafted();
     const effect = await verbs.lesson_check.run(at("call_2"), {
       draft_id: run,
+      names: [],
       help: { s01: { boost_by_mistake: { no_such_class: { text: "?" } } } },
     });
     expect(effect.output["ok"]).toBe(false);
@@ -204,12 +212,18 @@ describe("lesson_check", () => {
         () => null,
         (e: VerbError) => e.type,
       );
-    expect(await refusal(at("call_2"), { draft_id: runId(), help: {} })).toBe("unknown-draft");
-    expect(await refusal(contextFor(run, "call_3"), { draft_id: run, help: {} })).toBe("no-draft");
-    expect(await refusal(at("call_4"), { draft_id: run, help: { s99: {} } })).toBe("unknown-step");
-    expect(await refusal(at("call_5"), { draft_id: run, help: { s01: { say: "x" } } })).toBe(
-      "input",
+    expect(await refusal(at("call_2"), { draft_id: runId(), names: [], help: {} })).toBe(
+      "unknown-draft",
     );
+    expect(await refusal(contextFor(run, "call_3"), { draft_id: run, names: [], help: {} })).toBe(
+      "no-draft",
+    );
+    expect(await refusal(at("call_4"), { draft_id: run, names: [], help: { s99: {} } })).toBe(
+      "unknown-step",
+    );
+    expect(
+      await refusal(at("call_5"), { draft_id: run, names: [], help: { s01: { say: "x" } } }),
+    ).toBe("input");
   });
 });
 
@@ -222,11 +236,17 @@ describe("lesson_edit", () => {
       { question: { help: { almost: null } } },
     ].entries()) {
       await expect(
-        verbs.lesson_edit.run(at(`call_null_${n}`), { draft_id: run, step_id: "s01", patch }),
+        verbs.lesson_edit.run(at(`call_null_${n}`), {
+          draft_id: run,
+          names: [],
+          step_id: "s01",
+          patch,
+        }),
       ).rejects.toMatchObject({ type: "why-needed" });
     }
     const removed = await verbs.lesson_edit.run(at("call_why"), {
       draft_id: run,
+      names: [],
       step_id: "s01",
       patch: { question: { help: null } },
       why: "the parent asked for no hints",
@@ -240,6 +260,7 @@ describe("lesson_edit", () => {
     const { verbs, run, at, lesson_file } = await drafted();
     const effect = await verbs.lesson_edit.run(at("call_2"), {
       draft_id: run,
+      names: [],
       step_id: "s01",
       patch: { say: "Ile to razem: 7 + 5?", question: { help: { boost: null } } },
       why: "the parent asked for other words",
@@ -265,6 +286,7 @@ describe("lesson_edit", () => {
       verbs.lesson_edit
         .run(at(`call_${JSON.stringify(patch)}`), {
           draft_id: run,
+          names: [],
           step_id: "s01",
           patch,
           ...extra,
@@ -285,6 +307,7 @@ describe("lesson_edit", () => {
       contextFor(run, "call_2", { revision: 1, lesson_file }),
       {
         draft_id: run,
+        names: [],
         step_id: "s01",
         patch: { question: { help: { boost: null } } },
         why: "the parent asked for no boost",
@@ -294,6 +317,7 @@ describe("lesson_edit", () => {
       contextFor(run, "call_3", { revision: 2, lesson_file: bare.lesson_file ?? {} }),
       {
         draft_id: run,
+        names: [],
         step_id: "s01",
         patch: { question: { help: { boost: { text: "Dolicz po jednym." } } } },
       },
