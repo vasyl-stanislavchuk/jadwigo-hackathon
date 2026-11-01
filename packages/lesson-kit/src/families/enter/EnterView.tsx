@@ -41,7 +41,7 @@ import type { StepKeysInput } from "../../parts/stepKeys.ts";
 import { TooSoon } from "../../parts/TooSoon.tsx";
 import { missed, TONE_CLASS, type Tone, useChanged, wholeTone } from "../../parts/tone.ts";
 import type { Instant } from "../../stage/clock.ts";
-import { LessonLanguage } from "../../stage/lessonLanguage.ts";
+import { LessonLanguage, useScreensLang } from "../../stage/lessonLanguage.ts";
 import { press } from "../../stage/press.ts";
 import type { Language, PageSolutionLine } from "../../stage/types.ts";
 import {
@@ -134,11 +134,16 @@ function Answer({
   fraction?: { whole: boolean } | undefined;
   language: Language;
 }): JSX.Element {
+  // "Your answer" and "Right answer" are the screens' words, under the lesson's lang (dl-uukj.41).
+  const labelLang = useScreensLang(language);
   if (fraction) {
     return (
       <div className="flex flex-col gap-1">
-        <span className="text-jw-small">{label}</span>
-        <div className="text-jw-math">
+        <span className="text-jw-small" {...labelLang}>
+          {label}
+        </span>
+        {/* Digits only, named for a screen reader in the screens' words. */}
+        <div className="text-jw-math" {...labelLang}>
           <FractionBoxes
             text={text}
             whole={fraction.whole || text.includes(" ")}
@@ -156,7 +161,9 @@ function Answer({
   }
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-jw-small">{label}</span>
+      <span className="text-jw-small" {...labelLang}>
+        {label}
+      </span>
       <div
         data-tone={tone}
         className={cn(

@@ -38,6 +38,7 @@ import {
   wholeTone,
 } from "../../parts/tone.ts";
 import type { Instant } from "../../stage/clock.ts";
+import { useScreensLang } from "../../stage/lessonLanguage.ts";
 import { type PressModality, press } from "../../stage/press.ts";
 import type { Language } from "../../stage/types.ts";
 import { missingGroup } from "../complete.ts";
@@ -171,15 +172,21 @@ function Zones({
   placement,
   tone,
   label,
+  language,
 }: {
   data: GroupData;
   placement: Placement;
   tone: (item: string, group: string) => Tone;
   label: string;
+  language: Language;
 }): JSX.Element {
+  // The label is the screens' words, under the lesson's lang (dl-uukj.41).
+  const labelLang = useScreensLang(language);
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-jw-small">{label}</span>
+      <span className="text-jw-small" {...labelLang}>
+        {label}
+      </span>
       <div
         className={cn(
           "grid gap-[var(--kid-choice-gap)]",
@@ -226,16 +233,22 @@ function Pairs({
   placement,
   tone,
   label,
+  language,
 }: {
   data: GroupData;
   placement: Placement;
   tone: (item: string) => Tone;
   label: string;
+  language: Language;
 }): JSX.Element {
+  // The label is the screens' words, under the lesson's lang (dl-uukj.41).
+  const labelLang = useScreensLang(language);
   const groupOf = (id: string) => data.groups.find((g) => g.id === id);
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-jw-small">{label}</span>
+      <span className="text-jw-small" {...labelLang}>
+        {label}
+      </span>
       <ol className="flex flex-col gap-[var(--kid-choice-gap)]">
         {data.items.map((item) => {
           const t = tone(item.id);
@@ -301,6 +314,7 @@ function GroupStill({
         <>
           {shown !== null && (
             <Pairs
+              language={language}
               data={data}
               placement={shown.items}
               label={copy(language, "answer_yours")}
@@ -309,6 +323,7 @@ function GroupStill({
           )}
           {right !== null && !allRight && (
             <Pairs
+              language={language}
               data={data}
               placement={right.items}
               label={copy(language, "answer_right")}
@@ -317,6 +332,7 @@ function GroupStill({
           )}
           {shown === null && right === null && (
             <Pairs
+              language={language}
               data={data}
               placement={
                 pairsOf(
@@ -333,6 +349,7 @@ function GroupStill({
         <>
           {shown !== null && (
             <Zones
+              language={language}
               data={data}
               placement={shown.items}
               label={copy(language, "answer_yours")}
@@ -343,6 +360,7 @@ function GroupStill({
           )}
           {right !== null && !allRight && (
             <Zones
+              language={language}
               data={data}
               placement={right.items}
               label={copy(language, "answer_right")}
@@ -351,6 +369,7 @@ function GroupStill({
           )}
           {shown === null && right === null && (
             <Zones
+              language={language}
               data={data}
               placement={{}}
               label={copy(language, "drag_tray")}
