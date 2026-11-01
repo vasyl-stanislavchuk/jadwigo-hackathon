@@ -9,21 +9,6 @@ import type { EngineTransport } from "./useConversation.ts";
 
 afterEach(cleanup);
 
-/**
- * These merge and fold through `@jadwigo/core`'s `mergeLive` and `foldRun`, which the fold lane
- * (dl-z5ja.13) writes. Until it lands they run as `it.fails`, so they turn red the moment it does
- * and this guard goes.
- */
-const FOLD_LANDED = (() => {
-  try {
-    foldRun([]);
-    return true;
-  } catch {
-    return false;
-  }
-})();
-const withFold = FOLD_LANDED ? it : it.fails;
-
 const eventsOf = (name: string): RunEvent[] =>
   (RUN_LOGS.find((l) => l.name === name)?.events ?? []).map((e) => RunEvent.parse(e));
 
@@ -48,7 +33,7 @@ function runOf(events: readonly RunEvent[], status: Run["status"] = "in_progress
 }
 
 describe("conversationReducer", () => {
-  withFold("buffers live pushes until the fetch, then merges without a gap or a duplicate", () => {
+  it("buffers live pushes until the fetch, then merges without a gap or a duplicate", () => {
     const events = eventsOf("happy-turn");
     const run = runOf(events);
     let state = conversationReducer(EMPTY, { type: "run", run });
@@ -70,7 +55,7 @@ describe("conversationReducer", () => {
     expect(again.runs[0]?.events).toHaveLength(events.length);
   });
 
-  withFold("a reconnect fetches after the cursor and keeps what it drew", () => {
+  it("a reconnect fetches after the cursor and keeps what it drew", () => {
     const events = eventsOf("happy-turn");
     const run = runOf(events);
     let state = conversationReducer(EMPTY, { type: "run", run });
@@ -93,7 +78,7 @@ describe("conversationReducer", () => {
     expect(lessonOf(turnsOf(state))?.revision).toBe(2);
   });
 
-  withFold("a queued follow-up leaves the list once its message is in the log", () => {
+  it("a queued follow-up leaves the list once its message is in the log", () => {
     const events = eventsOf("follow-up-mid-turn");
     const run = runOf(events);
     let state = conversationReducer(EMPTY, { type: "run", run });
@@ -112,7 +97,7 @@ describe("conversationReducer", () => {
     expect(state.queued).toEqual([]);
   });
 
-  withFold("Stopping clears when the turn ends", () => {
+  it("Stopping clears when the turn ends", () => {
     const events = eventsOf("cancel-during-a-verb");
     const run = runOf(events);
     let state = conversationReducer(EMPTY, { type: "run", run });
@@ -154,9 +139,7 @@ function fakeTransport(events: readonly RunEvent[]) {
 }
 
 describe("ChatScreen on a transport", () => {
-  withFold("a reload subscribes before it fetches, then draws both panes", async () => {
-    // Drawn with the stub, the fold throws inside a fetch's callback, past the test.
-    if (!FOLD_LANDED) throw new Error("waits on dl-z5ja.13 (the fold lane)");
+  it("a reload subscribes before it fetches, then draws both panes", async () => {
     const events = eventsOf("happy-turn");
     const t = fakeTransport(events);
     render(<ChatScreen transport={t.transport} />);
