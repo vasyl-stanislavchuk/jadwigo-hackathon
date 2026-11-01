@@ -75,6 +75,11 @@ test("a child finishes a lesson and opens the question it missed, and one it got
   await expect(page).toHaveURL(/\/play\/asg_[0-9a-z]{26}\/review\/2$/);
   const step = page.locator("[data-review-step]");
   await expect(step.locator("[data-review-title]")).toHaveText(/^Pytanie 2 z \d+$/);
+  // The navigator (dl-uukj.30.8): every question, the open one marked, visible without a menu.
+  const nav = page.locator("[data-review-nav]");
+  await expect(nav).toBeVisible();
+  await expect(nav.locator('[aria-current="step"]')).toHaveCount(1);
+  await expect(nav.locator('li[data-seq="2"] [aria-current="step"]')).toHaveCount(1);
   await expect(step.locator("[data-review-ended]")).toHaveText("Wrócimy do tego");
   await expect(step.locator("[data-review-answer]")).toContainText("7");
   const solution = step.locator("[data-review-solution]");

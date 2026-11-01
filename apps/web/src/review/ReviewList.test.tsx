@@ -68,6 +68,11 @@ describe("ReviewList", () => {
     expect(card(1).textContent).toContain("Udało się");
   });
 
+  it("every card shows the chevron that says it opens, hover or not", () => {
+    render(<ReviewList rows={rows} language="pl" linkOf={(s) => `/r/${s}`} />);
+    expect(document.querySelectorAll("[data-card-chevron]")).toHaveLength(rows.length);
+  });
+
   it("shows no score and no count", () => {
     render(<ReviewList rows={rows} review={review} language="pl" linkOf={(s) => `/r/${s}`} />);
     expect(document.body.textContent).not.toMatch(/\d+ ?\/ ?\d+|%/);
