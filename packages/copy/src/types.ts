@@ -783,6 +783,20 @@ export const COPY_KEYS = [
   "chat_sign_in",
   "chat_limit_message",
   // end the chat page
+  // a parent's photos (dl-z5ja.11.5)
+  "attach_photo_alt",
+  "attach_uploading",
+  "attach_retry",
+  "attach_heic",
+  "attach_unreadable",
+  "attach_too_large",
+  "attach_limit_day",
+  "attach_offline",
+  "attach_expired",
+  "attach_changed",
+  "attach_not_taken",
+  "attach_left_off",
+  // end a parent's photos
 ] as const;
 
 export type CopyKey = (typeof COPY_KEYS)[number];
