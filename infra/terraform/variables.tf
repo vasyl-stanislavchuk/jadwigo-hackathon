@@ -39,3 +39,9 @@ variable "runner_muse_cap_usd" {
   type        = string
   default     = "1"
 }
+
+variable "runner_muse_private_model" {
+  description = "The no-training tier's model the step host calls (dl-z5ja.3 names it). Blank until then, and every private-tier call is refused before anything is sent"
+  type        = string
+  default     = ""
+}

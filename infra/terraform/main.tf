@@ -132,7 +132,8 @@ module "runner" {
   secret_params = ["muse-api-key"]
 
   environment_variables = {
-    JADWIGO_MUSE_KEY_PARAM = "/jadwigo/${var.environment}/muse-api-key"
-    JADWIGO_MUSE_CAP_USD   = var.runner_muse_cap_usd
+    JADWIGO_MUSE_KEY_PARAM     = "/jadwigo/${var.environment}/muse-api-key"
+    JADWIGO_MUSE_CAP_USD       = var.runner_muse_cap_usd
+    JADWIGO_MUSE_PRIVATE_MODEL = var.runner_muse_private_model
   }
 }
