@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import { ID_PREFIXES, uuidOf } from "@jadwigo/contracts";
 import { type CheckResult, check } from "@jadwigo/lesson-import/check";
 import { type Finding, parseLessonFileLenient } from "@jadwigo/lesson-import/file";
@@ -311,7 +312,10 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
   }
   const edited = mergePatch(step, patch) as Step;
   edited.id = step.id;
+  // A patch that changes nothing records nothing: a replay on the lesson it already wrote.
+  const changes = !isDeepStrictEqual(edited, step);
   if (
+    changes &&
     copied.length > 0 &&
     isObject(edited["based_on"]) &&
     Array.isArray(edited["based_on"]["changes"])
