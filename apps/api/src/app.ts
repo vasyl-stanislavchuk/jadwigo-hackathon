@@ -16,7 +16,9 @@ import {
   createConversation,
   type EngineRouteDeps,
   listConversationRuns,
+  listConversations,
   listRunEvents,
+  patchConversation,
   postMessage,
   rateRun,
 } from "./conversations.ts";
@@ -232,6 +234,12 @@ export function createApp(
   );
   // A message's or a Stop's step commits with its run row and never before it, so a consumer
   // never reads a step for a run it cannot see yet (engineUnit).
+  onSigned("listConversations", (_params, _body, claims) =>
+    run((s) => listConversations(s, claims)),
+  );
+  onSigned("patchConversation", (params, body, claims) =>
+    run((s) => patchConversation(s, engine, claims, params.id, body)),
+  );
   onSigned("postMessage", (params, body, claims) =>
     engineUnit(store, engine, poke, (s, deps) => postMessage(s, deps, claims, params.id, body)),
   );
