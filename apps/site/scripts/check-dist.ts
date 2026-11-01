@@ -32,6 +32,13 @@ const landing: readonly DistCheck[] = [
   ["zaloguj/index.html", 'href="https://app.jadwigo.pl/parent?provider=google"'],
   ["zaloguj/index.html", 'href="https://app.jadwigo.pl/parent?provider=facebook"'],
   ["index.html", 'href="/zaloguj/"'],
+  // The phone header opens the pages from a burger, and the footer names where the questions come from
+  // (design handoff "landing 3", dl-5ssh.4.12).
+  [
+    "index.html",
+    '<button class="burger" type="button" aria-expanded="false" aria-controls="site-menu"',
+  ],
+  ["index.html", "Alfik Matematyczny"],
   ["sitemap-0.xml", "<loc>https://jadwigo.pl/zaloguj/</loc>"],
   ["404.html", "Tej strony tu nie ma."],
   ["robots.txt", "Sitemap: https://jadwigo.pl/sitemap-index.xml"],
