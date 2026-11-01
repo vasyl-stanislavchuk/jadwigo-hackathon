@@ -48,6 +48,9 @@ jobs:
             case "$f" in
               # The docs site's pages are its source: a .md under apps/docs is built (dl-5ssh.90.10).
               apps/docs/*) code=true; echo "docs site change: $f" ;;
+              # jadwigo.pl's pages are .md too, and their translation: frontmatter sets each
+              # hreflang twin, so site-languages must run on them (dl-9t2o.6).
+              apps/site/*) code=true; echo "marketing site change: $f" ;;
               # A product workflow is .md, yet the cli's compose eval reads it (dl-5ssh.103).
               workflows/*) workflows=true; echo "workflow change: $f" ;;
               docs/*|*.md) ;;
