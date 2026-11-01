@@ -502,11 +502,25 @@ function SignedIn({
       await keepFor(learner.id);
     });
 
+  /** The child the dialog created, until /me reads it back (see addFromDialog). */
+  const createdChild = useRef<{
+    firstName: string;
+    learner: Awaited<ReturnType<ParentClient["createLearner"]>>["learner"];
+  } | null>(null);
+
   /** Dodaj dziecko's dialog: adds the child and reads /me again with the page left as it was (the
    * box keeps its words). From Dla, Dla shows the child; with a claim waiting, it is kept for them. */
   const addFromDialog = async ({ firstName }: { firstName: string }): Promise<void> => {
-    const { learner } = await api.createLearner({ first_name: firstName });
+    // A child created on a press whose /me read then failed is kept: pressing Dodaj again reads /me
+    // again and never makes a second child of the same name.
+    const kept = createdChild.current;
+    const learner =
+      kept !== null && kept.firstName === firstName
+        ? kept.learner
+        : (await api.createLearner({ first_name: firstName })).learner;
+    createdChild.current = { firstName, learner };
     const me = await meOf(api, languageNow.current);
+    createdChild.current = null;
     setView({ kind: "ready", me });
     if (adding === "dla") setForLearner(learner.id);
     if (pending !== null) run(() => keepFor(learner.id));
