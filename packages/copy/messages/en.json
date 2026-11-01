@@ -831,5 +831,20 @@
   "parent_new_lesson_for": "New lesson for {name}",
   "parent_child_skills_empty": "The child's goals will appear here: what they can do, what you are working on and what comes next.",
   "parent_child_lessons_empty": "The lessons given to this child will appear here.",
-  "parent_child_history_empty": "Every lesson this child does will appear here, with its result question by question."
+  "parent_child_history_empty": "Every lesson this child does will appear here, with its result question by question.",
+  "parent_question": "What lesson should we make?",
+  "parent_box_label": "Describe the homework",
+  "parent_placeholder": "E.g. Subtracting across 10. She found 15 − 7 and 12 − 5 hard.",
+  "parent_attach": "Add a photo",
+  "parent_remove_photo": "Remove the photo",
+  "parent_for": "For:",
+  "parent_no_child": "No child",
+  "parent_add_child_menu": "Add a child…",
+  "parent_add_child_hint": "Name and class. Jadwigo will start following what they can do.",
+  "parent_send": "Make the lesson",
+  "parent_send_reason": "Describe the homework or add a photo first",
+  "parent_name_note": "Only you and Jadwigo in the chat see it. It never goes into a lesson.",
+  "parent_grade": "Class",
+  "parent_cancel": "Cancel",
+  "parent_lesson_soon": "Making a lesson from here is on its way. It will work soon."
 }

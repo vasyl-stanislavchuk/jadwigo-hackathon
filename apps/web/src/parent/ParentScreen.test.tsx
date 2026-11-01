@@ -18,7 +18,7 @@ import {
   type Me,
 } from "@jadwigo/contracts";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setPodLanguage, useScreenLanguage } from "../nav/language.ts";
@@ -439,6 +439,68 @@ describe("ParentScreen", () => {
     expect(window.location.pathname).toBe(`/parent/assignments/${ASSIGNMENT}`);
     await screen.findByText("Nie udało się wczytać. Odśwież stronę, żeby spróbować ponownie.");
     expect(getAssignmentAttempts).toHaveBeenCalledWith(ASSIGNMENT);
+  });
+
+  // The first screen and Dodaj dziecko (dl-uukj.47.2, decision dl-xo0q).
+  it("adds a child from Dla in a dialog: Dla shows the child and the box keeps its words", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    let learners: LearnerSnapshot[] = [];
+    const api = client({
+      getMe: async () => me(learners),
+      createLearner: vi.fn(async () => {
+        learners = [snapshot];
+        return snapshot;
+      }),
+    });
+    render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
+    const field = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    fireEvent.change(field, { target: { value: "Odejmowanie przez 10" } });
+
+    await press("[data-dla]");
+    await act(async () => fireEvent.click(within(screen.getByRole("menu")).getByRole("menuitem")));
+    const dialog = screen.getByRole("dialog", { name: "Dodaj dziecko" });
+    expect(within(dialog).getByText(/Nie trafia do lekcji/)).toBeDefined();
+    expect(within(dialog).getByRole("radiogroup", { name: "Klasa" })).toBeDefined();
+    fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: " Ola " } });
+    await press("[data-add-child-dialog] [data-add]");
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(api.createLearner).toHaveBeenCalledWith({ first_name: "Ola" });
+    expect(document.querySelector("[data-dla]")?.textContent).toContain("Ola");
+    expect(document.querySelector(`[data-child-row="${LEARNER}"]`)).not.toBeNull();
+    expect(
+      (screen.getByRole("textbox", { name: "Opisz zadanie domowe" }) as HTMLTextAreaElement).value,
+    ).toBe("Odejmowanie przez 10");
+  });
+
+  it("opens Dodaj dziecko from the sidebar's + and gives the focus back to it on Anuluj", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const api = client({ getMe: async () => me([]) });
+    render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
+    const plus = await screen.findByRole("button", { name: "Dodaj dziecko" });
+    plus.focus();
+    await act(async () => fireEvent.click(plus));
+    const dialog = screen.getByRole("dialog", { name: "Dodaj dziecko" });
+    await act(async () => fireEvent.click(within(dialog).getByRole("button", { name: "Anuluj" })));
+    await waitFor(() => expect(document.activeElement).toBe(plus));
+  });
+
+  it("starts Dla at the child ?for names", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const api = client({ getMe: async () => me([snapshot]) });
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams(`for=${LEARNER}`)}
+        auth={auth}
+        client={api}
+      />,
+    );
+    await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    expect(document.querySelector("[data-dla]")?.textContent).toContain("Ola");
   });
 
   it("shows no provider button when the build turns none on", async () => {

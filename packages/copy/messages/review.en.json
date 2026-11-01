@@ -610,5 +610,20 @@
   "parent_new_lesson_for": false,
   "parent_child_skills_empty": false,
   "parent_child_lessons_empty": false,
-  "parent_child_history_empty": false
+  "parent_child_history_empty": false,
+  "parent_question": false,
+  "parent_box_label": false,
+  "parent_placeholder": false,
+  "parent_attach": false,
+  "parent_remove_photo": false,
+  "parent_for": false,
+  "parent_no_child": false,
+  "parent_add_child_menu": false,
+  "parent_add_child_hint": false,
+  "parent_send": false,
+  "parent_send_reason": false,
+  "parent_name_note": false,
+  "parent_grade": false,
+  "parent_cancel": false,
+  "parent_lesson_soon": false
 }

@@ -851,5 +851,20 @@
   "parent_new_lesson_for": "Nowa lekcja dla: {name}",
   "parent_child_skills_empty": "Tu pojawią się cele dziecka: co już umie, nad czym pracujecie i co dalej.",
   "parent_child_lessons_empty": "Tu pojawią się lekcje dane temu dziecku.",
-  "parent_child_history_empty": "Tu pojawi się każda lekcja, którą zrobi to dziecko, z wynikiem pytanie po pytaniu."
+  "parent_child_history_empty": "Tu pojawi się każda lekcja, którą zrobi to dziecko, z wynikiem pytanie po pytaniu.",
+  "parent_question": "Jaką lekcję przygotować?",
+  "parent_box_label": "Opisz zadanie domowe",
+  "parent_placeholder": "Np. Odejmowanie przez 10. Pomyliła się w 15 − 7 i 12 − 5.",
+  "parent_attach": "Dodaj zdjęcie",
+  "parent_remove_photo": "Usuń zdjęcie",
+  "parent_for": "Dla:",
+  "parent_no_child": "Bez dziecka",
+  "parent_add_child_menu": "Dodaj dziecko…",
+  "parent_add_child_hint": "Imię i klasa. Jadwigo zacznie śledzić, co umie.",
+  "parent_send": "Zrób lekcję",
+  "parent_send_reason": "Najpierw opisz zadanie albo dodaj zdjęcie",
+  "parent_name_note": "Widzisz je tylko Ty i Jadwigo w rozmowie. Nie trafia do lekcji.",
+  "parent_grade": "Klasa",
+  "parent_cancel": "Anuluj",
+  "parent_lesson_soon": "Robienie lekcji z tego miejsca jest w drodze. Wkrótce zadziała."
 }
