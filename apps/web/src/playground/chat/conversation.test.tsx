@@ -280,6 +280,49 @@ describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
     expect((words() as HTMLTextAreaElement).value).toBe("Ile to jest dwa razy sześć?");
   });
 
+  it("a Cofnij the server wrote before its send timed out reads as applied (#596's review)", async () => {
+    const events = eventsOf("happy-turn");
+    const t = fakeTransport(events);
+    const send = t.transport.send.bind(t.transport);
+    const third = thirdRevision(events);
+    const transport: EngineTransport = {
+      ...t.transport,
+      send: async (body) => {
+        if (body.kind !== "steer" || third.type !== "lesson_revision") return send(body);
+        // The server logs the steer and applies its patch, then the client's send times out.
+        t.push([
+          RunEvent.parse({
+            ...third,
+            type: "steer",
+            seq: third.seq + 1,
+            event_id: body.event_id,
+            payload: {
+              text: body.text,
+              source: "lesson_edit",
+              question_ids: body.question_ids,
+              patch: body.patch,
+              base_revision: body.base_revision,
+            },
+          }),
+          RunEvent.parse({
+            ...third,
+            seq: third.seq + 2,
+            event_id: "00000000-0000-4000-8000-000000000302",
+            payload: { ...third.payload, revision: 4, call_id: body.event_id },
+          }),
+        ]);
+        throw new Error("timed out");
+      },
+    };
+    render(<ChatScreen transport={transport} />);
+    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    await act(async () => t.push([third]));
+    await act(async () => fireEvent.click(document.querySelector("[data-undo]") as HTMLElement));
+    // The log holds the undo and its revision: it landed, so the pane never says it did not.
+    expect(screen.getByText("Wersja 4")).toBeTruthy();
+    expect(document.querySelector("[data-undo-refused]")).toBeNull();
+  });
+
   it("a revision that lands live marks only the step it changed, and a reload marks it again", async () => {
     const events = eventsOf("happy-turn");
     const t = fakeTransport(events);

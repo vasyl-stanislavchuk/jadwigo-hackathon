@@ -87,11 +87,17 @@ function ChatView({
   /** The last Cofnij's patch steer, followed to its revision or its refusal (dl-z5ja.111). */
   const [undoSent, setUndoSent] = useState<string | null>(null);
   /**
-   * What became of a patch steer: a send that never reached the server is refused, since no log
-   * will hold it, so Cofnij and a step's editor stop waiting and hand the words back (dl-z5ja.111).
+   * What became of a patch steer. Once the log holds the steer, the log says (a send that timed out
+   * after the server wrote it still lands). Until then, a send that failed is refused, so Cofnij and
+   * a step's editor stop waiting and hand the words back (dl-z5ja.111, .138).
    */
-  const outcomeOf = (event_id: string): PatchOutcome =>
-    state.failedSteers.includes(event_id) ? "refused" : patchOutcome(state.runs, event_id);
+  const outcomeOf = (event_id: string): PatchOutcome => {
+    const logged = state.runs.some((r) =>
+      r.events.some((e) => e.type === "steer" && e.event_id === event_id),
+    );
+    if (!logged && state.failedSteers.includes(event_id)) return "refused";
+    return patchOutcome(state.runs, event_id);
+  };
   const shown = lessonOf(turns);
   const changed = changedOf(turns);
   const undo = undoOf(turns);
