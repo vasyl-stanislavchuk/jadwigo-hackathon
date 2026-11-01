@@ -34,6 +34,8 @@ $$;
 -- The sweep (wave 1 Lead decision 10; packages/store's listRunsDue): one message per run past a
 -- deadline that has none waiting, so a run is never queued twice by the sweep. The step it starts
 -- decides what the deadline means for the run. Runs as the job's role, past row-level security.
+-- The step it sends carries the run's current attempt, so the consumer (dl-z5ja.20) checks the
+-- deadline first and takes the sweep path (claim attempt + 1, close the run), never a model call.
 create function app.enqueue_runs_due() returns integer
 language plpgsql security definer set search_path = public, pg_temp
 as $$
