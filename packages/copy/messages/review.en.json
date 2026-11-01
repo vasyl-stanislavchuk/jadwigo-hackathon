@@ -578,7 +578,6 @@
   "chat_announce_needs_you": true,
   "chat_announce_stopped": true,
   "chat_switch": true,
-  "chat_consent": true,
   "chat_check_findings": true,
   "chat_sign_in": true,
   "chat_limit_message": true,
