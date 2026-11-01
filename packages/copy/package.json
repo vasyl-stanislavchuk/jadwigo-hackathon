@@ -9,7 +9,7 @@
     "./runtime": "./src/paraglide/runtime.js"
   },
   "scripts": {
-    "lint": "biome check . && bun ../../tools/src/check-copy.ts",
+    "lint": "biome check .",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --config ../../vitest.config.ts --project unit",
     "messages": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --emit-ts-declarations --no-emit-git-ignore --no-emit-prettier-ignore --no-emit-readme --strategy baseLocale"

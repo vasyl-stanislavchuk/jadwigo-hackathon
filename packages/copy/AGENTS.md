@@ -6,7 +6,7 @@ Every string a person reads, in `pl` and `en`, as Paraglide JS messages with a r
 - **Owner:** the learner-experience workstream (`docs/workstreams/learner-experience.md`). The `site_*` keys are apps/site's.
 - **Imports:** nothing of ours.
 - **Public surface:** `src/index.ts`, and the compiled messages as `@jadwigo/copy/messages` and `@jadwigo/copy/runtime`. Other files are private to this package.
-- **Test:** `bunx turbo run lint typecheck test --filter=./packages/copy` (lint runs `tools/src/check-copy.ts`)
+- **Test:** `bunx turbo run lint typecheck test --filter=./packages/copy` (`make check` runs `tools/src/check-copy.ts` in lint:repo)
 
 ## Where a line lives
 
