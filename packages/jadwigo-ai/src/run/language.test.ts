@@ -28,4 +28,37 @@ describe("inLanguage (dl-z5ja.64)", () => {
   it("passes a Polish answer that quotes an English title", () => {
     expect(inLanguage('Dodałam "The tens and the ones" do lekcji dla dziecka.', "pl")).toBe(true);
   });
+
+  // #554's review: each finding's input.
+  it("passes an English answer naming Polish children (names are capitalised)", () => {
+    expect(inLanguage("Assigned to Łucja, Żaneta and Józef.", "en")).toBe(true);
+    expect(inLanguage("Sent to Łucja, Żaneta, Józef.", "en")).toBe(true);
+  });
+
+  it("passes a Polish answer quoting a lesson's English questions, or listing its words", () => {
+    expect(
+      inLanguage('Dodałam pytania: "What is the colour of the sky?" i "Where is the cat?"', "pl"),
+    ).toBe(true);
+    expect(
+      inLanguage("Dodałam pytania: „What is the colour of the sky?” i „Where is it?”", "pl"),
+    ).toBe(true);
+    expect(inLanguage("Lekcja angielskiego: is, are, was, the, and.", "pl")).toBe(true);
+  });
+
+  it("passes an English answer quoting a long Polish title, with English words in Polish lists", () => {
+    expect(
+      inLanguage(
+        'I added "Dodawanie w zakresie do 20 z przejściem przez dziesiątkę" for Łucja.',
+        "en",
+      ),
+    ).toBe(true);
+    expect(inLanguage("Do the ten questions, and come back to me after.", "en")).toBe(true);
+  });
+
+  it("still refuses plain prose in the other language once quotes and names are left out", () => {
+    expect(inLanguage('Łucja, your lesson "Dodawanie" is ready on the right now.', "pl")).toBe(
+      false,
+    );
+    expect(inLanguage("Łucja ma gotowe pytania, a lekcja jest już na prawo.", "en")).toBe(false);
+  });
 });

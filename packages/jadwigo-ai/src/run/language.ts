@@ -7,13 +7,24 @@ import type { Language } from "@jadwigo/contracts";
  * one written, so a short line, a name or a quoted title never trips it.
  *
  * The signals are function words, which every sentence carries and no name or title is made of,
- * and for Polish its letters with diacritics.
+ * and for Polish its letters with diacritics. Quoted spans ("...", „...", «...») are a lesson's
+ * own words, a title or a question, so they are left out first. A capitalised word is left out
+ * too: it is a name, or the first word of a sentence, and a name like Łucja says nothing about the
+ * language around it. And a lone word between punctuation is a list item, such as the words a
+ * lesson teaches ("is, are, was"), not prose: only runs of 2 words or more are read (dl-z5ja.64
+ * review).
  */
 export function inLanguage(text: string, language: Language): boolean {
-  const words = text.toLowerCase().match(/\p{L}+/gu) ?? [];
+  const unquoted = text.replace(QUOTED, " ");
+  const words = unquoted
+    .split(/[,;:.!?()[\]\n]+/u)
+    .map((run) => run.match(/\p{L}+/gu) ?? [])
+    .filter((run) => run.length >= 2)
+    .flat();
   let pl = 0;
   let en = 0;
   for (const word of words) {
+    if (/^\p{Lu}/u.test(word)) continue;
     if (POLISH.has(word) || DIACRITIC.test(word)) pl += 1;
     if (ENGLISH.has(word)) en += 1;
   }
@@ -26,29 +37,29 @@ const MIN_SIGNALS = 3;
 
 const DIACRITIC = /[ąćęłńóśźż]/u;
 
-/** Words only one of the 2 languages uses: `a`, `i`, `to`, `no` and `on` are in both, so in neither. */
+/** A quoted span: straight or curly double quotes, the Polish „...”, or guillemets. */
+const QUOTED = /"[^"]*"|„[^”"]*[”"]|“[^”]*”|«[^»]*»/gu;
+
+/**
+ * Words only one of the 2 languages uses: `a`, `i`, `to`, `no`, `on`, `do`, `ten`, `ale`, `ta`,
+ * `te` and `co` are English words too, so they are in neither.
+ */
 const POLISH = new Set([
   "jest",
   "są",
   "się",
   "nie",
   "że",
-  "do",
   "dla",
   "na",
   "w",
   "z",
   "ze",
   "czy",
-  "co",
   "jak",
-  "ten",
-  "ta",
-  "te",
   "już",
   "oraz",
   "lub",
-  "ale",
   "tak",
   "lekcja",
   "lekcji",
