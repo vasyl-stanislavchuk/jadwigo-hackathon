@@ -14,6 +14,7 @@ import { parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import { InMemoryStore } from "@jadwigo/store";
 import { FIXED_NOW } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
+import { fence } from "./fence/index.ts";
 import type { MuseClient, MuseRequest } from "./muse/client.ts";
 import { ScriptedMuse, type ScriptedReply } from "./muse/scripted.ts";
 import { InMemoryRunQueue } from "./queue/memory.ts";
@@ -634,7 +635,7 @@ describe("the engine keeps PostHog's production lessons", () => {
       await drain(t.deps);
 
       const instructions = t.muse.calls[0]?.instructions ?? "";
-      expect(instructions).toContain("learner page of Mole");
+      expect(instructions).toContain(fence("Mole", "parent"));
       expect(instructions).toContain(learner.id);
       const said = (await t.log(run)).find(
         (e) => e.type === "message" && e.payload.from === "parent",

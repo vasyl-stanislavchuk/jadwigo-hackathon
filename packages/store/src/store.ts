@@ -257,7 +257,7 @@ export interface OpenedAttempt {
  * `ERROR_STATUS` for a write the stored state refuses. `WriteOnce` also covers a unique key
  * another row holds (a learner's handle in its pod) and an id another pod holds; the other
  * pod's row is never returned. A read that finds nothing under the pod's scope is `NotFound`,
- * except the 2 lookups and `getLatestLessonVersion`, which return undefined.
+ * except the 2 lookups, `getLesson` and `getLatestLessonVersion`, which return undefined.
  *
  * A paused attempt refuses answers (`AttemptPaused`) but still allows `askQuestion`,
  * `releaseHelp` and `endAttemptQuestion`, as the database does: the server may finish its own
@@ -290,6 +290,12 @@ export interface Store extends RunStore {
   putPod(pod: NewPod): Promise<Pod>;
   putLearner(pod: PodId, learner: NewLearner): Promise<Learner>;
   putLesson(pod: PodId, lesson: NewLesson): Promise<Lesson>;
+  /**
+   * A lesson the pod holds, its draft answered as a published one is (dl-z5ja.119), or undefined
+   * for an id it does not hold. Another pod's lesson is undefined too, a claimed attempt's
+   * included: the `claimed_read` policy lets a pod read it, and this read is of its own.
+   */
+  getLesson(pod: PodId, id: LessonId): Promise<Lesson | undefined>;
   /**
    * Writes a lesson question once. The same id again with the same `content_hash` returns the
    * stored row; with another hash it is refused with `WriteOnce`.
