@@ -3973,6 +3973,34 @@
           "text": "Your mark {n}. Tap it again to remove it."
         }
       ]
+    },
+    {
+      "round": 10,
+      "issue": "dl-9t2o.11",
+      "lines": 1,
+      "verdicts": [
+        {
+          "id": "tutor_resting [category=adult]",
+          "verdict": "flag",
+          "text": "Practicing without voice today.",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "without voice",
+              "reason": "The phrase is vague and reads as if the learner has no voice, so the line does not say plainly and directly that the voice tutor is off for this lesson."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "owner_overrides": [
+    {
+      "id": "tutor_resting [category=adult]",
+      "text": "Practicing without voice today.",
+      "date": "2026-11-01",
+      "decision": "the owner chose this wording (US spelling of the line approved 2026-10-07) and approved it over the round-10 flag, to revisit with the rest of the copy later",
+      "issue": "dl-9t2o.11"
     }
   ]
 }

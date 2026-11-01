@@ -149,7 +149,7 @@
       "selectors": ["category"],
       "match": {
         "category=*": "Quiet practice today.",
-        "category=adult": "Practising without voice today."
+        "category=adult": "Practicing without voice today."
       }
     }
   ],
