@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Sent after this turn" |
+* | "Your message will be sent when the assistant finishes its reply." |
 *
 * @param {Chat_QueuedInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

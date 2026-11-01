@@ -256,6 +256,8 @@ function EnterPlay(props: PlayProps<F>): JSX.Element {
   }, [attemptNo]);
   // A ruler figure (dl-w3.51.4): the page holds where the child slid it; the key never knows.
   const rulerFigure = data.figure?.kind === "ruler" ? data.figure : null;
+  // The ruler's name and reading are the screens' words, under the lesson's lang (dl-uukj.43).
+  const rulerLang = useScreensLang(language);
   const [rulerZero, setRulerZero] = useState<number>(rulerFigure?.start ?? 0);
   const ruler: RulerControl | undefined = rulerFigure
     ? {
@@ -263,6 +265,7 @@ function EnterPlay(props: PlayProps<F>): JSX.Element {
         onMove: (zero) => {
           if (live) setRulerZero(zero);
         },
+        ...(rulerLang.lang === undefined ? {} : { lang: rulerLang.lang }),
         label: copy(language, "ruler_label"),
         valueText: copy(language, "ruler_at", {
           n: (rulerZero / rulerFigure.pixels_per_unit)

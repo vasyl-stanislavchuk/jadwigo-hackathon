@@ -11,7 +11,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 * | category | output |
 * | --- | --- |
 * | "adult" | "Skipped" |
-* | * | "We will come back to it" |
+* | * | "We will come back to it." |
 *
 * @param {Play_Ended_SkippedInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -21,7 +21,7 @@ export const play_ended_skipped = /** @type {((inputs: Play_Ended_SkippedInputs,
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") {
 		if (i?.category === "adult") return /** @type {LocalizedString} */ (`Skipped`);
-		return /** @type {LocalizedString} */ (`We will come back to it`)
+		return /** @type {LocalizedString} */ (`We will come back to it.`)
 	}
 	{
 		if (i?.category === "adult") return /** @type {LocalizedString} */ (`Pominięte`);

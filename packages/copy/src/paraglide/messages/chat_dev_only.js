@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "The chat page runs on the dev server only: start it with make dev." |
+* | "The chat page is not available here yet." |
 *
 * @param {Chat_Dev_OnlyInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const chat_dev_only = /** @type {((inputs?: Chat_Dev_OnlyInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Chat_Dev_OnlyInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("The chat page runs on the dev server only: start it with make dev.")
+	if (locale === "en") return /** @type {LocalizedString} */ ("The chat page is not available here yet.")
 	return /** @type {LocalizedString} */ ("Strona rozmowy działa tylko na serwerze deweloperskim: uruchom ją przez make dev.")
 });

@@ -4,7 +4,7 @@
 * | category | output |
 * | --- | --- |
 * | "adult" | "This lesson is finished. You can start it again." |
-* | * | "This lesson is finished. Thank you for practising!" |
+* | * | "This lesson is finished. Thank you for practicing!" |
 *
 * @param {Session_FinishedInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

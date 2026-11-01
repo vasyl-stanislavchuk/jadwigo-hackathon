@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Jadwigo is not affiliated with {source}" |
+* | "Jadwigo is not affiliated with {source}." |
 *
 * @param {Credit_Not_AffiliatedInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

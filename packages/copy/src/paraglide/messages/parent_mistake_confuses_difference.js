@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "The word difference used for another term" |
+* | "The word \"difference\" taken for another term" |
 *
 * @param {Parent_Mistake_Confuses_DifferenceInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const parent_mistake_confuses_difference = /** @type {((inputs?: Parent_Mistake_Confuses_DifferenceInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Parent_Mistake_Confuses_DifferenceInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("The word difference used for another term")
+	if (locale === "en") return /** @type {LocalizedString} */ ("The word \"difference\" taken for another term")
 	return /** @type {LocalizedString} */ ("Słowo różnica w miejscu innego")
 });

@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Have a go first. Then I can show you more." |
+* | "Try it first. Then I can show you more." |
 *
 * @param {Help_Try_FirstInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const help_try_first = /** @type {((inputs?: Help_Try_FirstInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Help_Try_FirstInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("Have a go first. Then I can show you more.")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Try it first. Then I can show you more.")
 	return /** @type {LocalizedString} */ ("Najpierw spróbuj. Potem pokażę ci więcej.")
 });

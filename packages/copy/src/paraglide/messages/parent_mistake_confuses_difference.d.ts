@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "The word difference used for another term" |
+* | "The word \"difference\" taken for another term" |
 *
 * @param {Parent_Mistake_Confuses_DifferenceInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
