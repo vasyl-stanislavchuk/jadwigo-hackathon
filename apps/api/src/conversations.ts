@@ -36,8 +36,18 @@ import { ApiError, badRequest } from "./errors.ts";
 
 /** What the message routes need besides the store. */
 export interface EngineRouteDeps {
-  /** Where a new step goes: pgmq's `agent_step` in AWS, sent as `jadwigo_api`. */
+  /**
+   * Where a new step goes. On Postgres, pgmq's `agent_step` joined to the request's unit, so the
+   * step commits with its run row (dl-z5ja.67); on InMemoryStore, a queue the route sends to after
+   * the unit.
+   */
   readonly queue: RunQueue;
+  /**
+   * Holds the pod's lock until the unit ends, so 2 messages of one pod are counted one after the
+   * other and cannot both pass a limit at 9. Postgres takes `pg_advisory_xact_lock`; in memory,
+   * where nothing runs at once inside a unit, it does nothing.
+   */
+  readonly lockPod: (pod: PodId) => Promise<void>;
   readonly now: () => Date;
 }
 
@@ -121,6 +131,7 @@ export async function postMessage(
   // One unit: the reads below, the write and the refusal. A refused message throws after
   // acceptMessage wrote, so on Postgres the unit rolls the row back and its held send is
   // dropped; nothing of it is kept (dl-z5ja.62, the steward's review of #464).
+  await deps.lockPod(pod);
   const since = windows(deps.now());
   const before = await store.messageUsage(pod, account, since);
   // NotFound for a conversation outside the pod, before anything is written.
