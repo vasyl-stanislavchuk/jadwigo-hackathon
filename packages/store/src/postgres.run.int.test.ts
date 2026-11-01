@@ -78,7 +78,7 @@ describe("PostgresStore as jadwigo_runner, the step consumer", () => {
     await api.addLearner(a.pod, { first_name: "Mole", goals: ["Tables of 2"] });
     await api.addLearner(b.pod, { first_name: "Wren", goals: [] });
     const me = await runner.getMe(a.pod, a.account);
-    expect(me.pod.id).toBe(a.pod);
+    expect(me.pod?.id).toBe(a.pod);
     expect(me.learners.map((l) => [l.learner.first_name, l.goals.map((g) => g.name)])).toEqual([
       ["Mole", ["Tables of 2"]],
     ]);
