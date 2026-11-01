@@ -476,8 +476,8 @@ export type BandState = "waiting" | "answered" | "miss" | "help" | "right" | "so
 export const BAND_STATES: readonly { id: BandState; title: string }[] = [
   { id: "waiting", title: "Waiting" },
   { id: "answered", title: "Answered, ready to check" },
-  { id: "miss", title: "A miss: “Pomóż mi” in the band" },
-  { id: "help", title: "After help: the yellow note, the plain footer" },
+  { id: "miss", title: "A miss: “Pomóż mi” and “Popraw” in the band" },
+  { id: "help", title: "Help on a miss: the yellow note, “Popraw” alone in the band" },
   { id: "right", title: "Right: Dalej in green" },
   { id: "solution", title: "The solution, after “Jeszcze nie wiem”" },
 ];

@@ -116,7 +116,8 @@ steward types the hand-back into it.
 4. `make check`, then run each "done when" check and keep its real output.
 5. Push, write the body with `/dev-pr` to a file, open a draft PR titled `<id>: <what>` with
    `gh pr create --draft --body-file <file>`, and push often. The steward leaves drafts alone.
-6. Ready: `gh pr ready`, then `gh pr merge --auto --squash`. Going ready is what starts the
+6. Ready, as soon as it is ready for review and its base is `main` ("Lanes and waves" says how a
+   stacked PR gets there): `gh pr ready`, then `gh pr merge --auto --squash`. Going ready is what starts the
    review: once `ci-ok` is green, md's merge steward runs fresh reviewers on the PR and posts
    `review-ok`, and GitHub merges it once both are green. The steward fixes only mechanical
    failures (a flaky job, a stale branch, format, a lockfile, generated files) and hands anything
@@ -141,9 +142,12 @@ Big changes ship as a wave: a lead plans it, and lanes build it in parallel.
   Issues carry `wave:<epic>-<n>` and `lane:<x>` labels, and a lane works `bd ready --label lane:<x>`.
 - **Step 0 is the lead's:** one PR with the plan, the contract changes and shared stubs. Lanes
   build against it and never edit a contract. A gap in a contract is a message to the lead.
-- **Step 0 lands before lane PRs face main.** A lane PR targets the step-0 branch, which GitHub
-  retargets to main once step 0 merges, or it stays a draft until then. Otherwise the steward
-  reviews step 0 again inside every lane PR (`dl-5ssh.67`).
+- **A PR targets `main`.** Stack it on another PR's branch only when it needs code that isn't on
+  `main` yet. A stacked PR doesn't wait as a draft for the PR below it: once it is ready for review,
+  `gh pr edit <n> --base main`, then `gh pr ready` and `gh pr merge --auto --squash`. The steward
+  reviews only PRs into `main`, and the ruleset guards `main` only, so a ready PR into any other
+  branch would merge unreviewed (`dl-5ssh.101`). Its review covers the PRs below it too, and
+  merging it lands them (`dl-03l2`).
 - **A stack updates by `git merge`, never by rebase.** The guard refuses force-push, so a rebased
   base strands every PR above it. The squash merge keeps main's history clean anyway (`dl-5ssh.67`).
 - **Every PR keeps an owner after its lane ends.** The wave plan names who takes the steward's
