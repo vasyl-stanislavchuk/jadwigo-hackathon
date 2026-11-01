@@ -13,6 +13,7 @@ import type { ChatItem } from "@jadwigo/core";
 import { type FormEvent, type ReactElement, useState } from "react";
 import { Button } from "../tool/button.tsx";
 import { isOpen, type Turn } from "./conversation.ts";
+import { toolResult } from "./widgets/Widgets.tsx";
 
 const TOOL_KEY: Record<VerbName, CopyKey> = {
   lesson_draft: "chat_tool_lesson_draft",
@@ -58,20 +59,33 @@ function ToolLine({ tool, language }: { tool: ToolItem; language: Language }): R
         ? copy(language, "chat_tool_running", {}, "adult")
         : tool.state === "pending"
           ? copy(language, "chat_tool_pending", {}, "adult")
-          : null;
+          : tool.state === "rejected"
+            ? copy(language, "chat_tool_rejected", {}, "adult")
+            : null;
+  const result = toolResult(tool, language);
   return (
     <li data-tool={tool.verb} data-state={tool.state}>
       {what}
       {how === null ? null : `: ${how}`}
+      {result !== null && (result.kind === "plain" || !result.keepVisible) && result.element}
     </li>
   );
 }
 
-/** Tool lines folded under one line; a stuck one stays in view under the fold. */
+/**
+ * Tool lines folded under one line; a stuck one stays in view under the fold, and so does each
+ * widget its registry entry keeps visible (dl-z5ja.24). The plain card stays inside the fold.
+ */
 function ToolGroup({ tools, language }: { tools: ToolItem[]; language: Language }): ReactElement {
   const stuck = tools.filter((t) => t.state === "failed");
   const latest = tools.at(-1);
   const head = latest === undefined ? "" : copy(language, TOOL_KEY[latest.verb], {}, "adult");
+  const shown = tools.flatMap((t) => {
+    const result = toolResult(t, language);
+    return result?.kind === "widget" && result.keepVisible
+      ? [{ call_id: t.call_id, element: result.element }]
+      : [];
+  });
   return (
     <div className="flex flex-col gap-1 text-sm">
       <details className="text-muted-foreground">
@@ -94,6 +108,9 @@ function ToolGroup({ tools, language }: { tools: ToolItem[]; language: Language 
           ))}
         </ul>
       )}
+      {shown.map((w) => (
+        <div key={w.call_id}>{w.element}</div>
+      ))}
     </div>
   );
 }
