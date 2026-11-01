@@ -50,9 +50,13 @@ export function supabaseLive(
         const jwt = await token();
         if (closed) return;
         if (jwt !== null) await client.realtime.setAuth(jwt);
+        // off() may have run during either await: then no channel is made at all.
+        if (closed) return;
         const joined = client.channel(topic, { config: { private: true } });
         channel = joined;
-        joined.on("broadcast", { event: "run_event" }, () => onPoke());
+        joined.on("broadcast", { event: "run_event" }, () => {
+          if (!closed) onPoke();
+        });
         joined.subscribe((status) => {
           if (status === "SUBSCRIBED") say(true);
           else if (status === "CHANNEL_ERROR" && !retried && !closed) {

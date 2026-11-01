@@ -35,7 +35,7 @@ function fakeClient(answers: Status[]) {
       return "ok";
     },
   };
-  return { client: client as never, log, pokes };
+  return { client: client as never, raw: client, log, pokes };
 }
 
 const flush = async () => {
@@ -104,5 +104,27 @@ describe("supabaseLive (dl-z5ja.65, dl-z5ja.92)", () => {
     expect(poked).toBe(1);
     off();
     expect(f.log.at(-1)).toBe("removeChannel");
+  });
+
+  it("an off() during the join makes no channel, so nothing keeps pulling", async () => {
+    const f = fakeClient(["SUBSCRIBED"]);
+    let releaseAuth: () => void = () => {};
+    f.raw.realtime.setAuth = (jwt: string) =>
+      new Promise<void>((resolve) => {
+        f.log.push(`setAuth ${jwt}`);
+        releaseAuth = resolve;
+      });
+    let poked = 0;
+    const live = supabaseLive(f.client, async () => "jwt");
+    const off = live.subscribe("run:run_a", () => {
+      poked += 1;
+    });
+    await flush();
+    expect(f.log).toEqual(["setAuth jwt"]);
+    off();
+    releaseAuth();
+    await flush();
+    expect(f.log.filter((l) => l.startsWith("channel") || l.startsWith("subscribe"))).toEqual([]);
+    expect(poked).toBe(0);
   });
 });
