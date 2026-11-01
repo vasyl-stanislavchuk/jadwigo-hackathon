@@ -55,9 +55,6 @@ describe("checkAnswer (dl-z5ja.26)", () => {
       { kind: "level", said: "opanowane" },
       { kind: "level", said: "Biegłe" },
     ]);
-    expect(checkAnswer("This skill is not started.", [DRAFT])).toEqual([
-      { kind: "level", said: "not started" },
-    ]);
   });
 
   it("refuses a status word no tool result gave, as a code or as the parent reads it", () => {
@@ -85,8 +82,23 @@ describe("checkAnswer (dl-z5ja.26)", () => {
     }
     expect(checkAnswer("The goal is on\nits  way.", gave)).toEqual([]);
     expect(checkAnswer("It is not\u00a0started.", gave)).toEqual([
-      { kind: "level", said: "not\u00a0started" },
+      { kind: "status", said: "not\u00a0started", code: "not_started" },
     ]);
+  });
+
+  it("passes not started in both languages only when a tool result gave not_started", () => {
+    const gave = [result(2, { goal: { status: "not_started" } })];
+    for (const said of [
+      "not started",
+      "not yet started",
+      "nie rozpoczęto",
+      "Jeszcze nie zaczęty",
+    ]) {
+      expect(checkAnswer(`This goal is ${said}.`, gave)).toEqual([]);
+      expect(checkAnswer(`This goal is ${said}.`, [DRAFT])).toEqual([
+        { kind: "status", said, code: "not_started" },
+      ]);
+    }
   });
 
   it("passes a status word a tool result gave, and the everyday word good", () => {

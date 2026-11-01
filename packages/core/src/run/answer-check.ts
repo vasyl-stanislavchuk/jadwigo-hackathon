@@ -13,10 +13,12 @@ import type { RunEvent } from "@jadwigo/contracts/run";
 
 /**
  * The closed vocabulary code assigns and the model may only repeat: a goal's `GoalProgress` and a
- * brief entry's `why` (`packages/contracts/src/records.ts`). `not_started` is a level name too, so
- * `LEVEL` refuses it in every form whatever a tool gave.
+ * brief entry's `why` (`packages/contracts/src/records.ts`). `not_started` is a level name too:
+ * it passes only when a tool result of the turn gave the code, as a goal's status (lead's call on
+ * `dl-z5ja.26`), and is refused otherwise like every level name.
  */
 export type StatusWord =
+  | "not_started"
   | "needs_attention"
   | "on_its_way"
   | "good"
@@ -42,6 +44,12 @@ export type AnswerMiss =
  * matches only as "going well" and "idzie dobrze": the bare word is everyday English.
  */
 const STATUS: readonly [StatusWord, RegExp][] = [
+  [
+    "not_started",
+    words(
+      String.raw`not[\s_-]+(?:yet[\s_-]+)?started|nie\s*rozpocz\p{L}*|nierozpocz\p{L}*|jeszcze\s+nie\s+zacz\p{L}*`,
+    ),
+  ],
   ["needs_attention", words(String.raw`needs?[\s_-]+attention|potrzebuj\p{L}*\s+uwagi`)],
   ["on_its_way", words(String.raw`on[\s_-]+its[\s_-]+way|w\s+drodze`)],
   ["good", words(String.raw`going\s+well|idzie\s+dobrze`)],
@@ -54,14 +62,20 @@ const STATUS: readonly [StatusWord, RegExp][] = [
 /**
  * The level names (`MasteryLevel`) and their Polish forms, any case. A mirror of `LEVEL` in
  * `apps/api/src/narrative.ts` and `apps/cli/evals/report/narrative_check.py`: a widened stem goes
- * into all 3 (`dl-e8ov.5.64`). Here `not started` takes any whitespace run, as the status words do;
- * the other 2 still take one character (noted on `dl-e8ov.5.64`).
+ * into all 3 (`dl-e8ov.5.64`). Here `not started` and its Polish forms are not in it: they are
+ * the status word `not_started` above, which a tool result may give (lead's call on `dl-z5ja.26`).
+ * The other 2 still refuse them always.
  */
 const LEVEL = words(
-  String.raw`mastered|proficient|proficiency|familiar|attempted|not[\s_-]+started|opanow\p{L}*|biegł\p{L}*|biegl\p{L}*|zaznajom\p{L}*|nie\s*rozpocz\p{L}*|nierozpocz\p{L}*|podję\p{L}*\s+prób\p{L}*|podjet\p{L}*\s+prob\p{L}*|próbowan\p{L}*`,
+  String.raw`mastered|proficient|proficiency|familiar|attempted|opanow\p{L}*|biegł\p{L}*|biegl\p{L}*|zaznajom\p{L}*|podję\p{L}*\s+prób\p{L}*|podjet\p{L}*\s+prob\p{L}*|próbowan\p{L}*`,
 );
 
-/** A number: digits, with a decimal point or a Polish decimal comma. */
+/**
+ * A number: digits, with a decimal point or a Polish decimal comma. Known and accepted for now
+ * (steward's notes on PR #454): a comma always reads as a decimal, so "1,000" is 1 and "3,12" is
+ * 3.12; a sign is dropped, so "-3" is 3; and digit runs inside an id or an ISO timestamp a tool
+ * gave count as given, so a message may repeat any of them.
+ */
 const NUMBER = /\d+(?:[.,]\d+)?/g;
 
 function words(alternatives: string): RegExp {
