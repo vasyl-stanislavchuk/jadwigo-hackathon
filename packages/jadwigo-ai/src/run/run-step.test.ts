@@ -131,6 +131,7 @@ class RunMemoryStore extends InMemoryStore {
       ...c,
       pod_id: pod,
       created_at: this.clock().toISOString(),
+      archived_at: null,
     };
     this.conversations.set(c.id, row);
     return Promise.resolve(row);

@@ -1,5 +1,11 @@
 import { EventId, ID_PREFIXES, idOf, PodId, Uuid } from "@jadwigo/contracts";
-import { ConversationId, type NewRunEvent, RunId, RunInbox } from "@jadwigo/contracts/run";
+import {
+  type Conversation,
+  ConversationId,
+  type NewRunEvent,
+  RunId,
+  RunInbox,
+} from "@jadwigo/contracts/run";
 import { describe, expect, it } from "vitest";
 import type { NewRun } from "./run.ts";
 import type { Store } from "./store.ts";
@@ -376,6 +382,89 @@ export function runContract(name: string, make: () => Promise<Store> | Store): v
       expect(racers[2]).toEqual(racers[0]);
       expect(await store.listRuns(a.pod, id)).toEqual([]);
     });
+
+    // dl-z5ja.104, decision dl-84wo: a parent's delete archives; nothing is deleted.
+    frozen(
+      "lists a pod's live conversations newest first, the archived left out unless asked for",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const b = await scope(store);
+        const made: Conversation[] = [];
+        for (const title of ["First", "Second", "Third"])
+          made.push(
+            await store.createConversation(a.pod, {
+              id: conversationId(),
+              created_by: a.account,
+              title,
+            }),
+          );
+        await store.createConversation(b.pod, {
+          id: conversationId(),
+          created_by: b.account,
+          title: "Another family's",
+        });
+        expect(made.every((c) => c.archived_at === null)).toBe(true);
+
+        const live = await store.listConversations(a.pod);
+        expect(new Set(live.map((c) => c.id))).toEqual(new Set(made.map((c) => c.id)));
+        const times = live.map((c) => c.created_at);
+        expect(times).toEqual([...times].sort().reverse());
+
+        const second = made[1] as Conversation;
+        const at = "2026-09-01T08:00:00.000Z";
+        const archived = await store.archiveConversation(a.pod, second.id, at);
+        expect(archived).toEqual({ ...second, archived_at: at });
+        expect((await store.listConversations(a.pod)).map((c) => c.id)).not.toContain(second.id);
+        const all = await store.listConversations(a.pod, { includeArchived: true });
+        expect(all.map((c) => c.id)).toContain(second.id);
+        expect(await store.getConversation(a.pod, second.id)).toEqual(archived);
+        // Kept for the pod: its runs still read.
+        expect(await store.listRuns(a.pod, second.id)).toEqual([]);
+        expect((await store.listConversations(b.pod)).map((c) => c.title)).toEqual([
+          "Another family's",
+        ]);
+      },
+    );
+
+    frozen("archives once: a 2nd archive keeps the first time", async () => {
+      const store = await make();
+      const a = await scope(store);
+      const conversation = await store.createConversation(a.pod, {
+        id: conversationId(),
+        created_by: a.account,
+        title: null,
+      });
+      const first = await store.archiveConversation(a.pod, conversation.id, "2026-09-01T08:00:00Z");
+      const again = await store.archiveConversation(a.pod, conversation.id, "2026-09-02T08:00:00Z");
+      expect(again).toEqual(first);
+      expect(again.archived_at).toBe("2026-09-01T08:00:00.000Z");
+    });
+
+    frozen(
+      "reads and archives another pod's conversation as NotFound, changing nothing",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const b = await scope(store);
+        const conversation = await store.createConversation(a.pod, {
+          id: conversationId(),
+          created_by: a.account,
+          title: null,
+        });
+        const at = "2026-09-01T08:00:00.000Z";
+        await expect(store.getConversation(b.pod, conversation.id)).rejects.toMatchObject(
+          NOT_FOUND,
+        );
+        await expect(store.archiveConversation(b.pod, conversation.id, at)).rejects.toMatchObject(
+          NOT_FOUND,
+        );
+        await expect(store.archiveConversation(a.pod, conversationId(), at)).rejects.toMatchObject(
+          NOT_FOUND,
+        );
+        expect((await store.getConversation(a.pod, conversation.id)).archived_at).toBeNull();
+      },
+    );
   });
 }
 
