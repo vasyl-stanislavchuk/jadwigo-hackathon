@@ -826,5 +826,13 @@
   "chat_edit_step": "Zmień ten krok",
   "chat_edit_prompt": "Co zmienić w tym kroku i dlaczego?",
   "chat_edit_send": "Wyślij zmianę",
-  "chat_edit_cancel": "Anuluj"
+  "chat_edit_cancel": "Anuluj",
+  "chat_list_title": "Rozmowy",
+  "chat_list_empty": "Nie masz jeszcze żadnej rozmowy.",
+  "chat_list_failed": "Nie udało się wczytać rozmów. Odśwież stronę.",
+  "chat_list_untitled": "Rozmowa bez tytułu",
+  "chat_list_archive": "Archiwizuj",
+  "chat_list_archive_confirm": "Rozmowa zniknie z listy. Zostanie zachowana przy koncie rodziny i usunięta razem z nim.",
+  "chat_list_archive_yes": "Tak, archiwizuj",
+  "chat_list_archive_failed": "Nie udało się zarchiwizować rozmowy. Spróbuj jeszcze raz."
 }

@@ -585,5 +585,13 @@
   "chat_edit_step": true,
   "chat_edit_prompt": true,
   "chat_edit_send": true,
-  "chat_edit_cancel": true
+  "chat_edit_cancel": true,
+  "chat_list_title": false,
+  "chat_list_empty": false,
+  "chat_list_failed": false,
+  "chat_list_untitled": false,
+  "chat_list_archive": false,
+  "chat_list_archive_confirm": false,
+  "chat_list_archive_yes": false,
+  "chat_list_archive_failed": false
 }

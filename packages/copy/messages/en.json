@@ -806,5 +806,13 @@
   "chat_edit_step": "Change this step",
   "chat_edit_prompt": "What should change in this step, and why?",
   "chat_edit_send": "Send the change",
-  "chat_edit_cancel": "Cancel"
+  "chat_edit_cancel": "Cancel",
+  "chat_list_title": "Conversations",
+  "chat_list_empty": "You have no conversations yet.",
+  "chat_list_failed": "Your conversations didn't load. Reload the page.",
+  "chat_list_untitled": "Untitled conversation",
+  "chat_list_archive": "Archive",
+  "chat_list_archive_confirm": "The conversation leaves the list. It is kept with your family's account and deleted along with it.",
+  "chat_list_archive_yes": "Yes, archive",
+  "chat_list_archive_failed": "The conversation wasn't archived. Try again."
 }
