@@ -87,6 +87,8 @@ def offline(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setattr(probe, "RAW_DIR", tmp_path / "raw")
     monkeypatch.setenv(muse.SHARED_LOG_ENV, str(tmp_path / "shared"))
     monkeypatch.delenv(probe.CANDIDATES_ENV, raising=False)
+    # Lane agents export a cap: no test may inherit one.
+    monkeypatch.delenv(muse.LANE_CAP_ENV, raising=False)
     key_file = tmp_path / "muse.env"
     key_file.write_text(f"export META_API_KEY='{KEY}'\n", encoding="utf-8")
     monkeypatch.setattr(muse, "KEY_FILE", key_file)
@@ -109,7 +111,7 @@ def test_a_run_covers_the_4_probes_through_the_ledger_and_writes_the_note(
     monkeypatch.setattr(probe, "http_transport", lambda key: (lambda *a: fake_answer(*a)))
     note = offline / "note.md"
 
-    assert probe.main(["--note", str(note)]) == 0
+    assert probe.main(["--live", "--note", str(note)]) == 0
 
     text = note.read_text(encoding="utf-8")
     works = {(m, n) for m, n in re.findall(r"\| (.+?) \| `(.+?)` \| works \|", text)}
@@ -133,9 +135,16 @@ def test_a_run_covers_the_4_probes_through_the_ledger_and_writes_the_note(
         rows = _ledger(directory)
         assert len(rows) == 8
         assert all(r["tag"].startswith("probe:") for r in rows)
-        assert {r["priced"] for r in rows} == {True, False}
-    image_row = next(r for r in _ledger(offline / "own") if r["tag"].startswith("probe:image-muse-spark-1-3-c"))
+        assert {r["priced"] for r in rows} == {"list", "placeholder"}
+    own = _ledger(offline / "own")
+    image_row = next(r for r in own if r["tag"].startswith("probe:image-muse-spark-1-3-c"))
     assert image_row["usage"]["usd"] == round((900 * 0.10 + 20 * 0.20) / 1e6, 6)
+    # The candidate is unpriced in jw.muse: charged at the contributor's price times 2, so the
+    # cap counts it.
+    schema_row = next(r for r in own if r["tag"] == "probe:schema-muse-spark-1-3")
+    assert schema_row["priced"] == "placeholder"
+    assert schema_row["usage"]["usd"] == round(2 * (80 * 0.10 + 30 * 0.20) / 1e6, 6)
+    assert "(unpriced, placeholder)" in text
 
     # The key went nowhere but the header.
     for path in [note, *offline.rglob("*.json*")]:
@@ -147,12 +156,12 @@ def test_it_refuses_without_a_small_cap_or_a_key(
 ) -> None:
     called: list[Any] = []
     monkeypatch.setattr(probe, "http_transport", lambda key: called.append(key))
-    assert probe.main(["--note", str(offline / "n.md")]) == 2
+    assert probe.main(["--live", "--note", str(offline / "n.md")]) == 2
     monkeypatch.setenv(muse.LANE_CAP_ENV, "25")
-    assert probe.main(["--note", str(offline / "n.md")]) == 2
+    assert probe.main(["--live", "--note", str(offline / "n.md")]) == 2
     monkeypatch.setenv(muse.LANE_CAP_ENV, "0.5")
     (offline / "muse.env").write_text("", encoding="utf-8")
-    assert probe.main(["--note", str(offline / "n.md")]) == 2
+    assert probe.main(["--live", "--note", str(offline / "n.md")]) == 2
     assert called == [] and not (offline / "n.md").exists()
     assert KEY not in capsys.readouterr().err
 
@@ -165,9 +174,64 @@ def test_the_budget_stops_the_probe_before_a_call(offline: Path, monkeypatch: py
     )
     sent: list[Any] = []
     monkeypatch.setattr(probe, "http_transport", lambda key: (lambda *a: sent.append(a) or fake_answer(*a)))
-    with pytest.raises(muse.BudgetExceeded):
-        probe.main(["--note", str(offline / "n.md")])
+    note = offline / "n.md"
+    assert probe.main(["--live", "--note", str(note)]) == 1
     assert [a[0] for a in sent] == ["GET"]  # the free models list only
+    # The stop still writes the note and the raw file.
+    assert "**Stopped early:** lane probe has spent" in note.read_text(encoding="utf-8")
+    (raw,) = (offline / "raw").glob("*.json")
+    assert "lane probe has spent" in json.loads(raw.read_text(encoding="utf-8"))["stopped"]
+
+
+def test_a_stop_mid_run_writes_what_was_paid_for(offline: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(muse.LANE_CAP_ENV, "0.5")
+    sent: list[Any] = []
+
+    def flaky(*a: Any) -> Any:
+        sent.append(a)
+        if len(sent) == 4:  # the tools probe's first turn on the contributor
+            raise ConnectionResetError("the link dropped")
+        return fake_answer(*a)
+
+    monkeypatch.setattr(probe, "http_transport", lambda key: flaky)
+    note = offline / "n.md"
+    assert probe.main(["--live", "--note", str(note)]) == 1
+    text = note.read_text(encoding="utf-8")
+    assert "**Stopped early:** ConnectionResetError: the link dropped" in text
+    assert "| image input | `muse-spark-1.3-contributor` | works |" in text
+    assert len(_ledger(offline / "own")) == 2  # the 2 POSTs that answered
+    (raw,) = (offline / "raw").glob("*.json")
+    assert len(json.loads(raw.read_text(encoding="utf-8"))["calls"]) == 2
+
+
+def test_a_plan_over_the_call_limit_is_refused_before_anything_is_sent(
+    offline: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv(muse.LANE_CAP_ENV, "0.5")
+    sent: list[Any] = []
+    monkeypatch.setattr(probe, "http_transport", lambda key: (lambda *a: sent.append(a) or fake_answer(*a)))
+    # 1 GET + 4 x 3 models = 13 calls, over 12.
+    monkeypatch.setenv(probe.CANDIDATES_ENV, "muse-a,muse-b")
+    assert probe.main(["--live", "--note", str(offline / "n.md")]) == 2
+    assert "needs 13 calls" in capsys.readouterr().err
+    assert sent == [] and not (offline / "n.md").exists()
+    # 2 models fit: 9 calls.
+    monkeypatch.setenv(probe.CANDIDATES_ENV, "muse-a")
+    assert probe.main(["--live", "--note", str(offline / "n.md")]) == 0
+    assert len(sent) == 9
+
+
+def test_without_live_it_only_prints_the_plan(
+    offline: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv(muse.LANE_CAP_ENV, "1")  # a cap and a key are not consent to spend
+    called: list[Any] = []
+    monkeypatch.setattr(probe, "http_transport", lambda key: called.append(key))
+    assert probe.main(["--note", str(offline / "n.md")]) == 0
+    out = capsys.readouterr().out
+    assert "Dry run, nothing sent" in out and "9 calls" in out and "key file present" in out
+    assert KEY not in out
+    assert called == [] and not (offline / "n.md").exists() and not (offline / "own").exists()
 
 
 def test_the_replay_file_runs_the_script_with_no_network_and_no_ledger(offline: Path) -> None:
@@ -194,7 +258,8 @@ def test_the_replay_file_is_what_the_fake_answers(offline: Path) -> None:
         answers.append({k: v for k, v in vars(ans).items() if v not in (None, [], "", 0.0)})
         return ans
 
-    probe.run(record, ledger=False)
+    _, stopped = probe.run(record, ledger=False)
+    assert stopped is None
     # Compared as JSON: Biome formats the file.
     if json.loads(REPLAY.read_text(encoding="utf-8")) != {"answers": answers}:
         pytest.fail(f"{REPLAY} is stale: rewrite it from fake_answer")

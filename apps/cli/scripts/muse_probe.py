@@ -3,8 +3,12 @@
 The owner runs it; it spends. No agent runs it live: an agent proves it with `--replay` or the
 test (tests/test_muse_probe.py), neither of which reaches the network.
 
-    cd apps/cli && JADWIGO_MUSE_CAP_USD=0.50 uv run --frozen python scripts/muse_probe.py
-    cd apps/cli && uv run --frozen python scripts/muse_probe.py --replay FILE   # no network, no spend
+    cd apps/cli && JADWIGO_MUSE_CAP_USD=0.50 uv run --frozen python scripts/muse_probe.py --live
+    cd apps/cli && uv run --frozen python scripts/muse_probe.py                  # the plan only
+    cd apps/cli && uv run --frozen python scripts/muse_probe.py --replay FILE    # no network, no spend
+
+Without `--live` it never reaches the network: lane agents hold the key file and often export a
+cap, so a cap and a key are not consent to spend (as `scripts/smoke_ready.py --live`).
 
 It runs 4 probes, each on every model it tries:
 
@@ -25,8 +29,12 @@ What it keeps to:
   in a request header: never on argv, in a log, in the note or in an error.
 - **The cap** is JADWIGO_MUSE_CAP_USD, read by `jw.muse`. The script refuses to start without it
   or above $2, checks the lane's spend before every call (`jw.muse.check_budget`) and writes one
-  ledger row per call (`jw.muse._log`, lane `probe`). It stops after 12 calls. A model jw.muse has
-  no price for is logged with its tokens and $0, and the note says it is unpriced.
+  ledger row per call (`jw.muse._log`, lane `probe`). It refuses to start when the plan needs more
+  than 12 calls (1 + 4 per model). A model jw.muse has no price for is priced at a placeholder,
+  the contributor's price times 2, so the cap still counts it; the note marks it "unpriced,
+  placeholder".
+- **Any stop still writes.** A refused budget, the call limit or a transport error ends the run,
+  and the note and the raw file are written with what ran, so nothing paid goes unrecorded.
 - **Every prompt passes `jw.pii.guard`**, though none carries a name, and answers pass `restore`.
 
 The note goes to docs/research/muse-responses-probe.md (or `--note PATH`) in the shape
@@ -66,6 +74,9 @@ NOTE = REPO_ROOT / "docs" / "research" / "muse-responses-probe.md"
 RAW_DIR = APP_ROOT / "logs" / "probe"
 EFFORT = "low"
 MAX_CALLS = 12
+CALLS_PER_MODEL = 4  # image, schema, and the 2 turns of the tools probe
+# A model jw.muse has no price for is charged at this multiple of the contributor's price.
+PLACEHOLDER_FACTOR = 2
 MAX_CAP_USD = 2.0
 MAX_OUTPUT_TOKENS = 1500
 LANE = "probe"
@@ -316,31 +327,48 @@ class Probe:
     answer: str = ""
     seconds: float = 0.0
     usd: float = 0.0
-    priced: bool = True
+    placeholder: bool = False
     tokens: dict[str, int] = field(default_factory=dict)
     events: list[str] = field(default_factory=list)
 
 
+class Stop(Exception):
+    """The run stopped before its plan ended; what ran is still written."""
+
+
+def calls_needed(models: list[str]) -> int:
+    return 1 + CALLS_PER_MODEL * len(models)
+
+
 class Prober:
-    """Runs the calls: the budget before each, a ledger row after each, at most MAX_CALLS."""
+    """Runs the calls: the budget before each, a ledger row after each, at most MAX_CALLS.
+
+    `probes` holds every probe that made a call, a stopped one included, for the note.
+    """
 
     def __init__(self, transport: Transport, *, ledger: bool) -> None:
         self.transport = transport
         self.ledger = ledger
         self.calls = 0
         self.raw: list[dict[str, Any]] = []
+        self.probes: list[Probe] = []
+        self.models = "(not asked)"
 
     def call(self, tag: str, model: str, body: dict[str, Any], probe: Probe) -> Answer:
-        self.calls += 1
-        if self.calls > MAX_CALLS:
-            raise SystemExit(f"stopped: more than {MAX_CALLS} calls")
+        if self.calls + 1 > MAX_CALLS:
+            raise Stop(f"stopped: the plan reached {MAX_CALLS} calls")
         muse.check_budget(tag)
+        self.calls += 1
+        if not any(x is probe for x in self.probes):
+            self.probes.append(probe)
         answer = self.transport("POST", "/responses", body)
         usage = completed(answer.events).get("usage") or {}
+        placeholder = model not in muse.PRICES
         priced = muse._priced(
             [
                 {
-                    "model": model,
+                    # An unpriced model is priced as the contributor, then times the factor.
+                    "model": CONTRIBUTOR if placeholder else model,
                     "input_tokens": usage.get("input_tokens"),
                     "cached_tokens": (usage.get("input_tokens_details") or {}).get("cached_tokens"),
                     "output_tokens": usage.get("output_tokens"),
@@ -350,6 +378,8 @@ class Prober:
                 }
             ]
         )
+        if placeholder:
+            priced["usd"] = round(priced["usd"] * PLACEHOLDER_FACTOR, 6)
         terminal = terminal_of(answer)
         if self.ledger:
             muse._log(
@@ -363,14 +393,14 @@ class Prober:
                     "seconds": round(answer.seconds, 1),
                     "usage": priced,
                     "route": "direct",
-                    "priced": model in muse.PRICES,
+                    "priced": "placeholder" if placeholder else "list",
                 }
             )
         probe.status = answer.status
         probe.terminal = terminal
         probe.seconds += answer.seconds
         probe.usd = round(probe.usd + priced["usd"], 6)
-        probe.priced = probe.priced and model in muse.PRICES
+        probe.placeholder = probe.placeholder or placeholder
         for k in ("input_tokens", "cached_tokens", "output_tokens"):
             probe.tokens[k] = probe.tokens.get(k, 0) + int(priced[k])
         probe.events = sorted({str(e.get("type")) for e in answer.events} | set(probe.events))
@@ -480,14 +510,15 @@ def shape(body: dict[str, Any]) -> dict[str, Any]:
     return cut(body)
 
 
-def probe_models(p: Prober) -> str:
+def probe_models(p: Prober) -> None:
     """GET /v1/models: free, and the only place the API could list a tier."""
     p.calls += 1
     answer = p.transport("GET", "/models", None)
     if answer.error or (answer.status or 0) >= 400:
-        return f"{answer.status}: {answer.error[:200]}"
+        p.models = f"{answer.status}: {answer.error[:200]}"
+        return
     ids = [m.get("id") for m in (answer.body or {}).get("data") or [] if isinstance(m, dict)]
-    return f"{answer.status}: {', '.join(str(i) for i in ids) or '(no models listed)'}"
+    p.models = f"{answer.status}: {', '.join(str(i) for i in ids) or '(no models listed)'}"
 
 
 # ---------------------------------------------------------------- the note ---
@@ -499,18 +530,31 @@ def candidates() -> list[str]:
     return [n for n in dict.fromkeys(names) if n != CONTRIBUTOR]
 
 
-def run(transport: Transport, *, ledger: bool) -> tuple[list[Probe], str, list[dict[str, Any]]]:
+def plan() -> list[str]:
+    return [CONTRIBUTOR, *candidates()]
+
+
+def run(transport: Transport, *, ledger: bool) -> tuple[Prober, str | None]:
+    """Every probe on every model, in order. A stop (the budget, the call limit, a transport
+    error) ends the run early; the Prober still holds what ran, and the reason comes back."""
     p = Prober(transport, ledger=ledger)
-    probes: list[Probe] = []
-    models = probe_models(p)
-    for model in [CONTRIBUTOR, *candidates()]:
-        probes += [probe_image(p, model), probe_schema(p, model), probe_tools(p, model)]
-    return probes, models, p.raw
+    try:
+        probe_models(p)
+        for model in plan():
+            for each in (probe_image, probe_schema, probe_tools):
+                each(p, model)
+    except (Stop, muse.BudgetExceeded) as e:
+        return p, str(e)
+    except Exception as e:  # noqa: BLE001 - anything else still writes what ran
+        return p, f"{type(e).__name__}: {e}"
+    return p, None
 
 
-def note(probes: list[Probe], models: str, at: str, replayed: bool) -> str:
+def note(
+    probes: list[Probe], models: str, at: str, replayed: bool, stopped: str | None = None
+) -> str:
     def usd(pr: Probe) -> str:
-        return f"${pr.usd:.6f}" if pr.priced else "unpriced"
+        return f"${pr.usd:.6f}" + (" (unpriced, placeholder)" if pr.placeholder else "")
 
     def works(pr: Probe) -> str:
         if pr.works:
@@ -576,7 +620,9 @@ Issue: `dl-z5ja.3`
 at effort `{EFFORT}`, streamed, `store: false`, through `jw.pii.guard` and the `jw.muse` ledger
 and budget. The image is a worksheet the script draws (2 sums in a pixel font), never a photo.
 `GET /v1/models` answered: {models}.
-
+A model jw.muse has no price for is charged at the contributor's price times {PLACEHOLDER_FACTOR}, so the
+lane cap counts it; its USD is marked "unpriced, placeholder".
+{f"{chr(10)}**Stopped early:** {stopped}. The table holds what ran before the stop.{chr(10)}" if stopped else ""}
 | Probe | Model | Result | HTTP | Latency | USD | Tokens in / out |
 | --- | --- | --- | --- | --- | --- | --- |
 {rows}
@@ -605,10 +651,23 @@ model and the terms that say so here (link and date), then dl-z5ja.48 and dl-z5j
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n", 1)[0])
-    parser.add_argument("--replay", type=Path, help="a recorded answers file: no network, no spend")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--live", action="store_true", help="call the API and spend, up to the cap")
+    mode.add_argument("--replay", type=Path, help="a recorded answers file: no network, no spend")
     parser.add_argument("--note", type=Path, default=NOTE, help="where the results note goes")
     args = parser.parse_args(argv)
     at = dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
+    models = plan()
+    needed = calls_needed(models)
+    if needed > MAX_CALLS:
+        print(f"The plan needs {needed} calls (1 + {CALLS_PER_MODEL} x {len(models)} models), more "
+              f"than {MAX_CALLS}: name fewer models in {CANDIDATES_ENV}.", file=sys.stderr)
+        return 2
+    if not args.live and not args.replay:
+        print(f"Dry run, nothing sent. With --live: {needed} calls on {', '.join(models)}, "
+              f"cap {muse.LANE_CAP_ENV}={muse.lane_cap()}, key file "
+              f"{'present' if muse.api_key() else 'missing'}, note to {args.note}.")
+        return 0
     if args.replay:
         transport, ledger = replay_transport(args.replay), False
     else:
@@ -623,17 +682,21 @@ def main(argv: list[str] | None = None) -> int:
                   file=sys.stderr)
             return 2
         transport, ledger = http_transport(key), True
-    probes, models, raw = run(transport, ledger=ledger)
+    p, stopped = run(transport, ledger=ledger)
     args.note.parent.mkdir(parents=True, exist_ok=True)
-    args.note.write_text(note(probes, models, at, bool(args.replay)), encoding="utf-8")
+    args.note.write_text(note(p.probes, p.models, at, bool(args.replay), stopped), encoding="utf-8")
     if not args.replay:
         RAW_DIR.mkdir(parents=True, exist_ok=True)
         (RAW_DIR / f"{at.replace(':', '')}.json").write_text(
-            json.dumps(raw, indent=1, ensure_ascii=False), encoding="utf-8")
-    for pr in probes:
+            json.dumps({"stopped": stopped, "calls": p.raw}, indent=1, ensure_ascii=False),
+            encoding="utf-8")
+    for pr in p.probes:
         print(f"{pr.model:32} {pr.name:36} {'works' if pr.works else pr.terminal:24} "
-              f"{pr.seconds:5.1f}s {('$%.6f' % pr.usd) if pr.priced else 'unpriced'}")
+              f"{pr.seconds:5.1f}s ${pr.usd:.6f}{' placeholder' if pr.placeholder else ''}")
     print(f"note: {args.note}")
+    if stopped:
+        print(f"stopped early: {stopped}", file=sys.stderr)
+        return 1
     return 0
 
 
