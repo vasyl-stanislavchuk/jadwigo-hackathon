@@ -1,3 +1,4 @@
+import { toolViewData } from "@jadwigo/contracts";
 import { ToolView } from "@jadwigo/contracts/run";
 import { describe, expect, it } from "vitest";
 import { contextFor, runId } from "../testing/context.ts";
@@ -75,5 +76,20 @@ describe("each verb's view", () => {
     expect(view.kind).toBe("question_search");
     expect(view.data).toEqual({ sets: effect.output["sets"] });
     expect((view.data["sets"] as unknown[]).length).toBeGreaterThan(0);
+  });
+
+  it("every view parses as its verb's schema in the contracts (dl-z5ja.71)", async () => {
+    const { verbs, run, effect, revision } = await drafted();
+    const context = contextFor(run, "call_2", revision);
+    const views = [
+      effect.view,
+      (await verbs.lesson_show.run(context, { draft_id: run })).view,
+      (await verbs.lesson_check.run(context, { draft_id: run, names: [], help: {} })).view,
+      (await verbs.question_search.run(context, { grade: "1", words: "dodawanie" })).view,
+    ];
+    for (const view of views) {
+      const parsed = ToolView.parse(view);
+      expect(toolViewData(parsed.kind, parsed.data), parsed.kind).not.toBeNull();
+    }
   });
 });
