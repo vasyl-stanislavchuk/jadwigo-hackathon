@@ -618,31 +618,6 @@ export function conversationSuite(
       expect(await q.stepsFor(run.id)).toBe(1);
     });
 
-    // Step 0 of wave 5 (dl-z5ja.11.1): the contract takes photos before the API does, so a
-    // message with photos is refused whole until dl-z5ja.11.3, never kept without them.
-    it("refuses a message with photos until they are taken, and the photo routes answer 404", async () => {
-      const a = await parent();
-      const conversation = await a.conversation();
-      const photo = "atch_6et2fhbnwvb45aw9atcfzs33za";
-      const sent = await a.call<ErrorEnvelope>(
-        "POST",
-        pathOf("postMessage", { id: conversation.id }),
-        { event_id: event(), text: "", attachment_ids: [photo] },
-      );
-      expect(sent.status).toBe(409);
-      expect(sent.body.error.type).toBe("AttachmentMismatch");
-      expect(await s.store.listRuns(a.pod, conversation.id)).toHaveLength(0);
-      const created = await a.call<ErrorEnvelope>("POST", pathOf("createAttachment", {}), {
-        event_id: event(),
-        media_type: "image/jpeg",
-        bytes: 1000,
-        width: 10,
-        height: 10,
-      });
-      expect(created.status).toBe(404);
-      expect((await a.call("GET", pathOf("getAttachment", { id: photo }))).status).toBe(404);
-    });
-
     it("answers 404 NotFound to archiving another pod's conversation, and leaves it live", async () => {
       const a = await parent();
       const b = await parent();

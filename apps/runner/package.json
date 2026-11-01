@@ -7,6 +7,7 @@
     "lint": "biome check .",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --config ../../vitest.config.ts --project unit",
+    "test:int": "vitest run --config ../../vitest.config.ts --project integration",
     "probe": "bun src/probe-cli.ts",
     "smoke": "bun src/smoke.ts"
   },
@@ -20,7 +21,7 @@
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "@types/pg": "types for pg",
     "typescript": "tsc for this package's typecheck script",
-    "vitest": "runs the host's unit test with the root vitest.config.ts",
+    "vitest": "runs the host's unit and integration tests with the root vitest.config.ts",
     "@jadwigo/testing": "FIXED_NOW, the pinned clock of the host's unit test"
   },
   "dependencies": {
