@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ChooseForm, RunEvent, RunInbox } from "./run.ts";
+import { ConversationMessage } from "./wire.ts";
 
 /** Run contract v2 (dl-z5ja.50): the model tier on every model call, and the UX seams' shapes. */
 
@@ -90,6 +91,28 @@ describe("the UX seams", () => {
     ];
     expect(parses("plan", { entries })).toBe(true);
     expect(parses("plan", { entries: [{ text: "Find questions", status: "maybe" }] })).toBe(false);
+  });
+});
+
+describe("a message's page rides on a message only (dl-z5ja.107, dl-z5ja.117)", () => {
+  it("parses a context on a message, and refuses it on a steer", () => {
+    const base = { event_id: BASE.event_id, text: "x" };
+    const context = { learner_id: "lrn_6et2fhbnwvb45aw9atcfzs33za" };
+    expect(ConversationMessage.safeParse({ ...base, context }).success).toBe(true);
+    expect(ConversationMessage.safeParse({ ...base, kind: "message", context }).success).toBe(true);
+    const steer = ConversationMessage.safeParse({ ...base, kind: "steer", context });
+    expect(steer.success).toBe(false);
+    expect(steer.error?.issues[0]?.path).toEqual(["context"]);
+  });
+
+  it("names one page: a learner or a lesson, never both and never another key", () => {
+    const base = { event_id: BASE.event_id, text: "x" };
+    const learner_id = "lrn_6et2fhbnwvb45aw9atcfzs33za";
+    const lesson_id = "les_6et2fhbnwvb45aw9atcfzs33za";
+    expect(ConversationMessage.safeParse({ ...base, context: { lesson_id } }).success).toBe(true);
+    for (const context of [{ learner_id, lesson_id }, { pod_id: "x" }, {}]) {
+      expect(ConversationMessage.safeParse({ ...base, context }).success).toBe(false);
+    }
   });
 });
 

@@ -4,6 +4,7 @@ export type {
   Client,
   ClientOptions,
   ConversationClient,
+  ConversationListClient,
   FeaturedClient,
   LearnerKnowledgeClient,
   ParentClient,
