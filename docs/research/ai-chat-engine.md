@@ -205,7 +205,7 @@ One scripted turn per invoke: a parent message, `lesson_draft` and `lesson_check
 What the dry run found before any deploy:
 - Our packages bundle for Deno with bun's bundler and one banner: Deno 2.1 has no `Buffer`, `process` or `global` globals. `pg` runs through Deno's `node:net`. Deno 2 dropped `deno bundle`, so bun builds both hosts' files.
 - Deno 2.1 answers `process.cpuUsage()` with zeros and a warning, so the Edge row's CPU comes from the dashboard.
-- Neither host can run a step on Postgres as `jadwigo_runner` today: `runStep` reads the pod's learner names through `getMe`, and the role has no select on `pod`, `account`, `member`, `learner` or `goal` (`dl-z5ja.81`). The local rows were measured with those selects granted in the lane's own database only.
+- `runStep` reads the pod's learner names through `getMe`, which `jadwigo_runner` could not read until `dl-z5ja.81` granted it `pod`, `account`, `member`, `learner` and `goal` under `pod_scope`. The local rows above were measured before that migration, with the same selects granted in the lane's own database.
 
 ## Muse: API or CLI
 
