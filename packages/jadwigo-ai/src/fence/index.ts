@@ -1,6 +1,6 @@
 /**
  * The untrusted-content fence (wave 2 Lead decision 24, dl-z5ja.47). Text a child or a photo wrote
- * reaches the model as data, never as instructions (decision `dl-2uq1`). It is copied from PostHog:
+ * reaches the model as data, never as instructions (AGENTS.md house rules, decision `dl-uafq`). It is copied from PostHog:
  * a tagged block that says so (`products/posthog_ai/frontend/utils/posthogContextBlock.ts`), with
  * the markup inside neutralised (`ee/hogai/utils/untrusted.py`), so the text can neither close the
  * block nor make a client load a link or an image that carries data out
