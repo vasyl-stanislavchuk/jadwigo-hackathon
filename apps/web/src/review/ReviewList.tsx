@@ -17,7 +17,7 @@ import { ChevronRight } from "lucide-react";
 import type { ReactElement } from "react";
 import { NavLink } from "../nav/NavLink.tsx";
 import { ENDED_ICON, ENDED_INK, ENDED_WORD } from "./outcome.ts";
-import { drawable, Still } from "./Still.tsx";
+import { drawable, drawsRightBeside, Still } from "./Still.tsx";
 
 export function ReviewList({
   rows,
@@ -124,6 +124,16 @@ function CardAnswer({
         category="child"
         compact
       />
+      {/* A picture's still marks only the child's points: the right ones follow as their own. */}
+      {question.ended !== "correct" && question.answer !== null && !drawsRightBeside(question) && (
+        <Still
+          question={question}
+          value={question.solution}
+          language={language}
+          category="child"
+          compact
+        />
+      )}
     </div>
   );
 }

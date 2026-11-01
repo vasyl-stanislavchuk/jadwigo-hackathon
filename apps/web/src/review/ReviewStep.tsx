@@ -15,7 +15,7 @@ import { Badge, Button, Card, CardContent, Heading } from "@jadwigo/ui";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ReactElement, ReactNode } from "react";
 import { ENDED_ICON, ENDED_WORD } from "./outcome.ts";
-import { drawable, Still } from "./Still.tsx";
+import { drawable, drawsRightBeside, Still } from "./Still.tsx";
 
 /**
  * The review step.
@@ -136,12 +136,14 @@ export function ReviewStep({
         )
       )}
 
-      {!right && drawn && (
+      {/* The right answer once (dl-uukj.30.7): beside the answer when the view draws it there, else
+          on its own, given no answer so the view never labels it as the child's. */}
+      {!right && drawn && (answer === null || !drawsRightBeside(question)) && (
         <div data-review-solution className="flex flex-col gap-3">
           <p className="font-semibold">{copy(language, "review_right_answer", {}, category)}</p>
           <Still
             question={question}
-            value={question.solution}
+            value={drawsRightBeside(question) ? null : question.solution}
             language={language}
             category={category}
           />
