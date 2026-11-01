@@ -1,15 +1,16 @@
-import { EventId, ID_PREFIXES, idOf, type PodId, Uuid } from "@jadwigo/contracts";
+import { type AccountId, EventId, ID_PREFIXES, idOf, type PodId, Uuid } from "@jadwigo/contracts";
 import {
   BUDGET_STEER_SHARE,
   BUDGET_STOP_SHARE,
   type Conversation,
   ConversationId,
   type NewRunEvent,
+  RUN_ERROR_TYPE,
   RUN_IDLE_MS,
   RUN_MAX_MS,
   type Run,
   type RunEvent,
-  type RunId,
+  RunId,
   type RunInbox,
   type VerbName,
 } from "@jadwigo/contracts/run";
@@ -296,6 +297,44 @@ async function setup(script: readonly Reply[], verbs: Verbs = fakeVerbs(), cap_u
 
 const DRAFT_INPUT = { request: "a short lesson", grade: "1", names: [], topic: "addition" };
 
+/** Another pod's run, with a lesson whose title names its learners: what must never leak. */
+async function theirRun(
+  store: RunMemoryStore,
+  member: { pod: PodId; account: AccountId },
+  title: string,
+): Promise<RunId> {
+  const conversation = await store.createConversation(member.pod, {
+    id: ConversationId.parse(idOf(ID_PREFIXES.conversation, crypto.randomUUID())),
+    created_by: member.account,
+    title,
+  });
+  const run = await store.createRun(member.pod, {
+    id: RunId.parse(idOf(ID_PREFIXES.run, crypto.randomUUID())),
+    created_by: member.account,
+    conversation_id: conversation.id,
+    workflow: "jadwigo-lesson-compose",
+    resumes: null,
+    cap_usd: 1,
+    idle_deadline_at: null,
+    max_deadline_at: new Date(FIXED_NOW.getTime() + RUN_MAX_MS).toISOString(),
+  });
+  await store.appendRunEvents(member.pod, run.id, run.attempt, [
+    {
+      type: "message",
+      run_id: run.id,
+      event_id: newEventId(),
+      payload: { from: "parent", text: title },
+    },
+    {
+      type: "lesson_revision",
+      run_id: run.id,
+      event_id: newEventId(),
+      payload: { revision: 1, call_id: "call_1", lesson_file: { id: "theirs", title, parts: [] } },
+    },
+  ]);
+  return run.id;
+}
+
 function newEventId(): EventId {
   return EventId.parse(crypto.randomUUID());
 }
@@ -527,7 +566,11 @@ describe("runStep and drain", () => {
     const results = (await t.log(run)).flatMap((e) =>
       e.type === "tool_result" ? [e.payload] : [],
     );
-    expect(results.find((r) => r.verb === "lesson_draft")).not.toHaveProperty("view");
+    // Every verb answers a typed view now (dl-z5ja.69): lesson_draft names the steps it wrote.
+    expect(results.find((r) => r.verb === "lesson_draft")?.view).toMatchObject({
+      kind: "lesson_draft",
+      data: { changed_step_ids: expect.arrayContaining(["s01"]) },
+    });
     const checked = results.find((r) => r.verb === "lesson_check");
     expect(checked?.error).toBeNull();
     expect(checked?.view).toEqual({
@@ -556,6 +599,44 @@ describe("runStep and drain", () => {
     await t.say("Hi.");
     await drain(t.deps);
     expect(t.muse.calls[0]?.names).toEqual(["Fox", "fox"]);
+  });
+
+  it("names only the run's own pod's learners, and another pod's never reach a MuseRequest", async () => {
+    const OTHER = ["Wren", "wren", "Juniper", "juniper"];
+    // The model asks lesson_show for pod B's draft, by its run id, once pod B exists.
+    const show: Record<string, unknown> = {};
+    // Pod B: another family with made-up learners, and a run whose lesson names one of them.
+    const t = await setup(
+      [
+        { calls: [{ verb: "lesson_draft", input: DRAFT_INPUT }] },
+        { calls: [{ verb: "lesson_show", input: show }] },
+        { text: "Ready." },
+      ],
+      createVerbs({ bank: fixtureBank() }),
+    );
+    const other = await t.store.createAccount(Uuid.parse(crypto.randomUUID()), "pl");
+    await t.store.putLearner(other.pod, { handle: "wren", first_name: "Wren" });
+    await t.store.putLearner(other.pod, { handle: "juniper", first_name: "Juniper" });
+    const theirs = await theirRun(t.store, other, "A lesson for Wren and Juniper");
+    // Pod A, the run's own: 2 made-up learners.
+    await t.store.putLearner(t.member.pod, { handle: "fox", first_name: "Fox" });
+    await t.store.putLearner(t.member.pod, { handle: "ash", first_name: "Ash" });
+    show["draft_id"] = theirs;
+
+    const run = await t.say("Adding within 20 for Fox, grade 1.");
+    await drain(t.deps);
+
+    expect(t.muse.calls).toHaveLength(3);
+    for (const call of t.muse.calls) {
+      expect([...call.names].sort()).toEqual(["Ash", "Fox", "ash", "fox"]);
+      const sent = JSON.stringify(call);
+      for (const name of OTHER) expect(sent).not.toContain(name);
+    }
+    const shown = (await t.log(run)).find(
+      (e) => e.type === "tool_result" && e.payload.verb === "lesson_show",
+    );
+    expect(shown?.payload).toMatchObject({ output: null, error: { type: "unknown-draft" } });
+    expect((await t.run(run)).status).toBe("completed");
   });
 
   it("delivers a follow-up sent mid-call once, at the next step", async () => {
@@ -619,7 +700,7 @@ describe("runStep and drain", () => {
     expect(events.filter((e) => e.type === "model_response")).toHaveLength(2);
     expect(events.filter((e) => e.type === "tool_result")).toHaveLength(1);
     expect(events.find((e) => e.type === "error")?.payload).toMatchObject({
-      error: { type: "StepTimedOut" },
+      error: { type: RUN_ERROR_TYPE.stepTimedOut },
       // Call 1 claimed attempt 2, which stalled; the redelivery took 3, and call 2 took 4.
       attempt: 2,
       retryable: true,
@@ -804,6 +885,12 @@ describe("runStep and drain", () => {
   });
 });
 
+describe("the run's own error types", () => {
+  it("are the contract's constants, which the page draws its limit lines from", () => {
+    expect(RUN_ERROR_TYPE).toEqual({ stepTimedOut: "StepTimedOut", runTimedOut: "RunTimedOut" });
+  });
+});
+
 describe("sweep", () => {
   it("closes an idle run on its idle clock, with its waiting message kept", async () => {
     const t = await setup([]);
@@ -923,7 +1010,10 @@ describe("sweep", () => {
     expect(await sweep(t.deps, t.now())).toEqual({ idle: [], max: [run] });
     const events = await t.log(run);
     expect(types(events)).toEqual(["message", "error", "status", "turn_complete"]);
-    expect(events[1]?.payload).toMatchObject({ error: { type: "RunTimedOut" }, retryable: false });
+    expect(events[1]?.payload).toMatchObject({
+      error: { type: RUN_ERROR_TYPE.runTimedOut },
+      retryable: false,
+    });
     expect((await t.run(run)).status).toBe("failed");
   });
 });
