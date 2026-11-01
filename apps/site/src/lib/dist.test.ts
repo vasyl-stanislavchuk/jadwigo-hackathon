@@ -71,7 +71,7 @@ describe("a reviewed path page", () => {
       lang: "en" as const,
       reviewed: true,
     };
-    expect(pathPageChecks([source]).must).toEqual([]);
+    expect(pathPageChecks([source], ["pl"]).must).toEqual([]);
   });
 });
 
