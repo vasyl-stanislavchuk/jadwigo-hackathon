@@ -68,7 +68,7 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from jw import bank_client, items, pii, settings_keys
+from jw import bank_client, items, pii, refusals, settings_keys
 from jw.commands import question
 from jw.draw import DRAW_RULES, NOT_READY_ITEM, Draw, Left, draw, ready_ids
 from jw.errors import JwError
@@ -225,13 +225,14 @@ def _add_times_rule(q: dict[str, Any]) -> None:
 
 
 def _slim_pictures(value: Any) -> Any:
-    """`value` with each picture's labels left out: the bulk of a Khan picture, which a twin or a
-    rung never needs."""
+    """`value` with each picture's labels and address left out: the bulk of a Khan picture, which
+    the agent reading the draft never needs (wave 3, lead decision 6). The draft file and
+    lesson_show keep them whole."""
     if isinstance(value, list):
         return [_slim_pictures(v) for v in value]
     if isinstance(value, Mapping):
         if "src" in value and "alt" in value:
-            return {k: v for k, v in value.items() if k != "labels"}
+            return {k: v for k, v in value.items() if k not in ("labels", "src")}
         return {k: _slim_pictures(v) for k, v in value.items()}
     return value
 
@@ -503,6 +504,26 @@ def _state_path(where: Path, draft_id: str) -> Path:
     return where / STATE_DIR / f"{draft_id}.json"
 
 
+def now() -> str:
+    """The moment, as a timing stamp writes it: UTC, to the millisecond."""
+    return dt.datetime.now(dt.UTC).isoformat(timespec="milliseconds")
+
+
+def stamp(where: Path, draft_id: str, tool: str, called_at: str) -> None:
+    """Add one tool call's `{tool, called_at, returned_at}` to jw's record of the draft (wave 3,
+    lead decision 10): `jw lesson timing` reads the split, the gaps being the model's time. A
+    draft with no record (a refused id) gets none."""
+    path = _state_path(where, draft_id)
+    try:
+        stored: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, ValueError):
+        return
+    stored.setdefault("timings", []).append(
+        {"tool": tool, "called_at": called_at, "returned_at": now()}
+    )
+    _write_json(path, stored)
+
+
 def _make_dirs(where: Path) -> None:
     """The drafts directory and jw's record under it, readable by this user only: a draft holds a
     parent's guarded request and the agent's words, and the directory outlives the session."""
@@ -586,8 +607,15 @@ def _cards_to_write(step: Mapping[str, Any]) -> list[str]:
     return [c for c in step.get("mistake_classes") or [] if c not in cards]
 
 
-def _slim(q: Mapping[str, Any]) -> dict[str, Any]:
-    """One question as the agent reads it: the copy as text, and what is left to write."""
+def _why_short(why: Any) -> str:
+    """The draw's reason cut to the problem type it names, else its first part."""
+    found = re.search(r"problem type (.+?); set ", str(why or ""))
+    return found[1] if found else str(why or "").split(";")[0]
+
+
+def _slim(q: Mapping[str, Any], verbose: bool = False) -> dict[str, Any]:
+    """One question as the agent reads it: what is left to write, and the copy as text only when
+    a rung is left to write or `verbose` (wave 3, lead decision 6: the draft result ≤ 8 KB)."""
     spec = q["question"]
     help_ = spec.get("help") or {}
     hints = []
@@ -598,23 +626,25 @@ def _slim(q: Mapping[str, Any]) -> dict[str, Any]:
     copied: dict[str, Any] = {"hints": hints}
     if help_.get("worked") and help_["worked"] != [h["text"] for h in hints]:
         copied["worked"] = help_["worked"]
-    out = {
+    you_write = _to_write(q)
+    key = spec["key"]
+    out: dict[str, Any] = {
         "step_id": q["step_id"],
         "item_id": q["item_id"],
-        "set_id": q["set_id"],
-        "skill": q["skill"],
-        "family": spec["family"],
-        "question_type": q["question_type"],
-        "prompt": _prompt(q["say"], spec.get("data")),
         "say": q["say"],
         "data": _slim_pictures(spec["data"]),
-        "key": spec["key"],
-        "copied_help": copied,
-        "rungs": _copied_rungs(spec),
-        "you_write": _to_write(q),
+        # The rule jw adds by code is not the agent's to read or write.
+        "key": {k: v for k, v in key.items() if k != "rule"} if isinstance(key, Mapping) else key,
+        "you_write": you_write,
         "mistake_classes": q.get("mistake_classes"),
-        "why_drawn": q["why_drawn"],
+        "why_drawn": _why_short(q["why_drawn"]),
     }
+    if verbose or any(r in you_write for r in RUNGS):
+        out["copied_help"] = copied
+        out["rungs"] = _copied_rungs(spec)
+    if verbose:
+        out.update(family=spec["family"], key=key, set_id=q["set_id"], skill=q["skill"],
+                   question_type=q["question_type"], why_drawn=q["why_drawn"])
     if "boost_by_mistake" in out["you_write"]:
         out["cards_to_write"] = _cards_to_write(q)
     if help_.get("twin"):
@@ -624,19 +654,54 @@ def _slim(q: Mapping[str, Any]) -> dict[str, Any]:
     return out
 
 
-def _view(stored: Mapping[str, Any]) -> dict[str, Any]:
-    """What lesson_draft returns: the draft's own fields and each question slim."""
-    keys = ("draft_id", "request", "need", "grade", "language", "kind", "rule", "rule_settled")
+def left_out_summary(left_out: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """`left_out` by cause (`refusals.cause_of`), the most common first, with 3 example ids each:
+    the full list stays in jw's record and in lesson_show (wave 3, lead decision 6)."""
+    by_cause: dict[str, list[str]] = {}
+    for left in left_out:
+        by_cause.setdefault(refusals.cause_of(str(left.get("reason"))), []).append(str(left["id"]))
+    causes = sorted(by_cause.items(), key=lambda kv: (-len(kv[1]), kv[0]))
     return {
+        "total": len(left_out),
+        "by_cause": [{"cause": c, "count": len(ids), "examples": ids[:3]} for c, ids in causes],
+    }
+
+
+# Over this share of the drawn ready ids missing from the converted file, the machine's bank copy
+# is out of step with the bank's pages: a setup problem, not a lesson one.
+MISSING_SHARE = 0.2
+SETUP_FIX = "run `jw doctor`, then `jw bank pull`"
+
+
+def _setup_warning(drawn: Sequence[str], refused: Mapping[str, str]) -> str | None:
+    """A warning when more than 20% of the ready ids the draw drew are not in the converted file."""
+    missing = [i for i in drawn if str(refused.get(i, "")).startswith("no item ")]
+    if not drawn or len(missing) / len(drawn) <= MISSING_SHARE:
+        return None
+    return (
+        f"{len(missing)} of {len(drawn)} drawn ready items are missing from the converted file "
+        f"({', '.join(missing[:3])}...): {SETUP_FIX}"
+    )
+
+
+def _view(stored: Mapping[str, Any], verbose: bool = False) -> dict[str, Any]:
+    """What lesson_draft returns: the draft's own fields, each question slim, and left_out by
+    cause; with `verbose`, each question whole and left_out in full."""
+    keys = ("draft_id", "request", "need", "grade", "language", "kind", "rule_settled")
+    out = {
         **{k: stored[k] for k in keys},
         "title": stored["lesson"]["title"],
-        "reasoning": stored["lesson"]["reasoning"],
         "plays_as_copied": stored["plays_as_copied"],
         "copy_errors": stored["copy_errors"],
-        "questions": [_slim(q) for q in stored["questions"]],
-        "left_out": stored["left_out"],
+        "questions": [_slim(q, verbose) for q in stored["questions"]],
+        "left_out": stored["left_out"] if verbose else left_out_summary(stored["left_out"]),
         "draft_path": stored["draft_path"],
     }
+    if stored.get("setup_warning"):
+        out["setup_warning"] = stored["setup_warning"]
+    if verbose:
+        out.update(rule=stored["rule"], reasoning=stored["lesson"]["reasoning"])
+    return out
 
 
 def draft(
@@ -650,6 +715,7 @@ def draft(
     names: Sequence[str] | None,
     topic: str,
     today: dt.date | None = None,
+    verbose: bool = False,
     runner: Runner | None = None,
     folder: Path | None = None,
 ) -> dict[str, Any]:
@@ -662,7 +728,9 @@ def draft(
     `topic` is what the lesson is about in a few words, distilled from the request by the calling
     agent ("mnożenie"), with no count, grade or name: it is the need's words the bank searches
     (dl-e8ov.5.38.12). The request is kept, guarded, as the draft's record and title.
+    `verbose` returns each question and left_out whole (`_view`).
     """
+    called_at = now()
     if names is None:
         raise JwError(
             "a lesson draft needs the family's names",
@@ -767,10 +835,12 @@ def draft(
         "left_out": left_out,
         "draft_path": str(_lesson_path(where, draft_id)),
     }
+    stored["setup_warning"] = _setup_warning([*(d.item_id for d, _ in loaded), *refused], refused)
     _make_dirs(where)
     _check_copy(stored, where, runner)
+    stored["timings"] = [{"tool": "lesson_draft", "called_at": called_at, "returned_at": now()}]
     _write_json(_state_path(where, draft_id), stored)
-    return _view(stored)
+    return _view(stored, verbose)
 
 
 def _check_copy(stored: dict[str, Any], where: Path, runner: Runner | None) -> None:
@@ -1027,8 +1097,41 @@ def check(
     reasoning: str | None = None,
     *,
     names: Sequence[str] = (),
+    full: bool = False,
+    verbose: bool = False,
     runner: Runner | None = None,
     folder: Path | None = None,
+) -> dict[str, Any]:
+    """`_check`, stamped in the draft's timings (wave 3, lead decision 10)."""
+    called_at = now()
+    where = folder or drafts_dir()
+    try:
+        return _check(draft_id, words, title, reasoning, names=names, full=full,
+                      verbose=verbose, runner=runner, where=where)
+    finally:
+        stamp(where, draft_id, "lesson_check", called_at)
+
+
+def warns_by_rule(findings: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    """The warnings as `{rule: count}`: what a clean check's answer carries unless verbose."""
+    out: dict[str, int] = {}
+    for f in findings:
+        if f.get("level") != "error":
+            out[str(f.get("rule"))] = out.get(str(f.get("rule")), 0) + 1
+    return out
+
+
+def _check(
+    draft_id: str,
+    words: Mapping[str, Mapping[str, Any]],
+    title: str | None,
+    reasoning: str | None,
+    *,
+    names: Sequence[str],
+    full: bool,
+    verbose: bool,
+    runner: Runner | None,
+    where: Path,
 ) -> dict[str, Any]:
     """Put the agent's words on the draft kept under `draft_id` and run check.ts on the lesson.
 
@@ -1050,7 +1153,6 @@ def check(
     `words={}` checks the file as it stands. Every string in `words` but a key goes through
     `pii.guard` with `names` (`guard_words`).
     """
-    where = folder or drafts_dir()
     stored = load_draft(draft_id, where)
     if not isinstance(words, Mapping):
         raise JwError("help maps step ids to their words", hint='Pass {"q1": {"twin": ...}, ...}.')
@@ -1102,16 +1204,71 @@ def check(
         return {"ok": False, "findings": findings, "errors": answer.get("errors") or [], **paths,
                 "render": render_of(where, draft_id)}
     play_path = answer.get("play_path")
+    shown: dict[str, Any] = (
+        {"findings": findings} if verbose else {"findings": [], "warns": warns_by_rule(findings)}
+    )
     return {
         "ok": True,
-        "card": {**card({**stored, "questions": [steps[s] for s in known]}), "next": NEXT},
-        "findings": findings,
+        "card": {**card({"questions": [steps[s] for s in known]}, full=full), "next": NEXT},
+        **shown,
         "render": render_of(where, draft_id),
         **paths,
         "play_path": play_path,
         "lesson_id": answer.get("lesson_id"),
         "questions": answer.get("questions"),
     }
+
+
+# ---------------------------------------------------------------- the timing -----
+
+# The wave-3 budget in seconds per tool (docs/worklog/dl-a38n/2026-10-31-wave-3.md, decision 10).
+BUDGET_S = {"lesson_draft": 8.0, "lesson_check": 5.0, "lesson_publish": 5.0}
+
+
+def timing(draft_id: str, folder: Path | None = None) -> dict[str, Any]:
+    """The draft's tool calls in order with their seconds, the model's seconds before each (the gap
+    since the call before returned), and the totals: `{draft_id, calls: [{tool, called_at,
+    returned_at, s, model_s, over_budget}], tools_s, model_s, wall_s}`."""
+    stored = load_draft(draft_id, folder)
+    stamps = sorted(stored.get("timings") or [], key=lambda t: str(t["called_at"]))
+    calls: list[dict[str, Any]] = []
+    previous: dt.datetime | None = None
+    for t in stamps:
+        called = dt.datetime.fromisoformat(str(t["called_at"]))
+        returned = dt.datetime.fromisoformat(str(t["returned_at"]))
+        took = round((returned - called).total_seconds(), 3)
+        budget = BUDGET_S.get(str(t["tool"]))
+        calls.append({
+            **t,
+            "s": took,
+            "model_s": None if previous is None else round((called - previous).total_seconds(), 3),
+            "over_budget": budget is not None and took > budget,
+        })
+        previous = returned
+    tools = round(sum(c["s"] for c in calls), 3)
+    model = round(sum(c["model_s"] or 0 for c in calls), 3)
+    wall = 0.0
+    if stamps:
+        first = dt.datetime.fromisoformat(str(stamps[0]["called_at"]))
+        wall = round((dt.datetime.fromisoformat(str(stamps[-1]["returned_at"])) - first)
+                     .total_seconds(), 3)
+    return {"draft_id": draft_id, "calls": calls, "tools_s": tools, "model_s": model,
+            "wall_s": wall}
+
+
+def timing_text(split: Mapping[str, Any]) -> str:
+    """The split as lines, for `jw lesson timing`."""
+    lines = []
+    for c in split["calls"]:
+        if c["model_s"] is not None:
+            lines.append(f"  model           {c['model_s']:7.2f} s")
+        over = "  over budget" if c["over_budget"] else ""
+        lines.append(f"  {c['tool']:<15} {c['s']:7.2f} s  ({c['called_at']}){over}")
+    lines.append(
+        f"tools {split['tools_s']:.2f} s, model {split['model_s']:.2f} s, "
+        f"wall {split['wall_s']:.2f} s"
+    )
+    return "\n".join([f"{split['draft_id']}", *lines])
 
 
 # ---------------------------------------------------------------- the card -------
@@ -1149,32 +1306,281 @@ def _rungs(spec: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def card(filled: Mapping[str, Any]) -> dict[str, Any]:
-    """What a parent reads before the lesson plays: each question, its key, rungs, twin, source,
-    and the changes made to the bank's copy."""
+def card(filled: Mapping[str, Any], full: bool = False) -> dict[str, Any]:
+    """What a parent reads before the lesson plays: each question's prompt in plain text, its key
+    as text, its twin with its source, the credit, and the changes made to the bank's copy when
+    there are any; with `full`, each rung and why it was drawn too (wave 3, lead decision 6: the
+    check result ≤ 6 KB). left_out is the draft's, not the card's."""
     out = []
     for n, q in enumerate(filled.get("questions") or [], start=1):
         spec = q["question"]
         twin = (spec.get("help") or {}).get("twin") or {}
         credit = q.get("credit") or {}
         source = " ".join(str(credit[k]) for k in ("source", "ref", "url") if credit.get(k))
-        out.append(
-            {
-                "n": n,
-                "step_id": q.get("step_id"),
-                "skill": _skill_label(str(q.get("skill") or "")),
-                "prompt": _prompt(q.get("say"), spec.get("data")),
-                "key": spec.get("key"),
-                "rungs": _rungs(spec),
-                "twin": {"prompt": _prompt(twin.get("say"), twin.get("data")), "key": twin.get("key")},
-                "twin_source": _twin_source(twin) if twin else None,
-                "source": source,
-                "licence": credit.get("licence"),
-                "changes": list((q.get("based_on") or {}).get("changes") or []),
-                "why_drawn": q.get("why_drawn"),
-            }
-        )
-    return {"questions": out, "left_out": list(filled.get("left_out") or [])}
+        line: dict[str, Any] = {
+            "n": n,
+            "step_id": q.get("step_id"),
+            "prompt": _plain_prompt(q.get("say"), spec.get("data")),
+            "key": _key_text(spec.get("key")),
+            "twin": {
+                "prompt": _plain_prompt(twin.get("say"), twin.get("data")),
+                "key": _key_text(twin.get("key")),
+                "source": _twin_source(twin),
+            } if twin else None,
+            "source": source,
+            "licence": credit.get("licence"),
+        }
+        changes = list((q.get("based_on") or {}).get("changes") or [])
+        if changes:
+            line["changes"] = [{k: c.get(k) for k in ("change", "why")} for c in changes]
+        if full:
+            line["skill"] = _skill_label(str(q.get("skill") or ""))
+            line["rungs"] = {k: _plain(v) for k, v in _rungs(spec).items()}
+            line["why_drawn"] = q.get("why_drawn")
+        out.append(line)
+    # One licence for the lesson when every question shares it, once instead of on each.
+    licences = {q["licence"] for q in out}
+    if len(licences) == 1 and out and not full:
+        for q in out:
+            del q["licence"]
+        return {"licence": licences.pop(), "questions": out}
+    return {"questions": out}
+
+
+def _plain_prompt(say: Any, data: Mapping[str, Any] | None) -> str:
+    """The prompt with TeX made plain, each part once: a part another part begins with
+    (`6 · 2 =` beside `6 · 2 = ?`) goes."""
+    parts = [str(tex_plain(p)) for p in _prompt(say, data).split(" | ") if p.strip()]
+    kept = [p for i, p in enumerate(parts)
+            if not any(p != o and o.startswith(p) for o in parts) and p not in parts[:i]]
+    return " | ".join(kept)
+
+
+def _plain(value: Any) -> Any:
+    """A rung's text, or its lines, with TeX made plain."""
+    if isinstance(value, list):
+        return [tex_plain(str(v)) for v in value]
+    return tex_plain(value) if isinstance(value, str) else value
+
+
+# TeX a Khan item writes, as plain characters a parent reads (dl-e8ov.5.38.6). The lesson file
+# keeps its TeX: the player draws it.
+_TEX_SYMBOLS = {
+    r"\cdot": " · ", r"\times": " × ", r"\div": " : ", r"\le": "≤", r"\leq": "≤", r"\ge": "≥",
+    r"\geq": "≥", r"\lt": "<", r"\gt": ">", r"\neq": "≠", r"\ne": "≠", r"\approx": "≈",
+    r"\pm": "±", r"\%": "%", r"\degree": "°", r"\circ": "°", r"\dots": "…", r"\ldots": "…",
+    r"\cdots": "…", r"\,": " ", r"\;": " ", r"\quad": " ", r"\qquad": " ", r"\ ": " ",
+    r"\log": "log", r"\ln": "ln", r"\pi": "π",
+    r"\:": " ", r"\>": " ", r"\!": "", r"\infty": "∞", r"\infin": "∞",
+    r"\rightarrow": "→", r"\rarr": "→", r"\to": "→", r"\Rightarrow": "⇒", r"\rArr": "⇒",
+    r"\angle": "∠", r"\triangle": "△", r"\perp": "⊥", r"\parallel": "∥", r"\cong": "≅",
+    r"\sim": "~", r"\in": "∈", r"\cup": "∪", r"\cap": "∩", r"\sum": "Σ", r"\mid": "|",
+    r"\vert": "|", r"\lvert": "|", r"\rvert": "|", r"\lfloor": "⌊", r"\rfloor": "⌋",
+    r"\lceil": "⌈", r"\rceil": "⌉", r"\hline": "", r"\alpha": "α", r"\beta": "β",
+    r"\gamma": "γ", r"\delta": "δ", r"\Delta": "Δ", r"\theta": "θ", r"\lambda": "λ",
+    r"\mu": "μ", r"\sigma": "σ", r"\omega": "ω",
+}
+# Commands that only style what follows (size, colour, spacing, text mode): they go, and what
+# they wrap stays. Any other command keeps its name, so a card never silently loses a word.
+_TEX_STYLE = re.compile(
+    r"(?:Huge|huge|LARGE|Large|large|normalsize|small|footnotesize|scriptsize|tiny"
+    r"|displaystyle|textstyle|scriptstyle|big|Big|bigg|Bigg|limits|nolimits"
+    r"|text|textbf|textit|textrm|textsf|mathrm|mathbf|mathit|mathsf|mathbb|boldsymbol|mbox"
+    r"|operatorname|bf|it|rm|bold|emph|mathbin|mathrel|mathop|mathord"
+    # The colour macros the player paints (packages/lesson-kit/src/parts/richTextMacros.ts, its
+    # PLAIN and FAMILIES; test_payload.py holds the two together).
+    r"|kaBlue|kaGreen|orange|pink|violet|purpleE|grayH|grayI|black|white|grey"
+    r"|(?:blue|teal|green|mint|gold|red|maroon|purple|gray)[A-G]?)"
+)
+# Of the styling commands, the switches: they change what follows and take no argument.
+_TEX_SWITCH = re.compile(
+    r"(?:Huge|huge|LARGE|Large|large|normalsize|small|footnotesize|scriptsize|tiny"
+    r"|displaystyle|textstyle|scriptstyle|big|Big|bigg|Bigg|limits|nolimits|bf|it|rm)"
+)
+# Space and nothing more: what it takes is a width, no word (`\hspace{1cm}`, `\rule{1cm}{0.4pt}`).
+_TEX_SPACES = {"hspace": 1, "vspace": 1, "hskip": 0, "kern": 0, "rule": 2, "mkern": 0}
+_TEX_SUPERSCRIPT = str.maketrans("0123456789n", "⁰¹²³⁴⁵⁶⁷⁸⁹ⁿ")
+_TEX_FRACS = frozenset({"frac", "dfrac", "tfrac", "cfrac"})
+# A colour's name is no word: `\color{#aa87ff}{8}` and `\textcolor{blue}{4}` read 8 and 4.
+_TEX_COLORS = frozenset({"color", "textcolor"})
+# Khan's blank to write in reads □; `\phantom{0}` only holds the blank's width, so it reads nothing.
+_TEX_PHANTOMS = frozenset({"phantom", "hphantom", "vphantom"})
+_TEX_BOXES = frozenset({"underline", "boxed", "fbox"})
+_TEX_BLANKS = frozenset({"square", "Box", "blank"})
+_TEX_ROOTS = {"": "√", "2": "√", "3": "∛", "4": "∜"}
+# Where a fraction begins and ends, until the text is whole: a whole number right before one on
+# the same line is a mixed number's (`\blue{2}\dfrac{1}{3}` reads 2 1/3), and two fractions side
+# by side are a product (1/2 · 1/3).
+_TEX_FRAC_START, _TEX_FRAC_END = "", ""
+
+
+def _grouped(part: str) -> str:
+    """A fraction's, a root's or a script's part in brackets when it is more than one term:
+    `(1+2)/3`."""
+    part = part.strip()
+    return f"({part})" if re.search(r"[\s+\-−·×:/=<>]", part) else part
+
+
+class _TexReader:
+    """Reads TeX the way TeX does: a command takes its arguments, braced or one character
+    (`\\frac1{12}` is 1/12), so a wrapper inside an argument never leaves a bare brace behind."""
+
+    def __init__(self, src: str) -> None:
+        self.src = src
+        self.at = 0
+
+    def _peek(self) -> str:
+        return self.src[self.at] if self.at < len(self.src) else ""
+
+    def _skip_space(self) -> None:
+        while self._peek() in (" ", "\t", "\n"):
+            self.at += 1
+
+    def text(self, until_brace: bool = False) -> str:
+        out: list[str] = []
+        while self.at < len(self.src):
+            c = self.src[self.at]
+            self.at += 1
+            if c == "}":
+                if until_brace:
+                    break
+            elif c == "{":
+                out.append(self.text(until_brace=True))
+            elif c == "$":
+                pass  # the maths' delimiters go
+            elif c == "&" and "\\begin" in self.src:
+                out.append(" ")  # an aligned row's column mark
+            elif c in "^_":
+                script = self._arg().strip()
+                out.append("°" if script == "°" else f"{c}{_grouped(script)} ")
+            elif c == "\\":
+                out.append(self._command())
+            else:
+                out.append(c)
+        return "".join(out)
+
+    def _arg(self) -> str:
+        self._skip_space()
+        c = self._peek()
+        if not c:
+            return ""
+        self.at += 1
+        if c == "{":
+            return self.text(until_brace=True)
+        if c == "\\":
+            return self._command()
+        return c
+
+    def _command(self) -> str:
+        m = re.compile(r"[A-Za-z]+|.", re.S).match(self.src, self.at)
+        if not m:
+            return ""
+        name = m[0]
+        self.at = m.end()
+        if name == "\\":
+            return "\n"
+        if not name.isalpha():
+            return _TEX_SYMBOLS.get("\\" + name, name)  # \$ \{ \} \% stay; \, is a space
+        if name in _TEX_FRACS:
+            # An empty part is Khan's blank: `\dfrac{\phantom{0}}{4}` reads □/4.
+            top, bottom = (part if part.strip() else "□" for part in (self._arg(), self._arg()))
+            return f"{_TEX_FRAC_START}{_grouped(top)}/{_grouped(bottom)}{_TEX_FRAC_END}"
+        if name == "sqrt":
+            self._skip_space()
+            degree = ""
+            if self._peek() == "[":
+                close = self.src.find("]", self.at)
+                close = len(self.src) if close < 0 else close
+                degree = _TexReader(self.src[self.at + 1:close]).text().strip()
+                self.at = close + 1
+            # A degree above 4 as a superscript, ⁵√32, so it never reads as a product.
+            root = _TEX_ROOTS.get(degree) or (
+                f"{degree.translate(_TEX_SUPERSCRIPT)}√"
+                if re.fullmatch(r"\d+|n", degree) else f"({degree})√"
+            )
+            return root + _grouped(self._arg()) + _TEX_FRAC_END  # √2 3 never reads √23
+        if name in _TEX_COLORS:
+            self._arg()  # the colour's name
+            return self._arg()
+        if name in _TEX_SPACES:
+            if self._peek() == "*":
+                self.at += 1
+            self._skip_space()
+            if self._peek() == "[":  # \rule[raise]{width}{height}
+                close = self.src.find("]", self.at)
+                self.at = len(self.src) if close < 0 else close + 1
+            for _ in range(_TEX_SPACES[name]):
+                self._arg()
+            return ""
+        if name in ("htmlClass", "sout", "cancel"):
+            if name == "htmlClass":
+                self._arg()  # the class's name
+            return self._arg()
+        if name in ("begin", "end"):
+            env = self._arg().strip()  # an environment's name is no word; its rows are lines
+            if name == "begin" and env in ("array", "tabular"):
+                self._arg()  # the column spec, {r} or {cc}
+            return "\n" if name == "end" else ""
+        if name in ("overbrace", "underbrace"):
+            inside = self._arg()
+            self._skip_space()
+            if self._peek() in ("^", "_"):  # the label: `\overbrace{2+3}^{5}` reads 2+3 (5)
+                self.at += 1
+                return f"{inside} ({self._arg().strip()})"
+            return inside
+        if name in ("overset", "stackrel", "underset"):
+            mark, base = self._arg().strip(), self._arg()
+            # A digit over a digit is a carry, the working and not the number: `\overset{1}{2}5`
+            # reads 25. Any other mark stays, apart from its base: `\overset{?}{=}` reads = ?.
+            return base if mark.isdigit() else f"{base} {mark} "
+        if name == "overline":
+            inside = self._arg()
+            # A period over digits, as Polish writes it: 0,\overline{3} reads 0,(3).
+            return f"({inside.strip()})" if inside.strip().isdigit() else f"overline {inside}"
+        if name in _TEX_PHANTOMS:
+            self._arg()
+            return ""
+        if name in _TEX_BOXES:
+            inside = self._arg()
+            # A box ends apart, so two side by side never join: 16 16, never 1616.
+            if not inside.strip():
+                return "□ "
+            return inside if name == "underline" else f"{inside} "
+        if name in _TEX_BLANKS:
+            return "□"
+        if name in ("left", "right"):
+            self._skip_space()
+            if self._peek() == ".":
+                self.at += 1  # an invisible delimiter
+            return ""
+        if "\\" + name in _TEX_SYMBOLS:
+            return _TEX_SYMBOLS["\\" + name]
+        if _TEX_SWITCH.fullmatch(name):
+            return ""  # a size or a style for what follows; it takes no argument
+        if _TEX_STYLE.fullmatch(name):
+            # A colour or a text mode takes its argument as any command does, braced or not, as
+            # the player's preProcessTex braces it: `\dfrac{6}\blueD{4}` reads 6/4.
+            return self._arg()
+        return f"{name} "
+
+
+def tex_plain(text: Any) -> Any:
+    """`text` with its TeX made plain: `$\\Huge{\\blue{6} \\cdot 4} = $` reads `6 · 4 =`.
+    Fractions become `a/b` (a part of more than one term in brackets, a mixed number `2 1/2`), a
+    root `√x`, a symbol or relation its character (`\\lt` `<`), Khan's blank `□`, a styling
+    command (size, colour, text mode) goes and keeps what it wraps, any other command keeps its
+    name (`\\overline{AB}` reads `overline AB`), so no meaning silently drops; the `$` around maths
+    go, an escaped `\\$` stays, and each line stays its own line."""
+    if not isinstance(text, str) or "\\" not in text and "$" not in text:
+        return text
+    out = _TexReader(text).text()
+    start, end = _TEX_FRAC_START, _TEX_FRAC_END
+    out = re.sub(f"{end}[ \\t]*{start}", " · ", out)  # \frac12\frac13: a product
+    out = re.sub(f"{end}[ \\t]*(?=\\d)", " · ", out)  # \frac12 3 and \sqrt2 3: a product too
+    out = re.sub(f"(\\d)[ \\t]*{start}", r"\1 ", out)  # 2\frac12, on one line: a mixed number
+    out = out.replace(start, "").replace(end, "")
+    lines = (re.sub(r"[ \t]+", " ", line).replace("√ ", "√").strip() for line in out.split("\n"))
+    return "\n".join(line for line in lines if line)
 
 
 def _key_text(key: Any) -> str:
@@ -1189,24 +1595,25 @@ def card_text(card_: Mapping[str, Any]) -> str:
     """The card as plain lines, for the verbs without `--json`."""
     lines: list[str] = []
     for q in card_.get("questions") or []:
-        rungs = q["rungs"]
-        lines += [
-            f"{q['n']}. {q['prompt']}",
-            f"   skill: {q['skill']}",
-            f"   key: {_key_text(q['key'])}",
-            f"   look: {rungs['look']}",
-            f"   boost: {rungs['boost']}",
-            f"   almost: {' / '.join(rungs['almost'] or [])}",
-            f"   worked: {' / '.join(rungs['worked'] or [])}",
-            f"   twin: {q['twin']['prompt']} (key: {_key_text(q['twin']['key'])})",
-            f"   source: {q['source']} ({q['licence']})",
-        ]
+        lines.append(f"{q['n']}. {q['prompt']}")
+        if q.get("skill"):
+            lines.append(f"   skill: {q['skill']}")
+        lines.append(f"   key: {q['key']}")
+        rungs = q.get("rungs")
+        if rungs:
+            lines += [
+                f"   look: {rungs['look']}",
+                f"   boost: {rungs['boost']}",
+                f"   almost: {' / '.join(rungs['almost'] or [])}",
+                f"   worked: {' / '.join(rungs['worked'] or [])}",
+            ]
+        twin = q.get("twin")
+        if twin:
+            lines.append(f"   twin: {twin['prompt']} (key: {twin['key']}; {twin['source']})")
+        lines.append(f"   source: {q['source']} ({q.get('licence') or card_.get('licence')})")
         lines += [f"   changed ({c['change']}): {c['why']}" for c in q.get("changes") or []]
-        lines.append(f"   why: {q['why_drawn']}")
-    left = card_.get("left_out") or []
-    if left:
-        lines.append("left out:")
-        lines += [f"   {item['id']}: {item['reason']}" for item in left]
+        if q.get("why_drawn"):
+            lines.append(f"   why: {q['why_drawn']}")
     step = card_.get("next")
     if step:
         lines += [f"next: {step['says']}"]

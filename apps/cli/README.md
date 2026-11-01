@@ -23,6 +23,7 @@ question modules came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
 | `jw lesson edit <draft_id> <step_id> <patch.json> [--why ... --change ...]` | One step changed by a JSON merge patch and checked: that step's findings, render findings and card | `JADWIGO_REPO_DIR` and `bun` |
 | `jw lesson show <draft_id> [<step_id>]` | The draft file's step, or every step, as data, with its latest findings | `JADWIGO_DRAFTS_DIR` |
 | `jw lesson publish <draft_id>` | The checked draft imported into the local database `make dev` serves, checked to play, and its absolute `play_url` | `JADWIGO_REPO_DIR`, `make dev` running |
+| `jw lesson timing <draft_id>` | Each tool call's seconds on the draft, the model's time between them, and the totals | `JADWIGO_DRAFTS_DIR` |
 
 - **Search** returns the envelope as the bank sent it. The `/api/v1` route answers stage `final`
   with every arm and takes no query fields, so `--stage` and `--arm` reach only the bank's own
@@ -170,11 +171,20 @@ it, readable by you only (mode 700).
    `check.ts` names for its step (`null` until `check.ts` sends them, `dl-e8ov.5.38.11`, or when
    no checkout or `bun` is found; then no check file is written). jw's own record of the draft is
    kept apart, in `<JADWIGO_DRAFTS_DIR>/.jw/<draft_id>.json`.
-3. **Read the slim view.** `lesson_draft` returns the draft's `draft_id`, `title`, `reasoning` and
-   `left_out`, and per question its `step_id`, `prompt`, `data` (pictures without their labels),
-   `key`, `copied_help` (the hints as text, with their picture alts), `rungs` (what fills each
-   rung), `you_write`, `cards_to_write`, `twin_source` and `mistake_classes`. For the canonical
-   request it is about 11,000 characters, under a client's tool-result limit.
+3. **Read the slim view.** `lesson_draft` returns the draft's `draft_id`, `title` and `left_out`
+   by cause (`{total, by_cause: [{cause, count, examples}]}`, causes as `refusals.cause_of` groups
+   them; the whole list stays in jw's record and in `lesson_show`), a `setup_warning` when over 20%
+   of the drawn ready ids are missing from the converted file (run `jw doctor`, then
+   `jw bank pull`), and per question its `step_id`, `item_id`, `say`, `data` (pictures without
+   their labels or address), `key` (without the rule jw adds), `you_write`, `mistake_classes`,
+   `why_drawn` cut to its problem type, `cards_to_write` and `twin_source`; `copied_help` (the
+   hints as text, with their picture alts) and `rungs` only when `you_write` names a rung.
+   `verbose=True` (`--verbose`) returns everything. On the 12-question fixture
+   (`tests/test_payload.py`) it is at most 8 KB, and a clean `lesson_check` at most 6 KB (wave 3,
+   lead decision 6): the card without `left_out`, its prompts with TeX made plain
+   (`dl-e8ov.5.38.6`), keys as text, each twin as `{prompt, key, source}`, changes only when there
+   are any, the licence once when shared, and the rungs, skill and why drawn only with
+   `full=True` (`--full`); warnings come back as `warns: {rule: count}` unless `verbose=True`.
 4. **Write what is missing.** Per step, what its `you_write` lists, in the lesson's language:
    `twin` (only without a bank twin), a question from the same template with its own `say`,
    `data` and `key`; `boost_by_mistake` as `{mistake class: {"text"}}`, for the classes in
@@ -445,16 +455,31 @@ your synced copy. `tests/test_settings.py` covers the loader.
 lesson-ready in the converted file (`plays` with `checked_at`, and no flag) and that
 `plays_as_copied` is true, fills what `you_write` lists with plain words, runs `lesson_check`, and
 imports the lesson file into the in-memory store (`InMemoryStore`, with bun in
-`packages/lesson-import`). It prints one line per need and exits 1 on any miss.
+`packages/lesson-import`). With `--publish` it publishes each lesson with `lesson_publish` instead,
+into the local database `make dev` serves, and needs its play URL verified. It prints one line per
+need, ending with the seconds each stage took from jw's own timing stamps (and which went over
+the wave-3 budget), and exits 1 on any miss. It calls jw only through what the tools return.
 
 ```sh
 cd apps/cli
-uv run --frozen python scripts/smoke_ready.py                # the planted fixture, a fake bank
-uv run --frozen python scripts/smoke_ready.py --fixture DIR  # another fixture laid out the same way
-uv run --frozen python scripts/smoke_ready.py --live         # nightly: the bank jw's settings name
+uv run --frozen python scripts/smoke_ready.py                    # the planted fixture, a fake bank
+uv run --frozen python scripts/smoke_ready.py --fixture DIR      # another fixture laid out the same way
+uv run --frozen python scripts/smoke_ready.py --live             # nightly: the bank jw's settings name
+uv run --frozen python scripts/smoke_ready.py --live --publish   # and publish each, make dev running
 ```
 
-The nightly run is `--live`, after the stamp, with the bank URL and token, `JADWIGO_BANK_DIR` and
+The planted fixture, `tests/fixtures/smoke`, gives each need its own set and ready item
+(`envelopes.json`, by topic), so the 3 needs draw 3 items: `fxs1`, `fxs2` and `fxr1`. The nightly
+run is `--live`, after the stamp, with the bank URL and token, `JADWIGO_BANK_DIR` and
 `JW_KHAN_CONVERTED` set as for `jw lesson draft`. It needs bun and a jadwigo checkout. It is never
-part of `make check`: it is not a test, and `pytest -q` does not collect `scripts/`. On the planted
-fixture it passes; with `fxr1` flagged it fails, since nothing lesson-ready is left to draw.
+part of `make check`: `pytest -q` does not collect `scripts/`. `tests/test_smoke_ready.py` runs it
+on the fixture with check.ts and the import stubbed, and plants a draw of an item that is not
+lesson-ready: the script's own check names it and exits 1.
+
+### Timing
+
+Each `lesson_draft`, `lesson_check`, `lesson_edit` and `lesson_publish` call stamps its
+`called_at` and `returned_at` into jw's record of the draft (`.jw/<draft_id>.json`, wave 3, lead
+decision 10). `jw lesson timing <draft_id>` (`--json` for the data) prints each call's seconds,
+the model's seconds between calls (the gap since the call before returned), and the totals, and
+marks a call over the wave-3 budget: draft 8 s, check 5 s, publish 5 s.

@@ -143,8 +143,10 @@ export async function lessonDraft(
     "kind",
     "count",
     "skills",
+    "verbose",
   ]);
   input.string("request");
+  input.flag("verbose"); // jw's switch; the engine answers its compact form either way
   input.strings("names", true);
   const grade = input.string("grade");
   const topic = input.string("topic");
@@ -224,7 +226,18 @@ export function lessonShow(context: VerbContext, raw: Json): Promise<VerbEffect>
 const HELP_WORDS = ["twin", "boost_by_mistake", "look", "boost", "almost", "worked"];
 
 export function lessonCheck(context: VerbContext, raw: Json): Promise<VerbEffect> {
-  const input = new Input("lesson_check", raw, ["draft_id", "help", "title", "reasoning", "names"]);
+  const input = new Input("lesson_check", raw, [
+    "draft_id",
+    "help",
+    "title",
+    "reasoning",
+    "names",
+    "full",
+    "verbose",
+  ]);
+  // jw's switches for a longer answer; the engine answers its compact form either way.
+  input.flag("full");
+  input.flag("verbose");
   let file = draftOf(context, input);
   const help = input.object("help");
   input.strings("names", false);

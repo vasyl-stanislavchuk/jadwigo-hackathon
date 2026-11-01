@@ -178,7 +178,7 @@ def test_draft_copies_6_questions_whole_and_keeps_them_by_draft_id(
     assert view["need"] == {"language": "pl", "grade": "3", "words": TOPIC}
     assert view["request"] == REQUEST
     assert re.fullmatch(r"draft_[0-9a-f]{12}", view["draft_id"])
-    assert view["rule_settled"] is False and view["rule"]["count"] == 6
+    assert view["rule_settled"] is False and _stored(view)["rule"]["count"] == 6
     assert (view["title"], view["plays_as_copied"], view["copy_errors"]) == (REQUEST, True, [])
     questions = view["questions"]
     assert [q["step_id"] for q in questions] == [f"q{n}" for n in range(1, 7)]
@@ -190,7 +190,10 @@ def test_draft_copies_6_questions_whole_and_keeps_them_by_draft_id(
         assert q["say"] == source["say"] and q["data"] == source["data"]
         # The copy's key, with the multiplication rule jw adds to a plainly a×b question.
         a, b = (int(n) for n in source["data"]["figure"]["text"].split(" = ")[0].split(" · "))
-        assert q["key"] == {**source["key"], "rule": _rule(a, b)}
+        # The copy's key: the multiplication rule jw adds is in the draft, not in the view.
+        assert q["key"] == source["key"]
+        assert _stored(view)["questions"][int(q["step_id"][1:]) - 1]["question"]["key"] == {
+            **source["key"], "rule": _rule(a, b)}
         # The worked line differs from the hints' text, so it is shown too.
         assert q["copied_help"] == source["help"]
         assert q["rungs"] == {"look": "hint 1", "boost": None, "almost": None,
@@ -203,11 +206,16 @@ def test_draft_copies_6_questions_whole_and_keeps_them_by_draft_id(
             assert q["you_write"] == ["twin", "boost", "boost_by_mistake"]
         assert q["cards_to_write"] == CLASSES  # the fixture items carry no cards yet
         assert q["mistake_classes"] == CLASSES
-        assert q["why_drawn"].startswith("unseen")
+        assert q["why_drawn"] == _converted(q["item_id"])["problem_type"]  # cut to the type
 
-    left = {item["id"]: item["reason"] for item in view["left_out"]}
+    # left_out by cause; the whole list stays in the draft, as lesson_show gives it.
+    summary = view["left_out"]
+    assert summary["total"] == sum(c["count"] for c in summary["by_cause"])
+    assert all(len(c["examples"]) <= 3 for c in summary["by_cause"])
+    left = {item["id"]: item["reason"] for item in lesson_edit.show(view["draft_id"])["left_out"]}
     assert "waits for its family step" in left["fxc201"]
     assert "no page" in left["set_khan_xj1k2l3"]
+    assert any("fxc201" in c["examples"] for c in summary["by_cause"])
 
     # The draft kept on this machine holds each question whole, help and credit included.
     stored = _stored(view)
@@ -251,7 +259,7 @@ def test_the_slim_view_leaves_picture_labels_and_duplicate_worked_lines_out() ->
                "labels": {"range": [[0, 1], [0, 1]], "items": []}}
     data = {"stem": {"pictures": [picture]}, "template": "{g1}"}
     assert lesson._slim_pictures(data) == {
-        "stem": {"pictures": [{k: v for k, v in picture.items() if k != "labels"}]},
+        "stem": {"pictures": [{k: v for k, v in picture.items() if k not in ("labels", "src")}]},
         "template": "{g1}",
     }
     q = {
@@ -265,6 +273,12 @@ def test_the_slim_view_leaves_picture_labels_and_duplicate_worked_lines_out() ->
     assert slim["copied_help"] == {"hints": [{"text": "a", "picture_alts": ["Pięć grup"]},
                                              {"text": "b"}]}
     assert slim["mistake_classes"] is None and slim["you_write"] == ["twin", "boost"]
+    # With no rung left to write, the copied help stays in the draft, not in the answer.
+    q["question"]["help"]["boost"] = {"text": "c"}
+    q["question"]["help"]["twin"] = {"say": "Ile?", "data": {}, "key": {"accept": ["8"]}}
+    slim = lesson._slim(q)
+    assert slim["you_write"] == [] and "copied_help" not in slim and "rungs" not in slim
+    assert "copied_help" in lesson._slim(q, verbose=True)
 
 
 def test_the_copy_maps_hints_onto_rungs_as_the_player_does() -> None:
@@ -366,7 +380,7 @@ def test_a_draft_without_a_topic_is_refused(bank: LessonBank) -> None:
 def test_the_proposed_mark_is_stripped_from_skill_ids(bank: LessonBank, check_ts: CheckTs) -> None:
     view = _draft(count=1)
     (q,) = view["questions"]
-    assert q["skill"] == "proposed:fixture.times-6"  # the draw's skill, as the bank wrote it
+    assert _stored(view)["questions"][0]["skill"] == "proposed:fixture.times-6"  # as the bank wrote it
     assert "skill_note" not in q
     assert _stored(view)["questions"][0]["skill_ids"] == ["fixture.times-6"]
     step = check_ts.seen[0][1]["script"]["parts"][0]["steps"][0]
@@ -391,7 +405,7 @@ def test_a_skill_that_is_no_skill_id_is_left_out_with_a_note() -> None:
 def test_a_count_overrides_the_rule(bank: LessonBank, check_ts: CheckTs) -> None:
     view = _draft(count=3)
     assert len(view["questions"]) == 3
-    assert view["rule"]["count"] == 3
+    assert _stored(view)["rule"]["count"] == 3
 
 
 def test_without_check_ts_the_draft_says_its_classes_are_unknown(
@@ -485,15 +499,18 @@ def test_check_puts_the_agents_words_on_the_copy_and_returns_the_card(
 
     card = result["card"]
     first = card["questions"][0]
-    assert set(first) == {"n", "step_id", "skill", "prompt", "key", "rungs", "twin", "twin_source",
-                          "source", "licence", "changes", "why_drawn"}
-    assert [q["twin_source"] for q in card["questions"]] == [
+    assert set(first) == {"n", "step_id", "prompt", "key", "twin", "source", "changes"}
+    assert card["licence"]  # one licence for the lesson, every question sharing it
+    assert first["key"] == "18" and set(first["twin"]) == {"prompt", "key", "source"}
+    assert [q["twin"]["source"] for q in card["questions"]] == [
         f"bank khan:{BANK_TWINS[s]}" if s in BANK_TWINS else "written" for s in
         (q["step_id"] for q in card["questions"])
     ]
-    assert first["skill"] == "fixture.times-6 (proposed)"
+    # The skill, the rungs and why each was drawn, only with full.
+    full = lesson.check(view["draft_id"], {}, full=True)["card"]["questions"][0]
+    assert full["skill"] == "fixture.times-6 (proposed)"
     hints = view["questions"][0]["copied_help"]["hints"]
-    assert first["rungs"] == {
+    assert full["rungs"] == {
         "look": hints[0]["text"],
         "boost": words["q1"]["boost"]["text"],
         "almost": None,
@@ -502,12 +519,14 @@ def test_check_puts_the_agents_words_on_the_copy_and_returns_the_card(
     }
     item = view["questions"][0]["item_id"]
     assert first["source"] == f"bank {item} https://fixture.invalid/jw/items/{item}"
-    assert all(q["licence"] and q["why_drawn"] and q["twin"]["key"] for q in card["questions"])
-    assert {item["id"] for item in card["left_out"]} >= {"fxc201", "set_khan_xj1k2l3"}
+    assert full["why_drawn"].startswith("unseen")
+    assert all(q["twin"]["key"] for q in card["questions"])
+    assert "left_out" not in card
 
     text = lesson.card_text(card)
-    assert text.startswith("1. ") and "left out:" in text and "fxc201" in text
-    assert "skill: fixture.times-6 (proposed)" in text
+    assert text.startswith("1. ") and "left out:" not in text and "twin:" in text
+    assert "skill:" not in text and "skill: fixture.times-6 (proposed)" in lesson.card_text(
+        lesson.check(view["draft_id"], {}, full=True)["card"])
 
     # What comes next is the publish tool, never a command the parent types (dl-a38n.39).
     assert "import_command" not in result
@@ -553,7 +572,8 @@ def test_a_change_to_a_copied_part_is_recorded_in_based_on(
         _rule_change(step["question"]["key"]["rule"]),
         {"change": "wording", "why": "Rodzic prosi o prostsze słowa.", "reviewed": False},
     ]
-    assert result["card"]["questions"][0]["changes"] == step["based_on"]["changes"]
+    assert result["card"]["questions"][0]["changes"] == [
+        {k: c[k] for k in ("change", "why")} for c in step["based_on"]["changes"]]
     assert "changed (wording): Rodzic prosi" in lesson.card_text(result["card"])
     # The draft kept is the bank's copy still.
     assert len(_stored(view)["questions"][0]["based_on"]["changes"]) == 1
@@ -776,7 +796,7 @@ def test_lesson_check_rewrites_the_file_on_every_call_and_writes_its_findings(
                        "mistake_classes": {f"q{n}": ["added_instead"] for n in range(1, 7)}}
     result = lesson.check(view["draft_id"], words)
     file, checked = _on_disk(view)
-    assert result["ok"] is True and result["findings"] == findings
+    assert result["ok"] is True and result["findings"] == [] and result["warns"] == {"long-say": 1}
     assert file == check_ts.seen[-1][1] and "boost" in file["script"]["parts"][0]["steps"][1][
         "question"]["help"]
     assert checked is not None
@@ -885,11 +905,11 @@ def test_lesson_edit_writes_a_twin_and_mistake_cards_without_a_why(
         "boost_by_mistake": {"added_instead": "Tu mnożymy, nie dodajemy."},
     }}})
     assert result["ok"] is True, result
-    assert result["card"]["twin_source"] == "written"
+    assert result["card"]["twin"]["source"] == "written"
     help_ = _file_now(view)["script"]["parts"][0]["steps"][1]["question"]["help"]
     assert help_["twin"]["family"] == "enter" and "question" not in help_["twin"]
     assert help_["boost_by_mistake"] == {"added_instead": {"text": "Tu mnożymy, nie dodajemy."}}
-    assert result["card"]["twin"]["key"] == twin["key"]
+    assert result["card"]["twin"]["key"] == ", ".join(twin["key"]["accept"])
 
 
 def test_the_page_render_findings_come_back_beside_the_checks(
@@ -1030,7 +1050,7 @@ def test_lesson_check_rebuilds_only_the_steps_it_is_sent(
     assert edited["ok"] is True
     words = _words(view)
     words["q1"]["boost"] = {"text": "Nowa podpowiedź dla q1."}
-    result = lesson.check(view["draft_id"], {"q1": words["q1"]})
+    result = lesson.check(view["draft_id"], {"q1": words["q1"]}, full=True)
     assert result["ok"] is True
     steps = {s["id"]: s for s in _file_now(view)["script"]["parts"][0]["steps"]}
     assert steps["q2"]["question"]["help"]["boost"] == {"text": "Policz worki po kolei."}
@@ -1105,7 +1125,7 @@ def test_the_real_check_ts_plays_the_copy_and_the_agents_words(bank: LessonBank)
     assert result["play_path"].startswith("/play/")
     assert result["lesson_id"].startswith("les_")
     assert result["questions"] == 6
-    assert all(q["source"] and q["licence"] for q in result["card"]["questions"])
+    assert all(q["source"] for q in result["card"]["questions"]) and result["card"]["licence"]
 
 
 @pytest.mark.skipif(shutil.which("bun") is None, reason="bun is not on PATH")
@@ -1158,7 +1178,8 @@ def ready_bank(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[Path
 
 def _ready_draft() -> dict[str, Any]:
     return lesson.draft(
-        "zadania z liczb parzystych", "3", names=[], topic="liczby parzyste", today=TODAY
+        "zadania z liczb parzystych", "3", names=[], topic="liczby parzyste", today=TODAY,
+        verbose=True,
     )
 
 
@@ -1188,7 +1209,9 @@ def test_a_flag_written_after_the_conversion_leaves_the_ready_item_out(
 
 def test_the_draft_verb_prints_the_reasons_too(ready_bank: Path, check_ts: CheckTs) -> None:
     args = ["lesson", "draft", "zadania z liczb parzystych", "--grade", "3"]
-    result = CliRunner().invoke(cli, [*args, "--topic", "liczby parzyste", "--no-names", "--json"])
+    result = CliRunner().invoke(
+        cli, [*args, "--topic", "liczby parzyste", "--no-names", "--verbose", "--json"]
+    )
 
     assert result.exit_code == 0, result.output
     view = json.loads(result.output)

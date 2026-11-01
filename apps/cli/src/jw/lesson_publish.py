@@ -229,9 +229,24 @@ def publish(
     folder: Path | None = None,
 ) -> dict[str, Any]:
     """Publish the checked draft locally and check it plays. Returns the publish record with `ok`
-    (imported and every check passed) and `publish_path`."""
-    started = time.monotonic()
+    (imported and every check passed) and `publish_path`. Stamped in the draft's timings."""
+    called_at = lesson.now()
     where = folder or lesson.drafts_dir()
+    try:
+        return _publish(draft_id, target, runner=runner, http=http, where=where)
+    finally:
+        lesson.stamp(where, draft_id, "lesson_publish", called_at)
+
+
+def _publish(
+    draft_id: str,
+    target: str,
+    *,
+    runner: lesson.Runner | None,
+    http: Http | None,
+    where: Path,
+) -> dict[str, Any]:
+    started = time.monotonic()
     stored = lesson.load_draft(draft_id, where)
     path = lesson._lesson_path(where, draft_id)
     _refuse_target(target, path)

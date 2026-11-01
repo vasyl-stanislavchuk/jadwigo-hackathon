@@ -98,7 +98,8 @@ agent writes only what the bank does not have.
 3. **Check.** Call [`lesson_check`](/mcp/lesson_check/) with the `draft_id` and your words by step
    id. Send only the steps you write for: a step left out keeps what the draft holds. Pass
    `names` again: every word you send has them replaced. Fix each error in its `findings` by step
-   id, and check again until it answers `ok` with a card.
+   id, and check again until it answers `ok` with a card. The card is short: plain text, no
+   rungs. Pass `full: true` for each rung, and `verbose: true` for each warning.
 4. **Change one step.** Read it with [`lesson_show`](/mcp/lesson_show/) and patch it with
    [`lesson_edit`](/mcp/lesson_edit/). The patch is a JSON merge patch on the step: an object
    merges, `null` removes a part, anything else replaces it. A change to the bank's copy (`say`,
