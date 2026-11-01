@@ -12,6 +12,7 @@
     "smoke": "bun src/smoke.ts"
   },
   "//": {
+    "@aws-sdk/client-s3": "reads a parent's photo, pods/<pod>/attachments/<id>.jpg, from the uploads bucket for the model's image input in src/attachments.ts (dl-z5ja.11.4)",
     "@aws-sdk/client-ssm": "reads the SecureString with the runner's DATABASE_URL once per cold start in src/config.ts",
     "@jadwigo/contracts": "the ids and run records the probe seeds and reads back",
     "@jadwigo/jadwigo-ai": "drain, runStep, PgmqRunQueue, the verbs and ScriptedMuse: the engine the host wraps",
@@ -24,6 +25,7 @@
     "@jadwigo/testing": "FIXED_NOW, the pinned clock of the host's unit test"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1156.0",
     "@aws-sdk/client-ssm": "3.1156.0",
     "@jadwigo/contracts": "workspace:*",
     "@jadwigo/jadwigo-ai": "workspace:*",

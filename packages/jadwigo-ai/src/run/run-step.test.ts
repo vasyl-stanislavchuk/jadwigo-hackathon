@@ -926,8 +926,10 @@ describe("runStep and drain", () => {
       expect(sent).toContain("]‹https://made-up.example/?q=‹names›)");
       for (const item of call.input) {
         if (item.type === "message" && item.role === "user") {
-          expect(item.text.startsWith('<jadwigo_untrusted source="parent">')).toBe(true);
-          expect(item.text.endsWith("</jadwigo_untrusted>")).toBe(true);
+          expect(typeof item.text).toBe("string");
+          const words = String(item.text);
+          expect(words.startsWith('<jadwigo_untrusted source="parent">')).toBe(true);
+          expect(words.endsWith("</jadwigo_untrusted>")).toBe(true);
         }
       }
     }

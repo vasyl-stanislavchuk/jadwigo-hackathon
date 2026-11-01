@@ -46,7 +46,10 @@ const FOLLOW_UPS = 10;
 function lastWords(request: MuseRequest): string {
   const said = request.input.filter((i) => i.type === "message" && i.role === "user");
   const last = said.at(-1);
-  return last?.type === "message" ? last.text : "";
+  if (last?.type !== "message") return "";
+  // A message with photos carries parts (dl-z5ja.11.4): its words are its text parts.
+  if (typeof last.text === "string") return last.text;
+  return last.text.flatMap((p) => (p.type === "input_text" ? [p.text] : [])).join(" ");
 }
 
 /** One turn's script: draft from the parent's words, check, say it is ready; then an edit and a
