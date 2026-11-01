@@ -88,7 +88,8 @@ web-deploy:
 	$(AWS) cloudfront create-invalidation --distribution-id $$dist_id --paths "/*"
 
 # apps/web's build with the environment's public settings, web-build/<env>.env: the Supabase URL, its
-# publishable key and the sign-in providers (dl-e8ov.2.64). The file's values win over the shell's, so
+# publishable key, the sign-in providers (dl-e8ov.2.64) and the media URL (dl-n9fr.53). It prints
+# them first, so `make -n` shows what a build would ship. The file's values win over the shell's, so
 # what is committed is what ships. It uploads nothing; the deploy above runs it first. WEB_BUILD_FLAGS
 # go to vite build: the test builds into a directory of its own (dl-e8ov.2.74).
 WEB_BUILD_ENV ?= web-build/$(ENV).env
@@ -96,6 +97,7 @@ WEB_BUILD_FLAGS ?=
 
 web-build:
 	test -f $(WEB_BUILD_ENV)
+	@echo 'web-build settings: $(strip $(shell grep -E '^[A-Z_]+=' $(WEB_BUILD_ENV) 2>/dev/null))'
 	set -a && . $(abspath $(WEB_BUILD_ENV)) && set +a && cd $(WEB) && bun run build $(WEB_BUILD_FLAGS)
 
 # The docs at docs.<apex> (dl-5ssh.90): apps/docs's Starlight build, checked, to the docs bucket, then
