@@ -16,7 +16,8 @@ through the client's tool-result limit (dl-e8ov.5.38.10), and both write it as a
 (dl-a38n.16). lesson_check and lesson_edit also return the page's own render findings,
 <draft_id>.render.json, when the lesson builder's page has written one (dl-a38n.28). The server
 finds the bank the way the verbs do (`jw.settings_keys`: JW_API_URL, then JW_BANK_URL, then
-~/.config/jadwigo-bank/bank.env) and reads pages from JADWIGO_BANK_DIR. Registration lines for
+~/.config/jadwigo-bank/bank.env) and reads pages from the bank checkout (JADWIGO_BANK_DIR, else
+the clone jw bank pull makes, dl-a38n.60). Registration lines for
 Claude Code, Muse Code and Codex are in apps/cli/README.md.
 
 Built on the `mcp` package, 2.x (`mcp.server.mcpserver.MCPServer`, FastMCP's new name).
