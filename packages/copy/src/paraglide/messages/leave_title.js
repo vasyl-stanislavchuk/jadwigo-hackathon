@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "This link leaves Jadwigo" |
+* | "This link leaves Jadwigo." |
 *
 * @param {Leave_TitleInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const leave_title = /** @type {((inputs?: Leave_TitleInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Leave_TitleInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("This link leaves Jadwigo")
+	if (locale === "en") return /** @type {LocalizedString} */ ("This link leaves Jadwigo.")
 	return /** @type {LocalizedString} */ ("Ten link prowadzi poza Jadwigo")
 });

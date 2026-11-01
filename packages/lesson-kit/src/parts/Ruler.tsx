@@ -16,6 +16,7 @@
 
 import type { KeyboardEvent, PointerEvent } from "react";
 import { useRef, useState } from "react";
+import type { Language } from "../stage/types.ts";
 import { Picture, type PictureProps } from "./Picture.tsx";
 import {
   gripDots,
@@ -38,6 +39,8 @@ export interface RulerControl {
   label: string;
   /** The position read out, such as "3,5 cm". */
   valueText: string;
+  /** The screens' lang for the label and the position, under a lesson's (dl-uukj.43). */
+  lang?: Language | undefined;
 }
 
 interface RulerProps {
@@ -72,6 +75,7 @@ export function Ruler({ geometry: g, height, top, unit, zero, control }: RulerPr
         "aria-valuemax": lastZero(g),
         "aria-valuenow": zero,
         "aria-valuetext": control.valueText,
+        ...(control.lang === undefined ? {} : { lang: control.lang }),
         style: { cursor: grab === null ? "grab" : "grabbing" },
         onPointerDown: (e: PointerEvent<SVGSVGElement>) => {
           const x = at(e);

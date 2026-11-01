@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Close bracket" |
+* | "Close parenthesis" |
 *
 * @param {Bracket_CloseInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const bracket_close = /** @type {((inputs?: Bracket_CloseInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Bracket_CloseInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("Close bracket")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Close parenthesis")
 	return /** @type {LocalizedString} */ ("Nawias zamykający")
 });

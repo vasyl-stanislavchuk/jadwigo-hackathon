@@ -11,7 +11,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 * | category | output |
 * | --- | --- |
 * | "adult" | "Why it is right:" |
-* | * | "Well done! Here is why:" |
+* | * | "Well done! Here is why it works." |
 *
 * @param {Review_PraiseInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -21,7 +21,7 @@ export const review_praise = /** @type {((inputs: Review_PraiseInputs, options?:
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") {
 		if (i?.category === "adult") return /** @type {LocalizedString} */ (`Why it is right:`);
-		return /** @type {LocalizedString} */ (`Well done! Here is why:`)
+		return /** @type {LocalizedString} */ (`Well done! Here is why it works.`)
 	}
 	{
 		if (i?.category === "adult") return /** @type {LocalizedString} */ (`Dlaczego tak:`);

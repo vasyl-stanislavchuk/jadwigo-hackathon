@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "{n}/{m}" |
+* | "{n} of {m}" |
 *
 * @param {Parent_Overview_RatioInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -18,6 +18,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 */
 export const parent_overview_ratio = /** @type {((inputs: Parent_Overview_RatioInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Parent_Overview_RatioInputs, { locale?: "pl" | "en" }, {}>} */ ((i, options = {}) => {
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ (`${i?.n}/${i?.m}`)
+	if (locale === "en") return /** @type {LocalizedString} */ (`${i?.n} of ${i?.m}`)
 	return /** @type {LocalizedString} */ (`${i?.n}/${i?.m}`)
 });

@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Looking for questions on: {topic}" |
+* | "Looking for questions about {topic}" |
 *
 * @param {Chat_Tool_Question_Search_AboutInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

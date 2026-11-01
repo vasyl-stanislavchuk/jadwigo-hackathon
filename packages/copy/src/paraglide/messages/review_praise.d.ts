@@ -4,7 +4,7 @@
 * | category | output |
 * | --- | --- |
 * | "adult" | "Why it is right:" |
-* | * | "Well done! Here is why:" |
+* | * | "Well done! Here is why it works." |
 *
 * @param {Review_PraiseInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

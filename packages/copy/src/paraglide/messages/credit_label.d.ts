@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "from {source}, source and licence" |
+* | "From {source}. See the source and license." |
 *
 * @param {Credit_LabelInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

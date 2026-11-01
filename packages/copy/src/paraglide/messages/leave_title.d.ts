@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "This link leaves Jadwigo" |
+* | "This link leaves Jadwigo." |
 *
 * @param {Leave_TitleInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

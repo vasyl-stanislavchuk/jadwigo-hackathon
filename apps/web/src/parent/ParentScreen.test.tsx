@@ -71,6 +71,7 @@ function signedOutAuth(
   const auth = {
     signedIn: false,
     token: async () => (auth.signedIn ? "header.payload.signature" : null),
+    refresh: async () => (auth.signedIn ? "header.payload.signature" : null),
     sendCode: vi.fn(async () => {}),
     verifyCode: vi.fn(async (_email: string, code: string) => {
       auth.signedIn = code === "123456";
@@ -214,7 +215,7 @@ describe("ParentScreen", () => {
     await press("[data-send-code]");
     type("[data-code]", "123456");
     await press("[data-sign-in]");
-    await screen.findByText("The child's first name");
+    await screen.findByText("Your child's first name");
     expect(api.createAccount).toHaveBeenCalledWith({ language: "en" });
   });
 

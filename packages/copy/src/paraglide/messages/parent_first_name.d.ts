@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "The child's first name" |
+* | "Your child's first name" |
 *
 * @param {Parent_First_NameInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

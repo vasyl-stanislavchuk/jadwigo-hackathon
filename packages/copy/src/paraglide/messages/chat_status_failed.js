@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "That didn't work this time" |
+* | "That didn't work this time." |
 *
 * @param {Chat_Status_FailedInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const chat_status_failed = /** @type {((inputs?: Chat_Status_FailedInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Chat_Status_FailedInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("That didn't work this time")
+	if (locale === "en") return /** @type {LocalizedString} */ ("That didn't work this time.")
 	return /** @type {LocalizedString} */ ("Tym razem się nie udało")
 });

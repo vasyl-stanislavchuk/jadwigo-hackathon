@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Factor where product was asked" |
+* | "A factor where a product was asked for" |
 *
 * @param {Parent_Mistake_Factor_For_ProductInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
