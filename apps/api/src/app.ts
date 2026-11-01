@@ -1,5 +1,12 @@
 import { Router } from "@aws-lambda-powertools/event-handler/http";
-import { ErrorType, LIMITS, ROUTES, type Route, type RouteName } from "@jadwigo/contracts";
+import {
+  ErrorType,
+  LIMITS,
+  ROUTES,
+  type Route,
+  type RouteName,
+  type RunStepInput,
+} from "@jadwigo/contracts";
 import { PgmqRunQueue, type RunQueue } from "@jadwigo/jadwigo-ai";
 import type { Store } from "@jadwigo/store";
 import { answer, getAttempt, startAttempt } from "./attempts.ts";
@@ -33,6 +40,7 @@ import {
   getMe,
 } from "./people.ts";
 import { playgroundExamples } from "./playground.ts";
+import { type PokeStepHost, pokeAll } from "./poke.ts";
 import { type BankDeps, type BucketDeps, questionBody, searchQuestions } from "./questions.ts";
 import { getParentReview, getReview } from "./review.ts";
 import { getResults, help, patchAttempt } from "./session.ts";
@@ -66,6 +74,11 @@ export interface AppDeps {
    * Stop fails, so nothing waits in an inbox with no step to take it.
    */
   readonly queue?: RunQueue | undefined;
+  /**
+   * Wakes the step host after a message's or a Stop's unit commits, once per step it sent
+   * (dl-z5ja.88). It never fails the route. With none, the host's schedule drains the queue alone.
+   */
+  readonly poke?: PokeStepHost | undefined;
   /** The engine's clock for a run's deadlines and the limits' windows. */
   readonly now?: () => Date;
 }
@@ -91,7 +104,7 @@ const NO_QUEUE: RunQueue = {
  */
 export function createApp(
   store: Store | Promise<Store>,
-  { authenticate = signedOut, bank, bucket, queue, now = () => new Date() }: AppDeps = {},
+  { authenticate = signedOut, bank, bucket, queue, poke, now = () => new Date() }: AppDeps = {},
 ): Router {
   const app = new Router();
   const engine: EngineRouteDeps = { queue: queue ?? NO_QUEUE, lockPod: async () => {}, now };
@@ -217,7 +230,7 @@ export function createApp(
   // A message's or a Stop's step commits with its run row and never before it, so a consumer
   // never reads a step for a run it cannot see yet (engineUnit).
   onSigned("postMessage", (params, body, claims) =>
-    engineUnit(store, engine, (s, deps) => postMessage(s, deps, claims, params.id, body)),
+    engineUnit(store, engine, poke, (s, deps) => postMessage(s, deps, claims, params.id, body)),
   );
   onSigned("listConversationRuns", (params, _body, claims) =>
     run((s) => listConversationRuns(s, claims, params.id)),
@@ -226,7 +239,7 @@ export function createApp(
     run((s) => listRunEvents(s, claims, params.id, params.after)),
   );
   onSigned("cancelRun", (params, body, claims) =>
-    engineUnit(store, engine, (s, deps) => cancelRun(s, deps, claims, params.id, body)),
+    engineUnit(store, engine, poke, (s, deps) => cancelRun(s, deps, claims, params.id, body)),
   );
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
@@ -250,22 +263,45 @@ function joinable(store: Store): store is Store & { unitSql(): UnitSql } {
 async function engineUnit<T>(
   store: Store | Promise<Store>,
   engine: EngineRouteDeps,
+  poke: PokeStepHost | undefined,
   work: (store: Store, deps: EngineRouteDeps) => Promise<T>,
 ): Promise<T> {
   const opened = await store;
-  if (!joinable(opened))
-    return afterCommit(engine, (deps) => opened.unit(() => work(opened, deps)));
-  return opened.unit(() => {
-    const sql = opened.unitSql();
-    return work(opened, {
-      ...engine,
-      queue: PgmqRunQueue.joining(sql),
-      // Held to the transaction's end; the key is the pod's wire id, hashed to a bigint.
-      lockPod: async (pod) => {
-        await sql.query("select pg_advisory_xact_lock(hashtextextended($1, 0))", [pod]);
-      },
+  // Each step the unit sent, poked once after the commit (dl-z5ja.88); a rollback pokes none.
+  const sent: RunStepInput[] = [];
+  let result: T;
+  if (!joinable(opened)) {
+    result = await afterCommit(engine, (deps) =>
+      opened.unit(() => work(opened, { ...deps, queue: recording(deps.queue, sent) })),
+    );
+  } else {
+    result = await opened.unit(() => {
+      const sql = opened.unitSql();
+      return work(opened, {
+        ...engine,
+        queue: recording(PgmqRunQueue.joining(sql), sent),
+        // Held to the transaction's end; the key is the pod's wire id, hashed to a bigint.
+        lockPod: async (pod) => {
+          await sql.query("select pg_advisory_xact_lock(hashtextextended($1, 0))", [pod]);
+        },
+      });
     });
-  });
+  }
+  await pokeAll(poke, sent);
+  return result;
+}
+
+/** `queue`, keeping each step it was asked to send in `sent`. */
+function recording(queue: RunQueue, sent: RunStepInput[]): RunQueue {
+  return {
+    send: (message, delay_s) => {
+      sent.push(message);
+      return queue.send(message, delay_s);
+    },
+    read: (vt_s, qty) => queue.read(vt_s, qty),
+    archive: (msg_id) => queue.archive(msg_id),
+    deadLetters: () => queue.deadLetters(),
+  };
 }
 
 /**

@@ -122,6 +122,44 @@ describe("a message's step and its unit on PostgresStore (dl-z5ja.67)", () => {
     expect(await stepsFor(sent.body.run.id)).toBe(1);
   });
 
+  // dl-z5ja.88: the poke comes after the commit, so the host it wakes finds the step.
+  it("pokes the step host only once the step has committed, and not at all on a rollback", async () => {
+    const pokedSteps: number[] = [];
+    const s = seeded(store, {
+      queue: joinedOnly,
+      poke: async (step) => void pokedSteps.push(await stepsFor(step.run_id)),
+    });
+    const headers = bearerOf(signToken({ sub: randomUUID() }));
+    const call = <T>(method: string, path: string, body?: unknown) =>
+      s.call<T>(method, path, body, headers);
+    await call<Me>("POST", pathOf("createAccount", {}), { language: "pl" });
+    const made = await call<Conversation>("POST", pathOf("createConversation", {}), {
+      event_id: randomUUID(),
+    });
+    const say = (conversation: string) =>
+      call<RunAccepted>("POST", pathOf("postMessage", { id: conversation }), {
+        event_id: randomUUID(),
+        text: "Hi",
+      });
+    expect((await say(made.body.id)).status).toBe(201);
+    expect(pokedSteps).toEqual([1]);
+
+    // A new conversation's first message sends a step, but its unit fails before the commit:
+    // the step is gone with it, and nothing is poked.
+    const other = await call<Conversation>("POST", pathOf("createConversation", {}), {
+      event_id: randomUUID(),
+    });
+    const restore = atUnitEnd(async () => {
+      throw new Error("planted failure before the commit");
+    });
+    try {
+      expect((await say(other.body.id)).status).toBe(500);
+    } finally {
+      restore();
+    }
+    expect(pokedSteps).toEqual([1]);
+  });
+
   it("is gone with its run when the unit rolls back", async () => {
     const f = await family();
     let run: RunId | undefined;

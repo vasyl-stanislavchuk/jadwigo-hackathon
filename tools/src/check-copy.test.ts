@@ -31,8 +31,10 @@ const fresh = (): LocaleFiles[] => [
 describe("check-copy", () => {
   it("passes on the repo's messages as they are", () => {
     const locales = readLocales(ROOT);
-    expect(locales.map((l) => `${l.code} ${l.status}`)).toEqual(["pl live", "en studio"]);
+    expect(locales.map((l) => `${l.code} ${l.status}`)).toEqual(["pl live", "en live"]);
     expect(checkCopy(locales)).toEqual([]);
+    // en went live in dl-5ssh.34.70 with every line reviewed, so nothing is left to report.
+    expect(unreviewedLines(locales)).toEqual([]);
   });
 
   it("passes on a whole, reviewed or baselined set", () => {
