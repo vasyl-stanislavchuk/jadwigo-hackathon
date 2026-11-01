@@ -4,6 +4,7 @@ import type { Language } from "@jadwigo/config";
 import Gallery from "../components/Gallery.astro";
 import Base from "../layouts/Base.astro";
 import { strictBuild } from "../lib/build.ts";
+import { pageLessons } from "../lib/featured.ts";
 import { otherLanguage, twinPath, twinStaticPaths } from "../lib/i18n.ts";
 import { landingReviewed, landingWords } from "../lib/words.ts";
 
@@ -18,13 +19,23 @@ const words = await landingWords(lang);
 const reviewed = await landingReviewed(lang);
 const translation = twinPath("lessons", otherLanguage(lang));
 const page = { ...words.lessons, lang, reviewed, translation };
+// Only this language's lessons; with none yet, one line in place of the cards (dl-w0b4.85).
+const lessons = await pageLessons(lang);
 ---
 
 <Base page={page} path={twinPath("lessons", lang)}>
   <section class="wrap top" aria-labelledby="page-title">
     <h1 id="page-title">{words.lessons.heading}</h1>
-    <p>{words.lessons.text}</p>
-    <Gallery lang={lang} />
+    {
+      lessons.length > 0 ? (
+        <>
+          <p>{words.lessons.text}</p>
+          <Gallery lang={lang} lessons={lessons} />
+        </>
+      ) : (
+        <p>{words.lessons.empty}</p>
+      )
+    }
   </section>
 </Base>
 
