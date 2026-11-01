@@ -23,27 +23,10 @@ async function decode(file: Blob): Promise<Decoded | null> {
   }
 }
 
-/** libheif's pixels as a bitmap; the decoder's chunk loads here, the first time it is needed. */
-async function decodeHeif(file: Blob): Promise<Decoded | null> {
-  const { decodeHeifPixels } = await import("./heif.ts");
-  const pixels = await decodeHeifPixels(new Uint8Array(await file.arrayBuffer()));
-  if (!pixels) return null;
-  const bitmap = await createImageBitmap(
-    new ImageData(new Uint8ClampedArray(pixels.data), pixels.width, pixels.height),
-  );
-  return {
-    source: bitmap,
-    width: bitmap.width,
-    height: bitmap.height,
-    close: () => bitmap.close(),
-  };
-}
-
 export function browserDeps(api: AttachmentPort): UploadDeps {
   return {
     api,
     decode,
-    decodeHeif,
     canvas: () => document.createElement("canvas"),
     xhr: () => new XMLHttpRequest() as unknown as FormXhr,
     eventId: () => EventId.parse(crypto.randomUUID()),

@@ -62,7 +62,7 @@ describe("AttachmentChips", () => {
   });
 
   it("a HEIC that still cannot be read is refused with its sentence, and no Retry", async () => {
-    const h = harness({ decoded: null, heif: null });
+    const h = harness({ decoded: null });
     const upload = new PhotoUpload(fileOf("IMG_0003.heic", "image/heic"), h.deps);
     render(<AttachmentChips language="pl" uploads={[upload]} onRemove={() => {}} />);
     await act(async () => {

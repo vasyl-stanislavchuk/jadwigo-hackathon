@@ -126,32 +126,22 @@ export interface Harness {
   api: FakeApi;
   canvas: FakeCanvas;
   xhrs: FakeXhr[];
-  heifCalls: Blob[];
   revoked: string[];
 }
 
-/** Deps where `decode` reads `decoded` (null: the browser cannot), and `heif` the fallback's. */
+/** Deps where `decode` reads `decoded` (null: the browser cannot read the file). */
 export function harness(
-  options: {
-    decoded?: Decoded | null;
-    heif?: Decoded | null;
-    sizeAt?: (quality: number) => number;
-  } = {},
+  options: { decoded?: Decoded | null; sizeAt?: (quality: number) => number } = {},
 ): Harness {
   const api = new FakeApi();
   const canvas = new FakeCanvas(options.sizeAt);
   const xhrs: FakeXhr[] = [];
-  const heifCalls: Blob[] = [];
   const revoked: string[] = [];
   let events = 0;
   let urls = 0;
   const deps: UploadDeps = {
     api,
     decode: async () => (options.decoded === undefined ? picture(4000, 3000) : options.decoded),
-    decodeHeif: async (file) => {
-      heifCalls.push(file);
-      return options.heif ?? null;
-    },
     canvas: () => canvas,
     xhr: () => {
       const xhr = new FakeXhr();
@@ -172,7 +162,7 @@ export function harness(
       },
     },
   };
-  return { deps, api, canvas, xhrs, heifCalls, revoked };
+  return { deps, api, canvas, xhrs, revoked };
 }
 
 /** Lets pending promises run, so the upload reaches its next await. */

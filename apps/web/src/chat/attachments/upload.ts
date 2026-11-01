@@ -2,8 +2,9 @@
  * One parent's photo on its way to a message (dl-z5ja.11.5, wave 5 decisions 51 and 57). The page
  * decodes the photo with its orientation applied, draws it on a canvas no larger than
  * `LIMITS.attachmentEdgePx` on its long edge, and re-encodes it to a JPEG of at most
- * `LIMITS.attachmentBytes`, which drops EXIF and GPS. A HEIC the browser cannot decode goes through
- * libheif in its own lazily loaded chunk. Then `POST /api/v1/attachments` hands back a presigned S3
+ * `LIMITS.attachmentBytes`, which drops EXIF and GPS. A HEIC the browser cannot decode (Chrome,
+ * Firefox, Android) is refused with a plain line: no LGPL decoder runs in the browser (dl-n2wys),
+ * and dl-z5ja.11.10 converts it on the server later. Then `POST /api/v1/attachments` hands back a presigned S3
  * form, and the JPEG is posted straight to the bucket with progress.
  *
  * Ported from md drop-comments' `Upload` (drop_runtime/src/comments/upload.ts): the browser parts
@@ -104,8 +105,6 @@ export interface UploadDeps {
   api: AttachmentPort;
   /** The browser's own decode, orientation applied; null when it cannot read the file. */
   decode: (file: Blob) => Promise<Decoded | null>;
-  /** The HEIF fallback, loaded only when a HEIC needs it; null when it cannot read the file. */
-  decodeHeif: (file: Blob) => Promise<Decoded | null>;
   canvas: () => EncodeCanvas;
   xhr: () => FormXhr;
   eventId: () => EventId;
@@ -152,16 +151,16 @@ export interface Encoded {
 }
 
 /**
- * The photo as the JPEG the store keeps: decoded (the HEIF fallback for a HEIC the browser cannot
- * read), fitted to the long edge, and exported at the first quality that fits the byte limit.
+ * The photo as the JPEG the store keeps: decoded by the browser (Safari reads HEIC itself), fitted
+ * to the long edge, and exported at the first quality that fits the byte limit. A photo the
+ * browser cannot decode is refused: a HEIC with the line that says to screenshot it or save a JPG.
  */
 export async function reencode(
   file: File,
-  deps: Pick<UploadDeps, "decode" | "decodeHeif" | "canvas">,
+  deps: Pick<UploadDeps, "decode" | "canvas">,
 ): Promise<Encoded> {
   const heif = isHeif(file);
-  let image = await deps.decode(file).catch(() => null);
-  if (!image && heif) image = await deps.decodeHeif(file).catch(() => null);
+  const image = await deps.decode(file).catch(() => null);
   if (!image) throw new RefusedError(heif ? "attach_heic" : "attach_unreadable");
   try {
     const size = fitEdge(image.width, image.height);

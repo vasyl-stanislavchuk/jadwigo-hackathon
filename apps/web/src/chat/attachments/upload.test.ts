@@ -2,9 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ApiError } from "@jadwigo/api-client";
 import { LIMITS } from "@jadwigo/contracts";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { fileOf, harness, picture, settle } from "./fakes.test-helpers.ts";
-import { decodeHeifPixels } from "./heif.ts";
 import {
   admit,
   bucketReason,
@@ -54,85 +53,58 @@ describe("reencode", () => {
     expect(canvas.tried).toEqual(qualities());
   });
 
-  it("sends a HEIC the browser cannot read through the HEIF fallback", async () => {
-    const { deps, heifCalls } = harness({ decoded: null, heif: picture(3024, 4032) });
+  it("re-encodes a HEIC the browser decodes (Safari) to a JPEG", async () => {
+    const { deps } = harness({ decoded: picture(3024, 4032) });
     const out = await reencode(fileOf("IMG_0002.HEIC", ""), deps);
-    expect(heifCalls).toHaveLength(1);
     expect(out.blob.type).toBe("image/jpeg");
     expect(out).toMatchObject({ width: 1500, height: 2000 });
   });
 
-  it("does not load the fallback for a HEIC the browser decodes (Safari)", async () => {
-    const { deps, heifCalls } = harness({ decoded: picture(100, 100) });
-    await reencode(fileOf("IMG_0003.heic", "image/heic"), deps);
-    expect(heifCalls).toEqual([]);
-  });
-
-  it("refuses a HEIC that still cannot be read with the HEIC sentence", async () => {
-    const { deps } = harness({ decoded: null, heif: null });
+  it("refuses a HEIC the browser cannot read with the HEIC sentence", async () => {
+    const { deps } = harness({ decoded: null });
     await expect(reencode(fileOf("broken.heic", "image/heic"), deps)).rejects.toEqual(
       new RefusedError("attach_heic"),
     );
   });
 
-  it("refuses a file nothing can decode, and never tries HEIF on it", async () => {
-    const { deps, heifCalls } = harness({ decoded: null });
+  it("refuses any other file the browser cannot decode with its own sentence", async () => {
+    const { deps } = harness({ decoded: null });
     await expect(reencode(fileOf("notes.txt", "text/plain"), deps)).rejects.toEqual(
       new RefusedError("attach_unreadable"),
     );
-    expect(heifCalls).toEqual([]);
   });
 });
 
-describe("the HEIF decoder", () => {
-  const heic = new Uint8Array(
-    readFileSync(join(import.meta.dirname, "fixtures/gradient-48x32.heic")),
-  );
-
-  it("reads a synthetic HEIC into RGBA pixels", async () => {
-    const pixels = await decodeHeifPixels(heic);
-    expect(pixels).toMatchObject({ width: 48, height: 32 });
-    expect(pixels?.data.length).toBe(48 * 32 * 4);
-  });
-
-  it("answers null for a truncated HEIC", async () => {
-    expect(await decodeHeifPixels(heic.subarray(0, 200))).toBeNull();
-  });
-
-  it("answers null for bytes that are not HEIF", async () => {
-    expect(await decodeHeifPixels(new Uint8Array(64))).toBeNull();
-  });
-});
-
-describe("a synthetic HEIC through the real decoder", () => {
+describe("the synthetic HEIC fixture", () => {
+  // A 48 x 32 gradient made in code and saved as HEIC with sips; never a photo.
   const bytes = readFileSync(join(import.meta.dirname, "fixtures/gradient-48x32.heic"));
-  const throughLibheif = (file: File) => {
-    const h = harness({ decoded: null });
-    h.deps.decodeHeif = async (blob) => {
-      const pixels = await decodeHeifPixels(new Uint8Array(await blob.arrayBuffer()));
-      return pixels ? picture(pixels.width, pixels.height) : null;
-    };
-    return { h, upload: new PhotoUpload(file, h.deps) };
-  };
+  const heic = (name: string, type: string) => new File([bytes], name, { type });
 
-  it("uploads as a JPEG of its own size", async () => {
-    const { h, upload } = throughLibheif(new File([bytes], "IMG_0007.HEIC", { type: "" }));
+  it("on a decoder that cannot read it (Chrome, Firefox, Android) is refused, with no Retry", async () => {
+    const h = harness({ decoded: null });
+    const upload = new PhotoUpload(heic("IMG_0007.heic", "image/heic"), h.deps);
+    await upload.start();
+    expect(upload.get()).toMatchObject({ state: "refused", reason: "attach_heic" });
+    await upload.retry();
+    expect(upload.get().state).toBe("refused");
+    expect(h.api.bodies).toEqual([]);
+  });
+
+  it("on a decoder that reads it (Safari, through the port) re-encodes to JPEG and uploads", async () => {
+    const h = harness();
+    const read: Blob[] = [];
+    h.deps.decode = async (file) => {
+      read.push(file);
+      return picture(48, 32);
+    };
+    const upload = new PhotoUpload(heic("IMG_0008.HEIC", ""), h.deps);
     const done = upload.start();
-    // Reading the file's bytes is real I/O, not a microtask, so wait for the post itself.
-    await vi.waitFor(() => expect(h.xhrs).toHaveLength(1));
+    await settle();
+    expect(read[0]?.size).toBe(bytes.length);
     h.xhrs[0]?.answer(204);
     expect(await done).toMatch(/^atch_/);
     expect(h.api.bodies[0]).toMatchObject({ media_type: "image/jpeg", width: 48, height: 32 });
     expect((h.xhrs[0]?.body?.get("file") as File | undefined)?.type).toBe("image/jpeg");
-  });
-
-  it("is refused, with no slot asked for, when truncated", async () => {
-    const { h, upload } = throughLibheif(
-      new File([bytes.subarray(0, 200)], "IMG_0008.heic", { type: "image/heic" }),
-    );
-    await upload.start();
-    expect(upload.get()).toMatchObject({ state: "refused", reason: "attach_heic" });
-    expect(h.api.bodies).toEqual([]);
   });
 });
 
@@ -208,13 +180,12 @@ describe("PhotoUpload", () => {
     expect(upload.get()).toMatchObject({ state: "failed", reason: "attach_offline" });
   });
 
-  it("a truncated HEIC is refused, and Retry does nothing", async () => {
-    const h = harness({ decoded: null, heif: null });
+  it("a truncated HEIC the browser cannot read is refused, and Retry does nothing", async () => {
+    const h = harness({ decoded: null });
     const upload = new PhotoUpload(fileOf("IMG_0006.heic", "image/heic"), h.deps);
     await upload.start();
     expect(upload.get()).toMatchObject({ state: "refused", reason: "attach_heic" });
     await upload.retry();
-    expect(h.heifCalls).toHaveLength(1);
     expect(h.api.bodies).toEqual([]);
   });
 
