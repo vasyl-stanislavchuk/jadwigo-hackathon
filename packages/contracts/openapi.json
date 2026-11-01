@@ -2479,6 +2479,9 @@
                 "type": "null"
               }
             ]
+          },
+          "language": {
+            "$ref": "#/components/schemas/Language"
           }
         },
         "required": [
@@ -2486,7 +2489,8 @@
           "plan",
           "questions",
           "open_seq",
-          "last_event_id"
+          "last_event_id",
+          "language"
         ],
         "additionalProperties": false
       },

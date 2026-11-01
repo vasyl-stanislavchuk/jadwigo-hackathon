@@ -1,0 +1,96 @@
+# The site's English words beyond each page's frontmatter (src/lib/landing.ts), the same shape as
+# pl/landing.yaml. Drafted in English, not translated word for word (wave dl-9t2o-1, lead decision 6);
+# en/index.md's reviewed: false covers them until the English AI reviewer passes them (dl-w0b4.84).
+# Copy says what Jadwigo does, never a slogan; numbers are digits.
+hero:
+  play: Play a lesson
+  # The first question of "Razy cztery: podwójne razy dwa" (src/content/featured.json), in English.
+  question:
+    say: "What is 2 times 7?" # a no-break space keeps "7?" on the line
+    choices: ["12", "14", "16"]
+    answer: "14"
+    right: Well done! 2 times 7 is 14.
+    hint: Almost. 2 times 7 is 7 and 7 more. Have another go.
+    signUp:
+      text: Every lesson works like this. A parent account is free, and Jadwigo builds each next lesson from the last one.
+      button: Create an account
+# Under the lessons, one line for the parent.
+after:
+  text: After each lesson you see what went well and what to practise next.
+  link: How it works
+# Every page in the header, in order, each its own page.
+links:
+  - { href: /en/lessons, label: Lessons }
+  - { href: /en/how-it-works, label: How it works }
+  - { href: /en/compare, label: Compare }
+  - { href: /en/about, label: About us }
+steps:
+  title: How Jadwigo works
+  description: You show the homework, your child plays a short lesson, and you see what went well and what comes next.
+  heading: How it works
+  items:
+    - title: You show the homework
+      text: Take a photo of the task your child got stuck on. Or pick a grade and a subject.
+    - title: Your child plays a short lesson
+      text: The questions go one step at a time. When something doesn't work out, a hint is waiting.
+    - title: You see what comes next
+      text: After the lesson Jadwigo notes what went well, where it got hard and which mistakes came up. The next lesson is built from that.
+promises:
+  heading: What you get
+  items:
+    - title: No points, timers or leaderboards
+      text: Your child learns at their own pace. Nobody rushes them.
+    - title: Every question has a source
+      text: Questions from Alfik Matematyczny and Khan Academy, always with the source named.
+    - title: Your data is yours
+      text: Only you see your child's answers. They are never used to train models.
+    - title: Free, with no ads
+      text: Lessons and the parent's summaries cost nothing.
+lessons:
+  title: Lessons to start with · Jadwigo
+  description: Short maths and Polish lessons for grades 1–3. No sign-in, right in the browser.
+  heading: Lessons to start with
+  text: No sign-in. Click and play.
+  play: Play
+  all: All lessons
+  # A card's labels: the subject, "Grade 2", and the question count (1 question, 2 questions).
+  subjects: { math: Maths, polish: Polish, english: English }
+  grade: Grade
+  questions: [question, questions, questions]
+signIn:
+  title: Sign in · Jadwigo
+  description: Sign in or create a Jadwigo parent account with a code from your email, with Google or with Facebook.
+  heading: Sign in
+  lead: A parent creates the account. Signing in and signing up are the same step, so if you don't have an account yet, it is made right away.
+  email: Your email
+  send: Send the code
+  note: We'll send a 6-digit code. You type it on the next page.
+  or: or
+  google: Continue with Google
+  facebook: Continue with Facebook
+# From docs/drops/identity/compare.md, each row with its source. Never "Duolingo charges for
+# mistakes", and never "no other app": both are out of public copy.
+compare:
+  heading: How Jadwigo is different
+  title: Jadwigo next to Khan Academy, Duolingo, Kahoot and Quizlet
+  description: How Jadwigo differs from Khan Academy, Duolingo, Kahoot and Quizlet, with a link to the source for each app.
+  text: Each of these apps is built around something other than one child and their parent.
+  columns: [App, Built around, Jadwigo]
+  source: source
+  rows:
+    - app: Khan Academy
+      around: a shared course a child works through at their own pace, sometimes with tasks from a teacher
+      jadwigo: builds the lesson from this child's goals and their last lesson
+      source: https://support.khanacademy.org/hc/en-us/articles/360030753412
+    - app: Duolingo
+      around: a daily habit, streaks and points; on the free plan each exercise uses up energy, and the paid plan lifts the limit
+      jadwigo: no streaks, points or limits. A child stops when they say that's enough for today
+      source: https://www.sec.gov/Archives/edgar/data/1562088/000156208825000165/q2fy25duolingo6-30x25share.htm
+    - app: Kahoot
+      around: a quiz a whole group plays at once
+      jadwigo: one child and many kinds of questions
+      source: https://onlineteachinghub.education.purdue.edu/kahoot
+    - app: Quizlet
+      around: study sets, often set by a teacher for the whole class
+      jadwigo: goals a parent picks, joined in one lesson
+      source: https://help.quizlet.com/hc/en-au/articles/39836814088845-Using-Assignments

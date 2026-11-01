@@ -1,0 +1,102 @@
+{
+  "$comment": "What a separate reviewer session (Opus, workflows/jadwigo-lesson-review, given batch-pl.json without its planted keys) answered on 2026-11-01, recorded as it answered.",
+  "language": "pl",
+  "verdicts": [
+    { "id": "fxc101.twin", "verdict": "pass" },
+    { "id": "fxc101.added_instead", "verdict": "pass" },
+    { "id": "fxc102.boost", "verdict": "pass" },
+    { "id": "fxc102.added_instead", "verdict": "pass" },
+    { "id": "fxc103.boost", "verdict": "pass" },
+    { "id": "fxc202.twin", "verdict": "pass" },
+    { "id": "parent.week", "verdict": "pass" },
+    { "id": "parent.attention", "verdict": "pass" },
+    {
+      "id": "old.participle",
+      "verdict": "flag",
+      "item": "pl-9",
+      "category": "locale",
+      "quote": "nie policzone",
+      "reason": "Since the 2026 reform, nie is written joined to an adjectival participle, so it must be niepoliczone."
+    },
+    {
+      "id": "old.by",
+      "verdict": "flag",
+      "item": "pl-9",
+      "category": "locale",
+      "quote": "czyby",
+      "reason": "Since the 2026 reform, by is written apart after the conjunction czy, so it must be czy by."
+    },
+    {
+      "id": "old.comparative",
+      "verdict": "flag",
+      "item": "pl-9",
+      "category": "locale",
+      "quote": "nie większą",
+      "reason": "Since the 2026 reform, nie is written joined to adjectives in every degree when there is no contrast, so it must be niewiększą."
+    },
+    {
+      "id": "old.inhabitants",
+      "verdict": "flag",
+      "item": "pl-9",
+      "category": "locale",
+      "quote": "krakowian",
+      "reason": "Since the 2026 reform, names of a town's inhabitants take a capital letter, so it must be Krakowian."
+    },
+    {
+      "id": "bare.wrong",
+      "verdict": "flag",
+      "item": "pl-5",
+      "category": "style",
+      "quote": "Źle.",
+      "reason": "The line opens with a bare źle, and spróbuj jeszcze raz does not tell the child what to try instead."
+    },
+    {
+      "id": "easy",
+      "verdict": "flag",
+      "item": "pl-6",
+      "category": "style",
+      "quote": "To proste",
+      "reason": "The line calls the task easy, which the checklist forbids."
+    },
+    {
+      "id": "gender.guess",
+      "verdict": "flag",
+      "item": "pl-4",
+      "category": "accuracy",
+      "quote": "Policzyłeś",
+      "reason": "This past-tense verb guesses the child's gender (masculine) when the batch names no profile form; the line needs neutral phrasing."
+    },
+    {
+      "id": "english",
+      "verdict": "flag",
+      "item": "pl-1",
+      "category": "accuracy",
+      "quote": "Great job!",
+      "reason": "The line has English words in it, and a Polish line must be in Polish only."
+    },
+    {
+      "id": "case",
+      "verdict": "flag",
+      "item": "pl-3",
+      "category": "fluency",
+      "quote": "5 jabłka",
+      "reason": "After the numeral 5 the noun takes the genitive plural, so it must be 5 jabłek."
+    },
+    {
+      "id": "say.mismatch",
+      "verdict": "flag",
+      "item": "pl-7",
+      "category": "accuracy",
+      "quote": "W pięciu torbach",
+      "reason": "The spoken line says 5 bags but the screen says 4, so a child who listens and a child who reads would answer different questions."
+    },
+    {
+      "id": "parent.score",
+      "verdict": "flag",
+      "item": "pl-5",
+      "category": "style",
+      "quote": "Wynik dziecka to 60 procent",
+      "reason": "The line gives the parent a score as a percentage (wynik, procent), which are pressure words."
+    }
+  ]
+}

@@ -78,6 +78,7 @@ function snapshot(
         say: q.say,
         question: q.question,
       })),
+    language: "pl",
     questions,
     open_seq: status === "finished" ? null : questions.length,
     last_event_id: null,

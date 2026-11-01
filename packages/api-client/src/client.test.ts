@@ -58,6 +58,7 @@ const planned = {
 
 const snapshot = {
   attempt,
+  language: "pl",
   plan: [planned],
   questions: [question],
   open_seq: 1,

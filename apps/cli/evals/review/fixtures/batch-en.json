@@ -1,0 +1,91 @@
+{
+  "$comment": "The first English sample batch for workflows/jadwigo-lesson-review (dl-r772.34), drafted in English. The lines without `planted` are written to workflows/_lang/en/style.md; each line with `planted` breaks the checklist item it names, on purpose. The reviewer sees the batch without `planted`. Fixture text, no learner's words.",
+  "language": "en",
+  "lines": [
+    {
+      "id": "dots.twin",
+      "reader": "child",
+      "text": "Count the dots in the rows: 4 × 6 =",
+      "say": "How many dots are in 4 rows of 6?"
+    },
+    {
+      "id": "dots.boost",
+      "reader": "child",
+      "text": "There are 4 rows. Each row has 6 dots. Count 6 for each row."
+    },
+    {
+      "id": "dots.added_instead",
+      "reader": "child",
+      "text": "6 + 4 is adding. Here there are 4 rows of 6 dots."
+    },
+    {
+      "id": "bags.twin",
+      "reader": "child",
+      "text": "4 bags have 6 apples each. How many apples in all?",
+      "say": "4 bags have 6 apples each. How many apples in all?"
+    },
+    {
+      "id": "bags.boost",
+      "reader": "child",
+      "text": "Each bag has 6 apples. Count the bags, then count 6 for each one."
+    },
+    { "id": "praise", "reader": "child", "text": "You counted all 4 rows." },
+    {
+      "id": "parent.week",
+      "reader": "parent",
+      "text": "Your child answered 18 multiplication questions this week. The next lesson comes back to the 7s."
+    },
+    {
+      "id": "parent.attention",
+      "reader": "parent",
+      "text": "Multiplying by 7 needs attention. Your child added the numbers instead of multiplying them 2 times."
+    },
+    {
+      "id": "uk.spelling",
+      "reader": "child",
+      "text": "Colour each group of 3 in your favourite colour.",
+      "planted": "en-2"
+    },
+    {
+      "id": "uk.maths",
+      "reader": "parent",
+      "text": "Your child practised maths on 3 days this week.",
+      "planted": "en-2"
+    },
+    { "id": "bare.wrong", "reader": "child", "text": "Wrong. Try again.", "planted": "en-6" },
+    { "id": "hurry", "reader": "child", "text": "Hurry, time is running out!", "planted": "en-6" },
+    {
+      "id": "easy",
+      "reader": "child",
+      "text": "This one is easy. Count the rows.",
+      "planted": "en-7"
+    },
+    { "id": "smart", "reader": "child", "text": "You're so smart!", "planted": "en-7" },
+    {
+      "id": "gender.guess",
+      "reader": "parent",
+      "text": "He counted every row this week.",
+      "planted": "en-5"
+    },
+    { "id": "polish", "reader": "child", "text": "Count the grupy again.", "planted": "en-1" },
+    {
+      "id": "grammar",
+      "reader": "child",
+      "text": "There is 5 apple in the bag. How many apples are in the bag?",
+      "planted": "en-4"
+    },
+    {
+      "id": "say.mismatch",
+      "reader": "child",
+      "text": "4 bags have 6 apples each. How many in all?",
+      "say": "5 bags have 6 apples each. How many in all?",
+      "planted": "en-8"
+    },
+    {
+      "id": "no.question.mark",
+      "reader": "child",
+      "text": "How many dots are there in 3 rows of 5",
+      "planted": "en-10"
+    }
+  ]
+}

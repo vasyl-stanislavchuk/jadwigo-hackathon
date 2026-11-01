@@ -194,7 +194,16 @@
         "call_id": "call_1",
         "verb": "lesson_draft",
         "state": "done",
-        "error": null
+        "error": null,
+        "input": {
+          "request": "counting in 2s",
+          "grade": "1",
+          "names": [],
+          "topic": "counting"
+        },
+        "output": {
+          "draft_id": "drf_demo"
+        }
       },
       {
         "kind": "message",
@@ -215,6 +224,7 @@
         "parts": []
       }
     },
+    "previous_lesson": null,
     "status": "completed",
     "turn_open": false,
     "spent_usd": 0.03,

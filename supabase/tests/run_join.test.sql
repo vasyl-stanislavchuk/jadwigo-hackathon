@@ -3,7 +3,7 @@
 -- Realtime's join check does with realtime.topic() set; another pod's user, a user with no pod and
 -- a made-up topic are refused. Realtime is the shim's stub here. Made-up rows only.
 begin;
-select plan(11);
+select plan(12);
 \ir _fixture.sql
 
 insert into account (id, pod_id, sub) values
@@ -74,10 +74,17 @@ select is(
   (select count(*) from realtime.messages)::int, 0, 'another pod is refused'
 );
 
-set local realtime.topic = 'run:run_0000000000800800000000t0b1';
+-- Pod B's run, whose wire id is run_0000000000800800000000t05h: its own pod joins, so the topic
+-- names a real run and the refusal below is the pod check's.
+set local realtime.topic = 'run:run_0000000000800800000000t05h';
+select is(
+  (select count(*) from realtime.messages where topic = 'run:run_0000000000800800000000t05h')::int,
+  1,
+  'pod B joins its own run''s topic'
+);
 set local "request.jwt.claims" = '{"role": "authenticated", "pod_id": "00000000-0000-4000-8000-00000000000a"}';
 select is(
-  (select count(*) from realtime.messages)::int, 0, 'and a pod is refused another pod''s run'
+  (select count(*) from realtime.messages)::int, 0, 'and pod A is refused pod B''s run'
 );
 
 set local realtime.topic = 'run:run_0000000000800800000000t051';

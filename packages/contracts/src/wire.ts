@@ -171,6 +171,11 @@ export const AttemptSnapshot = z.object({
   /** The open question's `seq`, or null once the attempt is finished. */
   open_seq: Count.nullable(),
   last_event_id: EventId.nullable(),
+  /**
+   * The lesson's language. The page sets it as the lesson region's `lang`, which may differ from
+   * the screens' language (dl-9t2o.3).
+   */
+  language: Language,
 });
 export type AttemptSnapshot = z.infer<typeof AttemptSnapshot>;
 
