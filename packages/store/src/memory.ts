@@ -13,6 +13,7 @@ import {
   CurriculumId,
   Ended,
   ErrorType,
+  type EventId,
   FEATURED_POD_ID,
   Goal,
   GoalId,
@@ -44,6 +45,7 @@ import {
   Pod,
   PodId,
   type ProposalDecision,
+  RunRatingId,
   SentAt,
   Skill,
   type SkillId,
@@ -60,6 +62,7 @@ import {
   RunEvent,
   type RunId,
   RunInbox,
+  RunRating,
   type RunStatus,
   type RunWorkflow,
 } from "@jadwigo/contracts/run";
@@ -72,6 +75,7 @@ import type {
   NewConversation,
   NewRun,
   NewRunInbox,
+  NewRunRating,
   RunChange,
   UsageSince,
 } from "./run.ts";
@@ -210,6 +214,8 @@ export class InMemoryStore implements Store {
   readonly #conversations = new Map<string, Conversation>();
   /** By id, in the order created. */
   readonly #runs = new Map<string, Run>();
+  /** By `<pod> <run> <account>`, in the order first rated: one rating per run and account. */
+  readonly #ratings = new Map<string, RunRating>();
   /** By run id, in `seq` order. */
   readonly #runEvents = new Map<string, RunEvent[]>();
   /**
@@ -337,6 +343,11 @@ export class InMemoryStore implements Store {
     );
     this.#lessons.set(row.id, row);
     return row;
+  }
+
+  async getLesson(pod: PodId, id: LessonId): Promise<Lesson | undefined> {
+    const row = this.#lessons.get(id);
+    return row?.pod_id === pod ? row : undefined;
   }
 
   async putLessonQuestion(pod: PodId, question: NewLessonQuestion): Promise<LessonQuestion> {
@@ -1598,6 +1609,10 @@ export class InMemoryStore implements Store {
     return (this.#runEvents.get(run) ?? []).filter((e) => e.seq > afterSeq);
   }
 
+  async findRunInbox(pod: PodId, event_id: EventId): Promise<RunInbox | undefined> {
+    return this.#inbox.get(inboxKey(pod, event_id));
+  }
+
   async putRunInbox(pod: PodId, entry: NewRunInbox): Promise<RunInbox> {
     this.#inPod(this.#runs, pod, entry.run_id, "the run");
     // Unique per pod, not across pods (dl-z5ja.86): another pod's row is never this one.
@@ -1616,6 +1631,42 @@ export class InMemoryStore implements Store {
     );
     this.#inbox.set(inboxKey(pod, row.event_id), row);
     return row;
+  }
+
+  async rateRun(
+    pod: PodId,
+    run: RunId,
+    account: AccountId,
+    rating: NewRunRating,
+  ): Promise<RunRating> {
+    this.#inPod(this.#runs, pod, run, "the run");
+    this.#inPod(this.#accounts, pod, account, "the account");
+    if (rating.verdict === "good" && rating.note !== null)
+      throw new StoreError(ErrorType.enum.BadRequest, "a note goes only with bad");
+    const key = `${pod} ${run} ${account}`;
+    const stored = this.#ratings.get(key);
+    const row = frozen(
+      parse(
+        RunRating,
+        {
+          id: stored?.id ?? mint(RunRatingId, ID_PREFIXES.run_rating),
+          pod_id: pod,
+          run_id: run,
+          account_id: account,
+          verdict: rating.verdict,
+          note: rating.note,
+          created_at: stored?.created_at ?? this.#at(),
+        },
+        "the rating",
+      ),
+    );
+    this.#ratings.set(key, row);
+    return row;
+  }
+
+  async listRunRatings(pod: PodId, run: RunId): Promise<readonly RunRating[]> {
+    this.#inPod(this.#runs, pod, run, "the run");
+    return [...this.#ratings.values()].filter((r) => r.pod_id === pod && r.run_id === run);
   }
 
   async messageUsage(pod: PodId, account: AccountId, since: UsageSince): Promise<MessageUsage> {

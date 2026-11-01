@@ -808,7 +808,6 @@
   "chat_announce_needs_you": "Asystent czeka na Twoją odpowiedź.",
   "chat_announce_stopped": "Zapisane, zatrzymane.",
   "chat_switch": "Rozmowa albo lekcja",
-  "chat_consent": "Asystent czyta tylko to, czego potrzebuje Twoja prośba o dziecku, imiona też. Model, na którym działa, nie uczy się na tych danych.",
   "chat_check_findings": [
     {
       "declarations": ["input n", "local notes_noun = n: plural"],
@@ -851,5 +850,13 @@
   "parent_new_lesson_for": "Nowa lekcja dla: {name}",
   "parent_child_skills_empty": "Tu pojawią się cele dziecka: co już umie, nad czym pracujecie i co dalej.",
   "parent_child_lessons_empty": "Tu pojawią się lekcje dane temu dziecku.",
-  "parent_child_history_empty": "Tu pojawi się każda lekcja, którą zrobi to dziecko, z wynikiem pytanie po pytaniu."
+  "parent_child_history_empty": "Tu pojawi się każda lekcja, którą zrobi to dziecko, z wynikiem pytanie po pytaniu.",
+  "chat_rate_ask": "Jak poszło?",
+  "chat_rate_good": "Dobrze",
+  "chat_rate_bad": "Słabo",
+  "chat_rate_retry": "Spróbuj jeszcze raz",
+  "chat_rate_missing": "Czego zabrakło?",
+  "chat_rate_send": "Wyślij ocenę",
+  "chat_rate_thanks": "Dziękujemy, ocena jest zapisana.",
+  "chat_rate_failed": "Nie udało się zapisać oceny. Spróbuj jeszcze raz."
 }

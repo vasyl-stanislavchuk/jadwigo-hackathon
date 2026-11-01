@@ -231,7 +231,13 @@ export function acceptMessage(
   };
   return store.unit(async () => {
     // A page the pod does not hold is refused before anything is written or asked (dl-z5ja.107).
-    if (context && (await pageLine(store, pod, message.created_by, context)) === null) {
+    // A resend of a message the turn already logged answers its stored row, even when its page has
+    // gone since (dl-z5ja.117): it was checked when it first came.
+    if (
+      context &&
+      (await pageLine(store, pod, message.created_by, context)) === null &&
+      !(await logged(store, pod, conversation_id, entry.event_id))
+    ) {
       throw new StoreError(ErrorType.enum.NotFound, "the page the message names is not in the pod");
     }
     for (let tries = 0; tries < 5; tries++) {
@@ -1077,11 +1083,25 @@ function pageOf(log: readonly RunEvent[]): MessageContext | null {
   return said?.type === "message" ? (said.payload.context ?? null) : null;
 }
 
+/** Whether a run of the conversation logged the event `event_id`: the message was taken before. */
+async function logged(
+  store: Store,
+  pod: PodId,
+  conversation: ConversationId,
+  event_id: EventId,
+): Promise<boolean> {
+  for (const run of await store.listRuns(pod, conversation)) {
+    const log = await store.listRunEvents(pod, run.id, 0);
+    if (log.some((e) => e.event_id === event_id)) return true;
+  }
+  return false;
+}
+
 /**
  * A message's page as a fact for the call's instructions, read from the run's pod only (Lead
  * decision 36): a learner of the pod, or a lesson the pod has published. Null when the pod holds no
  * such id: nothing of it is read, and `acceptMessage` refuses it. The learner's name is the
- * parent's own words, so its markup is neutralised.
+ * parent's own words, so it goes inside the fence as data (dl-z5ja.47, dl-z5ja.117).
  */
 async function pageLine(
   store: Store,
@@ -1093,8 +1113,11 @@ async function pageLine(
     const me = await store.getMe(pod, account);
     const found = me.learners.find(({ learner }) => learner.id === context.learner_id);
     if (!found) return null;
-    const name = neutralise(found.learner.first_name);
-    return `The parent is writing from the learner page of ${name} (learner ${context.learner_id}): questions about "the child" or "this learner" are about ${name}.`;
+    // The name is the parent's words, so it goes inside the fence as data, never on the line itself.
+    return [
+      `The parent is writing from the learner page of learner ${context.learner_id}: questions about "the child" or "this learner" are about that learner, whose first name is:`,
+      fence(found.learner.first_name, "parent"),
+    ].join("\n");
   }
   const version = await store.getLatestLessonVersion(pod, context.lesson_id);
   if (!version) return null;

@@ -578,7 +578,6 @@
   "chat_announce_needs_you": true,
   "chat_announce_stopped": true,
   "chat_switch": true,
-  "chat_consent": true,
   "chat_check_findings": true,
   "chat_sign_in": true,
   "chat_limit_message": true,
@@ -610,5 +609,13 @@
   "parent_new_lesson_for": false,
   "parent_child_skills_empty": false,
   "parent_child_lessons_empty": false,
-  "parent_child_history_empty": false
+  "parent_child_history_empty": false,
+  "chat_rate_ask": false,
+  "chat_rate_good": false,
+  "chat_rate_bad": false,
+  "chat_rate_retry": false,
+  "chat_rate_missing": false,
+  "chat_rate_send": false,
+  "chat_rate_thanks": false,
+  "chat_rate_failed": false
 }

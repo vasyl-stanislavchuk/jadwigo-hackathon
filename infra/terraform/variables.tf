@@ -35,7 +35,7 @@ variable "app_reserved_concurrency" {
 }
 
 variable "runner_muse_cap_usd" {
-  description = "USD the step host's Muse lane may spend per cold start before GuardedMuse refuses (dl-z5ja.20); each run's own cap_usd holds per turn"
+  description = "USD the step host's Muse lane may spend per UTC day, across cold starts and hosts, before GuardedMuse refuses (dl-z5ja.20, dl-z5ja.89: PostgresMuseLedger sums every run's model_response cost since 00:00 UTC); each run's own cap_usd holds per turn"
   type        = string
   default     = "1"
 }

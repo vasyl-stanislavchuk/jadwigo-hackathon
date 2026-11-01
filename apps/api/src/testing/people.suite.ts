@@ -67,7 +67,7 @@ export function peopleSuite(name: string, makeStore: () => Store): void {
     }
 
     it("refuses every token route without a token, or with a bad one, as 401 NotSignedIn", async () => {
-      expect(TOKEN_ROUTES).toHaveLength(21);
+      expect(TOKEN_ROUTES).toHaveLength(24);
       const tokens = [
         undefined,
         signToken({}, true),
