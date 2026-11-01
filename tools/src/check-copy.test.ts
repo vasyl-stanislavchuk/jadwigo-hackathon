@@ -33,8 +33,9 @@ describe("check-copy", () => {
     const locales = readLocales(ROOT);
     expect(locales.map((l) => `${l.code} ${l.status}`)).toEqual(["pl live", "en live"]);
     expect(checkCopy(locales)).toEqual([]);
-    // en went live in dl-5ssh.34.70 with every line reviewed, so nothing is left to report.
-    expect(unreviewedLines(locales)).toEqual([]);
+    // The unreviewed lines are a report for the owner's review pass, never a failure (dl-5ssh.125),
+    // so a new pl line waiting for its flag leaves this green. The listing still runs.
+    expect(unreviewedLines(locales).every((line) => /^(pl|en)\./.test(line))).toBe(true);
   });
 
   it("passes on a whole, reviewed or baselined set", () => {

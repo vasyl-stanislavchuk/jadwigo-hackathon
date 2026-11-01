@@ -28,30 +28,9 @@
  */
 
 import { ApiError, type Client, createClient, type ParentClient } from "@jadwigo/api-client";
-import type {
-  AssignmentId,
-  AttemptId,
-  AttemptResult,
-  Learner,
-  LearnerAttempts,
-  LearnerId,
-  Me,
-} from "@jadwigo/contracts";
+import type { AssignmentId, AttemptId, LearnerId, Me } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
-import {
-  Button,
-  Card,
-  CardContent,
-  type Crumb,
-  Field,
-  Heading,
-  Input,
-  Link,
-  Notice,
-  OutcomeTile,
-  Page,
-  Spinner,
-} from "@jadwigo/ui";
+import { Button, type Crumb, Field, Heading, Input, Notice, Page, Spinner } from "@jadwigo/ui";
 import {
   type FormEvent,
   type ReactElement,
@@ -64,7 +43,6 @@ import {
 } from "react";
 import { setPodLanguage } from "../nav/language.ts";
 import { navigate, useLocation } from "../nav/location.ts";
-import { NavLink } from "../nav/NavLink.tsx";
 import { storedAttempt } from "../play/storedAttempt.ts";
 import { AttemptReview } from "./AttemptReview.tsx";
 import { CATEGORY, pageLang } from "./adult.ts";
@@ -75,23 +53,20 @@ import {
   type RedirectOutcome,
   withoutReturn,
 } from "./auth.ts";
+import { ChildPage } from "./child/ChildPage.tsx";
+import { Failed } from "./Failed.tsx";
 import { inAppBrowser } from "./inApp.ts";
 import { LanguagePick } from "./LanguagePick.tsx";
-import { LearnerKnowledge } from "./learner/LearnerKnowledge.tsx";
 import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";
-import { cellsOf } from "./overview/grid.ts";
-import { OUTCOME_TONE, OutcomeIcon, TwinMark, tileLabel } from "./overview/outcome.tsx";
 import { ProviderButton } from "./ProviderButton.tsx";
 import {
-  assignmentPath,
-  attemptPath,
+  childPath,
   claimOf,
   emailOf,
   historyPath,
   learnerOf,
   lessonsPath,
   type ParentRoute,
-  parentPath,
   parentRoute,
   providerOf,
 } from "./route.ts";
@@ -112,15 +87,6 @@ function Loading({ language }: { language: Language }): ReactElement {
     <ParentPage>
       <Spinner label={copy(language, "loading", {}, CATEGORY)} />
     </ParentPage>
-  );
-}
-
-/** The line that says a page could not load: what stops the adult, with what to do. */
-function Failed({ language }: { language: Language }): ReactElement {
-  return (
-    <Notice role="alert" data-failed>
-      {copy(language, "parent_load_failed", {}, CATEGORY)}
-    </Notice>
   );
 }
 
@@ -511,7 +477,8 @@ function SignedIn({
     }
     storedAttempt.clear(pending.assignment);
     setPending(null);
-    navigate(parentPath({ lang: pageLang() }), { replace: true });
+    // The kept lesson shows on that child's page.
+    navigate(childPath({ learner, lang: pageLang() }), { replace: true });
   };
 
   const run = (work: () => Promise<void>): void => {
@@ -631,11 +598,12 @@ function SignedIn({
       return shell(
         { kind: "child", learner: child.id },
         [{ label: t("parent_nav_children") }, { label: child.first_name }],
-        <ParentPage>
-          <ul className="flex w-full flex-col gap-8" data-home>
-            <LearnerCard api={api} learner={child} language={language} />
-          </ul>
-        </ParentPage>,
+        <ChildPage
+          api={api}
+          learner={child}
+          language={language}
+          notice={notice === null ? null : t(notice)}
+        />,
       );
     }
     case "attempt":
@@ -656,11 +624,9 @@ function SignedIn({
         newLesson,
         <ParentPage>
           {notice !== null && <Notice>{t(notice)}</Notice>}
-          <ul className="flex w-full flex-col gap-8" data-home>
-            {learners.map((learner) => (
-              <LearnerCard key={learner.id} api={api} learner={learner} language={language} />
-            ))}
-          </ul>
+          <p className="text-jw-ink-soft" data-home>
+            {t("parent_lessons_empty")}
+          </p>
         </ParentPage>,
       );
   }
@@ -697,111 +663,5 @@ function AddChild({
         {copy(language, "parent_add", {}, CATEGORY)}
       </Button>
     </form>
-  );
-}
-
-function LearnerCard({
-  api,
-  learner,
-  language,
-}: {
-  api: ParentClient;
-  learner: Learner;
-  language: Language;
-}): ReactElement {
-  const [attempts, setAttempts] = useState<LearnerAttempts["attempts"] | "failed" | null>(null);
-  useEffect(() => {
-    let live = true;
-    api.getLearnerAttempts(learner.id).then(
-      (reply) => live && setAttempts(reply.attempts),
-      () => live && setAttempts("failed"),
-    );
-    return () => {
-      live = false;
-    };
-  }, [api, learner.id]);
-  const day = new Intl.DateTimeFormat(language, { dateStyle: "long" });
-  return (
-    <li className="flex flex-col gap-4" data-learner-card={learner.id}>
-      <Heading level={2}>{learner.first_name}</Heading>
-      <LearnerKnowledge api={api} learner={learner.id} language={language} />
-      {attempts === null && <Spinner label={copy(language, "loading", {}, CATEGORY)} />}
-      {attempts === "failed" && <Failed language={language} />}
-      {Array.isArray(attempts) && attempts.length === 0 && (
-        <p>{copy(language, "parent_no_attempts", {}, CATEGORY)}</p>
-      )}
-      {Array.isArray(attempts) && attempts.length > 0 && (
-        <ol className="flex flex-col gap-4">
-          {attempts.map(({ attempt, title, results }) => (
-            <li key={attempt.id} data-attempt={attempt.id}>
-              <Card size="compact">
-                <CardContent className="items-start gap-2">
-                  <Link asChild>
-                    <NavLink
-                      href={attemptPath({
-                        attempt: attempt.id,
-                        learner: learner.id,
-                        lang: pageLang(),
-                      })}
-                      data-attempt-link
-                    >
-                      {title}
-                    </NavLink>
-                  </Link>
-                  <span className="text-jw-small text-jw-ink-soft">
-                    {day.format(new Date(attempt.started_at))}
-                  </span>
-                  <Tiles results={results} language={language} />
-                  <Link asChild size="small">
-                    <NavLink
-                      href={assignmentPath({ assignment: attempt.assignment_id, lang: pageLang() })}
-                      data-overview-link
-                    >
-                      {copy(language, "parent_overview_link", {}, CATEGORY)}
-                    </NavLink>
-                  </Link>
-                </CardContent>
-              </Card>
-            </li>
-          ))}
-        </ol>
-      )}
-    </li>
-  );
-}
-
-/** A lesson's tiles: one per planned question, its twins folded in, as the heatmap draws its row.
- * Each keeps the stored ended on its item. */
-function Tiles({
-  results,
-  language,
-}: {
-  results: AttemptResult[];
-  language: Language;
-}): ReactElement {
-  return (
-    <ol className="flex flex-wrap gap-2 pt-1" data-lesson-tiles>
-      {cellsOf(results).map((cell, index) => (
-        <li
-          key={cell.planned.seq}
-          data-seq={cell.planned.seq}
-          data-ended={cell.planned.ended ?? "open"}
-        >
-          <OutcomeTile
-            size="sm"
-            tone={OUTCOME_TONE[cell.outcome]}
-            outcome={cell.outcome}
-            icon={<OutcomeIcon outcome={cell.outcome} />}
-            label={tileLabel(language, index + 1, cell)}
-          >
-            {cell.twin && (
-              <span className="absolute top-0.5 right-0.5">
-                <TwinMark />
-              </span>
-            )}
-          </OutcomeTile>
-        </li>
-      ))}
-    </ol>
   );
 }

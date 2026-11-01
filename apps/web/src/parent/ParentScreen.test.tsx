@@ -337,12 +337,14 @@ describe("ParentScreen", () => {
       },
       createAccount: vi.fn(async () => me([snapshot])),
     });
+    // The child's lessons are on the child's page (dl-uukj.47.3).
+    window.history.replaceState(null, "", `/parent/children/${LEARNER}`);
     render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
     await screen.findByText("Jeszcze nie ma tu lekcji.");
     expect(api.createAccount).toHaveBeenCalledTimes(1);
   });
 
-  it("draws each lesson on the home as a row of tiles, links it to its attempt page, and opens it", async () => {
+  it("draws each lesson on the child's page as a row of tiles, links it to its attempt page, and opens it", async () => {
     const auth = signedOutAuth();
     auth.signedIn = true;
     const attempts = {
@@ -374,6 +376,7 @@ describe("ParentScreen", () => {
       getLearnerAttempts: async () => attempts,
       getParentReview,
     });
+    window.history.replaceState(null, "", `/parent/children/${LEARNER}`);
     render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
     await screen.findByText("Równe grupy");
     const lesson = document.querySelector(`li[data-attempt="${ATTEMPT}"]`);
@@ -406,7 +409,7 @@ describe("ParentScreen", () => {
     expect(getParentReview).toHaveBeenCalledWith(LEARNER, ATTEMPT);
   });
 
-  it("links each lesson on the home to its assignment's overview, and opens it", async () => {
+  it("links each lesson on the child's page to its assignment's overview, and opens it", async () => {
     const auth = signedOutAuth();
     auth.signedIn = true;
     const attempts = {
@@ -427,6 +430,7 @@ describe("ParentScreen", () => {
       getLearnerAttempts: async () => attempts,
       getAssignmentAttempts,
     });
+    window.history.replaceState(null, "", `/parent/children/${LEARNER}`);
     render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
     const link = await screen.findByRole("link", { name: "Wszystkie podejścia do tej lekcji" });
     expect(link.getAttribute("href")).toBe(`/parent/assignments/${ASSIGNMENT}`);
