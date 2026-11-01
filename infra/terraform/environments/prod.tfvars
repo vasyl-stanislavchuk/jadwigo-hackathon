@@ -9,6 +9,10 @@ supabase_ref = "xhzkmpainwzrfktxffjv"
 # billing/addons, connections_pooler, read 2026-10-29). 150 leaves 50 for make api-dev and the seeds.
 app_reserved_concurrency = 150
 
+# The step host's Muse lane may spend 30 USD a UTC day across every run before GuardedMuse refuses
+# (decision dl-uxnj); each run's own cap_usd still holds per turn.
+runner_muse_cap_usd = "30"
+
 # Supabase Auth's custom domain (dl-e8ov.2.65). The TXT records come from
 # `infra/supabase-auth/domain.sh status` after the owner creates the domain; none are needed before.
 auth_domain     = "auth.jadwigo.pl"
