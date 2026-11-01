@@ -762,6 +762,12 @@ class PostgresStore implements Store {
         .where("id", "=", versionId)
         .executeTakeFirst();
       if (!version) throw notFound("the lesson version");
+      const lesson = await tx
+        .selectFrom("lesson")
+        .select("language")
+        .where("id", "=", version.lesson_id)
+        .executeTakeFirst();
+      if (!lesson) throw notFound("the lesson");
       const list = await tx
         .selectFrom("lesson_version_question")
         .selectAll()
@@ -783,6 +789,7 @@ class PostgresStore implements Store {
       const byId = new Map(questions.map((q) => [q.id, q]));
       return {
         version: read(LessonVersion, version, ID_PREFIXES.lesson_version),
+        language: lesson.language,
         questions: list.map((row) => {
           const question = byId.get(row.lesson_question_id);
           if (!question) throw notFound("a listed question");

@@ -38,6 +38,9 @@
           "type": "null"
         }
       ]
+    },
+    "language": {
+      "$ref": "#/$defs/Language"
     }
   },
   "required": [
@@ -45,7 +48,8 @@
     "plan",
     "questions",
     "open_seq",
-    "last_event_id"
+    "last_event_id",
+    "language"
   ],
   "additionalProperties": false,
   "$defs": {
@@ -2357,6 +2361,13 @@
     "EventId": {
       "type": "string",
       "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en"
+      ]
     }
   }
 }
