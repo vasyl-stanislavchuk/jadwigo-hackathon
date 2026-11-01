@@ -15,6 +15,7 @@ import {
   cursorOf,
   EMPTY,
   isOpen,
+  type SendLimit,
   turnsOf,
 } from "./conversation.ts";
 import { newEventId } from "./ids.ts";
@@ -30,9 +31,13 @@ import {
   type SendBody,
 } from "./wire.ts";
 
-/** Whether a send was refused by the message limit, read by the error's type, never its text. */
-const limited = (e: unknown): boolean =>
-  e instanceof ApiError && e.type === ErrorType.enum.MessageLimit;
+/** Which message limit refused a send, read by the error's type, never its text; null for any other failure. */
+function limitOf(e: unknown): SendLimit | null {
+  if (!(e instanceof ApiError)) return null;
+  if (e.type === ErrorType.enum.MessageLimitMinute) return "minute";
+  if (e.type === ErrorType.enum.MessageLimitDay) return "day";
+  return null;
+}
 
 export interface EngineTransport {
   /** Live pushes for one run; answers the unsubscribe. */
@@ -165,9 +170,7 @@ export function useConversation(
           dispatch({ type: "send_failed", failed: false });
           return follow(run);
         })
-        .catch((e: unknown) =>
-          dispatch({ type: "send_failed", failed: true, limited: limited(e) }),
-        );
+        .catch((e: unknown) => dispatch({ type: "send_failed", failed: true, limit: limitOf(e) }));
     },
     [transport, conversation, follow],
   );

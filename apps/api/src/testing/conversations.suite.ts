@@ -133,7 +133,7 @@ export function conversationSuite(
     });
 
     // dl-z5ja.62: both limits count real rows through store.messageUsage, in the message's own unit.
-    it("refuses the parent's message past 10 in a minute as 429 MessageLimit", async () => {
+    it("refuses the parent's message past 10 in a minute as 429 MessageLimitMinute", async () => {
       const a = await parent();
       const conversation = await a.conversation();
       const usage = vi.spyOn(s.store, "messageUsage");
@@ -144,7 +144,7 @@ export function conversationSuite(
       const eleventh = event();
       const refused = await a.say(conversation.id, "One too many", eleventh);
       expect(refused.status).toBe(429);
-      expect((refused.body as unknown as ErrorEnvelope).error.type).toBe("MessageLimit");
+      expect((refused.body as unknown as ErrorEnvelope).error.type).toBe("MessageLimitMinute");
 
       // The steward's review of #464: a resend of a stored message lands once, past the limit too.
       const tenth = sent.at(-1) as EventId;
@@ -208,7 +208,7 @@ export function conversationSuite(
       });
       const refused = await a.say(conversation.id, "Over the cap");
       expect(refused.status).toBe(429);
-      expect((refused.body as unknown as ErrorEnvelope).error.type).toBe("MessageLimit");
+      expect((refused.body as unknown as ErrorEnvelope).error.type).toBe("MessageLimitDay");
       const runs = await a.call<ConversationRuns>(
         "GET",
         pathOf("listConversationRuns", { id: conversation.id }),

@@ -378,11 +378,20 @@ describe("the engine's limits in plain words (dl-z5ja.28, dl-z5ja.83)", () => {
   });
 });
 
-describe("the message limit (dl-z5ja.62)", () => {
-  it("says it in one honest line, with no retry", () => {
-    pane({ sendFailed: true, sendLimited: true });
+describe("the message limits (dl-z5ja.62, .100)", () => {
+  it("says the minute's limit in one line: wait a moment, with no retry", () => {
+    pane({ sendFailed: true, sendLimit: "minute" });
     expect(document.querySelector("[data-row='send-limited']")?.textContent).toBe(
-      "Na razie asystent nie przyjmie więcej wiadomości. Spróbuj ponownie później.",
+      "Teraz przychodzi dużo wiadomości. Spróbuj ponownie za chwilę.",
+    );
+    expect(document.querySelector("[data-row='send-failed']")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Spróbuj ponownie" })).toBeNull();
+  });
+
+  it("says the day's limit in one line: come back tomorrow, with no retry", () => {
+    pane({ sendFailed: true, sendLimit: "day" });
+    expect(document.querySelector("[data-row='send-limited']")?.textContent).toBe(
+      "Na dziś to już wszystkie rozmowy z asystentem. Wróć jutro, a lekcja poczeka.",
     );
     expect(document.querySelector("[data-row='send-failed']")).toBeNull();
     expect(screen.queryByRole("button", { name: "Spróbuj ponownie" })).toBeNull();

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AccountId, ConversationId, EventId, PodId, RunId } from "./ids.ts";
+import { AccountId, ConversationId, EventId, LearnerId, LessonId, PodId, RunId } from "./ids.ts";
 import { Citation } from "./records.ts";
 
 /**
@@ -46,10 +46,10 @@ export const VerbName = z.enum([
 export type VerbName = z.infer<typeof VerbName>;
 
 /**
- * Which model tier a call went to. `private` trains on nothing it is sent and is the only tier
- * learner data may reach, names included; `contributor` may train on what it is sent and never
- * sees learner data (decision `dl-2uq1`, accepted on 2026-11-01:
- * `jadwigo-hackathon/decisions/2026-11-01-learner-data-reaches-the-model-by-design-for-the-parent-s-own-re`).
+ * Which model tier a call went to. `private` asks for a model that trains on nothing it is sent;
+ * `contributor` may train on what it is sent. A learner's data, names included, may reach either
+ * (decision `dl-uafq`, 2026-11-01, which supersedes `dl-2uq1`:
+ * `jadwigo-hackathon/decisions/2026-11-01-a-learner-s-data-names-included-may-reach-any-meta-model-the-con`).
  */
 export const ModelTier = z.enum(["private", "contributor"]);
 export type ModelTier = z.infer<typeof ModelTier>;
@@ -221,12 +221,25 @@ function event<T extends string, P extends z.ZodType>(type: T, payload: P) {
   return z.object({ ...Base, type: z.literal(type), payload });
 }
 
+/**
+ * The page a parent's message was sent from (Lead decision 36, dl-z5ja.107): the learner page
+ * names its learner, the lesson screen its lesson. The runner reads it from the run's pod and
+ * refuses an id the pod does not hold before any model call. Absent: the chat's own page.
+ */
+export const MessageContext = z.union([
+  z.strictObject({ learner_id: LearnerId }),
+  z.strictObject({ lesson_id: LessonId }),
+]);
+export type MessageContext = z.infer<typeof MessageContext>;
+
 export const MessageEvent = event(
   "message",
   z.object({
     from: z.enum(["parent", "agent"]),
     text: z.string(),
     attachments: z.array(Attachment).optional(),
+    /** A parent's message only: the page it was sent from. */
+    context: MessageContext.optional(),
     /** What an agent's claim about a learner rests on (seam 2). */
     citations: z.array(Citation).optional(),
   }),
@@ -365,7 +378,11 @@ export const RunInbox = z.discriminatedUnion("kind", [
   z.object({
     ...InboxBase,
     kind: z.literal("message"),
-    payload: z.object({ text: z.string(), attachments: z.array(Attachment).optional() }),
+    payload: z.object({
+      text: z.string(),
+      attachments: z.array(Attachment).optional(),
+      context: MessageContext.optional(),
+    }),
   }),
   z.object({
     ...InboxBase,

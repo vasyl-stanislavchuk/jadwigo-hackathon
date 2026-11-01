@@ -19,7 +19,8 @@
     "EventIdMismatch",
     "WriteOnce",
     "AnswerLimit",
-    "MessageLimit",
+    "MessageLimitMinute",
+    "MessageLimitDay",
     "Unauthorized",
     "BankUnavailable"
   ]
