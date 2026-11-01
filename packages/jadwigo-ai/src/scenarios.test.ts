@@ -20,7 +20,13 @@ import { InMemoryRunQueue } from "./queue/memory.ts";
 import { STEP_VISIBILITY_S } from "./queue/types.ts";
 import { acceptMessage, drain, type EngineDeps, type InboxEntry, sweep } from "./run/run-step.ts";
 import { createVerbs, fixtureBank } from "./verbs/index.ts";
-import type { Verb, VerbContext, VerbEffect, Verbs } from "./verbs/types.ts";
+import {
+  type Verb,
+  type VerbContext,
+  type VerbEffect,
+  VerbError,
+  type Verbs,
+} from "./verbs/types.ts";
 
 /**
  * PostHog's production failures as frozen scenarios (step 0, dl-z5ja.12; wave plan
@@ -525,6 +531,35 @@ describe("the engine keeps PostHog's production lessons", () => {
     await t.say("Adding within 20, grade 1.");
     await drain(t.deps);
     expect(t.muse.calls[0]?.instructions).not.toContain("writing from");
+  });
+
+  // Lead decision 38 (wave 4, dl-z5ja.102): words beside a failing tool call are dropped, with no
+  // correction and no error event. The tool's failure is logged, and the next call writes new words.
+  frozen("words beside a failing tool call are dropped, with no correction", async () => {
+    const BESIDE = "Drafting 12 questions now.";
+    const t = await setup(
+      [{ ...draft(), text: BESIDE }, { text: "That draft failed. Shall I try again?" }],
+      fakeVerbs({
+        lesson_draft: async () => {
+          throw new VerbError("BadInput", "made-up refusal");
+        },
+      }),
+    );
+    const run = await t.say("Adding within 20, grade 1.");
+    await drain(t.deps);
+
+    const events = await t.log(run);
+    expect(t.muse.calls).toHaveLength(2);
+    expect(t.muse.calls[1]?.instructions).not.toContain("was not sent to the parent");
+    expect(
+      events.flatMap((e) => (e.type === "tool_result" ? [e.payload.error?.type ?? null] : [])),
+    ).toEqual(["BadInput"]);
+    const agent = events.flatMap((e) =>
+      e.type === "message" && e.payload.from === "agent" ? [e.payload.text] : [],
+    );
+    expect(agent).toEqual(["That draft failed. Shall I try again?"]);
+    expect(events.some((e) => e.type === "error")).toBe(false);
+    expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
   });
 });
 

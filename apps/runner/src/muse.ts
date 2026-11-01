@@ -18,8 +18,10 @@ export interface MuseRuntime {
  * The host's model: `HttpMuse` against `/v1/responses` inside `GuardedMuse` (the tag, the cache key,
  * the lane's cap and a ledger row per call carrying the run id). Each tier answers with its own
  * model: `contributor` with the contributor model, `private` with the one
- * `JADWIGO_MUSE_PRIVATE_MODEL` names, or a refusal when none is named. Which tier a request asks
- * for is the engine's `tier`, which the host sets from `JADWIGO_MUSE_TIER` (`engine.ts`).
+ * `JADWIGO_MUSE_PRIVATE_MODEL` names once `HttpMuse`'s `PRICES` holds its price, and with the
+ * contributor model until then (`dl-uafq`, #478): a spend the cap cannot see is not made. Which
+ * tier a request asks for is the engine's `tier`, which the host sets from `JADWIGO_MUSE_TIER`
+ * (`engine.ts`).
  *
  * The ledger is this process's: the lane's cap holds per cold start, and each run's own `cap_usd`
  * holds per turn through `budgetGuard`. A ledger that outlives the process is not built yet.

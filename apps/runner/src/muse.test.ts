@@ -58,6 +58,16 @@ describe("the host's model", () => {
     expect(r.bodies[0]?.["model"]).toBe(CONTRIBUTOR_MODEL);
   });
 
+  // dl-z5ja.101: a named private model is used only once HttpMuse's PRICES holds its price, and
+  // the host passes no prices of its own, so a named but unpriced one still gets the contributor.
+  it("serves a private-tier request with the contributor model while the named one has no price", async () => {
+    const r = recorder();
+    const named: MuseConfig = { ...CONTRIBUTOR, tier: "private", private_model: "m" };
+    await expect(liveMuse(named, r.runtime).respond(REQUEST)).rejects.toThrow();
+    expect(r.bodies).toHaveLength(1);
+    expect(r.bodies[0]?.["model"]).toBe(CONTRIBUTOR_MODEL);
+  });
+
   it("refuses an untagged call in GuardedMuse, before anything is sent", async () => {
     const r = recorder();
     await expect(
