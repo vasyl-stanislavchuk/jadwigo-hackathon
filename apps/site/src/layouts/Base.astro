@@ -24,7 +24,14 @@ import {
   servedTwinPaths,
   twinPath,
 } from "../lib/i18n.ts";
-import { assertReviewed, headTags, jsonLd, type Page, servedPathPages } from "../lib/seo.ts";
+import {
+  assertReviewed,
+  headTags,
+  jsonLd,
+  type Page,
+  servedPathPages,
+  xDefaultTag,
+} from "../lib/seo.ts";
 
 interface Props {
   page: Page;
@@ -50,7 +57,8 @@ const served = new Set<string>([
 ]);
 const twin = page.translation && served.has(page.translation) ? page.translation : undefined;
 const { translation: _all, ...rest } = page;
-const tags = headTags(twin ? { ...rest, translation: twin } : rest, path);
+const shown = twin ? { ...rest, translation: twin } : rest;
+const tags = [...headTags(shown, path), ...xDefaultTag(shown, path)];
 const links = landing.links.filter((l) => served.has(l.href));
 const home = twinPath("index", lang);
 const footer = footerPaths(lang);
@@ -78,7 +86,7 @@ const footerLinks = [
       )
     }
     <link rel="sitemap" href="/sitemap-index.xml" />
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd())} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd(lang))} />
     <style is:global>
       *, *::before, *::after { box-sizing: border-box; }
       html { scroll-behavior: smooth; }
