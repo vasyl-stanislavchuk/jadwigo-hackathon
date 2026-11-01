@@ -78,11 +78,6 @@ const TIER: ModelTier = "private";
 const STEER =
   "You have used half of this turn's budget. Finish the lesson with what you have, with no more searching.";
 const STOP_TEXT = "I stopped here to stay within the budget. The lesson so far is on the right.";
-/**
- * The error type of an answer that failed the answer check twice (dl-z5ja.26). It belongs beside
- * `RUN_ERROR_TYPE` in `@jadwigo/contracts/run` (a question for the lead in the PR).
- */
-const ANSWER_UNCHECKED = "AnswerUnchecked";
 
 const ENDED: ReadonlySet<RunStatus> = new Set(["completed", "failed", "cancelled"]);
 
@@ -559,7 +554,7 @@ async function endUnchecked(
       event_id: await w.id("call", call_no, "unchecked"),
       payload: {
         error: {
-          type: ANSWER_UNCHECKED,
+          type: RUN_ERROR_TYPE.answerUnchecked,
           message: `the answer named ${saidOf(misses)}, which no tool result gave, after one correction`,
         },
         attempt: w.attempt,

@@ -894,7 +894,11 @@ describe("runStep and drain", () => {
 
 describe("the run's own error types", () => {
   it("are the contract's constants, which the page draws its limit lines from", () => {
-    expect(RUN_ERROR_TYPE).toEqual({ stepTimedOut: "StepTimedOut", runTimedOut: "RunTimedOut" });
+    expect(RUN_ERROR_TYPE).toEqual({
+      stepTimedOut: "StepTimedOut",
+      runTimedOut: "RunTimedOut",
+      answerUnchecked: "AnswerUnchecked",
+    });
   });
 });
 

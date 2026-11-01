@@ -2,6 +2,7 @@ import { EventId, ID_PREFIXES, idOf, Uuid } from "@jadwigo/contracts";
 import {
   ConversationId,
   type NewRunEvent,
+  RUN_ERROR_TYPE,
   RUN_IDLE_MS,
   RUN_MAX_MS,
   type RunEvent,
@@ -72,7 +73,7 @@ describe("the engine keeps PostHog's production lessons", () => {
     expect(stuck.muse.calls).toHaveLength(3);
     expect(log.filter((e) => e.type === "message" && e.payload.from === "agent")).toEqual([]);
     expect(log.find((e) => e.type === "error")?.payload).toMatchObject({
-      error: { type: "AnswerUnchecked" },
+      error: { type: RUN_ERROR_TYPE.answerUnchecked },
       retryable: false,
     });
     expect(log.at(-1)?.type).toBe("turn_complete");
