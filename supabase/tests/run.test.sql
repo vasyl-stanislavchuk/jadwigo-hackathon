@@ -53,8 +53,8 @@ select ok(
 select is(
   (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'app' and has_function_privilege('jadwigo_runner', p.oid, 'execute')),
-  3,
-  'jadwigo_runner executes only app.current_pod_id, app.run_pod and app.runs_due'
+  4,
+  'jadwigo_runner executes only app.current_pod_id, app.run_pod, app.runs_due and app.agent_step_dead_letter'
 );
 
 -- Pod A's runner sees pod A only.
