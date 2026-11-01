@@ -26,6 +26,7 @@ import { orMissing, useMissing } from "../../parts/status.ts";
 import { TileBank } from "../../parts/TileBank.tsx";
 import { praised, TONE_CLASS, type Tone, useChanged, wholeTone } from "../../parts/tone.ts";
 import type { Instant } from "../../stage/clock.ts";
+import { useScreensLang } from "../../stage/lessonLanguage.ts";
 import { type PressModality, press } from "../../stage/press.ts";
 import type { Language } from "../../stage/types.ts";
 import { missingSequence } from "../complete.ts";
@@ -82,16 +83,22 @@ function OrderList({
   order,
   tone,
   label,
+  language,
 }: {
   data: SequenceData;
   order: readonly string[];
   tone: Tone;
   label: string;
+  language: Language;
 }): JSX.Element {
+  // The label is the screens' words, under the lesson's lang (dl-uukj.41).
+  const labelLang = useScreensLang(language);
   const text = (id: string) => data.items.find((i) => i.id === id)?.text ?? id;
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-jw-small">{label}</span>
+      <span className="text-jw-small" {...labelLang}>
+        {label}
+      </span>
       <ol
         data-tone={tone}
         className={cn(
@@ -122,17 +129,23 @@ function TileRow({
   slots,
   tone,
   label,
+  language,
 }: {
   tiles: SequenceItem[];
   order: readonly (string | null)[] | null;
   slots: number;
   tone: Tone;
   label: string;
+  language: Language;
 }): JSX.Element {
+  // The label is the screens' words, under the lesson's lang (dl-uukj.41).
+  const labelLang = useScreensLang(language);
   const text = (id: string | null) => (!id ? null : (tiles.find((t) => t.id === id)?.text ?? id));
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-jw-small">{label}</span>
+      <span className="text-jw-small" {...labelLang}>
+        {label}
+      </span>
       <ol
         data-tone={tone}
         className={cn(
@@ -202,6 +215,7 @@ function TilesStill({
       </ul>
       {shown !== null && (
         <TileRow
+          language={language}
           tiles={data.tiles}
           order={shown}
           slots={slots}
@@ -211,6 +225,7 @@ function TilesStill({
       )}
       {right !== null && !same && (
         <TileRow
+          language={language}
           tiles={data.tiles}
           order={right}
           slots={slots}
@@ -220,6 +235,7 @@ function TilesStill({
       )}
       {shown === null && right === null && (
         <TileRow
+          language={language}
           tiles={data.tiles}
           order={null}
           slots={slots}
@@ -269,6 +285,7 @@ function SequenceStill({
       </p>
       {shown !== null && (
         <OrderList
+          language={language}
           data={data}
           order={shown}
           tone={right === null ? "idle" : same ? "green" : "try_again"}
@@ -276,10 +293,17 @@ function SequenceStill({
         />
       )}
       {right !== null && !same && (
-        <OrderList data={data} order={right} tone="green" label={copy(language, "answer_right")} />
+        <OrderList
+          language={language}
+          data={data}
+          order={right}
+          tone="green"
+          label={copy(language, "answer_right")}
+        />
       )}
       {shown === null && right === null && (
         <OrderList
+          language={language}
           data={data}
           order={data.items.map((i) => i.id)}
           tone="idle"

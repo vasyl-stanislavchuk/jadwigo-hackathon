@@ -1,6 +1,6 @@
 import { Router } from "@aws-lambda-powertools/event-handler/http";
 import { ErrorType, LIMITS, ROUTES, type Route, type RouteName } from "@jadwigo/contracts";
-import type { RunQueue } from "@jadwigo/jadwigo-ai";
+import { PgmqRunQueue, type RunQueue } from "@jadwigo/jadwigo-ai";
 import type { Store } from "@jadwigo/store";
 import { answer, getAttempt, startAttempt } from "./attempts.ts";
 import { type Authenticate, type Claims, signedOut } from "./auth.ts";
@@ -60,11 +60,13 @@ export interface AppDeps {
   /** The content bucket the question body route reads. With none, that route answers 502. */
   readonly bucket?: BucketDeps | undefined;
   /**
-   * Where the conversation routes enqueue a run's step. With none, a message or a Stop fails and
-   * its unit rolls back, so nothing waits in an inbox with no step to take it.
+   * Where the conversation routes enqueue a run's step on a store whose unit cannot be joined
+   * (InMemoryStore): sent after the unit. A store that hands out its unit's transaction
+   * (`unitSql`, PostgresStore) needs none: the step joins the unit. With neither, a message or a
+   * Stop fails, so nothing waits in an inbox with no step to take it.
    */
   readonly queue?: RunQueue | undefined;
-  /** The engine's clock for a run's deadlines. */
+  /** The engine's clock for a run's deadlines and the limits' windows. */
   readonly now?: () => Date;
 }
 
@@ -92,7 +94,7 @@ export function createApp(
   { authenticate = signedOut, bank, bucket, queue, now = () => new Date() }: AppDeps = {},
 ): Router {
   const app = new Router();
-  const engine: EngineRouteDeps = { queue: queue ?? NO_QUEUE, now };
+  const engine: EngineRouteDeps = { queue: queue ?? NO_QUEUE, lockPod: async () => {}, now };
 
   const register = <N extends RouteName>(name: N, handle: Handle<N>): void => {
     const route: Route = ROUTES[name];
@@ -212,10 +214,10 @@ export function createApp(
   onSigned("createConversation", (_params, body, claims) =>
     run((s) => createConversation(s, claims, body)),
   );
-  // A message's or a Stop's step is sent only once its unit has committed (afterCommit), so a
-  // consumer never reads a step for a run row it cannot see yet.
+  // A message's or a Stop's step commits with its run row and never before it, so a consumer
+  // never reads a step for a run it cannot see yet (engineUnit).
   onSigned("postMessage", (params, body, claims) =>
-    afterCommit(engine, (deps) => run((s) => postMessage(s, deps, claims, params.id, body))),
+    engineUnit(store, engine, (s, deps) => postMessage(s, deps, claims, params.id, body)),
   );
   onSigned("listConversationRuns", (params, _body, claims) =>
     run((s) => listConversationRuns(s, claims, params.id)),
@@ -224,19 +226,52 @@ export function createApp(
     run((s) => listRunEvents(s, claims, params.id, params.after)),
   );
   onSigned("cancelRun", (params, body, claims) =>
-    afterCommit(engine, (deps) => run((s) => cancelRun(s, deps, claims, params.id, body))),
+    engineUnit(store, engine, (s, deps) => cancelRun(s, deps, claims, params.id, body)),
   );
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;
 }
 
+/** The transaction a store's open unit hands out, as `PgmqRunQueue.joining` takes it. */
+type UnitSql = Parameters<typeof PgmqRunQueue.joining>[0];
+
+/** A store whose open unit hands out its own transaction: PostgresStore (dl-z5ja.67). */
+function joinable(store: Store): store is Store & { unitSql(): UnitSql } {
+  return "unitSql" in store && typeof store.unitSql === "function";
+}
+
+/**
+ * One unit for a message or a Stop. On a store that hands out its unit's transaction, the step is
+ * sent in that transaction (`PgmqRunQueue.joining`), so it commits with the run and inbox rows
+ * and vanishes with them on a rollback, and the pod's advisory lock is taken in it too. On any
+ * other store (InMemoryStore, whose unit never rolls back) the sends wait for the unit to end.
+ */
+async function engineUnit<T>(
+  store: Store | Promise<Store>,
+  engine: EngineRouteDeps,
+  work: (store: Store, deps: EngineRouteDeps) => Promise<T>,
+): Promise<T> {
+  const opened = await store;
+  if (!joinable(opened))
+    return afterCommit(engine, (deps) => opened.unit(() => work(opened, deps)));
+  return opened.unit(() => {
+    const sql = opened.unitSql();
+    return work(opened, {
+      ...engine,
+      queue: PgmqRunQueue.joining(sql),
+      // Held to the transaction's end; the key is the pod's wire id, hashed to a bigint.
+      lockPod: async (pod) => {
+        await sql.query("select pg_advisory_xact_lock(hashtextextended($1, 0))", [pod]);
+      },
+    });
+  });
+}
+
 /**
  * Runs `work` with a queue that holds its sends, and sends them, in order, only after `work` has
- * returned: after its unit committed. A unit that rolls back throws, and its sends are dropped.
- * A held send answers msg_id 0; `acceptMessage` never reads it. What this leaves: a send that
- * fails after the commit leaves the run queued with no step until the sweep closes it idle. The
- * fix, the send in the run's own transaction, is dl-z5ja.67 on the queue lane.
+ * returned: after its unit ended. A unit that throws sends nothing. A held send answers msg_id 0;
+ * `acceptMessage` never reads it. Only for a store whose unit cannot be joined (InMemoryStore).
  */
 async function afterCommit<T>(
   engine: EngineRouteDeps,

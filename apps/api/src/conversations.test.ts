@@ -25,8 +25,6 @@ conversationSuite(
         deadLetters: () => queue.deadLetters(),
       },
       stepsFor: async (run) => sent.filter((m) => m.run_id === run).length,
-      // One store, no 2nd connection: what a send could not see is the Postgres suite's to check.
-      unseenAtSend: async () => 0,
     };
   },
 );

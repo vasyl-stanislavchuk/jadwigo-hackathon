@@ -63,6 +63,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useLessonLang } from "../stage/lessonLanguage.ts";
 import type { PressHandlers } from "../stage/press.ts";
 import type {
   Category,
@@ -555,6 +556,8 @@ export function StepShell({
   const state = statusOf(input);
   const verdict = bandOf(state);
   const shellRef = useRef<HTMLDivElement>(null);
+  // The question's own text speaks the lesson's language; the controls keep the page's (dl-uukj.38).
+  const lessonLang = useLessonLang();
   const answerArea = useRef<HTMLDivElement>(null);
   const end = useRef<HTMLDivElement>(null);
   useFocusOnOpen(answerArea, keys !== null && keys.fields.length > 0);
@@ -996,10 +999,13 @@ export function StepShell({
         />
       )}
       <div data-stage>
-        <div data-area="stem">{stem}</div>
+        <div data-area="stem" {...lessonLang}>
+          {stem}
+        </div>
         <div
           ref={answerArea}
           data-area="answer"
+          {...lessonLang}
           style={ended && tallest.current > 0 ? { minHeight: tallest.current } : undefined}
           onInputCapture={onEdit}
           onPointerDownCapture={(event) => {
@@ -1018,6 +1024,8 @@ export function StepShell({
               variant="outline"
               size="icon"
               data-fold
+              // A control: the screens' language, not the lesson's around it.
+              {...("lang" in lessonLang ? { lang: language } : {})}
               aria-label={copy(language, "ds_keys")}
               aria-expanded={!folded}
               onClick={() => setFolded((f) => !f)}

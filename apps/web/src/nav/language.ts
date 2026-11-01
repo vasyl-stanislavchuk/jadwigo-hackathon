@@ -65,20 +65,44 @@ export function pickLanguage(language: Language): void {
   }
 }
 
-// A pick storage refused to keep, and the pod's language from the last /me.
+// A pick storage refused to keep, and the pod's language when storage refused it.
 let held: Language | null = null;
-let podLanguage: Language | null = null;
+let podHeld: Language | null = null;
+
+const POD_KEY = "jw.pod-language";
+
+/**
+ * The pod's language from the last /me, kept in this browser (dl-uukj.37) so a reload of / or
+ * /play speaks it before /parent opens again. Every /me that answers rewrites it, so a pod whose
+ * language changed shows on the next load; sign-out clears it.
+ */
+function podLanguageNow(storage: Storage = window.localStorage): Language | null {
+  try {
+    return known(storage.getItem(POD_KEY)) ?? podHeld;
+  } catch {
+    return podHeld;
+  }
+}
 
 /** The pod's language, from the signed-in parent's /me; null when signed out. */
-export function setPodLanguage(language: Language | null): void {
-  if (language === podLanguage) return;
-  podLanguage = language;
+export function setPodLanguage(
+  language: Language | null,
+  storage: Storage = window.localStorage,
+): void {
+  if (language === podLanguageNow(storage)) return;
+  podHeld = language;
+  try {
+    if (language === null) storage.removeItem(POD_KEY);
+    else storage.setItem(POD_KEY, language);
+  } catch {
+    // Kept for this page only.
+  }
   window.dispatchEvent(new Event(CHANGE));
 }
 
 function subscribe(listener: () => void): () => void {
   window.addEventListener(CHANGE, listener);
-  // Another tab's pick.
+  // Another tab's pick, or its /me.
   window.addEventListener("storage", listener);
   return () => {
     window.removeEventListener(CHANGE, listener);
@@ -86,7 +110,7 @@ function subscribe(listener: () => void): () => void {
   };
 }
 
-const snapshot = (): string => `${pickedLanguage.get() ?? held ?? ""}|${podLanguage ?? ""}`;
+const snapshot = (): string => `${pickedLanguage.get() ?? held ?? ""}|${podLanguageNow() ?? ""}`;
 
 /** The screens' language for this query, re-rendering when the pick or the pod's language moves. */
 export function useScreenLanguage(query: URLSearchParams): Language {

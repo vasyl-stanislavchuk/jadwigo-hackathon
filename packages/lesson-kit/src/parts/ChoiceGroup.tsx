@@ -28,6 +28,7 @@ import { Check } from "lucide-react";
 import { type KeyboardEvent as ReactKeyboardEvent, type ReactNode, useEffect, useRef } from "react";
 import type { Clock, Instant } from "../stage/clock.ts";
 import { type PressModality, press } from "../stage/press.ts";
+import type { Language } from "../stage/types.ts";
 import { ChoiceList } from "./ChoiceList.tsx";
 import { STATUS, StepStatus } from "./status.ts";
 import { FOCUS_CLASS, REMOVED_CLASS, TONE_CLASS, type Tone } from "./tone.ts";
@@ -52,6 +53,9 @@ export interface ChoiceItem {
   /** Once a step ends without a right answer, the right option shows the solution: an eye and
    * these words ("Rozwiązanie"), on the question card's paper (data-solution, README §3). */
   solution?: string | undefined;
+  /** The screens' lang for `note` and `solution`, which are the screens' words drawn under the
+   * lesson's lang (dl-uukj.41); absent outside a lesson. */
+  wordsLang?: Language | undefined;
 }
 
 export type ChoiceLayout = "list" | "grid" | "binary" | "lettered";
@@ -145,6 +149,7 @@ function Face({
   // On a centred tile the words go on its top edge, so the answer stays centred (addendum 1.5); on a
   // row of pictures too, so the row keeps its height (dl-uukj.29.94).
   const edge = onEdge(item, layout);
+  const words = item.wordsLang === undefined ? {} : { lang: item.wordsLang };
   return (
     <>
       {badge !== undefined && (
@@ -173,24 +178,38 @@ function Face({
       )}
       <span className="flex flex-col">
         {item.content}
-        {item.note && !edge && <span className="text-base font-normal">{item.note}</span>}
+        {item.note && !edge && (
+          <span className="text-base font-normal" {...words}>
+            {item.note}
+          </span>
+        )}
       </span>
-      {item.solution && !edge && <SolutionLabel words={item.solution} />}
+      {item.solution && !edge && <SolutionLabel words={item.solution} lang={item.wordsLang} />}
       {edge &&
         (item.solution ? (
-          <EdgeLabel words={item.solution} solution />
+          <EdgeLabel words={item.solution} solution lang={item.wordsLang} />
         ) : item.note ? (
-          <EdgeLabel words={item.note} />
+          <EdgeLabel words={item.note} lang={item.wordsLang} />
         ) : null)}
     </>
   );
 }
 
 /** The eye of the solution (the state table's, status.ts) and its word, at the option's end. */
-function SolutionLabel({ words }: { words: string }): JSX.Element {
+function SolutionLabel({
+  words,
+  lang,
+}: {
+  words: string;
+  lang?: Language | undefined;
+}): JSX.Element {
   const Eye = STATUS[StepStatus.MovedOn].icon;
   return (
-    <span data-solution-label className="ml-auto flex items-center gap-1 font-normal">
+    <span
+      data-solution-label
+      className="ml-auto flex items-center gap-1 font-normal"
+      {...(lang === undefined ? {} : { lang })}
+    >
       {Eye !== null && Eye !== "spinner" && <Eye aria-hidden="true" />}
       {words}
     </span>
@@ -205,14 +224,17 @@ function SolutionLabel({ words }: { words: string }): JSX.Element {
 function EdgeLabel({
   words,
   solution = false,
+  lang,
 }: {
   words: string;
   solution?: boolean | undefined;
+  lang?: Language | undefined;
 }): JSX.Element {
   const Eye = STATUS[StepStatus.MovedOn].icon;
   return (
     <span
       data-edge-label
+      {...(lang === undefined ? {} : { lang })}
       {...(solution ? { "data-solution-label": "" } : {})}
       className={cn(
         "absolute left-1/2 top-[-0.8125rem] flex h-6 -translate-x-1/2 items-center gap-[0.3125rem] whitespace-nowrap rounded-full border-2 px-2.5 text-[0.9375rem] font-normal leading-none",

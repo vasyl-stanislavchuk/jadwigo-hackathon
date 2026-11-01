@@ -41,8 +41,9 @@ The one Lambda: a router, `authorize()` and the routes, with an entry per functi
   change what the page shows next: the same `done`, the same next question.
 - The course (what is asked next, the growth rules) is `src/course.ts`, pure, and the server never asks an explain question in v0 (decision `2026-10-28-in-v0-the-server-never-asks-an-explain-question-a-lesson-plays-i`).
 - **The conversation routes** (`src/conversations.ts`, epic `dl-z5ja`) only write: `acceptMessage`
-  puts a message or a Stop in the run inbox and enqueues the step on pgmq's `agent_step` as
-  `jadwigo_api`, which may only send (`src/queue.ts`). A route never runs a step or calls a model.
+  puts a message or a Stop in the run inbox and sends the step to pgmq's `agent_step` in the same
+  unit, on its transaction (`PgmqRunQueue.joining`, `dl-z5ja.67`), under the pod's advisory lock.
+  On InMemoryStore the step is sent after the unit. A route never runs a step or calls a model.
   The pod is the caller's (`authorizeMember`), and a run or conversation is read only with the
   store's pod-scoped methods, so another pod's id is 404; never `findRunPod`, which `jadwigo_api`
   may not execute. `src/testing/conversations.suite.ts` freezes the 404.

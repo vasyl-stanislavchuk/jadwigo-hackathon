@@ -1,6 +1,6 @@
 {
   "name": "idle-vs-max-deadline",
-  "about": "The sweep closed a run that waited on the parent past its idle deadline. The checks pin deadlineDue's 2 clocks apart.",
+  "about": "The sweep closed a run that waited on the parent past its idle deadline. The checks pin deadlineDue's 2 clocks apart. The idle close writes a RunIdle error before the turn completes (dl-z5ja.94).",
   "events": [
     {
       "run_id": "run_00000000000000000000000001",
@@ -80,9 +80,14 @@
       "run_id": "run_00000000000000000000000001",
       "seq": 7,
       "event_id": "00000000-0000-4000-8014-000000000007",
-      "type": "status",
+      "type": "error",
       "payload": {
-        "status": "completed"
+        "error": {
+          "type": "RunIdle",
+          "message": "nothing happened in the turn for 10 minutes, so it closed"
+        },
+        "attempt": 1,
+        "retryable": true
       },
       "created_at": "2026-09-01T08:00:07.000Z"
     },
@@ -90,9 +95,19 @@
       "run_id": "run_00000000000000000000000001",
       "seq": 8,
       "event_id": "00000000-0000-4000-8014-000000000008",
+      "type": "status",
+      "payload": {
+        "status": "completed"
+      },
+      "created_at": "2026-09-01T08:00:08.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 9,
+      "event_id": "00000000-0000-4000-8014-000000000009",
       "type": "turn_complete",
       "payload": {},
-      "created_at": "2026-09-01T08:00:08.000Z"
+      "created_at": "2026-09-01T08:00:09.000Z"
     }
   ],
   "deadlines": [
@@ -182,6 +197,16 @@
         "from": "agent",
         "text": "Which grade is it for?",
         "attachments": []
+      },
+      {
+        "kind": "error",
+        "seq": 7,
+        "error": {
+          "type": "RunIdle",
+          "message": "nothing happened in the turn for 10 minutes, so it closed"
+        },
+        "attempt": 1,
+        "retryable": true
       }
     ],
     "lesson": null,
@@ -191,7 +216,7 @@
     "spent_usd": 0.01,
     "cap_usd": 1,
     "budget": "none",
-    "cursor": 8,
+    "cursor": 9,
     "plan": null
   }
 }

@@ -123,6 +123,11 @@ export type Attachment = z.infer<typeof Attachment>;
 export const RUN_ERROR_TYPE = {
   /** A step ran past its visibility timeout and was delivered again (`retryable`). */
   stepTimedOut: "StepTimedOut",
+  /**
+   * The turn closed past `idle_deadline_at`: nothing happened for RUN_IDLE_MS (dl-z5ja.94).
+   * `retryable`: the lesson so far stands, and the parent's next message opens a new turn.
+   */
+  runIdle: "RunIdle",
   /** The turn ran past `max_deadline_at` (not `retryable`). */
   runTimedOut: "RunTimedOut",
 } as const;
