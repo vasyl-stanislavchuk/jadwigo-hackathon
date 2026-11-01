@@ -45,7 +45,7 @@ import {
   SkipReason,
   Subject,
 } from "./records.ts";
-import { LessonPatch, Run, RunEvent } from "./run.ts";
+import { LessonPatch, MessageContext, Run, RunEvent } from "./run.ts";
 
 /**
  * What crosses `/api/v1` during an attempt (decision
@@ -669,6 +669,11 @@ export const ConversationMessage = z
      * it with no model call (dl-z5ja.76). The pane's Cofnij sends one too.
      */
     patch: LessonPatch.optional(),
+    /**
+     * A message's page (dl-z5ja.107): the learner page or the lesson screen it was sent from, as
+     * one id. A steer joins a running turn and carries none (Lead decision 36).
+     */
+    context: MessageContext.optional(),
   })
   .refine((m) => m.kind === "steer" || (m.source === undefined && m.question_ids === undefined), {
     message: "source and question_ids come only with a steer",
@@ -677,6 +682,10 @@ export const ConversationMessage = z
   .refine((m) => m.patch === undefined || (m.kind === "steer" && m.source === "lesson_edit"), {
     message: "a patch comes only with a lesson_edit steer",
     path: ["patch"],
+  })
+  .refine((m) => m.kind !== "steer" || m.context === undefined, {
+    message: "context comes only with a message",
+    path: ["context"],
   });
 export type ConversationMessage = z.infer<typeof ConversationMessage>;
 

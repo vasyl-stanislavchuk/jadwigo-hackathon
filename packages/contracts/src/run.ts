@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AccountId, ConversationId, EventId, PodId, RunId } from "./ids.ts";
+import { AccountId, ConversationId, EventId, LearnerId, LessonId, PodId, RunId } from "./ids.ts";
 import { Citation } from "./records.ts";
 
 /**
@@ -229,12 +229,25 @@ function event<T extends string, P extends z.ZodType>(type: T, payload: P) {
   return z.object({ ...Base, type: z.literal(type), payload });
 }
 
+/**
+ * The page a parent's message was sent from (Lead decision 36, dl-z5ja.107): the learner page
+ * names its learner, the lesson screen its lesson. The runner reads it from the run's pod and
+ * refuses an id the pod does not hold before any model call. Absent: the chat's own page.
+ */
+export const MessageContext = z.union([
+  z.strictObject({ learner_id: LearnerId }),
+  z.strictObject({ lesson_id: LessonId }),
+]);
+export type MessageContext = z.infer<typeof MessageContext>;
+
 export const MessageEvent = event(
   "message",
   z.object({
     from: z.enum(["parent", "agent"]),
     text: z.string(),
     attachments: z.array(Attachment).optional(),
+    /** A parent's message only: the page it was sent from. */
+    context: MessageContext.optional(),
     /** What an agent's claim about a learner rests on (seam 2). */
     citations: z.array(Citation).optional(),
   }),
@@ -379,7 +392,11 @@ export const RunInbox = z.discriminatedUnion("kind", [
   z.object({
     ...InboxBase,
     kind: z.literal("message"),
-    payload: z.object({ text: z.string(), attachments: z.array(Attachment).optional() }),
+    payload: z.object({
+      text: z.string(),
+      attachments: z.array(Attachment).optional(),
+      context: MessageContext.optional(),
+    }),
   }),
   z.object({
     ...InboxBase,

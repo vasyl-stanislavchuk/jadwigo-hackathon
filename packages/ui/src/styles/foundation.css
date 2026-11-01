@@ -247,6 +247,25 @@
   --jw-control-height: 3rem; /* 48px */
   /* The same decision's 44: a sub-row of a side menu, a switch or a segmented control in a toolbar. */
   --jw-control-height-sm: 2.75rem; /* 44px */
+  /* A small line on an app page: a row's second fact, a muted note. The parent's density sets 12.5. */
+  --jw-page-small: 0.9375rem; /* 15px */
+  /* The one question a screen asks ("Jaką lekcję przygotować?"), above its one box. */
+  --jw-page-question: 2rem; /* 32px */
+
+  /* The signed-in parent's app frame (decision 2026-11-01-the-parent-app-is-a-sidebar-shell-and-a-3-
+     * column-lesson-workspac, dl-xo0q): the sidebar and its folded rail, the 56 px line its logo row
+     * and the top bar share, the workspace's chat and details columns, the strip a folded panel
+     * leaves, the 68 px band under the chat and the lesson, the first screen's box and a dialog. */
+  --jw-shell-side: 14.5rem; /* 232px */
+  --jw-shell-rail: 3.75rem; /* 60px */
+  --jw-shell-bar: 3.5rem; /* 56px */
+  --jw-shell-chat: 22.5rem; /* 360px */
+  --jw-shell-details: 18.125rem; /* 290px */
+  --jw-shell-strip: 3.25rem; /* 52px */
+  --jw-shell-band: 4.25rem; /* 68px */
+  --jw-shell-box: 45rem; /* 720px */
+  --jw-dialog-width: 27.5rem; /* 440px */
+  --jw-radius-dialog: 0.875rem; /* 14px */
   /* Room around × and ÷ so a sum reads as one thing. */
   --jw-math-op-space: 0.2em;
 
@@ -297,6 +316,74 @@
     --jw-size-target: 2.25rem; /* 36px */
     --jw-page-h1: 1.625rem; /* 26px */
     --jw-page-h2: 1.25rem; /* 20px */
+  }
+}
+
+/* The parent's density: the signed-in parent app (decision 2026-11-01-the-parent-app-is-a-sidebar-
+ * shell-and-a-3-column-lesson-workspac, dl-xo0q). An adult works at a desk there: body 14, a small
+ * line 12.5, a control 34, corners 10 and 8, 1 px lines, the action on a 3 px edge. Page density=
+ * "parent" sets it, and a dialog or sheet it opens carries it through its portal. Sign-in and public
+ * pages keep the app scale above. The aliases a part reads are declared again here, since an alias
+ * resolves where it is declared. */
+[data-density="parent"] {
+  --jw-page-body: 0.875rem; /* 14px */
+  --jw-page-small: 0.78125rem; /* 12.5px */
+  --jw-page-h1: 1.25rem; /* 20px: a section title */
+  --jw-page-h2: 0.9375rem; /* 15px */
+  /* The settings controls (a side menu, tabs, a segmented control) read the body and small steps. */
+  --jw-size-body: 0.875rem; /* 14px */
+  --jw-size-small: 0.78125rem; /* 12.5px */
+  --jw-control-height: 2.125rem; /* 34px */
+  --jw-control-height-sm: 1.75rem; /* 28px */
+  --jw-radius-card: 0.625rem; /* 10px */
+  --jw-radius-control: 0.625rem; /* 10px */
+  --jw-radius-small: 0.5rem; /* 8px */
+  --jw-border: 1px;
+  --jw-press: 3px;
+  --radius-sm: var(--jw-radius-small);
+  --radius: var(--jw-radius-control);
+  --radius-lg: var(--jw-radius-card);
+  --radius-xl: var(--jw-radius-card);
+  --radius-2xl: var(--jw-radius-card);
+  --kid-press: var(--jw-press);
+}
+
+/* A lesson shown inside the parent's app (a step's preview) keeps the child's sizes: it shows what
+ * the child will see (the same decision). These are the :root values above, set back. */
+[data-density="parent"] :is([data-lesson-theme], [data-density="kid"]) {
+  --jw-size-body: 1.125rem;
+  --jw-size-small: 0.9375rem;
+  --jw-radius-card: 1rem;
+  --jw-radius-control: 1rem;
+  --jw-radius-small: 0.625rem;
+  --jw-border: 2px;
+  --jw-press: 4px;
+  --jw-control-height: 3rem;
+  --jw-control-height-sm: 2.75rem;
+  --radius-sm: var(--jw-radius-small);
+  --radius: var(--jw-radius-control);
+  --radius-lg: var(--jw-radius-card);
+  --radius-xl: var(--jw-radius-card);
+  --radius-2xl: var(--jw-radius-card);
+  --kid-press: var(--jw-press);
+}
+
+/* The logo's crown tips on hover or keyboard focus of the logo or the link around it (brand/README.md,
+ * hover 5a): only the crown moves, and it springs back. Still under reduced motion. */
+[data-slot="logo"] .crown {
+  transform-origin: -12.5px 2.15px;
+  transition: transform 320ms cubic-bezier(0.34, 1.8, 0.5, 1);
+}
+[data-slot="logo"]:hover .crown {
+  transform: translateY(-12.5px) rotate(-18deg);
+}
+:is(a, button):is(:hover, :focus-visible) [data-slot="logo"] .crown {
+  transform: translateY(-12.5px) rotate(-18deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="logo"] .crown {
+    transition: none;
+    transform: none;
   }
 }
 
