@@ -30,6 +30,12 @@ export type RedirectOutcome = "signed-in" | "no-email" | "failed" | "none";
 export interface Auth {
   /** The signed-in adult's access token, or null. */
   token(): Promise<string | null>;
+  /**
+   * A new access token from the session's refresh token, or null when nobody is signed in. A
+   * parent's first token is issued before their account row exists and carries no `pod_id`; the
+   * chat page's run channel refreshes once so its join carries one (dl-z5ja.65, dl-z5ja.92).
+   */
+  refresh(): Promise<string | null>;
   /** Mails a 6-digit code, making the user on first use. */
   sendCode(email: string): Promise<void>;
   /** Turns the code into a session; false when the code does not match. */
@@ -124,6 +130,10 @@ export function supabaseAuth(
     async token() {
       const { data } = await supabase.auth.getSession();
       return data.session?.access_token ?? null;
+    },
+    async refresh() {
+      const { data, error } = await supabase.auth.refreshSession();
+      return error ? null : (data.session?.access_token ?? null);
     },
     async sendCode(email) {
       const { error } = await supabase.auth.signInWithOtp({

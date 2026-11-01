@@ -71,6 +71,7 @@ function signedOutAuth(
   const auth = {
     signedIn: false,
     token: async () => (auth.signedIn ? "header.payload.signature" : null),
+    refresh: async () => (auth.signedIn ? "header.payload.signature" : null),
     sendCode: vi.fn(async () => {}),
     verifyCode: vi.fn(async (_email: string, code: string) => {
       auth.signedIn = code === "123456";

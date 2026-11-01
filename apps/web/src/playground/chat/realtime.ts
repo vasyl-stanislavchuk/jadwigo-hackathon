@@ -95,7 +95,10 @@ export function apiTransport(): { transport: EngineTransport; auth: Auth } | nul
   });
   const token = () => auth.token();
   return {
-    transport: routesTransport(createClient({ base: "", token }), supabaseLive(realtime, token)),
+    transport: routesTransport(
+      createClient({ base: "", token }),
+      supabaseLive(realtime, token, () => auth.refresh()),
+    ),
     auth,
   };
 }

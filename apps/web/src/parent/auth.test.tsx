@@ -140,3 +140,17 @@ describe("enabledProviders", () => {
     expect(unused).not.toHaveBeenCalled();
   });
 });
+
+describe("refresh (dl-z5ja.65)", () => {
+  it("answers the refreshed session's access token, and null when the refresh fails", async () => {
+    const refreshSession = vi
+      .fn()
+      .mockResolvedValueOnce({ data: { session: { access_token: "token-with-pod" } }, error: null })
+      .mockResolvedValueOnce({ data: { session: null }, error: new Error("no session") });
+    const supabase = { auth: { refreshSession } } as unknown as SupabaseClient;
+    const auth = supabaseAuth(supabase, []);
+    expect(await auth.refresh()).toBe("token-with-pod");
+    expect(await auth.refresh()).toBeNull();
+    expect(refreshSession).toHaveBeenCalledTimes(2);
+  });
+});
