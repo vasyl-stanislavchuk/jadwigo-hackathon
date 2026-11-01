@@ -17,7 +17,7 @@ export interface BankQuery {
 }
 
 /** One question set as a search row: what the model reads to choose. */
-export interface BankSet {
+interface BankSet {
   set_id: string;
   title: string;
   grades: readonly string[];
@@ -27,7 +27,7 @@ export interface BankSet {
 }
 
 /** One question, whole, as a lesson file's question step holds it, in the query's language. */
-export interface BankQuestion {
+interface BankQuestion {
   /** `authored:<id>` or `bank:<id>`: the step's `based_on.question`. */
   source: string;
   set_id: string;

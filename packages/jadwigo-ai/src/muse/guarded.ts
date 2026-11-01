@@ -21,7 +21,7 @@ export interface LedgerRow {
   at: string;
 }
 
-export interface MuseLedger {
+interface MuseLedger {
   /** USD spent so far by one lane, the tag's first `:` segment. */
   spent(lane: string): Promise<number>;
   write(row: LedgerRow): Promise<void>;
