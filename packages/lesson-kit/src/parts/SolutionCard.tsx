@@ -17,6 +17,7 @@
 
 import { copy } from "@jadwigo/copy";
 import type { ReactNode } from "react";
+import { useLessonLang } from "../stage/lessonLanguage.ts";
 import type { Language, PageSolutionLine } from "../stage/types.ts";
 import { Picture } from "./Picture.tsx";
 import { RichText } from "./RichText.tsx";
@@ -37,6 +38,8 @@ export function SolutionCard({
   lines: readonly PageSolutionLine[];
   body?: ReactNode | undefined;
 }): JSX.Element | null {
+  // The worked lines are the lesson's text; the card's heading stays the page's (dl-uukj.39).
+  const lessonLang = useLessonLang();
   if (lines.length === 0) return null;
   // The eye is the moved-on row's icon in the state table (docs/17 §2f rule 3).
   const Eye = STATUS.moved_on.icon;
@@ -56,7 +59,7 @@ export function SolutionCard({
         {lines.map((line, i) => (
           <li key={i} data-solution-step>
             <span data-solution-n aria-hidden="true">{`${i + 1}.`}</span>
-            <div data-solution-text>
+            <div data-solution-text {...lessonLang}>
               <RichText text={line.text} />
               {line.pictures?.map((p, j) => (
                 <Picture key={`${p.src}|${j}`} {...p} />

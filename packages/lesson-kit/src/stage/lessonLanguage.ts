@@ -15,3 +15,12 @@ export function useLessonLang(): { lang?: Language } {
   const language = useContext(LessonLanguage);
   return language === null ? {} : { lang: language };
 }
+
+/**
+ * `{ lang: language }` for the screens' own words that sit inside the question's text (a field's
+ * name, "Your answer", "Choose all"), so they keep the screens' language under the lesson's
+ * (dl-uukj.41); nothing when no lesson language is set, so a step outside a lesson is unchanged.
+ */
+export function useScreensLang(language: Language): { lang?: Language } {
+  return useContext(LessonLanguage) === null ? {} : { lang: language };
+}

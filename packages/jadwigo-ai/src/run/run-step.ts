@@ -658,13 +658,44 @@ async function endPastMax(w: Writer, attempt: number, now: Date): Promise<void> 
       run_id: w.run,
       event_id: await w.id("error", "max"),
       payload: {
-        error: { type: RUN_ERROR_TYPE.runTimedOut, message: "the turn ran past its 30 minutes" },
+        error: {
+          type: RUN_ERROR_TYPE.runTimedOut,
+          message: `the turn ran past its ${minutes(RUN_MAX_MS)} minutes`,
+        },
         attempt,
         retryable: false,
       },
     },
   ]);
   await endTurn(w, "failed", now);
+}
+
+/**
+ * Closes a turn past its idle deadline (dl-z5ja.94): an `error` event the page's idle limit line
+ * reads, then the turn completes. Retryable: the lesson so far stands.
+ */
+async function endPastIdle(w: Writer, attempt: number, now: Date): Promise<void> {
+  await w.append([
+    {
+      type: "error",
+      run_id: w.run,
+      event_id: await w.id("error", "idle"),
+      payload: {
+        error: {
+          type: RUN_ERROR_TYPE.runIdle,
+          message: `nothing happened in the turn for ${minutes(RUN_IDLE_MS)} minutes, so it closed`,
+        },
+        attempt,
+        retryable: true,
+      },
+    },
+  ]);
+  await endTurn(w, "completed", now);
+}
+
+/** A deadline in whole minutes, for the words of its error. */
+function minutes(ms: number): number {
+  return Math.round(ms / 60_000);
 }
 
 type ModelResponse = Extract<RunEvent, { type: "model_response" }>;
@@ -910,7 +941,7 @@ async function closeDue(
     if (due === "max") {
       await endPastMax(w, run.attempt, now);
     } else {
-      await endTurn(w, "completed", now);
+      await endPastIdle(w, run.attempt, now);
     }
   } catch (error) {
     if (error instanceof StaleAttempt) return null;
