@@ -46,10 +46,10 @@ export const VerbName = z.enum([
 export type VerbName = z.infer<typeof VerbName>;
 
 /**
- * Which model tier a call went to. `private` trains on nothing it is sent and is the only tier
- * learner data may reach, names included; `contributor` may train on what it is sent and never
- * sees learner data (decision `dl-2uq1`, accepted on 2026-11-01:
- * `jadwigo-hackathon/decisions/2026-11-01-learner-data-reaches-the-model-by-design-for-the-parent-s-own-re`).
+ * Which model tier a call went to. `private` asks for a model that trains on nothing it is sent;
+ * `contributor` may train on what it is sent. A learner's data, names included, may reach either
+ * (decision `dl-uafq`, 2026-11-01, which supersedes `dl-2uq1`:
+ * `jadwigo-hackathon/decisions/2026-11-01-a-learner-s-data-names-included-may-reach-any-meta-model-the-con`).
  */
 export const ModelTier = z.enum(["private", "contributor"]);
 export type ModelTier = z.infer<typeof ModelTier>;
