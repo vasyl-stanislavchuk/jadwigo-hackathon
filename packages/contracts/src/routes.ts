@@ -92,8 +92,15 @@ export const ROUTE_TAGS = [
 export type RouteTag = (typeof ROUTE_TAGS)[number];
 
 const Seq = z.coerce.number().pipe(z.int().min(1));
-/** A run event cursor: the last `seq` the caller holds, 0 before the first. */
-const After = z.coerce.number().pipe(z.int().min(0));
+/**
+ * A run event cursor: the last `seq` the caller holds, 0 before the first. Digits only, so "",
+ * "-0", "0x10" and "1e3" are refused, and at most `run_event.seq`'s Postgres `integer`.
+ */
+const After = z
+  .string()
+  .regex(/^\d+$/, "a cursor is a whole number")
+  .transform(Number)
+  .pipe(z.int().min(0).max(2_147_483_647));
 
 export const ROUTES = {
   health: {

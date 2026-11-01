@@ -636,7 +636,7 @@ export const LIMITS = {
  */
 export const ConversationCreate = z.strictObject({
   event_id: EventId,
-  title: z.string().min(1).optional(),
+  title: z.string().trim().min(1).optional(),
 });
 export type ConversationCreate = z.infer<typeof ConversationCreate>;
 
@@ -646,7 +646,8 @@ export type ConversationCreate = z.infer<typeof ConversationCreate>;
  */
 export const ConversationMessage = z.strictObject({
   event_id: EventId,
-  text: z.string().min(1),
+  /** Trimmed first, so words of only spaces never open a run. */
+  text: z.string().trim().min(1),
 });
 export type ConversationMessage = z.infer<typeof ConversationMessage>;
 
