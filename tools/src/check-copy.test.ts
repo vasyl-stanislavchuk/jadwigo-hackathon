@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { checkCopy, type LocaleFiles, readLocales } from "./check-copy.ts";
+import { checkCopy, type LocaleFiles, readLocales, unreviewedLines } from "./check-copy.ts";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -82,45 +82,33 @@ describe("check-copy", () => {
     expect(checkCopy(locales)).toEqual(["en.check has no flag in messages/review.en.json"]);
   });
 
-  it("fails a planted unreviewed line in a live language's prod build", () => {
+  it("passes an unreviewed line in a live language and lists it for the owner (dl-5ssh.125)", () => {
     const locales = fresh();
     const [pl] = locales;
     if (pl) {
       pl.messages["start"] = "Zaczynamy!";
       pl.review["start"] = false;
     }
-    expect(checkCopy(locales)).toEqual([
-      "pl.start is unreviewed and a prod build would ship it: review it and set its flag in messages/review.pl.json",
-    ]);
+    expect(checkCopy(locales)).toEqual([]);
+    expect(unreviewedLines(locales)).toEqual(["pl.start: Zaczynamy!"]);
   });
 
-  it("fails a baselined line whose text changed, and its stale baseline entry", () => {
+  it("lists a baselined line once its text changed, and passes a stale baseline entry", () => {
     const locales = fresh();
     const [pl] = locales;
     if (pl) pl.messages["check"] = "Sprawdź teraz";
-    expect(checkCopy(locales)).toEqual([
-      "pl.check is unreviewed and a prod build would ship it: review it and set its flag in messages/review.pl.json",
-      "pl.check is in messages/baseline.pl.json but is reviewed, changed or gone: drop it there",
-    ]);
-  });
-
-  it("fails a baselined line that is reviewed now, until it leaves the baseline", () => {
-    const locales = fresh();
-    const [pl] = locales;
-    if (pl) pl.review["check"] = true;
-    expect(checkCopy(locales)).toEqual([
-      "pl.check is in messages/baseline.pl.json but is reviewed, changed or gone: drop it there",
-    ]);
-    if (pl) pl.baseline = {};
     expect(checkCopy(locales)).toEqual([]);
+    expect(unreviewedLines(locales)).toEqual(["pl.check: Sprawdź teraz"]);
+    if (pl) pl.review["check"] = true;
+    expect(unreviewedLines(locales)).toEqual([]);
   });
 
-  it("gates each variant on its own flag", () => {
+  it("lists each variant on its own flag, and nothing in a studio language", () => {
     const locales = fresh();
     const [pl] = locales;
     if (pl) pl.review["count"] = { "steps=one": true, "steps=few": true, "steps=many": true };
-    expect(checkCopy(locales)).toEqual([
-      "pl.count [steps=other] is unreviewed and a prod build would ship it: review it and set its flag in messages/review.pl.json",
-    ]);
+    expect(checkCopy(locales)).toEqual([]);
+    expect(unreviewedLines(locales)).toEqual(["pl.count [steps=other]: {n} other"]);
+    expect(unreviewedLines(fresh())).toEqual([]);
   });
 });
