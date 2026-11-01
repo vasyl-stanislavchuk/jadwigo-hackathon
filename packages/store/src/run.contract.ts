@@ -14,19 +14,7 @@ import type { Store } from "./store.ts";
  * Until the store lane (dl-z5ja.14) lands, its tests are named in `EXPECTED_RED` and run as
  * `it.fails`: the lane removes each name as it turns green, and the set ends empty.
  */
-const EXPECTED_RED = new Set([
-  "finds the pod behind a run, and nothing for an unknown id",
-  "writes a conversation and a run once, a run starting queued at attempt 1",
-  "lists a conversation's runs oldest first",
-  "finds the runs whose idle or max deadline has come, in every pod, and no ended run",
-  "reads a run in another pod as NotFound, and writes nothing there",
-  "updates a run only while its attempt matches, and says stale when it doesn't",
-  "numbers events from 1 with no gap, and lists them after a cursor",
-  "stores an event_id once: a replayed write is a no-op that answers the stored row",
-  "appends nothing for a stale attempt",
-  "refuses an event for another run with BadRequest",
-  "keeps an inbox row once by event_id, and hands each pending row over once, oldest first",
-]);
+const EXPECTED_RED = new Set<string>([]);
 
 export function runContract(name: string, make: () => Promise<Store> | Store): void {
   /** `it`, or `it.fails` while the name is in EXPECTED_RED. */
