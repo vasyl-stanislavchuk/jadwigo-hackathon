@@ -385,7 +385,7 @@
       }
     },
     {
-      "description": "Search the bank for question sets that meet a need; the bank's search envelope.\n\n        grade is the bare grade number (\"3\"); words is the need in plain words in `language`\n        (pl, en or uk). arm and stage reach only the bank's own route (JW_BANK_URL); the /api/v1\n        route answers stage final with every arm.\n        ",
+      "description": "Search the bank for question sets that meet a need; the bank's search envelope.\n\n        grade is the bare grade number (\"3\"); words is the need in plain words in `language`\n        (pl or en). arm and stage reach only the bank's own route (JW_BANK_URL); the /api/v1\n        route answers stage final with every arm.\n        ",
       "inputSchema": {
         "properties": {
           "arm": {
@@ -509,6 +509,51 @@
       "outputSchema": {
         "additionalProperties": true,
         "title": "question_showDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "description": "A workflow's language and its parts in that language: read them before the first line.\n\n        workflow_name is jadwigo-lesson-compose, jadwigo-report-write or jadwigo-lesson-review.\n        The language comes from record, the record the workflow writes to (a goal's\n        lesson_language, a pod's language, a review batch's language), or from language (pl or\n        en) when the parent picked it and there is no record. Returns language, language_name,\n        language_source, shared, parts (style, glossary, checklist) and examples (reviewed lines\n        only). A language with no reviewed material fails naming the missing parts: stop there\n        and tell the parent, never write the lines in another language.\n        ",
+      "inputSchema": {
+        "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Language"
+          },
+          "record": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Record"
+          },
+          "workflow_name": {
+            "title": "Workflow Name",
+            "type": "string"
+          }
+        },
+        "required": ["workflow_name"],
+        "title": "workflow_partsArguments",
+        "type": "object"
+      },
+      "name": "workflow_parts",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "workflow_partsDictOutput",
         "type": "object"
       }
     }

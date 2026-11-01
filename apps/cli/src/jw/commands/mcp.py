@@ -30,7 +30,7 @@ from typing import Any
 import click
 
 from jw import doctor, lesson, lesson_edit, lesson_publish
-from jw.commands import question
+from jw.commands import question, workflow
 from jw.errors import JwError
 
 TOOLS = (
@@ -98,7 +98,7 @@ def build_server() -> Any:
         """Search the bank for question sets that meet a need; the bank's search envelope.
 
         grade is the bare grade number ("3"); words is the need in plain words in `language`
-        (pl, en or uk). arm and stage reach only the bank's own route (JW_BANK_URL); the /api/v1
+        (pl or en). arm and stage reach only the bank's own route (JW_BANK_URL); the /api/v1
         route answers stage final with every arm.
         """
         return _call(
@@ -305,6 +305,26 @@ def build_server() -> Any:
         verified_at, lesson_id, version, assignment_id, timings and publish_path.
         """
         return _call(lesson_publish.publish, draft_id=draft_id, target=target)
+
+    @server.tool(name="workflow_parts")
+    def workflow_parts(
+        workflow_name: str,
+        record: dict[str, Any] | None = None,
+        language: str | None = None,
+    ) -> dict[str, Any]:
+        """A workflow's language and its parts in that language: read them before the first line.
+
+        workflow_name is jadwigo-lesson-compose, jadwigo-report-write or jadwigo-lesson-review.
+        The language comes from record, the record the workflow writes to (a goal's
+        lesson_language, a pod's language, a review batch's language), or from language (pl or
+        en) when the parent picked it and there is no record. Returns language, language_name,
+        language_source, shared, parts (style, glossary, checklist) and examples (reviewed lines
+        only). A language with no reviewed material fails naming the missing parts: stop there
+        and tell the parent, never write the lines in another language.
+        """
+        return _call(
+            workflow.parts_for, name=workflow_name, record=record, language=language
+        )
 
     @server.tool(name="doctor")
     def doctor_tool(language: str = "pl") -> dict[str, Any]:

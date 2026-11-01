@@ -1,6 +1,6 @@
 ---
 name: jadwigo-lesson-compose
-description: "Use when a parent asks for a lesson for their child (\"6 zadań z mnożenia, klasa 3\", \"przygotuj lekcję z dodawania\"): drafts it from the question bank with the jadwigo MCP tools lesson_draft and lesson_check, writes only what the bank lacks (each question's twin and mistake cards) in short, kind Polish, publishes it locally with lesson_publish, and gives the parent the card and the play link. Needs only the jadwigo MCP server; it works in an empty folder."
+description: "Use when a parent asks for a lesson for their child (\"6 zadań z mnożenia, klasa 3\", \"przygotuj lekcję z dodawania\"): drafts it from the question bank with the jadwigo MCP tools lesson_draft and lesson_check, writes only what the bank lacks (each question's twin and mistake cards) in short, kind words in the lesson's language (Polish or English), publishes it locally with lesson_publish, and gives the parent the card and the play link. Needs only the jadwigo MCP server; it works in an empty folder."
 ---
 
 # Compose a lesson from the bank
@@ -61,8 +61,14 @@ Call `lesson_draft` with:
   before anything leaves the machine.
 - `topic`: what the lesson is about in a few words, taken from the request, with no count, grade
   or name (`mnożenie`, `dodawanie do 100`). The bank searches these words.
-- `grade`, `names`, and `count` when the parent gave one. Leave `language` at `pl` and `kind` at
-  `practice` unless the parent asked for a review or a check.
+- `grade`, `names`, and `count` when the parent gave one. Leave `kind` at `practice` unless the
+  parent asked for a review or a check.
+- `language`: the lesson's language, which comes from the goal (its `lesson_language`), never
+  from the words of the request. With no goal, it is the language the parent asked in, `pl`
+  unless they wrote English. Before you write a line, call `workflow_parts` with
+  `workflow_name: "jadwigo-lesson-compose"` and the goal as `record` (or that `language`), and
+  follow its `parts` and `examples`: they are how the lesson's language is written. When it fails
+  naming missing parts, stop and tell the parent the lesson cannot be made in that language yet.
 
 ## 3. Read the slim view
 
@@ -88,7 +94,7 @@ The result keeps the draft under `draft_id`. Read, before you write anything:
 ## 4. Write each question's words
 
 Take the questions one by one. For each, read its `say`, `data`, `key` and, when it is there,
-`copied_help` again, then write what its `you_write` lists, in Polish. No two questions get the
+`copied_help` again, then write what its `you_write` lists, in the lesson's language. No two questions get the
 same text.
 
 ### The twin (`twin`)
@@ -144,6 +150,9 @@ Each card speaks to that miss on that question, with its numbers: for 6 · 7 and
 that does).
 
 ### Polish for a child of 6 to 9
+
+For an English lesson, `workflow_parts` gives the same rules written for English.
+
 
 - Short sentences, one idea each. Address the child as `ty`. Every sentence ends with `.`, `?` or
   `!`; a question ends with `?`.

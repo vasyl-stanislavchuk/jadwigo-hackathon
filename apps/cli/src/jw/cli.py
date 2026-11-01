@@ -3,7 +3,7 @@
 import click
 
 from jw import __version__
-from jw.commands import bank, doctor, lesson, mcp, question
+from jw.commands import bank, doctor, lesson, mcp, question, workflow
 
 
 @click.group()
@@ -17,3 +17,4 @@ main.add_command(mcp.group, name="mcp")
 main.add_command(lesson.group, name="lesson")
 main.add_command(doctor.command, name="doctor")
 main.add_command(bank.group, name="bank")
+main.add_command(workflow.group, name="workflow")
