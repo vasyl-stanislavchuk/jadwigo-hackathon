@@ -16,7 +16,7 @@ import { ChatPane } from "./ChatPane.tsx";
 import { type ConversationState, lessonOf, type Turn, turnsOf } from "./conversation.ts";
 import { newConversationId } from "./ids.ts";
 import { LessonPane } from "./LessonPane.tsx";
-import { changedSteps } from "./revisions.ts";
+import { changedOf } from "./revisions.ts";
 import { type EngineTransport, hotTransport, useConversation } from "./useConversation.ts";
 
 const STORED = "jadwigo.playground.chat.conversation";
@@ -56,21 +56,6 @@ function useViewportHeight(): number | null {
 }
 
 type PaneName = "chat" | "lesson";
-
-/**
- * The steps the latest revision changed (dl-z5ja.30): against the revision before it in the same
- * turn (`RunView.previous_lesson`, dl-z5ja.68), else against the turn before's lesson. Read from
- * the log, so a reload highlights the same steps the live page did.
- */
-function changedOf(turns: readonly Turn[]): ReadonlySet<string> {
-  for (let i = turns.length - 1; i >= 0; i -= 1) {
-    const view = turns[i]?.view;
-    if (!view?.lesson) continue;
-    const before = view.previous_lesson ?? lessonOf(turns.slice(0, i));
-    return changedSteps(before?.lesson_file ?? null, view.lesson.lesson_file);
-  }
-  return new Set();
-}
 
 /** The 2 panes for a conversation's state: what the tests draw from the golden logs. */
 function ChatView({

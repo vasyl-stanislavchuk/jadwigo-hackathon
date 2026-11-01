@@ -5,6 +5,10 @@
  * highlights nothing rather than guessing.
  */
 
+import type { Turn } from "./conversation.ts";
+import { lessonOf } from "./conversation.ts";
+import { editView } from "./widgets/parse.ts";
+
 type Fields = Record<string, unknown>;
 
 const isFields = (value: unknown): value is Fields =>
@@ -31,4 +35,35 @@ export function changedSteps(previous: unknown, next: unknown): ReadonlySet<stri
   const changed = new Set<string>();
   for (const [id, step] of stepsById(next)) if (before.get(id) !== step) changed.add(id);
   return changed;
+}
+
+/**
+ * The steps the latest revision changed (dl-z5ja.30). When the turn's last call that wrote the
+ * lesson is a finished lesson_edit with a view, its `changed_step_ids` say so (dl-z5ja.69), an
+ * empty list for a no-op edit. Otherwise the lesson is diffed against the revision before it in
+ * the turn (`RunView.previous_lesson`, dl-z5ja.68), else the turn before's lesson. Both come from
+ * the log, so a reload marks what the live page marked.
+ */
+export function changedOf(turns: readonly Turn[]): ReadonlySet<string> {
+  for (let i = turns.length - 1; i >= 0; i -= 1) {
+    const view = turns[i]?.view;
+    if (!view?.lesson) continue;
+    const writer = view.chat.findLast(
+      (item) =>
+        item.kind === "tool" &&
+        item.state === "done" &&
+        (item.verb === "lesson_edit" || item.verb === "lesson_draft"),
+    );
+    if (
+      writer?.kind === "tool" &&
+      writer.verb === "lesson_edit" &&
+      writer.view?.kind === "lesson_edit"
+    ) {
+      const edit = editView(writer.view.data);
+      if (edit !== null) return new Set(edit.changed_step_ids);
+    }
+    const before = view.previous_lesson ?? lessonOf(turns.slice(0, i));
+    return changedSteps(before?.lesson_file ?? null, view.lesson.lesson_file);
+  }
+  return new Set();
 }

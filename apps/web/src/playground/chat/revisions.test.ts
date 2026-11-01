@@ -1,6 +1,10 @@
+import type { Run } from "@jadwigo/contracts/run";
+import { RunEvent } from "@jadwigo/contracts/run";
+import { type ChatItem, foldRun } from "@jadwigo/core";
 import { RUN_LOGS } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
-import { changedSteps } from "./revisions.ts";
+import type { Turn } from "./conversation.ts";
+import { changedOf, changedSteps } from "./revisions.ts";
 
 /** The happy turn's 2 lesson files, revision 1 and revision 2. */
 function revisions(): unknown[] {
@@ -38,5 +42,40 @@ describe("changedSteps (dl-z5ja.30)", () => {
     const added = structuredClone(second) as { script: { parts: { steps: unknown[] }[] } };
     added.script.parts[0]?.steps.push({ id: "s09", say: { pl: "Nowy krok" } });
     expect([...changedSteps(second, added)]).toEqual(["s09"]);
+  });
+});
+
+describe("changedOf (dl-z5ja.30)", () => {
+  /** The happy turn, with its chat ending on the tool line `last` when one is given. */
+  function happyTurn(last?: Extract<ChatItem, { kind: "tool" }>): Turn {
+    const log = RUN_LOGS.find((l) => l.name === "happy-turn");
+    const view = foldRun((log?.events ?? []).map((e) => RunEvent.parse(e)));
+    if (last) view.chat.push(last);
+    return { run: { id: view.lesson ? "run" : "none" } as unknown as Run, view };
+  }
+
+  const edit = (data: unknown): Extract<ChatItem, { kind: "tool" }> => ({
+    kind: "tool",
+    seq: 99,
+    call_id: "call_edit",
+    verb: "lesson_edit",
+    state: "done",
+    error: null,
+    view: { kind: "lesson_edit", data: data as never },
+  });
+
+  it("takes the last lesson_edit's changed_step_ids from its view", () => {
+    expect([...changedOf([happyTurn(edit({ changed_step_ids: ["s05"] }))])]).toEqual(["s05"]);
+  });
+
+  it("marks nothing for a no-op edit", () => {
+    expect([...changedOf([happyTurn(edit({ changed_step_ids: [] }))])]).toEqual([]);
+  });
+
+  it("diffs against previous_lesson when the edit has no readable view, or the draft wrote last", () => {
+    // Revisions 1 and 2 of the happy turn hold the same steps.
+    expect([...changedOf([happyTurn(edit({ changed: "s05" }))])]).toEqual([]);
+    expect([...changedOf([happyTurn()])]).toEqual([]);
+    expect([...changedOf([])]).toEqual([]);
   });
 });
