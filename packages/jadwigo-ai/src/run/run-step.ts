@@ -25,7 +25,7 @@ import type { RunQueue } from "../queue/types.ts";
 import { type QueuedStep, STEP_VISIBILITY_S } from "../queue/types.ts";
 import type { Verbs } from "../verbs/types.ts";
 import { type VerbContext, type VerbEffect, VerbError } from "../verbs/types.ts";
-import { eventIdFor, runIdFor } from "./ids.ts";
+import { eventIdFor, turnRunIdFor } from "./ids.ts";
 
 /**
  * The engine's loop (Lead decisions 5-9, 13): a message lands in the run inbox, a step is one Muse
@@ -205,29 +205,53 @@ export function acceptMessage(
     return inbox;
   };
   return store.unit(async () => {
-    const runs = await store.listRuns(pod, conversation_id);
-    const open = runs.findLast((r) => !isEnded(r.status));
+    for (let tries = 0; tries < 5; tries++) {
+      const runs = await store.listRuns(pod, conversation_id);
+      let open = runs.findLast((r) => !isEnded(r.status));
 
-    if (entry.kind !== "message" && !open) {
-      // Nothing is running: a cancel, a steer or an approval lands on the last turn and changes nothing.
-      const last = runs.at(-1);
-      if (!last) {
-        throw new StoreError(
-          ErrorType.enum.BadRequest,
-          `the conversation has no run for a ${entry.kind}`,
-        );
+      if (entry.kind !== "message" && !open) {
+        // Nothing is running: a cancel, a steer or an approval lands on the last turn and changes nothing.
+        const last = runs.at(-1);
+        if (!last) {
+          throw new StoreError(
+            ErrorType.enum.BadRequest,
+            `the conversation has no run for a ${entry.kind}`,
+          );
+        }
+        return { run: last, inbox: await put(last.id) };
       }
-      return { run: last, inbox: await put(last.id) };
-    }
 
-    if (open) {
+      // No open run: the next turn's, named by its number in the conversation (dl-z5ja.85). The store
+      // writes a run once, so 2 first messages racing open one run and both land in its inbox.
+      let opened = false;
+      if (!open) {
+        const now = deps.now().getTime();
+        const run = await store.createRun(pod, {
+          id: await turnRunIdFor(conversation_id, runs.length),
+          created_by: message.created_by,
+          conversation_id,
+          workflow: WORKFLOW,
+          resumes: null,
+          cap_usd: message.cap_usd ?? DEFAULT_CAP_USD,
+          idle_deadline_at: at(now + RUN_IDLE_MS),
+          max_deadline_at: at(now + RUN_MAX_MS),
+        });
+        // A racing message's turn that has already ended: this one opens the turn after it.
+        if (isEnded(run.status)) continue;
+        open = run;
+        opened = run.status === "queued";
+      }
+
       const inbox = await put(open.id);
       if (inbox.run_id !== open.id) {
-        // A resend of a message an earlier turn already holds.
+        // A resend of a message an earlier turn already holds. A run this call opened gets its step
+        // all the same: it ends the turn without a model call unless a racing message joined it.
+        if (opened) await queue.send({ run_id: open.id, attempt: open.attempt });
         return { run: await store.getRun(pod, inbox.run_id), inbox };
       }
       const now = deps.now().getTime();
       const cancel = entry.kind === "cancel";
+      const waiting = open.status === "awaiting_input";
       const woken = await updateLatest(store, pod, open, (run) => {
         const change: RunChange = {};
         if (cancel && run.cancel_requested_at === null) change.cancel_requested_at = at(now);
@@ -237,36 +261,15 @@ export function acceptMessage(
         }
         return Object.keys(change).length > 0 ? change : null;
       });
-      if (woken.changed && open.status === "awaiting_input" && woken.run.status === "queued") {
-        await queue.send({ run_id: woken.run.id, attempt: woken.run.attempt });
-      }
+      // A step for a run this call opened (a racing caller's too: one of the 2 steps runs stale or
+      // claims nothing to pay for, dl-z5ja.41), or for one it woke from awaiting_input.
+      const woke = woken.changed && waiting && woken.run.status === "queued";
+      if (opened || woke) await queue.send({ run_id: woken.run.id, attempt: woken.run.attempt });
       return { run: woken.run, inbox };
     }
-
-    const id = await runIdFor(entry.event_id);
-    const resent = runs.find((r) => r.id === id);
-    if (resent) return { run: resent, inbox: await put(id) };
-
-    const now = deps.now().getTime();
-    const run = await store.createRun(pod, {
-      id,
-      created_by: message.created_by,
-      conversation_id,
-      workflow: WORKFLOW,
-      resumes: null,
-      cap_usd: message.cap_usd ?? DEFAULT_CAP_USD,
-      idle_deadline_at: at(now + RUN_IDLE_MS),
-      max_deadline_at: at(now + RUN_MAX_MS),
-    });
-    const inbox = await put(run.id);
-    if (inbox.run_id !== run.id) {
-      // A resend of a mid-turn message whose turn has ended: the new run has nothing to do.
-      const w = new Writer(store, pod, run.id, run.attempt, []);
-      await endTurn(w, "completed", deps.now());
-      return { run: await store.getRun(pod, inbox.run_id), inbox };
-    }
-    await queue.send({ run_id: run.id, attempt: run.attempt });
-    return { run, inbox };
+    throw new Error(
+      `conversation ${conversation_id} kept opening turns while a message was accepted`,
+    );
   });
 }
 
@@ -371,6 +374,9 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       // The answer is recorded and nothing came after it: a redelivery ends the turn on it.
       return endTurn(w, "completed", deps.now());
     }
+
+    // Nothing from the parent: a turn a resend opened and no message joined (dl-z5ja.85).
+    if (!parentSpokeAfter(w.log, 0)) return endTurn(w, "completed", deps.now());
 
     const spent = spentOf(w.log);
     const level = budgetGuard(spent, run.cap_usd);
