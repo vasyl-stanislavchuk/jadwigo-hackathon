@@ -28,7 +28,8 @@ import { type Clock, FamilyView, type Instant, LessonTheme, ViewMode } from "@ja
 import { Card, CardContent, Heading, Link, Notice, OutcomeTile, Page, Spinner } from "@jadwigo/ui";
 import { type ReactElement, type ReactNode, useEffect, useState } from "react";
 import { NavLink } from "../nav/NavLink.tsx";
-import { ReviewStep, specOf } from "../review/ReviewStep.tsx";
+import { ReviewStep } from "../review/ReviewStep.tsx";
+import { specOf } from "../review/Still.tsx";
 import { CATEGORY, pageLang } from "./adult.ts";
 import { rowOutcome } from "./overview/grid.ts";
 import { OUTCOME_TONE, OutcomeIcon, OutcomeWord, outcomeWord } from "./overview/outcome.tsx";

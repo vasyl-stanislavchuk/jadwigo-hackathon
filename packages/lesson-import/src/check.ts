@@ -50,12 +50,13 @@ import { mistakeClassesByStep, mistakeClassesOf, unknownBoosts } from "./mistake
  *   when the file fails too; a step whose question does not parse is left out.
  */
 
-interface CheckError {
+export interface CheckError {
   readonly step_id: string | null;
   readonly message: string;
 }
 
-interface CheckResult {
+/** What `check` answers, and what `--json` prints. */
+export interface CheckResult {
   readonly ok: boolean;
   readonly findings: readonly Finding[];
   readonly errors: readonly CheckError[];
@@ -604,7 +605,11 @@ function errorsAsJw(fileId: unknown, findings: readonly Finding[]): Found {
   };
 }
 
-function check(raw: unknown): CheckResult {
+/**
+ * Checks one lesson file in-process, as `--json` does on the command line:
+ * `@jadwigo/lesson-import/check`, Node only, for the engine's `lesson_check` verb (dl-z5ja.15).
+ */
+export function check(raw: unknown): CheckResult {
   const fileId = LessonFile.shape.id.safeParse((raw as { id?: unknown } | null)?.id);
   const known = fileId.success
     ? {

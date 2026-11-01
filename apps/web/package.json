@@ -42,7 +42,9 @@
     "react-dom": "mounts the app (src/main.tsx)",
     "typescript": "tsc for this package's typecheck script",
     "vite": "serves and builds the app (vite.config.ts)",
-    "vitest": "runs this package's unit test with the root vitest.config.ts"
+    "vitest": "runs this package's unit test with the root vitest.config.ts",
+    "@jadwigo/jadwigo-ai": "the engine dev/engine-plugin.ts runs in the dev server for /playground/chat: acceptMessage, drain, ScriptedMuse, createVerbs, fixtureBank, InMemoryRunQueue (dl-z5ja.17)",
+    "@jadwigo/store": "InMemoryStore, the store dev/engine-plugin.ts keeps the chat page's runs in (dl-z5ja.17)"
   },
   "devDependencies": {
     "@jadwigo/testing": "workspace:*",
@@ -74,6 +76,8 @@
     "lucide-react": "catalog:",
     "radix-ui": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "@jadwigo/jadwigo-ai": "workspace:*",
+    "@jadwigo/store": "workspace:*"
   }
 }

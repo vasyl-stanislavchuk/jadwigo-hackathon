@@ -1366,11 +1366,11 @@ def _plain(value: Any) -> Any:
 # TeX a Khan item writes, as plain characters a parent reads (dl-e8ov.5.38.6). The lesson file
 # keeps its TeX: the player draws it.
 _TEX_SYMBOLS = {
-    r"\cdot": "·", r"\times": "×", r"\div": ":", r"\le": "≤", r"\leq": "≤", r"\ge": "≥",
+    r"\cdot": " · ", r"\times": " × ", r"\div": " : ", r"\le": "≤", r"\leq": "≤", r"\ge": "≥",
     r"\geq": "≥", r"\lt": "<", r"\gt": ">", r"\neq": "≠", r"\ne": "≠", r"\approx": "≈",
     r"\pm": "±", r"\%": "%", r"\degree": "°", r"\circ": "°", r"\dots": "…", r"\ldots": "…",
     r"\cdots": "…", r"\,": " ", r"\;": " ", r"\quad": " ", r"\qquad": " ", r"\ ": " ",
-    r"\log": "log", r"\ln": "ln", r"\pi": "π", r"\sqrt": "√",
+    r"\log": "log", r"\ln": "ln", r"\pi": "π",
 }
 # Characters TeX escapes, kept as they are: they stand in a private-use character while the `$`
 # and braces of the maths go.
@@ -1380,7 +1380,9 @@ _TEX_FRAC_DIGITS = re.compile(r"\\[dt]?frac\s*(\d)\s*(\d)")
 _TEX_COLOR_ARG = re.compile(r"\\(?:textcolor|color)\s*\{[^{}]*\}")
 _TEX_SQRT = re.compile(r"\\sqrt\s*\{([^{}]*)\}")
 _TEX_SCRIPT = re.compile(r"([_^])\{([^{}]*)\}")
-_TEX_WRAP = re.compile(r"\\([A-Za-z]+)\s*\{([^{}]*)\}")
+_TEX_MIXED = re.compile(r"(\d)\s*(?=\\[dt]?frac(?![A-Za-z]))")
+# Not a fraction or a root: `\dfrac{1}{\blue{4}}` waits until its colour goes, then reads 1/4.
+_TEX_WRAP = re.compile(r"\\(?!(?:[dt]?frac|sqrt)(?![A-Za-z]))([A-Za-z]+)\s*\{([^{}]*)\}")
 _TEX_WORD = re.compile(r"\\([A-Za-z]+)")
 # Commands that only style what follows (size, colour, spacing, text mode): they go. Any other
 # command keeps its name, so a card never silently loses a word it does not know.
@@ -1395,7 +1397,16 @@ _TEX_STYLE = re.compile(
 def _grouped(part: str) -> str:
     """A fraction's or a root's part in brackets when it is more than one term: `(1+2)/3`."""
     part = part.strip()
-    return f"({part})" if re.search(r"[\s+\-−·×:/]", part) else part
+    # A command still in it (`2\cdot3`) is an operator not yet made plain.
+    return f"({part})" if re.search(r"[\s+\-−·×:/\\]", part) else part
+
+
+def _script(m: re.Match[str]) -> str:
+    """A superscript or subscript keeps its grouping: `x^{2+1}` reads `x^(2+1)`. One that still
+    holds a command waits until the command is plain (`^{\\circ}` reads `^°`)."""
+    if "\\" in m[2]:
+        return m[0]
+    return f"{m[1]}{_grouped(m[2])} "
 
 
 def tex_plain(text: Any) -> Any:
@@ -1410,18 +1421,22 @@ def tex_plain(text: Any) -> Any:
     for tex, kept in _TEX_KEPT.items():
         out = out.replace(tex, kept)
     out = _TEX_COLOR_ARG.sub("", out)  # \textcolor{red}{7}: the colour's name is no word
+    # A mixed number, `2\frac{1}{2}`, keeps its whole part apart: 2 1/2, never 21/2.
+    out = _TEX_MIXED.sub(r"\1 ", out)
     for _ in range(8):  # nested wrappers, from the inside out
         before = out
         out = _TEX_FRAC.sub(lambda m: f"{_grouped(m[1])}/{_grouped(m[2])}", out)
         out = _TEX_FRAC_DIGITS.sub(r"\1/\2", out)
         out = _TEX_SQRT.sub(lambda m: f"√{_grouped(m[1])}", out)
-        out = _TEX_SCRIPT.sub(r"\1\2 ", out)
+        out = _TEX_SCRIPT.sub(_script, out)
         for tex, plain in sorted(_TEX_SYMBOLS.items(), key=lambda kv: -len(kv[0])):
             out = re.sub(re.escape(tex) + r"(?![A-Za-z])", plain, out)
         out = _TEX_WRAP.sub(lambda m: m[2] if _TEX_STYLE.fullmatch(m[1]) else f"{m[1]} {m[2]}",
                             out)
         if out == before:
             break
+    # A bare root, `\sqrt 2`, once the braced ones have their brackets (_TEX_SQRT, in the loop).
+    out = re.sub(r"\\sqrt(?![A-Za-z])", "√", out)
     out = _TEX_WORD.sub(lambda m: "" if _TEX_STYLE.fullmatch(m[1]) else m[1], out)
     out = out.replace("$", "")
     out = re.sub(r"[{}]", "", out)

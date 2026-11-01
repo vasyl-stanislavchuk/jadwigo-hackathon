@@ -1,0 +1,148 @@
+---
+// The hero's one question (dl-5ssh.4.9): the first question of a featured lesson on squared notebook
+// paper, answered right here. A wrong tile shows the hint and steps aside so the child tries again,
+// never a bare "wrong". A right tile turns green, Jadwiga's clip plays over the sheet as it does in
+// the app (apps/web/src/play/Queen.tsx), and then the sheet turns over to the invitation to a parent
+// account. Under reduced motion there is no clip and no fade: the invitation shows at once. Grading a
+// fixed choose question is a string compare, so the site needs no @jadwigo/core. Without JS the tiles
+// stay disabled and the sheet is a teaser for the play button beside it.
+import { getEntry } from "astro:content";
+import queenMov from "@jadwigo/ui/brand/queen.mov";
+import queenWebm from "@jadwigo/ui/brand/queen.webm";
+
+const q = (await getEntry("landing", "pl"))?.data.hero.question;
+if (!q) throw new Error("src/content/pl/landing.yaml has no hero question");
+---
+
+<div class="sheet" data-answer={q.answer} data-right={q.right} data-hint={q.hint}>
+  <div class="face ask">
+    <p class="say" id="hero-say">{q.say}</p>
+    <div class="tiles" role="group" aria-labelledby="hero-say">
+      {q.choices.map((c) => <button type="button" class="tile" disabled>{c}</button>)}
+    </div>
+    <p class="said" aria-live="polite"></p>
+  </div>
+  <div class="face join" hidden>
+    <p class="said">{q.right}</p>
+    <p class="pitch">{q.signUp.text}</p>
+    <a class="btn" href="/zaloguj/">{q.signUp.button}</a>
+  </div>
+  <video class="queen" aria-hidden="true" muted playsinline preload="none" hidden>
+    <source src={queenMov} type='video/mp4; codecs="hvc1"' />
+    <source src={queenWebm} type="video/webm" />
+  </video>
+</div>
+
+<script>
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  for (const sheet of document.querySelectorAll<HTMLElement>(".sheet")) {
+    const said = sheet.querySelector(".ask .said");
+    const join = sheet.querySelector<HTMLElement>(".join");
+    const video = sheet.querySelector("video");
+    const tiles = [...sheet.querySelectorAll<HTMLButtonElement>(".tile")];
+
+    // The clip loads only once a visitor reaches for a tile, so the page itself stays light.
+    const warm = () => {
+      if (video) video.preload = "auto";
+    };
+    sheet.addEventListener("pointerover", warm, { once: true });
+    sheet.addEventListener("focusin", warm, { once: true });
+
+    // The clip's end, a load error, a refused autoplay, a tap or 6 s, whichever is first, turns the
+    // sheet over. The invitation takes the focus so a keyboard lands on its button.
+    let turned = false;
+    const turn = () => {
+      if (turned || !join) return;
+      turned = true;
+      document.removeEventListener("pointerdown", turn);
+      if (video) video.hidden = true;
+      join.hidden = false;
+      join.getBoundingClientRect(); // a layout first, so the fade starts from the hidden face
+      sheet.classList.add("turned");
+      join.querySelector("a")?.focus({ preventScroll: true });
+    };
+
+    const celebrate = () => {
+      if (still || !video) return turn();
+      video.hidden = false;
+      video.addEventListener("ended", turn, { once: true });
+      video.addEventListener("error", turn, { once: true });
+      video.play().catch(turn);
+      setTimeout(turn, 6000);
+      document.addEventListener("pointerdown", turn); // the tap that answered has already passed
+    };
+
+    for (const tile of tiles) {
+      tile.disabled = false;
+      tile.addEventListener("click", () => {
+        const right = tile.textContent === sheet.dataset["answer"];
+        tile.classList.add(right ? "right" : "miss");
+        tile.disabled = true;
+        if (said) said.textContent = (right ? sheet.dataset["right"] : sheet.dataset["hint"]) ?? "";
+        if (!right) return;
+        sheet.classList.add("done");
+        for (const t of tiles) t.disabled = true;
+        celebrate();
+      });
+    }
+  }
+</script>
+
+<style>
+  /* Squared paper (kratka): 2 sets of lines every 1.5rem, the exercise book a child writes maths in.
+     Both faces share one grid cell, so turning over never changes the sheet's height. */
+  .sheet {
+    --cell: 1.5rem;
+    position: relative; display: grid;
+    padding: calc(var(--cell) * 1.5) var(--cell);
+    border: 2px solid var(--jw-line); border-radius: var(--jw-radius-card);
+    box-shadow: 0 6px 0 var(--jw-line);
+    background:
+      linear-gradient(to right, var(--jw-line) 1px, transparent 1px) 0 0 / var(--cell) var(--cell),
+      linear-gradient(to bottom, var(--jw-line) 1px, transparent 1px) 0 0 / var(--cell) var(--cell),
+      var(--jw-card);
+  }
+  @media (min-width: 52rem) { .sheet { padding: calc(var(--cell) * 2) calc(var(--cell) * 1.5); } }
+  .face { grid-area: 1 / 1; }
+  .say { font-size: clamp(1.9rem, 4.5vw, 2.6rem); font-weight: 700; line-height: calc(var(--cell) * 2); }
+  .tiles { display: flex; flex-wrap: wrap; gap: calc(var(--cell) * 0.75); margin-top: calc(var(--cell) * 1.5); }
+  .tile {
+    min-width: 4.75rem; min-height: 4.5rem; padding: 0 1rem;
+    font: inherit; font-size: 2rem; font-weight: 700; color: var(--jw-ink); cursor: pointer;
+    background: var(--jw-card); border: 2px solid var(--jw-line-strong); border-radius: var(--jw-radius-control);
+    box-shadow: 0 4px 0 var(--jw-line-strong);
+    transition: background-color 150ms, border-color 150ms, transform 80ms, box-shadow 80ms;
+  }
+  .tile:disabled { cursor: default; }
+  .tile:not(:disabled):active { transform: translateY(3px); box-shadow: 0 1px 0 var(--jw-line-strong); }
+  .tile:focus-visible { outline: 3px solid var(--jw-focus); outline-offset: 3px; }
+  .tile.right { background: var(--jw-right); border-color: var(--jw-right-edge); color: var(--jw-right-ink); box-shadow: 0 4px 0 var(--jw-right-edge); }
+  .tile.miss { background: var(--jw-help); border-color: var(--jw-help-edge); color: var(--jw-help-ink); box-shadow: none; }
+  .done .tile:not(.right) { opacity: 0.45; }
+  .said {
+    min-height: calc(var(--cell) * 2); margin-top: var(--cell);
+    font-size: 1.2rem; font-weight: 700; line-height: var(--cell);
+  }
+
+  /* The invitation, on the same paper: the right line, one sentence for the parent, one button. */
+  .join { align-self: center; }
+  .join .said { margin-top: 0; color: var(--jw-right-ink); }
+  .pitch { font-size: 1.25rem; line-height: calc(var(--cell) * 1.5); max-width: 28ch; margin-top: calc(var(--cell) / 2); }
+  .join .btn { margin-top: calc(var(--cell) * 1.5); }
+
+  /* The turn: the question fades out and lifts away as the invitation rises in, 450 ms. */
+  .ask, .join { transition: opacity 450ms ease, translate 450ms ease; }
+  .turned .ask { opacity: 0; translate: 0 -0.75rem; visibility: hidden; transition-property: opacity, translate, visibility; }
+  .join { opacity: 0; translate: 0 0.75rem; }
+  .turned .join { opacity: 1; translate: 0 0; }
+  .join[hidden] { display: none; }
+
+  /* Jadwiga stands on the sheet's bottom edge at its right, as she stands on the footer in the app. */
+  .queen { position: absolute; right: -1.5rem; bottom: 0; width: min(75%, 22rem); pointer-events: none; z-index: 1; }
+  .queen[hidden] { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tile, .ask, .join { transition: none; }
+  }
+</style>
