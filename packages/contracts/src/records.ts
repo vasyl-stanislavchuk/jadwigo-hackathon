@@ -38,7 +38,14 @@ const At = z.iso.datetime();
 /** A dense count from 1: `version`, `position`, `seq`, `try_no` (RULES.md rule 7). */
 const Count = z.int().min(1);
 
-export const Language = z.enum(["pl", "en", "uk"]);
+/**
+ * The languages Jadwigo speaks, the codes in packages/config/src/languages.ts, which
+ * tools/src/check-languages.ts compares with this list (contracts imports nothing of ours). No
+ * Ukrainian (jadwigo-platform decision of 2026-10-26); Polish and English are both served
+ * (jadwigo-marketing/decisions/2026-11-01-for-the-hackathon-jadwigo-is-live-in-polish-and-english-on-jadwi).
+ * The database's `language` type still lists `uk`; no row uses it.
+ */
+export const Language = z.enum(["pl", "en"]);
 export type Language = z.infer<typeof Language>;
 export const Subject = z.enum(["math", "polish", "english"]);
 export type Subject = z.infer<typeof Subject>;

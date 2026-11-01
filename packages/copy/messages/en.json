@@ -1,0 +1,11 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "site_404_title": "Page not found · Jadwigo",
+  "site_404_heading": "This page isn't here.",
+  "site_404_home": "Back to the home page",
+  "site_language_name": "English",
+  "site_switch_label": "Page language",
+  "site_note_text": "This page is also in English.",
+  "site_note_go": "Open in English",
+  "site_note_dismiss": "No, thanks"
+}

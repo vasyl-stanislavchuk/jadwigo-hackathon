@@ -110,8 +110,7 @@
       "type": "string",
       "enum": [
         "pl",
-        "en",
-        "uk"
+        "en"
       ]
     },
     "GoalStatus": {

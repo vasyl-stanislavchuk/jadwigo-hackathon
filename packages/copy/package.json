@@ -4,19 +4,24 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./messages": "./src/paraglide/messages.js",
+    "./runtime": "./src/paraglide/runtime.js"
   },
   "scripts": {
     "lint": "biome check .",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run --config ../../vitest.config.ts --project unit"
+    "test": "vitest run --config ../../vitest.config.ts --project unit",
+    "messages": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --emit-ts-declarations --no-emit-git-ignore --no-emit-prettier-ignore --no-emit-readme --strategy baseLocale"
   },
   "//": {
+    "@inlang/paraglide-js": "compiles messages/{pl,en}.json into typed message functions in src/paraglide (bun run messages), for the site and, after dl-5ssh.34.22, every screen",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit test with the root vitest.config.ts"
   },
   "devDependencies": {
+    "@inlang/paraglide-js": "2.29.1",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

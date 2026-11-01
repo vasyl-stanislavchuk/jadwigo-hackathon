@@ -1107,8 +1107,7 @@
       "type": "string",
       "enum": [
         "pl",
-        "en",
-        "uk"
+        "en"
       ]
     },
     "Subject": {

@@ -14,7 +14,7 @@ type Ended = "correct" | "skipped" | "missed";
 type Family = "choose" | "enter" | "slots" | "sequence" | "group" | "place" | "explain";
 type GoalStatus = "active" | "paused" | "reached" | "dropped";
 type Identity = "pick" | "type" | "none";
-type Language = "pl" | "en" | "uk";
+type Language = "pl" | "en";
 type LessonKind = "practice" | "review" | "check" | "diagnostic";
 type LessonStatus = "draft" | "published" | "archived";
 type MasteryLevel = "not_started" | "attempted" | "familiar" | "proficient" | "mastered";
@@ -628,7 +628,7 @@ export const COLUMNS = {
     name: { type: "text", nullable: false, generated: false, labels: null },
     country: { type: "text", nullable: false, generated: false, labels: null },
     version: { type: "text", nullable: false, generated: false, labels: null },
-    language: { type: "language", nullable: false, generated: false, labels: ["pl", "en", "uk"] },
+    language: { type: "language", nullable: false, generated: false, labels: ["pl", "en"] },
     source_url: { type: "text", nullable: true, generated: false, labels: null },
     created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
   },
@@ -639,12 +639,7 @@ export const COLUMNS = {
     name: { type: "text", nullable: false, generated: false, labels: null },
     created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
     words: { type: "text", nullable: true, generated: false, labels: null },
-    lesson_language: {
-      type: "language",
-      nullable: false,
-      generated: true,
-      labels: ["pl", "en", "uk"],
-    },
+    lesson_language: { type: "language", nullable: false, generated: true, labels: ["pl", "en"] },
     status: {
       type: "goal_status",
       nullable: false,
@@ -672,12 +667,7 @@ export const COLUMNS = {
     country: { type: "text", nullable: true, generated: false, labels: null },
     curriculum_id: { type: "uuid", nullable: true, generated: false, labels: null },
     school_grade: { type: "int4", nullable: true, generated: false, labels: null },
-    school_language: {
-      type: "language",
-      nullable: true,
-      generated: false,
-      labels: ["pl", "en", "uk"],
-    },
+    school_language: { type: "language", nullable: true, generated: false, labels: ["pl", "en"] },
   },
   learner_report: {
     id: { type: "uuid", nullable: false, generated: true, labels: null },
@@ -735,7 +725,7 @@ export const COLUMNS = {
     id: { type: "uuid", nullable: false, generated: true, labels: null },
     pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
     title: { type: "text", nullable: false, generated: false, labels: null },
-    language: { type: "language", nullable: false, generated: false, labels: ["pl", "en", "uk"] },
+    language: { type: "language", nullable: false, generated: false, labels: ["pl", "en"] },
     kind: {
       type: "lesson_kind",
       nullable: false,
@@ -833,7 +823,7 @@ export const COLUMNS = {
     pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
     lesson_question_id: { type: "uuid", nullable: false, generated: false, labels: null },
     twin: { type: "uuid", nullable: true, generated: false, labels: null },
-    language: { type: "language", nullable: false, generated: false, labels: ["pl", "en", "uk"] },
+    language: { type: "language", nullable: false, generated: false, labels: ["pl", "en"] },
     slug: { type: "text", nullable: false, generated: false, labels: null },
     position: { type: "int4", nullable: false, generated: false, labels: null },
     label: { type: "text", nullable: false, generated: false, labels: null },
@@ -871,7 +861,7 @@ export const COLUMNS = {
   pod: {
     id: { type: "uuid", nullable: false, generated: true, labels: null },
     name: { type: "text", nullable: false, generated: false, labels: null },
-    language: { type: "language", nullable: false, generated: false, labels: ["pl", "en", "uk"] },
+    language: { type: "language", nullable: false, generated: false, labels: ["pl", "en"] },
     created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
   },
   run: {

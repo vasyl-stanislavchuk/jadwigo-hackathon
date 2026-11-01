@@ -136,18 +136,15 @@ export function routeSuite(
         }
       });
 
-      it("serves a language with no examples as an empty list, and an unknown one as NotFound", async () => {
+      it("answers a language Jadwigo does not speak as NotFound, uk included (dl-9t2o.1)", async () => {
         await importExamples(s.store);
-        const uk = await s.call<PlaygroundExamples>(
-          "GET",
-          pathOf("playgroundExamples", { language: "uk" }),
-        );
-        expect(uk.body).toEqual({ examples: [], questions: [] });
-        const de = await s.call<ErrorEnvelope>(
-          "GET",
-          pathOf("playgroundExamples", { language: "de" }),
-        );
-        expect(de.status).toBe(404);
+        for (const language of ["uk", "de"]) {
+          const reply = await s.call<ErrorEnvelope>(
+            "GET",
+            pathOf("playgroundExamples", { language }),
+          );
+          expect(reply.status, language).toBe(404);
+        }
       });
     });
 

@@ -478,6 +478,10 @@ export const COPY_KEYS = [
   "parent_google_in_app",
   "parent_copy_link",
   "parent_link_copied",
+  // The parent picks the language the app and reports speak (dl-uukj.33, owner 2026-11-01).
+  "parent_language",
+  "parent_language_pl",
+  "parent_language_en",
   // end parent login
   // the home page's featured lessons (dl-5ssh.3.6)
   "home_title",

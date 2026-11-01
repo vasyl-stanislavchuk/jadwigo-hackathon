@@ -77,8 +77,45 @@ export function checkLanguages(
   return problems;
 }
 
+/**
+ * The packages that import nothing of ours keep their own copy of the language codes: the
+ * contracts enum and packages/copy's type (dl-5ssh.34.69). Each must list exactly the codes in
+ * `LANGUAGES`, in order. Apps import the list from @jadwigo/config and need no entry here.
+ */
+export const MIRRORS: readonly { path: string; pattern: RegExp }[] = [
+  {
+    path: "packages/contracts/src/records.ts",
+    pattern: /export const Language = z\.enum\(\[([^\]]*)\]\)/,
+  },
+  { path: "packages/copy/src/types.ts", pattern: /export type Language = ([^;]*);/ },
+];
+
+/** The codes a mirror lists, in order, or null when its line is not found. */
+export function mirroredCodes(text: string, pattern: RegExp): string[] | null {
+  const found = pattern.exec(text)?.[1];
+  if (found === undefined) return null;
+  return [...found.matchAll(/"([a-z]+)"/g)].map(([, code]) => code ?? "");
+}
+
+/** Every mirror that disagrees with the list; an empty list passes. */
+export function checkMirrors(
+  source: string,
+  read: (path: string) => string = (path) => readFileSync(path, "utf8"),
+): string[] {
+  const codes = languages(source).map((l) => l.code);
+  const problems: string[] = [];
+  for (const { path, pattern } of MIRRORS) {
+    const listed = mirroredCodes(read(path), pattern);
+    if (listed === null) problems.push(`${path}: its language list is not found`);
+    else if (listed.join() !== codes.join())
+      problems.push(`${path} lists ${listed.join(", ")}; ${LIST} lists ${codes.join(", ")}`);
+  }
+  return problems;
+}
+
 if (import.meta.main) {
-  const problems = checkLanguages(readFileSync(LIST, "utf8"));
+  const source = readFileSync(LIST, "utf8");
+  const problems = [...checkLanguages(source), ...checkMirrors(source)];
   for (const p of problems) console.error(`languages: ${p}`);
   if (problems.length > 0) {
     console.error(`languages: restore the part, or fix its entry in ${LIST}.`);

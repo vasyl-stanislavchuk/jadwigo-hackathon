@@ -14,7 +14,8 @@
       "!**/.venv",
       "!**/schemas/*.json",
       "!packages/contracts/openapi.json",
-      "!bun.lock"
+      "!bun.lock",
+      "!packages/copy/src/paraglide"
     ]
   },
   "formatter": {
