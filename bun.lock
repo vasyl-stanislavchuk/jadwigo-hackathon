@@ -92,6 +92,7 @@
         "@astrojs/sitemap": "3.7.4",
         "@fontsource/andika": "catalog:",
         "@jadwigo/config": "workspace:*",
+        "@jadwigo/contracts": "workspace:*",
         "@jadwigo/ui": "workspace:*",
         "astro": "7.4.2",
       },

@@ -72,7 +72,13 @@ export function routeSuite(
         expect(reply.body.lessons.find((l) => l.assignment_id === open)).toMatchObject({
           title: expect.any(String),
           language: "pl",
+          subject: expect.any(String),
+          question_count: expect.any(Number),
         });
+        // What the landing page's card shows: the planned questions and the first one's line.
+        const card = reply.body.lessons.find((l) => l.assignment_id === open);
+        expect(card?.question_count).toBeGreaterThan(0);
+        expect(card?.first_say).toEqual(expect.any(String));
         // A listed lesson starts with no login.
         const started = await s.call<AttemptSnapshot>(
           "POST",

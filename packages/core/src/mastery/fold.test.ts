@@ -7,8 +7,18 @@ import { foldLearner, masteryOf } from "./index.ts";
 const START = Date.parse("2026-09-01T00:00:00.000Z");
 const HOUR = 3_600_000;
 
+/**
+ * The store's key on an answer: `attempt_answer` is unique on (attempt_id, seq, try_no)
+ * (supabase/migrations/20261027120000_core_v0.sql), and the memory store refuses a second answer
+ * to a try with AnswerConflict. A skip is try 1, as `answer` writes it. The evidence view repeats
+ * an answer once per skill, so one skill never sees two rows with this key.
+ */
+function tryKey(r: Pick<Raw, "attempt" | "seq" | "try_no" | "outcome">): string {
+  return `${r.attempt}#${r.seq}#${r.outcome === "skip" ? 1 : r.try_no}`;
+}
+
 /** A run of answers over a few weeks: tries right or wrong, with or without help, and skips. */
-const answers = fc.array(
+const answers = fc.uniqueArray(
   fc.record({
     attempt: fc.integer({ min: 1, max: 6 }),
     seq: fc.integer({ min: 1, max: 3 }),
@@ -17,7 +27,7 @@ const answers = fc.array(
     outcome: fc.constantFrom("clean", "assisted", "miss", "skip"),
     mixed: fc.boolean(),
   }),
-  { maxLength: 25 },
+  { maxLength: 25, selector: tryKey },
 );
 interface Raw {
   attempt: number;
@@ -100,5 +110,34 @@ describe("the fold's rules, as properties", () => {
         expect(foldLearner([...rows].reverse(), [], NOW)).toEqual(folded);
       }),
     );
+  });
+});
+
+describe("the order property's counterexample (dl-e8ov.5.75)", () => {
+  // fast-check { seed: 1803801076, path: "16:1:1:15:15:16:31:31:31" } drew two answers to attempt 6,
+  // seq 2, try 1 at hour 720, one clean and one miss. The store holds one answer per try, so the
+  // generator keeps that key unique; these are the same question as the store can hold it.
+  const raw = { attempt: 6, seq: 2, hours: 720, mixed: false };
+
+  it("two answers to one try share the store's key, so the generator keeps one", () => {
+    expect(tryKey({ ...raw, try_no: 1, outcome: "clean" })).toBe(
+      tryKey({ ...raw, try_no: 1, outcome: "miss" }),
+    );
+  });
+
+  it.each([
+    ["clean then a miss", "clean", "miss", "familiar", false],
+    ["a miss then clean", "miss", "clean", "attempted", true],
+  ] as const)("try 1 decides, in either row order: %s", (_, first, second, level, attention) => {
+    const rows = [
+      answer({ ...raw, try_no: 1, outcome: first }),
+      answer({ ...raw, try_no: 2, outcome: second }),
+    ].map(row);
+    for (const order of [rows, [...rows].reverse()]) {
+      const [got] = foldLearner(order, [], NOW);
+      expect(got?.level).toBe(level);
+      expect(got?.needs_attention).toBe(attention);
+    }
+    expect(foldLearner([...rows].reverse(), [], NOW)).toEqual(foldLearner(rows, [], NOW));
   });
 });

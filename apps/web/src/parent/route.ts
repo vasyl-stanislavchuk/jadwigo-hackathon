@@ -15,6 +15,7 @@
  */
 
 import { AssignmentId, AttemptId, LearnerId } from "@jadwigo/contracts";
+import type { Provider } from "../config.ts";
 
 const PARENT_PATH = "/parent";
 const ATTEMPTS_PATH = `${PARENT_PATH}/attempts`;
@@ -104,4 +105,19 @@ export function claimOf(query: URLSearchParams): AssignmentId | null {
 export function learnerOf(query: URLSearchParams): LearnerId | null {
   const parsed = LearnerId.safeParse(query.get("learner"));
   return parsed.success ? parsed.data : null;
+}
+
+/**
+ * The sign-in jadwigo.pl/zaloguj hands over (dl-5ssh.4.2): `?provider=google|facebook` starts that
+ * provider, `?email=` fills the field and sends the code. Anything else is ignored.
+ */
+export function providerOf(query: URLSearchParams): Provider | null {
+  const named = query.get("provider");
+  return named === "google" || named === "facebook" ? named : null;
+}
+
+/** The address `?email` names, when it looks like one; the auth service checks it for real. */
+export function emailOf(query: URLSearchParams): string | null {
+  const email = query.get("email")?.trim() ?? "";
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254 ? email : null;
 }

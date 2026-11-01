@@ -18,9 +18,39 @@ export const landingSchema = z.object({
   lessons: z.object({
     heading: z.string().min(1),
     text: z.string().min(1),
-    open: z.string().min(1),
+    play: z.string().min(1),
+    all: z.string().min(1),
+  }),
+  compare: z.object({
+    heading: z.string().min(1),
+    nav: z.string().min(1),
+    text: z.string().min(1),
+    columns: z.tuple([z.string().min(1), z.string().min(1), z.string().min(1)]),
+    source: z.string().min(1),
+    rows: z
+      .array(
+        z.object({
+          app: z.string().min(1),
+          around: z.string().min(1),
+          jadwigo: z.string().min(1),
+          source: z.string().url(),
+        }),
+      )
+      .min(1),
   }),
   about: z.object({ heading: z.string().min(1), text: z.string().min(1), more: z.string().min(1) }),
+  signIn: z.object({
+    title: z.string().min(1),
+    description: z.string().min(1),
+    heading: z.string().min(1),
+    lead: z.string().min(1),
+    email: z.string().min(1),
+    send: z.string().min(1),
+    note: z.string().min(1),
+    or: z.string().min(1),
+    google: z.string().min(1),
+    facebook: z.string().min(1),
+  }),
   nav: z.object({ signIn: z.string().min(1), home: z.string().min(1) }),
   footer: z.object({
     privacy: z.string().min(1),
