@@ -18,12 +18,12 @@
 
 import { copy } from "@jadwigo/copy";
 import { cn } from "@jadwigo/ui";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { ENTRY_FIELD, Entry } from "../../parts/Entry.tsx";
 import { EMPTY_ENTRY, type EntryState, rearm, submit } from "../../parts/entryState.ts";
 import {
-  DECIMAL_KEY,
   DECIMAL_SEPARATORS,
+  decimalKeyOf,
   decimalShown,
   parseDecimal,
   parseFraction,
@@ -41,6 +41,7 @@ import type { StepKeysInput } from "../../parts/stepKeys.ts";
 import { TooSoon } from "../../parts/TooSoon.tsx";
 import { missed, TONE_CLASS, type Tone, useChanged, wholeTone } from "../../parts/tone.ts";
 import type { Instant } from "../../stage/clock.ts";
+import { LessonLanguage } from "../../stage/lessonLanguage.ts";
 import { press } from "../../stage/press.ts";
 import type { Language, PageSolutionLine } from "../../stage/types.ts";
 import {
@@ -80,14 +81,15 @@ const missingOf = (data: EnterData, text: string): Missing | null => {
   return data.input === "number" && data.decimal ? missingDecimal(text) : missingText(text);
 };
 
-/** A decimal's comma key, and a hardware comma or point typed as itself (dl-w3.70.7). */
-const DECIMAL_SIGNS: readonly string[] = [DECIMAL_KEY];
+/** A decimal's key, and a hardware comma or point typed as itself (dl-w3.70.7). */
 const decimalSignOf = (key: string): string | null =>
   DECIMAL_SEPARATORS.includes(key) ? key : null;
 
-/** The keypad's sign keys for the step: an expression's signs, a decimal's comma, else none. */
+/** The keypad's sign keys for the step: an expression's signs, a decimal's key (a comma, or a
+ * point in an English lesson, dl-uukj.42), else none. */
 function signsOf(
   data: EnterData,
+  decimalKey: string,
 ): { signs: readonly string[]; signOf: (key: string) => string | null } | null {
   // An equation (dl-w3.70.17) adds `=`.
   if (data.input === "expression")
@@ -95,7 +97,7 @@ function signsOf(
       ? { signs: EQUATION_SIGNS, signOf: equationSignOf }
       : { signs: EXPRESSION_SIGNS, signOf };
   if (data.input === "number" && data.decimal)
-    return { signs: DECIMAL_SIGNS, signOf: decimalSignOf };
+    return { signs: [decimalKey], signOf: decimalSignOf };
   return null;
 }
 
@@ -187,8 +189,10 @@ function EnterStill({
   paper: boolean;
 }): JSX.Element {
   const same = shown !== null && right !== null && sameEntry(data, shown.entered, right.entered);
+  const lessonLanguage = useContext(LessonLanguage);
   // A key's decimal reads as the learner's language writes it (0,29 in Polish, dl-w3.70.7).
-  const rightText = right !== null ? rightShown(data, right.entered, language) : undefined;
+  const rightText =
+    right !== null ? rightShown(data, right.entered, lessonLanguage ?? language) : undefined;
   const fraction = data.input === "fraction" ? { whole: data.whole === true } : undefined;
   return (
     <div className="kid-family-enter flex flex-col gap-6">
@@ -229,6 +233,8 @@ function EnterStill({
 
 function EnterPlay(props: PlayProps<F>): JSX.Element {
   const { spec, language, clock, live, attemptNo, feedback, onCommit } = props;
+  // The decimal key and a shown answer follow the lesson's language (dl-uukj.42).
+  const lessonLanguage = useContext(LessonLanguage);
   const data = spec.data;
   const [state, setState] = useState<EntryState>(() =>
     props.initialValue === undefined
@@ -279,7 +285,7 @@ function EnterPlay(props: PlayProps<F>): JSX.Element {
   const lines = solved
     ? solutionCardLines(
         props.solutionLines ?? null,
-        rightShown(data, props.solution.entered, language),
+        rightShown(data, props.solution.entered, lessonLanguage ?? language),
       )
     : null;
 
@@ -295,7 +301,7 @@ function EnterPlay(props: PlayProps<F>): JSX.Element {
     if (sent !== null)
       onCommit({ value: { entered: sent.text }, t1: sent.t1, modality: sent.modality });
   };
-  const signKeys = signsOf(data);
+  const signKeys = signsOf(data, decimalKeyOf(lessonLanguage));
   // A nudge is a line under the field only: the boxes keep their look (Enter addendum 3.4). The
   // solution keeps the miss mark the child last saw (addendum 2.8).
   const tone: Tone = solved

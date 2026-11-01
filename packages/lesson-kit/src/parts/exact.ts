@@ -22,8 +22,14 @@ export interface Exact {
 /** The separators a decimal may be typed with: the keypad's comma, or a hardware `.`. */
 export const DECIMAL_SEPARATORS: readonly string[] = [",", "."];
 
-/** The separator the keypad draws (owner, 2026-10-25: a comma key, as Polish school writes it). */
-export const DECIMAL_KEY = ",";
+/**
+ * The separator the keypad draws: a point in an English lesson, as English writes it (en-10 in
+ * workflows/_lang/en/checklist.md, dl-uukj.42), else the comma Polish school writes (owner,
+ * 2026-10-25). Outside a lesson there is no lesson language, and the key stays a comma.
+ */
+export function decimalKeyOf(lessonLanguage: Language | null): string {
+  return lessonLanguage === "en" ? "." : ",";
+}
 
 /** The most digits a decimal may hold: the answers a grade 4 child meets have far fewer, and the
  * cap keeps every scaled integer exact. */
@@ -72,7 +78,7 @@ export function sameExact(a: Exact, b: Exact): boolean {
   return a.n === b.n && a.d === b.d;
 }
 
-/** Whether a typed decimal is still being written: it ends in its separator (`5,`). */
+/** Whether a typed decimal is still being written: it ends in its separator (`5,` or `5.`). */
 export function unfinishedDecimal(text: string): boolean {
   const t = text.trim();
   return t !== "" && DECIMAL_SEPARATORS.includes(t.at(-1) ?? "");
