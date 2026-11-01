@@ -754,8 +754,11 @@ export const LearnerReport = z.object({
 });
 export type LearnerReport = z.infer<typeof LearnerReport>;
 
-/** Every record, by its table name, for the naming test. */
-export const RECORDS = {
+/**
+ * The records of pods, lessons, attempts and learner knowledge, by table name. `RECORDS`
+ * (`tables.ts`) adds the engine's from `run.ts`, which imports from here.
+ */
+export const LESSON_RECORDS = {
   pod: Pod,
   learner: Learner,
   account: Account,

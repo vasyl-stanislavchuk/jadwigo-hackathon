@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "$ref": "#/$defs/ToolViewKind"
+    },
+    "data": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
+    }
+  },
+  "required": [
+    "kind",
+    "data"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "ToolViewKind": {
+      "type": "string",
+      "enum": [
+        "lesson_draft",
+        "lesson_show",
+        "lesson_edit",
+        "lesson_check",
+        "question_search"
+      ]
+    }
+  }
+}

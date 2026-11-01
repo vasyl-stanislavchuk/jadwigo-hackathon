@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AccountId, EventId, ID_PREFIXES, PodId, prefixedId } from "./ids.ts";
+import { AccountId, ConversationId, EventId, PodId, RunId } from "./ids.ts";
 import { Citation } from "./records.ts";
 
 /**
@@ -7,9 +7,9 @@ import { Citation } from "./records.ts";
  * Lead decisions 3-9). A conversation holds runs, one run per turn; a run's effects are an
  * append-only log of run events, and what arrives while a run is busy waits in its run inbox.
  *
- * Exported as `@jadwigo/contracts/run`, not from `index.ts`: everything `index.ts` exports gets a
- * JSON Schema snapshot, and `RECORDS` must match a migration. These join `index.ts`, `RECORDS`,
- * `ID_SCHEMAS` and the snapshots in the dl-z5ja.7 migration PR, one one-way door together.
+ * Their tables are `supabase/migrations/20261101120000_run.sql` (dl-z5ja.7), which joined these to
+ * `index.ts`, `RECORDS` (`tables.ts`), `ID_SCHEMAS` and the snapshots: one one-way door together.
+ * `@jadwigo/contracts/run` still exports them on their own.
  */
 
 const At = z.iso.datetime();
@@ -19,13 +19,7 @@ const Usd = z.number().min(0);
 /** JSON the contracts treat as opaque: a lesson file, a verb's input or output. */
 const Json = z.record(z.string(), z.unknown());
 
-export const ConversationId = prefixedId<"ConversationId">(
-  ID_PREFIXES.conversation,
-  "a conversation",
-);
-export type ConversationId = z.infer<typeof ConversationId>;
-export const RunId = prefixedId<"RunId">(ID_PREFIXES.run, "a run");
-export type RunId = z.infer<typeof RunId>;
+export { ConversationId, RunId };
 
 /** A run idles out after 10 minutes with no activity while its turn is open. */
 export const RUN_IDLE_MS = 10 * 60 * 1000;
@@ -146,16 +140,16 @@ export const ToolView = z.object({ kind: ToolViewKind, data: Json });
 export type ToolView = z.infer<typeof ToolView>;
 
 /** One option of a question the agent asks. At most one is `recommended`, and it comes first. */
-export const ChooseOption = z.object({
+export const ChooseFormOption = z.object({
   label: z.string().min(1),
   recommended: z.boolean().optional(),
 });
-export type ChooseOption = z.infer<typeof ChooseOption>;
+export type ChooseFormOption = z.infer<typeof ChooseFormOption>;
 
 export const ChooseQuestion = z
   .object({
     text: z.string().min(1),
-    options: z.array(ChooseOption).min(2).max(4),
+    options: z.array(ChooseFormOption).min(2).max(4),
     /** The parent may answer in their own words. */
     custom_allowed: z.boolean(),
     /** The parent may leave it unanswered. */

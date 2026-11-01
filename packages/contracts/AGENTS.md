@@ -5,7 +5,7 @@ Zod schemas for everything that crosses a boundary: ids, the lesson script, answ
 - **Not here:** Logic beyond parsing. Any import of ours (dependency-cruiser fails it).
 - **Owner:** the platform workstream (`docs/workstreams/platform.md`). **Filled by:** `dl-5ssh.34.5`.
 - **Imports:** `zod` only.
-- **Public surface:** `src/index.ts`, and `src/run.ts` as `@jadwigo/contracts/run`: the AI engine's records, outside the snapshots and `RECORDS` until their migration joins them (`dl-z5ja.7`). Other files are private to this package.
+- **Public surface:** `src/index.ts`, which includes `src/run.ts`, the AI engine's records, also exported on its own as `@jadwigo/contracts/run`. Their tables joined the snapshots and `RECORDS` (`src/tables.ts`) with their migration (`dl-z5ja.7`). Other files are private to this package.
 - **Test:** `bunx turbo run lint typecheck test --filter=./packages/contracts`
 
 ## Rules here
