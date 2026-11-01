@@ -43,7 +43,9 @@ The one Lambda: a router, `authorize()` and the routes, with an entry per functi
 - **The conversation routes** (`src/conversations.ts`, epic `dl-z5ja`) only write: `acceptMessage`
   puts a message or a Stop in the run inbox and sends the step to pgmq's `agent_step` in the same
   unit, on its transaction (`PgmqRunQueue.joining`, `dl-z5ja.67`), under the pod's advisory lock.
-  On InMemoryStore the step is sent after the unit. A route never runs a step or calls a model.
+  On InMemoryStore the step is sent after the unit. After the commit the route pokes the step
+  host once per step (`src/poke.ts`, an async invoke of `RUNNER_LIVE_ALIAS_ARN`, `dl-z5ja.88`);
+  a failed poke is logged and never fails the route. A route never runs a step or calls a model.
   The pod is the caller's (`authorizeMember`), and a run or conversation is read only with the
   store's pod-scoped methods, so another pod's id is 404; never `findRunPod`, which `jadwigo_api`
   may not execute. `src/testing/conversations.suite.ts` freezes the 404.

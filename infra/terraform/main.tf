@@ -128,6 +128,10 @@ module "app" {
   # The api role reads questions/* and khan/converted/* in it (modules/app/bank.tf).
   content_bucket_name      = module.content.bucket_name
   content_bucket_param_arn = module.content.bucket_param_arn
+
+  # The message and Stop routes poke the step host's live alias after a commit (dl-z5ja.88): the api
+  # role gains lambda:InvokeFunction on that alias only.
+  runner_alias_arn = module.runner.live_alias_arn
 }
 
 # The engine's step host (dl-z5ja.20): apps/runner, its own release target (`make -C infra
