@@ -3,7 +3,8 @@
 // would see. Then real builds into a temp directory (dl-e8ov.2.74): with the shipped prod.env the
 // bundle carries no Supabase project, which is __JW_AUTH__ null, no sign-in, even with one exported in
 // the shell; with a file that names one, the bundle carries it. The deploy's own dry run shows it
-// builds through prod.env, whatever its recipe's wording. Nothing uploads.
+// builds through prod.env, whatever its recipe's wording, and prints the settings it ships: the prod
+// media URL among them (dl-n9fr.53), so pictures load from the media CloudFront. Nothing uploads.
 import { spawnSync } from "node:child_process";
 import {
   chmodSync,
@@ -20,19 +21,27 @@ import { describe, expect, it } from "vitest";
 
 const repo = resolve(import.meta.dirname, "../..");
 const infra = join(repo, "infra");
-const KEYS = ["JW_SUPABASE_URL", "JW_SUPABASE_KEY", "JW_SUPABASE_PROVIDERS"] as const;
+const KEYS = [
+  "JW_SUPABASE_URL",
+  "JW_SUPABASE_KEY",
+  "JW_SUPABASE_PROVIDERS",
+  "VITE_MEDIA_URL",
+] as const;
 const SHELL = {
   JW_SUPABASE_URL: "https://shell-sentinel.invalid",
   JW_SUPABASE_KEY: "sb_publishable_shell_sentinel",
   JW_SUPABASE_PROVIDERS: "google",
+  VITE_MEDIA_URL: "https://media-shell-sentinel.invalid",
 };
+/** The prod media CloudFront: terraform's media_url output, SSM /jadwigo/bank/media-url. */
+const PROD_MEDIA = "https://dx5i3bka3zn5f.cloudfront.net";
 
 /** An env file of our own naming a Supabase project. */
 function envFile(url: string, key: string) {
   const file = join(mkdtempSync(join(tmpdir(), "web-build-env-")), "stub.env");
   writeFileSync(
     file,
-    `JW_SUPABASE_URL=${url}\nJW_SUPABASE_KEY=${key}\nJW_SUPABASE_PROVIDERS=google,facebook\n`,
+    `JW_SUPABASE_URL=${url}\nJW_SUPABASE_KEY=${key}\nJW_SUPABASE_PROVIDERS=google,facebook\nVITE_MEDIA_URL=https://media.example.invalid\n`,
   );
   return file;
 }
@@ -85,7 +94,7 @@ function realBuild(args: string[]) {
 }
 
 describe("make -C infra web-build", { timeout: 120_000 }, () => {
-  it("the shipped prod file gives the build no sign-in and no providers, whatever the shell exports", () => {
+  it("the shipped prod file gives the build no sign-in, no providers and the prod media URL, whatever the shell exports", () => {
     const run = stubBuild(["ENV=prod"], SHELL);
     expect(run.status).toBe(0);
     expect(run.argv).toBe("bun run build");
@@ -93,6 +102,7 @@ describe("make -C infra web-build", { timeout: 120_000 }, () => {
       JW_SUPABASE_URL: "",
       JW_SUPABASE_KEY: "",
       JW_SUPABASE_PROVIDERS: "",
+      VITE_MEDIA_URL: PROD_MEDIA,
     });
   });
 
@@ -104,6 +114,7 @@ describe("make -C infra web-build", { timeout: 120_000 }, () => {
       JW_SUPABASE_URL: "https://auth.example.invalid",
       JW_SUPABASE_KEY: "sb_publishable_stub",
       JW_SUPABASE_PROVIDERS: "google,facebook",
+      VITE_MEDIA_URL: "https://media.example.invalid",
     });
   });
 
@@ -123,9 +134,15 @@ describe("make -C infra web-build", { timeout: 120_000 }, () => {
     }
 
     const prod = realBuild(["ENV=prod"]);
-    for (const text of [SHELL.JW_SUPABASE_URL, SHELL.JW_SUPABASE_KEY, "sb_publishable_named"]) {
+    for (const text of [
+      SHELL.JW_SUPABASE_URL,
+      SHELL.JW_SUPABASE_KEY,
+      SHELL.VITE_MEDIA_URL,
+      "sb_publishable_named",
+    ]) {
       expect(prod.includes(text), `the prod build carries ${text}`).toBe(false);
     }
+    expect(prod.includes(PROD_MEDIA), `the prod build lacks ${PROD_MEDIA}`).toBe(true);
     const project = prod.match(
       /https:\/\/[a-z0-9.-]*(supabase\.co|auth\.jadwigo\.pl|example\.invalid)/,
     );
@@ -145,6 +162,9 @@ describe("make -C infra web-build", { timeout: 120_000 }, () => {
     const build = builds[0] ?? "";
     expect(build).toMatch(
       /set -a && \. \S*infra\/web-build\/prod\.env && set \+a && cd \S*apps\/web && bun run build/,
+    );
+    expect(lines.find((l) => l.includes("web-build settings:")) ?? "").toContain(
+      `VITE_MEDIA_URL=${PROD_MEDIA}`,
     );
     const firstUpload = lines.findIndex((l) => /\bs3 sync\b/.test(l));
     expect(firstUpload).toBeGreaterThan(lines.indexOf(build));
