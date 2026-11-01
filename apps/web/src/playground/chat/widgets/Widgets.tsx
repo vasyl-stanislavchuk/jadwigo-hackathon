@@ -2,16 +2,16 @@
  * The widgets a finished tool line draws (dl-z5ja.24), PostHog's tool registry for a parent
  * (`docs/research/posthog-ai-ux-patterns.md` section 6). Each reads its verb's typed view, never
  * text, and draws only once the call is done and the view fits. Everything else gets the plain
- * card: "Step details", with what came back one tap away.
+ * card: "Step details", with what came back one tap away. A view fits when it parses as its verb's
+ * schema in `@jadwigo/contracts` (`TOOL_VIEW_DATA`, dl-z5ja.71), the one the verb wrote it through.
  */
 
+import { type FindingLevel, type LessonCheckView, toolViewData } from "@jadwigo/contracts";
 import type { VerbName } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
-import type { Finding } from "@jadwigo/lesson-import/file";
 import { ClipboardCheck, type LucideIcon, PencilLine, Search } from "lucide-react";
 import type { ReactElement } from "react";
-import { type CheckView, checkView, editView, searchView } from "./parse.ts";
 
 export type ToolItem = Extract<ChatItem, { kind: "tool" }>;
 
@@ -54,12 +54,12 @@ function register<T>(entry: WidgetEntry<T>): Registered {
   };
 }
 
-const LEVEL_KEY: Record<Finding["level"], CopyKey> = {
+const LEVEL_KEY: Record<FindingLevel, CopyKey> = {
   error: "chat_check_level_error",
   warn: "chat_check_level_warning",
 };
 
-function Findings({ view, language }: { view: CheckView; language: Language }): ReactElement {
+function Findings({ view, language }: { view: LessonCheckView; language: Language }): ReactElement {
   const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
     copy(language, key, vars, "adult");
   const toFix = view.findings.filter((f) => f.level === "error").length;
@@ -95,7 +95,7 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
     verb: "lesson_check",
     title: "chat_tool_lesson_check",
     icon: ClipboardCheck,
-    read: checkView,
+    read: (data) => toolViewData("lesson_check", data),
     Widget: ({ data, language }) => <Findings view={data} language={language} />,
     keepVisible: true,
   }),
@@ -103,7 +103,7 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
     verb: "lesson_edit",
     title: "chat_tool_lesson_edit",
     icon: PencilLine,
-    read: editView,
+    read: (data) => toolViewData("lesson_edit", data),
     Widget: ({ data, language }) => (
       <ul className="flex flex-wrap gap-1">
         {data.changed_step_ids.map((id) => (
@@ -119,7 +119,7 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
     verb: "question_search",
     title: "chat_search_sets",
     icon: Search,
-    read: searchView,
+    read: (data) => toolViewData("question_search", data),
     Widget: ({ data, language }) =>
       data.sets.length === 0 ? (
         <p>{copy(language, "chat_search_none", {}, "adult")}</p>

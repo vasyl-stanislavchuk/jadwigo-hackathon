@@ -20,6 +20,7 @@ import {
   listRunEvents,
   patchConversation,
   postMessage,
+  rateRun,
 } from "./conversations.ts";
 import { ApiError, badRequest, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
@@ -251,6 +252,8 @@ export function createApp(
   onSigned("cancelRun", (params, body, claims) =>
     engineUnit(store, engine, poke, (s, deps) => cancelRun(s, deps, claims, params.id, body)),
   );
+
+  onSigned("rateRun", (params, body, claims) => run((s) => rateRun(s, claims, params.id, body)));
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;

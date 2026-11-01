@@ -175,7 +175,7 @@ describe("lesson review", () => {
 });
 
 describe("parent login", () => {
-  it("needs a token on the 23 parent and conversation routes only; the login-free routes stay open", () => {
+  it("needs a token on the 24 parent and conversation routes only; the login-free routes stay open", () => {
     const token = Object.entries(ROUTES)
       .filter(([, route]) => route.auth === "token")
       .map(([, route]) => `${route.method} ${route.path}`)
@@ -204,6 +204,7 @@ describe("parent login", () => {
       "POST /api/v1/learners/{id}/goals",
       "POST /api/v1/learners/{id}/reports",
       "POST /api/v1/runs/{id}/cancellations",
+      "POST /api/v1/runs/{id}/ratings",
     ]);
   });
 

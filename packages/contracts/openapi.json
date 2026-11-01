@@ -1582,6 +1582,62 @@
         }
       }
     },
+    "/api/v1/runs/{id}/ratings": {
+      "post": {
+        "operationId": "rateRun",
+        "summary": "Rates a turn Good or Bad, with an optional note on Bad.",
+        "description": "One rating per run and parent: rating again replaces the verdict and the note. Try again is no route: send the last message again.",
+        "tags": [
+          "conversations"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/RunId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunRatingCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunRating"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/api/v1/question-searches": {
       "post": {
         "operationId": "questionSearches",
@@ -9866,6 +9922,93 @@
       "RunId": {
         "type": "string",
         "pattern": "^run_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "RunRating": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/RunRatingId"
+          },
+          "pod_id": {
+            "$ref": "#/components/schemas/PodId"
+          },
+          "run_id": {
+            "$ref": "#/components/schemas/RunId"
+          },
+          "account_id": {
+            "$ref": "#/components/schemas/AccountId"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/RunRatingVerdict"
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "pod_id",
+          "run_id",
+          "account_id",
+          "verdict",
+          "note",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "RunRatingCreate": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "verdict": {
+                "type": "string",
+                "const": "good"
+              }
+            },
+            "required": [
+              "verdict"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "verdict": {
+                "type": "string",
+                "const": "bad"
+              },
+              "note": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              }
+            },
+            "required": [
+              "verdict"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "RunRatingId": {
+        "type": "string",
+        "pattern": "^rtg_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "RunRatingVerdict": {
+        "type": "string",
+        "enum": [
+          "good",
+          "bad"
+        ]
       },
       "RunStatus": {
         "type": "string",
