@@ -90,7 +90,7 @@ pgmq:
 migrate:
 	@test -n "$$DATABASE_URL" || { echo "migrate: DATABASE_URL is unset. Run: cp .env.example .env.local && make db"; exit 1; }
 	@case "$${DATABASE_URL##*/}" in jadwigo*) ;; *) echo "migrate: resets only a jadwigo* database, not $${DATABASE_URL##*/}"; exit 1;; esac
-	psql "$(DATABASE_URL)" -q -v ON_ERROR_STOP=1 -c 'drop extension if exists pgmq cascade' -c 'drop schema if exists public, app, auth, realtime, realtime_join cascade' -c 'create schema public'
+	psql "$(DATABASE_URL)" -q -v ON_ERROR_STOP=1 -c 'drop extension if exists pgmq cascade' -c 'drop schema if exists public, app, auth, realtime, realtime_join, muse_ledger cascade' -c 'create schema public'
 	psql "$(DATABASE_URL)" -q -v ON_ERROR_STOP=1 -f supabase/tests/shim.sql
 	for f in supabase/migrations/*.sql; do echo "$$f"; psql "$(DATABASE_URL)" -q -v ON_ERROR_STOP=1 -1 -f "$$f" || exit 1; done
 

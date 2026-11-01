@@ -19,6 +19,10 @@ const landing: readonly DistCheck[] = [
   ["apple-touch-icon.png", "PNG"],
   ["index.html", '<p class="say" id="hero-say"'],
   ["index.html", 'id="lekcje"'],
+  // Direction 1a (design handoff "landing 3", dl-5ssh.4.13): the example profile and the sign-up at the end.
+  ["index.html", 'id="partner-title"'],
+  ["index.html", '<section class="end-band"'],
+  ["jak-to-dziala/index.html", '<section class="end-band"'],
   ["index.html", 'href="https://app.jadwigo.pl/play/asg_'],
   // Each header link is its own page, built and in the sitemap (owner, 2026-10-31).
   ...["lekcje", "jak-to-dziala", "porownanie", "o-nas"].flatMap((p): DistCheck[] => [
@@ -32,6 +36,13 @@ const landing: readonly DistCheck[] = [
   ["zaloguj/index.html", 'href="https://app.jadwigo.pl/parent?provider=google"'],
   ["zaloguj/index.html", 'href="https://app.jadwigo.pl/parent?provider=facebook"'],
   ["index.html", 'href="/zaloguj/"'],
+  // The phone header opens the pages from a burger, and the footer names where the questions come from
+  // (design handoff "landing 3", dl-5ssh.4.12).
+  [
+    "index.html",
+    '<button class="burger" type="button" aria-expanded="false" aria-controls="site-menu"',
+  ],
+  ["index.html", "Alfik Matematyczny"],
   ["sitemap-0.xml", "<loc>https://jadwigo.pl/zaloguj/</loc>"],
   ["404.html", "Tej strony tu nie ma."],
   ["robots.txt", "Sitemap: https://jadwigo.pl/sitemap-index.xml"],

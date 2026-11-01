@@ -31,6 +31,17 @@ export {
   polishNumberWords,
 } from "./lang/pl/number-words.ts";
 export {
+  answerText,
+  curriculumTopics,
+  learnerMistakes,
+  learnerWeeks,
+  lessonIdeas,
+  MAX_IDEAS,
+  mondayOf,
+  namedCodes,
+  SKILLS_PER_IDEA,
+} from "./learner/index.ts";
+export {
   brief,
   canDoLines,
   DIGEST_RULES_VERSION,
