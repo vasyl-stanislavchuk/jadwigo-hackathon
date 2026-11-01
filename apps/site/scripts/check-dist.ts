@@ -2,6 +2,8 @@
 // and link previews read, or nothing is synced to the bucket.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { type DistCheck, parsePathPage, pathPageChecks } from "../src/lib/dist.ts";
+import { servedLanguages } from "../src/lib/i18n.ts";
+import { signInDistChecks } from "../src/lib/landing.ts";
 
 const dist = new URL("../dist/", import.meta.url);
 const landing: readonly DistCheck[] = [
@@ -33,8 +35,6 @@ const landing: readonly DistCheck[] = [
   ["lekcje/index.html", 'href="https://app.jadwigo.pl/play/asg_'],
   ["porownanie/index.html", "Khan Academy"],
   ["zaloguj/index.html", '<form action="https://app.jadwigo.pl/parent" method="get"'],
-  ["zaloguj/index.html", 'href="https://app.jadwigo.pl/parent?provider=google"'],
-  ["zaloguj/index.html", 'href="https://app.jadwigo.pl/parent?provider=facebook"'],
   ["index.html", 'href="/zaloguj/"'],
   // The phone header opens the pages from a burger, and the footer names where the questions come from
   // (design handoff "landing 3", dl-5ssh.4.12).
@@ -58,8 +58,10 @@ const sources = readdirSync(content, { recursive: true, encoding: "utf8" })
   .filter((f) => f.endsWith(".md"))
   .flatMap((f) => parsePathPage(readFileSync(new URL(f, content), "utf8")) ?? []);
 const paged = pathPageChecks(sources);
-const must: readonly DistCheck[] = [...landing, ...paged.must];
-const mustNot = paged.mustNot;
+// The sign-in's provider links: Facebook's only once facebookSignInLive is on (dl-ovva).
+const signIn = signInDistChecks(servedLanguages(true));
+const must: readonly DistCheck[] = [...landing, ...paged.must, ...signIn.must];
+const mustNot = [...paged.mustNot, ...signIn.mustNot];
 
 const missing = must.filter(([file, text]) => {
   const path = new URL(file, dist);
@@ -72,4 +74,6 @@ const present = mustNot.filter(([file, text]) => {
 for (const [file, text] of missing) console.error(`dist/${file} lacks ${text}`);
 for (const [file, text] of present) console.error(`dist/${file} still carries ${text}`);
 if (missing.length > 0 || present.length > 0) process.exit(1);
-console.warn(`dist/ carries all ${must.length} checks and none of ${mustNot.length} placeholders`);
+console.warn(
+  `dist/ carries all ${must.length} checks and none of the ${mustNot.length} it must not`,
+);

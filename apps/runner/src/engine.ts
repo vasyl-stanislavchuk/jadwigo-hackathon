@@ -23,7 +23,8 @@ const MAX_STEPS = 20;
 /**
  * The engine on Postgres as `jadwigo_runner`: the store sets `app.pod_id` per unit after
  * `authorizeRun`, and the queue reads, hides, archives and dead-letters `agent_step`. The verbs read
- * the fixture bank: no bank service exists yet (`BankPort`'s only implementation).
+ * the fixture bank (no bank service exists yet, `BankPort`'s only implementation) and the run's
+ * pod's learner records through the same store.
  */
 export function postgresEngineHost(
   url: string,
@@ -37,15 +38,18 @@ export function postgresEngineHost(
   // A dropped idle connection emits 'error' on the pool; with no listener the process crashes.
   pool.on("error", (error) => warn(`an idle queue connection dropped: ${error.message}`));
   const queue = new PgmqRunQueue(pool, { role: "jadwigo_runner" });
+  const now = () => new Date();
   // The tier every model request names (EngineDeps.tier, dl-z5ja.91): the request says the tier
   // that answers it, and no slot of HttpMuse stands in for another.
   const engine: EngineDeps = {
     tier,
     store,
     muse: typeof muse === "function" ? muse(store) : muse,
-    verbs: createVerbs({ bank: fixtureBank() }),
+    // The learner verbs read one learner of the run's pod through this store, as jadwigo_runner,
+    // whose grants cover their reads (dl-z5ja.125); without it they refuse (dl-z5ja.127).
+    verbs: createVerbs({ bank: fixtureBank(), learners: store, now }),
     queue,
-    now: () => new Date(),
+    now,
     // A call that went to a less private tier than the run asked for, answered or failed, is
     // logged with its ids only (dl-z5ja.91, dl-z5ja.103).
     onWarning: (w) =>
