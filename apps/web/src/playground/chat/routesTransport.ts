@@ -110,7 +110,18 @@ export function routesTransport(
         return (await api.cancelRun(last.id, { event_id: body.event_id })).run;
       }
       const server = await ensure(body.conversation_id);
-      return (await api.postMessage(server, { event_id: body.event_id, text: body.text })).run;
+      // A lesson-pane edit or Cofnij goes as a steer naming its questions (dl-z5ja.93).
+      const message =
+        body.kind === "steer"
+          ? {
+              event_id: body.event_id,
+              text: body.text,
+              kind: "steer" as const,
+              source: body.source,
+              question_ids: body.question_ids,
+            }
+          : { event_id: body.event_id, text: body.text };
+      return (await api.postMessage(server, message)).run;
     },
   };
 }
