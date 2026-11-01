@@ -734,6 +734,12 @@ async function namesOf(store: Store, scope: Scope): Promise<string[]> {
   return [...new Set(names)];
 }
 
+/** A step that threw in `drain`: the run and attempt it carried, and its place in the queue. */
+export interface FailedStep extends RunStepInput {
+  msg_id: number;
+  read_ct: number;
+}
+
 /**
  * The consumer's loop, in-process: reads visible steps and runs each until none is visible. A step
  * that throws stays in the queue and comes back after its visibility timeout, as on pgmq; one that
@@ -742,10 +748,13 @@ async function namesOf(store: Store, scope: Scope): Promise<string[]> {
  * A step read a 2nd time is a redelivery: before running it, `drain` claims the run by moving its
  * `attempt` on, so the step that stalled goes stale, and logs the retry as an `error` row naming the
  * attempt that stalled.
+ *
+ * A step that throws is handed to `onError` with what it carried and its `msg_id`, so the host can
+ * log it by run id (dl-z5ja.82); it stays in the queue either way.
  */
 export async function drain(
   deps: EngineDeps,
-  options: { max_steps?: number } = {},
+  options: { max_steps?: number; onError?: (error: unknown, step: FailedStep) => void } = {},
 ): Promise<readonly RunStepOutput[]> {
   const max = options.max_steps ?? 100;
   const outputs: RunStepOutput[] = [];
@@ -756,8 +765,13 @@ export async function drain(
       const input = queued.read_ct > 1 ? await claim(deps, queued) : queued.message;
       outputs.push(await runStep(input, deps));
       await deps.queue.archive(queued.msg_id);
-    } catch {
+    } catch (error) {
       // The step stays in the queue, hidden until its visibility timeout, then delivered again.
+      options.onError?.(error, {
+        ...queued.message,
+        msg_id: queued.msg_id,
+        read_ct: queued.read_ct,
+      });
     }
   }
   return outputs;

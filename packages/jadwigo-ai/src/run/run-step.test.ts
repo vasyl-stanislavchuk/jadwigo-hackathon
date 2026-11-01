@@ -701,6 +701,23 @@ describe("runStep and drain", () => {
     expect((await t.run(run)).status).toBe("cancelled");
   });
 
+  it("hands a step that throws to onError with its run, attempt and msg_id, and keeps it queued", async () => {
+    const t = await setup([]);
+    // The store throws on the step's first write, as a missing grant would.
+    t.store.crashOn = () => true;
+    const run = await t.say("Halves.");
+    const seen: [unknown, unknown][] = [];
+    const outputs = await drain(t.deps, { onError: (error, step) => seen.push([error, step]) });
+
+    expect(outputs).toEqual([]);
+    expect(seen).toHaveLength(1);
+    expect(seen[0]?.[0]).toMatchObject({ message: "the process died" });
+    expect(seen[0]?.[1]).toEqual({ run_id: run, attempt: 1, msg_id: 1, read_ct: 1 });
+    t.tick(STEP_VISIBILITY_S * 1000 + 1000);
+    const [again] = await t.queue.read(STEP_VISIBILITY_S, 1);
+    expect(again).toMatchObject({ msg_id: 1, read_ct: 2, message: { run_id: run } });
+  });
+
   it("leaves a step that throws in the queue, and the dead letter takes it after MAX_READS", async () => {
     const t = await setup([]);
     await t.say("Muse is down.");
