@@ -339,6 +339,11 @@ export class InMemoryStore implements Store {
     return row;
   }
 
+  async getLesson(pod: PodId, id: LessonId): Promise<Lesson | undefined> {
+    const row = this.#lessons.get(id);
+    return row?.pod_id === pod ? row : undefined;
+  }
+
   async putLessonQuestion(pod: PodId, question: NewLessonQuestion): Promise<LessonQuestion> {
     this.#pod(pod);
     const id = question.id ?? mint(LessonQuestionId, ID_PREFIXES.lesson_question);
