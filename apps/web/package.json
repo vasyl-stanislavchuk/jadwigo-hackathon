@@ -44,6 +44,7 @@
     "vite": "serves and builds the app (vite.config.ts)",
     "vitest": "runs this package's unit test with the root vitest.config.ts",
     "@jadwigo/jadwigo-ai": "the engine dev/engine-plugin.ts runs in the dev server for /playground/chat: acceptMessage, drain, ScriptedMuse, createVerbs, fixtureBank, InMemoryRunQueue (dl-z5ja.17)",
+    "libheif-js": "decodes a parent's HEIC photo where the browser cannot, in its own lazily loaded chunk (src/chat/attachments/heif.ts, dl-z5ja.11.5)",
     "@jadwigo/store": "InMemoryStore, the store dev/engine-plugin.ts keeps the chat page's runs in (dl-z5ja.17)"
   },
   "devDependencies": {
@@ -78,6 +79,7 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "@jadwigo/jadwigo-ai": "workspace:*",
-    "@jadwigo/store": "workspace:*"
+    "@jadwigo/store": "workspace:*",
+    "libheif-js": "1.23.5"
   }
 }

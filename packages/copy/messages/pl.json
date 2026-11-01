@@ -883,5 +883,29 @@
   "chat_list_archive": "Archiwizuj",
   "chat_list_archive_confirm": "Rozmowa zniknie z listy. Zostanie zachowana przy koncie rodziny i usunięta razem z nim.",
   "chat_list_archive_yes": "Tak, archiwizuj",
-  "chat_list_archive_failed": "Nie udało się zarchiwizować rozmowy. Spróbuj jeszcze raz."
+  "chat_list_archive_failed": "Nie udało się zarchiwizować rozmowy. Spróbuj jeszcze raz.",
+  "attach_photo_alt": "Zdjęcie {n}",
+  "attach_uploading": "Wysyłam zdjęcie, {percent}%",
+  "attach_retry": "Spróbuj ponownie",
+  "attach_remove": "Usuń zdjęcie",
+  "attach_heic": "Nie umiemy otworzyć tego zdjęcia. Zrób zrzut ekranu albo zapisz je jako JPG",
+  "attach_unreadable": "Tego pliku nie umiemy otworzyć jako zdjęcia. Wybierz zdjęcie albo zrzut ekranu",
+  "attach_too_large": "To zdjęcie jest za duże nawet po zmniejszeniu. Zrób zrzut ekranu i dodaj go zamiast zdjęcia",
+  "attach_limit_day": "Na dziś to już wszystkie zdjęcia. Jutro można dodać kolejne",
+  "attach_offline": "Zdjęcie nie doszło. Sprawdź połączenie i spróbuj ponownie",
+  "attach_expired": "Wysyłanie trwało za długo. Spróbuj ponownie",
+  "attach_changed": "Zdjęcie dotarło w innym rozmiarze, niż zapowiadaliśmy. Spróbuj ponownie",
+  "attach_not_taken": "Serwer nie przyjął zdjęcia. Spróbuj ponownie",
+  "attach_left_off": [
+    {
+      "declarations": ["input max", "input n", "local max_noun = max: plural"],
+      "selectors": ["max_noun"],
+      "match": {
+        "max_noun=one": "Zmieści się {max} zdjęcie, {n} pominięto",
+        "max_noun=few": "Zmieszczą się {max} zdjęcia, {n} pominięto",
+        "max_noun=many": "Zmieści się {max} zdjęć, {n} pominięto",
+        "max_noun=other": "Zmieści się {max} zdjęcia, {n} pominięto"
+      }
+    }
+  ]
 }
