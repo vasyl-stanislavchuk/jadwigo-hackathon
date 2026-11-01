@@ -5,7 +5,7 @@ heading: About us
 lang: en
 path: /en/about
 translation: /o-nas
-reviewed: false
+reviewed: true
 draftNote: This page is still growing. Photos and more of our story are coming soon.
 ---
 

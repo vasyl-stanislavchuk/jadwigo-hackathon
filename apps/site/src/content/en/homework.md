@@ -5,7 +5,7 @@ heading: Show the homework
 lang: en
 path: /en/homework
 translation: /praca-domowa
-reviewed: false
+reviewed: true
 draftNote: We're working on this now.
 ---
 

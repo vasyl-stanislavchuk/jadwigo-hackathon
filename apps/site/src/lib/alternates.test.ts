@@ -23,7 +23,7 @@ describe("xDefaultTag", () => {
     expect(tags).toContainEqual({
       kind: "property",
       property: "og:locale:alternate",
-      content: "en_GB",
+      content: "en_US",
     });
   });
 });
