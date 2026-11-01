@@ -270,6 +270,11 @@ function fakeVerbs(hooks: Partial<Record<VerbName, Hook>> = {}): Verbs {
     lesson_edit: verb("lesson_edit"),
     lesson_check: verb("lesson_check"),
     question_search: verb("question_search"),
+    learner_skills: verb("learner_skills"),
+    learner_week: verb("learner_week"),
+    learner_mistakes: verb("learner_mistakes"),
+    curriculum_topics: verb("curriculum_topics"),
+    lesson_ideas: verb("lesson_ideas"),
   };
 }
 

@@ -434,7 +434,12 @@
         "lesson_show",
         "lesson_edit",
         "lesson_check",
-        "question_search"
+        "question_search",
+        "learner_skills",
+        "learner_week",
+        "learner_mistakes",
+        "curriculum_topics",
+        "lesson_ideas"
       ]
     },
     "ModelUsage": {
@@ -631,7 +636,12 @@
         "lesson_show",
         "lesson_edit",
         "lesson_check",
-        "question_search"
+        "question_search",
+        "learner_skills",
+        "learner_week",
+        "learner_mistakes",
+        "curriculum_topics",
+        "lesson_ideas"
       ]
     },
     "LessonRevisionEvent": {
