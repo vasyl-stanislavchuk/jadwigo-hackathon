@@ -175,13 +175,14 @@ describe("lesson review", () => {
 });
 
 describe("parent login", () => {
-  it("needs a token on the 21 parent and conversation routes only; the login-free routes stay open", () => {
+  it("needs a token on the 24 parent and conversation routes only; the login-free routes stay open", () => {
     const token = Object.entries(ROUTES)
       .filter(([, route]) => route.auth === "token")
       .map(([, route]) => `${route.method} ${route.path}`)
       .sort();
     expect(token).toEqual([
       "GET /api/v1/assignments/{id}/attempts",
+      "GET /api/v1/conversations",
       "GET /api/v1/conversations/{id}/runs",
       "GET /api/v1/learners/{id}/attempts",
       "GET /api/v1/learners/{id}/attempts/{attempt}/review",
@@ -191,6 +192,7 @@ describe("parent login", () => {
       "GET /api/v1/me",
       "GET /api/v1/runs/{id}/events",
       "GET /api/v1/skills",
+      "PATCH /api/v1/conversations/{id}",
       "PATCH /api/v1/learners/{id}/goals/{goal}",
       "PATCH /api/v1/learners/{id}/reports/{report}",
       "PATCH /api/v1/pods/{id}",
@@ -202,6 +204,7 @@ describe("parent login", () => {
       "POST /api/v1/learners/{id}/goals",
       "POST /api/v1/learners/{id}/reports",
       "POST /api/v1/runs/{id}/cancellations",
+      "POST /api/v1/runs/{id}/ratings",
     ]);
   });
 
