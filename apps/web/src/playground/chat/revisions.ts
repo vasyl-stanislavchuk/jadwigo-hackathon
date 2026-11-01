@@ -67,3 +67,31 @@ export function changedOf(turns: readonly Turn[]): ReadonlySet<string> {
   }
   return new Set();
 }
+
+/** What "Cofnij" takes back: the steps the latest revision changed, and the revision before it. */
+export interface Undo {
+  revision: number;
+  question_ids: string[];
+  /** The lesson's own language, which the undo steer is written in. */
+  language: "pl" | "en";
+}
+
+/**
+ * The one step "Cofnij" undoes (dl-z5ja.30): back to the revision before the latest, for the steps
+ * it changed. Null when there is nothing before it or nothing changed.
+ */
+export function undoOf(turns: readonly Turn[]): Undo | null {
+  for (let i = turns.length - 1; i >= 0; i -= 1) {
+    const view = turns[i]?.view;
+    if (!view?.lesson) continue;
+    const before = view.previous_lesson ?? lessonOf(turns.slice(0, i));
+    const changed = [...changedOf(turns)];
+    if (before === null || changed.length === 0) return null;
+    return {
+      revision: before.revision,
+      question_ids: changed,
+      language: view.lesson.lesson_file["language"] === "en" ? "en" : "pl",
+    };
+  }
+  return null;
+}

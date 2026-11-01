@@ -861,5 +861,9 @@ export const en: CopyTable = {
     text: "The parent asks for a change in step {step}: {words}",
     reviewed: false,
   },
+  chat_undo_steer: {
+    text: "The parent asks to undo the change to steps {steps}: go back to revision {n}.",
+    reviewed: false,
+  },
   // end the chat page
 };

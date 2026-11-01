@@ -16,7 +16,7 @@ import { ChatPane } from "./ChatPane.tsx";
 import { type ConversationState, lessonOf, type Turn, turnsOf } from "./conversation.ts";
 import { newConversationId } from "./ids.ts";
 import { LessonPane } from "./LessonPane.tsx";
-import { changedOf } from "./revisions.ts";
+import { changedOf, undoOf } from "./revisions.ts";
 import { type EngineTransport, hotTransport, useConversation } from "./useConversation.ts";
 
 const STORED = "jadwigo.playground.chat.conversation";
@@ -75,6 +75,21 @@ function ChatView({
 }): ReactElement {
   const turns = turnsOf(state);
   const changed = changedOf(turns);
+  const undo = undoOf(turns);
+  /** "Cofnij": a lesson_edit steer asking the AI to take the change back (dl-z5ja.30, .42). */
+  const onUndo =
+    undo === null || onEdit === undefined
+      ? undefined
+      : () =>
+          onEdit(
+            copy(
+              undo.language,
+              "chat_undo_steer",
+              { steps: undo.question_ids.join(", "), n: undo.revision },
+              "adult",
+            ),
+            undo.question_ids,
+          );
   return (
     <ChatLayout
       language={language}
@@ -96,6 +111,7 @@ function ChatView({
           language={language}
           lesson={lessonOf(turns)}
           changed={changed}
+          onUndo={onUndo}
           onEdit={onEdit}
         />
       }

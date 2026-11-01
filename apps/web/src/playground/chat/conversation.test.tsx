@@ -118,6 +118,7 @@ describe("conversationReducer", () => {
 /** A transport that records the order of calls and pushes when the test says. */
 function fakeTransport(events: readonly RunEvent[]) {
   const calls: string[] = [];
+  const sent: SendBody[] = [];
   const listeners = new Map<string, (e: readonly RunEvent[]) => void>();
   const run = runOf(events, "completed");
   const transport: EngineTransport = {
@@ -135,9 +136,12 @@ function fakeTransport(events: readonly RunEvent[]) {
       calls.push(`events ${id} after ${after}`);
       return events.filter((e) => e.seq > after);
     },
-    send: async () => run,
+    send: async (body) => {
+      sent.push(body);
+      return run;
+    },
   };
-  return { transport, calls, run, push: (e: RunEvent[]) => listeners.get(run.id)?.(e) };
+  return { transport, calls, sent, run, push: (e: RunEvent[]) => listeners.get(run.id)?.(e) };
 }
 
 describe("ChatScreen on a transport", () => {
@@ -206,8 +210,15 @@ describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
     const marked = () => [...document.querySelectorAll("[data-changed]")];
     expect(marked().map((m) => m.getAttribute("data-step"))).toEqual(["s02"]);
     expect(marked()[0]?.textContent).toContain("Zmienione przez asystenta");
-    // Nothing writes an undo yet (dl-z5ja.42), so Cofnij is not drawn.
-    expect(screen.queryByRole("button", { name: "Cofnij" })).toBeNull();
+    // Cofnij asks the AI to take the change back, in the lesson's language (dl-z5ja.42 keeps it).
+    // The happy turn has ended, so it goes as a new message.
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Cofnij" })));
+    expect(t.sent).toEqual([
+      expect.objectContaining({
+        kind: "message",
+        text: "Rodzic prosi o cofnięcie zmiany w krokach s02: wróć do wersji 2.",
+      }),
+    ]);
 
     // A reload reads revision 2 from the log as previous_lesson (dl-z5ja.68): the same mark.
     cleanup();

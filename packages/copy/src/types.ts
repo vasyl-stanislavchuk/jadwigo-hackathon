@@ -678,6 +678,7 @@ export const COPY_KEYS = [
   "chat_edit_send",
   "chat_edit_cancel",
   "chat_edit_steer",
+  "chat_undo_steer",
   // end the chat page
 ] as const;
 

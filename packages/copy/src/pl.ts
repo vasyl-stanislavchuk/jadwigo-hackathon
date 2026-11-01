@@ -862,5 +862,9 @@ export const pl: CopyTable = {
   chat_edit_send: { text: "Wyślij zmianę", reviewed: false },
   chat_edit_cancel: { text: "Anuluj", reviewed: false },
   chat_edit_steer: { text: "Rodzic prosi o zmianę w kroku {step}: {words}", reviewed: false },
+  chat_undo_steer: {
+    text: "Rodzic prosi o cofnięcie zmiany w krokach {steps}: wróć do wersji {n}.",
+    reviewed: false,
+  },
   // end the chat page
 };

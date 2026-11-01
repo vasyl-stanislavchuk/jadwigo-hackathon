@@ -4,7 +4,7 @@ import { type ChatItem, foldRun } from "@jadwigo/core";
 import { RUN_LOGS } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
 import type { Turn } from "./conversation.ts";
-import { changedOf, changedSteps } from "./revisions.ts";
+import { changedOf, changedSteps, undoOf } from "./revisions.ts";
 
 /** The happy turn's 2 lesson files, revision 1 and revision 2. */
 function revisions(): unknown[] {
@@ -77,5 +77,41 @@ describe("changedOf (dl-z5ja.30)", () => {
     expect([...changedOf([happyTurn(edit({ changed: "s05" }))])]).toEqual([]);
     expect([...changedOf([happyTurn()])]).toEqual([]);
     expect([...changedOf([])]).toEqual([]);
+  });
+});
+
+describe("undoOf (dl-z5ja.30)", () => {
+  const happy = (change: (view: ReturnType<typeof foldRun>) => void = () => {}): Turn => {
+    const log = RUN_LOGS.find((l) => l.name === "happy-turn");
+    const view = foldRun((log?.events ?? []).map((e) => RunEvent.parse(e)));
+    change(view);
+    return { run: {} as Run, view };
+  };
+
+  it("goes back to the revision before the latest, for the steps it changed", () => {
+    const turn = happy((view) => {
+      view.chat.push({
+        kind: "tool",
+        seq: 99,
+        call_id: "call_edit",
+        verb: "lesson_edit",
+        state: "done",
+        error: null,
+        view: { kind: "lesson_edit", data: { changed_step_ids: ["s05"] } },
+      });
+    });
+    expect(undoOf([turn])).toEqual({ revision: 1, question_ids: ["s05"], language: "pl" });
+  });
+
+  it("offers nothing when nothing changed or there is no revision before", () => {
+    expect(undoOf([happy()])).toBeNull();
+    expect(
+      undoOf([
+        happy((view) => {
+          view.previous_lesson = null;
+        }),
+      ]),
+    ).toBeNull();
+    expect(undoOf([])).toBeNull();
   });
 });
