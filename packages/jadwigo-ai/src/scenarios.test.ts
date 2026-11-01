@@ -515,10 +515,14 @@ describe("the engine keeps PostHog's production lessons", () => {
       const edited = await t.log(run);
       expect(t.muse.calls).toHaveLength(2);
       const steer = edited.find((e) => e.type === "steer");
-      expect(edited.at(-1)).toMatchObject({
-        type: "lesson_revision",
-        payload: { revision: 2, call_id: steer?.event_id },
-      });
+      expect(edited.slice(-2)).toMatchObject([
+        { type: "lesson_revision", payload: { revision: 2, call_id: steer?.event_id } },
+        // The pane reads the outcome from the log (dl-z5ja.130).
+        {
+          type: "patch_resolved",
+          payload: { steer_event_id: steer?.event_id, applied: true, revision: 2 },
+        },
+      ]);
       expect(foldRun(edited).lesson?.lesson_file).toMatchObject({ title: "Moja lekcja" });
       expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
 
