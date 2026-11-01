@@ -143,8 +143,10 @@ export async function lessonDraft(
     "kind",
     "count",
     "skills",
+    "verbose",
   ]);
   input.string("request");
+  input.flag("verbose"); // jw's switch; the engine answers its compact form either way
   input.strings("names", true);
   const grade = input.string("grade");
   const topic = input.string("topic");
@@ -220,14 +222,31 @@ export function lessonShow(context: VerbContext, raw: Json): Promise<VerbEffect>
   });
 }
 
+/**
+ * NAMES_UNUSED: lesson_check and lesson_edit require names in their schema, as jw's MCP tools do
+ * (parity.test.ts), so the model always sends them; these verbs only check their shape. The
+ * engine guards a family name where a prompt leaves (`muse/guarded.ts`), not here, so a call
+ * without names refuses nothing it would protect.
+ */
 /** The words lesson_check takes for a step: what `you_write` lists, under `question.help`. */
 const HELP_WORDS = ["twin", "boost_by_mistake", "look", "boost", "almost", "worked"];
 
 export function lessonCheck(context: VerbContext, raw: Json): Promise<VerbEffect> {
-  const input = new Input("lesson_check", raw, ["draft_id", "help", "title", "reasoning", "names"]);
+  const input = new Input("lesson_check", raw, [
+    "draft_id",
+    "help",
+    "title",
+    "reasoning",
+    "names",
+    "full",
+    "verbose",
+  ]);
+  // jw's switches for a longer answer; the engine answers its compact form either way.
+  input.flag("full");
+  input.flag("verbose");
   let file = draftOf(context, input);
   const help = input.object("help");
-  input.strings("names", false);
+  input.strings("names", false); // see NAMES_UNUSED
   const title = input.optionalString("title");
   const reasoning = input.optionalString("reasoning");
   for (const [step_id, words] of Object.entries(help)) {
@@ -309,7 +328,7 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
   const patch = input.object("patch");
   const why = input.optionalString("why");
   const change = input.oneOf("change", CHANGES, "wording");
-  input.strings("names", false);
+  input.strings("names", false); // see NAMES_UNUSED
   const step = stepOf(file, step_id);
 
   const refused = Object.keys(patch).filter((k) => k !== "say" && k !== "question");

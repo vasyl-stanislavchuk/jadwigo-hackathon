@@ -37,7 +37,7 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 from referencing import Registry, Resource
 
-from jw import draw
+from jw import draw, settings_keys
 from jw.errors import JwError
 from jw.settings_keys import (
     API_SEARCH_PATH,
@@ -51,7 +51,6 @@ from jw.settings_keys import (
     bank_timeout,
     env_file,
     read_env_file,
-    setting,
 )
 
 CONTRACTS = Path(__file__).resolve().parent / "contracts"
@@ -77,7 +76,10 @@ class NeedInvalid(JwError):
 
 
 class BankDirNotConfigured(JwError):
-    default_hint = f"Set {JADWIGO_BANK_DIR} to a checkout of the bank repo (its sets/ folder)."
+    default_hint = (
+        f"Run `jw bank pull`, or set {JADWIGO_BANK_DIR} to a checkout of the bank repo (its sets/ "
+        "folder)."
+    )
 
 
 class SetNotFound(JwError):
@@ -245,14 +247,15 @@ def show_set(set_id: str, *, bank_dir: str | Path | None = None) -> dict[str, An
     """One question set page, read from the local bank checkout and checked against the schema.
 
     The search route returns rows (ids, titles, enrichment), not pages, and the bank serves no page
-    route yet, so pages come from `JADWIGO_BANK_DIR`: `<dir>/sets/**/<id>.json`.
+    route yet, so pages come from the bank checkout (`settings_keys.bank_dir()`: JADWIGO_BANK_DIR,
+    else where `jw bank pull` clones it, dl-a38n.60): `<dir>/sets/**/<id>.json`.
     """
     if not SET_ID_RE.match(set_id):
         raise SetNotFound(f"{set_id!r} is not a set id")
-    root = bank_dir or setting(JADWIGO_BANK_DIR)
-    if not root:
-        raise BankDirNotConfigured(f"{JADWIGO_BANK_DIR} is not set")
-    sets = Path(root).expanduser() / "sets"
+    root = Path(bank_dir).expanduser() if bank_dir else settings_keys.bank_dir()
+    if not root.is_dir():
+        raise BankDirNotConfigured(f"no bank checkout at {root}")
+    sets = root / "sets"
     found = next(iter(sorted(sets.rglob(f"{set_id}.json"))), None) if sets.is_dir() else None
     if found is None:
         raise SetNotFound(f"no page for {set_id} under {sets}")

@@ -4,19 +4,25 @@ For 3 fixed Polish needs it runs `lesson_draft`, asserts that every drawn step's
 is lesson-ready in the converted file (status `plays` with `checked_at`, and no flag in the
 refusals file) and that the copy plays as copied, writes plain words for what `you_write` lists,
 runs `lesson_check`, and imports the lesson file into the in-memory store (`InMemoryStore` and
-`importLessonFile`, run with bun in packages/lesson-import). It prints one line per need and exits
-1 on any miss (decisions dl-kaxj and dl-be2l).
+`importLessonFile`, run with bun in packages/lesson-import), or with `--publish` publishes it
+with `lesson_publish` into the local database `make dev` serves and checks that it plays. It
+prints one line per need with the seconds each stage took, from jw's own timing stamps (wave 3,
+lead decision 10), and exits 1 on any miss (decisions dl-kaxj and dl-be2l).
 
-    uv run python scripts/smoke_ready.py                 # the planted fixture, a fake bank
-    uv run python scripts/smoke_ready.py --fixture DIR   # another fixture laid out the same way
-    uv run python scripts/smoke_ready.py --live          # the bank and files jw's settings name
+    uv run python scripts/smoke_ready.py                    # the planted fixture, a fake bank
+    uv run python scripts/smoke_ready.py --fixture DIR      # another fixture laid out the same way
+    uv run python scripts/smoke_ready.py --live             # the bank and files jw's settings name
+    uv run python scripts/smoke_ready.py --live --publish   # and publish each, with make dev up
 
-`--fixture` (the default, tests/fixtures/ready) copies the fixture into a temporary bank
-checkout, serves its envelope.json as the bank's answer to every need, and points
-JADWIGO_BANK_DIR and JW_KHAN_CONVERTED at the copy. `--live` takes the settings as they are: the
-nightly run, after the stamp, against the stamped converted file and the bank. It needs bun and a
-jadwigo checkout (JADWIGO_REPO_DIR, else this one). It is never part of `make check`: it is not a
-test, and pytest does not collect scripts/.
+`--fixture` (the default, tests/fixtures/smoke) copies the fixture into a temporary bank
+checkout, serves its envelopes.json (one envelope per need's topic; else envelope.json for every
+need) as the bank's answer, and points JADWIGO_BANK_DIR and JW_KHAN_CONVERTED at the copy, so the
+3 needs draw 3 items. `--live` takes the settings as they are: the nightly run, after the stamp,
+against the stamped converted file and the bank. It needs bun and a jadwigo checkout
+(JADWIGO_REPO_DIR, else this one). It calls jw only through what its tools return (`lesson_draft`,
+`lesson_show`, `lesson_check`, `lesson_publish`, `jw lesson timing`). It is never part of
+`make check`: it is not a test, and pytest does not collect scripts/ (tests/test_smoke_ready.py
+runs it on the fixture with check.ts and the import stubbed).
 """
 
 from __future__ import annotations
@@ -37,10 +43,10 @@ from typing import Any
 
 HERE = Path(__file__).resolve().parent
 CLI = HERE.parent
-FIXTURE = CLI / "tests" / "fixtures" / "ready"
+FIXTURE = CLI / "tests" / "fixtures" / "smoke"
 sys.path[:0] = [str(CLI / "src"), str(CLI / "tests")]
 
-from jw import items, lesson, settings_keys  # noqa: E402
+from jw import items, lesson, lesson_edit, lesson_publish, settings_keys  # noqa: E402
 from jw.errors import JwError  # noqa: E402
 
 # (request, grade, topic): Polish, fixed, and naming nobody.
@@ -78,10 +84,16 @@ def _fixture(source: Path) -> Iterator[None]:
     """The fixture copied into a temporary bank checkout, and a fake bank answering with it."""
     import fake_bank
 
-    envelope = json.loads((source / "envelope.json").read_text(encoding="utf-8"))
+    by_topic: dict[str, Any] = {}
+    if (source / "envelopes.json").is_file():
+        by_topic = json.loads((source / "envelopes.json").read_text(encoding="utf-8"))
+    default = None
+    if (source / "envelope.json").is_file():
+        default = json.loads((source / "envelope.json").read_text(encoding="utf-8"))
 
     class FixtureBank(fake_bank.FakeBank):
         def answer(self, need: Any, query: dict[str, str]) -> dict[str, Any]:
+            envelope = by_topic.get(str((need or {}).get("words")), default) or {"rows": []}
             return {**copy.deepcopy(envelope), "need": need}
 
     with tempfile.TemporaryDirectory(prefix="jw-smoke-") as tmp:
@@ -127,20 +139,19 @@ def _ready(item_id: str, by_id: dict[str, dict[str, Any]], flagged: set[str]) ->
     return None
 
 
-def _words(stored: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    """Plain words for every step's you_write: the twin is the copy itself."""
+def _words(view: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Plain words for what each step's you_write lists, read from what the tools return: the
+    twin, when the bank had none, is the step itself as lesson_show gives it."""
     out: dict[str, dict[str, Any]] = {}
-    for q in stored["questions"]:
-        spec = q["question"]
+    for q in view["questions"]:
         given: dict[str, Any] = {}
-        for need in lesson._to_write(q):
+        for need in q["you_write"]:
             if need == "twin":
-                given["twin"] = {
-                    "say": q.get("say"),
-                    "family": spec["family"],
-                    "data": spec["data"],
-                    "key": spec["key"],
-                }
+                (shown,) = lesson_edit.show(view["draft_id"], q["step_id"])["steps"]
+                step = shown["step"]
+                spec = step["question"]
+                given["twin"] = {"say": step["say"], "family": spec["family"],
+                                 "data": spec["data"], "key": spec["key"]}
             elif need == "look":
                 given["look"] = LOOK
             elif need == "boost":
@@ -148,8 +159,9 @@ def _words(stored: dict[str, Any]) -> dict[str, dict[str, Any]]:
             elif need == "worked":
                 given["worked"] = WORKED
             elif need == "boost_by_mistake":
-                given["boost_by_mistake"] = {c: MISTAKE for c in q.get("mistake_classes") or []}
-        out[q["step_id"]] = given
+                given["boost_by_mistake"] = {c: MISTAKE for c in q.get("cards_to_write") or []}
+        if given:
+            out[q["step_id"]] = given
     return out
 
 
@@ -170,34 +182,52 @@ def _import(lesson_file: str) -> dict[str, Any]:
     return answer
 
 
-def run_need(request: str, grade: str, topic: str) -> str:
-    """One need, bank to store; the line to print. Raises Miss on a break."""
+def _seconds(draft_id: str) -> str:
+    """Seconds per stage, from jw's own timing stamps (`jw lesson timing`)."""
+    split = lesson.timing(draft_id)
+    stages = ", ".join(f"{c['tool'].removeprefix('lesson_')} {c['s']:.2f} s" for c in split["calls"])
+    over = [c["tool"] for c in split["calls"] if c["over_budget"]]
+    return stages + (f" (over budget: {', '.join(over)})" if over else "")
+
+
+def run_need(request: str, grade: str, topic: str, publish: bool = False) -> str:
+    """One need, bank to store (or, with `publish`, to the local database and a verified play
+    URL); the line to print. Raises Miss on a break."""
     try:
         view = lesson.draft(request, grade, names=[], topic=topic, today=TODAY)
     except JwError as exc:
         raise Miss(f"lesson_draft: {exc}") from exc
-    stored = lesson.load_draft(view["draft_id"])
-    if not stored["questions"]:
-        left = "; ".join(f"{x['id']}: {x['reason']}" for x in view["left_out"][:3])
+    shown = lesson_edit.show(view["draft_id"])
+    if not shown["steps"]:
+        left = "; ".join(f"{x['id']}: {x['reason']}" for x in shown["left_out"][:3])
         raise Miss(f"lesson_draft drew nothing ({left or 'no left_out'})")
     by_id = _converted()
     flagged = {str(f.get("id")) for f in items.refusals("pl")["flags"]}
-    for q in stored["questions"]:
-        based_on = str(q["based_on"]["question"]).removeprefix("khan:")
+    for s in shown["steps"]:
+        based_on = str(s["step"]["based_on"]["question"]).removeprefix("khan:")
         why = _ready(based_on, by_id, flagged)
         if why:
-            raise Miss(f"{q['step_id']} is based on an item that is not lesson-ready: {why}")
+            raise Miss(f"{s['step']['id']} is based on an item that is not lesson-ready: {why}")
     if view["plays_as_copied"] is not True:
         raise Miss(f"plays_as_copied is {view['plays_as_copied']}: {view['copy_errors'][:2]}")
-    checked = lesson.check(view["draft_id"], _words(stored))
+    checked = lesson.check(view["draft_id"], _words(view))
     if not checked["ok"]:
         errors = [f for f in checked["findings"] if f.get("level") == "error"][:2]
         raise Miss(f"lesson_check: {errors}")
+    ids = ", ".join(str(q["item_id"]) for q in view["questions"])
+    head = f"{len(view['questions'])} questions ({ids}), plays as copied, check ok"
+    if publish:
+        try:
+            published = lesson_publish.publish(view["draft_id"])
+        except JwError as exc:
+            raise Miss(f"lesson_publish: {exc}") from exc
+        if not published["ok"]:
+            raise Miss(f"lesson_publish did not verify: {published['verified']}")
+        return f"{head}, published {published['play_url']}; {_seconds(view['draft_id'])}"
     imported = _import(checked["lesson_file"])
-    ids = ", ".join(str(q["item_id"]) for q in stored["questions"])
     return (
-        f"{len(stored['questions'])} questions ({ids}), plays as copied, check ok, imported "
-        f"{imported['lesson_id']} version {imported['version']}, play /play/{imported['play']}"
+        f"{head}, imported {imported['lesson_id']} version {imported['version']}, play "
+        f"/play/{imported['play']}; {_seconds(view['draft_id'])}"
     )
 
 
@@ -206,14 +236,19 @@ def main(argv: list[str] | None = None) -> int:
     where = parser.add_mutually_exclusive_group()
     where.add_argument("--fixture", type=Path, default=FIXTURE, help="a fixture directory")
     where.add_argument("--live", action="store_true", help="the bank jw's settings name")
+    parser.add_argument(
+        "--publish",
+        action="store_true",
+        help="publish each lesson locally with lesson_publish (make dev must be running)",
+    )
     args = parser.parse_args(argv)
 
     def run_all() -> int:
         misses = 0
         for request, grade, topic in NEEDS:
-            items._read.cache_clear()
+            items.clear_cache()
             try:
-                line = run_need(request, grade, topic)
+                line = run_need(request, grade, topic, publish=args.publish)
                 print(f"ok    {topic} (grade {grade}): {line}", flush=True)
             except Miss as miss:
                 misses += 1

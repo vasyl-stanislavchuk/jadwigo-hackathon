@@ -23,12 +23,14 @@ question modules came from `david-learns/src/dl` file for file (`dl-u1y5.23`).
 | `jw lesson edit <draft_id> <step_id> <patch.json> [--why ... --change ...]` | One step changed by a JSON merge patch and checked: that step's findings, render findings and card | `JADWIGO_REPO_DIR` and `bun` |
 | `jw lesson show <draft_id> [<step_id>]` | The draft file's step, or every step, as data, with its latest findings | `JADWIGO_DRAFTS_DIR` |
 | `jw lesson publish <draft_id>` | The checked draft imported into the local database `make dev` serves, checked to play, and its absolute `play_url` | `JADWIGO_REPO_DIR`, `make dev` running |
+| `jw lesson timing <draft_id>` | Each tool call's seconds on the draft, the model's time between them, and the totals | `JADWIGO_DRAFTS_DIR` |
 
 - **Search** returns the envelope as the bank sent it. The `/api/v1` route answers stage `final`
   with every arm and takes no query fields, so `--stage` and `--arm` reach only the bank's own
   route (`JW_BANK_URL`), where `--stage first` asks for ids and titles fast. A bank that is down, slow or wrong comes back
   as an envelope whose arms are all `degraded`, never as a crash.
-- **Show** reads set pages from a local checkout of the bank repo, `<JADWIGO_BANK_DIR>/sets/**`.
+- **Show** reads set pages from a local checkout of the bank repo, `<JADWIGO_BANK_DIR>/sets/**`,
+  else the clone `jw bank pull` makes; with neither, it says to run `jw bank pull`.
   The search route returns rows, not pages, and no page route exists yet.
 - **Gaps** is the caller's view: a need is a gap when every arm that was asked came back empty or
   abstained. A bank that could not be asked is `degraded`, not a gap. A need whose every found
@@ -58,7 +60,7 @@ values. Copy it into the file and fill what you use.
 | `JW_BANK_URL` | The bank's own search URL, `<JW_BANK_URL>/questions/search` | none |
 | `JW_BANK_TOKEN` | The bearer token for `JW_BANK_URL`, from Secrets Manager `jadwigo-bank/api-token` | none |
 | `JW_BANK_TIMEOUT_SECS` | Seconds one search may take before it comes back degraded | `10` |
-| `JADWIGO_BANK_DIR` | A checkout of the bank repo, whose `sets/` `jw question show` reads, and whose `refusals/<lang>.json` holds the flags and the shapes' beads | none |
+| `JADWIGO_BANK_DIR` | A checkout of the bank repo, whose `sets/` `jw question show` and the draw read, and whose `refusals/<lang>.json` holds the flags and the shapes' beads | `~/.local/share/jadwigo/bank`, where `jw bank pull` clones it (`dl-a38n.60`) |
 | `JADWIGO_KHAN_DIR` | The synced copy of the bank's Khan bucket | `~/.cache/jadwigo-bank/khan` |
 | `JW_KHAN_CONVERTED` | The converted items file `jw question item` reads | `<JADWIGO_KHAN_DIR>/converted-pl.json`, the Polish file the bank's sync writes (`converted.json` beside it is English) |
 | `JADWIGO_REPO_DIR` | The jadwigo-hackathon checkout whose `packages/lesson-import/src/check.ts` `jw lesson check` runs | the checkout `jw` was installed from |
@@ -105,8 +107,8 @@ the bank commit it was copied at.
 - `question_item(item_id, language="pl")`: the composer's view of one item, key and help kept.
   Never paste it where a child reads.
 - `lesson_draft(request, grade, names, language="pl", kind="practice", count?, skills?)`
-- `lesson_check(draft_id, help, title?, reasoning?, names?)`
-- `lesson_edit(draft_id, step_id, patch, why?, change?)` and `lesson_show(draft_id, step_id?)`
+- `lesson_check(draft_id, help, names, title?, reasoning?)`
+- `lesson_edit(draft_id, step_id, patch, names, why?, change?)` and `lesson_show(draft_id, step_id?)`
 - `lesson_publish(draft_id, target="local")`
 
 A failing call comes back as a tool error whose text is the verb's error and its hint.
@@ -170,11 +172,20 @@ it, readable by you only (mode 700).
    `check.ts` names for its step (`null` until `check.ts` sends them, `dl-e8ov.5.38.11`, or when
    no checkout or `bun` is found; then no check file is written). jw's own record of the draft is
    kept apart, in `<JADWIGO_DRAFTS_DIR>/.jw/<draft_id>.json`.
-3. **Read the slim view.** `lesson_draft` returns the draft's `draft_id`, `title`, `reasoning` and
-   `left_out`, and per question its `step_id`, `prompt`, `data` (pictures without their labels),
-   `key`, `copied_help` (the hints as text, with their picture alts), `rungs` (what fills each
-   rung), `you_write`, `cards_to_write`, `twin_source` and `mistake_classes`. For the canonical
-   request it is about 11,000 characters, under a client's tool-result limit.
+3. **Read the slim view.** `lesson_draft` returns the draft's `draft_id`, `title` and `left_out`
+   by cause (`{total, by_cause: [{cause, count, examples}]}`, causes as `refusals.cause_of` groups
+   them; the whole list stays in jw's record and in `lesson_show`), a `setup_warning` when over 20%
+   of the drawn ready ids are missing from the converted file (run `jw doctor`, then
+   `jw bank pull`), and per question its `step_id`, `item_id`, `say`, `data` (pictures without
+   their labels or address), `key` (without the rule jw adds), `you_write`, `mistake_classes`,
+   `why_drawn` cut to its problem type, `cards_to_write` and `twin_source`; `copied_help` (the
+   hints as text, with their picture alts) and `rungs` only when `you_write` names a rung.
+   `verbose=True` (`--verbose`) returns everything. On the 12-question fixture
+   (`tests/test_payload.py`) it is at most 8 KB, and a clean `lesson_check` at most 6 KB (wave 3,
+   lead decision 6): the card without `left_out`, its prompts with TeX made plain
+   (`dl-e8ov.5.38.6`), keys as text, each twin as `{prompt, key, source}`, changes only when there
+   are any, the licence once when shared, and the rungs, skill and why drawn only with
+   `full=True` (`--full`); warnings come back as `warns: {rule: count}` unless `verbose=True`.
 4. **Write what is missing.** Per step, what its `you_write` lists, in the lesson's language:
    `twin` (only without a bank twin), a question from the same template with its own `say`,
    `data` and `key`; `boost_by_mistake` as `{mistake class: {"text"}}`, for the classes in
@@ -184,12 +195,15 @@ it, readable by you only (mode 700).
    add `changes: [{"change", "why", "set": {path: value}}]`: `change` is `numbers`, `context`,
    `wording` or `tutor_notes`, and a path is `say` or a dotted path under `data`, `key`, `hints`,
    `worked` or `almost` (`hints.0.text`). Each change is recorded in `based_on.changes`.
-5. **Check.** `lesson_check(draft_id, help, title?, reasoning?, names?)` takes those words by
+5. **Check.** `lesson_check(draft_id, help, names, title?, reasoning?)` takes those words by
    step id and rebuilds only the steps it is sent, from the bank's copy and those words; a step
    left out keeps what the draft file holds (its words, the bank twin, `lesson_edit` changes), so
-   `help={}` checks the draft as it stands (`dl-a38n.40`). Every string in `help` but a `key`,
-   and `title` and `reasoning`, pass through the same name guard as the request, with `names`,
-   before they are written (`dl-a38n.36`). It builds the lesson file
+   `help={}` checks the draft as it stands (`dl-a38n.40`). `names` is required, as for
+   `lesson_draft` (`[]` when there is none; `--name` or `--no-names` from a shell). Every string
+   in `help` but an answer `key`, its keys included, and `title` and `reasoning`, pass through the
+   same name guard as the request before anything reads them, and the steps left out are guarded
+   again with them, so a name an earlier edit stored never reaches the file (`dl-a38n.36`,
+   `dl-a38n.62`). It builds the lesson file
    (`packages/lesson-import/src/lesson-file.ts`) and rewrites `<draft_id>.json` with it on every
    call, as far as the words go. It refuses a missing twin or rung, and mistake cards only when
    a step has none at all (the player falls back to `look` for a class with no card); otherwise
@@ -202,13 +216,13 @@ it, readable by you only (mode 700).
    (`bank khan:<id>` or `written`), source, licence, changes
    and why it was drawn, and what was left out. `ok: false` lists `findings` (and the old
    `errors`, for one release) by step id; fix them and check again. From a shell:
-   `jw lesson check <draft_id> words.json --name <name>`, where `words.json` is the `help` object.
+   `jw lesson check <draft_id> words.json --name <name>` (or `--no-names`), where `words.json` is the `help` object.
    Each answer also carries `render`: the findings the lesson builder's page wrote when it drew
    the draft, `<draft_id>.render.json` (`dl-a38n.28`), with `rendered_at` and `stale` (drawn
    before this call's write), or `null` when no page has drawn it.
 6. **Change one step.** `lesson_show(draft_id, step_id?)` returns the draft file's step, or every
    step, as data, with its latest findings and render findings. `lesson_edit(draft_id, step_id,
-   patch, why?, change?)` applies `patch`, a JSON merge patch (RFC 7386) on that step: an object
+   patch, names, why?, change?)` applies `patch`, a JSON merge patch (RFC 7386) on that step: an object
    merges, `null` removes a part, anything else replaces it. It may set `say` and `question`'s
    `data`, `key` and `help` (the twin is `help.twin`), and takes the same bare strings as
    `lesson_check`. A change to a part the bank's copy has (`say`, `data`, `key`, `hints`,
@@ -445,16 +459,31 @@ your synced copy. `tests/test_settings.py` covers the loader.
 lesson-ready in the converted file (`plays` with `checked_at`, and no flag) and that
 `plays_as_copied` is true, fills what `you_write` lists with plain words, runs `lesson_check`, and
 imports the lesson file into the in-memory store (`InMemoryStore`, with bun in
-`packages/lesson-import`). It prints one line per need and exits 1 on any miss.
+`packages/lesson-import`). With `--publish` it publishes each lesson with `lesson_publish` instead,
+into the local database `make dev` serves, and needs its play URL verified. It prints one line per
+need, ending with the seconds each stage took from jw's own timing stamps (and which went over
+the wave-3 budget), and exits 1 on any miss. It calls jw only through what the tools return.
 
 ```sh
 cd apps/cli
-uv run --frozen python scripts/smoke_ready.py                # the planted fixture, a fake bank
-uv run --frozen python scripts/smoke_ready.py --fixture DIR  # another fixture laid out the same way
-uv run --frozen python scripts/smoke_ready.py --live         # nightly: the bank jw's settings name
+uv run --frozen python scripts/smoke_ready.py                    # the planted fixture, a fake bank
+uv run --frozen python scripts/smoke_ready.py --fixture DIR      # another fixture laid out the same way
+uv run --frozen python scripts/smoke_ready.py --live             # nightly: the bank jw's settings name
+uv run --frozen python scripts/smoke_ready.py --live --publish   # and publish each, make dev running
 ```
 
-The nightly run is `--live`, after the stamp, with the bank URL and token, `JADWIGO_BANK_DIR` and
+The planted fixture, `tests/fixtures/smoke`, gives each need its own set and ready item
+(`envelopes.json`, by topic), so the 3 needs draw 3 items: `fxs1`, `fxs2` and `fxr1`. The nightly
+run is `--live`, after the stamp, with the bank URL and token, `JADWIGO_BANK_DIR` and
 `JW_KHAN_CONVERTED` set as for `jw lesson draft`. It needs bun and a jadwigo checkout. It is never
-part of `make check`: it is not a test, and `pytest -q` does not collect `scripts/`. On the planted
-fixture it passes; with `fxr1` flagged it fails, since nothing lesson-ready is left to draw.
+part of `make check`: `pytest -q` does not collect `scripts/`. `tests/test_smoke_ready.py` runs it
+on the fixture with check.ts and the import stubbed, and plants a draw of an item that is not
+lesson-ready: the script's own check names it and exits 1.
+
+### Timing
+
+Each `lesson_draft`, `lesson_check`, `lesson_edit` and `lesson_publish` call stamps its
+`called_at` and `returned_at` into jw's record of the draft (`.jw/<draft_id>.json`, wave 3, lead
+decision 10). `jw lesson timing <draft_id>` (`--json` for the data) prints each call's seconds,
+the model's seconds between calls (the gap since the call before returned), and the totals, and
+marks a call over the wave-3 budget: draft 8 s, check 5 s, publish 5 s.

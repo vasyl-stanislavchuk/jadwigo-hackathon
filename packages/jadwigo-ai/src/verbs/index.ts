@@ -17,6 +17,11 @@ export type CheckFindings = readonly Finding[];
 
 const str = { type: "string" } as const;
 const strOrNull = { anyOf: [{ type: "string" }, { type: "null" }] } as const;
+/**
+ * jw's switches for how much a verb answers (`verbose`, `full`). The engine takes them so the
+ * tool sets stay one, and answers its compact form either way.
+ */
+const detail = { type: "boolean", default: false } as const;
 const strsOrNull = {
   anyOf: [{ type: "array", items: { type: "string" } }, { type: "null" }],
 } as const;
@@ -49,6 +54,7 @@ export const TOOLS: Readonly<Record<VerbName, MuseTool>> = {
         },
         count: { anyOf: [{ type: "integer", minimum: 1, maximum: 20 }, { type: "null" }] },
         skills: strsOrNull,
+        verbose: detail,
       },
       ["request", "grade", "names", "topic"],
     ),
@@ -74,9 +80,9 @@ export const TOOLS: Readonly<Record<VerbName, MuseTool>> = {
           enum: ["numbers", "context", "wording", "tutor_notes"],
           default: "wording",
         },
-        names: strsOrNull,
+        names: { type: "array", items: str },
       },
-      ["draft_id", "step_id", "patch"],
+      ["draft_id", "step_id", "patch", "names"],
     ),
   },
   lesson_check: {
@@ -92,9 +98,11 @@ export const TOOLS: Readonly<Record<VerbName, MuseTool>> = {
         },
         title: strOrNull,
         reasoning: strOrNull,
-        names: strsOrNull,
+        names: { type: "array", items: str },
+        full: detail,
+        verbose: detail,
       },
-      ["draft_id", "help"],
+      ["draft_id", "help", "names"],
     ),
   },
   question_search: {

@@ -79,6 +79,7 @@ def test_unset_everywhere_gives_the_default(file_with) -> None:
 
 def test_the_file_feeds_the_bank_dir_and_the_timeout(file_with, tmp_path: Path) -> None:
     file_with(f"{JADWIGO_BANK_DIR}={tmp_path / 'bank'}\n")
+    (tmp_path / "bank").mkdir()  # a checkout with no sets/ yet; a missing one is no checkout
     with pytest.raises(bank_client.SetNotFound, match=str(tmp_path / "bank" / "sets")):
         bank_client.show_set("set_khan_1")
 

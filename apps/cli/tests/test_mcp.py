@@ -202,9 +202,12 @@ def test_a_client_with_no_shell_drafts_fills_and_checks_a_lesson_by_draft_id(
                 for q in draft["questions"]
             }
             short = {**words, "q1": {k: v for k, v in words["q1"].items() if k != "boost"}}
-            refused = await tool("lesson_check", {"draft_id": draft["draft_id"], "help": short})
-            checked = await tool("lesson_check", {"draft_id": draft["draft_id"], "help": words})
-            unknown = await tool("lesson_check", {"draft_id": "draft_000000000000", "help": {}})
+            refused = await tool("lesson_check", {"draft_id": draft["draft_id"], "help": short,
+                                                  "names": []})
+            checked = await tool("lesson_check", {"draft_id": draft["draft_id"], "help": words,
+                                                  "names": []})
+            unknown = await tool("lesson_check", {"draft_id": "draft_000000000000", "help": {},
+                                                  "names": []})
             return draft, refused, checked, unknown
 
     try:
@@ -223,7 +226,7 @@ def test_a_client_with_no_shell_drafts_fills_and_checks_a_lesson_by_draft_id(
     assert checked["lesson_file"] == checked["draft_path"] == draft["draft_path"]
     assert json.loads((tmp_path / "drafts" / f"{draft['draft_id']}.check.json").read_text())["ok"]
     assert checked["card"]["next"]["call"] == "lesson_publish" and "import_command" not in checked
-    assert all(q["rungs"]["look"] and q["twin"]["key"] for q in checked["card"]["questions"])
+    assert all(q["prompt"] and q["twin"]["key"] for q in checked["card"]["questions"])
     assert "no draft draft_000000000000" in unknown
 
 
@@ -262,14 +265,16 @@ def test_lesson_edit_changes_one_rung_and_answers_with_that_steps_findings_only(
                 q["step_id"]: {k: rungs[q["item_id"]][k] for k in q["you_write"]}
                 for q in draft["questions"]
             }
-            checked = await tool("lesson_check", {"draft_id": draft_id, "help": words})
+            checked = await tool("lesson_check", {"draft_id": draft_id, "help": words,
+                                                  "names": []})
             before = await tool("lesson_show", {"draft_id": draft_id, "step_id": "q2"})
             broken = await tool("lesson_edit", {
                 "draft_id": draft_id, "step_id": "q3", "why": "Rodzic prosi o inną liczbę.",
+                "names": [],
                 "change": "numbers", "patch": {"question": {"key": {"accept": "18"}}},
             })
             edited = await tool("lesson_edit", {
-                "draft_id": draft_id, "step_id": "q2",
+                "draft_id": draft_id, "step_id": "q2", "names": [],
                 "patch": {"question": {"help": {"boost": boost}}},
             })
             after = await tool("lesson_show", {"draft_id": draft_id})

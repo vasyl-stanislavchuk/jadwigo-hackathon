@@ -8,6 +8,7 @@ not be asked.
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 from collections.abc import Iterator
 from pathlib import Path
@@ -16,7 +17,7 @@ from typing import Any
 import fake_bank
 import pytest
 
-from jw import bank_client
+from jw import bank_client, settings_keys
 from jw.errors import JwError
 from jw.settings_keys import JADWIGO_BANK_DIR, JW_API_URL
 
@@ -90,3 +91,17 @@ def test_an_empty_answer_is_a_gap(bank: Any, monkeypatch: pytest.MonkeyPatch) ->
     report = bank_client.gaps([{"language": "pl", "grade": "3", "skills": ["maths.none"]}])
     assert report["gaps"] == 1
     assert report["needs"][0]["state"] == [{"arm": "C", "state": "empty"}]
+
+
+def test_with_no_setting_the_pages_come_from_where_jw_bank_pull_clones(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """dl-a38n.60: JADWIGO_BANK_DIR unset reads settings_keys.bank_dir()'s default; a missing
+    checkout says to run jw bank pull."""
+    with pytest.raises(bank_client.BankDirNotConfigured, match="no bank checkout") as caught:
+        bank_client.show_set("set_khan_fx0003")
+    assert "jw bank pull" in caught.value.hint
+    clone = tmp_path / "clone"
+    shutil.copytree(BANK_DIR, clone)
+    monkeypatch.setattr(settings_keys, "DEFAULT_BANK_DIR", clone)
+    assert bank_client.show_set("set_khan_fx0003")["id"] == "set_khan_fx0003"

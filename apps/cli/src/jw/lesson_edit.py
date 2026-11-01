@@ -131,7 +131,7 @@ def _question(stored: Mapping[str, Any], step: Mapping[str, Any]) -> dict[str, A
 
 
 def _step_card(stored: Mapping[str, Any], step: Mapping[str, Any]) -> dict[str, Any]:
-    (one,) = lesson.card({"questions": [_question(stored, step)]})["questions"]
+    (one,) = lesson.card({"questions": [_question(stored, step)]}, full=True)["questions"]
     return one
 
 
@@ -176,6 +176,27 @@ def edit(
     runner: lesson.Runner | None = None,
     folder: Path | None = None,
 ) -> dict[str, Any]:
+    """`_edit`, stamped in the draft's timings (wave 3, lead decision 10)."""
+    called_at = lesson.now()
+    where = folder or lesson.drafts_dir()
+    try:
+        return _edit(draft_id, step_id, patch, why, change, names=names, runner=runner,
+                     where=where)
+    finally:
+        lesson.stamp(where, draft_id, "lesson_edit", called_at)
+
+
+def _edit(
+    draft_id: str,
+    step_id: str,
+    patch: Mapping[str, Any],
+    why: str | None,
+    change: str,
+    *,
+    names: Sequence[str],
+    runner: lesson.Runner | None,
+    where: Path,
+) -> dict[str, Any]:
     """Change one step of the draft file by a JSON merge patch, check the lesson, and return that
     step's answer: `{ok, step_id, findings, render, card, lesson_ok, draft_path}`.
 
@@ -185,19 +206,19 @@ def edit(
     (dl-a38n.35). Every string in the patch but a key, and `why`, goes through `pii.guard` with
     `names`, the family's names as for lesson_draft (dl-a38n.36).
     """
-    where = folder or lesson.drafts_dir()
     stored, file = _load(draft_id, where)
     if not isinstance(patch, Mapping) or not patch:
         raise JwError("a patch is an object", hint='Pass e.g. {"question": {"help": {"boost": ...}}}.')
     p, n, step = _find(file, draft_id, step_id)
     at = f"script.parts[{p}].steps[{n}]"
     path = lesson._lesson_path(where, draft_id)
-    problems = _refused(patch, PATCHABLE)
-    if problems:
-        return _refusal(stored, step, step_id, problems, at, where, draft_id)
+    # Guarded before anything reads them, keys included, so no refusal echoes a name (dl-a38n.62).
     family = pii.names_for(members=list(names))
     patch = lesson.guard_words(patch, family)
     why = pii.guard(why, names=family).text if why else why
+    problems = _refused(patch, PATCHABLE)
+    if problems:
+        return _refusal(stored, step, step_id, problems, at, where, draft_id)
 
     edited = _merge(copy.deepcopy(step), patch)
     help_ = (edited.get("question") or {}).get("help")
@@ -245,7 +266,7 @@ def edit(
 def show(draft_id: str, step_id: str | None = None, *, folder: Path | None = None) -> dict[str, Any]:
     """The draft file's step (or every step) as data, with the last check's findings and the
     page's render findings for it: `{draft_id, draft_path, title, steps: [{step, findings}],
-    render}`."""
+    render, left_out}`, left_out being the draft's whole list (lesson_draft sends it by cause)."""
     where = folder or lesson.drafts_dir()
     stored, file = _load(draft_id, where)
     if step_id is None:
@@ -262,4 +283,5 @@ def show(draft_id: str, step_id: str | None = None, *, folder: Path | None = Non
             for step in steps
         ],
         "render": lesson.render_of(where, draft_id, step_id),
+        "left_out": stored.get("left_out") or [],
     }

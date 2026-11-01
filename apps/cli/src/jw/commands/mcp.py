@@ -16,7 +16,8 @@ through the client's tool-result limit (dl-e8ov.5.38.10), and both write it as a
 (dl-a38n.16). lesson_check and lesson_edit also return the page's own render findings,
 <draft_id>.render.json, when the lesson builder's page has written one (dl-a38n.28). The server
 finds the bank the way the verbs do (`jw.settings_keys`: JW_API_URL, then JW_BANK_URL, then
-~/.config/jadwigo-bank/bank.env) and reads pages from JADWIGO_BANK_DIR. Registration lines for
+~/.config/jadwigo-bank/bank.env) and reads pages from the bank checkout (JADWIGO_BANK_DIR, else
+the clone jw bank pull makes, dl-a38n.60). Registration lines for
 Claude Code, Muse Code and Codex are in apps/cli/README.md.
 
 Built on the `mcp` package, 2.x (`mcp.server.mcpserver.MCPServer`, FastMCP's new name).
@@ -165,6 +166,7 @@ def build_server() -> Any:
         kind: str = "practice",
         count: int | None = None,
         skills: list[str] | None = None,
+        verbose: bool = False,
     ) -> dict[str, Any]:
         """Draft a lesson for a parent's request: questions drawn from the bank and copied whole.
 
@@ -173,26 +175,28 @@ def build_server() -> Any:
         when there is none; the tool replaces them before anything leaves the machine. topic is
         required: what the lesson is about in a few words, distilled from the request, with no
         count, grade or name ("mnożenie", "dodawanie do 100"); the bank searches these words,
-        and the request is kept as the draft's record and title. grade the bare grade number; kind practice, review, check or diagnostic; count overrides the draw
-        rule's count. Each question is copied whole from the bank (family, data, key, say,
-        pictures, and the source's hints and worked lines as its help), so the lesson plays as
-        copied. Its twin is a sibling item of the same set, problem type and look, with another
-        answer, copied whole with its credit, when the bank has one (twin_source "bank
-        khan:<id>"); the item's own mistake cards are kept. The draft stays on this machine
-        under draft_id; the result is a slim view of it.
-        Per question: step_id, prompt, data (pictures without their labels), key, copied_help
-        (the hints as text with their picture alts), rungs (what fills look, boost, almost and
-        worked), you_write (what is left for you: twin only without a bank twin),
-        cards_to_write (the classes whose mistake card the item lacks, when you_write names
-        boost_by_mistake), twin_source, mistake_classes (the keys boost_by_mistake
-        may use; null when unknown) and why_drawn. left_out says why each set or item was not
-        used. Only lesson-ready items are copied, so an item's reason there is about the item:
-        "renders wrong: <rule>", "not checked", "flagged: <reason>", the converter's own, or for
-        a set "no item is lesson-ready in <lang>". rule_settled is false (the draw rules are
-        provisional). draft_path is the
-        lesson file as copied, written in JADWIGO_DRAFTS_DIR before the call returns, with its
-        check beside it. Write what you_write lists, in the lesson's language, then call
-        lesson_check with the draft_id.
+        and the request is kept as the draft's record and title. grade the bare grade number;
+        kind practice, review, check or diagnostic; count overrides the draw rule's count. Each
+        question is copied whole from the bank (family, data, key, say, pictures, and the
+        source's hints and worked lines as its help), so the lesson plays as copied. Its twin is
+        a sibling item of the same set, problem type and look, with another answer, copied whole
+        with its credit, when the bank has one (twin_source "bank khan:<id>"); the item's own
+        mistake cards are kept. The draft stays on this machine under draft_id; the result is a
+        slim view of it. Per question: step_id, item_id, say, data (pictures without their
+        labels or address), key (without the rule jw adds by code), you_write (what is left
+        for you: twin only without a bank twin), cards_to_write (the classes whose mistake card the item lacks, when
+        you_write names boost_by_mistake), twin_source, mistake_classes (the keys
+        boost_by_mistake may use; null when unknown), why_drawn (its problem type), and, only
+        when you_write names a rung, copied_help (the hints as text with their picture alts)
+        and rungs (what fills look, boost, almost and worked). left_out is {total, by_cause:
+        [{cause, count, examples}]}; lesson_show has the whole list. setup_warning, when
+        present, says this machine's bank copy is out of step: tell the owner to run jw doctor
+        and jw bank pull. rule_settled is false (the draw rules are provisional). draft_path is
+        the lesson file as copied, written in JADWIGO_DRAFTS_DIR before the call returns, with
+        its check beside it. verbose true returns every question whole (family, the full key,
+        set, skill, question type, the draw's whole reason, copied_help and rungs) and left_out
+        whole. Write what you_write lists, in the lesson's language, then call lesson_check
+        with the draft_id.
         """
         return _call(
             lesson.draft,
@@ -204,15 +208,18 @@ def build_server() -> Any:
             kind=kind,
             count=count,
             skills=skills or [],
+            verbose=verbose,
         )
 
     @server.tool(name="lesson_check")
     def lesson_check(
         draft_id: str,
         help: dict[str, dict[str, Any]],
+        names: list[str],
         title: str | None = None,
         reasoning: str | None = None,
-        names: list[str] | None = None,
+        full: bool = False,
+        verbose: bool = False,
     ) -> dict[str, Any]:
         """Check a draft with your words on it, and return the card a parent reads.
 
@@ -226,15 +233,17 @@ def build_server() -> Any:
         where a path is say, or a dotted path under data, key, hints, worked or almost
         ("hints.0.text"); each change is recorded in based_on.changes. Send only the steps you
         change: a step left out keeps what the draft holds (its words, the bank's twin,
-        lesson_edit's changes), and help {} checks the draft as it stands. Every word but a key
-        has the names you pass replaced, as for lesson_draft; title and reasoning replace the
-        draft's. Every call rewrites the
-        draft file (draft_path) with your words as far as they go, and writes its check beside
-        it. ok true returns the card (per question: prompt, key, rungs, twin, source, licence,
-        changes, why drawn; what was left out; and next: publish with lesson_publish), the
-        lesson_file path, play_path and lesson_id. findings lists each problem: step_id, path,
-        level (error or warn), rule, text and fix; ok is false while one is an error. Fix those
-        and call lesson_check again.
+        lesson_edit's changes), and help {} checks the draft as it stands. names is required, as
+        for lesson_draft (every name the family uses, or []): they are replaced in every word but
+        an answer key, keys included, and again in the steps the draft holds; title and
+        reasoning replace the draft's. Every call rewrites the draft file (draft_path) with your words as far as they
+        go, and writes its check beside it. ok true returns the card (per question: prompt and
+        key as plain text, twin {prompt, key, source}, source, licence, and changes when there
+        are any; and next: publish with lesson_publish), warns ({rule: count}), the lesson_file
+        path, play_path and lesson_id. full true adds each rung and why it was drawn to the
+        card; verbose true lists every finding instead of warns. ok false lists findings, each
+        a step_id, path, level (error or warn), rule, text and fix; ok is false while one is an
+        error. Fix those and call lesson_check again.
         """
         return _call(
             lesson.check,
@@ -242,7 +251,9 @@ def build_server() -> Any:
             words=help,
             title=title,
             reasoning=reasoning,
-            names=names or [],
+            names=names,
+            full=full,
+            verbose=verbose,
         )
 
     @server.tool(name="lesson_edit")
@@ -250,9 +261,9 @@ def build_server() -> Any:
         draft_id: str,
         step_id: str,
         patch: dict[str, Any],
+        names: list[str],
         why: str | None = None,
         change: str = lesson_edit.CHANGE_DEFAULT,
-        names: list[str] | None = None,
     ) -> dict[str, Any]:
         """Change one step of a draft and get that step's findings back, without resending the rest.
 
@@ -267,8 +278,9 @@ def build_server() -> Any:
         step_id, findings for this step only, render (the page's findings for it from its last
         draw, stale when drawn before this write; null without the page), the step's card,
         lesson_ok (the whole lesson's check) and draft_path. A patch that is not an object, or
-        sets a part as the wrong kind, is refused with rule edit and changes nothing. Pass names
-        as for lesson_draft: they are replaced in every word but a key, and in why. A later
+        sets a part as the wrong kind, is refused with rule edit and changes nothing. names is
+        required, as for lesson_draft (every name the family uses, or []): they are replaced in
+        every word but an answer key, keys included, and in why. A later
         lesson_check keeps this edit unless it is sent words for this step.
         """
         return _call(
@@ -278,7 +290,7 @@ def build_server() -> Any:
             patch=patch,
             why=why,
             change=change,
-            names=names or [],
+            names=names,
         )
 
     @server.tool(name="lesson_publish")
