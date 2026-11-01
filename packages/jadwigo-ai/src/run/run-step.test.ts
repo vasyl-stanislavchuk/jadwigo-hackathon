@@ -1634,6 +1634,50 @@ describe("a parent's patch (dl-z5ja.76)", () => {
     }
   });
 
+  it("is not applied on an ended turn when a later turn changed the lesson first (review round 2)", async () => {
+    const t = await setup([drafting(), { text: "Done." }, drafting(), { text: "Again." }], real());
+    const first = await t.say("Halves.");
+    await drain(t.deps);
+    // The pane's patch on revision 1 lands on the ended turn, and a step is queued for it.
+    await t.send(steer({ title: "Parent's title" }));
+    // Before that step runs, the parent opens a new turn, and its step drafts revision 2 first.
+    const second = await t.say("Make another.");
+    const { attempt } = await t.run(second);
+    await runStep({ run_id: second, attempt }, t.deps);
+    await drain(t.deps);
+
+    const firstLog = await t.log(first);
+    expect(firstLog.filter((e) => e.type === "lesson_revision")).toHaveLength(1);
+    const latest = (await t.log(second)).filter((e) => e.type === "lesson_revision");
+    expect(latest.map((e) => e.payload.revision)).toEqual([2]);
+    expect(latest[0]?.payload.lesson_file).not.toMatchObject({ title: "Parent's title" });
+  });
+
+  it("lands when the turn is cancelled before its next call", async () => {
+    let t: Awaited<ReturnType<typeof setup>>;
+    t = await setup([drafting(), { calls: [{ verb: "lesson_show" }] }], real());
+    const scripted = t.deps.muse;
+    let run: RunId | null = null;
+    t.deps.muse = {
+      respond: async (request) => {
+        const answer = await scripted.respond(request);
+        if (request.call_no === 2 && run) {
+          // The patch is sent on revision 1 and a Stop right behind it, while call 2 is out.
+          await t.send(steer({ title: "Mine" }));
+          await t.send({ event_id: newEventId(), kind: "cancel", payload: {} });
+        }
+        return answer;
+      },
+    };
+    run = await t.say("Halves.");
+    await drain(t.deps);
+    const events = await t.log(run);
+    expect((await t.run(run)).status).toBe("cancelled");
+    expect(
+      events.filter((e) => e.type === "lesson_revision").map((e) => e.payload.revision),
+    ).toEqual([1, 2]);
+  });
+
   it("leaves an ended turn's other inbox rows unlogged", async () => {
     const t = await setup([{ text: "Done." }]);
     const run = await t.say("Halves.");

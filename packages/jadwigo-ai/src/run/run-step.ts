@@ -931,6 +931,8 @@ async function endTurn(
 
 async function endCancelled(deps: EngineDeps, w: Writer): Promise<RunStepOutcome> {
   await takeInbox(deps.store, w);
+  // A parent's patch taken on the way out still lands: the cancel stops the AI, not the parent.
+  await applyPatches(w, await conversationLesson(deps.store, w.pod, w.run));
   return endTurn(w, "cancelled", deps.now());
 }
 
@@ -1053,7 +1055,7 @@ async function applyPatches(w: Writer, base: VerbContext["lesson"]): Promise<num
   for (const steer of steersOf(w.log)) {
     const { patch, base_revision } = steer.payload;
     if (patch === undefined || revisionOf(w.log, steer) !== null) continue;
-    const lesson = lessonOf(w.log) ?? base;
+    const lesson = newer(lessonOf(w.log), base);
     if (!lesson || lesson.revision !== base_revision) continue;
     const lesson_file = mergePatch(lesson.lesson_file, patch);
     if (!readable(lesson_file)) continue;
@@ -1072,6 +1074,31 @@ async function applyPatches(w: Writer, base: VerbContext["lesson"]): Promise<num
     applied += 1;
   }
   return applied;
+}
+
+/** The higher revision of 2 lessons, either of which may be missing. */
+function newer(a: VerbContext["lesson"], b: VerbContext["lesson"]): VerbContext["lesson"] {
+  if (!a) return b;
+  if (!b) return a;
+  return b.revision > a.revision ? b : a;
+}
+
+/**
+ * The conversation's latest lesson, read across all its turns, later ones included: what a patch
+ * applied outside a running turn's step must still be made on (dl-z5ja.76, review round 2).
+ */
+async function conversationLesson(
+  store: Store,
+  pod: PodId,
+  run: RunId,
+): Promise<VerbContext["lesson"]> {
+  const row = await store.getRun(pod, run);
+  if (row.conversation_id === null) return null;
+  let lesson: VerbContext["lesson"] = null;
+  for (const turn of await store.listRuns(pod, row.conversation_id)) {
+    lesson = newer(lesson, lessonOf(await store.listRunEvents(pod, turn.id, 0)));
+  }
+  return lesson;
 }
 
 /** Whether `file` is a lesson file the page's lenient parse reads whole, every step of it. */
@@ -1106,7 +1133,8 @@ async function patchEnded(
     return steers.length;
   });
   if (taken === 0) return w.appended;
-  await applyPatches(w, (await priorTurns(deps.store, found)).lesson);
+  // A later turn may have changed the lesson since: the patch is checked against the latest.
+  await applyPatches(w, await conversationLesson(deps.store, found.pod, found.run.id));
   return w.appended;
 }
 
@@ -1359,6 +1387,7 @@ async function closeDue(
   const w = new Writer(store, pod, run.id, attempt, log);
   try {
     await takeInbox(store, w);
+    await applyPatches(w, await conversationLesson(store, pod, run.id));
     if (due === "max") {
       await endPastMax(w, run.attempt, now);
     } else {
