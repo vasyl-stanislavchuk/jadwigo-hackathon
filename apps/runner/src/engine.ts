@@ -1,5 +1,6 @@
 import type { ModelTier } from "@jadwigo/contracts/run";
 import {
+  type AttachmentReader,
   createVerbs,
   type EngineDeps,
   fixtureBank,
@@ -31,6 +32,8 @@ export function postgresEngineHost(
   muse: MuseClient | ((store: Store) => MuseClient),
   warn: (line: string) => void,
   tier: ModelTier = "contributor",
+  /** Where the turn's photos are read: S3 in the Lambda; none in a probe or a test. */
+  attachments?: AttachmentReader,
 ): HostDeps & { close(): Promise<void> } {
   const store = createPostgresStore(url, { ...POOL, role: "jadwigo_runner" });
   const pool = new pg.Pool({ connectionString: url, ...POOL });
@@ -46,6 +49,7 @@ export function postgresEngineHost(
     verbs: createVerbs({ bank: fixtureBank() }),
     queue,
     now: () => new Date(),
+    ...(attachments === undefined ? {} : { attachments }),
     // A call that went to a less private tier than the run asked for, answered or failed, is
     // logged with its ids only (dl-z5ja.91, dl-z5ja.103).
     onWarning: (w) =>

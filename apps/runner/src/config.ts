@@ -4,7 +4,7 @@ import { GetParameterCommand, SSMClient } from "@aws-sdk/client-ssm";
 /** Reads one SecureString, decrypted. The runner's role may read only the parameter it names. */
 export type ReadParameter = (name: string) => Promise<string | undefined>;
 
-const readSsm: ReadParameter = async (name) => {
+export const readSsm: ReadParameter = async (name) => {
   const reply = await new SSMClient({}).send(
     new GetParameterCommand({ Name: name, WithDecryption: true }),
   );
@@ -108,4 +108,15 @@ export async function museConfig(read: ReadParameter = readSsm): Promise<MuseCon
     throw new Error("JADWIGO_MUSE_TIER is private: name its model in JADWIGO_MUSE_PRIVATE_MODEL");
   }
   return { api_key, lane_cap_usd, tier, private_model };
+}
+
+/**
+ * The SSM parameter holding the uploads bucket's name when `UPLOADS_BUCKET` is unset
+ * (dl-z5ja.11.2's Terraform writes it, as the bank's writes the content bucket's).
+ */
+export const UPLOADS_BUCKET_PARAM = "/jadwigo/uploads/bucket";
+
+/** The bucket a parent's photos are read from, `UPLOADS_BUCKET`; undefined when unset or blank. */
+export function uploadsBucket(): string | undefined {
+  return setting("UPLOADS_BUCKET");
 }
