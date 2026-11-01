@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ChooseForm, RunEvent } from "./run.ts";
+import { ChooseForm, RunEvent, RunInbox } from "./run.ts";
 
 /** Run contract v2 (dl-z5ja.50): the model tier on every model call, and the UX seams' shapes. */
 
@@ -90,5 +90,41 @@ describe("the UX seams", () => {
     ];
     expect(parses("plan", { entries })).toBe(true);
     expect(parses("plan", { entries: [{ text: "Find questions", status: "maybe" }] })).toBe(false);
+  });
+});
+
+describe("a steer is logged (dl-z5ja.51)", () => {
+  it("parses from the chat, and from a lesson edit naming its questions", () => {
+    expect(parses("steer", { text: "Shorter, please.", source: "chat" })).toBe(true);
+    expect(
+      parses("steer", {
+        text: "I changed question 2.",
+        source: "lesson_edit",
+        question_ids: ["s02"],
+      }),
+    ).toBe(true);
+  });
+
+  it("fails without a source, with an unknown one, or with an empty question list", () => {
+    expect(parses("steer", { text: "Shorter, please." })).toBe(false);
+    expect(parses("steer", { text: "Shorter, please.", source: "email" })).toBe(false);
+    expect(parses("steer", { text: "x", source: "lesson_edit", question_ids: [] })).toBe(false);
+  });
+
+  it("the inbox's steer takes a source and question ids, and still parses with neither", () => {
+    const row = {
+      run_id: BASE.run_id,
+      pod_id: "pod_6et2fhbnwvb45aw9atcfzs33za",
+      event_id: BASE.event_id,
+      status: "pending",
+      created_at: BASE.created_at,
+      kind: "steer",
+    };
+    expect(RunInbox.safeParse({ ...row, payload: { text: "Shorter." } }).success).toBe(true);
+    const edit = { text: "I changed question 2.", source: "lesson_edit", question_ids: ["s02"] };
+    expect(RunInbox.safeParse({ ...row, payload: edit }).success).toBe(true);
+    expect(RunInbox.safeParse({ ...row, payload: { text: "x", source: "sms" } }).success).toBe(
+      false,
+    );
   });
 });

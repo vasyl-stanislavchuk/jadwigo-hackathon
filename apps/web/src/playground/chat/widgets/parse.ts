@@ -2,7 +2,8 @@
  * Each verb's `tool_result.view.data` read into the shape its widget draws (dl-z5ja.24), or null
  * when it does not fit: the widget never parses text and never draws half a payload, and a miss
  * falls back to the plain card (`docs/research/posthog-ai-ux-patterns.md` section 6). One function
- * per verb, so moving these to Zod schemas in `packages/contracts` replaces this file only.
+ * per verb, so moving these to Zod schemas in `packages/contracts` replaces this file only. The
+ * shapes mirror what the verbs answer in `VerbEffect.view` (dl-z5ja.69).
  */
 
 import { FINDING_LEVELS, type Finding } from "@jadwigo/lesson-import/file";
@@ -35,25 +36,27 @@ function all<T>(value: unknown, read: (item: unknown) => T | null): T[] | null {
   return out;
 }
 
+/** lesson_check's view (dl-z5ja.69): whether the draft may be published, and every finding. */
 export interface CheckView {
-  ok: boolean;
+  publishable: boolean;
   findings: Finding[];
 }
 
 export function checkView(data: unknown): CheckView | null {
-  if (!isFields(data) || typeof data["ok"] !== "boolean") return null;
+  if (!isFields(data) || typeof data["publishable"] !== "boolean") return null;
   const findings = all(data["findings"], finding);
-  return findings === null ? null : { ok: data["ok"], findings };
+  return findings === null ? null : { publishable: data["publishable"], findings };
 }
 
-export interface EditView extends CheckView {
-  step_id: string;
+/** lesson_edit's view (dl-z5ja.69): the steps the edit changed, none for a no-op. */
+export interface EditView {
+  changed_step_ids: string[];
 }
 
 export function editView(data: unknown): EditView | null {
-  const check = checkView(data);
-  if (check === null || !isFields(data) || !isString(data["step_id"])) return null;
-  return { ...check, step_id: data["step_id"] };
+  if (!isFields(data)) return null;
+  const ids = all(data["changed_step_ids"], (id) => (isString(id) ? id : null));
+  return ids === null ? null : { changed_step_ids: ids };
 }
 
 export interface SearchView {

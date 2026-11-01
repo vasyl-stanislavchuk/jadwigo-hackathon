@@ -1,5 +1,5 @@
 import type { AccountId, PodId } from "@jadwigo/contracts";
-import type { RunId, VerbName } from "@jadwigo/contracts/run";
+import type { RunId, ToolView, VerbName } from "@jadwigo/contracts/run";
 import type { MuseTool } from "../muse/client.ts";
 
 /**
@@ -30,6 +30,12 @@ export interface VerbContext {
 export interface VerbEffect {
   output: Record<string, unknown>;
   lesson_file?: Record<string, unknown>;
+  /**
+   * The result typed for its widget, for the tool result's `view`. lesson_check sets
+   * `{ kind: "lesson_check", data: { publishable, findings } }`: check()'s findings and the
+   * harsh-word ones (`dl-z5ja.31`). The other verbs' views are `dl-z5ja.69`.
+   */
+  view?: ToolView;
 }
 
 export interface Verb {
