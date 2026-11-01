@@ -852,5 +852,14 @@ export const en: CopyTable = {
     reviewed: false,
     plural: { notes_noun: { count: "n", forms: { one: "note", other: "notes" } } },
   },
+  // a parent's own edit in the lesson pane (dl-z5ja.30)
+  chat_edit_step: { text: "Change this step", reviewed: false },
+  chat_edit_prompt: { text: "What should change in this step, and why?", reviewed: false },
+  chat_edit_send: { text: "Send the change", reviewed: false },
+  chat_edit_cancel: { text: "Cancel", reviewed: false },
+  chat_edit_steer: {
+    text: "The parent asks for a change in step {step}: {words}",
+    reviewed: false,
+  },
   // end the chat page
 };

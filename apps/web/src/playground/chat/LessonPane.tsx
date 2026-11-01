@@ -15,7 +15,7 @@ import {
   pageSpec,
   ViewMode,
 } from "@jadwigo/lesson-kit";
-import type { ReactElement } from "react";
+import { type FormEvent, type ReactElement, useState } from "react";
 import { lessonFileToSpecs } from "../lesson/adapter.ts";
 import { readDraft } from "../lesson/draft.ts";
 
@@ -26,6 +26,7 @@ export function LessonPane({
   lesson,
   changed = new Set(),
   onUndo,
+  onEdit,
 }: {
   /** The parent's language, for the pane's own words. */
   language: Language;
@@ -34,6 +35,8 @@ export function LessonPane({
   changed?: ReadonlySet<string>;
   /** Takes back the last AI revision; "Cofnij" shows only when it is given. */
   onUndo?: (() => void) | undefined;
+  /** Sends a parent's edit of one step back to the AI, in the lesson's own language. */
+  onEdit?: ((text: string, question_ids: string[]) => void) | undefined;
 }): ReactElement {
   const say = (key: Parameters<typeof copy>[1], vars: Record<string, string | number> = {}) =>
     copy(language, key, vars, "adult");
@@ -45,7 +48,7 @@ export function LessonPane({
           {say("chat_lesson_empty")}
         </p>
       ) : (
-        <Revision lesson={lesson} say={say} changed={changed} onUndo={onUndo} />
+        <Revision lesson={lesson} say={say} changed={changed} onUndo={onUndo} onEdit={onEdit} />
       )}
     </section>
   );
@@ -56,11 +59,13 @@ function Revision({
   say,
   changed,
   onUndo,
+  onEdit,
 }: {
   lesson: NonNullable<RunView["lesson"]>;
   say: (key: Parameters<typeof copy>[1], vars?: Record<string, string | number>) => string;
   changed: ReadonlySet<string>;
   onUndo: (() => void) | undefined;
+  onEdit: ((text: string, question_ids: string[]) => void) | undefined;
 }): ReactElement {
   const read = readDraft(lesson.lesson_file);
   if ("error" in read)
@@ -117,6 +122,23 @@ function Revision({
                   showKey={false}
                 />
               </LessonTheme>
+              {onEdit && (
+                <StepEdit
+                  step={step.step_id}
+                  say={say}
+                  steer={(words) =>
+                    onEdit(
+                      copy(
+                        lessonLanguage,
+                        "chat_edit_steer",
+                        { step: step.step_id, words },
+                        "adult",
+                      ),
+                      [step.step_id],
+                    )
+                  }
+                />
+              )}
             </li>
           ) : (
             <li
@@ -141,5 +163,70 @@ function Changed({ say }: { say: (key: Parameters<typeof copy>[1]) => string }):
     <p data-changed-mark className="text-primary mb-2 text-xs font-medium">
       {say("chat_revision_by_ai")}
     </p>
+  );
+}
+
+/**
+ * A parent's own edit of one step (dl-z5ja.30): what to change and why, in their words. It goes to
+ * the AI as a steer naming the step, whose next lesson_edit applies it with those words as its why.
+ */
+function StepEdit({
+  step,
+  say,
+  steer,
+}: {
+  step: string;
+  say: (key: Parameters<typeof copy>[1]) => string;
+  steer(words: string): void;
+}): ReactElement {
+  const [open, setOpen] = useState(false);
+  const [words, setWords] = useState("");
+  const [sent, setSent] = useState(false);
+  if (!open)
+    return (
+      <div className="mt-2 flex items-center gap-2 text-sm">
+        <button
+          type="button"
+          data-edit-step={step}
+          onClick={() => {
+            setOpen(true);
+            setSent(false);
+          }}
+          className="rounded-md border px-2 py-0.5"
+        >
+          {say("chat_edit_step")}
+        </button>
+        {sent && <span data-edit-sent>{say("chat_edit_sent")}</span>}
+      </div>
+    );
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    const trimmed = words.trim();
+    if (trimmed === "") return;
+    steer(trimmed);
+    setWords("");
+    setOpen(false);
+    setSent(true);
+  };
+  return (
+    <form onSubmit={submit} className="mt-2 flex flex-col gap-1 text-sm">
+      <label className="flex flex-col gap-1">
+        {say("chat_edit_prompt")}
+        <textarea
+          value={words}
+          rows={2}
+          className="rounded-md border px-2 py-1"
+          onChange={(e) => setWords(e.target.value)}
+        />
+      </label>
+      <div className="flex gap-2">
+        <button type="submit" className="rounded-md border px-2 py-0.5">
+          {say("chat_edit_send")}
+        </button>
+        <button type="button" onClick={() => setOpen(false)} className="px-2 py-0.5">
+          {say("chat_edit_cancel")}
+        </button>
+      </div>
+    </form>
   );
 }

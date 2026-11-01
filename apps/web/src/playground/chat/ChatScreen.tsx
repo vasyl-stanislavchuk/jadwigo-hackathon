@@ -83,12 +83,14 @@ function ChatView({
   state,
   onSend,
   onStop,
+  onEdit,
   onNew,
 }: {
   language: Language;
   state: ConversationState;
   onSend(text: string): void;
   onStop(): void;
+  onEdit?: (text: string, question_ids: string[]) => void;
   onNew?: () => void;
 }): ReactElement {
   const turns = turnsOf(state);
@@ -109,7 +111,14 @@ function ChatView({
           onStop={onStop}
         />
       }
-      lesson={<LessonPane language={language} lesson={lessonOf(turns)} changed={changed} />}
+      lesson={
+        <LessonPane
+          language={language}
+          lesson={lessonOf(turns)}
+          changed={changed}
+          onEdit={onEdit}
+        />
+      }
       lessonKey={lessonKey(turns)}
     />
   );
@@ -217,8 +226,17 @@ function LiveChat({
   language: Language;
   onNew(): void;
 }): ReactElement {
-  const { state, send, stop } = useConversation(transport, conversation);
-  return <ChatView language={language} state={state} onSend={send} onStop={stop} onNew={onNew} />;
+  const { state, send, stop, edit } = useConversation(transport, conversation);
+  return (
+    <ChatView
+      language={language}
+      state={state}
+      onSend={send}
+      onStop={stop}
+      onEdit={edit}
+      onNew={onNew}
+    />
+  );
 }
 
 export function ChatScreen({ transport }: { transport?: EngineTransport } = {}): ReactElement {

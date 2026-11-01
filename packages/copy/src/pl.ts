@@ -856,5 +856,11 @@ export const pl: CopyTable = {
       },
     },
   },
+  // a parent's own edit in the lesson pane (dl-z5ja.30)
+  chat_edit_step: { text: "Zmień ten krok", reviewed: false },
+  chat_edit_prompt: { text: "Co zmienić w tym kroku i dlaczego?", reviewed: false },
+  chat_edit_send: { text: "Wyślij zmianę", reviewed: false },
+  chat_edit_cancel: { text: "Anuluj", reviewed: false },
+  chat_edit_steer: { text: "Rodzic prosi o zmianę w kroku {step}: {words}", reviewed: false },
   // end the chat page
 };

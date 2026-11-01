@@ -1,12 +1,13 @@
-import { type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
+import { ConversationId, type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { foldRun } from "@jadwigo/core";
 import { RUN_LOGS } from "@jadwigo/testing";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ChatScreen } from "./ChatScreen.tsx";
 import { conversationReducer, EMPTY, lessonOf, turnsOf } from "./conversation.ts";
 import { LessonPane } from "./LessonPane.tsx";
-import type { EngineTransport } from "./useConversation.ts";
+import { type EngineTransport, useConversation } from "./useConversation.ts";
+import type { SendBody } from "./wire.ts";
 
 afterEach(cleanup);
 
@@ -223,5 +224,63 @@ describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Cofnij" }));
     expect(undone).toBe(1);
+  });
+});
+
+describe("a parent's own edit goes back to the AI (dl-z5ja.30)", () => {
+  it("the step editor sends what to change and why, in the lesson's language, naming the step", () => {
+    const lesson = foldRun(eventsOf("happy-turn")).lesson;
+    const sent: [string, string[]][] = [];
+    render(
+      <LessonPane
+        language="pl"
+        lesson={lesson}
+        onEdit={(text, ids) => {
+          sent.push([text, ids]);
+        }}
+      />,
+    );
+    fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
+    fireEvent.change(screen.getByRole("textbox", { name: "Co zmienić w tym kroku i dlaczego?" }), {
+      target: { value: "mniejsze liczby, bo to dopiero początek" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Wyślij zmianę" }));
+    expect(sent).toEqual([
+      ["Rodzic prosi o zmianę w kroku s02: mniejsze liczby, bo to dopiero początek", ["s02"]],
+    ]);
+    expect(screen.getByText("Twoja zmiana trafiła do asystenta.")).toBeTruthy();
+  });
+
+  /** The bodies a transport was sent, after its conversation restored. */
+  async function editOn(name: string): Promise<SendBody[]> {
+    const t = fakeTransport(eventsOf(name));
+    const bodies: SendBody[] = [];
+    const transport: EngineTransport = {
+      ...t.transport,
+      send: async (body) => {
+        bodies.push(body);
+        return t.run;
+      },
+    };
+    const conversation = ConversationId.parse("cnv_00000000000000000000000001");
+    const { result } = renderHook(() => useConversation(transport, conversation));
+    await act(async () => {});
+    await act(async () => result.current.edit("Rodzic prosi o zmianę w kroku s02: …", ["s02"]));
+    return bodies;
+  }
+
+  it("while the turn runs, the edit is a steer naming its questions", async () => {
+    const [body] = await editOn("reload-with-duplicates");
+    expect(body).toMatchObject({
+      kind: "steer",
+      source: "lesson_edit",
+      question_ids: ["s02"],
+      text: "Rodzic prosi o zmianę w kroku s02: …",
+    });
+  });
+
+  it("after the turn, the same words go as a new message", async () => {
+    const [body] = await editOn("happy-turn");
+    expect(body).toMatchObject({ kind: "message", text: "Rodzic prosi o zmianę w kroku s02: …" });
   });
 });
