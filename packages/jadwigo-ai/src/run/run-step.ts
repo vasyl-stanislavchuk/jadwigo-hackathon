@@ -35,7 +35,8 @@ import { type QueuedStep, STEP_VISIBILITY_S } from "../queue/types.ts";
 import { mergePatch } from "../verbs/input.ts";
 import type { Verbs } from "../verbs/types.ts";
 import { type VerbContext, type VerbEffect, VerbError } from "../verbs/types.ts";
-import { type AttachmentReader, dataUrl, ownPath } from "./attachments.ts";
+import type { AttachmentReader, Converter } from "./attachments.ts";
+import { earlierLine, refusedLine, turnFiles } from "./files.ts";
 import { eventIdFor, turnRunIdFor } from "./ids.ts";
 import { inLanguage } from "./language.ts";
 
@@ -69,6 +70,11 @@ export interface EngineDeps {
    * photo reaches the model as a line saying it could not be read, never as bytes.
    */
   attachments?: AttachmentReader;
+  /**
+   * Where a HEIC, a PDF or a DOCX becomes page JPEGs (dl-z5ja.11.7): the converter Lambda in the
+   * hosted runner. Without it such a file is refused as `unavailable`, and the parent is told.
+   */
+  converter?: Converter;
 }
 
 /** What `onWarning` is told. */
@@ -557,6 +563,20 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       await deps.queue.send({ run_id: run.id, attempt: w.attempt });
       return "continue";
     }
+    // The turn's own files (dl-z5ja.11.4, dl-z5ja.11.7). A file the converter refused is a line the
+    // parent reads, once per file however often a step reads it again: never a silent drop.
+    const language = await recordLanguage(deps, w, scope, prior);
+    const files = await turnFiles(deps, scope.pod, w.log, language);
+    const told = await Promise.all(
+      files.refused.map(async (file) =>
+        agentMessage(
+          w,
+          refusedLine(file, language),
+          await w.id("attachment", file.attachment_id, "refused"),
+        ),
+      ),
+    );
+    await w.append(told);
     const asked = deps.tier ?? DEFAULT_TIER;
     const downgraded = (answered: ModelTier) => {
       if (asked === "private" && answered !== "private") {
@@ -578,7 +598,7 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
         prompt_cache_key: PROMPT_CACHE_KEY,
         tier: asked,
         instructions: instructions.join("\n\n"),
-        input: [...prior.input, ...museInput(w.log, await photosOf(deps, scope.pod, w.log))],
+        input: [...prior.input, ...museInput(w.log, files.parts)],
         tools: Object.values(deps.verbs).map((verb) => verb.tool),
         names: await namesOf(deps.store, scope),
       });
@@ -775,6 +795,25 @@ function refusalOf(
   const misses = checkAnswer(text, given);
   const wrong = language !== null && !inLanguage(text, language) ? language : null;
   return misses.length === 0 && wrong === null ? null : { blank: false, misses, language: wrong };
+}
+
+/**
+ * The language a line the engine writes itself is in: the run's lesson's, else the pod's, which the
+ * parent chose at sign-up. The pod is read only when a turn needs it.
+ */
+async function recordLanguage(
+  deps: EngineDeps,
+  w: Writer,
+  scope: Scope,
+  prior: { lesson: VerbContext["lesson"] },
+): Promise<Language> {
+  const lesson = languageOf(w.log, prior.lesson);
+  if (lesson !== null) return lesson;
+  if (!w.log.some((e) => e.type === "message" && (e.payload.attachments?.length ?? 0) > 0)) {
+    return "pl";
+  }
+  const me = await deps.store.getMe(scope.pod, scope.created_by);
+  return me.pod?.language ?? "pl";
 }
 
 /** The language of the run's lesson as it stands in `log`, else the turn before's: null with none. */
@@ -1286,8 +1325,8 @@ function museInput(
         const parts: MusePart[] = words === "" ? [] : [{ type: "input_text", text: words }];
         input.push({ type: "message", role: "user", text: [...parts, ...own] });
       } else if (sent > 0) {
-        // An earlier turn's photos: a line, never the bytes again, so a long chat costs no more.
-        const line = `[${sent} ${sent === 1 ? "photo" : "photos"} from the parent, sent with this message in an earlier turn]`;
+        // An earlier turn's files: a line, never the bytes again, so a long chat costs no more.
+        const line = earlierLine(e.payload.attachments ?? []);
         input.push({
           type: "message",
           role: "user",
@@ -1314,40 +1353,6 @@ function museInput(
     }
   }
   return input;
-}
-
-/**
- * The turn's own photos as parts, by their message's `event_id` (dl-z5ja.11.4): for each one a
- * photo block, then the image as a `data:` URL the runner read. A path outside the run's pod's
- * `attachments/`, a host with no reader, or a missing object gives a line instead, never bytes.
- */
-async function photosOf(
-  deps: EngineDeps,
-  pod: PodId,
-  log: readonly RunEvent[],
-): Promise<Map<string, MusePart[]>> {
-  const photos = new Map<string, MusePart[]>();
-  for (const e of log) {
-    if (e.type !== "message" || e.payload.from !== "parent") continue;
-    const attached = e.payload.attachments ?? [];
-    if (attached.length === 0) continue;
-    const parts: MusePart[] = [];
-    for (const [i, photo] of attached.entries()) {
-      const label = `Photo ${i + 1} of ${attached.length} the parent sent.`;
-      const bytes =
-        deps.attachments && ownPath(pod, photo.storage_path)
-          ? await deps.attachments.read(photo.storage_path)
-          : undefined;
-      if (bytes === undefined) {
-        parts.push({ type: "input_text", text: `[${label} It could not be read.]` });
-        continue;
-      }
-      parts.push({ type: "input_text", text: fence(label, "photo") });
-      parts.push({ type: "input_image", image_url: dataUrl(photo.media_type, bytes) });
-    }
-    photos.set(e.event_id, parts);
-  }
-  return photos;
 }
 
 /**

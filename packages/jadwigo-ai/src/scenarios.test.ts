@@ -23,10 +23,11 @@ import { InMemoryStore } from "@jadwigo/store";
 import { FIXED_NOW } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
 import { fence } from "./fence/index.ts";
-import type { MuseClient, MuseRequest } from "./muse/client.ts";
+import type { MuseClient, MusePart, MuseRequest } from "./muse/client.ts";
 import { ScriptedMuse, type ScriptedReply } from "./muse/scripted.ts";
 import { InMemoryRunQueue } from "./queue/memory.ts";
 import { STEP_VISIBILITY_S } from "./queue/types.ts";
+import type { ConvertRefusal } from "./run/attachments.ts";
 import { acceptMessage, drain, type EngineDeps, type InboxEntry, sweep } from "./run/run-step.ts";
 import { createVerbs, fixtureBank, type LearnerReads } from "./verbs/index.ts";
 import {
@@ -1014,6 +1015,179 @@ describe("the engine keeps PostHog's production lessons", () => {
     expect(sent).not.toContain("data:image");
     expect(sent).toContain("It could not be read.");
   });
+  // Wave 6 (dl-z5ja.11.7, decision 59): a PDF, a DOCX or a HEIC goes through the converter on read,
+  // and its pages reach the model as images behind the photo fence, after a line with its kind and
+  // page count. At most LIMITS.imagesPerTurn (20) a turn; a refused file is a line the parent reads.
+  frozen(
+    "a 3-page PDF and a 1-page DOCX become 4 images behind the fence, with their lines",
+    async () => {
+      const t = await setup([{ text: "Widzę zadania." }, { text: "Dobrze." }]);
+      const pdf = file(t.pod, "application/pdf");
+      const docx = file(t.pod, DOCX);
+      const pages = documents(t, { [pdf.attachment_id]: 3, [docx.attachment_id]: 1 });
+      await t.send({
+        event_id: eventId(),
+        kind: "message",
+        payload: { text: "Zrób lekcję z tych kart.", attachments: [pdf, docx] },
+      });
+      await drain(t.deps);
+
+      const parts = userParts(t.muse.calls[0]);
+      expect(parts.filter((p) => p.type === "input_image")).toHaveLength(4);
+      expect(parts.map((p) => p.type)).toEqual([
+        "input_text", // the parent's words
+        "input_text", // the PDF's line, inside a photo block
+        "input_image",
+        "input_image",
+        "input_image",
+        "input_text", // the DOCX's line, inside a photo block
+        "input_image",
+      ]);
+      expect(parts[1]).toMatchObject({ text: expect.stringContaining('source="photo"') });
+      expect(parts[1]).toMatchObject({ text: expect.stringContaining("PDF, 3 strony") });
+      expect(parts[5]).toMatchObject({ text: expect.stringContaining("DOCX, 1 strona") });
+      // The pages in order, each the bytes the reader gave for its key.
+      expect(parts.filter((p) => p.type === "input_image")).toEqual(
+        [...pages.keys(pdf, 3), ...pages.keys(docx, 1)].map((key) => ({
+          type: "input_image",
+          image_url: `data:image/jpeg;base64,${btoa(pageText(key))}`,
+        })),
+      );
+      // No line for the parent: nothing was refused.
+      const said = (await t.log(t.muse.calls[0]?.run_id as RunId)).filter(
+        (e) => e.type === "message" && e.payload.from === "agent",
+      );
+      expect(said.map((e) => e.type === "message" && e.payload.text)).toEqual(["Widzę zadania."]);
+
+      // The next turn: a line, and no conversion or read again.
+      const before = { converted: pages.converted.length, read: pages.read.length };
+      await t.say("Dziękuję.");
+      await drain(t.deps);
+      const later = JSON.stringify(t.muse.calls[1]?.input);
+      expect(later).toContain(
+        "1 PDF, 1 DOCX file from the parent, sent with this message in an earlier turn",
+      );
+      expect(later).not.toContain("data:image");
+      expect({ converted: pages.converted.length, read: pages.read.length }).toEqual(before);
+    },
+  );
+
+  frozen(
+    "25 pages are capped at 20 images a turn, with a line saying 5 were left out",
+    async () => {
+      const t = await setup([{ text: "Widzę strony." }]);
+      const files = [
+        file(t.pod, "application/pdf"),
+        file(t.pod, "application/pdf"),
+        file(t.pod, DOCX),
+      ];
+      documents(t, Object.fromEntries(files.map((f, i) => [f.attachment_id, [10, 10, 5][i] ?? 0])));
+      await t.send({
+        event_id: eventId(),
+        kind: "message",
+        payload: { text: "", attachments: files },
+      });
+      await drain(t.deps);
+
+      const parts = userParts(t.muse.calls[0]);
+      expect(parts.filter((p) => p.type === "input_image")).toHaveLength(20);
+      expect(JSON.stringify(parts)).toContain("Pominięto jeszcze 5 ze stron i zdjęć");
+      expect(JSON.stringify(parts)).toContain("DOCX, 5 stron");
+    },
+  );
+
+  frozen(
+    "a refused conversion is a line the parent reads, and the other files still go",
+    async () => {
+      const t = await setup([{ text: "Mam jedną kartę." }]);
+      const locked = file(t.pod, "application/pdf");
+      const fine = file(t.pod, DOCX);
+      const photo = file(t.pod, "image/jpeg");
+      const pages = documents(t, { [locked.attachment_id]: "encrypted", [fine.attachment_id]: 2 });
+      const run = await t.send({
+        event_id: eventId(),
+        kind: "message",
+        payload: { text: "Zobacz.", attachments: [locked, fine, photo] },
+      });
+      await drain(t.deps);
+
+      const parts = userParts(t.muse.calls[0]);
+      // The DOCX's 2 pages and the photo still go; the PDF is a line, with no image.
+      expect(parts.filter((p) => p.type === "input_image")).toHaveLength(3);
+      expect(JSON.stringify(parts)).toContain("Nie udało się go otworzyć");
+      expect(pages.read).toContain(photo.storage_path);
+      // The parent reads why, once, before the answer, however often a step reads the file.
+      const said = (await t.log(run))
+        .filter((e) => e.type === "message" && e.payload.from === "agent")
+        .map((e) => e.type === "message" && e.payload.text);
+      expect(said).toEqual([
+        "Plik PDF jest chroniony hasłem. Wyślij go bez hasła.",
+        "Mam jedną kartę.",
+      ]);
+      expect(await (await t.store.getRun(t.pod, run)).status).toBe("completed");
+    },
+  );
+
+  frozen("a host with no converter tells the parent, and never sends the file", async () => {
+    const t = await setup([{ text: "Dobrze." }]);
+    const pdf = file(t.pod, "application/pdf");
+    const run = await t.send({
+      event_id: eventId(),
+      kind: "message",
+      payload: { text: "Karta.", attachments: [pdf] },
+    });
+    await drain(t.deps);
+    expect(JSON.stringify(t.muse.calls[0]?.input)).not.toContain("data:image");
+    const said = (await t.log(run))
+      .filter((e) => e.type === "message" && e.payload.from === "agent")
+      .map((e) => e.type === "message" && e.payload.text);
+    expect(said).toEqual(["Nie udało się otworzyć pliku PDF.", "Dobrze."]);
+  });
+
+  frozen("a page key outside the file's own folder is refused, and never read", async () => {
+    const t = await setup([{ text: "Nie widzę karty." }]);
+    const other = await t.store.createAccount(Uuid.parse(crypto.randomUUID()), "pl");
+    const pdf = file(t.pod, "application/pdf");
+    const theirs = file(other.pod, "application/pdf");
+    const read: string[] = [];
+    t.deps.attachments = {
+      read: async (storage_path) => {
+        read.push(storage_path);
+        return new TextEncoder().encode("synthetic page");
+      },
+    };
+    t.deps.converter = {
+      pages: async (f) => ({
+        pages: [
+          // The converter answers another pod's page, and a climb out of the file's folder.
+          {
+            storage_path: `pods/${other.pod}/attachments/${theirs.attachment_id}/p1.jpg`,
+            width: 1,
+            height: 1,
+            bytes: 1,
+          },
+          {
+            storage_path: `${f.storage_path.replace(/\.pdf$/, "")}/../x/p1.jpg`,
+            width: 1,
+            height: 1,
+            bytes: 1,
+          },
+        ],
+      }),
+    };
+    const run = await t.send({
+      event_id: eventId(),
+      kind: "message",
+      payload: { text: "Karta.", attachments: [pdf] },
+    });
+    await drain(t.deps);
+    expect(read).toEqual([]);
+    expect(JSON.stringify(t.muse.calls[0]?.input)).not.toContain("data:image");
+    const said = (await t.log(run))
+      .filter((e) => e.type === "message" && e.payload.from === "agent")
+      .map((e) => e.type === "message" && e.payload.text);
+    expect(said[0]).toBe("Nie udało się otworzyć pliku PDF.");
+  });
 });
 
 // The world each scenario runs in.
@@ -1219,4 +1393,69 @@ function lateReads(get: () => LearnerReads | undefined): LearnerReads {
     getAttempt: (...a) => store().getAttempt(...a),
     listReports: (...a) => store().listReports(...a),
   };
+}
+
+// Wave 6's files: synthetic attachments, and a converter and reader that answer made-up pages.
+
+const DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document" as const;
+const EXT = { "image/jpeg": "jpg", "application/pdf": "pdf", [DOCX]: "docx" } as const;
+
+/** A made-up attachment of `pod`, stored where the API copies it. */
+function file(pod: string, media_type: keyof typeof EXT) {
+  const attachment_id = AttachmentId.parse(idOf(ID_PREFIXES.attachment, crypto.randomUUID()));
+  return {
+    attachment_id,
+    storage_path: `pods/${pod}/attachments/${attachment_id}.${EXT[media_type]}`,
+    media_type,
+    bytes: 1000,
+    width: media_type === "image/jpeg" ? 800 : null,
+    height: media_type === "image/jpeg" ? 600 : null,
+  };
+}
+
+/** A page's synthetic bytes: its own key, so a test can tell the pages apart. */
+function pageText(key: string): string {
+  return `synthetic page ${key}`;
+}
+
+/**
+ * Installs a converter that answers each file's page count, or a refusal, and a reader that
+ * answers any key under the pod with its synthetic bytes. Records what was converted and read.
+ */
+function documents(
+  t: Awaited<ReturnType<typeof setup>>,
+  answers: Record<string, number | ConvertRefusal>,
+) {
+  const converted: string[] = [];
+  const read: string[] = [];
+  const keys = (f: { storage_path: string }, n: number) =>
+    Array.from({ length: n }, (_, i) => `${f.storage_path.replace(/\.[a-z]+$/, "")}/p${i + 1}.jpg`);
+  t.deps.converter = {
+    pages: async (f) => {
+      converted.push(f.storage_path);
+      const answer = answers[f.attachment_id] ?? "unreadable";
+      if (typeof answer !== "number") return { refused: answer };
+      return {
+        pages: keys(f, answer).map((storage_path) => ({
+          storage_path,
+          width: 1414,
+          height: 2000,
+          bytes: 1,
+        })),
+      };
+    },
+  };
+  t.deps.attachments = {
+    read: async (storage_path) => {
+      read.push(storage_path);
+      return new TextEncoder().encode(pageText(storage_path));
+    },
+  };
+  return { converted, read, keys };
+}
+
+/** The parts of the first user message a call carried. */
+function userParts(call: MuseRequest | undefined): readonly MusePart[] {
+  const asked = call?.input.find((i) => i.type === "message" && i.role === "user");
+  return asked?.type === "message" && Array.isArray(asked.text) ? asked.text : [];
 }

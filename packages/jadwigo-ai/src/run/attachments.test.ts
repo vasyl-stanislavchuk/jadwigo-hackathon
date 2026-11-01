@@ -1,6 +1,6 @@
 import { ID_PREFIXES, idOf, PodId, uuidOf } from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
-import { dataUrl, ownPath } from "./attachments.ts";
+import { dataUrl, ownPage, ownPath } from "./attachments.ts";
 
 const POD = PodId.parse(idOf(ID_PREFIXES.pod, crypto.randomUUID()));
 const OTHER = PodId.parse(idOf(ID_PREFIXES.pod, crypto.randomUUID()));
@@ -34,5 +34,27 @@ describe("dataUrl", () => {
       c.charCodeAt(0),
     );
     expect(back).toEqual(bytes);
+  });
+});
+
+describe("ownPage (dl-z5ja.11.7)", () => {
+  const file = `pods/${POD}/attachments/atch_1.pdf`;
+  it("trusts a page JPEG in the file's own folder", () => {
+    expect(ownPage(POD, file, `pods/${POD}/attachments/atch_1/p1.jpg`)).toBe(true);
+    expect(ownPage(POD, file, `pods/${POD}/attachments/atch_1/p10.jpg`)).toBe(true);
+  });
+
+  it("trusts nothing else: another file, another pod, a climb, a manifest, or a file it does not trust", () => {
+    for (const page of [
+      `pods/${POD}/attachments/atch_2/p1.jpg`,
+      `pods/${OTHER}/attachments/atch_1/p1.jpg`,
+      `pods/${POD}/attachments/atch_1/../atch_2/p1.jpg`,
+      `pods/${POD}/attachments/atch_1/pages.json`,
+      `pods/${POD}/attachments/atch_1/p0.jpg`,
+      `pods/${POD}/attachments/atch_1.jpg`,
+    ]) {
+      expect(ownPage(POD, file, page), page).toBe(false);
+    }
+    expect(ownPage(POD, `pending/${POD}/atch_1.pdf`, `pending/${POD}/atch_1/p1.jpg`)).toBe(false);
   });
 });

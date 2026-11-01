@@ -1,6 +1,7 @@
 import type { ModelTier } from "@jadwigo/contracts/run";
 import {
   type AttachmentReader,
+  type Converter,
   createVerbs,
   type EngineDeps,
   fixtureBank,
@@ -35,6 +36,8 @@ export function postgresEngineHost(
   tier: ModelTier = "contributor",
   /** Where the turn's photos are read: S3 in the Lambda; none in a probe or a test. */
   attachments?: AttachmentReader,
+  /** Where a PDF, a DOCX or a HEIC becomes page JPEGs: the converter Lambda; none in a probe. */
+  converter?: Converter,
 ): HostDeps & { close(): Promise<void> } {
   const store = createPostgresStore(url, { ...POOL, role: "jadwigo_runner" });
   const pool = new pg.Pool({ connectionString: url, ...POOL });
@@ -54,6 +57,7 @@ export function postgresEngineHost(
     queue,
     now,
     ...(attachments === undefined ? {} : { attachments }),
+    ...(converter === undefined ? {} : { converter }),
     // A call that went to a less private tier than the run asked for, answered or failed, is
     // logged with its ids only (dl-z5ja.91, dl-z5ja.103).
     onWarning: (w) =>
