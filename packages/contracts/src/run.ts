@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AccountId, EventId, ID_PREFIXES, PodId, prefixedId } from "./ids.ts";
+import { Citation } from "./records.ts";
 
 /**
  * The Jadwigo AI engine's records (epic dl-z5ja, wave plan `docs/worklog/dl-z5ja/2026-10-31-wave-1.md`,
@@ -49,6 +50,22 @@ export const VerbName = z.enum([
   "question_search",
 ]);
 export type VerbName = z.infer<typeof VerbName>;
+
+/**
+ * Which model tier a call went to. `private` trains on nothing it is sent and is the only tier
+ * learner data may reach, names included; `contributor` may train on what it is sent and never
+ * sees learner data (draft decision
+ * `jadwigo-hackathon/notes/2026-11-01-learner-data-reaches-the-model-by-design-for-the-parent-s-own-re`).
+ */
+export const ModelTier = z.enum(["private", "contributor"]);
+export type ModelTier = z.infer<typeof ModelTier>;
+
+/**
+ * Which widget draws a verb's result (`docs/research/posthog-ai-ux-patterns.md`, seam 1). Closed,
+ * one kind per verb for now; a kind the page has no widget for falls back to a plain card.
+ */
+export const ToolViewKind = z.enum(VerbName.options);
+export type ToolViewKind = z.infer<typeof ToolViewKind>;
 
 export const Conversation = z.object({
   id: ConversationId,
@@ -124,6 +141,42 @@ export const ToolCall = z.object({
 });
 export type ToolCall = z.infer<typeof ToolCall>;
 
+/** A verb's result typed for its widget, never text the page parses (seam 1). */
+export const ToolView = z.object({ kind: ToolViewKind, data: Json });
+export type ToolView = z.infer<typeof ToolView>;
+
+/** One option of a question the agent asks. At most one is `recommended`, and it comes first. */
+export const ChooseOption = z.object({
+  label: z.string().min(1),
+  recommended: z.boolean().optional(),
+});
+export type ChooseOption = z.infer<typeof ChooseOption>;
+
+export const ChooseQuestion = z
+  .object({
+    text: z.string().min(1),
+    options: z.array(ChooseOption).min(2).max(4),
+    /** The parent may answer in their own words. */
+    custom_allowed: z.boolean(),
+    /** The parent may leave it unanswered. */
+    skippable: z.boolean(),
+  })
+  .refine((q) => q.options.every((o, i) => o.recommended !== true || i === 0), {
+    message: "the recommended option comes first, and only one is recommended",
+    path: ["options"],
+  });
+export type ChooseQuestion = z.infer<typeof ChooseQuestion>;
+
+/** The form an approval asks the parent to fill (seam 3): 1 question by default, at most 2. */
+export const ChooseForm = z.object({ questions: z.array(ChooseQuestion).min(1).max(2) });
+export type ChooseForm = z.infer<typeof ChooseForm>;
+
+export const PlanStatus = z.enum(["pending", "in_progress", "done", "failed"]);
+export type PlanStatus = z.infer<typeof PlanStatus>;
+/** One line of the agent's checklist. */
+export const PlanEntry = z.object({ text: z.string().min(1), status: PlanStatus });
+export type PlanEntry = z.infer<typeof PlanEntry>;
+
 const Base = {
   run_id: RunId,
   /** Per run, gapless, `max + 1`, assigned by the store. The cursor. */
@@ -143,6 +196,8 @@ export const MessageEvent = event(
     from: z.enum(["parent", "agent"]),
     text: z.string(),
     attachments: z.array(Attachment).optional(),
+    /** What an agent's claim about a learner rests on (seam 2). */
+    citations: z.array(Citation).optional(),
   }),
 );
 /**
@@ -158,6 +213,10 @@ export const ModelResponseEvent = event(
     tool_calls: z.array(ToolCall),
     usage: ModelUsage,
     cost_usd: Usd,
+    /** The model that answered, as its provider names it. */
+    model: z.string().min(1),
+    /** Required: the log proves which tier saw what the call carried. */
+    tier: ModelTier,
   }),
 );
 export const ToolCallEvent = event("tool_call", ToolCall);
@@ -168,6 +227,7 @@ export const ToolResultEvent = event(
     verb: VerbName,
     output: Json.nullable(),
     error: RunError.nullable(),
+    view: ToolView.optional(),
   }),
 );
 /** The whole lesson file after an edit, not a patch: the fold keeps the highest `revision`. */
@@ -177,12 +237,25 @@ export const LessonRevisionEvent = event(
 );
 export const ApprovalRequestEvent = event(
   "approval_request",
-  z.object({ call_id: z.string().min(1), verb: VerbName, summary: z.string() }),
+  z.object({
+    call_id: z.string().min(1),
+    verb: VerbName,
+    summary: z.string(),
+    choose: ChooseForm.optional(),
+  }),
 );
+/** `answers` follow the `choose` form's questions in order; `feedback` is the parent's own words. */
 export const ApprovalResolvedEvent = event(
   "approval_resolved",
-  z.object({ call_id: z.string().min(1), decision: z.enum(["approved", "rejected"]) }),
+  z.object({
+    call_id: z.string().min(1),
+    decision: z.enum(["approved", "rejected"]),
+    feedback: z.string().optional(),
+    answers: z.array(z.string()).optional(),
+  }),
 );
+/** The agent's checklist for a long turn (seam 4). Each one replaces the last whole. */
+export const PlanEvent = event("plan", z.object({ entries: z.array(PlanEntry) }));
 export const StatusEvent = event("status", z.object({ status: RunStatus }));
 /** The run's total so far, after a model call. */
 export const UsageEvent = event("usage", z.object({ spent_usd: Usd, cap_usd: Usd }));
@@ -207,6 +280,7 @@ export const RunEvent = z.discriminatedUnion("type", [
   LessonRevisionEvent,
   ApprovalRequestEvent,
   ApprovalResolvedEvent,
+  PlanEvent,
   StatusEvent,
   UsageEvent,
   BudgetSteerEvent,
@@ -253,6 +327,9 @@ export const RunInbox = z.discriminatedUnion("kind", [
     payload: z.object({
       call_id: z.string().min(1),
       decision: z.enum(["approved", "rejected"]),
+      /** Carried into `approval_resolved` as they came. */
+      feedback: z.string().optional(),
+      answers: z.array(z.string()).optional(),
     }),
   }),
   z.object({ ...InboxBase, kind: z.literal("cancel"), payload: z.object({}) }),

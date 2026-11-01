@@ -1,4 +1,4 @@
-import type { ModelUsage, RunId, ToolCall, VerbName } from "@jadwigo/contracts/run";
+import type { ModelTier, ModelUsage, RunId, ToolCall, VerbName } from "@jadwigo/contracts/run";
 
 /**
  * The model behind the engine (Lead decision 10). It copies `jw.muse.ask`
@@ -30,6 +30,11 @@ export interface MuseRequest {
   tag: string;
   /** Stable per workflow and its instructions, so the provider's prompt cache holds. */
   prompt_cache_key: string;
+  /**
+   * The tier the call must go to. A prompt that carries learner data goes only to `private`, the
+   * tier that trains on nothing it is sent (draft decision dl-2uq1); the runner always sends it.
+   */
+  tier: ModelTier;
   instructions: string;
   input: readonly MuseInput[];
   tools: readonly MuseTool[];
@@ -40,6 +45,8 @@ export interface MuseRequest {
 /** What the model answered: words, function calls, or both. Becomes one `model_response` event. */
 export interface MuseResponse {
   response_id: string;
+  /** The model that answered, as its provider names it; `ScriptedMuse` answers `scripted`. */
+  model: string;
   text: string | null;
   tool_calls: readonly ToolCall[];
   usage: ModelUsage;

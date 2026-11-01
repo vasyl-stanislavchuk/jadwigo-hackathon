@@ -57,7 +57,9 @@
           "output_tokens": 90,
           "cached_tokens": 0
         },
-        "cost_usd": 0.02
+        "cost_usd": 0.02,
+        "model": "scripted",
+        "tier": "private"
       },
       "created_at": "2026-09-01T08:00:03.000Z"
     },
@@ -176,6 +178,7 @@
     "spent_usd": 0.02,
     "cap_usd": 1,
     "budget": "none",
-    "cursor": 9
+    "cursor": 9,
+    "plan": null
   }
 }
