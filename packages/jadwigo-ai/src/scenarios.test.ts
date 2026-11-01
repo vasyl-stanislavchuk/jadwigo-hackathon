@@ -369,6 +369,72 @@ describe("the engine keeps PostHog's production lessons", () => {
     );
     expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
   });
+
+  frozen(
+    "a parent's lesson edit mid-turn reaches the next call, and the AI's revision keeps it",
+    async () => {
+      const WORDS = "I wrote question 2 myself: count on from 7.";
+      const SAY = "Start at 7 and count on 5.";
+      const steerOnCall1 =
+        (t: { steer: (text: string, from?: SteerFrom) => Promise<RunId> }) =>
+        async (request: MuseRequest) => {
+          if (request.call_no === 1) {
+            await t.steer(WORDS, { source: "lesson_edit", question_ids: ["s02"] });
+          }
+        };
+      const verbs = createVerbs({ bank: fixtureBank() });
+
+      // The model honours the edit: a lesson_edit on s02 in the parent's words.
+      let kept: Awaited<ReturnType<typeof setup>>;
+      kept = await setup(
+        [
+          draft(),
+          {
+            tool_calls: [
+              {
+                verb: "lesson_edit",
+                input: (r) => ({
+                  draft_id: r.run_id,
+                  names: [],
+                  step_id: "s02",
+                  patch: { say: SAY },
+                  why: WORDS,
+                }),
+              },
+            ],
+          },
+          { text: "Kept your question 2." },
+        ],
+        verbs,
+        { onMuse: (request) => steerOnCall1(kept)(request) },
+      );
+      const run = await kept.say("Adding within 20, grade 1.");
+      await drain(kept.deps);
+
+      const events = await kept.log(run);
+      expect(sent(kept.muse, 1)).not.toContain(WORDS);
+      const second = kept.muse.calls.find((c) => c.call_no === 2);
+      expect(second?.instructions).toContain("questions s02");
+      expect(second?.instructions).toContain(WORDS);
+      expect(seqOf(events, (e) => e.type === "steer")).toBeLessThan(
+        seqOf(events, (e) => e.type === "model_response" && e.payload.call_no === 2),
+      );
+      expect(stepSay(foldRun(events).lesson?.lesson_file, "s02")).toBe(SAY);
+      expect((await kept.store.getRun(kept.pod, run)).status).toBe("completed");
+
+      // The model ignores it: the engine still named the question to it.
+      let ignored: Awaited<ReturnType<typeof setup>>;
+      ignored = await setup([draft(), { text: "Done." }], verbs, {
+        onMuse: (request) => steerOnCall1(ignored)(request),
+      });
+      const other = await ignored.say("Adding within 20, grade 1.");
+      await drain(ignored.deps);
+      const named = ignored.muse.calls.find((c) => c.call_no === 2);
+      expect(named?.instructions).toContain("questions s02");
+      expect(named?.instructions).toContain(WORDS);
+      expect(stepSay(foldRun(await ignored.log(other)).lesson?.lesson_file, "s02")).not.toBe(SAY);
+    },
+  );
 });
 
 // The world each scenario runs in.
@@ -530,6 +596,14 @@ function seqOf(events: readonly RunEvent[], match: (e: RunEvent) => boolean): nu
   const found = events.find(match);
   if (!found) throw new Error("no such event in the log");
   return found.seq;
+}
+
+/** What a lesson file's step says, by its id. */
+function stepSay(lesson_file: unknown, id: string): unknown {
+  const parts = (
+    lesson_file as { script?: { parts?: { steps?: { id: string; say?: unknown }[] }[] } }
+  )?.script?.parts;
+  return parts?.flatMap((p) => p.steps ?? []).find((s) => s.id === id)?.say;
 }
 
 /** Everything the model was sent on call `call_no`, as one string to search. */
