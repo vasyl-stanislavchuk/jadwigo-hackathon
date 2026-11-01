@@ -615,5 +615,13 @@
   "chat_rate_missing": false,
   "chat_rate_send": false,
   "chat_rate_thanks": false,
-  "chat_rate_failed": false
+  "chat_rate_failed": false,
+  "chat_list_title": false,
+  "chat_list_empty": false,
+  "chat_list_failed": false,
+  "chat_list_untitled": false,
+  "chat_list_archive": false,
+  "chat_list_archive_confirm": false,
+  "chat_list_archive_yes": false,
+  "chat_list_archive_failed": false
 }

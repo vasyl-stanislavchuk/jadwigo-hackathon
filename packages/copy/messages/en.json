@@ -836,5 +836,13 @@
   "chat_rate_missing": "What was missing?",
   "chat_rate_send": "Send the rating",
   "chat_rate_thanks": "Thank you, your rating is saved.",
-  "chat_rate_failed": "Your rating wasn't saved. Try again."
+  "chat_rate_failed": "Your rating wasn't saved. Try again.",
+  "chat_list_title": "Conversations",
+  "chat_list_empty": "You have no conversations yet.",
+  "chat_list_failed": "Your conversations didn't load. Reload the page.",
+  "chat_list_untitled": "Untitled conversation",
+  "chat_list_archive": "Archive",
+  "chat_list_archive_confirm": "The conversation leaves the list. It is kept with your family's account and deleted along with it.",
+  "chat_list_archive_yes": "Yes, archive",
+  "chat_list_archive_failed": "The conversation wasn't archived. Try again."
 }
