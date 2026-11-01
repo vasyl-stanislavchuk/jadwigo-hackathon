@@ -67,3 +67,9 @@ variable "uploads_bucket_name" {
   type        = string
   default     = ""
 }
+
+variable "converter_function_arn" {
+  description = "The converter Lambda (modules/converter) the step host invokes for a PDF, DOCX or HEIC (dl-z5ja.11.7); blank for the probe, and until the converter's image is deployed"
+  type        = string
+  default     = ""
+}

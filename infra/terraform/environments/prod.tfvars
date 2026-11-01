@@ -13,6 +13,10 @@ app_reserved_concurrency = 150
 # (decision dl-uxnj); each run's own cap_usd still holds per turn.
 runner_muse_cap_usd = "30"
 
+# The converter's image (dl-z5ja.11.8): blank makes its ECR repo only. The owner sets the tag
+# `make -C apps/converter push` prints, then applies again; the runner then invokes it.
+converter_image_tag = ""
+
 # Supabase Auth's custom domain (dl-e8ov.2.65). The TXT records come from
 # `infra/supabase-auth/domain.sh status` after the owner creates the domain; none are needed before.
 auth_domain     = "auth.jadwigo.pl"
