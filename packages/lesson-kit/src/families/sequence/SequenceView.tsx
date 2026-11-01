@@ -18,7 +18,7 @@
 
 import { copy } from "@jadwigo/copy";
 import { cn } from "@jadwigo/ui";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { RichText } from "../../parts/RichText.tsx";
 import { SortableList } from "../../parts/SortableList.tsx";
 import { StepShell } from "../../parts/StepShell.tsx";
@@ -195,14 +195,24 @@ function TilesStill({
   paper: boolean;
   bare: boolean;
 }): JSX.Element {
+  // The tray's name is the screens' words; its tiles are the lesson's (dl-uukj.43).
+  const trayLang = useScreensLang(language);
+  const trayId = useId();
   const slots = slotCount(data, right ? { orders: [right] } : undefined);
   const same = shown !== null && right !== null && shown.join() === right.join();
   return (
     <div className="kid-family-sequence flex flex-col gap-6">
       {!bare && <Stem say={say} stem={data.stem} language={language} paper={paper} />}
+      {"lang" in trayLang && (
+        <span id={trayId} hidden {...trayLang}>
+          {copy(language, "drag_tray")}
+        </span>
+      )}
       <ul
         className="flex flex-wrap gap-[var(--kid-choice-gap)]"
-        aria-label={copy(language, "drag_tray")}
+        {...("lang" in trayLang
+          ? { "aria-labelledby": trayId }
+          : { "aria-label": copy(language, "drag_tray") })}
       >
         {data.tiles.map((t) => (
           <li

@@ -120,7 +120,7 @@ function OptionContent({
         </span>
       );
     case "none":
-      return <span>{copy(language, "none_of_these")}</span>;
+      return <span {...screensLang}>{copy(language, "none_of_these")}</span>;
   }
 }
 
