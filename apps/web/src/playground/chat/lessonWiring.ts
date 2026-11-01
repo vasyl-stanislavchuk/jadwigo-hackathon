@@ -16,7 +16,7 @@ import { changedOf, revertOf, undoOf } from "./revisions.ts";
 import { undoSteer } from "./steerText.ts";
 
 /** Which lesson the right pane draws, as a key that changes with each new revision of any turn. */
-export function lessonKey(turns: readonly Turn[]): string | null {
+function lessonKey(turns: readonly Turn[]): string | null {
   for (let i = turns.length - 1; i >= 0; i -= 1) {
     const turn = turns[i];
     if (turn?.view.lesson) return `${turn.run.id}:${turn.view.lesson.revision}`;
