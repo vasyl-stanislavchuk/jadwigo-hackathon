@@ -243,6 +243,54 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
           b.assignment,
         ]);
       });
+
+      // How a featured lesson is withdrawn (decision dl-w0b4.111): off the list, still playable.
+      it("setLessonStatus archived takes the lesson off the list, and its assignment still starts an attempt", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const b = await newPod(store, "Pod of owls");
+        await expect(store.setLessonStatus(b, a.lesson, "archived")).rejects.toMatchObject(
+          NOT_FOUND,
+        );
+
+        const archived = await store.setLessonStatus(a.pod, a.lesson, "archived");
+        expect(archived).toMatchObject({ id: a.lesson, pod_id: a.pod, status: "archived" });
+        expect((await store.setLessonStatus(a.pod, a.lesson, "archived")).status).toBe("archived");
+        expect((await store.getLesson(a.pod, a.lesson))?.status).toBe("archived");
+        expect(await store.listOpenAssignments(a.pod)).toEqual([]);
+        const { attempt } = await store.startAttempt(a.pod, { assignment_id: a.assignment });
+        expect(attempt).toMatchObject({
+          assignment_id: a.assignment,
+          lesson_version_id: a.version,
+        });
+
+        // published puts it back, the undo.
+        expect((await store.setLessonStatus(a.pod, a.lesson, "published")).status).toBe(
+          "published",
+        );
+        expect((await store.listOpenAssignments(a.pod)).map((o) => o.assignment.id)).toEqual([
+          a.assignment,
+        ]);
+      });
+
+      it("setLessonStatus published refuses a lesson with no published version; the next publish lists an archived one again", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const draft = await store.putLesson(a.pod, { ...LESSON, title: "Not published" });
+        await expect(store.setLessonStatus(a.pod, draft.id, "published")).rejects.toMatchObject(
+          BAD_REQUEST,
+        );
+        expect((await store.getLesson(a.pod, draft.id))?.status).toBe("draft");
+
+        await store.setLessonStatus(a.pod, a.lesson, "archived");
+        await store.publishLessonVersion(a.pod, {
+          lesson_id: a.lesson,
+          questions: [{ lesson_question_id: a.apples, role: "planned" }],
+        });
+        expect((await store.listOpenAssignments(a.pod)).map((o) => o.assignment.id)).toEqual([
+          a.assignment,
+        ]);
+      });
     });
 
     describe("opening an attempt and running a unit", () => {
