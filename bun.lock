@@ -41,6 +41,9 @@
     "apps/cli": {
       "name": "@jadwigo/cli",
     },
+    "apps/converter": {
+      "name": "@jadwigo/converter",
+    },
     "apps/docs": {
       "name": "@jadwigo/docs",
       "dependencies": {
@@ -791,6 +794,8 @@
     "@jadwigo/config": ["@jadwigo/config@workspace:packages/config"],
 
     "@jadwigo/contracts": ["@jadwigo/contracts@workspace:packages/contracts"],
+
+    "@jadwigo/converter": ["@jadwigo/converter@workspace:apps/converter"],
 
     "@jadwigo/copy": ["@jadwigo/copy@workspace:packages/copy"],
 
