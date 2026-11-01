@@ -184,6 +184,12 @@ export const RUN_ERROR_TYPE = {
    * a number, status or level no tool result gave. Not `retryable`; the turn ends completed.
    */
   answerUnchecked: "AnswerUnchecked",
+  /**
+   * A verb's lesson change was refused: the conversation's lesson moved after the verb read it,
+   * by the parent's own edit or another turn (lead decision 48, dl-z5ja.76). Written as the
+   * `tool_result`'s error, so the model reads the lesson again; the turn goes on.
+   */
+  lessonChanged: "LessonChanged",
 } as const;
 export type RunErrorType = (typeof RUN_ERROR_TYPE)[keyof typeof RUN_ERROR_TYPE];
 

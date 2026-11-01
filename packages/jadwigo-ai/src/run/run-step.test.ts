@@ -26,6 +26,7 @@ import {
 import {
   type Fenced,
   InMemoryStore,
+  type LessonRevisionAppend,
   type NewConversation,
   type NewRun,
   type NewRunInbox,
@@ -214,6 +215,32 @@ class RunMemoryStore extends InMemoryStore {
       taken.push(row);
     });
     return Promise.resolve(taken);
+  }
+  /** The conversation's compare-and-set, as InMemoryStore keeps it (dl-z5ja.134), on these maps. */
+  override async appendLessonRevision(
+    pod: PodId,
+    id: RunId,
+    attempt: number,
+    expected: number,
+    event: Extract<NewRunEvent, { type: "lesson_revision" }>,
+  ): Promise<LessonRevisionAppend> {
+    const run = this.#run(pod, id);
+    const replay = (this.events.get(id) ?? []).find((e) => e.event_id === event.event_id);
+    if (replay?.type === "lesson_revision") {
+      return { ok: true, revision: replay.payload.revision, event: replay };
+    }
+    let latest = 0;
+    for (const other of this.runs.values()) {
+      if (other.conversation_id !== run.conversation_id) continue;
+      for (const e of this.events.get(other.id) ?? []) {
+        if (e.type === "lesson_revision") latest = Math.max(latest, e.payload.revision);
+      }
+    }
+    if (latest !== expected) return { ok: false, stale: "revision", latest };
+    const { stale, value } = await this.appendRunEvents(pod, id, attempt, [event]);
+    const appended = value[0];
+    if (stale || appended === undefined) return { ok: false, stale: "attempt", latest };
+    return { ok: true, revision: event.payload.revision, event: appended };
   }
 }
 
@@ -1119,6 +1146,7 @@ describe("the run's own error types", () => {
       runIdle: "RunIdle",
       runTimedOut: "RunTimedOut",
       answerUnchecked: "AnswerUnchecked",
+      lessonChanged: "LessonChanged",
     });
   });
 });
