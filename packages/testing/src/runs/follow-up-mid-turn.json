@@ -301,16 +301,7 @@
         "call_id": "call_1",
         "verb": "lesson_draft",
         "state": "done",
-        "error": null,
-        "input": {
-          "request": "adding within 20",
-          "grade": "1",
-          "names": [],
-          "topic": "addition"
-        },
-        "output": {
-          "draft_id": "drf_demo"
-        }
+        "error": null
       },
       {
         "kind": "message",
@@ -325,17 +316,7 @@
         "call_id": "call_2",
         "verb": "lesson_edit",
         "state": "done",
-        "error": null,
-        "input": {
-          "draft_id": "drf_demo",
-          "step_id": "p1",
-          "patch": {
-            "count": 5
-          }
-        },
-        "output": {
-          "draft_id": "drf_demo"
-        }
+        "error": null
       },
       {
         "kind": "message",
@@ -351,17 +332,6 @@
         "id": "draft-demo",
         "title": {
           "en": "Adding within 20, 5 questions"
-        },
-        "language": "en",
-        "parts": []
-      }
-    },
-    "previous_lesson": {
-      "revision": 1,
-      "lesson_file": {
-        "id": "draft-demo",
-        "title": {
-          "en": "Adding within 20"
         },
         "language": "en",
         "parts": []

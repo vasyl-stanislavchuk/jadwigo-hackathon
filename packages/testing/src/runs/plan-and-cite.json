@@ -225,9 +225,7 @@
         "view": {
           "kind": "question_search",
           "data": { "sets": [{ "set_id": "set_demo", "title": "Adding within 20" }] }
-        },
-        "input": { "query": "adding within 20 with carrying" },
-        "output": { "sets": [{ "set_id": "set_demo", "title": "Adding within 20" }] }
+        }
       },
       {
         "kind": "message",
@@ -269,7 +267,6 @@
       }
     ],
     "lesson": null,
-    "previous_lesson": null,
     "status": "in_progress",
     "turn_open": true,
     "spent_usd": 0.03,
