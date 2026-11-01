@@ -80,7 +80,7 @@ describe("the chat pane, one state per golden log", () => {
     expect(status().getAttribute("aria-live")).toBe("polite");
     const details = screen.getByText(/1 krok/).closest("details");
     expect(details?.open).toBe(false);
-    expect(screen.queryByRole("list", { name: "Stuck tool lines" })).toBeNull();
+    expect(screen.queryByRole("list", { name: "Kroki, które się zacięły" })).toBeNull();
     fireEvent.click(stopButton() as HTMLElement);
     expect(onStop).toHaveBeenCalledOnce();
   });
@@ -93,7 +93,7 @@ describe("the chat pane, one state per golden log", () => {
 
   it("happy turn: messages from both sides, 2 tool lines folded, done, no Stop", () => {
     pane({ turns: [turnOf("happy-turn")] });
-    const messages = screen.getByRole("list", { name: "Messages" });
+    const messages = screen.getByRole("list", { name: "Wiadomości" });
     expect(
       within(messages).getByText("A short lesson on equal groups for grade 2, please."),
     ).toBeTruthy();
@@ -115,7 +115,7 @@ describe("the chat pane, one state per golden log", () => {
         }),
       ],
     });
-    const stuck = screen.getByRole("list", { name: "Stuck tool lines" });
+    const stuck = screen.getByRole("list", { name: "Kroki, które się zacięły" });
     expect(stuck.textContent).toBe("Sprawdzam lekcję: nie udało się: step s03 has no key");
     expect(stuck.closest("details")).toBeNull();
   });

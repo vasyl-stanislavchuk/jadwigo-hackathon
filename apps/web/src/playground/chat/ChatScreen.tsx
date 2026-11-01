@@ -119,10 +119,7 @@ export function ChatScreen({ transport }: { transport?: EngineTransport } = {}):
   const language = queryLanguage(query) ?? "pl";
   const live = useMemo(() => transport ?? hotTransport(), [transport]);
   const [conversation, setConversation] = useState<ConversationId>(storedConversation);
-  if (live === null)
-    return (
-      <p className="p-4">The chat page runs on the dev server only: start it with `make dev`.</p>
-    );
+  if (live === null) return <p className="p-4">{copy(language, "chat_dev_only", {}, "adult")}</p>;
   const startNew = () => {
     const minted = newConversationId();
     window.sessionStorage.setItem(STORED, minted);
