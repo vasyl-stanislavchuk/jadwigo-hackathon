@@ -99,6 +99,9 @@
                 "type": "string",
                 "minLength": 1
               }
+            },
+            "patch": {
+              "$ref": "#/$defs/LessonPatch"
             }
           },
           "required": [
@@ -263,6 +266,13 @@
         "media_type"
       ],
       "additionalProperties": false
+    },
+    "LessonPatch": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
     }
   }
 }

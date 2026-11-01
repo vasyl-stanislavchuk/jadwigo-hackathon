@@ -207,6 +207,14 @@ const SteerSource = z.enum(["chat", "lesson_edit"]);
  * (the id `lesson_edit` and `lesson_check` call `step_id`). Never empty when present.
  */
 const SteerQuestionIds = z.array(z.string().min(1)).min(1);
+/**
+ * A parent's own edit of the lesson file, as a JSON merge patch (RFC 7386): a key set to `null` is
+ * removed, an object merges, any other value replaces (Lead decision 41, dl-z5ja.76). The runner
+ * applies it as a `lesson_revision` with no model call, so the parent's edit wins by construction,
+ * and the pane's Cofnij is one more patch the same way.
+ */
+export const LessonPatch = z.record(z.string(), z.unknown());
+export type LessonPatch = z.infer<typeof LessonPatch>;
 
 const Base = {
   run_id: RunId,
@@ -262,6 +270,10 @@ export const ToolResultEvent = event(
   }),
 );
 /** The whole lesson file after an edit, not a patch: the fold keeps the highest `revision`. */
+/**
+ * The lesson file after a change. `call_id` names what made it: the verb's tool call, or, for a
+ * parent's `patch` (dl-z5ja.76), the `event_id` of the steer that carried it.
+ */
 export const LessonRevisionEvent = event(
   "lesson_revision",
   z.object({ revision: Count, call_id: z.string().min(1), lesson_file: Json }),
@@ -298,6 +310,8 @@ const SteerEvent = event(
     text: z.string(),
     source: SteerSource,
     question_ids: SteerQuestionIds.optional(),
+    /** A `lesson_edit` steer's change, applied as the `lesson_revision` that names this event. */
+    patch: LessonPatch.optional(),
   }),
 );
 /** The agent's checklist for a long turn (seam 4). Each one replaces the last whole. */
@@ -375,6 +389,7 @@ export const RunInbox = z.discriminatedUnion("kind", [
       /** `chat` when absent: a steer from before dl-z5ja.51 named none. */
       source: SteerSource.optional(),
       question_ids: SteerQuestionIds.optional(),
+      patch: LessonPatch.optional(),
     }),
   }),
   z.object({

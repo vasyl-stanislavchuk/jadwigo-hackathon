@@ -489,6 +489,75 @@ describe("the engine keeps PostHog's production lessons", () => {
     },
   );
 
+  // Lead decision 41 (wave 4, dl-z5ja.76): the parent's own edit wins by construction.
+  frozen(
+    "a parent's patch lands as a revision with no model call, and Cofnij is one more patch",
+    async () => {
+      const t = await setup([draft(), { text: "Your lesson is ready." }, { text: "Kept it." }]);
+      const run = await t.say("Adding within 20, grade 1.");
+      await drain(t.deps);
+      const drafted = foldRun(await t.log(run)).lesson;
+      expect(t.muse.calls).toHaveLength(2);
+
+      // The turn has ended: the pane's edit lands on it by a step of its own, and no call is made.
+      const edit = { title: { en: "Mine now" } };
+      await t.steer("I renamed it.", { source: "lesson_edit", question_ids: ["s01"], patch: edit });
+      await drain(t.deps);
+      const edited = await t.log(run);
+      expect(t.muse.calls).toHaveLength(2);
+      const steer = edited.find((e) => e.type === "steer");
+      expect(edited.at(-1)).toMatchObject({
+        type: "lesson_revision",
+        payload: { revision: 2, call_id: steer?.event_id },
+      });
+      expect(foldRun(edited).lesson?.lesson_file).toMatchObject({ title: { en: "Mine now" } });
+      expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
+
+      // Cofnij: the pane sends the patch back, and the lesson is the draft again, one step on.
+      const before = { title: (drafted?.lesson_file as { title?: unknown } | undefined)?.title };
+      await t.steer("Undo.", { source: "lesson_edit", question_ids: ["s01"], patch: before });
+      await drain(t.deps);
+      const undone = foldRun(await t.log(run)).lesson;
+      expect(undone?.revision).toBe(3);
+      expect(undone?.lesson_file).toEqual(drafted?.lesson_file);
+      expect(t.muse.calls).toHaveLength(2);
+
+      // The next turn's call is told which questions the parent changed, and that it is done.
+      await t.say("Thanks.");
+      await drain(t.deps);
+      const told = t.muse.calls[2]?.instructions ?? "";
+      expect(told).toContain("questions s01");
+      expect(told).toContain("already in the lesson, as revision 2");
+      expect(told).toContain("already in the lesson, as revision 3");
+    },
+  );
+
+  frozen("a parent's patch mid-turn is applied before the next call, and wins", async () => {
+    const MINE = { title: { en: "Mine now" } };
+    let t: Awaited<ReturnType<typeof setup>>;
+    t = await setup([draft(), edit(), { text: "Kept your title." }], fakeVerbs(), {
+      onMuse: async (request) => {
+        if (request.call_no !== 2) return;
+        await t.steer("Renamed.", { source: "lesson_edit", question_ids: ["s01"], patch: MINE });
+      },
+    });
+    const run = await t.say("Adding within 20, grade 1.");
+    await drain(t.deps);
+
+    const events = await t.log(run);
+    const patched = seqOf(
+      events,
+      (e) =>
+        e.type === "lesson_revision" && e.payload.call_id !== "call_1" && e.payload.revision === 3,
+    );
+    expect(patched).toBeLessThan(
+      seqOf(events, (e) => e.type === "model_response" && e.payload.call_no === 3),
+    );
+    expect(t.muse.calls).toHaveLength(3);
+    expect(t.muse.calls[2]?.instructions).toContain("already in the lesson, as revision 3");
+    expect(foldRun(events).lesson?.lesson_file).toMatchObject({ title: { en: "Mine now" } });
+  });
+
   // Lead decision 38 (wave 4, dl-z5ja.102): words beside a failing tool call are dropped, with no
   // correction and no error event. The tool's failure is logged, and the next call writes new words.
   frozen("words beside a failing tool call are dropped, with no correction", async () => {

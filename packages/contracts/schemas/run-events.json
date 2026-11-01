@@ -80,6 +80,9 @@
                     "type": "string",
                     "minLength": 1
                   }
+                },
+                "patch": {
+                  "$ref": "#/$defs/LessonPatch"
                 }
               },
               "required": [
@@ -840,6 +843,13 @@
         "payload"
       ],
       "additionalProperties": false
+    },
+    "LessonPatch": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
     },
     "PlanEvent": {
       "type": "object",

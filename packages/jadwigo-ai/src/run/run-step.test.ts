@@ -1521,3 +1521,62 @@ describe("the answer check: one correction per turn", () => {
     expect(agent).toEqual(["Harder, still grade 2."]);
   });
 });
+
+describe("a parent's patch (dl-z5ja.76)", () => {
+  const steer = (patch: Record<string, unknown>) => ({
+    event_id: newEventId(),
+    kind: "steer" as const,
+    payload: { text: "I changed it.", source: "lesson_edit" as const, patch },
+  });
+
+  it("is left as words when there is no lesson yet to change", async () => {
+    let t: Awaited<ReturnType<typeof setup>>;
+    t = await setup([{ text: "Noted." }, { text: "Sure." }]);
+    const scripted = t.deps.muse;
+    t.deps.muse = {
+      respond: async (request) => {
+        if (request.call_no === 1) await t.send(steer({ title: { en: "Mine" } }));
+        return scripted.respond(request);
+      },
+    };
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+    const events = await t.log(run);
+    expect(events.some((e) => e.type === "lesson_revision")).toBe(false);
+    expect(t.muse.calls[1]?.instructions).toContain("edited the lesson themselves");
+    expect(t.muse.calls[1]?.instructions).not.toContain("already in the lesson");
+  });
+
+  it("is applied once when the step that applies it is delivered again", async () => {
+    const t = await setup([{ calls: [{ verb: "lesson_draft" }] }, { text: "Done." }]);
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+    const { attempt } = await t.run(run);
+    await t.send(steer({ title: { en: "Mine" } }));
+    // The same step again, as a redelivery would bring it.
+    await t.deps.queue.send({ run_id: run, attempt });
+    await drain(t.deps);
+    const revisions = (await t.log(run)).filter((e) => e.type === "lesson_revision");
+    expect(revisions.map((e) => e.payload.revision)).toEqual([1, 2]);
+    expect(t.muse.calls).toHaveLength(2);
+  });
+
+  it("leaves an ended turn's other inbox rows unlogged", async () => {
+    const t = await setup([{ text: "Done." }]);
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+    const ended = await t.log(run);
+    await t.send({
+      event_id: newEventId(),
+      kind: "steer",
+      payload: { text: "Shorter.", source: "chat" },
+    });
+    await t.send(steer({ title: { en: "Mine" } }));
+    await drain(t.deps);
+    // No lesson to change and no chat steer logged: the ended turn is as it was, plus the patch's steer.
+    const after = await t.log(run);
+    expect(after.slice(0, ended.length)).toEqual(ended);
+    expect(after.slice(ended.length).map((e) => e.type)).toEqual(["steer"]);
+    expect(t.muse.calls).toHaveLength(1);
+  });
+});

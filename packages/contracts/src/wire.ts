@@ -45,7 +45,7 @@ import {
   SkipReason,
   Subject,
 } from "./records.ts";
-import { Run, RunEvent } from "./run.ts";
+import { LessonPatch, Run, RunEvent } from "./run.ts";
 
 /**
  * What crosses `/api/v1` during an attempt (decision
@@ -664,10 +664,19 @@ export const ConversationMessage = z
     source: z.enum(["chat", "lesson_edit"]).optional(),
     /** The lesson file's questions a `lesson_edit` steer names, by their `id`. Never empty. */
     question_ids: z.array(z.string().min(1)).min(1).optional(),
+    /**
+     * A `lesson_edit` steer's change to the lesson file, as a JSON merge patch: the runner applies
+     * it with no model call (dl-z5ja.76). The pane's Cofnij sends one too.
+     */
+    patch: LessonPatch.optional(),
   })
   .refine((m) => m.kind === "steer" || (m.source === undefined && m.question_ids === undefined), {
     message: "source and question_ids come only with a steer",
     path: ["kind"],
+  })
+  .refine((m) => m.patch === undefined || (m.kind === "steer" && m.source === "lesson_edit"), {
+    message: "a patch comes only with a lesson_edit steer",
+    path: ["patch"],
   });
 export type ConversationMessage = z.infer<typeof ConversationMessage>;
 

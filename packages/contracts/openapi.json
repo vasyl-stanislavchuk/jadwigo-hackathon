@@ -3228,6 +3228,9 @@
               "type": "string",
               "minLength": 1
             }
+          },
+          "patch": {
+            "$ref": "#/components/schemas/LessonPatch"
           }
         },
         "required": [
@@ -5343,6 +5346,13 @@
       "LessonId": {
         "type": "string",
         "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "LessonPatch": {
+        "type": "object",
+        "propertyNames": {
+          "type": "string"
+        },
+        "additionalProperties": {}
       },
       "LessonQuestion": {
         "oneOf": [
@@ -9559,6 +9569,9 @@
                       "type": "string",
                       "minLength": 1
                     }
+                  },
+                  "patch": {
+                    "$ref": "#/components/schemas/LessonPatch"
                   }
                 },
                 "required": [

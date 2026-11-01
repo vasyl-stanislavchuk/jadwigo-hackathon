@@ -27,6 +27,7 @@ import { type QueuedStep, STEP_VISIBILITY_S } from "../queue/types.ts";
 import type { Verbs } from "../verbs/types.ts";
 import { type VerbContext, type VerbEffect, VerbError } from "../verbs/types.ts";
 import { eventIdFor, turnRunIdFor } from "./ids.ts";
+import { mergePatch } from "./merge-patch.ts";
 
 /**
  * The engine's loop (Lead decisions 5-9, 13): a message lands in the run inbox, a step is one Muse
@@ -241,7 +242,13 @@ export function acceptMessage(
             `the conversation has no run for a ${entry.kind}`,
           );
         }
-        return { run: last, inbox: await put(last.id) };
+        const inbox = await put(last.id);
+        // A parent's patch is applied on the last turn by a step of its own, with no model call
+        // (dl-z5ja.76): the lesson pane's edit and its Cofnij land when nothing is running.
+        if (inbox.kind === "steer" && inbox.payload.patch !== undefined) {
+          await queue.send({ run_id: last.id, attempt: last.attempt });
+        }
+        return { run: last, inbox };
       }
 
       // No open run: the next turn's, named by its number in the conversation (dl-z5ja.85). The store
@@ -331,9 +338,20 @@ export async function runStep(input: RunStepInput, deps: EngineDeps): Promise<Ru
     }
     throw error;
   }
+  if (found.run.attempt !== input.attempt) {
+    const ended = endedOutcome(found.run.status);
+    return { outcome: ended ?? "continue", events: 0 };
+  }
   const ended = endedOutcome(found.run.status);
-  if (ended) return { outcome: ended, events: 0 };
-  if (found.run.attempt !== input.attempt) return { outcome: "continue", events: 0 };
+  if (ended) {
+    // An ended turn changes only by a parent's patch; everything else in its inbox changes nothing.
+    try {
+      return { outcome: ended, events: await patchEnded(deps, found, input.attempt) };
+    } catch (error) {
+      if (error instanceof StaleAttempt) return { outcome: ended, events: 0 };
+      throw error;
+    }
+  }
 
   // A due run takes the sweep's path before any model call: the pg_cron sweep enqueues a step for
   // every run past a deadline (`app.enqueue_runs_due`), and that step only closes it (dl-z5ja.60).
@@ -386,9 +404,12 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
   }
   if (Object.keys(start).length > 0) run = await w.update(start);
 
+  // The parent's own edits land first, before a cancel ends the turn or a call reads the lesson.
+  const prior = await priorTurns(deps.store, scope);
+  await applyPatches(w, prior.lesson);
+
   if (await cancelRequested(w)) return endCancelled(deps, w);
 
-  const prior = await priorTurns(deps.store, scope);
   const last = responsesOf(w.log).at(-1);
   let pending = last ? unresolved(last, w.log) : [];
 
@@ -467,7 +488,8 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       ]);
       instructions.push(STEER);
     }
-    for (const steer of steersOf(w.log)) instructions.push(steerLine(steer));
+    instructions.push(...prior.edits);
+    for (const steer of steersOf(w.log)) instructions.push(steerLine(steer, w.log));
 
     const call_no = (last?.payload.call_no ?? 0) + 1;
     run = await w.claim();
@@ -803,6 +825,22 @@ async function runTool(
  * the turn is built from the logged steers, so a redelivered step keeps them (dl-z5ja.42). A cancel
  * is already on the run row.
  */
+/** A steer row as its event: `chat` when it names no source, its patch kept as it came. */
+function steerEvent(run: RunId, row: Extract<RunInbox, { kind: "steer" }>): NewRunEvent {
+  const { text, source, question_ids, patch } = row.payload;
+  return {
+    type: "steer",
+    run_id: run,
+    event_id: row.event_id,
+    payload: {
+      text,
+      source: source ?? "chat",
+      ...(question_ids === undefined ? {} : { question_ids }),
+      ...(patch === undefined ? {} : { patch }),
+    },
+  };
+}
+
 async function takeInbox(store: Store, w: Writer): Promise<{ messages: number; steers: number }> {
   return store.unit(async () => {
     const rows = await store.takeRunInbox(w.pod, w.run);
@@ -838,17 +876,7 @@ async function takeInbox(store: Store, w: Writer): Promise<{ messages: number; s
         });
       } else if (row.kind === "steer") {
         steers += 1;
-        const { text, source, question_ids } = row.payload;
-        events.push({
-          type: "steer",
-          run_id: w.run,
-          event_id: row.event_id,
-          payload: {
-            text,
-            source: source ?? "chat",
-            ...(question_ids === undefined ? {} : { question_ids }),
-          },
-        });
+        events.push(steerEvent(w.run, row));
       }
     }
     await w.append(events);
@@ -960,13 +988,85 @@ function steersOf(log: readonly RunEvent[]): SteerEvent[] {
   return log.filter((e): e is SteerEvent => e.type === "steer").sort((a, b) => a.seq - b.seq);
 }
 
-/** A steer as a line of the call's instructions: the parent's words go inside the fence. */
-function steerLine({ payload }: SteerEvent): string {
+/**
+ * A steer as a line of the call's instructions: the parent's words go inside the fence. A patch
+ * the runner applied is named with its revision, so the model keeps it and never makes it again.
+ */
+function steerLine(steer: SteerEvent, log: readonly RunEvent[]): string {
+  const { payload } = steer;
   const words = fence(payload.text, "parent");
   if (payload.source === "chat") return `The parent adds:\n${words}`;
   const ids = payload.question_ids?.map(neutralise).join(", ");
   const named = ids ? ` (questions ${ids})` : "";
-  return `The parent edited the lesson themselves${named}:\n${words}`;
+  const line = `The parent edited the lesson themselves${named}:\n${words}`;
+  const applied = revisionOf(log, steer);
+  if (applied === null) return line;
+  return `${line}\nTheir change is already in the lesson, as revision ${applied}: keep it, and do not make it again.`;
+}
+
+/** The revision a steer's patch was applied as, or null when it was not. */
+function revisionOf(log: readonly RunEvent[], steer: SteerEvent): number | null {
+  const revision = log.find(
+    (e) => e.type === "lesson_revision" && e.payload.call_id === steer.event_id,
+  );
+  return revision?.type === "lesson_revision" ? revision.payload.revision : null;
+}
+
+/**
+ * Applies each logged steer's patch not yet applied, oldest first, as a `lesson_revision` on the
+ * lesson as it stands: the log's, else the turn before's (`base`). No model call is made. A patch
+ * with no lesson to change is left as words only. Each revision's `event_id` comes from its steer,
+ * so a redelivered step never applies one twice.
+ */
+async function applyPatches(w: Writer, base: VerbContext["lesson"]): Promise<number> {
+  let applied = 0;
+  for (const steer of steersOf(w.log)) {
+    const { patch } = steer.payload;
+    if (patch === undefined || revisionOf(w.log, steer) !== null) continue;
+    const lesson = lessonOf(w.log) ?? base;
+    if (!lesson) continue;
+    await w.append([
+      {
+        type: "lesson_revision",
+        run_id: w.run,
+        event_id: await w.id("steer", steer.event_id, "revision"),
+        payload: {
+          revision: lesson.revision + 1,
+          call_id: steer.event_id,
+          lesson_file: mergePatch(lesson.lesson_file, patch),
+        },
+      },
+    ]);
+    applied += 1;
+  }
+  return applied;
+}
+
+/**
+ * A step for an ended turn: the parent's patches in its inbox land as revisions, with no model call
+ * and no status change (dl-z5ja.76). Any other row there changes nothing, as before, and is not
+ * logged. A stray step finds the inbox empty and writes nothing.
+ */
+async function patchEnded(
+  deps: EngineDeps,
+  found: Awaited<ReturnType<typeof authorizeRun>>,
+  attempt: number,
+): Promise<number> {
+  const log = [...(await deps.store.listRunEvents(found.pod, found.run.id, 0))];
+  const w = new Writer(deps.store, found.pod, found.run.id, attempt, log);
+  const taken = await deps.store.unit(async () => {
+    const rows = await deps.store.takeRunInbox(w.pod, w.run);
+    const steers: NewRunEvent[] = [];
+    for (const row of rows) {
+      if (row.kind !== "steer" || row.payload.patch === undefined) continue;
+      steers.push(steerEvent(w.run, row));
+    }
+    await w.append(steers);
+    return steers.length;
+  });
+  if (taken === 0) return w.appended;
+  await applyPatches(w, (await priorTurns(deps.store, found)).lesson);
+  return w.appended;
 }
 
 /** What the run has paid, from the log: each `model_response` counted once. */
@@ -1029,14 +1129,20 @@ function museInput(log: readonly RunEvent[]): MuseInput[] {
 async function priorTurns(
   store: Store,
   scope: Scope,
-): Promise<{ input: MuseInput[]; said: RunEvent[]; lesson: VerbContext["lesson"] }> {
+): Promise<{
+  input: MuseInput[];
+  said: RunEvent[];
+  lesson: VerbContext["lesson"];
+  edits: string[];
+}> {
   const { pod, run } = scope;
-  if (run.conversation_id === null) return { input: [], said: [], lesson: null };
+  if (run.conversation_id === null) return { input: [], said: [], lesson: null, edits: [] };
   const runs = await store.listRuns(pod, run.conversation_id);
   const here = runs.findIndex((r) => r.id === run.id);
   const before = here < 0 ? runs : runs.slice(0, here);
   const input: MuseInput[] = [];
   const said: RunEvent[] = [];
+  const edits: string[] = [];
   let lesson: VerbContext["lesson"] = null;
   for (const earlier of before) {
     const log = await store.listRunEvents(pod, earlier.id, 0);
@@ -1044,8 +1150,13 @@ async function priorTurns(
     said.push(...log.filter((e) => e.type === "message" && e.payload.from === "parent"));
     const left = lessonOf(log);
     if (left) lesson = left;
+    // A patch applied after that turn's last call: no call has been told of it yet (dl-z5ja.76).
+    const told = responsesOf(log).at(-1)?.seq ?? 0;
+    for (const steer of steersOf(log)) {
+      if (steer.seq > told && steer.payload.patch !== undefined) edits.push(steerLine(steer, log));
+    }
   }
-  return { input, said, lesson };
+  return { input, said, lesson, edits };
 }
 
 /**
