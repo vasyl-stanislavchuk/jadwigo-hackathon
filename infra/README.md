@@ -87,10 +87,12 @@ Supabase URL, its publishable key and the sign-in providers (`JW_SUPABASE_URL`, 
 `JW_SUPABASE_PROVIDERS`, a comma list of `google` and `facebook`), and the media URL a question's
 pictures load from (`VITE_MEDIA_URL`, terraform's `media_url` output, `dl-n9fr.53`). A browser holds
 all of them, so none is secret. `web-build` prints them first, so `make -n -C infra web-build` shows
-what a build would ship. `web-build` sources the file over the shell's environment, so a build ships what is
-committed and nothing an exported variable left behind. `prod.env` leaves all 3 empty: prod has no
-sign-in until the consent text (`dl-e8ov.2.9`) lands, and no provider button until `dl-e8ov.2.8` and
-`dl-e8ov.2.58`. Its comment names the values for that day. `tools/src/web-build.test.ts` checks what
+what a build would ship. `web-build` sources the file over the shell's environment, so a build ships
+what is committed and nothing an exported variable left behind. `prod.env` switches prod's sign-in on
+(`dl-e8ov.2.92`, decision `dl-asgl`): jadwigo-prod's `supabase.co` host until the custom domain is
+active (`dl-2qke`), its publishable key, and `google` alone, since Facebook's button waits for the Meta
+app to go Live while its testers use `/parent?provider=facebook` (`dl-ovva`). Its comment says what
+changes on each of those days. `tools/src/web-build.test.ts` checks what
 the build receives.
 
 **The database URL never passes through Terraform.** The module creates the parameter with a write-only
@@ -130,8 +132,8 @@ when an item is missing, and `apply` then sends nothing. The script refuses a `*
 (`hook_custom_access_token_*`, `dl-e8ov.2.67`) names a function a migration creates. While an env file
 turns the hook on, a read-only query through the Management API's `database/query` checks that the
 function is in that project. Until it is, `diff` exits 1 and `apply` sends nothing, so
-`make db-push ENV=<env>` comes first. `dev.json` has the hook on, and `prod.json` gains it with the
-provider switch-on. `tools/src/supabase-auth.test.ts` runs it
+`make db-push ENV=<env>` comes first. `dev.json` and `prod.json` both have the hook on, with Google
+and Facebook (prod's since `dl-e8ov.2.92`). `tools/src/supabase-auth.test.ts` runs it
 against a fake Management API (`SUPABASE_API_URL`). The owner's steps in Google Cloud, Meta and
 Supabase are `docs/runbooks/social-sign-in.md`.
 

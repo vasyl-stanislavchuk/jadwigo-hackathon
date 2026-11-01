@@ -4,6 +4,18 @@
   "settings": {
     "site_url": "https://app.jadwigo.pl",
     "uri_allow_list": "https://app.jadwigo.pl/**",
-    "mailer_otp_length": 6
+    "mailer_otp_length": 6,
+    "hook_custom_access_token_enabled": true,
+    "hook_custom_access_token_uri": "pg-functions://postgres/app/custom_access_token",
+    "external_google_enabled": true,
+    "external_google_client_id": "892975669695-c30i8v5er04lduok5fa3ulp844somp9d.apps.googleusercontent.com",
+    "external_google_email_optional": false,
+    "external_facebook_enabled": true,
+    "external_facebook_client_id": "3621441648030924",
+    "external_facebook_email_optional": false
+  },
+  "secrets": {
+    "external_google_secret": "jadwigo-google-oauth-secret-prod",
+    "external_facebook_secret": "jadwigo-facebook-app-secret-prod"
   }
 }

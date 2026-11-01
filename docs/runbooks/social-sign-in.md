@@ -5,8 +5,11 @@ The owner runs this. It makes accounts with Google and Meta, publishes the Jadwi
 Decisions:
 - `jadwigo-platform/notes/2026-10-29-facebook-sign-in-is-built-beside-google-sign-in` (`dl-na1u`)
 - `jadwigo-platform/decisions/2026-10-27-jadwigo-s-supabase-projects-are-recreated-in-frankfurt-and-sign`
+- `jadwigo-hackathon/notes/2026-11-01-prod-sign-in-is-switched-on-and-linked-from-jadwigo-pl-before-th` (`dl-asgl`)
+- `jadwigo-platform/notes/2026-11-01-facebook-sign-in-is-on-in-jadwigo-prod-for-the-meta-app-s-tester` (`dl-ovva`)
+- `jadwigo-platform/notes/2026-11-01-prod-sign-in-ships-on-the-supabase-co-host-now-and-moves-to-auth` (`dl-2qke`)
 
-It ends with a Google OAuth client for each Supabase project and one Meta app for both. Their secrets sit in the keychain, and both providers are switched on in `jadwigo-dev`. Prod is switched on later, by the same script, once `dl-e8ov.2.9` clears the consent text.
+It ends with a Google OAuth client for each Supabase project and one Meta app for both. Their secrets sit in the keychain, and both providers are switched on in `jadwigo-dev`. Prod is switched on by the same script (`dl-e8ov.2.92`, decision `dl-asgl`): the lawyer-reviewed consent text in `dl-e8ov.2.9` no longer gates it and stays a follow-up before families are invited.
 
 ## Before
 
@@ -95,7 +98,9 @@ It ends with a Google OAuth client for each Supabase project and one Meta app fo
 5. **Try a Facebook account with no email**, if you have one.
    You should see: the line offering the email code, and no new pod. `B update dl-e8ov.2.58 --append-notes "<what you saw>"`.
 
-Prod is the same, run only when `dl-e8ov.2.8` and `dl-e8ov.2.58` say it is time. `prod.json` gains the hook settings then, and `make db-push ENV=prod` comes before `auth.sh apply prod`.
+Prod is the same, with `prod` for `dev` (`dl-e8ov.2.92`). `prod.json` carries the hook, Google with the prod client id, Facebook and their 2 secrets (`jadwigo-google-oauth-secret-prod`, `jadwigo-facebook-app-secret-prod`). `make db-push ENV=prod` comes before `auth.sh apply prod`; until then `auth.sh diff prod` says the hook function is not in the project and exits 1. Then `make -C infra web-deploy` ships `infra/web-build/prod.env`: the `supabase.co` host for now (`dl-2qke`), jadwigo-prod's publishable key, and `JW_SUPABASE_PROVIDERS=google`.
+
+Facebook is on in jadwigo-prod but its button stays hidden while the Meta app is in Development mode (`dl-ovva`): a tester from Meta step 12 opens `https://app.jadwigo.pl/parent?provider=facebook`, which starts Facebook because the project has it on. Once the app is Live (Meta step 14), `JW_SUPABASE_PROVIDERS=google,facebook` and a web redeploy show the button.
 
 ## The custom domain
 
@@ -127,7 +132,7 @@ Prod's Auth answers on `auth.jadwigo.pl`, so Google's consent screen and Faceboo
    ```
    You should see: `iss: https://xhzkmpainwzrfktxffjv.supabase.co/auth/v1`, `alg: RS256`, `the JWKS key for that kid: RSA RS256` and `matches the authorizer`. Record the result: `B update dl-e8ov.2.65 --append-notes "issuer check: iss <iss>, alg <alg>, kid <kid>: <matches or DIFFERS>"`. On `DIFFERS`, stop. Deploy nothing and tell the lead: either the authorizer's `jwt_issuer` changes, or the signing key is not RS256 (`supabase-projects.md` step 2).
 
-Then `infra/web-build/prod.env` can name `JW_SUPABASE_URL=https://auth.jadwigo.pl`, once `dl-e8ov.2.9` lets prod have sign-in at all.
+Then `infra/web-build/prod.env` names `JW_SUPABASE_URL=https://auth.jadwigo.pl` in place of the `supabase.co` host prod ships on until now (`dl-2qke`), and the owner redeploys the web app.
 
 ## After
 
