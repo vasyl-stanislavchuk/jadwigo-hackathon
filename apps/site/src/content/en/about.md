@@ -1,15 +1,15 @@
 ---
 title: About us · Jadwigo
-description: We build Jadwigo as a family, a mum, a dad and our son. First for him, now for his class.
+description: "We build Jadwigo as a family: a mom, a dad and our son. First for him, now for his class."
 heading: About us
 lang: en
 path: /en/about
 translation: /o-nas
-reviewed: false
+reviewed: true
 draftNote: This page is still growing. Photos and more of our story are coming soon.
 ---
 
-We are a family: a mum, a dad and our son. We built Jadwigo for him first, so we could learn together with him at home.
+We are a family: a mom, a dad and our son. We built Jadwigo for him first, so we could learn together with him at home.
 
 <figure class="frame"><figcaption>A photo of our family goes here</figcaption></figure>
 
@@ -21,7 +21,7 @@ Our son can get things wrong, ask for more or say that's enough for today. We se
 
 ## Where the name comes from
 
-Jadwigo is named after Queen Jadwiga, the patron of our son's school. "Jadwigo!" is how you call out her name in Polish. In the lessons Jadwiga is the queen of the exercise book, and her class stands beside her: Ola, Tymek, Zoja and Marko.
+Jadwigo is named after a school's patron, Queen Jadwiga. "Jadwigo!" is how you call out her name in Polish. In the lessons Jadwiga is the queen of the notebook, and her class stands beside her: Ola, Tymek, Zoja and Marko.
 
 ## What's next
 

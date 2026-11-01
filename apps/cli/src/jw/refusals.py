@@ -64,11 +64,8 @@ def owner_of(rule: str) -> str:
 
 
 def converted_file(language: str) -> Path:
-    """The converted items file for `language`: JW_KHAN_CONVERTED when set, else the synced copy's
-    converted-pl.json for Polish and converted.json for English."""
-    if language == "pl" or settings_keys.setting(settings_keys.JW_KHAN_CONVERTED):
-        return items.converted_path()
-    return settings_keys.khan_dir() / "converted.json"
+    """The converted items file for `language`, as `items.converted_path` picks it."""
+    return items.converted_path(language)
 
 
 def sidecar_path(converted: Path) -> Path:
