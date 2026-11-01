@@ -120,3 +120,12 @@ export const UPLOADS_BUCKET_PARAM = "/jadwigo/uploads/bucket";
 export function uploadsBucket(): string | undefined {
   return setting("UPLOADS_BUCKET");
 }
+
+/**
+ * The converter Lambda's ARN, `CONVERTER_FUNCTION`: dl-z5ja.11.8's Terraform sets it once the
+ * owner has pushed an image and set its tag. Undefined when unset or blank, and then a PDF, a DOCX
+ * or a HEIC is refused as `unavailable`.
+ */
+export function converterFunction(): string | undefined {
+  return setting("CONVERTER_FUNCTION");
+}
