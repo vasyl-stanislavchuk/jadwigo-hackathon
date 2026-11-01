@@ -332,7 +332,7 @@ describe("the engine's limits in plain words (dl-z5ja.28, dl-z5ja.83)", () => {
     });
     const row = document.querySelector("[data-row='error']");
     expect(row?.querySelector("p")?.textContent).toBe(
-      "Na następny krok trzeba było czekać zbyt długo, więc tura się zakończyła. Lekcja do tej pory jest zapisana: napisz, co dalej.",
+      "Rozmowa długo czekała, więc tura się zakończyła. Napisz, aby iść dalej.",
     );
     expect(row?.textContent).not.toContain("10 minutes");
     expect(row?.textContent).not.toContain("Próbuję jeszcze raz.");
