@@ -1408,6 +1408,11 @@ _TEX_STYLE = re.compile(
     r"|kaBlue|kaGreen|orange|pink|violet|purpleE|grayH|grayI|black|white|grey"
     r"|(?:blue|teal|green|mint|gold|red|maroon|purple|gray)[A-G]?)"
 )
+# Of the styling commands, the switches: they change what follows and take no argument.
+_TEX_SWITCH = re.compile(
+    r"(?:Huge|huge|LARGE|Large|large|normalsize|small|footnotesize|scriptsize|tiny"
+    r"|displaystyle|textstyle|scriptstyle|big|Big|bigg|Bigg|limits|nolimits|bf|it|rm)"
+)
 # Space and nothing more: what it takes is a width, no word (`\hspace{1cm}`, `\rule{1cm}{0.4pt}`).
 _TEX_SPACES = {"hspace": 1, "vspace": 1, "hskip": 0, "kern": 0, "rule": 2, "mkern": 0}
 _TEX_SUPERSCRIPT = str.maketrans("0123456789n", "⁰¹²³⁴⁵⁶⁷⁸⁹ⁿ")
@@ -1511,8 +1516,8 @@ class _TexReader:
             )
             return root + _grouped(self._arg()) + _TEX_FRAC_END  # √2 3 never reads √23
         if name in _TEX_COLORS:
-            self._arg()  # the colour; what it colours follows as its own group
-            return ""
+            self._arg()  # the colour's name
+            return self._arg()
         if name in _TEX_SPACES:
             if self._peek() == "*":
                 self.at += 1
@@ -1525,8 +1530,8 @@ class _TexReader:
             return ""
         if name in ("htmlClass", "sout", "cancel"):
             if name == "htmlClass":
-                self._arg()  # the class; what it paints follows as its own group
-            return ""
+                self._arg()  # the class's name
+            return self._arg()
         if name in ("begin", "end"):
             env = self._arg().strip()  # an environment's name is no word; its rows are lines
             if name == "begin" and env in ("array", "tabular"):
@@ -1553,7 +1558,10 @@ class _TexReader:
             return ""
         if name in _TEX_BOXES:
             inside = self._arg()
-            return inside if inside.strip() else "□"
+            # A box ends apart, so two side by side never join: 16 16, never 1616.
+            if not inside.strip():
+                return "□ "
+            return inside if name == "underline" else f"{inside} "
         if name in _TEX_BLANKS:
             return "□"
         if name in ("left", "right"):
@@ -1563,8 +1571,12 @@ class _TexReader:
             return ""
         if "\\" + name in _TEX_SYMBOLS:
             return _TEX_SYMBOLS["\\" + name]
+        if _TEX_SWITCH.fullmatch(name):
+            return ""  # a size or a style for what follows; it takes no argument
         if _TEX_STYLE.fullmatch(name):
-            return ""
+            # A colour or a text mode takes its argument as any command does, braced or not, as
+            # the player's preProcessTex braces it: `\dfrac{6}\blueD{4}` reads 6/4.
+            return self._arg()
         return f"{name} "
 
 

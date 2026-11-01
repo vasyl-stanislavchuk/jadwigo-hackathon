@@ -327,6 +327,18 @@ KHAN_TEX = [
     (r"$\begin{aligned} x &= 2 \\ y &= 3 \end{aligned}$", "x = 2\ny = 3"),
     (r"$4 \mathbin{?} 5$", "4 ? 5"),
     (r"$\displaystyle\sum_{i=1}^{3} i$", "Σ_(i=1) ^3 i"),
+    # an unbraced colour as an argument, and boxes side by side (round 8)
+    (r"$\dfrac{\maroonD{6}}\blueD{4}$", "6/4"),
+    (r"$\underline\blueE6\maroonD0$", "60"),
+    (r"$\underline\purple{{}+\phantom{2} 480}$", "+ 480"),
+    (r"$\dfrac\blueD1\redD2$", "1/2"),
+    (r"$\sqrt\blueD9$", "√9"),
+    (r"$x^\blueD2$", "x^2"),
+    (r"$\fbox{\greenD{16}}\fbox{\greenD{16}}$", "16 16"),
+    (r"$\boxed{3}\boxed{4}$", "3 4"),
+    (r"$\Large 5 + \small 3$", "5 + 3"),
+    (r"$\displaystyle\dfrac{1}{2}$", "1/2"),
+    (r"$\textcolor{red}\blueD7$", "7"),
     # Polish sentences around the maths
     (r"Ile to jest $\dfrac{1}{2}$ z $10$?", "Ile to jest 1/2 z 10?"),
     (r"Zapisz $2\dfrac{3}{5}$ jako ułamek niewłaściwy.", "Zapisz 2 3/5 jako ułamek niewłaściwy."),
