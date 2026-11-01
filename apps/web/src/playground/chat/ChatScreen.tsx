@@ -18,6 +18,7 @@ import { newConversationId } from "./ids.ts";
 import { LessonPane } from "./LessonPane.tsx";
 import { apiTransport } from "./realtime.ts";
 import { changedOf, undoOf } from "./revisions.ts";
+import { undoSteer } from "./steerText.ts";
 import { type EngineTransport, hotTransport, useConversation } from "./useConversation.ts";
 
 const STORED = "jadwigo.playground.chat.conversation";
@@ -81,16 +82,7 @@ function ChatView({
   const onUndo =
     undo === null || onEdit === undefined
       ? undefined
-      : () =>
-          onEdit(
-            copy(
-              undo.language,
-              "chat_undo_steer",
-              { steps: undo.question_ids.join(", "), n: undo.revision },
-              "adult",
-            ),
-            undo.question_ids,
-          );
+      : () => onEdit(undoSteer(undo.language, undo.question_ids, undo.revision), undo.question_ids);
   return (
     <ChatLayout
       language={language}

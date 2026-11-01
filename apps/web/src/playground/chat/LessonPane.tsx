@@ -18,6 +18,7 @@ import {
 import { type FormEvent, type ReactElement, useState } from "react";
 import { lessonFileToSpecs } from "../lesson/adapter.ts";
 import { readDraft } from "../lesson/draft.ts";
+import { editSteer } from "./steerText.ts";
 
 const clock: Clock = { now: (): Instant => ({ perf: 0, wall: "2026-11-01T00:00:00.000Z" }) };
 
@@ -127,15 +128,7 @@ function Revision({
                   step={step.step_id}
                   say={say}
                   steer={(words) =>
-                    onEdit(
-                      copy(
-                        lessonLanguage,
-                        "chat_edit_steer",
-                        { step: step.step_id, words },
-                        "adult",
-                      ),
-                      [step.step_id],
-                    )
+                    onEdit(editSteer(lessonLanguage, step.step_id, words), [step.step_id])
                   }
                 />
               )}

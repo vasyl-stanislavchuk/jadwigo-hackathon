@@ -211,8 +211,10 @@ export class InMemoryStore implements Store {
   readonly #runs = new Map<string, Run>();
   /** By run id, in `seq` order. */
   readonly #runEvents = new Map<string, RunEvent[]>();
-  /** By event id, in the order written: the key a resent message is matched on. */
-  /** Inbox rows by `inboxKey`: an event_id is unique per pod (dl-z5ja.86). */
+  /**
+   * By `inboxKey(pod, event_id)`, in the order written: the key a resent message is matched on.
+   * An event_id is unique per pod (dl-z5ja.86).
+   */
   readonly #inbox = new Map<string, RunInbox>();
 
   constructor(options: { now?: () => Date } = {}) {
