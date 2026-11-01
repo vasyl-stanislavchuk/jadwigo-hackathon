@@ -3,8 +3,8 @@ import { PromptGuard } from "./pii.ts";
 
 /**
  * What a tier lets leave. `private` trains on nothing it is sent, so a run's prompt goes there as
- * it is, the learner's names included, for the parent's request about their own child (draft
- * decision dl-2uq1). `contributor` trains on its input, so every text of the request passes one
+ * it is, the learner's names included, for the parent's request about their own child
+ * (decision dl-2uq1, accepted 2026-11-01). `contributor` trains on its input, so every text of the request passes one
  * `PromptGuard`: the instructions (a parent's steer lands there), every message, the arguments
  * of a function call the model made and every function call output fed back. The answer is
  * restored with the same table, and only the placeholders it issued are put back.

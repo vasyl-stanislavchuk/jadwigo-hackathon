@@ -32,7 +32,8 @@ export interface MuseRequest {
   prompt_cache_key: string;
   /**
    * The tier the call must go to. A prompt that carries learner data goes only to `private`, the
-   * tier that trains on nothing it is sent (draft decision dl-2uq1); the runner always sends it.
+   * tier that trains on nothing it is sent (decision dl-2uq1, accepted 2026-11-01:
+   * `jadwigo-hackathon/decisions/2026-11-01-learner-data-reaches-the-model-by-design-for-the-parent-s-own-re`); the runner always sends it.
    */
   tier: ModelTier;
   instructions: string;

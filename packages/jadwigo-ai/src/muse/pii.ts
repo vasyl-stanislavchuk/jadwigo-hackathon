@@ -1,7 +1,7 @@
 /**
  * The PII guard, a port of `jw.pii` (`apps/cli/src/jw/pii.py`, dl-e8ov.5.2.18), for the one tier
  * that trains on what it is sent: `contributor`. A call there carries no learner data by design
- * (draft decision dl-2uq1); the guard is the fence that keeps a learner's name off it anyway. It
+ * (decision dl-2uq1, accepted 2026-11-01); the guard is the fence that keeps a learner's name off it anyway. It
  * replaces learner names, email addresses and phone numbers with placeholders and keeps the map,
  * so the answer can have the originals put back on the way out. A `private` call is not guarded:
  * it carries the parent's own child's data on purpose, to a tier that trains on none of it.

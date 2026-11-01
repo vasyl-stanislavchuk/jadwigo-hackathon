@@ -9,7 +9,7 @@ import { callAnswer, type Reply, scriptedFetch, textAnswer } from "./recorded.te
 /**
  * Frozen (dl-z5ja.35's second test, moved to dl-z5ja.18 by lead decision 29): a contributor-tier
  * call never carries a learner's name on the wire, and a private-tier call sends the names as
- * they are (draft decision dl-2uq1). The wire is the body `fetch` was handed, read as a reader
+ * they are (decision dl-2uq1, accepted 2026-11-01). The wire is the body `fetch` was handed, read as a reader
  * would, so no spelling the matcher misses can pass by looking different.
  */
 
