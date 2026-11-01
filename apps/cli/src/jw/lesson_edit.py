@@ -212,12 +212,13 @@ def _edit(
     p, n, step = _find(file, draft_id, step_id)
     at = f"script.parts[{p}].steps[{n}]"
     path = lesson._lesson_path(where, draft_id)
-    problems = _refused(patch, PATCHABLE)
-    if problems:
-        return _refusal(stored, step, step_id, problems, at, where, draft_id)
+    # Guarded before anything reads them, keys included, so no refusal echoes a name (dl-a38n.62).
     family = pii.names_for(members=list(names))
     patch = lesson.guard_words(patch, family)
     why = pii.guard(why, names=family).text if why else why
+    problems = _refused(patch, PATCHABLE)
+    if problems:
+        return _refusal(stored, step, step_id, problems, at, where, draft_id)
 
     edited = _merge(copy.deepcopy(step), patch)
     help_ = (edited.get("question") or {}).get("help")
