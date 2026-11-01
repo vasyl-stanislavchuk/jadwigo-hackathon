@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { BankQuestionId, Need, QuestionBody, SearchEnvelope } from "./bank.ts";
+import {
+  BankQuestionId,
+  Need,
+  QuestionBody,
+  QuestionSource,
+  questionSourceOf,
+  SearchEnvelope,
+} from "./bank.ts";
 import { ROUTES } from "./routes.ts";
 
 /**
@@ -188,9 +195,35 @@ describe("the question body", () => {
     expect(QuestionBody.safeParse(odd).success).toBe(false);
   });
 
-  it.each(["x1a2b3", "abc_DEF-9", "x".repeat(64)])("takes %s as an id", (id) => {
-    expect(BankQuestionId.safeParse(id).success).toBe(true);
+  it("takes an Alfik body: source alfik, a lettered choose and the task picture", () => {
+    const alfik = {
+      id: "alfik_2024_k2_q07",
+      source: "alfik",
+      pl: {
+        family: "choose",
+        data: { options: ["A", "B", "C", "D", "E"] },
+        key: { correct: ["C"] },
+      },
+      credit: { source: "alfik", licence: "© Łowcy Talentów – JERSZ" },
+      pictures: [{ ref: `${"ab".repeat(32)}.png`, decorative: false }],
+    };
+    expect(QuestionBody.parse(alfik).source).toBe("alfik");
+    expect(QuestionBody.safeParse({ ...alfik, source: "own" }).success).toBe(false);
   });
+
+  it("names khan and alfik as its sources, and reads the source from the id", () => {
+    expect(QuestionSource.options).toEqual(["khan", "alfik"]);
+    expect(questionSourceOf("alfik_2024_k2_q07")).toBe("alfik");
+    expect(questionSourceOf("x1a2b3c4")).toBe("khan");
+    expect(questionSourceOf("abc_DEF-9")).toBe("khan");
+  });
+
+  it.each(["x1a2b3", "abc_DEF-9", "alfik_2024_k2_q07", "x".repeat(64)])(
+    "takes %s as an id",
+    (id) => {
+      expect(BankQuestionId.safeParse(id).success).toBe(true);
+    },
+  );
 
   it.each(["", "../x", "x.json", "x/y", "x y", "x".repeat(65)])("refuses %j as an id", (id) => {
     expect(BankQuestionId.safeParse(id).success).toBe(false);

@@ -1,0 +1,24 @@
+---
+// The Question sources guide's table, generated from QuestionSource in @jadwigo/contracts at build time.
+import { sourceRows } from "../lib/question-sources.ts";
+
+const rows = sourceRows();
+---
+
+<table>
+  <thead>
+    <tr><th>Source</th><th>What it is</th><th>Credit in the lesson</th><th>Bucket key</th></tr>
+  </thead>
+  <tbody>
+    {
+      rows.map((row) => (
+        <tr>
+          <td><code>{row.source}</code></td>
+          <td>{row.name}</td>
+          <td>{row.credit}</td>
+          <td><code>{row.key}</code></td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>

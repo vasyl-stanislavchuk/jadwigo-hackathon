@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "string",
+  "enum": [
+    "khan",
+    "alfik"
+  ],
+  "description": "Where a bank question comes from, and its prefix in the content bucket: khan, alfik"
+}
