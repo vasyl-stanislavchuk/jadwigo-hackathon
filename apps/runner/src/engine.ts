@@ -45,6 +45,12 @@ export function postgresEngineHost(
     verbs: createVerbs({ bank: fixtureBank() }),
     queue,
     now: () => new Date(),
+    // A call that went to a less private tier than the run asked for, answered or failed, is
+    // logged with its ids only (dl-z5ja.91, dl-z5ja.103).
+    onWarning: (w) =>
+      warn(
+        `${w.kind}: run ${w.run_id} call ${w.call_no} asked for ${w.requested}, went to ${w.answered}`,
+      ),
   };
   return {
     engine,

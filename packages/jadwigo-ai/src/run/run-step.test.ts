@@ -4,6 +4,7 @@ import {
   BUDGET_STOP_SHARE,
   type Conversation,
   ConversationId,
+  type ModelTier,
   type NewRunEvent,
   RUN_ERROR_TYPE,
   RUN_IDLE_MS,
@@ -26,7 +27,12 @@ import {
 import { FIXED_NOW } from "@jadwigo/testing";
 import { describe, expect, it, vi } from "vitest";
 import { FENCE_RULE, fence } from "../fence/index.ts";
-import type { MuseClient, MuseRequest, MuseResponse } from "../muse/client.ts";
+import {
+  type MuseClient,
+  MuseFailed,
+  type MuseRequest,
+  type MuseResponse,
+} from "../muse/client.ts";
 import { ScriptedMuse } from "../muse/scripted.ts";
 import { InMemoryRunQueue } from "../queue/memory.ts";
 import { STEP_VISIBILITY_S } from "../queue/types.ts";
@@ -38,6 +44,10 @@ import {
   VerbError,
   type Verbs,
 } from "../verbs/types.ts";
+
+/** No tokens: what a made-up failed call used. */
+const MADE_UP_USAGE = { input_tokens: 0, cached_tokens: 0, output_tokens: 0 };
+
 import {
   acceptMessage,
   authorizeRun,
@@ -544,6 +554,47 @@ describe("runStep and drain", () => {
     ]);
     const recorded = (await t.log(run)).find((e) => e.type === "model_response");
     expect(recorded?.payload).toMatchObject({ tier: "contributor" });
+  });
+
+  it("warns of a downgrade when the downgraded call fails with no answer (dl-z5ja.103)", async () => {
+    const t = await setup([]);
+    const warnings: EngineWarning[] = [];
+    t.deps.onWarning = (warning) => warnings.push(warning);
+    t.deps.tier = "private";
+    t.deps.muse = {
+      respond: async () => {
+        throw new MuseFailed("the made-up stream broke", 0, MADE_UP_USAGE, "contributor");
+      },
+    };
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+    expect(warnings[0]).toEqual({
+      kind: "tier_downgraded",
+      run_id: run,
+      call_no: 1,
+      requested: "private",
+      answered: "contributor",
+    });
+    expect((await t.log(run)).some((e) => e.type === "model_response")).toBe(false);
+  });
+
+  it("says nothing when a failed call names no tier, or the tier it was asked for", async () => {
+    const t = await setup([]);
+    const warnings: EngineWarning[] = [];
+    t.deps.onWarning = (warning) => warnings.push(warning);
+    t.deps.tier = "private";
+    let tier: ModelTier | null = null;
+    t.deps.muse = {
+      respond: async () => {
+        throw new MuseFailed("the made-up stream broke", 0, MADE_UP_USAGE, tier);
+      },
+    };
+    await t.say("Halves.");
+    await drain(t.deps);
+    tier = "private";
+    await t.say("Quarters.");
+    await drain(t.deps);
+    expect(warnings).toEqual([]);
   });
 
   it("carries an approval's feedback and answers from the inbox into approval_resolved", async () => {
