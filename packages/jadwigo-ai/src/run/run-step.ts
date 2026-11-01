@@ -1,4 +1,4 @@
-import { type AccountId, ErrorType, type PodId } from "@jadwigo/contracts";
+import { type AccountId, ErrorType, type EventId, type PodId } from "@jadwigo/contracts";
 import {
   type ConversationId,
   type ModelTier,
@@ -18,7 +18,7 @@ import {
   type RunStepOutput,
   type ToolCall,
 } from "@jadwigo/contracts/run";
-import { budgetGuard, deadlineDue } from "@jadwigo/core";
+import { type AnswerMiss, budgetGuard, checkAnswer, deadlineDue } from "@jadwigo/core";
 import { type NewRunInbox, type RunChange, type Store, StoreError } from "@jadwigo/store";
 import { FENCE_RULE, fence, neutralise } from "../fence/index.ts";
 import type { MuseClient, MuseInput } from "../muse/client.ts";
@@ -42,6 +42,26 @@ export interface EngineDeps {
   queue: RunQueue;
   /** The engine's only clock. */
   now: () => Date;
+  /**
+   * The tier every call of a run asks for: the host sets it from `JADWIGO_MUSE_TIER`. Absent, the
+   * runner asks for `contributor` (decision `dl-uafq`). A `model_response` records the tier that
+   * answered, which the client may name.
+   */
+  tier?: ModelTier;
+  /**
+   * Told when something the run should not stay silent about happened; the host logs it with the
+   * run id. Today: a client answered on a less private tier than the run asked for (dl-z5ja.91).
+   */
+  onWarning?: (warning: EngineWarning) => void;
+}
+
+/** What `onWarning` is told. */
+export interface EngineWarning {
+  kind: "tier_downgraded";
+  run_id: RunId;
+  call_no: number;
+  requested: ModelTier;
+  answered: ModelTier;
 }
 
 /** An inbox row as the caller gives it: the engine names the run. */
@@ -74,10 +94,10 @@ const INSTRUCTIONS = [
 /** Moves on with `INSTRUCTIONS`: 2 since the fence rule (dl-z5ja.47). */
 const PROMPT_CACHE_KEY = `${WORKFLOW}:2`;
 /**
- * Every call goes to the tier that trains on nothing it is sent: a run's prompt carries the
- * parent's words and the learner's names (decision dl-2uq1, accepted 2026-11-01). Each `model_response` records it.
+ * The tier a run's calls go to when the host names none: the owner's decision `dl-uafq` runs the
+ * engine on `contributor` until a private tier is named (`JADWIGO_MUSE_TIER`, dl-z5ja.91).
  */
-const TIER: ModelTier = "private";
+const DEFAULT_TIER: ModelTier = "contributor";
 const STEER =
   "You have used half of this turn's budget. Finish the lesson with what you have, with no more searching.";
 const STOP_TEXT = "I stopped here to stay within the budget. The lesson so far is on the right.";
@@ -373,7 +393,25 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
   let pending = last ? unresolved(last, w.log) : [];
 
   if (pending.length === 0) {
-    if (last && last.payload.tool_calls.length === 0 && !parentSpokeAfter(w.log, last.seq)) {
+    // The answer check reads the turn and the parent's words of the turns before it (dl-z5ja.26).
+    const check = (text: string) => refusalOf(text, [...prior.said, ...w.log]);
+    let correction: { call_no: number; text: string; refusal: Refusal } | null = null;
+    const refused = last ? await refusedText(w, last) : null;
+    if (last && refused !== null) {
+      // The last answer failed the answer check, so it was never written. Its one correction comes
+      // first, even when the parent spoke since: the call reads the parent's new words as well.
+      const refusal = check(refused);
+      if (refusal === null) {
+        await w.append([
+          agentMessage(w, refused, await w.id("call", last.payload.call_no, "message")),
+        ]);
+        if (!parentSpokeAfter(w.log, last.seq)) return endTurn(w, "completed", deps.now());
+      } else if (await corrected(w, last)) {
+        return endUnchecked(deps, w, last, refusal);
+      } else {
+        correction = { call_no: last.payload.call_no, text: refused, refusal };
+      }
+    } else if (last && last.payload.tool_calls.length === 0 && !parentSpokeAfter(w.log, last.seq)) {
       // The answer is recorded and nothing came after it: a redelivery ends the turn on it.
       return endTurn(w, "completed", deps.now());
     }
@@ -384,7 +422,20 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     const spent = spentOf(w.log);
     const level = budgetGuard(spent, run.cap_usd);
     if (level === "stop") {
+      // A refused answer the budget leaves no correction for still ends with its error.
+      // One append: a crash between the error and the stop message can't leave a refused answer
+      // that a redelivery then closes with neither.
       await w.append([
+        ...(correction
+          ? [
+              await uncheckedEvent(
+                w,
+                correction.call_no,
+                correction.refusal,
+                "before its correction",
+              ),
+            ]
+          : []),
         {
           type: "budget_steer",
           run_id: run.id,
@@ -401,6 +452,7 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       return endTurn(w, "completed", deps.now());
     }
     const instructions = [INSTRUCTIONS];
+    if (correction) instructions.push(correctionNote(correction.text, correction.refusal));
     if (level === "steer") {
       await w.append([
         {
@@ -421,17 +473,29 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       await deps.queue.send({ run_id: run.id, attempt: w.attempt });
       return "continue";
     }
+    const asked = deps.tier ?? DEFAULT_TIER;
     const response = await deps.muse.respond({
       run_id: run.id,
       call_no,
       tag: TAG,
       prompt_cache_key: PROMPT_CACHE_KEY,
-      tier: TIER,
+      tier: asked,
       instructions: instructions.join("\n\n"),
       input: [...prior.input, ...museInput(w.log)],
       tools: Object.values(deps.verbs).map((verb) => verb.tool),
       names: await namesOf(deps.store, scope),
     });
+    const answered = response.tier ?? asked;
+    if (asked === "private" && answered !== "private") {
+      // Recorded as it answered, and never silently: the host logs it (dl-z5ja.91).
+      deps.onWarning?.({
+        kind: "tier_downgraded",
+        run_id: run.id,
+        call_no,
+        requested: asked,
+        answered,
+      });
+    }
     const total = spent + response.cost_usd;
     const recorded: NewRunEvent[] = [
       {
@@ -446,7 +510,7 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
           usage: response.usage,
           cost_usd: response.cost_usd,
           model: response.model,
-          tier: TIER,
+          tier: answered,
         },
       },
       {
@@ -456,13 +520,14 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
         payload: { spent_usd: total, cap_usd: run.cap_usd },
       },
     ];
-    if (response.text !== null) {
-      recorded.push({
-        type: "message",
-        run_id: run.id,
-        event_id: await w.id("call", call_no, "message"),
-        payload: { from: "agent", text: response.text },
-      });
+    // The answer check before an agent message (wave 2 Lead decision 23): code gave every number,
+    // status and level, or the message is not written. A text-only answer that fails is corrected
+    // once at the next step; text beside tool calls is dropped, and the turn's last answer is checked.
+    // A text-only answer with no words at all (HttpMuse answers "" as null) is a blank answer.
+    const words = wordsOf(response.text, response.tool_calls.length);
+    const checked = words === null ? null : check(words);
+    if (words !== null && checked === null) {
+      recorded.push(agentMessage(w, words, await w.id("call", call_no, "message")));
     }
     for (const call of response.tool_calls) {
       recorded.push({
@@ -475,6 +540,10 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     // Recorded before any verb runs, so a redelivery reuses it and never pays again.
     await w.append(recorded);
     run = await w.update({ spent_usd: total });
+    if (response.tool_calls.length === 0 && checked !== null) {
+      await deps.queue.send({ run_id: run.id, attempt: w.attempt });
+      return "continue";
+    }
 
     if (response.tool_calls.length === 0) {
       // A message that came in during the call keeps the turn open for one more step.
@@ -497,6 +566,153 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
   await w.update({ idle_deadline_at: at(deps.now().getTime() + RUN_IDLE_MS) });
   await deps.queue.send({ run_id: run.id, attempt: w.attempt });
   return "continue";
+}
+
+/** An agent `message` the answer check passed. */
+function agentMessage(w: Writer, text: string, event_id: EventId): NewRunEvent {
+  return { type: "message", run_id: w.run, event_id, payload: { from: "agent", text } };
+}
+
+/**
+ * A text-only answer's words when the answer check refused them: no `message` and no `error` for
+ * its call is in the log. Null for an answer that was written, or had no words.
+ */
+async function refusedText(w: Writer, response: ModelResponse): Promise<string | null> {
+  const { text, tool_calls, call_no } = response.payload;
+  if (tool_calls.length > 0) return null;
+  const words = wordsOf(text, 0) ?? "";
+  const written = new Set([
+    await w.id("call", call_no, "message"),
+    await w.id("call", call_no, "unchecked"),
+  ]);
+  return w.log.some((e) => written.has(e.event_id)) ? null : words;
+}
+
+/**
+ * An answer's words for the answer check: a text-only answer always has some, "" when the model
+ * gave none, so the blank rule refuses it. Beside tool calls, no words means no message.
+ */
+function wordsOf(text: string | null, tool_calls: number): string | null {
+  if (tool_calls > 0) return text;
+  return text ?? "";
+}
+
+/**
+ * Whether the answer `response` belongs to has had its one correction, counted from the log: every
+ * refused answer is followed by its correction call, whatever that call answers (tool calls
+ * included), so an earlier refused answer means the correction was made. The count is per answer:
+ * it starts again after the last answer that ended, a text-only answer written or one refused as
+ * `AnswerUnchecked`, when the turn goes on to answer what the parent sent meanwhile. Words beside
+ * tool calls end no answer, and a parent's message alone does not restart it either, so neither
+ * grants a second correction.
+ */
+async function corrected(w: Writer, response: ModelResponse): Promise<boolean> {
+  const since = await answerEndedAt(w);
+  for (const earlier of responsesOf(w.log)) {
+    if (earlier.payload.call_no >= response.payload.call_no) break;
+    if (earlier.seq <= since) continue;
+    if ((await refusedText(w, earlier)) !== null) return true;
+  }
+  return false;
+}
+
+/**
+ * Where the count of corrections starts again: after the last text-only answer that was written
+ * and after the last `AnswerUnchecked`. Words written beside tool calls end no answer.
+ */
+async function answerEndedAt(w: Writer): Promise<number> {
+  let since = 0;
+  for (const e of w.log) {
+    if (e.type === "error" && e.payload.error.type === RUN_ERROR_TYPE.answerUnchecked) {
+      since = Math.max(since, e.seq);
+    }
+  }
+  const written = new Map(
+    w.log.flatMap((e) => (e.type === "message" ? [[e.event_id, e.seq]] : [])),
+  );
+  for (const response of responsesOf(w.log)) {
+    if (response.payload.tool_calls.length > 0 || response.payload.text === null) continue;
+    const seq = written.get(await w.id("call", response.payload.call_no, "message"));
+    if (seq !== undefined) since = Math.max(since, seq);
+  }
+  return since;
+}
+
+/** Why an answer's words may not be written: they say nothing, or they fail the answer check. */
+interface Refusal {
+  blank: boolean;
+  misses: AnswerMiss[];
+}
+
+/** The answer check on `text` against `given`, with blank words refused as well. Null to write it. */
+function refusalOf(text: string, given: readonly RunEvent[]): Refusal | null {
+  if (text.trim() === "") return { blank: true, misses: [] };
+  const misses = checkAnswer(text, given);
+  return misses.length === 0 ? null : { blank: false, misses };
+}
+
+/** What a refusal names, for the correction note and the error. */
+function refusedFor({ blank, misses }: Refusal): string {
+  if (blank) return "said nothing";
+  return `named ${[...new Set(misses.map((m) => `"${m.said}"`))].join(", ")}, which no tool result of this turn gave`;
+}
+
+/**
+ * What the correction call is told: what failed, and its own words to write again. The words are
+ * the model's, which may quote what a child wrote, so they go inside the fence as a child's: DATA,
+ * markup neutralised, closing no fence and naming no link (dl-z5ja.47).
+ */
+function correctionNote(text: string, refusal: Refusal): string {
+  return [
+    `Your last answer was not sent to the parent: it ${refusedFor(refusal)}.`,
+    "Code computes every number, status and level; you only word them, and you never name a mastery level.",
+    "Write the answer again with only what the tool results say. Your answer was:",
+    fence(text, "child"),
+  ].join("\n");
+}
+
+/** The `error` event that stands in place of a refused answer's message. */
+async function uncheckedEvent(
+  w: Writer,
+  call_no: number,
+  refusal: Refusal,
+  when: string,
+): Promise<NewRunEvent> {
+  return {
+    type: "error",
+    run_id: w.run,
+    event_id: await w.id("call", call_no, "unchecked"),
+    payload: {
+      error: {
+        type: RUN_ERROR_TYPE.answerUnchecked,
+        message: `the answer ${refusedFor(refusal)}, ${when}`,
+      },
+      attempt: w.attempt,
+      retryable: false,
+    },
+  };
+}
+
+/**
+ * The correction failed the check too: an `error` event in place of the message. The turn ends,
+ * unless the parent sent a message or a steer after the last answer.
+ */
+async function endUnchecked(
+  deps: EngineDeps,
+  w: Writer,
+  last: ModelResponse,
+  refusal: Refusal,
+): Promise<RunStepOutcome> {
+  await w.append([
+    await uncheckedEvent(w, last.payload.call_no, refusal, "after its one correction"),
+  ]);
+  // A message or steer the parent sent meanwhile is still answered: the next step does, and that
+  // answer gets its own one correction (wave 2 Lead decision 22).
+  if (parentSpokeAfter(w.log, last.seq)) {
+    await deps.queue.send({ run_id: w.run, attempt: w.attempt });
+    return "continue";
+  }
+  return endTurn(w, "completed", deps.now());
 }
 
 /**
@@ -790,26 +1006,29 @@ function museInput(log: readonly RunEvent[]): MuseInput[] {
 
 /**
  * The conversation's earlier turns: their words, and the lesson the last of them left, so a
- * follow-up turn edits the lesson the turn before drafted.
+ * follow-up turn edits the lesson the turn before drafted. `said` is their parent messages, which
+ * the answer check reads too: a number the parent gave in turn 1 is no invention in turn 2.
  */
 async function priorTurns(
   store: Store,
   scope: Scope,
-): Promise<{ input: MuseInput[]; lesson: VerbContext["lesson"] }> {
+): Promise<{ input: MuseInput[]; said: RunEvent[]; lesson: VerbContext["lesson"] }> {
   const { pod, run } = scope;
-  if (run.conversation_id === null) return { input: [], lesson: null };
+  if (run.conversation_id === null) return { input: [], said: [], lesson: null };
   const runs = await store.listRuns(pod, run.conversation_id);
   const here = runs.findIndex((r) => r.id === run.id);
   const before = here < 0 ? runs : runs.slice(0, here);
   const input: MuseInput[] = [];
+  const said: RunEvent[] = [];
   let lesson: VerbContext["lesson"] = null;
   for (const earlier of before) {
     const log = await store.listRunEvents(pod, earlier.id, 0);
     input.push(...museInput(log.filter((e) => e.type === "message")));
+    said.push(...log.filter((e) => e.type === "message" && e.payload.from === "parent"));
     const left = lessonOf(log);
     if (left) lesson = left;
   }
-  return { input, lesson };
+  return { input, said, lesson };
 }
 
 /**

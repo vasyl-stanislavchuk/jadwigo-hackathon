@@ -216,6 +216,46 @@ export function conversationSuite(
       if (units) expect(runs.body.runs).toHaveLength(2);
     });
 
+    // dl-z5ja.93: a lesson-pane edit over the route lands as a steer on the open turn.
+    it("takes a steer onto the open turn as an inbox row of kind steer, once by event_id", async () => {
+      const a = await parent();
+      const conversation = await a.conversation();
+      const path = pathOf("postMessage", { id: conversation.id });
+      const early = await a.call<ErrorEnvelope>("POST", path, {
+        event_id: event(),
+        kind: "steer",
+        text: "Make it shorter",
+      });
+      expect(early.status).toBe(400);
+
+      const { run } = (await a.say(conversation.id, "A lesson on adding to 10")).body;
+      const steer = {
+        event_id: event(),
+        kind: "steer",
+        source: "lesson_edit",
+        question_ids: ["q2", "q3"],
+        text: "Use smaller numbers in these",
+      };
+      const sent = await a.call<RunAccepted>("POST", path, steer);
+      expect(sent.status).toBe(201);
+      expect(sent.body.run.id).toBe(run.id);
+      expect((await a.call<RunAccepted>("POST", path, steer)).status).toBe(201);
+      const moved = await a.call<ErrorEnvelope>("POST", path, { ...steer, question_ids: ["q4"] });
+      expect(moved.status).toBe(409);
+      expect(moved.body.error.type).toBe("EventIdMismatch");
+
+      const inbox = await s.store.takeRunInbox(a.pod, run.id);
+      const steers = inbox.filter((row) => row.kind === "steer");
+      expect(steers).toHaveLength(1);
+      expect(steers[0]?.payload).toEqual({
+        text: "Use smaller numbers in these",
+        source: "lesson_edit",
+        question_ids: ["q2", "q3"],
+      });
+      // A steer opens no turn and starts no 2nd step.
+      expect(await q.stepsFor(run.id)).toBe(1);
+    });
+
     it("refuses a message the server would own, or an empty one", async () => {
       const a = await parent();
       const conversation = await a.conversation();
@@ -225,6 +265,9 @@ export function conversationSuite(
         { event_id: event(), text: "   \n " },
         { event_id: "not-a-uuid", text: "Hi" },
         { event_id: event(), text: "Hi", from: "agent" },
+        { event_id: event(), text: "Hi", source: "lesson_edit" },
+        { event_id: event(), text: "Hi", kind: "steer", question_ids: [] },
+        { event_id: event(), text: "Hi", kind: "approval" },
       ]) {
         const reply = await a.call<ErrorEnvelope>("POST", path, body);
         expect(reply.status, JSON.stringify(body)).toBe(400);
@@ -327,6 +370,11 @@ export function conversationSuite(
         b.call<ErrorEnvelope>("POST", pathOf("postMessage", { id: conversation.id }), {
           event_id: event(),
           text: "Hi from another family",
+        }),
+        b.call<ErrorEnvelope>("POST", pathOf("postMessage", { id: conversation.id }), {
+          event_id: event(),
+          kind: "steer",
+          text: "A steer from another family",
         }),
         b.call<ErrorEnvelope>("GET", pathOf("listConversationRuns", { id: conversation.id })),
         b.call<ErrorEnvelope>("GET", pathOf("listRunEvents", { id: run.id })),

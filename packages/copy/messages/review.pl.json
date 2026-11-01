@@ -142,7 +142,9 @@
   "sign_plus": false,
   "sign_times": false,
   "decimal_comma": false,
+  "decimal_point": true,
   "incomplete_decimal": false,
+  "incomplete_decimal_point": true,
   "incomplete_fraction_boxes": false,
   "fraction_simplify": false,
   "fraction_whole": false,
@@ -535,7 +537,7 @@
   "chat_limit_busy": false,
   "chat_limit_daily": false,
   "chat_limit_too_long": false,
-  "chat_limit_idle": false,
+  "chat_limit_idle": true,
   "chat_dev_only": false,
   "chat_queue_next": false,
   "chat_queue_send_now": false,
@@ -578,5 +580,10 @@
   "chat_switch": false,
   "chat_consent": false,
   "chat_check_findings": false,
-  "chat_sign_in": false
+  "chat_sign_in": false,
+  "chat_limit_message": true,
+  "chat_edit_step": true,
+  "chat_edit_prompt": true,
+  "chat_edit_send": true,
+  "chat_edit_cancel": true
 }

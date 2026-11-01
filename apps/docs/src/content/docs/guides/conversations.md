@@ -45,6 +45,10 @@ sent while a turn is open joins that turn. Otherwise it starts a new run.
   the minute the reply is `429` `MessageLimitMinute`, past the day `429` `MessageLimitDay`, and
   nothing is stored. A message that joins a running turn is never refused by the day.
 
+A correction while the turn runs is a steer: the same route with `"kind": "steer"`. An edit in
+the lesson pane also sends `"source": "lesson_edit"` and the `question_ids` it changed. A steer
+joins the open turn and never starts one.
+
 ## 3. Read the answer
 
 [Reference](/api/operations/listrunevents/).

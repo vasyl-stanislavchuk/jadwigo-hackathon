@@ -15,6 +15,8 @@ import type { Language } from "../stage/types.ts";
 import { ChooseView } from "./choose/ChooseView.tsx";
 import { EnterView } from "./enter/EnterView.tsx";
 import { Family, QuestionType } from "./names.ts";
+import { StillLabel } from "./place/surface.tsx";
+import { SequenceView } from "./sequence/SequenceView.tsx";
 import { pageSpec, type SpecOf } from "./types.ts";
 import { type PageSpecOf, ViewMode } from "./view.ts";
 
@@ -138,5 +140,135 @@ describe("the screens' words under a lesson's lang", () => {
       />,
     );
     expect(container.querySelector("[lang]")).toBeNull();
+  });
+
+  // dl-uukj.43: the screens' words the first pass left under the lesson's lang.
+  it("names a text field through a span in the screens' lang, the field itself in the lesson's", () => {
+    framed(
+      <EnterView
+        {...common}
+        {...playing}
+        spec={pageSpec(word) as PageSpecOf<typeof Family.Enter>}
+        onCommit={vi.fn()}
+      />,
+      "pl",
+    );
+    const input = screen.getByRole("textbox", { name: copy("en", "answer_field") });
+    expect(langOf(input)).toBe("pl");
+    expect(langOf(document.getElementById(must(input.getAttribute("aria-labelledby"))))).toBe("en");
+  });
+
+  it("keeps the text field's plain aria-label when there is no lesson language", () => {
+    framed(
+      <EnterView
+        {...common}
+        {...playing}
+        spec={pageSpec(word) as PageSpecOf<typeof Family.Enter>}
+        onCommit={vi.fn()}
+      />,
+    );
+    const input = must(document.querySelector('input[data-entry="text"]'));
+    expect(input.getAttribute("aria-label")).toBe(copy("en", "answer_field"));
+    expect(input.hasAttribute("aria-labelledby")).toBe(false);
+  });
+
+  it("says None of these and a review's Your answer label in the screens' lang", () => {
+    const none: SpecOf<typeof Family.Choose> = {
+      ...many,
+      data: {
+        ...many.data,
+        options: [...many.data.options, { id: "o4", content: { kind: "none" } }],
+      },
+    };
+    framed(
+      <ChooseView
+        {...common}
+        mode={ViewMode.Review}
+        spec={pageSpec(none) as PageSpecOf<typeof Family.Choose>}
+        value={{ chosen: ["o2"] }}
+        answerKey={none.key}
+        verdict={{ correct: false, mistake_class: "other_wrong", parts: [] }}
+      />,
+      "pl",
+    );
+    expect(langOf(screen.getByText(copy("en", "none_of_these")))).toBe("en");
+    // ChoiceGroup's note on a picked option (ChoiceItem.wordsLang, dl-uukj.41).
+    expect(langOf(screen.getByText(copy("en", "answer_yours")))).toBe("en");
+    expect(langOf(screen.getAllByText(copy("en", "answer_right"))[0] ?? null)).toBe("en");
+  });
+
+  it("labels the place family's still answer in the screens' lang", () => {
+    framed(
+      <>
+        <StillLabel language="en" yours />
+        <StillLabel language="en" yours={false} />
+      </>,
+      "pl",
+    );
+    expect(langOf(screen.getByText(copy("en", "answer_yours")))).toBe("en");
+    expect(langOf(screen.getByText(copy("en", "answer_right")))).toBe("en");
+  });
+
+  it("names the tile tray through a span in the screens' lang", () => {
+    const tiles: SpecOf<typeof Family.Sequence> = {
+      ...base,
+      question_type: QuestionType.Order,
+      family: Family.Sequence,
+      data: {
+        items: [],
+        first_label: "first",
+        last_label: "last",
+        tiles: [
+          { id: "t8", text: "osiem" },
+          { id: "tp", text: "+" },
+        ],
+        slots: 3,
+      },
+      key: { orders: [["t8", "tp", "t8"]] },
+    };
+    framed(
+      <SequenceView
+        {...common}
+        mode={ViewMode.Preview}
+        spec={pageSpec(tiles) as PageSpecOf<typeof Family.Sequence>}
+        showKey={false}
+      />,
+      "pl",
+    );
+    // A still view outside StepShell's areas inherits the page's lang; inside a lesson's step the
+    // tiles take the answer area's. Either way the tray's name is the screens' words.
+    const tray = screen.getByRole("list", { name: copy("en", "drag_tray") });
+    expect(tray.hasAttribute("aria-label")).toBe(false);
+    expect(langOf(document.getElementById(must(tray.getAttribute("aria-labelledby"))))).toBe("en");
+  });
+
+  it("reads the ruler's name and position in the screens' lang", () => {
+    const PICTURE = {
+      src: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg"/>',
+      alt: "Ołówek",
+      width: 400,
+      height: 170,
+    };
+    const pencil: SpecOf<typeof Family.Enter> = {
+      ...base,
+      question_type: QuestionType.Measure,
+      family: Family.Enter,
+      data: {
+        input: "number",
+        entry: "keypad",
+        figure: { kind: "ruler", picture: PICTURE, unit: "cm", length: 8, pixels_per_unit: 40 },
+      },
+      key: { accept: ["6"] },
+    };
+    framed(
+      <EnterView
+        {...common}
+        {...playing}
+        spec={pageSpec(pencil) as PageSpecOf<typeof Family.Enter>}
+        onCommit={vi.fn()}
+      />,
+      "pl",
+    );
+    expect(langOf(screen.getByRole("slider", { name: copy("en", "ruler_label") }))).toBe("en");
   });
 });

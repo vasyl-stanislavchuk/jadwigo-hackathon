@@ -646,14 +646,29 @@ export const ConversationCreate = z.strictObject({
 export type ConversationCreate = z.infer<typeof ConversationCreate>;
 
 /**
- * `POST /api/v1/conversations/{id}/messages`: what the parent wrote. It lands in the run inbox
- * once by `event_id`, on the turn that is open or on a new one (`acceptMessage`).
+ * `POST /api/v1/conversations/{id}/messages`: what the parent wrote, or a steer. It lands in the
+ * run inbox once by `event_id`: a message on the turn that is open or on a new one, a steer on
+ * the open turn (`acceptMessage`).
  */
-export const ConversationMessage = z.strictObject({
-  event_id: EventId,
-  /** Trimmed first, so words of only spaces never open a run. */
-  text: z.string().trim().min(1),
-});
+export const ConversationMessage = z
+  .strictObject({
+    event_id: EventId,
+    /** Trimmed first, so words of only spaces never open a run. */
+    text: z.string().trim().min(1),
+    /**
+     * `message` when absent. A `steer` is the parent's correction while a turn runs: it joins the
+     * next step's context as a steer, never opens a turn (dl-z5ja.93).
+     */
+    kind: z.enum(["message", "steer"]).optional(),
+    /** A steer's origin, as the run inbox names it: `chat` when absent. */
+    source: z.enum(["chat", "lesson_edit"]).optional(),
+    /** The lesson file's questions a `lesson_edit` steer names, by their `id`. Never empty. */
+    question_ids: z.array(z.string().min(1)).min(1).optional(),
+  })
+  .refine((m) => m.kind === "steer" || (m.source === undefined && m.question_ids === undefined), {
+    message: "source and question_ids come only with a steer",
+    path: ["kind"],
+  });
 export type ConversationMessage = z.infer<typeof ConversationMessage>;
 
 /** `POST /api/v1/runs/{id}/cancellations`: the parent's Stop, once by `event_id`. */

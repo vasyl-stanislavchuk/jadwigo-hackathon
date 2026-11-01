@@ -5,6 +5,8 @@
  * transport is the dev server's (`hotTransport`) and a test's stand-in, the same interface.
  */
 
+import { ApiError } from "@jadwigo/api-client";
+import { ErrorType } from "@jadwigo/contracts";
 import type { ConversationId, Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import {
@@ -27,6 +29,10 @@ import {
   type SendAnswer,
   type SendBody,
 } from "./wire.ts";
+
+/** Whether a send was refused by the message limit, read by the error's type, never its text. */
+const limited = (e: unknown): boolean =>
+  e instanceof ApiError && e.type === ErrorType.enum.MessageLimit;
 
 export interface EngineTransport {
   /** Live pushes for one run; answers the unsubscribe. */
@@ -85,6 +91,12 @@ export interface Conversation {
   state: ConversationState;
   send(text: string): void;
   stop(): void;
+  /**
+   * A parent's edit in the lesson pane (dl-z5ja.30): a steer naming the questions while the turn
+   * runs, which the runner keeps (dl-z5ja.42); after the turn, the same words as a new message,
+   * since a steer on an ended turn changes nothing.
+   */
+  edit(text: string, question_ids: string[]): void;
 }
 
 export function useConversation(
@@ -153,7 +165,9 @@ export function useConversation(
           dispatch({ type: "send_failed", failed: false });
           return follow(run);
         })
-        .catch(() => dispatch({ type: "send_failed", failed: true }));
+        .catch((e: unknown) =>
+          dispatch({ type: "send_failed", failed: true, limited: limited(e) }),
+        );
     },
     [transport, conversation, follow],
   );
@@ -165,5 +179,27 @@ export function useConversation(
       .catch(() => dispatch({ type: "send_failed", failed: true }));
   }, [transport, conversation]);
 
-  return { state, send, stop };
+  const edit = useCallback(
+    (text: string, question_ids: string[]) => {
+      const last = turnsOf(latest.current).at(-1);
+      if (last === undefined || !isOpen(last)) return send(text);
+      transport
+        .send({
+          conversation_id: conversation,
+          event_id: newEventId(),
+          kind: "steer",
+          text,
+          source: "lesson_edit",
+          question_ids,
+        })
+        .then((run) => {
+          dispatch({ type: "send_failed", failed: false });
+          return follow(run);
+        })
+        .catch(() => dispatch({ type: "send_failed", failed: true }));
+    },
+    [transport, conversation, follow, send],
+  );
+
+  return { state, send, stop, edit };
 }

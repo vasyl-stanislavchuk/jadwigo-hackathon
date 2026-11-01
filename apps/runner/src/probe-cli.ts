@@ -1,19 +1,12 @@
 import { readFileSync } from "node:fs";
-import { EventId, ID_PREFIXES, idOf, type PodId, Uuid } from "@jadwigo/contracts";
-import { ConversationId, RunId } from "@jadwigo/contracts/run";
-import {
-  acceptMessage,
-  createVerbs,
-  type EngineDeps,
-  fixtureBank,
-  PgmqRunQueue,
-} from "@jadwigo/jadwigo-ai";
-import { createPostgresStore, type Store } from "@jadwigo/store";
-import pg from "pg";
+import type { PodId } from "@jadwigo/contracts";
+import { RunId } from "@jadwigo/contracts/run";
+import type { Store } from "@jadwigo/store";
 import { apiDatabaseUrl, probeHost } from "./config.ts";
 import { postgresEngineHost } from "./engine.ts";
 import { createHost, type HostReport } from "./host.ts";
 import { ProbeMuse, turnOf } from "./probe.ts";
+import { apiDeps, seed } from "./seed.ts";
 
 /**
  * The probe's laptop half (dl-z5ja.5), which `make step-probe` runs around each host's invoke:
@@ -27,47 +20,10 @@ import { ProbeMuse, turnOf } from "./probe.ts";
  * The pod is made up: a random account, no learner, no name. Nothing here reaches a model.
  */
 
-const POOL = { max: 1, connectionTimeoutMillis: 5000 } as const;
 const PARENT_TEXT = "A made-up lesson: adding within 20, grade 1.";
 
 function out(value: unknown): void {
   process.stdout.write(`${typeof value === "string" ? value : JSON.stringify(value)}\n`);
-}
-
-function apiDeps(url: string): EngineDeps & { close(): Promise<void> } {
-  const store = createPostgresStore(url, POOL);
-  const pool = new pg.Pool({ connectionString: url, ...POOL });
-  pool.on("error", () => undefined);
-  return {
-    store,
-    muse: new ProbeMuse(),
-    verbs: createVerbs({ bank: fixtureBank() }),
-    queue: new PgmqRunQueue(pool, { role: "jadwigo_api" }),
-    now: () => new Date(),
-    close: async () => {
-      await Promise.all([store.close(), pool.end()]);
-    },
-  };
-}
-
-async function seed(deps: EngineDeps): Promise<{ pod: PodId; run_id: RunId }> {
-  const member = await deps.store.createAccount(Uuid.parse(crypto.randomUUID()), "pl");
-  const conversation = await deps.store.createConversation(member.pod, {
-    id: ConversationId.parse(idOf(ID_PREFIXES.conversation, crypto.randomUUID())),
-    created_by: member.account,
-    title: null,
-  });
-  const { run } = await acceptMessage(deps, {
-    pod: member.pod,
-    created_by: member.account,
-    conversation_id: conversation.id,
-    entry: {
-      event_id: EventId.parse(crypto.randomUUID()),
-      kind: "message",
-      payload: { text: PARENT_TEXT },
-    },
-  });
-  return { pod: member.pod, run_id: run.id };
 }
 
 /** One invoke as the probe script records it. */
@@ -137,9 +93,9 @@ async function main(argv: readonly string[]): Promise<void> {
   const deps = apiDeps(apiDatabaseUrl());
   try {
     if (command === "seed") {
-      out(await seed(deps));
+      out(await seed(deps, PARENT_TEXT));
     } else if (command === "local") {
-      const seeded = await seed(deps);
+      const seeded = await seed(deps, PARENT_TEXT);
       const host = postgresEngineHost(apiDatabaseUrl(), new ProbeMuse(), (l) => console.warn(l));
       const run = createHost(() => Promise.resolve(host));
       const t0 = performance.now();

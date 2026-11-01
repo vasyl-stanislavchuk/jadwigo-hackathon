@@ -1,11 +1,15 @@
-import { type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
+import { ApiError } from "@jadwigo/api-client";
+import { ErrorType } from "@jadwigo/contracts";
+import { ConversationId, type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { foldRun } from "@jadwigo/core";
 import { RUN_LOGS } from "@jadwigo/testing";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ChatScreen } from "./ChatScreen.tsx";
 import { conversationReducer, EMPTY, lessonOf, turnsOf } from "./conversation.ts";
-import type { EngineTransport } from "./useConversation.ts";
+import { LessonPane } from "./LessonPane.tsx";
+import { type EngineTransport, useConversation } from "./useConversation.ts";
+import type { SendBody } from "./wire.ts";
 
 afterEach(cleanup);
 
@@ -116,6 +120,7 @@ describe("conversationReducer", () => {
 /** A transport that records the order of calls and pushes when the test says. */
 function fakeTransport(events: readonly RunEvent[]) {
   const calls: string[] = [];
+  const sent: SendBody[] = [];
   const listeners = new Map<string, (e: readonly RunEvent[]) => void>();
   const run = runOf(events, "completed");
   const transport: EngineTransport = {
@@ -133,9 +138,12 @@ function fakeTransport(events: readonly RunEvent[]) {
       calls.push(`events ${id} after ${after}`);
       return events.filter((e) => e.seq > after);
     },
-    send: async () => run,
+    send: async (body) => {
+      sent.push(body);
+      return run;
+    },
   };
-  return { transport, calls, run, push: (e: RunEvent[]) => listeners.get(run.id)?.(e) };
+  return { transport, calls, sent, run, push: (e: RunEvent[]) => listeners.get(run.id)?.(e) };
 }
 
 describe("ChatScreen on a transport", () => {
@@ -170,5 +178,154 @@ describe("ChatScreen's phone switch (dl-z5ja.28)", () => {
     expect(document.querySelector("[data-pane='lesson']")?.getAttribute("data-front")).toBe("true");
     fireEvent.click(screen.getByRole("tab", { name: "Rozmowa" }));
     expect(lessonTab.querySelector("[data-badge]")).toBeNull();
+  });
+});
+
+describe("a send the message limit refuses (dl-z5ja.62)", () => {
+  it("is marked limited by the error's type, and any other failure is not", async () => {
+    const conversation = ConversationId.parse("cnv_00000000000000000000000001");
+    const refusing = (error: Error): EngineTransport => ({
+      ...fakeTransport(eventsOf("happy-turn")).transport,
+      runs: async () => [],
+      send: async () => {
+        throw error;
+      },
+    });
+    const limit = refusing(new ApiError("too many messages", 429, ErrorType.enum.MessageLimit));
+    const { result } = renderHook(() => useConversation(limit, conversation));
+    await act(async () => {});
+    await act(async () => result.current.send("Jeszcze jedno."));
+    expect(result.current.state).toMatchObject({ sendFailed: true, sendLimited: true });
+    cleanup();
+    const down = refusing(new Error("offline"));
+    const other = renderHook(() => useConversation(down, conversation));
+    await act(async () => {});
+    await act(async () => other.result.current.send("Jeszcze jedno."));
+    expect(other.result.current.state).toMatchObject({ sendFailed: true, sendLimited: false });
+  });
+});
+
+describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
+  /** A 3rd revision of the happy turn's lesson with step s02's words changed, as the next event. */
+  function thirdRevision(events: readonly RunEvent[]): RunEvent {
+    const second = events.findLast((e) => e.type === "lesson_revision");
+    if (second?.type !== "lesson_revision") throw new Error("no lesson_revision");
+    const file = structuredClone(second.payload.lesson_file) as {
+      script: { parts: { steps: { id: string; say?: unknown }[] }[] };
+    };
+    for (const part of file.script.parts)
+      for (const step of part.steps) if (step.id === "s02") step.say = { pl: "Ile jest grup?" };
+    return RunEvent.parse({
+      ...second,
+      seq: Math.max(...events.map((e) => e.seq)) + 1,
+      event_id: "00000000-0000-4000-8000-000000000301",
+      payload: { ...second.payload, revision: 3, lesson_file: file },
+    });
+  }
+
+  it("a revision that lands live marks only the step it changed, and a reload marks it again", async () => {
+    const events = eventsOf("happy-turn");
+    const t = fakeTransport(events);
+    render(<ChatScreen transport={t.transport} />);
+    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    // Revisions 1 and 2 hold the same steps, so nothing is marked yet.
+    expect(document.querySelector("[data-changed]")).toBeNull();
+    const third = thirdRevision(events);
+    await act(async () => t.push([third]));
+    expect(screen.getByText("Wersja 3")).toBeTruthy();
+    const marked = () => [...document.querySelectorAll("[data-changed]")];
+    expect(marked().map((m) => m.getAttribute("data-step"))).toEqual(["s02"]);
+    expect(marked()[0]?.textContent).toContain("Zmienione przez asystenta");
+    // Cofnij asks the AI to take the change back, in the lesson's language (dl-z5ja.42 keeps it).
+    // The happy turn has ended, so it goes as a new message.
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Cofnij" })));
+    expect(t.sent).toEqual([
+      expect.objectContaining({
+        kind: "message",
+        text: "Rodzic prosi o cofnięcie zmiany w krokach s02: wróć do wersji 2.",
+      }),
+    ]);
+
+    // A reload reads revision 2 from the log as previous_lesson (dl-z5ja.68): the same mark.
+    cleanup();
+    render(<ChatScreen transport={fakeTransport([...events, third]).transport} />);
+    expect(await screen.findByText("Wersja 3")).toBeTruthy();
+    expect(marked().map((m) => m.getAttribute("data-step"))).toEqual(["s02"]);
+  });
+
+  it("Cofnij takes back the last AI revision once a handler is wired", () => {
+    const events = eventsOf("happy-turn");
+    const lesson = foldRun(events).lesson;
+    let undone = 0;
+    render(
+      <LessonPane
+        language="pl"
+        lesson={lesson}
+        changed={new Set(["s02"])}
+        onUndo={() => {
+          undone += 1;
+        }}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Cofnij" }));
+    expect(undone).toBe(1);
+  });
+});
+
+describe("a parent's own edit goes back to the AI (dl-z5ja.30)", () => {
+  it("the step editor sends what to change and why, in the lesson's language, naming the step", () => {
+    const lesson = foldRun(eventsOf("happy-turn")).lesson;
+    const sent: [string, string[]][] = [];
+    render(
+      <LessonPane
+        language="pl"
+        lesson={lesson}
+        onEdit={(text, ids) => {
+          sent.push([text, ids]);
+        }}
+      />,
+    );
+    fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
+    fireEvent.change(screen.getByRole("textbox", { name: "Co zmienić w tym kroku i dlaczego?" }), {
+      target: { value: "mniejsze liczby, bo to dopiero początek" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Wyślij zmianę" }));
+    expect(sent).toEqual([
+      ["Rodzic prosi o zmianę w kroku s02: mniejsze liczby, bo to dopiero początek", ["s02"]],
+    ]);
+    expect(screen.getByText("Twoja zmiana trafiła do asystenta.")).toBeTruthy();
+  });
+
+  /** The bodies a transport was sent, after its conversation restored. */
+  async function editOn(name: string): Promise<SendBody[]> {
+    const t = fakeTransport(eventsOf(name));
+    const bodies: SendBody[] = [];
+    const transport: EngineTransport = {
+      ...t.transport,
+      send: async (body) => {
+        bodies.push(body);
+        return t.run;
+      },
+    };
+    const conversation = ConversationId.parse("cnv_00000000000000000000000001");
+    const { result } = renderHook(() => useConversation(transport, conversation));
+    await act(async () => {});
+    await act(async () => result.current.edit("Rodzic prosi o zmianę w kroku s02: …", ["s02"]));
+    return bodies;
+  }
+
+  it("while the turn runs, the edit is a steer naming its questions", async () => {
+    const [body] = await editOn("reload-with-duplicates");
+    expect(body).toMatchObject({
+      kind: "steer",
+      source: "lesson_edit",
+      question_ids: ["s02"],
+      text: "Rodzic prosi o zmianę w kroku s02: …",
+    });
+  });
+
+  it("after the turn, the same words go as a new message", async () => {
+    const [body] = await editOn("happy-turn");
+    expect(body).toMatchObject({ kind: "message", text: "Rodzic prosi o zmianę w kroku s02: …" });
   });
 });

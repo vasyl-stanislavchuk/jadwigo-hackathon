@@ -5,9 +5,9 @@
     "lines": 611,
     "reviewed_before": 14,
     "note_before": "the 14 adult lines the owner approved on 2026-10-07, untouched here",
-    "passed_here": 595,
-    "still_open": ["decimal_comma", "incomplete_decimal"],
-    "still_open_reason": "dl-uukj.42: the keypad decimal key becomes a point in English"
+    "passed_here": 597,
+    "still_open": [],
+    "note_after": "decimal_comma and incomplete_decimal passed a separate reviewer session once dl-uukj.42 (#510) kept the comma key out of English lessons"
   },
   "rounds": [
     {
@@ -3973,6 +3973,51 @@
           "text": "Your mark {n}. Tap it again to remove it."
         }
       ]
+    },
+    {
+      "round": 10,
+      "issue": "dl-9t2o.11",
+      "lines": 1,
+      "verdicts": [
+        {
+          "id": "tutor_resting [category=adult]",
+          "verdict": "flag",
+          "text": "Practicing without voice today.",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "without voice",
+              "reason": "The phrase is vague and reads as if the learner has no voice, so the line does not say plainly and directly that the voice tutor is off for this lesson."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "round": 11,
+      "issue": "dl-5ssh.34.70",
+      "lines": 2,
+      "verdicts": [
+        {
+          "id": "decimal_comma",
+          "verdict": "pass",
+          "text": "Comma"
+        },
+        {
+          "id": "incomplete_decimal",
+          "verdict": "pass",
+          "text": "Write a digit after the comma."
+        }
+      ]
+    }
+  ],
+  "owner_overrides": [
+    {
+      "id": "tutor_resting [category=adult]",
+      "text": "Practicing without voice today.",
+      "date": "2026-11-01",
+      "decision": "the owner chose this wording (US spelling of the line approved 2026-10-07) and approved it over the round-10 flag, to revisit with the rest of the copy later",
+      "issue": "dl-9t2o.11"
     }
   ]
 }

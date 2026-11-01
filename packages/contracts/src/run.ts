@@ -130,6 +130,11 @@ export const RUN_ERROR_TYPE = {
   runIdle: "RunIdle",
   /** The turn ran past `max_deadline_at` (not `retryable`). */
   runTimedOut: "RunTimedOut",
+  /**
+   * An agent answer failed the answer check twice, after its one correction (dl-z5ja.26): it named
+   * a number, status or level no tool result gave. Not `retryable`; the turn ends completed.
+   */
+  answerUnchecked: "AnswerUnchecked",
 } as const;
 export type RunErrorType = (typeof RUN_ERROR_TYPE)[keyof typeof RUN_ERROR_TYPE];
 

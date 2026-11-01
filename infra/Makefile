@@ -9,7 +9,7 @@ export PATH := $(MISE_BIN_PATHS)$(PATH)
 ENV ?= prod
 TF := AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform
 
-.PHONY: init plan apply output site-deploy deploy deploy-all prod-status api-deploy web-deploy web-build docs-deploy auth-diff auth-apply fmt validate test probe-step-host-plan probe-step-host-apply probe-step-host-destroy
+.PHONY: init plan apply output site-deploy deploy deploy-all prod-status api-deploy web-deploy web-build docs-deploy auth-diff auth-apply fmt validate test probe-step-host-plan probe-step-host-apply probe-step-host-destroy runner-deploy runner-rollback runner-status
 
 init:
 	$(TF) init -input=false -reconfigure -backend-config=environments/$(ENV).backend.hcl
@@ -34,7 +34,7 @@ STAMP = printf '%s %s%s\n' "$$(git rev-parse HEAD)" "$$(date -u +%Y-%m-%dT%H:%M:
 
 site-deploy:
 	@$(NOT_FROM_AGENT)
-	cd $(SITE) && bun run build && bun run check:dist
+	cd $(SITE) && bun run build && bun run check:dist && bun run check:hreflang dist
 	$(STAMP) > $(SITE)/dist/version.txt
 	bucket=$$($(TF) output -raw site_bucket) && dist_id=$$($(TF) output -raw site_distribution_id) && \
 	{ [ ! -d $(SITE)/dist/_astro ] || $(AWS) s3 sync $(SITE)/dist/_astro s3://$$bucket/_astro --cache-control "public, max-age=31536000, immutable"; } && \
@@ -126,6 +126,48 @@ auth-diff:
 auth-apply:
 	@$(NOT_FROM_AGENT)
 	supabase-auth/auth.sh apply
+
+# The step host (dl-z5ja.20), its own release target, apart from api-deploy (posthog-ai-production.md
+# section 1). It deploys only when the code the runner bundles changed since the commit the live
+# version names (the path filter); FORCE=1 deploys anyway. The tree must be clean, so the commit a
+# version names is what it holds. The boot check imports the bundle in Node before anything is
+# uploaded. A release uploads the zip, publishes a version described "<commit> sha256:<zip>", and
+# moves `live` to it: the alias names the exact artifact. Then `make -C .. engine-smoke ENV=$(ENV)`
+# runs one turn against it. runner-rollback VERSION=<n> points `live` back; runner-status reads it.
+RUNNER_ZIP := ../apps/runner/dist/runner.zip
+RUNNER_ENTRY := $(abspath ../apps/runner/dist/index.mjs)
+RUNNER_PATHS := apps/runner packages/jadwigo-ai packages/store packages/contracts packages/core packages/lesson-import bun.lock
+
+runner-deploy:
+	@$(NOT_FROM_AGENT)
+	@test -z "$$(git -C .. status --porcelain)" || { echo "runner-deploy: the tree has changes; a version names a commit, so commit or stash them first"; exit 1; }
+	@fn=$$($(TF) output -raw runner_function_name) && \
+	live=$$($(AWS) lambda get-alias --function-name $$fn --name live --query FunctionVersion --output text) && \
+	shipped=$$($(AWS) lambda get-function-configuration --function-name $$fn --qualifier $$live --query Description --output text | cut -d' ' -f1) && \
+	if [ -z "$(FORCE)" ] && git -C .. cat-file -e "$$shipped^{commit}" 2>/dev/null && git -C .. diff --quiet "$$shipped" HEAD -- $(RUNNER_PATHS); then \
+	  echo "runner-deploy: nothing the runner bundles changed since $$shipped (version $$live is live); FORCE=1 deploys anyway"; exit 0; fi && \
+	$(MAKE) -C .. runner-bundle && \
+	node --input-type=module -e "const m = await import('$(RUNNER_ENTRY)'); if (typeof m.handler !== 'function') process.exit(1);" && \
+	rm -f $(RUNNER_ZIP) && zip -qj $(RUNNER_ZIP) $(RUNNER_ENTRY) && \
+	sum=$$(shasum -a 256 $(RUNNER_ZIP) | cut -d' ' -f1) && commit=$$(git -C .. rev-parse HEAD) && \
+	$(AWS) lambda update-function-code --function-name $$fn --zip-file fileb://$(RUNNER_ZIP) --architectures arm64 >/dev/null && \
+	$(AWS) lambda wait function-updated-v2 --function-name $$fn && \
+	v=$$($(AWS) lambda publish-version --function-name $$fn --description "$$commit sha256:$$sum" --query Version --output text) && \
+	$(AWS) lambda update-alias --function-name $$fn --name live --function-version $$v >/dev/null && \
+	echo "runner-deploy: $$fn live is version $$v ($$commit, sha256:$$sum); it was $$live. Next: make -C .. engine-smoke ENV=$(ENV). Back: make -C infra runner-rollback VERSION=$$live"
+
+runner-rollback:
+	@$(NOT_FROM_AGENT)
+	@test -n "$(VERSION)" || { echo "runner-rollback: VERSION=<the version to point live at>; runner-status names the live one"; exit 1; }
+	fn=$$($(TF) output -raw runner_function_name) && \
+	$(AWS) lambda update-alias --function-name $$fn --name live --function-version $(VERSION) >/dev/null && \
+	echo "runner-rollback: $$fn live is version $(VERSION)"
+
+# Read-only: the live version and the commit and zip hash it was published with.
+runner-status:
+	@fn=$$($(TF) output -raw runner_function_name) && \
+	live=$$($(AWS) lambda get-alias --function-name $$fn --name live --query FunctionVersion --output text) && \
+	echo "runner-status: $$fn live is version $$live: $$($(AWS) lambda get-function-configuration --function-name $$fn --qualifier $$live --query Description --output text)"
 
 # The step-host probe's Lambda on jadwigo-dev (dl-z5ja.5): a root of its own, terraform/probes/step-host,
 # whose state sits beside prod's under its own key, so neither plan ever reads the other. The owner

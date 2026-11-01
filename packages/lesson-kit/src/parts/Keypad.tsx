@@ -40,7 +40,7 @@ const PAD_SIGN = cn(TILE, "min-h-kid-tap min-w-0 text-jw-key-sign");
 const STRIP_SIGN = cn(TILE, "min-h-kid-tap min-w-kid-tap text-jw-key-strip");
 
 /** The signs that take the cell left of 0 on the pad, the step's one extra key. */
-const EXTRA_KEYS: readonly string[] = [",", "/", "="];
+const EXTRA_KEYS: readonly string[] = [",", ".", "/", "="];
 
 /** What a screen reader calls each sign key. */
 const SIGN_NAMES: Record<string, CopyKey> = {
@@ -51,6 +51,8 @@ const SIGN_NAMES: Record<string, CopyKey> = {
   "(": "bracket_open",
   ")": "bracket_close",
   ",": "decimal_comma",
+  // An English lesson's decimal key (dl-uukj.42).
+  ".": "decimal_point",
   "=": "sign_equals",
 };
 

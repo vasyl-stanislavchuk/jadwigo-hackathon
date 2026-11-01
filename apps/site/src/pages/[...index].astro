@@ -9,6 +9,7 @@ import Gallery from "../components/Gallery.astro";
 import HeroQuestion from "../components/HeroQuestion.astro";
 import Base from "../layouts/Base.astro";
 import { strictBuild } from "../lib/build.ts";
+import { pageLessons } from "../lib/featured.ts";
 import { otherLanguage, twinPath, twinStaticPaths } from "../lib/i18n.ts";
 import { landingWords } from "../lib/words.ts";
 
@@ -25,6 +26,8 @@ const words = await landingWords(lang);
 const page = { ...entry.data, translation: twinPath("index", otherLanguage(lang)) };
 // The lessons section's anchor, which /praca-domowa links: #lekcje in Polish, #lessons in English.
 const lessonsId = lang === "pl" ? "lekcje" : "lessons";
+// Only this language's lessons; with none yet, one line in place of the cards (dl-w0b4.85).
+const lessons = await pageLessons(lang);
 ---
 
 <Base page={page} path={twinPath("index", lang)}>
@@ -35,8 +38,16 @@ const lessonsId = lang === "pl" ? "lekcje" : "lessons";
 
   <section id={lessonsId} class="lessons wrap" aria-labelledby="lessons-title">
     <h2 id="lessons-title">{words.lessons.heading}</h2>
-    <p>{words.lessons.text} <a href={`${twinPath("lessons", lang)}/`}>{words.lessons.all}</a></p>
-    <Gallery lang={lang} />
+    {
+      lessons.length > 0 ? (
+        <>
+          <p>{words.lessons.text} <a href={`${twinPath("lessons", lang)}/`}>{words.lessons.all}</a></p>
+          <Gallery lang={lang} lessons={lessons} />
+        </>
+      ) : (
+        <p>{words.lessons.empty}</p>
+      )
+    }
   </section>
 
   <section class="after wrap">

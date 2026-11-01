@@ -2,6 +2,7 @@
 // GET /api/v1/featured-lessons when the site is built, since the API answers only its own origin
 // (no CORS). A build with no network falls back to the snapshot in src/content/featured.json. A lesson
 // whose title ends in "(mock)" is left out (owner, 2026-10-31).
+// Each page shows only the lessons in its own language (dl-w0b4.85).
 import { Featured, type FeaturedLesson, ROUTES } from "@jadwigo/contracts";
 import snapshot from "../content/featured.json" with { type: "json" };
 import { appUrl } from "../index.ts";
@@ -26,4 +27,34 @@ export async function featuredLessons(
   } catch {
     return { lessons: shown(Featured.parse(snapshot).lessons), from: "snapshot" };
   }
+}
+
+/** The featured lessons in one language: /lekcje and the Polish home show pl, /en/ shows en (dl-w0b4.85). */
+export const lessonsIn = (
+  lessons: FeaturedLesson[],
+  lang: FeaturedLesson["language"],
+): FeaturedLesson[] => lessons.filter((l) => l.language === lang);
+
+/** Stops the build when a page would show a lesson in another language than its own. */
+export function assertLanguage(lessons: FeaturedLesson[], lang: FeaturedLesson["language"]): void {
+  const other = lessons.filter((l) => l.language !== lang);
+  if (other.length > 0)
+    throw new Error(
+      `A ${lang} page lists lessons in another language: ${other.map((l) => `${l.title} (${l.language})`).join(", ")}`,
+    );
+}
+
+/**
+ * The lessons a page in `lang` shows: the featured list filtered to its language, with the source
+ * logged. The filter is the guarantee: a lesson in another language is left out of the page.
+ * Gallery.astro's assertLanguage guards the cards, on the list a page hands it.
+ */
+export async function pageLessons(
+  lang: FeaturedLesson["language"],
+  get: (url: string) => Promise<Response> = fetch,
+): Promise<FeaturedLesson[]> {
+  const { lessons, from } = await featuredLessons(get);
+  const mine = lessonsIn(lessons, lang);
+  console.warn(`Featured ${lang} lessons: ${mine.length} of ${lessons.length}, from the ${from}`);
+  return mine;
 }

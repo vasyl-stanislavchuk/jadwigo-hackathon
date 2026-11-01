@@ -10,7 +10,23 @@ import { type Auth, browserAuth } from "../../parent/auth.ts";
 import { type RunLive, routesTransport } from "./routesTransport.ts";
 import type { EngineTransport } from "./useConversation.ts";
 
-function supabaseLive(client: SupabaseClient, token: () => Promise<string | null>): RunLive {
+/** What the run channel needs of a Supabase client, so a test can stand in for it. */
+type LiveClient = Pick<SupabaseClient, "channel" | "removeChannel"> & {
+  realtime: Pick<SupabaseClient["realtime"], "setAuth">;
+};
+
+/**
+ * Joins `run:<run id>` as the signed-in parent. A parent's first token is issued before their
+ * account row exists, so it carries no `pod_id` and the join policy refuses it (dl-z5ja.92): the
+ * first join therefore refreshes the session once, which the page does only after an API call has
+ * answered, since it subscribes to a run the routes returned. A refused join refreshes and joins
+ * again, once per run.
+ */
+export function supabaseLive(
+  client: LiveClient,
+  token: () => Promise<string | null>,
+  refresh: () => Promise<unknown> = () => Promise.resolve(),
+): RunLive {
   const listeners = new Set<(up: boolean) => void>();
   let down = false;
   const say = (up: boolean) => {
@@ -18,18 +34,42 @@ function supabaseLive(client: SupabaseClient, token: () => Promise<string | null
     down = !up;
     for (const on of listeners) on(up);
   };
+  let refreshed: Promise<void> | null = null;
+  const firstRefresh = () =>
+    (refreshed ??= refresh().then(
+      () => {},
+      () => {},
+    ));
   return {
     subscribe(topic, onPoke) {
-      const channel = client.channel(topic, { config: { private: true } });
-      channel.on("broadcast", { event: "run_event" }, () => onPoke());
-      void token().then(async (jwt) => {
+      let channel: ReturnType<LiveClient["channel"]> | null = null;
+      let closed = false;
+      const join = async (retried: boolean): Promise<void> => {
+        if (retried) await refresh().catch(() => {});
+        else await firstRefresh();
+        const jwt = await token();
+        if (closed) return;
         if (jwt !== null) await client.realtime.setAuth(jwt);
-        channel.subscribe((status) => {
-          if (status === "SUBSCRIBED") say(true);
-          else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") say(false);
+        // off() may have run during either await: then no channel is made at all.
+        if (closed) return;
+        const joined = client.channel(topic, { config: { private: true } });
+        channel = joined;
+        joined.on("broadcast", { event: "run_event" }, () => {
+          if (!closed) onPoke();
         });
-      });
-      return () => void client.removeChannel(channel);
+        joined.subscribe((status) => {
+          if (status === "SUBSCRIBED") say(true);
+          else if (status === "CHANNEL_ERROR" && !retried && !closed) {
+            void client.removeChannel(joined);
+            void join(true);
+          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") say(false);
+        });
+      };
+      void join(false);
+      return () => {
+        closed = true;
+        if (channel !== null) void client.removeChannel(channel);
+      };
     },
     onConnection(on) {
       listeners.add(on);
@@ -59,7 +99,10 @@ export function apiTransport(): { transport: EngineTransport; auth: Auth } | nul
   });
   const token = () => auth.token();
   return {
-    transport: routesTransport(createClient({ base: "", token }), supabaseLive(realtime, token)),
+    transport: routesTransport(
+      createClient({ base: "", token }),
+      supabaseLive(realtime, token, () => auth.refresh()),
+    ),
     auth,
   };
 }
