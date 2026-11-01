@@ -122,11 +122,12 @@ lessons:
   subjects: { math: Matematyka, polish: Polski, english: Angielski }
   grade: klasa
   questions: [pytanie, pytania, pytań]
+  # /lekcje's heading over the lessons that have no grade yet.
+  other: Inne lekcje
   row:
     heading: Zagraj bez logowania
     gradeLabel: Klasa
     subjectLabel: Przedmiot
-    allGrades: Wszystkie
     allSubjects: Wszystkie
     count: [lekcja, lekcje, lekcji]
     prev: Poprzednie lekcje
