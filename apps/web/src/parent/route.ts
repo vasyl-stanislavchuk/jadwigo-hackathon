@@ -6,6 +6,7 @@
  *   /parent/history            every attempt, newest first (its table waits on dl-z5ja.106.1)
  *   /parent/children/<learner> one child's page (dl-uukj.47.3)
  *   /parent?claim=<assignment> the same, then keep the attempt this tab played of that assignment
+ *   /parent?for=<learner>      the first screen with "Dla" set to that child (dl-uukj.47.2)
  *   /parent/attempts/<attempt>?learner=<learner>
  *                              one finished lesson of the learner, question by question
  *   /parent/assignments/<assignment>
@@ -48,16 +49,20 @@ export const childPath = ({
   lang?: string | null;
 }): string => withLang(`${CHILDREN_PATH}/${learner}`, lang);
 
-/** /parent, with the assignment whose attempt to keep and the page's language. */
+/** /parent, with the assignment whose attempt to keep, the child a new lesson is for, and the page's
+ * language. */
 export function parentPath({
   claim,
+  forLearner,
   lang,
 }: {
   claim?: AssignmentId | null;
+  forLearner?: LearnerId | null;
   lang?: string | null;
 } = {}): string {
   const query = new URLSearchParams();
   if (claim) query.set("claim", claim);
+  if (forLearner) query.set("for", forLearner);
   if (lang) query.set("lang", lang);
   return query.size > 0 ? `${PARENT_PATH}?${query}` : PARENT_PATH;
 }
@@ -135,6 +140,12 @@ export function isParentPath(path: string): boolean {
 /** The assignment `?claim` names, or null. */
 export function claimOf(query: URLSearchParams): AssignmentId | null {
   const parsed = AssignmentId.safeParse(query.get("claim"));
+  return parsed.success ? parsed.data : null;
+}
+
+/** The child `?for` names as the new lesson's ("Dla", dl-uukj.47.2), or null. */
+export function forOf(query: URLSearchParams): LearnerId | null {
+  const parsed = LearnerId.safeParse(query.get("for"));
   return parsed.success ? parsed.data : null;
 }
 

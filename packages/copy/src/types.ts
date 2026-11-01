@@ -591,6 +591,15 @@ export const COPY_KEYS = [
   "parent_crumb_result",
   "parent_crumb_overview",
   // end the parent app frame
+  // the child's page (dl-uukj.47.3)
+  "parent_child_tabs",
+  "parent_tab_overview",
+  "parent_tab_skills",
+  "parent_new_lesson_for",
+  "parent_child_skills_empty",
+  "parent_child_lessons_empty",
+  "parent_child_history_empty",
+  // end the child's page
   // the chat page (dl-z5ja.17): /playground/chat, a parent's chat on the left and the lesson on the right
   "chat_title",
   "chat_lesson_title",
@@ -707,6 +716,14 @@ export const COPY_KEYS = [
   "chat_rate_send",
   "chat_rate_thanks",
   "chat_rate_failed",
+  "chat_list_title",
+  "chat_list_empty",
+  "chat_list_failed",
+  "chat_list_untitled",
+  "chat_list_archive",
+  "chat_list_archive_confirm",
+  "chat_list_archive_yes",
+  "chat_list_archive_failed",
   "chat_sign_in",
   "chat_limit_message",
   // end the chat page

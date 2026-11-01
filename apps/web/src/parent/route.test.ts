@@ -6,6 +6,7 @@ import {
   childPath,
   claimOf,
   emailOf,
+  forOf,
   historyPath,
   isParentPath,
   learnerOf,
@@ -119,6 +120,15 @@ describe("the shell's pages", () => {
     const child = childPath({ learner: LEARNER, lang: "en" });
     expect(child).toBe(`/parent/children/${LEARNER}?lang=en`);
     expect(parentRoute(child.split("?")[0] ?? "")).toEqual({ kind: "child", learner: LEARNER });
+  });
+});
+
+describe("the first screen's child", () => {
+  it("names the child a new lesson is for, and reads it back", () => {
+    const path = parentPath({ forLearner: LEARNER, lang: "en" });
+    expect(path).toBe(`/parent?for=${LEARNER}&lang=en`);
+    expect(forOf(new URLSearchParams(path.split("?")[1]))).toBe(LEARNER);
+    expect(forOf(new URLSearchParams("for=nope"))).toBeNull();
   });
 });
 
