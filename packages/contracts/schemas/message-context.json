@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "learner_id": {
+          "$ref": "#/$defs/LearnerId"
+        }
+      },
+      "required": [
+        "learner_id"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "lesson_id": {
+          "$ref": "#/$defs/LessonId"
+        }
+      },
+      "required": [
+        "lesson_id"
+      ],
+      "additionalProperties": false
+    }
+  ],
+  "$defs": {
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LessonId": {
+      "type": "string",
+      "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    }
+  }
+}

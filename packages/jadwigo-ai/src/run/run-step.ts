@@ -1,6 +1,7 @@
 import { type AccountId, ErrorType, type EventId, type PodId } from "@jadwigo/contracts";
 import {
   type ConversationId,
+  type MessageContext,
   type ModelTier,
   type NewRunEvent,
   RUN_ERROR_TYPE,
@@ -215,6 +216,7 @@ export function acceptMessage(
 ): Promise<{ run: Run; inbox: RunInbox }> {
   const { store, queue } = deps;
   const { pod, conversation_id, entry } = message;
+  const context = entry.kind === "message" ? entry.payload.context : undefined;
   // Each resend answers the stored row, and the engine acts on that row's kind, never the resend's
   // (dl-z5ja.73): an event_id kept as a message and resent as a cancel is refused, not obeyed.
   const put = async (run_id: RunId): Promise<RunInbox> => {
@@ -228,6 +230,10 @@ export function acceptMessage(
     return inbox;
   };
   return store.unit(async () => {
+    // A page the pod does not hold is refused before anything is written or asked (dl-z5ja.107).
+    if (context && (await pageLine(store, pod, message.created_by, context)) === null) {
+      throw new StoreError(ErrorType.enum.NotFound, "the page the message names is not in the pod");
+    }
     for (let tries = 0; tries < 5; tries++) {
       const runs = await store.listRuns(pod, conversation_id);
       let open = runs.findLast((r) => !isEnded(r.status));
@@ -468,6 +474,9 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       instructions.push(STEER);
     }
     for (const steer of steersOf(w.log)) instructions.push(steerLine(steer));
+    const page = pageOf(w.log);
+    const where = page ? await pageLine(deps.store, scope.pod, scope.created_by, page) : null;
+    if (where) instructions.push(where);
 
     const call_no = (last?.payload.call_no ?? 0) + 1;
     run = await w.claim();
@@ -822,7 +831,7 @@ async function takeInbox(store: Store, w: Writer): Promise<{ messages: number; s
     for (const row of rows) {
       if (row.kind === "message") {
         messages += 1;
-        const { attachments } = row.payload;
+        const { attachments, context } = row.payload;
         events.push({
           type: "message",
           run_id: w.run,
@@ -831,6 +840,7 @@ async function takeInbox(store: Store, w: Writer): Promise<{ messages: number; s
             from: "parent",
             text: row.payload.text,
             ...(attachments === undefined ? {} : { attachments }),
+            ...(context === undefined ? {} : { context }),
           },
         });
       } else if (row.kind === "approval") {
@@ -1056,6 +1066,39 @@ async function priorTurns(
     if (left) lesson = left;
   }
   return { input, said, lesson };
+}
+
+/**
+ * The page the turn's last parent message was sent from, when it names one: the parent who moved
+ * to the chat's own page since is no longer on it.
+ */
+function pageOf(log: readonly RunEvent[]): MessageContext | null {
+  const said = log.findLast((e) => e.type === "message" && e.payload.from === "parent");
+  return said?.type === "message" ? (said.payload.context ?? null) : null;
+}
+
+/**
+ * A message's page as a fact for the call's instructions, read from the run's pod only (Lead
+ * decision 36): a learner of the pod, or a lesson the pod has published. Null when the pod holds no
+ * such id: nothing of it is read, and `acceptMessage` refuses it. The learner's name is the
+ * parent's own words, so its markup is neutralised.
+ */
+async function pageLine(
+  store: Store,
+  pod: PodId,
+  account: AccountId,
+  context: MessageContext,
+): Promise<string | null> {
+  if ("learner_id" in context) {
+    const me = await store.getMe(pod, account);
+    const found = me.learners.find(({ learner }) => learner.id === context.learner_id);
+    if (!found) return null;
+    const name = neutralise(found.learner.first_name);
+    return `The parent is writing from the learner page of ${name} (learner ${context.learner_id}): questions about "the child" or "this learner" are about ${name}.`;
+  }
+  const version = await store.getLatestLessonVersion(pod, context.lesson_id);
+  if (!version) return null;
+  return `The parent is writing from the screen of lesson ${context.lesson_id} (version ${version.version}): questions about "this lesson" are about it.`;
 }
 
 /**

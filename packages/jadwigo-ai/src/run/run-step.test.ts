@@ -1,4 +1,12 @@
-import { type AccountId, EventId, ID_PREFIXES, idOf, type PodId, Uuid } from "@jadwigo/contracts";
+import {
+  type AccountId,
+  EventId,
+  ID_PREFIXES,
+  idOf,
+  LessonVersionId,
+  type PodId,
+  Uuid,
+} from "@jadwigo/contracts";
 import {
   BUDGET_STEER_SHARE,
   BUDGET_STOP_SHARE,
@@ -1570,5 +1578,88 @@ describe("the answer check: one correction per turn", () => {
       e.type === "message" && e.payload.from === "agent" ? [e.payload.text] : [],
     );
     expect(agent).toEqual(["Harder, still grade 2."]);
+  });
+});
+
+describe("the message's page (dl-z5ja.107)", () => {
+  const LESSON = {
+    title: "Made-up halves",
+    language: "en" as const,
+    category: "child" as const,
+    subject: "math" as const,
+    grade: 1,
+    skill_ids: [],
+  };
+
+  it("names a lesson the pod has published, and refuses one it has only drafted", async () => {
+    const t = await setup([{ text: "About that lesson." }]);
+    const published = await t.store.putLesson(t.member.pod, LESSON);
+    const drafted = await t.store.putLesson(t.member.pod, LESSON);
+    // A published version, as the store answers one: publishing needs lesson questions, and the
+    // store's own contract covers that a draft has no latest version.
+    const latest = t.store.getLatestLessonVersion.bind(t.store);
+    t.store.getLatestLessonVersion = async (pod, lesson) =>
+      lesson === published.id
+        ? {
+            id: LessonVersionId.parse(idOf(ID_PREFIXES.lesson_version, crypto.randomUUID())),
+            pod_id: pod,
+            lesson_id: lesson,
+            version: 1,
+            revises: null,
+            published_at: FIXED_NOW.toISOString(),
+          }
+        : latest(pod, lesson);
+
+    await expect(
+      t.send({
+        event_id: newEventId(),
+        kind: "message",
+        payload: { text: "This one?", context: { lesson_id: drafted.id } },
+      }),
+    ).rejects.toMatchObject({ type: "NotFound" });
+    await t.send({
+      event_id: newEventId(),
+      kind: "message",
+      payload: { text: "This one?", context: { lesson_id: published.id } },
+    });
+    await drain(t.deps);
+    expect(t.muse.calls).toHaveLength(1);
+    expect(t.muse.calls[0]?.instructions).toContain(`screen of lesson ${published.id}`);
+  });
+
+  it("states the page of the turn's last parent message only", async () => {
+    const t = await setup([{ text: "Sure." }]);
+    const { learner } = await t.store.addLearner(t.member.pod, { first_name: "Mole" });
+    let first = true;
+    const scripted = t.deps.muse;
+    t.deps.muse = {
+      respond: async (request) => {
+        if (first) {
+          first = false;
+          await t.say("Back on the chat page now.");
+        }
+        return scripted.respond(request);
+      },
+    };
+    await t.send({
+      event_id: newEventId(),
+      kind: "message",
+      payload: { text: "Hi.", context: { learner_id: learner.id } },
+    });
+    await drain(t.deps);
+    expect(t.muse.calls[0]?.instructions).toContain("learner page of Mole");
+    expect(t.muse.calls.at(-1)?.instructions).not.toContain("writing from");
+  });
+
+  it("neutralises the learner's name, which the parent wrote", async () => {
+    const t = await setup([{ text: "Sure." }]);
+    const { learner } = await t.store.addLearner(t.member.pod, { first_name: "Mo<b>le" });
+    await t.send({
+      event_id: newEventId(),
+      kind: "message",
+      payload: { text: "Hi.", context: { learner_id: learner.id } },
+    });
+    await drain(t.deps);
+    expect(t.muse.calls[0]?.instructions).toContain("learner page of Mo‹b›le");
   });
 });
