@@ -655,7 +655,10 @@ async function endPastMax(w: Writer, attempt: number, now: Date): Promise<void> 
       run_id: w.run,
       event_id: await w.id("error", "max"),
       payload: {
-        error: { type: RUN_ERROR_TYPE.runTimedOut, message: "the turn ran past its 30 minutes" },
+        error: {
+          type: RUN_ERROR_TYPE.runTimedOut,
+          message: `the turn ran past its ${minutes(RUN_MAX_MS)} minutes`,
+        },
         attempt,
         retryable: false,
       },
@@ -677,7 +680,7 @@ async function endPastIdle(w: Writer, attempt: number, now: Date): Promise<void>
       payload: {
         error: {
           type: RUN_ERROR_TYPE.runIdle,
-          message: "nothing happened in the turn for 10 minutes, so it closed",
+          message: `nothing happened in the turn for ${minutes(RUN_IDLE_MS)} minutes, so it closed`,
         },
         attempt,
         retryable: true,
@@ -685,6 +688,11 @@ async function endPastIdle(w: Writer, attempt: number, now: Date): Promise<void>
     },
   ]);
   await endTurn(w, "completed", now);
+}
+
+/** A deadline in whole minutes, for the words of its error. */
+function minutes(ms: number): number {
+  return Math.round(ms / 60_000);
 }
 
 type ModelResponse = Extract<RunEvent, { type: "model_response" }>;

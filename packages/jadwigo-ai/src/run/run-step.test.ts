@@ -924,7 +924,8 @@ describe("runStep and drain", () => {
 
 describe("the run's own error types", () => {
   it("are the contract's constants, which the page draws its limit lines from", () => {
-    expect(RUN_ERROR_TYPE).toMatchObject({
+    // toEqual on purpose: a new type fails here, so whoever adds one looks at the page's lines too.
+    expect(RUN_ERROR_TYPE).toEqual({
       stepTimedOut: "StepTimedOut",
       runIdle: "RunIdle",
       runTimedOut: "RunTimedOut",
