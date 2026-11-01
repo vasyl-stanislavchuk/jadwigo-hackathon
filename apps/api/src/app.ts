@@ -64,7 +64,7 @@ export interface AppDeps {
    * its unit rolls back, so nothing waits in an inbox with no step to take it.
    */
   readonly queue?: RunQueue | undefined;
-  /** The engine's clock for a run's deadlines. */
+  /** The engine's clock for a run's deadlines and the limits' windows. */
   readonly now?: () => Date;
 }
 
