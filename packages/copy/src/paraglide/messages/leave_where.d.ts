@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "{where} opens in a new tab" |
+* | "{where} opens in a new tab." |
 *
 * @param {Leave_WhereInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

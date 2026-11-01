@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "This item is in English" |
+* | "This item is in English." |
 *
 * @param {Written_In_EnInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

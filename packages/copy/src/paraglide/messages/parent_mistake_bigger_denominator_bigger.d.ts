@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "A bigger denominator taken for a bigger fraction" |
+* | "A greater denominator taken for a greater fraction" |
 *
 * @param {Parent_Mistake_Bigger_Denominator_BiggerInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

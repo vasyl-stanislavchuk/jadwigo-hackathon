@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Some of these we will practise again. See what the right answers look like." |
+* | "Some of these we will practice again. See what the right answers look like." |
 *
 * @param {Play_Summary_SomeInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const play_summary_some = /** @type {((inputs?: Play_Summary_SomeInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Play_Summary_SomeInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("Some of these we will practise again. See what the right answers look like.")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Some of these we will practice again. See what the right answers look like.")
 	return /** @type {LocalizedString} */ ("Niektóre pytania jeszcze poćwiczymy. Zobacz, jak wyglądają dobre odpowiedzi.")
 });

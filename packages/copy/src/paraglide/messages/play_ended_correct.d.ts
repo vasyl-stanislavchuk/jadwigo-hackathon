@@ -4,7 +4,7 @@
 * | category | output |
 * | --- | --- |
 * | "adult" | "Right" |
-* | * | "You got it" |
+* | * | "You got it!" |
 *
 * @param {Play_Ended_CorrectInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

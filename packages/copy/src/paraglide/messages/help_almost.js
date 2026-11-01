@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Almost there: you write the last line" |
+* | "Almost there. Now write the last line yourself." |
 *
 * @param {Help_AlmostInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const help_almost = /** @type {((inputs?: Help_AlmostInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Help_AlmostInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("Almost there: you write the last line")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Almost there. Now write the last line yourself.")
 	return /** @type {LocalizedString} */ ("Prawie: ostatnią linijkę piszesz ty")
 });

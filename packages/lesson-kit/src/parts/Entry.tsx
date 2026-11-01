@@ -14,7 +14,7 @@
 
 import { copy } from "@jadwigo/copy";
 import { Button, cn } from "@jadwigo/ui";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import type { Clock, Instant } from "../stage/clock.ts";
 import { useScreensLang } from "../stage/lessonLanguage.ts";
 import { press } from "../stage/press.ts";
@@ -132,6 +132,10 @@ export function Entry({
   // The field's name is the screens' words. A keypad field or fraction holds digits only, so it
   // takes the screens' lang; a text field holds a word in the lesson's, so it keeps that (dl-uukj.41).
   const screensLang = useScreensLang(language);
+  // A text field holds the lesson's word, so it keeps the lesson's lang; under a lesson language
+  // its name comes from a hidden span in the screens' lang instead (dl-uukj.43).
+  const nameId = useId();
+  const namedApart = input === "text" && "lang" in screensLang;
   const look = cn(
     FIELD,
     tone === "idle" ? "border-border" : TONE_CLASS[tone],
@@ -277,9 +281,14 @@ export function Entry({
       <div className="flex flex-col">
         {/* As wide as the field (a number is 180 / 160, stage.css). */}
         <div className={cn("relative", input === "number" ? "w-fit max-w-full" : "w-full")}>
+          {namedApart && (
+            <span id={nameId} hidden {...screensLang}>
+              {ariaLabel}
+            </span>
+          )}
           <input
             ref={field}
-            aria-label={ariaLabel}
+            {...(namedApart ? { "aria-labelledby": nameId } : { "aria-label": ariaLabel })}
             {...(input === "text" ? {} : screensLang)}
             data-tone={tone}
             data-field={ENTRY_FIELD}

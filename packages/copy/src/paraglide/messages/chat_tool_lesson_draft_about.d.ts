@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Drafting a lesson on: {topic}" |
+* | "Drafting a lesson about {topic}" |
 *
 * @param {Chat_Tool_Lesson_Draft_AboutInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
