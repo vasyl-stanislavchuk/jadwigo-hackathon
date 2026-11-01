@@ -49,6 +49,7 @@ tracker. A workstream owns a scope on it: its epics, and the label every open is
 | `apps/api` | the one Lambda: router, `authorize()`, routes | packages | platform |
 | `apps/web` | the app at app.jadwigo.pl: lesson player, parent screens | packages | learner-experience |
 | `apps/site` | the marketing site, jadwigo.pl and jadwigo.kids | packages | marketing |
+| `apps/runner` | the AI engine's step host: a 2nd Lambda (and the probe's Edge Function) that drains `agent_step` through `drain()` as `jadwigo_runner` (`dl-z5ja.20`) | packages | ai-workflows |
 | `apps/cli` | `jw`, Python and Click, later `jw mcp serve` | nothing of ours | ai-workflows |
 | `apps/docs` | the docs at docs.jadwigo.pl, Starlight: API, MCP and design system, generated from the code (`dl-5ssh.90`) | packages | platform |
 | `packages/contracts` | Zod schemas: ids, family schemas, records, the attempt wire, the `/api/v1` route table, errors; `RULES.md`; JSON Schema snapshots | Zod only | platform |
