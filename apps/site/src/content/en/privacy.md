@@ -9,7 +9,7 @@ draftNote: Draft. This text is waiting for a lawyer's review and may still chang
 reviewed: false
 ---
 
-Jadwigo is a learning app for children in the first grades of primary school. A parent sets up the
+Jadwigo is a learning app for children in the first grades of elementary school. A parent sets up the
 account. This page says what we receive when a parent signs in, and what we do with it.
 
 ## How a parent signs in
@@ -38,7 +38,7 @@ posts, photos or contacts, and we never post anything on their behalf.
 
 Supabase keeps the email address and the Google or Facebook account identifier, because a parent
 can't sign in without them. From sign-in, Jadwigo's own database keeps only the user identifier
-Supabase assigns. That is how we recognise the parent's account.
+Supabase assigns. That is how we recognize the parent's account.
 
 ## Deleting your data
 
