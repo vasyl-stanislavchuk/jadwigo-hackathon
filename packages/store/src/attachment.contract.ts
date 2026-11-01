@@ -164,6 +164,7 @@ function photo(account: NewAttachment["account_id"]): NewAttachment {
     bytes: 482_113,
     width: 1500,
     height: 2000,
+    name: null,
     expires_at: new Date(Date.now() + 86_400_000).toISOString(),
   };
 }

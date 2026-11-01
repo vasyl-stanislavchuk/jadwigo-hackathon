@@ -286,14 +286,28 @@
           "maximum": 9007199254740991
         },
         "width": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 9007199254740991
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "height": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 9007199254740991
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -313,7 +327,10 @@
     "AttachmentMediaType": {
       "type": "string",
       "enum": [
-        "image/jpeg"
+        "image/jpeg",
+        "image/heic",
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       ]
     },
     "MessageContext": {

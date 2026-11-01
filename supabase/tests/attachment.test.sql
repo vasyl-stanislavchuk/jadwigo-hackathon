@@ -44,8 +44,8 @@ select throws_ok(
   $$insert into attachment (id, pod_id, account_id, event_id, media_type, bytes, width, height, expires_at)
     values (gen_random_uuid(), '00000000-0000-4000-8000-00000000000a', '00000000-0000-4000-8000-00000000a0a1',
             gen_random_uuid(), 'image/png', 10, 10, 10, now() + interval '1 day')$$,
-  '22P02', null,
-  'only a JPEG is stored'
+  '23514', null,
+  'a PNG is never stored: the kinds are JPEG, HEIC, PDF and DOCX (wave 6, 20261101500000)'
 );
 select throws_ok(
   $$insert into attachment (id, pod_id, account_id, event_id, media_type, bytes, width, height)

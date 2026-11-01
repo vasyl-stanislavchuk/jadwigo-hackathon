@@ -9,6 +9,17 @@
       "type": "string",
       "format": "uri"
     },
+    "preview_url": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uri"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "expires_at": {
       "type": "string",
       "format": "date-time",
@@ -18,6 +29,7 @@
   "required": [
     "attachment",
     "url",
+    "preview_url",
     "expires_at"
   ],
   "additionalProperties": false,
@@ -41,7 +53,8 @@
           "$ref": "#/$defs/AttachmentState"
         },
         "media_type": {
-          "$ref": "#/$defs/AttachmentMediaType"
+          "type": "string",
+          "minLength": 1
         },
         "bytes": {
           "type": "integer",
@@ -49,14 +62,40 @@
           "maximum": 9007199254740991
         },
         "width": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 9007199254740991
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "height": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 9007199254740991
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "conversation_id": {
           "anyOf": [
@@ -119,6 +158,7 @@
         "bytes",
         "width",
         "height",
+        "name",
         "conversation_id",
         "storage_path",
         "created_at",
@@ -148,12 +188,6 @@
       "enum": [
         "pending",
         "attached"
-      ]
-    },
-    "AttachmentMediaType": {
-      "type": "string",
-      "enum": [
-        "image/jpeg"
       ]
     },
     "ConversationId": {

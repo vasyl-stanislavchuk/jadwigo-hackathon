@@ -97,7 +97,13 @@ photo no message has carried expires after a day (`409` `AttachmentExpired`). A 
 200 photos a day (`429` `AttachmentLimitDay`).
 
 `GET /api/v1/attachments/{id}` returns the stored copy, the same bytes the AI received, behind a
-short-lived link. Ask again after `expires_at`.
+short-lived link. Ask again after `expires_at`. Its `preview_url` is null for a photo, which is its
+own preview.
+
+The contract also names 3 kinds a client sends as they are, with a `name` and no `width` or
+`height`: `image/heic`, `application/pdf` and a DOCX, up to 10 MB. They are not taken yet: creating
+one is `409` `AttachmentMismatch`. Once they are, the server turns each into page images for the AI,
+and `preview_url` links the first page.
 
 ## 3. Read the answer
 

@@ -12,6 +12,7 @@ import {
   type Attachment,
   AttachmentCreate,
   AttachmentId,
+  AttachmentMediaType,
   type AttachmentRead,
   type AttachmentUpload,
   type ConversationId,
@@ -161,6 +162,10 @@ export async function createAttachment(
   const uploads = deps.uploads;
   if (uploads === undefined) throw noBucket();
   const declared = parsed.data;
+  // Wave 6 step 0 (dl-z5ja.11.11): the contract takes a HEIC, a PDF and a DOCX before the API
+  // does; until dl-z5ja.11.10 checks and copies them, only a JPEG gets a form.
+  if (declared.media_type !== JPEG)
+    throw new ApiError(ErrorType.enum.AttachmentMismatch, "only photos are taken yet");
   const id = attachmentIdFor(pod, declared.event_id);
   const now = deps.now().getTime();
   await deps.lockPod(pod);
@@ -179,16 +184,17 @@ export async function createAttachment(
       event_id: declared.event_id,
       media_type: declared.media_type,
       bytes: declared.bytes,
-      width: declared.width,
-      height: declared.height,
+      width: declared.width ?? null,
+      height: declared.height ?? null,
+      name: declared.name ?? null,
       expires_at: iso(now + PENDING_MS),
     });
   }
   if (
     attachment.media_type !== declared.media_type ||
     attachment.bytes !== declared.bytes ||
-    attachment.width !== declared.width ||
-    attachment.height !== declared.height
+    attachment.width !== (declared.width ?? null) ||
+    attachment.height !== (declared.height ?? null)
   )
     throw new ApiError(ErrorType.enum.EventIdMismatch, "this event id was sent with another body");
   if (attachment.state === "attached")
@@ -219,7 +225,8 @@ export async function getAttachment(
     throw new ApiError(ErrorType.enum.NotFound, "this photo is not on a message");
   if (deps.uploads === undefined) throw noBucket();
   const url = await deps.uploads.presignGet(attachment.storage_path, LINK_MS / 1000);
-  return { attachment, url, expires_at: iso(deps.now().getTime() + LINK_MS) };
+  // A JPEG is its own preview; a document's first page comes with dl-z5ja.11.10.
+  return { attachment, url, preview_url: null, expires_at: iso(deps.now().getTime() + LINK_MS) };
 }
 
 async function stored(store: Store, pod: PodId, id: AttachmentId): Promise<Attachment | undefined> {
@@ -371,7 +378,7 @@ async function checkAndCopy(
   return {
     attachment_id: id,
     storage_path: to,
-    media_type: row.media_type,
+    media_type: AttachmentMediaType.parse(row.media_type),
     bytes: row.bytes,
     width: row.width,
     height: row.height,
