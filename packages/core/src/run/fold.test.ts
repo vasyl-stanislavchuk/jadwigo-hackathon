@@ -105,6 +105,30 @@ describe("foldRun, properties", () => {
 });
 
 describe("mergeLive, properties", () => {
+  it("keeps one event per event_id, then the first per seq in input order (Lead, dl-z5ja.13)", () => {
+    const clashing = fc
+      .array(fc.tuple(fc.nat(), fc.integer({ min: 1, max: 5 }), fc.integer({ min: 1, max: 5 })), {
+        maxLength: 12,
+      })
+      .map((rows) =>
+        rows.map(([pick, seq, id]) =>
+          RunEvent.parse({ ...TEMPLATES[pick % TEMPLATES.length], seq, event_id: eventId(id) }),
+        ),
+      );
+    fc.assert(
+      fc.property(clashing, (events) => {
+        const ids = new Set<string>();
+        const byId = events.filter((e) => !ids.has(e.event_id) && Boolean(ids.add(e.event_id)));
+        const seqs = new Set<number>();
+        const want = byId
+          .filter((e) => !seqs.has(e.seq) && Boolean(seqs.add(e.seq)))
+          .sort((a, b) => a.seq - b.seq);
+        expect(mergeLive(events, [], 0)).toEqual(want);
+        expect(foldRun(events)).toEqual(foldRun(want));
+      }),
+    );
+  });
+
   it("fold(a ++ b) equals fold(mergeLive(a, b, 0))", () => {
     fc.assert(
       fc.property(halves, ({ buffer, fetched }) => {
@@ -127,6 +151,21 @@ describe("mergeLive, properties", () => {
 });
 
 describe("budgetGuard, properties", () => {
+  it("stops on a cap of 0, below 0 or NaN, as on an unknown spend (Lead, dl-z5ja.13)", () => {
+    expect(budgetGuard(0, 0)).toBe("stop");
+    expect(budgetGuard(0, -1)).toBe("stop");
+    expect(budgetGuard(0, Number.NaN)).toBe("stop");
+    fc.assert(
+      fc.property(
+        fc.double({ min: 0, max: 10, noNaN: true }),
+        fc.oneof(fc.double({ max: 0, noNaN: true }), fc.constant(Number.NaN)),
+        (spent, cap) => {
+          expect(budgetGuard(spent, cap)).toBe("stop");
+        },
+      ),
+    );
+  });
+
   it("never steps down as the spend grows", () => {
     fc.assert(
       fc.property(

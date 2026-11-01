@@ -70,21 +70,28 @@ export interface RunView {
 /** A run that has ended: no deadline is due on it, and the sweep leaves it alone. */
 const ENDED: ReadonlySet<RunStatus> = new Set(["completed", "failed", "cancelled"]);
 
-/**
- * One event per `seq` and per `event_id`, the first one seen winning, then in `seq` order. The
- * one dedupe both `foldRun` and `mergeLive` use, so the 2 can never disagree on a duplicate.
- */
-function normalize(events: readonly RunEvent[]): RunEvent[] {
-  const seqs = new Set<number>();
-  const ids = new Set<string>();
+/** The first event of each key, in input order. */
+function firstBy<K>(events: readonly RunEvent[], key: (e: RunEvent) => K): RunEvent[] {
+  const seen = new Set<K>();
   const kept: RunEvent[] = [];
   for (const e of events) {
-    if (seqs.has(e.seq) || ids.has(e.event_id)) continue;
-    seqs.add(e.seq);
-    ids.add(e.event_id);
+    const k = key(e);
+    if (seen.has(k)) continue;
+    seen.add(k);
     kept.push(e);
   }
-  return kept.sort((a, b) => a.seq - b.seq);
+  return kept;
+}
+
+/**
+ * Deduped by `event_id` first, then the first event per `seq` in input order, then in `seq`
+ * order. The store never writes 2 event_ids on one seq; this is the order the lead settled if one
+ * shows up (dl-z5ja.13 notes). The one dedupe `foldRun` and `mergeLive` share, so the 2 can never
+ * disagree on a duplicate.
+ */
+function normalize(events: readonly RunEvent[]): RunEvent[] {
+  const byId = firstBy(events, (e) => e.event_id);
+  return firstBy(byId, (e) => e.seq).sort((a, b) => a.seq - b.seq);
 }
 
 type ToolItem = Extract<ChatItem, { kind: "tool" }>;
