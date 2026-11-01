@@ -57,8 +57,6 @@ export const landingSchema = z.object({
     google: text,
     facebook: text,
   }),
-  nav: z.object({ signIn: text, home: text, label: text }),
-  footer: z.object({ privacy: text, deletion: text, made: text }),
 });
 
 /** Polish plural of a count: 1 pytanie, 2–4 (not 12–14) pytania, else pytań. */

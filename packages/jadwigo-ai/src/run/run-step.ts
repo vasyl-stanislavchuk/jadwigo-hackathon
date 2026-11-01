@@ -323,7 +323,9 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
   const start: RunChange = {};
   if (run.status !== "in_progress") start.status = "in_progress";
   const idle = run.idle_deadline_at === null ? null : Date.parse(run.idle_deadline_at);
-  if (idle === null || idle - now.getTime() < RUN_IDLE_MS - RUN_IDLE_PUSH_MS) {
+  const ahead = idle === null ? null : idle - now.getTime();
+  // Pushed at most every RUN_IDLE_PUSH_MS; a verb hold left by a step that died is taken back.
+  if (ahead === null || ahead < RUN_IDLE_MS - RUN_IDLE_PUSH_MS || ahead > RUN_IDLE_MS) {
     start.idle_deadline_at = at(now.getTime() + RUN_IDLE_MS);
   }
   if (start.status) {
@@ -451,12 +453,25 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     pending = [...response.tool_calls];
   }
 
+  if (pending.length > 0) await holdIdle(w, run);
   for (const call of pending) {
     if (await cancelRequested(w)) return endCancelled(deps, w);
     await runTool(deps, w, scope, call, lessonOf(w.log) ?? prior.lesson);
   }
+  await w.update({ idle_deadline_at: at(deps.now().getTime() + RUN_IDLE_MS) });
   await deps.queue.send({ run_id: run.id, attempt: w.attempt });
   return "continue";
+}
+
+/**
+ * Stops the idle clock while the step's verbs run (dl-z5ja.43): `idle_deadline_at` moves to
+ * `max_deadline_at`, so the sweep (`listRunsDue`, `app.runs_due` on Postgres) closes the run only on
+ * its 30 minutes, however long a verb takes. The step sets it back to now + RUN_IDLE_MS once the
+ * verbs are done, and a step that died holding it has it taken back by the next step's start.
+ */
+async function holdIdle(w: Writer, run: Run): Promise<void> {
+  if (run.idle_deadline_at === run.max_deadline_at) return;
+  await w.update({ idle_deadline_at: run.max_deadline_at });
 }
 
 async function runTool(

@@ -4,12 +4,16 @@
 // wordmark-with-a-crown-tipped-o) and a footer. With `prose`, the words read top to bottom in a
 // column under the page's heading, as the privacy pages do (dl-w0b4.64). Without it, the page brings
 // its own sections and its own h1 (the landing page, dl-5ssh.4.1). The header links every page in
-// landing.yaml's `links`, each its own page (owner, 2026-10-31).
+// landing.yaml's `links`, each its own page (owner, 2026-10-31). The frame's own words (the logo's
+// and the nav's labels, the sign-in, the footer, the other language's name) are the site_* Paraglide
+// messages in the page's language (dl-w0b4.82).
 import "@fontsource/andika/400.css";
 import "@fontsource/andika/700.css";
 import "@jadwigo/ui/foundation.css";
 import { getCollection, getEntry } from "astro:content";
+import { m } from "@jadwigo/copy/messages";
 import wordmark from "@jadwigo/ui/brand/wordmark.svg?raw";
+import { footerPaths } from "../lib/i18n.ts";
 import { assertReviewed, headTags, jsonLd, type Page, servedPathPages } from "../lib/seo.ts";
 
 interface Props {
@@ -20,19 +24,24 @@ interface Props {
 
 const { page, path, prose = false } = Astro.props;
 const lang = page.lang ?? "pl";
-const otherLanguage = lang === "pl" ? "English" : "Polski";
+const other = lang === "pl" ? "en" : "pl";
+const locale = { locale: lang } as const;
 const pages = await getCollection("pages");
 assertReviewed(pages, import.meta.env.PROD);
 const tags = headTags(page, path);
-const words = (await getEntry("landing", "pl"))?.data;
-if (!words) throw new Error("src/content/pl/landing.yaml has no `pl` entry");
-// The footer links only the Polish pages this build serves: a draft page is never linked.
+// The header links the pages of the page's own language: Polish has its landing words, and a
+// language without them yet (English until dl-w0b4.81) links none rather than Polish pages.
+const landing = (await getEntry("landing", lang))?.data;
+if (lang === "pl" && !landing) throw new Error("src/content/pl/landing.yaml has no `pl` entry");
+const links = landing?.links ?? [];
+// The footer links only the pages in this language that the build serves: a draft is never linked.
 const served = new Set(
   servedPathPages(pages, import.meta.env.PROD, () => {}).map((p) => p.data.path),
 );
+const footer = footerPaths(lang);
 const footerLinks = [
-  { href: "/prywatnosc", label: words.footer.privacy },
-  { href: "/prywatnosc/usuwanie-danych", label: words.footer.deletion },
+  { href: footer.privacy, label: m.site_footer_privacy({}, locale) },
+  { href: footer.deletion, label: m.site_footer_deletion({}, locale) },
 ].filter((l) => served.has(l.href));
 ---
 
@@ -154,22 +163,22 @@ const footerLinks = [
   <body class={prose ? "prose" : undefined}>
     <header class="site-header">
       <div class="wrap">
-        <a class="logo" href="/" aria-label={words.nav.home} set:html={wordmark} />
+        <a class="logo" href="/" aria-label={m.site_nav_home({}, locale)} set:html={wordmark} />
         {
-          <nav class="site-nav" aria-label={words.nav.label}>
-            {words.links.map((n) => (
+          <nav class="site-nav" aria-label={m.site_nav_label({}, locale)}>
+            {links.map((n) => (
               <a href={`${n.href}/`} aria-current={path === n.href ? "page" : undefined}>
                 {n.label}
               </a>
             ))}
           </nav>
         }
-        <a class="btn quiet" href="/zaloguj/">{words.nav.signIn}</a>
+        <a class="btn quiet" href="/zaloguj/">{m.site_nav_sign_in({}, locale)}</a>
       </div>
     </header>
     <main>
       {prose && page.translation && (
-        <p class="lang"><a href={`${page.translation}/`} hreflang={lang === "pl" ? "en" : "pl"}>{otherLanguage}</a></p>
+        <p class="lang"><a href={`${page.translation}/`} hreflang={other} lang={other}>{m.site_language_name({}, { locale: other })}</a></p>
       )}
       {prose && <h1>{page.heading}</h1>}
       {page.draftNote && <p class="draft" role="note">{page.draftNote}</p>}
@@ -179,7 +188,7 @@ const footerLinks = [
       <div class="wrap">
         <span>© Jadwigo</span>
         {footerLinks.map((l) => <a href={`${l.href}/`}>{l.label}</a>)}
-        <span>{words.footer.made}</span>
+        <span>{m.site_footer_made({}, locale)}</span>
       </div>
     </footer>
     <script is:inline>
