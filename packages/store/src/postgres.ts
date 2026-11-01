@@ -2680,6 +2680,8 @@ class PostgresStore implements Store {
             },
             "the run",
           );
+          // No conflict target: run has 2 unique keys, id and (pod_id, id), and 2 racing inserts may
+          // trip either, so any conflict falls through to the re-read (dl-z5ja.98).
           return tx
             .insertInto("run")
             .values({
@@ -2696,7 +2698,7 @@ class PostgresStore implements Store {
               // the order they were written in, as a conversation lists its turns.
               created_at: sql<Date>`clock_timestamp()`,
             })
-            .onConflict((oc) => oc.column("id").doNothing())
+            .onConflict((oc) => oc.doNothing())
             .returningAll()
             .executeTakeFirst();
         },
