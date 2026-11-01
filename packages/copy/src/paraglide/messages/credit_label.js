@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "from {source}, source and licence" |
+* | "From {source}. See the source and license." |
 *
 * @param {Credit_LabelInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -18,6 +18,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 */
 export const credit_label = /** @type {((inputs: Credit_LabelInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Credit_LabelInputs, { locale?: "pl" | "en" }, {}>} */ ((i, options = {}) => {
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ (`from ${i?.source}, source and licence`)
+	if (locale === "en") return /** @type {LocalizedString} */ (`From ${i?.source}. See the source and license.`)
 	return /** @type {LocalizedString} */ (`z ${i?.source}, źródło i licencja`)
 });

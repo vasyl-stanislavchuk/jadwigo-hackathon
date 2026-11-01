@@ -44,6 +44,10 @@ sent while a turn is open joins that turn. Otherwise it starts a new run.
 - A parent may send 10 messages a minute, and a family's runs may spend 10 USD a day in all. Past
   either limit the reply is `429` `MessageLimit`, and nothing is stored.
 
+A correction while the turn runs is a steer: the same route with `"kind": "steer"`. An edit in
+the lesson pane also sends `"source": "lesson_edit"` and the `question_ids` it changed. A steer
+joins the open turn and never starts one.
+
 ## 3. Read the answer
 
 [Reference](/api/operations/listrunevents/).

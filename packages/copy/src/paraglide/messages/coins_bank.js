@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Coins and notes" |
+* | "Coins and bills" |
 *
 * @param {Coins_BankInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const coins_bank = /** @type {((inputs?: Coins_BankInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Coins_BankInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("Coins and notes")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Coins and bills")
 	return /** @type {LocalizedString} */ ("Monety i banknoty")
 });

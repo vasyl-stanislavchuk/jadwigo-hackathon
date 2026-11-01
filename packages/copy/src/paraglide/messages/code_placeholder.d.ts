@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Type the id bd printed in place of the part in angle brackets" |
+* | "In place of the part in angle brackets, type the ID that bd printed." |
 *
 * @param {Code_PlaceholderInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

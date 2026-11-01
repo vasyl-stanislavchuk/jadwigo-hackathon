@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Tap {n}, tap again to lift it" |
+* | "Your mark {n}. Tap it again to remove it." |
 *
 * @param {Hotspot_MarkerInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

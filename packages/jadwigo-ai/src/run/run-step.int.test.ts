@@ -50,3 +50,36 @@ it("2 first messages racing on a new conversation open 1 run with 2 inbox rows",
     (await queue.read(STEP_VISIBILITY_S, 10)).every((s) => s.message.run_id === a.run.id),
   ).toBe(true);
 });
+
+it("20 races of 3 first messages each open 1 run apiece, never a key conflict", async () => {
+  // dl-z5ja.98: run has 2 unique keys, id and (pod_id, id), and a racing insert could trip the one
+  // createRun's conflict target did not name. 3 racers per conversation make it show within 20.
+  const now = () => new Date();
+  const deps: EngineDeps = {
+    store,
+    muse: new ScriptedMuse([]),
+    verbs: createVerbs({ bank: fixtureBank() }),
+    queue: new InMemoryRunQueue(now),
+    now,
+  };
+  for (let race = 0; race < 20; race++) {
+    const member = await store.createAccount(Uuid.parse(crypto.randomUUID()), "pl");
+    const conversation = await store.createConversation(member.pod, {
+      id: ConversationId.parse(idOf(ID_PREFIXES.conversation, crypto.randomUUID())),
+      created_by: member.account,
+      title: null,
+    });
+    const say = (text: string) =>
+      acceptMessage(deps, {
+        pod: member.pod,
+        created_by: member.account,
+        conversation_id: conversation.id,
+        entry: { event_id: EventId.parse(crypto.randomUUID()), kind: "message", payload: { text } },
+      });
+    const accepted = await Promise.all([say("Halves."), say("Quarters."), say("Thirds.")]);
+    const runs = await store.listRuns(member.pod, conversation.id);
+    expect(runs).toHaveLength(1);
+    expect(new Set(accepted.map((a) => a.run.id))).toEqual(new Set([runs[0]?.id]));
+    expect(await store.takeRunInbox(member.pod, accepted[0].run.id)).toHaveLength(3);
+  }
+});

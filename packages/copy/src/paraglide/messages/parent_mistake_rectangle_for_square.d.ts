@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "A rectangle where a square was asked" |
+* | "A rectangle where a square was asked for" |
 *
 * @param {Parent_Mistake_Rectangle_For_SquareInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

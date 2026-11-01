@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Times table, row {row}" |
+* | "Times table: the {row}s" |
 *
 * @param {Table_RowInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

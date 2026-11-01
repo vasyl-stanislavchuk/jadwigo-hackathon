@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "The chat page runs on the dev server only: start it with make dev." |
+* | "The chat page is not available here yet." |
 *
 * @param {Chat_Dev_OnlyInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "The report is counted but not written up yet." |
+* | "The report's numbers are in, but it is not written up yet." |
 *
 * @param {Parent_Report_Not_WrittenInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

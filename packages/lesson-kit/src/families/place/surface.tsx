@@ -12,6 +12,7 @@ import { StepShell } from "../../parts/StepShell.tsx";
 import { orMissing, useMissing } from "../../parts/status.ts";
 import { praised, type Tone, useChanged, wholeTone } from "../../parts/tone.ts";
 import type { Instant } from "../../stage/clock.ts";
+import { useScreensLang } from "../../stage/lessonLanguage.ts";
 import { type PressModality, press } from "../../stage/press.ts";
 import { type Missing, missingPlace } from "../complete.ts";
 import type { Family } from "../names.ts";
@@ -146,7 +147,11 @@ export function StillLabel({
   language: PlayProps<F>["language"];
   yours: boolean;
 }): JSX.Element {
+  // The screens' words, under the lesson's lang (dl-uukj.43).
+  const screensLang = useScreensLang(language);
   return (
-    <span className="text-jw-small">{copy(language, yours ? "answer_yours" : "answer_right")}</span>
+    <span className="text-jw-small" {...screensLang}>
+      {copy(language, yours ? "answer_yours" : "answer_right")}
+    </span>
   );
 }

@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "One picture stands for {n} {unit}" |
+* | "1 picture stands for {n} {unit}." |
 *
 * @param {Picture_Stands_ForInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
