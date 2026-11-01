@@ -18,6 +18,7 @@ import {
   type RunAccepted,
   type RunEvents,
   RunId,
+  type RunRating,
 } from "@jadwigo/contracts";
 import type { RunQueue } from "@jadwigo/jadwigo-ai";
 import type { Store } from "@jadwigo/store";
@@ -396,6 +397,54 @@ export function conversationSuite(
       expect(stored.cancel_requested_at).toBeNull();
       expect(await s.store.listRuns(a.pod, conversation.id)).toHaveLength(1);
       expect(await q.stepsFor(run.id)).toBe(1);
+    });
+
+    // dl-z5ja.110, wave 4 lead decision 37: a rating lands in run_rating, one per run and parent.
+    it("rates a turn Good or Bad with a note, and a re-rate replaces it", async () => {
+      const a = await parent();
+      const conversation = await a.conversation();
+      const { run } = (await a.say(conversation.id, "A lesson on adding to 10, please")).body;
+      const path = pathOf("rateRun", { id: run.id });
+
+      const bad = await a.call<RunRating>("POST", path, {
+        verdict: "bad",
+        note: "  It asked about subtraction.  ",
+      });
+      expect(bad.status).toBe(201);
+      expect(bad.body).toMatchObject({
+        pod_id: a.pod,
+        run_id: run.id,
+        verdict: "bad",
+        note: "It asked about subtraction.",
+      });
+      const good = await a.call<RunRating>("POST", path, { verdict: "good" });
+      expect(good.status).toBe(201);
+      expect(good.body).toEqual({ ...bad.body, verdict: "good", note: null });
+      expect(await s.store.listRunRatings(a.pod, run.id)).toEqual([good.body]);
+
+      for (const body of [
+        {},
+        { verdict: "meh" },
+        { verdict: "good", note: "Nice." },
+        { verdict: "bad", note: " " },
+        { verdict: "bad", run_id: run.id },
+      ])
+        expect((await a.call("POST", path, body)).status).toBe(400);
+      expect(await s.store.listRunRatings(a.pod, run.id)).toEqual([good.body]);
+    });
+
+    it("answers 404 NotFound to rating another pod's run, writing nothing", async () => {
+      const a = await parent();
+      const b = await parent();
+      const conversation = await a.conversation();
+      const { run } = (await a.say(conversation.id, "Hi")).body;
+      const reply = await b.call<ErrorEnvelope>("POST", pathOf("rateRun", { id: run.id }), {
+        verdict: "bad",
+        note: "From another family",
+      });
+      expect(reply.status).toBe(404);
+      expect(reply.body.error.type).toBe("NotFound");
+      expect(await s.store.listRunRatings(a.pod, run.id)).toEqual([]);
     });
 
     // dl-z5ja.112: consent is the pod's, kept on the server, so no client can skip it.

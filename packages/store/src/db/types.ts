@@ -68,6 +68,7 @@ type RunEventType =
   | "error";
 type RunInboxKind = "message" | "steer" | "approval" | "cancel";
 type RunInboxStatus = "pending" | "delivered";
+type RunRatingVerdict = "good" | "bad";
 type RunStatus = "queued" | "in_progress" | "awaiting_input" | "completed" | "failed" | "cancelled";
 type RunWorkflow = "jadwigo-lesson-compose";
 type SkillKind = "accuracy" | "speed";
@@ -174,6 +175,7 @@ interface ConversationTable {
   created_by: string;
   title: string | null;
   created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+  archived_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
 }
 
 interface CurriculumTable {
@@ -394,6 +396,16 @@ interface RunInboxTable {
   created_at: ColumnType<Date, Date | string | undefined, Date | string>;
 }
 
+interface RunRatingTable {
+  id: Generated<string>;
+  pod_id: string;
+  run_id: string;
+  account_id: string;
+  verdict: RunRatingVerdict;
+  note: string | null;
+  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+}
+
 interface SkillTable {
   pod_id: string;
   code: string;
@@ -444,6 +456,7 @@ export interface DB {
   run: RunTable;
   run_event: RunEventTable;
   run_inbox: RunInboxTable;
+  run_rating: RunRatingTable;
   skill: SkillTable;
   topic: TopicTable;
 }
@@ -622,6 +635,7 @@ export const COLUMNS = {
     created_by: { type: "uuid", nullable: false, generated: false, labels: null },
     title: { type: "text", nullable: true, generated: false, labels: null },
     created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+    archived_at: { type: "timestamptz", nullable: true, generated: false, labels: null },
   },
   curriculum: {
     id: { type: "uuid", nullable: false, generated: true, labels: null },
@@ -940,6 +954,20 @@ export const COLUMNS = {
       generated: true,
       labels: ["pending", "delivered"],
     },
+    created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+  },
+  run_rating: {
+    id: { type: "uuid", nullable: false, generated: true, labels: null },
+    pod_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    run_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    account_id: { type: "uuid", nullable: false, generated: false, labels: null },
+    verdict: {
+      type: "run_rating_verdict",
+      nullable: false,
+      generated: false,
+      labels: ["good", "bad"],
+    },
+    note: { type: "text", nullable: true, generated: false, labels: null },
     created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
   },
   skill: {

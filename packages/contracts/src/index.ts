@@ -5,4 +5,5 @@ export * from "./records.ts";
 export * from "./routes.ts";
 export * from "./run.ts";
 export * from "./tables.ts";
+export * from "./tool-views.ts";
 export * from "./wire.ts";

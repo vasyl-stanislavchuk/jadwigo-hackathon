@@ -1,5 +1,5 @@
 import { isDeepStrictEqual } from "node:util";
-import { ID_PREFIXES, uuidOf } from "@jadwigo/contracts";
+import { ID_PREFIXES, toolView, uuidOf } from "@jadwigo/contracts";
 import type { ToolView } from "@jadwigo/contracts/run";
 import { type Finding, parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import type { BankLanguage, BankPort, BankQuery } from "./bank.ts";
@@ -116,13 +116,14 @@ function revised(checked: Review, effect: VerbEffect): VerbEffect {
 /**
  * The view of a verb that writes a revision (`dl-z5ja.69`): the steps it changed. The kind is the
  * verb's name, the only kind `ToolView` parses; the page reads the revision's number from the
- * `lesson_revision` event the runner writes.
+ * `lesson_revision` event the runner writes. Every view goes through `toolView`, which parses its
+ * data as the contracts' schema for the verb (`dl-z5ja.71`) before the runner writes it.
  */
 function revisionView(
   kind: "lesson_draft" | "lesson_edit",
   changed_step_ids: readonly string[],
 ): ToolView {
-  return { kind, data: { changed_step_ids: [...changed_step_ids] } };
+  return toolView(kind, { changed_step_ids: [...changed_step_ids] });
 }
 /** What the model and the parent read of a step: its words and its key, not the whole JSON. */
 function card(step: Step) {
@@ -244,7 +245,7 @@ export function lessonShow(context: VerbContext, raw: Json): Promise<VerbEffect>
       steps: shown.map((step) => ({ step, findings: findingsFor(checks.findings, step.id) })),
       lesson_ok: checks.publishable,
     },
-    view: { kind: "lesson_show", data: { lesson: file } },
+    view: toolView("lesson_show", { lesson: file }),
   });
 }
 
@@ -307,10 +308,7 @@ export function lessonCheck(context: VerbContext, raw: Json): Promise<VerbEffect
     card: result.ok ? { title: file["title"] ?? null, steps: steps(file).map(card) } : null,
   };
   // The chat pane draws each finding on its question from the view (dl-z5ja.69's lesson_check shape).
-  const view = {
-    kind: "lesson_check" as const,
-    data: { publishable: result.ok, findings: result.findings },
-  };
+  const view = toolView("lesson_check", { publishable: result.ok, findings: result.findings });
   return Promise.resolve(
     changed ? revised(checks, { output, lesson_file: file, view }) : { output, view },
   );
@@ -446,5 +444,8 @@ export async function questionSearch(bank: BankPort, raw: Json): Promise<VerbEff
     limit: input.optionalInt("limit", 1, 50) ?? 20,
   };
   const { sets } = await bank.search(query);
-  return { output: { sets }, view: { kind: "question_search", data: { sets } } };
+  const view = toolView("question_search", {
+    sets: sets.map((set) => ({ ...set, grades: [...set.grades], skills: [...set.skills] })),
+  });
+  return { output: { sets }, view };
 }
