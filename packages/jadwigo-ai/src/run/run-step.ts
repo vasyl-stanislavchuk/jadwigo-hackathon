@@ -237,7 +237,7 @@ export function acceptMessage(
       created_by: message.created_by,
       conversation_id,
       workflow: WORKFLOW,
-      resumes_run_id: null,
+      resumes: null,
       cap_usd: message.cap_usd ?? DEFAULT_CAP_USD,
       idle_deadline_at: at(now + RUN_IDLE_MS),
       max_deadline_at: at(now + RUN_MAX_MS),
