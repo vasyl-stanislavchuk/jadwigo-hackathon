@@ -82,7 +82,7 @@ const INSTRUCTIONS = [
 const PROMPT_CACHE_KEY = `${WORKFLOW}:1`;
 /**
  * Every call goes to the tier that trains on nothing it is sent: a run's prompt carries the
- * parent's words and the learner's names (draft decision dl-2uq1). Each `model_response` records it.
+ * parent's words and the learner's names (decision dl-2uq1, accepted 2026-11-01). Each `model_response` records it.
  */
 const TIER: ModelTier = "private";
 const STEER =
@@ -523,7 +523,14 @@ async function runTool(
       type: "tool_result",
       run_id: scope.run.id,
       event_id: await w.id("tool", call.call_id, "result"),
-      payload: { call_id: call.call_id, verb: call.verb, output: effect?.output ?? null, error },
+      payload: {
+        call_id: call.call_id,
+        verb: call.verb,
+        output: effect?.output ?? null,
+        error,
+        // The verb's result typed for its widget, which the fold draws (dl-z5ja.70).
+        ...(effect?.view === undefined ? {} : { view: effect.view }),
+      },
     },
   ];
   if (effect?.lesson_file) {
