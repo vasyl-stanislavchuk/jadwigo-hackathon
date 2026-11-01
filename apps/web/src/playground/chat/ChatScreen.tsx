@@ -6,7 +6,7 @@
  * id is in the tab's session storage) and draws it again from the log.
  */
 
-import { ConversationId } from "@jadwigo/contracts/run";
+import { ConversationId, type LessonPatch } from "@jadwigo/contracts/run";
 import { copy, type Language } from "@jadwigo/copy";
 import { cn } from "@jadwigo/ui";
 import { type ReactElement, useEffect, useMemo, useState } from "react";
@@ -17,7 +17,7 @@ import { type ConversationState, lessonOf, type Turn, turnsOf } from "./conversa
 import { newConversationId } from "./ids.ts";
 import { LessonPane } from "./LessonPane.tsx";
 import { apiTransport } from "./realtime.ts";
-import { changedOf, undoOf } from "./revisions.ts";
+import { changedOf, revertOf, undoOf } from "./revisions.ts";
 import { undoSteer } from "./steerText.ts";
 import { type EngineTransport, hotTransport, useConversation } from "./useConversation.ts";
 
@@ -72,17 +72,27 @@ function ChatView({
   state: ConversationState;
   onSend(text: string): void;
   onStop(): void;
-  onEdit?: (text: string, question_ids: string[]) => void;
+  onEdit?: (text: string, question_ids: string[], patch?: LessonPatch) => void;
   onNew?: () => void;
 }): ReactElement {
   const turns = turnsOf(state);
   const changed = changedOf(turns);
   const undo = undoOf(turns);
-  /** "Cofnij": a lesson_edit steer asking the AI to take the change back (dl-z5ja.30, .42). */
+  const revert = revertOf(turns);
+  /**
+   * "Cofnij": a lesson_edit steer back to the revision before, carrying the patch that restores it,
+   * which the runner applies with no model call (dl-z5ja.111). Where no patch can say it, the steer
+   * asks the AI to take the change back in words (dl-z5ja.30, .42).
+   */
   const onUndo =
     undo === null || onEdit === undefined
       ? undefined
-      : () => onEdit(undoSteer(undo.language, undo.question_ids, undo.revision), undo.question_ids);
+      : () =>
+          onEdit(
+            undoSteer(undo.language, undo.question_ids, undo.revision),
+            undo.question_ids,
+            revert ?? undefined,
+          );
   return (
     <ChatLayout
       language={language}

@@ -5,8 +5,10 @@
  * highlights nothing rather than guessing.
  */
 
+import type { LessonPatch } from "@jadwigo/contracts/run";
 import type { Turn } from "./conversation.ts";
 import { lessonOf } from "./conversation.ts";
+import { revertPatch } from "./patches.ts";
 import { editView } from "./widgets/parse.ts";
 
 type Fields = Record<string, unknown>;
@@ -92,6 +94,22 @@ export function undoOf(turns: readonly Turn[]): Undo | null {
       question_ids: changed,
       language: view.lesson.lesson_file["language"] === "en" ? "en" : "pl",
     };
+  }
+  return null;
+}
+
+/**
+ * The merge patch "Cofnij" carries (dl-z5ja.111): from the lesson the pane draws back to the
+ * revision `undoOf` names, which the runner applies with no model call. Null when there is nothing
+ * to undo, or no merge patch can say it, and the undo steer asks the AI in words instead.
+ */
+export function revertOf(turns: readonly Turn[]): LessonPatch | null {
+  if (undoOf(turns) === null) return null;
+  for (let i = turns.length - 1; i >= 0; i -= 1) {
+    const view = turns[i]?.view;
+    if (!view?.lesson) continue;
+    const before = view.previous_lesson ?? lessonOf(turns.slice(0, i));
+    return before === null ? null : revertPatch(view.lesson.lesson_file, before.lesson_file);
   }
   return null;
 }

@@ -5,6 +5,7 @@
  * A step the kit cannot draw is a line saying so; the rest of the lesson still shows.
  */
 
+import type { LessonPatch } from "@jadwigo/contracts/run";
 import { type Category, copy, type Language } from "@jadwigo/copy";
 import type { RunView } from "@jadwigo/core";
 import {
@@ -18,7 +19,8 @@ import {
 import { type FormEvent, type ReactElement, useState } from "react";
 import { lessonFileToSpecs } from "../lesson/adapter.ts";
 import { readDraft } from "../lesson/draft.ts";
-import { editSteer } from "./steerText.ts";
+import { wordsOf, wordsPatch } from "./patches.ts";
+import { editSteer, wordsSteer } from "./steerText.ts";
 
 const clock: Clock = { now: (): Instant => ({ perf: 0, wall: "2026-11-01T00:00:00.000Z" }) };
 
@@ -36,8 +38,11 @@ export function LessonPane({
   changed?: ReadonlySet<string>;
   /** Takes back the last AI revision; "Cofnij" shows only when it is given. */
   onUndo?: (() => void) | undefined;
-  /** Sends a parent's edit of one step back to the AI, in the lesson's own language. */
-  onEdit?: ((text: string, question_ids: string[]) => void) | undefined;
+  /**
+   * Sends a parent's edit of one step, in the lesson's own language: their why for the AI, and
+   * their own words for the step as a `patch` the runner applies with no model call (dl-z5ja.111).
+   */
+  onEdit?: ((text: string, question_ids: string[], patch?: LessonPatch) => void) | undefined;
 }): ReactElement {
   const say = (key: Parameters<typeof copy>[1], vars: Record<string, string | number> = {}) =>
     copy(language, key, vars, "adult");
@@ -66,7 +71,7 @@ function Revision({
   say: (key: Parameters<typeof copy>[1], vars?: Record<string, string | number>) => string;
   changed: ReadonlySet<string>;
   onUndo: (() => void) | undefined;
-  onEdit: ((text: string, question_ids: string[]) => void) | undefined;
+  onEdit: ((text: string, question_ids: string[], patch?: LessonPatch) => void) | undefined;
 }): ReactElement {
   const read = readDraft(lesson.lesson_file);
   if ("error" in read)
@@ -127,9 +132,21 @@ function Revision({
                 <StepEdit
                   step={step.step_id}
                   say={say}
-                  steer={(words) =>
-                    onEdit(editSteer(lessonLanguage, step.step_id, words), [step.step_id])
-                  }
+                  words={wordsOf(lesson.lesson_file, step.step_id, lessonLanguage)}
+                  steer={(why, words) => {
+                    const id = step.step_id;
+                    const patch = wordsPatch(lesson.lesson_file, id, lessonLanguage, words);
+                    if (patch === null) {
+                      onEdit(editSteer(lessonLanguage, id, why), [id]);
+                      return false;
+                    }
+                    const text =
+                      why === ""
+                        ? wordsSteer(lessonLanguage, id)
+                        : editSteer(lessonLanguage, id, why);
+                    onEdit(text, [id], patch);
+                    return true;
+                  }}
                 />
               )}
             </li>
@@ -160,21 +177,26 @@ function Changed({ say }: { say: (key: Parameters<typeof copy>[1]) => string }):
 }
 
 /**
- * A parent's own edit of one step (dl-z5ja.30): what to change and why, in their words. It goes to
- * the AI as a steer naming the step, whose next lesson_edit applies it with those words as its why.
+ * A parent's own edit of one step (dl-z5ja.30, .111): the step's words, which the parent may change
+ * themselves and which land as a patch with no model call, and what to change and why, in their
+ * words, which go to the AI as a steer naming the step. `steer` answers whether a patch went.
  */
 function StepEdit({
   step,
   say,
+  words: current,
   steer,
 }: {
   step: string;
   say: (key: Parameters<typeof copy>[1]) => string;
-  steer(words: string): void;
+  /** What the step says to the child now, in the lesson's language. */
+  words: string;
+  steer(why: string, words: string): boolean;
 }): ReactElement {
   const [open, setOpen] = useState(false);
-  const [words, setWords] = useState("");
-  const [sent, setSent] = useState(false);
+  const [why, setWhy] = useState("");
+  const [words, setWords] = useState(current);
+  const [sent, setSent] = useState<"ai" | "lesson" | null>(null);
   if (!open)
     return (
       <div className="mt-2 flex items-center gap-2 text-sm">
@@ -183,33 +205,46 @@ function StepEdit({
           data-edit-step={step}
           onClick={() => {
             setOpen(true);
-            setSent(false);
+            setWords(current);
+            setSent(null);
           }}
           className="rounded-md border px-2 py-0.5"
         >
           {say("chat_edit_step")}
         </button>
-        {sent && <span data-edit-sent>{say("chat_edit_sent")}</span>}
+        {sent === "ai" && <span data-edit-sent>{say("chat_edit_sent")}</span>}
+        {sent === "lesson" && <span data-edit-sent="lesson">{say("chat_edit_saved")}</span>}
       </div>
     );
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    const trimmed = words.trim();
-    if (trimmed === "") return;
-    steer(trimmed);
-    setWords("");
+    const reason = why.trim();
+    const own = words.trim();
+    const changed = own !== "" && own !== current.trim();
+    if (reason === "" && !changed) return;
+    const patched = steer(reason, changed ? own : current);
+    setWhy("");
     setOpen(false);
-    setSent(true);
+    setSent(patched ? "lesson" : "ai");
   };
   return (
     <form onSubmit={submit} className="mt-2 flex flex-col gap-1 text-sm">
       <label className="flex flex-col gap-1">
-        {say("chat_edit_prompt")}
+        {say("chat_edit_words")}
         <textarea
           value={words}
           rows={2}
           className="rounded-md border px-2 py-1"
           onChange={(e) => setWords(e.target.value)}
+        />
+      </label>
+      <label className="flex flex-col gap-1">
+        {say("chat_edit_prompt")}
+        <textarea
+          value={why}
+          rows={2}
+          className="rounded-md border px-2 py-1"
+          onChange={(e) => setWhy(e.target.value)}
         />
       </label>
       <div className="flex gap-2">

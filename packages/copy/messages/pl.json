@@ -826,5 +826,7 @@
   "chat_edit_step": "Zmień ten krok",
   "chat_edit_prompt": "Co zmienić w tym kroku i dlaczego?",
   "chat_edit_send": "Wyślij zmianę",
-  "chat_edit_cancel": "Anuluj"
+  "chat_edit_cancel": "Anuluj",
+  "chat_edit_words": "Co ten krok mówi dziecku",
+  "chat_edit_saved": "Twoja zmiana jest już w lekcji."
 }

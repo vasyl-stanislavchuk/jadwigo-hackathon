@@ -110,7 +110,8 @@ export function routesTransport(
         return (await api.cancelRun(last.id, { event_id: body.event_id })).run;
       }
       const server = await ensure(body.conversation_id);
-      // A lesson-pane edit or Cofnij goes as a steer naming its questions (dl-z5ja.93).
+      // A lesson-pane edit or Cofnij goes as a steer naming its questions (dl-z5ja.93), with the
+      // parent's own change as its patch when it carries one (dl-z5ja.111).
       const message =
         body.kind === "steer"
           ? {
@@ -119,6 +120,7 @@ export function routesTransport(
               kind: "steer" as const,
               source: body.source,
               question_ids: body.question_ids,
+              ...(body.patch === undefined ? {} : { patch: body.patch }),
             }
           : { event_id: body.event_id, text: body.text };
       return (await api.postMessage(server, message)).run;

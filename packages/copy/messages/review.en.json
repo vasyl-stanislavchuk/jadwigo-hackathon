@@ -585,5 +585,7 @@
   "chat_edit_step": true,
   "chat_edit_prompt": true,
   "chat_edit_send": true,
-  "chat_edit_cancel": true
+  "chat_edit_cancel": true,
+  "chat_edit_words": false,
+  "chat_edit_saved": false
 }

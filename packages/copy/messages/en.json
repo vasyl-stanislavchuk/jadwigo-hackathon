@@ -806,5 +806,7 @@
   "chat_edit_step": "Change this step",
   "chat_edit_prompt": "What should change in this step, and why?",
   "chat_edit_send": "Send the change",
-  "chat_edit_cancel": "Cancel"
+  "chat_edit_cancel": "Cancel",
+  "chat_edit_words": "What this step says to the child",
+  "chat_edit_saved": "Your change is in the lesson now."
 }
