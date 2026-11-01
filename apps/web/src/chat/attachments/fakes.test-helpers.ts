@@ -100,6 +100,8 @@ export class FakeApi {
       bytes: body.bytes,
       width: body.width,
       height: body.height,
+      // The record names the file, or null (dl-z5ja.11.11, #595).
+      name: body.name ?? null,
       conversation_id: null,
       storage_path: null,
       created_at: "2026-09-01T08:00:00.000Z",
