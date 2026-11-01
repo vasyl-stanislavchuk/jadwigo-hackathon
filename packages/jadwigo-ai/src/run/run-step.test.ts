@@ -329,6 +329,19 @@ describe("acceptMessage", () => {
     expect((await t.run(run)).cancel_requested_at).toBe(FIXED_NOW.toISOString());
   });
 
+  it("refuses a message's event_id resent as a cancel, and the run is never cancelled", async () => {
+    const t = await setup([]);
+    const id = newEventId();
+    const run = await t.say("Halves.", id);
+    await expect(t.send({ event_id: id, kind: "cancel", payload: {} })).rejects.toMatchObject({
+      type: "BadRequest",
+    });
+    expect((await t.run(run)).cancel_requested_at).toBeNull();
+    expect(t.store.inbox.map((r) => r.kind)).toEqual(["message"]);
+    // The same kind resent still lands once.
+    expect(await t.say("Halves.", id)).toBe(run);
+  });
+
   it("opens a new run for the next turn once the last one ended", async () => {
     const t = await setup([{ text: "Hi." }, { text: "Again." }]);
     const first = await t.say("One.");
