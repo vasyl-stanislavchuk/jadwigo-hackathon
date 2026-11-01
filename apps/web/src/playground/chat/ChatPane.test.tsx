@@ -80,7 +80,7 @@ describe("the chat pane, one state per golden log", () => {
     expect(status().getAttribute("aria-live")).toBe("polite");
     const details = screen.getByText(/1 krok/).closest("details");
     expect(details?.open).toBe(false);
-    expect(screen.queryByRole("list", { name: "Stuck tool lines" })).toBeNull();
+    expect(screen.queryByRole("list", { name: "Kroki, które się zacięły" })).toBeNull();
     fireEvent.click(stopButton() as HTMLElement);
     expect(onStop).toHaveBeenCalledOnce();
   });
@@ -93,7 +93,7 @@ describe("the chat pane, one state per golden log", () => {
 
   it("happy turn: messages from both sides, 2 tool lines folded, done, no Stop", () => {
     pane({ turns: [turnOf("happy-turn")] });
-    const messages = screen.getByRole("list", { name: "Messages" });
+    const messages = screen.getByRole("list", { name: "Wiadomości" });
     expect(
       within(messages).getByText("A short lesson on equal groups for grade 2, please."),
     ).toBeTruthy();
@@ -115,7 +115,7 @@ describe("the chat pane, one state per golden log", () => {
         }),
       ],
     });
-    const stuck = screen.getByRole("list", { name: "Stuck tool lines" });
+    const stuck = screen.getByRole("list", { name: "Kroki, które się zacięły" });
     expect(stuck.textContent).toBe("Sprawdzam lekcję: nie udało się: step s03 has no key");
     expect(stuck.closest("details")).toBeNull();
   });
@@ -124,9 +124,11 @@ describe("the chat pane, one state per golden log", () => {
     pane({ turns: [turnOf("budget-steer-then-stop")] });
     const rows = document.querySelectorAll("[data-row='steer']");
     expect([...rows].map((r) => r.getAttribute("data-level"))).toEqual(["steer", "stop"]);
-    expect(rows[0]?.textContent).toContain("Połowa budżetu wykorzystana");
-    expect(rows[0]?.textContent).toContain("0.06 z 0.10 USD");
-    expect(rows[1]?.textContent).toContain("tu się zatrzymuję");
+    expect(rows[0]?.textContent).toBe("Kończę lekcję z tym, co mam, żeby zmieścić się w limicie.");
+    expect(rows[1]?.textContent).toContain("Zapisane, zatrzymane");
+    expect(rows[1]?.textContent).toContain("Lekcja do tej pory jest zapisana.");
+    // Cost in words: no dollar figure and no token count reaches the parent (dl-z5ja.29).
+    for (const row of rows) expect(row.textContent).not.toMatch(/USD|\$|\d\.\d/);
   });
 
   it("cancelled (cancel-during-a-verb): says stopped, and Stop is gone", () => {
