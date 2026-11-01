@@ -1,5 +1,6 @@
 // The public surface: the typed /api/v1 client the web app, the CLI and MCP share.
 export type {
+  AttachmentClient,
   AttemptClient,
   Client,
   ClientOptions,

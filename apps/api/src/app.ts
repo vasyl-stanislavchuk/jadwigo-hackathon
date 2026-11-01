@@ -9,6 +9,13 @@ import {
 } from "@jadwigo/contracts";
 import { PgmqRunQueue, type RunQueue } from "@jadwigo/jadwigo-ai";
 import type { Store } from "@jadwigo/store";
+import {
+  createAttachment,
+  getAttachment,
+  photoWork,
+  settlePhotos,
+  type UploadsBucket,
+} from "./attachments.ts";
 import { answer, getAttempt, startAttempt } from "./attempts.ts";
 import { type Authenticate, type Claims, signedOut } from "./auth.ts";
 import {
@@ -85,6 +92,11 @@ export interface AppDeps {
   readonly poke?: PokeStepHost | undefined;
   /** The engine's clock for a run's deadlines and the limits' windows. */
   readonly now?: () => Date;
+  /**
+   * The uploads bucket a message's photos go through (dl-z5ja.11.3). With none, the photo routes
+   * and a message with photos fail; a message without photos never reads it.
+   */
+  readonly uploads?: UploadsBucket | undefined;
 }
 
 /** No queue is wired: every send fails, and the unit that asked rolls back. */
@@ -108,7 +120,15 @@ const NO_QUEUE: RunQueue = {
  */
 export function createApp(
   store: Store | Promise<Store>,
-  { authenticate = signedOut, bank, bucket, queue, poke, now = () => new Date() }: AppDeps = {},
+  {
+    authenticate = signedOut,
+    bank,
+    bucket,
+    queue,
+    poke,
+    now = () => new Date(),
+    uploads,
+  }: AppDeps = {},
 ): Router {
   const app = new Router();
   const engine: EngineRouteDeps = { queue: queue ?? NO_QUEUE, lockPod: async () => {}, now };
@@ -240,9 +260,17 @@ export function createApp(
   onSigned("patchConversation", (params, body, claims) =>
     run((s) => patchConversation(s, engine, claims, params.id, body)),
   );
-  onSigned("postMessage", (params, body, claims) =>
-    engineUnit(store, engine, poke, (s, deps) => postMessage(s, deps, claims, params.id, body)),
-  );
+  // A message's photos are copied in its unit; settlePhotos deletes the copies if the unit rolls
+  // back, and the pending uploads once it commits (dl-z5ja.11.3).
+  onSigned("postMessage", (params, body, claims) => {
+    const photos = photoWork(uploads);
+    return settlePhotos(
+      photos,
+      engineUnit(store, { ...engine, photos }, poke, (s, deps) =>
+        postMessage(s, deps, claims, params.id, body),
+      ),
+    );
+  });
   onSigned("listConversationRuns", (params, _body, claims) =>
     run((s) => listConversationRuns(s, claims, params.id)),
   );
@@ -255,13 +283,16 @@ export function createApp(
 
   onSigned("rateRun", (params, body, claims) => run((s) => rateRun(s, claims, params.id, body)));
 
-  // A message's photos (dl-z5ja.11): step 0's stubs, until dl-z5ja.11.3 builds them. A token
-  // is checked first, as on every token route.
-  const notYet = async (): Promise<never> => {
-    throw new ApiError(ErrorType.enum.NotFound, "photos are not taken yet");
-  };
-  onSigned("createAttachment", notYet);
-  onSigned("getAttachment", notYet);
+  // A message's photos (dl-z5ja.11.3): an upload form, under the pod's lock for the daily count,
+  // then a link to the stored copy.
+  onSigned("createAttachment", (_params, body, claims) =>
+    engineUnit(store, engine, poke, (s, deps) =>
+      createAttachment(s, { uploads, lockPod: deps.lockPod, now }, claims, body),
+    ),
+  );
+  onSigned("getAttachment", (params, _body, claims) =>
+    run((s) => getAttachment(s, { uploads, now }, claims, params.id)),
+  );
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;
