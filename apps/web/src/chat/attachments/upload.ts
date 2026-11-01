@@ -1,5 +1,5 @@
 /**
- * One parent's photo on its way to a message (dl-z5ja.11.5, wave 5 decisions 43 and 49). The page
+ * One parent's photo on its way to a message (dl-z5ja.11.5, wave 5 decisions 51 and 57). The page
  * decodes the photo with its orientation applied, draws it on a canvas no larger than
  * `LIMITS.attachmentEdgePx` on its long edge, and re-encodes it to a JPEG of at most
  * `LIMITS.attachmentBytes`, which drops EXIF and GPS. A HEIC the browser cannot decode goes through

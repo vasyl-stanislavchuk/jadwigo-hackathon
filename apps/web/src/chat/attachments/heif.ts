@@ -1,5 +1,5 @@
 /**
- * The HEIF fallback (wave 5 decision 49): libheif compiled to WebAssembly, for a HEIC the browser
+ * The HEIF fallback (wave 5 decision 57): libheif compiled to WebAssembly, for a HEIC the browser
  * cannot decode itself (Chrome, Firefox, Android). Safari decodes HEIC natively, and iOS already
  * hands `accept="image/*"` a JPEG, so this runs only off Apple. `browser.ts` imports this module
  * with `import()`, so its ~2 MB chunk loads the first time a HEIC needs it and never otherwise.
