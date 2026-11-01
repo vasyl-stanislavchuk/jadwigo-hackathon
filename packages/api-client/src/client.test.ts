@@ -6,6 +6,7 @@ import {
   EventId,
   GoalId,
   LearnerId,
+  PodId,
   ROUTES,
   RunId,
 } from "@jadwigo/contracts";
@@ -318,6 +319,24 @@ describe("the parent's calls", () => {
       },
     ]);
     expect(reply.learner_id).toBe(LEARNER);
+  });
+
+  it("gives the pod's AI consent with a PATCH on the pod", async () => {
+    const pod = PodId.parse(attempt.pod_id);
+    const { fetch, sent } = stub(200, {
+      id: pod,
+      name: "home",
+      language: "pl",
+      created_at: AT,
+      ai_consent_at: AT,
+    });
+    const reply = await createClient({ base: "", fetch, token: signedIn }).patchPod(pod, {
+      ai_consented: true,
+    });
+    expect(sent).toMatchObject([
+      { url: `/api/v1/pods/${pod}`, method: "PATCH", body: { ai_consented: true } },
+    ]);
+    expect(reply.ai_consent_at).toBe(AT);
   });
 
   it("refuses a token route as NotSignedIn when nobody is signed in, sending nothing", async () => {

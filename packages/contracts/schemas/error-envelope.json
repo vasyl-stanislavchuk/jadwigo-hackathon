@@ -46,6 +46,7 @@
         "AnswerLimit",
         "MessageLimitMinute",
         "MessageLimitDay",
+        "AiConsentMissing",
         "ConversationArchived",
         "Unauthorized",
         "BankUnavailable"
