@@ -1,11 +1,23 @@
 # The site's words beyond each page's frontmatter (src/lib/landing.ts). Copy says what Jadwigo does,
 # never a slogan; numbers are digits; the child is "ty", the parent "Ty" (decisions of 2026-10-27).
-# The hero follows the owner's direction on dl-w0b4.30 and their review of 2026-10-31: half the words.
+# The hero is the h1 and one question to answer: no lead line, no buttons (owner, 2026-10-31, dl-5ssh.4.9).
 pl:
   hero:
-    lead: Pokaż ostatnią pracę domową, a ułożymy lekcję z tego, co trudne.
-    homework: Pokaż pracę domową
     play: Zagraj w lekcję
+    # The first question of "Razy cztery: podwójne razy dwa" (src/content/featured.json).
+    question:
+      say: "Ile to jest 2 razy\u00a07?" # a no-break space keeps "7?" on the line
+      choices: ["12", "14", "16"]
+      answer: "14"
+      right: Brawo! 2 razy 7 to 14.
+      hint: Prawie. 2 razy 7 to 7 i jeszcze 7. Spróbuj jeszcze raz.
+      signUp:
+        text: Tak wygląda każda lekcja. Konto rodzica jest bezpłatne, a Jadwigo z każdej lekcji układa następną.
+        button: Załóż konto
+  # Under the lessons, one line for the parent.
+  after:
+    text: Po każdej lekcji widzisz, co poszło dobrze i co ćwiczyć dalej.
+    link: Jak to działa
   # Every page in the header, in order (owner, 2026-10-31: each link its own page).
   links:
     - { href: /lekcje, label: Lekcje }

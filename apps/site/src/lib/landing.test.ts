@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { firstSentence, plural } from "./landing.ts";
+import { firstSentence, landingSchema, plural } from "./landing.ts";
 
 const forms = ["pytanie", "pytania", "pytań"] as const;
 
@@ -25,5 +25,25 @@ describe("firstSentence", () => {
       "Ile to jest 2 razy 7?",
     );
     expect(firstSentence("Policz kropki")).toBe("Policz kropki");
+  });
+});
+
+describe("the hero question", () => {
+  const question = landingSchema.shape.hero.shape.question;
+  const q = {
+    say: "Ile to jest 2 razy 7?",
+    choices: ["12", "14"],
+    answer: "14",
+    right: "Brawo!",
+    hint: "Prawie.",
+    signUp: { text: "Konto.", button: "Załóż konto" },
+  };
+
+  it("takes an answer that is one of the choices", () => {
+    expect(question.safeParse(q).success).toBe(true);
+  });
+
+  it("refuses an answer no tile shows", () => {
+    expect(question.safeParse({ ...q, answer: "15" }).success).toBe(false);
   });
 });

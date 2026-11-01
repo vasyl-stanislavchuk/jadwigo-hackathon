@@ -10,6 +10,7 @@ Imported as `@jadwigo/ui/brand/<file>`.
 | `crown.svg` | The crown alone, 40 by 26, with its ink outline. |
 | `favicon.svg` | The app icon: a blue square with 25% corners and the yellow crown 62% wide. |
 | `favicon-16.svg` | The same at 16 px: the crown 69% wide with a thicker line, so it still reads. |
+| `queen.mov`, `queen.webm` | Jadwiga flies in, gives a thumbs-up and vanishes: a 4 s clip with alpha, no sound. Safari takes the HEVC `.mov`, the others the VP9 `.webm`, so list the `.mov` first. The app plays it on a right answer (`apps/web/src/play/Queen.tsx`), the landing page on its hero question (`apps/site/src/components/HeroQuestion.astro`). |
 | `icons.json` | The hashes of the two favicon SVGs the PNGs were rendered from. |
 
 ## Colours
