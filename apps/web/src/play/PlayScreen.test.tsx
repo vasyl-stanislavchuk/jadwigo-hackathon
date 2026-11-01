@@ -120,15 +120,18 @@ describe("PlayScreen", () => {
     expect(storedAttempt.get(ASSIGNMENT)).toBe(FRESH);
   });
 
-  it("sets the lesson region's lang to the lesson's language, not the screens' (dl-9t2o.3)", async () => {
+  it("puts the lesson's language on the question and leaves Check the screens' (dl-9t2o.3, dl-uukj.38)", async () => {
+    document.documentElement.lang = "pl";
     const startAttempt = vi.fn(async () => snapshot(FRESH, "in_progress", [question(1)], "en"));
     render(
       <PlayScreen assignmentId={ASSIGNMENT} language="pl" client={client({ startAttempt })} />,
     );
     await screen.findAllByText("Ile to jest dwa razy pięć? (1)");
-    const region = document.querySelector("[data-lesson-region]");
-    expect(region?.getAttribute("lang")).toBe("en");
-    expect(region?.querySelector("fieldset")).not.toBeNull();
+    const langOf = (selector: string) =>
+      document.querySelector(selector)?.closest("[lang]")?.getAttribute("lang");
+    expect(langOf('[data-area="stem"]')).toBe("en");
+    expect(langOf('[data-area="answer"]')).toBe("en");
+    expect(langOf("[data-check]")).toBe("pl");
   });
 
   it("draws a Khan picture ref from the media URL (dl-n9fr.52)", async () => {
