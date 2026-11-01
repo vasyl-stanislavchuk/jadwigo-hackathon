@@ -32,11 +32,7 @@ import type { Verb, VerbContext, VerbEffect, Verbs } from "./verbs/types.ts";
  * lands: the store (dl-z5ja.14), fold (dl-z5ja.13) and verbs (dl-z5ja.15) lanes first, the runner
  * (dl-z5ja.16) last, when the set ends empty.
  */
-const EXPECTED_RED = new Set<string>([
-  // Wave 2 step 0 (dl-z5ja.51, Lead decisions 21 and 22); the runner lane's dl-z5ja.42 removes both.
-  "a steer survives a redelivered step",
-  "a steer during the final call keeps the turn open one more step",
-]);
+const EXPECTED_RED = new Set<string>([]);
 
 /** `it`, or `it.fails` while the name is in EXPECTED_RED. */
 function frozen(name: string, body: () => Promise<void>): void {
