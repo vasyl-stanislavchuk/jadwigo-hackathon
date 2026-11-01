@@ -47,6 +47,12 @@ export interface Auth {
    * switches that can drift, and a provider the project has off answers with a raw JSON 400
    * (dl-e8ov.2.83). */
   enabledProviders(): Promise<readonly Provider[]>;
+  /** The providers a hand-over from a link (`?provider=`) may start: every one the project has on,
+   * its button shown or not, from the same read. A Meta app in Development mode signs in only its
+   * testers, so prod hides the Facebook button and testers come in by
+   * app.jadwigo.pl/parent?provider=facebook (dl-ovva). None when the build turns no provider on,
+   * since a provider's return is then never read. */
+  handoffProviders(): Promise<readonly Provider[]>;
   /** Sends the tab to the provider, to come back to `returnTo`. */
   signInWith(provider: Provider, returnTo: string): Promise<void>;
   /** Reads a provider's return off `url` (`?code=`, or `error` in the query or the hash), takes it
@@ -100,6 +106,13 @@ export function withoutReturn(url: URL): string {
   return `${url.pathname}${search}${hash.size > 0 ? `#${hash}` : ""}`;
 }
 
+/** Every provider the app knows, in the screen's order (src/config.ts PROVIDERS, which the browser
+ * does not import). The record makes a new Provider a type error here until it is listed. */
+const KNOWN = Object.keys({ google: true, facebook: true } satisfies Record<
+  Provider,
+  true
+>) as Provider[];
+
 /** Supabase Auth's public settings: which external providers the project has on. */
 export type ReadSettings = () => Promise<unknown>;
 
@@ -122,7 +135,12 @@ export function supabaseAuth(
   providers: readonly Provider[],
   readSettings: ReadSettings = () => Promise.reject(new Error("no settings")),
 ): Auth {
-  let enabled: Promise<readonly Provider[]> | undefined;
+  let settings: Promise<unknown> | undefined;
+  // One read per page load, for the buttons and the hand-over both; null when it fails.
+  const read = (): Promise<unknown> => {
+    settings ??= providers.length === 0 ? Promise.resolve(null) : readSettings().catch(() => null);
+    return settings;
+  };
   // Each code is spent once: a remount that reads the same code again gets the first exchange's
   // outcome, never a second exchange that would fail.
   const exchanges = new Map<string, Promise<RedirectOutcome>>();
@@ -147,16 +165,8 @@ export function supabaseAuth(
       return error === null && data.session !== null;
     },
     providers: () => providers,
-    enabledProviders() {
-      enabled ??=
-        providers.length === 0
-          ? Promise.resolve([])
-          : readSettings().then(
-              (settings) => enabledIn(settings, providers),
-              () => [],
-            );
-      return enabled;
-    },
+    enabledProviders: () => read().then((read) => enabledIn(read, providers)),
+    handoffProviders: () => read().then((read) => enabledIn(read, KNOWN)),
     async signInWith(provider, returnTo) {
       // The providers' default scopes: Google's email and profile, Facebook's email.
       const { error } = await supabase.auth.signInWithOAuth({
