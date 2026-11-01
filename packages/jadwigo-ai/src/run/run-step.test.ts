@@ -690,6 +690,88 @@ describe("runStep and drain", () => {
     expect((await t.run(run)).status).toBe("completed");
   });
 
+  it("corrects once per turn, even when the correction answers with tool calls", async () => {
+    const t = await setup([
+      { text: "All 9 done." },
+      { calls: [{ verb: "lesson_show" }] },
+      { text: "All 9 done." },
+      { text: "never bought" },
+    ]);
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+
+    expect(t.muse.calls).toHaveLength(3);
+    const noted = t.muse.calls.map((c) => c.instructions.includes("was not sent to the parent"));
+    expect(noted).toEqual([false, true, false]);
+    const events = await t.log(run);
+    expect(events.find((e) => e.type === "error")?.payload).toMatchObject({
+      error: {
+        type: RUN_ERROR_TYPE.answerUnchecked,
+        message: expect.stringContaining("after its one correction"),
+      },
+    });
+    expect(events.filter((e) => e.type === "message" && e.payload.from === "agent")).toEqual([]);
+    expect(events.at(-1)?.type).toBe("turn_complete");
+  });
+
+  it("makes the correction first when the parent speaks between the refusal and it", async () => {
+    let t: Awaited<ReturnType<typeof setup>>;
+    t = await setup([{ text: "All 9 done." }, { text: "Still 9." }]);
+    const scripted = t.deps.muse;
+    t.deps.muse = {
+      respond: async (request) => {
+        if (request.call_no === 1) await t.say("One more thing.");
+        return scripted.respond(request);
+      },
+    };
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+
+    expect(t.muse.calls).toHaveLength(2);
+    expect(t.muse.calls[1]?.instructions).toContain("was not sent to the parent");
+    expect(JSON.stringify(t.muse.calls[1]?.input)).toContain("One more thing.");
+    // One correction was made, so the 2nd refusal ends the turn with the error.
+    expect((await t.log(run)).find((e) => e.type === "error")?.payload).toMatchObject({
+      error: { message: expect.stringContaining("after its one correction") },
+    });
+  });
+
+  it("writes the error before the budget stops a refused answer's correction", async () => {
+    const t = await setup([{ text: "All 9 done.", cost_usd: 0.095 }], fakeVerbs(), 0.1);
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+
+    expect(t.muse.calls).toHaveLength(1);
+    const events = await t.log(run);
+    expect(types(events).slice(-5)).toEqual([
+      "error",
+      "budget_steer",
+      "message",
+      "status",
+      "turn_complete",
+    ]);
+    expect(events.find((e) => e.type === "error")?.payload).toMatchObject({
+      error: {
+        type: RUN_ERROR_TYPE.answerUnchecked,
+        message: expect.stringContaining("before its correction"),
+      },
+    });
+  });
+
+  it("takes a number the parent gave in an earlier turn as given", async () => {
+    const t = await setup([{ text: "Ready." }, { text: "Harder, still grade 2." }]);
+    await t.say("Halves for grade 2.");
+    await drain(t.deps);
+    const second = await t.say("Make it harder.");
+    await drain(t.deps);
+
+    expect(t.muse.calls).toHaveLength(2);
+    const agent = (await t.log(second)).flatMap((e) =>
+      e.type === "message" && e.payload.from === "agent" ? [e.payload.text] : [],
+    );
+    expect(agent).toEqual(["Harder, still grade 2."]);
+  });
+
   it("reuses a recorded model_response after a crash and pays once", async () => {
     const t = await setup([
       { calls: [{ verb: "lesson_draft" }], cost_usd: 0.02 },

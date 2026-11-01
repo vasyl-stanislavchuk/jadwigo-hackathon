@@ -363,26 +363,38 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
   let pending = last ? unresolved(last, w.log) : [];
 
   if (pending.length === 0) {
-    let correction: { text: string; misses: AnswerMiss[] } | null = null;
-    if (last && last.payload.tool_calls.length === 0 && !parentSpokeAfter(w.log, last.seq)) {
-      const refused = await refusedText(w, last);
-      // The answer is recorded and nothing came after it: a redelivery ends the turn on it.
-      if (refused === null) return endTurn(w, "completed", deps.now());
-      // The last answer failed the answer check, so it was never written (dl-z5ja.26).
-      const misses = checkAnswer(refused, w.log);
+    // The answer check reads the turn and the parent's words of the turns before it (dl-z5ja.26).
+    const check = (text: string) => checkAnswer(text, [...prior.said, ...w.log]);
+    let correction: { call_no: number; text: string; misses: AnswerMiss[] } | null = null;
+    const refused = last ? await refusedText(w, last) : null;
+    if (last && refused !== null) {
+      // The last answer failed the answer check, so it was never written. Its one correction comes
+      // first, even when the parent spoke since: the call reads the parent's new words as well.
+      const misses = check(refused);
       if (misses.length === 0) {
         await w.append([
           agentMessage(w, refused, await w.id("call", last.payload.call_no, "message")),
         ]);
-        return endTurn(w, "completed", deps.now());
+        if (!parentSpokeAfter(w.log, last.seq)) return endTurn(w, "completed", deps.now());
+      } else if (await corrected(w, last)) {
+        return endUnchecked(deps, w, last.payload.call_no, misses);
+      } else {
+        correction = { call_no: last.payload.call_no, text: refused, misses };
       }
-      if (await correcting(w, last)) return endUnchecked(deps, w, last.payload.call_no, misses);
-      correction = { text: refused, misses };
+    } else if (last && last.payload.tool_calls.length === 0 && !parentSpokeAfter(w.log, last.seq)) {
+      // The answer is recorded and nothing came after it: a redelivery ends the turn on it.
+      return endTurn(w, "completed", deps.now());
     }
 
     const spent = spentOf(w.log);
     const level = budgetGuard(spent, run.cap_usd);
     if (level === "stop") {
+      // A refused answer the budget leaves no correction for still ends with its error.
+      if (correction) {
+        await w.append([
+          await uncheckedEvent(w, correction.call_no, correction.misses, "before its correction"),
+        ]);
+      }
       await w.append([
         {
           type: "budget_steer",
@@ -459,7 +471,7 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     // The answer check before an agent message (wave 2 Lead decision 23): code gave every number,
     // status and level, or the message is not written. A text-only answer that fails is corrected
     // once at the next step; text beside tool calls is dropped, and the turn's last answer is checked.
-    const checked = response.text === null ? [] : checkAnswer(response.text, w.log);
+    const checked = response.text === null ? [] : check(response.text);
     if (response.text !== null && checked.length === 0) {
       recorded.push(agentMessage(w, response.text, await w.id("call", call_no, "message")));
     }
@@ -520,10 +532,17 @@ async function refusedText(w: Writer, response: ModelResponse): Promise<string |
   return w.log.some((e) => written.has(e.event_id)) ? null : text;
 }
 
-/** Whether `response` was the one correction: the answer before it was refused too. */
-async function correcting(w: Writer, response: ModelResponse): Promise<boolean> {
-  const before = responsesOf(w.log).find((e) => e.payload.call_no === response.payload.call_no - 1);
-  return before !== undefined && (await refusedText(w, before)) !== null;
+/**
+ * Whether the turn has had its one correction before `response`, counted from the log: every
+ * refused answer is followed by its correction call, whatever that call answers (tool calls
+ * included), so an earlier refused answer means the correction was made.
+ */
+async function corrected(w: Writer, response: ModelResponse): Promise<boolean> {
+  for (const earlier of responsesOf(w.log)) {
+    if (earlier.payload.call_no >= response.payload.call_no) break;
+    if ((await refusedText(w, earlier)) !== null) return true;
+  }
+  return false;
 }
 
 function saidOf(misses: readonly AnswerMiss[]): string {
@@ -540,6 +559,28 @@ function correctionNote(text: string, misses: readonly AnswerMiss[]): string {
   ].join("\n");
 }
 
+/** The `error` event that stands in place of a refused answer's message. */
+async function uncheckedEvent(
+  w: Writer,
+  call_no: number,
+  misses: readonly AnswerMiss[],
+  when: string,
+): Promise<NewRunEvent> {
+  return {
+    type: "error",
+    run_id: w.run,
+    event_id: await w.id("call", call_no, "unchecked"),
+    payload: {
+      error: {
+        type: RUN_ERROR_TYPE.answerUnchecked,
+        message: `the answer named ${saidOf(misses)}, which no tool result gave, ${when}`,
+      },
+      attempt: w.attempt,
+      retryable: false,
+    },
+  };
+}
+
 /** The correction failed the check too: an `error` event in place of the message, and the turn ends. */
 async function endUnchecked(
   deps: EngineDeps,
@@ -547,21 +588,7 @@ async function endUnchecked(
   call_no: number,
   misses: readonly AnswerMiss[],
 ): Promise<RunStepOutcome> {
-  await w.append([
-    {
-      type: "error",
-      run_id: w.run,
-      event_id: await w.id("call", call_no, "unchecked"),
-      payload: {
-        error: {
-          type: RUN_ERROR_TYPE.answerUnchecked,
-          message: `the answer named ${saidOf(misses)}, which no tool result gave, after one correction`,
-        },
-        attempt: w.attempt,
-        retryable: false,
-      },
-    },
-  ]);
+  await w.append([await uncheckedEvent(w, call_no, misses, "after its one correction")]);
   return endTurn(w, "completed", deps.now());
 }
 
@@ -790,26 +817,29 @@ function museInput(log: readonly RunEvent[]): MuseInput[] {
 
 /**
  * The conversation's earlier turns: their words, and the lesson the last of them left, so a
- * follow-up turn edits the lesson the turn before drafted.
+ * follow-up turn edits the lesson the turn before drafted. `said` is their parent messages, which
+ * the answer check reads too: a number the parent gave in turn 1 is no invention in turn 2.
  */
 async function priorTurns(
   store: Store,
   scope: Scope,
-): Promise<{ input: MuseInput[]; lesson: VerbContext["lesson"] }> {
+): Promise<{ input: MuseInput[]; said: RunEvent[]; lesson: VerbContext["lesson"] }> {
   const { pod, run } = scope;
-  if (run.conversation_id === null) return { input: [], lesson: null };
+  if (run.conversation_id === null) return { input: [], said: [], lesson: null };
   const runs = await store.listRuns(pod, run.conversation_id);
   const here = runs.findIndex((r) => r.id === run.id);
   const before = here < 0 ? runs : runs.slice(0, here);
   const input: MuseInput[] = [];
+  const said: RunEvent[] = [];
   let lesson: VerbContext["lesson"] = null;
   for (const earlier of before) {
     const log = await store.listRunEvents(pod, earlier.id, 0);
     input.push(...museInput(log.filter((e) => e.type === "message")));
+    said.push(...log.filter((e) => e.type === "message" && e.payload.from === "parent"));
     const left = lessonOf(log);
     if (left) lesson = left;
   }
-  return { input, lesson };
+  return { input, said, lesson };
 }
 
 /**
