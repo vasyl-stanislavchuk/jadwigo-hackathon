@@ -42,7 +42,8 @@ przez Supabase. Po nim rozpoznajemy konto rodzica.
 ## Odpowiedzi dziecka
 
 Odpowiedzi dziecka i jego postępy w lekcjach widzi tylko rodzic, na swoim koncie. Inne rodziny ich
-nie widzą.
+nie widzą. Gdy rodzic prosi asystenta AI Jadwigo o lekcję albo podsumowanie, asystent czyta
+odpowiedzi i imię dziecka, żeby je przygotować.
 
 ## Usunięcie danych
 
