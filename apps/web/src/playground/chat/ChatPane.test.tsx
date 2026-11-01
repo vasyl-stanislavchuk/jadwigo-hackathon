@@ -337,6 +337,32 @@ describe("the engine's limits in plain words (dl-z5ja.28, dl-z5ja.83)", () => {
     );
   });
 
+  it("a turn closed while nothing happened says so in Polish, with no retry", () => {
+    pane({
+      turns: [
+        turnOf("happy-turn", (view) => {
+          view.chat.push({
+            kind: "error",
+            seq: 99,
+            error: {
+              type: RUN_ERROR_TYPE.runIdle,
+              message: "nothing happened in the turn for 10 minutes, so it closed",
+            },
+            attempt: 1,
+            retryable: true,
+          });
+        }),
+      ],
+    });
+    const row = document.querySelector("[data-row='error']");
+    expect(row?.querySelector("p")?.textContent).toBe(
+      "Na następny krok trzeba było czekać zbyt długo, więc tura się zakończyła. Lekcja do tej pory jest zapisana: napisz, co dalej.",
+    );
+    expect(row?.textContent).not.toContain("10 minutes");
+    expect(row?.textContent).not.toContain("Próbuję jeszcze raz.");
+    expect(document.querySelector("[data-row='retry-turn']")).toBeNull();
+  });
+
   it("a step delivered again only says it is trying again", () => {
     pane({ turns: [withError(RUN_ERROR_TYPE.stepTimedOut, true)] });
     expect(document.querySelector("[data-row='error'] p")?.textContent).toBe(
@@ -349,5 +375,16 @@ describe("the engine's limits in plain words (dl-z5ja.28, dl-z5ja.83)", () => {
     expect(document.querySelector("[data-row='error'] p")?.textContent).toBe(
       "Coś się zacięło: the turn ran past its 30 minutes",
     );
+  });
+});
+
+describe("the message limit (dl-z5ja.62)", () => {
+  it("says it in one honest line, with no retry", () => {
+    pane({ sendFailed: true, sendLimited: true });
+    expect(document.querySelector("[data-row='send-limited']")?.textContent).toBe(
+      "Na razie asystent nie przyjmie więcej wiadomości. Spróbuj ponownie później.",
+    );
+    expect(document.querySelector("[data-row='send-failed']")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Spróbuj ponownie" })).toBeNull();
   });
 });

@@ -129,6 +129,8 @@ function problemOf(error: RunError, retryable: boolean, language: Language): str
   const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
     copy(language, key, vars, "adult");
   if (error.type === RUN_ERROR_TYPE.runTimedOut) return say("chat_limit_too_long");
+  // An idle close (dl-z5ja.94): the turn is completed, so no retry; the parent writes what next.
+  if (error.type === RUN_ERROR_TYPE.runIdle) return say("chat_limit_idle");
   if (error.type === RUN_ERROR_TYPE.stepTimedOut) return say("chat_problem_retrying");
   const line = say("chat_problem", { message: error.message });
   return retryable ? `${line} ${say("chat_problem_retrying")}` : line;
@@ -272,6 +274,8 @@ export interface ChatPaneProps {
   restoring: boolean;
   stopping: boolean;
   sendFailed: boolean;
+  /** The last send was refused by the message limit: one line, no retry. */
+  sendLimited?: boolean;
   onSend(text: string): void;
   onStop(): void;
 }
@@ -283,6 +287,7 @@ export function ChatPane({
   restoring,
   stopping,
   sendFailed,
+  sendLimited = false,
   onSend,
   onStop,
 }: ChatPaneProps): ReactElement {
@@ -382,7 +387,12 @@ export function ChatPane({
           {say("chat_offline")}
         </p>
       )}
-      {sendFailed && (
+      {sendFailed && sendLimited && (
+        <p role="alert" data-row="send-limited" className="text-sm">
+          {say("chat_limit_message")}
+        </p>
+      )}
+      {sendFailed && !sendLimited && (
         <div role="alert" data-row="send-failed" className="flex items-center gap-2 text-sm">
           <p>{say("chat_send_again")}</p>
           {lastSent !== null && (

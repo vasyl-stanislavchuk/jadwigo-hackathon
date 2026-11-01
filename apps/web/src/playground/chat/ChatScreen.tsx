@@ -95,6 +95,7 @@ function ChatView({
           restoring={state.connection === "restoring"}
           stopping={state.stopping}
           sendFailed={state.sendFailed}
+          sendLimited={state.sendLimited}
           onSend={onSend}
           onStop={onStop}
         />

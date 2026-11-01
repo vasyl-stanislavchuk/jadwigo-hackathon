@@ -60,6 +60,7 @@ export * from "./chat_lesson_unreadable.js";
 export * from "./chat_limit_busy.js";
 export * from "./chat_limit_daily.js";
 export * from "./chat_limit_idle.js";
+export * from "./chat_limit_message.js";
 export * from "./chat_limit_too_long.js";
 export * from "./chat_messages.js";
 export * from "./chat_new.js";

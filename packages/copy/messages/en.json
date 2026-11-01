@@ -749,7 +749,7 @@
   "chat_limit_busy": "A lot of messages are coming in. Try again in a moment.",
   "chat_limit_daily": "That's all the assistant can do today. Come back tomorrow, and the lesson will be here.",
   "chat_limit_too_long": "This turn ran too long, so it stopped. The lesson so far is saved: say what to do next.",
-  "chat_limit_idle": "The conversation waited a long time, so the turn ended. Write to carry on.",
+  "chat_limit_idle": "The wait for the next step ran too long, so the turn ended. The lesson so far is saved: say what to do next.",
   "chat_dev_only": "The chat page is not available here yet.",
   "chat_queue_next": "Up next",
   "chat_queue_send_now": "Send now",
@@ -802,6 +802,7 @@
     }
   ],
   "chat_sign_in": "Sign in on the parent page first, then come back to the conversation.",
+  "chat_limit_message": "The assistant can't take more messages right now. Try again later.",
   "chat_edit_step": "Change this step",
   "chat_edit_prompt": "What should change in this step, and why?",
   "chat_edit_send": "Send the change",

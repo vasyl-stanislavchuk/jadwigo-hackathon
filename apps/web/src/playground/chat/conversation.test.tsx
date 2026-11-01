@@ -1,3 +1,5 @@
+import { ApiError } from "@jadwigo/api-client";
+import { ErrorType } from "@jadwigo/contracts";
 import { ConversationId, type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { foldRun } from "@jadwigo/core";
 import { RUN_LOGS } from "@jadwigo/testing";
@@ -176,6 +178,30 @@ describe("ChatScreen's phone switch (dl-z5ja.28)", () => {
     expect(document.querySelector("[data-pane='lesson']")?.getAttribute("data-front")).toBe("true");
     fireEvent.click(screen.getByRole("tab", { name: "Rozmowa" }));
     expect(lessonTab.querySelector("[data-badge]")).toBeNull();
+  });
+});
+
+describe("a send the message limit refuses (dl-z5ja.62)", () => {
+  it("is marked limited by the error's type, and any other failure is not", async () => {
+    const conversation = ConversationId.parse("cnv_00000000000000000000000001");
+    const refusing = (error: Error): EngineTransport => ({
+      ...fakeTransport(eventsOf("happy-turn")).transport,
+      runs: async () => [],
+      send: async () => {
+        throw error;
+      },
+    });
+    const limit = refusing(new ApiError("too many messages", 429, ErrorType.enum.MessageLimit));
+    const { result } = renderHook(() => useConversation(limit, conversation));
+    await act(async () => {});
+    await act(async () => result.current.send("Jeszcze jedno."));
+    expect(result.current.state).toMatchObject({ sendFailed: true, sendLimited: true });
+    cleanup();
+    const down = refusing(new Error("offline"));
+    const other = renderHook(() => useConversation(down, conversation));
+    await act(async () => {});
+    await act(async () => other.result.current.send("Jeszcze jedno."));
+    expect(other.result.current.state).toMatchObject({ sendFailed: true, sendLimited: false });
   });
 });
 

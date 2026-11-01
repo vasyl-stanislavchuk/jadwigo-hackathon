@@ -767,7 +767,7 @@
   "chat_limit_busy": "Teraz przychodzi dużo wiadomości. Spróbuj ponownie za chwilę.",
   "chat_limit_daily": "Na dziś to już wszystkie rozmowy z asystentem. Wróć jutro, a lekcja poczeka.",
   "chat_limit_too_long": "Ta tura trwała zbyt długo, więc się zatrzymała. Lekcja do tej pory jest zapisana: napisz, co dalej.",
-  "chat_limit_idle": "Rozmowa długo czekała, więc tura się zakończyła. Napisz, aby iść dalej.",
+  "chat_limit_idle": "Na następny krok trzeba było czekać zbyt długo, więc tura się zakończyła. Lekcja do tej pory jest zapisana: napisz, co dalej.",
   "chat_dev_only": "Strona rozmowy działa tylko na serwerze deweloperskim: uruchom ją przez make dev.",
   "chat_queue_next": "Następne",
   "chat_queue_send_now": "Wyślij teraz",
@@ -822,6 +822,7 @@
     }
   ],
   "chat_sign_in": "Najpierw zaloguj się na stronie rodzica, a potem wróć do rozmowy.",
+  "chat_limit_message": "Na razie asystent nie przyjmie więcej wiadomości. Spróbuj ponownie później.",
   "chat_edit_step": "Zmień ten krok",
   "chat_edit_prompt": "Co zmienić w tym kroku i dlaczego?",
   "chat_edit_send": "Wyślij zmianę",
