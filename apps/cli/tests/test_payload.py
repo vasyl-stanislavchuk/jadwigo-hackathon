@@ -13,6 +13,7 @@ from __future__ import annotations
 import copy
 import datetime as dt
 import json
+import re
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -220,7 +221,7 @@ def test_the_draft_and_the_check_stay_within_their_budgets(
         ("$90^{\\circ}$", "90°"),
         ("$\\sqrt 2$", "√2"),
         ("$\\overline{AB}$", "overline AB"),
-        ("$\\alpha + 1$", "alpha + 1"),
+        ("$\\alpha + 1$", "α + 1"),
         ("$\\textcolor{red}{7}$", "7"),
         ("Ile kropek?", "Ile kropek?"),
     ],
@@ -287,6 +288,35 @@ KHAN_TEX = [
     (r"$\left\{1, 2\right\}$", "{1, 2}"),
     (r"$3 \leq x \lt 5$", "3 ≤ x < 5"),
     (r"$\dfrac{3}{4} \gt \dfrac{1}{2}$", "3/4 > 1/2"),
+    # Khan's own colour macros, spacing commands, deep roots and drawn blanks (round 6)
+    (r"$\dfrac{1}{\kaBlue{6}}$", "1/6"),
+    (r"$\dfrac{\kaGreen{2}}{3}$", "2/3"),
+    (r"$\dfrac{5}{\grayH{9}}$", "5/9"),
+    (r"$\dfrac{1}{\violet{3}}$", "1/3"),
+    (r"$\purpleE{4}\dfrac{1}{\mintC{2}}$", "4 1/2"),
+    (r"$1\:000$", "1 000"),
+    (r"$3\>2$", "3 2"),
+    (r"$1\!000$", "1000"),
+    (r"$\sqrt[5]{32}$", "⁵√32"),
+    (r"$\sqrt[n]{x}$", "ⁿ√x"),
+    (r"$\underline{\hspace{1cm}} + 2 = 7$", "□ + 2 = 7"),
+    (r"$3 + \hspace{2em} = 5$", "3 + = 5"),
+    (r"$\rule{1cm}{0.4pt} - 1 = 4$", "- 1 = 4"),
+    (r"$\underline{\rule{1cm}{0pt}}$", "□"),
+    (r"$x \to \infty$", "x → ∞"),
+    # symbols, environments and decorations
+    (r"$AB \perp CD$", "AB ⊥ CD"),
+    (r"$\angle ABC = 90^\circ$", "∠ ABC = 90°"),
+    (r"$\lfloor 2{,}5 \rfloor$", "⌊ 2,5 ⌋"),
+    (r"$0{,}\overline{3}$", "0,(3)"),
+    (r"$\overline{AB}$", "overline AB"),
+    (r"$\overbrace{2+3}^{5}$", "2+3 (5)"),
+    (r"$\overset{?}{=}$", "=?"),
+    (r"$\dfrac{\phantom{0}}{4}$", "□/4"),
+    (r"$\begin{array}{r} 12 \\ +\,34 \\ \hline 46 \end{array}$", "12\n+ 34\n46"),
+    (r"$\begin{aligned} x &= 2 \\ y &= 3 \end{aligned}$", "x = 2\ny = 3"),
+    (r"$4 \mathbin{?} 5$", "4 ? 5"),
+    (r"$\displaystyle\sum_{i=1}^{3} i$", "Σ_(i=1) ^3 i"),
     # Polish sentences around the maths
     (r"Ile to jest $\dfrac{1}{2}$ z $10$?", "Ile to jest 1/2 z 10?"),
     (r"Zapisz $2\dfrac{3}{5}$ jako ułamek niewłaściwy.", "Zapisz 2 3/5 jako ułamek niewłaściwy."),
@@ -336,3 +366,17 @@ def test_every_tool_call_is_timed_and_the_split_names_the_models_time(
     as_json = json.loads(CliRunner().invoke(cli, ["lesson", "timing", view["draft_id"],
                                                   "--json"]).output)
     assert [c["tool"] for c in as_json["calls"]] == [c["tool"] for c in split["calls"]]
+
+
+def test_every_colour_the_player_paints_reads_as_its_number() -> None:
+    """tex_plain drops each colour macro richTextMacros.ts maps (PLAIN, and FAMILIES by shade),
+    so a colour the player knows never reaches the card as a word."""
+    src = (Path(__file__).resolve().parents[3]
+           / "packages/lesson-kit/src/parts/richTextMacros.ts").read_text()
+    plain = re.search(r"const PLAIN[^{]*\{([^}]*)\}", src)
+    families = re.findall(r"(\w+): \{ role: \"[\w-]+\", shades: \"([A-Z]+)\" \}", src)
+    assert plain and families
+    names = re.findall(r"^\s*(\w+):", plain[1], re.M)
+    names += [family + shade for family, shades in families for shade in shades]
+    for name in names:
+        assert lesson.tex_plain(f"$\\dfrac{{1}}{{\\{name}{{6}}}}$") == "1/6", name

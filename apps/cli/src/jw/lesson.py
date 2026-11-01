@@ -1371,6 +1371,14 @@ _TEX_SYMBOLS = {
     r"\pm": "±", r"\%": "%", r"\degree": "°", r"\circ": "°", r"\dots": "…", r"\ldots": "…",
     r"\cdots": "…", r"\,": " ", r"\;": " ", r"\quad": " ", r"\qquad": " ", r"\ ": " ",
     r"\log": "log", r"\ln": "ln", r"\pi": "π",
+    r"\:": " ", r"\>": " ", r"\!": "", r"\infty": "∞", r"\infin": "∞",
+    r"\rightarrow": "→", r"\rarr": "→", r"\to": "→", r"\Rightarrow": "⇒", r"\rArr": "⇒",
+    r"\angle": "∠", r"\triangle": "△", r"\perp": "⊥", r"\parallel": "∥", r"\cong": "≅",
+    r"\sim": "~", r"\in": "∈", r"\cup": "∪", r"\cap": "∩", r"\sum": "Σ", r"\mid": "|",
+    r"\vert": "|", r"\lvert": "|", r"\rvert": "|", r"\lfloor": "⌊", r"\rfloor": "⌋",
+    r"\lceil": "⌈", r"\rceil": "⌉", r"\hline": "", r"\alpha": "α", r"\beta": "β",
+    r"\gamma": "γ", r"\delta": "δ", r"\Delta": "Δ", r"\theta": "θ", r"\lambda": "λ",
+    r"\mu": "μ", r"\sigma": "σ", r"\omega": "ω",
 }
 # Commands that only style what follows (size, colour, spacing, text mode): they go, and what
 # they wrap stays. Any other command keeps its name, so a card never silently loses a word.
@@ -1378,9 +1386,15 @@ _TEX_STYLE = re.compile(
     r"(?:Huge|huge|LARGE|Large|large|normalsize|small|footnotesize|scriptsize|tiny"
     r"|displaystyle|textstyle|scriptstyle|big|Big|bigg|Bigg|limits|nolimits"
     r"|text|textbf|textit|textrm|textsf|mathrm|mathbf|mathit|mathsf|mathbb|boldsymbol|mbox"
-    r"|operatorname|bf|it|rm"
-    r"|(?:blue|red|green|gold|purple|teal|maroon|orange|pink|gray|grey|black|white|mint)[A-E]?)"
+    r"|operatorname|bf|it|rm|bold|emph|mathbin|mathrel|mathop|mathord"
+    # The colour macros the player paints (packages/lesson-kit/src/parts/richTextMacros.ts, its
+    # PLAIN and FAMILIES; test_payload.py holds the two together).
+    r"|kaBlue|kaGreen|orange|pink|violet|purpleE|grayH|grayI|black|white|grey"
+    r"|(?:blue|teal|green|mint|gold|red|maroon|purple|gray)[A-G]?)"
 )
+# Space and nothing more: what it takes is a width, no word (`\hspace{1cm}`, `\rule{1cm}{0.4pt}`).
+_TEX_SPACES = {"hspace": 1, "vspace": 1, "hskip": 0, "kern": 0, "rule": 2, "mkern": 0}
+_TEX_SUPERSCRIPT = str.maketrans("0123456789n", "⁰¹²³⁴⁵⁶⁷⁸⁹ⁿ")
 _TEX_FRACS = frozenset({"frac", "dfrac", "tfrac", "cfrac"})
 # A colour's name is no word: `\color{#aa87ff}{8}` and `\textcolor{blue}{4}` read 8 and 4.
 _TEX_COLORS = frozenset({"color", "textcolor"})
@@ -1399,7 +1413,7 @@ def _grouped(part: str) -> str:
     """A fraction's, a root's or a script's part in brackets when it is more than one term:
     `(1+2)/3`."""
     part = part.strip()
-    return f"({part})" if re.search(r"[\s+\-−·×:/]", part) else part
+    return f"({part})" if re.search(r"[\s+\-−·×:/=<>]", part) else part
 
 
 class _TexReader:
@@ -1429,6 +1443,8 @@ class _TexReader:
                 out.append(self.text(until_brace=True))
             elif c == "$":
                 pass  # the maths' delimiters go
+            elif c == "&" and "\\begin" in self.src:
+                out.append(" ")  # an aligned row's column mark
             elif c in "^_":
                 script = self._arg().strip()
                 out.append("°" if script == "°" else f"{c}{_grouped(script)} ")
@@ -1461,7 +1477,8 @@ class _TexReader:
         if not name.isalpha():
             return _TEX_SYMBOLS.get("\\" + name, name)  # \$ \{ \} \% stay; \, is a space
         if name in _TEX_FRACS:
-            top, bottom = self._arg(), self._arg()
+            # An empty part is Khan's blank: `\dfrac{\phantom{0}}{4}` reads □/4.
+            top, bottom = (part if part.strip() else "□" for part in (self._arg(), self._arg()))
             return f"{_TEX_FRAC_START}{_grouped(top)}/{_grouped(bottom)}{_TEX_FRAC_END}"
         if name == "sqrt":
             self._skip_space()
@@ -1471,10 +1488,48 @@ class _TexReader:
                 close = len(self.src) if close < 0 else close
                 degree = _TexReader(self.src[self.at + 1:close]).text().strip()
                 self.at = close + 1
-            return _TEX_ROOTS.get(degree, f"{degree}√") + _grouped(self._arg())
+            # A degree above 4 as a superscript, ⁵√32, so it never reads as a product.
+            root = _TEX_ROOTS.get(degree) or (
+                f"{degree.translate(_TEX_SUPERSCRIPT)}√"
+                if re.fullmatch(r"\d+|n", degree) else f"({degree})√"
+            )
+            return root + _grouped(self._arg())
         if name in _TEX_COLORS:
             self._arg()  # the colour; what it colours follows as its own group
             return ""
+        if name in _TEX_SPACES:
+            if self._peek() == "*":
+                self.at += 1
+            self._skip_space()
+            if self._peek() == "[":  # \rule[raise]{width}{height}
+                close = self.src.find("]", self.at)
+                self.at = len(self.src) if close < 0 else close + 1
+            for _ in range(_TEX_SPACES[name]):
+                self._arg()
+            return ""
+        if name in ("htmlClass", "sout", "cancel"):
+            if name == "htmlClass":
+                self._arg()  # the class; what it paints follows as its own group
+            return ""
+        if name in ("begin", "end"):
+            env = self._arg().strip()  # an environment's name is no word; its rows are lines
+            if name == "begin" and env in ("array", "tabular"):
+                self._arg()  # the column spec, {r} or {cc}
+            return "\n" if name == "end" else ""
+        if name in ("overbrace", "underbrace"):
+            inside = self._arg()
+            self._skip_space()
+            if self._peek() in ("^", "_"):  # the label: `\overbrace{2+3}^{5}` reads 2+3 (5)
+                self.at += 1
+                return f"{inside} ({self._arg().strip()})"
+            return inside
+        if name in ("overset", "stackrel", "underset"):
+            mark, base = self._arg(), self._arg()
+            return f"{base}{mark}"  # `\overset{?}{=}` reads =?
+        if name == "overline":
+            inside = self._arg()
+            # A period over digits, as Polish writes it: 0,\overline{3} reads 0,(3).
+            return f"({inside.strip()})" if inside.strip().isdigit() else f"overline {inside}"
         if name in _TEX_PHANTOMS:
             self._arg()
             return ""
