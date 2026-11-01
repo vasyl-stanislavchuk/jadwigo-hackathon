@@ -7,11 +7,14 @@ prod's major version, with no Docker: Postgres.app on port 5433 locally, and the
 | Path | What it is |
 | --- | --- |
 | `migrations/<timestamp>_<name>.sql` | One migration per change, applied in name order. Never edited once merged: a change is a new migration. |
-| `tests/shim.sql` | What a Supabase project has before any migration: the roles `anon`, `authenticated`, `authenticator`, `service_role` and `supabase_auth_admin`, the `auth` schema, `auth.uid()`, `auth.jwt()`, `auth.role()` and `auth.email()`, and the columns of `auth.users` and `auth.identities` a sign-in writes. Applied before the migrations, never to a real project. |
+| `tests/shim.sql` | What a Supabase project has before any migration: the roles `anon`, `authenticated`, `authenticator`, `service_role` and `supabase_auth_admin`, the `auth` schema, `auth.uid()`, `auth.jwt()`, `auth.role()` and `auth.email()`, and the columns of `auth.users` and `auth.identities` a sign-in writes. Realtime's `realtime.send()`, `realtime.topic()` and `realtime.messages`, which keep each broadcast as a row; and, where pg_cron is not available, `cron.job`, `cron.schedule()` and `cron.unschedule()`, which record a job and never run it. Applied before the migrations, never to a real project. |
 | `tests/*.test.sql` | pgTAP tests. Each runs in a transaction it rolls back, on the fixture in `tests/_fixture.sql`. |
 
 ## Commands
 
+- `make pgmq` installs pgmq 1.5.1, the version Supabase's Postgres 17 runs, into the extension
+  directory of the server `DATABASE_URL` names, once per machine. pgmq is pure SQL: a control file
+  and one script, checked by sha256. A migration then runs `create extension pgmq` as on Supabase.
 - `make migrate` resets the database `DATABASE_URL` names (only a `jadwigo*` one), then applies the
   shim and every migration.
 - `make pgtap` runs the tests with `pg_prove`. Locally, install it once with
