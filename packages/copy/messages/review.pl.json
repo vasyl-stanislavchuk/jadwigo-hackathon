@@ -579,8 +579,8 @@
   "chat_consent": false,
   "chat_check_findings": false,
   "chat_sign_in": false,
-  "chat_edit_step": false,
-  "chat_edit_prompt": false,
-  "chat_edit_send": false,
-  "chat_edit_cancel": false
+  "chat_edit_step": true,
+  "chat_edit_prompt": true,
+  "chat_edit_send": true,
+  "chat_edit_cancel": true
 }
