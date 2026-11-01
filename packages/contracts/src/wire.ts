@@ -657,22 +657,44 @@ export const LIMITS = {
    */
   attachmentsPerMessage: 10,
   attachmentBytes: 4_194_304,
+  /**
+   * A HEIC, a PDF or a DOCX, uploaded as it is (wave 6 decision 60). The converter renders at most
+   * `documentPages` pages of one, and a turn sends the model at most `imagesPerTurn` images.
+   */
+  documentBytes: 10_485_760,
+  documentPages: 10,
+  imagesPerTurn: 20,
   attachmentEdgePx: 2000,
   attachmentsPerPodPerDay: 200,
 } as const;
 
 /**
- * `POST /api/v1/attachments`: a photo the page is about to upload, as the page re-encoded it. The
- * id comes from `event_id` and the caller's pod, so a resend makes nothing new and answers the same
- * attachment with a fresh upload form.
+ * `POST /api/v1/attachments`: a file the page is about to upload. A JPEG is the page's re-encode,
+ * with its size; a HEIC, a PDF or a DOCX goes up as it is, without one, up to
+ * `LIMITS.documentBytes`. The id comes from `event_id` and the caller's pod, so a resend makes
+ * nothing new and answers the same attachment with a fresh upload form.
  */
-export const AttachmentCreate = z.strictObject({
-  event_id: EventId,
-  media_type: AttachmentMediaType,
-  bytes: z.int().min(1).max(LIMITS.attachmentBytes),
-  width: z.int().min(1).max(LIMITS.attachmentEdgePx),
-  height: z.int().min(1).max(LIMITS.attachmentEdgePx),
-});
+export const AttachmentCreate = z
+  .strictObject({
+    event_id: EventId,
+    media_type: AttachmentMediaType,
+    bytes: z.int().min(1).max(LIMITS.documentBytes),
+    width: z.int().min(1).max(LIMITS.attachmentEdgePx).optional(),
+    height: z.int().min(1).max(LIMITS.attachmentEdgePx).optional(),
+    /** The file's name, for the parent's chip only. */
+    name: z.string().trim().min(1).max(120).optional(),
+  })
+  .refine(
+    (a) =>
+      a.media_type === "image/jpeg"
+        ? a.width !== undefined && a.height !== undefined && a.bytes <= LIMITS.attachmentBytes
+        : a.width === undefined && a.height === undefined,
+    {
+      message:
+        "a JPEG has its width and height and at most attachmentBytes; another kind has neither",
+      path: ["media_type"],
+    },
+  );
 export type AttachmentCreate = z.infer<typeof AttachmentCreate>;
 
 /**
@@ -692,12 +714,14 @@ export const AttachmentUpload = z.object({ attachment: Attachment, upload: Attac
 export type AttachmentUpload = z.infer<typeof AttachmentUpload>;
 
 /**
- * `GET /api/v1/attachments/{id}`: an attached photo and a short-lived link to its stored copy, the
- * bytes the AI received. The page fetches the link again after `expires_at`.
+ * `GET /api/v1/attachments/{id}`: an attached file and a short-lived link to its stored copy. For
+ * a HEIC, a PDF or a DOCX, `preview_url` links the converter's first page, what the AI received,
+ * once a turn has read the file; null before. The page fetches both again after `expires_at`.
  */
 export const AttachmentRead = z.object({
   attachment: Attachment,
   url: z.url(),
+  preview_url: z.url().nullable(),
   expires_at: z.iso.datetime(),
 });
 export type AttachmentRead = z.infer<typeof AttachmentRead>;

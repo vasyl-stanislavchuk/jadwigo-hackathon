@@ -6,7 +6,6 @@ import type { Columns } from "./introspect.ts";
 type Added = "planned" | "twin";
 type AfterNotSure = "next" | "twin_now" | "review_round";
 type AnswerKind = "try" | "skip";
-type AttachmentMediaType = "image/jpeg";
 type AttachmentState = "pending" | "attached";
 type AttemptMode = "real" | "preview";
 type AttemptStatus = "in_progress" | "paused" | "finished";
@@ -106,15 +105,16 @@ interface AttachmentTable {
   account_id: string;
   event_id: string;
   state: Generated<AttachmentState>;
-  media_type: AttachmentMediaType;
+  media_type: string;
   bytes: number;
-  width: number;
-  height: number;
+  width: number | null;
+  height: number | null;
   conversation_id: string | null;
   storage_path: string | null;
   created_at: ColumnType<Date, Date | string | undefined, Date | string>;
   expires_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
   attached_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
+  name: string | null;
 }
 
 interface AttemptTable {
@@ -528,20 +528,16 @@ export const COLUMNS = {
       generated: true,
       labels: ["pending", "attached"],
     },
-    media_type: {
-      type: "attachment_media_type",
-      nullable: false,
-      generated: false,
-      labels: ["image/jpeg"],
-    },
+    media_type: { type: "text", nullable: false, generated: false, labels: null },
     bytes: { type: "int4", nullable: false, generated: false, labels: null },
-    width: { type: "int4", nullable: false, generated: false, labels: null },
-    height: { type: "int4", nullable: false, generated: false, labels: null },
+    width: { type: "int4", nullable: true, generated: false, labels: null },
+    height: { type: "int4", nullable: true, generated: false, labels: null },
     conversation_id: { type: "uuid", nullable: true, generated: false, labels: null },
     storage_path: { type: "text", nullable: true, generated: false, labels: null },
     created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
     expires_at: { type: "timestamptz", nullable: true, generated: false, labels: null },
     attached_at: { type: "timestamptz", nullable: true, generated: false, labels: null },
+    name: { type: "text", nullable: true, generated: false, labels: null },
   },
   attempt: {
     id: { type: "uuid", nullable: false, generated: true, labels: null },

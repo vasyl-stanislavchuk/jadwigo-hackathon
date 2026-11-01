@@ -2,6 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "string",
   "enum": [
-    "image/jpeg"
+    "image/jpeg",
+    "image/heic",
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   ]
 }

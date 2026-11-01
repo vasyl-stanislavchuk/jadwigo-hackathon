@@ -3171,6 +3171,7 @@ class PostgresStore implements Store {
               bytes: valid.bytes,
               width: valid.width,
               height: valid.height,
+              name: valid.name,
               expires_at: utc(attachment.expires_at),
             })
             .onConflict((oc) => oc.doNothing())

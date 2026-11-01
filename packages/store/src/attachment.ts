@@ -21,8 +21,11 @@ export interface NewAttachment {
   event_id: EventId;
   media_type: AttachmentMediaType;
   bytes: number;
-  width: number;
-  height: number;
+  /** A JPEG's size; null for a HEIC, a PDF or a DOCX (wave 6 decision 60). */
+  width: number | null;
+  height: number | null;
+  /** The file's name for the parent's chip, or null. */
+  name: string | null;
   /** When a photo no message carried is let go (ISO, UTC); the store keeps it pending until then. */
   expires_at: string;
 }

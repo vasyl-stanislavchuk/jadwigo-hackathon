@@ -262,6 +262,7 @@ export function attachmentSuite(
         bytes: BYTES,
         width: 10,
         height: 10,
+        name: null,
         expires_at: new Date(Date.now() - 60_000).toISOString(),
       });
       uploads.put(pendingKey(a.pod, id), syntheticJpeg(BYTES));
@@ -306,6 +307,29 @@ export function attachmentSuite(
       await keptNothing(a, [first, second]);
     });
 
+    // Wave 6 step 0 (dl-z5ja.11.11): the contract takes documents before the API does.
+    it("refuses a HEIC, a PDF or a DOCX until they are taken, as 409 AttachmentMismatch", async () => {
+      const a = await parent();
+      for (const media_type of [
+        "image/heic",
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ]) {
+        const created = await a.call<ErrorEnvelope>("POST", pathOf("createAttachment", {}), {
+          event_id: event(),
+          media_type,
+          bytes: 812_000,
+          name: "zeszyt",
+        });
+        expect([media_type, created.status, created.body.error.type]).toEqual([
+          media_type,
+          409,
+          "AttachmentMismatch",
+        ]);
+      }
+      expect(await s.store.countAttachments(a.pod, "2000-01-01T00:00:00.000Z")).toBe(0);
+    });
+
     it("answers a pending photo's link as 404", async () => {
       const a = await parent();
       const id = await a.upload();
@@ -324,6 +348,7 @@ export function attachmentSuite(
           bytes: BYTES,
           width: 10,
           height: 10,
+          name: null,
           expires_at,
         });
       const created = await a.create();

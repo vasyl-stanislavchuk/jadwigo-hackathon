@@ -226,20 +226,35 @@ describe("a message carries photos (dl-z5ja.11.1)", () => {
     expect(steer.error?.issues.some((i) => i.path[0] === "attachment_ids")).toBe(true);
   });
 
-  it("creates only a JPEG within the size and edge limits", () => {
+  it("creates a JPEG with its size, within the photo limits", () => {
     const photo = { ...base, media_type: "image/jpeg", bytes: 482_113, width: 1500, height: 2000 };
     expect(AttachmentCreate.safeParse(photo).success).toBe(true);
     for (const bad of [
-      { media_type: "image/heic" },
       { media_type: "image/png" },
       { bytes: LIMITS.attachmentBytes + 1 },
       { bytes: 0 },
       { width: LIMITS.attachmentEdgePx + 1 },
+      { width: undefined },
       { storage_path: "pods/x" },
     ]) {
       expect(AttachmentCreate.safeParse({ ...photo, ...bad }).success, JSON.stringify(bad)).toBe(
         false,
       );
+    }
+  });
+
+  it("creates a HEIC, a PDF and a DOCX as they are: a name, no size, up to documentBytes (wave 6)", () => {
+    const docx = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    for (const media_type of ["image/heic", "application/pdf", docx]) {
+      const file = { ...base, media_type, bytes: LIMITS.documentBytes, name: " zeszyt " };
+      const parsed = AttachmentCreate.safeParse(file);
+      expect(parsed.success, media_type).toBe(true);
+      expect(parsed.data?.name).toBe("zeszyt");
+      expect(AttachmentCreate.safeParse({ ...file, width: 10, height: 10 }).success).toBe(false);
+      expect(AttachmentCreate.safeParse({ ...file, bytes: LIMITS.documentBytes + 1 }).success).toBe(
+        false,
+      );
+      expect(AttachmentCreate.safeParse({ ...file, name: "a".repeat(121) }).success).toBe(false);
     }
   });
 

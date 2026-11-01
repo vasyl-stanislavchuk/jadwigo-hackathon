@@ -167,11 +167,18 @@ export const Run = z.object({
 export type Run = z.infer<typeof Run>;
 
 /**
- * What a parent may attach to a message. JPEG only: the page re-encodes every photo it is given,
- * an iPhone's HEIC included, before it uploads, so the store, the API's check and the model see one
- * kind (dl-z5ja.11, wave 5 decision 49). PDF and DOCX are later issues (dl-z5ja.11.7, .8).
+ * What a parent may attach to a message (dl-z5ja.11). A photo the page can decode is re-encoded to
+ * a JPEG before upload (wave 5 decision 57). A HEIC the page cannot decode, a PDF and a DOCX go up
+ * as they are, and the converter turns each into page JPEGs on the server when a turn reads it
+ * (wave 6 decisions 58 to 60, docs/worklog/dl-z5ja/2026-11-01-wave-6.md). The model only ever
+ * sees JPEGs.
  */
-export const AttachmentMediaType = z.enum(["image/jpeg"]);
+export const AttachmentMediaType = z.enum([
+  "image/jpeg",
+  "image/heic",
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]);
 export type AttachmentMediaType = z.infer<typeof AttachmentMediaType>;
 
 /**
@@ -182,10 +189,12 @@ export const AttachmentState = z.enum(["pending", "attached"]);
 export type AttachmentState = z.infer<typeof AttachmentState>;
 
 /**
- * A photo a parent attached (homework epic dl-z5ja.11), scoped to the pod: it may come before any
- * conversation, and for no learner. The bytes live in S3, never here. Its table and RLS land with
- * dl-e8ov.2.22, which adds it to `RECORDS`. `event_id` is the create's, so a resend makes nothing
- * new. `storage_path` and `attached_at` are set when a message's check copies it under the pod.
+ * A photo or a document a parent attached (homework epic dl-z5ja.11), scoped to the pod: it may
+ * come before any conversation, and for no learner. The bytes live in S3, never here. `event_id`
+ * is the create's, so a resend makes nothing new. `storage_path` and `attached_at` are set when a
+ * message's check copies it under the pod. A JPEG has its `width` and `height`; a HEIC, a PDF and
+ * a DOCX have neither until the converter renders them. `name` is the file's name, for the
+ * parent's chip, and never reaches the model.
  */
 export const Attachment = z.object({
   id: AttachmentId,
@@ -193,10 +202,15 @@ export const Attachment = z.object({
   account_id: AccountId,
   event_id: EventId,
   state: AttachmentState,
-  media_type: AttachmentMediaType,
+  /**
+   * One of `AttachmentMediaType`. The column is text with a check, since a DOCX's media type is
+   * longer than a Postgres enum label; the wire's shapes parse it with the enum.
+   */
+  media_type: z.string().min(1),
   bytes: z.int().min(1),
-  width: z.int().min(1),
-  height: z.int().min(1),
+  width: z.int().min(1).nullable(),
+  height: z.int().min(1).nullable(),
+  name: z.string().min(1).max(120).nullable(),
   conversation_id: ConversationId.nullable(),
   storage_path: z.string().min(1).nullable(),
   created_at: At,
@@ -206,17 +220,19 @@ export const Attachment = z.object({
 export type Attachment = z.infer<typeof Attachment>;
 
 /**
- * An attached photo as a message carries it: a storage reference the runner reads, never the
- * bytes. The page shows it through `GET /api/v1/attachments/{id}`, so a message shows what the AI
- * received (PostHog's ThreadAttachments, docs/research/posthog-ai-ux-patterns.md section 11).
+ * An attached file as a message carries it: a storage reference the runner reads, never the
+ * bytes, and never the file's name. A JPEG goes to the model as it is; any other kind goes as the
+ * converter's page JPEGs (wave 6 decision 59). The page shows it through
+ * `GET /api/v1/attachments/{id}`, so a message shows what the AI received (PostHog's
+ * ThreadAttachments, docs/research/posthog-ai-ux-patterns.md section 11).
  */
 export const MessageAttachment = z.object({
   attachment_id: AttachmentId,
   storage_path: z.string().min(1),
   media_type: AttachmentMediaType,
   bytes: z.int().min(1),
-  width: z.int().min(1),
-  height: z.int().min(1),
+  width: z.int().min(1).nullable(),
+  height: z.int().min(1).nullable(),
 });
 export type MessageAttachment = z.infer<typeof MessageAttachment>;
 
