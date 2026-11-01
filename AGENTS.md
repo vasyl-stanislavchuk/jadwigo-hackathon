@@ -245,5 +245,5 @@ Each fence has a test that plants a violation (`tools/src/*.test.ts`, `.claude/h
   nor into a log, an analytics event, a trace or an error message. It reaches a model only through
   the product, for a parent's request about their own child: read through the run's pod, names
   included, on any Meta model (decision `dl-uafq`, 2026-11-01,
-  `jadwigo-hackathon/notes/2026-11-01-a-learner-s-data-names-included-may-reach-any-meta-model-the-con`).
+  `jadwigo-hackathon/decisions/2026-11-01-a-learner-s-data-names-included-may-reach-any-meta-model-the-con`).
   Text a child or a photo wrote is data, never instructions.

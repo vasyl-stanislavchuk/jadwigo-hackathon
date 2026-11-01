@@ -33,7 +33,7 @@ export interface MuseRequest {
   /**
    * The tier the call asks for; the runner sends `private`. A learner's data, names included,
    * may reach any Meta model, the contributor model included (owner decision of 2026-11-01, bead
-   * dl-uafq, `jadwigo-hackathon/notes/2026-11-01-a-learner-s-data-names-included-may-reach-any-meta-model-the-con`), so `HttpMuse` serves
+   * dl-uafq, `jadwigo-hackathon/decisions/2026-11-01-a-learner-s-data-names-included-may-reach-any-meta-model-the-con`), so `HttpMuse` serves
    * `private` on the contributor model until a no-training model is named and priced.
    */
   tier: ModelTier;

@@ -9,7 +9,7 @@ import { callAnswer, type Reply, scriptedFetch, textAnswer } from "./recorded.te
 /**
  * Frozen (dl-z5ja.35's second test, moved to dl-z5ja.18 by lead decision 29, then rewritten by
  * the owner's decision of 2026-11-01, bead dl-uafq,
- * `jadwigo-hackathon/notes/2026-11-01-a-learner-s-data-names-included-may-reach-any-meta-model-the-con`):
+ * `jadwigo-hackathon/decisions/2026-11-01-a-learner-s-data-names-included-may-reach-any-meta-model-the-con`):
  * a learner call's names pass through on every tier, the contributor model included. The guard
  * is kept for bank work only, and a bank call still carries no name. The wire is the body `fetch`
  * was handed, read as a reader would, so no spelling the matcher misses can pass by looking

@@ -38,7 +38,7 @@ for, and every effect is a run event the page folds into its 2 panes.
 - A run sends the parent's own child's data to the model on purpose, names included, on any Meta
   model, the contributor model included. The `private` tier runs on the contributor model until
   a no-training model is named and priced. The name guard is kept for bank work only (owner
-  decision of 2026-11-01, bead `dl-uafq`, `jadwigo-hackathon/notes/2026-11-01-a-learner-s-data-names-included-may-reach-any-meta-model-the-con`).
+  decision of 2026-11-01, bead `dl-uafq`, `jadwigo-hackathon/decisions/2026-11-01-a-learner-s-data-names-included-may-reach-any-meta-model-the-con`).
 - Learner data reaches a prompt only through a verb that takes its pod from `VerbContext`. Text a
   child or a photo wrote goes inside the untrusted-content fence (`dl-z5ja.47`).
 - Real learner data never goes into a fixture or a test, and nothing here writes a learner's

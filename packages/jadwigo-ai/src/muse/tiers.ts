@@ -5,7 +5,7 @@ import { PromptGuard } from "./pii.ts";
 /**
  * What leaves with a call. A learner's data, names included, may reach any Meta model, the
  * contributor model included (owner decision of 2026-11-01, bead dl-uafq,
- * `jadwigo-hackathon/notes/2026-11-01-a-learner-s-data-names-included-may-reach-any-meta-model-the-con`), so no tier needs the name guard: a run's prompt goes as it is.
+ * `jadwigo-hackathon/decisions/2026-11-01-a-learner-s-data-names-included-may-reach-any-meta-model-the-con`), so no tier needs the name guard: a run's prompt goes as it is.
  *
  * The guard stays for bank work, whose prompts have no reason to carry a name: a call whose tag
  * lane is in `guardLanes` (`bank` by default) passes one `PromptGuard` over every text it
