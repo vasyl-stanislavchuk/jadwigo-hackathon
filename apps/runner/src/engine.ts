@@ -36,9 +36,9 @@ export function postgresEngineHost(
   // A dropped idle connection emits 'error' on the pool; with no listener the process crashes.
   pool.on("error", (error) => warn(`an idle queue connection dropped: ${error.message}`));
   const queue = new PgmqRunQueue(pool, { role: "jadwigo_runner" });
-  // The tier every model request names (dl-z5ja.91 moves runStep's constant onto EngineDeps):
-  // the request says the tier that answers it, and no slot of HttpMuse stands in for another.
-  const engine: EngineDeps & { tier: ModelTier } = {
+  // The tier every model request names (EngineDeps.tier, dl-z5ja.91): the request says the tier
+  // that answers it, and no slot of HttpMuse stands in for another.
+  const engine: EngineDeps = {
     tier,
     store,
     muse,
