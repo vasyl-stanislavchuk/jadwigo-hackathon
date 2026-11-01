@@ -70,7 +70,7 @@ from typing import Any
 
 from jw import bank_client, items, pii, refusals, settings_keys
 from jw.commands import question
-from jw.draw import DRAW_RULES, NOT_READY_ITEM, Draw, Left, draw, ready_ids
+from jw.draw import DRAW_RULES, NOT_READY_ITEM, LanguageDraw, Left, draw_or_original, ready_ids
 from jw.errors import JwError
 
 RUNGS = ("look", "boost", "almost", "worked")
@@ -377,14 +377,16 @@ def _draw_loading(
     language: str,
     count: int | None,
     today: dt.date,
-) -> tuple[Draw, list[tuple[Any, dict[str, Any]]], dict[str, str]]:
-    """Draw, load every drawn item, and draw again without the ones `load_item` refuses."""
+) -> tuple[LanguageDraw, list[tuple[Any, dict[str, Any]]], dict[str, str]]:
+    """Draw, load every drawn item, and draw again without the ones `load_item` refuses. When
+    nothing plays in `language`, the draw is in the sets' original language
+    (`draw_or_original`), and every item is loaded in the language the draw took."""
     rules = None
     if count is not None:
         rules = {**DRAW_RULES, kind: dataclasses.replace(DRAW_RULES[kind], count=count)}
     refused: dict[str, str] = {}
     while True:
-        result = draw(
+        result = draw_or_original(
             envelope,
             pages,
             kind=kind,
@@ -395,9 +397,9 @@ def _draw_loading(
         )
         loaded: list[tuple[Any, dict[str, Any]]] = []
         new = False
-        for drawn in result.questions:
+        for drawn in result.draw.questions:
             try:
-                loaded.append((drawn, items.load_item(drawn.item_id, language)))
+                loaded.append((drawn, items.load_item(drawn.item_id, result.language)))
             except items.NotReady as exc:
                 refused[drawn.item_id] = exc.reason
                 new = True
@@ -415,6 +417,14 @@ def _not_ready(left: Left, language: str) -> str:
         return left.reason
     why = items.why_not(left.id, language)
     return why or f"its set page does not list it as lesson-ready in {language}"
+
+
+def _fallback_reason(asked: str, offered: str) -> str:
+    """What the parent is told when the lesson is offered in its questions' original language."""
+    return (
+        f"nothing in these sets is checked in {asked} yet, so the lesson is offered in {offered}, "
+        "the language its questions were written in; write every line in it"
+    )
 
 
 def _slug(text: str) -> str:
@@ -699,6 +709,8 @@ def _view(stored: Mapping[str, Any], verbose: bool = False) -> dict[str, Any]:
     }
     if stored.get("setup_warning"):
         out["setup_warning"] = stored["setup_warning"]
+    if stored.get("language_fallback"):
+        out["language_fallback"] = stored["language_fallback"]
     if verbose:
         out.update(rule=stored["rule"], reasoning=stored["lesson"]["reasoning"])
     return out
@@ -758,9 +770,11 @@ def draft(
         grade=grade, words=topic, skills=list(skills), language=language
     )
     pages = _pages(envelope)
-    result, loaded, refused = _draw_loading(
+    drawn_in, loaded, refused = _draw_loading(
         envelope, pages, kind=kind, language=language, count=count, today=day
     )
+    result = drawn_in.draw
+    asked, language = language, drawn_in.language
 
     draft_id = f"draft_{secrets.token_hex(6)}"
     taken = {drawn.item_id for drawn, _ in loaded}
@@ -821,6 +835,11 @@ def draft(
         "language": language,
         "kind": kind,
         "rule": result.rule,
+        **(
+            {"language_fallback": {"asked": asked, "offered": language, "reason": _fallback_reason(asked, language)}}
+            if drawn_in.fallback_from
+            else {}
+        ),
         "rule_settled": result.rule_settled,
         "lesson": {
             "id": f"{_slug(request)}-{day.isoformat()}",

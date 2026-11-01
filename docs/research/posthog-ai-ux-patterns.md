@@ -363,7 +363,7 @@ A question such as "how is she doing with subtraction?" or "what should we pract
 | `curriculum_topics` | topics near the learner's skills (`packages/core/src/curriculum`) | topic chips with "make a lesson from this" |
 | `lesson_ideas` | up to 3 `focus` proposals from the brief | proposal cards; Accept starts `lesson_draft` |
 
-**What reaches Muse.** When this note was written (2026-10-31), the house rule kept real learner data out of every prompt, and only the digest's codes, counts and ids could reach the model. The owner decided to replace that rule on 2026-11-01 (draft decision `dl-2uq1`, waiting for acceptance; `jadwigo-hackathon/notes/2026-11-01-learner-data-reaches-the-model-by-design-for-the-parent-s-own-re`): the product needs a child's personal data in the prompt to work.
+**What reaches Muse.** When this note was written (2026-10-31), the house rule kept real learner data out of every prompt, and only the digest's codes, counts and ids could reach the model. The owner decided to replace that rule on 2026-11-01 (decision `dl-2uq1`, accepted on 2026-11-01; `jadwigo-hackathon/decisions/2026-11-01-learner-data-reaches-the-model-by-design-for-the-parent-s-own-re`): the product needs a child's personal data in the prompt to work.
 - A query verb's result may reach the model in full: evidence, the child's answers and words, mistakes, goals, notes, names included.
 - It runs only on a Meta tier that does not train on its input. The `contributor` model, which trains, stays for the bank and never carries a learner's name.
 - Code keeps 2 limits, PostHog's runner-adds-the-scope pattern (section 14): a verb reads only the run's pod, and text a child or a photo wrote goes inside the untrusted-content fence (`dl-z5ja.47`).

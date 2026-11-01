@@ -49,8 +49,6 @@ function rowsOf(chat: readonly ChatItem[]): Row[] {
   return rows;
 }
 
-const usd = (n: number): string => n.toFixed(2);
-
 function ToolLine({ tool, language }: { tool: ToolItem; language: Language }): ReactElement {
   const what = copy(language, TOOL_KEY[tool.verb], {}, "adult");
   const how =
@@ -80,14 +78,17 @@ function ToolGroup({ tools, language }: { tools: ToolItem[]; language: Language 
         <summary>
           {head} · {copy(language, "chat_tool_count", { n: tools.length }, "adult")}
         </summary>
-        <ul aria-label="Tool lines" className="ml-4 list-disc">
+        <ul aria-label={copy(language, "chat_tool_lines", {}, "adult")} className="ml-4 list-disc">
           {tools.map((t) => (
             <ToolLine key={t.call_id} tool={t} language={language} />
           ))}
         </ul>
       </details>
       {stuck.length > 0 && (
-        <ul aria-label="Stuck tool lines" className="font-medium">
+        <ul
+          aria-label={copy(language, "chat_tool_lines_stuck", {}, "adult")}
+          className="font-medium"
+        >
           {stuck.map((t) => (
             <ToolLine key={t.call_id} tool={t} language={language} />
           ))}
@@ -156,17 +157,8 @@ function RowView({ row, run, language }: { row: Row; run: RunId; language: Langu
             row.level === "steer" ? "chat_budget_steer" : "chat_budget_stop",
             {},
             "adult",
-          )}{" "}
-          <span className="text-muted-foreground">
-            (
-            {copy(
-              language,
-              "chat_budget_spent",
-              { spent: usd(row.spent_usd), cap: usd(row.cap_usd) },
-              "adult",
-            )}
-            )
-          </span>
+          )}
+          {row.level === "stop" && ` ${copy(language, "chat_budget_steer_note", {}, "adult")}`}
         </p>
       );
     case "approval": {
@@ -234,7 +226,7 @@ export function ChatPane({
           {say("chat_restoring")}
         </p>
       )}
-      <ol aria-label="Messages" className="flex flex-1 flex-col gap-3 overflow-y-auto">
+      <ol aria-label={say("chat_messages")} className="flex flex-1 flex-col gap-3 overflow-y-auto">
         {turns.map((turn) =>
           rowsOf(turn.view.chat).map((row) => (
             <li key={`${turn.run.id}-${row.seq}`} className="flex flex-col">

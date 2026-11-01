@@ -328,3 +328,39 @@ describe("lesson review (dl-uukj.30)", () => {
     expect(copy("pl", "parent_review_time", { seconds: 12 })).toBe("Czas: 12 s");
   });
 });
+
+describe("the chat page (dl-z5ja.29)", () => {
+  const chatKeys = COPY_KEYS.filter((key) => key.startsWith("chat_"));
+
+  it("never names money or tokens: the cost is said in words", () => {
+    for (const [language, table] of Object.entries(TABLES)) {
+      for (const key of chatKeys) {
+        for (const entry of entries(table[key])) {
+          expect(entry.text, `${language}.${key}`).not.toMatch(
+            /\$|(?<!\p{L})(usd|zł|dolar\p{L}*|dollars?|tokens?|tokenów)(?!\p{L})/iu,
+          );
+        }
+      }
+    }
+  });
+
+  it("names no verb and no JSON on a line a parent reads", () => {
+    for (const [language, table] of Object.entries(TABLES)) {
+      for (const key of chatKeys) {
+        for (const entry of entries(table[key])) {
+          expect(entry.text, `${language}.${key}`).not.toMatch(/lesson_|question_|[{}]\s*"/);
+        }
+      }
+    }
+  });
+
+  it("fills a tool line's topic and counts a check's notes in Polish plurals", () => {
+    expect(copy("pl", "chat_tool_question_search_about", { topic: "odejmowanie do 20" })).toBe(
+      "Szukam zadań o: odejmowanie do 20",
+    );
+    expect(copy("pl", "chat_check_findings", { n: 1 })).toBe("1 uwaga do poprawy");
+    expect(copy("pl", "chat_check_findings", { n: 3 })).toBe("3 uwagi do poprawy");
+    expect(copy("pl", "chat_check_findings", { n: 5 })).toBe("5 uwag do poprawy");
+    expect(copy("en", "chat_check_findings", { n: 1 })).toBe("1 note to fix");
+  });
+});
