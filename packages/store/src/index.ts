@@ -3,8 +3,10 @@ export { createPostgresStore } from "./postgres.ts";
 export { attemptResults, type ResultQuestion } from "./result.ts";
 export type {
   Fenced,
+  LessonRevisionAppend,
   MessageUsage,
   NewConversation,
+  NewLessonRevision,
   NewRun,
   NewRunInbox,
   RunChange,

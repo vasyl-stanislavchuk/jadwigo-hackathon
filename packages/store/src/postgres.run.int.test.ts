@@ -189,3 +189,31 @@ describe("PostgresStore's run row lock", () => {
     expect(await api.listRunEvents(a.pod, run.id, 0)).toHaveLength(1);
   });
 });
+
+describe("PostgresStore's lesson revision lock (dl-z5ja.134)", () => {
+  it("gives exactly 1 of 2 writers at the same expected revision ok, on 2 connections", async () => {
+    const a = await scope();
+    const conversation = await api.createConversation(a.pod, {
+      id: ConversationId.parse(idOf(ID_PREFIXES.conversation, crypto.randomUUID())),
+      created_by: a.account,
+      title: null,
+    });
+    for (let round = 0; round < 5; round++) {
+      const first = await api.createRun(a.pod, newRun(a.account, conversation.id));
+      const second = await api.createRun(a.pod, newRun(a.account, conversation.id));
+      const write = (store: typeof api, run: RunId) =>
+        store.unit(() =>
+          store.appendLessonRevision(a.pod, run, 1, round, {
+            run_id: run,
+            event_id: EventId.parse(crypto.randomUUID()),
+            type: "lesson_revision",
+            payload: { revision: round + 1, call_id: "call_1", lesson_file: { title: "Rows" } },
+          }),
+        );
+      // The API's role and the runner's, each on a connection of its own.
+      const results = await Promise.all([write(api, first.id), write(runner, second.id)]);
+      expect(results.map((r) => r.ok).sort()).toEqual([false, true]);
+      expect(results.find((r) => !r.ok)).toMatchObject({ stale: "revision", latest: round + 1 });
+    }
+  });
+});

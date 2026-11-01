@@ -69,10 +69,13 @@ import {
 import { byTypeThenPosition, checkExamples } from "./example.ts";
 import { handleFor } from "./handle.ts";
 import { attemptResults } from "./result.ts";
+import { checkRevision } from "./revision.ts";
 import type {
   Fenced,
+  LessonRevisionAppend,
   MessageUsage,
   NewConversation,
+  NewLessonRevision,
   NewRun,
   NewRunInbox,
   NewRunRating,
@@ -1602,6 +1605,39 @@ export class InMemoryStore implements Store {
     });
     this.#runEvents.set(run, [...log, ...fresh]);
     return { stale: false, value: answer };
+  }
+
+  async appendLessonRevision(
+    pod: PodId,
+    run: RunId,
+    attempt: number,
+    expected: number,
+    event: NewLessonRevision,
+  ): Promise<LessonRevisionAppend> {
+    // No await before the append: in memory the check and the write are one step.
+    const stored = this.#inPod(this.#runs, pod, run, "the run");
+    checkRevision(stored.conversation_id, run, expected, event);
+    const replay = this.#runEvents.get(run)?.find((e) => e.event_id === event.event_id);
+    if (replay?.type === "lesson_revision")
+      return { ok: true, revision: replay.payload.revision, event: replay };
+    const latest = this.#latestRevision(stored.conversation_id as ConversationId);
+    if (latest !== expected) return { ok: false, stale: "revision", latest };
+    const { stale, value } = await this.appendRunEvents(pod, run, attempt, [event]);
+    const appended = value[0];
+    if (stale || appended === undefined) return { ok: false, stale: "attempt", latest };
+    return { ok: true, revision: event.payload.revision, event: appended };
+  }
+
+  /** The highest lesson revision across a conversation's runs, 0 before the first. */
+  #latestRevision(conversation: ConversationId): number {
+    let latest = 0;
+    for (const r of this.#runs.values()) {
+      if (r.conversation_id !== conversation) continue;
+      for (const e of this.#runEvents.get(r.id) ?? [])
+        if (e.type === "lesson_revision" && e.payload.revision > latest)
+          latest = e.payload.revision;
+    }
+    return latest;
   }
 
   async listRunEvents(pod: PodId, run: RunId, afterSeq: number): Promise<readonly RunEvent[]> {
