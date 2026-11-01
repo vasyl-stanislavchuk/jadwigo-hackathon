@@ -1776,6 +1776,26 @@ describe("a parent's patch (dl-z5ja.76)", () => {
     expect(t.muse.calls).toHaveLength(2);
   });
 
+  it("is applied when an ender moves the attempt before the patch's step runs (#575's review)", async () => {
+    const t = await setup([drafting(), { text: "Done." }], real());
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+    expect((await t.run(run)).status).toBe("completed");
+    // The patch is accepted, and its step queued at the run's attempt; then an ender (the sweep's
+    // close, a redelivery's claim) moves the attempt before that step runs.
+    await t.send(steer({ title: "Mine" }));
+    const stored = await t.run(run);
+    await t.store.updateRun(t.member.pod, run, stored.attempt, { attempt: stored.attempt + 1 });
+    await drain(t.deps);
+
+    const events = await t.log(run);
+    expect(events.find((e) => e.type === "patch_resolved")?.payload).toMatchObject({
+      applied: true,
+      revision: 2,
+    });
+    expect(t.store.inbox.filter((r) => r.status === "pending")).toEqual([]);
+  });
+
   it("leaves an ended turn's other inbox rows unlogged", async () => {
     const t = await setup([{ text: "Done." }]);
     const run = await t.say("Halves.");

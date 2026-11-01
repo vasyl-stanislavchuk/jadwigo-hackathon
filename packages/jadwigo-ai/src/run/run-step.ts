@@ -384,15 +384,15 @@ export async function runStep(input: RunStepInput, deps: EngineDeps): Promise<Ru
     }
     throw error;
   }
-  if (found.run.attempt !== input.attempt) {
-    const ended = endedOutcome(found.run.status);
-    return { outcome: ended ?? "continue", events: 0 };
-  }
   const ended = endedOutcome(found.run.status);
+  if (found.run.attempt !== input.attempt && !ended) return { outcome: "continue", events: 0 };
   if (ended) {
     // An ended turn changes only by a parent's patch; everything else in its inbox changes nothing.
+    // A step queued before an ender moved the attempt (the sweep's close, a redelivery's claim)
+    // still lands its patch, under the attempt the run holds now, so no inbox row waits forever
+    // (#575's review): the ender itself never reads the inbox.
     try {
-      return { outcome: ended, events: await patchEnded(deps, found, input.attempt) };
+      return { outcome: ended, events: await patchEnded(deps, found, found.run.attempt) };
     } catch (error) {
       if (error instanceof StaleAttempt) return { outcome: ended, events: 0 };
       throw error;
