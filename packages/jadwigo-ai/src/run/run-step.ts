@@ -403,12 +403,19 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     const level = budgetGuard(spent, run.cap_usd);
     if (level === "stop") {
       // A refused answer the budget leaves no correction for still ends with its error.
-      if (correction) {
-        await w.append([
-          await uncheckedEvent(w, correction.call_no, correction.refusal, "before its correction"),
-        ]);
-      }
+      // One append: a crash between the error and the stop message can't leave a refused answer
+      // that a redelivery then closes with neither.
       await w.append([
+        ...(correction
+          ? [
+              await uncheckedEvent(
+                w,
+                correction.call_no,
+                correction.refusal,
+                "before its correction",
+              ),
+            ]
+          : []),
         {
           type: "budget_steer",
           run_id: run.id,
@@ -484,9 +491,11 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     // The answer check before an agent message (wave 2 Lead decision 23): code gave every number,
     // status and level, or the message is not written. A text-only answer that fails is corrected
     // once at the next step; text beside tool calls is dropped, and the turn's last answer is checked.
-    const checked = response.text === null ? null : check(response.text);
-    if (response.text !== null && checked === null) {
-      recorded.push(agentMessage(w, response.text, await w.id("call", call_no, "message")));
+    // A text-only answer with no words at all (HttpMuse answers "" as null) is a blank answer.
+    const words = wordsOf(response.text, response.tool_calls.length);
+    const checked = words === null ? null : check(words);
+    if (words !== null && checked === null) {
+      recorded.push(agentMessage(w, words, await w.id("call", call_no, "message")));
     }
     for (const call of response.tool_calls) {
       recorded.push({
@@ -538,12 +547,22 @@ function agentMessage(w: Writer, text: string, event_id: EventId): NewRunEvent {
  */
 async function refusedText(w: Writer, response: ModelResponse): Promise<string | null> {
   const { text, tool_calls, call_no } = response.payload;
-  if (text === null || tool_calls.length > 0) return null;
+  if (tool_calls.length > 0) return null;
+  const words = wordsOf(text, 0) ?? "";
   const written = new Set([
     await w.id("call", call_no, "message"),
     await w.id("call", call_no, "unchecked"),
   ]);
-  return w.log.some((e) => written.has(e.event_id)) ? null : text;
+  return w.log.some((e) => written.has(e.event_id)) ? null : words;
+}
+
+/**
+ * An answer's words for the answer check: a text-only answer always has some, "" when the model
+ * gave none, so the blank rule refuses it. Beside tool calls, no words means no message.
+ */
+function wordsOf(text: string | null, tool_calls: number): string | null {
+  if (tool_calls > 0) return text;
+  return text ?? "";
 }
 
 /**
@@ -608,15 +627,15 @@ function refusedFor({ blank, misses }: Refusal): string {
 
 /**
  * What the correction call is told: what failed, and its own words to write again. The words are
- * the model's, which may quote what a child wrote, so their markup is neutralised: they can close
- * no fence and name no link (dl-z5ja.47).
+ * the model's, which may quote what a child wrote, so they go inside the fence as a child's: DATA,
+ * markup neutralised, closing no fence and naming no link (dl-z5ja.47).
  */
 function correctionNote(text: string, refusal: Refusal): string {
   return [
     `Your last answer was not sent to the parent: it ${refusedFor(refusal)}.`,
     "Code computes every number, status and level; you only word them, and you never name a mastery level.",
     "Write the answer again with only what the tool results say. Your answer was:",
-    neutralise(text),
+    fence(text, "child"),
   ].join("\n");
 }
 
