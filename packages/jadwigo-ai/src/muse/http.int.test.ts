@@ -5,8 +5,10 @@ import { GuardedMuse, InMemoryMuseLedger, laneBudget } from "./guarded.ts";
 import { CONTRIBUTOR_MODEL, HttpMuse, type LiveText } from "./http.ts";
 
 /**
- * The one live call (dl-z5ja.18 acceptance), on the contributor tier with a prompt that carries
- * no learner data. It spends, so only the owner runs it, with a small cap and the key sourced
+ * The one live call (dl-z5ja.18 acceptance), on the contributor model with a one-line maths
+ * prompt. It waits only on the request shape the dl-z5ja.3 probe confirms, not on dl-z5ja.22:
+ * a learner's data may reach any Meta model (owner decision of 2026-11-01, bead dl-uafq).
+ * It spends, so only the owner runs it, with a small cap and the key sourced
  * from `jw.muse`'s key file (it exports META_API_KEY), so the key is never typed or on argv:
  *
  *   . ~/.config/jadwigo-bank/muse.env && JADWIGO_MUSE_CAP_USD=0.05 bunx vitest run \

@@ -6,8 +6,8 @@ import { type MuseClient, MuseFailed, type MuseRequest, type MuseResponse } from
  * transport aside: a call carries a `<lane>:<what>` tag and a `prompt_cache_key`, the lane's
  * spend is checked before the call, and each call writes one ledger row that carries its `run_id`
  * (Lead decisions 10 and 14: the run id is the trace). Wave 1 wraps `ScriptedMuse` in it;
- * `HttpMuse` (dl-z5ja.18) goes inside it too. The tier's guard is the transport's: `HttpMuse`
- * passes a `contributor` call through the `jw.pii.guard` port (`tiers.ts`) before it leaves.
+ * `HttpMuse` (dl-z5ja.18) goes inside it too. The name guard is the transport's: `HttpMuse`
+ * passes a bank call through the `jw.pii.guard` port (`tiers.ts`) before it leaves.
  * A call that failed after it spent still writes its row, with an empty `response_id`.
  */
 
@@ -28,13 +28,10 @@ export interface MuseLedger {
   write(row: LedgerRow): Promise<void>;
 }
 
-/**
- * A refused call: no tag, no cache key, a lane at its cap, or a tier the transport has no model
- * for. Nothing was sent or spent.
- */
+/** A refused call: no tag, no cache key, or a lane at its cap. Nothing was sent or spent. */
 export class MuseRefused extends Error {
   constructor(
-    readonly type: "untagged" | "no-cache-key" | "budget" | "tier",
+    readonly type: "untagged" | "no-cache-key" | "budget",
     message: string,
   ) {
     super(message);
