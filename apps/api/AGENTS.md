@@ -4,7 +4,7 @@ The one Lambda: a router, `authorize()` and the routes, with an entry per functi
 
 - **Not here:** Business rules (they go in `packages/core`) and SQL (it goes behind `packages/store`).
 - **Owner:** the platform workstream (`docs/workstreams/platform.md`). **Filled by:** `dl-5ssh.2` deploys it; the routes come with their contracts.
-- **Imports:** packages: `contracts`, `core`, `store`, `config`. Never another app.
+- **Imports:** packages: `contracts`, `core`, `store`, `config`, `jadwigo-ai`. Never another app.
 - **Public surface:** `src/index.ts`. Other files are private to this package.
 - **Test:** `bunx turbo run lint typecheck test --filter=./apps/api`
 
@@ -40,4 +40,10 @@ The one Lambda: a router, `authorize()` and the routes, with an entry per functi
   Help asked for before answering, and Not sure yet, work the same held or not. A miss must never
   change what the page shows next: the same `done`, the same next question.
 - The course (what is asked next, the growth rules) is `src/course.ts`, pure, and the server never asks an explain question in v0 (decision `2026-10-28-in-v0-the-server-never-asks-an-explain-question-a-lesson-plays-i`).
+- **The conversation routes** (`src/conversations.ts`, epic `dl-z5ja`) only write: `acceptMessage`
+  puts a message or a Stop in the run inbox and enqueues the step on pgmq's `agent_step` as
+  `jadwigo_api`, which may only send (`src/queue.ts`). A route never runs a step or calls a model.
+  The pod is the caller's (`authorizeMember`), and a run or conversation is read only with the
+  store's pod-scoped methods, so another pod's id is 404; never `findRunPod`, which `jadwigo_api`
+  may not execute. `src/testing/conversations.suite.ts` freezes the 404.
 - The route suite is `src/testing/routes.suite.ts`: `src/routes.test.ts` runs it on InMemoryStore, `src/routes.int.test.ts` on PostgresStore. `bun run dev` serves the routes on this machine.

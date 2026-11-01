@@ -15,7 +15,7 @@ import { solutionOf } from "@jadwigo/core";
 import { importLessonFile } from "@jadwigo/lesson-import";
 import type { NewAssignment, NewLessonQuestion, NewPod, Store } from "@jadwigo/store";
 import { LESSON_FILES } from "@jadwigo/testing";
-import { createApp } from "../app.ts";
+import { type AppDeps, createApp } from "../app.ts";
 import { testAuth } from "./token.ts";
 
 /** A route's path with its parameters filled in. */
@@ -35,8 +35,8 @@ type Call = <T = unknown>(
   headers?: Record<string, string>,
 ) => Promise<Reply<T>>;
 
-function client(store: Store): Call {
-  const app = createApp(store, { authenticate: testAuth });
+function client(store: Store, deps: Omit<AppDeps, "authenticate">): Call {
+  const app = createApp(store, { ...deps, authenticate: testAuth });
   const context = {} as Parameters<typeof app.resolve>[1];
   return async <T>(
     method: string,
@@ -44,14 +44,15 @@ function client(store: Store): Call {
     body?: unknown,
     headers: Record<string, string> = {},
   ): Promise<Reply<T>> => {
+    const [rawPath = path, rawQueryString = ""] = path.split("?");
     const reply = (await app.resolve(
       {
         version: "2.0",
         routeKey: "$default",
-        rawPath: path,
-        rawQueryString: "",
+        rawPath,
+        rawQueryString,
         headers: { "content-type": "application/json", ...headers },
-        requestContext: { http: { method, path }, stage: "$default" },
+        requestContext: { http: { method, path: rawPath }, stage: "$default" },
         body: body === undefined ? undefined : JSON.stringify(body),
         isBase64Encoded: false,
       },
@@ -87,8 +88,8 @@ export interface Seeded {
   questionOf(page: Pick<PageAttemptQuestion, "lesson_question_id">): Promise<LessonQuestion>;
 }
 
-export function seeded(store: Store): Seeded {
-  const call = client(store);
+export function seeded(store: Store, deps: Omit<AppDeps, "authenticate"> = {}): Seeded {
+  const call = client(store, deps);
   const known = new Map<string, LessonQuestion>();
   return {
     store,

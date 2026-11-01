@@ -21,7 +21,13 @@ export interface SidebarGroup {
 export const SIDEBAR: readonly SidebarGroup[] = [
   {
     label: "Start here",
-    items: ["guides/introduction", "guides/authentication", "guides/first-call", "guides/errors"],
+    items: [
+      "guides/introduction",
+      "guides/authentication",
+      "guides/first-call",
+      "guides/conversations",
+      "guides/errors",
+    ],
   },
   {
     label: "Use with agents",

@@ -75,6 +75,7 @@ export function headTags(page: Page, path: string): HeadTag[] {
     tags.push(
       { kind: "link", rel: "alternate", href: url, hreflang: lang },
       { kind: "link", rel: "alternate", href: canonical(page.translation), hreflang: other },
+      { kind: "property", property: "og:locale:alternate", content: locales[other] },
     );
   }
   if (page.ogImage) {
@@ -90,8 +91,18 @@ export function headTags(page: Page, path: string): HeadTag[] {
   return tags;
 }
 
-/** Structured data for the organisation and the website, one graph per page. */
-export function jsonLd(): Record<string, unknown> {
+/**
+ * The x-default alternate (dl-w0b4.83): a page with a twin names the Polish one as the page for a
+ * reader whose language is neither. Its own tag, after headTags' 2 alternates.
+ */
+export function xDefaultTag(page: Page, path: string): HeadTag[] {
+  if (!page.translation) return [];
+  const polish = (page.lang ?? "pl") === "pl" ? path : page.translation;
+  return [{ kind: "link", rel: "alternate", href: canonical(polish), hreflang: "x-default" }];
+}
+
+/** Structured data for the organisation and the website, one graph per page, in the page's language. */
+export function jsonLd(lang: "pl" | "en" = "pl"): Record<string, unknown> {
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -107,7 +118,7 @@ export function jsonLd(): Record<string, unknown> {
         "@id": `${origin}/#website`,
         name: siteName,
         url: `${origin}/`,
-        inLanguage: "pl",
+        inLanguage: lang,
         publisher: { "@id": `${origin}/#organization` },
       },
     ],

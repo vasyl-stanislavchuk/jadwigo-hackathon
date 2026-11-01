@@ -11,7 +11,9 @@ There is no jadwigo.kids. English reaches a deploy only once `en` is `live` in `
 - **Public surface:** `src/index.ts`. Other files are private to this package.
 - **Test:** `bunx turbo run lint typecheck test build --filter=./apps/site`, then `bun run check:dist`.
   `bun run build:preview` writes `dist-preview`: every listed language and every unreviewed page,
-  for checking the `/en/` twins before English is live. It is never deployed.
+  for checking the `/en/` twins before English is live. It is never deployed. It ends with
+  `check:hreflang` (`tools/src/check-hreflang.ts`): every twin linked both ways, x-default on the
+  Polish page, `<html lang>` right on each page. `bun run check:hreflang dist` checks a prod build.
 - **Deploy:** the owner runs `make -C infra site-deploy` (build, `check:dist`, sync to the bucket, invalidate). A merge deploys nothing.
 
 ## How it is laid out

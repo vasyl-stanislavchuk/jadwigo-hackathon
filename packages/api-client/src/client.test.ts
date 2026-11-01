@@ -1,4 +1,13 @@
-import { AssignmentId, AttemptId, EventId, GoalId, LearnerId, ROUTES } from "@jadwigo/contracts";
+import {
+  AssignmentId,
+  AttemptId,
+  ConversationId,
+  EventId,
+  GoalId,
+  LearnerId,
+  ROUTES,
+  RunId,
+} from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
 import { ApiError, createClient, pathOf, TransientError } from "./client.ts";
 
@@ -471,6 +480,69 @@ describe("the learner knowledge calls", () => {
     expect(sent).toMatchObject([{ url: `/api/v1/learners/${LEARNER}/reports`, body: {} }]);
     expect(refused).not.toBeInstanceOf(ApiError);
     expect(refused).toBeInstanceOf(Error);
+  });
+});
+
+describe("the conversation calls", () => {
+  const CONVERSATION = ConversationId.parse("cnv_2h4m8gyw0fb1cvz2nkqw0px8fq");
+  const RUN = RunId.parse("run_7qre3atahx8cpak6xbjtz73var");
+  const EVENT = EventId.parse("0b1f4c2e-7d3a-4e5b-9c6d-1a2b3c4d5e6f");
+  const signedIn = async (): Promise<string> => "header.payload.signature";
+  const run = {
+    id: RUN,
+    pod_id: "pod_6et2fhbnwvb45aw9atcfzs33za",
+    created_by: "acc_7qre3atahx8cpak6xbjtz73var",
+    conversation_id: CONVERSATION,
+    workflow: "jadwigo-lesson-compose",
+    resumes: null,
+    status: "queued",
+    attempt: 1,
+    cancel_requested_at: null,
+    idle_deadline_at: AT,
+    max_deadline_at: AT,
+    cap_usd: 1,
+    spent_usd: 0,
+    created_at: AT,
+    completed_at: null,
+  };
+
+  it("sends a message with the token at the route's path, and parses the run", async () => {
+    const { fetch, sent } = stub(201, { run });
+    const reply = await createClient({ base: "", fetch, token: signedIn }).postMessage(
+      CONVERSATION,
+      { event_id: EVENT, text: "A lesson on adding to 10" },
+    );
+    expect(sent).toEqual([
+      {
+        url: `/api/v1/conversations/${CONVERSATION}/messages`,
+        method: "POST",
+        body: { event_id: EVENT, text: "A lesson on adding to 10" },
+        authorization: "Bearer header.payload.signature",
+      },
+    ]);
+    expect(reply.run.id).toBe(RUN);
+  });
+
+  it("puts the events cursor in the query string, and leaves it out when none is given", async () => {
+    const { fetch, sent } = stub(200, { events: [] });
+    const client = createClient({ base: "", fetch, token: signedIn });
+    await client.listRunEvents(RUN, 7);
+    await client.listRunEvents(RUN);
+    expect(sent.map((s) => s.url)).toEqual([
+      `/api/v1/runs/${RUN}/events?after=7`,
+      `/api/v1/runs/${RUN}/events`,
+    ]);
+  });
+
+  it("asks a run to stop at its cancellations path", async () => {
+    const { fetch, sent } = stub(201, { run: { ...run, cancel_requested_at: AT } });
+    const reply = await createClient({ base: "", fetch, token: signedIn }).cancelRun(RUN, {
+      event_id: EVENT,
+    });
+    expect(sent).toMatchObject([
+      { url: `/api/v1/runs/${RUN}/cancellations`, method: "POST", body: { event_id: EVENT } },
+    ]);
+    expect(reply.run.cancel_requested_at).toBe(AT);
   });
 });
 

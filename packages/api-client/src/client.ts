@@ -27,6 +27,11 @@ import {
   type AttemptSnapshot,
   type AttemptStart,
   type Claim,
+  type Conversation,
+  type ConversationCreate,
+  type ConversationId,
+  type ConversationMessage,
+  type ConversationRuns,
   ErrorEnvelope,
   type ErrorType,
   type Featured,
@@ -52,6 +57,10 @@ import {
   type ReportPatch,
   ROUTES,
   type Route,
+  type RunAccepted,
+  type RunCancel,
+  type RunEvents,
+  type RunId,
   type Skills,
 } from "@jadwigo/contracts";
 import { apiUrl } from "./url.ts";
@@ -140,12 +149,29 @@ export interface LearnerKnowledgeClient {
   ): Promise<LearnerReport>;
 }
 
+/**
+ * The AI engine's conversation calls (epic dl-z5ja, dl-z5ja.21). Each needs a token. A message or
+ * a Stop answers with its run before the AI has answered; the run's events carry the answer.
+ */
+export interface ConversationClient {
+  /** Once by `event_id`: a resend returns the same conversation. */
+  createConversation(body: ConversationCreate): Promise<Conversation>;
+  /** Once by `event_id`; the same id with other text is `EventIdMismatch`. */
+  postMessage(conversationId: ConversationId, body: ConversationMessage): Promise<RunAccepted>;
+  listConversationRuns(conversationId: ConversationId): Promise<ConversationRuns>;
+  /** The events after `after`, the last `seq` the caller holds; the whole log without it. */
+  listRunEvents(runId: RunId, after?: number): Promise<RunEvents>;
+  /** Stop: the run ends at its next step. One that has ended comes back as it is. */
+  cancelRun(runId: RunId, body: RunCancel): Promise<RunAccepted>;
+}
+
 /** Every `/api/v1` call this client makes. */
 export type Client = AttemptClient &
   FeaturedClient &
   ParentClient &
   LearnerKnowledgeClient &
-  PlaygroundClient;
+  PlaygroundClient &
+  ConversationClient;
 
 /** A route's path with its `{name}` params filled in. */
 export function pathOf(route: Route, params: Record<string, string | number>): string {
@@ -154,6 +180,14 @@ export function pathOf(route: Route, params: Record<string, string | number>): s
     if (value === undefined) throw new Error(`${route.path} needs ${name}`);
     return encodeURIComponent(String(value));
   });
+}
+
+/** `?name=value` for each value given, or "" when none is. */
+function queryOf(query: Record<string, number | undefined>): string {
+  const given = new URLSearchParams();
+  for (const [name, value] of Object.entries(query))
+    if (value !== undefined) given.set(name, String(value));
+  return given.size === 0 ? "" : `?${given.toString()}`;
 }
 
 export function createClient({
@@ -165,6 +199,7 @@ export function createClient({
     route: R,
     params: Record<string, string | number>,
     body: unknown,
+    query: Record<string, number | undefined> = {},
   ): Promise<ReturnType<R["response"]["parse"]>> {
     const headers: Record<string, string> = { accept: "application/json" };
     if (route.auth === "token") {
@@ -185,7 +220,7 @@ export function createClient({
     }
     let reply: Response;
     try {
-      reply = await send(apiUrl(base, pathOf(route, params)), init);
+      reply = await send(apiUrl(base, pathOf(route, params) + queryOf(query)), init);
     } catch {
       throw new TransientError(`${route.method} ${route.path}: no answer from the server`);
     }
@@ -239,5 +274,12 @@ export function createClient({
     createReport: (learnerId, body = {}) => call(ROUTES.createReport, { id: learnerId }, body),
     patchReport: (learnerId, reportId, body) =>
       call(ROUTES.patchReport, { id: learnerId, report: reportId }, body),
+    createConversation: (body) => call(ROUTES.createConversation, {}, body),
+    postMessage: (conversationId, body) => call(ROUTES.postMessage, { id: conversationId }, body),
+    listConversationRuns: (conversationId) =>
+      call(ROUTES.listConversationRuns, { id: conversationId }, undefined),
+    listRunEvents: (runId, after) =>
+      call(ROUTES.listRunEvents, { id: runId }, undefined, { after }),
+    cancelRun: (runId, body) => call(ROUTES.cancelRun, { id: runId }, body),
   };
 }
