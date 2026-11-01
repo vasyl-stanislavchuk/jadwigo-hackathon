@@ -412,7 +412,8 @@ export class InMemoryStore implements Store {
       ...row,
       question: this.#inPod(this.#questions, pod, row.lesson_question_id, "a listed question"),
     }));
-    return { version, questions };
+    const { language } = this.#inPod(this.#lessons, pod, version.lesson_id, "the lesson");
+    return { version, language, questions };
   }
 
   async getLatestLessonVersion(pod: PodId, lesson: LessonId): Promise<LessonVersion | undefined> {
@@ -1532,6 +1533,10 @@ export class InMemoryStore implements Store {
   async putRunInbox(pod: PodId, entry: NewRunInbox): Promise<RunInbox> {
     this.#inPod(this.#runs, pod, entry.run_id, "the run");
     const stored = this.#taken(this.#inbox, pod, entry.event_id);
+    // A replay is the same run's: an event_id is unique across runs (dl-z5ja.36).
+    if (stored && stored.run_id !== entry.run_id) {
+      throw new StoreError(ErrorType.enum.WriteOnce, "that id is already taken");
+    }
     if (stored) return stored;
     const row = frozen(
       parse(

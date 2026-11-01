@@ -273,6 +273,32 @@ export function runContract(name: string, make: () => Promise<Store> | Store): v
     );
 
     frozen(
+      "refuses an inbox event_id another run holds, in its own pod or another (dl-z5ja.36)",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const b = await scope(store);
+        const run = await store.createRun(a.pod, newRun(a.account, null));
+        const other = await store.createRun(a.pod, newRun(a.account, null));
+        const elsewhere = await store.createRun(b.pod, newRun(b.account, null));
+        const first = inbox(run.id, "Make it 5 questions.");
+        const stored = await store.putRunInbox(a.pod, first);
+
+        await expect(
+          store.putRunInbox(a.pod, { ...first, run_id: other.id }),
+        ).rejects.toMatchObject(WRITE_ONCE);
+        await expect(
+          store.putRunInbox(b.pod, { ...first, run_id: elsewhere.id }),
+        ).rejects.toMatchObject(WRITE_ONCE);
+        expect(await store.takeRunInbox(a.pod, other.id)).toEqual([]);
+        expect(await store.takeRunInbox(b.pod, elsewhere.id)).toEqual([]);
+        expect((await store.takeRunInbox(a.pod, run.id)).map((r) => r.event_id)).toEqual([
+          stored.event_id,
+        ]);
+      },
+    );
+
+    frozen(
       "counts a parent's messages since a minute and sums the pod's caps since a day (dl-z5ja.72)",
       async () => {
         const store = await make();
@@ -323,6 +349,7 @@ export function runContract(name: string, make: () => Promise<Store> | Store): v
 }
 
 const NOT_FOUND = { type: "NotFound" };
+const WRITE_ONCE = { type: "WriteOnce" };
 
 /** A fresh signed-in account: its own pod, so no test sees another's rows. */
 async function scope(store: Store) {

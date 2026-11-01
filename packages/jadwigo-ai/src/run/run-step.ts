@@ -82,7 +82,7 @@ const INSTRUCTIONS = [
 const PROMPT_CACHE_KEY = `${WORKFLOW}:1`;
 /**
  * Every call goes to the tier that trains on nothing it is sent: a run's prompt carries the
- * parent's words and the learner's names (draft decision dl-2uq1). Each `model_response` records it.
+ * parent's words and the learner's names (decision dl-2uq1, accepted 2026-11-01). Each `model_response` records it.
  */
 const TIER: ModelTier = "private";
 const STEER =
@@ -118,9 +118,24 @@ class Writer {
     readonly store: Store,
     readonly pod: PodId,
     readonly run: RunId,
-    readonly attempt: number,
+    public attempt: number,
     readonly log: RunEvent[],
   ) {}
+
+  /**
+   * Claims the run for one paid call (dl-z5ja.41): moves `attempt` on, a compare and set only one
+   * caller holding this attempt wins, then reads the log back as stored, so the call is built from
+   * what every caller wrote before it. The loser goes stale and pays nothing.
+   */
+  async claim(): Promise<Run> {
+    const next = this.attempt + 1;
+    const claimed = await this.store.updateRun(this.pod, this.run, this.attempt, { attempt: next });
+    if (claimed.stale) throw new StaleAttempt();
+    this.attempt = next;
+    const stored = await this.store.listRunEvents(this.pod, this.run, 0);
+    this.log.splice(0, this.log.length, ...stored);
+    return claimed.value;
+  }
 
   async append(events: readonly NewRunEvent[]): Promise<void> {
     if (events.length === 0) return;
@@ -187,6 +202,18 @@ export function acceptMessage(
 ): Promise<{ run: Run; inbox: RunInbox }> {
   const { store, queue } = deps;
   const { pod, conversation_id, entry } = message;
+  // Each resend answers the stored row, and the engine acts on that row's kind, never the resend's
+  // (dl-z5ja.73): an event_id kept as a message and resent as a cancel is refused, not obeyed.
+  const put = async (run_id: RunId): Promise<RunInbox> => {
+    const inbox = await store.putRunInbox(pod, { ...entry, run_id });
+    if (inbox.kind !== entry.kind) {
+      throw new StoreError(
+        ErrorType.enum.BadRequest,
+        `event ${entry.event_id} is a ${inbox.kind}, not a ${entry.kind}`,
+      );
+    }
+    return inbox;
+  };
   return store.unit(async () => {
     const runs = await store.listRuns(pod, conversation_id);
     const open = runs.findLast((r) => !isEnded(r.status));
@@ -200,11 +227,11 @@ export function acceptMessage(
           `the conversation has no run for a ${entry.kind}`,
         );
       }
-      return { run: last, inbox: await store.putRunInbox(pod, { ...entry, run_id: last.id }) };
+      return { run: last, inbox: await put(last.id) };
     }
 
     if (open) {
-      const inbox = await store.putRunInbox(pod, { ...entry, run_id: open.id });
+      const inbox = await put(open.id);
       if (inbox.run_id !== open.id) {
         // A resend of a message an earlier turn already holds.
         return { run: await store.getRun(pod, inbox.run_id), inbox };
@@ -228,8 +255,7 @@ export function acceptMessage(
 
     const id = await runIdFor(entry.event_id);
     const resent = runs.find((r) => r.id === id);
-    if (resent)
-      return { run: resent, inbox: await store.putRunInbox(pod, { ...entry, run_id: id }) };
+    if (resent) return { run: resent, inbox: await put(id) };
 
     const now = deps.now().getTime();
     const run = await store.createRun(pod, {
@@ -242,7 +268,7 @@ export function acceptMessage(
       idle_deadline_at: at(now + RUN_IDLE_MS),
       max_deadline_at: at(now + RUN_MAX_MS),
     });
-    const inbox = await store.putRunInbox(pod, { ...entry, run_id: run.id });
+    const inbox = await put(run.id);
     if (inbox.run_id !== run.id) {
       // A resend of a mid-turn message whose turn has ended: the new run has nothing to do.
       const w = new Writer(store, pod, run.id, run.attempt, []);
@@ -386,6 +412,12 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     for (const text of steers) instructions.push(`The parent adds: ${text}`);
 
     const call_no = (last?.payload.call_no ?? 0) + 1;
+    run = await w.claim();
+    if (responsesOf(w.log).some((e) => e.payload.call_no >= call_no)) {
+      // Another caller recorded this call first: the next step reuses its answer.
+      await deps.queue.send({ run_id: run.id, attempt: w.attempt });
+      return "continue";
+    }
     const response = await deps.muse.respond({
       run_id: run.id,
       call_no,
@@ -502,7 +534,14 @@ async function runTool(
       type: "tool_result",
       run_id: scope.run.id,
       event_id: await w.id("tool", call.call_id, "result"),
-      payload: { call_id: call.call_id, verb: call.verb, output: effect?.output ?? null, error },
+      payload: {
+        call_id: call.call_id,
+        verb: call.verb,
+        output: effect?.output ?? null,
+        error,
+        // The verb's result typed for its widget, which the fold draws (dl-z5ja.70).
+        ...(effect?.view === undefined ? {} : { view: effect.view }),
+      },
     },
   ];
   if (effect?.lesson_file) {
@@ -743,9 +782,9 @@ export async function drain(
 }
 
 /**
- * Claims a redelivered step's run. Each earlier redelivery moved the attempt on by one, so read
- * `read_ct` expects the run at `attempt + read_ct - 2` and takes it to the next. A run at any other
- * attempt has moved on without this message, which then runs stale and writes nothing.
+ * Claims a redelivered step's run from whatever attempt holds it now, since each paid call and each
+ * earlier redelivery moved the attempt on (dl-z5ja.41). The step that stalled holding it goes stale.
+ * An ended run is left alone, and the message then runs stale and writes nothing.
  */
 async function claim(deps: EngineDeps, queued: QueuedStep): Promise<RunStepInput> {
   const { store } = deps;
@@ -753,8 +792,8 @@ async function claim(deps: EngineDeps, queued: QueuedStep): Promise<RunStepInput
   const pod = await store.findRunPod(message.run_id);
   if (!pod) return message;
   const run = await store.getRun(pod, message.run_id);
-  const held = message.attempt + queued.read_ct - 2;
-  if (isEnded(run.status) || run.attempt !== held) return message;
+  if (isEnded(run.status) || run.attempt < message.attempt) return message;
+  const held = run.attempt;
   const attempt = held + 1;
   const claimed = await store.updateRun(pod, run.id, held, { attempt });
   if (claimed.stale) return message;

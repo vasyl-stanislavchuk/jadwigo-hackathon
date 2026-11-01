@@ -59,6 +59,7 @@ type RunEventType =
   | "lesson_revision"
   | "approval_request"
   | "approval_resolved"
+  | "steer"
   | "plan"
   | "status"
   | "usage"
@@ -908,6 +909,7 @@ export const COLUMNS = {
         "lesson_revision",
         "approval_request",
         "approval_resolved",
+        "steer",
         "plan",
         "status",
         "usage",

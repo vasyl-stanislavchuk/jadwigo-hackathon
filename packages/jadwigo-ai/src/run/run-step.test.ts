@@ -25,8 +25,10 @@ import {
 import { FIXED_NOW } from "@jadwigo/testing";
 import { describe, expect, it, vi } from "vitest";
 import type { MuseClient, MuseRequest, MuseResponse } from "../muse/client.ts";
+import { ScriptedMuse } from "../muse/scripted.ts";
 import { InMemoryRunQueue } from "../queue/memory.ts";
 import { STEP_VISIBILITY_S } from "../queue/types.ts";
+import { createVerbs, fixtureBank } from "../verbs/index.ts";
 import {
   type Verb,
   type VerbContext,
@@ -292,6 +294,8 @@ async function setup(script: readonly Reply[], verbs: Verbs = fakeVerbs(), cap_u
   };
 }
 
+const DRAFT_INPUT = { request: "a short lesson", grade: "1", names: [], topic: "addition" };
+
 function newEventId(): EventId {
   return EventId.parse(crypto.randomUUID());
 }
@@ -327,6 +331,19 @@ describe("acceptMessage", () => {
     const run = await t.say("Something.");
     await t.send({ event_id: newEventId(), kind: "cancel", payload: {} });
     expect((await t.run(run)).cancel_requested_at).toBe(FIXED_NOW.toISOString());
+  });
+
+  it("refuses a message's event_id resent as a cancel, and the run is never cancelled", async () => {
+    const t = await setup([]);
+    const id = newEventId();
+    const run = await t.say("Halves.", id);
+    await expect(t.send({ event_id: id, kind: "cancel", payload: {} })).rejects.toMatchObject({
+      type: "BadRequest",
+    });
+    expect((await t.run(run)).cancel_requested_at).toBeNull();
+    expect(t.store.inbox.map((r) => r.kind)).toEqual(["message"]);
+    // The same kind resent still lands once.
+    expect(await t.say("Halves.", id)).toBe(run);
   });
 
   it("opens a new run for the next turn once the last one ended", async () => {
@@ -460,6 +477,33 @@ describe("runStep and drain", () => {
     expect(revisions).toEqual([1, 2]);
   });
 
+  it("copies a verb's view into its tool_result, as lesson_check's findings", async () => {
+    // lesson_check names the run's draft, known once the parent has spoken.
+    const check: Record<string, unknown> = { help: {}, names: [] };
+    const t = await setup(
+      [
+        { calls: [{ verb: "lesson_draft", input: DRAFT_INPUT }] },
+        { calls: [{ verb: "lesson_check", input: check }] },
+        { text: "Ready." },
+      ],
+      createVerbs({ bank: fixtureBank() }),
+    );
+    const run = await t.say("Adding within 20, grade 1.");
+    check["draft_id"] = run;
+    await drain(t.deps);
+
+    const results = (await t.log(run)).flatMap((e) =>
+      e.type === "tool_result" ? [e.payload] : [],
+    );
+    expect(results.find((r) => r.verb === "lesson_draft")).not.toHaveProperty("view");
+    const checked = results.find((r) => r.verb === "lesson_check");
+    expect(checked?.error).toBeNull();
+    expect(checked?.view).toEqual({
+      kind: "lesson_check",
+      data: { publishable: expect.any(Boolean), findings: expect.any(Array) },
+    });
+  });
+
   it("writes a VerbError as the tool's error for the model to read", async () => {
     const t = await setup(
       [{ calls: [{ verb: "lesson_edit" }] }, { text: "Sorry." }],
@@ -544,10 +588,51 @@ describe("runStep and drain", () => {
     expect(events.filter((e) => e.type === "tool_result")).toHaveLength(1);
     expect(events.find((e) => e.type === "error")?.payload).toMatchObject({
       error: { type: "StepTimedOut" },
-      attempt: 1,
+      // Call 1 claimed attempt 2, which stalled; the redelivery took 3, and call 2 took 4.
+      attempt: 2,
       retryable: true,
     });
-    expect(await t.run(run)).toMatchObject({ status: "completed", attempt: 2, spent_usd: 0.03 });
+    expect(await t.run(run)).toMatchObject({ status: "completed", attempt: 4, spent_usd: 0.03 });
+  });
+
+  it("2 runStep calls on one {run_id, attempt} at once call Muse once, with one turn_complete", async () => {
+    const t = await setup([]);
+    const muse = new ScriptedMuse([{ text: "Ready." }]);
+    t.deps.muse = muse;
+    const run = await t.say("Halves.");
+    const step = { run_id: run, attempt: 1 };
+    const outputs = await Promise.all([runStep(step, t.deps), runStep(step, t.deps)]);
+
+    expect(muse.calls).toHaveLength(1);
+    expect(outputs.map((o) => o.outcome).sort()).toEqual(["continue", "turn_complete"]);
+    const events = await t.log(run);
+    expect(events.filter((e) => e.type === "model_response")).toHaveLength(1);
+    expect(events.filter((e) => e.type === "turn_complete")).toHaveLength(1);
+    expect(events.filter((e) => e.type === "message").map((e) => e.payload.text)).toEqual([
+      "Halves.",
+      "Ready.",
+    ]);
+  });
+
+  it("2 steps racing on a tool turn pay each call once, and the turn completes", async () => {
+    const t = await setup([]);
+    const muse = new ScriptedMuse([
+      { tool_calls: [{ verb: "lesson_draft", input: {} }] },
+      { text: "Ready." },
+    ]);
+    t.deps.muse = muse;
+    const run = await t.say("Halves.");
+    await Promise.all([
+      runStep({ run_id: run, attempt: 1 }, t.deps),
+      runStep({ run_id: run, attempt: 1 }, t.deps),
+    ]);
+    await drain(t.deps);
+
+    expect(muse.calls.map((c) => c.call_no)).toEqual([1, 2]);
+    const events = await t.log(run);
+    expect(events.filter((e) => e.type === "tool_result")).toHaveLength(1);
+    expect(events.filter((e) => e.type === "turn_complete")).toHaveLength(1);
+    expect((await t.run(run)).status).toBe("completed");
   });
 
   it("a stalled attempt goes stale once a redelivery claims the run, and writes nothing", async () => {
