@@ -118,9 +118,24 @@ class Writer {
     readonly store: Store,
     readonly pod: PodId,
     readonly run: RunId,
-    readonly attempt: number,
+    public attempt: number,
     readonly log: RunEvent[],
   ) {}
+
+  /**
+   * Claims the run for one paid call (dl-z5ja.41): moves `attempt` on, a compare and set only one
+   * caller holding this attempt wins, then reads the log back as stored, so the call is built from
+   * what every caller wrote before it. The loser goes stale and pays nothing.
+   */
+  async claim(): Promise<Run> {
+    const next = this.attempt + 1;
+    const claimed = await this.store.updateRun(this.pod, this.run, this.attempt, { attempt: next });
+    if (claimed.stale) throw new StaleAttempt();
+    this.attempt = next;
+    const stored = await this.store.listRunEvents(this.pod, this.run, 0);
+    this.log.splice(0, this.log.length, ...stored);
+    return claimed.value;
+  }
 
   async append(events: readonly NewRunEvent[]): Promise<void> {
     if (events.length === 0) return;
@@ -386,6 +401,12 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     for (const text of steers) instructions.push(`The parent adds: ${text}`);
 
     const call_no = (last?.payload.call_no ?? 0) + 1;
+    run = await w.claim();
+    if (responsesOf(w.log).some((e) => e.payload.call_no >= call_no)) {
+      // Another caller recorded this call first: the next step reuses its answer.
+      await deps.queue.send({ run_id: run.id, attempt: w.attempt });
+      return "continue";
+    }
     const response = await deps.muse.respond({
       run_id: run.id,
       call_no,
@@ -743,9 +764,9 @@ export async function drain(
 }
 
 /**
- * Claims a redelivered step's run. Each earlier redelivery moved the attempt on by one, so read
- * `read_ct` expects the run at `attempt + read_ct - 2` and takes it to the next. A run at any other
- * attempt has moved on without this message, which then runs stale and writes nothing.
+ * Claims a redelivered step's run from whatever attempt holds it now, since each paid call and each
+ * earlier redelivery moved the attempt on (dl-z5ja.41). The step that stalled holding it goes stale.
+ * An ended run is left alone, and the message then runs stale and writes nothing.
  */
 async function claim(deps: EngineDeps, queued: QueuedStep): Promise<RunStepInput> {
   const { store } = deps;
@@ -753,8 +774,8 @@ async function claim(deps: EngineDeps, queued: QueuedStep): Promise<RunStepInput
   const pod = await store.findRunPod(message.run_id);
   if (!pod) return message;
   const run = await store.getRun(pod, message.run_id);
-  const held = message.attempt + queued.read_ct - 2;
-  if (isEnded(run.status) || run.attempt !== held) return message;
+  if (isEnded(run.status) || run.attempt < message.attempt) return message;
+  const held = run.attempt;
   const attempt = held + 1;
   const claimed = await store.updateRun(pod, run.id, held, { attempt });
   if (claimed.stale) return message;
