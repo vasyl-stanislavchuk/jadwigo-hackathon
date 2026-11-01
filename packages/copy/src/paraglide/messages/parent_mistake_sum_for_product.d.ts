@@ -1,0 +1,18 @@
+/** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
+/** @typedef {{}} Parent_Mistake_Sum_For_ProductInputs */
+/**
+* | output |
+* | --- |
+* | "A sum where a product was asked" |
+*
+* @param {Parent_Mistake_Sum_For_ProductInputs} inputs
+* @param {{ locale?: "pl" | "en" }} options
+* @returns {LocalizedString}
+*/
+export const parent_mistake_sum_for_product: ((inputs?: Parent_Mistake_Sum_For_ProductInputs, options?: {
+    locale?: "pl" | "en";
+}) => LocalizedString) & import("../runtime.js").MessageMetadata<Parent_Mistake_Sum_For_ProductInputs, {
+    locale?: "pl" | "en";
+}, {}>;
+export type LocalizedString = import("../runtime.js").LocalizedString;
+export type Parent_Mistake_Sum_For_ProductInputs = {};

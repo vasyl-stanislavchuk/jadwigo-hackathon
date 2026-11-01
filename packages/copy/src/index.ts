@@ -1,35 +1,21 @@
-import { enAdult } from "./en.adult.ts";
-import { en } from "./en.ts";
-import { plAdult } from "./pl.adult.ts";
-import { pl } from "./pl.ts";
+import { m } from "./paraglide/messages.js";
 import {
   type Category,
   type CopyEntry,
   type CopyKey,
-  type CopyTable,
   type Language,
   MISTAKE_CLASSES,
-  type PartialCopyTable,
 } from "./types.ts";
+import { CATEGORY_TABLES, TABLES } from "./view.ts";
 
 export { harshWordsIn } from "./harsh.ts";
 export type { Category, CopyKey, Language, MistakeClass } from "./types.ts";
 export { MISTAKE_CLASSES } from "./types.ts";
-
-/** The child tables: every key, in every language. A category with no line of its own reads these. */
-export const TABLES: Record<Language, CopyTable> = { pl, en };
-
-/**
- * A category's own lines, per language (dl-i952.17, owner 2026-10-07). An adult reads the adult
- * line where one exists and the child line otherwise;
- */
-export const CATEGORY_TABLES: Partial<
-  Record<Category, Partial<Record<Language, PartialCopyTable>>>
-> = {
-  adult: { pl: plAdult, en: enAdult },
-};
+export { CATEGORY_TABLES, TABLES } from "./view.ts";
 
 type Vars = Record<string, string | number>;
+type Message = (inputs: Record<string, unknown>, options: { locale: Language }) => string;
+const MESSAGES = m as unknown as Record<CopyKey, Message>;
 
 /** The line(s) for `key`: the category's own table, then the child table. */
 export function lookup(
@@ -40,30 +26,39 @@ export function lookup(
   return CATEGORY_TABLES[category]?.[language]?.[key] ?? TABLES[language][key];
 }
 
-function fill(entry: CopyEntry, language: Language, vars: Vars): string {
-  const rules = new Intl.PluralRules(language);
-  return entry.text.replace(/\{(\w+)\}/g, (whole, name: string) => {
-    const plural = entry.plural?.[name];
-    if (plural) {
-      const n = Number(vars[plural.count]);
-      const category = rules.select(n) as keyof typeof plural.forms;
-      return plural.forms[category] ?? plural.forms.other;
-    }
-    return name in vars ? String(vars[name]) : whole;
+/**
+ * The compiled message, called as the tables were: a placeholder `vars` does not name stays
+ * `{name}`, so a missing value shows where it goes instead of "undefined".
+ */
+function say(
+  language: Language,
+  key: CopyKey,
+  line: number,
+  vars: Vars,
+  category: Category,
+): string {
+  const message = MESSAGES[key];
+  if (message === undefined) throw new Error(`copy: ${key} has no message`);
+  const own: Record<string, unknown> = { ...vars, category, line };
+  const inputs = new Proxy(own, {
+    get: (target, name) =>
+      typeof name === "string" && !(name in target) ? `{${name}}` : Reflect.get(target, name),
   });
+  return message(inputs, { locale: language });
 }
 
-/** One line of copy in `language` for a learner of `category`, with `{name}` placeholders filled from `vars`. */
+/**
+ * One line of copy in `language` for a learner of `category`, with `{name}` placeholders filled
+ * from `vars`. A thin wrapper over the Paraglide messages until the call sites use them directly
+ * (dl-uukj.35).
+ */
 export function copy(
   language: Language,
   key: CopyKey,
   vars: Vars = {},
   category: Category = "child",
 ): string {
-  const value = lookup(language, key, category);
-  const entry = Array.isArray(value) ? value[0] : value;
-  if (entry === undefined) throw new Error(`copy: ${key} has no line in ${language}`);
-  return fill(entry, language, vars);
+  return say(language, key, 0, vars, category);
 }
 
 /** The `index`-th line of a list key, cycling (praise, try_again). */
@@ -75,10 +70,8 @@ export function copyAt(
   category: Category = "child",
 ): string {
   const value = lookup(language, key, category);
-  const list = Array.isArray(value) ? value : [value];
-  const entry = list[((index % list.length) + list.length) % list.length];
-  if (entry === undefined) throw new Error(`copy: ${key} has no line in ${language}`);
-  return fill(entry, language, vars);
+  const length = Array.isArray(value) ? value.length : 1;
+  return say(language, key, ((index % length) + length) % length, vars, category);
 }
 
 /**
