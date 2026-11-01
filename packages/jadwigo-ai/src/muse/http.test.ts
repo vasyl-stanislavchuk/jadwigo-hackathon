@@ -267,6 +267,20 @@ describe("HttpMuse routes the private tier and refuses what it cannot cap", () =
     expect(sent[0]?.body["model"]).toBe(CONTRIBUTOR_MODEL);
   });
 
+  it("names the tier a failed call went to (dl-z5ja.103)", async () => {
+    const down = muse([{ status: 400, body: "no" }], {
+      models: { contributor: CONTRIBUTOR_MODEL, private: "muse-unpriced" },
+    });
+    const downError = await down.http.respond(requestFor(runId(), 1)).catch((e: unknown) => e);
+    expect(downError).toBeInstanceOf(MuseFailed);
+    expect((downError as MuseFailed).tier).toBe("contributor");
+
+    const kept = muse([{ status: 400, body: "no" }]);
+    const keptError = await kept.http.respond(requestFor(runId(), 1)).catch((e: unknown) => e);
+    expect(kept.sent[0]?.body["model"]).toBe(PRIVATE_MODEL);
+    expect((keptError as MuseFailed).tier).toBe("private");
+  });
+
   it("refuses a contributor model it has no price for, and an empty key", () => {
     const base = muse([]).http;
     expect(base).toBeInstanceOf(HttpMuse);

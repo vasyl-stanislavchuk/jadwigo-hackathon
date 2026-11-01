@@ -37,6 +37,29 @@ The `--jw-page-*` steps are the adult's scale on an app page, the parent's scree
 heading of 28 px (26 on a phone), a second of 22 px (20 on a phone), and body text, a third
 heading and a label at 17 px with a line height of 1.5. A lesson keeps the child's scale.
 
+### The parent's density
+
+Inside the signed-in parent app the sizes are denser, because a parent works there at a desk
+(decision `dl-xo0q`). `DensityScope value="parent"` sets `data-density="parent"`, and a dialog,
+sheet or popover opened inside it carries the attribute through its portal. There, body text is
+14 px and a small line 12.5 px (`--jw-page-small`), a section title 20 px, a control 34 px high,
+corners 10 px and 8 px, lines 1 px (`--jw-border`), and the action stands on a 3 px edge. Sign-in
+and public pages keep the sizes above. A lesson shown inside the parent app, such as a step's
+preview, gets every child size back.
+
+The app frame has its own sizes, each a utility (`w-jw-shell-side`, `h-jw-shell-bar`):
+
+- the sidebar, 232 px, folded to a 60 px rail;
+- the 56 px line the sidebar's logo row and the top bar share;
+- the chat column, 360 px, and the details column, 290 px;
+- the 52 px strip a folded panel leaves;
+- the 68 px band under the chat and the lesson;
+- the first screen's 720 px box;
+- a dialog, 440 px wide with 14 px corners.
+
+`border-jw` (and `border-t-jw` and the other sides) draws a line at `--jw-border`, so it follows
+the density.
+
 Tailwind's own type steps (`text-xl` and the rest) are set outside Tailwind's theme layer, so they
 win over its defaults: `text-xl` is 20 px here.
 

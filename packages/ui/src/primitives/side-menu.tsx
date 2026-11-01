@@ -1,7 +1,9 @@
 // The side menu (dl-uukj.32.3, promoted from the System page's settings controls): section
 // headings, categories that fold open with their pages on an indented margin line, and pages. Three
 // levels at most. The current page wears the pick; its category turns bold and opens, also when the
-// current page changes (a scroll-spy). Rows are 48 px, sub-rows 44 px with smaller words.
+// current page changes (a scroll-spy). Rows are 48 px, sub-rows 44 px with smaller words; in the
+// parent's density (dl-xo0q) 34 and 28 at 14 and 12.5, on 1 px lines. Unframed (framed={false}) it
+// draws no border or fill of its own, as the parent's sidebar holds it.
 import { ChevronRight } from "lucide-react";
 import { type ReactElement, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { cn } from "../lib/utils.ts";
@@ -92,7 +94,7 @@ function SideMenu({
     const inside = category && holds(it, current);
     const isOpen = category && open[it.id] === true;
     const look = cn(
-      "flex w-full items-center gap-3 rounded-jw-small border-2 px-3 py-2 text-left transition-colors duration-jw-fast",
+      "flex w-full items-center gap-3 rounded-jw-small border-jw px-3 py-2 text-left transition-colors duration-jw-fast",
       FOCUS,
       ROW[sub ? "sm" : "md"],
       on
@@ -144,7 +146,7 @@ function SideMenu({
             <div
               role="group"
               aria-labelledby={`${own}-${it.id}`}
-              className="mb-1 ml-5.5 flex flex-col gap-0.5 border-l-2 border-jw-line pl-2.5"
+              className="mb-1 ml-5.5 flex flex-col gap-0.5 border-l-jw border-jw-line pl-2.5"
             >
               {it.items?.map((c) => row(c, true))}
             </div>
@@ -182,7 +184,7 @@ function SideMenu({
       data-slot="side-menu"
       className={cn(
         "flex flex-col gap-1",
-        framed && "rounded-jw-card border-2 border-jw-line bg-jw-card p-3",
+        framed && "rounded-jw-card border-jw border-jw-line bg-jw-card p-3",
         className,
       )}
     >
@@ -195,7 +197,7 @@ function SideMenu({
             key={`h-${it.heading}`}
             className={cn(
               "px-3 pb-1.5 text-jw-small leading-tight font-bold tracking-wider text-jw-ink-soft uppercase",
-              i > 0 ? "mt-4 border-t-2 border-jw-line pt-4" : "pt-1",
+              i > 0 ? "mt-4 border-t-jw border-jw-line pt-4" : "pt-1",
             )}
           >
             {it.heading}

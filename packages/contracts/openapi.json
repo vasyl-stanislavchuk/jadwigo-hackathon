@@ -3284,6 +3284,9 @@
               "type": "string",
               "minLength": 1
             }
+          },
+          "context": {
+            "$ref": "#/components/schemas/MessageContext"
           }
         },
         "required": [
@@ -6424,6 +6427,34 @@
           "self"
         ]
       },
+      "MessageContext": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "learner_id": {
+                "$ref": "#/components/schemas/LearnerId"
+              }
+            },
+            "required": [
+              "learner_id"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "lesson_id": {
+                "$ref": "#/components/schemas/LessonId"
+              }
+            },
+            "required": [
+              "lesson_id"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
       "MessageEvent": {
         "type": "object",
         "properties": {
@@ -6465,6 +6496,9 @@
                 "items": {
                   "$ref": "#/components/schemas/Attachment"
                 }
+              },
+              "context": {
+                "$ref": "#/components/schemas/MessageContext"
               },
               "citations": {
                 "type": "array",
