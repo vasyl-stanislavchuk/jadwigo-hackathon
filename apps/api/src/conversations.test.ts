@@ -77,6 +77,9 @@ describe("a message's step and its unit", () => {
     expect(
       (await s.call<Me>("POST", pathOf("createAccount", {}), { language: "pl" }, headers)).status,
     ).toBe(201);
+    const me = await s.call<Me>("GET", pathOf("getMe", {}), undefined, headers);
+    const consent = { ai_consented: true };
+    await s.call("PATCH", pathOf("patchPod", { id: String(me.body.pod?.id) }), consent, headers);
     const made = await s.call<Conversation>(
       "POST",
       pathOf("createConversation", {}),
@@ -145,9 +148,11 @@ describe("a steer through the route, then the next step", () => {
     const headers = bearerOf(signToken({ sub: randomUUID() }));
     const call = <T>(method: string, path: string, body?: unknown) =>
       s.call<T>(method, path, body, headers);
-    expect((await call<Me>("POST", pathOf("createAccount", {}), { language: "pl" })).status).toBe(
-      201,
-    );
+    const me = await call<Me>("POST", pathOf("createAccount", {}), { language: "pl" });
+    expect(me.status).toBe(201);
+    await call("PATCH", pathOf("patchPod", { id: String(me.body.pod?.id) }), {
+      ai_consented: true,
+    });
     const made = await call<Conversation>("POST", pathOf("createConversation", {}), {
       event_id: randomUUID(),
     });

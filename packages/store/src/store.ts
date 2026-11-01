@@ -63,7 +63,7 @@ export class StoreError extends Error {
 /** A record as a caller writes it: the store fills its id when absent, and its timestamps. */
 type New<T, Filled extends keyof T> = Omit<T, Filled | "pod_id"> & Partial<Pick<T, Filled>>;
 
-export type NewPod = Omit<Pod, "created_at">;
+export type NewPod = Omit<Pod, "created_at" | "ai_consent_at">;
 export type NewLearner = New<
   Learner,
   | "id"
@@ -449,6 +449,14 @@ export interface Store extends RunStore {
   createAccount(sub: Uuid, language: Language): Promise<MemberScope>;
   /** `GET /api/v1/me`: the pod, the account, its member row, and the learners with goals, oldest first. */
   getMe(pod: PodId, account: AccountId): Promise<Me>;
+  /** The pod's own row. `NotFound` for an unknown pod. */
+  getPod(pod: PodId): Promise<Pod>;
+  /**
+   * Gives (`true`) or withdraws (`false`) the pod's consent to the AI (dl-z5ja.112): giving it
+   * stamps `ai_consent_at` now, or keeps the stored time when it is given already; withdrawing it
+   * sets null. Returns the pod. `NotFound` for an unknown pod.
+   */
+  setAiConsent(pod: PodId, consented: boolean): Promise<Pod>;
   /**
    * Adds a learner and its goals in one unit. The handle is the first name made plain (lower
    * case, letters and digits), with `-2`, `-3` and so on when the pod holds it already.
