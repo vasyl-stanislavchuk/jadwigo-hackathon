@@ -1,0 +1,73 @@
+---
+// The design system's SegmentedControl (packages/ui primitives/segmented-control.tsx) without React:
+// 2 to 5 short choices as one row of joined segments on a quiet track, 44 px tall (size sm). The chosen
+// one wears the pick. With `name`, the segments are radios a page's script reads (the lesson filters);
+// with `href` on every option, they are links and the chosen one is the current page (the language switch).
+interface Option {
+  value: string;
+  label: string;
+  href?: string;
+  lang?: string;
+}
+interface Props {
+  label: string;
+  options: readonly Option[];
+  value: string;
+  name?: string;
+  hideLabel?: boolean;
+  class?: string;
+}
+
+const { label, options, value, name, hideLabel = false, class: extra } = Astro.props;
+const links = options.every((o) => o.href !== undefined);
+---
+
+{
+  links ? (
+    <nav class:list={["seg", extra]} aria-label={label}>
+      <span class="track">
+        {options.map((o) => (
+          <a href={o.href} hreflang={o.lang} lang={o.lang} aria-current={o.value === value ? "true" : undefined}>
+            {o.label}
+          </a>
+        ))}
+      </span>
+    </nav>
+  ) : (
+    <fieldset class:list={["seg", extra]}>
+      <legend class:list={{ "sr-only": hideLabel }}>{label}</legend>
+      <span class="track">
+        {options.map((o) => (
+          <label>
+            <input type="radio" name={name} value={o.value} checked={o.value === value} />
+            <span>{o.label}</span>
+          </label>
+        ))}
+      </span>
+    </fieldset>
+  )
+}
+
+<style>
+  .seg { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+  legend { padding: 0; font-size: 0.95rem; font-weight: 700; color: var(--jw-ink-soft); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .track {
+    display: inline-flex; align-self: flex-start; gap: 0.25rem; height: 44px; padding: 0.25rem;
+    border: 2px solid var(--jw-line); border-radius: var(--jw-radius-card); background: var(--jw-act-quiet);
+  }
+  label { position: relative; display: flex; }
+  input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  label > span, a {
+    display: flex; align-items: center; justify-content: center; padding: 0 0.9rem;
+    border: 2px solid transparent; border-radius: var(--jw-radius-small);
+    font-size: 0.95rem; font-weight: 600; white-space: nowrap; color: var(--jw-ink); text-decoration: none;
+    transition: background-color 120ms;
+  }
+  label:hover > span, a:hover { background: var(--jw-card); }
+  input:checked + span, a[aria-current] {
+    background: var(--jw-pick); border-color: var(--jw-pick-edge); color: var(--jw-pick-ink); font-weight: 700;
+  }
+  input:focus-visible + span { outline: 3px solid var(--jw-focus); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { label > span, a { transition: none; } }
+</style>
