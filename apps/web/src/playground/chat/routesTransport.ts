@@ -120,7 +120,9 @@ export function routesTransport(
               kind: "steer" as const,
               source: body.source,
               question_ids: body.question_ids,
-              ...(body.patch === undefined ? {} : { patch: body.patch }),
+              ...(body.patch === undefined || body.base_revision === undefined
+                ? {}
+                : { patch: body.patch, base_revision: body.base_revision }),
             }
           : { event_id: body.event_id, text: body.text };
       return (await api.postMessage(server, message)).run;

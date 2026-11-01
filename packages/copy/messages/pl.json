@@ -846,5 +846,7 @@
   "parent_crumb_result": "Wynik lekcji",
   "parent_crumb_overview": "Przegląd lekcji",
   "chat_edit_words": "Co ten krok mówi dziecku",
-  "chat_edit_saved": "Twoja zmiana jest już w lekcji."
+  "chat_edit_saved": "Twoja zmiana jest już w lekcji.",
+  "chat_edit_saving": "Zapisuję Twoją zmianę w lekcji…",
+  "chat_edit_not_applied": "Tej zmiany nie udało się wprowadzić: lekcja zmieniła się w międzyczasie albo zmiana jej nie pasuje. Twój tekst jest poniżej."
 }

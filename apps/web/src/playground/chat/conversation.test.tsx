@@ -256,6 +256,7 @@ describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
         question_ids: ["s02"],
         text: "Rodzic prosi o cofnięcie zmiany w krokach s02: wróć do wersji 2.",
         patch: revertPatch(lessonFileOf(third), lessonFileOf(events.findLast(isRevision))),
+        base_revision: 3,
       }),
     ]);
 

@@ -605,5 +605,7 @@
   "parent_crumb_result": false,
   "parent_crumb_overview": false,
   "chat_edit_words": false,
-  "chat_edit_saved": false
+  "chat_edit_saved": false,
+  "chat_edit_saving": false,
+  "chat_edit_not_applied": false
 }

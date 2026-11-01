@@ -39,6 +39,8 @@ export type SendBody =
       source: "lesson_edit";
       question_ids: string[];
       patch?: LessonPatch;
+      /** The lesson revision the patch was made on: sent with a patch, never without. */
+      base_revision?: number;
     };
 
 export interface SendAnswer {

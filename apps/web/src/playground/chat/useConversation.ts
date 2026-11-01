@@ -6,8 +6,8 @@
  */
 
 import { ApiError } from "@jadwigo/api-client";
-import { ErrorType } from "@jadwigo/contracts";
-import type { ConversationId, LessonPatch, Run, RunEvent, RunId } from "@jadwigo/contracts/run";
+import { ErrorType, type EventId } from "@jadwigo/contracts";
+import type { ConversationId, Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import {
   type ConversationState,
@@ -19,6 +19,7 @@ import {
   turnsOf,
 } from "./conversation.ts";
 import { newEventId } from "./ids.ts";
+import type { LessonChange } from "./patches.ts";
 import {
   type EventsAnswer,
   eventsPath,
@@ -100,9 +101,11 @@ export interface Conversation {
    * A parent's edit in the lesson pane (dl-z5ja.30): a steer naming the questions while the turn
    * runs, which the runner keeps (dl-z5ja.42); after the turn, the same words as a new message,
    * since a steer on an ended turn changes nothing. With a `patch`, the parent's own change, it is
-   * always a steer: the runner applies it to the last turn with no model call (dl-z5ja.111).
+   * always a steer, with the revision it was made on: the runner applies it to the last turn with
+   * no model call while the lesson is still at that revision (dl-z5ja.111). Answers the steer's
+   * `event_id`, which the pane follows to its revision, or null when it went as a message.
    */
-  edit(text: string, question_ids: string[], patch?: LessonPatch): void;
+  edit(text: string, question_ids: string[], change?: LessonChange): EventId | null;
 }
 
 export function useConversation(
@@ -184,24 +187,31 @@ export function useConversation(
   }, [transport, conversation]);
 
   const edit = useCallback(
-    (text: string, question_ids: string[], patch?: LessonPatch) => {
+    (text: string, question_ids: string[], change?: LessonChange): EventId | null => {
       const last = turnsOf(latest.current).at(-1);
-      if (last === undefined || (patch === undefined && !isOpen(last))) return send(text);
+      if (last === undefined || (change === undefined && !isOpen(last))) {
+        send(text);
+        return null;
+      }
+      const event_id = newEventId();
       transport
         .send({
           conversation_id: conversation,
-          event_id: newEventId(),
+          event_id,
           kind: "steer",
           text,
           source: "lesson_edit",
           question_ids,
-          ...(patch === undefined ? {} : { patch }),
+          ...(change === undefined
+            ? {}
+            : { patch: change.patch, base_revision: change.base_revision }),
         })
         .then((run) => {
           dispatch({ type: "send_failed", failed: false });
           return follow(run);
         })
         .catch(() => dispatch({ type: "send_failed", failed: true }));
+      return event_id;
     },
     [transport, conversation, follow, send],
   );

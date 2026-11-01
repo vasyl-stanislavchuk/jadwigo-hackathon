@@ -702,6 +702,8 @@ export const COPY_KEYS = [
   "chat_edit_cancel",
   "chat_edit_words",
   "chat_edit_saved",
+  "chat_edit_saving",
+  "chat_edit_not_applied",
   "chat_sign_in",
   "chat_limit_message",
   // end the chat page

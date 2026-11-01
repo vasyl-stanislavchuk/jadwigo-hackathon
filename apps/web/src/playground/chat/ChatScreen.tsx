@@ -6,7 +6,7 @@
  * id is in the tab's session storage) and draws it again from the log.
  */
 
-import { ConversationId, type LessonPatch } from "@jadwigo/contracts/run";
+import { ConversationId } from "@jadwigo/contracts/run";
 import { copy, type Language } from "@jadwigo/copy";
 import { cn } from "@jadwigo/ui";
 import { type ReactElement, useEffect, useMemo, useState } from "react";
@@ -16,6 +16,7 @@ import { ChatPane } from "./ChatPane.tsx";
 import { type ConversationState, lessonOf, type Turn, turnsOf } from "./conversation.ts";
 import { newConversationId } from "./ids.ts";
 import { LessonPane } from "./LessonPane.tsx";
+import { type LessonChange, patchOutcome } from "./patches.ts";
 import { apiTransport } from "./realtime.ts";
 import { changedOf, revertOf, undoOf } from "./revisions.ts";
 import { undoSteer } from "./steerText.ts";
@@ -72,10 +73,14 @@ function ChatView({
   state: ConversationState;
   onSend(text: string): void;
   onStop(): void;
-  onEdit?: (text: string, question_ids: string[], patch?: LessonPatch) => void;
+  onEdit?: (text: string, question_ids: string[], change?: LessonChange) => unknown;
   onNew?: () => void;
 }): ReactElement {
   const turns = turnsOf(state);
+  /** The last Cofnij's patch steer, followed to its revision or its refusal (dl-z5ja.111). */
+  const [undoSent, setUndoSent] = useState<string | null>(null);
+  const outcomeOf = (event_id: string) => patchOutcome(state.runs, event_id);
+  const shown = lessonOf(turns);
   const changed = changedOf(turns);
   const undo = undoOf(turns);
   const revert = revertOf(turns);
@@ -87,12 +92,19 @@ function ChatView({
   const onUndo =
     undo === null || onEdit === undefined
       ? undefined
-      : () =>
-          onEdit(
-            undoSteer(undo.language, undo.question_ids, undo.revision),
-            undo.question_ids,
-            revert ?? undefined,
-          );
+      : () => {
+          const text = undoSteer(undo.language, undo.question_ids, undo.revision);
+          if (revert === null || shown === null) {
+            onEdit(text, undo.question_ids);
+            return;
+          }
+          // The revision Cofnij undoes from: the one the pane shows.
+          const sent = onEdit(text, undo.question_ids, {
+            patch: revert,
+            base_revision: shown.revision,
+          });
+          setUndoSent(typeof sent === "string" ? sent : null);
+        };
   return (
     <ChatLayout
       language={language}
@@ -113,10 +125,12 @@ function ChatView({
       lesson={
         <LessonPane
           language={language}
-          lesson={lessonOf(turns)}
+          lesson={shown}
           changed={changed}
           onUndo={onUndo}
+          undoRefused={undoSent !== null && outcomeOf(undoSent) === "refused"}
           onEdit={onEdit}
+          outcomeOf={outcomeOf}
         />
       }
       lessonKey={lessonKey(turns)}

@@ -5,7 +5,6 @@
  * A step the kit cannot draw is a line saying so; the rest of the lesson still shows.
  */
 
-import type { LessonPatch } from "@jadwigo/contracts/run";
 import { type Category, copy, type Language } from "@jadwigo/copy";
 import type { RunView } from "@jadwigo/core";
 import {
@@ -16,20 +15,28 @@ import {
   pageSpec,
   ViewMode,
 } from "@jadwigo/lesson-kit";
-import { type FormEvent, type ReactElement, useState } from "react";
+import { type FormEvent, type ReactElement, useEffect, useState } from "react";
 import { lessonFileToSpecs } from "../lesson/adapter.ts";
 import { readDraft } from "../lesson/draft.ts";
-import { wordsOf, wordsPatch } from "./patches.ts";
+import { type LessonChange, type PatchOutcome, wordsOf, wordsPatch } from "./patches.ts";
 import { editSteer, wordsSteer } from "./steerText.ts";
 
 const clock: Clock = { now: (): Instant => ({ perf: 0, wall: "2026-11-01T00:00:00.000Z" }) };
+
+/** What a pane's edit handler answers: the patch steer's `event_id` when it sent one. */
+type EditAnswer = unknown;
+
+/** A parent's edit of one step: their words for the AI, and their own change when they made one. */
+type OnEdit = (text: string, question_ids: string[], change?: LessonChange) => EditAnswer;
 
 export function LessonPane({
   language,
   lesson,
   changed = new Set(),
   onUndo,
+  undoRefused = false,
   onEdit,
+  outcomeOf,
 }: {
   /** The parent's language, for the pane's own words. */
   language: Language;
@@ -38,11 +45,16 @@ export function LessonPane({
   changed?: ReadonlySet<string>;
   /** Takes back the last AI revision; "Cofnij" shows only when it is given. */
   onUndo?: (() => void) | undefined;
+  /** The last Cofnij's patch was not applied: the pane says so beside it (dl-z5ja.111). */
+  undoRefused?: boolean;
   /**
    * Sends a parent's edit of one step, in the lesson's own language: their why for the AI, and
-   * their own words for the step as a `patch` the runner applies with no model call (dl-z5ja.111).
+   * their own words for the step as a patch on the revision shown, which the runner applies with
+   * no model call (dl-z5ja.111). Answers the steer's `event_id` when a patch went.
    */
-  onEdit?: ((text: string, question_ids: string[], patch?: LessonPatch) => void) | undefined;
+  onEdit?: OnEdit | undefined;
+  /** What became of a patch steer (`patchOutcome`); pending throughout when not given. */
+  outcomeOf?: ((event_id: string) => PatchOutcome) | undefined;
 }): ReactElement {
   const say = (key: Parameters<typeof copy>[1], vars: Record<string, string | number> = {}) =>
     copy(language, key, vars, "adult");
@@ -54,7 +66,15 @@ export function LessonPane({
           {say("chat_lesson_empty")}
         </p>
       ) : (
-        <Revision lesson={lesson} say={say} changed={changed} onUndo={onUndo} onEdit={onEdit} />
+        <Revision
+          lesson={lesson}
+          say={say}
+          changed={changed}
+          onUndo={onUndo}
+          undoRefused={undoRefused}
+          onEdit={onEdit}
+          outcomeOf={outcomeOf ?? (() => "pending")}
+        />
       )}
     </section>
   );
@@ -65,13 +85,17 @@ function Revision({
   say,
   changed,
   onUndo,
+  undoRefused,
   onEdit,
+  outcomeOf,
 }: {
   lesson: NonNullable<RunView["lesson"]>;
   say: (key: Parameters<typeof copy>[1], vars?: Record<string, string | number>) => string;
   changed: ReadonlySet<string>;
   onUndo: (() => void) | undefined;
-  onEdit: ((text: string, question_ids: string[], patch?: LessonPatch) => void) | undefined;
+  undoRefused: boolean;
+  onEdit: OnEdit | undefined;
+  outcomeOf: (event_id: string) => PatchOutcome;
 }): ReactElement {
   const read = readDraft(lesson.lesson_file);
   if ("error" in read)
@@ -102,6 +126,11 @@ function Revision({
           </button>
         )}
       </div>
+      {undoRefused && (
+        <p role="alert" data-undo-refused className="text-sm">
+          {say("chat_edit_not_applied")}
+        </p>
+      )}
       <ol className="flex flex-col gap-4">
         {steps.map((step) =>
           step.kind === "question" ? (
@@ -133,19 +162,20 @@ function Revision({
                   step={step.step_id}
                   say={say}
                   words={wordsOf(lesson.lesson_file, step.step_id, lessonLanguage)}
+                  outcomeOf={outcomeOf}
                   steer={(why, words) => {
                     const id = step.step_id;
                     const patch = wordsPatch(lesson.lesson_file, id, lessonLanguage, words);
                     if (patch === null) {
                       onEdit(editSteer(lessonLanguage, id, why), [id]);
-                      return false;
+                      return null;
                     }
                     const text =
                       why === ""
                         ? wordsSteer(lessonLanguage, id)
                         : editSteer(lessonLanguage, id, why);
-                    onEdit(text, [id], patch);
-                    return true;
+                    const sent = onEdit(text, [id], { patch, base_revision: lesson.revision });
+                    return typeof sent === "string" ? sent : "";
                   }}
                 />
               )}
@@ -176,27 +206,51 @@ function Changed({ say }: { say: (key: Parameters<typeof copy>[1]) => string }):
   );
 }
 
+/** A patch the step sent, and what the parent wrote, kept for a refusal. */
+interface Sent {
+  event_id: string;
+  words: string;
+  why: string;
+}
+
 /**
  * A parent's own edit of one step (dl-z5ja.30, .111): the step's words, which the parent may change
- * themselves and which land as a patch with no model call, and what to change and why, in their
- * words, which go to the AI as a steer naming the step. `steer` answers whether a patch went.
+ * themselves and which go as a patch on the revision shown, and what to change and why, in their
+ * words, which go to the AI as a steer naming the step. `steer` answers the patch steer's
+ * `event_id` ("" when the handler named none), or null when only words went. The pane says the
+ * change is in the lesson only once its revision is logged; a refused patch opens the editor
+ * again with the parent's text kept, and says it was not applied.
  */
 function StepEdit({
   step,
   say,
   words: current,
+  outcomeOf,
   steer,
 }: {
   step: string;
   say: (key: Parameters<typeof copy>[1]) => string;
   /** What the step says to the child now, in the lesson's language. */
   words: string;
-  steer(why: string, words: string): boolean;
+  outcomeOf: (event_id: string) => PatchOutcome;
+  steer(why: string, words: string): string | null;
 }): ReactElement {
   const [open, setOpen] = useState(false);
   const [why, setWhy] = useState("");
   const [words, setWords] = useState(current);
-  const [sent, setSent] = useState<"ai" | "lesson" | null>(null);
+  const [toAi, setToAi] = useState(false);
+  const [sent, setSent] = useState<Sent | null>(null);
+  const [refused, setRefused] = useState(false);
+  const outcome: PatchOutcome | null =
+    sent === null ? null : sent.event_id === "" ? "pending" : outcomeOf(sent.event_id);
+  useEffect(() => {
+    if (outcome !== "refused" || sent === null) return;
+    setWords(sent.words);
+    setWhy(sent.why);
+    setSent(null);
+    setRefused(true);
+    setOpen(true);
+  }, [outcome, sent]);
   if (!open)
     return (
       <div className="mt-2 flex items-center gap-2 text-sm">
@@ -206,14 +260,17 @@ function StepEdit({
           onClick={() => {
             setOpen(true);
             setWords(current);
+            setToAi(false);
             setSent(null);
+            setRefused(false);
           }}
           className="rounded-md border px-2 py-0.5"
         >
           {say("chat_edit_step")}
         </button>
-        {sent === "ai" && <span data-edit-sent>{say("chat_edit_sent")}</span>}
-        {sent === "lesson" && <span data-edit-sent="lesson">{say("chat_edit_saved")}</span>}
+        {toAi && <span data-edit-sent>{say("chat_edit_sent")}</span>}
+        {outcome === "pending" && <span data-edit-sent="saving">{say("chat_edit_saving")}</span>}
+        {outcome === "applied" && <span data-edit-sent="lesson">{say("chat_edit_saved")}</span>}
       </div>
     );
   const submit = (e: FormEvent) => {
@@ -222,13 +279,24 @@ function StepEdit({
     const own = words.trim();
     const changed = own !== "" && own !== current.trim();
     if (reason === "" && !changed) return;
-    const patched = steer(reason, changed ? own : current);
-    setWhy("");
+    const event_id = steer(reason, changed ? own : current);
     setOpen(false);
-    setSent(patched ? "lesson" : "ai");
+    setRefused(false);
+    if (event_id === null) {
+      setWhy("");
+      setToAi(true);
+      return;
+    }
+    setSent({ event_id, words: own, why });
+    setWhy("");
   };
   return (
     <form onSubmit={submit} className="mt-2 flex flex-col gap-1 text-sm">
+      {refused && (
+        <p role="alert" data-edit-refused>
+          {say("chat_edit_not_applied")}
+        </p>
+      )}
       <label className="flex flex-col gap-1">
         {say("chat_edit_words")}
         <textarea
