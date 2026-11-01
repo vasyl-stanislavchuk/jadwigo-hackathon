@@ -313,6 +313,32 @@ describe("the engine's limits in plain words (dl-z5ja.28, dl-z5ja.83)", () => {
     );
   });
 
+  it("a turn closed while nothing happened says so in Polish, with no retry", () => {
+    pane({
+      turns: [
+        turnOf("happy-turn", (view) => {
+          view.chat.push({
+            kind: "error",
+            seq: 99,
+            error: {
+              type: RUN_ERROR_TYPE.runIdle,
+              message: "nothing happened in the turn for 10 minutes, so it closed",
+            },
+            attempt: 1,
+            retryable: true,
+          });
+        }),
+      ],
+    });
+    const row = document.querySelector("[data-row='error']");
+    expect(row?.querySelector("p")?.textContent).toBe(
+      "Rozmowa długo czekała, więc tura się zakończyła. Napisz, aby iść dalej.",
+    );
+    expect(row?.textContent).not.toContain("10 minutes");
+    expect(row?.textContent).not.toContain("Próbuję jeszcze raz.");
+    expect(document.querySelector("[data-row='retry-turn']")).toBeNull();
+  });
+
   it("a step delivered again only says it is trying again", () => {
     pane({ turns: [withError(RUN_ERROR_TYPE.stepTimedOut, true)] });
     expect(document.querySelector("[data-row='error'] p")?.textContent).toBe(
