@@ -1,0 +1,22 @@
+// House rule (dl-uukj.34, jadwigo-marketing/decisions/2026-11-01-for-the-hackathon-jadwigo-is-live-in-
+// polish-and-english-on-jadwi): a word a person reads or hears comes from @jadwigo/copy, so it
+// exists in every language. It fails JSX text with a letter in it, and an aria-label written as a
+// string. Numbers, symbols and punctuation (×, =, ·) pass. biome.json applies it to apps/web/src and
+// packages/lesson-kit/src, minus the playground (the owner's English tool) and tests.
+language js
+
+or {
+  JsxText() as $text where {
+    $text <: r"(?s).*[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż].*",
+    register_diagnostic(span=$text, message="Words on a screen come from @jadwigo/copy, not JSX text: add the line to packages/copy/messages/{pl,en}.json and render copy(language, key).", severity="error")
+  },
+  JsxAttribute(name=$name, initializer=JsxAttributeInitializerClause(value=$value)) where {
+    $name <: r"aria-label",
+    or {
+      $value <: JsxString(),
+      $value <: JsxExpressionAttributeValue(expression=JsStringLiteralExpression())
+    },
+    $value <: r"(?s).*[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż].*",
+    register_diagnostic(span=$value, message="An aria-label is read aloud, so it comes from @jadwigo/copy: aria-label={copy(language, key)}.", severity="error")
+  }
+}

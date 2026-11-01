@@ -21,6 +21,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setPodLanguage, useScreenLanguage } from "../nav/language.ts";
 import { storedAttempt } from "../play/storedAttempt.ts";
 import { type Auth, type Provider, type RedirectOutcome, returnOf, supabaseAuth } from "./auth.ts";
 import { result, twin } from "./overview/fixtures.ts";
@@ -126,12 +127,20 @@ const press = async (selector: string): Promise<void> => {
 
 beforeEach(() => {
   window.sessionStorage.clear();
+  window.localStorage.clear();
   window.history.replaceState(null, "", "/parent");
 });
 afterEach(() => {
   cleanup();
+  act(() => setPodLanguage(null));
   vi.restoreAllMocks();
 });
+
+/** The parent's screens with the language wired as App wires it (nav/language.ts). */
+function Wired(props: { auth: Auth; client: ParentClient }) {
+  const query = new URLSearchParams(window.location.search);
+  return <ParentScreen language={useScreenLanguage(query)} query={query} {...props} />;
+}
 
 describe("ParentScreen", () => {
   it("says sign-in is off when the build has no Supabase project", () => {
@@ -188,6 +197,36 @@ describe("ParentScreen", () => {
     expect(api.claimAttempt).toHaveBeenCalledWith(ATTEMPT, { learner_id: LEARNER });
     expect(storedAttempt.get(ASSIGNMENT)).toBeNull();
     expect(window.location.search).not.toContain("claim");
+  });
+
+  it("sends the language the parent picks at sign-in as the pod's, and the screens follow it", async () => {
+    const auth = signedOutAuth();
+    const api = client({
+      getMe: vi.fn(async () => (auth.signedIn ? NOBODY : me([]))),
+      createAccount: vi.fn(async () => me([])),
+    });
+    render(<Wired auth={auth} client={api} />);
+
+    await screen.findByText("Wyślij kod");
+    await press('[data-language-pick] [role="radio"][value="en"]');
+    await screen.findByText("Send the code");
+    type("[data-email]", "rodzic@example.com");
+    await press("[data-send-code]");
+    type("[data-code]", "123456");
+    await press("[data-sign-in]");
+    await screen.findByText("The child's first name");
+    expect(api.createAccount).toHaveBeenCalledWith({ language: "en" });
+  });
+
+  it("speaks the pod's language once /me says it, unless the parent picked another", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const english = { ...me([snapshot]), pod: { ...pod, language: "en" } } as unknown as Me;
+    const api = client({ getMe: async () => english });
+    render(<Wired auth={auth} client={api} />);
+    await screen.findByText("Add a child");
+    await press('[data-language-pick] [role="radio"][value="pl"]');
+    await screen.findByText("Dodaj dziecko");
   });
 
   it("asks whose lesson it was when the pod has a child, and says so when the attempt is already kept", async () => {
