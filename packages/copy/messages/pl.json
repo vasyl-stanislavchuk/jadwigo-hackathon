@@ -902,7 +902,6 @@
   "attach_photo_alt": "Zdjęcie {n}",
   "attach_uploading": "Wysyłam zdjęcie, {percent}%",
   "attach_retry": "Spróbuj ponownie",
-  "attach_heic": "Nie umiemy otworzyć tego zdjęcia. Zrób zrzut ekranu albo zapisz je jako JPG",
   "attach_unreadable": "Tego pliku nie umiemy otworzyć jako zdjęcia. Wybierz zdjęcie albo zrzut ekranu",
   "attach_too_large": "To zdjęcie jest za duże nawet po zmniejszeniu. Zrób zrzut ekranu i dodaj go zamiast zdjęcia",
   "attach_limit_day": "Na dziś to już wszystkie zdjęcia. Jutro można dodać kolejne",
@@ -942,5 +941,10 @@
   "parent_about_lesson_empty": "Źródło, kroki, wersja i historia zmian pojawią się tu, gdy lekcja będzie gotowa.",
   "parent_change": "Zmień",
   "parent_chat_empty": "Tu pojawi się rozmowa z Jadwigo.",
-  "parent_lesson_empty": "Tu pojawią się kroki lekcji, gdy Jadwigo zacznie ją pisać."
+  "parent_lesson_empty": "Tu pojawią się kroki lekcji, gdy Jadwigo zacznie ją pisać.",
+  "attach_document_too_large": "Ten plik ma więcej niż {mb} MB. Zapisz go mniejszy albo dodaj zdjęcie strony",
+  "attach_file_alt": "Plik {n}",
+  "attach_kind_pdf": "PDF",
+  "attach_kind_docx": "DOCX",
+  "attach_kind_heic": "HEIC"
 }

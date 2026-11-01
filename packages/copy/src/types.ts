@@ -783,7 +783,6 @@ export const COPY_KEYS = [
   "attach_photo_alt",
   "attach_uploading",
   "attach_retry",
-  "attach_heic",
   "attach_unreadable",
   "attach_too_large",
   "attach_limit_day",
@@ -792,6 +791,11 @@ export const COPY_KEYS = [
   "attach_changed",
   "attach_not_taken",
   "attach_left_off",
+  "attach_document_too_large",
+  "attach_file_alt",
+  "attach_kind_pdf",
+  "attach_kind_docx",
+  "attach_kind_heic",
   // end a parent's photos
 ] as const;
 

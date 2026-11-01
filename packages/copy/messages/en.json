@@ -882,7 +882,6 @@
   "attach_photo_alt": "Photo {n}",
   "attach_uploading": "Uploading the photo, {percent}%",
   "attach_retry": "Try again",
-  "attach_heic": "We can't open this photo. Take a screenshot of it or save it as a JPG",
   "attach_unreadable": "We can't open this file as a photo. Pick a photo or a screenshot",
   "attach_too_large": "This photo is too large even after shrinking it. Take a screenshot and add that instead",
   "attach_limit_day": "That is all the photos for today. You can add more tomorrow",
@@ -920,5 +919,10 @@
   "parent_about_lesson_empty": "The source, the steps, the version and the change history will appear here once the lesson is ready.",
   "parent_change": "Change",
   "parent_chat_empty": "Your chat with Jadwigo will appear here.",
-  "parent_lesson_empty": "The lesson's steps will appear here once Jadwigo starts writing it."
+  "parent_lesson_empty": "The lesson's steps will appear here once Jadwigo starts writing it.",
+  "attach_document_too_large": "This file is over {mb} MB. Save a smaller copy or add a photo of the page",
+  "attach_file_alt": "File {n}",
+  "attach_kind_pdf": "PDF",
+  "attach_kind_docx": "DOCX",
+  "attach_kind_heic": "HEIC"
 }

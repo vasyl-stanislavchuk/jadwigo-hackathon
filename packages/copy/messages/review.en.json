@@ -661,7 +661,6 @@
   "attach_photo_alt": false,
   "attach_uploading": false,
   "attach_retry": false,
-  "attach_heic": false,
   "attach_unreadable": false,
   "attach_too_large": false,
   "attach_limit_day": false,
@@ -690,5 +689,10 @@
   "parent_about_lesson_empty": false,
   "parent_change": false,
   "parent_chat_empty": false,
-  "parent_lesson_empty": false
+  "parent_lesson_empty": false,
+  "attach_document_too_large": false,
+  "attach_file_alt": false,
+  "attach_kind_pdf": false,
+  "attach_kind_docx": false,
+  "attach_kind_heic": false
 }

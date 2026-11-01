@@ -61,9 +61,42 @@ describe("AttachmentChips", () => {
     expect(h.xhrs[1]?.body?.get("policy")).toBe("p2");
   });
 
-  it("a HEIC that still cannot be read is refused with its sentence, and no Retry", async () => {
+  it("a PDF shows a document chip: icon, kind and name, no thumbnail", async () => {
+    const h = harness();
+    const upload = new PhotoUpload(fileOf("Karta pracy.pdf", "application/pdf"), h.deps);
+    render(<AttachmentChips language="pl" uploads={[upload]} onRemove={() => {}} />);
+    void upload.start();
+    await flush();
+
+    const card = screen.getByRole("img", { name: "Plik 1: Karta pracy.pdf" });
+    expect(card.dataset["document"]).toBe("pdf");
+    expect(within(card).getByText("PDF")).toBeTruthy();
+    expect(within(card).getByText("Karta pracy.pdf")).toBeTruthy();
+    expect(screen.getByRole("progressbar")).toBeTruthy();
+    expect(chip(1).querySelector("img")).toBeNull();
+
+    await act(async () => {
+      h.xhrs[0]?.answer(204);
+      await settle();
+    });
+    expect(chip(1).dataset["chip"]).toBe("ready");
+  });
+
+  it("a HEIC the browser cannot decode shows as a HEIC document chip and uploads", async () => {
     const h = harness({ decoded: null });
     const upload = new PhotoUpload(fileOf("IMG_0003.heic", "image/heic"), h.deps);
+    render(<AttachmentChips language="en" uploads={[upload]} onRemove={() => {}} />);
+    void upload.start();
+    await flush();
+    const card = screen.getByRole("img", { name: "File 1: IMG_0003.heic" });
+    expect(within(card).getByText("HEIC")).toBeTruthy();
+    expect(h.api.bodies[0]?.media_type).toBe("image/heic");
+  });
+
+  it("a document over 10 MB is refused with its sentence, and no Retry", async () => {
+    const h = harness();
+    const big = fileOf("Skan.docx", "", 10 * 1024 * 1024 + 1);
+    const upload = new PhotoUpload(big, h.deps);
     render(<AttachmentChips language="pl" uploads={[upload]} onRemove={() => {}} />);
     await act(async () => {
       await upload.start();
@@ -72,7 +105,7 @@ describe("AttachmentChips", () => {
     expect(chip(1).dataset["chip"]).toBe("refused");
     expect(
       screen.getByText(
-        "Zdjęcie 1: Nie umiemy otworzyć tego zdjęcia. Zrób zrzut ekranu albo zapisz je jako JPG",
+        "Plik 1: Ten plik ma więcej niż 10 MB. Zapisz go mniejszy albo dodaj zdjęcie strony",
       ),
     ).toBeTruthy();
     expect(within(chip(1)).queryByRole("button", { name: "Spróbuj ponownie" })).toBeNull();
@@ -80,7 +113,7 @@ describe("AttachmentChips", () => {
 
   it("an undecodable file is refused in English too, with no Retry", async () => {
     const h = harness({ decoded: null });
-    const upload = new PhotoUpload(fileOf("notes.pdf", "application/pdf"), h.deps);
+    const upload = new PhotoUpload(fileOf("notes.txt", "text/plain"), h.deps);
     render(<AttachmentChips language="en" uploads={[upload]} onRemove={() => {}} />);
     await act(async () => {
       await upload.start();
