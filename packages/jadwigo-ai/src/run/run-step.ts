@@ -293,6 +293,15 @@ export async function runStep(input: RunStepInput, deps: EngineDeps): Promise<Ru
   if (ended) return { outcome: ended, events: 0 };
   if (found.run.attempt !== input.attempt) return { outcome: "continue", events: 0 };
 
+  // A due run takes the sweep's path before any model call: the pg_cron sweep enqueues a step for
+  // every run past a deadline (`app.enqueue_runs_due`), and that step only closes it (dl-z5ja.60).
+  const due = deadlineDue(found.run, deps.now());
+  if (due) {
+    const closed = await closeDue(deps.store, found.pod, found.run, due, deps.now());
+    if (!closed) return { outcome: "continue", events: 0 };
+    return { outcome: due === "max" ? "failed" : "turn_complete", events: closed.events };
+  }
+
   const log = [...(await deps.store.listRunEvents(found.pod, found.run.id, 0))];
   const w = new Writer(deps.store, found.pod, found.run.id, input.attempt, log);
   try {
@@ -314,11 +323,6 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
   let run = scope.run;
   await takeInbox(deps.store, w);
   const now = deps.now();
-
-  if (deadlineDue(run, now) === "max") {
-    await endPastMax(w, run.attempt, now);
-    return "failed";
-  }
 
   const start: RunChange = {};
   if (run.status !== "in_progress") start.status = "in_progress";
@@ -804,23 +808,39 @@ export async function sweep(deps: EngineDeps, now: Date): Promise<{ idle: RunId[
   for (const { pod, run } of await store.listRunsDue(now.toISOString())) {
     const due = deadlineDue(run, now);
     if (!due) continue;
-    const attempt = run.attempt + 1;
-    const claimed = await store.updateRun(pod, run.id, run.attempt, { attempt });
-    if (claimed.stale) continue;
-    const log = [...(await store.listRunEvents(pod, run.id, 0))];
-    const w = new Writer(store, pod, run.id, attempt, log);
-    try {
-      await takeInbox(store, w);
-      if (due === "max") {
-        await endPastMax(w, run.attempt, now);
-      } else {
-        await endTurn(w, "completed", now);
-      }
-    } catch (error) {
-      if (error instanceof StaleAttempt) continue;
-      throw error;
-    }
-    ended[due].push(run.id);
+    if (await closeDue(store, pod, run, due, now)) ended[due].push(run.id);
   }
   return ended;
+}
+
+/**
+ * Closes one due run, as the sweep does and as a step for a due run does: claims it by moving its
+ * `attempt` on, so a step still running goes stale, takes the inbox, then fails it past
+ * `max_deadline_at` with an `error` event, or closes its turn past only `idle_deadline_at`. No
+ * model call. Answers the events it wrote, or null when another claim won the run.
+ */
+async function closeDue(
+  store: Store,
+  pod: PodId,
+  run: Run,
+  due: "idle" | "max",
+  now: Date,
+): Promise<{ events: number } | null> {
+  const attempt = run.attempt + 1;
+  const claimed = await store.updateRun(pod, run.id, run.attempt, { attempt });
+  if (claimed.stale) return null;
+  const log = [...(await store.listRunEvents(pod, run.id, 0))];
+  const w = new Writer(store, pod, run.id, attempt, log);
+  try {
+    await takeInbox(store, w);
+    if (due === "max") {
+      await endPastMax(w, run.attempt, now);
+    } else {
+      await endTurn(w, "completed", now);
+    }
+  } catch (error) {
+    if (error instanceof StaleAttempt) return null;
+    throw error;
+  }
+  return { events: w.appended };
 }

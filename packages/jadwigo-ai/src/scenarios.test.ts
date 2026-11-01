@@ -274,6 +274,39 @@ describe("the engine keeps PostHog's production lessons", () => {
     },
   );
 
+  frozen("a due run enqueued by the sweep ends without a model call", async () => {
+    // Muse is scripted with no reply, so any call fails the scenario.
+    const idle = await setup([]);
+    const quiet = await idle.say("Something about money.");
+    idle.tick(RUN_IDLE_MS);
+    // The pg_cron sweep's step: the run's current attempt (app.enqueue_runs_due).
+    const waiting = await idle.store.getRun(idle.pod, quiet);
+    await idle.deps.queue.send({ run_id: quiet, attempt: waiting.attempt });
+    const outputs = await drain(idle.deps);
+    expect(outputs.map((o) => o.outcome)).toContain("turn_complete");
+    expect(idle.muse.calls).toHaveLength(0);
+    expect((await idle.store.getRun(idle.pod, quiet)).status).toBe("completed");
+    const closed = await idle.log(quiet);
+    expect(closed.map((e) => e.type)).toEqual(["message", "status", "turn_complete"]);
+
+    const busy = await setup([]);
+    const long = await busy.say("A long one.");
+    const started = await busy.store.getRun(busy.pod, long);
+    await busy.store.updateRun(busy.pod, long, started.attempt, {
+      idle_deadline_at: new Date(busy.now().getTime() + 2 * RUN_MAX_MS).toISOString(),
+    });
+    busy.tick(RUN_MAX_MS);
+    expect((await drain(busy.deps)).map((o) => o.outcome)).toEqual(["failed"]);
+    expect(busy.muse.calls).toHaveLength(0);
+    expect((await busy.store.getRun(busy.pod, long)).status).toBe("failed");
+    const failed = await busy.log(long);
+    expect(failed.find((e) => e.type === "error")?.payload).toMatchObject({
+      error: { type: "RunTimedOut" },
+      retryable: false,
+    });
+    expect(failed.at(-1)?.type).toBe("turn_complete");
+  });
+
   frozen("a steer survives a redelivered step", async () => {
     const STEER = "Shorter, please: 5 questions.";
     const t = await setup(
