@@ -31,7 +31,9 @@ import {
   type ConversationCreate,
   type ConversationId,
   type ConversationMessage,
+  type ConversationPatch,
   type ConversationRuns,
+  type Conversations,
   ErrorEnvelope,
   type ErrorType,
   type Featured,
@@ -179,6 +181,17 @@ export interface ConversationClient {
   cancelRun(runId: RunId, body: RunCancel): Promise<RunAccepted>;
 }
 
+/**
+ * A parent's conversation list and its delete, which archives (dl-z5ja.105, decision dl-84wo).
+ * Each needs a token.
+ */
+export interface ConversationListClient {
+  /** The pod's live conversations, newest first; an archived one is left out. */
+  listConversations(): Promise<Conversations>;
+  /** Archives it, once: archiving again keeps the first `archived_at`. */
+  patchConversation(conversationId: ConversationId, body: ConversationPatch): Promise<Conversation>;
+}
+
 /** A parent's Good or Bad on a turn (dl-z5ja.110). Needs a token. */
 export interface RunRatingClient {
   /** One per run and parent: rating again replaces the verdict and the note. */
@@ -193,6 +206,7 @@ export type Client = AttemptClient &
   PlaygroundClient &
   PodClient &
   ConversationClient &
+  ConversationListClient &
   RunRatingClient;
 
 /** A route's path with its `{name}` params filled in. */
@@ -298,6 +312,9 @@ export function createClient({
     patchReport: (learnerId, reportId, body) =>
       call(ROUTES.patchReport, { id: learnerId, report: reportId }, body),
     createConversation: (body) => call(ROUTES.createConversation, {}, body),
+    listConversations: () => call(ROUTES.listConversations, {}, undefined),
+    patchConversation: (conversationId, body) =>
+      call(ROUTES.patchConversation, { id: conversationId }, body),
     postMessage: (conversationId, body) => call(ROUTES.postMessage, { id: conversationId }, body),
     listConversationRuns: (conversationId) =>
       call(ROUTES.listConversationRuns, { id: conversationId }, undefined),

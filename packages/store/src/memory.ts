@@ -13,6 +13,7 @@ import {
   CurriculumId,
   Ended,
   ErrorType,
+  type EventId,
   FEATURED_POD_ID,
   Goal,
   GoalId,
@@ -342,6 +343,11 @@ export class InMemoryStore implements Store {
     );
     this.#lessons.set(row.id, row);
     return row;
+  }
+
+  async getLesson(pod: PodId, id: LessonId): Promise<Lesson | undefined> {
+    const row = this.#lessons.get(id);
+    return row?.pod_id === pod ? row : undefined;
   }
 
   async putLessonQuestion(pod: PodId, question: NewLessonQuestion): Promise<LessonQuestion> {
@@ -1601,6 +1607,10 @@ export class InMemoryStore implements Store {
   async listRunEvents(pod: PodId, run: RunId, afterSeq: number): Promise<readonly RunEvent[]> {
     this.#inPod(this.#runs, pod, run, "the run");
     return (this.#runEvents.get(run) ?? []).filter((e) => e.seq > afterSeq);
+  }
+
+  async findRunInbox(pod: PodId, event_id: EventId): Promise<RunInbox | undefined> {
+    return this.#inbox.get(inboxKey(pod, event_id));
   }
 
   async putRunInbox(pod: PodId, entry: NewRunInbox): Promise<RunInbox> {

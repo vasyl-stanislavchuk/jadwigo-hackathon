@@ -8,6 +8,7 @@ import {
   type IdPrefix,
   idOf,
   LearnerId,
+  LessonId,
   type LessonQuestionId,
   LIMITS,
   PodId,
@@ -146,6 +147,22 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         const lesson = await store.putLesson(pod, LESSON);
         expect(await store.getLatestLessonVersion(pod, lesson.id)).toBeUndefined();
         expect(lesson.status).toBe("draft");
+      });
+
+      // dl-z5ja.119: a message's lesson context may name a draft in the sender's pod.
+      it("reads a lesson of the pod, a draft as a published one, and another pod's as undefined", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const draft = await store.putLesson(a.pod, LESSON);
+        expect(draft.status).toBe("draft");
+        expect(await store.getLesson(a.pod, draft.id)).toEqual(draft);
+        expect((await store.getLesson(a.pod, a.lesson))?.status).toBe("published");
+
+        const b = await newPod(store, "Pod of owls");
+        expect(await store.getLesson(b, draft.id)).toBeUndefined();
+        expect(await store.getLesson(b, a.lesson)).toBeUndefined();
+        const unknown = LessonId.parse(idOf(ID_PREFIXES.lesson, crypto.randomUUID()));
+        expect(await store.getLesson(a.pod, unknown)).toBeUndefined();
       });
 
       it("refuses a list that names one lesson question twice with BadRequest", async () => {

@@ -14,6 +14,7 @@ import {
   CurriculumId,
   Ended,
   ErrorType,
+  type EventId,
   FEATURED_POD_ID,
   Goal,
   GoalId,
@@ -840,6 +841,19 @@ class PostgresStore implements Store {
           };
         }),
       };
+    });
+  }
+
+  async getLesson(pod: PodId, id: LessonId): Promise<Lesson | undefined> {
+    return this.#in(pod, async (tx) => {
+      // pod_id too: claimed_read lets a pod read a claimed attempt's lesson of another pod.
+      const row = await tx
+        .selectFrom("lesson")
+        .selectAll()
+        .where("id", "=", uuidOf(ID_PREFIXES.lesson, id))
+        .where("pod_id", "=", uuidOf(ID_PREFIXES.pod, pod))
+        .executeTakeFirst();
+      return row && read(Lesson, row, ID_PREFIXES.lesson);
     });
   }
 
@@ -2956,6 +2970,19 @@ class PostgresStore implements Store {
         .orderBy("seq")
         .execute();
       return rows.map((row) => read(RunEvent, row));
+    });
+  }
+
+  async findRunInbox(pod: PodId, event_id: EventId): Promise<RunInbox | undefined> {
+    return this.#in(pod, async (tx) => {
+      // pod_id too, not only row-level security: the key is (pod_id, event_id).
+      const row = await tx
+        .selectFrom("run_inbox")
+        .selectAll()
+        .where("pod_id", "=", uuidOf(ID_PREFIXES.pod, pod))
+        .where("event_id", "=", event_id)
+        .executeTakeFirst();
+      return row && read(RunInbox, row);
     });
   }
 

@@ -39,7 +39,13 @@ Adres e-mail i identyfikator konta Google lub Facebook przechowuje Supabase, bo 
 mógłby się zalogować. Własna baza Jadwigo zapisuje z logowania tylko identyfikator użytkownika nadany
 przez Supabase. Po nim rozpoznajemy konto rodzica.
 
+## Odpowiedzi dziecka
+
+Odpowiedzi dziecka i jego postępy w lekcjach widzi tylko rodzic, na swoim koncie. Inne rodziny ich
+nie widzą. Gdy rodzic prosi asystenta AI Jadwigo o lekcję albo podsumowanie, asystent czyta
+odpowiedzi i imię dziecka, żeby je przygotować.
+
 ## Usunięcie danych
 
-Rodzic może w każdej chwili poprosić o usunięcie konta i danych z nim powiązanych. Jak to zrobić,
-piszemy na stronie [Usuwanie danych](/prywatnosc/usuwanie-danych/).
+Rodzic może w każdej chwili poprosić o usunięcie konta i danych z nim powiązanych, także odpowiedzi
+dziecka. Jak to zrobić, piszemy na stronie [Usuwanie danych](/prywatnosc/usuwanie-danych/).

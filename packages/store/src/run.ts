@@ -1,4 +1,4 @@
-import type { AccountId, PodId } from "@jadwigo/contracts";
+import type { AccountId, EventId, PodId } from "@jadwigo/contracts";
 import type {
   Conversation,
   ConversationId,
@@ -156,6 +156,12 @@ export interface RunStore {
   listRunEvents(pod: PodId, run: RunId, afterSeq: number): Promise<readonly RunEvent[]>;
   /** Written once by `event_id`: the same `event_id` again returns the stored row. */
   putRunInbox(pod: PodId, entry: NewRunInbox): Promise<RunInbox>;
+  /**
+   * The inbox row `pod` holds under `event_id`, pending or delivered, or undefined (dl-z5ja.131):
+   * how a resend is known before anything is written. Another pod's row is undefined: an
+   * `event_id` is unique per pod (dl-z5ja.86).
+   */
+  findRunInbox(pod: PodId, event_id: EventId): Promise<RunInbox | undefined>;
   /** Marks the run's pending rows delivered and answers them, oldest first. Each is taken once. */
   takeRunInbox(pod: PodId, run: RunId): Promise<readonly RunInbox[]>;
   /**
