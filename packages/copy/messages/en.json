@@ -902,7 +902,6 @@
   "parent_about_lesson": "About the lesson",
   "parent_about_lesson_empty": "The source, the steps, the version and the change history will appear here once the lesson is ready.",
   "parent_change": "Change",
-  "parent_chat_empty": "Your chat with Jadwigo will appear here.",
   "parent_lesson_empty": "The lesson's steps will appear here once Jadwigo starts writing it.",
   "attach_photo_alt": "Photo {n}",
   "attach_uploading": "Uploading the photo, {percent}%",
@@ -924,5 +923,9 @@
         "n_noun=other": "{max} photos fit, {n} were left off"
       }
     }
-  ]
+  ],
+  "parent_composer": "Keep typing…",
+  "parent_writing": "Jadwigo is writing the lesson",
+  "parent_sending": "Starting…",
+  "parent_start_failed": "The lesson didn't start. Try again."
 }
