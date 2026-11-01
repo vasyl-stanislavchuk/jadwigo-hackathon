@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Need, QuestionBody, SearchEnvelope } from "./bank.ts";
 import {
   AssignmentId,
+  AttachmentId,
   AttemptId,
   ConversationId,
   GoalId,
@@ -15,6 +16,9 @@ import { Conversation, RunRating, RunRatingCreate } from "./run.ts";
 import {
   AccountCreate,
   AssignmentAttempts,
+  AttachmentCreate,
+  AttachmentRead,
+  AttachmentUpload,
   AttemptAnswerRequest,
   AttemptAnswerResult,
   AttemptClaim,
@@ -481,7 +485,33 @@ export const ROUTES = {
     summary: "Sends the parent's message, on the open turn or a new one.",
     tag: "conversations",
     description:
-      "Idempotent by `event_id`: a resend returns the run that holds the message, and the same `event_id` with other text is 409 `EventIdMismatch`. The reply comes before the AI answers: read the run's events for its answer.",
+      "Idempotent by `event_id`: a resend returns the run that holds the message, and the same `event_id` with other text or photos is 409 `EventIdMismatch`. `attachment_ids` names photos from `POST /api/v1/attachments`, uploaded; one that is not there as declared is 409 `AttachmentMismatch`, and one another message carries is 409 `AttachmentAttached`, and the message is not kept. The reply comes before the AI answers: read the run's events for its answer.",
+  },
+  createAttachment: {
+    method: "POST",
+    path: "/api/v1/attachments",
+    params: z.object({}),
+    body: AttachmentCreate,
+    response: AttachmentUpload,
+    status: 201,
+    auth: "token",
+    summary: "Starts a photo upload for a message: a pending attachment and its upload form.",
+    tag: "conversations",
+    description:
+      "The page re-encodes the photo to a JPEG first and posts the form's fields and the file straight to S3. Idempotent by `event_id`: a resend answers the same attachment with a fresh form. A pending attachment no message carries expires after a day. Past the pod's daily count it is 429 `AttachmentLimitDay`.",
+  },
+  getAttachment: {
+    method: "GET",
+    path: "/api/v1/attachments/{id}",
+    params: z.object({ id: AttachmentId }),
+    body: null,
+    response: AttachmentRead,
+    status: 200,
+    auth: "token",
+    summary: "Reads an attached photo, with a short-lived link to the copy the AI received.",
+    tag: "conversations",
+    description:
+      "Only an attachment a message carries has a link; a pending one, and another pod's, is 404. Fetch it again after `expires_at`.",
   },
   listConversationRuns: {
     method: "GET",

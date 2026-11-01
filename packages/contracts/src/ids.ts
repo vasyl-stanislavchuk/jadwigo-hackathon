@@ -24,6 +24,8 @@ export const ID_PREFIXES = {
   conversation: "cnv_",
   run: "run_",
   run_rating: "rtg_",
+  /** `att_` is the attempt's, so a photo a parent attaches is `atch_` (dl-z5ja.11). */
+  attachment: "atch_",
 } as const;
 export type IdPrefix = (typeof ID_PREFIXES)[keyof typeof ID_PREFIXES];
 
@@ -138,6 +140,8 @@ export const RunId = prefixedId<"RunId">(ID_PREFIXES.run, "a run");
 export type RunId = z.infer<typeof RunId>;
 export const RunRatingId = prefixedId<"RunRatingId">(ID_PREFIXES.run_rating, "a run rating");
 export type RunRatingId = z.infer<typeof RunRatingId>;
+export const AttachmentId = prefixedId<"AttachmentId">(ID_PREFIXES.attachment, "an attachment");
+export type AttachmentId = z.infer<typeof AttachmentId>;
 
 /** The id the page mints for one write, so a replay is recognised. The bare uuid, no prefix. */
 export const EventId = z.string().regex(UUID, "an event id is a lowercase uuid").brand<"EventId">();
@@ -162,4 +166,5 @@ export const ID_SCHEMAS = {
   conversation_id: ConversationId,
   run_id: RunId,
   run_rating_id: RunRatingId,
+  attachment_id: AttachmentId,
 } as const;

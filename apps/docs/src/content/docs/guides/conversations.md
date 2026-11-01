@@ -1,6 +1,6 @@
 ---
 title: Conversations with the AI
-description: Start a conversation, send a message, read the AI's answer as run events, stop a turn, rate it, and archive a conversation.
+description: Start a conversation, send a message with photos, read the AI's answer as run events, stop a turn, rate it, and archive a conversation.
 ---
 
 This guide is for a client that runs a parent's chat with Jadwigo's AI: the chat on the left that
@@ -67,6 +67,37 @@ sent while a turn is open joins that turn. Otherwise it starts a new run.
 A correction while the turn runs is a steer: the same route with `"kind": "steer"`. An edit in
 the lesson pane also sends `"source": "lesson_edit"` and the `question_ids` it changed. A steer
 joins the open turn and never starts one.
+
+### Attach photos
+
+[Upload](/api/operations/createattachment/) and [read](/api/operations/getattachment/).
+
+A message may carry up to 10 photos, such as a page of homework, with or without words. Each photo
+goes in 3 steps:
+
+1. The client re-encodes the photo to a JPEG: at most 2000 px on its long edge and 4 MB. This
+   also drops the camera's Exif data, its location included. A photo that still carries Exif is
+   refused at step 3.
+2. It asks for an upload form, then posts the form's `fields` and the file straight to S3:
+
+   ```bash
+   curl -X POST https://app.jadwigo.pl/api/v1/attachments \
+     -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"event_id": "5d7a1c3e-2b4f-4e6a-9c8d-0f1e2a3b4c50", "media_type": "image/jpeg", "bytes": 482113, "width": 1500, "height": 2000}'
+   ```
+
+3. It sends the message with the attachment ids, in the order the parent added them:
+   `"attachment_ids": ["atch_…"]`. The text may then be empty.
+
+When the message arrives, the server checks each photo against what step 2 declared. If one is
+missing, another size, not a JPEG or still carries Exif, the reply is `409` `AttachmentMismatch`
+and nothing is stored. A photo another message already carries is `409` `AttachmentAttached`. A
+photo no message has carried expires after a day (`409` `AttachmentExpired`). A family may upload
+200 photos a day (`429` `AttachmentLimitDay`).
+
+`GET /api/v1/attachments/{id}` returns the stored copy, the same bytes the AI received, behind a
+short-lived link. Ask again after `expires_at`.
 
 ## 3. Read the answer
 
