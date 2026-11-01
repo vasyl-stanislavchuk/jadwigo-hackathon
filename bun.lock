@@ -216,6 +216,8 @@
       "devDependencies": {
         "@jadwigo/testing": "workspace:*",
         "@types/node": "catalog:",
+        "@types/pg": "8.23.1",
+        "pg": "8.23.1",
         "typescript": "catalog:",
         "vitest": "catalog:",
       },
