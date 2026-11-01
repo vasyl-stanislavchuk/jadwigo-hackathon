@@ -61,4 +61,20 @@ describe("inLanguage (dl-z5ja.64)", () => {
     );
     expect(inLanguage("Łucja ma gotowe pytania, a lekcja jest już na prawo.", "en")).toBe(false);
   });
+
+  it("leaves out single-quoted spans, but not an apostrophe inside a word", () => {
+    expect(
+      inLanguage("Dodałam pytania: 'What is the colour of the sky?' i 'Where is it?'", "pl"),
+    ).toBe(true);
+    expect(inLanguage("Dodałam pytanie ‘What is the name of the cat?’ do lekcji.", "pl")).toBe(
+      true,
+    );
+    // Apostrophes open no span: this English stays English, so a Polish lesson refuses it.
+    expect(
+      inLanguage("Don't worry, the child's lesson is ready and it's on the right.", "pl"),
+    ).toBe(false);
+    expect(
+      inLanguage("Don't worry, the child's lesson is ready and it's on the right.", "en"),
+    ).toBe(true);
+  });
 });
