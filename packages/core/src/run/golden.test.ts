@@ -8,27 +8,7 @@ import { budgetGuard, deadlineDue, foldRun, mergeLive } from "./index.ts";
  * writes the bodies and removes each name below as its test turns green: a name left here runs as
  * `it.fails`, so a test that starts passing fails until its name goes. The set ends empty.
  */
-const EXPECTED_RED = new Set([
-  "fold: happy-turn",
-  "fold: follow-up-mid-turn",
-  "fold: reload-with-duplicates",
-  "fold: cancel-during-a-verb",
-  "fold: budget-steer-then-stop",
-  "fold: redelivered-step",
-  "fold: stale-attempt",
-  "fold: late-event-after-turn-complete",
-  "fold: idle-vs-max-deadline",
-  "deadlineDue: neither has passed",
-  "deadlineDue: idle has passed, max has not",
-  "deadlineDue: activity pushed idle past max; max fires on its own clock",
-  "deadlineDue: both have passed: max wins",
-  "deadlineDue: no idle clock while no turn is open; max still counts",
-  "deadlineDue: an ended run is never due",
-  "deadlineDue: the instant itself is due",
-  "budgetGuard: none below half, steer from half, stop from 90%",
-  "budgetGuard: an unknown spend is stop",
-  "mergeLive: a reload's buffer and fetch fold like the log, with no gap and no duplicate",
-]);
+const EXPECTED_RED = new Set<string>([]);
 
 /** `it`, or `it.fails` while the name is in EXPECTED_RED. */
 function frozen(name: string, body: () => void): void {
