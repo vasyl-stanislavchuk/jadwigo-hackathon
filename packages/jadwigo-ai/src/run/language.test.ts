@@ -77,4 +77,14 @@ describe("inLanguage (dl-z5ja.64)", () => {
       inLanguage("Don't worry, the child's lesson is ready and it's on the right.", "en"),
     ).toBe(true);
   });
+
+  it("keeps a quoted span whole across an apostrophe inside it (#554's round 3)", () => {
+    for (const text of [
+      "Dodałam pytania 'What's the colour of the sky?' i 'Where is the cat?'",
+      "Dodałam pytania ‘What’s the colour of the sky?’ i ‘Where is the cat?’",
+      "Dodałam pytanie 'What's the name of the cat and the dog?'",
+    ]) {
+      expect(inLanguage(text, "pl"), text).toBe(true);
+    }
+  });
 });

@@ -41,10 +41,10 @@ const DIACRITIC = /[ąćęłńóśźż]/u;
  * A quoted span: straight or curly double quotes, the Polish „...”, guillemets, and single quotes
  * '...' or ‘...’. A single quote opens a span only after a space, a bracket or the start, and
  * closes it only before a space, punctuation or the end, so an apostrophe inside a word ("don't",
- * "child's") never opens one.
+ * "child's") never opens one, and one inside a quoted span ('What's ...') never closes it.
  */
 const QUOTED =
-  /"[^"]*"|„[^”"]*[”"]|“[^”]*”|«[^»]*»|(?<=^|[\s([])['‘][^'‘’\n]+['’](?=$|[\s.,;:!?)\]])/gu;
+  /"[^"]*"|„[^”"]*[”"]|“[^”]*”|«[^»]*»|(?<=^|[\s([])['‘](?:[^'‘’\n]|(?<=\p{L})['’](?=\p{L}))+['’](?=$|[\s.,;:!?)\]])/gu;
 
 /**
  * Words only one of the 2 languages uses: `a`, `i`, `to`, `no`, `on`, `do`, `ten`, `ale`, `ta`,
