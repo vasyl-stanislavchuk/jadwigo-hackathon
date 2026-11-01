@@ -65,6 +65,14 @@
                 "type": "string",
                 "minLength": 1
               }
+            },
+            "patch": {
+              "$ref": "#/$defs/LessonPatch"
+            },
+            "base_revision": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
             }
           },
           "required": [
@@ -937,6 +945,13 @@
         "payload"
       ],
       "additionalProperties": false
+    },
+    "LessonPatch": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
     },
     "PlanEvent": {
       "type": "object",

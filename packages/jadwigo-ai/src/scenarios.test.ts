@@ -490,6 +490,248 @@ describe("the engine keeps PostHog's production lessons", () => {
     },
   );
 
+  // Lead decision 41 (wave 4, dl-z5ja.76): the parent's own edit wins by construction.
+  frozen(
+    "a parent's patch lands as a revision with no model call, and Cofnij is one more patch",
+    async () => {
+      const t = await setup(
+        [draft(), { text: "Gotowe." }, { text: "Dobrze." }],
+        createVerbs({ bank: fixtureBank() }),
+      );
+      const run = await t.say("Dodawanie do 20, klasa 1.");
+      await drain(t.deps);
+      const drafted = foldRun(await t.log(run)).lesson;
+      expect(drafted?.revision).toBe(1);
+      expect(t.muse.calls).toHaveLength(2);
+
+      // The turn has ended: the pane's edit lands on it by a step of its own, and no call is made.
+      await t.steer("Zmieniłam tytuł.", {
+        source: "lesson_edit",
+        question_ids: ["s01"],
+        patch: { title: "Moja lekcja" },
+        base_revision: 1,
+      });
+      await drain(t.deps);
+      const edited = await t.log(run);
+      expect(t.muse.calls).toHaveLength(2);
+      const steer = edited.find((e) => e.type === "steer");
+      expect(edited.at(-1)).toMatchObject({
+        type: "lesson_revision",
+        payload: { revision: 2, call_id: steer?.event_id },
+      });
+      expect(foldRun(edited).lesson?.lesson_file).toMatchObject({ title: "Moja lekcja" });
+      expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
+
+      // Cofnij: the pane sends the patch back, and the lesson is the draft again, one step on.
+      const title = (drafted?.lesson_file as { title?: unknown } | undefined)?.title;
+      await t.steer("Cofnij.", {
+        source: "lesson_edit",
+        question_ids: ["s01"],
+        patch: { title },
+        base_revision: 2,
+      });
+      await drain(t.deps);
+      const undone = foldRun(await t.log(run)).lesson;
+      expect(undone?.revision).toBe(3);
+      expect(undone?.lesson_file).toEqual(drafted?.lesson_file);
+      expect(t.muse.calls).toHaveLength(2);
+
+      // The next turn's call is told which questions the parent changed, and that it is done.
+      await t.say("Dziękuję.");
+      await drain(t.deps);
+      const told = t.muse.calls[2]?.instructions ?? "";
+      expect(told).toContain("questions s01");
+      expect(told).toContain("already in the lesson, as revision 2");
+      expect(told).toContain("already in the lesson, as revision 3");
+    },
+  );
+
+  frozen("a parent's patch mid-turn is applied before the next call, and wins", async () => {
+    const verbs = createVerbs({ bank: fixtureBank() });
+    let t: Awaited<ReturnType<typeof setup>>;
+    t = await setup([draft(), check(), { text: "Zostawiłam twój tytuł." }], verbs, {
+      onMuse: async (request) => {
+        if (request.call_no !== 2) return;
+        await t.steer("Zmieniłam tytuł.", {
+          source: "lesson_edit",
+          question_ids: ["s01"],
+          patch: { title: "Moja lekcja" },
+          base_revision: 1,
+        });
+      },
+    });
+    const run = await t.say("Dodawanie do 20, klasa 1.");
+    await drain(t.deps);
+
+    const events = await t.log(run);
+    const steer = events.find((e) => e.type === "steer");
+    const patched = seqOf(
+      events,
+      (e) => e.type === "lesson_revision" && e.payload.call_id === steer?.event_id,
+    );
+    expect(patched).toBeLessThan(
+      seqOf(events, (e) => e.type === "model_response" && e.payload.call_no === 3),
+    );
+    expect(t.muse.calls).toHaveLength(3);
+    expect(t.muse.calls[2]?.instructions).toContain("already in the lesson, as revision 2");
+    expect(foldRun(events).lesson?.lesson_file).toMatchObject({ title: "Moja lekcja" });
+  });
+
+  frozen(
+    "a patch made on an older revision is not applied, so it undoes nothing the AI changed",
+    async () => {
+      const SAY = "Zacznij od 7 i dolicz 5.";
+      const verbs = createVerbs({ bank: fixtureBank() });
+      const aiEdit: ScriptedReply = {
+        tool_calls: [
+          {
+            verb: "lesson_edit",
+            input: (r) => ({
+              draft_id: r.run_id,
+              names: [],
+              step_id: "s02",
+              patch: { say: SAY },
+              why: "shorter",
+            }),
+          },
+        ],
+      };
+      let t: Awaited<ReturnType<typeof setup>>;
+      t = await setup([draft(), aiEdit, { text: "Dobrze." }], verbs, {
+        onMuse: async (request) => {
+          if (request.call_no !== 2) return;
+          // The pane still shows revision 1; the AI's edit makes revision 2 before this is taken.
+          await t.steer("Zmieniłam tytuł.", {
+            source: "lesson_edit",
+            question_ids: ["s01"],
+            patch: { title: "Moja lekcja" },
+            base_revision: 1,
+          });
+        },
+      });
+      const run = await t.say("Dodawanie do 20, klasa 1.");
+      await drain(t.deps);
+
+      const events = await t.log(run);
+      const lesson = foldRun(events).lesson;
+      expect(lesson?.revision).toBe(2);
+      expect(stepSay(lesson?.lesson_file, "s02")).toBe(SAY);
+      expect(lesson?.lesson_file).not.toMatchObject({ title: "Moja lekcja" });
+      expect(t.muse.calls[2]?.instructions).toContain("Their change was not applied");
+    },
+  );
+
+  // Lead decision 48 (#541's round 3): every revision goes through the conversation's
+  // compare-and-set, so a parent's patch and a later turn's AI edit can never both be revision 2.
+  frozen(
+    "an AI edit on a lesson the parent's patch moved is refused, re-read, and both changes stay",
+    async () => {
+      const SAY = "Zacznij od 7 i dolicz 5.";
+      const TITLE = "Moja lekcja";
+      const real = createVerbs({ bank: fixtureBank() });
+      let during: (() => Promise<void>) | null = null;
+      // The AI's lesson_edit reads the lesson, then the parent's patch lands before it writes.
+      const verbs: Verbs = {
+        ...real,
+        lesson_edit: {
+          ...real.lesson_edit,
+          run: async (context, input) => {
+            const effect = await real.lesson_edit.run(context, input);
+            const hook = during;
+            during = null;
+            await hook?.();
+            return effect;
+          },
+        },
+      };
+      const aiEdit: ScriptedReply = {
+        tool_calls: [
+          {
+            verb: "lesson_edit",
+            input: (r) => ({
+              draft_id: r.run_id,
+              names: [],
+              step_id: "s02",
+              patch: { say: SAY },
+              why: "shorter",
+            }),
+          },
+        ],
+      };
+      let t: Awaited<ReturnType<typeof setup>>;
+      t = await setup([draft(), { text: "Gotowe." }, aiEdit, aiEdit, { text: "Dobrze." }], verbs, {
+        // The patch step's first try dies before its revision is written: it runs again later.
+        crashOn: (events) =>
+          events.some(
+            (e) =>
+              e.type === "lesson_revision" &&
+              (e.payload.lesson_file as { title?: unknown }).title === TITLE,
+          ),
+      });
+      const first = await t.say("Dodawanie do 20, klasa 1.");
+      await drain(t.deps);
+      await t.steer("Zmieniłam tytuł.", {
+        source: "lesson_edit",
+        question_ids: ["s01"],
+        patch: { title: TITLE },
+        base_revision: 1,
+      });
+      await drain(t.deps);
+      // The parent opens turn 2 just before the patch step comes back. Its edit reads revision 1,
+      // and the patch's redelivery lands while the edit runs, before it writes: 2 workers' race.
+      t.tick(STEP_VISIBILITY_S * 1000 - 1000);
+      during = async () => {
+        t.tick(2000);
+        await drain(t.deps);
+      };
+      const second = await t.say("Krócej, proszę.");
+      await drain(t.deps);
+
+      const refused = (await t.log(second)).filter(
+        (e) => e.type === "tool_result" && e.payload.error?.type === RUN_ERROR_TYPE.lessonChanged,
+      );
+      expect(refused).toHaveLength(1);
+      const revisions = [...(await t.log(first)), ...(await t.log(second))].filter(
+        (e) => e.type === "lesson_revision",
+      );
+      expect(revisions.map((e) => e.payload.revision).sort()).toEqual([1, 2, 3]);
+      const last = revisions.find((e) => e.payload.revision === 3);
+      expect(last?.payload.lesson_file).toMatchObject({ title: TITLE });
+      expect(stepSay(last?.payload.lesson_file, "s02")).toBe(SAY);
+    },
+  );
+
+  frozen("a patch whose step dies after the take is applied on its redelivery", async () => {
+    const TITLE = "Moja lekcja";
+    const t = await setup([draft(), { text: "Gotowe." }], createVerbs({ bank: fixtureBank() }), {
+      crashOn: (events) =>
+        events.some(
+          (e) =>
+            e.type === "lesson_revision" &&
+            (e.payload.lesson_file as { title?: unknown }).title === TITLE,
+        ),
+    });
+    const run = await t.say("Dodawanie do 20, klasa 1.");
+    await drain(t.deps);
+    await t.steer("Zmieniłam tytuł.", {
+      source: "lesson_edit",
+      question_ids: ["s01"],
+      patch: { title: TITLE },
+      base_revision: 1,
+    });
+    await drain(t.deps);
+    // The take logged the steer; the step died before its revision. The inbox is empty now.
+    expect((await t.log(run)).filter((e) => e.type === "steer")).toHaveLength(1);
+    expect(foldRun(await t.log(run)).lesson?.revision).toBe(1);
+
+    t.tick(STEP_VISIBILITY_S * 1000 + 1000);
+    await drain(t.deps);
+    const lesson = foldRun(await t.log(run)).lesson;
+    expect(lesson?.revision).toBe(2);
+    expect(lesson?.lesson_file).toMatchObject({ title: TITLE });
+    expect(t.muse.calls).toHaveLength(2);
+  });
+
   // Lead decision 36 (wave 4, dl-z5ja.107): the side panel's page travels on the message.
   frozen(
     "a message from a learner page names that learner to the model, read from the pod",

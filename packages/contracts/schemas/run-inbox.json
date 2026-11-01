@@ -102,6 +102,14 @@
                 "type": "string",
                 "minLength": 1
               }
+            },
+            "patch": {
+              "$ref": "#/$defs/LessonPatch"
+            },
+            "base_revision": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
             }
           },
           "required": [
@@ -302,6 +310,13 @@
     "LessonId": {
       "type": "string",
       "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LessonPatch": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
     }
   }
 }
