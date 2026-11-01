@@ -17,5 +17,9 @@ auth_domain_txt = {}
 # Google Workspace mail on jadwigo.pl (dl-e8ov.2.71, docs/runbooks/google-workspace.md). Each line is
 # the owner's, in the runbook's order: the verification token, then mx = true, then dkim.
 mail_workspace = {
-  "jadwigo.pl" = { site_verification = "KknexconUTHl-ztuWvaFeMECMN9N4KrJp1oIt75br74", mx = true }
+  "jadwigo.pl" = {
+    site_verification = "KknexconUTHl-ztuWvaFeMECMN9N4KrJp1oIt75br74"
+    mx                = true
+    dkim              = "v=DKIM1;k=rsa;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuLCPz/CjALDdyyvBtd1zKPmbFz5yc8roCvVHtkVCH9Nu1cICBi3NxVJGmtgXS+taA8V2Yi6J4zC5cAggMkr6O7SzqoBQzehB7NZPnMvy1uPUeUW3QYleVm2oyLDY3eZI1gDsI9pqJWYxukDHB93J4m2fw4dvL/T452s/ChWYoUPR/vfWwEA2kK+lAqybjZuCjB0TDo8NZf9OCpgMbFPxOZLzlLHlZ1VonU11U88/+igOMz2r/zhjzBbZcmRgpFxcCM5IGAwl33HSOUkmdIteldvPZO32NzMHC8AF1JvPM2MVie1HH6r7bEe8kNB3JnU9xnparb4MM2E6AswAeEA9/wIDAQAB"
+  }
 }
