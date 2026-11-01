@@ -44,13 +44,22 @@ export const BUDGET_STOP_SHARE = 0.9;
 export const RunWorkflow = z.enum(["jadwigo-lesson-compose"]);
 export type RunWorkflow = z.infer<typeof RunWorkflow>;
 
-/** The verbs the model calls as function tools, the same set `jw mcp serve` exposes. */
+/**
+ * The verbs the model calls as function tools. The lesson verbs are the set `jw mcp serve`
+ * exposes; the learner verbs (dl-z5ja.25) read one learner of the run's pod and are the engine's
+ * only, since jw holds no learner.
+ */
 export const VerbName = z.enum([
   "lesson_draft",
   "lesson_show",
   "lesson_edit",
   "lesson_check",
   "question_search",
+  "learner_skills",
+  "learner_week",
+  "learner_mistakes",
+  "curriculum_topics",
+  "lesson_ideas",
 ]);
 export type VerbName = z.infer<typeof VerbName>;
 

@@ -1,5 +1,8 @@
 import { z } from "zod";
+import { AttemptId, GoalId, LearnerId } from "./ids.ts";
+import { Brief, BriefEntry, BriefList, Citation, Language, Skill, SkillId } from "./records.ts";
 import type { ToolView, VerbName } from "./run.ts";
+import { GoalView } from "./wire.ts";
 
 /**
  * Each verb's `tool_result.view.data`, the shape its widget draws (dl-z5ja.69, dl-z5ja.71): the
@@ -63,6 +66,128 @@ export type SearchSet = z.infer<typeof SearchSet>;
 export const QuestionSearchView = z.object({ sets: z.array(SearchSet) });
 export type QuestionSearchView = z.infer<typeof QuestionSearchView>;
 
+// The learner verbs (dl-z5ja.25): one learner of the run's pod, read by code. What they may say is
+// the owner's answer on dl-z5ja.27: everything the record holds, each claim cited, and never a
+// level, a score, a comparison or a diagnosis. So no view here carries a `MasteryLevel`, a ratio or
+// a percentage: a goal's status word, the brief's lists, counts and the child's own answers.
+
+/** The learner a view is about: its id and the first name the family gave it. */
+export const LearnerRef = z.object({ id: LearnerId, first_name: z.string().min(1) });
+export type LearnerRef = z.infer<typeof LearnerRef>;
+
+/**
+ * learner_skills' view: each goal as the learner page shows it, the brief, and the catalogue rows
+ * those name, so the widget words each code with its can-do line (GoalLists).
+ */
+export const LearnerSkillsView = z.object({
+  learner: LearnerRef,
+  goals: z.array(GoalView),
+  brief: Brief,
+  skills: z.array(Skill),
+});
+export type LearnerSkillsView = z.infer<typeof LearnerSkillsView>;
+
+/** One Monday-to-Sunday week (Warsaw) of the learner's: counts only, as the week strip shows them. */
+export const LearnerWeekCounts = z.object({
+  /** The week's Monday, `YYYY-MM-DD`. */
+  monday: z.iso.date(),
+  lessons: z.int().min(0),
+  /** The skills that moved forward that week, by the reports' digests. */
+  moved_up: z.int().min(0),
+  /** What needed attention by the week's newest report; null for a week no report ended in. */
+  attention: z.int().min(0).nullable(),
+});
+export type LearnerWeekCounts = z.infer<typeof LearnerWeekCounts>;
+
+/** One lesson the learner played in the weeks asked for. */
+export const LearnerWeekLesson = z.object({
+  attempt_id: AttemptId,
+  title: z.string().min(1),
+  language: Language,
+  started_at: z.iso.datetime(),
+  finished: z.boolean(),
+  /** The questions the learner was asked in it. */
+  questions: z.int().min(0),
+});
+export type LearnerWeekLesson = z.infer<typeof LearnerWeekLesson>;
+
+/** learner_week's view: the weeks, oldest first, and the lessons played in them, newest first. */
+export const LearnerWeekView = z.object({
+  learner: LearnerRef,
+  weeks: z.array(LearnerWeekCounts),
+  lessons: z.array(LearnerWeekLesson),
+});
+export type LearnerWeekView = z.infer<typeof LearnerWeekView>;
+
+/** One mistake class, how many answers made it, and the attempts they were in. */
+export const LearnerMistake = z.object({
+  mistake_class: z.string().min(1),
+  times: z.int().min(1),
+  citations: z.array(Citation),
+});
+export type LearnerMistake = z.infer<typeof LearnerMistake>;
+
+/**
+ * One question the learner missed or skipped: what it said, the mistake classes, and the child's
+ * own answers as text, in try order. The answers are what a child wrote: the verb fences them in
+ * what the model reads (`src/fence` in packages/jadwigo-ai), and the page shows them as text.
+ */
+export const LearnerMissedQuestion = z.object({
+  attempt_id: AttemptId,
+  seq: z.int().min(1),
+  say: z.string(),
+  mistake_classes: z.array(z.string()),
+  tries: z.int().min(0),
+  skipped: z.boolean(),
+  answers: z.array(z.string()),
+});
+export type LearnerMissedQuestion = z.infer<typeof LearnerMissedQuestion>;
+
+/** learner_mistakes' view: the mistake classes, most made first, and the questions behind them. */
+export const LearnerMistakesView = z.object({
+  learner: LearnerRef,
+  mistakes: z.array(LearnerMistake),
+  questions: z.array(LearnerMissedQuestion),
+});
+export type LearnerMistakesView = z.infer<typeof LearnerMistakesView>;
+
+/** One outcome of the curriculum, its skills, and the learner's goals that hold any of them. */
+export const CurriculumTopicRow = z.object({
+  code: z.string().min(1),
+  area: z.string().min(1),
+  text: z.string().min(1),
+  skill_codes: z.array(SkillId),
+  goal_ids: z.array(GoalId),
+});
+export type CurriculumTopicRow = z.infer<typeof CurriculumTopicRow>;
+
+/** curriculum_topics' view: the curriculum, and its topics that meet the words asked for. */
+export const CurriculumTopicsView = z.object({
+  curriculum: z.object({ code: z.string().min(1), name: z.string().min(1) }),
+  learner: LearnerRef.nullable(),
+  topics: z.array(CurriculumTopicRow),
+});
+export type CurriculumTopicsView = z.infer<typeof CurriculumTopicsView>;
+
+/** One idea for the next lesson: one list of the brief, its skills and goals, and why code put them there. */
+export const LessonIdea = z.object({
+  /** `i1` to `i3`, the order to offer them in. */
+  id: z.string().regex(/^i[1-3]$/, "an idea id is i and 1 to 3"),
+  list: BriefList,
+  why: BriefEntry.shape.why,
+  skill_codes: z.array(SkillId).min(1),
+  goal_ids: z.array(GoalId),
+  citations: z.array(Citation).min(1),
+});
+export type LessonIdea = z.infer<typeof LessonIdea>;
+
+/** lesson_ideas' view: up to 3 ideas from the brief, none when it holds nothing. */
+export const LessonIdeasView = z.object({
+  learner: LearnerRef,
+  ideas: z.array(LessonIdea).max(3),
+});
+export type LessonIdeasView = z.infer<typeof LessonIdeasView>;
+
 /** Each verb's view schema, one per `VerbName`: a verb without one fails typecheck here. */
 export const TOOL_VIEW_DATA = {
   lesson_draft: LessonRevisionView,
@@ -70,6 +195,11 @@ export const TOOL_VIEW_DATA = {
   lesson_edit: LessonRevisionView,
   lesson_check: LessonCheckView,
   question_search: QuestionSearchView,
+  learner_skills: LearnerSkillsView,
+  learner_week: LearnerWeekView,
+  learner_mistakes: LearnerMistakesView,
+  curriculum_topics: CurriculumTopicsView,
+  lesson_ideas: LessonIdeasView,
 } as const satisfies { [V in VerbName]: z.ZodObject };
 
 /** A verb's view data, typed by its verb. */
