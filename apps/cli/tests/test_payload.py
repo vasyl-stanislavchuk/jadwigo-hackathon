@@ -217,7 +217,7 @@ def test_the_draft_and_the_check_stay_within_their_budgets(
         ("$x^{2+1}$", "x^(2+1)"),
         ("$x^{\\blue{2}+1}$", "x^(2+1)"),
         ("$x^{2}$", "x^2"),
-        ("$90^{\\circ}$", "90^°"),
+        ("$90^{\\circ}$", "90°"),
         ("$\\sqrt 2$", "√2"),
         ("$\\overline{AB}$", "overline AB"),
         ("$\\alpha + 1$", "alpha + 1"),
@@ -226,6 +226,75 @@ def test_the_draft_and_the_check_stay_within_their_budgets(
     ],
 )
 def test_tex_on_the_card_reads_plain(tex: str, plain: str) -> None:
+    assert lesson.tex_plain(tex) == plain
+
+
+# Khan-style inputs by kind (the round-5 review's table on dl-a38n.41): each keeps its meaning.
+KHAN_TEX = [
+    # a coloured part of a fraction, every way Khan colours it
+    (r"$\dfrac{5}{\color{#aa87ff}{8}}$", "5/8"),
+    (r"$\dfrac{\color{#11accd}{3}}{4}$", "3/4"),
+    (r"$\dfrac{1}{\textcolor{blue}{4}}$", "1/4"),
+    (r"$\dfrac{\blue{3}}{\red{4}}$", "3/4"),
+    (r"$\dfrac{1}{{4}}$", "1/4"),
+    (r"$\color{#aa87ff}{\dfrac{2}{5}}$", "2/5"),
+    # unbraced parts of any length
+    (r"$\frac1{12}$", "1/12"),
+    (r"$\frac{1}2$", "1/2"),
+    (r"$\frac34$", "3/4"),
+    # mixed numbers
+    (r"$2\frac{1}{2}$", "2 1/2"),
+    (r"$\blue{2}\dfrac{1}{3}$", "2 1/3"),
+    (r"$2\red{\dfrac{1}{3}}$", "2 1/3"),
+    (r"$\blue{2}\blue{\dfrac{1}{3}}$", "2 1/3"),
+    (r"$\color{#aa87ff}{3}\dfrac{1}{4}$", "3 1/4"),
+    (r"$2\,\frac{1}{2}$", "2 1/2"),
+    (r"$-1\frac{1}{2}$", "-1 1/2"),
+    (r"$\frac{3\frac{1}{2}}{2}$", "(3 1/2)/2"),
+    (r"$12\dfrac{3}{4}$", "12 3/4"),
+    # fractions side by side, and beside an operator
+    (r"$\frac{1}{2}\frac{1}{3}$", "1/2 · 1/3"),
+    (r"$2 \times \frac{1}{2}$", "2 × 1/2"),
+    (r"$\frac{1}{2} + \frac{1}{4} = \frac{3}{4}$", "1/2 + 1/4 = 3/4"),
+    # a prompt of several lines keeps them, and a line's last digit never joins the next fraction
+    ("$\\dfrac{6}{3} = 2$\n\n$\\dfrac{8}{4} = 2$", "6/3 = 2\n8/4 = 2"),
+    ("Policz:\n$2 + 3$", "Policz:\n2 + 3"),
+    # Khan's blank
+    (r"$5 + \underline{\phantom{0}} = 8$", "5 + □ = 8"),
+    (r"$\boxed{\phantom{0}} - 3 = 4$", "□ - 3 = 4"),
+    (r"$7 = \square + 2$", "7 = □ + 2"),
+    (r"$\underline{7}$", "7"),
+    # roots and scripts
+    (r"$\sqrt[3]{8}$", "∛8"),
+    (r"$\sqrt{25} = 5$", "√25 = 5"),
+    (r"$2^{10} = 1024$", "2^10 = 1024"),
+    (r"$10^{-2}$", "10^(-2)"),
+    (r"$a_{n+1}$", "a_(n+1)"),
+    (r"$2^{\frac{1}{2}}$", "2^(1/2)"),
+    # text, colour and size on whole numbers and words
+    (r"$\text{5 cm} + \textbf{3 cm}$", "5 cm + 3 cm"),
+    (r"$\mathrm{kg}$", "kg"),
+    (r"$\color{#aa87ff}{12}$ jabłek", "12 jabłek"),
+    (r"$\large{\red{7}}$", "7"),
+    # Polish numbers and money
+    (r"$2{,}5 + 1{,}5 = 4$", "2,5 + 1,5 = 4"),
+    (r"$1\,000 + 2\,000$", "1 000 + 2 000"),
+    (r"$25\%$ z $80$", "25% z 80"),
+    (r"$12\text{ zł}$", "12 zł"),
+    (r"Zapłacił \$3.", "Zapłacił $3."),
+    # brackets and relations
+    (r"$\left(2 + 3\right) \cdot 4$", "(2 + 3) · 4"),
+    (r"$\left\{1, 2\right\}$", "{1, 2}"),
+    (r"$3 \leq x \lt 5$", "3 ≤ x < 5"),
+    (r"$\dfrac{3}{4} \gt \dfrac{1}{2}$", "3/4 > 1/2"),
+    # Polish sentences around the maths
+    (r"Ile to jest $\dfrac{1}{2}$ z $10$?", "Ile to jest 1/2 z 10?"),
+    (r"Zapisz $2\dfrac{3}{5}$ jako ułamek niewłaściwy.", "Zapisz 2 3/5 jako ułamek niewłaściwy."),
+]
+
+
+@pytest.mark.parametrize(("tex", "plain"), KHAN_TEX)
+def test_khan_tex_keeps_its_meaning(tex: str, plain: str) -> None:
     assert lesson.tex_plain(tex) == plain
 
 
