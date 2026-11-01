@@ -428,6 +428,11 @@ export const COPY_KEYS = [
   "credit_source",
   "credit_not_affiliated",
   "credit_close",
+  // the same lines for a source whose name Polish inflects: Alfik Matematyczny (dl-n9fr.66.6)
+  "credit_from_alfik",
+  "credit_title_alfik",
+  "credit_label_alfik",
+  "credit_not_affiliated_alfik",
   "leave_title",
   "leave_where",
   "leave_stay",
