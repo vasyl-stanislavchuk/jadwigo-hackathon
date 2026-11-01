@@ -200,16 +200,20 @@ endif
 ## lesson-import FILE=<path> [JSON=1]: one lesson file into the local jadwigo database, the one
 ## `make dev` serves, printing its /play/<assignment> path (dl-e8ov.5.38.3), or with JSON=1 one
 ## JSON object (jw's lesson_publish reads it, dl-a38n wave 3); check it first with `bun run --cwd
-## packages/lesson-import check <path>`. ENV=dev imports into jadwigo-dev instead, as jadwigo_api
-## the way db-seed does. Only dev: prod imports are the owner's, by hand. Safe to rerun: the same
-## content publishes nothing new.
+## packages/lesson-import check <path>`. ENV=dev|prod imports into that project instead, as
+## jadwigo_api the way db-seed does. ENV=prod runs only from the owner's own terminal and asks them
+## to type prod first (PROD_GATE); the guard refuses it to agents. A lesson lands in the featured
+## pod as an open anyone-assignment, so prod's featured list shows it at once: running the prod
+## import is the owner's approval (docs/runbooks/lesson-import.md, dl-9t2o.9). Safe to rerun: the
+## same content publishes nothing new.
 lesson-import:
 	@test -n "$(FILE)" || { echo "lesson-import: FILE=<lesson file> is required"; exit 1; }
 ifeq ($(ENV),)
 	@$(LOCAL_DB_GATE)
 	DATABASE_URL=$(LOCAL_DATABASE_URL) bun run --cwd packages/lesson-import import "$(abspath $(FILE))" $(if $(JSON),--json)
 else
-	@if [ "$(ENV)" != dev ]; then echo "lesson-import: only ENV=dev; prod imports are the owner's, by hand"; exit 1; fi
+	@if [ "$(ENV)" != dev ] && [ "$(ENV)" != prod ]; then echo "lesson-import: ENV is dev or prod"; exit 1; fi
+	@$(PROD_GATE)
 	@$(API_SESSION); \
 	$(AS_API) bun run --cwd packages/lesson-import import "$(abspath $(FILE))" $(if $(JSON),--json)
 endif
