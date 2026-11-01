@@ -85,7 +85,7 @@ describe("harshWordsIn", () => {
 describe("copy()", () => {
   it("fills placeholders", () => {
     expect(copy("pl", "dims", { rows: 7, cols: 8 })).toBe("7 na 8");
-    expect(copy("en", "table_row", { row: 9 })).toBe("Times table, row 9");
+    expect(copy("en", "table_row", { row: 9 })).toBe("Times table: the 9s");
   });
 
   it("gives each counted noun its own plural rule (pl)", () => {
@@ -121,12 +121,16 @@ describe("voice and closed-session lines (dl-w2.4)", () => {
     "start_again",
   ] as const;
 
-  it("exist in every language, unreviewed until a parent reads them", () => {
+  // Whether a line is reviewed is the review sidecars' and check-copy's to say, not this test's
+  // (dl-9t2o.10): English lines pass the AI reviewer only
+  // (jadwigo-question-bank/decisions/2026-11-01-english-text-is-checked-by-the-ai-reviewer-only-with-an-english),
+  // Polish lines the AI skill against its checklist
+  // (david-learns/decisions/2026-10-04-polish-lines-are-reviewed-by-an-ai-skill-against-a-cited-checkli).
+  it("exist in every language", () => {
     for (const [language, table] of Object.entries(TABLES)) {
       for (const key of KEYS) {
         const entry = table[key] as CopyEntry;
         expect(entry?.text, `${language}.${key}`).toBeTruthy();
-        expect(entry.reviewed, `${language}.${key}`).toBe(false);
       }
     }
   });
@@ -294,7 +298,7 @@ describe("copy() by category (dl-i952.17)", () => {
   it("falls back to the child line for an adult key with no adult line", () => {
     expect(CATEGORY_TABLES.adult?.en?.check).toBeUndefined();
     expect(copy("en", "check", {}, "adult")).toBe(copy("en", "check"));
-    expect(copy("en", "table_row", { row: 9 }, "adult")).toBe("Times table, row 9");
+    expect(copy("en", "table_row", { row: 9 }, "adult")).toBe("Times table: the 9s");
   });
 
   it("gives an adult the adult line in pl too, and the child line for a key with none", () => {

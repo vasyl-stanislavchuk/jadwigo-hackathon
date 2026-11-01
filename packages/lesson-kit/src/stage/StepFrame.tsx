@@ -27,16 +27,21 @@
 import { cn } from "@jadwigo/ui";
 import { Questionnaire } from "@shadcn/react/questionnaire";
 import { type ReactElement, type ReactNode, useEffect, useRef } from "react";
+import { LessonLanguage } from "./lessonLanguage.ts";
+import type { Language } from "./types.ts";
 
 export function StepFrame({
   stepId,
   className,
   letters = false,
+  lessonLanguage = null,
   children,
 }: {
   stepId: string;
   className?: string;
   letters?: boolean;
+  /** The lesson's language, set as `lang` on the question's own text (stage/lessonLanguage.ts). */
+  lessonLanguage?: Language | null;
   children: ReactNode;
 }): ReactElement {
   // Questionnaire takes no ref on React 18, so a wrapper with no box finds the step.
@@ -64,7 +69,7 @@ export function StepFrame({
           role="none"
           className={cn("min-w-0 outline-none", className)}
         >
-          {children}
+          <LessonLanguage.Provider value={lessonLanguage}>{children}</LessonLanguage.Provider>
         </Questionnaire.Item>
       </Questionnaire.Root>
     </div>

@@ -214,7 +214,7 @@ describe("ParentScreen", () => {
     await press("[data-send-code]");
     type("[data-code]", "123456");
     await press("[data-sign-in]");
-    await screen.findByText("The child's first name");
+    await screen.findByText("Your child's first name");
     expect(api.createAccount).toHaveBeenCalledWith({ language: "en" });
   });
 

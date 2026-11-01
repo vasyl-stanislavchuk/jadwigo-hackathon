@@ -32,7 +32,9 @@ Every refusal has one shape:
   says whether it exists.
 - **`409`**: read the record again and act on what it says now. An attempt that is paused,
   finished or claimed refuses a write that no longer fits.
-- **`429`**: the attempt is past a limit, such as 200 answers. Start a new attempt.
+- **`429`**: the request is past a limit. `AnswerLimit`: the attempt holds 200 answers, so start a
+  new attempt. `MessageLimit`: too many messages to the AI in a minute, or the family's AI budget
+  for the day is used up. Wait, then send it again.
 - **`502`**: the question bank did not answer. Try again later.
 
 A `500` is not in the table below. It means the API failed on its side. Try the request again

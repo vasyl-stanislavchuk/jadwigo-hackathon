@@ -20,6 +20,7 @@ import {
 } from "@jadwigo/contracts/run";
 import { budgetGuard, deadlineDue } from "@jadwigo/core";
 import { type NewRunInbox, type RunChange, type Store, StoreError } from "@jadwigo/store";
+import { FENCE_RULE, fence, neutralise } from "../fence/index.ts";
 import type { MuseClient, MuseInput, MuseResponse } from "../muse/client.ts";
 import type { RunQueue } from "../queue/types.ts";
 import { type QueuedStep, STEP_VISIBILITY_S } from "../queue/types.ts";
@@ -74,8 +75,10 @@ const INSTRUCTIONS = [
   "You help a parent make a short lesson for their child in the first school grades.",
   "Draft it with lesson_draft, read it with lesson_show, change a step with lesson_edit and check it with lesson_check.",
   "The draft you are working on has the id of this run. Answer the parent in their language, briefly.",
+  FENCE_RULE,
 ].join("\n");
-const PROMPT_CACHE_KEY = `${WORKFLOW}:1`;
+/** Moves on with `INSTRUCTIONS`: 2 since the fence rule (dl-z5ja.47). */
+const PROMPT_CACHE_KEY = `${WORKFLOW}:2`;
 /**
  * The tier a run's calls go to when the host names none: the owner's decision `dl-uafq` runs the
  * engine on `contributor` until a private tier is named (`JADWIGO_MUSE_TIER`, dl-z5ja.91).
@@ -670,13 +673,44 @@ async function endPastMax(w: Writer, attempt: number, now: Date): Promise<void> 
       run_id: w.run,
       event_id: await w.id("error", "max"),
       payload: {
-        error: { type: RUN_ERROR_TYPE.runTimedOut, message: "the turn ran past its 30 minutes" },
+        error: {
+          type: RUN_ERROR_TYPE.runTimedOut,
+          message: `the turn ran past its ${minutes(RUN_MAX_MS)} minutes`,
+        },
         attempt,
         retryable: false,
       },
     },
   ]);
   await endTurn(w, "failed", now);
+}
+
+/**
+ * Closes a turn past its idle deadline (dl-z5ja.94): an `error` event the page's idle limit line
+ * reads, then the turn completes. Retryable: the lesson so far stands.
+ */
+async function endPastIdle(w: Writer, attempt: number, now: Date): Promise<void> {
+  await w.append([
+    {
+      type: "error",
+      run_id: w.run,
+      event_id: await w.id("error", "idle"),
+      payload: {
+        error: {
+          type: RUN_ERROR_TYPE.runIdle,
+          message: `nothing happened in the turn for ${minutes(RUN_IDLE_MS)} minutes, so it closed`,
+        },
+        attempt,
+        retryable: true,
+      },
+    },
+  ]);
+  await endTurn(w, "completed", now);
+}
+
+/** A deadline in whole minutes, for the words of its error. */
+function minutes(ms: number): number {
+  return Math.round(ms / 60_000);
 }
 
 type ModelResponse = Extract<RunEvent, { type: "model_response" }>;
@@ -708,11 +742,13 @@ function steersOf(log: readonly RunEvent[]): SteerEvent[] {
   return log.filter((e): e is SteerEvent => e.type === "steer").sort((a, b) => a.seq - b.seq);
 }
 
-/** A steer as a line of the call's instructions. */
+/** A steer as a line of the call's instructions: the parent's words go inside the fence. */
 function steerLine({ payload }: SteerEvent): string {
-  if (payload.source === "chat") return `The parent adds: ${payload.text}`;
-  const named = payload.question_ids ? ` (questions ${payload.question_ids.join(", ")})` : "";
-  return `The parent edited the lesson themselves${named}: ${payload.text}`;
+  const words = fence(payload.text, "parent");
+  if (payload.source === "chat") return `The parent adds:\n${words}`;
+  const ids = payload.question_ids?.map(neutralise).join(", ");
+  const named = ids ? ` (questions ${ids})` : "";
+  return `The parent edited the lesson themselves${named}:\n${words}`;
 }
 
 /** What the run has paid, from the log: each `model_response` counted once. */
@@ -732,15 +768,20 @@ function lessonOf(log: readonly RunEvent[]): VerbContext["lesson"] {
   return lesson;
 }
 
-/** The run's log as the model reads it: the words, its function calls and their outputs. */
+/**
+ * The run's log as the model reads it: the words, its function calls and their outputs. A parent's
+ * message goes inside the fence (dl-z5ja.47): the contract marks no text as a child's, and a parent
+ * may paste what a child wrote, so the parent's whole message is fenced as the parent's.
+ */
 function museInput(log: readonly RunEvent[]): MuseInput[] {
   const input: MuseInput[] = [];
   for (const e of [...log].sort((a, b) => a.seq - b.seq)) {
     if (e.type === "message") {
+      const parent = e.payload.from === "parent";
       input.push({
         type: "message",
-        role: e.payload.from === "parent" ? "user" : "assistant",
-        text: e.payload.text,
+        role: parent ? "user" : "assistant",
+        text: parent ? fence(e.payload.text, "parent") : e.payload.text,
       });
     } else if (e.type === "model_response") {
       for (const call of e.payload.tool_calls) {
@@ -915,7 +956,7 @@ async function closeDue(
     if (due === "max") {
       await endPastMax(w, run.attempt, now);
     } else {
-      await endTurn(w, "completed", now);
+      await endPastIdle(w, run.attempt, now);
     }
   } catch (error) {
     if (error instanceof StaleAttempt) return null;

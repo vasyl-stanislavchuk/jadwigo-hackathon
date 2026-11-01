@@ -7,15 +7,14 @@ import { createPostgresStore, InMemoryStore } from "@jadwigo/store";
 import { createApp } from "./app.ts";
 import { jwksUrlAuth } from "./auth.ts";
 import { authIssuer, authJwksUrl, databaseUrl, port } from "./config.ts";
-import { pgmqQueue } from "./queue.ts";
 
 const url = databaseUrl();
 // The token routes verify against AUTH_JWKS_URL (the dev project's JWKS) and AUTH_ISSUER; with
 // either unset, they are all 401.
 const authenticate = jwksUrlAuth(authJwksUrl(), authIssuer());
-// A message's step goes to pgmq's agent_step on Postgres, else to a queue in memory nobody reads:
-// this server runs no step.
-const queue = url === undefined ? new InMemoryRunQueue(() => new Date()) : pgmqQueue(url);
+// On Postgres a message's step joins its unit on pgmq's agent_step; in memory it goes to a queue
+// nobody reads: this server runs no step.
+const queue = new InMemoryRunQueue(() => new Date());
 const app = createApp(url === undefined ? new InMemoryStore() : createPostgresStore(url), {
   authenticate,
   queue,

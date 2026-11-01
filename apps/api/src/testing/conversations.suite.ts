@@ -4,19 +4,23 @@
 // inbox and enqueues, so a test writes the step host's events itself.
 import { randomUUID } from "node:crypto";
 import {
+  type AccountId,
   type Conversation,
   type ConversationRuns,
   type ErrorEnvelope,
   EventId,
+  ID_PREFIXES,
+  idOf,
+  LIMITS,
   type Me,
   type PodId,
   type RunAccepted,
   type RunEvents,
-  type RunId,
+  RunId,
 } from "@jadwigo/contracts";
 import type { RunQueue } from "@jadwigo/jadwigo-ai";
 import type { Store } from "@jadwigo/store";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { pathOf, type Seeded, seeded } from "./client.ts";
 import { bearerOf, signToken } from "./token.ts";
 
@@ -24,8 +28,6 @@ import { bearerOf, signToken } from "./token.ts";
 export interface Queued {
   readonly queue: RunQueue;
   stepsFor(run: RunId): Promise<number>;
-  /** Steps sent while their run row was not yet visible to another connection: always 0. */
-  unseenAtSend(): Promise<number>;
 }
 
 const event = () => EventId.parse(randomUUID());
@@ -34,6 +36,8 @@ export function conversationSuite(
   name: string,
   makeStore: () => Store,
   makeQueue: () => Queued,
+  /** The store rolls a unit back on a throw (Postgres): a refused message then leaves nothing. */
+  { units = false }: { readonly units?: boolean } = {},
 ): void {
   describe(`the conversation routes on ${name}`, () => {
     let s: Seeded;
@@ -105,7 +109,6 @@ export function conversationSuite(
         attempt: 1,
       });
       expect(await q.stepsFor(run.id)).toBe(1);
-      expect(await q.unseenAtSend()).toBe(0);
 
       const resent = await a.say(conversation.id, "A lesson on adding to 10, please", event_id);
       expect(resent.status).toBe(201);
@@ -127,6 +130,90 @@ export function conversationSuite(
       );
       expect(runs.status).toBe(200);
       expect(runs.body.runs.map((r) => r.id)).toEqual([run.id]);
+    });
+
+    // dl-z5ja.62: both limits count real rows through store.messageUsage, in the message's own unit.
+    it("refuses the parent's message past 10 in a minute as 429 MessageLimit", async () => {
+      const a = await parent();
+      const conversation = await a.conversation();
+      const usage = vi.spyOn(s.store, "messageUsage");
+      // The 1st opens the turn; the rest wait in its inbox, each one counted.
+      const sent = Array.from({ length: LIMITS.messagesPerMinute }, () => event());
+      for (const [n, event_id] of sent.entries())
+        expect((await a.say(conversation.id, `Message ${n + 1}`, event_id)).status).toBe(201);
+      const eleventh = event();
+      const refused = await a.say(conversation.id, "One too many", eleventh);
+      expect(refused.status).toBe(429);
+      expect((refused.body as unknown as ErrorEnvelope).error.type).toBe("MessageLimit");
+
+      // The steward's review of #464: a resend of a stored message lands once, past the limit too.
+      const tenth = sent.at(-1) as EventId;
+      const resent = await a.say(conversation.id, `Message ${sent.length}`, tenth);
+      expect(resent.status).toBe(201);
+      // Rolled back, the refused 11th was never stored, so its own resend is refused again.
+      if (units) expect((await a.say(conversation.id, "One too many", eleventh)).status).toBe(429);
+      const [run] = (
+        await a.call<ConversationRuns>(
+          "GET",
+          pathOf("listConversationRuns", { id: conversation.id }),
+        )
+      ).body.runs;
+      expect(await q.stepsFor(run?.id as RunId)).toBe(1);
+      expect(resent.body.run.id).toBe(run?.id);
+
+      // The windows: the last 60 s, and the UTC day so far, for the caller's pod.
+      const [pod, , since] = usage.mock.calls.at(-1) ?? [];
+      expect(pod).toBe(a.pod);
+      expect(since?.daySince).toMatch(/T00:00:00\.000Z$/);
+      const minute = Date.now() - Date.parse(since?.minuteSince ?? "");
+      expect(minute).toBeGreaterThanOrEqual(60_000);
+      expect(minute).toBeLessThan(70_000);
+      usage.mockRestore();
+    });
+
+    it("refuses a message once the pod's runs today reach the daily cap, and passes under it", async () => {
+      const a = await parent();
+      const conversation = await a.conversation();
+      const me = await a.call<Me>("GET", pathOf("getMe", {}));
+      const account = me.body.account?.id as AccountId;
+      // A turn already open today with all but 1 USD of the cap: the next message still passes.
+      const now = Date.now();
+      const spent = await s.store.createRun(a.pod, {
+        id: RunId.parse(idOf(ID_PREFIXES.run, randomUUID())),
+        created_by: account,
+        conversation_id: conversation.id,
+        workflow: "jadwigo-lesson-compose",
+        resumes: null,
+        cap_usd: LIMITS.podDailyCapUsd - 1,
+        idle_deadline_at: new Date(now + 60_000).toISOString(),
+        max_deadline_at: new Date(now + 120_000).toISOString(),
+      });
+      await s.store.updateRun(a.pod, spent.id, spent.attempt, {
+        status: "completed",
+        completed_at: new Date(now).toISOString(),
+      });
+      const under = await a.say(conversation.id, "Under the cap");
+      expect(under.status).toBe(201);
+      expect(under.body.run.id).not.toBe(spent.id);
+
+      // The day is now at the cap, yet a message that joins the open turn opens no run: it passes.
+      const joined = await a.say(conversation.id, "One more thing for this lesson");
+      expect(joined.status).toBe(201);
+      expect(joined.body.run.id).toBe(under.body.run.id);
+
+      // A new turn would take the day past the cap by its own 1 USD: refused.
+      await s.store.updateRun(a.pod, under.body.run.id, under.body.run.attempt, {
+        status: "completed",
+        completed_at: new Date().toISOString(),
+      });
+      const refused = await a.say(conversation.id, "Over the cap");
+      expect(refused.status).toBe(429);
+      expect((refused.body as unknown as ErrorEnvelope).error.type).toBe("MessageLimit");
+      const runs = await a.call<ConversationRuns>(
+        "GET",
+        pathOf("listConversationRuns", { id: conversation.id }),
+      );
+      if (units) expect(runs.body.runs).toHaveLength(2);
     });
 
     it("refuses a message the server would own, or an empty one", async () => {
