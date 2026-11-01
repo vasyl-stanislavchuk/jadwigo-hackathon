@@ -48,6 +48,9 @@ jobs:
             case "$f" in
               # The docs site's pages are its source: a .md under apps/docs is built (dl-5ssh.90.10).
               apps/docs/*) code=true; echo "docs site change: $f" ;;
+              # jadwigo.pl's pages are .md too, and their translation: frontmatter sets each
+              # hreflang twin, so site-languages must run on them (dl-9t2o.6).
+              apps/site/*) code=true; echo "marketing site change: $f" ;;
               # A product workflow is .md, yet the cli's compose eval reads it (dl-5ssh.103).
               workflows/*) workflows=true; echo "workflow change: $f" ;;
               docs/*|*.md) ;;
@@ -190,6 +193,24 @@ jobs:
       - name: Check what the build put in dist
         run: bun run --cwd apps/docs check:dist
 
+  # jadwigo.pl in both languages: the preview build serves every listed language and unreviewed
+  # pages (never released), and check-hreflang reads it. Every page needs its twin, the twins must
+  # link both ways, x-default must be present, and /en/ pages carry <html lang="en">. Once en is
+  # live (dl-5ssh.34.70), the release runs the same check on dist (dl-9t2o.6).
+  site-languages:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Build the site's preview and check its hreflang twins
+        run: bun run --cwd apps/site build:preview
+
   fence-checks:
     needs: changes
     runs-on: ubuntu-latest
@@ -307,7 +328,7 @@ jobs:
         run: cat "$RUNNER_TEMP/api.log"
 
   ci-ok:
-    needs: [changes, lint, typecheck, unit, integration, supabase, contracts, docs, docs-site, fence-checks, gitleaks, browser]
+    needs: [changes, lint, typecheck, unit, integration, supabase, contracts, docs, docs-site, site-languages, fence-checks, gitleaks, browser]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2

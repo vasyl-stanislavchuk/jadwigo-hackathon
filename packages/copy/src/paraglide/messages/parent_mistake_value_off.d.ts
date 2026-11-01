@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Another value" |
+* | "A different value from the right one" |
 *
 * @param {Parent_Mistake_Value_OffInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

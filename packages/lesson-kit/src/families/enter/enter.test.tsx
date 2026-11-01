@@ -145,7 +145,7 @@ describe("a length read off a ruler (dl-w3.51.4)", () => {
     expect(ruler.getAttribute("data-zero")).toBe("0");
     fireEvent.keyDown(ruler, { key: "ArrowRight", shiftKey: true });
     expect(ruler.getAttribute("data-zero")).toBe("40");
-    expect(ruler.getAttribute("aria-valuetext")).toBe("Ruler zero at 1.0 cm from the left");
+    expect(ruler.getAttribute("aria-valuetext")).toBe("The ruler's zero is 1.0 cm from the left.");
     fireEvent.pointerDown(screen.getByRole("button", { name: "6" }));
     // The child types the number; the unit stands after the field (Enter addendum 3.8).
     const unit = must(document.querySelector("[data-unit]"));

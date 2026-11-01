@@ -1,7 +1,14 @@
 // The conversation routes on InMemoryStore, with a queue that keeps what was sent.
 import { randomUUID } from "node:crypto";
-import { type Conversation, type Me, ROUTES, type RunStepInput } from "@jadwigo/contracts";
-import { InMemoryRunQueue } from "@jadwigo/jadwigo-ai";
+import {
+  type Conversation,
+  type Me,
+  ROUTES,
+  type RunAccepted,
+  type RunEvents,
+  type RunStepInput,
+} from "@jadwigo/contracts";
+import { InMemoryRunQueue, runStep, ScriptedMuse, type Verbs } from "@jadwigo/jadwigo-ai";
 import { InMemoryStore } from "@jadwigo/store";
 import { describe, expect, it, vi } from "vitest";
 import { pathOf, seeded } from "./testing/client.ts";
@@ -126,5 +133,53 @@ describe("a message's step and its unit", () => {
     expect((await say()).status).toBe(500);
     expect(sends).toEqual([]);
     expect(pokes).toEqual([]);
+  });
+});
+
+// dl-z5ja.93's done-when: the next step logs a steer sent through the route as a steer event.
+describe("a steer through the route, then the next step", () => {
+  it("is logged as a steer event with its source and question ids", async () => {
+    const store = new InMemoryStore();
+    const queue = new InMemoryRunQueue(() => new Date());
+    const s = seeded(store, { queue });
+    const headers = bearerOf(signToken({ sub: randomUUID() }));
+    const call = <T>(method: string, path: string, body?: unknown) =>
+      s.call<T>(method, path, body, headers);
+    expect((await call<Me>("POST", pathOf("createAccount", {}), { language: "pl" })).status).toBe(
+      201,
+    );
+    const made = await call<Conversation>("POST", pathOf("createConversation", {}), {
+      event_id: randomUUID(),
+    });
+    const path = pathOf("postMessage", { id: made.body.id });
+    const { run } = (await call<RunAccepted>("POST", path, { event_id: randomUUID(), text: "Hi" }))
+      .body;
+    const steered = await call<RunAccepted>("POST", path, {
+      event_id: randomUUID(),
+      kind: "steer",
+      source: "lesson_edit",
+      question_ids: ["q1"],
+      text: "Easier, please",
+    });
+    expect(steered.status).toBe(201);
+
+    // One step, as the host runs it: a model that only answers in words, and no verbs.
+    await runStep(
+      { run_id: run.id, attempt: run.attempt },
+      {
+        store,
+        queue,
+        muse: new ScriptedMuse([{ text: "Done" }]),
+        verbs: {} as Verbs,
+        now: () => new Date(),
+      },
+    );
+    const events = await call<RunEvents>("GET", pathOf("listRunEvents", { id: run.id }));
+    const steer = events.body.events.find((e) => e.type === "steer");
+    expect(steer?.payload).toMatchObject({
+      text: "Easier, please",
+      source: "lesson_edit",
+      question_ids: ["q1"],
+    });
   });
 });

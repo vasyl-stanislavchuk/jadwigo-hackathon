@@ -57,3 +57,15 @@ output "content_bucket" {
 output "media_url" {
   value = module.content.media_url
 }
+
+output "runner_function_name" {
+  value = module.runner.function_name
+}
+
+output "runner_live_alias_arn" {
+  value = module.runner.live_alias_arn
+}
+
+output "runner_database_url_param" {
+  value = module.runner.database_url_param
+}

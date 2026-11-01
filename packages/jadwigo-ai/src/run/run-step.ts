@@ -21,7 +21,7 @@ import {
 import { budgetGuard, deadlineDue } from "@jadwigo/core";
 import { type NewRunInbox, type RunChange, type Store, StoreError } from "@jadwigo/store";
 import { FENCE_RULE, fence, neutralise } from "../fence/index.ts";
-import type { MuseClient, MuseInput } from "../muse/client.ts";
+import type { MuseClient, MuseInput, MuseResponse } from "../muse/client.ts";
 import type { RunQueue } from "../queue/types.ts";
 import { type QueuedStep, STEP_VISIBILITY_S } from "../queue/types.ts";
 import type { Verbs } from "../verbs/types.ts";
@@ -42,6 +42,12 @@ export interface EngineDeps {
   queue: RunQueue;
   /** The engine's only clock. */
   now: () => Date;
+  /**
+   * The tier every call of a run asks for: the host sets it from `JADWIGO_MUSE_TIER`. Absent, the
+   * runner asks for `contributor` (decision `dl-uafq`). A `model_response` records the tier that
+   * answered, which the client may name.
+   */
+  tier?: ModelTier;
 }
 
 /** An inbox row as the caller gives it: the engine names the run. */
@@ -74,10 +80,10 @@ const INSTRUCTIONS = [
 /** Moves on with `INSTRUCTIONS`: 2 since the fence rule (dl-z5ja.47). */
 const PROMPT_CACHE_KEY = `${WORKFLOW}:2`;
 /**
- * Every call goes to the tier that trains on nothing it is sent: a run's prompt carries the
- * parent's words and the learner's names (decision dl-2uq1, accepted 2026-11-01). Each `model_response` records it.
+ * The tier a run's calls go to when the host names none: the owner's decision `dl-uafq` runs the
+ * engine on `contributor` until a private tier is named (`JADWIGO_MUSE_TIER`, dl-z5ja.91).
  */
-const TIER: ModelTier = "private";
+const DEFAULT_TIER: ModelTier = "contributor";
 const STEER =
   "You have used half of this turn's budget. Finish the lesson with what you have, with no more searching.";
 const STOP_TEXT = "I stopped here to stay within the budget. The lesson so far is on the right.";
@@ -426,7 +432,7 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       call_no,
       tag: TAG,
       prompt_cache_key: PROMPT_CACHE_KEY,
-      tier: TIER,
+      tier: deps.tier ?? DEFAULT_TIER,
       instructions: instructions.join("\n\n"),
       input: [...prior.input, ...museInput(w.log)],
       tools: Object.values(deps.verbs).map((verb) => verb.tool),
@@ -446,7 +452,7 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
           usage: response.usage,
           cost_usd: response.cost_usd,
           model: response.model,
-          tier: TIER,
+          tier: answeredTier(response) ?? deps.tier ?? DEFAULT_TIER,
         },
       },
       {
@@ -497,6 +503,15 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
   await w.update({ idle_deadline_at: at(deps.now().getTime() + RUN_IDLE_MS) });
   await deps.queue.send({ run_id: run.id, attempt: w.attempt });
   return "continue";
+}
+
+/**
+ * The tier the client says answered, once `MuseResponse` carries it (the muse lane's `dl-z5ja.18`,
+ * PR #478); until then no client names one and the request's tier is recorded.
+ */
+function answeredTier(response: MuseResponse): ModelTier | undefined {
+  const named = (response as MuseResponse & { tier?: unknown }).tier;
+  return named === "private" || named === "contributor" ? named : undefined;
 }
 
 /**

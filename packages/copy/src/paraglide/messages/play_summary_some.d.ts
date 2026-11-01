@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Some of these we will practise again. See what the right answers look like." |
+* | "Some of these we will practice again. See what the right answers look like." |
 *
 * @param {Play_Summary_SomeInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

@@ -37,7 +37,11 @@ function server(name: string) {
       return { id: SERVER } as unknown as Conversation;
     },
     async postMessage(id, body) {
-      calls.push(`message ${id} ${body.text}`);
+      calls.push(
+        body.kind === "steer"
+          ? `steer ${id} ${body.source} ${body.question_ids?.join(",")} ${body.text}`
+          : `message ${id} ${body.text}`,
+      );
       state.posted = true;
       return { run };
     },
@@ -140,5 +144,18 @@ describe("the routes transport (dl-z5ja.65)", () => {
     await settle();
     await act(async () => result.current.stop());
     expect(s.calls).toContain(`cancel ${s.run.id} true`);
+  });
+
+  it("a lesson-pane edit during a turn goes as a steer naming its questions (dl-z5ja.93)", async () => {
+    const s = server("reload-with-duplicates");
+    s.held.set(`jadwigo.playground.chat.server.${LOCAL}`, SERVER);
+    s.state.posted = true;
+    const transport = routesTransport(s.api, s.live, s.storage);
+    const { result } = renderHook(() => useConversation(transport, LOCAL));
+    await settle();
+    await act(async () => result.current.edit("Rodzic prosi o zmianę w kroku s02: …", ["s02"]));
+    expect(s.calls).toContain(
+      `steer ${SERVER} lesson_edit s02 Rodzic prosi o zmianę w kroku s02: …`,
+    );
   });
 });

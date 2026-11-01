@@ -108,7 +108,9 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
     expect(card?.getAttribute("data-tool")).toBe("lesson_show");
     expect(card?.parentElement?.closest("details")).not.toBeNull();
     expect(card?.querySelector("summary")?.textContent).toBe("Szczegóły kroku");
-    expect(card?.querySelector("pre")?.textContent).toContain('"title": "Dodawanie"');
+    expect(card?.querySelector("[data-card-output]")?.textContent).toContain(
+      '"title": "Dodawanie"',
+    );
   });
 
   it("falls back to the plain card on a malformed view, and on a view naming another verb", () => {
@@ -166,5 +168,24 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
     ]);
     const widget = screen.getByRole("region", { name: "Zmieniam lekcję" });
     expect(widget.querySelector("[data-edited-step='s01']")?.textContent).toBe("Krok s01");
+  });
+
+  it("the plain card shows what the assistant sent and what came back (dl-z5ja.68)", () => {
+    draw([
+      tool(1, {
+        verb: "lesson_draft",
+        input: { topic: "dodawanie do 20", grade: "1" },
+        output: { draft_id: "run_1", title: "Dodawanie" },
+      }),
+    ]);
+    const card = document.querySelector("[data-card='plain']");
+    expect(card?.querySelector("[data-card-input]")?.textContent).toContain(
+      '"topic": "dodawanie do 20"',
+    );
+    expect(card?.querySelector("[data-card-output]")?.textContent).toContain(
+      '"title": "Dodawanie"',
+    );
+    expect(card?.textContent).toContain("Co asystent podał");
+    expect(card?.textContent).toContain("Co wróciło");
   });
 });

@@ -49,3 +49,15 @@ variable "secret_params" {
   type        = set(string)
   default     = []
 }
+
+variable "schedule" {
+  description = "Invoke live every minute with {}: the safety net for a lost api invoke, and what drains the steps the pg_cron sweep enqueues. Off for the probe"
+  type        = bool
+  default     = false
+}
+
+variable "schedule_enabled" {
+  description = "Whether the schedule runs. Off by default: until the first runner-deploy ships code, it would invoke a placeholder that throws once a minute. The owner flips it after that deploy"
+  type        = bool
+  default     = false
+}

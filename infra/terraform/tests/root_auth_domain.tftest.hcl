@@ -35,6 +35,10 @@ override_module {
   target = module.alarms
 }
 
+override_module {
+  target = module.runner
+}
+
 # alarms.tf's check fails a test run without an address; any address will do here.
 variables {
   alarm_email = "alarms@example.invalid"

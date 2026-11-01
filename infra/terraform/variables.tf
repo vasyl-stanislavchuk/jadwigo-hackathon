@@ -33,3 +33,32 @@ variable "app_reserved_concurrency" {
   description = "The app Lambda's reserved concurrency, set per environment below its Supabase pooler's client limit (dl-5ssh.75)"
   type        = number
 }
+
+variable "runner_muse_cap_usd" {
+  description = "USD the step host's Muse lane may spend per cold start before GuardedMuse refuses (dl-z5ja.20); each run's own cap_usd holds per turn"
+  type        = string
+  default     = "1"
+}
+
+variable "runner_muse_tier" {
+  description = "The model tier the step host's learner turns run on: contributor (the owner's decision of 2026-11-01, noted on dl-z5ja.20) or private, which needs runner_muse_private_model"
+  type        = string
+  default     = "contributor"
+
+  validation {
+    condition     = contains(["contributor", "private"], var.runner_muse_tier)
+    error_message = "runner_muse_tier is contributor or private"
+  }
+}
+
+variable "runner_muse_private_model" {
+  description = "The no-training tier's model, used only when runner_muse_tier is private (dl-z5ja.3 names it); blank otherwise"
+  type        = string
+  default     = ""
+}
+
+variable "runner_schedule_enabled" {
+  description = "Whether the step host's every-minute drain runs. False until the first runner-deploy has shipped code; the owner flips it then (dl-z5ja.20)"
+  type        = bool
+  default     = false
+}

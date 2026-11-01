@@ -298,7 +298,9 @@
   "sign_plus": "Dodać",
   "sign_times": "Razy",
   "decimal_comma": "Przecinek",
+  "decimal_point": "Kropka",
   "incomplete_decimal": "Dopisz cyfrę po przecinku.",
+  "incomplete_decimal_point": "Dopisz cyfrę po kropce.",
   "incomplete_fraction_boxes": "Wpisz licznik i mianownik.",
   "fraction_simplify": "Czy możesz zapisać ten ułamek prościej?",
   "fraction_whole": "Całości",
@@ -819,5 +821,9 @@
       }
     }
   ],
-  "chat_sign_in": "Najpierw zaloguj się na stronie rodzica, a potem wróć do rozmowy."
+  "chat_sign_in": "Najpierw zaloguj się na stronie rodzica, a potem wróć do rozmowy.",
+  "chat_edit_step": "Zmień ten krok",
+  "chat_edit_prompt": "Co zmienić w tym kroku i dlaczego?",
+  "chat_edit_send": "Wyślij zmianę",
+  "chat_edit_cancel": "Anuluj"
 }

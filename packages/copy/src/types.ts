@@ -16,10 +16,11 @@ type PluralForms = Partial<Record<"zero" | "one" | "two" | "few" | "many", strin
 };
 
 /**
- * One line. `reviewed` stays false until a parent has read it (pl always ships
- * false). A `{slot}` named in `plural` is filled with the form chosen by the number in
- * `vars[count]` — each counted noun has its own rule, so "7 rzędów po 8 kropek" and
- * "2 rzędy po 3 kropki" both come out right.
+ * One line. `reviewed` is true once the reviewer for its language passes it; the review
+ * sidecars hold the flag and tools/src/check-copy.ts gates on it (dl-9t2o.10). A `{slot}`
+ * named in `plural` is filled with the form chosen by the number in `vars[count]` — each
+ * counted noun has its own rule, so "7 rzędów po 8 kropek" and "2 rzędy po 3 kropki" both
+ * come out right.
  */
 export interface CopyEntry {
   text: string;
@@ -305,7 +306,9 @@ export const COPY_KEYS = [
   "sign_times",
   // Enter: a decimal on the keypad (dl-w3.70.7)
   "decimal_comma",
+  "decimal_point",
   "incomplete_decimal",
+  "incomplete_decimal_point",
   // Enter: a fraction in stacked boxes (dl-w3.70.16)
   "incomplete_fraction_boxes",
   "fraction_simplify",
@@ -673,6 +676,10 @@ export const COPY_KEYS = [
   "chat_switch",
   "chat_consent",
   "chat_check_findings",
+  "chat_edit_step",
+  "chat_edit_prompt",
+  "chat_edit_send",
+  "chat_edit_cancel",
   "chat_sign_in",
   // end the chat page
 ] as const;

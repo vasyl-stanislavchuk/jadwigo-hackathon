@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Ruler zero at {n} {unit} from the left" |
+* | "The ruler's zero is {n} {unit} from the left." |
 *
 * @param {Ruler_AtInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

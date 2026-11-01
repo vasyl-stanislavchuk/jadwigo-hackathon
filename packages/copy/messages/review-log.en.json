@@ -1,0 +1,4006 @@
+{
+  "language": "en",
+  "reviewer": "workflows/jadwigo-lesson-review with workflows/_lang/en/checklist.md (US English, dl-rok6); each round a separate Opus session that wrote no line in it; the writer and fixer was the dl-9t2o.10 session, 2026-11-01",
+  "final": {
+    "lines": 611,
+    "reviewed_before": 14,
+    "note_before": "the 14 adult lines the owner approved on 2026-10-07, untouched here",
+    "passed_here": 595,
+    "still_open": ["decimal_comma", "incomplete_decimal"],
+    "still_open_reason": "dl-uukj.42: the keypad decimal key becomes a point in English"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "lines": 597,
+      "verdicts": [
+        {
+          "id": "site_404_title",
+          "verdict": "pass",
+          "text": "Page not found · Jadwigo"
+        },
+        {
+          "id": "site_404_heading",
+          "verdict": "pass",
+          "text": "This page isn't here."
+        },
+        {
+          "id": "site_404_home",
+          "verdict": "pass",
+          "text": "Back to the home page"
+        },
+        {
+          "id": "site_language_name",
+          "verdict": "pass",
+          "text": "English"
+        },
+        {
+          "id": "site_switch_label",
+          "verdict": "pass",
+          "text": "Page language"
+        },
+        {
+          "id": "site_note_text",
+          "verdict": "pass",
+          "text": "This page is also in English."
+        },
+        {
+          "id": "site_note_go",
+          "verdict": "pass",
+          "text": "Open in English"
+        },
+        {
+          "id": "site_note_dismiss",
+          "verdict": "pass",
+          "text": "No, thanks"
+        },
+        {
+          "id": "site_nav_home",
+          "verdict": "pass",
+          "text": "Jadwigo, home page"
+        },
+        {
+          "id": "site_nav_label",
+          "verdict": "pass",
+          "text": "Pages"
+        },
+        {
+          "id": "site_nav_sign_in",
+          "verdict": "pass",
+          "text": "Sign in"
+        },
+        {
+          "id": "site_footer_privacy",
+          "verdict": "pass",
+          "text": "Privacy"
+        },
+        {
+          "id": "site_footer_deletion",
+          "verdict": "pass",
+          "text": "Data deletion"
+        },
+        {
+          "id": "site_footer_made",
+          "verdict": "pass",
+          "text": "Jadwigo was built at the Meta hackathon."
+        },
+        {
+          "id": "continue",
+          "verdict": "pass",
+          "text": "Next"
+        },
+        {
+          "id": "check",
+          "verdict": "pass",
+          "text": "Check"
+        },
+        {
+          "id": "erase",
+          "verdict": "pass",
+          "text": "Delete"
+        },
+        {
+          "id": "done",
+          "verdict": "pass",
+          "text": "Done"
+        },
+        {
+          "id": "show_more",
+          "verdict": "pass",
+          "text": "Show more"
+        },
+        {
+          "id": "answer_field",
+          "verdict": "pass",
+          "text": "Your answer"
+        },
+        {
+          "id": "choose_answer",
+          "verdict": "pass",
+          "text": "Choose the answer"
+        },
+        {
+          "id": "build_rectangle",
+          "verdict": "pass",
+          "text": "Build the rectangle"
+        },
+        {
+          "id": "choose_rectangle",
+          "verdict": "pass",
+          "text": "Choose the rectangle"
+        },
+        {
+          "id": "dims",
+          "verdict": "pass",
+          "text": "{rows} by {cols}"
+        },
+        {
+          "id": "array_label [rows_noun=one, dots_noun=one]",
+          "verdict": "pass",
+          "text": "{a} row of {b} dot"
+        },
+        {
+          "id": "array_label [rows_noun=one, dots_noun=other]",
+          "verdict": "pass",
+          "text": "{a} row of {b} dots"
+        },
+        {
+          "id": "array_label [rows_noun=other, dots_noun=one]",
+          "verdict": "pass",
+          "text": "{a} rows of {b} dot"
+        },
+        {
+          "id": "array_label [rows_noun=other, dots_noun=other]",
+          "verdict": "pass",
+          "text": "{a} rows of {b} dots"
+        },
+        {
+          "id": "groups_label [groups_noun=one]",
+          "verdict": "pass",
+          "text": "{a} group of {b}"
+        },
+        {
+          "id": "groups_label [groups_noun=other]",
+          "verdict": "pass",
+          "text": "{a} groups of {b}"
+        },
+        {
+          "id": "number_line_label [jumps_noun=one]",
+          "verdict": "pass",
+          "text": "{b} jump of {a}"
+        },
+        {
+          "id": "number_line_label [jumps_noun=other]",
+          "verdict": "pass",
+          "text": "{b} jumps of {a}"
+        },
+        {
+          "id": "table_row",
+          "verdict": "flag",
+          "text": "Times table, row {row}",
+          "flags": [
+            {
+              "item": "en-9",
+              "quote": "Times table, row {row}",
+              "reason": "The glossary names a row of the times table for a child as `the 7s` or `times 7`, not `row 7`."
+            }
+          ]
+        },
+        {
+          "id": "swapped_order",
+          "verdict": "pass",
+          "text": "Swapped order"
+        },
+        {
+          "id": "blank",
+          "verdict": "pass",
+          "text": "Missing number"
+        },
+        {
+          "id": "number_line_axis",
+          "verdict": "pass",
+          "text": "Number line from {min} to {max}"
+        },
+        {
+          "id": "number_line_marker",
+          "verdict": "pass",
+          "text": "Marker at {value}"
+        },
+        {
+          "id": "divisions_label",
+          "verdict": "pass",
+          "text": "Parts: {n}"
+        },
+        {
+          "id": "divisions_fewer",
+          "verdict": "pass",
+          "text": "Fewer parts"
+        },
+        {
+          "id": "divisions_more",
+          "verdict": "pass",
+          "text": "More parts"
+        },
+        {
+          "id": "step_left",
+          "verdict": "pass",
+          "text": "Step left"
+        },
+        {
+          "id": "step_right",
+          "verdict": "pass",
+          "text": "Step right"
+        },
+        {
+          "id": "praise [category=*, line=0]",
+          "verdict": "pass",
+          "text": "Yes, that's it!"
+        },
+        {
+          "id": "praise [category=*, line=1]",
+          "verdict": "pass",
+          "text": "Great work!"
+        },
+        {
+          "id": "praise [category=*, line=2]",
+          "verdict": "pass",
+          "text": "Nice thinking!"
+        },
+        {
+          "id": "other_form",
+          "verdict": "pass",
+          "text": "You could also write: {form}"
+        },
+        {
+          "id": "sides_swapped_form",
+          "verdict": "pass",
+          "text": "Or: {form}"
+        },
+        {
+          "id": "try_again [category=*, line=0]",
+          "verdict": "pass",
+          "text": "Let's try that one again."
+        },
+        {
+          "id": "try_again [category=*, line=1]",
+          "verdict": "pass",
+          "text": "Take another look — you can do it."
+        },
+        {
+          "id": "move_on [category=*]",
+          "verdict": "pass",
+          "text": "Not sure yet — next"
+        },
+        {
+          "id": "moved_on [category=*]",
+          "verdict": "pass",
+          "text": "Okay, we'll come back to it."
+        },
+        {
+          "id": "moved_on_calm",
+          "verdict": "flag",
+          "text": "That's fine. See how it goes.",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "See how it goes.",
+              "reason": "An idiom a child of 6 to 9 may not follow, and it does not say plainly what happens next."
+            }
+          ]
+        },
+        {
+          "id": "noted",
+          "verdict": "pass",
+          "text": "Thank you! On we go."
+        },
+        {
+          "id": "dont_know_yet",
+          "verdict": "pass",
+          "text": "I don't know yet"
+        },
+        {
+          "id": "start [category=*]",
+          "verdict": "pass",
+          "text": "Let's start!"
+        },
+        {
+          "id": "mic_check [category=*]",
+          "verdict": "pass",
+          "text": "Microphone check — coming soon"
+        },
+        {
+          "id": "no_voice_today",
+          "verdict": "pass",
+          "text": "No voice today"
+        },
+        {
+          "id": "tutor_resting [category=*]",
+          "verdict": "pass",
+          "text": "Quiet practice today."
+        },
+        {
+          "id": "loading",
+          "verdict": "pass",
+          "text": "Just a moment…"
+        },
+        {
+          "id": "saving",
+          "verdict": "pass",
+          "text": "Saving…"
+        },
+        {
+          "id": "connection_trouble",
+          "verdict": "pass",
+          "text": "Just a moment, saving again…"
+        },
+        {
+          "id": "load_failed [category=*]",
+          "verdict": "pass",
+          "text": "Something got stuck. Ask a grown-up for help."
+        },
+        {
+          "id": "finished [category=*]",
+          "verdict": "pass",
+          "text": "That's all for today. Thank you!"
+        },
+        {
+          "id": "can_do_heading [category=*]",
+          "verdict": "pass",
+          "text": "What I can do"
+        },
+        {
+          "id": "voice_resting",
+          "verdict": "pass",
+          "text": "The voice is resting."
+        },
+        {
+          "id": "voice_waking",
+          "verdict": "pass",
+          "text": "The voice is waking up…"
+        },
+        {
+          "id": "voice_listening",
+          "verdict": "pass",
+          "text": "The voice is listening."
+        },
+        {
+          "id": "voice_speaking",
+          "verdict": "pass",
+          "text": "The voice is speaking…"
+        },
+        {
+          "id": "tap_to_hear",
+          "verdict": "pass",
+          "text": "Tap to hear"
+        },
+        {
+          "id": "play_clip",
+          "verdict": "pass",
+          "text": "Listen"
+        },
+        {
+          "id": "play_clip_slow",
+          "verdict": "pass",
+          "text": "Listen slowly"
+        },
+        {
+          "id": "session_finished [category=*]",
+          "verdict": "flag",
+          "text": "This lesson is finished. Thank you for practising!",
+          "flags": [
+            {
+              "item": "en-2",
+              "quote": "practising",
+              "reason": "Jadwigo writes US English: practicing."
+            }
+          ]
+        },
+        {
+          "id": "start_again",
+          "verdict": "pass",
+          "text": "Start again"
+        },
+        {
+          "id": "true_or_false",
+          "verdict": "pass",
+          "text": "True or false?"
+        },
+        {
+          "id": "yes",
+          "verdict": "pass",
+          "text": "Yes"
+        },
+        {
+          "id": "no",
+          "verdict": "pass",
+          "text": "No"
+        },
+        {
+          "id": "none_of_these",
+          "verdict": "pass",
+          "text": "None of these"
+        },
+        {
+          "id": "reveal_steps",
+          "verdict": "pass",
+          "text": "Step by step"
+        },
+        {
+          "id": "reveal_show",
+          "verdict": "pass",
+          "text": "Show me"
+        },
+        {
+          "id": "reveal_drag",
+          "verdict": "pass",
+          "text": "Slide to see"
+        },
+        {
+          "id": "reveal_predict",
+          "verdict": "pass",
+          "text": "What do you think comes next?"
+        },
+        {
+          "id": "reveal_have_idea",
+          "verdict": "pass",
+          "text": "I have an idea!"
+        },
+        {
+          "id": "reveal_not_sure",
+          "verdict": "pass",
+          "text": "Not sure yet"
+        },
+        {
+          "id": "contest_task_image",
+          "verdict": "pass",
+          "text": "A task from the Alfik contest"
+        },
+        {
+          "id": "tried_option",
+          "verdict": "pass",
+          "text": "tried"
+        },
+        {
+          "id": "hint",
+          "verdict": "pass",
+          "text": "A hint"
+        },
+        {
+          "id": "worked_solution",
+          "verdict": "pass",
+          "text": "Solution"
+        },
+        {
+          "id": "help_me",
+          "verdict": "pass",
+          "text": "Help me"
+        },
+        {
+          "id": "help_more",
+          "verdict": "pass",
+          "text": "More help"
+        },
+        {
+          "id": "help_look",
+          "verdict": "pass",
+          "text": "Look again"
+        },
+        {
+          "id": "help_smaller",
+          "verdict": "pass",
+          "text": "A smaller step"
+        },
+        {
+          "id": "help_almost",
+          "verdict": "flag",
+          "text": "Almost there: you write the last line",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "you write the last line",
+              "reason": "The sentence has no closing period."
+            }
+          ]
+        },
+        {
+          "id": "help_twin",
+          "verdict": "pass",
+          "text": "Now one like it. Your turn!"
+        },
+        {
+          "id": "help_try_first",
+          "verdict": "flag",
+          "text": "Have a go first. Then I can show you more.",
+          "flags": [
+            {
+              "item": "en-2",
+              "quote": "Have a go",
+              "reason": "`Have a go` is British usage; US English says `Give it a try` or `Try it`."
+            }
+          ]
+        },
+        {
+          "id": "solution_step",
+          "verdict": "pass",
+          "text": "Step {n} of {total}"
+        },
+        {
+          "id": "solution_next",
+          "verdict": "pass",
+          "text": "Next step"
+        },
+        {
+          "id": "solution_tap",
+          "verdict": "pass",
+          "text": "Now tap the letter from the solution."
+        },
+        {
+          "id": "code_terminal",
+          "verdict": "flag",
+          "text": "Terminal",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "Terminal",
+              "reason": "`Terminal` is not an everyday word a child of 6 to 9 knows."
+            }
+          ]
+        },
+        {
+          "id": "code_command",
+          "verdict": "pass",
+          "text": "Command"
+        },
+        {
+          "id": "code_output",
+          "verdict": "flag",
+          "text": "Output",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "Output",
+              "reason": "`Output` is a technical word a child of 6 to 9 does not use."
+            }
+          ]
+        },
+        {
+          "id": "code_copy",
+          "verdict": "pass",
+          "text": "Copy: {cmd}"
+        },
+        {
+          "id": "code_copied",
+          "verdict": "pass",
+          "text": "Copied"
+        },
+        {
+          "id": "code_copy_failed",
+          "verdict": "pass",
+          "text": "Could not copy. Select the command and copy it by hand."
+        },
+        {
+          "id": "code_placeholder",
+          "verdict": "flag",
+          "text": "Type the id bd printed in place of the part in angle brackets",
+          "flags": [
+            {
+              "item": "en-1",
+              "quote": "bd",
+              "reason": "A child's line names a code tool, bd, which en-1 rules out."
+            },
+            {
+              "item": "en-10",
+              "quote": "in angle brackets",
+              "reason": "The sentence has no closing period."
+            }
+          ]
+        },
+        {
+          "id": "print_task",
+          "verdict": "pass",
+          "text": "Task {n}"
+        },
+        {
+          "id": "answer_card",
+          "verdict": "pass",
+          "text": "Mark your answers"
+        },
+        {
+          "id": "answer_card_note",
+          "verdict": "pass",
+          "text": "Fill in the whole circle next to one letter, with a black pen."
+        },
+        {
+          "id": "answer_card_example_right",
+          "verdict": "pass",
+          "text": "Mark like this"
+        },
+        {
+          "id": "answer_card_example_wrong",
+          "verdict": "pass",
+          "text": "Not like this"
+        },
+        {
+          "id": "answer_card_fix",
+          "verdict": "pass",
+          "text": "Changed your mind? Cross the circle out with an X and fill in the one you choose."
+        },
+        {
+          "id": "drag_beside",
+          "verdict": "pass",
+          "text": "{item} is now beside {other}."
+        },
+        {
+          "id": "drag_hint",
+          "verdict": "pass",
+          "text": "Drag a card, or tap it and then tap the right place."
+        },
+        {
+          "id": "drag_picked",
+          "verdict": "pass",
+          "text": "{item}: now tap the right place."
+        },
+        {
+          "id": "drag_moved_to",
+          "verdict": "pass",
+          "text": "{item} is now in place {n}."
+        },
+        {
+          "id": "drag_in_group",
+          "verdict": "pass",
+          "text": "{item} is in {group}."
+        },
+        {
+          "id": "drag_tray",
+          "verdict": "pass",
+          "text": "Still to sort"
+        },
+        {
+          "id": "tile_hint",
+          "verdict": "pass",
+          "text": "Tap a tile, then tap the place it goes. Tap a place to empty it."
+        },
+        {
+          "id": "tile_slot_empty",
+          "verdict": "pass",
+          "text": "Place {n}, empty"
+        },
+        {
+          "id": "tile_cleared",
+          "verdict": "pass",
+          "text": "Place {n} is empty again."
+        },
+        {
+          "id": "answer_yours",
+          "verdict": "pass",
+          "text": "Your answer"
+        },
+        {
+          "id": "answer_right",
+          "verdict": "pass",
+          "text": "The answer"
+        },
+        {
+          "id": "choose_all",
+          "verdict": "pass",
+          "text": "Pick every one that fits."
+        },
+        {
+          "id": "gap_label",
+          "verdict": "pass",
+          "text": "Gap {n}"
+        },
+        {
+          "id": "hotspot_marker",
+          "verdict": "flag",
+          "text": "Tap {n}, tap again to lift it",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "Tap {n}, tap again to lift it",
+              "reason": "Two instructions are joined by a comma and the sentence has no closing punctuation."
+            }
+          ]
+        },
+        {
+          "id": "explain_field",
+          "verdict": "pass",
+          "text": "Your explanation"
+        },
+        {
+          "id": "explain_hint",
+          "verdict": "pass",
+          "text": "A sentence or two is enough."
+        },
+        {
+          "id": "explain_more",
+          "verdict": "pass",
+          "text": "Write a little more. Then press Check."
+        },
+        {
+          "id": "explain_pieces",
+          "verdict": "pass",
+          "text": "The pieces of your explanation"
+        },
+        {
+          "id": "bar_height",
+          "verdict": "pass",
+          "text": "{label}: {value} {unit}"
+        },
+        {
+          "id": "bar_label",
+          "verdict": "pass",
+          "text": "Bar: {label}"
+        },
+        {
+          "id": "graph_label",
+          "verdict": "pass",
+          "text": "Graph from 0 to {max}"
+        },
+        {
+          "id": "incomplete_graph",
+          "verdict": "pass",
+          "text": "Draw the graph first."
+        },
+        {
+          "id": "picture_stands_for",
+          "verdict": "flag",
+          "text": "One picture stands for {n} {unit}",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "One picture stands for {n} {unit}",
+              "reason": "A full sentence with no closing period."
+            }
+          ]
+        },
+        {
+          "id": "incomplete_parts",
+          "verdict": "pass",
+          "text": "Finish every part first."
+        },
+        {
+          "id": "part_label",
+          "verdict": "pass",
+          "text": "Part {n}"
+        },
+        {
+          "id": "incomplete_gaps",
+          "verdict": "pass",
+          "text": "Fill in the empty spaces too."
+        },
+        {
+          "id": "incomplete_group",
+          "verdict": "pass",
+          "text": "Place the cards that are left too."
+        },
+        {
+          "id": "incomplete_place",
+          "verdict": "pass",
+          "text": "Show a place first."
+        },
+        {
+          "id": "incomplete_sequence",
+          "verdict": "pass",
+          "text": "Fill every place first."
+        },
+        {
+          "id": "incomplete_text",
+          "verdict": "pass",
+          "text": "Write your answer first."
+        },
+        {
+          "id": "bracket_close",
+          "verdict": "flag",
+          "text": "Close bracket",
+          "flags": [
+            {
+              "item": "en-2",
+              "quote": "bracket",
+              "reason": "In US English the round sign is a parenthesis; bracket means [ ] to a US reader."
+            }
+          ]
+        },
+        {
+          "id": "bracket_open",
+          "verdict": "flag",
+          "text": "Open bracket",
+          "flags": [
+            {
+              "item": "en-2",
+              "quote": "bracket",
+              "reason": "In US English the round sign is a parenthesis; bracket means [ ] to a US reader."
+            }
+          ]
+        },
+        {
+          "id": "incomplete_expression",
+          "verdict": "pass",
+          "text": "Finish the expression first."
+        },
+        {
+          "id": "sign_equals",
+          "verdict": "pass",
+          "text": "Equals"
+        },
+        {
+          "id": "ruler_at",
+          "verdict": "flag",
+          "text": "Ruler zero at {n} {unit} from the left",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "Ruler zero at",
+              "reason": "The telegraphic phrase has no verb and is hard for a child of 6 to 9 to follow."
+            }
+          ]
+        },
+        {
+          "id": "ruler_label",
+          "verdict": "pass",
+          "text": "Ruler. Drag it, or move it with the arrow keys."
+        },
+        {
+          "id": "sign_divide",
+          "verdict": "pass",
+          "text": "Divided by"
+        },
+        {
+          "id": "sign_minus",
+          "verdict": "pass",
+          "text": "Minus"
+        },
+        {
+          "id": "sign_plus",
+          "verdict": "pass",
+          "text": "Plus"
+        },
+        {
+          "id": "sign_times",
+          "verdict": "pass",
+          "text": "Times"
+        },
+        {
+          "id": "decimal_comma",
+          "verdict": "flag",
+          "text": "Comma",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "Comma",
+              "reason": "The English decimal separator is a point, not a comma."
+            }
+          ]
+        },
+        {
+          "id": "incomplete_decimal",
+          "verdict": "flag",
+          "text": "Write a digit after the comma.",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "after the comma",
+              "reason": "The English decimal separator is a point, so the digit goes after the decimal point."
+            }
+          ]
+        },
+        {
+          "id": "incomplete_fraction_boxes",
+          "verdict": "pass",
+          "text": "Write the top and the bottom number."
+        },
+        {
+          "id": "fraction_simplify",
+          "verdict": "pass",
+          "text": "Can you write this fraction more simply?"
+        },
+        {
+          "id": "fraction_whole",
+          "verdict": "pass",
+          "text": "Whole number"
+        },
+        {
+          "id": "fraction_numerator",
+          "verdict": "pass",
+          "text": "Top number"
+        },
+        {
+          "id": "fraction_denominator",
+          "verdict": "pass",
+          "text": "Bottom number"
+        },
+        {
+          "id": "written_in_en",
+          "verdict": "flag",
+          "text": "This item is in English",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "This item is in English",
+              "reason": "A full sentence with no closing period."
+            }
+          ]
+        },
+        {
+          "id": "written_in_pl",
+          "verdict": "flag",
+          "text": "This item is in Polish",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "This item is in Polish",
+              "reason": "A full sentence with no closing period."
+            }
+          ]
+        },
+        {
+          "id": "checking",
+          "verdict": "pass",
+          "text": "Checking…"
+        },
+        {
+          "id": "move_up",
+          "verdict": "pass",
+          "text": "Move up"
+        },
+        {
+          "id": "move_down",
+          "verdict": "pass",
+          "text": "Move down"
+        },
+        {
+          "id": "point_label",
+          "verdict": "pass",
+          "text": "Point: {label}"
+        },
+        {
+          "id": "hotspot_area",
+          "verdict": "pass",
+          "text": "Picture. The arrow keys move the target, Enter places a marker, Backspace lifts the last one."
+        },
+        {
+          "id": "hotspot_cursor",
+          "verdict": "pass",
+          "text": "Target: {x} from the left, {y} from the top"
+        },
+        {
+          "id": "column_r0",
+          "verdict": "pass",
+          "text": "the answer’s ones"
+        },
+        {
+          "id": "column_r1",
+          "verdict": "pass",
+          "text": "the answer’s tens"
+        },
+        {
+          "id": "column_r2",
+          "verdict": "pass",
+          "text": "the answer’s hundreds"
+        },
+        {
+          "id": "column_r3",
+          "verdict": "pass",
+          "text": "the answer’s thousands"
+        },
+        {
+          "id": "column_c1",
+          "verdict": "pass",
+          "text": "the small box in the tens column"
+        },
+        {
+          "id": "column_c2",
+          "verdict": "pass",
+          "text": "the small box in the hundreds column"
+        },
+        {
+          "id": "column_c3",
+          "verdict": "pass",
+          "text": "the small box in the thousands column"
+        },
+        {
+          "id": "pyramid_label",
+          "verdict": "pass",
+          "text": "Number pyramid"
+        },
+        {
+          "id": "clock_face",
+          "verdict": "pass",
+          "text": "Clock with hands"
+        },
+        {
+          "id": "clock_hour_hand",
+          "verdict": "pass",
+          "text": "Hour hand"
+        },
+        {
+          "id": "clock_minute_hand",
+          "verdict": "pass",
+          "text": "Minute hand"
+        },
+        {
+          "id": "clock_pick_hand",
+          "verdict": "pass",
+          "text": "Which hand are you moving?"
+        },
+        {
+          "id": "clock_points_at",
+          "verdict": "pass",
+          "text": "points at {n}"
+        },
+        {
+          "id": "clock_points_between",
+          "verdict": "pass",
+          "text": "between {from} and {to}"
+        },
+        {
+          "id": "incomplete_clock",
+          "verdict": "pass",
+          "text": "Move a hand first."
+        },
+        {
+          "id": "incomplete_coins",
+          "verdict": "pass",
+          "text": "Put some coins in the tray first."
+        },
+        {
+          "id": "coins_bank",
+          "verdict": "flag",
+          "text": "Coins and notes",
+          "flags": [
+            {
+              "item": "en-2",
+              "quote": "notes",
+              "reason": "US English calls paper money bills, not notes."
+            }
+          ]
+        },
+        {
+          "id": "coins_tray",
+          "verdict": "pass",
+          "text": "The tray"
+        },
+        {
+          "id": "coins_add",
+          "verdict": "pass",
+          "text": "Put {value} in the tray"
+        },
+        {
+          "id": "coins_take_back",
+          "verdict": "pass",
+          "text": "Take {value} back from the tray"
+        },
+        {
+          "id": "coins_slot_empty",
+          "verdict": "pass",
+          "text": "An empty place"
+        },
+        {
+          "id": "coins_total",
+          "verdict": "pass",
+          "text": "In the tray: {amount}"
+        },
+        {
+          "id": "fraction_shape",
+          "verdict": "pass",
+          "text": "A shape cut into {d} equal parts"
+        },
+        {
+          "id": "fraction_part",
+          "verdict": "pass",
+          "text": "Part {n} of {d}"
+        },
+        {
+          "id": "incomplete_fraction",
+          "verdict": "pass",
+          "text": "Shade a part first."
+        },
+        {
+          "id": "split_strip",
+          "verdict": "pass",
+          "text": "Where to split the rectangle"
+        },
+        {
+          "id": "split_after_col",
+          "verdict": "pass",
+          "text": "Split after column {n}"
+        },
+        {
+          "id": "split_after_row",
+          "verdict": "pass",
+          "text": "Split after row {n}"
+        },
+        {
+          "id": "split_none",
+          "verdict": "pass",
+          "text": "The rectangle is not split yet."
+        },
+        {
+          "id": "letters_row",
+          "verdict": "pass",
+          "text": "Polish letters"
+        },
+        {
+          "id": "letters_capitals",
+          "verdict": "pass",
+          "text": "Capital letters"
+        },
+        {
+          "id": "ds_right_short",
+          "verdict": "pass",
+          "text": "Well done!"
+        },
+        {
+          "id": "ds_miss_short",
+          "verdict": "flag",
+          "text": "Not yet.",
+          "flags": [
+            {
+              "item": "en-6",
+              "quote": "Not yet.",
+              "reason": "On its own the line is a bare no that does not say what to try instead."
+            }
+          ]
+        },
+        {
+          "id": "ds_fix",
+          "verdict": "pass",
+          "text": "Fix it"
+        },
+        {
+          "id": "ds_wait_hint",
+          "verdict": "pass",
+          "text": "Answer first, then check."
+        },
+        {
+          "id": "ds_fix_then_check",
+          "verdict": "pass",
+          "text": "Fix the marked place, then check."
+        },
+        {
+          "id": "ds_solution_band",
+          "verdict": "pass",
+          "text": "This is what the solution looks like."
+        },
+        {
+          "id": "ds_compare_solution",
+          "verdict": "pass",
+          "text": "Compare it with your answer."
+        },
+        {
+          "id": "ds_close_tip",
+          "verdict": "pass",
+          "text": "Stop for today. Your progress is saved."
+        },
+        {
+          "id": "ds_your_answer",
+          "verdict": "pass",
+          "text": "Your answer"
+        },
+        {
+          "id": "ds_right_answer",
+          "verdict": "pass",
+          "text": "The right answer"
+        },
+        {
+          "id": "ds_hint_title",
+          "verdict": "pass",
+          "text": "A hint"
+        },
+        {
+          "id": "ds_wait_choose",
+          "verdict": "pass",
+          "text": "Tap one answer."
+        },
+        {
+          "id": "ds_wait_enter",
+          "verdict": "pass",
+          "text": "Type or say the result."
+        },
+        {
+          "id": "ds_wait_gaps",
+          "verdict": "pass",
+          "text": "Fill in every digit of the result."
+        },
+        {
+          "id": "ds_wait_sequence",
+          "verdict": "pass",
+          "text": "Put every number in the row."
+        },
+        {
+          "id": "ds_wait_group",
+          "verdict": "pass",
+          "text": "Move every number into a group."
+        },
+        {
+          "id": "ds_wait_place",
+          "verdict": "pass",
+          "text": "Tap the line to place the marker."
+        },
+        {
+          "id": "ds_wait_explain",
+          "verdict": "pass",
+          "text": "Write or say your explanation."
+        },
+        {
+          "id": "ds_wait_compound",
+          "verdict": "pass",
+          "text": "Answer both parts."
+        },
+        {
+          "id": "ds_wait_word",
+          "verdict": "pass",
+          "text": "Write or say the word."
+        },
+        {
+          "id": "ds_hint_of",
+          "verdict": "pass",
+          "text": "{n} of {of}"
+        },
+        {
+          "id": "ds_miss_fix",
+          "verdict": "pass",
+          "text": "Fix the marked part."
+        },
+        {
+          "id": "ds_help_title",
+          "verdict": "pass",
+          "text": "Help"
+        },
+        {
+          "id": "ds_solution_label",
+          "verdict": "pass",
+          "text": "Solution"
+        },
+        {
+          "id": "ds_slow",
+          "verdict": "pass",
+          "text": "Slower"
+        },
+        {
+          "id": "ds_keys",
+          "verdict": "pass",
+          "text": "Keys"
+        },
+        {
+          "id": "ds_open_picture",
+          "verdict": "pass",
+          "text": "Show the picture larger"
+        },
+        {
+          "id": "ds_close_picture",
+          "verdict": "pass",
+          "text": "Close picture"
+        },
+        {
+          "id": "ds_more_below",
+          "verdict": "pass",
+          "text": "Scroll down"
+        },
+        {
+          "id": "ds_pause_title",
+          "verdict": "pass",
+          "text": "Pause"
+        },
+        {
+          "id": "ds_pause_text",
+          "verdict": "pass",
+          "text": "The lesson will wait. You'll come back to the same question."
+        },
+        {
+          "id": "ds_pause_back",
+          "verdict": "pass",
+          "text": "Back to the lesson"
+        },
+        {
+          "id": "ds_pause_stop",
+          "verdict": "pass",
+          "text": "Stop for today"
+        },
+        {
+          "id": "ds_sound",
+          "verdict": "pass",
+          "text": "Sound"
+        },
+        {
+          "id": "ds_end_title",
+          "verdict": "pass",
+          "text": "Lesson finished."
+        },
+        {
+          "id": "ds_end_question",
+          "verdict": "pass",
+          "text": "What next?"
+        },
+        {
+          "id": "ds_end_again",
+          "verdict": "pass",
+          "text": "The tricky ones again ({n})"
+        },
+        {
+          "id": "ds_end_similar",
+          "verdict": "flag",
+          "text": "Similar ones to practise",
+          "flags": [
+            {
+              "item": "en-2",
+              "quote": "practise",
+              "reason": "Jadwigo writes US English, where the verb is practice."
+            }
+          ]
+        },
+        {
+          "id": "ds_end_done",
+          "verdict": "pass",
+          "text": "Done for today"
+        },
+        {
+          "id": "ds_review_bar",
+          "verdict": "pass",
+          "text": "Review"
+        },
+        {
+          "id": "ds_progress_start",
+          "verdict": "pass",
+          "text": "Lesson: just started"
+        },
+        {
+          "id": "ds_progress_half",
+          "verdict": "pass",
+          "text": "Lesson: about halfway"
+        },
+        {
+          "id": "ds_progress_end",
+          "verdict": "pass",
+          "text": "Lesson: almost done"
+        },
+        {
+          "id": "credit_from",
+          "verdict": "pass",
+          "text": "from {source}"
+        },
+        {
+          "id": "credit_title",
+          "verdict": "pass",
+          "text": "Task from {source}"
+        },
+        {
+          "id": "credit_label",
+          "verdict": "flag",
+          "text": "from {source}, source and licence",
+          "flags": [
+            {
+              "item": "en-2",
+              "quote": "licence",
+              "reason": "Jadwigo writes US English, where the noun is license."
+            }
+          ]
+        },
+        {
+          "id": "credit_shared",
+          "verdict": "pass",
+          "text": "Shared under {licence}"
+        },
+        {
+          "id": "credit_translated",
+          "verdict": "pass",
+          "text": "Translated into English by Jadwigo under {licence}"
+        },
+        {
+          "id": "credit_adapted",
+          "verdict": "pass",
+          "text": "Adapted by Jadwigo under {licence}"
+        },
+        {
+          "id": "credit_both",
+          "verdict": "pass",
+          "text": "Translated and adapted by Jadwigo under {licence}"
+        },
+        {
+          "id": "credit_source",
+          "verdict": "pass",
+          "text": "Source: {source}"
+        },
+        {
+          "id": "credit_not_affiliated",
+          "verdict": "flag",
+          "text": "Jadwigo is not affiliated with {source}",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "Jadwigo is not affiliated with {source}",
+              "reason": "Every sentence ends with ., ? or !, and this line is a full sentence with no end mark."
+            }
+          ]
+        },
+        {
+          "id": "credit_close",
+          "verdict": "pass",
+          "text": "Close"
+        },
+        {
+          "id": "leave_title",
+          "verdict": "flag",
+          "text": "This link leaves Jadwigo",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "This link leaves Jadwigo",
+              "reason": "Every sentence ends with ., ? or !, and this line is a full sentence with no end mark."
+            }
+          ]
+        },
+        {
+          "id": "leave_where",
+          "verdict": "flag",
+          "text": "{where} opens in a new tab",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "{where} opens in a new tab",
+              "reason": "Every sentence ends with ., ? or !, and this line is a full sentence with no end mark."
+            }
+          ]
+        },
+        {
+          "id": "leave_stay",
+          "verdict": "pass",
+          "text": "Stay"
+        },
+        {
+          "id": "leave_go",
+          "verdict": "pass",
+          "text": "Open it"
+        },
+        {
+          "id": "play_congrats",
+          "verdict": "pass",
+          "text": "Well done! That's all for today."
+        },
+        {
+          "id": "play_results_title",
+          "verdict": "pass",
+          "text": "The questions in this lesson"
+        },
+        {
+          "id": "play_results_none",
+          "verdict": "pass",
+          "text": "The lesson's questions will show here."
+        },
+        {
+          "id": "play_summary_all",
+          "verdict": "pass",
+          "text": "You got them all! Have a look at your answers."
+        },
+        {
+          "id": "play_summary_some",
+          "verdict": "flag",
+          "text": "Some of these we will practise again. See what the right answers look like.",
+          "flags": [
+            {
+              "item": "en-2",
+              "quote": "practise",
+              "reason": "Jadwigo writes US English, where the verb is practice."
+            }
+          ]
+        },
+        {
+          "id": "play_review_walk",
+          "verdict": "pass",
+          "text": "Look at the answers"
+        },
+        {
+          "id": "play_ended_correct [category=*]",
+          "verdict": "flag",
+          "text": "You got it",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "You got it",
+              "reason": "Every sentence ends with ., ? or !, and this line is a full sentence with no end mark."
+            }
+          ]
+        },
+        {
+          "id": "play_ended_correct [category=adult]",
+          "verdict": "pass",
+          "text": "Right"
+        },
+        {
+          "id": "play_ended_missed [category=*]",
+          "verdict": "pass",
+          "text": "Still learning this one"
+        },
+        {
+          "id": "play_ended_missed [category=adult]",
+          "verdict": "pass",
+          "text": "Not yet"
+        },
+        {
+          "id": "play_ended_skipped [category=*]",
+          "verdict": "flag",
+          "text": "We will come back to it",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "We will come back to it",
+              "reason": "Every sentence ends with ., ? or !, and this line is a full sentence with no end mark."
+            }
+          ]
+        },
+        {
+          "id": "play_ended_skipped [category=adult]",
+          "verdict": "pass",
+          "text": "Skipped"
+        },
+        {
+          "id": "play_ended_done [category=*]",
+          "verdict": "pass",
+          "text": "Done"
+        },
+        {
+          "id": "play_ended_done [category=adult]",
+          "verdict": "pass",
+          "text": "Done"
+        },
+        {
+          "id": "play_ended_open [category=*]",
+          "verdict": "pass",
+          "text": "Still to come"
+        },
+        {
+          "id": "play_ended_open [category=adult]",
+          "verdict": "pass",
+          "text": "Still open"
+        },
+        {
+          "id": "play_results_twin",
+          "verdict": "pass",
+          "text": "a similar question"
+        },
+        {
+          "id": "play_results_help",
+          "verdict": "pass",
+          "text": "Help: {n}"
+        },
+        {
+          "id": "play_paused",
+          "verdict": "pass",
+          "text": "The lesson is waiting for you."
+        },
+        {
+          "id": "play_paused_back",
+          "verdict": "pass",
+          "text": "Back to the lesson"
+        },
+        {
+          "id": "play_not_found",
+          "verdict": "pass",
+          "text": "This lesson is not here."
+        },
+        {
+          "id": "play_save",
+          "verdict": "flag",
+          "text": "Save the progress",
+          "flags": [
+            {
+              "item": "en-4",
+              "quote": "Save the progress",
+              "reason": "The definite article is unidiomatic here; English says your progress, as ds_close_tip does."
+            }
+          ]
+        },
+        {
+          "id": "play_save_note",
+          "verdict": "flag",
+          "text": "For a grown-up: sign in, and this lesson stays on the child's account.",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "the child's account",
+              "reason": "A line for the grown-up should call the child your child, not the child."
+            }
+          ]
+        },
+        {
+          "id": "parent_title",
+          "verdict": "pass",
+          "text": "Parent account"
+        },
+        {
+          "id": "parent_off",
+          "verdict": "pass",
+          "text": "Signing in is not switched on yet."
+        },
+        {
+          "id": "parent_promise",
+          "verdict": "pass",
+          "text": "We keep your child's lessons on your account, so the next ones fit them."
+        },
+        {
+          "id": "parent_guardian",
+          "verdict": "pass",
+          "text": "I am this child's parent or guardian."
+        },
+        {
+          "id": "parent_email",
+          "verdict": "pass",
+          "text": "Your email"
+        },
+        {
+          "id": "parent_send_code",
+          "verdict": "pass",
+          "text": "Send the code"
+        },
+        {
+          "id": "parent_send_failed",
+          "verdict": "pass",
+          "text": "The code did not go out. Try again in a moment."
+        },
+        {
+          "id": "parent_code",
+          "verdict": "pass",
+          "text": "The code from the email, 6 digits"
+        },
+        {
+          "id": "parent_code_sent",
+          "verdict": "pass",
+          "text": "We sent a code to {email}."
+        },
+        {
+          "id": "parent_sign_in",
+          "verdict": "pass",
+          "text": "Sign in"
+        },
+        {
+          "id": "parent_code_mismatch",
+          "verdict": "pass",
+          "text": "That code does not match. Check the email and type it again."
+        },
+        {
+          "id": "parent_add_child",
+          "verdict": "pass",
+          "text": "Add a child"
+        },
+        {
+          "id": "parent_first_name",
+          "verdict": "flag",
+          "text": "The child's first name",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "The child's first name",
+              "reason": "A parent's line calls the child your child, not the child."
+            }
+          ]
+        },
+        {
+          "id": "parent_add",
+          "verdict": "pass",
+          "text": "Add"
+        },
+        {
+          "id": "parent_whose",
+          "verdict": "pass",
+          "text": "Whose lesson was it?"
+        },
+        {
+          "id": "parent_claimed_elsewhere",
+          "verdict": "pass",
+          "text": "This lesson is already saved on another account."
+        },
+        {
+          "id": "parent_claim_preview",
+          "verdict": "pass",
+          "text": "This lesson was a try-out, so it is not saved."
+        },
+        {
+          "id": "parent_no_attempts",
+          "verdict": "pass",
+          "text": "No lessons here yet."
+        },
+        {
+          "id": "parent_sign_out",
+          "verdict": "pass",
+          "text": "Sign out"
+        },
+        {
+          "id": "parent_or",
+          "verdict": "pass",
+          "text": "or"
+        },
+        {
+          "id": "parent_continue_google",
+          "verdict": "pass",
+          "text": "Continue with Google"
+        },
+        {
+          "id": "parent_continue_facebook",
+          "verdict": "pass",
+          "text": "Continue with Facebook"
+        },
+        {
+          "id": "parent_provider_no_email",
+          "verdict": "pass",
+          "text": "This Facebook account has no email address, so it can't sign in here. Sign in with a code by email instead."
+        },
+        {
+          "id": "parent_provider_failed",
+          "verdict": "pass",
+          "text": "That sign-in didn't finish. Try again, or sign in with a code by email."
+        },
+        {
+          "id": "parent_google_in_app",
+          "verdict": "pass",
+          "text": "Google can't sign you in inside this app. To continue with Google, open this page in your phone's browser."
+        },
+        {
+          "id": "parent_copy_link",
+          "verdict": "pass",
+          "text": "Copy the link"
+        },
+        {
+          "id": "parent_link_copied",
+          "verdict": "pass",
+          "text": "Copied. Paste it into your browser."
+        },
+        {
+          "id": "parent_language",
+          "verdict": "pass",
+          "text": "Language"
+        },
+        {
+          "id": "parent_language_pl",
+          "verdict": "pass",
+          "text": "Polski"
+        },
+        {
+          "id": "parent_language_en",
+          "verdict": "pass",
+          "text": "English"
+        },
+        {
+          "id": "home_title",
+          "verdict": "pass",
+          "text": "Pick a lesson"
+        },
+        {
+          "id": "home_empty",
+          "verdict": "pass",
+          "text": "There are no lessons here yet."
+        },
+        {
+          "id": "review_title",
+          "verdict": "pass",
+          "text": "Question {n} of {total}"
+        },
+        {
+          "id": "review_all",
+          "verdict": "pass",
+          "text": "All questions"
+        },
+        {
+          "id": "review_prev",
+          "verdict": "pass",
+          "text": "Previous"
+        },
+        {
+          "id": "review_next",
+          "verdict": "pass",
+          "text": "Next"
+        },
+        {
+          "id": "review_right_answer",
+          "verdict": "flag",
+          "text": "This is what the right answer looks like:",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "looks like:",
+              "reason": "A full sentence must end with a period, question mark or exclamation point, and this one ends with a colon."
+            }
+          ]
+        },
+        {
+          "id": "review_no_answer [category=*]",
+          "verdict": "pass",
+          "text": "No answer this time. Here is how it goes."
+        },
+        {
+          "id": "review_no_answer [category=adult]",
+          "verdict": "pass",
+          "text": "No answer given. The right answer is below."
+        },
+        {
+          "id": "review_praise [category=*]",
+          "verdict": "flag",
+          "text": "Well done! Here is why:",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "Here is why:",
+              "reason": "The sentence Here is why ends with a colon, and every sentence must end with a period, question mark or exclamation point."
+            }
+          ]
+        },
+        {
+          "id": "review_praise [category=adult]",
+          "verdict": "pass",
+          "text": "Why it is right:"
+        },
+        {
+          "id": "parent_review_title",
+          "verdict": "pass",
+          "text": "How the lesson went"
+        },
+        {
+          "id": "parent_review_tries",
+          "verdict": "pass",
+          "text": "Tries"
+        },
+        {
+          "id": "parent_review_time",
+          "verdict": "pass",
+          "text": "Time: {seconds} s"
+        },
+        {
+          "id": "parent_review_help",
+          "verdict": "pass",
+          "text": "Help: {n}"
+        },
+        {
+          "id": "parent_review_first_try",
+          "verdict": "pass",
+          "text": "On the first try"
+        },
+        {
+          "id": "parent_review_questions",
+          "verdict": "pass",
+          "text": "Questions"
+        },
+        {
+          "id": "parent_review_asked",
+          "verdict": "pass",
+          "text": "Questions asked: {n}"
+        },
+        {
+          "id": "parent_review_first_try_count",
+          "verdict": "pass",
+          "text": "Right on the first try: {n}"
+        },
+        {
+          "id": "parent_review_total_time",
+          "verdict": "pass",
+          "text": "{minutes} min {seconds} s"
+        },
+        {
+          "id": "parent_review_try_right",
+          "verdict": "pass",
+          "text": "Right"
+        },
+        {
+          "id": "parent_review_back",
+          "verdict": "pass",
+          "text": "All lessons"
+        },
+        {
+          "id": "parent_skip_dont_know",
+          "verdict": "pass",
+          "text": "Didn't know yet"
+        },
+        {
+          "id": "parent_skip_asked_to_skip",
+          "verdict": "pass",
+          "text": "Moved on without answering"
+        },
+        {
+          "id": "parent_skip_help_twin",
+          "verdict": "pass",
+          "text": "After help: a similar question"
+        },
+        {
+          "id": "parent_overview_title",
+          "verdict": "pass",
+          "text": "The lesson, question by question"
+        },
+        {
+          "id": "parent_overview_link",
+          "verdict": "pass",
+          "text": "Every attempt at this lesson"
+        },
+        {
+          "id": "parent_overview_attempts",
+          "verdict": "pass",
+          "text": "Attempts: {n}"
+        },
+        {
+          "id": "parent_overview_player",
+          "verdict": "pass",
+          "text": "Player {n}"
+        },
+        {
+          "id": "parent_overview_question",
+          "verdict": "pass",
+          "text": "Question {n}"
+        },
+        {
+          "id": "parent_overview_legend",
+          "verdict": "pass",
+          "text": "Key"
+        },
+        {
+          "id": "parent_overview_see_tries",
+          "verdict": "pass",
+          "text": "See the tries"
+        },
+        {
+          "id": "parent_overview_twin",
+          "verdict": "pass",
+          "text": "A similar question was asked too"
+        },
+        {
+          "id": "parent_overview_tries",
+          "verdict": "pass",
+          "text": "Tries: {n}"
+        },
+        {
+          "id": "parent_outcome_first_try",
+          "verdict": "pass",
+          "text": "First try"
+        },
+        {
+          "id": "parent_outcome_got_there",
+          "verdict": "pass",
+          "text": "After tries or help"
+        },
+        {
+          "id": "parent_outcome_not_yet",
+          "verdict": "pass",
+          "text": "Not yet"
+        },
+        {
+          "id": "parent_outcome_skipped",
+          "verdict": "pass",
+          "text": "Skipped"
+        },
+        {
+          "id": "parent_outcome_open",
+          "verdict": "pass",
+          "text": "Still open"
+        },
+        {
+          "id": "parent_outcome_not_asked",
+          "verdict": "pass",
+          "text": "Not asked"
+        },
+        {
+          "id": "parent_mistake_other",
+          "verdict": "pass",
+          "text": "An answer other than the one we looked for"
+        },
+        {
+          "id": "parent_mistake_other_wrong",
+          "verdict": "pass",
+          "text": "Another answer"
+        },
+        {
+          "id": "parent_mistake_neighbour_row",
+          "verdict": "pass",
+          "text": "A result from the next row of the times table"
+        },
+        {
+          "id": "parent_mistake_neighbour_fact_swap",
+          "verdict": "pass",
+          "text": "The result of a nearby times-table fact"
+        },
+        {
+          "id": "parent_mistake_add_for_multiply",
+          "verdict": "pass",
+          "text": "Added instead of multiplying"
+        },
+        {
+          "id": "parent_mistake_off_by_small",
+          "verdict": "pass",
+          "text": "Very close: 1 or 2 away"
+        },
+        {
+          "id": "parent_mistake_digit_reversal",
+          "verdict": "flag",
+          "text": "The digits the other way round",
+          "flags": [
+            {
+              "item": "en-2",
+              "quote": "the other way round",
+              "reason": "Other way round is British; US English says the other way around."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_same_decade",
+          "verdict": "pass",
+          "text": "The tens in place, the ones different"
+        },
+        {
+          "id": "parent_mistake_inverse_confusion",
+          "verdict": "pass",
+          "text": "The opposite operation to the one needed"
+        },
+        {
+          "id": "parent_mistake_off_by_tick",
+          "verdict": "pass",
+          "text": "One mark away on the line"
+        },
+        {
+          "id": "parent_mistake_scale_misread",
+          "verdict": "pass",
+          "text": "The scale's steps read differently"
+        },
+        {
+          "id": "parent_mistake_wrong_direction",
+          "verdict": "pass",
+          "text": "Counted from the other end of the line"
+        },
+        {
+          "id": "parent_mistake_bar_wrong",
+          "verdict": "pass",
+          "text": "A bar of another height"
+        },
+        {
+          "id": "parent_mistake_bar_off_by_step",
+          "verdict": "pass",
+          "text": "A bar one step away"
+        },
+        {
+          "id": "parent_mistake_grid_off_by_one",
+          "verdict": "pass",
+          "text": "One square away on the grid"
+        },
+        {
+          "id": "parent_mistake_missed_region",
+          "verdict": "pass",
+          "text": "Another place marked on the picture"
+        },
+        {
+          "id": "parent_mistake_target_missed",
+          "verdict": "pass",
+          "text": "Not everything asked for was marked"
+        },
+        {
+          "id": "parent_mistake_hands_swapped",
+          "verdict": "pass",
+          "text": "The clock's hands swapped"
+        },
+        {
+          "id": "parent_mistake_minute_off_by_step",
+          "verdict": "pass",
+          "text": "The minute hand one mark away"
+        },
+        {
+          "id": "parent_mistake_wrong_minute",
+          "verdict": "pass",
+          "text": "Another minute"
+        },
+        {
+          "id": "parent_mistake_hour_hand_not_moved",
+          "verdict": "flag",
+          "text": "The hour hand left on the full hour",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "on the full hour",
+              "reason": "Full hour is a calque of the Polish pełna godzina, and a US parent says on the hour."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_half_past_wrong_hour",
+          "verdict": "flag",
+          "text": "Half past, with the hour next to it",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "with the hour next to it",
+              "reason": "It is unclear what with the hour next to it means, so a parent cannot tell that the child used the neighboring hour."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_wrong_hour",
+          "verdict": "pass",
+          "text": "Another hour"
+        },
+        {
+          "id": "parent_mistake_not_fewest",
+          "verdict": "pass",
+          "text": "The right amount, with more coins than needed"
+        },
+        {
+          "id": "parent_mistake_zloty_grosze_mixed",
+          "verdict": "flag",
+          "text": "Złote and grosze mixed up",
+          "flags": [
+            {
+              "item": "en-1",
+              "quote": "Złote and grosze",
+              "reason": "Złote and grosze are Polish words, which en-1 does not allow in an English line."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_one_coin_off",
+          "verdict": "pass",
+          "text": "One coin away from the amount"
+        },
+        {
+          "id": "parent_mistake_too_much",
+          "verdict": "pass",
+          "text": "More than the amount"
+        },
+        {
+          "id": "parent_mistake_too_little",
+          "verdict": "pass",
+          "text": "Less than the amount"
+        },
+        {
+          "id": "parent_mistake_parts_apart",
+          "verdict": "pass",
+          "text": "The shaded parts not side by side"
+        },
+        {
+          "id": "parent_mistake_shaded_the_rest",
+          "verdict": "pass",
+          "text": "The other parts shaded"
+        },
+        {
+          "id": "parent_mistake_shaded_whole",
+          "verdict": "pass",
+          "text": "The whole shape shaded"
+        },
+        {
+          "id": "parent_mistake_off_by_one_part",
+          "verdict": "pass",
+          "text": "One part too many or too few"
+        },
+        {
+          "id": "parent_mistake_wrong_count",
+          "verdict": "pass",
+          "text": "Another number of parts"
+        },
+        {
+          "id": "parent_mistake_wrong_size",
+          "verdict": "pass",
+          "text": "A shape of another size"
+        },
+        {
+          "id": "parent_mistake_no_split",
+          "verdict": "pass",
+          "text": "Not split into parts"
+        },
+        {
+          "id": "parent_mistake_split_not_helpful",
+          "verdict": "pass",
+          "text": "A split that does not make it easier"
+        },
+        {
+          "id": "parent_mistake_not_placed",
+          "verdict": "pass",
+          "text": "Some pieces not placed yet"
+        },
+        {
+          "id": "parent_mistake_wrong_group",
+          "verdict": "pass",
+          "text": "Put in another group"
+        },
+        {
+          "id": "parent_mistake_took_unneeded_number",
+          "verdict": "pass",
+          "text": "A number used that the question did not need"
+        },
+        {
+          "id": "parent_mistake_wrong_pick",
+          "verdict": "pass",
+          "text": "Another option picked"
+        },
+        {
+          "id": "parent_mistake_missed_needed_number",
+          "verdict": "pass",
+          "text": "A number left out that the question needed"
+        },
+        {
+          "id": "parent_mistake_missed_option",
+          "verdict": "pass",
+          "text": "An option that fits left out"
+        },
+        {
+          "id": "parent_mistake_other_order",
+          "verdict": "pass",
+          "text": "Another order"
+        },
+        {
+          "id": "parent_mistake_swapped_neighbours",
+          "verdict": "flag",
+          "text": "Two neighbours swapped",
+          "flags": [
+            {
+              "item": "en-2",
+              "quote": "neighbours",
+              "reason": "Neighbours is British spelling; US English is neighbors."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_one_misplaced",
+          "verdict": "pass",
+          "text": "One piece in another place"
+        },
+        {
+          "id": "parent_mistake_extra_tile",
+          "verdict": "pass",
+          "text": "An extra tile"
+        },
+        {
+          "id": "parent_mistake_missing_tile",
+          "verdict": "pass",
+          "text": "A tile left out"
+        },
+        {
+          "id": "parent_mistake_off_by_one_unit",
+          "verdict": "pass",
+          "text": "One unit away"
+        },
+        {
+          "id": "parent_mistake_unit_mixed",
+          "verdict": "pass",
+          "text": "The units mixed up"
+        },
+        {
+          "id": "parent_mistake_unsimplified",
+          "verdict": "pass",
+          "text": "The right value, not simplified yet"
+        },
+        {
+          "id": "parent_mistake_wrong_form",
+          "verdict": "pass",
+          "text": "The value in another form than the question asked"
+        },
+        {
+          "id": "parent_mistake_fraction_flipped",
+          "verdict": "pass",
+          "text": "The fraction upside down"
+        },
+        {
+          "id": "parent_mistake_not_an_expression",
+          "verdict": "pass",
+          "text": "An equation where an expression was asked"
+        },
+        {
+          "id": "parent_mistake_not_an_equation",
+          "verdict": "pass",
+          "text": "An expression where an equation was asked"
+        },
+        {
+          "id": "parent_mistake_equation_sides_swapped",
+          "verdict": "pass",
+          "text": "The equation's sides swapped"
+        },
+        {
+          "id": "parent_mistake_sum_for_product",
+          "verdict": "flag",
+          "text": "A sum where a product was asked",
+          "flags": [
+            {
+              "item": "en-4",
+              "quote": "where a product was asked",
+              "reason": "In English a requested thing is 'asked for', so 'where a product was asked' reads unfinished."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_product_for_sum",
+          "verdict": "flag",
+          "text": "A product where a sum was asked",
+          "flags": [
+            {
+              "item": "en-4",
+              "quote": "where a sum was asked",
+              "reason": "In English a requested thing is 'asked for', so 'where a sum was asked' reads unfinished."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_number_for_expression",
+          "verdict": "pass",
+          "text": "Just the result, not the expression"
+        },
+        {
+          "id": "parent_mistake_value_off",
+          "verdict": "flag",
+          "text": "Another value",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "Another value",
+              "reason": "Too vague for a parent: it does not say what the value differs from or what the child did."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_missing_diacritics",
+          "verdict": "pass",
+          "text": "The Polish letters' marks left out (ą, ę, ó)"
+        },
+        {
+          "id": "parent_mistake_wrong_case",
+          "verdict": "pass",
+          "text": "Capital and small letters mixed up"
+        },
+        {
+          "id": "parent_mistake_typo",
+          "verdict": "pass",
+          "text": "A one-letter slip"
+        },
+        {
+          "id": "parent_mistake_borrow_not_marked",
+          "verdict": "pass",
+          "text": "The borrow not written down"
+        },
+        {
+          "id": "parent_mistake_carry_not_added",
+          "verdict": "pass",
+          "text": "The carried number not added"
+        },
+        {
+          "id": "parent_mistake_borrow_error",
+          "verdict": "pass",
+          "text": "Borrowed in another column"
+        },
+        {
+          "id": "parent_mistake_forgot_borrow",
+          "verdict": "pass",
+          "text": "The borrow left out"
+        },
+        {
+          "id": "parent_mistake_forgot_carry",
+          "verdict": "pass",
+          "text": "The carry left out"
+        },
+        {
+          "id": "parent_mistake_added_for_missing",
+          "verdict": "pass",
+          "text": "Added instead of finding the missing number"
+        },
+        {
+          "id": "parent_mistake_subtracted_for_sum",
+          "verdict": "flag",
+          "text": "Subtracted where a sum was asked",
+          "flags": [
+            {
+              "item": "en-4",
+              "quote": "where a sum was asked",
+              "reason": "In English a requested thing is 'asked for', so 'where a sum was asked' reads unfinished."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_fact_error",
+          "verdict": "pass",
+          "text": "A slip in a basic fact"
+        },
+        {
+          "id": "parent_mistake_gap_swap",
+          "verdict": "flag",
+          "text": "The answers in two gaps swapped",
+          "flags": [
+            {
+              "item": "en-2",
+              "quote": "gaps",
+              "reason": "US English calls the spaces to fill in 'blanks'; 'gaps' is British usage."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_added_not_divided",
+          "verdict": "pass",
+          "text": "Added instead of dividing"
+        },
+        {
+          "id": "parent_mistake_added_not_multiplied",
+          "verdict": "pass",
+          "text": "Added instead of multiplying"
+        },
+        {
+          "id": "parent_mistake_added_not_subtracted",
+          "verdict": "pass",
+          "text": "Added instead of subtracting"
+        },
+        {
+          "id": "parent_mistake_bigger_denominator_bigger",
+          "verdict": "flag",
+          "text": "A bigger denominator taken for a bigger fraction",
+          "flags": [
+            {
+              "item": "en-9",
+              "quote": "A bigger denominator taken for a bigger fraction",
+              "reason": "The glossary never uses 'bigger' for a number; US math says 'greater' (or 'larger')."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_cheaper_means_fewer",
+          "verdict": "pass",
+          "text": "Cheaper taken to mean fewer"
+        },
+        {
+          "id": "parent_mistake_compared_numerators_only",
+          "verdict": "pass",
+          "text": "Only the numerators compared"
+        },
+        {
+          "id": "parent_mistake_confuses_difference",
+          "verdict": "flag",
+          "text": "The word difference used for another term",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "The word difference",
+              "reason": "A word named as a term needs quotation marks ('the word \"difference\"'), or the line misreads."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_confuses_quotient",
+          "verdict": "pass",
+          "text": "The quotient mixed up with another result"
+        },
+        {
+          "id": "parent_mistake_confuses_shape",
+          "verdict": "pass",
+          "text": "One shape taken for another"
+        },
+        {
+          "id": "parent_mistake_counted_coins_not_value",
+          "verdict": "pass",
+          "text": "The coins counted, not their value"
+        },
+        {
+          "id": "parent_mistake_counted_in_tens",
+          "verdict": "pass",
+          "text": "Counted in tens instead of ones"
+        },
+        {
+          "id": "parent_mistake_counted_the_marks",
+          "verdict": "pass",
+          "text": "The marks counted instead of the spaces"
+        },
+        {
+          "id": "parent_mistake_factor_for_product",
+          "verdict": "flag",
+          "text": "Factor where product was asked",
+          "flags": [
+            {
+              "item": "en-4",
+              "quote": "Factor where product was asked",
+              "reason": "Both nouns lack an article, unlike the sibling labels ('A sum where a product was asked')."
+            },
+            {
+              "item": "en-4",
+              "quote": "where product was asked",
+              "reason": "In English a requested thing is 'asked for', so 'was asked' reads unfinished."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_forgot_second_step",
+          "verdict": "pass",
+          "text": "The second step left out"
+        },
+        {
+          "id": "parent_mistake_kept_the_old_price",
+          "verdict": "pass",
+          "text": "The old price kept"
+        },
+        {
+          "id": "parent_mistake_last_digit_as_row",
+          "verdict": "pass",
+          "text": "The last digit taken for the times-table row"
+        },
+        {
+          "id": "parent_mistake_minute_hand_as_number",
+          "verdict": "pass",
+          "text": "The minute hand read as the number on the face"
+        },
+        {
+          "id": "parent_mistake_miscounted_row",
+          "verdict": "pass",
+          "text": "A row counted differently"
+        },
+        {
+          "id": "parent_mistake_multiplied_not_divided",
+          "verdict": "pass",
+          "text": "Multiplied instead of dividing"
+        },
+        {
+          "id": "parent_mistake_not_two_parts",
+          "verdict": "pass",
+          "text": "Not 2 equal parts"
+        },
+        {
+          "id": "parent_mistake_odd_as_even",
+          "verdict": "pass",
+          "text": "An odd number taken for an even one"
+        },
+        {
+          "id": "parent_mistake_one_column_extra",
+          "verdict": "pass",
+          "text": "One column too many"
+        },
+        {
+          "id": "parent_mistake_one_column_short",
+          "verdict": "pass",
+          "text": "One column too few"
+        },
+        {
+          "id": "parent_mistake_one_jump_short",
+          "verdict": "pass",
+          "text": "One jump short"
+        },
+        {
+          "id": "parent_mistake_one_pack_only",
+          "verdict": "pass",
+          "text": "Only one pack counted"
+        },
+        {
+          "id": "parent_mistake_one_row_extra",
+          "verdict": "pass",
+          "text": "One row too many"
+        },
+        {
+          "id": "parent_mistake_price_does_not_matter",
+          "verdict": "pass",
+          "text": "The price left out of the comparison"
+        },
+        {
+          "id": "parent_mistake_rectangle_for_square",
+          "verdict": "flag",
+          "text": "A rectangle where a square was asked",
+          "flags": [
+            {
+              "item": "en-4",
+              "quote": "where a square was asked",
+              "reason": "In English a requested thing is 'asked for', so 'where a square was asked' reads unfinished."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_reversed",
+          "verdict": "pass",
+          "text": "The order reversed"
+        },
+        {
+          "id": "parent_mistake_same_parts_missing",
+          "verdict": "pass",
+          "text": "The parts not equal"
+        },
+        {
+          "id": "parent_mistake_same_total",
+          "verdict": "pass",
+          "text": "The same total, split another way"
+        },
+        {
+          "id": "parent_mistake_same_total_other_fact",
+          "verdict": "pass",
+          "text": "The same result from another fact"
+        },
+        {
+          "id": "parent_mistake_smaller_pieces_only",
+          "verdict": "pass",
+          "text": "Only the smaller pieces looked at"
+        },
+        {
+          "id": "parent_mistake_subtracted_not_divided",
+          "verdict": "pass",
+          "text": "Subtracted instead of dividing"
+        },
+        {
+          "id": "parent_mistake_swapped_digits",
+          "verdict": "pass",
+          "text": "The digits swapped"
+        },
+        {
+          "id": "parent_mistake_tens_only",
+          "verdict": "pass",
+          "text": "Only the tens, the ones left out"
+        },
+        {
+          "id": "parent_mistake_turned_array_rejected",
+          "verdict": "pass",
+          "text": "A turned array taken for a different one"
+        },
+        {
+          "id": "parent_mistake_twos_miscounted",
+          "verdict": "pass",
+          "text": "The twos counted differently"
+        },
+        {
+          "id": "parent_mistake_unequal_parts",
+          "verdict": "pass",
+          "text": "Unequal parts"
+        },
+        {
+          "id": "parent_mistake_criterion_missed",
+          "verdict": "pass",
+          "text": "One of the conditions left out"
+        },
+        {
+          "id": "close",
+          "verdict": "pass",
+          "text": "Close"
+        },
+        {
+          "id": "parent_review_try_line",
+          "verdict": "pass",
+          "text": "{time} · {help}"
+        },
+        {
+          "id": "parent_overview_sheet_line",
+          "verdict": "pass",
+          "text": "{tries} · {help} · {time}"
+        },
+        {
+          "id": "parent_overview_ratio",
+          "verdict": "flag",
+          "text": "{n}/{m}",
+          "flags": [
+            {
+              "item": "en-6",
+              "quote": "{n}/{m}",
+              "reason": "A bare n/m ratio shown to a parent reads as a score, which the checklist and style rule out for parents."
+            }
+          ]
+        },
+        {
+          "id": "parent_load_failed",
+          "verdict": "pass",
+          "text": "This didn't load. Reload the page to try again."
+        },
+        {
+          "id": "parent_learner_goals",
+          "verdict": "pass",
+          "text": "Goals"
+        },
+        {
+          "id": "parent_learner_no_goals",
+          "verdict": "pass",
+          "text": "No goals yet."
+        },
+        {
+          "id": "parent_learner_nothing_recorded",
+          "verdict": "pass",
+          "text": "Nothing recorded yet."
+        },
+        {
+          "id": "parent_goal_status_not_started",
+          "verdict": "pass",
+          "text": "Not started yet"
+        },
+        {
+          "id": "parent_goal_status_needs_attention",
+          "verdict": "pass",
+          "text": "Needs attention"
+        },
+        {
+          "id": "parent_goal_status_on_its_way",
+          "verdict": "pass",
+          "text": "On its way"
+        },
+        {
+          "id": "parent_goal_status_good",
+          "verdict": "pass",
+          "text": "Going well"
+        },
+        {
+          "id": "parent_goal_can_do_now",
+          "verdict": "pass",
+          "text": "Can do now"
+        },
+        {
+          "id": "parent_goal_needs_attention",
+          "verdict": "pass",
+          "text": "Working on"
+        },
+        {
+          "id": "parent_goal_next",
+          "verdict": "pass",
+          "text": "What comes next"
+        },
+        {
+          "id": "parent_week_title",
+          "verdict": "pass",
+          "text": "Week by week"
+        },
+        {
+          "id": "parent_week_of",
+          "verdict": "pass",
+          "text": "Week of {day}"
+        },
+        {
+          "id": "parent_week_lessons",
+          "verdict": "pass",
+          "text": "Lessons: {n}"
+        },
+        {
+          "id": "parent_week_moved_up",
+          "verdict": "pass",
+          "text": "Skills moved forward: {n}"
+        },
+        {
+          "id": "parent_week_attention",
+          "verdict": "pass",
+          "text": "Need attention: {n}"
+        },
+        {
+          "id": "parent_week_no_report",
+          "verdict": "pass",
+          "text": "No report this week"
+        },
+        {
+          "id": "parent_report_title",
+          "verdict": "pass",
+          "text": "Latest report"
+        },
+        {
+          "id": "parent_report_period",
+          "verdict": "pass",
+          "text": "{from} to {to}"
+        },
+        {
+          "id": "parent_report_none",
+          "verdict": "pass",
+          "text": "No report yet."
+        },
+        {
+          "id": "parent_report_not_written",
+          "verdict": "flag",
+          "text": "The report is counted but not written up yet.",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "The report is counted",
+              "reason": "A report is not 'counted'; the wording is unclear to a parent about what has happened so far."
+            }
+          ]
+        },
+        {
+          "id": "parent_report_skills_standing",
+          "verdict": "pass",
+          "text": "Where the skills stand"
+        },
+        {
+          "id": "parent_report_next_focus",
+          "verdict": "pass",
+          "text": "What to focus on next"
+        },
+        {
+          "id": "parent_report_proposals",
+          "verdict": "pass",
+          "text": "Proposals"
+        },
+        {
+          "id": "parent_report_accept",
+          "verdict": "pass",
+          "text": "Accept"
+        },
+        {
+          "id": "parent_report_dismiss",
+          "verdict": "pass",
+          "text": "Dismiss"
+        },
+        {
+          "id": "parent_report_accepted",
+          "verdict": "pass",
+          "text": "Accepted"
+        },
+        {
+          "id": "parent_report_dismissed",
+          "verdict": "pass",
+          "text": "Dismissed"
+        },
+        {
+          "id": "parent_report_decide_failed",
+          "verdict": "pass",
+          "text": "That didn't save. Try again."
+        },
+        {
+          "id": "parent_report_asks",
+          "verdict": "pass",
+          "text": "Questions for you"
+        },
+        {
+          "id": "chat_title",
+          "verdict": "pass",
+          "text": "Conversation"
+        },
+        {
+          "id": "chat_lesson_title",
+          "verdict": "pass",
+          "text": "Lesson"
+        },
+        {
+          "id": "chat_empty",
+          "verdict": "pass",
+          "text": "Say what lesson you need, and it appears on the right."
+        },
+        {
+          "id": "chat_starter_1",
+          "verdict": "pass",
+          "text": "A short lesson on equal groups for grade 2."
+        },
+        {
+          "id": "chat_starter_2",
+          "verdict": "pass",
+          "text": "Adding within 20 for grade 1, 5 questions."
+        },
+        {
+          "id": "chat_starter_3",
+          "verdict": "pass",
+          "text": "Telling the time for grade 2."
+        },
+        {
+          "id": "chat_from_parent",
+          "verdict": "pass",
+          "text": "You"
+        },
+        {
+          "id": "chat_from_agent",
+          "verdict": "pass",
+          "text": "Assistant"
+        },
+        {
+          "id": "chat_composer_label",
+          "verdict": "pass",
+          "text": "Your message"
+        },
+        {
+          "id": "chat_send",
+          "verdict": "pass",
+          "text": "Send"
+        },
+        {
+          "id": "chat_send_again",
+          "verdict": "pass",
+          "text": "That didn't send. Try again."
+        },
+        {
+          "id": "chat_stop",
+          "verdict": "pass",
+          "text": "Stop"
+        },
+        {
+          "id": "chat_stopping",
+          "verdict": "pass",
+          "text": "Stopping…"
+        },
+        {
+          "id": "chat_status_queued",
+          "verdict": "pass",
+          "text": "About to start"
+        },
+        {
+          "id": "chat_status_in_progress",
+          "verdict": "pass",
+          "text": "Working on it"
+        },
+        {
+          "id": "chat_status_awaiting_input",
+          "verdict": "pass",
+          "text": "Waiting for you"
+        },
+        {
+          "id": "chat_status_completed",
+          "verdict": "pass",
+          "text": "Done"
+        },
+        {
+          "id": "chat_status_failed",
+          "verdict": "flag",
+          "text": "That didn't work this time",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "That didn't work this time",
+              "reason": "This is a full sentence with a subject and verb, unlike the other status labels, so it needs a closing period."
+            }
+          ]
+        },
+        {
+          "id": "chat_status_cancelled",
+          "verdict": "pass",
+          "text": "Stopped"
+        },
+        {
+          "id": "chat_tool_lesson_draft",
+          "verdict": "pass",
+          "text": "Drafting the lesson"
+        },
+        {
+          "id": "chat_tool_lesson_show",
+          "verdict": "pass",
+          "text": "Reading the lesson"
+        },
+        {
+          "id": "chat_tool_lesson_edit",
+          "verdict": "pass",
+          "text": "Changing the lesson"
+        },
+        {
+          "id": "chat_tool_lesson_check",
+          "verdict": "pass",
+          "text": "Checking the lesson"
+        },
+        {
+          "id": "chat_tool_question_search",
+          "verdict": "pass",
+          "text": "Looking for questions"
+        },
+        {
+          "id": "chat_tool_running",
+          "verdict": "pass",
+          "text": "in progress"
+        },
+        {
+          "id": "chat_tool_pending",
+          "verdict": "pass",
+          "text": "waiting for your approval"
+        },
+        {
+          "id": "chat_tool_stuck",
+          "verdict": "pass",
+          "text": "didn't work: {message}"
+        },
+        {
+          "id": "chat_approval",
+          "verdict": "pass",
+          "text": "Needs your decision: {summary}"
+        },
+        {
+          "id": "chat_approval_approved",
+          "verdict": "pass",
+          "text": "Approved: {summary}"
+        },
+        {
+          "id": "chat_approval_rejected",
+          "verdict": "pass",
+          "text": "Declined: {summary}"
+        },
+        {
+          "id": "chat_budget_steer",
+          "verdict": "pass",
+          "text": "I'm finishing the lesson with what I have, to stay within the limit."
+        },
+        {
+          "id": "chat_budget_stop",
+          "verdict": "pass",
+          "text": "Saved, stopped: I'm not going further, to stay within the limit."
+        },
+        {
+          "id": "chat_queued",
+          "verdict": "flag",
+          "text": "Sent after this turn",
+          "flags": [
+            {
+              "item": "en-4",
+              "quote": "Sent after this turn",
+              "reason": "The past participle Sent reads as already sent, while the message is still waiting to go out after this turn."
+            }
+          ]
+        },
+        {
+          "id": "chat_problem",
+          "verdict": "pass",
+          "text": "Something went off track: {message}"
+        },
+        {
+          "id": "chat_problem_retrying",
+          "verdict": "pass",
+          "text": "Trying again."
+        },
+        {
+          "id": "chat_copy_details",
+          "verdict": "pass",
+          "text": "Copy details"
+        },
+        {
+          "id": "chat_copied",
+          "verdict": "pass",
+          "text": "Copied"
+        },
+        {
+          "id": "chat_restoring",
+          "verdict": "pass",
+          "text": "Restoring the conversation…"
+        },
+        {
+          "id": "chat_new",
+          "verdict": "pass",
+          "text": "New conversation"
+        },
+        {
+          "id": "chat_lesson_empty",
+          "verdict": "pass",
+          "text": "The lesson appears here."
+        },
+        {
+          "id": "chat_lesson_revision",
+          "verdict": "pass",
+          "text": "Revision {n}"
+        },
+        {
+          "id": "chat_lesson_unreadable",
+          "verdict": "pass",
+          "text": "This revision can't be shown yet."
+        },
+        {
+          "id": "chat_lesson_step_hidden",
+          "verdict": "pass",
+          "text": "Step {step} can't be shown yet."
+        },
+        {
+          "id": "chat_tool_count [steps_noun=one]",
+          "verdict": "pass",
+          "text": "{n} step"
+        },
+        {
+          "id": "chat_tool_count [steps_noun=other]",
+          "verdict": "pass",
+          "text": "{n} steps"
+        },
+        {
+          "id": "chat_tool_lesson_draft_about",
+          "verdict": "flag",
+          "text": "Drafting a lesson on: {topic}",
+          "flags": [
+            {
+              "item": "en-4",
+              "quote": "on: {topic}",
+              "reason": "A colon between a preposition and its object is not standard English punctuation."
+            }
+          ]
+        },
+        {
+          "id": "chat_tool_question_search_about",
+          "verdict": "flag",
+          "text": "Looking for questions on: {topic}",
+          "flags": [
+            {
+              "item": "en-4",
+              "quote": "on: {topic}",
+              "reason": "A colon between a preposition and its object is not standard English punctuation."
+            }
+          ]
+        },
+        {
+          "id": "chat_tool_lesson_edit_step",
+          "verdict": "pass",
+          "text": "Changing step {step}"
+        },
+        {
+          "id": "chat_tool_lesson_show_step",
+          "verdict": "pass",
+          "text": "Reading step {step}"
+        },
+        {
+          "id": "chat_tool_rejected",
+          "verdict": "pass",
+          "text": "skipped, as you asked"
+        },
+        {
+          "id": "chat_tool_lines",
+          "verdict": "pass",
+          "text": "The assistant's steps"
+        },
+        {
+          "id": "chat_tool_lines_stuck",
+          "verdict": "pass",
+          "text": "Steps that got stuck"
+        },
+        {
+          "id": "chat_reasoning",
+          "verdict": "pass",
+          "text": "How I thought it through"
+        },
+        {
+          "id": "chat_messages",
+          "verdict": "pass",
+          "text": "Messages"
+        },
+        {
+          "id": "chat_budget_steer_note",
+          "verdict": "pass",
+          "text": "The lesson so far is saved."
+        },
+        {
+          "id": "chat_retry_turn",
+          "verdict": "pass",
+          "text": "Try again"
+        },
+        {
+          "id": "chat_turn_unfinished",
+          "verdict": "pass",
+          "text": "This turn didn't finish. The lesson so far is saved, so you can try again."
+        },
+        {
+          "id": "chat_offline",
+          "verdict": "pass",
+          "text": "There's no connection. Your message stays here: send it once you're back online."
+        },
+        {
+          "id": "chat_limit_busy",
+          "verdict": "pass",
+          "text": "A lot of messages are coming in. Try again in a moment."
+        },
+        {
+          "id": "chat_limit_daily",
+          "verdict": "pass",
+          "text": "That's all the assistant can do today. Come back tomorrow, and the lesson will be here."
+        },
+        {
+          "id": "chat_limit_too_long",
+          "verdict": "pass",
+          "text": "This turn ran too long, so it stopped. The lesson so far is saved: say what to do next."
+        },
+        {
+          "id": "chat_limit_idle",
+          "verdict": "pass",
+          "text": "The conversation waited a long time, so the turn ended. Write to carry on."
+        },
+        {
+          "id": "chat_dev_only",
+          "verdict": "flag",
+          "text": "The chat page runs on the dev server only: start it with make dev.",
+          "flags": [
+            {
+              "item": "en-1",
+              "quote": "make dev",
+              "reason": "A parent line contains a shell command, which en-1 rules out as code."
+            },
+            {
+              "item": "en-3",
+              "quote": "dev server",
+              "reason": "dev server is developer jargon a parent does not know."
+            }
+          ]
+        },
+        {
+          "id": "chat_queue_next",
+          "verdict": "pass",
+          "text": "Up next"
+        },
+        {
+          "id": "chat_queue_send_now",
+          "verdict": "pass",
+          "text": "Send now"
+        },
+        {
+          "id": "chat_queue_edit",
+          "verdict": "pass",
+          "text": "Edit"
+        },
+        {
+          "id": "chat_queue_remove",
+          "verdict": "pass",
+          "text": "Remove"
+        },
+        {
+          "id": "chat_steered",
+          "verdict": "pass",
+          "text": "Added while working"
+        },
+        {
+          "id": "chat_steered_edit",
+          "verdict": "pass",
+          "text": "Your change to the lesson"
+        },
+        {
+          "id": "chat_lesson_step",
+          "verdict": "pass",
+          "text": "Step {step}"
+        },
+        {
+          "id": "chat_lesson_changed",
+          "verdict": "pass",
+          "text": "The lesson changed"
+        },
+        {
+          "id": "chat_revision_by_ai",
+          "verdict": "pass",
+          "text": "Changed by the assistant"
+        },
+        {
+          "id": "chat_undo",
+          "verdict": "pass",
+          "text": "Undo"
+        },
+        {
+          "id": "chat_undone",
+          "verdict": "pass",
+          "text": "Back to revision {n}"
+        },
+        {
+          "id": "chat_edit_sent",
+          "verdict": "pass",
+          "text": "Your change went to the assistant."
+        },
+        {
+          "id": "chat_newer_wins",
+          "verdict": "pass",
+          "text": "Your version is newer, so it stays. The assistant knows."
+        },
+        {
+          "id": "chat_plan",
+          "verdict": "pass",
+          "text": "Plan"
+        },
+        {
+          "id": "chat_plan_pending",
+          "verdict": "pass",
+          "text": "to do"
+        },
+        {
+          "id": "chat_plan_in_progress",
+          "verdict": "pass",
+          "text": "in progress"
+        },
+        {
+          "id": "chat_plan_done",
+          "verdict": "pass",
+          "text": "done"
+        },
+        {
+          "id": "chat_plan_failed",
+          "verdict": "pass",
+          "text": "didn't work out"
+        },
+        {
+          "id": "chat_why",
+          "verdict": "pass",
+          "text": "why?"
+        },
+        {
+          "id": "chat_citations",
+          "verdict": "pass",
+          "text": "What this rests on"
+        },
+        {
+          "id": "chat_choose_recommended",
+          "verdict": "pass",
+          "text": "recommended"
+        },
+        {
+          "id": "chat_choose_own",
+          "verdict": "pass",
+          "text": "In your own words"
+        },
+        {
+          "id": "chat_choose_skip",
+          "verdict": "pass",
+          "text": "Skip"
+        },
+        {
+          "id": "chat_choose_answer",
+          "verdict": "pass",
+          "text": "Answer"
+        },
+        {
+          "id": "chat_approve",
+          "verdict": "pass",
+          "text": "Go ahead"
+        },
+        {
+          "id": "chat_reject",
+          "verdict": "pass",
+          "text": "Not now"
+        },
+        {
+          "id": "chat_card_details",
+          "verdict": "pass",
+          "text": "Step details"
+        },
+        {
+          "id": "chat_card_input",
+          "verdict": "pass",
+          "text": "What the assistant sent"
+        },
+        {
+          "id": "chat_card_output",
+          "verdict": "pass",
+          "text": "What came back"
+        },
+        {
+          "id": "chat_check_ok",
+          "verdict": "pass",
+          "text": "The lesson passed its checks."
+        },
+        {
+          "id": "chat_check_level_error",
+          "verdict": "pass",
+          "text": "To fix"
+        },
+        {
+          "id": "chat_check_level_warning",
+          "verdict": "pass",
+          "text": "Worth a look"
+        },
+        {
+          "id": "chat_check_level_info",
+          "verdict": "pass",
+          "text": "For your information"
+        },
+        {
+          "id": "chat_search_none",
+          "verdict": "pass",
+          "text": "No question set fits this request yet."
+        },
+        {
+          "id": "chat_search_sets",
+          "verdict": "pass",
+          "text": "Question sets"
+        },
+        {
+          "id": "chat_announce_done",
+          "verdict": "pass",
+          "text": "The assistant is done."
+        },
+        {
+          "id": "chat_announce_needs_you",
+          "verdict": "pass",
+          "text": "The assistant is waiting for your answer."
+        },
+        {
+          "id": "chat_announce_stopped",
+          "verdict": "pass",
+          "text": "Saved, stopped."
+        },
+        {
+          "id": "chat_switch",
+          "verdict": "pass",
+          "text": "Conversation or lesson"
+        },
+        {
+          "id": "chat_consent",
+          "verdict": "pass",
+          "text": "The assistant reads only what your request about your child needs, names included. The model it runs on does not learn from it."
+        },
+        {
+          "id": "chat_check_findings [notes_noun=one]",
+          "verdict": "pass",
+          "text": "{n} note to fix"
+        },
+        {
+          "id": "chat_check_findings [notes_noun=other]",
+          "verdict": "pass",
+          "text": "{n} notes to fix"
+        },
+        {
+          "id": "chat_sign_in",
+          "verdict": "pass",
+          "text": "Sign in on the parent page first, then come back to the conversation."
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "lines": 46,
+      "verdicts": [
+        {
+          "id": "moved_on_calm",
+          "verdict": "pass",
+          "text": "That's fine. Let's look at how it works."
+        },
+        {
+          "id": "session_finished [category=*]",
+          "verdict": "pass",
+          "text": "This lesson is finished. Thank you for practicing!"
+        },
+        {
+          "id": "help_almost",
+          "verdict": "flag",
+          "text": "Almost there: you write the last line.",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "you write the last line",
+              "reason": "A child reads this as a statement about what they do rather than a clear step to take, so the line does not say plainly what to try."
+            }
+          ]
+        },
+        {
+          "id": "help_try_first",
+          "verdict": "pass",
+          "text": "Try it first. Then I can show you more."
+        },
+        {
+          "id": "hotspot_marker",
+          "verdict": "flag",
+          "text": "Tap {n} to place it. Tap again to lift it.",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "Tap {n} to place it",
+              "reason": "With {n} a marker number, \"it\" has no thing it refers to, so a child cannot tell what tapping places or lifts."
+            }
+          ]
+        },
+        {
+          "id": "picture_stands_for",
+          "verdict": "flag",
+          "text": "One picture stands for {n} {unit}.",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "One picture",
+              "reason": "Counts are written as digits, and this count of pictures is spelled out."
+            }
+          ]
+        },
+        {
+          "id": "bracket_close",
+          "verdict": "pass",
+          "text": "Close parenthesis"
+        },
+        {
+          "id": "bracket_open",
+          "verdict": "pass",
+          "text": "Open parenthesis"
+        },
+        {
+          "id": "written_in_en",
+          "verdict": "pass",
+          "text": "This item is in English."
+        },
+        {
+          "id": "written_in_pl",
+          "verdict": "pass",
+          "text": "This item is in Polish."
+        },
+        {
+          "id": "coins_bank",
+          "verdict": "pass",
+          "text": "Coins and bills"
+        },
+        {
+          "id": "ds_end_similar",
+          "verdict": "pass",
+          "text": "Similar ones to practice"
+        },
+        {
+          "id": "credit_label",
+          "verdict": "flag",
+          "text": "from {source}, source and license",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "from {source}, source and license",
+              "reason": "The label repeats \"source\" after naming the source and does not read as plain, direct English to a parent."
+            }
+          ]
+        },
+        {
+          "id": "credit_not_affiliated",
+          "verdict": "pass",
+          "text": "Jadwigo is not affiliated with {source}."
+        },
+        {
+          "id": "leave_title",
+          "verdict": "pass",
+          "text": "This link leaves Jadwigo."
+        },
+        {
+          "id": "leave_where",
+          "verdict": "pass",
+          "text": "{where} opens in a new tab."
+        },
+        {
+          "id": "play_summary_some",
+          "verdict": "pass",
+          "text": "Some of these we will practice again. See what the right answers look like."
+        },
+        {
+          "id": "play_ended_correct [category=*]",
+          "verdict": "pass",
+          "text": "You got it!"
+        },
+        {
+          "id": "play_ended_skipped [category=*]",
+          "verdict": "pass",
+          "text": "We will come back to it."
+        },
+        {
+          "id": "play_save",
+          "verdict": "pass",
+          "text": "Save your progress"
+        },
+        {
+          "id": "play_save_note",
+          "verdict": "pass",
+          "text": "For a grown-up: sign in, and this lesson stays on your child's account."
+        },
+        {
+          "id": "review_right_answer",
+          "verdict": "pass",
+          "text": "This is what the right answer looks like."
+        },
+        {
+          "id": "review_praise [category=*]",
+          "verdict": "pass",
+          "text": "Well done! Here is why it works."
+        },
+        {
+          "id": "parent_mistake_digit_reversal",
+          "verdict": "pass",
+          "text": "The digits the other way around"
+        },
+        {
+          "id": "parent_mistake_hour_hand_not_moved",
+          "verdict": "pass",
+          "text": "The hour hand left on the hour"
+        },
+        {
+          "id": "parent_mistake_half_past_wrong_hour",
+          "verdict": "pass",
+          "text": "Half past, but with the hour before or after"
+        },
+        {
+          "id": "parent_mistake_zloty_grosze_mixed",
+          "verdict": "pass",
+          "text": "The 2 units of Polish money mixed up"
+        },
+        {
+          "id": "parent_mistake_swapped_neighbours",
+          "verdict": "flag",
+          "text": "Two neighbors swapped",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "neighbors",
+              "reason": "A parent cannot tell that neighbors means neighboring numbers or digits, so the mistake is not named plainly."
+            },
+            {
+              "item": "en-10",
+              "quote": "Two neighbors",
+              "reason": "Counts are written as digits, as the sibling label \"The 2 units\" does."
+            }
+          ]
+        },
+        {
+          "id": "chat_status_failed",
+          "verdict": "pass",
+          "text": "That didn't work this time."
+        },
+        {
+          "id": "chat_queued",
+          "verdict": "flag",
+          "text": "Sends after this turn",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "this turn",
+              "reason": "\"Turn\" is chat-model jargon a parent may not read as \"after the current reply finishes\"."
+            }
+          ]
+        },
+        {
+          "id": "chat_tool_lesson_draft_about",
+          "verdict": "pass",
+          "text": "Drafting a lesson about {topic}"
+        },
+        {
+          "id": "chat_tool_question_search_about",
+          "verdict": "pass",
+          "text": "Looking for questions about {topic}"
+        },
+        {
+          "id": "chat_dev_only",
+          "verdict": "pass",
+          "text": "The chat page is not available here yet."
+        },
+        {
+          "id": "parent_mistake_sum_for_product",
+          "verdict": "pass",
+          "text": "A sum where a product was asked for"
+        },
+        {
+          "id": "parent_mistake_product_for_sum",
+          "verdict": "pass",
+          "text": "A product where a sum was asked for"
+        },
+        {
+          "id": "parent_mistake_value_off",
+          "verdict": "pass",
+          "text": "A different value from the right one"
+        },
+        {
+          "id": "parent_mistake_subtracted_for_sum",
+          "verdict": "pass",
+          "text": "Subtracted where a sum was asked for"
+        },
+        {
+          "id": "parent_mistake_gap_swap",
+          "verdict": "flag",
+          "text": "The answers in two blanks swapped",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "two blanks",
+              "reason": "Counts are written as digits, and this count of blanks is spelled out."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_bigger_denominator_bigger",
+          "verdict": "pass",
+          "text": "A greater denominator taken for a greater fraction"
+        },
+        {
+          "id": "parent_mistake_confuses_difference",
+          "verdict": "pass",
+          "text": "The word \"difference\" taken for another term"
+        },
+        {
+          "id": "parent_mistake_factor_for_product",
+          "verdict": "pass",
+          "text": "A factor where a product was asked for"
+        },
+        {
+          "id": "parent_mistake_rectangle_for_square",
+          "verdict": "pass",
+          "text": "A rectangle where a square was asked for"
+        },
+        {
+          "id": "parent_report_not_written",
+          "verdict": "pass",
+          "text": "The report's numbers are in, but it is not written up yet."
+        },
+        {
+          "id": "code_terminal",
+          "verdict": "pass",
+          "text": "Terminal"
+        },
+        {
+          "id": "code_output",
+          "verdict": "pass",
+          "text": "Output"
+        },
+        {
+          "id": "ds_miss_short",
+          "verdict": "pass",
+          "text": "Not yet."
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "lines": 12,
+      "verdicts": [
+        {
+          "id": "help_almost",
+          "verdict": "pass",
+          "text": "Almost there. Now write the last line yourself."
+        },
+        {
+          "id": "hotspot_marker",
+          "verdict": "flag",
+          "text": "Your tap number {n}. Tap it again to take it away.",
+          "flags": [
+            {
+              "item": "en-4",
+              "quote": "Your tap number {n}.",
+              "reason": "This is not a grammatical English sentence: it has no verb, and \"your tap number\" is not a phrase a child would recognize."
+            }
+          ]
+        },
+        {
+          "id": "picture_stands_for",
+          "verdict": "pass",
+          "text": "1 picture stands for {n} {unit}."
+        },
+        {
+          "id": "credit_label",
+          "verdict": "flag",
+          "text": "from {source}: see the source and license",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "see the source and license",
+              "reason": "The imperative clause is a sentence but has no end punctuation, and the line starts with a lowercase letter."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_swapped_neighbours",
+          "verdict": "flag",
+          "text": "2 items next to each other swapped",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "2 items next to each other swapped",
+              "reason": "This is a full clause with a subject and verb, so it is a sentence and needs a period."
+            }
+          ]
+        },
+        {
+          "id": "chat_queued",
+          "verdict": "flag",
+          "text": "Sends when the assistant finishes its reply",
+          "flags": [
+            {
+              "item": "en-4",
+              "quote": "Sends when",
+              "reason": "The verb has no subject, so the parent cannot tell what sends (their message)."
+            },
+            {
+              "item": "en-10",
+              "quote": "finishes its reply",
+              "reason": "The status sentence has no end punctuation."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_gap_swap",
+          "verdict": "flag",
+          "text": "The answers in 2 blanks swapped",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "The answers in 2 blanks swapped",
+              "reason": "This is a capitalized full sentence with a subject and verb but no period."
+            }
+          ]
+        },
+        {
+          "id": "table_row",
+          "verdict": "pass",
+          "text": "Times table: the {row}s"
+        },
+        {
+          "id": "code_placeholder",
+          "verdict": "flag",
+          "text": "Type the id bd printed in place of the part in angle brackets.",
+          "flags": [
+            {
+              "item": "en-2",
+              "quote": "the id bd printed",
+              "reason": "Merriam-Webster spells the abbreviation for identification ID; lowercase id is a different word."
+            }
+          ]
+        },
+        {
+          "id": "ruler_at",
+          "verdict": "flag",
+          "text": "The ruler's zero is at {n} {unit} from the left",
+          "flags": [
+            {
+              "item": "en-10",
+              "quote": "from the left",
+              "reason": "The line is a full sentence that a screen reader reads aloud, but it has no end punctuation."
+            }
+          ]
+        },
+        {
+          "id": "parent_first_name",
+          "verdict": "pass",
+          "text": "Your child's first name"
+        },
+        {
+          "id": "parent_overview_ratio",
+          "verdict": "pass",
+          "text": "{n} of {m}"
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "lines": 7,
+      "verdicts": [
+        {
+          "id": "hotspot_marker",
+          "verdict": "pass",
+          "text": "Mark {n}. Tap it again to take it away."
+        },
+        {
+          "id": "credit_label",
+          "verdict": "pass",
+          "text": "From {source}. See the source and license."
+        },
+        {
+          "id": "parent_mistake_swapped_neighbours",
+          "verdict": "pass",
+          "text": "A swap of 2 items next to each other"
+        },
+        {
+          "id": "chat_queued",
+          "verdict": "flag",
+          "text": "Your message sends when the assistant finishes its reply.",
+          "flags": [
+            {
+              "item": "en-4",
+              "quote": "Your message sends",
+              "reason": "Send used intransitively for a message being sent is informal and reads as an error to many readers; the standard form is passive or future (is sent, will send)."
+            }
+          ]
+        },
+        {
+          "id": "parent_mistake_gap_swap",
+          "verdict": "pass",
+          "text": "A swap of the answers in 2 blanks"
+        },
+        {
+          "id": "code_placeholder",
+          "verdict": "flag",
+          "text": "Type the ID bd printed in place of the part in angle brackets.",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "Type the ID bd printed",
+              "reason": "With the relative pronoun dropped and bd unmarked, the ID bd printed first reads as a compound noun (an ID called bd) and has to be read twice, which is not plain and direct."
+            }
+          ]
+        },
+        {
+          "id": "ruler_at",
+          "verdict": "flag",
+          "text": "The ruler's zero is at {n} {unit} from the left.",
+          "flags": [
+            {
+              "item": "en-4",
+              "quote": "is at {n} {unit} from the left",
+              "reason": "A distance from a point takes no at in English: the zero is 1.0 cm from the left, so at plus from reads as a non-native construction."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "lines": 4,
+      "verdicts": [
+        {
+          "id": "hotspot_marker",
+          "verdict": "flag",
+          "text": "Tap {n} is placed here. Tap it again to take it away.",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "Tap {n} is placed here.",
+              "reason": "A child's line is in the active voice, and the passive 'is placed' plus a tap named as a thing ('Tap it again' means tapping a tap) is not everyday wording a child of 6 to 9 follows."
+            }
+          ]
+        },
+        {
+          "id": "chat_queued",
+          "verdict": "pass",
+          "text": "Your message will be sent when the assistant finishes its reply."
+        },
+        {
+          "id": "code_placeholder",
+          "verdict": "flag",
+          "text": "Type the ID that bd printed in place of the part in angle brackets.",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "the ID that bd printed in place of the part in angle brackets",
+              "reason": "The word order lets 'in place of the part in angle brackets' read as where bd printed the ID rather than what to replace, so the line is not plain and direct on the first pass."
+            }
+          ]
+        },
+        {
+          "id": "ruler_at",
+          "verdict": "pass",
+          "text": "The ruler's zero is {n} {unit} from the left."
+        }
+      ]
+    },
+    {
+      "round": 6,
+      "lines": 2,
+      "verdicts": [
+        {
+          "id": "hotspot_marker",
+          "verdict": "flag",
+          "text": "Tap {n}: you put a mark here. Tap the mark again to take it away.",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "Tap {n}: you put a mark here.",
+              "reason": "Filled in, \"Tap 1:\" sounds like an order to tap the number 1 rather than naming the child's first mark, and \"you put\" shifts to the past tense, so the label is not one plain present-tense idea a child of 6 to 9 hears clearly."
+            }
+          ]
+        },
+        {
+          "id": "code_placeholder",
+          "verdict": "pass",
+          "text": "In place of the part in angle brackets, type the ID that bd printed."
+        }
+      ]
+    },
+    {
+      "round": 7,
+      "lines": 1,
+      "verdicts": [
+        {
+          "id": "hotspot_marker",
+          "verdict": "flag",
+          "text": "Mark {n}. Tap it again to take it away.",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "Mark {n}.",
+              "reason": "Read aloud before the imperative \"Tap it again\", \"Mark 1.\" sounds like an order to mark something rather than the name of the marker the child placed, so a 6-to-9-year-old hears two commands instead of one label and one instruction."
+            },
+            {
+              "item": "en-9",
+              "quote": "take it away",
+              "reason": "The glossary reserves \"take away\" as the child's word for subtraction, so in a math lesson using it to mean removing a marker clashes with the lesson's own math words."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "round": 8,
+      "lines": 1,
+      "verdicts": [
+        {
+          "id": "hotspot_marker",
+          "verdict": "flag",
+          "text": "Mark {n} is here. Tap it again to remove it.",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "Mark {n} is here.",
+              "reason": "Read aloud at the start of a sentence, \"Mark\" sounds like the boy's name or the verb a lesson uses for \"mark the dots\", so a child of 6 to 9 may not hear it as the thing they placed; a plainer noun for the marker would be clear."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "round": 9,
+      "lines": 1,
+      "verdicts": [
+        {
+          "id": "hotspot_marker",
+          "verdict": "pass",
+          "text": "Your mark {n}. Tap it again to remove it."
+        }
+      ]
+    },
+    {
+      "round": 10,
+      "issue": "dl-9t2o.11",
+      "lines": 1,
+      "verdicts": [
+        {
+          "id": "tutor_resting [category=adult]",
+          "verdict": "flag",
+          "text": "Practicing without voice today.",
+          "flags": [
+            {
+              "item": "en-3",
+              "quote": "without voice",
+              "reason": "The phrase is vague and reads as if the learner has no voice, so the line does not say plainly and directly that the voice tutor is off for this lesson."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "owner_overrides": [
+    {
+      "id": "tutor_resting [category=adult]",
+      "text": "Practicing without voice today.",
+      "date": "2026-11-01",
+      "decision": "the owner chose this wording (US spelling of the line approved 2026-10-07) and approved it over the round-10 flag, to revisit with the rest of the copy later",
+      "issue": "dl-9t2o.11"
+    }
+  ]
+}

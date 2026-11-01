@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "For a grown-up: sign in, and this lesson stays on the child's account." |
+* | "For a grown-up: sign in, and this lesson stays on your child's account." |
 *
 * @param {Play_Save_NoteInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const play_save_note = /** @type {((inputs?: Play_Save_NoteInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Play_Save_NoteInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("For a grown-up: sign in, and this lesson stays on the child's account.")
+	if (locale === "en") return /** @type {LocalizedString} */ ("For a grown-up: sign in, and this lesson stays on your child's account.")
 	return /** @type {LocalizedString} */ ("Dla dorosłego: zaloguj się, a ta lekcja zostanie na koncie dziecka.")
 });

@@ -169,7 +169,17 @@ function engine(server: ViteDevServer, m: Modules) {
         entry:
           body.kind === "message"
             ? { event_id: body.event_id, kind: "message", payload: { text: body.text } }
-            : { event_id: body.event_id, kind: "cancel", payload: {} },
+            : body.kind === "steer"
+              ? {
+                  event_id: body.event_id,
+                  kind: "steer",
+                  payload: {
+                    text: body.text,
+                    source: body.source,
+                    question_ids: body.question_ids,
+                  },
+                }
+              : { event_id: body.event_id, kind: "cancel", payload: {} },
       });
       // After the answer: the page subscribes, then fetches after its cursor.
       setTimeout(kick, 0);

@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Half past, with the hour next to it" |
+* | "Half past, but with the hour before or after" |
 *
 * @param {Parent_Mistake_Half_Past_Wrong_HourInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

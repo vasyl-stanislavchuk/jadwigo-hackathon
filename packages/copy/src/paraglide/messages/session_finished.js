@@ -11,7 +11,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 * | category | output |
 * | --- | --- |
 * | "adult" | "This lesson is finished. You can start it again." |
-* | * | "This lesson is finished. Thank you for practising!" |
+* | * | "This lesson is finished. Thank you for practicing!" |
 *
 * @param {Session_FinishedInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -21,7 +21,7 @@ export const session_finished = /** @type {((inputs: Session_FinishedInputs, opt
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") {
 		if (i?.category === "adult") return /** @type {LocalizedString} */ (`This lesson is finished. You can start it again.`);
-		return /** @type {LocalizedString} */ (`This lesson is finished. Thank you for practising!`)
+		return /** @type {LocalizedString} */ (`This lesson is finished. Thank you for practicing!`)
 	}
 	{
 		if (i?.category === "adult") return /** @type {LocalizedString} */ (`Ta lekcja jest zakończona. Możesz zacząć ją od nowa.`);

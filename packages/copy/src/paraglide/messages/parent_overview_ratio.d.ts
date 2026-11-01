@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "{n}/{m}" |
+* | "{n} of {m}" |
 *
 * @param {Parent_Overview_RatioInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

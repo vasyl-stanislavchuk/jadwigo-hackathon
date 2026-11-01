@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "The digits the other way round" |
+* | "The digits the other way around" |
 *
 * @param {Parent_Mistake_Digit_ReversalInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
