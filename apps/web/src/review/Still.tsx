@@ -41,7 +41,8 @@ export function drawable(question: Pick<ReviewQuestion, "question">): boolean {
 
 /**
  * - `value`: what to draw in the question: the child's answer or the solution.
- * - `compact`: smaller, for a card on the end list.
+ * - `compact`: smaller, for a card on the end list: the lesson's sizes, zoomed down as a whole so the
+ *   view keeps its own proportions.
  */
 export function Still({
   question,
@@ -57,7 +58,7 @@ export function Still({
   compact?: boolean;
 }): ReactElement {
   return (
-    <div className={compact ? "min-w-0 text-jw-small" : "min-w-0"}>
+    <div className={compact ? "min-w-0 [zoom:0.75]" : "min-w-0"}>
       <LessonTheme>
         <FamilyView
           mode={ViewMode.Solution}

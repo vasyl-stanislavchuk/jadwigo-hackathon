@@ -87,7 +87,9 @@ export function ReviewList({
  * The child's answer on the card, drawn by the question's own family view in its solution mode:
  * where the answer was not right, the view itself shows the right one beside it (Enter's "Poprawna
  * odpowiedź", Choose's green option, Sequence's right order). With no answer, the right answer
- * alone. The card already says what was asked, so the view's own instruction line is hidden.
+ * alone, under its own label (the view draws "Poprawna odpowiedź" when there is no answer, never
+ * "Twoja odpowiedź"). The card already says what was asked, so the view's own instruction line and
+ * prompt card are hidden.
  */
 function CardAnswer({
   question,
@@ -100,12 +102,12 @@ function CardAnswer({
   return (
     <div
       data-card-answer
-      className="flex flex-col gap-2 border-t border-jw-line pt-3 [&_[data-instruction]]:hidden"
+      className="flex flex-col gap-2 border-t border-jw-line pt-3 [&_[data-instruction]]:hidden [&_[data-prompt-card]]:hidden"
     >
       {question.answer === null && <p data-card-no-answer>{copy(language, "review_no_answer")}</p>}
       <Still
         question={question}
-        value={question.answer ?? question.solution}
+        value={question.answer}
         language={language}
         category="child"
         compact

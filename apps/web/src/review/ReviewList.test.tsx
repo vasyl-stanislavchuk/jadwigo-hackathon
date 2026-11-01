@@ -56,7 +56,10 @@ describe("ReviewList", () => {
     render(<ReviewList rows={rows} review={review} language="pl" linkOf={(s) => `/r/${s}`} />);
     const answer = card(3).querySelector("[data-card-answer]");
     expect(answer?.querySelector("[data-card-no-answer]")).not.toBeNull();
+    expect(answer?.textContent).toContain("Poprawna odpowiedź");
     expect(answer?.textContent).toContain("10");
+    // Never the right answer under the child's label when the child gave none.
+    expect(answer?.textContent).not.toContain("Twoja odpowiedź");
   });
 
   it("before the review has loaded, the cards carry no answers", () => {
