@@ -404,7 +404,8 @@ export class InMemoryStore implements Store {
       ...row,
       question: this.#inPod(this.#questions, pod, row.lesson_question_id, "a listed question"),
     }));
-    return { version, questions };
+    const { language } = this.#inPod(this.#lessons, pod, version.lesson_id, "the lesson");
+    return { version, language, questions };
   }
 
   async getLatestLessonVersion(pod: PodId, lesson: LessonId): Promise<LessonVersion | undefined> {

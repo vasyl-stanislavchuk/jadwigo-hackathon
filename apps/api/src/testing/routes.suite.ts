@@ -231,6 +231,8 @@ export function routeSuite(
         ]);
         expect(reply.body.open_seq).toBe(1);
         expect(reply.body.last_event_id).toBeNull();
+        // The lesson's language, for the lesson region's lang (dl-9t2o.3).
+        expect(reply.body.language).toBe("pl");
         const text = JSON.stringify(reply.body);
         expect(text).not.toContain('"key"');
         expect(text).not.toContain('"worked"');

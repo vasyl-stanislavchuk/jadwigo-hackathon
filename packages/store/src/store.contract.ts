@@ -95,6 +95,7 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         const first = await store.getLessonVersion(a.pod, a.version);
         expect(first.version).toMatchObject({ lesson_id: a.lesson, version: 1, revises: null });
         expect(first.version.published_at).not.toBeNull();
+        expect(first.language).toBe(LESSON.language);
 
         const second = await store.publishLessonVersion(a.pod, {
           lesson_id: a.lesson,
