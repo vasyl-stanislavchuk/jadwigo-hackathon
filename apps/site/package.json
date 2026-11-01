@@ -1,6 +1,6 @@
 {
   "name": "@jadwigo/site",
-  "description": "The marketing site at jadwigo.pl: Astro, static, Polish only for the hackathon",
+  "description": "The marketing site at jadwigo.pl: Astro, static, in Polish and English (/en/)",
   "private": true,
   "type": "module",
   "exports": {
@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "build:preview": "SITE_PREVIEW=1 astro build --outDir dist-preview",
     "preview": "astro preview",
     "check:dist": "bun scripts/check-dist.ts",
     "lint": "biome check .",
