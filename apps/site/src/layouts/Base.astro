@@ -184,6 +184,14 @@ const footerLinks = [
         .lang-row { margin: 0; padding: 0; border: 0; }
         .lang-row > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
       }
+      /* The pages, the switch and the sign-in stand on the wordmark's text line, not its box's middle:
+         the box holds the crown's room above the letters. The letters' middle (y 64 of -65..115) sits
+         0.217 of the logo's height below the box's middle. A translate, so the header's height does not move. */
+      .signin, .burger { translate: 0 calc(var(--logo-h) * 0.217); }
+      .site-header .bar { padding-bottom: 1rem; }
+      @media (min-width: 60rem) {
+        .menu, .js .menu:not(.open) { translate: 0 calc(var(--logo-h) * 0.217); }
+      }
 
       /* The footer: the wordmark and its line, the pages, where the questions come from, and whose the
          data is (design handoff "landing 3", SiteFooter). The privacy pages sit under the data line. */
