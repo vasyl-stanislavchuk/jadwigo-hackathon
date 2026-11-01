@@ -2874,13 +2874,13 @@ class PostgresStore implements Store {
               // The statement's clock, so rows put in one unit are taken in the order they came.
               created_at: sql<Date>`clock_timestamp()`,
             })
-            .onConflict((oc) => oc.column("event_id").doNothing())
+            .onConflict((oc) => oc.columns(["pod_id", "event_id"]).doNothing())
             .returningAll()
             .executeTakeFirst();
         },
       );
-      // A replay is the same run's: an event_id is unique across runs (dl-z5ja.36). Another
-      // pod's row is hidden by RLS, so its conflict already ends in `taken()` inside `#once`.
+      // A replay is the same run's: an event_id is unique across a pod's runs (dl-z5ja.36). It is
+      // unique per pod, not across pods (dl-z5ja.86), so another pod's row never conflicts.
       if (row.run_id !== stored.id) throw taken();
       return read(RunInbox, row);
     });
