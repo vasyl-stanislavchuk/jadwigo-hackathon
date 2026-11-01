@@ -23,7 +23,7 @@ import { type ReactElement, useCallback, useEffect, useMemo, useState } from "re
 import { withMedia } from "../media.ts";
 import { navigate, useLocation } from "../nav/location.ts";
 import { ChildReview } from "../review/ChildReview.tsx";
-import { specOf } from "../review/ReviewStep.tsx";
+import { specOf } from "../review/Still.tsx";
 import { Column, KidPage } from "./KidPage.tsx";
 import { Queen } from "./Queen.tsx";
 import { queenDue } from "./queen.ts";
@@ -182,6 +182,7 @@ export function PlayScreen({
           {seq === undefined ? (
             <Results
               results={stage.results}
+              review={player.review.kind === "ready" ? player.review.review : null}
               language={language}
               linkOf={(to) => withQuery(reviewPath(assignmentId, to))}
             />

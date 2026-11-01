@@ -16,12 +16,20 @@ const LESSONS: FeaturedLesson[] = [
     lesson_id: LessonId.parse("les_2h4m8gyw0fb1cvz2nkqw0px8fq"),
     title: "Równe grupy",
     language: "pl",
+    subject: "math",
+    grade: null,
+    question_count: 4,
+    first_say: "Ile to jest 2 razy 5?",
   },
   {
     assignment_id: AssignmentId.parse("asg_43007b83dp9w2tnfjxhha74cyq"),
     lesson_id: LessonId.parse("les_7qre3atahx8cpak6xbjtz73var"),
     title: "Dodawanie do 20",
     language: "pl",
+    subject: "math",
+    grade: null,
+    question_count: 4,
+    first_say: "Ile to jest 2 razy 5?",
   },
 ];
 

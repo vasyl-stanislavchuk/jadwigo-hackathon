@@ -8,9 +8,9 @@
  */
 
 import { prefersReducedMotion } from "@jadwigo/lesson-kit";
+import queenMov from "@jadwigo/ui/brand/queen.mov";
+import queenWebm from "@jadwigo/ui/brand/queen.webm";
 import { type ReactElement, useEffect, useLayoutEffect, useRef, useState } from "react";
-import queenMov from "./queen/queen.mov";
-import queenWebm from "./queen/queen.webm";
 
 export function Queen({ onDone }: { onDone: () => void }): ReactElement | null {
   const video = useRef<HTMLVideoElement>(null);

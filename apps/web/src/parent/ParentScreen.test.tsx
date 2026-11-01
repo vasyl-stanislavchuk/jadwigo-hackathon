@@ -404,6 +404,57 @@ describe("ParentScreen", () => {
     expect(screen.queryByText("albo")).toBeNull();
   });
 
+  it("starts the provider jadwigo.pl/zaloguj handed over, once, with the hand-over gone from the URL", async () => {
+    window.history.replaceState(null, "", "/parent?provider=facebook&lang=pl");
+    const auth = signedOutAuth(["google", "facebook"]);
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams("provider=facebook&lang=pl")}
+        auth={auth}
+        client={client({})}
+      />,
+    );
+    await screen.findByRole("button", { name: "Kontynuuj z Facebookiem" });
+    await vi.waitFor(() => expect(auth.signInWith).toHaveBeenCalledTimes(1));
+    expect(auth.signInWith).toHaveBeenCalledWith(
+      "facebook",
+      `${window.location.origin}/parent?lang=pl`,
+    );
+    expect(window.location.search).toBe("?lang=pl");
+  });
+
+  it("does not start a provider the project has off", async () => {
+    window.history.replaceState(null, "", "/parent?provider=facebook");
+    const auth = signedOutAuth(["google"]);
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams("provider=facebook")}
+        auth={auth}
+        client={client({})}
+      />,
+    );
+    await screen.findByRole("button", { name: "Kontynuuj z Google" });
+    expect(auth.signInWith).not.toHaveBeenCalled();
+  });
+
+  it("fills the address jadwigo.pl/zaloguj handed over and sends the code", async () => {
+    window.history.replaceState(null, "", "/parent?email=mama%40example.com");
+    const auth = signedOutAuth();
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams("email=mama%40example.com")}
+        auth={auth}
+        client={client({})}
+      />,
+    );
+    await vi.waitFor(() => expect(auth.sendCode).toHaveBeenCalledWith("mama@example.com"));
+    expect(auth.sendCode).toHaveBeenCalledTimes(1);
+    expect(window.location.search).toBe("");
+  });
+
   it("lists Google, then Facebook, under the email code, and leaves for the provider from this page", async () => {
     window.history.replaceState(null, "", `/parent?claim=${ASSIGNMENT}&lang=pl`);
     const auth = signedOutAuth(["google", "facebook"]);
