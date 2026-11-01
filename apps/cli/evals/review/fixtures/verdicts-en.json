@@ -1,0 +1,117 @@
+{
+  "$comment": "What a separate reviewer session (Opus, workflows/jadwigo-lesson-review, given batch-en.json without its planted keys) answered on 2026-11-01, recorded as it answered.",
+  "language": "en",
+  "verdicts": [
+    { "id": "dots.twin", "verdict": "pass" },
+    { "id": "dots.boost", "verdict": "pass" },
+    { "id": "dots.added_instead", "verdict": "pass" },
+    { "id": "bags.twin", "verdict": "pass" },
+    { "id": "bags.boost", "verdict": "pass" },
+    { "id": "praise", "verdict": "pass" },
+    { "id": "parent.week", "verdict": "pass" },
+    {
+      "id": "parent.attention",
+      "verdict": "flag",
+      "item": "en-3",
+      "category": "style",
+      "quote": "instead of multiplying them 2 times",
+      "reason": "Where 2 times sits, it reads as multiplying the numbers twice, not as a mistake made on 2 occasions, so a parent cannot tell which is meant on a first reading."
+    },
+    {
+      "id": "uk.spelling",
+      "verdict": "flag",
+      "item": "en-2",
+      "category": "locale",
+      "quote": "Colour each group of 3 in your favourite colour",
+      "reason": "Jadwigo writes US English: color, favorite, color."
+    },
+    {
+      "id": "uk.maths",
+      "verdict": "flag",
+      "item": "en-2",
+      "category": "locale",
+      "quote": "practised maths",
+      "reason": "Jadwigo writes US English: practiced math."
+    },
+    {
+      "id": "bare.wrong",
+      "verdict": "flag",
+      "item": "en-6",
+      "category": "style",
+      "quote": "Wrong.",
+      "reason": "A child's line never says a bare wrong; it says what to try instead."
+    },
+    {
+      "id": "hurry",
+      "verdict": "flag",
+      "item": "en-6",
+      "category": "style",
+      "quote": "Hurry, time is running out!",
+      "reason": "Time pressure words such as hurry and time is running out are not allowed."
+    },
+    {
+      "id": "easy",
+      "verdict": "flag",
+      "item": "en-7",
+      "category": "style",
+      "quote": "This one is easy.",
+      "reason": "A line never calls a task easy."
+    },
+    {
+      "id": "smart",
+      "verdict": "flag",
+      "item": "en-7",
+      "category": "style",
+      "quote": "You're so smart!",
+      "reason": "Praise is for what the child did, never for being smart."
+    },
+    {
+      "id": "gender.guess",
+      "verdict": "flag",
+      "item": "en-5",
+      "category": "accuracy",
+      "quote": "He",
+      "reason": "A parent's line calls the child your child or they, never a he or she the run did not give."
+    },
+    {
+      "id": "polish",
+      "verdict": "flag",
+      "item": "en-1",
+      "category": "accuracy",
+      "quote": "grupy",
+      "reason": "grupy is a Polish word in an English line; the line must be English only."
+    },
+    {
+      "id": "grammar",
+      "verdict": "flag",
+      "item": "en-4",
+      "category": "fluency",
+      "quote": "There is 5 apple",
+      "reason": "A plural count needs a plural verb and noun: there are 5 apples."
+    },
+    {
+      "id": "grammar",
+      "verdict": "flag",
+      "item": "en-8",
+      "category": "accuracy",
+      "quote": "There is 5 apple in the bag. How many apples are in the bag?",
+      "reason": "The first sentence states the count the question then asks for, so the line gives the answer away."
+    },
+    {
+      "id": "say.mismatch",
+      "verdict": "flag",
+      "item": "en-8",
+      "category": "accuracy",
+      "quote": "5 bags",
+      "reason": "The spoken line says 5 bags but the screen says 4 bags, so they are not the same question."
+    },
+    {
+      "id": "no.question.mark",
+      "verdict": "flag",
+      "item": "en-10",
+      "category": "locale",
+      "quote": "3 rows of 5",
+      "reason": "A question must end with a question mark."
+    }
+  ]
+}

@@ -48,8 +48,8 @@ export type VerbName = z.infer<typeof VerbName>;
 /**
  * Which model tier a call went to. `private` trains on nothing it is sent and is the only tier
  * learner data may reach, names included; `contributor` may train on what it is sent and never
- * sees learner data (draft decision
- * `jadwigo-hackathon/notes/2026-11-01-learner-data-reaches-the-model-by-design-for-the-parent-s-own-re`).
+ * sees learner data (decision `dl-2uq1`, accepted on 2026-11-01:
+ * `jadwigo-hackathon/decisions/2026-11-01-learner-data-reaches-the-model-by-design-for-the-parent-s-own-re`).
  */
 export const ModelTier = z.enum(["private", "contributor"]);
 export type ModelTier = z.infer<typeof ModelTier>;
@@ -114,7 +114,22 @@ export const Attachment = z.object({
 });
 export type Attachment = z.infer<typeof Attachment>;
 
+/**
+ * The engine's own error types, beside a verb's refusals (`unknown-draft`, ...), which stay free
+ * strings. They never reach the API's `{error}` envelope, so they are not `ErrorType`s. The page
+ * draws its limit lines from them (dl-z5ja.83). Not a schema, so no snapshot holds it: `RunError.type`
+ * stays a string, and the 3 event snapshots that embed it do not move.
+ */
+export const RUN_ERROR_TYPE = {
+  /** A step ran past its visibility timeout and was delivered again (`retryable`). */
+  stepTimedOut: "StepTimedOut",
+  /** The turn ran past `max_deadline_at` (not `retryable`). */
+  runTimedOut: "RunTimedOut",
+} as const;
+export type RunErrorType = (typeof RUN_ERROR_TYPE)[keyof typeof RUN_ERROR_TYPE];
+
 export const RunError = z.object({
+  /** A verb's refusal, or one of `RUN_ERROR_TYPE`. */
   type: z.string().min(1),
   message: z.string(),
 });
@@ -170,6 +185,18 @@ export type PlanStatus = z.infer<typeof PlanStatus>;
 /** One line of the agent's checklist. */
 export const PlanEntry = z.object({ text: z.string().min(1), status: PlanStatus });
 export type PlanEntry = z.infer<typeof PlanEntry>;
+
+/**
+ * Where a parent's steer came from: words typed in the chat while the turn ran, or an edit the
+ * parent made in the lesson pane (dl-z5ja.30). Not exported on its own, so it adds no snapshot:
+ * `run-event.json` and `run-inbox.json` carry it.
+ */
+const SteerSource = z.enum(["chat", "lesson_edit"]);
+/**
+ * The lesson file's questions a `lesson_edit` steer names, by each question's `id` in the file
+ * (the id `lesson_edit` and `lesson_check` call `step_id`). Never empty when present.
+ */
+const SteerQuestionIds = z.array(z.string().min(1)).min(1);
 
 const Base = {
   run_id: RunId,
@@ -248,6 +275,21 @@ export const ApprovalResolvedEvent = event(
     answers: z.array(z.string()).optional(),
   }),
 );
+/**
+ * A parent's steer, logged when the runner takes it off the inbox (wave 2 Lead decision 21,
+ * dl-z5ja.51): the next call's instructions are built from the turn's logged steers, so a
+ * redelivered step keeps them (dl-z5ja.42). `source` is the inbox row's, `chat` when it named none.
+ * Not exported on its own, so `run-event.json` is the one snapshot that holds it; a consumer names
+ * it as `Extract<RunEvent, { type: "steer" }>`.
+ */
+const SteerEvent = event(
+  "steer",
+  z.object({
+    text: z.string(),
+    source: SteerSource,
+    question_ids: SteerQuestionIds.optional(),
+  }),
+);
 /** The agent's checklist for a long turn (seam 4). Each one replaces the last whole. */
 export const PlanEvent = event("plan", z.object({ entries: z.array(PlanEntry) }));
 export const StatusEvent = event("status", z.object({ status: RunStatus }));
@@ -274,6 +316,7 @@ export const RunEvent = z.discriminatedUnion("type", [
   LessonRevisionEvent,
   ApprovalRequestEvent,
   ApprovalResolvedEvent,
+  SteerEvent,
   PlanEvent,
   StatusEvent,
   UsageEvent,
@@ -314,7 +357,16 @@ export const RunInbox = z.discriminatedUnion("kind", [
     kind: z.literal("message"),
     payload: z.object({ text: z.string(), attachments: z.array(Attachment).optional() }),
   }),
-  z.object({ ...InboxBase, kind: z.literal("steer"), payload: z.object({ text: z.string() }) }),
+  z.object({
+    ...InboxBase,
+    kind: z.literal("steer"),
+    payload: z.object({
+      text: z.string(),
+      /** `chat` when absent: a steer from before dl-z5ja.51 named none. */
+      source: SteerSource.optional(),
+      question_ids: SteerQuestionIds.optional(),
+    }),
+  }),
   z.object({
     ...InboxBase,
     kind: z.literal("approval"),

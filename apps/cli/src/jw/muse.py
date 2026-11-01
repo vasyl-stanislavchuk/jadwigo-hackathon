@@ -1,10 +1,16 @@
-"""The product's one way to call a model: the contributor model through muse (dl-e8ov.5.2.19).
+"""The product's one way to call a model through muse (dl-e8ov.5.2.19), on the tier its purpose allows.
 
 Mirrors jadwigo-bank tools/muse_call.py, which the bank lanes call, so the two sides behave alike:
 
-- **One model** (jadwigo-question-bank/decisions/2026-10-28-one-model-spark-contributor-for-every-
-  bank-and-product-call-user). `ask` refuses any model but `muse-spark-1.3-contributor`, and runs
-  it with contributor mode on.
+- **A model per purpose** (dl-z5ja.48). A `bank` call (the default) runs only on
+  `muse-spark-1.3-contributor`, with contributor mode on
+  (jadwigo-question-bank/decisions/2026-10-28-one-model-spark-contributor-for-every-bank-and-product-
+  call-user), and only with a guarded prompt, because that model trains on what it is sent. A
+  `learner` call carries a learner's data on purpose and runs only on the no-training model
+  JADWIGO_MUSE_PRIVATE_MODEL names, never on the contributor model; its prompt needs no guard
+  (draft decision dl-2uq1, jadwigo-hackathon/notes/2026-11-01-learner-data-reaches-the-model-by-
+  design-for-the-parent-s-own-re). Until the owner names that model from probe 4 of dl-z5ja.3,
+  the setting holds no model and every learner call is refused.
 - **The key on stdin.** The Meta key is read from ~/.config/jadwigo-bank/muse.env and handed to
   muse with `--api-key-stdin`. It is never on argv, in a log or in an error. Without the file the
   call falls back to the subscription, and the ledger row says so. The child process never sees
@@ -16,8 +22,8 @@ Mirrors jadwigo-bank tools/muse_call.py, which the bank lanes call, so the two s
   call both ledgers are read: a call is refused with BudgetExceeded once the lane (the tag's first
   segment, `product` in `product:explain`) has reached JADWIGO_MUSE_CAP_USD, or every lane together
   has reached $150.
-- **Only guarded prompts.** `ask` takes a `jw.pii.GuardedPrompt` sealed by `jw.pii.guard`, never a
-  string, because the contributor model trains on what it is sent.
+- **Guarded prompts on the contributor model.** A bank call takes a `jw.pii.GuardedPrompt` sealed
+  by `jw.pii.guard`, never a string, because the contributor model trains on what it is sent.
 - **Streaming.** `stream=True` returns an iterator over the model's text as muse emits it
   (`run.output.delta` records), so a page can show model text after the search rows.
 
@@ -36,7 +42,7 @@ import time
 import uuid
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Literal, overload
+from typing import Any, Literal, get_args, overload
 
 from jw.errors import JwError
 from jw.pii import GuardedPrompt
@@ -51,7 +57,14 @@ LANE_CAP_ENV = "JADWIGO_MUSE_CAP_USD"
 
 SPARK_CONTRIBUTOR = "muse-spark-1.3-contributor"
 DEFAULT_MODEL = SPARK_CONTRIBUTOR
-ALLOWED_MODELS = frozenset({SPARK_CONTRIBUTOR})
+# What a call is for: `bank` work trains the contributor model and carries no learner data;
+# a `learner` call carries the parent's own child's data to the tier that trains on none of it.
+Purpose = Literal["bank", "learner"]
+PURPOSES: tuple[str, ...] = get_args(Purpose)
+# The no-training model, named by the owner from probe 4 of dl-z5ja.3 (not run yet). Until then
+# the setting is unset, or holds this placeholder, and allowed_models("learner") is empty.
+PRIVATE_MODEL_ENV = "JADWIGO_MUSE_PRIVATE_MODEL"
+PRIVATE_MODEL_PLACEHOLDER = "no-training-model-unset-until-dl-z5ja.3-probe-4"
 KEY_FILE, KEY_NAME = Path.home() / ".config" / "jadwigo-bank" / "muse.env", "META_API_KEY"
 TOTAL_CAP_USD = 150.0
 
@@ -73,6 +86,25 @@ class BudgetExceeded(JwError):
 
 class PromptNotGuarded(JwError):
     default_hint = "Pass the prompt through jw.pii.guard() first."
+
+
+def private_model() -> str | None:
+    """The no-training model JADWIGO_MUSE_PRIVATE_MODEL names, or None while it names none."""
+    raw = os.environ.get(PRIVATE_MODEL_ENV, "").strip()
+    return raw if raw and raw != PRIVATE_MODEL_PLACEHOLDER and raw != SPARK_CONTRIBUTOR else None
+
+
+def allowed_models(purpose: Purpose) -> frozenset[str]:
+    """The models a call for `purpose` may run on: the contributor for bank work, and for a
+    learner call only the no-training model, once it is named and priced (so the cap sees it)."""
+    if purpose == "bank":
+        return frozenset({SPARK_CONTRIBUTOR})
+    model = private_model()
+    return frozenset({model}) if model is not None and model in PRICES else frozenset()
+
+
+# Bank work's one model. A learner call's model is read per call, from the setting.
+ALLOWED_MODELS = allowed_models("bank")
 
 
 # ---------------------------------------------------------------- key -------
@@ -272,60 +304,83 @@ def _rate_limited(text: str) -> bool:
 
 @overload
 def ask(
-    prompt: GuardedPrompt,
+    prompt: GuardedPrompt | str,
     *,
     tag: str,
+    purpose: Purpose = ...,
     effort: str = ...,
     stream: Literal[False] = ...,
-    model: str = ...,
+    model: str | None = ...,
     steps: int = ...,
     timeout: float = ...,
     retries: int = ...,
 ) -> str: ...
 @overload
 def ask(
-    prompt: GuardedPrompt,
+    prompt: GuardedPrompt | str,
     *,
     tag: str,
+    purpose: Purpose = ...,
     effort: str = ...,
     stream: Literal[True],
-    model: str = ...,
+    model: str | None = ...,
     steps: int = ...,
     timeout: float = ...,
     retries: int = ...,
 ) -> Iterator[str]: ...
 def ask(
-    prompt: GuardedPrompt,
+    prompt: GuardedPrompt | str,
     *,
     tag: str,
+    purpose: Purpose = "bank",
     effort: str = "low",
     stream: bool = False,
-    model: str = DEFAULT_MODEL,
+    model: str | None = None,
     steps: int = 3,
     timeout: float = 300,
     retries: int = 2,
 ) -> str | Iterator[str]:
-    """Run one guarded prompt on the contributor model; return its text, or stream it.
+    """Run one prompt on the model its purpose allows; return its text, or stream it.
 
-    The text still holds the guard's placeholders: `jw.pii.restore` (or `restore_stream`) puts the
-    names back. Raises PromptNotGuarded, ModelNotAllowed and BudgetExceeded before any call, and
-    MuseFailed when no attempt completes.
+    `model` defaults to the purpose's model: the contributor for `bank`, JADWIGO_MUSE_PRIVATE_MODEL
+    for `learner`. A bank prompt must be sealed by `jw.pii.guard`, and its text still holds the
+    guard's placeholders: `jw.pii.restore` (or `restore_stream`) puts the names back. A learner
+    prompt goes as it is. Raises PromptNotGuarded, ModelNotAllowed and BudgetExceeded before any
+    call, and MuseFailed when no attempt completes.
     """
-    if not isinstance(prompt, GuardedPrompt) or not prompt.sealed:
-        raise PromptNotGuarded("jw.muse.ask takes only a prompt sealed by jw.pii.guard")
-    if model not in ALLOWED_MODELS:
+    if purpose not in PURPOSES:
+        raise ModelNotAllowed(f"purpose {purpose!r} is not one of {', '.join(PURPOSES)}")
+    allowed = allowed_models(purpose)
+    if model is None:
+        model = SPARK_CONTRIBUTOR if purpose == "bank" else (private_model() or PRIVATE_MODEL_PLACEHOLDER)
+    if model not in allowed:
+        if purpose == "bank":
+            raise ModelNotAllowed(f"{model!r} is not allowed; bank work runs on {SPARK_CONTRIBUTOR}")
         raise ModelNotAllowed(
-            f"{model!r} is not allowed; every product call runs on {SPARK_CONTRIBUTOR}"
+            f"{model!r} is not allowed for a learner call: it runs only on the no-training model "
+            f"{PRIVATE_MODEL_ENV} names, with a price in jw.muse.PRICES "
+            f"({private_model() or 'unset: the owner names it from probe 4 of dl-z5ja.3'})",
+            hint="A learner's data never goes to the contributor model, which trains on its input.",
         )
+    if model == SPARK_CONTRIBUTOR and (not isinstance(prompt, GuardedPrompt) or not prompt.sealed):
+        raise PromptNotGuarded("the contributor model takes only a prompt sealed by jw.pii.guard")
+    text = prompt.text if isinstance(prompt, GuardedPrompt) else prompt
     if not tag:
         raise JwError("a Muse call needs a tag", hint="Tag it <lane>:<what>, e.g. product:explain.")
     check_budget(tag)
-    chunks = _attempts(prompt.text, tag, model, effort, steps, timeout, retries)
+    chunks = _attempts(text, tag, model, effort, steps, timeout, retries, purpose)
     return chunks if stream else "".join(chunks)
 
 
 def _attempts(
-    text: str, tag: str, model: str, effort: str, steps: int, timeout: float, retries: int
+    text: str,
+    tag: str,
+    model: str,
+    effort: str,
+    steps: int,
+    timeout: float,
+    retries: int,
+    purpose: Purpose = "bank",
 ) -> Iterator[str]:
     key = api_key()
     last = ""
@@ -370,6 +425,7 @@ def _attempts(
             {
                 "tag": tag,
                 "model": model,
+                "purpose": purpose,
                 "effort": effort,
                 "attempt": attempt,
                 "terminal": run.terminal,
