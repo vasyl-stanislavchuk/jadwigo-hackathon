@@ -535,7 +535,7 @@
   "chat_limit_busy": false,
   "chat_limit_daily": false,
   "chat_limit_too_long": false,
-  "chat_limit_idle": false,
+  "chat_limit_idle": true,
   "chat_dev_only": false,
   "chat_queue_next": false,
   "chat_queue_send_now": false,
@@ -579,5 +579,5 @@
   "chat_consent": false,
   "chat_check_findings": false,
   "chat_sign_in": false,
-  "chat_limit_message": false
+  "chat_limit_message": true
 }
