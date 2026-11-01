@@ -232,9 +232,13 @@ describe("primitive sources", () => {
     expect(files.map((f) => f.name).sort()).toEqual(
       [
         "badge.tsx",
+        "breadcrumb.tsx",
         "button.tsx",
         "card.tsx",
+        "dialog.tsx",
+        "disc.tsx",
         "input.tsx",
+        "panel-toggle.tsx",
         "popover.tsx",
         "progress.tsx",
         "radio-group.tsx",
@@ -248,7 +252,7 @@ describe("primitive sources", () => {
         "tabs.tsx",
         "toggle-group.tsx",
         "toggle.tsx",
-      ].sort(), // popover: the chosen-gap menu (dl-w3.37.16); switch: the pause sheet's Dźwięk (dl-uukj.29.55); sheet and table: the lesson overview's question sheet and heatmap (dl-uukj.30.4); radio-group, segmented-control, tabs and side-menu: the settings and navigation controls (dl-uukj.32.3)
+      ].sort(), // popover: the chosen-gap menu (dl-w3.37.16); switch: the pause sheet's Dźwięk (dl-uukj.29.55); sheet and table: the lesson overview's question sheet and heatmap (dl-uukj.30.4); radio-group, segmented-control, tabs and side-menu: the settings and navigation controls (dl-uukj.32.3); breadcrumb, dialog, disc and panel-toggle: the parent app frame (dl-uukj.47.1)
     );
   });
 
@@ -267,7 +271,7 @@ describe("primitive sources", () => {
   // A literal height or width on a control would undercut --kid-tap-min. Icon sizes inside a
   // control ([&_svg…]:size-7) are not targets. The slider's track and thumb face are drawn
   // inside a row that is itself tap-min high; each is listed with its reason.
-  const LABELS = new Set(["badge.tsx", "progress.tsx", "card.tsx", "spinner.tsx"]);
+  const LABELS = new Set(["badge.tsx", "progress.tsx", "card.tsx", "spinner.tsx", "disc.tsx"]);
   const DRAWN: Record<string, string[]> = {
     "radio-group.tsx": [
       "min-w-0", // lets the wrapper of legend and rows shrink in a flex row; the rows are the targets
@@ -276,6 +280,12 @@ describe("primitive sources", () => {
     ],
     "segmented-control.tsx": [
       "min-w-0", // lets the wrapper of legend and track shrink in a flex row; the track is the target
+    ],
+    "breadcrumb.tsx": [
+      "min-w-0", // lets a long page name truncate in the top bar's flex row
+    ],
+    "panel-toggle.tsx": [
+      "size-4.5", // the panel icon inside the control-sized button
     ],
     "tabs.tsx": [
       "min-w-0", // lets the tabs and their panel shrink in a flex row; each tab is a target
