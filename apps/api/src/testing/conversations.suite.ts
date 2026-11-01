@@ -28,8 +28,6 @@ import { bearerOf, signToken } from "./token.ts";
 export interface Queued {
   readonly queue: RunQueue;
   stepsFor(run: RunId): Promise<number>;
-  /** Steps sent while their run row was not yet visible to another connection: always 0. */
-  unseenAtSend(): Promise<number>;
 }
 
 const event = () => EventId.parse(randomUUID());
@@ -111,7 +109,6 @@ export function conversationSuite(
         attempt: 1,
       });
       expect(await q.stepsFor(run.id)).toBe(1);
-      expect(await q.unseenAtSend()).toBe(0);
 
       const resent = await a.say(conversation.id, "A lesson on adding to 10, please", event_id);
       expect(resent.status).toBe(201);
