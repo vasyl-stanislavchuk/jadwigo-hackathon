@@ -863,5 +863,20 @@
   "chat_list_archive": "Archive",
   "chat_list_archive_confirm": "The conversation leaves the list. It is kept with your family's account and deleted along with it.",
   "chat_list_archive_yes": "Yes, archive",
-  "chat_list_archive_failed": "The conversation wasn't archived. Try again."
+  "chat_list_archive_failed": "The conversation wasn't archived. Try again.",
+  "parent_question": "What lesson should we make?",
+  "parent_box_label": "Describe the homework",
+  "parent_placeholder": "E.g. Subtracting across 10. She found 15 − 7 and 12 − 5 hard.",
+  "parent_attach": "Add a photo",
+  "parent_remove_photo": "Remove the photo",
+  "parent_for": "For:",
+  "parent_no_child": "No child",
+  "parent_add_child_menu": "Add a child…",
+  "parent_add_child_hint": "Name and class. Jadwigo will start following what they can do.",
+  "parent_send": "Make the lesson",
+  "parent_send_reason": "Describe the homework or add a photo first",
+  "parent_name_note": "Only you and Jadwigo in the chat see it. It never goes into a lesson.",
+  "parent_grade": "Class",
+  "parent_cancel": "Cancel",
+  "parent_lesson_soon": "Making a lesson from here is on its way. It will work soon."
 }
