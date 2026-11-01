@@ -72,6 +72,13 @@ describe("InMemoryStore", () => {
     expect(await store.spentUsd(workflows, "2026-11-01T09:00:00.000Z")).toBeCloseTo(0.05, 10);
     expect(await store.spentUsd(workflows, "2026-11-01T00:00:00.000Z")).toBeCloseTo(0.0625, 10);
     expect(await store.spentUsd([], "2026-11-01T00:00:00.000Z")).toBe(0);
+    // dl-z5ja.123: a call that failed after it spent counts too; an unknown run records nothing.
+    await store.recordFailedMuseCall(b.run, 2, 0.5);
+    await store.recordFailedMuseCall(RunId.parse(idOf(ID_PREFIXES.run, crypto.randomUUID())), 1, 9);
+    await expect(store.recordFailedMuseCall(b.run, 3, 0)).rejects.toMatchObject({
+      type: "BadRequest",
+    });
+    expect(await store.spentUsd(workflows, "2026-11-01T09:00:00.000Z")).toBeCloseTo(0.55, 10);
   });
 
   it("lists open assignments made at the same instant in id order", async () => {

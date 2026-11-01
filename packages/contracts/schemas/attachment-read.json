@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "attachment": {
+      "$ref": "#/$defs/Attachment"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+    }
+  },
+  "required": [
+    "attachment",
+    "url",
+    "expires_at"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Attachment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/AttachmentId"
+        },
+        "pod_id": {
+          "$ref": "#/$defs/PodId"
+        },
+        "account_id": {
+          "$ref": "#/$defs/AccountId"
+        },
+        "event_id": {
+          "$ref": "#/$defs/EventId"
+        },
+        "state": {
+          "$ref": "#/$defs/AttachmentState"
+        },
+        "media_type": {
+          "$ref": "#/$defs/AttachmentMediaType"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "conversation_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ConversationId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "storage_path": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        },
+        "expires_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "attached_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "pod_id",
+        "account_id",
+        "event_id",
+        "state",
+        "media_type",
+        "bytes",
+        "width",
+        "height",
+        "conversation_id",
+        "storage_path",
+        "created_at",
+        "expires_at",
+        "attached_at"
+      ],
+      "additionalProperties": false
+    },
+    "AttachmentId": {
+      "type": "string",
+      "pattern": "^atch_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "AccountId": {
+      "type": "string",
+      "pattern": "^acc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "EventId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "AttachmentState": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "attached"
+      ]
+    },
+    "AttachmentMediaType": {
+      "type": "string",
+      "enum": [
+        "image/jpeg"
+      ]
+    },
+    "ConversationId": {
+      "type": "string",
+      "pattern": "^cnv_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    }
+  }
+}

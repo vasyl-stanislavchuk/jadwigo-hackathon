@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { ChooseForm, RunEvent, RunInbox } from "./run.ts";
-import { ConversationMessage } from "./wire.ts";
+import { idOf } from "./ids.ts";
+import { ChooseForm, MessageAttachment, RunEvent, RunInbox } from "./run.ts";
+import { AttachmentCreate, ConversationMessage, LIMITS } from "./wire.ts";
 
 /** Run contract v2 (dl-z5ja.50): the model tier on every model call, and the UX seams' shapes. */
 
@@ -183,5 +184,91 @@ describe("a steer is logged (dl-z5ja.51)", () => {
     expect(RunInbox.safeParse({ ...row, payload: { text: "x", source: "sms" } }).success).toBe(
       false,
     );
+  });
+});
+
+describe("a message carries photos (dl-z5ja.11.1)", () => {
+  const ids = Array.from({ length: 11 }, (_, i) =>
+    idOf("atch_", `00000000-0000-4000-8fff-${String(i + 1).padStart(12, "0")}`),
+  );
+  const base = { event_id: BASE.event_id };
+
+  it("parses a photo-only message, and refuses a message with neither words nor photos", () => {
+    expect(
+      ConversationMessage.safeParse({ ...base, text: "", attachment_ids: [ids[0]] }).success,
+    ).toBe(true);
+    expect(
+      ConversationMessage.safeParse({ ...base, text: "  ", attachment_ids: [ids[0]] }).success,
+    ).toBe(true);
+    const empty = ConversationMessage.safeParse({ ...base, text: "  " });
+    expect(empty.success).toBe(false);
+    expect(empty.error?.issues[0]?.path).toEqual(["text"]);
+  });
+
+  it("refuses 11 photos, a photo named twice, an empty list and an attempt's id", () => {
+    const at = (attachment_ids: unknown) =>
+      ConversationMessage.safeParse({ ...base, text: "x", attachment_ids }).success;
+    expect(at(ids.slice(0, LIMITS.attachmentsPerMessage))).toBe(true);
+    expect(at(ids)).toBe(false);
+    expect(at([ids[0], ids[0]])).toBe(false);
+    expect(at([])).toBe(false);
+    expect(at(["att_6et2fhbnwvb45aw9atcfzs33za"])).toBe(false);
+  });
+
+  it("refuses photos on a steer", () => {
+    const steer = ConversationMessage.safeParse({
+      ...base,
+      kind: "steer",
+      text: "x",
+      attachment_ids: [ids[0]],
+    });
+    expect(steer.success).toBe(false);
+    expect(steer.error?.issues.some((i) => i.path[0] === "attachment_ids")).toBe(true);
+  });
+
+  it("creates only a JPEG within the size and edge limits", () => {
+    const photo = { ...base, media_type: "image/jpeg", bytes: 482_113, width: 1500, height: 2000 };
+    expect(AttachmentCreate.safeParse(photo).success).toBe(true);
+    for (const bad of [
+      { media_type: "image/heic" },
+      { media_type: "image/png" },
+      { bytes: LIMITS.attachmentBytes + 1 },
+      { bytes: 0 },
+      { width: LIMITS.attachmentEdgePx + 1 },
+      { storage_path: "pods/x" },
+    ]) {
+      expect(AttachmentCreate.safeParse({ ...photo, ...bad }).success, JSON.stringify(bad)).toBe(
+        false,
+      );
+    }
+  });
+
+  it("carries the stored photo on the message event and the inbox row", () => {
+    const photo = MessageAttachment.parse({
+      attachment_id: ids[0],
+      storage_path: `pods/pod_x/attachments/${ids[0]}.jpg`,
+      media_type: "image/jpeg",
+      bytes: 482_113,
+      width: 1500,
+      height: 2000,
+    });
+    expect(parses("message", { from: "parent", text: "", attachments: [photo] })).toBe(true);
+    const row = {
+      run_id: BASE.run_id,
+      pod_id: "pod_6et2fhbnwvb45aw9atcfzs33za",
+      event_id: BASE.event_id,
+      kind: "message",
+      payload: { text: "", attachments: [photo] },
+      status: "pending",
+      created_at: BASE.created_at,
+    };
+    expect(RunInbox.safeParse(row).success).toBe(true);
+    expect(
+      parses("message", {
+        from: "parent",
+        text: "",
+        attachments: [{ storage_path: "x", media_type: "image/jpeg" }],
+      }),
+    ).toBe(false);
   });
 });

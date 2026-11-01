@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "learner": {
+      "$ref": "#/$defs/LearnerRef"
+    },
+    "mistakes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/LearnerMistake"
+      }
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/LearnerMissedQuestion"
+      }
+    }
+  },
+  "required": [
+    "learner",
+    "mistakes",
+    "questions"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "LearnerRef": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/LearnerId"
+        },
+        "first_name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "first_name"
+      ],
+      "additionalProperties": false
+    },
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LearnerMistake": {
+      "type": "object",
+      "properties": {
+        "mistake_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "times": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "citations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Citation"
+          }
+        }
+      },
+      "required": [
+        "mistake_class",
+        "times",
+        "citations"
+      ],
+      "additionalProperties": false
+    },
+    "Citation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "attempt"
+            },
+            "attempt_id": {
+              "$ref": "#/$defs/AttemptId"
+            }
+          },
+          "required": [
+            "kind",
+            "attempt_id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "skill"
+            },
+            "skill_code": {
+              "$ref": "#/$defs/SkillId"
+            }
+          },
+          "required": [
+            "kind",
+            "skill_code"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "goal"
+            },
+            "goal_id": {
+              "$ref": "#/$defs/GoalId"
+            }
+          },
+          "required": [
+            "kind",
+            "goal_id"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "AttemptId": {
+      "type": "string",
+      "pattern": "^att_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "SkillId": {
+      "type": "string",
+      "pattern": "^[a-z]+(\\.[a-z0-9-]+)+$"
+    },
+    "GoalId": {
+      "type": "string",
+      "pattern": "^gol_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LearnerMissedQuestion": {
+      "type": "object",
+      "properties": {
+        "attempt_id": {
+          "$ref": "#/$defs/AttemptId"
+        },
+        "seq": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "say": {
+          "type": "string"
+        },
+        "mistake_classes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "skipped": {
+          "type": "boolean"
+        },
+        "answers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "attempt_id",
+        "seq",
+        "say",
+        "mistake_classes",
+        "tries",
+        "skipped",
+        "answers"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

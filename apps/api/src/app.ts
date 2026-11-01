@@ -255,6 +255,14 @@ export function createApp(
 
   onSigned("rateRun", (params, body, claims) => run((s) => rateRun(s, claims, params.id, body)));
 
+  // A message's photos (dl-z5ja.11): step 0's stubs, until dl-z5ja.11.3 builds them. A token
+  // is checked first, as on every token route.
+  const notYet = async (): Promise<never> => {
+    throw new ApiError(ErrorType.enum.NotFound, "photos are not taken yet");
+  };
+  onSigned("createAttachment", notYet);
+  onSigned("getAttachment", notYet);
+
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;
 }

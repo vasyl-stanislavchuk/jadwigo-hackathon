@@ -18,7 +18,7 @@ import {
   type Me,
 } from "@jadwigo/contracts";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setPodLanguage, useScreenLanguage } from "../nav/language.ts";
@@ -337,12 +337,14 @@ describe("ParentScreen", () => {
       },
       createAccount: vi.fn(async () => me([snapshot])),
     });
+    // The child's lessons are on the child's page (dl-uukj.47.3).
+    window.history.replaceState(null, "", `/parent/children/${LEARNER}`);
     render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
     await screen.findByText("Jeszcze nie ma tu lekcji.");
     expect(api.createAccount).toHaveBeenCalledTimes(1);
   });
 
-  it("draws each lesson on the home as a row of tiles, links it to its attempt page, and opens it", async () => {
+  it("draws each lesson on the child's page as a row of tiles, links it to its attempt page, and opens it", async () => {
     const auth = signedOutAuth();
     auth.signedIn = true;
     const attempts = {
@@ -374,6 +376,7 @@ describe("ParentScreen", () => {
       getLearnerAttempts: async () => attempts,
       getParentReview,
     });
+    window.history.replaceState(null, "", `/parent/children/${LEARNER}`);
     render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
     await screen.findByText("Równe grupy");
     const lesson = document.querySelector(`li[data-attempt="${ATTEMPT}"]`);
@@ -406,7 +409,7 @@ describe("ParentScreen", () => {
     expect(getParentReview).toHaveBeenCalledWith(LEARNER, ATTEMPT);
   });
 
-  it("links each lesson on the home to its assignment's overview, and opens it", async () => {
+  it("links each lesson on the child's page to its assignment's overview, and opens it", async () => {
     const auth = signedOutAuth();
     auth.signedIn = true;
     const attempts = {
@@ -427,6 +430,7 @@ describe("ParentScreen", () => {
       getLearnerAttempts: async () => attempts,
       getAssignmentAttempts,
     });
+    window.history.replaceState(null, "", `/parent/children/${LEARNER}`);
     render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
     const link = await screen.findByRole("link", { name: "Wszystkie podejścia do tej lekcji" });
     expect(link.getAttribute("href")).toBe(`/parent/assignments/${ASSIGNMENT}`);
@@ -435,6 +439,99 @@ describe("ParentScreen", () => {
     expect(window.location.pathname).toBe(`/parent/assignments/${ASSIGNMENT}`);
     await screen.findByText("Nie udało się wczytać. Odśwież stronę, żeby spróbować ponownie.");
     expect(getAssignmentAttempts).toHaveBeenCalledWith(ASSIGNMENT);
+  });
+
+  // The first screen and Dodaj dziecko (dl-uukj.47.2, decision dl-xo0q).
+  it("adds a child from Dla in a dialog: Dla shows the child and the box keeps its words", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    let learners: LearnerSnapshot[] = [];
+    const api = client({
+      getMe: async () => me(learners),
+      createLearner: vi.fn(async () => {
+        learners = [snapshot];
+        return snapshot;
+      }),
+    });
+    render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
+    const field = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    fireEvent.change(field, { target: { value: "Odejmowanie przez 10" } });
+
+    await press("[data-dla]");
+    await act(async () => fireEvent.click(within(screen.getByRole("menu")).getByRole("menuitem")));
+    const dialog = screen.getByRole("dialog", { name: "Dodaj dziecko" });
+    expect(within(dialog).getByText(/Nie trafia do lekcji/)).toBeDefined();
+    expect(within(dialog).getByRole("radiogroup", { name: "Klasa" })).toBeDefined();
+    fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: " Ola " } });
+    await press("[data-add-child-dialog] [data-add]");
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(api.createLearner).toHaveBeenCalledWith({ first_name: "Ola" });
+    expect(document.querySelector("[data-dla]")?.textContent).toContain("Ola");
+    expect(document.querySelector(`[data-child-row="${LEARNER}"]`)).not.toBeNull();
+    expect(
+      (screen.getByRole("textbox", { name: "Opisz zadanie domowe" }) as HTMLTextAreaElement).value,
+    ).toBe("Odejmowanie przez 10");
+  });
+
+  it("adds the child once when the read after it fails and Dodaj is pressed again", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    let learners: LearnerSnapshot[] = [];
+    let reads = 0;
+    const api = client({
+      getMe: async () => {
+        reads += 1;
+        if (reads === 2) throw new Error("offline");
+        return me(learners);
+      },
+      createLearner: vi.fn(async () => {
+        learners = [snapshot];
+        return snapshot;
+      }),
+    });
+    render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
+    await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    await press("[data-dla]");
+    await act(async () => fireEvent.click(within(screen.getByRole("menu")).getByRole("menuitem")));
+    const dialog = screen.getByRole("dialog", { name: "Dodaj dziecko" });
+    fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "Ola" } });
+    await press("[data-add-child-dialog] [data-add]");
+    expect(screen.getByRole("dialog", { name: "Dodaj dziecko" })).toBeDefined();
+    await press("[data-add-child-dialog] [data-add]");
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(api.createLearner).toHaveBeenCalledTimes(1);
+    expect(document.querySelector(`[data-child-row="${LEARNER}"]`)).not.toBeNull();
+  });
+
+  it("opens Dodaj dziecko from the sidebar's + and gives the focus back to it on Anuluj", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const api = client({ getMe: async () => me([]) });
+    render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
+    const plus = await screen.findByRole("button", { name: "Dodaj dziecko" });
+    plus.focus();
+    await act(async () => fireEvent.click(plus));
+    const dialog = screen.getByRole("dialog", { name: "Dodaj dziecko" });
+    await act(async () => fireEvent.click(within(dialog).getByRole("button", { name: "Anuluj" })));
+    await waitFor(() => expect(document.activeElement).toBe(plus));
+  });
+
+  it("starts Dla at the child ?for names", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const api = client({ getMe: async () => me([snapshot]) });
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams(`for=${LEARNER}`)}
+        auth={auth}
+        client={api}
+      />,
+    );
+    await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    expect(document.querySelector("[data-dla]")?.textContent).toContain("Ola");
   });
 
   it("shows no provider button when the build turns none on", async () => {

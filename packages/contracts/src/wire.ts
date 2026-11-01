@@ -11,6 +11,7 @@ import {
 import {
   AccountId,
   AssignmentId,
+  AttachmentId,
   AttemptId,
   EventId,
   LearnerId,
@@ -45,7 +46,15 @@ import {
   SkipReason,
   Subject,
 } from "./records.ts";
-import { Conversation, LessonPatch, MessageContext, Run, RunEvent } from "./run.ts";
+import {
+  Attachment,
+  AttachmentMediaType,
+  Conversation,
+  LessonPatch,
+  MessageContext,
+  Run,
+  RunEvent,
+} from "./run.ts";
 
 /**
  * What crosses `/api/v1` during an attempt (decision
@@ -640,7 +649,58 @@ export const LIMITS = {
    * it is reached, a message that would open a turn is `MessageLimitDay`: a budget not known is never spent.
    */
   podDailyCapUsd: 10,
+  /**
+   * A parent's photos (dl-z5ja.11). The page re-encodes each to a JPEG whose long edge is at most
+   * `attachmentEdgePx` and whose size is at most `attachmentBytes`; a message carries at most
+   * `attachmentsPerMessage` (PostHog's 10 a message); a pod creates at most `attachmentsPerPodPerDay`
+   * in a UTC day, and the next is `AttachmentLimitDay` (md drop-comments' 200 a day).
+   */
+  attachmentsPerMessage: 10,
+  attachmentBytes: 4_194_304,
+  attachmentEdgePx: 2000,
+  attachmentsPerPodPerDay: 200,
 } as const;
+
+/**
+ * `POST /api/v1/attachments`: a photo the page is about to upload, as the page re-encoded it. The
+ * id comes from `event_id` and the caller's pod, so a resend makes nothing new and answers the same
+ * attachment with a fresh upload form.
+ */
+export const AttachmentCreate = z.strictObject({
+  event_id: EventId,
+  media_type: AttachmentMediaType,
+  bytes: z.int().min(1).max(LIMITS.attachmentBytes),
+  width: z.int().min(1).max(LIMITS.attachmentEdgePx),
+  height: z.int().min(1).max(LIMITS.attachmentEdgePx),
+});
+export type AttachmentCreate = z.infer<typeof AttachmentCreate>;
+
+/**
+ * A presigned S3 form POST for one pending attachment: the page posts `fields` and then the file to
+ * `url` before `expires_at`. The form holds the key, the content type and the exact size, so S3
+ * refuses any other file (md drop-comments' upload, dl-z5ja.11).
+ */
+export const AttachmentUploadForm = z.object({
+  url: z.url(),
+  fields: z.record(z.string(), z.string()),
+  expires_at: z.iso.datetime(),
+});
+export type AttachmentUploadForm = z.infer<typeof AttachmentUploadForm>;
+
+/** The reply to `POST /api/v1/attachments`: the pending attachment and its upload form. */
+export const AttachmentUpload = z.object({ attachment: Attachment, upload: AttachmentUploadForm });
+export type AttachmentUpload = z.infer<typeof AttachmentUpload>;
+
+/**
+ * `GET /api/v1/attachments/{id}`: an attached photo and a short-lived link to its stored copy, the
+ * bytes the AI received. The page fetches the link again after `expires_at`.
+ */
+export const AttachmentRead = z.object({
+  attachment: Attachment,
+  url: z.url(),
+  expires_at: z.iso.datetime(),
+});
+export type AttachmentRead = z.infer<typeof AttachmentRead>;
 
 /**
  * `POST /api/v1/conversations`: a parent's new chat with the AI engine (epic dl-z5ja). The page
@@ -661,8 +721,11 @@ export type ConversationCreate = z.infer<typeof ConversationCreate>;
 export const ConversationMessage = z
   .strictObject({
     event_id: EventId,
-    /** Trimmed first, so words of only spaces never open a run. */
-    text: z.string().trim().min(1),
+    /**
+     * Trimmed first, so words of only spaces never open a run. Empty only on a message that
+     * carries photos ("Najpierw opisz zadanie albo dodaj zdjęcie").
+     */
+    text: z.string().trim(),
     /**
      * `message` when absent. A `steer` is the parent's correction while a turn runs: it joins the
      * next step's context as a steer, never opens a turn (dl-z5ja.93).
@@ -684,6 +747,24 @@ export const ConversationMessage = z
      * one id. A steer joins a running turn and carries none (Lead decision 36).
      */
     context: MessageContext.optional(),
+    /**
+     * A message's photos, each created by `POST /api/v1/attachments` and uploaded, in the order
+     * the parent added them. The message's check copies each under the pod; one that is not there
+     * as declared refuses the whole message (`AttachmentMismatch`), never a message with fewer.
+     */
+    attachment_ids: z.array(AttachmentId).min(1).max(LIMITS.attachmentsPerMessage).optional(),
+  })
+  .refine((m) => m.text.length > 0 || m.attachment_ids !== undefined, {
+    message: "a message has words or a photo",
+    path: ["text"],
+  })
+  .refine((m) => m.kind !== "steer" || m.attachment_ids === undefined, {
+    message: "attachment_ids come only with a message",
+    path: ["attachment_ids"],
+  })
+  .refine((m) => new Set(m.attachment_ids ?? []).size === (m.attachment_ids ?? []).length, {
+    message: "an attachment is named once",
+    path: ["attachment_ids"],
   })
   .refine((m) => m.kind === "steer" || (m.source === undefined && m.question_ids === undefined), {
     message: "source and question_ids come only with a steer",
@@ -827,6 +908,17 @@ export const ERROR_STATUS = {
   AiConsentMissing: 409,
   /** A message or steer to a conversation the parent archived (dl-z5ja.105). */
   ConversationArchived: 409,
+  /**
+   * A message's photo whose stored file is not what `POST /api/v1/attachments` declared: missing,
+   * another size, not a JPEG, or one that still carries Exif data. Nothing of the message is kept.
+   */
+  AttachmentMismatch: 409,
+  /** A photo already carried by another message. */
+  AttachmentAttached: 409,
+  /** A pending photo past its `expires_at`, never sent: the page uploads it again. */
+  AttachmentExpired: 409,
+  /** An attachment past the pod's `LIMITS.attachmentsPerPodPerDay` for the UTC day. */
+  AttachmentLimitDay: 429,
   Unauthorized: 401,
   BankUnavailable: 502,
 } as const;

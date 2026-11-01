@@ -6,8 +6,7 @@
       "$ref": "#/$defs/EventId"
     },
     "text": {
-      "type": "string",
-      "minLength": 1
+      "type": "string"
     },
     "kind": {
       "type": "string",
@@ -41,6 +40,14 @@
     },
     "context": {
       "$ref": "#/$defs/MessageContext"
+    },
+    "attachment_ids": {
+      "minItems": 1,
+      "maxItems": 10,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/AttachmentId"
+      }
     }
   },
   "required": [
@@ -95,6 +102,10 @@
     "LessonId": {
       "type": "string",
       "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "AttachmentId": {
+      "type": "string",
+      "pattern": "^atch_[0-7][0-9a-hjkmnp-tv-z]{25}$"
     }
   }
 }

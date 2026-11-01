@@ -30,6 +30,14 @@ export const pageSchema = z.object({
     .optional(),
   /** A line shown above the words while the lawyer has not read them (dl-e8ov.2.9). */
   draftNote: z.string().min(1).optional(),
+  /**
+   * The O nas layout (design handoff "landing 3", dl-5ssh.4.15): the words in a column beside 3 photo
+   * frames, each labelled with the photo still to come, and one link under the words.
+   */
+  photos: z.tuple([z.string().min(1), z.string().min(1), z.string().min(1)]).optional(),
+  link: z
+    .object({ href: z.string().regex(/^(\/[a-z0-9-]+)+$/), label: z.string().min(1) })
+    .optional(),
 });
 export type Page = z.infer<typeof pageSchema>;
 

@@ -15,6 +15,7 @@
 //     AUTH_ISSUER=http://127.0.0.1:54321/auth/v1 bun apps/api/src/serve.ts &
 import { type APIRequestContext, expect, type Page, test } from "@playwright/test";
 import { AUTH_ORIGIN } from "./auth-origin.ts";
+import { agreeToAi } from "./consent.ts";
 
 /** Plays equal-groups from the home page to the results, saying "Not sure yet" to every question. */
 async function playToTheEnd(page: Page): Promise<void> {
@@ -52,6 +53,8 @@ const storedAttempts = (page: Page): Promise<string[]> =>
     Object.keys(window.sessionStorage).filter((key) => key.startsWith("jw.play.attempt.")),
   );
 
+test.beforeEach(({ page }) => agreeToAi(page));
+
 test("an email signed in with the code, then with Google, is the same parent with the same children", async ({
   page,
   request,
@@ -75,7 +78,8 @@ test("an email signed in with the code, then with Google, is the same parent wit
   await expect(card.getByRole("heading", { name: "Ola" })).toBeVisible();
   await expect(card.locator("li[data-attempt]")).toHaveCount(1);
   await expect(page.locator("[data-add-child]")).toHaveCount(0);
-  await expect(page).toHaveURL(/\/parent$/);
+  // Back on the child's page the parent signed out from (dl-uukj.47.3).
+  await expect(page).toHaveURL(/\/parent\/children\/lrn_[0-9a-z]{26}$/);
 });
 
 test("a fresh tab's lesson is kept after the round trip to Google", async ({ page, request }) => {
@@ -95,7 +99,8 @@ test("a fresh tab's lesson is kept after the round trip to Google", async ({ pag
   const lesson = page.locator("[data-learner-card]").locator("li[data-attempt]");
   await expect(lesson).toHaveCount(1);
   await expect(lesson.getByText("Równe grupy")).toBeVisible();
-  await expect(page).toHaveURL(/\/parent$/);
+  // The kept lesson opens on that child's page (dl-uukj.47.3).
+  await expect(page).toHaveURL(/\/parent\/children\/lrn_[0-9a-z]{26}$/);
   expect(await storedAttempts(page)).toEqual([]);
 });
 

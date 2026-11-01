@@ -1373,7 +1373,7 @@
       "post": {
         "operationId": "postMessage",
         "summary": "Sends the parent's message, on the open turn or a new one.",
-        "description": "Idempotent by `event_id`: a resend returns the run that holds the message, and the same `event_id` with other text is 409 `EventIdMismatch`. The reply comes before the AI answers: read the run's events for its answer.",
+        "description": "Idempotent by `event_id`: a resend returns the run that holds the message, and the same `event_id` with other text or photos is 409 `EventIdMismatch`. `attachment_ids` names photos from `POST /api/v1/attachments`, uploaded; one that is not there as declared is 409 `AttachmentMismatch`, and one another message carries is 409 `AttachmentAttached`, and the message is not kept. The reply comes before the AI answers: read the run's events for its answer.",
         "tags": [
           "conversations"
         ],
@@ -1409,6 +1409,98 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RunAccepted"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/attachments": {
+      "post": {
+        "operationId": "createAttachment",
+        "summary": "Starts a photo upload for a message: a pending attachment and its upload form.",
+        "description": "The page re-encodes the photo to a JPEG first and posts the form's fields and the file straight to S3. Idempotent by `event_id`: a resend answers the same attachment with a fresh form. A pending attachment no message carries expires after a day. Past the pod's daily count it is 429 `AttachmentLimitDay`.",
+        "tags": [
+          "conversations"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachmentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentUpload"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/attachments/{id}": {
+      "get": {
+        "operationId": "getAttachment",
+        "summary": "Reads an attached photo, with a short-lived link to the copy the AI received.",
+        "description": "Only an attachment a message carries has a link; a pending one, and another pod's, is 404. Fetch it again after `expires_at`.",
+        "tags": [
+          "conversations"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AttachmentId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentRead"
                 }
               }
             }
@@ -2118,18 +2210,224 @@
       "Attachment": {
         "type": "object",
         "properties": {
-          "storage_path": {
-            "type": "string",
-            "minLength": 1
+          "id": {
+            "$ref": "#/components/schemas/AttachmentId"
+          },
+          "pod_id": {
+            "$ref": "#/components/schemas/PodId"
+          },
+          "account_id": {
+            "$ref": "#/components/schemas/AccountId"
+          },
+          "event_id": {
+            "$ref": "#/components/schemas/EventId"
+          },
+          "state": {
+            "$ref": "#/components/schemas/AttachmentState"
           },
           "media_type": {
+            "$ref": "#/components/schemas/AttachmentMediaType"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "storage_path": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
             "type": "string",
-            "minLength": 1
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attached_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
+          "id",
+          "pod_id",
+          "account_id",
+          "event_id",
+          "state",
+          "media_type",
+          "bytes",
+          "width",
+          "height",
+          "conversation_id",
           "storage_path",
-          "media_type"
+          "created_at",
+          "expires_at",
+          "attached_at"
+        ],
+        "additionalProperties": false
+      },
+      "AttachmentCreate": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "$ref": "#/components/schemas/EventId"
+          },
+          "media_type": {
+            "$ref": "#/components/schemas/AttachmentMediaType"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4194304
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2000
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2000
+          }
+        },
+        "required": [
+          "event_id",
+          "media_type",
+          "bytes",
+          "width",
+          "height"
+        ],
+        "additionalProperties": false
+      },
+      "AttachmentId": {
+        "type": "string",
+        "pattern": "^atch_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "AttachmentMediaType": {
+        "type": "string",
+        "enum": [
+          "image/jpeg"
+        ]
+      },
+      "AttachmentRead": {
+        "type": "object",
+        "properties": {
+          "attachment": {
+            "$ref": "#/components/schemas/Attachment"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "attachment",
+          "url",
+          "expires_at"
+        ],
+        "additionalProperties": false
+      },
+      "AttachmentState": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "attached"
+        ]
+      },
+      "AttachmentUpload": {
+        "type": "object",
+        "properties": {
+          "attachment": {
+            "$ref": "#/components/schemas/Attachment"
+          },
+          "upload": {
+            "$ref": "#/components/schemas/AttachmentUploadForm"
+          }
+        },
+        "required": [
+          "attachment",
+          "upload"
+        ],
+        "additionalProperties": false
+      },
+      "AttachmentUploadForm": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "fields": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "url",
+          "fields",
+          "expires_at"
         ],
         "additionalProperties": false
       },
@@ -3420,8 +3718,7 @@
             "$ref": "#/components/schemas/EventId"
           },
           "text": {
-            "type": "string",
-            "minLength": 1
+            "type": "string"
           },
           "kind": {
             "type": "string",
@@ -3455,6 +3752,14 @@
           },
           "context": {
             "$ref": "#/components/schemas/MessageContext"
+          },
+          "attachment_ids": {
+            "minItems": 1,
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttachmentId"
+            }
           }
         },
         "required": [
@@ -3847,6 +4152,10 @@
           "MessageLimitDay",
           "AiConsentMissing",
           "ConversationArchived",
+          "AttachmentMismatch",
+          "AttachmentAttached",
+          "AttachmentExpired",
+          "AttachmentLimitDay",
           "Unauthorized",
           "BankUnavailable"
         ]
@@ -6631,6 +6940,45 @@
           "self"
         ]
       },
+      "MessageAttachment": {
+        "type": "object",
+        "properties": {
+          "attachment_id": {
+            "$ref": "#/components/schemas/AttachmentId"
+          },
+          "storage_path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "media_type": {
+            "$ref": "#/components/schemas/AttachmentMediaType"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "attachment_id",
+          "storage_path",
+          "media_type",
+          "bytes",
+          "width",
+          "height"
+        ],
+        "additionalProperties": false
+      },
       "MessageContext": {
         "anyOf": [
           {
@@ -6698,7 +7046,7 @@
               "attachments": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/Attachment"
+                  "$ref": "#/components/schemas/MessageAttachment"
                 }
               },
               "context": {
@@ -11090,7 +11438,12 @@
           "lesson_show",
           "lesson_edit",
           "lesson_check",
-          "question_search"
+          "question_search",
+          "learner_skills",
+          "learner_week",
+          "learner_mistakes",
+          "curriculum_topics",
+          "lesson_ideas"
         ]
       },
       "TopicId": {
@@ -11199,13 +11552,18 @@
           "lesson_show",
           "lesson_edit",
           "lesson_check",
-          "question_search"
+          "question_search",
+          "learner_skills",
+          "learner_week",
+          "learner_mistakes",
+          "curriculum_topics",
+          "lesson_ideas"
         ]
       }
     },
     "responses": {
       "Error": {
-        "description": "An error: `{error: {type, message}}`. The type names the cause, and answers with one status:\n\n- 400: `BadRequest`, `ServerFieldSupplied`\n- 401: `NotSignedIn`, `Unauthorized`\n- 404: `NotFound`\n- 409: `AccountMissing`, `AttemptClaimed`, `AttemptPreview`, `AssignmentClosed`, `AttemptFinished`, `AttemptNotFinished`, `AttemptPaused`, `QuestionNotOpen`, `TryOutOfOrder`, `AnswerConflict`, `EventIdMismatch`, `WriteOnce`, `AiConsentMissing`, `ConversationArchived`\n- 429: `AnswerLimit`, `MessageLimitMinute`, `MessageLimitDay`\n- 502: `BankUnavailable`",
+        "description": "An error: `{error: {type, message}}`. The type names the cause, and answers with one status:\n\n- 400: `BadRequest`, `ServerFieldSupplied`\n- 401: `NotSignedIn`, `Unauthorized`\n- 404: `NotFound`\n- 409: `AccountMissing`, `AttemptClaimed`, `AttemptPreview`, `AssignmentClosed`, `AttemptFinished`, `AttemptNotFinished`, `AttemptPaused`, `QuestionNotOpen`, `TryOutOfOrder`, `AnswerConflict`, `EventIdMismatch`, `WriteOnce`, `AiConsentMissing`, `ConversationArchived`, `AttachmentMismatch`, `AttachmentAttached`, `AttachmentExpired`\n- 429: `AnswerLimit`, `MessageLimitMinute`, `MessageLimitDay`, `AttachmentLimitDay`\n- 502: `BankUnavailable`",
         "content": {
           "application/json": {
             "schema": {

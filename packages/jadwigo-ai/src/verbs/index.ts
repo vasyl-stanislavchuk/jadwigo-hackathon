@@ -3,14 +3,44 @@ import type { Finding } from "@jadwigo/lesson-import/file";
 import type { MuseTool } from "../muse/client.ts";
 import type { BankPort } from "./bank.ts";
 import type { Json } from "./input.ts";
+import {
+  curriculumTopicsVerb,
+  LEARNER_TOOLS,
+  type LearnerReads,
+  type LearnerVerbName,
+  learnerMistakesVerb,
+  learnerSkills,
+  learnerWeek,
+  lessonIdeasVerb,
+} from "./learner.ts";
 import { lessonCheck, lessonDraft, lessonEdit, lessonShow, questionSearch } from "./lesson.ts";
-import type { Verb, VerbContext, VerbEffect, Verbs } from "./types.ts";
+import { type Verb, type VerbContext, type VerbEffect, VerbError, type Verbs } from "./types.ts";
 
 export { type BankPort, fixtureBank } from "./bank.ts";
+export type { LearnerReads } from "./learner.ts";
 
 export interface VerbDeps {
   bank: BankPort;
+  /**
+   * Where the learner verbs read one learner of the run's pod (dl-z5ja.25): the engine's Store.
+   * Without it they refuse, so a host that reads no learner (a test, a probe) says so to the model.
+   */
+  learners?: LearnerReads;
+  /** The clock the learner verbs fold and count weeks by; the wall clock when absent. */
+  now?: () => Date;
 }
+
+/**
+ * The verbs only the hosted engine has: they read a learner of the run's pod, and `jw mcp serve`
+ * holds no learner. `parity.test.ts` holds every other verb to jw's tools, and these to their absence.
+ */
+export const ENGINE_ONLY: readonly LearnerVerbName[] = [
+  "learner_skills",
+  "learner_week",
+  "learner_mistakes",
+  "curriculum_topics",
+  "lesson_ideas",
+];
 
 /** What `lesson_check` answers in its output: `@jadwigo/lesson-import/check` findings. */
 export type CheckFindings = readonly Finding[];
@@ -124,16 +154,26 @@ export const TOOLS: Readonly<Record<VerbName, MuseTool>> = {
       ["grade"],
     ),
   },
+  ...LEARNER_TOOLS,
 };
 
 /**
- * The 5 verbs: lesson_draft, lesson_show, lesson_edit, lesson_check, question_search. Each is
+ * The 10 verbs: lesson_draft, lesson_show, lesson_edit, lesson_check, question_search, and the
+ * learner verbs (`./learner.ts`): learner_skills, learner_week, learner_mistakes,
+ * curriculum_topics, lesson_ideas. Each is
  * idempotent by `call_id`: a second call with one run and call id answers the first call's effect
  * and reads nothing again, so a redelivered step writes nothing new. The memo is this process's;
  * a step redelivered to another process gets the same effect because every verb is a function of
  * its input, the lesson and the bank.
  */
 export function createVerbs(deps: VerbDeps): Verbs {
+  const now = deps.now ?? (() => new Date());
+  const reads = (name: LearnerVerbName): LearnerReads => {
+    if (deps.learners === undefined) {
+      throw new VerbError("unavailable", `${name}: this engine reads no learner`);
+    }
+    return deps.learners;
+  };
   const done = new Map<string, Promise<VerbEffect>>();
   const verb = (
     name: VerbName,
@@ -159,5 +199,18 @@ export function createVerbs(deps: VerbDeps): Verbs {
     lesson_edit: verb("lesson_edit", lessonEdit),
     lesson_check: verb("lesson_check", lessonCheck),
     question_search: verb("question_search", (_c, i) => questionSearch(deps.bank, i)),
+    learner_skills: verb("learner_skills", (c, i) =>
+      learnerSkills(reads("learner_skills"), now(), c, i),
+    ),
+    learner_week: verb("learner_week", (c, i) => learnerWeek(reads("learner_week"), now(), c, i)),
+    learner_mistakes: verb("learner_mistakes", (c, i) =>
+      learnerMistakesVerb(reads("learner_mistakes"), c, i),
+    ),
+    curriculum_topics: verb("curriculum_topics", (c, i) =>
+      curriculumTopicsVerb(reads("curriculum_topics"), c, i),
+    ),
+    lesson_ideas: verb("lesson_ideas", (c, i) =>
+      lessonIdeasVerb(reads("lesson_ideas"), now(), c, i),
+    ),
   };
 }

@@ -260,12 +260,12 @@ export function acceptMessage(
   };
   return store.unit(async () => {
     // A page the pod does not hold is refused before anything is written or asked (dl-z5ja.107).
-    // A resend of a message the turn already logged answers its stored row, even when its page has
-    // gone since (dl-z5ja.117): it was checked when it first came.
+    // A resend answers its stored row, pending or taken, even when its page has gone since
+    // (dl-z5ja.117, dl-z5ja.132): it was checked when it first came.
     if (
       context &&
       (await pageLine(store, pod, message.created_by, context)) === null &&
-      !(await logged(store, pod, conversation_id, entry.event_id))
+      (await store.findRunInbox(pod, entry.event_id)) === undefined
     ) {
       throw new StoreError(ErrorType.enum.NotFound, "the page the message names is not in the pod");
     }
@@ -1073,30 +1073,11 @@ function steerLine(steer: SteerEvent, log: readonly RunEvent[]): string {
   const named = ids ? ` (questions ${ids})` : "";
   const line = `The parent edited the lesson themselves${named}:\n${words}`;
   if (payload.patch === undefined) return line;
-  const resolved = resolutionOf(log, steer);
-  if (resolved?.applied && resolved.revision !== undefined) {
-    return `${line}\nTheir change is already in the lesson, as revision ${resolved.revision}: keep it, and do not make it again.`;
+  const applied = revisionOf(log, steer);
+  if (applied === null) {
+    return `${line}\nTheir change was not applied: the lesson changed after they made it, or it would not read as a lesson. Make it with lesson_edit if it still fits.`;
   }
-  const why = resolved?.reason ? NOT_APPLIED[resolved.reason] : NOT_APPLIED.stale_base;
-  return `${line}\nTheir change was not applied: ${why}. Make it with lesson_edit if it still fits.`;
-}
-
-type PatchResolved = Extract<RunEvent, { type: "patch_resolved" }>["payload"];
-type PatchRefusal = NonNullable<PatchResolved["reason"]>;
-
-/** Why a patch was not applied, as the model is told it. */
-const NOT_APPLIED: Record<PatchRefusal, string> = {
-  stale_base: "the lesson changed after they made it",
-  invalid_file: "it would not read as a lesson",
-  no_lesson: "there was no lesson yet to change",
-};
-
-/** The `patch_resolved` event a steer's patch got (dl-z5ja.130), or null before it has one. */
-function resolutionOf(log: readonly RunEvent[], steer: SteerEvent): PatchResolved | null {
-  const found = log.find(
-    (e) => e.type === "patch_resolved" && e.payload.steer_event_id === steer.event_id,
-  );
-  return found?.type === "patch_resolved" ? found.payload : null;
+  return `${line}\nTheir change is already in the lesson, as revision ${applied}: keep it, and do not make it again.`;
 }
 
 /** The revision a steer's patch was applied as, or null when it was not. */
@@ -1116,47 +1097,28 @@ function revisionOf(log: readonly RunEvent[], steer: SteerEvent): number | null 
  * A patch lands only on the revision it was made on, checked against the conversation's latest
  * across every turn and written through its compare-and-set: a merge patch replaces arrays whole,
  * so on a newer revision it would undo what changed since. And only when the page's lenient parse
- * reads every step of the result, as a verb's change must (`writable` in `verbs/lesson.ts`). Each
- * patch gets one `patch_resolved` event (dl-z5ja.130, Lead decision 49): applied with its revision,
- * or not, with why (`stale_base`, `invalid_file`, `no_lesson`), so the pane reads the outcome
- * instead of re-deriving the rule. A patch not applied stays words for the model, told why.
+ * reads every step of the result, as a verb's change must (`writable` in `verbs/lesson.ts`). A
+ * patch not applied stays words for the model, told so. Revisions only grow, so the refusal holds
+ * on every later step.
  */
 async function applyPatches(w: Writer): Promise<number> {
   let applied = 0;
   for (const steer of steersOf(w.log)) {
     const { patch, base_revision } = steer.payload;
-    if (patch === undefined || resolutionOf(w.log, steer) !== null) continue;
-    const resolve = async (resolution: Omit<PatchResolved, "steer_event_id">) =>
-      w.append([
-        {
-          type: "patch_resolved",
-          run_id: w.run,
-          event_id: await w.id("steer", steer.event_id, "resolved"),
-          payload: { steer_event_id: steer.event_id, ...resolution },
-        },
-      ]);
-    await w.store.unit(async () => {
-      // A revision written before a throw is found again by its event_id: it was applied.
-      const done = revisionOf(w.log, steer);
-      if (done !== null) return resolve({ applied: true, revision: done });
-      // The conversation's latest, across every turn: what the compare-and-set checks too.
-      const lesson = await conversationLesson(w.store, w.pod, w.run);
-      if (!lesson) return resolve({ applied: false, reason: "no_lesson" });
-      if (base_revision === undefined || lesson.revision !== base_revision) {
-        return resolve({ applied: false, reason: "stale_base" });
-      }
-      const lesson_file = mergePatch(lesson.lesson_file, patch);
-      if (!readable(lesson_file)) return resolve({ applied: false, reason: "invalid_file" });
-      const written = await w.revise(base_revision, {
-        type: "lesson_revision",
-        run_id: w.run,
-        event_id: await w.id("steer", steer.event_id, "revision"),
-        payload: { revision: base_revision + 1, call_id: steer.event_id, lesson_file },
-      });
-      if (!written) return resolve({ applied: false, reason: "stale_base" });
-      applied += 1;
-      return resolve({ applied: true, revision: base_revision + 1 });
+    if (patch === undefined || base_revision === undefined) continue;
+    if (revisionOf(w.log, steer) !== null) continue;
+    // The conversation's latest, across every turn: what the compare-and-set checks too.
+    const lesson = await conversationLesson(w.store, w.pod, w.run);
+    if (!lesson || lesson.revision !== base_revision) continue;
+    const lesson_file = mergePatch(lesson.lesson_file, patch);
+    if (!readable(lesson_file)) continue;
+    const written = await w.revise(base_revision, {
+      type: "lesson_revision",
+      run_id: w.run,
+      event_id: await w.id("steer", steer.event_id, "revision"),
+      payload: { revision: base_revision + 1, call_id: steer.event_id, lesson_file },
     });
+    if (written) applied += 1;
   }
   return applied;
 }
@@ -1326,25 +1288,12 @@ function pageOf(log: readonly RunEvent[]): MessageContext | null {
   return said?.type === "message" ? (said.payload.context ?? null) : null;
 }
 
-/** Whether a run of the conversation logged the event `event_id`: the message was taken before. */
-async function logged(
-  store: Store,
-  pod: PodId,
-  conversation: ConversationId,
-  event_id: EventId,
-): Promise<boolean> {
-  for (const run of await store.listRuns(pod, conversation)) {
-    const log = await store.listRunEvents(pod, run.id, 0);
-    if (log.some((e) => e.event_id === event_id)) return true;
-  }
-  return false;
-}
-
 /**
  * A message's page as a fact for the call's instructions, read from the run's pod only (Lead
- * decision 36): a learner of the pod, or a lesson the pod has published. Null when the pod holds no
- * such id: nothing of it is read, and `acceptMessage` refuses it. The learner's name is the
- * parent's own words, so it goes inside the fence as data (dl-z5ja.47, dl-z5ja.117).
+ * decision 36): a learner of the pod, or a lesson of the pod, its draft included (Lead decision
+ * 42). Null when the pod holds no such id: nothing of it is read, and `acceptMessage` refuses it.
+ * The learner's name and the lesson's title are the parent's own words, so they go inside the
+ * fence as data (dl-z5ja.47, dl-z5ja.117, dl-z5ja.121).
  */
 async function pageLine(
   store: Store,
@@ -1362,9 +1311,13 @@ async function pageLine(
       fence(found.learner.first_name, "parent"),
     ].join("\n");
   }
-  const version = await store.getLatestLessonVersion(pod, context.lesson_id);
-  if (!version) return null;
-  return `The parent is writing from the screen of lesson ${context.lesson_id} (version ${version.version}): questions about "this lesson" are about it.`;
+  // The pod's own lesson, its draft included (Lead decision 42): another pod's id reads as none.
+  const lesson = await store.getLesson(pod, context.lesson_id);
+  if (!lesson) return null;
+  return [
+    `The parent is writing from the screen of lesson ${context.lesson_id} (${lesson.status}): questions about "this lesson" are about it, whose title is:`,
+    fence(lesson.title, "parent"),
+  ].join("\n");
 }
 
 /**
