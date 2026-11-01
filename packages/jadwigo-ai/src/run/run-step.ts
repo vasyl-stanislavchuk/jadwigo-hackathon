@@ -21,7 +21,7 @@ import {
 import { type AnswerMiss, budgetGuard, checkAnswer, deadlineDue } from "@jadwigo/core";
 import { type NewRunInbox, type RunChange, type Store, StoreError } from "@jadwigo/store";
 import { FENCE_RULE, fence, neutralise } from "../fence/index.ts";
-import type { MuseClient, MuseInput } from "../muse/client.ts";
+import { type MuseClient, MuseFailed, type MuseInput, type MuseResponse } from "../muse/client.ts";
 import type { RunQueue } from "../queue/types.ts";
 import { type QueuedStep, STEP_VISIBILITY_S } from "../queue/types.ts";
 import type { Verbs } from "../verbs/types.ts";
@@ -499,28 +499,38 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       return "continue";
     }
     const asked = deps.tier ?? DEFAULT_TIER;
-    const response = await deps.muse.respond({
-      run_id: run.id,
-      call_no,
-      tag: TAG,
-      prompt_cache_key: PROMPT_CACHE_KEY,
-      tier: asked,
-      instructions: instructions.join("\n\n"),
-      input: [...prior.input, ...museInput(w.log)],
-      tools: Object.values(deps.verbs).map((verb) => verb.tool),
-      names: await namesOf(deps.store, scope),
-    });
-    const answered = response.tier ?? asked;
-    if (asked === "private" && answered !== "private") {
-      // Recorded as it answered, and never silently: the host logs it (dl-z5ja.91).
-      deps.onWarning?.({
-        kind: "tier_downgraded",
+    const downgraded = (answered: ModelTier) => {
+      if (asked === "private" && answered !== "private") {
+        deps.onWarning?.({
+          kind: "tier_downgraded",
+          run_id: run.id,
+          call_no,
+          requested: asked,
+          answered,
+        });
+      }
+    };
+    let response: MuseResponse;
+    try {
+      response = await deps.muse.respond({
         run_id: run.id,
         call_no,
-        requested: asked,
-        answered,
+        tag: TAG,
+        prompt_cache_key: PROMPT_CACHE_KEY,
+        tier: asked,
+        instructions: instructions.join("\n\n"),
+        input: [...prior.input, ...museInput(w.log)],
+        tools: Object.values(deps.verbs).map((verb) => verb.tool),
+        names: await namesOf(deps.store, scope),
       });
+    } catch (error) {
+      // A failed call writes no model_response, so the tier it went to is told here (dl-z5ja.103).
+      if (error instanceof MuseFailed && error.tier !== null) downgraded(error.tier);
+      throw error;
     }
+    const answered = response.tier ?? asked;
+    // Recorded as it answered, and never silently: the host logs it (dl-z5ja.91).
+    downgraded(answered);
     const total = spent + response.cost_usd;
     const recorded: NewRunEvent[] = [
       {
