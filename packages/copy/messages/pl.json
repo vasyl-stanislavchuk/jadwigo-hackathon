@@ -883,5 +883,20 @@
   "chat_list_archive": "Archiwizuj",
   "chat_list_archive_confirm": "Rozmowa zniknie z listy. Zostanie zachowana przy koncie rodziny i usunięta razem z nim.",
   "chat_list_archive_yes": "Tak, archiwizuj",
-  "chat_list_archive_failed": "Nie udało się zarchiwizować rozmowy. Spróbuj jeszcze raz."
+  "chat_list_archive_failed": "Nie udało się zarchiwizować rozmowy. Spróbuj jeszcze raz.",
+  "parent_question": "Jaką lekcję przygotować?",
+  "parent_box_label": "Opisz zadanie domowe",
+  "parent_placeholder": "Np. Odejmowanie przez 10. Pomyliła się w 15 − 7 i 12 − 5.",
+  "parent_attach": "Dodaj zdjęcie",
+  "parent_remove_photo": "Usuń zdjęcie",
+  "parent_for": "Dla:",
+  "parent_no_child": "Bez dziecka",
+  "parent_add_child_menu": "Dodaj dziecko…",
+  "parent_add_child_hint": "Imię i klasa. Jadwigo zacznie śledzić, co umie.",
+  "parent_send": "Zrób lekcję",
+  "parent_send_reason": "Najpierw opisz zadanie albo dodaj zdjęcie",
+  "parent_name_note": "Widzisz je tylko Ty i Jadwigo w rozmowie. Nie trafia do lekcji.",
+  "parent_grade": "Klasa",
+  "parent_cancel": "Anuluj",
+  "parent_lesson_soon": "Robienie lekcji z tego miejsca jest w drodze. Wkrótce zadziała."
 }

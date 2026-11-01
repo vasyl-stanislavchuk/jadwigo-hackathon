@@ -158,6 +158,7 @@
   --radius-jw-control: var(--jw-radius-control);
   --radius-jw-small: var(--jw-radius-small);
   --radius-jw-dialog: var(--jw-radius-dialog);
+  --radius-jw-box: var(--jw-radius-box);
   /* The pressed edge the action stands on (foundation.css, Behaviour: the action). */
   --shadow-jw-act: 0 var(--jw-press) 0 var(--jw-act-edge);
   --transition-duration-jw-fast: var(--jw-dur-fast);
