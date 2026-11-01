@@ -686,6 +686,99 @@ describe("sweep", () => {
     expect(t.muse.calls).toHaveLength(0);
   });
 
+  it("leaves a turn open while a verb runs past RUN_IDLE_MS, and the turn completes", async () => {
+    const swept: Awaited<ReturnType<typeof sweep>>[] = [];
+    let t: Awaited<ReturnType<typeof setup>>;
+    t = await setup(
+      [{ calls: [{ verb: "lesson_draft" }] }, { text: "Ready." }],
+      fakeVerbs({
+        lesson_draft: async () => {
+          for (let i = 0; i < 3; i++) {
+            t.tick(RUN_IDLE_MS / 2);
+            swept.push(await sweep(t.deps, t.now()));
+          }
+          return undefined;
+        },
+      }),
+    );
+    const run = await t.say("A slow draft.");
+    await drain(t.deps);
+
+    expect(swept).toEqual([
+      { idle: [], max: [] },
+      { idle: [], max: [] },
+      { idle: [], max: [] },
+    ]);
+    expect(types(await t.log(run)).slice(-2)).toEqual(["status", "turn_complete"]);
+    expect(await t.run(run)).toMatchObject({ status: "completed" });
+    expect(t.muse.calls).toHaveLength(2);
+  });
+
+  it("gives the idle clock back once the verbs are done", async () => {
+    let t: Awaited<ReturnType<typeof setup>>;
+    let held: string | null = null;
+    t = await setup(
+      [{ calls: [{ verb: "lesson_draft" }] }],
+      fakeVerbs({
+        lesson_draft: async (context) => {
+          held = (await t.run(context.run_id)).idle_deadline_at;
+          t.tick(RUN_IDLE_MS * 2);
+          return undefined;
+        },
+      }),
+    );
+    const run = await t.say("Halves.");
+    const [queued] = await t.queue.read(STEP_VISIBILITY_S, 1);
+    if (!queued) throw new Error("no step queued");
+    await runStep(queued.message, t.deps);
+
+    const stored = await t.run(run);
+    expect(held).toBe(stored.max_deadline_at);
+    expect(stored.idle_deadline_at).toBe(new Date(t.now().getTime() + RUN_IDLE_MS).toISOString());
+  });
+
+  it("still fails a run on max_deadline_at while a verb runs", async () => {
+    let t: Awaited<ReturnType<typeof setup>>;
+    let swept: Awaited<ReturnType<typeof sweep>> | null = null;
+    t = await setup(
+      [{ calls: [{ verb: "lesson_draft" }] }, { text: "never sent" }],
+      fakeVerbs({
+        lesson_draft: async () => {
+          t.tick(RUN_MAX_MS);
+          swept = await sweep(t.deps, t.now());
+          return undefined;
+        },
+      }),
+    );
+    const run = await t.say("Forever.");
+    await drain(t.deps);
+
+    expect(swept).toEqual({ idle: [], max: [run] });
+    expect((await t.run(run)).status).toBe("failed");
+    expect(t.muse.calls).toHaveLength(1);
+  });
+
+  it("takes back a verb hold left by a step that died", async () => {
+    const t = await setup([{ text: "Back." }]);
+    const run = await t.say("Halves.");
+    const stored = await t.run(run);
+    // The step before died inside a verb, holding the idle clock at the max deadline.
+    await t.store.updateRun(t.member.pod, run, stored.attempt, {
+      idle_deadline_at: stored.max_deadline_at,
+    });
+    let idle: string | null = null;
+    const scripted = t.deps.muse;
+    t.deps.muse = {
+      respond: async (request) => {
+        idle = (await t.run(run)).idle_deadline_at;
+        return scripted.respond(request);
+      },
+    };
+    await drain(t.deps);
+    expect(idle).toBe(new Date(t.now().getTime() + RUN_IDLE_MS).toISOString());
+    expect((await t.run(run)).status).toBe("completed");
+  });
+
   it("fails a run past max_deadline_at even while activity keeps idle away", async () => {
     const t = await setup([]);
     const run = await t.say("Long.");
