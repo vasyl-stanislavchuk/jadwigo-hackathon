@@ -2,8 +2,10 @@
 // from infra/web-build/<env>.env, and the file wins over the shell. A stub bun records what the build
 // would see. Then real builds into a temp directory (dl-e8ov.2.74): with the shipped prod.env the
 // bundle carries jadwigo-prod's project and Google alone (dl-e8ov.2.92, decisions dl-asgl, dl-2qke,
-// dl-ovva), and none of the shell's; with a file that names another, the bundle carries that one. The deploy's own dry run shows it
-// builds through prod.env, whatever its recipe's wording. Nothing uploads.
+// dl-ovva), and none of the shell's; with a file that names another, the bundle carries that one. The
+// deploy's own dry run shows it builds through prod.env, whatever its recipe's wording, and prints the
+// settings it ships: the prod media URL among them (dl-n9fr.53), so pictures load from the media
+// CloudFront. Nothing uploads.
 import { spawnSync } from "node:child_process";
 import {
   chmodSync,
@@ -20,7 +22,14 @@ import { describe, expect, it } from "vitest";
 
 const repo = resolve(import.meta.dirname, "../..");
 const infra = join(repo, "infra");
-const KEYS = ["JW_SUPABASE_URL", "JW_SUPABASE_KEY", "JW_SUPABASE_PROVIDERS"] as const;
+const KEYS = [
+  "JW_SUPABASE_URL",
+  "JW_SUPABASE_KEY",
+  "JW_SUPABASE_PROVIDERS",
+  "VITE_MEDIA_URL",
+] as const;
+/** The prod media CloudFront: terraform's media_url output, SSM /jadwigo/bank/media-url. */
+const PROD_MEDIA = "https://dx5i3bka3zn5f.cloudfront.net";
 /** jadwigo-prod's publishable key as prod.env writes it: read, not retyped, so the key sits in one
  * file (its line carries gitleaks:allow). */
 const PROD_KEY =
@@ -33,11 +42,13 @@ const PROD = {
   JW_SUPABASE_URL: "https://xhzkmpainwzrfktxffjv.supabase.co",
   JW_SUPABASE_KEY: PROD_KEY,
   JW_SUPABASE_PROVIDERS: "google",
+  VITE_MEDIA_URL: PROD_MEDIA,
 };
 const SHELL = {
   JW_SUPABASE_URL: "https://shell-sentinel.invalid",
   JW_SUPABASE_KEY: "sb_publishable_shell_sentinel",
   JW_SUPABASE_PROVIDERS: "google",
+  VITE_MEDIA_URL: "https://media-shell-sentinel.invalid",
 };
 
 /** An env file of our own naming a Supabase project. */
@@ -45,7 +56,7 @@ function envFile(url: string, key: string) {
   const file = join(mkdtempSync(join(tmpdir(), "web-build-env-")), "stub.env");
   writeFileSync(
     file,
-    `JW_SUPABASE_URL=${url}\nJW_SUPABASE_KEY=${key}\nJW_SUPABASE_PROVIDERS=google,facebook\n`,
+    `JW_SUPABASE_URL=${url}\nJW_SUPABASE_KEY=${key}\nJW_SUPABASE_PROVIDERS=google,facebook\nVITE_MEDIA_URL=https://media.example.invalid\n`,
   );
   return file;
 }
@@ -98,7 +109,7 @@ function realBuild(args: string[]) {
 }
 
 describe("make -C infra web-build", { timeout: 120_000 }, () => {
-  it("the shipped prod file gives the build jadwigo-prod's sign-in with Google, whatever the shell exports", () => {
+  it("the shipped prod file gives the build jadwigo-prod's sign-in with Google and the prod media URL, whatever the shell exports", () => {
     const run = stubBuild(["ENV=prod"], SHELL);
     expect(run.status).toBe(0);
     expect(run.argv).toBe("bun run build");
@@ -119,6 +130,7 @@ describe("make -C infra web-build", { timeout: 120_000 }, () => {
       JW_SUPABASE_URL: "https://auth.example.invalid",
       JW_SUPABASE_KEY: "sb_publishable_stub",
       JW_SUPABASE_PROVIDERS: "google,facebook",
+      VITE_MEDIA_URL: "https://media.example.invalid",
     });
   });
 
@@ -138,10 +150,15 @@ describe("make -C infra web-build", { timeout: 120_000 }, () => {
     }
 
     const prod = realBuild(["ENV=prod"]);
-    for (const text of [SHELL.JW_SUPABASE_URL, SHELL.JW_SUPABASE_KEY, "sb_publishable_named"]) {
+    for (const text of [
+      SHELL.JW_SUPABASE_URL,
+      SHELL.JW_SUPABASE_KEY,
+      SHELL.VITE_MEDIA_URL,
+      "sb_publishable_named",
+    ]) {
       expect(prod.includes(text), `the prod build carries ${text}`).toBe(false);
     }
-    for (const text of [PROD.JW_SUPABASE_URL, PROD.JW_SUPABASE_KEY]) {
+    for (const text of [PROD.JW_SUPABASE_URL, PROD.JW_SUPABASE_KEY, PROD_MEDIA]) {
       expect(prod.includes(text), `the prod build lacks ${text}`).toBe(true);
     }
   });
@@ -159,6 +176,9 @@ describe("make -C infra web-build", { timeout: 120_000 }, () => {
     const build = builds[0] ?? "";
     expect(build).toMatch(
       /set -a && \. \S*infra\/web-build\/prod\.env && set \+a && cd \S*apps\/web && bun run build/,
+    );
+    expect(lines.find((l) => l.includes("web-build settings:")) ?? "").toContain(
+      `VITE_MEDIA_URL=${PROD_MEDIA}`,
     );
     const firstUpload = lines.findIndex((l) => /\bs3 sync\b/.test(l));
     expect(firstUpload).toBeGreaterThan(lines.indexOf(build));
