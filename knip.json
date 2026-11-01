@@ -12,6 +12,9 @@
       "project": ["src/**/*.{ts,astro,mdx}", "scripts/*.ts", "*.mjs"],
       "ignoreDependencies": ["satteri", "@jadwigo/cli", "@jadwigo/api-client"]
     },
+    "apps/runner": {
+      "entry": ["src/probe-lambda.ts", "src/probe-edge.ts"]
+    },
     "apps/web": {
       "entry": ["vite.config.ts", "playwright.config.ts", "e2e/**/*.spec.ts", "e2e/auth-server.ts"],
       "project": ["src/**/*.{ts,tsx}", "dev/**/*.ts", "e2e/**/*.ts", "*.config.ts"],

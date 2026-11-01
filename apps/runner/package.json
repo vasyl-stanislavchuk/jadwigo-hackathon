@@ -1,0 +1,38 @@
+{
+  "name": "@jadwigo/runner",
+  "description": "The engine's step host: a thin wrapper that drains agent_step through runStep, as a 2nd Lambda or an Edge Function (dl-z5ja.5 probe, dl-z5ja.20)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "biome check .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --config ../../vitest.config.ts --project unit",
+    "probe": "bun src/probe-cli.ts"
+  },
+  "//": {
+    "@aws-sdk/client-ssm": "reads the SecureString with the runner's DATABASE_URL once per cold start in src/config.ts",
+    "@jadwigo/contracts": "the ids and run records the probe seeds and reads back",
+    "@jadwigo/jadwigo-ai": "drain, runStep, PgmqRunQueue, the verbs and ScriptedMuse: the engine the host wraps",
+    "@jadwigo/store": "PostgresStore as jadwigo_runner, the store runStep reads and writes through",
+    "pg": "the pool PgmqRunQueue takes (it never imports pg itself)",
+    "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
+    "@types/pg": "types for pg",
+    "typescript": "tsc for this package's typecheck script",
+    "vitest": "runs the host's unit test with the root vitest.config.ts",
+    "@jadwigo/testing": "FIXED_NOW, the pinned clock of the host's unit test"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ssm": "3.1156.0",
+    "@jadwigo/contracts": "workspace:*",
+    "@jadwigo/jadwigo-ai": "workspace:*",
+    "@jadwigo/store": "workspace:*",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@jadwigo/testing": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/pg": "8.23.1",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
