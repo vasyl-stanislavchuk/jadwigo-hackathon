@@ -114,24 +114,15 @@ function revised(checked: Review, effect: VerbEffect): VerbEffect {
 }
 
 /**
- * The view of a verb that writes a revision (`dl-z5ja.69`): the revision the runner will write,
- * which is the run's last plus one as `runTool` numbers it, and the steps it changed. The kind is
- * the verb's name, the only kind `ToolView` parses.
+ * The view of a verb that writes a revision (`dl-z5ja.69`): the steps it changed. The kind is the
+ * verb's name, the only kind `ToolView` parses; the page reads the revision's number from the
+ * `lesson_revision` event the runner writes.
  */
 function revisionView(
   kind: "lesson_draft" | "lesson_edit",
-  context: VerbContext,
   changed_step_ids: readonly string[],
-  checked: Review,
 ): ToolView {
-  return {
-    kind,
-    data: {
-      revision: (context.lesson?.revision ?? 0) + 1,
-      changed_step_ids: [...changed_step_ids],
-      publishable: checked.publishable,
-    },
-  };
+  return { kind, data: { changed_step_ids: [...changed_step_ids] } };
 }
 /** What the model and the parent read of a step: its words and its key, not the whole JSON. */
 function card(step: Step) {
@@ -234,9 +225,7 @@ export async function lessonDraft(
     lesson_file,
     view: revisionView(
       "lesson_draft",
-      context,
       drawn.map((s) => s.id),
-      checks,
     ),
   });
 }
@@ -429,7 +418,7 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
         lesson_ok: checks.publishable,
       },
       lesson_file,
-      view: revisionView("lesson_edit", context, changes ? [step_id] : [], checks),
+      view: revisionView("lesson_edit", changes ? [step_id] : []),
     }),
   );
 }

@@ -19,30 +19,26 @@ async function drafted() {
 }
 
 describe("each verb's view", () => {
-  it("lesson_draft names its revision and every step it drew", async () => {
+  it("lesson_draft names every step it drew", async () => {
     const { effect } = await drafted();
     expect(ToolView.parse(effect.view)).toEqual({
       kind: "lesson_draft",
-      data: {
-        revision: 1,
-        changed_step_ids: ["s01", "s02", "s03", "s04", "s05", "s06"],
-        publishable: true,
-      },
+      data: { changed_step_ids: ["s01", "s02", "s03", "s04", "s05", "s06"] },
     });
   });
 
-  it("lesson_edit names the next revision and the step it changed, and none for a no-op", async () => {
+  it("lesson_edit names the step it changed, and none for a no-op", async () => {
     const { verbs, run, revision } = await drafted();
     const patch = { say: "Ile to razem?" };
     const edit = { draft_id: run, names: [], step_id: "s03", patch, why: "the parent asked" };
     const effect = await verbs.lesson_edit.run(contextFor(run, "call_2", revision), edit);
     expect(ToolView.parse(effect.view)).toEqual({
       kind: "lesson_edit",
-      data: { revision: 2, changed_step_ids: ["s03"], publishable: true },
+      data: { changed_step_ids: ["s03"] },
     });
     const next = { revision: 2, lesson_file: effect.lesson_file ?? {} };
     const again = await verbs.lesson_edit.run(contextFor(run, "call_3", next), edit);
-    expect(again.view?.data).toMatchObject({ revision: 3, changed_step_ids: [] });
+    expect(again.view?.data).toEqual({ changed_step_ids: [] });
   });
 
   it("lesson_check answers its findings and whether the lesson can be published", async () => {
