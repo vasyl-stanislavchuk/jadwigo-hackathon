@@ -28,7 +28,7 @@ function turnOf(name: string, change: (view: RunView) => void = () => {}): Turn 
     created_by: "acc_00000000000000000000000001" as Run["created_by"],
     conversation_id: null,
     workflow: "jadwigo-lesson-compose",
-    resumes_run_id: null,
+    resumes: null,
     status,
     attempt: 1,
     cancel_requested_at: null,
