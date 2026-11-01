@@ -14,6 +14,7 @@ import { type ReactElement, useEffect, useMemo, useState } from "react";
 import { queryLanguage, useLocation } from "../route.ts";
 import { Button } from "../tool/button.tsx";
 import { ChatPane } from "./ChatPane.tsx";
+import { type ConsentClient, ConsentScreen, giveConsent } from "./ConsentScreen.tsx";
 import { ConversationList } from "./ConversationList.tsx";
 import { type ConversationState, lessonOf, type Turn, turnsOf } from "./conversation.ts";
 import { newConversationId } from "./ids.ts";
@@ -214,19 +215,38 @@ function ChatLayout({
 
 function LiveChat({
   transport,
+  consent,
   ratings,
   conversation,
   language,
   onNew,
 }: {
   transport: EngineTransport;
+  /** Gives the pod's consent when a route asks for it; null where no route can (dl-z5ja.32). */
+  consent: ConsentClient | null;
   /** The rating route, on the routes transport only (dl-z5ja.63). */
   ratings: RunRatingClient | null;
   conversation: ConversationId;
   language: Language;
   onNew(): void;
 }): ReactElement {
-  const { state, send, stop, edit } = useConversation(transport, conversation);
+  const { state, send, stop, edit, consentMissing, consented } = useConversation(
+    transport,
+    conversation,
+  );
+  if (consentMissing)
+    return (
+      <main className="mx-auto flex max-w-xl flex-col p-4">
+        <ConsentScreen
+          language={language}
+          onAgree={async () => {
+            if (consent === null) throw new Error("no route to give consent through");
+            await giveConsent(consent);
+            consented();
+          }}
+        />
+      </main>
+    );
   return (
     <ChatView
       language={language}
@@ -247,12 +267,14 @@ function LiveChat({
  */
 function useEngine(
   given: EngineTransport | undefined,
+  givenConsent: ConsentClient | undefined,
   givenLists: ConversationListClient | undefined,
   givenRatings: RunRatingClient | undefined,
   engine: string | null,
 ): {
   transport: EngineTransport;
   signIn: (() => Promise<string | null>) | null;
+  consent: ConsentClient | null;
   /** The conversation list's routes, on the routes transport only (dl-z5ja.106). */
   lists: ConversationListClient | null;
   ratings: RunRatingClient | null;
@@ -262,29 +284,34 @@ function useEngine(
       return {
         transport: given,
         signIn: null,
+        consent: givenConsent ?? null,
         lists: givenLists ?? null,
         ratings: givenRatings ?? null,
       };
     const hot = engine === "api" ? null : hotTransport();
-    if (hot) return { transport: hot, signIn: null, lists: null, ratings: null };
+    if (hot) return { transport: hot, signIn: null, consent: null, lists: null, ratings: null };
     const api = apiTransport();
     return api === null
       ? null
       : {
           transport: api.transport,
           signIn: () => api.auth.token(),
+          consent: api.client,
           lists: api.client,
           ratings: api.client,
         };
-  }, [given, givenLists, givenRatings, engine]);
+  }, [given, givenConsent, givenLists, givenRatings, engine]);
 }
 
 export function ChatScreen({
   transport,
+  consent,
   lists,
   ratings,
 }: {
   transport?: EngineTransport;
+  /** A test's consent client, beside its transport. */
+  consent?: ConsentClient;
   /** A test's list routes, beside its transport. */
   lists?: ConversationListClient;
   /** A test's rating route, beside its transport. */
@@ -292,7 +319,7 @@ export function ChatScreen({
 } = {}): ReactElement {
   const { query } = useLocation();
   const language = queryLanguage(query) ?? "pl";
-  const live = useEngine(transport, lists, ratings, query.get("engine"));
+  const live = useEngine(transport, consent, lists, ratings, query.get("engine"));
   const [conversation, setConversation] = useState<ConversationId>(storedConversation);
   /** Null until known; the routes refuse a parent who is not signed in. */
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
@@ -313,6 +340,7 @@ export function ChatScreen({
     <LiveChat
       key={conversation}
       transport={live.transport}
+      consent={live.consent}
       ratings={live.ratings}
       conversation={conversation}
       language={language}

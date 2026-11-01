@@ -95,6 +95,40 @@ describe("the UX seams", () => {
   });
 });
 
+describe("a parent's patch rides on a lesson_edit steer (dl-z5ja.76)", () => {
+  it("parses on the steer event and the inbox, and only as an object", () => {
+    const patch = { title: { en: "Mine" }, notes: null };
+    expect(parses("steer", { text: "x", source: "lesson_edit", patch })).toBe(true);
+    expect(parses("steer", { text: "x", source: "lesson_edit", patch: ["a"] })).toBe(false);
+    expect(parses("steer", { text: "x", source: "lesson_edit", patch: null })).toBe(false);
+    const row = {
+      run_id: BASE.run_id,
+      pod_id: "pod_6et2fhbnwvb45aw9atcfzs33za",
+      event_id: BASE.event_id,
+      status: "pending",
+      created_at: BASE.created_at,
+      kind: "steer",
+    };
+    const payload = { text: "x", source: "lesson_edit", patch };
+    expect(RunInbox.safeParse({ ...row, payload }).success).toBe(true);
+  });
+
+  it("comes on the wire only with a lesson_edit steer", () => {
+    const base = { event_id: BASE.event_id, text: "x" };
+    const patch = { title: { en: "Mine" } };
+    const steer = { ...base, kind: "steer", source: "lesson_edit", patch, base_revision: 2 };
+    expect(ConversationMessage.safeParse(steer).success).toBe(true);
+    expect(ConversationMessage.safeParse({ ...steer, source: "chat" }).success).toBe(false);
+    expect(ConversationMessage.safeParse({ ...base, patch, base_revision: 2 }).success).toBe(false);
+    // A patch names the revision it was made on, and that revision comes only with a patch.
+    const { base_revision: _, ...unanchored } = steer;
+    expect(ConversationMessage.safeParse(unanchored).success).toBe(false);
+    const { patch: __, ...bare } = steer;
+    expect(ConversationMessage.safeParse(bare).success).toBe(false);
+    expect(ConversationMessage.safeParse({ ...steer, base_revision: 0 }).success).toBe(false);
+  });
+});
+
 describe("a message's page rides on a message only (dl-z5ja.107, dl-z5ja.117)", () => {
   it("parses a context on a message, and refuses it on a steer", () => {
     const base = { event_id: BASE.event_id, text: "x" };

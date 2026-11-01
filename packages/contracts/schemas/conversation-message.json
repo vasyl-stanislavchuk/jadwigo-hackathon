@@ -30,6 +30,14 @@
         "minLength": 1
       }
     },
+    "patch": {
+      "$ref": "#/$defs/LessonPatch"
+    },
+    "base_revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
     "context": {
       "$ref": "#/$defs/MessageContext"
     },
@@ -51,6 +59,13 @@
     "EventId": {
       "type": "string",
       "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "LessonPatch": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
     },
     "MessageContext": {
       "anyOf": [

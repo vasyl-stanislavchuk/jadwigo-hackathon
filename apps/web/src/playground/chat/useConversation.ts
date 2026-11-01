@@ -8,7 +8,7 @@
 import { ApiError } from "@jadwigo/api-client";
 import { ErrorType } from "@jadwigo/contracts";
 import type { ConversationId, Run, RunEvent, RunId } from "@jadwigo/contracts/run";
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import {
   type ConversationState,
   conversationReducer,
@@ -38,6 +38,10 @@ function limitOf(e: unknown): SendLimit | null {
   if (e.type === ErrorType.enum.MessageLimitDay) return "day";
   return null;
 }
+
+/** Whether a route refused for want of the pod's consent to the AI (dl-z5ja.112), by its type. */
+const consentMissing = (e: unknown): boolean =>
+  e instanceof ApiError && e.type === ErrorType.enum.AiConsentMissing;
 
 export interface EngineTransport {
   /** Live pushes for one run; answers the unsubscribe. */
@@ -102,6 +106,13 @@ export interface Conversation {
    * since a steer on an ended turn changes nothing.
    */
   edit(text: string, question_ids: string[]): void;
+  /**
+   * True once a route answered 409 `AiConsentMissing` (dl-z5ja.32): the page asks for the pod's
+   * consent instead of saying the send failed.
+   */
+  consentMissing: boolean;
+  /** The consent was given: the message the route refused is sent again. */
+  consented(): void;
 }
 
 export function useConversation(
@@ -115,6 +126,8 @@ export function useConversation(
   const latest = useRef(state);
   latest.current = state;
   const subscribed = useRef(new Map<RunId, () => void>());
+  /** The words a route refused for want of consent, sent again once it is given. */
+  const [refused, setRefused] = useState<string | null>(null);
 
   /** Subscribe first, then fetch after the cursor: what lands between is buffered and merged. */
   const follow = useCallback(
@@ -170,10 +183,19 @@ export function useConversation(
           dispatch({ type: "send_failed", failed: false });
           return follow(run);
         })
-        .catch((e: unknown) => dispatch({ type: "send_failed", failed: true, limit: limitOf(e) }));
+        .catch((e: unknown) => {
+          if (consentMissing(e)) setRefused(text);
+          else dispatch({ type: "send_failed", failed: true, limit: limitOf(e) });
+        });
     },
     [transport, conversation, follow],
   );
+
+  const consented = useCallback(() => {
+    const text = refused;
+    setRefused(null);
+    if (text !== null) send(text);
+  }, [refused, send]);
 
   const stop = useCallback(() => {
     dispatch({ type: "stop" });
@@ -204,5 +226,5 @@ export function useConversation(
     [transport, conversation, follow, send],
   );
 
-  return { state, send, stop, edit };
+  return { state, send, stop, edit, consentMissing: refused !== null, consented };
 }
