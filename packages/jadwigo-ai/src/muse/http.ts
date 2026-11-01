@@ -131,7 +131,7 @@ export class HttpMuse implements MuseClient {
         const response = await this.#attempt(model, sent, guard, live);
         return {
           ...response,
-          tier: model === this.#o.models.contributor ? "contributor" : "private",
+          tier: this.#tierOf(model),
           usage: add(usage, response.usage),
           cost_usd: round6(spent + response.cost_usd),
         };
@@ -145,7 +145,12 @@ export class HttpMuse implements MuseClient {
         await this.#o.sleep((error.rate_limited ? 15_000 : 2_000) * (attempt + 1));
       }
     }
-    throw new MuseFailed(last, spent, usage);
+    throw new MuseFailed(last, spent, usage, this.#tierOf(model));
+  }
+
+  /** The tier `model` serves: the contributor model is `contributor`, any other `private`. */
+  #tierOf(model: string): ModelTier {
+    return model === this.#o.models.contributor ? "contributor" : "private";
   }
 
   #modelFor(tier: ModelTier): string {
