@@ -38,6 +38,7 @@ export {
   type SkillEvent,
   type SkillMastery,
 } from "./mastery/index.ts";
+export { type AnswerMiss, checkAnswer, type StatusWord } from "./run/answer-check.ts";
 export {
   type BudgetLevel,
   budgetGuard,
