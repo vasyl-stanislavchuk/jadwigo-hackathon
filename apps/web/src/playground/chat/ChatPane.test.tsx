@@ -124,9 +124,11 @@ describe("the chat pane, one state per golden log", () => {
     pane({ turns: [turnOf("budget-steer-then-stop")] });
     const rows = document.querySelectorAll("[data-row='steer']");
     expect([...rows].map((r) => r.getAttribute("data-level"))).toEqual(["steer", "stop"]);
-    expect(rows[0]?.textContent).toContain("Połowa budżetu wykorzystana");
-    expect(rows[0]?.textContent).toContain("0.06 z 0.10 USD");
-    expect(rows[1]?.textContent).toContain("tu się zatrzymuję");
+    expect(rows[0]?.textContent).toBe("Kończę lekcję z tym, co mam, żeby zmieścić się w limicie.");
+    expect(rows[1]?.textContent).toContain("Zapisane, zatrzymane");
+    expect(rows[1]?.textContent).toContain("Lekcja do tej pory jest zapisana.");
+    // Cost in words: no dollar figure and no token count reaches the parent (dl-z5ja.29).
+    for (const row of rows) expect(row.textContent).not.toMatch(/USD|\$|\d\.\d/);
   });
 
   it("cancelled (cancel-during-a-verb): says stopped, and Stop is gone", () => {

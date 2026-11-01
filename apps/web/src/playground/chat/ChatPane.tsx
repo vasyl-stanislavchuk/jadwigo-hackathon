@@ -49,8 +49,6 @@ function rowsOf(chat: readonly ChatItem[]): Row[] {
   return rows;
 }
 
-const usd = (n: number): string => n.toFixed(2);
-
 function ToolLine({ tool, language }: { tool: ToolItem; language: Language }): ReactElement {
   const what = copy(language, TOOL_KEY[tool.verb], {}, "adult");
   const how =
@@ -156,17 +154,8 @@ function RowView({ row, run, language }: { row: Row; run: RunId; language: Langu
             row.level === "steer" ? "chat_budget_steer" : "chat_budget_stop",
             {},
             "adult",
-          )}{" "}
-          <span className="text-muted-foreground">
-            (
-            {copy(
-              language,
-              "chat_budget_spent",
-              { spent: usd(row.spent_usd), cap: usd(row.cap_usd) },
-              "adult",
-            )}
-            )
-          </span>
+          )}
+          {row.level === "stop" && ` ${copy(language, "chat_budget_steer_note", {}, "adult")}`}
         </p>
       );
     case "approval": {
