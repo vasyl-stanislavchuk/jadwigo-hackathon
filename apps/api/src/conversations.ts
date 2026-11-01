@@ -166,6 +166,7 @@ export async function cancelRun(
     conversation_id: run.conversation_id,
     entry: { kind: "cancel", event_id: parsed.data.event_id, payload: {} },
   });
-  if (accepted.inbox.kind !== "cancel") throw mismatch();
+  // The cancel landed on another run: its event_id already names another run's row.
+  if (accepted.inbox.kind !== "cancel" || accepted.run.id !== id) throw mismatch();
   return { run: accepted.run };
 }

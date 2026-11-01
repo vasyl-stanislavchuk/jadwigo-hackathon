@@ -87,6 +87,8 @@ export function conversationSuite(
       expect(other.body.error.type).toBe("EventIdMismatch");
       const owned = await a.call<ErrorEnvelope>("POST", path, { event_id: event(), pod_id: a.pod });
       expect(owned.status).toBe(400);
+      const blank = await a.call<ErrorEnvelope>("POST", path, { event_id: event(), title: "  " });
+      expect(blank.status).toBe(400);
     });
 
     it("takes a message onto a new run with one step enqueued, and a resend lands once", async () => {
@@ -133,6 +135,7 @@ export function conversationSuite(
       const path = pathOf("postMessage", { id: conversation.id });
       for (const body of [
         { event_id: event(), text: "" },
+        { event_id: event(), text: "   \n " },
         { event_id: "not-a-uuid", text: "Hi" },
         { event_id: event(), text: "Hi", from: "agent" },
       ]) {
@@ -174,6 +177,13 @@ export function conversationSuite(
       expect((await events(2)).body.events).toEqual([]);
       expect((await events(-1)).status).toBe(400);
       expect((await events("one")).status).toBe(400);
+      // Exact digits, at most run_event.seq's integer: past it would be a 500 on Postgres.
+      expect((await events(2_147_483_647)).body.events).toEqual([]);
+      for (const bad of ["2147483648", "", "%20", "-0", "0x10", "1e3", "1.5"]) {
+        const reply = await events(bad);
+        expect(reply.status, `after=${bad}`).toBe(400);
+        expect((reply.body as unknown as ErrorEnvelope).error.type).toBe("BadRequest");
+      }
     });
 
     it("asks an open run to stop, and answers an ended one as it is", async () => {
@@ -198,6 +208,15 @@ export function conversationSuite(
       const late = await a.call<RunAccepted>("POST", path, { event_id: event() });
       expect(late.status).toBe(201);
       expect(late.body.run.status).toBe("completed");
+
+      // The next turn's Stop, sent with the 1st turn's cancel event_id, names another run: 409.
+      const next = (await a.say(conversation.id, "Once more")).body.run;
+      expect(next.id).not.toBe(run.id);
+      const reused = await a.call<ErrorEnvelope>("POST", pathOf("cancelRun", { id: next.id }), {
+        event_id,
+      });
+      expect(reused.status).toBe(409);
+      expect(reused.body.error.type).toBe("EventIdMismatch");
     });
 
     // Frozen (dl-z5ja.21, the steward's #409 review): a caller holding another family's
