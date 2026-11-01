@@ -1388,78 +1388,145 @@ _TEX_SYMBOLS = {
     r"\cdots": "…", r"\,": " ", r"\;": " ", r"\quad": " ", r"\qquad": " ", r"\ ": " ",
     r"\log": "log", r"\ln": "ln", r"\pi": "π",
 }
-# Characters TeX escapes, kept as they are: they stand in a private-use character while the `$`
-# and braces of the maths go.
-_TEX_KEPT = {r"\$": "\ue000", r"\{": "\ue001", r"\}": "\ue002"}
-_TEX_FRAC = re.compile(r"\\[dt]?frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}")
-_TEX_FRAC_DIGITS = re.compile(r"\\[dt]?frac\s*(\d)\s*(\d)")
-_TEX_COLOR_ARG = re.compile(r"\\(?:textcolor|color)\s*\{[^{}]*\}")
-_TEX_SQRT = re.compile(r"\\sqrt\s*\{([^{}]*)\}")
-_TEX_SCRIPT = re.compile(r"([_^])\{([^{}]*)\}")
-# Where a fraction began, until its wrappers go: a digit right before it is a mixed number's
-# whole part (`\blue{2}\dfrac{1}{3}` reads 2 1/3, never 21/3).
-_TEX_FRAC_START = "\ue003"
-# Not a fraction or a root: `\dfrac{1}{\blue{4}}` waits until its colour goes, then reads 1/4.
-_TEX_WRAP = re.compile(r"\\(?!(?:[dt]?frac|sqrt)(?![A-Za-z]))([A-Za-z]+)\s*\{([^{}]*)\}")
-_TEX_WORD = re.compile(r"\\([A-Za-z]+)")
-# Commands that only style what follows (size, colour, spacing, text mode): they go. Any other
-# command keeps its name, so a card never silently loses a word it does not know.
+# Commands that only style what follows (size, colour, spacing, text mode): they go, and what
+# they wrap stays. Any other command keeps its name, so a card never silently loses a word.
 _TEX_STYLE = re.compile(
     r"(?:Huge|huge|LARGE|Large|large|normalsize|small|footnotesize|scriptsize|tiny"
-    r"|displaystyle|textstyle|scriptstyle|left|right|big|Big|bigg|Bigg|limits|nolimits"
-    r"|text|textbf|textit|mathrm|mathbf|mathit|boldsymbol|operatorname|color|textcolor"
+    r"|displaystyle|textstyle|scriptstyle|big|Big|bigg|Bigg|limits|nolimits"
+    r"|text|textbf|textit|textrm|textsf|mathrm|mathbf|mathit|mathsf|mathbb|boldsymbol|mbox"
+    r"|operatorname|bf|it|rm"
     r"|(?:blue|red|green|gold|purple|teal|maroon|orange|pink|gray|grey|black|white|mint)[A-E]?)"
 )
+_TEX_FRACS = frozenset({"frac", "dfrac", "tfrac", "cfrac"})
+# A colour's name is no word: `\color{#aa87ff}{8}` and `\textcolor{blue}{4}` read 8 and 4.
+_TEX_COLORS = frozenset({"color", "textcolor"})
+# Khan's blank to write in reads □; `\phantom{0}` only holds the blank's width, so it reads nothing.
+_TEX_PHANTOMS = frozenset({"phantom", "hphantom", "vphantom"})
+_TEX_BOXES = frozenset({"underline", "boxed", "fbox"})
+_TEX_BLANKS = frozenset({"square", "Box", "blank"})
+_TEX_ROOTS = {"": "√", "2": "√", "3": "∛", "4": "∜"}
+# Where a fraction begins and ends, until the text is whole: a whole number right before one on
+# the same line is a mixed number's (`\blue{2}\dfrac{1}{3}` reads 2 1/3), and two fractions side
+# by side are a product (1/2 · 1/3).
+_TEX_FRAC_START, _TEX_FRAC_END = "", ""
 
 
 def _grouped(part: str) -> str:
-    """A fraction's or a root's part in brackets when it is more than one term: `(1+2)/3`."""
+    """A fraction's, a root's or a script's part in brackets when it is more than one term:
+    `(1+2)/3`."""
     part = part.strip()
-    # A command still in it (`2\cdot3`) is an operator not yet made plain.
-    return f"({part})" if re.search(r"[\s+\-−·×:/\\]", part) else part
+    return f"({part})" if re.search(r"[\s+\-−·×:/]", part) else part
 
 
-def _script(m: re.Match[str]) -> str:
-    """A superscript or subscript keeps its grouping: `x^{2+1}` reads `x^(2+1)`. One that still
-    holds a command waits until the command is plain (`^{\\circ}` reads `^°`)."""
-    if "\\" in m[2]:
-        return m[0]
-    return f"{m[1]}{_grouped(m[2])} "
+class _TexReader:
+    """Reads TeX the way TeX does: a command takes its arguments, braced or one character
+    (`\\frac1{12}` is 1/12), so a wrapper inside an argument never leaves a bare brace behind."""
+
+    def __init__(self, src: str) -> None:
+        self.src = src
+        self.at = 0
+
+    def _peek(self) -> str:
+        return self.src[self.at] if self.at < len(self.src) else ""
+
+    def _skip_space(self) -> None:
+        while self._peek() in (" ", "\t", "\n"):
+            self.at += 1
+
+    def text(self, until_brace: bool = False) -> str:
+        out: list[str] = []
+        while self.at < len(self.src):
+            c = self.src[self.at]
+            self.at += 1
+            if c == "}":
+                if until_brace:
+                    break
+            elif c == "{":
+                out.append(self.text(until_brace=True))
+            elif c == "$":
+                pass  # the maths' delimiters go
+            elif c in "^_":
+                script = self._arg().strip()
+                out.append("°" if script == "°" else f"{c}{_grouped(script)} ")
+            elif c == "\\":
+                out.append(self._command())
+            else:
+                out.append(c)
+        return "".join(out)
+
+    def _arg(self) -> str:
+        self._skip_space()
+        c = self._peek()
+        if not c:
+            return ""
+        self.at += 1
+        if c == "{":
+            return self.text(until_brace=True)
+        if c == "\\":
+            return self._command()
+        return c
+
+    def _command(self) -> str:
+        m = re.compile(r"[A-Za-z]+|.", re.S).match(self.src, self.at)
+        if not m:
+            return ""
+        name = m[0]
+        self.at = m.end()
+        if name == "\\":
+            return "\n"
+        if not name.isalpha():
+            return _TEX_SYMBOLS.get("\\" + name, name)  # \$ \{ \} \% stay; \, is a space
+        if name in _TEX_FRACS:
+            top, bottom = self._arg(), self._arg()
+            return f"{_TEX_FRAC_START}{_grouped(top)}/{_grouped(bottom)}{_TEX_FRAC_END}"
+        if name == "sqrt":
+            self._skip_space()
+            degree = ""
+            if self._peek() == "[":
+                close = self.src.find("]", self.at)
+                close = len(self.src) if close < 0 else close
+                degree = _TexReader(self.src[self.at + 1:close]).text().strip()
+                self.at = close + 1
+            return _TEX_ROOTS.get(degree, f"{degree}√") + _grouped(self._arg())
+        if name in _TEX_COLORS:
+            self._arg()  # the colour; what it colours follows as its own group
+            return ""
+        if name in _TEX_PHANTOMS:
+            self._arg()
+            return ""
+        if name in _TEX_BOXES:
+            inside = self._arg()
+            return inside if inside.strip() else "□"
+        if name in _TEX_BLANKS:
+            return "□"
+        if name in ("left", "right"):
+            self._skip_space()
+            if self._peek() == ".":
+                self.at += 1  # an invisible delimiter
+            return ""
+        if "\\" + name in _TEX_SYMBOLS:
+            return _TEX_SYMBOLS["\\" + name]
+        if _TEX_STYLE.fullmatch(name):
+            return ""
+        return f"{name} "
 
 
 def tex_plain(text: Any) -> Any:
     """`text` with its TeX made plain: `$\\Huge{\\blue{6} \\cdot 4} = $` reads `6 · 4 =`.
-    Fractions become `a/b` (a part of more than one term in brackets), a root `√x`, a symbol or
-    relation its character (`\\lt` `<`), a styling command (size, colour, text mode) goes and
-    keeps what it wraps, any other command keeps its name (`\\overline{AB}` reads `overline
-    AB`), so no meaning silently drops; the `$` around maths go, and an escaped `\\$` stays."""
+    Fractions become `a/b` (a part of more than one term in brackets, a mixed number `2 1/2`), a
+    root `√x`, a symbol or relation its character (`\\lt` `<`), Khan's blank `□`, a styling
+    command (size, colour, text mode) goes and keeps what it wraps, any other command keeps its
+    name (`\\overline{AB}` reads `overline AB`), so no meaning silently drops; the `$` around maths
+    go, an escaped `\\$` stays, and each line stays its own line."""
     if not isinstance(text, str) or "\\" not in text and "$" not in text:
         return text
-    out = text
-    for tex, kept in _TEX_KEPT.items():
-        out = out.replace(tex, kept)
-    out = _TEX_COLOR_ARG.sub("", out)  # \textcolor{red}{7}: the colour's name is no word
-    for _ in range(8):  # nested wrappers, from the inside out
-        before = out
-        out = _TEX_FRAC.sub(lambda m: f"{_TEX_FRAC_START}{_grouped(m[1])}/{_grouped(m[2])}", out)
-        out = _TEX_FRAC_DIGITS.sub(_TEX_FRAC_START + r"\1/\2", out)
-        out = _TEX_SQRT.sub(lambda m: f"√{_grouped(m[1])}", out)
-        out = _TEX_SCRIPT.sub(_script, out)
-        for tex, plain in sorted(_TEX_SYMBOLS.items(), key=lambda kv: -len(kv[0])):
-            out = re.sub(re.escape(tex) + r"(?![A-Za-z])", plain, out)
-        out = _TEX_WRAP.sub(lambda m: m[2] if _TEX_STYLE.fullmatch(m[1]) else f"{m[1]} {m[2]}",
-                            out)
-        if out == before:
-            break
-    # A bare root, `\sqrt 2`, once the braced ones have their brackets (_TEX_SQRT, in the loop).
-    out = re.sub(r"\\sqrt(?![A-Za-z])", "√", out)
-    out = _TEX_WORD.sub(lambda m: "" if _TEX_STYLE.fullmatch(m[1]) else m[1], out)
-    out = out.replace("$", "")
-    out = re.sub(r"[{}]", "", out)
-    out = re.sub(r"(\d)\s*" + _TEX_FRAC_START, r"\1 ", out).replace(_TEX_FRAC_START, "")
-    for tex, kept in _TEX_KEPT.items():
-        out = out.replace(kept, tex[1:])
-    return re.sub(r"\s+", " ", out).replace("√ ", "√").strip()
+    out = _TexReader(text).text()
+    start, end = _TEX_FRAC_START, _TEX_FRAC_END
+    out = re.sub(f"{end}[ \\t]*{start}", " · ", out)  # \frac12\frac13: a product
+    out = re.sub(f"(\\d)[ \\t]*{start}", r"\1 ", out)  # 2\frac12, on one line: a mixed number
+    out = out.replace(start, "").replace(end, "")
+    lines = (re.sub(r"[ \t]+", " ", line).replace("√ ", "√").strip() for line in out.split("\n"))
+    return "\n".join(line for line in lines if line)
 
 
 def _key_text(key: Any) -> str:
