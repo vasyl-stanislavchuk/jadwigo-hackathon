@@ -21,7 +21,7 @@ import {
 import { type AnswerMiss, budgetGuard, checkAnswer, deadlineDue } from "@jadwigo/core";
 import { type NewRunInbox, type RunChange, type Store, StoreError } from "@jadwigo/store";
 import { FENCE_RULE, fence, neutralise } from "../fence/index.ts";
-import type { MuseClient, MuseInput, MuseResponse } from "../muse/client.ts";
+import type { MuseClient, MuseInput } from "../muse/client.ts";
 import type { RunQueue } from "../queue/types.ts";
 import { type QueuedStep, STEP_VISIBILITY_S } from "../queue/types.ts";
 import type { Verbs } from "../verbs/types.ts";
@@ -48,6 +48,20 @@ export interface EngineDeps {
    * answered, which the client may name.
    */
   tier?: ModelTier;
+  /**
+   * Told when something the run should not stay silent about happened; the host logs it with the
+   * run id. Today: a client answered on a less private tier than the run asked for (dl-z5ja.91).
+   */
+  onWarning?: (warning: EngineWarning) => void;
+}
+
+/** What `onWarning` is told. */
+export interface EngineWarning {
+  kind: "tier_downgraded";
+  run_id: RunId;
+  call_no: number;
+  requested: ModelTier;
+  answered: ModelTier;
 }
 
 /** An inbox row as the caller gives it: the engine names the run. */
@@ -459,17 +473,29 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       await deps.queue.send({ run_id: run.id, attempt: w.attempt });
       return "continue";
     }
+    const asked = deps.tier ?? DEFAULT_TIER;
     const response = await deps.muse.respond({
       run_id: run.id,
       call_no,
       tag: TAG,
       prompt_cache_key: PROMPT_CACHE_KEY,
-      tier: deps.tier ?? DEFAULT_TIER,
+      tier: asked,
       instructions: instructions.join("\n\n"),
       input: [...prior.input, ...museInput(w.log)],
       tools: Object.values(deps.verbs).map((verb) => verb.tool),
       names: await namesOf(deps.store, scope),
     });
+    const answered = response.tier ?? asked;
+    if (asked === "private" && answered !== "private") {
+      // Recorded as it answered, and never silently: the host logs it (dl-z5ja.91).
+      deps.onWarning?.({
+        kind: "tier_downgraded",
+        run_id: run.id,
+        call_no,
+        requested: asked,
+        answered,
+      });
+    }
     const total = spent + response.cost_usd;
     const recorded: NewRunEvent[] = [
       {
@@ -484,7 +510,7 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
           usage: response.usage,
           cost_usd: response.cost_usd,
           model: response.model,
-          tier: answeredTier(response) ?? deps.tier ?? DEFAULT_TIER,
+          tier: answered,
         },
       },
       {
@@ -687,15 +713,6 @@ async function endUnchecked(
     return "continue";
   }
   return endTurn(w, "completed", deps.now());
-}
-
-/**
- * The tier the client says answered, once `MuseResponse` carries it (the muse lane's `dl-z5ja.18`,
- * PR #478); until then no client names one and the request's tier is recorded.
- */
-function answeredTier(response: MuseResponse): ModelTier | undefined {
-  const named = (response as MuseResponse & { tier?: unknown }).tier;
-  return named === "private" || named === "contributor" ? named : undefined;
 }
 
 /**

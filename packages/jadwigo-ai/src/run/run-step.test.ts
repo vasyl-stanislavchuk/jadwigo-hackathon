@@ -43,6 +43,7 @@ import {
   authorizeRun,
   drain,
   type EngineDeps,
+  type EngineWarning,
   type InboxEntry,
   runStep,
   sweep,
@@ -514,6 +515,35 @@ describe("runStep and drain", () => {
     expect(await tierOf(first)).toEqual(["private"]);
     expect(t.muse.calls[1]?.tier).toBe("private");
     expect(await tierOf(second)).toEqual(["contributor"]);
+  });
+
+  it("warns when the client answers a less private tier than the run asked for", async () => {
+    const t = await setup([{ text: "Ready." }, { text: "Again." }]);
+    const warnings: EngineWarning[] = [];
+    t.deps.onWarning = (warning) => warnings.push(warning);
+    const scripted = t.deps.muse;
+    t.deps.muse = {
+      respond: async (request) => ({ ...(await scripted.respond(request)), tier: "contributor" }),
+    };
+    // Asked for contributor and answered on it: nothing to say.
+    await t.say("Halves.");
+    await drain(t.deps);
+    expect(warnings).toEqual([]);
+    // Asked for private, answered on contributor: recorded as it answered, and warned.
+    t.deps.tier = "private";
+    const run = await t.say("Quarters.");
+    await drain(t.deps);
+    expect(warnings).toEqual([
+      {
+        kind: "tier_downgraded",
+        run_id: run,
+        call_no: 1,
+        requested: "private",
+        answered: "contributor",
+      },
+    ]);
+    const recorded = (await t.log(run)).find((e) => e.type === "model_response");
+    expect(recorded?.payload).toMatchObject({ tier: "contributor" });
   });
 
   it("carries an approval's feedback and answers from the inbox into approval_resolved", async () => {
