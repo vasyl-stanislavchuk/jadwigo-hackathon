@@ -1,12 +1,4 @@
-import {
-  type AccountId,
-  EventId,
-  ID_PREFIXES,
-  idOf,
-  LessonVersionId,
-  type PodId,
-  Uuid,
-} from "@jadwigo/contracts";
+import { type AccountId, EventId, ID_PREFIXES, idOf, type PodId, Uuid } from "@jadwigo/contracts";
 import {
   BUDGET_STEER_SHARE,
   BUDGET_STOP_SHARE,
@@ -1592,40 +1584,31 @@ describe("the message's page (dl-z5ja.107)", () => {
     skill_ids: [],
   };
 
-  it("names a lesson the pod has published, and refuses one it has only drafted", async () => {
+  it("names a lesson of the pod, its draft included, and refuses another pod's (dl-z5ja.121)", async () => {
     const t = await setup([{ text: "About that lesson." }]);
-    const published = await t.store.putLesson(t.member.pod, LESSON);
-    const drafted = await t.store.putLesson(t.member.pod, LESSON);
-    // A published version, as the store answers one: publishing needs lesson questions, and the
-    // store's own contract covers that a draft has no latest version.
-    const latest = t.store.getLatestLessonVersion.bind(t.store);
-    t.store.getLatestLessonVersion = async (pod, lesson) =>
-      lesson === published.id
-        ? {
-            id: LessonVersionId.parse(idOf(ID_PREFIXES.lesson_version, crypto.randomUUID())),
-            pod_id: pod,
-            lesson_id: lesson,
-            version: 1,
-            revises: null,
-            published_at: FIXED_NOW.toISOString(),
-          }
-        : latest(pod, lesson);
+    const drafted = await t.store.putLesson(t.member.pod, { ...LESSON, title: "Mo<b>je" });
+    const other = await t.store.createAccount(Uuid.parse(crypto.randomUUID()), "en");
+    const elsewhere = await t.store.putLesson(other.pod, LESSON);
 
     await expect(
       t.send({
         event_id: newEventId(),
         kind: "message",
-        payload: { text: "This one?", context: { lesson_id: drafted.id } },
+        payload: { text: "This one?", context: { lesson_id: elsewhere.id } },
       }),
     ).rejects.toMatchObject({ type: "NotFound" });
+    expect(t.muse.calls).toHaveLength(0);
     await t.send({
       event_id: newEventId(),
       kind: "message",
-      payload: { text: "This one?", context: { lesson_id: published.id } },
+      payload: { text: "This one?", context: { lesson_id: drafted.id } },
     });
     await drain(t.deps);
     expect(t.muse.calls).toHaveLength(1);
-    expect(t.muse.calls[0]?.instructions).toContain(`screen of lesson ${published.id}`);
+    const instructions = t.muse.calls[0]?.instructions ?? "";
+    expect(instructions).toContain(`screen of lesson ${drafted.id} (draft)`);
+    // The title is the parent's words: inside the fence, markup neutralised.
+    expect(instructions).toContain(fence("Mo<b>je", "parent"));
   });
 
   it("states the page of the turn's last parent message only", async () => {

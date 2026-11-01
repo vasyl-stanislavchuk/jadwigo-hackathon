@@ -1099,9 +1099,10 @@ async function logged(
 
 /**
  * A message's page as a fact for the call's instructions, read from the run's pod only (Lead
- * decision 36): a learner of the pod, or a lesson the pod has published. Null when the pod holds no
- * such id: nothing of it is read, and `acceptMessage` refuses it. The learner's name is the
- * parent's own words, so it goes inside the fence as data (dl-z5ja.47, dl-z5ja.117).
+ * decision 36): a learner of the pod, or a lesson of the pod, its draft included (Lead decision
+ * 42). Null when the pod holds no such id: nothing of it is read, and `acceptMessage` refuses it.
+ * The learner's name and the lesson's title are the parent's own words, so they go inside the
+ * fence as data (dl-z5ja.47, dl-z5ja.117, dl-z5ja.121).
  */
 async function pageLine(
   store: Store,
@@ -1119,9 +1120,13 @@ async function pageLine(
       fence(found.learner.first_name, "parent"),
     ].join("\n");
   }
-  const version = await store.getLatestLessonVersion(pod, context.lesson_id);
-  if (!version) return null;
-  return `The parent is writing from the screen of lesson ${context.lesson_id} (version ${version.version}): questions about "this lesson" are about it.`;
+  // The pod's own lesson, its draft included (Lead decision 42): another pod's id reads as none.
+  const lesson = await store.getLesson(pod, context.lesson_id);
+  if (!lesson) return null;
+  return [
+    `The parent is writing from the screen of lesson ${context.lesson_id} (${lesson.status}): questions about "this lesson" are about it, whose title is:`,
+    fence(lesson.title, "parent"),
+  ].join("\n");
 }
 
 /**
