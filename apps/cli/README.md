@@ -107,8 +107,8 @@ the bank commit it was copied at.
 - `question_item(item_id, language="pl")`: the composer's view of one item, key and help kept.
   Never paste it where a child reads.
 - `lesson_draft(request, grade, names, language="pl", kind="practice", count?, skills?)`
-- `lesson_check(draft_id, help, title?, reasoning?, names?)`
-- `lesson_edit(draft_id, step_id, patch, why?, change?)` and `lesson_show(draft_id, step_id?)`
+- `lesson_check(draft_id, help, names, title?, reasoning?)`
+- `lesson_edit(draft_id, step_id, patch, names, why?, change?)` and `lesson_show(draft_id, step_id?)`
 - `lesson_publish(draft_id, target="local")`
 
 A failing call comes back as a tool error whose text is the verb's error and its hint.
@@ -195,12 +195,15 @@ it, readable by you only (mode 700).
    add `changes: [{"change", "why", "set": {path: value}}]`: `change` is `numbers`, `context`,
    `wording` or `tutor_notes`, and a path is `say` or a dotted path under `data`, `key`, `hints`,
    `worked` or `almost` (`hints.0.text`). Each change is recorded in `based_on.changes`.
-5. **Check.** `lesson_check(draft_id, help, title?, reasoning?, names?)` takes those words by
+5. **Check.** `lesson_check(draft_id, help, names, title?, reasoning?)` takes those words by
    step id and rebuilds only the steps it is sent, from the bank's copy and those words; a step
    left out keeps what the draft file holds (its words, the bank twin, `lesson_edit` changes), so
-   `help={}` checks the draft as it stands (`dl-a38n.40`). Every string in `help` but a `key`,
-   and `title` and `reasoning`, pass through the same name guard as the request, with `names`,
-   before they are written (`dl-a38n.36`). It builds the lesson file
+   `help={}` checks the draft as it stands (`dl-a38n.40`). `names` is required, as for
+   `lesson_draft` (`[]` when there is none; `--name` or `--no-names` from a shell). Every string
+   in `help` but an answer `key`, its keys included, and `title` and `reasoning`, pass through the
+   same name guard as the request before anything reads them, and the steps left out are guarded
+   again with them, so a name an earlier edit stored never reaches the file (`dl-a38n.36`,
+   `dl-a38n.62`). It builds the lesson file
    (`packages/lesson-import/src/lesson-file.ts`) and rewrites `<draft_id>.json` with it on every
    call, as far as the words go. It refuses a missing twin or rung, and mistake cards only when
    a step has none at all (the player falls back to `look` for a class with no card); otherwise
@@ -213,13 +216,13 @@ it, readable by you only (mode 700).
    (`bank khan:<id>` or `written`), source, licence, changes
    and why it was drawn, and what was left out. `ok: false` lists `findings` (and the old
    `errors`, for one release) by step id; fix them and check again. From a shell:
-   `jw lesson check <draft_id> words.json --name <name>`, where `words.json` is the `help` object.
+   `jw lesson check <draft_id> words.json --name <name>` (or `--no-names`), where `words.json` is the `help` object.
    Each answer also carries `render`: the findings the lesson builder's page wrote when it drew
    the draft, `<draft_id>.render.json` (`dl-a38n.28`), with `rendered_at` and `stale` (drawn
    before this call's write), or `null` when no page has drawn it.
 6. **Change one step.** `lesson_show(draft_id, step_id?)` returns the draft file's step, or every
    step, as data, with its latest findings and render findings. `lesson_edit(draft_id, step_id,
-   patch, why?, change?)` applies `patch`, a JSON merge patch (RFC 7386) on that step: an object
+   patch, names, why?, change?)` applies `patch`, a JSON merge patch (RFC 7386) on that step: an object
    merges, `null` removes a part, anything else replaces it. It may set `say` and `question`'s
    `data`, `key` and `help` (the twin is `help.twin`), and takes the same bare strings as
    `lesson_check`. A change to a part the bank's copy has (`say`, `data`, `key`, `hints`,
