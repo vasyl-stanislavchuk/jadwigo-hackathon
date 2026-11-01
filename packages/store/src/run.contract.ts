@@ -1,0 +1,318 @@
+import { EventId, ID_PREFIXES, idOf, Uuid } from "@jadwigo/contracts";
+import { ConversationId, type NewRunEvent, RunId, RunInbox } from "@jadwigo/contracts/run";
+import { describe, expect, it } from "vitest";
+import type { NewRun } from "./run.ts";
+import type { Store } from "./store.ts";
+
+/**
+ * The engine's records, as every `Store` keeps them (dl-z5ja.12 step 0; wave plan
+ * `docs/worklog/dl-z5ja/2026-10-31-wave-1.md`, Lead decisions 3, 5 and 6). Frozen for the wave's
+ * lanes: a gap here is a message to the lead. Wired into `store.test.ts` for `InMemoryStore`; the
+ * Postgres store joins it with the dl-z5ja.7 tables (dl-z5ja.19). Each test signs in its own fresh
+ * account, so it never assumes an empty database.
+ *
+ * Until the store lane (dl-z5ja.14) lands, its tests are named in `EXPECTED_RED` and run as
+ * `it.fails`: the lane removes each name as it turns green, and the set ends empty.
+ */
+const EXPECTED_RED = new Set<string>([]);
+
+export function runContract(name: string, make: () => Promise<Store> | Store): void {
+  /** `it`, or `it.fails` while the name is in EXPECTED_RED. */
+  const frozen = (title: string, body: () => Promise<void>) =>
+    (EXPECTED_RED.has(title) ? it.fails : it)(title, body);
+
+  describe(`${name} keeps the run contract`, () => {
+    frozen("finds the pod behind a run, and nothing for an unknown id", async () => {
+      const store = await make();
+      const a = await scope(store);
+      const run = await store.createRun(a.pod, newRun(a.account, null));
+      expect(await store.findRunPod(run.id)).toBe(a.pod);
+      expect(await store.findRunPod(runId())).toBeUndefined();
+    });
+
+    frozen("writes a conversation and a run once, a run starting queued at attempt 1", async () => {
+      const store = await make();
+      const a = await scope(store);
+      const conversation = await store.createConversation(a.pod, {
+        id: conversationId(),
+        created_by: a.account,
+        title: "Equal groups",
+      });
+      expect(conversation).toMatchObject({
+        pod_id: a.pod,
+        created_by: a.account,
+        title: "Equal groups",
+      });
+      const again = await store.createConversation(a.pod, {
+        id: conversation.id,
+        created_by: a.account,
+        title: "Another title",
+      });
+      expect(again).toEqual(conversation);
+
+      const given = newRun(a.account, conversation.id);
+      const run = await store.createRun(a.pod, given);
+      expect(run).toMatchObject({
+        ...given,
+        pod_id: a.pod,
+        status: "queued",
+        attempt: 1,
+        cancel_requested_at: null,
+        spent_usd: 0,
+        completed_at: null,
+      });
+      expect(await store.createRun(a.pod, { ...given, cap_usd: 9 })).toEqual(run);
+      expect(await store.getRun(a.pod, run.id)).toEqual(run);
+    });
+
+    frozen("lists a conversation's runs oldest first", async () => {
+      const store = await make();
+      const a = await scope(store);
+      const conversation = await store.createConversation(a.pod, {
+        id: conversationId(),
+        created_by: a.account,
+        title: null,
+      });
+      expect(await store.listRuns(a.pod, conversation.id)).toEqual([]);
+      const first = await store.createRun(a.pod, newRun(a.account, conversation.id));
+      const second = await store.createRun(a.pod, newRun(a.account, conversation.id));
+      await store.createRun(a.pod, newRun(a.account, null));
+      expect((await store.listRuns(a.pod, conversation.id)).map((r) => r.id)).toEqual([
+        first.id,
+        second.id,
+      ]);
+      const b = await scope(store);
+      await expect(store.listRuns(b.pod, conversation.id)).rejects.toMatchObject(NOT_FOUND);
+    });
+
+    frozen(
+      "finds the runs whose idle or max deadline has come, in every pod, and no ended run",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const b = await scope(store);
+        const idle = await store.createRun(a.pod, {
+          ...newRun(a.account, null),
+          idle_deadline_at: "2026-09-01T08:10:00.000Z",
+          max_deadline_at: "2026-09-01T08:30:00.000Z",
+        });
+        const max = await store.createRun(b.pod, {
+          ...newRun(b.account, null),
+          idle_deadline_at: null,
+          max_deadline_at: "2026-09-01T08:10:00.000Z",
+        });
+        const later = await store.createRun(a.pod, {
+          ...newRun(a.account, null),
+          idle_deadline_at: "2026-09-01T08:20:00.000Z",
+          max_deadline_at: "2026-09-01T08:30:00.000Z",
+        });
+        const ended = await store.createRun(a.pod, {
+          ...newRun(a.account, null),
+          idle_deadline_at: "2026-09-01T08:00:00.000Z",
+          max_deadline_at: "2026-09-01T08:05:00.000Z",
+        });
+        await store.updateRun(a.pod, ended.id, 1, { status: "completed" });
+
+        const due = await store.listRunsDue("2026-09-01T08:10:00.000Z");
+        const mine = due.filter((d) => [idle.id, max.id, later.id, ended.id].includes(d.run.id));
+        expect(mine.map((d) => [d.pod, d.run.id]).sort()).toEqual(
+          [
+            [a.pod, idle.id],
+            [b.pod, max.id],
+          ].sort(),
+        );
+      },
+    );
+
+    frozen("reads a run in another pod as NotFound, and writes nothing there", async () => {
+      const store = await make();
+      const a = await scope(store);
+      const b = await scope(store);
+      const run = await store.createRun(a.pod, newRun(a.account, null));
+      await store.appendRunEvents(a.pod, run.id, 1, [message(run.id, "Halves, grade 2.")]);
+
+      await expect(store.getRun(b.pod, run.id)).rejects.toMatchObject(NOT_FOUND);
+      await expect(store.updateRun(b.pod, run.id, 1, { status: "failed" })).rejects.toMatchObject(
+        NOT_FOUND,
+      );
+      await expect(
+        store.appendRunEvents(b.pod, run.id, 1, [message(run.id, "Hello")]),
+      ).rejects.toMatchObject(NOT_FOUND);
+      await expect(store.listRunEvents(b.pod, run.id, 0)).rejects.toMatchObject(NOT_FOUND);
+      await expect(store.putRunInbox(b.pod, inbox(run.id, "Hello"))).rejects.toMatchObject(
+        NOT_FOUND,
+      );
+      await expect(store.takeRunInbox(b.pod, run.id)).rejects.toMatchObject(NOT_FOUND);
+      // A conversation in pod a can't hold a run in pod b.
+      const conversation = await store.createConversation(a.pod, {
+        id: conversationId(),
+        created_by: a.account,
+        title: null,
+      });
+      await expect(
+        store.createRun(b.pod, newRun(b.account, conversation.id)),
+      ).rejects.toMatchObject(NOT_FOUND);
+
+      expect((await store.getRun(a.pod, run.id)).status).toBe("queued");
+      expect(await store.listRunEvents(a.pod, run.id, 0)).toHaveLength(1);
+    });
+
+    frozen(
+      "updates a run only while its attempt matches, and says stale when it doesn't",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const run = await store.createRun(a.pod, newRun(a.account, null));
+
+        const claimed = await store.updateRun(a.pod, run.id, 1, {
+          attempt: 2,
+          status: "in_progress",
+        });
+        expect(claimed.stale).toBe(false);
+        expect(claimed.value).toMatchObject({ attempt: 2, status: "in_progress" });
+
+        const late = await store.updateRun(a.pod, run.id, 1, { status: "completed", spent_usd: 5 });
+        expect(late.stale).toBe(true);
+        expect(late.value).toEqual(claimed.value);
+        expect(await store.getRun(a.pod, run.id)).toEqual(claimed.value);
+      },
+    );
+
+    frozen("numbers events from 1 with no gap, and lists them after a cursor", async () => {
+      const store = await make();
+      const a = await scope(store);
+      const run = await store.createRun(a.pod, newRun(a.account, null));
+      const first = await store.appendRunEvents(a.pod, run.id, 1, [
+        message(run.id, "Halves, grade 2."),
+        status(run.id, "in_progress"),
+      ]);
+      const second = await store.appendRunEvents(a.pod, run.id, 1, [status(run.id, "completed")]);
+      expect(first.stale).toBe(false);
+      expect(first.value.map((e) => e.seq)).toEqual([1, 2]);
+      expect(second.value.map((e) => e.seq)).toEqual([3]);
+
+      const all = await store.listRunEvents(a.pod, run.id, 0);
+      expect(all.map((e) => e.seq)).toEqual([1, 2, 3]);
+      expect(all[0]).toMatchObject({ run_id: run.id, type: "message" });
+      expect((await store.listRunEvents(a.pod, run.id, 2)).map((e) => e.seq)).toEqual([3]);
+      expect(await store.listRunEvents(a.pod, run.id, 3)).toEqual([]);
+    });
+
+    frozen(
+      "stores an event_id once: a replayed write is a no-op that answers the stored row",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const run = await store.createRun(a.pod, newRun(a.account, null));
+        const hello = message(run.id, "Halves, grade 2.");
+        const [stored] = (await store.appendRunEvents(a.pod, run.id, 1, [hello])).value;
+
+        const replay = await store.appendRunEvents(a.pod, run.id, 1, [
+          { ...message(run.id, "Something else"), event_id: hello.event_id },
+          status(run.id, "in_progress"),
+        ]);
+        expect(replay.value[0]).toEqual(stored);
+        expect(replay.value[1]?.seq).toBe(2);
+        expect((await store.listRunEvents(a.pod, run.id, 0)).map((e) => e.event_id)).toEqual([
+          hello.event_id,
+          replay.value[1]?.event_id,
+        ]);
+      },
+    );
+
+    frozen("appends nothing for a stale attempt", async () => {
+      const store = await make();
+      const a = await scope(store);
+      const run = await store.createRun(a.pod, newRun(a.account, null));
+      await store.updateRun(a.pod, run.id, 1, { attempt: 2 });
+
+      const late = await store.appendRunEvents(a.pod, run.id, 1, [message(run.id, "late")]);
+      expect(late).toEqual({ stale: true, value: [] });
+      expect(await store.listRunEvents(a.pod, run.id, 0)).toEqual([]);
+    });
+
+    frozen("refuses an event for another run with BadRequest", async () => {
+      const store = await make();
+      const a = await scope(store);
+      const run = await store.createRun(a.pod, newRun(a.account, null));
+      const other = await store.createRun(a.pod, newRun(a.account, null));
+      await expect(
+        store.appendRunEvents(a.pod, run.id, 1, [message(other.id, "Wrong run")]),
+      ).rejects.toMatchObject({ type: "BadRequest" });
+      expect(await store.listRunEvents(a.pod, run.id, 0)).toEqual([]);
+    });
+
+    frozen(
+      "keeps an inbox row once by event_id, and hands each pending row over once, oldest first",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const run = await store.createRun(a.pod, newRun(a.account, null));
+        const first = inbox(run.id, "Make it 5 questions.");
+        const stored = await store.putRunInbox(a.pod, first);
+        expect(RunInbox.parse(stored)).toMatchObject({
+          ...first,
+          pod_id: a.pod,
+          status: "pending",
+        });
+        expect(await store.putRunInbox(a.pod, { ...first, payload: { text: "Changed" } })).toEqual(
+          stored,
+        );
+        const second = await store.putRunInbox(a.pod, inbox(run.id, "And add a picture."));
+
+        const taken = await store.takeRunInbox(a.pod, run.id);
+        expect(taken.map((r) => r.event_id)).toEqual([stored.event_id, second.event_id]);
+        expect(taken.every((r) => r.status === "delivered")).toBe(true);
+        expect(await store.takeRunInbox(a.pod, run.id)).toEqual([]);
+
+        const third = await store.putRunInbox(a.pod, inbox(run.id, "Thanks."));
+        expect((await store.takeRunInbox(a.pod, run.id)).map((r) => r.event_id)).toEqual([
+          third.event_id,
+        ]);
+      },
+    );
+  });
+}
+
+const NOT_FOUND = { type: "NotFound" };
+
+/** A fresh signed-in account: its own pod, so no test sees another's rows. */
+async function scope(store: Store) {
+  const member = await store.createAccount(Uuid.parse(crypto.randomUUID()), "pl");
+  return { pod: member.pod, account: member.account };
+}
+
+function runId(): RunId {
+  return RunId.parse(idOf(ID_PREFIXES.run, crypto.randomUUID()));
+}
+
+function conversationId(): ConversationId {
+  return ConversationId.parse(idOf(ID_PREFIXES.conversation, crypto.randomUUID()));
+}
+
+function newRun(account: NewRun["created_by"], conversation: NewRun["conversation_id"]): NewRun {
+  return {
+    id: runId(),
+    created_by: account,
+    conversation_id: conversation,
+    workflow: "jadwigo-lesson-compose",
+    resumes_run_id: null,
+    cap_usd: 1,
+    idle_deadline_at: "2026-09-01T08:10:00.000Z",
+    max_deadline_at: "2026-09-01T09:00:00.000Z",
+  };
+}
+
+const eventId = () => EventId.parse(crypto.randomUUID());
+
+function message(run: RunId, text: string): NewRunEvent {
+  return { run_id: run, event_id: eventId(), type: "message", payload: { from: "parent", text } };
+}
+
+function status(run: RunId, value: "in_progress" | "completed"): NewRunEvent {
+  return { run_id: run, event_id: eventId(), type: "status", payload: { status: value } };
+}
+
+function inbox(run: RunId, text: string) {
+  return { run_id: run, event_id: eventId(), kind: "message" as const, payload: { text } };
+}

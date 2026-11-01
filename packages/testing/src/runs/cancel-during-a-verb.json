@@ -1,0 +1,181 @@
+{
+  "name": "cancel-during-a-verb",
+  "about": "Stop pressed while lesson_draft ran: it finishes, lesson_check never starts, the turn ends cancelled with the draft kept.",
+  "events": [
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 1,
+      "event_id": "00000000-0000-4000-8014-000000000001",
+      "type": "message",
+      "payload": {
+        "from": "parent",
+        "text": "Telling the time, grade 2."
+      },
+      "created_at": "2026-09-01T08:00:01.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 2,
+      "event_id": "00000000-0000-4000-8014-000000000002",
+      "type": "status",
+      "payload": {
+        "status": "in_progress"
+      },
+      "created_at": "2026-09-01T08:00:02.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 3,
+      "event_id": "00000000-0000-4000-8014-000000000003",
+      "type": "model_response",
+      "payload": {
+        "response_id": "resp_1",
+        "call_no": 1,
+        "text": null,
+        "tool_calls": [
+          {
+            "call_id": "call_1",
+            "verb": "lesson_draft",
+            "input": {
+              "request": "telling the time",
+              "grade": "2",
+              "names": [],
+              "topic": "clock"
+            }
+          },
+          {
+            "call_id": "call_2",
+            "verb": "lesson_check",
+            "input": {
+              "draft_id": "drf_demo",
+              "help": {}
+            }
+          }
+        ],
+        "usage": {
+          "input_tokens": 1000,
+          "output_tokens": 90,
+          "cached_tokens": 0
+        },
+        "cost_usd": 0.02
+      },
+      "created_at": "2026-09-01T08:00:03.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 4,
+      "event_id": "00000000-0000-4000-8014-000000000004",
+      "type": "usage",
+      "payload": {
+        "spent_usd": 0.02,
+        "cap_usd": 1
+      },
+      "created_at": "2026-09-01T08:00:04.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 5,
+      "event_id": "00000000-0000-4000-8014-000000000005",
+      "type": "tool_call",
+      "payload": {
+        "call_id": "call_1",
+        "verb": "lesson_draft",
+        "input": {
+          "request": "telling the time",
+          "grade": "2",
+          "names": [],
+          "topic": "clock"
+        }
+      },
+      "created_at": "2026-09-01T08:00:05.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 6,
+      "event_id": "00000000-0000-4000-8014-000000000006",
+      "type": "tool_result",
+      "payload": {
+        "call_id": "call_1",
+        "verb": "lesson_draft",
+        "output": {
+          "draft_id": "drf_demo"
+        },
+        "error": null
+      },
+      "created_at": "2026-09-01T08:00:06.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 7,
+      "event_id": "00000000-0000-4000-8014-000000000007",
+      "type": "lesson_revision",
+      "payload": {
+        "revision": 1,
+        "call_id": "call_1",
+        "lesson_file": {
+          "id": "draft-demo",
+          "title": {
+            "en": "Telling the time"
+          },
+          "language": "en",
+          "parts": []
+        }
+      },
+      "created_at": "2026-09-01T08:00:07.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 8,
+      "event_id": "00000000-0000-4000-8014-000000000008",
+      "type": "status",
+      "payload": {
+        "status": "cancelled"
+      },
+      "created_at": "2026-09-01T08:00:08.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 9,
+      "event_id": "00000000-0000-4000-8014-000000000009",
+      "type": "turn_complete",
+      "payload": {},
+      "created_at": "2026-09-01T08:00:09.000Z"
+    }
+  ],
+  "expected": {
+    "chat": [
+      {
+        "kind": "message",
+        "seq": 1,
+        "from": "parent",
+        "text": "Telling the time, grade 2.",
+        "attachments": []
+      },
+      {
+        "kind": "tool",
+        "seq": 5,
+        "call_id": "call_1",
+        "verb": "lesson_draft",
+        "state": "done",
+        "error": null
+      }
+    ],
+    "lesson": {
+      "revision": 1,
+      "lesson_file": {
+        "id": "draft-demo",
+        "title": {
+          "en": "Telling the time"
+        },
+        "language": "en",
+        "parts": []
+      }
+    },
+    "status": "cancelled",
+    "turn_open": false,
+    "spent_usd": 0.02,
+    "cap_usd": 1,
+    "budget": "none",
+    "cursor": 9
+  }
+}
