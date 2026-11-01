@@ -32,15 +32,9 @@ def group() -> None:
     required=True,
     help="What the lesson is about in a few words (mnożenie): the bank searches these.",
 )
-@click.option(
-    "--language", default="pl", show_default=True, type=click.Choice(LANGUAGES)
-)
-@click.option(
-    "--kind", default="practice", show_default=True, type=click.Choice(list(DRAW_RULES))
-)
-@click.option(
-    "--count", default=None, type=click.IntRange(min=1), help="Questions to draw."
-)
+@click.option("--language", default="pl", show_default=True, type=click.Choice(LANGUAGES))
+@click.option("--kind", default="practice", show_default=True, type=click.Choice(list(DRAW_RULES)))
+@click.option("--count", default=None, type=click.IntRange(min=1), help="Questions to draw.")
 @click.option("--skill", "skills", multiple=True, help="Skill id (repeatable).")
 @click.option(
     "--name",
@@ -67,26 +61,15 @@ def draft(
     """Draft a lesson for REQUEST: drawn questions copied whole from the bank, kept by draft id
     and written to JADWIGO_DRAFTS_DIR as <draft_id>.json."""
     if not names and not no_names:
-        raise click.UsageError(
-            "pass every name the family uses with --name, or --no-names"
-        )
+        raise click.UsageError("pass every name the family uses with --name, or --no-names")
     result = lesson.draft(
-        request,
-        grade,
-        language,
-        kind,
-        count,
-        skills,
-        names=list(names),
-        topic=topic,
+        request, grade, language, kind, count, skills, names=list(names), topic=topic,
         verbose=verbose,
     )
     if json_mode:
         click.echo(json.dumps(result, ensure_ascii=False))
         return
-    lines = [
-        f"{result['draft_id']}  {result['title']}  ({result['kind']}, rule not settled)"
-    ]
+    lines = [f"{result['draft_id']}  {result['title']}  ({result['kind']}, rule not settled)"]
     lines += [
         f"  {q['step_id']}  {q['item_id']}  {lesson.tex_plain(q['say'])}  "
         f"(write: {', '.join(q['you_write']) or 'nothing'})"
@@ -96,10 +79,8 @@ def draft(
     if verbose:
         lines += [f"  left out {item['id']}: {item['reason']}" for item in left]
     else:
-        lines += [
-            f"  left out {c['count']}: {c['cause']} ({', '.join(c['examples'])})"
-            for c in left["by_cause"]
-        ]
+        lines += [f"  left out {c['count']}: {c['cause']} ({', '.join(c['examples'])})"
+                  for c in left["by_cause"]]
     if result.get("setup_warning"):
         lines.append(f"setup: {result['setup_warning']}")
     lines.append(f"draft file: {result['draft_path']}")
@@ -108,24 +89,16 @@ def draft(
 
 @group.command(cls=_EmitErrorsCommand)
 @click.argument("draft_id")
-@click.argument(
-    "words_file", type=click.Path(exists=True, dir_okay=False, path_type=Path)
-)
-@click.option(
-    "--title", default=None, help="The lesson's title, in place of the request."
-)
-@click.option(
-    "--reasoning", default=None, help="Why the lesson is what it is, for the parent."
-)
+@click.argument("words_file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option("--title", default=None, help="The lesson's title, in place of the request.")
+@click.option("--reasoning", default=None, help="Why the lesson is what it is, for the parent.")
 @click.option(
     "--name",
     "names",
     multiple=True,
     help="A name the family uses (repeatable); replaced in --title and --reasoning.",
 )
-@click.option(
-    "--full", is_flag=True, help="The card with each rung and why it was drawn."
-)
+@click.option("--full", is_flag=True, help="The card with each rung and why it was drawn.")
 @click.option("--verbose", is_flag=True, help="Every finding, warnings one by one.")
 @click.option("--json", "json_mode", is_flag=True, help="Print the check's answer.")
 def check(
@@ -145,8 +118,7 @@ def check(
         words: Any = json.loads(words_file.read_text(encoding="utf-8"))
     except ValueError as exc:
         raise JwError(
-            f"{words_file} is not JSON: {exc}",
-            hint='Pass {"q1": {"twin": ...}, ...} as JSON.',
+            f"{words_file} is not JSON: {exc}", hint='Pass {"q1": {"twin": ...}, ...} as JSON.'
         ) from exc
     result = lesson.check(
         draft_id, words, title, reasoning, names=list(names), full=full, verbose=verbose
@@ -158,9 +130,7 @@ def check(
         click.echo(f"lesson file: {result['lesson_file']}")
     else:
         for finding in result["findings"]:
-            click.echo(
-                f"step {finding['step_id']} ({finding['rule']}): {finding['text']}"
-            )
+            click.echo(f"step {finding['step_id']} ({finding['rule']}): {finding['text']}")
         click.echo(f"draft file: {result['draft_path']}")
     if not result["ok"]:
         raise SystemExit(1)
@@ -169,12 +139,8 @@ def check(
 @group.command(cls=_EmitErrorsCommand)
 @click.argument("draft_id")
 @click.argument("step_id")
-@click.argument(
-    "patch_file", type=click.Path(exists=True, dir_okay=False, path_type=Path)
-)
-@click.option(
-    "--why", default=None, help="Why a copied part changes (the parent's ask)."
-)
+@click.argument("patch_file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option("--why", default=None, help="Why a copied part changes (the parent's ask).")
 @click.option(
     "--change",
     default=lesson_edit.CHANGE_DEFAULT,
@@ -211,9 +177,7 @@ def edit(
     if json_mode:
         click.echo(json.dumps(result, ensure_ascii=False))
     else:
-        click.echo(
-            f"{step_id}: {'ok' if result['ok'] else 'not ok'}  {result['card']['prompt']}"
-        )
+        click.echo(f"{step_id}: {'ok' if result['ok'] else 'not ok'}  {result['card']['prompt']}")
         for finding in result["findings"]:
             click.echo(f"  {finding['level']} ({finding['rule']}): {finding['text']}")
         click.echo(f"draft file: {result['draft_path']}")
@@ -259,8 +223,4 @@ def publish(draft_id: str, target: str, json_mode: bool) -> None:
 def timing(draft_id: str, json_mode: bool) -> None:
     """Print how long each tool call on DRAFT_ID took, and the model's time between them."""
     split = lesson.timing(draft_id)
-    click.echo(
-        json.dumps(split, ensure_ascii=False)
-        if json_mode
-        else lesson.timing_text(split)
-    )
+    click.echo(json.dumps(split, ensure_ascii=False) if json_mode else lesson.timing_text(split))

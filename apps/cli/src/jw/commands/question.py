@@ -91,9 +91,7 @@ def gaps_report(
         {"language": language, "grade": grade, "words": w} for w in words
     ] + [{"language": language, "grade": grade, "skills": [s]} for s in skills]
     if not needs:
-        raise JwError(
-            "gaps needs at least one --words or --skill", hint="Name what to look for."
-        )
+        raise JwError("gaps needs at least one --words or --skill", hint="Name what to look for.")
     report = bank_client.gaps(needs, arm=arm)
     for row in report["needs"]:
         if row.get("reason") and row.get("not_ready"):
@@ -132,9 +130,7 @@ def _table(envelope: dict[str, Any], language: str) -> str:
         for r in envelope["rows"]
     ]
     header = ("rank", "set", "title", "arm", "score")
-    widths = [
-        max(len(cells[i]) for cells in [header, *rows]) for i in range(len(header))
-    ]
+    widths = [max(len(cells[i]) for cells in [header, *rows]) for i in range(len(header))]
     lines = [
         "  ".join(cell.ljust(w) for cell, w in zip(cells, widths, strict=True)).rstrip()
         for cells in [header, *rows]
@@ -152,12 +148,8 @@ def _table(envelope: dict[str, Any], language: str) -> str:
 @click.option("--words", default=None, help="The need in plain words, in --language.")
 @click.option("--words-en", default=None, help="English terms for the keyword arm.")
 @click.option("--skill", "skills", multiple=True, help="Skill id (repeatable).")
-@click.option(
-    "--mistake", "mistakes", multiple=True, help="Mistake class (repeatable)."
-)
-@click.option(
-    "--language", default="pl", show_default=True, type=click.Choice(LANGUAGES)
-)
+@click.option("--mistake", "mistakes", multiple=True, help="Mistake class (repeatable).")
+@click.option("--language", default="pl", show_default=True, type=click.Choice(LANGUAGES))
 @click.option("--grade", required=True, help="The bare grade number, e.g. 3.")
 @click.option("--limit", default=20, show_default=True, type=click.IntRange(min=1))
 @click.option(
@@ -199,9 +191,7 @@ def search(
         stage=stage,
     )
     click.echo(
-        json.dumps(envelope, ensure_ascii=False)
-        if json_mode
-        else _table(envelope, language)
+        json.dumps(envelope, ensure_ascii=False) if json_mode else _table(envelope, language)
     )
 
 
@@ -224,15 +214,9 @@ def show(set_id: str, json_mode: bool) -> None:
 
 @group.command(cls=_EmitErrorsCommand)
 @click.option("--json", "json_mode", is_flag=True, help="Print the gap report.")
-@click.option(
-    "--words", "words", multiple=True, help="A need in plain words (repeatable)."
-)
-@click.option(
-    "--skill", "skills", multiple=True, help="A skill id, one need each (repeatable)."
-)
-@click.option(
-    "--language", default="pl", show_default=True, type=click.Choice(LANGUAGES)
-)
+@click.option("--words", "words", multiple=True, help="A need in plain words (repeatable).")
+@click.option("--skill", "skills", multiple=True, help="A skill id, one need each (repeatable).")
+@click.option("--language", default="pl", show_default=True, type=click.Choice(LANGUAGES))
 @click.option("--grade", required=True, help="The bare grade number, e.g. 3.")
 @click.option(
     "--arm",
@@ -248,9 +232,7 @@ def gaps(
     arm: str | None,
 ) -> None:
     """Search each need once and say which find nothing."""
-    report = gaps_report(
-        grade=grade, words=words, skills=skills, language=language, arm=arm
-    )
+    report = gaps_report(grade=grade, words=words, skills=skills, language=language, arm=arm)
     if json_mode:
         click.echo(json.dumps(report, ensure_ascii=False))
         return
@@ -263,9 +245,7 @@ def gaps(
 
 @group.command(cls=_EmitErrorsCommand)
 @click.argument("item_id")
-@click.option(
-    "--language", default="pl", show_default=True, type=click.Choice(LANGUAGES)
-)
+@click.option("--language", default="pl", show_default=True, type=click.Choice(LANGUAGES))
 @click.option("--json", "json_mode", is_flag=True, help="Print the item.")
 def item(item_id: str, language: str, json_mode: bool) -> None:
     """Show one converted item's family step, key and help kept (read from JW_KHAN_CONVERTED)."""
@@ -305,9 +285,7 @@ def _refusals_text(report: dict[str, Any]) -> str:
         for r in report["shapes"]
     ]
     header = ("rule", "question_type", "items", "owner", "issue", "examples")
-    widths = [
-        max(len(cells[i]) for cells in [header, *rows]) for i in range(len(header))
-    ]
+    widths = [max(len(cells[i]) for cells in [header, *rows]) for i in range(len(header))]
     lines = [
         f"{report['language']}: {report['items']} items, {report['ready']} lesson-ready, "
         f"{report['not_checked']} not checked, {report['waiting']} waiting, "
@@ -315,9 +293,7 @@ def _refusals_text(report: dict[str, Any]) -> str:
     ]
     if rows:
         lines += [
-            "  ".join(
-                cell.ljust(w) for cell, w in zip(cells, widths, strict=True)
-            ).rstrip()
+            "  ".join(cell.ljust(w) for cell, w in zip(cells, widths, strict=True)).rstrip()
             for cells in [header, *rows]
         ]
     else:
@@ -331,9 +307,7 @@ def _refusals_text(report: dict[str, Any]) -> str:
                 lines.append(f"  {what}: empty, every item plays now")
             else:
                 ids = ", ".join(shape["still_refused"])
-                lines.append(
-                    f"  {what}: {len(shape['still_refused'])} still refused ({ids})"
-                )
+                lines.append(f"  {what}: {len(shape['still_refused'])} still refused ({ids})")
         if not since["shapes"]:
             lines.append("  no shape names this bead")
     return "\n".join(lines)
@@ -387,12 +361,8 @@ def refusals_assign(rule: str, question_type: str, bead: str, language: str) -> 
     type=click.Choice(refusals.ROLES),
     help="Who pulls it: a role, never a name.",
 )
-@click.option(
-    "--issue", default=None, help="The bead that tracks the fix, when there is one."
-)
-def flag(
-    item_id: str, reason: str, language: str, clear: bool, by: str, issue: str | None
-) -> None:
+@click.option("--issue", default=None, help="The bead that tracks the fix, when there is one.")
+def flag(item_id: str, reason: str, language: str, clear: bool, by: str, issue: str | None) -> None:
     """Pull ITEM_ID from lessons in --lang, saying why (REASON), or --clear the flag."""
     if clear:
         path = refusals.clear(item_id, language)
@@ -420,9 +390,7 @@ def _readiness_text(report: dict[str, Any]) -> str:
         lines.append(f"  {title}:")
         for row in block:
             owner = f"  [{row['owner']}]" if row.get("owner") else ""
-            lines.append(
-                f"    {row['items']:>5}  {row[key]}{owner}  {row['issue'] or 'no bead'}"
-            )
+            lines.append(f"    {row['items']:>5}  {row[key]}{owner}  {row['issue'] or 'no bead'}")
         if not block:
             lines.append("    none")
     readmitted = report["readmitted"]

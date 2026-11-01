@@ -87,8 +87,8 @@ report yet: tell the parent so and stop, without saving.
 
 Write one JSON object, the report's narrative, in the parent's language, the pod's: `"language": "pl"`
 for a Polish pod, `"language": "en"` for an English one. The report names no language yet
-(`dl-e8ov.5.78`), so until it does the narrative is Polish. For English, call `workflow_parts` with
-`workflow_name: "jadwigo-report-write"` and `language: "en"`, and write as its `parts` say:
+(`dl-e8ov.5.78`), so until it does the narrative is Polish. For English, write as the English parts the
+session was started with say:
 
 - `headline`: one sentence, at most 140 characters: the one thing the parent should know.
 - `direction_now`: at most 500 characters: where the learner is heading now, from the counts,
@@ -112,7 +112,7 @@ the skill is in plain words, as its code says it.
 
 ### Polish for a parent
 
-For English, `workflow_parts` gives the same rules written for English.
+For English, the English parts hold the same rules written for English.
 
 
 - Short sentences, one idea each. Concrete: what the child did and what comes next, with the

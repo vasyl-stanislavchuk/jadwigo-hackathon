@@ -65,10 +65,9 @@ Call `lesson_draft` with:
   parent asked for a review or a check.
 - `language`: the lesson's language, which comes from the goal (its `lesson_language`), never
   from the words of the request. With no goal, it is the language the parent asked in, `pl`
-  unless they wrote English. Before you write a line, call `workflow_parts` with
-  `workflow_name: "jadwigo-lesson-compose"` and the goal as `record` (or that `language`), and
-  follow its `parts` and `examples`: they are how the lesson's language is written. When it fails
-  naming missing parts, stop and tell the parent the lesson cannot be made in that language yet.
+  unless they wrote English. Write every line in that language. When the session was started
+  with the lesson's language parts (its style, glossary, checklist and reviewed examples), follow
+  them; the rules in step 4 are the Polish ones.
 
 ## 3. Read the slim view
 
@@ -151,7 +150,7 @@ that does).
 
 ### Polish for a child of 6 to 9
 
-For an English lesson, `workflow_parts` gives the same rules written for English.
+For an English lesson, the English parts hold the same rules written for English.
 
 
 - Short sentences, one idea each. Address the child as `ty`. Every sentence ends with `.`, `?` or
