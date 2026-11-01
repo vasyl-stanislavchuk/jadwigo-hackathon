@@ -16,13 +16,20 @@ export const landingSchema = z.object({
     play: text,
     question: z
       .object({
+        // Above the question: what kind it is, the grade and its place (design handoff "landing 3").
+        label: text,
         say: text,
+        // The illustration slot beside the question, until its art exists (owner, 2026-11-01).
+        pic: text,
+        // Where the question comes from: every question shows its source.
+        source: text,
         choices: z.array(text).min(2).max(4),
         answer: text,
         right: text,
         hint: text,
         // After a right answer and Jadwiga's clip: the invitation to a parent account (/zaloguj).
-        signUp: z.object({ text, button: text }),
+        // `again` turns the sheet back to the question.
+        signUp: z.object({ text, button: text, again: text }),
       })
       .refine((q) => q.choices.includes(q.answer), {
         message: "answer must be one of the choices",
@@ -32,6 +39,30 @@ export const landingSchema = z.object({
   links: z.array(z.object({ href: z.string().regex(/^(\/[a-z0-9-]+)+$/), label: text })).min(1),
   steps: z.object({ ...head, items: z.array(item).length(3) }),
   promises: z.object({ heading: text, items: z.array(item).min(1) }),
+  // Direction 1a, "Partner" (owner, 2026-11-01): learning the parent is close to, beside a made-up
+  // child's profile as the parent app shows it. Goals and skill dots, never a score or a percentage.
+  partner: z.object({
+    heading: text,
+    text,
+    pic: text,
+    child: z.object({ initial: text, name: text, sub: text }),
+    practising: text,
+    allDone: text,
+    nextUp: text,
+    states: z.object({ done: text, now: text, next: text }),
+    goals: z
+      .array(
+        z.object({
+          name: text,
+          skills: z.array(z.object({ name: text, state: z.enum(["done", "now", "next"]) })).min(1),
+        }),
+      )
+      .min(1),
+    nextLabel: text,
+    next: text,
+  }),
+  // The end of the landing page and /jak-to-dziala: one line for the parent and the sign-up.
+  end: z.object({ text, button: text }),
   lessons: z.object({
     ...head,
     text,
@@ -42,6 +73,20 @@ export const landingSchema = z.object({
     subjects: z.object({ math: text, polish: text, english: text }),
     grade: text,
     questions: z.tuple([text, text, text]),
+    // The landing page's row: its heading, the grade and subject filters, the count and the arrows.
+    row: z.object({
+      heading: text,
+      gradeLabel: text,
+      subjectLabel: text,
+      allGrades: text,
+      allSubjects: text,
+      count: z.tuple([text, text, text]),
+      prev: text,
+      next: text,
+      // Shown when a filter leaves no lesson.
+      none: text,
+      pic: text,
+    }),
   }),
   compare: z.object({
     ...head,
@@ -80,3 +125,19 @@ export function plural(
 
 /** The first sentence of a spoken line, for a card's teaser: "Ile to jest 2 razy 7?" */
 export const firstSentence = (line: string): string => line.match(/^.*?[?.!](?=\s|$)/)?.[0] ?? line;
+
+type Skill = { name: string; state: "done" | "now" | "next" };
+
+/**
+ * A goal's second line on the profile: the skill being practised now, or, when every skill before
+ * the next is done, the next one. "Ćwiczy: Rz po spółgłoskach" / "Umie wszystko. Dalej: Daty…".
+ */
+export function goalLine(
+  skills: readonly Skill[],
+  words: { practising: string; allDone: string; nextUp: string },
+): string {
+  const now = skills.find((s) => s.state === "now");
+  if (now) return `${words.practising} ${now.name}`;
+  const next = skills.find((s) => s.state === "next");
+  return next ? `${words.allDone} ${words.nextUp} ${next.name}` : words.allDone;
+}

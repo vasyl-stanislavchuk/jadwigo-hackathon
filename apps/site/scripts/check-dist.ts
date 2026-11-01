@@ -19,6 +19,9 @@ const landing: readonly DistCheck[] = [
   ["apple-touch-icon.png", "PNG"],
   ["index.html", '<p class="say" id="hero-say"'],
   ["index.html", 'id="lekcje"'],
+  // Direction 1a (design handoff "landing 3", dl-5ssh.4.13): the example profile and the sign-up at the end.
+  ["index.html", 'id="partner-title"'],
+  ["index.html", '<section class="end-band"'],
   ["index.html", 'href="https://app.jadwigo.pl/play/asg_'],
   // Each header link is its own page, built and in the sitemap (owner, 2026-10-31).
   ...["lekcje", "jak-to-dziala", "porownanie", "o-nas"].flatMap((p): DistCheck[] => [

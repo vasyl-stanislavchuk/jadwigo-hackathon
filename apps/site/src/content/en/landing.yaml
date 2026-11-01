@@ -5,16 +5,20 @@
 # Copy says what Jadwigo does, never a slogan; numbers are digits.
 hero:
   play: Play a lesson
-  # The first question of "Razy cztery: podwójne razy dwa" (src/content/featured.json), in English.
+  # A grade 3 two-step word problem (design handoff "landing 3", 2026-11-01; draft).
   question:
-    say: "What is 2 times 7?" # a no-break space keeps "7?" on the line
-    choices: ["12", "14", "16"]
-    answer: "14"
-    right: Well done! 2 times 7 is 14.
-    hint: Almost. 2 times 7 is 7 and 7 more. Try again.
+    label: Two steps · grade 3 · question 1
+    say: Zoja has 3 packs of 12 crayons. She gives 9 crayons to her friends. How many crayons does she have left?
+    pic: illustration · Zoja with 3 packs of crayons
+    source: "Source: Alfik Matematyczny"
+    choices: ["27", "36", "45"]
+    answer: "27"
+    right: Well done! 3 times 12 is 36, and 36 − 9 = 27.
+    hint: Almost. First count all the crayons, 3 times 12. Then take away the 9 she gave. Try again.
     signUp:
       text: Every lesson works like this. A parent account is free, and Jadwigo builds every new lesson from the one before.
       button: Create an account
+      again: Play the question again
 # Under the lessons, one line for the parent.
 after:
   text: After each lesson you see what went well and what to practice next.
@@ -42,11 +46,45 @@ promises:
     - title: No points, timers or leaderboards
       text: Your child learns at their own pace. Nobody rushes them.
     - title: Every question has a source
-      text: Questions from Alfik Matematyczny and Khan Academy, always with the source named.
+      text: From Alfik Matematyczny and Khan Academy, always with the source named.
     - title: Your data is yours
-      text: Only you see your child's answers. You can ask us to delete them at any time.
-    - title: Free, with no ads
-      text: Lessons and the parent's summaries cost nothing.
+      text: Only you see your child's answers. They never go to models that train on them.
+    - title: Print it, check it from a photo
+      text: Print any lesson for your child. Take a photo of the finished work or the homework, and Jadwigo checks it.
+# Direction 1a (draft). Sophie is a made-up example child, never a real learner.
+partner:
+  heading: Learning with you close by.
+  text: Your child practices at their own pace, and you see them grow.
+  pic: illustration · a parent and child at the table over a notebook
+  child: { initial: S, name: Sophie, sub: Grade 3 · with Jadwigo since September }
+  practising: "Practicing:"
+  allDone: Can do it all.
+  nextUp: "Next:"
+  states: { done: can do, now: practicing now, next: next }
+  goals:
+    - name: Money and shopping
+      skills:
+        - { name: Adds and subtracts to 100, state: done }
+        - { name: Turns dollars into cents, state: done }
+        - { name: Works out change with cents, state: now }
+        - { name: Two-step problems, state: next }
+    - name: "Time: clock and calendar"
+      skills:
+        - { name: Reads hours and minutes, state: done }
+        - { name: Time passing in whole hours, state: done }
+        - { name: Time passing with minutes, state: done }
+        - { name: Dates and weeks on a calendar, state: next }
+    - name: "Spelling: tricky letters"
+      skills:
+        - { name: ee or ea, state: done }
+        - { name: Silent letters, state: now }
+        - { name: "Their, there or they're", state: next }
+        - { name: Words to remember, state: next }
+  nextLabel: "Next lesson:"
+  next: change with cents and silent letters, in one lesson.
+end:
+  text: A parent creates the account. It's free.
+  button: Create an account
 lessons:
   title: Lessons to start with · Jadwigo
   description: Short math and Polish lessons for grades 1–3. No sign-in, right in the browser.
@@ -59,6 +97,17 @@ lessons:
   subjects: { math: Math, polish: Polish, english: English }
   grade: Grade
   questions: [question, questions, questions]
+  row:
+    heading: Play without signing in
+    gradeLabel: Grade
+    subjectLabel: Subject
+    allGrades: All
+    allSubjects: All
+    count: [lesson, lessons, lessons]
+    prev: Previous lessons
+    next: More lessons
+    none: No lessons for this grade yet.
+    pic: illustration
 signIn:
   title: Sign in · Jadwigo
   description: Sign in or create a Jadwigo parent account with a code from your email, with Google or with Facebook.
