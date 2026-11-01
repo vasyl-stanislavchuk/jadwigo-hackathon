@@ -394,6 +394,14 @@ export const Me = z.object({
 export type Me = z.infer<typeof Me>;
 
 /**
+ * `PATCH /api/v1/pods/{id}`: a parent gives the pod's consent to the AI (`true`), or withdraws it
+ * (`false`). The server stamps `ai_consent_at`: giving it again keeps the first time, and a
+ * withdrawal sets it to null (dl-z5ja.112).
+ */
+export const PodPatch = z.strictObject({ ai_consented: z.boolean() });
+export type PodPatch = z.infer<typeof PodPatch>;
+
+/**
  * `POST /api/v1/accounts`: the first sign-in makes the pod, the account (keyed by the token's
  * `sub`) and a `parent` member row in one transaction. Idempotent per signed-in user: a 2nd call
  * makes nothing and returns the same `Me`.
@@ -785,6 +793,8 @@ export const ERROR_STATUS = {
   MessageLimitMinute: 429,
   /** A message that would open a turn past the pod's `LIMITS.podDailyCapUsd` for the UTC day. */
   MessageLimitDay: 429,
+  /** A conversation route called before a parent gave the pod's consent to the AI (dl-z5ja.112). */
+  AiConsentMissing: 409,
   Unauthorized: 401,
   BankUnavailable: 502,
 } as const;

@@ -95,6 +95,12 @@ export interface RunStore {
    * Not scoped, like `findRunPod`: on Postgres it is the `pg_cron` sweep's query (dl-z5ja.7).
    */
   listRunsDue(now: string): Promise<readonly { pod: PodId; run: Run }[]>;
+  /**
+   * The Muse spend of a lane (dl-z5ja.89): the `cost_usd` of every `model_response` event of the
+   * runs of `workflows`, in any pod, logged at or after `since`. Not scoped, like `listRunsDue`: on
+   * Postgres it is `muse_ledger.spent_usd`, which only `jadwigo_runner` may call.
+   */
+  spentUsd(workflows: readonly RunWorkflow[], since: string): Promise<number>;
 
   /** Written once: the same id again returns the stored row. */
   createConversation(pod: PodId, conversation: NewConversation): Promise<Conversation>;

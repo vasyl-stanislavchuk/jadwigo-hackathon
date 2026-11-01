@@ -53,6 +53,9 @@ import {
   type Me,
   type ParentAttemptReview,
   type PlaygroundExamples,
+  type Pod,
+  type PodId,
+  type PodPatch,
   type ReportCreate,
   type ReportPatch,
   ROUTES,
@@ -149,6 +152,12 @@ export interface LearnerKnowledgeClient {
   ): Promise<LearnerReport>;
 }
 
+/** The pod's own settings: its consent to the AI (dl-z5ja.112). Needs a token. */
+export interface PodClient {
+  /** Gives (`ai_consented: true`) or withdraws the pod's consent to the AI. */
+  patchPod(podId: PodId, body: PodPatch): Promise<Pod>;
+}
+
 /**
  * The AI engine's conversation calls (epic dl-z5ja, dl-z5ja.21). Each needs a token. A message or
  * a Stop answers with its run before the AI has answered; the run's events carry the answer.
@@ -174,6 +183,7 @@ export type Client = AttemptClient &
   ParentClient &
   LearnerKnowledgeClient &
   PlaygroundClient &
+  PodClient &
   ConversationClient;
 
 /** A route's path with its `{name}` params filled in. */
@@ -258,6 +268,7 @@ export function createClient({
     getReview: (attemptId) => call(ROUTES.getReview, { id: attemptId }, undefined),
     getMe: () => call(ROUTES.getMe, {}, undefined),
     createAccount: (body) => call(ROUTES.createAccount, {}, body),
+    patchPod: (podId, body) => call(ROUTES.patchPod, { id: podId }, body),
     createLearner: (body) => call(ROUTES.createLearner, {}, body),
     claimAttempt: (attemptId, body) => call(ROUTES.claimAttempt, { id: attemptId }, body),
     getLearnerAttempts: (learnerId) =>

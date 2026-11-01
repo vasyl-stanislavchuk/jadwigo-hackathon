@@ -61,6 +61,7 @@ import {
   type RunId,
   RunInbox,
   type RunStatus,
+  type RunWorkflow,
 } from "@jadwigo/contracts/run";
 import { byTypeThenPosition, checkExamples } from "./example.ts";
 import { handleFor } from "./handle.ts";
@@ -273,7 +274,9 @@ export class InMemoryStore implements Store {
   async putPod(pod: NewPod): Promise<Pod> {
     const stored = this.#pods.get(pod.id);
     if (stored) return stored;
-    const row = frozen(parse(Pod, { ...pod, created_at: this.#at() }, "the pod"));
+    const row = frozen(
+      parse(Pod, { ...pod, created_at: this.#at(), ai_consent_at: null }, "the pod"),
+    );
     this.#pods.set(row.id, row);
     return row;
   }
@@ -936,7 +939,13 @@ export class InMemoryStore implements Store {
     const pod = frozen(
       parse(
         Pod,
-        { id: mint(PodId, ID_PREFIXES.pod), name: "home", language, created_at: at },
+        {
+          id: mint(PodId, ID_PREFIXES.pod),
+          name: "home",
+          language,
+          created_at: at,
+          ai_consent_at: null,
+        },
         "the pod",
       ),
     );
@@ -977,6 +986,18 @@ export class InMemoryStore implements Store {
       .sort(byAge)
       .map((learner) => this.#snapshot(learner));
     return { account: row, member, pod: this.#pod(pod), learners };
+  }
+
+  async getPod(pod: PodId): Promise<Pod> {
+    return this.#pod(pod);
+  }
+
+  async setAiConsent(pod: PodId, consented: boolean): Promise<Pod> {
+    const row = this.#pod(pod);
+    const ai_consent_at = consented ? (row.ai_consent_at ?? this.#at()) : null;
+    const next = frozen({ ...row, ai_consent_at });
+    this.#pods.set(pod, next);
+    return next;
   }
 
   #snapshot(learner: Learner): LearnerSnapshot {
@@ -1432,6 +1453,18 @@ export class InMemoryStore implements Store {
     return [...this.#runs.values()]
       .filter((r) => !ENDED.has(r.status) && (due(r.idle_deadline_at) || due(r.max_deadline_at)))
       .map((run) => ({ pod: run.pod_id, run }));
+  }
+
+  async spentUsd(workflows: readonly RunWorkflow[], since: string): Promise<number> {
+    const from = Date.parse(utc(since));
+    let total = 0;
+    for (const run of this.#runs.values()) {
+      if (!workflows.includes(run.workflow)) continue;
+      for (const event of this.#runEvents.get(run.id) ?? [])
+        if (event.type === "model_response" && Date.parse(event.created_at) >= from)
+          total += event.payload.cost_usd;
+    }
+    return total;
   }
 
   async createConversation(pod: PodId, conversation: NewConversation): Promise<Conversation> {

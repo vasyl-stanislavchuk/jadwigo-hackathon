@@ -21,6 +21,7 @@
     "AnswerLimit",
     "MessageLimitMinute",
     "MessageLimitDay",
+    "AiConsentMissing",
     "Unauthorized",
     "BankUnavailable"
   ]
