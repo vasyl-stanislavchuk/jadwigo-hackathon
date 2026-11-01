@@ -1,4 +1,4 @@
-// The parent app's frame (dl-uukj.47.4, decision dl-xo0q), what happy-dom cannot measure: the one
+// The parent app's frame (dl-uukj.47.4, decision dl-xo0q) and its lesson workspace (dl-uukj.47.5), what happy-dom cannot measure: the one
 // 56 px line across the sidebar's logo row and the top bar, the sidebar at 232 px folded to a 60 px
 // rail and remembered across a reload, and nothing to press in the top bar on a laptop. Signs in
 // with the email code against e2e/auth-server.ts (every code is 123456), with no child: a child is
@@ -51,4 +51,23 @@ test("the sidebar is 232 px, folds to a 60 px rail, and stays folded after a rel
   await expect(sidebar).toHaveAttribute("data-sidebar", "folded");
   await page.getByRole("button", { name: "Rozwiń menu" }).click();
   await expect.poll(async () => Math.round((await box(page, "#parent-sidebar")).width)).toBe(232);
+});
+
+// The lesson workspace (dl-uukj.47.5): chat 360 | lesson | details folded to its 52 px strip, and
+// one 68 px band under the chat and the lesson.
+test("the workspace: chat 360, details folded to 52, one 68 px band under the chat and the lesson", async ({
+  page,
+}) => {
+  await signIn(page);
+  await page.goto("/parent/lessons/cnv_00000000000000000000000001");
+  await expect(page.locator("[data-workspace]")).toBeVisible();
+  expect(Math.round((await box(page, "#parent-chat")).width)).toBe(360);
+  expect(Math.round((await box(page, "#parent-details")).width)).toBe(52);
+  const band = await box(page, "[data-chat-band]");
+  const footer = await box(page, "[data-lesson-footer]");
+  expect(Math.round(band.height)).toBe(68);
+  expect(Math.round(footer.height)).toBe(68);
+  expect(Math.round(band.y + band.height)).toBe(Math.round(footer.y + footer.height));
+  await page.getByRole("button", { name: "Rozwiń szczegóły" }).click();
+  await expect.poll(async () => Math.round((await box(page, "#parent-details")).width)).toBe(290);
 });

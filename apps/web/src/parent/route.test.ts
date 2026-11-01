@@ -1,4 +1,4 @@
-import { AssignmentId, AttemptId, LearnerId } from "@jadwigo/contracts";
+import { AssignmentId, AttemptId, ConversationId, LearnerId } from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
 import {
   assignmentPath,
@@ -10,6 +10,7 @@ import {
   historyPath,
   isParentPath,
   learnerOf,
+  lessonPath,
   lessonsPath,
   parentPath,
   parentRoute,
@@ -120,6 +121,20 @@ describe("the shell's pages", () => {
     const child = childPath({ learner: LEARNER, lang: "en" });
     expect(child).toBe(`/parent/children/${LEARNER}?lang=en`);
     expect(parentRoute(child.split("?")[0] ?? "")).toEqual({ kind: "child", learner: LEARNER });
+  });
+});
+
+describe("a lesson's workspace", () => {
+  it("reads /parent/lessons/<conversation>, and a bad id as null", () => {
+    const conversation = ConversationId.parse("cnv_00000000000000000000000001");
+    const path = lessonPath({ conversation });
+    expect(path).toBe("/parent/lessons/cnv_00000000000000000000000001");
+    expect(parentRoute(path)).toEqual({ kind: "lesson", conversation });
+    expect(parentRoute(`/parent/lessons/${LEARNER}`)).toEqual({
+      kind: "lesson",
+      conversation: null,
+    });
+    expect(parentRoute("/parent/lessons")).toEqual({ kind: "lessons" });
   });
 });
 

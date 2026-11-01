@@ -3,6 +3,8 @@
  *
  *   /parent                    sign in, then "Lekcje / Nowa lekcja", the parent app's first screen
  *   /parent/lessons            the family's lessons (dl-xo0q; its table waits on dl-z5ja.106)
+ *   /parent/lessons/<conversation>
+ *                              one lesson's workspace: its chat, the lesson, its details (dl-uukj.47.5)
  *   /parent/history            every attempt, newest first (its table waits on dl-z5ja.106.1)
  *   /parent/children/<learner> one child's page (dl-uukj.47.3)
  *   /parent?claim=<assignment> the same, then keep the attempt this tab played of that assignment
@@ -18,7 +20,7 @@
  * reads it under; without one the page asks each of the adult's learners in turn.
  */
 
-import { AssignmentId, AttemptId, LearnerId } from "@jadwigo/contracts";
+import { AssignmentId, AttemptId, ConversationId, LearnerId } from "@jadwigo/contracts";
 import type { Provider } from "../config.ts";
 
 const PARENT_PATH = "/parent";
@@ -35,6 +37,15 @@ const withLang = (path: string, lang: string | null | undefined): string =>
 /** /parent/lessons, the family's lessons. */
 export const lessonsPath = ({ lang }: { lang?: string | null } = {}): string =>
   withLang(LESSONS_PATH, lang);
+
+/** /parent/lessons/<conversation>, one lesson's workspace. */
+export const lessonPath = ({
+  conversation,
+  lang,
+}: {
+  conversation: ConversationId;
+  lang?: string | null;
+}): string => withLang(`${LESSONS_PATH}/${conversation}`, lang);
 
 /** /parent/history, every attempt. */
 export const historyPath = ({ lang }: { lang?: string | null } = {}): string =>
@@ -100,6 +111,7 @@ export function assignmentPath({
 export type ParentRoute =
   | { kind: "home" }
   | { kind: "lessons" }
+  | { kind: "lesson"; conversation: ConversationId | null }
   | { kind: "history" }
   | { kind: "child"; learner: LearnerId | null }
   | { kind: "attempt"; attempt: AttemptId | null }
@@ -114,6 +126,11 @@ export function parentRoute(path: string): ParentRoute | null {
   if (bare === PARENT_PATH) return { kind: "home" };
   if (bare === LESSONS_PATH) return { kind: "lessons" };
   if (bare === HISTORY_PATH) return { kind: "history" };
+  const lesson = idUnder(path, LESSONS_PATH);
+  if (lesson !== undefined) {
+    const parsed = ConversationId.safeParse(lesson);
+    return { kind: "lesson", conversation: parsed.success ? parsed.data : null };
+  }
   const child = idUnder(path, CHILDREN_PATH);
   if (child !== undefined) {
     const parsed = LearnerId.safeParse(child);

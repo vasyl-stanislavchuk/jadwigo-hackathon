@@ -44,6 +44,7 @@ export function DlaSelect({
   value,
   onChange,
   onAddChild,
+  trigger,
 }: {
   language: Language;
   learners: readonly Learner[];
@@ -51,6 +52,8 @@ export function DlaSelect({
   value: LearnerId | null;
   onChange: (learner: LearnerId | null) => void;
   onAddChild: () => void;
+  /** Another control to open the same menu, such as the details' "Zmień"; "Dla: … ▾" by default. */
+  trigger?: ReactElement;
 }): ReactElement {
   const [open, setOpen] = useState(false);
   const t = (key: CopyKey): string => copy(language, key, {}, CATEGORY);
@@ -62,15 +65,17 @@ export function DlaSelect({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="flex min-h-jw-control items-center gap-1.5 rounded-jw-small px-2 text-jw-ink hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus"
-          data-dla
-        >
-          <span className="text-jw-ink-soft">{t("parent_for")}</span>
-          <span className="font-bold">{chosen?.first_name ?? t("parent_no_child")}</span>
-          <ChevronDownIcon aria-hidden className="size-4 text-jw-ink-soft" />
-        </button>
+        {trigger ?? (
+          <button
+            type="button"
+            className="flex min-h-jw-control items-center gap-1.5 rounded-jw-small px-2 text-jw-ink hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus"
+            data-dla
+          >
+            <span className="text-jw-ink-soft">{t("parent_for")}</span>
+            <span className="font-bold">{chosen?.first_name ?? t("parent_no_child")}</span>
+            <ChevronDownIcon aria-hidden className="size-4 text-jw-ink-soft" />
+          </button>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-64 gap-0.5 p-1.5" data-dla-menu>
         <div role="menu" aria-label={t("parent_for")} className="flex flex-col gap-0.5">
