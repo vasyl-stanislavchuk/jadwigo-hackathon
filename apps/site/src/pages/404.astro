@@ -1,14 +1,5 @@
 ---
-import Base from "../layouts/Base.astro";
-
-const page = {
-  title: "Nie ma takiej strony · Jadwigo",
-  description: "Tej strony tu nie ma.",
-  heading: "Tej strony tu nie ma.",
-  reviewed: true,
-};
+import NotFound from "../components/NotFound.astro";
 ---
 
-<Base page={page} path="/404" prose>
-  <p><a href="/">Wróć na stronę główną</a></p>
-</Base>
+<NotFound lang="pl" />

@@ -1,0 +1,26 @@
+---
+// The 404 in one language, its words the site_404_* messages (dl-w0b4.82). Rendered at /404 in
+// Polish and at /<lang>/404 for each other language the build serves.
+import type { Language } from "@jadwigo/config";
+import { m } from "@jadwigo/copy/messages";
+import Base from "../layouts/Base.astro";
+
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+const locale = { locale: lang } as const;
+const home = lang === "pl" ? "/" : `/${lang}/`;
+const page = {
+  title: m.site_404_title({}, locale),
+  description: m.site_404_heading({}, locale),
+  heading: m.site_404_heading({}, locale),
+  lang,
+  reviewed: true,
+};
+---
+
+<Base page={page} path={lang === "pl" ? "/404" : `/${lang}/404`} prose>
+  <p><a href={home}>{m.site_404_home({}, locale)}</a></p>
+</Base>

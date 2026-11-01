@@ -7,5 +7,11 @@
   "site_switch_label": "Język strony",
   "site_note_text": "Ta strona jest też po polsku.",
   "site_note_go": "Otwórz po polsku",
-  "site_note_dismiss": "Nie, dziękuję"
+  "site_note_dismiss": "Nie, dziękuję",
+  "site_nav_home": "Jadwigo, strona główna",
+  "site_nav_label": "Strony",
+  "site_nav_sign_in": "Zaloguj się",
+  "site_footer_privacy": "Prywatność",
+  "site_footer_deletion": "Usuwanie danych",
+  "site_footer_made": "Jadwigo powstało podczas hackathonu Meta."
 }
