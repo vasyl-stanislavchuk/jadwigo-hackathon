@@ -118,3 +118,20 @@ export function contentBucket(): string | undefined {
 export function runnerLiveAliasArn(): string | undefined {
   return process.env["RUNNER_LIVE_ALIAS_ARN"]?.trim() || undefined;
 }
+
+/**
+ * The SSM parameter holding the uploads bucket's name when `UPLOADS_BUCKET` is unset, as with the
+ * content bucket: infra's `modules/uploads` writes it (dl-z5ja.11.2).
+ */
+export const UPLOADS_BUCKET_PARAM = "/jadwigo/uploads/bucket";
+
+/**
+ * The bucket a message's photos go to (dl-z5ja.11.2): `pending/<pod>/<id>` for the browser's upload,
+ * `pods/<pod>/attachments/<id>.jpg` once a message carries it. `UPLOADS_BUCKET`, as Terraform sets
+ * it on the function, else the name in `UPLOADS_BUCKET_PARAM`; undefined when neither names one.
+ */
+export async function uploadsBucket(read: ReadParameter = readSsm): Promise<string | undefined> {
+  const direct = process.env["UPLOADS_BUCKET"]?.trim();
+  if (direct) return direct;
+  return (await read(UPLOADS_BUCKET_PARAM))?.trim() || undefined;
+}

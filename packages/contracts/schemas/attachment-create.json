@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "$ref": "#/$defs/EventId"
+    },
+    "media_type": {
+      "$ref": "#/$defs/AttachmentMediaType"
+    },
+    "bytes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4194304
+    },
+    "width": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2000
+    },
+    "height": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2000
+    }
+  },
+  "required": [
+    "event_id",
+    "media_type",
+    "bytes",
+    "width",
+    "height"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "EventId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "AttachmentMediaType": {
+      "type": "string",
+      "enum": [
+        "image/jpeg"
+      ]
+    }
+  }
+}
