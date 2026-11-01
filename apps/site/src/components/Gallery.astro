@@ -1,88 +1,198 @@
 ---
-// The featured lessons as big cards (dl-5ssh.4.3, dl-5ssh.4.7): who a lesson fits and how long it is
-// on top, its first question written large on a notebook page as the teaser, one click to play in
-// the app with no login. A still grid: the drifting row went with dl-5ssh.4.9, since the hero holds
-// the page's one moving moment.
+// The featured lessons as cards (dl-5ssh.4.3, redrawn in design handoff "landing 3", dl-5ssh.4.13):
+// the subject and grade with the question count, the title, an illustration slot, the first question
+// on squared paper, and one link to play in the app with no login. With `row`, the landing page's
+// version: grade and subject filters, a count, and one row of 300 px cards that scrolls sideways
+// with snap to the page's right edge, moved a card at a time by 2 arrow buttons. Without it, a
+// still grid (/lekcje). Only the real featured lessons show (owner, 2026-11-01).
 import type { Language } from "@jadwigo/config";
 import type { FeaturedLesson } from "@jadwigo/contracts";
 import { assertLanguage, playUrl } from "../lib/featured.ts";
 import { withLang } from "../lib/i18n.ts";
 import { firstSentence, plural } from "../lib/landing.ts";
 import { landingWords } from "../lib/words.ts";
+import Pic from "./Pic.astro";
+import Segmented from "./Segmented.astro";
 
 interface Props {
   lang: Language;
   // The page's lessons, from pageLessons(lang) in src/lib/featured.ts.
   lessons: FeaturedLesson[];
+  row?: boolean;
 }
 
 // The cards, their labels and the lessons are all in the page's language (dl-w0b4.85): a lesson in
 // another language stops the build. Each card opens the app in the page's language.
-const { lang, lessons } = Astro.props;
+const { lang, lessons, row = false } = Astro.props;
 assertLanguage(lessons, lang);
 const words = (await landingWords(lang)).lessons;
 
 const cards = lessons.map((l) => ({
   href: withLang(playUrl(l), lang),
   title: l.title,
+  subject: l.subject,
+  grade: l.grade === null ? "" : String(l.grade),
   teaser: l.first_say === null ? null : firstSentence(l.first_say),
-  meta: [
-    words.subjects[l.subject],
-    l.grade === null ? null : `${words.grade} ${l.grade}`,
-    l.question_count > 0 ? plural(l.question_count, words.questions, lang) : null,
-  ].filter((m): m is string => m !== null),
+  meta: [words.subjects[l.subject], l.grade === null ? null : `${words.grade} ${l.grade}`]
+    .filter((m): m is string => m !== null)
+    .join(" · "),
+  count: l.question_count > 0 ? plural(l.question_count, words.questions, lang) : null,
 }));
+const subjects = [...new Set(lessons.map((l) => l.subject))];
+const gradeOptions = [
+  { value: "all", label: words.row.allGrades },
+  ...["1", "2", "3", "4"].map((g) => ({ value: g, label: g })),
+];
+const subjectOptions = [
+  { value: "all", label: words.row.allSubjects },
+  ...subjects.map((s) => ({ value: s, label: words.subjects[s] })),
+];
 ---
 
-<ul class="gallery">
+<div class:list={["lessons-ui", { row }]} data-count={JSON.stringify(words.row.count)} data-lang={lang}>
   {
-    cards.map((c) => (
-      <li class="card">
-        <a href={c.href}>
-          <span class="meta">
-            {c.meta.map((m) => (
-              <span class="chip">{m}</span>
-            ))}
-          </span>
-          {c.teaser && <span class="page">{c.teaser}</span>}
-          <span class="foot">
-            <span class="title">{c.title}</span>
-            <span class="go">{words.play} →</span>
-          </span>
-        </a>
-      </li>
-    ))
+    row && (
+      <div class="wrap controls">
+        <div class="head">
+          <slot />
+        </div>
+        <div class="filters">
+          <Segmented name="grade" label={words.row.gradeLabel} options={gradeOptions} value="all" />
+          <Segmented name="subject" label={words.row.subjectLabel} options={subjectOptions} value="all" />
+        </div>
+        <div class="bar">
+          <p class="count" aria-live="polite">{plural(cards.length, words.row.count, lang)}</p>
+          <button type="button" class="arrow" data-step="-1" aria-label={words.row.prev}>←</button>
+          <button type="button" class="arrow" data-step="1" aria-label={words.row.next}>→</button>
+        </div>
+      </div>
+    )
   }
-</ul>
+  <ul class="cards">
+    {
+      cards.map((c) => (
+        <li class="card" data-grade={c.grade} data-subject={c.subject}>
+          <a href={c.href}>
+            <span class="meta">
+              <span>{c.meta}</span>
+              {c.count && <span>{c.count}</span>}
+            </span>
+            <span class="title">{c.title}</span>
+            <Pic label={`${words.row.pic} · ${c.title}`} class="card-pic" />
+            {c.teaser && <span class="teaser paper">{c.teaser}</span>}
+            <span class="go">{words.play} →</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+  {row && <p class="wrap none" hidden>{words.row.none}</p>}
+</div>
+
+<script>
+  import { plural } from "../lib/landing.ts";
+
+  for (const ui of document.querySelectorAll<HTMLElement>(".lessons-ui.row")) {
+    const list = ui.querySelector<HTMLElement>(".cards");
+    const cards = [...ui.querySelectorAll<HTMLElement>(".card")];
+    const count = ui.querySelector(".count");
+    const none = ui.querySelector<HTMLElement>(".none");
+    const arrows = [...ui.querySelectorAll<HTMLButtonElement>(".arrow")];
+    const forms = JSON.parse(ui.dataset["count"] ?? "[]") as [string, string, string];
+    const lang = ui.dataset["lang"] === "en" ? "en" : "pl";
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!list) continue;
+
+    // The arrows go grey at either end of the row.
+    const ends = () => {
+      const max = list.scrollWidth - list.clientWidth - 1;
+      arrows[0]?.toggleAttribute("disabled", list.scrollLeft <= 0);
+      arrows[1]?.toggleAttribute("disabled", list.scrollLeft >= max);
+    };
+
+    // A filter shows the cards that match both choices and puts the row back at its start.
+    const filter = () => {
+      const grade = ui.querySelector<HTMLInputElement>('input[name="grade"]:checked')?.value ?? "all";
+      const subject = ui.querySelector<HTMLInputElement>('input[name="subject"]:checked')?.value ?? "all";
+      let shown = 0;
+      for (const card of cards) {
+        const fits =
+          (grade === "all" || card.dataset["grade"] === grade) &&
+          (subject === "all" || card.dataset["subject"] === subject);
+        card.hidden = !fits;
+        if (fits) shown += 1;
+      }
+      if (count) count.textContent = plural(shown, forms, lang);
+      if (none) none.hidden = shown > 0;
+      list.scrollLeft = 0;
+      ends();
+    };
+    for (const input of ui.querySelectorAll("input")) input.addEventListener("change", filter);
+
+    // Each arrow moves the row by one card and its gap.
+    for (const arrow of arrows) {
+      arrow.addEventListener("click", () => {
+        const card = cards.find((c) => !c.hidden);
+        const gap = Number.parseFloat(getComputedStyle(list).columnGap) || 0;
+        const step = (card?.offsetWidth ?? 300) + gap;
+        list.scrollBy({ left: step * Number(arrow.dataset["step"]), behavior: still ? "auto" : "smooth" });
+      });
+    }
+    list.addEventListener("scroll", ends, { passive: true });
+    addEventListener("resize", ends);
+    ends();
+  }
+</script>
 
 <style>
-  .gallery {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); gap: 1.25rem;
-    list-style: none; margin: 1.5rem 0 0; padding: 0 0 1.25rem;
+  /* The heading, then the filters; on a laptop the filters stand to the heading's right. */
+  .controls { display: grid; gap: 1rem 1.5rem; align-items: end; }
+  @media (min-width: 60rem) {
+    .controls { grid-template-columns: 1fr auto; }
+    .bar { grid-column: 1 / -1; }
   }
+  .filters { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; }
+  .bar { display: flex; align-items: center; gap: 0.75rem; }
+  .count { flex: 1; font-weight: 700; color: var(--jw-ink-soft); }
+  .arrow {
+    width: 48px; height: 48px; display: grid; place-items: center; cursor: pointer;
+    font: inherit; font-size: 1.3rem; font-weight: 700; color: var(--jw-ink);
+    background: var(--jw-card); border: 2px solid var(--jw-line-strong); border-radius: var(--jw-radius-control);
+    box-shadow: 0 3px 0 var(--jw-line-strong); transition: transform 80ms, box-shadow 80ms;
+  }
+  .arrow:not(:disabled):active { transform: translateY(2px); box-shadow: 0 1px 0 var(--jw-line-strong); }
+  .arrow:disabled { opacity: 0.4; cursor: default; }
+  .arrow:focus-visible { outline: 3px solid var(--jw-focus); outline-offset: 3px; }
+
+  .cards {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 18.75rem), 1fr)); gap: 1.25rem;
+    list-style: none; margin: 1.5rem 0 0; padding: 0 0 1rem;
+  }
+  /* The row: one line of 300 px cards from the page's left margin to its right edge, snapping to a card. */
+  .row .cards {
+    --edge: max(1rem, calc((100vw - 72rem) / 2 + 1rem));
+    display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--edge);
+    margin-top: 1.25rem; padding: 0.25rem var(--edge) 1.25rem;
+    width: 100vw; margin-left: calc(50% - 50vw);
+  }
+  .row .card { flex: 0 0 18.75rem; scroll-snap-align: start; }
+  .card[hidden] { display: none; }
 
   .card a {
-    display: flex; flex-direction: column; gap: 1rem; height: 100%;
-    min-height: 22rem; padding: 1.25rem;
+    display: flex; flex-direction: column; gap: 0.75rem; height: 100%; padding: 1rem;
     border: 2px solid var(--jw-line); border-radius: var(--jw-radius-card);
     background: var(--jw-card); color: var(--jw-ink); text-decoration: none;
-    box-shadow: 0 6px 0 var(--jw-line); transition: transform 120ms, border-color 120ms;
+    box-shadow: 0 5px 0 var(--jw-line); transition: border-color 120ms;
   }
-  .card a:hover { border-color: var(--jw-pick-edge); transform: translateY(-3px); }
-  .meta { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-  .chip {
-    padding: 0.25rem 0.75rem; border-radius: var(--jw-radius-chip); font-size: 0.95rem; font-weight: 700;
-    background: var(--jw-pick); color: var(--jw-pick-ink);
-  }
-  .chip + .chip { background: var(--jw-act-quiet); color: var(--jw-ink); }
-  /* The teaser: the first question as the child sees it, large, on a lined exercise-book page. */
-  .page {
-    flex: 1; display: flex; align-items: center; padding: 1rem 1.25rem; border-radius: var(--jw-radius-small);
-    font-size: 1.6rem; font-weight: 700; line-height: 2.2rem; color: var(--jw-ink);
-    background: repeating-linear-gradient(to bottom, transparent 0 calc(2.2rem - 1px), var(--jw-line) calc(2.2rem - 1px) 2.2rem),
-      var(--jw-act-quiet);
-  }
-  .foot { display: flex; align-items: end; justify-content: space-between; gap: 1rem; }
-  .title { font-size: 1.15rem; font-weight: 700; line-height: 1.3; }
-  .go { flex: none; font-weight: 700; color: var(--jw-brand-go); }
+  .card a:hover { border-color: var(--jw-ink); }
+  .card a:focus-visible { outline: 3px solid var(--jw-focus); outline-offset: 3px; }
+  .meta { display: flex; justify-content: space-between; gap: 0.75rem; font-size: 0.85rem; font-weight: 700; color: var(--jw-ink-soft); }
+  .title { font-size: 1.3rem; font-weight: 700; line-height: 1.25; }
+  .card a :global(.card-pic) { height: 6.5rem; min-height: 0; }
+  /* The teaser: the first question as the child sees it, on squared paper. */
+  .teaser { --cell: 1.25rem; padding: 0.6rem 0.75rem; font-size: 1.05rem; font-weight: 700; line-height: 1.35; border-radius: var(--jw-radius-small); }
+  .go { margin-top: auto; padding-top: 0.5rem; font-weight: 700; color: var(--jw-brand-go); }
+  .none { margin-top: 0.5rem; font-weight: 700; color: var(--jw-ink-soft); }
+  .none[hidden] { display: none; }
+  @media (prefers-reduced-motion: reduce) { .arrow { transition: none; } }
 </style>

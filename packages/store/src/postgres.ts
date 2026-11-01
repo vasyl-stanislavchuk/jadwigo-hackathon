@@ -2665,6 +2665,18 @@ class PostgresStore implements Store {
     });
   }
 
+  async recordFailedMuseCall(run: RunId, call_no: number, cost_usd: number): Promise<void> {
+    if (!(cost_usd > 0) || !Number.isInteger(call_no) || call_no < 1)
+      throw new StoreError(ErrorType.enum.BadRequest, "a failed call that spent, by its call_no");
+    const id = uuidOf(ID_PREFIXES.run, run);
+    await this.#in(null, async (tx) => {
+      // muse_ledger.record_failed_call takes the pod from the run, past row-level security.
+      await sql`select muse_ledger.record_failed_call(${id}::uuid, ${call_no}::integer, ${cost_usd}::numeric)`.execute(
+        tx,
+      );
+    });
+  }
+
   async spentUsd(workflows: readonly RunWorkflow[], since: string): Promise<number> {
     const at = utc(since);
     return this.#in(null, async (tx) => {

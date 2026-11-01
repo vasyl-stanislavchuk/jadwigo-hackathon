@@ -10,8 +10,17 @@ import { type FindingLevel, type LessonCheckView, toolViewData } from "@jadwigo/
 import type { VerbName } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
-import { ClipboardCheck, type LucideIcon, PencilLine, Search } from "lucide-react";
+import {
+  CalendarDays,
+  ClipboardCheck,
+  type LucideIcon,
+  PencilLine,
+  Search,
+  Target,
+} from "lucide-react";
 import type { ReactElement } from "react";
+import { GoalLists } from "../../../parent/learner/GoalLists.tsx";
+import { WeekStrip } from "../../../parent/learner/WeekStrip.tsx";
 
 export type ToolItem = Extract<ChatItem, { kind: "tool" }>;
 
@@ -132,6 +141,36 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
           ))}
         </ul>
       ),
+    keepVisible: true,
+  }),
+  // The learner verbs (dl-z5ja.25) draw with the parent's learner page's own parts; the others
+  // (learner_mistakes, curriculum_topics, lesson_ideas) get the plain card for now.
+  learner_skills: register({
+    verb: "learner_skills",
+    title: "chat_tool_learner_skills",
+    icon: Target,
+    read: (data) => toolViewData("learner_skills", data),
+    Widget: ({ data, language }) => (
+      <GoalLists goals={data.goals} catalogue={data.skills} language={language} />
+    ),
+    keepVisible: true,
+  }),
+  learner_week: register({
+    verb: "learner_week",
+    title: "chat_tool_learner_week",
+    icon: CalendarDays,
+    read: (data) => toolViewData("learner_week", data),
+    Widget: ({ data, language }) => (
+      <WeekStrip
+        weeks={data.weeks.map((w) => ({
+          monday: w.monday,
+          lessons: w.lessons,
+          movedUp: w.moved_up,
+          attention: w.attention,
+        }))}
+        language={language}
+      />
+    ),
     keepVisible: true,
   }),
 };

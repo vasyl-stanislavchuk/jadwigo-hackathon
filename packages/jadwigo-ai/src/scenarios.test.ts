@@ -1,4 +1,4 @@
-import { EventId, ID_PREFIXES, idOf, Uuid } from "@jadwigo/contracts";
+import { EventId, ID_PREFIXES, idOf, type LearnerId, toolViewData, Uuid } from "@jadwigo/contracts";
 import {
   ConversationId,
   type NewRunEvent,
@@ -9,7 +9,7 @@ import {
   type RunId,
   type VerbName,
 } from "@jadwigo/contracts/run";
-import { foldRun, mergeLive } from "@jadwigo/core";
+import { checkAnswer, foldRun, mergeLive } from "@jadwigo/core";
 import { parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import { InMemoryStore } from "@jadwigo/store";
 import { FIXED_NOW } from "@jadwigo/testing";
@@ -20,7 +20,7 @@ import { ScriptedMuse, type ScriptedReply } from "./muse/scripted.ts";
 import { InMemoryRunQueue } from "./queue/memory.ts";
 import { STEP_VISIBILITY_S } from "./queue/types.ts";
 import { acceptMessage, drain, type EngineDeps, type InboxEntry, sweep } from "./run/run-step.ts";
-import { createVerbs, fixtureBank } from "./verbs/index.ts";
+import { createVerbs, fixtureBank, type LearnerReads } from "./verbs/index.ts";
 import {
   type Verb,
   type VerbContext,
@@ -804,6 +804,73 @@ describe("the engine keeps PostHog's production lessons", () => {
     expect(events.some((e) => e.type === "error")).toBe(false);
     expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
   });
+
+  frozen(
+    "what should we practise next: up to 3 ideas citing the brief, and no level or number of its own",
+    async () => {
+      // A made-up learner with 2 goals and no lesson played yet: the brief puts each goal's
+      // skills on its new list, so lesson_ideas offers one idea per goal (dl-z5ja.25).
+      const ASK = "What should we practise next?";
+      const INVENTED = "Ola has mastered adding: 80% right, better than most. Try subtracting.";
+      const WORDED =
+        "Two ideas from the brief. i1: adding, maths.add.within-10 and maths.add.within-20, for the goal Dodawanie. i2: subtracting, maths.sub.within-10, for the goal Odejmowanie.";
+      let learner: LearnerId | undefined;
+      const ideas: ScriptedReply = {
+        tool_calls: [{ verb: "lesson_ideas", input: () => ({ learner_id: learner }) }],
+      };
+      let reads: LearnerReads | undefined;
+      const t = await setup(
+        [ideas, { text: INVENTED }, { text: WORDED }],
+        createVerbs({
+          bank: fixtureBank(),
+          learners: lateReads(() => reads),
+          now: () => FIXED_NOW,
+        }),
+      );
+      reads = t.store;
+      learner = (await t.store.addLearner(t.pod, { first_name: "Ola" })).learner.id;
+      await t.store.addGoal(t.pod, learner, {
+        name: "Dodawanie",
+        skill_codes: ["maths.add.within-10", "maths.add.within-20"],
+      });
+      await t.store.addGoal(t.pod, learner, {
+        name: "Odejmowanie",
+        skill_codes: ["maths.sub.within-10"],
+      });
+
+      const run = await t.say(ASK);
+      await drain(t.deps);
+      const events = await t.log(run);
+
+      // The tool answered up to 3 ideas, each cited by the brief's skills and goals.
+      const result = events.find((e) => e.type === "tool_result");
+      if (result?.type !== "tool_result") throw new Error("lesson_ideas wrote no result");
+      expect(result.payload.error ?? null).toBeNull();
+      const view = toolViewData("lesson_ideas", result.payload.view?.data);
+      expect(view?.ideas.map((i) => [i.id, i.list, i.skill_codes])).toEqual([
+        ["i1", "new", ["maths.add.within-10", "maths.add.within-20"]],
+        ["i2", "new", ["maths.sub.within-10"]],
+      ]);
+      for (const idea of view?.ideas ?? []) {
+        expect(idea.citations.filter((c) => c.kind === "skill")).toHaveLength(
+          idea.skill_codes.length,
+        );
+        expect(idea.citations.some((c) => c.kind === "goal")).toBe(true);
+      }
+
+      // The invented level, score and comparison never reach the parent; the cited answer does,
+      // and it holds no level word or number the turn's tool results did not give.
+      const agent = events.flatMap((e) =>
+        e.type === "message" && e.payload.from === "agent" ? [e.payload.text] : [],
+      );
+      expect(agent).toEqual([WORDED]);
+      expect(checkAnswer(WORDED, events)).toEqual([]);
+      // Its level word alone refuses it: a number may happen to sit in a random id the turn gave.
+      expect(checkAnswer(INVENTED, events).map((m) => m.kind)).toContain("level");
+      expect(t.muse.calls).toHaveLength(3);
+      expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
+    },
+  );
 });
 
 // The world each scenario runs in.
@@ -938,6 +1005,11 @@ function fakeVerbs(
     lesson_edit: (c) => ({ output: {}, lesson_file: c.lesson?.lesson_file ?? LESSON }),
     lesson_check: () => ({ output: { findings: [] } }),
     question_search: () => ({ output: { sets: [] } }),
+    learner_skills: () => ({ output: { goals: [] } }),
+    learner_week: () => ({ output: { weeks: [] } }),
+    learner_mistakes: () => ({ output: { mistakes: [] } }),
+    curriculum_topics: () => ({ output: { topics: [] } }),
+    lesson_ideas: () => ({ output: { ideas: [] } }),
   };
   const verb = (name: VerbName): Verb => ({
     name,
@@ -953,6 +1025,11 @@ function fakeVerbs(
     lesson_edit: verb("lesson_edit"),
     lesson_check: verb("lesson_check"),
     question_search: verb("question_search"),
+    learner_skills: verb("learner_skills"),
+    learner_week: verb("learner_week"),
+    learner_mistakes: verb("learner_mistakes"),
+    curriculum_topics: verb("curriculum_topics"),
+    lesson_ideas: verb("lesson_ideas"),
   };
 }
 
@@ -978,4 +1055,25 @@ function stepSay(lesson_file: unknown, id: string): unknown {
 /** Everything the model was sent on call `call_no`, as one string to search. */
 function sent(muse: ScriptedMuse, call_no: number): string {
   return JSON.stringify(muse.calls.find((c) => c.call_no === call_no) ?? null);
+}
+
+/**
+ * The learner reads, from a store the scenario makes after its verbs: `setup` makes the store, and
+ * the verbs are made before it. Each read throws until the store is there.
+ */
+function lateReads(get: () => LearnerReads | undefined): LearnerReads {
+  const store = (): LearnerReads => {
+    const s = get();
+    if (s === undefined) throw new Error("the scenario's store is not made yet");
+    return s;
+  };
+  return {
+    getMe: (...a) => store().getMe(...a),
+    listSkills: (...a) => store().listSkills(...a),
+    listGoals: (...a) => store().listGoals(...a),
+    getLearnerEvidence: (...a) => store().getLearnerEvidence(...a),
+    getLearnerAttempts: (...a) => store().getLearnerAttempts(...a),
+    getAttempt: (...a) => store().getAttempt(...a),
+    listReports: (...a) => store().listReports(...a),
+  };
 }

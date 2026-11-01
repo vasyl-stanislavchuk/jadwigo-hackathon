@@ -7,6 +7,8 @@
  *                Instagram's own browser, where Google refuses to sign in, a line and the link to
  *                open in the phone's browser stand in Google's place (dl-e8ov.2.63)
  *   signed in    GET /me; with no account yet, POST /accounts once (it is idempotent)
+ *     consent    while the pod has no ai_consent_at, the AI's consent screen, once (dl-z5ja.32,
+ *                dl-xo0q); "Nie teraz" steps past it for this visit
  *     ?claim     the tab still holds an attempt of that assignment: pick the child, or add one,
  *                and POST /attempts/{id}/claims; the tab then forgets the attempt
  *     the shell  every signed-in page sits in the parent app's frame (shell/ParentShell.tsx, decision
@@ -27,31 +29,16 @@
  * Heading, Field, Card, Notice), in the adult's lines (dl-uukj.32 wave 2).
  */
 
-import { ApiError, type Client, createClient, type ParentClient } from "@jadwigo/api-client";
-import type {
-  AssignmentId,
-  AttemptId,
-  AttemptResult,
-  Learner,
-  LearnerAttempts,
-  LearnerId,
-  Me,
-} from "@jadwigo/contracts";
-import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import {
-  Button,
-  Card,
-  CardContent,
-  type Crumb,
-  Field,
-  Heading,
-  Input,
-  Link,
-  Notice,
-  OutcomeTile,
-  Page,
-  Spinner,
-} from "@jadwigo/ui";
+  ApiError,
+  type Client,
+  createClient,
+  type ParentClient,
+  type PodClient,
+} from "@jadwigo/api-client";
+import type { AssignmentId, AttemptId, LearnerId, Me } from "@jadwigo/contracts";
+import { type CopyKey, copy, type Language } from "@jadwigo/copy";
+import { Button, type Crumb, Field, Heading, Input, Notice, Page, Spinner } from "@jadwigo/ui";
 import {
   type FormEvent,
   type ReactElement,
@@ -64,8 +51,8 @@ import {
 } from "react";
 import { setPodLanguage } from "../nav/language.ts";
 import { navigate, useLocation } from "../nav/location.ts";
-import { NavLink } from "../nav/NavLink.tsx";
 import { storedAttempt } from "../play/storedAttempt.ts";
+import { ConsentScreen } from "../playground/chat/ConsentScreen.tsx";
 import { AttemptReview } from "./AttemptReview.tsx";
 import { CATEGORY, pageLang } from "./adult.ts";
 import {
@@ -75,23 +62,23 @@ import {
   type RedirectOutcome,
   withoutReturn,
 } from "./auth.ts";
+import { ChildPage } from "./child/ChildPage.tsx";
+import { Failed } from "./Failed.tsx";
 import { inAppBrowser } from "./inApp.ts";
 import { LanguagePick } from "./LanguagePick.tsx";
-import { LearnerKnowledge } from "./learner/LearnerKnowledge.tsx";
+import { AddChildDialog } from "./newLesson/AddChildDialog.tsx";
+import { NewLessonBox } from "./newLesson/NewLessonBox.tsx";
 import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";
-import { cellsOf } from "./overview/grid.ts";
-import { OUTCOME_TONE, OutcomeIcon, TwinMark, tileLabel } from "./overview/outcome.tsx";
 import { ProviderButton } from "./ProviderButton.tsx";
 import {
-  assignmentPath,
-  attemptPath,
+  childPath,
   claimOf,
   emailOf,
+  forOf,
   historyPath,
   learnerOf,
   lessonsPath,
   type ParentRoute,
-  parentPath,
   parentRoute,
   providerOf,
 } from "./route.ts";
@@ -115,20 +102,12 @@ function Loading({ language }: { language: Language }): ReactElement {
   );
 }
 
-/** The line that says a page could not load: what stops the adult, with what to do. */
-function Failed({ language }: { language: Language }): ReactElement {
-  return (
-    <Notice role="alert" data-failed>
-      {copy(language, "parent_load_failed", {}, CATEGORY)}
-    </Notice>
-  );
-}
-
 export function ParentScreen({
   language,
   query,
   auth = browserAuth(),
   client,
+  pods,
 }: {
   language: Language;
   query: URLSearchParams;
@@ -136,16 +115,18 @@ export function ParentScreen({
   auth?: Auth | null;
   /** The API, for tests; the page's own origin, with the sign-in's token, when absent. */
   client?: ParentClient;
+  /**
+   * The pod's consent to the AI (dl-z5ja.32), for tests; the page's own client when `client` is
+   * absent. With a test's `client` and no `pods`, the consent screen is not asked.
+   */
+  pods?: PodClient;
 }): ReactElement {
-  const api = useMemo<ParentClient>(
-    () =>
-      client ??
-      (createClient({
-        base: "",
-        token: () => auth?.token() ?? Promise.resolve(null),
-      }) satisfies Client),
-    [client, auth],
+  const own = useMemo<Client>(
+    () => createClient({ base: "", token: () => auth?.token() ?? Promise.resolve(null) }),
+    [auth],
   );
+  const api: ParentClient = client ?? own;
+  const podApi: PodClient | null = pods ?? (client ? null : own);
   const route = parentRoute(useLocation().path);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [returned, setReturned] = useState<CopyKey | null>(null);
@@ -196,9 +177,11 @@ export function ParentScreen({
   return (
     <SignedIn
       api={api}
+      pods={podApi}
       language={language}
       route={route ?? { kind: "home" }}
       learner={learnerOf(query)}
+      forLearner={forOf(query)}
       claim={claimOf(query)}
       onSignOut={() => {
         auth.signOut().finally(() => {
@@ -462,24 +445,34 @@ async function meOf(api: ParentClient, language: Language): Promise<Me> {
 
 function SignedIn({
   api,
+  pods,
   language,
   route,
   learner,
   claim,
+  forLearner: forAtFirst,
   onSignOut,
 }: {
   api: ParentClient;
+  pods: PodClient | null;
   language: Language;
   route: ParentRoute;
   /** The attempt page's ?learner. */
   learner: LearnerId | null;
   claim: AssignmentId | null;
+  /** ?for: the child the first screen's Dla starts at. */
+  forLearner: LearnerId | null;
   onSignOut: () => void;
 }): ReactElement {
   const [view, setView] = useState<View>({ kind: "loading" });
   const [pending, setPending] = useState(() => pendingClaim(claim));
-  const [adding, setAdding] = useState(false);
+  // Dodaj dziecko is open, and from where: Dla's menu picks the new child, the "+" does not.
+  const [adding, setAdding] = useState<"plus" | "dla" | null>(null);
+  const [forLearner, setForLearner] = useState<LearnerId | null>(forAtFirst);
+  const [soon, setSoon] = useState(false);
   const [notice, setNotice] = useState<CopyKey | null>(null);
+  /** "Nie teraz" on the consent screen: asked again on the next visit, not on this one. */
+  const [later, setLater] = useState(false);
 
   // The first sign-in's language is the one on screen then; a later pick moves the screens without
   // reading /me again.
@@ -511,7 +504,8 @@ function SignedIn({
     }
     storedAttempt.clear(pending.assignment);
     setPending(null);
-    navigate(parentPath({ lang: pageLang() }), { replace: true });
+    // The kept lesson shows on that child's page.
+    navigate(childPath({ learner, lang: pageLang() }), { replace: true });
   };
 
   const run = (work: () => Promise<void>): void => {
@@ -522,15 +516,53 @@ function SignedIn({
   const addChild = (firstName: string): void =>
     run(async () => {
       const { learner } = await api.createLearner({ first_name: firstName });
-      setAdding(false);
       await keepFor(learner.id);
     });
+
+  /** The child the dialog created, until /me reads it back (see addFromDialog). */
+  const createdChild = useRef<{
+    firstName: string;
+    learner: Awaited<ReturnType<ParentClient["createLearner"]>>["learner"];
+  } | null>(null);
+
+  /** Dodaj dziecko's dialog: adds the child and reads /me again with the page left as it was (the
+   * box keeps its words). From Dla, Dla shows the child; with a claim waiting, it is kept for them. */
+  const addFromDialog = async ({ firstName }: { firstName: string }): Promise<void> => {
+    // A child created on a press whose /me read then failed is kept: pressing Dodaj again reads /me
+    // again and never makes a second child of the same name.
+    const kept = createdChild.current;
+    const learner =
+      kept !== null && kept.firstName === firstName
+        ? kept.learner
+        : (await api.createLearner({ first_name: firstName })).learner;
+    createdChild.current = { firstName, learner };
+    const me = await meOf(api, languageNow.current);
+    createdChild.current = null;
+    setView({ kind: "ready", me });
+    if (adding === "dla") setForLearner(learner.id);
+    if (pending !== null) run(() => keepFor(learner.id));
+  };
 
   if (view.kind === "loading") return <Loading language={language} />;
   if (view.kind === "failed")
     return (
       <ParentPage>
         <Failed language={language} />
+      </ParentPage>
+    );
+
+  const pod = view.me.pod;
+  if (pods !== null && pod !== null && (pod.ai_consent_at ?? null) === null && !later)
+    return (
+      <ParentPage>
+        <ConsentScreen
+          language={language}
+          onAgree={async () => {
+            await pods.patchPod(pod.id, { ai_consented: true });
+            load();
+          }}
+          onLater={() => setLater(true)}
+        />
       </ParentPage>
     );
 
@@ -546,15 +578,21 @@ function SignedIn({
       learners={learners}
       place={place}
       trail={trail}
-      onAddChild={() => setAdding(true)}
+      onAddChild={() => setAdding("plus")}
       onSignOut={onSignOut}
     >
       {body}
+      <AddChildDialog
+        language={language}
+        open={adding !== null}
+        onOpenChange={(open) => !open && setAdding(null)}
+        onAdd={addFromDialog}
+      />
     </ParentShell>
   );
 
-  // Adding a child, or keeping the tab's attempt for one: the page asks it before anything else.
-  if (adding || (pending !== null && learners.length === 0))
+  // Keeping the tab's attempt with no child yet: the page asks for one before anything else.
+  if (pending !== null && learners.length === 0)
     return shell(
       { kind: "elsewhere" },
       [{ label: t("parent_nav_children") }, { label: t("parent_add_child") }],
@@ -589,7 +627,7 @@ function SignedIn({
           variant="outline"
           size="control"
           className="self-start"
-          onClick={() => setAdding(true)}
+          onClick={() => setAdding("plus")}
           data-add-another
         >
           {t("parent_add_child")}
@@ -631,11 +669,12 @@ function SignedIn({
       return shell(
         { kind: "child", learner: child.id },
         [{ label: t("parent_nav_children") }, { label: child.first_name }],
-        <ParentPage>
-          <ul className="flex w-full flex-col gap-8" data-home>
-            <LearnerCard api={api} learner={child} language={language} />
-          </ul>
-        </ParentPage>,
+        <ChildPage
+          api={api}
+          learner={child}
+          language={language}
+          notice={notice === null ? null : t(notice)}
+        />,
       );
     }
     case "attempt":
@@ -654,14 +693,27 @@ function SignedIn({
       return shell(
         { kind: "lessons" },
         newLesson,
-        <ParentPage>
-          {notice !== null && <Notice>{t(notice)}</Notice>}
-          <ul className="flex w-full flex-col gap-8" data-home>
-            {learners.map((learner) => (
-              <LearnerCard key={learner.id} api={api} learner={learner} language={language} />
-            ))}
-          </ul>
-        </ParentPage>,
+        <>
+          {notice !== null && (
+            <div className="px-4 pt-4 lg:px-6">
+              <Notice>{t(notice)}</Notice>
+            </div>
+          )}
+          <NewLessonBox
+            language={language}
+            learners={learners}
+            forLearner={forLearner}
+            onForChange={setForLearner}
+            onAddChild={() => setAdding("dla")}
+            // The engine's send lands with dl-z5ja.108; until then the box says it is on its way.
+            onSend={() => setSoon(true)}
+          />
+          {soon && (
+            <p className="px-4 pb-10 text-center text-jw-ink-soft" role="status" data-soon>
+              {t("parent_lesson_soon")}
+            </p>
+          )}
+        </>,
       );
   }
 }
@@ -697,111 +749,5 @@ function AddChild({
         {copy(language, "parent_add", {}, CATEGORY)}
       </Button>
     </form>
-  );
-}
-
-function LearnerCard({
-  api,
-  learner,
-  language,
-}: {
-  api: ParentClient;
-  learner: Learner;
-  language: Language;
-}): ReactElement {
-  const [attempts, setAttempts] = useState<LearnerAttempts["attempts"] | "failed" | null>(null);
-  useEffect(() => {
-    let live = true;
-    api.getLearnerAttempts(learner.id).then(
-      (reply) => live && setAttempts(reply.attempts),
-      () => live && setAttempts("failed"),
-    );
-    return () => {
-      live = false;
-    };
-  }, [api, learner.id]);
-  const day = new Intl.DateTimeFormat(language, { dateStyle: "long" });
-  return (
-    <li className="flex flex-col gap-4" data-learner-card={learner.id}>
-      <Heading level={2}>{learner.first_name}</Heading>
-      <LearnerKnowledge api={api} learner={learner.id} language={language} />
-      {attempts === null && <Spinner label={copy(language, "loading", {}, CATEGORY)} />}
-      {attempts === "failed" && <Failed language={language} />}
-      {Array.isArray(attempts) && attempts.length === 0 && (
-        <p>{copy(language, "parent_no_attempts", {}, CATEGORY)}</p>
-      )}
-      {Array.isArray(attempts) && attempts.length > 0 && (
-        <ol className="flex flex-col gap-4">
-          {attempts.map(({ attempt, title, results }) => (
-            <li key={attempt.id} data-attempt={attempt.id}>
-              <Card size="compact">
-                <CardContent className="items-start gap-2">
-                  <Link asChild>
-                    <NavLink
-                      href={attemptPath({
-                        attempt: attempt.id,
-                        learner: learner.id,
-                        lang: pageLang(),
-                      })}
-                      data-attempt-link
-                    >
-                      {title}
-                    </NavLink>
-                  </Link>
-                  <span className="text-jw-small text-jw-ink-soft">
-                    {day.format(new Date(attempt.started_at))}
-                  </span>
-                  <Tiles results={results} language={language} />
-                  <Link asChild size="small">
-                    <NavLink
-                      href={assignmentPath({ assignment: attempt.assignment_id, lang: pageLang() })}
-                      data-overview-link
-                    >
-                      {copy(language, "parent_overview_link", {}, CATEGORY)}
-                    </NavLink>
-                  </Link>
-                </CardContent>
-              </Card>
-            </li>
-          ))}
-        </ol>
-      )}
-    </li>
-  );
-}
-
-/** A lesson's tiles: one per planned question, its twins folded in, as the heatmap draws its row.
- * Each keeps the stored ended on its item. */
-function Tiles({
-  results,
-  language,
-}: {
-  results: AttemptResult[];
-  language: Language;
-}): ReactElement {
-  return (
-    <ol className="flex flex-wrap gap-2 pt-1" data-lesson-tiles>
-      {cellsOf(results).map((cell, index) => (
-        <li
-          key={cell.planned.seq}
-          data-seq={cell.planned.seq}
-          data-ended={cell.planned.ended ?? "open"}
-        >
-          <OutcomeTile
-            size="sm"
-            tone={OUTCOME_TONE[cell.outcome]}
-            outcome={cell.outcome}
-            icon={<OutcomeIcon outcome={cell.outcome} />}
-            label={tileLabel(language, index + 1, cell)}
-          >
-            {cell.twin && (
-              <span className="absolute top-0.5 right-0.5">
-                <TwinMark />
-              </span>
-            )}
-          </OutcomeTile>
-        </li>
-      ))}
-    </ol>
   );
 }

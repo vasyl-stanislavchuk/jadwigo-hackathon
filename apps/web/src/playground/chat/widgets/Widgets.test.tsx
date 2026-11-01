@@ -3,6 +3,7 @@ import { RunId } from "@jadwigo/contracts/run";
 import type { ChatItem, RunView } from "@jadwigo/core";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { SKILLS } from "../../../parent/learner/fixtures.ts";
 import { ChatPane } from "../ChatPane.tsx";
 
 afterEach(cleanup);
@@ -199,5 +200,47 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
     );
     expect(card?.textContent).toContain("Co asystent podał");
     expect(card?.textContent).toContain("Co wróciło");
+  });
+
+  it("draws learner_skills with the learner page's goal lists, in the parent's words", () => {
+    const data = {
+      learner: { id: SKILLS.learner.id, first_name: "Ola" },
+      goals: SKILLS.goals,
+      brief: SKILLS.brief,
+      skills: SKILLS.catalogue,
+    };
+    draw([tool(1, { verb: "learner_skills", view: { kind: "learner_skills", data } })]);
+    const widget = screen.getByRole("region", { name: "Czytam cele dziecka" });
+    expect(widget.querySelector("[data-goals]")).not.toBeNull();
+    expect(widget.querySelectorAll("[data-goal]")).toHaveLength(2);
+    expect(widget.textContent).toContain("Dodaje w zakresie 10.");
+    expect(widget.textContent).not.toMatch(/familiar|attempted|mastered|proficient/);
+  });
+
+  it("draws learner_week with the week strip, and a malformed one as the plain card", () => {
+    const weeks = [
+      { monday: "2026-10-26", lessons: 0, moved_up: 0, attention: null },
+      { monday: "2026-11-02", lessons: 2, moved_up: 1, attention: 1 },
+    ];
+    const data = { learner: { id: SKILLS.learner.id, first_name: "Ola" }, weeks, lessons: [] };
+    draw([
+      tool(1, { verb: "learner_week", view: { kind: "learner_week", data } }),
+      tool(2, { verb: "learner_week", view: { kind: "learner_week", data: { weeks: 3 } } }),
+    ]);
+    const widget = screen.getByRole("region", { name: "Czytam tydzień dziecka" });
+    expect(
+      [...widget.querySelectorAll("[data-week]")].map((w) => w.getAttribute("data-week")),
+    ).toEqual(["2026-10-26", "2026-11-02"]);
+    expect(widget.querySelector("[data-lessons='2']")).not.toBeNull();
+    expect(document.querySelectorAll("[data-card='plain']")).toHaveLength(1);
+  });
+
+  it("draws lesson_ideas as the plain card", () => {
+    const data = { learner: { id: SKILLS.learner.id, first_name: "Ola" }, ideas: [] };
+    draw([tool(1, { verb: "lesson_ideas", view: { kind: "lesson_ideas", data } })]);
+    expect(document.querySelector("[data-widget]")).toBeNull();
+    expect(document.querySelector("[data-card='plain']")?.getAttribute("data-tool")).toBe(
+      "lesson_ideas",
+    );
   });
 });

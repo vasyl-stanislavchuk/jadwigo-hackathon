@@ -59,4 +59,30 @@ describe("TOOL_VIEW_DATA", () => {
     // A verb whose data drifted from its schema, past the type: the parse throws before a write.
     expect(() => toolView("lesson_check", { publishable: true } as never)).toThrow();
   });
+
+  it("holds a learner view to its shape: at most 3 ideas, each cited, and no level field", () => {
+    const learner = { id: "lrn_2h4m8gyw0fb1cvz2nkqw0px8fq", first_name: "Ola" };
+    const idea = (n: number) => ({
+      id: `i${n}`,
+      list: "new",
+      why: "prerequisites_met",
+      skill_codes: ["math.add.within-10"],
+      goal_ids: [],
+      citations: [{ kind: "skill", skill_code: "math.add.within-10" }],
+    });
+    expect(
+      toolViewData("lesson_ideas", { learner, ideas: [idea(1), idea(2), idea(3)] }),
+    ).not.toBeNull();
+    expect(toolViewData("lesson_ideas", { learner, ideas: [1, 2, 3, 3].map(idea) })).toBeNull();
+    expect(
+      toolViewData("lesson_ideas", { learner, ideas: [{ ...idea(1), citations: [] }] }),
+    ).toBeNull();
+    const week = { monday: "2026-11-02", lessons: 1, moved_up: 0, attention: null };
+    const parsed = toolViewData("learner_week", {
+      learner,
+      weeks: [{ ...week, level: "mastered" }],
+      lessons: [],
+    });
+    expect(parsed?.weeks).toEqual([week]);
+  });
 });
