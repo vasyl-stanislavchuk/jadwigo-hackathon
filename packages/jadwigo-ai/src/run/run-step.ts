@@ -82,7 +82,7 @@ const INSTRUCTIONS = [
 const PROMPT_CACHE_KEY = `${WORKFLOW}:1`;
 /**
  * Every call goes to the tier that trains on nothing it is sent: a run's prompt carries the
- * parent's words and the learner's names (draft decision dl-2uq1). Each `model_response` records it.
+ * parent's words and the learner's names (decision dl-2uq1, accepted 2026-11-01). Each `model_response` records it.
  */
 const TIER: ModelTier = "private";
 const STEER =
@@ -118,9 +118,24 @@ class Writer {
     readonly store: Store,
     readonly pod: PodId,
     readonly run: RunId,
-    readonly attempt: number,
+    public attempt: number,
     readonly log: RunEvent[],
   ) {}
+
+  /**
+   * Claims the run for one paid call (dl-z5ja.41): moves `attempt` on, a compare and set only one
+   * caller holding this attempt wins, then reads the log back as stored, so the call is built from
+   * what every caller wrote before it. The loser goes stale and pays nothing.
+   */
+  async claim(): Promise<Run> {
+    const next = this.attempt + 1;
+    const claimed = await this.store.updateRun(this.pod, this.run, this.attempt, { attempt: next });
+    if (claimed.stale) throw new StaleAttempt();
+    this.attempt = next;
+    const stored = await this.store.listRunEvents(this.pod, this.run, 0);
+    this.log.splice(0, this.log.length, ...stored);
+    return claimed.value;
+  }
 
   async append(events: readonly NewRunEvent[]): Promise<void> {
     if (events.length === 0) return;
@@ -327,7 +342,9 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
   const start: RunChange = {};
   if (run.status !== "in_progress") start.status = "in_progress";
   const idle = run.idle_deadline_at === null ? null : Date.parse(run.idle_deadline_at);
-  if (idle === null || idle - now.getTime() < RUN_IDLE_MS - RUN_IDLE_PUSH_MS) {
+  const ahead = idle === null ? null : idle - now.getTime();
+  // Pushed at most every RUN_IDLE_PUSH_MS; a verb hold left by a step that died is taken back.
+  if (ahead === null || ahead < RUN_IDLE_MS - RUN_IDLE_PUSH_MS || ahead > RUN_IDLE_MS) {
     start.idle_deadline_at = at(now.getTime() + RUN_IDLE_MS);
   }
   if (start.status) {
@@ -388,6 +405,12 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     for (const steer of steersOf(w.log)) instructions.push(steerLine(steer));
 
     const call_no = (last?.payload.call_no ?? 0) + 1;
+    run = await w.claim();
+    if (responsesOf(w.log).some((e) => e.payload.call_no >= call_no)) {
+      // Another caller recorded this call first: the next step reuses its answer.
+      await deps.queue.send({ run_id: run.id, attempt: w.attempt });
+      return "continue";
+    }
     const response = await deps.muse.respond({
       run_id: run.id,
       call_no,
@@ -456,12 +479,25 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     pending = [...response.tool_calls];
   }
 
+  if (pending.length > 0) await holdIdle(w, run);
   for (const call of pending) {
     if (await cancelRequested(w)) return endCancelled(deps, w);
     await runTool(deps, w, scope, call, lessonOf(w.log) ?? prior.lesson);
   }
+  await w.update({ idle_deadline_at: at(deps.now().getTime() + RUN_IDLE_MS) });
   await deps.queue.send({ run_id: run.id, attempt: w.attempt });
   return "continue";
+}
+
+/**
+ * Stops the idle clock while the step's verbs run (dl-z5ja.43): `idle_deadline_at` moves to
+ * `max_deadline_at`, so the sweep (`listRunsDue`, `app.runs_due` on Postgres) closes the run only on
+ * its 30 minutes, however long a verb takes. The step sets it back to now + RUN_IDLE_MS once the
+ * verbs are done, and a step that died holding it has it taken back by the next step's start.
+ */
+async function holdIdle(w: Writer, run: Run): Promise<void> {
+  if (run.idle_deadline_at === run.max_deadline_at) return;
+  await w.update({ idle_deadline_at: run.max_deadline_at });
 }
 
 async function runTool(
@@ -492,7 +528,14 @@ async function runTool(
       type: "tool_result",
       run_id: scope.run.id,
       event_id: await w.id("tool", call.call_id, "result"),
-      payload: { call_id: call.call_id, verb: call.verb, output: effect?.output ?? null, error },
+      payload: {
+        call_id: call.call_id,
+        verb: call.verb,
+        output: effect?.output ?? null,
+        error,
+        // The verb's result typed for its widget, which the fold draws (dl-z5ja.70).
+        ...(effect?.view === undefined ? {} : { view: effect.view }),
+      },
     },
   ];
   if (effect?.lesson_file) {
@@ -761,9 +804,9 @@ export async function drain(
 }
 
 /**
- * Claims a redelivered step's run. Each earlier redelivery moved the attempt on by one, so read
- * `read_ct` expects the run at `attempt + read_ct - 2` and takes it to the next. A run at any other
- * attempt has moved on without this message, which then runs stale and writes nothing.
+ * Claims a redelivered step's run from whatever attempt holds it now, since each paid call and each
+ * earlier redelivery moved the attempt on (dl-z5ja.41). The step that stalled holding it goes stale.
+ * An ended run is left alone, and the message then runs stale and writes nothing.
  */
 async function claim(deps: EngineDeps, queued: QueuedStep): Promise<RunStepInput> {
   const { store } = deps;
@@ -771,8 +814,8 @@ async function claim(deps: EngineDeps, queued: QueuedStep): Promise<RunStepInput
   const pod = await store.findRunPod(message.run_id);
   if (!pod) return message;
   const run = await store.getRun(pod, message.run_id);
-  const held = message.attempt + queued.read_ct - 2;
-  if (isEnded(run.status) || run.attempt !== held) return message;
+  if (isEnded(run.status) || run.attempt < message.attempt) return message;
+  const held = run.attempt;
   const attempt = held + 1;
   const claimed = await store.updateRun(pod, run.id, held, { attempt });
   if (claimed.stale) return message;

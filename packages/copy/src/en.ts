@@ -729,14 +729,13 @@ export const en: CopyTable = {
   chat_approval_approved: { text: "Approved: {summary}", reviewed: false },
   chat_approval_rejected: { text: "Declined: {summary}", reviewed: false },
   chat_budget_steer: {
-    text: "Half the budget is used, so I'm finishing the lesson with what I have.",
+    text: "I'm finishing the lesson with what I have, to stay within the limit.",
     reviewed: false,
   },
   chat_budget_stop: {
-    text: "The budget is nearly used up, so this is where I stop.",
+    text: "Saved, stopped: I'm not going further, to stay within the limit.",
     reviewed: false,
   },
-  chat_budget_spent: { text: "{spent} of {cap} USD", reviewed: false },
   chat_queued: { text: "Sent after this turn", reviewed: false },
   chat_problem: { text: "Something went off track: {message}", reviewed: false },
   chat_problem_retrying: { text: "Trying again.", reviewed: false },
@@ -752,6 +751,106 @@ export const en: CopyTable = {
     text: "{n} {steps_noun}",
     reviewed: false,
     plural: { steps_noun: { count: "n", forms: { one: "step", other: "steps" } } },
+  },
+  // the chat page, wave 2 (dl-z5ja.29)
+  // what each verb does, said with its topic when the call names one
+  chat_tool_lesson_draft_about: { text: "Drafting a lesson on: {topic}", reviewed: false },
+  chat_tool_question_search_about: { text: "Looking for questions on: {topic}", reviewed: false },
+  chat_tool_lesson_edit_step: { text: "Changing step {step}", reviewed: false },
+  chat_tool_lesson_show_step: { text: "Reading step {step}", reviewed: false },
+  chat_tool_rejected: { text: "skipped, as you asked", reviewed: false },
+  chat_tool_lines: { text: "The assistant's steps", reviewed: false },
+  chat_tool_lines_stuck: { text: "Steps that got stuck", reviewed: false },
+  chat_reasoning: { text: "How I thought it through", reviewed: false },
+  chat_messages: { text: "Messages", reviewed: false },
+  // the budget, in words: never money or tokens
+  chat_budget_steer_note: { text: "The lesson so far is saved.", reviewed: false },
+  // errors and limits, each with what to do next
+  chat_retry_turn: { text: "Try again", reviewed: false },
+  chat_turn_unfinished: {
+    text: "This turn didn't finish. The lesson so far is saved, so you can try again.",
+    reviewed: false,
+  },
+  chat_offline: {
+    text: "There's no connection. Your message stays here: send it once you're back online.",
+    reviewed: false,
+  },
+  chat_limit_busy: {
+    text: "A lot of messages are coming in. Try again in a moment.",
+    reviewed: false,
+  },
+  chat_limit_daily: {
+    text: "That's all the assistant can do today. Come back tomorrow, and the lesson will be here.",
+    reviewed: false,
+  },
+  chat_limit_too_long: {
+    text: "This turn ran too long, so it stopped. The lesson so far is saved: say what to do next.",
+    reviewed: false,
+  },
+  chat_limit_idle: {
+    text: "The conversation waited a long time, so the turn ended. Write to carry on.",
+    reviewed: false,
+  },
+  chat_dev_only: {
+    text: "The chat page runs on the dev server only: start it with make dev.",
+    reviewed: false,
+  },
+  // the follow-ups sent while a turn runs (Następne)
+  chat_queue_next: { text: "Up next", reviewed: false },
+  chat_queue_send_now: { text: "Send now", reviewed: false },
+  chat_queue_edit: { text: "Edit", reviewed: false },
+  chat_queue_remove: { text: "Remove", reviewed: false },
+  chat_steered: { text: "Added while working", reviewed: false },
+  chat_steered_edit: { text: "Your change to the lesson", reviewed: false },
+  // the lesson as the artifact: revisions, undo, the parent's own edit
+  chat_lesson_step: { text: "Step {step}", reviewed: false },
+  chat_lesson_changed: { text: "The lesson changed", reviewed: false },
+  chat_revision_by_ai: { text: "Changed by the assistant", reviewed: false },
+  chat_undo: { text: "Undo", reviewed: false },
+  chat_undone: { text: "Back to revision {n}", reviewed: false },
+  chat_edit_sent: { text: "Your change went to the assistant.", reviewed: false },
+  chat_newer_wins: {
+    text: "Your version is newer, so it stays. The assistant knows.",
+    reviewed: false,
+  },
+  // plan, citations and questions the assistant asks
+  chat_plan: { text: "Plan", reviewed: false },
+  chat_plan_pending: { text: "to do", reviewed: false },
+  chat_plan_in_progress: { text: "in progress", reviewed: false },
+  chat_plan_done: { text: "done", reviewed: false },
+  chat_plan_failed: { text: "didn't work out", reviewed: false },
+  chat_why: { text: "why?", reviewed: false },
+  chat_citations: { text: "What this rests on", reviewed: false },
+  chat_choose_recommended: { text: "recommended", reviewed: false },
+  chat_choose_own: { text: "In your own words", reviewed: false },
+  chat_choose_skip: { text: "Skip", reviewed: false },
+  chat_choose_answer: { text: "Answer", reviewed: false },
+  chat_approve: { text: "Go ahead", reviewed: false },
+  chat_reject: { text: "Not now", reviewed: false },
+  // widgets on a finished step, and the plain card
+  chat_card_details: { text: "Step details", reviewed: false },
+  chat_card_input: { text: "What the assistant sent", reviewed: false },
+  chat_card_output: { text: "What came back", reviewed: false },
+  chat_check_ok: { text: "The lesson passed its checks.", reviewed: false },
+  chat_check_level_error: { text: "To fix", reviewed: false },
+  chat_check_level_warning: { text: "Worth a look", reviewed: false },
+  chat_check_level_info: { text: "For your information", reviewed: false },
+  chat_search_none: { text: "No question set fits this request yet.", reviewed: false },
+  chat_search_sets: { text: "Question sets", reviewed: false },
+  // turn finished or needs the parent, said once in the live region; the phone switch
+  chat_announce_done: { text: "The assistant is done.", reviewed: false },
+  chat_announce_needs_you: { text: "The assistant is waiting for your answer.", reviewed: false },
+  chat_announce_stopped: { text: "Saved, stopped.", reviewed: false },
+  chat_switch: { text: "Conversation or lesson", reviewed: false },
+  // what the assistant reads, before the first message (dl-2uq1)
+  chat_consent: {
+    text: "The assistant reads only what your request about your child needs, names included. The model it runs on does not learn from it.",
+    reviewed: false,
+  },
+  chat_check_findings: {
+    text: "{n} {notes_noun} to fix",
+    reviewed: false,
+    plural: { notes_noun: { count: "n", forms: { one: "note", other: "notes" } } },
   },
   // end the chat page
 };

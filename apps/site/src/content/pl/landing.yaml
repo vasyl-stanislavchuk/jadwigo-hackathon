@@ -68,14 +68,6 @@ pl:
     or: albo
     google: Kontynuuj z Google
     facebook: Kontynuuj z Facebookiem
-  nav:
-    signIn: Zaloguj się
-    home: Jadwigo, strona główna
-    label: Strony
-  footer:
-    privacy: Prywatność
-    deletion: Usuwanie danych
-    made: Jadwigo powstało podczas hackathonu Meta.
   # From docs/drops/identity/compare.md, each row with its source. Never "Duolingo charges for
   # mistakes", and never "no other app": both are out of public copy.
   compare:

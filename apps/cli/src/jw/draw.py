@@ -417,6 +417,54 @@ def draw(
     )
 
 
+# The language each source writes its questions in. Khan's originals are English.
+ORIGINAL_LANGUAGE: Mapping[str, str] = {"khan": "en"}
+
+
+@dataclass
+class LanguageDraw:
+    """A draw and the language it plays in: the one asked for, or the sets' original language
+    when nothing plays in the asked one (`fallback_from` is then the asked language)."""
+
+    draw: Draw
+    language: str
+    fallback_from: str | None = None
+
+
+def original_language(
+    envelope: Mapping[str, Any], pages: Mapping[str, Mapping[str, Any]]
+) -> str | None:
+    """The one language the envelope's sets were written in, or None when they differ or a
+    source is not known."""
+    found = {
+        ORIGINAL_LANGUAGE.get(str((page.get("source") or {}).get("name")))
+        for row in envelope.get("rows") or []
+        if (page := pages.get(str(row["id"]))) is not None
+    }
+    return found.pop() if len(found) == 1 and None not in found else None
+
+
+def draw_or_original(
+    envelope: Mapping[str, Any],
+    pages: Mapping[str, Mapping[str, Any]],
+    *,
+    language: str,
+    **kwargs: Any,
+) -> LanguageDraw:
+    """`draw` in `language`, and when nothing plays in it, in the sets' original language
+    (decision jadwigo-ai-workflows/decisions/2026-11-01-when-a-lesson-s-language-has-nothing-
+    checked-the-family-is-offer): only checked text reaches a child, and a lesson is all in one
+    language, so the original is drawn whole, never mixed with the asked language."""
+    asked = draw(envelope, pages, language=language, **kwargs)
+    original = original_language(envelope, pages)
+    if asked.questions or original is None or original == language:
+        return LanguageDraw(asked, language)
+    offered = draw(envelope, pages, language=original, **kwargs)
+    if not offered.questions:
+        return LanguageDraw(asked, language)
+    return LanguageDraw(offered, original, fallback_from=language)
+
+
 def _twin_of(
     item: str,
     pages: Mapping[str, Mapping[str, Any]],
