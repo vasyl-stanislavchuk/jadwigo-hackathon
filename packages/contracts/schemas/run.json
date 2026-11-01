@@ -24,7 +24,7 @@
     "workflow": {
       "$ref": "#/$defs/RunWorkflow"
     },
-    "resumes_run_id": {
+    "resumes": {
       "anyOf": [
         {
           "$ref": "#/$defs/RunId"
@@ -103,7 +103,7 @@
     "created_by",
     "conversation_id",
     "workflow",
-    "resumes_run_id",
+    "resumes",
     "status",
     "attempt",
     "cancel_requested_at",

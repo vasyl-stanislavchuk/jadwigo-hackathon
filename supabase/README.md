@@ -49,4 +49,8 @@ prod's major version, with no Docker: Postgres.app on port 5433 locally, and the
   token's `user_metadata`. A claim the token needs, such as `pod_id`, joins that hook.
 - `apps/api` connects as `jadwigo_api`, which never owns a table and never bypasses row-level
   security. Its login is set per environment, outside migrations.
+- The engine's step consumer connects as `jadwigo_runner` (`20261101120000_run.sql`): it owns no
+  table, never bypasses row-level security, and executes only the `app` functions a migration grants
+  it by name. `USAGE` on `app` lets it call anything left to PUBLIC, so a migration that adds an `app`
+  function revokes it from `public` (and from `jadwigo_api` unless the API calls it).
 - A migration under `supabase/` is a one-way door: say so in the PR.
