@@ -19,7 +19,7 @@ import { ConversationList } from "./ConversationList.tsx";
 import { type ConversationState, lessonOf, type Turn, turnsOf } from "./conversation.ts";
 import { newConversationId } from "./ids.ts";
 import { LessonPane } from "./LessonPane.tsx";
-import { type LessonChange, patchOutcome } from "./patches.ts";
+import { type LessonChange, type PatchOutcome, patchOutcome } from "./patches.ts";
 import { apiTransport } from "./realtime.ts";
 import { changedOf, revertOf, undoOf } from "./revisions.ts";
 import { holdServer } from "./routesTransport.ts";
@@ -86,7 +86,12 @@ function ChatView({
   const turns = turnsOf(state);
   /** The last Cofnij's patch steer, followed to its revision or its refusal (dl-z5ja.111). */
   const [undoSent, setUndoSent] = useState<string | null>(null);
-  const outcomeOf = (event_id: string) => patchOutcome(state.runs, event_id);
+  /**
+   * What became of a patch steer: a send that never reached the server is refused, since no log
+   * will hold it, so Cofnij and a step's editor stop waiting and hand the words back (dl-z5ja.111).
+   */
+  const outcomeOf = (event_id: string): PatchOutcome =>
+    state.failedSteers.includes(event_id) ? "refused" : patchOutcome(state.runs, event_id);
   const shown = lessonOf(turns);
   const changed = changedOf(turns);
   const undo = undoOf(turns);
@@ -137,11 +142,7 @@ function ChatView({
           changed={changed}
           onUndo={onUndo}
           undoRefused={undoSent !== null && outcomeOf(undoSent) === "refused"}
-          undoPending={
-            undoSent !== null &&
-            !state.failedSteers.includes(undoSent) &&
-            outcomeOf(undoSent) === "pending"
-          }
+          undoPending={undoSent !== null && outcomeOf(undoSent) === "pending"}
           onEdit={onEdit}
           outcomeOf={outcomeOf}
         />

@@ -258,6 +258,28 @@ describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
     expect(undo().disabled).toBe(true);
   });
 
+  it("a step's words edit whose send fails hands the words back (#546's review)", async () => {
+    const events = eventsOf("happy-turn");
+    const t = fakeTransport(events);
+    const send = t.transport.send.bind(t.transport);
+    const transport: EngineTransport = {
+      ...t.transport,
+      send: async (body) => {
+        if (body.kind === "steer") throw new Error("offline");
+        return send(body);
+      },
+    };
+    render(<ChatScreen transport={transport} />);
+    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
+    const words = () => screen.getByRole("textbox", { name: "Co ten krok mówi dziecku" });
+    fireEvent.change(words(), { target: { value: "Ile to jest dwa razy sześć?" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyślij zmianę" })));
+    // Never saving forever: the editor opens again on the parent's words, and says it did not land.
+    expect(screen.queryByText("Zapisuję Twoją zmianę w lekcji…")).toBeNull();
+    expect((words() as HTMLTextAreaElement).value).toBe("Ile to jest dwa razy sześć?");
+  });
+
   it("a revision that lands live marks only the step it changed, and a reload marks it again", async () => {
     const events = eventsOf("happy-turn");
     const t = fakeTransport(events);
