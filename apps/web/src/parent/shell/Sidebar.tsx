@@ -341,7 +341,7 @@ export function LogoRow({
         {folded ? (
           <Logo mark label={copy(language, "parent_new_lesson", {}, CATEGORY)} className="h-5" />
         ) : (
-          <Logo className="h-5.5" />
+          <Logo className="h-10" />
         )}
       </NavLink>
       {toggle}
