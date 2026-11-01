@@ -1439,8 +1439,8 @@ export class InMemoryStore implements Store {
     if (run.conversation_id !== null) {
       this.#inPod(this.#conversations, pod, run.conversation_id, "the conversation");
     }
-    if (run.resumes_run_id !== null) {
-      this.#inPod(this.#runs, pod, run.resumes_run_id, "the run it resumes");
+    if (run.resumes !== null) {
+      this.#inPod(this.#runs, pod, run.resumes, "the run it resumes");
     }
     const row = frozen(
       parse(

@@ -212,6 +212,7 @@ class FakeMuse implements MuseClient {
     if (!reply) return Promise.reject(new Error("past the script's end"));
     return Promise.resolve({
       response_id: `resp_${this.calls.length}`,
+      model: "fake",
       text: reply.text ?? null,
       tool_calls: (reply.calls ?? []).map((c) => ({
         call_id: `call_${++this.#ids}`,
@@ -392,6 +393,43 @@ describe("runStep and drain", () => {
     ]);
   });
 
+  it("sends every call to the private tier, and each model_response records its model and tier", async () => {
+    const t = await setup([{ calls: [{ verb: "lesson_draft" }] }, { text: "Ready." }]);
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+    expect(t.muse.calls.map((c) => c.tier)).toEqual(["private", "private"]);
+    const recorded = (await t.log(run)).flatMap((e) =>
+      e.type === "model_response" ? [[e.payload.model, e.payload.tier]] : [],
+    );
+    expect(recorded).toEqual([
+      ["fake", "private"],
+      ["fake", "private"],
+    ]);
+  });
+
+  it("carries an approval's feedback and answers from the inbox into approval_resolved", async () => {
+    const t = await setup([{ text: "Ready." }]);
+    const run = await t.say("Halves.");
+    await t.send({
+      event_id: newEventId(),
+      kind: "approval",
+      payload: {
+        call_id: "call_9",
+        decision: "rejected",
+        feedback: "Not that one.",
+        answers: ["2"],
+      },
+    });
+    await drain(t.deps);
+    const resolved = (await t.log(run)).find((e) => e.type === "approval_resolved");
+    expect(resolved?.payload).toEqual({
+      call_id: "call_9",
+      decision: "rejected",
+      feedback: "Not that one.",
+      answers: ["2"],
+    });
+  });
+
   it("builds VerbContext from the run row and hands the verb the latest lesson", async () => {
     const seen: VerbContext[] = [];
     const t = await setup(
@@ -471,6 +509,7 @@ describe("runStep and drain", () => {
         if (request.call_no === 1) await t.say("One more thing.");
         return {
           response_id: `resp_${request.call_no}`,
+          model: "fake",
           text: `answer ${request.call_no}`,
           tool_calls: [],
           usage: { input_tokens: 1, output_tokens: 1, cached_tokens: 0 },

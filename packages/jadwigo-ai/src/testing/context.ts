@@ -33,6 +33,7 @@ export function requestFor(
     call_no,
     tag,
     prompt_cache_key: "jadwigo-lesson-compose:v1",
+    tier: "private",
     instructions: "Draft a lesson from the parent's words.",
     input: [{ type: "message", role: "user", text: "Adding within 20, grade 1." }],
     tools: [],

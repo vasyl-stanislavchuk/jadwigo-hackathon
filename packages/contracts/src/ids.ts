@@ -21,7 +21,6 @@ export const ID_PREFIXES = {
   curriculum: "crc_",
   topic: "top_",
   learner_report: "rpt_",
-  /** Reserved for the engine's records in `run.ts`, which join the snapshots with dl-z5ja.7. */
   conversation: "cnv_",
   run: "run_",
 } as const;
@@ -129,6 +128,14 @@ export const LearnerReportId = prefixedId<"LearnerReportId">(
 );
 export type LearnerReportId = z.infer<typeof LearnerReportId>;
 
+export const ConversationId = prefixedId<"ConversationId">(
+  ID_PREFIXES.conversation,
+  "a conversation",
+);
+export type ConversationId = z.infer<typeof ConversationId>;
+export const RunId = prefixedId<"RunId">(ID_PREFIXES.run, "a run");
+export type RunId = z.infer<typeof RunId>;
+
 /** The id the page mints for one write, so a replay is recognised. The bare uuid, no prefix. */
 export const EventId = z.string().regex(UUID, "an event id is a lowercase uuid").brand<"EventId">();
 export type EventId = z.infer<typeof EventId>;
@@ -149,4 +156,6 @@ export const ID_SCHEMAS = {
   curriculum_id: CurriculumId,
   topic_id: TopicId,
   learner_report_id: LearnerReportId,
+  conversation_id: ConversationId,
+  run_id: RunId,
 } as const;

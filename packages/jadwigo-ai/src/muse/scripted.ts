@@ -15,6 +15,9 @@ export interface ScriptedReply {
   cost_usd?: number;
 }
 
+/** The model a scripted answer names, so a log shows it came from no provider. */
+const SCRIPTED_MODEL = "scripted";
+
 /**
  * A `MuseClient` that replays a script, one reply per call in order, deterministic and with no
  * network. The dev page (`apps/web/dev/engine-plugin.ts`) and the tests both run it, so it lives
@@ -55,6 +58,7 @@ export class ScriptedMuse implements MuseClient {
     const text = reply.text ?? null;
     return Promise.resolve({
       response_id: `resp_${n + 1}`,
+      model: SCRIPTED_MODEL,
       text,
       tool_calls,
       usage: madeUpUsage(request, text, tool_calls.length),

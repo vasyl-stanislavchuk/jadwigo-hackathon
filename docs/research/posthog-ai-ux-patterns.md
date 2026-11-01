@@ -28,7 +28,7 @@ Issue: `dl-z5ja.23`
 5. **Jadwigo already holds the answer half,** and must go past PostHog where PostHog never had to:
    - Already ours: a code-computed digest and brief, `Citation`, proposals the parent accepts, no levels or scores, harsh words refused.
    - **What a child ever sees of AI output.** Nothing reaches a child without the parent's review and the checks a hand-written lesson passes.
-   - **Consent and transparency for a child's data,** and which fields of a learner's evidence may enter a prompt at all.
+   - **Consent and transparency for a child's data,** and which model tier may read it (since 2026-11-01: only one that does not train on it).
    - **A phone layout that adapts.**
    - **Announcing a turn to a screen reader.**
    - **Answers in the record's language.**
@@ -363,11 +363,12 @@ A question such as "how is she doing with subtraction?" or "what should we pract
 | `curriculum_topics` | topics near the learner's skills (`packages/core/src/curriculum`) | topic chips with "make a lesson from this" |
 | `lesson_ideas` | up to 3 `focus` proposals from the brief | proposal cards; Accept starts `lesson_draft` |
 
-**What reaches Muse.** The house rule is "Real learner data never goes into a prompt" (`AGENTS.md`).
-- The one exception in force is `jadwigo-hackathon/decisions/2026-10-31-the-report-write-workflow-may-write-a-real-family-s-narrative`: the digest only (skill codes, counts, mistake classes, attempt ids), on Meta's API, behind the personal-data guard.
-- So a query verb's result is formatted for Muse in the digest's terms: codes, counts and ids, never a name, an answer value or free text from the child.
-- The widget the parent sees can show more, because it is drawn by code from the API, not by the model.
-- Whether even that may reach the chat model is part of the owner question `dl-z5ja.27`, and of `dl-z5ja.8`'s privacy question.
+**What reaches Muse.** When this note was written (2026-10-31), the house rule kept real learner data out of every prompt, and only the digest's codes, counts and ids could reach the model. The owner decided to replace that rule on 2026-11-01 (draft decision `dl-2uq1`, waiting for acceptance; `jadwigo-hackathon/notes/2026-11-01-learner-data-reaches-the-model-by-design-for-the-parent-s-own-re`): the product needs a child's personal data in the prompt to work.
+- A query verb's result may reach the model in full: evidence, the child's answers and words, mistakes, goals, notes, names included.
+- It runs only on a Meta tier that does not train on its input. The `contributor` model, which trains, stays for the bank and never carries a learner's name.
+- Code keeps 2 limits, PostHog's runner-adds-the-scope pattern (section 14): a verb reads only the run's pod, and text a child or a photo wrote goes inside the untrusted-content fence (`dl-z5ja.47`).
+- The widget still comes from the API and is drawn by code, so the model never restates numbers the parent can read off the widget.
+- What the chat may *answer* about a learner is still the owner question `dl-z5ja.27`.
 
 **The answer takes `ReportNarrative`'s shape:** a one-line headline, cited answer sentences, at most 3 proposals and at most 2 asks.
 
@@ -405,7 +406,7 @@ These are the topics a parent's chat about a young child raises and an analytics
    - The child never chats with the AI.
    - PostHog: none beyond approval cards.
 2. **Consent and transparency for a child's data.**
-   - Before a parent's first message, one screen says what the AI reads (the digest's codes and counts, never names or answers), which model and where (`dl-z5ja.8`), and how to switch it off.
+   - Before a parent's first message, one screen says what the AI reads (everything the request needs about the child, names included, on a model that does not learn from it, per the 2026-11-01 decision), which model and where (`dl-z5ja.22`), and how to switch it off.
    - The parent agrees once per pod.
    - PostHog asks an admin to approve AI data processing before anyone in the org can use it (`PH/products/posthog_ai/frontend/scenes/TaskTracker/taskTrackerSceneLogic.ts`, `PH/products/posthog_ai/frontend/components/onboarding/AiOnboardingImpl.tsx`). The mobile app has a consent sheet (`PH/products/mobile`).
 3. **Interrupting and steering.**
@@ -426,7 +427,7 @@ These are the topics a parent's chat about a young child raises and an analytics
 8. **Low technical comfort.** Plain sentences on tool lines, no jargon, 1-question forms, no keyboard-only affordances (section 15.3).
 9. **Why this lesson.** The AI explains its choices from the brief's `why` (`needs_attention`, `review_due`, `prerequisites_met`, `second_day_owed`, `school_tag`) and the bank's metadata, each with a citation, never from its own theory of teaching.
 10. **Polish specifics.**
-    - Names reach the model only as `[NAME_n]` placeholders (`jw.pii.guard`). Restoring a name into an inflected sentence needs the case forms the guard already matches, or sentences that avoid inflecting the name.
+    - Names reach the model as they are, on the no-training tier (2026-11-01), so the model inflects them itself. `[NAME_n]` placeholders (`jw.pii.guard`) remain only on the `contributor` model, where restoring an inflected name needs the case forms the guard matches.
     - Formal ("Pan/Pani") or informal address to the parent follows the voice the owner picks (`dl-w0b4.36`).
     - The model drifting into English is a check: the language of every agent message matches the record's.
 11. **Repairing trust after a wrong answer.** When the parent marks a claim wrong, the next turn says what it got wrong and what the correct cited fact is, and never argues. A wrong claim about a child is also a "report a problem" entry with the run id. PostHog's rejection-as-feedback is the nearest pattern.
@@ -461,7 +462,7 @@ These are the topics a parent's chat about a young child raises and an analytics
 | Ask | `create_form`, fill up to 4 | 1 question by default, at most 2 | v1 if seam 3 is taken |
 | Citations | Object chips, "Show definition" | `Citation` on every claim about a learner, a quiet "dlaczego?" | later |
 | No invented facts | Structure + prompts, no checker | Structure + an answer check (`dl-z5ja.26`) | later |
-| What reaches the model | Everything the user can see | The digest's codes, counts and ids only; widgets drawn by code may show more (`dl-z5ja.27`) | later |
+| What reaches the model | Everything the user can see | Everything the request needs about the parent's own child, names included, on a no-training tier, read through the run's pod, child text fenced (2026-11-01 decision) | v1 contract (`dl-z5ja.50`), wave 2 client |
 | QueryEngine | Schema, runner with scope injected, cache, compact table, governed metrics | Learner query verbs over `packages/core` (`dl-z5ja.25`) | later |
 | Where the chat lives | Side panel + entry points, the page as context | The owner's choice (`dl-z5ja.33`) | — |
 | Phone, accessibility, recovery | Container width; no live region for answers; no per-turn retry | Rozmowa / Lekcja switch, a live region per turn, status as text, per-turn retry (`dl-z5ja.28`) | v1 |
@@ -479,7 +480,7 @@ These are the topics a parent's chat about a young child raises and an analytics
 {
   "issue": "dl-z5ja.23",
   "question": "How does PostHog keep its AI chat honest, clear and pleasant, and what does Jadwigo reuse for a parent's chat?",
-  "answer": "PostHog learned to show the whole process (hiding failed calls and reasoning cost trust), to make honesty structural (the model builds queries and calls tools, code computes, the product's own components draw), to set autonomy by how easy work is to check and undo, to keep one AI pattern inside the product rather than a mascot assistant, and to give approvals evidence readable in 2 seconds, diffs with one-step undo, clarifying forms, a widget registry with a plain fallback, and sampled judges read by hand. Jadwigo already has the answer half (code-computed digest and brief, Citation, proposals the parent accepts, no levels or scores, harsh words refused). It goes past PostHog where a child is involved: nothing AI-written reaches a child unpublished and unchecked, only the digest's codes and counts reach the model, consent comes first, forms ask 1 question, and the chat adapts to a phone, announces turns to a screen reader and answers in the record's language.",
+  "answer": "PostHog learned to show the whole process (hiding failed calls and reasoning cost trust), to make honesty structural (the model builds queries and calls tools, code computes, the product's own components draw), to set autonomy by how easy work is to check and undo, to keep one AI pattern inside the product rather than a mascot assistant, and to give approvals evidence readable in 2 seconds, diffs with one-step undo, clarifying forms, a widget registry with a plain fallback, and sampled judges read by hand. Jadwigo already has the answer half (code-computed digest and brief, Citation, proposals the parent accepts, no levels or scores, harsh words refused). It goes past PostHog where a child is involved: nothing AI-written reaches a child unpublished and unchecked, a child's data reaches only a model tier that does not train on it, consent comes first, forms ask 1 question, and the chat adapts to a phone, announces turns to a screen reader and answers in the record's language.",
   "status": "answered",
   "sources": [
     "https://posthog.com/blog/8-learnings-from-1-year-of-agents-posthog-ai",
@@ -534,7 +535,7 @@ These are the topics a parent's chat about a young child raises and an analytics
   ],
   "page_changes": [
     { "section": "ai-workflows workstream page, hosted engine", "change": "Link this note as the UX reference for the chat pane and for answers about a learner" },
-    { "section": "learner-knowledge workstream page", "change": "Name the learner query verbs as the chat's way to read learner knowledge, with only the digest's codes and counts reaching the model" },
+    { "section": "learner-knowledge workstream page", "change": "Name the learner query verbs as the chat's way to read learner knowledge, reaching the model on a tier that does not train on it (2026-11-01 decision)" },
     { "section": "learner-experience workstream page", "change": "The chat pane's phone layout, accessibility, co-editing and child-safety rules from sections 15.3 and 16" }
   ]
 }

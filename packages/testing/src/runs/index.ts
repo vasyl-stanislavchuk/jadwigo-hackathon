@@ -6,13 +6,15 @@ import idleVsMaxDeadline from "./idle-vs-max-deadline.json" with { type: "json" 
 import lateEventAfterTurnComplete from "./late-event-after-turn-complete.json" with {
   type: "json",
 };
+import planAndCite from "./plan-and-cite.json" with { type: "json" };
 import redeliveredStep from "./redelivered-step.json" with { type: "json" };
 import reloadWithDuplicates from "./reload-with-duplicates.json" with { type: "json" };
 import staleAttempt from "./stale-attempt.json" with { type: "json" };
 
 /**
  * The engine's golden run logs (dl-z5ja.12, wave plan `docs/worklog/dl-z5ja/2026-10-31-wave-1.md`
- * Lead decision 13): one per PostHog production failure, each the log a run leaves and the view
+ * Lead decision 13): one per PostHog production failure, and `plan-and-cite` for the UX seams
+ * (dl-z5ja.50), each the log a run leaves and the view
  * `foldRun` must draw from it. Frozen for the wave's lanes: a disagreement is a message to the
  * lead. JSON, so the `dom` project's component tests import them too. Plain data: a consumer
  * parses `events` with `RunEvent` from `@jadwigo/contracts/run`. Every id is made up and no text
@@ -44,4 +46,5 @@ export const RUN_LOGS: readonly RunLog[] = [
   staleAttempt,
   lateEventAfterTurnComplete,
   idleVsMaxDeadline,
+  planAndCite,
 ] as readonly RunLog[];

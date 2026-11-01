@@ -1,11 +1,15 @@
+import type { Citation } from "@jadwigo/contracts";
 import {
   type Attachment,
   BUDGET_STEER_SHARE,
   BUDGET_STOP_SHARE,
+  type ChooseForm,
+  type PlanEntry,
   type Run,
   type RunError,
   type RunEvent,
   type RunStatus,
+  type ToolView,
   type VerbName,
 } from "@jadwigo/contracts/run";
 
@@ -15,10 +19,16 @@ import {
  * the golden logs in `packages/testing/src/runs/`. Pure: `now` is passed in.
  */
 
-/** A tool line: `pending` waits on an approval, `running` has no result yet. */
-export type ToolState = "pending" | "running" | "failed" | "done";
+/**
+ * A tool line: `pending` waits on an approval, `running` has no result yet, `rejected` is a call
+ * the parent turned down before it ran (dl-z5ja.39).
+ */
+export type ToolState = "pending" | "running" | "failed" | "done" | "rejected";
 
-/** One row of the chat pane, in `seq` order of the event that opened it. */
+/**
+ * One row of the chat pane, in `seq` order of the event that opened it. The optional fields
+ * (`citations`, `view`, `choose`, `feedback`, `answers`) are present only when the log carries them.
+ */
 export type ChatItem =
   | {
       kind: "message";
@@ -26,6 +36,7 @@ export type ChatItem =
       from: "parent" | "agent";
       text: string;
       attachments: readonly Attachment[];
+      citations?: readonly Citation[];
     }
   | {
       kind: "tool";
@@ -34,6 +45,8 @@ export type ChatItem =
       verb: VerbName;
       state: ToolState;
       error: RunError | null;
+      /** The result typed for its widget, from the call's `tool_result`. */
+      view?: ToolView;
     }
   | { kind: "steer"; seq: number; level: "steer" | "stop"; spent_usd: number; cap_usd: number }
   | {
@@ -42,8 +55,11 @@ export type ChatItem =
       call_id: string;
       verb: VerbName;
       summary: string;
-      /** Null until resolved; the first resolution pins it. */
+      choose?: ChooseForm;
+      /** Null until resolved; the first resolution pins it, with its feedback and answers. */
       decision: "approved" | "rejected" | null;
+      feedback?: string;
+      answers?: readonly string[];
     }
   | { kind: "error"; seq: number; error: RunError; attempt: number; retryable: boolean };
 
@@ -65,6 +81,8 @@ export interface RunView {
   budget: BudgetLevel;
   /** The highest `seq` folded, 0 for an empty log: where a reload fetches after. */
   cursor: number;
+  /** The last `plan` event's entries, each plan replacing the one before, or null before one. */
+  plan: PlanEntry[] | null;
 }
 
 /** A run that has ended: no deadline is due on it, and the sweep leaves it alone. */
@@ -114,6 +132,7 @@ export function foldRun(events: readonly RunEvent[]): RunView {
     cap_usd: null,
     budget: "none",
     cursor: 0,
+    plan: null,
   };
 
   /** The call's tool line, opened at `seq` in `state` when the log has none yet. */
@@ -129,15 +148,18 @@ export function foldRun(events: readonly RunEvent[]): RunView {
   for (const e of normalize(events)) {
     view.cursor = e.seq;
     switch (e.type) {
-      case "message":
+      case "message": {
+        const { from, text, attachments, citations } = e.payload;
         chat.push({
           kind: "message",
           seq: e.seq,
-          from: e.payload.from,
-          text: e.payload.text,
-          attachments: e.payload.attachments ?? [],
+          from,
+          text,
+          attachments: attachments ?? [],
+          ...(citations ? { citations } : {}),
         });
         break;
+      }
       case "tool_call": {
         const line = toolLine(e.payload.call_id, e.payload.verb, e.seq, "running");
         if (line.state === "pending") line.state = "running";
@@ -147,10 +169,11 @@ export function foldRun(events: readonly RunEvent[]): RunView {
         const line = toolLine(e.payload.call_id, e.payload.verb, e.seq, "running");
         line.error = e.payload.error;
         line.state = e.payload.error ? "failed" : "done";
+        if (e.payload.view) line.view = e.payload.view;
         break;
       }
       case "approval_request": {
-        const { call_id, verb, summary } = e.payload;
+        const { call_id, verb, summary, choose } = e.payload;
         if (approvals.has(call_id)) break;
         toolLine(call_id, verb, e.seq, "pending");
         const item: ApprovalItem = {
@@ -159,6 +182,7 @@ export function foldRun(events: readonly RunEvent[]): RunView {
           call_id,
           verb,
           summary,
+          ...(choose ? { choose } : {}),
           decision: null,
         };
         approvals.set(call_id, item);
@@ -166,10 +190,20 @@ export function foldRun(events: readonly RunEvent[]): RunView {
         break;
       }
       case "approval_resolved": {
-        const item = approvals.get(e.payload.call_id);
-        if (item && item.decision === null) item.decision = e.payload.decision;
+        const { call_id, decision, feedback, answers } = e.payload;
+        const item = approvals.get(call_id);
+        if (!item || item.decision !== null) break;
+        item.decision = decision;
+        if (feedback !== undefined) item.feedback = feedback;
+        if (answers !== undefined) item.answers = answers;
+        // A rejection closes a line still waiting on it; one already running or ended keeps its state.
+        const line = tools.get(call_id);
+        if (decision === "rejected" && line?.state === "pending") line.state = "rejected";
         break;
       }
+      case "plan":
+        view.plan = e.payload.entries;
+        break;
       case "budget_steer":
         view.budget = e.payload.level;
         chat.push({ kind: "steer", seq: e.seq, ...e.payload });

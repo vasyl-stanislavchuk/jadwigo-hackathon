@@ -49,7 +49,9 @@
           "output_tokens": 80,
           "cached_tokens": 0
         },
-        "cost_usd": 0.02
+        "cost_usd": 0.02,
+        "model": "scripted",
+        "tier": "private"
       },
       "created_at": "2026-09-01T08:00:03.000Z"
     },
@@ -953,7 +955,9 @@
           "output_tokens": 120,
           "cached_tokens": 0
         },
-        "cost_usd": 0.03
+        "cost_usd": 0.03,
+        "model": "scripted",
+        "tier": "private"
       },
       "created_at": "2026-09-01T08:00:08.000Z"
     },
@@ -1846,7 +1850,9 @@
           "output_tokens": 40,
           "cached_tokens": 0
         },
-        "cost_usd": 0.02
+        "cost_usd": 0.02,
+        "model": "scripted",
+        "tier": "private"
       },
       "created_at": "2026-09-01T08:00:13.000Z"
     },
@@ -2754,6 +2760,7 @@
     "spent_usd": 0.07,
     "cap_usd": 1,
     "budget": "none",
-    "cursor": 17
+    "cursor": 17,
+    "plan": null
   }
 }

@@ -1,7 +1,8 @@
 /**
  * The child's review at /play/<assignment>/review/<seq> (dl-uukj.30.1): the review step for that
- * question, with the arrows to its neighbours and "Wszystkie pytania" back to the end list. A seq
- * the attempt has no question at goes back to the list.
+ * question, with the arrows to its neighbours and "Wszystkie pytania" back to the end list, and the
+ * navigator of every question beside it on a wide screen, above it on a phone (dl-uukj.30.8,
+ * ReviewNav.tsx). A seq the attempt has no question at goes back to the list.
  */
 
 import { copy, type Language } from "@jadwigo/copy";
@@ -9,6 +10,7 @@ import { Button, Spinner } from "@jadwigo/ui";
 import { type ReactElement, useEffect } from "react";
 import { Column } from "../play/KidPage.tsx";
 import type { Review } from "../play/usePlayer.ts";
+import { ReviewNav } from "./ReviewNav.tsx";
 import { ReviewStep } from "./ReviewStep.tsx";
 
 export function ChildReview({
@@ -61,15 +63,23 @@ export function ChildReview({
   const prev = questions[index - 1];
   const next = questions[index + 1];
   return (
-    <ReviewStep
-      key={question.seq}
-      question={question}
-      index={index}
-      total={questions.length}
-      language={language}
-      {...(prev === undefined ? {} : { onPrev: () => onOpen(prev.seq) })}
-      {...(next === undefined ? {} : { onNext: () => onOpen(next.seq) })}
-      onAll={() => onAll()}
-    />
+    <div
+      data-child-review
+      className="mx-auto flex w-full max-w-5xl flex-col md:flex-row md:items-start md:gap-4 md:px-6"
+    >
+      <ReviewNav questions={questions} seq={question.seq} language={language} onOpen={onOpen} />
+      <div className="min-w-0 flex-1">
+        <ReviewStep
+          key={question.seq}
+          question={question}
+          index={index}
+          total={questions.length}
+          language={language}
+          {...(prev === undefined ? {} : { onPrev: () => onOpen(prev.seq) })}
+          {...(next === undefined ? {} : { onNext: () => onOpen(next.seq) })}
+          onAll={() => onAll()}
+        />
+      </div>
+    </div>
   );
 }
