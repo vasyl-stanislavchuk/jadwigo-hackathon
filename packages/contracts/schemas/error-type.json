@@ -19,7 +19,10 @@
     "EventIdMismatch",
     "WriteOnce",
     "AnswerLimit",
-    "MessageLimit",
+    "MessageLimitMinute",
+    "MessageLimitDay",
+    "AiConsentMissing",
+    "ConversationArchived",
     "Unauthorized",
     "BankUnavailable"
   ]

@@ -11,6 +11,7 @@ import {
   RUN_ERROR_TYPE,
   type RunError,
   type RunId,
+  type RunRatingCreate,
   type RunStatus,
   type VerbName,
 } from "@jadwigo/contracts/run";
@@ -18,7 +19,8 @@ import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
 import { type FormEvent, type ReactElement, useEffect, useRef, useState } from "react";
 import { Button } from "../tool/button.tsx";
-import { isOpen, type Turn } from "./conversation.ts";
+import { isOpen, type SendLimit, type Turn } from "./conversation.ts";
+import { Rating } from "./Rating.tsx";
 import { toolResult } from "./widgets/Widgets.tsx";
 
 const TOOL_KEY: Record<VerbName, CopyKey> = {
@@ -241,6 +243,17 @@ function announcementOf(last: Turn | undefined, restoring: boolean): CopyKey | n
 }
 
 /** The parent's words that opened a turn: what "Spróbuj ponownie" sends again. */
+/** A turn that ended well: its rating band shows (dl-z5ja.63). */
+function completed(turn: Turn): boolean {
+  return !isOpen(turn) && (turn.view.status ?? turn.run.status) === "completed";
+}
+
+/** Try again on a turn: its own message, sent again as a new turn; none when it holds none. */
+function retryOf(turn: Turn, resend: (text: string) => void): (() => void) | undefined {
+  const text = parentTextOf(turn);
+  return text === null ? undefined : () => resend(text);
+}
+
 function parentTextOf(turn: Turn): string | null {
   for (const item of turn.view.chat)
     if (item.kind === "message" && item.from === "parent") return item.text;
@@ -267,6 +280,12 @@ function useOnline(): boolean {
 const scrollBehavior = (): ScrollBehavior =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
 
+/** Each message limit's line: the minute's says wait a moment, the day's says come back tomorrow. */
+const LIMIT_LINE: Readonly<Record<SendLimit, CopyKey>> = {
+  minute: "chat_limit_busy",
+  day: "chat_limit_daily",
+};
+
 export interface ChatPaneProps {
   language: Language;
   turns: readonly Turn[];
@@ -274,10 +293,15 @@ export interface ChatPaneProps {
   restoring: boolean;
   stopping: boolean;
   sendFailed: boolean;
-  /** The last send was refused by the message limit: one line, no retry. */
-  sendLimited?: boolean;
+  /** Which message limit refused the last send: its own line, no retry (dl-z5ja.100). */
+  sendLimit?: SendLimit | null;
   onSend(text: string): void;
   onStop(): void;
+  /**
+   * Rates a completed turn by its run (dl-z5ja.63); Good, Bad and Try again show under each
+   * completed turn only when it is given.
+   */
+  onRate?: ((run: RunId, body: RunRatingCreate) => Promise<unknown>) | undefined;
 }
 
 export function ChatPane({
@@ -287,9 +311,10 @@ export function ChatPane({
   restoring,
   stopping,
   sendFailed,
-  sendLimited = false,
+  sendLimit = null,
   onSend,
   onStop,
+  onRate,
 }: ChatPaneProps): ReactElement {
   const [draft, setDraft] = useState("");
   /** The last words sent, so a send that did not reach the server can go again. */
@@ -334,13 +359,25 @@ export function ChatPane({
         </p>
       )}
       <ol aria-label={say("chat_messages")} className="flex flex-1 flex-col gap-3 overflow-y-auto">
-        {turns.map((turn) =>
-          rowsOf(turn.view.chat).map((row) => (
+        {turns.map((turn) => [
+          ...rowsOf(turn.view.chat).map((row) => (
             <li key={`${turn.run.id}-${row.seq}`} className="flex flex-col">
               <RowView row={row} run={turn.run.id} language={language} />
             </li>
           )),
-        )}
+          ...(onRate !== undefined && completed(turn)
+            ? [
+                <li key={`${turn.run.id}-rating`} className="flex flex-col">
+                  <Rating
+                    language={language}
+                    run={turn.run.id}
+                    onRate={onRate}
+                    onRetry={retryOf(turn, resend)}
+                  />
+                </li>,
+              ]
+            : []),
+        ])}
       </ol>
       <div ref={end} aria-hidden />
       {turns.length === 0 && !restoring && (
@@ -387,12 +424,12 @@ export function ChatPane({
           {say("chat_offline")}
         </p>
       )}
-      {sendFailed && sendLimited && (
-        <p role="alert" data-row="send-limited" className="text-sm">
-          {say("chat_limit_message")}
+      {sendFailed && sendLimit !== null && (
+        <p role="alert" data-row="send-limited" data-limit={sendLimit} className="text-sm">
+          {say(LIMIT_LINE[sendLimit])}
         </p>
       )}
-      {sendFailed && !sendLimited && (
+      {sendFailed && sendLimit === null && (
         <div role="alert" data-row="send-failed" className="flex items-center gap-2 text-sm">
           <p>{say("chat_send_again")}</p>
           {lastSent !== null && (

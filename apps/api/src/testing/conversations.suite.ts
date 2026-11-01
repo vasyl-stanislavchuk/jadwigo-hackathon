@@ -7,16 +7,19 @@ import {
   type AccountId,
   type Conversation,
   type ConversationRuns,
+  type Conversations,
   type ErrorEnvelope,
   EventId,
   ID_PREFIXES,
   idOf,
   LIMITS,
   type Me,
+  type Pod,
   type PodId,
   type RunAccepted,
   type RunEvents,
   RunId,
+  type RunRating,
 } from "@jadwigo/contracts";
 import type { RunQueue } from "@jadwigo/jadwigo-ai";
 import type { Store } from "@jadwigo/store";
@@ -48,16 +51,20 @@ export function conversationSuite(
     });
 
     /** A signed-in parent with an account, so a pod of its own. */
-    async function parent() {
+    async function parent({ consented = true }: { readonly consented?: boolean } = {}) {
       const headers = bearerOf(signToken({ sub: randomUUID() }));
       const call = <T>(method: string, path: string, body?: unknown) =>
         s.call<T>(method, path, body, headers);
       const me = await call<Me>("POST", pathOf("createAccount", {}), { language: "pl" });
       expect(me.status).toBe(201);
       const pod = me.body.pod?.id as PodId;
+      const consent = (ai_consented: boolean) =>
+        call<Pod>("PATCH", pathOf("patchPod", { id: pod }), { ai_consented });
+      if (consented) expect((await consent(true)).status).toBe(200);
       return {
         call,
         pod,
+        consent,
         async conversation(title?: string): Promise<Conversation> {
           const reply = await call<Conversation>("POST", pathOf("createConversation", {}), {
             event_id: event(),
@@ -133,7 +140,7 @@ export function conversationSuite(
     });
 
     // dl-z5ja.62: both limits count real rows through store.messageUsage, in the message's own unit.
-    it("refuses the parent's message past 10 in a minute as 429 MessageLimit", async () => {
+    it("refuses the parent's message past 10 in a minute as 429 MessageLimitMinute", async () => {
       const a = await parent();
       const conversation = await a.conversation();
       const usage = vi.spyOn(s.store, "messageUsage");
@@ -144,7 +151,7 @@ export function conversationSuite(
       const eleventh = event();
       const refused = await a.say(conversation.id, "One too many", eleventh);
       expect(refused.status).toBe(429);
-      expect((refused.body as unknown as ErrorEnvelope).error.type).toBe("MessageLimit");
+      expect((refused.body as unknown as ErrorEnvelope).error.type).toBe("MessageLimitMinute");
 
       // The steward's review of #464: a resend of a stored message lands once, past the limit too.
       const tenth = sent.at(-1) as EventId;
@@ -208,7 +215,7 @@ export function conversationSuite(
       });
       const refused = await a.say(conversation.id, "Over the cap");
       expect(refused.status).toBe(429);
-      expect((refused.body as unknown as ErrorEnvelope).error.type).toBe("MessageLimit");
+      expect((refused.body as unknown as ErrorEnvelope).error.type).toBe("MessageLimitDay");
       const runs = await a.call<ConversationRuns>(
         "GET",
         pathOf("listConversationRuns", { id: conversation.id }),
@@ -391,6 +398,201 @@ export function conversationSuite(
       expect(stored.cancel_requested_at).toBeNull();
       expect(await s.store.listRuns(a.pod, conversation.id)).toHaveLength(1);
       expect(await q.stepsFor(run.id)).toBe(1);
+    });
+
+    // dl-z5ja.110, wave 4 lead decision 37: a rating lands in run_rating, one per run and parent.
+    it("rates a turn Good or Bad with a note, and a re-rate replaces it", async () => {
+      const a = await parent();
+      const conversation = await a.conversation();
+      const { run } = (await a.say(conversation.id, "A lesson on adding to 10, please")).body;
+      const path = pathOf("rateRun", { id: run.id });
+
+      const bad = await a.call<RunRating>("POST", path, {
+        verdict: "bad",
+        note: "  It asked about subtraction.  ",
+      });
+      expect(bad.status).toBe(201);
+      expect(bad.body).toMatchObject({
+        pod_id: a.pod,
+        run_id: run.id,
+        verdict: "bad",
+        note: "It asked about subtraction.",
+      });
+      const good = await a.call<RunRating>("POST", path, { verdict: "good" });
+      expect(good.status).toBe(201);
+      expect(good.body).toEqual({ ...bad.body, verdict: "good", note: null });
+      expect(await s.store.listRunRatings(a.pod, run.id)).toEqual([good.body]);
+
+      for (const body of [
+        {},
+        { verdict: "meh" },
+        { verdict: "good", note: "Nice." },
+        { verdict: "bad", note: " " },
+        { verdict: "bad", run_id: run.id },
+      ])
+        expect((await a.call("POST", path, body)).status).toBe(400);
+      expect(await s.store.listRunRatings(a.pod, run.id)).toEqual([good.body]);
+    });
+
+    it("answers 404 NotFound to rating another pod's run, writing nothing", async () => {
+      const a = await parent();
+      const b = await parent();
+      const conversation = await a.conversation();
+      const { run } = (await a.say(conversation.id, "Hi")).body;
+      const reply = await b.call<ErrorEnvelope>("POST", pathOf("rateRun", { id: run.id }), {
+        verdict: "bad",
+        note: "From another family",
+      });
+      expect(reply.status).toBe(404);
+      expect(reply.body.error.type).toBe("NotFound");
+      expect(await s.store.listRunRatings(a.pod, run.id)).toEqual([]);
+    });
+
+    // dl-z5ja.112: consent is the pod's, kept on the server, so no client can skip it.
+    it("refuses a conversation and a message with 409 AiConsentMissing until consent, and again after it is withdrawn", async () => {
+      const a = await parent({ consented: false });
+      const before = await a.call<ErrorEnvelope>("POST", pathOf("createConversation", {}), {
+        event_id: event(),
+      });
+      expect(before.status).toBe(409);
+      expect(before.body.error.type).toBe("AiConsentMissing");
+
+      const given = await a.consent(true);
+      expect(given.status).toBe(200);
+      expect(given.body).toMatchObject({ id: a.pod });
+      expect(given.body.ai_consent_at).toEqual(expect.any(String));
+      const me = await a.call<Me>("GET", pathOf("getMe", {}));
+      expect(me.body.pod?.ai_consent_at).toBe(given.body.ai_consent_at);
+      // Giving it again keeps the first time.
+      expect((await a.consent(true)).body.ai_consent_at).toBe(given.body.ai_consent_at);
+
+      const conversation = await a.conversation();
+      const sent = await a.say(conversation.id, "A lesson on adding to 10, please");
+      expect(sent.status).toBe(201);
+      const { run } = sent.body;
+
+      const withdrawn = await a.consent(false);
+      expect(withdrawn.status).toBe(200);
+      expect(withdrawn.body.ai_consent_at).toBeNull();
+      const refused = [
+        a.call<ErrorEnvelope>("POST", pathOf("createConversation", {}), { event_id: event() }),
+        a.call<ErrorEnvelope>("POST", pathOf("postMessage", { id: conversation.id }), {
+          event_id: event(),
+          text: "One more",
+        }),
+        a.call<ErrorEnvelope>("POST", pathOf("postMessage", { id: conversation.id }), {
+          event_id: event(),
+          kind: "steer",
+          text: "A steer",
+        }),
+      ];
+      for (const reply of await Promise.all(refused)) {
+        expect(reply.status).toBe(409);
+        expect(reply.body.error.type).toBe("AiConsentMissing");
+      }
+      // Nothing was written or enqueued, and the parent may still read the turn and stop it.
+      expect(await s.store.listRuns(a.pod, conversation.id)).toHaveLength(1);
+      expect(await q.stepsFor(run.id)).toBe(1);
+      const runs = await a.call("GET", pathOf("listConversationRuns", { id: conversation.id }));
+      expect(runs.status).toBe(200);
+      const stop = await a.call("POST", pathOf("cancelRun", { id: run.id }), { event_id: event() });
+      expect(stop.status).toBe(201);
+    });
+
+    it("sets only the caller's own pod's consent: another pod's id is 404, a bad body 400", async () => {
+      const a = await parent({ consented: false });
+      const b = await parent({ consented: false });
+      const other = await a.call<ErrorEnvelope>("PATCH", pathOf("patchPod", { id: b.pod }), {
+        ai_consented: true,
+      });
+      expect(other.status).toBe(404);
+      expect(other.body.error.type).toBe("NotFound");
+      expect((await s.store.getPod(b.pod)).ai_consent_at).toBeNull();
+      for (const body of [{}, { ai_consented: "yes" }, { ai_consented: true, ai_consent_at: null }])
+        expect((await a.call("PATCH", pathOf("patchPod", { id: a.pod }), body)).status).toBe(400);
+      expect((await s.store.getPod(a.pod)).ai_consent_at).toBeNull();
+    });
+
+    // dl-z5ja.105, decision dl-84wo: a parent's delete archives; nothing is deleted.
+    it("lists the pod's live conversations newest first, and archives one once", async () => {
+      const a = await parent();
+      const b = await parent();
+      const first = await a.conversation("Adding to 10");
+      const second = await a.conversation("Equal groups");
+      await b.conversation("Another family's");
+      const list = () => a.call<Conversations>("GET", pathOf("listConversations", {}));
+
+      const listed = await list();
+      expect(listed.status).toBe(200);
+      expect(new Set(listed.body.conversations.map((c) => c.id))).toEqual(
+        new Set([first.id, second.id]),
+      );
+      const times = listed.body.conversations.map((c) => c.created_at);
+      expect(times).toEqual([...times].sort().reverse());
+
+      const path = pathOf("patchConversation", { id: first.id });
+      const archived = await a.call<Conversation>("PATCH", path, { archived: true });
+      expect(archived.status).toBe(200);
+      expect(archived.body).toMatchObject({ id: first.id, pod_id: a.pod, title: "Adding to 10" });
+      expect(archived.body.archived_at).toEqual(expect.any(String));
+      const again = await a.call<Conversation>("PATCH", path, { archived: true });
+      expect(again.status).toBe(200);
+      expect(again.body).toEqual(archived.body);
+
+      expect((await list()).body.conversations.map((c) => c.id)).toEqual([second.id]);
+      // Kept for the pod: the store still holds it, and its runs still read.
+      expect((await s.store.getConversation(a.pod, first.id)).archived_at).toBe(
+        archived.body.archived_at,
+      );
+      const runs = await a.call("GET", pathOf("listConversationRuns", { id: first.id }));
+      expect(runs.status).toBe(200);
+
+      for (const body of [{}, { archived: false }, { archived: true, archived_at: null }])
+        expect(
+          (await a.call("PATCH", pathOf("patchConversation", { id: second.id }), body)).status,
+        ).toBe(400);
+    });
+
+    it("refuses a message or a steer to an archived conversation with 409 ConversationArchived, enqueuing nothing", async () => {
+      const a = await parent();
+      const conversation = await a.conversation();
+      const { run } = (await a.say(conversation.id, "A lesson on adding to 10, please")).body;
+      expect(await q.stepsFor(run.id)).toBe(1);
+      await a.call("PATCH", pathOf("patchConversation", { id: conversation.id }), {
+        archived: true,
+      });
+
+      const refused = [
+        a.say(conversation.id, "One more"),
+        a.call<RunAccepted>("POST", pathOf("postMessage", { id: conversation.id }), {
+          event_id: event(),
+          kind: "steer",
+          text: "A steer",
+        }),
+      ];
+      for (const reply of await Promise.all(refused)) {
+        expect(reply.status).toBe(409);
+        expect((reply.body as unknown as ErrorEnvelope).error.type).toBe("ConversationArchived");
+      }
+      expect(await s.store.listRuns(a.pod, conversation.id)).toHaveLength(1);
+      expect(await q.stepsFor(run.id)).toBe(1);
+    });
+
+    it("answers 404 NotFound to archiving another pod's conversation, and leaves it live", async () => {
+      const a = await parent();
+      const b = await parent();
+      const conversation = await a.conversation();
+      const reply = await b.call<ErrorEnvelope>(
+        "PATCH",
+        pathOf("patchConversation", { id: conversation.id }),
+        { archived: true },
+      );
+      expect(reply.status).toBe(404);
+      expect(reply.body.error.type).toBe("NotFound");
+      expect((await s.store.getConversation(a.pod, conversation.id)).archived_at).toBeNull();
+      expect((await b.call<Conversations>("GET", pathOf("listConversations", {}))).body).toEqual({
+        conversations: [],
+      });
     });
 
     it("answers 409 AccountMissing to a signed-in user with no account yet", async () => {

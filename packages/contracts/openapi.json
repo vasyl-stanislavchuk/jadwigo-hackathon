@@ -568,6 +568,62 @@
         }
       }
     },
+    "/api/v1/pods/{id}": {
+      "patch": {
+        "operationId": "patchPod",
+        "summary": "Gives or withdraws the pod's consent to the AI.",
+        "description": "`ai_consented: true` stamps `ai_consent_at`, and giving it again keeps the first time; `false` sets it to null. While it is null the conversation routes answer 409 `AiConsentMissing`. Another pod's id is 404.",
+        "tags": [
+          "parents"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PodId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PodPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pod"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/api/v1/learners": {
       "post": {
         "operationId": "createLearner",
@@ -1221,6 +1277,96 @@
             "$ref": "#/components/responses/Error"
           }
         }
+      },
+      "get": {
+        "operationId": "listConversations",
+        "summary": "Lists the caller's pod's conversations, newest first.",
+        "description": "An archived conversation is left out: it is kept for the pod, never listed.",
+        "tags": [
+          "conversations"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conversations"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/{id}": {
+      "patch": {
+        "operationId": "patchConversation",
+        "summary": "Archives a conversation: the parent's delete.",
+        "description": "Idempotent: archiving again keeps the first `archived_at`. Nothing is deleted; the conversation and its runs stay with the pod. A message to it after is 409 `ConversationArchived`.",
+        "tags": [
+          "conversations"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ConversationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conversation"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
       }
     },
     "/api/v1/conversations/{id}/messages": {
@@ -1420,6 +1566,62 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RunAccepted"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/runs/{id}/ratings": {
+      "post": {
+        "operationId": "rateRun",
+        "summary": "Rates a turn Good or Bad, with an optional note on Bad.",
+        "description": "One rating per run and parent: rating again replaces the verdict and the note. Try again is no route: send the last message again.",
+        "tags": [
+          "conversations"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/RunId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunRatingCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunRating"
                 }
               }
             }
@@ -3166,6 +3368,19 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "archived_at": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -3173,7 +3388,8 @@
           "pod_id",
           "created_by",
           "title",
-          "created_at"
+          "created_at",
+          "archived_at"
         ],
         "additionalProperties": false
       },
@@ -3228,11 +3444,27 @@
               "type": "string",
               "minLength": 1
             }
+          },
+          "context": {
+            "$ref": "#/components/schemas/MessageContext"
           }
         },
         "required": [
           "event_id",
           "text"
+        ],
+        "additionalProperties": false
+      },
+      "ConversationPatch": {
+        "type": "object",
+        "properties": {
+          "archived": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": [
+          "archived"
         ],
         "additionalProperties": false
       },
@@ -3248,6 +3480,21 @@
         },
         "required": [
           "runs"
+        ],
+        "additionalProperties": false
+      },
+      "Conversations": {
+        "type": "object",
+        "properties": {
+          "conversations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Conversation"
+            }
+          }
+        },
+        "required": [
+          "conversations"
         ],
         "additionalProperties": false
       },
@@ -3588,7 +3835,10 @@
           "EventIdMismatch",
           "WriteOnce",
           "AnswerLimit",
-          "MessageLimit",
+          "MessageLimitMinute",
+          "MessageLimitDay",
+          "AiConsentMissing",
+          "ConversationArchived",
           "Unauthorized",
           "BankUnavailable"
         ]
@@ -6366,6 +6616,34 @@
           "self"
         ]
       },
+      "MessageContext": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "learner_id": {
+                "$ref": "#/components/schemas/LearnerId"
+              }
+            },
+            "required": [
+              "learner_id"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "lesson_id": {
+                "$ref": "#/components/schemas/LessonId"
+              }
+            },
+            "required": [
+              "lesson_id"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
       "MessageEvent": {
         "type": "object",
         "properties": {
@@ -6407,6 +6685,9 @@
                 "items": {
                   "$ref": "#/components/schemas/Attachment"
                 }
+              },
+              "context": {
+                "$ref": "#/components/schemas/MessageContext"
               },
               "citations": {
                 "type": "array",
@@ -8165,19 +8446,45 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "ai_consent_at": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "id",
           "name",
           "language",
-          "created_at"
+          "created_at",
+          "ai_consent_at"
         ],
         "additionalProperties": false
       },
       "PodId": {
         "type": "string",
         "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "PodPatch": {
+        "type": "object",
+        "properties": {
+          "ai_consented": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ai_consented"
+        ],
+        "additionalProperties": false
       },
       "Point": {
         "type": "object",
@@ -9616,6 +9923,93 @@
         "type": "string",
         "pattern": "^run_[0-7][0-9a-hjkmnp-tv-z]{25}$"
       },
+      "RunRating": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/RunRatingId"
+          },
+          "pod_id": {
+            "$ref": "#/components/schemas/PodId"
+          },
+          "run_id": {
+            "$ref": "#/components/schemas/RunId"
+          },
+          "account_id": {
+            "$ref": "#/components/schemas/AccountId"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/RunRatingVerdict"
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "pod_id",
+          "run_id",
+          "account_id",
+          "verdict",
+          "note",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "RunRatingCreate": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "verdict": {
+                "type": "string",
+                "const": "good"
+              }
+            },
+            "required": [
+              "verdict"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "verdict": {
+                "type": "string",
+                "const": "bad"
+              },
+              "note": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              }
+            },
+            "required": [
+              "verdict"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "RunRatingId": {
+        "type": "string",
+        "pattern": "^rtg_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "RunRatingVerdict": {
+        "type": "string",
+        "enum": [
+          "good",
+          "bad"
+        ]
+      },
       "RunStatus": {
         "type": "string",
         "enum": [
@@ -10725,7 +11119,7 @@
     },
     "responses": {
       "Error": {
-        "description": "An error: `{error: {type, message}}`. The type names the cause, and answers with one status:\n\n- 400: `BadRequest`, `ServerFieldSupplied`\n- 401: `NotSignedIn`, `Unauthorized`\n- 404: `NotFound`\n- 409: `AccountMissing`, `AttemptClaimed`, `AttemptPreview`, `AssignmentClosed`, `AttemptFinished`, `AttemptNotFinished`, `AttemptPaused`, `QuestionNotOpen`, `TryOutOfOrder`, `AnswerConflict`, `EventIdMismatch`, `WriteOnce`\n- 429: `AnswerLimit`, `MessageLimit`\n- 502: `BankUnavailable`",
+        "description": "An error: `{error: {type, message}}`. The type names the cause, and answers with one status:\n\n- 400: `BadRequest`, `ServerFieldSupplied`\n- 401: `NotSignedIn`, `Unauthorized`\n- 404: `NotFound`\n- 409: `AccountMissing`, `AttemptClaimed`, `AttemptPreview`, `AssignmentClosed`, `AttemptFinished`, `AttemptNotFinished`, `AttemptPaused`, `QuestionNotOpen`, `TryOutOfOrder`, `AnswerConflict`, `EventIdMismatch`, `WriteOnce`, `AiConsentMissing`, `ConversationArchived`\n- 429: `AnswerLimit`, `MessageLimitMinute`, `MessageLimitDay`\n- 502: `BankUnavailable`",
         "content": {
           "application/json": {
             "schema": {

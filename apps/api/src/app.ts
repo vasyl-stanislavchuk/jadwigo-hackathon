@@ -16,8 +16,11 @@ import {
   createConversation,
   type EngineRouteDeps,
   listConversationRuns,
+  listConversations,
   listRunEvents,
+  patchConversation,
   postMessage,
+  rateRun,
 } from "./conversations.ts";
 import { ApiError, badRequest, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
@@ -38,6 +41,7 @@ import {
   getAssignmentAttempts,
   getLearnerAttempts,
   getMe,
+  patchPod,
 } from "./people.ts";
 import { playgroundExamples } from "./playground.ts";
 import { type PokeStepHost, pokeAll } from "./poke.ts";
@@ -183,6 +187,7 @@ export function createApp(
   // writes are one unit, so the claim is one transaction.
   onSigned("getMe", (_params, _body, claims) => run((s) => getMe(s, claims)));
   onSigned("createAccount", (_params, body, claims) => run((s) => createAccount(s, claims, body)));
+  onSigned("patchPod", (params, body, claims) => run((s) => patchPod(s, claims, params.id, body)));
   onSigned("createLearner", (_params, body, claims) => run((s) => createLearner(s, claims, body)));
   onSigned("claimAttempt", (params, body, claims) =>
     run((s) => claimAttempt(s, claims, params.id, body)),
@@ -229,6 +234,12 @@ export function createApp(
   );
   // A message's or a Stop's step commits with its run row and never before it, so a consumer
   // never reads a step for a run it cannot see yet (engineUnit).
+  onSigned("listConversations", (_params, _body, claims) =>
+    run((s) => listConversations(s, claims)),
+  );
+  onSigned("patchConversation", (params, body, claims) =>
+    run((s) => patchConversation(s, engine, claims, params.id, body)),
+  );
   onSigned("postMessage", (params, body, claims) =>
     engineUnit(store, engine, poke, (s, deps) => postMessage(s, deps, claims, params.id, body)),
   );
@@ -241,6 +252,8 @@ export function createApp(
   onSigned("cancelRun", (params, body, claims) =>
     engineUnit(store, engine, poke, (s, deps) => cancelRun(s, deps, claims, params.id, body)),
   );
+
+  onSigned("rateRun", (params, body, claims) => run((s) => rateRun(s, claims, params.id, body)));
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;

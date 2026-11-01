@@ -1,5 +1,11 @@
 import { EventId, ID_PREFIXES, idOf, PodId, Uuid } from "@jadwigo/contracts";
-import { ConversationId, type NewRunEvent, RunId, RunInbox } from "@jadwigo/contracts/run";
+import {
+  type Conversation,
+  ConversationId,
+  type NewRunEvent,
+  RunId,
+  RunInbox,
+} from "@jadwigo/contracts/run";
 import { describe, expect, it } from "vitest";
 import type { NewRun } from "./run.ts";
 import type { Store } from "./store.ts";
@@ -376,6 +382,160 @@ export function runContract(name: string, make: () => Promise<Store> | Store): v
       expect(racers[2]).toEqual(racers[0]);
       expect(await store.listRuns(a.pod, id)).toEqual([]);
     });
+
+    // dl-z5ja.104, decision dl-84wo: a parent's delete archives; nothing is deleted.
+    frozen(
+      "lists a pod's live conversations newest first, the archived left out unless asked for",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const b = await scope(store);
+        const made: Conversation[] = [];
+        for (const title of ["First", "Second", "Third"])
+          made.push(
+            await store.createConversation(a.pod, {
+              id: conversationId(),
+              created_by: a.account,
+              title,
+            }),
+          );
+        await store.createConversation(b.pod, {
+          id: conversationId(),
+          created_by: b.account,
+          title: "Another family's",
+        });
+        expect(made.every((c) => c.archived_at === null)).toBe(true);
+
+        const live = await store.listConversations(a.pod);
+        expect(new Set(live.map((c) => c.id))).toEqual(new Set(made.map((c) => c.id)));
+        const times = live.map((c) => c.created_at);
+        expect(times).toEqual([...times].sort().reverse());
+
+        const second = made[1] as Conversation;
+        const at = "2026-09-01T08:00:00.000Z";
+        const archived = await store.archiveConversation(a.pod, second.id, at);
+        expect(archived).toEqual({ ...second, archived_at: at });
+        expect((await store.listConversations(a.pod)).map((c) => c.id)).not.toContain(second.id);
+        const all = await store.listConversations(a.pod, { includeArchived: true });
+        expect(all.map((c) => c.id)).toContain(second.id);
+        expect(await store.getConversation(a.pod, second.id)).toEqual(archived);
+        // Kept for the pod: its runs still read.
+        expect(await store.listRuns(a.pod, second.id)).toEqual([]);
+        expect((await store.listConversations(b.pod)).map((c) => c.title)).toEqual([
+          "Another family's",
+        ]);
+      },
+    );
+
+    frozen("archives once: a 2nd archive keeps the first time", async () => {
+      const store = await make();
+      const a = await scope(store);
+      const conversation = await store.createConversation(a.pod, {
+        id: conversationId(),
+        created_by: a.account,
+        title: null,
+      });
+      const first = await store.archiveConversation(a.pod, conversation.id, "2026-09-01T08:00:00Z");
+      const again = await store.archiveConversation(a.pod, conversation.id, "2026-09-02T08:00:00Z");
+      expect(again).toEqual(first);
+      expect(again.archived_at).toBe("2026-09-01T08:00:00.000Z");
+    });
+
+    frozen(
+      "reads and archives another pod's conversation as NotFound, changing nothing",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const b = await scope(store);
+        const conversation = await store.createConversation(a.pod, {
+          id: conversationId(),
+          created_by: a.account,
+          title: null,
+        });
+        const at = "2026-09-01T08:00:00.000Z";
+        await expect(store.getConversation(b.pod, conversation.id)).rejects.toMatchObject(
+          NOT_FOUND,
+        );
+        await expect(store.archiveConversation(b.pod, conversation.id, at)).rejects.toMatchObject(
+          NOT_FOUND,
+        );
+        await expect(store.archiveConversation(a.pod, conversationId(), at)).rejects.toMatchObject(
+          NOT_FOUND,
+        );
+        expect((await store.getConversation(a.pod, conversation.id)).archived_at).toBeNull();
+      },
+    );
+
+    // dl-z5ja.110, wave 4 lead decision 37: a rating in its own table, one per run and account.
+    frozen(
+      "rates a run once per account: a re-rate replaces the verdict and the note",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const run = await store.createRun(a.pod, newRun(a.account, null));
+        expect(await store.listRunRatings(a.pod, run.id)).toEqual([]);
+
+        const bad = await store.rateRun(a.pod, run.id, a.account, {
+          verdict: "bad",
+          note: "Too many questions.",
+        });
+        expect(bad).toMatchObject({
+          pod_id: a.pod,
+          run_id: run.id,
+          account_id: a.account,
+          verdict: "bad",
+          note: "Too many questions.",
+        });
+        expect(bad.id).toMatch(/^rtg_/);
+
+        const good = await store.rateRun(a.pod, run.id, a.account, { verdict: "good", note: null });
+        expect(good).toEqual({ ...bad, verdict: "good", note: null });
+        expect(await store.listRunRatings(a.pod, run.id)).toEqual([good]);
+      },
+    );
+
+    frozen(
+      "refuses a note with good as BadRequest, and another pod's run as NotFound",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const b = await scope(store);
+        const run = await store.createRun(a.pod, newRun(a.account, null));
+        await expect(
+          store.rateRun(a.pod, run.id, a.account, { verdict: "good", note: "Nice." }),
+        ).rejects.toMatchObject({ type: "BadRequest" });
+        await expect(
+          store.rateRun(b.pod, run.id, b.account, { verdict: "good", note: null }),
+        ).rejects.toMatchObject(NOT_FOUND);
+        await expect(store.listRunRatings(b.pod, run.id)).rejects.toMatchObject(NOT_FOUND);
+        expect(await store.listRunRatings(a.pod, run.id)).toEqual([]);
+      },
+    );
+
+    // dl-z5ja.131: a resend is known by its stored row before anything is written.
+    frozen(
+      "finds a stored inbox row by event_id, pending or delivered, and only in its pod",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const b = await scope(store);
+        const run = await store.createRun(a.pod, newRun(a.account, null));
+        const entry = inbox(run.id, "Make it 5 questions.");
+        expect(await store.findRunInbox(a.pod, entry.event_id)).toBeUndefined();
+
+        const put = await store.putRunInbox(a.pod, entry);
+        expect(await store.findRunInbox(a.pod, entry.event_id)).toEqual(put);
+        expect(put.status).toBe("pending");
+
+        await store.takeRunInbox(a.pod, run.id);
+        expect(await store.findRunInbox(a.pod, entry.event_id)).toEqual({
+          ...put,
+          status: "delivered",
+        });
+        expect(await store.findRunInbox(b.pod, entry.event_id)).toBeUndefined();
+        expect(await store.findRunInbox(a.pod, eventId())).toBeUndefined();
+      },
+    );
   });
 }
 

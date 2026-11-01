@@ -247,8 +247,8 @@ export function learnerKnowledgeContract(name: string, make: () => Promise<Store
     it("keeps reports newest first, a narrative written once, and decisions on known proposals", async () => {
       const store = await make();
       const a = await family(store);
-      const older = await store.putReport(a.pod, report(a.learner));
-      const newer = await store.putReport(a.pod, { ...report(a.learner), reused: true });
+      const older = await store.putReport(a.pod, reportOf(a.learner));
+      const newer = await store.putReport(a.pod, { ...reportOf(a.learner), reused: true });
       expect(older).toMatchObject({ narrative: null, decisions: [], pod_id: a.pod });
 
       const listed = await store.listReports(a.pod, a.learner);
@@ -290,7 +290,9 @@ export function learnerKnowledgeContract(name: string, make: () => Promise<Store
       await expect(
         store.updateReport(other.pod, other.learner, newer.id, { narrative: NARRATIVE }),
       ).rejects.toMatchObject(NOT_FOUND);
-      await expect(store.putReport(other.pod, report(a.learner))).rejects.toMatchObject(NOT_FOUND);
+      await expect(store.putReport(other.pod, reportOf(a.learner))).rejects.toMatchObject(
+        NOT_FOUND,
+      );
     });
 
     it("writes a curriculum once per code and version, each pod its own", async () => {
@@ -592,7 +594,7 @@ const NARRATIVE: ReportNarrative = {
   made_by: "jadwigo-report-write",
 };
 
-function report(learner: LearnerId) {
+function reportOf(learner: LearnerId) {
   return {
     learner_id: learner,
     period_starts_at: "2026-09-01T00:00:00.000Z",
@@ -600,5 +602,48 @@ function report(learner: LearnerId) {
     inputs_hash: `h-${crypto.randomUUID()}`,
     reused: false,
     digest: DIGEST,
+  };
+}
+
+/**
+ * One learner's records in a fresh pod, written by `store`: a goal with a skill, a published lesson
+ * with its draft beside it, a finished attempt with 2 answers, and a report. For the runner's reads
+ * (dl-z5ja.125): the test reads them back as `jadwigo_runner`.
+ */
+export async function learnerRecords(store: Store) {
+  const codes = freshCodes();
+  await sharedSkills(store, [codes.shared]);
+  const a = await family(store);
+  const goal = await store.addGoal(a.pod, a.learner, {
+    name: "Rows of apples",
+    skill_codes: [codes.shared, codes.own],
+  });
+  const lesson = await lessonOf(store, a.pod, [[codes.shared], [codes.own]]);
+  const assignment = await store.getAssignment(a.pod, lesson.start.assignment_id);
+  const draft = await store.putLesson(a.pod, {
+    title: "Rows, a draft",
+    language: "pl",
+    category: "child",
+    subject: "math",
+    grade: 2,
+    skill_ids: [],
+  });
+  const attempt = (await store.startAttempt(a.pod, { ...lesson.start, learner_id: a.learner }))
+    .attempt.id;
+  await store.appendAttemptAnswer(a.pod, tryAt(attempt, 1, 1, true, "08:00:01"), {
+    end: "correct",
+  });
+  await store.askQuestion(a.pod, attempt, planned(lesson.questions[1]));
+  await store.appendAttemptAnswer(a.pod, skipAt(attempt, 2, 1, "08:00:05"), { end: "skipped" });
+  await store.finishAttempt(a.pod, attempt);
+  const report = await store.putReport(a.pod, reportOf(a.learner));
+  return {
+    ...a,
+    codes,
+    goal: goal.goal.id,
+    lesson: assignment.lesson_id,
+    draft: draft.id,
+    attempt,
+    report: report.id,
   };
 }

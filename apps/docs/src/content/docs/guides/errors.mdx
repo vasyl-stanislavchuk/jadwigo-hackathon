@@ -31,10 +31,12 @@ Every refusal has one shape:
 - **`404`**: check the id. A record in another pod is `404`, never `403`, so the API never
   says whether it exists.
 - **`409`**: read the record again and act on what it says now. An attempt that is paused,
-  finished or claimed refuses a write that no longer fits.
+  finished or claimed refuses a write that no longer fits. `AiConsentMissing`: the family has not
+  turned the AI on, or turned it off; ask the parent to give consent first.
+  `ConversationArchived`: the parent archived the conversation; start a new one.
 - **`429`**: the request is past a limit. `AnswerLimit`: the attempt holds 200 answers, so start a
-  new attempt. `MessageLimit`: too many messages to the AI in a minute, or the family's AI budget
-  for the day is used up. Wait, then send it again.
+  new attempt. `MessageLimitMinute`: too many messages to the AI in a minute; wait a moment.
+  `MessageLimitDay`: the family's AI budget for the day is used up; try again tomorrow.
 - **`502`**: the question bank did not answer. Try again later.
 
 A `500` is not in the table below. It means the API failed on its side. Try the request again

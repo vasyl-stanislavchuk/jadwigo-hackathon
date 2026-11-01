@@ -1,6 +1,6 @@
 ---
 title: Conversations with the AI
-description: Start a conversation, send a message, read the AI's answer as run events, and stop a turn.
+description: Start a conversation, send a message, read the AI's answer as run events, stop a turn, rate it, and archive a conversation.
 ---
 
 This guide is for a client that runs a parent's chat with Jadwigo's AI: the chat on the left that
@@ -10,6 +10,25 @@ becomes a lesson on the right. Every route here takes the parent's Supabase Auth
 A conversation holds runs, one run per turn. A run's work is an append-only log of run events,
 numbered by `seq` from 1. The API never waits for the AI: a message is stored and its run is queued,
 and the reply comes at once. The AI's answer arrives later, as events on the run.
+
+## 0. Turn the AI on for the family
+
+[Reference](/api/operations/patchpod/).
+
+```bash
+curl -X PATCH https://app.jadwigo.pl/api/v1/pods/$POD_ID \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"ai_consented": true}'
+```
+
+A parent gives consent once, for the whole family's pod, after the client has shown what the AI
+reads and where it goes. The pod's id is in [`GET /api/v1/me`](/api/operations/getme/). The reply is
+the pod, with `ai_consent_at` set; sending it again keeps the first time.
+
+Until then, starting a conversation or sending a message is `409` `AiConsentMissing`, and nothing
+is stored. `{"ai_consented": false}` withdraws it: `ai_consent_at` is null again, and the same
+`409` comes back. A turn already running can still be read and stopped.
 
 ## 1. Start a conversation
 
@@ -42,7 +61,8 @@ sent while a turn is open joins that turn. Otherwise it starts a new run.
 - A resend with the same `event_id` and text returns the same run.
 - The same `event_id` with other text is `409` `EventIdMismatch`.
 - A parent may send 10 messages a minute, and a family's runs may spend 10 USD a day in all. Past
-  either limit the reply is `429` `MessageLimit`, and nothing is stored.
+  the minute the reply is `429` `MessageLimitMinute`, past the day `429` `MessageLimitDay`, and
+  nothing is stored. A message that joins a running turn is never refused by the day.
 
 A correction while the turn runs is a steer: the same route with `"kind": "steer"`. An edit in
 the lesson pane also sends `"source": "lesson_edit"` and the `question_ids` it changed. A steer
@@ -75,6 +95,41 @@ curl -X POST https://app.jadwigo.pl/api/v1/runs/$RUN_ID/cancellations \
 
 The run stops at its next step, and its events then show it `cancelled`. A run that has already
 ended comes back as it is.
+
+## 5. Rate a turn
+
+[Reference](/api/operations/raterun/).
+
+```bash
+curl -X POST https://app.jadwigo.pl/api/v1/runs/$RUN_ID/ratings \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"verdict": "bad", "note": "It asked about subtraction"}'
+```
+
+A parent rates a turn `good` or `bad`, and may say what was missing on `bad`. Each parent has one
+rating per run: rating again replaces it. The rating stays with the family's pod and is never sent
+to analytics, since a note may name the child. Try again is no route: send the last message again.
+
+## 6. List and archive conversations
+
+[List](/api/operations/listconversations/) and [archive](/api/operations/patchconversation/).
+
+```bash
+curl https://app.jadwigo.pl/api/v1/conversations \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"
+
+curl -X PATCH https://app.jadwigo.pl/api/v1/conversations/$CONVERSATION_ID \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"archived": true}'
+```
+
+The list holds the family's live conversations, newest first. A parent's delete archives a
+conversation: it leaves the list, and `archived_at` is set. Archiving again keeps the first time.
+Nothing is deleted. The conversation and its runs stay with the family's pod and go only with it,
+and an archive is never undone. A message or a steer to an archived conversation is `409`
+`ConversationArchived`, and nothing is stored: start a new conversation instead.
 
 ## Whose records a caller sees
 

@@ -66,9 +66,9 @@ async function family() {
   const headers = bearerOf(signToken({ sub: randomUUID() }));
   const call = <T>(method: string, path: string, body?: unknown) =>
     s.call<T>(method, path, body, headers);
-  expect((await call<Me>("POST", pathOf("createAccount", {}), { language: "pl" })).status).toBe(
-    201,
-  );
+  const me = await call<Me>("POST", pathOf("createAccount", {}), { language: "pl" });
+  expect(me.status).toBe(201);
+  await call("PATCH", pathOf("patchPod", { id: String(me.body.pod?.id) }), { ai_consented: true });
   const conversation = (
     await call<Conversation>("POST", pathOf("createConversation", {}), { event_id: randomUUID() })
   ).body;
@@ -132,7 +132,10 @@ describe("a message's step and its unit on PostgresStore (dl-z5ja.67)", () => {
     const headers = bearerOf(signToken({ sub: randomUUID() }));
     const call = <T>(method: string, path: string, body?: unknown) =>
       s.call<T>(method, path, body, headers);
-    await call<Me>("POST", pathOf("createAccount", {}), { language: "pl" });
+    const me = await call<Me>("POST", pathOf("createAccount", {}), { language: "pl" });
+    await call("PATCH", pathOf("patchPod", { id: String(me.body.pod?.id) }), {
+      ai_consented: true,
+    });
     const made = await call<Conversation>("POST", pathOf("createConversation", {}), {
       event_id: randomUUID(),
     });
@@ -204,6 +207,6 @@ describe("a message's step and its unit on PostgresStore (dl-z5ja.67)", () => {
     }
     expect(all.map((r) => r.status).sort()).toEqual([201, 429, 429, 429, 429]);
     for (const refused of all.filter((r) => r.status === 429))
-      expect((refused.body as unknown as ErrorEnvelope).error.type).toBe("MessageLimit");
+      expect((refused.body as unknown as ErrorEnvelope).error.type).toBe("MessageLimitMinute");
   });
 });

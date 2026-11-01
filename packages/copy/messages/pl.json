@@ -808,7 +808,6 @@
   "chat_announce_needs_you": "Asystent czeka na Twoją odpowiedź.",
   "chat_announce_stopped": "Zapisane, zatrzymane.",
   "chat_switch": "Rozmowa albo lekcja",
-  "chat_consent": "Asystent czyta tylko to, czego potrzebuje Twoja prośba o dziecku, imiona też. Model, na którym działa, nie uczy się na tych danych.",
   "chat_check_findings": [
     {
       "declarations": ["input n", "local notes_noun = n: plural"],
@@ -866,5 +865,13 @@
   "parent_name_note": "Widzisz je tylko Ty i Jadwigo w rozmowie. Nie trafia do lekcji.",
   "parent_grade": "Klasa",
   "parent_cancel": "Anuluj",
-  "parent_lesson_soon": "Robienie lekcji z tego miejsca jest w drodze. Wkrótce zadziała."
+  "parent_lesson_soon": "Robienie lekcji z tego miejsca jest w drodze. Wkrótce zadziała.",
+  "chat_rate_ask": "Jak poszło?",
+  "chat_rate_good": "Dobrze",
+  "chat_rate_bad": "Słabo",
+  "chat_rate_retry": "Spróbuj jeszcze raz",
+  "chat_rate_missing": "Czego zabrakło?",
+  "chat_rate_send": "Wyślij ocenę",
+  "chat_rate_thanks": "Dziękujemy, ocena jest zapisana.",
+  "chat_rate_failed": "Nie udało się zapisać oceny. Spróbuj jeszcze raz."
 }

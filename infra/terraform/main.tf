@@ -72,6 +72,8 @@ module "app" {
     # dl-e8ov.2.42; apply them only together with it, never alone.
     "GET /api/v1/me",
     "POST /api/v1/accounts",
+    # A pod's consent to the AI (dl-z5ja.112): a token route.
+    "PATCH /api/v1/pods/{id}",
     "POST /api/v1/learners",
     "POST /api/v1/attempts/{id}/claims",
     "GET /api/v1/learners/{id}/attempts",
@@ -90,10 +92,15 @@ module "app" {
     "PATCH /api/v1/learners/{id}/reports/{report}",
     # The AI engine's conversations (dl-z5ja.21): a parent's chat, one run per turn; token routes.
     "POST /api/v1/conversations",
+    # A parent's list and delete, which archives (dl-z5ja.105); token routes.
+    "GET /api/v1/conversations",
+    "PATCH /api/v1/conversations/{id}",
     "POST /api/v1/conversations/{id}/messages",
     "GET /api/v1/conversations/{id}/runs",
     "GET /api/v1/runs/{id}/events",
     "POST /api/v1/runs/{id}/cancellations",
+    # A parent's Good or Bad on a turn (dl-z5ja.110); a token route.
+    "POST /api/v1/runs/{id}/ratings",
   ]
 
   # The routes above whose ROUTES auth is "token": only these carry the JWT authorizer
@@ -101,6 +108,7 @@ module "app" {
   token_routes = [
     "GET /api/v1/me",
     "POST /api/v1/accounts",
+    "PATCH /api/v1/pods/{id}",
     "POST /api/v1/learners",
     "POST /api/v1/attempts/{id}/claims",
     "GET /api/v1/learners/{id}/attempts",
@@ -115,10 +123,13 @@ module "app" {
     "POST /api/v1/learners/{id}/reports",
     "PATCH /api/v1/learners/{id}/reports/{report}",
     "POST /api/v1/conversations",
+    "GET /api/v1/conversations",
+    "PATCH /api/v1/conversations/{id}",
     "POST /api/v1/conversations/{id}/messages",
     "GET /api/v1/conversations/{id}/runs",
     "GET /api/v1/runs/{id}/events",
     "POST /api/v1/runs/{id}/cancellations",
+    "POST /api/v1/runs/{id}/ratings",
   ]
 
   jwt_issuer = "https://${var.supabase_ref}.supabase.co/auth/v1"

@@ -6,6 +6,7 @@ import {
   EventId,
   GoalId,
   LearnerId,
+  PodId,
   ROUTES,
   RunId,
 } from "@jadwigo/contracts";
@@ -320,6 +321,24 @@ describe("the parent's calls", () => {
     expect(reply.learner_id).toBe(LEARNER);
   });
 
+  it("gives the pod's AI consent with a PATCH on the pod", async () => {
+    const pod = PodId.parse(attempt.pod_id);
+    const { fetch, sent } = stub(200, {
+      id: pod,
+      name: "home",
+      language: "pl",
+      created_at: AT,
+      ai_consent_at: AT,
+    });
+    const reply = await createClient({ base: "", fetch, token: signedIn }).patchPod(pod, {
+      ai_consented: true,
+    });
+    expect(sent).toMatchObject([
+      { url: `/api/v1/pods/${pod}`, method: "PATCH", body: { ai_consented: true } },
+    ]);
+    expect(reply.ai_consent_at).toBe(AT);
+  });
+
   it("refuses a token route as NotSignedIn when nobody is signed in, sending nothing", async () => {
     const { fetch, sent } = stub(200, {});
     const refused = await createClient({ base: "", fetch })
@@ -548,6 +567,65 @@ describe("the conversation calls", () => {
       `/api/v1/runs/${RUN}/events?after=7`,
       `/api/v1/runs/${RUN}/events`,
     ]);
+  });
+
+  it("lists the conversations and archives one with a PATCH", async () => {
+    const conversation = {
+      id: ConversationId.parse("cnv_6et2fhbnwvb45aw9atcfzs33zd"),
+      pod_id: attempt.pod_id,
+      created_by: "acc_6et2fhbnwvb45aw9atcfzs33zb",
+      title: null,
+      created_at: AT,
+      archived_at: null,
+    };
+    const listed = stub(200, { conversations: [conversation] });
+    const reply = await createClient({
+      base: "",
+      fetch: listed.fetch,
+      token: signedIn,
+    }).listConversations();
+    expect(listed.sent).toMatchObject([{ url: "/api/v1/conversations", method: "GET" }]);
+    expect(reply.conversations.map((c) => c.id)).toEqual([conversation.id]);
+
+    const archived = stub(200, { ...conversation, archived_at: AT });
+    const done = await createClient({
+      base: "",
+      fetch: archived.fetch,
+      token: signedIn,
+    }).patchConversation(conversation.id, { archived: true });
+    expect(archived.sent).toMatchObject([
+      {
+        url: `/api/v1/conversations/${conversation.id}`,
+        method: "PATCH",
+        body: { archived: true },
+      },
+    ]);
+    expect(done.archived_at).toBe(AT);
+  });
+
+  it("rates a turn at its ratings path", async () => {
+    const rating = {
+      id: "rtg_6et2fhbnwvb45aw9atcfzs33ze",
+      pod_id: attempt.pod_id,
+      run_id: RUN,
+      account_id: "acc_6et2fhbnwvb45aw9atcfzs33zb",
+      verdict: "bad",
+      note: "Too long",
+      created_at: AT,
+    };
+    const { fetch, sent } = stub(201, rating);
+    const reply = await createClient({ base: "", fetch, token: signedIn }).rateRun(RUN, {
+      verdict: "bad",
+      note: "Too long",
+    });
+    expect(sent).toMatchObject([
+      {
+        url: `/api/v1/runs/${RUN}/ratings`,
+        method: "POST",
+        body: { verdict: "bad", note: "Too long" },
+      },
+    ]);
+    expect(reply.verdict).toBe("bad");
   });
 
   it("asks a run to stop at its cancellations path", async () => {

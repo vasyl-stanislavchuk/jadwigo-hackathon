@@ -23,6 +23,7 @@ export const ID_PREFIXES = {
   learner_report: "rpt_",
   conversation: "cnv_",
   run: "run_",
+  run_rating: "rtg_",
 } as const;
 export type IdPrefix = (typeof ID_PREFIXES)[keyof typeof ID_PREFIXES];
 
@@ -135,6 +136,8 @@ export const ConversationId = prefixedId<"ConversationId">(
 export type ConversationId = z.infer<typeof ConversationId>;
 export const RunId = prefixedId<"RunId">(ID_PREFIXES.run, "a run");
 export type RunId = z.infer<typeof RunId>;
+export const RunRatingId = prefixedId<"RunRatingId">(ID_PREFIXES.run_rating, "a run rating");
+export type RunRatingId = z.infer<typeof RunRatingId>;
 
 /** The id the page mints for one write, so a replay is recognised. The bare uuid, no prefix. */
 export const EventId = z.string().regex(UUID, "an event id is a lowercase uuid").brand<"EventId">();
@@ -158,4 +161,5 @@ export const ID_SCHEMAS = {
   learner_report_id: LearnerReportId,
   conversation_id: ConversationId,
   run_id: RunId,
+  run_rating_id: RunRatingId,
 } as const;

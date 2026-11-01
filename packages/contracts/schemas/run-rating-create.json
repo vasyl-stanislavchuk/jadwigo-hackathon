@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "verdict": {
+          "type": "string",
+          "const": "good"
+        }
+      },
+      "required": [
+        "verdict"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "verdict": {
+          "type": "string",
+          "const": "bad"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "verdict"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

@@ -314,10 +314,11 @@ function reached(spent_usd: number, cap_usd: number, share: number): boolean {
 /**
  * Before every Muse call: `steer` from half the cap, `stop` from 90% (`BUDGET_STEER_SHARE`,
  * `BUDGET_STOP_SHARE`). A spend that can't be read is `stop`: an unknown balance is no licence to
- * spend (`ff23c1ce7af`). So is a cap that can't be read or leaves nothing to spend.
+ * spend (`ff23c1ce7af`). So is a spend below 0, which no ledger can hold (`dl-z5ja.74`), and a cap
+ * that can't be read or leaves nothing to spend.
  */
 export function budgetGuard(spent_usd: number | null | undefined, cap_usd: number): BudgetLevel {
-  if (spent_usd == null || !Number.isFinite(spent_usd)) return "stop";
+  if (spent_usd == null || !Number.isFinite(spent_usd) || spent_usd < 0) return "stop";
   if (!Number.isFinite(cap_usd) || cap_usd <= 0) return "stop";
   if (reached(spent_usd, cap_usd, BUDGET_STOP_SHARE)) return "stop";
   if (reached(spent_usd, cap_usd, BUDGET_STEER_SHARE)) return "steer";
