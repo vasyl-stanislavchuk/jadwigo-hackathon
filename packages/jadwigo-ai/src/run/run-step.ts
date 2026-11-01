@@ -3,6 +3,7 @@ import {
   type ConversationId,
   type ModelTier,
   type NewRunEvent,
+  RUN_ERROR_TYPE,
   RUN_IDLE_MS,
   RUN_IDLE_PUSH_MS,
   RUN_MAX_MS,
@@ -60,17 +61,6 @@ export interface AcceptMessage {
 
 /** A turn's budget when the caller names none. */
 const DEFAULT_CAP_USD = 1;
-
-/**
- * The run's own error types, which never reach the API's `{error}` envelope, so they are not
- * `ErrorType`s. They belong beside `RunError` in `@jadwigo/contracts/run` (a note to the lead).
- */
-const RUN_ERROR = {
-  /** A step ran past its visibility timeout and was delivered again. */
-  stepTimedOut: "StepTimedOut",
-  /** The turn ran past `max_deadline_at`. */
-  runTimedOut: "RunTimedOut",
-} as const;
 
 const WORKFLOW = "jadwigo-lesson-compose";
 const TAG = "product:lesson-compose";
@@ -644,7 +634,7 @@ async function endPastMax(w: Writer, attempt: number, now: Date): Promise<void> 
       run_id: w.run,
       event_id: await w.id("error", "max"),
       payload: {
-        error: { type: RUN_ERROR.runTimedOut, message: "the turn ran past its 30 minutes" },
+        error: { type: RUN_ERROR_TYPE.runTimedOut, message: "the turn ran past its 30 minutes" },
         attempt,
         retryable: false,
       },
@@ -805,7 +795,7 @@ async function claim(deps: EngineDeps, queued: QueuedStep): Promise<RunStepInput
       event_id: await w.id("retry", held),
       payload: {
         error: {
-          type: RUN_ERROR.stepTimedOut,
+          type: RUN_ERROR_TYPE.stepTimedOut,
           message: "the step ran past its visibility timeout and was retried",
         },
         attempt: held,
