@@ -9,6 +9,7 @@ import {
   type EventId,
   ID_PREFIXES,
   idOf,
+  LIMITS,
   type PodId,
   type Run,
   type RunAccepted,
@@ -17,7 +18,7 @@ import {
   type RunId,
 } from "@jadwigo/contracts";
 import { acceptMessage, type EngineDeps, type RunQueue, type Verbs } from "@jadwigo/jadwigo-ai";
-import type { Store } from "@jadwigo/store";
+import type { Store, UsageSince } from "@jadwigo/store";
 import type { Claims } from "./auth.ts";
 import { authorizeMember } from "./authorize.ts";
 import { ApiError, badRequest } from "./errors.ts";
@@ -38,6 +39,20 @@ export interface EngineRouteDeps {
   /** Where a new step goes: pgmq's `agent_step` in AWS, sent as `jadwigo_api`. */
   readonly queue: RunQueue;
   readonly now: () => Date;
+}
+
+/** The windows the limits count over: the last 60 s, and the UTC day so far. */
+function windows(now: Date): UsageSince {
+  const day = new Date(now);
+  day.setUTCHours(0, 0, 0, 0);
+  return {
+    minuteSince: new Date(now.getTime() - 60_000).toISOString(),
+    daySince: day.toISOString(),
+  };
+}
+
+function limited(message: string): ApiError {
+  return new ApiError(ErrorType.enum.MessageLimit, message);
 }
 
 /** The API never runs a step, so its engine has no Muse and no verbs: `acceptMessage` reads neither. */
@@ -103,6 +118,13 @@ export async function postMessage(
   const parsed = ConversationMessage.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
   const { event_id, text } = parsed.data;
+  // One unit: the reads below, the write and the refusal. A refused message throws after
+  // acceptMessage wrote, so on Postgres the unit rolls the row back and its held send is
+  // dropped; nothing of it is kept (dl-z5ja.62, the steward's review of #464).
+  const since = windows(deps.now());
+  const before = await store.messageUsage(pod, account, since);
+  // NotFound for a conversation outside the pod, before anything is written.
+  const runsBefore = await store.listRuns(pod, id);
   const { run, inbox } = await acceptMessage(engine(store, deps), {
     pod,
     created_by: account,
@@ -112,6 +134,18 @@ export async function postMessage(
   // A resend lands once; the same id on another message, or in another conversation, is refused.
   if (inbox.kind !== "message" || inbox.payload.text !== text || run.conversation_id !== id)
     throw mismatch();
+  // A new run is a new turn. Otherwise the count says whether this event_id is new: a resend of
+  // a stored message counts nothing, and answers its run whatever the limits say now.
+  const opened = !runsBefore.some((r) => r.id === run.id);
+  const counted =
+    opened || (await store.messageUsage(pod, account, since)).messages > before.messages;
+  if (!counted) return { run };
+  if (before.messages >= LIMITS.messagesPerMinute)
+    throw limited("too many messages in a minute: wait a moment and send it again");
+  // Only a message that opens a turn spends: one that joins the open turn always may, so a parent
+  // can finish a running turn. The pod never passes its cap by a run.
+  if (opened && before.cap_usd + run.cap_usd > LIMITS.podDailyCapUsd)
+    throw limited("today's AI budget for this family is used up: try again tomorrow");
   return { run };
 }
 
