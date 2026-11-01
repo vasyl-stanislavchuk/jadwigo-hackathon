@@ -4,6 +4,7 @@
 import { EventId, ID_PREFIXES, idOf, Uuid } from "@jadwigo/contracts";
 import { ConversationId, type NewRunEvent, RunId } from "@jadwigo/contracts/run";
 import { afterAll, describe, expect, it } from "vitest";
+import { attachmentContract } from "./attachment.contract.ts";
 import { databaseUrl } from "./config.ts";
 import { createPostgresStore } from "./postgres.ts";
 import { runContract } from "./run.contract.ts";
@@ -14,6 +15,8 @@ const runner = createPostgresStore(databaseUrl(), { role: "jadwigo_runner" });
 afterAll(() => Promise.all([api.close(), runner.close()]));
 
 runContract("PostgresStore", () => api);
+// A parent's photos (dl-e8ov.2.22), on the attachment table, as the API's role.
+attachmentContract("PostgresStore", () => api);
 
 async function scope() {
   const member = await api.createAccount(Uuid.parse(crypto.randomUUID()), "pl");

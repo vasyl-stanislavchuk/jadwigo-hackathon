@@ -1,3 +1,4 @@
+export type { AttachedPhoto, AttachmentStore, NewAttachment } from "./attachment.ts";
 export { InMemoryStore } from "./memory.ts";
 export { createPostgresStore } from "./postgres.ts";
 export { attemptResults, type ResultQuestion } from "./result.ts";

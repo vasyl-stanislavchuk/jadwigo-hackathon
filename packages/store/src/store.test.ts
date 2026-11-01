@@ -1,6 +1,7 @@
 import { AssignmentId, EventId, ID_PREFIXES, idOf, PodId, Uuid } from "@jadwigo/contracts";
 import { RunId } from "@jadwigo/contracts/run";
 import { describe, expect, it } from "vitest";
+import { attachmentContract } from "./attachment.contract.ts";
 import { learnerKnowledgeContract } from "./knowledge.contract.ts";
 import { InMemoryStore } from "./memory.ts";
 import { runContract } from "./run.contract.ts";
@@ -9,6 +10,7 @@ import { seed, storeContract } from "./store.contract.ts";
 storeContract("InMemoryStore", () => new InMemoryStore());
 learnerKnowledgeContract("InMemoryStore", () => new InMemoryStore());
 runContract("InMemoryStore", () => new InMemoryStore());
+attachmentContract("InMemoryStore", () => new InMemoryStore());
 
 describe("InMemoryStore", () => {
   it("stamps records with the clock it is given", async () => {

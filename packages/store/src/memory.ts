@@ -4,6 +4,7 @@ import {
   Assignment,
   type AssignmentAttempts,
   AssignmentId,
+  type AttachmentId,
   Attempt,
   AttemptAnswer,
   AttemptId,
@@ -55,6 +56,7 @@ import {
   valueFor,
 } from "@jadwigo/contracts";
 import {
+  Attachment,
   Conversation,
   type ConversationId,
   type NewRunEvent,
@@ -66,6 +68,7 @@ import {
   type RunStatus,
   type RunWorkflow,
 } from "@jadwigo/contracts/run";
+import { type AttachedPhoto, type NewAttachment, photosProblem } from "./attachment.ts";
 import { byTypeThenPosition, checkExamples } from "./example.ts";
 import { handleFor } from "./handle.ts";
 import { attemptResults } from "./result.ts";
@@ -228,6 +231,8 @@ export class InMemoryStore implements Store {
    * An event_id is unique per pod (dl-z5ja.86).
    */
   readonly #inbox = new Map<string, RunInbox>();
+  /** A parent's photos (dl-e8ov.2.22), by id, in the order created. */
+  readonly #attachments = new Map<string, Attachment>();
 
   constructor(options: { now?: () => Date } = {}) {
     this.#now = options.now ?? (() => new Date());
@@ -1717,6 +1722,82 @@ export class InMemoryStore implements Store {
   async listRunRatings(pod: PodId, run: RunId): Promise<readonly RunRating[]> {
     this.#inPod(this.#runs, pod, run, "the run");
     return [...this.#ratings.values()].filter((r) => r.pod_id === pod && r.run_id === run);
+  }
+
+  async createAttachment(pod: PodId, attachment: NewAttachment): Promise<Attachment> {
+    this.#pod(pod);
+    this.#inPod(this.#accounts, pod, attachment.account_id, "the account");
+    const stored = this.#taken(this.#attachments, pod, attachment.id);
+    if (stored) return stored;
+    // One per pod and event_id, as the table's unique key keeps it.
+    for (const row of this.#attachments.values()) {
+      if (row.pod_id === pod && row.event_id === attachment.event_id)
+        throw new StoreError(ErrorType.enum.WriteOnce, "that event_id names another attachment");
+    }
+    const row = frozen(
+      parse(
+        Attachment,
+        {
+          ...attachment,
+          pod_id: pod,
+          state: "pending",
+          conversation_id: null,
+          storage_path: null,
+          created_at: this.#at(),
+          attached_at: null,
+        },
+        "the attachment",
+      ),
+    );
+    this.#attachments.set(row.id, row);
+    return row;
+  }
+
+  async getAttachment(pod: PodId, id: AttachmentId): Promise<Attachment> {
+    return this.#inPod(this.#attachments, pod, id, "the attachment");
+  }
+
+  async countAttachments(pod: PodId, since: string): Promise<number> {
+    const from = Date.parse(since);
+    return [...this.#attachments.values()].filter(
+      (a) => a.pod_id === pod && Date.parse(a.created_at) >= from,
+    ).length;
+  }
+
+  async attachToMessage(
+    pod: PodId,
+    conversation: ConversationId,
+    photos: readonly AttachedPhoto[],
+    at: string,
+  ): Promise<readonly Attachment[]> {
+    this.#inPod(this.#conversations, pod, conversation, "the conversation");
+    const problem = photosProblem(photos);
+    if (problem !== undefined) throw new StoreError(ErrorType.enum.BadRequest, problem);
+    const when = Date.parse(at);
+    // Every photo is checked before any is written: all or none.
+    const rows = photos.map((photo) => {
+      const row = this.#inPod(this.#attachments, pod, photo.id, "the attachment");
+      if (row.state === "attached")
+        throw new StoreError(ErrorType.enum.AttachmentAttached, "a message carries it already");
+      if (row.expires_at === null || Date.parse(row.expires_at) <= when)
+        throw new StoreError(ErrorType.enum.AttachmentExpired, "the upload has expired");
+      return frozen(
+        parse(
+          Attachment,
+          {
+            ...row,
+            state: "attached",
+            conversation_id: conversation,
+            storage_path: photo.storage_path,
+            expires_at: null,
+            attached_at: new Date(when).toISOString(),
+          },
+          "the attachment",
+        ),
+      );
+    });
+    for (const row of rows) this.#attachments.set(row.id, row);
+    return rows;
   }
 
   async messageUsage(pod: PodId, account: AccountId, since: UsageSince): Promise<MessageUsage> {
