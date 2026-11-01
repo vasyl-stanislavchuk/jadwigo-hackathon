@@ -5,7 +5,10 @@ import {
   InMemoryMuseLedger,
   laneBudget,
   type MuseClient,
+  type MuseLedger,
+  PostgresMuseLedger,
 } from "@jadwigo/jadwigo-ai";
+import type { RunStore } from "@jadwigo/store";
 import type { MuseConfig } from "./config.ts";
 
 export interface MuseRuntime {
@@ -23,11 +26,20 @@ export interface MuseRuntime {
  * tier a request asks for is the engine's `tier`, which the host sets from `JADWIGO_MUSE_TIER`
  * (`engine.ts`).
  *
- * The ledger is this process's: the lane's cap holds per cold start, and each run's own `cap_usd`
- * holds per turn through `budgetGuard`. A ledger that outlives the process is not built yet.
+ * With the host's store, the ledger is `PostgresMuseLedger` (dl-z5ja.89): the lane's spend is read
+ * from every run's `model_response` events, so its cap holds per UTC day across cold starts and
+ * hosts. Without one (a test, a laptop), the ledger is this process's own. Each run's own `cap_usd`
+ * holds per turn through `budgetGuard` either way.
  */
-export function liveMuse(config: MuseConfig, runtime: MuseRuntime): MuseClient {
-  const ledger = new InMemoryMuseLedger();
+export function liveMuse(
+  config: MuseConfig,
+  runtime: MuseRuntime,
+  store?: Pick<RunStore, "spentUsd">,
+): MuseClient {
+  const ledger: MuseLedger =
+    store === undefined
+      ? new InMemoryMuseLedger()
+      : new PostgresMuseLedger({ store, now: runtime.now });
   const http = new HttpMuse({
     fetch: runtime.fetch,
     api_key: config.api_key,

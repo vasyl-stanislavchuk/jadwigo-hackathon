@@ -174,6 +174,7 @@ interface ConversationTable {
   created_by: string;
   title: string | null;
   created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+  archived_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
 }
 
 interface CurriculumTable {
@@ -353,6 +354,7 @@ interface PodTable {
   name: string;
   language: Language;
   created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+  ai_consent_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
 }
 
 interface RunTable {
@@ -621,6 +623,7 @@ export const COLUMNS = {
     created_by: { type: "uuid", nullable: false, generated: false, labels: null },
     title: { type: "text", nullable: true, generated: false, labels: null },
     created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+    archived_at: { type: "timestamptz", nullable: true, generated: false, labels: null },
   },
   curriculum: {
     id: { type: "uuid", nullable: false, generated: true, labels: null },
@@ -864,6 +867,7 @@ export const COLUMNS = {
     name: { type: "text", nullable: false, generated: false, labels: null },
     language: { type: "language", nullable: false, generated: false, labels: ["pl", "en"] },
     created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+    ai_consent_at: { type: "timestamptz", nullable: true, generated: false, labels: null },
   },
   run: {
     id: { type: "uuid", nullable: false, generated: false, labels: null },

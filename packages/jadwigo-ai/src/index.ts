@@ -20,6 +20,11 @@ export {
   MuseRefused,
 } from "./muse/guarded.ts";
 export { CONTRIBUTOR_MODEL, HttpMuse, type HttpMuseOptions, type LiveText } from "./muse/http.ts";
+export {
+  LANE_WORKFLOWS,
+  PostgresMuseLedger,
+  type PostgresMuseLedgerOptions,
+} from "./muse/postgres-ledger.ts";
 export { ScriptedMuse, type ScriptedReply } from "./muse/scripted.ts";
 export { InMemoryRunQueue } from "./queue/memory.ts";
 export { type PgmqClient, type PgmqPool, PgmqRunQueue, type StuckRuns } from "./queue/pgmq.ts";
