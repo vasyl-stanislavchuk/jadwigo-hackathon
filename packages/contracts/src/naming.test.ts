@@ -2,9 +2,9 @@ import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { EventId, ID_SCHEMAS } from "./ids.ts";
-import { RECORDS } from "./records.ts";
 import { ROUTE_TAGS, ROUTES } from "./routes.ts";
 import * as run from "./run.ts";
+import { RECORDS } from "./tables.ts";
 import * as wire from "./wire.ts";
 
 /**

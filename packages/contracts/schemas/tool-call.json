@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "call_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "verb": {
+      "$ref": "#/$defs/VerbName"
+    },
+    "input": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
+    }
+  },
+  "required": [
+    "call_id",
+    "verb",
+    "input"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "VerbName": {
+      "type": "string",
+      "enum": [
+        "lesson_draft",
+        "lesson_show",
+        "lesson_edit",
+        "lesson_check",
+        "question_search"
+      ]
+    }
+  }
+}

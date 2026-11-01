@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "$ref": "#/$defs/RunId"
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    }
+  },
+  "required": [
+    "run_id",
+    "attempt"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "RunId": {
+      "type": "string",
+      "pattern": "^run_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    }
+  }
+}
