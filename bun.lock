@@ -203,6 +203,21 @@
         "vitest": "catalog:",
       },
     },
+    "packages/jadwigo-ai": {
+      "name": "@jadwigo/jadwigo-ai",
+      "dependencies": {
+        "@jadwigo/contracts": "workspace:*",
+        "@jadwigo/core": "workspace:*",
+        "@jadwigo/lesson-import": "workspace:*",
+        "@jadwigo/store": "workspace:*",
+      },
+      "devDependencies": {
+        "@jadwigo/testing": "workspace:*",
+        "@types/node": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:",
+      },
+    },
     "packages/lesson-import": {
       "name": "@jadwigo/lesson-import",
       "dependencies": {
@@ -720,6 +735,8 @@
     "@jadwigo/core": ["@jadwigo/core@workspace:packages/core"],
 
     "@jadwigo/docs": ["@jadwigo/docs@workspace:apps/docs"],
+
+    "@jadwigo/jadwigo-ai": ["@jadwigo/jadwigo-ai@workspace:packages/jadwigo-ai"],
 
     "@jadwigo/lesson-import": ["@jadwigo/lesson-import@workspace:packages/lesson-import"],
 

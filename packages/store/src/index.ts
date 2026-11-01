@@ -1,6 +1,7 @@
 export { InMemoryStore } from "./memory.ts";
 export { createPostgresStore } from "./postgres.ts";
 export { attemptResults, type ResultQuestion } from "./result.ts";
+export type { Fenced, NewConversation, NewRun, NewRunInbox, RunChange, RunStore } from "./run.ts";
 export {
   type AttemptRecord,
   type ExampleWithQuestions,
