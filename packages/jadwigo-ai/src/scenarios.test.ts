@@ -2,6 +2,7 @@ import { EventId, ID_PREFIXES, idOf, Uuid } from "@jadwigo/contracts";
 import {
   ConversationId,
   type NewRunEvent,
+  RUN_ERROR_TYPE,
   RUN_IDLE_MS,
   RUN_MAX_MS,
   type RunEvent,
@@ -221,7 +222,12 @@ describe("the engine keeps PostHog's production lessons", () => {
     expect(await sweep(idle.deps, idle.now())).toEqual({ idle: [quiet], max: [] });
     const closed = await idle.store.getRun(idle.pod, quiet);
     expect(["completed", "failed", "cancelled"]).toContain(closed.status);
-    expect((await idle.log(quiet)).at(-1)?.type).toBe("turn_complete");
+    const quietLog = await idle.log(quiet);
+    expect(quietLog.at(-1)?.type).toBe("turn_complete");
+    expect(quietLog.find((e) => e.type === "error")?.payload).toMatchObject({
+      error: { type: RUN_ERROR_TYPE.runIdle },
+      retryable: true,
+    });
 
     // Max: activity keeps pushing the idle deadline, and the wall clock fires anyway.
     const busy = await setup([]);
@@ -236,7 +242,10 @@ describe("the engine keeps PostHog's production lessons", () => {
     expect(await sweep(busy.deps, busy.now())).toEqual({ idle: [], max: [long] });
     expect((await busy.store.getRun(busy.pod, long)).status).toBe("failed");
     const events = await busy.log(long);
-    expect(events.some((e) => e.type === "error")).toBe(true);
+    expect(events.find((e) => e.type === "error")?.payload).toMatchObject({
+      error: { type: RUN_ERROR_TYPE.runTimedOut },
+      retryable: false,
+    });
     expect(events.at(-1)?.type).toBe("turn_complete");
   });
 
@@ -287,7 +296,11 @@ describe("the engine keeps PostHog's production lessons", () => {
     expect(idle.muse.calls).toHaveLength(0);
     expect((await idle.store.getRun(idle.pod, quiet)).status).toBe("completed");
     const closed = await idle.log(quiet);
-    expect(closed.map((e) => e.type)).toEqual(["message", "status", "turn_complete"]);
+    expect(closed.map((e) => e.type)).toEqual(["message", "error", "status", "turn_complete"]);
+    expect(closed[1]?.payload).toMatchObject({
+      error: { type: RUN_ERROR_TYPE.runIdle },
+      retryable: true,
+    });
 
     const busy = await setup([]);
     const long = await busy.say("A long one.");

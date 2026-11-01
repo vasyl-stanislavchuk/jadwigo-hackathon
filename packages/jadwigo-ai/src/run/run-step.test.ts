@@ -924,7 +924,11 @@ describe("runStep and drain", () => {
 
 describe("the run's own error types", () => {
   it("are the contract's constants, which the page draws its limit lines from", () => {
-    expect(RUN_ERROR_TYPE).toEqual({ stepTimedOut: "StepTimedOut", runTimedOut: "RunTimedOut" });
+    expect(RUN_ERROR_TYPE).toMatchObject({
+      stepTimedOut: "StepTimedOut",
+      runIdle: "RunIdle",
+      runTimedOut: "RunTimedOut",
+    });
   });
 });
 
@@ -936,7 +940,13 @@ describe("sweep", () => {
     expect(await sweep(t.deps, t.now())).toEqual({ idle: [], max: [] });
     t.tick(1);
     expect(await sweep(t.deps, t.now())).toEqual({ idle: [run], max: [] });
-    expect(types(await t.log(run))).toEqual(["message", "status", "turn_complete"]);
+    const events = await t.log(run);
+    expect(types(events)).toEqual(["message", "error", "status", "turn_complete"]);
+    expect(events[1]?.payload).toMatchObject({
+      error: { type: RUN_ERROR_TYPE.runIdle },
+      attempt: 1,
+      retryable: true,
+    });
     expect(await t.run(run)).toMatchObject({ status: "completed", attempt: 2 });
     expect(await sweep(t.deps, t.now())).toEqual({ idle: [], max: [] });
     // The step still in the queue finds an ended run and writes nothing.
