@@ -1,3 +1,4 @@
+/// <reference path="../brand/svg.d.ts" />
 // The logo (decision jadwigo-marketing/decisions/2026-10-30-jadwigo-wears-lockup-4a-an-andika-
 // wordmark-with-a-crown-tipped-o): the wordmark, inlined so it reads Zeszyt's roles and follows
 // night mode, and so its crown tips on hover or keyboard focus (brand/README.md, hover 5a). With
