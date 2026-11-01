@@ -1,4 +1,4 @@
-import { type LearnerId, ToolView, toolViewData, Uuid } from "@jadwigo/contracts";
+import { ID_PREFIXES, idOf, LearnerId, ToolView, toolViewData, Uuid } from "@jadwigo/contracts";
 import { InMemoryStore } from "@jadwigo/store";
 import { FIXED_NOW, finishedAttempt } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
@@ -53,11 +53,13 @@ describe("every learner verb is scoped by the run's pod", () => {
       const theirs = t.verbs[name].run(t.context(), naming(t.kuba));
       await expect(theirs).rejects.toBeInstanceOf(VerbError);
       await expect(theirs).rejects.toMatchObject({ type: "not_found" });
-      const unknown = t.verbs[name].run(t.context(), naming("lrn_00000000000000000000000000"));
-      await expect(unknown).rejects.toMatchObject({
-        type: expect.stringMatching(/not_found|input/),
-      });
-      // The refusal names only the id the model gave: nothing about the other pod or its learner.
+      // A well-formed id no pod holds: the model learns nothing from the refusal about whether
+      // another family has the learner (wave 4 decision 44).
+      const madeUp = LearnerId.parse(idOf(ID_PREFIXES.learner, crypto.randomUUID()));
+      const unknown = t.verbs[name].run(t.context(), naming(madeUp));
+      const refusal = (e: unknown) =>
+        e instanceof VerbError ? { type: e.type, message: e.message } : e;
+      expect(await theirs.catch(refusal)).toEqual(await unknown.catch(refusal));
       await theirs.catch((e: Error) => expect(e.message).not.toContain("Kuba"));
     },
   );

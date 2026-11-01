@@ -127,7 +127,7 @@ async function learnerOf(
   const learner = me.learners.find((l) => l.learner.id === parsed.data)?.learner;
   // One refusal for an unknown id and another pod's: the model learns nothing about other pods.
   if (learner === undefined) {
-    throw new VerbError("not_found", `${input.verb}: this family has no learner ${parsed.data}`);
+    throw new VerbError("not_found", `${input.verb}: this family has no such learner`);
   }
   return {
     learner,
