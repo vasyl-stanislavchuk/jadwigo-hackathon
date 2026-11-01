@@ -3588,7 +3588,8 @@
           "EventIdMismatch",
           "WriteOnce",
           "AnswerLimit",
-          "MessageLimit",
+          "MessageLimitMinute",
+          "MessageLimitDay",
           "Unauthorized",
           "BankUnavailable"
         ]
@@ -10725,7 +10726,7 @@
     },
     "responses": {
       "Error": {
-        "description": "An error: `{error: {type, message}}`. The type names the cause, and answers with one status:\n\n- 400: `BadRequest`, `ServerFieldSupplied`\n- 401: `NotSignedIn`, `Unauthorized`\n- 404: `NotFound`\n- 409: `AccountMissing`, `AttemptClaimed`, `AttemptPreview`, `AssignmentClosed`, `AttemptFinished`, `AttemptNotFinished`, `AttemptPaused`, `QuestionNotOpen`, `TryOutOfOrder`, `AnswerConflict`, `EventIdMismatch`, `WriteOnce`\n- 429: `AnswerLimit`, `MessageLimit`\n- 502: `BankUnavailable`",
+        "description": "An error: `{error: {type, message}}`. The type names the cause, and answers with one status:\n\n- 400: `BadRequest`, `ServerFieldSupplied`\n- 401: `NotSignedIn`, `Unauthorized`\n- 404: `NotFound`\n- 409: `AccountMissing`, `AttemptClaimed`, `AttemptPreview`, `AssignmentClosed`, `AttemptFinished`, `AttemptNotFinished`, `AttemptPaused`, `QuestionNotOpen`, `TryOutOfOrder`, `AnswerConflict`, `EventIdMismatch`, `WriteOnce`\n- 429: `AnswerLimit`, `MessageLimitMinute`, `MessageLimitDay`\n- 502: `BankUnavailable`",
         "content": {
           "application/json": {
             "schema": {

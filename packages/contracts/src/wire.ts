@@ -623,13 +623,13 @@ export const LIMITS = {
   /** The reports one learner's list returns (`getLearnerReports`), newest first. */
   reportsPerLearner: 50,
   /**
-   * The messages one parent may send the AI in a minute; the next is `MessageLimit` (PostHog's
+   * The messages one parent may send the AI in a minute; the next is `MessageLimitMinute` (PostHog's
    * 10 a minute per user, `docs/research/posthog-ai-production.md` section 4, dl-z5ja.62).
    */
   messagesPerMinute: 10,
   /**
    * What the runs a pod opens in one UTC day may spend at most, the sum of their `cap_usd`. Once
-   * it is reached, the next message is `MessageLimit`: a budget not known is never spent.
+   * it is reached, a message that would open a turn is `MessageLimitDay`: a budget not known is never spent.
    */
   podDailyCapUsd: 10,
 } as const;
@@ -772,8 +772,10 @@ export const ERROR_STATUS = {
   EventIdMismatch: 409,
   WriteOnce: 409,
   AnswerLimit: 429,
-  /** A message to the AI past `LIMITS.messagesPerMinute` or the pod's `LIMITS.podDailyCapUsd`. */
-  MessageLimit: 429,
+  /** A parent's message to the AI past `LIMITS.messagesPerMinute` in the last minute. */
+  MessageLimitMinute: 429,
+  /** A message that would open a turn past the pod's `LIMITS.podDailyCapUsd` for the UTC day. */
+  MessageLimitDay: 429,
   Unauthorized: 401,
   BankUnavailable: 502,
 } as const;

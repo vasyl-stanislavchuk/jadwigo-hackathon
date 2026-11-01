@@ -42,7 +42,8 @@ sent while a turn is open joins that turn. Otherwise it starts a new run.
 - A resend with the same `event_id` and text returns the same run.
 - The same `event_id` with other text is `409` `EventIdMismatch`.
 - A parent may send 10 messages a minute, and a family's runs may spend 10 USD a day in all. Past
-  either limit the reply is `429` `MessageLimit`, and nothing is stored.
+  the minute the reply is `429` `MessageLimitMinute`, past the day `429` `MessageLimitDay`, and
+  nothing is stored. A message that joins a running turn is never refused by the day.
 
 A correction while the turn runs is a steer: the same route with `"kind": "steer"`. An edit in
 the lesson pane also sends `"source": "lesson_edit"` and the `question_ids` it changed. A steer
