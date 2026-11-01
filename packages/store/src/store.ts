@@ -44,6 +44,7 @@ import type {
   Topic,
   Uuid,
 } from "@jadwigo/contracts";
+import type { RunStore } from "./run.ts";
 
 /**
  * A rule the stored state refuses, named as the API names it (`packages/contracts/src/wire.ts`,
@@ -260,7 +261,7 @@ export interface OpenedAttempt {
  * `releaseHelp` and `endAttemptQuestion`, as the database does: the server may finish its own
  * bookkeeping after the player leaves.
  */
-export interface Store {
+export interface Store extends RunStore {
   /**
    * Runs `work` as one unit: on Postgres every Store call inside it shares one transaction, with
    * the role set once and the pod set each time it changes, and a throw out of `work` rolls all of

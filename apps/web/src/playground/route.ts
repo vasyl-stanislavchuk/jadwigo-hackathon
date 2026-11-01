@@ -7,6 +7,7 @@
  *   /playground/system                                 the System page: Zeszyt, drawn from the live tokens
  *   /playground/lesson                                 the lesson builder: the newest MCP draft, live (dl-a38n)
  *   /playground/conformance                            the bank's items drawn and render-checked, dev only (dl-a38n.31)
+ *   /playground/chat                                   a parent's chat becomes a lesson, the engine in the dev server (dl-z5ja.17)
  *   /playground/<family>                               a family's first question type
  *   /playground/<family>/<question type>[/<example>]   a question type at one example
  *
@@ -30,12 +31,12 @@ export interface PlaygroundRoute {
   question_type: string | null;
   /** An example of the question type, by id. */
   example: string | null;
-  /** A page of its own, not a family: /playground/system, /playground/lesson, /playground/conformance. */
+  /** A page of its own, not a family: /playground/system, /playground/lesson, /playground/conformance, /playground/chat. */
   page?: PlaygroundPage;
 }
 
 /** The playground's own pages beside the families. */
-const PAGES = ["system", "lesson", "conformance"] as const;
+const PAGES = ["system", "lesson", "conformance", "chat"] as const;
 type PlaygroundPage = (typeof PAGES)[number];
 const isPage = (name: string | undefined): name is PlaygroundPage =>
   name !== undefined && (PAGES as readonly string[]).includes(name);

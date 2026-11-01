@@ -54,11 +54,21 @@ import {
   uuidOf,
   valueFor,
 } from "@jadwigo/contracts";
+import type {
+  Conversation,
+  ConversationId,
+  NewRunEvent,
+  Run,
+  RunEvent,
+  RunId,
+  RunInbox,
+} from "@jadwigo/contracts/run";
 import { Kysely, PostgresDialect, type Selectable, sql } from "kysely";
 import pg from "pg";
 import { COLUMNS, type DB } from "./db/types.ts";
 import { byTypeThenPosition, checkExamples } from "./example.ts";
 import { handleFor } from "./handle.ts";
+import type { Fenced, NewConversation, NewRun, NewRunInbox, RunChange } from "./run.ts";
 import {
   type AttemptRecord,
   type ExampleWithQuestions,
@@ -91,6 +101,8 @@ import {
   type Store,
   StoreError,
 } from "./store.ts";
+
+const WAITS_RUN = "waits on dl-z5ja.7";
 
 /** A Zod schema as this file uses it: parse a row read back, or check a record before writing it. */
 interface Schema<T> {
@@ -2521,6 +2533,47 @@ class PostgresStore implements Store {
         .executeTakeFirstOrThrow();
       return read(LearnerReport, updated, ID_PREFIXES.learner_report);
     });
+  }
+
+  // The engine's records (dl-z5ja.12 step 0): the store lane (dl-z5ja.14) fills these.
+
+  findRunPod(_id: RunId): Promise<PodId | undefined> {
+    return Promise.reject(new Error(WAITS_RUN));
+  }
+  listRunsDue(_now: string): Promise<readonly { pod: PodId; run: Run }[]> {
+    return Promise.reject(new Error(WAITS_RUN));
+  }
+  createConversation(_pod: PodId, _conversation: NewConversation): Promise<Conversation> {
+    return Promise.reject(new Error(WAITS_RUN));
+  }
+  createRun(_pod: PodId, _run: NewRun): Promise<Run> {
+    return Promise.reject(new Error(WAITS_RUN));
+  }
+  listRuns(_pod: PodId, _conversation: ConversationId): Promise<readonly Run[]> {
+    return Promise.reject(new Error(WAITS_RUN));
+  }
+  getRun(_pod: PodId, _run: RunId): Promise<Run> {
+    return Promise.reject(new Error(WAITS_RUN));
+  }
+  updateRun(_pod: PodId, _run: RunId, _attempt: number, _change: RunChange): Promise<Fenced<Run>> {
+    return Promise.reject(new Error(WAITS_RUN));
+  }
+  appendRunEvents(
+    _pod: PodId,
+    _run: RunId,
+    _attempt: number,
+    _events: readonly NewRunEvent[],
+  ): Promise<Fenced<readonly RunEvent[]>> {
+    return Promise.reject(new Error(WAITS_RUN));
+  }
+  listRunEvents(_pod: PodId, _run: RunId, _afterSeq: number): Promise<readonly RunEvent[]> {
+    return Promise.reject(new Error(WAITS_RUN));
+  }
+  putRunInbox(_pod: PodId, _entry: NewRunInbox): Promise<RunInbox> {
+    return Promise.reject(new Error(WAITS_RUN));
+  }
+  takeRunInbox(_pod: PodId, _run: RunId): Promise<readonly RunInbox[]> {
+    return Promise.reject(new Error(WAITS_RUN));
   }
 }
 

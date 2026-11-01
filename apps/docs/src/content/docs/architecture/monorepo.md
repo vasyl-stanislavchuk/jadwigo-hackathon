@@ -32,6 +32,7 @@ flowchart LR
     contracts
     copy
     core
+    jadwigo_ai["jadwigo-ai"]
     lesson_import["lesson-import"]
     lesson_kit["lesson-kit"]
     store
@@ -45,8 +46,10 @@ flowchart LR
   web --> contracts
   web --> copy
   web --> core
+  web --> jadwigo_ai
   web --> lesson_import
   web --> lesson_kit
+  web --> store
   web --> ui
   site --> config
   site --> contracts
@@ -59,6 +62,10 @@ flowchart LR
   bank --> api_client
   bank --> contracts
   core --> contracts
+  jadwigo_ai --> contracts
+  jadwigo_ai --> core
+  jadwigo_ai --> lesson_import
+  jadwigo_ai --> store
   lesson_import --> contracts
   lesson_import --> core
   lesson_import --> store
@@ -118,6 +125,7 @@ violation to prove the check still catches it.
 | `copy` | Every string a person reads, in Polish and English. |
 | `lesson-import` | Compiles a lesson file from the playground into lesson questions and a published version. |
 | `bank` | Code to read, search and import the question bank. Never the questions themselves. |
+| `jadwigo-ai` | The AI engine: a parent's chat becomes a lesson, one run per turn, every effect a run event. |
 | `testing` | Fixtures, factories and the unit setup, for test files only. |
 
 ## Next

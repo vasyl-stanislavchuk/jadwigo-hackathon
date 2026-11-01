@@ -21,6 +21,9 @@ export const ID_PREFIXES = {
   curriculum: "crc_",
   topic: "top_",
   learner_report: "rpt_",
+  /** Reserved for the engine's records in `run.ts`, which join the snapshots with dl-z5ja.7. */
+  conversation: "cnv_",
+  run: "run_",
 } as const;
 export type IdPrefix = (typeof ID_PREFIXES)[keyof typeof ID_PREFIXES];
 
@@ -66,7 +69,8 @@ export function uuidOf(prefix: IdPrefix, id: string): Uuid {
   return decodeUuid(id.slice(prefix.length));
 }
 
-function prefixedId<B extends string>(prefix: IdPrefix, record: string) {
+/** The parser for one record's ids: its prefix and 26 base32 characters, branded `B`. */
+export function prefixedId<B extends string>(prefix: IdPrefix, record: string) {
   return z
     .string()
     .regex(new RegExp(`^${prefix}${BODY}$`), `${record} id is ${prefix} and 26 base32 characters`)
