@@ -569,6 +569,31 @@ describe("the conversation calls", () => {
     ]);
   });
 
+  it("rates a turn at its ratings path", async () => {
+    const rating = {
+      id: "rtg_6et2fhbnwvb45aw9atcfzs33ze",
+      pod_id: attempt.pod_id,
+      run_id: RUN,
+      account_id: "acc_6et2fhbnwvb45aw9atcfzs33zb",
+      verdict: "bad",
+      note: "Too long",
+      created_at: AT,
+    };
+    const { fetch, sent } = stub(201, rating);
+    const reply = await createClient({ base: "", fetch, token: signedIn }).rateRun(RUN, {
+      verdict: "bad",
+      note: "Too long",
+    });
+    expect(sent).toMatchObject([
+      {
+        url: `/api/v1/runs/${RUN}/ratings`,
+        method: "POST",
+        body: { verdict: "bad", note: "Too long" },
+      },
+    ]);
+    expect(reply.verdict).toBe("bad");
+  });
+
   it("asks a run to stop at its cancellations path", async () => {
     const { fetch, sent } = stub(201, { run: { ...run, cancel_requested_at: AT } });
     const reply = await createClient({ base: "", fetch, token: signedIn }).cancelRun(RUN, {
