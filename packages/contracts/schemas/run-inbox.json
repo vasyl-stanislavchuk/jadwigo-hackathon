@@ -84,6 +84,21 @@
           "properties": {
             "text": {
               "type": "string"
+            },
+            "source": {
+              "type": "string",
+              "enum": [
+                "chat",
+                "lesson_edit"
+              ]
+            },
+            "question_ids": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           },
           "required": [
