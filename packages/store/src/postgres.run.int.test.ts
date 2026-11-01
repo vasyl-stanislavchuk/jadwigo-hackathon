@@ -42,6 +42,24 @@ function message(run: RunId, text: string): NewRunEvent {
   };
 }
 
+function modelResponse(run: RunId, cost_usd: number): NewRunEvent {
+  return {
+    run_id: run,
+    event_id: EventId.parse(crypto.randomUUID()),
+    type: "model_response",
+    payload: {
+      response_id: "resp_1",
+      call_no: 1,
+      text: "Here is a plan.",
+      tool_calls: [],
+      usage: { input_tokens: 10, output_tokens: 5, cached_tokens: 0 },
+      cost_usd,
+      model: "a-model",
+      tier: "contributor",
+    },
+  };
+}
+
 function inbox(run: RunId, text: string) {
   const event_id = EventId.parse(crypto.randomUUID());
   return { run_id: run, event_id, kind: "message" as const, payload: { text } };
@@ -84,6 +102,51 @@ describe("PostgresStore as jadwigo_runner, the step consumer", () => {
     ]);
     await expect(runner.getMe(a.pod, b.account)).rejects.toThrow();
     await expect(runner.addLearner(a.pod, { first_name: "Vole", goals: [] })).rejects.toThrow();
+  });
+
+  // dl-z5ja.89: the Muse lane's spend, across pods, from the model_response events every run logs.
+  it("sums model_response costs across pods since a time, which only it may read", async () => {
+    const since = new Date(Date.now() - 1000).toISOString();
+    const before = await runner.spentUsd(["jadwigo-lesson-compose"], since);
+    for (const [cost, other] of [
+      [0.0125, 0.5],
+      [0.03, 0.25],
+    ] as const) {
+      const p = await scope();
+      const run = await api.createRun(p.pod, newRun(p.account, null));
+      await runner.appendRunEvents(p.pod, run.id, 1, [
+        modelResponse(run.id, cost),
+        // A usage event carries spend too, and is not a call: never counted.
+        { ...message(run.id, "x"), type: "usage", payload: { spent_usd: other, cap_usd: 1 } },
+      ]);
+    }
+    const after = await runner.spentUsd(["jadwigo-lesson-compose"], since);
+    // Other suites may log calls at the same time, so the 2 pods' 0.0425 is the least it grew by.
+    expect(after - before).toBeGreaterThanOrEqual(0.0425 - 1e-9);
+    expect(await runner.spentUsd([], since)).toBe(0);
+    expect(await runner.spentUsd(["jadwigo-lesson-compose"], "2999-01-01T00:00:00.000Z")).toBe(0);
+    await expect(api.spentUsd(["jadwigo-lesson-compose"], since)).rejects.toThrow();
+  });
+
+  // dl-z5ja.123: a call that failed after it spent counts toward the lane; only the runner records.
+  it("records a failed call's cost under its run's pod, and the lane's sum counts it", async () => {
+    const since = new Date(Date.now() - 1000).toISOString();
+    const p = await scope();
+    const run = await api.createRun(p.pod, newRun(p.account, null));
+    const before = await runner.spentUsd(["jadwigo-lesson-compose"], since);
+    await runner.recordFailedMuseCall(run.id, 1, 0.75);
+    await runner.recordFailedMuseCall(
+      RunId.parse(idOf(ID_PREFIXES.run, crypto.randomUUID())),
+      1,
+      5,
+    );
+    const after = await runner.spentUsd(["jadwigo-lesson-compose"], since);
+    expect(after - before).toBeGreaterThanOrEqual(0.75 - 1e-9);
+    expect(after - before).toBeLessThan(5);
+    await expect(api.recordFailedMuseCall(run.id, 2, 0.1)).rejects.toThrow();
+    await expect(runner.recordFailedMuseCall(run.id, 2, 0)).rejects.toMatchObject({
+      type: "BadRequest",
+    });
   });
 
   it("is not the owner: it may not open an account, which only the API's role writes", async () => {
@@ -145,5 +208,33 @@ describe("PostgresStore's run row lock", () => {
     const { value } = await api.appendRunEvents(a.pod, run.id, 1, [hello, hello]);
     expect(value.map((e) => e.seq)).toEqual([1, 1]);
     expect(await api.listRunEvents(a.pod, run.id, 0)).toHaveLength(1);
+  });
+});
+
+describe("PostgresStore's lesson revision lock (dl-z5ja.134)", () => {
+  it("gives exactly 1 of 2 writers at the same expected revision ok, on 2 connections", async () => {
+    const a = await scope();
+    const conversation = await api.createConversation(a.pod, {
+      id: ConversationId.parse(idOf(ID_PREFIXES.conversation, crypto.randomUUID())),
+      created_by: a.account,
+      title: null,
+    });
+    for (let round = 0; round < 5; round++) {
+      const first = await api.createRun(a.pod, newRun(a.account, conversation.id));
+      const second = await api.createRun(a.pod, newRun(a.account, conversation.id));
+      const write = (store: typeof api, run: RunId) =>
+        store.unit(() =>
+          store.appendLessonRevision(a.pod, run, 1, round, {
+            run_id: run,
+            event_id: EventId.parse(crypto.randomUUID()),
+            type: "lesson_revision",
+            payload: { revision: round + 1, call_id: "call_1", lesson_file: { title: "Rows" } },
+          }),
+        );
+      // The API's role and the runner's, each on a connection of its own.
+      const results = await Promise.all([write(api, first.id), write(runner, second.id)]);
+      expect(results.map((r) => r.ok).sort()).toEqual([false, true]);
+      expect(results.find((r) => !r.ok)).toMatchObject({ stale: "revision", latest: round + 1 });
+    }
   });
 });

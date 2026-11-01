@@ -92,6 +92,12 @@ export const Pod = z.object({
   name: z.string().min(1),
   language: Language,
   created_at: At,
+  /**
+   * When a parent gave the pod's consent to the AI, null before it and after a withdrawal
+   * (dl-z5ja.112, decision dl-uafq). The conversation routes answer `AiConsentMissing` while it
+   * is null. A reply written before the column (a page's fixture, a cached `Me`) reads as null.
+   */
+  ai_consent_at: At.nullable().default(null),
 });
 export type Pod = z.infer<typeof Pod>;
 

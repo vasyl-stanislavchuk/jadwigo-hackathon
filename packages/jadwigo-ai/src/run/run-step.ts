@@ -1,6 +1,7 @@
 import { type AccountId, ErrorType, type EventId, type PodId } from "@jadwigo/contracts";
 import {
   type ConversationId,
+  type MessageContext,
   type ModelTier,
   type NewRunEvent,
   RUN_ERROR_TYPE,
@@ -21,7 +22,7 @@ import {
 import { type AnswerMiss, budgetGuard, checkAnswer, deadlineDue } from "@jadwigo/core";
 import { type NewRunInbox, type RunChange, type Store, StoreError } from "@jadwigo/store";
 import { FENCE_RULE, fence, neutralise } from "../fence/index.ts";
-import type { MuseClient, MuseInput } from "../muse/client.ts";
+import { type MuseClient, MuseFailed, type MuseInput, type MuseResponse } from "../muse/client.ts";
 import type { RunQueue } from "../queue/types.ts";
 import { type QueuedStep, STEP_VISIBILITY_S } from "../queue/types.ts";
 import type { Verbs } from "../verbs/types.ts";
@@ -215,6 +216,7 @@ export function acceptMessage(
 ): Promise<{ run: Run; inbox: RunInbox }> {
   const { store, queue } = deps;
   const { pod, conversation_id, entry } = message;
+  const context = entry.kind === "message" ? entry.payload.context : undefined;
   // Each resend answers the stored row, and the engine acts on that row's kind, never the resend's
   // (dl-z5ja.73): an event_id kept as a message and resent as a cancel is refused, not obeyed.
   const put = async (run_id: RunId): Promise<RunInbox> => {
@@ -228,6 +230,16 @@ export function acceptMessage(
     return inbox;
   };
   return store.unit(async () => {
+    // A page the pod does not hold is refused before anything is written or asked (dl-z5ja.107).
+    // A resend answers its stored row, pending or taken, even when its page has gone since
+    // (dl-z5ja.117, dl-z5ja.132): it was checked when it first came.
+    if (
+      context &&
+      (await pageLine(store, pod, message.created_by, context)) === null &&
+      (await store.findRunInbox(pod, entry.event_id)) === undefined
+    ) {
+      throw new StoreError(ErrorType.enum.NotFound, "the page the message names is not in the pod");
+    }
     for (let tries = 0; tries < 5; tries++) {
       const runs = await store.listRuns(pod, conversation_id);
       let open = runs.findLast((r) => !isEnded(r.status));
@@ -400,7 +412,10 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     if (last && refused !== null) {
       // The last answer failed the answer check, so it was never written. Its one correction comes
       // first, even when the parent spoke since: the call reads the parent's new words as well.
-      const refusal = check(refused);
+      // A redelivery checks it again against what the model had read, the log up to its call:
+      // words the parent wrote after it give nothing the answer could have read (dl-z5ja.102).
+      const until = await callEndSeq(w, last);
+      const refusal = refusalOf(refused, [...prior.said, ...w.log.filter((e) => e.seq <= until)]);
       if (refusal === null) {
         await w.append([
           agentMessage(w, refused, await w.id("call", last.payload.call_no, "message")),
@@ -465,6 +480,9 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       instructions.push(STEER);
     }
     for (const steer of steersOf(w.log)) instructions.push(steerLine(steer));
+    const page = pageOf(w.log);
+    const where = page ? await pageLine(deps.store, scope.pod, scope.created_by, page) : null;
+    if (where) instructions.push(where);
 
     const call_no = (last?.payload.call_no ?? 0) + 1;
     run = await w.claim();
@@ -474,28 +492,38 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       return "continue";
     }
     const asked = deps.tier ?? DEFAULT_TIER;
-    const response = await deps.muse.respond({
-      run_id: run.id,
-      call_no,
-      tag: TAG,
-      prompt_cache_key: PROMPT_CACHE_KEY,
-      tier: asked,
-      instructions: instructions.join("\n\n"),
-      input: [...prior.input, ...museInput(w.log)],
-      tools: Object.values(deps.verbs).map((verb) => verb.tool),
-      names: await namesOf(deps.store, scope),
-    });
-    const answered = response.tier ?? asked;
-    if (asked === "private" && answered !== "private") {
-      // Recorded as it answered, and never silently: the host logs it (dl-z5ja.91).
-      deps.onWarning?.({
-        kind: "tier_downgraded",
+    const downgraded = (answered: ModelTier) => {
+      if (asked === "private" && answered !== "private") {
+        deps.onWarning?.({
+          kind: "tier_downgraded",
+          run_id: run.id,
+          call_no,
+          requested: asked,
+          answered,
+        });
+      }
+    };
+    let response: MuseResponse;
+    try {
+      response = await deps.muse.respond({
         run_id: run.id,
         call_no,
-        requested: asked,
-        answered,
+        tag: TAG,
+        prompt_cache_key: PROMPT_CACHE_KEY,
+        tier: asked,
+        instructions: instructions.join("\n\n"),
+        input: [...prior.input, ...museInput(w.log)],
+        tools: Object.values(deps.verbs).map((verb) => verb.tool),
+        names: await namesOf(deps.store, scope),
       });
+    } catch (error) {
+      // A failed call writes no model_response, so the tier it went to is told here (dl-z5ja.103).
+      if (error instanceof MuseFailed && error.tier !== null) downgraded(error.tier);
+      throw error;
     }
+    const answered = response.tier ?? asked;
+    // Recorded as it answered, and never silently: the host logs it (dl-z5ja.91).
+    downgraded(answered);
     const total = spent + response.cost_usd;
     const recorded: NewRunEvent[] = [
       {
@@ -586,6 +614,20 @@ async function refusedText(w: Writer, response: ModelResponse): Promise<string |
     await w.id("call", call_no, "unchecked"),
   ]);
   return w.log.some((e) => written.has(e.event_id)) ? null : words;
+}
+
+/**
+ * The last `seq` the call `response` recorded: its `model_response`, its `usage` and its
+ * `tool_call`s, appended together. Events after it came in once the model had answered.
+ */
+async function callEndSeq(w: Writer, response: ModelResponse): Promise<number> {
+  const { call_no, tool_calls } = response.payload;
+  const own = new Set([
+    await w.id("call", call_no, "response"),
+    await w.id("call", call_no, "usage"),
+    ...(await Promise.all(tool_calls.map((call) => w.id("tool", call.call_id, "call")))),
+  ]);
+  return w.log.reduce((end, e) => (own.has(e.event_id) ? Math.max(end, e.seq) : end), response.seq);
 }
 
 /**
@@ -795,7 +837,7 @@ async function takeInbox(store: Store, w: Writer): Promise<{ messages: number; s
     for (const row of rows) {
       if (row.kind === "message") {
         messages += 1;
-        const { attachments } = row.payload;
+        const { attachments, context } = row.payload;
         events.push({
           type: "message",
           run_id: w.run,
@@ -804,6 +846,7 @@ async function takeInbox(store: Store, w: Writer): Promise<{ messages: number; s
             from: "parent",
             text: row.payload.text,
             ...(attachments === undefined ? {} : { attachments }),
+            ...(context === undefined ? {} : { context }),
           },
         });
       } else if (row.kind === "approval") {
@@ -1029,6 +1072,47 @@ async function priorTurns(
     if (left) lesson = left;
   }
   return { input, said, lesson };
+}
+
+/**
+ * The page the turn's last parent message was sent from, when it names one: the parent who moved
+ * to the chat's own page since is no longer on it.
+ */
+function pageOf(log: readonly RunEvent[]): MessageContext | null {
+  const said = log.findLast((e) => e.type === "message" && e.payload.from === "parent");
+  return said?.type === "message" ? (said.payload.context ?? null) : null;
+}
+
+/**
+ * A message's page as a fact for the call's instructions, read from the run's pod only (Lead
+ * decision 36): a learner of the pod, or a lesson of the pod, its draft included (Lead decision
+ * 42). Null when the pod holds no such id: nothing of it is read, and `acceptMessage` refuses it.
+ * The learner's name and the lesson's title are the parent's own words, so they go inside the
+ * fence as data (dl-z5ja.47, dl-z5ja.117, dl-z5ja.121).
+ */
+async function pageLine(
+  store: Store,
+  pod: PodId,
+  account: AccountId,
+  context: MessageContext,
+): Promise<string | null> {
+  if ("learner_id" in context) {
+    const me = await store.getMe(pod, account);
+    const found = me.learners.find(({ learner }) => learner.id === context.learner_id);
+    if (!found) return null;
+    // The name is the parent's words, so it goes inside the fence as data, never on the line itself.
+    return [
+      `The parent is writing from the learner page of learner ${context.learner_id}: questions about "the child" or "this learner" are about that learner, whose first name is:`,
+      fence(found.learner.first_name, "parent"),
+    ].join("\n");
+  }
+  // The pod's own lesson, its draft included (Lead decision 42): another pod's id reads as none.
+  const lesson = await store.getLesson(pod, context.lesson_id);
+  if (!lesson) return null;
+  return [
+    `The parent is writing from the screen of lesson ${context.lesson_id} (${lesson.status}): questions about "this lesson" are about it, whose title is:`,
+    fence(lesson.title, "parent"),
+  ].join("\n");
 }
 
 /**

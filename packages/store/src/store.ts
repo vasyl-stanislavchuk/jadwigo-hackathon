@@ -63,7 +63,7 @@ export class StoreError extends Error {
 /** A record as a caller writes it: the store fills its id when absent, and its timestamps. */
 type New<T, Filled extends keyof T> = Omit<T, Filled | "pod_id"> & Partial<Pick<T, Filled>>;
 
-export type NewPod = Omit<Pod, "created_at">;
+export type NewPod = Omit<Pod, "created_at" | "ai_consent_at">;
 export type NewLearner = New<
   Learner,
   | "id"
@@ -257,7 +257,7 @@ export interface OpenedAttempt {
  * `ERROR_STATUS` for a write the stored state refuses. `WriteOnce` also covers a unique key
  * another row holds (a learner's handle in its pod) and an id another pod holds; the other
  * pod's row is never returned. A read that finds nothing under the pod's scope is `NotFound`,
- * except the 2 lookups and `getLatestLessonVersion`, which return undefined.
+ * except the 2 lookups, `getLesson` and `getLatestLessonVersion`, which return undefined.
  *
  * A paused attempt refuses answers (`AttemptPaused`) but still allows `askQuestion`,
  * `releaseHelp` and `endAttemptQuestion`, as the database does: the server may finish its own
@@ -290,6 +290,12 @@ export interface Store extends RunStore {
   putPod(pod: NewPod): Promise<Pod>;
   putLearner(pod: PodId, learner: NewLearner): Promise<Learner>;
   putLesson(pod: PodId, lesson: NewLesson): Promise<Lesson>;
+  /**
+   * A lesson the pod holds, its draft answered as a published one is (dl-z5ja.119), or undefined
+   * for an id it does not hold. Another pod's lesson is undefined too, a claimed attempt's
+   * included: the `claimed_read` policy lets a pod read it, and this read is of its own.
+   */
+  getLesson(pod: PodId, id: LessonId): Promise<Lesson | undefined>;
   /**
    * Writes a lesson question once. The same id again with the same `content_hash` returns the
    * stored row; with another hash it is refused with `WriteOnce`.
@@ -449,6 +455,14 @@ export interface Store extends RunStore {
   createAccount(sub: Uuid, language: Language): Promise<MemberScope>;
   /** `GET /api/v1/me`: the pod, the account, its member row, and the learners with goals, oldest first. */
   getMe(pod: PodId, account: AccountId): Promise<Me>;
+  /** The pod's own row. `NotFound` for an unknown pod. */
+  getPod(pod: PodId): Promise<Pod>;
+  /**
+   * Gives (`true`) or withdraws (`false`) the pod's consent to the AI (dl-z5ja.112): giving it
+   * stamps `ai_consent_at` now, or keeps the stored time when it is given already; withdrawing it
+   * sets null. Returns the pod. `NotFound` for an unknown pod.
+   */
+  setAiConsent(pod: PodId, consented: boolean): Promise<Pod>;
   /**
    * Adds a learner and its goals in one unit. The handle is the first name made plain (lower
    * case, letters and digits), with `-2`, `-3` and so on when the pod holds it already.

@@ -23,7 +23,9 @@ for, and every effect is a run event the page folds into its 2 panes.
   waiting on lane code is named in its `EXPECTED_RED` and runs as `it.fails`. The lane that makes
   it pass removes the name. A gap in a scenario is a message to the lead.
 - A verb takes who it acts for from `VerbContext`, which the runner builds from the run row. It
-  never takes a pod, a learner or an owner from the model's arguments.
+  never takes a pod or an owner from the model's arguments. A learner id from the model is only a
+  choice inside the run's pod: the verb checks it against VerbContext.pod, and the pod never comes
+  from the model (wave 4 decision 44).
 - The log is the draft. A verb reads the lesson from `VerbContext.lesson`, and one that changes it
   answers the whole file, which the runner writes as a `lesson_revision`.
 - A redelivered step never pays twice and never writes twice. It reuses a recorded

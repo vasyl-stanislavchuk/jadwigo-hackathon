@@ -50,11 +50,15 @@ select ok(
   not has_function_privilege('jadwigo_runner', 'app.claim_attempt(uuid, uuid, uuid)', 'execute'),
   'jadwigo_runner cannot call a parent-facing app function'
 );
+-- Wave 4 lead decision 45 (dl-z5ja.125): the 3 read functions the learner verbs need joined the
+-- runner's 4, named here so the fence lists exactly what it may execute.
 select is(
-  (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+  (select array_agg(p.proname::text order by p.proname::text collate "C")
+   from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'app' and has_function_privilege('jadwigo_runner', p.oid, 'execute')),
-  4,
-  'jadwigo_runner executes only app.current_pod_id, app.run_pod, app.runs_due and app.agent_step_dead_letter'
+  array['agent_step_dead_letter', 'asked_question', 'asked_skills', 'current_pod_id', 'run_pod',
+        'runs_due', 'shared_pod_id'],
+  'jadwigo_runner executes only app.current_pod_id, app.run_pod, app.runs_due, app.agent_step_dead_letter, app.shared_pod_id, app.asked_skills and app.asked_question'
 );
 
 -- Pod A's runner sees pod A only.

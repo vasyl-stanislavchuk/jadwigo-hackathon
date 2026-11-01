@@ -14,6 +14,7 @@ import {
   CurriculumId,
   Ended,
   ErrorType,
+  type EventId,
   FEATURED_POD_ID,
   Goal,
   GoalId,
@@ -62,6 +63,8 @@ import {
   RunEvent,
   type RunId,
   RunInbox,
+  RunRating,
+  type RunWorkflow,
 } from "@jadwigo/contracts/run";
 import {
   CompiledQuery,
@@ -75,12 +78,16 @@ import pg from "pg";
 import { COLUMNS, type DB } from "./db/types.ts";
 import { byTypeThenPosition, checkExamples } from "./example.ts";
 import { handleFor } from "./handle.ts";
+import { checkRevision } from "./revision.ts";
 import type {
   Fenced,
+  LessonRevisionAppend,
   MessageUsage,
   NewConversation,
+  NewLessonRevision,
   NewRun,
   NewRunInbox,
+  NewRunRating,
   RunChange,
   UsageSince,
 } from "./run.ts";
@@ -511,7 +518,11 @@ class PostgresStore implements Store {
       const { row } = await this.#once(
         () => tx.selectFrom("pod").selectAll().where("id", "=", id).executeTakeFirst(),
         () => {
-          const valid = parse(Pod, { ...pod, created_at: new Date().toISOString() }, "the pod");
+          const valid = parse(
+            Pod,
+            { ...pod, created_at: new Date().toISOString(), ai_consent_at: null },
+            "the pod",
+          );
           return tx
             .insertInto("pod")
             .values({ id, name: valid.name, language: valid.language })
@@ -833,6 +844,19 @@ class PostgresStore implements Store {
           };
         }),
       };
+    });
+  }
+
+  async getLesson(pod: PodId, id: LessonId): Promise<Lesson | undefined> {
+    return this.#in(pod, async (tx) => {
+      // pod_id too: claimed_read lets a pod read a claimed attempt's lesson of another pod.
+      const row = await tx
+        .selectFrom("lesson")
+        .selectAll()
+        .where("id", "=", uuidOf(ID_PREFIXES.lesson, id))
+        .where("pod_id", "=", uuidOf(ID_PREFIXES.pod, pod))
+        .executeTakeFirst();
+      return row && read(Lesson, row, ID_PREFIXES.lesson);
     });
   }
 
@@ -1743,6 +1767,33 @@ class PostgresStore implements Store {
     });
   }
 
+  async getPod(pod: PodId): Promise<Pod> {
+    return this.#in(pod, async (tx) => {
+      const row = await tx
+        .selectFrom("pod")
+        .selectAll()
+        .where("id", "=", uuidOf(ID_PREFIXES.pod, pod))
+        .executeTakeFirst();
+      if (!row) throw notFound("the pod");
+      return read(Pod, row, ID_PREFIXES.pod);
+    });
+  }
+
+  async setAiConsent(pod: PodId, consented: boolean): Promise<Pod> {
+    return this.#in(pod, async (tx) => {
+      const row = await tx
+        .updateTable("pod")
+        .set({
+          ai_consent_at: consented ? sql<Date>`coalesce(ai_consent_at, now())` : null,
+        })
+        .where("id", "=", uuidOf(ID_PREFIXES.pod, pod))
+        .returningAll()
+        .executeTakeFirst();
+      if (!row) throw notFound("the pod");
+      return read(Pod, row, ID_PREFIXES.pod);
+    });
+  }
+
   async getMe(pod: PodId, account: AccountId): Promise<Me> {
     const accountId = uuidOf(ID_PREFIXES.account, account);
     return this.#in(pod, async (tx) => {
@@ -2614,6 +2665,29 @@ class PostgresStore implements Store {
     });
   }
 
+  async recordFailedMuseCall(run: RunId, call_no: number, cost_usd: number): Promise<void> {
+    if (!(cost_usd > 0) || !Number.isInteger(call_no) || call_no < 1)
+      throw new StoreError(ErrorType.enum.BadRequest, "a failed call that spent, by its call_no");
+    const id = uuidOf(ID_PREFIXES.run, run);
+    await this.#in(null, async (tx) => {
+      // muse_ledger.record_failed_call takes the pod from the run, past row-level security.
+      await sql`select muse_ledger.record_failed_call(${id}::uuid, ${call_no}::integer, ${cost_usd}::numeric)`.execute(
+        tx,
+      );
+    });
+  }
+
+  async spentUsd(workflows: readonly RunWorkflow[], since: string): Promise<number> {
+    const at = utc(since);
+    return this.#in(null, async (tx) => {
+      // muse_ledger.spent_usd reads past row-level security: every pod's model calls.
+      const { rows } = await sql<{ spent: string }>`
+        select muse_ledger.spent_usd(${[...workflows]}::run_workflow[], ${at}::timestamptz) as spent
+      `.execute(tx);
+      return Number(rows[0]?.spent ?? Number.NaN);
+    });
+  }
+
   async createConversation(pod: PodId, conversation: NewConversation): Promise<Conversation> {
     const id = uuidOf(ID_PREFIXES.conversation, conversation.id);
     return this.#in(pod, async (tx) => {
@@ -2623,7 +2697,12 @@ class PostgresStore implements Store {
         () => {
           const valid = parse(
             Conversation,
-            { ...conversation, pod_id: pod, created_at: new Date().toISOString() },
+            {
+              ...conversation,
+              pod_id: pod,
+              created_at: new Date().toISOString(),
+              archived_at: null,
+            },
             "the conversation",
           );
           return tx
@@ -2639,6 +2718,60 @@ class PostgresStore implements Store {
             .executeTakeFirst();
         },
       );
+      return read(Conversation, row, ID_PREFIXES.conversation);
+    });
+  }
+
+  async getConversation(pod: PodId, conversation: ConversationId): Promise<Conversation> {
+    const id = uuidOf(ID_PREFIXES.conversation, conversation);
+    return this.#in(pod, async (tx) => {
+      const row = await tx
+        .selectFrom("conversation")
+        .selectAll()
+        .where("id", "=", id)
+        .executeTakeFirst();
+      if (!row) throw notFound("the conversation");
+      return read(Conversation, row, ID_PREFIXES.conversation);
+    });
+  }
+
+  async listConversations(
+    pod: PodId,
+    { includeArchived = false }: { readonly includeArchived?: boolean } = {},
+  ): Promise<readonly Conversation[]> {
+    return this.#in(pod, async (tx) => {
+      let query = tx
+        .selectFrom("conversation")
+        .selectAll()
+        .where("pod_id", "=", uuidOf(ID_PREFIXES.pod, pod));
+      if (!includeArchived) query = query.where("archived_at", "is", null);
+      const rows = await query.orderBy("created_at", "desc").orderBy("id", "desc").execute();
+      return rows.map((row) => read(Conversation, row, ID_PREFIXES.conversation));
+    });
+  }
+
+  async archiveConversation(
+    pod: PodId,
+    conversation: ConversationId,
+    at: string,
+  ): Promise<Conversation> {
+    const id = uuidOf(ID_PREFIXES.conversation, conversation);
+    const archived = utc(at);
+    return this.#in(pod, async (tx) => {
+      // Only a live row is changed, so a 2nd archive keeps the first time; the read after it
+      // answers both, and NotFound for one outside the pod.
+      await tx
+        .updateTable("conversation")
+        .set({ archived_at: archived })
+        .where("id", "=", id)
+        .where("archived_at", "is", null)
+        .execute();
+      const row = await tx
+        .selectFrom("conversation")
+        .selectAll()
+        .where("id", "=", id)
+        .executeTakeFirst();
+      if (!row) throw notFound("the conversation");
       return read(Conversation, row, ID_PREFIXES.conversation);
     });
   }
@@ -2841,6 +2974,48 @@ class PostgresStore implements Store {
     });
   }
 
+  async appendLessonRevision(
+    pod: PodId,
+    run: RunId,
+    attempt: number,
+    expected: number,
+    event: NewLessonRevision,
+  ): Promise<LessonRevisionAppend> {
+    return this.#in(pod, async (tx) => {
+      const stored = await this.#run(tx, run, false);
+      const conversation = stored.conversation_id;
+      checkRevision(conversation, run, expected, event);
+      // One writer per conversation until the unit ends: an advisory lock on its id. FOR UPDATE on
+      // the conversation row would need UPDATE on it, which jadwigo_runner does not hold.
+      await sql`select pg_advisory_xact_lock(hashtextextended(${`lesson_revision:${conversation}`}, 0))`.execute(
+        tx,
+      );
+      const replay = await tx
+        .selectFrom("run_event")
+        .selectAll()
+        .where("run_id", "=", stored.id)
+        .where("event_id", "=", event.event_id)
+        .executeTakeFirst();
+      if (replay?.type === "lesson_revision") {
+        const kept = read(RunEvent, replay);
+        if (kept.type === "lesson_revision")
+          return { ok: true, revision: kept.payload.revision, event: kept };
+      }
+      const { rows } = await sql<{ latest: number }>`
+        select coalesce(max((e.payload ->> 'revision')::integer), 0)::integer as latest
+        from run_event as e
+        join run as r on r.pod_id = e.pod_id and r.id = e.run_id
+        where r.conversation_id = ${conversation} and e.type = 'lesson_revision'
+      `.execute(tx);
+      const latest = rows[0]?.latest ?? 0;
+      if (latest !== expected) return { ok: false, stale: "revision", latest };
+      const { stale, value } = await this.appendRunEvents(pod, run, attempt, [event]);
+      const appended = value[0];
+      if (stale || appended === undefined) return { ok: false, stale: "attempt", latest };
+      return { ok: true, revision: event.payload.revision, event: appended };
+    });
+  }
+
   async listRunEvents(pod: PodId, run: RunId, afterSeq: number): Promise<readonly RunEvent[]> {
     return this.#in(pod, async (tx) => {
       await this.#run(tx, run, false);
@@ -2852,6 +3027,19 @@ class PostgresStore implements Store {
         .orderBy("seq")
         .execute();
       return rows.map((row) => read(RunEvent, row));
+    });
+  }
+
+  async findRunInbox(pod: PodId, event_id: EventId): Promise<RunInbox | undefined> {
+    return this.#in(pod, async (tx) => {
+      // pod_id too, not only row-level security: the key is (pod_id, event_id).
+      const row = await tx
+        .selectFrom("run_inbox")
+        .selectAll()
+        .where("pod_id", "=", uuidOf(ID_PREFIXES.pod, pod))
+        .where("event_id", "=", event_id)
+        .executeTakeFirst();
+      return row && read(RunInbox, row);
     });
   }
 
@@ -2943,6 +3131,53 @@ class PostgresStore implements Store {
   }
 
   /** The run's row in the unit's pod, locked to the end of the unit when `lock`; else NotFound. */
+  async rateRun(
+    pod: PodId,
+    run: RunId,
+    account: AccountId,
+    rating: NewRunRating,
+  ): Promise<RunRating> {
+    if (rating.verdict === "good" && rating.note !== null)
+      throw new StoreError(ErrorType.enum.BadRequest, "a note goes only with bad");
+    return this.#in(pod, async (tx) => {
+      const runRow = await this.#run(tx, run, false);
+      // One per run and account: a re-rate replaces the verdict and the note, and keeps the id
+      // and created_at (the run_rating_change trigger allows nothing else).
+      const row = await tx
+        .insertInto("run_rating")
+        .values({
+          pod_id: runRow.pod_id,
+          run_id: runRow.id,
+          account_id: uuidOf(ID_PREFIXES.account, account),
+          verdict: rating.verdict,
+          note: rating.note,
+        })
+        .onConflict((oc) =>
+          oc.columns(["pod_id", "run_id", "account_id"]).doUpdateSet((eb) => ({
+            verdict: eb.ref("excluded.verdict"),
+            note: eb.ref("excluded.note"),
+          })),
+        )
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      return read(RunRating, row, ID_PREFIXES.run_rating);
+    });
+  }
+
+  async listRunRatings(pod: PodId, run: RunId): Promise<readonly RunRating[]> {
+    return this.#in(pod, async (tx) => {
+      const runRow = await this.#run(tx, run, false);
+      const rows = await tx
+        .selectFrom("run_rating")
+        .selectAll()
+        .where("run_id", "=", runRow.id)
+        .orderBy("created_at")
+        .orderBy("id")
+        .execute();
+      return rows.map((row) => read(RunRating, row, ID_PREFIXES.run_rating));
+    });
+  }
+
   async #run(tx: Tx, run: RunId, lock: boolean): Promise<Selectable<DB["run"]>> {
     const query = tx.selectFrom("run").selectAll().where("id", "=", uuidOf(ID_PREFIXES.run, run));
     const row = await (lock ? query.forUpdate() : query).executeTakeFirst();

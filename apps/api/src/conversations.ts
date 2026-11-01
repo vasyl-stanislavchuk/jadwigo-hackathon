@@ -5,7 +5,9 @@ import {
   ConversationCreate,
   ConversationId,
   ConversationMessage,
+  ConversationPatch,
   type ConversationRuns,
+  type Conversations,
   ErrorType,
   type EventId,
   ID_PREFIXES,
@@ -17,6 +19,8 @@ import {
   RunCancel,
   type RunEvents,
   type RunId,
+  type RunRating,
+  RunRatingCreate,
 } from "@jadwigo/contracts";
 import { acceptMessage, type EngineDeps, type RunQueue, type Verbs } from "@jadwigo/jadwigo-ai";
 import type { Store, UsageSince } from "@jadwigo/store";
@@ -62,8 +66,9 @@ function windows(now: Date): UsageSince {
   };
 }
 
-function limited(message: string): ApiError {
-  return new ApiError(ErrorType.enum.MessageLimit, message);
+/** A limit's refusal, by its own type: the page picks its words by the type, never the text. */
+function limited(type: "MessageLimitMinute" | "MessageLimitDay", message: string): ApiError {
+  return new ApiError(ErrorType.enum[type], message);
 }
 
 /** The API never runs a step, so its engine has no Muse and no verbs: `acceptMessage` reads neither. */
@@ -90,6 +95,19 @@ function conversationIdFor(pod: PodId, event_id: EventId): ConversationId {
   return ConversationId.parse(idOf(ID_PREFIXES.conversation, uuid));
 }
 
+/**
+ * A conversation is started and spoken to only once a parent has given the pod's consent to the
+ * AI (dl-z5ja.112, wave 4 lead decision 39): until then, or after a withdrawal, 409
+ * `AiConsentMissing`, before anything is written. A Stop and the reads still answer.
+ */
+async function requireConsent(store: Store, pod: PodId): Promise<void> {
+  if ((await store.getPod(pod)).ai_consent_at === null)
+    throw new ApiError(
+      ErrorType.enum.AiConsentMissing,
+      "turn the AI on for this family before the first message",
+    );
+}
+
 function mismatch(): ApiError {
   return new ApiError(ErrorType.enum.EventIdMismatch, "this event id was sent with another body");
 }
@@ -103,6 +121,7 @@ export async function createConversation(
   const { pod, account } = await authorizeMember(store, claims);
   const parsed = ConversationCreate.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
+  await requireConsent(store, pod);
   const title = parsed.data.title ?? null;
   const conversation = await store.createConversation(pod, {
     id: conversationIdFor(pod, parsed.data.event_id),
@@ -111,6 +130,41 @@ export async function createConversation(
   });
   if (conversation.title !== title) throw mismatch();
   return conversation;
+}
+
+/** `GET /api/v1/conversations`: the pod's live conversations, newest first (dl-z5ja.105). */
+export async function listConversations(store: Store, claims: Claims): Promise<Conversations> {
+  const { pod } = await authorizeMember(store, claims);
+  return { conversations: [...(await store.listConversations(pod))] };
+}
+
+/**
+ * `PATCH /api/v1/conversations/{id}`: the parent's delete archives it (decision dl-84wo), once;
+ * archiving again answers it as it is. `NotFound` for a conversation outside the pod.
+ */
+export async function patchConversation(
+  store: Store,
+  deps: Pick<EngineRouteDeps, "now">,
+  claims: Claims,
+  id: ConversationId,
+  raw: unknown,
+): Promise<Conversation> {
+  const { pod } = await authorizeMember(store, claims);
+  const parsed = ConversationPatch.safeParse(raw);
+  if (!parsed.success) throw badRequest(parsed.error.issues);
+  return store.archiveConversation(pod, id, deps.now().toISOString());
+}
+
+/**
+ * A message or a steer goes only to a live conversation of the pod: `NotFound` outside it, 409
+ * `ConversationArchived` once the parent archived it, before anything is written (dl-z5ja.105).
+ */
+async function requireLive(store: Store, pod: PodId, id: ConversationId): Promise<void> {
+  if ((await store.getConversation(pod, id)).archived_at !== null)
+    throw new ApiError(
+      ErrorType.enum.ConversationArchived,
+      "this conversation is archived: start a new one",
+    );
 }
 
 /**
@@ -128,6 +182,8 @@ export async function postMessage(
   const { pod, account } = await authorizeMember(store, claims);
   const parsed = ConversationMessage.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
+  await requireConsent(store, pod);
+  await requireLive(store, pod, id);
   if (parsed.data.kind === "steer") return steer(store, deps, pod, account, id, parsed.data);
   const { event_id, text } = parsed.data;
   // One unit: the reads below, the write and the refusal. A refused message throws after
@@ -154,11 +210,17 @@ export async function postMessage(
     opened || (await store.messageUsage(pod, account, since)).messages > before.messages;
   if (!counted) return { run };
   if (before.messages >= LIMITS.messagesPerMinute)
-    throw limited("too many messages in a minute: wait a moment and send it again");
+    throw limited(
+      ErrorType.enum.MessageLimitMinute,
+      "too many messages in a minute: wait a moment and send it again",
+    );
   // Only a message that opens a turn spends: one that joins the open turn always may, so a parent
   // can finish a running turn. The pod never passes its cap by a run.
   if (opened && before.cap_usd + run.cap_usd > LIMITS.podDailyCapUsd)
-    throw limited("today's AI budget for this family is used up: try again tomorrow");
+    throw limited(
+      ErrorType.enum.MessageLimitDay,
+      "today's AI budget for this family is used up: try again tomorrow",
+    );
   return { run };
 }
 
@@ -250,4 +312,23 @@ export async function cancelRun(
   // The cancel landed on another run: its event_id already names another run's row.
   if (accepted.inbox.kind !== "cancel" || accepted.run.id !== id) throw mismatch();
   return { run: accepted.run };
+}
+
+/**
+ * `POST /api/v1/runs/{id}/ratings`: the parent's Good or Bad on a turn, with an optional note on
+ * Bad, in its own table (wave 4 lead decision 37, dl-z5ja.110); never an analytics event, since a
+ * note may hold learner data. One per run and parent: a re-rate replaces it. Another pod's run is
+ * 404. Try again is no route: the page sends the last message again.
+ */
+export async function rateRun(
+  store: Store,
+  claims: Claims,
+  id: RunId,
+  raw: unknown,
+): Promise<RunRating> {
+  const { pod, account } = await authorizeMember(store, claims);
+  const parsed = RunRatingCreate.safeParse(raw);
+  if (!parsed.success) throw badRequest(parsed.error.issues);
+  const note = parsed.data.verdict === "bad" ? (parsed.data.note ?? null) : null;
+  return store.rateRun(pod, id, account, { verdict: parsed.data.verdict, note });
 }

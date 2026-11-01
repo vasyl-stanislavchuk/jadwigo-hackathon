@@ -1,0 +1,83 @@
+---
+// Direction 1a, "Partner" (design handoff "landing 3", owner, 2026-11-01): learning the parent is close
+// to, beside a simplified child profile from the parent app's child page. A made-up child (never a real
+// learner), 3 goals, 4 skill dots each (filled = can do, ink ring = practising now, dashed = next), the
+// goal's second line and the next lesson. No percentages, no status words, no recent lessons: the owner
+// asked to keep it this simple. The dots carry their meaning in text for a screen reader.
+import type { Language } from "@jadwigo/config";
+import { goalLine } from "../lib/landing.ts";
+import { landingWords } from "../lib/words.ts";
+import Pic from "./Pic.astro";
+
+interface Props {
+  lang: Language;
+}
+
+const p = (await landingWords(Astro.props.lang)).partner;
+---
+
+<section class="partner wrap" aria-labelledby="partner-title">
+  <div class="lead">
+    <h2 id="partner-title">{p.heading}</h2>
+    <p class="text">{p.text}</p>
+    <Pic label={p.pic} class="partner-pic" />
+  </div>
+  <div class="profile">
+    <div class="child">
+      <span class="avatar" aria-hidden="true">{p.child.initial}</span>
+      <span>
+        <strong>{p.child.name}</strong>
+        <span class="sub">{p.child.sub}</span>
+      </span>
+    </div>
+    <ul class="goals">
+      {
+        p.goals.map((g) => (
+          <li>
+            <span class="goal">
+              <strong>{g.name}</strong>
+              <span class="dots" role="img" aria-label={g.skills.map((s) => `${s.name}: ${p.states[s.state]}`).join(", ")}>
+                {g.skills.map((s) => (
+                  <i class={s.state} />
+                ))}
+              </span>
+            </span>
+            <span class="line">{goalLine(g.skills, p)}</span>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="next-lesson"><strong>{p.nextLabel}</strong> {p.next}</p>
+  </div>
+</section>
+
+<style>
+  .partner { display: grid; gap: 2rem; align-items: center; }
+  @media (min-width: 56rem) { .partner { grid-template-columns: 1fr 1fr; gap: 2.5rem; } }
+  .lead { display: flex; flex-direction: column; gap: 0.75rem; }
+  .lead h2 { font-size: clamp(1.9rem, 4vw, 2.6rem); line-height: 1.12; max-width: 18ch; }
+  .text { font-size: 1.15rem; color: var(--jw-ink-soft); }
+  .lead :global(.partner-pic) { margin-top: 0.75rem; height: clamp(10rem, 22vw, 15rem); }
+  .profile {
+    padding: 1.25rem; border: 2px solid var(--jw-line); border-radius: var(--jw-radius-card);
+    background: var(--jw-card); box-shadow: 0 5px 0 var(--jw-line);
+  }
+  .child { display: flex; align-items: center; gap: 0.75rem; }
+  .child strong { display: block; font-size: 1.15rem; line-height: 1.2; }
+  .sub { font-size: 0.85rem; color: var(--jw-ink-soft); }
+  .avatar {
+    width: 2.6rem; height: 2.6rem; flex: none; display: grid; place-items: center; border-radius: 50%;
+    background: var(--jw-pick); color: var(--jw-pick-ink); font-weight: 700;
+  }
+  .goals { list-style: none; margin: 1.25rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 1rem; }
+  .goals li { display: flex; flex-direction: column; gap: 0.15rem; }
+  .goal { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+  .goal strong { font-size: 1rem; }
+  .line { font-size: 0.9rem; color: var(--jw-ink-soft); }
+  .dots { display: flex; gap: 0.3rem; flex: none; }
+  .dots i { width: 14px; height: 14px; border-radius: 50%; box-sizing: border-box; }
+  .dots .done { background: var(--jw-right-edge); }
+  .dots .now { border: 2px solid var(--jw-ink); }
+  .dots .next { border: 2px dashed var(--jw-ink-soft); }
+  .next-lesson { margin-top: 1.25rem; padding-top: 1rem; border-top: 2px solid var(--jw-line); font-size: 0.95rem; }
+</style>

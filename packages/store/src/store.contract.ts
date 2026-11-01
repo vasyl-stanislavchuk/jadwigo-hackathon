@@ -8,6 +8,7 @@ import {
   type IdPrefix,
   idOf,
   LearnerId,
+  LessonId,
   type LessonQuestionId,
   LIMITS,
   PodId,
@@ -146,6 +147,22 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
         const lesson = await store.putLesson(pod, LESSON);
         expect(await store.getLatestLessonVersion(pod, lesson.id)).toBeUndefined();
         expect(lesson.status).toBe("draft");
+      });
+
+      // dl-z5ja.119: a message's lesson context may name a draft in the sender's pod.
+      it("reads a lesson of the pod, a draft as a published one, and another pod's as undefined", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const draft = await store.putLesson(a.pod, LESSON);
+        expect(draft.status).toBe("draft");
+        expect(await store.getLesson(a.pod, draft.id)).toEqual(draft);
+        expect((await store.getLesson(a.pod, a.lesson))?.status).toBe("published");
+
+        const b = await newPod(store, "Pod of owls");
+        expect(await store.getLesson(b, draft.id)).toBeUndefined();
+        expect(await store.getLesson(b, a.lesson)).toBeUndefined();
+        const unknown = LessonId.parse(idOf(ID_PREFIXES.lesson, crypto.randomUUID()));
+        expect(await store.getLesson(a.pod, unknown)).toBeUndefined();
       });
 
       it("refuses a list that names one lesson question twice with BadRequest", async () => {
@@ -1154,6 +1171,31 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
           pod: { id: made.pod, name: "home", language: "en" },
           learners: [],
         });
+      });
+
+      it("gives the pod's AI consent once, keeps its first time, and withdraws it (dl-z5ja.112)", async () => {
+        const store = await make();
+        const a = await store.createAccount(newSub(), "pl");
+        const b = await store.createAccount(newSub(), "pl");
+        expect((await store.getPod(a.pod)).ai_consent_at).toBeNull();
+
+        const given = await store.setAiConsent(a.pod, true);
+        expect(given).toMatchObject({ id: a.pod, name: "home", language: "pl" });
+        expect(given.ai_consent_at).toEqual(expect.any(String));
+        expect(await store.getPod(a.pod)).toEqual(given);
+        expect((await store.getMe(a.pod, a.account)).pod).toEqual(given);
+        expect((await store.setAiConsent(a.pod, true)).ai_consent_at).toBe(given.ai_consent_at);
+        expect((await store.getPod(b.pod)).ai_consent_at).toBeNull();
+
+        expect((await store.setAiConsent(a.pod, false)).ai_consent_at).toBeNull();
+        expect((await store.getPod(a.pod)).ai_consent_at).toBeNull();
+      });
+
+      it("reads and sets an unknown pod's consent as NotFound", async () => {
+        const store = await make();
+        const unknown = PodId.parse(idOf(ID_PREFIXES.pod, crypto.randomUUID()));
+        await expect(store.getPod(unknown)).rejects.toMatchObject(NOT_FOUND);
+        await expect(store.setAiConsent(unknown, true)).rejects.toMatchObject(NOT_FOUND);
       });
 
       it("makes one account when the same user signs in twice at once", async () => {

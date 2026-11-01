@@ -100,6 +100,69 @@
           "additionalProperties": false
         },
         {
+          "type": "object",
+          "properties": {
+            "run_id": {
+              "$ref": "#/$defs/RunId"
+            },
+            "seq": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "event_id": {
+              "$ref": "#/$defs/EventId"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            },
+            "type": {
+              "type": "string",
+              "const": "patch_resolved"
+            },
+            "payload": {
+              "type": "object",
+              "properties": {
+                "steer_event_id": {
+                  "$ref": "#/$defs/EventId"
+                },
+                "applied": {
+                  "type": "boolean"
+                },
+                "revision": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "reason": {
+                  "type": "string",
+                  "enum": [
+                    "stale_base",
+                    "invalid_file",
+                    "no_lesson"
+                  ]
+                }
+              },
+              "required": [
+                "steer_event_id",
+                "applied"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "run_id",
+            "seq",
+            "event_id",
+            "created_at",
+            "type",
+            "payload"
+          ],
+          "additionalProperties": false
+        },
+        {
           "$ref": "#/$defs/PlanEvent"
         },
         {
@@ -161,6 +224,9 @@
                 "$ref": "#/$defs/Attachment"
               }
             },
+            "context": {
+              "$ref": "#/$defs/MessageContext"
+            },
             "citations": {
               "type": "array",
               "items": {
@@ -210,6 +276,42 @@
         "media_type"
       ],
       "additionalProperties": false
+    },
+    "MessageContext": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "learner_id": {
+              "$ref": "#/$defs/LearnerId"
+            }
+          },
+          "required": [
+            "learner_id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "lesson_id": {
+              "$ref": "#/$defs/LessonId"
+            }
+          },
+          "required": [
+            "lesson_id"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LessonId": {
+      "type": "string",
+      "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
     },
     "Citation": {
       "oneOf": [
@@ -395,7 +497,12 @@
         "lesson_show",
         "lesson_edit",
         "lesson_check",
-        "question_search"
+        "question_search",
+        "learner_skills",
+        "learner_week",
+        "learner_mistakes",
+        "curriculum_topics",
+        "lesson_ideas"
       ]
     },
     "ModelUsage": {
@@ -592,7 +699,12 @@
         "lesson_show",
         "lesson_edit",
         "lesson_check",
-        "question_search"
+        "question_search",
+        "learner_skills",
+        "learner_week",
+        "learner_mistakes",
+        "curriculum_topics",
+        "lesson_ideas"
       ]
     },
     "LessonRevisionEvent": {

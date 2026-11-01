@@ -1,18 +1,23 @@
 # The site's words beyond each page's frontmatter (src/lib/landing.ts). Copy says what Jadwigo does,
 # never a slogan; numbers are digits; the child is "ty", the parent "Ty" (decisions of 2026-10-27).
 # The hero is the h1 and one question to answer: no lead line, no buttons (owner, 2026-10-31, dl-5ssh.4.9).
+# Lines below marked "draft" are the design handoff "landing 3" drafts (2026-11-01), for the native review.
 hero:
-  play: Zagraj w lekcję
-  # The first question of "Razy cztery: podwójne razy dwa" (src/content/featured.json).
+  # A grade 3 two-step word problem: the owner found "2 razy 7" too simple for a 9-10-year-old (draft).
+  # 36 is "forgot to take away", 45 is "added instead". The source is not confirmed yet.
   question:
-    say: "Ile to jest 2 razy\u00a07?" # a no-break space keeps "7?" on the line
-    choices: ["12", "14", "16"]
-    answer: "14"
-    right: Brawo! 2 razy 7 to 14.
-    hint: Prawie. 2 razy 7 to 7 i jeszcze 7. Spróbuj jeszcze raz.
+    label: Dwa działania · klasa 3 · pytanie 1
+    say: Zoja ma 3 paczki kredek, po 12 w każdej. Koleżankom dała 9 kredek. Ile kredek jej zostało?
+    pic: ilustracja · Zoja z 3 paczkami kredek
+    source: "Źródło: Alfik Matematyczny"
+    choices: ["27", "36", "45"]
+    answer: "27"
+    right: Brawo! 3 razy 12 to 36, a 36 − 9 = 27.
+    hint: Prawie. Najpierw policz wszystkie kredki, 3 razy 12. Potem odejmij te 9, które dała. Spróbuj jeszcze raz.
     signUp:
       text: Tak wygląda każda lekcja. Konto rodzica jest bezpłatne, a Jadwigo z każdej lekcji układa następną.
       button: Załóż konto
+      again: Zagraj to pytanie jeszcze raz
 # Under the lessons, one line for the parent.
 after:
   text: Po każdej lekcji widzisz, co poszło dobrze i co ćwiczyć dalej.
@@ -23,28 +28,88 @@ links:
   - { href: /jak-to-dziala, label: Jak to działa }
   - { href: /porownanie, label: Porównanie }
   - { href: /o-nas, label: O nas }
+# /jak-to-dziala in direction 1a (design handoff "landing 3", 2026-11-01; draft). The owner's principle:
+# the parent is aware and close in a few minutes, never required to sit through a lesson together.
 steps:
   title: Jak działa Jadwigo
-  description: Pokazujesz pracę domową, dziecko rozwiązuje krótką lekcję, a Ty widzisz, co poszło dobrze i co dalej.
+  description: Piszesz, co dziecko ćwiczy w szkole, dziecko gra krótką lekcję, a Ty wiesz, co już umie i nad czym pracuje.
   heading: Jak to działa
+  intro: Nie musisz siedzieć obok przez całą lekcję. Wystarczy kilka minut, żeby wiedzieć, co dziecko umie i z czym ma trudność.
+  pic: ilustracja · Jadwiga z zeszytem, obok jej klasa
   items:
-    - title: Pokazujesz pracę domową
-      text: Robisz zdjęcie zadania, z którym dziecko miało kłopot. Albo wybierasz klasę i przedmiot.
-    - title: Dziecko rozwiązuje krótką lekcję
-      text: Zadania idą krok po kroku. Gdy coś nie wychodzi, czeka podpowiedź.
-    - title: Widzisz, co dalej
-      text: Po lekcji Jadwigo zapisuje, co poszło dobrze, gdzie była trudność i w czym dziecko się myliło. Z tego układa następną lekcję.
+    - who: Ty
+      title: Napisz, co dziecko ćwiczy w szkole.
+      text: Jadwigo układa lekcję z zadań ze źródłem. Widzisz ją, zanim zobaczy ją dziecko.
+    - who: Dziecko
+      title: Dziecko gra krótką lekcję.
+      text: Podpowiedź czeka obok. Można się pomylić, poprosić o więcej albo skończyć na dziś.
+    - who: Ty
+      title: Wiesz, co dziecko już umie, a nad czym jeszcze pracuje.
+      text: Każde pytanie, próba i pomyłka opisane zwykłymi słowami. Następną lekcję Jadwigo układa od tego, co było trudne. A gdy chcesz usiąść razem nad czymś trudnym, podpowie, od czego zacząć.
+  request:
+    ask: Zadania z resztą, tak jak w zeszycie. Myli złote z groszami.
+    lines: [Szukam zadań o reszcie z groszami, Sprawdzam lekcję, Gotowe]
+    soon: "Wkrótce: zdjęcie zeszytu zamiast opisu."
+    screencast: screencast · rodzic pisze w czacie, lekcja układa się po prawej, „Pokaż dziecku”
+  card:
+    say: Bilet kosztuje 14 zł 50 gr. Płacisz 20 zł. Ile reszty?
+    choices: ["5 zł 50 gr", "6 zł 50 gr", "5 zł"]
+    hint: Od 14 zł 50 gr do 15 zł brakuje 50 gr. Ile od 15 zł do 20 zł?
+    pic: ilustracja · dziecko przy stole z tabletem, rodzic obok
+  record:
+    counts:
+      - { value: 8, label: pytań }
+      - { value: 5, label: od razu }
+      - { value: 3, label: z podpowiedzią }
+    nextLabel: "Następna lekcja:"
+    next: dopełnianie do pełnego złotego, potem reszta z 50 zł.
+    screencast: "screencast · strona dziecka: cele, umiejętności, ostatnia lekcja pytanie po pytaniu"
 promises:
   heading: Co dostajecie
   items:
     - title: Bez punktów, zegarów i rankingów
       text: Dziecko uczy się we własnym tempie. Nikt go nie pogania.
     - title: Zadania ze źródłem
-      text: Zadania z Alfika Matematycznego i Khan Academy, zawsze z podanym źródłem.
+      text: Z Alfika Matematycznego i Khan Academy, zawsze z podanym źródłem.
     - title: Dane należą do Ciebie
       text: Odpowiedzi dziecka widzisz tylko Ty. Nie trafiają do modeli, które się na nich uczą.
-    - title: Bezpłatnie i bez reklam
-      text: Lekcje i podsumowania dla rodzica nic nie kosztują.
+    # Replaces "Bezpłatnie i bez reklam" (owner, 2026-11-01; draft).
+    - title: Wydrukuj i sprawdź ze zdjęcia
+      text: Każdą lekcję wydrukujesz dla dziecka. Gotową pracę albo pracę domową sfotografuj, a Jadwigo ją sprawdzi.
+# Direction 1a (owner, 2026-11-01; draft). Zosia is a made-up example child, never a real learner.
+partner:
+  heading: Nauka, przy której jesteś obok.
+  text: Dziecko ćwiczy w swoim tempie, a Ty widzisz, jak rośnie.
+  pic: ilustracja · rodzic i dziecko przy stole nad zeszytem
+  child: { initial: Z, name: Zosia, sub: 3 klasa · z Jadwigo od września }
+  practising: "Ćwiczy:"
+  allDone: Umie wszystko.
+  nextUp: "Dalej:"
+  states: { done: umie, now: ćwiczy teraz, next: następne }
+  goals:
+    - name: Pieniądze i zakupy
+      skills:
+        - { name: Dodaje i odejmuje do 100, state: done }
+        - { name: Zamienia złote na grosze, state: done }
+        - { name: Liczy resztę z groszami, state: now }
+        - { name: Zadania z dwoma działaniami, state: next }
+    - name: "Czas: zegar i kalendarz"
+      skills:
+        - { name: Odczytuje godziny i minuty, state: done }
+        - { name: Upływ czasu w pełnych godzinach, state: done }
+        - { name: Upływ czasu z minutami, state: done }
+        - { name: Daty i tygodnie w kalendarzu, state: next }
+    - name: "Ortografia: ó, u, rz, ż"
+      skills:
+        - { name: Ó wymienne na o, state: done }
+        - { name: Rz po spółgłoskach, state: now }
+        - { name: Ż wymienne na g, z, s, state: next }
+        - { name: Wyrazy do zapamiętania, state: next }
+  nextLabel: "Następna lekcja:"
+  next: reszta z groszami i rz po spółgłoskach, w jednej lekcji.
+end:
+  text: Konto zakłada rodzic. Jest bezpłatne.
+  button: Załóż konto
 lessons:
   title: Lekcje na start · Jadwigo
   description: Krótkie lekcje matematyki i polskiego dla klas 1–3. Bez logowania, od razu w przeglądarce.
@@ -57,6 +122,17 @@ lessons:
   subjects: { math: Matematyka, polish: Polski, english: Angielski }
   grade: klasa
   questions: [pytanie, pytania, pytań]
+  row:
+    heading: Zagraj bez logowania
+    gradeLabel: Klasa
+    subjectLabel: Przedmiot
+    allGrades: Wszystkie
+    allSubjects: Wszystko
+    count: [lekcja, lekcje, lekcji]
+    prev: Poprzednie lekcje
+    next: Kolejne lekcje
+    none: Nie ma jeszcze lekcji dla tej klasy.
+    pic: ilustracja
 signIn:
   title: Zaloguj się · Jadwigo
   description: Zaloguj się albo załóż konto rodzica w Jadwigo kodem z e-maila, przez Google albo przez Facebooka.

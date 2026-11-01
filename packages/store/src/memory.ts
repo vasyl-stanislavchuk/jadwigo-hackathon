@@ -13,6 +13,7 @@ import {
   CurriculumId,
   Ended,
   ErrorType,
+  type EventId,
   FEATURED_POD_ID,
   Goal,
   GoalId,
@@ -44,6 +45,7 @@ import {
   Pod,
   PodId,
   type ProposalDecision,
+  RunRatingId,
   SentAt,
   Skill,
   type SkillId,
@@ -60,17 +62,23 @@ import {
   RunEvent,
   type RunId,
   RunInbox,
+  RunRating,
   type RunStatus,
+  type RunWorkflow,
 } from "@jadwigo/contracts/run";
 import { byTypeThenPosition, checkExamples } from "./example.ts";
 import { handleFor } from "./handle.ts";
 import { attemptResults } from "./result.ts";
+import { checkRevision } from "./revision.ts";
 import type {
   Fenced,
+  LessonRevisionAppend,
   MessageUsage,
   NewConversation,
+  NewLessonRevision,
   NewRun,
   NewRunInbox,
+  NewRunRating,
   RunChange,
   UsageSince,
 } from "./run.ts";
@@ -209,6 +217,10 @@ export class InMemoryStore implements Store {
   readonly #conversations = new Map<string, Conversation>();
   /** By id, in the order created. */
   readonly #runs = new Map<string, Run>();
+  /** Muse calls that failed after they spent (dl-z5ja.123), in the order recorded. */
+  readonly #failedCalls: { run: RunId; cost_usd: number; at: string }[] = [];
+  /** By `<pod> <run> <account>`, in the order first rated: one rating per run and account. */
+  readonly #ratings = new Map<string, RunRating>();
   /** By run id, in `seq` order. */
   readonly #runEvents = new Map<string, RunEvent[]>();
   /**
@@ -273,7 +285,9 @@ export class InMemoryStore implements Store {
   async putPod(pod: NewPod): Promise<Pod> {
     const stored = this.#pods.get(pod.id);
     if (stored) return stored;
-    const row = frozen(parse(Pod, { ...pod, created_at: this.#at() }, "the pod"));
+    const row = frozen(
+      parse(Pod, { ...pod, created_at: this.#at(), ai_consent_at: null }, "the pod"),
+    );
     this.#pods.set(row.id, row);
     return row;
   }
@@ -334,6 +348,11 @@ export class InMemoryStore implements Store {
     );
     this.#lessons.set(row.id, row);
     return row;
+  }
+
+  async getLesson(pod: PodId, id: LessonId): Promise<Lesson | undefined> {
+    const row = this.#lessons.get(id);
+    return row?.pod_id === pod ? row : undefined;
   }
 
   async putLessonQuestion(pod: PodId, question: NewLessonQuestion): Promise<LessonQuestion> {
@@ -936,7 +955,13 @@ export class InMemoryStore implements Store {
     const pod = frozen(
       parse(
         Pod,
-        { id: mint(PodId, ID_PREFIXES.pod), name: "home", language, created_at: at },
+        {
+          id: mint(PodId, ID_PREFIXES.pod),
+          name: "home",
+          language,
+          created_at: at,
+          ai_consent_at: null,
+        },
         "the pod",
       ),
     );
@@ -977,6 +1002,18 @@ export class InMemoryStore implements Store {
       .sort(byAge)
       .map((learner) => this.#snapshot(learner));
     return { account: row, member, pod: this.#pod(pod), learners };
+  }
+
+  async getPod(pod: PodId): Promise<Pod> {
+    return this.#pod(pod);
+  }
+
+  async setAiConsent(pod: PodId, consented: boolean): Promise<Pod> {
+    const row = this.#pod(pod);
+    const ai_consent_at = consented ? (row.ai_consent_at ?? this.#at()) : null;
+    const next = frozen({ ...row, ai_consent_at });
+    this.#pods.set(pod, next);
+    return next;
   }
 
   #snapshot(learner: Learner): LearnerSnapshot {
@@ -1434,6 +1471,30 @@ export class InMemoryStore implements Store {
       .map((run) => ({ pod: run.pod_id, run }));
   }
 
+  async recordFailedMuseCall(run: RunId, call_no: number, cost_usd: number): Promise<void> {
+    if (!(cost_usd > 0) || !Number.isInteger(call_no) || call_no < 1)
+      throw new StoreError(ErrorType.enum.BadRequest, "a failed call that spent, by its call_no");
+    if (!this.#runs.has(run)) return;
+    this.#failedCalls.push({ run, cost_usd, at: this.#at() });
+  }
+
+  async spentUsd(workflows: readonly RunWorkflow[], since: string): Promise<number> {
+    const from = Date.parse(utc(since));
+    let total = 0;
+    for (const call of this.#failedCalls) {
+      const r = this.#runs.get(call.run);
+      if (r && workflows.includes(r.workflow) && Date.parse(call.at) >= from)
+        total += call.cost_usd;
+    }
+    for (const run of this.#runs.values()) {
+      if (!workflows.includes(run.workflow)) continue;
+      for (const event of this.#runEvents.get(run.id) ?? [])
+        if (event.type === "model_response" && Date.parse(event.created_at) >= from)
+          total += event.payload.cost_usd;
+    }
+    return total;
+  }
+
   async createConversation(pod: PodId, conversation: NewConversation): Promise<Conversation> {
     this.#pod(pod);
     const stored = this.#taken(this.#conversations, pod, conversation.id);
@@ -1441,9 +1502,36 @@ export class InMemoryStore implements Store {
     const row = frozen(
       parse(
         Conversation,
-        { ...conversation, pod_id: pod, created_at: this.#at() },
+        { ...conversation, pod_id: pod, created_at: this.#at(), archived_at: null },
         "the conversation",
       ),
+    );
+    this.#conversations.set(row.id, row);
+    return row;
+  }
+
+  async getConversation(pod: PodId, conversation: ConversationId): Promise<Conversation> {
+    return this.#inPod(this.#conversations, pod, conversation, "the conversation");
+  }
+
+  async listConversations(
+    pod: PodId,
+    { includeArchived = false }: { readonly includeArchived?: boolean } = {},
+  ): Promise<readonly Conversation[]> {
+    return [...this.#conversations.values()]
+      .filter((c) => c.pod_id === pod && (includeArchived || c.archived_at === null))
+      .sort((a, b) => b.created_at.localeCompare(a.created_at) || (a.id < b.id ? 1 : -1));
+  }
+
+  async archiveConversation(
+    pod: PodId,
+    conversation: ConversationId,
+    at: string,
+  ): Promise<Conversation> {
+    const stored = this.#inPod(this.#conversations, pod, conversation, "the conversation");
+    if (stored.archived_at !== null) return stored;
+    const row = frozen(
+      parse(Conversation, { ...stored, archived_at: utc(at) }, "the conversation"),
     );
     this.#conversations.set(row.id, row);
     return row;
@@ -1533,9 +1621,46 @@ export class InMemoryStore implements Store {
     return { stale: false, value: answer };
   }
 
+  async appendLessonRevision(
+    pod: PodId,
+    run: RunId,
+    attempt: number,
+    expected: number,
+    event: NewLessonRevision,
+  ): Promise<LessonRevisionAppend> {
+    // No await before the append: in memory the check and the write are one step.
+    const stored = this.#inPod(this.#runs, pod, run, "the run");
+    checkRevision(stored.conversation_id, run, expected, event);
+    const replay = this.#runEvents.get(run)?.find((e) => e.event_id === event.event_id);
+    if (replay?.type === "lesson_revision")
+      return { ok: true, revision: replay.payload.revision, event: replay };
+    const latest = this.#latestRevision(stored.conversation_id as ConversationId);
+    if (latest !== expected) return { ok: false, stale: "revision", latest };
+    const { stale, value } = await this.appendRunEvents(pod, run, attempt, [event]);
+    const appended = value[0];
+    if (stale || appended === undefined) return { ok: false, stale: "attempt", latest };
+    return { ok: true, revision: event.payload.revision, event: appended };
+  }
+
+  /** The highest lesson revision across a conversation's runs, 0 before the first. */
+  #latestRevision(conversation: ConversationId): number {
+    let latest = 0;
+    for (const r of this.#runs.values()) {
+      if (r.conversation_id !== conversation) continue;
+      for (const e of this.#runEvents.get(r.id) ?? [])
+        if (e.type === "lesson_revision" && e.payload.revision > latest)
+          latest = e.payload.revision;
+    }
+    return latest;
+  }
+
   async listRunEvents(pod: PodId, run: RunId, afterSeq: number): Promise<readonly RunEvent[]> {
     this.#inPod(this.#runs, pod, run, "the run");
     return (this.#runEvents.get(run) ?? []).filter((e) => e.seq > afterSeq);
+  }
+
+  async findRunInbox(pod: PodId, event_id: EventId): Promise<RunInbox | undefined> {
+    return this.#inbox.get(inboxKey(pod, event_id));
   }
 
   async putRunInbox(pod: PodId, entry: NewRunInbox): Promise<RunInbox> {
@@ -1556,6 +1681,42 @@ export class InMemoryStore implements Store {
     );
     this.#inbox.set(inboxKey(pod, row.event_id), row);
     return row;
+  }
+
+  async rateRun(
+    pod: PodId,
+    run: RunId,
+    account: AccountId,
+    rating: NewRunRating,
+  ): Promise<RunRating> {
+    this.#inPod(this.#runs, pod, run, "the run");
+    this.#inPod(this.#accounts, pod, account, "the account");
+    if (rating.verdict === "good" && rating.note !== null)
+      throw new StoreError(ErrorType.enum.BadRequest, "a note goes only with bad");
+    const key = `${pod} ${run} ${account}`;
+    const stored = this.#ratings.get(key);
+    const row = frozen(
+      parse(
+        RunRating,
+        {
+          id: stored?.id ?? mint(RunRatingId, ID_PREFIXES.run_rating),
+          pod_id: pod,
+          run_id: run,
+          account_id: account,
+          verdict: rating.verdict,
+          note: rating.note,
+          created_at: stored?.created_at ?? this.#at(),
+        },
+        "the rating",
+      ),
+    );
+    this.#ratings.set(key, row);
+    return row;
+  }
+
+  async listRunRatings(pod: PodId, run: RunId): Promise<readonly RunRating[]> {
+    this.#inPod(this.#runs, pod, run, "the run");
+    return [...this.#ratings.values()].filter((r) => r.pod_id === pod && r.run_id === run);
   }
 
   async messageUsage(pod: PodId, account: AccountId, since: UsageSince): Promise<MessageUsage> {

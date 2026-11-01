@@ -7,7 +7,8 @@
 // landing.yaml's `links`, each its own page (owner, 2026-10-31). The frame's own words (the logo's
 // and the nav's labels, the sign-in, the footer, the other language's name) are the site_* Paraglide
 // messages in the page's language (dl-w0b4.82). The header's switch links the page's twin in the
-// other language, when the build serves it (dl-w0b4.81).
+// other language, when the build serves it (dl-w0b4.81). The header, burger and footer follow design
+// handoff "landing 3" (dl-5ssh.4.12).
 import "@fontsource/andika/400.css";
 import "@fontsource/andika/700.css";
 import "@jadwigo/ui/foundation.css";
@@ -15,6 +16,7 @@ import { getCollection, getEntry } from "astro:content";
 import { m } from "@jadwigo/copy/messages";
 import wordmark from "@jadwigo/ui/brand/wordmark.svg?raw";
 import LanguageNote from "../components/LanguageNote.astro";
+import Segmented from "../components/Segmented.astro";
 import { strictBuild } from "../lib/build.ts";
 import {
   footerPaths,
@@ -61,6 +63,14 @@ const shown = twin ? { ...rest, translation: twin } : rest;
 const tags = [...headTags(shown, path), ...xDefaultTag(shown, path)];
 const links = landing.links.filter((l) => served.has(l.href));
 const home = twinPath("index", lang);
+const homeHref = home === "/" ? "/" : `${home}/`;
+// The switch lists the page's own language and its twin's, each in its own code; it shows only when the
+// build serves the twin.
+const twinHref = twin === "/" ? "/" : `${twin}/`;
+const switchOptions = [
+  { value: lang, label: lang.toUpperCase(), href: path === "/" ? "/" : `${path}/`, lang },
+  { value: other, label: other.toUpperCase(), href: twinHref, lang: other },
+].sort((a, b) => (a.value === "pl" ? -1 : b.value === "pl" ? 1 : 0));
 const footer = footerPaths(lang);
 const footerLinks = [
   { href: footer.privacy, label: m.site_footer_privacy({}, locale) },
@@ -86,6 +96,7 @@ const footerLinks = [
       )
     }
     <link rel="sitemap" href="/sitemap-index.xml" />
+    <script is:inline>document.documentElement.classList.add("js");</script>
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd(lang))} />
     <style is:global>
       *, *::before, *::after { box-sizing: border-box; }
@@ -114,75 +125,102 @@ const footerLinks = [
       .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--jw-act-edge); }
       .btn.quiet { background: var(--jw-act-quiet); color: var(--jw-ink); box-shadow: 0 4px 0 var(--jw-line); }
 
-      /* The header stays in reach on a long page: sticky, on the page's own white, its hairline below.
-         The crown gets room above the wordmark so it never touches the top edge (dl-5ssh.4.9). */
+      /* The header stays in reach on a long page: sticky, on the page's own white, its line below
+         (design handoff "landing 3", SiteHeader). On a laptop: the wordmark, the page pills, then the
+         language switch and the sign-in on the right, all on one centre line. On a phone: one 68 px row
+         with the wordmark, the sign-in and a 48 px burger that opens the pages and the language. */
       .site-header {
-        position: sticky; top: 0; z-index: 10;
-        background: var(--jw-ground); border-bottom: 1px solid var(--jw-line);
+        position: sticky; top: 0; z-index: 10; --logo-h: 3rem;
+        background: var(--jw-ground); border-bottom: 2px solid var(--jw-line);
       }
-      /* The wordmark's box is 180 units: the crown's room above, the "g" reaching its foot. The bottom
-         padding is the top's plus the crown's spare room, so the space under the logo matches the
-         space over the crown. */
-      .site-header { --logo-h: 3rem; }
-      .site-header .wrap { display: flex; align-items: center; gap: 0.5rem 1rem; padding-top: 0.75rem; padding-bottom: 1rem; }
+      .site-header .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0 0.5rem; min-height: 68px; padding-top: 0.5rem; }
       /* Hover 5a: only the crown tips, about the bottom-left corner of its box (packages/ui src/brand/
          README.md); a tap plays it once. The wordmark's box is 180 units tall, the crown's room included. */
-      .logo { display: inline-flex; line-height: 0; }
+      .logo { display: inline-flex; line-height: 0; flex: 1 0 auto; }
       .logo svg { height: var(--logo-h); width: auto; overflow: visible; }
-      @media (min-width: 52rem) { .site-header { --logo-h: 3.25rem; } }
       .logo .crown { transform-origin: -12.5px 2.15px; transition: transform 320ms cubic-bezier(.34, 1.8, .5, 1); }
       .logo:hover .crown, .logo:focus-visible .crown, .logo.tip .crown { transform: translateY(-12.5px) rotate(-18deg); }
       @media (prefers-reduced-motion: reduce) {
         .logo .crown, .logo:hover .crown, .logo:focus-visible .crown, .logo.tip .crown { transition: none; transform: none; }
       }
-      .site-header .wrap { flex-wrap: wrap; }
-      /* Each page link is a 44 px pill: hover wears the quiet fill, the page you are on wears the pick,
-         as a picked answer does in the app. On a phone the pills sit in a row under the logo and
-         scroll sideways if they must; the row starts flush with the logo, its first pill's text aligned. */
-      .site-nav { display: flex; order: 3; width: calc(100% + 0.6rem); margin-left: -0.6rem; gap: 0.25rem; overflow-x: auto; white-space: nowrap; }
+      /* The sign-in: an outlined 44 px pill, the pages' size, so it reads as a door, not the page's action. */
+      .signin {
+        order: 1; display: inline-flex; align-items: center; min-height: 44px; padding: 0 1rem;
+        border: 2px solid var(--jw-ink); border-radius: 22px; color: var(--jw-ink); text-decoration: none;
+        font-weight: 700; white-space: nowrap;
+      }
+      .signin:hover { background: var(--jw-act-quiet); }
+      .burger {
+        order: 2; width: 48px; height: 48px; display: inline-flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: 5px; padding: 0; cursor: pointer;
+        border: 2px solid var(--jw-line); border-radius: var(--jw-radius-control); background: var(--jw-card);
+      }
+      .burger span { width: 20px; height: 2px; border-radius: 1px; background: var(--jw-ink); }
+      .burger[aria-expanded="true"] { border-color: var(--jw-ink); background: var(--jw-pick); }
+      /* Without the script the menu simply stays open under the row, so every page is still one tap away. */
+      .menu { order: 3; width: 100%; display: flex; flex-direction: column; padding: 0.75rem 0 1.25rem; border-top: 2px solid var(--jw-line); margin-top: 0.5rem; }
+      .js .menu:not(.open) { display: none; }
+      html:not(.js) .burger { display: none; }
+      .site-nav { display: flex; flex-direction: column; gap: 0.25rem; }
       .site-nav a {
-        display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.6rem; font-size: 0.95rem;
-        border-radius: var(--jw-radius-control); color: var(--jw-ink); text-decoration: none; font-weight: 700;
+        display: flex; align-items: center; min-height: 52px; padding: 0 1rem; font-size: 1.2rem; font-weight: 700;
+        border: 2px solid transparent; border-radius: var(--jw-radius-control); color: var(--jw-ink); text-decoration: none;
       }
       .site-nav a:hover { background: var(--jw-act-quiet); }
-      .site-nav a[aria-current] { background: var(--jw-pick); color: var(--jw-pick-ink); }
-      /* The sign-in is the nav's size, not a hero button's: the same text, a 40 px body. */
-      /* The language switch: a quiet text link beside the sign-in, the other language's name in itself. */
-      .site-header .switch {
-        display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.5rem; margin-left: auto;
-        color: var(--jw-ink-soft); font-size: 0.95rem; text-decoration: none; font-weight: 700;
+      .site-nav a[aria-current] { background: var(--jw-pick); border-color: var(--jw-ink); color: var(--jw-pick-ink); }
+      .lang-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+        margin-top: 0.5rem; padding-top: 0.9rem; border-top: 2px solid var(--jw-line);
       }
-      .site-header .switch:hover { color: var(--jw-ink); text-decoration: underline; }
-      .site-header .switch + .btn { margin-left: 0.25rem; }
-      .site-header .btn { margin-left: auto; padding: 0 0.95rem; min-height: 40px; font-size: 1rem; box-shadow: 0 3px 0 var(--jw-line); }
-      @media (min-width: 52rem) {
-        .site-header .wrap { flex-wrap: nowrap; }
-        .site-nav { order: 0; width: auto; margin-left: auto; overflow: visible; gap: 0.5rem; }
-        .site-nav a { padding: 0 0.85rem; font-size: 1rem; }
-        /* The one button stands a little apart from the pages, so it reads as an action, not a page. */
-        .site-nav + .btn, .site-nav + .switch { margin-left: 1rem; }
-        /* The links and the button stand on the wordmark's baseline, not its box's middle: the baseline
-           (y 91 of -65..115) is 0.367 of the logo's height below the middle, less a 1rem text's baseline drop. A
-           translate, so the header's height does not move. */
-        .site-nav, .site-header .switch, .site-header .btn { translate: 0 calc(var(--logo-h) * 0.367 - 0.42rem); }
+      .lang-row > span { font-weight: 700; color: var(--jw-ink-soft); }
+      @media (min-width: 60rem) {
+        .site-header { --logo-h: 3.25rem; }
+        .site-header .bar { flex-wrap: nowrap; gap: 1.5rem; min-height: 76px; padding-top: 0.25rem; }
+        .logo { flex: none; }
+        .burger { display: none; }
+        .menu, .js .menu:not(.open) { order: 0; width: auto; flex: 1; display: flex; flex-direction: row; align-items: center; gap: 1.5rem; padding: 0; margin: 0; border: 0; }
+        .site-nav { flex-direction: row; gap: 0.25rem; flex: 1; }
+        .site-nav a { min-height: 44px; padding: 0 1rem; font-size: 1.05rem; border-radius: 22px; white-space: nowrap; }
+        .lang-row { margin: 0; padding: 0; border: 0; }
+        .lang-row > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+      }
+      /* The pages, the switch and the sign-in stand on the wordmark's text line, not its box's middle:
+         the box holds the crown's room above the letters. The letters' middle (y 64 of -65..115) sits
+         0.217 of the logo's height below the box's middle. A translate, so the header's height does not move. */
+      .signin, .burger { translate: 0 calc(var(--logo-h) * 0.217); }
+      .site-header .bar { padding-bottom: 1rem; }
+      @media (min-width: 60rem) {
+        .menu, .js .menu:not(.open) { translate: 0 calc(var(--logo-h) * 0.217); }
       }
 
-      .site-footer { border-top: 1px solid var(--jw-line); margin-top: 4rem; padding: 2rem 0 3rem; color: var(--jw-ink-soft); }
-      .site-footer .wrap { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; align-items: center; }
-      .site-footer a { color: var(--jw-ink-soft); }
+      /* The footer: the wordmark and its line, the pages, where the questions come from, and whose the
+         data is (design handoff "landing 3", SiteFooter). The privacy pages sit under the data line. */
+      .site-footer { border-top: 2px solid var(--jw-line); margin-top: 4rem; padding: 2rem 0 2.5rem; font-size: 1rem; line-height: 1.5; }
+      .site-footer .wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr)); gap: 1.5rem 2rem; }
+      .site-footer .col { display: flex; flex-direction: column; gap: 0.25rem; color: var(--jw-ink-soft); }
+      .site-footer .col > strong { color: var(--jw-ink); }
+      .site-footer a { color: var(--jw-ink); text-decoration: none; }
+      .site-footer a:hover { text-decoration: underline; }
+      .site-footer .mark { line-height: 0; margin-bottom: 0.25rem; }
+      .site-footer .mark svg { height: 2.5rem; width: auto; overflow: visible; }
+      .site-footer .data { text-wrap: pretty; }
+      .site-footer .data a { color: var(--jw-ink-soft); text-decoration: underline; }
 
+      /* Squared paper (kratka), the exercise book a child writes maths in: behind questions only. */
+      .paper {
+        --cell: 1.5rem;
+        border: 2px solid var(--jw-line); border-radius: var(--jw-radius-card);
+        background:
+          linear-gradient(to right, var(--jw-line) 1px, transparent 1px) 0 0 / var(--cell) var(--cell),
+          linear-gradient(to bottom, var(--jw-line) 1px, transparent 1px) 0 0 / var(--cell) var(--cell),
+          var(--jw-card);
+      }
       .prose main { max-width: 40rem; margin: 0 auto; padding: 2.5rem 1rem 0; }
       .prose h1 { font-size: clamp(1.8rem, 6vw, 2.5rem); }
       .prose h2 { font-size: 1.3rem; margin: 2rem 0 0.5rem; }
       .prose p { margin: 0.75rem 0 0; }
       .prose ol { padding-left: 1.25rem; }
       .prose li { margin-top: 0.4rem; }
-      /* A photo still to come: a dashed frame with its label, until the picture is chosen. */
-      .prose .frame {
-        display: grid; place-items: center; aspect-ratio: 16 / 9; max-height: 16rem; width: 100%; margin: 1.5rem 0;
-        border: 2px dashed var(--jw-line-strong); border-radius: var(--jw-radius-card);
-        background: var(--jw-act-quiet); color: var(--jw-ink-soft); text-align: center; padding: 1rem;
-      }
       .prose .draft {
         margin: 1rem 0 1.5rem; padding: 0.75rem 1rem; border-radius: 0.5rem;
         background: var(--jw-help); color: var(--jw-help-ink); font-size: 0.95rem;
@@ -191,9 +229,12 @@ const footerLinks = [
   </head>
   <body class={prose ? "prose" : undefined}>
     <header class="site-header">
-      <div class="wrap">
-        <a class="logo" href={home === "/" ? "/" : `${home}/`} aria-label={m.site_nav_home({}, locale)} set:html={wordmark} />
-        {
+      <div class="wrap bar">
+        <a class="logo" href={homeHref} aria-label={m.site_nav_home({}, locale)} set:html={wordmark} />
+        <button class="burger" type="button" aria-expanded="false" aria-controls="site-menu" aria-label={m.site_menu({}, locale)}>
+          <span></span><span></span><span></span>
+        </button>
+        <div class="menu" id="site-menu">
           <nav class="site-nav" aria-label={m.site_nav_label({}, locale)}>
             {links.map((n) => (
               <a href={`${n.href}/`} aria-current={path === n.href ? "page" : undefined}>
@@ -201,15 +242,16 @@ const footerLinks = [
               </a>
             ))}
           </nav>
-        }
-        {
-          twin && (
-            <a class="switch" href={twin === "/" ? "/" : `${twin}/`} hreflang={other} lang={other} aria-label={m.site_switch_label({}, locale)}>
-              {m.site_language_name({}, { locale: other })}
-            </a>
-          )
-        }
-        <a class="btn quiet" href={`${twinPath("signIn", lang)}/`}>{m.site_nav_sign_in({}, locale)}</a>
+          {
+            twin && (
+              <div class="lang-row">
+                <span aria-hidden="true">{m.site_language_label({}, locale)}</span>
+                <Segmented label={m.site_switch_label({}, locale)} value={lang} options={switchOptions} />
+              </div>
+            )
+          }
+        </div>
+        <a class="signin" href={`${twinPath("signIn", lang)}/`}>{m.site_nav_sign_in({}, locale)}</a>
       </div>
     </header>
     {twin && <LanguageNote lang={lang} twin={other} href={twin === "/" ? "/" : `${twin}/`} />}
@@ -220,9 +262,23 @@ const footerLinks = [
     </main>
     <footer class="site-footer">
       <div class="wrap">
-        <span>© Jadwigo</span>
-        {footerLinks.map((l) => <a href={`${l.href}/`}>{l.label}</a>)}
-        <span>{m.site_footer_made({}, locale)}</span>
+        <div class="col">
+          <a class="mark" href={homeHref} aria-label={m.site_nav_home({}, locale)} set:html={wordmark} />
+          <strong>{m.site_footer_line({}, locale)}</strong>
+        </div>
+        <div class="col">
+          {links.map((n) => <a href={`${n.href}/`}>{n.label}</a>)}
+        </div>
+        <div class="col">
+          <strong>{m.site_footer_sources({}, locale)}</strong>
+          <span>Alfik Matematyczny</span>
+          <span>Khan Academy</span>
+        </div>
+        <div class="col data">
+          <strong>{m.site_footer_data_heading({}, locale)}</strong>
+          <span>{m.site_footer_data({}, locale)}</span>
+          {footerLinks.map((l) => <a href={`${l.href}/`}>{l.label}</a>)}
+        </div>
       </div>
     </footer>
     <script is:inline>
@@ -232,6 +288,20 @@ const footerLinks = [
         const logo = e.currentTarget;
         logo.classList.add("tip");
         setTimeout(() => logo.classList.remove("tip"), 520);
+      });
+      // The phone menu: the burger opens and closes it; Escape or a link closes it and gives focus back.
+      const burger = document.querySelector(".burger");
+      const menu = document.getElementById("site-menu");
+      const setOpen = (open) => {
+        burger?.setAttribute("aria-expanded", String(open));
+        menu?.classList.toggle("open", open);
+      };
+      burger?.addEventListener("click", () => setOpen(burger.getAttribute("aria-expanded") !== "true"));
+      menu?.addEventListener("click", (e) => { if (e.target.closest("a")) setOpen(false); });
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape" || burger?.getAttribute("aria-expanded") !== "true") return;
+        setOpen(false);
+        burger.focus();
       });
     </script>
   </body>
