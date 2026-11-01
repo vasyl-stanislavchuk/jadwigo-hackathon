@@ -889,16 +889,7 @@
   "attach_expired": "The upload took too long. Try again",
   "attach_changed": "The photo arrived at a different size than we said it would. Try again",
   "attach_not_taken": "The server did not take the photo. Try again",
-  "attach_left_off": [
-    {
-      "declarations": ["input max", "input n", "local n_noun = n: plural"],
-      "selectors": ["n_noun"],
-      "match": {
-        "n_noun=one": "{max} photos fit, {n} was left off",
-        "n_noun=other": "{max} photos fit, {n} were left off"
-      }
-    }
-  ],
+  "attach_left_off": "Only {max} files fit, {n} left off",
   "parent_chat": "Chat",
   "parent_lesson": "Lesson",
   "parent_details": "Lesson details",

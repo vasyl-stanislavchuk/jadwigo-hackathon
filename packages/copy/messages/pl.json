@@ -909,18 +909,7 @@
   "attach_expired": "Wysyłanie trwało za długo. Spróbuj ponownie",
   "attach_changed": "Zdjęcie dotarło w innym rozmiarze, niż zapowiadaliśmy. Spróbuj ponownie",
   "attach_not_taken": "Serwer nie przyjął zdjęcia. Spróbuj ponownie",
-  "attach_left_off": [
-    {
-      "declarations": ["input max", "input n", "local max_noun = max: plural"],
-      "selectors": ["max_noun"],
-      "match": {
-        "max_noun=one": "Zmieści się {max} zdjęcie, {n} pominięto",
-        "max_noun=few": "Zmieszczą się {max} zdjęcia, {n} pominięto",
-        "max_noun=many": "Zmieści się {max} zdjęć, {n} pominięto",
-        "max_noun=other": "Zmieści się {max} zdjęcia, {n} pominięto"
-      }
-    }
-  ],
+  "attach_left_off": "Zmieści się {max} plików, {n} pominięto",
   "parent_chat": "Rozmowa",
   "parent_lesson": "Lekcja",
   "parent_details": "Szczegóły lekcji",
