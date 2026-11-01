@@ -1,0 +1,184 @@
+{
+  "q1": {
+    "look": {
+      "text": "Look at the array. Count the rows, then count the dots in each row."
+    },
+    "boost": {
+      "text": "5 × 1 means 5 rows with 1 dot in each."
+    },
+    "boost_by_mistake": {
+      "add_for_multiply": {
+        "text": "5 + 1 is adding. Here there are 5 rows with 1 dot in each."
+      },
+      "neighbour_row": {
+        "text": "Count the rows again. There are 5 rows."
+      },
+      "off_by_small": {
+        "text": "You are close. Count the dots one by one."
+      },
+      "other_wrong": {
+        "text": "Each row has 1 dot. Count all the dots."
+      }
+    }
+  },
+  "q2": {
+    "boost_by_mistake": {
+      "add_for_multiply": {
+        "text": "5 + 5 adds only 2 fives. Here there are 5 groups of 5."
+      },
+      "neighbour_row": {
+        "text": "Count the groups again. There are 5 groups, each with 5."
+      },
+      "off_by_small": {
+        "text": "You are close. Count by 5 for each group."
+      },
+      "digit_reversal": {
+        "text": "Check the order of the digits. Count by 5s: 5, 10, 15, and keep going."
+      },
+      "same_decade": {
+        "text": "The tens are right. Check the ones: counting by 5 ends in 0 or 5."
+      },
+      "other_wrong": {
+        "text": "There are 5 groups with 5 in each. Count by 5 for every group."
+      }
+    }
+  },
+  "q3": {
+    "boost": {
+      "text": "7 × 5 is 7 jumps of 5 on the number line."
+    },
+    "boost_by_mistake": {
+      "add_for_multiply": {
+        "text": "7 + 5 is adding. Here there are 7 jumps, and each jump is 5."
+      },
+      "neighbour_row": {
+        "text": "Count the jumps again. There are 7 of them."
+      },
+      "off_by_small": {
+        "text": "You are close. Each jump is 5, so the number ends in 0 or 5."
+      },
+      "digit_reversal": {
+        "text": "Check the order of the digits. Read the number where the last jump lands."
+      },
+      "same_decade": {
+        "text": "The tens are right. Look at where the 7th jump lands."
+      },
+      "other_wrong": {
+        "text": "Count by 5 for each jump: 5, 10, 15, and keep going."
+      }
+    }
+  },
+  "q4": {
+    "boost": {
+      "text": "10 × 8 is 8 tens. Count by 10, 8 times."
+    },
+    "boost_by_mistake": {
+      "other_wrong": {
+        "text": "8 tens is 8 groups of 10. Count by 10 for each group."
+      }
+    }
+  },
+  "q5": {
+    "boost": {
+      "text": "7 × 10 is 7 tens. Count by 10, 7 times."
+    },
+    "boost_by_mistake": {
+      "other_wrong": {
+        "text": "There are 7 rows with 10 in each. Count the rows by 10s."
+      }
+    }
+  },
+  "q6": {
+    "boost": {
+      "text": "5 × 8 is 8 fives. Count by 5, 8 times."
+    },
+    "boost_by_mistake": {
+      "add_for_multiply": {
+        "text": "5 + 8 is adding. Here there are 5 rows with 8 in each."
+      },
+      "neighbour_row": {
+        "text": "That is one 8 too many or too few. There are 5 rows of 8."
+      },
+      "off_by_small": {
+        "text": "You are close. Counting by 5 always ends in 0 or 5."
+      },
+      "digit_reversal": {
+        "text": "Check the order of the digits in your number."
+      },
+      "same_decade": {
+        "text": "The tens are right. Count the last few fives again."
+      },
+      "other_wrong": {
+        "text": "Count by 5 for each of the 8 groups."
+      }
+    },
+    "changes": [
+      {
+        "change": "wording",
+        "why": "the English reviewer (workflows/_lang/en/checklist.md en-10) needs a question to end with ?; dl-e8ov.5.77 asks that every step pass it",
+        "set": {
+          "say": "the copied say with ? added"
+        }
+      }
+    ]
+  },
+  "q7": {
+    "boost": {
+      "text": "10 × 5 is 10 fives. It is also 5 tens."
+    },
+    "boost_by_mistake": {
+      "add_for_multiply": {
+        "text": "10 + 5 is adding. Here there are 10 rows with 5 in each."
+      },
+      "neighbour_row": {
+        "text": "Count the rows again. There are 10 rows of 5."
+      },
+      "off_by_small": {
+        "text": "You are close. Count by 10 for each of the 5 columns."
+      },
+      "digit_reversal": {
+        "text": "Check where each digit goes. Count by 10, 5 times."
+      },
+      "same_decade": {
+        "text": "You have the right tens. Count the 10 rows of 5 again."
+      },
+      "other_wrong": {
+        "text": "Count by 5 for each of the 10 rows."
+      }
+    },
+    "changes": [
+      {
+        "change": "wording",
+        "why": "the English reviewer (workflows/_lang/en/checklist.md en-10) needs a question to end with ?; dl-e8ov.5.77 asks that every step pass it",
+        "set": {
+          "say": "the copied say with ? added"
+        }
+      }
+    ]
+  },
+  "q8": {
+    "boost": {
+      "text": "10 × 2 is 2 columns with 10 dots in each. Count by 10s."
+    },
+    "boost_by_mistake": {
+      "add_for_multiply": {
+        "text": "10 + 2 is adding. Here there are 10 rows with 2 dots in each."
+      },
+      "neighbour_row": {
+        "text": "Count the rows again. There are 10 rows of 2."
+      },
+      "off_by_small": {
+        "text": "You are close. Count the 2 columns by 10s."
+      },
+      "digit_reversal": {
+        "text": "Check where each digit goes. Count the 2 columns by 10s again."
+      },
+      "same_decade": {
+        "text": "You have the right tens. Count every dot in the 2 columns again."
+      },
+      "other_wrong": {
+        "text": "There are 2 columns of 10. Count by 10 for each column."
+      }
+    }
+  }
+}

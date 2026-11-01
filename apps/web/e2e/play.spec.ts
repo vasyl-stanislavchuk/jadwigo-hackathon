@@ -104,6 +104,26 @@ test("a child plays equal-groups to the results, through a miss, a twin, a pause
   await expect(results).not.toContainText("%");
 });
 
+// The lesson region speaks the lesson's language, whatever the screens speak (dl-9t2o.3): with
+// the screens in English, the seed's Polish lesson keeps lang="pl" on its region, after a reload
+// too, while <html lang> follows ?lang (dl-uukj.33).
+test("the lesson region keeps its lesson's lang when the screens speak another", async ({
+  page,
+}) => {
+  await page.goto("/?lang=en");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await page.locator("[data-featured]").getByRole("link", { name: "Równe grupy" }).click();
+  await onQuestion(page, "2 × 5");
+  const region = page.locator("[data-lesson-region]");
+  await expect(region).toHaveAttribute("lang", "pl");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+
+  await page.reload();
+  await onQuestion(page, "2 × 5");
+  await expect(region).toHaveAttribute("lang", "pl");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+});
+
 test("the gallery still renders at /playground", async ({ page }) => {
   await page.goto("/playground");
   await expect(page.getByRole("heading", { name: "Question-type playground" })).toBeVisible();

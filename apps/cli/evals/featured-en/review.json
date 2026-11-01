@@ -1,0 +1,857 @@
+{
+  "language": "en",
+  "reviewer": "workflows/jadwigo-lesson-review with workflows/_lang/en/checklist.md, a separate Opus session each round, 2026-11-01",
+  "final": {
+    "lines": 147,
+    "passed": 147
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "lines": "all 147",
+      "verdicts": [
+        {
+          "id": "lesson1.q1.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson1.q1.card.missed_option",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson1.q1.card.wrong_pick",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson1.q1.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson1.q2.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson1.q2.twin",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson1.q2.card.not_placed",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson1.q2.card.wrong_group",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson1.q2.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson1.q3.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson1.q3.card.gap_swap",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson1.q3.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson1.q4.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson1.q4.twin",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson1.q4.card.gap_swap",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson1.q4.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson1.title",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson1.reasoning",
+          "verdict": "flag",
+          "item": "en-1",
+          "category": "accuracy",
+          "quote": "Równe grupy",
+          "reason": "The line carries Polish words; an English line names the Polish lesson in English or not at all."
+        },
+        {
+          "id": "lesson2.q1.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q1.look",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q1.boost",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q1.card.add_for_multiply",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q1.card.neighbour_row",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q1.card.off_by_small",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q1.card.other_wrong",
+          "verdict": "flag",
+          "item": "en-7",
+          "category": "style",
+          "quote": "just",
+          "reason": "Just is on the list of words that make a task sound easy; the line should say only or drop it."
+        },
+        {
+          "id": "lesson2.q2.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q2.card.add_for_multiply",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q2.card.neighbour_row",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q2.card.off_by_small",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q2.card.digit_reversal",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q2.card.same_decade",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q2.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q3.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q3.boost",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q3.card.add_for_multiply",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q3.card.neighbour_row",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q3.card.off_by_small",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q3.card.digit_reversal",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q3.card.same_decade",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q3.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q4.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q4.boost",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q4.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q5.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q5.boost",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q5.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q6.say",
+          "verdict": "flag",
+          "item": "en-10",
+          "category": "locale",
+          "reason": "The line is a question, so it ends with ?."
+        },
+        {
+          "id": "lesson2.q6.boost",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q6.card.add_for_multiply",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q6.card.neighbour_row",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q6.card.off_by_small",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q6.card.digit_reversal",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q6.card.same_decade",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q6.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q7.say",
+          "verdict": "flag",
+          "item": "en-10",
+          "category": "locale",
+          "reason": "The line is a question, so it ends with ?."
+        },
+        {
+          "id": "lesson2.q7.boost",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q7.card.add_for_multiply",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q7.card.neighbour_row",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q7.card.off_by_small",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q7.card.digit_reversal",
+          "verdict": "flag",
+          "item": "en-8",
+          "category": "accuracy",
+          "quote": "5 tens has a 0 at the end",
+          "reason": "Naming the tens and the 0 at the end spells out the answer, so the card gives it away."
+        },
+        {
+          "id": "lesson2.q7.card.same_decade",
+          "verdict": "flag",
+          "item": "en-8",
+          "category": "accuracy",
+          "quote": "The tens are right. A number times 10 ends in 0.",
+          "reason": "The line says the tens are right and names the ones digit, so the child can write the answer without counting."
+        },
+        {
+          "id": "lesson2.q7.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q8.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q8.boost",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q8.card.add_for_multiply",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q8.card.neighbour_row",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q8.card.off_by_small",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q8.card.digit_reversal",
+          "verdict": "flag",
+          "item": "en-8",
+          "category": "accuracy",
+          "quote": "2 tens has a 0 at the end",
+          "reason": "Naming the tens and the 0 at the end spells out the answer, so the card gives it away."
+        },
+        {
+          "id": "lesson2.q8.card.same_decade",
+          "verdict": "flag",
+          "item": "en-8",
+          "category": "accuracy",
+          "quote": "The tens are right. Check the ones: 2 tens has no ones.",
+          "reason": "The line says the tens are right and names the ones digit, so the child can write the answer without counting."
+        },
+        {
+          "id": "lesson2.q8.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.title",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.reasoning",
+          "verdict": "flag",
+          "item": "en-1",
+          "category": "accuracy",
+          "quote": "Piątki wszędzie",
+          "reason": "The line carries Polish words; an English line names the Polish lesson in English or not at all."
+        },
+        {
+          "id": "lesson3.q1.say",
+          "verdict": "flag",
+          "item": "en-10",
+          "category": "locale",
+          "reason": "The line is a question, so it ends with ?."
+        },
+        {
+          "id": "lesson3.q1.boost",
+          "verdict": "flag",
+          "item": "en-10",
+          "category": "locale",
+          "quote": "two times",
+          "reason": "A count is written in digits, as other lines write it: 2 times."
+        },
+        {
+          "id": "lesson3.q1.card.add_for_multiply",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q1.card.neighbour_row",
+          "verdict": "flag",
+          "item": "en-7",
+          "category": "style",
+          "quote": "just",
+          "reason": "Just is on the list of words that make a task sound easy; the line should say only or drop it."
+        },
+        {
+          "id": "lesson3.q1.card.off_by_small",
+          "verdict": "flag",
+          "item": "en-10",
+          "category": "locale",
+          "quote": "two jumps",
+          "reason": "A count is written in digits: 2 jumps."
+        },
+        {
+          "id": "lesson3.q1.card.digit_reversal",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q1.card.same_decade",
+          "verdict": "flag",
+          "item": "en-8",
+          "category": "accuracy",
+          "quote": "The tens are right. Check the ones: 2 fives end in 0.",
+          "reason": "The line says the tens are right and names the ones digit, so the child can write the answer without counting."
+        },
+        {
+          "id": "lesson3.q1.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q2.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q2.boost",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q2.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q3.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q3.boost",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q3.card.add_for_multiply",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q3.card.neighbour_row",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q3.card.off_by_small",
+          "verdict": "flag",
+          "item": "en-4",
+          "category": "fluency",
+          "quote": "10, 20, and on",
+          "reason": "And on is not idiomatic English; the other cards say and keep going."
+        },
+        {
+          "id": "lesson3.q3.card.digit_reversal",
+          "verdict": "flag",
+          "item": "en-8",
+          "category": "accuracy",
+          "quote": "4 tens has a 0 at the end",
+          "reason": "Naming the tens and the 0 at the end spells out the answer, so the card gives it away."
+        },
+        {
+          "id": "lesson3.q3.card.same_decade",
+          "verdict": "flag",
+          "item": "en-8",
+          "category": "accuracy",
+          "quote": "The tens are right. Times 10 always ends in 0.",
+          "reason": "The line says the tens are right and names the ones digit, so the child can write the answer without counting."
+        },
+        {
+          "id": "lesson3.q3.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q4.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q4.boost",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q4.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q5.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q5.boost",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q5.card.add_for_multiply",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q5.card.neighbour_row",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q5.card.off_by_small",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q5.card.digit_reversal",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q5.card.same_decade",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q5.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q6.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q6.boost",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q6.card.add_for_multiply",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q6.card.neighbour_row",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q6.card.off_by_small",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q6.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q7.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q7.boost",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q7.card.add_for_multiply",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q7.card.neighbour_row",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q7.card.off_by_small",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q7.card.digit_reversal",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q7.card.same_decade",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q7.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q8.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q8.boost",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q8.card.add_for_multiply",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q8.card.neighbour_row",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q8.card.off_by_small",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q8.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q9.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q9.boost",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q9.card.add_for_multiply",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q9.card.neighbour_row",
+          "verdict": "flag",
+          "item": "en-7",
+          "category": "style",
+          "quote": "just",
+          "reason": "Just is on the list of words that make a task sound easy; the line should say only or drop it."
+        },
+        {
+          "id": "lesson3.q9.card.off_by_small",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q9.card.digit_reversal",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q9.card.same_decade",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q9.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q10.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q10.boost",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q10.card.add_for_multiply",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q10.card.neighbour_row",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q10.card.off_by_small",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q10.card.digit_reversal",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q10.card.same_decade",
+          "verdict": "flag",
+          "item": "en-8",
+          "category": "accuracy",
+          "quote": "The tens are right. 5 jumps of 2 land on a tens number.",
+          "reason": "The line says the tens are right and names the ones digit, so the child can write the answer without counting."
+        },
+        {
+          "id": "lesson3.q10.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q11.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q11.card.add_for_multiply",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q11.card.neighbour_row",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q11.card.off_by_small",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q11.card.digit_reversal",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q11.card.same_decade",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q11.card.other_wrong",
+          "verdict": "flag",
+          "item": "en-10",
+          "category": "locale",
+          "quote": "seven times",
+          "reason": "A count is written in digits: 7 times."
+        },
+        {
+          "id": "lesson3.title",
+          "verdict": "flag",
+          "item": "en-10",
+          "category": "locale",
+          "quote": "Times four: double times two",
+          "reason": "The numbers are spelled out where the lesson writes them as digits: Times 4: double times 2."
+        },
+        {
+          "id": "lesson3.reasoning",
+          "verdict": "flag",
+          "item": "en-1",
+          "category": "accuracy",
+          "quote": "Razy cztery: podwójne razy dwa",
+          "reason": "The line carries Polish words; an English line names the Polish lesson in English or not at all."
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "lines": "the lines rewritten after the round before",
+      "verdicts": [
+        {
+          "id": "lesson1.reasoning",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q1.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q6.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q7.card.digit_reversal",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q7.card.same_decade",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q7.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q8.card.digit_reversal",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.q8.card.same_decade",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson2.reasoning",
+          "verdict": "flag",
+          "item": "en-3",
+          "category": "style",
+          "quote": "It mirrors Jadwigo's Polish featured lesson on fives; the bank has no English coin, clock or chocolate questions, so the pictures are arrays and groups.",
+          "reason": "One sentence carries 3 ideas joined by a semicolon and uses the internal word 'the bank', so a parent does not get plain, short sentences with one idea each."
+        },
+        {
+          "id": "lesson3.q1.boost",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q1.card.neighbour_row",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q1.card.off_by_small",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q1.card.same_decade",
+          "verdict": "flag",
+          "item": "en-9",
+          "category": "terminology",
+          "quote": "the second 5",
+          "reason": "The question's word is groups of 5, and 'the second 5' can read as the number 5 rather than the second group of 5."
+        },
+        {
+          "id": "lesson3.q1.say",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q10.card.same_decade",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q11.card.other_wrong",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q3.card.digit_reversal",
+          "verdict": "flag",
+          "item": "en-8",
+          "category": "accuracy",
+          "quote": "Check where each digit goes. Count by 10 for each of the 4 tens.",
+          "reason": "Telling a child where the digits go and that there are 4 tens settles the answer by place value, so the card gives the answer away."
+        },
+        {
+          "id": "lesson3.q3.card.off_by_small",
+          "verdict": "flag",
+          "item": "en-8",
+          "category": "accuracy",
+          "quote": "the 4 tens",
+          "reason": "Naming the total as 4 tens states the product in place-value words, so the card settles the answer by itself instead of pointing at the groups to count."
+        },
+        {
+          "id": "lesson3.q3.card.same_decade",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q9.card.neighbour_row",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.reasoning",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.title",
+          "verdict": "pass"
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "lines": "the lines rewritten after the round before",
+      "verdicts": [
+        {
+          "id": "lesson2.reasoning",
+          "verdict": "flag",
+          "item": "en-3",
+          "category": "style",
+          "quote": "with times 10 beside it",
+          "reason": "A parent cannot tell what 'times 10 beside it' means (practiced alongside, or mixed into the 8 questions?), and the later 'It' and 'featured lesson' are just as vague, so the note is not plain and direct."
+        },
+        {
+          "id": "lesson3.q1.card.same_decade",
+          "verdict": "pass"
+        },
+        {
+          "id": "lesson3.q3.card.digit_reversal",
+          "verdict": "flag",
+          "item": "en-8",
+          "category": "accuracy",
+          "quote": "Check the order of the digits you typed.",
+          "reason": "The card's only hint is to swap the 2 digits the child typed, which settles the answer by itself without the child going back to the 4 groups of 10."
+        },
+        {
+          "id": "lesson3.q3.card.off_by_small",
+          "verdict": "pass"
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "lines": "the lines rewritten after the round before",
+      "verdicts": [
+        {
+          "id": "lesson2.reasoning",
+          "verdict": "flag",
+          "item": "en-4",
+          "category": "fluency",
+          "quote": "8 English questions from Khan Academy on multiplying by 5 and by 10, shown with arrays, groups and a number line. It matches",
+          "reason": "The first sentence has no verb, so the singular It has only the plural 8 English questions to refer to and its antecedent (the lesson) is never named."
+        },
+        {
+          "id": "lesson3.q3.card.digit_reversal",
+          "verdict": "pass"
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "lines": "the lines rewritten after the round before",
+      "verdicts": [
+        {
+          "id": "lesson2.reasoning",
+          "verdict": "pass"
+        }
+      ]
+    }
+  ]
+}

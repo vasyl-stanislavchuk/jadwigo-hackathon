@@ -866,5 +866,10 @@ export const pl: CopyTable = {
     text: "Rodzic prosi o cofnięcie zmiany w krokach {steps}: wróć do wersji {n}.",
     reviewed: false,
   },
+  // the chat page on the conversation routes (dl-z5ja.65)
+  chat_sign_in: {
+    text: "Najpierw zaloguj się na stronie rodzica, a potem wróć do rozmowy.",
+    reviewed: false,
+  },
   // end the chat page
 };
