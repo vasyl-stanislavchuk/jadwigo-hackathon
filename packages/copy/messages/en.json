@@ -824,5 +824,13 @@
   "parent_lessons_empty": "The lessons you make will appear here.",
   "parent_history_empty": "Every lesson done will appear here, with its result question by question.",
   "parent_crumb_result": "Lesson result",
-  "parent_crumb_overview": "Lesson overview"
+  "parent_crumb_overview": "Lesson overview",
+  "chat_rate_ask": "How did it go?",
+  "chat_rate_good": "Good",
+  "chat_rate_bad": "Not great",
+  "chat_rate_retry": "Try again",
+  "chat_rate_missing": "What was missing?",
+  "chat_rate_send": "Send the rating",
+  "chat_rate_thanks": "Thank you, your rating is saved.",
+  "chat_rate_failed": "Your rating wasn't saved. Try again."
 }
