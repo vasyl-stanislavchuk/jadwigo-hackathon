@@ -25,6 +25,14 @@ export interface PgmqPool {
   connect(): Promise<PgmqClient>;
 }
 
+/**
+ * A transaction someone else opened and will end: the store unit's `unitSql()` meets it
+ * (`@jadwigo/store`, dl-z5ja.67). A queue joining it runs as that transaction's role.
+ */
+export interface PgmqTransaction {
+  query<R>(text: string, values?: readonly unknown[]): Promise<{ rows: R[] }>;
+}
+
 /** The roles a queue may run as. Both own no table and never bypass row-level security. */
 const QUEUE_ROLES = ["jadwigo_runner", "jadwigo_api"] as const;
 type QueueRole = (typeof QUEUE_ROLES)[number];
@@ -54,12 +62,27 @@ export interface StuckRuns {
 export class PgmqRunQueue implements RunQueue {
   readonly #pool: PgmqPool;
   readonly #role: QueueRole;
+  /** The transaction every call joins, when the queue was made by `joining`. */
+  #joined: PgmqTransaction | null = null;
 
   constructor(pool: PgmqPool, { role = "jadwigo_runner" }: { role?: QueueRole } = {}) {
     // The role is spliced into `set local role`, so only a name from the fixed list gets there.
     if (!QUEUE_ROLES.includes(role)) throw new Error(`${role} is not a queue role`);
     this.#pool = pool;
     this.#role = role;
+  }
+
+  /**
+   * A queue whose every call runs in `tx`, a transaction its owner opened and will end: no
+   * `begin`, `commit` or role of its own, so a step sent here commits or rolls back with the run
+   * row and inbox row written beside it (dl-z5ja.67). The role is the transaction's.
+   */
+  static joining(tx: PgmqTransaction): PgmqRunQueue {
+    const queue = new PgmqRunQueue({
+      connect: () => Promise.reject(new Error("a joined queue opens no connection")),
+    });
+    queue.#joined = tx;
+    return queue;
   }
 
   async send(message: RunStepInput, delay_s = 0): Promise<number> {
@@ -144,7 +167,8 @@ export class PgmqRunQueue implements RunQueue {
   }
 
   /** One transaction on one connection, as the queue's role; rolled back on a throw. */
-  async #in<T>(work: (client: PgmqClient) => Promise<T>): Promise<T> {
+  async #in<T>(work: (client: PgmqTransaction) => Promise<T>): Promise<T> {
+    if (this.#joined) return work(this.#joined);
     const client = await this.#pool.connect();
     try {
       await client.query(`begin; set local role ${this.#role}`);

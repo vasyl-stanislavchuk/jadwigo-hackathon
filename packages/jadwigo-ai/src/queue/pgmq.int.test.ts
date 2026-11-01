@@ -4,7 +4,7 @@
 // alarm. Only this file uses agent_step, so each test empties it.
 import { ID_PREFIXES, idOf, Uuid, uuidOf } from "@jadwigo/contracts";
 import { RunId } from "@jadwigo/contracts/run";
-import { createPostgresStore } from "@jadwigo/store";
+import { createPostgresStore, type NewRun } from "@jadwigo/store";
 import pg from "pg";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { databaseUrl } from "../config.ts";
@@ -96,5 +96,65 @@ describe("the stuck-run alarm", () => {
     const alarm = await q.stuck();
     expect(alarm.oldest_ready_step_age_s).toBeGreaterThanOrEqual(120);
     expect(alarm.runs_past_deadline).toContainEqual({ pod: member.pod, run_id: stuck });
+  });
+});
+
+describe("PgmqRunQueue joining a store unit (dl-z5ja.67)", () => {
+  async function stepsFor(run: RunId) {
+    const { rows } = await owner.query<{ n: number }>(
+      "select count(*)::int as n from pgmq.q_agent_step where message ->> 'run_id' = $1",
+      [run],
+    );
+    return rows[0]?.n;
+  }
+
+  function newRun(account: NewRun["created_by"], id: RunId): NewRun {
+    return {
+      id,
+      created_by: account,
+      conversation_id: null,
+      workflow: "jadwigo-lesson-compose",
+      resumes: null,
+      cap_usd: 1,
+      idle_deadline_at: "2026-09-01T08:10:00.000Z",
+      max_deadline_at: "2026-09-01T09:00:00.000Z",
+    };
+  }
+
+  it("sends nothing when the unit rolls back, and one step when it commits", async () => {
+    const member = await store.createAccount(Uuid.parse(crypto.randomUUID()), "pl");
+    const lost = RunId.parse(idOf(ID_PREFIXES.run, crypto.randomUUID()));
+    await expect(
+      store.unit(async () => {
+        await store.createRun(member.pod, newRun(member.account, lost));
+        await PgmqRunQueue.joining(store.unitSql()).send({ run_id: lost, attempt: 1 });
+        throw new Error("planted after the send");
+      }),
+    ).rejects.toThrow("planted after the send");
+    expect(await store.findRunPod(lost)).toBeUndefined();
+    expect(await stepsFor(lost)).toBe(0);
+
+    const kept = RunId.parse(idOf(ID_PREFIXES.run, crypto.randomUUID()));
+    const sent = await store.unit(async () => {
+      await store.createRun(member.pod, newRun(member.account, kept));
+      return PgmqRunQueue.joining(store.unitSql()).send({ run_id: kept, attempt: 1 });
+    });
+    expect(await store.findRunPod(kept)).toBe(member.pod);
+    expect(await stepsFor(kept)).toBe(1);
+    expect((await q.read(60, 1)).map((s) => [s.msg_id, s.message])).toEqual([
+      [sent, { run_id: kept, attempt: 1 }],
+    ]);
+  });
+
+  it("runs as the unit's role, and its handle works only inside the unit", async () => {
+    // The store runs as jadwigo_api, which may only send: a joined read is refused as that role.
+    await expect(
+      store.unit(async () => PgmqRunQueue.joining(store.unitSql()).read(60, 1)),
+    ).rejects.toThrow();
+    expect(() => store.unitSql()).toThrow("inside unit()");
+    const handle = await store.unit(async () => store.unitSql());
+    await expect(PgmqRunQueue.joining(handle).send({ run_id: RUN, attempt: 1 })).rejects.toThrow(
+      "outlived its unit",
+    );
   });
 });
