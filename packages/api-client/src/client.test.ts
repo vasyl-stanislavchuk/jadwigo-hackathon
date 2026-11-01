@@ -615,6 +615,7 @@ describe("the conversation calls", () => {
       bytes: 4096,
       width: 1500,
       height: 2000,
+      name: null,
       conversation_id: null,
       storage_path: null,
       created_at: AT,
@@ -645,6 +646,7 @@ describe("the conversation calls", () => {
     const read = stub(200, {
       attachment: { ...photo, state: "attached", storage_path: "pods/x/attachments/y.jpg" },
       url: "https://uploads.example/pods/x/attachments/y.jpg",
+      preview_url: null,
       expires_at: AT,
     });
     const link = await createClient({ base: "", fetch: read.fetch, token: signedIn }).getAttachment(
