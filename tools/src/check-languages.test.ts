@@ -26,8 +26,11 @@ describe("check-languages", () => {
       'checklist: "workflows/_lang/pl/checklist.md",',
     );
     const withFile = (path: string) => path === "workflows/_lang/pl/checklist.md" || exists(path);
+    // The file is in the repo now (dl-r772.34), so the stub leaves it out.
+    const withoutFile = (path: string) =>
+      path !== "workflows/_lang/pl/checklist.md" && exists(path);
     expect(checkLanguages(landed, withFile)).toEqual([]);
-    expect(checkLanguages(landed, exists)).toEqual([
+    expect(checkLanguages(landed, withoutFile)).toEqual([
       "pl is live and its checklist is missing: workflows/_lang/pl/checklist.md",
     ]);
   });

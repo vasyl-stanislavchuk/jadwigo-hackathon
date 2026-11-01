@@ -6,12 +6,18 @@
 // account. Under reduced motion there is no clip and no fade: the invitation shows at once. Grading a
 // fixed choose question is a string compare, so the site needs no @jadwigo/core. Without JS the tiles
 // stay disabled and the sheet is a teaser for the play button beside it.
-import { getEntry } from "astro:content";
+import type { Language } from "@jadwigo/config";
 import queenMov from "@jadwigo/ui/brand/queen.mov";
 import queenWebm from "@jadwigo/ui/brand/queen.webm";
+import { twinPath } from "../lib/i18n.ts";
+import { landingWords } from "../lib/words.ts";
 
-const q = (await getEntry("landing", "pl"))?.data.hero.question;
-if (!q) throw new Error("src/content/pl/landing.yaml has no hero question");
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+const q = (await landingWords(lang)).hero.question;
 ---
 
 <div class="sheet" data-answer={q.answer} data-right={q.right} data-hint={q.hint}>
@@ -25,7 +31,7 @@ if (!q) throw new Error("src/content/pl/landing.yaml has no hero question");
   <div class="face join" hidden>
     <p class="said">{q.right}</p>
     <p class="pitch">{q.signUp.text}</p>
-    <a class="btn" href="/zaloguj/">{q.signUp.button}</a>
+    <a class="btn" href={`${twinPath("signIn", lang)}/`}>{q.signUp.button}</a>
   </div>
   <video class="queen" aria-hidden="true" muted playsinline preload="none" hidden>
     <source src={queenMov} type='video/mp4; codecs="hvc1"' />

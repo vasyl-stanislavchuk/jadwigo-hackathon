@@ -71,7 +71,7 @@ There is no SQS, EventBridge, Step Functions, function URL, streaming or second 
 
 **Model rules.**
 - When this note was written, `jw.muse` allowed only `muse-spark-1.3-contributor`, took only prompts sealed by `jw.pii.guard`, and kept the budget ledger. The no-training tier for learner calls is `dl-z5ja.48`.
-- When this note was written, no real learner data went into a prompt. The owner decided on 2026-11-01 (draft decision `dl-2uq1`, waiting for acceptance): a parent's own child's data reaches the model, names included, only on a Meta tier that does not train on it (`private`); the `contributor` tier stays for the bank and carries no learner data (`jadwigo-hackathon/notes/2026-11-01-learner-data-reaches-the-model-by-design-for-the-parent-s-own-re`).
+- When this note was written, no real learner data went into a prompt. The owner decided on 2026-11-01 (decision `dl-2uq1`, accepted on 2026-11-01, `jadwigo-hackathon/decisions/2026-11-01-learner-data-reaches-the-model-by-design-for-the-parent-s-own-re`): a parent's own child's data reaches the model, names included, only on a Meta tier that does not train on it (`private`); the `contributor` tier stays for the bank and carries no learner data.
 
 ## What Preply loop-your-lesson teaches
 

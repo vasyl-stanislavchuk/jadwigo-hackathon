@@ -1,10 +1,11 @@
 ---
 // The 404 for each language under its own prefix: /en/404 once English is served (lib/i18n.ts).
 import NotFound from "../../components/NotFound.astro";
+import { strictBuild } from "../../lib/build.ts";
 import { prefixedLanguages } from "../../lib/i18n.ts";
 
 export function getStaticPaths() {
-  return prefixedLanguages(import.meta.env.PROD).map((lang) => ({
+  return prefixedLanguages(strictBuild).map((lang) => ({
     params: { lang },
     props: { lang },
   }));

@@ -1,4 +1,4 @@
-import { EventId, ID_PREFIXES, idOf, type PodId, Uuid } from "@jadwigo/contracts";
+import { type AccountId, EventId, ID_PREFIXES, idOf, type PodId, Uuid } from "@jadwigo/contracts";
 import {
   BUDGET_STEER_SHARE,
   BUDGET_STOP_SHARE,
@@ -9,7 +9,7 @@ import {
   RUN_MAX_MS,
   type Run,
   type RunEvent,
-  type RunId,
+  RunId,
   type RunInbox,
   type VerbName,
 } from "@jadwigo/contracts/run";
@@ -25,8 +25,10 @@ import {
 import { FIXED_NOW } from "@jadwigo/testing";
 import { describe, expect, it, vi } from "vitest";
 import type { MuseClient, MuseRequest, MuseResponse } from "../muse/client.ts";
+import { ScriptedMuse } from "../muse/scripted.ts";
 import { InMemoryRunQueue } from "../queue/memory.ts";
 import { STEP_VISIBILITY_S } from "../queue/types.ts";
+import { createVerbs, fixtureBank } from "../verbs/index.ts";
 import {
   type Verb,
   type VerbContext,
@@ -292,6 +294,46 @@ async function setup(script: readonly Reply[], verbs: Verbs = fakeVerbs(), cap_u
   };
 }
 
+const DRAFT_INPUT = { request: "a short lesson", grade: "1", names: [], topic: "addition" };
+
+/** Another pod's run, with a lesson whose title names its learners: what must never leak. */
+async function theirRun(
+  store: RunMemoryStore,
+  member: { pod: PodId; account: AccountId },
+  title: string,
+): Promise<RunId> {
+  const conversation = await store.createConversation(member.pod, {
+    id: ConversationId.parse(idOf(ID_PREFIXES.conversation, crypto.randomUUID())),
+    created_by: member.account,
+    title,
+  });
+  const run = await store.createRun(member.pod, {
+    id: RunId.parse(idOf(ID_PREFIXES.run, crypto.randomUUID())),
+    created_by: member.account,
+    conversation_id: conversation.id,
+    workflow: "jadwigo-lesson-compose",
+    resumes: null,
+    cap_usd: 1,
+    idle_deadline_at: null,
+    max_deadline_at: new Date(FIXED_NOW.getTime() + RUN_MAX_MS).toISOString(),
+  });
+  await store.appendRunEvents(member.pod, run.id, run.attempt, [
+    {
+      type: "message",
+      run_id: run.id,
+      event_id: newEventId(),
+      payload: { from: "parent", text: title },
+    },
+    {
+      type: "lesson_revision",
+      run_id: run.id,
+      event_id: newEventId(),
+      payload: { revision: 1, call_id: "call_1", lesson_file: { id: "theirs", title, parts: [] } },
+    },
+  ]);
+  return run.id;
+}
+
 function newEventId(): EventId {
   return EventId.parse(crypto.randomUUID());
 }
@@ -327,6 +369,19 @@ describe("acceptMessage", () => {
     const run = await t.say("Something.");
     await t.send({ event_id: newEventId(), kind: "cancel", payload: {} });
     expect((await t.run(run)).cancel_requested_at).toBe(FIXED_NOW.toISOString());
+  });
+
+  it("refuses a message's event_id resent as a cancel, and the run is never cancelled", async () => {
+    const t = await setup([]);
+    const id = newEventId();
+    const run = await t.say("Halves.", id);
+    await expect(t.send({ event_id: id, kind: "cancel", payload: {} })).rejects.toMatchObject({
+      type: "BadRequest",
+    });
+    expect((await t.run(run)).cancel_requested_at).toBeNull();
+    expect(t.store.inbox.map((r) => r.kind)).toEqual(["message"]);
+    // The same kind resent still lands once.
+    expect(await t.say("Halves.", id)).toBe(run);
   });
 
   it("opens a new run for the next turn once the last one ended", async () => {
@@ -460,6 +515,33 @@ describe("runStep and drain", () => {
     expect(revisions).toEqual([1, 2]);
   });
 
+  it("copies a verb's view into its tool_result, as lesson_check's findings", async () => {
+    // lesson_check names the run's draft, known once the parent has spoken.
+    const check: Record<string, unknown> = { help: {}, names: [] };
+    const t = await setup(
+      [
+        { calls: [{ verb: "lesson_draft", input: DRAFT_INPUT }] },
+        { calls: [{ verb: "lesson_check", input: check }] },
+        { text: "Ready." },
+      ],
+      createVerbs({ bank: fixtureBank() }),
+    );
+    const run = await t.say("Adding within 20, grade 1.");
+    check["draft_id"] = run;
+    await drain(t.deps);
+
+    const results = (await t.log(run)).flatMap((e) =>
+      e.type === "tool_result" ? [e.payload] : [],
+    );
+    expect(results.find((r) => r.verb === "lesson_draft")).not.toHaveProperty("view");
+    const checked = results.find((r) => r.verb === "lesson_check");
+    expect(checked?.error).toBeNull();
+    expect(checked?.view).toEqual({
+      kind: "lesson_check",
+      data: { publishable: expect.any(Boolean), findings: expect.any(Array) },
+    });
+  });
+
   it("writes a VerbError as the tool's error for the model to read", async () => {
     const t = await setup(
       [{ calls: [{ verb: "lesson_edit" }] }, { text: "Sorry." }],
@@ -480,6 +562,44 @@ describe("runStep and drain", () => {
     await t.say("Hi.");
     await drain(t.deps);
     expect(t.muse.calls[0]?.names).toEqual(["Fox", "fox"]);
+  });
+
+  it("names only the run's own pod's learners, and another pod's never reach a MuseRequest", async () => {
+    const OTHER = ["Wren", "wren", "Juniper", "juniper"];
+    // The model asks lesson_show for pod B's draft, by its run id, once pod B exists.
+    const show: Record<string, unknown> = {};
+    // Pod B: another family with made-up learners, and a run whose lesson names one of them.
+    const t = await setup(
+      [
+        { calls: [{ verb: "lesson_draft", input: DRAFT_INPUT }] },
+        { calls: [{ verb: "lesson_show", input: show }] },
+        { text: "Ready." },
+      ],
+      createVerbs({ bank: fixtureBank() }),
+    );
+    const other = await t.store.createAccount(Uuid.parse(crypto.randomUUID()), "pl");
+    await t.store.putLearner(other.pod, { handle: "wren", first_name: "Wren" });
+    await t.store.putLearner(other.pod, { handle: "juniper", first_name: "Juniper" });
+    const theirs = await theirRun(t.store, other, "A lesson for Wren and Juniper");
+    // Pod A, the run's own: 2 made-up learners.
+    await t.store.putLearner(t.member.pod, { handle: "fox", first_name: "Fox" });
+    await t.store.putLearner(t.member.pod, { handle: "ash", first_name: "Ash" });
+    show["draft_id"] = theirs;
+
+    const run = await t.say("Adding within 20 for Fox, grade 1.");
+    await drain(t.deps);
+
+    expect(t.muse.calls).toHaveLength(3);
+    for (const call of t.muse.calls) {
+      expect([...call.names].sort()).toEqual(["Ash", "Fox", "ash", "fox"]);
+      const sent = JSON.stringify(call);
+      for (const name of OTHER) expect(sent).not.toContain(name);
+    }
+    const shown = (await t.log(run)).find(
+      (e) => e.type === "tool_result" && e.payload.verb === "lesson_show",
+    );
+    expect(shown?.payload).toMatchObject({ output: null, error: { type: "unknown-draft" } });
+    expect((await t.run(run)).status).toBe("completed");
   });
 
   it("delivers a follow-up sent mid-call once, at the next step", async () => {
@@ -544,10 +664,51 @@ describe("runStep and drain", () => {
     expect(events.filter((e) => e.type === "tool_result")).toHaveLength(1);
     expect(events.find((e) => e.type === "error")?.payload).toMatchObject({
       error: { type: "StepTimedOut" },
-      attempt: 1,
+      // Call 1 claimed attempt 2, which stalled; the redelivery took 3, and call 2 took 4.
+      attempt: 2,
       retryable: true,
     });
-    expect(await t.run(run)).toMatchObject({ status: "completed", attempt: 2, spent_usd: 0.03 });
+    expect(await t.run(run)).toMatchObject({ status: "completed", attempt: 4, spent_usd: 0.03 });
+  });
+
+  it("2 runStep calls on one {run_id, attempt} at once call Muse once, with one turn_complete", async () => {
+    const t = await setup([]);
+    const muse = new ScriptedMuse([{ text: "Ready." }]);
+    t.deps.muse = muse;
+    const run = await t.say("Halves.");
+    const step = { run_id: run, attempt: 1 };
+    const outputs = await Promise.all([runStep(step, t.deps), runStep(step, t.deps)]);
+
+    expect(muse.calls).toHaveLength(1);
+    expect(outputs.map((o) => o.outcome).sort()).toEqual(["continue", "turn_complete"]);
+    const events = await t.log(run);
+    expect(events.filter((e) => e.type === "model_response")).toHaveLength(1);
+    expect(events.filter((e) => e.type === "turn_complete")).toHaveLength(1);
+    expect(events.filter((e) => e.type === "message").map((e) => e.payload.text)).toEqual([
+      "Halves.",
+      "Ready.",
+    ]);
+  });
+
+  it("2 steps racing on a tool turn pay each call once, and the turn completes", async () => {
+    const t = await setup([]);
+    const muse = new ScriptedMuse([
+      { tool_calls: [{ verb: "lesson_draft", input: {} }] },
+      { text: "Ready." },
+    ]);
+    t.deps.muse = muse;
+    const run = await t.say("Halves.");
+    await Promise.all([
+      runStep({ run_id: run, attempt: 1 }, t.deps),
+      runStep({ run_id: run, attempt: 1 }, t.deps),
+    ]);
+    await drain(t.deps);
+
+    expect(muse.calls.map((c) => c.call_no)).toEqual([1, 2]);
+    const events = await t.log(run);
+    expect(events.filter((e) => e.type === "tool_result")).toHaveLength(1);
+    expect(events.filter((e) => e.type === "turn_complete")).toHaveLength(1);
+    expect((await t.run(run)).status).toBe("completed");
   });
 
   it("a stalled attempt goes stale once a redelivery claims the run, and writes nothing", async () => {
@@ -657,6 +818,23 @@ describe("runStep and drain", () => {
     expect(events.filter((e) => e.type === "tool_result")).toHaveLength(1);
     expect(types(events).slice(-2)).toEqual(["status", "turn_complete"]);
     expect((await t.run(run)).status).toBe("cancelled");
+  });
+
+  it("hands a step that throws to onError with its run, attempt and msg_id, and keeps it queued", async () => {
+    const t = await setup([]);
+    // The store throws on the step's first write, as a missing grant would.
+    t.store.crashOn = () => true;
+    const run = await t.say("Halves.");
+    const seen: [unknown, unknown][] = [];
+    const outputs = await drain(t.deps, { onError: (error, step) => seen.push([error, step]) });
+
+    expect(outputs).toEqual([]);
+    expect(seen).toHaveLength(1);
+    expect(seen[0]?.[0]).toMatchObject({ message: "the process died" });
+    expect(seen[0]?.[1]).toEqual({ run_id: run, attempt: 1, msg_id: 1, read_ct: 1 });
+    t.tick(STEP_VISIBILITY_S * 1000 + 1000);
+    const [again] = await t.queue.read(STEP_VISIBILITY_S, 1);
+    expect(again).toMatchObject({ msg_id: 1, read_ct: 2, message: { run_id: run } });
   });
 
   it("leaves a step that throws in the queue, and the dead letter takes it after MAX_READS", async () => {
