@@ -2,6 +2,7 @@ import { z } from "zod";
 import { PodId } from "./ids.ts";
 import { LESSON_RECORDS } from "./records.ts";
 import {
+  Attachment,
   Conversation,
   MessageEvent,
   Run,
@@ -36,4 +37,6 @@ export const RECORDS = {
   }),
   run_inbox: RunInbox.options[0].extend({ kind: RunInboxKind, payload: Payload }),
   run_rating: RunRating,
+  /** A parent's photo, scoped to the pod (dl-e8ov.2.22, wave 5 decision 42). */
+  attachment: Attachment,
 } as const;

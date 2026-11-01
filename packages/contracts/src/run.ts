@@ -242,6 +242,12 @@ export const RUN_ERROR_TYPE = {
    */
   answerUnchecked: "AnswerUnchecked",
   /**
+   * An agent answer was not in the lesson's language twice, after its one correction (dl-z5ja.64,
+   * Lead decision 43). Checked only when the run has a lesson. Not `retryable`; the turn ends
+   * completed.
+   */
+  answerWrongLanguage: "AnswerWrongLanguage",
+  /**
    * A verb's lesson change was refused: the conversation's lesson moved after the verb read it,
    * by the parent's own edit or another turn (lead decision 48, dl-z5ja.76). Written as the
    * `tool_result`'s error, so the model reads the lesson again; the turn goes on.

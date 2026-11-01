@@ -23,7 +23,8 @@ export const PROBE_SCRIPT: readonly ScriptedReply[] = [
     ],
     cost_usd: 0,
   },
-  { text: "The made-up lesson is on the right.", cost_usd: 0 },
+  // In Polish, the draft's language: an English answer would be refused (dl-z5ja.64).
+  { text: "Lekcja jest gotowa po prawej.", cost_usd: 0 },
 ];
 
 export class ProbeMuse implements MuseClient {

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { firstSentence, goalLine, landingSchema, plural } from "./landing.ts";
+import {
+  facebookSignInLive,
+  firstSentence,
+  goalLine,
+  landingSchema,
+  plural,
+  signInDistChecks,
+  signInProviders,
+} from "./landing.ts";
 
 const forms = ["pytanie", "pytania", "pytań"] as const;
 
@@ -73,5 +81,37 @@ describe("goalLine", () => {
 
   it("says only that every skill is done when nothing comes next", () => {
     expect(goalLine([{ name: "Odczytuje godziny", state: "done" }], words)).toBe("Umie wszystko.");
+  });
+});
+
+describe("the Facebook sign-in switch (dl-ovva)", () => {
+  const facebook = 'href="https://app.jadwigo.pl/parent?provider=facebook';
+  const google = 'href="https://app.jadwigo.pl/parent?provider=google';
+
+  it("is off until the Meta app is Live, so /zaloguj shows Google only", () => {
+    expect(facebookSignInLive).toBe(false);
+    expect(signInProviders()).toEqual(["google"]);
+  });
+
+  it("asks the built /zaloguj and /en/sign-in for no Facebook link while it is off", () => {
+    const { must, mustNot } = signInDistChecks(["pl", "en"]);
+    expect(must).toEqual([
+      ["zaloguj/index.html", google],
+      ["en/sign-in/index.html", google],
+    ]);
+    expect(mustNot).toEqual([
+      ["zaloguj/index.html", facebook],
+      ["en/sign-in/index.html", facebook],
+    ]);
+  });
+
+  it("brings the Facebook button back, after Google, once it is on", () => {
+    expect(signInProviders(true)).toEqual(["google", "facebook"]);
+    const { must, mustNot } = signInDistChecks(["pl"], true);
+    expect(must).toEqual([
+      ["zaloguj/index.html", google],
+      ["zaloguj/index.html", facebook],
+    ]);
+    expect(mustNot).toEqual([]);
   });
 });

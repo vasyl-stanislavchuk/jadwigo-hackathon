@@ -7,6 +7,7 @@ export {
   type MuseClient,
   MuseFailed,
   type MuseInput,
+  type MusePart,
   type MuseRequest,
   type MuseResponse,
   type MuseTool,
@@ -29,6 +30,7 @@ export { ScriptedMuse, type ScriptedReply } from "./muse/scripted.ts";
 export { InMemoryRunQueue } from "./queue/memory.ts";
 export { type PgmqClient, type PgmqPool, PgmqRunQueue, type StuckRuns } from "./queue/pgmq.ts";
 export { MAX_READS, type QueuedStep, type RunQueue, STEP_VISIBILITY_S } from "./queue/types.ts";
+export type { AttachmentReader } from "./run/attachments.ts";
 export {
   type AcceptMessage,
   acceptMessage,

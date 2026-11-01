@@ -33,7 +33,7 @@ steps:
   title: How Jadwigo works
   description: You write what your child practices at school, your child plays a short lesson, and you know what they can do and what they're working on.
   heading: How it works
-  intro: You don't need to sit beside them for the whole lesson. A few minutes are enough to know what your child can do and where they struggle.
+  intro: You don't need to sit beside your child for the whole lesson. A few minutes are enough to know what they can do and where they struggle.
   pic: illustration · Jadwiga with her notebook, her class beside her
   items:
     - who: You
@@ -44,7 +44,7 @@ steps:
       text: A hint waits beside them. They can make a mistake, ask for more or stop for today.
     - who: You
       title: You know what your child can do now, and what they're still working on.
-      text: Every question, try and mistake in plain words. Jadwigo builds the next lesson from what was hard. And when you want to sit down together over something hard, it suggests where to start.
+      text: You see every question, try and mistake in plain words. Jadwigo builds the next lesson from what was hard. And when you want to sit down together over something hard, it suggests where to start.
   request:
     ask: Making change, like in the workbook. Mixes up dollars and cents.
     lines: [Looking for change questions with cents, Checking the lesson, Ready]
@@ -58,10 +58,10 @@ steps:
   record:
     counts:
       - { value: 8, label: questions }
-      - { value: 5, label: first try }
+      - { value: 5, label: on the first try }
       - { value: 3, label: with a hint }
     nextLabel: "Next lesson:"
-    next: making up to the next dollar, then change from $20.
+    next: counting up to the next dollar, then change from $20.
     screencast: "screencast · the child's page: goals, skills, the last lesson question by question"
 promises:
   heading: What you get
@@ -71,7 +71,7 @@ promises:
     - title: Every question has a source
       text: From Alfik Matematyczny and Khan Academy, always with the source named.
     - title: Your data is yours
-      text: Only you see your child's answers. They never go to models that train on them.
+      text: Only you see your child's answers. You can ask us to delete them at any time.
     - title: Print it, check it from a photo
       text: Print any lesson for your child. Take a photo of the finished work or the homework, and Jadwigo checks it.
 # Direction 1a (draft). Sophie is a made-up example child, never a real learner.
@@ -93,9 +93,9 @@ partner:
         - { name: Two-step problems, state: next }
     - name: "Time: clock and calendar"
       skills:
-        - { name: Reads hours and minutes, state: done }
-        - { name: Time passing in whole hours, state: done }
-        - { name: Time passing with minutes, state: done }
+        - { name: Tells time to the minute, state: done }
+        - { name: Elapsed time in whole hours, state: done }
+        - { name: Elapsed time in minutes, state: done }
         - { name: Dates and weeks on a calendar, state: next }
     - name: "Spelling: tricky letters"
       skills:

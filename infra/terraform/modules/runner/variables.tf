@@ -61,3 +61,9 @@ variable "schedule_enabled" {
   type        = bool
   default     = false
 }
+
+variable "uploads_bucket_name" {
+  description = "The uploads bucket whose pods/*/attachments/* the step host reads a message's photos from (dl-z5ja.11.2); blank for the probe, which reads none"
+  type        = string
+  default     = ""
+}

@@ -1,5 +1,6 @@
 import {
   AssignmentId,
+  AttachmentId,
   AttemptId,
   ConversationId,
   type ConversationMessage,
@@ -601,6 +602,56 @@ describe("the conversation calls", () => {
       },
     ]);
     expect(done.archived_at).toBe(AT);
+  });
+
+  it("creates a photo's upload form, and reads a sent photo's link (dl-z5ja.11.3)", async () => {
+    const photo = {
+      id: "atch_6et2fhbnwvb45aw9atcfzs33zf",
+      pod_id: attempt.pod_id,
+      account_id: "acc_6et2fhbnwvb45aw9atcfzs33zb",
+      event_id: EVENT,
+      state: "pending",
+      media_type: "image/jpeg",
+      bytes: 4096,
+      width: 1500,
+      height: 2000,
+      conversation_id: null,
+      storage_path: null,
+      created_at: AT,
+      expires_at: AT,
+      attached_at: null,
+    };
+    const created = stub(201, {
+      attachment: photo,
+      upload: { url: "https://uploads.example/", fields: { key: "pending/x" }, expires_at: AT },
+    });
+    const declared = {
+      event_id: EVENT,
+      media_type: "image/jpeg",
+      bytes: 4096,
+      width: 1500,
+      height: 2000,
+    } as const;
+    const form = await createClient({
+      base: "",
+      fetch: created.fetch,
+      token: signedIn,
+    }).createAttachment(declared);
+    expect(created.sent).toMatchObject([
+      { url: "/api/v1/attachments", method: "POST", body: declared },
+    ]);
+    expect(form.upload.fields).toEqual({ key: "pending/x" });
+
+    const read = stub(200, {
+      attachment: { ...photo, state: "attached", storage_path: "pods/x/attachments/y.jpg" },
+      url: "https://uploads.example/pods/x/attachments/y.jpg",
+      expires_at: AT,
+    });
+    const link = await createClient({ base: "", fetch: read.fetch, token: signedIn }).getAttachment(
+      AttachmentId.parse(photo.id),
+    );
+    expect(read.sent).toMatchObject([{ url: `/api/v1/attachments/${photo.id}`, method: "GET" }]);
+    expect(link.url).toBe("https://uploads.example/pods/x/attachments/y.jpg");
   });
 
   it("rates a turn at its ratings path", async () => {
