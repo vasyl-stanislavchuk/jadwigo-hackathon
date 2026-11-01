@@ -47,6 +47,13 @@ export type ChatItem =
       error: RunError | null;
       /** The result typed for its widget, from the call's `tool_result`. */
       view?: ToolView;
+      /** What the model called the verb with, from the call's `tool_call`, once the log has it. */
+      input?: Record<string, unknown>;
+      /**
+       * What the verb answered, from the call's `tool_result`, once the log has it: null for a
+       * failed call. The chat pane's plain fallback card shows both (dl-z5ja.68).
+       */
+      output?: Record<string, unknown> | null;
     }
   | { kind: "steer"; seq: number; level: "steer" | "stop"; spent_usd: number; cap_usd: number }
   | {
@@ -65,11 +72,22 @@ export type ChatItem =
 
 export type BudgetLevel = "none" | "steer" | "stop";
 
+/** One `lesson_revision`'s lesson file, opaque, and its number. */
+export interface LessonAt {
+  revision: number;
+  lesson_file: Record<string, unknown>;
+}
+
 /** What the 2 panes draw from one run's log. */
 export interface RunView {
   chat: ChatItem[];
   /** The highest `lesson_revision`, the lesson file opaque, or null before the first. */
-  lesson: { revision: number; lesson_file: Record<string, unknown> } | null;
+  lesson: LessonAt | null;
+  /**
+   * The revision just below `lesson`'s, for the page's one-step undo, or null while the log holds
+   * fewer than 2 revisions (dl-z5ja.68).
+   */
+  previous_lesson: LessonAt | null;
   /** The last `status` event's, or null before one. A late event never moves it off an ended turn. */
   status: RunStatus | null;
   /** False once `turn_complete` is in the log; nothing after it reopens the turn. */
@@ -123,9 +141,12 @@ export function foldRun(events: readonly RunEvent[]): RunView {
   const chat: ChatItem[] = [];
   const tools = new Map<string, ToolItem>();
   const approvals = new Map<string, ApprovalItem>();
+  /** Each revision's first lesson file, by revision. */
+  const revisions = new Map<number, LessonAt>();
   const view: RunView = {
     chat,
     lesson: null,
+    previous_lesson: null,
     status: null,
     turn_open: true,
     spent_usd: 0,
@@ -163,6 +184,7 @@ export function foldRun(events: readonly RunEvent[]): RunView {
       case "tool_call": {
         const line = toolLine(e.payload.call_id, e.payload.verb, e.seq, "running");
         if (line.state === "pending") line.state = "running";
+        line.input ??= e.payload.input;
         break;
       }
       case "tool_result": {
@@ -170,6 +192,7 @@ export function foldRun(events: readonly RunEvent[]): RunView {
         line.error = e.payload.error;
         line.state = e.payload.error ? "failed" : "done";
         if (e.payload.view) line.view = e.payload.view;
+        line.output = e.payload.output;
         break;
       }
       case "approval_request": {
@@ -219,11 +242,11 @@ export function foldRun(events: readonly RunEvent[]): RunView {
         if (view.turn_open) view.status = e.payload.status;
         break;
       case "lesson_revision":
-        if (view.lesson === null || e.payload.revision > view.lesson.revision) {
-          view.lesson = {
+        if (!revisions.has(e.payload.revision)) {
+          revisions.set(e.payload.revision, {
             revision: e.payload.revision,
             lesson_file: e.payload.lesson_file as Record<string, unknown>,
-          };
+          });
         }
         break;
       case "turn_complete":
@@ -233,6 +256,9 @@ export function foldRun(events: readonly RunEvent[]): RunView {
         break;
     }
   }
+  const [highest, previous] = [...revisions.keys()].sort((a, b) => b - a);
+  view.lesson = highest === undefined ? null : (revisions.get(highest) ?? null);
+  view.previous_lesson = previous === undefined ? null : (revisions.get(previous) ?? null);
   return view;
 }
 
