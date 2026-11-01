@@ -45,7 +45,7 @@ import {
   SkipReason,
   Subject,
 } from "./records.ts";
-import { Run, RunEvent } from "./run.ts";
+import { MessageContext, Run, RunEvent } from "./run.ts";
 
 /**
  * What crosses `/api/v1` during an attempt (decision
@@ -394,6 +394,14 @@ export const Me = z.object({
 export type Me = z.infer<typeof Me>;
 
 /**
+ * `PATCH /api/v1/pods/{id}`: a parent gives the pod's consent to the AI (`true`), or withdraws it
+ * (`false`). The server stamps `ai_consent_at`: giving it again keeps the first time, and a
+ * withdrawal sets it to null (dl-z5ja.112).
+ */
+export const PodPatch = z.strictObject({ ai_consented: z.boolean() });
+export type PodPatch = z.infer<typeof PodPatch>;
+
+/**
  * `POST /api/v1/accounts`: the first sign-in makes the pod, the account (keyed by the token's
  * `sub`) and a `parent` member row in one transaction. Idempotent per signed-in user: a 2nd call
  * makes nothing and returns the same `Me`.
@@ -664,10 +672,19 @@ export const ConversationMessage = z
     source: z.enum(["chat", "lesson_edit"]).optional(),
     /** The lesson file's questions a `lesson_edit` steer names, by their `id`. Never empty. */
     question_ids: z.array(z.string().min(1)).min(1).optional(),
+    /**
+     * A message's page (dl-z5ja.107): the learner page or the lesson screen it was sent from, as
+     * one id. A steer joins a running turn and carries none (Lead decision 36).
+     */
+    context: MessageContext.optional(),
   })
   .refine((m) => m.kind === "steer" || (m.source === undefined && m.question_ids === undefined), {
     message: "source and question_ids come only with a steer",
     path: ["kind"],
+  })
+  .refine((m) => m.kind !== "steer" || m.context === undefined, {
+    message: "context comes only with a message",
+    path: ["context"],
   });
 export type ConversationMessage = z.infer<typeof ConversationMessage>;
 
@@ -776,6 +793,8 @@ export const ERROR_STATUS = {
   MessageLimitMinute: 429,
   /** A message that would open a turn past the pod's `LIMITS.podDailyCapUsd` for the UTC day. */
   MessageLimitDay: 429,
+  /** A conversation route called before a parent gave the pod's consent to the AI (dl-z5ja.112). */
+  AiConsentMissing: 409,
   Unauthorized: 401,
   BankUnavailable: 502,
 } as const;

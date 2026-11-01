@@ -42,6 +42,24 @@ function message(run: RunId, text: string): NewRunEvent {
   };
 }
 
+function modelResponse(run: RunId, cost_usd: number): NewRunEvent {
+  return {
+    run_id: run,
+    event_id: EventId.parse(crypto.randomUUID()),
+    type: "model_response",
+    payload: {
+      response_id: "resp_1",
+      call_no: 1,
+      text: "Here is a plan.",
+      tool_calls: [],
+      usage: { input_tokens: 10, output_tokens: 5, cached_tokens: 0 },
+      cost_usd,
+      model: "a-model",
+      tier: "contributor",
+    },
+  };
+}
+
 function inbox(run: RunId, text: string) {
   const event_id = EventId.parse(crypto.randomUUID());
   return { run_id: run, event_id, kind: "message" as const, payload: { text } };
@@ -84,6 +102,30 @@ describe("PostgresStore as jadwigo_runner, the step consumer", () => {
     ]);
     await expect(runner.getMe(a.pod, b.account)).rejects.toThrow();
     await expect(runner.addLearner(a.pod, { first_name: "Vole", goals: [] })).rejects.toThrow();
+  });
+
+  // dl-z5ja.89: the Muse lane's spend, across pods, from the model_response events every run logs.
+  it("sums model_response costs across pods since a time, which only it may read", async () => {
+    const since = new Date(Date.now() - 1000).toISOString();
+    const before = await runner.spentUsd(["jadwigo-lesson-compose"], since);
+    for (const [cost, other] of [
+      [0.0125, 0.5],
+      [0.03, 0.25],
+    ] as const) {
+      const p = await scope();
+      const run = await api.createRun(p.pod, newRun(p.account, null));
+      await runner.appendRunEvents(p.pod, run.id, 1, [
+        modelResponse(run.id, cost),
+        // A usage event carries spend too, and is not a call: never counted.
+        { ...message(run.id, "x"), type: "usage", payload: { spent_usd: other, cap_usd: 1 } },
+      ]);
+    }
+    const after = await runner.spentUsd(["jadwigo-lesson-compose"], since);
+    // Other suites may log calls at the same time, so the 2 pods' 0.0425 is the least it grew by.
+    expect(after - before).toBeGreaterThanOrEqual(0.0425 - 1e-9);
+    expect(await runner.spentUsd([], since)).toBe(0);
+    expect(await runner.spentUsd(["jadwigo-lesson-compose"], "2999-01-01T00:00:00.000Z")).toBe(0);
+    await expect(api.spentUsd(["jadwigo-lesson-compose"], since)).rejects.toThrow();
   });
 
   it("is not the owner: it may not open an account, which only the API's role writes", async () => {

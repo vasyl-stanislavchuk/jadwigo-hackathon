@@ -6,7 +6,7 @@ import {
   type MuseClient,
   PgmqRunQueue,
 } from "@jadwigo/jadwigo-ai";
-import { createPostgresStore } from "@jadwigo/store";
+import { createPostgresStore, type Store } from "@jadwigo/store";
 import pg from "pg";
 import type { HostDeps } from "./host.ts";
 
@@ -27,7 +27,8 @@ const MAX_STEPS = 20;
  */
 export function postgresEngineHost(
   url: string,
-  muse: MuseClient,
+  /** The model, or how to make it from the host's store: the live one reads its ledger there. */
+  muse: MuseClient | ((store: Store) => MuseClient),
   warn: (line: string) => void,
   tier: ModelTier = "contributor",
 ): HostDeps & { close(): Promise<void> } {
@@ -41,10 +42,16 @@ export function postgresEngineHost(
   const engine: EngineDeps = {
     tier,
     store,
-    muse,
+    muse: typeof muse === "function" ? muse(store) : muse,
     verbs: createVerbs({ bank: fixtureBank() }),
     queue,
     now: () => new Date(),
+    // A call that went to a less private tier than the run asked for, answered or failed, is
+    // logged with its ids only (dl-z5ja.91, dl-z5ja.103).
+    onWarning: (w) =>
+      warn(
+        `${w.kind}: run ${w.run_id} call ${w.call_no} asked for ${w.requested}, went to ${w.answered}`,
+      ),
   };
   return {
     engine,

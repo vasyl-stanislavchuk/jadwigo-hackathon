@@ -38,3 +38,40 @@ export const BODY: Record<Register, string> = {
   app: "text-jw-page-body",
   lesson: "text-jw-body",
 };
+
+/**
+ * The density a part draws at (decision 2026-11-01-the-parent-app-is-a-sidebar-shell-and-a-3-column-
+ * lesson-workspac, dl-xo0q). "parent" is the signed-in parent's app: foundation.css's
+ * [data-density="parent"] block, body 14, a control 34, corners 10, 1 px lines. A context as well
+ * as an attribute, for the same reason as the register: a dialog, a sheet or a popover renders
+ * through a portal and leaves the attribute's subtree, so it reads the context and writes the
+ * attribute again on its own content.
+ */
+export type Density = "parent";
+
+const DensityContext = createContext<Density | undefined>(undefined);
+
+export function useDensity(): Density | undefined {
+  return useContext(DensityContext);
+}
+
+/** The parent's density for everything inside: the "app" register, and data-density on one div. */
+export function DensityScope({
+  value,
+  className,
+  children,
+}: {
+  value: Density;
+  className?: string;
+  children?: ReactNode;
+}): ReactElement {
+  return (
+    <RegisterProvider value="app">
+      <DensityContext.Provider value={value}>
+        <div data-density={value} className={className}>
+          {children}
+        </div>
+      </DensityContext.Provider>
+    </RegisterProvider>
+  );
+}
