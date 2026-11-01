@@ -62,6 +62,7 @@ import {
   RunEvent,
   type RunId,
   RunInbox,
+  type RunWorkflow,
 } from "@jadwigo/contracts/run";
 import {
   CompiledQuery,
@@ -511,7 +512,11 @@ class PostgresStore implements Store {
       const { row } = await this.#once(
         () => tx.selectFrom("pod").selectAll().where("id", "=", id).executeTakeFirst(),
         () => {
-          const valid = parse(Pod, { ...pod, created_at: new Date().toISOString() }, "the pod");
+          const valid = parse(
+            Pod,
+            { ...pod, created_at: new Date().toISOString(), ai_consent_at: null },
+            "the pod",
+          );
           return tx
             .insertInto("pod")
             .values({ id, name: valid.name, language: valid.language })
@@ -1743,6 +1748,33 @@ class PostgresStore implements Store {
     });
   }
 
+  async getPod(pod: PodId): Promise<Pod> {
+    return this.#in(pod, async (tx) => {
+      const row = await tx
+        .selectFrom("pod")
+        .selectAll()
+        .where("id", "=", uuidOf(ID_PREFIXES.pod, pod))
+        .executeTakeFirst();
+      if (!row) throw notFound("the pod");
+      return read(Pod, row, ID_PREFIXES.pod);
+    });
+  }
+
+  async setAiConsent(pod: PodId, consented: boolean): Promise<Pod> {
+    return this.#in(pod, async (tx) => {
+      const row = await tx
+        .updateTable("pod")
+        .set({
+          ai_consent_at: consented ? sql<Date>`coalesce(ai_consent_at, now())` : null,
+        })
+        .where("id", "=", uuidOf(ID_PREFIXES.pod, pod))
+        .returningAll()
+        .executeTakeFirst();
+      if (!row) throw notFound("the pod");
+      return read(Pod, row, ID_PREFIXES.pod);
+    });
+  }
+
   async getMe(pod: PodId, account: AccountId): Promise<Me> {
     const accountId = uuidOf(ID_PREFIXES.account, account);
     return this.#in(pod, async (tx) => {
@@ -2614,6 +2646,17 @@ class PostgresStore implements Store {
     });
   }
 
+  async spentUsd(workflows: readonly RunWorkflow[], since: string): Promise<number> {
+    const at = utc(since);
+    return this.#in(null, async (tx) => {
+      // muse_ledger.spent_usd reads past row-level security: every pod's model calls.
+      const { rows } = await sql<{ spent: string }>`
+        select muse_ledger.spent_usd(${[...workflows]}::run_workflow[], ${at}::timestamptz) as spent
+      `.execute(tx);
+      return Number(rows[0]?.spent ?? Number.NaN);
+    });
+  }
+
   async createConversation(pod: PodId, conversation: NewConversation): Promise<Conversation> {
     const id = uuidOf(ID_PREFIXES.conversation, conversation.id);
     return this.#in(pod, async (tx) => {
@@ -2623,7 +2666,12 @@ class PostgresStore implements Store {
         () => {
           const valid = parse(
             Conversation,
-            { ...conversation, pod_id: pod, created_at: new Date().toISOString() },
+            {
+              ...conversation,
+              pod_id: pod,
+              created_at: new Date().toISOString(),
+              archived_at: null,
+            },
             "the conversation",
           );
           return tx
@@ -2639,6 +2687,60 @@ class PostgresStore implements Store {
             .executeTakeFirst();
         },
       );
+      return read(Conversation, row, ID_PREFIXES.conversation);
+    });
+  }
+
+  async getConversation(pod: PodId, conversation: ConversationId): Promise<Conversation> {
+    const id = uuidOf(ID_PREFIXES.conversation, conversation);
+    return this.#in(pod, async (tx) => {
+      const row = await tx
+        .selectFrom("conversation")
+        .selectAll()
+        .where("id", "=", id)
+        .executeTakeFirst();
+      if (!row) throw notFound("the conversation");
+      return read(Conversation, row, ID_PREFIXES.conversation);
+    });
+  }
+
+  async listConversations(
+    pod: PodId,
+    { includeArchived = false }: { readonly includeArchived?: boolean } = {},
+  ): Promise<readonly Conversation[]> {
+    return this.#in(pod, async (tx) => {
+      let query = tx
+        .selectFrom("conversation")
+        .selectAll()
+        .where("pod_id", "=", uuidOf(ID_PREFIXES.pod, pod));
+      if (!includeArchived) query = query.where("archived_at", "is", null);
+      const rows = await query.orderBy("created_at", "desc").orderBy("id", "desc").execute();
+      return rows.map((row) => read(Conversation, row, ID_PREFIXES.conversation));
+    });
+  }
+
+  async archiveConversation(
+    pod: PodId,
+    conversation: ConversationId,
+    at: string,
+  ): Promise<Conversation> {
+    const id = uuidOf(ID_PREFIXES.conversation, conversation);
+    const archived = utc(at);
+    return this.#in(pod, async (tx) => {
+      // Only a live row is changed, so a 2nd archive keeps the first time; the read after it
+      // answers both, and NotFound for one outside the pod.
+      await tx
+        .updateTable("conversation")
+        .set({ archived_at: archived })
+        .where("id", "=", id)
+        .where("archived_at", "is", null)
+        .execute();
+      const row = await tx
+        .selectFrom("conversation")
+        .selectAll()
+        .where("id", "=", id)
+        .executeTakeFirst();
+      if (!row) throw notFound("the conversation");
       return read(Conversation, row, ID_PREFIXES.conversation);
     });
   }

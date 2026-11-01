@@ -75,4 +75,22 @@ describe("the host's model", () => {
     ).rejects.toBeInstanceOf(MuseRefused);
     expect(r.bodies).toEqual([]);
   });
+
+  // dl-z5ja.89: with the host's store, the lane's spend is what every run logged today, so the
+  // cap holds across cold starts.
+  it("reads the lane's spend from the host's store, and refuses at the cap with nothing sent", async () => {
+    const r = recorder();
+    const asked: string[] = [];
+    const store = {
+      spentUsd: (_workflows: readonly unknown[], since: string) => {
+        asked.push(since);
+        return Promise.resolve(CONTRIBUTOR.lane_cap_usd);
+      },
+    };
+    await expect(
+      liveMuse(CONTRIBUTOR, r.runtime, store).respond({ ...REQUEST, tier: "contributor" }),
+    ).rejects.toMatchObject({ type: "budget" });
+    expect(r.bodies).toEqual([]);
+    expect(asked[0]).toBe("2026-09-01T00:00:00.000Z");
+  });
 });

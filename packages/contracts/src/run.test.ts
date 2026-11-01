@@ -115,10 +115,16 @@ describe("a parent's patch rides on a lesson_edit steer (dl-z5ja.76)", () => {
   it("comes on the wire only with a lesson_edit steer", () => {
     const base = { event_id: BASE.event_id, text: "x" };
     const patch = { title: { en: "Mine" } };
-    const steer = { ...base, kind: "steer", source: "lesson_edit", patch };
+    const steer = { ...base, kind: "steer", source: "lesson_edit", patch, base_revision: 2 };
     expect(ConversationMessage.safeParse(steer).success).toBe(true);
     expect(ConversationMessage.safeParse({ ...steer, source: "chat" }).success).toBe(false);
-    expect(ConversationMessage.safeParse({ ...base, patch }).success).toBe(false);
+    expect(ConversationMessage.safeParse({ ...base, patch, base_revision: 2 }).success).toBe(false);
+    // A patch names the revision it was made on, and that revision comes only with a patch.
+    const { base_revision: _, ...unanchored } = steer;
+    expect(ConversationMessage.safeParse(unanchored).success).toBe(false);
+    const { patch: __, ...bare } = steer;
+    expect(ConversationMessage.safeParse(bare).success).toBe(false);
+    expect(ConversationMessage.safeParse({ ...steer, base_revision: 0 }).success).toBe(false);
   });
 });
 

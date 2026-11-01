@@ -1,4 +1,12 @@
-import { type AccountId, EventId, ID_PREFIXES, idOf, type PodId, Uuid } from "@jadwigo/contracts";
+import {
+  type AccountId,
+  EventId,
+  ID_PREFIXES,
+  idOf,
+  LessonVersionId,
+  type PodId,
+  Uuid,
+} from "@jadwigo/contracts";
 import {
   BUDGET_STEER_SHARE,
   BUDGET_STOP_SHARE,
@@ -123,6 +131,7 @@ class RunMemoryStore extends InMemoryStore {
       ...c,
       pod_id: pod,
       created_at: this.clock().toISOString(),
+      archived_at: null,
     };
     this.conversations.set(c.id, row);
     return Promise.resolve(row);
@@ -1574,19 +1583,21 @@ describe("the answer check: one correction per turn", () => {
 });
 
 describe("a parent's patch (dl-z5ja.76)", () => {
-  const steer = (patch: Record<string, unknown>) => ({
+  const steer = (patch: Record<string, unknown>, base_revision = 1) => ({
     event_id: newEventId(),
     kind: "steer" as const,
-    payload: { text: "I changed it.", source: "lesson_edit" as const, patch },
+    payload: { text: "I changed it.", source: "lesson_edit" as const, patch, base_revision },
   });
+  const drafting = (): Reply => ({ calls: [{ verb: "lesson_draft", input: DRAFT_INPUT }] });
+  const real = () => createVerbs({ bank: fixtureBank() });
 
-  it("is left as words when there is no lesson yet to change", async () => {
+  it("is left as words, told it was not applied, when there is no lesson yet", async () => {
     let t: Awaited<ReturnType<typeof setup>>;
     t = await setup([{ text: "Noted." }, { text: "Sure." }]);
     const scripted = t.deps.muse;
     t.deps.muse = {
       respond: async (request) => {
-        if (request.call_no === 1) await t.send(steer({ title: { en: "Mine" } }));
+        if (request.call_no === 1) await t.send(steer({ title: "Mine" }));
         return scripted.respond(request);
       },
     };
@@ -1594,22 +1605,33 @@ describe("a parent's patch (dl-z5ja.76)", () => {
     await drain(t.deps);
     const events = await t.log(run);
     expect(events.some((e) => e.type === "lesson_revision")).toBe(false);
-    expect(t.muse.calls[1]?.instructions).toContain("edited the lesson themselves");
-    expect(t.muse.calls[1]?.instructions).not.toContain("already in the lesson");
+    expect(t.muse.calls[1]?.instructions).toContain("Their change was not applied");
   });
 
   it("is applied once when the step that applies it is delivered again", async () => {
-    const t = await setup([{ calls: [{ verb: "lesson_draft" }] }, { text: "Done." }]);
+    const t = await setup([drafting(), { text: "Done." }], real());
     const run = await t.say("Halves.");
     await drain(t.deps);
     const { attempt } = await t.run(run);
-    await t.send(steer({ title: { en: "Mine" } }));
+    await t.send(steer({ title: "Mine" }));
     // The same step again, as a redelivery would bring it.
     await t.deps.queue.send({ run_id: run, attempt });
     await drain(t.deps);
     const revisions = (await t.log(run)).filter((e) => e.type === "lesson_revision");
     expect(revisions.map((e) => e.payload.revision)).toEqual([1, 2]);
     expect(t.muse.calls).toHaveLength(2);
+  });
+
+  it("is not applied when the file it makes would not read as a lesson", async () => {
+    for (const patch of [{ script: null }, { language: null }, { title: 7 }]) {
+      const t = await setup([drafting(), { text: "Done." }], real());
+      const run = await t.say("Halves.");
+      await drain(t.deps);
+      await t.send(steer(patch));
+      await drain(t.deps);
+      const revisions = (await t.log(run)).filter((e) => e.type === "lesson_revision");
+      expect(revisions.map((e) => e.payload.revision)).toEqual([1]);
+    }
   });
 
   it("leaves an ended turn's other inbox rows unlogged", async () => {
@@ -1622,12 +1644,95 @@ describe("a parent's patch (dl-z5ja.76)", () => {
       kind: "steer",
       payload: { text: "Shorter.", source: "chat" },
     });
-    await t.send(steer({ title: { en: "Mine" } }));
+    await t.send(steer({ title: "Mine" }));
     await drain(t.deps);
     // No lesson to change and no chat steer logged: the ended turn is as it was, plus the patch's steer.
     const after = await t.log(run);
     expect(after.slice(0, ended.length)).toEqual(ended);
     expect(after.slice(ended.length).map((e) => e.type)).toEqual(["steer"]);
     expect(t.muse.calls).toHaveLength(1);
+  });
+});
+
+describe("the message's page (dl-z5ja.107)", () => {
+  const LESSON = {
+    title: "Made-up halves",
+    language: "en" as const,
+    category: "child" as const,
+    subject: "math" as const,
+    grade: 1,
+    skill_ids: [],
+  };
+
+  it("names a lesson the pod has published, and refuses one it has only drafted", async () => {
+    const t = await setup([{ text: "About that lesson." }]);
+    const published = await t.store.putLesson(t.member.pod, LESSON);
+    const drafted = await t.store.putLesson(t.member.pod, LESSON);
+    // A published version, as the store answers one: publishing needs lesson questions, and the
+    // store's own contract covers that a draft has no latest version.
+    const latest = t.store.getLatestLessonVersion.bind(t.store);
+    t.store.getLatestLessonVersion = async (pod, lesson) =>
+      lesson === published.id
+        ? {
+            id: LessonVersionId.parse(idOf(ID_PREFIXES.lesson_version, crypto.randomUUID())),
+            pod_id: pod,
+            lesson_id: lesson,
+            version: 1,
+            revises: null,
+            published_at: FIXED_NOW.toISOString(),
+          }
+        : latest(pod, lesson);
+
+    await expect(
+      t.send({
+        event_id: newEventId(),
+        kind: "message",
+        payload: { text: "This one?", context: { lesson_id: drafted.id } },
+      }),
+    ).rejects.toMatchObject({ type: "NotFound" });
+    await t.send({
+      event_id: newEventId(),
+      kind: "message",
+      payload: { text: "This one?", context: { lesson_id: published.id } },
+    });
+    await drain(t.deps);
+    expect(t.muse.calls).toHaveLength(1);
+    expect(t.muse.calls[0]?.instructions).toContain(`screen of lesson ${published.id}`);
+  });
+
+  it("states the page of the turn's last parent message only", async () => {
+    const t = await setup([{ text: "Sure." }]);
+    const { learner } = await t.store.addLearner(t.member.pod, { first_name: "Mole" });
+    let first = true;
+    const scripted = t.deps.muse;
+    t.deps.muse = {
+      respond: async (request) => {
+        if (first) {
+          first = false;
+          await t.say("Back on the chat page now.");
+        }
+        return scripted.respond(request);
+      },
+    };
+    await t.send({
+      event_id: newEventId(),
+      kind: "message",
+      payload: { text: "Hi.", context: { learner_id: learner.id } },
+    });
+    await drain(t.deps);
+    expect(t.muse.calls[0]?.instructions).toContain("learner page of Mole");
+    expect(t.muse.calls.at(-1)?.instructions).not.toContain("writing from");
+  });
+
+  it("neutralises the learner's name, which the parent wrote", async () => {
+    const t = await setup([{ text: "Sure." }]);
+    const { learner } = await t.store.addLearner(t.member.pod, { first_name: "Mo<b>le" });
+    await t.send({
+      event_id: newEventId(),
+      kind: "message",
+      payload: { text: "Hi.", context: { learner_id: learner.id } },
+    });
+    await drain(t.deps);
+    expect(t.muse.calls[0]?.instructions).toContain("learner page of Mo‹b›le");
   });
 });

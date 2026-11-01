@@ -1,7 +1,10 @@
 /**
  * The parent's paths (dl-e8ov.2.38, dl-uukj.30.2):
  *
- *   /parent                    sign in, then the parent home
+ *   /parent                    sign in, then "Lekcje / Nowa lekcja", the parent app's first screen
+ *   /parent/lessons            the family's lessons (dl-xo0q; its table waits on dl-z5ja.106)
+ *   /parent/history            every attempt, newest first (its table waits on dl-z5ja.106.1)
+ *   /parent/children/<learner> one child's page (dl-uukj.47.3)
  *   /parent?claim=<assignment> the same, then keep the attempt this tab played of that assignment
  *   /parent/attempts/<attempt>?learner=<learner>
  *                              one finished lesson of the learner, question by question
@@ -20,6 +23,30 @@ import type { Provider } from "../config.ts";
 const PARENT_PATH = "/parent";
 const ATTEMPTS_PATH = `${PARENT_PATH}/attempts`;
 const ASSIGNMENTS_PATH = `${PARENT_PATH}/assignments`;
+const LESSONS_PATH = `${PARENT_PATH}/lessons`;
+const HISTORY_PATH = `${PARENT_PATH}/history`;
+const CHILDREN_PATH = `${PARENT_PATH}/children`;
+
+/** A path with the page's language, when there is one. */
+const withLang = (path: string, lang: string | null | undefined): string =>
+  lang ? `${path}?${new URLSearchParams({ lang })}` : path;
+
+/** /parent/lessons, the family's lessons. */
+export const lessonsPath = ({ lang }: { lang?: string | null } = {}): string =>
+  withLang(LESSONS_PATH, lang);
+
+/** /parent/history, every attempt. */
+export const historyPath = ({ lang }: { lang?: string | null } = {}): string =>
+  withLang(HISTORY_PATH, lang);
+
+/** /parent/children/<learner>, one child's page. */
+export const childPath = ({
+  learner,
+  lang,
+}: {
+  learner: LearnerId;
+  lang?: string | null;
+}): string => withLang(`${CHILDREN_PATH}/${learner}`, lang);
 
 /** /parent, with the assignment whose attempt to keep and the page's language. */
 export function parentPath({
@@ -60,14 +87,16 @@ export function assignmentPath({
   assignment: AssignmentId;
   lang?: string | null;
 }): string {
-  const path = `${ASSIGNMENTS_PATH}/${assignment}`;
-  return lang ? `${path}?${new URLSearchParams({ lang })}` : path;
+  return withLang(`${ASSIGNMENTS_PATH}/${assignment}`, lang);
 }
 
-/** Which parent page a path is: the home, an attempt or an assignment's overview (null for an id
- * that does not parse), or none. */
+/** Which parent page a path is: the home (the first screen), the lessons, the history, a child, an
+ * attempt or an assignment's overview (null for an id that does not parse), or none. */
 export type ParentRoute =
   | { kind: "home" }
+  | { kind: "lessons" }
+  | { kind: "history" }
+  | { kind: "child"; learner: LearnerId | null }
   | { kind: "attempt"; attempt: AttemptId | null }
   | { kind: "assignment"; assignment: AssignmentId | null };
 
@@ -76,7 +105,15 @@ const idUnder = (path: string, prefix: string): string | undefined =>
   path.startsWith(`${prefix}/`) ? path.slice(prefix.length + 1).replace(/\/$/, "") : undefined;
 
 export function parentRoute(path: string): ParentRoute | null {
-  if (path === PARENT_PATH || path === `${PARENT_PATH}/`) return { kind: "home" };
+  const bare = path.replace(/\/$/, "");
+  if (bare === PARENT_PATH) return { kind: "home" };
+  if (bare === LESSONS_PATH) return { kind: "lessons" };
+  if (bare === HISTORY_PATH) return { kind: "history" };
+  const child = idUnder(path, CHILDREN_PATH);
+  if (child !== undefined) {
+    const parsed = LearnerId.safeParse(child);
+    return { kind: "child", learner: parsed.success ? parsed.data : null };
+  }
   const attempt = idUnder(path, ATTEMPTS_PATH);
   if (attempt !== undefined) {
     const parsed = AttemptId.safeParse(attempt);

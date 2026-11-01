@@ -33,6 +33,14 @@
     },
     "patch": {
       "$ref": "#/$defs/LessonPatch"
+    },
+    "base_revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "context": {
+      "$ref": "#/$defs/MessageContext"
     }
   },
   "required": [
@@ -51,6 +59,42 @@
         "type": "string"
       },
       "additionalProperties": {}
+    },
+    "MessageContext": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "learner_id": {
+              "$ref": "#/$defs/LearnerId"
+            }
+          },
+          "required": [
+            "learner_id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "lesson_id": {
+              "$ref": "#/$defs/LessonId"
+            }
+          },
+          "required": [
+            "lesson_id"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LessonId": {
+      "type": "string",
+      "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
     }
   }
 }

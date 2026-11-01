@@ -5,7 +5,9 @@
 // action everywhere, not only under [data-lesson-theme] (dl-uukj.32.3). On an app page (the "app"
 // register, dl-uukj.32.17) it focuses with the page's 3 px outline, 3 px out, instead of the soft
 // ring; size="control" is the page body size, bold, 24 px in; and the outline variant is paper on
-// Zeszyt's line. In a lesson, and outside any Page, it draws as before.
+// Zeszyt's line. In a lesson, and outside any Page, it draws as before. In the parent's density
+// (dl-xo0q) a disabled action is quiet with a 1 px dashed outline, never a silent grey: the screen
+// writes the reason beside it. Its border is Zeszyt's line width, 2 px, and 1 px in that density.
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
 import type * as React from "react";
@@ -13,7 +15,7 @@ import { PAGE_FOCUS, type Register, useRegister } from "../lib/register.tsx";
 import { cn } from "../lib/utils.ts";
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center gap-3 rounded-lg border-2 border-transparent bg-clip-padding text-xl font-semibold whitespace-nowrap transition-all select-none active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-7",
+  "group/button inline-flex shrink-0 items-center justify-center gap-3 rounded-lg border-jw border-transparent bg-clip-padding text-xl font-semibold whitespace-nowrap transition-all select-none active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-7",
   {
     variants: {
       variant: {
@@ -48,6 +50,14 @@ const buttonVariants = cva(
     compoundVariants: [
       { register: "app", size: "control", class: "px-6 text-jw-page-body font-bold" },
       { register: "app", variant: "outline", class: "border-jw-line bg-jw-card text-jw-ink" },
+      // The parent's density: a control 34 high, 16 px in, and the quiet action's dashed outline.
+      { register: "app", size: "control", class: "in-data-[density=parent]:px-4" },
+      {
+        register: "app",
+        variant: "default",
+        class:
+          "in-data-[density=parent]:aria-disabled:border-dashed in-data-[density=parent]:aria-disabled:border-jw-ink-soft in-data-[density=parent]:disabled:border-dashed in-data-[density=parent]:disabled:border-jw-ink-soft",
+      },
     ],
     defaultVariants: { variant: "default", size: "default", register: "lesson" },
   },

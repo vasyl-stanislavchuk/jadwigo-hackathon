@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AccountId, ConversationId, EventId, PodId, RunId } from "./ids.ts";
+import { AccountId, ConversationId, EventId, LearnerId, LessonId, PodId, RunId } from "./ids.ts";
 import { Citation } from "./records.ts";
 
 /**
@@ -67,6 +67,12 @@ export const Conversation = z.object({
   created_by: AccountId,
   title: z.string().nullable(),
   created_at: At,
+  /**
+   * When a parent archived it, null while it is live (dl-z5ja.104, decision dl-84wo). An archived
+   * conversation is left out of the list and kept for the pod; it goes only with the pod. A reply
+   * written before the column reads as null.
+   */
+  archived_at: At.nullable().default(null),
 });
 export type Conversation = z.infer<typeof Conversation>;
 
@@ -215,6 +221,12 @@ const SteerQuestionIds = z.array(z.string().min(1)).min(1);
  */
 export const LessonPatch = z.record(z.string(), z.unknown());
 export type LessonPatch = z.infer<typeof LessonPatch>;
+/**
+ * The lesson revision a parent's patch was made on. The runner applies the patch only while that
+ * is still the latest: a merge patch replaces arrays whole, so on a newer revision it would undo
+ * what changed since (dl-z5ja.76). Not exported on its own: the steer snapshots carry it.
+ */
+const PatchBase = Count;
 
 const Base = {
   run_id: RunId,
@@ -229,12 +241,25 @@ function event<T extends string, P extends z.ZodType>(type: T, payload: P) {
   return z.object({ ...Base, type: z.literal(type), payload });
 }
 
+/**
+ * The page a parent's message was sent from (Lead decision 36, dl-z5ja.107): the learner page
+ * names its learner, the lesson screen its lesson. The runner reads it from the run's pod and
+ * refuses an id the pod does not hold before any model call. Absent: the chat's own page.
+ */
+export const MessageContext = z.union([
+  z.strictObject({ learner_id: LearnerId }),
+  z.strictObject({ lesson_id: LessonId }),
+]);
+export type MessageContext = z.infer<typeof MessageContext>;
+
 export const MessageEvent = event(
   "message",
   z.object({
     from: z.enum(["parent", "agent"]),
     text: z.string(),
     attachments: z.array(Attachment).optional(),
+    /** A parent's message only: the page it was sent from. */
+    context: MessageContext.optional(),
     /** What an agent's claim about a learner rests on (seam 2). */
     citations: z.array(Citation).optional(),
   }),
@@ -312,6 +337,7 @@ const SteerEvent = event(
     question_ids: SteerQuestionIds.optional(),
     /** A `lesson_edit` steer's change, applied as the `lesson_revision` that names this event. */
     patch: LessonPatch.optional(),
+    base_revision: PatchBase.optional(),
   }),
 );
 /** The agent's checklist for a long turn (seam 4). Each one replaces the last whole. */
@@ -379,7 +405,11 @@ export const RunInbox = z.discriminatedUnion("kind", [
   z.object({
     ...InboxBase,
     kind: z.literal("message"),
-    payload: z.object({ text: z.string(), attachments: z.array(Attachment).optional() }),
+    payload: z.object({
+      text: z.string(),
+      attachments: z.array(Attachment).optional(),
+      context: MessageContext.optional(),
+    }),
   }),
   z.object({
     ...InboxBase,
@@ -390,6 +420,7 @@ export const RunInbox = z.discriminatedUnion("kind", [
       source: SteerSource.optional(),
       question_ids: SteerQuestionIds.optional(),
       patch: LessonPatch.optional(),
+      base_revision: PatchBase.optional(),
     }),
   }),
   z.object({
