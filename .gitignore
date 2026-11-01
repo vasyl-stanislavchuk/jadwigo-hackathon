@@ -17,3 +17,5 @@ dist/
 test-results/
 playwright-report/
 supabase/.temp/
+# The step host bundles, built by make runner-bundle (dl-z5ja.5)
+supabase/functions/*/*.bundle.mjs

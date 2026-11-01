@@ -49,6 +49,7 @@ function draw(tools: ToolItem[], language: "pl" | "en" = "pl") {
   const view: RunView = {
     chat: tools,
     lesson: null,
+    previous_lesson: null,
     status: "completed",
     turn_open: false,
     spent_usd: 0,
