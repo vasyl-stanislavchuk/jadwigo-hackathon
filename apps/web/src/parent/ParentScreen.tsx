@@ -66,12 +66,15 @@ import { ChildPage } from "./child/ChildPage.tsx";
 import { Failed } from "./Failed.tsx";
 import { inAppBrowser } from "./inApp.ts";
 import { LanguagePick } from "./LanguagePick.tsx";
+import { AddChildDialog } from "./newLesson/AddChildDialog.tsx";
+import { NewLessonBox } from "./newLesson/NewLessonBox.tsx";
 import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";
 import { ProviderButton } from "./ProviderButton.tsx";
 import {
   childPath,
   claimOf,
   emailOf,
+  forOf,
   historyPath,
   learnerOf,
   lessonsPath,
@@ -178,6 +181,7 @@ export function ParentScreen({
       language={language}
       route={route ?? { kind: "home" }}
       learner={learnerOf(query)}
+      forLearner={forOf(query)}
       claim={claimOf(query)}
       onSignOut={() => {
         auth.signOut().finally(() => {
@@ -446,6 +450,7 @@ function SignedIn({
   route,
   learner,
   claim,
+  forLearner: forAtFirst,
   onSignOut,
 }: {
   api: ParentClient;
@@ -455,11 +460,16 @@ function SignedIn({
   /** The attempt page's ?learner. */
   learner: LearnerId | null;
   claim: AssignmentId | null;
+  /** ?for: the child the first screen's Dla starts at. */
+  forLearner: LearnerId | null;
   onSignOut: () => void;
 }): ReactElement {
   const [view, setView] = useState<View>({ kind: "loading" });
   const [pending, setPending] = useState(() => pendingClaim(claim));
-  const [adding, setAdding] = useState(false);
+  // Dodaj dziecko is open, and from where: Dla's menu picks the new child, the "+" does not.
+  const [adding, setAdding] = useState<"plus" | "dla" | null>(null);
+  const [forLearner, setForLearner] = useState<LearnerId | null>(forAtFirst);
+  const [soon, setSoon] = useState(false);
   const [notice, setNotice] = useState<CopyKey | null>(null);
   /** "Nie teraz" on the consent screen: asked again on the next visit, not on this one. */
   const [later, setLater] = useState(false);
@@ -506,9 +516,32 @@ function SignedIn({
   const addChild = (firstName: string): void =>
     run(async () => {
       const { learner } = await api.createLearner({ first_name: firstName });
-      setAdding(false);
       await keepFor(learner.id);
     });
+
+  /** The child the dialog created, until /me reads it back (see addFromDialog). */
+  const createdChild = useRef<{
+    firstName: string;
+    learner: Awaited<ReturnType<ParentClient["createLearner"]>>["learner"];
+  } | null>(null);
+
+  /** Dodaj dziecko's dialog: adds the child and reads /me again with the page left as it was (the
+   * box keeps its words). From Dla, Dla shows the child; with a claim waiting, it is kept for them. */
+  const addFromDialog = async ({ firstName }: { firstName: string }): Promise<void> => {
+    // A child created on a press whose /me read then failed is kept: pressing Dodaj again reads /me
+    // again and never makes a second child of the same name.
+    const kept = createdChild.current;
+    const learner =
+      kept !== null && kept.firstName === firstName
+        ? kept.learner
+        : (await api.createLearner({ first_name: firstName })).learner;
+    createdChild.current = { firstName, learner };
+    const me = await meOf(api, languageNow.current);
+    createdChild.current = null;
+    setView({ kind: "ready", me });
+    if (adding === "dla") setForLearner(learner.id);
+    if (pending !== null) run(() => keepFor(learner.id));
+  };
 
   if (view.kind === "loading") return <Loading language={language} />;
   if (view.kind === "failed")
@@ -545,15 +578,21 @@ function SignedIn({
       learners={learners}
       place={place}
       trail={trail}
-      onAddChild={() => setAdding(true)}
+      onAddChild={() => setAdding("plus")}
       onSignOut={onSignOut}
     >
       {body}
+      <AddChildDialog
+        language={language}
+        open={adding !== null}
+        onOpenChange={(open) => !open && setAdding(null)}
+        onAdd={addFromDialog}
+      />
     </ParentShell>
   );
 
-  // Adding a child, or keeping the tab's attempt for one: the page asks it before anything else.
-  if (adding || (pending !== null && learners.length === 0))
+  // Keeping the tab's attempt with no child yet: the page asks for one before anything else.
+  if (pending !== null && learners.length === 0)
     return shell(
       { kind: "elsewhere" },
       [{ label: t("parent_nav_children") }, { label: t("parent_add_child") }],
@@ -588,7 +627,7 @@ function SignedIn({
           variant="outline"
           size="control"
           className="self-start"
-          onClick={() => setAdding(true)}
+          onClick={() => setAdding("plus")}
           data-add-another
         >
           {t("parent_add_child")}
@@ -654,12 +693,27 @@ function SignedIn({
       return shell(
         { kind: "lessons" },
         newLesson,
-        <ParentPage>
-          {notice !== null && <Notice>{t(notice)}</Notice>}
-          <p className="text-jw-ink-soft" data-home>
-            {t("parent_lessons_empty")}
-          </p>
-        </ParentPage>,
+        <>
+          {notice !== null && (
+            <div className="px-4 pt-4 lg:px-6">
+              <Notice>{t(notice)}</Notice>
+            </div>
+          )}
+          <NewLessonBox
+            language={language}
+            learners={learners}
+            forLearner={forLearner}
+            onForChange={setForLearner}
+            onAddChild={() => setAdding("dla")}
+            // The engine's send lands with dl-z5ja.108; until then the box says it is on its way.
+            onSend={() => setSoon(true)}
+          />
+          {soon && (
+            <p className="px-4 pb-10 text-center text-jw-ink-soft" role="status" data-soon>
+              {t("parent_lesson_soon")}
+            </p>
+          )}
+        </>,
       );
   }
 }
