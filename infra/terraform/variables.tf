@@ -33,3 +33,9 @@ variable "app_reserved_concurrency" {
   description = "The app Lambda's reserved concurrency, set per environment below its Supabase pooler's client limit (dl-5ssh.75)"
   type        = number
 }
+
+variable "runner_muse_cap_usd" {
+  description = "USD the step host's Muse lane may spend per cold start before GuardedMuse refuses (dl-z5ja.20); each run's own cap_usd holds per turn"
+  type        = string
+  default     = "1"
+}

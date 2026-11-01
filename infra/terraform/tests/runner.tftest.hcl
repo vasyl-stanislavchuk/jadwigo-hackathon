@@ -18,6 +18,9 @@ mock_provider "aws" {
   mock_resource "aws_lambda_function" {
     defaults = { arn = "arn:aws:lambda:eu-central-1:123456789012:function:jadwigo-runner-probe-dev", version = "1" }
   }
+  mock_resource "aws_lambda_alias" {
+    defaults = { arn = "arn:aws:lambda:eu-central-1:123456789012:function:jadwigo-runner-prod:live" }
+  }
   mock_data "aws_iam_policy_document" {
     defaults = { json = "{}" }
   }
@@ -79,10 +82,40 @@ run "the_step_host_reads_its_muse_key" {
     environment   = "prod"
     handler       = "index.handler"
     secret_params = ["muse-api-key"]
+    schedule      = true
   }
 
   assert {
     condition     = aws_ssm_parameter.secret["muse-api-key"].name == "/jadwigo/prod/muse-api-key"
     error_message = "a secret is a SecureString under /jadwigo/<env>/, which the role alone reads"
+  }
+
+  assert {
+    condition     = aws_scheduler_schedule.drain[0].schedule_expression == "rate(1 minute)" && aws_scheduler_schedule.drain[0].target[0].input == "{}"
+    error_message = "the host's schedule drains every minute with an empty event"
+  }
+
+  assert {
+    condition     = aws_lambda_function_event_invoke_config.live.maximum_retry_attempts == 0
+    error_message = "an async poke is never retried: the step waits in agent_step for the next drain"
+  }
+}
+
+run "the_probe_has_no_schedule" {
+  command = plan
+
+  module {
+    source = "./modules/runner"
+  }
+
+  variables {
+    environment = "dev"
+    name        = "runner-probe"
+    handler     = "probe-lambda.handler"
+  }
+
+  assert {
+    condition     = length(aws_scheduler_schedule.drain) == 0 && length(aws_iam_role.schedule) == 0
+    error_message = "the probe is invoked by its script only"
   }
 }

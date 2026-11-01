@@ -118,3 +118,21 @@ module "app" {
   content_bucket_name      = module.content.bucket_name
   content_bucket_param_arn = module.content.bucket_param_arn
 }
+
+# The engine's step host (dl-z5ja.20): apps/runner, its own release target (`make -C infra
+# runner-deploy`), apart from the api. The api pokes its live alias after each pgmq.send, and the
+# schedule drains every minute behind it. Its pool holds 2 connections per instance, 10 at the
+# reserved 5, inside the 50 the api's 150 leave of the pooler's 200.
+module "runner" {
+  source = "./modules/runner"
+
+  environment   = var.environment
+  handler       = "index.handler"
+  schedule      = true
+  secret_params = ["muse-api-key"]
+
+  environment_variables = {
+    JADWIGO_MUSE_KEY_PARAM = "/jadwigo/${var.environment}/muse-api-key"
+    JADWIGO_MUSE_CAP_USD   = var.runner_muse_cap_usd
+  }
+}

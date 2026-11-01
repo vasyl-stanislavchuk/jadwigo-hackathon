@@ -186,7 +186,7 @@ This is a sketch only. The migration is `dl-z5ja.7`, a one-way door the owner pu
 | | Supabase Edge Function | 2nd AWS Lambda |
 |---|---|---|
 | Limits | 400 s wall clock (paid; 150 s free), **2 s CPU**, 256 MB, 150 s idle response timeout | 15 min, memory as configured |
-| Invoked by | `pg_net` on enqueue + Cron | `pg_net` → function URL + Cron |
+| Invoked by | `pg_net` on enqueue + Cron | the API's async invoke of the `live` alias after `pgmq.send`, and an EventBridge schedule every minute (`dl-z5ja.20`) |
 | Code | Deno; our bun workspace packages need their own bundle | Our `bun build` bundle; `packages/store` and `contracts` as they are |
 | Secrets / infra | Supabase secrets, no Terraform | Terraform + IAM (owner applies); the Muse key in AWS like the bank's search Lambda |
 | Risk | 2 s CPU on large JSON and lesson checks | One more deploy target |

@@ -122,3 +122,71 @@ resource "aws_lambda_alias" "live" {
     ignore_changes = [function_version]
   }
 }
+
+# The api's poke is fire-and-forget: a failed or lost one costs nothing, since the step waits in
+# agent_step for the next drain. So Lambda retries no async invoke, and drops one older than a minute,
+# when the schedule's next drain is due anyway.
+resource "aws_lambda_function_event_invoke_config" "live" {
+  function_name                = aws_lambda_function.runner.function_name
+  qualifier                    = aws_lambda_alias.live.name
+  maximum_retry_attempts       = 0
+  maximum_event_age_in_seconds = 60
+}
+
+data "aws_iam_policy_document" "scheduler_assume" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["scheduler.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "schedule" {
+  count = var.schedule ? 1 : 0
+
+  name               = "${local.name}-schedule"
+  assume_role_policy = data.aws_iam_policy_document.scheduler_assume.json
+}
+
+# The schedule may invoke the live alias and nothing else.
+data "aws_iam_policy_document" "schedule" {
+  statement {
+    sid       = "InvokesTheLiveAlias"
+    actions   = ["lambda:InvokeFunction"]
+    resources = [aws_lambda_alias.live.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "schedule" {
+  count = var.schedule ? 1 : 0
+
+  name   = "${local.name}-schedule"
+  role   = aws_iam_role.schedule[0].id
+  policy = data.aws_iam_policy_document.schedule.json
+}
+
+# Every minute, the finest EventBridge Scheduler goes. A drain that finds nothing visible ends at
+# once, so an idle minute costs one short invoke and two pooled connections.
+resource "aws_scheduler_schedule" "drain" {
+  count = var.schedule ? 1 : 0
+
+  name                = "${local.name}-drain"
+  schedule_expression = "rate(1 minute)"
+
+  flexible_time_window {
+    mode = "OFF"
+  }
+
+  target {
+    arn      = aws_lambda_alias.live.arn
+    role_arn = aws_iam_role.schedule[0].arn
+    input    = "{}"
+
+    retry_policy {
+      maximum_retry_attempts = 0
+    }
+  }
+}

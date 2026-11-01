@@ -2,7 +2,7 @@
 import { GetParameterCommand, SSMClient } from "@aws-sdk/client-ssm";
 
 /** Reads one SecureString, decrypted. The runner's role may read only the parameter it names. */
-type ReadParameter = (name: string) => Promise<string | undefined>;
+export type ReadParameter = (name: string) => Promise<string | undefined>;
 
 const readSsm: ReadParameter = async (name) => {
   const reply = await new SSMClient({}).send(
@@ -62,4 +62,34 @@ export function apiDatabaseUrl(): string {
 /** What the probe report names the host it measured: `lambda`, `edge` or `local`. */
 export function probeHost(): string {
   return setting("PROBE_HOST") ?? "local";
+}
+
+/** What the host's `HttpMuse` needs: the Meta key, the lane's cap and the no-training tier's model. */
+export interface MuseConfig {
+  api_key: string;
+  lane_cap_usd: number;
+  /** Null until the owner names the private tier's model (`dl-z5ja.3`); a private call is refused. */
+  private_model: string | null;
+}
+
+/**
+ * The key is `META_API_KEY` when it is in the environment (a laptop, which sources
+ * `~/.config/jadwigo-bank/muse.env`), else the SSM SecureString `JADWIGO_MUSE_KEY_PARAM` names, read
+ * once per cold start. The cap is `JADWIGO_MUSE_CAP_USD`, required: no call without a cap.
+ */
+export async function museConfig(read: ReadParameter = readSsm): Promise<MuseConfig> {
+  let api_key = setting("META_API_KEY");
+  if (api_key === undefined) {
+    const name = setting("JADWIGO_MUSE_KEY_PARAM");
+    if (!name) throw new Error("set META_API_KEY or JADWIGO_MUSE_KEY_PARAM: the host calls Muse");
+    api_key = (await read(name))?.trim() || undefined;
+    if (api_key === undefined) throw new Error(`the SSM parameter ${name} holds no value`);
+  }
+  const lane_cap_usd = Number(setting("JADWIGO_MUSE_CAP_USD") ?? "");
+  if (!(lane_cap_usd > 0)) {
+    throw new Error(
+      "JADWIGO_MUSE_CAP_USD is unset or not a positive number: no call without a cap",
+    );
+  }
+  return { api_key, lane_cap_usd, private_model: setting("JADWIGO_MUSE_PRIVATE_MODEL") ?? null };
 }

@@ -7,7 +7,8 @@
     "lint": "biome check .",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --config ../../vitest.config.ts --project unit",
-    "probe": "bun src/probe-cli.ts"
+    "probe": "bun src/probe-cli.ts",
+    "smoke": "bun src/smoke.ts"
   },
   "//": {
     "@aws-sdk/client-ssm": "reads the SecureString with the runner's DATABASE_URL once per cold start in src/config.ts",

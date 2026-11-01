@@ -49,3 +49,9 @@ variable "secret_params" {
   type        = set(string)
   default     = []
 }
+
+variable "schedule" {
+  description = "Invoke live every minute with {}: the safety net for a lost api invoke, and what drains the steps the pg_cron sweep enqueues. Off for the probe"
+  type        = bool
+  default     = false
+}
