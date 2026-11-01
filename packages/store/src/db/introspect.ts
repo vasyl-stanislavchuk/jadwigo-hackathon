@@ -60,6 +60,7 @@ const TS_TYPES: Readonly<Record<string, { readonly read: string; readonly write:
   uuid: { read: "string", write: "string" },
   text: { read: "string", write: "string" },
   int4: { read: "number", write: "number" },
+  float8: { read: "number", write: "number" },
   bool: { read: "boolean", write: "boolean" },
   // pg reads a timestamptz as a Date; a write may send ISO text.
   timestamptz: { read: "Date", write: "Date | string" },

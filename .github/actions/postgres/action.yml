@@ -3,7 +3,8 @@ description: >
   Postgres 17, prod's major version, from the PGDG apt repository, with pgTAP and pg_prove, on port
   5433 as Postgres.app runs it locally. No Docker (decision
   jadwigo-platform/decisions/2026-10-27-jadwigo-runs-on-a-prod-and-a-dev-supabase-project-a-native-local).
-  Creates the superuser runner and the database jadwigo_test. PGDG serves only the newest 17.x, so
+  Creates the superuser runner and the database jadwigo_test, and installs pgmq as Supabase has
+  it (`make pgmq`, dl-z5ja.53). PGDG serves only the newest 17.x, so
   the minor isn't pinned: a different major fails the job, and a minor other than prod's warns.
 inputs:
   prod-version:
@@ -34,6 +35,11 @@ runs:
         sudo pg_createcluster 17 main --port 5433 --start
         sudo -u postgres psql -p 5433 -c "create role runner superuser login password 'runner'"
         PGPASSWORD=runner createdb -h localhost -p 5433 -U runner jadwigo_test
+    - name: Install pgmq (make pgmq, the version Supabase's Postgres 17 ships)
+      shell: bash
+      env:
+        DATABASE_URL: postgresql://runner:runner@localhost:5433/jadwigo_test
+      run: make pgmq SUDO=sudo
     - name: Check the version against prod's
       shell: bash
       env:
