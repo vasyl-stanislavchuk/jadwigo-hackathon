@@ -61,7 +61,6 @@ describe("a message's step and its unit", () => {
         archive: (msg_id) => queue.archive(msg_id),
         deadLetters: () => queue.deadLetters(),
       },
-      usage: async () => ({ messages: 0, cap_usd: 0 }),
     });
     const headers = bearerOf(signToken({ sub: randomUUID() }));
     expect(

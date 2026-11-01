@@ -35,28 +35,10 @@ import { ApiError, badRequest } from "./errors.ts";
  * run's pod up by its id (`findRunPod`); the API's role may not.
  */
 
-/** What a message would add to: the parent's recent messages and the pod's spend today. */
-export interface MessageUsage {
-  /** The parent's messages to the AI at or after `minuteSince`. */
-  readonly messages: number;
-  /** The sum of `cap_usd` over the runs the pod opened at or after `daySince`. */
-  readonly cap_usd: number;
-}
-
-/** Reads `MessageUsage` in the request's unit, scoped to the pod (dl-z5ja.62). */
-export type ReadMessageUsage = (
-  store: Store,
-  pod: PodId,
-  account: AccountId,
-  since: { readonly minuteSince: string; readonly daySince: string },
-) => Promise<MessageUsage>;
-
 /** What the message routes need besides the store. */
 export interface EngineRouteDeps {
   /** Where a new step goes: pgmq's `agent_step` in AWS, sent as `jadwigo_api`. */
   readonly queue: RunQueue;
-  /** What the limits count. With none, every message fails: an unknown balance is never spent. */
-  readonly usage: ReadMessageUsage;
   readonly now: () => Date;
 }
 
@@ -74,7 +56,8 @@ async function checkLimits(
   const now = deps.now();
   const day = new Date(now);
   day.setUTCHours(0, 0, 0, 0);
-  const used = await deps.usage(store, pod, account, {
+  // In the request's unit, under the pod: the store's count, never a guess (dl-z5ja.72).
+  const used = await store.messageUsage(pod, account, {
     minuteSince: new Date(now.getTime() - 60_000).toISOString(),
     daySince: day.toISOString(),
   });
