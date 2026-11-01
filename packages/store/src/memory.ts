@@ -57,6 +57,7 @@ import {
 } from "@jadwigo/contracts";
 import {
   Attachment,
+  AttachmentMediaType,
   Conversation,
   type ConversationId,
   type NewRunEvent,
@@ -179,6 +180,28 @@ function frozen<T>(value: T): T {
     Object.freeze(value);
   }
   return value;
+}
+
+/**
+ * What the attachment table's checks hold (`20261101500000_attachment_documents.sql`), so the 2
+ * stores agree: one of the 4 kinds; a JPEG has its width and height and another kind has
+ * neither; a name, when there is one, is 1 to 120 characters. Each is `BadRequest`, as Postgres
+ * answers a check violation.
+ */
+function checkAttachmentKind(attachment: NewAttachment): void {
+  if (!AttachmentMediaType.safeParse(attachment.media_type).success)
+    throw new StoreError(
+      ErrorType.enum.BadRequest,
+      "the attachment is not a kind a parent may send",
+    );
+  const sized = attachment.width !== null && attachment.height !== null;
+  if ((attachment.media_type === "image/jpeg") !== sized)
+    throw new StoreError(
+      ErrorType.enum.BadRequest,
+      "a JPEG has its width and height, and another kind has neither",
+    );
+  if (attachment.name !== null && (attachment.name === "" || attachment.name.length > 120))
+    throw new StoreError(ErrorType.enum.BadRequest, "an attachment's name is 1 to 120 characters");
 }
 
 /**
@@ -1729,6 +1752,7 @@ export class InMemoryStore implements Store {
     this.#inPod(this.#accounts, pod, attachment.account_id, "the account");
     const stored = this.#taken(this.#attachments, pod, attachment.id);
     if (stored) return stored;
+    checkAttachmentKind(attachment);
     // One per pod and event_id, as the table's unique key keeps it.
     for (const row of this.#attachments.values()) {
       if (row.pod_id === pod && row.event_id === attachment.event_id)

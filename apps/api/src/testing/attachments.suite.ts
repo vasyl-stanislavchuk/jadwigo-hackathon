@@ -395,6 +395,26 @@ export function attachmentSuite(
       },
     );
 
+    // The name is for the parent's chip only, so it is not part of the resend's identity.
+    it("answers a resend with another name with the first row and a fresh form", async () => {
+      const a = await parent();
+      const event_id = event();
+      const create = (name: string) =>
+        a.call<AttachmentUpload>("POST", pathOf("createAttachment", {}), {
+          event_id,
+          media_type: PDF,
+          bytes: BYTES,
+          name,
+        });
+      const first = await create("zeszyt.pdf");
+      expect(first.status).toBe(201);
+      const again = await create("zadanie domowe.pdf");
+      expect(again.status).toBe(201);
+      expect(again.body.attachment).toEqual(first.body.attachment);
+      expect(again.body.attachment.name).toBe("zeszyt.pdf");
+      expect(uploads.forms).toHaveLength(2);
+    });
+
     it("reads a DOCX's central directory with ranged GETs from its end, past the first 64 KB", async () => {
       const a = await parent();
       const bytes = syntheticZip(DOCX_NAMES, { pad: 100_000 });

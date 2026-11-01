@@ -31,6 +31,63 @@ export function attachmentContract(name: string, make: () => Promise<Store> | St
       expect(await store.getAttachment(a.pod, created.id)).toEqual(created);
     });
 
+    // Wave 6 (dl-z5ja.11.10): the table's checks on kind, size and name, kept by both stores.
+    it("creates a HEIC, a PDF and a DOCX with a name and no size", async () => {
+      const store = await make();
+      const a = await scope(store);
+      for (const media_type of [HEIC, PDF, DOCX] as const) {
+        const given = {
+          ...photo(a.account),
+          media_type,
+          width: null,
+          height: null,
+          name: "zeszyt",
+        };
+        expect(await store.createAttachment(a.pod, given)).toMatchObject({
+          media_type,
+          width: null,
+          height: null,
+          name: "zeszyt",
+          state: "pending",
+        });
+      }
+    });
+
+    it("refuses a kind a parent may not send as BadRequest", async () => {
+      const store = await make();
+      const a = await scope(store);
+      const png = { ...photo(a.account), media_type: "image/png" } as unknown as NewAttachment;
+      await expect(store.createAttachment(a.pod, png)).rejects.toMatchObject(BAD);
+      expect(await store.countAttachments(a.pod, EPOCH)).toBe(0);
+    });
+
+    it("refuses a JPEG without its size, and a document with one, as BadRequest", async () => {
+      const store = await make();
+      const a = await scope(store);
+      await expect(
+        store.createAttachment(a.pod, { ...photo(a.account), width: null, height: null }),
+      ).rejects.toMatchObject(BAD);
+      await expect(
+        store.createAttachment(a.pod, { ...photo(a.account), height: null }),
+      ).rejects.toMatchObject(BAD);
+      await expect(
+        store.createAttachment(a.pod, { ...photo(a.account), media_type: PDF, name: "zeszyt" }),
+      ).rejects.toMatchObject(BAD);
+      expect(await store.countAttachments(a.pod, EPOCH)).toBe(0);
+    });
+
+    it("refuses a name of 121 characters, or an empty one, as BadRequest", async () => {
+      const store = await make();
+      const a = await scope(store);
+      for (const name of ["a".repeat(121), ""])
+        await expect(
+          store.createAttachment(a.pod, { ...photo(a.account), name }),
+        ).rejects.toMatchObject(BAD);
+      expect(
+        await store.createAttachment(a.pod, { ...photo(a.account), name: "a".repeat(120) }),
+      ).toMatchObject({ name: "a".repeat(120) });
+    });
+
     it("hides a photo from another pod, and refuses another pod's account and id", async () => {
       const store = await make();
       const a = await scope(store);
@@ -138,6 +195,11 @@ export function attachmentContract(name: string, make: () => Promise<Store> | St
 }
 
 const NOT_FOUND = { type: "NotFound" };
+const BAD = { type: "BadRequest" };
+const EPOCH = "2000-01-01T00:00:00.000Z";
+const HEIC = "image/heic";
+const PDF = "application/pdf";
+const DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
 /** A fresh signed-in account: its own pod, so no test sees another's rows. */
 async function scope(store: Store) {
