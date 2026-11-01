@@ -174,6 +174,7 @@ interface ConversationTable {
   created_by: string;
   title: string | null;
   created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+  archived_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
 }
 
 interface CurriculumTable {
@@ -621,6 +622,7 @@ export const COLUMNS = {
     created_by: { type: "uuid", nullable: false, generated: false, labels: null },
     title: { type: "text", nullable: true, generated: false, labels: null },
     created_at: { type: "timestamptz", nullable: false, generated: true, labels: null },
+    archived_at: { type: "timestamptz", nullable: true, generated: false, labels: null },
   },
   curriculum: {
     id: { type: "uuid", nullable: false, generated: true, labels: null },
