@@ -5,6 +5,7 @@
 export type { MuseClient, MuseInput, MuseRequest, MuseResponse, MuseTool } from "./muse/client.ts";
 export { ScriptedMuse, type ScriptedReply } from "./muse/scripted.ts";
 export { InMemoryRunQueue } from "./queue/memory.ts";
+export { type PgmqClient, type PgmqPool, PgmqRunQueue } from "./queue/pgmq.ts";
 export { MAX_READS, type QueuedStep, type RunQueue, STEP_VISIBILITY_S } from "./queue/types.ts";
 export {
   type AcceptMessage,

@@ -3,6 +3,7 @@ export type {
   AttemptClient,
   Client,
   ClientOptions,
+  ConversationClient,
   FeaturedClient,
   LearnerKnowledgeClient,
   ParentClient,

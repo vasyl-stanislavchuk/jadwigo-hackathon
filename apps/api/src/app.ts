@@ -1,9 +1,18 @@
 import { Router } from "@aws-lambda-powertools/event-handler/http";
 import { ErrorType, LIMITS, ROUTES, type Route, type RouteName } from "@jadwigo/contracts";
+import type { RunQueue } from "@jadwigo/jadwigo-ai";
 import type { Store } from "@jadwigo/store";
 import { answer, getAttempt, startAttempt } from "./attempts.ts";
 import { type Authenticate, type Claims, signedOut } from "./auth.ts";
-import { ApiError, errorResponse, json, refusal } from "./errors.ts";
+import {
+  cancelRun,
+  createConversation,
+  type EngineRouteDeps,
+  listConversationRuns,
+  listRunEvents,
+  postMessage,
+} from "./conversations.ts";
+import { ApiError, badRequest, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
 import {
   createGoal,
@@ -28,7 +37,9 @@ import { type BankDeps, type BucketDeps, questionBody, searchQuestions } from ".
 import { getParentReview, getReview } from "./review.ts";
 import { getResults, help, patchAttempt } from "./session.ts";
 
-type Params<N extends RouteName> = ReturnType<(typeof ROUTES)[N]["params"]["parse"]>;
+/** A route's parsed path parameters, and its query's when it reads one. */
+type Params<N extends RouteName> = ReturnType<(typeof ROUTES)[N]["params"]["parse"]> &
+  ((typeof ROUTES)[N] extends { query: { parse: (v: unknown) => infer Q } } ? Q : unknown);
 type Handle<N extends RouteName> = (
   params: Params<N>,
   body: unknown,
@@ -48,7 +59,22 @@ export interface AppDeps {
   readonly bank?: BankDeps | undefined;
   /** The content bucket the question body route reads. With none, that route answers 502. */
   readonly bucket?: BucketDeps | undefined;
+  /**
+   * Where the conversation routes enqueue a run's step. With none, a message or a Stop fails and
+   * its unit rolls back, so nothing waits in an inbox with no step to take it.
+   */
+  readonly queue?: RunQueue | undefined;
+  /** The engine's clock for a run's deadlines. */
+  readonly now?: () => Date;
 }
+
+/** No queue is wired: every send fails, and the unit that asked rolls back. */
+const NO_QUEUE: RunQueue = {
+  send: () => Promise.reject(new Error("no run queue is wired")),
+  read: () => Promise.reject(new Error("no run queue is wired")),
+  archive: () => Promise.reject(new Error("no run queue is wired")),
+  deadLetters: () => Promise.reject(new Error("no run queue is wired")),
+};
 
 /**
  * The `/api/v1` routes on the Powertools router, each registered from `ROUTES` (RULES.md rule
@@ -63,9 +89,10 @@ export interface AppDeps {
  */
 export function createApp(
   store: Store | Promise<Store>,
-  { authenticate = signedOut, bank, bucket }: AppDeps = {},
+  { authenticate = signedOut, bank, bucket, queue, now = () => new Date() }: AppDeps = {},
 ): Router {
   const app = new Router();
+  const engine: EngineRouteDeps = { queue: queue ?? NO_QUEUE, now };
 
   const register = <N extends RouteName>(name: N, handle: Handle<N>): void => {
     const route: Route = ROUTES[name];
@@ -79,8 +106,14 @@ export function createApp(
         const parsed = route.params.safeParse(params);
         // An id that does not parse names no record.
         if (!parsed.success) throw new ApiError(ErrorType.enum.NotFound, "no such record");
+        const query = queryOf(route, req);
         const body = route.body === null ? undefined : await bodyOf(req);
-        const reply = await handle(parsed.data as Params<N>, body, req.headers, claims);
+        const reply = await handle(
+          { ...(parsed.data as object), ...query } as Params<N>,
+          body,
+          req.headers,
+          claims,
+        );
         return json(route.status, route.response.parse(reply));
       } catch (error) {
         const refused = refusal(error);
@@ -174,6 +207,24 @@ export function createApp(
     run((s) => patchReport(s, claims, params.id, params.report, body)),
   );
 
+  // The AI engine's conversations (dl-z5ja.21): the pod is the caller's, and a route only writes
+  // the inbox and enqueues; the step host runs the step.
+  onSigned("createConversation", (_params, body, claims) =>
+    run((s) => createConversation(s, claims, body)),
+  );
+  onSigned("postMessage", (params, body, claims) =>
+    run((s) => postMessage(s, engine, claims, params.id, body)),
+  );
+  onSigned("listConversationRuns", (params, _body, claims) =>
+    run((s) => listConversationRuns(s, claims, params.id)),
+  );
+  onSigned("listRunEvents", (params, _body, claims) =>
+    run((s) => listRunEvents(s, claims, params.id, params.after)),
+  );
+  onSigned("cancelRun", (params, body, claims) =>
+    run((s) => cancelRun(s, engine, claims, params.id, body)),
+  );
+
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;
 }
@@ -188,6 +239,14 @@ function logFailure(route: RouteName, error: unknown): void {
       ? { name: error.name, message: error.message, stack: error.stack }
       : { name: typeof error, message: String(error) };
   console.error(JSON.stringify({ level: "ERROR", message: "route failed", route, error: failure }));
+}
+
+/** The query string, parsed with the route's `query`; a route that reads none gets nothing. */
+function queryOf(route: Route, req: Request): object {
+  if (route.query === undefined) return {};
+  const parsed = route.query.safeParse(Object.fromEntries(new URL(req.url).searchParams));
+  if (!parsed.success) throw badRequest(parsed.error.issues);
+  return parsed.data;
 }
 
 /**
