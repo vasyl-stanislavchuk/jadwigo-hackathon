@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Only you see your child's answers. They never go to models that train on them." |
+* | "Only you see your child's answers. You can ask us to delete them at any time." |
 *
 * @param {Site_Footer_DataInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const site_footer_data = /** @type {((inputs?: Site_Footer_DataInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Site_Footer_DataInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("Only you see your child's answers. They never go to models that train on them.")
-	return /** @type {LocalizedString} */ ("Odpowiedzi dziecka widzisz tylko Ty. Nie trafiają do modeli, które się na nich uczą.")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Only you see your child's answers. You can ask us to delete them at any time.")
+	return /** @type {LocalizedString} */ ("Odpowiedzi dziecka widzisz tylko Ty. W każdej chwili możesz poprosić o ich usunięcie.")
 });

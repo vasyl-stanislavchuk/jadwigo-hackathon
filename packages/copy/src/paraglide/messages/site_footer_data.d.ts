@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Only you see your child's answers. They never go to models that train on them." |
+* | "Only you see your child's answers. You can ask us to delete them at any time." |
 *
 * @param {Site_Footer_DataInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
