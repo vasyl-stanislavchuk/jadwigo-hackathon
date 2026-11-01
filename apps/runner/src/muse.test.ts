@@ -49,12 +49,13 @@ describe("the host's model", () => {
     expect(r.bodies[0]?.["model"]).toBe(CONTRIBUTOR_MODEL);
   });
 
-  it("never answers a private-tier request with the contributor model", async () => {
+  // dl-uafq (accepted 2026-11-01): while no private model is named, the contributor model
+  // serves a private-tier request too (#478); before, it was refused with nothing sent.
+  it("serves a private-tier request with the contributor model while no private model is named", async () => {
     const r = recorder();
-    await expect(liveMuse(CONTRIBUTOR, r.runtime).respond(REQUEST)).rejects.toBeInstanceOf(
-      MuseRefused,
-    );
-    expect(r.bodies).toEqual([]);
+    await expect(liveMuse(CONTRIBUTOR, r.runtime).respond(REQUEST)).rejects.toThrow();
+    expect(r.bodies).toHaveLength(1);
+    expect(r.bodies[0]?.["model"]).toBe(CONTRIBUTOR_MODEL);
   });
 
   it("refuses an untagged call in GuardedMuse, before anything is sent", async () => {
