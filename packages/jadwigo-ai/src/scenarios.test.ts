@@ -301,7 +301,7 @@ describe("the engine keeps PostHog's production lessons", () => {
               { verb: "lesson_check", input: (r) => ({ draft_id: r.run_id, help: {} }) },
             ],
           },
-          { text: "Your lesson is ready on the right." },
+          { text: "Lekcja jest gotowa po prawej." },
         ],
         createVerbs({ bank: fixtureBank() }),
       );
@@ -803,6 +803,53 @@ describe("the engine keeps PostHog's production lessons", () => {
     expect(agent).toEqual(["That draft failed. Shall I try again?"]);
     expect(events.some((e) => e.type === "error")).toBe(false);
     expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
+  });
+  // Lead decision 43 (wave 4, dl-z5ja.64): an answer is in the run's lesson's language.
+  frozen("an English answer on a Polish lesson is corrected once, then refused", async () => {
+    const ENGLISH = "Your lesson is ready on the right, with the questions you asked for.";
+    const POLISH = "Lekcja jest gotowa po prawej, z pytaniami, o które prosiłeś.";
+    const polish = { ...DRAFT_INPUT, language: "pl" };
+    const drafted = (): ScriptedReply => ({
+      tool_calls: [{ verb: "lesson_draft", input: polish }],
+      cost_usd: 0.02,
+    });
+    const isAgent = (e: RunEvent, text: string) =>
+      e.type === "message" && e.payload.from === "agent" && e.payload.text === text;
+
+    // The correction is in Polish: it is written, and the English one never is.
+    const fixed = await setup(
+      [drafted(), { text: ENGLISH }, { text: POLISH }],
+      createVerbs({ bank: fixtureBank() }),
+    );
+    const run = await fixed.say("Dodawanie do 20, klasa 1.");
+    await drain(fixed.deps);
+    const events = await fixed.log(run);
+    expect(fixed.muse.calls).toHaveLength(3);
+    expect(fixed.muse.calls[2]?.instructions).toContain("was not in Polish, the lesson's language");
+    expect(events.some((e) => isAgent(e, ENGLISH))).toBe(false);
+    expect(events.some((e) => isAgent(e, POLISH))).toBe(true);
+    expect(events.some((e) => e.type === "error")).toBe(false);
+
+    // The correction is English again: the language error in its place, and the turn ends.
+    const stuck = await setup(
+      [drafted(), { text: ENGLISH }, { text: ENGLISH }],
+      createVerbs({ bank: fixtureBank() }),
+    );
+    const other = await stuck.say("Dodawanie do 20, klasa 1.");
+    await drain(stuck.deps);
+    const log = await stuck.log(other);
+    expect(log.filter((e) => e.type === "message" && e.payload.from === "agent")).toEqual([]);
+    expect(log.find((e) => e.type === "error")?.payload).toMatchObject({
+      error: { type: RUN_ERROR_TYPE.answerWrongLanguage },
+      retryable: false,
+    });
+    expect(log.at(-1)?.type).toBe("turn_complete");
+
+    // No lesson in the run: no check, so an English answer on a Polish pod is written as it is.
+    const plain = await setup([{ text: ENGLISH }]);
+    const chat = await plain.say("Co umiesz zrobić?");
+    await drain(plain.deps);
+    expect((await plain.log(chat)).some((e) => isAgent(e, ENGLISH))).toBe(true);
   });
 
   frozen(

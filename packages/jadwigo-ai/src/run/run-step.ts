@@ -1,4 +1,4 @@
-import { type AccountId, ErrorType, type EventId, type PodId } from "@jadwigo/contracts";
+import { type AccountId, ErrorType, type EventId, Language, type PodId } from "@jadwigo/contracts";
 import {
   type ConversationId,
   type MessageContext,
@@ -30,6 +30,7 @@ import { mergePatch } from "../verbs/input.ts";
 import type { Verbs } from "../verbs/types.ts";
 import { type VerbContext, type VerbEffect, VerbError } from "../verbs/types.ts";
 import { eventIdFor, turnRunIdFor } from "./ids.ts";
+import { inLanguage } from "./language.ts";
 
 /**
  * The engine's loop (Lead decisions 5-9, 13): a message lands in the run inbox, a step is one Muse
@@ -455,7 +456,9 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
 
   if (pending.length === 0) {
     // The answer check reads the turn and the parent's words of the turns before it (dl-z5ja.26).
-    const check = (text: string) => refusalOf(text, [...prior.said, ...w.log]);
+    // ...and, when the run has a lesson, that the answer is in its language (dl-z5ja.64).
+    const check = (text: string) =>
+      refusalOf(text, [...prior.said, ...w.log], languageOf(w.log, prior.lesson));
     let correction: { call_no: number; text: string; refusal: Refusal } | null = null;
     const refused = last ? await refusedText(w, last) : null;
     if (last && refused !== null) {
@@ -464,7 +467,8 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       // A redelivery checks it again against what the model had read, the log up to its call:
       // words the parent wrote after it give nothing the answer could have read (dl-z5ja.102).
       const until = await callEndSeq(w, last);
-      const refusal = refusalOf(refused, [...prior.said, ...w.log.filter((e) => e.seq <= until)]);
+      const read = w.log.filter((e) => e.seq <= until);
+      const refusal = refusalOf(refused, [...prior.said, ...read], languageOf(read, prior.lesson));
       if (refusal === null) {
         await w.append([
           agentMessage(w, refused, await w.id("call", last.payload.call_no, "message")),
@@ -714,10 +718,16 @@ async function corrected(w: Writer, response: ModelResponse): Promise<boolean> {
  * Where the count of corrections starts again: after the last text-only answer that was written
  * and after the last `AnswerUnchecked`. Words written beside tool calls end no answer.
  */
+/** The error types a refused answer is written as. */
+const REFUSED = new Set<string>([
+  RUN_ERROR_TYPE.answerUnchecked,
+  RUN_ERROR_TYPE.answerWrongLanguage,
+]);
+
 async function answerEndedAt(w: Writer): Promise<number> {
   let since = 0;
   for (const e of w.log) {
-    if (e.type === "error" && e.payload.error.type === RUN_ERROR_TYPE.answerUnchecked) {
+    if (e.type === "error" && REFUSED.has(e.payload.error.type)) {
       since = Math.max(since, e.seq);
     }
   }
@@ -736,19 +746,51 @@ async function answerEndedAt(w: Writer): Promise<number> {
 interface Refusal {
   blank: boolean;
   misses: AnswerMiss[];
+  /** The lesson's language, when the answer was not in it (dl-z5ja.64). */
+  language: Language | null;
 }
 
-/** The answer check on `text` against `given`, with blank words refused as well. Null to write it. */
-function refusalOf(text: string, given: readonly RunEvent[]): Refusal | null {
-  if (text.trim() === "") return { blank: true, misses: [] };
+/**
+ * The answer check on `text` against `given`, with blank words refused as well, and words not in
+ * `language` when the run's lesson names one. Null to write it.
+ */
+function refusalOf(
+  text: string,
+  given: readonly RunEvent[],
+  language: Language | null,
+): Refusal | null {
+  if (text.trim() === "") return { blank: true, misses: [], language: null };
   const misses = checkAnswer(text, given);
-  return misses.length === 0 ? null : { blank: false, misses };
+  const wrong = language !== null && !inLanguage(text, language) ? language : null;
+  return misses.length === 0 && wrong === null ? null : { blank: false, misses, language: wrong };
 }
+
+/** The language of the run's lesson as it stands in `log`, else the turn before's: null with none. */
+function languageOf(log: readonly RunEvent[], base: VerbContext["lesson"]): Language | null {
+  const lesson = lessonOf(log) ?? base;
+  const parsed = Language.safeParse(lesson?.lesson_file["language"]);
+  return parsed.success ? parsed.data : null;
+}
+
+const LANGUAGE_NAME: Record<Language, string> = { pl: "Polish", en: "English" };
 
 /** What a refusal names, for the correction note and the error. */
-function refusedFor({ blank, misses }: Refusal): string {
+function refusedFor({ blank, misses, language }: Refusal): string {
   if (blank) return "said nothing";
-  return `named ${[...new Set(misses.map((m) => `"${m.said}"`))].join(", ")}, which no tool result of this turn gave`;
+  const said = [];
+  if (misses.length > 0) {
+    said.push(
+      `named ${[...new Set(misses.map((m) => `"${m.said}"`))].join(", ")}, which no tool result of this turn gave`,
+    );
+  }
+  if (language) said.push(`was not in ${LANGUAGE_NAME[language]}, the lesson's language`);
+  return said.join(", and ");
+}
+
+/** The error type a refusal is written as: only a refusal for its language alone is that. */
+function refusalType({ blank, misses, language }: Refusal): string {
+  if (!blank && misses.length === 0 && language !== null) return RUN_ERROR_TYPE.answerWrongLanguage;
+  return RUN_ERROR_TYPE.answerUnchecked;
 }
 
 /**
@@ -760,6 +802,7 @@ function correctionNote(text: string, refusal: Refusal): string {
   return [
     `Your last answer was not sent to the parent: it ${refusedFor(refusal)}.`,
     "Code computes every number, status and level; you only word them, and you never name a mastery level.",
+    ...(refusal.language ? [`Write it in ${LANGUAGE_NAME[refusal.language]}.`] : []),
     "Write the answer again with only what the tool results say. Your answer was:",
     fence(text, "child"),
   ].join("\n");
@@ -778,7 +821,7 @@ async function uncheckedEvent(
     event_id: await w.id("call", call_no, "unchecked"),
     payload: {
       error: {
-        type: RUN_ERROR_TYPE.answerUnchecked,
+        type: refusalType(refusal),
         message: `the answer ${refusedFor(refusal)}, ${when}`,
       },
       attempt: w.attempt,
