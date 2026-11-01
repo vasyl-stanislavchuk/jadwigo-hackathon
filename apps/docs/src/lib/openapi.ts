@@ -6,6 +6,8 @@ const TAG_DESCRIPTIONS: Readonly<Record<RouteTag, string>> = {
     "A child's play: start an attempt, answer, ask for help, pause and read the results. No sign-in; the attempt id is the access.",
   parents:
     "The parent screens: the signed-in adult, their pod, their children and what each child played. Every route takes a Supabase Auth token.",
+  conversations:
+    "A parent's chat with the AI: start a conversation, send a message, read each turn's events and stop a turn. Every route takes a Supabase Auth token.",
   lessons: "The lessons anyone may play, and the playground's written examples.",
   bank: "The question bank: search it, and read one question. Every route takes the bank's read token.",
   health: "Whether the API is up.",
@@ -20,6 +22,7 @@ export const REFERENCE_TAG_ORDER: readonly RouteTag[] = [
   "lessons",
   "attempts",
   "parents",
+  "conversations",
   "bank",
 ];
 
@@ -29,6 +32,7 @@ export const TAG_TITLES: Readonly<Record<RouteTag, string>> = {
   lessons: "Lessons",
   attempts: "Attempts",
   parents: "Parents",
+  conversations: "Conversations",
   bank: "Bank",
 };
 
@@ -62,6 +66,11 @@ const OPERATION_TITLES: Readonly<Record<RouteName, string>> = {
   createReport: "Work out a report",
   patchReport: "Write a report's narrative",
   listSkills: "List the skill catalogue",
+  createConversation: "Start a conversation",
+  postMessage: "Send a message",
+  listConversationRuns: "List a conversation's runs",
+  listRunEvents: "List a run's events",
+  cancelRun: "Stop a run",
   questionSearches: "Search the bank",
   questionBody: "Read a question",
 };
@@ -97,6 +106,11 @@ export const OPERATION_ORDER: readonly RouteName[] = [
   "createReport",
   "patchReport",
   "listSkills",
+  "createConversation",
+  "postMessage",
+  "listConversationRuns",
+  "listRunEvents",
+  "cancelRun",
   "questionSearches",
   "questionBody",
 ];

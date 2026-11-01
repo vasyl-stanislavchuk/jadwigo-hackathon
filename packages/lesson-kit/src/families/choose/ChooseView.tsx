@@ -34,6 +34,7 @@ import { RichText } from "../../parts/RichText.tsx";
 import { StepShell } from "../../parts/StepShell.tsx";
 import { missed, partTone, praised, useChanged, wholeMark, wholeTone } from "../../parts/tone.ts";
 import type { Instant } from "../../stage/clock.ts";
+import { useScreensLang } from "../../stage/lessonLanguage.ts";
 import { type PressModality, press } from "../../stage/press.ts";
 import type { Language } from "../../stage/types.ts";
 import type { Family } from "../names.ts";
@@ -66,6 +67,8 @@ function OptionContent({
   language: Language;
 }): JSX.Element {
   const c = option.content;
+  // "yes", "no" and an array's size are the screens' words, under the lesson's lang (dl-uukj.41).
+  const screensLang = useScreensLang(language);
   switch (c.kind) {
     case "text":
       // One element: the option's host stacks its content and its note in a column, so bare runs
@@ -78,12 +81,13 @@ function OptionContent({
     case "number":
       return <span className="tabular-nums">{notationText(String(c.number), language)}</span>;
     case "bool":
-      return <span>{copy(language, c.bool ? "yes" : "no")}</span>;
+      return <span {...screensLang}>{copy(language, c.bool ? "yes" : "no")}</span>;
     case "array":
       return (
         <span
           role="img"
           aria-label={copy(language, "dims", { rows: c.rows, cols: c.cols })}
+          {...screensLang}
           className="inline-grid gap-1"
           style={{ gridTemplateColumns: `repeat(${c.cols}, auto)` }}
         >
@@ -124,6 +128,8 @@ function items(
   props: { spec: ViewProps<F>["spec"]; language: Language },
   tone: (id: string) => ChoiceItem["tone"],
   note: (id: string) => string | undefined,
+  /** The screens' lang for the notes and the solution label (useScreensLang), or none. */
+  screensLang: { lang?: Language } = {},
 ): ChoiceItem[] {
   return pinNoneLast(props.spec.data.options).map((o) => ({
     id: o.id,
@@ -133,6 +139,7 @@ function items(
     content: <OptionContent option={o} language={props.language} />,
     tone: tone(o.id),
     note: note(o.id),
+    ...(screensLang.lang === undefined ? {} : { wordsLang: screensLang.lang }),
   }));
 }
 
@@ -237,6 +244,7 @@ function ChooseStill({
   bare?: boolean | undefined;
 }): JSX.Element {
   const { spec, language } = props;
+  const screensLang = useScreensLang(language);
   const picked = (id: string) => shown?.chosen.includes(id) ?? false;
   const isRight = (id: string) => right?.chosen.includes(id) ?? false;
   return (
@@ -294,6 +302,7 @@ function ChooseStill({
                   props,
                   (id) => (!isRight(id) && picked(id) ? "try_again" : "idle"),
                   () => undefined,
+                  screensLang,
                 ).map((i) =>
                   isRight(i.id) ? { ...i, solution: copy(language, "ds_solution_label") } : i,
                 )
@@ -313,6 +322,7 @@ function ChooseStill({
                       : picked(id) && right !== null
                         ? copy(language, "answer_yours")
                         : undefined,
+                  screensLang,
                 )
           }
         />
@@ -323,6 +333,7 @@ function ChooseStill({
 
 function ChoosePlay(props: PlayProps<F>): JSX.Element {
   const { spec, language, clock, live, attemptNo, feedback, onCommit } = props;
+  const screensLang = useScreensLang(language);
   const data = spec.data;
   const [chosen, setChosen] = useState<string[]>(() => props.initialValue?.chosen ?? []);
   const onset = useRef<{ at: Instant; modality: PressModality } | null>(null);
@@ -378,7 +389,9 @@ function ChoosePlay(props: PlayProps<F>): JSX.Element {
         }
       />
       {data.select === "many" && !isInline(data) && (
-        <p className="text-lg">{copy(language, "choose_all")}</p>
+        <p className="text-lg" {...screensLang}>
+          {copy(language, "choose_all")}
+        </p>
       )}
     </div>
   );
@@ -460,7 +473,7 @@ function ChoosePlay(props: PlayProps<F>): JSX.Element {
           ) : (
             <ChoiceGroup
               label={spec.say}
-              items={items(props, tone, tried).map((i) => ({
+              items={items(props, tone, tried, screensLang).map((i) => ({
                 ...i,
                 focus: focus.has(i.id),
                 removed: removed.has(i.id),

@@ -27,7 +27,8 @@
     "@jadwigo/testing": "the fixture lesson files and the pinned clock of the route tests",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
-    "vitest": "runs this package's unit and route tests with the root vitest.config.ts"
+    "vitest": "runs this package's unit and route tests with the root vitest.config.ts",
+    "@jadwigo/jadwigo-ai": "acceptMessage and PgmqRunQueue.joining: the conversation routes write the run inbox and send the step in the same unit (dl-z5ja.21, dl-z5ja.67)"
   },
   "devDependencies": {
     "@jadwigo/lesson-import": "workspace:*",
@@ -43,6 +44,7 @@
     "@aws-sdk/client-ssm": "3.1156.0",
     "@jadwigo/contracts": "workspace:*",
     "@jadwigo/core": "workspace:*",
+    "@jadwigo/jadwigo-ai": "workspace:*",
     "@jadwigo/store": "workspace:*"
   }
 }

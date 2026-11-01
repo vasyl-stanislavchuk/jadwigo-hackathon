@@ -16,6 +16,7 @@ import { copy } from "@jadwigo/copy";
 import { Button, cn } from "@jadwigo/ui";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { Clock, Instant } from "../stage/clock.ts";
+import { useScreensLang } from "../stage/lessonLanguage.ts";
 import { press } from "../stage/press.ts";
 import type { Language } from "../stage/types.ts";
 import type { ComposerEvent } from "./composer.ts";
@@ -128,6 +129,9 @@ export function Entry({
   }, [selected, whole]);
 
   const ariaLabel = label ?? copy(language, "answer_field");
+  // The field's name is the screens' words. A keypad field or fraction holds digits only, so it
+  // takes the screens' lang; a text field holds a word in the lesson's, so it keeps that (dl-uukj.41).
+  const screensLang = useScreensLang(language);
   const look = cn(
     FIELD,
     tone === "idle" ? "border-border" : TONE_CLASS[tone],
@@ -171,6 +175,7 @@ export function Entry({
           data-empty={state.text === "" ? "" : undefined}
           data-away={away ? "" : undefined}
           className="text-jw-math"
+          {...screensLang}
         >
           <FractionBoxes
             text={state.text}
@@ -225,6 +230,7 @@ export function Entry({
           role="textbox"
           aria-readonly="true"
           aria-label={ariaLabel}
+          {...screensLang}
           // It takes the focus, so the step keys can put the child in it.
           tabIndex={locked ? -1 : 0}
           data-tone={tone}
@@ -274,6 +280,7 @@ export function Entry({
           <input
             ref={field}
             aria-label={ariaLabel}
+            {...(input === "text" ? {} : screensLang)}
             data-tone={tone}
             data-field={ENTRY_FIELD}
             data-entry={input}

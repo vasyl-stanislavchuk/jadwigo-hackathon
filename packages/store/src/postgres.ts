@@ -63,7 +63,14 @@ import {
   type RunId,
   RunInbox,
 } from "@jadwigo/contracts/run";
-import { Kysely, PostgresDialect, type Selectable, sql, type Updateable } from "kysely";
+import {
+  CompiledQuery,
+  Kysely,
+  PostgresDialect,
+  type Selectable,
+  sql,
+  type Updateable,
+} from "kysely";
 import pg from "pg";
 import { COLUMNS, type DB } from "./db/types.ts";
 import { byTypeThenPosition, checkExamples } from "./example.ts";
@@ -345,6 +352,19 @@ class PostgresStore implements Store {
 
   async close(): Promise<void> {
     await this.#db.destroy();
+  }
+
+  unitSql(): UnitSql {
+    const unit = this.#units.getStore();
+    if (!unit) throw new Error("unitSql() is called inside unit()");
+    return {
+      query: async <R>(text: string, values: readonly unknown[] = []) => {
+        // A handle that outlived its unit would run on a connection another request may hold.
+        if (unit.closed) throw new Error("a unitSql() handle outlived its unit");
+        const { rows } = await unit.tx.executeQuery<R>(CompiledQuery.raw(text, [...values]));
+        return { rows: [...rows] };
+      },
+    };
   }
 
   async unit<T>(work: () => Promise<T>): Promise<T> {
@@ -2854,13 +2874,13 @@ class PostgresStore implements Store {
               // The statement's clock, so rows put in one unit are taken in the order they came.
               created_at: sql<Date>`clock_timestamp()`,
             })
-            .onConflict((oc) => oc.column("event_id").doNothing())
+            .onConflict((oc) => oc.columns(["pod_id", "event_id"]).doNothing())
             .returningAll()
             .executeTakeFirst();
         },
       );
-      // A replay is the same run's: an event_id is unique across runs (dl-z5ja.36). Another
-      // pod's row is hidden by RLS, so its conflict already ends in `taken()` inside `#once`.
+      // A replay is the same run's: an event_id is unique across a pod's runs (dl-z5ja.36). It is
+      // unique per pod, not across pods (dl-z5ja.86), so another pod's row never conflicts.
       if (row.run_id !== stored.id) throw taken();
       return read(RunInbox, row);
     });
@@ -2995,9 +3015,22 @@ interface PoolOptions {
 /**
  * The Store on Postgres, held to `store.contract.ts` as InMemoryStore is. `close` ends its pool.
  */
+/**
+ * A statement on the open unit's own connection: inside its transaction, as the store's role, with
+ * the pod the unit last set (dl-z5ja.67). What `PgmqRunQueue.joining` takes, so a step is sent in
+ * the transaction that writes its run and inbox row, and a unit that rolls back sends nothing.
+ */
+export interface UnitSql {
+  query<R>(text: string, values?: readonly unknown[]): Promise<{ rows: R[] }>;
+}
+
 export function createPostgresStore(
   databaseUrl: string,
   options?: PoolOptions,
-): Store & { close(): Promise<void> } {
+): Store & {
+  close(): Promise<void>;
+  /** The open unit's `UnitSql`. Called inside `unit()` only; it throws outside one. */
+  unitSql(): UnitSql;
+} {
   return new PostgresStore(databaseUrl, options);
 }

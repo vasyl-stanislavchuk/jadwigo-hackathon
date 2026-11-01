@@ -57,11 +57,21 @@ describe("a reviewed path page", () => {
       lang: "en" as const,
       reviewed: true,
     };
-    expect(pathPageChecks([source]).must).toEqual([
+    expect(pathPageChecks([source], ["pl", "en"]).must).toEqual([
       ["en/privacy/data-deletion/index.html", '<html lang="en"'],
       ["en/privacy/data-deletion/index.html", "<h1>Data deletion</h1>"],
       ["sitemap-0.xml", "<loc>https://jadwigo.pl/en/privacy/data-deletion/</loc>"],
     ]);
+  });
+
+  it("asks nothing of dist/ while its language is not live, as English is until dl-5ssh.34.70", () => {
+    const source = {
+      path: "/en/about",
+      heading: "About us",
+      lang: "en" as const,
+      reviewed: true,
+    };
+    expect(pathPageChecks([source], ["pl"]).must).toEqual([]);
   });
 });
 

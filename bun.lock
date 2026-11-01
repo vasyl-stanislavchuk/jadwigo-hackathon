@@ -25,6 +25,7 @@
         "@aws-sdk/client-ssm": "3.1156.0",
         "@jadwigo/contracts": "workspace:*",
         "@jadwigo/core": "workspace:*",
+        "@jadwigo/jadwigo-ai": "workspace:*",
         "@jadwigo/store": "workspace:*",
       },
       "devDependencies": {

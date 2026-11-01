@@ -2,6 +2,7 @@
 // DATABASE_URL is set, else on an in-memory store seeded with nothing. It listens on 127.0.0.1 only,
 // so `make api-dev ENV=dev` never serves jadwigo-dev data to the local network.
 import { createServer } from "node:http";
+import { InMemoryRunQueue } from "@jadwigo/jadwigo-ai";
 import { createPostgresStore, InMemoryStore } from "@jadwigo/store";
 import { createApp } from "./app.ts";
 import { jwksUrlAuth } from "./auth.ts";
@@ -11,8 +12,12 @@ const url = databaseUrl();
 // The token routes verify against AUTH_JWKS_URL (the dev project's JWKS) and AUTH_ISSUER; with
 // either unset, they are all 401.
 const authenticate = jwksUrlAuth(authJwksUrl(), authIssuer());
+// On Postgres a message's step joins its unit on pgmq's agent_step; in memory it goes to a queue
+// nobody reads: this server runs no step.
+const queue = new InMemoryRunQueue(() => new Date());
 const app = createApp(url === undefined ? new InMemoryStore() : createPostgresStore(url), {
   authenticate,
+  queue,
 });
 const context = {} as Parameters<typeof app.resolve>[1];
 

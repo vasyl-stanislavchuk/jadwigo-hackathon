@@ -14,6 +14,7 @@ import "@jadwigo/ui/foundation.css";
 import { getCollection, getEntry } from "astro:content";
 import { m } from "@jadwigo/copy/messages";
 import wordmark from "@jadwigo/ui/brand/wordmark.svg?raw";
+import LanguageNote from "../components/LanguageNote.astro";
 import { strictBuild } from "../lib/build.ts";
 import {
   footerPaths,
@@ -23,7 +24,14 @@ import {
   servedTwinPaths,
   twinPath,
 } from "../lib/i18n.ts";
-import { assertReviewed, headTags, jsonLd, type Page, servedPathPages } from "../lib/seo.ts";
+import {
+  assertReviewed,
+  headTags,
+  jsonLd,
+  type Page,
+  servedPathPages,
+  xDefaultTag,
+} from "../lib/seo.ts";
 
 interface Props {
   page: Page;
@@ -49,7 +57,8 @@ const served = new Set<string>([
 ]);
 const twin = page.translation && served.has(page.translation) ? page.translation : undefined;
 const { translation: _all, ...rest } = page;
-const tags = headTags(twin ? { ...rest, translation: twin } : rest, path);
+const shown = twin ? { ...rest, translation: twin } : rest;
+const tags = [...headTags(shown, path), ...xDefaultTag(shown, path)];
 const links = landing.links.filter((l) => served.has(l.href));
 const home = twinPath("index", lang);
 const footer = footerPaths(lang);
@@ -77,7 +86,7 @@ const footerLinks = [
       )
     }
     <link rel="sitemap" href="/sitemap-index.xml" />
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd())} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd(lang))} />
     <style is:global>
       *, *::before, *::after { box-sizing: border-box; }
       html { scroll-behavior: smooth; }
@@ -203,6 +212,7 @@ const footerLinks = [
         <a class="btn quiet" href={`${twinPath("signIn", lang)}/`}>{m.site_nav_sign_in({}, locale)}</a>
       </div>
     </header>
+    {twin && <LanguageNote lang={lang} twin={other} href={twin === "/" ? "/" : `${twin}/`} />}
     <main>
       {prose && <h1>{page.heading}</h1>}
       {page.draftNote && <p class="draft" role="note">{page.draftNote}</p>}

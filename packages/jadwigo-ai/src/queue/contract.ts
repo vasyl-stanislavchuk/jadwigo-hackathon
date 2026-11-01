@@ -63,5 +63,16 @@ export function runQueueContract(
       await tick(100);
       expect(await q.read(10, 1)).toEqual([]);
     });
+
+    it("delivers a step at most once per read, past a dead letter, with no visibility timeout", async () => {
+      const { q } = await make();
+      const a = await q.send({ run_id: run, attempt: 1 });
+      for (let i = 1; i <= MAX_READS; i++) await q.read(0, 1);
+      const b = await q.send({ run_id: run, attempt: 2 });
+      // a is read a 4th time and dead-lettered, which leaves a place in the batch; b fills it once.
+      expect((await q.read(0, 2)).map((s) => [s.msg_id, s.read_ct])).toEqual([[b, 1]]);
+      expect((await q.deadLetters()).map((s) => s.msg_id)).toEqual([a]);
+      expect((await q.read(0, 5)).map((s) => [s.msg_id, s.read_ct])).toEqual([[b, 2]]);
+    });
   });
 }

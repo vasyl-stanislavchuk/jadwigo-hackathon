@@ -72,6 +72,23 @@ describe("openapi.json", () => {
   it("names no servers: the docs app adds them", () => {
     expect(doc).not.toHaveProperty("servers");
   });
+
+  it("lists a route's query as query parameters, optional when the schema allows none", () => {
+    const routes = {
+      listRunEvents: {
+        ...ROUTES.listRunEvents,
+        query: z.object({ after: z.int().optional(), limit: z.int() }),
+      },
+    };
+    const { paths } = openApiDocument(routes) as {
+      paths: Record<string, Record<string, { parameters: { name: string; in: string }[] }>>;
+    };
+    expect(paths["/api/v1/runs/{id}/events"]?.["get"]?.parameters).toMatchObject([
+      { name: "id", in: "path", required: true },
+      { name: "after", in: "query", required: false, schema: { type: "integer" } },
+      { name: "limit", in: "query", required: true },
+    ]);
+  });
 });
 
 describe("a route table openApiDocument refuses", () => {

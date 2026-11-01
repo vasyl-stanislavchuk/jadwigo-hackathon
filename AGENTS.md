@@ -212,8 +212,9 @@ Each fence has a test that plants a violation (`tools/src/*.test.ts`, `.claude/h
 3. **Strict TypeScript:** `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, and ids that
    are branded types only the Zod parsers in `packages/contracts` create.
 4. **Biome:** errors on `any`, `@ts-ignore`, `.only` and `.skip`. `lint/*.grit`: `process.env`
-   is read only in a `src/config.ts`, and an error type, route path or id prefix is written
-   through its constant.
+   is read only in a `src/config.ts`, an error type, route path or id prefix is written
+   through its constant, and a component in `apps/web` or `packages/lesson-kit` types no words
+   into JSX text or an `aria-label` (`lint/no-jsx-literal.grit`).
 5. **Imports** (dependency-cruiser): apps import packages, never the reverse. `contracts` imports
    nothing of ours. Only test files import `@jadwigo/testing`. knip fails unused files, exports and
    dependencies.

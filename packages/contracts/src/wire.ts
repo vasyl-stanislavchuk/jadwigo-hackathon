@@ -45,6 +45,7 @@ import {
   SkipReason,
   Subject,
 } from "./records.ts";
+import { Run, RunEvent } from "./run.ts";
 
 /**
  * What crosses `/api/v1` during an attempt (decision
@@ -621,7 +622,55 @@ export const LIMITS = {
   enteredChars: 200,
   /** The reports one learner's list returns (`getLearnerReports`), newest first. */
   reportsPerLearner: 50,
+  /**
+   * The messages one parent may send the AI in a minute; the next is `MessageLimit` (PostHog's
+   * 10 a minute per user, `docs/research/posthog-ai-production.md` section 4, dl-z5ja.62).
+   */
+  messagesPerMinute: 10,
+  /**
+   * What the runs a pod opens in one UTC day may spend at most, the sum of their `cap_usd`. Once
+   * it is reached, the next message is `MessageLimit`: a budget not known is never spent.
+   */
+  podDailyCapUsd: 10,
 } as const;
+
+/**
+ * `POST /api/v1/conversations`: a parent's new chat with the AI engine (epic dl-z5ja). The page
+ * mints `event_id`, and the conversation's id comes from it and the caller's pod, so a resend makes
+ * nothing new and answers the same conversation.
+ */
+export const ConversationCreate = z.strictObject({
+  event_id: EventId,
+  title: z.string().trim().min(1).optional(),
+});
+export type ConversationCreate = z.infer<typeof ConversationCreate>;
+
+/**
+ * `POST /api/v1/conversations/{id}/messages`: what the parent wrote. It lands in the run inbox
+ * once by `event_id`, on the turn that is open or on a new one (`acceptMessage`).
+ */
+export const ConversationMessage = z.strictObject({
+  event_id: EventId,
+  /** Trimmed first, so words of only spaces never open a run. */
+  text: z.string().trim().min(1),
+});
+export type ConversationMessage = z.infer<typeof ConversationMessage>;
+
+/** `POST /api/v1/runs/{id}/cancellations`: the parent's Stop, once by `event_id`. */
+export const RunCancel = z.strictObject({ event_id: EventId });
+export type RunCancel = z.infer<typeof RunCancel>;
+
+/** The reply to a message or a cancel: the run that holds it, as it stands now. */
+export const RunAccepted = z.object({ run: Run });
+export type RunAccepted = z.infer<typeof RunAccepted>;
+
+/** `GET /api/v1/conversations/{id}/runs`: one run per turn, oldest first. */
+export const ConversationRuns = z.object({ runs: z.array(Run) });
+export type ConversationRuns = z.infer<typeof ConversationRuns>;
+
+/** `GET /api/v1/runs/{id}/events`: the run's events after the cursor, in `seq` order. */
+export const RunEvents = z.object({ events: z.array(RunEvent) });
+export type RunEvents = z.infer<typeof RunEvents>;
 
 /**
  * A lesson anyone may play now, from the landing page, with what its card shows (owner,
@@ -708,6 +757,8 @@ export const ERROR_STATUS = {
   EventIdMismatch: 409,
   WriteOnce: 409,
   AnswerLimit: 429,
+  /** A message to the AI past `LIMITS.messagesPerMinute` or the pod's `LIMITS.podDailyCapUsd`. */
+  MessageLimit: 429,
   Unauthorized: 401,
   BankUnavailable: 502,
 } as const;

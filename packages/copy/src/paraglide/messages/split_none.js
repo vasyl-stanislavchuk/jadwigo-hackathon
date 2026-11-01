@@ -1,0 +1,24 @@
+/* eslint-disable */
+import { getLocale, experimentalStaticLocale } from '../runtime.js';
+
+/** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
+
+/** @typedef {{}} Split_NoneInputs */
+
+
+
+/**
+* | output |
+* | --- |
+* | "The rectangle is not split yet." |
+*
+* @param {Split_NoneInputs} inputs
+* @param {{ locale?: "pl" | "en" }} options
+* @returns {LocalizedString}
+*/
+export const split_none = /** @type {((inputs?: Split_NoneInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Split_NoneInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
+	void inputs;
+	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
+	if (locale === "en") return /** @type {LocalizedString} */ ("The rectangle is not split yet.")
+	return /** @type {LocalizedString} */ ("Prostokąt jeszcze nie jest podzielony.")
+});
