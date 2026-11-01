@@ -5,6 +5,7 @@ import {
   Assignment,
   type AssignmentAttempts,
   AssignmentId,
+  type AttachmentId,
   Attempt,
   AttemptAnswer,
   AttemptId,
@@ -56,6 +57,7 @@ import {
   valueFor,
 } from "@jadwigo/contracts";
 import {
+  Attachment,
   Conversation,
   type ConversationId,
   type NewRunEvent,
@@ -75,6 +77,7 @@ import {
   type Updateable,
 } from "kysely";
 import pg from "pg";
+import { type AttachedPhoto, type NewAttachment, photosProblem } from "./attachment.ts";
 import { COLUMNS, type DB } from "./db/types.ts";
 import { byTypeThenPosition, checkExamples } from "./example.ts";
 import { handleFor } from "./handle.ts";
@@ -3127,6 +3130,132 @@ class PostgresStore implements Store {
             a.created_at.getTime() - b.created_at.getTime() || byText(a.event_id, b.event_id),
         )
         .map((row) => read(RunInbox, row));
+    });
+  }
+
+  async createAttachment(pod: PodId, attachment: NewAttachment): Promise<Attachment> {
+    const id = uuidOf(ID_PREFIXES.attachment, attachment.id);
+    return this.#in(pod, async (tx) => {
+      await this.#pod(tx, pod);
+      const account = uuidOf(ID_PREFIXES.account, attachment.account_id);
+      const member = await tx
+        .selectFrom("account")
+        .select("id")
+        .where("id", "=", account)
+        .executeTakeFirst();
+      if (!member) throw notFound("the account");
+      const { row } = await this.#once(
+        () => tx.selectFrom("attachment").selectAll().where("id", "=", id).executeTakeFirst(),
+        () => {
+          const valid = parse(
+            Attachment,
+            {
+              ...attachment,
+              pod_id: pod,
+              state: "pending",
+              conversation_id: null,
+              storage_path: null,
+              created_at: new Date().toISOString(),
+              attached_at: null,
+            },
+            "the attachment",
+          );
+          return tx
+            .insertInto("attachment")
+            .values({
+              id,
+              pod_id: uuidOf(ID_PREFIXES.pod, pod),
+              account_id: account,
+              event_id: valid.event_id,
+              media_type: valid.media_type,
+              bytes: valid.bytes,
+              width: valid.width,
+              height: valid.height,
+              expires_at: utc(attachment.expires_at),
+            })
+            .onConflict((oc) => oc.doNothing())
+            .returningAll()
+            .executeTakeFirst();
+        },
+      );
+      return read(Attachment, row, ID_PREFIXES.attachment);
+    });
+  }
+
+  async getAttachment(pod: PodId, id: AttachmentId): Promise<Attachment> {
+    return this.#in(pod, async (tx) => {
+      const row = await tx
+        .selectFrom("attachment")
+        .selectAll()
+        .where("id", "=", uuidOf(ID_PREFIXES.attachment, id))
+        .executeTakeFirst();
+      if (!row) throw notFound("the attachment");
+      return read(Attachment, row, ID_PREFIXES.attachment);
+    });
+  }
+
+  async countAttachments(pod: PodId, since: string): Promise<number> {
+    return this.#in(pod, async (tx) => {
+      const { count } = await tx
+        .selectFrom("attachment")
+        .select((eb) => eb.fn.countAll<string>().as("count"))
+        .where("pod_id", "=", uuidOf(ID_PREFIXES.pod, pod))
+        .where("created_at", ">=", new Date(utc(since)))
+        .executeTakeFirstOrThrow();
+      return Number(count);
+    });
+  }
+
+  async attachToMessage(
+    pod: PodId,
+    conversation: ConversationId,
+    photos: readonly AttachedPhoto[],
+    at: string,
+  ): Promise<readonly Attachment[]> {
+    const problem = photosProblem(photos);
+    if (problem !== undefined) throw new StoreError(ErrorType.enum.BadRequest, problem);
+    const when = utc(at);
+    const conversationId = uuidOf(ID_PREFIXES.conversation, conversation);
+    return this.#in(pod, async (tx) => {
+      const owner = await tx
+        .selectFrom("conversation")
+        .select("id")
+        .where("id", "=", conversationId)
+        .executeTakeFirst();
+      if (!owner) throw notFound("the conversation");
+      const ids = photos.map((p) => uuidOf(ID_PREFIXES.attachment, p.id));
+      // Locked to the end of the unit, so 2 messages naming one photo attach it once.
+      const stored = new Map(
+        (
+          await tx.selectFrom("attachment").selectAll().where("id", "in", ids).forUpdate().execute()
+        ).map((row) => [row.id, row]),
+      );
+      // Every photo is checked before any is written: all or none.
+      for (const id of ids) {
+        const row = stored.get(id);
+        if (!row) throw notFound("the attachment");
+        if (row.state === "attached")
+          throw new StoreError(ErrorType.enum.AttachmentAttached, "a message carries it already");
+        if (row.expires_at === null || row.expires_at.getTime() <= Date.parse(when))
+          throw new StoreError(ErrorType.enum.AttachmentExpired, "the upload has expired");
+      }
+      const attached: Attachment[] = [];
+      for (const [i, photo] of photos.entries()) {
+        const row = await tx
+          .updateTable("attachment")
+          .set({
+            state: "attached",
+            conversation_id: conversationId,
+            storage_path: photo.storage_path,
+            expires_at: null,
+            attached_at: when,
+          })
+          .where("id", "=", ids[i] ?? "")
+          .returningAll()
+          .executeTakeFirstOrThrow();
+        attached.push(read(Attachment, row, ID_PREFIXES.attachment));
+      }
+      return attached;
     });
   }
 

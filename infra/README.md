@@ -44,6 +44,16 @@ subscription, so an apply from such a checkout would remove the owner's (`dl-5ss
 warns `Check block assertion failed` when that is so, and an empty `alarm_email` fails validation (`dl-5ssh.81`). After the
 first apply, AWS mails a confirmation link, and the alarms reach no one until the owner clicks it.
 
+Uploads (`terraform/modules/uploads`, `dl-z5ja.11.2`): the private bucket `jadwigo-uploads-<env>-<acct>` for
+the photos a parent attaches to a message, apart from the content bucket so learner data never mixes with the
+bank (wave 5 decision 43). Every public access setting is blocked, SSE-S3, and it is **not versioned**, so a
+delete erases the photo. `pending/` (the browser's presigned POST) expires after 1 day; a sent photo is copied
+to `pods/<pod>/attachments/<id>.jpg`. CORS allows a `POST` from `https://<app_domain>` only, and the bucket
+policy denies plain HTTP. The api role may put, get and delete under those 2 prefixes (`modules/app/uploads.tf`),
+the runner role may only get under `pods/*/attachments/*`, and neither may list. Both functions get
+`UPLOADS_BUCKET`; the name is also the SSM String `/jadwigo/uploads/bucket`, which `apps/api` reads when the
+variable is unset. `terraform/tests/uploads.tftest.hcl` pins all of it.
+
 Parent routes (`dl-e8ov.2.42`): a JWT authorizer named `supabase` on the HTTP API verifies Supabase Auth's
 RS256 access tokens (issuer `https://<supabase_ref>.supabase.co/auth/v1`, audience `authenticated`, the
 `Authorization` header). It sits only on the routes in `token_routes` in `terraform/main.tf`, which are the `ROUTES`

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { authIssuer, lambdaDatabaseUrl } from "./config.ts";
+import { authIssuer, lambdaDatabaseUrl, UPLOADS_BUCKET_PARAM, uploadsBucket } from "./config.ts";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -77,5 +77,23 @@ describe("authIssuer", () => {
     expect(authIssuer()).toBe("https://ref.supabase.co/auth/v1");
     vi.stubEnv("AUTH_ISSUER", " ");
     expect(authIssuer()).toBeUndefined();
+  });
+});
+
+describe("uploadsBucket", () => {
+  it("is UPLOADS_BUCKET trimmed when it is set, and reads no parameter", async () => {
+    vi.stubEnv("UPLOADS_BUCKET", " jadwigo-uploads-prod-1 ");
+    const read = vi.fn();
+    expect(await uploadsBucket(read)).toBe("jadwigo-uploads-prod-1");
+    expect(read).not.toHaveBeenCalled();
+  });
+
+  it("reads the name from SSM when UPLOADS_BUCKET is unset or blank, and is undefined when none is there", async () => {
+    vi.stubEnv("UPLOADS_BUCKET", "  ");
+    const read = vi.fn(async () => "jadwigo-uploads-prod-1\n");
+    expect(await uploadsBucket(read)).toBe("jadwigo-uploads-prod-1");
+    expect(read).toHaveBeenCalledWith(UPLOADS_BUCKET_PARAM);
+    expect(await uploadsBucket(async () => undefined)).toBeUndefined();
+    expect(await uploadsBucket(async () => " ")).toBeUndefined();
   });
 });

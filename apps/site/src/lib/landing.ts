@@ -2,7 +2,11 @@
 // src/content/<lang>/landing.yaml so a native speaker edits words, not markup. Each language's
 // file has the same shape (dl-w0b4.81), and its index page's `reviewed` flag
 // (src/content/<lang>/index.md) covers these words too.
+import { LANGUAGE_CODES, type Language } from "@jadwigo/config";
 import { z } from "astro/zod";
+import { providerUrl } from "../index.ts";
+import type { DistCheck } from "./dist.ts";
+import { twinPath } from "./i18n.ts";
 
 const text = z.string().min(1);
 const item = z.object({ title: text, text });
@@ -158,4 +162,39 @@ export function goalLine(
   if (now) return `${words.practising} ${now.name}`;
   const next = skills.find((s) => s.state === "next");
   return next ? `${words.allDone} ${words.nextUp} ${next.name}` : words.allDone;
+}
+
+/**
+ * The switch for the Facebook button on /zaloguj and /en/sign-in (decision dl-ovva): Facebook
+ * sign-in works in prod for the Meta app's testers, and the button stays out of the page until the
+ * app is Live. Set it to true when dl-e8ov.2.58 lands. Its words stay in landing.yaml either way.
+ */
+export const facebookSignInLive = false;
+
+/** A way to sign in that /zaloguj hands over to the app, besides the email code. */
+export type SignInProvider = Parameters<typeof providerUrl>[0];
+
+/** The provider buttons /zaloguj shows, in order: Google, then Facebook once it is Live. */
+export const signInProviders = (facebookLive = facebookSignInLive): readonly SignInProvider[] =>
+  facebookLive ? ["google", "facebook"] : ["google"];
+
+/**
+ * What scripts/check-dist.ts asks of each built sign-in page: a link for every shown provider, and
+ * none for a hidden one. A page the build left out (English before it is live) is skipped by
+ * check-dist's mustNot and is not in `must`.
+ */
+export function signInDistChecks(
+  languages: readonly Language[],
+  facebookLive = facebookSignInLive,
+): { must: DistCheck[]; mustNot: DistCheck[] } {
+  const shown = signInProviders(facebookLive);
+  const all: readonly SignInProvider[] = ["google", "facebook"];
+  const file = (lang: Language): string => `${twinPath("signIn", lang).slice(1)}/index.html`;
+  const link = (provider: SignInProvider): string => `href="${providerUrl(provider)}`;
+  return {
+    must: languages.flatMap((lang) => shown.map((p): DistCheck => [file(lang), link(p)])),
+    mustNot: LANGUAGE_CODES.flatMap((lang) =>
+      all.filter((p) => !shown.includes(p)).map((p): DistCheck => [file(lang), link(p)]),
+    ),
+  };
 }

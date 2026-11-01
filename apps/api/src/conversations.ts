@@ -24,6 +24,7 @@ import {
 } from "@jadwigo/contracts";
 import { acceptMessage, type EngineDeps, type RunQueue, type Verbs } from "@jadwigo/jadwigo-ai";
 import type { Store, UsageSince } from "@jadwigo/store";
+import { messagePhotos, type PhotoWork } from "./attachments.ts";
 import type { Claims } from "./auth.ts";
 import { authorizeMember } from "./authorize.ts";
 import { ApiError, badRequest } from "./errors.ts";
@@ -54,6 +55,8 @@ export interface EngineRouteDeps {
    */
   readonly lockPod: (pod: PodId) => Promise<void>;
   readonly now: () => Date;
+  /** What a message's photos did to the uploads bucket in this request (dl-z5ja.11.3). */
+  readonly photos?: PhotoWork | undefined;
 }
 
 /** The windows the limits count over: the last 60 s, and the UTC day so far. */
@@ -185,9 +188,6 @@ export async function postMessage(
   await requireConsent(store, pod);
   await requireLive(store, pod, id);
   if (parsed.data.kind === "steer") return steer(store, deps, pod, account, id, parsed.data);
-  // Photos are taken from dl-z5ja.11.3 on; until then a message never lands without its photos.
-  if (parsed.data.attachment_ids !== undefined)
-    throw new ApiError(ErrorType.enum.AttachmentMismatch, "photos cannot be sent yet");
   const { event_id, text } = parsed.data;
   // One unit: the reads below, the write and the refusal. A refused message throws after
   // acceptMessage wrote, so on Postgres the unit rolls the row back and its held send is
@@ -197,14 +197,21 @@ export async function postMessage(
   const before = await store.messageUsage(pod, account, since);
   // NotFound for a conversation outside the pod, before anything is written.
   const runsBefore = await store.listRuns(pod, id);
+  // Its photos, checked and copied under the pod, and attached last, in this unit (dl-z5ja.11.3).
+  const photos = await messagePhotos(store, deps.photos, deps.now(), pod, id, parsed.data);
   const { run, inbox } = await acceptMessage(engine(store, deps), {
     pod,
     created_by: account,
     conversation_id: id,
-    entry: { kind: "message", event_id, payload: { text } },
+    entry: { kind: "message", event_id, payload: { text, ...photos.payload } },
   });
   // A resend lands once; the same id on another message, or in another conversation, is refused.
-  if (inbox.kind !== "message" || inbox.payload.text !== text || run.conversation_id !== id)
+  if (
+    inbox.kind !== "message" ||
+    inbox.payload.text !== text ||
+    !photos.same(inbox) ||
+    run.conversation_id !== id
+  )
     throw mismatch();
   // A new run is a new turn. Otherwise the count says whether this event_id is new: a resend of
   // a stored message counts nothing, and answers its run whatever the limits say now.
@@ -224,6 +231,7 @@ export async function postMessage(
       ErrorType.enum.MessageLimitDay,
       "today's AI budget for this family is used up: try again tomorrow",
     );
+  await photos.attach();
   return { run };
 }
 

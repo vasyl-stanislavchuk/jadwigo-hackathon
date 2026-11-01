@@ -17,6 +17,10 @@ import {
   type AccountCreate,
   type AssignmentAttempts,
   type AssignmentId,
+  type AttachmentCreate,
+  type AttachmentId,
+  type AttachmentRead,
+  type AttachmentUpload,
   type AttemptAnswerRequest,
   type AttemptAnswerResult,
   type AttemptClaim,
@@ -198,6 +202,21 @@ export interface RunRatingClient {
   rateRun(runId: RunId, body: RunRatingCreate): Promise<RunRating>;
 }
 
+/**
+ * A message's photos (dl-z5ja.11.3). Each needs a token. The page re-encodes a photo to a JPEG,
+ * creates it here, posts the form's fields and then the file to `upload.url`, and sends the
+ * message with the photo's id in `attachment_ids`.
+ */
+export interface AttachmentClient {
+  /**
+   * A pending photo and its upload form, once by `event_id`: a resend answers the same photo with
+   * a fresh form. Past the pod's daily count it is `AttachmentLimitDay`.
+   */
+  createAttachment(body: AttachmentCreate): Promise<AttachmentUpload>;
+  /** A photo a message carries, with a link to the stored copy until `expires_at`. */
+  getAttachment(attachmentId: AttachmentId): Promise<AttachmentRead>;
+}
+
 /** Every `/api/v1` call this client makes. */
 export type Client = AttemptClient &
   FeaturedClient &
@@ -207,7 +226,8 @@ export type Client = AttemptClient &
   PodClient &
   ConversationClient &
   ConversationListClient &
-  RunRatingClient;
+  RunRatingClient &
+  AttachmentClient;
 
 /** A route's path with its `{name}` params filled in. */
 export function pathOf(route: Route, params: Record<string, string | number>): string {
@@ -322,5 +342,7 @@ export function createClient({
       call(ROUTES.listRunEvents, { id: runId }, undefined, { after }),
     cancelRun: (runId, body) => call(ROUTES.cancelRun, { id: runId }, body),
     rateRun: (runId, body) => call(ROUTES.rateRun, { id: runId }, body),
+    createAttachment: (body) => call(ROUTES.createAttachment, {}, body),
+    getAttachment: (attachmentId) => call(ROUTES.getAttachment, { id: attachmentId }, undefined),
   };
 }
