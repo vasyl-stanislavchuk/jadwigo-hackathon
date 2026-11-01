@@ -318,13 +318,15 @@ def build_server() -> Any:
         return _call(lesson_publish.publish, draft_id=draft_id, target=target)
 
     @server.tool(name="doctor")
-    def doctor_tool(language: str = "pl") -> dict[str, Any]:
+    def doctor_tool(language: str | None = None) -> dict[str, Any]:
         """Check whether this machine can draft, check and publish a lesson, and say what to fix.
 
-        Five checks, each ok, warn or fail: settings (the bank checkout, the converted items
-        file, readiness.json, bank.env at mode 600, check.ts and bun, the drafts directory),
-        ready ids (every set page's ready ids are lesson-ready in the converted file; the stale
-        ones counted with 3 examples), stamps (readiness.json, the converted file and the pages
+        language pl or en checks that one; left out, pl and en are each checked against their
+        own converted file. Five checks, each ok, warn or fail: settings (the bank checkout,
+        each language's converted items file, converted homes: a warn when a second copy sits
+        where a jw without these settings would read it, readiness.json, bank.env at mode 600,
+        check.ts and bun, the drafts directory), ready ids (every set page's ready ids are
+        lesson-ready in that language's converted file; the stale ones counted with 3 examples), stamps (readiness.json, the converted file and the pages
         name one stamp), bank_rev (the search service's build against the local index) and
         services (the local api and web dev server answer). Returns status (the worst) and
         checks, each {n, name, status, lines: [{name, status, detail, fix}]}. Call it when

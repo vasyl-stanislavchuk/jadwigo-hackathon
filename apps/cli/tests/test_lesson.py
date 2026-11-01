@@ -1422,3 +1422,18 @@ def test_guard_key_keeps_answers_and_guards_prose() -> None:
         "near": list(out["near"].values()), "gap": out["gaps"]["g1"]["near"]["4"]},
         ensure_ascii=False)
     assert pii.leaks(text, ["Kasia"]) == []
+
+
+def test_an_item_missing_from_the_converted_file_says_it_is_not_converted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """dl-n9fr.64: an item the page does not list as ready, absent from the converted file, never
+    reads as a ready id whose body is missing."""
+    from jw.draw import NOT_READY_ITEM, Left
+
+    monkeypatch.setattr(lesson.items, "why_not", lambda _id, _lang: "no item x1 in /k/converted-pl.json")
+    assert lesson._not_ready(Left("x1", NOT_READY_ITEM), "pl") == (
+        "not converted in pl, so not lesson-ready: no item x1 in /k/converted-pl.json"
+    )
+    monkeypatch.setattr(lesson.items, "why_not", lambda _id, _lang: "not checked")
+    assert lesson._not_ready(Left("x1", NOT_READY_ITEM), "pl") == "not checked"

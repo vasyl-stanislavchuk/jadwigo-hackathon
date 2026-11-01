@@ -458,12 +458,19 @@ def _draw_loading(
             return result, loaded, refused
 
 
+MISSING_ITEM = "no item "  # how load_item says an id is not in the converted file
+
+
 def _not_ready(left: Left, language: str) -> str:
     """The draw's reason, or for an item the page does not list as ready, load_item's own; when
     the converted file finds it ready, the page is older than the stamp, and the reason says so."""
     if left.reason != NOT_READY_ITEM:
         return left.reason
     why = items.why_not(left.id, language)
+    if why and why.startswith(MISSING_ITEM):
+        # Not converted in this language, which is why the page does not list it: said first, so
+        # it never reads as a ready id whose body is missing (dl-n9fr.64).
+        return f"not converted in {language}, so not lesson-ready: {why}"
     return why or f"its set page does not list it as lesson-ready in {language}"
 
 
