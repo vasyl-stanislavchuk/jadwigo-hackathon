@@ -19,6 +19,14 @@ const UNDO: Record<LessonLanguage, (steps: string, revision: number) => string> 
     `The parent asks to undo the change to steps ${steps}: go back to revision ${revision}.`,
 };
 
+const WORDS: Record<LessonLanguage, (step: string) => string> = {
+  pl: (step) => `Rodzic sam zmienił słowa w kroku ${step}.`,
+  en: (step) => `The parent changed the words in step ${step} themselves.`,
+};
+
+/** The steer for a parent's own words in one step, sent with its patch and no why (dl-z5ja.111). */
+export const wordsSteer = (language: LessonLanguage, step: string): string => WORDS[language](step);
+
 /** The steer for a parent's own edit of one step. */
 export const editSteer = (language: LessonLanguage, step: string, words: string): string =>
   EDIT[language](step, words);
