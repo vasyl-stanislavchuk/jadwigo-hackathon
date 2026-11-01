@@ -164,7 +164,16 @@ export async function lessonDraft(
     "count",
     "skills",
     "verbose",
+    "sets",
+    "question_types",
   ]);
+  // jw's lesson_draft pins sets and keeps only some question types (dl-u1y5.37). The engine draws
+  // from its bank's search, so it says so rather than answer a lesson the model did not ask for.
+  for (const key of ["sets", "question_types"] as const) {
+    if (input.strings(key, false).length > 0) {
+      throw new VerbError("input", `lesson_draft: ${key} is not taken here yet; leave it out`);
+    }
+  }
   input.string("request");
   input.flag("verbose"); // jw's switch; the engine answers its compact form either way
   input.strings("names", true);

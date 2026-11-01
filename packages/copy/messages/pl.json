@@ -922,7 +922,6 @@
   "parent_about_lesson": "O lekcji",
   "parent_about_lesson_empty": "Źródło, kroki, wersja i historia zmian pojawią się tu, gdy lekcja będzie gotowa.",
   "parent_change": "Zmień",
-  "parent_chat_empty": "Tu pojawi się rozmowa z Jadwigo.",
   "parent_lesson_empty": "Tu pojawią się kroki lekcji, gdy Jadwigo zacznie ją pisać.",
   "attach_photo_alt": "Zdjęcie {n}",
   "attach_uploading": "Wysyłam zdjęcie, {percent}%",
@@ -946,5 +945,9 @@
         "max_noun=other": "Zmieści się {max} zdjęcia, {n} pominięto"
       }
     }
-  ]
+  ],
+  "parent_composer": "Możesz pisać dalej…",
+  "parent_writing": "Jadwigo pisze lekcję",
+  "parent_sending": "Zaczynam…",
+  "parent_start_failed": "Nie udało się zacząć lekcji. Spróbuj jeszcze raz."
 }

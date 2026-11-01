@@ -681,7 +681,6 @@
   "parent_about_lesson": false,
   "parent_about_lesson_empty": false,
   "parent_change": false,
-  "parent_chat_empty": false,
   "parent_lesson_empty": false,
   "attach_photo_alt": false,
   "attach_uploading": false,
@@ -694,5 +693,9 @@
   "attach_expired": false,
   "attach_changed": false,
   "attach_not_taken": false,
-  "attach_left_off": false
+  "attach_left_off": false,
+  "parent_composer": false,
+  "parent_writing": false,
+  "parent_sending": false,
+  "parent_start_failed": false
 }

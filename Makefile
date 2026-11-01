@@ -197,25 +197,28 @@ else
 	$(AS_API) bun run --cwd packages/lesson-import seed
 endif
 
-## lesson-import FILE=<path> [JSON=1]: one lesson file into the local jadwigo database, the one
-## `make dev` serves, printing its /play/<assignment> path (dl-e8ov.5.38.3), or with JSON=1 one
-## JSON object (jw's lesson_publish reads it, dl-a38n wave 3); check it first with `bun run --cwd
-## packages/lesson-import check <path>`. ENV=dev|prod imports into that project instead, as
-## jadwigo_api the way db-seed does. ENV=prod runs only from the owner's own terminal and asks them
-## to type prod first (PROD_GATE); the guard refuses it to agents. A lesson lands in the featured
-## pod as an open anyone-assignment, so prod's featured list shows it at once: running the prod
-## import is the owner's approval (docs/runbooks/lesson-import.md, dl-9t2o.9). Safe to rerun: the
-## same content publishes nothing new.
+## lesson-import FILE=<path> [JSON=1] [FEATURED=1]: one lesson file into the local jadwigo
+## database, the one `make dev` serves, printing its /play/<assignment> path (dl-e8ov.5.38.3), or
+## with JSON=1 one JSON object (jw's lesson_publish reads it, dl-a38n wave 3); check it first with
+## `bun run --cwd packages/lesson-import check <path>`. By default the lesson lands in the drafts
+## pod: it plays at its path but never joins the featured list (dl-e8ov.2.59). FEATURED=1 imports
+## into the featured pod as an open anyone-assignment instead, so the featured list shows it at once
+## (dl-e8ov.2.97). ENV=dev|prod imports into that project instead, as jadwigo_api the way db-seed
+## does. ENV=prod runs only from the owner's own terminal and asks them to type prod first
+## (PROD_GATE); the guard refuses it to agents. Running ENV=prod FEATURED=1 is the owner's approval
+## of a featured lesson (docs/runbooks/lesson-import.md, dl-9t2o.9). Safe to rerun: the same content
+## publishes nothing new.
+LESSON_IMPORT_FLAGS = $(if $(JSON),--json) $(if $(FEATURED),--featured)
 lesson-import:
 	@test -n "$(FILE)" || { echo "lesson-import: FILE=<lesson file> is required"; exit 1; }
 ifeq ($(ENV),)
 	@$(LOCAL_DB_GATE)
-	DATABASE_URL=$(LOCAL_DATABASE_URL) bun run --cwd packages/lesson-import import "$(abspath $(FILE))" $(if $(JSON),--json)
+	DATABASE_URL=$(LOCAL_DATABASE_URL) bun run --cwd packages/lesson-import import "$(abspath $(FILE))" $(LESSON_IMPORT_FLAGS)
 else
 	@if [ "$(ENV)" != dev ] && [ "$(ENV)" != prod ]; then echo "lesson-import: ENV is dev or prod"; exit 1; fi
 	@$(PROD_GATE)
 	@$(API_SESSION); \
-	$(AS_API) bun run --cwd packages/lesson-import import "$(abspath $(FILE))" $(if $(JSON),--json)
+	$(AS_API) bun run --cwd packages/lesson-import import "$(abspath $(FILE))" $(LESSON_IMPORT_FLAGS)
 endif
 
 ## dream LEARNER=<id> [ENV=local]: the dream on demand (decision jadwigo-hackathon 2026-10-30, the

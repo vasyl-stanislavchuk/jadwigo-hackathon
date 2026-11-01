@@ -278,7 +278,7 @@ function compile(
       issues: [],
     });
   }
-  const shared = { subject: file.subject, grade: null };
+  const shared = { subject: file.subject, grade: file.grade ?? null };
 
   const planned: CompiledQuestion[] = [];
   const spares: CompiledQuestion[] = [];
@@ -370,7 +370,7 @@ function compile(
       reasoning: file.reasoning,
       category: file.category,
       subject: file.subject,
-      grade: null,
+      grade: file.grade ?? null,
       skill_ids: skills,
     },
     questions: [...planned, ...spares],

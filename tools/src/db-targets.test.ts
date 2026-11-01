@@ -136,7 +136,8 @@ function fromPipe(
 const calls = (s: Stage) => (existsSync(s.log) ? readFileSync(s.log, "utf8") : "");
 
 // lesson-import's prod form is the owner's import of a featured lesson (dl-9t2o.9): the same gate.
-const EXTRA: Record<string, string[]> = { "lesson-import": ["FILE=lesson.json"] };
+// With FEATURED=1, the form that makes it featured (dl-e8ov.2.97), so that form is the one gated.
+const EXTRA: Record<string, string[]> = { "lesson-import": ["FILE=lesson.json", "FEATURED=1"] };
 
 describe("the prod db targets", { timeout: 60_000 }, () => {
   for (const target of ["db-seed", "db-push", "db-role", "lesson-import"]) {
@@ -272,6 +273,19 @@ describe("db-role and db-seed around the pooler's old password", { timeout: 60_0
     expect(status).not.toBe(0);
     expect(output).toContain("still refuses jadwigo_api's password after 2s");
     expect(existsSync(s.bunEnv)).toBe(false);
+  });
+
+  // A draft by default, the featured pod only with FEATURED=1 (dl-e8ov.2.97).
+  it("lesson-import ENV=dev: FEATURED=1 passes --featured to the import, and only then", () => {
+    const featured = onDev("lesson-import", ["ok"], ["FILE=lesson.json", "FEATURED=1"]);
+    expect(featured.status, featured.output).toBe(0);
+    expect(calls(featured.s)).toMatch(
+      /bun run --cwd packages\/lesson-import import \S+ +--featured/,
+    );
+    const draft = onDev("lesson-import", ["ok"], ["FILE=lesson.json"]);
+    expect(draft.status, draft.output).toBe(0);
+    expect(calls(draft.s)).toContain("packages/lesson-import import");
+    expect(calls(draft.s)).not.toContain("--featured");
   });
 
   it("db-seed: any other login error stops at once, without retrying", () => {

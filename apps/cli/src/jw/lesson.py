@@ -917,6 +917,7 @@ def draft(
             "language": language,
             "category": CATEGORY,
             "subject": subject,
+            **_file_grade(grade),
             "reasoning": reasoning,
             "kind": kind,
         },
@@ -930,6 +931,15 @@ def draft(
     stored["timings"] = [{"tool": "lesson_draft", "called_at": called_at, "returned_at": now()}]
     _write_json(_state_path(where, draft_id), stored)
     return _view(stored, verbose)
+
+
+def _file_grade(grade: str) -> dict[str, int]:
+    """The lesson file's `grade`, the number the import writes on the lesson (dl-e8ov.2.96), or
+    nothing when the draft's grade is not one LessonFile takes (1 to 4)."""
+    text = grade.strip()
+    if text.isdigit() and 1 <= int(text) <= 4:
+        return {"grade": int(text)}
+    return {}
 
 
 def _check_copy(stored: dict[str, Any], where: Path, runner: Runner | None) -> None:
