@@ -1,16 +1,16 @@
 ---
 title: Prywatność · Jadwigo
-description: Jakie dane Jadwigo dostaje, gdy rodzic loguje się przez Google lub Facebooka, i co z nimi robi.
+description: Jakie dane Jadwigo dostaje od rodzica, od Google i od Facebooka, kto je przetwarza i co z nimi robi.
 heading: Prywatność
 lang: pl
 path: /prywatnosc
 translation: /en/privacy
 draftNote: Wersja robocza. Ten tekst czeka na przegląd prawnika i może się jeszcze zmienić.
-reviewed: false
+reviewed: true
 ---
 
 Jadwigo to aplikacja do nauki dla dzieci z pierwszych klas szkoły podstawowej. Konto w niej zakłada
-rodzic. Tutaj piszemy, jakie dane dostajemy, gdy rodzic się loguje, i co z nimi robimy.
+rodzic. Tutaj piszemy, jakie dane dostajemy, kto je przetwarza i co z nimi robimy.
 
 ## Jak rodzic się loguje
 
@@ -21,29 +21,48 @@ kontem Facebook. Logowanie obsługuje dla nas Supabase, usługa logowania, z kt�
 
 Gdy rodzic loguje się kontem Google albo Facebook, ta usługa przekazuje nam:
 
-- adres e-mail rodzica,
-- informację, czy Google lub Facebook potwierdził ten adres,
+- adres e-mail rodzica;
+- informację, czy Google lub Facebook potwierdził ten adres;
 - identyfikator konta rodzica w Google lub na Facebooku.
 
-Od Facebooka prosimy tylko o adres e-mail i profil publiczny (uprawnienia `email` i `public_profile`).
+Od Facebooka prosimy tylko o adres e-mail i profil publiczny (imię i zdjęcie).
 
-Google i Facebook przesyłają też imię, nazwisko i zdjęcie profilowe. Nie przechowujemy ich i nie
-używamy.
+Google i Facebook przesyłają też imię, nazwisko i zdjęcie profilowe rodzica. Usuwamy je, zanim
+cokolwiek zapiszemy, i nie używamy ich.
 
 Nie dostajemy hasła do konta Google ani Facebook. Nie widzimy znajomych, postów, zdjęć ani kontaktów
 rodzica i niczego nie publikujemy w jego imieniu.
 
-## Gdzie są te dane
+## Co rodzic wpisuje o dziecku
 
-Adres e-mail i identyfikator konta Google lub Facebook przechowuje Supabase, bo bez nich rodzic nie
-mógłby się zalogować. Własna baza Jadwigo zapisuje z logowania tylko identyfikator użytkownika nadany
-przez Supabase. Po nim rozpoznajemy konto rodzica.
+Rodzic podaje imię dziecka. Może też podać jego klasę i opisać cel nauki własnymi słowami.
+Gdy dziecko przerabia lekcje, zapisujemy jego odpowiedzi i postępy.
 
 ## Odpowiedzi dziecka
 
 Odpowiedzi dziecka i jego postępy w lekcjach widzi tylko rodzic, na swoim koncie. Inne rodziny ich
 nie widzą. Gdy rodzic prosi asystenta AI Jadwigo o lekcję albo podsumowanie, asystent czyta
-odpowiedzi i imię dziecka, żeby je przygotować.
+odpowiedzi i imię dziecka, żeby przygotować lekcję albo podsumowanie.
+
+## Asystent AI i modele Meta
+
+Asystent AI Jadwigo działa na modelach AI firmy Meta. Gdy rodzic pisze do asystenta, wysyłamy do
+firmy Meta wiadomości rodzica i dane dziecka, których asystent potrzebuje: imię, cele, odpowiedzi i błędy.
+Meta przetwarza je na własnych zasadach. W samej lekcji, którą dziecko przerabia, nie ma jego
+imienia.
+
+## Kto przetwarza dane
+
+Dane rodziny przetwarzają dla nas te firmy:
+
+- Supabase: logowanie i baza danych Jadwigo, na serwerach we Frankfurcie, w Unii Europejskiej.
+- Amazon Web Services: serwery aplikacji Jadwigo, też we Frankfurcie.
+- Meta: modele AI asystenta i logowanie przez Facebooka.
+- Google: logowanie kontem Google i skrzynka privacy@jadwigo.pl.
+
+## Jak długo trzymamy dane
+
+Dane trzymamy, dopóki istnieje konto rodzica.
 
 ## Usunięcie danych
 

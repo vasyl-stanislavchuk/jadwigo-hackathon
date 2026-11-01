@@ -1,52 +1,70 @@
 ---
 title: Privacy · Jadwigo
-description: What Jadwigo receives when a parent signs in with Google or Facebook, and what it does with it.
+description: What Jadwigo receives from you, from Google and from Facebook, who processes it, and what Jadwigo does with it.
 heading: Privacy
 lang: en
 path: /en/privacy
 translation: /prywatnosc
 draftNote: Draft. This text is waiting for a lawyer's review and may still change.
-reviewed: false
+reviewed: true
 ---
 
-Jadwigo is a learning app for children in the first grades of elementary school. A parent sets up the
-account. This page says what we receive when a parent signs in, and what we do with it.
+Jadwigo is a learning app for children in grades 1 to 3 of elementary school. You, the parent, set
+up the account. This page says what we receive, who processes it, and what we do with it.
 
-## How a parent signs in
+## How you sign in
 
-A parent signs in in one of 3 ways: with a code sent to their email address, with a Google account or
-with a Facebook account. Supabase, the sign-in service Jadwigo uses, handles sign-in for us.
+You sign in in one of 3 ways: with a code sent to your email address, with a Google account or with a
+Facebook account. Supabase, the sign-in service Jadwigo uses, handles sign-in for us.
 
 ## What Google and Facebook send us
 
-When a parent signs in with Google or Facebook, that service sends us:
+When you sign in with Google or Facebook, that service sends us:
 
-- the parent's email address,
-- whether Google or Facebook has verified that address,
-- the identifier of the parent's Google or Facebook account.
+- your email address;
+- whether Google or Facebook has verified that address;
+- the identifier of your Google or Facebook account.
 
-From Facebook we ask only for the email address and the public profile (the `email` and
-`public_profile` permissions).
+From Facebook we ask only for your email address and your public profile (name and picture).
 
-Google and Facebook also send the parent's name and profile picture. We don't keep them and don't
-use them.
+Google and Facebook also send your name and profile picture. We remove them before we save anything,
+and we don't use them.
 
-We never receive the password to a Google or Facebook account. We don't see the parent's friends,
-posts, photos or contacts, and we never post anything on their behalf.
+We never receive the password to your Google or Facebook account. We don't see your friends, posts,
+photos or contacts, and we never post anything on your behalf.
 
-## Where the data is kept
+## What you tell us about your child
 
-Supabase keeps the email address and the Google or Facebook account identifier, because a parent
-can't sign in without them. From sign-in, Jadwigo's own database keeps only the user identifier
-Supabase assigns. That is how we recognize the parent's account.
+You give your child's first name. You can also give your child's grade and describe a learning goal
+in your own words. When your child works through lessons, we save their answers and progress.
 
 ## Your child's answers
 
-Only the parent sees their child's answers and progress in lessons, in their own account. No other
-family sees them. When a parent asks Jadwigo's AI assistant for a lesson or a summary, the assistant
-reads the child's answers and first name to prepare it.
+Only you see your child's answers and progress in lessons, in your own account. No other family sees
+them. When you ask Jadwigo's AI assistant for a lesson or a summary, the assistant reads your child's
+answers and first name to prepare it.
+
+## The AI assistant and Meta's models
+
+Jadwigo's AI assistant runs on AI models made by Meta. When you write to the assistant, we send Meta
+your messages and the data about your child the assistant needs: first name, goals, answers and
+mistakes. Meta processes them under Meta's own terms. The lesson your child works through doesn't
+contain your child's name.
+
+## Who processes the data
+
+These companies process your family's data for us:
+
+- Supabase: sign-in and Jadwigo's database, on servers in Frankfurt, in the European Union.
+- Amazon Web Services: the servers Jadwigo's app runs on, also in Frankfurt.
+- Meta: the assistant's AI models, and sign-in with Facebook.
+- Google: sign-in with Google, and the privacy@jadwigo.pl mailbox.
+
+## How long we keep the data
+
+We keep the data for as long as your account exists.
 
 ## Deleting your data
 
-A parent can ask at any time for their account and the data linked to it to be deleted, their
-child's answers included. The [Data deletion](/en/privacy/data-deletion/) page says how.
+You can ask at any time for your account and the data linked to it to be deleted, your child's
+answers included. The [Data deletion](/en/privacy/data-deletion/) page says how.
