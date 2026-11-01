@@ -44,6 +44,40 @@ function frozen(name: string, body: () => Promise<void>): void {
 }
 
 describe("the engine keeps PostHog's production lessons", () => {
+  frozen("an answer with an invented number or level is corrected once, then refused", async () => {
+    const INVENTED = "Done: 37 questions, and the learner has mastered adding.";
+    const REQUEST = "Adding within 20, grade 1.";
+    const isMessage = (e: RunEvent, text: string) =>
+      e.type === "message" && e.payload.from === "agent" && e.payload.text === text;
+
+    // The correction words only what the turn gave: it is written, and the invented one never is.
+    const fixed = await setup([draft(), { text: INVENTED }, { text: "Your lesson is ready." }]);
+    const run = await fixed.say(REQUEST);
+    await drain(fixed.deps);
+    const events = await fixed.log(run);
+    expect(fixed.muse.calls).toHaveLength(3);
+    const note = fixed.muse.calls[2]?.instructions ?? "";
+    expect(note).toContain('"37"');
+    expect(note).toContain('"mastered"');
+    expect(events.some((e) => isMessage(e, INVENTED))).toBe(false);
+    expect(events.some((e) => isMessage(e, "Your lesson is ready."))).toBe(true);
+    expect(events.some((e) => e.type === "error")).toBe(false);
+    expect((await fixed.store.getRun(fixed.pod, run)).status).toBe("completed");
+
+    // The correction invents again: an error event in its place, and the turn ends.
+    const stuck = await setup([draft(), { text: INVENTED }, { text: "Still 37, mastered." }]);
+    const other = await stuck.say(REQUEST);
+    await drain(stuck.deps);
+    const log = await stuck.log(other);
+    expect(stuck.muse.calls).toHaveLength(3);
+    expect(log.filter((e) => e.type === "message" && e.payload.from === "agent")).toEqual([]);
+    expect(log.find((e) => e.type === "error")?.payload).toMatchObject({
+      error: { type: "AnswerUnchecked" },
+      retryable: false,
+    });
+    expect(log.at(-1)?.type).toBe("turn_complete");
+  });
+
   frozen("a reload replays without a gap or a duplicate", async () => {
     const t = await setup([draft(), { text: "Your lesson is ready." }]);
     const run = await t.say("Halves for grade 2.");
@@ -339,40 +373,6 @@ describe("the engine keeps PostHog's production lessons", () => {
       }),
     );
     expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
-  });
-
-  frozen("an answer with an invented number or level is corrected once, then refused", async () => {
-    const INVENTED = "Done: 37 questions, and the learner has mastered adding.";
-    const REQUEST = "Adding within 20, grade 1.";
-    const isMessage = (e: RunEvent, text: string) =>
-      e.type === "message" && e.payload.from === "agent" && e.payload.text === text;
-
-    // The correction words only what the turn gave: it is written, and the invented one never is.
-    const fixed = await setup([draft(), { text: INVENTED }, { text: "Your lesson is ready." }]);
-    const run = await fixed.say(REQUEST);
-    await drain(fixed.deps);
-    const events = await fixed.log(run);
-    expect(fixed.muse.calls).toHaveLength(3);
-    const note = fixed.muse.calls[2]?.instructions ?? "";
-    expect(note).toContain('"37"');
-    expect(note).toContain('"mastered"');
-    expect(events.some((e) => isMessage(e, INVENTED))).toBe(false);
-    expect(events.some((e) => isMessage(e, "Your lesson is ready."))).toBe(true);
-    expect(events.some((e) => e.type === "error")).toBe(false);
-    expect((await fixed.store.getRun(fixed.pod, run)).status).toBe("completed");
-
-    // The correction invents again: an error event in its place, and the turn ends.
-    const stuck = await setup([draft(), { text: INVENTED }, { text: "Still 37, mastered." }]);
-    const other = await stuck.say(REQUEST);
-    await drain(stuck.deps);
-    const log = await stuck.log(other);
-    expect(stuck.muse.calls).toHaveLength(3);
-    expect(log.filter((e) => e.type === "message" && e.payload.from === "agent")).toEqual([]);
-    expect(log.find((e) => e.type === "error")?.payload).toMatchObject({
-      error: { type: "AnswerUnchecked" },
-      retryable: false,
-    });
-    expect(log.at(-1)?.type).toBe("turn_complete");
   });
 });
 
