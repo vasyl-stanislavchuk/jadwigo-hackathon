@@ -54,6 +54,7 @@ flowchart LR
   web --> ui
   site --> config
   site --> contracts
+  site --> copy
   site --> ui
   docs --> config
   docs --> contracts

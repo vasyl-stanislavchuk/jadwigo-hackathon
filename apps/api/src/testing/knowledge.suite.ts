@@ -10,6 +10,7 @@ import {
   ERROR_STATUS,
   type ErrorEnvelope,
   type ErrorType,
+  type Language,
   type LearnerGoals,
   type LearnerReport,
   type LearnerReports,
@@ -29,11 +30,11 @@ import { bearerOf, signToken } from "./token.ts";
 export function knowledgeSuite(name: string, makeStore: () => Store): void {
   describe(`the learner knowledge routes on ${name}`, () => {
     /** A signed-up parent with one child, and calls carrying the parent's token. */
-    async function family(s: Seeded) {
+    async function family(s: Seeded, language: Language = "pl") {
       const headers = bearerOf(signToken({ sub: randomUUID() }));
       const call = <T>(method: string, path: string, body?: unknown) =>
         s.call<T>(method, path, body, headers);
-      const me = await call<Me>("POST", pathOf("createAccount", {}), { language: "pl" });
+      const me = await call<Me>("POST", pathOf("createAccount", {}), { language });
       const child = await call<LearnerSnapshot>("POST", pathOf("createLearner", {}), {
         first_name: "Fox",
       });
@@ -139,7 +140,12 @@ export function knowledgeSuite(name: string, makeStore: () => Store): void {
       expect(created.body.goals).toHaveLength(1);
       const [view] = created.body.goals;
       expect(view).toMatchObject({
-        goal: { name: "Equal groups", words: "Groups of 2 by Friday.", status: "active" },
+        goal: {
+          name: "Equal groups",
+          words: "Groups of 2 by Friday.",
+          lesson_language: "pl",
+          status: "active",
+        },
         skill_codes: [code, draft].sort(),
         status: "on_its_way",
         can_do_now: [code],
@@ -175,6 +181,24 @@ export function knowledgeSuite(name: string, makeStore: () => Store): void {
         {},
       );
       expect([empty.status, empty.body.error.type]).toEqual([400, "BadRequest"]);
+    });
+
+    it("makes a goal's lessons in the language the parent picked at sign-up", async () => {
+      const s = seeded(makeStore());
+      const english = await family(s, "en");
+      const draft = `test.lk${randomUUID().slice(0, 8)}.own`;
+      const created = await english.call<LearnerGoals>(
+        "POST",
+        pathOf("createGoal", { id: english.learner }),
+        { name: "Count to 20", skill_codes: [draft] },
+      );
+      expect(created.status).toBe(201);
+      expect(created.body.goals.map((v) => v.goal.lesson_language)).toEqual(["en"]);
+      const listed = await english.call<LearnerGoals>(
+        "GET",
+        pathOf("getLearnerGoals", { id: english.learner }),
+      );
+      expect(listed.body.goals.map((v) => v.goal.lesson_language)).toEqual(["en"]);
     });
 
     it("writes reports newest first, reuses an unchanged digest, and replaces the mastery cache", async () => {
