@@ -5,6 +5,7 @@ import {
   type Conversation,
   ConversationId,
   type NewRunEvent,
+  RUN_ERROR_TYPE,
   RUN_IDLE_MS,
   RUN_MAX_MS,
   type Run,
@@ -663,7 +664,7 @@ describe("runStep and drain", () => {
     expect(events.filter((e) => e.type === "model_response")).toHaveLength(2);
     expect(events.filter((e) => e.type === "tool_result")).toHaveLength(1);
     expect(events.find((e) => e.type === "error")?.payload).toMatchObject({
-      error: { type: "StepTimedOut" },
+      error: { type: RUN_ERROR_TYPE.stepTimedOut },
       // Call 1 claimed attempt 2, which stalled; the redelivery took 3, and call 2 took 4.
       attempt: 2,
       retryable: true,
@@ -848,6 +849,12 @@ describe("runStep and drain", () => {
   });
 });
 
+describe("the run's own error types", () => {
+  it("are the contract's constants, which the page draws its limit lines from", () => {
+    expect(RUN_ERROR_TYPE).toEqual({ stepTimedOut: "StepTimedOut", runTimedOut: "RunTimedOut" });
+  });
+});
+
 describe("sweep", () => {
   it("closes an idle run on its idle clock, with its waiting message kept", async () => {
     const t = await setup([]);
@@ -967,7 +974,10 @@ describe("sweep", () => {
     expect(await sweep(t.deps, t.now())).toEqual({ idle: [], max: [run] });
     const events = await t.log(run);
     expect(types(events)).toEqual(["message", "error", "status", "turn_complete"]);
-    expect(events[1]?.payload).toMatchObject({ error: { type: "RunTimedOut" }, retryable: false });
+    expect(events[1]?.payload).toMatchObject({
+      error: { type: RUN_ERROR_TYPE.runTimedOut },
+      retryable: false,
+    });
     expect((await t.run(run)).status).toBe("failed");
   });
 });
