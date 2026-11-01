@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "conversations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Conversation"
+      }
+    }
+  },
+  "required": [
+    "conversations"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Conversation": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ConversationId"
+        },
+        "pod_id": {
+          "$ref": "#/$defs/PodId"
+        },
+        "created_by": {
+          "$ref": "#/$defs/AccountId"
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        },
+        "archived_at": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "pod_id",
+        "created_by",
+        "title",
+        "created_at",
+        "archived_at"
+      ],
+      "additionalProperties": false
+    },
+    "ConversationId": {
+      "type": "string",
+      "pattern": "^cnv_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "PodId": {
+      "type": "string",
+      "pattern": "^pod_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "AccountId": {
+      "type": "string",
+      "pattern": "^acc_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    }
+  }
+}

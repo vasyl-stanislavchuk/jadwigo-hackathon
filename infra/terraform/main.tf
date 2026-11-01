@@ -90,6 +90,9 @@ module "app" {
     "PATCH /api/v1/learners/{id}/reports/{report}",
     # The AI engine's conversations (dl-z5ja.21): a parent's chat, one run per turn; token routes.
     "POST /api/v1/conversations",
+    # A parent's list and delete, which archives (dl-z5ja.105); token routes.
+    "GET /api/v1/conversations",
+    "PATCH /api/v1/conversations/{id}",
     "POST /api/v1/conversations/{id}/messages",
     "GET /api/v1/conversations/{id}/runs",
     "GET /api/v1/runs/{id}/events",
@@ -115,6 +118,8 @@ module "app" {
     "POST /api/v1/learners/{id}/reports",
     "PATCH /api/v1/learners/{id}/reports/{report}",
     "POST /api/v1/conversations",
+    "GET /api/v1/conversations",
+    "PATCH /api/v1/conversations/{id}",
     "POST /api/v1/conversations/{id}/messages",
     "GET /api/v1/conversations/{id}/runs",
     "GET /api/v1/runs/{id}/events",

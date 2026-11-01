@@ -5,7 +5,9 @@ import {
   ConversationCreate,
   ConversationId,
   ConversationMessage,
+  ConversationPatch,
   type ConversationRuns,
+  type Conversations,
   ErrorType,
   type EventId,
   ID_PREFIXES,
@@ -114,6 +116,41 @@ export async function createConversation(
   return conversation;
 }
 
+/** `GET /api/v1/conversations`: the pod's live conversations, newest first (dl-z5ja.105). */
+export async function listConversations(store: Store, claims: Claims): Promise<Conversations> {
+  const { pod } = await authorizeMember(store, claims);
+  return { conversations: [...(await store.listConversations(pod))] };
+}
+
+/**
+ * `PATCH /api/v1/conversations/{id}`: the parent's delete archives it (decision dl-84wo), once;
+ * archiving again answers it as it is. `NotFound` for a conversation outside the pod.
+ */
+export async function patchConversation(
+  store: Store,
+  deps: Pick<EngineRouteDeps, "now">,
+  claims: Claims,
+  id: ConversationId,
+  raw: unknown,
+): Promise<Conversation> {
+  const { pod } = await authorizeMember(store, claims);
+  const parsed = ConversationPatch.safeParse(raw);
+  if (!parsed.success) throw badRequest(parsed.error.issues);
+  return store.archiveConversation(pod, id, deps.now().toISOString());
+}
+
+/**
+ * A message or a steer goes only to a live conversation of the pod: `NotFound` outside it, 409
+ * `ConversationArchived` once the parent archived it, before anything is written (dl-z5ja.105).
+ */
+async function requireLive(store: Store, pod: PodId, id: ConversationId): Promise<void> {
+  if ((await store.getConversation(pod, id)).archived_at !== null)
+    throw new ApiError(
+      ErrorType.enum.ConversationArchived,
+      "this conversation is archived: start a new one",
+    );
+}
+
 /**
  * `POST /api/v1/conversations/{id}/messages`: the message in the run inbox, on the open turn or a
  * new run, and a step enqueued when none is pending. `listRuns` inside `acceptMessage` refuses a
@@ -129,6 +166,7 @@ export async function postMessage(
   const { pod, account } = await authorizeMember(store, claims);
   const parsed = ConversationMessage.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
+  await requireLive(store, pod, id);
   if (parsed.data.kind === "steer") return steer(store, deps, pod, account, id, parsed.data);
   const { event_id, text } = parsed.data;
   // One unit: the reads below, the write and the refusal. A refused message throws after

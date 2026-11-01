@@ -45,7 +45,7 @@ import {
   SkipReason,
   Subject,
 } from "./records.ts";
-import { Run, RunEvent } from "./run.ts";
+import { Conversation, Run, RunEvent } from "./run.ts";
 
 /**
  * What crosses `/api/v1` during an attempt (decision
@@ -679,6 +679,21 @@ export type RunCancel = z.infer<typeof RunCancel>;
 export const RunAccepted = z.object({ run: Run });
 export type RunAccepted = z.infer<typeof RunAccepted>;
 
+/**
+ * `GET /api/v1/conversations`: the caller's pod's live conversations, newest first. An archived one
+ * is left out (dl-z5ja.105, decision dl-84wo).
+ */
+export const Conversations = z.object({ conversations: z.array(Conversation) });
+export type Conversations = z.infer<typeof Conversations>;
+
+/**
+ * `PATCH /api/v1/conversations/{id}`: a parent's delete, which archives the conversation. The
+ * server stamps `archived_at`; an archive is kept for the pod and never undone, so `archived` is
+ * only ever `true` (decision dl-84wo).
+ */
+export const ConversationPatch = z.strictObject({ archived: z.literal(true) });
+export type ConversationPatch = z.infer<typeof ConversationPatch>;
+
 /** `GET /api/v1/conversations/{id}/runs`: one run per turn, oldest first. */
 export const ConversationRuns = z.object({ runs: z.array(Run) });
 export type ConversationRuns = z.infer<typeof ConversationRuns>;
@@ -776,6 +791,8 @@ export const ERROR_STATUS = {
   MessageLimitMinute: 429,
   /** A message that would open a turn past the pod's `LIMITS.podDailyCapUsd` for the UTC day. */
   MessageLimitDay: 429,
+  /** A message or steer to a conversation the parent archived (dl-z5ja.105). */
+  ConversationArchived: 409,
   Unauthorized: 401,
   BankUnavailable: 502,
 } as const;

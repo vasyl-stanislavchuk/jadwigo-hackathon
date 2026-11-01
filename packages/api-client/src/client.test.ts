@@ -550,6 +550,40 @@ describe("the conversation calls", () => {
     ]);
   });
 
+  it("lists the conversations and archives one with a PATCH", async () => {
+    const conversation = {
+      id: ConversationId.parse("cnv_6et2fhbnwvb45aw9atcfzs33zd"),
+      pod_id: attempt.pod_id,
+      created_by: "acc_6et2fhbnwvb45aw9atcfzs33zb",
+      title: null,
+      created_at: AT,
+      archived_at: null,
+    };
+    const listed = stub(200, { conversations: [conversation] });
+    const reply = await createClient({
+      base: "",
+      fetch: listed.fetch,
+      token: signedIn,
+    }).listConversations();
+    expect(listed.sent).toMatchObject([{ url: "/api/v1/conversations", method: "GET" }]);
+    expect(reply.conversations.map((c) => c.id)).toEqual([conversation.id]);
+
+    const archived = stub(200, { ...conversation, archived_at: AT });
+    const done = await createClient({
+      base: "",
+      fetch: archived.fetch,
+      token: signedIn,
+    }).patchConversation(conversation.id, { archived: true });
+    expect(archived.sent).toMatchObject([
+      {
+        url: `/api/v1/conversations/${conversation.id}`,
+        method: "PATCH",
+        body: { archived: true },
+      },
+    ]);
+    expect(done.archived_at).toBe(AT);
+  });
+
   it("asks a run to stop at its cancellations path", async () => {
     const { fetch, sent } = stub(201, { run: { ...run, cancel_requested_at: AT } });
     const reply = await createClient({ base: "", fetch, token: signedIn }).cancelRun(RUN, {

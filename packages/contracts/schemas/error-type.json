@@ -21,6 +21,7 @@
     "AnswerLimit",
     "MessageLimitMinute",
     "MessageLimitDay",
+    "ConversationArchived",
     "Unauthorized",
     "BankUnavailable"
   ]

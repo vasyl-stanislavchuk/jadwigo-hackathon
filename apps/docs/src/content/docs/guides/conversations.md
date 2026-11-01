@@ -1,6 +1,6 @@
 ---
 title: Conversations with the AI
-description: Start a conversation, send a message, read the AI's answer as run events, and stop a turn.
+description: Start a conversation, send a message, read the AI's answer as run events, stop a turn, and archive a conversation.
 ---
 
 This guide is for a client that runs a parent's chat with Jadwigo's AI: the chat on the left that
@@ -76,6 +76,26 @@ curl -X POST https://app.jadwigo.pl/api/v1/runs/$RUN_ID/cancellations \
 
 The run stops at its next step, and its events then show it `cancelled`. A run that has already
 ended comes back as it is.
+
+## 5. List and archive conversations
+
+[List](/api/operations/listconversations/) and [archive](/api/operations/patchconversation/).
+
+```bash
+curl https://app.jadwigo.pl/api/v1/conversations \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"
+
+curl -X PATCH https://app.jadwigo.pl/api/v1/conversations/$CONVERSATION_ID \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"archived": true}'
+```
+
+The list holds the family's live conversations, newest first. A parent's delete archives a
+conversation: it leaves the list, and `archived_at` is set. Archiving again keeps the first time.
+Nothing is deleted. The conversation and its runs stay with the family's pod and go only with it,
+and an archive is never undone. A message or a steer to an archived conversation is `409`
+`ConversationArchived`, and nothing is stored: start a new conversation instead.
 
 ## Whose records a caller sees
 

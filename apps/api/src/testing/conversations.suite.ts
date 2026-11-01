@@ -7,6 +7,7 @@ import {
   type AccountId,
   type Conversation,
   type ConversationRuns,
+  type Conversations,
   type ErrorEnvelope,
   EventId,
   ID_PREFIXES,
@@ -391,6 +392,88 @@ export function conversationSuite(
       expect(stored.cancel_requested_at).toBeNull();
       expect(await s.store.listRuns(a.pod, conversation.id)).toHaveLength(1);
       expect(await q.stepsFor(run.id)).toBe(1);
+    });
+
+    // dl-z5ja.105, decision dl-84wo: a parent's delete archives; nothing is deleted.
+    it("lists the pod's live conversations newest first, and archives one once", async () => {
+      const a = await parent();
+      const b = await parent();
+      const first = await a.conversation("Adding to 10");
+      const second = await a.conversation("Equal groups");
+      await b.conversation("Another family's");
+      const list = () => a.call<Conversations>("GET", pathOf("listConversations", {}));
+
+      const listed = await list();
+      expect(listed.status).toBe(200);
+      expect(new Set(listed.body.conversations.map((c) => c.id))).toEqual(
+        new Set([first.id, second.id]),
+      );
+      const times = listed.body.conversations.map((c) => c.created_at);
+      expect(times).toEqual([...times].sort().reverse());
+
+      const path = pathOf("patchConversation", { id: first.id });
+      const archived = await a.call<Conversation>("PATCH", path, { archived: true });
+      expect(archived.status).toBe(200);
+      expect(archived.body).toMatchObject({ id: first.id, pod_id: a.pod, title: "Adding to 10" });
+      expect(archived.body.archived_at).toEqual(expect.any(String));
+      const again = await a.call<Conversation>("PATCH", path, { archived: true });
+      expect(again.status).toBe(200);
+      expect(again.body).toEqual(archived.body);
+
+      expect((await list()).body.conversations.map((c) => c.id)).toEqual([second.id]);
+      // Kept for the pod: the store still holds it, and its runs still read.
+      expect((await s.store.getConversation(a.pod, first.id)).archived_at).toBe(
+        archived.body.archived_at,
+      );
+      const runs = await a.call("GET", pathOf("listConversationRuns", { id: first.id }));
+      expect(runs.status).toBe(200);
+
+      for (const body of [{}, { archived: false }, { archived: true, archived_at: null }])
+        expect(
+          (await a.call("PATCH", pathOf("patchConversation", { id: second.id }), body)).status,
+        ).toBe(400);
+    });
+
+    it("refuses a message or a steer to an archived conversation with 409 ConversationArchived, enqueuing nothing", async () => {
+      const a = await parent();
+      const conversation = await a.conversation();
+      const { run } = (await a.say(conversation.id, "A lesson on adding to 10, please")).body;
+      expect(await q.stepsFor(run.id)).toBe(1);
+      await a.call("PATCH", pathOf("patchConversation", { id: conversation.id }), {
+        archived: true,
+      });
+
+      const refused = [
+        a.say(conversation.id, "One more"),
+        a.call<RunAccepted>("POST", pathOf("postMessage", { id: conversation.id }), {
+          event_id: event(),
+          kind: "steer",
+          text: "A steer",
+        }),
+      ];
+      for (const reply of await Promise.all(refused)) {
+        expect(reply.status).toBe(409);
+        expect((reply.body as unknown as ErrorEnvelope).error.type).toBe("ConversationArchived");
+      }
+      expect(await s.store.listRuns(a.pod, conversation.id)).toHaveLength(1);
+      expect(await q.stepsFor(run.id)).toBe(1);
+    });
+
+    it("answers 404 NotFound to archiving another pod's conversation, and leaves it live", async () => {
+      const a = await parent();
+      const b = await parent();
+      const conversation = await a.conversation();
+      const reply = await b.call<ErrorEnvelope>(
+        "PATCH",
+        pathOf("patchConversation", { id: conversation.id }),
+        { archived: true },
+      );
+      expect(reply.status).toBe(404);
+      expect(reply.body.error.type).toBe("NotFound");
+      expect((await s.store.getConversation(a.pod, conversation.id)).archived_at).toBeNull();
+      expect((await b.call<Conversations>("GET", pathOf("listConversations", {}))).body).toEqual({
+        conversations: [],
+      });
     });
 
     it("answers 409 AccountMissing to a signed-in user with no account yet", async () => {
