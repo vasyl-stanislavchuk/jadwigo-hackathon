@@ -240,7 +240,7 @@ export function lessonCheck(context: VerbContext, raw: Json): Promise<VerbEffect
   input.flag("verbose");
   let file = draftOf(context, input);
   const help = input.object("help");
-  input.strings("names", false);
+  input.strings("names", true);
   const title = input.optionalString("title");
   const reasoning = input.optionalString("reasoning");
   for (const [step_id, words] of Object.entries(help)) {
@@ -322,7 +322,7 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
   const patch = input.object("patch");
   const why = input.optionalString("why");
   const change = input.oneOf("change", CHANGES, "wording");
-  input.strings("names", false);
+  input.strings("names", true);
   const step = stepOf(file, step_id);
 
   const refused = Object.keys(patch).filter((k) => k !== "say" && k !== "question");

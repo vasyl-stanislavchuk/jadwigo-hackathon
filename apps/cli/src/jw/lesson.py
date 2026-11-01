@@ -1016,8 +1016,16 @@ def _file_steps(path: Path) -> dict[str, dict[str, Any]]:
     }
 
 
-# The parts of an agent's words the guard leaves alone: an answer and a picture's address.
-UNGUARDED = ("key", "src")
+# The parts of an agent's words the guard leaves alone: a picture's address. An answer key is
+# guarded by guard_key, which keeps its answers and guards its prose.
+UNGUARDED = ("src",)
+# What an answer key holds that is an answer or a setting, never prose (packages/contracts
+# families: ChooseKey, EnterKey, GroupKey, PlaceKey, SequenceKey, SlotsKey, ExplainKey).
+KEY_ANSWERS = frozenset({
+    "correct", "accept", "orders", "items", "value", "tolerance", "form", "forms", "exact_terms",
+    "sides", "case", "accents", "typo", "rule", "surface", "kind", "id", "cite",
+    "criteria_version",
+})
 
 
 def guard_words(value: Any, family: Any) -> Any:
@@ -1030,9 +1038,30 @@ def guard_words(value: Any, family: Any) -> Any:
         return [guard_words(v, family) for v in value]
     if isinstance(value, Mapping):
         return {
-            guard_words(str(k), family): v if k in UNGUARDED else guard_words(v, family)
+            guard_words(str(k), family): (
+                v if k in UNGUARDED else guard_key(v, family) if k == "key"
+                else guard_words(v, family)
+            )
             for k, v in value.items()
         }
+    return value
+
+
+def guard_key(value: Any, family: Any, field: str | None = None) -> Any:
+    """An answer key with its prose guarded and its answers kept: `why`, `worked_solution`, a
+    criterion's `text` and each `near` note are words a parent may read, so a family name in
+    them goes like any other (dl-a38n.62). `near` is keyed by the near answer, which stays."""
+    if field in KEY_ANSWERS:
+        return value
+    if isinstance(value, str):
+        return pii.guard(value, names=family).text
+    if isinstance(value, list):
+        return [guard_key(v, family, field) for v in value]
+    if isinstance(value, Mapping):
+        if field in ("near", "gaps"):  # keyed by an answer or a gap id; the values say the words
+            return {k: guard_key(v, family, "near" if field == "near" else None)
+                    for k, v in value.items()}
+        return {k: guard_key(v, family, str(k)) for k, v in value.items()}
     return value
 
 

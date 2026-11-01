@@ -1293,3 +1293,37 @@ def test_a_name_as_a_key_or_in_an_edit_without_names_never_reaches_the_draft(
     refused = lesson_edit.edit(view["draft_id"], "q3", {"Kasia": "x"}, names=["Kasia"])
     assert refused["ok"] is False and pii.leaks(json.dumps(refused, ensure_ascii=False),
                                                 ["Kasia"]) == []
+
+
+def test_a_name_in_an_answer_keys_words_never_reaches_the_draft(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    """dl-a38n.62: a key's why, worked_solution, near notes and criteria are words a parent reads;
+    its answers stay as written. Kasia: an invented name, as tests/test_pii.py."""
+    view = _draft()
+    path = Path(lesson.check(view["draft_id"], _words(view), names=["Kasia"])["draft_path"])
+    key = {"correct": ["12"], "why": "Kasia ma 12.", "worked_solution": ["Kasia liczy: 7 + 5."],
+           "near": {"11": "Kasia, policz jeszcze raz."}}
+    lesson_edit.edit(view["draft_id"], "q1", {"question": {"key": key}}, why="Prośba rodzica.",
+                     names=["Kasia"])
+    stored = path.read_text(encoding="utf-8")
+    assert pii.leaks(stored, ["Kasia"]) == []
+    steps = [st for part in json.loads(stored)["script"]["parts"] for st in part["steps"]]
+    stored_key = next(st for st in steps if st["id"] == "q1")["question"]["key"]
+    assert stored_key["correct"] == ["12"]
+    assert "11" in stored_key["near"]  # a near answer is an answer, kept as written
+
+
+def test_guard_key_keeps_answers_and_guards_prose() -> None:
+    key = {"correct": ["Kasia"], "accept": ["12"], "why": "Kasia ma 12.",
+           "near": {"11": "Kasia, nie.", "Kasia": "x"},
+           "criteria": [{"id": "c1", "text": "Kasia wyjaśnia.", "cite": "PP 2.1"}],
+           "gaps": {"g1": {"kind": "choose", "correct": ["3"], "near": {"4": "Kasia?"}}},
+           "items": {"a": ["1"]}}
+    out = lesson.guard_key(key, ["Kasia"])
+    assert out["correct"] == ["Kasia"] and out["accept"] == ["12"] and out["items"] == {"a": ["1"]}
+    assert set(out["near"]) == {"11", "Kasia"} and out["criteria"][0]["id"] == "c1"
+    text = json.dumps({k: out[k] for k in ("why", "criteria")} | {
+        "near": list(out["near"].values()), "gap": out["gaps"]["g1"]["near"]["4"]},
+        ensure_ascii=False)
+    assert pii.leaks(text, ["Kasia"]) == []
