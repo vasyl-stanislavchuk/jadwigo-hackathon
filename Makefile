@@ -18,7 +18,7 @@ ifneq (,$(wildcard $(HOME)/perl5/bin/pg_prove))
 export PATH := $(HOME)/perl5/bin:$(PATH)
 export PERL5LIB := $(HOME)/perl5/lib/perl5$(if $(PERL5LIB),:$(PERL5LIB))
 endif
-.PHONY: check check-all dev db migrate pgtap db-reset db-seed lesson-import api-dev api-bundle api-invoke db-push db-role release skills drops icons builder
+.PHONY: check check-all dev db pgmq migrate pgtap db-reset db-seed lesson-import api-dev api-bundle api-invoke db-push db-role release skills drops icons builder
 
 ## check: lint, typecheck and test what changed since main (turbo --affected), uv's pytest
 ## included, then the repo-wide checks turbo cannot scope: knip, dependency-cruiser, no-bank, worklog,
@@ -66,12 +66,31 @@ db:
 	for d in jadwigo jadwigo_test; do psql -lqt | cut -d'|' -f1 | grep -qw "$$d" || createdb "$$d"; done
 	psql -lqt | cut -d'|' -f1 | grep -E '^ *jadwigo(_test)? *$$'
 
+## pgmq: install pgmq into the extension directory of the Postgres DATABASE_URL names, as Supabase
+## has it, so a migration can `create extension pgmq` (dl-z5ja.4). pgmq is pure SQL, nothing
+## compiled: the control file and one script. Pinned to the version Supabase's Postgres 17 image
+## ships (supabase/postgres nix/ext/versions.json), checked by sha256. Once per machine; CI runs it
+## with SUDO=sudo.
+PGMQ_VERSION := 1.5.1
+PGMQ_SHA256 := a435fec34a8d3b3e6ace928e24889b5549a83369b1e479ab6747ac076246085c
+pgmq:
+	@test -n "$$DATABASE_URL" || { echo "pgmq: DATABASE_URL is unset. Run: cp .env.example .env.local && make db"; exit 1; }
+	@dir="$$(psql "$(DATABASE_URL)" -Atc "select setting from pg_config where name = 'SHAREDIR'")/extension"; \
+	if [ -f "$$dir/pgmq--$(PGMQ_VERSION).sql" ]; then echo "pgmq $(PGMQ_VERSION) is already in $$dir"; exit 0; fi; \
+	tmp="$$(mktemp -d)"; trap 'rm -rf "$$tmp"' EXIT; src="$$tmp/pgmq-$(PGMQ_VERSION)/pgmq-extension"; \
+	curl -fsSL -o "$$tmp/pgmq.tar.gz" "https://github.com/pgmq/pgmq/archive/refs/tags/v$(PGMQ_VERSION).tar.gz" || exit 1; \
+	echo "$(PGMQ_SHA256)  $$tmp/pgmq.tar.gz" | shasum -a 256 -c - >/dev/null || { echo "pgmq: the tarball's sha256 is not $(PGMQ_SHA256)"; exit 1; }; \
+	tar -xzf "$$tmp/pgmq.tar.gz" -C "$$tmp" || exit 1; \
+	$(SUDO) install -m 644 "$$src/pgmq.control" "$$dir/pgmq.control" && \
+	$(SUDO) install -m 644 "$$src/sql/pgmq.sql" "$$dir/pgmq--$(PGMQ_VERSION).sql" && \
+	echo "pgmq $(PGMQ_VERSION) installed in $$dir"
+
 ## migrate: reset the database DATABASE_URL names, then apply the Supabase shim and every migration
 ## in order, on plain Postgres with no Docker. It only ever resets a jadwigo* database.
 migrate:
 	@test -n "$$DATABASE_URL" || { echo "migrate: DATABASE_URL is unset. Run: cp .env.example .env.local && make db"; exit 1; }
 	@case "$${DATABASE_URL##*/}" in jadwigo*) ;; *) echo "migrate: resets only a jadwigo* database, not $${DATABASE_URL##*/}"; exit 1;; esac
-	psql "$(DATABASE_URL)" -q -v ON_ERROR_STOP=1 -c 'drop schema if exists public, app, auth cascade' -c 'create schema public'
+	psql "$(DATABASE_URL)" -q -v ON_ERROR_STOP=1 -c 'drop extension if exists pgmq cascade' -c 'drop schema if exists public, app, auth, realtime cascade' -c 'create schema public'
 	psql "$(DATABASE_URL)" -q -v ON_ERROR_STOP=1 -f supabase/tests/shim.sql
 	for f in supabase/migrations/*.sql; do echo "$$f"; psql "$(DATABASE_URL)" -q -v ON_ERROR_STOP=1 -1 -f "$$f" || exit 1; done
 
