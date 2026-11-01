@@ -12,9 +12,10 @@ from typing import Any
 
 from jw import muse
 from jw.draw import Draw
+from jw.languages import NAMES
 from jw.pii import GuardedPrompt, guard, names_for, restore_stream
 
-_LANGUAGE_NAMES = {"pl": "Polish", "en": "English", "uk": "Ukrainian"}
+_LANGUAGE_NAMES = NAMES
 
 
 def _title(page: Mapping[str, Any] | None, language: str) -> str:

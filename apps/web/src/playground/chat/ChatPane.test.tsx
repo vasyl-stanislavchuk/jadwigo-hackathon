@@ -1,5 +1,5 @@
 import type { Run } from "@jadwigo/contracts/run";
-import { RunEvent, RunId } from "@jadwigo/contracts/run";
+import { RUN_ERROR_TYPE, RunEvent, RunId } from "@jadwigo/contracts/run";
 import type { RunView } from "@jadwigo/core";
 import { RUN_LOGS } from "@jadwigo/testing";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
@@ -61,7 +61,7 @@ function pane(props: Partial<ChatPaneProps> = {}) {
   return { onSend, onStop };
 }
 
-const status = () => screen.getByRole("status");
+const status = () => document.querySelector("[data-status]") as HTMLElement;
 const stopButton = () => screen.queryByRole("button", { name: "Zatrzymaj" });
 
 describe("the chat pane, one state per golden log", () => {
@@ -77,7 +77,8 @@ describe("the chat pane, one state per golden log", () => {
   it("running (reload-with-duplicates): the state in words, a Stop, the tool line folded", () => {
     const { onStop } = pane({ turns: [turnOf("reload-with-duplicates")] });
     expect(status().textContent).toBe("Pracuję nad tym");
-    expect(status().getAttribute("aria-live")).toBe("polite");
+    // The live region stays quiet while a turn runs: it speaks when it ends or needs the parent.
+    expect(screen.getByRole("status").textContent).toBe("");
     const details = screen.getByText(/1 krok/).closest("details");
     expect(details?.open).toBe(false);
     expect(screen.queryByRole("list", { name: "Kroki, które się zacięły" })).toBeNull();
@@ -192,5 +193,137 @@ describe("the lesson pane", () => {
   it("a revision that does not parse says so and draws nothing else", () => {
     render(<LessonPane language="en" lesson={{ revision: 3, lesson_file: { id: 1 } }} />);
     expect(screen.getByRole("alert").textContent).toBe("This revision can't be shown yet.");
+  });
+});
+
+describe("accessibility and recovery (dl-z5ja.28)", () => {
+  const live = () => screen.getByRole("status");
+
+  it("the live region speaks when a turn finishes, stops or needs the parent, and not while restoring", () => {
+    pane({ turns: [turnOf("happy-turn")] });
+    expect(live().getAttribute("aria-live")).toBe("polite");
+    expect(live().textContent).toBe("Asystent skończył.");
+    cleanup();
+    // plan-and-cite's approval, still unanswered.
+    const waiting = turnOf("plan-and-cite", (view) => {
+      for (const item of view.chat) if (item.kind === "approval") item.decision = null;
+    });
+    pane({ turns: [waiting] });
+    expect(live().textContent).toBe("Asystent czeka na Twoją odpowiedź.");
+    cleanup();
+    pane({ turns: [turnOf("cancel-during-a-verb")] });
+    expect(live().textContent).toBe("Zapisane, zatrzymane.");
+    cleanup();
+    pane({ turns: [turnOf("happy-turn")], restoring: true });
+    expect(live().textContent).toBe("");
+  });
+
+  it("the run's state is text, not a colour alone", () => {
+    pane({ turns: [turnOf("happy-turn")] });
+    expect(status().textContent).toBe("Gotowe");
+    expect(status().getAttribute("data-status")).toBe("completed");
+  });
+
+  it("Spróbuj ponownie sends the failed turn's own words again", () => {
+    const turn = turnOf("happy-turn", (view) => {
+      view.status = "failed";
+    });
+    const first = turn.view.chat[0];
+    const words = first?.kind === "message" ? first.text : "";
+    const { onSend } = pane({ turns: [turn] });
+    const row = document.querySelector("[data-row='retry-turn']") as HTMLElement;
+    expect(row.textContent).toContain("Tej tury nie udało się dokończyć.");
+    expect(live().textContent).toContain("Tej tury nie udało się dokończyć.");
+    fireEvent.click(within(row).getByRole("button", { name: "Spróbuj ponownie" }));
+    expect(onSend).toHaveBeenCalledWith(words);
+  });
+
+  it("a send that did not reach the server can go again, and the draft being typed stays", () => {
+    const { onSend } = pane({ sendFailed: true });
+    const box = screen.getByRole("textbox", { name: "Twoja wiadomość" });
+    fireEvent.change(box, { target: { value: "Dodawanie do 10." } });
+    fireEvent.click(screen.getByRole("button", { name: "Wyślij" }));
+    fireEvent.change(box, { target: { value: "jeszcze" } });
+    const failed = document.querySelector("[data-row='send-failed']") as HTMLElement;
+    fireEvent.click(within(failed).getByRole("button", { name: "Spróbuj ponownie" }));
+    expect(onSend.mock.calls).toEqual([["Dodawanie do 10."], ["Dodawanie do 10."]]);
+    expect((box as HTMLTextAreaElement).value).toBe("jeszcze");
+  });
+
+  it("Escape in the composer stops a running turn", () => {
+    const { onStop } = pane({ turns: [turnOf("reload-with-duplicates")] });
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "Twoja wiadomość" }), { key: "Escape" });
+    expect(onStop).toHaveBeenCalledTimes(1);
+  });
+
+  it("scrolls to the newest row without motion when the parent asks for less", () => {
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce") }));
+    try {
+      pane({ turns: [turnOf("happy-turn")] });
+      expect(scroll).toHaveBeenCalledWith({ block: "end", behavior: "auto" });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("says when the network is gone, and what to do", () => {
+    const online = vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+    try {
+      pane();
+      expect(document.querySelector("[data-row='offline']")?.textContent).toBe(
+        "Nie ma połączenia z siecią. Wiadomość zostaje tutaj: wyślij ją, gdy sieć wróci.",
+      );
+    } finally {
+      online.mockRestore();
+    }
+  });
+
+  it("every error row has Copy details naming the run and the attempt", () => {
+    pane({ turns: [turnOf("stale-attempt")] });
+    const error = document.querySelector("[data-row='error']");
+    const details = error?.querySelector("[data-details]")?.getAttribute("data-details") ?? "";
+    expect(details).toMatch(/^run run_\w+ attempt \d+: /);
+    expect(error?.textContent).toContain("Kopiuj szczegóły");
+  });
+});
+
+describe("the engine's limits in plain words (dl-z5ja.28, dl-z5ja.83)", () => {
+  const withError = (type: string, retryable: boolean) =>
+    turnOf("happy-turn", (view) => {
+      view.chat.push({
+        kind: "error",
+        seq: 99,
+        error: { type, message: "the turn ran past its 30 minutes" },
+        attempt: 2,
+        retryable,
+      });
+    });
+
+  it("a turn past its time limit says the lesson so far is saved and what to do next", () => {
+    pane({ turns: [withError(RUN_ERROR_TYPE.runTimedOut, false)] });
+    const row = document.querySelector("[data-row='error']");
+    expect(row?.querySelector("p")?.textContent).toBe(
+      "Ta tura trwała zbyt długo, więc się zatrzymała. Lekcja do tej pory jest zapisana: napisz, co dalej.",
+    );
+    expect(row?.textContent).not.toContain("30 minutes");
+    expect(row?.querySelector("[data-details]")?.getAttribute("data-details")).toContain(
+      "attempt 2: RunTimedOut",
+    );
+  });
+
+  it("a step delivered again only says it is trying again", () => {
+    pane({ turns: [withError(RUN_ERROR_TYPE.stepTimedOut, true)] });
+    expect(document.querySelector("[data-row='error'] p")?.textContent).toBe(
+      "Próbuję jeszcze raz.",
+    );
+  });
+
+  it("any other problem keeps its message", () => {
+    pane({ turns: [withError("unknown-draft", false)] });
+    expect(document.querySelector("[data-row='error'] p")?.textContent).toBe(
+      "Coś się zacięło: the turn ran past its 30 minutes",
+    );
   });
 });

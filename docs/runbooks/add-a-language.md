@@ -13,11 +13,11 @@ German (`de`) is the example below.
 ## Steps
 
 1. Add `de` to `LANGUAGES` in `packages/config/src/languages.ts` with status `studio`, its name in German and its plural categories. `bunx turbo run test --filter=./packages/config` checks them against `Intl.PluralRules`. Mark every part `{ pending: "<issue>" }`, naming the issue that builds it.
-2. Copy: `packages/copy/src/de.ts` holds every key and every plural category. Point `copy` at it.
+2. Copy: `packages/copy/messages/de.json` holds every key and every plural category, `messages/review.de.json` a review flag for each, and `de` joins `locales` in `packages/copy/project.inlang/settings.json`. Run `bun run messages` in `packages/copy`. Point `copy` at the messages file.
 3. Review: `workflows/_lang/de/` holds `checklist.md` (with sources), `style.md`, `glossary.md` and reviewed examples. Point `checklist` and `workflow` at them.
-4. Number words: `packages/core/src/lang/de/`, with golden cases. Point `number_words` at it.
+4. Number words: `packages/core/src/lang/de/number-words.ts`, with golden cases. Point `number_words` at it.
 5. Run `bun tools/src/check-languages.ts`. A studio language passes with every part but the site.
-6. Have the reviewer workflow pass the first batch of lines, then send the native reader samples.
+6. Have the reviewer workflow (`/jadwigo-lesson-review`) pass the first batch of lines. A native reader's samples are optional: English shipped on the AI reviewer alone (jadwigo-question-bank/decisions/2026-11-01-english-text-is-checked-by-the-ai-reviewer-only-with-an-english).
 7. Bank: run the translate workflow on the questions the lessons need, then review them.
 8. A site only if German gets its own audience: a host in `packages/config`, `apps/site/src/content/de/` and its legal pages. Point `site` at the content.
 9. Set the status to `live`. `make check` now fails until every part exists.

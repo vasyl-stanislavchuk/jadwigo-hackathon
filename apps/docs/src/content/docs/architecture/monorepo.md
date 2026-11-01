@@ -24,6 +24,7 @@ flowchart LR
     web
     site
     docs
+    runner
   end
   subgraph packages [Packages]
     api_client["api-client"]
@@ -40,6 +41,7 @@ flowchart LR
   end
   api --> contracts
   api --> core
+  api --> jadwigo_ai
   api --> store
   web --> api_client
   web --> config
@@ -59,6 +61,9 @@ flowchart LR
   docs --> contracts
   docs --> lesson_kit
   docs --> ui
+  runner --> contracts
+  runner --> jadwigo_ai
+  runner --> store
   api_client --> contracts
   bank --> api_client
   bank --> contracts
@@ -110,6 +115,7 @@ violation to prove the check still catches it.
 | `web` | The app at app.jadwigo.pl: the lesson player and the parent's screens. |
 | `site` | The marketing site at jadwigo.pl. |
 | `docs` | This site, docs.jadwigo.pl. |
+| `runner` | The AI engine's step host: it drains the step queue through the engine, as a 2nd Lambda or a Supabase Edge Function. |
 | `cli` | `jw`, in Python: question search for lesson authors, and its MCP server. It imports none of the TypeScript code and talks to the API over HTTP. |
 
 ## Every package

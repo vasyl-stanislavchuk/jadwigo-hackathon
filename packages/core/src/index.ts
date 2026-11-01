@@ -48,12 +48,14 @@ export {
   type SkillEvent,
   type SkillMastery,
 } from "./mastery/index.ts";
+export { type AnswerMiss, checkAnswer, type StatusWord } from "./run/answer-check.ts";
 export {
   type BudgetLevel,
   budgetGuard,
   type ChatItem,
   deadlineDue,
   foldRun,
+  type LessonAt,
   mergeLive,
   type RunView,
   type ToolState,

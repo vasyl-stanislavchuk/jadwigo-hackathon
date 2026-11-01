@@ -59,6 +59,7 @@ function snapshot(
       started_at: AT,
       finished_at: status === "finished" ? AT : null,
     },
+    language: "pl",
     plan,
     questions,
     open_seq: status === "finished" ? null : (questions.find((q) => q.ended === null)?.seq ?? null),

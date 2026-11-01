@@ -1,4 +1,4 @@
-import { EventId, ID_PREFIXES, idOf, Uuid } from "@jadwigo/contracts";
+import { EventId, ID_PREFIXES, idOf, PodId, Uuid } from "@jadwigo/contracts";
 import { ConversationId, type NewRunEvent, RunId, RunInbox } from "@jadwigo/contracts/run";
 import { describe, expect, it } from "vitest";
 import type { NewRun } from "./run.ts";
@@ -271,10 +271,95 @@ export function runContract(name: string, make: () => Promise<Store> | Store): v
         ]);
       },
     );
+
+    frozen(
+      "refuses an inbox event_id another run of its pod holds, and keeps each pod's ids its own (dl-z5ja.36, dl-z5ja.86)",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const b = await scope(store);
+        const run = await store.createRun(a.pod, newRun(a.account, null));
+        const other = await store.createRun(a.pod, newRun(a.account, null));
+        const elsewhere = await store.createRun(b.pod, newRun(b.account, null));
+        const first = inbox(run.id, "Make it 5 questions.");
+        const stored = await store.putRunInbox(a.pod, first);
+
+        await expect(
+          store.putRunInbox(a.pod, { ...first, run_id: other.id }),
+        ).rejects.toMatchObject(WRITE_ONCE);
+        // The same id in another pod is that pod's own row: nothing says the id exists in pod a.
+        const theirs = await store.putRunInbox(b.pod, {
+          ...first,
+          run_id: elsewhere.id,
+          payload: { text: "Adding within 20." },
+        });
+        expect([theirs.pod_id, theirs.run_id, theirs.payload]).toEqual([
+          b.pod,
+          elsewhere.id,
+          { text: "Adding within 20." },
+        ]);
+        expect(await store.takeRunInbox(a.pod, other.id)).toEqual([]);
+        expect((await store.takeRunInbox(b.pod, elsewhere.id)).map((r) => r.event_id)).toEqual([
+          first.event_id,
+        ]);
+        expect((await store.takeRunInbox(a.pod, run.id)).map((r) => r.event_id)).toEqual([
+          stored.event_id,
+        ]);
+      },
+    );
+
+    frozen(
+      "counts a parent's messages since a minute and sums the pod's caps since a day (dl-z5ja.72)",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const b = await scope(store);
+        const before = new Date(Date.now() - 60_000).toISOString();
+        const later = new Date(Date.now() + 60_000).toISOString();
+        const mine = await store.createRun(a.pod, { ...newRun(a.account, null), cap_usd: 1 });
+        const theirs = await store.createRun(a.pod, { ...newRun(b.account, null), cap_usd: 2 });
+        const elsewhere = await store.createRun(b.pod, { ...newRun(b.account, null), cap_usd: 4 });
+        await store.putRunInbox(a.pod, inbox(mine.id, "Shapes for grade 1."));
+        await store.putRunInbox(a.pod, inbox(mine.id, "Make it 5 questions."));
+        await store.putRunInbox(a.pod, {
+          run_id: mine.id,
+          event_id: eventId(),
+          kind: "steer",
+          payload: { text: "Easier, please." },
+        });
+        await store.putRunInbox(a.pod, inbox(theirs.id, "Telling the time."));
+        await store.putRunInbox(b.pod, inbox(elsewhere.id, "Adding within 20."));
+
+        const since = { minuteSince: before, daySince: before };
+        expect(await store.messageUsage(a.pod, a.account, since)).toEqual({
+          messages: 2,
+          cap_usd: 3,
+        });
+        expect(await store.messageUsage(a.pod, b.account, since)).toEqual({
+          messages: 1,
+          cap_usd: 3,
+        });
+        expect(await store.messageUsage(b.pod, a.account, since)).toEqual({
+          messages: 0,
+          cap_usd: 4,
+        });
+        expect(
+          await store.messageUsage(a.pod, a.account, { minuteSince: later, daySince: later }),
+        ).toEqual({ messages: 0, cap_usd: 0 });
+        await expect(
+          store.messageUsage(
+            PodId.parse(idOf(ID_PREFIXES.pod, crypto.randomUUID())),
+            a.account,
+            since,
+          ),
+        ).rejects.toMatchObject(NOT_FOUND);
+      },
+    );
   });
 }
 
 const NOT_FOUND = { type: "NotFound" };
+const WRITE_ONCE = { type: "WriteOnce" };
 
 /** A fresh signed-in account: its own pod, so no test sees another's rows. */
 async function scope(store: Store) {

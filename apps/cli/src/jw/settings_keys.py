@@ -71,6 +71,11 @@ KHAN_SYNC_COMMAND = "uv run python -m tools.khan.sync down"
 # (dl-e8ov.5.38.2). Unset: <JADWIGO_KHAN_DIR>/converted-pl.json, the Polish file the sync writes
 # (dl-e8ov.5.38.8); converted.json beside it is the English one.
 JW_KHAN_CONVERTED = "JW_KHAN_CONVERTED"
+# The converted items file per language (dl-hin8.17). JW_KHAN_CONVERTED is Polish's old name,
+# kept for one release; for English it still counts when it names no Polish conversion.
+JW_KHAN_CONVERTED_PL = "JW_KHAN_CONVERTED_PL"
+JW_KHAN_CONVERTED_EN = "JW_KHAN_CONVERTED_EN"
+CONVERTED_EN_DEFAULT = Path("converted.json")  # relative to the Khan dir
 CONVERTED_DEFAULT = Path("converted-pl.json")  # relative to the Khan dir
 
 # The jadwigo-hackathon checkout whose packages/lesson-import/src/check.ts the lesson_check tool
@@ -95,6 +100,8 @@ KEYS = (
     JADWIGO_BANK_DIR,
     JADWIGO_KHAN_DIR,
     JW_KHAN_CONVERTED,
+    JW_KHAN_CONVERTED_PL,
+    JW_KHAN_CONVERTED_EN,
     JADWIGO_REPO_DIR,
 )
 

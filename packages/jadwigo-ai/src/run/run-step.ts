@@ -3,6 +3,7 @@ import {
   type ConversationId,
   type ModelTier,
   type NewRunEvent,
+  RUN_ERROR_TYPE,
   RUN_IDLE_MS,
   RUN_IDLE_PUSH_MS,
   RUN_MAX_MS,
@@ -25,7 +26,7 @@ import type { RunQueue } from "../queue/types.ts";
 import { type QueuedStep, STEP_VISIBILITY_S } from "../queue/types.ts";
 import type { Verbs } from "../verbs/types.ts";
 import { type VerbContext, type VerbEffect, VerbError } from "../verbs/types.ts";
-import { eventIdFor, runIdFor } from "./ids.ts";
+import { eventIdFor, turnRunIdFor } from "./ids.ts";
 
 /**
  * The engine's loop (Lead decisions 5-9, 13): a message lands in the run inbox, a step is one Muse
@@ -61,17 +62,6 @@ export interface AcceptMessage {
 
 /** A turn's budget when the caller names none. */
 const DEFAULT_CAP_USD = 1;
-
-/**
- * The run's own error types, which never reach the API's `{error}` envelope, so they are not
- * `ErrorType`s. They belong beside `RunError` in `@jadwigo/contracts/run` (a note to the lead).
- */
-const RUN_ERROR = {
-  /** A step ran past its visibility timeout and was delivered again. */
-  stepTimedOut: "StepTimedOut",
-  /** The turn ran past `max_deadline_at`. */
-  runTimedOut: "RunTimedOut",
-} as const;
 
 const WORKFLOW = "jadwigo-lesson-compose";
 const TAG = "product:lesson-compose";
@@ -205,30 +195,66 @@ export function acceptMessage(
 ): Promise<{ run: Run; inbox: RunInbox }> {
   const { store, queue } = deps;
   const { pod, conversation_id, entry } = message;
-  return store.unit(async () => {
-    const runs = await store.listRuns(pod, conversation_id);
-    const open = runs.findLast((r) => !isEnded(r.status));
-
-    if (entry.kind !== "message" && !open) {
-      // Nothing is running: a cancel, a steer or an approval lands on the last turn and changes nothing.
-      const last = runs.at(-1);
-      if (!last) {
-        throw new StoreError(
-          ErrorType.enum.BadRequest,
-          `the conversation has no run for a ${entry.kind}`,
-        );
-      }
-      return { run: last, inbox: await store.putRunInbox(pod, { ...entry, run_id: last.id }) };
+  // Each resend answers the stored row, and the engine acts on that row's kind, never the resend's
+  // (dl-z5ja.73): an event_id kept as a message and resent as a cancel is refused, not obeyed.
+  const put = async (run_id: RunId): Promise<RunInbox> => {
+    const inbox = await store.putRunInbox(pod, { ...entry, run_id });
+    if (inbox.kind !== entry.kind) {
+      throw new StoreError(
+        ErrorType.enum.BadRequest,
+        `event ${entry.event_id} is a ${inbox.kind}, not a ${entry.kind}`,
+      );
     }
+    return inbox;
+  };
+  return store.unit(async () => {
+    for (let tries = 0; tries < 5; tries++) {
+      const runs = await store.listRuns(pod, conversation_id);
+      let open = runs.findLast((r) => !isEnded(r.status));
 
-    if (open) {
-      const inbox = await store.putRunInbox(pod, { ...entry, run_id: open.id });
+      if (entry.kind !== "message" && !open) {
+        // Nothing is running: a cancel, a steer or an approval lands on the last turn and changes nothing.
+        const last = runs.at(-1);
+        if (!last) {
+          throw new StoreError(
+            ErrorType.enum.BadRequest,
+            `the conversation has no run for a ${entry.kind}`,
+          );
+        }
+        return { run: last, inbox: await put(last.id) };
+      }
+
+      // No open run: the next turn's, named by its number in the conversation (dl-z5ja.85). The store
+      // writes a run once, so 2 first messages racing open one run and both land in its inbox.
+      let opened = false;
+      if (!open) {
+        const now = deps.now().getTime();
+        const run = await store.createRun(pod, {
+          id: await turnRunIdFor(conversation_id, runs.length),
+          created_by: message.created_by,
+          conversation_id,
+          workflow: WORKFLOW,
+          resumes: null,
+          cap_usd: message.cap_usd ?? DEFAULT_CAP_USD,
+          idle_deadline_at: at(now + RUN_IDLE_MS),
+          max_deadline_at: at(now + RUN_MAX_MS),
+        });
+        // A racing message's turn that has already ended: this one opens the turn after it.
+        if (isEnded(run.status)) continue;
+        open = run;
+        opened = run.status === "queued";
+      }
+
+      const inbox = await put(open.id);
       if (inbox.run_id !== open.id) {
-        // A resend of a message an earlier turn already holds.
+        // A resend of a message an earlier turn already holds. A run this call opened gets its step
+        // all the same: it ends the turn without a model call unless a racing message joined it.
+        if (opened) await queue.send({ run_id: open.id, attempt: open.attempt });
         return { run: await store.getRun(pod, inbox.run_id), inbox };
       }
       const now = deps.now().getTime();
       const cancel = entry.kind === "cancel";
+      const waiting = open.status === "awaiting_input";
       const woken = await updateLatest(store, pod, open, (run) => {
         const change: RunChange = {};
         if (cancel && run.cancel_requested_at === null) change.cancel_requested_at = at(now);
@@ -238,37 +264,15 @@ export function acceptMessage(
         }
         return Object.keys(change).length > 0 ? change : null;
       });
-      if (woken.changed && open.status === "awaiting_input" && woken.run.status === "queued") {
-        await queue.send({ run_id: woken.run.id, attempt: woken.run.attempt });
-      }
+      // A step for a run this call opened (a racing caller's too: one of the 2 steps runs stale or
+      // claims nothing to pay for, dl-z5ja.41), or for one it woke from awaiting_input.
+      const woke = woken.changed && waiting && woken.run.status === "queued";
+      if (opened || woke) await queue.send({ run_id: woken.run.id, attempt: woken.run.attempt });
       return { run: woken.run, inbox };
     }
-
-    const id = await runIdFor(entry.event_id);
-    const resent = runs.find((r) => r.id === id);
-    if (resent)
-      return { run: resent, inbox: await store.putRunInbox(pod, { ...entry, run_id: id }) };
-
-    const now = deps.now().getTime();
-    const run = await store.createRun(pod, {
-      id,
-      created_by: message.created_by,
-      conversation_id,
-      workflow: WORKFLOW,
-      resumes: null,
-      cap_usd: message.cap_usd ?? DEFAULT_CAP_USD,
-      idle_deadline_at: at(now + RUN_IDLE_MS),
-      max_deadline_at: at(now + RUN_MAX_MS),
-    });
-    const inbox = await store.putRunInbox(pod, { ...entry, run_id: run.id });
-    if (inbox.run_id !== run.id) {
-      // A resend of a mid-turn message whose turn has ended: the new run has nothing to do.
-      const w = new Writer(store, pod, run.id, run.attempt, []);
-      await endTurn(w, "completed", deps.now());
-      return { run: await store.getRun(pod, inbox.run_id), inbox };
-    }
-    await queue.send({ run_id: run.id, attempt: run.attempt });
-    return { run, inbox };
+    throw new Error(
+      `conversation ${conversation_id} kept opening turns while a message was accepted`,
+    );
   });
 }
 
@@ -373,6 +377,9 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       // The answer is recorded and nothing came after it: a redelivery ends the turn on it.
       return endTurn(w, "completed", deps.now());
     }
+
+    // Nothing from the parent: a turn a resend opened and no message joined (dl-z5ja.85).
+    if (!parentSpokeAfter(w.log, 0)) return endTurn(w, "completed", deps.now());
 
     const spent = spentOf(w.log);
     const level = budgetGuard(spent, run.cap_usd);
@@ -651,7 +658,7 @@ async function endPastMax(w: Writer, attempt: number, now: Date): Promise<void> 
       run_id: w.run,
       event_id: await w.id("error", "max"),
       payload: {
-        error: { type: RUN_ERROR.runTimedOut, message: "the turn ran past its 30 minutes" },
+        error: { type: RUN_ERROR_TYPE.runTimedOut, message: "the turn ran past its 30 minutes" },
         attempt,
         retryable: false,
       },
@@ -784,6 +791,12 @@ async function namesOf(store: Store, scope: Scope): Promise<string[]> {
   return [...new Set(names)];
 }
 
+/** A step that threw in `drain`: the run and attempt it carried, and its place in the queue. */
+export interface FailedStep extends RunStepInput {
+  msg_id: number;
+  read_ct: number;
+}
+
 /**
  * The consumer's loop, in-process: reads visible steps and runs each until none is visible. A step
  * that throws stays in the queue and comes back after its visibility timeout, as on pgmq; one that
@@ -792,10 +805,13 @@ async function namesOf(store: Store, scope: Scope): Promise<string[]> {
  * A step read a 2nd time is a redelivery: before running it, `drain` claims the run by moving its
  * `attempt` on, so the step that stalled goes stale, and logs the retry as an `error` row naming the
  * attempt that stalled.
+ *
+ * A step that throws is handed to `onError` with what it carried and its `msg_id`, so the host can
+ * log it by run id (dl-z5ja.82); it stays in the queue either way.
  */
 export async function drain(
   deps: EngineDeps,
-  options: { max_steps?: number } = {},
+  options: { max_steps?: number; onError?: (error: unknown, step: FailedStep) => void } = {},
 ): Promise<readonly RunStepOutput[]> {
   const max = options.max_steps ?? 100;
   const outputs: RunStepOutput[] = [];
@@ -806,8 +822,13 @@ export async function drain(
       const input = queued.read_ct > 1 ? await claim(deps, queued) : queued.message;
       outputs.push(await runStep(input, deps));
       await deps.queue.archive(queued.msg_id);
-    } catch {
+    } catch (error) {
       // The step stays in the queue, hidden until its visibility timeout, then delivered again.
+      options.onError?.(error, {
+        ...queued.message,
+        msg_id: queued.msg_id,
+        read_ct: queued.read_ct,
+      });
     }
   }
   return outputs;
@@ -837,7 +858,7 @@ async function claim(deps: EngineDeps, queued: QueuedStep): Promise<RunStepInput
       event_id: await w.id("retry", held),
       payload: {
         error: {
-          type: RUN_ERROR.stepTimedOut,
+          type: RUN_ERROR_TYPE.stepTimedOut,
           message: "the step ran past its visibility timeout and was retried",
         },
         attempt: held,
