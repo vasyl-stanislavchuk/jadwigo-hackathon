@@ -31,8 +31,14 @@ for, and every effect is a run event the page folds into its 2 panes.
   run's `attempt`.
 - What the dev page runs (`ScriptedMuse`, `fixtureBank`) lives outside `src/testing/`, which only
   test files may import.
-- Wave 1 makes no network call and no paid call. `HttpMuse` is `dl-z5ja.18`. Real learner data
-  never goes into a prompt, a fixture or a test, and nothing here writes a learner's record
+- Wave 1 makes no network call and no paid call. `HttpMuse` is `dl-z5ja.18`.
+- A run sends the parent's own child's data to the model on purpose, names included, and only on
+  the tier that does not train on it (`private`). A call on the `contributor` tier, which trains,
+  carries no learner's name (`jadwigo-hackathon/notes/2026-11-01-learner-data-reaches-the-model-by-design-for-the-parent-s-own-re`).
+- Learner data reaches a prompt only through a verb that takes its pod from `VerbContext`. Text a
+  child or a photo wrote goes inside the untrusted-content fence (`dl-z5ja.47`).
+- Real learner data never goes into a fixture or a test, and nothing here writes a learner's
+  record
   (`jadwigo-ai-workflows/decisions/2026-10-31-a-session-may-propose-notes-for-a-learner-s-record-at-its-end-an`).
 - Nothing schedules a run
   (`jadwigo-ai-workflows/decisions/2026-10-31-a-report-runs-only-when-the-parent-asks-for-it-never-on-a-schedu`).

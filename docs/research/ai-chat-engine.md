@@ -71,7 +71,7 @@ There is no SQS, EventBridge, Step Functions, function URL, streaming or second 
 
 **Model rules.**
 - `jw.muse` allows only `muse-spark-1.3-contributor`, takes only prompts sealed by `jw.pii.guard`, and keeps the budget ledger.
-- Real learner data never goes into a prompt.
+- Real learner data never goes into a prompt. Since 2026-11-01: a parent's own child's data reaches the model, names included, on a Meta tier that does not train on it; `contributor` stays for the bank (`jadwigo-hackathon/notes/2026-11-01-learner-data-reaches-the-model-by-design-for-the-parent-s-own-re`).
 
 ## What Preply loop-your-lesson teaches
 
