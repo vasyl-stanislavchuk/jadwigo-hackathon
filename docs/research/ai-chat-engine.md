@@ -191,6 +191,22 @@ This is a sketch only. The migration is `dl-z5ja.7`, a one-way door the owner pu
 | Secrets / infra | Supabase secrets, no Terraform | Terraform + IAM (owner applies); the Muse key in AWS like the bank's search Lambda |
 | Risk | 2 s CPU on large JSON and lesson checks | One more deploy target |
 
+#### Measured by the probe (`dl-z5ja.5`)
+
+One scripted turn per invoke: a parent message, `lesson_draft` and `lesson_check` on the fixture bank, then the answer. That is 2 steps and no paid call. Each host is invoked cold, then warm with a new message. `make step-probe-local` prints the local rows. The owner fills the 2 hosted rows from `make step-probe HOST=lambda|edge ENV=dev CONFIRM=dev`, which prints the same columns.
+
+| Host | Cold start | Round trip, cold / warm | Handler wall, cold / warm | CPU, cold / warm | Bundle | Secrets |
+|---|---|---|---|---|---|---|
+| Local, Node 24, the Lambda bundle | 397 ms (module load) | 503 / 272 ms | 503 / 272 ms | 145 / 62 ms | 1121 KiB; bun build, the api's command, nothing changed in our packages | a local URL |
+| Local, Deno 2.1.4, the Edge bundle, network limited to Postgres | 949 ms (module load) | 656 / 170 ms | 652 / 170 ms | not reported by Deno | 1121 KiB; bun build plus a banner for 3 Node globals | a local URL |
+| 2nd Lambda on jadwigo-dev | _owner_ | _owner_ | _owner_ | _owner_ | _owner_ | SSM SecureString, read once per cold start; the role reads only its own parameter |
+| Edge Function on jadwigo-dev | _owner_ | _owner_ | _owner_ | _owner, from the dashboard's logs_ | _owner_ | Supabase secret `RUNNER_DATABASE_URL`; every function in the project reads every secret |
+
+What the dry run found before any deploy:
+- Our packages bundle for Deno with bun's bundler and one banner: Deno 2.1 has no `Buffer`, `process` or `global` globals. `pg` runs through Deno's `node:net`. Deno 2 dropped `deno bundle`, so bun builds both hosts' files.
+- Deno 2.1 answers `process.cpuUsage()` with zeros and a warning, so the Edge row's CPU comes from the dashboard.
+- Neither host can run a step on Postgres as `jadwigo_runner` today: `runStep` reads the pod's learner names through `getMe`, and the role has no select on `pod`, `account`, `member`, `learner` or `goal` (`dl-z5ja.81`). The local rows were measured with those selects granted in the lane's own database only.
+
 ## Muse: API or CLI
 
 | | `muse exec` / `muse serve` (CLI) | Meta API direct (`/v1/responses`) |

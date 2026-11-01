@@ -18,7 +18,7 @@ ifneq (,$(wildcard $(HOME)/perl5/bin/pg_prove))
 export PATH := $(HOME)/perl5/bin:$(PATH)
 export PERL5LIB := $(HOME)/perl5/lib/perl5$(if $(PERL5LIB),:$(PERL5LIB))
 endif
-.PHONY: check check-all dev db pgmq migrate pgtap db-reset db-seed lesson-import api-dev api-bundle api-invoke db-push db-role release skills drops icons builder
+.PHONY: check check-all dev db pgmq migrate pgtap db-reset db-seed lesson-import api-dev api-bundle api-invoke db-push db-role release skills drops icons builder runner-bundle db-runner-role step-probe step-probe-local
 
 ## check: lint, typecheck and test what changed since main (turbo --affected), uv's pytest
 ## included, then the repo-wide checks turbo cannot scope: knip, dependency-cruiser, no-bank, worklog,
@@ -333,6 +333,62 @@ api-invoke: api-bundle
 	@v=$$(node -p 'process.versions.node.split(".")[0] + " on " + process.arch'); \
 	  test "$$v" = "$(LAMBDA_NODE) on $(LAMBDA_ARCH)" || { echo "api-invoke: the Lambda runs Node $(LAMBDA_NODE) on $(LAMBDA_ARCH) ($(LAMBDA_TF)); this node is $$v"; exit 1; }
 	DATABASE_URL=$${DATABASE_URL:-postgresql://localhost:$${PGPORT:-5433}/jadwigo} bun run --cwd apps/api invoke
+
+## runner-bundle: apps/runner's 2 entries as one ESM file each, with bun's bundler as api-bundle does
+## (dl-z5ja.5): apps/runner/dist/probe-lambda.mjs, the 2nd Lambda's (`probe-lambda.handler`), and
+## supabase/functions/agent-step/probe.bundle.mjs, which the Edge Function's index.ts serves. Deno has
+## no Buffer, process or global as globals, so the Edge banner sets them from node:buffer and
+## node:process. Neither file is committed.
+RUNNER_LAMBDA := apps/runner/dist/probe-lambda.mjs
+RUNNER_EDGE := supabase/functions/agent-step/probe.bundle.mjs
+NODE_BANNER := import { createRequire } from "node:module"; const require = createRequire(import.meta.url);
+EDGE_BANNER := $(NODE_BANNER) import { Buffer as __Buffer } from "node:buffer"; import __process from "node:process"; globalThis.Buffer ??= __Buffer; globalThis.process ??= __process; globalThis.global ??= globalThis;
+runner-bundle:
+	rm -f $(RUNNER_LAMBDA) $(RUNNER_EDGE)
+	bun build apps/runner/src/probe-lambda.ts --target=node --format=esm --minify --banner='$(NODE_BANNER)' --outfile $(RUNNER_LAMBDA)
+	bun build apps/runner/src/probe-edge.ts --target=node --format=esm --minify --banner='$(EDGE_BANNER)' --outfile $(RUNNER_EDGE)
+	@printf 'runner-bundle: %s, %s bytes; %s, %s bytes\n' $(RUNNER_LAMBDA) "$$(wc -c < $(RUNNER_LAMBDA) | tr -d ' ')" $(RUNNER_EDGE) "$$(wc -c < $(RUNNER_EDGE) | tr -d ' ')"
+
+## step-probe-local [LOCAL_DATABASE_URL=…]: the step-host probe's dry run (dl-z5ja.5) on a local
+## jadwigo* database `make migrate` built: one scripted turn, cold then warm, in the Lambda bundle
+## under Node and in the Edge bundle under Deno with its network limited to Postgres. No AWS, no
+## Supabase, no paid call. Prints a comparison row per host.
+step-probe-local: runner-bundle
+	@$(LOCAL_DB_GATE)
+	DATABASE_URL=$(LOCAL_DATABASE_URL) sh apps/runner/scripts/step-probe.sh local
+
+## db-runner-role ENV=dev|prod: give jadwigo_runner (made by the migration, nologin) a login and its
+## password (JADWIGO_RUNNER_DB_PASSWORD_<ENV>, or the keychain item jadwigo-runner-db-password-<env>),
+## as db-role does for jadwigo_api. The step host logs in as it. ENV=prod runs only from your own
+## terminal and asks you to type prod first.
+db-runner-role:
+	@$(PROD_GATE)
+	@$(SUPABASE_LINK); \
+	RUNNER_PASSWORD=$${JADWIGO_RUNNER_DB_PASSWORD_$(ENV_UPPER):-$$(security find-generic-password -s jadwigo-runner-db-password-$(ENV) -w 2>/dev/null)}; \
+	test -n "$$RUNNER_PASSWORD" || { echo "db-runner-role: set JADWIGO_RUNNER_DB_PASSWORD_$(ENV_UPPER) in $(SUPABASE_SECRETS), or add the keychain item jadwigo-runner-db-password-$(ENV)"; exit 1; }; \
+	export RUNNER_PASSWORD; \
+	printf '%s\n' '\set pw `printenv RUNNER_PASSWORD`' "alter role jadwigo_runner login password :'pw';" \
+	  | PGPASSWORD=$$SUPABASE_DB_PASSWORD psql "$$(cat supabase/.temp/pooler-url)" -q -v ON_ERROR_STOP=1 \
+	  && echo "db-runner-role: jadwigo_runner can log in on jadwigo-$(ENV). The pooler may refuse the new password for a few minutes"
+
+## step-probe HOST=lambda|edge ENV=dev CONFIRM=dev: the step-host probe on jadwigo-dev (dl-z5ja.5),
+## the owner's. lambda deploys to the probe root's function, which `make -C infra
+## probe-step-host-apply` made; edge deploys supabase/functions/agent-step and sets its secret. Each
+## seeds a made-up pod as jadwigo_api, invokes the host cold and warm, and prints the comparison row.
+## The model is scripted: no paid call. Run db-runner-role ENV=dev first. CONFIRM=dev on the command
+## line is the go, as for db-push; only dev.
+step-probe: runner-bundle
+	@case "$(HOST)" in lambda|edge) ;; *) echo "step-probe: HOST=lambda or HOST=edge"; exit 1;; esac
+	@if [ "$(ENV)" != dev ]; then echo "step-probe: only ENV=dev"; exit 1; fi
+	@if [ "$(origin CONFIRM)" != "command line" ] || [ "$(CONFIRM)" != dev ]; then echo "step-probe: deploys to jadwigo-dev; add CONFIRM=dev to go on"; exit 1; fi
+	@$(API_SESSION); \
+	RUNNER_PASSWORD=$${JADWIGO_RUNNER_DB_PASSWORD_$(ENV_UPPER):-$$(security find-generic-password -s jadwigo-runner-db-password-$(ENV) -w 2>/dev/null)}; \
+	test -n "$$RUNNER_PASSWORD" || { echo "step-probe: set JADWIGO_RUNNER_DB_PASSWORD_$(ENV_UPPER), or add the keychain item jadwigo-runner-db-password-$(ENV), then run make db-runner-role ENV=$(ENV)"; exit 1; }; \
+	pooler=$$(sed 's/:5432\//:6543\//' supabase/.temp/pooler-url); \
+	RUNNER_URL=$$(RUNNER_PASSWORD="$$RUNNER_PASSWORD" POOLER="$$pooler" node -p 'process.env.POOLER.replace("://postgres.", "://jadwigo_runner.").replace(/@/, ":" + encodeURIComponent(process.env.RUNNER_PASSWORD) + "@")'); \
+	case "$$RUNNER_URL" in *://jadwigo_runner.$(SUPABASE_REF):*@*:6543/*) ;; *) echo "step-probe: supabase/.temp/pooler-url is not postgres.$(SUPABASE_REF)@<pooler>:<port>"; exit 1;; esac; \
+	API_URL="$$url" API_PASSWORD="$$API_PASSWORD" RUNNER_URL="$$RUNNER_URL" SUPABASE_REF=$(SUPABASE_REF) \
+	  SUPABASE_ACCESS_TOKEN="$$SUPABASE_ACCESS_TOKEN" AWS_PROFILE=jadwigo sh apps/runner/scripts/step-probe.sh $(HOST)
 
 ## drops: md drops check on every drop under docs/drops/
 drops:
