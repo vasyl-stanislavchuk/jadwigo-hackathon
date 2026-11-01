@@ -34,10 +34,12 @@ select ok(
     'muse_ledger.spent_usd(public.run_workflow[], timestamptz)', 'execute'),
   'anon may not execute it'
 );
+-- Wave 4 lead decision 47 (dl-z5ja.123): record_failed_call joined spent_usd, named here.
 select is(
-  (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+  (select array_agg(p.proname::text order by p.proname::text collate "C")
+   from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'muse_ledger'),
-  1, 'muse_ledger holds one function'
+  array['record_failed_call', 'spent_usd'], 'muse_ledger holds 2 functions: record_failed_call and spent_usd'
 );
 select ok(
   (select p.prosecdef from pg_proc p join pg_namespace n on n.oid = p.pronamespace
