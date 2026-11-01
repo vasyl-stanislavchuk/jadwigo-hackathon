@@ -2666,7 +2666,12 @@ class PostgresStore implements Store {
         () => {
           const valid = parse(
             Conversation,
-            { ...conversation, pod_id: pod, created_at: new Date().toISOString() },
+            {
+              ...conversation,
+              pod_id: pod,
+              created_at: new Date().toISOString(),
+              archived_at: null,
+            },
             "the conversation",
           );
           return tx
@@ -2682,6 +2687,60 @@ class PostgresStore implements Store {
             .executeTakeFirst();
         },
       );
+      return read(Conversation, row, ID_PREFIXES.conversation);
+    });
+  }
+
+  async getConversation(pod: PodId, conversation: ConversationId): Promise<Conversation> {
+    const id = uuidOf(ID_PREFIXES.conversation, conversation);
+    return this.#in(pod, async (tx) => {
+      const row = await tx
+        .selectFrom("conversation")
+        .selectAll()
+        .where("id", "=", id)
+        .executeTakeFirst();
+      if (!row) throw notFound("the conversation");
+      return read(Conversation, row, ID_PREFIXES.conversation);
+    });
+  }
+
+  async listConversations(
+    pod: PodId,
+    { includeArchived = false }: { readonly includeArchived?: boolean } = {},
+  ): Promise<readonly Conversation[]> {
+    return this.#in(pod, async (tx) => {
+      let query = tx
+        .selectFrom("conversation")
+        .selectAll()
+        .where("pod_id", "=", uuidOf(ID_PREFIXES.pod, pod));
+      if (!includeArchived) query = query.where("archived_at", "is", null);
+      const rows = await query.orderBy("created_at", "desc").orderBy("id", "desc").execute();
+      return rows.map((row) => read(Conversation, row, ID_PREFIXES.conversation));
+    });
+  }
+
+  async archiveConversation(
+    pod: PodId,
+    conversation: ConversationId,
+    at: string,
+  ): Promise<Conversation> {
+    const id = uuidOf(ID_PREFIXES.conversation, conversation);
+    const archived = utc(at);
+    return this.#in(pod, async (tx) => {
+      // Only a live row is changed, so a 2nd archive keeps the first time; the read after it
+      // answers both, and NotFound for one outside the pod.
+      await tx
+        .updateTable("conversation")
+        .set({ archived_at: archived })
+        .where("id", "=", id)
+        .where("archived_at", "is", null)
+        .execute();
+      const row = await tx
+        .selectFrom("conversation")
+        .selectAll()
+        .where("id", "=", id)
+        .executeTakeFirst();
+      if (!row) throw notFound("the conversation");
       return read(Conversation, row, ID_PREFIXES.conversation);
     });
   }

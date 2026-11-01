@@ -3,10 +3,13 @@ import { describe, expect, it } from "vitest";
 import {
   assignmentPath,
   attemptPath,
+  childPath,
   claimOf,
   emailOf,
+  historyPath,
   isParentPath,
   learnerOf,
+  lessonsPath,
   parentPath,
   parentRoute,
   providerOf,
@@ -97,6 +100,25 @@ describe("assignmentPath", () => {
     });
     expect(parentRoute("/parent/assignments")).toBeNull();
     expect(isParentPath(`/parent/assignments/${ASSIGNMENT}`)).toBe(true);
+  });
+});
+
+// The parent app's pages (dl-uukj.47.4, decision dl-xo0q).
+describe("the shell's pages", () => {
+  it("reads the lessons, the history and a child, a trailing slash too", () => {
+    expect(parentRoute("/parent/lessons")).toEqual({ kind: "lessons" });
+    expect(parentRoute("/parent/history/")).toEqual({ kind: "history" });
+    expect(parentRoute(`/parent/children/${LEARNER}`)).toEqual({ kind: "child", learner: LEARNER });
+    expect(parentRoute(`/parent/children/${ATTEMPT}`)).toEqual({ kind: "child", learner: null });
+    expect(parentRoute("/parent/children")).toBeNull();
+  });
+
+  it("round-trips each path with the page's language", () => {
+    expect(lessonsPath()).toBe("/parent/lessons");
+    expect(historyPath({ lang: "en" })).toBe("/parent/history?lang=en");
+    const child = childPath({ learner: LEARNER, lang: "en" });
+    expect(child).toBe(`/parent/children/${LEARNER}?lang=en`);
+    expect(parentRoute(child.split("?")[0] ?? "")).toEqual({ kind: "child", learner: LEARNER });
   });
 });
 
