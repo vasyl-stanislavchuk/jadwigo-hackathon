@@ -31,6 +31,16 @@ export const ENDED_ICON: Record<EndedOrOpen, LucideIcon> = {
   open: Circle,
 };
 
+/** The ink the child's icon and word wear on the end list: the kid green for right, the soft miss
+ * colour (owner, 2026-10-24) for one still growing, plain for the rest (dl-uukj.30.6). */
+export const ENDED_INK: Record<EndedOrOpen, string> = {
+  correct: "text-kid-correct-ink",
+  missed: "text-kid-try-again-ink",
+  skipped: "text-kid-try-again-ink",
+  done: "",
+  open: "",
+};
+
 /** The colours a tile or a cell wears: right, a miss, or plain for the rest; the parent's pages also
  * draw right-soft (right after tries or help) and empty (not asked), decision
  * 2026-10-30-the-parent-s-outcomes-a-soft-green-for-got-there-a-dashed-tile-f. */

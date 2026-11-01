@@ -59,6 +59,13 @@ test("a child finishes a lesson and opens the question it missed, and one it got
   const rows = results.locator("li[data-seq]");
   await expect(rows.nth(0)).toHaveAttribute("data-ended", "correct");
   await expect(rows.nth(1)).toHaveAttribute("data-ended", "skipped");
+  // Under it a kind line with no number, the walk from the first question, and each card's answer
+  // (dl-uukj.30.6): the right one on the first, the right answer drawn on the skipped one.
+  await expect(page.locator("[data-results-summary]")).toContainText("jeszcze poćwiczymy");
+  await expect(page.locator("[data-review-walk]")).toHaveAttribute("href", /\/review\/1(\?|$)/);
+  await expect(rows.nth(0).locator("[data-card-answer]")).toContainText("10");
+  await expect(rows.nth(1).locator("[data-card-answer]")).toContainText("12");
+  await expect(results).not.toContainText("%");
   const congrats = await page.locator("[data-congrats]").boundingBox();
   const firstCard = await rows.nth(0).boundingBox();
   expect(congrats !== null && firstCard !== null && congrats.y < firstCard.y).toBe(true);

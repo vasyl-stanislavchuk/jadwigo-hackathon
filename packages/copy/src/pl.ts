@@ -346,6 +346,12 @@ export const pl: CopyTable = {
   play_congrats: { text: "Brawo! To już wszystko na dziś.", reviewed: false },
   play_results_title: { text: "Pytania z tej lekcji", reviewed: false },
   play_results_none: { text: "Tu pojawią się pytania z lekcji.", reviewed: false },
+  play_summary_all: { text: "Wszystko się udało! Zobacz swoje odpowiedzi.", reviewed: false },
+  play_summary_some: {
+    text: "Niektóre pytania jeszcze poćwiczymy. Zobacz, jak wyglądają dobre odpowiedzi.",
+    reviewed: false,
+  },
+  play_review_walk: { text: "Obejrzyj odpowiedzi", reviewed: false },
   play_ended_correct: { text: "Udało się", reviewed: false },
   play_ended_missed: { text: "Jeszcze się uczymy", reviewed: false },
   play_ended_skipped: { text: "Wrócimy do tego", reviewed: false },
