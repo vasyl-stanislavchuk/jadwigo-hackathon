@@ -241,7 +241,15 @@ export function lessonCheck(context: VerbContext, raw: Json): Promise<VerbEffect
         `lesson_check: help.${step_id} takes ${HELP_WORDS.join(", ")}; to change ${unknown.join(", ")} use lesson_edit`,
       );
     }
-    file = withStep(file, mergePatch(step, { question: { help: words } }) as Step);
+    const after = mergePatch(step, { question: { help: words } }) as Step;
+    const copied = copiedChanges(step, after);
+    if (copied.length > 0) {
+      throw new VerbError(
+        "copied-rung",
+        `step ${step_id}: ${copied.join(", ")} is copied from the bank; lesson_check fills only what the copy leaves empty, so edit the copied part with lesson_edit and a why; nothing changed`,
+      );
+    }
+    file = withStep(file, after);
   }
   if (title !== null) file["title"] = title;
   if (reasoning !== null) file["reasoning"] = reasoning;
@@ -257,8 +265,35 @@ export function lessonCheck(context: VerbContext, raw: Json): Promise<VerbEffect
 
 /** The parts a patch may set: `say`, and the question's `data`, `key` and `help`. */
 const QUESTION_PARTS = ["data", "key", "help"];
-/** Parts the bank's copy has: changing one needs `why`, the parent's ask, and is recorded. */
-const COPIED_HELP = ["worked", "almost", "look", "boost"];
+/** The rungs of a step's help, and its twin: a part the step already holds is the bank's copy. */
+const COPIED_HELP = ["look", "boost", "almost", "worked", "twin"];
+
+function partsOf(step: Step) {
+  const question = isObject(step["question"]) ? step["question"] : {};
+  const help = isObject(question["help"]) ? question["help"] : {};
+  const cards = isObject(help["boost_by_mistake"]) ? help["boost_by_mistake"] : {};
+  return { question, help, cards };
+}
+
+/**
+ * The parts of the bank's copy a change would alter: `say`, the question's `data` and `key`, a
+ * rung or the twin the step holds, and a mistake card it holds. Read from the step before and
+ * after, so removing a part (a null rung, a null help) counts as much as replacing it, and a
+ * replay that changes nothing alters nothing. Changing one needs `why`, the parent's ask.
+ */
+function copiedChanges(before: Step, after: Step): string[] {
+  const was = partsOf(before);
+  const now = partsOf(after);
+  const differs = (a: unknown, b: unknown) => a !== undefined && !isDeepStrictEqual(a, b);
+  return [
+    ...(differs(before["say"], after["say"]) ? ["say"] : []),
+    ...["data", "key"].filter((k) => differs(was.question[k], now.question[k])),
+    ...COPIED_HELP.filter((k) => differs(was.help[k], now.help[k])),
+    ...Object.keys(was.cards)
+      .filter((k) => differs(was.cards[k], now.cards[k]))
+      .map((k) => `boost_by_mistake.${k}`),
+  ];
+}
 
 export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect> {
   const input = new Input("lesson_edit", raw, [
@@ -294,24 +329,15 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
     );
   }
 
-  const before =
-    isObject(step["question"]) && isObject(step["question"]["help"])
-      ? step["question"]["help"]
-      : {};
-  const help = isObject(question) && isObject(question["help"]) ? question["help"] : {};
-  const copied = [
-    ...(patch["say"] === undefined ? [] : ["say"]),
-    ...(isObject(question) ? ["data", "key"].filter((k) => question[k] !== undefined) : []),
-    ...COPIED_HELP.filter((k) => help[k] !== undefined && before[k] !== undefined),
-  ];
+  const edited = mergePatch(step, patch) as Step;
+  edited.id = step.id;
+  const copied = copiedChanges(step, edited);
   if (copied.length > 0 && (why === null || why.trim() === "")) {
     throw new VerbError(
       "why-needed",
       `changing ${copied.join(", ")} changes the bank's copy: pass why, the parent's ask; nothing changed`,
     );
   }
-  const edited = mergePatch(step, patch) as Step;
-  edited.id = step.id;
   // A patch that changes nothing records nothing: a replay on the lesson it already wrote.
   const changes = !isDeepStrictEqual(edited, step);
   if (

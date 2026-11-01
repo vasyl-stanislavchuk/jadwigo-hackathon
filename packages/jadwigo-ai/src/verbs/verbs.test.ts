@@ -133,6 +133,35 @@ describe("a verb is idempotent by call_id", () => {
 });
 
 describe("lesson_check", () => {
+  it("refuses a rung the bank's copy holds, and fills one it leaves empty", async () => {
+    const { verbs, run, at, lesson_file } = await drafted();
+    for (const [n, words] of [
+      { worked: ["hacked"] },
+      { look: null },
+      { twin: { say: "x" } },
+    ].entries()) {
+      const refused = verbs.lesson_check.run(at(`call_copied_${n}`), {
+        draft_id: run,
+        help: { s01: words },
+      });
+      await expect(refused).rejects.toMatchObject({ type: "copied-rung" });
+      await expect(refused).rejects.toThrow(/copied from the bank/);
+    }
+    const bare = await verbs.lesson_edit.run(at("call_bare"), {
+      draft_id: run,
+      step_id: "s01",
+      patch: { question: { help: { worked: null } } },
+      why: "the parent asked for another worked example",
+    });
+    const filled = await verbs.lesson_check.run(
+      contextFor(run, "call_fill", { revision: 2, lesson_file: bare.lesson_file ?? lesson_file }),
+      { draft_id: run, help: { s01: { worked: ["7 + 3 = 10", "10 + 2 = 12"] } } },
+    );
+    expect(stepsOf(filled.lesson_file)[0]).toMatchObject({
+      question: { help: { worked: ["7 + 3 = 10", "10 + 2 = 12"] } },
+    });
+  });
+
   it("answers check()'s findings and a card, and writes nothing for help {}", async () => {
     const { verbs, run, at } = await drafted();
     const effect = await verbs.lesson_check.run(at("call_2"), { draft_id: run, help: {} });
@@ -185,6 +214,28 @@ describe("lesson_check", () => {
 });
 
 describe("lesson_edit", () => {
+  it("refuses removing the copied help or a copied rung without why, and changes nothing", async () => {
+    const { verbs, run, at } = await drafted();
+    for (const [n, patch] of [
+      { question: { help: null } },
+      { question: { help: { twin: null } } },
+      { question: { help: { almost: null } } },
+    ].entries()) {
+      await expect(
+        verbs.lesson_edit.run(at(`call_null_${n}`), { draft_id: run, step_id: "s01", patch }),
+      ).rejects.toMatchObject({ type: "why-needed" });
+    }
+    const removed = await verbs.lesson_edit.run(at("call_why"), {
+      draft_id: run,
+      step_id: "s01",
+      patch: { question: { help: null } },
+      why: "the parent asked for no hints",
+    });
+    expect(stepsOf(removed.lesson_file)[0]).toMatchObject({
+      based_on: { changes: [{ why: "the parent asked for no hints" }] },
+    });
+  });
+
   it("applies a JSON merge patch to one step and records a change to the copy", async () => {
     const { verbs, run, at, lesson_file } = await drafted();
     const effect = await verbs.lesson_edit.run(at("call_2"), {
