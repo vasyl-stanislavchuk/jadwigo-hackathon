@@ -479,8 +479,8 @@ def test_check_puts_the_agents_words_on_the_copy_and_returns_the_card(
     )
 
     # The shape parseLessonFile accepts (packages/lesson-import/src/lesson-file.ts).
-    assert set(file) == {"id", "title", "language", "category", "subject", "reasoning", "kind",
-                         "script"}
+    assert set(file) == {"id", "title", "language", "category", "subject", "grade", "reasoning",
+                         "kind", "script"}
     (part,) = file["script"]["parts"]
     assert part["part"] == "practice" and len(part["steps"]) == 6
     for step, q in zip(part["steps"], view["questions"], strict=True):
@@ -759,6 +759,21 @@ def test_lesson_draft_writes_the_lesson_file_with_its_empty_rungs(
     assert sorted(p.name for p in lesson.drafts_dir().iterdir()) == sorted(
         [".jw", f"{view['draft_id']}.json", f"{view['draft_id']}.check.json"]
     )
+
+
+def test_lesson_draft_writes_its_grade_into_the_lesson_file(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    file, _ = _on_disk(_draft())
+    assert file["grade"] == 3
+
+
+def test_a_grade_the_lesson_file_cannot_take_is_left_out(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    view = lesson.draft(REQUEST, "K", names=[], topic=TOPIC, today=TODAY)
+    file, _ = _on_disk(view)
+    assert "grade" not in file
 
 
 def test_without_check_ts_the_draft_file_is_written_all_the_same(
