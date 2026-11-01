@@ -1167,6 +1167,82 @@ describe("the answer check: one correction per turn", () => {
     });
   });
 
+  it("answers a message the parent sent during a failed correction, after the error", async () => {
+    let t: Awaited<ReturnType<typeof setup>>;
+    t = await setup([{ text: "All 9 done." }, { text: "Still 9." }, { text: "Sure." }]);
+    const scripted = t.deps.muse;
+    t.deps.muse = {
+      respond: async (request) => {
+        if (request.call_no === 2) await t.say("One more thing.");
+        return scripted.respond(request);
+      },
+    };
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+
+    expect(t.muse.calls).toHaveLength(3);
+    expect(JSON.stringify(t.muse.calls[2]?.input)).toContain("One more thing.");
+    expect(t.muse.calls[2]?.instructions).not.toContain("was not sent to the parent");
+    const events = await t.log(run);
+    expect(events.filter((e) => e.type === "error")).toHaveLength(1);
+    const agent = events.flatMap((e) =>
+      e.type === "message" && e.payload.from === "agent" ? [e.payload.text] : [],
+    );
+    expect(agent).toEqual(["Sure."]);
+    expect(events.filter((e) => e.type === "turn_complete")).toHaveLength(1);
+    expect((await t.run(run)).status).toBe("completed");
+  });
+
+  it("keeps the turn open for a steer sent during a failed correction", async () => {
+    let t: Awaited<ReturnType<typeof setup>>;
+    t = await setup([{ text: "All 9 done." }, { text: "Still 9." }, { text: "Sure." }]);
+    const scripted = t.deps.muse;
+    t.deps.muse = {
+      respond: async (request) => {
+        if (request.call_no === 2) {
+          await t.send({ event_id: newEventId(), kind: "steer", payload: { text: "Shorter." } });
+        }
+        return scripted.respond(request);
+      },
+    };
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+
+    expect(t.muse.calls).toHaveLength(3);
+    expect(t.muse.calls[2]?.instructions).toContain("Shorter.");
+    const events = await t.log(run);
+    expect(events.some((e) => e.type === "steer")).toBe(true);
+    expect(events.filter((e) => e.type === "error")).toHaveLength(1);
+    expect(events.at(-1)?.type).toBe("turn_complete");
+  });
+
+  it("gives the answer after an AnswerUnchecked its own one correction", async () => {
+    let t: Awaited<ReturnType<typeof setup>>;
+    t = await setup([
+      { text: "All 9 done." },
+      { text: "Still 9." },
+      { text: "Now 7." },
+      { text: "Fine." },
+    ]);
+    const scripted = t.deps.muse;
+    t.deps.muse = {
+      respond: async (request) => {
+        if (request.call_no === 2) await t.say("One more thing.");
+        return scripted.respond(request);
+      },
+    };
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+
+    expect(t.muse.calls).toHaveLength(4);
+    const noted = t.muse.calls.map((c) => c.instructions.includes("was not sent to the parent"));
+    expect(noted).toEqual([false, true, false, true]);
+    const agent = (await t.log(run)).flatMap((e) =>
+      e.type === "message" && e.payload.from === "agent" ? [e.payload.text] : [],
+    );
+    expect(agent).toEqual(["Fine."]);
+  });
+
   it("takes a number the parent gave in an earlier turn as given", async () => {
     const t = await setup([{ text: "Ready." }, { text: "Harder, still grade 2." }]);
     await t.say("Halves for grade 2.");

@@ -384,7 +384,7 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
         ]);
         if (!parentSpokeAfter(w.log, last.seq)) return endTurn(w, "completed", deps.now());
       } else if (await corrected(w, last)) {
-        return endUnchecked(deps, w, last.payload.call_no, misses);
+        return endUnchecked(deps, w, last, misses);
       } else {
         correction = { call_no: last.payload.call_no, text: refused, misses };
       }
@@ -544,13 +544,23 @@ async function refusedText(w: Writer, response: ModelResponse): Promise<string |
 }
 
 /**
- * Whether the turn has had its one correction before `response`, counted from the log: every
+ * Whether the answer `response` belongs to has had its one correction, counted from the log: every
  * refused answer is followed by its correction call, whatever that call answers (tool calls
- * included), so an earlier refused answer means the correction was made.
+ * included), so an earlier refused answer means the correction was made. The count is per answer:
+ * it starts again after the last `AnswerUnchecked`, when the turn goes on to answer what the parent
+ * sent meanwhile.
  */
 async function corrected(w: Writer, response: ModelResponse): Promise<boolean> {
+  const since = w.log.reduce(
+    (seq, e) =>
+      e.type === "error" && e.payload.error.type === RUN_ERROR_TYPE.answerUnchecked
+        ? Math.max(seq, e.seq)
+        : seq,
+    0,
+  );
   for (const earlier of responsesOf(w.log)) {
     if (earlier.payload.call_no >= response.payload.call_no) break;
+    if (earlier.seq <= since) continue;
     if ((await refusedText(w, earlier)) !== null) return true;
   }
   return false;
@@ -592,14 +602,25 @@ async function uncheckedEvent(
   };
 }
 
-/** The correction failed the check too: an `error` event in place of the message, and the turn ends. */
+/**
+ * The correction failed the check too: an `error` event in place of the message. The turn ends,
+ * unless the parent sent a message or a steer after the last answer.
+ */
 async function endUnchecked(
   deps: EngineDeps,
   w: Writer,
-  call_no: number,
+  last: ModelResponse,
   misses: readonly AnswerMiss[],
 ): Promise<RunStepOutcome> {
-  await w.append([await uncheckedEvent(w, call_no, misses, "after its one correction")]);
+  await w.append([
+    await uncheckedEvent(w, last.payload.call_no, misses, "after its one correction"),
+  ]);
+  // A message or steer the parent sent meanwhile is still answered: the next step does, and that
+  // answer gets its own one correction (wave 2 Lead decision 22).
+  if (parentSpokeAfter(w.log, last.seq)) {
+    await deps.queue.send({ run_id: w.run, attempt: w.attempt });
+    return "continue";
+  }
   return endTurn(w, "completed", deps.now());
 }
 
