@@ -61,8 +61,9 @@ function windows(now: Date): UsageSince {
   };
 }
 
-function limited(message: string): ApiError {
-  return new ApiError(ErrorType.enum.MessageLimit, message);
+/** A limit's refusal, by its own type: the page picks its words by the type, never the text. */
+function limited(type: "MessageLimitMinute" | "MessageLimitDay", message: string): ApiError {
+  return new ApiError(ErrorType.enum[type], message);
 }
 
 /** The API never runs a step, so its engine has no Muse and no verbs: `acceptMessage` reads neither. */
@@ -152,11 +153,17 @@ export async function postMessage(
     opened || (await store.messageUsage(pod, account, since)).messages > before.messages;
   if (!counted) return { run };
   if (before.messages >= LIMITS.messagesPerMinute)
-    throw limited("too many messages in a minute: wait a moment and send it again");
+    throw limited(
+      ErrorType.enum.MessageLimitMinute,
+      "too many messages in a minute: wait a moment and send it again",
+    );
   // Only a message that opens a turn spends: one that joins the open turn always may, so a parent
   // can finish a running turn. The pod never passes its cap by a run.
   if (opened && before.cap_usd + run.cap_usd > LIMITS.podDailyCapUsd)
-    throw limited("today's AI budget for this family is used up: try again tomorrow");
+    throw limited(
+      ErrorType.enum.MessageLimitDay,
+      "today's AI budget for this family is used up: try again tomorrow",
+    );
   return { run };
 }
 
