@@ -3,6 +3,7 @@ import {
   type ConversationId,
   type ModelTier,
   type NewRunEvent,
+  RUN_ERROR_TYPE,
   RUN_IDLE_MS,
   RUN_IDLE_PUSH_MS,
   RUN_MAX_MS,
@@ -60,17 +61,6 @@ export interface AcceptMessage {
 
 /** A turn's budget when the caller names none. */
 const DEFAULT_CAP_USD = 1;
-
-/**
- * The run's own error types, which never reach the API's `{error}` envelope, so they are not
- * `ErrorType`s. They belong beside `RunError` in `@jadwigo/contracts/run` (a note to the lead).
- */
-const RUN_ERROR = {
-  /** A step ran past its visibility timeout and was delivered again. */
-  stepTimedOut: "StepTimedOut",
-  /** The turn ran past `max_deadline_at`. */
-  runTimedOut: "RunTimedOut",
-} as const;
 
 const WORKFLOW = "jadwigo-lesson-compose";
 const TAG = "product:lesson-compose";
@@ -644,7 +634,7 @@ async function endPastMax(w: Writer, attempt: number, now: Date): Promise<void> 
       run_id: w.run,
       event_id: await w.id("error", "max"),
       payload: {
-        error: { type: RUN_ERROR.runTimedOut, message: "the turn ran past its 30 minutes" },
+        error: { type: RUN_ERROR_TYPE.runTimedOut, message: "the turn ran past its 30 minutes" },
         attempt,
         retryable: false,
       },
@@ -752,6 +742,12 @@ async function namesOf(store: Store, scope: Scope): Promise<string[]> {
   return [...new Set(names)];
 }
 
+/** A step that threw in `drain`: the run and attempt it carried, and its place in the queue. */
+export interface FailedStep extends RunStepInput {
+  msg_id: number;
+  read_ct: number;
+}
+
 /**
  * The consumer's loop, in-process: reads visible steps and runs each until none is visible. A step
  * that throws stays in the queue and comes back after its visibility timeout, as on pgmq; one that
@@ -760,10 +756,13 @@ async function namesOf(store: Store, scope: Scope): Promise<string[]> {
  * A step read a 2nd time is a redelivery: before running it, `drain` claims the run by moving its
  * `attempt` on, so the step that stalled goes stale, and logs the retry as an `error` row naming the
  * attempt that stalled.
+ *
+ * A step that throws is handed to `onError` with what it carried and its `msg_id`, so the host can
+ * log it by run id (dl-z5ja.82); it stays in the queue either way.
  */
 export async function drain(
   deps: EngineDeps,
-  options: { max_steps?: number } = {},
+  options: { max_steps?: number; onError?: (error: unknown, step: FailedStep) => void } = {},
 ): Promise<readonly RunStepOutput[]> {
   const max = options.max_steps ?? 100;
   const outputs: RunStepOutput[] = [];
@@ -774,8 +773,13 @@ export async function drain(
       const input = queued.read_ct > 1 ? await claim(deps, queued) : queued.message;
       outputs.push(await runStep(input, deps));
       await deps.queue.archive(queued.msg_id);
-    } catch {
+    } catch (error) {
       // The step stays in the queue, hidden until its visibility timeout, then delivered again.
+      options.onError?.(error, {
+        ...queued.message,
+        msg_id: queued.msg_id,
+        read_ct: queued.read_ct,
+      });
     }
   }
   return outputs;
@@ -805,7 +809,7 @@ async function claim(deps: EngineDeps, queued: QueuedStep): Promise<RunStepInput
       event_id: await w.id("retry", held),
       payload: {
         error: {
-          type: RUN_ERROR.stepTimedOut,
+          type: RUN_ERROR_TYPE.stepTimedOut,
           message: "the step ran past its visibility timeout and was retried",
         },
         attempt: held,

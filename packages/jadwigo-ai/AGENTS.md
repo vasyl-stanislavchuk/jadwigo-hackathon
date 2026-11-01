@@ -31,7 +31,10 @@ for, and every effect is a run event the page folds into its 2 panes.
   run's `attempt`.
 - What the dev page runs (`ScriptedMuse`, `fixtureBank`) lives outside `src/testing/`, which only
   test files may import.
-- Wave 1 makes no network call and no paid call. `HttpMuse` is `dl-z5ja.18`.
+- `HttpMuse` (`src/muse/http.ts`, `dl-z5ja.18`) is the one network call, to `/v1/responses`. It
+  takes its `fetch` as a dependency, so unit tests run on recorded streams and never pay. Its live
+  call is `src/muse/http.int.test.ts`, which the owner runs and which skips without `META_API_KEY`.
+  A `contributor` call passes the `jw.pii.guard` port (`src/muse/pii.ts`) before it leaves.
 - A run sends the parent's own child's data to the model on purpose, names included, and only on
   the tier that does not train on it (`private`). A call on the `contributor` tier, which trains,
   carries no learner data: at most the bank search words of a request, with names stripped by

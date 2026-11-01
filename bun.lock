@@ -25,12 +25,15 @@
         "@aws-sdk/client-ssm": "3.1156.0",
         "@jadwigo/contracts": "workspace:*",
         "@jadwigo/core": "workspace:*",
+        "@jadwigo/jadwigo-ai": "workspace:*",
         "@jadwigo/store": "workspace:*",
+        "pg": "8.23.1",
       },
       "devDependencies": {
         "@jadwigo/lesson-import": "workspace:*",
         "@jadwigo/testing": "workspace:*",
         "@types/node": "catalog:",
+        "@types/pg": "8.23.1",
         "typescript": "catalog:",
         "vitest": "catalog:",
       },
@@ -82,6 +85,23 @@
         "@types/node": "catalog:",
         "happy-dom": "catalog:",
         "markdownlint-cli2": "0.24.0",
+        "typescript": "catalog:",
+        "vitest": "catalog:",
+      },
+    },
+    "apps/runner": {
+      "name": "@jadwigo/runner",
+      "dependencies": {
+        "@aws-sdk/client-ssm": "3.1156.0",
+        "@jadwigo/contracts": "workspace:*",
+        "@jadwigo/jadwigo-ai": "workspace:*",
+        "@jadwigo/store": "workspace:*",
+        "pg": "8.23.1",
+      },
+      "devDependencies": {
+        "@jadwigo/testing": "workspace:*",
+        "@types/node": "catalog:",
+        "@types/pg": "8.23.1",
         "typescript": "catalog:",
         "vitest": "catalog:",
       },
@@ -778,6 +798,8 @@
     "@jadwigo/lesson-import": ["@jadwigo/lesson-import@workspace:packages/lesson-import"],
 
     "@jadwigo/lesson-kit": ["@jadwigo/lesson-kit@workspace:packages/lesson-kit"],
+
+    "@jadwigo/runner": ["@jadwigo/runner@workspace:apps/runner"],
 
     "@jadwigo/site": ["@jadwigo/site@workspace:apps/site"],
 

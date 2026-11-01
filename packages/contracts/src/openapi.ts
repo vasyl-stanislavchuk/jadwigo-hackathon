@@ -148,6 +148,19 @@ export function openApiDocument(routes: Record<string, Route>): Json {
         schema: id === undefined ? inlined : { $ref: SCHEMAS + id },
       };
     });
+    // A query parameter is optional unless its schema refuses a missing value.
+    const query = Object.entries((route.query?.shape ?? {}) as Record<string, z.ZodType>).map(
+      ([name, schema]) => {
+        const { $schema: _, ...inlined } = z.toJSONSchema(schema, { io: "output" });
+        return {
+          name,
+          in: "query",
+          required: !schema.safeParse(undefined).success,
+          schema: inlined,
+        };
+      },
+    );
+    parameters.push(...query);
     const schemes = security(route);
     let body: Json | undefined;
     if (route.body !== null) {

@@ -1,5 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
 import { ID_PREFIXES, uuidOf } from "@jadwigo/contracts";
+import type { ToolView } from "@jadwigo/contracts/run";
 import { type Finding, parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import type { BankLanguage, BankPort, BankQuery } from "./bank.ts";
 import { Input, isObject, type Json, mergePatch } from "./input.ts";
@@ -111,6 +112,18 @@ function findingsFor(findings: readonly Finding[], step_id: string): Finding[] {
 function revised(checked: Review, effect: VerbEffect): VerbEffect {
   return { ...effect, output: { ...effect.output, publishable: checked.publishable } };
 }
+
+/**
+ * The view of a verb that writes a revision (`dl-z5ja.69`): the steps it changed. The kind is the
+ * verb's name, the only kind `ToolView` parses; the page reads the revision's number from the
+ * `lesson_revision` event the runner writes.
+ */
+function revisionView(
+  kind: "lesson_draft" | "lesson_edit",
+  changed_step_ids: readonly string[],
+): ToolView {
+  return { kind, data: { changed_step_ids: [...changed_step_ids] } };
+}
 /** What the model and the parent read of a step: its words and its key, not the whole JSON. */
 function card(step: Step) {
   const question = isObject(step["question"]) ? step["question"] : {};
@@ -210,6 +223,10 @@ export async function lessonDraft(
       findings: checks.findings,
     },
     lesson_file,
+    view: revisionView(
+      "lesson_draft",
+      drawn.map((s) => s.id),
+    ),
   });
 }
 
@@ -227,6 +244,7 @@ export function lessonShow(context: VerbContext, raw: Json): Promise<VerbEffect>
       steps: shown.map((step) => ({ step, findings: findingsFor(checks.findings, step.id) })),
       lesson_ok: checks.publishable,
     },
+    view: { kind: "lesson_show", data: { lesson: file } },
   });
 }
 
@@ -400,6 +418,7 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
         lesson_ok: checks.publishable,
       },
       lesson_file,
+      view: revisionView("lesson_edit", changes ? [step_id] : []),
     }),
   );
 }
@@ -427,5 +446,5 @@ export async function questionSearch(bank: BankPort, raw: Json): Promise<VerbEff
     limit: input.optionalInt("limit", 1, 50) ?? 20,
   };
   const { sets } = await bank.search(query);
-  return { output: { sets } };
+  return { output: { sets }, view: { kind: "question_search", data: { sets } } };
 }

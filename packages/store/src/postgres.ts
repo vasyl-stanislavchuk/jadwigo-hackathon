@@ -63,12 +63,27 @@ import {
   type RunId,
   RunInbox,
 } from "@jadwigo/contracts/run";
-import { Kysely, PostgresDialect, type Selectable, sql, type Updateable } from "kysely";
+import {
+  CompiledQuery,
+  Kysely,
+  PostgresDialect,
+  type Selectable,
+  sql,
+  type Updateable,
+} from "kysely";
 import pg from "pg";
 import { COLUMNS, type DB } from "./db/types.ts";
 import { byTypeThenPosition, checkExamples } from "./example.ts";
 import { handleFor } from "./handle.ts";
-import type { Fenced, NewConversation, NewRun, NewRunInbox, RunChange } from "./run.ts";
+import type {
+  Fenced,
+  MessageUsage,
+  NewConversation,
+  NewRun,
+  NewRunInbox,
+  RunChange,
+  UsageSince,
+} from "./run.ts";
 import {
   type AttemptRecord,
   type ExampleWithQuestions,
@@ -337,6 +352,19 @@ class PostgresStore implements Store {
 
   async close(): Promise<void> {
     await this.#db.destroy();
+  }
+
+  unitSql(): UnitSql {
+    const unit = this.#units.getStore();
+    if (!unit) throw new Error("unitSql() is called inside unit()");
+    return {
+      query: async <R>(text: string, values: readonly unknown[] = []) => {
+        // A handle that outlived its unit would run on a connection another request may hold.
+        if (unit.closed) throw new Error("a unitSql() handle outlived its unit");
+        const { rows } = await unit.tx.executeQuery<R>(CompiledQuery.raw(text, [...values]));
+        return { rows: [...rows] };
+      },
+    };
   }
 
   async unit<T>(work: () => Promise<T>): Promise<T> {
@@ -2858,6 +2886,33 @@ class PostgresStore implements Store {
     });
   }
 
+  async messageUsage(pod: PodId, account: AccountId, since: UsageSince): Promise<MessageUsage> {
+    const minute = utc(since.minuteSince);
+    const day = utc(since.daySince);
+    return this.#in(pod, async (tx) => {
+      await this.#pod(tx, pod);
+      // Row-level security keeps both reads in the pod; no index yet, a pod's rows are few.
+      const sent = await tx
+        .selectFrom("run_inbox")
+        .innerJoin("run", (join) =>
+          join
+            .onRef("run.pod_id", "=", "run_inbox.pod_id")
+            .onRef("run.id", "=", "run_inbox.run_id"),
+        )
+        .select((eb) => eb.fn.countAll<string>().as("n"))
+        .where("run_inbox.kind", "=", "message")
+        .where("run.created_by", "=", uuidOf(ID_PREFIXES.account, account))
+        .where("run_inbox.created_at", ">=", new Date(minute))
+        .executeTakeFirstOrThrow();
+      const caps = await tx
+        .selectFrom("run")
+        .select((eb) => eb.fn.coalesce(eb.fn.sum<number>("cap_usd"), eb.lit(0)).as("usd"))
+        .where("created_at", ">=", new Date(day))
+        .executeTakeFirstOrThrow();
+      return { messages: Number(sent.n), cap_usd: Number(caps.usd) };
+    });
+  }
+
   async takeRunInbox(pod: PodId, run: RunId): Promise<readonly RunInbox[]> {
     return this.#in(pod, async (tx) => {
       await this.#run(tx, run, false);
@@ -2960,9 +3015,22 @@ interface PoolOptions {
 /**
  * The Store on Postgres, held to `store.contract.ts` as InMemoryStore is. `close` ends its pool.
  */
+/**
+ * A statement on the open unit's own connection: inside its transaction, as the store's role, with
+ * the pod the unit last set (dl-z5ja.67). What `PgmqRunQueue.joining` takes, so a step is sent in
+ * the transaction that writes its run and inbox row, and a unit that rolls back sends nothing.
+ */
+export interface UnitSql {
+  query<R>(text: string, values?: readonly unknown[]): Promise<{ rows: R[] }>;
+}
+
 export function createPostgresStore(
   databaseUrl: string,
   options?: PoolOptions,
-): Store & { close(): Promise<void> } {
+): Store & {
+  close(): Promise<void>;
+  /** The open unit's `UnitSql`. Called inside `unit()` only; it throws outside one. */
+  unitSql(): UnitSql;
+} {
   return new PostgresStore(databaseUrl, options);
 }

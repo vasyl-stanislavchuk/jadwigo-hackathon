@@ -88,6 +88,12 @@ module "app" {
     "GET /api/v1/learners/{id}/reports",
     "POST /api/v1/learners/{id}/reports",
     "PATCH /api/v1/learners/{id}/reports/{report}",
+    # The AI engine's conversations (dl-z5ja.21): a parent's chat, one run per turn; token routes.
+    "POST /api/v1/conversations",
+    "POST /api/v1/conversations/{id}/messages",
+    "GET /api/v1/conversations/{id}/runs",
+    "GET /api/v1/runs/{id}/events",
+    "POST /api/v1/runs/{id}/cancellations",
   ]
 
   # The routes above whose ROUTES auth is "token": only these carry the JWT authorizer
@@ -108,6 +114,11 @@ module "app" {
     "GET /api/v1/learners/{id}/reports",
     "POST /api/v1/learners/{id}/reports",
     "PATCH /api/v1/learners/{id}/reports/{report}",
+    "POST /api/v1/conversations",
+    "POST /api/v1/conversations/{id}/messages",
+    "GET /api/v1/conversations/{id}/runs",
+    "GET /api/v1/runs/{id}/events",
+    "POST /api/v1/runs/{id}/cancellations",
   ]
 
   jwt_issuer = "https://${var.supabase_ref}.supabase.co/auth/v1"
