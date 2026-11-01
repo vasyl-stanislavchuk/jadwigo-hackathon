@@ -1,7 +1,7 @@
 import { type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { foldRun } from "@jadwigo/core";
 import { RUN_LOGS } from "@jadwigo/testing";
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ChatScreen } from "./ChatScreen.tsx";
 import { conversationReducer, EMPTY, lessonOf, turnsOf } from "./conversation.ts";
@@ -146,7 +146,29 @@ describe("ChatScreen on a transport", () => {
     expect(await screen.findByText("Your lesson is ready on the right.")).toBeTruthy();
     expect(t.calls).toEqual(["runs", `subscribe ${t.run.id}`, `events ${t.run.id} after 0`]);
     expect(screen.getByText("Wersja 2")).toBeTruthy();
+    // Each question step is named in the parent's language (dl-z5ja.45).
+    const steps = document.querySelectorAll("[data-step][aria-label]");
+    expect(steps.length).toBeGreaterThan(0);
+    for (const step of steps)
+      expect(step.getAttribute("aria-label")).toBe(`Krok ${step.getAttribute("data-step")}`);
     await act(async () => t.push(events));
     expect(screen.getAllByText("Your lesson is ready on the right.")).toHaveLength(1);
+  });
+});
+
+describe("ChatScreen's phone switch (dl-z5ja.28)", () => {
+  it("badges Lekcja when a revision lands with the chat in front, and clears it once read", async () => {
+    const events = eventsOf("happy-turn");
+    const t = fakeTransport(events);
+    render(<ChatScreen transport={t.transport} />);
+    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    const lessonTab = screen.getByRole("tab", { name: /Lekcja/ });
+    expect(screen.getByRole("tab", { name: "Rozmowa" }).getAttribute("aria-selected")).toBe("true");
+    expect(lessonTab.querySelector("[data-badge]")?.textContent).toBe("Lekcja się zmieniła");
+    fireEvent.click(lessonTab);
+    expect(lessonTab.getAttribute("aria-selected")).toBe("true");
+    expect(document.querySelector("[data-pane='lesson']")?.getAttribute("data-front")).toBe("true");
+    fireEvent.click(screen.getByRole("tab", { name: "Rozmowa" }));
+    expect(lessonTab.querySelector("[data-badge]")).toBeNull();
   });
 });
