@@ -13,6 +13,7 @@ import { type ReactElement, useEffect, useMemo, useState } from "react";
 import { queryLanguage, useLocation } from "../route.ts";
 import { Button } from "../tool/button.tsx";
 import { ChatPane } from "./ChatPane.tsx";
+import { type ConsentClient, ConsentScreen, giveConsent } from "./ConsentScreen.tsx";
 import { type ConversationState, lessonOf, type Turn, turnsOf } from "./conversation.ts";
 import { newConversationId } from "./ids.ts";
 import { LessonPane } from "./LessonPane.tsx";
@@ -207,16 +208,35 @@ function ChatLayout({
 
 function LiveChat({
   transport,
+  consent,
   conversation,
   language,
   onNew,
 }: {
   transport: EngineTransport;
+  /** Gives the pod's consent when a route asks for it; null where no route can (dl-z5ja.32). */
+  consent: ConsentClient | null;
   conversation: ConversationId;
   language: Language;
   onNew(): void;
 }): ReactElement {
-  const { state, send, stop, edit } = useConversation(transport, conversation);
+  const { state, send, stop, edit, consentMissing, consented } = useConversation(
+    transport,
+    conversation,
+  );
+  if (consentMissing)
+    return (
+      <main className="mx-auto flex max-w-xl flex-col p-4">
+        <ConsentScreen
+          language={language}
+          onAgree={async () => {
+            if (consent === null) throw new Error("no route to give consent through");
+            await giveConsent(consent);
+            consented();
+          }}
+        />
+      </main>
+    );
   return (
     <ChatView
       language={language}
@@ -236,21 +256,35 @@ function LiveChat({
  */
 function useEngine(
   given: EngineTransport | undefined,
+  givenConsent: ConsentClient | undefined,
   engine: string | null,
-): { transport: EngineTransport; signIn: (() => Promise<string | null>) | null } | null {
+): {
+  transport: EngineTransport;
+  signIn: (() => Promise<string | null>) | null;
+  consent: ConsentClient | null;
+} | null {
   return useMemo(() => {
-    if (given) return { transport: given, signIn: null };
+    if (given) return { transport: given, signIn: null, consent: givenConsent ?? null };
     const hot = engine === "api" ? null : hotTransport();
-    if (hot) return { transport: hot, signIn: null };
+    if (hot) return { transport: hot, signIn: null, consent: null };
     const api = apiTransport();
-    return api === null ? null : { transport: api.transport, signIn: () => api.auth.token() };
-  }, [given, engine]);
+    return api === null
+      ? null
+      : { transport: api.transport, signIn: () => api.auth.token(), consent: api.client };
+  }, [given, givenConsent, engine]);
 }
 
-export function ChatScreen({ transport }: { transport?: EngineTransport } = {}): ReactElement {
+export function ChatScreen({
+  transport,
+  consent,
+}: {
+  transport?: EngineTransport;
+  /** A test's consent client, beside its transport. */
+  consent?: ConsentClient;
+} = {}): ReactElement {
   const { query } = useLocation();
   const language = queryLanguage(query) ?? "pl";
-  const live = useEngine(transport, query.get("engine"));
+  const live = useEngine(transport, consent, query.get("engine"));
   const [conversation, setConversation] = useState<ConversationId>(storedConversation);
   /** Null until known; the routes refuse a parent who is not signed in. */
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
@@ -271,6 +305,7 @@ export function ChatScreen({ transport }: { transport?: EngineTransport } = {}):
     <LiveChat
       key={conversation}
       transport={live.transport}
+      consent={live.consent}
       conversation={conversation}
       language={language}
       onNew={startNew}

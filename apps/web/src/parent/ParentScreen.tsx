@@ -7,6 +7,8 @@
  *                Instagram's own browser, where Google refuses to sign in, a line and the link to
  *                open in the phone's browser stand in Google's place (dl-e8ov.2.63)
  *   signed in    GET /me; with no account yet, POST /accounts once (it is idempotent)
+ *     consent    while the pod has no ai_consent_at, the AI's consent screen, once (dl-z5ja.32,
+ *                dl-xo0q); "Nie teraz" steps past it for this visit
  *     ?claim     the tab still holds an attempt of that assignment: pick the child, or add one,
  *                and POST /attempts/{id}/claims; the tab then forgets the attempt
  *     no child   add one: a first name (goals and the age group wait on the owner)
@@ -22,7 +24,13 @@
  * Heading, Field, Card, Notice), in the adult's lines (dl-uukj.32 wave 2).
  */
 
-import { ApiError, type Client, createClient, type ParentClient } from "@jadwigo/api-client";
+import {
+  ApiError,
+  type Client,
+  createClient,
+  type ParentClient,
+  type PodClient,
+} from "@jadwigo/api-client";
 import type {
   AssignmentId,
   AttemptId,
@@ -60,6 +68,7 @@ import { setPodLanguage } from "../nav/language.ts";
 import { navigate, useLocation } from "../nav/location.ts";
 import { NavLink } from "../nav/NavLink.tsx";
 import { storedAttempt } from "../play/storedAttempt.ts";
+import { ConsentScreen } from "../playground/chat/ConsentScreen.tsx";
 import { AttemptReview } from "./AttemptReview.tsx";
 import { CATEGORY, pageLang } from "./adult.ts";
 import {
@@ -118,6 +127,7 @@ export function ParentScreen({
   query,
   auth = browserAuth(),
   client,
+  pods,
 }: {
   language: Language;
   query: URLSearchParams;
@@ -125,16 +135,18 @@ export function ParentScreen({
   auth?: Auth | null;
   /** The API, for tests; the page's own origin, with the sign-in's token, when absent. */
   client?: ParentClient;
+  /**
+   * The pod's consent to the AI (dl-z5ja.32), for tests; the page's own client when `client` is
+   * absent. With a test's `client` and no `pods`, the consent screen is not asked.
+   */
+  pods?: PodClient;
 }): ReactElement {
-  const api = useMemo<ParentClient>(
-    () =>
-      client ??
-      (createClient({
-        base: "",
-        token: () => auth?.token() ?? Promise.resolve(null),
-      }) satisfies Client),
-    [client, auth],
+  const own = useMemo<Client>(
+    () => createClient({ base: "", token: () => auth?.token() ?? Promise.resolve(null) }),
+    [auth],
   );
+  const api: ParentClient = client ?? own;
+  const podApi: PodClient | null = pods ?? (client ? null : own);
   const route = parentRoute(useLocation().path);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [returned, setReturned] = useState<CopyKey | null>(null);
@@ -196,6 +208,7 @@ export function ParentScreen({
   return (
     <SignedIn
       api={api}
+      pods={podApi}
       language={language}
       claim={claimOf(query)}
       onSignOut={() => {
@@ -460,11 +473,13 @@ async function meOf(api: ParentClient, language: Language): Promise<Me> {
 
 function SignedIn({
   api,
+  pods,
   language,
   claim,
   onSignOut,
 }: {
   api: ParentClient;
+  pods: PodClient | null;
   language: Language;
   claim: AssignmentId | null;
   onSignOut: () => void;
@@ -473,6 +488,8 @@ function SignedIn({
   const [pending, setPending] = useState(() => pendingClaim(claim));
   const [adding, setAdding] = useState(false);
   const [notice, setNotice] = useState<CopyKey | null>(null);
+  /** "Nie teraz" on the consent screen: asked again on the next visit, not on this one. */
+  const [later, setLater] = useState(false);
 
   // The first sign-in's language is the one on screen then; a later pick moves the screens without
   // reading /me again.
@@ -524,6 +541,21 @@ function SignedIn({
     return (
       <ParentPage>
         <Failed language={language} />
+      </ParentPage>
+    );
+
+  const pod = view.me.pod;
+  if (pods !== null && pod !== null && (pod.ai_consent_at ?? null) === null && !later)
+    return (
+      <ParentPage>
+        <ConsentScreen
+          language={language}
+          onAgree={async () => {
+            await pods.patchPod(pod.id, { ai_consented: true });
+            load();
+          }}
+          onLater={() => setLater(true)}
+        />
       </ParentPage>
     );
 

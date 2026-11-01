@@ -806,5 +806,12 @@
   "chat_edit_step": "Change this step",
   "chat_edit_prompt": "What should change in this step, and why?",
   "chat_edit_send": "Send the change",
-  "chat_edit_cancel": "Cancel"
+  "chat_edit_cancel": "Cancel",
+  "chat_consent_title": "Before you talk to the assistant",
+  "chat_consent_reads": "The assistant reads what your request needs: your child's data, names included.",
+  "chat_consent_model": "That data goes to Meta's models, which may learn from it.",
+  "chat_consent_kept": "The record of your conversations stays with your family's account until the account is deleted. An archived conversation does too.",
+  "chat_consent_agree": "I agree",
+  "chat_consent_later": "Not now",
+  "chat_consent_failed": "Your consent wasn't saved. Try again."
 }

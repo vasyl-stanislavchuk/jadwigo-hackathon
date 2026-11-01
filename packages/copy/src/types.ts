@@ -680,6 +680,13 @@ export const COPY_KEYS = [
   "chat_edit_prompt",
   "chat_edit_send",
   "chat_edit_cancel",
+  "chat_consent_title",
+  "chat_consent_reads",
+  "chat_consent_model",
+  "chat_consent_kept",
+  "chat_consent_agree",
+  "chat_consent_later",
+  "chat_consent_failed",
   "chat_sign_in",
   "chat_limit_message",
   // end the chat page

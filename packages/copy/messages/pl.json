@@ -826,5 +826,12 @@
   "chat_edit_step": "Zmień ten krok",
   "chat_edit_prompt": "Co zmienić w tym kroku i dlaczego?",
   "chat_edit_send": "Wyślij zmianę",
-  "chat_edit_cancel": "Anuluj"
+  "chat_edit_cancel": "Anuluj",
+  "chat_consent_title": "Zanim porozmawiasz z asystentem",
+  "chat_consent_reads": "Asystent czyta to, czego potrzebuje Twoja prośba: dane dziecka, imiona też.",
+  "chat_consent_model": "Te dane trafiają do modeli firmy Meta, które mogą się na nich uczyć.",
+  "chat_consent_kept": "Zapis rozmów zostaje przy koncie rodziny, dopóki konto nie zostanie usunięte. Zarchiwizowana rozmowa też.",
+  "chat_consent_agree": "Zgadzam się",
+  "chat_consent_later": "Nie teraz",
+  "chat_consent_failed": "Nie udało się zapisać zgody. Spróbuj jeszcze raz."
 }

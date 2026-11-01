@@ -4,7 +4,7 @@
  * policy (dl-z5ja.61). Each `run_event` broadcast is a poke; its payload is never read as an event.
  */
 
-import { createClient } from "@jadwigo/api-client";
+import { type Client, createClient } from "@jadwigo/api-client";
 import { createClient as createSupabase, type SupabaseClient } from "@supabase/supabase-js";
 import { type Auth, browserAuth } from "../../parent/auth.ts";
 import { type RunLive, routesTransport } from "./routesTransport.ts";
@@ -85,7 +85,12 @@ declare const __JW_AUTH__: { url: string; key: string } | null | undefined;
  * parent's token, and a Realtime client that keeps no session of its own (the sign-in's is the one
  * `browserAuth` holds). Null when the build has no Supabase project.
  */
-export function apiTransport(): { transport: EngineTransport; auth: Auth } | null {
+export function apiTransport(): {
+  transport: EngineTransport;
+  auth: Auth;
+  /** The same client, for the consent fallback (dl-z5ja.32). */
+  client: Client;
+} | null {
   const config = typeof __JW_AUTH__ === "undefined" ? null : __JW_AUTH__;
   const auth = browserAuth();
   if (config === null || auth === null) return null;
@@ -98,11 +103,13 @@ export function apiTransport(): { transport: EngineTransport; auth: Auth } | nul
     },
   });
   const token = () => auth.token();
+  const client = createClient({ base: "", token });
   return {
     transport: routesTransport(
-      createClient({ base: "", token }),
+      client,
       supabaseLive(realtime, token, () => auth.refresh()),
     ),
     auth,
+    client,
   };
 }
