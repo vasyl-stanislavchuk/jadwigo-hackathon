@@ -346,6 +346,38 @@ describe("acceptMessage", () => {
     expect(await t.say("Halves.", id)).toBe(run);
   });
 
+  it("opens one run for 2 first messages that race, and both land in its inbox", async () => {
+    const t = await setup([{ text: "Hi." }]);
+    const [a, b] = await Promise.all([t.say("Halves."), t.say("And quarters.")]);
+    expect(a).toBe(b);
+    expect(await t.store.listRuns(t.member.pod, t.conversation)).toHaveLength(1);
+    expect(t.store.inbox.map((r) => r.run_id)).toEqual([a, a]);
+    await drain(t.deps);
+    expect(t.muse.calls).toHaveLength(1);
+    expect(JSON.stringify(t.muse.calls[0]?.input)).toContain("And quarters.");
+    expect((await t.log(a)).filter((e) => e.type === "turn_complete")).toHaveLength(1);
+  });
+
+  it("a resend of an ended turn's first message answers that turn, with no model call", async () => {
+    const t = await setup([{ text: "Hi." }, { text: "Again." }]);
+    const id = newEventId();
+    const first = await t.say("Halves.", id);
+    await drain(t.deps);
+    expect(await t.say("Halves.", id)).toBe(first);
+    await drain(t.deps);
+    expect(t.muse.calls).toHaveLength(1);
+    // The run the resend opened ended at its step, with nothing from the parent in it.
+    const [, opened] = await t.store.listRuns(t.member.pod, t.conversation);
+    if (!opened) throw new Error("the resend opened no run");
+    expect(opened.status).toBe("completed");
+    expect(types(await t.log(opened.id))).toEqual(["status", "turn_complete"]);
+    // The next message opens a turn of its own and is answered.
+    const next = await t.say("Quarters.");
+    await drain(t.deps);
+    expect(next).not.toBe(first);
+    expect(t.muse.calls).toHaveLength(2);
+  });
+
   it("opens a new run for the next turn once the last one ended", async () => {
     const t = await setup([{ text: "Hi." }, { text: "Again." }]);
     const first = await t.say("One.");
