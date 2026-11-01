@@ -164,8 +164,10 @@ For an English lesson, the English parts hold the same rules written for English
 
 Call `lesson_check(draft_id, help, names)`, where `help` maps each `step_id` you wrote for to its
 words. A step you leave out keeps what the draft already holds (the bank's twin and cards
-included), so a step whose `you_write` is empty needs no entry. Pass the same `names` as to
-`lesson_draft`: the tool replaces them in every word you send.
+included), so a step whose `you_write` is empty needs no entry. `names` is required on every
+`lesson_check` call, and on every `lesson_edit` call if you use one: pass the same list you gave
+`lesson_draft`, or `[]` when the parent named nobody. A call without it is refused. The tool
+replaces those names in every word you send.
 
 ```json
 {

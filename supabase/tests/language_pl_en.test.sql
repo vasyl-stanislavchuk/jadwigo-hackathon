@@ -1,4 +1,4 @@
--- The language type is Polish and English, with no `uk` (migration 20261101130000_language_pl_en.sql,
+-- The language type is Polish and English, with no `uk` (migration 20261101140000_language_pl_en.sql,
 -- issue dl-9t2o.1), and every column that holds a language uses it.
 begin;
 select plan(8);
