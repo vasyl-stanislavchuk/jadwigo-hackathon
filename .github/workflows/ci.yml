@@ -190,6 +190,23 @@ jobs:
       - name: Check what the build put in dist
         run: bun run --cwd apps/docs check:dist
 
+  # jadwigo.pl in both languages: the preview build serves every listed language and unreviewed
+  # pages (never released), and check-hreflang reads it. Every page needs its twin, the twins must
+  # link both ways, x-default must be present, and /en/ pages carry <html lang="en">. Once en is
+  # live (dl-5ssh.34.70), the release runs the same check on dist (dl-9t2o.6).
+  site-languages:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Build the site's preview and check its hreflang twins
+        run: bun run --cwd apps/site build:preview
+
   fence-checks:
     needs: changes
     runs-on: ubuntu-latest
@@ -307,7 +324,7 @@ jobs:
         run: cat "$RUNNER_TEMP/api.log"
 
   ci-ok:
-    needs: [changes, lint, typecheck, unit, integration, supabase, contracts, docs, docs-site, fence-checks, gitleaks, browser]
+    needs: [changes, lint, typecheck, unit, integration, supabase, contracts, docs, docs-site, site-languages, fence-checks, gitleaks, browser]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
