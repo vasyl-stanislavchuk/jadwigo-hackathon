@@ -300,7 +300,7 @@ describe("the engine keeps PostHog's production lessons", () => {
               { verb: "lesson_check", input: (r) => ({ draft_id: r.run_id, help: {} }) },
             ],
           },
-          { text: "Your lesson is ready on the right." },
+          { text: "Lekcja jest gotowa po prawej." },
         ],
         createVerbs({ bank: fixtureBank() }),
       );
