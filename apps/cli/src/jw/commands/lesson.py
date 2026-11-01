@@ -95,8 +95,9 @@ def draft(
     "--name",
     "names",
     multiple=True,
-    help="A name the family uses (repeatable); replaced in --title and --reasoning.",
+    help="A name the family uses (repeatable); replaced in every word, --title and --reasoning.",
 )
+@click.option("--no-names", is_flag=True, help="Say the family's words name nobody.")
 @click.option("--full", is_flag=True, help="The card with each rung and why it was drawn.")
 @click.option("--verbose", is_flag=True, help="Every finding, warnings one by one.")
 @click.option("--json", "json_mode", is_flag=True, help="Print the check's answer.")
@@ -106,6 +107,7 @@ def check(
     title: str | None,
     reasoning: str | None,
     names: tuple[str, ...],
+    no_names: bool,
     full: bool,
     verbose: bool,
     json_mode: bool,
@@ -113,6 +115,8 @@ def check(
     """Check the draft DRAFT_ID with WORDS_FILE, a JSON object of each step's words by step id
     (the lesson_check tool's `help`), and print its card. The draft file is rewritten with the
     words and its check written beside it, whatever the check says."""
+    if not names and not no_names:
+        raise click.UsageError("pass every name the family uses with --name, or --no-names")
     try:
         words: Any = json.loads(words_file.read_text(encoding="utf-8"))
     except ValueError as exc:
@@ -153,6 +157,7 @@ def check(
     multiple=True,
     help="A name the family uses (repeatable); replaced in the patch's words and --why.",
 )
+@click.option("--no-names", is_flag=True, help="Say the family's words name nobody.")
 @click.option("--json", "json_mode", is_flag=True, help="Print the step's answer.")
 def edit(
     draft_id: str,
@@ -161,10 +166,13 @@ def edit(
     why: str | None,
     change: str,
     names: tuple[str, ...],
+    no_names: bool,
     json_mode: bool,
 ) -> None:
     """Change step STEP_ID of the draft DRAFT_ID by PATCH_FILE, a JSON merge patch on the step
     (the lesson_edit tool's `patch`), check the lesson, and print that step's findings."""
+    if not names and not no_names:
+        raise click.UsageError("pass every name the family uses with --name, or --no-names")
     try:
         patch: Any = json.loads(patch_file.read_text(encoding="utf-8"))
     except ValueError as exc:
