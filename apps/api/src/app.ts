@@ -212,8 +212,10 @@ export function createApp(
   onSigned("createConversation", (_params, body, claims) =>
     run((s) => createConversation(s, claims, body)),
   );
+  // A message's or a Stop's step is sent only once its unit has committed (afterCommit), so a
+  // consumer never reads a step for a run row it cannot see yet.
   onSigned("postMessage", (params, body, claims) =>
-    run((s) => postMessage(s, engine, claims, params.id, body)),
+    afterCommit(engine, (deps) => run((s) => postMessage(s, deps, claims, params.id, body))),
   );
   onSigned("listConversationRuns", (params, _body, claims) =>
     run((s) => listConversationRuns(s, claims, params.id)),
@@ -222,11 +224,37 @@ export function createApp(
     run((s) => listRunEvents(s, claims, params.id, params.after)),
   );
   onSigned("cancelRun", (params, body, claims) =>
-    run((s) => cancelRun(s, engine, claims, params.id, body)),
+    afterCommit(engine, (deps) => run((s) => cancelRun(s, deps, claims, params.id, body))),
   );
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;
+}
+
+/**
+ * Runs `work` with a queue that holds its sends, and sends them, in order, only after `work` has
+ * returned: after its unit committed. A unit that rolls back throws, and its sends are dropped.
+ * A held send answers msg_id 0; `acceptMessage` never reads it. What this leaves: a send that
+ * fails after the commit leaves the run queued with no step until the sweep closes it idle. The
+ * fix, the send in the run's own transaction, is dl-z5ja.67 on the queue lane.
+ */
+async function afterCommit<T>(
+  engine: EngineRouteDeps,
+  work: (deps: EngineRouteDeps) => Promise<T>,
+): Promise<T> {
+  const held: Parameters<RunQueue["send"]>[] = [];
+  const holding: RunQueue = {
+    send: (...args) => {
+      held.push(args);
+      return Promise.resolve(0);
+    },
+    read: (vt_s, qty) => engine.queue.read(vt_s, qty),
+    archive: (msg_id) => engine.queue.archive(msg_id),
+    deadLetters: () => engine.queue.deadLetters(),
+  };
+  const result = await work({ ...engine, queue: holding });
+  for (const args of held) await engine.queue.send(...args);
+  return result;
 }
 
 /**
