@@ -292,7 +292,7 @@ export const PHASES: readonly { id: string; what: string }[] = [
   },
   {
     id: "help",
-    what: "The yellow note under the question, one rung more each time, the plain footer.",
+    what: "The yellow note under the question, one rung more each time. After a miss the band stays with Popraw alone; from the second miss the note opens by itself once the band is read.",
   },
   {
     id: "right",

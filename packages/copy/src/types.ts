@@ -371,6 +371,7 @@ export const COPY_KEYS = [
   "letters_capitals",
   "ds_right_short",
   "ds_miss_short",
+  "ds_fix",
   "ds_wait_hint",
   "ds_fix_then_check",
   "ds_solution_band",
