@@ -2900,7 +2900,7 @@ class PostgresStore implements Store {
             .onRef("run.id", "=", "run_inbox.run_id"),
         )
         .select((eb) => eb.fn.countAll<string>().as("n"))
-        .where("run_inbox.kind", "=", "message")
+        .where("run_inbox.kind", "in", ["message", "steer"])
         .where("run.created_by", "=", uuidOf(ID_PREFIXES.account, account))
         .where("run_inbox.created_at", ">=", new Date(minute))
         .executeTakeFirstOrThrow();

@@ -1564,7 +1564,7 @@ export class InMemoryStore implements Store {
     const day = Date.parse(since.daySince);
     let messages = 0;
     for (const row of this.#inbox.values()) {
-      if (row.pod_id !== pod || row.kind !== "message") continue;
+      if (row.pod_id !== pod || (row.kind !== "message" && row.kind !== "steer")) continue;
       if (Date.parse(row.created_at) < minute) continue;
       if (this.#runs.get(row.run_id)?.created_by === account) messages += 1;
     }
