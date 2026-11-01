@@ -46,7 +46,9 @@ prod's major version, with no Docker: Postgres.app on port 5433 locally, and the
 - Google and Facebook profile data is trimmed (`20261030120000_trim_profile.sql`,
   `docs/research/profile-trim.md`): triggers keep only the linking keys in `auth.users` and
   `auth.identities`, and the custom access token hook `app.custom_access_token` does the same to a
-  token's `user_metadata`. A claim the token needs, such as `pod_id`, joins that hook.
+  token's `user_metadata`. The hook also sets the top-level `pod_id` claim to the pod
+  `app.member_pod()` finds for the user, which `app.current_pod_id()` reads
+  (`20261101200000_token_pod_id.sql`). A user with no account yet gets none.
 - `apps/api` connects as `jadwigo_api`, which never owns a table and never bypasses row-level
   security. Its login is set per environment, outside migrations.
 - The engine's step consumer connects as `jadwigo_runner` (`20261101120000_run.sql`): it owns no
