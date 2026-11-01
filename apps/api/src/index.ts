@@ -1,8 +1,10 @@
+import type { RunQueue } from "@jadwigo/jadwigo-ai";
 import { createPostgresStore, type Store } from "@jadwigo/store";
 import { createApp } from "./app.ts";
 import { type Authenticate, jwksUrlAuth, lambdaAuth } from "./auth.ts";
 import { authIssuer, authJwksUrl, lambdaDatabaseUrl } from "./config.ts";
 import { type BankDeps, type BucketDeps, lambdaBank, lambdaBucket } from "./questions.ts";
+import { pgmqQueue } from "./queue.ts";
 
 export { createApp } from "./app.ts";
 
@@ -28,14 +30,32 @@ export interface HandlerDeps {
   readUrl: () => Promise<string>;
   /** The store on that URL. */
   connect: (url: string) => Store;
+  /** The run queue on that URL, for the conversation routes; none leaves them unwired. */
+  queue?: (url: string) => RunQueue;
   now: () => number;
 }
 
 const lambdaDeps: HandlerDeps = {
   readUrl: () => lambdaDatabaseUrl(),
   connect: (url) => createPostgresStore(url, LAMBDA_POOL),
+  queue: (url) => pgmqQueue(url),
   now: () => Date.now(),
 };
+
+/** A queue that is still opening: each call waits for it, and fails as its opening failed. */
+function whenOpen(queue: Promise<RunQueue | undefined>): RunQueue {
+  const ready = async () => {
+    const opened = await queue;
+    if (opened === undefined) throw new Error("no run queue is wired");
+    return opened;
+  };
+  return {
+    send: async (message, delay_s) => (await ready()).send(message, delay_s),
+    read: async (vt_s, qty) => (await ready()).read(vt_s, qty),
+    archive: async (msg_id) => (await ready()).archive(msg_id),
+    deadLetters: async () => (await ready()).deadLetters(),
+  };
+}
 
 /**
  * The routes on PostgresStore. The store opens on the first request and is kept for the life of
@@ -53,6 +73,7 @@ export function createHandler(
   bucket: BucketDeps = lambdaBucket(),
 ) {
   let store: Promise<Store> | undefined;
+  let queue: Promise<RunQueue | undefined> = Promise.resolve(undefined);
   let failed = false;
   let failures = 0;
   let retryAt = 0;
@@ -60,7 +81,11 @@ export function createHandler(
   const open = (): Promise<Store> => {
     if (store !== undefined && (!failed || deps.now() < retryAt)) return store;
     failed = false;
-    const opening = deps.readUrl().then(deps.connect);
+    const url = deps.readUrl();
+    const opening = url.then(deps.connect);
+    queue = url.then((u) => deps.queue?.(u));
+    // Its failure is the store's too, which the request answers; this copy is only waited on.
+    queue.catch(() => undefined);
     opening.then(
       () => {
         failures = 0;
@@ -76,7 +101,10 @@ export function createHandler(
   };
 
   return (event: unknown, context: Context) =>
-    createApp(open(), { authenticate, bank, bucket }).resolve(event, context);
+    createApp(open(), { authenticate, bank, bucket, queue: whenOpen(queue) }).resolve(
+      event,
+      context,
+    );
 }
 
 /** The Lambda entry (`index.handler` in the bundle `make api-bundle` writes). */
