@@ -58,8 +58,9 @@ resource "aws_iam_role" "runner" {
   assume_role_policy = data.aws_iam_policy_document.assume.json
 }
 
-# Its own log group and its own parameters, nothing else: no S3, no other Lambda, no KMS statement
-# (the aws/ssm key lets the account's principals decrypt through SSM).
+# Its own log group and its own parameters, and with an uploads bucket named, a read of the photos
+# messages carry (dl-z5ja.11.2): no other S3, no other Lambda, no KMS statement (the aws/ssm key lets
+# the account's principals decrypt through SSM).
 data "aws_iam_policy_document" "runner" {
   statement {
     sid       = "WritesItsLogs"
@@ -71,6 +72,16 @@ data "aws_iam_policy_document" "runner" {
     sid       = "ReadsItsParameters"
     actions   = ["ssm:GetParameter"]
     resources = concat([aws_ssm_parameter.database_url.arn], [for p in aws_ssm_parameter.secret : p.arn])
+  }
+
+  # Only the checked copies under pods/, never pending/: the runner reads what a message carries.
+  dynamic "statement" {
+    for_each = var.uploads_bucket_name == "" ? [] : [var.uploads_bucket_name]
+    content {
+      sid       = "ReadsAttachedPhotos"
+      actions   = ["s3:GetObject"]
+      resources = ["arn:aws:s3:::${statement.value}/pods/*/attachments/*"]
+    }
   }
 }
 
@@ -95,9 +106,11 @@ resource "aws_lambda_function" "runner" {
   reserved_concurrent_executions = var.reserved_concurrency
 
   environment {
-    variables = merge(var.environment_variables, {
-      JADWIGO_RUNNER_DB_URL_PARAM = aws_ssm_parameter.database_url.name
-    })
+    variables = merge(
+      var.environment_variables,
+      { JADWIGO_RUNNER_DB_URL_PARAM = aws_ssm_parameter.database_url.name },
+      var.uploads_bucket_name == "" ? {} : { UPLOADS_BUCKET = var.uploads_bucket_name },
+    )
   }
 
   logging_config {

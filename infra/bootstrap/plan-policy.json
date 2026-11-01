@@ -23,6 +23,8 @@
         "logs:ListTagsLogGroup",
         "route53:Get*",
         "route53:List*",
+        "scheduler:Get*",
+        "scheduler:List*",
         "ses:Get*",
         "ses:List*",
         "sns:Get*",

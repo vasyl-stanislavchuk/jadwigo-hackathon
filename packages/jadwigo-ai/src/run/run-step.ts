@@ -1,4 +1,4 @@
-import { type AccountId, ErrorType, type EventId, type PodId } from "@jadwigo/contracts";
+import { type AccountId, ErrorType, type EventId, Language, type PodId } from "@jadwigo/contracts";
 import {
   type ConversationId,
   type MessageContext,
@@ -23,13 +23,21 @@ import { type AnswerMiss, budgetGuard, checkAnswer, deadlineDue } from "@jadwigo
 import { parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import { type NewRunInbox, type RunChange, type Store, StoreError } from "@jadwigo/store";
 import { FENCE_RULE, fence, neutralise } from "../fence/index.ts";
-import { type MuseClient, MuseFailed, type MuseInput, type MuseResponse } from "../muse/client.ts";
+import {
+  type MuseClient,
+  MuseFailed,
+  type MuseInput,
+  type MusePart,
+  type MuseResponse,
+} from "../muse/client.ts";
 import type { RunQueue } from "../queue/types.ts";
 import { type QueuedStep, STEP_VISIBILITY_S } from "../queue/types.ts";
 import { mergePatch } from "../verbs/input.ts";
 import type { Verbs } from "../verbs/types.ts";
 import { type VerbContext, type VerbEffect, VerbError } from "../verbs/types.ts";
+import { type AttachmentReader, dataUrl, ownPath } from "./attachments.ts";
 import { eventIdFor, turnRunIdFor } from "./ids.ts";
+import { inLanguage } from "./language.ts";
 
 /**
  * The engine's loop (Lead decisions 5-9, 13): a message lands in the run inbox, a step is one Muse
@@ -56,6 +64,11 @@ export interface EngineDeps {
    * run id. Today: a client answered on a less private tier than the run asked for (dl-z5ja.91).
    */
   onWarning?: (warning: EngineWarning) => void;
+  /**
+   * Where the turn's own photos are read (dl-z5ja.11.4): S3 in the hosted runner. Without it a
+   * photo reaches the model as a line saying it could not be read, never as bytes.
+   */
+  attachments?: AttachmentReader;
 }
 
 /** What `onWarning` is told. */
@@ -455,7 +468,9 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
 
   if (pending.length === 0) {
     // The answer check reads the turn and the parent's words of the turns before it (dl-z5ja.26).
-    const check = (text: string) => refusalOf(text, [...prior.said, ...w.log]);
+    // ...and, when the run has a lesson, that the answer is in its language (dl-z5ja.64).
+    const check = (text: string) =>
+      refusalOf(text, [...prior.said, ...w.log], languageOf(w.log, prior.lesson));
     let correction: { call_no: number; text: string; refusal: Refusal } | null = null;
     const refused = last ? await refusedText(w, last) : null;
     if (last && refused !== null) {
@@ -464,7 +479,8 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       // A redelivery checks it again against what the model had read, the log up to its call:
       // words the parent wrote after it give nothing the answer could have read (dl-z5ja.102).
       const until = await callEndSeq(w, last);
-      const refusal = refusalOf(refused, [...prior.said, ...w.log.filter((e) => e.seq <= until)]);
+      const read = w.log.filter((e) => e.seq <= until);
+      const refusal = refusalOf(refused, [...prior.said, ...read], languageOf(read, prior.lesson));
       if (refusal === null) {
         await w.append([
           agentMessage(w, refused, await w.id("call", last.payload.call_no, "message")),
@@ -562,7 +578,7 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
         prompt_cache_key: PROMPT_CACHE_KEY,
         tier: asked,
         instructions: instructions.join("\n\n"),
-        input: [...prior.input, ...museInput(w.log)],
+        input: [...prior.input, ...museInput(w.log, await photosOf(deps, scope.pod, w.log))],
         tools: Object.values(deps.verbs).map((verb) => verb.tool),
         names: await namesOf(deps.store, scope),
       });
@@ -714,10 +730,16 @@ async function corrected(w: Writer, response: ModelResponse): Promise<boolean> {
  * Where the count of corrections starts again: after the last text-only answer that was written
  * and after the last `AnswerUnchecked`. Words written beside tool calls end no answer.
  */
+/** The error types a refused answer is written as. */
+const REFUSED = new Set<string>([
+  RUN_ERROR_TYPE.answerUnchecked,
+  RUN_ERROR_TYPE.answerWrongLanguage,
+]);
+
 async function answerEndedAt(w: Writer): Promise<number> {
   let since = 0;
   for (const e of w.log) {
-    if (e.type === "error" && e.payload.error.type === RUN_ERROR_TYPE.answerUnchecked) {
+    if (e.type === "error" && REFUSED.has(e.payload.error.type)) {
       since = Math.max(since, e.seq);
     }
   }
@@ -736,19 +758,51 @@ async function answerEndedAt(w: Writer): Promise<number> {
 interface Refusal {
   blank: boolean;
   misses: AnswerMiss[];
+  /** The lesson's language, when the answer was not in it (dl-z5ja.64). */
+  language: Language | null;
 }
 
-/** The answer check on `text` against `given`, with blank words refused as well. Null to write it. */
-function refusalOf(text: string, given: readonly RunEvent[]): Refusal | null {
-  if (text.trim() === "") return { blank: true, misses: [] };
+/**
+ * The answer check on `text` against `given`, with blank words refused as well, and words not in
+ * `language` when the run's lesson names one. Null to write it.
+ */
+function refusalOf(
+  text: string,
+  given: readonly RunEvent[],
+  language: Language | null,
+): Refusal | null {
+  if (text.trim() === "") return { blank: true, misses: [], language: null };
   const misses = checkAnswer(text, given);
-  return misses.length === 0 ? null : { blank: false, misses };
+  const wrong = language !== null && !inLanguage(text, language) ? language : null;
+  return misses.length === 0 && wrong === null ? null : { blank: false, misses, language: wrong };
 }
+
+/** The language of the run's lesson as it stands in `log`, else the turn before's: null with none. */
+function languageOf(log: readonly RunEvent[], base: VerbContext["lesson"]): Language | null {
+  const lesson = lessonOf(log) ?? base;
+  const parsed = Language.safeParse(lesson?.lesson_file["language"]);
+  return parsed.success ? parsed.data : null;
+}
+
+const LANGUAGE_NAME: Record<Language, string> = { pl: "Polish", en: "English" };
 
 /** What a refusal names, for the correction note and the error. */
-function refusedFor({ blank, misses }: Refusal): string {
+function refusedFor({ blank, misses, language }: Refusal): string {
   if (blank) return "said nothing";
-  return `named ${[...new Set(misses.map((m) => `"${m.said}"`))].join(", ")}, which no tool result of this turn gave`;
+  const said = [];
+  if (misses.length > 0) {
+    said.push(
+      `named ${[...new Set(misses.map((m) => `"${m.said}"`))].join(", ")}, which no tool result of this turn gave`,
+    );
+  }
+  if (language) said.push(`was not in ${LANGUAGE_NAME[language]}, the lesson's language`);
+  return said.join(", and ");
+}
+
+/** The error type a refusal is written as: only a refusal for its language alone is that. */
+function refusalType({ blank, misses, language }: Refusal): string {
+  if (!blank && misses.length === 0 && language !== null) return RUN_ERROR_TYPE.answerWrongLanguage;
+  return RUN_ERROR_TYPE.answerUnchecked;
 }
 
 /**
@@ -760,6 +814,7 @@ function correctionNote(text: string, refusal: Refusal): string {
   return [
     `Your last answer was not sent to the parent: it ${refusedFor(refusal)}.`,
     "Code computes every number, status and level; you only word them, and you never name a mastery level.",
+    ...(refusal.language ? [`Write it in ${LANGUAGE_NAME[refusal.language]}.`] : []),
     "Write the answer again with only what the tool results say. Your answer was:",
     fence(text, "child"),
   ].join("\n");
@@ -778,7 +833,7 @@ async function uncheckedEvent(
     event_id: await w.id("call", call_no, "unchecked"),
     payload: {
       error: {
-        type: RUN_ERROR_TYPE.answerUnchecked,
+        type: refusalType(refusal),
         message: `the answer ${refusedFor(refusal)}, ${when}`,
       },
       attempt: w.attempt,
@@ -1211,16 +1266,36 @@ function lessonOf(log: readonly RunEvent[]): VerbContext["lesson"] {
  * message goes inside the fence (dl-z5ja.47): the contract marks no text as a child's, and a parent
  * may paste what a child wrote, so the parent's whole message is fenced as the parent's.
  */
-function museInput(log: readonly RunEvent[]): MuseInput[] {
+function museInput(
+  log: readonly RunEvent[],
+  photos: ReadonlyMap<string, readonly MusePart[]> = new Map(),
+): MuseInput[] {
   const input: MuseInput[] = [];
   for (const e of [...log].sort((a, b) => a.seq - b.seq)) {
     if (e.type === "message") {
       const parent = e.payload.from === "parent";
-      input.push({
-        type: "message",
-        role: parent ? "user" : "assistant",
-        text: parent ? fence(e.payload.text, "parent") : e.payload.text,
-      });
+      if (!parent) {
+        input.push({ type: "message", role: "assistant", text: e.payload.text });
+        continue;
+      }
+      const words = e.payload.text === "" ? "" : fence(e.payload.text, "parent");
+      const own = photos.get(e.event_id);
+      const sent = e.payload.attachments?.length ?? 0;
+      if (own !== undefined && own.length > 0) {
+        // The turn's own photos, each behind its photo block (dl-z5ja.11.4).
+        const parts: MusePart[] = words === "" ? [] : [{ type: "input_text", text: words }];
+        input.push({ type: "message", role: "user", text: [...parts, ...own] });
+      } else if (sent > 0) {
+        // An earlier turn's photos: a line, never the bytes again, so a long chat costs no more.
+        const line = `[${sent} ${sent === 1 ? "photo" : "photos"} from the parent, sent with this message in an earlier turn]`;
+        input.push({
+          type: "message",
+          role: "user",
+          text: words === "" ? line : `${words}\n${line}`,
+        });
+      } else {
+        input.push({ type: "message", role: "user", text: words });
+      }
     } else if (e.type === "model_response") {
       for (const call of e.payload.tool_calls) {
         input.push({
@@ -1239,6 +1314,40 @@ function museInput(log: readonly RunEvent[]): MuseInput[] {
     }
   }
   return input;
+}
+
+/**
+ * The turn's own photos as parts, by their message's `event_id` (dl-z5ja.11.4): for each one a
+ * photo block, then the image as a `data:` URL the runner read. A path outside the run's pod's
+ * `attachments/`, a host with no reader, or a missing object gives a line instead, never bytes.
+ */
+async function photosOf(
+  deps: EngineDeps,
+  pod: PodId,
+  log: readonly RunEvent[],
+): Promise<Map<string, MusePart[]>> {
+  const photos = new Map<string, MusePart[]>();
+  for (const e of log) {
+    if (e.type !== "message" || e.payload.from !== "parent") continue;
+    const attached = e.payload.attachments ?? [];
+    if (attached.length === 0) continue;
+    const parts: MusePart[] = [];
+    for (const [i, photo] of attached.entries()) {
+      const label = `Photo ${i + 1} of ${attached.length} the parent sent.`;
+      const bytes =
+        deps.attachments && ownPath(pod, photo.storage_path)
+          ? await deps.attachments.read(photo.storage_path)
+          : undefined;
+      if (bytes === undefined) {
+        parts.push({ type: "input_text", text: `[${label} It could not be read.]` });
+        continue;
+      }
+      parts.push({ type: "input_text", text: fence(label, "photo") });
+      parts.push({ type: "input_image", image_url: dataUrl(photo.media_type, bytes) });
+    }
+    photos.set(e.event_id, parts);
+  }
+  return photos;
 }
 
 /**

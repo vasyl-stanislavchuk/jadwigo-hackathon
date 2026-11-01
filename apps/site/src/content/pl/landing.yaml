@@ -17,7 +17,7 @@ hero:
     signUp:
       text: Tak wygląda każda lekcja. Konto rodzica jest bezpłatne, a Jadwigo z każdej lekcji układa następną.
       button: Załóż konto
-      again: Zagraj to pytanie jeszcze raz
+      again: Spróbuj tego pytania jeszcze raz
 # Under the lessons, one line for the parent.
 after:
   text: Po każdej lekcji widzisz, co poszło dobrze i co ćwiczyć dalej.
@@ -32,7 +32,7 @@ links:
 # the parent is aware and close in a few minutes, never required to sit through a lesson together.
 steps:
   title: Jak działa Jadwigo
-  description: Piszesz, co dziecko ćwiczy w szkole, dziecko gra krótką lekcję, a Ty wiesz, co już umie i nad czym pracuje.
+  description: Piszesz, co dziecko ćwiczy w szkole. Dziecko przerabia krótką lekcję. Ty wiesz, co już umie i nad czym pracuje.
   heading: Jak to działa
   intro: Nie musisz siedzieć obok przez całą lekcję. Wystarczy kilka minut, żeby wiedzieć, co dziecko umie i z czym ma trudność.
   pic: ilustracja · Jadwiga z zeszytem, obok jej klasa
@@ -41,13 +41,13 @@ steps:
       title: Napisz, co dziecko ćwiczy w szkole.
       text: Jadwigo układa lekcję z zadań ze źródłem. Widzisz ją, zanim zobaczy ją dziecko.
     - who: Dziecko
-      title: Dziecko gra krótką lekcję.
+      title: Dziecko przerabia krótką lekcję.
       text: Podpowiedź czeka obok. Można się pomylić, poprosić o więcej albo skończyć na dziś.
     - who: Ty
       title: Wiesz, co dziecko już umie, a nad czym jeszcze pracuje.
-      text: Każde pytanie, próba i pomyłka opisane zwykłymi słowami. Następną lekcję Jadwigo układa od tego, co było trudne. A gdy chcesz usiąść razem nad czymś trudnym, podpowie, od czego zacząć.
+      text: Każde pytanie, każda próba i każda pomyłka opisane zwykłymi słowami. Następną lekcję Jadwigo zaczyna od tego, co było trudne. A gdy chcesz usiąść razem nad czymś trudnym, podpowie, od czego zacząć.
   request:
-    ask: Zadania z resztą, tak jak w zeszycie. Myli złote z groszami.
+    ask: Zadania o wydawaniu reszty, tak jak w zeszycie. Myli złote z groszami.
     lines: [Szukam zadań o reszcie z groszami, Sprawdzam lekcję, Gotowe]
     soon: "Wkrótce: zdjęcie zeszytu zamiast opisu."
     screencast: screencast · rodzic pisze w czacie, lekcja układa się po prawej, „Pokaż dziecku”
@@ -72,16 +72,16 @@ promises:
     - title: Zadania ze źródłem
       text: Z Alfika Matematycznego i Khan Academy, zawsze z podanym źródłem.
     - title: Dane należą do Ciebie
-      text: Odpowiedzi dziecka widzisz tylko Ty. Nie trafiają do modeli, które się na nich uczą.
+      text: Odpowiedzi dziecka widzisz tylko Ty. W każdej chwili możesz poprosić o ich usunięcie.
     # Replaces "Bezpłatnie i bez reklam" (owner, 2026-11-01; draft).
     - title: Wydrukuj i sprawdź ze zdjęcia
       text: Każdą lekcję wydrukujesz dla dziecka. Gotową pracę albo pracę domową sfotografuj, a Jadwigo ją sprawdzi.
 # Direction 1a (owner, 2026-11-01; draft). Zosia is a made-up example child, never a real learner.
 partner:
-  heading: Nauka, przy której jesteś obok.
+  heading: Nauka, przy której jesteś blisko.
   text: Dziecko ćwiczy w swoim tempie, a Ty widzisz, jak rośnie.
   pic: ilustracja · rodzic i dziecko przy stole nad zeszytem
-  child: { initial: Z, name: Zosia, sub: 3 klasa · z Jadwigo od września }
+  child: { initial: Z, name: Zosia, sub: klasa 3 · z Jadwigo od września }
   practising: "Ćwiczy:"
   allDone: Umie wszystko.
   nextUp: "Dalej:"
@@ -127,7 +127,7 @@ lessons:
     gradeLabel: Klasa
     subjectLabel: Przedmiot
     allGrades: Wszystkie
-    allSubjects: Wszystko
+    allSubjects: Wszystkie
     count: [lekcja, lekcje, lekcji]
     prev: Poprzednie lekcje
     next: Kolejne lekcje

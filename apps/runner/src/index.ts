@@ -1,3 +1,4 @@
+import { s3Attachments } from "./attachments.ts";
 import { museConfig, runnerDatabaseUrl } from "./config.ts";
 import { postgresEngineHost } from "./engine.ts";
 import { createRunnerHandler } from "./handler.ts";
@@ -15,7 +16,13 @@ const warn = (line: string) => console.warn(line);
 const host = createHost(async () => {
   const [url, muse] = await Promise.all([runnerDatabaseUrl(), museConfig()]);
   // The lane's ledger reads the host's own store (dl-z5ja.89), so its cap outlives a cold start.
-  return postgresEngineHost(url, (store) => liveMuse(muse, realRuntime, store), warn, muse.tier);
+  return postgresEngineHost(
+    url,
+    (store) => liveMuse(muse, realRuntime, store),
+    warn,
+    muse.tier,
+    s3Attachments(),
+  );
 });
 
 export const handler = createRunnerHandler(host, warn);

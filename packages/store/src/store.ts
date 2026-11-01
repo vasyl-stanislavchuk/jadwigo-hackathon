@@ -44,6 +44,7 @@ import type {
   Topic,
   Uuid,
 } from "@jadwigo/contracts";
+import type { AttachmentStore } from "./attachment.ts";
 import type { RunStore } from "./run.ts";
 
 /**
@@ -263,7 +264,7 @@ export interface OpenedAttempt {
  * `releaseHelp` and `endAttemptQuestion`, as the database does: the server may finish its own
  * bookkeeping after the player leaves.
  */
-export interface Store extends RunStore {
+export interface Store extends RunStore, AttachmentStore {
   /**
    * Runs `work` as one unit: on Postgres every Store call inside it shares one transaction, with
    * the role set once and the pod set each time it changes, and a throw out of `work` rolls all of

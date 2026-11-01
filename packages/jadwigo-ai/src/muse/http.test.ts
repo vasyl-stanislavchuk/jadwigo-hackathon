@@ -107,6 +107,40 @@ describe("HttpMuse speaks /v1/responses", () => {
     });
   });
 
+  it("sends a message's image parts as they are, and guards only their words (dl-z5ja.11.4)", async () => {
+    const IMAGE = "data:image/jpeg;base64,c3ludGhldGljIHdvcmtzaGVldA==";
+    const parts = [
+      { type: "input_text" as const, text: "Kasia sent this worksheet." },
+      { type: "input_image" as const, image_url: IMAGE },
+    ];
+    const learner = muse([{ status: 200, body: textAnswer(["ok"]) }]);
+    await learner.http.respond({
+      ...requestFor(runId(), 1),
+      input: [{ type: "message", role: "user", text: parts }],
+    });
+    expect(learner.sent[0]?.body["input"]).toEqual([
+      { type: "message", role: "user", content: parts },
+    ]);
+
+    // A bank call passes the name guard: the words are guarded, the image is not touched.
+    const bank = muse([{ status: 200, body: textAnswer(["ok"]) }]);
+    await bank.http.respond({
+      ...contributor(),
+      names: ["Kasia"],
+      input: [{ type: "message", role: "user", text: parts }],
+    });
+    expect(bank.sent[0]?.body["input"]).toEqual([
+      {
+        type: "message",
+        role: "user",
+        content: [
+          { type: "input_text", text: "[NAME_1] sent this worksheet." },
+          { type: "input_image", image_url: IMAGE },
+        ],
+      },
+    ]);
+  });
+
   it("routes by tier: contributor to the contributor model, private to the private one", async () => {
     const { http, sent } = muse([
       { status: 200, body: textAnswer(["a"]) },

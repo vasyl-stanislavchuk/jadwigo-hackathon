@@ -18,7 +18,7 @@
   "site_footer_line": "Jesteś blisko.",
   "site_footer_sources": "Źródła zadań",
   "site_footer_data_heading": "Dane należą do Ciebie",
-  "site_footer_data": "Odpowiedzi dziecka widzisz tylko Ty. Nie trafiają do modeli, które się na nich uczą.",
+  "site_footer_data": "Odpowiedzi dziecka widzisz tylko Ty. W każdej chwili możesz poprosić o ich usunięcie.",
   "continue": "Dalej",
   "check": "Sprawdź",
   "erase": "Usuń",
@@ -921,5 +921,26 @@
         "max_noun=other": "Zmieści się {max} zdjęcia, {n} pominięto"
       }
     }
-  ]
+  ],
+  "parent_chat": "Rozmowa",
+  "parent_lesson": "Lekcja",
+  "parent_details": "Szczegóły lekcji",
+  "parent_workspace_tabs": "Rozmowa i lekcja",
+  "parent_chat_fold": "Zwiń rozmowę",
+  "parent_chat_unfold": "Rozwiń rozmowę",
+  "parent_details_fold": "Zwiń szczegóły",
+  "parent_details_unfold": "Rozwiń szczegóły",
+  "parent_save": "Zapisz na później",
+  "parent_give": "Daj lekcję",
+  "parent_show": "Pokaż: {name}",
+  "parent_give_reason": "„Daj lekcję” zadziała, gdy lekcja przejdzie sprawdzenie",
+  "parent_steps_ready": "Gotowe zadania: {done} z {total}",
+  "parent_for_whom": "Dla kogo",
+  "parent_lesson_skills": "Co ćwiczy ta lekcja",
+  "parent_lesson_skills_empty": "Umiejętności, które ćwiczy ta lekcja, pojawią się tu, gdy będzie gotowa.",
+  "parent_about_lesson": "O lekcji",
+  "parent_about_lesson_empty": "Źródło, kroki, wersja i historia zmian pojawią się tu, gdy lekcja będzie gotowa.",
+  "parent_change": "Zmień",
+  "parent_chat_empty": "Tu pojawi się rozmowa z Jadwigo.",
+  "parent_lesson_empty": "Tu pojawią się kroki lekcji, gdy Jadwigo zacznie ją pisać."
 }

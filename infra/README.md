@@ -44,6 +44,16 @@ subscription, so an apply from such a checkout would remove the owner's (`dl-5ss
 warns `Check block assertion failed` when that is so, and an empty `alarm_email` fails validation (`dl-5ssh.81`). After the
 first apply, AWS mails a confirmation link, and the alarms reach no one until the owner clicks it.
 
+Uploads (`terraform/modules/uploads`, `dl-z5ja.11.2`): the private bucket `jadwigo-uploads-<env>-<acct>` for
+the photos a parent attaches to a message, apart from the content bucket so learner data never mixes with the
+bank (wave 5 decision 43). Every public access setting is blocked, SSE-S3, and it is **not versioned**, so a
+delete erases the photo. `pending/` (the browser's presigned POST) expires after 1 day; a sent photo is copied
+to `pods/<pod>/attachments/<id>.jpg`. CORS allows a `POST` from `https://<app_domain>` only, and the bucket
+policy denies plain HTTP. The api role may put, get and delete under those 2 prefixes (`modules/app/uploads.tf`),
+the runner role may only get under `pods/*/attachments/*`, and neither may list. Both functions get
+`UPLOADS_BUCKET`; the name is also the SSM String `/jadwigo/uploads/bucket`, which `apps/api` reads when the
+variable is unset. `terraform/tests/uploads.tftest.hcl` pins all of it.
+
 Parent routes (`dl-e8ov.2.42`): a JWT authorizer named `supabase` on the HTTP API verifies Supabase Auth's
 RS256 access tokens (issuer `https://<supabase_ref>.supabase.co/auth/v1`, audience `authenticated`, the
 `Authorization` header). It sits only on the routes in `token_routes` in `terraform/main.tf`, which are the `ROUTES`
@@ -66,7 +76,7 @@ A merge deploys nothing. The owner deploys by hand
 | `make release` (from the repo root) | the whole release of `origin/main`, asking once: it previews the migrations, a saved plan and `prod-status`, asks you to type prod, then runs `db-push`, `db-role`, `db-seed`, the saved plan, `api-deploy` with a health check, `web-deploy`, `site-deploy` and `docs-deploy`. It stops before asking when the plan destroys or replaces anything (`dl-5ssh.34.67`) | the owner |
 | `make -C infra deploy-all` | every service's code: `api-deploy`, `web-deploy`, `site-deploy`, `docs-deploy`. No migration and no apply: run those first when a PR needs them (`dl-5ssh.34.65`) | the owner |
 | `make -C infra prod-status` | read-only: each service's live commit (each deploy writes `version.txt`, or `version/api.txt` and `version/web.txt` on app.jadwigo.pl) and how many commits on `origin/main` touch it since | anyone |
-| `make -C infra web-build` | build `apps/web` with `web-build/<env>.env`'s public settings, uploading nothing | anyone |
+| `make -C infra web-build` | build `apps/web` with `web-build/<env>.env`'s public settings (sign-in, media URL), uploading nothing | anyone |
 | `make -C infra auth-diff` | read both Supabase projects' auth config and print what `supabase-auth/<env>.json` would change; exits 2 if anything would | anyone with the token |
 | `make -C infra auth-apply` | write those settings through the Management API | the owner |
 | `supabase-auth/domain.sh status` | prod's custom domain `auth.jadwigo.pl`: its state and the TXT records for `prod.tfvars` | anyone with the token |
@@ -74,8 +84,10 @@ A merge deploys nothing. The owner deploys by hand
 
 **The app's build settings are committed, in `web-build/<env>.env`** (`dl-e8ov.2.64`). They are the
 Supabase URL, its publishable key and the sign-in providers (`JW_SUPABASE_URL`, `JW_SUPABASE_KEY`,
-`JW_SUPABASE_PROVIDERS`, a comma list of `google` and `facebook`). A browser holds all of them, so none
-is secret. `web-build` sources the file over the shell's environment, so a build ships what is
+`JW_SUPABASE_PROVIDERS`, a comma list of `google` and `facebook`), and the media URL a question's
+pictures load from (`VITE_MEDIA_URL`, terraform's `media_url` output, `dl-n9fr.53`). A browser holds
+all of them, so none is secret. `web-build` prints them first, so `make -n -C infra web-build` shows
+what a build would ship. `web-build` sources the file over the shell's environment, so a build ships what is
 committed and nothing an exported variable left behind. `prod.env` leaves all 3 empty: prod has no
 sign-in until the consent text (`dl-e8ov.2.9`) lands, and no provider button until `dl-e8ov.2.8` and
 `dl-e8ov.2.58`. Its comment names the values for that day. `tools/src/web-build.test.ts` checks what

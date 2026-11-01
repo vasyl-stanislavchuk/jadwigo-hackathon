@@ -17,5 +17,5 @@ auth_domain_txt = {}
 # Google Workspace mail on jadwigo.pl (dl-e8ov.2.71, docs/runbooks/google-workspace.md). Each line is
 # the owner's, in the runbook's order: the verification token, then mx = true, then dkim.
 mail_workspace = {
-  "jadwigo.pl" = {}
+  "jadwigo.pl" = { site_verification = "KknexconUTHl-ztuWvaFeMECMN9N4KrJp1oIt75br74", mx = true }
 }

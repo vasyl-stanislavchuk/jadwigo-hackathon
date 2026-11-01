@@ -67,6 +67,7 @@ import { Failed } from "./Failed.tsx";
 import { inAppBrowser } from "./inApp.ts";
 import { LanguagePick } from "./LanguagePick.tsx";
 import { AddChildDialog } from "./newLesson/AddChildDialog.tsx";
+import { DlaSelect } from "./newLesson/DlaSelect.tsx";
 import { NewLessonBox } from "./newLesson/NewLessonBox.tsx";
 import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";
 import { ProviderButton } from "./ProviderButton.tsx";
@@ -84,6 +85,9 @@ import {
 } from "./route.ts";
 import { ParentShell } from "./shell/ParentShell.tsx";
 import type { Place } from "./shell/Sidebar.tsx";
+import { DetailsPanel } from "./workspace/DetailsPanel.tsx";
+import { LessonFooter } from "./workspace/LessonFooter.tsx";
+import { Workspace } from "./workspace/Workspace.tsx";
 
 /** The parent's page: the app page's prose column. */
 function ParentPage({ children }: { children: ReactNode }): ReactElement {
@@ -646,6 +650,51 @@ function SignedIn({
           </p>
         </ParentPage>,
       );
+    case "lesson": {
+      const child = learners.find((l) => l.id === forLearner) ?? null;
+      const dla = (trigger?: ReactElement): ReactElement => (
+        <DlaSelect
+          language={language}
+          learners={learners}
+          value={forLearner}
+          onChange={setForLearner}
+          onAddChild={() => setAdding("dla")}
+          {...(trigger === undefined ? {} : { trigger })}
+        />
+      );
+      // The frame, with its slots waiting for the engine (dl-z5ja.108): the breadcrumb stays the
+      // first screen's, as the send leaves it.
+      return shell(
+        { kind: "lessons" },
+        newLesson,
+        <Workspace
+          language={language}
+          chat={<p className="p-4 text-jw-ink-soft">{t("parent_chat_empty")}</p>}
+          chatBand={null}
+          lessonTitle={t("parent_new_lesson")}
+          lesson={<p className="text-jw-ink-soft">{t("parent_lesson_empty")}</p>}
+          lessonFooter={
+            <LessonFooter
+              language={language}
+              status={copy(language, "parent_steps_ready", { done: 0, total: 0 }, CATEGORY)}
+              ready={false}
+              child={child}
+              onSave={() => {}}
+              onGive={() => {}}
+            />
+          }
+          details={
+            <DetailsPanel
+              language={language}
+              child={child}
+              onAddChild={() => setAdding("dla")}
+              changeMenu={dla}
+            />
+          }
+          detailsFact={child?.first_name ?? t("parent_no_child")}
+        />,
+      );
+    }
     case "history":
       return shell(
         { kind: "history" },

@@ -4,13 +4,15 @@ import type { Language } from "@jadwigo/config";
 // order of jadwigo-platform/decisions/2026-10-30-the-parent-sign-in-screen-lists-the-email-code-first-
 // then-google. Nothing signs in here: each way hands over to the app's /parent, which reads
 // ?email= and ?provider= (apps/web/src/parent/route.ts). Signing in and registering are one step.
-// An English page adds lang=en to each, the form as a hidden field (dl-w0b4.81).
+// An English page adds lang=en to each, the form as a hidden field (dl-w0b4.81). The Facebook button
+// shows only once the Meta app is Live: one switch, facebookSignInLive in src/lib/landing.ts (dl-ovva).
 import facebook from "../assets/facebook-f.svg?raw";
 import google from "../assets/google-g.svg?raw";
 import { parentUrl, providerUrl } from "../index.ts";
 import Base from "../layouts/Base.astro";
 import { strictBuild } from "../lib/build.ts";
 import { otherLanguage, twinPath, twinStaticPaths, withLang } from "../lib/i18n.ts";
+import { signInProviders } from "../lib/landing.ts";
 import { landingReviewed, landingWords } from "../lib/words.ts";
 
 export const getStaticPaths = () => twinStaticPaths("signIn", strictBuild);
@@ -22,6 +24,8 @@ interface Props {
 const { lang } = Astro.props;
 const words = (await landingWords(lang)).signIn;
 const reviewed = await landingReviewed(lang);
+const icons = { google, facebook };
+const providers = signInProviders();
 const translation = twinPath("signIn", otherLanguage(lang));
 const page = {
   title: words.title,
@@ -46,8 +50,9 @@ const page = {
     </form>
     <p class="or">{words.or}</p>
     <p class="providers">
-      <a class="provider" href={withLang(providerUrl("google"), lang)}><span set:html={google} />{words.google}</a>
-      <a class="provider" href={withLang(providerUrl("facebook"), lang)}><span set:html={facebook} />{words.facebook}</a>
+      {providers.map((p) => (
+        <a class="provider" href={withLang(providerUrl(p), lang)}><span set:html={icons[p]} />{words[p]}</a>
+      ))}
     </p>
   </section>
 </Base>
