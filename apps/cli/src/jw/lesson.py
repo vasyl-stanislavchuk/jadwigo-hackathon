@@ -1380,6 +1380,7 @@ _TEX_FRAC_DIGITS = re.compile(r"\\[dt]?frac\s*(\d)\s*(\d)")
 _TEX_COLOR_ARG = re.compile(r"\\(?:textcolor|color)\s*\{[^{}]*\}")
 _TEX_SQRT = re.compile(r"\\sqrt\s*\{([^{}]*)\}")
 _TEX_SCRIPT = re.compile(r"([_^])\{([^{}]*)\}")
+_TEX_MIXED = re.compile(r"(\d)\s*(?=\\[dt]?frac(?![A-Za-z]))")
 # Not a fraction or a root: `\dfrac{1}{\blue{4}}` waits until its colour goes, then reads 1/4.
 _TEX_WRAP = re.compile(r"\\(?!(?:[dt]?frac|sqrt)(?![A-Za-z]))([A-Za-z]+)\s*\{([^{}]*)\}")
 _TEX_WORD = re.compile(r"\\([A-Za-z]+)")
@@ -1400,6 +1401,14 @@ def _grouped(part: str) -> str:
     return f"({part})" if re.search(r"[\s+\-−·×:/\\]", part) else part
 
 
+def _script(m: re.Match[str]) -> str:
+    """A superscript or subscript keeps its grouping: `x^{2+1}` reads `x^(2+1)`. One that still
+    holds a command waits until the command is plain (`^{\\circ}` reads `^°`)."""
+    if "\\" in m[2]:
+        return m[0]
+    return f"{m[1]}{_grouped(m[2])} "
+
+
 def tex_plain(text: Any) -> Any:
     """`text` with its TeX made plain: `$\\Huge{\\blue{6} \\cdot 4} = $` reads `6 · 4 =`.
     Fractions become `a/b` (a part of more than one term in brackets), a root `√x`, a symbol or
@@ -1412,12 +1421,14 @@ def tex_plain(text: Any) -> Any:
     for tex, kept in _TEX_KEPT.items():
         out = out.replace(tex, kept)
     out = _TEX_COLOR_ARG.sub("", out)  # \textcolor{red}{7}: the colour's name is no word
+    # A mixed number, `2\frac{1}{2}`, keeps its whole part apart: 2 1/2, never 21/2.
+    out = _TEX_MIXED.sub(r"\1 ", out)
     for _ in range(8):  # nested wrappers, from the inside out
         before = out
         out = _TEX_FRAC.sub(lambda m: f"{_grouped(m[1])}/{_grouped(m[2])}", out)
         out = _TEX_FRAC_DIGITS.sub(r"\1/\2", out)
         out = _TEX_SQRT.sub(lambda m: f"√{_grouped(m[1])}", out)
-        out = _TEX_SCRIPT.sub(r"\1\2 ", out)
+        out = _TEX_SCRIPT.sub(_script, out)
         for tex, plain in sorted(_TEX_SYMBOLS.items(), key=lambda kv: -len(kv[0])):
             out = re.sub(re.escape(tex) + r"(?![A-Za-z])", plain, out)
         out = _TEX_WRAP.sub(lambda m: m[2] if _TEX_STYLE.fullmatch(m[1]) else f"{m[1]} {m[2]}",
