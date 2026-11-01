@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import {
+  type AccountId,
   type Conversation,
   ConversationCreate,
   ConversationId,
@@ -127,6 +128,7 @@ export async function postMessage(
   const { pod, account } = await authorizeMember(store, claims);
   const parsed = ConversationMessage.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
+  if (parsed.data.kind === "steer") return steer(store, deps, pod, account, id, parsed.data);
   const { event_id, text } = parsed.data;
   // One unit: the reads below, the write and the refusal. A refused message throws after
   // acceptMessage wrote, so on Postgres the unit rolls the row back and its held send is
@@ -157,6 +159,40 @@ export async function postMessage(
   // can finish a running turn. The pod never passes its cap by a run.
   if (opened && before.cap_usd + run.cap_usd > LIMITS.podDailyCapUsd)
     throw limited("today's AI budget for this family is used up: try again tomorrow");
+  return { run };
+}
+
+/**
+ * A steer (dl-z5ja.93): an inbox row of kind `steer` with its text, source and question ids, on
+ * the open turn, where the next step logs it as a steer event. A steer opens no turn, and the
+ * store counts only messages, so neither limit applies. With no turn open it lands on the last
+ * one and changes nothing; a conversation with no turn yet is 400.
+ */
+async function steer(
+  store: Store,
+  deps: EngineRouteDeps,
+  pod: PodId,
+  account: AccountId,
+  id: ConversationId,
+  body: ConversationMessage,
+): Promise<RunAccepted> {
+  const payload = {
+    text: body.text,
+    ...(body.source === undefined ? {} : { source: body.source }),
+    ...(body.question_ids === undefined ? {} : { question_ids: body.question_ids }),
+  };
+  const { run, inbox } = await acceptMessage(engine(store, deps), {
+    pod,
+    created_by: account,
+    conversation_id: id,
+    entry: { kind: "steer", event_id: body.event_id, payload },
+  });
+  const same =
+    inbox.kind === "steer" &&
+    inbox.payload.text === payload.text &&
+    inbox.payload.source === payload.source &&
+    JSON.stringify(inbox.payload.question_ids) === JSON.stringify(payload.question_ids);
+  if (!same || run.conversation_id !== id) throw mismatch();
   return { run };
 }
 
