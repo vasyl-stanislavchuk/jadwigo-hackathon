@@ -4,7 +4,7 @@ import { type Finding, parseLessonFileLenient } from "@jadwigo/lesson-import/fil
 import type { BankLanguage, BankPort, BankQuery } from "./bank.ts";
 import { Input, isObject, type Json, mergePatch } from "./input.ts";
 import { type Review, review } from "./review.ts";
-import type { LessonVerbName, VerbContext, VerbEffect } from "./types.ts";
+import type { VerbContext, VerbEffect } from "./types.ts";
 import { VerbError } from "./types.ts";
 
 /**
@@ -105,19 +105,12 @@ function findingsFor(findings: readonly Finding[], step_id: string): Finding[] {
 }
 
 /**
- * A verb that writes a lesson revision answers it with the revision's review (`review.ts`): every
- * finding, check()'s and the harsh-word check's, and whether a parent may publish it. The same goes
- * in the tool result's view, so the chat pane draws each finding on its question.
+ * A verb that writes a lesson revision answers whether a parent may publish it (`review.ts`): no
+ * error finding, check()'s or the harsh-word check's.
  */
-function revised(verb: LessonVerbName, checked: Review, effect: VerbEffect): VerbEffect {
-  const { findings, publishable } = checked;
-  return {
-    ...effect,
-    output: { ...effect.output, publishable },
-    view: { kind: verb, data: { publishable, findings } },
-  };
+function revised(checked: Review, effect: VerbEffect): VerbEffect {
+  return { ...effect, output: { ...effect.output, publishable: checked.publishable } };
 }
-
 /** What the model and the parent read of a step: its words and its key, not the whole JSON. */
 function card(step: Step) {
   const question = isObject(step["question"]) ? step["question"] : {};
@@ -199,7 +192,7 @@ export async function lessonDraft(
     script: { parts: [{ part: PART[language], steps: drawn }] },
   });
   const checks = review(lesson_file);
-  return revised("lesson_draft", checks, {
+  return revised(checks, {
     output: {
       draft_id: context.run_id,
       title,
@@ -295,8 +288,13 @@ export function lessonCheck(context: VerbContext, raw: Json): Promise<VerbEffect
     ...result,
     card: result.ok ? { title: file["title"] ?? null, steps: steps(file).map(card) } : null,
   };
+  // The chat pane draws each finding on its question from the view (dl-z5ja.69's lesson_check shape).
+  const view = {
+    kind: "lesson_check" as const,
+    data: { publishable: result.ok, findings: result.findings },
+  };
   return Promise.resolve(
-    changed ? revised("lesson_check", checks, { output, lesson_file: file }) : { output },
+    changed ? revised(checks, { output, lesson_file: file, view }) : { output, view },
   );
 }
 
@@ -392,7 +390,7 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
   const checks = review(lesson_file);
   const findings = findingsFor(checks.findings, step_id);
   return Promise.resolve(
-    revised("lesson_edit", checks, {
+    revised(checks, {
       output: {
         draft_id: context.run_id,
         ok: !findings.some((f) => f.level === "error"),

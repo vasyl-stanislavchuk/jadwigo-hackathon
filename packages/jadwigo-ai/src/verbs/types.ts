@@ -31,14 +31,12 @@ export interface VerbEffect {
   output: Record<string, unknown>;
   lesson_file?: Record<string, unknown>;
   /**
-   * The result typed for its widget, for the tool result's `view`. A verb that writes a revision
-   * sets it to `{ publishable, findings }`: check()'s findings and the harsh-word ones (`dl-z5ja.31`).
+   * The result typed for its widget, for the tool result's `view`. lesson_check sets
+   * `{ kind: "lesson_check", data: { publishable, findings } }`: check()'s findings and the
+   * harsh-word ones (`dl-z5ja.31`). The other verbs' views are `dl-z5ja.69`.
    */
   view?: ToolView;
 }
-
-/** The verbs that write a lesson revision. */
-export type LessonVerbName = Extract<VerbName, "lesson_draft" | "lesson_check" | "lesson_edit">;
 
 export interface Verb {
   name: VerbName;

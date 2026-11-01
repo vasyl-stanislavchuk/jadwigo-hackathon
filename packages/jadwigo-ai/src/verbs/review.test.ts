@@ -26,13 +26,9 @@ async function drafted() {
 const harsh = expect.objectContaining({ step_id: "s02", level: "error", rule: HARSH_WORD_RULE });
 
 describe("a lesson revision is reviewed before it can be published", () => {
-  it("a drafted lesson from the bank is publishable, and its view says so", async () => {
+  it("a drafted lesson from the bank is publishable", async () => {
     const { effect } = await drafted();
     expect(effect.output).toMatchObject({ publishable: true, findings: [] });
-    expect(effect.view).toEqual({
-      kind: "lesson_draft",
-      data: { publishable: true, findings: [] },
-    });
   });
 
   it("a bare 'źle' in an AI hint is an error finding on its question, and blocks publish", async () => {
@@ -72,7 +68,6 @@ describe("a lesson revision is reviewed before it can be published", () => {
     const blocked = await edit("call_2", "Wrong! Look again.");
     expect(blocked.output).toMatchObject({ ok: false, lesson_ok: false, publishable: false });
     expect(blocked.output["findings"]).toEqual([harsh]);
-    expect(blocked.view?.data).toEqual({ publishable: false, findings: [harsh] });
 
     const kind = await edit("call_3", "Jeszcze nie. Spójrz jeszcze raz na znak.");
     expect(kind.output).toMatchObject({
@@ -81,7 +76,6 @@ describe("a lesson revision is reviewed before it can be published", () => {
       publishable: true,
       findings: [],
     });
-    expect(kind.view?.data).toEqual({ publishable: true, findings: [] });
   });
 
   it("a check() error blocks publish as a harsh word does", async () => {
@@ -116,7 +110,10 @@ describe("a lesson revision is reviewed before it can be published", () => {
       help: {},
     });
     expect(checked.lesson_file).toBeUndefined();
-    expect(checked.view).toBeUndefined();
+    expect(checked.view).toEqual({
+      kind: "lesson_check",
+      data: { publishable: false, findings: [harsh] },
+    });
     expect(checked.output).toMatchObject({ ok: false, findings: [harsh] });
   });
 
