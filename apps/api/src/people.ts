@@ -11,6 +11,9 @@ import {
   type LearnerId,
   type LearnerSnapshot,
   type Me,
+  type Pod,
+  type PodId,
+  PodPatch,
 } from "@jadwigo/contracts";
 import type { Store } from "@jadwigo/store";
 import type { Claims } from "./auth.ts";
@@ -36,6 +39,23 @@ export async function createAccount(store: Store, claims: Claims, raw: unknown):
   if (!parsed.success) throw badRequest(parsed.error.issues);
   const member = await store.createAccount(claims.sub, parsed.data.language);
   return store.getMe(member.pod, member.account);
+}
+
+/**
+ * `PATCH /api/v1/pods/{id}`: the parent gives or withdraws the pod's consent to the AI
+ * (dl-z5ja.112). Only the caller's own pod: another pod's id is 404, as row-level security answers.
+ */
+export async function patchPod(
+  store: Store,
+  claims: Claims,
+  id: PodId,
+  raw: unknown,
+): Promise<Pod> {
+  const { pod } = await authorizeMember(store, claims);
+  if (id !== pod) throw new ApiError(ErrorType.enum.NotFound, "no such pod");
+  const parsed = PodPatch.safeParse(raw);
+  if (!parsed.success) throw badRequest(parsed.error.issues);
+  return store.setAiConsent(pod, parsed.data.ai_consented);
 }
 
 /** `POST /api/v1/learners`: a child, with up to 5 goal stubs, in the caller's pod. */

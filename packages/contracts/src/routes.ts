@@ -7,9 +7,10 @@ import {
   GoalId,
   LearnerId,
   LearnerReportId,
+  PodId,
   RunId,
 } from "./ids.ts";
-import { Language, LearnerReport } from "./records.ts";
+import { Language, LearnerReport, Pod } from "./records.ts";
 import { Conversation } from "./run.ts";
 import {
   AccountCreate,
@@ -41,6 +42,7 @@ import {
   Me,
   ParentAttemptReview,
   PlaygroundExamples,
+  PodPatch,
   ReportCreate,
   ReportPatch,
   RunAccepted,
@@ -251,6 +253,19 @@ export const ROUTES = {
     tag: "parents",
     description:
       "Idempotent per signed-in user: a second call makes nothing and returns the same reply.",
+  },
+  patchPod: {
+    method: "PATCH",
+    path: "/api/v1/pods/{id}",
+    params: z.object({ id: PodId }),
+    body: PodPatch,
+    response: Pod,
+    status: 200,
+    auth: "token",
+    summary: "Gives or withdraws the pod's consent to the AI.",
+    tag: "parents",
+    description:
+      "`ai_consented: true` stamps `ai_consent_at`, and giving it again keeps the first time; `false` sets it to null. While it is null the conversation routes answer 409 `AiConsentMissing`. Another pod's id is 404.",
   },
   createLearner: {
     method: "POST",

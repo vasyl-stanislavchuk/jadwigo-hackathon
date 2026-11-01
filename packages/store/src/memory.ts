@@ -273,7 +273,9 @@ export class InMemoryStore implements Store {
   async putPod(pod: NewPod): Promise<Pod> {
     const stored = this.#pods.get(pod.id);
     if (stored) return stored;
-    const row = frozen(parse(Pod, { ...pod, created_at: this.#at() }, "the pod"));
+    const row = frozen(
+      parse(Pod, { ...pod, created_at: this.#at(), ai_consent_at: null }, "the pod"),
+    );
     this.#pods.set(row.id, row);
     return row;
   }
@@ -936,7 +938,13 @@ export class InMemoryStore implements Store {
     const pod = frozen(
       parse(
         Pod,
-        { id: mint(PodId, ID_PREFIXES.pod), name: "home", language, created_at: at },
+        {
+          id: mint(PodId, ID_PREFIXES.pod),
+          name: "home",
+          language,
+          created_at: at,
+          ai_consent_at: null,
+        },
         "the pod",
       ),
     );
@@ -977,6 +985,18 @@ export class InMemoryStore implements Store {
       .sort(byAge)
       .map((learner) => this.#snapshot(learner));
     return { account: row, member, pod: this.#pod(pod), learners };
+  }
+
+  async getPod(pod: PodId): Promise<Pod> {
+    return this.#pod(pod);
+  }
+
+  async setAiConsent(pod: PodId, consented: boolean): Promise<Pod> {
+    const row = this.#pod(pod);
+    const ai_consent_at = consented ? (row.ai_consent_at ?? this.#at()) : null;
+    const next = frozen({ ...row, ai_consent_at });
+    this.#pods.set(pod, next);
+    return next;
   }
 
   #snapshot(learner: Learner): LearnerSnapshot {

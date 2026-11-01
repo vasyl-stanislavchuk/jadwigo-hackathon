@@ -53,6 +53,9 @@ import {
   type Me,
   type ParentAttemptReview,
   type PlaygroundExamples,
+  type Pod,
+  type PodId,
+  type PodPatch,
   type ReportCreate,
   type ReportPatch,
   ROUTES,
@@ -118,6 +121,8 @@ export interface PlaygroundClient {
 export interface ParentClient {
   getMe(): Promise<Me>;
   createAccount(body: AccountCreate): Promise<Me>;
+  /** Gives (`ai_consented: true`) or withdraws the pod's consent to the AI (dl-z5ja.112). */
+  patchPod(podId: PodId, body: PodPatch): Promise<Pod>;
   createLearner(body: LearnerCreate): Promise<LearnerSnapshot>;
   claimAttempt(attemptId: AttemptId, body: AttemptClaim): Promise<Claim>;
   getLearnerAttempts(learnerId: LearnerId): Promise<LearnerAttempts>;
@@ -258,6 +263,7 @@ export function createClient({
     getReview: (attemptId) => call(ROUTES.getReview, { id: attemptId }, undefined),
     getMe: () => call(ROUTES.getMe, {}, undefined),
     createAccount: (body) => call(ROUTES.createAccount, {}, body),
+    patchPod: (podId, body) => call(ROUTES.patchPod, { id: podId }, body),
     createLearner: (body) => call(ROUTES.createLearner, {}, body),
     claimAttempt: (attemptId, body) => call(ROUTES.claimAttempt, { id: attemptId }, body),
     getLearnerAttempts: (learnerId) =>
