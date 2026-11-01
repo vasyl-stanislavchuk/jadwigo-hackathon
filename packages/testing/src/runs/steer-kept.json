@@ -217,7 +217,16 @@
         "call_id": "call_1",
         "verb": "lesson_draft",
         "state": "done",
-        "error": null
+        "error": null,
+        "input": {
+          "request": "adding within 20",
+          "grade": "1",
+          "names": [],
+          "topic": "addition"
+        },
+        "output": {
+          "draft_id": "drf_demo"
+        }
       },
       {
         "kind": "message",
@@ -259,6 +268,7 @@
         "parts": []
       }
     },
+    "previous_lesson": null,
     "status": "completed",
     "turn_open": false,
     "spent_usd": 0.03,

@@ -17,6 +17,7 @@ import click
 
 from jw import bank_client, items, readiness, refusals
 from jw.errors import JwError, emit
+from jw.languages import LANGUAGES
 
 
 class _EmitErrorsCommand(click.Command):
@@ -148,7 +149,7 @@ def _table(envelope: dict[str, Any], language: str) -> str:
 @click.option("--words-en", default=None, help="English terms for the keyword arm.")
 @click.option("--skill", "skills", multiple=True, help="Skill id (repeatable).")
 @click.option("--mistake", "mistakes", multiple=True, help="Mistake class (repeatable).")
-@click.option("--language", default="pl", show_default=True, type=click.Choice(["pl", "en", "uk"]))
+@click.option("--language", default="pl", show_default=True, type=click.Choice(LANGUAGES))
 @click.option("--grade", required=True, help="The bare grade number, e.g. 3.")
 @click.option("--limit", default=20, show_default=True, type=click.IntRange(min=1))
 @click.option(
@@ -215,7 +216,7 @@ def show(set_id: str, json_mode: bool) -> None:
 @click.option("--json", "json_mode", is_flag=True, help="Print the gap report.")
 @click.option("--words", "words", multiple=True, help="A need in plain words (repeatable).")
 @click.option("--skill", "skills", multiple=True, help="A skill id, one need each (repeatable).")
-@click.option("--language", default="pl", show_default=True, type=click.Choice(["pl", "en", "uk"]))
+@click.option("--language", default="pl", show_default=True, type=click.Choice(LANGUAGES))
 @click.option("--grade", required=True, help="The bare grade number, e.g. 3.")
 @click.option(
     "--arm",
@@ -244,7 +245,7 @@ def gaps(
 
 @group.command(cls=_EmitErrorsCommand)
 @click.argument("item_id")
-@click.option("--language", default="pl", show_default=True, type=click.Choice(["pl", "en", "uk"]))
+@click.option("--language", default="pl", show_default=True, type=click.Choice(LANGUAGES))
 @click.option("--json", "json_mode", is_flag=True, help="Print the item.")
 def item(item_id: str, language: str, json_mode: bool) -> None:
     """Show one converted item's family step, key and help kept (read from JW_KHAN_CONVERTED)."""

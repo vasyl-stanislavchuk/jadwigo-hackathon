@@ -39,11 +39,14 @@ a missing link, a wrong name, or a dev command filed here.
 | --- | --- | --- |
 | [`jadwigo-lesson-compose`](jadwigo-lesson-compose/SKILL.md) | a parent asks for a lesson | `apps/cli/evals/compose/` |
 | [`jadwigo-report-write`](jadwigo-report-write/SKILL.md) | a learner's report needs its narrative for the parent, after `make dream` | `apps/cli/evals/report/` |
+| [`jadwigo-lesson-review`](jadwigo-lesson-review/SKILL.md) | lines a child or parent will read need review, in a separate session from the writer's | `apps/cli/evals/review/` |
 
 A workflow may run in an empty folder, with only the jadwigo MCP tools, so it keeps what the agent
 needs in its own folder and never sends the agent to source, a shell or the repo. The per-language
-parts (`_lang/pl`) wait on `dl-r772.34` and on `jw` assembling them (`dl-5ssh.34.23`); until then
-`jadwigo-lesson-compose` carries its Polish rules itself.
+parts are in `_lang/pl` and `_lang/en` (`dl-r772.34`): a checklist with its sources, style, a
+glossary and reviewed examples. `jadwigo-lesson-review` reads them; `jw` assembling them into
+the other workflows is `dl-5ssh.34.23`, and until then `jadwigo-lesson-compose` carries its Polish
+rules itself.
 
 **Its eval.** `apps/cli/evals/compose/test_compose_workflow.py` runs with `pytest -q`, no model:
 it checks the workflow's text, and puts the words it teaches, and run A's (`dl-e8ov.5.38.5`), on

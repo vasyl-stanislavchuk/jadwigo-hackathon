@@ -16,6 +16,7 @@ from jw import lesson, lesson_edit, lesson_publish
 from jw.commands.question import _EmitErrorsCommand
 from jw.draw import DRAW_RULES
 from jw.errors import JwError
+from jw.languages import LANGUAGES
 
 
 @click.group()
@@ -31,7 +32,7 @@ def group() -> None:
     required=True,
     help="What the lesson is about in a few words (mnożenie): the bank searches these.",
 )
-@click.option("--language", default="pl", show_default=True, type=click.Choice(["pl", "en", "uk"]))
+@click.option("--language", default="pl", show_default=True, type=click.Choice(LANGUAGES))
 @click.option("--kind", default="practice", show_default=True, type=click.Choice(list(DRAW_RULES)))
 @click.option("--count", default=None, type=click.IntRange(min=1), help="Questions to draw.")
 @click.option("--skill", "skills", multiple=True, help="Skill id (repeatable).")

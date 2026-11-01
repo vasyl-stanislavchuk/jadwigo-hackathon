@@ -82,7 +82,7 @@ const INSTRUCTIONS = [
 const PROMPT_CACHE_KEY = `${WORKFLOW}:1`;
 /**
  * Every call goes to the tier that trains on nothing it is sent: a run's prompt carries the
- * parent's words and the learner's names (draft decision dl-2uq1). Each `model_response` records it.
+ * parent's words and the learner's names (decision dl-2uq1, accepted 2026-11-01). Each `model_response` records it.
  */
 const TIER: ModelTier = "private";
 const STEER =
@@ -202,6 +202,18 @@ export function acceptMessage(
 ): Promise<{ run: Run; inbox: RunInbox }> {
   const { store, queue } = deps;
   const { pod, conversation_id, entry } = message;
+  // Each resend answers the stored row, and the engine acts on that row's kind, never the resend's
+  // (dl-z5ja.73): an event_id kept as a message and resent as a cancel is refused, not obeyed.
+  const put = async (run_id: RunId): Promise<RunInbox> => {
+    const inbox = await store.putRunInbox(pod, { ...entry, run_id });
+    if (inbox.kind !== entry.kind) {
+      throw new StoreError(
+        ErrorType.enum.BadRequest,
+        `event ${entry.event_id} is a ${inbox.kind}, not a ${entry.kind}`,
+      );
+    }
+    return inbox;
+  };
   return store.unit(async () => {
     const runs = await store.listRuns(pod, conversation_id);
     const open = runs.findLast((r) => !isEnded(r.status));
@@ -215,11 +227,11 @@ export function acceptMessage(
           `the conversation has no run for a ${entry.kind}`,
         );
       }
-      return { run: last, inbox: await store.putRunInbox(pod, { ...entry, run_id: last.id }) };
+      return { run: last, inbox: await put(last.id) };
     }
 
     if (open) {
-      const inbox = await store.putRunInbox(pod, { ...entry, run_id: open.id });
+      const inbox = await put(open.id);
       if (inbox.run_id !== open.id) {
         // A resend of a message an earlier turn already holds.
         return { run: await store.getRun(pod, inbox.run_id), inbox };
@@ -243,8 +255,7 @@ export function acceptMessage(
 
     const id = await runIdFor(entry.event_id);
     const resent = runs.find((r) => r.id === id);
-    if (resent)
-      return { run: resent, inbox: await store.putRunInbox(pod, { ...entry, run_id: id }) };
+    if (resent) return { run: resent, inbox: await put(id) };
 
     const now = deps.now().getTime();
     const run = await store.createRun(pod, {
@@ -257,7 +268,7 @@ export function acceptMessage(
       idle_deadline_at: at(now + RUN_IDLE_MS),
       max_deadline_at: at(now + RUN_MAX_MS),
     });
-    const inbox = await store.putRunInbox(pod, { ...entry, run_id: run.id });
+    const inbox = await put(run.id);
     if (inbox.run_id !== run.id) {
       // A resend of a mid-turn message whose turn has ended: the new run has nothing to do.
       const w = new Writer(store, pod, run.id, run.attempt, []);
@@ -523,7 +534,14 @@ async function runTool(
       type: "tool_result",
       run_id: scope.run.id,
       event_id: await w.id("tool", call.call_id, "result"),
-      payload: { call_id: call.call_id, verb: call.verb, output: effect?.output ?? null, error },
+      payload: {
+        call_id: call.call_id,
+        verb: call.verb,
+        output: effect?.output ?? null,
+        error,
+        // The verb's result typed for its widget, which the fold draws (dl-z5ja.70).
+        ...(effect?.view === undefined ? {} : { view: effect.view }),
+      },
     },
   ];
   if (effect?.lesson_file) {
@@ -734,6 +752,12 @@ async function namesOf(store: Store, scope: Scope): Promise<string[]> {
   return [...new Set(names)];
 }
 
+/** A step that threw in `drain`: the run and attempt it carried, and its place in the queue. */
+export interface FailedStep extends RunStepInput {
+  msg_id: number;
+  read_ct: number;
+}
+
 /**
  * The consumer's loop, in-process: reads visible steps and runs each until none is visible. A step
  * that throws stays in the queue and comes back after its visibility timeout, as on pgmq; one that
@@ -742,10 +766,13 @@ async function namesOf(store: Store, scope: Scope): Promise<string[]> {
  * A step read a 2nd time is a redelivery: before running it, `drain` claims the run by moving its
  * `attempt` on, so the step that stalled goes stale, and logs the retry as an `error` row naming the
  * attempt that stalled.
+ *
+ * A step that throws is handed to `onError` with what it carried and its `msg_id`, so the host can
+ * log it by run id (dl-z5ja.82); it stays in the queue either way.
  */
 export async function drain(
   deps: EngineDeps,
-  options: { max_steps?: number } = {},
+  options: { max_steps?: number; onError?: (error: unknown, step: FailedStep) => void } = {},
 ): Promise<readonly RunStepOutput[]> {
   const max = options.max_steps ?? 100;
   const outputs: RunStepOutput[] = [];
@@ -756,8 +783,13 @@ export async function drain(
       const input = queued.read_ct > 1 ? await claim(deps, queued) : queued.message;
       outputs.push(await runStep(input, deps));
       await deps.queue.archive(queued.msg_id);
-    } catch {
+    } catch (error) {
       // The step stays in the queue, hidden until its visibility timeout, then delivered again.
+      options.onError?.(error, {
+        ...queued.message,
+        msg_id: queued.msg_id,
+        read_ct: queued.read_ct,
+      });
     }
   }
   return outputs;

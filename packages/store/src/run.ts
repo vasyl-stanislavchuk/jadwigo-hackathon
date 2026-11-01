@@ -65,6 +65,22 @@ export type NewRunInbox = RunInbox extends infer R
     : never
   : never;
 
+/** The windows `messageUsage` counts over, as sent times (ISO, UTC). */
+export interface UsageSince {
+  /** Count a parent's messages put at or after this time. */
+  minuteSince: string;
+  /** Sum the caps of the pod's runs created at or after this time. */
+  daySince: string;
+}
+
+/** What the api's message throttle and daily cap read (dl-z5ja.62). */
+export interface MessageUsage {
+  /** Inbox rows of kind `message` on runs `account` created, put since `minuteSince`. */
+  messages: number;
+  /** The sum of `cap_usd` over the pod's runs created since `daySince`, whoever created them. */
+  cap_usd: number;
+}
+
 export interface RunStore {
   /** The pod behind a run id, for `authorizeRun`. Not scoped: it is how the scope is found. */
   findRunPod(id: RunId): Promise<PodId | undefined>;
@@ -108,4 +124,9 @@ export interface RunStore {
   putRunInbox(pod: PodId, entry: NewRunInbox): Promise<RunInbox>;
   /** Marks the run's pending rows delivered and answers them, oldest first. Each is taken once. */
   takeRunInbox(pod: PodId, run: RunId): Promise<readonly RunInbox[]>;
+  /**
+   * A parent's recent messages and the pod's spend allowance, for the message throttle and the
+   * daily cap (dl-z5ja.72). Scoped to `pod`; `NotFound` for an unknown pod. A bounds is inclusive.
+   */
+  messageUsage(pod: PodId, account: AccountId, since: UsageSince): Promise<MessageUsage>;
 }
