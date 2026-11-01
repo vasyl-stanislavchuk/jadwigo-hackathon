@@ -630,11 +630,34 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
   visibility: hidden;
 }
 
-/* After a miss "Pomóż mi" stands at the band's right, in the band's soft red (owner, 2026-10-24). */
+/* After a miss "Pomóż mi" stands at the band's right, in the band's soft red (owner, 2026-10-24),
+ * and Popraw after it, at the far right where Sprawdź was (handoff "after a miss" 1c §3). */
 [data-bar][data-band="miss"] [data-bulb] {
   order: 3;
   margin-left: auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+/* Popraw: soft paper with ink, never red or green (DS hard rule), and never the blue action on the
+ * red band (handoff 1c §3): the card's paper, a 2px line on its 4px edge, 22px bold, 64 tall, no
+ * icon. 200 wide on a laptop. */
+.kid-step-shell [data-bar][data-band="miss"] [data-fix] {
+  order: 4;
+  margin-left: auto;
   min-width: 12.5rem;
+  height: var(--kid-commit-height);
+  font-size: 1.375rem; /* 22px */
+  font-weight: var(--font-weight-bold);
+  background-color: var(--popover);
+  color: var(--foreground);
+  border: 0.125rem solid var(--border);
+  box-shadow: 0 var(--kid-press, 0px) 0 var(--border);
+}
+
+/* With "Pomóż mi" drawn, Popraw follows it and the bulb takes the free room before them. */
+[data-bar][data-band="miss"] [data-bulb] ~ [data-fix] {
+  margin-left: 0;
 }
 
 .kid-step-shell [data-bar][data-band="miss"] [data-bulb] {
@@ -712,6 +735,13 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
   order: 0;
   margin-left: 0;
   min-width: 0;
+}
+
+/* On a phone Popraw is as wide as its word, padding 0 26, at the band's right (handoff 1c §2). */
+.kid-step-shell[data-frame="phone"] [data-bar][data-band="miss"] [data-fix] {
+  min-width: 0;
+  padding-inline: 1.625rem;
+  margin-left: auto;
 }
 
 /* A phone's band draws no disc, which gives its words about 45px (Choose addendum 1.3). */

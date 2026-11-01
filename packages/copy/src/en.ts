@@ -261,6 +261,7 @@ export const en: CopyTable = {
   // reviewed lines until a parent reads these (dl-uukj.29.28)
   ds_right_short: { text: "Well done!", reviewed: false },
   ds_miss_short: { text: "Not yet.", reviewed: false },
+  ds_fix: { text: "Fix it", reviewed: false },
   ds_wait_hint: { text: "Answer first, then check.", reviewed: false },
   ds_fix_then_check: { text: "Fix the marked place, then check.", reviewed: false },
   ds_solution_band: { text: "This is what the solution looks like.", reviewed: false },
