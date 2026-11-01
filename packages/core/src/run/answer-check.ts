@@ -36,27 +36,29 @@ export type AnswerMiss =
 
 /**
  * A word stands alone: a letter, digit or underscore on either side makes it another word. Each
- * code matches as written (`on_its_way`), with spaces or hyphens for its underscores, and as the
+ * code matches as written (`on_its_way`), with any run of whitespace (a newline, a no-break space)
+ * or hyphens for its underscores, and as the
  * parent reads it in `pl` and `en` (`packages/copy`, the `parent_goal_status_*` keys). `good`
  * matches only as "going well" and "idzie dobrze": the bare word is everyday English.
  */
 const STATUS: readonly [StatusWord, RegExp][] = [
-  ["needs_attention", words(String.raw`needs?[ _-]attention|potrzebuj\p{L}*\s+uwagi`)],
-  ["on_its_way", words(String.raw`on[ _-]its[ _-]way|w\s+drodze`)],
+  ["needs_attention", words(String.raw`needs?[\s_-]+attention|potrzebuj\p{L}*\s+uwagi`)],
+  ["on_its_way", words(String.raw`on[\s_-]+its[\s_-]+way|w\s+drodze`)],
   ["good", words(String.raw`going\s+well|idzie\s+dobrze`)],
-  ["review_due", words("review[ _-]due")],
-  ["prerequisites_met", words("prerequisites[ _-]met")],
-  ["second_day_owed", words("second[ _-]day[ _-]owed")],
-  ["school_tag", words("school[ _-]tag")],
+  ["review_due", words(String.raw`review[\s_-]+due`)],
+  ["prerequisites_met", words(String.raw`prerequisites[\s_-]+met`)],
+  ["second_day_owed", words(String.raw`second[\s_-]+day[\s_-]+owed`)],
+  ["school_tag", words(String.raw`school[\s_-]+tag`)],
 ];
 
 /**
  * The level names (`MasteryLevel`) and their Polish forms, any case. A mirror of `LEVEL` in
  * `apps/api/src/narrative.ts` and `apps/cli/evals/report/narrative_check.py`: a widened stem goes
- * into all 3 (`dl-e8ov.5.64`).
+ * into all 3 (`dl-e8ov.5.64`). Here `not started` takes any whitespace run, as the status words do;
+ * the other 2 still take one character (noted on `dl-e8ov.5.64`).
  */
 const LEVEL = words(
-  String.raw`mastered|proficient|proficiency|familiar|attempted|not[ _-]started|opanow\p{L}*|biegł\p{L}*|biegl\p{L}*|zaznajom\p{L}*|nie\s*rozpocz\p{L}*|nierozpocz\p{L}*|podję\p{L}*\s+prób\p{L}*|podjet\p{L}*\s+prob\p{L}*|próbowan\p{L}*`,
+  String.raw`mastered|proficient|proficiency|familiar|attempted|not[\s_-]+started|opanow\p{L}*|biegł\p{L}*|biegl\p{L}*|zaznajom\p{L}*|nie\s*rozpocz\p{L}*|nierozpocz\p{L}*|podję\p{L}*\s+prób\p{L}*|podjet\p{L}*\s+prob\p{L}*|próbowan\p{L}*`,
 );
 
 /** A number: digits, with a decimal point or a Polish decimal comma. */

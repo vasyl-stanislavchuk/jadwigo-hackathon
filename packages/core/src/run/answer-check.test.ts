@@ -73,6 +73,22 @@ describe("checkAnswer (dl-z5ja.26)", () => {
     ]);
   });
 
+  it("refuses a status word whatever whitespace splits it (steward, PR #454)", () => {
+    const gave = [result(2, { goal: { status: "on_its_way" } })];
+    for (const gap of ["  ", "\n", "\u00a0", " - "]) {
+      expect(checkAnswer(`This goal needs${gap}attention.`, gave)).toEqual([
+        { kind: "status", said: `needs${gap}attention`, code: "needs_attention" },
+      ]);
+      expect(checkAnswer(`It is review${gap}due.`, gave)).toEqual([
+        { kind: "status", said: `review${gap}due`, code: "review_due" },
+      ]);
+    }
+    expect(checkAnswer("The goal is on\nits  way.", gave)).toEqual([]);
+    expect(checkAnswer("It is not\u00a0started.", gave)).toEqual([
+      { kind: "level", said: "not\u00a0started" },
+    ]);
+  });
+
   it("passes a status word a tool result gave, and the everyday word good", () => {
     expect(checkAnswer("Good news: the goal is on its way. Cel jest w drodze.", [DRAFT])).toEqual(
       [],
