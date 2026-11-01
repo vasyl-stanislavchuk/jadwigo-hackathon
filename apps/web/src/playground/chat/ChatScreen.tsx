@@ -137,7 +137,11 @@ function ChatView({
           changed={changed}
           onUndo={onUndo}
           undoRefused={undoSent !== null && outcomeOf(undoSent) === "refused"}
-          undoPending={undoSent !== null && outcomeOf(undoSent) === "pending"}
+          undoPending={
+            undoSent !== null &&
+            !state.failedSteers.includes(undoSent) &&
+            outcomeOf(undoSent) === "pending"
+          }
           onEdit={onEdit}
           outcomeOf={outcomeOf}
         />

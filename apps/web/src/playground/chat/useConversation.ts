@@ -232,7 +232,10 @@ export function useConversation(
           dispatch({ type: "send_failed", failed: false });
           return follow(run);
         })
-        .catch(() => dispatch({ type: "send_failed", failed: true }));
+        .catch(() => {
+          dispatch({ type: "send_failed", failed: true });
+          dispatch({ type: "steer_failed", event_id });
+        });
       return event_id;
     },
     [transport, conversation, follow, send],

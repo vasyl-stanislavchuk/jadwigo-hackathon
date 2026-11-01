@@ -233,6 +233,31 @@ describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
     });
   }
 
+  it("Cofnij waits for its patch, and stops waiting when the send fails (#546's review)", async () => {
+    const events = eventsOf("happy-turn");
+    const t = fakeTransport(events);
+    let refuse = true;
+    const send = t.transport.send.bind(t.transport);
+    const transport: EngineTransport = {
+      ...t.transport,
+      send: async (body) => {
+        if (refuse && body.kind === "steer") throw new Error("offline");
+        return send(body);
+      },
+    };
+    render(<ChatScreen transport={transport} />);
+    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    await act(async () => t.push([thirdRevision(events)]));
+    const undo = () => document.querySelector("[data-undo]") as HTMLButtonElement;
+    await act(async () => fireEvent.click(undo()));
+    // The send never reached the server: no log will hold the steer, so Cofnij is pressable again.
+    expect(undo().disabled).toBe(false);
+    refuse = false;
+    await act(async () => fireEvent.click(undo()));
+    // This one went: Cofnij waits for its revision.
+    expect(undo().disabled).toBe(true);
+  });
+
   it("a revision that lands live marks only the step it changed, and a reload marks it again", async () => {
     const events = eventsOf("happy-turn");
     const t = fakeTransport(events);
