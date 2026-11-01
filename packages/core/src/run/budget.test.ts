@@ -29,6 +29,27 @@ describe("budgetGuard, shares without float error (dl-z5ja.38)", () => {
     expect(budgetGuard(0, Number.NaN)).toBe("stop");
   });
 
+  it("reads a spend below 0 as stop, like an unknown one (dl-z5ja.74)", () => {
+    expect(budgetGuard(-1, 1)).toBe("stop");
+    expect(budgetGuard(-0.01, 100)).toBe("stop");
+    expect(budgetGuard(-Number.MIN_VALUE, 1)).toBe("stop");
+    fc.assert(
+      fc.property(
+        // -0 is a spend of 0, not below it: maxExcluded still yields it, so it is filtered out.
+        fc.double({ max: 0, maxExcluded: true, noNaN: true }).filter((spent) => spent < 0),
+        fc.double({ noNaN: false }),
+        (spent, cap) => {
+          expect(budgetGuard(spent, cap)).toBe("stop");
+        },
+      ),
+    );
+  });
+
+  it("still reads a spend of 0 against a cap above 0 as none", () => {
+    expect(budgetGuard(0, 1)).toBe("none");
+    expect(budgetGuard(-0, 1)).toBe("none");
+  });
+
   it("reads a spend of exactly a share of any cap as at least that share's level", () => {
     fc.assert(
       fc.property(

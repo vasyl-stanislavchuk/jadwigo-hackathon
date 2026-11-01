@@ -18,7 +18,7 @@ import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
 import { type FormEvent, type ReactElement, useEffect, useRef, useState } from "react";
 import { Button } from "../tool/button.tsx";
-import { isOpen, type Turn } from "./conversation.ts";
+import { isOpen, type SendLimit, type Turn } from "./conversation.ts";
 import { toolResult } from "./widgets/Widgets.tsx";
 
 const TOOL_KEY: Record<VerbName, CopyKey> = {
@@ -267,6 +267,12 @@ function useOnline(): boolean {
 const scrollBehavior = (): ScrollBehavior =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
 
+/** Each message limit's line: the minute's says wait a moment, the day's says come back tomorrow. */
+const LIMIT_LINE: Readonly<Record<SendLimit, CopyKey>> = {
+  minute: "chat_limit_busy",
+  day: "chat_limit_daily",
+};
+
 export interface ChatPaneProps {
   language: Language;
   turns: readonly Turn[];
@@ -274,8 +280,8 @@ export interface ChatPaneProps {
   restoring: boolean;
   stopping: boolean;
   sendFailed: boolean;
-  /** The last send was refused by the message limit: one line, no retry. */
-  sendLimited?: boolean;
+  /** Which message limit refused the last send: its own line, no retry (dl-z5ja.100). */
+  sendLimit?: SendLimit | null;
   onSend(text: string): void;
   onStop(): void;
 }
@@ -287,7 +293,7 @@ export function ChatPane({
   restoring,
   stopping,
   sendFailed,
-  sendLimited = false,
+  sendLimit = null,
   onSend,
   onStop,
 }: ChatPaneProps): ReactElement {
@@ -387,12 +393,12 @@ export function ChatPane({
           {say("chat_offline")}
         </p>
       )}
-      {sendFailed && sendLimited && (
-        <p role="alert" data-row="send-limited" className="text-sm">
-          {say("chat_limit_message")}
+      {sendFailed && sendLimit !== null && (
+        <p role="alert" data-row="send-limited" data-limit={sendLimit} className="text-sm">
+          {say(LIMIT_LINE[sendLimit])}
         </p>
       )}
-      {sendFailed && !sendLimited && (
+      {sendFailed && sendLimit === null && (
         <div role="alert" data-row="send-failed" className="flex items-center gap-2 text-sm">
           <p>{say("chat_send_again")}</p>
           {lastSent !== null && (

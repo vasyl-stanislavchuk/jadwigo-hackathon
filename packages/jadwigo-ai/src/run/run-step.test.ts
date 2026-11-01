@@ -1,9 +1,18 @@
-import { type AccountId, EventId, ID_PREFIXES, idOf, type PodId, Uuid } from "@jadwigo/contracts";
+import {
+  type AccountId,
+  EventId,
+  ID_PREFIXES,
+  idOf,
+  LessonVersionId,
+  type PodId,
+  Uuid,
+} from "@jadwigo/contracts";
 import {
   BUDGET_STEER_SHARE,
   BUDGET_STOP_SHARE,
   type Conversation,
   ConversationId,
+  type ModelTier,
   type NewRunEvent,
   RUN_ERROR_TYPE,
   RUN_IDLE_MS,
@@ -26,7 +35,12 @@ import {
 import { FIXED_NOW } from "@jadwigo/testing";
 import { describe, expect, it, vi } from "vitest";
 import { FENCE_RULE, fence } from "../fence/index.ts";
-import type { MuseClient, MuseRequest, MuseResponse } from "../muse/client.ts";
+import {
+  type MuseClient,
+  MuseFailed,
+  type MuseRequest,
+  type MuseResponse,
+} from "../muse/client.ts";
 import { ScriptedMuse } from "../muse/scripted.ts";
 import { InMemoryRunQueue } from "../queue/memory.ts";
 import { STEP_VISIBILITY_S } from "../queue/types.ts";
@@ -38,6 +52,10 @@ import {
   VerbError,
   type Verbs,
 } from "../verbs/types.ts";
+
+/** No tokens: what a made-up failed call used. */
+const MADE_UP_USAGE = { input_tokens: 0, cached_tokens: 0, output_tokens: 0 };
+
 import {
   acceptMessage,
   authorizeRun,
@@ -544,6 +562,47 @@ describe("runStep and drain", () => {
     ]);
     const recorded = (await t.log(run)).find((e) => e.type === "model_response");
     expect(recorded?.payload).toMatchObject({ tier: "contributor" });
+  });
+
+  it("warns of a downgrade when the downgraded call fails with no answer (dl-z5ja.103)", async () => {
+    const t = await setup([]);
+    const warnings: EngineWarning[] = [];
+    t.deps.onWarning = (warning) => warnings.push(warning);
+    t.deps.tier = "private";
+    t.deps.muse = {
+      respond: async () => {
+        throw new MuseFailed("the made-up stream broke", 0, MADE_UP_USAGE, "contributor");
+      },
+    };
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+    expect(warnings[0]).toEqual({
+      kind: "tier_downgraded",
+      run_id: run,
+      call_no: 1,
+      requested: "private",
+      answered: "contributor",
+    });
+    expect((await t.log(run)).some((e) => e.type === "model_response")).toBe(false);
+  });
+
+  it("says nothing when a failed call names no tier, or the tier it was asked for", async () => {
+    const t = await setup([]);
+    const warnings: EngineWarning[] = [];
+    t.deps.onWarning = (warning) => warnings.push(warning);
+    t.deps.tier = "private";
+    let tier: ModelTier | null = null;
+    t.deps.muse = {
+      respond: async () => {
+        throw new MuseFailed("the made-up stream broke", 0, MADE_UP_USAGE, tier);
+      },
+    };
+    await t.say("Halves.");
+    await drain(t.deps);
+    tier = "private";
+    await t.say("Quarters.");
+    await drain(t.deps);
+    expect(warnings).toEqual([]);
   });
 
   it("carries an approval's feedback and answers from the inbox into approval_resolved", async () => {
@@ -1243,6 +1302,43 @@ describe("the answer check: one correction per turn", () => {
     });
   });
 
+  it("re-checks a refused answer only against the log up to its call (dl-z5ja.102)", async () => {
+    let t: Awaited<ReturnType<typeof setup>>;
+    t = await setup([{ text: "All 9 done." }, { text: "Ready." }]);
+    const scripted = t.deps.muse;
+    t.deps.muse = {
+      respond: async (request) => {
+        // The parent's words arrive after the model answered: they name the 9 it invented.
+        if (request.call_no === 1) await t.say("Make it 9 questions.");
+        return scripted.respond(request);
+      },
+    };
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+
+    expect(t.muse.calls).toHaveLength(2);
+    expect(t.muse.calls[1]?.instructions).toContain("was not sent to the parent");
+    expect(JSON.stringify(t.muse.calls[1]?.input)).toContain("Make it 9 questions.");
+    const agent = (await t.log(run)).flatMap((e) =>
+      e.type === "message" && e.payload.from === "agent" ? [e.payload.text] : [],
+    );
+    expect(agent).toEqual(["Ready."]);
+  });
+
+  it("counts the parent's words from an earlier turn as given (Lead decision 38)", async () => {
+    const t = await setup([{ text: "Sure." }, { text: "All 9 done." }]);
+    await t.say("Make it 9 questions.");
+    await drain(t.deps);
+    const run = await t.say("Is it done?");
+    await drain(t.deps);
+
+    expect(t.muse.calls).toHaveLength(2);
+    const agent = (await t.log(run)).flatMap((e) =>
+      e.type === "message" && e.payload.from === "agent" ? [e.payload.text] : [],
+    );
+    expect(agent).toEqual(["All 9 done."]);
+  });
+
   it("writes the error before the budget stops a refused answer's correction", async () => {
     const t = await setup([{ text: "All 9 done.", cost_usd: 0.095 }], fakeVerbs(), 0.1);
     const run = await t.say("Halves.");
@@ -1482,5 +1578,88 @@ describe("the answer check: one correction per turn", () => {
       e.type === "message" && e.payload.from === "agent" ? [e.payload.text] : [],
     );
     expect(agent).toEqual(["Harder, still grade 2."]);
+  });
+});
+
+describe("the message's page (dl-z5ja.107)", () => {
+  const LESSON = {
+    title: "Made-up halves",
+    language: "en" as const,
+    category: "child" as const,
+    subject: "math" as const,
+    grade: 1,
+    skill_ids: [],
+  };
+
+  it("names a lesson the pod has published, and refuses one it has only drafted", async () => {
+    const t = await setup([{ text: "About that lesson." }]);
+    const published = await t.store.putLesson(t.member.pod, LESSON);
+    const drafted = await t.store.putLesson(t.member.pod, LESSON);
+    // A published version, as the store answers one: publishing needs lesson questions, and the
+    // store's own contract covers that a draft has no latest version.
+    const latest = t.store.getLatestLessonVersion.bind(t.store);
+    t.store.getLatestLessonVersion = async (pod, lesson) =>
+      lesson === published.id
+        ? {
+            id: LessonVersionId.parse(idOf(ID_PREFIXES.lesson_version, crypto.randomUUID())),
+            pod_id: pod,
+            lesson_id: lesson,
+            version: 1,
+            revises: null,
+            published_at: FIXED_NOW.toISOString(),
+          }
+        : latest(pod, lesson);
+
+    await expect(
+      t.send({
+        event_id: newEventId(),
+        kind: "message",
+        payload: { text: "This one?", context: { lesson_id: drafted.id } },
+      }),
+    ).rejects.toMatchObject({ type: "NotFound" });
+    await t.send({
+      event_id: newEventId(),
+      kind: "message",
+      payload: { text: "This one?", context: { lesson_id: published.id } },
+    });
+    await drain(t.deps);
+    expect(t.muse.calls).toHaveLength(1);
+    expect(t.muse.calls[0]?.instructions).toContain(`screen of lesson ${published.id}`);
+  });
+
+  it("states the page of the turn's last parent message only", async () => {
+    const t = await setup([{ text: "Sure." }]);
+    const { learner } = await t.store.addLearner(t.member.pod, { first_name: "Mole" });
+    let first = true;
+    const scripted = t.deps.muse;
+    t.deps.muse = {
+      respond: async (request) => {
+        if (first) {
+          first = false;
+          await t.say("Back on the chat page now.");
+        }
+        return scripted.respond(request);
+      },
+    };
+    await t.send({
+      event_id: newEventId(),
+      kind: "message",
+      payload: { text: "Hi.", context: { learner_id: learner.id } },
+    });
+    await drain(t.deps);
+    expect(t.muse.calls[0]?.instructions).toContain("learner page of Mole");
+    expect(t.muse.calls.at(-1)?.instructions).not.toContain("writing from");
+  });
+
+  it("neutralises the learner's name, which the parent wrote", async () => {
+    const t = await setup([{ text: "Sure." }]);
+    const { learner } = await t.store.addLearner(t.member.pod, { first_name: "Mo<b>le" });
+    await t.send({
+      event_id: newEventId(),
+      kind: "message",
+      payload: { text: "Hi.", context: { learner_id: learner.id } },
+    });
+    await drain(t.deps);
+    expect(t.muse.calls[0]?.instructions).toContain("learner page of Mo‹b›le");
   });
 });
