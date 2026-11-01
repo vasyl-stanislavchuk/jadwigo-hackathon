@@ -402,6 +402,9 @@ export const en: CopyTable = {
   },
   parent_copy_link: { text: "Copy the link", reviewed: false },
   parent_link_copied: { text: "Copied. Paste it into your browser.", reviewed: false },
+  parent_language: { text: "Language", reviewed: false },
+  parent_language_pl: { text: "Polski", reviewed: false },
+  parent_language_en: { text: "English", reviewed: false },
   // end parent login
   // the home page's featured lessons (dl-5ssh.3.6)
   home_title: { text: "Pick a lesson", reviewed: false },

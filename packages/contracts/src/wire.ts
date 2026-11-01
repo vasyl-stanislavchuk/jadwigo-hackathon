@@ -393,7 +393,10 @@ export type Me = z.infer<typeof Me>;
  * makes nothing and returns the same `Me`.
  */
 export const AccountCreate = z.strictObject({
-  /** The pod's language: the page's. */
+  /**
+   * The pod's language, which reports and mail are written in: the parent's choice at sign-up, Polish
+   * unless they pick English (owner, 2026-11-01).
+   */
   language: Language,
 });
 export type AccountCreate = z.infer<typeof AccountCreate>;

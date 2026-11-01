@@ -23,7 +23,6 @@ const AT = "2026-09-01T08:00:00.000Z";
 
 /** What `GET /api/v1/playground-examples/{language}` answers once the seed has run. */
 export function examplesReply(language: Language): PlaygroundExamples {
-  if (language === "uk") return { examples: [], questions: [] };
   const { questions, examples } = compileExamples(PLAYGROUND_EXAMPLES, language);
   return PlaygroundExamples.parse({
     examples: examples.map((e) => ({

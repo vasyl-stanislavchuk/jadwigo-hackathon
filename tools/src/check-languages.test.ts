@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { checkLanguages, languages, neededParts } from "./check-languages.ts";
+import { checkLanguages, checkMirrors, languages, neededParts } from "./check-languages.ts";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const source = readFileSync(`${ROOT}packages/config/src/languages.ts`, "utf8");
@@ -45,7 +45,7 @@ describe("check-languages", () => {
     const live = source.replace('status: "studio"', 'status: "live"');
     expect(checkLanguages(live, exists)).toEqual([]);
     const enSite = live.replace(
-      'site: { pending: "dl-w0b4.7" }',
+      'site: { pending: "dl-w0b4.81" }',
       'site: "apps/site/src/content/en"',
     );
     const noEnSite = (path: string) => path !== "apps/site/src/content/en" && exists(path);
@@ -65,6 +65,24 @@ describe("check-languages", () => {
     );
     const odd = source.replace('status: "studio"', 'status: "beta"');
     expect(checkLanguages(odd, exists)).toContain('en: unknown status "beta"');
+  });
+
+  it("passes when the contracts enum and the copy type list the same codes as the list", () => {
+    const read = (path: string) => readFileSync(`${ROOT}${path}`, "utf8");
+    expect(checkMirrors(source, read)).toEqual([]);
+  });
+
+  it("fails when a mirror lists a code the list does not, or loses its line", () => {
+    const read = (path: string) => {
+      const text = readFileSync(`${ROOT}${path}`, "utf8");
+      return path === "packages/contracts/src/records.ts"
+        ? text.replace('z.enum(["pl", "en"])', 'z.enum(["pl", "en", "de"])')
+        : text.replace('export type Language = "pl" | "en";', "");
+    };
+    expect(checkMirrors(source, read)).toEqual([
+      "packages/contracts/src/records.ts lists pl, en, de; packages/config/src/languages.ts lists pl, en",
+      "packages/copy/src/types.ts: its language list is not found",
+    ]);
   });
 
   it("fails when it can read no language", () => {

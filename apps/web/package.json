@@ -17,7 +17,7 @@
   "//": {
     "@jadwigo/testing": "the design-system check its tokens.test.ts runs (checkTokens), tests only",
     "@jadwigo/api-client": "the typed /api/v1 calls the lesson player makes (src/play/) and the playground's examples read (src/playground/examples/load.ts)",
-    "@jadwigo/config": "hosts.prod, the host this app serves (src/index.ts)",
+    "@jadwigo/config": "hosts.prod, the host this app serves (src/index.ts), and LANGUAGE_CODES, the languages ?lang names (src/nav/location.ts)",
     "@jadwigo/contracts": "the question shapes the playground's examples are typed and parsed with",
     "@jadwigo/copy": "every string the app shows, in pl and en",
     "@jadwigo/core": "the conformance page grades each item's key with judge(q, solutionOf(q)), dl-a38n.32.2",

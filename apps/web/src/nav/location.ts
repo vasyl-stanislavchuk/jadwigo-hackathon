@@ -5,11 +5,12 @@
  * every useLocation() through one event.
  */
 
+import { LANGUAGE_CODES } from "@jadwigo/config";
 import type { Language } from "@jadwigo/copy";
 import { useSyncExternalStore } from "react";
 
-/** The languages the app speaks, as ?lang names them (packages/copy's Language). */
-export const LANGUAGES: readonly Language[] = ["pl", "en"];
+/** The languages the app speaks, as ?lang names them: packages/config's one list (dl-5ssh.34.69). */
+export const LANGUAGES: readonly Language[] = LANGUAGE_CODES;
 
 const CHANGE = "playground:navigate";
 

@@ -423,6 +423,9 @@ export const pl: CopyTable = {
   },
   parent_copy_link: { text: "Skopiuj link", reviewed: false },
   parent_link_copied: { text: "Skopiowano. Wklej go w przeglądarce.", reviewed: false },
+  parent_language: { text: "Język", reviewed: false },
+  parent_language_pl: { text: "Polski", reviewed: false },
+  parent_language_en: { text: "English", reviewed: false },
   // end parent login
   // the home page's featured lessons (dl-5ssh.3.6)
   home_title: { text: "Wybierz lekcję", reviewed: false },
