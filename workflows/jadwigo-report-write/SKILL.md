@@ -1,6 +1,6 @@
 ---
 name: jadwigo-report-write
-description: "Use when a learner's report needs its narrative for the parent: after `make dream LEARNER=<id>` printed a report whose narrative is null. Reads the report's digest (code's counts, skills, mistakes, brief and proposals), writes the parent's narrative in short, kind Polish that cites the digest and restates none of its numbers wrongly, saves it with `make dream-save`, and shows the parent what was written. Never recomputes a level, never changes a goal."
+description: "Use when a learner's report needs its narrative for the parent: after `make dream LEARNER=<id>` printed a report whose narrative is null. Reads the report's digest (code's counts, skills, mistakes, brief and proposals), writes the parent's narrative in short, kind words in the parent's language (Polish or English) that cites the digest and restates none of its numbers wrongly, saves it with `make dream-save`, and shows the parent what was written. Never recomputes a level, never changes a goal."
 ---
 
 # Write a report's narrative from its digest
@@ -85,7 +85,10 @@ report yet: tell the parent so and stop, without saving.
 
 ## 2. Write the narrative
 
-Write one JSON object, the report's narrative, in Polish (`"language": "pl"`):
+Write one JSON object, the report's narrative, in the parent's language, the pod's: `"language": "pl"`
+for a Polish pod, `"language": "en"` for an English one. The report names no language yet
+(`dl-e8ov.5.78`), so until it does the narrative is Polish. For English, write as the English parts the
+session was started with say:
 
 - `headline`: one sentence, at most 140 characters: the one thing the parent should know.
 - `direction_now`: at most 500 characters: where the learner is heading now, from the counts,
@@ -109,6 +112,9 @@ the skill is in plain words, as its code says it.
 
 ### Polish for a parent
 
+For English, the English parts hold the same rules written for English.
+
+
 - Short sentences, one idea each. Concrete: what the child did and what comes next, with the
   digest's own numbers.
 - Kind, never alarming. "Wymaga uwagi", not "problem" or "słabo". Praise only what the digest shows.
@@ -131,6 +137,6 @@ nothing new to try, stop and show the parent the refusal as it was printed.
 
 ## 4. Show the parent what was written
 
-Show the parent the saved narrative as they will read it, in Polish: the headline, the direction,
+Show the parent the saved narrative as they will read it, in the narrative's language: the headline, the direction,
 each answer, each proposal with its claim and why, and each ask. Then one line: a proposal
 changes nothing until the parent accepts it on the learner page. Stop there.

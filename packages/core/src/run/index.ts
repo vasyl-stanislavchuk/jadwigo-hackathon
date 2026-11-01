@@ -27,7 +27,8 @@ export type ToolState = "pending" | "running" | "failed" | "done" | "rejected";
 
 /**
  * One row of the chat pane, in `seq` order of the event that opened it. The optional fields
- * (`citations`, `view`, `choose`, `feedback`, `answers`) are present only when the log carries them.
+ * (`citations`, `steer`, `view`, `choose`, `feedback`, `answers`) are present only when the log
+ * carries them.
  */
 export type ChatItem =
   | {
@@ -37,6 +38,11 @@ export type ChatItem =
       text: string;
       attachments: readonly Attachment[];
       citations?: readonly Citation[];
+      /**
+       * Present only on a parent's steer (dl-z5ja.51): words sent while the turn ran, or an edit
+       * in the lesson pane naming the questions it changed.
+       */
+      steer?: SteerMark;
     }
   | {
       kind: "tool";
@@ -47,6 +53,13 @@ export type ChatItem =
       error: RunError | null;
       /** The result typed for its widget, from the call's `tool_result`. */
       view?: ToolView;
+      /** What the model called the verb with, from the call's `tool_call`, once the log has it. */
+      input?: Record<string, unknown>;
+      /**
+       * What the verb answered, from the call's `tool_result`, once the log has it: null for a
+       * failed call. The chat pane's plain fallback card shows both (dl-z5ja.68).
+       */
+      output?: Record<string, unknown> | null;
     }
   | { kind: "steer"; seq: number; level: "steer" | "stop"; spent_usd: number; cap_usd: number }
   | {
@@ -63,13 +76,28 @@ export type ChatItem =
     }
   | { kind: "error"; seq: number; error: RunError; attempt: number; retryable: boolean };
 
+type SteerPayload = Extract<RunEvent, { type: "steer" }>["payload"];
+/** Where a steer came from, and the questions a lesson edit names. */
+type SteerMark = Pick<SteerPayload, "source" | "question_ids">;
+
 export type BudgetLevel = "none" | "steer" | "stop";
+
+/** One `lesson_revision`'s lesson file, opaque, and its number. */
+export interface LessonAt {
+  revision: number;
+  lesson_file: Record<string, unknown>;
+}
 
 /** What the 2 panes draw from one run's log. */
 export interface RunView {
   chat: ChatItem[];
   /** The highest `lesson_revision`, the lesson file opaque, or null before the first. */
-  lesson: { revision: number; lesson_file: Record<string, unknown> } | null;
+  lesson: LessonAt | null;
+  /**
+   * The revision just below `lesson`'s, for the page's one-step undo, or null while the log holds
+   * fewer than 2 revisions (dl-z5ja.68).
+   */
+  previous_lesson: LessonAt | null;
   /** The last `status` event's, or null before one. A late event never moves it off an ended turn. */
   status: RunStatus | null;
   /** False once `turn_complete` is in the log; nothing after it reopens the turn. */
@@ -123,9 +151,12 @@ export function foldRun(events: readonly RunEvent[]): RunView {
   const chat: ChatItem[] = [];
   const tools = new Map<string, ToolItem>();
   const approvals = new Map<string, ApprovalItem>();
+  /** Each revision's first lesson file, by revision. */
+  const revisions = new Map<number, LessonAt>();
   const view: RunView = {
     chat,
     lesson: null,
+    previous_lesson: null,
     status: null,
     turn_open: true,
     spent_usd: 0,
@@ -160,9 +191,22 @@ export function foldRun(events: readonly RunEvent[]): RunView {
         });
         break;
       }
+      case "steer": {
+        const { text, source, question_ids } = e.payload;
+        chat.push({
+          kind: "message",
+          seq: e.seq,
+          from: "parent",
+          text,
+          attachments: [],
+          steer: { source, ...(question_ids ? { question_ids } : {}) },
+        });
+        break;
+      }
       case "tool_call": {
         const line = toolLine(e.payload.call_id, e.payload.verb, e.seq, "running");
         if (line.state === "pending") line.state = "running";
+        line.input ??= e.payload.input;
         break;
       }
       case "tool_result": {
@@ -170,6 +214,7 @@ export function foldRun(events: readonly RunEvent[]): RunView {
         line.error = e.payload.error;
         line.state = e.payload.error ? "failed" : "done";
         if (e.payload.view) line.view = e.payload.view;
+        line.output = e.payload.output;
         break;
       }
       case "approval_request": {
@@ -219,11 +264,11 @@ export function foldRun(events: readonly RunEvent[]): RunView {
         if (view.turn_open) view.status = e.payload.status;
         break;
       case "lesson_revision":
-        if (view.lesson === null || e.payload.revision > view.lesson.revision) {
-          view.lesson = {
+        if (!revisions.has(e.payload.revision)) {
+          revisions.set(e.payload.revision, {
             revision: e.payload.revision,
             lesson_file: e.payload.lesson_file as Record<string, unknown>,
-          };
+          });
         }
         break;
       case "turn_complete":
@@ -233,6 +278,9 @@ export function foldRun(events: readonly RunEvent[]): RunView {
         break;
     }
   }
+  const [highest, previous] = [...revisions.keys()].sort((a, b) => b - a);
+  view.lesson = highest === undefined ? null : (revisions.get(highest) ?? null);
+  view.previous_lesson = previous === undefined ? null : (revisions.get(previous) ?? null);
   return view;
 }
 
@@ -250,6 +298,20 @@ export function mergeLive(
 }
 
 /**
+ * How far below a share's threshold a spend may sit and still count as reaching it, relative to
+ * the threshold. `0.1 * 0.9` is `0.09000000000000001`, so a plain `>=` reads a spend of exactly
+ * 90% of the cap as below it (`dl-z5ja.38`). A billionth of the threshold is far below a cent on
+ * any cap and far above a float's rounding error. A fixed threshold per cap keeps the guard
+ * monotone in the spend.
+ */
+const SHARE_TOLERANCE = 1e-9;
+
+/** Whether `spent_usd` has reached `share` of `cap_usd`, float error forgiven. */
+function reached(spent_usd: number, cap_usd: number, share: number): boolean {
+  return spent_usd >= cap_usd * share * (1 - SHARE_TOLERANCE);
+}
+
+/**
  * Before every Muse call: `steer` from half the cap, `stop` from 90% (`BUDGET_STEER_SHARE`,
  * `BUDGET_STOP_SHARE`). A spend that can't be read is `stop`: an unknown balance is no licence to
  * spend (`ff23c1ce7af`). So is a cap that can't be read or leaves nothing to spend.
@@ -257,8 +319,8 @@ export function mergeLive(
 export function budgetGuard(spent_usd: number | null | undefined, cap_usd: number): BudgetLevel {
   if (spent_usd == null || !Number.isFinite(spent_usd)) return "stop";
   if (!Number.isFinite(cap_usd) || cap_usd <= 0) return "stop";
-  if (spent_usd >= cap_usd * BUDGET_STOP_SHARE) return "stop";
-  if (spent_usd >= cap_usd * BUDGET_STEER_SHARE) return "steer";
+  if (reached(spent_usd, cap_usd, BUDGET_STOP_SHARE)) return "stop";
+  if (reached(spent_usd, cap_usd, BUDGET_STEER_SHARE)) return "steer";
   return "none";
 }
 

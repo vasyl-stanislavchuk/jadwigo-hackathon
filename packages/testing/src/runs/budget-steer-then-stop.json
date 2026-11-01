@@ -257,7 +257,16 @@
         "call_id": "call_1",
         "verb": "lesson_draft",
         "state": "done",
-        "error": null
+        "error": null,
+        "input": {
+          "request": "shapes",
+          "grade": "1",
+          "names": [],
+          "topic": "geometry"
+        },
+        "output": {
+          "draft_id": "drf_demo"
+        }
       },
       {
         "kind": "steer",
@@ -272,7 +281,14 @@
         "call_id": "call_2",
         "verb": "lesson_check",
         "state": "done",
-        "error": null
+        "error": null,
+        "input": {
+          "draft_id": "drf_demo",
+          "help": {}
+        },
+        "output": {
+          "findings": []
+        }
       },
       {
         "kind": "steer",
@@ -300,6 +316,7 @@
         "parts": []
       }
     },
+    "previous_lesson": null,
     "status": "completed",
     "turn_open": false,
     "spent_usd": 0.095,

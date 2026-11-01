@@ -159,7 +159,16 @@
         "call_id": "call_1",
         "verb": "lesson_draft",
         "state": "done",
-        "error": null
+        "error": null,
+        "input": {
+          "request": "telling the time",
+          "grade": "2",
+          "names": [],
+          "topic": "clock"
+        },
+        "output": {
+          "draft_id": "drf_demo"
+        }
       }
     ],
     "lesson": {
@@ -173,6 +182,7 @@
         "parts": []
       }
     },
+    "previous_lesson": null,
     "status": "cancelled",
     "turn_open": false,
     "spent_usd": 0.02,

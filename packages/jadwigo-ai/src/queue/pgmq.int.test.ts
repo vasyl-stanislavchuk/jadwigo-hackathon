@@ -1,12 +1,14 @@
-// PgmqRunQueue on the dl-z5ja.52 queues (dl-z5ja.19): InMemoryRunQueue's 3 cases from
-// memory.test.ts on pgmq, with time passed by moving every step's vt back as the owner does, then
-// the roles and the stuck-run alarm. Only this file uses agent_step, so each test empties it.
+// PgmqRunQueue on the dl-z5ja.52 queues (dl-z5ja.19): the run queue contract InMemoryRunQueue
+// keeps too (contract.ts, dl-z5ja.56), with time passed by moving every step's vt back as the owner
+// does, then what only pgmq has: a batch filled past a dead letter, the roles and the stuck-run
+// alarm. Only this file uses agent_step, so each test empties it.
 import { ID_PREFIXES, idOf, Uuid, uuidOf } from "@jadwigo/contracts";
 import { RunId } from "@jadwigo/contracts/run";
 import { createPostgresStore } from "@jadwigo/store";
 import pg from "pg";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { databaseUrl } from "../config.ts";
+import { runQueueContract } from "./contract.ts";
 import { PgmqRunQueue } from "./pgmq.ts";
 import { MAX_READS } from "./types.ts";
 
@@ -29,50 +31,17 @@ async function tick(s: number) {
   );
 }
 
-beforeEach(async () => {
+async function purge() {
   await owner.query("select pgmq.purge_queue('agent_step'), pgmq.purge_queue('agent_step_dlq')");
+}
+beforeEach(purge);
+
+runQueueContract("PgmqRunQueue", async () => {
+  await purge();
+  return { q, tick };
 });
 
-describe("PgmqRunQueue keeps InMemoryRunQueue's rules", () => {
-  it("delivers oldest first, hides a read step for its visibility timeout and counts each read", async () => {
-    const a = await q.send({ run_id: RUN, attempt: 1 });
-    const b = await q.send({ run_id: RUN, attempt: 2 });
-    expect((await q.read(60, 1)).map((s) => [s.msg_id, s.read_ct])).toEqual([[a, 1]]);
-    expect((await q.read(60, 5)).map((s) => s.msg_id)).toEqual([b]);
-    expect(await q.read(60, 5)).toEqual([]);
-    await tick(55);
-    expect(await q.read(60, 5)).toEqual([]);
-    await tick(5);
-    expect((await q.read(60, 5)).map((s) => [s.msg_id, s.read_ct])).toEqual([
-      [a, 2],
-      [b, 2],
-    ]);
-  });
-
-  it("never delivers an archived step, and holds a delayed one back", async () => {
-    const a = await q.send({ run_id: RUN, attempt: 1 });
-    await q.archive(a);
-    await q.archive(a);
-    const later = await q.send({ run_id: RUN, attempt: 1 }, 30);
-    expect(await q.read(60, 5)).toEqual([]);
-    await tick(30);
-    expect((await q.read(60, 5)).map((s) => s.msg_id)).toEqual([later]);
-  });
-
-  it("moves a step read more than MAX_READS times to the dead letter", async () => {
-    const a = await q.send({ run_id: RUN, attempt: 1 });
-    for (let i = 1; i <= MAX_READS; i++) {
-      expect((await q.read(10, 1)).map((s) => s.read_ct)).toEqual([i]);
-      await tick(10);
-    }
-    expect(await q.read(10, 1)).toEqual([]);
-    expect((await q.deadLetters()).map((s) => [s.msg_id, s.read_ct, s.message])).toEqual([
-      [a, MAX_READS + 1, { run_id: RUN, attempt: 1 }],
-    ]);
-    await tick(100);
-    expect(await q.read(10, 1)).toEqual([]);
-  });
-
+describe("PgmqRunQueue's dead letter", () => {
   it("fills a batch past a step it dead-letters", async () => {
     const dead = await q.send({ run_id: RUN, attempt: 1 });
     for (let i = 1; i <= MAX_READS; i++) {

@@ -1,0 +1,280 @@
+{
+  "name": "steer-kept",
+  "about": "Two steers arrive while lesson_draft runs, one typed in the chat and one an edit in the lesson pane naming question s02. The runner logs each as a steer event when it takes it off the inbox, before the next model call, and the fold draws each as a parent chat item marked as a steer.",
+  "events": [
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 1,
+      "event_id": "00000000-0000-4000-8022-000000000001",
+      "type": "message",
+      "payload": {
+        "from": "parent",
+        "text": "Adding within 20, grade 1."
+      },
+      "created_at": "2026-09-01T08:00:01.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 2,
+      "event_id": "00000000-0000-4000-8022-000000000002",
+      "type": "status",
+      "payload": {
+        "status": "in_progress"
+      },
+      "created_at": "2026-09-01T08:00:02.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 3,
+      "event_id": "00000000-0000-4000-8022-000000000003",
+      "type": "model_response",
+      "payload": {
+        "response_id": "resp_1",
+        "call_no": 1,
+        "text": null,
+        "tool_calls": [
+          {
+            "call_id": "call_1",
+            "verb": "lesson_draft",
+            "input": {
+              "request": "adding within 20",
+              "grade": "1",
+              "names": [],
+              "topic": "addition"
+            }
+          }
+        ],
+        "usage": {
+          "input_tokens": 1000,
+          "output_tokens": 60,
+          "cached_tokens": 0
+        },
+        "cost_usd": 0.02,
+        "model": "scripted",
+        "tier": "private"
+      },
+      "created_at": "2026-09-01T08:00:03.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 4,
+      "event_id": "00000000-0000-4000-8022-000000000004",
+      "type": "usage",
+      "payload": {
+        "spent_usd": 0.02,
+        "cap_usd": 1
+      },
+      "created_at": "2026-09-01T08:00:04.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 5,
+      "event_id": "00000000-0000-4000-8022-000000000005",
+      "type": "tool_call",
+      "payload": {
+        "call_id": "call_1",
+        "verb": "lesson_draft",
+        "input": {
+          "request": "adding within 20",
+          "grade": "1",
+          "names": [],
+          "topic": "addition"
+        }
+      },
+      "created_at": "2026-09-01T08:00:05.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 6,
+      "event_id": "00000000-0000-4000-8022-000000000006",
+      "type": "tool_result",
+      "payload": {
+        "call_id": "call_1",
+        "verb": "lesson_draft",
+        "output": {
+          "draft_id": "drf_demo"
+        },
+        "error": null
+      },
+      "created_at": "2026-09-01T08:00:06.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 7,
+      "event_id": "00000000-0000-4000-8022-000000000007",
+      "type": "lesson_revision",
+      "payload": {
+        "revision": 1,
+        "call_id": "call_1",
+        "lesson_file": {
+          "id": "draft-demo",
+          "title": {
+            "en": "Adding within 20"
+          },
+          "language": "en",
+          "parts": []
+        }
+      },
+      "created_at": "2026-09-01T08:00:07.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 8,
+      "event_id": "00000000-0000-4000-8022-000000000008",
+      "type": "steer",
+      "payload": {
+        "text": "Shorter, please: 5 questions.",
+        "source": "chat"
+      },
+      "created_at": "2026-09-01T08:00:08.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 9,
+      "event_id": "00000000-0000-4000-8022-000000000009",
+      "type": "steer",
+      "payload": {
+        "text": "I rewrote question 2 myself.",
+        "source": "lesson_edit",
+        "question_ids": ["s02"]
+      },
+      "created_at": "2026-09-01T08:00:09.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 10,
+      "event_id": "00000000-0000-4000-8022-00000000000a",
+      "type": "model_response",
+      "payload": {
+        "response_id": "resp_2",
+        "call_no": 2,
+        "text": "Done: 5 questions, and question 2 stays as you wrote it.",
+        "tool_calls": [],
+        "usage": {
+          "input_tokens": 1400,
+          "output_tokens": 30,
+          "cached_tokens": 0
+        },
+        "cost_usd": 0.01,
+        "model": "scripted",
+        "tier": "private"
+      },
+      "created_at": "2026-09-01T08:00:10.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 11,
+      "event_id": "00000000-0000-4000-8022-00000000000b",
+      "type": "usage",
+      "payload": {
+        "spent_usd": 0.03,
+        "cap_usd": 1
+      },
+      "created_at": "2026-09-01T08:00:11.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 12,
+      "event_id": "00000000-0000-4000-8022-00000000000c",
+      "type": "message",
+      "payload": {
+        "from": "agent",
+        "text": "Done: 5 questions, and question 2 stays as you wrote it."
+      },
+      "created_at": "2026-09-01T08:00:12.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 13,
+      "event_id": "00000000-0000-4000-8022-00000000000d",
+      "type": "status",
+      "payload": {
+        "status": "completed"
+      },
+      "created_at": "2026-09-01T08:00:13.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 14,
+      "event_id": "00000000-0000-4000-8022-00000000000e",
+      "type": "turn_complete",
+      "payload": {},
+      "created_at": "2026-09-01T08:00:14.000Z"
+    }
+  ],
+  "expected": {
+    "chat": [
+      {
+        "kind": "message",
+        "seq": 1,
+        "from": "parent",
+        "text": "Adding within 20, grade 1.",
+        "attachments": []
+      },
+      {
+        "kind": "tool",
+        "seq": 5,
+        "call_id": "call_1",
+        "verb": "lesson_draft",
+        "state": "done",
+        "error": null,
+        "input": {
+          "request": "adding within 20",
+          "grade": "1",
+          "names": [],
+          "topic": "addition"
+        },
+        "output": {
+          "draft_id": "drf_demo"
+        }
+      },
+      {
+        "kind": "message",
+        "seq": 8,
+        "from": "parent",
+        "text": "Shorter, please: 5 questions.",
+        "attachments": [],
+        "steer": {
+          "source": "chat"
+        }
+      },
+      {
+        "kind": "message",
+        "seq": 9,
+        "from": "parent",
+        "text": "I rewrote question 2 myself.",
+        "attachments": [],
+        "steer": {
+          "source": "lesson_edit",
+          "question_ids": ["s02"]
+        }
+      },
+      {
+        "kind": "message",
+        "seq": 12,
+        "from": "agent",
+        "text": "Done: 5 questions, and question 2 stays as you wrote it.",
+        "attachments": []
+      }
+    ],
+    "lesson": {
+      "revision": 1,
+      "lesson_file": {
+        "id": "draft-demo",
+        "title": {
+          "en": "Adding within 20"
+        },
+        "language": "en",
+        "parts": []
+      }
+    },
+    "previous_lesson": null,
+    "status": "completed",
+    "turn_open": false,
+    "spent_usd": 0.03,
+    "cap_usd": 1,
+    "budget": "none",
+    "cursor": 14,
+    "plan": null
+  }
+}
