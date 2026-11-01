@@ -819,5 +819,9 @@
       }
     }
   ],
-  "chat_sign_in": "Najpierw zaloguj się na stronie rodzica, a potem wróć do rozmowy."
+  "chat_sign_in": "Najpierw zaloguj się na stronie rodzica, a potem wróć do rozmowy.",
+  "chat_edit_step": "Zmień ten krok",
+  "chat_edit_prompt": "Co zmienić w tym kroku i dlaczego?",
+  "chat_edit_send": "Wyślij zmianę",
+  "chat_edit_cancel": "Anuluj"
 }

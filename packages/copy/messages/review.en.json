@@ -578,5 +578,9 @@
   "chat_switch": true,
   "chat_consent": true,
   "chat_check_findings": true,
-  "chat_sign_in": true
+  "chat_sign_in": true,
+  "chat_edit_step": true,
+  "chat_edit_prompt": true,
+  "chat_edit_send": true,
+  "chat_edit_cancel": true
 }

@@ -289,6 +289,30 @@ describe("accessibility and recovery (dl-z5ja.28)", () => {
   });
 });
 
+describe("a logged steer in the chat (dl-z5ja.30)", () => {
+  it("marks a parent's lesson edit and a chat steer apart from an ordinary message", () => {
+    const turn = turnOf("happy-turn", (view) => {
+      const first = view.chat[0];
+      if (first?.kind === "message") first.steer = { source: "lesson_edit", question_ids: ["s02"] };
+    });
+    pane({ turns: [turn] });
+    const steered = document.querySelector("[data-steer='lesson_edit']");
+    expect(steered?.textContent).toContain("Ty · Twoja zmiana w lekcji");
+    cleanup();
+    pane({
+      turns: [
+        turnOf("happy-turn", (view) => {
+          const first = view.chat[0];
+          if (first?.kind === "message") first.steer = { source: "chat" };
+        }),
+      ],
+    });
+    expect(document.querySelector("[data-steer='chat']")?.textContent).toContain(
+      "Ty · Dopisane w trakcie",
+    );
+  });
+});
+
 describe("the engine's limits in plain words (dl-z5ja.28, dl-z5ja.83)", () => {
   const withError = (type: string, retryable: boolean) =>
     turnOf("happy-turn", (view) => {

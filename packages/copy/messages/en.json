@@ -799,5 +799,9 @@
       }
     }
   ],
-  "chat_sign_in": "Sign in on the parent page first, then come back to the conversation."
+  "chat_sign_in": "Sign in on the parent page first, then come back to the conversation.",
+  "chat_edit_step": "Change this step",
+  "chat_edit_prompt": "What should change in this step, and why?",
+  "chat_edit_send": "Send the change",
+  "chat_edit_cancel": "Cancel"
 }

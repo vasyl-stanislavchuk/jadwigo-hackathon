@@ -674,6 +674,10 @@ export const COPY_KEYS = [
   "chat_switch",
   "chat_consent",
   "chat_check_findings",
+  "chat_edit_step",
+  "chat_edit_prompt",
+  "chat_edit_send",
+  "chat_edit_cancel",
   "chat_sign_in",
   // end the chat page
 ] as const;
