@@ -285,7 +285,7 @@ describe("PlayScreen", () => {
       expect(window.location.search).toBe("?lang=pl");
       expect(await screen.findByText("Pytanie 2 z 2")).toBeTruthy();
       expect(screen.queryByLabelText("Następne")).toBeNull();
-      expect(screen.getByText("Tak wygląda dobra odpowiedź:")).toBeTruthy();
+      expect(screen.getByText("Poprawna odpowiedź")).toBeTruthy();
 
       await act(async () => fireEvent.click(screen.getByText("Wszystkie pytania")));
       expect(window.location.pathname).toBe(playPath(ASSIGNMENT));
