@@ -76,6 +76,12 @@ export const Conversation = z.object({
   created_by: AccountId,
   title: z.string().nullable(),
   created_at: At,
+  /**
+   * When a parent archived it, null while it is live (dl-z5ja.104, decision dl-84wo). An archived
+   * conversation is left out of the list and kept for the pod; it goes only with the pod. A reply
+   * written before the column reads as null.
+   */
+  archived_at: At.nullable().default(null),
 });
 export type Conversation = z.infer<typeof Conversation>;
 

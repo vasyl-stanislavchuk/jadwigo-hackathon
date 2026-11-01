@@ -571,6 +571,26 @@ export const COPY_KEYS = [
   "parent_report_decide_failed",
   "parent_report_asks",
   // end the learner page
+  // the parent app frame (dl-uukj.47.4): the sidebar, the top bar and the shell's pages
+  "parent_nav_label",
+  "parent_nav_lessons",
+  "parent_nav_history",
+  "parent_nav_children",
+  "parent_menu_empty",
+  "parent_children_hint",
+  "parent_breadcrumb_label",
+  "parent_new_lesson",
+  "parent_menu_fold",
+  "parent_menu_unfold",
+  "parent_menu_open",
+  "parent_menu_close",
+  "parent_account",
+  "parent_child_grade",
+  "parent_lessons_empty",
+  "parent_history_empty",
+  "parent_crumb_result",
+  "parent_crumb_overview",
+  // end the parent app frame
   // the chat page (dl-z5ja.17): /playground/chat, a parent's chat on the left and the lesson on the right
   "chat_title",
   "chat_lesson_title",
