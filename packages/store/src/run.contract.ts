@@ -273,7 +273,7 @@ export function runContract(name: string, make: () => Promise<Store> | Store): v
     );
 
     frozen(
-      "refuses an inbox event_id another run holds, in its own pod or another (dl-z5ja.36)",
+      "refuses an inbox event_id another run of its pod holds, and keeps each pod's ids its own (dl-z5ja.36, dl-z5ja.86)",
       async () => {
         const store = await make();
         const a = await scope(store);
@@ -287,11 +287,21 @@ export function runContract(name: string, make: () => Promise<Store> | Store): v
         await expect(
           store.putRunInbox(a.pod, { ...first, run_id: other.id }),
         ).rejects.toMatchObject(WRITE_ONCE);
-        await expect(
-          store.putRunInbox(b.pod, { ...first, run_id: elsewhere.id }),
-        ).rejects.toMatchObject(WRITE_ONCE);
+        // The same id in another pod is that pod's own row: nothing says the id exists in pod a.
+        const theirs = await store.putRunInbox(b.pod, {
+          ...first,
+          run_id: elsewhere.id,
+          payload: { text: "Adding within 20." },
+        });
+        expect([theirs.pod_id, theirs.run_id, theirs.payload]).toEqual([
+          b.pod,
+          elsewhere.id,
+          { text: "Adding within 20." },
+        ]);
         expect(await store.takeRunInbox(a.pod, other.id)).toEqual([]);
-        expect(await store.takeRunInbox(b.pod, elsewhere.id)).toEqual([]);
+        expect((await store.takeRunInbox(b.pod, elsewhere.id)).map((r) => r.event_id)).toEqual([
+          first.event_id,
+        ]);
         expect((await store.takeRunInbox(a.pod, run.id)).map((r) => r.event_id)).toEqual([
           stored.event_id,
         ]);
