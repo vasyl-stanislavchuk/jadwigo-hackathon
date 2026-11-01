@@ -32,7 +32,8 @@ export interface VerbEffect {
   lesson_file?: Record<string, unknown>;
   /**
    * The result typed for its widget, for the tool result's `view` (`dl-z5ja.31`, `dl-z5ja.69`). The
-   * kind is the verb's name; the data, by verb:
+   * kind is the verb's name, and the data parses as its schema in `TOOL_VIEW_DATA`
+   * (`@jadwigo/contracts`, `dl-z5ja.71`), which every verb writes it through with `toolView`:
    * - lesson_check: `{ publishable, findings }`, check()'s findings and the harsh-word ones;
    * - lesson_draft, lesson_edit: `{ changed_step_ids }`; the revision is on its `lesson_revision`;
    * - lesson_show: `{ lesson }`, the lesson file as it stands;

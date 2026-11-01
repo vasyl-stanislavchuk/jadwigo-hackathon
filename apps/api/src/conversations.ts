@@ -17,6 +17,8 @@ import {
   RunCancel,
   type RunEvents,
   type RunId,
+  type RunRating,
+  RunRatingCreate,
 } from "@jadwigo/contracts";
 import { acceptMessage, type EngineDeps, type RunQueue, type Verbs } from "@jadwigo/jadwigo-ai";
 import type { Store, UsageSince } from "@jadwigo/store";
@@ -272,4 +274,23 @@ export async function cancelRun(
   // The cancel landed on another run: its event_id already names another run's row.
   if (accepted.inbox.kind !== "cancel" || accepted.run.id !== id) throw mismatch();
   return { run: accepted.run };
+}
+
+/**
+ * `POST /api/v1/runs/{id}/ratings`: the parent's Good or Bad on a turn, with an optional note on
+ * Bad, in its own table (wave 4 lead decision 37, dl-z5ja.110); never an analytics event, since a
+ * note may hold learner data. One per run and parent: a re-rate replaces it. Another pod's run is
+ * 404. Try again is no route: the page sends the last message again.
+ */
+export async function rateRun(
+  store: Store,
+  claims: Claims,
+  id: RunId,
+  raw: unknown,
+): Promise<RunRating> {
+  const { pod, account } = await authorizeMember(store, claims);
+  const parsed = RunRatingCreate.safeParse(raw);
+  if (!parsed.success) throw badRequest(parsed.error.issues);
+  const note = parsed.data.verdict === "bad" ? (parsed.data.note ?? null) : null;
+  return store.rateRun(pod, id, account, { verdict: parsed.data.verdict, note });
 }
