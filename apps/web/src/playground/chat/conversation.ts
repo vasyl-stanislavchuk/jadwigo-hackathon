@@ -143,10 +143,24 @@ const ENDED: readonly RunStatus[] = ["completed", "failed", "cancelled"];
 export interface Turn {
   run: Run;
   view: RunView;
+  /**
+   * What wrote the turn's latest lesson revision: its `call_id`, the AI's tool call or the parent's
+   * patch steer (dl-z5ja.111); null before a revision. Absent where a test builds the turn by hand.
+   */
+  writer?: string | null;
+}
+
+/** The `call_id` of the highest `lesson_revision` in a run's log, or null before one. */
+function writerOf(events: readonly RunEvent[]): string | null {
+  let latest: { revision: number; call_id: string } | null = null;
+  for (const e of events)
+    if (e.type === "lesson_revision" && (latest === null || e.payload.revision > latest.revision))
+      latest = { revision: e.payload.revision, call_id: e.payload.call_id };
+  return latest?.call_id ?? null;
 }
 
 export const turnsOf = (state: ConversationState): Turn[] =>
-  state.runs.map((r) => ({ run: r.run, view: foldRun(r.events) }));
+  state.runs.map((r) => ({ run: r.run, view: foldRun(r.events), writer: writerOf(r.events) }));
 
 /** A turn is open from its run's creation until `turn_complete`, or its row says it ended. */
 export function isOpen(turn: Turn): boolean {

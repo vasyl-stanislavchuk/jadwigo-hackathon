@@ -35,6 +35,7 @@ export function LessonPane({
   changed = new Set(),
   onUndo,
   undoRefused = false,
+  undoPending = false,
   onEdit,
   outcomeOf,
 }: {
@@ -47,6 +48,11 @@ export function LessonPane({
   onUndo?: (() => void) | undefined;
   /** The last Cofnij's patch was not applied: the pane says so beside it (dl-z5ja.111). */
   undoRefused?: boolean;
+  /**
+   * The last Cofnij's patch is on its way: Cofnij waits for its revision, so a second press never
+   * sends the same undo again on the same revision (dl-z5ja.111).
+   */
+  undoPending?: boolean;
   /**
    * Sends a parent's edit of one step, in the lesson's own language: their why for the AI, and
    * their own words for the step as a patch on the revision shown, which the runner applies with
@@ -72,6 +78,7 @@ export function LessonPane({
           changed={changed}
           onUndo={onUndo}
           undoRefused={undoRefused}
+          undoPending={undoPending}
           onEdit={onEdit}
           outcomeOf={outcomeOf ?? (() => "pending")}
         />
@@ -86,6 +93,7 @@ function Revision({
   changed,
   onUndo,
   undoRefused,
+  undoPending,
   onEdit,
   outcomeOf,
 }: {
@@ -94,6 +102,7 @@ function Revision({
   changed: ReadonlySet<string>;
   onUndo: (() => void) | undefined;
   undoRefused: boolean;
+  undoPending: boolean;
   onEdit: OnEdit | undefined;
   outcomeOf: (event_id: string) => PatchOutcome;
 }): ReactElement {
@@ -119,6 +128,7 @@ function Revision({
           <button
             type="button"
             data-undo
+            disabled={undoPending}
             onClick={onUndo}
             className="ml-auto rounded-md border px-2 py-0.5 text-sm"
           >

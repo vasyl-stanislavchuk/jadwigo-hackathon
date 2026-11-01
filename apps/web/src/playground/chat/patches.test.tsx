@@ -159,6 +159,32 @@ describe("patches (dl-z5ja.111)", () => {
   });
 });
 
+describe("Cofnij waits for its patch (dl-z5ja.111)", () => {
+  it("is disabled while the last undo is pending, so a second press sends nothing", () => {
+    const lesson = foldRun(eventsOf("happy-turn")).lesson;
+    let presses = 0;
+    const pane = (undoPending: boolean) => (
+      <LessonPane
+        language="pl"
+        lesson={lesson}
+        changed={new Set(["s02"])}
+        onUndo={() => {
+          presses += 1;
+        }}
+        undoPending={undoPending}
+      />
+    );
+    const { rerender } = render(pane(true));
+    const undo = document.querySelector("[data-undo]") as HTMLButtonElement;
+    expect(undo.disabled).toBe(true);
+    fireEvent.click(undo);
+    expect(presses).toBe(0);
+    rerender(pane(false));
+    fireEvent.click(document.querySelector("[data-undo]") as HTMLElement);
+    expect(presses).toBe(1);
+  });
+});
+
 describe("the lesson pane sends a parent's own words as a patch (dl-z5ja.111)", () => {
   it("an edit of a step's words sends one steer with its patch and question_ids", () => {
     const lesson = foldRun(eventsOf("happy-turn")).lesson;
