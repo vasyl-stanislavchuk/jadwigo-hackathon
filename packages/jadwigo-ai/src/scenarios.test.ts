@@ -489,6 +489,50 @@ describe("the engine keeps PostHog's production lessons", () => {
     },
   );
 
+  // Lead decision 36 (wave 4, dl-z5ja.107): the side panel's page travels on the message.
+  frozen(
+    "a message from a learner page names that learner to the model, read from the pod",
+    async () => {
+      const t = await setup([{ text: "Mole is on it." }]);
+      const { learner } = await t.store.addLearner(t.pod, { first_name: "Mole" });
+      const run = await t.send({
+        event_id: eventId(),
+        kind: "message",
+        payload: { text: "How is it going?", context: { learner_id: learner.id } },
+      });
+      await drain(t.deps);
+
+      const instructions = t.muse.calls[0]?.instructions ?? "";
+      expect(instructions).toContain("learner page of Mole");
+      expect(instructions).toContain(learner.id);
+      const said = (await t.log(run)).find(
+        (e) => e.type === "message" && e.payload.from === "parent",
+      );
+      expect(said?.payload).toMatchObject({ context: { learner_id: learner.id } });
+    },
+  );
+
+  frozen("a page from another pod is refused before any model call", async () => {
+    const t = await setup([{ text: "never asked" }]);
+    const other = await t.store.createAccount(Uuid.parse(crypto.randomUUID()), "en");
+    const { learner } = await t.store.addLearner(other.pod, { first_name: "Owl" });
+    await expect(
+      t.send({
+        event_id: eventId(),
+        kind: "message",
+        payload: { text: "How is Owl?", context: { learner_id: learner.id } },
+      }),
+    ).rejects.toMatchObject({ type: "NotFound" });
+    await drain(t.deps);
+
+    expect(t.muse.calls).toEqual([]);
+    expect(await t.store.listRuns(t.pod, t.conversation)).toEqual([]);
+    // A message with no page is today's turn: no line about where the parent is.
+    await t.say("Adding within 20, grade 1.");
+    await drain(t.deps);
+    expect(t.muse.calls[0]?.instructions).not.toContain("writing from");
+  });
+
   // Lead decision 38 (wave 4, dl-z5ja.102): words beside a failing tool call are dropped, with no
   // correction and no error event. The tool's failure is logged, and the next call writes new words.
   frozen("words beside a failing tool call are dropped, with no correction", async () => {
