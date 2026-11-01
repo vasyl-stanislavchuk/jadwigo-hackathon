@@ -1,6 +1,7 @@
 import { type AccountId, ErrorType, type PodId } from "@jadwigo/contracts";
 import {
   type ConversationId,
+  type ModelTier,
   type NewRunEvent,
   RUN_IDLE_MS,
   RUN_IDLE_PUSH_MS,
@@ -79,6 +80,11 @@ const INSTRUCTIONS = [
   "The draft you are working on has the id of this run. Answer the parent in their language, briefly.",
 ].join("\n");
 const PROMPT_CACHE_KEY = `${WORKFLOW}:1`;
+/**
+ * Every call goes to the tier that trains on nothing it is sent: a run's prompt carries the
+ * parent's words and the learner's names (draft decision dl-2uq1). Each `model_response` records it.
+ */
+const TIER: ModelTier = "private";
 const STEER =
   "You have used half of this turn's budget. Finish the lesson with what you have, with no more searching.";
 const STOP_TEXT = "I stopped here to stay within the budget. The lesson so far is on the right.";
@@ -383,6 +389,7 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       call_no,
       tag: TAG,
       prompt_cache_key: PROMPT_CACHE_KEY,
+      tier: TIER,
       instructions: instructions.join("\n\n"),
       input: [...prior.input, ...museInput(w.log)],
       tools: Object.values(deps.verbs).map((verb) => verb.tool),
@@ -401,6 +408,8 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
           tool_calls: [...response.tool_calls],
           usage: response.usage,
           cost_usd: response.cost_usd,
+          model: response.model,
+          tier: TIER,
         },
       },
       {
@@ -525,11 +534,17 @@ async function takeInbox(
           },
         });
       } else if (row.kind === "approval") {
+        const { call_id, decision, feedback, answers } = row.payload;
         events.push({
           type: "approval_resolved",
           run_id: w.run,
           event_id: row.event_id,
-          payload: { call_id: row.payload.call_id, decision: row.payload.decision },
+          payload: {
+            call_id,
+            decision,
+            ...(feedback === undefined ? {} : { feedback }),
+            ...(answers === undefined ? {} : { answers }),
+          },
         });
       } else if (row.kind === "steer") {
         steers.push(row.payload.text);

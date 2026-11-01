@@ -64,7 +64,9 @@
           "output_tokens": 60,
           "cached_tokens": 0
         },
-        "cost_usd": 0.02
+        "cost_usd": 0.02,
+        "model": "scripted",
+        "tier": "private"
       },
       "created_at": "2026-09-01T08:00:04.000Z"
     },
@@ -145,7 +147,9 @@
           "output_tokens": 10,
           "cached_tokens": 0
         },
-        "cost_usd": 0.01
+        "cost_usd": 0.01,
+        "model": "scripted",
+        "tier": "private"
       },
       "created_at": "2026-09-01T08:00:09.000Z"
     },
@@ -241,6 +245,7 @@
     "spent_usd": 0.03,
     "cap_usd": 1,
     "budget": "none",
-    "cursor": 13
+    "cursor": 13,
+    "plan": null
   }
 }
