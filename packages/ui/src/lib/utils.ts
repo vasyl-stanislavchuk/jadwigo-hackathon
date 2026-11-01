@@ -51,7 +51,7 @@ const twMerge = extendTailwindMerge({
   extend: {
     theme: {
       spacing: SPACING,
-      radius: ["jw-card", "jw-control", "jw-small", "jw-dialog"],
+      radius: ["jw-card", "jw-control", "jw-small", "jw-dialog", "jw-box"],
       shadow: ["jw-act"],
       ease: ["jw-out"],
       leading: ["jw-page"],

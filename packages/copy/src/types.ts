@@ -600,6 +600,23 @@ export const COPY_KEYS = [
   "parent_child_lessons_empty",
   "parent_child_history_empty",
   // end the child's page
+  // the first screen (dl-uukj.47.2): the question, the box, Dla and Dodaj dziecko
+  "parent_question",
+  "parent_box_label",
+  "parent_placeholder",
+  "parent_attach",
+  "parent_remove_photo",
+  "parent_for",
+  "parent_no_child",
+  "parent_add_child_menu",
+  "parent_add_child_hint",
+  "parent_send",
+  "parent_send_reason",
+  "parent_name_note",
+  "parent_grade",
+  "parent_cancel",
+  "parent_lesson_soon",
+  // end the first screen
   // the chat page (dl-z5ja.17): /playground/chat, a parent's chat on the left and the lesson on the right
   "chat_title",
   "chat_lesson_title",
@@ -743,7 +760,6 @@ export const COPY_KEYS = [
   "attach_photo_alt",
   "attach_uploading",
   "attach_retry",
-  "attach_remove",
   "attach_heic",
   "attach_unreadable",
   "attach_too_large",

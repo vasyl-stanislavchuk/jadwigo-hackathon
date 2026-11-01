@@ -168,7 +168,7 @@ function Chip({
       )}
       <button
         type="button"
-        aria-label={copy(language, "attach_remove")}
+        aria-label={copy(language, "parent_remove_photo")}
         onClick={() => {
           upload.dispose();
           onRemove(upload);

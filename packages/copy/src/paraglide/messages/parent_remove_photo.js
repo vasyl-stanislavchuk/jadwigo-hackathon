@@ -3,7 +3,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 
 /** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
 
-/** @typedef {{}} Attach_RemoveInputs */
+/** @typedef {{}} Parent_Remove_PhotoInputs */
 
 
 
@@ -12,11 +12,11 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 * | --- |
 * | "Remove the photo" |
 *
-* @param {Attach_RemoveInputs} inputs
+* @param {Parent_Remove_PhotoInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
 * @returns {LocalizedString}
 */
-export const attach_remove = /** @type {((inputs?: Attach_RemoveInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Attach_RemoveInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
+export const parent_remove_photo = /** @type {((inputs?: Parent_Remove_PhotoInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Parent_Remove_PhotoInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") return /** @type {LocalizedString} */ ("Remove the photo")
