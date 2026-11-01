@@ -44,7 +44,7 @@ promises:
     - title: Every question has a source
       text: Questions from Alfik Matematyczny and Khan Academy, always with the source named.
     - title: Your data is yours
-      text: Only you see your child's answers, and you can delete them at any time.
+      text: Only you see your child's answers. You can ask us to delete them at any time.
     - title: Free, with no ads
       text: Lessons and the parent's summaries cost nothing.
 lessons:
