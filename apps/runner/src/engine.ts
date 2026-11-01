@@ -1,3 +1,4 @@
+import type { ModelTier } from "@jadwigo/contracts/run";
 import {
   createVerbs,
   type EngineDeps,
@@ -28,13 +29,17 @@ export function postgresEngineHost(
   url: string,
   muse: MuseClient,
   warn: (line: string) => void,
+  tier: ModelTier = "contributor",
 ): HostDeps & { close(): Promise<void> } {
   const store = createPostgresStore(url, { ...POOL, role: "jadwigo_runner" });
   const pool = new pg.Pool({ connectionString: url, ...POOL });
   // A dropped idle connection emits 'error' on the pool; with no listener the process crashes.
   pool.on("error", (error) => warn(`an idle queue connection dropped: ${error.message}`));
   const queue = new PgmqRunQueue(pool, { role: "jadwigo_runner" });
+  // The tier every model request names (EngineDeps.tier, dl-z5ja.91): the request says the tier
+  // that answers it, and no slot of HttpMuse stands in for another.
   const engine: EngineDeps = {
+    tier,
     store,
     muse,
     verbs: createVerbs({ bank: fixtureBank() }),
@@ -45,6 +50,7 @@ export function postgresEngineHost(
     engine,
     max_steps: MAX_STEPS,
     stuck: () => queue.stuck(),
+    dead_letters: async () => (await queue.deadLetters()).length,
     warn,
     close: async () => {
       await Promise.all([store.close(), pool.end()]);
