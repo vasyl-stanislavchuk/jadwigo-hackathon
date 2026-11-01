@@ -1124,12 +1124,18 @@ const NOT_APPLIED: Record<PatchRefusal, string> = {
   no_lesson: "there was no lesson yet to change",
 };
 
-/** The `patch_resolved` event a steer's patch got (dl-z5ja.130), or null before it has one. */
+/**
+ * The `patch_resolved` event a steer's patch got (dl-z5ja.130), or null while it is pending. An
+ * "applied" whose revision is not in the log is pending too: its unit died between the 2 writes
+ * (Postgres rolls both back; a store that cannot is redone here).
+ */
 function resolutionOf(log: readonly RunEvent[], steer: SteerEvent): PatchResolved | null {
   const found = log.find(
     (e) => e.type === "patch_resolved" && e.payload.steer_event_id === steer.event_id,
   );
-  return found?.type === "patch_resolved" ? found.payload : null;
+  if (found?.type !== "patch_resolved") return null;
+  if (found.payload.applied && revisionOf(log, steer) === null) return null;
+  return found.payload;
 }
 
 /** The revision a steer's patch was applied as, or null when it was not. */
@@ -1180,15 +1186,20 @@ async function applyPatches(w: Writer): Promise<number> {
       }
       const lesson_file = mergePatch(lesson.lesson_file, patch);
       if (!readable(lesson_file)) return resolve({ applied: false, reason: "invalid_file" });
+      // The resolution, then its revision, as the golden order keeps a tool_result before its
+      // revision. A writer that wins between the check above and this fails the unit, and a
+      // redelivery redoes it, now as stale_base.
+      await resolve({ applied: true, revision: base_revision + 1 });
       const written = await w.revise(base_revision, {
         type: "lesson_revision",
         run_id: w.run,
         event_id: await w.id("steer", steer.event_id, "revision"),
         payload: { revision: base_revision + 1, call_id: steer.event_id, lesson_file },
       });
-      if (!written) return resolve({ applied: false, reason: "stale_base" });
+      if (!written) {
+        throw new Error(`lesson revision ${base_revision + 1} lost its race: the step is redone`);
+      }
       applied += 1;
-      return resolve({ applied: true, revision: base_revision + 1 });
     });
   }
   return applied;
