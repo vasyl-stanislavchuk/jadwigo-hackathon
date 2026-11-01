@@ -2,7 +2,7 @@
  * The AI engine's dev-server side (epic dl-z5ja, wave 1; dl-z5ja.17): one Vite plugin, loaded only
  * while `vite` serves, that runs the engine in-process for `/playground/chat`. A parent's message
  * goes through `acceptMessage`, then `drain` runs its steps on an InMemoryStore, ScriptedMuse,
- * `createVerbs({bank: fixtureBank()})` and InMemoryRunQueue: no network, no database, no paid call.
+ * `createVerbs({bank: fixtureBank(), learners: store})` and InMemoryRunQueue: no network, no database, no paid call.
  * Every event a run appends is pushed to the page as the `run:<id>` custom event, shaped like the
  * Realtime broadcast wave 2 brings (dl-z5ja.21); the page fetches the log after its cursor over
  * the routes in `src/playground/chat/wire.ts`. Nothing schedules a run: a run starts only when the
@@ -140,7 +140,8 @@ function engine(server: ViteDevServer, m: Modules) {
   const deps: EngineDeps = {
     store,
     muse,
-    verbs: createVerbs({ bank: fixtureBank() }),
+    // The learner verbs read the dev page's own made-up pod (dl-z5ja.25).
+    verbs: createVerbs({ bank: fixtureBank(), learners: store, now }),
     queue: new InMemoryRunQueue(now),
     now,
   };

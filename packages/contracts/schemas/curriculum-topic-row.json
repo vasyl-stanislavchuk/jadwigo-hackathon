@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "minLength": 1
+    },
+    "area": {
+      "type": "string",
+      "minLength": 1
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "skill_codes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SkillId"
+      }
+    },
+    "goal_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/GoalId"
+      }
+    }
+  },
+  "required": [
+    "code",
+    "area",
+    "text",
+    "skill_codes",
+    "goal_ids"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "SkillId": {
+      "type": "string",
+      "pattern": "^[a-z]+(\\.[a-z0-9-]+)+$"
+    },
+    "GoalId": {
+      "type": "string",
+      "pattern": "^gol_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    }
+  }
+}

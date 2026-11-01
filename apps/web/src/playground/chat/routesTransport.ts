@@ -25,6 +25,14 @@ type Held = Pick<Storage, "getItem" | "setItem">;
 const SERVER_KEY = (local: string) => `jadwigo.playground.chat.server.${local}`;
 const CREATE_KEY = (local: string) => `jadwigo.playground.chat.create.${local}`;
 
+/**
+ * Opens a server conversation from the list (dl-z5ja.106) as the page's own: its id stands for
+ * itself, so the transport reads its runs and posts to it without making a new one.
+ */
+export function holdServer(id: ConversationId, held: Held = window.sessionStorage): void {
+  held.setItem(SERVER_KEY(id), id);
+}
+
 export function routesTransport(
   api: ConversationClient,
   live: RunLive,

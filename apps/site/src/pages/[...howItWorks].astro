@@ -1,6 +1,14 @@
 ---
-// /jak-to-dziala and /en/how-it-works (dl-5ssh.4.7, dl-w0b4.81): the 3 steps, then what a family gets.
+// /jak-to-dziala and /en/how-it-works (dl-5ssh.4.7, dl-w0b4.81), in direction 1a of design handoff
+// "landing 3" (dl-5ssh.4.14): the intro over a wide illustration, then 3 steps in alternating rows,
+// each with a large step number, who acts, a heading and a short body. Step 1 quotes a parent's
+// request and the build lines beside a screencast slot, step 2 lays a question card over an
+// illustration, step 3 shows one lesson's counts beside a screencast slot. The page ends with the
+// sign-up. The owner's principle (2026-11-01): the parent is aware and close in a few minutes; the
+// copy never asks them to sit through a lesson together.
 import type { Language } from "@jadwigo/config";
+import EndBand from "../components/EndBand.astro";
+import Pic from "../components/Pic.astro";
 import Base from "../layouts/Base.astro";
 import { strictBuild } from "../lib/build.ts";
 import { otherLanguage, twinPath, twinStaticPaths } from "../lib/i18n.ts";
@@ -16,58 +24,125 @@ const { lang } = Astro.props;
 const words = await landingWords(lang);
 const reviewed = await landingReviewed(lang);
 const translation = twinPath("howItWorks", otherLanguage(lang));
-const page = { ...words.steps, lang, reviewed, translation };
+const s = words.steps;
+const page = {
+  title: s.title,
+  description: s.description,
+  heading: s.heading,
+  lang,
+  reviewed,
+  translation,
+};
+const [one, two, three] = s.items;
 ---
 
 <Base page={page} path={twinPath("howItWorks", lang)}>
   <section class="wrap top" aria-labelledby="page-title">
-    <h1 id="page-title">{words.steps.heading}</h1>
-    <ol class="steps">
-      {
-        words.steps.items.map((s) => (
-          <li>
-            <h2>{s.title}</h2>
-            <p>{s.text}</p>
-          </li>
-        ))
-      }
-    </ol>
+    <h1 id="page-title">{s.heading}</h1>
+    <p class="intro">{s.intro}</p>
+    <Pic label={s.pic} class="wide-pic" />
   </section>
-  <section class="wrap band" aria-labelledby="promises-title">
-    <h2 id="promises-title" class="section">{words.promises.heading}</h2>
-    <ul class="promises">
-      {
-        words.promises.items.map((p) => (
-          <li>
-            <h3>{p.title}</h3>
-            <p>{p.text}</p>
-          </li>
-        ))
-      }
-    </ul>
-    <p class="actions"><a class="btn" href={`${twinPath("lessons", lang)}/`}>{words.hero.play}</a></p>
-  </section>
+
+  <ol class="wrap steps">
+    <li class="step">
+      <div class="words">
+        <p class="num" aria-hidden="true">1 <span>{one?.who}</span></p>
+        <h2><span class="sr-only">1. {one?.who}: </span>{one?.title}</h2>
+        <p>{one?.text}</p>
+        <blockquote class="request">
+          <p class="ask">„{s.request.ask}”</p>
+          <ul>{s.request.lines.map((l) => <li>{l}</li>)}</ul>
+        </blockquote>
+        <p class="soon">{s.request.soon}</p>
+      </div>
+      <Pic label={s.request.screencast} screen ratio="16 / 10" class="side-pic" />
+    </li>
+
+    <li class="step flip">
+      <div class="words">
+        <p class="num" aria-hidden="true">2 <span>{two?.who}</span></p>
+        <h2><span class="sr-only">2. {two?.who}: </span>{two?.title}</h2>
+        <p>{two?.text}</p>
+      </div>
+      <div class="stage">
+        <Pic label={s.card.pic} class="stage-pic" />
+        <div class="card paper">
+          <p class="say">{s.card.say}</p>
+          <div class="tiles" aria-hidden="true">{s.card.choices.map((c) => <span class="tile">{c}</span>)}</div>
+          <p class="hint">{s.card.hint}</p>
+        </div>
+      </div>
+    </li>
+
+    <li class="step">
+      <div class="words">
+        <p class="num" aria-hidden="true">3 <span>{three?.who}</span></p>
+        <h2><span class="sr-only">3. {three?.who}: </span>{three?.title}</h2>
+        <p>{three?.text}</p>
+        <dl class="counts">
+          {
+            s.record.counts.map((c) => (
+              <div>
+                <dt>{c.label}</dt>
+                <dd>{c.value}</dd>
+              </div>
+            ))
+          }
+        </dl>
+        <p class="next"><strong>{s.record.nextLabel}</strong> {s.record.next}</p>
+      </div>
+      <Pic label={s.record.screencast} screen ratio="16 / 10" class="side-pic" />
+    </li>
+  </ol>
+
+  <EndBand lang={lang} />
 </Base>
 
 <style>
-  .top { padding-top: clamp(2rem, 6vw, 3.5rem); }
-  h1 { font-size: clamp(2rem, 5vw, 2.75rem); }
-  .band { padding-top: clamp(3rem, 8vw, 4.5rem); }
-  .section { font-size: clamp(1.5rem, 3.5vw, 2rem); }
-  .steps, .promises { list-style: none; padding: 0; margin: 1.75rem 0 0; display: grid; gap: 1.25rem; }
-  .steps { counter-reset: step; }
-  .steps li { counter-increment: step; position: relative; padding-top: 3.5rem; }
-  .steps li::before {
-    content: counter(step); position: absolute; top: 0; left: 0;
-    width: 2.75rem; height: 2.75rem; border-radius: 50%; display: grid; place-items: center;
-    background: var(--jw-pick); color: var(--jw-pick-ink); border: 2px solid var(--jw-pick-edge); font-weight: 700;
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .top { padding-top: clamp(2rem, 5vw, 3.5rem); }
+  .top h1 { font-size: clamp(2.2rem, 5vw, 3.25rem); }
+  .intro { margin-top: 0.75rem; max-width: 38rem; font-size: 1.2rem; color: var(--jw-ink-soft); }
+  .top :global(.wide-pic) { margin-top: 1.5rem; height: clamp(9rem, 18vw, 14rem); }
+
+  .steps { list-style: none; padding-top: 0; padding-bottom: 0; margin-top: clamp(3rem, 7vw, 5rem); display: flex; flex-direction: column; gap: clamp(3.5rem, 8vw, 6rem); }
+  .step { display: grid; gap: 1.5rem 3rem; align-items: center; }
+  @media (min-width: 56rem) {
+    .step { grid-template-columns: 1fr 1fr; }
+    .flip .words { order: 2; }
   }
-  .steps h2 { font-size: 1.2rem; }
-  .steps p, .promises p { margin-top: 0.4rem; color: var(--jw-ink-soft); }
-  .promises li { border: 1px solid var(--jw-line); border-radius: var(--jw-radius-card); padding: 1.25rem; }
-  .actions { margin-top: 2rem; }
-  @media (min-width: 48rem) {
-    .steps { grid-template-columns: repeat(3, 1fr); gap: 2rem; }
-    .promises { grid-template-columns: repeat(2, 1fr); }
+  .words { display: flex; flex-direction: column; gap: 0.75rem; }
+  .num { display: flex; align-items: flex-start; gap: 0.75rem; font-size: clamp(3.5rem, 7vw, 4.5rem); font-weight: 700; line-height: 1; color: var(--jw-brand-go); }
+  .num span { margin-top: 0.4rem; font-size: 1rem; color: var(--jw-ink); }
+  .words h2 { font-size: clamp(1.6rem, 3vw, 2.1rem); max-width: 22ch; }
+  .words > p:not(.num) { color: var(--jw-ink-soft); max-width: 34rem; }
+  .request { margin: 0.5rem 0 0; padding: 0.25rem 0 0.25rem 1rem; border-left: 4px solid var(--jw-brand-go); }
+  .ask { font-weight: 700; }
+  .request ul { list-style: none; margin: 0.5rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.95rem; color: var(--jw-ink-soft); }
+  .words > .soon { font-size: 0.9rem; }
+
+  /* Step 2: a small question card overlapping its illustration, as a child sees one question. */
+  .stage { position: relative; padding-bottom: 5rem; }
+  .stage :global(.stage-pic) { height: clamp(14rem, 28vw, 19rem); }
+  /* The label sits at the slot's top, clear of the card that overlaps its bottom. */
+  .stage :global(.stage-pic .body) { place-content: start center; padding-top: 2rem; }
+  .card { position: absolute; right: 0; bottom: 0; width: min(19rem, 85%); padding: 0.9rem; box-shadow: 0 5px 0 var(--jw-line); --cell: 1.25rem; }
+  .card .say { font-weight: 700; font-size: 0.95rem; line-height: 1.35; }
+  .card .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-top: 0.6rem; }
+  .card .tile {
+    display: grid; place-items: center; min-height: 2.25rem; font-size: 0.85rem; font-weight: 700; white-space: nowrap;
+    background: var(--jw-card); border: 2px solid var(--jw-line-strong); border-radius: var(--jw-radius-small);
   }
+  .card .hint {
+    margin-top: 0.6rem; padding: 0.5rem 0.6rem; font-size: 0.82rem; line-height: 1.35;
+    background: var(--jw-help); border: 2px solid var(--jw-help-edge); border-radius: var(--jw-radius-small); color: var(--jw-help-ink);
+  }
+
+  /* Step 3: one lesson's counts, plain numbers with their words, never a score. */
+  .counts { display: flex; gap: 2rem; margin: 0.5rem 0 0; }
+  .counts div { display: flex; flex-direction: column-reverse; }
+  .counts dd { margin: 0; font-size: 2rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .counts dt { font-size: 0.9rem; color: var(--jw-ink-soft); }
+  .next { font-size: 0.98rem; }
+  .words > .next { color: var(--jw-ink); }
 </style>

@@ -14,15 +14,20 @@ import type { LedgerRow, MuseLedger } from "./guarded.ts";
  * reads NaN, which `laneBudget` refuses: an unknown balance is no licence to spend. The window is
  * the UTC day so far, as the pod's own daily cap counts (`LIMITS.podDailyCapUsd`).
  *
- * A call that failed after it spent writes no event, so its cost is not counted here; each run's
- * own `cap_usd` still holds it per turn.
+ * A call that failed after it spent writes no event, so `write` records its row instead (the row
+ * `GuardedMuse` writes with an empty `response_id`, dl-z5ja.123, lead decision 47), and `spent`
+ * counts it. A store without `recordFailedMuseCall` (a test's stub) records nothing.
  */
 export const LANE_WORKFLOWS: Readonly<Record<string, readonly RunWorkflow[]>> = {
   product: RunWorkflow.options,
 };
 
+/** What the ledger reads and writes: the lane's spend, and, when it can, a failed call's cost. */
+export type MuseLedgerStore = Pick<RunStore, "spentUsd"> &
+  Partial<Pick<RunStore, "recordFailedMuseCall">>;
+
 export interface PostgresMuseLedgerOptions {
-  readonly store: Pick<RunStore, "spentUsd">;
+  readonly store: MuseLedgerStore;
   readonly now: () => Date;
   readonly lanes?: Readonly<Record<string, readonly RunWorkflow[]>>;
 }
@@ -35,7 +40,7 @@ function dayOf(now: Date): string {
 }
 
 export class PostgresMuseLedger implements MuseLedger {
-  readonly #store: Pick<RunStore, "spentUsd">;
+  readonly #store: MuseLedgerStore;
   readonly #now: () => Date;
   readonly #lanes: Readonly<Record<string, readonly RunWorkflow[]>>;
 
@@ -51,8 +56,12 @@ export class PostgresMuseLedger implements MuseLedger {
     return this.#store.spentUsd(workflows, dayOf(this.#now()));
   }
 
-  /** The run's own `model_response` event is the row: nothing more to write. */
-  write(_row: LedgerRow): Promise<void> {
-    return Promise.resolve();
+  /**
+   * An answered call's row is its run's `model_response` event: nothing more to write. A call that
+   * failed after it spent (an empty `response_id`, a cost) is recorded, so the lane's cap sees it.
+   */
+  async write(row: LedgerRow): Promise<void> {
+    if (row.response_id !== "" || !(row.cost_usd > 0)) return;
+    await this.#store.recordFailedMuseCall?.(row.run_id, row.call_no, row.cost_usd);
   }
 }

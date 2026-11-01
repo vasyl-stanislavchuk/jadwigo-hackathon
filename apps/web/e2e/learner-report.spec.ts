@@ -58,7 +58,7 @@ const ME = {
     role: "parent",
     created_at: CREATED,
   },
-  pod: { id: POD, name: "Dom", language: "pl", created_at: CREATED },
+  pod: { id: POD, name: "Dom", language: "pl", created_at: CREATED, ai_consent_at: CREATED },
   learners: [{ learner: SKILLS.learner, goals: SKILLS.goals.map((g) => g.goal) }],
 };
 
@@ -92,6 +92,10 @@ async function signIn(page: Page): Promise<void> {
   await page.locator("[data-send-code]").click();
   await page.locator("[data-code]").fill("123456");
   await page.locator("[data-sign-in]").click();
+  // The child's goals and report live on the child's page (dl-uukj.47.3); the session survives the
+  // load (supabase-js keeps it in localStorage).
+  await page.locator("[data-top-bar]").waitFor();
+  await page.goto(`/parent/children/${SKILLS.learner.id}`);
 }
 
 test("the learner page shows the 3 lists and the report, and fits a phone without sideways scroll", async ({

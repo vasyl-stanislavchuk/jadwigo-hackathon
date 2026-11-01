@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "curriculum": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "code",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "learner": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LearnerRef"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "topics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/CurriculumTopicRow"
+      }
+    }
+  },
+  "required": [
+    "curriculum",
+    "learner",
+    "topics"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "LearnerRef": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/LearnerId"
+        },
+        "first_name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "first_name"
+      ],
+      "additionalProperties": false
+    },
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "CurriculumTopicRow": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "area": {
+          "type": "string",
+          "minLength": 1
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "skill_codes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
+        },
+        "goal_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/GoalId"
+          }
+        }
+      },
+      "required": [
+        "code",
+        "area",
+        "text",
+        "skill_codes",
+        "goal_ids"
+      ],
+      "additionalProperties": false
+    },
+    "SkillId": {
+      "type": "string",
+      "pattern": "^[a-z]+(\\.[a-z0-9-]+)+$"
+    },
+    "GoalId": {
+      "type": "string",
+      "pattern": "^gol_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    }
+  }
+}

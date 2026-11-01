@@ -7,6 +7,7 @@
 // It runs only in the `api` project (JW_E2E_API=1), with the api and e2e/auth-server.ts started as
 // parent.spec.ts's header says.
 import { expect, type Page, test } from "@playwright/test";
+import { agreeToAi } from "./consent.ts";
 
 /** Plays equal-groups: 2 × 5 right on the first try, "Not sure yet" to every other question. */
 async function play(page: Page): Promise<void> {
@@ -44,6 +45,8 @@ async function saveForAChild(page: Page): Promise<void> {
   await page.locator("[data-add]").click();
   await claimed;
 }
+
+test.beforeEach(({ page }) => agreeToAi(page));
 
 test("a parent opens a lesson's overview: one row, the legend, a question's sheet, a cell to the attempt", async ({
   page,
