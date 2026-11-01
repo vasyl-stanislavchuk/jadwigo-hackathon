@@ -651,6 +651,43 @@ describe("runStep and drain", () => {
     expect((await t.run(run)).status).toBe("completed");
   });
 
+  it("logs a steer with its source, and every later call of the turn carries it", async () => {
+    const t = await setup(
+      [
+        { calls: [{ verb: "lesson_draft" }] },
+        { calls: [{ verb: "lesson_check" }] },
+        { text: "ok" },
+      ],
+      fakeVerbs({
+        lesson_draft: async () => {
+          await t.send({ event_id: newEventId(), kind: "steer", payload: { text: "Shorter." } });
+          await t.send({
+            event_id: newEventId(),
+            kind: "steer",
+            payload: { text: "Kept my words.", source: "lesson_edit", question_ids: ["s02"] },
+          });
+          return undefined;
+        },
+      }),
+    );
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+
+    const steers = (await t.log(run)).flatMap((e) => (e.type === "steer" ? [e.payload] : []));
+    expect(steers).toEqual([
+      { text: "Shorter.", source: "chat" },
+      { text: "Kept my words.", source: "lesson_edit", question_ids: ["s02"] },
+    ]);
+    expect(t.muse.calls[0]?.instructions).not.toContain("Shorter.");
+    for (const call of t.muse.calls.slice(1)) {
+      expect(call.instructions).toContain("The parent adds: Shorter.");
+      expect(call.instructions).toContain(
+        "The parent edited the lesson themselves (questions s02): Kept my words.",
+      );
+    }
+    expect(t.muse.calls).toHaveLength(3);
+  });
+
   it("reuses a recorded model_response after a crash and pays once", async () => {
     const t = await setup([
       { calls: [{ verb: "lesson_draft" }], cost_usd: 0.02 },

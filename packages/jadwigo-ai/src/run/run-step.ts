@@ -328,7 +328,7 @@ interface Scope {
 
 async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepOutcome> {
   let run = scope.run;
-  const { steers } = await takeInbox(deps.store, w);
+  await takeInbox(deps.store, w);
   const now = deps.now();
 
   if (deadlineDue(run, now) === "max") {
@@ -399,7 +399,7 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       ]);
       instructions.push(STEER);
     }
-    for (const text of steers) instructions.push(`The parent adds: ${text}`);
+    for (const steer of steersOf(w.log)) instructions.push(steerLine(steer));
 
     const call_no = (last?.payload.call_no ?? 0) + 1;
     run = await w.claim();
@@ -465,8 +465,9 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
 
     if (response.tool_calls.length === 0) {
       // A message that came in during the call keeps the turn open for one more step.
+      // So does a steer: it is logged, and the next call is built with it (Lead decision 22).
       const late = await takeInbox(deps.store, w);
-      if (late.messages > 0) {
+      if (late.messages + late.steers > 0) {
         await deps.queue.send({ run_id: run.id, attempt: w.attempt });
         return "continue";
       }
@@ -551,18 +552,17 @@ async function runTool(
 
 /**
  * Takes the run's pending inbox and writes what the log keeps, in one unit, so a stale or failed
- * append gives the rows back on Postgres. A message's event keeps the inbox row's `event_id`, which
- * the page minted. A steer joins this step's instructions; a cancel is already on the run row.
+ * append gives the rows back on Postgres. A message's or a steer's event keeps the inbox row's
+ * `event_id`, which the page minted. A steer is logged (Lead decision 21), and every later call of
+ * the turn is built from the logged steers, so a redelivered step keeps them (dl-z5ja.42). A cancel
+ * is already on the run row.
  */
-async function takeInbox(
-  store: Store,
-  w: Writer,
-): Promise<{ messages: number; steers: readonly string[] }> {
+async function takeInbox(store: Store, w: Writer): Promise<{ messages: number; steers: number }> {
   return store.unit(async () => {
     const rows = await store.takeRunInbox(w.pod, w.run);
     const events: NewRunEvent[] = [];
-    const steers: string[] = [];
     let messages = 0;
+    let steers = 0;
     for (const row of rows) {
       if (row.kind === "message") {
         messages += 1;
@@ -591,7 +591,18 @@ async function takeInbox(
           },
         });
       } else if (row.kind === "steer") {
-        steers.push(row.payload.text);
+        steers += 1;
+        const { text, source, question_ids } = row.payload;
+        events.push({
+          type: "steer",
+          run_id: w.run,
+          event_id: row.event_id,
+          payload: {
+            text,
+            source: source ?? "chat",
+            ...(question_ids === undefined ? {} : { question_ids }),
+          },
+        });
       }
     }
     await w.append(events);
@@ -657,8 +668,26 @@ function unresolved(response: ModelResponse, log: readonly RunEvent[]): ToolCall
   return response.payload.tool_calls.filter((call) => !done.has(call.call_id));
 }
 
+/** A parent's message or steer logged after `seq`: the turn has more to answer. */
 function parentSpokeAfter(log: readonly RunEvent[], seq: number): boolean {
-  return log.some((e) => e.seq > seq && e.type === "message" && e.payload.from === "parent");
+  return log.some(
+    (e) =>
+      e.seq > seq && (e.type === "steer" || (e.type === "message" && e.payload.from === "parent")),
+  );
+}
+
+type SteerEvent = Extract<RunEvent, { type: "steer" }>;
+
+/** The turn's logged steers, oldest first. */
+function steersOf(log: readonly RunEvent[]): SteerEvent[] {
+  return log.filter((e): e is SteerEvent => e.type === "steer").sort((a, b) => a.seq - b.seq);
+}
+
+/** A steer as a line of the call's instructions. */
+function steerLine({ payload }: SteerEvent): string {
+  if (payload.source === "chat") return `The parent adds: ${payload.text}`;
+  const named = payload.question_ids ? ` (questions ${payload.question_ids.join(", ")})` : "";
+  return `The parent edited the lesson themselves${named}: ${payload.text}`;
 }
 
 /** What the run has paid, from the log: each `model_response` counted once. */
