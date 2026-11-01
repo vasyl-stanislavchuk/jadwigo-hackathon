@@ -52,6 +52,7 @@ lessons:
   description: Short math and Polish lessons for grades 1–3. No sign-in, right in the browser.
   heading: Lessons to start with
   text: No sign-in. Click and play.
+  empty: The first English lessons are coming soon.
   play: Play
   all: All lessons
   # A card's labels: the subject, "Grade 2", and the question count (1 question, 2 questions).
