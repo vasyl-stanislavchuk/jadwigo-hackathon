@@ -128,6 +128,27 @@ describe("PostgresStore as jadwigo_runner, the step consumer", () => {
     await expect(api.spentUsd(["jadwigo-lesson-compose"], since)).rejects.toThrow();
   });
 
+  // dl-z5ja.123: a call that failed after it spent counts toward the lane; only the runner records.
+  it("records a failed call's cost under its run's pod, and the lane's sum counts it", async () => {
+    const since = new Date(Date.now() - 1000).toISOString();
+    const p = await scope();
+    const run = await api.createRun(p.pod, newRun(p.account, null));
+    const before = await runner.spentUsd(["jadwigo-lesson-compose"], since);
+    await runner.recordFailedMuseCall(run.id, 1, 0.75);
+    await runner.recordFailedMuseCall(
+      RunId.parse(idOf(ID_PREFIXES.run, crypto.randomUUID())),
+      1,
+      5,
+    );
+    const after = await runner.spentUsd(["jadwigo-lesson-compose"], since);
+    expect(after - before).toBeGreaterThanOrEqual(0.75 - 1e-9);
+    expect(after - before).toBeLessThan(5);
+    await expect(api.recordFailedMuseCall(run.id, 2, 0.1)).rejects.toThrow();
+    await expect(runner.recordFailedMuseCall(run.id, 2, 0)).rejects.toMatchObject({
+      type: "BadRequest",
+    });
+  });
+
   it("is not the owner: it may not open an account, which only the API's role writes", async () => {
     await expect(runner.createAccount(Uuid.parse(crypto.randomUUID()), "pl")).rejects.toThrow();
   });
@@ -187,5 +208,33 @@ describe("PostgresStore's run row lock", () => {
     const { value } = await api.appendRunEvents(a.pod, run.id, 1, [hello, hello]);
     expect(value.map((e) => e.seq)).toEqual([1, 1]);
     expect(await api.listRunEvents(a.pod, run.id, 0)).toHaveLength(1);
+  });
+});
+
+describe("PostgresStore's lesson revision lock (dl-z5ja.134)", () => {
+  it("gives exactly 1 of 2 writers at the same expected revision ok, on 2 connections", async () => {
+    const a = await scope();
+    const conversation = await api.createConversation(a.pod, {
+      id: ConversationId.parse(idOf(ID_PREFIXES.conversation, crypto.randomUUID())),
+      created_by: a.account,
+      title: null,
+    });
+    for (let round = 0; round < 5; round++) {
+      const first = await api.createRun(a.pod, newRun(a.account, conversation.id));
+      const second = await api.createRun(a.pod, newRun(a.account, conversation.id));
+      const write = (store: typeof api, run: RunId) =>
+        store.unit(() =>
+          store.appendLessonRevision(a.pod, run, 1, round, {
+            run_id: run,
+            event_id: EventId.parse(crypto.randomUUID()),
+            type: "lesson_revision",
+            payload: { revision: round + 1, call_id: "call_1", lesson_file: { title: "Rows" } },
+          }),
+        );
+      // The API's role and the runner's, each on a connection of its own.
+      const results = await Promise.all([write(api, first.id), write(runner, second.id)]);
+      expect(results.map((r) => r.ok).sort()).toEqual([false, true]);
+      expect(results.find((r) => !r.ok)).toMatchObject({ stale: "revision", latest: round + 1 });
+    }
   });
 });

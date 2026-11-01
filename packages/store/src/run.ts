@@ -34,6 +34,19 @@ export interface NewRunRating {
   note: string | null;
 }
 
+/** A `lesson_revision` event as `appendLessonRevision` takes it. */
+export type NewLessonRevision = Extract<NewRunEvent, { type: "lesson_revision" }>;
+
+/**
+ * What `appendLessonRevision` answers (dl-z5ja.134): the revision appended, or why not. `stale`
+ * when the conversation's latest revision is no longer `expected` (another run or the parent wrote
+ * first; `latest` is the one to read), or when the run's attempt had moved on, as `updateRun`'s
+ * fence answers (`attempt`).
+ */
+export type LessonRevisionAppend =
+  | { readonly ok: true; readonly revision: number; readonly event: RunEvent }
+  | { readonly ok: false; readonly stale: "revision" | "attempt"; readonly latest: number };
+
 /** A run starts `queued` at attempt 1, nothing spent, not cancelled, not completed. */
 export interface NewRun {
   id: RunId;
@@ -105,10 +118,18 @@ export interface RunStore {
   listRunsDue(now: string): Promise<readonly { pod: PodId; run: Run }[]>;
   /**
    * The Muse spend of a lane (dl-z5ja.89): the `cost_usd` of every `model_response` event of the
-   * runs of `workflows`, in any pod, logged at or after `since`. Not scoped, like `listRunsDue`: on
+   * runs of `workflows`, in any pod, logged at or after `since`, and of their failed calls
+   * (`recordFailedMuseCall`, dl-z5ja.123). Not scoped, like `listRunsDue`: on
    * Postgres it is `muse_ledger.spent_usd`, which only `jadwigo_runner` may call.
    */
   spentUsd(workflows: readonly RunWorkflow[], since: string): Promise<number>;
+  /**
+   * Records a Muse call of `run` that failed after it spent `cost_usd` (dl-z5ja.123): it logs no
+   * `model_response`, so `spentUsd` would miss it. The pod is the run's. Not scoped, like
+   * `spentUsd`: on Postgres it is `muse_ledger.record_failed_call`, which only `jadwigo_runner` may
+   * call. An unknown run records nothing; a cost of 0 or less is `BadRequest`.
+   */
+  recordFailedMuseCall(run: RunId, call_no: number, cost_usd: number): Promise<void>;
 
   /** Written once: the same id again returns the stored row. */
   createConversation(pod: PodId, conversation: NewConversation): Promise<Conversation>;
@@ -152,6 +173,22 @@ export interface RunStore {
     attempt: number,
     events: readonly NewRunEvent[],
   ): Promise<Fenced<readonly RunEvent[]>>;
+  /**
+   * Every lesson revision's one write path (lead decision 48, dl-z5ja.134): appends `event` to
+   * `run`, fenced on `attempt` like `appendRunEvents`, only while the latest `revision` across all
+   * the runs of the run's conversation is `expected` (0 before the first), and the event's own
+   * `revision` is `expected + 1`. On Postgres the check and the append hold a per-conversation
+   * lock in the unit's transaction, so 2 writers at the same `expected` get exactly 1 `ok`. A
+   * replayed `event_id` the run holds answers `ok` with the stored event. A run outside `pod` is
+   * `NotFound`; a run with no conversation, or an event of another run or revision, `BadRequest`.
+   */
+  appendLessonRevision(
+    pod: PodId,
+    run: RunId,
+    attempt: number,
+    expected: number,
+    event: NewLessonRevision,
+  ): Promise<LessonRevisionAppend>;
   /** The run's events with `seq` greater than `afterSeq`, in `seq` order. */
   listRunEvents(pod: PodId, run: RunId, afterSeq: number): Promise<readonly RunEvent[]>;
   /** Written once by `event_id`: the same `event_id` again returns the stored row. */

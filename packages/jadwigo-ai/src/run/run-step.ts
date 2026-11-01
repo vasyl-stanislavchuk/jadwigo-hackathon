@@ -20,11 +20,13 @@ import {
   type ToolCall,
 } from "@jadwigo/contracts/run";
 import { type AnswerMiss, budgetGuard, checkAnswer, deadlineDue } from "@jadwigo/core";
+import { parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import { type NewRunInbox, type RunChange, type Store, StoreError } from "@jadwigo/store";
 import { FENCE_RULE, fence, neutralise } from "../fence/index.ts";
 import { type MuseClient, MuseFailed, type MuseInput, type MuseResponse } from "../muse/client.ts";
 import type { RunQueue } from "../queue/types.ts";
 import { type QueuedStep, STEP_VISIBILITY_S } from "../queue/types.ts";
+import { mergePatch } from "../verbs/input.ts";
 import type { Verbs } from "../verbs/types.ts";
 import { type VerbContext, type VerbEffect, VerbError } from "../verbs/types.ts";
 import { eventIdFor, turnRunIdFor } from "./ids.ts";
@@ -165,6 +167,33 @@ class Writer {
     }
   }
 
+  /**
+   * Writes a lesson revision through the conversation's compare-and-set (lead decision 48,
+   * dl-z5ja.134): only while the conversation's latest revision is `expected`. False when another
+   * writer moved it first; a stale attempt throws, as every write of a stale step does.
+   */
+  async revise(
+    expected: number,
+    event: Extract<NewRunEvent, { type: "lesson_revision" }>,
+  ): Promise<boolean> {
+    const written = await this.store.appendLessonRevision(
+      this.pod,
+      this.run,
+      this.attempt,
+      expected,
+      event,
+    );
+    if (!written.ok) {
+      if (written.stale === "attempt") throw new StaleAttempt();
+      return false;
+    }
+    if (!this.log.some((e) => e.event_id === written.event.event_id)) {
+      this.log.push(written.event);
+      this.appended += 1;
+    }
+    return true;
+  }
+
   async update(change: RunChange): Promise<Run> {
     const updated = await this.store.updateRun(this.pod, this.run, this.attempt, change);
     if (updated.stale) throw new StaleAttempt();
@@ -232,12 +261,12 @@ export function acceptMessage(
   };
   return store.unit(async () => {
     // A page the pod does not hold is refused before anything is written or asked (dl-z5ja.107).
-    // A resend of a message the turn already logged answers its stored row, even when its page has
-    // gone since (dl-z5ja.117): it was checked when it first came.
+    // A resend answers its stored row, pending or taken, even when its page has gone since
+    // (dl-z5ja.117, dl-z5ja.132): it was checked when it first came.
     if (
       context &&
       (await pageLine(store, pod, message.created_by, context)) === null &&
-      !(await logged(store, pod, conversation_id, entry.event_id))
+      (await store.findRunInbox(pod, entry.event_id)) === undefined
     ) {
       throw new StoreError(ErrorType.enum.NotFound, "the page the message names is not in the pod");
     }
@@ -254,7 +283,13 @@ export function acceptMessage(
             `the conversation has no run for a ${entry.kind}`,
           );
         }
-        return { run: last, inbox: await put(last.id) };
+        const inbox = await put(last.id);
+        // A parent's patch is applied on the last turn by a step of its own, with no model call
+        // (dl-z5ja.76): the lesson pane's edit and its Cofnij land when nothing is running.
+        if (inbox.kind === "steer" && inbox.payload.patch !== undefined) {
+          await queue.send({ run_id: last.id, attempt: last.attempt });
+        }
+        return { run: last, inbox };
       }
 
       // No open run: the next turn's, named by its number in the conversation (dl-z5ja.85). The store
@@ -344,9 +379,20 @@ export async function runStep(input: RunStepInput, deps: EngineDeps): Promise<Ru
     }
     throw error;
   }
+  if (found.run.attempt !== input.attempt) {
+    const ended = endedOutcome(found.run.status);
+    return { outcome: ended ?? "continue", events: 0 };
+  }
   const ended = endedOutcome(found.run.status);
-  if (ended) return { outcome: ended, events: 0 };
-  if (found.run.attempt !== input.attempt) return { outcome: "continue", events: 0 };
+  if (ended) {
+    // An ended turn changes only by a parent's patch; everything else in its inbox changes nothing.
+    try {
+      return { outcome: ended, events: await patchEnded(deps, found, input.attempt) };
+    } catch (error) {
+      if (error instanceof StaleAttempt) return { outcome: ended, events: 0 };
+      throw error;
+    }
+  }
 
   // A due run takes the sweep's path before any model call: the pg_cron sweep enqueues a step for
   // every run past a deadline (`app.enqueue_runs_due`), and that step only closes it (dl-z5ja.60).
@@ -399,9 +445,12 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
   }
   if (Object.keys(start).length > 0) run = await w.update(start);
 
+  // The parent's own edits land first, before a cancel ends the turn or a call reads the lesson.
+  const prior = await priorTurns(deps.store, scope);
+  await applyPatches(w);
+
   if (await cancelRequested(w)) return endCancelled(deps, w);
 
-  const prior = await priorTurns(deps.store, scope);
   const last = responsesOf(w.log).at(-1);
   let pending = last ? unresolved(last, w.log) : [];
 
@@ -483,7 +532,8 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       ]);
       instructions.push(STEER);
     }
-    for (const steer of steersOf(w.log)) instructions.push(steerLine(steer));
+    instructions.push(...prior.edits);
+    for (const steer of steersOf(w.log)) instructions.push(steerLine(steer, w.log));
     const page = pageOf(w.log);
     const where = page ? await pageLine(deps.store, scope.pod, scope.created_by, page) : null;
     if (where) instructions.push(where);
@@ -593,7 +643,9 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
   if (pending.length > 0) await holdIdle(w, run);
   for (const call of pending) {
     if (await cancelRequested(w)) return endCancelled(deps, w);
-    await runTool(deps, w, scope, call, lessonOf(w.log) ?? prior.lesson);
+    // The conversation's latest lesson, read again before each verb: a parent's patch or another
+    // turn may have moved it since the call was made (lead decision 48).
+    await runTool(deps, w, scope, call, await conversationLesson(deps.store, scope.pod, run.id));
   }
   await w.update({ idle_deadline_at: at(deps.now().getTime() + RUN_IDLE_MS) });
   await deps.queue.send({ run_id: run.id, attempt: w.attempt });
@@ -834,34 +886,65 @@ async function runTool(
     if (!(thrown instanceof VerbError)) throw thrown;
     error = { type: thrown.type, message: thrown.message };
   }
-  const events: NewRunEvent[] = [
-    {
-      type: "tool_result",
-      run_id: scope.run.id,
-      event_id: await w.id("tool", call.call_id, "result"),
-      payload: {
-        call_id: call.call_id,
-        verb: call.verb,
-        output: effect?.output ?? null,
-        error,
-        // The verb's result typed for its widget, which the fold draws (dl-z5ja.70).
-        ...(effect?.view === undefined ? {} : { view: effect.view }),
-      },
-    },
-  ];
-  if (effect?.lesson_file) {
-    events.push({
-      type: "lesson_revision",
-      run_id: scope.run.id,
-      event_id: await w.id("tool", call.call_id, "revision"),
-      payload: {
-        revision: (lesson?.revision ?? 0) + 1,
-        call_id: call.call_id,
-        lesson_file: effect.lesson_file,
-      },
-    });
+  const expected = lesson?.revision ?? 0;
+  const revision: Extract<NewRunEvent, { type: "lesson_revision" }> | null = effect?.lesson_file
+    ? {
+        type: "lesson_revision",
+        run_id: scope.run.id,
+        event_id: await w.id("tool", call.call_id, "revision"),
+        payload: { revision: expected + 1, call_id: call.call_id, lesson_file: effect.lesson_file },
+      }
+    : null;
+  // Every revision through the conversation's compare-and-set (lead decision 48): a change made on
+  // a lesson that moved since the verb read it is refused, never laid over the newer one, and the
+  // model is told to read it again. Checked first, so the log keeps its order (the tool_result,
+  // then its revision); a writer that wins in between fails the unit, which a redelivery redoes.
+  const replayed = revision !== null && w.log.some((e) => e.event_id === revision.event_id);
+  if (revision && !replayed && (await latestRevision(w)) !== expected) {
+    effect = null;
+    error = {
+      type: RUN_ERROR_TYPE.lessonChanged,
+      message:
+        "the lesson changed after you read it (the parent's own edit, or another turn): read it again with lesson_show, then make your change on it",
+    };
   }
-  await w.append(events);
+  const result: NewRunEvent = {
+    type: "tool_result",
+    run_id: scope.run.id,
+    event_id: await w.id("tool", call.call_id, "result"),
+    payload: {
+      call_id: call.call_id,
+      verb: call.verb,
+      output: effect?.output ?? null,
+      error,
+      // The verb's result typed for its widget, which the fold draws (dl-z5ja.70).
+      ...(effect?.view === undefined ? {} : { view: effect.view }),
+    },
+  };
+  await deps.store.unit(async () => {
+    await w.append([result]);
+    if (effect === null || revision === null) return;
+    if (!(await w.revise(expected, revision))) {
+      throw new Error(`lesson revision ${expected + 1} lost its race: the step is redone`);
+    }
+  });
+}
+
+/** A steer row as its event: `chat` when it names no source, its patch kept as it came. */
+function steerEvent(run: RunId, row: Extract<RunInbox, { kind: "steer" }>): NewRunEvent {
+  const { text, source, question_ids, patch, base_revision } = row.payload;
+  return {
+    type: "steer",
+    run_id: run,
+    event_id: row.event_id,
+    payload: {
+      text,
+      source: source ?? "chat",
+      ...(question_ids === undefined ? {} : { question_ids }),
+      ...(patch === undefined ? {} : { patch }),
+      ...(base_revision === undefined ? {} : { base_revision }),
+    },
+  };
 }
 
 /**
@@ -907,17 +990,7 @@ async function takeInbox(store: Store, w: Writer): Promise<{ messages: number; s
         });
       } else if (row.kind === "steer") {
         steers += 1;
-        const { text, source, question_ids } = row.payload;
-        events.push({
-          type: "steer",
-          run_id: w.run,
-          event_id: row.event_id,
-          payload: {
-            text,
-            source: source ?? "chat",
-            ...(question_ids === undefined ? {} : { question_ids }),
-          },
-        });
+        events.push(steerEvent(w.run, row));
       }
     }
     await w.append(events);
@@ -950,6 +1023,8 @@ async function endTurn(
 
 async function endCancelled(deps: EngineDeps, w: Writer): Promise<RunStepOutcome> {
   await takeInbox(deps.store, w);
+  // A parent's patch taken on the way out still lands: the cancel stops the AI, not the parent.
+  await applyPatches(w);
   return endTurn(w, "cancelled", deps.now());
 }
 
@@ -1029,13 +1104,132 @@ function steersOf(log: readonly RunEvent[]): SteerEvent[] {
   return log.filter((e): e is SteerEvent => e.type === "steer").sort((a, b) => a.seq - b.seq);
 }
 
-/** A steer as a line of the call's instructions: the parent's words go inside the fence. */
-function steerLine({ payload }: SteerEvent): string {
+/**
+ * A steer as a line of the call's instructions: the parent's words go inside the fence. A patch
+ * the runner applied is named with its revision, so the model keeps it and never makes it again.
+ */
+function steerLine(steer: SteerEvent, log: readonly RunEvent[]): string {
+  const { payload } = steer;
   const words = fence(payload.text, "parent");
   if (payload.source === "chat") return `The parent adds:\n${words}`;
   const ids = payload.question_ids?.map(neutralise).join(", ");
   const named = ids ? ` (questions ${ids})` : "";
-  return `The parent edited the lesson themselves${named}:\n${words}`;
+  const line = `The parent edited the lesson themselves${named}:\n${words}`;
+  if (payload.patch === undefined) return line;
+  const applied = revisionOf(log, steer);
+  if (applied === null) {
+    return `${line}\nTheir change was not applied: the lesson changed after they made it, or it would not read as a lesson. Make it with lesson_edit if it still fits.`;
+  }
+  return `${line}\nTheir change is already in the lesson, as revision ${applied}: keep it, and do not make it again.`;
+}
+
+/** The revision a steer's patch was applied as, or null when it was not. */
+function revisionOf(log: readonly RunEvent[], steer: SteerEvent): number | null {
+  const revision = log.find(
+    (e) => e.type === "lesson_revision" && e.payload.call_id === steer.event_id,
+  );
+  return revision?.type === "lesson_revision" ? revision.payload.revision : null;
+}
+
+/**
+ * Applies each logged steer's patch not yet applied, oldest first, as a `lesson_revision`, with no
+ * model call. It runs in its own unit after the take (lead decision 48), so a throw between the 2
+ * is redone on redelivery and the parent's edit is never lost; the revision's `event_id` comes from
+ * its steer, so it is never applied twice.
+ *
+ * A patch lands only on the revision it was made on, checked against the conversation's latest
+ * across every turn and written through its compare-and-set: a merge patch replaces arrays whole,
+ * so on a newer revision it would undo what changed since. And only when the page's lenient parse
+ * reads every step of the result, as a verb's change must (`writable` in `verbs/lesson.ts`). A
+ * patch not applied stays words for the model, told so. Revisions only grow, so the refusal holds
+ * on every later step.
+ */
+async function applyPatches(w: Writer): Promise<number> {
+  let applied = 0;
+  for (const steer of steersOf(w.log)) {
+    const { patch, base_revision } = steer.payload;
+    if (patch === undefined || base_revision === undefined) continue;
+    if (revisionOf(w.log, steer) !== null) continue;
+    // The conversation's latest, across every turn: what the compare-and-set checks too.
+    const lesson = await conversationLesson(w.store, w.pod, w.run);
+    if (!lesson || lesson.revision !== base_revision) continue;
+    const lesson_file = mergePatch(lesson.lesson_file, patch);
+    if (!readable(lesson_file)) continue;
+    const written = await w.revise(base_revision, {
+      type: "lesson_revision",
+      run_id: w.run,
+      event_id: await w.id("steer", steer.event_id, "revision"),
+      payload: { revision: base_revision + 1, call_id: steer.event_id, lesson_file },
+    });
+    if (written) applied += 1;
+  }
+  return applied;
+}
+
+/** The conversation's latest lesson revision across every turn, 0 before the first. */
+async function latestRevision(w: Writer): Promise<number> {
+  return (await conversationLesson(w.store, w.pod, w.run))?.revision ?? 0;
+}
+
+/** The higher revision of 2 lessons, either of which may be missing. */
+function newer(a: VerbContext["lesson"], b: VerbContext["lesson"]): VerbContext["lesson"] {
+  if (!a) return b;
+  if (!b) return a;
+  return b.revision > a.revision ? b : a;
+}
+
+/**
+ * The conversation's latest lesson, read across all its turns, later ones included: what a patch
+ * applied outside a running turn's step must still be made on (dl-z5ja.76, review round 2).
+ */
+async function conversationLesson(
+  store: Store,
+  pod: PodId,
+  run: RunId,
+): Promise<VerbContext["lesson"]> {
+  const row = await store.getRun(pod, run);
+  if (row.conversation_id === null) return null;
+  let lesson: VerbContext["lesson"] = null;
+  for (const turn of await store.listRuns(pod, row.conversation_id)) {
+    lesson = newer(lesson, lessonOf(await store.listRunEvents(pod, turn.id, 0)));
+  }
+  return lesson;
+}
+
+/** Whether `file` is a lesson file the page's lenient parse reads whole, every step of it. */
+function readable(file: unknown): file is Record<string, unknown> {
+  try {
+    return parseLessonFileLenient(file).skipped.length === 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * A step for an ended turn: the parent's patches in its inbox land as revisions, with no model call
+ * and no status change (dl-z5ja.76). Any other row there changes nothing, as before, and is not
+ * logged. A stray step finds the inbox empty and writes nothing.
+ */
+async function patchEnded(
+  deps: EngineDeps,
+  found: Awaited<ReturnType<typeof authorizeRun>>,
+  attempt: number,
+): Promise<number> {
+  const log = [...(await deps.store.listRunEvents(found.pod, found.run.id, 0))];
+  const w = new Writer(deps.store, found.pod, found.run.id, attempt, log);
+  await deps.store.unit(async () => {
+    const rows = await deps.store.takeRunInbox(w.pod, w.run);
+    const steers: NewRunEvent[] = [];
+    for (const row of rows) {
+      if (row.kind !== "steer" || row.payload.patch === undefined) continue;
+      steers.push(steerEvent(w.run, row));
+    }
+    await w.append(steers);
+  });
+  // A later unit applies every logged patch not yet resolved, this take's and any a step that
+  // threw after its take left behind (lead decision 48): a redelivery redoes it, never loses it.
+  await applyPatches(w);
+  return w.appended;
 }
 
 /** What the run has paid, from the log: each `model_response` counted once. */
@@ -1098,14 +1292,20 @@ function museInput(log: readonly RunEvent[]): MuseInput[] {
 async function priorTurns(
   store: Store,
   scope: Scope,
-): Promise<{ input: MuseInput[]; said: RunEvent[]; lesson: VerbContext["lesson"] }> {
+): Promise<{
+  input: MuseInput[];
+  said: RunEvent[];
+  lesson: VerbContext["lesson"];
+  edits: string[];
+}> {
   const { pod, run } = scope;
-  if (run.conversation_id === null) return { input: [], said: [], lesson: null };
+  if (run.conversation_id === null) return { input: [], said: [], lesson: null, edits: [] };
   const runs = await store.listRuns(pod, run.conversation_id);
   const here = runs.findIndex((r) => r.id === run.id);
   const before = here < 0 ? runs : runs.slice(0, here);
   const input: MuseInput[] = [];
   const said: RunEvent[] = [];
+  const edits: string[] = [];
   let lesson: VerbContext["lesson"] = null;
   for (const earlier of before) {
     const log = await store.listRunEvents(pod, earlier.id, 0);
@@ -1113,8 +1313,13 @@ async function priorTurns(
     said.push(...log.filter((e) => e.type === "message" && e.payload.from === "parent"));
     const left = lessonOf(log);
     if (left) lesson = left;
+    // A patch applied after that turn's last call: no call has been told of it yet (dl-z5ja.76).
+    const told = responsesOf(log).at(-1)?.seq ?? 0;
+    for (const steer of steersOf(log)) {
+      if (steer.seq > told && steer.payload.patch !== undefined) edits.push(steerLine(steer, log));
+    }
   }
-  return { input, said, lesson };
+  return { input, said, lesson, edits };
 }
 
 /**
@@ -1126,25 +1331,12 @@ function pageOf(log: readonly RunEvent[]): MessageContext | null {
   return said?.type === "message" ? (said.payload.context ?? null) : null;
 }
 
-/** Whether a run of the conversation logged the event `event_id`: the message was taken before. */
-async function logged(
-  store: Store,
-  pod: PodId,
-  conversation: ConversationId,
-  event_id: EventId,
-): Promise<boolean> {
-  for (const run of await store.listRuns(pod, conversation)) {
-    const log = await store.listRunEvents(pod, run.id, 0);
-    if (log.some((e) => e.event_id === event_id)) return true;
-  }
-  return false;
-}
-
 /**
  * A message's page as a fact for the call's instructions, read from the run's pod only (Lead
- * decision 36): a learner of the pod, or a lesson the pod has published. Null when the pod holds no
- * such id: nothing of it is read, and `acceptMessage` refuses it. The learner's name is the
- * parent's own words, so it goes inside the fence as data (dl-z5ja.47, dl-z5ja.117).
+ * decision 36): a learner of the pod, or a lesson of the pod, its draft included (Lead decision
+ * 42). Null when the pod holds no such id: nothing of it is read, and `acceptMessage` refuses it.
+ * The learner's name and the lesson's title are the parent's own words, so they go inside the
+ * fence as data (dl-z5ja.47, dl-z5ja.117, dl-z5ja.121).
  */
 async function pageLine(
   store: Store,
@@ -1162,9 +1354,13 @@ async function pageLine(
       fence(found.learner.first_name, "parent"),
     ].join("\n");
   }
-  const version = await store.getLatestLessonVersion(pod, context.lesson_id);
-  if (!version) return null;
-  return `The parent is writing from the screen of lesson ${context.lesson_id} (version ${version.version}): questions about "this lesson" are about it.`;
+  // The pod's own lesson, its draft included (Lead decision 42): another pod's id reads as none.
+  const lesson = await store.getLesson(pod, context.lesson_id);
+  if (!lesson) return null;
+  return [
+    `The parent is writing from the screen of lesson ${context.lesson_id} (${lesson.status}): questions about "this lesson" are about it, whose title is:`,
+    fence(lesson.title, "parent"),
+  ].join("\n");
 }
 
 /**
@@ -1293,6 +1489,7 @@ async function closeDue(
   const w = new Writer(store, pod, run.id, attempt, log);
   try {
     await takeInbox(store, w);
+    await applyPatches(w);
     if (due === "max") {
       await endPastMax(w, run.attempt, now);
     } else {

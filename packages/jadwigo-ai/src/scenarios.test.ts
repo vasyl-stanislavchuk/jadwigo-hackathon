@@ -1,4 +1,4 @@
-import { EventId, ID_PREFIXES, idOf, Uuid } from "@jadwigo/contracts";
+import { EventId, ID_PREFIXES, idOf, type LearnerId, toolViewData, Uuid } from "@jadwigo/contracts";
 import {
   ConversationId,
   type NewRunEvent,
@@ -9,7 +9,7 @@ import {
   type RunId,
   type VerbName,
 } from "@jadwigo/contracts/run";
-import { foldRun, mergeLive } from "@jadwigo/core";
+import { checkAnswer, foldRun, mergeLive } from "@jadwigo/core";
 import { parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import { InMemoryStore } from "@jadwigo/store";
 import { FIXED_NOW } from "@jadwigo/testing";
@@ -20,7 +20,7 @@ import { ScriptedMuse, type ScriptedReply } from "./muse/scripted.ts";
 import { InMemoryRunQueue } from "./queue/memory.ts";
 import { STEP_VISIBILITY_S } from "./queue/types.ts";
 import { acceptMessage, drain, type EngineDeps, type InboxEntry, sweep } from "./run/run-step.ts";
-import { createVerbs, fixtureBank } from "./verbs/index.ts";
+import { createVerbs, fixtureBank, type LearnerReads } from "./verbs/index.ts";
 import {
   type Verb,
   type VerbContext,
@@ -490,6 +490,248 @@ describe("the engine keeps PostHog's production lessons", () => {
     },
   );
 
+  // Lead decision 41 (wave 4, dl-z5ja.76): the parent's own edit wins by construction.
+  frozen(
+    "a parent's patch lands as a revision with no model call, and Cofnij is one more patch",
+    async () => {
+      const t = await setup(
+        [draft(), { text: "Gotowe." }, { text: "Dobrze." }],
+        createVerbs({ bank: fixtureBank() }),
+      );
+      const run = await t.say("Dodawanie do 20, klasa 1.");
+      await drain(t.deps);
+      const drafted = foldRun(await t.log(run)).lesson;
+      expect(drafted?.revision).toBe(1);
+      expect(t.muse.calls).toHaveLength(2);
+
+      // The turn has ended: the pane's edit lands on it by a step of its own, and no call is made.
+      await t.steer("Zmieniłam tytuł.", {
+        source: "lesson_edit",
+        question_ids: ["s01"],
+        patch: { title: "Moja lekcja" },
+        base_revision: 1,
+      });
+      await drain(t.deps);
+      const edited = await t.log(run);
+      expect(t.muse.calls).toHaveLength(2);
+      const steer = edited.find((e) => e.type === "steer");
+      expect(edited.at(-1)).toMatchObject({
+        type: "lesson_revision",
+        payload: { revision: 2, call_id: steer?.event_id },
+      });
+      expect(foldRun(edited).lesson?.lesson_file).toMatchObject({ title: "Moja lekcja" });
+      expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
+
+      // Cofnij: the pane sends the patch back, and the lesson is the draft again, one step on.
+      const title = (drafted?.lesson_file as { title?: unknown } | undefined)?.title;
+      await t.steer("Cofnij.", {
+        source: "lesson_edit",
+        question_ids: ["s01"],
+        patch: { title },
+        base_revision: 2,
+      });
+      await drain(t.deps);
+      const undone = foldRun(await t.log(run)).lesson;
+      expect(undone?.revision).toBe(3);
+      expect(undone?.lesson_file).toEqual(drafted?.lesson_file);
+      expect(t.muse.calls).toHaveLength(2);
+
+      // The next turn's call is told which questions the parent changed, and that it is done.
+      await t.say("Dziękuję.");
+      await drain(t.deps);
+      const told = t.muse.calls[2]?.instructions ?? "";
+      expect(told).toContain("questions s01");
+      expect(told).toContain("already in the lesson, as revision 2");
+      expect(told).toContain("already in the lesson, as revision 3");
+    },
+  );
+
+  frozen("a parent's patch mid-turn is applied before the next call, and wins", async () => {
+    const verbs = createVerbs({ bank: fixtureBank() });
+    let t: Awaited<ReturnType<typeof setup>>;
+    t = await setup([draft(), check(), { text: "Zostawiłam twój tytuł." }], verbs, {
+      onMuse: async (request) => {
+        if (request.call_no !== 2) return;
+        await t.steer("Zmieniłam tytuł.", {
+          source: "lesson_edit",
+          question_ids: ["s01"],
+          patch: { title: "Moja lekcja" },
+          base_revision: 1,
+        });
+      },
+    });
+    const run = await t.say("Dodawanie do 20, klasa 1.");
+    await drain(t.deps);
+
+    const events = await t.log(run);
+    const steer = events.find((e) => e.type === "steer");
+    const patched = seqOf(
+      events,
+      (e) => e.type === "lesson_revision" && e.payload.call_id === steer?.event_id,
+    );
+    expect(patched).toBeLessThan(
+      seqOf(events, (e) => e.type === "model_response" && e.payload.call_no === 3),
+    );
+    expect(t.muse.calls).toHaveLength(3);
+    expect(t.muse.calls[2]?.instructions).toContain("already in the lesson, as revision 2");
+    expect(foldRun(events).lesson?.lesson_file).toMatchObject({ title: "Moja lekcja" });
+  });
+
+  frozen(
+    "a patch made on an older revision is not applied, so it undoes nothing the AI changed",
+    async () => {
+      const SAY = "Zacznij od 7 i dolicz 5.";
+      const verbs = createVerbs({ bank: fixtureBank() });
+      const aiEdit: ScriptedReply = {
+        tool_calls: [
+          {
+            verb: "lesson_edit",
+            input: (r) => ({
+              draft_id: r.run_id,
+              names: [],
+              step_id: "s02",
+              patch: { say: SAY },
+              why: "shorter",
+            }),
+          },
+        ],
+      };
+      let t: Awaited<ReturnType<typeof setup>>;
+      t = await setup([draft(), aiEdit, { text: "Dobrze." }], verbs, {
+        onMuse: async (request) => {
+          if (request.call_no !== 2) return;
+          // The pane still shows revision 1; the AI's edit makes revision 2 before this is taken.
+          await t.steer("Zmieniłam tytuł.", {
+            source: "lesson_edit",
+            question_ids: ["s01"],
+            patch: { title: "Moja lekcja" },
+            base_revision: 1,
+          });
+        },
+      });
+      const run = await t.say("Dodawanie do 20, klasa 1.");
+      await drain(t.deps);
+
+      const events = await t.log(run);
+      const lesson = foldRun(events).lesson;
+      expect(lesson?.revision).toBe(2);
+      expect(stepSay(lesson?.lesson_file, "s02")).toBe(SAY);
+      expect(lesson?.lesson_file).not.toMatchObject({ title: "Moja lekcja" });
+      expect(t.muse.calls[2]?.instructions).toContain("Their change was not applied");
+    },
+  );
+
+  // Lead decision 48 (#541's round 3): every revision goes through the conversation's
+  // compare-and-set, so a parent's patch and a later turn's AI edit can never both be revision 2.
+  frozen(
+    "an AI edit on a lesson the parent's patch moved is refused, re-read, and both changes stay",
+    async () => {
+      const SAY = "Zacznij od 7 i dolicz 5.";
+      const TITLE = "Moja lekcja";
+      const real = createVerbs({ bank: fixtureBank() });
+      let during: (() => Promise<void>) | null = null;
+      // The AI's lesson_edit reads the lesson, then the parent's patch lands before it writes.
+      const verbs: Verbs = {
+        ...real,
+        lesson_edit: {
+          ...real.lesson_edit,
+          run: async (context, input) => {
+            const effect = await real.lesson_edit.run(context, input);
+            const hook = during;
+            during = null;
+            await hook?.();
+            return effect;
+          },
+        },
+      };
+      const aiEdit: ScriptedReply = {
+        tool_calls: [
+          {
+            verb: "lesson_edit",
+            input: (r) => ({
+              draft_id: r.run_id,
+              names: [],
+              step_id: "s02",
+              patch: { say: SAY },
+              why: "shorter",
+            }),
+          },
+        ],
+      };
+      let t: Awaited<ReturnType<typeof setup>>;
+      t = await setup([draft(), { text: "Gotowe." }, aiEdit, aiEdit, { text: "Dobrze." }], verbs, {
+        // The patch step's first try dies before its revision is written: it runs again later.
+        crashOn: (events) =>
+          events.some(
+            (e) =>
+              e.type === "lesson_revision" &&
+              (e.payload.lesson_file as { title?: unknown }).title === TITLE,
+          ),
+      });
+      const first = await t.say("Dodawanie do 20, klasa 1.");
+      await drain(t.deps);
+      await t.steer("Zmieniłam tytuł.", {
+        source: "lesson_edit",
+        question_ids: ["s01"],
+        patch: { title: TITLE },
+        base_revision: 1,
+      });
+      await drain(t.deps);
+      // The parent opens turn 2 just before the patch step comes back. Its edit reads revision 1,
+      // and the patch's redelivery lands while the edit runs, before it writes: 2 workers' race.
+      t.tick(STEP_VISIBILITY_S * 1000 - 1000);
+      during = async () => {
+        t.tick(2000);
+        await drain(t.deps);
+      };
+      const second = await t.say("Krócej, proszę.");
+      await drain(t.deps);
+
+      const refused = (await t.log(second)).filter(
+        (e) => e.type === "tool_result" && e.payload.error?.type === RUN_ERROR_TYPE.lessonChanged,
+      );
+      expect(refused).toHaveLength(1);
+      const revisions = [...(await t.log(first)), ...(await t.log(second))].filter(
+        (e) => e.type === "lesson_revision",
+      );
+      expect(revisions.map((e) => e.payload.revision).sort()).toEqual([1, 2, 3]);
+      const last = revisions.find((e) => e.payload.revision === 3);
+      expect(last?.payload.lesson_file).toMatchObject({ title: TITLE });
+      expect(stepSay(last?.payload.lesson_file, "s02")).toBe(SAY);
+    },
+  );
+
+  frozen("a patch whose step dies after the take is applied on its redelivery", async () => {
+    const TITLE = "Moja lekcja";
+    const t = await setup([draft(), { text: "Gotowe." }], createVerbs({ bank: fixtureBank() }), {
+      crashOn: (events) =>
+        events.some(
+          (e) =>
+            e.type === "lesson_revision" &&
+            (e.payload.lesson_file as { title?: unknown }).title === TITLE,
+        ),
+    });
+    const run = await t.say("Dodawanie do 20, klasa 1.");
+    await drain(t.deps);
+    await t.steer("Zmieniłam tytuł.", {
+      source: "lesson_edit",
+      question_ids: ["s01"],
+      patch: { title: TITLE },
+      base_revision: 1,
+    });
+    await drain(t.deps);
+    // The take logged the steer; the step died before its revision. The inbox is empty now.
+    expect((await t.log(run)).filter((e) => e.type === "steer")).toHaveLength(1);
+    expect(foldRun(await t.log(run)).lesson?.revision).toBe(1);
+
+    t.tick(STEP_VISIBILITY_S * 1000 + 1000);
+    await drain(t.deps);
+    const lesson = foldRun(await t.log(run)).lesson;
+    expect(lesson?.revision).toBe(2);
+    expect(lesson?.lesson_file).toMatchObject({ title: TITLE });
+    expect(t.muse.calls).toHaveLength(2);
+  });
+
   // Lead decision 36 (wave 4, dl-z5ja.107): the side panel's page travels on the message.
   frozen(
     "a message from a learner page names that learner to the model, read from the pod",
@@ -609,6 +851,73 @@ describe("the engine keeps PostHog's production lessons", () => {
     await drain(plain.deps);
     expect((await plain.log(chat)).some((e) => isAgent(e, ENGLISH))).toBe(true);
   });
+
+  frozen(
+    "what should we practise next: up to 3 ideas citing the brief, and no level or number of its own",
+    async () => {
+      // A made-up learner with 2 goals and no lesson played yet: the brief puts each goal's
+      // skills on its new list, so lesson_ideas offers one idea per goal (dl-z5ja.25).
+      const ASK = "What should we practise next?";
+      const INVENTED = "Ola has mastered adding: 80% right, better than most. Try subtracting.";
+      const WORDED =
+        "Two ideas from the brief. i1: adding, maths.add.within-10 and maths.add.within-20, for the goal Dodawanie. i2: subtracting, maths.sub.within-10, for the goal Odejmowanie.";
+      let learner: LearnerId | undefined;
+      const ideas: ScriptedReply = {
+        tool_calls: [{ verb: "lesson_ideas", input: () => ({ learner_id: learner }) }],
+      };
+      let reads: LearnerReads | undefined;
+      const t = await setup(
+        [ideas, { text: INVENTED }, { text: WORDED }],
+        createVerbs({
+          bank: fixtureBank(),
+          learners: lateReads(() => reads),
+          now: () => FIXED_NOW,
+        }),
+      );
+      reads = t.store;
+      learner = (await t.store.addLearner(t.pod, { first_name: "Ola" })).learner.id;
+      await t.store.addGoal(t.pod, learner, {
+        name: "Dodawanie",
+        skill_codes: ["maths.add.within-10", "maths.add.within-20"],
+      });
+      await t.store.addGoal(t.pod, learner, {
+        name: "Odejmowanie",
+        skill_codes: ["maths.sub.within-10"],
+      });
+
+      const run = await t.say(ASK);
+      await drain(t.deps);
+      const events = await t.log(run);
+
+      // The tool answered up to 3 ideas, each cited by the brief's skills and goals.
+      const result = events.find((e) => e.type === "tool_result");
+      if (result?.type !== "tool_result") throw new Error("lesson_ideas wrote no result");
+      expect(result.payload.error ?? null).toBeNull();
+      const view = toolViewData("lesson_ideas", result.payload.view?.data);
+      expect(view?.ideas.map((i) => [i.id, i.list, i.skill_codes])).toEqual([
+        ["i1", "new", ["maths.add.within-10", "maths.add.within-20"]],
+        ["i2", "new", ["maths.sub.within-10"]],
+      ]);
+      for (const idea of view?.ideas ?? []) {
+        expect(idea.citations.filter((c) => c.kind === "skill")).toHaveLength(
+          idea.skill_codes.length,
+        );
+        expect(idea.citations.some((c) => c.kind === "goal")).toBe(true);
+      }
+
+      // The invented level, score and comparison never reach the parent; the cited answer does,
+      // and it holds no level word or number the turn's tool results did not give.
+      const agent = events.flatMap((e) =>
+        e.type === "message" && e.payload.from === "agent" ? [e.payload.text] : [],
+      );
+      expect(agent).toEqual([WORDED]);
+      expect(checkAnswer(WORDED, events)).toEqual([]);
+      // Its level word alone refuses it: a number may happen to sit in a random id the turn gave.
+      expect(checkAnswer(INVENTED, events).map((m) => m.kind)).toContain("level");
+      expect(t.muse.calls).toHaveLength(3);
+      expect((await t.store.getRun(t.pod, run)).status).toBe("completed");
+    },
+  );
 });
 
 // The world each scenario runs in.
@@ -743,6 +1052,11 @@ function fakeVerbs(
     lesson_edit: (c) => ({ output: {}, lesson_file: c.lesson?.lesson_file ?? LESSON }),
     lesson_check: () => ({ output: { findings: [] } }),
     question_search: () => ({ output: { sets: [] } }),
+    learner_skills: () => ({ output: { goals: [] } }),
+    learner_week: () => ({ output: { weeks: [] } }),
+    learner_mistakes: () => ({ output: { mistakes: [] } }),
+    curriculum_topics: () => ({ output: { topics: [] } }),
+    lesson_ideas: () => ({ output: { ideas: [] } }),
   };
   const verb = (name: VerbName): Verb => ({
     name,
@@ -758,6 +1072,11 @@ function fakeVerbs(
     lesson_edit: verb("lesson_edit"),
     lesson_check: verb("lesson_check"),
     question_search: verb("question_search"),
+    learner_skills: verb("learner_skills"),
+    learner_week: verb("learner_week"),
+    learner_mistakes: verb("learner_mistakes"),
+    curriculum_topics: verb("curriculum_topics"),
+    lesson_ideas: verb("lesson_ideas"),
   };
 }
 
@@ -783,4 +1102,25 @@ function stepSay(lesson_file: unknown, id: string): unknown {
 /** Everything the model was sent on call `call_no`, as one string to search. */
 function sent(muse: ScriptedMuse, call_no: number): string {
   return JSON.stringify(muse.calls.find((c) => c.call_no === call_no) ?? null);
+}
+
+/**
+ * The learner reads, from a store the scenario makes after its verbs: `setup` makes the store, and
+ * the verbs are made before it. Each read throws until the store is there.
+ */
+function lateReads(get: () => LearnerReads | undefined): LearnerReads {
+  const store = (): LearnerReads => {
+    const s = get();
+    if (s === undefined) throw new Error("the scenario's store is not made yet");
+    return s;
+  };
+  return {
+    getMe: (...a) => store().getMe(...a),
+    listSkills: (...a) => store().listSkills(...a),
+    listGoals: (...a) => store().listGoals(...a),
+    getLearnerEvidence: (...a) => store().getLearnerEvidence(...a),
+    getLearnerAttempts: (...a) => store().getLearnerAttempts(...a),
+    getAttempt: (...a) => store().getAttempt(...a),
+    listReports: (...a) => store().listReports(...a),
+  };
 }

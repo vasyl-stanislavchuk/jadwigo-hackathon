@@ -44,13 +44,22 @@ export const BUDGET_STOP_SHARE = 0.9;
 export const RunWorkflow = z.enum(["jadwigo-lesson-compose"]);
 export type RunWorkflow = z.infer<typeof RunWorkflow>;
 
-/** The verbs the model calls as function tools, the same set `jw mcp serve` exposes. */
+/**
+ * The verbs the model calls as function tools. The lesson verbs are the set `jw mcp serve`
+ * exposes; the learner verbs (dl-z5ja.25) read one learner of the run's pod and are the engine's
+ * only, since jw holds no learner.
+ */
 export const VerbName = z.enum([
   "lesson_draft",
   "lesson_show",
   "lesson_edit",
   "lesson_check",
   "question_search",
+  "learner_skills",
+  "learner_week",
+  "learner_mistakes",
+  "curriculum_topics",
+  "lesson_ideas",
 ]);
 export type VerbName = z.infer<typeof VerbName>;
 
@@ -190,6 +199,12 @@ export const RUN_ERROR_TYPE = {
    * completed.
    */
   answerWrongLanguage: "AnswerWrongLanguage",
+  /**
+   * A verb's lesson change was refused: the conversation's lesson moved after the verb read it,
+   * by the parent's own edit or another turn (lead decision 48, dl-z5ja.76). Written as the
+   * `tool_result`'s error, so the model reads the lesson again; the turn goes on.
+   */
+  lessonChanged: "LessonChanged",
 } as const;
 export type RunErrorType = (typeof RUN_ERROR_TYPE)[keyof typeof RUN_ERROR_TYPE];
 
@@ -262,6 +277,20 @@ const SteerSource = z.enum(["chat", "lesson_edit"]);
  * (the id `lesson_edit` and `lesson_check` call `step_id`). Never empty when present.
  */
 const SteerQuestionIds = z.array(z.string().min(1)).min(1);
+/**
+ * A parent's own edit of the lesson file, as a JSON merge patch (RFC 7386): a key set to `null` is
+ * removed, an object merges, any other value replaces (Lead decision 41, dl-z5ja.76). The runner
+ * applies it as a `lesson_revision` with no model call, so the parent's edit wins by construction,
+ * and the pane's Cofnij is one more patch the same way.
+ */
+export const LessonPatch = z.record(z.string(), z.unknown());
+export type LessonPatch = z.infer<typeof LessonPatch>;
+/**
+ * The lesson revision a parent's patch was made on. The runner applies the patch only while that
+ * is still the latest: a merge patch replaces arrays whole, so on a newer revision it would undo
+ * what changed since (dl-z5ja.76). Not exported on its own: the steer snapshots carry it.
+ */
+const PatchBase = Count;
 
 const Base = {
   run_id: RunId,
@@ -330,6 +359,10 @@ export const ToolResultEvent = event(
   }),
 );
 /** The whole lesson file after an edit, not a patch: the fold keeps the highest `revision`. */
+/**
+ * The lesson file after a change. `call_id` names what made it: the verb's tool call, or, for a
+ * parent's `patch` (dl-z5ja.76), the `event_id` of the steer that carried it.
+ */
 export const LessonRevisionEvent = event(
   "lesson_revision",
   z.object({ revision: Count, call_id: z.string().min(1), lesson_file: Json }),
@@ -366,6 +399,24 @@ const SteerEvent = event(
     text: z.string(),
     source: SteerSource,
     question_ids: SteerQuestionIds.optional(),
+    /** A `lesson_edit` steer's change, applied as the `lesson_revision` that names this event. */
+    patch: LessonPatch.optional(),
+    base_revision: PatchBase.optional(),
+  }),
+);
+/**
+ * What became of a parent's patch (lead decision 49, dl-z5ja.130): `applied` with the revision it
+ * made, or not, and why. Its own event, since run_event is append-only and the steer is logged
+ * before the patch is resolved. `steer_event_id` names the steer that carried the patch. Not
+ * exported on its own, like the steer: `run-event.json` holds it.
+ */
+const PatchResolvedEvent = event(
+  "patch_resolved",
+  z.object({
+    steer_event_id: EventId,
+    applied: z.boolean(),
+    revision: Count.optional(),
+    reason: z.enum(["stale_base", "invalid_file", "no_lesson"]).optional(),
   }),
 );
 /** The agent's checklist for a long turn (seam 4). Each one replaces the last whole. */
@@ -395,6 +446,7 @@ export const RunEvent = z.discriminatedUnion("type", [
   ApprovalRequestEvent,
   ApprovalResolvedEvent,
   SteerEvent,
+  PatchResolvedEvent,
   PlanEvent,
   StatusEvent,
   UsageEvent,
@@ -447,6 +499,8 @@ export const RunInbox = z.discriminatedUnion("kind", [
       /** `chat` when absent: a steer from before dl-z5ja.51 named none. */
       source: SteerSource.optional(),
       question_ids: SteerQuestionIds.optional(),
+      patch: LessonPatch.optional(),
+      base_revision: PatchBase.optional(),
     }),
   }),
   z.object({

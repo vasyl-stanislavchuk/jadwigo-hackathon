@@ -11,6 +11,7 @@
 //   DATABASE_URL=postgresql://localhost:5433/jadwigo_e2e PORT=8787 \
 //     AUTH_JWKS_URL=http://127.0.0.1:54321/auth/v1/.well-known/jwks.json bun apps/api/src/serve.ts &
 import { expect, type Page, test } from "@playwright/test";
+import { agreeToAi } from "./consent.ts";
 
 /** Opens the help note and says "Not sure yet". */
 async function notSureYet(page: Page): Promise<void> {
@@ -64,6 +65,8 @@ const storedAttempts = (page: Page): Promise<string[]> =>
     Object.keys(window.sessionStorage).filter((key) => key.startsWith("jw.play.attempt.")),
   );
 
+test.beforeEach(({ page }) => agreeToAi(page));
+
 test("an adult saves a finished lesson: email code, account, a child, the claim, the parent home", async ({
   page,
 }) => {
@@ -109,10 +112,11 @@ test("an adult saves a finished lesson: email code, account, a child, the claim,
   await expect(lesson).toHaveCount(1);
   await expect(lesson.getByText("Równe grupy")).toBeVisible();
   await expect(lesson.locator("li[data-seq]").first()).toHaveAttribute("data-ended", "skipped");
-  await expect(page).toHaveURL(/\/parent$/);
+  // The kept lesson opens on that child's page (dl-uukj.47.3).
+  await expect(page).toHaveURL(/\/parent\/children\/lrn_[0-9a-z]{26}$/);
   expect(await storedAttempts(page)).toEqual([]);
 
-  // A reload keeps the session (supabase-js's storage) and the home, with no second claim to make.
+  // A reload keeps the session (supabase-js's storage) and the page, with no second claim to make.
   await page.reload();
   await expect(page.locator("[data-learner-card]").locator("li[data-attempt]")).toHaveCount(1);
 });

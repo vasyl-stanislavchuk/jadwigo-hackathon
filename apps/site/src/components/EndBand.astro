@@ -1,0 +1,28 @@
+---
+// The end of the landing page and /jak-to-dziala (design handoff "landing 3"): one line for the
+// parent, who creates the account, and the sign-up.
+import type { Language } from "@jadwigo/config";
+import { twinPath } from "../lib/i18n.ts";
+import { landingWords } from "../lib/words.ts";
+
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+const end = (await landingWords(lang)).end;
+---
+
+<section class="end-band">
+  <div class="wrap">
+    <h2>{end.text}</h2>
+    <a class="btn" href={`${twinPath("signIn", lang)}/`}>{end.button}</a>
+  </div>
+</section>
+
+<style>
+  .end-band { border-top: 2px solid var(--jw-line); margin-top: clamp(3rem, 7vw, 5rem); padding-top: clamp(2rem, 5vw, 3.5rem); }
+  .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem 2rem; }
+  h2 { font-size: clamp(1.4rem, 3vw, 1.8rem); }
+  .btn { min-width: 11rem; }
+</style>

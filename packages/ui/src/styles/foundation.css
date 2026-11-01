@@ -266,6 +266,7 @@
   --jw-shell-box: 45rem; /* 720px */
   --jw-dialog-width: 27.5rem; /* 440px */
   --jw-radius-dialog: 0.875rem; /* 14px */
+  --jw-radius-box: 1rem; /* 16px: the first screen's one box, the same in the parent's density */
   /* Room around × and ÷ so a sum reads as one thing. */
   --jw-math-op-space: 0.2em;
 

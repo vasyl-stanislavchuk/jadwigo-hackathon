@@ -45,7 +45,7 @@ import {
   SkipReason,
   Subject,
 } from "./records.ts";
-import { Conversation, MessageContext, Run, RunEvent } from "./run.ts";
+import { Conversation, LessonPatch, MessageContext, Run, RunEvent } from "./run.ts";
 
 /**
  * What crosses `/api/v1` during an attempt (decision
@@ -673,6 +673,13 @@ export const ConversationMessage = z
     /** The lesson file's questions a `lesson_edit` steer names, by their `id`. Never empty. */
     question_ids: z.array(z.string().min(1)).min(1).optional(),
     /**
+     * A `lesson_edit` steer's change to the lesson file, as a JSON merge patch: the runner applies
+     * it with no model call (dl-z5ja.76). The pane's Cofnij sends one too.
+     */
+    patch: LessonPatch.optional(),
+    /** The lesson revision the pane's patch was made on: required with a patch, never without. */
+    base_revision: z.int().min(1).optional(),
+    /**
      * A message's page (dl-z5ja.107): the learner page or the lesson screen it was sent from, as
      * one id. A steer joins a running turn and carries none (Lead decision 36).
      */
@@ -681,6 +688,14 @@ export const ConversationMessage = z
   .refine((m) => m.kind === "steer" || (m.source === undefined && m.question_ids === undefined), {
     message: "source and question_ids come only with a steer",
     path: ["kind"],
+  })
+  .refine((m) => m.patch === undefined || (m.kind === "steer" && m.source === "lesson_edit"), {
+    message: "a patch comes only with a lesson_edit steer",
+    path: ["patch"],
+  })
+  .refine((m) => (m.patch === undefined) === (m.base_revision === undefined), {
+    message: "a patch comes with the revision it was made on, and that revision only with a patch",
+    path: ["base_revision"],
   })
   .refine((m) => m.kind !== "steer" || m.context === undefined, {
     message: "context comes only with a message",

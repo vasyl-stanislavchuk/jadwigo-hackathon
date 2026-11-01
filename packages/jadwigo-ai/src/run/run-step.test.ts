@@ -1,12 +1,4 @@
-import {
-  type AccountId,
-  EventId,
-  ID_PREFIXES,
-  idOf,
-  LessonVersionId,
-  type PodId,
-  Uuid,
-} from "@jadwigo/contracts";
+import { type AccountId, EventId, ID_PREFIXES, idOf, type PodId, Uuid } from "@jadwigo/contracts";
 import {
   BUDGET_STEER_SHARE,
   BUDGET_STOP_SHARE,
@@ -26,6 +18,7 @@ import {
 import {
   type Fenced,
   InMemoryStore,
+  type LessonRevisionAppend,
   type NewConversation,
   type NewRun,
   type NewRunInbox,
@@ -215,6 +208,36 @@ class RunMemoryStore extends InMemoryStore {
     });
     return Promise.resolve(taken);
   }
+  /** The conversation's compare-and-set, as InMemoryStore keeps it (dl-z5ja.134), on these maps. */
+  override async appendLessonRevision(
+    pod: PodId,
+    id: RunId,
+    attempt: number,
+    expected: number,
+    event: Extract<NewRunEvent, { type: "lesson_revision" }>,
+  ): Promise<LessonRevisionAppend> {
+    const run = this.#run(pod, id);
+    const replay = (this.events.get(id) ?? []).find((e) => e.event_id === event.event_id);
+    if (replay?.type === "lesson_revision") {
+      return { ok: true, revision: replay.payload.revision, event: replay };
+    }
+    let latest = 0;
+    for (const other of this.runs.values()) {
+      if (other.conversation_id !== run.conversation_id) continue;
+      for (const e of this.events.get(other.id) ?? []) {
+        if (e.type === "lesson_revision") latest = Math.max(latest, e.payload.revision);
+      }
+    }
+    if (latest !== expected) return { ok: false, stale: "revision", latest };
+    const { stale, value } = await this.appendRunEvents(pod, id, attempt, [event]);
+    const appended = value[0];
+    if (stale || appended === undefined) return { ok: false, stale: "attempt", latest };
+    return { ok: true, revision: event.payload.revision, event: appended };
+  }
+
+  override findRunInbox(pod: PodId, event_id: EventId) {
+    return Promise.resolve(this.inbox.find((r) => r.pod_id === pod && r.event_id === event_id));
+  }
 }
 
 interface Reply {
@@ -271,6 +294,11 @@ function fakeVerbs(hooks: Partial<Record<VerbName, Hook>> = {}): Verbs {
     lesson_edit: verb("lesson_edit"),
     lesson_check: verb("lesson_check"),
     question_search: verb("question_search"),
+    learner_skills: verb("learner_skills"),
+    learner_week: verb("learner_week"),
+    learner_mistakes: verb("learner_mistakes"),
+    curriculum_topics: verb("curriculum_topics"),
+    lesson_ideas: verb("lesson_ideas"),
   };
 }
 
@@ -1121,6 +1149,7 @@ describe("the run's own error types", () => {
       answerUnchecked: "AnswerUnchecked",
       // The page writes it as its generic "what went off track" line, as AnswerUnchecked.
       answerWrongLanguage: "AnswerWrongLanguage",
+      lessonChanged: "LessonChanged",
     });
   });
 });
@@ -1584,6 +1613,122 @@ describe("the answer check: one correction per turn", () => {
   });
 });
 
+describe("a parent's patch (dl-z5ja.76)", () => {
+  const steer = (patch: Record<string, unknown>, base_revision = 1) => ({
+    event_id: newEventId(),
+    kind: "steer" as const,
+    payload: { text: "I changed it.", source: "lesson_edit" as const, patch, base_revision },
+  });
+  const drafting = (): Reply => ({ calls: [{ verb: "lesson_draft", input: DRAFT_INPUT }] });
+  const real = () => createVerbs({ bank: fixtureBank() });
+
+  it("is left as words, told it was not applied, when there is no lesson yet", async () => {
+    let t: Awaited<ReturnType<typeof setup>>;
+    t = await setup([{ text: "Noted." }, { text: "Sure." }]);
+    const scripted = t.deps.muse;
+    t.deps.muse = {
+      respond: async (request) => {
+        if (request.call_no === 1) await t.send(steer({ title: "Mine" }));
+        return scripted.respond(request);
+      },
+    };
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+    const events = await t.log(run);
+    expect(events.some((e) => e.type === "lesson_revision")).toBe(false);
+    expect(t.muse.calls[1]?.instructions).toContain("Their change was not applied");
+  });
+
+  it("is applied once when the step that applies it is delivered again", async () => {
+    const t = await setup([drafting(), { text: "Done." }], real());
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+    const { attempt } = await t.run(run);
+    await t.send(steer({ title: "Mine" }));
+    // The same step again, as a redelivery would bring it.
+    await t.deps.queue.send({ run_id: run, attempt });
+    await drain(t.deps);
+    const revisions = (await t.log(run)).filter((e) => e.type === "lesson_revision");
+    expect(revisions.map((e) => e.payload.revision)).toEqual([1, 2]);
+    expect(t.muse.calls).toHaveLength(2);
+  });
+
+  it("is not applied when the file it makes would not read as a lesson", async () => {
+    for (const patch of [{ script: null }, { language: null }, { title: 7 }]) {
+      const t = await setup([drafting(), { text: "Done." }], real());
+      const run = await t.say("Halves.");
+      await drain(t.deps);
+      await t.send(steer(patch));
+      await drain(t.deps);
+      const revisions = (await t.log(run)).filter((e) => e.type === "lesson_revision");
+      expect(revisions.map((e) => e.payload.revision)).toEqual([1]);
+    }
+  });
+
+  it("is not applied on an ended turn when a later turn changed the lesson first (review round 2)", async () => {
+    const t = await setup([drafting(), { text: "Done." }, drafting(), { text: "Again." }], real());
+    const first = await t.say("Halves.");
+    await drain(t.deps);
+    // The pane's patch on revision 1 lands on the ended turn, and a step is queued for it.
+    await t.send(steer({ title: "Parent's title" }));
+    // Before that step runs, the parent opens a new turn, and its step drafts revision 2 first.
+    const second = await t.say("Make another.");
+    const { attempt } = await t.run(second);
+    await runStep({ run_id: second, attempt }, t.deps);
+    await drain(t.deps);
+
+    const firstLog = await t.log(first);
+    expect(firstLog.filter((e) => e.type === "lesson_revision")).toHaveLength(1);
+    const latest = (await t.log(second)).filter((e) => e.type === "lesson_revision");
+    expect(latest.map((e) => e.payload.revision)).toEqual([2]);
+    expect(latest[0]?.payload.lesson_file).not.toMatchObject({ title: "Parent's title" });
+  });
+
+  it("lands when the turn is cancelled before its next call", async () => {
+    let t: Awaited<ReturnType<typeof setup>>;
+    t = await setup([drafting(), { calls: [{ verb: "lesson_show" }] }], real());
+    const scripted = t.deps.muse;
+    let run: RunId | null = null;
+    t.deps.muse = {
+      respond: async (request) => {
+        const answer = await scripted.respond(request);
+        if (request.call_no === 2 && run) {
+          // The patch is sent on revision 1 and a Stop right behind it, while call 2 is out.
+          await t.send(steer({ title: "Mine" }));
+          await t.send({ event_id: newEventId(), kind: "cancel", payload: {} });
+        }
+        return answer;
+      },
+    };
+    run = await t.say("Halves.");
+    await drain(t.deps);
+    const events = await t.log(run);
+    expect((await t.run(run)).status).toBe("cancelled");
+    expect(
+      events.filter((e) => e.type === "lesson_revision").map((e) => e.payload.revision),
+    ).toEqual([1, 2]);
+  });
+
+  it("leaves an ended turn's other inbox rows unlogged", async () => {
+    const t = await setup([{ text: "Done." }]);
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+    const ended = await t.log(run);
+    await t.send({
+      event_id: newEventId(),
+      kind: "steer",
+      payload: { text: "Shorter.", source: "chat" },
+    });
+    await t.send(steer({ title: "Mine" }));
+    await drain(t.deps);
+    // No lesson to change and no chat steer logged: the ended turn is as it was, plus the patch's steer.
+    const after = await t.log(run);
+    expect(after.slice(0, ended.length)).toEqual(ended);
+    expect(after.slice(ended.length).map((e) => e.type)).toEqual(["steer"]);
+    expect(t.muse.calls).toHaveLength(1);
+  });
+});
+
 describe("the message's page (dl-z5ja.107)", () => {
   const LESSON = {
     title: "Made-up halves",
@@ -1594,40 +1739,31 @@ describe("the message's page (dl-z5ja.107)", () => {
     skill_ids: [],
   };
 
-  it("names a lesson the pod has published, and refuses one it has only drafted", async () => {
+  it("names a lesson of the pod, its draft included, and refuses another pod's (dl-z5ja.121)", async () => {
     const t = await setup([{ text: "About that lesson." }]);
-    const published = await t.store.putLesson(t.member.pod, LESSON);
-    const drafted = await t.store.putLesson(t.member.pod, LESSON);
-    // A published version, as the store answers one: publishing needs lesson questions, and the
-    // store's own contract covers that a draft has no latest version.
-    const latest = t.store.getLatestLessonVersion.bind(t.store);
-    t.store.getLatestLessonVersion = async (pod, lesson) =>
-      lesson === published.id
-        ? {
-            id: LessonVersionId.parse(idOf(ID_PREFIXES.lesson_version, crypto.randomUUID())),
-            pod_id: pod,
-            lesson_id: lesson,
-            version: 1,
-            revises: null,
-            published_at: FIXED_NOW.toISOString(),
-          }
-        : latest(pod, lesson);
+    const drafted = await t.store.putLesson(t.member.pod, { ...LESSON, title: "Mo<b>je" });
+    const other = await t.store.createAccount(Uuid.parse(crypto.randomUUID()), "en");
+    const elsewhere = await t.store.putLesson(other.pod, LESSON);
 
     await expect(
       t.send({
         event_id: newEventId(),
         kind: "message",
-        payload: { text: "This one?", context: { lesson_id: drafted.id } },
+        payload: { text: "This one?", context: { lesson_id: elsewhere.id } },
       }),
     ).rejects.toMatchObject({ type: "NotFound" });
+    expect(t.muse.calls).toHaveLength(0);
     await t.send({
       event_id: newEventId(),
       kind: "message",
-      payload: { text: "This one?", context: { lesson_id: published.id } },
+      payload: { text: "This one?", context: { lesson_id: drafted.id } },
     });
     await drain(t.deps);
     expect(t.muse.calls).toHaveLength(1);
-    expect(t.muse.calls[0]?.instructions).toContain(`screen of lesson ${published.id}`);
+    const instructions = t.muse.calls[0]?.instructions ?? "";
+    expect(instructions).toContain(`screen of lesson ${drafted.id} (draft)`);
+    // The title is the parent's words: inside the fence, markup neutralised.
+    expect(instructions).toContain(fence("Mo<b>je", "parent"));
   });
 
   it("states the page of the turn's last parent message only", async () => {
@@ -1672,6 +1808,27 @@ describe("the message's page (dl-z5ja.107)", () => {
     expect(again.run.id).toBe(first.run.id);
     expect(again.inbox.event_id).toBe(entry.event_id);
     // A new message naming it is refused.
+    await expect(t.send({ ...entry, event_id: newEventId() })).rejects.toMatchObject({
+      type: "NotFound",
+    });
+  });
+
+  it("answers a pending resend its stored row after the page has gone (dl-z5ja.132)", async () => {
+    const t = await setup([{ text: "Sure." }]);
+    const { learner } = await t.store.addLearner(t.member.pod, { first_name: "Mole" });
+    const entry = {
+      event_id: newEventId(),
+      kind: "message" as const,
+      payload: { text: "Hi.", context: { learner_id: learner.id } },
+    };
+    const first = await t.send(entry);
+    // Not drained: the row is still pending in the inbox when the learner leaves the pod's list.
+    const me = t.store.getMe.bind(t.store);
+    t.store.getMe = async (pod, account) => ({ ...(await me(pod, account)), learners: [] });
+
+    const again = await t.send(entry);
+    expect(again.run.id).toBe(first.run.id);
+    expect(again.inbox).toEqual(first.inbox);
     await expect(t.send({ ...entry, event_id: newEventId() })).rejects.toMatchObject({
       type: "NotFound",
     });
