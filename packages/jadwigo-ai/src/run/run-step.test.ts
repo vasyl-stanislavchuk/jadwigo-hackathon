@@ -1624,7 +1624,7 @@ describe("a parent's patch (dl-z5ja.76)", () => {
   const drafting = (): Reply => ({ calls: [{ verb: "lesson_draft", input: DRAFT_INPUT }] });
   const real = () => createVerbs({ bank: fixtureBank() });
 
-  it("is left as words, told it was not applied, when there is no lesson yet", async () => {
+  it("is resolved no_lesson with no model call, and told when a call is made", async () => {
     let t: Awaited<ReturnType<typeof setup>>;
     t = await setup([{ text: "Noted." }, { text: "Sure." }]);
     const scripted = t.deps.muse;
@@ -1638,7 +1638,15 @@ describe("a parent's patch (dl-z5ja.76)", () => {
     await drain(t.deps);
     const events = await t.log(run);
     expect(events.some((e) => e.type === "lesson_revision")).toBe(false);
-    expect(t.muse.calls[1]?.instructions).toContain("Their change was not applied");
+    expect(events.find((e) => e.type === "patch_resolved")?.payload).toMatchObject({
+      applied: false,
+      reason: "no_lesson",
+    });
+    // A patch asks for no model call of its own; the next call that is made is told why.
+    expect(t.muse.calls).toHaveLength(1);
+    await t.say("And now?");
+    await drain(t.deps);
+    expect(t.muse.calls[1]?.instructions).toContain("there was no lesson yet to change");
   });
 
   it("is applied once when the step that applies it is delivered again", async () => {
@@ -1711,6 +1719,87 @@ describe("a parent's patch (dl-z5ja.76)", () => {
     ).toEqual([1, 2]);
   });
 
+  it("resolves each patch once, with why when it is not applied (dl-z5ja.130)", async () => {
+    const resolutions = async (patch: Record<string, unknown>, base: number, lesson = true) => {
+      const t = await setup(
+        [...(lesson ? [drafting()] : []), { text: "Done." }],
+        lesson ? real() : fakeVerbs(),
+      );
+      const run = await t.say("Halves.");
+      await drain(t.deps);
+      const sent = steer(patch, base);
+      await t.send(sent);
+      await drain(t.deps);
+      // A stray step for the ended turn writes no second resolution.
+      const { attempt } = await t.run(run);
+      await t.deps.queue.send({ run_id: run, attempt });
+      await drain(t.deps);
+      return (await t.log(run)).flatMap((e) =>
+        e.type === "patch_resolved"
+          ? [{ ...e.payload, mine: e.payload.steer_event_id === sent.event_id }]
+          : [],
+      );
+    };
+    expect(await resolutions({ title: "Mine" }, 1)).toEqual([
+      { steer_event_id: expect.any(String), applied: true, revision: 2, mine: true },
+    ]);
+    expect(await resolutions({ title: "Mine" }, 7)).toMatchObject([
+      { applied: false, reason: "stale_base", mine: true },
+    ]);
+    expect(await resolutions({ script: null }, 1)).toMatchObject([
+      { applied: false, reason: "invalid_file", mine: true },
+    ]);
+    expect(await resolutions({ title: "Mine" }, 1, false)).toMatchObject([
+      { applied: false, reason: "no_lesson", mine: true },
+    ]);
+  });
+
+  it("is applied when it comes while the turn is ending, past its last take (#575's review)", async () => {
+    const t = await setup([drafting(), { text: "Done." }], real());
+    // The parent's patch is accepted just as the step writes turn_complete: after finish's take.
+    const append = t.store.appendRunEvents.bind(t.store);
+    let sent = false;
+    t.store.appendRunEvents = async (pod, id, attempt, events) => {
+      if (!sent && events.some((e) => e.type === "turn_complete")) {
+        sent = true;
+        await t.send(steer({ title: "Mine" }));
+      }
+      return append(pod, id, attempt, events);
+    };
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+
+    expect(sent).toBe(true);
+    expect((await t.run(run)).status).toBe("completed");
+    const events = await t.log(run);
+    expect(events.find((e) => e.type === "patch_resolved")?.payload).toMatchObject({
+      applied: true,
+      revision: 2,
+    });
+    expect(t.store.inbox.filter((r) => r.status === "pending")).toEqual([]);
+    expect(t.muse.calls).toHaveLength(2);
+  });
+
+  it("is applied when an ender moves the attempt before the patch's step runs (#575's review)", async () => {
+    const t = await setup([drafting(), { text: "Done." }], real());
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+    expect((await t.run(run)).status).toBe("completed");
+    // The patch is accepted, and its step queued at the run's attempt; then an ender (the sweep's
+    // close, a redelivery's claim) moves the attempt before that step runs.
+    await t.send(steer({ title: "Mine" }));
+    const stored = await t.run(run);
+    await t.store.updateRun(t.member.pod, run, stored.attempt, { attempt: stored.attempt + 1 });
+    await drain(t.deps);
+
+    const events = await t.log(run);
+    expect(events.find((e) => e.type === "patch_resolved")?.payload).toMatchObject({
+      applied: true,
+      revision: 2,
+    });
+    expect(t.store.inbox.filter((r) => r.status === "pending")).toEqual([]);
+  });
+
   it("leaves an ended turn's other inbox rows unlogged", async () => {
     const t = await setup([{ text: "Done." }]);
     const run = await t.say("Halves.");
@@ -1723,10 +1812,11 @@ describe("a parent's patch (dl-z5ja.76)", () => {
     });
     await t.send(steer({ title: "Mine" }));
     await drain(t.deps);
-    // No lesson to change and no chat steer logged: the ended turn is as it was, plus the patch's steer.
+    // No lesson to change and no chat steer logged: the ended turn is as it was, plus the patch's
+    // steer and its resolution.
     const after = await t.log(run);
     expect(after.slice(0, ended.length)).toEqual(ended);
-    expect(after.slice(ended.length).map((e) => e.type)).toEqual(["steer"]);
+    expect(after.slice(ended.length).map((e) => e.type)).toEqual(["steer", "patch_resolved"]);
     expect(t.muse.calls).toHaveLength(1);
   });
 });

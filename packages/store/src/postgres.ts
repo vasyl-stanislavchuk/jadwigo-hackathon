@@ -2873,6 +2873,10 @@ class PostgresStore implements Store {
     return this.#in(pod, async (tx) => runOf(await this.#run(tx, run, false)));
   }
 
+  async lockRun(pod: PodId, run: RunId): Promise<Run> {
+    return this.#in(pod, async (tx) => runOf(await this.#run(tx, run, true)));
+  }
+
   async updateRun(
     pod: PodId,
     run: RunId,

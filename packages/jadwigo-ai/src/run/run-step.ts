@@ -288,13 +288,17 @@ export function acceptMessage(
 
       if (entry.kind !== "message" && !open) {
         // Nothing is running: a cancel, a steer or an approval lands on the last turn and changes nothing.
-        const last = runs.at(-1);
-        if (!last) {
+        const listed = runs.at(-1);
+        if (!listed) {
           throw new StoreError(
             ErrorType.enum.BadRequest,
             `the conversation has no run for a ${entry.kind}`,
           );
         }
+        // The row is locked from here to the unit's end, so no ender moves its attempt or takes its
+        // inbox in between (#575's review); one that ran first is seen here.
+        const last = await store.lockRun(pod, listed.id);
+        if (!isEnded(last.status)) continue;
         const inbox = await put(last.id);
         // A parent's patch is applied on the last turn by a step of its own, with no model call
         // (dl-z5ja.76): the lesson pane's edit and its Cofnij land when nothing is running.
@@ -325,6 +329,11 @@ export function acceptMessage(
         opened = run.status === "queued";
       }
 
+      // Locked as above: an ender (the sweep's close, a step's finish) waits for this unit, or has
+      // ended the turn already, and then the entry goes to the ended turn on the next try.
+      const locked = await store.lockRun(pod, open.id);
+      if (isEnded(locked.status)) continue;
+      open = locked;
       const inbox = await put(open.id);
       if (inbox.run_id !== open.id) {
         // A resend of a message an earlier turn already holds. A run this call opened gets its step
@@ -347,7 +356,13 @@ export function acceptMessage(
       // A step for a run this call opened (a racing caller's too: one of the 2 steps runs stale or
       // claims nothing to pay for, dl-z5ja.41), or for one it woke from awaiting_input.
       const woke = woken.changed && waiting && woken.run.status === "queued";
-      if (opened || woke) await queue.send({ run_id: woken.run.id, attempt: woken.run.attempt });
+      // A parent's patch always gets a step of its own (#575's review): a step that is ending the
+      // turn may have taken its inbox already, and a patch must never be stranded behind it. The
+      // extra step takes it, or finds the turn ended and applies it there; racing steps pay once.
+      const patched = inbox.kind === "steer" && inbox.payload.patch !== undefined;
+      if (opened || woke || patched) {
+        await queue.send({ run_id: woken.run.id, attempt: woken.run.attempt });
+      }
       return { run: woken.run, inbox };
     }
     throw new Error(
@@ -391,15 +406,15 @@ export async function runStep(input: RunStepInput, deps: EngineDeps): Promise<Ru
     }
     throw error;
   }
-  if (found.run.attempt !== input.attempt) {
-    const ended = endedOutcome(found.run.status);
-    return { outcome: ended ?? "continue", events: 0 };
-  }
   const ended = endedOutcome(found.run.status);
+  if (found.run.attempt !== input.attempt && !ended) return { outcome: "continue", events: 0 };
   if (ended) {
     // An ended turn changes only by a parent's patch; everything else in its inbox changes nothing.
+    // A step queued before an ender moved the attempt (the sweep's close, a redelivery's claim)
+    // still lands its patch, under the attempt the run holds now, so no inbox row waits forever
+    // (#575's review): the ender itself never reads the inbox.
     try {
-      return { outcome: ended, events: await patchEnded(deps, found, input.attempt) };
+      return { outcome: ended, events: await patchEnded(deps, found, found.run.attempt) };
     } catch (error) {
       if (error instanceof StaleAttempt) return { outcome: ended, events: 0 };
       throw error;
@@ -485,7 +500,7 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
         await w.append([
           agentMessage(w, refused, await w.id("call", last.payload.call_no, "message")),
         ]);
-        if (!parentSpokeAfter(w.log, last.seq)) return endTurn(w, "completed", deps.now());
+        if (!parentSpokeAfter(w.log, last.seq)) return finish(deps, w);
       } else if (await corrected(w, last)) {
         return endUnchecked(deps, w, last, refusal);
       } else {
@@ -493,11 +508,11 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       }
     } else if (last && last.payload.tool_calls.length === 0 && !parentSpokeAfter(w.log, last.seq)) {
       // The answer is recorded and nothing came after it: a redelivery ends the turn on it.
-      return endTurn(w, "completed", deps.now());
+      return finish(deps, w);
     }
 
     // Nothing from the parent: a turn a resend opened and no message joined (dl-z5ja.85).
-    if (!parentSpokeAfter(w.log, 0)) return endTurn(w, "completed", deps.now());
+    if (!parentSpokeAfter(w.log, 0)) return finish(deps, w);
 
     const spent = spentOf(w.log);
     const level = budgetGuard(spent, run.cap_usd);
@@ -529,7 +544,7 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
           payload: { from: "agent", text: STOP_TEXT },
         },
       ]);
-      return endTurn(w, "completed", deps.now());
+      return finish(deps, w);
     }
     const instructions = [INSTRUCTIONS];
     if (correction) instructions.push(correctionNote(correction.text, correction.refusal));
@@ -643,11 +658,11 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       // A message that came in during the call keeps the turn open for one more step.
       // So does a steer: it is logged, and the next call is built with it (Lead decision 22).
       const late = await takeInbox(deps.store, w);
-      if (late.messages + late.steers > 0) {
+      if (late.messages + late.steers - late.patches > 0) {
         await deps.queue.send({ run_id: run.id, attempt: w.attempt });
         return "continue";
       }
-      return endTurn(w, "completed", deps.now());
+      return finish(deps, w);
     }
     pending = [...response.tool_calls];
   }
@@ -861,7 +876,7 @@ async function endUnchecked(
     await deps.queue.send({ run_id: w.run, attempt: w.attempt });
     return "continue";
   }
-  return endTurn(w, "completed", deps.now());
+  return finish(deps, w);
 }
 
 /**
@@ -966,12 +981,16 @@ function steerEvent(run: RunId, row: Extract<RunInbox, { kind: "steer" }>): NewR
  * the turn is built from the logged steers, so a redelivered step keeps them (dl-z5ja.42). A cancel
  * is already on the run row.
  */
-async function takeInbox(store: Store, w: Writer): Promise<{ messages: number; steers: number }> {
+async function takeInbox(
+  store: Store,
+  w: Writer,
+): Promise<{ messages: number; steers: number; patches: number }> {
   return store.unit(async () => {
     const rows = await store.takeRunInbox(w.pod, w.run);
     const events: NewRunEvent[] = [];
     let messages = 0;
     let steers = 0;
+    let patches = 0;
     for (const row of rows) {
       if (row.kind === "message") {
         messages += 1;
@@ -1002,11 +1021,12 @@ async function takeInbox(store: Store, w: Writer): Promise<{ messages: number; s
         });
       } else if (row.kind === "steer") {
         steers += 1;
+        if (row.payload.patch !== undefined) patches += 1;
         events.push(steerEvent(w.run, row));
       }
     }
     await w.append(events);
-    return { messages, steers };
+    return { messages, steers, patches };
   });
 }
 
@@ -1015,6 +1035,27 @@ async function cancelRequested(w: Writer): Promise<boolean> {
 }
 
 /** Ends the turn: its status, then `turn_complete`, then the row. Each write is idempotent. */
+/**
+ * Completes the turn, in one unit with a last take of its inbox (dl-z5ja.130 review): a parent's
+ * patch that came after the step's last take is applied now, with no model call, instead of being
+ * stranded on an ended turn. A message or a chat steer that came then keeps the turn going for one
+ * more step, as the late take before the end already does.
+ */
+async function finish(deps: EngineDeps, w: Writer): Promise<RunStepOutcome> {
+  return deps.store.unit(async () => {
+    // Locked before the last take, so a parent's patch is either taken here or accepted after the
+    // turn has ended, never between the two (#575's review).
+    await deps.store.lockRun(w.pod, w.run);
+    const late = await takeInbox(deps.store, w);
+    await applyPatches(w);
+    if (late.messages + late.steers - late.patches > 0) {
+      await deps.queue.send({ run_id: w.run, attempt: w.attempt });
+      return "continue";
+    }
+    return endTurn(w, "completed", deps.now());
+  });
+}
+
 async function endTurn(
   w: Writer,
   status: "completed" | "failed" | "cancelled",
@@ -1101,11 +1142,17 @@ function unresolved(response: ModelResponse, log: readonly RunEvent[]): ToolCall
   return response.payload.tool_calls.filter((call) => !done.has(call.call_id));
 }
 
-/** A parent's message or steer logged after `seq`: the turn has more to answer. */
+/**
+ * A parent's message or steer logged after `seq`: the turn has more to answer. A steer carrying a
+ * patch is not: the runner applies it with no model call (dl-z5ja.76), and the next call that is
+ * made for something else is told of it.
+ */
 function parentSpokeAfter(log: readonly RunEvent[], seq: number): boolean {
   return log.some(
     (e) =>
-      e.seq > seq && (e.type === "steer" || (e.type === "message" && e.payload.from === "parent")),
+      e.seq > seq &&
+      ((e.type === "steer" && e.payload.patch === undefined) ||
+        (e.type === "message" && e.payload.from === "parent")),
   );
 }
 
@@ -1128,11 +1175,40 @@ function steerLine(steer: SteerEvent, log: readonly RunEvent[]): string {
   const named = ids ? ` (questions ${ids})` : "";
   const line = `The parent edited the lesson themselves${named}:\n${words}`;
   if (payload.patch === undefined) return line;
-  const applied = revisionOf(log, steer);
-  if (applied === null) {
-    return `${line}\nTheir change was not applied: the lesson changed after they made it, or it would not read as a lesson. Make it with lesson_edit if it still fits.`;
+  const resolved = resolutionOf(log, steer);
+  if (resolved?.applied && resolved.revision !== undefined) {
+    return `${line}\nTheir change is already in the lesson, as revision ${resolved.revision}: keep it, and do not make it again.`;
   }
-  return `${line}\nTheir change is already in the lesson, as revision ${applied}: keep it, and do not make it again.`;
+  // Logged and not resolved yet: pending, never refused (a step that threw after its take).
+  if (!resolved) {
+    return `${line}\nTheir change is not applied yet: the runner applies it, so do not make it yourself.`;
+  }
+  const why = resolved.reason ? NOT_APPLIED[resolved.reason] : NOT_APPLIED.stale_base;
+  return `${line}\nTheir change was not applied: ${why}. Make it with lesson_edit if it still fits.`;
+}
+
+type PatchResolved = Extract<RunEvent, { type: "patch_resolved" }>["payload"];
+type PatchRefusal = NonNullable<PatchResolved["reason"]>;
+
+/** Why a patch was not applied, as the model is told it. */
+const NOT_APPLIED: Record<PatchRefusal, string> = {
+  stale_base: "the lesson changed after they made it",
+  invalid_file: "it would not read as a lesson",
+  no_lesson: "there was no lesson yet to change",
+};
+
+/**
+ * The `patch_resolved` event a steer's patch got (dl-z5ja.130), or null while it is pending. An
+ * "applied" whose revision is not in the log is pending too: its unit died between the 2 writes
+ * (Postgres rolls both back; a store that cannot is redone here).
+ */
+function resolutionOf(log: readonly RunEvent[], steer: SteerEvent): PatchResolved | null {
+  const found = log.find(
+    (e) => e.type === "patch_resolved" && e.payload.steer_event_id === steer.event_id,
+  );
+  if (found?.type !== "patch_resolved") return null;
+  if (found.payload.applied && revisionOf(log, steer) === null) return null;
+  return found.payload;
 }
 
 /** The revision a steer's patch was applied as, or null when it was not. */
@@ -1152,28 +1228,52 @@ function revisionOf(log: readonly RunEvent[], steer: SteerEvent): number | null 
  * A patch lands only on the revision it was made on, checked against the conversation's latest
  * across every turn and written through its compare-and-set: a merge patch replaces arrays whole,
  * so on a newer revision it would undo what changed since. And only when the page's lenient parse
- * reads every step of the result, as a verb's change must (`writable` in `verbs/lesson.ts`). A
- * patch not applied stays words for the model, told so. Revisions only grow, so the refusal holds
- * on every later step.
+ * reads every step of the result, as a verb's change must (`writable` in `verbs/lesson.ts`). Each
+ * patch gets one `patch_resolved` event (dl-z5ja.130, Lead decision 49): applied with its revision,
+ * or not, with why (`stale_base`, `invalid_file`, `no_lesson`), so the pane reads the outcome
+ * instead of re-deriving the rule. A patch not applied stays words for the model, told why.
  */
 async function applyPatches(w: Writer): Promise<number> {
   let applied = 0;
   for (const steer of steersOf(w.log)) {
     const { patch, base_revision } = steer.payload;
-    if (patch === undefined || base_revision === undefined) continue;
-    if (revisionOf(w.log, steer) !== null) continue;
-    // The conversation's latest, across every turn: what the compare-and-set checks too.
-    const lesson = await conversationLesson(w.store, w.pod, w.run);
-    if (!lesson || lesson.revision !== base_revision) continue;
-    const lesson_file = mergePatch(lesson.lesson_file, patch);
-    if (!readable(lesson_file)) continue;
-    const written = await w.revise(base_revision, {
-      type: "lesson_revision",
-      run_id: w.run,
-      event_id: await w.id("steer", steer.event_id, "revision"),
-      payload: { revision: base_revision + 1, call_id: steer.event_id, lesson_file },
+    if (patch === undefined || resolutionOf(w.log, steer) !== null) continue;
+    const resolve = async (resolution: Omit<PatchResolved, "steer_event_id">) =>
+      w.append([
+        {
+          type: "patch_resolved",
+          run_id: w.run,
+          event_id: await w.id("steer", steer.event_id, "resolved"),
+          payload: { steer_event_id: steer.event_id, ...resolution },
+        },
+      ]);
+    await w.store.unit(async () => {
+      // A revision written before a throw is found again by its event_id: it was applied.
+      const done = revisionOf(w.log, steer);
+      if (done !== null) return resolve({ applied: true, revision: done });
+      // The conversation's latest, across every turn: what the compare-and-set checks too.
+      const lesson = await conversationLesson(w.store, w.pod, w.run);
+      if (!lesson) return resolve({ applied: false, reason: "no_lesson" });
+      if (base_revision === undefined || lesson.revision !== base_revision) {
+        return resolve({ applied: false, reason: "stale_base" });
+      }
+      const lesson_file = mergePatch(lesson.lesson_file, patch);
+      if (!readable(lesson_file)) return resolve({ applied: false, reason: "invalid_file" });
+      // The resolution, then its revision, as the golden order keeps a tool_result before its
+      // revision. A writer that wins between the check above and this fails the unit, and a
+      // redelivery redoes it, now as stale_base.
+      await resolve({ applied: true, revision: base_revision + 1 });
+      const written = await w.revise(base_revision, {
+        type: "lesson_revision",
+        run_id: w.run,
+        event_id: await w.id("steer", steer.event_id, "revision"),
+        payload: { revision: base_revision + 1, call_id: steer.event_id, lesson_file },
+      });
+      if (!written) {
+        throw new Error(`lesson revision ${base_revision + 1} lost its race: the step is redone`);
+      }
+      applied += 1;
     });
-    if (written) applied += 1;
   }
   return applied;
 }
@@ -1548,22 +1648,28 @@ async function closeDue(
   due: "idle" | "max",
   now: Date,
 ): Promise<{ events: number } | null> {
-  const attempt = run.attempt + 1;
-  const claimed = await store.updateRun(pod, run.id, run.attempt, { attempt });
-  if (claimed.stale) return null;
-  const log = [...(await store.listRunEvents(pod, run.id, 0))];
-  const w = new Writer(store, pod, run.id, attempt, log);
-  try {
-    await takeInbox(store, w);
-    await applyPatches(w);
-    if (due === "max") {
-      await endPastMax(w, run.attempt, now);
-    } else {
-      await endPastIdle(w, run.attempt, now);
+  // One unit, the run's row locked first: the claim, the take and the end land together, so a
+  // parent's patch accepted meanwhile waits and then finds the turn ended (#575's review).
+  return store.unit(async () => {
+    const locked = await store.lockRun(pod, run.id);
+    if (locked.attempt !== run.attempt) return null;
+    const attempt = run.attempt + 1;
+    const claimed = await store.updateRun(pod, run.id, run.attempt, { attempt });
+    if (claimed.stale) return null;
+    const log = [...(await store.listRunEvents(pod, run.id, 0))];
+    const w = new Writer(store, pod, run.id, attempt, log);
+    try {
+      await takeInbox(store, w);
+      await applyPatches(w);
+      if (due === "max") {
+        await endPastMax(w, run.attempt, now);
+      } else {
+        await endPastIdle(w, run.attempt, now);
+      }
+    } catch (error) {
+      if (error instanceof StaleAttempt) return null;
+      throw error;
     }
-  } catch (error) {
-    if (error instanceof StaleAttempt) return null;
-    throw error;
-  }
-  return { events: w.appended };
+    return { events: w.appended };
+  });
 }
