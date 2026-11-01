@@ -13,9 +13,14 @@ _MARK = {doctor.OK: "ok  ", doctor.WARN: "warn", doctor.FAIL: "FAIL"}
 
 
 @click.command()
-@click.option("--language", default="pl", type=click.Choice(["pl", "en"]), show_default=True)
+@click.option(
+    "--language",
+    default=None,
+    type=click.Choice(["pl", "en"]),
+    help="Check one language; without it, pl and en each against its own converted file.",
+)
 @click.option("--json", "json_mode", is_flag=True, help="Print the result as JSON.")
-def command(language: str, json_mode: bool) -> None:
+def command(language: str | None, json_mode: bool) -> None:
     """Check this machine: settings, ready ids, stamps, the bank revision, the local services."""
     result = doctor.run(language)
     if json_mode:
