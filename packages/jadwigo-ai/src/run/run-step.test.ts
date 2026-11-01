@@ -635,7 +635,8 @@ describe("runStep and drain", () => {
         return {
           response_id: `resp_${request.call_no}`,
           model: "fake",
-          text: `answer ${request.call_no}`,
+          // Words, not digits: no tool result gave a number for the answer check (dl-z5ja.26).
+          text: request.call_no === 1 ? "First answer." : "Second answer.",
           tool_calls: [],
           usage: { input_tokens: 1, output_tokens: 1, cached_tokens: 0 },
           cost_usd: 0.01,
@@ -647,7 +648,45 @@ describe("runStep and drain", () => {
     const run = await t.say("Start.");
     await drain(t.deps);
     const texts = (await t.log(run)).flatMap((e) => (e.type === "message" ? [e.payload.text] : []));
-    expect(texts).toEqual(["Start.", "answer 1", "One more thing.", "answer 2"]);
+    expect(texts).toEqual(["Start.", "First answer.", "One more thing.", "Second answer."]);
+    expect((await t.run(run)).status).toBe("completed");
+  });
+
+  it("drops words beside tool calls that fail the answer check, and checks the last answer", async () => {
+    const t = await setup([
+      { text: "Drafting 12 questions now.", calls: [{ verb: "lesson_draft" }] },
+      { text: "Ready." },
+    ]);
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+    const agent = (await t.log(run)).flatMap((e) =>
+      e.type === "message" && e.payload.from === "agent" ? [e.payload.text] : [],
+    );
+    expect(agent).toEqual(["Ready."]);
+    expect(t.muse.calls).toHaveLength(2);
+  });
+
+  it("a redelivery after a refused answer still makes the one correction", async () => {
+    const t = await setup([{ text: "All 9 done." }, { text: "Done." }, { text: "Done." }]);
+    // The step after the refusal dies before its correction call is recorded.
+    t.store.crashOn = (events) =>
+      events.some((e) => e.type === "model_response" && e.payload.call_no === 2);
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+    t.tick(STEP_VISIBILITY_S * 1000 + 1000);
+    await drain(t.deps);
+
+    // Call 2 was paid before the crash and is asked again: the price of a crash mid-call, as before.
+    expect(t.muse.calls.map((c) => c.call_no)).toEqual([1, 2, 2]);
+    for (const call of t.muse.calls.slice(1)) expect(call.instructions).toContain('"9"');
+    const events = await t.log(run);
+    expect(events.filter((e) => e.type === "model_response").map((e) => e.payload.call_no)).toEqual(
+      [1, 2],
+    );
+    const agent = events.flatMap((e) =>
+      e.type === "message" && e.payload.from === "agent" ? [e.payload.text] : [],
+    );
+    expect(agent).toEqual(["Done."]);
     expect((await t.run(run)).status).toBe("completed");
   });
 

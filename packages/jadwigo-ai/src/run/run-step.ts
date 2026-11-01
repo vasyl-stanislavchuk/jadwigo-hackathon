@@ -1,4 +1,4 @@
-import { type AccountId, ErrorType, type PodId } from "@jadwigo/contracts";
+import { type AccountId, ErrorType, type EventId, type PodId } from "@jadwigo/contracts";
 import {
   type ConversationId,
   type ModelTier,
@@ -18,7 +18,7 @@ import {
   type RunStepOutput,
   type ToolCall,
 } from "@jadwigo/contracts/run";
-import { budgetGuard, deadlineDue } from "@jadwigo/core";
+import { type AnswerMiss, budgetGuard, checkAnswer, deadlineDue } from "@jadwigo/core";
 import { type NewRunInbox, type RunChange, type Store, StoreError } from "@jadwigo/store";
 import type { MuseClient, MuseInput } from "../muse/client.ts";
 import type { RunQueue } from "../queue/types.ts";
@@ -78,6 +78,11 @@ const TIER: ModelTier = "private";
 const STEER =
   "You have used half of this turn's budget. Finish the lesson with what you have, with no more searching.";
 const STOP_TEXT = "I stopped here to stay within the budget. The lesson so far is on the right.";
+/**
+ * The error type of an answer that failed the answer check twice (dl-z5ja.26). It belongs beside
+ * `RUN_ERROR_TYPE` in `@jadwigo/contracts/run` (a question for the lead in the PR).
+ */
+const ANSWER_UNCHECKED = "AnswerUnchecked";
 
 const ENDED: ReadonlySet<RunStatus> = new Set(["completed", "failed", "cancelled"]);
 
@@ -363,9 +368,21 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
   let pending = last ? unresolved(last, w.log) : [];
 
   if (pending.length === 0) {
+    let correction: { text: string; misses: AnswerMiss[] } | null = null;
     if (last && last.payload.tool_calls.length === 0 && !parentSpokeAfter(w.log, last.seq)) {
+      const refused = await refusedText(w, last);
       // The answer is recorded and nothing came after it: a redelivery ends the turn on it.
-      return endTurn(w, "completed", deps.now());
+      if (refused === null) return endTurn(w, "completed", deps.now());
+      // The last answer failed the answer check, so it was never written (dl-z5ja.26).
+      const misses = checkAnswer(refused, w.log);
+      if (misses.length === 0) {
+        await w.append([
+          agentMessage(w, refused, await w.id("call", last.payload.call_no, "message")),
+        ]);
+        return endTurn(w, "completed", deps.now());
+      }
+      if (await correcting(w, last)) return endUnchecked(deps, w, last.payload.call_no, misses);
+      correction = { text: refused, misses };
     }
 
     const spent = spentOf(w.log);
@@ -388,6 +405,7 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       return endTurn(w, "completed", deps.now());
     }
     const instructions = [INSTRUCTIONS];
+    if (correction) instructions.push(correctionNote(correction.text, correction.misses));
     if (level === "steer") {
       await w.append([
         {
@@ -443,13 +461,12 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
         payload: { spent_usd: total, cap_usd: run.cap_usd },
       },
     ];
-    if (response.text !== null) {
-      recorded.push({
-        type: "message",
-        run_id: run.id,
-        event_id: await w.id("call", call_no, "message"),
-        payload: { from: "agent", text: response.text },
-      });
+    // The answer check before an agent message (wave 2 Lead decision 23): code gave every number,
+    // status and level, or the message is not written. A text-only answer that fails is corrected
+    // once at the next step; text beside tool calls is dropped, and the turn's last answer is checked.
+    const checked = response.text === null ? [] : checkAnswer(response.text, w.log);
+    if (response.text !== null && checked.length === 0) {
+      recorded.push(agentMessage(w, response.text, await w.id("call", call_no, "message")));
     }
     for (const call of response.tool_calls) {
       recorded.push({
@@ -462,6 +479,10 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     // Recorded before any verb runs, so a redelivery reuses it and never pays again.
     await w.append(recorded);
     run = await w.update({ spent_usd: total });
+    if (response.tool_calls.length === 0 && checked.length > 0) {
+      await deps.queue.send({ run_id: run.id, attempt: w.attempt });
+      return "continue";
+    }
 
     if (response.tool_calls.length === 0) {
       // A message that came in during the call keeps the turn open for one more step.
@@ -483,6 +504,70 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
   await w.update({ idle_deadline_at: at(deps.now().getTime() + RUN_IDLE_MS) });
   await deps.queue.send({ run_id: run.id, attempt: w.attempt });
   return "continue";
+}
+
+/** An agent `message` the answer check passed. */
+function agentMessage(w: Writer, text: string, event_id: EventId): NewRunEvent {
+  return { type: "message", run_id: w.run, event_id, payload: { from: "agent", text } };
+}
+
+/**
+ * A text-only answer's words when the answer check refused them: no `message` and no `error` for
+ * its call is in the log. Null for an answer that was written, or had no words.
+ */
+async function refusedText(w: Writer, response: ModelResponse): Promise<string | null> {
+  const { text, tool_calls, call_no } = response.payload;
+  if (text === null || tool_calls.length > 0) return null;
+  const written = new Set([
+    await w.id("call", call_no, "message"),
+    await w.id("call", call_no, "unchecked"),
+  ]);
+  return w.log.some((e) => written.has(e.event_id)) ? null : text;
+}
+
+/** Whether `response` was the one correction: the answer before it was refused too. */
+async function correcting(w: Writer, response: ModelResponse): Promise<boolean> {
+  const before = responsesOf(w.log).find((e) => e.payload.call_no === response.payload.call_no - 1);
+  return before !== undefined && (await refusedText(w, before)) !== null;
+}
+
+function saidOf(misses: readonly AnswerMiss[]): string {
+  return [...new Set(misses.map((m) => `"${m.said}"`))].join(", ");
+}
+
+/** What the correction call is told: what failed, and its own words to write again. */
+function correctionNote(text: string, misses: readonly AnswerMiss[]): string {
+  return [
+    `Your last answer was not sent to the parent: it named ${saidOf(misses)}, which no tool result of this turn gave.`,
+    "Code computes every number, status and level; you only word them, and you never name a mastery level.",
+    "Write the answer again with only what the tool results say. Your answer was:",
+    text,
+  ].join("\n");
+}
+
+/** The correction failed the check too: an `error` event in place of the message, and the turn ends. */
+async function endUnchecked(
+  deps: EngineDeps,
+  w: Writer,
+  call_no: number,
+  misses: readonly AnswerMiss[],
+): Promise<RunStepOutcome> {
+  await w.append([
+    {
+      type: "error",
+      run_id: w.run,
+      event_id: await w.id("call", call_no, "unchecked"),
+      payload: {
+        error: {
+          type: ANSWER_UNCHECKED,
+          message: `the answer named ${saidOf(misses)}, which no tool result gave, after one correction`,
+        },
+        attempt: w.attempt,
+        retryable: false,
+      },
+    },
+  ]);
+  return endTurn(w, "completed", deps.now());
 }
 
 /**
