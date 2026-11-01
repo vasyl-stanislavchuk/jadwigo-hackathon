@@ -637,9 +637,14 @@ export const COPY_KEYS = [
   "parent_about_lesson",
   "parent_about_lesson_empty",
   "parent_change",
-  "parent_chat_empty",
   "parent_lesson_empty",
   // end the lesson workspace
+  // the lesson's send and its chat (dl-z5ja.108)
+  "parent_composer",
+  "parent_writing",
+  "parent_sending",
+  "parent_start_failed",
+  // end the lesson's send and its chat
   // the chat page (dl-z5ja.17): /playground/chat, a parent's chat on the left and the lesson on the right
   "chat_title",
   "chat_lesson_title",

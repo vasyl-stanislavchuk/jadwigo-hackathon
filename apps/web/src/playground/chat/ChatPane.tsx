@@ -5,6 +5,11 @@
  * Stop and Stopping, an error row with Copy details (the run id and the attempt), and a Restoring
  * line while the page catches up. The pattern list is `docs/research/posthog-ai-ux-patterns.md`
  * 15.3. Every word a parent reads comes from `@jadwigo/copy`.
+ *
+ * `variant="parent"` is the same pane inside the parent app's lesson workspace (dl-z5ja.108,
+ * decision dl-xo0q): no heading (the panel has one), no starters (the first screen asked), no Stop
+ * button (Esc still stops), the run's state in the workspace's band instead (`statusOf`), and the
+ * composer "Możesz pisać dalej…" with a 32 px round ink send button, quiet while empty.
  */
 
 import {
@@ -17,6 +22,8 @@ import {
 } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
+import { cn } from "@jadwigo/ui";
+import { ArrowUpIcon } from "lucide-react";
 import { type FormEvent, type ReactElement, useEffect, useRef, useState } from "react";
 import { Button } from "../tool/button.tsx";
 import { isOpen, type SendLimit, type Turn } from "./conversation.ts";
@@ -36,7 +43,7 @@ const TOOL_KEY: Record<VerbName, CopyKey> = {
   lesson_ideas: "chat_tool_lesson_ideas",
 };
 
-const STATUS_KEY: Record<RunStatus, CopyKey> = {
+export const STATUS_KEY: Record<RunStatus, CopyKey> = {
   queued: "chat_status_queued",
   in_progress: "chat_status_in_progress",
   awaiting_input: "chat_status_awaiting_input",
@@ -247,7 +254,17 @@ function announcementOf(last: Turn | undefined, restoring: boolean): CopyKey | n
   return "chat_announce_done";
 }
 
-/** The parent's words that opened a turn: what "Spróbuj ponownie" sends again. */
+/** The last turn's state, which the pane, or the parent workspace's band, writes in words. */
+export function statusOf(turns: readonly Turn[]): RunStatus | null {
+  const last = turns.at(-1);
+  return last === undefined ? null : (last.view.status ?? last.run.status);
+}
+
+/** What the live region says, for the parent workspace's band (the pane's own logic). */
+export function announcementFor(turns: readonly Turn[], restoring: boolean): CopyKey | null {
+  return announcementOf(turns.at(-1), restoring);
+}
+
 /** A turn that ended well: its rating band shows (dl-z5ja.63). */
 function completed(turn: Turn): boolean {
   return !isOpen(turn) && (turn.view.status ?? turn.run.status) === "completed";
@@ -307,6 +324,8 @@ export interface ChatPaneProps {
    * completed turn only when it is given.
    */
   onRate?: ((run: RunId, body: RunRatingCreate) => Promise<unknown>) | undefined;
+  /** The playground's pane, or the parent workspace's (see the header). */
+  variant?: "playground" | "parent";
 }
 
 export function ChatPane({
@@ -320,7 +339,9 @@ export function ChatPane({
   onSend,
   onStop,
   onRate,
+  variant = "playground",
 }: ChatPaneProps): ReactElement {
+  const parent = variant === "parent";
   const [draft, setDraft] = useState("");
   /** The last words sent, so a send that did not reach the server can go again. */
   const [lastSent, setLastSent] = useState<string | null>(null);
@@ -356,8 +377,12 @@ export function ChatPane({
   };
 
   return (
-    <section aria-label={say("chat_title")} className="flex min-h-0 flex-col gap-3">
-      <h2 className="text-base font-medium">{say("chat_title")}</h2>
+    <section
+      aria-label={say("chat_title")}
+      className={cn("flex min-h-0 flex-col gap-3", parent && "h-full p-4")}
+      data-variant={variant}
+    >
+      {!parent && <h2 className="text-base font-medium">{say("chat_title")}</h2>}
       {restoring && (
         <p data-row="restoring" className="text-muted-foreground text-sm">
           {say("chat_restoring")}
@@ -385,7 +410,7 @@ export function ChatPane({
         ])}
       </ol>
       <div ref={end} aria-hidden />
-      {turns.length === 0 && !restoring && (
+      {turns.length === 0 && !restoring && !parent && (
         <div data-row="empty" className="flex flex-col gap-2">
           <p className="text-muted-foreground">{say("chat_empty")}</p>
           <ul className="flex flex-col gap-1">
@@ -417,13 +442,17 @@ export function ChatPane({
           </Button>
         </div>
       )}
-      {/* The run's state as words, never a coloured dot alone. */}
-      <p data-status={status ?? "none"} className="text-sm">
-        {status === null ? "" : say(STATUS_KEY[status])}
-      </p>
-      <p role="status" aria-live="polite" data-live className="sr-only">
-        {announce === null ? "" : say(announce)}
-      </p>
+      {/* The run's state as words, never a coloured dot alone; the parent's is in the band. */}
+      {!parent && (
+        <>
+          <p data-status={status ?? "none"} className="text-sm">
+            {status === null ? "" : say(STATUS_KEY[status])}
+          </p>
+          <p role="status" aria-live="polite" data-live className="sr-only">
+            {announce === null ? "" : say(announce)}
+          </p>
+        </>
+      )}
       {!online && (
         <p data-row="offline" className="text-sm">
           {say("chat_offline")}
@@ -444,13 +473,24 @@ export function ChatPane({
           )}
         </div>
       )}
-      <form onSubmit={submit} className="flex items-end gap-2">
+      <form
+        onSubmit={submit}
+        className={cn(
+          "flex items-end gap-2",
+          parent && "rounded-jw-control border-jw border-jw-line bg-jw-card p-2",
+        )}
+      >
         <label className="flex flex-1 flex-col gap-1 text-sm">
-          {say("chat_composer_label")}
+          <span className={cn(parent && "sr-only")}>{say("chat_composer_label")}</span>
           <textarea
             value={draft}
             rows={2}
-            className="rounded-md border px-2 py-1"
+            placeholder={parent ? say("parent_composer") : undefined}
+            className={cn(
+              "rounded-md border px-2 py-1",
+              parent &&
+                "resize-none border-0 bg-transparent text-jw-page-body text-jw-ink outline-none placeholder:text-jw-placeholder",
+            )}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -465,8 +505,23 @@ export function ChatPane({
             }}
           />
         </label>
-        <Button type="submit">{say("chat_send")}</Button>
-        {open && (
+        {parent ? (
+          <button
+            type="submit"
+            aria-label={say("chat_send")}
+            aria-disabled={draft.trim() === ""}
+            className={cn(
+              "grid size-8 shrink-0 place-items-center rounded-full focus-visible:outline-3 focus-visible:outline-jw-focus",
+              draft.trim() === "" ? "bg-jw-act-quiet text-jw-ink-soft" : "bg-jw-ink text-jw-card",
+            )}
+            data-send
+          >
+            <ArrowUpIcon aria-hidden className="size-4" />
+          </button>
+        ) : (
+          <Button type="submit">{say("chat_send")}</Button>
+        )}
+        {open && !parent && (
           <Button type="button" variant="outline" disabled={stopping} onClick={onStop}>
             {stopping ? say("chat_stopping") : say("chat_stop")}
           </Button>

@@ -54,6 +54,9 @@ export function NewLessonBox({
   onAddChild,
   onSend,
   photos: photosOn = false,
+  busy = false,
+  problem = null,
+  initialText = "",
 }: {
   language: Language;
   learners: readonly Learner[];
@@ -65,9 +68,15 @@ export function NewLessonBox({
   onSend: (ask: LessonAsk) => void;
   /** Whether photos can be added: off until the upload route exists (dl-z5ja.11). */
   photos?: boolean;
+  /** The send is on its way: the button says so and takes no second press (dl-z5ja.108). */
+  busy?: boolean;
+  /** Why the last send did not start, in words, under the box; null for none. */
+  problem?: string | null;
+  /** The words the box opens with: the parent's own, back after the consent screen. */
+  initialText?: string;
 }): ReactElement {
   const t = (key: CopyKey): string => copy(language, key, {}, CATEGORY);
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialText);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const box = useRef<HTMLTextAreaElement>(null);
   const picker = useRef<HTMLInputElement>(null);
@@ -100,7 +109,7 @@ export function NewLessonBox({
   };
 
   const send = (): void => {
-    if (!ready) return;
+    if (!ready || busy) return;
     onSend({ text: text.trim(), photos: photos.map((p) => p.file), learner: forLearner });
   };
   const submit = (event: FormEvent): void => {
@@ -214,15 +223,21 @@ export function NewLessonBox({
           <Button
             type="submit"
             size="control"
-            aria-disabled={!ready}
+            aria-disabled={!ready || busy}
+            aria-busy={busy}
             aria-describedby={ready ? undefined : reasonId}
             data-send
           >
-            {t("parent_send")}
+            {busy ? t("parent_sending") : t("parent_send")}
             <ArrowRightIcon aria-hidden />
           </Button>
         </div>
       </form>
+      {problem !== null && (
+        <p role="alert" className="text-jw-ink" data-send-problem>
+          {problem}
+        </p>
+      )}
     </div>
   );
 }
