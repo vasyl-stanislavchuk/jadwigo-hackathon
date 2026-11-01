@@ -125,19 +125,16 @@ describe("checkAnswer (dl-z5ja.26)", () => {
     expect(checkAnswer("Done: 6 questions now.", turn)).toEqual([{ kind: "number", said: "6" }]);
   });
 
-  it("takes a steer's numbers, from its text and its question ids (dl-z5ja.51's event)", () => {
-    const steer = {
-      ...BASE,
-      seq: 3,
-      event_id: "00000000-0000-4000-8fff-000000000003",
-      type: "steer",
-      payload: {
-        text: "Swap question 7 for an easier one.",
-        source: "lesson_edit",
-        question_ids: ["q_42"],
-      },
-    } as unknown as RunEvent;
+  it("takes a steer's numbers, from its text and its question ids", () => {
+    const steer = at(3, "steer", {
+      text: "Swap question 7 for an easier one.",
+      source: "lesson_edit",
+      question_ids: ["q_42"],
+    });
     expect(checkAnswer("I swapped question 7 (q_42).", [DRAFT, steer])).toEqual([]);
+    expect(checkAnswer("I swapped question 9.", [DRAFT, steer])).toEqual([
+      { kind: "number", said: "9" },
+    ]);
   });
 
   it("refuses a status word the parent wrote but no tool result gave", () => {

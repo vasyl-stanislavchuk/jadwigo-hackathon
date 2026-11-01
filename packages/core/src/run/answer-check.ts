@@ -101,8 +101,9 @@ export function checkAnswer(text: string, turn: readonly RunEvent[]): AnswerMiss
   for (const event of turn) {
     if (event.type === "message" && event.payload.from === "parent") {
       numbersIn(event.payload.text, given.numbers);
-    } else if (isSteer(event)) {
-      collect(event.payload, { numbers: given.numbers, strings: new Set<string>() });
+    } else if (event.type === "steer") {
+      numbersIn(event.payload.text, given.numbers);
+      for (const id of event.payload.question_ids ?? []) numbersIn(id, given.numbers);
     }
     if (event.type !== "tool_result" || event.payload.output === null) continue;
     collect(event.payload.output, given);
@@ -133,15 +134,6 @@ export function checkAnswer(text: string, turn: readonly RunEvent[]): AnswerMiss
       seen.add(key);
       return true;
     });
-}
-
-/**
- * A logged steer (`dl-z5ja.51` adds the event to `RunEvent`), read by its shape so this check
- * holds before and after the union carries it. Its payload's strings are its text, its `source`
- * and its `question_ids`; only the numbers in them are taken.
- */
-function isSteer(event: RunEvent): event is RunEvent & { payload: Record<string, unknown> } {
-  return (event as { type: string }).type === "steer";
 }
 
 function numbersIn(text: string, into: Set<number>): void {
