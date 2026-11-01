@@ -1,5 +1,6 @@
 -- The engine's queue, sweep and broadcast (migration 20261101130000_run_queue.sql, issue
--- dl-z5ja.52): an inserted run event reaches realtime.send on its run's private topic with its seq;
+-- dl-z5ja.52; ids only since dl-z5ja.59): an inserted run event reaches realtime.send on its run's
+-- private topic as {run_id, seq, event_id}, never its text;
 -- the sweep is scheduled and enqueues each run past a deadline once; a step moves to the
 -- dead-letter queue whole. pg_cron and Realtime are the shim's stubs here. Made-up rows only.
 begin;
@@ -39,26 +40,26 @@ insert into run_event (run_id, seq, event_id, pod_id, type, payload) values
   ('00000000-0000-4000-8000-0000000d00a1', 2, '00000000-0000-4000-8000-0000000e02a1',
    '00000000-0000-4000-8000-00000000000a', 'status', '{"status": "in_progress"}');
 select results_eq(
-  $$select topic, event, private, (payload ->> 'seq')::int, payload ->> 'type'
+  $$select topic, event, private, (payload ->> 'seq')::int, payload ->> 'event_id'
     from realtime.messages order by (payload ->> 'seq')::int$$,
-  $$values ('run:run_0000000000800800000000t051', 'run_event', true, 1, 'message'),
-           ('run:run_0000000000800800000000t051', 'run_event', true, 2, 'status')$$,
+  $$values ('run:run_0000000000800800000000t051', 'run_event', true, 1, '00000000-0000-4000-8000-0000000e01a1'),
+           ('run:run_0000000000800800000000t051', 'run_event', true, 2, '00000000-0000-4000-8000-0000000e02a1')$$,
   'each inserted run event reaches realtime.send on run:<run id>, private, with its seq'
 );
 select is(
-  (select payload - 'id' - 'created_at' from realtime.messages where payload ->> 'seq' = '1'),
+  (select payload - 'id' from realtime.messages where payload ->> 'seq' = '1'),
   jsonb_build_object(
     'run_id', 'run_0000000000800800000000t051', 'seq', 1,
-    'event_id', '00000000-0000-4000-8000-0000000e01a1', 'type', 'message',
-    'payload', '{"from": "parent", "text": "Adding to 20"}'::jsonb
+    'event_id', '00000000-0000-4000-8000-0000000e01a1'
   ),
-  'the broadcast carries the event whole, as the page folds it'
+  'the broadcast is a poke: the run, the seq and the event id (dl-z5ja.59)'
 );
 select ok(
-  (select (m.payload ->> 'created_at')::timestamptz = e.created_at
-   from realtime.messages as m join run_event as e on e.seq = (m.payload ->> 'seq')::int
-   where e.seq = 1),
-  'with its created_at'
+  not exists (
+    select from realtime.messages
+    where payload ? 'type' or payload ? 'payload' or payload::text like '%Adding to 20%'
+  ),
+  'no broadcast holds an event''s type, its payload or its text'
 );
 
 -- A broadcast that fails never fails the event's insert.

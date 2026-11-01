@@ -116,6 +116,7 @@ export function snapshot(
     questions: record.questions.map((q) => pageQuestion(version, q, record.answers, held)),
     open_seq: record.attempt.status === "finished" ? null : (open?.seq ?? null),
     last_event_id: record.answers.at(-1)?.event_id ?? null,
+    language: version.language,
   };
 }
 

@@ -192,6 +192,36 @@ function engine(server: ViteDevServer, m: Modules) {
   };
 }
 
+/** The request as the gate reads it, so a test needs no socket. */
+interface PostRequest {
+  headers: Record<string, string | string[] | undefined>;
+}
+
+const one = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
+
+/**
+ * null when a POST may start a run, else the status and the reason (dl-z5ja.45). The Origin must
+ * be this dev server's own: its host and port are the Host the request came in on. A browser sends
+ * Origin on every POST, and another page's is its own, so it cannot start a scripted run here. The
+ * body must be JSON: a cross-site form can send only form and text types without a preflight.
+ */
+export function admitPost(req: PostRequest): { status: number; error: string } | null {
+  const host = one(req.headers["host"]);
+  const origin = one(req.headers["origin"]);
+  let own = false;
+  try {
+    const url = new URL(origin ?? "");
+    own = (url.protocol === "http:" || url.protocol === "https:") && url.host === host;
+  } catch {
+    own = false;
+  }
+  if (!own) return { status: 403, error: "the engine only answers this dev server's own page" };
+  const type = (one(req.headers["content-type"]) ?? "").split(";")[0]?.trim().toLowerCase();
+  if (type !== "application/json")
+    return { status: 415, error: "the engine takes a JSON body (Content-Type: application/json)" };
+  return null;
+}
+
 async function body(req: IncomingMessage): Promise<unknown> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(chunk as Buffer);
@@ -226,10 +256,13 @@ export function enginePlugin(): Plugin {
             .catch((e: unknown) =>
               answer(res, 400, { error: e instanceof Error ? e.message : String(e) }),
             );
-        if (req.method === "POST" && url.pathname === "/messages")
+        if (req.method === "POST" && url.pathname === "/messages") {
+          const refused = admitPost(req);
+          if (refused !== null) return answer(res, refused.status, { error: refused.error });
           return void reply(
             Promise.all([ready(), body(req)]).then(([e, b]) => e.send(b as SendBody)),
           );
+        }
         if (req.method === "GET" && runs !== undefined)
           return void reply(ready().then((e) => e.runs(decodeURIComponent(runs))));
         if (req.method === "GET" && events !== undefined)
