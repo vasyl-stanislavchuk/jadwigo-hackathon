@@ -306,7 +306,9 @@ export const COPY_KEYS = [
   "sign_times",
   // Enter: a decimal on the keypad (dl-w3.70.7)
   "decimal_comma",
+  "decimal_point",
   "incomplete_decimal",
+  "incomplete_decimal_point",
   // Enter: a fraction in stacked boxes (dl-w3.70.16)
   "incomplete_fraction_boxes",
   "fraction_simplify",
