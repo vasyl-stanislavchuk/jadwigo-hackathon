@@ -288,11 +288,18 @@ function SignIn({
   // A provider's button shows once the project says it is on: none while that is read, or if it
   // cannot be (dl-e8ov.2.83). The email code is always there.
   const [providers, setProviders] = useState<readonly Provider[]>([]);
+  // What a hand-over may start: every provider the project has on, its button shown or not (a Meta
+  // app's testers, dl-ovva). Null until it is read.
+  const [startable, setStartable] = useState<readonly Provider[] | null>(null);
   useEffect(() => {
     let live = true;
     auth.enabledProviders().then(
       (enabled) => live && setProviders(enabled),
       () => live && setProviders([]),
+    );
+    auth.handoffProviders().then(
+      (enabled) => live && setStartable(enabled),
+      () => live && setStartable([]),
     );
     return () => {
       live = false;
@@ -301,11 +308,12 @@ function SignIn({
   const inApp = inAppBrowser(navigator.userAgent);
 
   // The hand-over from jadwigo.pl/zaloguj runs once: its parameters leave the address bar first, so
-  // a reload or a provider's return never starts it again. A provider starts only once its button
-  // would show, and not after a return that failed.
+  // a reload or a provider's return never starts it again. A provider starts only once the project
+  // is read to have it on, its button shown or not, and not after a return that failed.
   const handedOver = useRef(false);
   useEffect(() => {
     if (handedOver.current || (handoff.provider === null && handoff.email === null)) return;
+    if (handoff.email === null && startable === null) return;
     const here = new URL(window.location.href);
     window.history.replaceState(window.history.state, "", withoutReturn(here));
     if (handoff.email !== null) {
@@ -314,12 +322,12 @@ function SignIn({
       return;
     }
     const provider = handoff.provider;
-    if (provider === null || returned !== null || !providers.includes(provider)) return;
+    if (provider === null || returned !== null || !startable?.includes(provider)) return;
     if (provider === "google" && inApp) return;
     handedOver.current = true;
     continueWith(provider);
     // biome-ignore lint/correctness/useExhaustiveDependencies: runs once the providers are read
-  }, [providers]);
+  }, [startable]);
 
   return (
     <ParentPage>
