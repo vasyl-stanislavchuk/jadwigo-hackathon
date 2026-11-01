@@ -103,6 +103,15 @@
       "plugins": ["./lint/boundary-constants.grit"]
     },
     {
+      "includes": [
+        "apps/web/src/**/*.tsx",
+        "packages/lesson-kit/src/**/*.tsx",
+        "!apps/web/src/playground/**",
+        "!**/*.test.tsx"
+      ],
+      "plugins": ["./lint/no-jsx-literal.grit"]
+    },
+    {
       "includes": [".claude/hooks/**", "tools/**"],
       "linter": {
         "rules": {
