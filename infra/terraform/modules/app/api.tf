@@ -53,12 +53,14 @@ resource "aws_iam_role" "api" {
   assume_role_policy = data.aws_iam_policy_document.assume.json
 }
 
-# Its own log group and the one parameter, plus the bank's statements (bank.tf), nothing else. The aws/ssm key's policy lets the
+# Its own log group and the one parameter, plus the bank's statements (bank.tf) and the uploads
+# bucket's (uploads.tf), nothing else. The aws/ssm key's policy lets the
 # account's principals decrypt through SSM, so no KMS statement is needed.
 data "aws_iam_policy_document" "api" {
   source_policy_documents = [
     data.aws_iam_policy_document.bank.json,
     data.aws_iam_policy_document.runner.json,
+    data.aws_iam_policy_document.uploads.json,
   ]
 
   statement {
@@ -119,6 +121,8 @@ resource "aws_lambda_function" "api" {
       },
       # The step host the routes poke (dl-z5ja.88); absent, they poke nothing.
       var.runner_alias_arn == "" ? {} : { RUNNER_LIVE_ALIAS_ARN = var.runner_alias_arn },
+      # The bucket a message's photos go to (dl-z5ja.11.2); absent, the photo routes have none.
+      var.uploads_bucket_name == "" ? {} : { UPLOADS_BUCKET = var.uploads_bucket_name },
     )
   }
 

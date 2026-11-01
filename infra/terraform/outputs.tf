@@ -69,3 +69,7 @@ output "runner_live_alias_arn" {
 output "runner_database_url_param" {
   value = module.runner.database_url_param
 }
+
+output "uploads_bucket" {
+  value = module.uploads.bucket_name
+}
