@@ -67,7 +67,7 @@ export type NewRunInbox = RunInbox extends infer R
 
 /** The windows `messageUsage` counts over, as sent times (ISO, UTC). */
 export interface UsageSince {
-  /** Count a parent's messages put at or after this time. */
+  /** Count a parent's messages and steers put at or after this time. */
   minuteSince: string;
   /** Sum the caps of the pod's runs created at or after this time. */
   daySince: string;
@@ -75,7 +75,11 @@ export interface UsageSince {
 
 /** What the api's message throttle and daily cap read (dl-z5ja.62). */
 export interface MessageUsage {
-  /** Inbox rows of kind `message` on runs `account` created, put since `minuteSince`. */
+  /**
+   * Inbox rows of kind `message` or `steer` on runs `account` created, put since `minuteSince`. A
+   * steer opens no run, so the day cap never sees it: the minute count is its only limit
+   * (dl-z5ja.97).
+   */
   messages: number;
   /** The sum of `cap_usd` over the pod's runs created since `daySince`, whoever created them. */
   cap_usd: number;

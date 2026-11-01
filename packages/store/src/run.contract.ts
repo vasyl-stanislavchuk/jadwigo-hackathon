@@ -309,7 +309,7 @@ export function runContract(name: string, make: () => Promise<Store> | Store): v
     );
 
     frozen(
-      "counts a parent's messages since a minute and sums the pod's caps since a day (dl-z5ja.72)",
+      "counts a parent's messages and steers since a minute and sums the pod's caps since a day (dl-z5ja.72, dl-z5ja.97)",
       async () => {
         const store = await make();
         const a = await scope(store);
@@ -327,12 +327,19 @@ export function runContract(name: string, make: () => Promise<Store> | Store): v
           kind: "steer",
           payload: { text: "Easier, please." },
         });
+        await store.putRunInbox(a.pod, {
+          run_id: mine.id,
+          event_id: eventId(),
+          kind: "cancel",
+          payload: {},
+        });
         await store.putRunInbox(a.pod, inbox(theirs.id, "Telling the time."));
         await store.putRunInbox(b.pod, inbox(elsewhere.id, "Adding within 20."));
 
         const since = { minuteSince: before, daySince: before };
+        // a's run: 2 messages and 1 steer count, the cancel does not (dl-z5ja.97).
         expect(await store.messageUsage(a.pod, a.account, since)).toEqual({
-          messages: 2,
+          messages: 3,
           cap_usd: 3,
         });
         expect(await store.messageUsage(a.pod, b.account, since)).toEqual({
