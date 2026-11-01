@@ -1509,7 +1509,7 @@ class _TexReader:
                 f"{degree.translate(_TEX_SUPERSCRIPT)}√"
                 if re.fullmatch(r"\d+|n", degree) else f"({degree})√"
             )
-            return root + _grouped(self._arg())
+            return root + _grouped(self._arg()) + _TEX_FRAC_END  # √2 3 never reads √23
         if name in _TEX_COLORS:
             self._arg()  # the colour; what it colours follows as its own group
             return ""
@@ -1540,8 +1540,10 @@ class _TexReader:
                 return f"{inside} ({self._arg().strip()})"
             return inside
         if name in ("overset", "stackrel", "underset"):
-            mark, base = self._arg(), self._arg()
-            return f"{base}{mark}"  # `\overset{?}{=}` reads =?
+            mark, base = self._arg().strip(), self._arg()
+            # A digit over a digit is a carry, the working and not the number: `\overset{1}{2}5`
+            # reads 25. Any other mark stays, apart from its base: `\overset{?}{=}` reads = ?.
+            return base if mark.isdigit() else f"{base} {mark} "
         if name == "overline":
             inside = self._arg()
             # A period over digits, as Polish writes it: 0,\overline{3} reads 0,(3).
@@ -1578,6 +1580,7 @@ def tex_plain(text: Any) -> Any:
     out = _TexReader(text).text()
     start, end = _TEX_FRAC_START, _TEX_FRAC_END
     out = re.sub(f"{end}[ \\t]*{start}", " · ", out)  # \frac12\frac13: a product
+    out = re.sub(f"{end}[ \\t]*(?=\\d)", " · ", out)  # \frac12 3 and \sqrt2 3: a product too
     out = re.sub(f"(\\d)[ \\t]*{start}", r"\1 ", out)  # 2\frac12, on one line: a mixed number
     out = out.replace(start, "").replace(end, "")
     lines = (re.sub(r"[ \t]+", " ", line).replace("√ ", "√").strip() for line in out.split("\n"))
