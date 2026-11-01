@@ -66,6 +66,8 @@ test("an email signed in with the code, then with Google, is the same parent wit
   await addChildAndClaim(page, "Ola");
   const card = page.locator("[data-learner-card]");
   await expect(card.getByRole("heading", { name: "Ola" })).toBeVisible();
+  // Signing out sits in the account menu at the sidebar's foot (dl-uukj.47.4).
+  await page.locator("[data-account]").click();
   await page.locator("[data-sign-out]").click();
 
   await providerReturns(request, email);
