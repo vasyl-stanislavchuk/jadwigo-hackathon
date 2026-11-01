@@ -156,7 +156,8 @@ export function patchOutcome(runs: readonly Logged[], event_id: string): PatchOu
     const steer = events.find((e) => e.type === "steer" && e.event_id === event_id);
     if (steer?.type !== "steer") continue;
     const { patch, base_revision } = steer.payload;
-    if (patch === undefined) return "applied";
+    // Logged without its patch (a route that dropped it): nothing will apply it.
+    if (patch === undefined) return "refused";
     if (events.some((e) => e.type === "lesson_revision" && e.payload.call_id === event_id))
       return "applied";
     const earlier = runs.slice(0, i).flatMap((r) => r.events);

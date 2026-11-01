@@ -137,6 +137,13 @@ describe("patches (dl-z5ja.111)", () => {
     expect(patchOutcome([{ events: [...events, steerFor(events, body(ok, 1))] }], id)).toBe(
       "refused",
     );
+    // A steer logged without its patch (a route that dropped it) is never applied.
+    const dropped = {
+      ...body(ok, 2),
+      patch: undefined,
+      base_revision: undefined,
+    } as unknown as SendBody;
+    expect(patchOutcome([{ events: [...events, steerFor(events, dropped)] }], id)).toBe("refused");
     // A merged file the lenient parse cannot read whole is refused too.
     const broken = { script: { parts: [{ part: "p", steps: [{ id: "s02" }] }] } };
     expect(patchOutcome([{ events: [...events, steerFor(events, body(broken, 2))] }], id)).toBe(
