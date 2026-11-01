@@ -250,6 +250,20 @@ export function mergeLive(
 }
 
 /**
+ * How far below a share's threshold a spend may sit and still count as reaching it, relative to
+ * the threshold. `0.1 * 0.9` is `0.09000000000000001`, so a plain `>=` reads a spend of exactly
+ * 90% of the cap as below it (`dl-z5ja.38`). A billionth of the threshold is far below a cent on
+ * any cap and far above a float's rounding error. A fixed threshold per cap keeps the guard
+ * monotone in the spend.
+ */
+const SHARE_TOLERANCE = 1e-9;
+
+/** Whether `spent_usd` has reached `share` of `cap_usd`, float error forgiven. */
+function reached(spent_usd: number, cap_usd: number, share: number): boolean {
+  return spent_usd >= cap_usd * share * (1 - SHARE_TOLERANCE);
+}
+
+/**
  * Before every Muse call: `steer` from half the cap, `stop` from 90% (`BUDGET_STEER_SHARE`,
  * `BUDGET_STOP_SHARE`). A spend that can't be read is `stop`: an unknown balance is no licence to
  * spend (`ff23c1ce7af`). So is a cap that can't be read or leaves nothing to spend.
@@ -257,8 +271,8 @@ export function mergeLive(
 export function budgetGuard(spent_usd: number | null | undefined, cap_usd: number): BudgetLevel {
   if (spent_usd == null || !Number.isFinite(spent_usd)) return "stop";
   if (!Number.isFinite(cap_usd) || cap_usd <= 0) return "stop";
-  if (spent_usd >= cap_usd * BUDGET_STOP_SHARE) return "stop";
-  if (spent_usd >= cap_usd * BUDGET_STEER_SHARE) return "steer";
+  if (reached(spent_usd, cap_usd, BUDGET_STOP_SHARE)) return "stop";
+  if (reached(spent_usd, cap_usd, BUDGET_STEER_SHARE)) return "steer";
   return "none";
 }
 
