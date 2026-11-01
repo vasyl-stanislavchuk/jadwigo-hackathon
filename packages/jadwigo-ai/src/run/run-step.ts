@@ -344,9 +344,6 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
   const { steers } = await takeInbox(deps.store, w);
   const now = deps.now();
 
-  // Nothing from the parent: a turn a resend opened and no message joined (dl-z5ja.85).
-  if (!parentSpokeAfter(w.log, 0)) return endTurn(w, "completed", now);
-
   if (deadlineDue(run, now) === "max") {
     await endPastMax(w, run.attempt, now);
     return "failed";
@@ -383,6 +380,9 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       // The answer is recorded and nothing came after it: a redelivery ends the turn on it.
       return endTurn(w, "completed", deps.now());
     }
+
+    // Nothing from the parent: a turn a resend opened and no message joined (dl-z5ja.85).
+    if (!parentSpokeAfter(w.log, 0)) return endTurn(w, "completed", deps.now());
 
     const spent = spentOf(w.log);
     const level = budgetGuard(spent, run.cap_usd);

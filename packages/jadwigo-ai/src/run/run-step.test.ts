@@ -370,7 +370,7 @@ describe("acceptMessage", () => {
     const [, opened] = await t.store.listRuns(t.member.pod, t.conversation);
     if (!opened) throw new Error("the resend opened no run");
     expect(opened.status).toBe("completed");
-    expect(types(await t.log(opened.id))).toEqual(["status", "turn_complete"]);
+    expect(types(await t.log(opened.id))).toEqual(["status", "status", "turn_complete"]);
     // The next message opens a turn of its own and is answered.
     const next = await t.say("Quarters.");
     await drain(t.deps);
