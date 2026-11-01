@@ -167,7 +167,7 @@ def test_a_call_past_the_hackathon_total_is_refused(fake: Path, tmp_path: Path) 
 
 def test_only_a_sealed_prompt_and_only_the_contributor_model(fake: Path) -> None:
     with pytest.raises(muse.PromptNotGuarded):
-        muse.ask("Kasia", tag="product:x")  # type: ignore[call-overload]
+        muse.ask("Kasia", tag="product:x")  # a bank call: a plain string is refused
     with pytest.raises(muse.PromptNotGuarded):
         muse.ask(GuardedPrompt(text="Kasia", replacements={}), tag="product:x")
     with pytest.raises(muse.ModelNotAllowed):
@@ -195,3 +195,74 @@ def test_a_run_that_never_completes_raises(fake: Path, monkeypatch: pytest.Monke
     with pytest.raises(muse.MuseFailed, match="model error"):
         muse.ask(guard("x"), tag="product:test", retries=1)
     assert len(_calls(fake)) == 2
+
+
+# ------------------------------------------------- dl-z5ja.48: the purpose ----
+
+PRIVATE = "muse-no-training-test-model"
+
+
+@pytest.fixture
+def private_tier(monkeypatch: pytest.MonkeyPatch) -> str:
+    """The no-training model named and priced, as the owner will once probe 4 has run."""
+    monkeypatch.setenv(muse.PRIVATE_MODEL_ENV, PRIVATE)
+    monkeypatch.setitem(muse.PRICES, PRIVATE, {"input": 0.3, "cached": 0.01, "output": 0.6})
+    return PRIVATE
+
+
+def test_a_learner_call_refuses_the_contributor_model(fake: Path, private_tier: str) -> None:
+    with pytest.raises(muse.ModelNotAllowed, match="not allowed for a learner call"):
+        muse.ask(guard("x"), tag="product:report", purpose="learner", model=muse.SPARK_CONTRIBUTOR)
+    with pytest.raises(muse.ModelNotAllowed):
+        muse.ask("Kasia liczy.", tag="product:report", purpose="learner", model=muse.SPARK_CONTRIBUTOR)
+    assert _calls(fake) == []
+
+
+def test_a_learner_call_is_refused_until_the_no_training_model_is_named(
+    fake: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    for value in (None, "", muse.PRIVATE_MODEL_PLACEHOLDER, muse.SPARK_CONTRIBUTOR):
+        if value is None:
+            monkeypatch.delenv(muse.PRIVATE_MODEL_ENV, raising=False)
+        else:
+            monkeypatch.setenv(muse.PRIVATE_MODEL_ENV, value)
+        with pytest.raises(muse.ModelNotAllowed, match="probe 4 of dl-z5ja.3"):
+            muse.ask("Kasia liczy.", tag="product:report", purpose="learner")
+    # Named but unpriced: the cap could not see its spend.
+    monkeypatch.setenv(muse.PRIVATE_MODEL_ENV, "muse-unpriced")
+    with pytest.raises(muse.ModelNotAllowed, match="with a price"):
+        muse.ask("Kasia liczy.", tag="product:report", purpose="learner")
+    assert _calls(fake) == []
+
+
+def test_a_learner_call_runs_on_the_no_training_model_with_the_names_as_they_are(
+    fake: Path, tmp_path: Path, private_tier: str
+) -> None:
+    muse.ask("Kasia nie lubi ułamków.", tag="product:report", purpose="learner")
+    (call,) = _calls(fake)
+    argv = call["argv"]
+    assert argv[argv.index("--model") + 1] == private_tier
+    assert "--contributor-mode" not in argv
+    assert call["prompt"] == "Kasia nie lubi ułamków."
+    (row,) = _ledger(tmp_path / "own")
+    assert row["model"] == private_tier and row["purpose"] == "learner"
+
+
+def test_a_bank_call_keeps_the_guard_and_the_contributor_model(fake: Path, private_tier: str) -> None:
+    with pytest.raises(muse.PromptNotGuarded):
+        muse.ask("Kasia", tag="bank:enrich")
+    with pytest.raises(muse.PromptNotGuarded):
+        muse.ask("Kasia", tag="bank:enrich", purpose="bank")
+    with pytest.raises(muse.ModelNotAllowed, match="bank work runs on"):
+        muse.ask(guard("x"), tag="bank:enrich", purpose="bank", model=private_tier)
+    assert _calls(fake) == []
+    muse.ask(guard("Kasia liczy.", names=["Kasia"]), tag="bank:enrich")
+    (call,) = _calls(fake)
+    assert call["argv"][call["argv"].index("--model") + 1] == muse.SPARK_CONTRIBUTOR
+    assert "Kasia" not in call["prompt"] and "[NAME_1]" in call["prompt"]
+
+
+def test_an_unknown_purpose_is_refused(fake: Path) -> None:
+    with pytest.raises(muse.ModelNotAllowed, match="purpose"):
+        muse.ask(guard("x"), tag="product:x", purpose="teacher")  # type: ignore[call-overload]
+    assert _calls(fake) == []
