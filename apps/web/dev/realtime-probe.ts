@@ -76,7 +76,7 @@ export function readConfig(
 }
 
 /** Where the Makefile keeps each project's secrets (SUPABASE_SECRETS): KEY=VALUE lines, `#` comments. */
-export const SECRETS_FILE = `${homedir()}/.config/jadwigo/supabase.env`;
+const SECRETS_FILE = `${homedir()}/.config/jadwigo/supabase.env`;
 
 /** The KEY=VALUE lines of a secrets file. A value may be wrapped in one pair of quotes. */
 export function parseSecrets(text: string): Record<string, string> {
