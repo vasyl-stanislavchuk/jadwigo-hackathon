@@ -9,9 +9,21 @@ import type { ModelTier, ModelUsage, RunId, ToolCall, VerbName } from "@jadwigo/
  * Decision `david-learns/decisions/2026-10-24-every-ai-workflow-in-the-jadwigo-service-runs-on-meta-s-api`.
  */
 
-/** One item of the conversation the model reads, in the shape of `/v1/responses` input. */
+/**
+ * One part of a message's content, in the shape of `/v1/responses` input: words, or an image as a
+ * `data:image/jpeg;base64,` URL the runner read itself, never a link the model fetches (the shape
+ * the `dl-z5ja.3` probe sends, `apps/cli/scripts/muse_probe.py` `probe_image`).
+ */
+export type MusePart =
+  | { type: "input_text"; text: string }
+  | { type: "input_image"; image_url: string };
+
+/**
+ * One item of the conversation the model reads, in the shape of `/v1/responses` input. A message's
+ * `text` is its words, or its parts when it carries images (dl-z5ja.11.4).
+ */
 export type MuseInput =
-  | { type: "message"; role: "system" | "user" | "assistant"; text: string }
+  | { type: "message"; role: "system" | "user" | "assistant"; text: string | readonly MusePart[] }
   | { type: "function_call"; call_id: string; verb: VerbName; arguments: Record<string, unknown> }
   | { type: "function_call_output"; call_id: string; output: Record<string, unknown> };
 

@@ -42,7 +42,16 @@ export function outbound(
 function guardInput(item: MuseInput, guard: PromptGuard): MuseInput {
   switch (item.type) {
     case "message":
-      return { ...item, text: guard.guard(item.text) };
+      // The name guard reads words: an image part passes as it is (dl-z5ja.11.4).
+      return {
+        ...item,
+        text:
+          typeof item.text === "string"
+            ? guard.guard(item.text)
+            : item.text.map((part) =>
+                part.type === "input_text" ? { ...part, text: guard.guard(part.text) } : part,
+              ),
+      };
     case "function_call":
       return { ...item, arguments: mapStrings(item.arguments, (s) => guard.guard(s)) };
     case "function_call_output":

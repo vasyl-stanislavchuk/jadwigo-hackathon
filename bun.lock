@@ -92,6 +92,7 @@
     "apps/runner": {
       "name": "@jadwigo/runner",
       "dependencies": {
+        "@aws-sdk/client-s3": "3.1156.0",
         "@aws-sdk/client-ssm": "3.1156.0",
         "@jadwigo/contracts": "workspace:*",
         "@jadwigo/jadwigo-ai": "workspace:*",

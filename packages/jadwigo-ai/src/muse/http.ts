@@ -290,7 +290,12 @@ function bodyFor(model: string, request: MuseRequest, o: HttpMuseOptions): Recor
 function inputItem(item: MuseInput): Record<string, unknown> {
   switch (item.type) {
     case "message":
-      return { type: "message", role: item.role, content: item.text };
+      // Words alone stay a string; a message with images sends its parts as they are.
+      return {
+        type: "message",
+        role: item.role,
+        content: typeof item.text === "string" ? item.text : item.text.map((part) => ({ ...part })),
+      };
     case "function_call":
       return {
         type: "function_call",
