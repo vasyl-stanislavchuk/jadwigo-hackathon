@@ -6,6 +6,7 @@ import {
   latencyStats,
   PROBE_EMAIL,
   type ProbeRow,
+  parseSecrets,
   podClaim,
   readConfig,
   seqCheck,
@@ -51,8 +52,15 @@ describe("readConfig", () => {
       problems: [
         "JW_SUPABASE_URL is unset",
         "JW_SUPABASE_KEY is unset (the publishable key)",
-        "JW_SUPABASE_SECRET_KEY is unset (a secret key)",
+        "JW_SUPABASE_SECRET_KEY is unset, and so is SUPABASE_SECRET_KEY_DEV in ~/.config/jadwigo/supabase.env",
       ],
+    });
+  });
+
+  it("takes the dev secret key from the secrets file's name when the shell sets none", () => {
+    const { JW_SUPABASE_SECRET_KEY: _, ...rest } = env;
+    expect(readConfig({ ...rest, SUPABASE_SECRET_KEY_DEV: "from-file" }, DEV)).toMatchObject({
+      secretKey: "from-file",
     });
   });
 
@@ -60,6 +68,13 @@ describe("readConfig", () => {
     expect(readConfig({ ...env, JW_PROBE_DELTA_RATE: "50" }, DEV)).toEqual({
       problems: ["JW_PROBE_DELTA_RATE is not in (0, 20]"],
     });
+  });
+});
+
+describe("parseSecrets", () => {
+  it("reads KEY=VALUE lines and skips comments", () => {
+    const text = "# a comment\nSUPABASE_SECRET_KEY_DEV=sb_x\nexport A_B='q=1'\nnot a line\n";
+    expect(parseSecrets(text)).toEqual({ SUPABASE_SECRET_KEY_DEV: "sb_x", A_B: "q=1" });
   });
 });
 

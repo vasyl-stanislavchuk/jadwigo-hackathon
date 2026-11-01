@@ -10,7 +10,7 @@ project only, and `cleanup.sql` removes it again.
 | --- | --- |
 | `setup.sql` | creates the schema `realtime_probe` (`run`, `run_event`, row-level security), the select policy `realtime_probe_run_join` on `realtime.messages`, the insert trigger that calls `realtime.send`, and 3 `public.realtime_probe_*` functions the script calls |
 | `cleanup.sql` | drops all of that, deletes the probe's messages and its `realtime-probe-*@example.com` users; safe to run twice |
-| `apply.sh` | `apply.sh setup` or `apply.sh cleanup`: runs the file with psql on `JW_DEV_DATABASE_URL`, and refuses a URL without jadwigo-dev's ref |
+| `apply.sh` | `apply.sh setup` or `apply.sh cleanup`: runs the file with psql on `JW_DEV_DATABASE_URL`, else `SUPABASE_DB_URL_DEV` from `~/.config/jadwigo/supabase.env`, and refuses a URL without jadwigo-dev's ref |
 | `apps/web/dev/realtime-probe.ts` | the probe itself, run with `bun`: 2 made-up users in 2 made-up pods, then the join, live, reload and delta checks, then a JSON report |
 
 ## Run it
@@ -23,7 +23,9 @@ supabase/probes/realtime/apply.sh cleanup   # prints: realtime probe removed | 0
 
 The script needs `JW_SUPABASE_URL`, `JW_SUPABASE_KEY` (the publishable key) and
 `JW_SUPABASE_SECRET_KEY` (a secret key, used to make and delete the test users, append events
-and send the deltas). `JW_PROBE_DELTA_RATE` (default 4) and `JW_PROBE_DELTA_SECONDS` (default
+and send the deltas). With the last one unset it reads `SUPABASE_SECRET_KEY_DEV` from
+`~/.config/jadwigo/supabase.env`, where the Makefile keeps each project's secrets, so the commands
+below need no exports once that file has it. `JW_PROBE_DELTA_RATE` (default 4) and `JW_PROBE_DELTA_SECONDS` (default
 30) shape the delta stream. The step-by-step runbook and the measured results are in the issue's
 notes (`bd show dl-z5ja.6`).
 
