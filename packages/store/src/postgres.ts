@@ -14,6 +14,7 @@ import {
   CurriculumId,
   Ended,
   ErrorType,
+  type EventId,
   FEATURED_POD_ID,
   Goal,
   GoalId,
@@ -62,6 +63,7 @@ import {
   RunEvent,
   type RunId,
   RunInbox,
+  RunRating,
   type RunWorkflow,
 } from "@jadwigo/contracts/run";
 import {
@@ -82,6 +84,7 @@ import type {
   NewConversation,
   NewRun,
   NewRunInbox,
+  NewRunRating,
   RunChange,
   UsageSince,
 } from "./run.ts";
@@ -838,6 +841,19 @@ class PostgresStore implements Store {
           };
         }),
       };
+    });
+  }
+
+  async getLesson(pod: PodId, id: LessonId): Promise<Lesson | undefined> {
+    return this.#in(pod, async (tx) => {
+      // pod_id too: claimed_read lets a pod read a claimed attempt's lesson of another pod.
+      const row = await tx
+        .selectFrom("lesson")
+        .selectAll()
+        .where("id", "=", uuidOf(ID_PREFIXES.lesson, id))
+        .where("pod_id", "=", uuidOf(ID_PREFIXES.pod, pod))
+        .executeTakeFirst();
+      return row && read(Lesson, row, ID_PREFIXES.lesson);
     });
   }
 
@@ -2957,6 +2973,19 @@ class PostgresStore implements Store {
     });
   }
 
+  async findRunInbox(pod: PodId, event_id: EventId): Promise<RunInbox | undefined> {
+    return this.#in(pod, async (tx) => {
+      // pod_id too, not only row-level security: the key is (pod_id, event_id).
+      const row = await tx
+        .selectFrom("run_inbox")
+        .selectAll()
+        .where("pod_id", "=", uuidOf(ID_PREFIXES.pod, pod))
+        .where("event_id", "=", event_id)
+        .executeTakeFirst();
+      return row && read(RunInbox, row);
+    });
+  }
+
   async putRunInbox(pod: PodId, entry: NewRunInbox): Promise<RunInbox> {
     return this.#in(pod, async (tx) => {
       const stored = await this.#run(tx, entry.run_id, false);
@@ -3045,6 +3074,53 @@ class PostgresStore implements Store {
   }
 
   /** The run's row in the unit's pod, locked to the end of the unit when `lock`; else NotFound. */
+  async rateRun(
+    pod: PodId,
+    run: RunId,
+    account: AccountId,
+    rating: NewRunRating,
+  ): Promise<RunRating> {
+    if (rating.verdict === "good" && rating.note !== null)
+      throw new StoreError(ErrorType.enum.BadRequest, "a note goes only with bad");
+    return this.#in(pod, async (tx) => {
+      const runRow = await this.#run(tx, run, false);
+      // One per run and account: a re-rate replaces the verdict and the note, and keeps the id
+      // and created_at (the run_rating_change trigger allows nothing else).
+      const row = await tx
+        .insertInto("run_rating")
+        .values({
+          pod_id: runRow.pod_id,
+          run_id: runRow.id,
+          account_id: uuidOf(ID_PREFIXES.account, account),
+          verdict: rating.verdict,
+          note: rating.note,
+        })
+        .onConflict((oc) =>
+          oc.columns(["pod_id", "run_id", "account_id"]).doUpdateSet((eb) => ({
+            verdict: eb.ref("excluded.verdict"),
+            note: eb.ref("excluded.note"),
+          })),
+        )
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      return read(RunRating, row, ID_PREFIXES.run_rating);
+    });
+  }
+
+  async listRunRatings(pod: PodId, run: RunId): Promise<readonly RunRating[]> {
+    return this.#in(pod, async (tx) => {
+      const runRow = await this.#run(tx, run, false);
+      const rows = await tx
+        .selectFrom("run_rating")
+        .selectAll()
+        .where("run_id", "=", runRow.id)
+        .orderBy("created_at")
+        .orderBy("id")
+        .execute();
+      return rows.map((row) => read(RunRating, row, ID_PREFIXES.run_rating));
+    });
+  }
+
   async #run(tx: Tx, run: RunId, lock: boolean): Promise<Selectable<DB["run"]>> {
     const query = tx.selectFrom("run").selectAll().where("id", "=", uuidOf(ID_PREFIXES.run, run));
     const row = await (lock ? query.forUpdate() : query).executeTakeFirst();

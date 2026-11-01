@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "step_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "path": {
+      "type": "string"
+    },
+    "level": {
+      "$ref": "#/$defs/FindingLevel"
+    },
+    "rule": {
+      "type": "string"
+    },
+    "text": {
+      "type": "string"
+    },
+    "fix": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "step_id",
+    "path",
+    "level",
+    "rule",
+    "text",
+    "fix"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "FindingLevel": {
+      "type": "string",
+      "enum": [
+        "error",
+        "warn"
+      ]
+    }
+  }
+}

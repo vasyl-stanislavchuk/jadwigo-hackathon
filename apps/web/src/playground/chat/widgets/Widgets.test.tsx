@@ -145,7 +145,19 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
         verb: "question_search",
         view: {
           kind: "question_search",
-          data: { sets: [{ set_id: "set_demo", title: "Adding within 20" }] },
+          // The whole set as question_search writes it, through the contracts' SearchSet.
+          data: {
+            sets: [
+              {
+                set_id: "set_demo",
+                title: "Adding within 20",
+                grades: ["1"],
+                skills: ["add-20"],
+                questions: 6,
+                why_found: "dodawanie",
+              },
+            ],
+          },
         },
       }),
       tool(2, { verb: "question_search", view: { kind: "question_search", data: { sets: [] } } }),

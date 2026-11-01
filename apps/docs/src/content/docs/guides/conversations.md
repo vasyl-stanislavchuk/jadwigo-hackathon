@@ -1,6 +1,6 @@
 ---
 title: Conversations with the AI
-description: Start a conversation, send a message, read the AI's answer as run events, and stop a turn.
+description: Start a conversation, send a message, read the AI's answer as run events, stop a turn, rate it, and archive a conversation.
 ---
 
 This guide is for a client that runs a parent's chat with Jadwigo's AI: the chat on the left that
@@ -95,6 +95,41 @@ curl -X POST https://app.jadwigo.pl/api/v1/runs/$RUN_ID/cancellations \
 
 The run stops at its next step, and its events then show it `cancelled`. A run that has already
 ended comes back as it is.
+
+## 5. Rate a turn
+
+[Reference](/api/operations/raterun/).
+
+```bash
+curl -X POST https://app.jadwigo.pl/api/v1/runs/$RUN_ID/ratings \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"verdict": "bad", "note": "It asked about subtraction"}'
+```
+
+A parent rates a turn `good` or `bad`, and may say what was missing on `bad`. Each parent has one
+rating per run: rating again replaces it. The rating stays with the family's pod and is never sent
+to analytics, since a note may name the child. Try again is no route: send the last message again.
+
+## 6. List and archive conversations
+
+[List](/api/operations/listconversations/) and [archive](/api/operations/patchconversation/).
+
+```bash
+curl https://app.jadwigo.pl/api/v1/conversations \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"
+
+curl -X PATCH https://app.jadwigo.pl/api/v1/conversations/$CONVERSATION_ID \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"archived": true}'
+```
+
+The list holds the family's live conversations, newest first. A parent's delete archives a
+conversation: it leaves the list, and `archived_at` is set. Archiving again keeps the first time.
+Nothing is deleted. The conversation and its runs stay with the family's pod and go only with it,
+and an archive is never undone. A message or a steer to an archived conversation is `409`
+`ConversationArchived`, and nothing is stored: start a new conversation instead.
 
 ## Whose records a caller sees
 
