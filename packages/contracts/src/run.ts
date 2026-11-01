@@ -389,6 +389,21 @@ const SteerEvent = event(
     base_revision: PatchBase.optional(),
   }),
 );
+/**
+ * What became of a parent's patch (lead decision 49, dl-z5ja.130): `applied` with the revision it
+ * made, or not, and why. Its own event, since run_event is append-only and the steer is logged
+ * before the patch is resolved. `steer_event_id` names the steer that carried the patch. Not
+ * exported on its own, like the steer: `run-event.json` holds it.
+ */
+const PatchResolvedEvent = event(
+  "patch_resolved",
+  z.object({
+    steer_event_id: EventId,
+    applied: z.boolean(),
+    revision: Count.optional(),
+    reason: z.enum(["stale_base", "invalid_file", "no_lesson"]).optional(),
+  }),
+);
 /** The agent's checklist for a long turn (seam 4). Each one replaces the last whole. */
 export const PlanEvent = event("plan", z.object({ entries: z.array(PlanEntry) }));
 export const StatusEvent = event("status", z.object({ status: RunStatus }));
@@ -416,6 +431,7 @@ export const RunEvent = z.discriminatedUnion("type", [
   ApprovalRequestEvent,
   ApprovalResolvedEvent,
   SteerEvent,
+  PatchResolvedEvent,
   PlanEvent,
   StatusEvent,
   UsageEvent,
