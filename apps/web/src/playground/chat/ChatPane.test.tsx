@@ -1,5 +1,5 @@
 import type { Run } from "@jadwigo/contracts/run";
-import { RunEvent, RunId } from "@jadwigo/contracts/run";
+import { RUN_ERROR_TYPE, RunEvent, RunId } from "@jadwigo/contracts/run";
 import type { RunView } from "@jadwigo/core";
 import { RUN_LOGS } from "@jadwigo/testing";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
@@ -286,5 +286,44 @@ describe("accessibility and recovery (dl-z5ja.28)", () => {
     const details = error?.querySelector("[data-details]")?.getAttribute("data-details") ?? "";
     expect(details).toMatch(/^run run_\w+ attempt \d+: /);
     expect(error?.textContent).toContain("Kopiuj szczegóły");
+  });
+});
+
+describe("the engine's limits in plain words (dl-z5ja.28, dl-z5ja.83)", () => {
+  const withError = (type: string, retryable: boolean) =>
+    turnOf("happy-turn", (view) => {
+      view.chat.push({
+        kind: "error",
+        seq: 99,
+        error: { type, message: "the turn ran past its 30 minutes" },
+        attempt: 2,
+        retryable,
+      });
+    });
+
+  it("a turn past its time limit says the lesson so far is saved and what to do next", () => {
+    pane({ turns: [withError(RUN_ERROR_TYPE.runTimedOut, false)] });
+    const row = document.querySelector("[data-row='error']");
+    expect(row?.querySelector("p")?.textContent).toBe(
+      "Ta tura trwała zbyt długo, więc się zatrzymała. Lekcja do tej pory jest zapisana: napisz, co dalej.",
+    );
+    expect(row?.textContent).not.toContain("30 minutes");
+    expect(row?.querySelector("[data-details]")?.getAttribute("data-details")).toContain(
+      "attempt 2: RunTimedOut",
+    );
+  });
+
+  it("a step delivered again only says it is trying again", () => {
+    pane({ turns: [withError(RUN_ERROR_TYPE.stepTimedOut, true)] });
+    expect(document.querySelector("[data-row='error'] p")?.textContent).toBe(
+      "Próbuję jeszcze raz.",
+    );
+  });
+
+  it("any other problem keeps its message", () => {
+    pane({ turns: [withError("unknown-draft", false)] });
+    expect(document.querySelector("[data-row='error'] p")?.textContent).toBe(
+      "Coś się zacięło: the turn ran past its 30 minutes",
+    );
   });
 });

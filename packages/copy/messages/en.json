@@ -798,5 +798,6 @@
         "notes_noun=other": "{n} notes to fix"
       }
     }
-  ]
+  ],
+  "chat_sign_in": "Sign in on the parent page first, then come back to the conversation."
 }

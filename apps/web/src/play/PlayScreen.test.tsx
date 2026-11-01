@@ -53,6 +53,7 @@ function snapshot(
   id: AttemptId,
   status: "in_progress" | "paused" | "finished",
   questions: unknown[],
+  language: "pl" | "en" = "pl",
 ): AttemptSnapshot {
   return AttemptSnapshot.parse({
     attempt: {
@@ -78,7 +79,7 @@ function snapshot(
         say: q.say,
         question: q.question,
       })),
-    language: "pl",
+    language,
     questions,
     open_seq: status === "finished" ? null : questions.length,
     last_event_id: null,
@@ -117,6 +118,17 @@ describe("PlayScreen", () => {
     expect(await screen.findAllByText("Ile to jest dwa razy pięć? (1)")).not.toHaveLength(0);
     expect(startAttempt).toHaveBeenCalledTimes(1);
     expect(storedAttempt.get(ASSIGNMENT)).toBe(FRESH);
+  });
+
+  it("sets the lesson region's lang to the lesson's language, not the screens' (dl-9t2o.3)", async () => {
+    const startAttempt = vi.fn(async () => snapshot(FRESH, "in_progress", [question(1)], "en"));
+    render(
+      <PlayScreen assignmentId={ASSIGNMENT} language="pl" client={client({ startAttempt })} />,
+    );
+    await screen.findAllByText("Ile to jest dwa razy pięć? (1)");
+    const region = document.querySelector("[data-lesson-region]");
+    expect(region?.getAttribute("lang")).toBe("en");
+    expect(region?.querySelector("fieldset")).not.toBeNull();
   });
 
   it("draws a Khan picture ref from the media URL (dl-n9fr.52)", async () => {

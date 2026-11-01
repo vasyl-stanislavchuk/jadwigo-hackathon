@@ -38,11 +38,19 @@ export function writeDecimal(text: string, language: Language): string {
     : text;
 }
 
-/** An amount in grosze as this language writes money: `3,50 zł` in Polish, `PLN 3.50` in English.
- * The coins are Polish in either language (families/money.ts). Intl puts a no-break space between
- * the amount and its currency. */
+/** An amount in grosze as this language writes money: `3,50 zł` in Polish, `3.50 zł` in English.
+ * English lessons count zloty too, written with a decimal point and the zł sign the child sees on
+ * Polish money (jadwigo-learner-knowledge/decisions/2026-11-01-english-lessons-count-zloty-written-3-50-z).
+ * A no-break space keeps the amount and `zł` on one line, as Intl writes Polish. */
 export function formatMoney(gr: number, language: Language): string {
-  return new Intl.NumberFormat(LOCALE[language], { style: "currency", currency: "PLN" }).format(
-    gr / 100,
-  );
+  if (language === "pl") {
+    return new Intl.NumberFormat(PL_LOCALE, { style: "currency", currency: "PLN" }).format(
+      gr / 100,
+    );
+  }
+  const amount = new Intl.NumberFormat(LOCALE[language], {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(gr / 100);
+  return `${amount}\u00a0zł`;
 }

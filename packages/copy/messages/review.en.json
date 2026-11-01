@@ -616,5 +616,6 @@
   "chat_announce_stopped": false,
   "chat_switch": false,
   "chat_consent": false,
-  "chat_check_findings": false
+  "chat_check_findings": false,
+  "chat_sign_in": false
 }

@@ -665,5 +665,6 @@
     "notes_noun=few": "{n} uwagi do poprawy",
     "notes_noun=many": "{n} uwag do poprawy",
     "notes_noun=other": "{n} uwagi do poprawy"
-  }
+  },
+  "chat_sign_in": "Najpierw zaloguj się na stronie rodzica, a potem wróć do rozmowy."
 }
