@@ -135,14 +135,25 @@ function fromPipe(
 
 const calls = (s: Stage) => (existsSync(s.log) ? readFileSync(s.log, "utf8") : "");
 
-// lesson-import's prod form is the owner's import of a featured lesson (dl-9t2o.9): the same gate.
-// With FEATURED=1, the form that makes it featured (dl-e8ov.2.97), so that form is the one gated.
-const EXTRA: Record<string, string[]> = { "lesson-import": ["FILE=lesson.json", "FEATURED=1"] };
+// lesson-import's prod form is the owner's import of a featured lesson (dl-9t2o.9): the same gate,
+// as a draft and with FEATURED=1 (dl-e8ov.2.97). lesson-withdraw's takes one off prod's featured
+// list (dl-9t2o.12), by lesson, by assignment and as the undo: the same gate again.
+const GATED: readonly (readonly [string, readonly string[]])[] = [
+  ["db-seed", []],
+  ["db-push", []],
+  ["db-role", []],
+  ["lesson-import", ["FILE=lesson.json"]],
+  ["lesson-import", ["FILE=lesson.json", "FEATURED=1"]],
+  ["lesson-withdraw", ["LESSON=les_x"]],
+  ["lesson-withdraw", ["ASSIGNMENT=asg_x"]],
+  ["lesson-withdraw", ["LESSON=les_x", "UNDO=1"]],
+];
 
 describe("the prod db targets", { timeout: 60_000 }, () => {
-  for (const target of ["db-seed", "db-push", "db-role", "lesson-import"]) {
-    const extra = EXTRA[target] ?? [];
-    it(`${target} ENV=prod: 'no' at the prompt exits 1 before any link`, () => {
+  for (const [target, given] of GATED) {
+    const extra = [...given];
+    const named = [target, ...given].join(" ");
+    it(`${named} ENV=prod: 'no' at the prompt exits 1 before any link`, () => {
       const s = stage();
       const { status, output } = atTerminal(s, target, "no", extra);
       expect(output).toContain("Type prod");
@@ -153,7 +164,7 @@ describe("the prod db targets", { timeout: 60_000 }, () => {
       expect(calls(s)).not.toContain("supabase link");
     });
 
-    it(`${target} ENV=prod: refused with no terminal, even with CONFIRM=prod, exported or given`, () => {
+    it(`${named} ENV=prod: refused with no terminal, even with CONFIRM=prod, exported or given`, () => {
       const s = stage();
       for (const run of [
         fromPipe(s, target, extra),
@@ -286,6 +297,24 @@ describe("db-role and db-seed around the pooler's old password", { timeout: 60_0
     expect(draft.status, draft.output).toBe(0);
     expect(calls(draft.s)).toContain("packages/lesson-import import");
     expect(calls(draft.s)).not.toContain("--featured");
+    // Only 1 means featured: a featured prod import shows at once.
+    const no = onDev("lesson-import", ["ok"], ["FILE=lesson.json", "FEATURED=0"]);
+    expect(calls(no.s)).not.toContain("--featured");
+  });
+
+  it("lesson-withdraw ENV=dev: withdraws the lesson or assignment named, and UNDO=1 restores it", () => {
+    const byLesson = onDev("lesson-withdraw", ["ok"], ["LESSON=les_x"]);
+    expect(byLesson.status, byLesson.output).toBe(0);
+    expect(calls(byLesson.s)).toMatch(/bun run --cwd packages\/lesson-import withdraw les_x *\n/);
+    const undo = onDev("lesson-withdraw", ["ok"], ["ASSIGNMENT=asg_x", "UNDO=1"]);
+    expect(undo.status, undo.output).toBe(0);
+    expect(calls(undo.s)).toContain("packages/lesson-import withdraw asg_x --restore");
+    for (const given of [[], ["LESSON=les_x", "ASSIGNMENT=asg_x"]]) {
+      const refused = onDev("lesson-withdraw", ["ok"], given);
+      expect(refused.status).not.toBe(0);
+      expect(refused.output).toContain("give one of LESSON=les_… or ASSIGNMENT=asg_…");
+      expect(calls(refused.s)).not.toContain("supabase");
+    }
   });
 
   it("db-seed: any other login error stops at once, without retrying", () => {

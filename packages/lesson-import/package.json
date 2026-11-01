@@ -15,6 +15,7 @@
     "seed": "bun src/seed.ts",
     "check": "bun src/check.ts",
     "import": "bun src/import-file.ts",
+    "withdraw": "bun src/withdraw-cli.ts",
     "test:int": "vitest run --config ../../vitest.config.ts --project integration"
   },
   "//": {

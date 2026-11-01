@@ -54,7 +54,30 @@ With it, the lesson lands in the featured pod as an open anyone-assignment, at a
 `curl -s https://app.jadwigo.pl/api/v1/featured-lessons | jq '.lessons[] | [.language, .title]'`
 lists the lesson in its language, and its `/play/` path plays on app.jadwigo.pl.
 
-## Undo
+## Undo: withdraw a featured lesson
 
-One-way for now. No target withdraws an imported lesson from the featured list (`dl-9t2o.12`).
-Importing a fixed file publishes a new version of the same lesson; it does not remove the old one.
+`make lesson-withdraw` takes a lesson off the featured list by archiving it (decision
+`dl-w0b4.111`, `dl-9t2o.12`). Name it by its play path's assignment or by its lesson id:
+
+1. **Dev.** `make lesson-withdraw ASSIGNMENT=asg_… ENV=dev` (or `LESSON=les_…`).
+   - It prints `<lesson id> archived: off the featured list; its play links still play`.
+   - `curl -s https://app.dev.jadwigo.pl/api/v1/featured-lessons | jq '.lessons[] | .title'` no
+     longer lists it.
+   - Its old `/play/` link keeps playing. That is on purpose: a link a parent already shared
+     still works.
+2. **Prod.** From your own terminal: `make lesson-withdraw ASSIGNMENT=asg_… ENV=prod`.
+   - It asks you to type `prod` first. A session can't run it: the guard refuses it, and so does
+     the gate when there is no terminal (`tools/src/db-targets.test.ts`).
+3. **The site's snapshot.** Take the lesson out of `apps/site/src/content/featured.json` in a PR,
+   as in step 4 above.
+
+Rerunning a withdraw is safe. An unchanged re-import, or `make db-seed`, leaves the lesson
+withdrawn. Importing a changed file publishes a new version, and that puts the lesson back on the
+list.
+
+To put a withdrawn lesson back, add `UNDO=1`:
+`make lesson-withdraw ASSIGNMENT=asg_… ENV=dev UNDO=1`. It prints
+`<lesson id> published: back on the featured list`. Prod is gated the same way.
+
+A withdraw only ever touches a lesson in the featured pod. It refuses a draft's id and changes
+nothing.

@@ -14,6 +14,7 @@ import { createPostgresStore } from "@jadwigo/store";
 import { afterAll, describe, expect, it } from "vitest";
 import { databaseUrl } from "./config.ts";
 import { DRAFTS_POD, FEATURED_POD, featuredAssignmentId } from "./ids.ts";
+import { withdrawLesson } from "./withdraw.ts";
 
 const pkg = fileURLToPath(new URL("..", import.meta.url));
 const fixture = fileURLToPath(
@@ -96,6 +97,10 @@ describe("bun run import <file> --featured", () => {
   const featuredId = featuredAssignmentId(fileId);
   const listed = async () =>
     (await store.listOpenAssignments(FEATURED_POD.id)).map((o) => o.assignment.id);
+  // Off the featured list again once the tests are done, so runs do not pile up there.
+  afterAll(async () => {
+    if (await store.findAssignmentPod(featuredId)) await withdrawLesson(store, featuredId);
+  });
 
   it("without --featured, the lesson is not among the featured pod's open assignments", async () => {
     const { line } = runImportOf(copy);

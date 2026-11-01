@@ -863,6 +863,35 @@ class PostgresStore implements Store {
     });
   }
 
+  async setLessonStatus(
+    pod: PodId,
+    id: LessonId,
+    status: "archived" | "published",
+  ): Promise<Lesson> {
+    const lessonId = uuidOf(ID_PREFIXES.lesson, id);
+    return this.#in(pod, async (tx) => {
+      // pod_id too: claimed_read lets a pod read a claimed attempt's lesson of another pod.
+      const held = await tx
+        .selectFrom("lesson")
+        .select("id")
+        .where("id", "=", lessonId)
+        .where("pod_id", "=", uuidOf(ID_PREFIXES.pod, pod))
+        .executeTakeFirst();
+      if (!held) throw notFound("the lesson");
+      if (status === "published" && !(await this.#latest(tx, lessonId))) {
+        throw new StoreError(ErrorType.enum.BadRequest, "the lesson has no published version");
+      }
+      // jadwigo_api may update lesson.status and nothing else of a lesson (core_v0's grants).
+      const row = await tx
+        .updateTable("lesson")
+        .set({ status })
+        .where("id", "=", lessonId)
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      return read(Lesson, row, ID_PREFIXES.lesson);
+    });
+  }
+
   async getLatestLessonVersion(pod: PodId, lesson: LessonId): Promise<LessonVersion | undefined> {
     return this.#in(pod, async (tx) => {
       const latest = await this.#latest(tx, uuidOf(ID_PREFIXES.lesson, lesson));
