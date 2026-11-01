@@ -9,13 +9,13 @@
     "./runtime": "./src/paraglide/runtime.js"
   },
   "scripts": {
-    "lint": "biome check .",
+    "lint": "biome check . && bun ../../tools/src/check-copy.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --config ../../vitest.config.ts --project unit",
     "messages": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --emit-ts-declarations --no-emit-git-ignore --no-emit-prettier-ignore --no-emit-readme --strategy baseLocale"
   },
   "//": {
-    "@inlang/paraglide-js": "compiles messages/{pl,en}.json into typed message functions in src/paraglide (bun run messages), for the site and, after dl-5ssh.34.22, every screen",
+    "@inlang/paraglide-js": "compiles messages/{pl,en}.json into the typed message functions in src/paraglide (bun run messages), which copy() wraps and the site calls",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit test with the root vitest.config.ts"
