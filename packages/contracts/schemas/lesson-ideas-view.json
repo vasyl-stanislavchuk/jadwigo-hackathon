@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "learner": {
+      "$ref": "#/$defs/LearnerRef"
+    },
+    "ideas": {
+      "maxItems": 3,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/LessonIdea"
+      }
+    }
+  },
+  "required": [
+    "learner",
+    "ideas"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "LearnerRef": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/LearnerId"
+        },
+        "first_name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "first_name"
+      ],
+      "additionalProperties": false
+    },
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LessonIdea": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^i[1-3]$"
+        },
+        "list": {
+          "$ref": "#/$defs/BriefList"
+        },
+        "why": {
+          "type": "string",
+          "enum": [
+            "needs_attention",
+            "review_due",
+            "prerequisites_met",
+            "second_day_owed",
+            "school_tag"
+          ]
+        },
+        "skill_codes": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SkillId"
+          }
+        },
+        "goal_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/GoalId"
+          }
+        },
+        "citations": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Citation"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "list",
+        "why",
+        "skill_codes",
+        "goal_ids",
+        "citations"
+      ],
+      "additionalProperties": false
+    },
+    "BriefList": {
+      "type": "string",
+      "enum": [
+        "reteach",
+        "review",
+        "new",
+        "recheck",
+        "school"
+      ]
+    },
+    "SkillId": {
+      "type": "string",
+      "pattern": "^[a-z]+(\\.[a-z0-9-]+)+$"
+    },
+    "GoalId": {
+      "type": "string",
+      "pattern": "^gol_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "Citation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "attempt"
+            },
+            "attempt_id": {
+              "$ref": "#/$defs/AttemptId"
+            }
+          },
+          "required": [
+            "kind",
+            "attempt_id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "skill"
+            },
+            "skill_code": {
+              "$ref": "#/$defs/SkillId"
+            }
+          },
+          "required": [
+            "kind",
+            "skill_code"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "goal"
+            },
+            "goal_id": {
+              "$ref": "#/$defs/GoalId"
+            }
+          },
+          "required": [
+            "kind",
+            "goal_id"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "AttemptId": {
+      "type": "string",
+      "pattern": "^att_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    }
+  }
+}

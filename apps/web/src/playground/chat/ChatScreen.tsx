@@ -6,7 +6,7 @@
  * id is in the tab's session storage) and draws it again from the log.
  */
 
-import type { RunRatingClient } from "@jadwigo/api-client";
+import type { ConversationListClient, RunRatingClient } from "@jadwigo/api-client";
 import { ConversationId, type RunId, type RunRatingCreate } from "@jadwigo/contracts/run";
 import { copy, type Language } from "@jadwigo/copy";
 import { cn } from "@jadwigo/ui";
@@ -15,11 +15,13 @@ import { queryLanguage, useLocation } from "../route.ts";
 import { Button } from "../tool/button.tsx";
 import { ChatPane } from "./ChatPane.tsx";
 import { type ConsentClient, ConsentScreen, giveConsent } from "./ConsentScreen.tsx";
+import { ConversationList } from "./ConversationList.tsx";
 import { type ConversationState, lessonOf, type Turn, turnsOf } from "./conversation.ts";
 import { newConversationId } from "./ids.ts";
 import { LessonPane } from "./LessonPane.tsx";
 import { apiTransport } from "./realtime.ts";
 import { changedOf, undoOf } from "./revisions.ts";
+import { holdServer } from "./routesTransport.ts";
 import { undoSteer } from "./steerText.ts";
 import { type EngineTransport, hotTransport, useConversation } from "./useConversation.ts";
 
@@ -266,12 +268,15 @@ function LiveChat({
 function useEngine(
   given: EngineTransport | undefined,
   givenConsent: ConsentClient | undefined,
+  givenLists: ConversationListClient | undefined,
   givenRatings: RunRatingClient | undefined,
   engine: string | null,
 ): {
   transport: EngineTransport;
   signIn: (() => Promise<string | null>) | null;
   consent: ConsentClient | null;
+  /** The conversation list's routes, on the routes transport only (dl-z5ja.106). */
+  lists: ConversationListClient | null;
   ratings: RunRatingClient | null;
 } | null {
   return useMemo(() => {
@@ -280,10 +285,11 @@ function useEngine(
         transport: given,
         signIn: null,
         consent: givenConsent ?? null,
+        lists: givenLists ?? null,
         ratings: givenRatings ?? null,
       };
     const hot = engine === "api" ? null : hotTransport();
-    if (hot) return { transport: hot, signIn: null, consent: null, ratings: null };
+    if (hot) return { transport: hot, signIn: null, consent: null, lists: null, ratings: null };
     const api = apiTransport();
     return api === null
       ? null
@@ -291,25 +297,29 @@ function useEngine(
           transport: api.transport,
           signIn: () => api.auth.token(),
           consent: api.client,
+          lists: api.client,
           ratings: api.client,
         };
-  }, [given, givenConsent, givenRatings, engine]);
+  }, [given, givenConsent, givenLists, givenRatings, engine]);
 }
 
 export function ChatScreen({
   transport,
   consent,
+  lists,
   ratings,
 }: {
   transport?: EngineTransport;
   /** A test's consent client, beside its transport. */
   consent?: ConsentClient;
+  /** A test's list routes, beside its transport. */
+  lists?: ConversationListClient;
   /** A test's rating route, beside its transport. */
   ratings?: RunRatingClient;
 } = {}): ReactElement {
   const { query } = useLocation();
   const language = queryLanguage(query) ?? "pl";
-  const live = useEngine(transport, consent, ratings, query.get("engine"));
+  const live = useEngine(transport, consent, lists, ratings, query.get("engine"));
   const [conversation, setConversation] = useState<ConversationId>(storedConversation);
   /** Null until known; the routes refuse a parent who is not signed in. */
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
@@ -326,7 +336,7 @@ export function ChatScreen({
     window.sessionStorage.setItem(STORED, minted);
     setConversation(minted);
   };
-  return (
+  const chat = (
     <LiveChat
       key={conversation}
       transport={live.transport}
@@ -336,5 +346,26 @@ export function ChatScreen({
       language={language}
       onNew={startNew}
     />
+  );
+  if (live.lists === null) return chat;
+  /** A conversation from the list becomes the page's, its server id standing for itself. */
+  const open = (id: ConversationId) => {
+    holdServer(id);
+    window.sessionStorage.setItem(STORED, id);
+    setConversation(id);
+  };
+  return (
+    <div className="flex flex-col lg:flex-row">
+      <aside className="border-b p-3 lg:w-64 lg:shrink-0 lg:border-r lg:border-b-0">
+        <ConversationList
+          language={language}
+          api={live.lists}
+          current={conversation}
+          onOpen={open}
+          onArchived={(id) => id === conversation && startNew()}
+        />
+      </aside>
+      <div className="min-w-0 flex-1">{chat}</div>
+    </div>
   );
 }
