@@ -364,33 +364,47 @@ describe("auth.sh", () => {
       expect(api.requests).toEqual([]);
     });
 
-    it("the hook is on in dev.json only; prod.json waits for the provider switch-on", () => {
+    it("the hook is on in dev.json and prod.json (dl-e8ov.2.92)", () => {
       const read = (env: string) =>
         JSON.parse(readFileSync(join(repo, `infra/supabase-auth/${env}.json`), "utf8")).settings;
       expect(read("dev")).toMatchObject(HOOK.settings);
-      expect(read("prod").hook_custom_access_token_enabled).toBeUndefined();
+      expect(read("prod")).toMatchObject({
+        hook_custom_access_token_enabled: true,
+        hook_custom_access_token_uri: HOOK.settings.hook_custom_access_token_uri,
+      });
     });
   });
 
-  it("Google (dl-e8ov.2.8) and Facebook (dl-e8ov.2.58) are on in dev.json with their keychain secrets; prod.json waits", () => {
+  it("Google (dl-e8ov.2.8) and Facebook (dl-e8ov.2.58) are on in dev.json and prod.json (dl-e8ov.2.92) with each project's keychain secrets", () => {
     const read = (env: string) =>
       JSON.parse(readFileSync(join(repo, `infra/supabase-auth/${env}.json`), "utf8"));
     const dev = read("dev");
-    expect(dev.settings).toMatchObject({
-      external_google_enabled: true,
-      external_google_client_id: expect.stringMatching(/\.apps\.googleusercontent\.com$/),
-      external_google_email_optional: false,
-      external_facebook_enabled: true,
-      external_facebook_client_id: expect.stringMatching(/^\d+$/),
-      external_facebook_email_optional: false,
-    });
+    const prod = read("prod");
+    for (const env of [dev, prod]) {
+      expect(env.settings).toMatchObject({
+        external_google_enabled: true,
+        external_google_client_id: expect.stringMatching(/\.apps\.googleusercontent\.com$/),
+        external_google_email_optional: false,
+        external_facebook_enabled: true,
+        external_facebook_client_id: expect.stringMatching(/^\d+$/),
+        external_facebook_email_optional: false,
+      });
+    }
     expect(dev.secrets).toEqual({
       external_google_secret: "jadwigo-google-oauth-secret-dev",
       external_facebook_secret: "jadwigo-facebook-app-secret-dev",
     });
-    const prod = read("prod");
-    expect(Object.keys(prod.settings).filter((k) => k.startsWith("external_"))).toEqual([]);
-    expect(prod.secrets).toBeUndefined();
+    expect(prod.secrets).toEqual({
+      external_google_secret: "jadwigo-google-oauth-secret-prod",
+      external_facebook_secret: "jadwigo-facebook-app-secret-prod",
+    });
+    // Each project has its own Google client; one Meta app serves both.
+    expect(prod.settings.external_google_client_id).not.toBe(
+      dev.settings.external_google_client_id,
+    );
+    expect(prod.settings.external_facebook_client_id).toBe(
+      dev.settings.external_facebook_client_id,
+    );
   });
 
   it("the committed env files name no secret value and keep email_optional off", () => {

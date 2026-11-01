@@ -82,6 +82,11 @@ function signedOutAuth(
       if (enabled === "unreadable") throw new Error("settings 503");
       return providers.filter((provider) => enabled.includes(provider));
     }),
+    // Every provider the project has on, its button shown or not; none with no build provider.
+    handoffProviders: vi.fn(async () => {
+      if (enabled === "unreadable") throw new Error("settings 503");
+      return providers.length === 0 ? [] : enabled;
+    }),
     signInWith: vi.fn(async (_provider: Provider, _returnTo: string) => {}),
     // A provider's return as auth.ts reads it: a code signs in, an error says which.
     completeRedirect: vi.fn(async (url: URL): Promise<RedirectOutcome> => {
@@ -566,6 +571,24 @@ describe("ParentScreen", () => {
       `${window.location.origin}/parent?lang=pl`,
     );
     expect(window.location.search).toBe("?lang=pl");
+  });
+
+  it("starts a provider the project has on whose button the build hides: a Meta app's tester (dl-ovva)", async () => {
+    window.history.replaceState(null, "", "/parent?provider=facebook");
+    const auth = signedOutAuth(["google"], ["google", "facebook"]);
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams("provider=facebook")}
+        auth={auth}
+        client={client({})}
+      />,
+    );
+    await screen.findByRole("button", { name: "Kontynuuj z Google" });
+    await vi.waitFor(() => expect(auth.signInWith).toHaveBeenCalledTimes(1));
+    expect(auth.signInWith).toHaveBeenCalledWith("facebook", `${window.location.origin}/parent`);
+    expect(document.querySelector('[data-provider="facebook"]')).toBeNull();
+    expect(window.location.search).toBe("");
   });
 
   it("does not start a provider the project has off", async () => {

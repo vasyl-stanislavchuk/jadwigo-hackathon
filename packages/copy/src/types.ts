@@ -776,6 +776,10 @@ export const COPY_KEYS = [
   "chat_list_archive_confirm",
   "chat_list_archive_yes",
   "chat_list_archive_failed",
+  "chat_edit_words",
+  "chat_edit_saved",
+  "chat_edit_saving",
+  "chat_edit_not_applied",
   "chat_sign_in",
   "chat_limit_message",
   // end the chat page

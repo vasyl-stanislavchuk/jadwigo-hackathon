@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { ChatScreen } from "./ChatScreen.tsx";
 import { conversationReducer, EMPTY, lessonOf, turnsOf } from "./conversation.ts";
 import { LessonPane } from "./LessonPane.tsx";
+import { revertPatch } from "./patches.ts";
 import { type EngineTransport, useConversation } from "./useConversation.ts";
 import type { SendBody } from "./wire.ts";
 
@@ -210,6 +211,10 @@ describe("a send a message limit refuses (dl-z5ja.62, .100)", () => {
   });
 });
 
+const isRevision = (e: RunEvent): boolean => e.type === "lesson_revision";
+const lessonFileOf = (e: RunEvent | undefined): unknown =>
+  e?.type === "lesson_revision" ? e.payload.lesson_file : null;
+
 describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
   /** A 3rd revision of the happy turn's lesson with step s02's words changed, as the next event. */
   function thirdRevision(events: readonly RunEvent[]): RunEvent {
@@ -228,6 +233,31 @@ describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
     });
   }
 
+  it("Cofnij waits for its patch, and stops waiting when the send fails (#546's review)", async () => {
+    const events = eventsOf("happy-turn");
+    const t = fakeTransport(events);
+    let refuse = true;
+    const send = t.transport.send.bind(t.transport);
+    const transport: EngineTransport = {
+      ...t.transport,
+      send: async (body) => {
+        if (refuse && body.kind === "steer") throw new Error("offline");
+        return send(body);
+      },
+    };
+    render(<ChatScreen transport={transport} />);
+    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    await act(async () => t.push([thirdRevision(events)]));
+    const undo = () => document.querySelector("[data-undo]") as HTMLButtonElement;
+    await act(async () => fireEvent.click(undo()));
+    // The send never reached the server: no log will hold the steer, so Cofnij is pressable again.
+    expect(undo().disabled).toBe(false);
+    refuse = false;
+    await act(async () => fireEvent.click(undo()));
+    // This one went: Cofnij waits for its revision.
+    expect(undo().disabled).toBe(true);
+  });
+
   it("a revision that lands live marks only the step it changed, and a reload marks it again", async () => {
     const events = eventsOf("happy-turn");
     const t = fakeTransport(events);
@@ -241,13 +271,17 @@ describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
     const marked = () => [...document.querySelectorAll("[data-changed]")];
     expect(marked().map((m) => m.getAttribute("data-step"))).toEqual(["s02"]);
     expect(marked()[0]?.textContent).toContain("Zmienione przez asystenta");
-    // Cofnij asks the AI to take the change back, in the lesson's language (dl-z5ja.42 keeps it).
-    // The happy turn has ended, so it goes as a new message.
+    // Cofnij sends the patch back to revision 2 as a lesson_edit steer, which the runner applies
+    // with no model call even on an ended turn (wave 4 decision 41, dl-z5ja.111).
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Cofnij" })));
     expect(t.sent).toEqual([
       expect.objectContaining({
-        kind: "message",
+        kind: "steer",
+        source: "lesson_edit",
+        question_ids: ["s02"],
         text: "Rodzic prosi o cofnięcie zmiany w krokach s02: wróć do wersji 2.",
+        patch: revertPatch(lessonFileOf(third), lessonFileOf(events.findLast(isRevision))),
+        base_revision: 3,
       }),
     ]);
 

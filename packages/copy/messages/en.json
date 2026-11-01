@@ -879,27 +879,10 @@
   "parent_grade": "Class",
   "parent_cancel": "Cancel",
   "parent_lesson_soon": "Making a lesson from here is on its way. It will work soon.",
-  "attach_photo_alt": "Photo {n}",
-  "attach_uploading": "Uploading the photo, {percent}%",
-  "attach_retry": "Try again",
-  "attach_heic": "We can't open this photo. Take a screenshot of it or save it as a JPG",
-  "attach_unreadable": "We can't open this file as a photo. Pick a photo or a screenshot",
-  "attach_too_large": "This photo is too large even after shrinking it. Take a screenshot and add that instead",
-  "attach_limit_day": "That is all the photos for today. You can add more tomorrow",
-  "attach_offline": "The photo did not get through. Check the connection and try again",
-  "attach_expired": "The upload took too long. Try again",
-  "attach_changed": "The photo arrived at a different size than we said it would. Try again",
-  "attach_not_taken": "The server did not take the photo. Try again",
-  "attach_left_off": [
-    {
-      "declarations": ["input max", "input n", "local n_noun = n: plural"],
-      "selectors": ["n_noun"],
-      "match": {
-        "n_noun=one": "{max} photos fit, {n} was left off",
-        "n_noun=other": "{max} photos fit, {n} were left off"
-      }
-    }
-  ],
+  "chat_edit_words": "What this step says to the child",
+  "chat_edit_saved": "Your change is in the lesson now.",
+  "chat_edit_saving": "Saving your change to the lesson…",
+  "chat_edit_not_applied": "This change wasn't applied: the lesson changed in the meantime, or the change doesn't fit it. Your text is below.",
   "parent_chat": "Chat",
   "parent_lesson": "Lesson",
   "parent_details": "Lesson details",
@@ -920,5 +903,26 @@
   "parent_about_lesson_empty": "The source, the steps, the version and the change history will appear here once the lesson is ready.",
   "parent_change": "Change",
   "parent_chat_empty": "Your chat with Jadwigo will appear here.",
-  "parent_lesson_empty": "The lesson's steps will appear here once Jadwigo starts writing it."
+  "parent_lesson_empty": "The lesson's steps will appear here once Jadwigo starts writing it.",
+  "attach_photo_alt": "Photo {n}",
+  "attach_uploading": "Uploading the photo, {percent}%",
+  "attach_retry": "Try again",
+  "attach_heic": "We can't open this photo. Take a screenshot of it or save it as a JPG",
+  "attach_unreadable": "We can't open this file as a photo. Pick a photo or a screenshot",
+  "attach_too_large": "This photo is too large even after shrinking it. Take a screenshot and add that instead",
+  "attach_limit_day": "That is all the photos for today. You can add more tomorrow",
+  "attach_offline": "The photo did not get through. Check the connection and try again",
+  "attach_expired": "The upload took too long. Try again",
+  "attach_changed": "The photo arrived at a different size than we said it would. Try again",
+  "attach_not_taken": "The server did not take the photo. Try again",
+  "attach_left_off": [
+    {
+      "declarations": ["input max", "input n", "local n_noun = n: plural"],
+      "selectors": ["n_noun"],
+      "match": {
+        "n_noun=one": "{max} photos fit, {n} was left off",
+        "n_noun=other": "{max} photos fit, {n} were left off"
+      }
+    }
+  ]
 }
