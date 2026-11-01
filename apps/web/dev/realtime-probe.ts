@@ -19,7 +19,8 @@
  * Only the dev project is accepted (infra/supabase-auth/dev.json).
  */
 import { randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { homedir } from "node:os";
 import { ID_PREFIXES, idOf } from "@jadwigo/contracts";
 import { RunEvent } from "@jadwigo/contracts/run";
 import { mergeLive } from "@jadwigo/core";
@@ -57,7 +58,7 @@ export function readConfig(
 ): ProbeConfig | { problems: string[] } {
   const url = env["JW_SUPABASE_URL"] ?? "";
   const publishableKey = env["JW_SUPABASE_KEY"] ?? "";
-  const secretKey = env["JW_SUPABASE_SECRET_KEY"] ?? "";
+  const secretKey = env["JW_SUPABASE_SECRET_KEY"] || env["SUPABASE_SECRET_KEY_DEV"] || "";
   const rate = Number(env["JW_PROBE_DELTA_RATE"] ?? "4");
   const seconds = Number(env["JW_PROBE_DELTA_SECONDS"] ?? "30");
   const problems: string[] = [];
@@ -65,10 +66,36 @@ export function readConfig(
   else if (new URL(url).hostname !== `${devRef}.supabase.co`)
     problems.push(`JW_SUPABASE_URL is not jadwigo-dev (${devRef}.supabase.co)`);
   if (!publishableKey) problems.push("JW_SUPABASE_KEY is unset (the publishable key)");
-  if (!secretKey) problems.push("JW_SUPABASE_SECRET_KEY is unset (a secret key)");
+  if (!secretKey)
+    problems.push(
+      "JW_SUPABASE_SECRET_KEY is unset, and so is SUPABASE_SECRET_KEY_DEV in ~/.config/jadwigo/supabase.env",
+    );
   if (!(rate > 0 && rate <= 20)) problems.push("JW_PROBE_DELTA_RATE is not in (0, 20]");
   if (!(seconds > 0 && seconds <= 300)) problems.push("JW_PROBE_DELTA_SECONDS is not in (0, 300]");
   return problems.length ? { problems } : { url, publishableKey, secretKey, rate, seconds };
+}
+
+/** Where the Makefile keeps each project's secrets (SUPABASE_SECRETS): KEY=VALUE lines, `#` comments. */
+export const SECRETS_FILE = `${homedir()}/.config/jadwigo/supabase.env`;
+
+/** The KEY=VALUE lines of a secrets file. A value may be wrapped in one pair of quotes. */
+export function parseSecrets(text: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const line of text.split("\n")) {
+    const m = /^\s*(?:export\s+)?([A-Z_][A-Z0-9_]*)=(.*)$/.exec(line);
+    if (!m?.[1]) continue;
+    out[m[1]] = (m[2] ?? "").trim().replace(/^(["'])(.*)\1$/, "$2");
+  }
+  return out;
+}
+
+/** The secrets file's values under the process's own: what the shell sets wins. A file anyone
+ * but its owner may read is refused, as the Makefile refuses it. */
+function withSecrets(env: Record<string, string | undefined>): Record<string, string | undefined> {
+  if (!existsSync(SECRETS_FILE)) return env;
+  if ((statSync(SECRETS_FILE).mode & 0o077) !== 0)
+    throw new Error(`run chmod 600 ${SECRETS_FILE} first`);
+  return { ...parseSecrets(readFileSync(SECRETS_FILE, "utf8")), ...env };
 }
 
 /** A realtime_probe.run_event row, as the read function returns it and the trigger sends it. */
@@ -272,7 +299,7 @@ async function main(): Promise<number> {
   const devRef = JSON.parse(
     readFileSync(new URL("../../../infra/supabase-auth/dev.json", import.meta.url), "utf8"),
   ).ref as string;
-  const cfg = readConfig(process.env, devRef);
+  const cfg = readConfig(withSecrets(process.env), devRef);
   if ("problems" in cfg) {
     for (const p of cfg.problems) say(`config: ${p}`);
     return 2;
