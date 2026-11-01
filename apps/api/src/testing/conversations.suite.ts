@@ -283,13 +283,14 @@ export function conversationSuite(
       expect(late.body.run.status).toBe("completed");
 
       // The next turn's Stop, sent with the 1st turn's cancel event_id, names another run: 409.
+      // The store refuses an event_id another run holds (dl-z5ja.36) before the route's own check.
       const next = (await a.say(conversation.id, "Once more")).body.run;
       expect(next.id).not.toBe(run.id);
       const reused = await a.call<ErrorEnvelope>("POST", pathOf("cancelRun", { id: next.id }), {
         event_id,
       });
       expect(reused.status).toBe(409);
-      expect(reused.body.error.type).toBe("EventIdMismatch");
+      expect(reused.body.error.type).toBe("WriteOnce");
     });
 
     // Frozen (dl-z5ja.21, the steward's #409 review): a caller holding another family's

@@ -1,0 +1,265 @@
+{
+  "answers": [
+    {
+      "status": 401,
+      "error": "{\"error\": \"unauthorized\"}"
+    },
+    {
+      "status": 200,
+      "events": [
+        {
+          "type": "response.created",
+          "response": {
+            "id": "resp_x"
+          }
+        },
+        {
+          "type": "response.output_text.delta",
+          "delta": "7\n4"
+        },
+        {
+          "type": "response.output_text.delta",
+          "delta": ""
+        },
+        {
+          "type": "response.completed",
+          "response": {
+            "id": "resp_x",
+            "usage": {
+              "input_tokens": 900,
+              "input_tokens_details": {
+                "cached_tokens": 0
+              },
+              "output_tokens": 20
+            }
+          }
+        }
+      ],
+      "seconds": 2.5
+    },
+    {
+      "status": 200,
+      "events": [
+        {
+          "type": "response.created",
+          "response": {
+            "id": "resp_x"
+          }
+        },
+        {
+          "type": "response.output_text.delta",
+          "delta": "{\"a"
+        },
+        {
+          "type": "response.output_text.delta",
+          "delta": "nswers\": [7, 4], \"grade\": \"1\"}"
+        },
+        {
+          "type": "response.completed",
+          "response": {
+            "id": "resp_x",
+            "usage": {
+              "input_tokens": 80,
+              "input_tokens_details": {
+                "cached_tokens": 0
+              },
+              "output_tokens": 30
+            }
+          }
+        }
+      ],
+      "seconds": 1.5
+    },
+    {
+      "status": 200,
+      "events": [
+        {
+          "type": "response.output_item.added",
+          "item": {
+            "type": "function_call",
+            "call_id": "call_1",
+            "name": "add_numbers",
+            "arguments": ""
+          }
+        },
+        {
+          "type": "response.function_call_arguments.delta",
+          "delta": "{\"a\": 27, "
+        },
+        {
+          "type": "response.function_call_arguments.done",
+          "arguments": "{\"a\": 27, \"b\": 45}"
+        },
+        {
+          "type": "response.output_item.done",
+          "item": {
+            "type": "function_call",
+            "call_id": "call_1",
+            "name": "add_numbers",
+            "arguments": "{\"a\": 27, \"b\": 45}"
+          }
+        },
+        {
+          "type": "response.completed",
+          "response": {
+            "usage": {
+              "input_tokens": 100,
+              "input_tokens_details": {
+                "cached_tokens": 0
+              },
+              "output_tokens": 15
+            }
+          }
+        }
+      ],
+      "seconds": 1.2
+    },
+    {
+      "status": 200,
+      "events": [
+        {
+          "type": "response.created",
+          "response": {
+            "id": "resp_x"
+          }
+        },
+        {
+          "type": "response.output_text.delta",
+          "delta": "The"
+        },
+        {
+          "type": "response.output_text.delta",
+          "delta": " sum is 72."
+        },
+        {
+          "type": "response.completed",
+          "response": {
+            "id": "resp_x",
+            "usage": {
+              "input_tokens": 120,
+              "input_tokens_details": {
+                "cached_tokens": 0
+              },
+              "output_tokens": 10
+            }
+          }
+        }
+      ],
+      "seconds": 1.0
+    },
+    {
+      "status": 400,
+      "error": "input_image is not supported for this model"
+    },
+    {
+      "status": 200,
+      "events": [
+        {
+          "type": "response.created",
+          "response": {
+            "id": "resp_x"
+          }
+        },
+        {
+          "type": "response.output_text.delta",
+          "delta": "{\"a"
+        },
+        {
+          "type": "response.output_text.delta",
+          "delta": "nswers\": [7, 4], \"grade\": \"1\"}"
+        },
+        {
+          "type": "response.completed",
+          "response": {
+            "id": "resp_x",
+            "usage": {
+              "input_tokens": 80,
+              "input_tokens_details": {
+                "cached_tokens": 0
+              },
+              "output_tokens": 30
+            }
+          }
+        }
+      ],
+      "seconds": 1.5
+    },
+    {
+      "status": 200,
+      "events": [
+        {
+          "type": "response.output_item.added",
+          "item": {
+            "type": "function_call",
+            "call_id": "call_1",
+            "name": "add_numbers",
+            "arguments": ""
+          }
+        },
+        {
+          "type": "response.function_call_arguments.delta",
+          "delta": "{\"a\": 27, "
+        },
+        {
+          "type": "response.function_call_arguments.done",
+          "arguments": "{\"a\": 27, \"b\": 45}"
+        },
+        {
+          "type": "response.output_item.done",
+          "item": {
+            "type": "function_call",
+            "call_id": "call_1",
+            "name": "add_numbers",
+            "arguments": "{\"a\": 27, \"b\": 45}"
+          }
+        },
+        {
+          "type": "response.completed",
+          "response": {
+            "usage": {
+              "input_tokens": 100,
+              "input_tokens_details": {
+                "cached_tokens": 0
+              },
+              "output_tokens": 15
+            }
+          }
+        }
+      ],
+      "seconds": 1.2
+    },
+    {
+      "status": 200,
+      "events": [
+        {
+          "type": "response.created",
+          "response": {
+            "id": "resp_x"
+          }
+        },
+        {
+          "type": "response.output_text.delta",
+          "delta": "The"
+        },
+        {
+          "type": "response.output_text.delta",
+          "delta": " sum is 72."
+        },
+        {
+          "type": "response.completed",
+          "response": {
+            "id": "resp_x",
+            "usage": {
+              "input_tokens": 120,
+              "input_tokens_details": {
+                "cached_tokens": 0
+              },
+              "output_tokens": 10
+            }
+          }
+        }
+      ],
+      "seconds": 1.0
+    }
+  ]
+}
