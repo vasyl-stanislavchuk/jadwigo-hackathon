@@ -107,7 +107,9 @@ agent writes only what the bank does not have.
    the step: an object merges, `null` removes a part, anything else replaces it. A change to the
    bank's copy (`say`, `data`, `key`, `hints`, `worked`) needs a `why`, and it is recorded in
    `based_on.changes`. The answer is that step's findings and card. A later `lesson_check` keeps
-   the edit unless it is sent words for that step.
+   the edit, less any part that check's words for that step set. To put the steps in another
+   order, easy to harder, call [`lesson_move`](/mcp/lesson_move/) with a step and `before` or
+   `after` another; every later check keeps the order.
 5. **Publish, then play.** Once a check answers `ok`, call [`lesson_publish`](/mcp/lesson_publish/)
    with the `draft_id`, without asking. It imports the lesson into the local database `make dev`
    serves. Then it checks that the api answers, that a preview attempt starts with every question,

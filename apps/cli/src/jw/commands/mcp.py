@@ -41,6 +41,7 @@ TOOLS = (
     "lesson_draft",
     "lesson_check",
     "lesson_edit",
+    "lesson_move",
     "lesson_show",
     "lesson_publish",
     "doctor",
@@ -64,7 +65,8 @@ def build_server() -> Any:
             "those words by step id, and fix what its findings list by step id until it answers "
             "ok with a card. Each call rewrites the draft file, so the lesson can be watched as it "
             "is built. To change one step after that, read it with lesson_show and patch it with "
-            "lesson_edit, which answers with that step's findings and card. question_search, "
+            "lesson_edit, which answers with that step's findings and card; to put the steps in "
+            "another order (easy to harder), call lesson_move. question_search, "
             "question_show, question_gaps and question_item look into the bank directly: sets "
             "that meet a need, one set's page, needs it cannot meet, one item. Once a check "
             "answers ok, call lesson_publish with the draft_id, without asking: it imports the "
@@ -290,7 +292,7 @@ def build_server() -> Any:
         sets a part as the wrong kind, is refused with rule edit and changes nothing. names is
         required, as for lesson_draft (every name the family uses, or []): they are replaced in
         every word but an answer key, keys included, and in why. A later
-        lesson_check keeps this edit unless it is sent words for this step.
+        lesson_check keeps this edit, less any part that check's words for this step set.
         """
         return _call(
             lesson_edit.edit,
@@ -301,6 +303,19 @@ def build_server() -> Any:
             change=change,
             names=names,
         )
+
+    @server.tool(name="lesson_move")
+    def lesson_move_tool(
+        draft_id: str, step_id: str, before: str | None = None, after: str | None = None
+    ) -> dict[str, Any]:
+        """Move one step of a draft to just before or just after another, so the lesson goes from
+        easy to harder. Pass before or after (a step id), not both. Step ids do not change; the
+        new order is kept by the draft and by every later lesson_check and lesson_edit. check.ts
+        runs on the whole lesson. Returns ok (the lesson's check), order (the step ids in their
+        new order), findings, lesson_ok and draft_path.
+        """
+        return _call(lesson_edit.move, draft_id=draft_id, step_id=step_id, before=before,
+                     after=after)
 
     @server.tool(name="lesson_publish")
     def lesson_publish_tool(draft_id: str, target: str = "local") -> dict[str, Any]:

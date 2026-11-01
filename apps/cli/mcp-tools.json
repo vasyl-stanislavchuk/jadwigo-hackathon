@@ -204,7 +204,7 @@
       }
     },
     {
-      "description": "Change one step of a draft and get that step's findings back, without resending the rest.\n\n        patch is a JSON merge patch on the step as lesson_show returns it: an object merges into\n        what is there, null removes a part, anything else replaces it. It may set say and\n        question's data, key and help (look, boost, almost, worked, hints, boost_by_mistake and\n        twin, under question.help). A change to a part the bank's copy has (say, data, key, hints,\n        worked, a copied almost) needs why, the parent's ask; it is recorded in based_on.changes\n        with change (numbers, context, wording or tutor_notes; wording by default). A rung, twin\n        or mistake card you write needs no why. The draft file is rewritten, check.ts runs on the\n        whole lesson and its check file is rewritten. Returns ok (no error for this step),\n        step_id, findings for this step only, render (the page's findings for it from its last\n        draw, stale when drawn before this write; null without the page), the step's card,\n        lesson_ok (the whole lesson's check) and draft_path. A patch that is not an object, or\n        sets a part as the wrong kind, is refused with rule edit and changes nothing. names is\n        required, as for lesson_draft (every name the family uses, or []): they are replaced in\n        every word but an answer key, keys included, and in why. A later\n        lesson_check keeps this edit unless it is sent words for this step.\n        ",
+      "description": "Change one step of a draft and get that step's findings back, without resending the rest.\n\n        patch is a JSON merge patch on the step as lesson_show returns it: an object merges into\n        what is there, null removes a part, anything else replaces it. It may set say and\n        question's data, key and help (look, boost, almost, worked, hints, boost_by_mistake and\n        twin, under question.help). A change to a part the bank's copy has (say, data, key, hints,\n        worked, a copied almost) needs why, the parent's ask; it is recorded in based_on.changes\n        with change (numbers, context, wording or tutor_notes; wording by default). A rung, twin\n        or mistake card you write needs no why. The draft file is rewritten, check.ts runs on the\n        whole lesson and its check file is rewritten. Returns ok (no error for this step),\n        step_id, findings for this step only, render (the page's findings for it from its last\n        draw, stale when drawn before this write; null without the page), the step's card,\n        lesson_ok (the whole lesson's check) and draft_path. A patch that is not an object, or\n        sets a part as the wrong kind, is refused with rule edit and changes nothing. names is\n        required, as for lesson_draft (every name the family uses, or []): they are replaced in\n        every word but an answer key, keys included, and in why. A later\n        lesson_check keeps this edit, less any part that check's words for this step set.\n        ",
       "inputSchema": {
         "properties": {
           "change": {
@@ -253,6 +253,54 @@
       "outputSchema": {
         "additionalProperties": true,
         "title": "lesson_edit_toolDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "description": "Move one step of a draft to just before or just after another, so the lesson goes from\n        easy to harder. Pass before or after (a step id), not both. Step ids do not change; the\n        new order is kept by the draft and by every later lesson_check and lesson_edit. check.ts\n        runs on the whole lesson. Returns ok (the lesson's check), order (the step ids in their\n        new order), findings, lesson_ok and draft_path.\n        ",
+      "inputSchema": {
+        "properties": {
+          "after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "After"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Before"
+          },
+          "draft_id": {
+            "title": "Draft Id",
+            "type": "string"
+          },
+          "step_id": {
+            "title": "Step Id",
+            "type": "string"
+          }
+        },
+        "required": ["draft_id", "step_id"],
+        "title": "lesson_move_toolArguments",
+        "type": "object"
+      },
+      "name": "lesson_move",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "lesson_move_toolDictOutput",
         "type": "object"
       }
     },

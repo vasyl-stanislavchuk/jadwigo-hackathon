@@ -209,6 +209,31 @@ def edit(
 
 @group.command(cls=_EmitErrorsCommand)
 @click.argument("draft_id")
+@click.argument("step_id")
+@click.option("--before", default=None, help="The step it goes just before.")
+@click.option("--after", default=None, help="The step it goes just after.")
+@click.option("--json", "json_mode", is_flag=True, help="Print the answer.")
+def move(
+    draft_id: str, step_id: str, before: str | None, after: str | None, json_mode: bool
+) -> None:
+    """Move step STEP_ID of the draft DRAFT_ID before or after another step (the lesson_move
+    tool), check the lesson, and print the new order."""
+    if (before is None) == (after is None):
+        raise click.UsageError("pass --before STEP or --after STEP")
+    result = lesson_edit.move(draft_id, step_id, before=before, after=after)
+    if json_mode:
+        click.echo(json.dumps(result, ensure_ascii=False))
+    else:
+        click.echo(f"order: {' '.join(result['order'])}  ({'ok' if result['ok'] else 'not ok'})")
+        for finding in result["findings"]:
+            click.echo(f"  step {finding['step_id']} ({finding['rule']}): {finding['text']}")
+        click.echo(f"draft file: {result['draft_path']}")
+    if not result["ok"]:
+        raise SystemExit(1)
+
+
+@group.command(cls=_EmitErrorsCommand)
+@click.argument("draft_id")
 @click.argument("step_id", required=False)
 def show(draft_id: str, step_id: str | None) -> None:
     """Print step STEP_ID of the draft DRAFT_ID, or every step, as JSON (the lesson_show tool)."""
