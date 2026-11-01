@@ -253,7 +253,7 @@ function sharedStart(a: string, b: string): number {
 }
 
 /** The fewest letters 2 words must share from their start to be forms of one word. */
-export const STEM_LETTERS = 4;
+const STEM_LETTERS = 4;
 
 /**
  * Whether a need's word meets a topic's word. Polish bends a word at its end (`dodawanie`,
