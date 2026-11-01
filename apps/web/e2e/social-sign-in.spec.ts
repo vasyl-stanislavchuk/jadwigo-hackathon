@@ -15,6 +15,7 @@
 //     AUTH_ISSUER=http://127.0.0.1:54321/auth/v1 bun apps/api/src/serve.ts &
 import { type APIRequestContext, expect, type Page, test } from "@playwright/test";
 import { AUTH_ORIGIN } from "./auth-origin.ts";
+import { agreeToAi } from "./consent.ts";
 
 /** Plays equal-groups from the home page to the results, saying "Not sure yet" to every question. */
 async function playToTheEnd(page: Page): Promise<void> {
@@ -51,6 +52,8 @@ const storedAttempts = (page: Page): Promise<string[]> =>
   page.evaluate(() =>
     Object.keys(window.sessionStorage).filter((key) => key.startsWith("jw.play.attempt.")),
   );
+
+test.beforeEach(({ page }) => agreeToAi(page));
 
 test("an email signed in with the code, then with Google, is the same parent with the same children", async ({
   page,

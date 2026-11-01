@@ -11,6 +11,7 @@
 //   DATABASE_URL=postgresql://localhost:5433/jadwigo_e2e PORT=8787 \
 //     AUTH_JWKS_URL=http://127.0.0.1:54321/auth/v1/.well-known/jwks.json bun apps/api/src/serve.ts &
 import { expect, type Page, test } from "@playwright/test";
+import { agreeToAi } from "./consent.ts";
 
 /** Opens the help note and says "Not sure yet". */
 async function notSureYet(page: Page): Promise<void> {
@@ -63,6 +64,8 @@ const storedAttempts = (page: Page): Promise<string[]> =>
   page.evaluate(() =>
     Object.keys(window.sessionStorage).filter((key) => key.startsWith("jw.play.attempt.")),
   );
+
+test.beforeEach(({ page }) => agreeToAi(page));
 
 test("an adult saves a finished lesson: email code, account, a child, the claim, the parent home", async ({
   page,

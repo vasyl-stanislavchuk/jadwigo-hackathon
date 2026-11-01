@@ -58,7 +58,7 @@ const ME = {
     role: "parent",
     created_at: CREATED,
   },
-  pod: { id: POD, name: "Dom", language: "pl", created_at: CREATED },
+  pod: { id: POD, name: "Dom", language: "pl", created_at: CREATED, ai_consent_at: CREATED },
   learners: [{ learner: SKILLS.learner, goals: SKILLS.goals.map((g) => g.goal) }],
 };
 
