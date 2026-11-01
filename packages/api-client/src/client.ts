@@ -55,6 +55,9 @@ import {
   type Me,
   type ParentAttemptReview,
   type PlaygroundExamples,
+  type Pod,
+  type PodId,
+  type PodPatch,
   type ReportCreate,
   type ReportPatch,
   ROUTES,
@@ -63,6 +66,8 @@ import {
   type RunCancel,
   type RunEvents,
   type RunId,
+  type RunRating,
+  type RunRatingCreate,
   type Skills,
 } from "@jadwigo/contracts";
 import { apiUrl } from "./url.ts";
@@ -151,6 +156,12 @@ export interface LearnerKnowledgeClient {
   ): Promise<LearnerReport>;
 }
 
+/** The pod's own settings: its consent to the AI (dl-z5ja.112). Needs a token. */
+export interface PodClient {
+  /** Gives (`ai_consented: true`) or withdraws the pod's consent to the AI. */
+  patchPod(podId: PodId, body: PodPatch): Promise<Pod>;
+}
+
 /**
  * The AI engine's conversation calls (epic dl-z5ja, dl-z5ja.21). Each needs a token. A message or
  * a Stop answers with its run before the AI has answered; the run's events carry the answer.
@@ -181,14 +192,22 @@ export interface ConversationListClient {
   patchConversation(conversationId: ConversationId, body: ConversationPatch): Promise<Conversation>;
 }
 
+/** A parent's Good or Bad on a turn (dl-z5ja.110). Needs a token. */
+export interface RunRatingClient {
+  /** One per run and parent: rating again replaces the verdict and the note. */
+  rateRun(runId: RunId, body: RunRatingCreate): Promise<RunRating>;
+}
+
 /** Every `/api/v1` call this client makes. */
 export type Client = AttemptClient &
   FeaturedClient &
   ParentClient &
   LearnerKnowledgeClient &
   PlaygroundClient &
+  PodClient &
   ConversationClient &
-  ConversationListClient;
+  ConversationListClient &
+  RunRatingClient;
 
 /** A route's path with its `{name}` params filled in. */
 export function pathOf(route: Route, params: Record<string, string | number>): string {
@@ -272,6 +291,7 @@ export function createClient({
     getReview: (attemptId) => call(ROUTES.getReview, { id: attemptId }, undefined),
     getMe: () => call(ROUTES.getMe, {}, undefined),
     createAccount: (body) => call(ROUTES.createAccount, {}, body),
+    patchPod: (podId, body) => call(ROUTES.patchPod, { id: podId }, body),
     createLearner: (body) => call(ROUTES.createLearner, {}, body),
     claimAttempt: (attemptId, body) => call(ROUTES.claimAttempt, { id: attemptId }, body),
     getLearnerAttempts: (learnerId) =>
@@ -301,5 +321,6 @@ export function createClient({
     listRunEvents: (runId, after) =>
       call(ROUTES.listRunEvents, { id: runId }, undefined, { after }),
     cancelRun: (runId, body) => call(ROUTES.cancelRun, { id: runId }, body),
+    rateRun: (runId, body) => call(ROUTES.rateRun, { id: runId }, body),
   };
 }

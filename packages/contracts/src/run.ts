@@ -1,5 +1,14 @@
 import { z } from "zod";
-import { AccountId, ConversationId, EventId, PodId, RunId } from "./ids.ts";
+import {
+  AccountId,
+  ConversationId,
+  EventId,
+  LearnerId,
+  LessonId,
+  PodId,
+  RunId,
+  RunRatingId,
+} from "./ids.ts";
 import { Citation } from "./records.ts";
 
 /**
@@ -75,6 +84,40 @@ export const Conversation = z.object({
   archived_at: At.nullable().default(null),
 });
 export type Conversation = z.infer<typeof Conversation>;
+
+/** A parent's verdict on a turn (dl-z5ja.110). */
+export const RunRatingVerdict = z.enum(["good", "bad"]);
+export type RunRatingVerdict = z.infer<typeof RunRatingVerdict>;
+
+/**
+ * A parent's rating of one turn (wave 4 lead decision 37, dl-z5ja.110): Good or Bad, with an
+ * optional note on Bad ("what was missing?"). One per run and account; a re-rate replaces the
+ * verdict and the note, and `created_at` stays the first rating's. It lives in its own pod-scoped
+ * table, never an analytics event, since a note may hold learner data.
+ */
+export const RunRating = z.object({
+  id: RunRatingId,
+  pod_id: PodId,
+  run_id: RunId,
+  account_id: AccountId,
+  verdict: RunRatingVerdict,
+  note: z.string().nullable(),
+  created_at: At,
+});
+export type RunRating = z.infer<typeof RunRating>;
+
+/**
+ * `POST /api/v1/runs/{id}/ratings`: Good, or Bad with an optional note. The server fills the run,
+ * the account and the time.
+ */
+export const RunRatingCreate = z.discriminatedUnion("verdict", [
+  z.strictObject({ verdict: z.literal("good") }),
+  z.strictObject({
+    verdict: z.literal("bad"),
+    note: z.string().trim().min(1).max(2000).optional(),
+  }),
+]);
+export type RunRatingCreate = z.infer<typeof RunRatingCreate>;
 
 export const RunStatus = z.enum([
   "queued",
@@ -227,12 +270,25 @@ function event<T extends string, P extends z.ZodType>(type: T, payload: P) {
   return z.object({ ...Base, type: z.literal(type), payload });
 }
 
+/**
+ * The page a parent's message was sent from (Lead decision 36, dl-z5ja.107): the learner page
+ * names its learner, the lesson screen its lesson. The runner reads it from the run's pod and
+ * refuses an id the pod does not hold before any model call. Absent: the chat's own page.
+ */
+export const MessageContext = z.union([
+  z.strictObject({ learner_id: LearnerId }),
+  z.strictObject({ lesson_id: LessonId }),
+]);
+export type MessageContext = z.infer<typeof MessageContext>;
+
 export const MessageEvent = event(
   "message",
   z.object({
     from: z.enum(["parent", "agent"]),
     text: z.string(),
     attachments: z.array(Attachment).optional(),
+    /** A parent's message only: the page it was sent from. */
+    context: MessageContext.optional(),
     /** What an agent's claim about a learner rests on (seam 2). */
     citations: z.array(Citation).optional(),
   }),
@@ -371,7 +427,11 @@ export const RunInbox = z.discriminatedUnion("kind", [
   z.object({
     ...InboxBase,
     kind: z.literal("message"),
-    payload: z.object({ text: z.string(), attachments: z.array(Attachment).optional() }),
+    payload: z.object({
+      text: z.string(),
+      attachments: z.array(Attachment).optional(),
+      context: MessageContext.optional(),
+    }),
   }),
   z.object({
     ...InboxBase,

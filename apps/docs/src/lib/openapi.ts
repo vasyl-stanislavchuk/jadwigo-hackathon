@@ -54,6 +54,7 @@ const OPERATION_TITLES: Readonly<Record<RouteName, string>> = {
   getAssignmentAttempts: "List an assignment's attempts",
   createAccount: "Create the account",
   getMe: "Read the signed-in adult",
+  patchPod: "Turn the AI on or off",
   createLearner: "Add a child",
   claimAttempt: "Claim an attempt",
   getLearnerAttempts: "List a child's attempts",
@@ -73,6 +74,7 @@ const OPERATION_TITLES: Readonly<Record<RouteName, string>> = {
   listConversationRuns: "List a conversation's runs",
   listRunEvents: "List a run's events",
   cancelRun: "Stop a run",
+  rateRun: "Rate a turn",
   questionSearches: "Search the bank",
   questionBody: "Read a question",
 };
@@ -96,6 +98,7 @@ export const OPERATION_ORDER: readonly RouteName[] = [
   "getReview",
   "createAccount",
   "getMe",
+  "patchPod",
   "createLearner",
   "claimAttempt",
   "getLearnerAttempts",
@@ -115,6 +118,7 @@ export const OPERATION_ORDER: readonly RouteName[] = [
   "listConversationRuns",
   "listRunEvents",
   "cancelRun",
+  "rateRun",
   "questionSearches",
   "questionBody",
 ];

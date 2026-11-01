@@ -19,6 +19,8 @@ import {
   RunCancel,
   type RunEvents,
   type RunId,
+  type RunRating,
+  RunRatingCreate,
 } from "@jadwigo/contracts";
 import { acceptMessage, type EngineDeps, type RunQueue, type Verbs } from "@jadwigo/jadwigo-ai";
 import type { Store, UsageSince } from "@jadwigo/store";
@@ -93,6 +95,19 @@ function conversationIdFor(pod: PodId, event_id: EventId): ConversationId {
   return ConversationId.parse(idOf(ID_PREFIXES.conversation, uuid));
 }
 
+/**
+ * A conversation is started and spoken to only once a parent has given the pod's consent to the
+ * AI (dl-z5ja.112, wave 4 lead decision 39): until then, or after a withdrawal, 409
+ * `AiConsentMissing`, before anything is written. A Stop and the reads still answer.
+ */
+async function requireConsent(store: Store, pod: PodId): Promise<void> {
+  if ((await store.getPod(pod)).ai_consent_at === null)
+    throw new ApiError(
+      ErrorType.enum.AiConsentMissing,
+      "turn the AI on for this family before the first message",
+    );
+}
+
 function mismatch(): ApiError {
   return new ApiError(ErrorType.enum.EventIdMismatch, "this event id was sent with another body");
 }
@@ -106,6 +121,7 @@ export async function createConversation(
   const { pod, account } = await authorizeMember(store, claims);
   const parsed = ConversationCreate.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
+  await requireConsent(store, pod);
   const title = parsed.data.title ?? null;
   const conversation = await store.createConversation(pod, {
     id: conversationIdFor(pod, parsed.data.event_id),
@@ -166,6 +182,7 @@ export async function postMessage(
   const { pod, account } = await authorizeMember(store, claims);
   const parsed = ConversationMessage.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
+  await requireConsent(store, pod);
   await requireLive(store, pod, id);
   if (parsed.data.kind === "steer") return steer(store, deps, pod, account, id, parsed.data);
   const { event_id, text } = parsed.data;
@@ -295,4 +312,23 @@ export async function cancelRun(
   // The cancel landed on another run: its event_id already names another run's row.
   if (accepted.inbox.kind !== "cancel" || accepted.run.id !== id) throw mismatch();
   return { run: accepted.run };
+}
+
+/**
+ * `POST /api/v1/runs/{id}/ratings`: the parent's Good or Bad on a turn, with an optional note on
+ * Bad, in its own table (wave 4 lead decision 37, dl-z5ja.110); never an analytics event, since a
+ * note may hold learner data. One per run and parent: a re-rate replaces it. Another pod's run is
+ * 404. Try again is no route: the page sends the last message again.
+ */
+export async function rateRun(
+  store: Store,
+  claims: Claims,
+  id: RunId,
+  raw: unknown,
+): Promise<RunRating> {
+  const { pod, account } = await authorizeMember(store, claims);
+  const parsed = RunRatingCreate.safeParse(raw);
+  if (!parsed.success) throw badRequest(parsed.error.issues);
+  const note = parsed.data.verdict === "bad" ? (parsed.data.note ?? null) : null;
+  return store.rateRun(pod, id, account, { verdict: parsed.data.verdict, note });
 }

@@ -9,6 +9,8 @@ export type {
   LearnerKnowledgeClient,
   ParentClient,
   PlaygroundClient,
+  PodClient,
+  RunRatingClient,
 } from "./client.ts";
 export { ApiError, createClient, TransientError } from "./client.ts";
 export { apiUrl } from "./url.ts";

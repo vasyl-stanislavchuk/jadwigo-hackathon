@@ -20,6 +20,7 @@ import {
   listRunEvents,
   patchConversation,
   postMessage,
+  rateRun,
 } from "./conversations.ts";
 import { ApiError, badRequest, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
@@ -40,6 +41,7 @@ import {
   getAssignmentAttempts,
   getLearnerAttempts,
   getMe,
+  patchPod,
 } from "./people.ts";
 import { playgroundExamples } from "./playground.ts";
 import { type PokeStepHost, pokeAll } from "./poke.ts";
@@ -185,6 +187,7 @@ export function createApp(
   // writes are one unit, so the claim is one transaction.
   onSigned("getMe", (_params, _body, claims) => run((s) => getMe(s, claims)));
   onSigned("createAccount", (_params, body, claims) => run((s) => createAccount(s, claims, body)));
+  onSigned("patchPod", (params, body, claims) => run((s) => patchPod(s, claims, params.id, body)));
   onSigned("createLearner", (_params, body, claims) => run((s) => createLearner(s, claims, body)));
   onSigned("claimAttempt", (params, body, claims) =>
     run((s) => claimAttempt(s, claims, params.id, body)),
@@ -249,6 +252,8 @@ export function createApp(
   onSigned("cancelRun", (params, body, claims) =>
     engineUnit(store, engine, poke, (s, deps) => cancelRun(s, deps, claims, params.id, body)),
   );
+
+  onSigned("rateRun", (params, body, claims) => run((s) => rateRun(s, claims, params.id, body)));
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;

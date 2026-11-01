@@ -146,6 +146,9 @@
                 "$ref": "#/$defs/Attachment"
               }
             },
+            "context": {
+              "$ref": "#/$defs/MessageContext"
+            },
             "citations": {
               "type": "array",
               "items": {
@@ -195,6 +198,42 @@
         "media_type"
       ],
       "additionalProperties": false
+    },
+    "MessageContext": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "learner_id": {
+              "$ref": "#/$defs/LearnerId"
+            }
+          },
+          "required": [
+            "learner_id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "lesson_id": {
+              "$ref": "#/$defs/LessonId"
+            }
+          },
+          "required": [
+            "lesson_id"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LessonId": {
+      "type": "string",
+      "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
     },
     "Citation": {
       "oneOf": [
