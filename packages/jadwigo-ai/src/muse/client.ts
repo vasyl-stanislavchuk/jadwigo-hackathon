@@ -5,7 +5,7 @@ import type { ModelTier, ModelUsage, RunId, ToolCall, VerbName } from "@jadwigo/
  * (`apps/cli/src/jw/muse.py`): a prompt guarded before it leaves (`names` are what the guard
  * replaces, `apps/cli/src/jw/pii.py`), a `tag` naming the lane, a budget check before the call, a
  * ledger row per call that carries the `run_id`, and a `prompt_cache_key` stable per workflow.
- * Wave 1 runs `ScriptedMuse` (`scripted.ts`); `HttpMuse` against `/v1/responses` is dl-z5ja.18.
+ * Wave 1 runs `ScriptedMuse` (`scripted.ts`); `HttpMuse` (`http.ts`, dl-z5ja.18) calls `/v1/responses`.
  * Decision `david-learns/decisions/2026-10-24-every-ai-workflow-in-the-jadwigo-service-runs-on-meta-s-api`.
  */
 
@@ -55,4 +55,19 @@ export interface MuseResponse {
 
 export interface MuseClient {
   respond(request: MuseRequest): Promise<MuseResponse>;
+}
+
+/**
+ * A call that no attempt completed. `spent_usd` is what the failed attempts still cost (a stream
+ * that failed after it started is billed), so the ledger can hold it.
+ */
+export class MuseFailed extends Error {
+  constructor(
+    message: string,
+    readonly spent_usd: number,
+    readonly usage: ModelUsage,
+  ) {
+    super(message);
+    this.name = "MuseFailed";
+  }
 }

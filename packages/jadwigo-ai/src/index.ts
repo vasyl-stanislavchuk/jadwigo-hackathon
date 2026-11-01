@@ -2,7 +2,24 @@
  * The Jadwigo AI engine (epic dl-z5ja): a parent's chat on the left becomes a lesson on the right.
  * Wave plan: `docs/worklog/dl-z5ja/2026-10-31-wave-1.md`.
  */
-export type { MuseClient, MuseInput, MuseRequest, MuseResponse, MuseTool } from "./muse/client.ts";
+export { museSettings } from "./config.ts";
+export {
+  type MuseClient,
+  MuseFailed,
+  type MuseInput,
+  type MuseRequest,
+  type MuseResponse,
+  type MuseTool,
+} from "./muse/client.ts";
+export {
+  GuardedMuse,
+  InMemoryMuseLedger,
+  type LedgerRow,
+  laneBudget,
+  type MuseLedger,
+  MuseRefused,
+} from "./muse/guarded.ts";
+export { CONTRIBUTOR_MODEL, HttpMuse, type HttpMuseOptions, type LiveText } from "./muse/http.ts";
 export { ScriptedMuse, type ScriptedReply } from "./muse/scripted.ts";
 export { InMemoryRunQueue } from "./queue/memory.ts";
 export { MAX_READS, type QueuedStep, type RunQueue, STEP_VISIBILITY_S } from "./queue/types.ts";
