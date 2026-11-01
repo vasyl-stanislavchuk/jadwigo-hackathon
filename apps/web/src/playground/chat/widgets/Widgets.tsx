@@ -65,8 +65,8 @@ function Findings({ view, language }: { view: CheckView; language: Language }): 
   const toFix = view.findings.filter((f) => f.level === "error").length;
   return (
     <div className="flex flex-col gap-2">
-      <p data-check={view.ok ? "ok" : "to-fix"}>
-        {view.ok ? say("chat_check_ok") : say("chat_check_findings", { n: toFix })}
+      <p data-check={view.publishable ? "ok" : "to-fix"}>
+        {view.publishable ? say("chat_check_ok") : say("chat_check_findings", { n: toFix })}
       </p>
       {view.findings.length > 0 && (
         <ul className="flex flex-col gap-1">
@@ -105,12 +105,13 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
     icon: PencilLine,
     read: editView,
     Widget: ({ data, language }) => (
-      <div data-edited-step={data.step_id} className="flex flex-col gap-1">
-        <p className="font-medium">
-          {copy(language, "chat_lesson_step", { step: data.step_id }, "adult")}
-        </p>
-        <Findings view={data} language={language} />
-      </div>
+      <ul className="flex flex-wrap gap-1">
+        {data.changed_step_ids.map((id) => (
+          <li key={id} data-edited-step={id} className="rounded-full border px-2 py-0.5">
+            {copy(language, "chat_lesson_step", { step: id }, "adult")}
+          </li>
+        ))}
+      </ul>
     ),
     keepVisible: true,
   }),
