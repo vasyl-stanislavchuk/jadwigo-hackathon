@@ -547,25 +547,29 @@ class PostgresStore implements Store {
             },
             "the learner",
           );
-          return tx
-            .insertInto("learner")
-            .values({
-              id,
-              pod_id: uuidOf(ID_PREFIXES.pod, pod),
-              handle: valid.handle,
-              first_name: valid.first_name,
-              age_group: valid.age_group,
-              country: valid.country,
-              curriculum_id:
-                valid.curriculum_id === null
-                  ? null
-                  : uuidOf(ID_PREFIXES.curriculum, valid.curriculum_id),
-              school_grade: valid.school_grade,
-              school_language: valid.school_language,
-            })
-            .onConflict((oc) => oc.column("id").doNothing())
-            .returningAll()
-            .executeTakeFirst();
+          return (
+            tx
+              .insertInto("learner")
+              .values({
+                id,
+                pod_id: uuidOf(ID_PREFIXES.pod, pod),
+                handle: valid.handle,
+                first_name: valid.first_name,
+                age_group: valid.age_group,
+                country: valid.country,
+                curriculum_id:
+                  valid.curriculum_id === null
+                    ? null
+                    : uuidOf(ID_PREFIXES.curriculum, valid.curriculum_id),
+                school_grade: valid.school_grade,
+                school_language: valid.school_language,
+              })
+              // Targeted on purpose (dl-z5ja.99): no target would also swallow a taken
+              // (pod_id, handle), which must stay an error.
+              .onConflict((oc) => oc.column("id").doNothing())
+              .returningAll()
+              .executeTakeFirst()
+          );
         },
       );
       return read(Learner, row, ID_PREFIXES.learner);
@@ -608,7 +612,7 @@ class PostgresStore implements Store {
               grade: valid.grade,
               skill_ids: [...valid.skill_ids],
             })
-            .onConflict((oc) => oc.column("id").doNothing())
+            .onConflict((oc) => oc.doNothing())
             .returningAll()
             .executeTakeFirst();
         },
@@ -650,7 +654,7 @@ class PostgresStore implements Store {
               based_on: json(valid.based_on),
               content_hash: valid.content_hash,
             })
-            .onConflict((oc) => oc.column("id").doNothing())
+            .onConflict((oc) => oc.doNothing())
             .returningAll()
             .executeTakeFirst();
         },
@@ -731,6 +735,8 @@ class PostgresStore implements Store {
           revises: latest?.id ?? null,
           published_at: null,
         })
+        // Targeted on purpose (dl-z5ja.99): no target would also swallow a duplicate
+        // (lesson_id, version), a real conflict between 2 publishes.
         .onConflict((oc) => oc.column("id").doNothing())
         .returning("id")
         .executeTakeFirst();
@@ -894,7 +900,7 @@ class PostgresStore implements Store {
               opens_at: valid.opens_at,
               closes_at: valid.closes_at,
             })
-            .onConflict((oc) => oc.column("id").doNothing())
+            .onConflict((oc) => oc.doNothing())
             .returningAll()
             .executeTakeFirst();
         },
@@ -1137,7 +1143,7 @@ class PostgresStore implements Store {
           player_name: valid.player_name,
           mode: valid.mode,
         })
-        .onConflict((oc) => oc.column("id").doNothing())
+        .onConflict((oc) => oc.doNothing())
         .returning("id")
         .executeTakeFirst();
       if (!inserted) {
@@ -2628,7 +2634,7 @@ class PostgresStore implements Store {
               created_by: uuidOf(ID_PREFIXES.account, valid.created_by),
               title: valid.title,
             })
-            .onConflict((oc) => oc.column("id").doNothing())
+            .onConflict((oc) => oc.doNothing())
             .returningAll()
             .executeTakeFirst();
         },
