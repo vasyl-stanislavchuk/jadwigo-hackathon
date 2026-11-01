@@ -147,7 +147,9 @@ Big changes ship as a wave: a lead plans it, and lanes build it in parallel.
   `gh pr edit <n> --base main`, then `gh pr ready` and `gh pr merge --auto --squash`. The steward
   reviews only PRs into `main`, and the ruleset guards `main` only, so a ready PR into any other
   branch would merge unreviewed (`dl-5ssh.101`). Its review covers the PRs below it too, and
-  merging it lands them (`dl-03l2`).
+  merging it lands them (`dl-03l2`). The PR below then has nothing left, and the steward closes
+  only the merged PR's issue, so the lower PR's author closes it: `gh pr close <n> --comment
+  "landed in #<m>"` and `bd close <id> --reason "landed in #<m>"`.
 - **A stack updates by `git merge`, never by rebase.** The guard refuses force-push, so a rebased
   base strands every PR above it. The squash merge keeps main's history clean anyway (`dl-5ssh.67`).
 - **Every PR keeps an owner after its lane ends.** The wave plan names who takes the steward's
