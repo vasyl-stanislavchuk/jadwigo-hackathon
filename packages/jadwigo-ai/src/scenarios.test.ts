@@ -31,17 +31,7 @@ import type { Verb, VerbContext, VerbEffect, Verbs } from "./verbs/types.ts";
  * lands: the store (dl-z5ja.14), fold (dl-z5ja.13) and verbs (dl-z5ja.15) lanes first, the runner
  * (dl-z5ja.16) last, when the set ends empty.
  */
-const EXPECTED_RED = new Set([
-  "a reload replays without a gap or a duplicate",
-  "a follow-up sent mid-turn arrives once, at the next step, never inside a running call",
-  "a redelivered step pays once",
-  "a stale attempt writes nothing",
-  "a late event doesn't reopen an ended turn",
-  "the budget steers at 50% and stops at 90%",
-  "cancel during a verb stops before the next one",
-  "the idle and max deadlines fire on their own clocks",
-  "a happy turn: the real verbs draft and check a lesson from the fixture bank",
-]);
+const EXPECTED_RED = new Set<string>([]);
 
 /** `it`, or `it.fails` while the name is in EXPECTED_RED. */
 function frozen(name: string, body: () => Promise<void>): void {
