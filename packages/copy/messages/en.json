@@ -879,6 +879,27 @@
   "parent_grade": "Class",
   "parent_cancel": "Cancel",
   "parent_lesson_soon": "Making a lesson from here is on its way. It will work soon.",
+  "attach_photo_alt": "Photo {n}",
+  "attach_uploading": "Uploading the photo, {percent}%",
+  "attach_retry": "Try again",
+  "attach_heic": "We can't open this photo. Take a screenshot of it or save it as a JPG",
+  "attach_unreadable": "We can't open this file as a photo. Pick a photo or a screenshot",
+  "attach_too_large": "This photo is too large even after shrinking it. Take a screenshot and add that instead",
+  "attach_limit_day": "That is all the photos for today. You can add more tomorrow",
+  "attach_offline": "The photo did not get through. Check the connection and try again",
+  "attach_expired": "The upload took too long. Try again",
+  "attach_changed": "The photo arrived at a different size than we said it would. Try again",
+  "attach_not_taken": "The server did not take the photo. Try again",
+  "attach_left_off": [
+    {
+      "declarations": ["input max", "input n", "local n_noun = n: plural"],
+      "selectors": ["n_noun"],
+      "match": {
+        "n_noun=one": "{max} photos fit, {n} was left off",
+        "n_noun=other": "{max} photos fit, {n} were left off"
+      }
+    }
+  ],
   "parent_chat": "Chat",
   "parent_lesson": "Lesson",
   "parent_details": "Lesson details",
