@@ -19,8 +19,9 @@ import { ConversationList } from "./ConversationList.tsx";
 import { type ConversationState, lessonOf, type Turn, turnsOf } from "./conversation.ts";
 import { newConversationId } from "./ids.ts";
 import { LessonPane } from "./LessonPane.tsx";
+import { type LessonChange, patchOutcome } from "./patches.ts";
 import { apiTransport } from "./realtime.ts";
-import { changedOf, undoOf } from "./revisions.ts";
+import { changedOf, revertOf, undoOf } from "./revisions.ts";
 import { holdServer } from "./routesTransport.ts";
 import { undoSteer } from "./steerText.ts";
 import { type EngineTransport, hotTransport, useConversation } from "./useConversation.ts";
@@ -77,19 +78,40 @@ function ChatView({
   state: ConversationState;
   onSend(text: string): void;
   onStop(): void;
-  onEdit?: (text: string, question_ids: string[]) => void;
+  onEdit?: (text: string, question_ids: string[], change?: LessonChange) => unknown;
   onNew?: () => void;
   /** Rates a completed turn by its run (dl-z5ja.63). */
   onRate?: ((run: RunId, body: RunRatingCreate) => Promise<unknown>) | undefined;
 }): ReactElement {
   const turns = turnsOf(state);
+  /** The last Cofnij's patch steer, followed to its revision or its refusal (dl-z5ja.111). */
+  const [undoSent, setUndoSent] = useState<string | null>(null);
+  const outcomeOf = (event_id: string) => patchOutcome(state.runs, event_id);
+  const shown = lessonOf(turns);
   const changed = changedOf(turns);
   const undo = undoOf(turns);
-  /** "Cofnij": a lesson_edit steer asking the AI to take the change back (dl-z5ja.30, .42). */
+  const revert = revertOf(turns);
+  /**
+   * "Cofnij": a lesson_edit steer back to the revision before, carrying the patch that restores it,
+   * which the runner applies with no model call (dl-z5ja.111). Where no patch can say it, the steer
+   * asks the AI to take the change back in words (dl-z5ja.30, .42).
+   */
   const onUndo =
     undo === null || onEdit === undefined
       ? undefined
-      : () => onEdit(undoSteer(undo.language, undo.question_ids, undo.revision), undo.question_ids);
+      : () => {
+          const text = undoSteer(undo.language, undo.question_ids, undo.revision);
+          if (revert === null || shown === null) {
+            onEdit(text, undo.question_ids);
+            return;
+          }
+          // The revision Cofnij undoes from: the one the pane shows.
+          const sent = onEdit(text, undo.question_ids, {
+            patch: revert,
+            base_revision: shown.revision,
+          });
+          setUndoSent(typeof sent === "string" ? sent : null);
+        };
   return (
     <ChatLayout
       language={language}
@@ -111,10 +133,17 @@ function ChatView({
       lesson={
         <LessonPane
           language={language}
-          lesson={lessonOf(turns)}
+          lesson={shown}
           changed={changed}
           onUndo={onUndo}
+          undoRefused={undoSent !== null && outcomeOf(undoSent) === "refused"}
+          undoPending={
+            undoSent !== null &&
+            !state.failedSteers.includes(undoSent) &&
+            outcomeOf(undoSent) === "pending"
+          }
           onEdit={onEdit}
+          outcomeOf={outcomeOf}
         />
       }
       lessonKey={lessonKey(turns)}
