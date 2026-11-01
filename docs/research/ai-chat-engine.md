@@ -186,7 +186,7 @@ This is a sketch only. The migration is `dl-z5ja.7`, a one-way door the owner pu
 | | Supabase Edge Function | 2nd AWS Lambda |
 |---|---|---|
 | Limits | 400 s wall clock (paid; 150 s free), **2 s CPU**, 256 MB, 150 s idle response timeout | 15 min, memory as configured |
-| Invoked by | `pg_net` on enqueue + Cron | `pg_net` → function URL + Cron |
+| Invoked by | `pg_net` on enqueue + Cron | the API's async invoke of the `live` alias after `pgmq.send`, and an EventBridge schedule every minute (`dl-z5ja.20`) |
 | Code | Deno; our bun workspace packages need their own bundle | Our `bun build` bundle; `packages/store` and `contracts` as they are |
 | Secrets / infra | Supabase secrets, no Terraform | Terraform + IAM (owner applies); the Muse key in AWS like the bank's search Lambda |
 | Risk | 2 s CPU on large JSON and lesson checks | One more deploy target |
@@ -205,7 +205,7 @@ One scripted turn per invoke: a parent message, `lesson_draft` and `lesson_check
 What the dry run found before any deploy:
 - Our packages bundle for Deno with bun's bundler and one banner: Deno 2.1 has no `Buffer`, `process` or `global` globals. `pg` runs through Deno's `node:net`. Deno 2 dropped `deno bundle`, so bun builds both hosts' files.
 - Deno 2.1 answers `process.cpuUsage()` with zeros and a warning, so the Edge row's CPU comes from the dashboard.
-- Neither host can run a step on Postgres as `jadwigo_runner` today: `runStep` reads the pod's learner names through `getMe`, and the role has no select on `pod`, `account`, `member`, `learner` or `goal` (`dl-z5ja.81`). The local rows were measured with those selects granted in the lane's own database only.
+- `runStep` reads the pod's learner names through `getMe`, which `jadwigo_runner` could not read until `dl-z5ja.81` granted it `pod`, `account`, `member`, `learner` and `goal` under `pod_scope`. The local rows above were measured before that migration, with the same selects granted in the lane's own database.
 
 ## Muse: API or CLI
 

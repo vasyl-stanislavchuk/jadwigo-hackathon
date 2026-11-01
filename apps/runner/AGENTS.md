@@ -8,11 +8,20 @@ from `@jadwigo/jadwigo-ai`, as `jadwigo_runner`. Its own release target, apart f
 - **Owner:** the ai-workflows workstream. **Filled by:** `dl-z5ja.5` (the probe: both hosts, scripted
   model), `dl-z5ja.20` (the host itself, its invocation path, `make engine-smoke`).
 - **Imports:** packages: `contracts`, `jadwigo-ai`, `store`. Never another app.
-- **Entries:** `src/probe-lambda.ts` (`probe-lambda.handler`, the 2nd Lambda) and `src/probe-edge.ts`
-  (served by `supabase/functions/agent-step/index.ts`), both bundled by `make runner-bundle`.
-  `src/probe-cli.ts` is the probe's laptop half: seed, local dry run, report.
-- **Test:** `bunx turbo run lint typecheck test --filter=./apps/runner`; the dry run on a local
-  database is `make step-probe-local LOCAL_DATABASE_URL=postgresql://localhost:5433/jadwigo_<yours>`.
+- **Entries:** `src/index.ts` (`index.handler`, the step host: `HttpMuse` in `GuardedMuse`),
+  `src/probe-lambda.ts` (`probe-lambda.handler`, the probe's 2nd Lambda) and `src/probe-edge.ts`
+  (served by `supabase/functions/agent-step/index.ts`), all bundled by `make runner-bundle`.
+  `src/probe-cli.ts` is the probe's laptop half (seed, local dry run, report) and `src/smoke.ts`
+  is `make engine-smoke`'s.
+- **Invoked by:** `apps/api` after it commits a `pgmq.send`, an async invoke (`InvocationType:
+  "Event"`) of the `live` alias with the `RunStepInput` it sent; and an EventBridge schedule every
+  minute with `{}`, the safety net that also drains what the pg_cron sweep enqueues. Either way it
+  drains the queue (`src/handler.ts`). Lambda retries no async invoke: the step waits in the queue.
+- **Test:** `bunx turbo run lint typecheck test --filter=./apps/runner`. On a local database:
+  `make engine-smoke DRY=1 LOCAL_DATABASE_URL=postgresql://localhost:5433/jadwigo_<yours>` (one
+  scripted turn) and `make step-probe-local` with the same URL.
+- **Release:** `make -C infra runner-deploy` (the owner's), then `make engine-smoke ENV=<env>`;
+  `runner-rollback VERSION=<n>` and `runner-status`.
 
 ## Rules here
 

@@ -142,6 +142,25 @@ describe("the step host", () => {
     expect((await host()).outcomes).toEqual(["turn_complete"]);
   });
 
+  it("logs a step that threw by its ids, keeps it queued, and reports the dead letters", async () => {
+    const t = await setup({
+      respond: () => Promise.reject(new Error("the model is down\nand a second line")),
+    });
+    const run = await t.say("a turn the model never answers");
+    const report = await createHost(
+      () => Promise.resolve(t.deps({ dead_letters: () => Promise.resolve(2) })),
+      fakeMeter(),
+    )();
+
+    expect(report.steps).toBe(0);
+    expect(report.failed).toMatchObject([{ run_id: run, attempt: 1, read_ct: 1 }]);
+    expect(report.dead_letters).toBe(2);
+    expect(t.warnings).toEqual([
+      `agent_step: step for ${run} attempt 1 (msg ${report.failed[0]?.msg_id}, read 1) threw Error`,
+      "agent_step_dlq: 2 steps dead-lettered",
+    ]);
+  });
+
   it("logs a stuck queue by ids only, and stays quiet when it is not", async () => {
     const t = await setup();
     const quiet: Stuck = { oldest_ready_step_age_s: STUCK_AFTER_S - 1, runs_past_deadline: [] };

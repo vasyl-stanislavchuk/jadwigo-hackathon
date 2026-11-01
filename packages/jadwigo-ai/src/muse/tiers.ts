@@ -1,22 +1,32 @@
 import type { MuseInput, MuseRequest } from "./client.ts";
+import { laneOf } from "./guarded.ts";
 import { PromptGuard } from "./pii.ts";
 
 /**
- * What a tier lets leave. `private` trains on nothing it is sent, so a run's prompt goes there as
- * it is, the learner's names included, for the parent's request about their own child
- * (decision dl-2uq1, accepted 2026-11-01). `contributor` trains on its input, so every text of the request passes one
- * `PromptGuard`: the instructions (a parent's steer lands there), every message, the arguments
- * of a function call the model made and every function call output fed back. The answer is
- * restored with the same table, and only the placeholders it issued are put back.
+ * What leaves with a call. A learner's data, names included, may reach any Meta model, the
+ * contributor model included (owner decision of 2026-11-01, bead dl-uafq,
+ * `jadwigo-hackathon/decisions/2026-11-01-a-learner-s-data-names-included-may-reach-any-meta-model-the-con`), so no tier needs the name guard: a run's prompt goes as it is.
+ *
+ * The guard stays for bank work, whose prompts have no reason to carry a name: a call whose tag
+ * lane is in `guardLanes` (`bank` by default) passes one `PromptGuard` over every text it
+ * carries. That covers the instructions, every message, the arguments of a function call the
+ * model made and every function call output fed back. The answer is restored with the same
+ * table, and only the placeholders it issued are put back.
  */
 export interface Outbound {
   request: MuseRequest;
-  /** The guard the request passed, to restore the answer with; null on the private tier. */
+  /** The guard the request passed, to restore the answer with; null when it went unguarded. */
   guard: PromptGuard | null;
 }
 
-export function outbound(request: MuseRequest): Outbound {
-  if (request.tier === "private") return { request, guard: null };
+/** The lanes whose calls pass the name guard by default: bank work. */
+const GUARD_LANES: readonly string[] = ["bank"];
+
+export function outbound(
+  request: MuseRequest,
+  guardLanes: readonly string[] = GUARD_LANES,
+): Outbound {
+  if (!guardLanes.includes(laneOf(request.tag))) return { request, guard: null };
   const guard = new PromptGuard(request.names);
   return {
     guard,

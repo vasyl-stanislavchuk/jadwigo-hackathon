@@ -1,10 +1,9 @@
 /**
- * The PII guard, a port of `jw.pii` (`apps/cli/src/jw/pii.py`, dl-e8ov.5.2.18), for the one tier
- * that trains on what it is sent: `contributor`. A call there carries no learner data by design
- * (decision dl-2uq1, accepted 2026-11-01); the guard is the fence that keeps a learner's name off it anyway. It
+ * The PII guard, a port of `jw.pii` (`apps/cli/src/jw/pii.py`, dl-e8ov.5.2.18), for bank work.
+ * A learner's data may reach any Meta model (owner decision of 2026-11-01, bead dl-uafq), so no
+ * tier requires the guard; `HttpMuse` applies it to the lanes it names (`bank` by default). It
  * replaces learner names, email addresses and phone numbers with placeholders and keeps the map,
- * so the answer can have the originals put back on the way out. A `private` call is not guarded:
- * it carries the parent's own child's data on purpose, to a tier that trains on none of it.
+ * so the answer can have the originals put back on the way out.
  *
  * The matching rules are pii.py's, case by case (its docstring says why each exists): every
  * Polish case form of a name (`nameForms`), case and diacritics ignored ("kasia", "Lucja" for

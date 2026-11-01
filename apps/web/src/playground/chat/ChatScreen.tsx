@@ -17,6 +17,8 @@ import { type ConversationState, lessonOf, type Turn, turnsOf } from "./conversa
 import { newConversationId } from "./ids.ts";
 import { LessonPane } from "./LessonPane.tsx";
 import { apiTransport } from "./realtime.ts";
+import { changedOf, undoOf } from "./revisions.ts";
+import { undoSteer } from "./steerText.ts";
 import { type EngineTransport, hotTransport, useConversation } from "./useConversation.ts";
 
 const STORED = "jadwigo.playground.chat.conversation";
@@ -63,15 +65,24 @@ function ChatView({
   state,
   onSend,
   onStop,
+  onEdit,
   onNew,
 }: {
   language: Language;
   state: ConversationState;
   onSend(text: string): void;
   onStop(): void;
+  onEdit?: (text: string, question_ids: string[]) => void;
   onNew?: () => void;
 }): ReactElement {
   const turns = turnsOf(state);
+  const changed = changedOf(turns);
+  const undo = undoOf(turns);
+  /** "Cofnij": a lesson_edit steer asking the AI to take the change back (dl-z5ja.30, .42). */
+  const onUndo =
+    undo === null || onEdit === undefined
+      ? undefined
+      : () => onEdit(undoSteer(undo.language, undo.question_ids, undo.revision), undo.question_ids);
   return (
     <ChatLayout
       language={language}
@@ -88,7 +99,15 @@ function ChatView({
           onStop={onStop}
         />
       }
-      lesson={<LessonPane language={language} lesson={lessonOf(turns)} />}
+      lesson={
+        <LessonPane
+          language={language}
+          lesson={lessonOf(turns)}
+          changed={changed}
+          onUndo={onUndo}
+          onEdit={onEdit}
+        />
+      }
       lessonKey={lessonKey(turns)}
     />
   );
@@ -196,8 +215,17 @@ function LiveChat({
   language: Language;
   onNew(): void;
 }): ReactElement {
-  const { state, send, stop } = useConversation(transport, conversation);
-  return <ChatView language={language} state={state} onSend={send} onStop={stop} onNew={onNew} />;
+  const { state, send, stop, edit } = useConversation(transport, conversation);
+  return (
+    <ChatView
+      language={language}
+      state={state}
+      onSend={send}
+      onStop={stop}
+      onEdit={edit}
+      onNew={onNew}
+    />
+  );
 }
 
 /**

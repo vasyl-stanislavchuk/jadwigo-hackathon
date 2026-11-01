@@ -110,3 +110,11 @@ export const CONTENT_BUCKET_PARAM = "/jadwigo/bank/content-bucket";
 export function contentBucket(): string | undefined {
   return process.env["CONTENT_BUCKET"]?.trim() || undefined;
 }
+
+/**
+ * The step host's live alias ARN the message routes poke after a commit (dl-z5ja.88), or
+ * undefined to poke nothing: the host's every-minute schedule drains the queue behind it.
+ */
+export function runnerLiveAliasArn(): string | undefined {
+  return process.env["RUNNER_LIVE_ALIAS_ARN"]?.trim() || undefined;
+}

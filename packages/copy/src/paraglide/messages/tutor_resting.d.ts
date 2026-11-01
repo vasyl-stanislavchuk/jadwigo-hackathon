@@ -3,7 +3,7 @@
 /**
 * | category | output |
 * | --- | --- |
-* | "adult" | "Practising without voice today." |
+* | "adult" | "Practicing without voice today." |
 * | * | "Quiet practice today." |
 *
 * @param {Tutor_RestingInputs} inputs

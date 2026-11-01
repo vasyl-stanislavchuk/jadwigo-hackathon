@@ -22,7 +22,7 @@ export {
 export { CONTRIBUTOR_MODEL, HttpMuse, type HttpMuseOptions, type LiveText } from "./muse/http.ts";
 export { ScriptedMuse, type ScriptedReply } from "./muse/scripted.ts";
 export { InMemoryRunQueue } from "./queue/memory.ts";
-export { type PgmqClient, type PgmqPool, PgmqRunQueue } from "./queue/pgmq.ts";
+export { type PgmqClient, type PgmqPool, PgmqRunQueue, type StuckRuns } from "./queue/pgmq.ts";
 export { MAX_READS, type QueuedStep, type RunQueue, STEP_VISIBILITY_S } from "./queue/types.ts";
 export {
   type AcceptMessage,

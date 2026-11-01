@@ -18,7 +18,7 @@ ifneq (,$(wildcard $(HOME)/perl5/bin/pg_prove))
 export PATH := $(HOME)/perl5/bin:$(PATH)
 export PERL5LIB := $(HOME)/perl5/lib/perl5$(if $(PERL5LIB),:$(PERL5LIB))
 endif
-.PHONY: check check-all dev db pgmq migrate pgtap db-reset db-seed lesson-import api-dev api-bundle api-invoke db-push db-role release skills drops icons builder runner-bundle db-runner-role step-probe step-probe-local
+.PHONY: check check-all dev db pgmq migrate pgtap db-reset db-seed lesson-import api-dev api-bundle api-invoke db-push db-role release skills drops icons builder runner-bundle db-runner-role step-probe step-probe-local engine-smoke
 
 ## check: lint, typecheck and test what changed since main (turbo --affected), uv's pytest
 ## included, then the repo-wide checks turbo cannot scope: knip, dependency-cruiser, no-bank, worklog,
@@ -334,19 +334,23 @@ api-invoke: api-bundle
 	  test "$$v" = "$(LAMBDA_NODE) on $(LAMBDA_ARCH)" || { echo "api-invoke: the Lambda runs Node $(LAMBDA_NODE) on $(LAMBDA_ARCH) ($(LAMBDA_TF)); this node is $$v"; exit 1; }
 	DATABASE_URL=$${DATABASE_URL:-postgresql://localhost:$${PGPORT:-5433}/jadwigo} bun run --cwd apps/api invoke
 
-## runner-bundle: apps/runner's 2 entries as one ESM file each, with bun's bundler as api-bundle does
-## (dl-z5ja.5): apps/runner/dist/probe-lambda.mjs, the 2nd Lambda's (`probe-lambda.handler`), and
+## runner-bundle: apps/runner's entries as one ESM file each, with bun's bundler as api-bundle does:
+## apps/runner/dist/index.mjs, the step host's Lambda (`index.handler`, dl-z5ja.20), which
+## `make -C infra runner-deploy` zips; apps/runner/dist/probe-lambda.mjs, the probe's (dl-z5ja.5); and
 ## supabase/functions/agent-step/probe.bundle.mjs, which the Edge Function's index.ts serves. Deno has
 ## no Buffer, process or global as globals, so the Edge banner sets them from node:buffer and
-## node:process. Neither file is committed.
+## node:process. None of them is committed.
+RUNNER_HOST := apps/runner/dist/index.mjs
 RUNNER_LAMBDA := apps/runner/dist/probe-lambda.mjs
 RUNNER_EDGE := supabase/functions/agent-step/probe.bundle.mjs
 NODE_BANNER := import { createRequire } from "node:module"; const require = createRequire(import.meta.url);
 EDGE_BANNER := $(NODE_BANNER) import { Buffer as __Buffer } from "node:buffer"; import __process from "node:process"; globalThis.Buffer ??= __Buffer; globalThis.process ??= __process; globalThis.global ??= globalThis;
 runner-bundle:
-	rm -f $(RUNNER_LAMBDA) $(RUNNER_EDGE)
+	rm -f $(RUNNER_HOST) $(RUNNER_LAMBDA) $(RUNNER_EDGE)
+	bun build apps/runner/src/index.ts --target=node --format=esm --minify --banner='$(NODE_BANNER)' --outfile $(RUNNER_HOST)
 	bun build apps/runner/src/probe-lambda.ts --target=node --format=esm --minify --banner='$(NODE_BANNER)' --outfile $(RUNNER_LAMBDA)
 	bun build apps/runner/src/probe-edge.ts --target=node --format=esm --minify --banner='$(EDGE_BANNER)' --outfile $(RUNNER_EDGE)
+	@printf 'runner-bundle: %s, %s bytes\n' $(RUNNER_HOST) "$$(wc -c < $(RUNNER_HOST) | tr -d ' ')"
 	@printf 'runner-bundle: %s, %s bytes; %s, %s bytes\n' $(RUNNER_LAMBDA) "$$(wc -c < $(RUNNER_LAMBDA) | tr -d ' ')" $(RUNNER_EDGE) "$$(wc -c < $(RUNNER_EDGE) | tr -d ' ')"
 
 ## step-probe-local [LOCAL_DATABASE_URL=…]: the step-host probe's dry run (dl-z5ja.5) on a local
@@ -389,6 +393,44 @@ step-probe: runner-bundle
 	case "$$RUNNER_URL" in *://jadwigo_runner.$(SUPABASE_REF):*@*:6543/*) ;; *) echo "step-probe: supabase/.temp/pooler-url is not postgres.$(SUPABASE_REF)@<pooler>:<port>"; exit 1;; esac; \
 	API_URL="$$url" API_PASSWORD="$$API_PASSWORD" RUNNER_URL="$$RUNNER_URL" SUPABASE_REF=$(SUPABASE_REF) \
 	  SUPABASE_ACCESS_TOKEN="$$SUPABASE_ACCESS_TOKEN" AWS_PROFILE=jadwigo sh apps/runner/scripts/step-probe.sh $(HOST)
+
+## engine-smoke [DRY=1 | ENV=dev|prod]: one chat turn end to end through the step host (dl-z5ja.20),
+## PostHog's gateway smoke. It fails on any error event, a turn that does not end, or a model call
+## that throws, and prints the run id, the turn's events and USD.
+##   DRY=1    the scripted model, in this process as jadwigo_runner, on the local database
+##            LOCAL_DATABASE_URL names: no network but Postgres, no paid call. Anyone's.
+##   (none)   HttpMuse against the real Muse API, on the same local database: the owner's, it pays.
+##            The key comes from MUSE_ENV (META_API_KEY, as jw.muse reads it), the cap from
+##            JADWIGO_MUSE_CAP_USD (0.05 unless set), the private tier's model from
+##            JADWIGO_MUSE_PRIVATE_MODEL. Run it before `make -C infra runner-deploy`.
+##   ENV=…    against the deployed host: seeds a made-up pod on that project as jadwigo_api, pokes
+##            jadwigo-runner-<env>:live as the api does, and waits for the turn. Run it right after
+##            the deploy; ENV=prod only from your own terminal.
+MUSE_ENV ?= $(HOME)/.config/jadwigo-bank/muse.env
+SMOKE_WAIT_S ?= 120
+engine-smoke:
+ifeq ($(ENV),)
+	@$(LOCAL_DB_GATE)
+ifeq ($(DRY),)
+	@test -f "$(MUSE_ENV)" || { echo "engine-smoke: no $(MUSE_ENV) with META_API_KEY; DRY=1 runs the scripted model instead"; exit 1; }
+	@set -a; . "$(MUSE_ENV)"; set +a; \
+	JADWIGO_MUSE_CAP_USD=$${JADWIGO_MUSE_CAP_USD:-0.05} DATABASE_URL=$(LOCAL_DATABASE_URL) bun apps/runner/src/smoke.ts local
+else
+	DATABASE_URL=$(LOCAL_DATABASE_URL) bun apps/runner/src/smoke.ts local --dry
+endif
+else
+	@$(PROD_GATE)
+	@$(API_SESSION); \
+	seeded=$$($(AS_API) bun apps/runner/src/smoke.ts seed) || exit 1; \
+	pod=$$(printf '%s' "$$seeded" | jq -r .pod); run=$$(printf '%s' "$$seeded" | jq -r .run_id); \
+	echo "engine-smoke: seeded $$run in a made-up pod on jadwigo-$(ENV)"; \
+	reply=$$(mktemp); \
+	AWS_PROFILE=jadwigo aws lambda invoke --function-name jadwigo-runner-$(ENV) --qualifier live \
+	  --invocation-type Event --cli-binary-format raw-in-base64-out \
+	  --payload "{\"run_id\":\"$$run\",\"attempt\":1}" "$$reply" >/dev/null || exit 1; \
+	rm -f "$$reply"; \
+	$(AS_API) bun apps/runner/src/smoke.ts check "$$pod" "$$run" $(SMOKE_WAIT_S)
+endif
 
 ## drops: md drops check on every drop under docs/drops/
 drops:

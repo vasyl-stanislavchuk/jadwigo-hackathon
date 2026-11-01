@@ -34,11 +34,11 @@ for, and every effect is a run event the page folds into its 2 panes.
 - `HttpMuse` (`src/muse/http.ts`, `dl-z5ja.18`) is the one network call, to `/v1/responses`. It
   takes its `fetch` as a dependency, so unit tests run on recorded streams and never pay. Its live
   call is `src/muse/http.int.test.ts`, which the owner runs and which skips without `META_API_KEY`.
-  A `contributor` call passes the `jw.pii.guard` port (`src/muse/pii.ts`) before it leaves.
-- A run sends the parent's own child's data to the model on purpose, names included, and only on
-  the tier that does not train on it (`private`). A call on the `contributor` tier, which trains,
-  carries no learner data: at most the bank search words of a request, with names stripped by
-  `jw.pii.guard` (decision `dl-2uq1`, accepted on 2026-11-01, `jadwigo-hackathon/decisions/2026-11-01-learner-data-reaches-the-model-by-design-for-the-parent-s-own-re`).
+  A bank call (tag lane `bank`) passes the `jw.pii.guard` port (`src/muse/pii.ts`) before it leaves.
+- A run sends the parent's own child's data to the model on purpose, names included, on any Meta
+  model, the contributor model included. The `private` tier runs on the contributor model until
+  a no-training model is named and priced. The name guard is kept for bank work only (owner
+  decision of 2026-11-01, bead `dl-uafq`, `jadwigo-hackathon/decisions/2026-11-01-a-learner-s-data-names-included-may-reach-any-meta-model-the-con`).
 - Learner data reaches a prompt only through a verb that takes its pod from `VerbContext`. Text a
   child or a photo wrote goes inside the untrusted-content fence (`dl-z5ja.47`).
 - Real learner data never goes into a fixture or a test, and nothing here writes a learner's

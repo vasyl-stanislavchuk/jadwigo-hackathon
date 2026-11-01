@@ -128,4 +128,32 @@ module "app" {
   # The api role reads questions/* and khan/converted/* in it (modules/app/bank.tf).
   content_bucket_name      = module.content.bucket_name
   content_bucket_param_arn = module.content.bucket_param_arn
+
+  # The message and Stop routes poke the step host's live alias after a commit (dl-z5ja.88): the api
+  # role gains lambda:InvokeFunction on that alias only.
+  runner_alias_arn = module.runner.live_alias_arn
+}
+
+# The engine's step host (dl-z5ja.20): apps/runner, its own release target (`make -C infra
+# runner-deploy`), apart from the api. The api pokes its live alias after each pgmq.send, and the
+# schedule drains every minute behind it once enabled. Its pool holds 2 connections per instance, 10 at the
+# reserved 5, inside the 50 the api's 150 leave of the pooler's 200.
+module "runner" {
+  source = "./modules/runner"
+
+  environment   = var.environment
+  handler       = "index.handler"
+  schedule      = true
+  secret_params = ["muse-api-key"]
+
+  # Created disabled: the owner sets runner_schedule_enabled = true in prod.tfvars and applies
+  # again after the first `make -C infra runner-deploy`, so it never invokes the placeholder.
+  schedule_enabled = var.runner_schedule_enabled
+
+  environment_variables = {
+    JADWIGO_MUSE_KEY_PARAM     = "/jadwigo/${var.environment}/muse-api-key"
+    JADWIGO_MUSE_CAP_USD       = var.runner_muse_cap_usd
+    JADWIGO_MUSE_TIER          = var.runner_muse_tier
+    JADWIGO_MUSE_PRIVATE_MODEL = var.runner_muse_private_model
+  }
 }

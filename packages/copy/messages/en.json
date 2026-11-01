@@ -149,7 +149,7 @@
       "selectors": ["category"],
       "match": {
         "category=*": "Quiet practice today.",
-        "category=adult": "Practising without voice today."
+        "category=adult": "Practicing without voice today."
       }
     }
   ],
@@ -282,7 +282,9 @@
   "sign_plus": "Plus",
   "sign_times": "Times",
   "decimal_comma": "Comma",
+  "decimal_point": "Decimal point",
   "incomplete_decimal": "Write a digit after the comma.",
+  "incomplete_decimal_point": "Write a digit after the decimal point.",
   "incomplete_fraction_boxes": "Write the top and the bottom number.",
   "fraction_simplify": "Can you write this fraction more simply?",
   "fraction_whole": "Whole number",
@@ -799,5 +801,9 @@
       }
     }
   ],
-  "chat_sign_in": "Sign in on the parent page first, then come back to the conversation."
+  "chat_sign_in": "Sign in on the parent page first, then come back to the conversation.",
+  "chat_edit_step": "Change this step",
+  "chat_edit_prompt": "What should change in this step, and why?",
+  "chat_edit_send": "Send the change",
+  "chat_edit_cancel": "Cancel"
 }

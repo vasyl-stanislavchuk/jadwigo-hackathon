@@ -83,3 +83,9 @@ variable "content_bucket_param_arn" {
   type        = string
   description = "The SSM parameter the api reads the content bucket's name from (dl-n9fr.51)"
 }
+
+variable "runner_alias_arn" {
+  description = "The step host's live alias ARN (the root's module.runner.live_alias_arn, dl-z5ja.20). The api pokes it after a message's unit commits (dl-z5ja.88); blank gives the api no invoke grant and no poke"
+  type        = string
+  default     = ""
+}

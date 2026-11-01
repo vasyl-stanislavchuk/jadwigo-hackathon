@@ -168,7 +168,11 @@ function RowView({ row, run, language }: { row: Row; run: RunId; language: Langu
   switch (row.kind) {
     case "message":
       return (
-        <div data-from={row.from} className={row.from === "parent" ? "self-end" : "self-start"}>
+        <div
+          data-from={row.from}
+          data-steer={row.steer?.source}
+          className={row.from === "parent" ? "self-end" : "self-start"}
+        >
           <p className="text-muted-foreground text-xs">
             {copy(
               language,
@@ -176,6 +180,13 @@ function RowView({ row, run, language }: { row: Row; run: RunId; language: Langu
               {},
               "adult",
             )}
+            {row.steer !== undefined &&
+              ` · ${copy(
+                language,
+                row.steer.source === "lesson_edit" ? "chat_steered_edit" : "chat_steered",
+                {},
+                "adult",
+              )}`}
           </p>
           <p className="rounded-md border px-3 py-2 whitespace-pre-wrap">{row.text}</p>
         </div>

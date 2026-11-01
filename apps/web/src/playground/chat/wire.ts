@@ -23,10 +23,21 @@ export const eventsPath = (run: string, after: number): string =>
 /** The live channel's name for one run, as the Realtime broadcast in wave 2 names it. */
 export const runChannel = (run: string): string => `run:${run}`;
 
-/** What the page sends: the parent's words, or Stop. `event_id` makes a resend land once. */
+/**
+ * What the page sends: the parent's words, Stop, or a parent's edit in the lesson pane as a steer
+ * naming the questions it changed (dl-z5ja.30). `event_id` makes a resend land once.
+ */
 export type SendBody =
   | { conversation_id: ConversationId; event_id: EventId; kind: "message"; text: string }
-  | { conversation_id: ConversationId; event_id: EventId; kind: "cancel" };
+  | { conversation_id: ConversationId; event_id: EventId; kind: "cancel" }
+  | {
+      conversation_id: ConversationId;
+      event_id: EventId;
+      kind: "steer";
+      text: string;
+      source: "lesson_edit";
+      question_ids: string[];
+    };
 
 export interface SendAnswer {
   run: Run;
