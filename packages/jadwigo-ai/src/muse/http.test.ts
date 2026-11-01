@@ -247,16 +247,25 @@ describe("HttpMuse retries as jw.muse.ask does", () => {
   });
 });
 
-describe("HttpMuse refuses what it cannot cap or route", () => {
-  it("refuses a private-tier call with no private model, before anything is sent", async () => {
+describe("HttpMuse routes the private tier and refuses what it cannot cap", () => {
+  it("serves a private-tier call on the contributor model while no private model is named", async () => {
     const { http, sent } = muse([{ status: 200, body: textAnswer(["x"]) }], {
       models: { contributor: CONTRIBUTOR_MODEL, private: null },
     });
-    await expect(http.respond(requestFor(runId(), 1))).rejects.toMatchObject({ type: "tier" });
-    expect(sent).toHaveLength(0);
+    const r = await http.respond(requestFor(runId(), 1));
+    expect(sent[0]?.body["model"]).toBe(CONTRIBUTOR_MODEL);
+    expect(r.model).toBe(CONTRIBUTOR_MODEL);
   });
 
-  it("refuses a model it has no price for, and an empty key", () => {
+  it("does not use a private model it has no price for", async () => {
+    const { http, sent } = muse([{ status: 200, body: textAnswer(["x"]) }], {
+      models: { contributor: CONTRIBUTOR_MODEL, private: "muse-unpriced" },
+    });
+    await http.respond(requestFor(runId(), 1));
+    expect(sent[0]?.body["model"]).toBe(CONTRIBUTOR_MODEL);
+  });
+
+  it("refuses a contributor model it has no price for, and an empty key", () => {
     const base = muse([]).http;
     expect(base).toBeInstanceOf(HttpMuse);
     expect(() => muse([], { prices: {} })).toThrow(/no price for muse-spark-1.3-contributor/);

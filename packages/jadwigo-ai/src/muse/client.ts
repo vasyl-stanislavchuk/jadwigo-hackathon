@@ -31,9 +31,10 @@ export interface MuseRequest {
   /** Stable per workflow and its instructions, so the provider's prompt cache holds. */
   prompt_cache_key: string;
   /**
-   * The tier the call must go to. A prompt that carries learner data goes only to `private`, the
-   * tier that trains on nothing it is sent (decision dl-2uq1, accepted 2026-11-01:
-   * `jadwigo-hackathon/decisions/2026-11-01-learner-data-reaches-the-model-by-design-for-the-parent-s-own-re`); the runner always sends it.
+   * The tier the call asks for; the runner sends `private`. A learner's data, names included,
+   * may reach any Meta model, the contributor model included (owner decision of 2026-11-01, bead
+   * dl-uafq, `jadwigo-hackathon/notes/2026-11-01-a-learner-s-data-names-included-may-reach-any-meta-model-the-con`), so `HttpMuse` serves
+   * `private` on the contributor model until a no-training model is named and priced.
    */
   tier: ModelTier;
   instructions: string;

@@ -13,8 +13,9 @@ export function databaseUrl(): string {
  * What `HttpMuse` reads from the environment. The key is `META_API_KEY`, the name in
  * `~/.config/jadwigo-bank/muse.env` that `jw.muse.api_key` reads; the host puts it in the
  * environment from its secret store, never on argv. The cap is `JADWIGO_MUSE_CAP_USD`, as for
- * `jw.muse`. `JADWIGO_MUSE_PRIVATE_MODEL` names the no-training tier's model once the owner has
- * named it from the dl-z5ja.3 probe; until then a private-tier call is refused.
+ * `jw.muse`. `JADWIGO_MUSE_PRIVATE_MODEL` names a no-training model once the owner has named one
+ * from the dl-z5ja.3 probe; until then, and while it has no price, the contributor model serves
+ * a private-tier call (owner decision of 2026-11-01, bead dl-uafq).
  */
 export interface MuseSettings {
   api_key: string;

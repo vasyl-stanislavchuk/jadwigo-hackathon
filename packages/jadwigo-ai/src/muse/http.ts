@@ -6,7 +6,7 @@ import {
   type MuseRequest,
   type MuseResponse,
 } from "./client.ts";
-import { type BudgetCheck, MuseRefused } from "./guarded.ts";
+import type { BudgetCheck } from "./guarded.ts";
 import type { PromptGuard } from "./pii.ts";
 import { mapStrings, outbound } from "./tiers.ts";
 
@@ -16,17 +16,22 @@ import { mapStrings, outbound } from "./tiers.ts";
  * `jadwigo-bank/experiments/direct_api` measured: `Bearer` key, `stream: true`, `store: false`, a
  * stable `prompt_cache_key`, `reasoning.effort`, and the usage in `response.completed`.
  *
- * - **Tier routing.** `request.tier` picks the model. `private` goes as it is, names included;
- *   `contributor` passes the `jw.pii.guard` port first and its answer is restored (`tiers.ts`).
- *   A tier with no model configured is refused before anything is sent.
+ * - **Tier routing.** `request.tier` picks the model. `contributor` goes to the contributor
+ *   model. `private` goes to `models.private` once it is named and priced, and to the contributor
+ *   model until then: a learner's data may reach any Meta model (owner decision of 2026-11-01,
+ *   bead dl-uafq). The response names the model that answered.
+ * - **The name guard is optional.** Only a call whose tag lane is in `guard_lanes` (`bank` by
+ *   default) passes the `jw.pii.guard` port, and its answer is restored (`tiers.ts`). A learner
+ *   call goes with its names as they are, on either tier.
  * - **Streaming.** Text deltas reach `live` batched, every `batch_ms` or `batch_chars`, restored
- *   on the contributor tier with a hold-back for half a placeholder.
+ *   on a guarded call with a hold-back for half a placeholder.
  * - **Retry,** as `jw.muse.ask`: 3 attempts, the budget checked before each with what failed
  *   attempts already cost, a longer backoff on a 429, and no retry once text reached `live`,
  *   since the page would show it twice. A 4xx other than 429 is not retried: the request itself
  *   was refused, and it costs nothing to fail.
- * - **Cost** from `prices`, per model. A configured model without a price is refused at
- *   construction: a spend the cap cannot see is no spend at all.
+ * - **Cost** from `prices`, per model. The contributor model without a price is refused at
+ *   construction, and an unpriced private model is not used: a spend the cap cannot see is no
+ *   spend at all.
  *
  * Its `fetch`, clock and sleep come in as dependencies, so unit tests run on recorded streams.
  * Wrap it in `GuardedMuse` for the tag, cache-key and ledger rules.
@@ -57,8 +62,10 @@ type Fetch = (url: string, init: RequestInit) => Promise<Response>;
 export interface HttpMuseOptions {
   fetch: Fetch;
   api_key: string;
-  /** The model per tier. `private` stays null until the owner names the no-training tier. */
+  /** The model per tier. `private` is null until the owner names one; the contributor serves it. */
   models: { contributor: string; private: string | null };
+  /** The tag lanes whose calls pass the name guard; `bank` by default. */
+  guard_lanes?: readonly string[];
   /** Checked before every attempt, as `laneBudget(ledger, cap)` builds it. */
   budget: BudgetCheck;
   sleep: (ms: number) => Promise<void>;
@@ -102,16 +109,17 @@ export class HttpMuse implements MuseClient {
     if (options.api_key === "") throw new Error("HttpMuse needs the Meta API key from config");
     this.#o = options;
     this.#prices = options.prices ?? PRICES;
-    for (const model of [options.models.contributor, options.models.private]) {
-      if (model !== null && this.#prices[model] === undefined) {
-        throw new Error(`HttpMuse has no price for ${model}: add it to PRICES before calling it`);
-      }
+    const { contributor } = options.models;
+    if (this.#prices[contributor] === undefined) {
+      throw new Error(
+        `HttpMuse has no price for ${contributor}: add it to PRICES before calling it`,
+      );
     }
   }
 
   async respond(request: MuseRequest): Promise<MuseResponse> {
     const model = this.#modelFor(request.tier);
-    const { request: sent, guard } = outbound(request);
+    const { request: sent, guard } = outbound(request, this.#o.guard_lanes);
     const attempts = this.#o.attempts ?? 3;
     let spent = 0;
     let usage = NO_USAGE;
@@ -140,14 +148,9 @@ export class HttpMuse implements MuseClient {
   }
 
   #modelFor(tier: ModelTier): string {
-    const model = tier === "private" ? this.#o.models.private : this.#o.models.contributor;
-    if (model === null) {
-      throw new MuseRefused(
-        "tier",
-        `no model is configured for the ${tier} tier (JADWIGO_MUSE_PRIVATE_MODEL); nothing was sent`,
-      );
-    }
-    return model;
+    const { contributor, private: named } = this.#o.models;
+    if (tier === "private" && named !== null && this.#prices[named] !== undefined) return named;
+    return contributor;
   }
 
   #cost(model: string, u: ModelUsage): number {
