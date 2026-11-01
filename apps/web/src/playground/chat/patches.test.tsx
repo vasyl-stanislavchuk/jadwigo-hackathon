@@ -201,6 +201,43 @@ describe("the lesson pane sends a parent's own words as a patch (dl-z5ja.111)", 
   });
 });
 
+describe("Cofnij falls back to words (dl-z5ja.111)", () => {
+  it("when no merge patch can restore the revision before, Cofnij asks the AI in words", async () => {
+    const events = eventsOf("happy-turn");
+    const t = transportOf(events);
+    render(<ChatScreen transport={t.transport} />);
+    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    const second = lessonFile();
+    // Revision 3 holds a key whose value is null; revision 4 sets it, so going back needs a null.
+    const third = {
+      ...(applyPatch(second, wordsPatch(second, "s02", "pl", "Raz")) as object),
+      extra: null,
+    };
+    const fourth = {
+      ...(applyPatch(third, wordsPatch(third, "s02", "pl", "Dwa")) as object),
+      extra: 1,
+    };
+    const at = (file: unknown, revision: number, seq: number) =>
+      RunEvent.parse({
+        ...events.findLast((e) => e.type === "lesson_revision"),
+        seq,
+        event_id: `00000000-0000-4000-8000-00000000060${revision}`,
+        payload: { revision, call_id: "call_x", lesson_file: file },
+      });
+    const top = Math.max(...events.map((e) => e.seq));
+    await act(async () => t.push([at(third, 3, top + 1), at(fourth, 4, top + 2)]));
+    expect(screen.getByText("Wersja 4")).toBeTruthy();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Cofnij" })));
+    expect(t.sent).toEqual([
+      expect.objectContaining({
+        kind: "message",
+        text: "Rodzic prosi o cofnięcie zmiany w krokach s02: wróć do wersji 3.",
+      }),
+    ]);
+    expect(t.sent[0]).not.toHaveProperty("patch");
+  });
+});
+
 describe("the routes carry the patch (dl-z5ja.111)", () => {
   it("a steer's patch reaches postMessage", async () => {
     const SERVER = ConversationId.parse("cnv_00000000000000000000000002");

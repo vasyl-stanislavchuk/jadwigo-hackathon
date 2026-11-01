@@ -177,6 +177,7 @@ function engine(server: ViteDevServer, m: Modules) {
                     text: body.text,
                     source: body.source,
                     question_ids: body.question_ids,
+                    ...(body.patch === undefined ? {} : { patch: body.patch }),
                   },
                 }
               : { event_id: body.event_id, kind: "cancel", payload: {} },
