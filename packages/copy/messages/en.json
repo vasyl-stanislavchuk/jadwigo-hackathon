@@ -790,7 +790,6 @@
   "chat_announce_needs_you": "The assistant is waiting for your answer.",
   "chat_announce_stopped": "Saved, stopped.",
   "chat_switch": "Conversation or lesson",
-  "chat_consent": "The assistant reads only what your request about your child needs, names included. The model it runs on does not learn from it.",
   "chat_check_findings": [
     {
       "declarations": ["input n", "local notes_noun = n: plural"],

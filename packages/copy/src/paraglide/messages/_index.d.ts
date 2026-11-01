@@ -38,7 +38,6 @@ export * from "./chat_choose_recommended.js";
 export * from "./chat_choose_skip.js";
 export * from "./chat_citations.js";
 export * from "./chat_composer_label.js";
-export * from "./chat_consent.js";
 export * from "./chat_copied.js";
 export * from "./chat_copy_details.js";
 export * from "./chat_dev_only.js";

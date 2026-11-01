@@ -694,7 +694,6 @@ export const COPY_KEYS = [
   "chat_announce_needs_you",
   "chat_announce_stopped",
   "chat_switch",
-  "chat_consent",
   "chat_check_findings",
   "chat_edit_step",
   "chat_edit_prompt",

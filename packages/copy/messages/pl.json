@@ -808,7 +808,6 @@
   "chat_announce_needs_you": "Asystent czeka na Twoją odpowiedź.",
   "chat_announce_stopped": "Zapisane, zatrzymane.",
   "chat_switch": "Rozmowa albo lekcja",
-  "chat_consent": "Asystent czyta tylko to, czego potrzebuje Twoja prośba o dziecku, imiona też. Model, na którym działa, nie uczy się na tych danych.",
   "chat_check_findings": [
     {
       "declarations": ["input n", "local notes_noun = n: plural"],
