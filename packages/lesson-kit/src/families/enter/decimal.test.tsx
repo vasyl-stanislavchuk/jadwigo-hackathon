@@ -219,3 +219,100 @@ describe("a decimal gap", () => {
     expect(must(onCommit.mock.calls[0])[0].value).toEqual({ gaps: { g1: "3", g2: ",3" } });
   });
 });
+
+// An English lesson writes a decimal with a point (dl-uukj.42, en-10 in
+// workflows/_lang/en/checklist.md). The key follows the lesson's language from StepFrame; with
+// none, or in a Polish lesson, it stays the comma above.
+describe("the decimal key in an English lesson", () => {
+  const View = EnterView as ComponentType<object>;
+  const threeAndAHalf: SpecOf<typeof Family.Enter> = {
+    ...tenths,
+    key: { accept: ["3.5"] },
+  };
+  function playIn(lessonLanguage: "en" | "pl", screens: "en" | "pl" = "en", onCommit = vi.fn()) {
+    const props = {
+      ...common,
+      language: screens,
+      mode: ViewMode.Play,
+      spec: pageSpec(threeAndAHalf),
+      live: true,
+      attemptNo: 1,
+      feedback: null,
+      solution: null,
+      onCommit,
+    } as object;
+    render(
+      <StepFrame stepId="d1" lessonLanguage={lessonLanguage}>
+        <View {...props} />
+      </StepFrame>,
+    );
+    return { onCommit };
+  }
+  const press = (name: string) => fireEvent.pointerDown(screen.getByRole("button", { name }));
+
+  it("draws a point key named Decimal point, and commits 3.5 as typed", () => {
+    const { onCommit } = playIn("en");
+    expect(screen.queryByRole("button", { name: "Comma" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Decimal point" }).textContent).toBe(".");
+    for (const key of ["3", "Decimal point", "5"]) press(key);
+    expect(screen.getByRole("textbox").textContent).toBe("3.5");
+    press("Check");
+    expect(must(onCommit.mock.calls[0])[0].value).toEqual({ entered: "3.5" });
+  });
+
+  it("asks for a digit after the decimal point when 3. is checked", () => {
+    const { onCommit } = playIn("en");
+    press("3");
+    press("Decimal point");
+    act(() => {
+      press("Check");
+    });
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(screen.getByRole("status").textContent).toBe("Write a digit after the decimal point.");
+  });
+
+  it("keeps the comma key in a Polish lesson, named in the screens' words", () => {
+    playIn("pl", "pl");
+    expect(screen.queryByRole("button", { name: "Kropka" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Przecinek" }).textContent).toBe(",");
+  });
+
+  it("asks for a digit after the comma when 3, is checked in a Polish lesson", () => {
+    const { onCommit } = playIn("pl", "pl");
+    press("3");
+    press("Przecinek");
+    act(() => {
+      press("Sprawdź");
+    });
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(screen.getByRole("status").textContent).toBe("Dopisz cyfrę po przecinku.");
+  });
+
+  it("shows a right answer with the lesson's separator: 0.6 in English, 0,6 in Polish", () => {
+    const page = pageSpec(tenths) as PageSpecOf<typeof Family.Enter>;
+    const review = (lessonLanguage: "en" | "pl") =>
+      render(
+        <StepFrame stepId="d1" lessonLanguage={lessonLanguage}>
+          <EnterView
+            {...common}
+            language="pl"
+            mode={ViewMode.Review}
+            spec={page}
+            value={{ entered: "0.5" }}
+            answerKey={tenths.key}
+            verdict={{ correct: false, mistake_class: "other_wrong", parts: [] }}
+          />
+        </StepFrame>,
+      );
+    review("en");
+    expect(screen.getByText("0.6")).toBeTruthy();
+    cleanup();
+    review("pl");
+    expect(screen.getByText("0,6")).toBeTruthy();
+  });
+
+  it("names the point in Polish screens' words over an English lesson", () => {
+    playIn("en", "pl");
+    expect(screen.getByRole("button", { name: "Kropka" }).textContent).toBe(".");
+  });
+});

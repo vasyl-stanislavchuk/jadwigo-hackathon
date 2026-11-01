@@ -76,12 +76,12 @@ describe("a picture by keyboard", () => {
     fireEvent.keyDown(picture, { key: "Enter" });
     fireEvent.keyDown(picture, { key: "ArrowLeft" });
     fireEvent.keyDown(picture, { key: " " });
-    const markers = screen.getAllByRole("button", { name: /^Tap \d/ });
+    const markers = screen.getAllByRole("button", { name: /\b\d+\b.*tap it again/i });
     expect(markers.map((m) => parseFloat(m.style.left))).toEqual(
       [57.5, 52.5].map((v) => expect.closeTo(v)),
     );
     fireEvent.keyDown(picture, { key: "Backspace" });
-    expect(screen.getAllByRole("button", { name: /^Tap \d/ })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: /\b\d+\b.*tap it again/i })).toHaveLength(1);
     // The crosshair never stops at the edge of the picture's grid by wrapping: it stays inside.
     for (let i = 0; i < 30; i++) fireEvent.keyDown(picture, { key: "ArrowUp" });
     expect(screen.getByTestId("hotspot-cursor").style.top).toBe("2.5%");

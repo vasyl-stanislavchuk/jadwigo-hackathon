@@ -1,0 +1,75 @@
+{
+  "q1": {
+    "boost_by_mistake": {
+      "missed_option": {
+        "text": "More than one expression shows 5 threes. Check each one again."
+      },
+      "wrong_pick": {
+        "text": "5 threes means 5 groups with 3 in each. Check that the one you picked shows that."
+      },
+      "other_wrong": {
+        "text": "Picture 5 groups with 3 in each. Find every expression that shows those groups."
+      }
+    }
+  },
+  "q2": {
+    "twin": {
+      "say": "Match the equivalent expressions.",
+      "key": {
+        "items": {
+          "l1": ["r1"],
+          "l2": ["r2"],
+          "l3": ["r3"]
+        }
+      },
+      "data": "the question's data with its numbers changed, kept in the draft file only"
+    },
+    "boost_by_mistake": {
+      "not_placed": {
+        "text": "Each expression on the left needs a match. Place every one."
+      },
+      "wrong_group": {
+        "text": "Read the pair out loud. A match says the same amount in a new way."
+      },
+      "other_wrong": {
+        "text": "For each one, count the groups and how many are in each group. Then find the same on the other side."
+      }
+    }
+  },
+  "q3": {
+    "boost_by_mistake": {
+      "gap_swap": {
+        "text": "Every row of the table shows the same amount. Count the 10s in the middle row."
+      },
+      "other_wrong": {
+        "text": "The middle row adds 10 again and again. Count how many 10s it adds."
+      }
+    }
+  },
+  "q4": {
+    "twin": {
+      "say": "Use the image below to help fill in the blanks.",
+      "key": {
+        "gaps": {
+          "g1": {
+            "accept": ["5"],
+            "kind": "enter"
+          },
+          "g2": {
+            "accept": ["15"],
+            "kind": "enter"
+          }
+        }
+      },
+      "data": "the question's data with its numbers changed, kept in the draft file only"
+    },
+    "boost_by_mistake": {
+      "gap_swap": {
+        "text": "The first blank is how many groups there are. The second blank is how many sheep in all."
+      },
+      "other_wrong": {
+        "text": "Count the groups first. Then count by 3 for each group."
+      }
+    }
+  }
+}

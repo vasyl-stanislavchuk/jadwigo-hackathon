@@ -7,7 +7,13 @@
  * 15.3. Every word a parent reads comes from `@jadwigo/copy`.
  */
 
-import type { RunId, RunStatus, VerbName } from "@jadwigo/contracts/run";
+import {
+  RUN_ERROR_TYPE,
+  type RunError,
+  type RunId,
+  type RunStatus,
+  type VerbName,
+} from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
 import { type FormEvent, type ReactElement, useEffect, useRef, useState } from "react";
@@ -115,6 +121,19 @@ function ToolGroup({ tools, language }: { tools: ToolItem[]; language: Language 
   );
 }
 
+/**
+ * An error row's words (dl-z5ja.28, .83): the engine's own limits in plain words with what to do
+ * next, a step delivered again as "trying again", and anything else as what went off track.
+ */
+function problemOf(error: RunError, retryable: boolean, language: Language): string {
+  const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
+    copy(language, key, vars, "adult");
+  if (error.type === RUN_ERROR_TYPE.runTimedOut) return say("chat_limit_too_long");
+  if (error.type === RUN_ERROR_TYPE.stepTimedOut) return say("chat_problem_retrying");
+  const line = say("chat_problem", { message: error.message });
+  return retryable ? `${line} ${say("chat_problem_retrying")}` : line;
+}
+
 function ErrorRow({
   item,
   run,
@@ -128,10 +147,7 @@ function ErrorRow({
   const details = `run ${run} attempt ${item.attempt}: ${item.error.type}`;
   return (
     <div role="alert" data-row="error" className="rounded-md border p-2 text-sm">
-      <p>
-        {copy(language, "chat_problem", { message: item.error.message }, "adult")}
-        {item.retryable && ` ${copy(language, "chat_problem_retrying", {}, "adult")}`}
-      </p>
+      <p>{problemOf(item.error, item.retryable, language)}</p>
       <Button
         variant="outline"
         size="xs"
@@ -152,7 +168,11 @@ function RowView({ row, run, language }: { row: Row; run: RunId; language: Langu
   switch (row.kind) {
     case "message":
       return (
-        <div data-from={row.from} className={row.from === "parent" ? "self-end" : "self-start"}>
+        <div
+          data-from={row.from}
+          data-steer={row.steer?.source}
+          className={row.from === "parent" ? "self-end" : "self-start"}
+        >
           <p className="text-muted-foreground text-xs">
             {copy(
               language,
@@ -160,6 +180,13 @@ function RowView({ row, run, language }: { row: Row; run: RunId; language: Langu
               {},
               "adult",
             )}
+            {row.steer !== undefined &&
+              ` · ${copy(
+                language,
+                row.steer.source === "lesson_edit" ? "chat_steered_edit" : "chat_steered",
+                {},
+                "adult",
+              )}`}
           </p>
           <p className="rounded-md border px-3 py-2 whitespace-pre-wrap">{row.text}</p>
         </div>

@@ -52,12 +52,27 @@ class NotReady(JwError):
         self.reason = reason
 
 
-def converted_path() -> Path:
-    """The converted items file: JW_KHAN_CONVERTED, else <JADWIGO_KHAN_DIR>/converted-pl.json."""
-    configured = settings_keys.setting(settings_keys.JW_KHAN_CONVERTED)
+def converted_path(language: str = "pl") -> Path:
+    """The converted items file for `language` (dl-hin8.17).
+
+    Polish: JW_KHAN_CONVERTED_PL, else JW_KHAN_CONVERTED (its old name, for one release), else
+    <JADWIGO_KHAN_DIR>/converted-pl.json. English: JW_KHAN_CONVERTED_EN, else, when
+    JW_KHAN_CONVERTED names a Polish conversion (`*-pl.json`), the `converted.json` beside it, and
+    when it names any other file that file, else <JADWIGO_KHAN_DIR>/converted.json.
+    """
+    old = settings_keys.setting(settings_keys.JW_KHAN_CONVERTED)
+    if language == "pl":
+        configured = settings_keys.setting(settings_keys.JW_KHAN_CONVERTED_PL) or old
+        if configured:
+            return Path(configured).expanduser()
+        return settings_keys.khan_dir() / settings_keys.CONVERTED_DEFAULT
+    configured = settings_keys.setting(settings_keys.JW_KHAN_CONVERTED_EN)
     if configured:
         return Path(configured).expanduser()
-    return settings_keys.khan_dir() / settings_keys.CONVERTED_DEFAULT
+    if old:
+        named = Path(old).expanduser()
+        return named.with_name(settings_keys.CONVERTED_EN_DEFAULT.name) if named.name.endswith("-pl.json") else named
+    return settings_keys.khan_dir() / settings_keys.CONVERTED_EN_DEFAULT
 
 
 def clear_cache() -> None:
@@ -182,7 +197,7 @@ def why_not(item_id: str, language: str = "pl") -> str | None:
 
 def load_item(item_id: str, language: str = "pl") -> dict[str, Any]:
     """One converted item, the composer's view: the family step with key and help kept."""
-    path = converted_path()
+    path = converted_path(language)
     items, licence_note = _read(path)
     item = items.get(item_id)
     if item is None:

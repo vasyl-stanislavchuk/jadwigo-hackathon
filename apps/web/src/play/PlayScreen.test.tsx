@@ -53,6 +53,7 @@ function snapshot(
   id: AttemptId,
   status: "in_progress" | "paused" | "finished",
   questions: unknown[],
+  language: "pl" | "en" = "pl",
 ): AttemptSnapshot {
   return AttemptSnapshot.parse({
     attempt: {
@@ -78,7 +79,7 @@ function snapshot(
         say: q.say,
         question: q.question,
       })),
-    language: "pl",
+    language,
     questions,
     open_seq: status === "finished" ? null : questions.length,
     last_event_id: null,
@@ -117,6 +118,20 @@ describe("PlayScreen", () => {
     expect(await screen.findAllByText("Ile to jest dwa razy pięć? (1)")).not.toHaveLength(0);
     expect(startAttempt).toHaveBeenCalledTimes(1);
     expect(storedAttempt.get(ASSIGNMENT)).toBe(FRESH);
+  });
+
+  it("puts the lesson's language on the question and leaves Check the screens' (dl-9t2o.3, dl-uukj.38)", async () => {
+    document.documentElement.lang = "pl";
+    const startAttempt = vi.fn(async () => snapshot(FRESH, "in_progress", [question(1)], "en"));
+    render(
+      <PlayScreen assignmentId={ASSIGNMENT} language="pl" client={client({ startAttempt })} />,
+    );
+    await screen.findAllByText("Ile to jest dwa razy pięć? (1)");
+    const langOf = (selector: string) =>
+      document.querySelector(selector)?.closest("[lang]")?.getAttribute("lang");
+    expect(langOf('[data-area="stem"]')).toBe("en");
+    expect(langOf('[data-area="answer"]')).toBe("en");
+    expect(langOf("[data-check]")).toBe("pl");
   });
 
   it("draws a Khan picture ref from the media URL (dl-n9fr.52)", async () => {

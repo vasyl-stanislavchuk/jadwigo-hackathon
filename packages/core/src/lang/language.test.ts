@@ -43,8 +43,11 @@ describe("money", () => {
     [350, "pl", `3,50${NBSP}zł`],
     [5, "pl", `0,05${NBSP}zł`],
     [2000, "pl", `20,00${NBSP}zł`],
-    [350, "en", `PLN${NBSP}3.50`],
-    [2000, "en", `PLN${NBSP}20.00`],
+    [123_456, "pl", `1234,56${NBSP}zł`],
+    [350, "en", `3.50${NBSP}zł`],
+    [5, "en", `0.05${NBSP}zł`],
+    [2000, "en", `20.00${NBSP}zł`],
+    [123_456, "en", `1,234.56${NBSP}zł`],
   ] as const)("writes %i grosze in %s as %s", (gr, language, written) => {
     expect(formatMoney(gr, language)).toBe(written);
   });

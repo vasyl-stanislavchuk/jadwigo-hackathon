@@ -148,9 +148,9 @@ export type ToolResult =
  * one with no view. A view whose kind names another verb never borrows that verb's widget.
  */
 export function toolResult(tool: ToolItem, language: Language): ToolResult {
-  if (tool.state !== "done" || tool.view === undefined) return null;
+  if (tool.state !== "done") return null;
   const entry = REGISTRY[tool.verb];
-  if (entry !== undefined && tool.view.kind === tool.verb) {
+  if (entry !== undefined && tool.view !== undefined && tool.view.kind === tool.verb) {
     const drawn = entry.draw(tool.view.data, language);
     if (drawn !== null) {
       const Icon = entry.icon;
@@ -173,18 +173,31 @@ export function toolResult(tool: ToolItem, language: Language): ToolResult {
       };
     }
   }
+  if (tool.view === undefined && tool.input === undefined && tool.output === undefined) return null;
   return { kind: "plain", element: <PlainCard tool={tool} language={language} /> };
 }
 
-/** "Step details": the call's view as it came back, one tap away. */
+/**
+ * "Step details": what the assistant sent the verb and what came back, one tap away (dl-z5ja.68).
+ * What came back is the call's output, or its view when the log holds no output.
+ */
 function PlainCard({ tool, language }: { tool: ToolItem; language: Language }): ReactElement {
   const say = (key: CopyKey) => copy(language, key, {}, "adult");
+  const back = tool.output !== undefined ? tool.output : (tool.view?.data ?? null);
   return (
     <details data-card="plain" data-tool={tool.verb} className="text-sm">
       <summary>{say("chat_card_details")}</summary>
+      {tool.input !== undefined && (
+        <>
+          <p className="text-muted-foreground text-xs">{say("chat_card_input")}</p>
+          <pre data-card-input className="overflow-x-auto rounded-md border p-2 text-xs">
+            {JSON.stringify(tool.input, null, 2)}
+          </pre>
+        </>
+      )}
       <p className="text-muted-foreground text-xs">{say("chat_card_output")}</p>
-      <pre className="overflow-x-auto rounded-md border p-2 text-xs">
-        {JSON.stringify(tool.view?.data ?? null, null, 2)}
+      <pre data-card-output className="overflow-x-auto rounded-md border p-2 text-xs">
+        {JSON.stringify(back, null, 2)}
       </pre>
     </details>
   );

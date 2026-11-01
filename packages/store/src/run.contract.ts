@@ -273,7 +273,7 @@ export function runContract(name: string, make: () => Promise<Store> | Store): v
     );
 
     frozen(
-      "refuses an inbox event_id another run holds, in its own pod or another (dl-z5ja.36)",
+      "refuses an inbox event_id another run of its pod holds, and keeps each pod's ids its own (dl-z5ja.36, dl-z5ja.86)",
       async () => {
         const store = await make();
         const a = await scope(store);
@@ -287,11 +287,21 @@ export function runContract(name: string, make: () => Promise<Store> | Store): v
         await expect(
           store.putRunInbox(a.pod, { ...first, run_id: other.id }),
         ).rejects.toMatchObject(WRITE_ONCE);
-        await expect(
-          store.putRunInbox(b.pod, { ...first, run_id: elsewhere.id }),
-        ).rejects.toMatchObject(WRITE_ONCE);
+        // The same id in another pod is that pod's own row: nothing says the id exists in pod a.
+        const theirs = await store.putRunInbox(b.pod, {
+          ...first,
+          run_id: elsewhere.id,
+          payload: { text: "Adding within 20." },
+        });
+        expect([theirs.pod_id, theirs.run_id, theirs.payload]).toEqual([
+          b.pod,
+          elsewhere.id,
+          { text: "Adding within 20." },
+        ]);
         expect(await store.takeRunInbox(a.pod, other.id)).toEqual([]);
-        expect(await store.takeRunInbox(b.pod, elsewhere.id)).toEqual([]);
+        expect((await store.takeRunInbox(b.pod, elsewhere.id)).map((r) => r.event_id)).toEqual([
+          first.event_id,
+        ]);
         expect((await store.takeRunInbox(a.pod, run.id)).map((r) => r.event_id)).toEqual([
           stored.event_id,
         ]);
@@ -299,7 +309,7 @@ export function runContract(name: string, make: () => Promise<Store> | Store): v
     );
 
     frozen(
-      "counts a parent's messages since a minute and sums the pod's caps since a day (dl-z5ja.72)",
+      "counts a parent's messages and steers since a minute and sums the pod's caps since a day (dl-z5ja.72, dl-z5ja.97)",
       async () => {
         const store = await make();
         const a = await scope(store);
@@ -317,12 +327,19 @@ export function runContract(name: string, make: () => Promise<Store> | Store): v
           kind: "steer",
           payload: { text: "Easier, please." },
         });
+        await store.putRunInbox(a.pod, {
+          run_id: mine.id,
+          event_id: eventId(),
+          kind: "cancel",
+          payload: {},
+        });
         await store.putRunInbox(a.pod, inbox(theirs.id, "Telling the time."));
         await store.putRunInbox(b.pod, inbox(elsewhere.id, "Adding within 20."));
 
         const since = { minuteSince: before, daySince: before };
+        // a's run: 2 messages and 1 steer count, the cancel does not (dl-z5ja.97).
         expect(await store.messageUsage(a.pod, a.account, since)).toEqual({
-          messages: 2,
+          messages: 3,
           cap_usd: 3,
         });
         expect(await store.messageUsage(a.pod, b.account, since)).toEqual({
@@ -345,6 +362,20 @@ export function runContract(name: string, make: () => Promise<Store> | Store): v
         ).rejects.toMatchObject(NOT_FOUND);
       },
     );
+
+    frozen("lands one conversation when 3 writes of one id race (dl-z5ja.99)", async () => {
+      const store = await make();
+      const a = await scope(store);
+      const id = conversationId();
+      const racers = await Promise.all(
+        [1, 2, 3].map(() =>
+          store.createConversation(a.pod, { id, created_by: a.account, title: "Equal groups" }),
+        ),
+      );
+      expect(racers[1]).toEqual(racers[0]);
+      expect(racers[2]).toEqual(racers[0]);
+      expect(await store.listRuns(a.pod, id)).toEqual([]);
+    });
   });
 }
 

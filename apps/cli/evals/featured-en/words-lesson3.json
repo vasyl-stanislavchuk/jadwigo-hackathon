@@ -1,0 +1,241 @@
+{
+  "q1": {
+    "boost": {
+      "text": "2 × 5 is 2 fives. Count by 5, 2 times."
+    },
+    "boost_by_mistake": {
+      "add_for_multiply": {
+        "text": "2 + 5 is adding. Here there are 2 groups of 5."
+      },
+      "neighbour_row": {
+        "text": "Count the groups again. There are 2 groups of 5."
+      },
+      "off_by_small": {
+        "text": "You are close. Count by 5 for each of the 2 groups."
+      },
+      "digit_reversal": {
+        "text": "Check the order of the digits. Count 5 and 5 again."
+      },
+      "same_decade": {
+        "text": "You have the right tens. Count the second group of 5 again."
+      },
+      "other_wrong": {
+        "text": "Count 5, then 5 more."
+      }
+    },
+    "changes": [
+      {
+        "change": "wording",
+        "why": "the English reviewer (workflows/_lang/en/checklist.md en-10) needs a question to end with ?; dl-e8ov.5.77 asks that every step pass it",
+        "set": {
+          "say": "the copied say with ? added"
+        }
+      }
+    ]
+  },
+  "q2": {
+    "boost": {
+      "text": "8 × 2 is double 8. Add 8 and 8."
+    },
+    "boost_by_mistake": {
+      "other_wrong": {
+        "text": "Times 2 means double. Put 8 and 8 together."
+      }
+    }
+  },
+  "q3": {
+    "boost": {
+      "text": "4 × 10 is 4 tens. Count by 10, 4 times."
+    },
+    "boost_by_mistake": {
+      "add_for_multiply": {
+        "text": "4 + 10 is adding. Here there are 4 tens."
+      },
+      "neighbour_row": {
+        "text": "Count the tens again. There are 4 of them."
+      },
+      "off_by_small": {
+        "text": "You are close. Count by 10 again, one group at a time."
+      },
+      "digit_reversal": {
+        "text": "Count the 4 groups of 10 again, then type the number you get."
+      },
+      "same_decade": {
+        "text": "You have the right tens. Count the 4 groups of 10 again."
+      },
+      "other_wrong": {
+        "text": "4 × 10 means 4 groups of 10. Count by 10 for each group."
+      }
+    }
+  },
+  "q4": {
+    "boost": {
+      "text": "2 × 4 is double 4. Add 4 and 4."
+    },
+    "boost_by_mistake": {
+      "other_wrong": {
+        "text": "Times 2 means double. Put 4 and 4 together."
+      }
+    }
+  },
+  "q5": {
+    "boost": {
+      "text": "4 × 7 is double 2 × 7. Find 2 rows of seals, then double them."
+    },
+    "boost_by_mistake": {
+      "add_for_multiply": {
+        "text": "4 + 7 is adding. Here there are 4 rows with 7 seals in each."
+      },
+      "neighbour_row": {
+        "text": "Count the rows again. There are 4 rows of 7."
+      },
+      "off_by_small": {
+        "text": "You are close. Count the seals in each row again."
+      },
+      "digit_reversal": {
+        "text": "Check the order of the digits. 4 rows of 7 is more than 20."
+      },
+      "same_decade": {
+        "text": "The tens are right. Count the last row of 7 again."
+      },
+      "other_wrong": {
+        "text": "Count the top 2 rows of seals. The bottom 2 rows have the same number."
+      }
+    }
+  },
+  "q6": {
+    "boost": {
+      "text": "4 × 2 is double 2 × 2. Count the first 2 groups, then double."
+    },
+    "boost_by_mistake": {
+      "add_for_multiply": {
+        "text": "4 + 2 is adding. Here there are 4 groups with 2 in each."
+      },
+      "neighbour_row": {
+        "text": "Count the groups again. There are 4 groups of 2."
+      },
+      "off_by_small": {
+        "text": "You are close. Count every group again."
+      },
+      "other_wrong": {
+        "text": "There are 4 groups of 2. Count by 2 for each group."
+      }
+    }
+  },
+  "q7": {
+    "boost": {
+      "text": "4 × 3 is 4 jumps of 3 on the number line. It is also double 2 × 3."
+    },
+    "boost_by_mistake": {
+      "add_for_multiply": {
+        "text": "4 + 3 is adding. Here there are 4 jumps, and each jump is 3."
+      },
+      "neighbour_row": {
+        "text": "Count the jumps again. There are 4 jumps of 3."
+      },
+      "off_by_small": {
+        "text": "You are close. Each jump is 3, so check the last jump."
+      },
+      "digit_reversal": {
+        "text": "Check the order of the digits. Read where the 4th jump lands."
+      },
+      "same_decade": {
+        "text": "The tens are right. Look again at where the last jump lands."
+      },
+      "other_wrong": {
+        "text": "Count by 3 for each jump: 3, 6, and keep going."
+      }
+    }
+  },
+  "q8": {
+    "boost": {
+      "text": "2 × 3 is 2 rows of 3 dots. Count one row, then double it."
+    },
+    "boost_by_mistake": {
+      "add_for_multiply": {
+        "text": "2 + 3 is adding. Here there are 2 rows with 3 dots in each."
+      },
+      "neighbour_row": {
+        "text": "Count the rows again. There are 2 rows of 3."
+      },
+      "off_by_small": {
+        "text": "You are close. Count the dots one by one."
+      },
+      "other_wrong": {
+        "text": "Each row has 3 dots. Count both rows."
+      }
+    }
+  },
+  "q9": {
+    "boost": {
+      "text": "2 × 6 is double 6. Count one group of cheese, then double it."
+    },
+    "boost_by_mistake": {
+      "add_for_multiply": {
+        "text": "2 + 6 is adding. Here there are 2 groups with 6 wedges in each."
+      },
+      "neighbour_row": {
+        "text": "Count the groups again. There are 2 groups of 6."
+      },
+      "off_by_small": {
+        "text": "You are close. Count each group of cheese again."
+      },
+      "digit_reversal": {
+        "text": "Check the order of the digits. 2 groups of 6 is less than 20."
+      },
+      "same_decade": {
+        "text": "The tens are right. Check the ones: count the second group again."
+      },
+      "other_wrong": {
+        "text": "Count the wedges in one circle. Then add the same again."
+      }
+    }
+  },
+  "q10": {
+    "boost": {
+      "text": "5 × 2 is 5 jumps of 2 on the number line."
+    },
+    "boost_by_mistake": {
+      "add_for_multiply": {
+        "text": "5 + 2 is adding. Here there are 5 jumps, and each jump is 2."
+      },
+      "neighbour_row": {
+        "text": "Count the jumps again. There are 5 jumps of 2."
+      },
+      "off_by_small": {
+        "text": "You are close. Count the jumps of 2 again."
+      },
+      "digit_reversal": {
+        "text": "Check the order of the digits. Read where the last jump lands."
+      },
+      "same_decade": {
+        "text": "You have the right tens. Count the 5 jumps of 2 again."
+      },
+      "other_wrong": {
+        "text": "Count by 2 for each jump: 2, 4, and keep going."
+      }
+    }
+  },
+  "q11": {
+    "boost_by_mistake": {
+      "add_for_multiply": {
+        "text": "7 + 5 is adding. Here there are 7 fives."
+      },
+      "neighbour_row": {
+        "text": "That is one 5 too many or too few. There are 7 fives."
+      },
+      "off_by_small": {
+        "text": "You are close. Count by 5, 7 times, and check the last step."
+      },
+      "digit_reversal": {
+        "text": "Check the order of the digits. 7 fives is more than 30."
+      },
+      "same_decade": {
+        "text": "The tens are right. Counting by 5 ends in 0 or 5."
+      },
+      "other_wrong": {
+        "text": "Count by 5, 7 times: 5, 10, 15, and keep going."
+      }
+    }
+  }
+}

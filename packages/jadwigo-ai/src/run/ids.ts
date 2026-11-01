@@ -1,5 +1,5 @@
 import { EventId, ID_PREFIXES, idOf } from "@jadwigo/contracts";
-import { RunId } from "@jadwigo/contracts/run";
+import { type ConversationId, RunId } from "@jadwigo/contracts/run";
 
 /**
  * Deterministic ids (Lead decision 5): the same write names the same `event_id` on every delivery,
@@ -31,9 +31,10 @@ export async function eventIdFor(run: RunId, ...parts: readonly (string | number
 }
 
 /**
- * The run a parent's message opens, named by the message's own `event_id`: a resend of the message
- * that opened a turn finds that turn instead of opening a 2nd.
+ * A conversation's turn `turn` (0, 1, ...), named by the conversation and the turn's number
+ * (dl-z5ja.85): 2 first messages racing name the same run, which the store writes once, so the 2nd
+ * joins the 1st's turn instead of opening another.
  */
-export async function runIdFor(opening: EventId) {
-  return RunId.parse(idOf(ID_PREFIXES.run, await uuidV5(`run\u001f${opening}`)));
+export async function turnRunIdFor(conversation: ConversationId, turn: number) {
+  return RunId.parse(idOf(ID_PREFIXES.run, await uuidV5(`turn\u001f${conversation}\u001f${turn}`)));
 }

@@ -35,7 +35,8 @@ export function missingGaps(data: SlotsData, value: SlotsValue): Missing | null 
       (g) => g.kind === Family.Enter && g.decimal && unfinishedDecimal(value.gaps[g.id] ?? ""),
     )
     .map((g) => g.id);
-  if (unfinished.length > 0) return { reason: "incomplete_decimal", parts: unfinished };
+  if (unfinished.length > 0)
+    return { reason: unfinishedReason(value.gaps[unfinished[0] ?? ""] ?? ""), parts: unfinished };
   // A fraction gap with one of its two numbers still to write (dl-w3.70.16).
   const half = data.gaps
     .filter(
@@ -94,7 +95,13 @@ export function missingExpression(text: string): Missing | null {
 export function missingDecimal(text: string): Missing | null {
   const empty = missingText(text);
   if (empty !== null) return empty;
-  return unfinishedDecimal(text) ? { reason: "incomplete_decimal", parts: [] } : null;
+  return unfinishedDecimal(text) ? { reason: unfinishedReason(text), parts: [] } : null;
+}
+
+/** The hint names the separator the child typed: "after the point" for `5.`, "after the comma"
+ * for `5,` (dl-uukj.42). */
+function unfinishedReason(text: string): CopyKey {
+  return text.trim().endsWith(".") ? "incomplete_decimal_point" : "incomplete_decimal";
 }
 
 /**

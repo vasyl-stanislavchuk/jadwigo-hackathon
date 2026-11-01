@@ -51,7 +51,9 @@ function Question({
   const clock = browserClock;
   return (
     <LessonFrame.Provider value={frame}>
-      <StepFrame key={question.seq} stepId={spec.id}>
+      {/* The question's own text speaks the lesson's language, which may differ from the
+          screens' (dl-9t2o.3); the controls keep the page's (dl-uukj.38). */}
+      <StepFrame key={question.seq} stepId={spec.id} lessonLanguage={player.lessonLanguage}>
         <FamilyView
           // A new question is a new view: nothing typed or placed carries over.
           key={question.seq}

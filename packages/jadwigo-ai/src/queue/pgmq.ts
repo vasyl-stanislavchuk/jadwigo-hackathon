@@ -39,6 +39,27 @@ type QueueRole = (typeof QUEUE_ROLES)[number];
 
 const QUEUE = "agent_step";
 
+/**
+ * pgmq 1.5.1's `read` on agent_step, for the visible steps whose msg_id is not in `$3`: hides each
+ * for `$1` seconds and counts the read, oldest first, at most `$2`.
+ */
+const READ_PAST = `
+  with cte as (
+    select msg_id from pgmq.q_agent_step
+    where vt <= clock_timestamp() and msg_id <> all($3::bigint[])
+    order by msg_id
+    limit $2
+    for update skip locked
+  ),
+  counted as (
+    update pgmq.q_agent_step as m
+    set vt = clock_timestamp() + make_interval(secs => $1), read_ct = read_ct + 1
+    from cte
+    where m.msg_id = cte.msg_id
+    returning m.msg_id, m.read_ct, m.enqueued_at, m.vt, m.message
+  )
+  select * from counted order by msg_id`;
+
 interface MessageRow {
   msg_id: string;
   read_ct: number;
@@ -101,14 +122,23 @@ export class PgmqRunQueue implements RunQueue {
       const delivered: QueuedStep[] = [];
       // A dead-lettered step takes a place in the batch it was read in, so read again for the
       // places it left, as InMemoryRunQueue passes it by and goes on. Each round removes what it
-      // dead-letters, so the loop ends.
+      // dead-letters, so the loop ends. The 1st round is pgmq.read; a later one is the same
+      // statement for the steps this call has not delivered: its row locks are this transaction's,
+      // which SKIP LOCKED never skips, so with vt_s 0 pgmq.read would deliver them twice.
       for (;;) {
         const want = qty - delivered.length;
         if (want <= 0) break;
-        const { rows } = await c.query<MessageRow>(
-          "select msg_id, read_ct, enqueued_at, vt, message from pgmq.read($1, $2::integer, $3::integer) order by msg_id",
-          [QUEUE, vt_s, want],
-        );
+        const { rows } =
+          delivered.length === 0
+            ? await c.query<MessageRow>(
+                "select msg_id, read_ct, enqueued_at, vt, message from pgmq.read($1, $2::integer, $3::integer) order by msg_id",
+                [QUEUE, vt_s, want],
+              )
+            : await c.query<MessageRow>(READ_PAST, [
+                vt_s,
+                want,
+                delivered.map((step) => step.msg_id),
+              ]);
         if (rows.length === 0) break;
         let dead = 0;
         for (const row of rows) {

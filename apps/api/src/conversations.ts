@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import {
+  type AccountId,
   type Conversation,
   ConversationCreate,
   ConversationId,
@@ -9,6 +10,7 @@ import {
   type EventId,
   ID_PREFIXES,
   idOf,
+  LIMITS,
   type PodId,
   type Run,
   type RunAccepted,
@@ -17,7 +19,7 @@ import {
   type RunId,
 } from "@jadwigo/contracts";
 import { acceptMessage, type EngineDeps, type RunQueue, type Verbs } from "@jadwigo/jadwigo-ai";
-import type { Store } from "@jadwigo/store";
+import type { Store, UsageSince } from "@jadwigo/store";
 import type { Claims } from "./auth.ts";
 import { authorizeMember } from "./authorize.ts";
 import { ApiError, badRequest } from "./errors.ts";
@@ -35,9 +37,33 @@ import { ApiError, badRequest } from "./errors.ts";
 
 /** What the message routes need besides the store. */
 export interface EngineRouteDeps {
-  /** Where a new step goes: pgmq's `agent_step` in AWS, sent as `jadwigo_api`. */
+  /**
+   * Where a new step goes. On Postgres, pgmq's `agent_step` joined to the request's unit, so the
+   * step commits with its run row (dl-z5ja.67); on InMemoryStore, a queue the route sends to after
+   * the unit.
+   */
   readonly queue: RunQueue;
+  /**
+   * Holds the pod's lock until the unit ends, so 2 messages of one pod are counted one after the
+   * other and cannot both pass a limit at 9. Postgres takes `pg_advisory_xact_lock`; in memory,
+   * where nothing runs at once inside a unit, it does nothing.
+   */
+  readonly lockPod: (pod: PodId) => Promise<void>;
   readonly now: () => Date;
+}
+
+/** The windows the limits count over: the last 60 s, and the UTC day so far. */
+function windows(now: Date): UsageSince {
+  const day = new Date(now);
+  day.setUTCHours(0, 0, 0, 0);
+  return {
+    minuteSince: new Date(now.getTime() - 60_000).toISOString(),
+    daySince: day.toISOString(),
+  };
+}
+
+function limited(message: string): ApiError {
+  return new ApiError(ErrorType.enum.MessageLimit, message);
 }
 
 /** The API never runs a step, so its engine has no Muse and no verbs: `acceptMessage` reads neither. */
@@ -102,7 +128,16 @@ export async function postMessage(
   const { pod, account } = await authorizeMember(store, claims);
   const parsed = ConversationMessage.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
+  if (parsed.data.kind === "steer") return steer(store, deps, pod, account, id, parsed.data);
   const { event_id, text } = parsed.data;
+  // One unit: the reads below, the write and the refusal. A refused message throws after
+  // acceptMessage wrote, so on Postgres the unit rolls the row back and its held send is
+  // dropped; nothing of it is kept (dl-z5ja.62, the steward's review of #464).
+  await deps.lockPod(pod);
+  const since = windows(deps.now());
+  const before = await store.messageUsage(pod, account, since);
+  // NotFound for a conversation outside the pod, before anything is written.
+  const runsBefore = await store.listRuns(pod, id);
   const { run, inbox } = await acceptMessage(engine(store, deps), {
     pod,
     created_by: account,
@@ -112,6 +147,52 @@ export async function postMessage(
   // A resend lands once; the same id on another message, or in another conversation, is refused.
   if (inbox.kind !== "message" || inbox.payload.text !== text || run.conversation_id !== id)
     throw mismatch();
+  // A new run is a new turn. Otherwise the count says whether this event_id is new: a resend of
+  // a stored message counts nothing, and answers its run whatever the limits say now.
+  const opened = !runsBefore.some((r) => r.id === run.id);
+  const counted =
+    opened || (await store.messageUsage(pod, account, since)).messages > before.messages;
+  if (!counted) return { run };
+  if (before.messages >= LIMITS.messagesPerMinute)
+    throw limited("too many messages in a minute: wait a moment and send it again");
+  // Only a message that opens a turn spends: one that joins the open turn always may, so a parent
+  // can finish a running turn. The pod never passes its cap by a run.
+  if (opened && before.cap_usd + run.cap_usd > LIMITS.podDailyCapUsd)
+    throw limited("today's AI budget for this family is used up: try again tomorrow");
+  return { run };
+}
+
+/**
+ * A steer (dl-z5ja.93): an inbox row of kind `steer` with its text, source and question ids, on
+ * the open turn, where the next step logs it as a steer event. A steer opens no turn, and the
+ * store counts only messages, so neither limit applies. With no turn open it lands on the last
+ * one and changes nothing; a conversation with no turn yet is 400.
+ */
+async function steer(
+  store: Store,
+  deps: EngineRouteDeps,
+  pod: PodId,
+  account: AccountId,
+  id: ConversationId,
+  body: ConversationMessage,
+): Promise<RunAccepted> {
+  const payload = {
+    text: body.text,
+    ...(body.source === undefined ? {} : { source: body.source }),
+    ...(body.question_ids === undefined ? {} : { question_ids: body.question_ids }),
+  };
+  const { run, inbox } = await acceptMessage(engine(store, deps), {
+    pod,
+    created_by: account,
+    conversation_id: id,
+    entry: { kind: "steer", event_id: body.event_id, payload },
+  });
+  const same =
+    inbox.kind === "steer" &&
+    inbox.payload.text === payload.text &&
+    inbox.payload.source === payload.source &&
+    JSON.stringify(inbox.payload.question_ids) === JSON.stringify(payload.question_ids);
+  if (!same || run.conversation_id !== id) throw mismatch();
   return { run };
 }
 

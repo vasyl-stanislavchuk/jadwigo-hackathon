@@ -32,9 +32,9 @@
  * what a gap is, by gaps.ts.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import type { ComposerEvent } from "../../parts/composer.ts";
-import { DECIMAL_KEY, DECIMAL_SEPARATORS, separatorCount } from "../../parts/exact.ts";
+import { DECIMAL_SEPARATORS, decimalKeyOf, separatorCount } from "../../parts/exact.ts";
 import { clearBox, type FractionBox, firstBox, typeInto } from "../../parts/fractionEntry.ts";
 import { Keypad } from "../../parts/Keypad.tsx";
 import { LetterRow } from "../../parts/LetterRow.tsx";
@@ -46,6 +46,7 @@ import { Tools } from "../../parts/Tools.tsx";
 import { TooSoon } from "../../parts/TooSoon.tsx";
 import { fieldTone, missed, praised, type Tone, useChanged } from "../../parts/tone.ts";
 import type { Instant } from "../../stage/clock.ts";
+import { LessonLanguage } from "../../stage/lessonLanguage.ts";
 import { type PressModality, press } from "../../stage/press.ts";
 import { missingGaps } from "../complete.ts";
 import { Family } from "../names.ts";
@@ -78,6 +79,8 @@ type F = typeof Family.Slots;
 
 function SlotsPlay(props: PlayProps<F>): JSX.Element {
   const { spec, language, clock, live, attemptNo, feedback, onCommit } = props;
+  // A decimal gap's key is a point in an English lesson (dl-uukj.42).
+  const lessonLanguage = useContext(LessonLanguage);
   const data = spec.data;
   // The gaps the one keypad types into: numbers, and fractions in stacked boxes (dl-w3.70.16).
   const numberGaps = data.gaps
@@ -271,7 +274,7 @@ function SlotsPlay(props: PlayProps<F>): JSX.Element {
   const decimalKeys =
     data.gaps.some(isDecimal) || data.gaps.some(isFraction)
       ? {
-          signs: data.gaps.some(isDecimal) ? [DECIMAL_KEY] : [],
+          signs: data.gaps.some(isDecimal) ? [decimalKeyOf(lessonLanguage)] : [],
           signOf: (key: string) => (DECIMAL_SEPARATORS.includes(key) || key === "/" ? key : null),
           onSign: (sign: string, at: Instant, source: PressModality) => {
             if (

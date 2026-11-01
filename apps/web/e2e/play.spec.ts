@@ -104,6 +104,36 @@ test("a child plays equal-groups to the results, through a miss, a twin, a pause
   await expect(results).not.toContainText("%");
 });
 
+// The question speaks the lesson's language, whatever the screens speak (dl-9t2o.3), and the
+// controls speak the screens' (dl-uukj.38): with the screens in English, the seed's Polish lesson
+// keeps lang="pl" on its stem, Sprawdź's nearest lang is the page's en, after a reload too, while
+// <html lang> follows ?lang (dl-uukj.33). The reverse, an English lesson on Polish screens, waits
+// for an English lesson in the e2e seed.
+test("the question keeps its lesson's lang and Check the screens' when they differ", async ({
+  page,
+}) => {
+  const nearestLang = (selector: string) =>
+    page
+      .locator(selector)
+      .first()
+      .evaluate((el) => el.closest("[lang]")?.getAttribute("lang") ?? null);
+  const expectLangs = async () => {
+    await expect(page.locator('[data-area="stem"]').first()).toHaveAttribute("lang", "pl");
+    expect(await nearestLang("[data-check]")).toBe("en");
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  };
+
+  await page.goto("/?lang=en");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await page.locator("[data-featured]").getByRole("link", { name: "Równe grupy" }).click();
+  await onQuestion(page, "2 × 5");
+  await expectLangs();
+
+  await page.reload();
+  await onQuestion(page, "2 × 5");
+  await expectLangs();
+});
+
 test("the gallery still renders at /playground", async ({ page }) => {
   await page.goto("/playground");
   await expect(page.getByRole("heading", { name: "Question-type playground" })).toBeVisible();

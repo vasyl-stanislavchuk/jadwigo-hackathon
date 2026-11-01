@@ -14,6 +14,7 @@ import { RichText } from "../../../parts/RichText.tsx";
 import { TaskTarget } from "../../../parts/TaskTarget.tsx";
 import { TONE_CLASS, type Tone } from "../../../parts/tone.ts";
 import type { Clock, Instant } from "../../../stage/clock.ts";
+import { useScreensLang } from "../../../stage/lessonLanguage.ts";
 import type { PressModality } from "../../../stage/press.ts";
 import type { Language } from "../../../stage/types.ts";
 import type { Missing } from "../../complete.ts";
@@ -60,9 +61,12 @@ function Shape({
   clock?: Clock | undefined;
   onToggle?(i: number, at: Instant, modality: PressModality): void;
 }): JSX.Element {
+  // The shape holds no lesson text: its names are the screens' words (dl-uukj.41).
+  const screensLang = useScreensLang(language);
   return (
     <div
       data-tone={tone}
+      {...screensLang}
       className={cn(
         "w-full max-w-xl rounded-xl border-2 p-3",
         tone === "idle" ? "border-transparent" : TONE_CLASS[tone],
