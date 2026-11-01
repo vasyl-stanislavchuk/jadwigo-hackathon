@@ -7,7 +7,10 @@ decision 8: a clean machine works).
    downloads the bucket's khan/converted/ into JADWIGO_KHAN_DIR (default ~/.cache/jadwigo-bank/khan)
    as converted-pl.json, converted.json and readiness.json (TOP_FILES in jadwigo-bank
    tools/khan/sync.py). The bucket is JADWIGO_KHAN_BUCKET, else SSM /jadwigo/bank/content-bucket,
-   else its known name; AWS_PROFILE defaults to jadwigo.
+   else its known name. The AWS profile is JADWIGO_AWS_PROFILE, else jadwigo
+   (`settings_keys.aws_profile()`). The shell's AWS_PROFILE is ignored: it may name another
+   project's profile, whose expired token failed the pull with botocore InvalidToken (dl-n9fr.64).
+   When the sync fails, the error names the profile it used.
 
 It prints what changed: the checkout's commits and each converted file, new, updated or unchanged.
 """
@@ -29,7 +32,6 @@ from jw.errors import JwError, emit
 BUCKET = "JADWIGO_KHAN_BUCKET"
 BUCKET_PARAMETER = "/jadwigo/bank/content-bucket"
 KNOWN_BUCKET = "jadwigo-content-843109108289"  # infra/terraform/modules/content/variables.tf
-DEFAULT_PROFILE = "jadwigo"
 REGION = "eu-central-1"
 PREFIX = "khan/converted"
 # What the converted prefix lands as in the Khan dir (jadwigo-bank tools/khan/sync.py TOP_FILES).
@@ -83,7 +85,7 @@ def bucket() -> tuple[str, str]:
     named = os.environ.get(BUCKET, "").strip()
     if named:
         return named, BUCKET
-    profile = os.environ.get("AWS_PROFILE") or DEFAULT_PROFILE
+    profile = settings_keys.aws_profile()
     try:
         value = _run(
             [
@@ -119,14 +121,22 @@ def sync(bank: Path) -> dict[str, Any]:
     """Download the bucket's converted files into the Khan dir; report each file's change."""
     khan = settings_keys.khan_dir()
     name, source = bucket()
+    profile = settings_keys.aws_profile()
     env = {
         **os.environ,
         settings_keys.JADWIGO_KHAN_DIR: str(khan),
         BUCKET: name,
-        "AWS_PROFILE": os.environ.get("AWS_PROFILE") or DEFAULT_PROFILE,
+        "AWS_PROFILE": profile,
     }
     before = _snapshot(khan)
-    _run([*shlex.split(settings_keys.KHAN_SYNC_COMMAND), "--prefix", PREFIX], cwd=bank, env=env)
+    try:
+        _run([*shlex.split(settings_keys.KHAN_SYNC_COMMAND), "--prefix", PREFIX], cwd=bank, env=env)
+    except PullFailed as exc:
+        raise PullFailed(
+            f"{exc} (AWS profile {profile})",
+            hint=f"Check that profile with `aws sts get-caller-identity --profile {profile}`, or"
+            f" set {settings_keys.JADWIGO_AWS_PROFILE} to the profile for jadwigo's account.",
+        ) from exc
     after = _snapshot(khan)
     files = []
     for file in FILES:
@@ -140,7 +150,13 @@ def sync(bank: Path) -> dict[str, Any]:
             else "updated"
         )
         files.append({"name": file, "bytes": after[file][0], "change": change})
-    return {"khan_dir": str(khan), "bucket": name, "bucket_from": source, "files": files}
+    return {
+        "khan_dir": str(khan),
+        "bucket": name,
+        "bucket_from": source,
+        "aws_profile": profile,
+        "files": files,
+    }
 
 
 def pull() -> dict[str, Any]:
@@ -174,7 +190,8 @@ def pull_command(json_mode: bool) -> None:
     click.echo(f"bank checkout {repo['path']}: {moved}")
     converted = result["converted"]
     click.echo(
-        f"converted files in {converted['khan_dir']} (bucket from {converted['bucket_from']}):"
+        f"converted files in {converted['khan_dir']} (bucket from {converted['bucket_from']},"
+        f" AWS profile {converted['aws_profile']}):"
     )
     for file in converted["files"]:
         click.echo(f"  {file['name']}: {file['change']}, {file['bytes']:,} bytes")

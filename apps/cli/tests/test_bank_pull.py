@@ -39,6 +39,9 @@ khan.mkdir(parents=True, exist_ok=True)
 Path(os.environ["FAKE_LOG"]).open("a").write(json.dumps({
     "argv": sys.argv[1:], "cwd": os.getcwd(), "bucket": os.environ.get("JADWIGO_KHAN_BUCKET"),
     "profile": os.environ.get("AWS_PROFILE")}) + "\\n")
+if os.environ.get("FAKE_SYNC_FAILS"):
+    sys.exit("botocore.exceptions.ClientError: An error occurred (InvalidToken) when calling the"
+             " ListObjectsV2 operation: The provided token is malformed or otherwise invalid.")
 (khan / "converted-pl.json").write_text('{"generated_by": "fake", "items": []}')
 (khan / "readiness.json").write_text('{"rules_version": "sha256:r2"}')
 """
@@ -57,7 +60,8 @@ def fakes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
     monkeypatch.setenv("FAKE_LOG", str(log))
     monkeypatch.setenv("JADWIGO_KHAN_BUCKET", "test-bucket")
-    monkeypatch.delenv("AWS_PROFILE", raising=False)
+    # The shell's own profile, for another project: jw bank pull must never use it (dl-n9fr.64).
+    monkeypatch.setenv("AWS_PROFILE", "mfa")
     monkeypatch.setenv("JADWIGO_KHAN_DIR", str(tmp_path / "khan"))
     monkeypatch.setattr(settings_keys, "DEFAULT_BANK_DIR", tmp_path / "share" / "bank")
     monkeypatch.setattr(settings_keys, "KHAN_SYNC_COMMAND", f"{sys.executable} {sync} down")
@@ -141,8 +145,52 @@ def test_the_bucket_comes_from_ssm_else_the_known_name(
     aws.chmod(aws.stat().st_mode | stat.S_IEXEC)
     assert bank.bucket() == ("from-ssm", "SSM /jadwigo/bank/content-bucket")
     assert "ssm get-parameter --name /jadwigo/bank/content-bucket" in _log(fakes)[-1]
+    assert "--profile jadwigo " in _log(fakes)[-1]
     aws.write_text("#!/bin/sh\nexit 255\n")
     assert bank.bucket() == (bank.KNOWN_BUCKET, "the known name")
+
+
+def test_jadwigo_aws_profile_names_the_profile_and_the_shell_s_aws_profile_never_does(
+    fakes: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("JADWIGO_AWS_PROFILE", "jadwigo-admin")
+    monkeypatch.delenv("JADWIGO_KHAN_BUCKET")
+    aws = tmp_path / "bin" / "aws"
+    aws.write_text('#!/bin/sh\necho "$@" >> "$FAKE_LOG"\necho from-ssm\n')
+    aws.chmod(aws.stat().st_mode | stat.S_IEXEC)
+    result = CliRunner().invoke(main, ["bank", "pull"])
+    assert result.exit_code == 0, result.output
+    assert "AWS profile jadwigo-admin" in result.output
+    lines = _log(fakes)
+    assert any("--profile jadwigo-admin " in line for line in lines)
+    assert json.loads(lines[-1])["profile"] == "jadwigo-admin"
+    assert not any("mfa" in line for line in lines)
+
+
+def test_the_profile_comes_from_the_operator_s_file_too(
+    fakes: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    env_file = tmp_path / "bank.env"
+    env_file.write_text("JADWIGO_AWS_PROFILE=from-file\n")
+    env_file.chmod(0o600)
+    monkeypatch.setenv("JW_BANK_ENV_FILE", str(env_file))
+    result = CliRunner().invoke(main, ["bank", "pull", "--json"])
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output)["converted"]["aws_profile"] == "from-file"
+    assert json.loads(_log(fakes)[-1])["profile"] == "from-file"
+
+
+def test_a_failed_sync_names_the_profile_it_used(
+    fakes: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("FAKE_SYNC_FAILS", "1")
+    result = CliRunner().invoke(main, ["bank", "pull", "--json"])
+    assert result.exit_code == 1
+    error = json.loads(result.output)["error"]
+    assert "InvalidToken" in error["message"]
+    assert error["message"].endswith("(AWS profile jadwigo)")
+    assert "JADWIGO_AWS_PROFILE" in error["hint"]
+    assert "--profile jadwigo" in error["hint"]
 
 
 def test_env_example_names_the_default_jw_bank_pull_fills() -> None:
