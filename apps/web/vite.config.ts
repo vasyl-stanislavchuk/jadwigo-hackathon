@@ -5,6 +5,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import { builderPlugin } from "./dev/builder-plugin.ts";
+import { enginePlugin } from "./dev/engine-plugin.ts";
 import { apiTarget, authConfig, webPort } from "./src/config.ts";
 import { devMediaUrl, NO_MEDIA_URL } from "./src/media.ts";
 
@@ -54,11 +55,13 @@ export default defineConfig(({ command, mode }) => {
         )
       : undefined;
   return {
-    // The lesson builder's dev-server side applies on `serve` only (dev/builder-plugin.ts, dl-a38n).
+    // The lesson builder's and the AI engine's dev-server sides apply on `serve` only
+    // (dev/builder-plugin.ts, dl-a38n; dev/engine-plugin.ts, dl-z5ja).
     plugins: [
       react(),
       tailwindcss(),
       builderPlugin(),
+      enginePlugin(),
       ...(media === undefined ? [] : [mediaGuard(media)]),
     ],
     define: {

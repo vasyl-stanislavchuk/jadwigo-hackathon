@@ -100,6 +100,7 @@ export function jsonLd(): Record<string, unknown> {
         "@id": `${origin}/#organization`,
         name: siteName,
         url: `${origin}/`,
+        logo: `${origin}/icon-512.png`,
       },
       {
         "@type": "WebSite",

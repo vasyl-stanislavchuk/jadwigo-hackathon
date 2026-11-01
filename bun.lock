@@ -90,7 +90,9 @@
       "name": "@jadwigo/site",
       "dependencies": {
         "@astrojs/sitemap": "3.7.4",
+        "@fontsource/andika": "catalog:",
         "@jadwigo/config": "workspace:*",
+        "@jadwigo/contracts": "workspace:*",
         "@jadwigo/ui": "workspace:*",
         "astro": "7.4.2",
       },
@@ -110,8 +112,10 @@
         "@jadwigo/contracts": "workspace:*",
         "@jadwigo/copy": "workspace:*",
         "@jadwigo/core": "workspace:*",
+        "@jadwigo/jadwigo-ai": "workspace:*",
         "@jadwigo/lesson-import": "workspace:*",
         "@jadwigo/lesson-kit": "workspace:*",
+        "@jadwigo/store": "workspace:*",
         "@jadwigo/ui": "workspace:*",
         "@supabase/supabase-js": "2.118.0",
         "class-variance-authority": "catalog:",
@@ -197,6 +201,21 @@
         "@jadwigo/testing": "workspace:*",
         "@types/node": "catalog:",
         "fast-check": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:",
+      },
+    },
+    "packages/jadwigo-ai": {
+      "name": "@jadwigo/jadwigo-ai",
+      "dependencies": {
+        "@jadwigo/contracts": "workspace:*",
+        "@jadwigo/core": "workspace:*",
+        "@jadwigo/lesson-import": "workspace:*",
+        "@jadwigo/store": "workspace:*",
+      },
+      "devDependencies": {
+        "@jadwigo/testing": "workspace:*",
+        "@types/node": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:",
       },
@@ -718,6 +737,8 @@
     "@jadwigo/core": ["@jadwigo/core@workspace:packages/core"],
 
     "@jadwigo/docs": ["@jadwigo/docs@workspace:apps/docs"],
+
+    "@jadwigo/jadwigo-ai": ["@jadwigo/jadwigo-ai@workspace:packages/jadwigo-ai"],
 
     "@jadwigo/lesson-import": ["@jadwigo/lesson-import@workspace:packages/lesson-import"],
 

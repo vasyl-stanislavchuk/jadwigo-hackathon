@@ -10,65 +10,12 @@
 
 import type { ReviewQuestion } from "@jadwigo/contracts";
 import { type Category, copy, type Language } from "@jadwigo/copy";
-import {
-  FamilyView,
-  LessonTheme,
-  type PageFamilySpec,
-  RichText,
-  stillClock,
-  ViewMode,
-} from "@jadwigo/lesson-kit";
+import { RichText } from "@jadwigo/lesson-kit";
 import { Badge, Button, Card, CardContent, Heading } from "@jadwigo/ui";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ReactElement, ReactNode } from "react";
-import { withMedia } from "../media.ts";
 import { ENDED_ICON, ENDED_WORD } from "./outcome.ts";
-
-/**
- * The page's half of the question, as the family view takes it: never a key. The player's open
- * question has the same four fields, so PlayScreen draws its question from here too.
- */
-export function specOf(
-  question: Pick<ReviewQuestion, "seq" | "say" | "question_type" | "question">,
-): PageFamilySpec {
-  return {
-    id: `q${question.seq}`,
-    say: question.say,
-    question_type: question.question_type,
-    family: question.question.family,
-    // A picture ref becomes its media URL before the kit sees a src (src/media.ts).
-    data: withMedia(question.question.data),
-  } as PageFamilySpec;
-}
-
-function Still({
-  question,
-  value,
-  language,
-  category,
-}: {
-  question: ReviewQuestion;
-  value: unknown;
-  language: Language;
-  category: Category;
-}): ReactElement {
-  return (
-    <div className="min-w-0">
-      <LessonTheme>
-        <FamilyView
-          mode={ViewMode.Solution}
-          spec={specOf(question) as never}
-          language={language}
-          category={category}
-          // A still view has no timing to measure: the pinned clock draws it the same every time.
-          clock={stillClock}
-          value={value as never}
-          solution={question.solution as never}
-        />
-      </LessonTheme>
-    </div>
-  );
-}
+import { drawable, Still } from "./Still.tsx";
 
 /**
  * The review step.
@@ -111,9 +58,7 @@ export function ReviewStep({
   const { ended, answer, reveal } = question;
   const Icon = ENDED_ICON[ended];
   const right = ended === "correct";
-  // An explain question is never asked in v0, and has no value to draw again (decision
-  // 2026-10-28-in-v0-the-server-never-asks-an-explain-question-a-lesson-plays-i).
-  const drawn = question.question.family !== "explain";
+  const drawn = drawable(question);
   const lines = [
     ...(reveal.why === undefined ? [] : [reveal.why]),
     ...(reveal.worked_solution ?? []),

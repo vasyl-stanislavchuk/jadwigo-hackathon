@@ -117,6 +117,10 @@ describe("createClient", () => {
       lesson_id: "les_2h4m8gyw0fb1cvz2nkqw0px8fq",
       title: "Równe grupy",
       language: "pl",
+      subject: "math",
+      grade: null,
+      question_count: 4,
+      first_say: "Ile to jest 2 razy 5?",
     };
     const { fetch, sent } = stub(200, { lessons: [lesson] });
     const reply = await createClient({ base: "", fetch }).featuredLessons();
