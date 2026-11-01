@@ -67,6 +67,12 @@ JADWIGO_KHAN_DIR = "JADWIGO_KHAN_DIR"
 DEFAULT_KHAN_DIR = Path.home() / ".cache" / "jadwigo-bank" / "khan"
 KHAN_SYNC_COMMAND = "uv run python -m tools.khan.sync down"
 
+# The AWS profile `jw bank pull` reads the bucket with (dl-n9fr.64). Never the shell's AWS_PROFILE,
+# which an operator may export for another project: an expired one failed the pull with botocore
+# InvalidToken.
+JADWIGO_AWS_PROFILE = "JADWIGO_AWS_PROFILE"
+DEFAULT_AWS_PROFILE = "jadwigo"
+
 # The converted Khan items file, read by `jw question item` and the question_item tool
 # (dl-e8ov.5.38.2). Unset: <JADWIGO_KHAN_DIR>/converted-pl.json, the Polish file the sync writes
 # (dl-e8ov.5.38.8); converted.json beside it is the English one.
@@ -99,6 +105,7 @@ KEYS = (
     JW_BANK_TIMEOUT_SECS,
     JADWIGO_BANK_DIR,
     JADWIGO_KHAN_DIR,
+    JADWIGO_AWS_PROFILE,
     JW_KHAN_CONVERTED,
     JW_KHAN_CONVERTED_PL,
     JW_KHAN_CONVERTED_EN,
@@ -166,6 +173,12 @@ def khan_dir() -> Path:
     """The synced Khan copy: JADWIGO_KHAN_DIR, else ~/.cache/jadwigo-bank/khan."""
     configured = setting(JADWIGO_KHAN_DIR)
     return Path(configured).expanduser() if configured else DEFAULT_KHAN_DIR
+
+
+def aws_profile() -> str:
+    """The AWS profile `jw bank pull` uses: JADWIGO_AWS_PROFILE, else jadwigo. AWS_PROFILE is
+    ignored on purpose (dl-n9fr.64)."""
+    return setting(JADWIGO_AWS_PROFILE) or DEFAULT_AWS_PROFILE
 
 
 def bank_dir() -> Path:
