@@ -245,6 +245,10 @@ async function steer(
     text: body.text,
     ...(body.source === undefined ? {} : { source: body.source }),
     ...(body.question_ids === undefined ? {} : { question_ids: body.question_ids }),
+    // A lesson_edit steer's change and the revision it was made on (dl-z5ja.116): the runner
+    // applies it as a lesson_revision with no model call (dl-z5ja.76).
+    ...(body.patch === undefined ? {} : { patch: body.patch }),
+    ...(body.base_revision === undefined ? {} : { base_revision: body.base_revision }),
   };
   const { run, inbox } = await acceptMessage(engine(store, deps), {
     pod,
@@ -256,9 +260,29 @@ async function steer(
     inbox.kind === "steer" &&
     inbox.payload.text === payload.text &&
     inbox.payload.source === payload.source &&
-    JSON.stringify(inbox.payload.question_ids) === JSON.stringify(payload.question_ids);
+    JSON.stringify(inbox.payload.question_ids) === JSON.stringify(payload.question_ids) &&
+    canonical(inbox.payload.patch) === canonical(payload.patch) &&
+    inbox.payload.base_revision === payload.base_revision;
   if (!same || run.conversation_id !== id) throw mismatch();
   return { run };
+}
+
+/**
+ * A JSON value with its object keys sorted, so a patch read back from jsonb (which keeps keys in
+ * its own order) compares equal to the one the page sent.
+ */
+function canonical(value: unknown): string | undefined {
+  const sorted = (v: unknown): unknown =>
+    Array.isArray(v)
+      ? v.map(sorted)
+      : v !== null && typeof v === "object"
+        ? Object.fromEntries(
+            Object.keys(v)
+              .sort()
+              .map((k) => [k, sorted((v as Record<string, unknown>)[k])]),
+          )
+        : v;
+  return value === undefined ? undefined : JSON.stringify(sorted(value));
 }
 
 /** `GET /api/v1/conversations/{id}/runs`: `NotFound` for a conversation outside the pod. */
