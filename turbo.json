@@ -22,6 +22,10 @@
     "test:int": {
       "cache": false
     },
+    "@jadwigo/api#test:int": {
+      "cache": false,
+      "dependsOn": ["@jadwigo/jadwigo-ai#test:int"]
+    },
     "//#typecheck": {},
     "//#test": {},
     "dev": {
