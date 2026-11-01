@@ -1,0 +1,64 @@
+---
+// The one-time note that offers the page's twin (dl-w0b4.87). Rendered hidden, in the twin's
+// language, only when the build serves the twin; a small script shows it once per browser whose
+// language is the twin's (src/lib/note.ts). No cookie, no framework, no third-party script. The
+// header's switch is always there besides (dl-w0b4.81).
+import type { Language } from "@jadwigo/config";
+import { m } from "@jadwigo/copy/messages";
+
+interface Props {
+  lang: Language;
+  twin: Language;
+  href: string;
+}
+
+const { lang, twin, href } = Astro.props;
+const words = { locale: twin } as const;
+---
+
+<aside class="language-note" lang={twin} data-page={lang} data-twin={twin} hidden>
+  <div class="wrap">
+    <p>{m.site_note_text({}, words)}</p>
+    <a class="btn" href={href} hreflang={twin}>{m.site_note_go({}, words)}</a>
+    <button type="button" class="dismiss">{m.site_note_dismiss({}, words)}</button>
+  </div>
+</aside>
+
+<script>
+  import { offerOnce } from "../lib/note.ts";
+
+  const note = document.querySelector<HTMLElement>(".language-note");
+  const page = note?.dataset["page"];
+  const twin = note?.dataset["twin"];
+  if (note && page && twin) {
+    let storage: Storage | null = null;
+    try {
+      storage = window.localStorage;
+    } catch {
+      // A browser that refuses storage gets no note.
+    }
+    if (storage && offerOnce(storage, navigator.language, page, twin)) {
+      note.hidden = false;
+      note.querySelector(".dismiss")?.addEventListener("click", () => {
+        note.hidden = true;
+      });
+    }
+  }
+</script>
+
+<style>
+  /* Fixed to the bottom of the screen, so showing it after load shifts nothing on the page (no layout
+     shift for Lighthouse), in the help colours, until it is followed or dismissed. */
+  .language-note {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    background: var(--jw-help); color: var(--jw-help-ink); border-top: 1px solid var(--jw-line);
+  }
+  .language-note .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; padding-top: 0.75rem; padding-bottom: 0.75rem; }
+  .language-note p { margin-right: auto; font-weight: 700; }
+  .language-note .btn { min-height: 44px; padding: 0 1rem; }
+  .dismiss {
+    min-height: 44px; padding: 0 0.75rem; border: 0; background: none; font: inherit;
+    color: inherit; text-decoration: underline; cursor: pointer;
+  }
+  .dismiss:focus-visible { outline: 3px solid var(--jw-focus); outline-offset: 3px; border-radius: 6px; }
+</style>
