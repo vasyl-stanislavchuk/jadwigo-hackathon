@@ -248,8 +248,11 @@ function Worked({ lines, blankLast }: { lines: string[]; blankLast: boolean }): 
 /** One card of the help note as written (families/help.ts StackCard): its words, its pictures, its
  * worked lines with the blank the almost-there rung leaves. */
 function Hint({ hint }: { hint: PageHintCard }): JSX.Element {
+  // A hint is the lesson's text: its words and worked lines speak the lesson's language, while the
+  // help note's heading, counter and buttons keep the page's (dl-uukj.39).
+  const lessonLang = useLessonLang();
   return (
-    <div data-hint className="flex flex-col gap-2">
+    <div data-hint className="flex flex-col gap-2" {...lessonLang}>
       {hint.text.trim() !== "" && <RichText text={hint.text} />}
       {hint.pictures?.map((p, i) => (
         <Picture key={`${p.src}|${i}`} {...p} />
@@ -1047,7 +1050,14 @@ export function StepShell({
           )}
           {hint && !workedSolution && help === null && !ended && (
             <HelpCard state="boost" language={language}>
-              <RichText text={hint} />
+              {/* The boost is the lesson's words; the card's heading stays the page's (dl-uukj.39). */}
+              {"lang" in lessonLang ? (
+                <div {...lessonLang}>
+                  <RichText text={hint} />
+                </div>
+              ) : (
+                <RichText text={hint} />
+              )}
             </HelpCard>
           )}
           {cardLines.length > 0 && (
