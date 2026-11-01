@@ -1,0 +1,115 @@
+{
+  "$comment": "The first Polish sample batch for workflows/jadwigo-lesson-review (dl-r772.34). The lines without `planted` are the hand-written words of evals/compose/fixtures/words.json and 2 parent lines; each line with `planted` breaks the checklist item it names, on purpose. The reviewer sees the batch without `planted`. Fixture text, no learner's words.",
+  "language": "pl",
+  "lines": [
+    {
+      "id": "fxc101.twin",
+      "reader": "child",
+      "text": "Policz kropki w rzędach: 6 · 4 =",
+      "say": "Ile kropek jest w czterech rzędach po sześć?"
+    },
+    {
+      "id": "fxc101.added_instead",
+      "reader": "child",
+      "text": "6 + 3 to dodawanie. Tu są 3 rzędy po 6 kropek."
+    },
+    {
+      "id": "fxc102.boost",
+      "reader": "child",
+      "text": "Policz rzędy: są 4. W każdym jest 6 kropek, więc dodawaj po 6."
+    },
+    {
+      "id": "fxc102.added_instead",
+      "reader": "child",
+      "text": "Wyszło 10, bo 6 i 4 zostały dodane. Tu masz 4 rzędy i w każdym 6 kropek."
+    },
+    {
+      "id": "fxc103.boost",
+      "reader": "child",
+      "text": "Jest 7 rzędów po 6 kropek. Dodawaj po 6, aż policzysz wszystkie rzędy."
+    },
+    {
+      "id": "fxc202.twin",
+      "reader": "child",
+      "text": "W 4 torbach jest po 6 jabłek. Ile razem?",
+      "say": "W czterech torbach jest po sześć jabłek. Ile razem?"
+    },
+    {
+      "id": "parent.week",
+      "reader": "parent",
+      "text": "Dziecko rozwiązało w tym tygodniu 18 pytań z mnożenia. Następna lekcja wróci do mnożenia przez 7."
+    },
+    {
+      "id": "parent.attention",
+      "reader": "parent",
+      "text": "Mnożenie przez 7 wymaga uwagi. Warto przy następnej lekcji policzyć grupy na kropkach."
+    },
+    {
+      "id": "old.participle",
+      "reader": "child",
+      "text": "Zostały jeszcze nie policzone kropki. Policz je po kolei.",
+      "planted": "pl-9"
+    },
+    {
+      "id": "old.by",
+      "reader": "child",
+      "text": "Pomyśl, czyby nie policzyć rzędów jeszcze raz.",
+      "planted": "pl-9"
+    },
+    {
+      "id": "old.comparative",
+      "reader": "child",
+      "text": "Wybierz liczbę nie większą niż 10.",
+      "planted": "pl-9"
+    },
+    {
+      "id": "old.inhabitants",
+      "reader": "child",
+      "text": "W 3 autobusach jedzie po 5 krakowian. Ile osób jedzie razem?",
+      "planted": "pl-9"
+    },
+    {
+      "id": "bare.wrong",
+      "reader": "child",
+      "text": "Źle. Spróbuj jeszcze raz.",
+      "planted": "pl-5"
+    },
+    {
+      "id": "easy",
+      "reader": "child",
+      "text": "To proste, policz jeszcze raz grupy.",
+      "planted": "pl-6"
+    },
+    {
+      "id": "gender.guess",
+      "reader": "child",
+      "text": "Policzyłeś wszystkie rzędy!",
+      "planted": "pl-4"
+    },
+    {
+      "id": "english",
+      "reader": "child",
+      "text": "Great job! Policz teraz grupy.",
+      "planted": "pl-1"
+    },
+    {
+      "id": "case",
+      "reader": "child",
+      "text": "Na stole leży 5 jabłka. Ile jabłek leży na stole?",
+      "planted": "pl-3"
+    },
+    {
+      "id": "say.mismatch",
+      "reader": "child",
+      "text": "W 4 torbach jest po 6 jabłek. Ile razem?",
+      "say": "W pięciu torbach jest po sześć jabłek. Ile razem?",
+      "planted": "pl-7"
+    },
+    {
+      "id": "parent.score",
+      "reader": "parent",
+      "text": "Wynik dziecka to 60 procent poprawnych odpowiedzi.",
+      "planted": "pl-5"
+    }
+  ]
+}
