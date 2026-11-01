@@ -534,7 +534,11 @@ describe("runStep and drain", () => {
     const results = (await t.log(run)).flatMap((e) =>
       e.type === "tool_result" ? [e.payload] : [],
     );
-    expect(results.find((r) => r.verb === "lesson_draft")).not.toHaveProperty("view");
+    // Every verb answers a typed view now (dl-z5ja.69): lesson_draft names the steps it wrote.
+    expect(results.find((r) => r.verb === "lesson_draft")?.view).toMatchObject({
+      kind: "lesson_draft",
+      data: { changed_step_ids: expect.arrayContaining(["s01"]) },
+    });
     const checked = results.find((r) => r.verb === "lesson_check");
     expect(checked?.error).toBeNull();
     expect(checked?.view).toEqual({
