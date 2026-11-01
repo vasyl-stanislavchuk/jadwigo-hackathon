@@ -105,10 +105,18 @@ export interface RunStore {
   listRunsDue(now: string): Promise<readonly { pod: PodId; run: Run }[]>;
   /**
    * The Muse spend of a lane (dl-z5ja.89): the `cost_usd` of every `model_response` event of the
-   * runs of `workflows`, in any pod, logged at or after `since`. Not scoped, like `listRunsDue`: on
+   * runs of `workflows`, in any pod, logged at or after `since`, and of their failed calls
+   * (`recordFailedMuseCall`, dl-z5ja.123). Not scoped, like `listRunsDue`: on
    * Postgres it is `muse_ledger.spent_usd`, which only `jadwigo_runner` may call.
    */
   spentUsd(workflows: readonly RunWorkflow[], since: string): Promise<number>;
+  /**
+   * Records a Muse call of `run` that failed after it spent `cost_usd` (dl-z5ja.123): it logs no
+   * `model_response`, so `spentUsd` would miss it. The pod is the run's. Not scoped, like
+   * `spentUsd`: on Postgres it is `muse_ledger.record_failed_call`, which only `jadwigo_runner` may
+   * call. An unknown run records nothing; a cost of 0 or less is `BadRequest`.
+   */
+  recordFailedMuseCall(run: RunId, call_no: number, cost_usd: number): Promise<void>;
 
   /** Written once: the same id again returns the stored row. */
   createConversation(pod: PodId, conversation: NewConversation): Promise<Conversation>;

@@ -214,6 +214,8 @@ export class InMemoryStore implements Store {
   readonly #conversations = new Map<string, Conversation>();
   /** By id, in the order created. */
   readonly #runs = new Map<string, Run>();
+  /** Muse calls that failed after they spent (dl-z5ja.123), in the order recorded. */
+  readonly #failedCalls: { run: RunId; cost_usd: number; at: string }[] = [];
   /** By `<pod> <run> <account>`, in the order first rated: one rating per run and account. */
   readonly #ratings = new Map<string, RunRating>();
   /** By run id, in `seq` order. */
@@ -1466,9 +1468,21 @@ export class InMemoryStore implements Store {
       .map((run) => ({ pod: run.pod_id, run }));
   }
 
+  async recordFailedMuseCall(run: RunId, call_no: number, cost_usd: number): Promise<void> {
+    if (!(cost_usd > 0) || !Number.isInteger(call_no) || call_no < 1)
+      throw new StoreError(ErrorType.enum.BadRequest, "a failed call that spent, by its call_no");
+    if (!this.#runs.has(run)) return;
+    this.#failedCalls.push({ run, cost_usd, at: this.#at() });
+  }
+
   async spentUsd(workflows: readonly RunWorkflow[], since: string): Promise<number> {
     const from = Date.parse(utc(since));
     let total = 0;
+    for (const call of this.#failedCalls) {
+      const r = this.#runs.get(call.run);
+      if (r && workflows.includes(r.workflow) && Date.parse(call.at) >= from)
+        total += call.cost_usd;
+    }
     for (const run of this.#runs.values()) {
       if (!workflows.includes(run.workflow)) continue;
       for (const event of this.#runEvents.get(run.id) ?? [])
