@@ -362,6 +362,20 @@ export function runContract(name: string, make: () => Promise<Store> | Store): v
         ).rejects.toMatchObject(NOT_FOUND);
       },
     );
+
+    frozen("lands one conversation when 3 writes of one id race (dl-z5ja.99)", async () => {
+      const store = await make();
+      const a = await scope(store);
+      const id = conversationId();
+      const racers = await Promise.all(
+        [1, 2, 3].map(() =>
+          store.createConversation(a.pod, { id, created_by: a.account, title: "Equal groups" }),
+        ),
+      );
+      expect(racers[1]).toEqual(racers[0]);
+      expect(racers[2]).toEqual(racers[0]);
+      expect(await store.listRuns(a.pod, id)).toEqual([]);
+    });
   });
 }
 
