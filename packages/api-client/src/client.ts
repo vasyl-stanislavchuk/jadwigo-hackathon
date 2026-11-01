@@ -156,7 +156,10 @@ export interface LearnerKnowledgeClient {
 export interface ConversationClient {
   /** Once by `event_id`: a resend returns the same conversation. */
   createConversation(body: ConversationCreate): Promise<Conversation>;
-  /** Once by `event_id`; the same id with other text is `EventIdMismatch`. */
+  /**
+   * Once by `event_id`; the same id with another body is `EventIdMismatch`. `kind: "steer"` sends
+   * a correction to the open turn, such as a lesson-pane edit with its `question_ids`.
+   */
   postMessage(conversationId: ConversationId, body: ConversationMessage): Promise<RunAccepted>;
   listConversationRuns(conversationId: ConversationId): Promise<ConversationRuns>;
   /** The events after `after`, the last `seq` the caller holds; the whole log without it. */

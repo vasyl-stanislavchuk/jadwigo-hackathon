@@ -2,6 +2,7 @@ import {
   AssignmentId,
   AttemptId,
   ConversationId,
+  type ConversationMessage,
   EventId,
   GoalId,
   LearnerId,
@@ -521,6 +522,21 @@ describe("the conversation calls", () => {
       },
     ]);
     expect(reply.run.id).toBe(RUN);
+  });
+
+  it("sends a lesson-pane edit as a steer on the message route", async () => {
+    const { fetch, sent } = stub(201, { run });
+    const body: ConversationMessage = {
+      event_id: EVENT,
+      kind: "steer",
+      source: "lesson_edit",
+      question_ids: ["q2"],
+      text: "Smaller numbers here",
+    };
+    await createClient({ base: "", fetch, token: signedIn }).postMessage(CONVERSATION, body);
+    expect(sent).toMatchObject([
+      { url: `/api/v1/conversations/${CONVERSATION}/messages`, method: "POST", body },
+    ]);
   });
 
   it("puts the events cursor in the query string, and leaves it out when none is given", async () => {
