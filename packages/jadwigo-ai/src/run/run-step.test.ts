@@ -1707,6 +1707,41 @@ describe("a parent's patch (dl-z5ja.76)", () => {
     ).toEqual([1, 2]);
   });
 
+  it("resolves each patch once, with why when it is not applied (dl-z5ja.130)", async () => {
+    const resolutions = async (patch: Record<string, unknown>, base: number, lesson = true) => {
+      const t = await setup(
+        [...(lesson ? [drafting()] : []), { text: "Done." }],
+        lesson ? real() : fakeVerbs(),
+      );
+      const run = await t.say("Halves.");
+      await drain(t.deps);
+      const sent = steer(patch, base);
+      await t.send(sent);
+      await drain(t.deps);
+      // A stray step for the ended turn writes no second resolution.
+      const { attempt } = await t.run(run);
+      await t.deps.queue.send({ run_id: run, attempt });
+      await drain(t.deps);
+      return (await t.log(run)).flatMap((e) =>
+        e.type === "patch_resolved"
+          ? [{ ...e.payload, mine: e.payload.steer_event_id === sent.event_id }]
+          : [],
+      );
+    };
+    expect(await resolutions({ title: "Mine" }, 1)).toEqual([
+      { steer_event_id: expect.any(String), applied: true, revision: 2, mine: true },
+    ]);
+    expect(await resolutions({ title: "Mine" }, 7)).toMatchObject([
+      { applied: false, reason: "stale_base", mine: true },
+    ]);
+    expect(await resolutions({ script: null }, 1)).toMatchObject([
+      { applied: false, reason: "invalid_file", mine: true },
+    ]);
+    expect(await resolutions({ title: "Mine" }, 1, false)).toMatchObject([
+      { applied: false, reason: "no_lesson", mine: true },
+    ]);
+  });
+
   it("leaves an ended turn's other inbox rows unlogged", async () => {
     const t = await setup([{ text: "Done." }]);
     const run = await t.say("Halves.");
@@ -1719,10 +1754,11 @@ describe("a parent's patch (dl-z5ja.76)", () => {
     });
     await t.send(steer({ title: "Mine" }));
     await drain(t.deps);
-    // No lesson to change and no chat steer logged: the ended turn is as it was, plus the patch's steer.
+    // No lesson to change and no chat steer logged: the ended turn is as it was, plus the patch's
+    // steer and its resolution.
     const after = await t.log(run);
     expect(after.slice(0, ended.length)).toEqual(ended);
-    expect(after.slice(ended.length).map((e) => e.type)).toEqual(["steer"]);
+    expect(after.slice(ended.length).map((e) => e.type)).toEqual(["steer", "patch_resolved"]);
     expect(t.muse.calls).toHaveLength(1);
   });
 });

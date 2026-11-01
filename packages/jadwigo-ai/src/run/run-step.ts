@@ -1073,11 +1073,30 @@ function steerLine(steer: SteerEvent, log: readonly RunEvent[]): string {
   const named = ids ? ` (questions ${ids})` : "";
   const line = `The parent edited the lesson themselves${named}:\n${words}`;
   if (payload.patch === undefined) return line;
-  const applied = revisionOf(log, steer);
-  if (applied === null) {
-    return `${line}\nTheir change was not applied: the lesson changed after they made it, or it would not read as a lesson. Make it with lesson_edit if it still fits.`;
+  const resolved = resolutionOf(log, steer);
+  if (resolved?.applied && resolved.revision !== undefined) {
+    return `${line}\nTheir change is already in the lesson, as revision ${resolved.revision}: keep it, and do not make it again.`;
   }
-  return `${line}\nTheir change is already in the lesson, as revision ${applied}: keep it, and do not make it again.`;
+  const why = resolved?.reason ? NOT_APPLIED[resolved.reason] : NOT_APPLIED.stale_base;
+  return `${line}\nTheir change was not applied: ${why}. Make it with lesson_edit if it still fits.`;
+}
+
+type PatchResolved = Extract<RunEvent, { type: "patch_resolved" }>["payload"];
+type PatchRefusal = NonNullable<PatchResolved["reason"]>;
+
+/** Why a patch was not applied, as the model is told it. */
+const NOT_APPLIED: Record<PatchRefusal, string> = {
+  stale_base: "the lesson changed after they made it",
+  invalid_file: "it would not read as a lesson",
+  no_lesson: "there was no lesson yet to change",
+};
+
+/** The `patch_resolved` event a steer's patch got (dl-z5ja.130), or null before it has one. */
+function resolutionOf(log: readonly RunEvent[], steer: SteerEvent): PatchResolved | null {
+  const found = log.find(
+    (e) => e.type === "patch_resolved" && e.payload.steer_event_id === steer.event_id,
+  );
+  return found?.type === "patch_resolved" ? found.payload : null;
 }
 
 /** The revision a steer's patch was applied as, or null when it was not. */
@@ -1097,28 +1116,47 @@ function revisionOf(log: readonly RunEvent[], steer: SteerEvent): number | null 
  * A patch lands only on the revision it was made on, checked against the conversation's latest
  * across every turn and written through its compare-and-set: a merge patch replaces arrays whole,
  * so on a newer revision it would undo what changed since. And only when the page's lenient parse
- * reads every step of the result, as a verb's change must (`writable` in `verbs/lesson.ts`). A
- * patch not applied stays words for the model, told so. Revisions only grow, so the refusal holds
- * on every later step.
+ * reads every step of the result, as a verb's change must (`writable` in `verbs/lesson.ts`). Each
+ * patch gets one `patch_resolved` event (dl-z5ja.130, Lead decision 49): applied with its revision,
+ * or not, with why (`stale_base`, `invalid_file`, `no_lesson`), so the pane reads the outcome
+ * instead of re-deriving the rule. A patch not applied stays words for the model, told why.
  */
 async function applyPatches(w: Writer): Promise<number> {
   let applied = 0;
   for (const steer of steersOf(w.log)) {
     const { patch, base_revision } = steer.payload;
-    if (patch === undefined || base_revision === undefined) continue;
-    if (revisionOf(w.log, steer) !== null) continue;
-    // The conversation's latest, across every turn: what the compare-and-set checks too.
-    const lesson = await conversationLesson(w.store, w.pod, w.run);
-    if (!lesson || lesson.revision !== base_revision) continue;
-    const lesson_file = mergePatch(lesson.lesson_file, patch);
-    if (!readable(lesson_file)) continue;
-    const written = await w.revise(base_revision, {
-      type: "lesson_revision",
-      run_id: w.run,
-      event_id: await w.id("steer", steer.event_id, "revision"),
-      payload: { revision: base_revision + 1, call_id: steer.event_id, lesson_file },
+    if (patch === undefined || resolutionOf(w.log, steer) !== null) continue;
+    const resolve = async (resolution: Omit<PatchResolved, "steer_event_id">) =>
+      w.append([
+        {
+          type: "patch_resolved",
+          run_id: w.run,
+          event_id: await w.id("steer", steer.event_id, "resolved"),
+          payload: { steer_event_id: steer.event_id, ...resolution },
+        },
+      ]);
+    await w.store.unit(async () => {
+      // A revision written before a throw is found again by its event_id: it was applied.
+      const done = revisionOf(w.log, steer);
+      if (done !== null) return resolve({ applied: true, revision: done });
+      // The conversation's latest, across every turn: what the compare-and-set checks too.
+      const lesson = await conversationLesson(w.store, w.pod, w.run);
+      if (!lesson) return resolve({ applied: false, reason: "no_lesson" });
+      if (base_revision === undefined || lesson.revision !== base_revision) {
+        return resolve({ applied: false, reason: "stale_base" });
+      }
+      const lesson_file = mergePatch(lesson.lesson_file, patch);
+      if (!readable(lesson_file)) return resolve({ applied: false, reason: "invalid_file" });
+      const written = await w.revise(base_revision, {
+        type: "lesson_revision",
+        run_id: w.run,
+        event_id: await w.id("steer", steer.event_id, "revision"),
+        payload: { revision: base_revision + 1, call_id: steer.event_id, lesson_file },
+      });
+      if (!written) return resolve({ applied: false, reason: "stale_base" });
+      applied += 1;
+      return resolve({ applied: true, revision: base_revision + 1 });
     });
-    if (written) applied += 1;
   }
   return applied;
 }
