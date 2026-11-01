@@ -112,6 +112,22 @@ export interface RunStore {
 
   /** Written once: the same id again returns the stored row. */
   createConversation(pod: PodId, conversation: NewConversation): Promise<Conversation>;
+  /** `NotFound` outside `pod`, archived or not. */
+  getConversation(pod: PodId, conversation: ConversationId): Promise<Conversation>;
+  /**
+   * The pod's conversations, newest first (`created_at`, then id), the archived left out unless
+   * `includeArchived` (dl-z5ja.104, decision dl-84wo).
+   */
+  listConversations(
+    pod: PodId,
+    options?: { readonly includeArchived?: boolean },
+  ): Promise<readonly Conversation[]>;
+  /**
+   * Archives a conversation of `pod` at `at` (ISO, UTC) and returns it. Idempotent: archiving one
+   * that is archived already keeps its first `archived_at`. Nothing is deleted: an archived
+   * conversation is kept for the pod and goes only with it. `NotFound` outside `pod`.
+   */
+  archiveConversation(pod: PodId, conversation: ConversationId, at: string): Promise<Conversation>;
   /** Written once: the same id again returns the stored row. A conversation outside `pod` is `NotFound`. */
   createRun(pod: PodId, run: NewRun): Promise<Run>;
   /** A conversation's runs, oldest first (one per turn). `NotFound` for a conversation outside `pod`. */
