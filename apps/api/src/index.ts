@@ -2,6 +2,7 @@ import { createPostgresStore, type Store } from "@jadwigo/store";
 import { createApp } from "./app.ts";
 import { type Authenticate, jwksUrlAuth, lambdaAuth } from "./auth.ts";
 import { authIssuer, authJwksUrl, lambdaDatabaseUrl } from "./config.ts";
+import { lambdaPoke, type PokeStepHost } from "./poke.ts";
 import { type BankDeps, type BucketDeps, lambdaBank, lambdaBucket } from "./questions.ts";
 
 export { createApp } from "./app.ts";
@@ -44,13 +45,15 @@ const lambdaDeps: HandlerDeps = {
  * The search route's bank is the alias in `BANK_SEARCH_ALIAS_ARN`, or none when it is unset.
  * The question body route's bucket is `CONTENT_BUCKET`, else the one SSM names, built once per cold start.
  * API Gateway's authorizer verifies the token routes' tokens; `AUTH_JWKS_URL` and `AUTH_ISSUER`
- * are for a local invoke.
+ * are for a local invoke. The message routes poke the step host's alias in
+ * `RUNNER_LIVE_ALIAS_ARN` after a commit, or none when it is unset.
  */
 export function createHandler(
   deps: HandlerDeps = lambdaDeps,
   bank: BankDeps | undefined = lambdaBank(),
   authenticate: Authenticate = lambdaAuth(jwksUrlAuth(authJwksUrl(), authIssuer())),
   bucket: BucketDeps = lambdaBucket(),
+  poke: PokeStepHost | undefined = lambdaPoke(),
 ) {
   let store: Promise<Store> | undefined;
   let failed = false;
@@ -76,7 +79,7 @@ export function createHandler(
   };
 
   return (event: unknown, context: Context) =>
-    createApp(open(), { authenticate, bank, bucket }).resolve(event, context);
+    createApp(open(), { authenticate, bank, bucket, poke }).resolve(event, context);
 }
 
 /** The Lambda entry (`index.handler` in the bundle `make api-bundle` writes). */

@@ -110,8 +110,8 @@ const makeArgs = (s: Stage, target: string, extra: string[] = [], env = "prod") 
 ];
 
 /** make at a terminal, answering the prompt. */
-function atTerminal(s: Stage, target: string, answer: string) {
-  const out = spawnSync("python3", ["-c", PTY, "make", ...makeArgs(s, target)], {
+function atTerminal(s: Stage, target: string, answer: string, extra: string[] = []) {
+  const out = spawnSync("python3", ["-c", PTY, "make", ...makeArgs(s, target, extra)], {
     env: { ...s.env, PTY_ANSWER: answer },
     encoding: "utf8",
   });
@@ -135,11 +135,15 @@ function fromPipe(
 
 const calls = (s: Stage) => (existsSync(s.log) ? readFileSync(s.log, "utf8") : "");
 
+// lesson-import's prod form is the owner's import of a featured lesson (dl-9t2o.9): the same gate.
+const EXTRA: Record<string, string[]> = { "lesson-import": ["FILE=lesson.json"] };
+
 describe("the prod db targets", { timeout: 60_000 }, () => {
-  for (const target of ["db-seed", "db-push", "db-role"]) {
+  for (const target of ["db-seed", "db-push", "db-role", "lesson-import"]) {
+    const extra = EXTRA[target] ?? [];
     it(`${target} ENV=prod: 'no' at the prompt exits 1 before any link`, () => {
       const s = stage();
-      const { status, output } = atTerminal(s, target, "no");
+      const { status, output } = atTerminal(s, target, "no", extra);
       expect(output).toContain("Type prod");
       // The recipe exits 1, which make reports as its Error 1 (and exits 2 itself).
       expect(status).not.toBe(0);
@@ -151,9 +155,9 @@ describe("the prod db targets", { timeout: 60_000 }, () => {
     it(`${target} ENV=prod: refused with no terminal, even with CONFIRM=prod, exported or given`, () => {
       const s = stage();
       for (const run of [
-        fromPipe(s, target),
-        fromPipe(s, target, ["CONFIRM=prod"]),
-        fromPipe(s, target, [], { CONFIRM: "prod" }),
+        fromPipe(s, target, extra),
+        fromPipe(s, target, [...extra, "CONFIRM=prod"]),
+        fromPipe(s, target, extra, { CONFIRM: "prod" }),
       ]) {
         expect(run.status).not.toBe(0);
         expect(run.output).toContain("run it from your own terminal");

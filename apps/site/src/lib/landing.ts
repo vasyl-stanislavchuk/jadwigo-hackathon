@@ -35,6 +35,8 @@ export const landingSchema = z.object({
   lessons: z.object({
     ...head,
     text,
+    // Shown in place of the cards while a language has no featured lessons (dl-w0b4.85).
+    empty: text,
     play: text,
     all: text,
     subjects: z.object({ math: text, polish: text, english: text }),

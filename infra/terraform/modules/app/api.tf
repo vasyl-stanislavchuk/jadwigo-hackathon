@@ -56,7 +56,10 @@ resource "aws_iam_role" "api" {
 # Its own log group and the one parameter, plus the bank's statements (bank.tf), nothing else. The aws/ssm key's policy lets the
 # account's principals decrypt through SSM, so no KMS statement is needed.
 data "aws_iam_policy_document" "api" {
-  source_policy_documents = [data.aws_iam_policy_document.bank.json]
+  source_policy_documents = [
+    data.aws_iam_policy_document.bank.json,
+    data.aws_iam_policy_document.runner.json,
+  ]
 
   statement {
     sid       = "WritesItsLogs"
@@ -68,6 +71,19 @@ data "aws_iam_policy_document" "api" {
     sid       = "ReadsTheDatabaseUrl"
     actions   = ["ssm:GetParameter"]
     resources = [aws_ssm_parameter.database_url.arn]
+  }
+}
+
+# Invoke the step host's live alias, and only it, when one is named (dl-z5ja.88): the message and
+# Stop routes poke it after their unit commits. With none, no statement.
+data "aws_iam_policy_document" "runner" {
+  dynamic "statement" {
+    for_each = var.runner_alias_arn == "" ? [] : [var.runner_alias_arn]
+    content {
+      sid       = "InvokesTheStepHostLiveAlias"
+      actions   = ["lambda:InvokeFunction"]
+      resources = [statement.value]
+    }
   }
 }
 
@@ -94,12 +110,16 @@ resource "aws_lambda_function" "api" {
   reserved_concurrent_executions = var.reserved_concurrency
 
   environment {
-    variables = {
-      JADWIGO_DB_URL_PARAM  = aws_ssm_parameter.database_url.name
-      BANK_SEARCH_ALIAS_ARN = data.aws_ssm_parameter.bank_search_alias_arn.insecure_value
-      BANK_READ_TOKEN_PARAM = aws_ssm_parameter.bank_read_token.name
-      CONTENT_BUCKET        = var.content_bucket_name
-    }
+    variables = merge(
+      {
+        JADWIGO_DB_URL_PARAM  = aws_ssm_parameter.database_url.name
+        BANK_SEARCH_ALIAS_ARN = data.aws_ssm_parameter.bank_search_alias_arn.insecure_value
+        BANK_READ_TOKEN_PARAM = aws_ssm_parameter.bank_read_token.name
+        CONTENT_BUCKET        = var.content_bucket_name
+      },
+      # The step host the routes poke (dl-z5ja.88); absent, they poke nothing.
+      var.runner_alias_arn == "" ? {} : { RUNNER_LIVE_ALIAS_ARN = var.runner_alias_arn },
+    )
   }
 
   logging_config {

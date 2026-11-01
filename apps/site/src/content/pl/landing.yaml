@@ -50,6 +50,7 @@ lessons:
   description: Krótkie lekcje matematyki i polskiego dla klas 1–3. Bez logowania, od razu w przeglądarce.
   heading: Lekcje na start
   text: Bez logowania. Kliknij i grajcie.
+  empty: Pierwsze lekcje po polsku pojawią się tu wkrótce.
   play: Zagraj
   all: Wszystkie lekcje
   # A card's labels: the subject, "klasa 2", and the question count in its 3 Polish forms (1, 2–4, 5+).

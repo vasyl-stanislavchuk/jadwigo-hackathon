@@ -13,7 +13,7 @@
       "ignoreDependencies": ["satteri", "@jadwigo/cli", "@jadwigo/api-client"]
     },
     "apps/runner": {
-      "entry": ["src/probe-lambda.ts", "src/probe-edge.ts"]
+      "entry": ["src/index.ts", "src/probe-lambda.ts", "src/probe-edge.ts"]
     },
     "apps/web": {
       "entry": ["vite.config.ts", "playwright.config.ts", "e2e/**/*.spec.ts", "e2e/auth-server.ts"],

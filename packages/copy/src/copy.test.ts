@@ -119,7 +119,7 @@ describe("voice and closed-session lines (dl-w2.4)", () => {
   // (dl-9t2o.10): English lines pass the AI reviewer only
   // (jadwigo-question-bank/decisions/2026-11-01-english-text-is-checked-by-the-ai-reviewer-only-with-an-english),
   // Polish lines the AI skill against its checklist
-  // (david-learns/decisions/2026-10-04-polish-lines-are-reviewed-by-an-ai-skill-against-a-cited-checkli).
+  // (decision 2026-10-04-polish-lines-are-reviewed-by-an-ai-skill-against-a-cited-checkli).
   it("exist in every language", () => {
     for (const [language, table] of Object.entries(TABLES)) {
       for (const key of KEYS) {
@@ -239,7 +239,7 @@ describe("category tables (dl-i952.17)", () => {
     ["moved_on", "Fine, we'll come back to this one."],
     ["start", "Start the lesson"],
     ["mic_check", "Microphone check (coming soon)"],
-    ["tutor_resting", "Practising without voice today."],
+    ["tutor_resting", "Practicing without voice today."],
     ["load_failed", "This lesson didn't load. Reload the page to try again."],
     ["finished", "That's the lesson done. Thank you!"],
     ["can_do_heading", "What you can do now"],

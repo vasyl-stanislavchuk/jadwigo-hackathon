@@ -4,21 +4,23 @@
 // the app with no login. A still grid: the drifting row went with dl-5ssh.4.9, since the hero holds
 // the page's one moving moment.
 import type { Language } from "@jadwigo/config";
-import { featuredLessons, playUrl } from "../lib/featured.ts";
+import type { FeaturedLesson } from "@jadwigo/contracts";
+import { assertLanguage, playUrl } from "../lib/featured.ts";
 import { withLang } from "../lib/i18n.ts";
 import { firstSentence, plural } from "../lib/landing.ts";
 import { landingWords } from "../lib/words.ts";
 
 interface Props {
   lang: Language;
+  // The page's lessons, from pageLessons(lang) in src/lib/featured.ts.
+  lessons: FeaturedLesson[];
 }
 
-// The card labels are in the page's language; the lessons themselves are the featured list's until
-// dl-w0b4.85 gives each language its own, and each card opens the app in the page's language.
-const { lang } = Astro.props;
+// The cards, their labels and the lessons are all in the page's language (dl-w0b4.85): a lesson in
+// another language stops the build. Each card opens the app in the page's language.
+const { lang, lessons } = Astro.props;
+assertLanguage(lessons, lang);
 const words = (await landingWords(lang)).lessons;
-const { lessons, from } = await featuredLessons();
-console.warn(`Featured lessons for the gallery: ${lessons.length}, from the ${from}`);
 
 const cards = lessons.map((l) => ({
   href: withLang(playUrl(l), lang),

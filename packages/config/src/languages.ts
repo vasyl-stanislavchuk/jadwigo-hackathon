@@ -1,9 +1,9 @@
 /**
  * The languages Jadwigo speaks, and what each one has (dl-5ssh.34.20, docs/runbooks/add-a-language.md).
  * Polish and English only (decisions 2026-10-24-the-marketing-site-is-built-with-astro-polish-and-english-only-p
- * and 2026-10-26-jadwigo-carries-no-ukrainian-the-tables-stay-in-david-learns-and). English goes
- * live on jadwigo.pl/en/ once its parts land (jadwigo-marketing/decisions/2026-11-01-for-the-
- * hackathon-jadwigo-is-live-in-polish-and-english-on-jadwi; the switch is dl-5ssh.34.70).
+ * and 2026-10-26-jadwigo-carries-no-ukrainian-the-tables-stay-in-david-learns-and). English is
+ * live on jadwigo.pl/en/ (jadwigo-marketing/decisions/2026-11-01-for-the-hackathon-jadwigo-is-
+ * live-in-polish-and-english-on-jadwi), switched in dl-5ssh.34.70 once every part had landed.
  * The contracts enum and packages/copy's type mirror these codes, and check-languages compares them. Voice is out of
  * scope (2026-10-26-voice-is-out-of-scope-until-the-core-works-well-children-answer), so a language
  * names no voice or speech-to-text code yet.
@@ -77,7 +77,7 @@ export const LANGUAGES = [
   {
     code: "en",
     name: "English",
-    status: "studio",
+    status: "live",
     plural: ["one", "other"],
     parts: {
       copy: "packages/copy/messages/en.json",
