@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "options": {
+      "minItems": 2,
+      "maxItems": 4,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ChooseFormOption"
+      }
+    },
+    "custom_allowed": {
+      "type": "boolean"
+    },
+    "skippable": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "text",
+    "options",
+    "custom_allowed",
+    "skippable"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "ChooseFormOption": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "recommended": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "label"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

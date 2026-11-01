@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "string",
+  "enum": [
+    "lesson_draft",
+    "lesson_show",
+    "lesson_edit",
+    "lesson_check",
+    "question_search"
+  ]
+}

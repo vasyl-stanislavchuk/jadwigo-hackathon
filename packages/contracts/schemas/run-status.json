@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "string",
+  "enum": [
+    "queued",
+    "in_progress",
+    "awaiting_input",
+    "completed",
+    "failed",
+    "cancelled"
+  ]
+}

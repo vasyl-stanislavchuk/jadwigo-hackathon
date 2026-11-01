@@ -10,8 +10,14 @@
  * - One 96px footer pinned to the bottom on every step and in every state (rule 1). At rest it holds
  *   the bulb, help from the first frame (rule 5; "Pomóż mi" beside it on a laptop), and Sprawdź,
  *   quiet until the answer is complete (rule 2). After a check it turns into the band at the same
- *   height: a miss (pencil, "Jeszcze nie.", help), right (check, "Dobrze!", the worked line, Dalej),
- *   or the solution after "Jeszcze nie wiem" (eye, Dalej).
+ *   height: a miss (pencil, "Jeszcze nie.", help and Popraw), right (check, "Dobrze!", the worked
+ *   line, Dalej), or the solution after "Jeszcze nie wiem" (eye, Dalej).
+ * - After a miss (handoff "after a miss" 1c, dl-uukj.29.162): Popraw does what a quiet Sprawdź does
+ *   after a miss, the focus on the first marked part. The band stays while help is open, with
+ *   Popraw only, and folds on the first edit of a marked part (decision dl-rn0d). From the second
+ *   miss on a step, once the band has been read (MISS_READ), the help note opens by itself at its
+ *   first rung, through the same ask the bulb presses. The focus stays on the field, and the rung
+ *   is not read out by itself. Help already open stays as it is: no rung is ever added by itself.
  * - After "Jeszcze nie wiem" the answer shows the solution in place, the help note folds away, and
  *   the solution card (SolutionCard.tsx) stands under the answer with every worked line; the view
  *   scrolls the least that shows the whole card (Choose addendum 1.2). A right answer keeps the
@@ -265,6 +271,11 @@ const FIRST_PART = "textarea:not([readonly]):not([disabled])";
  * each with data-field, its id for the step keys. */
 const FIELD = "[data-field]";
 
+/** What Popraw focuses in a marked part on a step with no fields: the part itself, or the first
+ * control in it. */
+const FOCUSABLE_PART =
+  'button, input, textarea, select, [tabindex]:not([tabindex="-1"]), [role="radio"], [role="checkbox"]';
+
 /** Focus the first part once, when a step with no fields opens, unless something already holds the
  * focus (a control the child or a screen reader is on). The step frame's own focus waits for this:
  * a child's effect runs before its parent's (stage/StepFrame.tsx). */
@@ -277,6 +288,11 @@ function useFocusOnOpen(answer: { current: HTMLElement | null }, fields: boolean
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }
+
+/** How long the miss band is read before help opens by itself on a second miss (handoff 1c §1):
+ * the app has no voice yet, so the wait stands for the spoken band line. Reduced motion keeps it,
+ * so the band is still read first. */
+export const MISS_READ = 1500;
 
 /** What the footer is now: the plain footer before a check, then one band. */
 type Band = "none" | "right" | "miss" | "solution";
@@ -646,10 +662,38 @@ export function StepShell({
       if (!holdFold.current) setFolded(false);
     },
   });
-  // The miss band folds back to the plain footer once the child edits a marked part (§3.5) or help
-  // is out. A view may say itself whether a marked part changed (options, §3.3); else a step with no
-  // fields counts any change to its answer: a tap, a key or an input.
-  const band: Band = verdict === "miss" && (stepKeys.changed || open) ? "none" : verdict;
+  // The miss band folds back to the plain footer once the child edits a marked part (§3.5). Open
+  // help leaves it standing, with Popraw only (decision dl-rn0d). A view may say itself whether a
+  // marked part changed (options, §3.3); else a step with no fields counts any change to its
+  // answer: a tap, a key or an input.
+  const band: Band = verdict === "miss" && stepKeys.changed ? "none" : verdict;
+  // The misses on this step: each new try_again verdict is one. A new step is a new view (its key),
+  // so the count starts again at 0.
+  const misses = useRef<{ seen: object | null; count: number }>({ seen: null, count: 0 });
+  const feedback = input.feedback ?? null;
+  if (feedback?.kind === "try_again" && misses.current.seen !== feedback)
+    misses.current = { seen: feedback, count: misses.current.count + 1 };
+  // From the second miss, once the band has been read, help opens by itself at its first rung
+  // (handoff 1c §1). Help already open, by the child or on an earlier miss, stays as it is.
+  const opened = useRef(false);
+  const askRef = useRef(ask);
+  askRef.current = ask;
+  const openRef = useRef(open);
+  openRef.current = open;
+  const changedRef = useRef(stepKeys.changed);
+  changedRef.current = stepKeys.changed;
+  useEffect(() => {
+    if (feedback?.kind !== "try_again" || misses.current.count < 2 || open || ask === null) return;
+    const timer = setTimeout(() => {
+      const now = askRef.current;
+      if (now === null || openRef.current || changedRef.current) return;
+      opened.current = true;
+      now.press.onClick({ detail: 0 });
+    }, MISS_READ);
+    return () => clearTimeout(timer);
+    // Once per verdict: a later render (a key, a tap) must not start the wait again.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feedback]);
   const onEdit =
     keys === null && edited === undefined && stepKeys.phase === "miss"
       ? stepKeys.markChanged
@@ -759,7 +803,10 @@ export function StepShell({
     band === "right"
       ? `${copy(language, "ds_right_short")} ${rightLine ?? ""}`
       : band === "miss"
-        ? `${copy(language, "ds_miss_short")} ${copy(language, "ds_miss_fix")}`
+        ? // A phone shows only the title, and reads only what it shows (decision dl-rn0d).
+          frame === "phone"
+          ? copy(language, "ds_miss_short")
+          : `${copy(language, "ds_miss_short")} ${copy(language, "ds_miss_fix")}`
         : band === "solution"
           ? next
             ? copy(language, "ds_solution_band")
@@ -774,12 +821,21 @@ export function StepShell({
   const rungs = written.length;
   useEffect(() => {
     const newest = written[rungs - 1];
+    // A rung that opened by itself is not read out: the band's words were the last said, and the
+    // child can tap listen (handoff 1c §1).
+    if (newest && opened.current) {
+      opened.current = false;
+      return;
+    }
     if (newest) setAnnounce(liveWords(newest.text, language));
     // A new rung is the change to read.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rungs]);
 
   const helpButton = (where: "rest" | "miss") => {
+    // In the miss band with the note open, the band holds Popraw only: the note has its own way
+    // out (decision dl-rn0d).
+    if (where === "miss" && open) return null;
     if (wayOut !== null)
       return (
         <Button
@@ -864,6 +920,42 @@ export function StepShell({
       onClick={checkPress?.onClick}
     >
       {copy(language, "check")}
+    </Button>
+  );
+  // Popraw (handoff 1c §1): what the quiet Sprawdź does after a miss, the focus on the first marked
+  // part with its text selected, and no check. On pointerdown, so a phone's keyboard opens inside
+  // the tap. A step with no fields focuses its marked part (Choose: the marked option).
+  const fixIt = (): void => {
+    if (keys !== null && keys.fields.length > 0) {
+      pointTheWay();
+      return;
+    }
+    const marked = answerArea.current?.querySelector<HTMLElement>('[data-tone="try_again"]');
+    const target = marked?.matches(FOCUSABLE_PART)
+      ? marked
+      : marked?.querySelector<HTMLElement>(FOCUSABLE_PART);
+    (target ?? shellRef.current?.closest<HTMLElement>("fieldset"))?.focus({ preventScroll: true });
+  };
+  const fixButton = (
+    <Button
+      key="fix"
+      type="button"
+      variant="outline"
+      size="commit"
+      data-fix
+      className="kid-fix text-2xl"
+      onPointerDown={(event) => {
+        if (event.button === 0) {
+          // The focus moves on pointerdown; the browser's own focus on the button must not take it back.
+          event.preventDefault();
+          fixIt();
+        }
+      }}
+      onClick={(event) => {
+        if (event.detail === 0) fixIt();
+      }}
+    >
+      {copy(language, "ds_fix")}
     </Button>
   );
   const dalej = next && (
@@ -1027,8 +1119,12 @@ export function StepShell({
               </span>
               <div data-bar-verdict>
                 <p data-band-title>{copy(language, "ds_miss_short")}</p>
-                <p data-band-line>{copy(language, "ds_miss_fix")}</p>
+                {/* A phone drops the second line: Popraw carries it (handoff 1c §2). */}
+                <p data-band-line data-wide-only>
+                  {copy(language, "ds_miss_fix")}
+                </p>
               </div>
+              {fixButton}
             </>
           )}
           {band === "right" && (

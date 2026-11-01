@@ -40,6 +40,17 @@ export function drawable(question: Pick<ReviewQuestion, "question">): boolean {
 }
 
 /**
+ * Whether the question's still view, given the child's answer and the solution, already draws the
+ * right answer beside a wrong one under its own "Poprawna odpowiedź" line (dl-uukj.30.7): Enter,
+ * Choose, Sequence, Group, Slots and every Place surface but the picture, whose still marks only the
+ * child's points. Only for the picture does a page draw the solution again, as a still of its own.
+ */
+export function drawsRightBeside(question: Pick<ReviewQuestion, "question">): boolean {
+  const { family, data } = question.question;
+  return !(family === "place" && (data as { surface?: string }).surface === "image");
+}
+
+/**
  * - `value`: what to draw in the question: the child's answer or the solution.
  * - `compact`: smaller, for a card on the end list: the lesson's sizes, zoomed down as a whole so the
  *   view keeps its own proportions.

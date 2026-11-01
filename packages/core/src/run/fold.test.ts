@@ -90,17 +90,142 @@ describe("foldRun, properties", () => {
   it("pins an approval to its first resolution", () => {
     fc.assert(
       fc.property(log, (events) => {
-        const asked = events.find((e) => e.type === "approval_request");
+        const asked = events.find(
+          (e): e is Extract<RunEvent, { type: "approval_request" }> =>
+            e.type === "approval_request",
+        );
         const item = foldRun(events).chat.find((c) => c.kind === "approval");
         if (!asked) {
           expect(item).toBeUndefined();
           return;
         }
-        const first = events.find((e) => e.type === "approval_resolved" && e.seq > asked.seq);
+        const call = asked.payload.call_id;
+        const first = events.find(
+          (e) => e.type === "approval_resolved" && e.payload.call_id === call && e.seq > asked.seq,
+        );
         const decision = first?.type === "approval_resolved" ? first.payload.decision : null;
         expect(item?.decision).toBe(decision);
+        // A rejection closes the call's line, unless the call started before it or ended at all.
+        if (decision !== "rejected" || first === undefined) return;
+        const ran = events.some(
+          (e) =>
+            (e.type === "tool_result" || (e.type === "tool_call" && e.seq < first.seq)) &&
+            e.payload.call_id === call,
+        );
+        const line = foldRun(events).chat.find((c) => c.kind === "tool" && c.call_id === call);
+        if (!ran) expect(line).toMatchObject({ state: "rejected" });
       }),
     );
+  });
+});
+
+/** A log of `rows` (type and payload), numbered 1..n, parsed as the store would have written it. */
+function logOf(rows: readonly { type: string; payload: Record<string, unknown> }[]): RunEvent[] {
+  const base = RUN_LOGS[0]?.events[0] as object;
+  return rows.map((row, i) =>
+    RunEvent.parse({ ...base, ...row, seq: i + 1, event_id: eventId(i + 1) }),
+  );
+}
+
+const ASK = {
+  type: "approval_request",
+  payload: { call_id: "call_1", verb: "lesson_edit", summary: "Drop question 3." },
+};
+
+describe("foldRun, the UX seams (dl-z5ja.50)", () => {
+  it("closes a pending tool line as rejected and keeps the parent's feedback (dl-z5ja.39)", () => {
+    const view = foldRun(
+      logOf([
+        ASK,
+        {
+          type: "approval_resolved",
+          payload: { call_id: "call_1", decision: "rejected", feedback: "Keep it." },
+        },
+        {
+          type: "approval_resolved",
+          payload: { call_id: "call_1", decision: "approved", feedback: "Changed my mind." },
+        },
+      ]),
+    );
+    expect(view.chat).toMatchObject([
+      { kind: "tool", call_id: "call_1", state: "rejected", error: null },
+      { kind: "approval", call_id: "call_1", decision: "rejected", feedback: "Keep it." },
+    ]);
+  });
+
+  it("leaves an approved line pending until its call runs, and keeps the answers", () => {
+    const approved = {
+      type: "approval_resolved",
+      payload: { call_id: "call_1", decision: "approved", answers: ["5"] },
+    };
+    const view = foldRun(logOf([ASK, approved]));
+    expect(view.chat).toMatchObject([
+      { kind: "tool", state: "pending" },
+      { kind: "approval", decision: "approved", answers: ["5"] },
+    ]);
+    expect(view.chat[1]).not.toHaveProperty("feedback");
+  });
+
+  it("never moves a line that already ran: a late rejection keeps it done", () => {
+    const view = foldRun(
+      logOf([
+        ASK,
+        { type: "tool_call", payload: { call_id: "call_1", verb: "lesson_edit", input: {} } },
+        {
+          type: "tool_result",
+          payload: { call_id: "call_1", verb: "lesson_edit", output: {}, error: null },
+        },
+        { type: "approval_resolved", payload: { call_id: "call_1", decision: "rejected" } },
+      ]),
+    );
+    expect(view.chat[0]).toMatchObject({ kind: "tool", state: "done" });
+  });
+
+  it("draws a tool line's view from its result, and only when the result has one", () => {
+    const result = { call_id: "call_1", verb: "question_search", output: {}, error: null };
+    const view = { kind: "question_search", data: { sets: [] } };
+    const [withView] = foldRun(logOf([{ type: "tool_result", payload: { ...result, view } }])).chat;
+    const [plain] = foldRun(logOf([{ type: "tool_result", payload: result }])).chat;
+    expect(withView).toMatchObject({ kind: "tool", state: "done", view });
+    expect(plain).not.toHaveProperty("view");
+  });
+
+  it("carries an agent message's citations, and none on a message without them", () => {
+    const citations = [{ kind: "skill", skill_code: "math.add.within-20" }];
+    const { chat } = foldRun(
+      logOf([
+        { type: "message", payload: { from: "agent", text: "Carrying.", citations } },
+        { type: "message", payload: { from: "parent", text: "Thanks." } },
+      ]),
+    );
+    expect(chat[0]).toMatchObject({ kind: "message", citations });
+    expect(chat[1]).not.toHaveProperty("citations");
+  });
+
+  it("keeps the approval's choose form", () => {
+    const choose = {
+      questions: [
+        {
+          text: "How many?",
+          options: [{ label: "5", recommended: true }, { label: "8" }],
+          custom_allowed: false,
+          skippable: true,
+        },
+      ],
+    };
+    const { chat } = foldRun(logOf([{ ...ASK, payload: { ...ASK.payload, choose } }]));
+    expect(chat[1]).toMatchObject({ kind: "approval", choose, decision: null });
+  });
+
+  it("shows the last plan whole, and null before one", () => {
+    const plan = (status: string) => ({
+      type: "plan",
+      payload: { entries: [{ text: "Find questions", status }] },
+    });
+    expect(foldRun([]).plan).toBeNull();
+    expect(foldRun(logOf([plan("in_progress"), plan("done")])).plan).toEqual([
+      { text: "Find questions", status: "done" },
+    ]);
   });
 });
 

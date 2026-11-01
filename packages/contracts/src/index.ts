@@ -3,4 +3,6 @@ export * from "./families/index.ts";
 export * from "./ids.ts";
 export * from "./records.ts";
 export * from "./routes.ts";
+export * from "./run.ts";
+export * from "./tables.ts";
 export * from "./wire.ts";

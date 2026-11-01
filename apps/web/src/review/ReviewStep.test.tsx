@@ -35,7 +35,7 @@ describe("ReviewStep", () => {
     expect(document.body.textContent).not.toMatch(/\d+ ?\/ ?\d+|%/);
   });
 
-  it("a missed one: the answer given, then the right answer in the same view, and the why line", () => {
+  it("a missed one: the answer given with the right answer beside it, once, and the why line", () => {
     render(
       <ReviewStep
         question={reviewQuestion(2, "missed")}
@@ -46,10 +46,12 @@ describe("ReviewStep", () => {
       />,
     );
     expect(screen.getByText("Jeszcze się uczymy")).toBeTruthy();
-    expect($("[data-review-answer]")).not.toBeNull();
-    const solution = $("[data-review-solution]");
-    expect(solution?.textContent).toContain("Tak wygląda dobra odpowiedź:");
-    expect(solution?.textContent).toContain("10");
+    // The family view draws the right answer beside the child's: no second drawing (dl-uukj.30.7).
+    const answer = $("[data-review-answer]")?.textContent ?? "";
+    expect(answer).toContain("7");
+    expect(answer).toContain("10");
+    expect(document.body.textContent?.split("Poprawna odpowiedź")).toHaveLength(2);
+    expect($("[data-review-solution]")).toBeNull();
     const bubble = $("[data-review-bubble]");
     expect(bubble?.textContent).toContain("Dwa razy pięć to pięć i jeszcze pięć.");
     expect(bubble?.textContent).not.toContain("Brawo");
@@ -99,7 +101,11 @@ describe("ReviewStep", () => {
     expect(screen.getByText("Wrócimy do tego")).toBeTruthy();
     expect(screen.getByText("Tym razem bez odpowiedzi. Zobacz, jak to wygląda.")).toBeTruthy();
     expect($("[data-review-answer]")).toBeNull();
-    expect($("[data-review-solution]")).not.toBeNull();
+    // The right answer under its own label, never as the child's (dl-uukj.30.7).
+    const solution = $("[data-review-solution]")?.textContent ?? "";
+    expect(solution).toContain("Poprawna odpowiedź");
+    expect(solution).toContain("10");
+    expect(document.body.textContent).not.toContain("Twoja odpowiedź");
     expect(screen.getByText("podobne pytanie")).toBeTruthy();
     expect(screen.getByText("Pomoc: 2")).toBeTruthy();
   });

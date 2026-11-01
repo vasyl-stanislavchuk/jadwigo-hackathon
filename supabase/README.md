@@ -7,11 +7,14 @@ prod's major version, with no Docker: Postgres.app on port 5433 locally, and the
 | Path | What it is |
 | --- | --- |
 | `migrations/<timestamp>_<name>.sql` | One migration per change, applied in name order. Never edited once merged: a change is a new migration. |
-| `tests/shim.sql` | What a Supabase project has before any migration: the roles `anon`, `authenticated`, `authenticator`, `service_role` and `supabase_auth_admin`, the `auth` schema, `auth.uid()`, `auth.jwt()`, `auth.role()` and `auth.email()`, and the columns of `auth.users` and `auth.identities` a sign-in writes. Applied before the migrations, never to a real project. |
+| `tests/shim.sql` | What a Supabase project has before any migration: the roles `anon`, `authenticated`, `authenticator`, `service_role` and `supabase_auth_admin`, the `auth` schema, `auth.uid()`, `auth.jwt()`, `auth.role()` and `auth.email()`, and the columns of `auth.users` and `auth.identities` a sign-in writes. Realtime's `realtime.send()`, `realtime.topic()` and `realtime.messages`, which keep each broadcast as a row; and, where pg_cron is not available, `cron.job`, `cron.schedule()` and `cron.unschedule()`, which record a job and never run it. Applied before the migrations, never to a real project. |
 | `tests/*.test.sql` | pgTAP tests. Each runs in a transaction it rolls back, on the fixture in `tests/_fixture.sql`. |
 
 ## Commands
 
+- `make pgmq` installs pgmq 1.5.1, the version Supabase's Postgres 17 runs, into the extension
+  directory of the server `DATABASE_URL` names, once per machine. pgmq is pure SQL: a control file
+  and one script, checked by sha256. A migration then runs `create extension pgmq` as on Supabase.
 - `make migrate` resets the database `DATABASE_URL` names (only a `jadwigo*` one), then applies the
   shim and every migration.
 - `make pgtap` runs the tests with `pg_prove`. Locally, install it once with
@@ -46,4 +49,8 @@ prod's major version, with no Docker: Postgres.app on port 5433 locally, and the
   token's `user_metadata`. A claim the token needs, such as `pod_id`, joins that hook.
 - `apps/api` connects as `jadwigo_api`, which never owns a table and never bypasses row-level
   security. Its login is set per environment, outside migrations.
+- The engine's step consumer connects as `jadwigo_runner` (`20261101120000_run.sql`): it owns no
+  table, never bypasses row-level security, and executes only the `app` functions a migration grants
+  it by name. `USAGE` on `app` lets it call anything left to PUBLIC, so a migration that adds an `app`
+  function revokes it from `public` (and from `jadwigo_api` unless the API calls it).
 - A migration under `supabase/` is a one-way door: say so in the PR.

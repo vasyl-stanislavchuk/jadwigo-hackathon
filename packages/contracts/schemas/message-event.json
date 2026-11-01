@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "$ref": "#/$defs/RunId"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "event_id": {
+      "$ref": "#/$defs/EventId"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+    },
+    "type": {
+      "type": "string",
+      "const": "message"
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "enum": [
+            "parent",
+            "agent"
+          ]
+        },
+        "text": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment"
+          }
+        },
+        "citations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Citation"
+          }
+        }
+      },
+      "required": [
+        "from",
+        "text"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "run_id",
+    "seq",
+    "event_id",
+    "created_at",
+    "type",
+    "payload"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "RunId": {
+      "type": "string",
+      "pattern": "^run_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "EventId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "Attachment": {
+      "type": "object",
+      "properties": {
+        "storage_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "media_type": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "storage_path",
+        "media_type"
+      ],
+      "additionalProperties": false
+    },
+    "Citation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "attempt"
+            },
+            "attempt_id": {
+              "$ref": "#/$defs/AttemptId"
+            }
+          },
+          "required": [
+            "kind",
+            "attempt_id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "skill"
+            },
+            "skill_code": {
+              "$ref": "#/$defs/SkillId"
+            }
+          },
+          "required": [
+            "kind",
+            "skill_code"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "goal"
+            },
+            "goal_id": {
+              "$ref": "#/$defs/GoalId"
+            }
+          },
+          "required": [
+            "kind",
+            "goal_id"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "AttemptId": {
+      "type": "string",
+      "pattern": "^att_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "SkillId": {
+      "type": "string",
+      "pattern": "^[a-z]+(\\.[a-z0-9-]+)+$"
+    },
+    "GoalId": {
+      "type": "string",
+      "pattern": "^gol_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    }
+  }
+}
