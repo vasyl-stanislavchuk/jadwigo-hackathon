@@ -1380,7 +1380,9 @@ _TEX_FRAC_DIGITS = re.compile(r"\\[dt]?frac\s*(\d)\s*(\d)")
 _TEX_COLOR_ARG = re.compile(r"\\(?:textcolor|color)\s*\{[^{}]*\}")
 _TEX_SQRT = re.compile(r"\\sqrt\s*\{([^{}]*)\}")
 _TEX_SCRIPT = re.compile(r"([_^])\{([^{}]*)\}")
-_TEX_MIXED = re.compile(r"(\d)\s*(?=\\[dt]?frac(?![A-Za-z]))")
+# Where a fraction began, until its wrappers go: a digit right before it is a mixed number's
+# whole part (`\blue{2}\dfrac{1}{3}` reads 2 1/3, never 21/3).
+_TEX_FRAC_START = "\ue003"
 # Not a fraction or a root: `\dfrac{1}{\blue{4}}` waits until its colour goes, then reads 1/4.
 _TEX_WRAP = re.compile(r"\\(?!(?:[dt]?frac|sqrt)(?![A-Za-z]))([A-Za-z]+)\s*\{([^{}]*)\}")
 _TEX_WORD = re.compile(r"\\([A-Za-z]+)")
@@ -1421,12 +1423,10 @@ def tex_plain(text: Any) -> Any:
     for tex, kept in _TEX_KEPT.items():
         out = out.replace(tex, kept)
     out = _TEX_COLOR_ARG.sub("", out)  # \textcolor{red}{7}: the colour's name is no word
-    # A mixed number, `2\frac{1}{2}`, keeps its whole part apart: 2 1/2, never 21/2.
-    out = _TEX_MIXED.sub(r"\1 ", out)
     for _ in range(8):  # nested wrappers, from the inside out
         before = out
-        out = _TEX_FRAC.sub(lambda m: f"{_grouped(m[1])}/{_grouped(m[2])}", out)
-        out = _TEX_FRAC_DIGITS.sub(r"\1/\2", out)
+        out = _TEX_FRAC.sub(lambda m: f"{_TEX_FRAC_START}{_grouped(m[1])}/{_grouped(m[2])}", out)
+        out = _TEX_FRAC_DIGITS.sub(_TEX_FRAC_START + r"\1/\2", out)
         out = _TEX_SQRT.sub(lambda m: f"√{_grouped(m[1])}", out)
         out = _TEX_SCRIPT.sub(_script, out)
         for tex, plain in sorted(_TEX_SYMBOLS.items(), key=lambda kv: -len(kv[0])):
@@ -1440,6 +1440,7 @@ def tex_plain(text: Any) -> Any:
     out = _TEX_WORD.sub(lambda m: "" if _TEX_STYLE.fullmatch(m[1]) else m[1], out)
     out = out.replace("$", "")
     out = re.sub(r"[{}]", "", out)
+    out = re.sub(r"(\d)\s*" + _TEX_FRAC_START, r"\1 ", out).replace(_TEX_FRAC_START, "")
     for tex, kept in _TEX_KEPT.items():
         out = out.replace(kept, tex[1:])
     return re.sub(r"\s+", " ", out).replace("√ ", "√").strip()
