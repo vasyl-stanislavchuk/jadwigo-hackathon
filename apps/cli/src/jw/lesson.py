@@ -56,6 +56,7 @@ from __future__ import annotations
 import copy
 import dataclasses
 import datetime as dt
+import fnmatch
 import hashlib
 import json
 import os
@@ -369,6 +370,42 @@ def _pages(envelope: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
     return pages
 
 
+def _pinned(sets: Sequence[str]) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+    """The envelope and pages for the sets a lesson pins (dl-u1y5.37), in the order given, with
+    no search: the same ids draw a lesson's pl and en twins from the same sets. A pinned set
+    with no page is an error, not a left_out line: the caller named it."""
+    ids = list(dict.fromkeys(s.strip() for s in sets if s.strip()))
+    pages: dict[str, dict[str, Any]] = {}
+    for set_id in ids:
+        try:
+            pages[set_id] = question.show_page(set_id)
+        except bank_client.SetNotFound as exc:
+            raise JwError(
+                f"no page for the pinned set {set_id}",
+                hint="Pin a set id question_search or question_show returns.",
+            ) from exc
+    rows = [{"id": set_id, "rank": n} for n, set_id in enumerate(ids, start=1)]
+    return {"rows": rows}, pages
+
+
+def _type_of(view: Mapping[str, Any]) -> str:
+    """An item's own `<family>.<question_type>`, from its converted step, never its set page
+    (whose families are not reliable, dl-n9fr.65)."""
+    return f"{view['question'].get('family')}.{view.get('question_type')}"
+
+
+def _type_kept(view: Mapping[str, Any], question_types: Sequence[str]) -> bool:
+    """Whether the item's type is one asked for: `slots.fill_gaps`, a family (`choose`, or
+    `group.*`), or a bare question type (`fill_gaps`). Nothing asked keeps every type."""
+    if not question_types:
+        return True
+    full = _type_of(view)
+    family, _, qtype = full.partition(".")
+    return any(
+        fnmatch.fnmatchcase(full, p) or p in (family, qtype) for p in question_types
+    )
+
+
 def _draw_loading(
     envelope: Mapping[str, Any],
     pages: Mapping[str, Mapping[str, Any]],
@@ -377,10 +414,13 @@ def _draw_loading(
     language: str,
     count: int | None,
     today: dt.date,
+    question_types: Sequence[str] = (),
+    spread: str = "type",
 ) -> tuple[LanguageDraw, list[tuple[Any, dict[str, Any]]], dict[str, str]]:
-    """Draw, load every drawn item, and draw again without the ones `load_item` refuses. When
-    nothing plays in `language`, the draw is in the sets' original language
-    (`draw_or_original`), and every item is loaded in the language the draw took."""
+    """Draw, load every drawn item, and draw again without the ones `load_item` refuses or
+    whose own type is not in `question_types`. When nothing plays in `language`, the draw is in
+    the sets' original language (`draw_or_original`), and every item is loaded in the language
+    the draw took."""
     rules = None
     if count is not None:
         rules = {**DRAW_RULES, kind: dataclasses.replace(DRAW_RULES[kind], count=count)}
@@ -394,12 +434,20 @@ def _draw_loading(
             today=today,
             flagged=refused,
             rules=rules,
+            spread=spread,
         )
         loaded: list[tuple[Any, dict[str, Any]]] = []
         new = False
         for drawn in result.draw.questions:
             try:
-                loaded.append((drawn, items.load_item(drawn.item_id, result.language)))
+                view = items.load_item(drawn.item_id, result.language)
+                if not _type_kept(view, question_types):
+                    refused[drawn.item_id] = (
+                        f"its type {_type_of(view)} is not among {', '.join(question_types)}"
+                    )
+                    new = True
+                    continue
+                loaded.append((drawn, view))
             except items.NotReady as exc:
                 refused[drawn.item_id] = exc.reason
                 new = True
@@ -711,6 +759,9 @@ def _view(stored: Mapping[str, Any], verbose: bool = False) -> dict[str, Any]:
         out["setup_warning"] = stored["setup_warning"]
     if stored.get("language_fallback"):
         out["language_fallback"] = stored["language_fallback"]
+    for pinned in ("sets", "question_types"):
+        if stored.get(pinned):
+            out[pinned] = stored[pinned]
     if verbose:
         out.update(rule=stored["rule"], reasoning=stored["lesson"]["reasoning"])
     return out
@@ -726,6 +777,8 @@ def draft(
     *,
     names: Sequence[str] | None,
     topic: str,
+    sets: Sequence[str] = (),
+    question_types: Sequence[str] = (),
     today: dt.date | None = None,
     verbose: bool = False,
     runner: Runner | None = None,
@@ -740,6 +793,10 @@ def draft(
     `topic` is what the lesson is about in a few words, distilled from the request by the calling
     agent ("mnożenie"), with no count, grade or name: it is the need's words the bank searches
     (dl-e8ov.5.38.12). The request is kept, guarded, as the draft's record and title.
+    `sets` pins the sets to draw from (dl-u1y5.37): no search, only those sets, taken in turn
+    and each varied by problem type, the same ids for every language. `question_types` keeps
+    only items whose own type matches one (`slots.fill_gaps`, `group.*`, `choose`, `fill_gaps`);
+    the rest go to left_out with that reason.
     `verbose` returns each question and left_out whole (`_view`).
     """
     called_at = now()
@@ -766,12 +823,23 @@ def draft(
         raise JwError("count must be at least 1", hint="Leave it out for the rule's count.")
     day = today or dt.date.today()
     need = _need(topic, grade, language, skills)
-    envelope = question.search_envelope(
-        grade=grade, words=topic, skills=list(skills), language=language
-    )
-    pages = _pages(envelope)
+    question_types = [t.strip() for t in question_types if t.strip()]
+    if sets:
+        envelope, pages = _pinned(sets)
+    else:
+        envelope = question.search_envelope(
+            grade=grade, words=topic, skills=list(skills), language=language
+        )
+        pages = _pages(envelope)
     drawn_in, loaded, refused = _draw_loading(
-        envelope, pages, kind=kind, language=language, count=count, today=day
+        envelope,
+        pages,
+        kind=kind,
+        language=language,
+        count=count,
+        today=day,
+        question_types=question_types,
+        spread="set" if sets else "type",
     )
     result = drawn_in.draw
     asked, language = language, drawn_in.language
@@ -823,8 +891,8 @@ def draft(
     subject = subjects.pop() if len(subjects) == 1 else "math"
     reasoning = (
         f'Drafted for the request "{request}" (grade {grade}): {len(questions)} questions drawn by '
-        f"the provisional {kind} rule from {', '.join(used_sets) or 'no set'}, each copied whole "
-        "from the bank."
+        f"the provisional {kind} rule from {', '.join(used_sets) or 'no set'}"
+        f"{' (pinned)' if sets else ''}, each copied whole from the bank."
     )
     where = folder or drafts_dir()
     stored: dict[str, Any] = {
@@ -834,6 +902,8 @@ def draft(
         "grade": grade,
         "language": language,
         "kind": kind,
+        **({"sets": [str(r["id"]) for r in envelope["rows"]]} if sets else {}),
+        **({"question_types": question_types} if question_types else {}),
         "rule": result.rule,
         **(
             {"language_fallback": {"asked": asked, "offered": language, "reason": _fallback_reason(asked, language)}}

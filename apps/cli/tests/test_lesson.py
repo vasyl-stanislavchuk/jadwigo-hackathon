@@ -761,6 +761,86 @@ def test_lesson_draft_writes_the_lesson_file_with_its_empty_rungs(
     )
 
 
+# dl-u1y5.37: the sets a curated lesson pins. Two fixture sets, each with items that play in pl
+# and en: set_khan_fx0003's own, and clones of them as set_khan_fx0001's ids, its "In a column"
+# items (fxa2xx) of another question type, short_text.
+PINNED = ["set_khan_fx0001", "set_khan_fx0003"]
+
+
+@pytest.fixture
+def two_sets(bank: LessonBank, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
+    converted = json.loads(ITEMS_FILE.read_text(encoding="utf-8"))
+    playing = [i for i in converted["items"] if i["status"]["kind"] == "plays"]
+    clones = []
+    for n, item_id in enumerate(["fxa101", "fxa102", "fxa103", "fxa201", "fxa202", "fxa203"]):
+        clone = copy.deepcopy(playing[n])
+        clone.update(id=item_id, exercise="fx0001")
+        if item_id.startswith("fxa2"):
+            clone["spec"]["question_type"] = "short_text"
+        clones.append(clone)
+    for item in [*converted["items"], *clones]:
+        item["language"] = "multi"
+    converted["items"] += clones
+    path = tmp_path / "converted-two-sets.json"
+    path.write_text(json.dumps(converted), encoding="utf-8")
+    monkeypatch.setenv(JW_KHAN_CONVERTED, str(path))
+    return path
+
+
+@pytest.mark.parametrize("language", ["pl", "en"])
+def test_pinned_sets_draw_only_from_those_sets_spread_across_them(
+    two_sets: Path, check_ts: CheckTs, language: str
+) -> None:
+    view = lesson.draft(REQUEST, "3", language, names=[], topic=TOPIC, today=TODAY,
+                        sets=PINNED, count=6)
+    stored = _stored(view)
+    drawn = [q["set_id"] for q in stored["questions"]]
+    assert view["language"] == language and view["sets"] == PINNED
+    assert set(drawn) == set(PINNED)
+    # Taken in turn: no set gives more than its share while the other still has questions.
+    assert drawn == ["set_khan_fx0001", "set_khan_fx0003"] * 3
+    # Within a set, its problem types vary.
+    fx1 = [q["item_id"][:4] for q in stored["questions"] if q["set_id"] == "set_khan_fx0001"]
+    assert set(fx1) == {"fxa1", "fxa2"}
+    assert "(pinned)" in stored["lesson"]["reasoning"]
+
+
+def test_pinned_sets_ask_the_bank_nothing(two_sets: Path, check_ts: CheckTs, bank: LessonBank) -> None:
+    lesson.draft(REQUEST, "3", names=[], topic=TOPIC, today=TODAY, sets=PINNED)
+    assert bank.requests == []
+
+
+def test_a_pinned_set_with_no_page_is_an_error(two_sets: Path, check_ts: CheckTs) -> None:
+    with pytest.raises(JwError, match="set_khan_nope"):
+        lesson.draft(REQUEST, "3", names=[], topic=TOPIC, today=TODAY,
+                     sets=["set_khan_fx0003", "set_khan_nope"])
+
+
+@pytest.mark.parametrize("kept", [["enter.production"], ["production"], ["enter.p*"]])
+def test_question_types_keep_only_items_of_those_types_by_their_own_step(
+    two_sets: Path, check_ts: CheckTs, kept: list[str]
+) -> None:
+    view = lesson.draft(REQUEST, "3", names=[], topic=TOPIC, today=TODAY, sets=PINNED,
+                        question_types=kept, count=6, verbose=True)
+    stored = _stored(view)
+    assert {q["question_type"] for q in stored["questions"]} == {"production"}
+    assert not any(q["item_id"].startswith("fxa2") for q in stored["questions"])
+    left = {item["id"]: item["reason"] for item in stored["left_out"]}
+    assert "its type enter.short_text is not among" in left["fxa201"]
+
+
+def test_jw_lesson_draft_takes_set_and_question_type(two_sets: Path, check_ts: CheckTs) -> None:
+    out = CliRunner().invoke(cli, [
+        "lesson", "draft", REQUEST, "--grade", "3", "--topic", TOPIC, "--no-names",
+        "--set", "set_khan_fx0001", "--set", "set_khan_fx0003",
+        "--question-type", "enter.*", "--json",
+    ])
+    assert out.exit_code == 0, out.output
+    view = json.loads(out.output)
+    assert view["sets"] == PINNED and view["question_types"] == ["enter.*"]
+    assert {q["set_id"] for q in _stored(view)["questions"]} == set(PINNED)
+
+
 def test_without_check_ts_the_draft_file_is_written_all_the_same(
     bank: LessonBank, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
