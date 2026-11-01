@@ -788,7 +788,7 @@ export const en: CopyTable = {
     reviewed: false,
   },
   chat_limit_idle: {
-    text: "The conversation waited a long time, so the turn ended. Write to carry on.",
+    text: "The wait for the next step ran too long, so the turn ended. The lesson so far is saved: say what to do next.",
     reviewed: false,
   },
   chat_dev_only: {

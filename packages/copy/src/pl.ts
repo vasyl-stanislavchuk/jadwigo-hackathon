@@ -784,7 +784,7 @@ export const pl: CopyTable = {
     reviewed: false,
   },
   chat_limit_idle: {
-    text: "Rozmowa długo czekała, więc tura się zakończyła. Napisz, aby iść dalej.",
+    text: "Na następny krok trzeba było czekać zbyt długo, więc tura się zakończyła. Lekcja do tej pory jest zapisana: napisz, co dalej.",
     reviewed: false,
   },
   chat_dev_only: {

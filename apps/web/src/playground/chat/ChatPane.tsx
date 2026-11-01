@@ -129,6 +129,8 @@ function problemOf(error: RunError, retryable: boolean, language: Language): str
   const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
     copy(language, key, vars, "adult");
   if (error.type === RUN_ERROR_TYPE.runTimedOut) return say("chat_limit_too_long");
+  // An idle close (dl-z5ja.94): the turn is completed, so no retry; the parent writes what next.
+  if (error.type === RUN_ERROR_TYPE.runIdle) return say("chat_limit_idle");
   if (error.type === RUN_ERROR_TYPE.stepTimedOut) return say("chat_problem_retrying");
   const line = say("chat_problem", { message: error.message });
   return retryable ? `${line} ${say("chat_problem_retrying")}` : line;
