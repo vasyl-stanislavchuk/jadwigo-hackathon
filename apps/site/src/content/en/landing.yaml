@@ -4,7 +4,6 @@
 # Written in US English (decision draft dl-rok6), checked against workflows/_lang/en/checklist.md.
 # Copy says what Jadwigo does, never a slogan; numbers are digits.
 hero:
-  play: Play a lesson
   # A grade 3 two-step word problem (design handoff "landing 3", 2026-11-01; draft).
   question:
     label: Two steps · grade 3 · question 1
@@ -29,17 +28,41 @@ links:
   - { href: /en/how-it-works, label: How it works }
   - { href: /en/compare, label: Compare }
   - { href: /en/about, label: About us }
+# /en/how-it-works in direction 1a (design handoff "landing 3", 2026-11-01; draft), in US English.
 steps:
   title: How Jadwigo works
-  description: You show the homework, your child plays a short lesson, and you see what went well and what comes next.
+  description: You write what your child practices at school, your child plays a short lesson, and you know what they can do and what they're working on.
   heading: How it works
+  intro: You don't need to sit beside them for the whole lesson. A few minutes are enough to know what your child can do and where they struggle.
+  pic: illustration · Jadwiga with her notebook, her class beside her
   items:
-    - title: You show the homework
-      text: Take a photo of the problem your child got stuck on. Or pick a grade and a subject.
-    - title: Your child plays a short lesson
-      text: The questions go one step at a time. When something doesn't work out, a hint is waiting.
-    - title: You see what comes next
-      text: After the lesson Jadwigo notes what went well, where it got hard and which mistakes came up. The next lesson is built from that.
+    - who: You
+      title: Write what your child practices at school.
+      text: Jadwigo builds a lesson from questions with a source. You see it before your child does.
+    - who: Your child
+      title: Your child plays a short lesson.
+      text: A hint waits beside them. They can make a mistake, ask for more or stop for today.
+    - who: You
+      title: You know what your child can do now, and what they're still working on.
+      text: Every question, try and mistake in plain words. Jadwigo builds the next lesson from what was hard. And when you want to sit down together over something hard, it suggests where to start.
+  request:
+    ask: Making change, like in the workbook. Mixes up dollars and cents.
+    lines: [Looking for change questions with cents, Checking the lesson, Ready]
+    soon: "Coming soon: a photo of the workbook instead of a description."
+    screencast: screencast · the parent types in the chat, the lesson builds on the right, “Show my child”
+  card:
+    say: A ticket costs $4.50. You pay $10. How much change?
+    choices: ["$5.50", "$6.50", "$5"]
+    hint: From $4.50 to $5 is 50 cents. How much from $5 to $10?
+    pic: illustration · a child at the table with a tablet, a parent beside them
+  record:
+    counts:
+      - { value: 8, label: questions }
+      - { value: 5, label: first try }
+      - { value: 3, label: with a hint }
+    nextLabel: "Next lesson:"
+    next: making up to the next dollar, then change from $20.
+    screencast: "screencast · the child's page: goals, skills, the last lesson question by question"
 promises:
   heading: What you get
   items:

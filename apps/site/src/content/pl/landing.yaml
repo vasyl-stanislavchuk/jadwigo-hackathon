@@ -3,7 +3,6 @@
 # The hero is the h1 and one question to answer: no lead line, no buttons (owner, 2026-10-31, dl-5ssh.4.9).
 # Lines below marked "draft" are the design handoff "landing 3" drafts (2026-11-01), for the native review.
 hero:
-  play: Zagraj w lekcję
   # A grade 3 two-step word problem: the owner found "2 razy 7" too simple for a 9-10-year-old (draft).
   # 36 is "forgot to take away", 45 is "added instead". The source is not confirmed yet.
   question:
@@ -29,17 +28,42 @@ links:
   - { href: /jak-to-dziala, label: Jak to działa }
   - { href: /porownanie, label: Porównanie }
   - { href: /o-nas, label: O nas }
+# /jak-to-dziala in direction 1a (design handoff "landing 3", 2026-11-01; draft). The owner's principle:
+# the parent is aware and close in a few minutes, never required to sit through a lesson together.
 steps:
   title: Jak działa Jadwigo
-  description: Pokazujesz pracę domową, dziecko rozwiązuje krótką lekcję, a Ty widzisz, co poszło dobrze i co dalej.
+  description: Piszesz, co dziecko ćwiczy w szkole, dziecko gra krótką lekcję, a Ty wiesz, co już umie i nad czym pracuje.
   heading: Jak to działa
+  intro: Nie musisz siedzieć obok przez całą lekcję. Wystarczy kilka minut, żeby wiedzieć, co dziecko umie i z czym ma trudność.
+  pic: ilustracja · Jadwiga z zeszytem, obok jej klasa
   items:
-    - title: Pokazujesz pracę domową
-      text: Robisz zdjęcie zadania, z którym dziecko miało kłopot. Albo wybierasz klasę i przedmiot.
-    - title: Dziecko rozwiązuje krótką lekcję
-      text: Zadania idą krok po kroku. Gdy coś nie wychodzi, czeka podpowiedź.
-    - title: Widzisz, co dalej
-      text: Po lekcji Jadwigo zapisuje, co poszło dobrze, gdzie była trudność i w czym dziecko się myliło. Z tego układa następną lekcję.
+    - who: Ty
+      title: Napisz, co dziecko ćwiczy w szkole.
+      text: Jadwigo układa lekcję z zadań ze źródłem. Widzisz ją, zanim zobaczy ją dziecko.
+    - who: Dziecko
+      title: Dziecko gra krótką lekcję.
+      text: Podpowiedź czeka obok. Można się pomylić, poprosić o więcej albo skończyć na dziś.
+    - who: Ty
+      title: Wiesz, co dziecko już umie, a nad czym jeszcze pracuje.
+      text: Każde pytanie, próba i pomyłka opisane zwykłymi słowami. Następną lekcję Jadwigo układa od tego, co było trudne. A gdy chcesz usiąść razem nad czymś trudnym, podpowie, od czego zacząć.
+  request:
+    ask: Zadania z resztą, tak jak w zeszycie. Myli złote z groszami.
+    lines: [Szukam zadań o reszcie z groszami, Sprawdzam lekcję, Gotowe]
+    soon: "Wkrótce: zdjęcie zeszytu zamiast opisu."
+    screencast: screencast · rodzic pisze w czacie, lekcja układa się po prawej, „Pokaż dziecku”
+  card:
+    say: Bilet kosztuje 14 zł 50 gr. Płacisz 20 zł. Ile reszty?
+    choices: ["5 zł 50 gr", "6 zł 50 gr", "5 zł"]
+    hint: Od 14 zł 50 gr do 15 zł brakuje 50 gr. Ile od 15 zł do 20 zł?
+    pic: ilustracja · dziecko przy stole z tabletem, rodzic obok
+  record:
+    counts:
+      - { value: 8, label: pytań }
+      - { value: 5, label: od razu }
+      - { value: 3, label: z podpowiedzią }
+    nextLabel: "Następna lekcja:"
+    next: dopełnianie do pełnego złotego, potem reszta z 50 zł.
+    screencast: "screencast · strona dziecka: cele, umiejętności, ostatnia lekcja pytanie po pytaniu"
 promises:
   heading: Co dostajecie
   items:

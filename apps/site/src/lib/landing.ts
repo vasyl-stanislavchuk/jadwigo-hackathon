@@ -10,10 +10,8 @@ const item = z.object({ title: text, text });
 const head = { title: text, description: text, heading: text };
 
 export const landingSchema = z.object({
-  // The hero's question (owner, 2026-10-31): the first question of one featured lesson, answered on
-  // the page. `play` names the way into the lessons on other pages (/jak-to-dziala).
+  // The hero's question (owner, 2026-10-31): one question, answered on the page.
   hero: z.object({
-    play: text,
     question: z
       .object({
         // Above the question: what kind it is, the grade and its place (design handoff "landing 3").
@@ -37,7 +35,27 @@ export const landingSchema = z.object({
   }),
   after: z.object({ text, link: text }),
   links: z.array(z.object({ href: z.string().regex(/^(\/[a-z0-9-]+)+$/), label: text })).min(1),
-  steps: z.object({ ...head, items: z.array(item).length(3) }),
+  // /jak-to-dziala in direction 1a (design handoff "landing 3"): the intro over a wide illustration,
+  // then 3 steps, each with who acts. Step 1 shows the parent's request and the build lines beside a
+  // screencast, step 2 a question card over an illustration, step 3 the lesson's counts beside a screencast.
+  steps: z.object({
+    ...head,
+    intro: text,
+    pic: text,
+    items: z.array(z.object({ who: text, title: text, text })).length(3),
+    request: z.object({ ask: text, lines: z.array(text).min(1), soon: text, screencast: text }),
+    card: z
+      .object({ say: text, choices: z.array(text).min(2).max(4), hint: text, pic: text })
+      .refine((c) => new Set(c.choices).size === c.choices.length, {
+        message: "choices must differ",
+      }),
+    record: z.object({
+      counts: z.array(z.object({ value: z.int().min(0), label: text })).length(3),
+      nextLabel: text,
+      next: text,
+      screencast: text,
+    }),
+  }),
   promises: z.object({ heading: text, items: z.array(item).min(1) }),
   // Direction 1a, "Partner" (owner, 2026-11-01): learning the parent is close to, beside a made-up
   // child's profile as the parent app shows it. Goals and skill dots, never a score or a percentage.
