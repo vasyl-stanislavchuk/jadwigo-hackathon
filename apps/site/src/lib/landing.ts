@@ -95,12 +95,14 @@ export const landingSchema = z.object({
     subjects: z.object({ math: text, polish: text, english: text }),
     grade: text,
     questions: z.tuple([text, text, text]),
-    // The landing page's row: its heading, the grade and subject filters, the count and the arrows.
+    // /lekcje's heading over the lessons with no grade, after the grades' groups (dl-w0b4.108).
+    other: text,
+    // The landing page's row: its heading, the grade tabs ("Klasa 1"), the subject filter while
+    // there is more than one subject, the count and the arrows.
     row: z.object({
       heading: text,
       gradeLabel: text,
       subjectLabel: text,
-      allGrades: text,
       allSubjects: text,
       count: z.tuple([text, text, text]),
       prev: text,
