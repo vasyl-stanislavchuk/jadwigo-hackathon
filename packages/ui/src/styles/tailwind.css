@@ -131,6 +131,8 @@
   --text-jw-page-h1: var(--jw-page-h1);
   --text-jw-page-h2: var(--jw-page-h2);
   --text-jw-page-body: var(--jw-page-body);
+  --text-jw-page-small: var(--jw-page-small);
+  --text-jw-page-question: var(--jw-page-question);
   --leading-jw-page: var(--jw-page-leading);
 
   /* Sizes: min-h-kid-tap, size-kid-key, h-kid-commit, gap-kid-choice, min-h-jw-control. */
@@ -142,9 +144,20 @@
   --spacing-kid-credit: var(--kid-credit-height);
   --spacing-jw-control: var(--jw-control-height);
   --spacing-jw-control-sm: var(--jw-control-height-sm);
+  /* The parent's app frame (foundation.css): w-jw-shell-side, h-jw-shell-bar, max-w-jw-shell-box. */
+  --spacing-jw-shell-side: var(--jw-shell-side);
+  --spacing-jw-shell-rail: var(--jw-shell-rail);
+  --spacing-jw-shell-bar: var(--jw-shell-bar);
+  --spacing-jw-shell-chat: var(--jw-shell-chat);
+  --spacing-jw-shell-details: var(--jw-shell-details);
+  --spacing-jw-shell-strip: var(--jw-shell-strip);
+  --spacing-jw-shell-band: var(--jw-shell-band);
+  --spacing-jw-shell-box: var(--jw-shell-box);
+  --spacing-jw-dialog: var(--jw-dialog-width);
   --radius-jw-card: var(--jw-radius-card);
   --radius-jw-control: var(--jw-radius-control);
   --radius-jw-small: var(--jw-radius-small);
+  --radius-jw-dialog: var(--jw-radius-dialog);
   /* The pressed edge the action stands on (foundation.css, Behaviour: the action). */
   --shadow-jw-act: 0 var(--jw-press) 0 var(--jw-act-edge);
   --transition-duration-jw-fast: var(--jw-dur-fast);
@@ -152,6 +165,24 @@
   --transition-duration-jw-band: var(--jw-dur-band);
   --transition-duration-jw-step: var(--jw-dur-step);
   --ease-jw-out: var(--jw-ease-out);
+}
+
+/* A line at Zeszyt's width (--jw-border): 2 px, and 1 px in the parent's density. Tailwind's border
+ * widths are fixed numbers, so these name the token: border-jw, border-b-jw and the other sides. */
+@utility border-jw {
+  border-width: var(--jw-border);
+}
+@utility border-t-jw {
+  border-top-width: var(--jw-border);
+}
+@utility border-r-jw {
+  border-right-width: var(--jw-border);
+}
+@utility border-b-jw {
+  border-bottom-width: var(--jw-border);
+}
+@utility border-l-jw {
+  border-left-width: var(--jw-border);
 }
 
 @layer base {

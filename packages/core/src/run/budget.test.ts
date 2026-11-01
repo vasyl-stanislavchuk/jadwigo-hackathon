@@ -35,7 +35,8 @@ describe("budgetGuard, shares without float error (dl-z5ja.38)", () => {
     expect(budgetGuard(-Number.MIN_VALUE, 1)).toBe("stop");
     fc.assert(
       fc.property(
-        fc.double({ max: 0, maxExcluded: true, noNaN: true }),
+        // -0 is a spend of 0, not below it: maxExcluded still yields it, so it is filtered out.
+        fc.double({ max: 0, maxExcluded: true, noNaN: true }).filter((spent) => spent < 0),
         fc.double({ noNaN: false }),
         (spent, cap) => {
           expect(budgetGuard(spent, cap)).toBe("stop");

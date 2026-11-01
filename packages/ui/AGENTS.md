@@ -21,7 +21,8 @@ Design tokens, primitives and the parts the web app and the site share.
   lists what is still being removed, and only shrinks (`dl-uukj.32`).
 - Green means right, red means a miss, and nothing else wears them; a pick is its own blue; the
   action is neither. A tap target in a lesson is at least `--kid-tap-min`; a settings or navigation
-  control is 48 (`--jw-control-height`).
+  control is 48 (`--jw-control-height`), and 34 inside the signed-in parent app's density
+  (`[data-density="parent"]`, decision `dl-xo0q`). A lesson shown there keeps the child's sizes.
 - The playground's primitives, shadcn/ui and Tailwind come with `dl-5ssh.34.6`. OPEN: theme, sound and
   motion packs wait on the engagement epic (`dl-7wlo`); the can-do card is out of scope
   (`jadwigo-learner-experience/decisions/2026-10-27-the-can-do-card-and-the-look-back-review-at-a-lesson-s-end-are-o`).

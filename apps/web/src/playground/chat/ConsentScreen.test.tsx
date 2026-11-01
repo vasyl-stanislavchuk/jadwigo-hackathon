@@ -115,7 +115,7 @@ describe("the consent screen in /parent, once after sign-up (dl-z5ja.32)", () =>
     const agree = await agreeButton();
     await act(async () => fireEvent.click(agree));
     expect(f.state.patched).toEqual([[POD, { ai_consented: true }]]);
-    expect(await screen.findByText("Ola")).toBeTruthy();
+    expect((await screen.findAllByText("Ola")).length).toBeGreaterThan(0);
     expect(document.querySelector("[data-consent]")).toBeNull();
   });
 
@@ -137,13 +137,13 @@ describe("the consent screen in /parent, once after sign-up (dl-z5ja.32)", () =>
     screenFor(f);
     await screen.findByText("Zanim porozmawiasz z asystentem");
     fireEvent.click(screen.getByRole("button", { name: "Nie teraz" }));
-    expect(await screen.findByText("Ola")).toBeTruthy();
+    expect((await screen.findAllByText("Ola")).length).toBeGreaterThan(0);
     expect(f.state.patched).toEqual([]);
   });
 
   it("is not shown once the pod has consented", async () => {
     screenFor(family(AT));
-    expect(await screen.findByText("Ola")).toBeTruthy();
+    expect((await screen.findAllByText("Ola")).length).toBeGreaterThan(0);
     expect(document.querySelector("[data-consent]")).toBeNull();
   });
 });

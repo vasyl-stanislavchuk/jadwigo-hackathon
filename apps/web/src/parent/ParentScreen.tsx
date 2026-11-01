@@ -11,11 +11,16 @@
  *                dl-xo0q); "Nie teraz" steps past it for this visit
  *     ?claim     the tab still holds an attempt of that assignment: pick the child, or add one,
  *                and POST /attempts/{id}/claims; the tab then forgets the attempt
- *     no child   add one: a first name (goals and the age group wait on the owner)
- *     home       each child, with their lessons, newest first: each a card with a link to its
- *                attempt page, the day, a tile per question as the overview's heatmap draws that
- *                attempt's row, and a link to the overview (decision 2026-10-30-app-pages-take-an-
- *                adult-type-scale-h1-28-h2-22-body-17-and-the-a)
+ *     the shell  every signed-in page sits in the parent app's frame (shell/ParentShell.tsx, decision
+ *                dl-xo0q): the sidebar with Lekcje, Historia, the children and the account, and a top
+ *                bar with the breadcrumb only. A child is never a gate: with none, the page still
+ *                opens, and the sidebar's "+" adds one
+ *     home       "Lekcje / Nowa lekcja": for now each child's card, with their lessons, newest first
+ *                (each a card with a link to its attempt page, the day, a tile per question as the
+ *                overview's heatmap draws that attempt's row, and a link to the overview); the
+ *                first screen's box replaces it (dl-uukj.47.2), and the cards move to the child's
+ *                page (dl-uukj.47.3)
+ *   /parent/children/<learner>, /parent/lessons, /parent/history: the shell's pages (route.ts)
  *   /parent/attempts/<attempt>, signed in: that lesson, question by question (AttemptReview.tsx)
  *   /parent/assignments/<assignment>, signed in: every attempt at that lesson against its
  *                questions (overview/AssignmentOverview.tsx)
@@ -45,6 +50,7 @@ import {
   Button,
   Card,
   CardContent,
+  type Crumb,
   Field,
   Heading,
   Input,
@@ -90,11 +96,16 @@ import {
   attemptPath,
   claimOf,
   emailOf,
+  historyPath,
   learnerOf,
+  lessonsPath,
+  type ParentRoute,
   parentPath,
   parentRoute,
   providerOf,
 } from "./route.ts";
+import { ParentShell } from "./shell/ParentShell.tsx";
+import type { Place } from "./shell/Sidebar.tsx";
 
 /** The parent's page: the app page's prose column. */
 function ParentPage({ children }: { children: ReactNode }): ReactElement {
@@ -194,22 +205,13 @@ export function ParentScreen({
         }}
       />
     );
-  if (route?.kind === "attempt")
-    return (
-      <AttemptReview
-        api={api}
-        attempt={route.attempt}
-        learner={learnerOf(query)}
-        language={language}
-      />
-    );
-  if (route?.kind === "assignment")
-    return <AssignmentOverview api={api} assignment={route.assignment} language={language} />;
   return (
     <SignedIn
       api={api}
       pods={podApi}
       language={language}
+      route={route ?? { kind: "home" }}
+      learner={learnerOf(query)}
       claim={claimOf(query)}
       onSignOut={() => {
         auth.signOut().finally(() => {
@@ -475,12 +477,17 @@ function SignedIn({
   api,
   pods,
   language,
+  route,
+  learner,
   claim,
   onSignOut,
 }: {
   api: ParentClient;
   pods: PodClient | null;
   language: Language;
+  route: ParentRoute;
+  /** The attempt page's ?learner. */
+  learner: LearnerId | null;
   claim: AssignmentId | null;
   onSignOut: () => void;
 }): ReactElement {
@@ -560,44 +567,40 @@ function SignedIn({
     );
 
   const learners = view.me.learners.map((s) => s.learner);
-  const signOut = (
-    <Button
-      type="button"
-      variant="outline"
-      size="control"
-      className="self-start"
-      onClick={onSignOut}
-      data-sign-out
+  const t = (key: CopyKey): string => copy(language, key, {}, CATEGORY);
+  const lang = pageLang();
+  const lessons: Crumb = { label: t("parent_nav_lessons"), href: lessonsPath({ lang }) };
+  const history: Crumb = { label: t("parent_nav_history"), href: historyPath({ lang }) };
+  const newLesson: Crumb[] = [lessons, { label: t("parent_new_lesson") }];
+  const shell = (place: Place, trail: readonly Crumb[], body: ReactNode): ReactElement => (
+    <ParentShell
+      language={language}
+      learners={learners}
+      place={place}
+      trail={trail}
+      onAddChild={() => setAdding(true)}
+      onSignOut={onSignOut}
     >
-      {copy(language, "parent_sign_out", {}, CATEGORY)}
-    </Button>
+      {body}
+    </ParentShell>
   );
 
-  const addAnother = (
-    <Button
-      type="button"
-      variant="outline"
-      size="control"
-      className="self-start"
-      onClick={() => setAdding(true)}
-      data-add-another
-    >
-      {copy(language, "parent_add_child", {}, CATEGORY)}
-    </Button>
-  );
-
-  if (learners.length === 0 || adding)
-    return (
+  // Adding a child, or keeping the tab's attempt for one: the page asks it before anything else.
+  if (adding || (pending !== null && learners.length === 0))
+    return shell(
+      { kind: "elsewhere" },
+      [{ label: t("parent_nav_children") }, { label: t("parent_add_child") }],
       <ParentPage>
         <AddChild language={language} onAdd={addChild} />
-        {signOut}
-      </ParentPage>
+      </ParentPage>,
     );
 
   if (pending !== null)
-    return (
+    return shell(
+      { kind: "lessons" },
+      newLesson,
       <ParentPage>
-        <Heading>{copy(language, "parent_whose", {}, CATEGORY)}</Heading>
+        <Heading>{t("parent_whose")}</Heading>
         <ul className="flex w-full flex-col gap-3" data-whose>
           {learners.map((learner) => (
             <li key={learner.id}>
@@ -613,25 +616,86 @@ function SignedIn({
             </li>
           ))}
         </ul>
-        {addAnother}
-      </ParentPage>
+        <Button
+          type="button"
+          variant="outline"
+          size="control"
+          className="self-start"
+          onClick={() => setAdding(true)}
+          data-add-another
+        >
+          {t("parent_add_child")}
+        </Button>
+      </ParentPage>,
     );
 
-  return (
-    <ParentPage>
-      <Heading>{copy(language, "parent_title", {}, CATEGORY)}</Heading>
-      {notice !== null && <Notice>{copy(language, notice, {}, CATEGORY)}</Notice>}
-      <ul className="flex w-full flex-col gap-8" data-home>
-        {learners.map((learner) => (
-          <LearnerCard key={learner.id} api={api} learner={learner} language={language} />
-        ))}
-      </ul>
-      {addAnother}
-      {/* Moves the screens; the pod's own language waits for wave 2's PATCH route. */}
-      <LanguagePick language={language} />
-      {signOut}
-    </ParentPage>
-  );
+  switch (route.kind) {
+    case "lessons":
+      return shell(
+        { kind: "lessons" },
+        [{ label: t("parent_nav_lessons") }],
+        <ParentPage>
+          <p className="text-jw-ink-soft" data-lessons-empty>
+            {t("parent_lessons_empty")}
+          </p>
+        </ParentPage>,
+      );
+    case "history":
+      return shell(
+        { kind: "history" },
+        [{ label: t("parent_nav_history") }],
+        <ParentPage>
+          <p className="text-jw-ink-soft" data-history-empty>
+            {t("parent_history_empty")}
+          </p>
+        </ParentPage>,
+      );
+    case "child": {
+      const child = learners.find((l) => l.id === route.learner);
+      if (child === undefined)
+        return shell(
+          { kind: "elsewhere" },
+          [{ label: t("parent_nav_children") }],
+          <ParentPage>
+            <Failed language={language} />
+          </ParentPage>,
+        );
+      return shell(
+        { kind: "child", learner: child.id },
+        [{ label: t("parent_nav_children") }, { label: child.first_name }],
+        <ParentPage>
+          <ul className="flex w-full flex-col gap-8" data-home>
+            <LearnerCard api={api} learner={child} language={language} />
+          </ul>
+        </ParentPage>,
+      );
+    }
+    case "attempt":
+      return shell(
+        { kind: "history" },
+        [history, { label: t("parent_crumb_result") }],
+        <AttemptReview api={api} attempt={route.attempt} learner={learner} language={language} />,
+      );
+    case "assignment":
+      return shell(
+        { kind: "lessons" },
+        [lessons, { label: t("parent_crumb_overview") }],
+        <AssignmentOverview api={api} assignment={route.assignment} language={language} />,
+      );
+    case "home":
+      return shell(
+        { kind: "lessons" },
+        newLesson,
+        <ParentPage>
+          {notice !== null && <Notice>{t(notice)}</Notice>}
+          <ul className="flex w-full flex-col gap-8" data-home>
+            {learners.map((learner) => (
+              <LearnerCard key={learner.id} api={api} learner={learner} language={language} />
+            ))}
+          </ul>
+        </ParentPage>,
+      );
+  }
 }
 
 function AddChild({

@@ -476,13 +476,61 @@ describe("the adult sizes on an app page", () => {
     expect(declared(TOKENS)["jw-page-h2"]).toBe("1.375rem");
     expect(declared(TOKENS)["jw-page-body"]).toBe("1.0625rem");
     expect(declared(TOKENS)["jw-page-leading"]).toBe("1.5");
-    expect(rem("jw-page-h1")).toEqual([28, 26]);
-    expect(rem("jw-page-h2")).toEqual([22, 20]);
+    // The phone's step, then the parent's density (below) sets its own.
+    expect(rem("jw-page-h1")).toEqual([28, 26, 20]);
+    expect(rem("jw-page-h2")).toEqual([22, 20, 15]);
   });
 
   it("keeps the adult scale off a lesson's own rules", () => {
     const lesson = [...CSS.matchAll(/\[data-lesson-theme[^{]*\{([^}]*)\}/g)].map((m) => m[1] ?? "");
     for (const body of lesson) expect(body).not.toMatch(/--jw-page-/);
+  });
+});
+
+// Decision 2026-11-01-the-parent-app-is-a-sidebar-shell-and-a-3-column-lesson-workspac (dl-xo0q).
+describe("the parent's density", () => {
+  const PARENT = "[data-density='parent']";
+  const KID = "[data-density='parent'] :is([data-lesson-theme], [data-density='kid'])";
+  const px = (v: string | undefined) => Number(/^([\d.]+)rem$/.exec(v ?? "")?.[1]) * 16;
+
+  it("sets body 14, small 12.5, a control 34, corners 10 and 8, 1 px lines and a 3 px edge", () => {
+    const d = declared(PARENT);
+    expect(px(d["jw-page-body"])).toBe(14);
+    expect(px(d["jw-page-small"])).toBe(12.5);
+    expect(px(d["jw-size-body"])).toBe(14);
+    expect(px(d["jw-control-height"])).toBe(34);
+    expect(px(d["jw-radius-control"])).toBe(10);
+    expect(px(d["jw-radius-small"])).toBe(8);
+    expect(d["jw-border"]).toBe("1px");
+    expect(d["jw-press"]).toBe("3px");
+  });
+
+  // An alias resolves where it is declared, so the density declares the ones it changes again.
+  it("declares the radius and press aliases again", () => {
+    for (const block of [PARENT, KID]) {
+      expect(declared(block)["radius"], block).toBe("var(--jw-radius-control)");
+      expect(declared(block)["kid-press"], block).toBe("var(--jw-press)");
+    }
+  });
+
+  it("gives a lesson inside it back every size the density changed, at the :root value", () => {
+    const parent = declared(PARENT);
+    const kid = declared(KID);
+    const root = declared(TOKENS);
+    for (const name of Object.keys(parent)) {
+      if (name.startsWith("jw-page-") || !name.startsWith("jw-")) continue;
+      expect(kid[name], `--${name}`).toBe(root[name]);
+    }
+  });
+
+  it("sets nothing but sizes: no colour, no role", () => {
+    for (const block of [PARENT, KID])
+      for (const [name, value] of Object.entries(declared(block))) {
+        expect(value, `--${name}`).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+        expect(name, `--${name}`).not.toMatch(
+          /^jw-(p-|ground|card|ink|act|pick|focus|right|miss|help)/,
+        );
+      }
   });
 });
 

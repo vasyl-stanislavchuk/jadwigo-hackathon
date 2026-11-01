@@ -3222,6 +3222,19 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "archived_at": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -3229,7 +3242,8 @@
           "pod_id",
           "created_by",
           "title",
-          "created_at"
+          "created_at",
+          "archived_at"
         ],
         "additionalProperties": false
       },
@@ -3284,6 +3298,9 @@
               "type": "string",
               "minLength": 1
             }
+          },
+          "context": {
+            "$ref": "#/components/schemas/MessageContext"
           }
         },
         "required": [
@@ -6424,6 +6441,34 @@
           "self"
         ]
       },
+      "MessageContext": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "learner_id": {
+                "$ref": "#/components/schemas/LearnerId"
+              }
+            },
+            "required": [
+              "learner_id"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "lesson_id": {
+                "$ref": "#/components/schemas/LessonId"
+              }
+            },
+            "required": [
+              "lesson_id"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
       "MessageEvent": {
         "type": "object",
         "properties": {
@@ -6465,6 +6510,9 @@
                 "items": {
                   "$ref": "#/components/schemas/Attachment"
                 }
+              },
+              "context": {
+                "$ref": "#/components/schemas/MessageContext"
               },
               "citations": {
                 "type": "array",
