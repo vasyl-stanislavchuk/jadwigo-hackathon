@@ -43,7 +43,8 @@ Supabase assigns. That is how we recognize the parent's account.
 ## Your child's answers
 
 Only the parent sees their child's answers and progress in lessons, in their own account. No other
-family sees them.
+family sees them. When a parent asks Jadwigo's AI assistant for a lesson or a summary, the assistant
+reads the child's answers and first name to prepare it.
 
 ## Deleting your data
 
