@@ -135,6 +135,12 @@ export const RUN_ERROR_TYPE = {
    * a number, status or level no tool result gave. Not `retryable`; the turn ends completed.
    */
   answerUnchecked: "AnswerUnchecked",
+  /**
+   * An agent answer was not in the lesson's language twice, after its one correction (dl-z5ja.64,
+   * Lead decision 43). Checked only when the run has a lesson. Not `retryable`; the turn ends
+   * completed.
+   */
+  answerWrongLanguage: "AnswerWrongLanguage",
 } as const;
 export type RunErrorType = (typeof RUN_ERROR_TYPE)[keyof typeof RUN_ERROR_TYPE];
 

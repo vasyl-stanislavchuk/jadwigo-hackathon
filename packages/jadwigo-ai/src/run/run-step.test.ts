@@ -1118,6 +1118,8 @@ describe("the run's own error types", () => {
       runIdle: "RunIdle",
       runTimedOut: "RunTimedOut",
       answerUnchecked: "AnswerUnchecked",
+      // The page writes it as its generic "what went off track" line, as AnswerUnchecked.
+      answerWrongLanguage: "AnswerWrongLanguage",
     });
   });
 });
