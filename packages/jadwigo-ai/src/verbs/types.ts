@@ -31,9 +31,12 @@ export interface VerbEffect {
   output: Record<string, unknown>;
   lesson_file?: Record<string, unknown>;
   /**
-   * The result typed for its widget, for the tool result's `view`. lesson_check sets
-   * `{ kind: "lesson_check", data: { publishable, findings } }`: check()'s findings and the
-   * harsh-word ones (`dl-z5ja.31`). The other verbs' views are `dl-z5ja.69`.
+   * The result typed for its widget, for the tool result's `view` (`dl-z5ja.31`, `dl-z5ja.69`). The
+   * kind is the verb's name; the data, by verb:
+   * - lesson_check: `{ publishable, findings }`, check()'s findings and the harsh-word ones;
+   * - lesson_draft, lesson_edit: `{ revision, changed_step_ids, publishable }`;
+   * - lesson_show: `{ lesson }`, the lesson file as it stands;
+   * - question_search: `{ sets }`.
    */
   view?: ToolView;
 }
