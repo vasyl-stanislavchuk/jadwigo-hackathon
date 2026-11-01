@@ -29,6 +29,22 @@ describe("check-bootstrap", () => {
     expect(checkBoundary(boundary)).toEqual([]);
   });
 
+  it("lets the plan read EventBridge Scheduler, so a PR plan refreshes module.runner's schedule (dl-5ssh.34.72)", () => {
+    const allowed = policy.Statement.filter((s) => s.Effect === "Allow").flatMap((s) =>
+      Array.isArray(s.Action) ? s.Action : s.Action === undefined ? [] : [s.Action],
+    );
+    // An IAM action pattern: `*` matches any run of characters.
+    const grants = (action: string) =>
+      allowed.some((a) => new RegExp(`^${a.replaceAll("*", ".*")}$`).test(action));
+    for (const action of [
+      "scheduler:GetSchedule",
+      "scheduler:ListSchedules",
+      "scheduler:ListTagsForResource",
+    ])
+      expect(grants(action), action).toBe(true);
+    expect(grants("scheduler:UpdateSchedule")).toBe(false);
+  });
+
   it("fails on a trust that takes any branch of the repo", () => {
     const wide = withStatement(trust, "PullRequestRunsOfThisRepoOnly", (s) => ({
       ...s,
