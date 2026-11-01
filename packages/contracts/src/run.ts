@@ -100,7 +100,7 @@ export const Run = z.object({
   conversation_id: ConversationId.nullable(),
   workflow: RunWorkflow,
   /** The run this one continues, when a turn resumes an earlier one. */
-  resumes_run_id: RunId.nullable(),
+  resumes: RunId.nullable(),
   status: RunStatus,
   attempt: Count,
   cancel_requested_at: At.nullable(),

@@ -32,7 +32,7 @@ export interface NewRun {
   created_by: AccountId;
   conversation_id: ConversationId | null;
   workflow: RunWorkflow;
-  resumes_run_id: RunId | null;
+  resumes: RunId | null;
   cap_usd: number;
   idle_deadline_at: string | null;
   max_deadline_at: string;
