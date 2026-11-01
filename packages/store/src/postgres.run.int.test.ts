@@ -26,7 +26,7 @@ function newRun(account: NewRun["created_by"], conversation: NewRun["conversatio
     created_by: account,
     conversation_id: conversation,
     workflow: "jadwigo-lesson-compose",
-    resumes_run_id: null,
+    resumes: null,
     cap_usd: 1,
     idle_deadline_at: "2026-09-01T08:10:00.000Z",
     max_deadline_at: "2026-09-01T09:00:00.000Z",

@@ -151,7 +151,7 @@ const PREFIXES: Readonly<Record<string, IdPrefix>> = {
   created_by: ID_PREFIXES.account,
   conversation_id: ID_PREFIXES.conversation,
   run_id: ID_PREFIXES.run,
-  resumes_run_id: ID_PREFIXES.run,
+  resumes: ID_PREFIXES.run,
 };
 
 /**
@@ -2622,8 +2622,7 @@ class PostgresStore implements Store {
               .executeTakeFirst();
             if (!found) throw notFound("the conversation");
           }
-          const resumes =
-            run.resumes_run_id === null ? null : uuidOf(ID_PREFIXES.run, run.resumes_run_id);
+          const resumes = run.resumes === null ? null : uuidOf(ID_PREFIXES.run, run.resumes);
           if (resumes !== null) {
             const found = await tx
               .selectFrom("run")
@@ -2890,10 +2889,9 @@ const RUN_CHANGE = [
   "completed_at",
 ] as const satisfies readonly (keyof RunChange)[];
 
-/** A run row as its record. The table names the resumed run `resumes`; the record `resumes_run_id`. */
+/** A run row as its record. */
 function runOf(row: Selectable<DB["run"]>): Run {
-  const { resumes, ...rest } = row;
-  return read(Run, { ...rest, resumes_run_id: resumes }, ID_PREFIXES.run);
+  return read(Run, row, ID_PREFIXES.run);
 }
 
 /**
