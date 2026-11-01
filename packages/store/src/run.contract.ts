@@ -7,7 +7,7 @@ import {
   RunInbox,
 } from "@jadwigo/contracts/run";
 import { describe, expect, it } from "vitest";
-import type { NewRun } from "./run.ts";
+import type { NewLessonRevision, NewRun } from "./run.ts";
 import type { Store } from "./store.ts";
 
 /**
@@ -511,6 +511,99 @@ export function runContract(name: string, make: () => Promise<Store> | Store): v
         expect(await store.listRunRatings(a.pod, run.id)).toEqual([]);
       },
     );
+
+    // dl-z5ja.131: a resend is known by its stored row before anything is written.
+    frozen(
+      "finds a stored inbox row by event_id, pending or delivered, and only in its pod",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const b = await scope(store);
+        const run = await store.createRun(a.pod, newRun(a.account, null));
+        const entry = inbox(run.id, "Make it 5 questions.");
+        expect(await store.findRunInbox(a.pod, entry.event_id)).toBeUndefined();
+
+        const put = await store.putRunInbox(a.pod, entry);
+        expect(await store.findRunInbox(a.pod, entry.event_id)).toEqual(put);
+        expect(put.status).toBe("pending");
+
+        await store.takeRunInbox(a.pod, run.id);
+        expect(await store.findRunInbox(a.pod, entry.event_id)).toEqual({
+          ...put,
+          status: "delivered",
+        });
+        expect(await store.findRunInbox(b.pod, entry.event_id)).toBeUndefined();
+        expect(await store.findRunInbox(a.pod, eventId())).toBeUndefined();
+      },
+    );
+
+    // dl-z5ja.134, lead decision 48: every lesson revision is a compare-and-set per conversation.
+    frozen(
+      "appends a lesson revision only at the conversation's expected latest, across its runs",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const conversation = await store.createConversation(a.pod, {
+          id: conversationId(),
+          created_by: a.account,
+          title: null,
+        });
+        const first = await store.createRun(a.pod, newRun(a.account, conversation.id));
+        const second = await store.createRun(a.pod, newRun(a.account, conversation.id));
+
+        const one = revision(first.id, 1);
+        const made = await store.appendLessonRevision(a.pod, first.id, 1, 0, one);
+        expect(made).toMatchObject({ ok: true, revision: 1, event: { type: "lesson_revision" } });
+        // A replay of the same event answers it again, and appends nothing.
+        expect(await store.appendLessonRevision(a.pod, first.id, 1, 0, one)).toEqual(made);
+        expect(await store.listRunEvents(a.pod, first.id, 0)).toHaveLength(1);
+
+        // The other run wrote revision 1 first: a 2nd writer at 0 is stale and told the latest.
+        expect(
+          await store.appendLessonRevision(a.pod, second.id, 1, 0, revision(second.id, 1)),
+        ).toEqual({ ok: false, stale: "revision", latest: 1 });
+        expect(
+          await store.appendLessonRevision(a.pod, second.id, 1, 1, revision(second.id, 2)),
+        ).toMatchObject({ ok: true, revision: 2 });
+        // A run whose attempt moved on appends nothing.
+        expect(
+          await store.appendLessonRevision(a.pod, first.id, 9, 2, revision(first.id, 3)),
+        ).toEqual({
+          ok: false,
+          stale: "attempt",
+          latest: 2,
+        });
+        expect(await store.listRunEvents(a.pod, second.id, 0)).toHaveLength(1);
+      },
+    );
+
+    frozen(
+      "refuses a lesson revision outside its pod, its conversation or its numbering",
+      async () => {
+        const store = await make();
+        const a = await scope(store);
+        const b = await scope(store);
+        const conversation = await store.createConversation(a.pod, {
+          id: conversationId(),
+          created_by: a.account,
+          title: null,
+        });
+        const run = await store.createRun(a.pod, newRun(a.account, conversation.id));
+        const loose = await store.createRun(a.pod, newRun(a.account, null));
+        await expect(
+          store.appendLessonRevision(b.pod, run.id, 1, 0, revision(run.id, 1)),
+        ).rejects.toMatchObject(NOT_FOUND);
+        for (const [target, expected, event] of [
+          [loose.id, 0, revision(loose.id, 1)],
+          [run.id, 0, revision(run.id, 2)],
+          [run.id, 0, revision(loose.id, 1)],
+        ] as const)
+          await expect(
+            store.appendLessonRevision(a.pod, target, 1, expected, event),
+          ).rejects.toMatchObject({ type: "BadRequest" });
+        expect(await store.listRunEvents(a.pod, run.id, 0)).toEqual([]);
+      },
+    );
   });
 }
 
@@ -552,6 +645,15 @@ function message(run: RunId, text: string): NewRunEvent {
 
 function status(run: RunId, value: "in_progress" | "completed"): NewRunEvent {
   return { run_id: run, event_id: eventId(), type: "status", payload: { status: value } };
+}
+
+function revision(run: RunId, n: number): NewLessonRevision {
+  return {
+    run_id: run,
+    event_id: eventId(),
+    type: "lesson_revision",
+    payload: { revision: n, call_id: `call_${n}`, lesson_file: { title: `Revision ${n}` } },
+  };
 }
 
 function inbox(run: RunId, text: string) {

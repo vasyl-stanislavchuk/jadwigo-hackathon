@@ -40,7 +40,13 @@ Supabase keeps the email address and the Google or Facebook account identifier, 
 can't sign in without them. From sign-in, Jadwigo's own database keeps only the user identifier
 Supabase assigns. That is how we recognize the parent's account.
 
+## Your child's answers
+
+Only the parent sees their child's answers and progress in lessons, in their own account. No other
+family sees them. When a parent asks Jadwigo's AI assistant for a lesson or a summary, the assistant
+reads the child's answers and first name to prepare it.
+
 ## Deleting your data
 
-A parent can ask at any time for their account and the data linked to it to be deleted. The
-[Data deletion](/en/privacy/data-deletion/) page says how.
+A parent can ask at any time for their account and the data linked to it to be deleted, their
+child's answers included. The [Data deletion](/en/privacy/data-deletion/) page says how.

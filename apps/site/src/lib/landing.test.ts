@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { firstSentence, landingSchema, plural } from "./landing.ts";
+import { firstSentence, goalLine, landingSchema, plural } from "./landing.ts";
 
 const forms = ["pytanie", "pytania", "pytań"] as const;
 
@@ -31,12 +31,15 @@ describe("firstSentence", () => {
 describe("the hero question", () => {
   const question = landingSchema.shape.hero.shape.question;
   const q = {
+    label: "Dwa działania · klasa 3 · pytanie 1",
     say: "Ile to jest 2 razy 7?",
+    pic: "ilustracja",
+    source: "Źródło: Alfik Matematyczny",
     choices: ["12", "14"],
     answer: "14",
     right: "Brawo!",
     hint: "Prawie.",
-    signUp: { text: "Konto.", button: "Załóż konto" },
+    signUp: { text: "Konto.", button: "Załóż konto", again: "Jeszcze raz" },
   };
 
   it("takes an answer that is one of the choices", () => {
@@ -45,5 +48,30 @@ describe("the hero question", () => {
 
   it("refuses an answer no tile shows", () => {
     expect(question.safeParse({ ...q, answer: "15" }).success).toBe(false);
+  });
+});
+
+describe("goalLine", () => {
+  const words = { practising: "Ćwiczy:", allDone: "Umie wszystko.", nextUp: "Dalej:" };
+
+  it("names the skill being practised now", () => {
+    const skills = [
+      { name: "Ó wymienne na o", state: "done" },
+      { name: "Rz po spółgłoskach", state: "now" },
+      { name: "Wyrazy do zapamiętania", state: "next" },
+    ] as const;
+    expect(goalLine(skills, words)).toBe("Ćwiczy: Rz po spółgłoskach");
+  });
+
+  it("says every skill so far is done and names the next one", () => {
+    const skills = [
+      { name: "Odczytuje godziny", state: "done" },
+      { name: "Daty w kalendarzu", state: "next" },
+    ] as const;
+    expect(goalLine(skills, words)).toBe("Umie wszystko. Dalej: Daty w kalendarzu");
+  });
+
+  it("says only that every skill is done when nothing comes next", () => {
+    expect(goalLine([{ name: "Odczytuje godziny", state: "done" }], words)).toBe("Umie wszystko.");
   });
 });
