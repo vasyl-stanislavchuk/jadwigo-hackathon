@@ -2844,6 +2844,9 @@ class PostgresStore implements Store {
             .executeTakeFirst();
         },
       );
+      // A replay is the same run's: an event_id is unique across runs (dl-z5ja.36). Another
+      // pod's row is hidden by RLS, so its conflict already ends in `taken()` inside `#once`.
+      if (row.run_id !== stored.id) throw taken();
       return read(RunInbox, row);
     });
   }
