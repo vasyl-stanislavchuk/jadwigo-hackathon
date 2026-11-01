@@ -1188,6 +1188,35 @@ describe("the engine keeps PostHog's production lessons", () => {
       .map((e) => e.type === "message" && e.payload.text);
     expect(said[0]).toBe("Nie udało się otworzyć pliku PDF.");
   });
+  // The steward's review of #598: a file's name never reaches the model. MessageAttachment carries
+  // no name, and a name sent beside it anyway is dropped before any call.
+  frozen("an attachment's name never reaches the model", async () => {
+    // A made-up name shaped like a child's, never a real one.
+    const NAME = "Zosia_praca_domowa.pdf";
+    const t = await setup([{ text: "Widzę kartę." }, { text: "Dobrze." }]);
+    const pdf = file(t.pod, "application/pdf");
+    const photo = file(t.pod, "image/jpeg");
+    documents(t, { [pdf.attachment_id]: 2 });
+    // The name rides along as the attachment row has it, as a caller might send it.
+    const named = [
+      { ...pdf, name: NAME },
+      { ...photo, name: "Zosia.jpg" },
+    ];
+    await t.send({
+      event_id: eventId(),
+      kind: "message",
+      payload: { text: "Pomóż z tą kartą.", attachments: named },
+    });
+    await drain(t.deps);
+    await t.say("Dziękuję.");
+    await drain(t.deps);
+    expect(t.muse.calls).toHaveLength(2);
+    for (const call of t.muse.calls) {
+      const sent = JSON.stringify([call.instructions, call.input]);
+      expect(sent).not.toContain("Zosia");
+      expect(sent).not.toContain("praca_domowa");
+    }
+  });
 });
 
 // The world each scenario runs in.
