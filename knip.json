@@ -20,6 +20,9 @@
     },
     "packages/copy": {
       "ignore": ["src/paraglide/**"]
+    },
+    "apps/site": {
+      "ignoreDependencies": ["@jadwigo/copy"]
     }
   },
   "ignoreBinaries": ["make", "gitleaks", "uv", "psql"],
