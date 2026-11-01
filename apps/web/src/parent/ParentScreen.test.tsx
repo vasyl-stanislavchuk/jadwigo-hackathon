@@ -193,7 +193,9 @@ describe("ParentScreen", () => {
 
     type("[data-first-name]", " Ola ");
     await press("[data-add]");
-    await screen.findByText("Ola");
+    // The child's card on the home, and the child's row in the sidebar.
+    await screen.findByRole("heading", { name: "Ola" });
+    expect(document.querySelector(`[data-child-row="${LEARNER}"]`)?.textContent).toContain("Ola");
     expect(api.createLearner).toHaveBeenCalledWith({ first_name: "Ola" });
     expect(api.claimAttempt).toHaveBeenCalledWith(ATTEMPT, { learner_id: LEARNER });
     expect(storedAttempt.get(ASSIGNMENT)).toBeNull();
@@ -215,7 +217,10 @@ describe("ParentScreen", () => {
     await press("[data-send-code]");
     type("[data-code]", "123456");
     await press("[data-sign-in]");
-    await screen.findByText("Your child's first name");
+    // A child is never a gate (decision dl-xo0q): the app opens on "Lessons / New lesson".
+    await screen.findByRole("navigation", { name: "Where you are" });
+    expect(screen.getByText("New lesson").getAttribute("aria-current")).toBe("page");
+    expect(document.querySelector("[data-first-name]")).toBeNull();
     expect(api.createAccount).toHaveBeenCalledWith({ language: "en" });
   });
 
@@ -225,9 +230,11 @@ describe("ParentScreen", () => {
     const english = { ...me([snapshot]), pod: { ...pod, language: "en" } } as unknown as Me;
     const api = client({ getMe: async () => english });
     render(<Wired auth={auth} client={api} />);
-    await screen.findByText("Add a child");
+    await screen.findByRole("button", { name: "Add a child" });
+    // The language lives in the account menu at the sidebar's foot.
+    await press("[data-account]");
     await press('[data-language-pick] [role="radio"][value="pl"]');
-    await screen.findByText("Dodaj dziecko");
+    await screen.findByRole("button", { name: "Dodaj dziecko" });
   });
 
   it("asks whose lesson it was when the pod has a child, and says so when the attempt is already kept", async () => {
