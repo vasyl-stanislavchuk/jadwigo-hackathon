@@ -72,6 +72,20 @@ describe("PostgresStore as jadwigo_runner, the step consumer", () => {
     expect(await runner.listRuns(a.pod, conversation.id)).toEqual([claimed.value]);
   });
 
+  it("reads what runStep's names read needs of the run's pod, and nothing of another pod (dl-z5ja.81)", async () => {
+    const a = await scope();
+    const b = await scope();
+    await api.addLearner(a.pod, { first_name: "Mole", goals: ["Tables of 2"] });
+    await api.addLearner(b.pod, { first_name: "Wren", goals: [] });
+    const me = await runner.getMe(a.pod, a.account);
+    expect(me.pod.id).toBe(a.pod);
+    expect(me.learners.map((l) => [l.learner.first_name, l.goals.map((g) => g.name)])).toEqual([
+      ["Mole", ["Tables of 2"]],
+    ]);
+    await expect(runner.getMe(a.pod, b.account)).rejects.toThrow();
+    await expect(runner.addLearner(a.pod, { first_name: "Vole", goals: [] })).rejects.toThrow();
+  });
+
   it("is not the owner: it may not open an account, which only the API's role writes", async () => {
     await expect(runner.createAccount(Uuid.parse(crypto.randomUUID()), "pl")).rejects.toThrow();
   });
