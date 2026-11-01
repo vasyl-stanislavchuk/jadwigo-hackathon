@@ -4,6 +4,7 @@ import {
   GoalCreate,
   type GoalId,
   GoalPatch,
+  type Language,
   type Learner,
   type LearnerGoals,
   type LearnerId,
@@ -32,17 +33,20 @@ import { narrativeProblems } from "./narrative.ts";
  * (packages/core); a route only reads, folds and writes.
  */
 
-/** The caller's pod and account, and the learner the path names in it; another pod's is 404. */
+/**
+ * The caller's pod, its language and account, and the learner the path names in it; another
+ * pod's is 404.
+ */
 async function learnerOf(
   store: Store,
   claims: Claims,
   id: LearnerId,
-): Promise<{ pod: PodId; account: AccountId; learner: Learner }> {
+): Promise<{ pod: PodId; language: Language; account: AccountId; learner: Learner }> {
   const { pod, account } = await authorizeMember(store, claims);
   const me = await store.getMe(pod, account);
   const learner = me.learners.find((l) => l.learner.id === id)?.learner;
-  if (!learner) throw new ApiError(ErrorType.enum.NotFound, "no such learner");
-  return { pod, account, learner };
+  if (!learner || !me.pod) throw new ApiError(ErrorType.enum.NotFound, "no such learner");
+  return { pod, language: me.pod.language, account, learner };
 }
 
 /**
@@ -106,15 +110,16 @@ export async function createGoal(
   id: LearnerId,
   raw: unknown,
 ): Promise<LearnerGoals> {
-  const { pod } = await learnerOf(store, claims, id);
+  const { pod, language } = await learnerOf(store, claims, id);
   const parsed = GoalCreate.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
   const catalogue = await store.listSkills(pod);
   await store.addGoal(pod, id, {
     name: parsed.data.name,
-    // Lessons are in Polish only for now, so a goal's lessons are Polish whatever the pod's
-    // language (jadwigo-hackathon/decisions/2026-10-29-lessons-are-in-polish-only-for-now-other-lesson-languages-are-pa).
-    lesson_language: "pl",
+    // A goal's lessons are in the language the parent picked at sign-up, the pod's: Polish or
+    // English (jadwigo-learner-knowledge/decisions/2026-11-01-jadwigo-makes-english-lessons-now-a-lesson-s-language-comes-from).
+    // `GoalCreate` names no language of its own yet, so every goal of a pod shares it.
+    lesson_language: language,
     // An empty `words` is none: the column refuses an empty string.
     words: parsed.data.words || null,
     skill_codes: parsed.data.skill_codes.map((code) => resolveSkill(code, catalogue)),

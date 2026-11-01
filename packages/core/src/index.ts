@@ -20,6 +20,15 @@ export {
 export { judge, pageMarks, solutionOf } from "./families/judge.ts";
 export { type Marks, QUESTION_TYPE_MARKS, type Question } from "./families/question.ts";
 export { mistakeClassesOf } from "./families/rules.ts";
+export { numberWords, readNumberWords } from "./lang/number-words.ts";
+export {
+  PL_CASES,
+  PL_GENDERS,
+  type PlCase,
+  type PlGender,
+  type PlNumberWordsOptions,
+  polishNumberWords,
+} from "./lang/pl/number-words.ts";
 export {
   brief,
   canDoLines,
