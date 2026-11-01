@@ -27,7 +27,8 @@ export type ToolState = "pending" | "running" | "failed" | "done" | "rejected";
 
 /**
  * One row of the chat pane, in `seq` order of the event that opened it. The optional fields
- * (`citations`, `view`, `choose`, `feedback`, `answers`) are present only when the log carries them.
+ * (`citations`, `steer`, `view`, `choose`, `feedback`, `answers`) are present only when the log
+ * carries them.
  */
 export type ChatItem =
   | {
@@ -37,6 +38,11 @@ export type ChatItem =
       text: string;
       attachments: readonly Attachment[];
       citations?: readonly Citation[];
+      /**
+       * Present only on a parent's steer (dl-z5ja.51): words sent while the turn ran, or an edit
+       * in the lesson pane naming the questions it changed.
+       */
+      steer?: SteerMark;
     }
   | {
       kind: "tool";
@@ -62,6 +68,10 @@ export type ChatItem =
       answers?: readonly string[];
     }
   | { kind: "error"; seq: number; error: RunError; attempt: number; retryable: boolean };
+
+type SteerPayload = Extract<RunEvent, { type: "steer" }>["payload"];
+/** Where a steer came from, and the questions a lesson edit names. */
+type SteerMark = Pick<SteerPayload, "source" | "question_ids">;
 
 export type BudgetLevel = "none" | "steer" | "stop";
 
@@ -160,6 +170,18 @@ export function foldRun(events: readonly RunEvent[]): RunView {
         });
         break;
       }
+      case "steer": {
+        const { text, source, question_ids } = e.payload;
+        chat.push({
+          kind: "message",
+          seq: e.seq,
+          from: "parent",
+          text,
+          attachments: [],
+          steer: { source, ...(question_ids ? { question_ids } : {}) },
+        });
+        break;
+      }
       case "tool_call": {
         const line = toolLine(e.payload.call_id, e.payload.verb, e.seq, "running");
         if (line.state === "pending") line.state = "running";
@@ -250,6 +272,20 @@ export function mergeLive(
 }
 
 /**
+ * How far below a share's threshold a spend may sit and still count as reaching it, relative to
+ * the threshold. `0.1 * 0.9` is `0.09000000000000001`, so a plain `>=` reads a spend of exactly
+ * 90% of the cap as below it (`dl-z5ja.38`). A billionth of the threshold is far below a cent on
+ * any cap and far above a float's rounding error. A fixed threshold per cap keeps the guard
+ * monotone in the spend.
+ */
+const SHARE_TOLERANCE = 1e-9;
+
+/** Whether `spent_usd` has reached `share` of `cap_usd`, float error forgiven. */
+function reached(spent_usd: number, cap_usd: number, share: number): boolean {
+  return spent_usd >= cap_usd * share * (1 - SHARE_TOLERANCE);
+}
+
+/**
  * Before every Muse call: `steer` from half the cap, `stop` from 90% (`BUDGET_STEER_SHARE`,
  * `BUDGET_STOP_SHARE`). A spend that can't be read is `stop`: an unknown balance is no licence to
  * spend (`ff23c1ce7af`). So is a cap that can't be read or leaves nothing to spend.
@@ -257,8 +293,8 @@ export function mergeLive(
 export function budgetGuard(spent_usd: number | null | undefined, cap_usd: number): BudgetLevel {
   if (spent_usd == null || !Number.isFinite(spent_usd)) return "stop";
   if (!Number.isFinite(cap_usd) || cap_usd <= 0) return "stop";
-  if (spent_usd >= cap_usd * BUDGET_STOP_SHARE) return "stop";
-  if (spent_usd >= cap_usd * BUDGET_STEER_SHARE) return "steer";
+  if (reached(spent_usd, cap_usd, BUDGET_STOP_SHARE)) return "stop";
+  if (reached(spent_usd, cap_usd, BUDGET_STEER_SHARE)) return "steer";
   return "none";
 }
 
