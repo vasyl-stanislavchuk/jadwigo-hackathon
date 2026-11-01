@@ -5,6 +5,7 @@
  */
 
 import { copy } from "@jadwigo/copy";
+import { FIXED_NOW } from "@jadwigo/testing";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
@@ -13,6 +14,7 @@ import { must } from "./must.ts";
 import {
   bandWords,
   LessonFrame,
+  MISS_READ,
   StepShell,
   type StepShellProps,
   spokenInstruction,
@@ -290,11 +292,22 @@ describe("the bands", () => {
     expect(bar(container).querySelector("[data-next]")).toBeNull();
   });
 
-  it("announces the band in one live region", () => {
-    const { container } = render(shell({ feedback: miss }));
-    expect(must(container.querySelector("[data-announce]")).textContent).toBe(
+  it("announces the band in one live region: the phone reads only its title, a laptop both lines (dl-rn0d)", () => {
+    const phone = render(shell({ feedback: miss }));
+    expect(must(phone.container.querySelector("[data-announce]")).textContent).toBe(
+      en("ds_miss_short"),
+    );
+    // A phone drops the second line: Popraw carries it (handoff 1c §2).
+    expect(
+      must(bar(phone.container).querySelector("[data-band-line]")).hasAttribute("data-wide-only"),
+    ).toBe(true);
+    cleanup();
+    const back = asLaptop();
+    const laptop = render(shell({ feedback: miss }));
+    expect(must(laptop.container.querySelector("[data-announce]")).textContent).toBe(
       `${en("ds_miss_short")} ${en("ds_miss_fix")}`,
     );
+    back();
   });
 });
 
@@ -476,14 +489,19 @@ describe("the help note", () => {
     expect(bulb.getAttribute("aria-hidden")).toBe("true");
   });
 
-  it("folds the miss band once help is out, Sprawdź resting until the answer changes", () => {
+  it("keeps the miss band while help is out, with Popraw only: no bulb, no way out, no Check (dl-rn0d)", () => {
     const { container } = render(
-      shell({ feedback: miss, ladder: { help: released(1), ask: ask(), refused: false } }),
+      shell({
+        feedback: miss,
+        moveOn: { enabled: true, press: press() },
+        ladder: { help: released(1), ask: ask(), refused: false },
+      }),
     );
-    expect(bar(container).getAttribute("data-band")).toBe("none");
-    expect(must(bar(container).querySelector("[data-check]")).getAttribute("aria-disabled")).toBe(
-      "true",
-    );
+    expect(bar(container).getAttribute("data-band")).toBe("miss");
+    expect(bar(container).querySelector("[data-fix]")).not.toBeNull();
+    expect(bar(container).querySelector("[data-bulb]")).toBeNull();
+    expect(bar(container).querySelector("[data-move-on]")).toBeNull();
+    expect(bar(container).querySelector("[data-check]")).toBeNull();
   });
 
   it("with no help to give, the bulb's slot holds Jeszcze nie wiem, one tap away (dl-uukj.29.154)", () => {
@@ -925,7 +943,7 @@ describe("the keyboard demo with fields of any length (§3.4, §3.5)", () => {
     expect(band()).toBe("right");
   });
 
-  it("a quiet Sprawdź goes to the first empty field, and after a miss to the first marked one, its tooltip repeating the band", () => {
+  it("a quiet Sprawdź goes to the first empty field, and after a miss with help out Popraw goes to the first marked one", () => {
     const restore = asLaptop();
     const checks = vi.fn();
     render(
@@ -944,12 +962,11 @@ describe("the keyboard demo with fields of any length (§3.4, §3.5)", () => {
     type("31");
     key("Enter");
     expect(checks).toHaveBeenCalledOnce();
-    // Help is out, so the band is folded and Sprawdź stays quiet until a marked part changes.
+    // Help is out and the band stays, Popraw alone in it (dl-rn0d): Popraw does what the quiet
+    // Sprawdź did, the first marked field with its part selected, and checks nothing.
     pole(1).focus();
-    const check = screen.getByRole("button", { name: copy("pl", "check") });
-    expect(check.getAttribute("aria-disabled")).toBe("true");
-    expect(must(check.closest(".kid-tooltip")).textContent).toContain("Popraw zaznaczone miejsce.");
-    fireEvent.pointerDown(check);
+    expect(screen.queryByRole("button", { name: copy("pl", "check") })).toBeNull();
+    fireEvent.pointerDown(screen.getByRole("button", { name: copy("pl", "ds_fix") }));
     expect(checks).toHaveBeenCalledOnce();
     expect(focused()).toBe("Pole 3");
     expect(selection()).toEqual([0, 2]);
@@ -1111,14 +1128,143 @@ describe("the step ends, help comes, and the live region", () => {
       });
     const { container, rerender } = render(at(0));
     expect(container.querySelectorAll("[aria-live]").length).toBe(1);
-    expect(must(container.querySelector("[data-announce]")).textContent).toBe(
-      `${en("ds_miss_short")} ${en("ds_miss_fix")}`,
-    );
+    // A phone reads only the title it shows (dl-rn0d).
+    expect(must(container.querySelector("[data-announce]")).textContent).toBe(en("ds_miss_short"));
     rerender(at(1));
     expect(must(container.querySelector("[data-announce]")).textContent).toBe("Count the rows.");
     rerender(at(2));
     expect(must(container.querySelector("[data-announce]")).textContent).toBe("Now the columns.");
     expect(container.querySelectorAll("[aria-live]").length).toBe(1);
+  });
+});
+
+// Handoff "after a miss" 1c (dl-uukj.29.162): Popraw in every miss band, and help that opens by
+// itself at its first rung from the second miss, once the band has been read.
+describe("after a miss: Popraw, and help that opens by itself (handoff 1c)", () => {
+  // The wait is a timer: fake it on top of the pinned clock (the unit setup keeps Date fixed).
+  const timers = () =>
+    vi.useFakeTimers({ now: FIXED_NOW, toFake: ["Date", "setTimeout", "clearTimeout"] });
+  const marked = {
+    answer: <input aria-label="answer" data-field="a" data-tone="try_again" defaultValue="13" />,
+    keys: keysOf([field("a", "13", { marked: true })]),
+  };
+  /** A help ask whose taps and keyboard presses are both counted. */
+  const asking = () => {
+    const pressed = vi.fn();
+    return {
+      pressed,
+      ask: { enabled: true, press: { onPointerDown: () => pressed(), onClick: () => pressed() } },
+    };
+  };
+  const answer = () => screen.getByRole("textbox", { name: "answer" }) as HTMLInputElement;
+
+  it("draws Popraw in the miss band beside Pomóż mi; it focuses the first mark, selected, and checks nothing", () => {
+    const check = vi.fn();
+    const { container } = render(
+      shell({
+        ...marked,
+        feedback: miss,
+        action: { ready: true, press: press(check) },
+        ladder: { help: null, ask: ask(), refused: false },
+      }),
+    );
+    expect(bar(container).querySelector("[data-bulb]")).not.toBeNull();
+    const fix = must(bar(container).querySelector<HTMLElement>("[data-fix]"));
+    expect(fix.textContent).toBe(en("ds_fix"));
+    fix.focus();
+    fireEvent.pointerDown(fix);
+    expect(document.activeElement).toBe(answer());
+    expect([answer().selectionStart, answer().selectionEnd]).toEqual([0, 2]);
+    expect(check).not.toHaveBeenCalled();
+    expect(bar(container).getAttribute("data-band")).toBe("miss");
+    // A keyboard press on Popraw does the same.
+    fix.focus();
+    fireEvent.click(fix, { detail: 0 });
+    expect(document.activeElement).toBe(answer());
+  });
+
+  it("on a step with no fields, Popraw focuses the marked part (Choose: the marked option)", () => {
+    const { container } = render(
+      shell({
+        feedback: miss,
+        answer: (
+          <>
+            <button type="button" data-option="a" data-tone="idle">
+              5
+            </button>
+            <button type="button" data-option="b" data-tone="try_again">
+              6
+            </button>
+          </>
+        ),
+      }),
+    );
+    fireEvent.pointerDown(must(bar(container).querySelector("[data-fix]")));
+    expect(document.activeElement?.getAttribute("data-option")).toBe("b");
+  });
+
+  it("never opens help by itself on the first miss", () => {
+    timers();
+    const { pressed, ask: offer } = asking();
+    render(
+      shell({ ...marked, feedback: miss, ladder: { help: null, ask: offer, refused: false } }),
+    );
+    act(() => vi.advanceTimersByTime(MISS_READ * 2));
+    expect(pressed).not.toHaveBeenCalled();
+  });
+
+  it("on the second miss opens help once the band is read, at its first rung, the focus kept on the field, the rung not read out", () => {
+    timers();
+    const { pressed, ask: offer } = asking();
+    const at = (feedback: Feedback, help: ReturnType<typeof released> | null) =>
+      shell({ ...marked, feedback, ladder: { help, ask: offer, refused: false } });
+    const { container, rerender } = render(at(miss, null));
+    rerender(at({ kind: "try_again", index: 1 }, null));
+    act(() => vi.advanceTimersByTime(MISS_READ - 1));
+    expect(pressed).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1));
+    expect(pressed).toHaveBeenCalledOnce();
+    // The runner releases rung 1: the band stays with Popraw only, the focus stays on the field,
+    // and the live region still holds the band's words.
+    rerender(at({ kind: "try_again", index: 1 }, released(1)));
+    expect(container.querySelector("[data-help-note]")).not.toBeNull();
+    expect(bar(container).getAttribute("data-band")).toBe("miss");
+    expect(bar(container).querySelector("[data-fix]")).not.toBeNull();
+    expect(bar(container).querySelector("[data-bulb]")).toBeNull();
+    expect(document.activeElement).toBe(answer());
+    expect(must(container.querySelector("[data-announce]")).textContent).toBe(en("ds_miss_short"));
+    // Miss 3 with the note open: no rung is added by itself.
+    rerender(at({ kind: "try_again", index: 2 }, released(1)));
+    act(() => vi.advanceTimersByTime(MISS_READ * 2));
+    expect(pressed).toHaveBeenCalledOnce();
+    // A rung the child asks for is read out as before.
+    rerender(at({ kind: "try_again", index: 2 }, released(2)));
+    expect(must(container.querySelector("[data-announce]")).textContent).toBe("Now the columns.");
+  });
+
+  it("opens nothing by itself when the child asked for help before the second miss", () => {
+    timers();
+    const { pressed, ask: offer } = asking();
+    const at = (feedback: Feedback) =>
+      shell({ ...marked, feedback, ladder: { help: released(1), ask: offer, refused: false } });
+    const { container, rerender } = render(at(miss));
+    rerender(at({ kind: "try_again", index: 1 }));
+    act(() => vi.advanceTimersByTime(MISS_READ * 2));
+    expect(pressed).not.toHaveBeenCalled();
+    expect(bar(container).getAttribute("data-band")).toBe("miss");
+    expect(bar(container).querySelector("[data-bulb]")).toBeNull();
+  });
+
+  it("opens nothing on the second miss of a step with no help to give", () => {
+    timers();
+    const out = vi.fn();
+    const at = (feedback: Feedback) =>
+      shell({ ...marked, feedback, moveOn: { enabled: true, press: press(out) } });
+    const { container, rerender } = render(at(miss));
+    rerender(at({ kind: "try_again", index: 1 }));
+    act(() => vi.advanceTimersByTime(MISS_READ * 2));
+    expect(container.querySelector("[data-help-note]")).toBeNull();
+    expect(out).not.toHaveBeenCalled();
   });
 });
 
