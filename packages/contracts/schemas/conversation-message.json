@@ -30,6 +30,9 @@
         "type": "string",
         "minLength": 1
       }
+    },
+    "context": {
+      "$ref": "#/$defs/MessageContext"
     }
   },
   "required": [
@@ -41,6 +44,42 @@
     "EventId": {
       "type": "string",
       "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "MessageContext": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "learner_id": {
+              "$ref": "#/$defs/LearnerId"
+            }
+          },
+          "required": [
+            "learner_id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "lesson_id": {
+              "$ref": "#/$defs/LessonId"
+            }
+          },
+          "required": [
+            "lesson_id"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "LearnerId": {
+      "type": "string",
+      "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+    },
+    "LessonId": {
+      "type": "string",
+      "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
     }
   }
 }
