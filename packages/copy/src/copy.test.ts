@@ -22,14 +22,8 @@ describe("copy tables", () => {
     }
   });
 
-  it("ship every pl line with reviewed: false", () => {
-    for (const [key, value] of Object.entries(TABLES.pl)) {
-      for (const entry of entries(value)) {
-        expect(entry.reviewed, `pl.${key}`).toBe(false);
-      }
-    }
-  });
-
+  // A pl line may ship reviewed: the owner sets the flags, and an unreviewed line is listed by
+  // tools/src/check-copy.ts, never a failure (owner, 2026-11-01, dl-5ssh.125).
   it("hold lists exactly for the list keys", () => {
     for (const table of Object.values(TABLES)) {
       for (const key of COPY_KEYS) {
