@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { devDatabaseUrl, isLocalDatabaseUrl, museConfig, runnerDatabaseUrl } from "./config.ts";
+import {
+  bankConfig,
+  devDatabaseUrl,
+  isLocalDatabaseUrl,
+  museConfig,
+  runnerDatabaseUrl,
+} from "./config.ts";
 
 const KEYS = [
   "META_API_KEY",
@@ -11,6 +17,9 @@ const KEYS = [
   "RUNNER_DATABASE_URL",
   "JADWIGO_RUNNER_DB_URL_PARAM",
   "LOCAL_DATABASE_URL",
+  "JADWIGO_API_URL",
+  "JADWIGO_BANK_READ_TOKEN",
+  "BANK_READ_TOKEN_PARAM",
 ];
 const saved = Object.fromEntries(KEYS.map((k) => [k, process.env[k]]));
 
@@ -28,6 +37,26 @@ afterEach(() => {
 });
 
 describe("the runner's settings", () => {
+  it("reads no bank while JADWIGO_API_URL is unset, so the verbs draw from the fixture", async () => {
+    env({ BANK_READ_TOKEN_PARAM: "/jadwigo/bank/read-token" });
+    expect(await bankConfig(() => Promise.reject(new Error("not read")))).toBeUndefined();
+  });
+
+  it("reads the bank's read token from the SSM parameter it names, else from the environment", async () => {
+    env({ JADWIGO_API_URL: "https://app.example.test", BANK_READ_TOKEN_PARAM: "/p" });
+    const asked: string[] = [];
+    const config = await bankConfig((name) => {
+      asked.push(name);
+      return Promise.resolve(" t0ken ");
+    });
+    expect(config).toEqual({ base: "https://app.example.test", token: "t0ken" });
+    expect(asked).toEqual(["/p"]);
+    env({ JADWIGO_API_URL: "https://app.example.test", JADWIGO_BANK_READ_TOKEN: "local" });
+    expect((await bankConfig())?.token).toBe("local");
+    env({ JADWIGO_API_URL: "https://app.example.test" });
+    await expect(bankConfig()).rejects.toThrow("BANK_READ_TOKEN_PARAM");
+  });
+
   it("reads the Meta key from the SSM parameter it names, once, when the environment has none", async () => {
     env({ JADWIGO_MUSE_KEY_PARAM: "/jadwigo/dev/muse-api-key", JADWIGO_MUSE_CAP_USD: "0.5" });
     const asked: string[] = [];
