@@ -13,6 +13,7 @@ describe("colour and size come from the tokens", () => {
     ["review", false],
     ["parent", false],
     ["playground", false],
+    ["chat", false],
   ] as const) {
     const report = checkTokens(join(SRC, dir), join(SRC, dir, "tokens.allow.json"), { shallow });
     it(`${dir}: finds the sources it checks`, () => {

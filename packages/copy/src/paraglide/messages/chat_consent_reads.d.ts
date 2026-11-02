@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "The assistant reads what your request needs: your child's data, names included." |
+* | "Jadwigo AI reads what your request needs: your child's data, names included." |
 *
 * @param {Chat_Consent_ReadsInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

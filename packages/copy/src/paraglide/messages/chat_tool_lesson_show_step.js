@@ -19,5 +19,5 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const chat_tool_lesson_show_step = /** @type {((inputs: Chat_Tool_Lesson_Show_StepInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Chat_Tool_Lesson_Show_StepInputs, { locale?: "pl" | "en" }, {}>} */ ((i, options = {}) => {
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") return /** @type {LocalizedString} */ (`Reading step ${i?.step}`)
-	return /** @type {LocalizedString} */ (`Czytam krok ${i?.step}`)
+	return /** @type {LocalizedString} */ (`Czytanie kroku ${i?.step}`)
 });

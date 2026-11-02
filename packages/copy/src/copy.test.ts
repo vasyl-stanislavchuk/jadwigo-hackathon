@@ -354,7 +354,7 @@ describe("the chat page (dl-z5ja.29)", () => {
 
   it("fills a tool line's topic and counts a check's notes in Polish plurals", () => {
     expect(copy("pl", "chat_tool_question_search_about", { topic: "odejmowanie do 20" })).toBe(
-      "Szukam zadań o: odejmowanie do 20",
+      "Szukanie zadań o: odejmowanie do 20",
     );
     expect(copy("pl", "chat_check_findings", { n: 1 })).toBe("1 uwaga do poprawy");
     expect(copy("pl", "chat_check_findings", { n: 3 })).toBe("3 uwagi do poprawy");

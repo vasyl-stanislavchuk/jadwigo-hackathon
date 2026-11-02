@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Your message will be sent when the assistant finishes its reply." |
+* | "Queued, sent after this turn" |
 *
 * @param {Chat_QueuedInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const chat_queued = /** @type {((inputs?: Chat_QueuedInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Chat_QueuedInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("Your message will be sent when the assistant finishes its reply.")
-	return /** @type {LocalizedString} */ ("Wyślę po tej turze")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Queued, sent after this turn")
+	return /** @type {LocalizedString} */ ("W kolejce, do wysłania po tej turze")
 });

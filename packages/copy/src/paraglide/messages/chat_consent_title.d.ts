@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Before you talk to the assistant" |
+* | "Before you start with Jadwigo AI" |
 *
 * @param {Chat_Consent_TitleInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

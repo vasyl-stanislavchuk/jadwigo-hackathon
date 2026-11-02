@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "About to start" |
+* | "Queued" |
 *
 * @param {Chat_Status_QueuedInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

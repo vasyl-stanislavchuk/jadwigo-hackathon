@@ -147,7 +147,7 @@ describe("the lesson footer", () => {
         onGive={give}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Pokaż: Ola" }));
+    fireEvent.click(screen.getByRole("button", { name: "Daj lekcję · Ola" }));
     expect(give).toHaveBeenCalledOnce();
     expect(document.querySelector("[data-status]")?.textContent).toBe("Gotowe");
   });

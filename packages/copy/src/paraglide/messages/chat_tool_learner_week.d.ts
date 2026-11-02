@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Reading the learner's week" |
+* | "Reading the child's week" |
 *
 * @param {Chat_Tool_Learner_WeekInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

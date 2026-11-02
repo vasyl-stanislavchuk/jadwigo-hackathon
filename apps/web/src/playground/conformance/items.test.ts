@@ -1,6 +1,6 @@
 import { parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import { describe, expect, it } from "vitest";
-import { lessonFileToSpecs } from "../lesson/adapter.ts";
+import { lessonFileToSpecs } from "../../chat/lesson/adapter.ts";
 import { playgroundRoute } from "../route.ts";
 import { CONFORMANCE_PATH } from "./ConformanceScreen.tsx";
 import { itemsOf, lessonFileOf, plays, setIdOf } from "./items.ts";

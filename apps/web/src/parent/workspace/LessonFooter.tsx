@@ -54,7 +54,7 @@ export function LessonFooter({
         onClick={() => ready && onGive()}
         data-give
       >
-        {child === null ? t("parent_give") : t("parent_show", { name: child.first_name })}
+        {child === null ? t("parent_give") : t("parent_give_child", { name: child.first_name })}
       </Button>
     </Band>
   );

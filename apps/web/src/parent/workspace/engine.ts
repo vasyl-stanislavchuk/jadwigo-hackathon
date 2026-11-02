@@ -11,9 +11,9 @@
 
 import type { ConversationClient, RunRatingClient } from "@jadwigo/api-client";
 import type { ConversationId } from "@jadwigo/contracts";
-import type { ConsentClient } from "../../playground/chat/ConsentScreen.tsx";
-import { apiTransport } from "../../playground/chat/realtime.ts";
-import type { EngineTransport } from "../../playground/chat/useConversation.ts";
+import type { ConsentClient } from "../../chat/ConsentScreen.tsx";
+import { apiTransport } from "../../chat/realtime.ts";
+import type { EngineTransport } from "../../chat/useConversation.ts";
 
 export interface LessonEngine {
   conversations: Pick<ConversationClient, "createConversation">;

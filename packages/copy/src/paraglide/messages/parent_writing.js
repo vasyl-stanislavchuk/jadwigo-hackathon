@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Jadwigo is writing the lesson" |
+* | "Drafting the lesson" |
 *
 * @param {Parent_WritingInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const parent_writing = /** @type {((inputs?: Parent_WritingInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Parent_WritingInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("Jadwigo is writing the lesson")
-	return /** @type {LocalizedString} */ ("Jadwigo pisze lekcję")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Drafting the lesson")
+	return /** @type {LocalizedString} */ ("Układanie lekcji")
 });

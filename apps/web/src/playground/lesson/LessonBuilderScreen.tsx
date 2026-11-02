@@ -12,16 +12,11 @@
 import type { Category, Language } from "@jadwigo/copy";
 import type { Finding } from "@jadwigo/lesson-import/file";
 import { Fragment, type ReactElement, useEffect, useState } from "react";
+import { lessonFileToSpecs, twinRow } from "../../chat/lesson/adapter.ts";
+import { readDraft } from "../../chat/lesson/readDraft.ts";
 import { Label } from "../tool/label.tsx";
 import { Switch } from "../tool/switch.tsx";
-import { lessonFileToSpecs, twinRow } from "./adapter.ts";
-import {
-  BUILDER_DRAFT,
-  BUILDER_HELLO,
-  type DraftMessage,
-  type HelloMessage,
-  readDraft,
-} from "./draft.ts";
+import { BUILDER_DRAFT, BUILDER_HELLO, type DraftMessage, type HelloMessage } from "./draft.ts";
 import { publishOf } from "./publish/model.ts";
 import { PublishState } from "./publish/PublishState.tsx";
 import { postRender, renderReport } from "./render/report.ts";

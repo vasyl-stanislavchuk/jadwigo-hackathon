@@ -13,7 +13,7 @@
 import type { PlaygroundClient } from "@jadwigo/api-client";
 import { familyInfo, questionTypesOf } from "@jadwigo/lesson-kit";
 import { type ReactElement, useEffect } from "react";
-import { ChatScreen } from "./chat/ChatScreen.tsx";
+import { ChatScreen } from "../chat/ChatScreen.tsx";
 import { ConformanceScreen } from "./conformance/ConformanceScreen.tsx";
 import { PlaygroundApi } from "./examples/index.ts";
 import { LessonBuilderScreen } from "./lesson/LessonBuilderScreen.tsx";

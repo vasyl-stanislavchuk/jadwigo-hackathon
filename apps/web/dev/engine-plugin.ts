@@ -5,7 +5,7 @@
  * `createVerbs({bank: fixtureBank(), learners: store})` and InMemoryRunQueue: no network, no database, no paid call.
  * Every event a run appends is pushed to the page as the `run:<id>` custom event, shaped like the
  * Realtime broadcast wave 2 brings (dl-z5ja.21); the page fetches the log after its cursor over
- * the routes in `src/playground/chat/wire.ts`. Nothing schedules a run: a run starts only when the
+ * the routes in `src/chat/wire.ts`. Nothing schedules a run: a run starts only when the
  * parent sends (jadwigo-ai-workflows/decisions/2026-10-31-a-report-runs-only-when-the-parent-asks-for-it-never-on-a-schedu).
  * The wave plan is docs/worklog/dl-z5ja/2026-10-31-wave-1.md.
  */
@@ -34,7 +34,7 @@ import {
   runChannel,
   type SendAnswer,
   type SendBody,
-} from "../src/playground/chat/wire.ts";
+} from "../src/chat/wire.ts";
 
 const ENGINE_PLUGIN = "jadwigo-engine";
 /** How long the scripted model "thinks" per call, so the page shows a turn in progress. */

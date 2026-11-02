@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Assistant" |
+* | "Jadwigo AI" |
 *
 * @param {Chat_From_AgentInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const chat_from_agent = /** @type {((inputs?: Chat_From_AgentInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Chat_From_AgentInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("Assistant")
-	return /** @type {LocalizedString} */ ("Asystent")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Jadwigo AI")
+	return /** @type {LocalizedString} */ ("Jadwigo AI")
 });

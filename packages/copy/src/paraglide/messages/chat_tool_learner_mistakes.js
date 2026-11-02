@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Reading what the learner found tricky" |
+* | "Reading what the child found tricky" |
 *
 * @param {Chat_Tool_Learner_MistakesInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const chat_tool_learner_mistakes = /** @type {((inputs?: Chat_Tool_Learner_MistakesInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Chat_Tool_Learner_MistakesInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("Reading what the learner found tricky")
-	return /** @type {LocalizedString} */ ("Czytam, co sprawiło dziecku trudność")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Reading what the child found tricky")
+	return /** @type {LocalizedString} */ ("Czytanie, co sprawiło dziecku trudność")
 });

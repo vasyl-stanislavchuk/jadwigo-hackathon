@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "What the assistant sent" |
+* | "What was sent" |
 *
 * @param {Chat_Card_InputInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const chat_card_input = /** @type {((inputs?: Chat_Card_InputInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Chat_Card_InputInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("What the assistant sent")
-	return /** @type {LocalizedString} */ ("Co asystent podał")
+	if (locale === "en") return /** @type {LocalizedString} */ ("What was sent")
+	return /** @type {LocalizedString} */ ("Wysłane dane")
 });

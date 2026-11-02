@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Starting…" |
+* | "Sending…" |
 *
 * @param {Parent_SendingInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

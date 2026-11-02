@@ -20,19 +20,14 @@
 import type { ConversationId, Learner, LearnerId } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { type ReactElement, useEffect, useRef } from "react";
+import { announcementFor, ChatPane, STATUS_KEY, statusOf } from "../../chat/ChatPane.tsx";
+import { ConsentScreen, giveConsent } from "../../chat/ConsentScreen.tsx";
+import { isOpen } from "../../chat/conversation.ts";
+import { LessonPane } from "../../chat/LessonPane.tsx";
+import { lessonSummary, useLessonWiring } from "../../chat/lessonWiring.ts";
+import { holdServer } from "../../chat/routesTransport.ts";
+import { useConversation } from "../../chat/useConversation.ts";
 import { navigate } from "../../nav/location.ts";
-import {
-  announcementFor,
-  ChatPane,
-  STATUS_KEY,
-  statusOf,
-} from "../../playground/chat/ChatPane.tsx";
-import { ConsentScreen, giveConsent } from "../../playground/chat/ConsentScreen.tsx";
-import { isOpen } from "../../playground/chat/conversation.ts";
-import { LessonPane } from "../../playground/chat/LessonPane.tsx";
-import { lessonSummary, useLessonWiring } from "../../playground/chat/lessonWiring.ts";
-import { holdServer } from "../../playground/chat/routesTransport.ts";
-import { useConversation } from "../../playground/chat/useConversation.ts";
 import { CATEGORY, pageLang } from "../adult.ts";
 import { lessonsPath } from "../route.ts";
 import { DetailsPanel } from "./DetailsPanel.tsx";

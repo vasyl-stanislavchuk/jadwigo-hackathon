@@ -13,8 +13,8 @@ import { ConversationId, type Run, RunEvent, RunId } from "@jadwigo/contracts/ru
 import { RUN_LOGS } from "@jadwigo/testing";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { EngineTransport } from "../../playground/chat/useConversation.ts";
-import type { SendBody } from "../../playground/chat/wire.ts";
+import type { EngineTransport } from "../../chat/useConversation.ts";
+import type { SendBody } from "../../chat/wire.ts";
 import { firstMessage, type LessonEngine } from "./engine.ts";
 import { LessonWorkspace } from "./LessonWorkspace.tsx";
 

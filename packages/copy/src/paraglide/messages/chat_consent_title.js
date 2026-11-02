@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Before you talk to the assistant" |
+* | "Before you start with Jadwigo AI" |
 *
 * @param {Chat_Consent_TitleInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const chat_consent_title = /** @type {((inputs?: Chat_Consent_TitleInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Chat_Consent_TitleInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("Before you talk to the assistant")
-	return /** @type {LocalizedString} */ ("Zanim porozmawiasz z asystentem")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Before you start with Jadwigo AI")
+	return /** @type {LocalizedString} */ ("Zanim zaczniesz z Jadwigo AI")
 });

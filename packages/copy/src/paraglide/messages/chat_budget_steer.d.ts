@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "I'm finishing the lesson with what I have, to stay within the limit." |
+* | "Finishing the lesson with what there is, to stay within the limit." |
 *
 * @param {Chat_Budget_SteerInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

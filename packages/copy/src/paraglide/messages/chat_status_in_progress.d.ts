@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Working on it" |
+* | "In progress" |
 *
 * @param {Chat_Status_In_ProgressInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

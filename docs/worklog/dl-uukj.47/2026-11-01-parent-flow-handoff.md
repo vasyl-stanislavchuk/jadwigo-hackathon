@@ -123,6 +123,7 @@ The core promise: **describe the homework → get a lesson.** A child, goals and
 - **Main area**, centred:
   - The question "Jaką lekcję przygotować?" (32 bold), then **one box**, 720 wide.
   - Nothing else: no subtitle, no starters, no consent line.
+  - Amended by the owner on 2026-11-02: one muted line under the box, "Jadwigo AI ułoży lekcję z Twojego opisu. Zobacz, jak to działa", whose second sentence opens a small dialog on what Jadwigo AI does (`dl-uukj.47.37`; `2026-11-02-wave-1.md`).
 - **The box:** `--surface`, 2 px `--text-muted` outline, r16. The caret is in it on load.
   - **Placeholder, the only example:** "Np. Odejmowanie przez 10. Pomyliła się w 15 − 7 i 12 − 5."
   - **Under the text:** "Dodaj zdjęcie", then "Dla: Bez dziecka ▾", then on the right the reason and "Zrób lekcję →".

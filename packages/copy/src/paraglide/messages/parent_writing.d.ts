@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Jadwigo is writing the lesson" |
+* | "Drafting the lesson" |
 *
 * @param {Parent_WritingInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

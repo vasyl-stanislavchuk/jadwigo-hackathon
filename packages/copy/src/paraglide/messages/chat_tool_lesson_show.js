@@ -20,5 +20,5 @@ export const chat_tool_lesson_show = /** @type {((inputs?: Chat_Tool_Lesson_Show
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") return /** @type {LocalizedString} */ ("Reading the lesson")
-	return /** @type {LocalizedString} */ ("Czytam lekcję")
+	return /** @type {LocalizedString} */ ("Czytanie lekcji")
 });

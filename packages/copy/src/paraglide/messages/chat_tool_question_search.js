@@ -20,5 +20,5 @@ export const chat_tool_question_search = /** @type {((inputs?: Chat_Tool_Questio
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") return /** @type {LocalizedString} */ ("Looking for questions")
-	return /** @type {LocalizedString} */ ("Szukam zadań")
+	return /** @type {LocalizedString} */ ("Szukanie zadań")
 });

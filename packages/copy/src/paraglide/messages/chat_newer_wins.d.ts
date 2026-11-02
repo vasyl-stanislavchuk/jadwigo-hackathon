@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Your version is newer, so it stays. The assistant knows." |
+* | "Your version is newer, so it stays. Jadwigo AI knows." |
 *
 * @param {Chat_Newer_WinsInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
