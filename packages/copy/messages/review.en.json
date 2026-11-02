@@ -537,6 +537,8 @@
   "chat_object_attempt": false,
   "chat_object_open_page": false,
   "chat_object_not_here": false,
+  "chat_learner_open": false,
+  "chat_learner_open_page": false,
   "chat_lesson_card": false,
   "chat_lesson_card_open": false,
   "chat_lesson_card_open_named": false,

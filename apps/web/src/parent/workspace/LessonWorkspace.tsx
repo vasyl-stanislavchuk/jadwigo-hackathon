@@ -19,6 +19,7 @@
  * answers AiConsentMissing puts the consent screen in the chat until the parent agrees.
  */
 
+import type { ParentClient } from "@jadwigo/api-client";
 import type { ConversationId, Learner, LearnerId } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { type ReactElement, useEffect, useRef, useState } from "react";
@@ -27,7 +28,7 @@ import { ConsentScreen, giveConsent } from "../../chat/ConsentScreen.tsx";
 import { LessonPane } from "../../chat/LessonPane.tsx";
 import { lessonSummary, useLessonWiring } from "../../chat/lessonWiring.ts";
 import { type ObjectRef, sameObject } from "../../chat/objects/ref.ts";
-import { ObjectFallback, objectEntry } from "../../chat/objects/registry.tsx";
+import { ObjectPanel, objectHeading, type PanelPage } from "../../chat/objects/registry.tsx";
 import { elapsedSeconds, phaseAnnouncement, usePhase } from "../../chat/phase.ts";
 import { holdServer } from "../../chat/routesTransport.ts";
 import { useConversation } from "../../chat/useConversation.ts";
@@ -47,6 +48,7 @@ export function LessonWorkspace({
   forLearner,
   onForChange,
   onAddChild,
+  api = null,
 }: {
   language: Language;
   /** The server's conversation: the route's id. */
@@ -59,6 +61,8 @@ export function LessonWorkspace({
   onForChange: (learner: LearnerId | null) => void;
   /** Opens Dodaj dziecko from Dla's menu. */
   onAddChild: () => void;
+  /** The parent's client, for a child opened beside the chat (dl-uukj.47.59); none in a playground. */
+  api?: ParentClient | null;
 }): ReactElement {
   const t = (key: CopyKey, vars: Record<string, string | number> = {}): string =>
     copy(language, key, vars, CATEGORY);
@@ -107,6 +111,7 @@ export function LessonWorkspace({
     inspector.current !== null && !sameObject(inspector.current, ownLesson)
       ? inspector.current
       : null;
+  const panelPage: PanelPage = { language, lang: pageLang(), learners, api };
 
   // The first screen's words and photos: sent once the page has read the conversation back with no turn in it,
   // with Dla as their page, so the run reads that child's record (dl-uukj.47.12).
@@ -220,14 +225,14 @@ export function LessonWorkspace({
       {...(phase === null ? {} : { chatFact: words })}
       lessonTitle={
         other !== null
-          ? t(objectEntry(other.kind).title)
+          ? objectHeading(other, panelPage)
           : summary.title === ""
             ? t("parent_new_lesson")
             : summary.title
       }
       lesson={
         other !== null ? (
-          <ObjectFallback object={other} language={language} lang={pageLang()} />
+          <ObjectPanel object={other} page={panelPage} />
         ) : lesson.shown === null && lesson.ghosts === 0 ? (
           <p className="text-jw-ink-soft" data-lesson-waiting>
             {said ? words : t("parent_lesson_empty")}

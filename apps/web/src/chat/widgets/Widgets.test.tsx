@@ -2,9 +2,10 @@ import type { Run } from "@jadwigo/contracts/run";
 import { RunId } from "@jadwigo/contracts/run";
 import type { ChatItem, RunView } from "@jadwigo/core";
 import { cleanup, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { SKILLS } from "../../parent/learner/fixtures.ts";
 import { ChatPane } from "../ChatPane.tsx";
+import type { ObjectRef } from "../objects/ref.ts";
 
 afterEach(cleanup);
 
@@ -50,6 +51,7 @@ function draw(
   tools: ToolItem[],
   language: "pl" | "en" = "pl",
   onSend: (text: string) => void = () => {},
+  onOpen?: (object: ObjectRef) => void,
 ) {
   const view: RunView = {
     chat: tools,
@@ -74,6 +76,7 @@ function draw(
       sendFailed={false}
       onSend={onSend}
       onStop={() => {}}
+      onOpen={onOpen}
     />,
   );
 }
@@ -221,6 +224,28 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
     expect(widget.querySelectorAll("[data-goal]")).toHaveLength(2);
     expect(widget.textContent).toContain("Dodaje w zakresie 10.");
     expect(widget.textContent).not.toMatch(/familiar|attempted|mastered|proficient/);
+  });
+
+  it("opens the child beside the chat from a learner widget, and offers nothing where the page can't (dl-uukj.47.59)", () => {
+    const data = {
+      learner: { id: SKILLS.learner.id, first_name: "Ola" },
+      goals: SKILLS.goals,
+      brief: SKILLS.brief,
+      skills: SKILLS.catalogue,
+    };
+    const onOpen = vi.fn();
+    draw(
+      [tool(1, { verb: "learner_skills", view: { kind: "learner_skills", data } })],
+      "pl",
+      () => {},
+      onOpen,
+    );
+    const widget = screen.getByRole("region", { name: "Czytanie celów dziecka" });
+    within(widget).getByRole("button", { name: "Szczegóły: Ola" }).click();
+    expect(onOpen).toHaveBeenCalledWith({ kind: "learner", id: SKILLS.learner.id });
+    cleanup();
+    draw([tool(1, { verb: "learner_skills", view: { kind: "learner_skills", data } })]);
+    expect(document.querySelector("[data-open-learner]")).toBeNull();
   });
 
   it("draws learner_week with the week strip, and a malformed one as the plain card", () => {

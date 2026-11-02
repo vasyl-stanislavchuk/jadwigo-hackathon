@@ -760,6 +760,8 @@ export const COPY_KEYS = [
   "chat_object_attempt",
   "chat_object_open_page",
   "chat_object_not_here",
+  "chat_learner_open",
+  "chat_learner_open_page",
   "chat_lesson_card",
   "chat_lesson_card_open",
   "chat_lesson_card_open_named",

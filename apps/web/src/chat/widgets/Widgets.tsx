@@ -10,6 +10,7 @@ import {
   type BriefList,
   type FindingLevel,
   type LearnerMistakesView,
+  type LearnerRef,
   type LessonCheckView,
   type LessonIdeasView,
   toolViewData,
@@ -228,6 +229,35 @@ function Mistakes({ view, language }: { view: LearnerMistakesView; language: Lan
   );
 }
 
+/**
+ * "Szczegóły: {imię}" under a learner verb's widget (dl-uukj.47.59): opens the child beside the
+ * chat, their goals, weeks and report, with the way to their own page. Drawn only where the page
+ * can open things.
+ */
+function OpenLearner({
+  learner,
+  language,
+  actions,
+}: {
+  learner: LearnerRef;
+  language: Language;
+  actions: WidgetActions;
+}): ReactElement | null {
+  const open = actions.onOpen;
+  if (open === undefined) return null;
+  return (
+    <Button
+      variant="outline"
+      size="xs"
+      className="w-fit"
+      onClick={() => open({ kind: "learner", id: learner.id })}
+      data-open-learner={learner.id}
+    >
+      {copy(language, "chat_learner_open", { name: learner.first_name }, "adult")}
+    </Button>
+  );
+}
+
 const REGISTRY: Partial<Record<VerbName, Registered>> = {
   lesson_check: register({
     verb: "lesson_check",
@@ -277,8 +307,11 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
     verb: "learner_skills",
     title: "chat_tool_learner_skills",
     read: (data) => toolViewData("learner_skills", data),
-    Widget: ({ data, language }) => (
-      <GoalLists goals={data.goals} catalogue={data.skills} language={language} />
+    Widget: ({ data, language, actions }) => (
+      <>
+        <GoalLists goals={data.goals} catalogue={data.skills} language={language} />
+        <OpenLearner learner={data.learner} language={language} actions={actions} />
+      </>
     ),
     keepVisible: true,
   }),
@@ -286,16 +319,19 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
     verb: "learner_week",
     title: "chat_tool_learner_week",
     read: (data) => toolViewData("learner_week", data),
-    Widget: ({ data, language }) => (
-      <WeekStrip
-        weeks={data.weeks.map((w) => ({
-          monday: w.monday,
-          lessons: w.lessons,
-          movedUp: w.moved_up,
-          attention: w.attention,
-        }))}
-        language={language}
-      />
+    Widget: ({ data, language, actions }) => (
+      <>
+        <WeekStrip
+          weeks={data.weeks.map((w) => ({
+            monday: w.monday,
+            lessons: w.lessons,
+            movedUp: w.moved_up,
+            attention: w.attention,
+          }))}
+          language={language}
+        />
+        <OpenLearner learner={data.learner} language={language} actions={actions} />
+      </>
     ),
     keepVisible: true,
   }),
@@ -312,7 +348,12 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
     verb: "learner_mistakes",
     title: "chat_tool_learner_mistakes",
     read: (data) => toolViewData("learner_mistakes", data),
-    Widget: ({ data, language }) => <Mistakes view={data} language={language} />,
+    Widget: ({ data, language, actions }) => (
+      <>
+        <Mistakes view={data} language={language} />
+        <OpenLearner learner={data.learner} language={language} actions={actions} />
+      </>
+    ),
     keepVisible: true,
   }),
 };

@@ -97,6 +97,8 @@ export * from "./chat_ideas_why_prerequisites_met.js";
 export * from "./chat_ideas_why_review_due.js";
 export * from "./chat_ideas_why_school_tag.js";
 export * from "./chat_ideas_why_second_day_owed.js";
+export * from "./chat_learner_open.js";
+export * from "./chat_learner_open_page.js";
 export * from "./chat_lesson_card.js";
 export * from "./chat_lesson_card_first.js";
 export * from "./chat_lesson_card_open.js";
