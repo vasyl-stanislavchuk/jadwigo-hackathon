@@ -943,6 +943,45 @@
   "chat_choose_recap": "{question} · {answer}",
   "chat_choose_skipped": "{question} · pominięte",
   "chat_readback_title": "Odczytane zadania · odznacz, co nie jest domowe · {n}",
+  "chat_ideas_list_reteach": "Do nauczenia jeszcze raz",
+  "chat_ideas_list_review": "Do powtórki",
+  "chat_ideas_list_new": "Coś nowego",
+  "chat_ideas_list_recheck": "Do sprawdzenia jeszcze raz",
+  "chat_ideas_list_school": "Z planu szkoły",
+  "chat_ideas_why_needs_attention": "Ostatnio sprawiało trudność",
+  "chat_ideas_why_review_due": "Pora na powtórkę",
+  "chat_ideas_why_prerequisites_met": "Podstawy już są",
+  "chat_ideas_why_second_day_owed": "Drugi dzień ćwiczeń",
+  "chat_ideas_why_school_tag": "Tego teraz uczą w szkole",
+  "chat_ideas_skills": [
+    {
+      "declarations": ["input n", "local count_noun = n: plural"],
+      "selectors": ["count_noun"],
+      "match": {
+        "count_noun=one": "{n} umiejętność",
+        "count_noun=few": "{n} umiejętności",
+        "count_noun=many": "{n} umiejętności",
+        "count_noun=other": "{n} umiejętności"
+      }
+    }
+  ],
+  "chat_ideas_ask": "Ułóż tę lekcję",
+  "chat_ideas_ask_message": "Ułóż lekcję z pomysłu {n}: {list}.",
+  "chat_ideas_none": "Na razie nie ma pomysłów na następną lekcję.",
+  "chat_mistakes_times": [
+    {
+      "declarations": ["input n", "local count_noun = n: plural"],
+      "selectors": ["count_noun"],
+      "match": {
+        "count_noun=one": "{n} raz",
+        "count_noun=few": "{n} razy",
+        "count_noun=many": "{n} razy",
+        "count_noun=other": "{n} razy"
+      }
+    }
+  ],
+  "chat_mistakes_answers": "Odpowiedzi dziecka",
+  "chat_mistakes_none": "Ostatnio nic nie sprawiało trudności.",
   "parent_chat": "Rozmowa",
   "parent_lesson": "Lekcja",
   "parent_details": "Szczegóły lekcji",
