@@ -183,6 +183,16 @@ describe("the question body", () => {
     expect(parsed).not.toHaveProperty("raw_item");
   });
 
+  it("keeps a variant's question type, and refuses one the families do not name", () => {
+    const typed = { ...BODY, en: { ...BODY.en, question_type: "production" } };
+    expect(QuestionBody.parse(typed).en?.question_type).toBe("production");
+    expect(QuestionBody.parse({ ...BODY, question_type: "lettered_choice" }).question_type).toBe(
+      "lettered_choice",
+    );
+    const odd = { ...BODY, en: { ...BODY.en, question_type: "pick" } };
+    expect(QuestionBody.safeParse(odd).success).toBe(false);
+  });
+
   it("takes a body with no playable variant yet: only id, credit and problem_type", () => {
     const waiting = { id: "xfeed0002", credit: BODY.credit, problem_type: "invented" };
     expect(QuestionBody.parse(waiting)).toEqual(waiting);
