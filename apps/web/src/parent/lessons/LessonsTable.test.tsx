@@ -100,6 +100,22 @@ describe("LessonsTable", () => {
     expect(screen.queryByText("Nic tu nie pasuje do wyboru.")).toBeNull();
   });
 
+  it("starts a new lesson from the row atop the table, with lessons and without", async () => {
+    for (const conversations of [[conversation(1, "Odejmowanie przez 10")], []]) {
+      await shown(conversations);
+      const row = screen.getByRole("link", { name: "Nowa lekcja" });
+      expect(row.getAttribute("href")).toBe("/parent");
+      expect(row.hasAttribute("data-new-lesson-row")).toBe(true);
+      // First: before the table and every lesson in it.
+      const table = screen.getByRole("table");
+      expect(row.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      window.history.replaceState(null, "", "/parent/lessons");
+      await act(async () => fireEvent.click(row));
+      expect(window.location.pathname).toBe("/parent");
+      cleanup();
+    }
+  });
+
   it("says it could not load when the route fails", async () => {
     render(
       <LessonsTable
