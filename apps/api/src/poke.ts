@@ -73,7 +73,7 @@ export type PostJson = (target: PokeTarget, body: string) => Promise<void>;
  * How long a poke waits for the step host's answer. A host that takes the connection and never
  * answers (paused, its event loop blocked) is let go, so the route's reply never waits on it.
  */
-export const POKE_TIMEOUT_MS = 2000;
+const POKE_TIMEOUT_MS = 2000;
 
 /** `node:http`'s POST, given up after `timeoutMs` with no answer. */
 export const httpPostWithin =
