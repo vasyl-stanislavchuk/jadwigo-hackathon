@@ -565,6 +565,11 @@ export interface ChatPaneProps {
   nameOf?: ((learner: string) => string | null) | undefined;
   /** The "Następne" queue (queue.ts): what waits to go once the turn ends. */
   next?: readonly string[];
+  /**
+   * "Spróbuj ponownie" after a failed send, from the conversation: the exact words that failed,
+   * a queued row's included. Without it the pane sends its own last words again.
+   */
+  onResend?: (() => void) | undefined;
   /** "Wyślij teraz" on one waiting row. */
   onSendNow?: ((index: number) => void) | undefined;
   /** Takes one waiting row out, answering its words ("Zmień" puts them back in the composer). */
@@ -589,6 +594,7 @@ export function ChatPane({
   onRetry,
   nameOf,
   next = [],
+  onResend,
   onSendNow,
   onTakeNext,
 }: ChatPaneProps): ReactElement {
@@ -791,8 +797,14 @@ export function ChatPane({
       {sendFailed && sendLimit === null && (
         <div role="alert" data-row="send-failed" className="flex items-center gap-2 text-sm">
           <p>{say("chat_send_again")}</p>
-          {lastSent !== null && (
-            <Button variant="outline" size="sm" onClick={() => resend(lastSent)}>
+          {(onResend !== undefined || lastSent !== null) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                onResend !== undefined ? onResend() : lastSent !== null && resend(lastSent)
+              }
+            >
               {say("chat_retry_turn")}
             </Button>
           )}

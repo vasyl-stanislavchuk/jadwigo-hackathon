@@ -20,6 +20,24 @@ export interface LessonEngine {
   transport: EngineTransport;
   consent: ConsentClient | null;
   ratings: RunRatingClient | null;
+  /**
+   * The signed-in account, by the sign-in's token: the "Następne" queue is kept for it alone
+   * (chat/queue.ts). Absent where there is no sign-in.
+   */
+  owner?: () => Promise<string | null>;
+}
+
+/** The `sub` of a JWT: who signed in. Null for no token or one that does not read. */
+export function subOf(jwt: string | null): string | null {
+  const body = jwt?.split(".")[1];
+  if (body === undefined) return null;
+  try {
+    const claims: unknown = JSON.parse(atob(body.replaceAll("-", "+").replaceAll("_", "/")));
+    const sub = (claims as { sub?: unknown }).sub;
+    return typeof sub === "string" ? sub : null;
+  } catch {
+    return null;
+  }
 }
 
 /** The build's engine, or null when it has no Supabase project (no sign-in, no chat). */
@@ -31,6 +49,7 @@ export function browserEngine(): LessonEngine | null {
     transport: api.transport,
     consent: api.client,
     ratings: api.client,
+    owner: async () => subOf(await api.auth.token()),
   };
 }
 

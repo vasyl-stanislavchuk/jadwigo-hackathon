@@ -69,6 +69,7 @@ function ChatView({
   next,
   onSendNow,
   onTakeNext,
+  onResend,
 }: {
   language: Language;
   state: ConversationState;
@@ -82,6 +83,8 @@ function ChatView({
   next?: readonly string[];
   onSendNow?: (index: number) => void;
   onTakeNext?: (index: number) => string | null;
+  /** "Spróbuj ponownie" after a failed send: the exact words that failed. */
+  onResend?: () => void;
   onEdit?: (text: string, question_ids: string[], change?: LessonChange) => unknown;
   onNew?: () => void;
   /** Rates a completed turn by its run (dl-z5ja.63). */
@@ -113,6 +116,7 @@ function ChatView({
           {...(next === undefined ? {} : { next })}
           onSendNow={onSendNow}
           onTakeNext={onTakeNext}
+          onResend={onResend}
         />
       }
       lesson={
@@ -252,6 +256,7 @@ function LiveChat({
     next,
     sendNow,
     takeNext,
+    resend,
   } = useConversation(transport, conversation);
   if (consentMissing)
     return (
@@ -280,6 +285,7 @@ function LiveChat({
       next={next}
       onSendNow={sendNow}
       onTakeNext={takeNext}
+      onResend={resend}
     />
   );
 }
