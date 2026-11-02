@@ -11,16 +11,16 @@
 
 import type { ChooseQuestion, ChooseForm as Form } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
-import { cn } from "@jadwigo/ui";
+import { Button, cn, Input } from "@jadwigo/ui";
 import {
   type FormEvent,
   type KeyboardEvent,
   type ReactElement,
   useEffect,
+  useId,
   useRef,
   useState,
 } from "react";
-import { Button } from "./button.tsx";
 
 /** One answer per question, in order: its words, or null when skipped. */
 export type ChooseAnswers = readonly (string | null)[];
@@ -46,6 +46,7 @@ function Question({
 }): ReactElement {
   const say = (key: CopyKey) => copy(language, key, {}, "adult");
   const [own, setOwn] = useState("");
+  const ownId = useId();
   const group = useRef<HTMLDivElement>(null);
   // Focus moves to the form when it takes the composer's place, and to each next question.
   useEffect(() => {
@@ -77,7 +78,10 @@ function Question({
             variant="outline"
             size="sm"
             onClick={() => onPick(option.label)}
-            className={cn(option.recommended === true && "border-jw-pick-edge bg-jw-pick")}
+            className={cn(
+              option.recommended === true &&
+                "border-selected-edge bg-selected text-selected-foreground",
+            )}
             data-option={i + 1}
             data-recommended={option.recommended === true}
           >
@@ -86,25 +90,26 @@ function Question({
             </span>
             {option.label}
             {option.recommended === true && (
-              <span className="text-jw-page-small text-jw-pick-ink">
-                {` · ${say("chat_choose_recommended")}`}
-              </span>
+              <span className="text-jw-page-small">{` · ${say("chat_choose_recommended")}`}</span>
             )}
           </Button>
         ))}
       </div>
       {question.custom_allowed && (
-        <form onSubmit={answerOwn} className="flex items-center gap-2">
-          <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm">
-            <span className="text-jw-ink-soft">{say("chat_choose_own")}</span>
-            <input
+        <form onSubmit={answerOwn} className="flex items-end gap-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-1 text-jw-page-body">
+            <label htmlFor={ownId} className="text-muted-foreground">
+              {say("chat_choose_own")}
+            </label>
+            <Input
+              id={ownId}
+              kind="text"
               value={own}
               onChange={(e) => setOwn(e.target.value)}
-              className="rounded-jw-small border-jw border-jw-line bg-jw-card px-2 py-1 text-jw-ink"
               data-choose-own
             />
-          </label>
-          <Button type="submit" variant="outline" size="sm" className="self-end">
+          </div>
+          <Button type="submit" variant="outline" size="control" className="self-end">
             {say("chat_choose_answer")}
           </Button>
         </form>

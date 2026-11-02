@@ -19,10 +19,9 @@ import {
   type QuestionTypeInfo,
   questionTypesOf,
 } from "@jadwigo/lesson-kit";
-import { Spinner } from "@jadwigo/ui";
+import { Button, Spinner } from "@jadwigo/ui";
 import { ClipboardCheck, Info, Maximize2, Minimize2, SquareMousePointer } from "lucide-react";
 import { type ReactElement, type ReactNode, useEffect, useState } from "react";
-import { Button } from "../../chat/button.tsx";
 import { examplesFor, useExamples, type WrittenExample } from "../examples/index.ts";
 import { GUIDES } from "../guides.ts";
 import { DataPanel } from "../panels/DataPanel.tsx";

@@ -19,8 +19,8 @@ import {
   StepFrame,
   ViewMode,
 } from "@jadwigo/lesson-kit";
+import { Button } from "@jadwigo/ui";
 import { type ReactElement, useRef, useState } from "react";
-import { Button } from "../../chat/button.tsx";
 import type { WrittenExample } from "../examples/index.ts";
 import { TryExample } from "../panels/TryExample.tsx";
 import { Badge } from "../tool/badge.tsx";

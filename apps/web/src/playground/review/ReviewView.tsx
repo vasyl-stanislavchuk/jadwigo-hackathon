@@ -14,6 +14,7 @@
 
 import type { Category, Language } from "@jadwigo/copy";
 import { type FamilySpec, FamilyView, LessonTheme, StepFrame } from "@jadwigo/lesson-kit";
+import { Button } from "@jadwigo/ui";
 import { RotateCcw } from "lucide-react";
 import {
   type ComponentProps,
@@ -22,7 +23,6 @@ import {
   useCallback,
   useState,
 } from "react";
-import { Button } from "../../chat/button.tsx";
 import type { WrittenExample } from "../examples/index.ts";
 import { LANGUAGES, resolve } from "../localize.ts";
 import { LearnerControls } from "../panels/LearnerControls.tsx";
