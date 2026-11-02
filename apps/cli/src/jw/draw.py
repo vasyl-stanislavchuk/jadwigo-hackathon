@@ -262,6 +262,8 @@ def _candidates(
             typed_skills = _type_skills(skills, ptype)
             for sample in ptype.get("samples") or []:
                 item = str(sample["item_id"])
+                if item in typed:  # a sample under 2 problem types is one item (dl-u1y5.40)
+                    continue
                 typed.add(item)
                 if ready is not None and item not in ready:
                     left.append(Left(item, NOT_READY_ITEM))
@@ -407,6 +409,9 @@ def draw(
     day = today or dt.date.today()
     left: list[Left] = []
     cands = _candidates(list(envelope.get("rows") or []), pages, language, set(flagged), left)
+    # An item id is asked once per lesson, whichever set or problem type names it again.
+    seen_ids: set[str] = set()
+    cands = [c for c in cands if not (c.item_id in seen_ids or seen_ids.add(c.item_id))]
     reasons: dict[str, str] = {}
     keep: list[_Candidate] = []
 

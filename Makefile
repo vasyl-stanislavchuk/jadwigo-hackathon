@@ -9,6 +9,10 @@ include .env.local
 $(foreach v,$(ENV_LOCAL_KEPT),$(eval $(v) := $$(ENV_LOCAL_KEPT_$(v))))
 export
 endif
+# Postgres.app's 17 server, prod's major version, for psql and createdb in `make db` and `make pgtap`
+# when .env.local names no PGPORT: the 18 server on the default 5432 belongs to other projects.
+PGPORT ?= 5433
+export PGPORT
 # The tools mise.toml pins (gitleaks for the fence test, terraform) on PATH even in a shell that never
 # activated mise, such as the Stop hook's. Without mise, PATH is left as it is.
 MISE_BIN_PATHS := $(shell command -v mise >/dev/null 2>&1 && mise bin-paths 2>/dev/null | tr '\n' ':')
@@ -18,7 +22,7 @@ ifneq (,$(wildcard $(HOME)/perl5/bin/pg_prove))
 export PATH := $(HOME)/perl5/bin:$(PATH)
 export PERL5LIB := $(HOME)/perl5/lib/perl5$(if $(PERL5LIB),:$(PERL5LIB))
 endif
-.PHONY: check check-all dev db pgmq migrate pgtap db-reset db-seed lesson-import lesson-withdraw api-dev api-bundle api-invoke db-push db-role release skills drops icons builder runner-bundle db-runner-role step-probe step-probe-local engine-smoke
+.PHONY: check check-all dev dev-app dev-site dev-fresh dbpgmq migrate pgtap db-reset db-seed lesson-import lesson-withdraw api-dev api-bundle api-invoke db-push db-role release skills drops icons builder runner-bundle db-runner-role step-probe step-probe-local engine-smoke
 
 ## check: lint, typecheck and test what changed since main (turbo --affected), uv's pytest
 ## included, then the repo-wide checks turbo cannot scope: knip, dependency-cruiser, no-bank, worklog,
@@ -50,6 +54,22 @@ LOCAL_DB_GATE = printf '%s\n' "$(LOCAL_DATABASE_URL)" | grep -Eq '^postgres(ql)?
 dev:
 	@$(LOCAL_DB_GATE)
 	DATABASE_URL=$(LOCAL_DATABASE_URL) bunx turbo run dev --env-mode=loose
+
+## dev-app: the app alone, apps/web and apps/api (and packages/copy's message compile), on the
+## same ports and database as dev. The api restarts on each edit (bun --watch); web is Vite's HMR.
+dev-app:
+	@$(LOCAL_DB_GATE)
+	DATABASE_URL=$(LOCAL_DATABASE_URL) bunx turbo run dev --env-mode=loose --filter=@jadwigo/web --filter=@jadwigo/api --filter=@jadwigo/copy
+
+## dev-site: the marketing site alone, apps/site on SITE_PORT (and packages/copy's message compile).
+dev-site:
+	bunx turbo run dev --env-mode=loose --filter=@jadwigo/site --filter=@jadwigo/copy
+
+## dev-fresh: rebuild the local jadwigo database (the local db-reset, never a project's: ENV is
+## cleared), then dev. After a pull that brings migrations, the dev database is stale until then.
+dev-fresh:
+	$(MAKE) db-reset ENV=
+	$(MAKE) dev
 
 ## skills: link the product AI workflows (workflows/jadwigo-*) into .claude/skills and .agents/skills,
 ## and the dev and marketing commands (.agents/skills/dev-*, mk-*) into .claude/skills. The links are committed;

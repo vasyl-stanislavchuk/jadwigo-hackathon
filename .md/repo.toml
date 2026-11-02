@@ -14,6 +14,8 @@ entry = "src/main.tsx"
 WEB_PORT = 5173
 API_PORT = 8730
 BUILDER_PORT = 5174
+SITE_PORT = 4321
+DOCS_PORT = 4322
 
 [run.dev]
 command = "make dev"

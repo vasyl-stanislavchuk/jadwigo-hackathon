@@ -44,6 +44,16 @@ describe("BUILDER_PORT", () => {
   });
 });
 
+describe("SITE_PORT and DOCS_PORT", () => {
+  it("are read like WEB_PORT, and fail inside a worktree when md exported none", () => {
+    expect(port("SITE_PORT", DEV_PORTS.SITE_PORT, {})).toBe(4321);
+    expect(port("DOCS_PORT", DEV_PORTS.DOCS_PORT, { DOCS_PORT: "8303" })).toBe(8303);
+    expect(() =>
+      port("SITE_PORT", DEV_PORTS.SITE_PORT, { MEDALLION_DEV_WORKSPACE_NAME: "lane-a" }),
+    ).toThrow(/SITE_PORT is unset/);
+  });
+});
+
 describe(".md/repo.toml", () => {
   it("declares exactly DEV_PORTS under [review.ports], so md exports what the apps read", () => {
     const toml = readFileSync(new URL("../../.md/repo.toml", import.meta.url), "utf8");
