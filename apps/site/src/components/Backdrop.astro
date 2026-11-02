@@ -92,14 +92,19 @@ const pieces = [
 
   const TONE = { maths: "act", polish: "green", english: "go" } as const;
 
-  // Once the font is in, so the words are measured at their real size before the pieces avoid them.
-  const start = (backdrop: HTMLElement) => {
-    // Every visit deals new sums and new places (dl-5ssh.4.38). Only this decorative layer changes, so no
-    // content shifts; under reduced motion the pieces land and stay. How many show follows the page's
-    // length, and none lands on the words, a field or a picture: a short page such as the sign-in stays
-    // calm (owner, 2026-11-02: "a bit too much on a screen with few elements").
+  const between = (lo: number, hi: number): number => lo + Math.random() * (hi - lo);
+
+  // Places the pieces, and on a first deal gives each sum new words (dl-5ssh.4.38). Only this decorative
+  // layer changes, so no content shifts; under reduced motion the pieces land and stay. How many show
+  // follows the page's length, and none lands on the words, a field or a picture, or on another piece:
+  // a short page such as the sign-in stays calm (owner, 2026-11-02). Every piece sits whole inside the
+  // page at the far end of its drift and the cursor's push, so a cut-off sum never reads as a false one
+  // ("7 · 9 = 6"); positions are in px and placed again whenever the page's width changes, so a rotated
+  // phone or a narrowed window never cuts one either.
+  const place = (backdrop: HTMLElement, deal: boolean): void => {
     const lang = backdrop.dataset["lang"] === "en" ? "en" : "pl";
-    const between = (lo: number, hi: number): number => lo + Math.random() * (hi - lo);
+    const pieces = [...backdrop.querySelectorAll<HTMLElement>(".piece")];
+    for (const piece of pieces) piece.hidden = false; // measured at their real size
     const layer = backdrop.getBoundingClientRect();
     const W = layer.width;
     const H = layer.height;
@@ -126,10 +131,11 @@ const pieces = [
     const placed = { sum: 0, star: 0 };
     // The drift (up to 1.5rem) and the cursor's push (up to 22px), with a little to spare.
     const EDGE = 48;
-    for (const piece of backdrop.querySelectorAll<HTMLElement>(".piece")) {
+    const DRIFT = 24;
+    for (const piece of pieces) {
       const kind = piece.classList.contains("sum") ? "sum" : "star";
       const drift = piece.querySelector(".drift");
-      if (drift && kind === "sum") {
+      if (deal && drift && kind === "sum") {
         const dealt = cloudPiece(Math.random, lang);
         drift.textContent = dealt.text;
         piece.classList.remove("act", "green", "go");
@@ -138,12 +144,10 @@ const pieces = [
       const w = piece.offsetWidth;
       const h = piece.offsetHeight;
       let spot: [number, number] | undefined;
-      for (let tries = 0; tries < 12 && placed[kind] < room[kind] && !spot; tries++) {
-        // Whole inside the page even at the far end of its drift and the cursor's push, so a cut-off
-        // sum never reads as a false one ("7 · 9 = 6"): a margin each side for both.
+      const fits = W - w - EDGE >= EDGE && H - h - EDGE >= EDGE;
+      for (let tries = 0; fits && tries < 12 && placed[kind] < room[kind] && !spot; tries++) {
         const l = between(EDGE, W - w - EDGE);
         const t = between(EDGE, H - h - EDGE);
-        if (W - w - EDGE < EDGE) break;
         if (clear(l, t, w, h)) spot = [l, t];
       }
       if (!spot) {
@@ -151,72 +155,86 @@ const pieces = [
         continue;
       }
       placed[kind]++;
-      // Pieces keep clear of each other too, with room for their drift (up to 1.5rem each way).
-      const DRIFT = 24;
       taken.push({ left: spot[0] - DRIFT, top: spot[1] - DRIFT, right: spot[0] + w + DRIFT, bottom: spot[1] + h + DRIFT });
-      piece.hidden = false;
-      piece.style.left = `${((spot[0] / W) * 100).toFixed(2)}%`;
-      piece.style.top = `${((spot[1] / H) * 100).toFixed(2)}%`;
-      piece.style.setProperty("--drift-x", `${between(-1.5, 1.5).toFixed(2)}rem`);
-      piece.style.setProperty("--drift-y", `${between(-1.5, 1.5).toFixed(2)}rem`);
-      piece.style.setProperty("--turn", `${Math.round(between(-12, 12))}deg`);
-      piece.style.setProperty("--delay", `${(-between(0, 26)).toFixed(1)}s`);
+      piece.style.left = `${spot[0].toFixed(0)}px`;
+      piece.style.top = `${spot[1].toFixed(0)}px`;
+      if (deal) {
+        piece.style.setProperty("--drift-x", `${between(-1.5, 1.5).toFixed(2)}rem`);
+        piece.style.setProperty("--drift-y", `${between(-1.5, 1.5).toFixed(2)}rem`);
+        piece.style.setProperty("--turn", `${Math.round(between(-12, 12))}deg`);
+        piece.style.setProperty("--delay", `${(-between(0, 26)).toFixed(1)}s`);
+      }
     }
+  };
 
-    // The cursor's part, on a fine pointer only and never under reduced motion: the glow follows it,
-    // everything within reach leans away, the stars twinkle and the sums brighten, then all settle back.
-    const fine = matchMedia("(pointer: fine)").matches;
-    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (fine && !still) {
-      const pieces = [...backdrop.querySelectorAll<HTMLElement>(".piece:not([hidden])")];
-      // Livelier than dl-5ssh.4.35's calm lean (owner, 2026-11-02: "move a bit more actively").
-      const REACH = 170; // px
-      const PUSH = 22; // px at the cursor itself
-      // The cursor on the page, not the screen: the layer scrolls with the page, and only the mouse
-      // moves the pieces.
-      let x = -1000;
-      let y = -1000;
-      let queued = false;
-      const frame = () => {
-        queued = false;
-        backdrop.style.setProperty("--glow-x", `${x}px`);
-        backdrop.style.setProperty("--glow-y", `${y}px`);
-        const top = backdrop.getBoundingClientRect().top;
-        for (const p of pieces) {
-          const r = p.getBoundingClientRect();
-          const dx = r.left + r.width / 2 - x;
-          const dy = r.top - top + r.height / 2 - y;
-          const d = Math.hypot(dx, dy);
-          if (d > REACH || d === 0) {
-            p.classList.remove("near");
-            p.style.removeProperty("--away-x");
-            p.style.removeProperty("--away-y");
-            continue;
-          }
-          const f = (1 - d / REACH) * PUSH;
-          p.classList.add("near");
-          p.style.setProperty("--away-x", `${((dx / d) * f).toFixed(1)}px`);
-          p.style.setProperty("--away-y", `${((dy / d) * f).toFixed(1)}px`);
+  // The cursor's part, on a fine pointer only and never under reduced motion: the glow follows it,
+  // everything within reach leans away, the stars twinkle and the sums brighten, then all settle back.
+  const follow = (backdrop: HTMLElement): void => {
+    // Livelier than dl-5ssh.4.35's calm lean (owner, 2026-11-02: "move a bit more actively").
+    const REACH = 170; // px
+    const PUSH = 22; // px at the cursor itself
+    // The cursor on the page, not the screen: the layer scrolls with the page, and only the mouse
+    // moves the pieces.
+    let x = -1000;
+    let y = -1000;
+    let queued = false;
+    const frame = () => {
+      queued = false;
+      backdrop.style.setProperty("--glow-x", `${x}px`);
+      backdrop.style.setProperty("--glow-y", `${y}px`);
+      const top = backdrop.getBoundingClientRect().top;
+      for (const p of backdrop.querySelectorAll<HTMLElement>(".piece:not([hidden])")) {
+        const r = p.getBoundingClientRect();
+        const dx = r.left + r.width / 2 - x;
+        const dy = r.top - top + r.height / 2 - y;
+        const d = Math.hypot(dx, dy);
+        if (d > REACH || d === 0) {
+          p.classList.remove("near");
+          p.style.removeProperty("--away-x");
+          p.style.removeProperty("--away-y");
+          continue;
         }
-      };
-      addEventListener(
-        "pointermove",
-        (e) => {
-          x = e.pageX;
-          y = e.pageY;
-          backdrop.classList.add("lit");
-          if (!queued) {
-            queued = true;
-            requestAnimationFrame(frame);
-          }
-        },
-        { passive: true },
-      );
-      document.documentElement.addEventListener("pointerleave", () => backdrop.classList.remove("lit"));
-    }
-  }
+        const f = (1 - d / REACH) * PUSH;
+        p.classList.add("near");
+        p.style.setProperty("--away-x", `${((dx / d) * f).toFixed(1)}px`);
+        p.style.setProperty("--away-y", `${((dy / d) * f).toFixed(1)}px`);
+      }
+    };
+    addEventListener(
+      "pointermove",
+      (e) => {
+        x = e.pageX;
+        y = e.pageY;
+        backdrop.classList.add("lit");
+        if (!queued) {
+          queued = true;
+          requestAnimationFrame(frame);
+        }
+      },
+      { passive: true },
+    );
+    document.documentElement.addEventListener("pointerleave", () => backdrop.classList.remove("lit"));
+  };
+
   const backdrop = document.querySelector<HTMLElement>(".backdrop");
-  if (backdrop) void document.fonts.ready.then(() => start(backdrop));
+  if (backdrop) {
+    // Once the font is in, so the words are measured at their real size before the pieces avoid them.
+    void document.fonts.ready.then(() => {
+      place(backdrop, true);
+      // A rotated phone or a resized window places them again, a moment after it settles.
+      let width = innerWidth;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      addEventListener("resize", () => {
+        if (innerWidth === width) return;
+        width = innerWidth;
+        clearTimeout(timer);
+        timer = setTimeout(() => place(backdrop, false), 200);
+      });
+      if (matchMedia("(pointer: fine)").matches && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        follow(backdrop);
+      }
+    });
+  }
 </script>
 
 <style>
