@@ -68,18 +68,25 @@ STANDIN = http://127.0.0.1:$${AUTH_PORT:-54321}
 LOCAL_AUTH_ENV = JW_SUPABASE_URL=$(STANDIN) JW_SUPABASE_KEY=local JW_SUPABASE_PROVIDERS=google,facebook \
 	AUTH_JWKS_URL=$(STANDIN)/auth/v1/.well-known/jwks.json AUTH_ISSUER=$(STANDIN)/auth/v1 \
 	AUTH_STANDIN_KEY=.logs/dev/auth-key.pem
+# In an md worktree, only `md run` exports the worktree's ports. A bare `make dev-all` there that
+# lacks one hands itself to `md run all --here`, which runs this target again with them all;
+# DEV_ALL_VIA_MD stops a second hand-off when md exports too few (its repo.toml is main's).
+DEV_ALL_PORTS = WEB_PORT API_PORT SITE_PORT DOCS_PORT AUTH_PORT
+DEV_ALL_MISSING = $(strip $(if $(MEDALLION_DEV_WORKSPACE_NAME),$(foreach v,$(DEV_ALL_PORTS),$(if $($(v)),,$(v)))))
+ifneq ($(DEV_ALL_MISSING),)
+dev-all:
+	@if [ -n "$$DEV_ALL_VIA_MD" ]; then echo "dev-all: md run all exported no $(DEV_ALL_MISSING). md reads .md/repo.toml from main, so a port named only on this branch waits for its merge. Meanwhile set it: $(firstword $(DEV_ALL_MISSING))=<free port> make dev-all"; exit 1; fi
+	@echo "dev-all: md worktree $(MEDALLION_DEV_WORKSPACE_NAME) has no $(DEV_ALL_MISSING); starting it through md run all, which exports them"
+	env -u MEDALLION_DEV_REPO DEV_ALL_VIA_MD=1 DEV_AUTH=$(DEV_AUTH) md run all --here
+else
 dev-all:
 	@$(LOCAL_DB_GATE)
 	@case "$(DEV_AUTH)" in local|supabase) ;; *) echo "dev-all: DEV_AUTH=local or DEV_AUTH=supabase, not $(DEV_AUTH)"; exit 1;; esac
 	@command -v dekit >/dev/null || { echo "dev-all: dekit (mprocs) is not installed. Run: mise install"; exit 1; }
-	@if [ -n "$$MEDALLION_DEV_WORKSPACE_NAME" ]; then missing=""; \
-	  for v in WEB_PORT API_PORT SITE_PORT DOCS_PORT AUTH_PORT; do eval "[ -n \"\$${$$v:-}\" ]" || missing="$$missing $$v"; done; \
-	  if [ -n "$$missing" ]; then echo "dev-all: md worktree $$MEDALLION_DEV_WORKSPACE_NAME has no$$missing, so every pane would stop on it."; \
-	    echo "  Run: env -u MEDALLION_DEV_REPO md run all --here"; exit 1; fi; \
-	fi
 	@mkdir -p .logs/dev
 	@echo "dev-all: the parent's app is http://127.0.0.1:$${WEB_PORT:-5173}/parent ($(if $(filter local,$(DEV_AUTH)),any email and the code 123456,jadwigo-dev's sign-in))"
 	$(if $(filter local,$(DEV_AUTH)),$(LOCAL_AUTH_ENV)) DATABASE_URL=$(LOCAL_DATABASE_URL) dekit mprocs --config mprocs.yaml --log-dir .logs/dev --log-mode truncate
+endif
 
 ## dev-all-supabase: dev-all with jadwigo-dev's real sign-in (.env.local), not the local stand-in.
 dev-all-supabase:
