@@ -21,6 +21,7 @@ import { newConversationId } from "./ids.ts";
 import { LessonPane } from "./LessonPane.tsx";
 import { useLessonWiring } from "./lessonWiring.ts";
 import type { LessonChange } from "./patches.ts";
+import { usePhase } from "./phase.ts";
 import { apiTransport } from "./realtime.ts";
 import { holdServer } from "./routesTransport.ts";
 import { type EngineTransport, hotTransport, useConversation } from "./useConversation.ts";
@@ -63,11 +64,17 @@ function ChatView({
   onEdit,
   onNew,
   onRate,
+  onRefetch,
+  onRetry,
 }: {
   language: Language;
   state: ConversationState;
   onSend(text: string): void;
   onStop(): void;
+  /** Reads the conversation back once, when the turn goes quiet (phase.ts). */
+  onRefetch?: () => void;
+  /** Spróbuj ponownie on a stalled turn. */
+  onRetry?: () => void;
   onEdit?: (text: string, question_ids: string[], change?: LessonChange) => unknown;
   onNew?: () => void;
   /** Rates a completed turn by its run (dl-z5ja.63). */
@@ -75,6 +82,7 @@ function ChatView({
 }): ReactElement {
   const lesson = useLessonWiring(state, onEdit);
   const { turns } = lesson;
+  const { phase, now } = usePhase(turns, state, onRefetch);
   return (
     <ChatLayout
       language={language}
@@ -91,6 +99,10 @@ function ChatView({
           onSend={onSend}
           onStop={onStop}
           onRate={onRate}
+          phase={phase}
+          now={now}
+          pending={state.pending?.text ?? null}
+          onRetry={onRetry}
         />
       }
       lesson={
@@ -218,7 +230,7 @@ function LiveChat({
   language: Language;
   onNew(): void;
 }): ReactElement {
-  const { state, send, stop, edit, consentMissing, consented } = useConversation(
+  const { state, send, stop, edit, consentMissing, consented, refetch, retry } = useConversation(
     transport,
     conversation,
   );
@@ -244,6 +256,8 @@ function LiveChat({
       onEdit={edit}
       onNew={onNew}
       onRate={ratings === null ? undefined : (run, body) => ratings.rateRun(run, body)}
+      onRefetch={refetch}
+      onRetry={retry}
     />
   );
 }

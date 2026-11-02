@@ -221,6 +221,7 @@ const pieces = [
     // Once the font is in, so the words are measured at their real size before the pieces avoid them.
     void document.fonts.ready.then(() => {
       place(backdrop, true);
+      backdrop.classList.add("dealt");
       // A rotated phone or a resized window places them again, a moment after it settles.
       let width = innerWidth;
       let timer: ReturnType<typeof setTimeout> | undefined;
@@ -258,6 +259,11 @@ const pieces = [
   /* Without JS nothing keeps a sum whole inside the page, and a cut-off one would read as false, so
      only the stars show. */
   :global(html:not(.js)) .sum { display: none; }
+  /* With JS the pieces wait unseen until they are placed, then fade in, so placing them never moves
+     anything the reader sees (dl-5ssh.4.43). */
+  :global(html.js) .backdrop:not(.dealt) .piece { visibility: hidden; }
+  .dealt .piece { animation: appear 0.8s ease both; }
+  @keyframes appear { from { opacity: 0; } }
   .star svg { display: block; }
   /* A star twinkles under the cursor: it grows and turns a quarter, and brightens. */
   .star.near { transform: translate(var(--away-x, 0), var(--away-y, 0)) scale(1.7) rotate(45deg); }
@@ -276,6 +282,7 @@ const pieces = [
   .green.near { color: color-mix(in srgb, var(--jw-right-edge) 55%, var(--jw-ground)); }
   @media (prefers-reduced-motion: reduce) {
     .drift { animation: none; }
+    .dealt .piece { animation: none; }
     .piece { transition: none; }
   }
 </style>

@@ -42,6 +42,24 @@ export function cutPath(value: string): string {
   return /^[a-z]+:\/\//i.test(value) ? `${url.origin}${path}` : path;
 }
 
+/** A prefixed id (`lrn_…`) or a uuid anywhere in a value, such as `data-learner-card`'s. */
+const ID_ANYWHERE =
+  /\b[a-z]{2,5}_[0-9A-Za-z]{10,}\b|\b[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\b/g;
+
+/** The attributes whose value is a URL. */
+const URL_ATTRIBUTES = new Set(["href", "src", "action", "poster"]);
+
+/**
+ * What a session replay records of an element's attribute (dl-w0b4.13): a URL cut as an event's
+ * URLs are, and any id in another attribute (`data-learner-card="lrn_…"`) as `:id`. rrweb's
+ * snapshots reach PostHog compressed, where before_send cannot see them, so the recorder cuts
+ * them as it writes.
+ */
+export function maskAttribute(name: string, value: string): string {
+  if (URL_ATTRIBUTES.has(name)) return cutPath(value);
+  return value.replace(ID_ANYWHERE, ":id");
+}
+
 /** The PostHog properties that hold a URL or a path. */
 const URL_KEYS = [
   "$current_url",

@@ -5,7 +5,7 @@
  */
 import { posthogHosts } from "@jadwigo/config";
 import type { PostHogConfig } from "posthog-js";
-import { beforeSendFor, cutPath } from "./before-send.ts";
+import { beforeSendFor, cutPath, maskAttribute } from "./before-send.ts";
 import type { Surface } from "./catalog.ts";
 
 export function posthogOptions(surface: Surface): Partial<PostHogConfig> {
@@ -37,6 +37,9 @@ export function posthogOptions(surface: Surface): Partial<PostHogConfig> {
       recordBody: false,
       // The recorder writes the page's href into every replay (its Meta and $url_changed events)
       // through this function: cut it as before_send cuts an event's URLs.
+      // Every element attribute too: a link's href (/parent?for=lrn_…) and a data-* id
+      // (data-learner-card="lrn_…") would otherwise ride in the replay's snapshots.
+      maskAttributeFn: (name, value) => maskAttribute(name, value),
       maskCapturedNetworkRequestFn: (request) => ({
         ...request,
         name: cutPath(String(request["name"] ?? "")),
