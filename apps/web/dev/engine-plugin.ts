@@ -251,7 +251,7 @@ function engine(server: ViteDevServer, m: Modules) {
                   payload: {
                     text: body.text,
                     source: body.source,
-                    question_ids: body.question_ids,
+                    ...(body.question_ids === undefined ? {} : { question_ids: body.question_ids }),
                     ...(body.patch === undefined || body.base_revision === undefined
                       ? {}
                       : { patch: body.patch, base_revision: body.base_revision }),

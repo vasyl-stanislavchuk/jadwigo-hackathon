@@ -22,7 +22,7 @@
 
 import type { ConversationId, Learner, LearnerId } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
-import { type ReactElement, useEffect, useRef } from "react";
+import { type ReactElement, useEffect, useRef, useState } from "react";
 import { ChatPane } from "../../chat/ChatPane.tsx";
 import { ConsentScreen, giveConsent } from "../../chat/ConsentScreen.tsx";
 import { LessonPane } from "../../chat/LessonPane.tsx";
@@ -79,10 +79,35 @@ export function LessonWorkspace({
     copy(language, key, vars, CATEGORY);
   // The route's id is the server's: it stands for itself in the transport, before the first read.
   holdServer(conversation);
-  const { state, send, stop, edit, consentMissing, consented, refetch, retry } = useConversation(
-    engine.transport,
-    conversation,
+  // Who is signed in, for the queue kept in the tab (chat/queue.ts); unknown until the token reads.
+  const [owner, setOwner] = useState<string | null | false>(
+    engine.owner === undefined ? null : false,
   );
+  useEffect(() => {
+    if (engine.owner === undefined) return;
+    let live = true;
+    void engine.owner().then(
+      (who) => live && setOwner(who),
+      () => live && setOwner(null),
+    );
+    return () => {
+      live = false;
+    };
+  }, [engine]);
+  const {
+    state,
+    send,
+    stop,
+    edit,
+    consentMissing,
+    consented,
+    refetch,
+    retry,
+    next,
+    sendNow,
+    takeNext,
+    resend,
+  } = useConversation(engine.transport, conversation, owner, engine.owner);
   const lesson = useLessonWiring(state, edit);
   const { turns } = lesson;
   const restoring = state.connection === "restoring";
@@ -152,6 +177,10 @@ export function LessonWorkspace({
       pending={state.pending?.text ?? null}
       onRetry={retry}
       nameOf={(id) => learners.find((l) => l.id === id)?.first_name ?? null}
+      next={next}
+      onSendNow={sendNow}
+      onTakeNext={takeNext}
+      onResend={resend}
     />
   );
 

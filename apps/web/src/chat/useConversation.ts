@@ -20,6 +20,7 @@ import {
 } from "./conversation.ts";
 import { newEventId } from "./ids.ts";
 import type { LessonChange } from "./patches.ts";
+import { useNextQueue } from "./queue.ts";
 import {
   type EventsAnswer,
   eventsPath,
@@ -133,6 +134,17 @@ export interface Conversation {
   /** Reads the conversation back once more: the slow phase's one fetch (dl-uukj.47.29). */
   refetch(): void;
   /**
+   * The "Następne" queue (dl-uukj.47.34, queue.ts): what the parent sent while a turn ran, waiting
+   * in the tab. It goes out in order once the turn ends, one turn each.
+   */
+  next: readonly string[];
+  /** "Wyślij teraz": one waiting row goes into the running turn now, as a steer. */
+  sendNow(index: number): void;
+  /** Takes one waiting row out (to remove it, or back to the composer), answering its words. */
+  takeNext(index: number): string | null;
+  /** "Spróbuj ponownie" after a failed send: the exact words that failed, sent the same way. */
+  resend(): void;
+  /**
    * "Spróbuj ponownie" on a stalled turn (dl-uukj.47.29): a failed restore reads the conversation
    * back again; an open turn is cancelled first, so no 2 runs race, and then its words go again.
    */
@@ -149,6 +161,16 @@ function openingWords(turn: ReturnType<typeof turnsOf>[number] | undefined): str
 export function useConversation(
   transport: EngineTransport,
   conversation: ConversationId,
+  /**
+   * The signed-in account, whose "Następne" queue alone the page reads (queue.ts): false while it
+   * is not known yet, null where there is no sign-in (the dev pages).
+   */
+  owner: string | null | false = null,
+  /**
+   * Who is signed in right now, by the token the transport will send. The queue's words go only
+   * while it is still `owner`: another tab may have signed in someone else since (dl-uukj.47.34).
+   */
+  whoNow?: () => Promise<string | null>,
 ): Conversation {
   const [state, dispatch] = useReducer(conversationReducer, {
     ...EMPTY,
@@ -157,6 +179,42 @@ export function useConversation(
   const latest = useRef(state);
   latest.current = state;
   const subscribed = useRef(new Map<RunId, () => void>());
+  const queue = useNextQueue(conversation, owner === false ? undefined : owner);
+  /**
+   * The last send that failed, of any kind (a message, a queued row, a steer, Stop, a retry's
+   * cancel), as the way to do it again: "Spróbuj ponownie" runs it, and the queue waits till then.
+   */
+  const failed = useRef<(() => void) | null>(null);
+  /** Latest versions of the sends a failure redoes, so a redo never runs a stale closure. */
+  const redo = useRef<{
+    sendNow: (index: number) => void;
+    stop: () => void;
+    retry: () => void;
+    edit: (text: string, question_ids: string[], change?: LessonChange) => EventId | null;
+  } | null>(null);
+  /** A failure, with the way to do it again. */
+  const fail = useCallback((again: () => void, limit: SendLimit | null = null) => {
+    failed.current = again;
+    dispatch({ type: "send_failed", failed: true, limit });
+  }, []);
+  /** A send that went: no failure stands. */
+  const went = useCallback(() => {
+    failed.current = null;
+    dispatch({ type: "send_failed", failed: false });
+  }, []);
+  /**
+   * Whether the queue's words may still go under this tab's token: false when another account
+   * has signed in since, and then the queue is dropped, never sent under their name.
+   */
+  const stillOwner = useCallback(async (): Promise<boolean> => {
+    if (typeof owner !== "string" || whoNow === undefined) return true;
+    const who = await whoNow().catch(() => null);
+    if (who === owner) return true;
+    queue.clear();
+    return false;
+  }, [owner, whoNow, queue.clear]);
+  /** A queued row on its way: the drain starts no other meanwhile. */
+  const draining = useRef(false);
   /** A retry's words, waiting for the turn it cancelled to end (dl-uukj.47.29). */
   const afterEnd = useRef<{ run: RunId; text: string } | null>(null);
   /** The words a route refused for want of consent, sent again once it is given. */
@@ -210,14 +268,15 @@ export function useConversation(
     };
   }, [transport, restore]);
 
-  const send = useCallback(
-    (text: string, context?: MessageContext) => {
-      const last = turnsOf(latest.current).at(-1);
+  /**
+   * The words as a message, echoed until their event lands. Answers whether the server took them;
+   * a failure is kept, with whether the words came from the queue, for "Spróbuj ponownie".
+   */
+  const post = useCallback(
+    (text: string, context?: MessageContext, queued = false): Promise<boolean> => {
       const event_id = newEventId();
-      // Mid-turn words wait in the queue; otherwise they echo at once until their event lands.
-      if (last !== undefined && isOpen(last)) dispatch({ type: "queued", text });
-      else dispatch({ type: "pending", pending: { text, event_id, at: Date.now() } });
-      transport
+      dispatch({ type: "pending", pending: { text, event_id, at: Date.now() } });
+      return transport
         .send({
           conversation_id: conversation,
           event_id,
@@ -226,17 +285,114 @@ export function useConversation(
           ...(context === undefined ? {} : { context }),
         })
         .then((run) => {
-          dispatch({ type: "send_failed", failed: false });
+          went();
           dispatch({ type: "sent", event_id, run_id: run.id });
-          return follow(run);
+          void follow(run);
+          return true;
         })
         .catch((e: unknown) => {
-          if (consentMissing(e)) setRefused(context === undefined ? { text } : { text, context });
-          else dispatch({ type: "send_failed", failed: true, limit: limitOf(e) });
+          if (consentMissing(e)) {
+            // Not sent: the consent screen asks first, and the words go again once it is given.
+            dispatch({ type: "unsent", event_id });
+            setRefused(context === undefined ? { text } : { text, context });
+          } else if (queued) {
+            // A queued row stays in the queue; doing it again sends whatever row still holds it.
+            fail(() => {
+              const index = latestQueue.current.indexOf(text);
+              if (index >= 0) redo.current?.sendNow(index);
+            }, limitOf(e));
+          } else fail(() => void postRef.current?.(text, context), limitOf(e));
+          return false;
         });
     },
-    [transport, conversation, follow],
+    [transport, conversation, follow, went, fail],
   );
+  const postRef = useRef(post);
+  postRef.current = post;
+  const latestQueue = useRef(queue.items);
+  latestQueue.current = queue.items;
+
+  const send = useCallback(
+    (text: string, context?: MessageContext) => {
+      const last = turnsOf(latest.current).at(-1);
+      // Mid-turn words wait under "Następne" in the tab, not in the running turn's inbox (once the
+      // account they belong to is known; before that they go as they did).
+      const busy = (last !== undefined && isOpen(last)) || latest.current.pending !== null;
+      if (busy && queue.ready) {
+        queue.add(text);
+        return;
+      }
+      void post(text, context);
+    },
+    [post, queue.ready, queue.add],
+  );
+
+  /**
+   * "Wyślij teraz": the row goes into the running turn as a chat steer, or as a turn when none
+   * runs. The row leaves the queue only once the server took the words; a failure keeps it.
+   */
+  const sendNow = useCallback(
+    (index: number) => {
+      const text = queue.items[index];
+      if (text === undefined) return;
+      void stillOwner().then((mine) => {
+        if (!mine) return;
+        const last = turnsOf(latest.current).at(-1);
+        if (last === undefined || !isOpen(last)) {
+          void post(text, undefined, true).then((ok) => ok && queue.remove(text));
+          return;
+        }
+        transport
+          .send({
+            conversation_id: conversation,
+            event_id: newEventId(),
+            kind: "steer",
+            source: "chat",
+            text,
+          })
+          .then((run) => {
+            went();
+            queue.remove(text);
+            return follow(run);
+          })
+          .catch(() =>
+            fail(() => {
+              const at = latestQueue.current.indexOf(text);
+              if (at >= 0) redo.current?.sendNow(at);
+            }),
+          );
+      });
+    },
+    [queue.items, queue.remove, stillOwner, post, transport, conversation, follow, went, fail],
+  );
+
+  /** "Spróbuj ponownie" after a failed send of any kind: the same send, done again. */
+  const resend = useCallback(() => {
+    const again = failed.current;
+    failed.current = null;
+    // Cleared first: the redo either goes, or fails and stands again.
+    dispatch({ type: "send_failed", failed: false });
+    again?.();
+  }, []);
+
+  // Once no turn runs, the waiting rows go out in order, one turn each; never after a failed send
+  // (it waits for "Spróbuj ponownie"), a failed restore or a lesson that is not there.
+  useEffect(() => {
+    if (queue.items.length === 0 || state.connection === "restoring" || state.pending !== null)
+      return;
+    if (state.sendFailed || state.restoreFailed || state.notFound) return;
+    const last = turnsOf(state).at(-1);
+    if (last !== undefined && isOpen(last)) return;
+    const text = queue.items[0];
+    if (text === undefined || draining.current) return;
+    draining.current = true;
+    void stillOwner()
+      .then((mine) => (mine ? post(text, undefined, true) : false))
+      .then((ok) => ok && queue.remove(text))
+      .finally(() => {
+        draining.current = false;
+      });
+  }, [state, queue.items, queue.remove, post, stillOwner]);
 
   const consented = useCallback(() => {
     const words = refused;
@@ -248,8 +404,9 @@ export function useConversation(
     dispatch({ type: "stop" });
     transport
       .send({ conversation_id: conversation, event_id: newEventId(), kind: "cancel" })
-      .catch(() => dispatch({ type: "send_failed", failed: true }));
-  }, [transport, conversation]);
+      .then(() => went())
+      .catch(() => fail(() => redo.current?.stop()));
+  }, [transport, conversation, went, fail]);
 
   const retry = useCallback(() => {
     const now = latest.current;
@@ -268,12 +425,15 @@ export function useConversation(
     if (text !== null) afterEnd.current = { run: last.run.id, text };
     transport
       .send({ conversation_id: conversation, event_id: newEventId(), kind: "cancel" })
-      .then((run) => follow(run))
+      .then((run) => {
+        went();
+        return follow(run);
+      })
       .catch(() => {
         afterEnd.current = null;
-        dispatch({ type: "send_failed", failed: true });
+        fail(() => redo.current?.retry());
       });
-  }, [transport, conversation, follow, restore, send]);
+  }, [transport, conversation, follow, restore, send, went, fail]);
 
   // The retried words go out once the cancelled turn has ended, as a turn of their own.
   useEffect(() => {
@@ -306,17 +466,18 @@ export function useConversation(
             : { patch: change.patch, base_revision: change.base_revision }),
         })
         .then((run) => {
-          dispatch({ type: "send_failed", failed: false });
+          went();
           return follow(run);
         })
         .catch(() => {
-          dispatch({ type: "send_failed", failed: true });
+          fail(() => void redo.current?.edit(text, question_ids, change));
           dispatch({ type: "steer_failed", event_id });
         });
       return event_id;
     },
-    [transport, conversation, follow, send],
+    [transport, conversation, follow, send, went, fail],
   );
+  redo.current = { sendNow, stop, retry, edit };
 
   const refetch = useCallback(() => void restore(), [restore]);
 
@@ -329,5 +490,9 @@ export function useConversation(
     consented,
     refetch,
     retry,
+    next: queue.items,
+    sendNow,
+    takeNext: queue.take,
+    resend,
   };
 }
