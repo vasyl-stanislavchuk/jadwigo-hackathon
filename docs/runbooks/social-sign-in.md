@@ -8,6 +8,7 @@ Decisions:
 - `jadwigo-hackathon/notes/2026-11-01-prod-sign-in-is-switched-on-and-linked-from-jadwigo-pl-before-th` (`dl-asgl`)
 - `jadwigo-platform/notes/2026-11-01-facebook-sign-in-is-on-in-jadwigo-prod-for-the-meta-app-s-tester` (`dl-ovva`)
 - `jadwigo-platform/notes/2026-11-01-prod-sign-in-ships-on-the-supabase-co-host-now-and-moves-to-auth` (`dl-2qke`)
+- `jadwigo-platform/notes/2026-11-02-facebook-sign-in-goes-live-through-a-business-portfolio-verified` (`dl-hg9sk`)
 
 It ends with a Google OAuth client for each Supabase project and one Meta app for both. Their secrets sit in the keychain, and both providers are switched on in `jadwigo-dev`. Prod is switched on by the same script (`dl-e8ov.2.92`, decision `dl-asgl`): the lawyer-reviewed consent text in `dl-e8ov.2.9` no longer gates it and stays a follow-up before families are invited.
 
@@ -98,9 +99,9 @@ It ends with a Google OAuth client for each Supabase project and one Meta app fo
 5. **Try a Facebook account with no email**, if you have one.
    You should see: the line offering the email code, and no new pod. `B update dl-e8ov.2.58 --append-notes "<what you saw>"`.
 
-Prod is the same, with `prod` for `dev` (`dl-e8ov.2.92`). `prod.json` carries the hook, Google with the prod client id, Facebook and their 2 secrets (`jadwigo-google-oauth-secret-prod`, `jadwigo-facebook-app-secret-prod`). `make db-push ENV=prod` comes before `auth.sh apply prod`; until then `auth.sh diff prod` says the hook function is not in the project and exits 1. Then `make -C infra web-deploy` ships `infra/web-build/prod.env`: the `supabase.co` host for now (`dl-2qke`), jadwigo-prod's publishable key, and `JW_SUPABASE_PROVIDERS=google`.
+Prod is the same, with `prod` for `dev` (`dl-e8ov.2.92`). `prod.json` carries the hook, Google with the prod client id, Facebook and their 2 secrets (`jadwigo-google-oauth-secret-prod`, `jadwigo-facebook-app-secret-prod`). `make db-push ENV=prod` comes before `auth.sh apply prod`; until then `auth.sh diff prod` says the hook function is not in the project and exits 1. Then `make -C infra web-deploy` ships `infra/web-build/prod.env`: the `supabase.co` host for now (`dl-2qke`), jadwigo-prod's publishable key, and the buttons in `JW_SUPABASE_PROVIDERS`.
 
-Facebook is on in jadwigo-prod but its button stays hidden while the Meta app is in Development mode (`dl-ovva`): a tester from Meta step 12 opens `https://app.jadwigo.pl/parent?provider=facebook`, which starts Facebook because the project has it on. Once the app is Live (Meta step 14), `JW_SUPABASE_PROVIDERS=google,facebook` and a web redeploy show the button.
+Facebook is on in jadwigo-prod but its button stays hidden while the Meta app is in Development mode (`dl-ovva`): a tester from Meta step 12 opens `https://app.jadwigo.pl/parent?provider=facebook`, which starts Facebook because the project has it on. Going Live and showing the button follow "Facebook Live" below.
 
 ## The custom domain
 
@@ -133,6 +134,27 @@ Prod's Auth answers on `auth.jadwigo.pl`, so Google's consent screen and Faceboo
    You should see: `iss: https://xhzkmpainwzrfktxffjv.supabase.co/auth/v1`, `alg: RS256`, `the JWKS key for that kid: RSA RS256` and `matches the authorizer`. Record the result: `B update dl-e8ov.2.65 --append-notes "issuer check: iss <iss>, alg <alg>, kid <kid>: <matches or DIFFERS>"`. On `DIFFERS`, stop. Deploy nothing and tell the lead: either the authorizer's `jwt_issuer` changes, or the signing key is not RS256 (`supabase-projects.md` step 2).
 
 Then `infra/web-build/prod.env` names `JW_SUPABASE_URL=https://auth.jadwigo.pl` in place of the `supabase.co` host prod ships on until now (`dl-2qke`), and the owner redeploys the web app.
+
+## Facebook Live
+
+This takes the Meta app `3621441648030924` Live for anyone with a Facebook account (`dl-e8ov.2.58`, decision `dl-hg9sk`), in this order. It fills in Meta steps 2, 8, 9, 13 and 14. The switch in the repo is `dl-e8ov.2.58`'s draft PR: `JW_SUPABASE_PROVIDERS=google,facebook` in `infra/web-build/prod.env` and `facebookSignInLive = true` in `apps/site/src/lib/landing.ts`. It stays a draft until step 9.
+
+1. **Name the business portfolio after the JDG.** At https://business.facebook.com, give the portfolio the JDG's name exactly as its CEIDG entry has it.
+2. **Verify the business.** Under **Security Centre → Business verification**, upload the CEIDG extract and a document with the JDG's address or phone number, such as a utility bill or a bank statement.
+   You should see: the portfolio marked "Verified". Meta may ask for another document first.
+3. **Verify jadwigo.pl.** Under **Brand safety → Domains**, add `jadwigo.pl`, choose the DNS TXT record, and add it in Route 53.
+   You should see: `dig +short TXT jadwigo.pl` prints the `facebook-domain-verification=` value, and the domain is marked "Verified".
+4. **Connect the portfolio to the app.** At https://developers.facebook.com/apps/3621441648030924, under **App settings → Basic**, pick the verified portfolio.
+5. **Switch prod to auth.jadwigo.pl first** ("The custom domain" above, `dl-e8ov.2.75`, decision `dl-x3kec`). Facebook's dialog then names Jadwigo's host for the reviewer and for every parent.
+6. **Fill in the app settings.** Under **Settings → Basic**: the 1024 × 1024 px icon, the category "Education", the privacy policy URL `https://jadwigo.pl/prywatnosc/`, and under **User data deletion** the "Data deletion instructions URL" `https://jadwigo.pl/prywatnosc/usuwanie-danych/` (an instructions page, decision `dl-wfdn`). Under **Facebook Login → Settings**, turn **Social discovery** off.
+7. **Ask for App Review of `email`** (Meta step 13). Record the screen while a tester opens `https://app.jadwigo.pl/parent?provider=facebook`, accepts Facebook's consent and lands on the parent home. In the reviewer notes, name that link as the way in.
+   You should see: the request "In review".
+8. **Go Live** once the review passes (Meta step 14).
+   You should see: "Live" at the top of the app dashboard.
+9. **Ship the button.** Mark the PR ready with `gh pr ready <n>` and `gh pr merge <n> --auto --squash`. Once it merges, run the web deploy and the site deploy from your own terminal (`infra/Makefile`).
+   You should see: jadwigo.pl/zaloguj and jadwigo.pl/en/sign-in show Facebook after Google.
+10. **Sign in with a non-tester.** From jadwigo.pl/zaloguj, choose Facebook with an account that has no role on the app.
+    You should see: the parent home, and no "Submit for Login Review" warning in Facebook's dialog. Then `B update dl-e8ov.2.58 --append-notes "Live e2e, non-tester: <what you saw>"`.
 
 ## After
 

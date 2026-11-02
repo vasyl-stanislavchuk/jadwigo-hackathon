@@ -59,7 +59,8 @@ const sources = readdirSync(content, { recursive: true, encoding: "utf8" })
   .filter((f) => f.endsWith(".md"))
   .flatMap((f) => parsePathPage(readFileSync(new URL(f, content), "utf8")) ?? []);
 const paged = pathPageChecks(sources);
-// The sign-in's provider links: Facebook's only once facebookSignInLive is on (dl-ovva).
+// The sign-in's provider links: Google's and, with facebookSignInLive on, Facebook's (dl-ovva,
+// dl-e8ov.2.58). Built with the switch off, a Facebook link fails it.
 const signIn = signInDistChecks(servedLanguages(true));
 // The English landing page, once English is served (dl-w0b4.108): its own lang and its lessons section.
 const served = servedLanguages(true);

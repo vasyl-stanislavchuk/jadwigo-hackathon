@@ -170,11 +170,11 @@ export function goalLine(
 }
 
 /**
- * The switch for the Facebook button on /zaloguj and /en/sign-in (decision dl-ovva): Facebook
- * sign-in works in prod for the Meta app's testers, and the button stays out of the page until the
- * app is Live. Set it to true when dl-e8ov.2.58 lands. Its words stay in landing.yaml either way.
+ * The switch for the Facebook button on /zaloguj and /en/sign-in (decision dl-ovva): on, because the
+ * Meta app is Live (dl-e8ov.2.58, decision dl-hg9sk). Set it to false to hide the button again; its
+ * words stay in landing.yaml either way.
  */
-export const facebookSignInLive = false;
+export const facebookSignInLive = true;
 
 /** A way to sign in that /zaloguj hands over to the app, besides the email code. */
 export type SignInProvider = Parameters<typeof providerUrl>[0];

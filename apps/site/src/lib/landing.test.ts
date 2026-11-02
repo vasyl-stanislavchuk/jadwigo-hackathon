@@ -102,30 +102,29 @@ describe("the Facebook sign-in switch (dl-ovva)", () => {
   const facebook = 'href="https://app.jadwigo.pl/parent?provider=facebook';
   const google = 'href="https://app.jadwigo.pl/parent?provider=google';
 
-  it("is off until the Meta app is Live, so /zaloguj shows Google only", () => {
-    expect(facebookSignInLive).toBe(false);
-    expect(signInProviders()).toEqual(["google"]);
+  it("is on now the Meta app is Live, so /zaloguj shows Google, then Facebook", () => {
+    expect(facebookSignInLive).toBe(true);
+    expect(signInProviders()).toEqual(["google", "facebook"]);
   });
 
-  it("asks the built /zaloguj and /en/sign-in for no Facebook link while it is off", () => {
+  it("asks the built /zaloguj and /en/sign-in for the Facebook link while it is on", () => {
     const { must, mustNot } = signInDistChecks(["pl", "en"]);
     expect(must).toEqual([
       ["zaloguj/index.html", google],
+      ["zaloguj/index.html", facebook],
       ["en/sign-in/index.html", google],
+      ["en/sign-in/index.html", facebook],
     ]);
+    expect(mustNot).toEqual([]);
+  });
+
+  it("hides the Facebook button and asks for no Facebook link once it is off", () => {
+    expect(signInProviders(false)).toEqual(["google"]);
+    const { must, mustNot } = signInDistChecks(["pl"], false);
+    expect(must).toEqual([["zaloguj/index.html", google]]);
     expect(mustNot).toEqual([
       ["zaloguj/index.html", facebook],
       ["en/sign-in/index.html", facebook],
     ]);
-  });
-
-  it("brings the Facebook button back, after Google, once it is on", () => {
-    expect(signInProviders(true)).toEqual(["google", "facebook"]);
-    const { must, mustNot } = signInDistChecks(["pl"], true);
-    expect(must).toEqual([
-      ["zaloguj/index.html", google],
-      ["zaloguj/index.html", facebook],
-    ]);
-    expect(mustNot).toEqual([]);
   });
 });
