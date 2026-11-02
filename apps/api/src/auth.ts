@@ -8,6 +8,8 @@ import { Uuid } from "@jadwigo/contracts";
 export interface Claims {
   readonly sub: Uuid;
   readonly email: string | null;
+  /** The OAuth client an AI app's token names (the remote MCP, dl-1u6fn.17); null for the web app's. */
+  readonly client_id: string | null;
 }
 
 /** The caller's verified claims, or undefined for no token or one that fails verification. */
@@ -53,7 +55,12 @@ function claimsOf(payload: Record<string, unknown>): Claims | undefined {
   const sub = Uuid.safeParse(payload["sub"]);
   if (!sub.success) return undefined;
   const email = payload["email"];
-  return { sub: sub.data, email: typeof email === "string" && email !== "" ? email : null };
+  const client = payload["client_id"];
+  return {
+    sub: sub.data,
+    email: typeof email === "string" && email !== "" ? email : null,
+    client_id: typeof client === "string" && client !== "" ? client : null,
+  };
 }
 
 /**
