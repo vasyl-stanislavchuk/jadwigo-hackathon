@@ -92,7 +92,7 @@ export function lessonSuite(
       );
     }
 
-    it("lists the 4 lesson tools, lesson_draft taking learner_id", async () => {
+    it("lists the lesson tools, lesson_draft taking learner_id", async () => {
       const headers = bearerOf(signToken({ sub: randomUUID() }));
       const { body } = await call({ jsonrpc: "2.0", id: 1, method: "tools/list" }, headers);
       const tools = (
@@ -104,6 +104,7 @@ export function lessonSuite(
         "lesson_show",
         "lesson_edit",
         "lesson_check",
+        "lesson_publish",
       ]);
       expect(tools[1]?.inputSchema.required).toContain("learner_id");
     });
@@ -122,7 +123,12 @@ export function lessonSuite(
       expect(run.status).toBe("completed");
       expect(String(draft["open_url"]).endsWith(String(run.conversation_id))).toBe(true);
       const log = await store.listRunEvents(pod as never, draft_id, 0);
-      expect(log.map((e) => e.type)).toEqual(["lesson_revision", "status", "turn_complete"]);
+      expect(log.map((e) => e.type)).toEqual([
+        "tool_result",
+        "lesson_revision",
+        "status",
+        "turn_complete",
+      ]);
 
       const shown = await tool("lesson_show", { draft_id });
       expect(shown).toMatchObject({ draft_id, revision: 1, lesson_ok: true });
@@ -139,6 +145,105 @@ export function lessonSuite(
       expect(await tool("lesson_show", { draft_id })).toMatchObject({
         revision: 2,
         title: "Dodawanie do 20",
+      });
+    });
+
+    it("publishes a checked draft for the child and answers the play link (lesson_publish)", async () => {
+      const { tool, learner_id, pod } = await parent();
+      const draft_id = (await tool("lesson_draft", { ...DRAFT, learner_id }))["draft_id"];
+      // Drafted but not checked: the AI is told what to do first.
+      expect(await tool("lesson_publish", { draft_id, learner_id })).toEqual({
+        error: "the lesson has not passed lesson_check: check it again first",
+      });
+      expect(await tool("lesson_check", { draft_id, names: [], help: {} })).toMatchObject({
+        ok: true,
+      });
+      const given = await tool("lesson_publish", { draft_id, learner_id });
+      const assignment_id = given["assignment_id"] as string;
+      expect(given["play_url"]).toBe(
+        `https://app.jadwigo.test/play/${assignment_id}?learner=${learner_id}`,
+      );
+      expect(given["parent_url"]).toBe(
+        `https://app.jadwigo.test/parent/assignments/${assignment_id}`,
+      );
+      const assignment = await store.getAssignment(pod as never, assignment_id as never);
+      expect(assignment).toMatchObject({ audience: "learners" });
+      const version = await store.getLessonVersion(
+        pod as never,
+        given["lesson_version_id"] as never,
+      );
+      expect(version.version.lesson_id).toBe(assignment.lesson_id);
+      // The same revision for the same child again answers the same assignment.
+      expect((await tool("lesson_publish", { draft_id, learner_id }))["assignment_id"]).toBe(
+        assignment_id,
+      );
+      // A change after the check needs a check again.
+      await tool("lesson_edit", {
+        draft_id,
+        step_id: "s01",
+        patch: { say: "Policz." },
+        why: "the parent asked for a shorter line",
+        names: [],
+      });
+      expect(await tool("lesson_publish", { draft_id, learner_id })).toEqual({
+        error: expect.stringMatching(/lesson_check/),
+      });
+    });
+
+    it("refuses to publish for another family's child, or a lesson over 20 questions", async () => {
+      const a = await parent();
+      const b = await parent();
+      const draft_id = (await a.tool("lesson_draft", { ...DRAFT, learner_id: a.learner_id }))[
+        "draft_id"
+      ] as string;
+      await a.tool("lesson_check", { draft_id, names: [], help: {} });
+      expect(await a.tool("lesson_publish", { draft_id, learner_id: b.learner_id })).toEqual({
+        error: "no such learner",
+      });
+      expect(await b.tool("lesson_publish", { draft_id, learner_id: b.learner_id })).toEqual({
+        error: expect.stringMatching(/no/),
+      });
+
+      // 21 questions, as no verb can write: the parent's own edit in the app could, so the check
+      // and the publish both stand between it and a child.
+      const shown = (await a.tool("lesson_show", { draft_id })) as {
+        steps: { step: Record<string, unknown> }[];
+        revision: number;
+      };
+      const first = shown.steps[0]?.step ?? {};
+      const steps = Array.from({ length: 21 }, (_, i) => ({
+        ...first,
+        id: `s${String(i + 1).padStart(2, "0")}`,
+      }));
+      const run = await store.getRun(a.pod as never, draft_id as never);
+      const file = (await store.listRunEvents(a.pod as never, run.id, 0)).findLast(
+        (e) => e.type === "lesson_revision",
+      );
+      if (file?.type !== "lesson_revision") throw new Error("the draft has no revision");
+      const lesson_file = file.payload.lesson_file as { script: { parts: object[] } };
+      const written = await store.appendLessonRevision(
+        a.pod as never,
+        run.id,
+        run.attempt,
+        shown.revision,
+        {
+          type: "lesson_revision",
+          run_id: run.id,
+          event_id: randomUUID() as never,
+          payload: {
+            revision: shown.revision + 1,
+            call_id: randomUUID(),
+            lesson_file: {
+              ...lesson_file,
+              script: { parts: [{ ...lesson_file.script.parts[0], steps }] },
+            },
+          },
+        },
+      );
+      expect(written.ok).toBe(true);
+      await a.tool("lesson_check", { draft_id, names: [], help: {} });
+      expect(await a.tool("lesson_publish", { draft_id, learner_id: a.learner_id })).toEqual({
+        error: expect.stringMatching(/at most 20/),
       });
     });
 
