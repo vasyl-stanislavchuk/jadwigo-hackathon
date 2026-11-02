@@ -248,3 +248,23 @@ describe("formulas (lesson frame rule 17)", () => {
     expect(product.getAttribute("aria-label")).toBe("5 × 5");
   });
 });
+
+describe("a word formula (dl-uukj.52)", () => {
+  it("draws a hint's words-and-signs formula a word at a time, so it can wrap", () => {
+    const { container } = render(
+      <RichText text="$\blueD{\text{ Number of rows}}\times\purpleC{\text{ Number of objects in each row}}=\greenD{\text{ Total}}$" />,
+    );
+    const formula = must(container.querySelector<HTMLElement>("[data-word-formula]"));
+    // 10 words, each its own KaTeX span; the signs are text that keeps to the word before.
+    expect(formula.querySelectorAll(".katex")).toHaveLength(10);
+    expect(formula.textContent).toContain("rows × Number");
+    expect(formula.textContent).toContain("row = Total");
+    expect(formula.getAttribute("role")).toBe("math");
+    expect(formula.getAttribute("aria-label")).toContain("Number of rows");
+  });
+
+  it("leaves a formula of numbers to KaTeX whole", () => {
+    const { container } = render(<RichText text="$\blueD7\times\purpleC8$" />);
+    expect(container.querySelector("[data-word-formula]")).toBeNull();
+  });
+});
