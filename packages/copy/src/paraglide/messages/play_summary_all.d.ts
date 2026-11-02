@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "You got them all! Have a look at your answers." |
+* | "All done! Have a look at your answers." |
 *
 * @param {Play_Summary_AllInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

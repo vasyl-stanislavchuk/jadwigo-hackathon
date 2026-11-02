@@ -37,10 +37,27 @@ describe("Results", () => {
     );
     const page = document.querySelector("[data-results]");
     expect(page?.firstElementChild?.hasAttribute("data-congrats")).toBe(true);
-    expect(text("[data-results-summary]")).toBe("Wszystko się udało! Zobacz swoje odpowiedzi.");
+    expect(text("[data-results-summary]")).toBe(
+      "Wszystkie pytania gotowe! Zobacz swoje odpowiedzi.",
+    );
     const walk = document.querySelector("[data-review-walk]");
     expect(walk?.textContent).toBe("Obejrzyj odpowiedzi");
     expect(walk?.getAttribute("href")).toBe("/r/4");
+  });
+
+  // The rows carry no tries (the list is not a score), so a question right after misses ends
+  // `correct` like one right first time: the all-right line says only that every question is done,
+  // true either way, never "all went well" (dl-uukj.53, the owner's pick, 2026-11-02).
+  it("all right, some after misses: the line says done, in English too, and claims no clean run", () => {
+    render(
+      <Results
+        results={resultsOf(row(1, "correct"), row(2, "correct"))}
+        language="en"
+        linkOf={(s) => `/r/${s}`}
+      />,
+    );
+    expect(text("[data-results-summary]")).toBe("All done! Have a look at your answers.");
+    expect(text("[data-results-summary]")).not.toMatch(/got them all/i);
   });
 
   it("one missed: the line about practising some again, with no number", () => {
