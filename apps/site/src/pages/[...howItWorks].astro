@@ -122,21 +122,15 @@ const [one, two, three] = s.items;
   .request ul { list-style: none; margin: 0.5rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.95rem; color: var(--jw-ink-soft); }
   .words > .soon { font-size: 0.9rem; }
 
-  /* Step 2: a small question card overlapping its illustration, as a child sees one question. */
-  .stage { position: relative; padding-bottom: 5rem; }
-  .stage :global(.stage-pic) { height: clamp(14rem, 28vw, 19rem); }
-  /* The label sits at the slot's top, clear of the card that overlaps its bottom. */
-  .stage :global(.stage-pic .body) { place-content: start center; padding-top: 2rem; }
-  /* Centred at the bottom: the picture keeps its centre and bottom-middle empty for it (dl-5ssh.4.24). */
-  .card { position: absolute; left: 0; right: 0; bottom: 0; margin-inline: auto; width: min(19rem, 85%); padding: 0.9rem; box-shadow: 0 5px 0 var(--jw-line); --cell: 1.25rem; }
-  /* In one column (phone, tablet) the picture is short beside the card, which would hide the people in it:
-     the picture takes its own height and the card sits under it, overlapping only the table's edge. */
-  @media (max-width: 55.99rem) {
-    .stage { padding-bottom: 0; }
-    .stage :global(.stage-pic) { height: auto; min-height: 0; max-width: 36rem; margin-inline: auto; }
-    .stage :global(.stage-pic img) { height: auto; }
-    .card { position: relative; margin-top: -1.5rem; }
-  }
+  /* Step 2: a small question card overlapping its illustration, as a child sees one question. The
+     picture takes the column's full width at its own height, and the card sits under it, overlapping only
+     the table's edge: on top of a shorter picture the card hid the people in it (dl-5ssh.4.24). */
+  .stage { display: flex; flex-direction: column; align-items: center; }
+  .stage :global(.stage-pic) { height: auto; min-height: 0; }
+  .stage :global(.stage-pic img) { height: auto; }
+  /* Up onto the table, clear of the people: the table is the picture's bottom 30%, about 14% of its width,
+     and a percent margin is of the width, so the card rises the same share at every size (owner, 2026-11-02). */
+  .card { position: relative; margin-top: -11%; width: min(19rem, 85%); padding: 0.9rem; box-shadow: 0 5px 0 var(--jw-line); --cell: 1.25rem; }
   .card .say { font-weight: 700; font-size: 0.95rem; line-height: 1.35; }
   .card .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-top: 0.6rem; }
   .card .tile {
