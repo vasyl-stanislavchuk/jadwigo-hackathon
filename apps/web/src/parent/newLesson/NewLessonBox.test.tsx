@@ -2,13 +2,21 @@
 /**
  * The first screen (dl-uukj.47.2, decision dl-xo0q): the question and one box with the caret in it;
  * "Zrób lekcję" quiet with its reason until there are words; Enter sends, Shift+Enter does not;
- * Dla defaults to "Bez dziecka" and lists each child, then "Dodaj dziecko…"; photos stay off until
- * the upload route exists.
+ * Dla defaults to "Bez dziecka" and lists each child, then "Dodaj dziecko…". Photos (dl-z5ja.11.16)
+ * upload as they are picked, pasted or dropped and show as chips; the send waits for every upload,
+ * a failed one holds it until retried, and the send carries the attachment ids. The uploads run on
+ * upload.ts's fakes (fakes.test-helpers.ts): no network, no real photo.
  */
 
-import { type Learner, LearnerId } from "@jadwigo/contracts";
+import { AttachmentId, ID_PREFIXES, idOf, type Learner, LearnerId } from "@jadwigo/contracts";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  fileOf,
+  type Harness,
+  harness,
+  settle,
+} from "../../chat/attachments/fakes.test-helpers.ts";
 import { NewLessonBox } from "./NewLessonBox.tsx";
 
 const OLA = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
@@ -85,7 +93,7 @@ describe("the first screen", () => {
     expect(field().getAttribute("placeholder")).toBe(
       "Np. Odejmowanie przez 10. Pomyliła się w 15 − 7 i 12 − 5.",
     );
-    // Photos wait on the upload route (dl-z5ja.11).
+    // Photos need what they upload through; without it there is no photo button.
     expect(screen.queryByText("Dodaj zdjęcie")).toBeNull();
   });
 
@@ -109,7 +117,7 @@ describe("the first screen", () => {
     fireEvent.keyDown(field(), { key: "Enter", shiftKey: true });
     expect(props.onSend).not.toHaveBeenCalled();
     fireEvent.keyDown(field(), { key: "Enter" });
-    expect(props.onSend).toHaveBeenCalledWith({ text: "15 − 7", photos: [], learner: OLA });
+    expect(props.onSend).toHaveBeenCalledWith({ text: "15 − 7", attachmentIds: [], learner: OLA });
   });
 
   it("says Dla: Bez dziecka, lists each child, and ends the menu with Dodaj dziecko…", async () => {
@@ -138,5 +146,115 @@ describe("the first screen", () => {
   it("shows the chosen child in Dla", () => {
     box({ forLearner: OLA });
     expect(document.querySelector("[data-dla]")?.textContent).toContain("Ola");
+  });
+});
+
+/** The fake api's n-th attachment (fakes.test-helpers.ts numbers them from 1). */
+const photoId = (n: number) =>
+  AttachmentId.parse(
+    idOf(ID_PREFIXES.attachment, `00000000-0000-4000-8000-${n.toString(16).padStart(12, "0")}`),
+  );
+
+describe("the first screen's photos (dl-z5ja.11.16)", () => {
+  let fake: Harness;
+  beforeEach(() => {
+    fake = harness();
+  });
+  const withPhotos = (changes: Partial<Parameters<typeof NewLessonBox>[0]> = {}) =>
+    box({ photos: true, uploadDeps: fake.deps, ...changes });
+  const photo = () => fileOf("zadanie.png", "image/png");
+  const chips = () => [...document.querySelectorAll("[data-attachments] [data-chip]")];
+  const sendReason = () => document.querySelector("[data-send-reason]")?.textContent ?? null;
+  const pick = async (file: File) => {
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+      await settle();
+    });
+  };
+  const answer = async (n: number, status: number) => {
+    await act(async () => {
+      fake.xhrs[n]?.answer(status);
+      await settle();
+    });
+  };
+
+  it("uploads a picked photo, shows its chip, waits for it, then sends its id", async () => {
+    const props = withPhotos();
+    expect(screen.getByText("Dodaj zdjęcie")).toBeDefined();
+    await pick(photo());
+    expect(fake.api.bodies).toHaveLength(1);
+    expect(chips().map((c) => c.getAttribute("data-chip"))).toEqual(["uploading"]);
+    // A photo alone is enough to send, once it is up.
+    expect(sendReason()).toBe("Czekam, aż zdjęcia się wyślą");
+    expect(send().getAttribute("aria-disabled")).toBe("true");
+    fireEvent.click(send());
+    expect(props.onSend).not.toHaveBeenCalled();
+
+    await answer(0, 204);
+    expect(chips().map((c) => c.getAttribute("data-chip"))).toEqual(["ready"]);
+    expect(sendReason()).toBeNull();
+    expect(send().getAttribute("aria-disabled")).toBe("false");
+    fireEvent.click(send());
+    expect(props.onSend).toHaveBeenCalledWith({
+      text: "",
+      attachmentIds: [photoId(1)],
+      learner: null,
+    });
+  });
+
+  it("uploads a pasted photo and a dropped one, each as its own chip", async () => {
+    withPhotos();
+    await act(async () => {
+      fireEvent.paste(field(), { clipboardData: { files: [photo()] } });
+      await settle();
+    });
+    const form = document.querySelector("[data-new-lesson]") as HTMLElement;
+    await act(async () => {
+      fireEvent.drop(form, { dataTransfer: { files: [photo(), fileOf("a.txt", "text/plain")] } });
+      await settle();
+    });
+    // The text file is not a photo, so it is left out.
+    expect(fake.api.bodies).toHaveLength(2);
+    expect(chips()).toHaveLength(2);
+  });
+
+  it("holds the send with its reason when an upload fails, and sends once the chip retries it", async () => {
+    const props = withPhotos();
+    fireEvent.change(field(), { target: { value: "Odejmowanie" } });
+    await pick(photo());
+    await answer(0, 500);
+    expect(chips().map((c) => c.getAttribute("data-chip"))).toEqual(["failed"]);
+    expect(sendReason()).toBe("Ponów albo usuń zdjęcie, które się nie wysłało");
+    fireEvent.keyDown(field(), { key: "Enter" });
+    expect(props.onSend).not.toHaveBeenCalled();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Spróbuj ponownie" }));
+      await settle();
+    });
+    expect(fake.api.bodies).toHaveLength(2);
+    await answer(1, 204);
+    fireEvent.keyDown(field(), { key: "Enter" });
+    expect(props.onSend).toHaveBeenCalledWith({
+      text: "Odejmowanie",
+      attachmentIds: [photoId(2)],
+      learner: null,
+    });
+  });
+
+  it("sends without a photo whose chip was removed", async () => {
+    const props = withPhotos();
+    fireEvent.change(field(), { target: { value: "Odejmowanie" } });
+    await pick(photo());
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Usuń zdjęcie" })));
+    expect(chips()).toHaveLength(0);
+    expect(fake.xhrs[0]?.aborted).toBe(true);
+    fireEvent.keyDown(field(), { key: "Enter" });
+    expect(props.onSend).toHaveBeenCalledWith({
+      text: "Odejmowanie",
+      attachmentIds: [],
+      learner: null,
+    });
   });
 });

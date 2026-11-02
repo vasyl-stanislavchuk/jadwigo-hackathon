@@ -1,5 +1,5 @@
 import type { ConversationClient } from "@jadwigo/api-client";
-import { LearnerId } from "@jadwigo/contracts";
+import { AttachmentId, EventId, ID_PREFIXES, idOf, LearnerId } from "@jadwigo/contracts";
 import {
   type Conversation,
   ConversationId,
@@ -13,6 +13,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { ChatScreen } from "./ChatScreen.tsx";
 import { type RunLive, routesTransport } from "./routesTransport.ts";
 import { useConversation } from "./useConversation.ts";
+import type { SendBody } from "./wire.ts";
 
 afterEach(cleanup);
 
@@ -31,6 +32,8 @@ function server(name: string) {
     conversation_id: SERVER,
   } as unknown as Run;
   const calls: string[] = [];
+  /** Each body postMessage took, as the route would read it. */
+  const bodies: Record<string, unknown>[] = [];
   const state = { written: events.length, posted: false };
   const api: ConversationClient = {
     async createConversation(body) {
@@ -38,6 +41,7 @@ function server(name: string) {
       return { id: SERVER } as unknown as Conversation;
     },
     async postMessage(id, body) {
+      bodies.push(body as Record<string, unknown>);
       calls.push(
         body.kind === "steer"
           ? `steer ${id} ${body.source} ${body.question_ids?.join(",")} ${body.text}`
@@ -79,6 +83,7 @@ function server(name: string) {
     storage,
     held,
     calls,
+    bodies,
     run,
     events,
     state,
@@ -170,5 +175,32 @@ describe("the routes transport (dl-z5ja.65)", () => {
     expect(s.calls).toContain(`message ${SERVER} Dodawanie do 20. {"learner_id":"${learner_id}"}`);
     await act(async () => result.current.send("Jeszcze jedno."));
     expect(s.calls).toContain(`message ${SERVER} Jeszcze jedno.`);
+  });
+
+  it("puts a message's photos on it, none when it has none, and never any on a steer (dl-z5ja.11.16)", async () => {
+    const s = server("happy-turn");
+    const transport = routesTransport(s.api, s.live, s.storage);
+    const { result } = renderHook(() => useConversation(transport, LOCAL));
+    await settle();
+    const photo = AttachmentId.parse(
+      idOf(ID_PREFIXES.attachment, "00000000-0000-4000-8000-000000000001"),
+    );
+    await act(async () => result.current.send("Zadanie ze zdjęcia.", undefined, [photo]));
+    expect(s.bodies.at(-1)).toMatchObject({ text: "Zadanie ze zdjęcia.", attachment_ids: [photo] });
+    await act(async () => result.current.send("Bez zdjęcia.", undefined, []));
+    expect(s.bodies.at(-1)).not.toHaveProperty("attachment_ids");
+
+    // A steer body that somehow names photos still goes without them: the route refuses them there.
+    const steer = {
+      conversation_id: LOCAL,
+      event_id: EventId.parse("00000000-0000-4000-8000-0000000000aa"),
+      kind: "steer",
+      source: "chat",
+      text: "Teraz.",
+      attachment_ids: [photo],
+    } as SendBody;
+    await act(async () => void (await transport.send(steer)));
+    expect(s.bodies.at(-1)).toMatchObject({ kind: "steer", text: "Teraz." });
+    expect(s.bodies.at(-1)).not.toHaveProperty("attachment_ids");
   });
 });

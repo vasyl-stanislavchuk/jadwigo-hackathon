@@ -893,6 +893,8 @@
   "parent_add_child_hint": "Imię i klasa. Jadwigo zacznie śledzić, co umie.",
   "parent_send": "Zrób lekcję",
   "parent_send_reason": "Najpierw opisz zadanie albo dodaj zdjęcie",
+  "parent_send_uploading": "Czekam, aż zdjęcia się wyślą",
+  "parent_send_photo_failed": "Ponów albo usuń zdjęcie, które się nie wysłało",
   "parent_name_note": "Widzisz je tylko Ty i Jadwigo w rozmowie. Nie trafia do lekcji.",
   "parent_grade": "Klasa",
   "parent_cancel": "Anuluj",

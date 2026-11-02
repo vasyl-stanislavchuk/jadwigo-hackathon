@@ -136,6 +136,10 @@ export function routesTransport(
               event_id: body.event_id,
               text: body.text,
               ...(body.context === undefined ? {} : { context: body.context }),
+              // A message's photos, when it has some; a steer never carries them (wire.ts).
+              ...(body.attachment_ids === undefined || body.attachment_ids.length === 0
+                ? {}
+                : { attachment_ids: body.attachment_ids }),
             };
       return (await api.postMessage(server, message)).run;
     },

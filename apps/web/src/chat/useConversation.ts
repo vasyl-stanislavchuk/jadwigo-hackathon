@@ -6,7 +6,7 @@
  */
 
 import { ApiError } from "@jadwigo/api-client";
-import { ErrorType, type EventId } from "@jadwigo/contracts";
+import { type AttachmentId, ErrorType, type EventId } from "@jadwigo/contracts";
 import type { ConversationId, MessageContext, Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useContextClosed } from "./contextHold.ts";
@@ -114,7 +114,7 @@ export function hotTransport(pace: Pace | null = null): EngineTransport | null {
 export interface Conversation {
   state: ConversationState;
   /** Sends the parent's words, with the page they were sent from when there is one (dl-uukj.47.12). */
-  send(text: string, context?: MessageContext): void;
+  send(text: string, context?: MessageContext, attachmentIds?: readonly AttachmentId[]): void;
   stop(): void;
   /**
    * A parent's edit in the lesson pane (dl-z5ja.30): a steer naming the questions while the turn
@@ -234,7 +234,11 @@ export function useConversation(
   /** A retry's words, waiting for the turn it cancelled to end (dl-uukj.47.29). */
   const afterEnd = useRef<{ run: RunId; text: string } | null>(null);
   /** The words a route refused for want of consent, sent again once it is given. */
-  const [refused, setRefused] = useState<{ text: string; context?: MessageContext } | null>(null);
+  const [refused, setRefused] = useState<{
+    text: string;
+    context?: MessageContext;
+    attachmentIds?: readonly AttachmentId[];
+  } | null>(null);
 
   /** Subscribe first, then fetch after the cursor: what lands between is buffered and merged. */
   const follow = useCallback(
@@ -289,7 +293,12 @@ export function useConversation(
    * a failure is kept, with whether the words came from the queue, for "Spróbuj ponownie".
    */
   const post = useCallback(
-    (text: string, given?: MessageContext, queued = false): Promise<boolean> => {
+    (
+      text: string,
+      given?: MessageContext,
+      queued = false,
+      attachmentIds: readonly AttachmentId[] = [],
+    ): Promise<boolean> => {
       // The page goes on with the context the conversation already has, until the parent closes
       // the chip; then nothing more goes with any message (dl-uukj.47.36).
       const context = closedRef.current ? undefined : (given ?? lastContext(latest.current));
@@ -302,6 +311,8 @@ export function useConversation(
           kind: "message",
           text,
           ...(context === undefined ? {} : { context }),
+          // The photos go on a message only, and only when there are some (dl-z5ja.11.16).
+          ...(attachmentIds.length === 0 ? {} : { attachment_ids: [...attachmentIds] }),
         })
         .then((run) => {
           went();
@@ -313,14 +324,18 @@ export function useConversation(
           if (consentMissing(e)) {
             // Not sent: the consent screen asks first, and the words go again once it is given.
             dispatch({ type: "unsent", event_id });
-            setRefused(context === undefined ? { text } : { text, context });
+            setRefused({
+              text,
+              ...(context === undefined ? {} : { context }),
+              ...(attachmentIds.length === 0 ? {} : { attachmentIds }),
+            });
           } else if (queued) {
             // A queued row stays in the queue; doing it again sends whatever row still holds it.
             fail(() => {
               const index = latestQueue.current.indexOf(text);
               if (index >= 0) redo.current?.sendNow(index);
             }, limitOf(e));
-          } else fail(() => void postRef.current?.(text, given), limitOf(e));
+          } else fail(() => void postRef.current?.(text, given, false, attachmentIds), limitOf(e));
           return false;
         });
     },
@@ -332,16 +347,17 @@ export function useConversation(
   latestQueue.current = queue.items;
 
   const send = useCallback(
-    (text: string, context?: MessageContext) => {
+    (text: string, context?: MessageContext, attachmentIds: readonly AttachmentId[] = []) => {
       const last = turnsOf(latest.current).at(-1);
       // Mid-turn words wait under "Następne" in the tab, not in the running turn's inbox (once the
       // account they belong to is known; before that they go as they did).
       const busy = (last !== undefined && isOpen(last)) || latest.current.pending !== null;
-      if (busy && queue.ready) {
+      // The queue keeps words only, so a message with photos goes now (dl-z5ja.11.16).
+      if (busy && queue.ready && attachmentIds.length === 0) {
         queue.add(text);
         return;
       }
-      void post(text, context);
+      void post(text, context, false, attachmentIds);
     },
     [post, queue.ready, queue.add],
   );
@@ -416,7 +432,7 @@ export function useConversation(
   const consented = useCallback(() => {
     const words = refused;
     setRefused(null);
-    if (words !== null) send(words.text, words.context);
+    if (words !== null) send(words.text, words.context, words.attachmentIds);
   }, [refused, send]);
 
   const stop = useCallback(() => {
