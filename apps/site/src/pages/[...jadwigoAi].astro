@@ -1,0 +1,117 @@
+---
+// /jadwigo-ai and /en/jadwigo-ai (dl-w0b4.114): Jadwigo AI as a named part of the product, the way
+// PostHog markets PostHog AI (owner's call jadwigo-marketing/calls/2026-11-02-jadwigo-ai-gets-a-marketing-page).
+// The intro, the 4 steps (reads the request, searches the question bank, builds and checks the lesson,
+// you decide), what it reads about a child and where that goes in the consent screen's words (decision
+// dl-uafq: Meta's models may learn from it, so the page never claims a no-training tier), what it never
+// does, and "you check, then give". The words are the `ai` section of src/content/<lang>/landing.yaml.
+import type { Language } from "@jadwigo/config";
+import EndBand from "../components/EndBand.astro";
+import Base from "../layouts/Base.astro";
+import { strictBuild } from "../lib/build.ts";
+import { otherLanguage, twinPath, twinStaticPaths } from "../lib/i18n.ts";
+import { landingReviewed, landingWords } from "../lib/words.ts";
+
+export const getStaticPaths = () => twinStaticPaths("jadwigoAi", strictBuild);
+
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+const words = await landingWords(lang);
+const reviewed = await landingReviewed(lang);
+const ai = words.ai;
+const page = {
+  title: ai.title,
+  description: ai.description,
+  heading: ai.heading,
+  lang,
+  reviewed,
+  translation: twinPath("jadwigoAi", otherLanguage(lang)),
+};
+---
+
+<Base page={page} path={twinPath("jadwigoAi", lang)}>
+  <section class="wrap top" aria-labelledby="page-title">
+    <h1 id="page-title">{ai.heading}</h1>
+    <p class="intro">{ai.intro}</p>
+  </section>
+
+  <ol class="wrap steps">
+    {
+      ai.steps.map((step, i) => (
+        <li class="step paper">
+          <p class="num" aria-hidden="true">{i + 1}</p>
+          <h2>
+            <span class="sr-only">{i + 1}. </span>
+            {step.title}
+          </h2>
+          <p>{step.text}</p>
+        </li>
+      ))
+    }
+  </ol>
+
+  <section class="wrap band data" aria-labelledby="data-title">
+    <h2 id="data-title">{ai.data.heading}</h2>
+    <ul>{ai.data.items.map((line) => <li>{line}</li>)}</ul>
+    <p class="consent">{ai.data.consent}</p>
+  </section>
+
+  <section class="wrap band never" aria-labelledby="never-title">
+    <h2 id="never-title">{ai.never.heading}</h2>
+    <ul>
+      {
+        ai.never.items.map((n) => (
+          <li>
+            <h3>{n.title}</h3>
+            <p>{n.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="wrap band check" aria-labelledby="check-title">
+    <h2 id="check-title">{ai.check.heading}</h2>
+    <p>{ai.check.text}</p>
+    <p class="wrong">{ai.check.wrong}</p>
+  </section>
+
+  <EndBand lang={lang} />
+</Base>
+
+<style>
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .top { padding-top: clamp(2rem, 5vw, 3.5rem); }
+  .top h1 { font-size: clamp(2.2rem, 5vw, 3.25rem); }
+  .intro { margin-top: 0.75rem; max-width: 40rem; font-size: 1.2rem; color: var(--jw-ink-soft); }
+
+  /* The 4 steps: one row of 4 on a wide screen, 2 by 2 on a tablet, one column on a phone. */
+  .steps {
+    list-style: none; margin-top: clamp(2rem, 5vw, 3rem); padding-top: 0; padding-bottom: 0;
+    display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  }
+  .step { display: flex; flex-direction: column; gap: 0.5rem; padding: 1.25rem; }
+  .num { font-size: 2.75rem; font-weight: 700; line-height: 1; color: var(--jw-brand-go); }
+  .step h2 { font-size: 1.25rem; }
+  .step p:not(.num) { color: var(--jw-ink-soft); font-size: 0.98rem; }
+
+  .band { border-top: 2px solid var(--jw-line); margin-top: clamp(3rem, 7vw, 4.5rem); padding-top: clamp(2rem, 5vw, 3rem); }
+  .band h2 { font-size: clamp(1.5rem, 3vw, 2rem); max-width: 28ch; }
+
+  /* What it reads and where it goes: the consent screen's lines, plain and in full. */
+  .data ul { margin: 1rem 0 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; max-width: 42rem; }
+  .data .consent { margin-top: 1rem; max-width: 42rem; color: var(--jw-ink-soft); }
+
+  .never ul {
+    list-style: none; margin: 1.25rem 0 0; padding: 0;
+    display: grid; gap: 1.25rem 2rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  }
+  .never h3 { font-size: 1.05rem; }
+  .never p { margin-top: 0.35rem; color: var(--jw-ink-soft); font-size: 0.98rem; }
+
+  .check p { margin-top: 0.75rem; max-width: 40rem; }
+  .check .wrong { color: var(--jw-ink-soft); }
+</style>
