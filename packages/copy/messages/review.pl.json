@@ -298,6 +298,7 @@
   "parent_language": false,
   "parent_language_pl": false,
   "parent_language_en": false,
+  "parent_page_language": false,
   "home_title": false,
   "home_empty": false,
   "review_title": false,

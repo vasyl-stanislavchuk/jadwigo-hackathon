@@ -671,6 +671,7 @@ export * from "./parent_overview_sheet_line.js";
 export * from "./parent_overview_title.js";
 export * from "./parent_overview_tries.js";
 export * from "./parent_overview_twin.js";
+export * from "./parent_page_language.js";
 export * from "./parent_placeholder.js";
 export * from "./parent_print.js";
 export * from "./parent_print_hint.js";

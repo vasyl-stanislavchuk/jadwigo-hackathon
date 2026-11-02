@@ -483,6 +483,7 @@
   "parent_language": "Language",
   "parent_language_pl": "Polski",
   "parent_language_en": "English",
+  "parent_page_language": "Page language",
   "home_title": "Pick a lesson",
   "home_empty": "There are no lessons here yet.",
   "review_title": "Question {n} of {total}",
