@@ -589,9 +589,10 @@
   --radius-md: 0.375rem; /* Tailwind's own, which the adult block moved to 8 */
 }
 
-/* A child's section that is not a lesson (jadwigo.pl's question sheet and lesson cards) sets its own
- * type, as LessonTheme's root does (lesson.css). */
-[data-audience="kid"] {
+/* Each audience sets its own type where it is marked, as LessonTheme's root does (lesson.css): a
+ * child's section that is not a lesson (jadwigo.pl's question sheet and lesson cards), and an adult
+ * sample inside the owner's playground, whose <html> is neither. */
+[data-audience] {
   font-family: var(--font-sans);
 }
 
