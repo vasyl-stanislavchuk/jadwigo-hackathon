@@ -206,20 +206,20 @@ const footerLinks = [
       .site-footer .data { text-wrap: pretty; }
       .site-footer .data a { color: var(--jw-ink-soft); text-decoration: underline; }
 
-      /* Exercise-book paper behind questions only: a plain cream page. `--cell` is still the question's spacing unit. */
+      /* Exercise-book paper, warmed towards the help note's yellow but lighter than it, so a hint on it
+         still stands out (owner, 2026-11-02, dl-5ssh.4.30): mixed from 2 tokens, no new colour. */
       .paper {
         --cell: 1.5rem;
         border: 2px solid var(--jw-line); border-radius: var(--jw-radius-card);
-        background: var(--jw-card);
+        background: color-mix(in srgb, var(--jw-card), var(--jw-help) 50%);
       }
-      /* A spiral notebook's binding along the top edge: each coil runs from above the page into its
-         punched hole. Plain paper, no grid (owner, 2026-11-02, dl-5ssh.4.30). The shape is a mask, so the
-         colour is a Zeszyt token. */
+      /* A spiral notebook's binding: thin slanted wire loops along the top edge, each through its
+         punched hole. The shape is a mask, so the colour is a Zeszyt token. */
       .paper.notebook { position: relative; }
       .paper.notebook::before {
-        content: ""; position: absolute; left: 1.25rem; right: 1.25rem; top: -0.95rem; height: 1.75rem;
+        content: ""; position: absolute; left: 1.5rem; right: 1.5rem; top: -1.1rem; height: 1.75rem;
         background: var(--jw-ink-soft); pointer-events: none;
-        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='28'%3E%3Crect x='9' y='1' width='6' height='17' rx='3'/%3E%3Ccircle cx='12' cy='19' r='2.75'/%3E%3C/svg%3E") 0 0 / 1.5rem 1.75rem repeat-x;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='28'%3E%3Cellipse cx='11' cy='12' rx='2.6' ry='9.4' transform='rotate(14 11 12)' fill='none' stroke='black' stroke-width='1.4'/%3E%3Ccircle cx='12.7' cy='21.2' r='1.9'/%3E%3C/svg%3E") 0 0 / 1.375rem 1.75rem space no-repeat;
       }
       .prose main { max-width: 40rem; margin: 0 auto; padding: 2.5rem 1rem 0; }
       .prose h1 { font-size: clamp(1.8rem, 6vw, 2.5rem); }
