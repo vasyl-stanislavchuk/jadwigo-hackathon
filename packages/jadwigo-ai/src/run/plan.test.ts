@@ -2,7 +2,7 @@
 
 import type { RunEvent } from "@jadwigo/contracts/run";
 import { describe, expect, it } from "vitest";
-import { movePlan, startPlan } from "./plan.ts";
+import { movePlan, settlePlan, startPlan, startsPlan } from "./plan.ts";
 
 const toolCall = { type: "tool_call" } as unknown as RunEvent;
 const planned = {
@@ -35,5 +35,17 @@ describe("the plan (dl-hin8.19)", () => {
     expect(movePlan(null, "lesson_draft", "done")).toBeNull();
     // The plan given is never changed in place.
     expect(plan?.map((e) => e.status)).toEqual(["pending", "pending", "pending"]);
+  });
+
+  it("never takes a done stage back, and settles a plan with nothing left under way or waiting", () => {
+    const done = movePlan(startPlan([], "question_search", "pl"), "question_search", "done");
+    expect(movePlan(done, "question_search", "in_progress")).toBeNull();
+    expect(settlePlan(movePlan(done, "lesson_draft", "in_progress"))?.map((e) => e.status)).toEqual(
+      ["done", "failed", "failed"],
+    );
+    expect(settlePlan(null)).toBeNull();
+    expect(settlePlan([{ text: "x", status: "done" }])).toBeNull();
+    expect(startsPlan("lesson_draft")).toBe(true);
+    expect(startsPlan("lesson_edit")).toBe(false);
   });
 });

@@ -39,7 +39,7 @@ import type { AttachmentReader, Converter } from "./attachments.ts";
 import { earlierLine, refusedLine, turnFiles } from "./files.ts";
 import { eventIdFor, turnRunIdFor } from "./ids.ts";
 import { inLanguage } from "./language.ts";
-import { movePlan, planIn, startPlan } from "./plan.ts";
+import { movePlan, planIn, settlePlan, startPlan, startsPlan } from "./plan.ts";
 
 /**
  * The engine's loop (Lead decisions 5-9, 13): a message lands in the run inbox, a step is one Muse
@@ -663,7 +663,7 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     const plan = startPlan(
       w.log,
       response.tool_calls[0]?.verb,
-      response.tool_calls.length > 0 ? await planLanguage(deps, w, scope, prior) : "pl",
+      startsPlan(response.tool_calls[0]?.verb) ? await planLanguage(deps, w, scope, prior) : "pl",
     );
     if (plan !== null) {
       recorded.push({
@@ -1156,7 +1156,19 @@ async function endTurn(
   status: "completed" | "failed" | "cancelled",
   now: Date,
 ): Promise<RunStepOutcome> {
+  // Every end settles the plan first (#705's review): nothing under way or waiting on an ended turn.
+  const settled = settlePlan(planIn(w.log));
   await w.append([
+    ...(settled === null
+      ? []
+      : [
+          {
+            type: "plan" as const,
+            run_id: w.run,
+            event_id: await w.id("plan", "settle"),
+            payload: { entries: settled },
+          },
+        ]),
     {
       type: "status",
       run_id: w.run,

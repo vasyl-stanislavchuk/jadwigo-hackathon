@@ -522,6 +522,8 @@ describe("runStep and drain", () => {
       "model_response",
       "usage",
       "message",
+      // The check never ran: the plan settles before the turn ends (#705's review).
+      "plan",
       "status",
       "turn_complete",
     ]);
@@ -2003,6 +2005,70 @@ describe("a lesson-building turn's plan (dl-hin8.19)", () => {
     const run = await t.say("Halves.");
     await drain(t.deps);
     expect(plans(await t.log(run)).at(-1)).toEqual(["done", "done", "failed"]);
+  });
+
+  /** The last plan's statuses: what the card shows once the turn has ended. */
+  const lastPlan = async (t: Awaited<ReturnType<typeof setup>>, run: RunId) =>
+    plans(await t.log(run)).at(-1);
+
+  it("a cancel while a stage is under way settles the plan: nothing left under way or waiting", async () => {
+    const t = await setup(
+      [{ calls: [{ verb: "question_search" }] }, { text: "never sent" }],
+      fakeVerbs({
+        question_search: async () => {
+          await t.send({ event_id: newEventId(), kind: "cancel", payload: {} });
+          // A fault, not a refusal: the step dies with its stage under way.
+          throw new Error("the bank went away");
+        },
+      }),
+    );
+    const run = await t.say("Halves.");
+    await drain(t.deps, { onError: () => {} });
+    expect(await lastPlan(t, run)).toEqual(["in_progress", "pending", "pending"]);
+    t.tick(STEP_VISIBILITY_S * 1000 + 1);
+    await drain(t.deps, { onError: () => {} });
+    expect((await t.run(run)).status).toBe("cancelled");
+    expect(await lastPlan(t, run)).toEqual(["failed", "failed", "failed"]);
+  });
+
+  it("a verb that keeps faulting until the sweep closes the turn leaves no stage under way", async () => {
+    const t = await setup(
+      [{ calls: [{ verb: "lesson_draft" }] }, { text: "never sent" }],
+      fakeVerbs({
+        lesson_draft: () => Promise.reject(new Error("the store went away")),
+      }),
+    );
+    const run = await t.say("Halves.");
+    await drain(t.deps, { onError: () => {} });
+    expect(await lastPlan(t, run)).toEqual(["done", "in_progress", "pending"]);
+    t.tick(RUN_MAX_MS);
+    expect((await sweep(t.deps, t.now())).max).toEqual([run]);
+    expect((await t.run(run)).status).toBe("failed");
+    expect(await lastPlan(t, run)).toEqual(["done", "failed", "failed"]);
+  });
+
+  it("a turn that never checks its lesson ends with the check marked, not waiting forever", async () => {
+    const t = await setup([{ calls: [{ verb: "lesson_draft" }] }, { text: "Ready." }]);
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+    expect((await t.run(run)).status).toBe("completed");
+    expect(await lastPlan(t, run)).toEqual(["done", "done", "failed"]);
+  });
+
+  it("a verb run again never takes a done stage back: the count only grows", async () => {
+    const t = await setup([
+      { calls: [{ verb: "question_search" }] },
+      { calls: [{ verb: "lesson_draft" }] },
+      { calls: [{ verb: "lesson_check" }] },
+      { calls: [{ verb: "question_search" }] },
+      { calls: [{ verb: "lesson_check" }] },
+      { text: "Ready." },
+    ]);
+    const run = await t.say("Halves.");
+    await drain(t.deps);
+    const done = plans(await t.log(run)).map((p) => p.filter((s) => s === "done").length);
+    expect(done).toEqual([...done].sort((a, b) => a - b));
+    expect(await lastPlan(t, run)).toEqual(["done", "done", "done"]);
   });
 
   it("a 1-step turn (an edit) writes no plan", async () => {

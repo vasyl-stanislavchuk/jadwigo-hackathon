@@ -31,6 +31,10 @@ const STAGE_OF: Partial<Record<VerbName, 0 | 1 | 2>> = {
 /** The verbs a lesson-building turn starts with. */
 const STARTS: ReadonlySet<VerbName> = new Set(["question_search", "lesson_draft"]);
 
+/** Whether a turn whose first tool call is `verb` builds a lesson, so it may start a plan. */
+export const startsPlan = (verb: VerbName | undefined): boolean =>
+  verb !== undefined && STARTS.has(verb);
+
 /** The run's plan as it stands in `log`: the last `plan` event's entries, or null before one. */
 export function planIn(log: readonly RunEvent[]): PlanEntry[] | null {
   const last = log.findLast((e) => e.type === "plan");
@@ -46,7 +50,7 @@ export function startPlan(
   firstVerb: VerbName | undefined,
   language: Language,
 ): PlanEntry[] | null {
-  if (firstVerb === undefined || !STARTS.has(firstVerb)) return null;
+  if (!startsPlan(firstVerb)) return null;
   if (planIn(log) !== null || log.some((e) => e.type === "tool_call")) return null;
   return STAGES[language].map((text) => ({ text, status: "pending" }));
 }
@@ -66,9 +70,27 @@ export function movePlan(
   const next = entries.map((e) => ({ ...e }));
   const at = next[stage];
   if (at === undefined) return null;
+  // A stage once done stays done: the verb run again (a second check after a fix) never takes the
+  // count back mid-turn (#705's review).
+  if (at.status === "done") return null;
   at.status = status;
   const search = next[0];
   if (stage === 1 && search !== undefined && search.status === "pending") search.status = "done";
   const same = next.every((e, i) => e.status === entries[i]?.status);
   return same ? null : next;
+}
+
+/**
+ * The plan as the turn ends (#705's review): no stage is left under way or waiting on an ended
+ * turn. A stage under way when the turn stopped (a cancel, a fault, the sweep) failed; a stage the
+ * turn never reached did not happen, which the status set says as failed too, so the card never
+ * spins on an ended turn nor claims a step the turn did not take. Null when nothing changes.
+ */
+export function settlePlan(entries: readonly PlanEntry[] | null): PlanEntry[] | null {
+  if (entries === null) return null;
+  if (entries.every((e) => e.status === "done" || e.status === "failed")) return null;
+  return entries.map((e) => ({
+    ...e,
+    status: e.status === "done" ? "done" : "failed",
+  }));
 }
