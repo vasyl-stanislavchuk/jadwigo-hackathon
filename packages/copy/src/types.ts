@@ -764,6 +764,8 @@ export const COPY_KEYS = [
   "chat_lesson_card_open_named",
   "chat_lesson_card_first",
   "chat_lesson_card_steps",
+  "chat_citations_why",
+  "chat_citation_nth",
   "chat_tool_count",
   // the chat page, wave 2 (dl-z5ja.29)
   "chat_tool_lesson_draft_about",
