@@ -52,6 +52,7 @@ function devEngine(transport: EngineTransport): LessonEngine {
     transport,
     consent: null,
     ratings: null,
+    give: null,
   };
 }
 

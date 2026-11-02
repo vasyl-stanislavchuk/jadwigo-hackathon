@@ -43,14 +43,17 @@ const run: Run = {
 };
 
 /** A new conversation (no turn) until a message is sent; then the happy turn. */
-function engineWith(send: (body: SendBody) => Promise<Run> = async () => run) {
+function engineWith(
+  send: (body: SendBody) => Promise<Run> = async () => run,
+  log: readonly RunEvent[] = events,
+) {
   const sent: SendBody[] = [];
   let started = false;
   const transport: EngineTransport = {
     subscribe: () => () => {},
     onConnection: () => () => {},
     runs: async () => (started ? [run] : []),
-    events: async (_id, after) => events.filter((e) => e.seq > after),
+    events: async (_id, after) => log.filter((e) => e.seq > after),
     send: async (body) => {
       sent.push(body);
       const answer = await send(body);
@@ -64,6 +67,7 @@ function engineWith(send: (body: SendBody) => Promise<Run> = async () => run) {
     transport,
     consent: consent as unknown as LessonEngine["consent"],
     ratings: null,
+    give: null,
   };
   return { engine, sent, consent };
 }
@@ -261,6 +265,7 @@ function quietEngine() {
     transport,
     consent: null,
     ratings: null,
+    give: null,
   };
   return {
     engine,
@@ -469,5 +474,84 @@ describe("opening things from the chat (dl-uukj.47.58)", () => {
     expect(shut()).toBe(false);
     expect(document.querySelector("[data-learner-panel='unknown']")).not.toBeNull();
     expect(screen.queryByRole("link", { name: /^Strona dziecka/ })).toBeNull();
+  });
+});
+
+describe("Daj lekcję from the card (dl-uukj.47.55; steward on #747)", () => {
+  beforeEach(() => window.history.replaceState(null, "", `/parent/lessons/${CONVERSATION}`));
+  // A made-up child of the family, and the happy turn with its lesson_check passed, so it can be given.
+  const ola = {
+    id: LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq"),
+    pod_id: "pod_00000000000000000000000001",
+    handle: "ola",
+    first_name: "Ola",
+    created_at: "2026-10-28T14:02:06.274Z",
+  } as unknown as Learner;
+  const checked = events.map((e) =>
+    e.type === "tool_result" && e.payload.verb === "lesson_check"
+      ? RunEvent.parse({
+          ...e,
+          payload: {
+            ...e.payload,
+            view: { kind: "lesson_check", data: { publishable: true, findings: [] } },
+          },
+        })
+      : e,
+  );
+  const ASSIGNMENT = "asg_00000000000000000000000001";
+
+  async function giving(giveLesson: ReturnType<typeof vi.fn>) {
+    const { engine } = engineWith(async () => run, checked);
+    engine.give = { giveLesson } as unknown as LessonEngine["give"];
+    firstMessage.put(CONVERSATION, "Odejmowanie przez 10");
+    await act(async () => {
+      render(
+        <LessonWorkspace
+          language="pl"
+          conversation={CONVERSATION}
+          engine={engine}
+          learners={[ola]}
+          forLearner={ola.id}
+          onForChange={() => {}}
+          onAddChild={() => {}}
+        />,
+      );
+    });
+    await screen.findByText("Your lesson is ready on the right.");
+    await act(async () => {
+      fireEvent.click(document.querySelector("[data-give]") as HTMLElement);
+    });
+  }
+
+  it("gives the lesson to the Dla child and says where it waits, with the child's link", async () => {
+    const giveLesson = vi.fn(async () => ({ assignment: { id: ASSIGNMENT } }));
+    await giving(giveLesson);
+    expect(giveLesson).toHaveBeenCalledWith(CONVERSATION, { learner_id: ola.id });
+    expect(document.querySelector("[data-give-state]")?.textContent).toBe(
+      "Lekcja czeka na: Ola. Link do lekcji",
+    );
+    expect(screen.getByRole("link", { name: "Link do lekcji" }).getAttribute("href")).toBe(
+      `/play/${ASSIGNMENT}?learner=${ola.id}`,
+    );
+  });
+
+  it("words a refusal: a lesson changed since its check, and any other failure", async () => {
+    await giving(
+      vi.fn(async () => {
+        throw new ApiError("not publishable", 409, "LessonNotPublishable");
+      }),
+    );
+    expect(document.querySelector("[data-give-state]")?.textContent).toMatch(
+      /^Lekcja zmieniła się od ostatniego sprawdzenia/,
+    );
+    cleanup();
+    await giving(
+      vi.fn(async () => {
+        throw new Error("network");
+      }),
+    );
+    expect(document.querySelector("[data-give-state]")?.textContent).toBe(
+      "Nie udało się dać lekcji. Spróbuj jeszcze raz.",
+    );
   });
 });

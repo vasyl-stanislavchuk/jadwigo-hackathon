@@ -34,11 +34,15 @@ export function LessonPrint({
   language: Language;
   lesson: NonNullable<RunView["lesson"]>;
 }): ReactElement | null {
+  const read = readDraft(lesson.lesson_file);
+  const reads = !("error" in read);
+  // The print rule hides the page for the sheet only when there is a sheet: a lesson that does not
+  // read prints the page as it is, never a blank one (steward, #747).
   useEffect(() => {
+    if (!reads) return;
     document.body.setAttribute("data-printing", "");
     return () => document.body.removeAttribute("data-printing");
-  }, []);
-  const read = readDraft(lesson.lesson_file);
+  }, [reads]);
   if ("error" in read) return null;
   const { file, skipped } = read;
   const lessonLanguage: Language = file.language === "en" ? "en" : "pl";

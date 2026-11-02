@@ -69,11 +69,55 @@ describe("the lesson card's actions (dl-uukj.47.55)", () => {
     const button = give();
     expect(button.getAttribute("aria-disabled")).toBe("true");
     const reason = document.getElementById(button.getAttribute("aria-describedby") ?? "");
-    expect(reason?.textContent).toBe("„Daj lekcję” zadziała, gdy lekcja przejdzie sprawdzenie");
+    expect(reason?.textContent).toBe(
+      "„Daj lekcję” zadziała, gdy lekcja przejdzie sprawdzenie „Wydrukuj” też.",
+    );
     cleanup();
     footer();
     expect(give().getAttribute("aria-describedby")).toBeNull();
     expect(document.querySelector("[data-give-reason]")).toBeNull();
+  });
+});
+
+describe("giving and printing only a checked lesson (steward on #747)", () => {
+  it("Wydrukuj is quiet with the same reason until the check passed, and prints nothing", async () => {
+    const props = footer({ ready: false });
+    const print = document.querySelector("[data-print]") as HTMLElement;
+    expect(print.getAttribute("aria-disabled")).toBe("true");
+    expect(print.getAttribute("aria-describedby")).toBe(give().getAttribute("aria-describedby"));
+    await act(async () => fireEvent.click(print));
+    expect(props.print).not.toHaveBeenCalled();
+    expect(document.querySelector("[data-print-sheet]")).toBeNull();
+  });
+
+  it("with a child and nothing to give with, Daj lekcję is quiet with its reason", async () => {
+    footer({ child: ola, onGive: undefined });
+    expect(give().getAttribute("aria-disabled")).toBe("true");
+    expect(document.querySelector("[data-give-reason]")?.textContent).toBe(
+      "Dawanie lekcji zadziała po zalogowaniu.",
+    );
+  });
+
+  it("says where the lesson waits once given, and why when it was refused", () => {
+    footer({
+      child: ola,
+      given: { kind: "given", name: "Ola", href: "/play/asg_x?learner=lrn_y" },
+    });
+    const state = document.querySelector("[data-give-state]");
+    expect(state?.textContent).toBe("Lekcja czeka na: Ola. Link do lekcji");
+    expect(screen.getByRole("link", { name: "Link do lekcji" }).getAttribute("href")).toBe(
+      "/play/asg_x?learner=lrn_y",
+    );
+    cleanup();
+    footer({ child: ola, given: { kind: "refused", reason: "changed" } });
+    expect(document.querySelector("[data-give-state]")?.textContent).toMatch(
+      /^Lekcja zmieniła się od ostatniego sprawdzenia/,
+    );
+    cleanup();
+    const props = footer({ child: ola, given: { kind: "giving" } });
+    expect(document.querySelector("[data-give-state]")?.textContent).toBe("Daję lekcję…");
+    fireEvent.click(give());
+    expect(props.onGive).not.toHaveBeenCalled();
   });
 });
 

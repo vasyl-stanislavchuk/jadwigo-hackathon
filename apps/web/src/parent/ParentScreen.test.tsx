@@ -650,6 +650,7 @@ describe("ParentScreen", () => {
       },
       consent: { getMe: vi.fn(async () => me([])), patchPod: vi.fn(async () => ({})) },
       ratings: null,
+      give: null,
     };
     return engine as unknown as LessonEngine & typeof engine;
   }

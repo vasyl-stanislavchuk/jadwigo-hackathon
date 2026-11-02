@@ -6,11 +6,13 @@
  *
  *   Dla kogo   who the lesson is for: the Dla child's name, or "Bez dziecka"
  *   Zapisz na później   to the family's lessons
- *   Wydrukuj   the lesson's sheet, printed in place (LessonPrint)
+ *   Wydrukuj   the lesson's sheet, printed in place (LessonPrint), once the lesson's latest check
+ *              passed: an unchecked sheet could reach a child on paper (steward, #747)
  *   Daj lekcję / Daj lekcję · {imię}   the one primary, quiet with its reason until the lesson's
- *              latest check passed, never a silent grey. With no child it opens 2 choices:
- *              "Otwórz na tym komputerze" (quiet with its reason until a route opens the lesson for
- *              the player) and "Wydrukuj", which prints the lesson's sheet in place (LessonPrint).
+ *              latest check passed, never a silent grey. With a child it gives the lesson to that
+ *              child (POST /api/v1/conversations/{id}/lessons) and says where it waits. With no
+ *              child it opens 2 choices: "Otwórz na tym komputerze" (gives it to nobody in
+ *              particular and opens the player) and "Wydrukuj" (LessonPrint).
  *
  * What the lesson practises is not here yet: the lesson file names skill ids, and wording them for a
  * parent needs the catalogue's can-do lines (dl-hin8.21).
@@ -21,7 +23,21 @@ import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { RunView } from "@jadwigo/core";
 import { Button, Dialog, DialogClose, DialogContent, DialogFooter } from "@jadwigo/ui";
 import { type ReactElement, useEffect, useId, useState } from "react";
+import { NavLink } from "../../nav/NavLink.tsx";
 import { LessonPrint, printLesson } from "./LessonPrint.tsx";
+
+/** Where giving the lesson stands: nothing yet, on its way, given, or refused with its reason. */
+export type GiveState =
+  | { kind: "idle" }
+  | { kind: "giving" }
+  | { kind: "given"; name: string; href: string }
+  | { kind: "refused"; reason: "changed" | "child" | "failed" };
+
+const REFUSED: Readonly<Record<Extract<GiveState, { kind: "refused" }>["reason"], CopyKey>> = {
+  changed: "parent_give_refused_changed",
+  child: "parent_give_refused_child",
+  failed: "parent_give_failed",
+};
 
 export function LessonActions({
   language,
@@ -31,6 +47,7 @@ export function LessonActions({
   onSave,
   onGive,
   onOpenHere,
+  given = { kind: "idle" },
   print = () => window.print(),
 }: {
   language: Language;
@@ -42,10 +59,12 @@ export function LessonActions({
   lesson: RunView["lesson"];
   /** Zapisz na później. */
   onSave: () => void;
-  /** Daj lekcję · {imię}, with a child. */
-  onGive: () => void;
+  /** Daj lekcję · {imię}, with a child; absent where nothing can give (no sign-in). */
+  onGive?: (() => void) | undefined;
   /** Opens the lesson here for the child; quiet with its reason while it is not given. */
   onOpenHere?: (() => void) | undefined;
+  /** Where giving stands, said under the buttons. */
+  given?: GiveState;
   /** The browser's print; a test's own. */
   print?: () => void;
 }): ReactElement {
@@ -67,11 +86,19 @@ export function LessonActions({
     setPrinting(true);
     printLesson(print);
   };
+  const busy = given.kind === "giving";
+  // With a child, the lesson goes to that child; with none, the dialog offers this computer or paper.
+  const canGive = ready && !busy && (child === null || onGive !== undefined);
   const give = (): void => {
-    if (!ready) return;
+    if (!canGive) return;
     if (child === null) setChoosing(true);
-    else onGive();
+    else onGive?.();
   };
+  const giveReason = !ready
+    ? t("parent_give_reason")
+    : child !== null && onGive === undefined
+      ? t("parent_give_unavailable")
+      : null;
   return (
     <div className="flex w-full flex-col gap-2" data-lesson-actions>
       <p className="text-jw-page-small text-jw-ink-soft" data-for-whom>
@@ -82,10 +109,10 @@ export function LessonActions({
         <Button
           type="button"
           size="control"
-          aria-disabled={!ready}
-          aria-describedby={ready ? undefined : reasonId}
+          aria-disabled={!canGive}
+          aria-describedby={giveReason === null ? undefined : reasonId}
           // Quiet with its reason (handoff §3), never a silent grey.
-          className={ready ? undefined : "border-dashed"}
+          className={canGive ? undefined : "border-dashed"}
           onClick={give}
           data-give
         >
@@ -98,18 +125,40 @@ export function LessonActions({
           type="button"
           variant="outline"
           size="control"
-          disabled={lesson === null}
-          onClick={printNow}
+          // Only a checked lesson goes on paper: the sheet reaches a child as surely as the player.
+          aria-disabled={!ready || lesson === null}
+          aria-describedby={ready ? undefined : reasonId}
+          className={ready && lesson !== null ? undefined : "border-dashed text-jw-ink-soft"}
+          onClick={() => {
+            if (ready && lesson !== null) printNow();
+          }}
           data-print
         >
           {t("parent_print")}
         </Button>
       </div>
-      {!ready && (
+      {giveReason !== null && (
         <p id={reasonId} className="text-jw-page-small text-jw-ink-soft" data-give-reason>
-          {t("parent_give_reason")}
+          {giveReason}
+          {!ready && ` ${t("parent_print_reason")}`}
         </p>
       )}
+      <p role="status" className="text-jw-page-small text-jw-ink" data-give-state={given.kind}>
+        {given.kind === "giving" && t("parent_giving")}
+        {given.kind === "refused" && t(REFUSED[given.reason])}
+        {given.kind === "given" && (
+          <>
+            {`${t("parent_given_child", { name: given.name })} `}
+            <NavLink
+              href={given.href}
+              className="font-bold underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-jw-focus"
+              data-given-link
+            >
+              {t("parent_given_link")}
+            </NavLink>
+          </>
+        )}
+      </p>
       <Dialog open={choosing} onOpenChange={setChoosing}>
         <DialogContent title={t("parent_give_title")} data-give-dialog>
           <div className="flex flex-col gap-3">
@@ -141,7 +190,7 @@ export function LessonActions({
                 type="button"
                 variant="outline"
                 size="control"
-                disabled={lesson === null}
+                disabled={!ready || lesson === null}
                 onClick={printNow}
                 data-give-print
               >
