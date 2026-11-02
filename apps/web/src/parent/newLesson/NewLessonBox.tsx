@@ -119,15 +119,19 @@ export function NewLessonBox({
   const views = uploads.map((upload) => upload.get());
   const ready = text.trim() !== "" || uploads.length > 0;
   const uploading = views.some((view) => view.state === "uploading");
-  const stuck = views.some((view) => view.state === "failed" || view.state === "refused");
+  const failed = views.some((view) => view.state === "failed");
+  const refused = views.some((view) => view.state === "refused");
+  const stuck = failed || refused;
   const go = ready && !uploading && !stuck;
   const reason: CopyKey | null = !ready
     ? "parent_send_reason"
-    : stuck
-      ? "parent_send_photo_failed"
-      : uploading
-        ? "parent_send_uploading"
-        : null;
+    : refused
+      ? "parent_send_photo_refused"
+      : failed
+        ? "parent_send_photo_failed"
+        : uploading
+          ? "parent_send_uploading"
+          : null;
 
   // The caret is in the box on load.
   useEffect(() => box.current?.focus(), []);

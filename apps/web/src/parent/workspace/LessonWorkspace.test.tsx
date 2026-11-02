@@ -124,6 +124,16 @@ describe("the lesson workspace on the engine", () => {
     expect(sent.filter((b) => b.kind === "message")).toHaveLength(1);
   });
 
+  it("posts nothing for a kept first message with no words and no photo that reads", async () => {
+    const { engine, sent } = engineWith();
+    window.sessionStorage.setItem(
+      `jw.parent.first.${CONVERSATION}`,
+      JSON.stringify({ text: "", attachment_ids: ["not-an-id"] }),
+    );
+    await workspace(engine);
+    expect(sent.filter((b) => b.kind === "message")).toHaveLength(0);
+  });
+
   it("sends an older tab's plain words with no photos", async () => {
     const { engine, sent } = engineWith();
     window.sessionStorage.setItem(`jw.parent.first.${CONVERSATION}`, "Odejmowanie przez 10");

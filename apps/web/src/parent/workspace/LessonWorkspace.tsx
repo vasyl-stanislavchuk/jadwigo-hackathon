@@ -123,7 +123,9 @@ export function LessonWorkspace({
     if (firstDone.current || restoring) return;
     firstDone.current = true;
     const first = firstMessage.take(conversation);
-    if (first !== null && state.runs.length === 0)
+    // A message has words or a photo; one with neither (a kept value that did not read) goes nowhere.
+    const sendable = first !== null && (first.text !== "" || first.attachment_ids.length > 0);
+    if (first !== null && sendable && state.runs.length === 0)
       send(
         first.text,
         forLearner === null ? undefined : { learner_id: forLearner },
