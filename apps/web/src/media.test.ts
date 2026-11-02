@@ -19,6 +19,21 @@ describe("mediaSrc", () => {
     expect(mediaSrc(`/media/khan/${REF}`, BASE)).toBe(`${BASE}/${REF}`);
   });
 
+  it("puts an Alfik /media/alfik/ path under the media URL's alfik/media/ (dl-e8ov.2.98)", () => {
+    expect(mediaSrc(`/media/alfik/${REF}`, BASE)).toBe(`${BASE}/alfik/media/${REF}`);
+    expect(mediaSrc(`/media/alfik/${REF}`, `${BASE}/`)).toBe(`${BASE}/alfik/media/${REF}`);
+    expect(mediaSrc("/media/alfik/not-a-ref.png", BASE)).toBe("/media/alfik/not-a-ref.png");
+    const stem = {
+      stem: { image: `/media/alfik/${REF}`, text: `![A clock.](/media/alfik/${REF})` },
+    };
+    expect(withMedia(stem, BASE)).toEqual({
+      stem: {
+        image: `${BASE}/alfik/media/${REF}`,
+        text: `![A clock.](${BASE}/alfik/media/${REF})`,
+      },
+    });
+  });
+
   it("leaves an absolute http(s) address as it is", () => {
     expect(mediaSrc(`https://cdn.kastatic.org/ka-perseus-images/${REF}`, BASE)).toBe(
       `https://cdn.kastatic.org/ka-perseus-images/${REF}`,

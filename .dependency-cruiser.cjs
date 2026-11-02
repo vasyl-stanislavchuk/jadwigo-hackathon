@@ -56,6 +56,14 @@ module.exports = {
       to: { path: "node_modules/katex/" },
     },
     {
+      name: "posthog-only-in-analytics",
+      comment:
+        "PostHog is configured in one place, so every event passes the catalogue and its before_send (dl-376c8).",
+      severity: "error",
+      from: { pathNot: "^packages/analytics/" },
+      to: { path: "node_modules/posthog-js/" },
+    },
+    {
       name: "no-circular",
       severity: "error",
       from: {},
