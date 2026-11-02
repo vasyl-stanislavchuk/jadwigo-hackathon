@@ -84,6 +84,29 @@ export function supabaseLive(
 declare const __JW_AUTH__: { url: string; key: string } | null | undefined;
 
 /**
+ * The page's one Realtime client (dl-uukj.47.33). Its GoTrueClient keeps no session of its own, under
+ * a storage key of its own, beside the sign-in's (parent/auth.ts): 2 clients, never 2 on one key,
+ * which is what supabase-js warns about ("Multiple GoTrueClient instances"). Made once per page,
+ * however many times a screen asks for the transport.
+ */
+let made: { url: string; client: SupabaseClient } | null = null;
+function realtimeClient(config: { url: string; key: string }): SupabaseClient {
+  if (made?.url !== config.url)
+    made = {
+      url: config.url,
+      client: createSupabase(config.url, config.key, {
+        auth: {
+          storageKey: "jw.chat.realtime",
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
+      }),
+    };
+  return made.client;
+}
+
+/**
  * The routes transport for the build's Supabase project: the API on the page's own origin with the
  * parent's token, and a Realtime client that keeps no session of its own (the sign-in's is the one
  * `browserAuth` holds). Null when the build has no Supabase project.
@@ -97,14 +120,7 @@ export function apiTransport(): {
   const config = typeof __JW_AUTH__ === "undefined" ? null : __JW_AUTH__;
   const auth = browserAuth();
   if (config === null || auth === null) return null;
-  const realtime = createSupabase(config.url, config.key, {
-    auth: {
-      storageKey: "jw.chat.realtime",
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  });
+  const realtime = realtimeClient(config);
   const token = () => auth.token();
   const client = createClient({ base: "", token });
   return {

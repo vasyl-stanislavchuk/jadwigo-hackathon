@@ -123,6 +123,38 @@ describe("the lesson workspace on the engine", () => {
     expect(without.sent[0]).not.toHaveProperty("context");
   });
 
+  it("says there is no such lesson when the routes refuse the conversation (dl-uukj.47.33)", async () => {
+    for (const status of [404, 403]) {
+      const { engine } = engineWith();
+      engine.transport.runs = async () => {
+        throw new ApiError("no such conversation", status, null);
+      };
+      await workspace(engine);
+      const missing = document.querySelector("[data-not-found]") as HTMLElement;
+      expect(missing.textContent).toContain(
+        "Nie ma tu takiej lekcji. Może należy do innego konta albo została usunięta.",
+      );
+      const link = screen.getByRole("link", { name: "Nowa lekcja" });
+      expect(link.getAttribute("href")).toBe("/parent");
+      // No 3 columns, and nothing stuck on restoring.
+      expect(document.querySelector("[data-workspace]")).toBeNull();
+      cleanup();
+    }
+  });
+
+  it("keeps the workspace, stalled, when a restore fails for any other reason", async () => {
+    const { engine } = engineWith();
+    engine.transport.runs = async () => {
+      throw new Error("the network went away");
+    };
+    await workspace(engine);
+    expect(document.querySelector("[data-not-found]")).toBeNull();
+    expect(document.querySelector("[data-workspace]")).not.toBeNull();
+    expect(
+      document.querySelector("[data-chat-band] [data-status]")?.getAttribute("data-status"),
+    ).toBe("stalled");
+  });
+
   it("opens on a waiting line with no words to send, and sends nothing", async () => {
     const { engine, sent } = engineWith();
     await workspace(engine);
