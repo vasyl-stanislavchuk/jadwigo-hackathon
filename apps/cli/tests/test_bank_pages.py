@@ -66,6 +66,39 @@ def test_show_refuses_a_page_that_breaks_the_schema(tmp_path: Path) -> None:
         bank_client.show_set("set_khan_bad", bank_dir=tmp_path)
 
 
+def _alfik_page(set_id: str, exercise_id: str) -> dict[str, Any]:
+    """A made-up Alfik page: fixture fx0001 with Alfik's id, licence and credit, and no url."""
+    page = json.loads((BANK_DIR / "sets" / "set_khan_fx0001.json").read_text(encoding="utf-8"))
+    page["id"] = set_id
+    page["source"] = {
+        "name": "alfik",
+        "exercise_id": exercise_id,
+        "licence": "© Łowcy Talentów – JERSZ",
+        "credit": "z Alfika Matematycznego",
+    }
+    return page
+
+
+@pytest.mark.parametrize(
+    ("set_id", "exercise_id"),
+    [("set_alfik_2_ages", "2_ages"), ("set_alfik_3_clocks-and-calendars", "3_clocks-and-calendars")],
+)
+def test_show_reads_an_alfik_page(tmp_path: Path, set_id: str, exercise_id: str) -> None:
+    folder = tmp_path / "sets" / "alfik" / "math" / "grade-2"
+    folder.mkdir(parents=True)
+    (folder / f"{set_id}.json").write_text(json.dumps(_alfik_page(set_id, exercise_id)))
+    assert bank_client.show_set(set_id, bank_dir=tmp_path)["source"]["name"] == "alfik"
+
+
+def test_an_alfik_page_with_khan_s_licence_breaks_the_schema(tmp_path: Path) -> None:
+    page = _alfik_page("set_alfik_2_ages", "2_ages")
+    page["source"]["licence"] = "CC BY-NC-SA 4.0"
+    (tmp_path / "sets").mkdir()
+    (tmp_path / "sets" / "set_alfik_2_ages.json").write_text(json.dumps(page))
+    with pytest.raises(JwError, match=r"does not match set\.schema\.json"):
+        bank_client.show_set("set_alfik_2_ages", bank_dir=tmp_path)
+
+
 def test_gaps_reports_found_needs(bank: Any) -> None:
     report = bank_client.gaps([{"language": "pl", "grade": "3", "words": "dodawanie"}])
     assert report["gaps"] == 0 and report["needs"][0]["verdict"] == "found"
