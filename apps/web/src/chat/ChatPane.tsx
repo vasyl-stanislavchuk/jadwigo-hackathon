@@ -131,7 +131,7 @@ function ToolLine({
   const sentence = sentenceOf(tool.verb, tool.input, context);
   const words = copy(language, sentence.key, sentence.vars, "adult");
   const Icon = TOOL_ICON[tool.verb];
-  const result = toolResult(tool, language);
+  const result = toolResult(tool, language, context);
   const failed = tool.state === "failed";
   return (
     <li data-tool={tool.verb} data-state={tool.state}>
@@ -185,7 +185,7 @@ function ToolGroup({
     "adult",
   );
   const shown = tools.flatMap((t) => {
-    const result = toolResult(t, language);
+    const result = toolResult(t, language, context);
     return result?.kind === "widget" && result.keepVisible
       ? [{ call_id: t.call_id, element: result.element }]
       : [];
@@ -592,7 +592,10 @@ export function ChatPane({
   contextClosed = false,
   onCloseContext,
 }: ChatPaneProps): ReactElement {
-  const lineContext: LineContext = nameOf === undefined ? {} : { nameOf };
+  const lineContext: LineContext = {
+    ...(nameOf === undefined ? {} : { nameOf }),
+    onAsk: (text: string) => onSend(text),
+  };
   const context = contextClosed ? null : contextLine(turns, nameOf, language);
   const parent = variant === "parent";
   const [draft, setDraft] = useState("");

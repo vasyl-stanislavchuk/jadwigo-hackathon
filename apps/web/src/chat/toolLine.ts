@@ -39,6 +39,8 @@ export const TOOL_ICON: Readonly<Record<VerbName, LucideIcon>> = {
 export interface LineContext {
   /** A learner's first name by id, from the parent's family; null when it is not one of theirs. */
   nameOf?: (learner: string) => string | null;
+  /** Sends words as the parent's message: a widget's "Ułóż tę lekcję" (dl-z5ja.129). */
+  onAsk?: (text: string) => void;
 }
 
 export interface Sentence {
