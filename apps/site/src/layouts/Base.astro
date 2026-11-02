@@ -160,8 +160,9 @@ const footerLinks = [
 
       /* The header stays in reach on a long page: sticky, on the page's own white, its line below
          (design handoff "landing 3", SiteHeader). On a laptop: the wordmark, the page pills, then the
-         language switch and the sign-in on the right, all on one centre line. On a phone: one 68 px row
-         with the wordmark, the sign-in and a 48 px burger that opens the pages and the language. */
+         sign-in on the right, all on one centre line. On a phone: one 68 px row with the wordmark, the
+         sign-in and a 48 px burger that opens the pages. The language switch is in the footer only
+         (owner, 2026-11-02, dl-5ssh.4.51); a visitor in the wrong language gets the LanguageNote. */
       .site-header {
         position: sticky; top: 0; z-index: 10; --logo-h: 3rem;
         background: var(--jw-ground); border-bottom: 2px solid var(--jw-line);
@@ -201,11 +202,6 @@ const footerLinks = [
       }
       .site-nav a:hover { background: var(--jw-act-quiet); }
       .site-nav a[aria-current] { background: var(--jw-pick); border-color: var(--jw-ink); color: var(--jw-pick-ink); }
-      .lang-row {
-        display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
-        margin-top: 0.5rem; padding-top: 0.9rem; border-top: 2px solid var(--jw-line);
-      }
-      .lang-row > span { font-weight: 700; color: var(--jw-ink-soft); }
       @media (min-width: 60rem) {
         .site-header { --logo-h: 3.25rem; }
         .site-header .bar { flex-wrap: nowrap; gap: 1.5rem; min-height: 76px; padding-top: 0.25rem; }
@@ -214,10 +210,8 @@ const footerLinks = [
         .menu, .js .menu:not(.open) { order: 0; width: auto; flex: 1; display: flex; flex-direction: row; align-items: center; gap: 1.5rem; padding: 0; margin: 0; border: 0; }
         .site-nav { flex-direction: row; gap: 0.25rem; flex: 1; }
         .site-nav a { min-height: 44px; padding: 0 1rem; font-size: 1.05rem; border-radius: 22px; white-space: nowrap; }
-        .lang-row { margin: 0; padding: 0; border: 0; }
-        .lang-row > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
       }
-      /* The pages, the switch and the sign-in stand on the wordmark's text line, not its box's middle:
+      /* The pages and the sign-in stand on the wordmark's text line, not its box's middle:
          the box holds the crown's room above the letters. The letters' middle (y 64 of -65..115) sits
          0.217 of the logo's height below the box's middle. A translate, so the header's height does not move. */
       .signin, .burger { translate: 0 calc(var(--logo-h) * 0.217); }
@@ -229,7 +223,7 @@ const footerLinks = [
       /* The footer: the wordmark and its line, the pages, and whose the data is with the privacy pages
          (design handoff "landing 3", SiteFooter). The sources column and the data sentence are gone: the
          privacy pages say it (owner, 2026-11-02, dl-5ssh.4.28). */
-      .site-footer { border-top: 2px solid var(--jw-line); margin-top: 4rem; padding: 2rem 0 2.5rem; font-size: 1rem; line-height: 1.5; }
+      .site-footer { border-top: 2px solid var(--jw-line); margin-top: 4rem; padding: 2rem 0 calc(2.5rem + var(--note-room, 0px)); font-size: 1rem; line-height: 1.5; }
       .site-footer .wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr)); gap: 1.5rem 2rem; }
       .site-footer .col { display: flex; flex-direction: column; gap: 0.25rem; color: var(--jw-ink-soft); }
       .site-footer .col > strong { color: var(--jw-ink); }
@@ -239,6 +233,7 @@ const footerLinks = [
       .site-footer .mark svg { height: 2.5rem; width: auto; overflow: visible; }
       .site-footer .data { text-wrap: pretty; }
       .site-footer .data a { color: var(--jw-ink-soft); text-decoration: underline; }
+      .site-footer .lang-row { align-items: start; gap: 0.5rem; }
 
       /* Exercise-book paper, warmed towards the help note's yellow but lighter than it, so a hint on it
          still stands out (owner, 2026-11-02, dl-5ssh.4.30): mixed from 2 tokens, no new colour. */
@@ -283,14 +278,6 @@ const footerLinks = [
               </a>
             ))}
           </nav>
-          {
-            twin && (
-              <div class="lang-row">
-                <span aria-hidden="true">{m.site_language_label({}, locale)}</span>
-                <Segmented label={m.site_switch_label({}, locale)} value={lang} options={switchOptions} />
-              </div>
-            )
-          }
         </div>
         <a class="signin" href={`${twinPath("signIn", lang)}/`}>{m.site_nav_sign_in({}, locale)}</a>
       </div>
@@ -314,6 +301,14 @@ const footerLinks = [
           <strong>{m.site_footer_data_heading({}, locale)}</strong>
           {footerLinks.map((l) => <a href={`${l.href}/`}>{l.label}</a>)}
         </div>
+        {
+          twin && (
+            <div class="col lang-row">
+              <strong aria-hidden="true">{m.site_language_label({}, locale)}</strong>
+              <Segmented label={m.site_switch_label({}, locale)} value={lang} options={switchOptions} />
+            </div>
+          )
+        }
       </div>
     </footer>
     <Analytics lang={lang} privacyHref={footer.privacy} />

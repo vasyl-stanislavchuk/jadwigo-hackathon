@@ -39,8 +39,13 @@ const words = { locale: twin } as const;
     }
     if (storage && offerOnce(storage, navigator.language, page, twin)) {
       note.hidden = false;
+      // The footer's last row (the language switch, dl-5ssh.4.51) stays reachable above the note:
+      // the footer grows by the note's height while it shows.
+      const root = document.documentElement;
+      root.style.setProperty("--note-room", `${note.offsetHeight}px`);
       note.querySelector(".dismiss")?.addEventListener("click", () => {
         note.hidden = true;
+        root.style.removeProperty("--note-room");
       });
     }
   }
