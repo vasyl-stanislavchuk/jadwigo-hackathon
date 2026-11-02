@@ -16,6 +16,6 @@ We started with the times tables and the Polish spelling our son often gets wron
 
 Our son can get things wrong, ask for more or say that's enough for today. We see what he can already do.
 
-**Where the name comes from.** Jadwigo is named after a school's patron, Queen Jadwiga. "Jadwigo!" is how you call out her name in Polish. In the lessons Jadwiga is the queen of the notebook, and her class stands beside her: Ola, Tymek, Zoja and Marko.
+**Where the name comes from.** Jadwigo is Queen Jadwiga, a school's patron, and the English "go". Together: moving forward and growing under her warm wings. In the pictures Jadwiga is a little queen, and her pencil-case court stands beside her: Gumka the eraser, Ołówek the pencil and Linijka the ruler.
 
 **What's next.** Now we are inviting our son's class, then the whole school. And then maybe you.

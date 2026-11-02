@@ -15,6 +15,6 @@ Zaczęliśmy od tabliczki mnożenia i ortografii, w której syn często się myl
 
 Syn może się pomylić, poprosić o więcej albo powiedzieć, że na dziś wystarczy. My widzimy, co już umie.
 
-**Skąd nazwa.** Jadwigo nosi imię królowej Jadwigi, patronki szkoły naszego syna. „Jadwigo!” to po polsku wołanie po imieniu. W lekcjach Jadwiga jest królową zeszytu, a obok niej stoi jej klasa: Ola, Tymek, Zoja i Marko.
+**Skąd nazwa.** Jadwigo to królowa Jadwiga, patronka szkoły naszego syna, i angielskie „go”, czyli „naprzód”. Razem: iść naprzód i rosnąć pod jej ciepłymi skrzydłami. Na rysunkach Jadwiga jest małą królową, a obok niej stoi jej dwór z piórnika: Gumka, Ołówek i Linijka.
 
 **Co dalej.** Teraz zapraszamy klasę syna, potem całą szkołę. A potem może i Was.

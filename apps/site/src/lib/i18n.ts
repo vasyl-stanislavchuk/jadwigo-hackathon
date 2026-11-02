@@ -3,7 +3,7 @@
 // a page passes its language explicitly, since a static build has no request to read a locale from.
 // Pure, so i18n.test.ts checks it without a build.
 import { LANGUAGES, type Language } from "@jadwigo/config";
-import { type Twin, twins } from "../content/twins.ts";
+import { hiddenTwins, type Twin, twins } from "../content/twins.ts";
 
 /** The language every page has, and the one served without a prefix. */
 const baseLanguage: Language = "pl";
@@ -36,6 +36,7 @@ export function twinStaticPaths<T extends Twin>(
   twin: T,
   strict: boolean,
 ): { params: Record<T, string | undefined>; props: { lang: Language } }[] {
+  if (hiddenTwins.has(twin)) return [];
   return servedLanguages(strict).map((lang) => {
     const path: string = twins[twin][lang];
     const params = { [twin]: path === "/" ? undefined : path.slice(1) } as Record<
@@ -51,7 +52,9 @@ export const twinPath = (twin: Twin, lang: Language): string => twins[twin][lang
 
 /** Every path the build serves for the pages in src/pages. */
 export const servedTwinPaths = (strict: boolean): string[] =>
-  Object.values(twins).flatMap((t) => servedLanguages(strict).map((lang) => t[lang]));
+  (Object.keys(twins) as Twin[])
+    .filter((t) => !hiddenTwins.has(t))
+    .flatMap((t) => servedLanguages(strict).map((lang) => twins[t][lang]));
 
 /**
  * A link into the app from a page in `lang`: `?lang=` names the page's language, so the app opens

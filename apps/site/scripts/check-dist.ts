@@ -28,13 +28,12 @@ const landing: readonly DistCheck[] = [
   ["jak-to-dziala/index.html", '<section class="end-band"'],
   ["index.html", 'href="https://app.jadwigo.pl/play/asg_'],
   // Each header link is its own page, built and in the sitemap (owner, 2026-10-31).
-  ...["lekcje", "jak-to-dziala", "porownanie", "o-nas"].flatMap((p): DistCheck[] => [
+  ...["lekcje", "jak-to-dziala", "o-nas"].flatMap((p): DistCheck[] => [
     ["index.html", `href="/${p}/"`],
     [`${p}/index.html`, "<h1"],
     ["sitemap-0.xml", `<loc>https://jadwigo.pl/${p}/</loc>`],
   ]),
   ["lekcje/index.html", 'href="https://app.jadwigo.pl/play/asg_'],
-  ["porownanie/index.html", "Khan Academy"],
   ["zaloguj/index.html", '<form action="https://app.jadwigo.pl/parent" method="get"'],
   ["index.html", 'href="/zaloguj/"'],
   // The phone header opens the pages from a burger, and the footer names where the questions come from
@@ -71,7 +70,15 @@ const english: readonly DistCheck[] = served.includes("en")
     ]
   : [];
 const must: readonly DistCheck[] = [...landing, ...english, ...paged.must, ...signIn.must];
-const mustNot = [...paged.mustNot, ...signIn.mustNot];
+// Hidden for now (dl-5ssh.4.28): /porownanie is neither built nor linked, and the footer has no
+// sources column or data sentence.
+const hidden: readonly DistCheck[] = [
+  ["index.html", 'href="/porownanie/"'],
+  ["sitemap-0.xml", "https://jadwigo.pl/porownanie/"],
+  ["index.html", "Źródła zadań"],
+  ["index.html", "Odpowiedzi dziecka widzisz tylko Ty"],
+];
+const mustNot = [...paged.mustNot, ...signIn.mustNot, ...hidden];
 
 const missing = must.filter(([file, text]) => {
   const path = new URL(file, dist);
