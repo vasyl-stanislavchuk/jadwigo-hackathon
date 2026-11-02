@@ -20,6 +20,14 @@ export { Logo } from "./parts/logo.tsx";
 export { Notice } from "./parts/notice.tsx";
 export { OutcomeTile } from "./parts/outcome-tile.tsx";
 export { Page } from "./parts/page.tsx";
+export {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogTrigger,
+} from "./primitives/alert-dialog.tsx";
 export { Badge, badgeVariants } from "./primitives/badge.tsx";
 export { Breadcrumb, type Crumb } from "./primitives/breadcrumb.tsx";
 export { Button, buttonVariants } from "./primitives/button.tsx";
@@ -34,14 +42,37 @@ export {
 } from "./primitives/card.tsx";
 export type { Choice, ControlSize } from "./primitives/choice.ts";
 export {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "./primitives/context-menu.tsx";
+export {
   Dialog,
   DialogClose,
   DialogContent,
   DialogFooter,
   DialogTrigger,
 } from "./primitives/dialog.tsx";
+export { DisabledReason } from "./primitives/disabled-reason.tsx";
 export { Disc } from "./primitives/disc.tsx";
+export {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "./primitives/dropdown-menu.tsx";
 export { Input } from "./primitives/input.tsx";
+export { Kbd } from "./primitives/kbd.tsx";
 export { PanelToggle } from "./primitives/panel-toggle.tsx";
 export { Popover, PopoverContent, PopoverTrigger } from "./primitives/popover.tsx";
 export { Progress } from "./primitives/progress.tsx";
@@ -72,6 +103,8 @@ export {
   TableRow,
 } from "./primitives/table.tsx";
 export { Tabs } from "./primitives/tabs.tsx";
+export { showToast, Toaster, type ToastInput } from "./primitives/toast.tsx";
 export { Toggle, toggleVariants } from "./primitives/toggle.tsx";
 export { ToggleGroup, ToggleGroupItem } from "./primitives/toggle-group.tsx";
+export { Tooltip, TooltipContent, TooltipTrigger } from "./primitives/tooltip.tsx";
 export { VisuallyHidden } from "./visually-hidden.tsx";

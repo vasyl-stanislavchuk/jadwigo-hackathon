@@ -231,13 +231,18 @@ describe("primitive sources", () => {
   it("holds the primitives the blocks and screens need, and nothing else", () => {
     expect(files.map((f) => f.name).sort()).toEqual(
       [
+        "alert-dialog.tsx",
         "badge.tsx",
         "breadcrumb.tsx",
         "button.tsx",
         "card.tsx",
+        "context-menu.tsx",
         "dialog.tsx",
+        "disabled-reason.tsx",
         "disc.tsx",
+        "dropdown-menu.tsx",
         "input.tsx",
+        "kbd.tsx",
         "panel-toggle.tsx",
         "popover.tsx",
         "progress.tsx",
@@ -250,9 +255,11 @@ describe("primitive sources", () => {
         "switch.tsx",
         "table.tsx",
         "tabs.tsx",
+        "toast.tsx",
         "toggle-group.tsx",
         "toggle.tsx",
-      ].sort(), // popover: the chosen-gap menu (dl-w3.37.16); switch: the pause sheet's Dźwięk (dl-uukj.29.55); sheet and table: the lesson overview's question sheet and heatmap (dl-uukj.30.4); radio-group, segmented-control, tabs and side-menu: the settings and navigation controls (dl-uukj.32.3); breadcrumb, dialog, disc and panel-toggle: the parent app frame (dl-uukj.47.1)
+        "tooltip.tsx",
+      ].sort(), // alert-dialog, context-menu, disabled-reason, dropdown-menu, kbd, toast and tooltip: the adult overlays (dl-uukj.47.67.2); popover: the chosen-gap menu (dl-w3.37.16); switch: the pause sheet's Dźwięk (dl-uukj.29.55); sheet and table: the lesson overview's question sheet and heatmap (dl-uukj.30.4); radio-group, segmented-control, tabs and side-menu: the settings and navigation controls (dl-uukj.32.3); breadcrumb, dialog, disc and panel-toggle: the parent app frame (dl-uukj.47.1)
     );
   });
 
@@ -271,7 +278,14 @@ describe("primitive sources", () => {
   // A literal height or width on a control would undercut --kid-tap-min. Icon sizes inside a
   // control ([&_svg…]:size-7) are not targets. The slider's track and thumb face are drawn
   // inside a row that is itself tap-min high; each is listed with its reason.
-  const LABELS = new Set(["badge.tsx", "progress.tsx", "card.tsx", "spinner.tsx", "disc.tsx"]);
+  const LABELS = new Set([
+    "badge.tsx",
+    "progress.tsx",
+    "card.tsx",
+    "spinner.tsx",
+    "disc.tsx",
+    "kbd.tsx",
+  ]);
   const DRAWN: Record<string, string[]> = {
     "radio-group.tsx": [
       "min-w-0", // lets the wrapper of legend and rows shrink in a flex row; the rows are the targets
@@ -298,6 +312,13 @@ describe("primitive sources", () => {
       "h-8", // the track, drawn inside the tap-min row that is the switch
       "w-14", // the same
       "size-6", // the knob inside the track
+    ],
+    "dropdown-menu.tsx": [
+      "size-2", // a radio row's dot, inside the row that is the target
+    ],
+    "toast.tsx": [
+      "size-7", // the kind's icon disc beside the words; the toast's buttons are the targets
+      "min-w-0", // lets the words wrap beside the buttons
     ],
     "slider.tsx": [
       "data-horizontal:h-3", // the track's thickness, inside the tap-min row
