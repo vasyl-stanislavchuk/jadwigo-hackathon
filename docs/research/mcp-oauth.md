@@ -7,7 +7,7 @@ Issue: `dl-1u6fn.1`
 1. Yes. Supabase Auth's OAuth 2.1 server (beta, free on every plan) does dynamic client registration, S256 PKCE, refresh-token rotation and RFC 8414 metadata. It is off on both projects today, and 3 settings switch it on.
 2. The issuer is `https://<ref>.supabase.co/auth/v1`, not `auth.jadwigo.pl`. The protected-resource metadata names it exactly, and clients find the server's metadata at `https://<ref>.supabase.co/.well-known/oauth-authorization-server/auth/v1`.
 3. An OAuth token is an ordinary Supabase access token, plus `client_id` and `scope` claims: same `iss`, `aud: "authenticated"`, RS256 key and `sub`. Our custom access token hook runs for it unchanged, so it carries `pod_id`, and `apps/api`'s verifier accepts it as it is.
-4. Two gaps: `aud` never names the MCP server (Supabase ignores the `resource` parameter for it), and revoking a grant kills the refresh token but not the access token already issued, which lives until `exp` (1 hour by default).
+4. Two gaps, both settled by the owner: `aud` never names the MCP server (Supabase ignores the `resource` parameter for it), so `/api/mcp` accepts any valid token from our issuer, a departure from the MCP spec the owner accepted; and a revoked app keeps its current access token until `exp` (1 hour by default).
 5. The consent page calls `supabase.auth.oauth.getAuthorizationDetails`, `approveAuthorization` and `denyAuthorization` (supabase-js 2.118.0, already installed). A parent revokes an app with `auth.oauth.listGrants()` and `revokeGrant({ clientId })`.
 
 ## Method
@@ -97,7 +97,9 @@ with the dev ref on dev, read from `AUTH_ISSUER` (already in `apps/api/src/confi
 
 So `apps/api/src/auth.ts`'s `verifyToken` accepts an OAuth token with no change, and the API Gateway JWT authorizer on the REST token routes does too.
 
-The MCP spec says a server MUST check that a token was issued for it as the audience. Supabase can't put the resource in `aud`, so lane `mcp` has 3 ways to stand in, which is the owner's question 1 below.
+The MCP spec says a server MUST check that a token was issued for it as the audience. Supabase can't put the resource in `aud`. **The owner decided `/api/mcp` accepts any valid token from our issuer, the parent's own browser token included, with the same rights as the parent, and logs the token's `client_id` on each call** (`jadwigo-hackathon/decisions/2026-11-02-an-ai-app-s-oauth-token-has-the-same-rights-as-the-parent-s-own`; built in #721).
+
+**This departs from the MCP spec's MUST on audience validation, and the owner accepted it.** The check exists to stop a token meant for one resource server being replayed at another. Here that risk is absent: Jadwigo's API is the only resource server that trusts this issuer, so there is no other audience a token could have been meant for; and an OAuth token is issued only to a client the parent approved on our own consent page. A token reaching `/api/mcp` therefore already speaks for the parent, and the API gives it nothing the parent's own sign-in doesn't. Every tool call still goes through `authorize()` with the token's `sub`, scoped to the parent's pod by RLS, as the REST routes do.
 
 ### The custom access token hook runs for OAuth tokens
 
@@ -119,19 +121,27 @@ Both refuse an `Origin` outside `site_url` and `uri_allow_list` (`authorize.go` 
 
 - Refresh: `POST /auth/v1/oauth/token` with `grant_type=refresh_token`. Refresh tokens rotate; the hook runs again, so `pod_id` stays current.
 - A parent revokes an app with `supabase.auth.oauth.listGrants()` (`GET /auth/v1/user/oauth/grants`) and `revokeGrant({ clientId })` (`DELETE /auth/v1/user/oauth/grants?client_id=`). It marks the consent revoked and deletes that client's sessions for the user, so the refresh token dies (`handlers.go` `UserRevokeOAuthGrant`). No page offers it yet.
-- **The access token already issued stays valid until `exp`.** It is a stateless JWT, and `apps/api` checks only its signature and claims. So "revoking makes the next call 401" (the epic's acceptance) holds only once the token expires, up to 1 hour by default, unless the Lambda also checks the session: owner's question 2.
+- **The access token already issued stays valid until `exp`.** It is a stateless JWT, and `apps/api` checks only its signature and claims. The owner decided a revoked app keeps its current access token until it expires, up to 1 hour by default, with no per-call session check (`jadwigo-hackathon/decisions/2026-11-02-a-revoked-ai-app-keeps-its-current-access-token-until-it-expires`). The epic's "revoking makes the next call 401" holds from the next refresh, not the next call.
 - There is no RFC 7009 `/oauth/revoke` endpoint, so `claude mcp logout` revokes nothing at Supabase.
+
+### Dynamic registration abuse
+
+Registration is public: anyone who finds the endpoint can create clients, limited only by Supabase's rate limit (`api.go`, `limitHandler(OAuthClientRegister)`). Two things follow.
+
+- **Clients pile up.** claude.ai registers a new client on every fresh connection (Claude's docs), and Supabase has no cap on clients and no expiry for one nobody approved. Nothing removes them. The admin API lists and deletes clients (`GET`/`DELETE /auth/v1/admin/oauth/clients`), so a script can show the pile and prune dynamic clients with no active grant: filed as `dl-1u6fn.21`.
+- **Names are spoofable.** `client_name` is whatever the registrant sent, so a client can call itself "Claude" or "ChatGPT". A registered client still gets nothing without a parent's approval on our consent page, and its code goes only to a redirect URI it registered. So the consent page shows the redirect URI's host beside the name (`dl-1u6fn.7`): `claude.ai`, `chatgpt.com` or `localhost` is what tells a parent who is really asking. A loopback-only client gets a line that it is a program on this computer.
 
 ### What an OAuth token reaches besides the MCP
 
-The token is a full Supabase user token. With no custom scopes, the parent's AI app can also call `/api/v1` token routes (writes included), Realtime and the Supabase Data API with the parent's RLS rights, not only the MCP tools. That is within decision `dl-jf6wy` (`jadwigo-hackathon/decisions/2026-11-02-the-remote-mcp-reads-everything-a-parent-can-read-in-the-app-and`) for reads, but not for the writes the MCP v1 leaves out: owner's question 3.
+The token is a full Supabase user token. With no custom scopes, the parent's AI app can also call `/api/v1` token routes (writes included), Realtime and the Supabase Data API with the parent's RLS rights, not only the MCP tools. The owner decided that is intended: an AI app's token has the same rights as the parent's own, writes through `/api/v1` included (`jadwigo-hackathon/decisions/2026-11-02-an-ai-app-s-oauth-token-has-the-same-rights-as-the-parent-s-own`). Reads were already in scope by `dl-jf6wy` (`jadwigo-hackathon/decisions/2026-11-02-the-remote-mcp-reads-everything-a-parent-can-read-in-the-app-and`). So the consent page says plainly that the app gets all the family's and the children's data and can act as the parent.
 
 ## What this means for jadwigo
 
 - `dl-1u6fn.6` (owner): set the 3 settings in `infra/supabase-auth/dev.json`, run `auth.sh diff dev`, `auth.sh apply dev`, then the steps below. Dev's consent URL is `http://127.0.0.1:5173/oauth/consent` unless dev's `site_url` changes. Prod later, the same 3 keys.
-- `dl-1u6fn.8` (lane `mcp`): `authorization_servers: [AUTH_ISSUER]`; verify with the existing `verifyToken` (`iss` = `AUTH_ISSUER`, `aud` = `authenticated`); require a uuid `client_id` claim on `/api/mcp` only if the owner picks that answer to question 1; read `pod_id` as today. The 401 carries `resource_metadata`.
+- `dl-1u6fn.8` (lane `mcp`): `authorization_servers: [AUTH_ISSUER]`; verify with the existing `verifyToken` (`iss` = `AUTH_ISSUER`, `aud` = `authenticated`); no `client_id` requirement and no audience check beyond `aud` = `authenticated` (`jadwigo-hackathon/decisions/2026-11-02-an-ai-app-s-oauth-token-has-the-same-rights-as-the-parent-s-own`), so the departure from the spec is the owner's, written down; log `client_id` (absent for a browser token) on each call; every tool goes through `authorize()` with `sub` and reads `pod_id` as today. The 401 carries `resource_metadata`.
 - `dl-1u6fn.7` (consent page): the 3 calls above, with the client's name and its redirect host, and a sign-in detour that keeps `authorization_id`.
-- New issue: a parent's "connected apps" list with a revoke button, over `listGrants` and `revokeGrant`. Without it a parent can't take access back.
+- `dl-1u6fn.14`: a parent's "connected apps" list with a revoke button, over `listGrants` and `revokeGrant`. Without it a parent can't take access back.
+- `dl-1u6fn.21`: list and prune dynamically registered clients no parent approved.
 - The epic's design: "naming auth.jadwigo.pl" becomes "naming `AUTH_ISSUER`, the `supabase.co` issuer".
 
 ### Steps for the owner (turn the unverified facts into observed ones, dev only)
@@ -143,17 +153,19 @@ After `auth.sh apply dev`:
 3. Decode the access token's payload (not the signature) with `cut -d. -f2 | base64 -d` and record `iss`, `aud`, `client_id`, `scope` and whether `pod_id` is there, with `sub`, email and ids redacted, in this note.
 4. Revoke with `revokeGrant` from the browser console on the web app, then refresh: expect `invalid_grant`, and the old access token still accepted until `exp`.
 
-## The owner's questions
+## Decided by the owner
 
-1. **The audience.** Supabase writes `aud: "authenticated"` on every token, so `/api/mcp` can't tell a token meant for it from the parent's own browser token.
-2. **Revocation lag.** A revoked app keeps working until its access token expires.
-3. **What the AI app's token reaches.** It works on every `/api/v1` token route, writes included, not only the MCP's tools.
+The 3 questions this note raised are settled:
+
+1. **The audience.** `/api/mcp` accepts any valid token from our issuer, with the parent's rights, and logs `client_id` per call. A departure from the MCP spec's audience MUST, accepted (`jadwigo-hackathon/decisions/2026-11-02-an-ai-app-s-oauth-token-has-the-same-rights-as-the-parent-s-own`).
+2. **Revocation lag.** A revoked app keeps its current access token until it expires (`jadwigo-hackathon/decisions/2026-11-02-a-revoked-ai-app-keeps-its-current-access-token-until-it-expires`).
+3. **What the AI app's token reaches.** The same rights as the parent's own, writes through `/api/v1` included (`jadwigo-hackathon/decisions/2026-11-02-an-ai-app-s-oauth-token-has-the-same-rights-as-the-parent-s-own`).
 
 ```json jadwigo-outcome
 {
   "issue": "dl-1u6fn.1",
   "question": "Can Supabase Auth be the OAuth 2.1 server a parent's AI app signs in through to reach Jadwigo's remote MCP?",
-  "answer": "Yes: it does DCR, S256 PKCE and rotating refresh tokens, its issuer is https://<ref>.supabase.co/auth/v1, and its OAuth tokens are ordinary Supabase tokens plus client_id and scope that our hook gives pod_id. Gaps: aud is always 'authenticated', and a revoked grant's access token lives until exp. Not yet observed: the server is off on both projects.",
+  "answer": "Yes: it does DCR, S256 PKCE and rotating refresh tokens, its issuer is https://<ref>.supabase.co/auth/v1, and its OAuth tokens are ordinary Supabase tokens plus client_id and scope that our hook gives pod_id. Gaps, settled by the owner: aud is always 'authenticated', so /api/mcp accepts any valid token from our issuer (a departure from the MCP spec's audience MUST, accepted), and a revoked app keeps its access token until exp. Not yet observed: the server is off on both projects.",
   "status": "partial",
   "sources": [
     "https://supabase.com/docs/guides/auth/oauth-server/getting-started",
@@ -172,31 +184,7 @@ After `auth.sh apply dev`:
     "supabase/migrations/20261101200000_token_pod_id.sql",
     "apps/api/src/auth.ts"
   ],
-  "owner_decisions": [
-    {
-      "question": "Supabase never puts the MCP's URL in aud. What stands in for the MCP spec's audience check on /api/mcp?",
-      "options": [
-        "Accept any valid Jadwigo token for the user (aud authenticated), browser tokens included",
-        "Require a client_id claim on /api/mcp, so only an OAuth app's token reaches it",
-        "Have the token hook add the MCP URL to aud when claims.client_id is set (a migration), and check it"
-      ]
-    },
-    {
-      "question": "After a parent revokes an AI app, its access token works until exp. How long may that last?",
-      "options": [
-        "Accept up to the token lifetime (1 hour by default)",
-        "Shorten the project's JWT expiry, for browser tokens too",
-        "Have /api/mcp check the token's session_id still exists in auth.sessions on each call (a migration for the grant, one query per call)"
-      ]
-    },
-    {
-      "question": "An AI app's OAuth token also works on every /api/v1 token route, writes included. Should it?",
-      "options": [
-        "Yes: the token is the parent's, and RLS keeps it to their pod",
-        "No: apps/api refuses a token with a client_id claim outside /api/mcp"
-      ]
-    }
-  ],
+  "owner_decisions": [],
   "proposed_issues": [
     {
       "title": "web: a parent's connected AI apps, listed with a revoke button",
@@ -204,12 +192,23 @@ After `auth.sh apply dev`:
       "done_when": "A component test lists 2 grants from a stubbed client and calls revokeGrant with the right clientId; make check is green",
       "depends_on": ["dl-1u6fn.7"],
       "labels": ["project:jadwigo-learner-experience", "mcp", "auth"]
+    },
+    {
+      "title": "auth: see and prune dynamically registered OAuth clients that no parent approved",
+      "scope": "infra/supabase-auth/clients.sh: list (read-only) over the admin clients API; prune (the owner's) deletes dynamic clients older than 30 days with no active grant. Filed as dl-1u6fn.21.",
+      "done_when": "Its test against a fake admin API lists 3 clients and prune deletes only the old dynamic one with no grant; make check is green",
+      "depends_on": ["dl-1u6fn.6"],
+      "labels": ["project:jadwigo-platform", "mcp", "auth"]
     }
   ],
   "page_changes": [
     {
       "section": "Epic dl-1u6fn design, Architecture, Auth",
       "change": "The protected-resource metadata names AUTH_ISSUER (https://<ref>.supabase.co/auth/v1), not auth.jadwigo.pl"
+    },
+    {
+      "section": "Epic dl-1u6fn acceptance",
+      "change": "Revoking a grant makes the next refresh fail; the current access token works until exp (decision a-revoked-ai-app-keeps-its-current-access-token-until-it-expires)"
     },
     {
       "section": "dl-1u6fn.6",
