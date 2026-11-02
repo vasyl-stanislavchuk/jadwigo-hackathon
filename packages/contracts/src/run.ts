@@ -56,6 +56,7 @@ export const VerbName = z.enum([
   "lesson_edit",
   "lesson_check",
   "question_search",
+  "question_types",
   "learner_skills",
   "learner_week",
   "learner_mistakes",
