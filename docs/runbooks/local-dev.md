@@ -2,7 +2,8 @@
 
 `make dev` starts every app's dev server on md's ports (`tools/src/ports.ts`), against the local
 `jadwigo` database. The main checkout runs on the numbers `.md/repo.toml` declares. Every md
-worktree runs on its own, which `md run dev` exports (`dl-5ssh.98`). The api is kept off 8787,
+worktree runs on its own, which md gives it (`dl-5ssh.98`): `make dev`, `dev-all`, `dev-app` and
+`dev-site` run themselves under `md exec` when a port is unset, so the same command works anywhere. The api is kept off 8787,
 because other local tools listen there.
 
 | App | Port (main checkout) | URL | On an edit |
@@ -42,8 +43,8 @@ one (`dl-5ssh.129`).
 
 1. In the main checkout, run `make dev`. You should see `api on http://127.0.0.1:8730` and Vite's
    `Local: http://127.0.0.1:5173/`.
-2. All of it in one terminal, one pane per server: `make dev-all` (in a worktree:
-   `env -u MEDALLION_DEV_REPO md run all --here`). It runs mprocs (`mprocs.yaml`; mise pins it, and
+2. All of it in one terminal, one pane per server: `make dev-all` (or `md run all`).
+   It runs mprocs (`mprocs.yaml`; mise pins it, and
    since 0.10 it ships as `dekit`, so `mise install` brings it). Web, api, copy and site start; docs,
    `check` and `db-reset` wait for `s`. Arrows pick a pane, `r` restarts it, `x` stops it, `q` quits
    all. Each pane also writes `.logs/dev/<name>.log`, which an agent reads to see what you see.
@@ -62,17 +63,11 @@ one (`dl-5ssh.129`).
    - `make dev-site`: the landing and the copy compile.
    - `make dev-fresh`: rebuild the local database first (the local `db-reset`), then `make dev`.
      Run it after a pull that brings migrations. Until you do, the dev database is stale, with no warning.
-4. In a worktree, run `md run dev`. It opens a cmux tab with the worktree's ports. Add `--here`
-   to run it in this terminal instead. Until md fixes the bug below, run it as
-   `env -u MEDALLION_DEV_REPO md run dev --here`. md exports the ports only to what it runs, so
-   in a worktree a bare `make dev-app` or `make dev-site` stops on the first unset port and names it.
-   Give it the ports md runs this worktree on.
-
-   The bug: the worktree's `.envrc` exports `MEDALLION_DEV_REPO`, and md reads that as `--repo`
-   with no worktree, which means the main checkout. So a bare `md run dev` from a worktree
-   starts `make dev` in `~/projects/jadwigo-hackathon`. It is md's bug, reported from `dl-5ssh.98`.
-5. To start one app by hand, give it its port: `API_PORT=<n> bun run --cwd apps/api dev`,
-   `API_PORT=<n> WEB_PORT=<m> bun run --cwd apps/web dev`, `SITE_PORT=<n> bun run --cwd apps/site dev`.
+4. In a worktree, the same commands work: each one that needs ports runs itself under `md exec`,
+   which hands it the worktree's env and ports. `md env` prints them, and `md run dev` (or `md run
+   all`) opens the server in a cmux tab of its own; `--here` keeps it in this terminal.
+5. To start one app by hand, run it under `md exec`: `md exec -- bun run --cwd apps/web dev`. In
+   the main checkout, `bun run --cwd apps/web dev` alone takes the default ports.
 
 ## Iterating with an agent
 

@@ -47,17 +47,17 @@ check-all:
 LOCAL_DATABASE_URL ?= postgresql://localhost:$(or $(PGPORT),5433)/jadwigo
 LOCAL_DB_GATE = printf '%s\n' "$(LOCAL_DATABASE_URL)" | grep -Eq '^postgres(ql)?://([A-Za-z0-9._~%+=:-]+@)?(localhost|127\.0\.0\.1)(:[0-9]+)?/jadwigo[A-Za-z0-9_]*$$' || { echo "$@: LOCAL_DATABASE_URL is not postgresql://[user[:password]@]localhost[:port]/jadwigo…"; exit 1; }
 
-## dev: every app's dev server, on md's ports (tools/src/ports.ts) and the local jadwigo database.
-## Turbo's strict env mode passes a task only the variables turbo.json names, which would drop
-## WEB_PORT, API_PORT and the worktree's name, so dev runs loose: it is never cached, so nothing
-## hashes its environment (dl-5ssh.98).
-dev:
-	@$(LOCAL_DB_GATE)
-	DATABASE_URL=$(LOCAL_DATABASE_URL) bunx turbo run dev --env-mode=loose
+## The dev servers' ports come from md (tools/src/ports.ts): the main checkout runs on the numbers
+## .md/repo.toml declares, and a worktree on md's own. md exports them only to what it starts, so in
+## a worktree where one is unset, dev, dev-all, dev-app and dev-site each run themselves again under
+## `md exec`, which gives any command the worktree's env and ports (medallion-dev-cli-eflji.2).
+## DEV_IN_MD_EXEC stops a second round when md gives too few; `md env` shows what it has.
+DEV_PORTS = WEB_PORT API_PORT SITE_PORT DOCS_PORT AUTH_PORT
+DEV_PORTS_MISSING = $(strip $(if $(MEDALLION_DEV_WORKSPACE_NAME),$(foreach v,$(DEV_PORTS),$(if $($(v)),,$(v)))))
 
 ## dev-all: the same servers as dev, each in its own pane of one terminal (mprocs.yaml), with docs,
 ## check and db-reset a key away. mprocs ships as dekit, pinned in mise.toml; each pane also logs
-## to .logs/dev/<name>.log. Needs a terminal: run it yourself, or through `md run all` in a worktree.
+## to .logs/dev/<name>.log. Needs a terminal. `md run all` runs it too.
 ## The parent signs in locally (dl-5ssh.131): the auth pane is apps/web/e2e/auth-server.ts, the
 ## browser tests' stand-in for Supabase Auth, and web and api point at it. Any email signs in with
 ## the code 123456, Google and Facebook at once; the same email is the same parent in every run,
@@ -68,17 +68,23 @@ STANDIN = http://127.0.0.1:$${AUTH_PORT:-54321}
 LOCAL_AUTH_ENV = JW_SUPABASE_URL=$(STANDIN) JW_SUPABASE_KEY=local JW_SUPABASE_PROVIDERS=google,facebook \
 	AUTH_JWKS_URL=$(STANDIN)/auth/v1/.well-known/jwks.json AUTH_ISSUER=$(STANDIN)/auth/v1 \
 	AUTH_STANDIN_KEY=.logs/dev/auth-key.pem
-# In an md worktree, only `md run` exports the worktree's ports. A bare `make dev-all` there that
-# lacks one hands itself to `md run all --here`, which runs this target again with them all;
-# DEV_ALL_VIA_MD stops a second hand-off when md exports too few (its repo.toml is main's).
-DEV_ALL_PORTS = WEB_PORT API_PORT SITE_PORT DOCS_PORT AUTH_PORT
-DEV_ALL_MISSING = $(strip $(if $(MEDALLION_DEV_WORKSPACE_NAME),$(foreach v,$(DEV_ALL_PORTS),$(if $($(v)),,$(v)))))
-ifneq ($(DEV_ALL_MISSING),)
-dev-all:
-	@if [ -n "$$DEV_ALL_VIA_MD" ]; then echo "dev-all: md run all exported no $(DEV_ALL_MISSING). md reads .md/repo.toml from main, so a port named only on this branch waits for its merge. Meanwhile set it: $(firstword $(DEV_ALL_MISSING))=<free port> make dev-all"; exit 1; fi
-	@echo "dev-all: md worktree $(MEDALLION_DEV_WORKSPACE_NAME) has no $(DEV_ALL_MISSING); starting it through md run all, which exports them"
-	env -u MEDALLION_DEV_REPO DEV_ALL_VIA_MD=1 DEV_AUTH=$(DEV_AUTH) md run all --here
+
+## dev: every app's dev server, on md's ports and the local jadwigo database. Turbo's strict env
+## mode passes a task only the variables turbo.json names, which would drop WEB_PORT, API_PORT and
+## the worktree's name, so dev runs loose: it is never cached, so nothing hashes its environment
+## (dl-5ssh.98).
+## dev-app: the app alone, apps/web and apps/api (and packages/copy's message compile), on the
+## same ports and database as dev. The api restarts on each edit (bun --watch); web is Vite's HMR.
+## dev-site: the marketing site alone, apps/site on SITE_PORT (and packages/copy's message compile).
+ifneq ($(DEV_PORTS_MISSING),)
+dev dev-all dev-app dev-site:
+	@test -z "$(DEV_IN_MD_EXEC)" || { echo "$@: md exec gave md worktree $(MEDALLION_DEV_WORKSPACE_NAME) no $(DEV_PORTS_MISSING). Check: md env"; exit 1; }
+	md exec -- $(MAKE) $@ DEV_AUTH=$(DEV_AUTH) DEV_IN_MD_EXEC=1
 else
+dev:
+	@$(LOCAL_DB_GATE)
+	DATABASE_URL=$(LOCAL_DATABASE_URL) bunx turbo run dev --env-mode=loose
+
 dev-all:
 	@$(LOCAL_DB_GATE)
 	@case "$(DEV_AUTH)" in local|supabase) ;; *) echo "dev-all: DEV_AUTH=local or DEV_AUTH=supabase, not $(DEV_AUTH)"; exit 1;; esac
@@ -86,21 +92,18 @@ dev-all:
 	@mkdir -p .logs/dev
 	@echo "dev-all: the parent's app is http://127.0.0.1:$${WEB_PORT:-5173}/parent ($(if $(filter local,$(DEV_AUTH)),any email and the code 123456,jadwigo-dev's sign-in))"
 	$(if $(filter local,$(DEV_AUTH)),$(LOCAL_AUTH_ENV)) DATABASE_URL=$(LOCAL_DATABASE_URL) dekit mprocs --config mprocs.yaml --log-dir .logs/dev --log-mode truncate
+
+dev-app:
+	@$(LOCAL_DB_GATE)
+	DATABASE_URL=$(LOCAL_DATABASE_URL) bunx turbo run dev --env-mode=loose --filter=@jadwigo/web --filter=@jadwigo/api --filter=@jadwigo/copy
+
+dev-site:
+	bunx turbo run dev --env-mode=loose --filter=@jadwigo/site --filter=@jadwigo/copy
 endif
 
 ## dev-all-supabase: dev-all with jadwigo-dev's real sign-in (.env.local), not the local stand-in.
 dev-all-supabase:
 	$(MAKE) dev-all DEV_AUTH=supabase
-
-## dev-app: the app alone, apps/web and apps/api (and packages/copy's message compile), on the
-## same ports and database as dev. The api restarts on each edit (bun --watch); web is Vite's HMR.
-dev-app:
-	@$(LOCAL_DB_GATE)
-	DATABASE_URL=$(LOCAL_DATABASE_URL) bunx turbo run dev --env-mode=loose --filter=@jadwigo/web --filter=@jadwigo/api --filter=@jadwigo/copy
-
-## dev-site: the marketing site alone, apps/site on SITE_PORT (and packages/copy's message compile).
-dev-site:
-	bunx turbo run dev --env-mode=loose --filter=@jadwigo/site --filter=@jadwigo/copy
 
 ## dev-fresh: rebuild the local jadwigo database (the local db-reset, never a project's: ENV is
 ## cleared), then dev. After a pull that brings migrations, the dev database is stale until then.
