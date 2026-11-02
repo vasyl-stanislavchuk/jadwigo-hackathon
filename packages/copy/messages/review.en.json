@@ -275,6 +275,7 @@
   "parent_guardian": true,
   "parent_email": true,
   "parent_send_code": true,
+  "parent_email_hint": false,
   "parent_send_failed": true,
   "parent_code": true,
   "parent_code_sent": true,

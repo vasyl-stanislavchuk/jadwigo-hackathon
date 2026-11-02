@@ -481,6 +481,7 @@ export * from "./parent_details.js";
 export * from "./parent_details_fold.js";
 export * from "./parent_details_unfold.js";
 export * from "./parent_email.js";
+export * from "./parent_email_hint.js";
 export * from "./parent_expand_all.js";
 export * from "./parent_filter_all.js";
 export * from "./parent_filter_label.js";
