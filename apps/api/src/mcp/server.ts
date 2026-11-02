@@ -17,7 +17,7 @@ import {
 import type { Authenticate, Claims } from "../auth.ts";
 import { authorizeMember } from "../authorize.ts";
 import { ApiError, errorResponse, json } from "../errors.ts";
-import type { McpTool } from "./tool.ts";
+import type { McpTool, ToolDeps } from "./tool.ts";
 import { TOOLS } from "./tools/index.ts";
 
 /** RFC 9728's well-known path; the metadata is also served at it followed by `MCP_PATH`. */
@@ -54,6 +54,7 @@ export async function serveMcp(
   store: Store | Promise<Store>,
   authenticate: Authenticate,
   config: McpConfig,
+  deps: ToolDeps = { now: () => new Date() },
 ): Promise<Response> {
   const resource = resourceOf(req, config);
   // A browser's request from another site is refused (DNS rebinding); non-browser clients send none.
@@ -86,7 +87,7 @@ export async function serveMcp(
     return rpcError(400, -32700, "Parse error: the body is not JSON");
   }
 
-  const server = () => serverFor(store, claims);
+  const server = () => serverFor(store, claims, deps);
   if (await isLegacyRequest(req, parsedBody)) {
     // 2025-era clients (initialize handshake): a fresh server and transport per request.
     const transport = new WebStandardStreamableHTTPServerTransport({
@@ -108,15 +109,15 @@ export async function serveMcp(
 }
 
 /** An MCP server with every tool in `TOOLS`, each call run as `claims`' pod member. */
-function serverFor(store: Store | Promise<Store>, claims: Claims): McpServer {
+function serverFor(store: Store | Promise<Store>, claims: Claims, deps: ToolDeps): McpServer {
   const server = new McpServer({ name: "jadwigo", version: "1.0.0" });
   for (const tool of TOOLS) {
     const config = { description: tool.description };
     if (tool.inputSchema === undefined)
-      server.registerTool(tool.name, config, () => callTool(tool, undefined, store, claims));
+      server.registerTool(tool.name, config, () => callTool(tool, undefined, store, claims, deps));
     else
       server.registerTool(tool.name, { ...config, inputSchema: tool.inputSchema }, (input) =>
-        callTool(tool, input, store, claims),
+        callTool(tool, input, store, claims, deps),
       );
   }
   return server;
@@ -132,11 +133,17 @@ async function callTool(
   input: unknown,
   store: Store | Promise<Store>,
   claims: Claims,
+  deps: ToolDeps,
 ): Promise<CallToolResult> {
   try {
     const opened = await store;
     const result = await opened.unit(async () =>
-      tool.run(input, { store: opened, member: await authorizeMember(opened, claims), claims }),
+      tool.run(input, {
+        store: opened,
+        member: await authorizeMember(opened, claims),
+        claims,
+        deps,
+      }),
     );
     return { content: [{ type: "text", text: JSON.stringify(result) }] };
   } catch (error) {

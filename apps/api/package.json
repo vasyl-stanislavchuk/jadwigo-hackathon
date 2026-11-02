@@ -37,6 +37,7 @@
     "@react-email/render": "renders the auth mail's component to HTML and plain text, in src/mail/render.ts (dl-liwi.33)",
     "react": "the auth mail's component in src/mail/AuthEmail.tsx, which @react-email/render renders on the server (dl-liwi.33)",
     "react-dom": "@react-email/render's peer: React's server renderer for the auth mail (dl-liwi.33)",
+    "zod": "the remote MCP tools' input schemas in src/mcp/tools/, which the MCP SDK turns into JSON Schema (dl-1u6fn.3)",
     "standardwebhooks": "checks the Standard Webhooks signature Supabase's Send Email Hook carries, in src/mail/hook.ts (dl-liwi.33)",
     "@types/react": "React's types for the auth mail's .tsx (dl-liwi.33)",
     "@modelcontextprotocol/server": "the remote MCP's server and stateless Streamable HTTP transport at /api/mcp, in src/mcp/server.ts (dl-1u6fn.8)"
@@ -67,6 +68,7 @@
     "@react-email/render": "2.1.1",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "standardwebhooks": "1.1.1"
+    "standardwebhooks": "1.1.1",
+    "zod": "catalog:"
   }
 }

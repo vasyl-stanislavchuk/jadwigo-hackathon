@@ -1,12 +1,23 @@
 import type { MemberScope, Store } from "@jadwigo/store";
 import type { StandardSchemaWithJSON } from "@modelcontextprotocol/server";
+import type { UploadsBucket } from "../attachments.ts";
 import type { Claims } from "../auth.ts";
+import type { BankDeps, BucketDeps } from "../questions.ts";
+
+/** What the tools reach outside the store, as the routes do (`createApp`'s options). */
+export interface ToolDeps {
+  readonly bank?: BankDeps | undefined;
+  readonly bucket?: BucketDeps | undefined;
+  readonly uploads?: UploadsBucket | undefined;
+  readonly now: () => Date;
+}
 
 /** What every tool call runs with: the caller's pod member, found by `authorizeMember`, in one unit. */
 interface ToolContext {
   readonly store: Store;
   readonly member: MemberScope;
   readonly claims: Claims;
+  readonly deps: ToolDeps;
 }
 
 /**

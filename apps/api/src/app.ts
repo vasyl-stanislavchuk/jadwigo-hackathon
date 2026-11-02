@@ -341,7 +341,7 @@ export function createApp(
   // The remote MCP (dl-1u6fn.8), outside ROUTES: it verifies its own token, and its 401 names the
   // metadata below, which says where to get one.
   const mcpRoute = ({ req, event }: { req: Request; event: unknown }) =>
-    serveMcp(req, event, store, authenticate, mcp);
+    serveMcp(req, event, store, authenticate, mcp, { bank, bucket, uploads, now });
   app.post(MCP_PATH, mcpRoute);
   app.get(MCP_PATH, mcpRoute);
   app.delete(MCP_PATH, mcpRoute);
