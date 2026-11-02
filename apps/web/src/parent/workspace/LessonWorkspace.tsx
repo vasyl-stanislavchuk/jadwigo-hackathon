@@ -19,7 +19,7 @@
  * answers AiConsentMissing puts the consent screen in the chat until the parent agrees.
  */
 
-import type { ParentClient } from "@jadwigo/api-client";
+import { ApiError, type ParentClient } from "@jadwigo/api-client";
 import type { ConversationId, Learner, LearnerId } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { type ReactElement, useEffect, useRef, useState } from "react";
@@ -27,15 +27,18 @@ import { ChatPane } from "../../chat/ChatPane.tsx";
 import { ConsentScreen, giveConsent } from "../../chat/ConsentScreen.tsx";
 import { LessonPane } from "../../chat/LessonPane.tsx";
 import { lessonSummary, useLessonWiring } from "../../chat/lessonWiring.ts";
+import { type GiveState, LessonActions } from "../../chat/objects/LessonActions.tsx";
 import { type ObjectRef, sameObject } from "../../chat/objects/ref.ts";
 import { ObjectPanel, objectHeading, type PanelPage } from "../../chat/objects/registry.tsx";
 import { elapsedSeconds, phaseAnnouncement, usePhase } from "../../chat/phase.ts";
 import { holdServer } from "../../chat/routesTransport.ts";
 import { useConversation } from "../../chat/useConversation.ts";
+import { navigate } from "../../nav/location.ts";
 import { NavLink } from "../../nav/NavLink.tsx";
+import { playPath } from "../../play/route.ts";
 import { CATEGORY, pageLang } from "../adult.ts";
 import { DlaSelect } from "../newLesson/DlaSelect.tsx";
-import { parentPath } from "../route.ts";
+import { lessonsPath, parentPath } from "../route.ts";
 import { firstMessage, type LessonEngine } from "./engine.ts";
 import { useInspector } from "./inspector.ts";
 import { Workspace } from "./Workspace.tsx";
@@ -138,6 +141,34 @@ export function LessonWorkspace({
   const summary = lessonSummary(lesson.shown);
   const child = learners.find((l) => l.id === forLearner) ?? null;
 
+  // Daj lekcję (dl-uukj.47.55): the latest checked revision, given to the Dla child, who plays it
+  // from its ?learner= link; with no child, given to nobody in particular and opened here. The route
+  // refuses a revision no check passed (harsh words included) and a child outside the family.
+  const [given, setGiven] = useState<GiveState>({ kind: "idle" });
+  const giveTo = async (to: Learner | null): Promise<void> => {
+    if (engine.give === null || !lesson.ready) return;
+    setGiven({ kind: "giving" });
+    try {
+      const { assignment } = await engine.give.giveLesson(
+        conversation,
+        to === null ? {} : { learner_id: to.id },
+      );
+      if (to === null) {
+        navigate(playPath(assignment.id));
+        return;
+      }
+      const href = `${playPath(assignment.id)}?${new URLSearchParams({ learner: to.id })}`;
+      setGiven({ kind: "given", name: to.first_name, href });
+    } catch (error) {
+      const type = error instanceof ApiError ? error.type : null;
+      setGiven({
+        kind: "refused",
+        reason:
+          type === "LessonNotPublishable" ? "changed" : type === "NotFound" ? "child" : "failed",
+      });
+    }
+  };
+
   // A lesson URL the routes refuse (another family's, or gone): one line and the way to a new one,
   // never 3 empty columns stuck restoring (dl-uukj.47.33).
   if (state.notFound)
@@ -200,6 +231,23 @@ export function LessonWorkspace({
       onResend={resend}
       lessonObject={ownLesson}
       onOpen={inspector.open}
+      // How and when to give the lesson live in its card (dl-uukj.47.55, decision dl-hz9ks).
+      lessonActions={
+        <LessonActions
+          language={language}
+          ready={lesson.ready}
+          child={child}
+          lesson={lesson.shown}
+          onSave={() => navigate(lessonsPath({ lang: pageLang() }))}
+          given={given}
+          {...(engine.give === null
+            ? {}
+            : {
+                onGive: () => void giveTo(child),
+                onOpenHere: () => void giveTo(null),
+              })}
+        />
+      }
     />
   );
 

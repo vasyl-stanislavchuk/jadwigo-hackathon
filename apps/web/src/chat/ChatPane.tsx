@@ -564,6 +564,11 @@ function openChoose(
   return { call_id: approval.call_id, choose: approval.choose };
 }
 
+/** The newest finished turn that wrote the lesson: the one whose card carries the actions. */
+function newestCard(turns: readonly Turn[]): Turn | undefined {
+  return turns.findLast((t) => !isOpen(t) && t.view.lesson !== null && wroteLesson(t.view));
+}
+
 /** Whether a turn draws its plan (PlanCard.tsx: 3 or more entries). */
 const hasPlan = (turn: Turn): boolean => (turn.view.plan?.length ?? 0) >= PLAN_MIN;
 
@@ -653,6 +658,8 @@ export interface ChatPaneProps {
   lessonObject?: ObjectRef | undefined;
   /** Opens a thing beside the chat: the lesson card's click, and a widget's (WidgetActions). */
   onOpen?: ((object: ObjectRef) => void) | undefined;
+  /** The lesson's actions (dl-uukj.47.55), in the foot of the newest lesson card only. */
+  lessonActions?: ReactNode;
 }
 
 export function ChatPane({
@@ -682,6 +689,7 @@ export function ChatPane({
   composerLead,
   lessonObject,
   onOpen,
+  lessonActions,
 }: ChatPaneProps): ReactElement {
   /** The choose forms answered on this page, by call: their recap shows until the log has one. */
   const [chosen, setChosen] = useState<Readonly<Record<string, ChooseAnswers>>>({});
@@ -828,6 +836,9 @@ export function ChatPane({
                     object={lessonObject}
                     language={language}
                     onOpen={onOpen}
+                    {...(lessonActions !== undefined && turn === newestCard(turns)
+                      ? { actions: lessonActions }
+                      : {})}
                   />
                 </li>,
               ]
