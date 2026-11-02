@@ -68,7 +68,7 @@ const [one, two, three] = s.items;
       </div>
       <div class="stage">
         <Pic label={s.card.pic} src={slotArt.howStep2} sizes="(max-width: 48rem) 100vw, 36rem" class="stage-pic" />
-        <div class="card paper">
+        <div class="card paper" data-audience="kid">
           <p class="say">{s.card.say}</p>
           <div class="tiles" aria-hidden="true">{s.card.choices.map((c) => <span class="tile">{c}</span>)}</div>
           <p class="hint">{s.card.hint}</p>
@@ -120,7 +120,7 @@ const [one, two, three] = s.items;
   .num span { font-size: 1rem; color: var(--jw-ink); }
   .words h2 { font-size: clamp(1.6rem, 3vw, 2.1rem); max-width: 22ch; }
   .words > p:not(.num) { color: var(--jw-ink-soft); max-width: 34rem; }
-  .request { margin: 0.5rem 0 0; padding: 0.25rem 0 0.25rem 1rem; border-left: 4px solid var(--jw-brand-go); }
+  .request { margin: 0.5rem 0 0; padding: 0.25rem 0 0.25rem 1rem; border-left: 2px solid var(--primary); }
   .ask { font-weight: 700; }
   .request ul { list-style: none; margin: 0.5rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.95rem; color: var(--jw-ink-soft); }
   .words > .soon { font-size: 0.9rem; }
