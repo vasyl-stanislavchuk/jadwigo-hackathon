@@ -20,6 +20,7 @@
  */
 
 import {
+  type MessageContext,
   RUN_ERROR_TYPE,
   type RunError,
   type RunId,
@@ -29,7 +30,7 @@ import {
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
 import { cn } from "@jadwigo/ui";
-import { ArrowUpIcon, CheckIcon, LoaderCircleIcon } from "lucide-react";
+import { ArrowUpIcon, CheckIcon, EyeIcon, LoaderCircleIcon } from "lucide-react";
 import { type FormEvent, type ReactElement, useEffect, useRef, useState } from "react";
 import { Button } from "./button.tsx";
 import "./chat.css";
@@ -366,6 +367,29 @@ function announcementOf(last: Turn | undefined, restoring: boolean): CopyKey | n
   return "chat_announce_done";
 }
 
+/**
+ * What Jadwigo AI sees, from the last message the parent sent (dl-uukj.47.32): its page context
+ * as it went out, never a choice not sent yet. Null before any message, or for a child the family
+ * does not hold, whose name the page cannot say.
+ */
+function contextLine(
+  turns: readonly Turn[],
+  nameOf: ((learner: string) => string | null) | undefined,
+  language: Language,
+): string | null {
+  let last: MessageContext | undefined | null = null;
+  for (const turn of turns)
+    for (const item of turn.view.chat)
+      if (item.kind === "message" && item.from === "parent") last = item.context;
+  if (last === null) return null;
+  const say = (key: CopyKey, vars: Record<string, string> = {}) =>
+    copy(language, key, vars, "adult");
+  if (last === undefined) return say("chat_context_none");
+  if ("lesson_id" in last) return say("chat_context_lesson");
+  const child = nameOf?.(last.learner_id) ?? null;
+  return child === null ? null : say("chat_context_child", { child });
+}
+
 /** The kinds of phase while Jadwigo AI is at work: the activity line shimmers then. */
 const WORKING: ReadonlySet<RunPhase["kind"]> = new Set([
   "connecting",
@@ -554,6 +578,7 @@ export function ChatPane({
   nameOf,
 }: ChatPaneProps): ReactElement {
   const lineContext: LineContext = nameOf === undefined ? {} : { nameOf };
+  const context = contextLine(turns, nameOf, language);
   const parent = variant === "parent";
   const [draft, setDraft] = useState("");
   /** The last words sent, so a send that did not reach the server can go again. */
@@ -750,6 +775,15 @@ export function ChatPane({
           )}
         </div>
       )}
+      {context !== null && (
+        <p
+          className="flex w-fit max-w-full items-center gap-1.5 self-start rounded-full border-jw border-jw-line bg-jw-card px-2.5 py-0.5 text-jw-page-small text-jw-ink-soft"
+          data-context-chip
+        >
+          <EyeIcon aria-hidden className="size-3.5 shrink-0" />
+          <span className="min-w-0 truncate">{context}</span>
+        </p>
+      )}
       <form
         onSubmit={submit}
         className={cn(
@@ -804,6 +838,9 @@ export function ChatPane({
           </Button>
         )}
       </form>
+      <p className="text-jw-page-small text-jw-ink-soft" data-footnote>
+        {say("chat_footnote")}
+      </p>
     </section>
   );
 }

@@ -618,3 +618,67 @@ describe("the plan as a checklist (dl-uukj.47.31)", () => {
     expect(card()).toBeNull();
   });
 });
+
+describe("the context chip and the footnote (dl-uukj.47.32)", () => {
+  const chip = () => document.querySelector("[data-context-chip]")?.textContent ?? null;
+  const OLA = "lrn_2h4m8gyw0fb1cvz2nkqw0px8fq";
+  const nameOf = (id: string) => (id === OLA ? "Ola" : null);
+  /** happy-turn with its parent message sent from `context`. */
+  const turns = (context: unknown): Turn[] => [
+    turnOf("happy-turn", (view) => {
+      const message = view.chat[0];
+      if (message?.kind === "message" && context !== undefined)
+        message.context = context as typeof message.context;
+    }),
+  ];
+
+  it("says no child when the last message went with none", () => {
+    pane({ variant: "parent", nameOf, turns: turns(undefined) });
+    expect(chip()).toBe("Jadwigo AI widzi: bez dziecka");
+  });
+
+  it("follows the last message's context, never an earlier one", () => {
+    pane({ variant: "parent", nameOf, turns: turns({ learner_id: OLA }) });
+    expect(chip()).toBe("Jadwigo AI widzi: Ola");
+    cleanup();
+    pane({
+      variant: "parent",
+      nameOf,
+      turns: [
+        ...turns({ learner_id: OLA }),
+        turnOf("happy-turn", (view) => {
+          const message = view.chat[0];
+          if (message?.kind === "message") delete message.context;
+        }),
+      ],
+    });
+    expect(chip()).toBe("Jadwigo AI widzi: bez dziecka");
+    cleanup();
+    pane({
+      variant: "parent",
+      nameOf,
+      turns: turns({ lesson_id: "lsn_2h4m8gyw0fb1cvz2nkqw0px8fq" }),
+    });
+    expect(chip()).toBe("Jadwigo AI widzi: tę lekcję");
+  });
+
+  it("shows no chip before the parent has sent anything", () => {
+    pane({ variant: "parent", nameOf });
+    expect(chip()).toBeNull();
+  });
+
+  it("keeps the footnote under the composer, in both languages", () => {
+    pane({ variant: "parent" });
+    const note = document.querySelector("[data-footnote]") as HTMLElement;
+    expect(note.textContent).toBe(
+      "Jadwigo AI może się mylić. Nic nie trafi do dziecka, zanim tego nie sprawdzisz.",
+    );
+    const form = document.querySelector("form") as HTMLElement;
+    expect(form.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    cleanup();
+    pane({ variant: "parent", language: "en" });
+    expect(document.querySelector("[data-footnote]")?.textContent).toBe(
+      "Jadwigo AI isn't always right. Nothing reaches the child before you check it.",
+    );
+  });
+});
