@@ -113,11 +113,13 @@ describe("the local step host (dl-uukj.47.14.2)", () => {
     expect([calls, most]).toEqual([2, 1]);
   });
 
-  it("answers 404 off /poke, and logs a failed drain by its message", async () => {
+  it("answers 404 off /poke, and logs a failed drain by its name and code, never its message", async () => {
     const warned: string[] = [];
     const runner = createDevRunner(
       async () => {
-        throw new Error("set DATABASE_URL or JADWIGO_RUNNER_DB_URL_PARAM");
+        throw Object.assign(new Error("duplicate key value: (text)=(a row value)"), {
+          code: "23505",
+        });
       },
       (l) => warned.push(l),
     );
@@ -126,9 +128,7 @@ describe("the local step host (dl-uukj.47.14.2)", () => {
     expect(res.status).toBe(404);
     runner.wake();
     await runner.idle();
-    expect(warned).toEqual([
-      "dev: the drain failed: Error: set DATABASE_URL or JADWIGO_RUNNER_DB_URL_PARAM",
-    ]);
+    expect(warned).toEqual(["dev: the drain failed: Error 23505"]);
   });
 
   it("listens where LOCAL_RUNNER_URL points, and refuses anything else", () => {

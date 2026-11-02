@@ -76,7 +76,7 @@ export function createDevRunner(
       try {
         await handler(next);
       } catch (error) {
-        // A failed open (the database, the settings): tried again on the next wake.
+        // A failed drain: tried again on the next wake. Its name and code only.
         warn(`dev: the drain failed: ${described(error)}`);
       }
       if (!asked) return;
@@ -115,8 +115,8 @@ export function createDevRunner(
 }
 
 /**
- * An error by its name, its code and its message, which name a setting, never its value. A refused
- * connect is an AggregateError with no message of its own: its code says what happened.
+ * An error by its name and its code only: a message that escapes from Postgres can quote a row. A
+ * refused connect is an AggregateError whose first error carries the code.
  */
 function described(error: unknown): string {
   if (!(error instanceof Error)) return String(error);
@@ -126,7 +126,7 @@ function described(error: unknown): string {
     inner instanceof Error && "code" in inner && typeof inner.code === "string"
       ? ` ${inner.code}`
       : "";
-  return `${error.name}${code || innerCode}${error.message ? `: ${error.message}` : ""}`;
+  return `${error.name}${code || innerCode}`;
 }
 
 /** Logs a drain that did something; a poll that found nothing stays quiet. */
