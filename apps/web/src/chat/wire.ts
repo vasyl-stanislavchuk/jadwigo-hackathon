@@ -10,7 +10,7 @@
  */
 
 // Types only, so dev/engine-plugin.ts, which Vite loads with Node's type stripping, can import it.
-import type { EventId } from "@jadwigo/contracts";
+import type { AttachmentId, EventId } from "@jadwigo/contracts";
 import type {
   ConversationId,
   LessonPatch,
@@ -56,6 +56,8 @@ export type SendBody =
       text: string;
       /** The page the message was sent from (dl-z5ja.107): the child the lesson is for (dl-uukj.47.12). */
       context?: MessageContext;
+      /** The photos the parent uploaded for it, in order (dl-z5ja.11.16); never on a steer. */
+      attachment_ids?: AttachmentId[];
     }
   | { conversation_id: ConversationId; event_id: EventId; kind: "cancel" }
   | {

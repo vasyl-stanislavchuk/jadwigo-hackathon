@@ -60,6 +60,7 @@ export {
   httpBankReads,
   type VerbDeps,
 } from "./verbs/index.ts";
+export { review } from "./verbs/review.ts";
 export {
   type Verb,
   type VerbContext,

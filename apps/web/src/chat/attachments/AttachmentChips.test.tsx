@@ -16,6 +16,15 @@ function chip(n: number): HTMLElement {
 }
 
 describe("AttachmentChips", () => {
+  it("keeps the chips out of a session replay: a file name may name the child (dl-376c8)", async () => {
+    const { deps } = harness();
+    const upload = new PhotoUpload(fileOf("zadanie.png", "image/png"), deps);
+    render(<AttachmentChips language="pl" uploads={[upload]} onRemove={() => {}} />);
+    expect(document.querySelector("[data-attachments]")?.classList.contains("ph-no-capture")).toBe(
+      true,
+    );
+  });
+
   it("shows the upload's progress on the chip's ring, then the ready thumbnail", async () => {
     const h = harness();
     const upload = new PhotoUpload(fileOf("IMG_0001.jpg", "image/jpeg"), h.deps);

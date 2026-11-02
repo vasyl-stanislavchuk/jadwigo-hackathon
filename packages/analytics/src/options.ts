@@ -15,6 +15,9 @@ export function posthogOptions(surface: Surface): Partial<PostHogConfig> {
     defaults: "2025-05-24",
     cookieless_mode: "on_reject",
     cross_subdomain_cookie: true,
+    // The answer to the banner is a cookie on .jadwigo.pl, not localStorage, so a yes or a no on
+    // jadwigo.pl holds on app.jadwigo.pl and the visitor is asked once (dl-w0b4.118).
+    opt_out_capturing_persistence_type: "cookie",
     person_profiles: "never",
     respect_dnt: true,
     autocapture: false,

@@ -1,8 +1,9 @@
 ---
-// PostHog on every page (decision dl-376c8, dl-w0b4.14) through packages/analytics: nothing is
-// captured until the visitor answers this banner. Yes turns on storage and session replay with every
-// input masked; no counts the visit cookieless. With no key in the build, nothing loads and the
-// banner is never written.
+// The one cookie banner (decision dl-376c8, dl-w0b4.118), the same as the app's
+// (apps/web/src/analytics/ConsentBanner.tsx), through packages/analytics: nothing is captured until
+// the visitor answers. Accept turns on the cookie and session replay with every input masked; the ×
+// is a no, which counts the visit cookieless. The answer lives in a .jadwigo.pl cookie, so it holds
+// on app.jadwigo.pl too. With no key in the build, nothing loads and the banner is never written.
 import type { Language } from "@jadwigo/config";
 import { m } from "@jadwigo/copy/messages";
 import { posthogKey } from "../config.ts";
@@ -18,14 +19,15 @@ const key = posthogKey();
 ---
 {
   key && (
-    <section class="consent" data-analytics-consent data-key={key} aria-label={m.site_footer_privacy({}, locale)} hidden>
+    <section class="consent" data-analytics-consent data-key={key} aria-labelledby="consent-title" hidden>
+      <button type="button" class="close" data-analytics-reject aria-label={m.consent_close({}, locale)}>
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" /></svg>
+      </button>
+      <h2 id="consent-title">{m.consent_title({}, locale)}</h2>
       <p>
-        {m.site_consent_ask({}, locale)} <a href={`${privacyHref}/`}>{m.site_footer_privacy({}, locale)}</a>
+        {m.consent_text({}, locale)} <a href={`${privacyHref}/`}>{m.consent_privacy({}, locale)}</a>
       </p>
-      <p class="answers">
-        <button type="button" class="yes" data-analytics-accept>{m.site_consent_accept({}, locale)}</button>
-        <button type="button" class="no" data-analytics-reject>{m.site_consent_reject({}, locale)}</button>
-      </p>
+      <button type="button" class="btn accept" data-analytics-accept>{m.consent_accept({}, locale)}</button>
     </section>
   )
 }
@@ -52,16 +54,20 @@ const key = posthogKey();
 
 <style>
   .consent {
-    position: fixed; inset: auto 1rem 1rem; z-index: 50; max-width: 36rem; margin-inline: auto;
-    padding: 1rem 1.25rem; color: var(--jw-ink); background: var(--jw-card);
+    position: fixed; inset: auto 1rem 1rem; z-index: 50; max-width: 28rem; margin-inline: auto;
+    padding: 1.25rem 3rem 1.25rem 1.25rem; color: var(--jw-ink); background: var(--jw-card);
     border: 2px solid var(--jw-line-strong); border-radius: var(--jw-radius-control);
     box-shadow: 0 3px 0 var(--jw-line-strong);
   }
   .consent[hidden] { display: none; }
-  .answers { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
-  .answers button {
-    font: inherit; font-weight: 700; padding: 0.5rem 1rem; cursor: pointer; color: var(--jw-ink);
-    background: var(--jw-card); border: 2px solid var(--jw-line-strong); border-radius: var(--jw-radius-control);
+  .consent h2 { margin: 0 0 0.25rem; font-size: 1.125rem; font-weight: 700; }
+  .consent p { margin: 0; }
+  .close {
+    position: absolute; top: 0.5rem; right: 0.5rem; display: grid; place-items: center;
+    width: 44px; height: 44px; padding: 0; border: 0; border-radius: var(--jw-radius-control);
+    color: var(--jw-ink); background: none; cursor: pointer;
   }
-  .answers .yes { color: var(--jw-card); background: var(--jw-ink); border-color: var(--jw-ink); }
+  .close:focus-visible { outline: 3px solid var(--jw-focus); outline-offset: 2px; }
+  /* The site's action button (.btn in Base.astro), as the app's default Button draws it. */
+  .accept { margin-top: 0.75rem; border: 0; font: inherit; font-weight: 700; cursor: pointer; }
 </style>

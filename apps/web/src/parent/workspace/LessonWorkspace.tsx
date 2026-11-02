@@ -97,15 +97,21 @@ export function LessonWorkspace({
   const { ratings } = engine;
   const { phase, now } = usePhase(turns, state, refetch);
 
-  // The first screen's words: sent once the page has read the conversation back with no turn in it,
+  // The first screen's words and photos: sent once the page has read the conversation back with no turn in it,
   // with Dla as their page, so the run reads that child's record (dl-uukj.47.12).
   const firstDone = useRef(false);
   useEffect(() => {
     if (firstDone.current || restoring) return;
     firstDone.current = true;
-    const text = firstMessage.take(conversation);
-    if (text !== null && state.runs.length === 0)
-      send(text, forLearner === null ? undefined : { learner_id: forLearner });
+    const first = firstMessage.take(conversation);
+    // A message has words or a photo; one with neither (a kept value that did not read) goes nowhere.
+    const sendable = first !== null && (first.text !== "" || first.attachment_ids.length > 0);
+    if (first !== null && sendable && state.runs.length === 0)
+      send(
+        first.text,
+        forLearner === null ? undefined : { learner_id: forLearner },
+        first.attachment_ids,
+      );
   }, [restoring, conversation, state.runs.length, send, forLearner]);
 
   // One state, in words, for every place that says it.

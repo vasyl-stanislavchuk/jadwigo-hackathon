@@ -1,18 +1,18 @@
 /** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
-/** @typedef {{}} Site_Note_GoInputs */
+/** @typedef {{}} Consent_CloseInputs */
 /**
 * | output |
 * | --- |
-* | "Open in English" |
+* | "Close" |
 *
-* @param {Site_Note_GoInputs} inputs
+* @param {Consent_CloseInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
 * @returns {LocalizedString}
 */
-export const site_note_go: ((inputs?: Site_Note_GoInputs, options?: {
+export const consent_close: ((inputs?: Consent_CloseInputs, options?: {
     locale?: "pl" | "en";
-}) => LocalizedString) & import("../runtime.js").MessageMetadata<Site_Note_GoInputs, {
+}) => LocalizedString) & import("../runtime.js").MessageMetadata<Consent_CloseInputs, {
     locale?: "pl" | "en";
 }, {}>;
 export type LocalizedString = import("../runtime.js").LocalizedString;
-export type Site_Note_GoInputs = {};
+export type Consent_CloseInputs = {};

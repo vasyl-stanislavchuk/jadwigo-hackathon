@@ -40,7 +40,7 @@ lessonSuite(
         idle: [],
         max: [],
       });
-      expect(await store.listRunEvents(pod as never, draft_id, 0)).toHaveLength(3);
+      expect(await store.listRunEvents(pod as never, draft_id, 0)).toHaveLength(4);
     });
   },
 );

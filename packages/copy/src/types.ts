@@ -616,6 +616,9 @@ export const COPY_KEYS = [
   "parent_add_child_hint",
   "parent_send",
   "parent_send_reason",
+  "parent_send_uploading",
+  "parent_send_photo_failed",
+  "parent_send_photo_refused",
   "parent_name_note",
   "parent_grade",
   "parent_cancel",
@@ -693,15 +696,12 @@ export const COPY_KEYS = [
   "parent_print",
   "parent_print_hint",
   "parent_this_computer_soon",
-  // the analytics consent banner on the parent screens (dl-uukj.56, decision dl-376c8)
-  "parent_analytics_ask",
-  "parent_analytics_accept",
-  "parent_analytics_reject",
-  "parent_analytics_privacy",
-  // the analytics consent banner on the site (dl-w0b4.14, decision dl-376c8)
-  "site_consent_ask",
-  "site_consent_accept",
-  "site_consent_reject",
+  // the one cookie banner, the same on the site and in the app (dl-w0b4.118, decision dl-376c8)
+  "consent_title",
+  "consent_text",
+  "consent_accept",
+  "consent_close",
+  "consent_privacy",
   // end the lesson's send and its chat
   // the chat page (dl-z5ja.17): /playground/chat, a parent's chat on the left and the lesson on the right
   "chat_title",

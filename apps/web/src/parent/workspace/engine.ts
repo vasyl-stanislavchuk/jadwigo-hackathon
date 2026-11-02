@@ -10,7 +10,7 @@
  */
 
 import type { ConversationClient, RunRatingClient } from "@jadwigo/api-client";
-import type { ConversationId } from "@jadwigo/contracts";
+import { AttachmentId, type ConversationId } from "@jadwigo/contracts";
 import type { ConsentClient } from "../../chat/ConsentScreen.tsx";
 import { apiTransport } from "../../chat/realtime.ts";
 import type { EngineTransport } from "../../chat/useConversation.ts";
@@ -55,21 +55,56 @@ export function browserEngine(): LessonEngine | null {
 
 const KEY = (conversation: ConversationId) => `jw.parent.first.${conversation}`;
 
-/** The first screen's words, kept for the conversation they made until its page sends them. */
+/** The first screen's send: its words and the photos it uploaded (dl-z5ja.11.16). */
+export interface FirstMessage {
+  text: string;
+  attachment_ids: AttachmentId[];
+}
+
+/**
+ * The kept value read back: the JSON this page writes, or the plain words a tab opened before photos
+ * came wrote, which go with no photos. An id that does not read is left off.
+ */
+function readFirst(raw: string): FirstMessage {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { text: raw, attachment_ids: [] };
+  }
+  if (typeof parsed !== "object" || parsed === null) return { text: raw, attachment_ids: [] };
+  const { text, attachment_ids } = parsed as { text?: unknown; attachment_ids?: unknown };
+  if (typeof text !== "string") return { text: raw, attachment_ids: [] };
+  const ids = Array.isArray(attachment_ids) ? attachment_ids : [];
+  return {
+    text,
+    attachment_ids: ids.flatMap((id) => {
+      const read = AttachmentId.safeParse(id);
+      return read.success ? [read.data] : [];
+    }),
+  };
+}
+
+/** The first screen's words and photos, kept for the conversation they made until its page sends them. */
 export const firstMessage = {
-  put(conversation: ConversationId, text: string, held: Storage = window.sessionStorage): void {
+  /** Plain words are kept as they are, the shape `take` also reads from an older tab. */
+  put(
+    conversation: ConversationId,
+    first: FirstMessage | string,
+    held: Storage = window.sessionStorage,
+  ): void {
     try {
-      held.setItem(KEY(conversation), text);
+      held.setItem(KEY(conversation), typeof first === "string" ? first : JSON.stringify(first));
     } catch {
       // Storage refused: the workspace opens on an empty chat and the parent writes again.
     }
   },
-  /** The words, once: taken out as they are read, so a reload never sends them twice. */
-  take(conversation: ConversationId, held: Storage = window.sessionStorage): string | null {
+  /** The send, once: taken out as it is read, so a reload never sends it twice. */
+  take(conversation: ConversationId, held: Storage = window.sessionStorage): FirstMessage | null {
     try {
-      const text = held.getItem(KEY(conversation));
+      const raw = held.getItem(KEY(conversation));
       held.removeItem(KEY(conversation));
-      return text;
+      return raw === null ? null : readFirst(raw);
     } catch {
       return null;
     }

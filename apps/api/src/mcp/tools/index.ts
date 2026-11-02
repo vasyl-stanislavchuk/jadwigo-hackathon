@@ -10,6 +10,7 @@ import { learnerSkills } from "./learner-skills.ts";
 import { lessonCheck } from "./lesson-check.ts";
 import { lessonDraft } from "./lesson-draft.ts";
 import { lessonEdit } from "./lesson-edit.ts";
+import { lessonPublish } from "./lesson-publish.ts";
 import { lessonShow } from "./lesson-show.ts";
 import { me } from "./me.ts";
 import { questionSearch } from "./question-search.ts";
@@ -42,4 +43,5 @@ export const TOOLS: readonly McpTool[] = [
   lessonShow,
   lessonEdit,
   lessonCheck,
+  lessonPublish,
 ];

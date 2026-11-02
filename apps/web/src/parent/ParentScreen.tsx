@@ -51,6 +51,8 @@ import {
   useRef,
   useState,
 } from "react";
+import { browserDeps } from "../chat/attachments/browser.ts";
+import type { UploadDeps } from "../chat/attachments/upload.ts";
 import { ConsentScreen, giveConsent } from "../chat/ConsentScreen.tsx";
 import { newEventId } from "../chat/ids.ts";
 import { clearChatQueues } from "../chat/queue.ts";
@@ -163,6 +165,11 @@ export function ParentScreen({
     [auth],
   );
   const api: ParentClient = client ?? own;
+  // The first screen's photos upload through the page's own client; a test's client has none.
+  const uploadDeps = useMemo<UploadDeps | null>(
+    () => (client ? null : browserDeps(own)),
+    [client, own],
+  );
   const podApi: PodClient | null = pods ?? (client ? null : own);
   const listApi = lessons ?? (client ? null : own);
   const route = parentRoute(useLocation().path);
@@ -227,6 +234,7 @@ export function ParentScreen({
       pods={podApi}
       conversations={listApi}
       engine={engine}
+      uploadDeps={uploadDeps}
       language={language}
       route={route ?? { kind: "home" }}
       learner={learnerOf(query)}
@@ -511,6 +519,7 @@ function SignedIn({
   pods,
   conversations,
   engine,
+  uploadDeps,
   language,
   route,
   learner,
@@ -522,6 +531,8 @@ function SignedIn({
   pods: PodClient | null;
   conversations: ConversationListClient | null;
   engine: LessonEngine | null;
+  /** What the first screen's photos upload through; null keeps them off. */
+  uploadDeps: UploadDeps | null;
   language: Language;
   route: ParentRoute;
   /** The attempt page's ?learner. */
@@ -648,10 +659,10 @@ function SignedIn({
     try {
       const made = await engine.conversations.createConversation({ event_id: newEventId() });
       track("lesson_conversation_started", {
-        has_attachments: ask.photos.length > 0,
+        has_attachments: ask.attachmentIds.length > 0,
         has_learner: ask.learner !== null,
       });
-      firstMessage.put(made.id, ask.text);
+      firstMessage.put(made.id, { text: ask.text, attachment_ids: ask.attachmentIds });
       // Started: the words now wait for the workspace, not the first screen.
       newLessonDraft.clear();
       setStarting("idle");
@@ -885,6 +896,8 @@ function SignedIn({
               onForChange={setForLearner}
               onAddChild={() => setAdding("dla")}
               onSend={(ask) => void start(ask)}
+              photos={uploadDeps !== null}
+              {...(uploadDeps === null ? {} : { uploadDeps })}
               busy={starting === "busy"}
               problem={starting === "failed" ? t("parent_start_failed") : null}
               initialText={kept}
