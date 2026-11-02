@@ -1425,6 +1425,62 @@
         }
       }
     },
+    "/api/v1/conversations/{id}/lessons": {
+      "post": {
+        "operationId": "giveLesson",
+        "summary": "Gives the conversation's checked lesson to play: a published version and an assignment.",
+        "description": "Only the latest lesson revision whose latest `lesson_check` found it publishable, with nothing written after it; else 409 `LessonNotPublishable`, as for a lesson of more than `LIMITS.questionsPerLesson` questions. A `learner_id` outside the pod is 404 `NotFound`. Giving the same revision again answers the same assignment. The child plays it at `/play/<assignment id>`, or `/play/<assignment id>?learner=<learner id>` for the learner it was given to.",
+        "tags": [
+          "conversations"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ConversationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LessonGive"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonGiven"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/api/v1/attachments": {
       "post": {
         "operationId": "createAttachment",
@@ -4202,6 +4258,7 @@
           "AttachmentAttached",
           "AttachmentExpired",
           "AttachmentLimitDay",
+          "LessonNotPublishable",
           "Unauthorized",
           "BankUnavailable"
         ]
@@ -5952,6 +6009,36 @@
         ],
         "additionalProperties": false
       },
+      "LessonGive": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "learner_id": {
+            "$ref": "#/components/schemas/LearnerId"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LessonGiven": {
+        "type": "object",
+        "properties": {
+          "assignment": {
+            "$ref": "#/components/schemas/Assignment"
+          },
+          "lesson_version": {
+            "$ref": "#/components/schemas/LessonVersion"
+          }
+        },
+        "required": [
+          "assignment",
+          "lesson_version"
+        ],
+        "additionalProperties": false
+      },
       "LessonId": {
         "type": "string",
         "pattern": "^les_[0-7][0-9a-hjkmnp-tv-z]{25}$"
@@ -6864,6 +6951,56 @@
           "created_at",
           "type",
           "payload"
+        ],
+        "additionalProperties": false
+      },
+      "LessonVersion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/LessonVersionId"
+          },
+          "pod_id": {
+            "$ref": "#/components/schemas/PodId"
+          },
+          "lesson_id": {
+            "$ref": "#/components/schemas/LessonId"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "revises": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LessonVersionId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "pod_id",
+          "lesson_id",
+          "version",
+          "revises",
+          "published_at"
         ],
         "additionalProperties": false
       },
@@ -11630,7 +11767,7 @@
     },
     "responses": {
       "Error": {
-        "description": "An error: `{error: {type, message}}`. The type names the cause, and answers with one status:\n\n- 400: `BadRequest`, `ServerFieldSupplied`\n- 401: `NotSignedIn`, `Unauthorized`\n- 404: `NotFound`\n- 409: `AccountMissing`, `AttemptClaimed`, `AttemptPreview`, `AssignmentClosed`, `AttemptFinished`, `AttemptNotFinished`, `AttemptPaused`, `QuestionNotOpen`, `TryOutOfOrder`, `AnswerConflict`, `EventIdMismatch`, `WriteOnce`, `AiConsentMissing`, `ConversationArchived`, `AttachmentMismatch`, `AttachmentAttached`, `AttachmentExpired`\n- 429: `AnswerLimit`, `MessageLimitMinute`, `MessageLimitDay`, `AttachmentLimitDay`\n- 502: `BankUnavailable`",
+        "description": "An error: `{error: {type, message}}`. The type names the cause, and answers with one status:\n\n- 400: `BadRequest`, `ServerFieldSupplied`\n- 401: `NotSignedIn`, `Unauthorized`\n- 404: `NotFound`\n- 409: `AccountMissing`, `AttemptClaimed`, `AttemptPreview`, `AssignmentClosed`, `AttemptFinished`, `AttemptNotFinished`, `AttemptPaused`, `QuestionNotOpen`, `TryOutOfOrder`, `AnswerConflict`, `EventIdMismatch`, `WriteOnce`, `AiConsentMissing`, `ConversationArchived`, `AttachmentMismatch`, `AttachmentAttached`, `AttachmentExpired`, `LessonNotPublishable`\n- 429: `AnswerLimit`, `MessageLimitMinute`, `MessageLimitDay`, `AttachmentLimitDay`\n- 502: `BankUnavailable`",
         "content": {
           "application/json": {
             "schema": {

@@ -32,6 +32,7 @@ import {
 } from "./conversations.ts";
 import { ApiError, badRequest, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
+import { giveLesson } from "./give.ts";
 import {
   createGoal,
   createReport,
@@ -290,6 +291,9 @@ export function createApp(
   );
 
   onSigned("rateRun", (params, body, claims) => run((s) => rateRun(s, claims, params.id, body)));
+  onSigned("giveLesson", (params, body, claims) =>
+    run((s) => giveLesson(s, claims, params.id, body)),
+  );
 
   // A message's photos (dl-z5ja.11.3): an upload form, under the pod's lock for the daily count,
   // then a link to the stored copy.

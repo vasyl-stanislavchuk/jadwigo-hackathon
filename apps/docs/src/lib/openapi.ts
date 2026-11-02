@@ -77,6 +77,7 @@ const OPERATION_TITLES: Readonly<Record<RouteName, string>> = {
   listRunEvents: "List a run's events",
   cancelRun: "Stop a run",
   rateRun: "Rate a turn",
+  giveLesson: "Give a lesson to play",
   questionSearches: "Search the bank",
   questionBody: "Read a question",
 };
@@ -123,6 +124,7 @@ export const OPERATION_ORDER: readonly RouteName[] = [
   "listRunEvents",
   "cancelRun",
   "rateRun",
+  "giveLesson",
   "questionSearches",
   "questionBody",
 ];

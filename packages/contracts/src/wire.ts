@@ -36,6 +36,7 @@ import {
   LearnerSkillMastery,
   LessonQuestion,
   LessonQuestionExample,
+  LessonVersion,
   Member,
   Placed,
   Pod,
@@ -640,6 +641,11 @@ export const LIMITS = {
   /** The reports one learner's list returns (`getLearnerReports`), newest first. */
   reportsPerLearner: 50,
   /**
+   * The question steps one lesson holds, however it was made; a longer one is never given (decision
+   * `2026-11-02-a-lesson-holds-at-most-20-questions-however-it-was-made`).
+   */
+  questionsPerLesson: 20,
+  /**
    * The messages one parent may send the AI in a minute; the next is `MessageLimitMinute` (PostHog's
    * 10 a minute per user, `docs/research/posthog-ai-production.md` section 4, dl-z5ja.62).
    */
@@ -812,6 +818,21 @@ export type ConversationMessage = z.infer<typeof ConversationMessage>;
 export const RunCancel = z.strictObject({ event_id: EventId });
 export type RunCancel = z.infer<typeof RunCancel>;
 
+/**
+ * `POST /api/v1/conversations/{id}/lessons`: gives the conversation's lesson to play (dl-5ssh.136).
+ * `revision` is the lesson revision the parent saw, left out for the latest; `learner_id` names
+ * the child it is for, left out when the child picks their name before the first question.
+ */
+export const LessonGive = z.strictObject({
+  revision: Count.optional(),
+  learner_id: LearnerId.optional(),
+});
+export type LessonGive = z.infer<typeof LessonGive>;
+
+/** The reply: the assignment the child plays at `/play/<assignment id>`, and the version it serves. */
+export const LessonGiven = z.object({ assignment: Assignment, lesson_version: LessonVersion });
+export type LessonGiven = z.infer<typeof LessonGiven>;
+
 /** The reply to a message or a cancel: the run that holds it, as it stands now. */
 export const RunAccepted = z.object({ run: Run });
 export type RunAccepted = z.infer<typeof RunAccepted>;
@@ -943,6 +964,11 @@ export const ERROR_STATUS = {
   AttachmentExpired: 409,
   /** An attachment past the pod's `LIMITS.attachmentsPerPodPerDay` for the UTC day. */
   AttachmentLimitDay: 429,
+  /**
+   * A lesson revision that may not be given yet: no lesson_check passed it, a newer revision
+   * replaced it, or it holds more than `LIMITS.questionsPerLesson` questions (dl-5ssh.136).
+   */
+  LessonNotPublishable: 409,
   Unauthorized: 401,
   BankUnavailable: 502,
 } as const;
