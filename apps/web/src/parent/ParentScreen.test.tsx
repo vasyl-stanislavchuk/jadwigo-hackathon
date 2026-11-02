@@ -347,7 +347,9 @@ describe("ParentScreen", () => {
     // The child's lessons are on the child's page (dl-uukj.47.3).
     window.history.replaceState(null, "", `/parent/children/${LEARNER}`);
     render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
-    await screen.findByText("Jeszcze nie ma tu lekcji.");
+    await screen.findByText(
+      "Tu pojawi się tydzień po tygodniu, jak idzie nauka, po pierwszej lekcji.",
+    );
     expect(api.createAccount).toHaveBeenCalledTimes(1);
   });
 
@@ -475,6 +477,8 @@ describe("ParentScreen", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(api.createLearner).toHaveBeenCalledWith({ first_name: "Ola" });
     expect(document.querySelector("[data-dla]")?.textContent).toContain("Ola");
+    // The focus comes back to Dla, where the dialog was opened from (dl-uukj.47.20).
+    await waitFor(() => expect(document.activeElement).toBe(document.querySelector("[data-dla]")));
     expect(document.querySelector(`[data-child-row="${LEARNER}"]`)).not.toBeNull();
     expect(
       (screen.getByRole("textbox", { name: "Opisz zadanie domowe" }) as HTMLTextAreaElement).value,
@@ -523,6 +527,42 @@ describe("ParentScreen", () => {
     const dialog = screen.getByRole("dialog", { name: "Dodaj dziecko" });
     await act(async () => fireEvent.click(within(dialog).getByRole("button", { name: "Anuluj" })));
     await waitFor(() => expect(document.activeElement).toBe(plus));
+  });
+
+  it("asks the pod's consent after sign-in inside the shell, at the parent's density", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    let consented = false;
+    const patchPod = vi.fn(async () => {
+      consented = true;
+      return {};
+    });
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({
+          getMe: async () =>
+            ({
+              ...me([]),
+              pod: { ...pod, ai_consent_at: consented ? AT : null },
+            }) as unknown as Me,
+        })}
+        pods={{ patchPod } as never}
+      />,
+    );
+    const consent = await screen.findByRole("region", { name: /Zanim/ });
+    expect(consent.closest('[data-density="parent"]')).not.toBeNull();
+    expect(document.querySelector("[data-top-bar]")).not.toBeNull();
+    expect(document.querySelector("[data-sidebar]")).not.toBeNull();
+
+    await act(async () =>
+      fireEvent.click(consent.querySelector("[data-consent-agree]") as Element),
+    );
+    expect(patchPod).toHaveBeenCalledWith(POD, { ai_consented: true });
+    await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    expect(document.querySelector("[data-consent]")).toBeNull();
   });
 
   // The first screen's send (dl-z5ja.108).

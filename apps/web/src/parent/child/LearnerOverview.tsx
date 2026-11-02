@@ -3,7 +3,8 @@
  * then their lessons, newest first, each a card with a link to its attempt page, the day, a tile per
  * question as the overview's heatmap draws that attempt's row, and a link to the overview. Moved
  * whole from the old parent home's card (decision 2026-10-30-app-pages-take-an-adult-type-scale-h1-
- * 28-h2-22-body-17-and-the-a).
+ * 28-h2-22-body-17-and-the-a). With nothing played yet, the weeks start at the week the child was
+ * added in and one muted line says what will appear (dl-uukj.47.22).
  */
 
 import type { ParentClient } from "@jadwigo/api-client";
@@ -41,11 +42,18 @@ export function LearnerOverview({
   const day = new Intl.DateTimeFormat(language, { dateStyle: "long" });
   return (
     <div className="flex flex-col gap-4" data-learner-overview={learner.id}>
-      <LearnerKnowledge api={api} learner={learner.id} language={language} />
+      <LearnerKnowledge
+        api={api}
+        learner={learner.id}
+        language={language}
+        since={learner.created_at}
+      />
       {attempts === null && <Spinner label={copy(language, "loading", {}, CATEGORY)} />}
       {attempts === "failed" && <Failed language={language} />}
       {Array.isArray(attempts) && attempts.length === 0 && (
-        <p>{copy(language, "parent_no_attempts", {}, CATEGORY)}</p>
+        <p className="text-jw-ink-soft" data-overview-empty>
+          {copy(language, "parent_overview_empty", {}, CATEGORY)}
+        </p>
       )}
       {Array.isArray(attempts) && attempts.length > 0 && (
         <ol className="flex flex-col gap-4">
