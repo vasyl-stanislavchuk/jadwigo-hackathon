@@ -6,12 +6,13 @@
  * why it could not.
  */
 
-import { ApiError, type ParentClient } from "@jadwigo/api-client";
+import { ApiError, type ConversationListClient, type ParentClient } from "@jadwigo/api-client";
 import {
   AccountId,
   AssignmentId,
   AttemptId,
   type Claim,
+  type Conversation,
   type LearnerAttempts,
   LearnerId,
   type LearnerSnapshot,
@@ -523,6 +524,54 @@ describe("ParentScreen", () => {
     const dialog = screen.getByRole("dialog", { name: "Dodaj dziecko" });
     await act(async () => fireEvent.click(within(dialog).getByRole("button", { name: "Anuluj" })));
     await waitFor(() => expect(document.activeElement).toBe(plus));
+  });
+
+  it("lists the family's conversations under Lekcje, and the sidebar's empty line goes once there is one", async () => {
+    window.history.replaceState(null, "", "/parent/lessons");
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const saved = {
+      id: CONVERSATION,
+      pod_id: POD,
+      created_by: ACCOUNT,
+      title: "Odejmowanie przez 10",
+      created_at: AT,
+      archived_at: null,
+    } as unknown as Conversation;
+    const lessons = (conversations: Conversation[]): ConversationListClient => ({
+      listConversations: vi.fn(async () => ({ conversations })),
+      patchConversation: vi.fn(async () => ({ ...saved, archived_at: AT })),
+    });
+
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({ getMe: async () => me([]) })}
+        lessons={lessons([])}
+      />,
+    );
+    await screen.findByText("Tu pojawią się lekcje, które przygotujesz.");
+    expect(document.querySelector("[data-menu-empty]")).not.toBeNull();
+    cleanup();
+
+    const one = lessons([saved]);
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({ getMe: async () => me([]) })}
+        lessons={one}
+      />,
+    );
+    const link = await screen.findByRole("link", { name: "Odejmowanie przez 10" });
+    expect(link.getAttribute("href")).toBe(`/parent/lessons/${CONVERSATION}`);
+    expect(document.querySelector("[data-menu-empty]")).toBeNull();
+    // Opening it moves to its workspace's address.
+    await act(async () => fireEvent.click(link));
+    expect(window.location.pathname).toBe(`/parent/lessons/${CONVERSATION}`);
   });
 
   // The first screen's send (dl-z5ja.108).
