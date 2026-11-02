@@ -228,7 +228,7 @@ export function Workspace({
             front === "chat" ? "max-lg:flex" : "max-lg:hidden",
           )}
         >
-          <div className="min-h-0 flex-1 overflow-y-auto" data-chat-body>
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto" data-chat-body>
             {chat}
           </div>
           <Band data-chat-band>{chatBand}</Band>

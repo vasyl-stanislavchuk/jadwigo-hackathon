@@ -18,6 +18,7 @@
  * in; a part may not import content/, so its shape is restated here as `CreditShown`.
  */
 
+import type { QuestionSource } from "@jadwigo/contracts";
 import { type CopyKey, copy } from "@jadwigo/copy";
 import { X } from "lucide-react";
 import {
@@ -45,6 +46,38 @@ export interface CreditShown {
   noticeLink?: string | undefined;
   home: string;
   notAffiliated: boolean;
+  /** The bank source the question came from. A source whose name Polish inflects (Alfik) has its
+   * own lines, "z Alfika Matematycznego"; any other source fills `{source}` in the shared ones. */
+  bankSource?: QuestionSource | undefined;
+}
+
+/** The copy keys a credit's lines are drawn with: the shared ones take `{source}`. */
+interface CreditKeys {
+  from: CopyKey;
+  title: CopyKey;
+  label: CopyKey;
+  notAffiliated: CopyKey;
+}
+
+const SHARED_KEYS: CreditKeys = {
+  from: "credit_from",
+  title: "credit_title",
+  label: "credit_label",
+  notAffiliated: "credit_not_affiliated",
+};
+
+/** The sources with their own lines (decision dl-gc7yn: the credit reads "z Alfika Matematycznego"). */
+const SOURCE_KEYS: Partial<Record<QuestionSource, CreditKeys>> = {
+  alfik: {
+    from: "credit_from_alfik",
+    title: "credit_title_alfik",
+    label: "credit_label_alfik",
+    notAffiliated: "credit_not_affiliated_alfik",
+  },
+};
+
+function creditKeys(credit: CreditShown): CreditKeys {
+  return (credit.bankSource && SOURCE_KEYS[credit.bankSource]) ?? SHARED_KEYS;
 }
 
 /** One question's credit, in the language the question is shown in; null for our own. */
@@ -255,7 +288,8 @@ function CreditControl({ credit, language }: QuestionCreditValue): JSX.Element {
     };
   }, [open]);
 
-  const label = credit.from ?? copy(language, "credit_from", { source: credit.source });
+  const keys = creditKeys(credit);
+  const label = credit.from ?? copy(language, keys.from, { source: credit.source });
   const licenceLink = (
     <OutsideLink href={credit.deedUrl}>
       <span data-credit-link>{credit.licence}</span>
@@ -276,7 +310,7 @@ function CreditControl({ credit, language }: QuestionCreditValue): JSX.Element {
         ref={trigger}
         type="button"
         data-credit-trigger
-        aria-label={copy(language, "credit_label", { source: credit.source })}
+        aria-label={copy(language, keys.label, { source: credit.source })}
         aria-expanded={open}
         aria-controls={cardId}
         // A hover opened it: the click keeps it open. Opened by a click (or Enter, or Space),
@@ -305,7 +339,7 @@ function CreditControl({ credit, language }: QuestionCreditValue): JSX.Element {
         <div role="dialog" aria-modal="false" aria-labelledby={titleId} data-credit-panel>
           <div data-credit-head>
             <p id={titleId} data-credit-title>
-              {copy(language, "credit_title", { source: credit.source })}
+              {copy(language, keys.title, { source: credit.source })}
             </p>
             <button
               type="button"
@@ -339,7 +373,7 @@ function CreditControl({ credit, language }: QuestionCreditValue): JSX.Element {
             </p>
             {credit.notAffiliated && (
               <p data-credit-not-affiliated>
-                {copy(language, "credit_not_affiliated", { source: credit.source })}
+                {copy(language, keys.notAffiliated, { source: credit.source })}
               </p>
             )}
           </LeaveGuard>

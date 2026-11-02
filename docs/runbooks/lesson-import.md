@@ -19,21 +19,29 @@ that drafted them (`~/.local/state/jadwigo/drafts` by default; draft decision `d
 
 ## Steps
 
+`FEATURED=1` is what makes a lesson featured. Without it, `make lesson-import` imports the lesson as
+a draft: it plays at its own `/play/` path, but it never joins the featured list (`dl-e8ov.2.59`).
+With it, the lesson lands in the featured pod as an open anyone-assignment, at a different
+`/play/` path (`dl-e8ov.2.97`).
+
 1. **Dev.** From the jadwigo checkout:
-   `make lesson-import FILE=$HOME/.local/state/jadwigo/drafts/<draft>.json ENV=dev`
+   `make lesson-import FILE=$HOME/.local/state/jadwigo/drafts/<draft>.json ENV=dev FEATURED=1`
    - It links jadwigo-dev and imports as `jadwigo_api` through the session pooler, the way
      `make db-seed` does.
    - It prints the lesson's `/play/<assignment>` path.
    - Rerunning is safe: the same content publishes nothing new.
+   - `curl -s https://app.dev.jadwigo.pl/api/v1/featured-lessons | jq '.lessons[] | [.language, .title]'`
+     lists it.
 2. **Play it on dev.** Open app.dev.jadwigo.pl at that path, in the lesson's language: add
    `?lang=en` for an English lesson. Answer a few questions right and one wrong.
 3. **Prod.** From your own terminal:
-   `make lesson-import FILE=$HOME/.local/state/jadwigo/drafts/<draft>.json ENV=prod`
+   `make lesson-import FILE=$HOME/.local/state/jadwigo/drafts/<draft>.json ENV=prod FEATURED=1`
    - It asks you to type `prod` before it links.
    - A session can't run it. The guard refuses it, and the gate refuses any run with no terminal
      (`tools/src/db-targets.test.ts`).
-   - Running it is your approval of the lesson as featured. It lands in the featured pod as an open
-     anyone-assignment, so prod's featured list shows it at once. The decision is
+   - Running it with `FEATURED=1` is your approval of the lesson as featured. It lands in the
+     featured pod as an open anyone-assignment, so prod's featured list shows it at once. The
+     decision is
      `jadwigo-marketing/decisions/2026-11-01-the-owner-approves-each-featured-lesson-jadwigo-pl-s-language-sw`.
 4. **The site's snapshot.** jadwigo.pl reads the featured lessons from the API when it builds.
    `apps/site/src/content/featured.json` is the snapshot it falls back to, so refresh it in a PR
@@ -46,7 +54,30 @@ that drafted them (`~/.local/state/jadwigo/drafts` by default; draft decision `d
 `curl -s https://app.jadwigo.pl/api/v1/featured-lessons | jq '.lessons[] | [.language, .title]'`
 lists the lesson in its language, and its `/play/` path plays on app.jadwigo.pl.
 
-## Undo
+## Undo: withdraw a featured lesson
 
-One-way for now. No target withdraws an imported lesson from the featured list (`dl-9t2o.12`).
-Importing a fixed file publishes a new version of the same lesson; it does not remove the old one.
+`make lesson-withdraw` takes a lesson off the featured list by archiving it (decision
+`dl-w0b4.111`, `dl-9t2o.12`). Name it by its play path's assignment or by its lesson id:
+
+1. **Dev.** `make lesson-withdraw ASSIGNMENT=asg_… ENV=dev` (or `LESSON=les_…`).
+   - It prints `<lesson id> archived: off the featured list; its play links still play`.
+   - `curl -s https://app.dev.jadwigo.pl/api/v1/featured-lessons | jq '.lessons[] | .title'` no
+     longer lists it.
+   - Its old `/play/` link keeps playing. That is on purpose: a link a parent already shared
+     still works.
+2. **Prod.** From your own terminal: `make lesson-withdraw ASSIGNMENT=asg_… ENV=prod`.
+   - It asks you to type `prod` first. A session can't run it: the guard refuses it, and so does
+     the gate when there is no terminal (`tools/src/db-targets.test.ts`).
+3. **The site's snapshot.** Take the lesson out of `apps/site/src/content/featured.json` in a PR,
+   as in step 4 above.
+
+Rerunning a withdraw is safe. An unchanged re-import, or `make db-seed`, leaves the lesson
+withdrawn. Importing a changed file publishes a new version, and that puts the lesson back on the
+list.
+
+To put a withdrawn lesson back, add `UNDO=1`:
+`make lesson-withdraw ASSIGNMENT=asg_… ENV=dev UNDO=1`. It prints
+`<lesson id> published: back on the featured list`. Prod is gated the same way.
+
+A withdraw only ever touches a lesson in the featured pod. It refuses a draft's id and changes
+nothing.

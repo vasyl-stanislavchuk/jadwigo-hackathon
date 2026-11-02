@@ -1,0 +1,25 @@
+[project]
+name = "converter"
+version = "0.0.1"
+description = "The attachments converter Lambda: a parent's PDF, DOCX or HEIC becomes page JPEGs the model reads"
+# The Lambda's base image is public.ecr.aws/lambda/python:3.12 (Dockerfile); .python-version keeps the tests on it
+requires-python = ">=3.12"
+dependencies = [
+  "pillow==13.0.0", # every page's re-encode to a metadata-free JPEG (src/converter/encode.py)
+  "boto3==1.43.118", # the S3 get and puts in the uploads bucket (src/converter/handler.py)
+]
+
+[dependency-groups]
+dev = [
+  "pytest==9.1.1", # the tests in tests/
+  "moto[s3]==5.2.4", # an in-process S3 for the handler tests (tests/conftest.py)
+  "python-docx==1.2.0", # builds the DOCX fixture in code (tests/fixtures.py)
+  "pypdf==6.21.2", # builds the PDF fixtures in code, the encrypted one included (tests/fixtures.py)
+  # builds the HEIC fixture in code (tests/fixtures.py); tests only, never in the image, which
+  # decodes with libheif's heif-convert on the server (decision dl-n2wys)
+  "pillow-heif==1.8.1",
+]
+
+[build-system]
+requires = ["uv_build==0.13.5"]
+build-backend = "uv_build"

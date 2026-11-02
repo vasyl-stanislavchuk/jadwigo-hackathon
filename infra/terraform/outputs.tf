@@ -73,3 +73,11 @@ output "runner_database_url_param" {
 output "uploads_bucket" {
   value = module.uploads.bucket_name
 }
+
+output "converter_repository_url" {
+  value = module.converter.repository_url
+}
+
+output "converter_function_name" {
+  value = module.converter.function_name
+}

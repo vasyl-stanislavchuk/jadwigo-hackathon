@@ -16,13 +16,13 @@ import { Button } from "../tool/button.tsx";
 import { ChatPane } from "./ChatPane.tsx";
 import { type ConsentClient, ConsentScreen, giveConsent } from "./ConsentScreen.tsx";
 import { ConversationList } from "./ConversationList.tsx";
-import { type ConversationState, lessonOf, type Turn, turnsOf } from "./conversation.ts";
+import type { ConversationState } from "./conversation.ts";
 import { newConversationId } from "./ids.ts";
 import { LessonPane } from "./LessonPane.tsx";
+import { useLessonWiring } from "./lessonWiring.ts";
+import type { LessonChange } from "./patches.ts";
 import { apiTransport } from "./realtime.ts";
-import { changedOf, undoOf } from "./revisions.ts";
 import { holdServer } from "./routesTransport.ts";
-import { undoSteer } from "./steerText.ts";
 import { type EngineTransport, hotTransport, useConversation } from "./useConversation.ts";
 
 const STORED = "jadwigo.playground.chat.conversation";
@@ -33,15 +33,6 @@ function storedConversation(): ConversationId {
   const minted = newConversationId();
   window.sessionStorage.setItem(STORED, minted);
   return minted;
-}
-
-/** Which lesson the right pane draws, as a key that changes with each new revision of any turn. */
-function lessonKey(turns: readonly Turn[]): string | null {
-  for (let i = turns.length - 1; i >= 0; i -= 1) {
-    const turn = turns[i];
-    if (turn?.view.lesson) return `${turn.run.id}:${turn.view.lesson.revision}`;
-  }
-  return null;
 }
 
 /**
@@ -77,19 +68,13 @@ function ChatView({
   state: ConversationState;
   onSend(text: string): void;
   onStop(): void;
-  onEdit?: (text: string, question_ids: string[]) => void;
+  onEdit?: (text: string, question_ids: string[], change?: LessonChange) => unknown;
   onNew?: () => void;
   /** Rates a completed turn by its run (dl-z5ja.63). */
   onRate?: ((run: RunId, body: RunRatingCreate) => Promise<unknown>) | undefined;
 }): ReactElement {
-  const turns = turnsOf(state);
-  const changed = changedOf(turns);
-  const undo = undoOf(turns);
-  /** "Cofnij": a lesson_edit steer asking the AI to take the change back (dl-z5ja.30, .42). */
-  const onUndo =
-    undo === null || onEdit === undefined
-      ? undefined
-      : () => onEdit(undoSteer(undo.language, undo.question_ids, undo.revision), undo.question_ids);
+  const lesson = useLessonWiring(state, onEdit);
+  const { turns } = lesson;
   return (
     <ChatLayout
       language={language}
@@ -111,13 +96,16 @@ function ChatView({
       lesson={
         <LessonPane
           language={language}
-          lesson={lessonOf(turns)}
-          changed={changed}
-          onUndo={onUndo}
+          lesson={lesson.shown}
+          changed={lesson.changed}
+          onUndo={lesson.onUndo}
+          undoRefused={lesson.undoRefused}
+          undoPending={lesson.undoPending}
           onEdit={onEdit}
+          outcomeOf={lesson.outcomeOf}
         />
       }
-      lessonKey={lessonKey(turns)}
+      lessonKey={lesson.key}
     />
   );
 }

@@ -2,7 +2,8 @@
 // and link previews read, or nothing is synced to the bucket.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { type DistCheck, parsePathPage, pathPageChecks } from "../src/lib/dist.ts";
-import { servedLanguages } from "../src/lib/i18n.ts";
+import { gradePlayProblems, playBase } from "../src/lib/featured.ts";
+import { servedLanguages, twinPath } from "../src/lib/i18n.ts";
 import { signInDistChecks } from "../src/lib/landing.ts";
 
 const dist = new URL("../dist/", import.meta.url);
@@ -60,7 +61,16 @@ const sources = readdirSync(content, { recursive: true, encoding: "utf8" })
 const paged = pathPageChecks(sources);
 // The sign-in's provider links: Facebook's only once facebookSignInLive is on (dl-ovva).
 const signIn = signInDistChecks(servedLanguages(true));
-const must: readonly DistCheck[] = [...landing, ...paged.must, ...signIn.must];
+// The English landing page, once English is served (dl-w0b4.108): its own lang and its lessons section.
+const served = servedLanguages(true);
+const english: readonly DistCheck[] = served.includes("en")
+  ? [
+      ["en/index.html", '<html lang="en"'],
+      ["en/index.html", 'id="lessons"'],
+      ["en/index.html", '<h1 id="hero-title"'],
+    ]
+  : [];
+const must: readonly DistCheck[] = [...landing, ...english, ...paged.must, ...signIn.must];
 const mustNot = [...paged.mustNot, ...signIn.mustNot];
 
 const missing = must.filter(([file, text]) => {
@@ -71,9 +81,25 @@ const present = mustNot.filter(([file, text]) => {
   const path = new URL(file, dist);
   return existsSync(path) && readFileSync(path, "utf8").includes(text);
 });
+// Every grade a landing or lessons page offers, as a tab or a group, has a card that plays
+// (dl-w0b4.108). While no lesson has a grade, a page offers none and this checks nothing.
+const gradePages = served.flatMap((lang) =>
+  (["index", "lessons"] as const).map((twin) => {
+    const path = twinPath(twin, lang);
+    return path === "/" ? "index.html" : `${path.slice(1)}/index.html`;
+  }),
+);
+const ungraded = gradePages.flatMap((file) => {
+  const path = new URL(file, dist);
+  if (!existsSync(path)) return [];
+  return gradePlayProblems(readFileSync(path, "utf8"), `${playBase}asg_`).map(
+    (p) => `dist/${file}: ${p}`,
+  );
+});
 for (const [file, text] of missing) console.error(`dist/${file} lacks ${text}`);
 for (const [file, text] of present) console.error(`dist/${file} still carries ${text}`);
-if (missing.length > 0 || present.length > 0) process.exit(1);
+for (const line of ungraded) console.error(line);
+if (missing.length > 0 || present.length > 0 || ungraded.length > 0) process.exit(1);
 console.warn(
   `dist/ carries all ${must.length} checks and none of the ${mustNot.length} it must not`,
 );

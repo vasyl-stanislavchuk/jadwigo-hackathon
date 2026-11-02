@@ -30,3 +30,41 @@ export function dataUrl(media_type: MessageAttachment["media_type"], bytes: Uint
   }
   return `data:${media_type};base64,${btoa(binary)}`;
 }
+
+/** Why the converter would not render a file (dl-z5ja.11.8's stable codes, and `unavailable`). */
+export type ConvertRefusal = "too_many_pages" | "encrypted" | "unreadable" | "unavailable";
+
+/** One page the converter wrote: a JPEG under the file's own folder, `<id>/p<n>.jpg`. */
+export interface ConvertedPage {
+  storage_path: string;
+  width: number;
+  height: number;
+  bytes: number;
+}
+
+/** The converter's answer: the file's pages in order, or why it refused. */
+export type Converted = { pages: readonly ConvertedPage[] } | { refused: ConvertRefusal };
+
+/**
+ * Where the runner turns a HEIC, a PDF or a DOCX into page JPEGs (dl-z5ja.11.7, wave 6 decision
+ * 59): the converter Lambda in `apps/runner`, a fake in tests. A second call for the same file
+ * answers the pages it wrote the first time. A refusal is an answer; a failure to reach the
+ * converter throws, and the step is retried.
+ */
+export interface Converter {
+  pages(attachment: MessageAttachment, pod: PodId): Promise<Converted>;
+}
+
+/**
+ * Whether `page` is a page the converter wrote for `storage_path`, a file `ownPath` already
+ * trusts: `<its path without the extension>/p<n>.jpg` and nothing else, so a converter's answer
+ * can never point the runner at another file, another pod or the pending prefix.
+ */
+export function ownPage(pod: PodId, storage_path: string, page: string): boolean {
+  if (!ownPath(pod, storage_path)) return false;
+  const name = storage_path.slice(storage_path.lastIndexOf("/") + 1);
+  const dot = name.lastIndexOf(".");
+  const folder =
+    dot > 0 ? storage_path.slice(0, storage_path.length - name.length + dot) : storage_path;
+  return page.startsWith(`${folder}/`) && /^p[1-9][0-9]*\.jpg$/.test(page.slice(folder.length + 1));
+}

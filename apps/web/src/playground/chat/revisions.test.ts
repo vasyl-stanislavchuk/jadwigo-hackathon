@@ -68,6 +68,23 @@ describe("changedOf (dl-z5ja.30)", () => {
     expect([...changedOf([happyTurn(edit({ changed_step_ids: ["s05"] }))])]).toEqual(["s05"]);
   });
 
+  it("names the parent's step when the parent's patch wrote the latest revision, not the AI's edit", () => {
+    // The happy turn's lesson, then the parent's own patch on s02 as the latest revision.
+    const turn = happyTurn(edit({ changed_step_ids: ["s05"] }));
+    const before = turn.view.lesson;
+    if (before === null) throw new Error("no lesson");
+    const after = structuredClone(before.lesson_file) as {
+      script: { parts: { steps: { id: string; say?: unknown }[] }[] };
+    };
+    for (const part of after.script.parts)
+      for (const step of part.steps) if (step.id === "s02") step.say = { pl: "Ile jest grup?" };
+    turn.view.previous_lesson = before;
+    turn.view.lesson = { revision: before.revision + 1, lesson_file: after };
+    expect([...changedOf([{ ...turn, writer: "evt_parent_patch" }])]).toEqual(["s02"]);
+    // The AI's edit wrote it: its own view says which.
+    expect([...changedOf([{ ...turn, writer: "call_edit" }])]).toEqual(["s05"]);
+  });
+
   it("marks nothing for a no-op edit", () => {
     expect([...changedOf([happyTurn(edit({ changed_step_ids: [] }))])]).toEqual([]);
   });

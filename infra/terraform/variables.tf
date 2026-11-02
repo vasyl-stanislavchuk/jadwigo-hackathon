@@ -62,3 +62,9 @@ variable "runner_schedule_enabled" {
   type        = bool
   default     = false
 }
+
+variable "converter_image_tag" {
+  description = "The converter image's ECR tag, as `make -C apps/converter push` prints it. Blank: the repo only, no function, and the runner gets no converter"
+  type        = string
+  default     = ""
+}

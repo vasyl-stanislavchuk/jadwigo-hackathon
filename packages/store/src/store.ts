@@ -298,6 +298,15 @@ export interface Store extends RunStore, AttachmentStore {
    */
   getLesson(pod: PodId, id: LessonId): Promise<Lesson | undefined>;
   /**
+   * Sets a lesson's status and returns it. `archived` takes its assignments off
+   * `listOpenAssignments`: how a featured lesson is withdrawn (`make lesson-withdraw`, decision
+   * dl-w0b4.111). Its assignments still start attempts, so an old play link keeps playing.
+   * `published` puts it back, and is refused with `BadRequest` while the lesson has no published
+   * version. Setting the status it has changes nothing, and the next `publishLessonVersion` marks
+   * it published either way. A lesson the pod does not hold is `NotFound`.
+   */
+  setLessonStatus(pod: PodId, id: LessonId, status: "archived" | "published"): Promise<Lesson>;
+  /**
    * Writes a lesson question once. The same id again with the same `content_hash` returns the
    * stored row; with another hash it is refused with `WriteOnce`.
    */

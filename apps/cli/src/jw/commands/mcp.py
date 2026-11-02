@@ -41,6 +41,7 @@ TOOLS = (
     "lesson_draft",
     "lesson_check",
     "lesson_edit",
+    "lesson_move",
     "lesson_show",
     "lesson_publish",
     "doctor",
@@ -64,7 +65,8 @@ def build_server() -> Any:
             "those words by step id, and fix what its findings list by step id until it answers "
             "ok with a card. Each call rewrites the draft file, so the lesson can be watched as it "
             "is built. To change one step after that, read it with lesson_show and patch it with "
-            "lesson_edit, which answers with that step's findings and card. question_search, "
+            "lesson_edit, which answers with that step's findings and card; to put the steps in "
+            "another order (easy to harder), call lesson_move. question_search, "
             "question_show, question_gaps and question_item look into the bank directly: sets "
             "that meet a need, one set's page, needs it cannot meet, one item. Once a check "
             "answers ok, call lesson_publish with the draft_id, without asking: it imports the "
@@ -166,6 +168,8 @@ def build_server() -> Any:
         kind: str = "practice",
         count: int | None = None,
         skills: list[str] | None = None,
+        sets: list[str] | None = None,
+        question_types: list[str] | None = None,
         verbose: bool = False,
     ) -> dict[str, Any]:
         """Draft a lesson for a parent's request: questions drawn from the bank and copied whole.
@@ -176,7 +180,12 @@ def build_server() -> Any:
         required: what the lesson is about in a few words, distilled from the request, with no
         count, grade or name ("mnożenie", "dodawanie do 100"); the bank searches these words,
         and the request is kept as the draft's record and title. grade the bare grade number;
-        kind practice, review, check or diagnostic; count overrides the draw rule's count. Each
+        kind practice, review, check or diagnostic; count overrides the draw rule's count. sets
+        pins the set ids to draw from (set_khan_...), with no search: only those sets, taken in
+        turn and each varied by problem type; the same ids draw the pl and en lessons alike.
+        question_types keeps only items whose own type matches one: family.question_type
+        ("slots.fill_gaps"), a family ("choose", "group.*") or a question type ("fill_gaps");
+        the rest are left out with that reason. Each
         question is copied whole from the bank (family, data, key, say, pictures, and the
         source's hints and worked lines as its help), so the lesson plays as copied. Its twin is
         a sibling item of the same set, problem type and look, with another answer, copied whole
@@ -208,6 +217,8 @@ def build_server() -> Any:
             kind=kind,
             count=count,
             skills=skills or [],
+            sets=sets or [],
+            question_types=question_types or [],
             verbose=verbose,
         )
 
@@ -281,7 +292,7 @@ def build_server() -> Any:
         sets a part as the wrong kind, is refused with rule edit and changes nothing. names is
         required, as for lesson_draft (every name the family uses, or []): they are replaced in
         every word but an answer key, keys included, and in why. A later
-        lesson_check keeps this edit unless it is sent words for this step.
+        lesson_check keeps this edit, less any part that check's words for this step set.
         """
         return _call(
             lesson_edit.edit,
@@ -292,6 +303,19 @@ def build_server() -> Any:
             change=change,
             names=names,
         )
+
+    @server.tool(name="lesson_move")
+    def lesson_move_tool(
+        draft_id: str, step_id: str, before: str | None = None, after: str | None = None
+    ) -> dict[str, Any]:
+        """Move one step of a draft to just before or just after another, so the lesson goes from
+        easy to harder. Pass before or after (a step id), not both. Step ids do not change; the
+        new order is kept by the draft and by every later lesson_check and lesson_edit. check.ts
+        runs on the whole lesson. Returns ok (the lesson's check), order (the step ids in their
+        new order), findings, lesson_ok and draft_path.
+        """
+        return _call(lesson_edit.move, draft_id=draft_id, step_id=step_id, before=before,
+                     after=after)
 
     @server.tool(name="lesson_publish")
     def lesson_publish_tool(draft_id: str, target: str = "local") -> dict[str, Any]:
@@ -309,13 +333,15 @@ def build_server() -> Any:
         return _call(lesson_publish.publish, draft_id=draft_id, target=target)
 
     @server.tool(name="doctor")
-    def doctor_tool(language: str = "pl") -> dict[str, Any]:
+    def doctor_tool(language: str | None = None) -> dict[str, Any]:
         """Check whether this machine can draft, check and publish a lesson, and say what to fix.
 
-        Five checks, each ok, warn or fail: settings (the bank checkout, the converted items
-        file, readiness.json, bank.env at mode 600, check.ts and bun, the drafts directory),
-        ready ids (every set page's ready ids are lesson-ready in the converted file; the stale
-        ones counted with 3 examples), stamps (readiness.json, the converted file and the pages
+        language pl or en checks that one; left out, pl and en are each checked against their
+        own converted file. Five checks, each ok, warn or fail: settings (the bank checkout,
+        each language's converted items file, converted homes: a warn when a second copy sits
+        where a jw without these settings would read it, readiness.json, bank.env at mode 600,
+        check.ts and bun, the drafts directory), ready ids (every set page's ready ids are
+        lesson-ready in that language's converted file; the stale ones counted with 3 examples), stamps (readiness.json, the converted file and the pages
         name one stamp), bank_rev (the search service's build against the local index) and
         services (the local api and web dev server answer). Returns status (the worst) and
         checks, each {n, name, status, lines: [{name, status, detail, fix}]}. Call it when

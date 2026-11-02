@@ -1,13 +1,20 @@
 {
   "tools": [
     {
-      "description": "Check whether this machine can draft, check and publish a lesson, and say what to fix.\n\n        Five checks, each ok, warn or fail: settings (the bank checkout, the converted items\n        file, readiness.json, bank.env at mode 600, check.ts and bun, the drafts directory),\n        ready ids (every set page's ready ids are lesson-ready in the converted file; the stale\n        ones counted with 3 examples), stamps (readiness.json, the converted file and the pages\n        name one stamp), bank_rev (the search service's build against the local index) and\n        services (the local api and web dev server answer). Returns status (the worst) and\n        checks, each {n, name, status, lines: [{name, status, detail, fix}]}. Call it when\n        another tool fails on a setting, a missing file or a service; it changes nothing.\n        ",
+      "description": "Check whether this machine can draft, check and publish a lesson, and say what to fix.\n\n        language pl or en checks that one; left out, pl and en are each checked against their\n        own converted file. Five checks, each ok, warn or fail: settings (the bank checkout,\n        each language's converted items file, converted homes: a warn when a second copy sits\n        where a jw without these settings would read it, readiness.json, bank.env at mode 600,\n        check.ts and bun, the drafts directory), ready ids (every set page's ready ids are\n        lesson-ready in that language's converted file; the stale ones counted with 3 examples), stamps (readiness.json, the converted file and the pages\n        name one stamp), bank_rev (the search service's build against the local index) and\n        services (the local api and web dev server answer). Returns status (the worst) and\n        checks, each {n, name, status, lines: [{name, status, detail, fix}]}. Call it when\n        another tool fails on a setting, a missing file or a service; it changes nothing.\n        ",
       "inputSchema": {
         "properties": {
           "language": {
-            "default": "pl",
-            "title": "Language",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Language"
           }
         },
         "title": "doctor_toolArguments",
@@ -90,7 +97,7 @@
       }
     },
     {
-      "description": "Draft a lesson for a parent's request: questions drawn from the bank and copied whole.\n\n        request is the parent's words (\"6 zadań z mnożenia, klasa 3\"); names is required: pass\n        every name the family uses in the request (the child's, siblings', the parent's), or []\n        when there is none; the tool replaces them before anything leaves the machine. topic is\n        required: what the lesson is about in a few words, distilled from the request, with no\n        count, grade or name (\"mnożenie\", \"dodawanie do 100\"); the bank searches these words,\n        and the request is kept as the draft's record and title. grade the bare grade number;\n        kind practice, review, check or diagnostic; count overrides the draw rule's count. Each\n        question is copied whole from the bank (family, data, key, say, pictures, and the\n        source's hints and worked lines as its help), so the lesson plays as copied. Its twin is\n        a sibling item of the same set, problem type and look, with another answer, copied whole\n        with its credit, when the bank has one (twin_source \"bank khan:<id>\"); the item's own\n        mistake cards are kept. The draft stays on this machine under draft_id; the result is a\n        slim view of it. Per question: step_id, item_id, say, data (pictures without their\n        labels or address), key (without the rule jw adds by code), you_write (what is left\n        for you: twin only without a bank twin), cards_to_write (the classes whose mistake card the item lacks, when\n        you_write names boost_by_mistake), twin_source, mistake_classes (the keys\n        boost_by_mistake may use; null when unknown), why_drawn (its problem type), and, only\n        when you_write names a rung, copied_help (the hints as text with their picture alts)\n        and rungs (what fills look, boost, almost and worked). left_out is {total, by_cause:\n        [{cause, count, examples}]}; lesson_show has the whole list. setup_warning, when\n        present, says this machine's bank copy is out of step: tell the owner to run jw doctor\n        and jw bank pull. rule_settled is false (the draw rules are provisional). draft_path is\n        the lesson file as copied, written in JADWIGO_DRAFTS_DIR before the call returns, with\n        its check beside it. verbose true returns every question whole (family, the full key,\n        set, skill, question type, the draw's whole reason, copied_help and rungs) and left_out\n        whole. Write what you_write lists, in the lesson's language, then call lesson_check\n        with the draft_id.\n        ",
+      "description": "Draft a lesson for a parent's request: questions drawn from the bank and copied whole.\n\n        request is the parent's words (\"6 zadań z mnożenia, klasa 3\"); names is required: pass\n        every name the family uses in the request (the child's, siblings', the parent's), or []\n        when there is none; the tool replaces them before anything leaves the machine. topic is\n        required: what the lesson is about in a few words, distilled from the request, with no\n        count, grade or name (\"mnożenie\", \"dodawanie do 100\"); the bank searches these words,\n        and the request is kept as the draft's record and title. grade the bare grade number;\n        kind practice, review, check or diagnostic; count overrides the draw rule's count. sets\n        pins the set ids to draw from (set_khan_...), with no search: only those sets, taken in\n        turn and each varied by problem type; the same ids draw the pl and en lessons alike.\n        question_types keeps only items whose own type matches one: family.question_type\n        (\"slots.fill_gaps\"), a family (\"choose\", \"group.*\") or a question type (\"fill_gaps\");\n        the rest are left out with that reason. Each\n        question is copied whole from the bank (family, data, key, say, pictures, and the\n        source's hints and worked lines as its help), so the lesson plays as copied. Its twin is\n        a sibling item of the same set, problem type and look, with another answer, copied whole\n        with its credit, when the bank has one (twin_source \"bank khan:<id>\"); the item's own\n        mistake cards are kept. The draft stays on this machine under draft_id; the result is a\n        slim view of it. Per question: step_id, item_id, say, data (pictures without their\n        labels or address), key (without the rule jw adds by code), you_write (what is left\n        for you: twin only without a bank twin), cards_to_write (the classes whose mistake card the item lacks, when\n        you_write names boost_by_mistake), twin_source, mistake_classes (the keys\n        boost_by_mistake may use; null when unknown), why_drawn (its problem type), and, only\n        when you_write names a rung, copied_help (the hints as text with their picture alts)\n        and rungs (what fills look, boost, almost and worked). left_out is {total, by_cause:\n        [{cause, count, examples}]}; lesson_show has the whole list. setup_warning, when\n        present, says this machine's bank copy is out of step: tell the owner to run jw doctor\n        and jw bank pull. rule_settled is false (the draw rules are provisional). draft_path is\n        the lesson file as copied, written in JADWIGO_DRAFTS_DIR before the call returns, with\n        its check beside it. verbose true returns every question whole (family, the full key,\n        set, skill, question type, the draw's whole reason, copied_help and rungs) and left_out\n        whole. Write what you_write lists, in the lesson's language, then call lesson_check\n        with the draft_id.\n        ",
       "inputSchema": {
         "properties": {
           "count": {
@@ -126,9 +133,39 @@
             "title": "Names",
             "type": "array"
           },
+          "question_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Question Types"
+          },
           "request": {
             "title": "Request",
             "type": "string"
+          },
+          "sets": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Sets"
           },
           "skills": {
             "anyOf": [
@@ -167,7 +204,7 @@
       }
     },
     {
-      "description": "Change one step of a draft and get that step's findings back, without resending the rest.\n\n        patch is a JSON merge patch on the step as lesson_show returns it: an object merges into\n        what is there, null removes a part, anything else replaces it. It may set say and\n        question's data, key and help (look, boost, almost, worked, hints, boost_by_mistake and\n        twin, under question.help). A change to a part the bank's copy has (say, data, key, hints,\n        worked, a copied almost) needs why, the parent's ask; it is recorded in based_on.changes\n        with change (numbers, context, wording or tutor_notes; wording by default). A rung, twin\n        or mistake card you write needs no why. The draft file is rewritten, check.ts runs on the\n        whole lesson and its check file is rewritten. Returns ok (no error for this step),\n        step_id, findings for this step only, render (the page's findings for it from its last\n        draw, stale when drawn before this write; null without the page), the step's card,\n        lesson_ok (the whole lesson's check) and draft_path. A patch that is not an object, or\n        sets a part as the wrong kind, is refused with rule edit and changes nothing. names is\n        required, as for lesson_draft (every name the family uses, or []): they are replaced in\n        every word but an answer key, keys included, and in why. A later\n        lesson_check keeps this edit unless it is sent words for this step.\n        ",
+      "description": "Change one step of a draft and get that step's findings back, without resending the rest.\n\n        patch is a JSON merge patch on the step as lesson_show returns it: an object merges into\n        what is there, null removes a part, anything else replaces it. It may set say and\n        question's data, key and help (look, boost, almost, worked, hints, boost_by_mistake and\n        twin, under question.help). A change to a part the bank's copy has (say, data, key, hints,\n        worked, a copied almost) needs why, the parent's ask; it is recorded in based_on.changes\n        with change (numbers, context, wording or tutor_notes; wording by default). A rung, twin\n        or mistake card you write needs no why. The draft file is rewritten, check.ts runs on the\n        whole lesson and its check file is rewritten. Returns ok (no error for this step),\n        step_id, findings for this step only, render (the page's findings for it from its last\n        draw, stale when drawn before this write; null without the page), the step's card,\n        lesson_ok (the whole lesson's check) and draft_path. A patch that is not an object, or\n        sets a part as the wrong kind, is refused with rule edit and changes nothing. names is\n        required, as for lesson_draft (every name the family uses, or []): they are replaced in\n        every word but an answer key, keys included, and in why. A later\n        lesson_check keeps this edit, less any part that check's words for this step set.\n        ",
       "inputSchema": {
         "properties": {
           "change": {
@@ -216,6 +253,54 @@
       "outputSchema": {
         "additionalProperties": true,
         "title": "lesson_edit_toolDictOutput",
+        "type": "object"
+      }
+    },
+    {
+      "description": "Move one step of a draft to just before or just after another, so the lesson goes from\n        easy to harder. Pass before or after (a step id), not both. Step ids do not change; the\n        new order is kept by the draft and by every later lesson_check and lesson_edit. check.ts\n        runs on the whole lesson. Returns ok (the lesson's check), order (the step ids in their\n        new order), findings, lesson_ok and draft_path.\n        ",
+      "inputSchema": {
+        "properties": {
+          "after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "After"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Before"
+          },
+          "draft_id": {
+            "title": "Draft Id",
+            "type": "string"
+          },
+          "step_id": {
+            "title": "Step Id",
+            "type": "string"
+          }
+        },
+        "required": ["draft_id", "step_id"],
+        "title": "lesson_move_toolArguments",
+        "type": "object"
+      },
+      "name": "lesson_move",
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "lesson_move_toolDictOutput",
         "type": "object"
       }
     },

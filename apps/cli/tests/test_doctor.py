@@ -83,7 +83,10 @@ def test_every_ready_id_lesson_ready_passes_check_2(machine: Path) -> None:
     page.write_text(json.dumps({"id": "khan-add-10", "items": {"ready_ids": {"pl": ["a", "e"]}}}))
     ready = _check(doctor.run("pl", get=lambda url: 200, search=_search("x")), 2)
     assert ready["status"] == doctor.OK
-    assert ready["lines"][0]["detail"] == "2 ready ids on 1 pages, all lesson-ready"
+    khan = machine.parent / "khan"
+    assert ready["lines"][0]["detail"] == (
+        f"2 ready ids on 1 pages, all lesson-ready in {khan / 'converted-pl.json'}"
+    )
 
 
 def test_stamps_disagree_and_pages_unstamped(machine: Path) -> None:
@@ -157,10 +160,10 @@ def test_services_name_db_reset_for_a_500(machine: Path) -> None:
 def test_settings_name_what_is_missing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("JADWIGO_DRAFTS_DIR", str(tmp_path / "drafts"))
     monkeypatch.setattr(doctor.settings_keys, "DEFAULT_BANK_DIR", tmp_path / "no-bank")
-    settings = doctor.settings_check("pl")
+    settings = doctor.settings_check(["pl"])
     by_name = {line["name"]: line for line in settings["lines"]}
     assert by_name["bank checkout"]["status"] == doctor.FAIL
-    assert by_name["converted items"]["status"] == doctor.FAIL
+    assert by_name["converted items (pl)"]["status"] == doctor.FAIL
     assert by_name["drafts directory"]["status"] == doctor.WARN
     assert by_name["drafts directory"]["fix"] == f"mkdir -m 700 -p {tmp_path / 'drafts'}"
 
@@ -207,7 +210,88 @@ def test_the_mcp_tool_returns_the_verb_s_json(
 
     monkeypatch.setattr(doctor, "http_status", lambda url: 200)
     monkeypatch.setattr(doctor.bank_client, "search", _search("x"))
-    verb = json.loads(CliRunner().invoke(main, ["doctor", "--json"]).output)
+    verb = json.loads(CliRunner().invoke(main, ["doctor", "--language", "pl", "--json"]).output)
     result = anyio.run(build_server().call_tool, "doctor", {"language": "pl"})
     assert not result.is_error
     assert result.structured_content == verb
+
+
+# dl-n9fr.65 and dl-n9fr.64: every language, and one home for the converted files.
+
+
+def _english(machine: Path, ids: list[str]) -> None:
+    """The page lists `ids` as ready in en; converted.json beside the Polish file holds only a."""
+    khan = machine.parent / "khan"
+    page = machine / "sets" / "khan" / "khan-add-10.json"
+    raw = json.loads(page.read_text())
+    raw["items"]["ready_ids"]["en"] = ids
+    page.write_text(json.dumps(raw))
+    english = {"generated_by": "tools/khan/to_family.py", "items": [{**_item("a", PLAYS), "language": "en"}]}
+    (khan / "converted.json").write_text(json.dumps(english))
+
+
+def test_doctor_with_no_language_checks_pl_and_en_each_against_its_own_file(
+    machine: Path,
+) -> None:
+    _english(machine, ["a", "x1", "x2"])
+    result = doctor.run(get=lambda url: 200, search=_search("x"))
+    assert result["language"] is None and result["languages"] == ["pl", "en"]
+    lines = {line["name"]: line for line in _check(result, 2)["lines"]}
+    assert set(lines) == {"ready ids (pl)", "ready ids (en)"}
+    english = lines["ready ids (en)"]
+    assert english["status"] == doctor.FAIL
+    assert english["detail"].startswith("2 of 3 ready ids on 1 pages are not lesson-ready in ")
+    assert str(machine.parent / "khan" / "converted.json") in english["detail"]
+    assert "khan-add-10: x1 (not in the converted file)" in english["detail"]
+    settings = {line["name"] for line in _check(result, 1)["lines"]}
+    assert {"converted items (pl)", "converted items (en)", "converted homes"} <= settings
+
+
+def test_doctor_with_a_language_checks_only_that_one(machine: Path) -> None:
+    _english(machine, ["x1"])
+    result = doctor.run("en", get=lambda url: 200, search=_search("x"))
+    assert [line["name"] for line in _check(result, 2)["lines"]] == ["ready ids (en)"]
+
+
+def test_the_cli_without_language_checks_both(machine: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _english(machine, ["a"])
+    monkeypatch.setattr(doctor, "http_status", lambda url: 200)
+    monkeypatch.setattr(doctor.bank_client, "search", _search("x"))
+    printed = json.loads(CliRunner().invoke(main, ["doctor", "--json"]).output)
+    assert printed["languages"] == ["pl", "en"]
+
+
+def test_converted_files_in_one_home_are_ok(machine: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _english(machine, ["a"])
+    monkeypatch.setattr(doctor.settings_keys, "DEFAULT_KHAN_DIR", machine.parent / "khan")
+    line = doctor.homes_line(["pl", "en"])
+    assert line["status"] == doctor.OK and str(machine.parent / "khan") in line["detail"]
+
+
+def test_a_second_copy_in_the_default_home_warns_with_both_paths(
+    machine: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The MCP server reads one copy (JW_KHAN_CONVERTED); a shell jw without it reads the cache."""
+    _english(machine, ["a"])
+    cache = tmp_path / "cache-khan"
+    cache.mkdir()
+    (cache / "converted.json").write_text("{}")
+    monkeypatch.setattr(doctor.settings_keys, "DEFAULT_KHAN_DIR", cache)
+    line = doctor.homes_line(["pl", "en"])
+    assert line["status"] == doctor.WARN
+    assert f"{cache / 'converted.json'} is a second en copy" in line["detail"]
+    assert str(machine.parent / "khan" / "converted.json") in line["detail"]
+    assert "JADWIGO_KHAN_DIR" in line["fix"]
+
+
+def test_languages_read_from_different_folders_warn(
+    machine: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    other = tmp_path / "elsewhere" / "converted.json"
+    other.parent.mkdir()
+    other.write_text("{}")
+    monkeypatch.setenv("JW_KHAN_CONVERTED_EN", str(other))
+    monkeypatch.setattr(doctor.settings_keys, "DEFAULT_KHAN_DIR", tmp_path / "no-cache")
+    line = doctor.homes_line(["pl", "en"])
+    assert line["status"] == doctor.WARN
+    assert "the languages read from different folders" in line["detail"]

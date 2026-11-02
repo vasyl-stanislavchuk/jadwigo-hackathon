@@ -122,6 +122,19 @@ describe("a verb is idempotent by call_id", () => {
     expect(stepsOf(replayed.lesson_file)[0]).toEqual(stepsOf(once.lesson_file)[0]);
   });
 
+  it("refuses pinned sets and kept question types, which only jw draws by yet (dl-u1y5.37)", async () => {
+    const verbs = createVerbs({ bank: fixtureBank() });
+    for (const extra of [{ sets: ["set_khan_fx0001"] }, { question_types: ["enter.*"] }]) {
+      await expect(
+        verbs.lesson_draft.run(contextFor(runId(), "call_1"), { ...DRAFT, ...extra }),
+      ).rejects.toMatchObject({ type: "input" });
+    }
+    // Left out, or empty, they change nothing.
+    await expect(
+      verbs.lesson_draft.run(contextFor(runId(), "call_1"), { ...DRAFT, sets: null }),
+    ).resolves.toHaveProperty("lesson_file");
+  });
+
   it("a refusal is not remembered", async () => {
     const verbs = createVerbs({ bank: fixtureBank() });
     const context = contextFor(runId(), "call_1");

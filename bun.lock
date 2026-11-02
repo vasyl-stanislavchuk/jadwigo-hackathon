@@ -41,6 +41,9 @@
     "apps/cli": {
       "name": "@jadwigo/cli",
     },
+    "apps/converter": {
+      "name": "@jadwigo/converter",
+    },
     "apps/docs": {
       "name": "@jadwigo/docs",
       "dependencies": {
@@ -92,6 +95,7 @@
     "apps/runner": {
       "name": "@jadwigo/runner",
       "dependencies": {
+        "@aws-sdk/client-lambda": "3.1156.0",
         "@aws-sdk/client-s3": "3.1156.0",
         "@aws-sdk/client-ssm": "3.1156.0",
         "@jadwigo/contracts": "workspace:*",
@@ -791,6 +795,8 @@
     "@jadwigo/config": ["@jadwigo/config@workspace:packages/config"],
 
     "@jadwigo/contracts": ["@jadwigo/contracts@workspace:packages/contracts"],
+
+    "@jadwigo/converter": ["@jadwigo/converter@workspace:apps/converter"],
 
     "@jadwigo/copy": ["@jadwigo/copy@workspace:packages/copy"],
 

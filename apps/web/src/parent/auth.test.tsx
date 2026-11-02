@@ -129,14 +129,27 @@ describe("enabledProviders", () => {
     expect(readSettings).toHaveBeenCalledTimes(1);
   });
 
+  it("lets a hand-over start every provider the project has on, its button shown or not (dl-ovva)", async () => {
+    const { supabase } = fakeSupabase();
+    const readSettings = vi.fn(async () => ({ external: { google: true, facebook: true } }));
+    const auth = supabaseAuth(supabase, ["google"], readSettings);
+    expect(await auth.enabledProviders()).toEqual(["google"]);
+    expect(await auth.handoffProviders()).toEqual(["google", "facebook"]);
+    expect(readSettings).toHaveBeenCalledTimes(1);
+    const off = supabaseAuth(supabase, ["google"], async () => settings);
+    expect(await off.handoffProviders()).toEqual(["google"]);
+  });
+
   it("is none when the read fails, and reads nothing when the build turns no provider on", async () => {
     const { supabase } = fakeSupabase();
     const failing = vi.fn(async () => {
       throw new Error("offline");
     });
     expect(await supabaseAuth(supabase, ["google"], failing).enabledProviders()).toEqual([]);
+    expect(await supabaseAuth(supabase, ["google"], failing).handoffProviders()).toEqual([]);
     const unused = vi.fn(async () => settings);
     expect(await supabaseAuth(supabase, [], unused).enabledProviders()).toEqual([]);
+    expect(await supabaseAuth(supabase, [], unused).handoffProviders()).toEqual([]);
     expect(unused).not.toHaveBeenCalled();
   });
 });

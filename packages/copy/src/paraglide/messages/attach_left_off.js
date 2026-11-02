@@ -1,4 +1,5 @@
 /* eslint-disable */
+import * as registry from '../registry.js'
 import { getLocale, experimentalStaticLocale } from '../runtime.js';
 
 /** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
@@ -8,9 +9,10 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 
 
 /**
-* | output |
-* | --- |
-* | "Only {max} files fit, {n} left off" |
+* | n_noun | output |
+* | --- | --- |
+* | "one" | "{max} files fit, {n} was left off" |
+* | "other" | "{max} files fit, {n} were left off" |
 *
 * @param {Attach_Left_OffInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -18,6 +20,18 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 */
 export const attach_left_off = /** @type {((inputs: Attach_Left_OffInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Attach_Left_OffInputs, { locale?: "pl" | "en" }, {}>} */ ((i, options = {}) => {
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ (`Only ${i?.max} files fit, ${i?.n} left off`)
-	return /** @type {LocalizedString} */ (`Zmieści się ${i?.max} plików, ${i?.n} pominięto`)
+	if (locale === "en") {
+		const n_noun = registry.plural("en", i?.n, {}, true);
+		if (n_noun === "one") return /** @type {LocalizedString} */ (`${i?.max} files fit, ${i?.n} was left off`);
+		if (n_noun === "other") return /** @type {LocalizedString} */ (`${i?.max} files fit, ${i?.n} were left off`);
+		return /** @type {LocalizedString} */ ("attach_left_off");
+	}
+	{
+		const max_noun = registry.plural("pl", i?.max, {}, true);
+		if (max_noun === "one") return /** @type {LocalizedString} */ (`Zmieści się ${i?.max} plik, ${i?.n} pominięto`);
+		if (max_noun === "few") return /** @type {LocalizedString} */ (`Zmieszczą się ${i?.max} pliki, ${i?.n} pominięto`);
+		if (max_noun === "many") return /** @type {LocalizedString} */ (`Zmieści się ${i?.max} plików, ${i?.n} pominięto`);
+		if (max_noun === "other") return /** @type {LocalizedString} */ (`Zmieści się ${i?.max} pliku, ${i?.n} pominięto`);
+		return /** @type {LocalizedString} */ ("attach_left_off");
+	}
 });

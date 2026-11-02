@@ -26,5 +26,5 @@
     }
   },
   "ignoreBinaries": ["make", "gitleaks", "uv", "psql"],
-  "ignoreWorkspaces": ["apps/cli"]
+  "ignoreWorkspaces": ["apps/cli", "apps/converter"]
 }

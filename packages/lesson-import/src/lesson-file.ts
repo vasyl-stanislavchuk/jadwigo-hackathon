@@ -89,6 +89,8 @@ export const LessonFile = z.object({
   language: Language,
   category: Category,
   subject: Subject,
+  /** The school grade the lesson is for; `compile.ts` writes it, or null when it is left out. */
+  grade: z.int().min(1).max(4).optional(),
   reasoning: z.string(),
   kind: LessonKind.optional(),
   script: z.object({

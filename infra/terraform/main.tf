@@ -47,6 +47,17 @@ module "uploads" {
   allowed_origins = ["https://${var.app_domain}"]
 }
 
+# The attachments converter (dl-z5ja.11.8, wave 6 decision 58): apps/converter's image, which the
+# runner invokes with S3 keys. converter_image_tag blank makes the ECR repo only; the owner pushes an
+# image, sets the tag in prod.tfvars and applies again (infra/README.md, Converter).
+module "converter" {
+  source = "./modules/converter"
+
+  environment         = var.environment
+  uploads_bucket_name = module.uploads.bucket_name
+  image_tag           = var.converter_image_tag
+}
+
 # The service at app.<apex>: apps/web, and /api/* to the one Lambda (dl-5ssh.3.3).
 module "app" {
   source = "./modules/app"
@@ -181,6 +192,9 @@ module "runner" {
 
   # The step host reads the photos a message carries, under pods/*/attachments/ only (dl-z5ja.11.2).
   uploads_bucket_name = module.uploads.bucket_name
+
+  # And invokes the converter for a PDF, DOCX or HEIC (wave 6 decision 59), once it has an image.
+  converter_function_arn = module.converter.function_arn
 
   environment_variables = {
     JADWIGO_MUSE_KEY_PARAM     = "/jadwigo/${var.environment}/muse-api-key"

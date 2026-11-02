@@ -1,9 +1,10 @@
 /** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
 /** @typedef {{ max: NonNullable<unknown>, n: NonNullable<unknown> }} Attach_Left_OffInputs */
 /**
-* | output |
-* | --- |
-* | "Only {max} files fit, {n} left off" |
+* | n_noun | output |
+* | --- | --- |
+* | "one" | "{max} files fit, {n} was left off" |
+* | "other" | "{max} files fit, {n} were left off" |
 *
 * @param {Attach_Left_OffInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

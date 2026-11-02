@@ -10,6 +10,25 @@ export interface GetObjectClient {
 }
 
 /**
+ * The uploads bucket's name: `name` when the environment gives it, else the SSM parameter
+ * `/jadwigo/uploads/bucket`, read once (again after a failed read). Undefined when neither names it.
+ */
+export function uploadsBucketOf(
+  name: string | undefined,
+  read: ReadParameter,
+): () => Promise<string | undefined> {
+  let bucket: Promise<string | undefined> | undefined;
+  return () => {
+    if (name !== undefined) return Promise.resolve(name);
+    bucket ??= read(UPLOADS_BUCKET_PARAM).then((value) => value?.trim() || undefined);
+    bucket.catch(() => {
+      bucket = undefined;
+    });
+    return bucket;
+  };
+}
+
+/**
  * The runner's photo reader (dl-z5ja.11.4): GetObject on the uploads bucket, named by
  * `UPLOADS_BUCKET`, else by the SSM parameter `/jadwigo/uploads/bucket`, read once per cold start
  * (again after a failed read). The engine has already checked the key is under the run's pod's
@@ -22,15 +41,7 @@ export function s3Attachments(
   read: ReadParameter = readSsm,
   client: GetObjectClient = new S3Client({}),
 ): AttachmentReader {
-  let bucket: Promise<string | undefined> | undefined;
-  const resolve = (): Promise<string | undefined> => {
-    if (name !== undefined) return Promise.resolve(name);
-    bucket ??= read(UPLOADS_BUCKET_PARAM).then((value) => value?.trim() || undefined);
-    bucket.catch(() => {
-      bucket = undefined;
-    });
-    return bucket;
-  };
+  const resolve = uploadsBucketOf(name, read);
   return {
     read: async (storage_path) => {
       const Bucket = await resolve();

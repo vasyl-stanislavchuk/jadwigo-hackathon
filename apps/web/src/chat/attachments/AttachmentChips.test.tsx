@@ -152,7 +152,7 @@ describe("AttachmentChips", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(10);
     expect(screen.getByText("Zmieści się 10 plików, 3 pominięto")).toBeTruthy();
     rerender(<AttachmentChips language="en" uploads={uploads} leftOff={1} onRemove={() => {}} />);
-    expect(screen.getByText("Only 10 files fit, 1 left off")).toBeTruthy();
+    expect(screen.getByText("10 files fit, 1 was left off")).toBeTruthy();
   });
 
   it("renders nothing with no photos", () => {

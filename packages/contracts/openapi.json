@@ -3105,7 +3105,7 @@
       "BankQuestionId": {
         "type": "string",
         "pattern": "^[A-Za-z0-9_-]{1,64}$",
-        "description": "A bank question's id: a Khan item id such as x1a2b3c4, letters, digits, _ and - only"
+        "description": "A bank question's id: a Khan item id such as x1a2b3c4 or an Alfik task id such as alfik_2024_k2_q07, letters, digits, _ and - only"
       },
       "BasedOn": {
         "type": "object",
@@ -8993,8 +8993,7 @@
             "$ref": "#/components/schemas/BankQuestionId"
           },
           "source": {
-            "type": "string",
-            "const": "khan"
+            "$ref": "#/components/schemas/QuestionSource"
           },
           "pl": {
             "type": "object",
@@ -9131,6 +9130,14 @@
         ],
         "additionalProperties": false,
         "description": "One bank question's private body from questions/<source>/<id>.json: a version per language with its family, data, key and help, the credit and the pictures by sha; a question with no playable variant yet carries only id, credit and problem_type; it reaches only a caller with the read token"
+      },
+      "QuestionSource": {
+        "type": "string",
+        "enum": [
+          "khan",
+          "alfik"
+        ],
+        "description": "Where a bank question comes from, and its prefix in the content bucket: khan, alfik"
       },
       "QuestionType": {
         "type": "string",

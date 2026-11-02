@@ -18,7 +18,7 @@ ifneq (,$(wildcard $(HOME)/perl5/bin/pg_prove))
 export PATH := $(HOME)/perl5/bin:$(PATH)
 export PERL5LIB := $(HOME)/perl5/lib/perl5$(if $(PERL5LIB),:$(PERL5LIB))
 endif
-.PHONY: check check-all dev db pgmq migrate pgtap db-reset db-seed lesson-import api-dev api-bundle api-invoke db-push db-role release skills drops icons builder runner-bundle db-runner-role step-probe step-probe-local engine-smoke
+.PHONY: check check-all dev db pgmq migrate pgtap db-reset db-seed lesson-import lesson-withdraw api-dev api-bundle api-invoke db-push db-role release skills drops icons builder runner-bundle db-runner-role step-probe step-probe-local engine-smoke
 
 ## check: lint, typecheck and test what changed since main (turbo --affected), uv's pytest
 ## included, then the repo-wide checks turbo cannot scope: knip, dependency-cruiser, no-bank, worklog,
@@ -197,25 +197,50 @@ else
 	$(AS_API) bun run --cwd packages/lesson-import seed
 endif
 
-## lesson-import FILE=<path> [JSON=1]: one lesson file into the local jadwigo database, the one
-## `make dev` serves, printing its /play/<assignment> path (dl-e8ov.5.38.3), or with JSON=1 one
-## JSON object (jw's lesson_publish reads it, dl-a38n wave 3); check it first with `bun run --cwd
-## packages/lesson-import check <path>`. ENV=dev|prod imports into that project instead, as
-## jadwigo_api the way db-seed does. ENV=prod runs only from the owner's own terminal and asks them
-## to type prod first (PROD_GATE); the guard refuses it to agents. A lesson lands in the featured
-## pod as an open anyone-assignment, so prod's featured list shows it at once: running the prod
-## import is the owner's approval (docs/runbooks/lesson-import.md, dl-9t2o.9). Safe to rerun: the
-## same content publishes nothing new.
+## lesson-import FILE=<path> [JSON=1] [FEATURED=1]: one lesson file into the local jadwigo
+## database, the one `make dev` serves, printing its /play/<assignment> path (dl-e8ov.5.38.3), or
+## with JSON=1 one JSON object (jw's lesson_publish reads it, dl-a38n wave 3); check it first with
+## `bun run --cwd packages/lesson-import check <path>`. By default the lesson lands in the drafts
+## pod: it plays at its path but never joins the featured list (dl-e8ov.2.59). FEATURED=1 imports
+## into the featured pod as an open anyone-assignment instead, so the featured list shows it at once
+## (dl-e8ov.2.97). ENV=dev|prod imports into that project instead, as jadwigo_api the way db-seed
+## does. ENV=prod runs only from the owner's own terminal and asks them to type prod first
+## (PROD_GATE); the guard refuses it to agents. Running ENV=prod FEATURED=1 is the owner's approval
+## of a featured lesson (docs/runbooks/lesson-import.md, dl-9t2o.9). Safe to rerun: the same content
+## publishes nothing new.
+# Only FEATURED=1 makes it featured: FEATURED=0 or no imports a draft (a featured prod import shows at once).
+LESSON_IMPORT_FLAGS = $(if $(JSON),--json) $(if $(filter 1,$(FEATURED)),--featured)
 lesson-import:
 	@test -n "$(FILE)" || { echo "lesson-import: FILE=<lesson file> is required"; exit 1; }
 ifeq ($(ENV),)
 	@$(LOCAL_DB_GATE)
-	DATABASE_URL=$(LOCAL_DATABASE_URL) bun run --cwd packages/lesson-import import "$(abspath $(FILE))" $(if $(JSON),--json)
+	DATABASE_URL=$(LOCAL_DATABASE_URL) bun run --cwd packages/lesson-import import "$(abspath $(FILE))" $(LESSON_IMPORT_FLAGS)
 else
 	@if [ "$(ENV)" != dev ] && [ "$(ENV)" != prod ]; then echo "lesson-import: ENV is dev or prod"; exit 1; fi
 	@$(PROD_GATE)
 	@$(API_SESSION); \
-	$(AS_API) bun run --cwd packages/lesson-import import "$(abspath $(FILE))" $(if $(JSON),--json)
+	$(AS_API) bun run --cwd packages/lesson-import import "$(abspath $(FILE))" $(LESSON_IMPORT_FLAGS)
+endif
+
+## lesson-withdraw LESSON=les_… | ASSIGNMENT=asg_… [UNDO=1]: withdraws a featured lesson by
+## archiving it (decision dl-w0b4.111, dl-9t2o.12), in the local jadwigo database. The featured
+## list drops it at once; its /play/ links keep playing, on purpose. ASSIGNMENT names it by its
+## featured assignment. UNDO=1 publishes it again, back on the list. ENV=dev|prod does it on that
+## project, as jadwigo_api the way lesson-import does, and ENV=prod is gated the same way: only
+## from the owner's own terminal, after typing prod (PROD_GATE); the guard refuses it to agents.
+## Safe to rerun. An unchanged re-import or db-seed leaves it withdrawn; a changed file's import
+## publishes a new version, which puts it back.
+LESSON_WITHDRAW_ARGS = "$(or $(LESSON),$(ASSIGNMENT))" $(if $(filter 1,$(UNDO)),--restore)
+lesson-withdraw:
+	@if [ -z "$(LESSON)$(ASSIGNMENT)" ] || { [ -n "$(LESSON)" ] && [ -n "$(ASSIGNMENT)" ]; }; then echo "lesson-withdraw: give one of LESSON=les_… or ASSIGNMENT=asg_…"; exit 1; fi
+ifeq ($(ENV),)
+	@$(LOCAL_DB_GATE)
+	DATABASE_URL=$(LOCAL_DATABASE_URL) bun run --cwd packages/lesson-import withdraw $(LESSON_WITHDRAW_ARGS)
+else
+	@if [ "$(ENV)" != dev ] && [ "$(ENV)" != prod ]; then echo "lesson-withdraw: ENV is dev or prod"; exit 1; fi
+	@$(PROD_GATE)
+	@$(API_SESSION); \
+	$(AS_API) bun run --cwd packages/lesson-import withdraw $(LESSON_WITHDRAW_ARGS)
 endif
 
 ## dream LEARNER=<id> [ENV=local]: the dream on demand (decision jadwigo-hackathon 2026-10-30, the

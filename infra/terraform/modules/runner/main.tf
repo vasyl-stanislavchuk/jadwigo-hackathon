@@ -58,9 +58,9 @@ resource "aws_iam_role" "runner" {
   assume_role_policy = data.aws_iam_policy_document.assume.json
 }
 
-# Its own log group and its own parameters, and with an uploads bucket named, a read of the photos
-# messages carry (dl-z5ja.11.2): no other S3, no other Lambda, no KMS statement (the aws/ssm key lets
-# the account's principals decrypt through SSM).
+# Its own log group and its own parameters, with an uploads bucket named a read of the photos
+# messages carry (dl-z5ja.11.2), and with a converter named an invoke of it: no other S3, no other
+# Lambda, no KMS statement (the aws/ssm key lets the account's principals decrypt through SSM).
 data "aws_iam_policy_document" "runner" {
   statement {
     sid       = "WritesItsLogs"
@@ -81,6 +81,16 @@ data "aws_iam_policy_document" "runner" {
       sid       = "ReadsAttachedPhotos"
       actions   = ["s3:GetObject"]
       resources = ["arn:aws:s3:::${statement.value}/pods/*/attachments/*"]
+    }
+  }
+
+  # With a converter named, an invoke of that function and no other (dl-z5ja.11.7, wave 6 decision 59).
+  dynamic "statement" {
+    for_each = var.converter_function_arn == "" ? [] : [var.converter_function_arn]
+    content {
+      sid       = "InvokesTheConverter"
+      actions   = ["lambda:InvokeFunction"]
+      resources = [statement.value]
     }
   }
 }
@@ -110,6 +120,7 @@ resource "aws_lambda_function" "runner" {
       var.environment_variables,
       { JADWIGO_RUNNER_DB_URL_PARAM = aws_ssm_parameter.database_url.name },
       var.uploads_bucket_name == "" ? {} : { UPLOADS_BUCKET = var.uploads_bucket_name },
+      var.converter_function_arn == "" ? {} : { CONVERTER_FUNCTION = var.converter_function_arn },
     )
   }
 

@@ -1,5 +1,6 @@
 import { s3Attachments } from "./attachments.ts";
 import { museConfig, runnerDatabaseUrl } from "./config.ts";
+import { lambdaConverter } from "./converter.ts";
 import { postgresEngineHost } from "./engine.ts";
 import { createRunnerHandler } from "./handler.ts";
 import { createHost } from "./host.ts";
@@ -22,6 +23,7 @@ const host = createHost(async () => {
     warn,
     muse.tier,
     s3Attachments(),
+    lambdaConverter(),
   );
 });
 

@@ -62,6 +62,7 @@ values. Copy it into the file and fill what you use.
 | `JW_BANK_TIMEOUT_SECS` | Seconds one search may take before it comes back degraded | `10` |
 | `JADWIGO_BANK_DIR` | A checkout of the bank repo, whose `sets/` `jw question show` and the draw read, and whose `refusals/<lang>.json` holds the flags and the shapes' beads | `~/.local/share/jadwigo/bank`, where `jw bank pull` clones it (`dl-a38n.60`) |
 | `JADWIGO_KHAN_DIR` | The synced copy of the bank's Khan bucket | `~/.cache/jadwigo-bank/khan` |
+| `JADWIGO_AWS_PROFILE` | The AWS profile `jw bank pull` reads the bucket with. The shell's `AWS_PROFILE` is ignored, since it may name another project's profile (`dl-n9fr.64`) | `jadwigo` |
 | `JW_KHAN_CONVERTED` | The Polish converted items file, the old name of `JW_KHAN_CONVERTED_PL`, kept for one release. For English it names the `converted.json` beside a `*-pl.json` file, or itself when it names any other file | `<JADWIGO_KHAN_DIR>/converted-pl.json`, the Polish file the bank's sync writes |
 | `JW_KHAN_CONVERTED_PL` | The Polish converted items file, in place of `JW_KHAN_CONVERTED` | as `JW_KHAN_CONVERTED` |
 | `JW_KHAN_CONVERTED_EN` | The English converted items file (`dl-hin8.17`) | `converted.json` beside `JW_KHAN_CONVERTED`'s Polish file, else `<JADWIGO_KHAN_DIR>/converted.json` |

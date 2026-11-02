@@ -11,7 +11,7 @@
 
 // Types only, so dev/engine-plugin.ts, which Vite loads with Node's type stripping, can import it.
 import type { EventId } from "@jadwigo/contracts";
-import type { ConversationId, Run, RunEvent, RunId } from "@jadwigo/contracts/run";
+import type { ConversationId, LessonPatch, Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 
 export const ENGINE_BASE = "/__engine";
 export const MESSAGES_PATH = `${ENGINE_BASE}/messages`;
@@ -25,7 +25,8 @@ export const runChannel = (run: string): string => `run:${run}`;
 
 /**
  * What the page sends: the parent's words, Stop, or a parent's edit in the lesson pane as a steer
- * naming the questions it changed (dl-z5ja.30). `event_id` makes a resend land once.
+ * naming the questions it changed (dl-z5ja.30). A steer's `patch` is the parent's own change, which
+ * the runner applies with no model call (dl-z5ja.111). `event_id` makes a resend land once.
  */
 export type SendBody =
   | { conversation_id: ConversationId; event_id: EventId; kind: "message"; text: string }
@@ -37,6 +38,9 @@ export type SendBody =
       text: string;
       source: "lesson_edit";
       question_ids: string[];
+      patch?: LessonPatch;
+      /** The lesson revision the patch was made on: sent with a patch, never without. */
+      base_revision?: number;
     };
 
 export interface SendAnswer {

@@ -360,6 +360,20 @@ export class InMemoryStore implements Store {
     return row?.pod_id === pod ? row : undefined;
   }
 
+  async setLessonStatus(
+    pod: PodId,
+    id: LessonId,
+    status: "archived" | "published",
+  ): Promise<Lesson> {
+    const lesson = this.#inPod(this.#lessons, pod, id, "the lesson");
+    if (status === "published" && this.#latest(pod, id) === undefined) {
+      throw new StoreError(ErrorType.enum.BadRequest, "the lesson has no published version");
+    }
+    const row = frozen({ ...lesson, status });
+    this.#lessons.set(id, row);
+    return row;
+  }
+
   async putLessonQuestion(pod: PodId, question: NewLessonQuestion): Promise<LessonQuestion> {
     this.#pod(pod);
     const id = question.id ?? mint(LessonQuestionId, ID_PREFIXES.lesson_question);
@@ -1581,6 +1595,10 @@ export class InMemoryStore implements Store {
 
   async getRun(pod: PodId, run: RunId): Promise<Run> {
     return this.#inPod(this.#runs, pod, run, "the run");
+  }
+
+  async lockRun(pod: PodId, run: RunId): Promise<Run> {
+    return this.getRun(pod, run);
   }
 
   async updateRun(

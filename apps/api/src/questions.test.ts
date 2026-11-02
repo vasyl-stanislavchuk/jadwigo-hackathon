@@ -424,6 +424,38 @@ describe("GET /api/v1/questions/{id}", () => {
     expect(asked).toEqual(["questions/khan/xfeed0001.json"]);
   });
 
+  it("returns an Alfik body from questions/alfik/<id>.json: a lettered choose and its picture", async () => {
+    const alfik = {
+      id: "alfik_2024_k2_q07",
+      source: "alfik",
+      pl: {
+        family: "choose",
+        data: { options: ["A", "B", "C", "D", "E"] },
+        key: { correct: ["C"] },
+      },
+      credit: { source: "alfik", licence: "© Łowcy Talentów – JERSZ" },
+      pictures: [{ ref: `${"cd".repeat(32)}.png`, decorative: false }],
+    };
+    const { bucket, asked } = fakeBucket({
+      "questions/alfik/alfik_2024_k2_q07.json": JSON.stringify(alfik),
+    });
+    const reply = await getBody(bucket, "alfik_2024_k2_q07");
+    expect(reply.status).toBe(200);
+    expect(reply.body).toEqual(QuestionBody.parse(alfik));
+    expect((reply.body as QuestionBody).source).toBe("alfik");
+    expect(asked).toEqual(["questions/alfik/alfik_2024_k2_q07.json"]);
+  });
+
+  it("answers 502 when the object names another source than its prefix", async () => {
+    const { bucket } = fakeBucket({
+      "questions/alfik/alfik_2024_k2_q07.json": JSON.stringify({
+        ...BODY,
+        id: "alfik_2024_k2_q07",
+      }),
+    });
+    refusedWith(await getBody(bucket, "alfik_2024_k2_q07"), ErrorType.enum.BankUnavailable);
+  });
+
   it("drops a field the body schema does not name", async () => {
     const { bucket } = fakeBucket({
       "questions/khan/xfeed0001.json": JSON.stringify({ ...BODY, raw_item: { secret: 1 } }),

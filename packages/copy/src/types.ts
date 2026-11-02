@@ -428,6 +428,11 @@ export const COPY_KEYS = [
   "credit_source",
   "credit_not_affiliated",
   "credit_close",
+  // the same lines for a source whose name Polish inflects: Alfik Matematyczny (dl-n9fr.66.6)
+  "credit_from_alfik",
+  "credit_title_alfik",
+  "credit_label_alfik",
+  "credit_not_affiliated_alfik",
   "leave_title",
   "leave_where",
   "leave_stay",
@@ -637,9 +642,14 @@ export const COPY_KEYS = [
   "parent_about_lesson",
   "parent_about_lesson_empty",
   "parent_change",
-  "parent_chat_empty",
   "parent_lesson_empty",
   // end the lesson workspace
+  // the lesson's send and its chat (dl-z5ja.108)
+  "parent_composer",
+  "parent_writing",
+  "parent_sending",
+  "parent_start_failed",
+  // end the lesson's send and its chat
   // the chat page (dl-z5ja.17): /playground/chat, a parent's chat on the left and the lesson on the right
   "chat_title",
   "chat_lesson_title",
@@ -776,6 +786,10 @@ export const COPY_KEYS = [
   "chat_list_archive_confirm",
   "chat_list_archive_yes",
   "chat_list_archive_failed",
+  "chat_edit_words",
+  "chat_edit_saved",
+  "chat_edit_saving",
+  "chat_edit_not_applied",
   "chat_sign_in",
   "chat_limit_message",
   // end the chat page

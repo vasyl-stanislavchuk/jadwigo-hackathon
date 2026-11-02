@@ -40,6 +40,11 @@ export interface ConversationState {
    * per-minute one or the day's. Either way there is no retry.
    */
   sendLimit: SendLimit | null;
+  /**
+   * The edit steers whose send was refused or never reached the server, by `event_id`: no log will
+   * hold them, so what waits on one (Cofnij) stops waiting (dl-z5ja.111).
+   */
+  failedSteers: readonly string[];
 }
 
 /** The two message limits a send can hit: `MessageLimitMinute` and `MessageLimitDay`. */
@@ -54,7 +59,8 @@ export type ConversationAction =
   | { type: "restored" }
   | { type: "queued"; text: string }
   | { type: "stop" }
-  | { type: "send_failed"; failed: boolean; limit?: SendLimit | null };
+  | { type: "send_failed"; failed: boolean; limit?: SendLimit | null }
+  | { type: "steer_failed"; event_id: string };
 
 export const EMPTY: ConversationState = {
   runs: [],
@@ -63,6 +69,7 @@ export const EMPTY: ConversationState = {
   stopping: false,
   sendFailed: false,
   sendLimit: null,
+  failedSteers: [],
 };
 
 /** The highest `seq` merged: where the next fetch starts. */
@@ -134,6 +141,8 @@ export function conversationReducer(
       return { ...state, stopping: turnOpen(state) };
     case "send_failed":
       return { ...state, sendFailed: action.failed, sendLimit: action.limit ?? null };
+    case "steer_failed":
+      return { ...state, failedSteers: [...state.failedSteers, action.event_id] };
   }
 }
 
@@ -143,10 +152,24 @@ const ENDED: readonly RunStatus[] = ["completed", "failed", "cancelled"];
 export interface Turn {
   run: Run;
   view: RunView;
+  /**
+   * What wrote the turn's latest lesson revision: its `call_id`, the AI's tool call or the parent's
+   * patch steer (dl-z5ja.111); null before a revision. Absent where a test builds the turn by hand.
+   */
+  writer?: string | null;
+}
+
+/** The `call_id` of the highest `lesson_revision` in a run's log, or null before one. */
+function writerOf(events: readonly RunEvent[]): string | null {
+  let latest: { revision: number; call_id: string } | null = null;
+  for (const e of events)
+    if (e.type === "lesson_revision" && (latest === null || e.payload.revision > latest.revision))
+      latest = { revision: e.payload.revision, call_id: e.payload.call_id };
+  return latest?.call_id ?? null;
 }
 
 export const turnsOf = (state: ConversationState): Turn[] =>
-  state.runs.map((r) => ({ run: r.run, view: foldRun(r.events) }));
+  state.runs.map((r) => ({ run: r.run, view: foldRun(r.events), writer: writerOf(r.events) }));
 
 /** A turn is open from its run's creation until `turn_complete`, or its row says it ended. */
 export function isOpen(turn: Turn): boolean {
