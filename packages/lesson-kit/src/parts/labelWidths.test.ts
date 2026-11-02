@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { labelWidths, textOnly } from "./labelWidths.ts";
+import { isAxisTitle, labelWidths, textOnly } from "./labelWidths.ts";
 
 const at = (x: number, y: number, alignment = "below") => ({
   coordinates: [x, y] as [number, number],
@@ -46,5 +46,31 @@ describe("textOnly", () => {
     expect(textOnly("\\blueD{4}")).toBeNull();
     expect(textOnly("\\text{a} + 1")).toBeNull();
     expect(textOnly("12")).toBeNull();
+  });
+});
+
+describe("isAxisTitle", () => {
+  // The pony picture graph's range: a margin left of the y-axis at x = 0.
+  const range = [
+    [-0.53, 4.3],
+    [-2.04, 5],
+  ] as const;
+
+  it("finds the centred title left of the y-axis", () => {
+    expect(isAxisTitle(at(-0.45, 2.65, "center"), range)).toBe(true);
+  });
+
+  it("leaves the x-axis names, the x-axis title and other labels level", () => {
+    expect(isAxisTitle(at(0.65, 0, "below"), range)).toBe(false);
+    expect(isAxisTitle(at(2.15, -1.6, "below"), range)).toBe(false);
+    expect(isAxisTitle(at(-0.45, 2, "left"), range)).toBe(false);
+    expect(isAxisTitle(at(1, 2, "center"), range)).toBe(false);
+    // A drawing with no margin left of 0 has no such title.
+    expect(
+      isAxisTitle(at(-1, 0, "center"), [
+        [-5, -0.5],
+        [0, 1],
+      ]),
+    ).toBe(false);
   });
 });
