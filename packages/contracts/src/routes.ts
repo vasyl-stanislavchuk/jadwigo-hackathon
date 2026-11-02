@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Need, QuestionBody, SearchEnvelope } from "./bank.ts";
+import { Need, QuestionBody, QuestionSetPage, SearchEnvelope } from "./bank.ts";
 import {
   AssignmentId,
   AttachmentId,
@@ -45,6 +45,8 @@ import {
   LearnerReports,
   LearnerSkills,
   LearnerSnapshot,
+  LessonGive,
+  LessonGiven,
   Me,
   ParentAttemptReview,
   PlaygroundExamples,
@@ -63,6 +65,13 @@ import {
  * OpenAPI document, and API Gateway's `$default` route carries it to the router.
  */
 export const AUTH_EMAIL_HOOK_PATH = "/api/hooks/auth-emails";
+
+/**
+ * The remote MCP for parents (dl-1u6fn.8), outside `/api/v1` and `ROUTES`: one JSON-RPC endpoint,
+ * Streamable HTTP, whose tools are its surface. Its RFC 9728 metadata is served at
+ * `/.well-known/oauth-protected-resource` and at that path followed by this one.
+ */
+export const MCP_PATH = "/api/mcp";
 
 /**
  * The `/api/v1` route table, named once (RULES.md rules 14 to 18). `apps/api` registers these and
@@ -494,6 +503,20 @@ export const ROUTES = {
     description:
       "Idempotent by `event_id`: a resend returns the run that holds the message, and the same `event_id` with other text, other photos or another page in `context` (or none where it had one) is 409 `EventIdMismatch`. A `context` naming a learner or a lesson the pod does not hold is 404 `NotFound`, and nothing is kept. `attachment_ids` names photos from `POST /api/v1/attachments`, uploaded; one that is not there as declared is 409 `AttachmentMismatch`, and one another message carries is 409 `AttachmentAttached`, and the message is not kept. The reply comes before the AI answers: read the run's events for its answer.",
   },
+  giveLesson: {
+    method: "POST",
+    path: "/api/v1/conversations/{id}/lessons",
+    params: z.object({ id: ConversationId }),
+    body: LessonGive,
+    response: LessonGiven,
+    status: 201,
+    auth: "token",
+    summary:
+      "Gives the conversation's checked lesson to play: a published version and an assignment.",
+    tag: "conversations",
+    description:
+      "Only the latest lesson revision whose latest `lesson_check` found it publishable, with nothing written after it; else 409 `LessonNotPublishable`, as for a lesson of more than `LIMITS.questionsPerLesson` questions. A `learner_id` outside the pod is 404 `NotFound`. Giving the same revision again answers the same assignment. The child plays it at `/play/<assignment id>`, or `/play/<assignment id>?learner=<learner id>` for the learner it was given to.",
+  },
   createAttachment: {
     method: "POST",
     path: "/api/v1/attachments",
@@ -585,6 +608,25 @@ export const ROUTES = {
     summary: "Searches the question bank: a need in, ranked questions out.",
     tag: "bank",
     description: "Called with the bank's shared read token, not a Supabase token.",
+  },
+  /**
+   * One question set's public page: its question ids and the lesson-ready ones per language
+   * (`src/bank.ts`, dl-e8ov.5.2.22). The bank Lambda answers it; the id is checked against
+   * `QuestionSetId` in apps/api after the read token.
+   */
+  questionSet: {
+    method: "GET",
+    path: "/api/v1/question-sets/{id}",
+    params: z.object({ id: z.string() }),
+    body: null,
+    response: QuestionSetPage,
+    status: 200,
+    // Like questionSearches: the bank's shared read token, checked in apps/api (questions.ts).
+    auth: "none",
+    summary: "Reads one question set: its question ids, and which are lesson-ready per language.",
+    tag: "bank",
+    description:
+      "Called with the bank's shared read token, not a Supabase token: without it the reply is 401, whatever the id.",
   },
   /**
    * One bank question's body with its key, from the content bucket (`src/bank.ts`). The id is

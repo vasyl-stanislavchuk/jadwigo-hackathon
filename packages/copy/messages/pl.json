@@ -1092,5 +1092,8 @@
   "parent_analytics_ask": "Jadwigo zapisuje, jak używasz aplikacji, także nagrania ekranu bez tego, co wpisujesz. Dzięki temu ją ulepszamy. Zgadzasz się?",
   "parent_analytics_accept": "Zgadzam się",
   "parent_analytics_reject": "Nie, dziękuję",
-  "parent_analytics_privacy": "Prywatność"
+  "parent_analytics_privacy": "Prywatność",
+  "site_consent_ask": "Jadwigo zapisuje, jak odwiedzasz stronę, także nagrania ekranu bez tego, co wpisujesz. Dzięki temu ją ulepszamy. Zgadzasz się?",
+  "site_consent_accept": "Zgadzam się",
+  "site_consent_reject": "Nie, dziękuję"
 }

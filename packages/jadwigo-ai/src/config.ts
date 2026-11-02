@@ -43,3 +43,13 @@ export function museSettings(): MuseSettings {
     private_model: process.env["JADWIGO_MUSE_PRIVATE_MODEL"] || null,
   };
 }
+
+/**
+ * The deployed bank the live bank test draws from, or null: `JW_API_URL` and `JW_BANK_READ_TOKEN`,
+ * the names in `~/.config/jadwigo-bank/bank.env` that `jw` reads. The test skips without them.
+ */
+export function liveBank(): { base: string; token: string } | null {
+  const base = process.env["JW_API_URL"]?.trim();
+  const token = process.env["JW_BANK_READ_TOKEN"]?.trim();
+  return base && token ? { base, token } : null;
+}

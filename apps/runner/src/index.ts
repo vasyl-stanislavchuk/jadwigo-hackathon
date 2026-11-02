@@ -1,5 +1,6 @@
+import { apiBank, fixtureBank, httpBankReads } from "@jadwigo/jadwigo-ai";
 import { s3Attachments } from "./attachments.ts";
-import { museConfig, runnerDatabaseUrl } from "./config.ts";
+import { bankConfig, museConfig, runnerDatabaseUrl } from "./config.ts";
 import { lambdaConverter } from "./converter.ts";
 import { postgresEngineHost } from "./engine.ts";
 import { createRunnerHandler } from "./handler.ts";
@@ -15,7 +16,8 @@ import { liveMuse, realRuntime } from "./muse.ts";
 const warn = (line: string) => console.warn(line);
 
 const host = createHost(async () => {
-  const [url, muse] = await Promise.all([runnerDatabaseUrl(), museConfig()]);
+  const [url, muse, bank] = await Promise.all([runnerDatabaseUrl(), museConfig(), bankConfig()]);
+  if (bank === undefined) warn("JADWIGO_API_URL is unset: the verbs draw from the fixture bank");
   // The lane's ledger reads the host's own store (dl-z5ja.89), so its cap outlives a cold start.
   return postgresEngineHost(
     url,
@@ -24,6 +26,7 @@ const host = createHost(async () => {
     muse.tier,
     s3Attachments(),
     lambdaConverter(),
+    bank === undefined ? fixtureBank() : apiBank(httpBankReads(bank)),
   );
 });
 

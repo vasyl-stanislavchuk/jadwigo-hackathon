@@ -1,6 +1,6 @@
 ---
 title: Conversations with the AI
-description: Start a conversation, send a message with photos, read the AI's answer as run events, stop a turn, rate it, and archive a conversation.
+description: Start a conversation, send a message with photos, read the AI's answer as run events, stop a turn, rate it, give its lesson to play, and archive a conversation.
 ---
 
 This guide is for a client that runs a parent's chat with Jadwigo's AI: the chat on the left that
@@ -151,7 +151,33 @@ A parent rates a turn `good` or `bad`, and may say what was missing on `bad`. Ea
 rating per run: rating again replaces it. The rating stays with the family's pod and is never sent
 to analytics, since a note may name the child. Try again is no route: send the last message again.
 
-## 6. List and archive conversations
+## 6. Give the lesson to play
+
+[Reference](/api/operations/givelesson/).
+
+```bash
+curl -X POST https://app.jadwigo.pl/api/v1/conversations/$CONVERSATION_ID/lessons \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"revision": 3, "learner_id": "lrn_…"}'
+```
+
+The conversation's lesson is the latest `lesson_revision` event across its runs. It can be given
+once the latest `lesson_check` found it publishable and nothing changed the lesson after that check,
+neither the AI nor the parent's own edit. The server checks the revision again before it publishes.
+The reply holds a published lesson version and an assignment, and the child plays the assignment
+at `/play/<assignment id>`.
+
+- `revision` is the revision the parent saw. Leave it out to give the latest. An older revision is
+  `409` `LessonNotPublishable`, so a parent never gives a lesson they have not seen.
+- `learner_id` names the child the lesson is for: the play link is then
+  `/play/<assignment id>?learner=<learner id>`. Leave it out, and the child picks their name before
+  the first question. A child outside the family is `404` `NotFound`.
+- A lesson with no `lesson_check` since its last change, one that failed it, or one of more than
+  20 questions is `409` `LessonNotPublishable`, and nothing is written.
+- Giving the same revision to the same child again returns the same assignment, so a retry is safe.
+
+## 7. List and archive conversations
 
 [List](/api/operations/listconversations/) and [archive](/api/operations/patchconversation/).
 

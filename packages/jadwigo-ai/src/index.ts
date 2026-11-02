@@ -50,10 +50,14 @@ export {
   sweep,
 } from "./run/run-step.ts";
 export {
+  apiBank,
   type BankPort,
+  type BankReads,
   type CheckFindings,
   createVerbs,
   fixtureBank,
+  type HttpBankOptions,
+  httpBankReads,
   type VerbDeps,
 } from "./verbs/index.ts";
 export {

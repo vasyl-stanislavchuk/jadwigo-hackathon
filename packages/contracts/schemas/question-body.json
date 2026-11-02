@@ -38,6 +38,10 @@
         },
         "say": {
           "type": "string"
+        },
+        "question_type": {
+          "description": "The question type a lesson step names; its family is the variant's family",
+          "$ref": "#/$defs/QuestionType"
         }
       },
       "required": [
@@ -77,6 +81,10 @@
         },
         "say": {
           "type": "string"
+        },
+        "question_type": {
+          "description": "The question type a lesson step names; its family is the variant's family",
+          "$ref": "#/$defs/QuestionType"
         }
       },
       "required": [
@@ -88,6 +96,10 @@
     },
     "problem_type": {
       "type": "string"
+    },
+    "question_type": {
+      "description": "The question type of every variant that names none (an Alfik task's lettered_choice)",
+      "$ref": "#/$defs/QuestionType"
     },
     "credit": {
       "type": "object",
@@ -156,6 +168,40 @@
         "alfik"
       ],
       "description": "Where a bank question comes from, and its prefix in the content bucket: khan, alfik"
+    },
+    "QuestionType": {
+      "type": "string",
+      "enum": [
+        "true_false",
+        "recognition",
+        "lettered_choice",
+        "multi_select",
+        "mark_numbers",
+        "fraction_compare",
+        "production",
+        "short_text",
+        "expression",
+        "measure",
+        "fill_gaps",
+        "fill_table",
+        "label_picture",
+        "column",
+        "pyramid",
+        "clock_read",
+        "money_count",
+        "order",
+        "bucket",
+        "match",
+        "number_line_place",
+        "hotspot",
+        "spatial_build",
+        "draw_graph",
+        "clock_set",
+        "money_pay",
+        "fraction_shade",
+        "area_model",
+        "explain"
+      ]
     }
   }
 }

@@ -1,6 +1,7 @@
 // Run before every upload (make -C infra site-deploy): the built site carries what search engines
 // and link previews read, or nothing is synced to the bucket.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { posthogKey } from "../src/config.ts";
 import { type DistCheck, parsePathPage, pathPageChecks } from "../src/lib/dist.ts";
 import { gradePlayProblems, playBase } from "../src/lib/featured.ts";
 import { servedLanguages, twinPath } from "../src/lib/i18n.ts";
@@ -69,7 +70,22 @@ const english: readonly DistCheck[] = served.includes("en")
       ["en/index.html", '<h1 id="hero-title"'],
     ]
   : [];
-const must: readonly DistCheck[] = [...landing, ...english, ...paged.must, ...signIn.must];
+// With PostHog's key in the build (infra/site-build/prod.env, dl-w0b4.14), every page carries the
+// consent banner, which starts PostHog; nothing is captured before a visitor's answer.
+const analytics: readonly DistCheck[] = posthogKey()
+  ? [
+      ["index.html", "data-analytics-consent"],
+      ["zaloguj/index.html", "data-analytics-consent"],
+      ["prywatnosc/index.html", "data-analytics-consent"],
+    ]
+  : [];
+const must: readonly DistCheck[] = [
+  ...landing,
+  ...english,
+  ...paged.must,
+  ...signIn.must,
+  ...analytics,
+];
 // Hidden for now (dl-5ssh.4.28): /porownanie is neither built nor linked, and the footer has no
 // sources column or data sentence.
 const hidden: readonly DistCheck[] = [

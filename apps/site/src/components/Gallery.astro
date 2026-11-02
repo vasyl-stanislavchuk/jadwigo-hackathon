@@ -78,8 +78,11 @@ const cards = lessons.map((l) => {
 </div>
 
 <script>
+  import { track } from "@jadwigo/analytics";
+  import { pageLocale } from "../lib/page-locale.ts";
+
   // The landing page's row (dl-5ssh.4.44): it drifts on its own, slowly and without end, so every
-  // lesson passes by. A copy of the cards follows the real ones (inert: out of the tab order and hidden
+  // lesson passes by. A copy of the cards follows the real ones (out of the tab order and hidden
   // from a screen reader), and the row steps back by one set as it reaches the copy, which looks the
   // same. It rests while the pointer is on it or a card has focus, for a few seconds after a touch or
   // a wheel, while the row is off screen or the tab is hidden; under reduced motion it never moves.
@@ -91,13 +94,23 @@ const cards = lessons.map((l) => {
     const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (!list || cards.length === 0) continue;
 
+    // A featured lesson opened from the row (dl-w0b4.14), from a card or from its drifting copy below.
+    const opened = (card: HTMLElement) =>
+      card.querySelector("a")?.addEventListener("click", () =>
+        track("featured_lesson_opened", { locale: pageLocale() }),
+      );
+    for (const card of cards) opened(card);
+
     // Under reduced motion the row stays still; a hand scrolls it.
     if (still) continue;
 
     for (const card of cards) {
       const copy = card.cloneNode(true) as HTMLElement;
-      copy.inert = true;
+      // Hidden from a screen reader and out of the tab order, but not inert: an inert card gets no
+      // hover, and a pointer on a copy should look and click like the real one (dl-5ssh.4.52).
       copy.setAttribute("aria-hidden", "true");
+      for (const link of copy.querySelectorAll("a")) link.tabIndex = -1;
+      opened(copy);
       // A copied picture that is already in shows at once; one still on its way fades in when it lands.
       for (const slot of copy.querySelectorAll(".fade-in")) {
         const img = slot.querySelector("img");
@@ -199,7 +212,9 @@ const cards = lessons.map((l) => {
   .title { font-size: 1.3rem; font-weight: 700; line-height: 1.25; }
   .card a :global(.card-pic) { height: 6.5rem; min-height: 0; }
   /* The teaser: the first question as the child sees it, on exercise-book paper. */
-  .teaser { --cell: 1.25rem; padding: 0.6rem 0.75rem; font-size: 1.05rem; font-weight: 700; line-height: 1.35; border-radius: var(--jw-radius-small); }
+  /* Its words sit in the middle of the box, top to bottom, whatever its height on the shared row
+     (owner, 2026-11-02, dl-5ssh.4.52). */
+  .teaser { --cell: 1.25rem; display: flex; align-items: center; padding: 0.6rem 0.75rem; font-size: 1.05rem; font-weight: 700; line-height: 1.35; border-radius: var(--jw-radius-small); }
   /* Play: centred at the card's foot, shown when the card is pointed at or focused; where there is no
      hover (a touch screen) it always shows. Its place is kept, so nothing moves when it appears. */
   .go {

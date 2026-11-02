@@ -1,6 +1,7 @@
 import type { ModelTier } from "@jadwigo/contracts/run";
 import {
   type AttachmentReader,
+  type BankPort,
   type Converter,
   createVerbs,
   type EngineDeps,
@@ -25,8 +26,8 @@ const MAX_STEPS = 20;
 /**
  * The engine on Postgres as `jadwigo_runner`: the store sets `app.pod_id` per unit after
  * `authorizeRun`, and the queue reads, hides, archives and dead-letters `agent_step`. The verbs read
- * the fixture bank (no bank service exists yet, `BankPort`'s only implementation) and the run's
- * pod's learner records through the same store.
+ * the bank they are given (the real one through the API in the Lambda, dl-1u6fn.4; the fixture in a
+ * probe or a test) and the run's pod's learner records through the same store.
  */
 export function postgresEngineHost(
   url: string,
@@ -38,6 +39,8 @@ export function postgresEngineHost(
   attachments?: AttachmentReader,
   /** Where a PDF, a DOCX or a HEIC becomes page JPEGs: the converter Lambda; none in a probe. */
   converter?: Converter,
+  /** Where the verbs draw questions: `apiBank` in the Lambda; the fixture when none is given. */
+  bank: BankPort = fixtureBank(),
 ): HostDeps & { close(): Promise<void> } {
   const store = createPostgresStore(url, { ...POOL, role: "jadwigo_runner" });
   const pool = new pg.Pool({ connectionString: url, ...POOL });
@@ -53,7 +56,7 @@ export function postgresEngineHost(
     muse: typeof muse === "function" ? muse(store) : muse,
     // The learner verbs read one learner of the run's pod through this store, as jadwigo_runner,
     // whose grants cover their reads (dl-z5ja.125); without it they refuse (dl-z5ja.127).
-    verbs: createVerbs({ bank: fixtureBank(), learners: store, now }),
+    verbs: createVerbs({ bank, learners: store, now }),
     queue,
     now,
     ...(attachments === undefined ? {} : { attachments }),

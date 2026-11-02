@@ -6,6 +6,8 @@ import {
   ErrorType,
   Need,
   QuestionBody,
+  QuestionSetId,
+  QuestionSetPage,
   questionSourceOf,
   SearchEnvelope,
 } from "@jadwigo/contracts";
@@ -69,6 +71,29 @@ export async function searchQuestions(
   if (!need.success) throw badRequest(need.error.issues);
   const reply = await invokeBank(bank, need.data);
   return publicEnvelope(reply);
+}
+
+/**
+ * `GET /api/v1/question-sets/{id}`: one set's public page, its question ids and the lesson-ready
+ * ones per language, from the bank Lambda (`{set_id}`, dl-e8ov.5.2.22). Authorization runs first,
+ * as for a search; then the id must be a `QuestionSetId` (404 otherwise, before the bank is
+ * invoked), the bank must know the set (404) and its answer must parse as that set's page (502).
+ */
+export async function questionSet(
+  bank: BankDeps | undefined,
+  headers: Headers,
+  id: string,
+): Promise<QuestionSetPage> {
+  if (bank === undefined) throw unavailable();
+  await authorizeRead(bank, headers);
+  const setId = QuestionSetId.safeParse(id);
+  if (!setId.success) throw noSuchSet();
+  const { statusCode, answer } = await invokeLambda(bank, { set_id: setId.data });
+  if (statusCode === 404) throw noSuchSet();
+  if (statusCode !== 200) throw unavailable();
+  const page = QuestionSetPage.safeParse(answer);
+  if (!page.success || page.data.id !== setId.data) throw unavailable();
+  return page.data;
 }
 
 /**
@@ -245,9 +270,25 @@ function same(a: string, b: string): boolean {
  * (a function error, a throw, a 403 or 500, a body that is not JSON) is BankUnavailable, 502.
  */
 async function invokeBank(bank: BankDeps, need: Need): Promise<unknown> {
+  const { statusCode, answer } = await invokeLambda(bank, { need, stage: "final" });
+  if (statusCode === 400) {
+    throw new ApiError(ErrorType.enum.BadRequest, bankDetail(answer));
+  }
+  if (statusCode !== 200 || answer === undefined) throw unavailable();
+  return answer;
+}
+
+/**
+ * One invoke of the alias: the status the bank answered and its body as JSON. A function error,
+ * a throw, or a reply that is no function URL response is BankUnavailable, 502.
+ */
+async function invokeLambda(
+  bank: BankDeps,
+  payload: unknown,
+): Promise<{ statusCode: number; answer: unknown }> {
   let reply: BankInvokeReply;
   try {
-    reply = await bank.invoke(JSON.stringify({ need, stage: "final" }));
+    reply = await bank.invoke(JSON.stringify(payload));
   } catch {
     throw unavailable();
   }
@@ -257,12 +298,7 @@ async function invokeBank(bank: BankDeps, need: Need): Promise<unknown> {
   if (typeof parsed !== "object" || parsed === null) throw unavailable();
   const response = parsed as BankResponse;
   if (typeof response.statusCode !== "number") throw unavailable();
-  const answer = parseJson(response.body ?? "");
-  if (response.statusCode === 400) {
-    throw new ApiError(ErrorType.enum.BadRequest, bankDetail(answer));
-  }
-  if (response.statusCode !== 200 || answer === undefined) throw unavailable();
-  return answer;
+  return { statusCode: response.statusCode, answer: parseJson(response.body ?? "") };
 }
 
 /**
@@ -314,4 +350,8 @@ function unavailable(): ApiError {
 
 function noSuchQuestion(): ApiError {
   return new ApiError(ErrorType.enum.NotFound, "no such question");
+}
+
+function noSuchSet(): ApiError {
+  return new ApiError(ErrorType.enum.NotFound, "no such question set");
 }
