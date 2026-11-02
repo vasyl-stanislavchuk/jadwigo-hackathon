@@ -96,6 +96,7 @@ import {
 } from "./route.ts";
 import { ParentShell } from "./shell/ParentShell.tsx";
 import type { Place } from "./shell/Sidebar.tsx";
+import { learnerTone } from "./tone.ts";
 import { browserEngine, firstMessage, type LessonEngine } from "./workspace/engine.ts";
 import { LessonWorkspace } from "./workspace/LessonWorkspace.tsx";
 import { ChatFoldToggle, LessonToggle } from "./workspace/Workspace.tsx";
@@ -849,6 +850,7 @@ function SignedIn({
           learner={child}
           language={language}
           notice={notice === null ? null : t(notice)}
+          tone={learnerTone(learners, child.id)}
         />,
       );
     }
