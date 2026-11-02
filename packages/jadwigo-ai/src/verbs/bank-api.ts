@@ -122,7 +122,9 @@ async function pinned(
     const page = await reads.set(id);
     if (page === undefined)
       throw new VerbError("input", `lesson_draft: the bank holds no set ${id}`);
-    if (out.length >= limit || tally.reads >= tally.max) continue;
+    // Every pinned set is read, so a set the bank lacks is refused; one whose page names none of
+    // the kept types is passed over unread, as the search path does, and spends none of the bound.
+    if (out.length >= limit || tally.reads >= tally.max || !holdsKept(page, tally.types)) continue;
     out.push(...(await draw(reads, page, limit - out.length, language, tally)));
   }
   if (out.length === 0 && tally.reads > 0) throw passedOverAll(tally, language);

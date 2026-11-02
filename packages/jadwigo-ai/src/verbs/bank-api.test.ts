@@ -244,6 +244,29 @@ describe("apiBank with question types (dl-hin8.24)", () => {
     });
   });
 
+  it("passes over a pinned set naming none of the kept types without reading it, and draws the next", async () => {
+    const more = IDS.map((id) => id.replace("xmade", "xmore"));
+    const choose = mixed();
+    const bodies: Record<string, QuestionBody | undefined> = { ...BODIES };
+    more.forEach((id, i) => {
+      const twin = choose[IDS[i] ?? ""];
+      if (twin !== undefined) bodies[id] = { ...twin, id };
+    });
+    const allProduction = { ...page("set_a", IDS.slice(0, 30)), question_types: ["production"] };
+    const holdsChoose = { ...page("set_b", more), question_types: ["production", "recognition"] };
+    const { reads, asked } = fakeReads(bodies, [allProduction, holdsChoose]);
+    const questions = await apiBank(reads).sources({
+      ...QUERY,
+      limit: 5,
+      sets: ["set_a", "set_b"],
+      question_types: ["choose"],
+    });
+    expect(asked.set).toEqual(["set_a", "set_b"]);
+    expect(asked.body.every((id) => id.startsWith("xmore"))).toBe(true);
+    expect(questions.map((q) => q.question_type)).toEqual(Array(5).fill("recognition"));
+    expect(questions.every((q) => q.set_id === "set_b")).toBe(true);
+  });
+
   it("maps a search row's question types onto its set", async () => {
     const { reads } = fakeReads(BODIES, PAGES);
     const plain = reads.search;
