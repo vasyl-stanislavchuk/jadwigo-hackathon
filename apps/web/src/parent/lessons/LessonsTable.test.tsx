@@ -1,14 +1,16 @@
 /**
  * The Lekcje table against a double of the conversation list's route: a row per conversation with
  * its title (or the untitled line), "Bez dziecka" rows muted, the filter and the search narrowing
- * the rows, and the empty and no-match lines.
+ * the rows, the empty and no-match lines, and Archive, which asks once and takes the row away only
+ * after the route answers (dl-uukj.47.9).
  */
 
 import type { ConversationListClient } from "@jadwigo/api-client";
-import { type Conversation, LearnerId } from "@jadwigo/contracts";
+import { type Conversation, type ConversationId, LearnerId } from "@jadwigo/contracts";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { LessonsTable } from "./LessonsTable.tsx";
+import { useLessons } from "./useLessons.ts";
 
 const AT = "2026-10-28T14:02:06.274Z";
 const OLA = {
@@ -30,16 +32,45 @@ const conversation = (n: number, title: string | null): Conversation =>
     archived_at: null,
   }) as Conversation;
 
+const refused = (): never => {
+  throw new Error("not called in this test");
+};
+
 const listOf = (
   conversations: Conversation[],
-): Pick<ConversationListClient, "listConversations"> => ({
+  changes: Partial<ConversationListClient> = {},
+): ConversationListClient => ({
   listConversations: async () => ({ conversations }),
+  patchConversation: refused,
+  ...changes,
 });
+
+/** The table as the page wires it: its rows and Archive from useLessons. */
+function Wired({
+  list,
+  language = "pl",
+}: {
+  list: ConversationListClient;
+  language?: "pl" | "en";
+}) {
+  const lessons = useLessons(list, "lessons");
+  return (
+    <LessonsTable
+      language={language}
+      learners={[OLA]}
+      lessons={lessons.rows}
+      onArchive={lessons.archive}
+    />
+  );
+}
 
 afterEach(cleanup);
 
-async function shown(conversations: Conversation[]): Promise<void> {
-  render(<LessonsTable language="pl" learners={[OLA]} list={listOf(conversations)} />);
+async function shown(
+  conversations: Conversation[],
+  changes: Partial<ConversationListClient> = {},
+): Promise<void> {
+  render(<Wired list={listOf(conversations, changes)} />);
   await screen.findByRole("table");
 }
 
@@ -116,16 +147,72 @@ describe("LessonsTable", () => {
     }
   });
 
+  it("archives a row after asking once, and only once the route answers", async () => {
+    let answer: () => void = () => {};
+    const patchConversation = vi.fn(
+      (id: ConversationId) =>
+        new Promise<Conversation>((resolve) => {
+          answer = () =>
+            resolve({ ...conversation(1, "Odejmowanie przez 10"), id, archived_at: AT });
+        }),
+    );
+    await shown([conversation(1, "Odejmowanie przez 10"), conversation(2, "Żółw liczy kroki")], {
+      patchConversation,
+    });
+    const [first] = rows();
+    await act(async () =>
+      fireEvent.click(within(first as HTMLElement).getByRole("button", { name: "Archiwizuj" })),
+    );
+    expect(
+      screen.getByText(
+        "Rozmowa zniknie z listy. Zostanie zachowana przy koncie rodziny i usunięta razem z nim.",
+      ),
+    ).toBeTruthy();
+    expect(patchConversation).not.toHaveBeenCalled();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Tak, archiwizuj" })));
+    expect(patchConversation).toHaveBeenCalledWith("cnv_00000000000000000000000001", {
+      archived: true,
+    });
+    // Asked, not yet answered: the row stays.
+    expect(rows()).toHaveLength(2);
+    await act(async () => answer());
+    expect(rows()).toHaveLength(1);
+    expect(screen.queryByRole("link", { name: "Odejmowanie przez 10" })).toBeNull();
+  });
+
+  it("keeps the row and says so when archiving fails", async () => {
+    await shown([conversation(1, "Odejmowanie przez 10")], {
+      patchConversation: async () => {
+        throw new Error("503");
+      },
+    });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Archiwizuj" })));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Tak, archiwizuj" })));
+    expect(rows()).toHaveLength(1);
+    expect(screen.getByRole("alert").textContent).toBe(
+      "Nie udało się zarchiwizować rozmowy. Spróbuj jeszcze raz.",
+    );
+  });
+
+  it("cancels an archive without calling the route", async () => {
+    const patchConversation = vi.fn(refused);
+    await shown([conversation(1, "Odejmowanie przez 10")], { patchConversation });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Archiwizuj" })));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Anuluj" })));
+    expect(document.querySelector("[data-archive-confirm]")).toBeNull();
+    expect(patchConversation).not.toHaveBeenCalled();
+    expect(rows()).toHaveLength(1);
+  });
+
   it("says it could not load when the route fails", async () => {
     render(
-      <LessonsTable
+      <Wired
         language="en"
-        learners={[]}
-        list={{
+        list={listOf([], {
           listConversations: async () => {
             throw new Error("503");
           },
-        }}
+        })}
       />,
     );
     expect(await screen.findByText(/Reload the page/)).toBeTruthy();
