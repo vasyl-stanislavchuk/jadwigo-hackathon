@@ -18,7 +18,7 @@
  *
  * The 2 buttons share one shape, Google's (owner, dl-e8ov.2.85: "same shape, own font"): the same
  * fill, stroke, text colour, height, corner, padding, mark size, gap and 14/20 medium text. Only the
- * family differs: Google Sans on Google's, as its rules ask, the page's Andika on Facebook's.
+ * family differs: Google Sans on Google's, as its rules ask, the page's own face (Geist, the adult audience's) on Facebook's.
  *
  * Google's colours are not Zeszyt roles, so they are written here once (parent/tokens.allow.json
  * says why).

@@ -167,5 +167,6 @@ test("the 2 provider buttons share one shape at a phone's width, the long Polish
   expect(f.overflows).toBe(false);
   expect(f.lines).toBe(1);
   expect(g.font).toMatch(/Google Sans/);
-  expect(f.font).toMatch(/^"?Andika/);
+  // The adult audience's face (dl-uukj.47.67 D1).
+  expect(f.font).toMatch(/^"?Geist/);
 });

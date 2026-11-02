@@ -33,10 +33,13 @@ function expectClasses(el: Element, present: readonly string[], absent: readonly
   for (const c of absent) expect(el.classList.contains(c), `lacks ${c}`).toBe(false);
 }
 
+// Outside the adult audience the page's 3 px outline; inside it the soft 3 px halo (dl-uukj.47.67 D15).
 const PAGE_OUTLINE = [
-  "focus-visible:outline-3",
-  "focus-visible:outline-offset-3",
-  "focus-visible:outline-jw-focus",
+  "not-in-data-[audience=adult]:focus-visible:outline-3",
+  "not-in-data-[audience=adult]:focus-visible:outline-offset-3",
+  "not-in-data-[audience=adult]:focus-visible:outline-jw-focus",
+  "in-data-[audience=adult]:focus-visible:ring-3",
+  "in-data-[audience=adult]:focus-visible:ring-ring/30",
 ];
 const SOFT_RING = [
   "outline-none",
@@ -236,13 +239,23 @@ describe("Button", () => {
     expectClasses(screen.getByRole("button", { name: "Wyślij kod" }), PAGE_OUTLINE, SOFT_RING);
   });
 
-  it("keeps the action, its edge and its press on an app page", () => {
+  // The edge is foundation.css's --jw-press, 0 in the adult audience (D4); the 1 px press move is a
+  // lesson's only.
+  it("keeps the action and its edge on an app page, and moves on press only in a lesson", () => {
     on("prose", <Button>Wyślij kod</Button>);
     expectClasses(
       screen.getByRole("button", { name: "Wyślij kod" }),
-      ["bg-jw-act", "text-jw-on-act", "shadow-jw-act", "active:translate-y-px"],
-      [],
+      [
+        "bg-jw-act",
+        "text-jw-on-act",
+        "shadow-jw-act",
+        "in-data-[audience=adult]:hover:bg-jw-act-hover",
+      ],
+      ["active:translate-y-px"],
     );
+    cleanup();
+    render(<Button>Sprawdź</Button>);
+    expectClasses(screen.getByRole("button", { name: "Sprawdź" }), ["active:translate-y-px"], []);
   });
 
   it("hands the page's outline to a link with asChild", () => {

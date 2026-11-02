@@ -39,7 +39,10 @@ const CSS = flat(readFileSync(join(import.meta.dirname, "foundation.css"), "utf-
 /** The heads of Zeszyt's blocks: primitives and type, the day roles, the aliases, the night roles. */
 const TOKENS = ":root, :host";
 const DAY = ":root, :host, [theme='light']";
-const ALIASES = ":root, :host, [theme], [data-lesson-theme]";
+const ALIASES = ":root, :host, [theme], [data-lesson-theme], [data-audience='kid']";
+/** The adult audience (dl-uukj.47.67) and the child's subtree inside it. */
+const ADULT = "[data-audience='adult']";
+const KID_IN_ADULT = "[data-audience='adult'] :is([data-audience='kid'], [data-lesson-theme])";
 const DARK = "[theme='dark']";
 
 /** Every custom property in the blocks whose selector is exactly `selector`, as written. */
@@ -144,6 +147,15 @@ const ROLES = [
   "brand-go",
   "crown",
   "crown-line",
+  "hover",
+  "hover-strong",
+  "side",
+  "side-active",
+  "field-edge",
+  "control-edge",
+  "act-hover",
+  "pick-row",
+  "pick-soft-edge",
 ];
 
 // Every pair a child reads: text on each surface, the main action, a picked option, help, each
@@ -349,7 +361,8 @@ describe("where the tokens apply", () => {
     expect(lesson).toMatch(/font-variant-numeric:\s*tabular-nums lining-nums;/);
     expect(bodies(ALIASES)).not.toMatch(/(^|;)\s*(font-weight|line-height|font-variant-numeric):/);
     for (const [, head = "", body = ""] of CSS.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-      if (!head.includes("data-lesson-theme") || head.trim() === ALIASES) continue;
+      if (!head.includes("data-lesson-theme") || [ALIASES, KID_IN_ADULT].includes(head.trim()))
+        continue;
       expect(body, head.trim()).not.toMatch(/--jw-(p-|ground|act|ink|font|dur-)[\w-]*:/);
     }
   });
@@ -477,8 +490,8 @@ describe("the adult sizes on an app page", () => {
     expect(declared(TOKENS)["jw-page-body"]).toBe("1.0625rem");
     expect(declared(TOKENS)["jw-page-leading"]).toBe("1.5");
     // The phone's step, then the parent's density (below) sets its own.
-    expect(rem("jw-page-h1")).toEqual([28, 26, 20]);
-    expect(rem("jw-page-h2")).toEqual([22, 20, 15]);
+    expect(rem("jw-page-h1")).toEqual([28, 26, 22]);
+    expect(rem("jw-page-h2")).toEqual([22, 20, 16]);
   });
 
   it("keeps the adult scale off a lesson's own rules", () => {
@@ -487,30 +500,23 @@ describe("the adult sizes on an app page", () => {
   });
 });
 
-// Decision 2026-11-01-the-parent-app-is-a-sidebar-shell-and-a-3-column-lesson-workspac (dl-xo0q).
+// Decision 2026-11-01-the-parent-app-is-a-sidebar-shell-and-a-3-column-lesson-workspac (dl-xo0q), with
+// the handoff's section and card titles (dl-uukj.47.67 S2). Corners, lines and the edge moved to the
+// adult audience below.
 describe("the parent's density", () => {
   const PARENT = "[data-density='parent']";
   const KID = "[data-density='parent'] :is([data-lesson-theme], [data-density='kid'])";
   const px = (v: string | undefined) => Number(/^([\d.]+)rem$/.exec(v ?? "")?.[1]) * 16;
 
-  it("sets body 14, small 12.5, a control 34, corners 10 and 8, 1 px lines and a 3 px edge", () => {
+  it("sets body 14, small 12.5, a control 34 and 28, a section title 22 and a card's 16", () => {
     const d = declared(PARENT);
     expect(px(d["jw-page-body"])).toBe(14);
     expect(px(d["jw-page-small"])).toBe(12.5);
     expect(px(d["jw-size-body"])).toBe(14);
     expect(px(d["jw-control-height"])).toBe(34);
-    expect(px(d["jw-radius-control"])).toBe(10);
-    expect(px(d["jw-radius-small"])).toBe(8);
-    expect(d["jw-border"]).toBe("1px");
-    expect(d["jw-press"]).toBe("3px");
-  });
-
-  // An alias resolves where it is declared, so the density declares the ones it changes again.
-  it("declares the radius and press aliases again", () => {
-    for (const block of [PARENT, KID]) {
-      expect(declared(block)["radius"], block).toBe("var(--jw-radius-control)");
-      expect(declared(block)["kid-press"], block).toBe("var(--jw-press)");
-    }
+    expect(px(d["jw-control-height-sm"])).toBe(28);
+    expect(px(d["jw-page-h1"])).toBe(22);
+    expect(px(d["jw-page-h2"])).toBe(16);
   });
 
   it("gives a lesson inside it back every size the density changed, at the :root value", () => {
@@ -523,14 +529,116 @@ describe("the parent's density", () => {
     }
   });
 
-  it("sets nothing but sizes: no colour, no role", () => {
+  it("sets nothing but sizes: no colour, no role, no shape", () => {
     for (const block of [PARENT, KID])
       for (const [name, value] of Object.entries(declared(block))) {
         expect(value, `--${name}`).not.toMatch(/#[0-9a-f]{3,8}\b/i);
         expect(name, `--${name}`).not.toMatch(
-          /^jw-(p-|ground|card|ink|act|pick|focus|right|miss|help)/,
+          /^(jw-(p-|ground|card|ink|act|pick|focus|right|miss|help|radius|border|press)|radius)/,
         );
       }
+  });
+});
+
+// The owner's parent design system, 2026-11-02 (dl-uukj.47.67, handoff §2-§5, §14): an adult's pages
+// and a child's are two audiences on purpose.
+describe("the adult audience", () => {
+  const heads = [...CSS.matchAll(/([^{}]+)\{/g)].map((m) => (m[1] ?? "").trim());
+  const adult = declared(ADULT);
+  const kid = declared(KID_IN_ADULT);
+  const vars = { ...light, ...adult };
+  const day = { ...declared(TOKENS), ...declared(DAY) };
+
+  it("comes after the aliases, so on <html> it wins over them, and the child's subtree after it", () => {
+    expect(heads.indexOf(ADULT)).toBeGreaterThan(heads.indexOf(ALIASES));
+    expect(heads.indexOf(KID_IN_ADULT)).toBeGreaterThan(heads.indexOf(ADULT));
+  });
+
+  // D1: Geist for adults, Andika only for what a child reads.
+  it("sets Geist for an adult and keeps Andika out of it; a child keeps Andika", () => {
+    expect(c(vars, "font-sans")).toMatch(/^'geist'/);
+    expect(c(vars, "font-sans")).not.toMatch(/andika/);
+    expect(c(vars, "font-mono")).toMatch(/^'geist mono'/);
+    expect(c(light, "font-sans")).toMatch(/^'andika'/);
+    expect(c(light, "jw-font-kid")).toMatch(/^'andika'/);
+    expect(c(light, "jw-font-adult")).not.toMatch(/andika/);
+  });
+
+  // D3, D4: corners 6 on a control and 10 on a card, 1 px lines, and no pressed edge at all.
+  it("is flat: no pressed edge, 1 px lines, corners 6 and 10", () => {
+    expect(adult["jw-press"]).toBe("0px");
+    expect(adult["jw-border"]).toBe("1px");
+    expect(adult["jw-radius-control"]).toBe("0.375rem");
+    expect(adult["jw-radius-card"]).toBe("0.625rem");
+    expect(adult["kid-press"]).toBe("var(--jw-press)");
+    expect(adult["radius"]).toBe("var(--jw-radius-control)");
+  });
+
+  // D5: the primary is ink blue with white text, a step darker under the mouse.
+  it("makes the action ink blue with white text, darker under the mouse", () => {
+    expect(c(vars, "jw-act")).toBe("#3a5fa8");
+    expect(c(vars, "jw-on-act")).toBe("#ffffff");
+    expect(c(vars, "primary-hover")).toBe("#33549a");
+    expect(contrast(c(vars, "jw-on-act"), c(vars, "jw-act-hover"))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  const ADULT_PAIRS: [string, string][] = [
+    ...TEXT_PAIRS,
+    ["jw-ink", "jw-hover"],
+    ["jw-ink", "jw-hover-strong"],
+    ["jw-ink", "jw-side"],
+    ["jw-ink", "jw-side-active"],
+    ["jw-ink-soft", "jw-hover"],
+    ["jw-ink-soft", "jw-side"],
+    ["jw-pick-ink", "jw-pick-row"],
+    ["jw-ink", "jw-pick-row"],
+  ];
+  it.each(ADULT_PAIRS)("holds %s on %s to 4.5:1", (fg, bg) => {
+    expect(
+      contrast(c(vars, fg), c(vars, bg)),
+      `${c(vars, fg)} on ${c(vars, bg)}`,
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  // S3: verdict hues stay in results; nothing the adult block sets wears red or green, and
+  // destructive is ink.
+  it("lends no verdict hue to anything it sets, and keeps destructive ink", () => {
+    for (const name of Object.keys(adult)) {
+      if (
+        !/^jw-(?!p-)/.test(name) &&
+        !["destructive", "secondary", "muted", "accent", "input"].includes(name)
+      )
+        continue;
+      const hex = c(vars, name);
+      if (!hex.startsWith("#") || chroma(hex) < 0.12) continue;
+      expect(isRed(hue(hex)) || isGreen(hue(hex)), `--${name} ${hex}`).toBe(false);
+    }
+    expect(c(vars, "destructive")).toBe(c(vars, "jw-ink"));
+    expect(c(light, "destructive")).toBe(c(light, "jw-ink"));
+  });
+
+  it("writes no literal colour: every value reads a primitive, a role or a size", () => {
+    for (const block of [adult, kid])
+      for (const [name, value] of Object.entries(block)) {
+        expect(value, `--${name}`).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+        if (name.startsWith("jw-") && value.startsWith("var("))
+          expect(value).toMatch(/^var\(--jw-p-/);
+      }
+  });
+
+  // §14: a lesson preview inside the parent app renders exactly what the child sees.
+  it("gives a child's subtree back every role and shape it changed, at the day value", () => {
+    for (const name of Object.keys(adult)) {
+      if (!name.startsWith("jw-")) continue;
+      expect(kid[name], `--${name}`).toBe(day[name]);
+    }
+    expect(kid["radius-md"], "Tailwind's radius-md").toBe("0.375rem");
+  });
+
+  it("declares the aliases again on a child's subtree, so they resolve on Zeszyt there", () => {
+    expect(selectorList(ALIASES)).toEqual(
+      expect.arrayContaining(["[data-lesson-theme]", "[data-audience='kid']"]),
+    );
   });
 });
 

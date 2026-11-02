@@ -289,6 +289,8 @@ export const INTERNAL: Readonly<Record<string, Readonly<Record<string, string>>>
     "jw-edge": "the edge a lesson option stands on, which follows its tone",
     "jw-ring-out": "how far a lesson control's focus ring sits outside it",
     "tw-ring-color": "Tailwind's ring colour, turned off on a picked option",
+    // tokens.css sets the mono face for both audiences; the adult audience swaps in Geist Mono.
+    "font-mono": "the adult audience's mono face, Geist Mono, over tokens.css's own",
   },
 };
 

@@ -349,6 +349,8 @@
       "name": "@jadwigo/ui",
       "dependencies": {
         "@fontsource/andika": "catalog:",
+        "@fontsource/geist": "catalog:",
+        "@fontsource/geist-mono": "catalog:",
         "class-variance-authority": "catalog:",
         "clsx": "catalog:",
         "lucide-react": "catalog:",
@@ -388,6 +390,8 @@
     "@dnd-kit/sortable": "10.0.0",
     "@dnd-kit/utilities": "3.2.2",
     "@fontsource/andika": "5.3.0",
+    "@fontsource/geist": "5.3.0",
+    "@fontsource/geist-mono": "5.3.0",
     "@playwright/test": "1.64.0",
     "@shadcn/react": "0.3.1",
     "@tailwindcss/vite": "4.3.3",
@@ -742,6 +746,10 @@
     "@floating-ui/utils": ["@floating-ui/utils@0.2.12", "", {}, "sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww=="],
 
     "@fontsource/andika": ["@fontsource/andika@5.3.0", "", {}, "sha512-m15/VavWcrOhTJr4xXVKTKrJgI8Ny4fI52ZwcoYH3kH6IyLpAfuYUuFouI223WFbDP0kwvKsOOankklFNyMvNw=="],
+
+    "@fontsource/geist": ["@fontsource/geist@5.3.0", "", {}, "sha512-u03ftlfVwb05uijq2jGDJ03/HKGqMKaNFk7KOhkpBUex8+BhrAOfMs/XciJ2UUNUX9fEsZbZQld/RWMA2oFU7g=="],
+
+    "@fontsource/geist-mono": ["@fontsource/geist-mono@5.3.0", "", {}, "sha512-UtJ1BBBCVpMYdIcW7nEB45UAoAw5M53ZXs2t0ciPW+IokuAAIc56M8+kW5tXbRJCTpDw4XTtU7proT6NdQAHTg=="],
 
     "@fontsource/google-sans": ["@fontsource/google-sans@5.3.2", "", {}, "sha512-IwR9hZgU1LUi0RAkhlqb+mCflPi/dU3ZJRUfznUW9TwgGXS2mEOeCptvVKVy/jRqhCJgwHYWvKHM9DU3/N4xsQ=="],
 
