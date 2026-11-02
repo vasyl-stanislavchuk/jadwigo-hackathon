@@ -454,6 +454,7 @@
   "play_paused": "The lesson is waiting for you.",
   "play_paused_back": "Back to the lesson",
   "play_not_found": "This lesson is not here.",
+  "play_link_incomplete": "This link is not complete. Ask a parent for a new one.",
   "play_save": "Save your progress",
   "play_save_note": "For a grown-up: sign in, and this lesson stays on your child's account.",
   "parent_title": "Parent account",
@@ -1067,5 +1068,16 @@
   "parent_analytics_privacy": "Privacy",
   "site_consent_ask": "Jadwigo records how the site is used, including screen recordings without what you type, so we can make it better. Do you agree?",
   "site_consent_accept": "I agree",
-  "site_consent_reject": "No, thanks"
+  "site_consent_reject": "No, thanks",
+  "oauth_title": "Connect {app} to Jadwigo",
+  "oauth_address": "The app's address: {host}",
+  "oauth_can": "This app will be able to:",
+  "oauth_can_read": "read your family's data and the question bank",
+  "oauth_can_lessons": "make lessons and give them to your children",
+  "oauth_data": "{app} will get your children's names, lessons and results.",
+  "oauth_approve": "Allow",
+  "oauth_deny": "Deny",
+  "oauth_failed": "We couldn't connect. Go back to the app and try again.",
+  "oauth_as": "Signed in as {email}.",
+  "oauth_not_you": "Not you? Sign out"
 }

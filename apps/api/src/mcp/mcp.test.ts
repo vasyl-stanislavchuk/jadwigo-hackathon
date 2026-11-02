@@ -118,9 +118,50 @@ describe("the remote MCP, /api/mcp", () => {
   it("refuses another site's Origin, and a GET or DELETE (no SSE, no session)", async () => {
     const rpc = await parent([]);
     expect((await call("POST", MCP_PATH, {}, { origin: "https://evil.test" })).status).toBe(403);
+    // The same host over http is another origin: the scheme counts (dl-1u6fn.19).
+    expect((await call("POST", MCP_PATH, {}, { origin: "http://app.jadwigo.test" })).status).toBe(
+      403,
+    );
+    expect(
+      (
+        await call(
+          "POST",
+          MCP_PATH,
+          { jsonrpc: "2.0", id: 1, method: "ping" },
+          {
+            origin: "https://app.jadwigo.test",
+            ...bearerOf(signToken({ sub: randomUUID() })),
+          },
+        )
+      ).status,
+    ).not.toBe(403);
     expect((await call("GET", MCP_PATH)).status).toBe(405);
     expect((await call("DELETE", MCP_PATH)).status).toBe(405);
     expect((await rpc("initialize", INITIALIZE)).status).toBe(200);
+  });
+
+  it("refuses a JSON-RPC batch, an array body, as 400 Invalid Request", async () => {
+    await parent([]);
+    const headers = bearerOf(signToken({ sub: randomUUID() }));
+    const batch = [
+      { jsonrpc: "2.0", id: 1, method: "initialize", params: INITIALIZE },
+      { jsonrpc: "2.0", id: 2, method: "tools/list" },
+    ];
+    const reply = await call("POST", MCP_PATH, batch, headers);
+    expect(reply.status).toBe(400);
+    expect(reply.body).toMatchObject({ jsonrpc: "2.0", error: { code: -32600 }, id: null });
+    // A 2025-06-18 client's batch, named by its protocol header, on the legacy transport.
+    const later = [
+      { jsonrpc: "2.0", id: 3, method: "tools/list" },
+      { jsonrpc: "2.0", id: 4, method: "ping" },
+    ];
+    const legacy = await call("POST", MCP_PATH, later, {
+      ...headers,
+      "mcp-protocol-version": "2025-06-18",
+    });
+    expect(legacy.status).toBe(400);
+    expect(legacy.body).toMatchObject({ error: { code: -32600 } });
+    expect(reply.body).toMatchObject({ jsonrpc: "2.0", error: { code: -32600 }, id: null });
   });
 
   it("initializes, lists the tools, and me returns the token's own pod's learners only", async () => {
@@ -134,8 +175,9 @@ describe("the remote MCP, /api/mcp", () => {
     expect(init.body).toMatchObject({ result: { serverInfo: { name: "jadwigo" } } });
 
     const list = await rpc("tools/list");
-    const listed = (list.body as { result: { tools: { name: string }[] } }).result.tools;
-    expect(listed.map((t) => t.name)).toContain("me");
+    expect(list.body).toMatchObject({
+      result: { tools: expect.arrayContaining([expect.objectContaining({ name: "me" })]) },
+    });
 
     const me = (await rpc("tools/call", { name: "me", arguments: {} })).body as {
       result: { isError?: boolean; content: { text: string }[] };

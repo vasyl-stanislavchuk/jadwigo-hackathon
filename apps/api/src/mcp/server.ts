@@ -2,7 +2,8 @@
 // and never SSE, so one Lambda request is one MCP exchange. The Lambda verifies the parent's
 // token itself (no gateway authorizer on this path), so a missing or bad one answers 401 with the
 // WWW-Authenticate challenge MCP clients follow to the authorization server.
-import { ErrorType, LIMITS, MCP_PATH } from "@jadwigo/contracts";
+import { ErrorType, MCP_PATH } from "@jadwigo/contracts";
+import type { BankPort } from "@jadwigo/jadwigo-ai";
 import { type Store, StoreError } from "@jadwigo/store";
 import {
   type CallToolResult,
@@ -19,6 +20,12 @@ import { authorizeMember } from "../authorize.ts";
 import { ApiError, errorResponse, json } from "../errors.ts";
 import type { McpTool, ToolDeps } from "./tool.ts";
 import { TOOLS } from "./tools/index.ts";
+
+/**
+ * The largest MCP request body: a 20-question lesson_check carries the AI's words for every step,
+ * which the REST routes' `LIMITS.bodyBytes` (16 KiB) cannot hold (measured in mcp.test.ts).
+ */
+export const MCP_BODY_BYTES = 256 * 1024;
 
 /** RFC 9728's well-known path; the metadata is also served at it followed by `MCP_PATH`. */
 export const PROTECTED_RESOURCE_PATH = "/.well-known/oauth-protected-resource";
@@ -51,6 +58,9 @@ export function protectedResource(req: Request, config: McpConfig): Response {
 interface Caller {
   readonly store: Store | Promise<Store>;
   readonly claims: Claims;
+  readonly bank: BankPort;
+  /** A path of the app as a full URL, on the MCP's own origin (the app's, `app.jadwigo.pl`). */
+  readonly appUrl: (path: string) => string;
   readonly deps: ToolDeps;
 }
 
@@ -60,8 +70,7 @@ interface Caller {
  */
 const MODERN = createMcpHandler(
   ({ authInfo }) => {
-    const caller = authInfo?.extra?.["caller"] as Caller;
-    return serverFor(caller.store, caller.claims, caller.deps);
+    return serverFor(authInfo?.extra?.["caller"] as Caller);
   },
   { legacy: "reject", responseMode: "json" },
 );
@@ -73,6 +82,7 @@ export async function serveMcp(
   store: Store | Promise<Store>,
   authenticate: Authenticate,
   config: McpConfig,
+  bank: BankPort,
   deps: ToolDeps = { now: () => new Date() },
 ): Promise<Response> {
   const resource = resourceOf(req, config);
@@ -81,6 +91,10 @@ export async function serveMcp(
   const origins = [resource.hostname, ...(local ? localhostAllowedOrigins() : [])];
   const badOrigin = originValidationResponse(req, origins);
   if (badOrigin) return badOrigin;
+  // The SDK compares the host only: an http page on the same host is another origin too.
+  const origin = req.headers.get("origin");
+  if (origin !== null && !local && URL.parse(origin)?.protocol !== resource.protocol)
+    return rpcError(403, -32000, "Forbidden: the Origin's scheme is not the resource's");
   if (req.method !== "POST") {
     // Stateless: no SSE stream to GET and no session to DELETE.
     const reply = rpcError(405, -32000, "Method not allowed.");
@@ -100,22 +114,32 @@ export async function serveMcp(
   }
 
   const text = await req.text();
-  if (new TextEncoder().encode(text).byteLength > LIMITS.bodyBytes)
-    return rpcError(413, -32600, `the body is over ${LIMITS.bodyBytes} bytes`);
+  if (new TextEncoder().encode(text).byteLength > MCP_BODY_BYTES)
+    return rpcError(413, -32600, `the body is over ${MCP_BODY_BYTES} bytes`);
   let parsedBody: unknown;
   try {
     parsedBody = JSON.parse(text);
   } catch {
     return rpcError(400, -32700, "Parse error: the body is not JSON");
   }
+  // The 2025-06-18 spec dropped JSON-RPC batching, and the 2026-07-28 one has none either.
+  if (Array.isArray(parsedBody))
+    return rpcError(400, -32600, "Invalid Request: a batch is not supported, send one message");
 
+  const caller: Caller = {
+    store,
+    claims,
+    bank,
+    appUrl: (path) => new URL(path, resource.origin).href,
+    deps,
+  };
   if (await isLegacyRequest(req, parsedBody)) {
     // 2025-era clients (initialize handshake): a fresh server and transport per request.
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableJsonResponse: true,
     });
-    const legacy = serverFor(store, claims, deps);
+    const legacy = serverFor(caller);
     await legacy.connect(transport);
     try {
       return await transport.handleRequest(req, { parsedBody });
@@ -124,21 +148,20 @@ export async function serveMcp(
     }
   }
   // 2026-07-28 clients (a per-request envelope): stateless by design.
-  const caller: Caller = { store, claims, deps };
   const authInfo = { token: "", clientId: claims.client_id ?? "", scopes: [], extra: { caller } };
   return MODERN.fetch(req, { parsedBody, authInfo });
 }
 
-/** An MCP server with every tool in `TOOLS`, each call run as `claims`' pod member. */
-function serverFor(store: Store | Promise<Store>, claims: Claims, deps: ToolDeps): McpServer {
+/** An MCP server with every tool in `TOOLS`, each call run as the caller's pod member. */
+function serverFor(caller: Caller): McpServer {
   const server = new McpServer({ name: "jadwigo", version: "1.0.0" });
   for (const tool of TOOLS) {
     const config = { description: tool.description };
     if (tool.inputSchema === undefined)
-      server.registerTool(tool.name, config, () => callTool(tool, undefined, store, claims, deps));
+      server.registerTool(tool.name, config, () => callTool(tool, undefined, caller));
     else
       server.registerTool(tool.name, { ...config, inputSchema: tool.inputSchema }, (input) =>
-        callTool(tool, input, store, claims, deps),
+        callTool(tool, input, caller),
       );
   }
   return server;
@@ -152,9 +175,7 @@ function serverFor(store: Store | Promise<Store>, claims: Claims, deps: ToolDeps
 async function callTool(
   tool: McpTool,
   input: unknown,
-  store: Store | Promise<Store>,
-  claims: Claims,
-  deps: ToolDeps,
+  { store, claims, bank, appUrl, deps }: Caller,
 ): Promise<CallToolResult> {
   // One line per call: the OAuth client (null for the web app's token), the tool and the outcome,
   // never its arguments or what it read (dl-1u6fn.17).
@@ -169,6 +190,8 @@ async function callTool(
         store: opened,
         member: await authorizeMember(opened, claims),
         claims,
+        bank,
+        appUrl,
         deps,
       }),
     );

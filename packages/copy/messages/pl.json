@@ -470,6 +470,7 @@
   "play_paused": "Lekcja czeka na ciebie.",
   "play_paused_back": "Wracam do lekcji",
   "play_not_found": "Tej lekcji tu nie ma.",
+  "play_link_incomplete": "Ten link jest niepełny. Poproś rodzica o nowy.",
   "play_save": "Zapisz postępy",
   "play_save_note": "Dla dorosłego: zaloguj się, a ta lekcja zostanie na koncie dziecka.",
   "parent_title": "Konto rodzica",
@@ -1095,5 +1096,16 @@
   "parent_analytics_privacy": "Prywatność",
   "site_consent_ask": "Jadwigo zapisuje, jak odwiedzasz stronę, także nagrania ekranu bez tego, co wpisujesz. Dzięki temu ją ulepszamy. Zgadzasz się?",
   "site_consent_accept": "Zgadzam się",
-  "site_consent_reject": "Nie, dziękuję"
+  "site_consent_reject": "Nie, dziękuję",
+  "oauth_title": "Połącz {app} z Jadwigo",
+  "oauth_address": "Adres aplikacji: {host}",
+  "oauth_can": "Ta aplikacja będzie mogła:",
+  "oauth_can_read": "czytać dane Twojej rodziny i bank pytań",
+  "oauth_can_lessons": "tworzyć lekcje i dawać je dzieciom",
+  "oauth_data": "{app} dostanie imiona Twoich dzieci, ich lekcje i wyniki.",
+  "oauth_approve": "Zezwól",
+  "oauth_deny": "Odmów",
+  "oauth_failed": "Nie udało się połączyć. Wróć do aplikacji i spróbuj jeszcze raz.",
+  "oauth_as": "Zalogowano jako {email}.",
+  "oauth_not_you": "To nie Ty? Wyloguj się"
 }

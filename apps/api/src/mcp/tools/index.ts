@@ -7,6 +7,10 @@ import { conversationRuns } from "./conversation-runs.ts";
 import { learnerAttempts } from "./learner-attempts.ts";
 import { learnerGoals } from "./learner-goals.ts";
 import { learnerSkills } from "./learner-skills.ts";
+import { lessonCheck } from "./lesson-check.ts";
+import { lessonDraft } from "./lesson-draft.ts";
+import { lessonEdit } from "./lesson-edit.ts";
+import { lessonShow } from "./lesson-show.ts";
 import { me } from "./me.ts";
 import { questionSearch } from "./question-search.ts";
 import { questionSet } from "./question-set.ts";
@@ -34,4 +38,8 @@ export const TOOLS: readonly McpTool[] = [
   questionSearch,
   questionShow,
   questionSet,
+  lessonDraft,
+  lessonShow,
+  lessonEdit,
+  lessonCheck,
 ];

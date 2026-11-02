@@ -2,6 +2,7 @@ import { lazy, type ReactElement, Suspense, useEffect } from "react";
 import { ConsentBanner } from "./analytics/ConsentBanner.tsx";
 import { useDocumentLang, useScreenLanguage } from "./nav/language.ts";
 import { navigate, useLocation } from "./nav/location.ts";
+import { ConsentScreen } from "./oauth/ConsentScreen.tsx";
 import { ParentScreen } from "./parent/ParentScreen.tsx";
 import { isParentPath } from "./parent/route.ts";
 import { HomeScreen } from "./play/HomeScreen.tsx";
@@ -15,6 +16,7 @@ import { playRoute } from "./play/route.ts";
  *   /play/<id>         the lesson player
  *   /parent            the parent's sign-in and home (dl-e8ov.2.38)
  *   /parent/attempts/<id>  one finished lesson for the parent (dl-uukj.30.2)
+ *   /oauth/consent     a parent lets their own AI app connect Jadwigo's MCP (dl-1u6fn.7)
  *   /playground/...    the question-type gallery, at an unlisted path, loaded on demand (decision
  *                      2026-10-28-the-question-type-gallery-ships-at-app-jadwigo-pl-playground-wit)
  *
@@ -29,13 +31,17 @@ const PlaygroundScreen = lazy(() =>
   import("./playground/PlaygroundScreen.tsx").then((m) => ({ default: m.PlaygroundScreen })),
 );
 
+/** Where Supabase Auth's oauth_server_authorization_path sends a parent (docs/research/mcp-oauth.md). */
+const CONSENT_PATH = "/oauth/consent";
+
 export function App(): ReactElement | null {
   const { path, query } = useLocation();
   const inPlayground = path.startsWith("/playground");
   const inParent = isParentPath(path);
+  const consent = path === CONSENT_PATH;
   const home = path === "/";
-  const play = inPlayground || inParent || home ? null : playRoute(path);
-  const elsewhere = !inPlayground && !inParent && !home && play === null;
+  const play = inPlayground || inParent || consent || home ? null : playRoute(path);
+  const elsewhere = !inPlayground && !inParent && !consent && !home && play === null;
   const language = useScreenLanguage(query);
   useDocumentLang(language);
   useEffect(() => {
@@ -54,6 +60,7 @@ export function App(): ReactElement | null {
         <ConsentBanner language={language} />
       </>
     );
+  if (consent) return <ConsentScreen language={language} query={query} />;
   if (home) return <HomeScreen language={language} query={query} />;
   if (play === null) return null;
   if (play.assignmentId === null) return <LessonNotFound language={language} />;

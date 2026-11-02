@@ -269,6 +269,7 @@
   "play_paused": true,
   "play_paused_back": true,
   "play_not_found": true,
+  "play_link_incomplete": false,
   "play_save": true,
   "play_save_note": true,
   "parent_title": true,
@@ -810,5 +811,16 @@
   "parent_analytics_privacy": false,
   "site_consent_ask": false,
   "site_consent_accept": false,
-  "site_consent_reject": false
+  "site_consent_reject": false,
+  "oauth_title": false,
+  "oauth_address": false,
+  "oauth_can": false,
+  "oauth_can_read": false,
+  "oauth_can_lessons": false,
+  "oauth_data": false,
+  "oauth_approve": false,
+  "oauth_deny": false,
+  "oauth_failed": false,
+  "oauth_as": false,
+  "oauth_not_you": false
 }

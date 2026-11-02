@@ -45,6 +45,7 @@ import {
   patchReport,
 } from "./knowledge.ts";
 import { handleSendEmail, type MailDeps } from "./mail/hook.ts";
+import { mcpBank } from "./mcp/bank.ts";
 import {
   type McpConfig,
   PROTECTED_RESOURCE_PATH,
@@ -340,8 +341,9 @@ export function createApp(
 
   // The remote MCP (dl-1u6fn.8), outside ROUTES: it verifies its own token, and its 401 names the
   // metadata below, which says where to get one.
+  const lessonBank = mcpBank(bank, bucket);
   const mcpRoute = ({ req, event }: { req: Request; event: unknown }) =>
-    serveMcp(req, event, store, authenticate, mcp, { bank, bucket, uploads, now });
+    serveMcp(req, event, store, authenticate, mcp, lessonBank, { bank, bucket, uploads, now });
   app.post(MCP_PATH, mcpRoute);
   app.get(MCP_PATH, mcpRoute);
   app.delete(MCP_PATH, mcpRoute);

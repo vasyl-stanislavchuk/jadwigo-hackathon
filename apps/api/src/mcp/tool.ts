@@ -1,10 +1,11 @@
+import type { BankPort } from "@jadwigo/jadwigo-ai";
 import type { MemberScope, Store } from "@jadwigo/store";
 import type { StandardSchemaWithJSON } from "@modelcontextprotocol/server";
 import type { UploadsBucket } from "../attachments.ts";
 import type { Claims } from "../auth.ts";
 import type { BankDeps, BucketDeps } from "../questions.ts";
 
-/** What the tools reach outside the store, as the routes do (`createApp`'s options). */
+/** What the read tools reach outside the store, as the routes do (`createApp`'s options). */
 export interface ToolDeps {
   readonly bank?: BankDeps | undefined;
   readonly bucket?: BucketDeps | undefined;
@@ -13,10 +14,15 @@ export interface ToolDeps {
 }
 
 /** What every tool call runs with: the caller's pod member, found by `authorizeMember`, in one unit. */
-interface ToolContext {
+export interface ToolContext {
   readonly store: Store;
   readonly member: MemberScope;
   readonly claims: Claims;
+  /** The bank the lesson verbs draw from (`mcpBank`). */
+  readonly bank: BankPort;
+  /** A path of the app (`/parent/lessons/<cnv_>`) as the full URL a parent's AI can link to. */
+  appUrl(path: string): string;
+  /** The bank's routes, the content bucket and the uploads bucket the read tools call through. */
   readonly deps: ToolDeps;
 }
 
