@@ -1,7 +1,13 @@
 import { rmSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { CONTRIBUTOR_MODEL } from "@jadwigo/jadwigo-ai";
-import { devDatabaseUrl, type MuseConfig, museConfig } from "./config.ts";
+import { apiBank, CONTRIBUTOR_MODEL, fixtureBank, httpBankReads } from "@jadwigo/jadwigo-ai";
+import {
+  type BankConfig,
+  bankConfig,
+  devDatabaseUrl,
+  type MuseConfig,
+  museConfig,
+} from "./config.ts";
 import { postgresEngineHost } from "./engine.ts";
 import { createRunnerHandler } from "./handler.ts";
 import { createHost, type HostReport } from "./host.ts";
@@ -21,6 +27,10 @@ import { liveMuse, realRuntime } from "./muse.ts";
  *   schedule does, which also picks up the pg_cron sweep's steps.
  * - The run events a step writes reach the page through the database: the run_event trigger calls
  *   realtime.send, and make dev-all's Realtime stand-in relays it (apps/web/e2e/realtime-server.ts).
+ * - The verbs draw from the bank the Lambda draws from (dl-hin8.23): `JADWIGO_API_URL` and
+ *   `JADWIGO_BANK_READ_TOKEN`, which make dev-all's runner pane maps from BANK_ENV
+ *   (`~/.config/jadwigo-bank/bank.env`). With no URL they draw from the fixture. The token comes
+ *   from the environment only: a laptop never reads a deployed SSM parameter.
  * - Photos are not read here: there is no uploads bucket on this machine.
  *
  * Logs are the Lambda's: ids, counts and outcomes, never a message, a payload, a key or a URL.
@@ -49,13 +59,24 @@ export function listenOf(argv: readonly string[]): Listen {
   return { port: Number(parsed.port) };
 }
 
-/** The settings it will call Muse with, for its first log line: never the key. */
-export function settingsLine(config: MuseConfig): string {
+/**
+ * The bank the verbs draw from on this machine: `bankConfig` with the token from the environment
+ * only. Asked for an SSM parameter instead, it refuses, so a laptop never reads a deployed one.
+ */
+export function devBankConfig(): Promise<BankConfig | undefined> {
+  return bankConfig(() =>
+    Promise.reject(new Error("the dev runner reads no SSM: set JADWIGO_BANK_READ_TOKEN")),
+  );
+}
+
+/** The settings it will call Muse with, and the bank it draws from, for its first log line: never the key or the token. */
+export function settingsLine(config: MuseConfig, bank?: BankConfig): string {
   return JSON.stringify({
     runner: "dev",
     tier: config.tier,
     models: { contributor: CONTRIBUTOR_MODEL, private: config.private_model },
     lane_cap_usd: config.lane_cap_usd,
+    bank: bank === undefined ? "fixture" : `api ${new URL(bank.base).origin}`,
   });
 }
 
@@ -143,11 +164,19 @@ async function main(argv: readonly string[]): Promise<void> {
   const listen = listenOf(argv);
   // A local jadwigo database only, never a deployed one (dl-uukj.47.14.2 review).
   const url = devDatabaseUrl();
-  const muse = await museConfig();
+  const [muse, bank] = await Promise.all([museConfig(), devBankConfig()]);
   const log = (line: string) => process.stdout.write(`${line}\n`);
-  log(settingsLine(muse));
+  log(settingsLine(muse, bank));
   const host = createHost(async () =>
-    postgresEngineHost(url, (store) => liveMuse(muse, realRuntime, store), log, muse.tier),
+    postgresEngineHost(
+      url,
+      (store) => liveMuse(muse, realRuntime, store),
+      log,
+      muse.tier,
+      undefined,
+      undefined,
+      bank === undefined ? fixtureBank() : apiBank(httpBankReads(bank)),
+    ),
   );
   const runner = createDevRunner(
     createRunnerHandler(host, (line) => {
