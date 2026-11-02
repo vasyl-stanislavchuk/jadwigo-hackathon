@@ -73,6 +73,9 @@ test("an email signed in with the code, then with Google, is the same parent wit
   await page.locator("[data-account]").click();
   await page.locator("[data-sign-out]").click();
 
+  // Signing out lands on /parent, leaving no child's or lesson's address behind (dl-uukj.47.16).
+  await expect(page).toHaveURL(/\/parent$/);
+
   await providerReturns(request, email);
   await page.locator('[data-provider="google"]').click();
   // Sign-out returns to /parent (dl-uukj.47.16), so the Google return lands on the first screen,

@@ -70,6 +70,7 @@ import { HistoryTable } from "./history/HistoryTable.tsx";
 import { inAppBrowser } from "./inApp.ts";
 import { LanguagePick } from "./LanguagePick.tsx";
 import { LessonsTable } from "./lessons/LessonsTable.tsx";
+import { useLessons } from "./lessons/useLessons.ts";
 import { AddChildDialog } from "./newLesson/AddChildDialog.tsx";
 import { DlaSelect } from "./newLesson/DlaSelect.tsx";
 import { type LessonAsk, NewLessonBox } from "./newLesson/NewLessonBox.tsx";
@@ -132,10 +133,11 @@ export function ParentScreen({
    */
   pods?: PodClient;
   /**
-   * The family's conversations, the Lekcje table's rows (dl-z5ja.106.1), for tests; the page's own
-   * client when `client` is absent. With a test's `client` and no `lessons`, the table is empty.
+   * The family's conversations, the Lekcje table's rows and their Archive (dl-z5ja.106.1,
+   * dl-uukj.47.9), for tests; the page's own client when `client` is absent. With a test's `client`
+   * and no `lessons`, the table is empty.
    */
-  lessons?: Pick<ConversationListClient, "listConversations">;
+  lessons?: ConversationListClient;
   /**
    * The lesson engine (dl-z5ja.108), for tests; the build's conversation routes and Realtime when
    * `client` is absent. With a test's `client` and no `engine`, sending says it is on its way.
@@ -496,7 +498,7 @@ function SignedIn({
 }: {
   api: ParentClient;
   pods: PodClient | null;
-  conversations: Pick<ConversationListClient, "listConversations"> | null;
+  conversations: ConversationListClient | null;
   engine: LessonEngine | null;
   language: Language;
   route: ParentRoute;
@@ -521,6 +523,11 @@ function SignedIn({
   const [notice, setNotice] = useState<CopyKey | null>(null);
   /** "Nie teraz" on the consent screen: asked again on the next visit, not on this one. */
   const [later, setLater] = useState(false);
+  // The family's lessons, read again as the page moves, so a lesson just made or saved is listed.
+  const family = useLessons(
+    conversations,
+    route.kind === "lesson" ? `lesson ${route.conversation}` : route.kind,
+  );
 
   // The first sign-in's language is the one on screen then; a later pick moves the screens without
   // reading /me again.
@@ -620,21 +627,6 @@ function SignedIn({
       </ParentPage>
     );
 
-  const pod = view.me.pod;
-  if (pods !== null && pod !== null && (pod.ai_consent_at ?? null) === null && !later)
-    return (
-      <ParentPage>
-        <ConsentScreen
-          language={language}
-          onAgree={async () => {
-            await pods.patchPod(pod.id, { ai_consented: true });
-            load();
-          }}
-          onLater={() => setLater(true)}
-        />
-      </ParentPage>
-    );
-
   const learners = view.me.learners.map((s) => s.learner);
   const t = (key: CopyKey): string => copy(language, key, {}, CATEGORY);
   const lang = pageLang();
@@ -646,6 +638,7 @@ function SignedIn({
       language={language}
       learners={learners}
       place={place}
+      hasLessons={Array.isArray(family.rows) && family.rows.length > 0}
       trail={trail}
       onAddChild={() => setAdding("plus")}
       onSignOut={onSignOut}
@@ -659,6 +652,25 @@ function SignedIn({
       />
     </ParentShell>
   );
+
+  // The pod's consent to the AI, once, right after the first sign-in: inside the shell at the
+  // parent's density, as it is when a send asks for it (dl-uukj.47.25).
+  const pod = view.me.pod;
+  if (pods !== null && pod !== null && (pod.ai_consent_at ?? null) === null && !later)
+    return shell(
+      { kind: "lessons" },
+      newLesson,
+      <div className="mx-auto flex w-full max-w-jw-shell-box flex-col px-4 py-10" data-consent-page>
+        <ConsentScreen
+          language={language}
+          onAgree={async () => {
+            await pods.patchPod(pod.id, { ai_consented: true });
+            load();
+          }}
+          onLater={() => setLater(true)}
+        />
+      </div>,
+    );
 
   // Keeping the tab's attempt with no child yet: the page asks for one before anything else.
   if (pending !== null && learners.length === 0)
@@ -710,7 +722,12 @@ function SignedIn({
         { kind: "lessons" },
         [{ label: t("parent_nav_lessons") }],
         <ParentPage>
-          <LessonsTable language={language} learners={learners} list={conversations} />
+          <LessonsTable
+            language={language}
+            learners={learners}
+            lessons={family.rows}
+            onArchive={family.archive}
+          />
         </ParentPage>,
       );
     case "lesson": {

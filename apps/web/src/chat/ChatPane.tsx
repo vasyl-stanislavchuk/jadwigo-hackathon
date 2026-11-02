@@ -11,6 +11,12 @@
  * decision dl-xo0q): no heading (the panel has one), no starters (the first screen asked), no Stop
  * button (Esc still stops), the run's state in the workspace's band instead (`statusOf`), and the
  * composer "Możesz pisać dalej…" with a 32 px round ink send button, quiet while empty.
+ *
+ * The two sides read apart (dl-uukj.47.28; owner's call of 2026-11-02): the parent's words are a
+ * filled bubble on the right, "Ty" kept for screen readers; Jadwigo AI's turn is plain prose on the
+ * left under one header (its crown mark and its name), its tool lines and widgets in the same
+ * column. A parent's steer keeps its label in view ("Ty · Twoja zmiana w lekcji"). Rows fade in
+ * only when the system allows motion (chat.css).
  */
 
 import {
@@ -27,7 +33,9 @@ import { cn } from "@jadwigo/ui";
 import { ArrowUpIcon } from "lucide-react";
 import { type FormEvent, type ReactElement, useEffect, useRef, useState } from "react";
 import { Button } from "./button.tsx";
+import "./chat.css";
 import { isOpen, type SendLimit, type Turn } from "./conversation.ts";
+import { JadwigoAiMark } from "./JadwigoAiMark.tsx";
 import { Rating } from "./Rating.tsx";
 import { toolResult } from "./widgets/Widgets.tsx";
 
@@ -183,31 +191,42 @@ function ErrorRow({
 
 function RowView({ row, run, language }: { row: Row; run: RunId; language: Language }) {
   switch (row.kind) {
-    case "message":
-      return (
-        <div
-          data-from={row.from}
-          data-steer={row.steer?.source}
-          className={row.from === "parent" ? "self-end" : "self-start"}
-        >
-          <p className="text-muted-foreground text-xs">
-            {copy(
+    case "message": {
+      const steer =
+        row.steer === undefined
+          ? null
+          : copy(
               language,
-              row.from === "parent" ? "chat_from_parent" : "chat_from_agent",
+              row.steer.source === "lesson_edit" ? "chat_steered_edit" : "chat_steered",
               {},
               "adult",
-            )}
-            {row.steer !== undefined &&
-              ` · ${copy(
-                language,
-                row.steer.source === "lesson_edit" ? "chat_steered_edit" : "chat_steered",
-                {},
-                "adult",
-              )}`}
-          </p>
-          <p className="rounded-md border px-3 py-2 whitespace-pre-wrap">{row.text}</p>
-        </div>
+            );
+      if (row.from === "parent")
+        return (
+          <div
+            data-from="parent"
+            data-steer={row.steer?.source}
+            className="flex max-w-[85%] flex-col items-end gap-1 self-end"
+          >
+            {/* "Ty" for a screen reader; a steer says what it was in view. */}
+            <p className={cn("text-jw-page-small text-jw-ink-soft", steer === null && "sr-only")}>
+              {copy(language, "chat_from_parent", {}, "adult")}
+              {steer !== null && ` · ${steer}`}
+            </p>
+            <p
+              className="rounded-jw-dialog bg-jw-pick px-3 py-2 whitespace-pre-wrap text-jw-pick-ink"
+              data-bubble
+            >
+              {row.text}
+            </p>
+          </div>
+        );
+      return (
+        <p data-from={row.from} className="whitespace-pre-wrap text-jw-ink" data-prose>
+          {row.text}
+        </p>
       );
+    }
     case "tools":
       return <ToolGroup tools={row.tools} language={language} />;
     case "steer":
@@ -299,9 +318,26 @@ function useOnline(): boolean {
   return online;
 }
 
+/** Whether the parent asked the system for less motion. */
+const lessMotion = (): boolean =>
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+
 /** Smooth unless the parent asked the system for less motion. */
-const scrollBehavior = (): ScrollBehavior =>
-  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+const scrollBehavior = (): ScrollBehavior => (lessMotion() ? "auto" : "smooth");
+
+/**
+ * A turn's rows, the first of Jadwigo AI's marked to carry its header: one header per turn, over
+ * its prose, tool lines and widgets, however the parent's words fall between them.
+ */
+function turnRows(turn: Turn): { row: Row; header: boolean }[] {
+  let headed = false;
+  return rowsOf(turn.view.chat).map((row) => {
+    const ai = !(row.kind === "message" && row.from === "parent");
+    const header = ai && !headed;
+    if (ai) headed = true;
+    return { row, header };
+  });
+}
 
 /** Each message limit's line: the minute's says wait a moment, the day's says come back tomorrow. */
 const LIMIT_LINE: Readonly<Record<SendLimit, CopyKey>> = {
@@ -347,6 +383,8 @@ export function ChatPane({
   /** The last words sent, so a send that did not reach the server can go again. */
   const [lastSent, setLastSent] = useState<string | null>(null);
   const online = useOnline();
+  /** Rows enter with a fade only when the system allows motion (chat.css). */
+  const [still] = useState(lessMotion);
   const end = useRef<HTMLDivElement>(null);
   const rowCount = turns.reduce((n, t) => n + t.view.chat.length, 0);
   useEffect(() => {
@@ -391,8 +429,25 @@ export function ChatPane({
       )}
       <ol aria-label={say("chat_messages")} className="flex flex-1 flex-col gap-3 overflow-y-auto">
         {turns.map((turn) => [
-          ...rowsOf(turn.view.chat).map((row) => (
-            <li key={`${turn.run.id}-${row.seq}`} className="flex flex-col">
+          ...turnRows(turn).map(({ row, header }) => (
+            <li
+              key={`${turn.run.id}-${row.seq}`}
+              className={cn(
+                "flex flex-col",
+                row.kind === "message" && row.from === "parent" ? "items-end" : "items-stretch",
+              )}
+              data-chat-row
+              {...(still ? {} : { "data-enter": "" })}
+            >
+              {header && (
+                <p
+                  className="mb-1 flex items-center gap-2 text-jw-page-small font-bold text-jw-ink"
+                  data-ai-header
+                >
+                  <JadwigoAiMark />
+                  {say("chat_from_agent")}
+                </p>
+              )}
               <RowView row={row} run={turn.run.id} language={language} />
             </li>
           )),

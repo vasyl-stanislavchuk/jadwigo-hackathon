@@ -30,6 +30,8 @@ import {
   ENGINE_BASE,
   type EventsAnswer,
   type LivePush,
+  type Pace,
+  paceOf,
   type RunsAnswer,
   runChannel,
   type SendAnswer,
@@ -39,6 +41,10 @@ import {
 const ENGINE_PLUGIN = "jadwigo-engine";
 /** How long the scripted model "thinks" per call, so the page shows a turn in progress. */
 const THINK_MS = 400;
+/** The same under `?pace=slow` (dl-uukj.47.27): long enough to watch each step land. */
+const SLOW_THINK_MS = 2000;
+/** How far past a turn's longest life `?pace=fail` runs its clock, so the turn ends failed. */
+const PAST_MAX_MS = 24 * 60 * 60 * 1000;
 /** How many follow-ups a turn's script answers after it drafts and checks. */
 const FOLLOW_UPS = 10;
 
@@ -114,6 +120,12 @@ function engine(server: ViteDevServer, m: Modules) {
 
   /** A script per run, so every turn of the dev page plays the same way from its start. */
   const scripts = new Map<string, ScriptedMuse>();
+  /**
+   * The pace each conversation was sent with (`?pace=`), so 2 pages at different paces never
+   * pace each other's turns: a run's pace is its conversation's.
+   */
+  const paces = new Map<string, Pace>();
+  const conversations = new Map<string, string>();
   const muse: MuseClient = {
     async respond(request: MuseRequest): Promise<MuseResponse> {
       let scripted = scripts.get(request.run_id);
@@ -121,7 +133,11 @@ function engine(server: ViteDevServer, m: Modules) {
         scripted = new m.engine.ScriptedMuse(turnScript());
         scripts.set(request.run_id, scripted);
       }
-      await new Promise((resolve) => setTimeout(resolve, THINK_MS));
+      const pace = await paceOfRun(request.run_id);
+      // `stall`: the step has taken the parent's words into the log; the model never answers.
+      if (pace === "stall") return new Promise<MuseResponse>(() => {});
+      const think = pace === "slow" ? SLOW_THINK_MS : THINK_MS;
+      await new Promise((resolve) => setTimeout(resolve, think));
       return scripted.respond(request);
     },
   };
@@ -139,17 +155,59 @@ function engine(server: ViteDevServer, m: Modules) {
     return appended;
   };
 
+  /** A run's pace: its conversation's, looked up once. */
+  async function paceOfRun(run: string): Promise<Pace | null> {
+    let conversation = conversations.get(run);
+    if (conversation === undefined) {
+      const pod = await store.findRunPod(RunId.parse(run));
+      if (!pod) return null;
+      conversation = (await store.getRun(pod, RunId.parse(run))).conversation_id ?? "";
+      conversations.set(run, conversation);
+    }
+    return paces.get(conversation) ?? null;
+  }
+
+  /**
+   * The queue, paced: a stalled or failing conversation's steps go to a lane of their own, which
+   * only that pace's drains read, so no pace ever plays another's turn. A stalled step is archived
+   * the moment it is read: its model never answers, and a step delivered again would hang the next
+   * stalled drain on it (and write a retry into a log that must stay still). A failing lane drains
+   * on a clock past the turn's max deadline, so the engine ends it failed with `RunTimedOut`.
+   */
+  const lane = (): Engine.InMemoryRunQueue => new InMemoryRunQueue(() => new Date());
+  const stalled = lane();
+  const readStalled = stalled.read.bind(stalled);
+  stalled.read = async (vt_s, qty) => {
+    const read = await readStalled(vt_s, qty);
+    for (const step of read) await stalled.archive(step.msg_id);
+    return read;
+  };
+  const failing = lane();
+  const queue = lane();
+  const enqueue = queue.send.bind(queue);
+  queue.send = async (message, delay_s) => {
+    const pace = await paceOfRun(message.run_id);
+    if (pace === "stall") return stalled.send(message, delay_s);
+    if (pace === "fail") return failing.send(message, delay_s);
+    return enqueue(message, delay_s);
+  };
   const now = () => new Date();
   const deps: EngineDeps = {
     store,
     muse,
     // The learner verbs read the dev page's own made-up pod (dl-z5ja.25).
     verbs: createVerbs({ bank: fixtureBank(), learners: store, now }),
-    queue: new InMemoryRunQueue(now),
+    queue,
     now,
   };
   const member = store.createAccount(m.contracts.Uuid.parse(crypto.randomUUID()), "pl");
   let draining: Promise<unknown> = Promise.resolve();
+  /** A paced lane's drain: on its own, so it never holds up another turn's. */
+  const drainLane = (lane: EngineDeps["queue"], clock: () => Date) => {
+    drain({ ...deps, queue: lane, now: clock }).catch((e: unknown) =>
+      server.config.logger.error(`[${ENGINE_PLUGIN}] ${String(e)}`),
+    );
+  };
   /** One drain at a time; a message mid-drain is picked up by the drain running. */
   const kick = () => {
     draining = draining
@@ -158,9 +216,11 @@ function engine(server: ViteDevServer, m: Modules) {
   };
 
   return {
-    async send(body: SendBody): Promise<SendAnswer> {
+    async send(body: SendBody, pace: Pace | null = null): Promise<SendAnswer> {
       const { pod, account } = await member;
       const conversation_id = ConversationId.parse(body.conversation_id);
+      if (pace === null) paces.delete(conversation_id);
+      else paces.set(conversation_id, pace);
       await store.createConversation(pod, {
         id: conversation_id,
         created_by: account,
@@ -188,8 +248,14 @@ function engine(server: ViteDevServer, m: Modules) {
                 }
               : { event_id: body.event_id, kind: "cancel", payload: {} },
       });
-      // After the answer: the page subscribes, then fetches after its cursor.
-      setTimeout(kick, 0);
+      // After the answer: the page subscribes, then fetches after its cursor. A `stall` step logs
+      // the parent's message and then waits on a model that never answers; a `fail` step finds
+      // its turn past its max deadline. Each drains in its own lane.
+      setTimeout(() => {
+        if (pace === "stall") drainLane(stalled, now);
+        else if (pace === "fail") drainLane(failing, () => new Date(Date.now() + PAST_MAX_MS));
+        else kick();
+      }, 0);
       return { run };
     },
     async runs(conversation: string): Promise<RunsAnswer> {
@@ -277,7 +343,9 @@ export function enginePlugin(): Plugin {
           const refused = admitPost(req);
           if (refused !== null) return answer(res, refused.status, { error: refused.error });
           return void reply(
-            Promise.all([ready(), body(req)]).then(([e, b]) => e.send(b as SendBody)),
+            Promise.all([ready(), body(req)]).then(([e, b]) =>
+              e.send(b as SendBody, paceOf(url.searchParams.get("pace"))),
+            ),
           );
         }
         if (req.method === "GET" && runs !== undefined)

@@ -24,7 +24,8 @@ import {
   type EventsAnswer,
   eventsPath,
   type LivePush,
-  MESSAGES_PATH,
+  messagesPath,
+  type Pace,
   type RunsAnswer,
   runChannel,
   runsPath,
@@ -60,8 +61,9 @@ async function json<T>(response: Response): Promise<T> {
 }
 
 /** The dev server's transport: HMR custom events for the live channel, fetch for the log. Null
- * outside `vite` serve, where the engine plugin does not run. */
-export function hotTransport(): EngineTransport | null {
+ * outside `vite` serve, where the engine plugin does not run. A pace plays every turn it sends
+ * slow, stalled or failed (wire.ts). */
+export function hotTransport(pace: Pace | null = null): EngineTransport | null {
   const hot = import.meta.hot;
   if (hot === undefined) return null;
   return {
@@ -87,7 +89,7 @@ export function hotTransport(): EngineTransport | null {
     send: async (body) =>
       (
         await json<SendAnswer>(
-          await fetch(MESSAGES_PATH, {
+          await fetch(messagesPath(pace), {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify(body),

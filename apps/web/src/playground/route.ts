@@ -8,6 +8,7 @@
  *   /playground/lesson                                 the lesson builder: the newest MCP draft, live (dl-a38n)
  *   /playground/conformance                            the bank's items drawn and render-checked, dev only (dl-a38n.31)
  *   /playground/chat                                   a parent's chat becomes a lesson, the engine in the dev server (dl-z5ja.17)
+ *   /playground/workspace                              the parent's lesson workspace on that engine, dev only (dl-uukj.47.27)
  *   /playground/<family>                               a family's first question type
  *   /playground/<family>/<question type>[/<example>]   a question type at one example
  *
@@ -16,6 +17,7 @@
  *   ?level=concrete|representational|abstract   the review tab's CRA level
  *   ?theme=light|dark         the review tab holds the page at one theme
  *   ?<switch>=<value>         every playground switch in switches.ts
+ *   ?pace=slow|stall|fail     how the workspace's dev engine plays a turn (src/chat/wire.ts)
  *
  * Moving around is client-side (pushState, src/nav/location.ts), so the query rides along: a
  * language picked on one family stays on the next. Links stay real links (src/nav/NavLink.tsx).
@@ -31,12 +33,12 @@ export interface PlaygroundRoute {
   question_type: string | null;
   /** An example of the question type, by id. */
   example: string | null;
-  /** A page of its own, not a family: /playground/system, /playground/lesson, /playground/conformance, /playground/chat. */
+  /** A page of its own, not a family: /playground/system, /playground/lesson, /playground/conformance, /playground/chat, /playground/workspace. */
   page?: PlaygroundPage;
 }
 
 /** The playground's own pages beside the families. */
-const PAGES = ["system", "lesson", "conformance", "chat"] as const;
+const PAGES = ["system", "lesson", "conformance", "chat", "workspace"] as const;
 type PlaygroundPage = (typeof PAGES)[number];
 const isPage = (name: string | undefined): name is PlaygroundPage =>
   name !== undefined && (PAGES as readonly string[]).includes(name);
