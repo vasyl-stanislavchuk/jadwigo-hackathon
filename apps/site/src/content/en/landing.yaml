@@ -4,6 +4,8 @@
 # Written in US English (decision draft dl-rok6), checked against workflows/_lang/en/checklist.md.
 # Copy says what Jadwigo does, never a slogan; numbers are digits.
 hero:
+  # Beside the h1 until its picture exists (owner, 2026-11-02: less text on top; dl-5ssh.4.46).
+  pic: illustration · Jadwiga and her pencil-case court at the table
   # A grade 3 two-step word problem (design handoff "landing 3", 2026-11-01; draft).
   question:
     label: Two steps · grade 3 · question 1

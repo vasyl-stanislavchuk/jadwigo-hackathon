@@ -10,6 +10,7 @@ import EndBand from "../components/EndBand.astro";
 import Gallery from "../components/Gallery.astro";
 import HeroQuestion from "../components/HeroQuestion.astro";
 import PartnerBlock from "../components/PartnerBlock.astro";
+import Pic from "../components/Pic.astro";
 import Base from "../layouts/Base.astro";
 import { strictBuild } from "../lib/build.ts";
 import { pageLessons } from "../lib/featured.ts";
@@ -36,7 +37,7 @@ const lessons = await pageLessons(lang);
 <Base page={page} path={twinPath("index", lang)}>
   <section class="hero wrap" aria-labelledby="hero-title">
     <h1 id="hero-title">{entry.data.heading}</h1>
-    <HeroQuestion lang={lang} />
+    <Pic label={words.hero.pic} class="hero-art" />
   </section>
 
   <section id={lessonsId} class="lessons" aria-labelledby="lessons-title">
@@ -54,6 +55,11 @@ const lessons = await pageLessons(lang);
     }
     <p class="after wrap">{words.after.text} <a href={`${twinPath("howItWorks", lang)}/`}>{words.after.link}</a></p>
     <p class="after ai wrap">{words.ai.teaser.text} <a href={`${twinPath("jadwigoAi", lang)}/`}>{words.ai.teaser.link}</a></p>
+  </section>
+
+  {/* One question to try, under the lessons rather than at the top (owner, 2026-11-02, dl-5ssh.4.46). */}
+  <section class="try wrap" aria-label={words.hero.question.label}>
+    <HeroQuestion lang={lang} />
   </section>
 
   <div class="band"><PartnerBlock lang={lang} /></div>
@@ -78,7 +84,8 @@ const lessons = await pageLessons(lang);
 </Base>
 
 <style>
-  /* A phone reads the h1, then the question. From 52rem the h1 stands left and the question right. */
+  /* A phone reads the h1, then the illustration. From 52rem the h1 stands left and the picture right:
+     the top carries one line of words (owner, 2026-11-02, dl-5ssh.4.46). */
   .hero {
     display: grid; gap: 1.5rem; align-items: center;
     padding-top: clamp(1.5rem, 5vw, 3rem);
@@ -87,7 +94,11 @@ const lessons = await pageLessons(lang);
   @media (min-width: 52rem) {
     .hero { grid-template-columns: 1fr 1.15fr; column-gap: 3.5rem; }
   }
+  .hero :global(.hero-art) { height: clamp(12rem, 26vw, 20rem); }
   .lessons { margin-top: clamp(3rem, 7vw, 4.5rem); }
+  /* The question to try: one sheet, centred, as wide as a page of a notebook. */
+  .try { margin-top: clamp(2.5rem, 6vw, 4rem); display: grid; justify-items: center; }
+  .try > :global(.sheet) { width: min(100%, 40rem); }
   .after { margin-top: 0.75rem; }
   .after a { font-weight: 700; }
   .after.ai { margin-top: 0.35rem; }

@@ -16,6 +16,8 @@ const head = { title: text, description: text, heading: text };
 export const landingSchema = z.object({
   // The hero's question (owner, 2026-10-31): one question, answered on the page.
   hero: z.object({
+    // The label of the illustration slot beside the h1, until its art exists (dl-5ssh.4.46).
+    pic: text,
     question: z
       .object({
         // Above the question: what kind it is, the grade and its place (design handoff "landing 3").
