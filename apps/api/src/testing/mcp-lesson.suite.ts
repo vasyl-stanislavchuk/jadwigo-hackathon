@@ -288,6 +288,65 @@ export function lessonSuite(
       });
     });
 
+    it("reviews the revision it gives again, so a harsh word the log's order passes never reaches a child", async () => {
+      const { tool, learner_id, pod } = await parent();
+      const draft_id = (await tool("lesson_draft", { ...DRAFT, learner_id }))["draft_id"] as string;
+      await tool("lesson_check", { draft_id, names: [], help: {} });
+      const first = await store.getRun(pod as never, draft_id as never);
+      const log = await store.listRunEvents(pod as never, draft_id as never, 0);
+      const passed = log.findLast((e) => e.type === "tool_result");
+      const latest = log.findLast((e) => e.type === "lesson_revision");
+      if (passed?.type !== "tool_result" || latest?.type !== "lesson_revision")
+        throw new Error("the draft has no check or no revision");
+
+      // A turn whose passing check names the revision after it, as a check that wrote one does;
+      // that revision's first line now holds a harsh word.
+      const turn = await store.createRun(pod as never, {
+        id: idOf(ID_PREFIXES.run, randomUUID()) as never,
+        created_by: first.created_by,
+        conversation_id: first.conversation_id,
+        workflow: "jadwigo-lesson-compose",
+        resumes: null,
+        cap_usd: 1,
+        idle_deadline_at: new Date(Date.now() + 600_000).toISOString(),
+        max_deadline_at: new Date(Date.now() + 1_800_000).toISOString(),
+      });
+      await store.appendRunEvents(pod as never, turn.id, turn.attempt, [
+        {
+          type: "tool_result",
+          run_id: turn.id,
+          event_id: randomUUID() as never,
+          payload: { ...passed.payload, call_id: "harsh" },
+        },
+      ]);
+      const file = structuredClone(latest.payload.lesson_file) as {
+        script: { parts: { steps: { say?: string }[] }[] };
+      };
+      const step = file.script.parts[0]?.steps[0];
+      if (step === undefined) throw new Error("the draft has no step");
+      step.say = "Źle, policz jeszcze raz.";
+      const written = await store.appendLessonRevision(
+        pod as never,
+        turn.id,
+        turn.attempt,
+        latest.payload.revision,
+        {
+          type: "lesson_revision",
+          run_id: turn.id,
+          event_id: randomUUID() as never,
+          payload: { revision: latest.payload.revision + 1, call_id: "harsh", lesson_file: file },
+        },
+      );
+      expect(written.ok).toBe(true);
+      await store.updateRun(pod as never, turn.id, turn.attempt, {
+        status: "completed",
+        completed_at: new Date().toISOString(),
+      });
+      expect(await tool("lesson_publish", { draft_id, learner_id })).toEqual({
+        error: expect.stringMatching(/^the lesson does not pass lesson_check: .*źle/i),
+      });
+    });
+
     it("refuses to publish for another family's child, or a lesson over 20 questions", async () => {
       const a = await parent();
       const b = await parent();
