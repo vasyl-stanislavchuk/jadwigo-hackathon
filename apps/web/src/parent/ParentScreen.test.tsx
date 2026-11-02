@@ -238,6 +238,33 @@ describe("ParentScreen", () => {
     expect(api.createAccount).toHaveBeenCalledWith({ language: "en" });
   });
 
+  it("takes the code in the 6-cell field, typed digit by digit or pasted whole (dl-uukj.47.67.11)", async () => {
+    const auth = signedOutAuth();
+    const api = client({ getMe: vi.fn(async () => me([])) });
+    render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
+
+    const email = await screen.findByRole("textbox", { name: "Twój e-mail" });
+    expect(
+      screen.getByText("Wyślemy na ten adres kod z 6 cyfr. Hasło nie jest potrzebne."),
+    ).toBeTruthy();
+    fireEvent.change(email, { target: { value: "rodzic@example.com" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyślij kod" })));
+
+    const code = screen.getByRole("textbox", { name: "Kod z e-maila, 6 cyfr" }) as HTMLInputElement;
+    const cells = () =>
+      [...document.querySelectorAll('[data-slot="input-otp"] > span')].map((c) => c.textContent);
+    // Typed: each digit takes the next cell.
+    fireEvent.change(code, { target: { value: "1" } });
+    fireEvent.change(code, { target: { value: "12" } });
+    expect(cells()).toEqual(["1", "2", "", "", "", ""]);
+    // Pasted, with the spaces an email puts in: the 6 digits, and nothing else.
+    fireEvent.change(code, { target: { value: "123 456" } });
+    expect(code.value).toBe("123456");
+    expect(cells()).toEqual(["1", "2", "3", "4", "5", "6"]);
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Zaloguj się" })));
+    expect(auth.verifyCode).toHaveBeenCalledWith("rodzic@example.com", "123456");
+  });
+
   it("speaks the pod's language once /me says it, unless the parent picked another", async () => {
     const auth = signedOutAuth();
     auth.signedIn = true;
@@ -245,9 +272,14 @@ describe("ParentScreen", () => {
     const api = client({ getMe: async () => english });
     render(<Wired auth={auth} client={api} />);
     await screen.findByRole("button", { name: "Add a child" });
-    // The language lives in the account menu at the sidebar's foot.
-    await press("[data-account]");
-    await press('[data-language-pick] [role="radio"][value="pl"]');
+    // The language lives in the account menu, under Page language (S10).
+    fireEvent.keyDown(document.querySelector("[data-account]") as Element, { key: "Enter" });
+    fireEvent.keyDown(await screen.findByRole("menuitem", { name: "Page language" }), {
+      key: "ArrowRight",
+    });
+    await act(async () =>
+      fireEvent.click(await screen.findByRole("menuitemradio", { name: "Polski" })),
+    );
     await screen.findByRole("button", { name: "Dodaj dziecko" });
   });
 
@@ -548,8 +580,10 @@ describe("ParentScreen", () => {
       />,
     );
     const account = await screen.findByRole("button", { name: "Account and settings" });
-    await act(async () => fireEvent.click(account));
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Sign out" })));
+    await act(async () => fireEvent.keyDown(account, { key: "Enter" }));
+    await act(async () =>
+      fireEvent.click(await screen.findByRole("menuitem", { name: "Sign out" })),
+    );
     await screen.findByText("Send the code");
     expect(window.location.pathname).toBe("/parent");
     expect(window.location.search).toBe("?lang=en");
@@ -785,8 +819,10 @@ describe("ParentScreen", () => {
     );
 
     const account = await screen.findByRole("button", { name: "Konto i ustawienia" });
-    await act(async () => fireEvent.click(account));
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyloguj się" })));
+    await act(async () => fireEvent.keyDown(account, { key: "Enter" }));
+    await act(async () =>
+      fireEvent.click(await screen.findByRole("menuitem", { name: "Wyloguj się" })),
+    );
     await screen.findByText("Wyślij kod");
     expect(window.sessionStorage.getItem("jw.parent.draft")).toBeNull();
     expect(window.sessionStorage.getItem("jw.chat.next.cnv_00000000000000000000000001")).toBeNull();
@@ -810,8 +846,10 @@ describe("ParentScreen", () => {
     const field = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
     fireEvent.change(field, { target: { value: "Ola myli odejmowanie przez 10" } });
     const account1 = await screen.findByRole("button", { name: "Konto i ustawienia" });
-    await act(async () => fireEvent.click(account1));
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyloguj się" })));
+    await act(async () => fireEvent.keyDown(account1, { key: "Enter" }));
+    await act(async () =>
+      fireEvent.click(await screen.findByRole("menuitem", { name: "Wyloguj się" })),
+    );
 
     who = other;
     await screen.findByText("Wyślij kod");
@@ -896,8 +934,10 @@ describe("ParentScreen", () => {
     fireEvent.change(field, { target: { value: "Ola myli odejmowanie przez 10" } });
     await act(async () => fireEvent.keyDown(field, { key: "Enter" }));
     const account1 = await screen.findByRole("button", { name: "Konto i ustawienia" });
-    await act(async () => fireEvent.click(account1));
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyloguj się" })));
+    await act(async () => fireEvent.keyDown(account1, { key: "Enter" }));
+    await act(async () =>
+      fireEvent.click(await screen.findByRole("menuitem", { name: "Wyloguj się" })),
+    );
     await screen.findByText("Wyślij kod");
     await act(async () => fail(new TypeError("Failed to fetch")));
     expect(window.sessionStorage.getItem("jw.parent.draft")).toBeNull();

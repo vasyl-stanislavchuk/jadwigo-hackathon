@@ -35,8 +35,8 @@ async function playToTheEnd(page: Page): Promise<void> {
 
 /**
  * The role the sign-in button fills with: Zeszyt's action blue, which @jadwigo/ui's default Button
- * wears on every page since epic dl-uukj.32 (dl-uukj.32.3). The button is a 48 control (decision
- * dl-og82), outside any lesson theme.
+ * wears on every page since epic dl-uukj.32 (dl-uukj.32.3). The button is a 40 control, the sign-in
+ * scale (dl-uukj.47.67 §3), outside any lesson theme.
  */
 const SEND_CODE_FILL = "--jw-act";
 

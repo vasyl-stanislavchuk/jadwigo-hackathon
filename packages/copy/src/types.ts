@@ -466,6 +466,7 @@ export const COPY_KEYS = [
   "parent_guardian",
   "parent_email",
   "parent_send_code",
+  "parent_email_hint",
   "parent_send_failed",
   "parent_code",
   "parent_code_sent",
@@ -490,6 +491,7 @@ export const COPY_KEYS = [
   "parent_language",
   "parent_language_pl",
   "parent_language_en",
+  "parent_page_language",
   // end parent login
   // the home page's featured lessons (dl-5ssh.3.6)
   "home_title",
@@ -663,6 +665,7 @@ export const COPY_KEYS = [
   "parent_ai_about_you",
   "parent_ai_about_link",
   "parent_overview_empty",
+  "parent_result_right",
   "parent_add_child_reason",
   "parent_grade_n",
   "parent_grade_age",

@@ -12,6 +12,11 @@
  *   step     a tile opens the shared review step (src/review/ReviewStep.tsx) in the adult's lines,
  *            with the same outcome as its badge and the tries under it: each answer drawn beside
  *            the right one, its time, the help it had, and the mistake or the skip in plain words
+ *
+ * On the adult frame (dl-uukj.47.67 §12.7, S3): the wide page, a title block (the title, the day,
+ * the time and the questions as its muted line, the overview link after it), then the kit's result
+ * bar on top: right at once, with help, not yet. The tiles and the bar are results, the one adult
+ * place a verdict hue appears; every try view stays the child's, inside LessonTheme.
  */
 
 import { ApiError, type ParentClient } from "@jadwigo/api-client";
@@ -25,13 +30,24 @@ import type {
 } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language, mistakeCopyKey } from "@jadwigo/copy";
 import { type Clock, FamilyView, type Instant, LessonTheme, ViewMode } from "@jadwigo/lesson-kit";
-import { Card, CardContent, Heading, Link, Notice, OutcomeTile, Page, Spinner } from "@jadwigo/ui";
+import {
+  Button,
+  Card,
+  CardContent,
+  Heading,
+  Link,
+  Notice,
+  OutcomeTile,
+  ResultBar,
+  Spinner,
+} from "@jadwigo/ui";
 import { type ReactElement, type ReactNode, useEffect, useState } from "react";
 import { NavLink } from "../nav/NavLink.tsx";
 import { ReviewStep } from "../review/ReviewStep.tsx";
 import { specOf } from "../review/Still.tsx";
 import { CATEGORY, pageLang } from "./adult.ts";
-import { rowOutcome } from "./overview/grid.ts";
+import { TitleBlock, WidePage } from "./overview/frame.tsx";
+import { type Outcome, rowOutcome } from "./overview/grid.ts";
 import { OUTCOME_TONE, OutcomeIcon, OutcomeWord, outcomeWord } from "./overview/outcome.tsx";
 import { assignmentPath, parentPath } from "./route.ts";
 
@@ -177,12 +193,12 @@ export function AttemptReview({
   );
 }
 
-/** The attempt page: the app page's prose column. */
+/** The attempt page: the wide column. */
 function ReviewPage({ children }: { children: ReactNode }): ReactElement {
   return (
-    <Page width="prose" data-parent data-attempt-review>
+    <WidePage data-parent data-attempt-review>
       {children}
-    </Page>
+    </WidePage>
   );
 }
 
@@ -202,7 +218,7 @@ function QuestionTile({
   return (
     <button
       type="button"
-      className="flex h-full min-h-jw-control w-full items-start gap-3 rounded-jw-card border-2 border-jw-line bg-jw-card p-3 text-left text-jw-ink transition-colors duration-jw-fast hover:border-jw-line-strong"
+      className="flex h-full min-h-jw-control w-full items-start gap-3 rounded-jw-card border border-jw-line bg-jw-card p-3 text-left text-jw-page-body text-jw-ink transition-colors duration-jw-fast hover:bg-muted"
       data-tile={question.seq}
       data-ended={question.ended}
       onClick={onOpen}
@@ -214,13 +230,21 @@ function QuestionTile({
         label={word}
       />
       <span className="flex min-w-0 flex-col gap-1">
-        <span className="text-jw-small font-bold">{question.seq}</span>
+        <span className="text-jw-page-small font-semibold">{question.seq}</span>
         <span>{question.say}</span>
-        <span className="text-jw-small text-jw-ink-soft">{word}</span>
+        <span className="text-jw-page-small text-jw-ink-soft">{word}</span>
       </span>
     </button>
   );
 }
+
+/** Where each outcome falls on the result bar; a question still open falls nowhere. */
+const BAR: Partial<Record<Outcome, "right" | "help" | "miss">> = {
+  first_try: "right",
+  got_there: "help",
+  not_yet: "miss",
+  skipped: "miss",
+};
 
 function Header({
   review,
@@ -231,30 +255,48 @@ function Header({
 }): ReactElement {
   const day = new Intl.DateTimeFormat(language, { dateStyle: "long" });
   const time = totalTime(review);
+  const bar = { right: 0, help: 0, miss: 0 };
+  for (const q of review.questions) {
+    const at = BAR[rowOutcome(q.result)];
+    if (at !== undefined) bar[at] += 1;
+  }
   const firstTry = review.questions.filter((q) => q.result.first_try_correct).length;
+  const total = review.questions.length;
   return (
-    <header className="flex flex-col items-start gap-2" data-review-header>
-      <p className="text-jw-small text-jw-ink-soft">
-        {copy(language, "parent_review_title", {}, CATEGORY)}
-      </p>
-      <Heading>{review.title}</Heading>
-      <Link asChild size="small">
-        <NavLink
-          href={assignmentPath({ assignment: review.attempt.assignment_id, lang: pageLang() })}
-          data-overview-link
-        >
-          {copy(language, "parent_overview_link", {}, CATEGORY)}
-        </NavLink>
-      </Link>
-      <p data-day>{day.format(new Date(review.attempt.started_at))}</p>
-      <p data-total-time>{copy(language, "parent_review_total_time", time, CATEGORY)}</p>
-      <p data-asked={review.questions.length}>
-        {copy(language, "parent_review_asked", { n: review.questions.length }, CATEGORY)}
-      </p>
-      <p data-first-try={firstTry}>
-        {copy(language, "parent_review_first_try_count", { n: firstTry }, CATEGORY)}
-      </p>
-    </header>
+    <div className="flex flex-col gap-4" data-review-header>
+      <TitleBlock
+        title={review.title}
+        line={
+          <>
+            <span data-day>{day.format(new Date(review.attempt.started_at))}</span>
+            <span aria-hidden="true">·</span>
+            <span data-total-time>
+              {copy(language, "parent_review_total_time", time, CATEGORY)}
+            </span>
+            <span aria-hidden="true">·</span>
+            <span data-asked={total}>
+              {copy(language, "parent_review_asked", { n: total }, CATEGORY)}
+            </span>
+          </>
+        }
+        action={
+          <Button asChild variant="outline" size="control" className="w-full sm:w-auto">
+            <NavLink
+              href={assignmentPath({ assignment: review.attempt.assignment_id, lang: pageLang() })}
+              data-overview-link
+            >
+              {copy(language, "parent_overview_link", {}, CATEGORY)}
+            </NavLink>
+          </Button>
+        }
+      />
+      <span className="flex" data-first-try={firstTry} data-result-bar>
+        <ResultBar
+          {...bar}
+          label={copy(language, "parent_result_right", { right: bar.right, total }, CATEGORY)}
+        />
+      </span>
+    </div>
   );
 }
 
@@ -298,7 +340,7 @@ function Try({
         : mistake;
   return (
     <li data-try={entry.try_no} data-kind={entry.kind}>
-      <Card size="compact">
+      <Card size="compact" className="shadow-none">
         <CardContent className="gap-2">
           {entry.kind === "try" && entry.value !== null && (
             <div className="kid-step min-w-0" data-try-view>
@@ -315,7 +357,7 @@ function Try({
               </LessonTheme>
             </div>
           )}
-          <p className="text-jw-small text-jw-ink-soft">
+          <p className="text-jw-page-small text-jw-ink-soft">
             {copy(
               language,
               "parent_review_try_line",

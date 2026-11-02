@@ -37,11 +37,11 @@ export function GoalLists({
         <ul className="flex flex-col gap-3">
           {goals.map((view) => (
             <li key={view.goal.id} data-goal={view.goal.id} data-goal-status={view.status}>
-              <Card size="compact">
+              <Card size="compact" className="shadow-none">
                 <CardContent className="items-start gap-3">
                   <div className="flex flex-col gap-1">
-                    <span className="font-bold break-words">{view.goal.name}</span>
-                    <span className="text-jw-small text-jw-ink-soft" data-status-word>
+                    <span className="font-semibold break-words">{view.goal.name}</span>
+                    <span className="text-jw-page-small text-jw-ink-soft" data-status-word>
                       {copy(language, GOAL_STATUS[view.status], {}, CATEGORY)}
                     </span>
                   </div>
@@ -80,7 +80,7 @@ function SkillList({
 }): ReactElement {
   return (
     <div className="flex w-full min-w-0 flex-col gap-1" data-list={list}>
-      <span className="font-bold">{title}</span>
+      <span className="font-semibold">{title}</span>
       {codes.length === 0 ? (
         <p className="text-jw-ink-soft" data-nothing-recorded>
           {copy(language, "parent_learner_nothing_recorded", {}, CATEGORY)}

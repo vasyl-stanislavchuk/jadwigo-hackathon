@@ -11,10 +11,11 @@ import { pickLanguage } from "../nav/language.ts";
 import { LANGUAGES } from "../nav/location.ts";
 import { CATEGORY } from "./adult.ts";
 
-const NAME = { pl: "parent_language_pl", en: "parent_language_en" } as const satisfies Record<
-  Language,
-  string
->;
+/** Each language named in itself. */
+export const LANGUAGE_NAME = {
+  pl: "parent_language_pl",
+  en: "parent_language_en",
+} as const satisfies Record<Language, string>;
 
 export function LanguagePick({ language }: { language: Language }): ReactElement {
   return (
@@ -23,7 +24,10 @@ export function LanguagePick({ language }: { language: Language }): ReactElement
         label={copy(language, "parent_language", {}, CATEGORY)}
         size="sm"
         value={language}
-        options={LANGUAGES.map((l) => ({ value: l, label: copy(language, NAME[l], {}, CATEGORY) }))}
+        options={LANGUAGES.map((l) => ({
+          value: l,
+          label: copy(language, LANGUAGE_NAME[l], {}, CATEGORY),
+        }))}
         onChange={(value) => {
           const picked = LANGUAGES.find((l) => l === value);
           if (picked !== undefined) pickLanguage(picked);
