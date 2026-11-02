@@ -129,6 +129,22 @@ export function mcpReadSuite(name: string, makeStore: () => Store): void {
 
     type Parent = Awaited<ReturnType<typeof parent>>;
 
+    /** Equal-groups played to the end as the people suite's review plays it, claimed for p's child. */
+    async function played(p: Parent) {
+      const assignment_id = await s.assign("equalGroups");
+      const { id: attempt_id } = await start(s, assignment_id);
+      const next = () => openQuestion(s, attempt_id);
+      await tryAt(s, attempt_id, await next(), false);
+      for (let n = 0; n < 3; n++) await tryAt(s, attempt_id, await next(), true);
+      await tryAt(s, attempt_id, await next(), false);
+      await skipAt(s, attempt_id, await next(), "asked_to_skip");
+      const claim = await p.call("POST", pathOf("claimAttempt", { id: attempt_id }), {
+        learner_id: p.learner.id,
+      });
+      expect(claim.status).toBe(201);
+      return { attempt_id, assignment_id };
+    }
+
     /** A conversation with one turn and one attached photo, written as the routes would. */
     async function chat(p: Parent) {
       const conversation = await p.call<{ id: ConversationId }>(
@@ -180,16 +196,7 @@ export function mcpReadSuite(name: string, makeStore: () => Store): void {
 
     it("reads a child's attempts, review, skills, goals and reports", async () => {
       const a = await parent("Ala");
-      // Played to the end exactly as the people suite's review plays equal-groups.
-      const { id: attempt_id } = await start(s, await s.assign("equalGroups"));
-      const next = () => openQuestion(s, attempt_id);
-      await tryAt(s, attempt_id, await next(), false);
-      for (let n = 0; n < 3; n++) await tryAt(s, attempt_id, await next(), true);
-      await tryAt(s, attempt_id, await next(), false);
-      await skipAt(s, attempt_id, await next(), "asked_to_skip");
-      await a.call("POST", pathOf("claimAttempt", { id: attempt_id }), {
-        learner_id: a.learner.id,
-      });
+      const { attempt_id } = await played(a);
       await a.call("POST", pathOf("createReport", { id: a.learner.id }), {});
       const learner_id = a.learner.id;
 
@@ -250,31 +257,57 @@ export function mcpReadSuite(name: string, makeStore: () => Store): void {
       for (const reply of [search, set, question]) expect(reply.text).not.toContain(BANK_TOKEN);
     });
 
-    it("reads none of another pod's learners, reports, conversations, runs or photos", async () => {
+    it("answers every id-taking read tool another pod's id as not found, exactly as an unknown id", async () => {
       const a = await parent("Ala");
       const b = await parent("Olek");
       await b.call("POST", pathOf("createReport", { id: b.learner.id }), {});
       const theirs = await chat(b);
       const learner_id = b.learner.id;
 
-      // B reads its own; A, with the same ids, reads nothing of them.
-      expect((await b.tool("report_list", { learner_id })).json).toMatchObject({
-        reports: [{ learner_id }],
-      });
-      expect((await b.tool("attachment_get", theirs)).isError).toBe(false);
-      for (const [tool, args] of [
-        ["learner_attempts", { learner_id }],
-        ["learner_skills", { learner_id }],
-        ["learner_goals", { learner_id }],
-        ["report_list", { learner_id }],
-        ["report_latest", { learner_id }],
-        ["conversation_runs", { conversation_id: theirs.conversation_id }],
-        ["run_events", { run_id: theirs.run_id }],
-        ["attachment_get", { attachment_id: theirs.attachment_id }],
-      ] as const) {
-        const reply = await a.tool(tool, args);
-        expect(reply.isError, `${tool}: ${reply.text}`).toBe(true);
-        expect(reply.text).not.toContain("Olek");
+      const game = await played(b);
+      const fresh = (prefix: keyof typeof ID_PREFIXES) => idOf(ID_PREFIXES[prefix], randomUUID());
+      // Every id-taking read tool: B's own id, and an id no pod holds. B reads its own; A gets
+      // exactly the reply an unknown id gets, so a foreign id reads as not found, never as data
+      // or as some other refusal.
+      const TABLE: readonly [string, object, object][] = [
+        ["learner_attempts", { learner_id }, { learner_id: fresh("learner") }],
+        [
+          "attempt_review",
+          { learner_id, attempt_id: game.attempt_id },
+          { learner_id: fresh("learner"), attempt_id: fresh("attempt") },
+        ],
+        [
+          "assignment_attempts",
+          { assignment_id: game.assignment_id },
+          { assignment_id: fresh("assignment") },
+        ],
+        ["learner_skills", { learner_id }, { learner_id: fresh("learner") }],
+        ["learner_goals", { learner_id }, { learner_id: fresh("learner") }],
+        ["report_list", { learner_id }, { learner_id: fresh("learner") }],
+        ["report_latest", { learner_id }, { learner_id: fresh("learner") }],
+        [
+          "conversation_runs",
+          { conversation_id: theirs.conversation_id },
+          { conversation_id: fresh("conversation") },
+        ],
+        ["run_events", { run_id: theirs.run_id }, { run_id: fresh("run") }],
+        [
+          "attachment_get",
+          { attachment_id: theirs.attachment_id },
+          { attachment_id: fresh("attachment") },
+        ],
+      ];
+      for (const [tool, foreign, unknown] of TABLE) {
+        const own = await b.tool(tool, foreign);
+        expect(own.isError, `${tool} for its own pod: ${own.text}`).toBe(false);
+        const read = await a.tool(tool, foreign);
+        const none = await a.tool(tool, unknown);
+        expect(none.isError, `${tool}, an unknown id: ${none.text}`).toBe(true);
+        expect(none.text, tool).toMatch(/not found|no such|not.*hold/i);
+        expect({ isError: read.isError, text: read.text }, tool).toEqual({
+          isError: true,
+          text: none.text,
+        });
       }
       const me = (await a.tool("me")).json as Me;
       expect(me.learners.map((l) => l.learner.id)).toEqual([a.learner.id]);
