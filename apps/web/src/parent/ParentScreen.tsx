@@ -32,6 +32,7 @@
 import {
   ApiError,
   type Client,
+  type ConversationListClient,
   createClient,
   type ParentClient,
   type PodClient,
@@ -65,8 +66,10 @@ import {
 } from "./auth.ts";
 import { ChildPage } from "./child/ChildPage.tsx";
 import { Failed } from "./Failed.tsx";
+import { HistoryTable } from "./history/HistoryTable.tsx";
 import { inAppBrowser } from "./inApp.ts";
 import { LanguagePick } from "./LanguagePick.tsx";
+import { LessonsTable } from "./lessons/LessonsTable.tsx";
 import { AddChildDialog } from "./newLesson/AddChildDialog.tsx";
 import { DlaSelect } from "./newLesson/DlaSelect.tsx";
 import { type LessonAsk, NewLessonBox } from "./newLesson/NewLessonBox.tsx";
@@ -113,6 +116,7 @@ export function ParentScreen({
   auth = browserAuth(),
   client,
   pods,
+  lessons,
   engine: givenEngine,
 }: {
   language: Language;
@@ -126,6 +130,11 @@ export function ParentScreen({
    * absent. With a test's `client` and no `pods`, the consent screen is not asked.
    */
   pods?: PodClient;
+  /**
+   * The family's conversations, the Lekcje table's rows (dl-z5ja.106.1), for tests; the page's own
+   * client when `client` is absent. With a test's `client` and no `lessons`, the table is empty.
+   */
+  lessons?: Pick<ConversationListClient, "listConversations">;
   /**
    * The lesson engine (dl-z5ja.108), for tests; the build's conversation routes and Realtime when
    * `client` is absent. With a test's `client` and no `engine`, sending says it is on its way.
@@ -142,6 +151,7 @@ export function ParentScreen({
   );
   const api: ParentClient = client ?? own;
   const podApi: PodClient | null = pods ?? (client ? null : own);
+  const listApi = lessons ?? (client ? null : own);
   const route = parentRoute(useLocation().path);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [returned, setReturned] = useState<CopyKey | null>(null);
@@ -193,6 +203,7 @@ export function ParentScreen({
     <SignedIn
       api={api}
       pods={podApi}
+      conversations={listApi}
       engine={engine}
       language={language}
       route={route ?? { kind: "home" }}
@@ -470,6 +481,7 @@ async function meOf(api: ParentClient, language: Language): Promise<Me> {
 function SignedIn({
   api,
   pods,
+  conversations,
   engine,
   language,
   route,
@@ -480,6 +492,7 @@ function SignedIn({
 }: {
   api: ParentClient;
   pods: PodClient | null;
+  conversations: Pick<ConversationListClient, "listConversations"> | null;
   engine: LessonEngine | null;
   language: Language;
   route: ParentRoute;
@@ -693,9 +706,7 @@ function SignedIn({
         { kind: "lessons" },
         [{ label: t("parent_nav_lessons") }],
         <ParentPage>
-          <p className="text-jw-ink-soft" data-lessons-empty>
-            {t("parent_lessons_empty")}
-          </p>
+          <LessonsTable language={language} learners={learners} list={conversations} />
         </ParentPage>,
       );
     case "lesson": {
@@ -738,9 +749,7 @@ function SignedIn({
         { kind: "history" },
         [{ label: t("parent_nav_history") }],
         <ParentPage>
-          <p className="text-jw-ink-soft" data-history-empty>
-            {t("parent_history_empty")}
-          </p>
+          <HistoryTable api={api} language={language} learners={learners} />
         </ParentPage>,
       );
     case "child": {
