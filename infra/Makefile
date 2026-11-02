@@ -25,6 +25,7 @@ output:
 
 # The site's files: build, check the head tags, sync to the bucket, then invalidate. The owner runs it
 # after an apply; a merge deploys nothing. Hashed assets under _astro/ cache for a year, the rest 5 minutes.
+# The build reads site-build/prod.env first: PostHog's public key, so the site carries its banner (dl-w0b4.14).
 SITE := ../apps/site
 AWS := aws --profile $(AWS_PROFILE)
 # Each deploy writes the commit it ships, "<sha> <UTC time>[ dirty]", which `make prod-status` reads
@@ -34,7 +35,7 @@ STAMP = printf '%s %s%s\n' "$$(git rev-parse HEAD)" "$$(date -u +%Y-%m-%dT%H:%M:
 
 site-deploy:
 	@$(NOT_FROM_AGENT)
-	cd $(SITE) && bun run build && bun run check:dist && bun run check:hreflang dist
+	set -a && . $(abspath site-build/prod.env) && set +a && cd $(SITE) && bun run build && bun run check:dist && bun run check:hreflang dist
 	$(STAMP) > $(SITE)/dist/version.txt
 	bucket=$$($(TF) output -raw site_bucket) && dist_id=$$($(TF) output -raw site_distribution_id) && \
 	{ [ ! -d $(SITE)/dist/_astro ] || $(AWS) s3 sync $(SITE)/dist/_astro s3://$$bucket/_astro --cache-control "public, max-age=31536000, immutable"; } && \

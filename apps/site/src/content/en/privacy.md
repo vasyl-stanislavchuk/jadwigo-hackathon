@@ -51,6 +51,16 @@ your messages and the data about your child that Jadwigo AI needs: first name, g
 mistakes and the lessons your child has worked through. Meta processes them under Meta's own terms. The lesson your child works through doesn't
 contain your child's name.
 
+## Statistics and screen recordings
+
+On the site and in the app we ask whether we may record how you use them. Until you answer, we
+record nothing. If you agree, PostHog records the pages you visit, a few steps such as adding a
+child or signing in, and screen recordings. A recording shows what the screen shows, including
+your child's first name and the lesson's questions. It doesn't show what you type into form fields.
+We then store a PostHog cookie on your device. If you say no, we only count the visit and those
+steps, with no cookie and no recording, so we can't tell it's still you. No event carries your child's name, your email, an answer or a score. We
+don't record IP addresses.
+
 ## Who processes the data
 
 These companies process your family's data for us:
@@ -59,6 +69,7 @@ These companies process your family's data for us:
 - Amazon Web Services: the servers Jadwigo's app runs on, also in Frankfurt.
 - Meta: the AI models Jadwigo AI runs on, and sign-in with Facebook.
 - Google: sign-in with Google, and the privacy@jadwigo.pl mailbox.
+- PostHog: statistics and screen recordings, after you agree, on servers in Frankfurt.
 
 ## How long we keep the data
 
