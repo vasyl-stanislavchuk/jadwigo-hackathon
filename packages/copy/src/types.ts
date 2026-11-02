@@ -686,6 +686,11 @@ export const COPY_KEYS = [
   "parent_step_move_up",
   "parent_step_move_down",
   "parent_step_drop",
+  "parent_give_title",
+  "parent_this_computer",
+  "parent_print",
+  "parent_print_hint",
+  "parent_this_computer_soon",
   // end the lesson's send and its chat
   // the chat page (dl-z5ja.17): /playground/chat, a parent's chat on the left and the lesson on the right
   "chat_title",
