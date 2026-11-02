@@ -664,6 +664,7 @@ export const COPY_KEYS = [
   "parent_ai_about_you",
   "parent_ai_about_link",
   "parent_overview_empty",
+  "parent_result_right",
   "parent_add_child_reason",
   "parent_filter_label",
   "parent_filter_all",

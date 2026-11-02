@@ -693,6 +693,7 @@ export * from "./parent_report_period.js";
 export * from "./parent_report_proposals.js";
 export * from "./parent_report_skills_standing.js";
 export * from "./parent_report_title.js";
+export * from "./parent_result_right.js";
 export * from "./parent_review_asked.js";
 export * from "./parent_review_back.js";
 export * from "./parent_review_first_try.js";

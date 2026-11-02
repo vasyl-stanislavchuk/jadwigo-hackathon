@@ -1075,6 +1075,7 @@
   "parent_ai_about_you": "Ty decydujesz, co trafi do dziecka.",
   "parent_ai_about_link": "Więcej o Jadwigo AI",
   "parent_overview_empty": "Tu pojawi się tydzień po tygodniu, jak idzie nauka, po pierwszej lekcji.",
+  "parent_result_right": "{right} z {total} dobrze",
   "parent_add_child_reason": "Najpierw wpisz imię",
   "parent_filter_label": "Pokaż",
   "parent_filter_all": "Wszystkie",

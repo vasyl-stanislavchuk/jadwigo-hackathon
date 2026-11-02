@@ -91,7 +91,7 @@ export function OutcomeWord({
 }: ComponentProps<"span"> & { outcome: Outcome; language: Language }): ReactElement {
   const word = outcomeWord(language, outcome);
   return (
-    <span className="flex items-center gap-2 text-jw-small font-bold" {...props}>
+    <span className="flex items-center gap-2 text-jw-page-small font-semibold" {...props}>
       <OutcomeTile
         size="xs"
         tone={OUTCOME_TONE[outcome]}
