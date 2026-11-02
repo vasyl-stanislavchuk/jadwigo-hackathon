@@ -14,7 +14,10 @@
     "external_facebook_email_optional": false,
     "hook_send_email_enabled": true,
     "hook_send_email_uri": "https://app.jadwigo.pl/api/hooks/auth-emails",
-    "rate_limit_email_sent": 30
+    "rate_limit_email_sent": 30,
+    "oauth_server_enabled": true,
+    "oauth_server_allow_dynamic_registration": true,
+    "oauth_server_authorization_path": "/oauth/consent"
   },
   "secrets": {
     "external_google_secret": "jadwigo-google-oauth-secret-dev",
