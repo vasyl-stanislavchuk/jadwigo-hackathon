@@ -530,6 +530,27 @@ describe("ParentScreen", () => {
     await waitFor(() => expect(document.activeElement).toBe(plus));
   });
 
+  it("signs out to /parent from a lesson's page, keeping the page's language", async () => {
+    window.history.replaceState(null, "", `/parent/lessons/${CONVERSATION}?lang=en`);
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    render(
+      <ParentScreen
+        language="en"
+        query={new URLSearchParams("lang=en")}
+        auth={auth}
+        client={client({ getMe: async () => me([]) })}
+      />,
+    );
+    const account = await screen.findByRole("button", { name: "Account and settings" });
+    await act(async () => fireEvent.click(account));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Sign out" })));
+    await screen.findByText("Send the code");
+    expect(window.location.pathname).toBe("/parent");
+    expect(window.location.search).toBe("?lang=en");
+    expect(auth.signedIn).toBe(false);
+  });
+
   it("lists the family's conversations under Lekcje, and the sidebar's empty line goes once there is one", async () => {
     window.history.replaceState(null, "", "/parent/lessons");
     const auth = signedOutAuth();
