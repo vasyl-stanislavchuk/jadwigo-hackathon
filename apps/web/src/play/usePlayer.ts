@@ -29,6 +29,7 @@ import {
   ErrorType,
   EventId,
   type Language,
+  type LearnerId,
 } from "@jadwigo/contracts";
 import type { Instant } from "@jadwigo/lesson-kit";
 import { browserClock } from "@jadwigo/lesson-kit";
@@ -46,6 +47,8 @@ type Stage =
   | { kind: "paused" }
   | { kind: "finished"; results: AttemptResults | null }
   | { kind: "not_found" }
+  /** A learners assignment opened with no valid `?learner=`: the link lost its child. */
+  | { kind: "link_incomplete" }
   | { kind: "failed" };
 
 /** A finished attempt's questions again, for the review step; failing it leaves the list as is. */
@@ -93,22 +96,37 @@ async function untilAnswered<T>(run: () => Promise<T>, alive: () => boolean): Pr
   }
 }
 
-/** One start per assignment at a time, so React's double effect in development starts one attempt. */
-const starting = new Map<AssignmentId, Promise<AttemptSnapshot>>();
+/** One start per assignment and learner at a time, so React's double effect in development starts
+ * one attempt. */
+const starting = new Map<string, Promise<AttemptSnapshot>>();
 
-function startOnce(client: AttemptClient, assignmentId: AssignmentId): Promise<AttemptSnapshot> {
-  const pending = starting.get(assignmentId);
+function startOnce(
+  client: AttemptClient,
+  assignmentId: AssignmentId,
+  learner: LearnerId | null,
+): Promise<AttemptSnapshot> {
+  const key = `${assignmentId}.${learner}`;
+  const pending = starting.get(key);
   if (pending !== undefined) return pending;
-  const started = client.startAttempt(assignmentId).then((snapshot) => {
-    storedAttempt.set(assignmentId, snapshot.attempt.id);
+  const body = learner === null ? {} : { learner_id: learner };
+  const started = client.startAttempt(assignmentId, body).then((snapshot) => {
+    storedAttempt.set(assignmentId, snapshot.attempt.id, learner);
     return snapshot;
   });
-  starting.set(assignmentId, started);
-  void started.finally(() => starting.delete(assignmentId)).catch(() => undefined);
+  starting.set(key, started);
+  void started.finally(() => starting.delete(key)).catch(() => undefined);
   return started;
 }
 
-export function usePlayer(assignmentId: AssignmentId, client?: AttemptClient): Player {
+/**
+ * `learner` is the child a play link names (`?learner=`, dl-1u6fn.5): an assignment for a pod's
+ * learners starts only with one, and the attempt is that child's from its start.
+ */
+export function usePlayer(
+  assignmentId: AssignmentId,
+  client?: AttemptClient,
+  learner: LearnerId | null = null,
+): Player {
   const api = useMemo(() => client ?? createClient({ base: "" }), [client]);
   const [state, dispatch] = useReducer(runner, initialRunner);
   const [stage, setStage] = useState<Stage>({ kind: "loading" });
@@ -170,18 +188,26 @@ export function usePlayer(assignmentId: AssignmentId, client?: AttemptClient): P
     let live = true;
     const isLive = (): boolean => live;
     const start = (): Promise<AttemptSnapshot> =>
-      untilAnswered(() => startOnce(api, assignmentId), isLive);
-    const stored = storedAttempt.get(assignmentId);
+      untilAnswered(() => startOnce(api, assignmentId, learner), isLive);
+    const stored = storedAttempt.get(assignmentId, learner);
     const load =
       stored === null
         ? start()
-        : untilAnswered(() => api.getAttempt(stored), isLive).catch((error: unknown) => {
-            if (isApiError(error) && error.status === 404) {
-              storedAttempt.clear(assignmentId);
+        : untilAnswered(() => api.getAttempt(stored), isLive).then(
+            // Another child's attempt is never resumed: this link starts its own.
+            (snapshot) => {
+              if ((snapshot.attempt.learner_id ?? null) === learner) return snapshot;
+              storedAttempt.clear(assignmentId, learner);
               return start();
-            }
-            throw error;
-          });
+            },
+            (error: unknown) => {
+              if (isApiError(error) && error.status === 404) {
+                storedAttempt.clear(assignmentId, learner);
+                return start();
+              }
+              throw error;
+            },
+          );
     load
       .then((snapshot) => {
         if (live) take(snapshot);
@@ -189,12 +215,15 @@ export function usePlayer(assignmentId: AssignmentId, client?: AttemptClient): P
       .catch((error: unknown) => {
         if (!live) return;
         const missing = isApiError(error) && error.status === 404;
-        setStage({ kind: missing ? "not_found" : "failed" });
+        // With no learner the body is {}, so a 400 is a learners assignment asking for one.
+        const noChild =
+          learner === null && isApiError(error) && error.type === ErrorType.enum.BadRequest;
+        setStage({ kind: missing ? "not_found" : noChild ? "link_incomplete" : "failed" });
       });
     return () => {
       live = false;
     };
-  }, [api, assignmentId, take]);
+  }, [api, assignmentId, learner, take]);
 
   // A new question on screen: its clock starts now. A miss keeps the question, and its clock.
   useEffect(() => {

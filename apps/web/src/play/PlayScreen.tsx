@@ -28,7 +28,7 @@ import { Column, KidPage } from "./KidPage.tsx";
 import { Queen } from "./Queen.tsx";
 import { queenDue } from "./queen.ts";
 import { Results } from "./Results.tsx";
-import { playPath, playRoute, reviewPath } from "./route.ts";
+import { playLearner, playPath, playRoute, reviewPath } from "./route.ts";
 import { currentOf, progressOf } from "./runner.ts";
 import { type Player, usePlayer } from "./usePlayer.ts";
 
@@ -113,9 +113,9 @@ export function PlayScreen({
   /** The API, for tests; the page's own origin when absent. */
   client?: AttemptClient;
 }): ReactElement {
-  const player = usePlayer(assignmentId, client);
-  const { stage } = player;
   const { path, query } = useLocation();
+  const player = usePlayer(assignmentId, client, playLearner(query));
+  const { stage } = player;
   const seq = playRoute(path)?.review;
   // The page's own query (the language) rides along from the list to a step and back.
   const search = query.toString();
@@ -201,6 +201,14 @@ export function PlayScreen({
       );
     case "not_found":
       return <LessonNotFound language={language} />;
+    case "link_incomplete":
+      return (
+        <KidPage>
+          <Column>
+            <p data-link-incomplete>{copy(language, "play_link_incomplete")}</p>
+          </Column>
+        </KidPage>
+      );
     case "failed":
       return (
         <KidPage>

@@ -454,6 +454,7 @@
   "play_paused": "The lesson is waiting for you.",
   "play_paused_back": "Back to the lesson",
   "play_not_found": "This lesson is not here.",
+  "play_link_incomplete": "This link is not complete. Ask a parent for a new one.",
   "play_save": "Save your progress",
   "play_save_note": "For a grown-up: sign in, and this lesson stays on your child's account.",
   "parent_title": "Parent account",
