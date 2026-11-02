@@ -476,6 +476,7 @@
   "parent_guardian": "Jestem rodzicem lub opiekunem tego dziecka.",
   "parent_email": "Twój e-mail",
   "parent_send_code": "Wyślij kod",
+  "parent_email_hint": "Wyślemy na ten adres kod z 6 cyfr. Hasło nie jest potrzebne.",
   "parent_send_failed": "Nie udało się wysłać kodu. Spróbuj za chwilę.",
   "parent_code": "Kod z e-maila, 6 cyfr",
   "parent_code_sent": "Wysłaliśmy kod na {email}.",
