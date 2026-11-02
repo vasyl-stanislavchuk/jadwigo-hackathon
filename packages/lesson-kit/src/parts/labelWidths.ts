@@ -1,9 +1,10 @@
 /**
  * How wide each label over a drawing may be (dl-uukj.48). Labels that share a row (the same y and
- * the same vertical alignment, like a graph's category names under its x-axis) each get a max-width
+ * the same alignment, like a graph's category names under its x-axis) each get a max-width
  * of the distance to their nearest neighbour on that row, in percent of the drawing's width, so a
  * long name wraps under its own column instead of running into the next one. A label alone on its
- * row gets null and keeps one line.
+ * row gets null and keeps one line. The whole alignment counts: a y-axis tick ("left") and the
+ * axis title ("center") at the same height are not a row, so the title is not squeezed (dl-uukj.54).
  */
 
 export interface LabelSpot {
@@ -11,10 +12,8 @@ export interface LabelSpot {
   alignment: string;
 }
 
-const vertical = (alignment: string): string => {
-  const words = alignment.split(/\s+/);
-  return words.includes("above") ? "above" : words.includes("below") ? "below" : "middle";
-};
+const alignmentKey = (alignment: string): string =>
+  alignment.trim().split(/\s+/).sort().join(" ") || "center";
 
 export function labelWidths(
   items: readonly LabelSpot[],
@@ -22,7 +21,8 @@ export function labelWidths(
 ): (number | null)[] {
   const [x0, x1] = range[0];
   const xs = items.map((l) => (100 * (l.coordinates[0] - x0)) / (x1 - x0));
-  const row = (l: LabelSpot): string => `${l.coordinates[1].toFixed(6)} ${vertical(l.alignment)}`;
+  const row = (l: LabelSpot): string =>
+    `${l.coordinates[1].toFixed(6)} ${alignmentKey(l.alignment)}`;
   return items.map((l, i) => {
     const x = xs[i] ?? 0;
     const gaps = items.flatMap((m, j) => {
