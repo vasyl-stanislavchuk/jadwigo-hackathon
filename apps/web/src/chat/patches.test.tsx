@@ -12,7 +12,15 @@ import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-li
 import { afterEach, describe, expect, it } from "vitest";
 import { ChatScreen } from "./ChatScreen.tsx";
 import { LessonPane } from "./LessonPane.tsx";
-import { applyPatch, patchOutcome, revertPatch, wordsOf, wordsPatch } from "./patches.ts";
+import {
+  applyPatch,
+  dropPatch,
+  movePatch,
+  patchOutcome,
+  revertPatch,
+  wordsOf,
+  wordsPatch,
+} from "./patches.ts";
 import { type RunLive, routesTransport } from "./routesTransport.ts";
 import { type EngineTransport, useConversation } from "./useConversation.ts";
 import type { SendBody } from "./wire.ts";
@@ -21,6 +29,10 @@ afterEach(cleanup);
 
 const eventsOf = (name: string): RunEvent[] =>
   (RUN_LOGS.find((l) => l.name === name)?.events ?? []).map((e) => RunEvent.parse(e));
+
+/** Opens a step's row: its editor and actions sit in the opened step (dl-z5ja.108.1). */
+const openStep = (step: string) =>
+  fireEvent.click(document.querySelector(`[data-step='${step}'] [aria-expanded]`) as HTMLElement);
 
 /** The happy turn's last lesson file: an ended turn, revision 2. */
 const lessonFile = () => {
@@ -190,6 +202,7 @@ describe("the lesson pane sends a parent's own words as a patch (dl-z5ja.111)", 
     const lesson = foldRun(eventsOf("happy-turn")).lesson;
     const sent: unknown[][] = [];
     render(<LessonPane language="pl" lesson={lesson} onEdit={(...args) => sent.push(args)} />);
+    openStep("s02");
     fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
     const words = screen.getByRole("textbox", { name: "Co ten krok mówi dziecku" });
     expect((words as HTMLTextAreaElement).value).toBe(wordsOf(lesson?.lesson_file, "s02", "pl"));
@@ -213,6 +226,7 @@ describe("the lesson pane sends a parent's own words as a patch (dl-z5ja.111)", 
     const lesson = foldRun(eventsOf("happy-turn")).lesson;
     const sent: unknown[][] = [];
     render(<LessonPane language="pl" lesson={lesson} onEdit={(...args) => sent.push(args)} />);
+    openStep("s02");
     fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
     fireEvent.change(screen.getByRole("textbox", { name: "Co ten krok mówi dziecku" }), {
       target: { value: "Ile to jest dwa razy sześć?" },
@@ -260,6 +274,7 @@ describe("the lesson pane sends a parent's own words as a patch (dl-z5ja.111)", 
     const t = transportOf(events);
     render(<ChatScreen transport={t.transport} />);
     expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    openStep("s02");
     fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
     fireEvent.change(screen.getByRole("textbox", { name: "Co ten krok mówi dziecku" }), {
       target: { value: "Ile to jest dwa razy sześć?" },
@@ -279,7 +294,9 @@ describe("the lesson pane sends a parent's own words as a patch (dl-z5ja.111)", 
     expect(screen.getByText("Zapisywanie Twojej zmiany w lekcji…")).toBeTruthy();
     await act(async () => t.push([revisionFor([...events, steer], patch, 3, body?.event_id)]));
     expect(screen.getByText("Wersja 3")).toBeTruthy();
-    expect(screen.getByText("Ile to jest dwa razy sześć?")).toBeTruthy();
+    expect(document.querySelector("[data-step='s02'] [data-step-title]")?.textContent).toBe(
+      "Ile to jest dwa razy sześć?",
+    );
     expect(screen.getByText("Twoja zmiana jest już w lekcji.")).toBeTruthy();
   });
 
@@ -288,6 +305,7 @@ describe("the lesson pane sends a parent's own words as a patch (dl-z5ja.111)", 
     const t = transportOf(events);
     render(<ChatScreen transport={t.transport} />);
     expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    openStep("s02");
     fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
     fireEvent.change(screen.getByRole("textbox", { name: "Co ten krok mówi dziecku" }), {
       target: { value: "Ile to jest dwa razy sześć?" },
@@ -417,5 +435,89 @@ describe("the routes carry the patch (dl-z5ja.111)", () => {
       base_revision: 1,
     });
     expect(posted).toEqual([expect.objectContaining({ kind: "steer", patch, base_revision: 1 })]);
+  });
+});
+
+/** The ids of the file's steps in order, teaching steps included. */
+const order = (file: unknown): string[] =>
+  (file as { script: { parts: { steps: { id: string }[] }[] } }).script.parts.flatMap((p) =>
+    p.steps.map((s) => s.id),
+  );
+
+describe("a step moved or removed by the parent (dl-z5ja.108.1)", () => {
+  it("a move swaps the step with the next question that way, stepping over teaching steps", () => {
+    const file = lessonFile();
+    expect(order(file)).toEqual(["s01", "s02", "s03", "s05", "s06", "s07", "s08"]);
+    // s03 is a teaching step: s05 up lands where s02 was.
+    expect(order(applyPatch(file, movePatch(file, "s05", -1)))).toEqual([
+      "s01",
+      "s05",
+      "s03",
+      "s02",
+      "s06",
+      "s07",
+      "s08",
+    ]);
+    expect(order(applyPatch(file, movePatch(file, "s06", 1)))).toEqual([
+      "s01",
+      "s02",
+      "s03",
+      "s05",
+      "s07",
+      "s06",
+      "s08",
+    ]);
+    // Nowhere to go: the first question up, the last down, a step not in the file.
+    expect(movePatch(file, "s02", -1)).toBeNull();
+    expect(movePatch(file, "s07", 1)).toBeNull();
+    expect(movePatch(file, "s99", 1)).toBeNull();
+  });
+
+  it("a removal takes only that step out, and never the lesson's last", () => {
+    const file = lessonFile();
+    expect(order(applyPatch(file, dropPatch(file, "s05")))).toEqual([
+      "s01",
+      "s02",
+      "s03",
+      "s06",
+      "s07",
+      "s08",
+    ]);
+    expect(dropPatch(file, "s99")).toBeNull();
+    const one = { script: { parts: [{ part: "a", steps: [{ id: "s01" }] }] } };
+    expect(dropPatch(one, "s01")).toBeNull();
+  });
+
+  it("the opened step's Przenieś and Usuń send a patch on the revision shown, with a steer", () => {
+    const lesson = foldRun(eventsOf("happy-turn")).lesson;
+    const sent: unknown[][] = [];
+    render(<LessonPane language="pl" lesson={lesson} onEdit={(...args) => sent.push(args)} />);
+    openStep("s05");
+    fireEvent.click(document.querySelector("[data-step='s05'] [data-move='up']") as HTMLElement);
+    fireEvent.click(document.querySelector("[data-step='s05'] [data-drop]") as HTMLElement);
+    expect(sent.map(([text, ids]) => [text, ids])).toEqual([
+      ["Rodzic sam przeniósł krok s05 o jedno miejsce wyżej.", ["s05"]],
+      ["Rodzic sam usunął krok s05 z lekcji.", ["s05"]],
+    ]);
+    const [move, drop] = sent.map(
+      ([, , change]) => change as { patch: unknown; base_revision: number },
+    );
+    expect(move?.base_revision).toBe(lesson?.revision);
+    expect(order(applyPatch(lesson?.lesson_file, move?.patch))).toEqual(
+      order(applyPatch(lesson?.lesson_file, movePatch(lesson?.lesson_file, "s05", -1))),
+    );
+    expect(order(applyPatch(lesson?.lesson_file, drop?.patch))).not.toContain("s05");
+  });
+
+  it("the first question cannot move up, nor the last down", () => {
+    const lesson = foldRun(eventsOf("happy-turn")).lesson;
+    render(<LessonPane language="pl" lesson={lesson} onEdit={() => undefined} />);
+    openStep("s02");
+    openStep("s07");
+    const button = (step: string, way: string) =>
+      document.querySelector(`[data-step='${step}'] [data-move='${way}']`) as HTMLButtonElement;
+    expect(button("s02", "up").disabled).toBe(true);
+    expect(button("s02", "down").disabled).toBe(false);
+    expect(button("s07", "down").disabled).toBe(true);
   });
 });
