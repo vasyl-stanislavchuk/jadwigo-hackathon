@@ -5,6 +5,7 @@ import {
   type ErrorEnvelope,
   ErrorType,
   QuestionBody,
+  QuestionSetPage,
   ROUTES,
   SearchEnvelope,
 } from "@jadwigo/contracts";
@@ -598,5 +599,92 @@ describe("lambdaBucket", () => {
   ])("throws on any other failure (%s)", async (_, err) => {
     const broken = lambdaBucket("b", undefined, { send: () => Promise.reject(err) });
     await expect(broken.get("k")).rejects.toThrow(err.message);
+  });
+});
+
+/** A made-up set page, as the bank Lambda answers `{set_id}` (jadwigo-bank service/rows.py `public_page`). */
+const SET_PAGE = {
+  id: "set_khan_xd4e5f6",
+  titles: { pl: "Dodawanie w zakresie 100", en: "Add within 100" },
+  grade: "2",
+  skill_ids: ["maths.add.within100"],
+  credit: "Khan Academy, CC BY-NC-SA 4.0",
+  items: {
+    ids: ["xfeed0001", "xfeed0002", "xfeed0003"],
+    ready_ids: { pl: ["xfeed0001", "xfeed0003"], en: [] },
+  },
+};
+
+async function getSet(
+  bank: BankDeps | undefined,
+  id: string,
+  headers: Record<string, string> = { authorization: `Bearer ${TOKEN}` },
+): Promise<{ status: number; body: unknown }> {
+  const app = createApp(new InMemoryStore(), { bank });
+  const path = ROUTES.questionSet.path.replace("{id}", id);
+  const reply = (await app.resolve(
+    {
+      version: "2.0",
+      routeKey: "$default",
+      rawPath: path,
+      rawQueryString: "",
+      headers,
+      requestContext: { http: { method: "GET", path }, stage: "$default" },
+      isBase64Encoded: false,
+    },
+    {} as Parameters<typeof app.resolve>[1],
+  )) as { statusCode: number; body?: string };
+  return { status: reply.statusCode, body: reply.body ? JSON.parse(reply.body) : null };
+}
+
+describe("GET /api/v1/question-sets/{id}", () => {
+  it.each([
+    ["no authorization header", {}],
+    ["a wrong token", { authorization: "Bearer not-the-token" }],
+  ])("refuses %s as 401 and never invokes the bank", async (_, headers) => {
+    const { bank, sent } = fakeBank(async () => answered(200, SET_PAGE));
+    refusedWith(await getSet(bank, SET_PAGE.id, headers), ErrorType.enum.Unauthorized);
+    refusedWith(await getSet(bank, "not-a-set", headers), ErrorType.enum.Unauthorized);
+    expect(sent).toEqual([]);
+  });
+
+  it("invokes the bank with the set id and returns its page", async () => {
+    const { bank, sent } = fakeBank(async () => answered(200, SET_PAGE));
+    const reply = await getSet(bank, SET_PAGE.id);
+    expect(reply.status).toBe(200);
+    expect(reply.body).toEqual(QuestionSetPage.parse(SET_PAGE));
+    expect(sent).toEqual([{ set_id: SET_PAGE.id }]);
+  });
+
+  it("drops a field the page schema does not name, a question body among them", async () => {
+    const { bank } = fakeBank(async () => answered(200, { ...SET_PAGE, body: { key: 1 } }));
+    const reply = await getSet(bank, SET_PAGE.id);
+    expect(reply.status).toBe(200);
+    expect(reply.body).not.toHaveProperty("body");
+  });
+
+  it("answers 404 for an id that is no set id, without invoking the bank", async () => {
+    const { bank, sent } = fakeBank(async () => answered(200, SET_PAGE));
+    refusedWith(await getSet(bank, "_bank"), ErrorType.enum.NotFound);
+    expect(sent).toEqual([]);
+  });
+
+  it("answers 404 when the bank knows no such set", async () => {
+    const { bank } = fakeBank(async () => answered(404, { error: "not found" }));
+    refusedWith(await getSet(bank, "set_nope"), ErrorType.enum.NotFound);
+  });
+
+  it.each([
+    ["a 500", async () => answered(500, { error: "set page failed" })],
+    ["another set's page", async () => answered(200, { ...SET_PAGE, id: "set_other" })],
+    ["a page that does not parse", async () => answered(200, { id: SET_PAGE.id })],
+    ["a function error", async () => ({ payload: "{}", functionError: "Unhandled" })],
+  ])("answers 502 for %s", async (_, reply) => {
+    const { bank } = fakeBank(reply);
+    refusedWith(await getSet(bank, SET_PAGE.id), ErrorType.enum.BankUnavailable);
+  });
+
+  it("answers 502 when no bank is wired, as on the local server", async () => {
+    refusedWith(await getSet(undefined, SET_PAGE.id), ErrorType.enum.BankUnavailable);
   });
 });

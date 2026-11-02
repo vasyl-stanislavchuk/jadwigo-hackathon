@@ -54,7 +54,13 @@ import {
 } from "./people.ts";
 import { playgroundExamples } from "./playground.ts";
 import { type PokeStepHost, pokeAll } from "./poke.ts";
-import { type BankDeps, type BucketDeps, questionBody, searchQuestions } from "./questions.ts";
+import {
+  type BankDeps,
+  type BucketDeps,
+  questionBody,
+  questionSet,
+  searchQuestions,
+} from "./questions.ts";
 import { getParentReview, getReview } from "./review.ts";
 import { getResults, help, patchAttempt } from "./session.ts";
 
@@ -210,6 +216,7 @@ export function createApp(
   on("getReview", (params) => run((s) => getReview(s, params.id)));
   // No store: the bank answers it (questions.ts).
   on("questionSearches", (_, body, headers) => searchQuestions(bank, headers, body));
+  on("questionSet", (params, _body, headers) => questionSet(bank, headers, params.id));
   on("questionBody", (params, _body, headers) => questionBody(bank, bucket, headers, params.id));
   // The token was verified before the unit opens; the member lookup and the route's reads and
   // writes are one unit, so the claim is one transaction.

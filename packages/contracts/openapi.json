@@ -1776,6 +1776,52 @@
         }
       }
     },
+    "/api/v1/question-sets/{id}": {
+      "get": {
+        "operationId": "questionSet",
+        "summary": "Reads one question set: its question ids, and which are lesson-ready per language.",
+        "description": "Called with the bank's shared read token, not a Supabase token: without it the reply is 401, whatever the id.",
+        "tags": [
+          "bank"
+        ],
+        "security": [
+          {
+            "bankToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionSetPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/api/v1/questions/{id}": {
       "get": {
         "operationId": "questionBody",
@@ -9130,6 +9176,82 @@
         ],
         "additionalProperties": false,
         "description": "One bank question's private body from questions/<source>/<id>.json: a version per language with its family, data, key and help, the credit and the pictures by sha; a question with no playable variant yet carries only id, credit and problem_type; it reaches only a caller with the read token"
+      },
+      "QuestionSetId": {
+        "type": "string",
+        "pattern": "^set_[A-Za-z0-9_-]{1,120}$",
+        "description": "A question set's id, such as set_khan_x24e08583ca4994d1: set_ then letters, digits, _ and -"
+      },
+      "QuestionSetPage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/QuestionSetId"
+          },
+          "titles": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "By language code: pl, en"
+          },
+          "grade": {
+            "type": "string",
+            "description": "The bare grade number, \"3\", or \"\" when the set names none"
+          },
+          "skill_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "credit": {
+            "type": "string",
+            "description": "The attribution line the product must show for the set's questions"
+          },
+          "items": {
+            "type": "object",
+            "properties": {
+              "ids": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/BankQuestionId"
+                },
+                "description": "Every question the set holds, in set order"
+              },
+              "ready_ids": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BankQuestionId"
+                  }
+                },
+                "description": "By language code: the questions that are lesson-ready in it, in set order"
+              }
+            },
+            "required": [
+              "ids",
+              "ready_ids"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "titles",
+          "grade",
+          "skill_ids",
+          "items"
+        ],
+        "additionalProperties": false,
+        "description": "One question set's public page: its titles, skills and credit, the ids of its questions, and which are lesson-ready per language; never a question's body"
       },
       "QuestionSource": {
         "type": "string",

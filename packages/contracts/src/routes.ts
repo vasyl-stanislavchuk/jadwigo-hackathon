@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Need, QuestionBody, SearchEnvelope } from "./bank.ts";
+import { Need, QuestionBody, QuestionSetPage, SearchEnvelope } from "./bank.ts";
 import {
   AssignmentId,
   AttachmentId,
@@ -585,6 +585,25 @@ export const ROUTES = {
     summary: "Searches the question bank: a need in, ranked questions out.",
     tag: "bank",
     description: "Called with the bank's shared read token, not a Supabase token.",
+  },
+  /**
+   * One question set's public page: its question ids and the lesson-ready ones per language
+   * (`src/bank.ts`, dl-e8ov.5.2.22). The bank Lambda answers it; the id is checked against
+   * `QuestionSetId` in apps/api after the read token.
+   */
+  questionSet: {
+    method: "GET",
+    path: "/api/v1/question-sets/{id}",
+    params: z.object({ id: z.string() }),
+    body: null,
+    response: QuestionSetPage,
+    status: 200,
+    // Like questionSearches: the bank's shared read token, checked in apps/api (questions.ts).
+    auth: "none",
+    summary: "Reads one question set: its question ids, and which are lesson-ready per language.",
+    tag: "bank",
+    description:
+      "Called with the bank's shared read token, not a Supabase token: without it the reply is 401, whatever the id.",
   },
   /**
    * One bank question's body with its key, from the content bucket (`src/bank.ts`). The id is

@@ -9,7 +9,7 @@ const TAG_DESCRIPTIONS: Readonly<Record<RouteTag, string>> = {
   conversations:
     "A parent's chat with the AI: start a conversation, send a message, read each turn's events and stop a turn. Every route takes a Supabase Auth token.",
   lessons: "The lessons anyone may play, and the playground's written examples.",
-  bank: "The question bank: search it, and read one question. Every route takes the bank's read token.",
+  bank: "The question bank: search it, read one set's question ids, and read one question. Every route takes the bank's read token.",
   health: "Whether the API is up.",
 };
 
@@ -78,6 +78,7 @@ const OPERATION_TITLES: Readonly<Record<RouteName, string>> = {
   cancelRun: "Stop a run",
   rateRun: "Rate a turn",
   questionSearches: "Search the bank",
+  questionSet: "Read a question set",
   questionBody: "Read a question",
 };
 
@@ -124,6 +125,7 @@ export const OPERATION_ORDER: readonly RouteName[] = [
   "cancelRun",
   "rateRun",
   "questionSearches",
+  "questionSet",
   "questionBody",
 ];
 
