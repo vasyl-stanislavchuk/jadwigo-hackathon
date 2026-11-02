@@ -241,6 +241,8 @@
   --jw-tone-9-ink: var(--jw-p-tone-9-ink);
   --jw-avatar: var(--jw-p-ink-50);
   --jw-avatar-ink: var(--jw-p-ink-750);
+  /* A skeleton bar while a list loads (handoff §6.10). */
+  --jw-skeleton: var(--jw-p-stone-150);
 }
 
 /* ---- 2. Roles, by night ----------------------------------------------------------------------- */

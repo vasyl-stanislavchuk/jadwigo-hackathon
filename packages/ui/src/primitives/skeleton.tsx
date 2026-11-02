@@ -24,7 +24,7 @@ function Skeleton({
       data-slot="skeleton"
       aria-hidden="true"
       className={cn(
-        "h-4 rounded-jw-small bg-muted motion-safe:animate-pulse motion-safe:[animation-duration:1.6s]",
+        "h-4 rounded-jw-small bg-jw-skeleton motion-safe:animate-pulse motion-safe:[animation-duration:1.6s]",
         className,
       )}
     />
