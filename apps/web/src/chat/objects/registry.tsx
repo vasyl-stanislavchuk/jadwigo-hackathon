@@ -8,7 +8,14 @@
  * skill, assignment and attempt panels come with dl-uukj.47.59 to dl-uukj.47.61.
  */
 
-import { AssignmentId, AttemptId, ConversationId, LearnerId } from "@jadwigo/contracts";
+import type { ParentClient } from "@jadwigo/api-client";
+import {
+  AssignmentId,
+  AttemptId,
+  ConversationId,
+  type Learner,
+  LearnerId,
+} from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import {
   BookOpenIcon,
@@ -20,6 +27,7 @@ import {
 import type { ReactElement } from "react";
 import { NavLink } from "../../nav/NavLink.tsx";
 import { assignmentPath, attemptPath, childPath, lessonPath } from "../../parent/route.ts";
+import { LearnerPanel } from "./LearnerPanel.tsx";
 import type { ObjectKind, ObjectRef } from "./ref.ts";
 
 interface ObjectEntry {
@@ -29,6 +37,19 @@ interface ObjectEntry {
   icon: LucideIcon;
   /** The thing's own page, when it has one. */
   href?(ref: ObjectRef, lang: string | null): string | null;
+  /** Its panel in the right column; a kind without one draws ObjectFallback. */
+  Panel?(props: { object: ObjectRef; page: PanelPage }): ReactElement;
+  /** The column's heading for this thing, when it says more than the kind's name (a child's name). */
+  heading?(object: ObjectRef, page: PanelPage): string | null;
+}
+
+/** What the page gives a panel: its language, ?lang, the family's children and the parent's client. */
+export interface PanelPage {
+  language: Language;
+  lang: string | null;
+  learners: readonly Learner[];
+  /** Null where the page has no client of its own (the playground's workspace). */
+  api: ParentClient | null;
 }
 
 /** Reads an id as its kind's branded id; the ref was parsed through the same schema (ref.ts). */
@@ -58,6 +79,16 @@ const REGISTRY: Readonly<Record<ObjectKind, ObjectEntry>> = {
       const learner = parsed(LearnerId, ref.id);
       return learner === null ? null : childPath({ learner, lang });
     },
+    Panel: ({ object, page }) => (
+      <LearnerPanel
+        learner={object.id}
+        learners={page.learners}
+        api={page.api}
+        language={page.language}
+        lang={page.lang}
+      />
+    ),
+    heading: (object, page) => page.learners.find((l) => l.id === object.id)?.first_name ?? null,
   },
   skill: { kind: "skill", title: "chat_object_skill", icon: SparklesIcon },
   assignment: {
@@ -87,7 +118,7 @@ export const objectEntry = (kind: ObjectKind): ObjectEntry => REGISTRY[kind];
  * A thing the right column has no panel for yet: its kind's name and the way to its own page, or
  * the line that says it can't be shown here yet.
  */
-export function ObjectFallback({
+function ObjectFallback({
   object,
   language,
   lang,
@@ -119,4 +150,26 @@ export function ObjectFallback({
       )}
     </div>
   );
+}
+
+/** A thing in the right column: its kind's panel, or the fallback (its name and its own page). */
+export function ObjectPanel({
+  object,
+  page,
+}: {
+  object: ObjectRef;
+  page: PanelPage;
+}): ReactElement {
+  const { Panel } = objectEntry(object.kind);
+  return Panel === undefined ? (
+    <ObjectFallback object={object} language={page.language} lang={page.lang} />
+  ) : (
+    <Panel object={object} page={page} />
+  );
+}
+
+/** The right column's heading for a thing: what its kind says of it, else the kind's name. */
+export function objectHeading(object: ObjectRef, page: PanelPage): string {
+  const entry = objectEntry(object.kind);
+  return entry.heading?.(object, page) ?? copy(page.language, entry.title, {}, "adult");
 }

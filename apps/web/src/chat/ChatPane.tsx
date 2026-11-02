@@ -55,6 +55,7 @@ import { type ChooseAnswers, ChooseForm, recapOf } from "./ChooseForm.tsx";
 import "./chat.css";
 import { isOpen, type SendLimit, type Turn } from "./conversation.ts";
 import { JadwigoAiMark } from "./JadwigoAiMark.tsx";
+import { CitationChips } from "./objects/CitationChips.tsx";
 import { LessonCard, wroteLesson } from "./objects/LessonCard.tsx";
 import type { ObjectRef } from "./objects/ref.ts";
 import { PLAN_MIN, PlanCard } from "./PlanCard.tsx";
@@ -356,6 +357,10 @@ function RowView({
       return (
         <div data-from={row.from} className="text-jw-ink" data-prose>
           <ChatMarkdown text={row.text} />
+          {/* What the message rests on, each opening beside the chat (dl-uukj.47.62). */}
+          {context.onOpen !== undefined && row.citations !== undefined && (
+            <CitationChips citations={row.citations} language={language} onOpen={context.onOpen} />
+          )}
         </div>
       );
     }
