@@ -1,7 +1,9 @@
 /**
  * The workspace's details (decision 2026-11-01-the-parent-app-is-a-sidebar-shell-and-a-3-column-
- * lesson-workspac, dl-xo0q; handoff §5.5): Dla kogo ("Bez dziecka" with "Dodaj dziecko", or the
- * child with "Zmień"); Co ćwiczy ta lekcja, only with a child; O lekcji. Their content fills as the
+ * lesson-workspac, dl-xo0q; handoff §5.5): Dla kogo ("Bez dziecka", or the child, each with
+ * "Zmień", the menu that lists the family's children and ends with "Dodaj dziecko…"; with no
+ * children yet, "Bez dziecka" with "Dodaj dziecko", dl-uukj.47.17); Co ćwiczy ta lekcja, only with
+ * a child; O lekcji. Their content fills as the
  * engine writes the lesson (dl-z5ja.108); here is their place.
  */
 
@@ -24,11 +26,14 @@ function Section({ title, children }: { title: string; children: ReactNode }): R
 
 export function DetailsPanel({
   language,
+  learners,
   child,
   onAddChild,
   changeMenu,
 }: {
   language: Language;
+  /** The family's children: with any, "Bez dziecka" opens the same menu as "Zmień". */
+  learners: readonly Learner[];
   child: Learner | null;
   onAddChild: () => void;
   /** Wraps "Zmień" in the menu that picks another child or none (DlaSelect with a trigger). */
@@ -41,9 +46,17 @@ export function DetailsPanel({
         {child === null ? (
           <div className="flex items-center justify-between gap-2">
             <span>{t("parent_no_child")}</span>
-            <Button type="button" variant="outline" size="control" onClick={onAddChild}>
-              {t("parent_add_child")}
-            </Button>
+            {learners.length === 0 ? (
+              <Button type="button" variant="outline" size="control" onClick={onAddChild}>
+                {t("parent_add_child")}
+              </Button>
+            ) : (
+              changeMenu(
+                <Button type="button" variant="outline" size="control" data-change-child>
+                  {t("parent_change")}
+                </Button>,
+              )
+            )}
           </div>
         ) : (
           <div className="flex items-center gap-2" data-for-child={child.id}>

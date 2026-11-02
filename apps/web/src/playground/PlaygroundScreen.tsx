@@ -23,6 +23,7 @@ import { type Crumb, Shell } from "./shell/Shell.tsx";
 import { FamilyPage } from "./views/FamilyPage.tsx";
 import { StartPage } from "./views/StartPage.tsx";
 import { SystemPage } from "./views/system/SystemPage.tsx";
+import { WorkspacePlayground } from "./workspace/WorkspacePlayground.tsx";
 
 function Missing({ what }: { what: string }): ReactElement {
   return (
@@ -76,12 +77,15 @@ export function PlaygroundScreen({
 
 function PlaygroundPages(): ReactElement {
   const { path } = useLocation();
-  // The tools are neutral; only the lesson takes a theme (tool/neutral.css).
+  const route = playgroundRoute(path);
+  // The tools are neutral; only the lesson takes a theme (tool/neutral.css). The parent's
+  // workspace is the app's own page, so it keeps the app's look.
+  const neutral = route?.page !== "workspace";
   useEffect(() => {
+    if (!neutral) return;
     document.documentElement.setAttribute("data-playground", "");
     return () => document.documentElement.removeAttribute("data-playground");
-  }, []);
-  const route = playgroundRoute(path);
+  }, [neutral]);
   // The System page draws in Zeszyt itself, so it skips the neutral shell.
   if (route?.page === "system") return <SystemPage />;
   // The lesson builder is the owner's tool too, with its own frame (dl-a38n).
@@ -90,6 +94,8 @@ function PlaygroundPages(): ReactElement {
   if (route?.page === "conformance" && import.meta.env.DEV) return <ConformanceScreen />;
   // A parent's chat becomes a lesson, the engine running in the dev server (dl-z5ja.17); dev only.
   if (route?.page === "chat" && import.meta.env.DEV) return <ChatScreen />;
+  // The parent's lesson workspace on that engine, paced by ?pace= (dl-uukj.47.27); dev only.
+  if (route?.page === "workspace" && import.meta.env.DEV) return <WorkspacePlayground />;
   const { crumbs, body, controls } = view(route);
   return (
     <Shell crumbs={crumbs} controls={controls ?? true}>

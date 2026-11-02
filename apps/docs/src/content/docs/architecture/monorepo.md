@@ -27,6 +27,7 @@ flowchart LR
     runner
   end
   subgraph packages [Packages]
+    analytics
     api_client["api-client"]
     bank
     config
@@ -65,6 +66,7 @@ flowchart LR
   runner --> contracts
   runner --> jadwigo_ai
   runner --> store
+  analytics --> config
   api_client --> contracts
   bank --> api_client
   bank --> contracts
@@ -134,6 +136,7 @@ violation to prove the check still catches it.
 | `lesson-import` | Compiles a lesson file from the playground into lesson questions and a published version. |
 | `bank` | Code to read, search and import the question bank. Never the questions themselves. |
 | `jadwigo-ai` | The AI engine: a parent's chat becomes a lesson, one run per turn, every effect a run event. |
+| `analytics` | PostHog for the site and the app: the event catalogue, the one init config, consent and the filter every event passes. |
 | `testing` | Fixtures, factories and the unit setup, for test files only. |
 
 ## Next

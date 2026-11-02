@@ -2,10 +2,12 @@
 // (apps/web/src/playground/tool/sheet.tsx) for the parent's lesson overview (dl-uukj.30.3): a panel
 // that slides from one edge, closes on Escape, a tap outside or its close, and returns focus to its
 // trigger. The close cross is a kid-sized ghost Button whose name the caller passes from copy;
-// without a closeLabel it draws none. Colours are the theme's popover names.
+// without a closeLabel it draws none. Colours are the theme's popover names. The overlay forwards
+// its ref: Radix's portal hands it one, and on React 18 a plain function component cannot take it
+// (dl-uukj.47.26).
 import { XIcon } from "lucide-react";
 import { Dialog as SheetPrimitive } from "radix-ui";
-import type * as React from "react";
+import * as React from "react";
 import { useDensity } from "../lib/register.tsx";
 import { cn } from "../lib/utils.ts";
 import { Button } from "./button.tsx";
@@ -22,18 +24,19 @@ function SheetClose(props: React.ComponentProps<typeof SheetPrimitive.Close>): J
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />;
 }
 
-function SheetOverlay({
-  className,
-  ...props
-}: React.ComponentProps<typeof SheetPrimitive.Overlay>): JSX.Element {
+const SheetOverlay = React.forwardRef<
+  React.ElementRef<typeof SheetPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Overlay>
+>(function SheetOverlay({ className, ...props }, ref) {
   return (
     <SheetPrimitive.Overlay
+      ref={ref}
       data-slot="sheet-overlay"
       className={cn("fixed inset-0 z-50 bg-foreground/20", className)}
       {...props}
     />
   );
-}
+});
 
 function SheetContent({
   className,

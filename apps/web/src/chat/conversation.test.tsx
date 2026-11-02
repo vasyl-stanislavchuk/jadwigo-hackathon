@@ -70,7 +70,7 @@ describe("conversationReducer", () => {
       events: events.slice(0, 8),
     });
     state = conversationReducer(state, { type: "disconnected" });
-    expect(state.connection).toBe("restoring");
+    expect(state.connection).toBe("down");
     state = conversationReducer(state, { type: "live", run_id: run.id, events: events.slice(12) });
     state = conversationReducer(state, {
       type: "fetched",
@@ -271,6 +271,7 @@ describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
     };
     render(<ChatScreen transport={transport} />);
     expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    fireEvent.click(document.querySelector("[data-step='s02'] [aria-expanded]") as HTMLElement);
     fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
     const words = () => screen.getByRole("textbox", { name: "Co ten krok mówi dziecku" });
     fireEvent.change(words(), { target: { value: "Ile to jest dwa razy sześć?" } });
@@ -389,6 +390,7 @@ describe("a parent's own edit goes back to the AI (dl-z5ja.30)", () => {
         }}
       />,
     );
+    fireEvent.click(document.querySelector("[data-step='s02'] [aria-expanded]") as HTMLElement);
     fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
     fireEvent.change(screen.getByRole("textbox", { name: "Co zmienić w tym kroku i dlaczego?" }), {
       target: { value: "mniejsze liczby, bo to dopiero początek" },

@@ -16,6 +16,8 @@ const head = { title: text, description: text, heading: text };
 export const landingSchema = z.object({
   // The hero's question (owner, 2026-10-31): one question, answered on the page.
   hero: z.object({
+    // The label of the illustration slot beside the h1, until its art exists (dl-5ssh.4.46).
+    pic: text,
     question: z
       .object({
         // Above the question: what kind it is, the grade and its place (design handoff "landing 3").
@@ -37,7 +39,8 @@ export const landingSchema = z.object({
         message: "answer must be one of the choices",
       }),
   }),
-  after: z.object({ text, link: text }),
+  // Step 3's short line in the landing page's how-it-works steps (dl-5ssh.4.49).
+  after: z.object({ text }),
   links: z.array(z.object({ href: z.string().regex(/^(\/[a-z0-9-]+)+$/), label: text })).min(1),
   // /jak-to-dziala in direction 1a (design handoff "landing 3"): the intro over a wide illustration,
   // then 3 steps, each with who acts. Step 1 shows the parent's request and the build lines beside a
@@ -115,22 +118,23 @@ export const landingSchema = z.object({
     questions: z.tuple([text, text, text]),
     // /lekcje's heading over the lessons with no grade, after the grades' groups (dl-w0b4.108).
     other: text,
-    // The landing page's row: its heading, the grade tabs ("Klasa 1"), the subject filter while
-    // there is more than one subject, the count and the arrows.
+    // The landing page's row: its heading. Every featured lesson shows on it and the row drifts by itself,
+    // with no grade tabs and no subject filter (owner, 2026-11-02, dl-5ssh.4.42).
     row: z.object({
       heading: text,
+      // /lekcje's heading over each grade's group ("Klasa 1").
       gradeLabel: text,
-      subjectLabel: text,
-      allSubjects: text,
-      count: z.tuple([text, text, text]),
-      prev: text,
-      next: text,
-      // Shown when a filter leaves no lesson.
-      none: text,
       // The grey slot's label on a card with no picture yet.
       pic: text,
       // Each card picture's alt text, by its name in src/lib/illustrations.ts (CardArt).
-      pics: z.object({ rowneGrupy: text, piatki: text, razyCztery: text }),
+      pics: z.object({
+        cukier: text,
+        nalesnik: text,
+        skoki: text,
+        mierzenie: text,
+        czekolada: text,
+        spacer: text,
+      }),
     }),
   }),
   compare: z.object({

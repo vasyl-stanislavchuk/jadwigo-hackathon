@@ -4,6 +4,8 @@
 # Written in US English (decision draft dl-rok6), checked against workflows/_lang/en/checklist.md.
 # Copy says what Jadwigo does, never a slogan; numbers are digits.
 hero:
+  # Beside the h1 until its picture exists (owner, 2026-11-02: less text on top; dl-5ssh.4.46).
+  pic: illustration · Jadwiga and her pencil-case court at the table
   # A grade 3 two-step word problem (design handoff "landing 3", 2026-11-01; draft).
   question:
     label: Two steps · grade 3 · question 1
@@ -22,7 +24,6 @@ hero:
 # Under the lessons, one line for the parent.
 after:
   text: After each lesson you see what went well and what to practice next.
-  link: How it works
 # Every page in the header, in order, each its own page.
 links:
   - { href: /en/lessons, label: Lessons }
@@ -168,17 +169,14 @@ lessons:
   row:
     heading: Play without signing in
     gradeLabel: Grade
-    subjectLabel: Subject
-    allSubjects: All
-    count: [lesson, lessons, lessons]
-    prev: Previous lessons
-    next: More lessons
-    none: No lessons for this grade yet.
     pic: illustration
     pics:
-      rowneGrupy: Linijka the ruler checks two equal rows of biscuits while Jadwiga waits for the verdict.
-      piatki: Jadwiga rolls a coin as big as herself towards a chocolate bar.
-      razyCztery: Ołówek the pencil has drawn two cats and Jadwiga draws two more.
+      cukier: Jadwiga lifts a sugar cube off a tower while Gumka the eraser faints.
+      nalesnik: Linijka the ruler checks a pancake cut into four equal parts while Jadwiga holds a quarter like a shield.
+      skoki: Linijka the ruler lies flat like a number line and Jadwiga hops along it, mark to mark.
+      mierzenie: Linijka the ruler measures Ołówek the pencil just as his tip snaps, and Jadwiga waits her turn.
+      czekolada: Jadwiga shares a chocolate bar, handing Gumka the eraser a whole row of squares.
+      spacer: Jadwiga yawns as she walks round the edge of a shaded rectangle in a squared notebook.
 signIn:
   title: Sign in · Jadwigo
   description: Sign in or create a Jadwigo parent account with a code from your email, with Google or with Facebook.

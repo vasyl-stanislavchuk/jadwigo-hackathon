@@ -49,7 +49,7 @@ export function ParentShell({
   language: Language;
   learners: readonly Learner[];
   place: Place;
-  /** Whether the family has a lesson yet; false until the lesson list exists (dl-z5ja.106). */
+  /** Whether the family has a lesson yet: a live conversation (dl-uukj.47.9). */
   hasLessons?: boolean;
   /** The top bar's breadcrumb: the section, then the page. */
   trail: readonly Crumb[];

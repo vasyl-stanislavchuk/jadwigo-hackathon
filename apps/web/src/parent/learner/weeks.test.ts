@@ -33,6 +33,18 @@ describe("weeksOf", () => {
     expect(weeks.map((w) => w.movedUp)).toEqual([0, 0, 1, 0]);
   });
 
+  it("starts at the week the learner was added in, and keeps this week whatever `since` says", () => {
+    // FIXED_NOW is Tuesday 2026-09-01: this week's Monday is 2026-08-31.
+    const mondays = (since?: string) =>
+      weeksOf([], [], new Date(), 4, since).map((week) => week.monday);
+    expect(mondays("2026-09-01T07:00:00.000Z")).toEqual(["2026-08-31"]);
+    expect(mondays("2026-08-20T12:00:00.000Z")).toEqual(["2026-08-17", "2026-08-24", "2026-08-31"]);
+    expect(mondays("2026-01-01T00:00:00.000Z")).toHaveLength(4);
+    expect(mondays(undefined)).toHaveLength(4);
+    // A clock that runs behind the learner's created_at still shows this week.
+    expect(mondays("2026-09-14T00:00:00.000Z")).toEqual(["2026-08-31"]);
+  });
+
   it("is all zeros and no reports for a learner with nothing yet", () => {
     expect(weeksOf([], [], new Date(), 2)).toEqual([
       { monday: "2026-08-24", lessons: 0, movedUp: 0, attention: null },
