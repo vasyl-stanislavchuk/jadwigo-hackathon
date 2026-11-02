@@ -700,7 +700,6 @@ export const COPY_KEYS = [
   "parent_give_refused_child",
   "parent_give_failed",
   "parent_give_unavailable",
-  "parent_print_reason",
   "parent_giving",
   "parent_given_child",
   "parent_given_link",

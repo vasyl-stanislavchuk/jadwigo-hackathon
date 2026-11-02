@@ -64,17 +64,24 @@ describe("the lesson card's actions (dl-uukj.47.55)", () => {
     expect(document.querySelector("[data-for-whom]")?.textContent).toBe("Dla kogo: Ola");
   });
 
-  it("Daj lekcję is quiet with its reason until the lesson's check passed", async () => {
-    footer({ ready: false });
-    const button = give();
-    expect(button.getAttribute("aria-disabled")).toBe("true");
-    const reason = document.getElementById(button.getAttribute("aria-describedby") ?? "");
-    expect(reason?.textContent).toBe(
-      "„Daj lekcję” zadziała, gdy lekcja przejdzie sprawdzenie „Wydrukuj” też.",
-    );
+  it("Daj lekcję and Wydrukuj are quiet with their reason until the lesson's check passed", async () => {
+    const props = footer({ ready: false });
+    const print = document.querySelector("[data-print]") as HTMLElement;
+    for (const button of [give(), print]) {
+      expect(button.getAttribute("aria-disabled")).toBe("true");
+      const reason = document.getElementById(button.getAttribute("aria-describedby") ?? "");
+      expect(reason?.textContent).toBe(
+        "„Daj lekcję” i „Wydrukuj” zadziałają, gdy lekcja przejdzie sprawdzenie",
+      );
+    }
+    // A lesson that has not passed its check (a harsh word included) never reaches paper.
+    await act(async () => fireEvent.click(print));
+    expect(props.print).not.toHaveBeenCalled();
+    expect(document.querySelector("[data-print-sheet]")).toBeNull();
     cleanup();
     footer();
     expect(give().getAttribute("aria-describedby")).toBeNull();
+    expect(document.querySelector("[data-print]")?.getAttribute("aria-describedby")).toBeNull();
     expect(document.querySelector("[data-give-reason]")).toBeNull();
   });
 });

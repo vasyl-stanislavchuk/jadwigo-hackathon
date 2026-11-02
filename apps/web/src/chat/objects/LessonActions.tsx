@@ -82,6 +82,7 @@ export function LessonActions({
     return () => window.removeEventListener("afterprint", done);
   }, [printing]);
   const printNow = (): void => {
+    if (!ready) return;
     setChoosing(false);
     setPrinting(true);
     printLesson(print);
@@ -140,7 +141,6 @@ export function LessonActions({
       {giveReason !== null && (
         <p id={reasonId} className="text-jw-page-small text-jw-ink-soft" data-give-reason>
           {giveReason}
-          {!ready && ` ${t("parent_print_reason")}`}
         </p>
       )}
       <p role="status" className="text-jw-page-small text-jw-ink" data-give-state={given.kind}>

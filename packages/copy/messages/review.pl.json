@@ -815,7 +815,6 @@
   "parent_give_refused_child": false,
   "parent_give_failed": false,
   "parent_give_unavailable": false,
-  "parent_print_reason": false,
   "parent_giving": false,
   "parent_given_child": false,
   "parent_given_link": false,
