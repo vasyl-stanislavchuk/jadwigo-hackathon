@@ -22,6 +22,7 @@ import type { ReactElement } from "react";
 import { GoalLists } from "../../parent/learner/GoalLists.tsx";
 import { WeekStrip } from "../../parent/learner/WeekStrip.tsx";
 import { Button } from "../button.tsx";
+import type { ObjectRef } from "../objects/ref.ts";
 import { TOOL_ICON } from "../toolLine.ts";
 
 export type ToolItem = Extract<ChatItem, { kind: "tool" }>;
@@ -30,6 +31,8 @@ export type ToolItem = Extract<ChatItem, { kind: "tool" }>;
 export interface WidgetActions {
   /** Sends words as the parent's message. */
   onAsk?: ((text: string) => void) | undefined;
+  /** Opens a thing beside the chat: a lesson, a learner, a skill (objects/ref.ts, dl-uukj.47.58). */
+  onOpen?: ((object: ObjectRef) => void) | undefined;
 }
 
 interface Props<T> {

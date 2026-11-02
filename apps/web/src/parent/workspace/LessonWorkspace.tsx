@@ -7,7 +7,8 @@
  *            the tools folded, the composer that stays live; Esc stops a run, no Stop button
  *   band     the run's state in words, and the polite live region that speaks when a turn ends or
  *            needs the parent
- *   lesson   the latest revision (LessonPane), its changed steps marked, Cofnij and step edits
+ *   lesson   the latest revision (LessonPane), its changed steps marked, Cofnij and step edits;
+ *            or, when `?open` names another thing, that thing's panel (the inspector, dl-uukj.47.58)
  *   (no footer: giving the lesson, and when, happen in the chat; design review 2026-11-02)
  *
  * The run's state everywhere (the band, the folded strip, the lesson's placeholder, the footer and
@@ -25,6 +26,8 @@ import { ChatPane } from "../../chat/ChatPane.tsx";
 import { ConsentScreen, giveConsent } from "../../chat/ConsentScreen.tsx";
 import { LessonPane } from "../../chat/LessonPane.tsx";
 import { lessonSummary, useLessonWiring } from "../../chat/lessonWiring.ts";
+import { type ObjectRef, sameObject } from "../../chat/objects/ref.ts";
+import { ObjectFallback, objectEntry } from "../../chat/objects/registry.tsx";
 import { elapsedSeconds, phaseAnnouncement, usePhase } from "../../chat/phase.ts";
 import { holdServer } from "../../chat/routesTransport.ts";
 import { useConversation } from "../../chat/useConversation.ts";
@@ -33,6 +36,7 @@ import { CATEGORY, pageLang } from "../adult.ts";
 import { DlaSelect } from "../newLesson/DlaSelect.tsx";
 import { parentPath } from "../route.ts";
 import { firstMessage, type LessonEngine } from "./engine.ts";
+import { useInspector } from "./inspector.ts";
 import { Workspace } from "./Workspace.tsx";
 
 export function LessonWorkspace({
@@ -96,6 +100,13 @@ export function LessonWorkspace({
   const restoring = state.connection === "restoring";
   const { ratings } = engine;
   const { phase, now } = usePhase(turns, state, refetch);
+  // The right column: this conversation's lesson, unless the URL opened another thing beside it.
+  const inspector = useInspector();
+  const ownLesson: ObjectRef = { kind: "lesson", id: conversation };
+  const other =
+    inspector.current !== null && !sameObject(inspector.current, ownLesson)
+      ? inspector.current
+      : null;
 
   // The first screen's words and photos: sent once the page has read the conversation back with no turn in it,
   // with Dla as their page, so the run reads that child's record (dl-uukj.47.12).
@@ -182,6 +193,8 @@ export function LessonWorkspace({
       contextClosed={contextClosed}
       onCloseContext={closeContext}
       onResend={resend}
+      lessonObject={ownLesson}
+      onOpen={inspector.open}
     />
   );
 
@@ -205,9 +218,17 @@ export function LessonWorkspace({
         </>
       }
       {...(phase === null ? {} : { chatFact: words })}
-      lessonTitle={summary.title === "" ? t("parent_new_lesson") : summary.title}
+      lessonTitle={
+        other !== null
+          ? t(objectEntry(other.kind).title)
+          : summary.title === ""
+            ? t("parent_new_lesson")
+            : summary.title
+      }
       lesson={
-        lesson.shown === null && lesson.ghosts === 0 ? (
+        other !== null ? (
+          <ObjectFallback object={other} language={language} lang={pageLang()} />
+        ) : lesson.shown === null && lesson.ghosts === 0 ? (
           <p className="text-jw-ink-soft" data-lesson-waiting>
             {said ? words : t("parent_lesson_empty")}
           </p>

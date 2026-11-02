@@ -732,6 +732,27 @@
   "chat_lesson_revision": "Revision {n}",
   "chat_lesson_unreadable": "This revision can't be shown yet.",
   "chat_lesson_step_hidden": "Step {step} can't be shown yet.",
+  "chat_object_lesson": "Lesson",
+  "chat_object_learner": "Child",
+  "chat_object_skill": "Skill",
+  "chat_object_assignment": "Given lesson",
+  "chat_object_attempt": "Played lesson",
+  "chat_object_open_page": "Open on its own page",
+  "chat_object_not_here": "This can't be shown here yet.",
+  "chat_lesson_card": "Lesson ready",
+  "chat_lesson_card_open": "Open",
+  "chat_lesson_card_open_named": "Open the lesson: {title}",
+  "chat_lesson_card_first": "First: {say}",
+  "chat_lesson_card_steps": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "{n} question",
+        "q_noun=other": "{n} questions"
+      }
+    }
+  ],
   "chat_tool_count": [
     {
       "declarations": ["input n", "local steps_noun = n: plural"],
