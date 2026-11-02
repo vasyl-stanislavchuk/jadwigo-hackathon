@@ -237,21 +237,27 @@ describe("primitive sources", () => {
         "button.tsx",
         "card.tsx",
         "context-menu.tsx",
+        "chip.tsx",
         "dialog.tsx",
         "disabled-reason.tsx",
         "disc.tsx",
         "dropdown-menu.tsx",
         "input.tsx",
         "kbd.tsx",
+        "empty.tsx",
+        "pagination.tsx",
         "panel-toggle.tsx",
         "popover.tsx",
         "progress.tsx",
         "radio-group.tsx",
+        "result-bar.tsx",
         "segmented-control.tsx",
         "sheet.tsx",
         "side-menu.tsx",
+        "skeleton.tsx",
         "slider.tsx",
         "spinner.tsx",
+        "status.tsx",
         "switch.tsx",
         "table.tsx",
         "tabs.tsx",
@@ -259,7 +265,7 @@ describe("primitive sources", () => {
         "toggle-group.tsx",
         "toggle.tsx",
         "tooltip.tsx",
-      ].sort(), // alert-dialog, context-menu, disabled-reason, dropdown-menu, kbd, toast and tooltip: the adult overlays (dl-uukj.47.67.2); popover: the chosen-gap menu (dl-w3.37.16); switch: the pause sheet's Dźwięk (dl-uukj.29.55); sheet and table: the lesson overview's question sheet and heatmap (dl-uukj.30.4); radio-group, segmented-control, tabs and side-menu: the settings and navigation controls (dl-uukj.32.3); breadcrumb, dialog, disc and panel-toggle: the parent app frame (dl-uukj.47.1)
+      ].sort(), // alert-dialog, context-menu, disabled-reason, dropdown-menu, kbd, toast and tooltip: the adult overlays (dl-uukj.47.67.2); popover: the chosen-gap menu (dl-w3.37.16); switch: the pause sheet's Dźwięk (dl-uukj.29.55); sheet and table: the lesson overview's question sheet and heatmap (dl-uukj.30.4); radio-group, segmented-control, tabs and side-menu: the settings and navigation controls (dl-uukj.32.3); breadcrumb, dialog, disc and panel-toggle: the parent app frame (dl-uukj.47.1); chip, empty, pagination, result-bar, skeleton and status: the adult kit's display parts (dl-uukj.47.67.4)
     );
   });
 
@@ -285,6 +291,10 @@ describe("primitive sources", () => {
     "spinner.tsx",
     "disc.tsx",
     "kbd.tsx",
+    "status.tsx",
+    "skeleton.tsx",
+    "empty.tsx",
+    "result-bar.tsx",
   ]);
   const DRAWN: Record<string, string[]> = {
     "radio-group.tsx": [
@@ -294,6 +304,11 @@ describe("primitive sources", () => {
     ],
     "segmented-control.tsx": [
       "min-w-0", // lets the wrapper of legend and track shrink in a flex row; the track is the target
+    ],
+    "chip.tsx": [
+      "h-5.5", // the chip, a label; the × inside it is a mouse target in the adult app
+      "size-4.5", // the × around its icon
+      "size-3", // the × icon
     ],
     "breadcrumb.tsx": [
       "min-w-0", // lets a long page name truncate in the top bar's flex row

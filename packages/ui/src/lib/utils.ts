@@ -26,6 +26,7 @@ const SIZES = [
   "jw-page-h2",
   "jw-page-body",
   "jw-page-small",
+  "jw-page-micro",
   "jw-page-question",
 ];
 const SPACING = [
