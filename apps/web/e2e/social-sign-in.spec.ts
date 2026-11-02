@@ -73,12 +73,18 @@ test("an email signed in with the code, then with Google, is the same parent wit
   await page.locator("[data-account]").click();
   await page.locator("[data-sign-out]").click();
 
+  // Signing out lands on /parent, leaving no child's or lesson's address behind (dl-uukj.47.16).
+  await expect(page).toHaveURL(/\/parent$/);
+
   await providerReturns(request, email);
   await page.locator('[data-provider="google"]').click();
+  // The same parent: the same child, and no prompt to add one.
+  const ola = page.locator("[data-child-row]", { hasText: "Ola" });
+  await expect(ola).toBeVisible();
+  await expect(page.locator("[data-add-child]")).toHaveCount(0);
+  await ola.click();
   await expect(card.getByRole("heading", { name: "Ola" })).toBeVisible();
   await expect(card.locator("li[data-attempt]")).toHaveCount(1);
-  await expect(page.locator("[data-add-child]")).toHaveCount(0);
-  // Back on the child's page the parent signed out from (dl-uukj.47.3).
   await expect(page).toHaveURL(/\/parent\/children\/lrn_[0-9a-z]{26}$/);
 });
 
