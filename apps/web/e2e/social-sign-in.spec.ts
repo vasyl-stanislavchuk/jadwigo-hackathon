@@ -75,11 +75,14 @@ test("an email signed in with the code, then with Google, is the same parent wit
 
   await providerReturns(request, email);
   await page.locator('[data-provider="google"]').click();
+  // Sign-out returns to /parent (dl-uukj.47.16), so the Google return lands on the first screen,
+  // with the same child in the sidebar; their page holds the kept lesson.
+  await expect(page).toHaveURL(/\/parent$/);
+  await expect(page.locator("[data-add-child]")).toHaveCount(0);
+  await page.locator("#parent-sidebar [data-child-row]").first().click();
+  await expect(page).toHaveURL(/\/parent\/children\/lrn_[0-9a-z]{26}$/);
   await expect(card.getByRole("heading", { name: "Ola" })).toBeVisible();
   await expect(card.locator("li[data-attempt]")).toHaveCount(1);
-  await expect(page.locator("[data-add-child]")).toHaveCount(0);
-  // Back on the child's page the parent signed out from (dl-uukj.47.3).
-  await expect(page).toHaveURL(/\/parent\/children\/lrn_[0-9a-z]{26}$/);
 });
 
 test("a fresh tab's lesson is kept after the round trip to Google", async ({ page, request }) => {
