@@ -347,7 +347,9 @@ describe("ParentScreen", () => {
     // The child's lessons are on the child's page (dl-uukj.47.3).
     window.history.replaceState(null, "", `/parent/children/${LEARNER}`);
     render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
-    await screen.findByText("Jeszcze nie ma tu lekcji.");
+    await screen.findByText(
+      "Tu pojawi się tydzień po tygodniu, jak idzie nauka, po pierwszej lekcji.",
+    );
     expect(api.createAccount).toHaveBeenCalledTimes(1);
   });
 
