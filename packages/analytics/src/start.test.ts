@@ -55,8 +55,19 @@ describe("startAnalytics", () => {
 });
 
 describe("posthogOptions", () => {
+  it("cuts the page's href the replay recorder writes", () => {
+    const mask = posthogOptions("app").session_recording?.maskCapturedNetworkRequestFn;
+    expect(mask?.({ name: "https://app.jadwigo.pl/parent/children/lrn_2?x=1" })?.["name"]).toBe(
+      "https://app.jadwigo.pl/parent/children/:id",
+    );
+  });
+
   it("waits for consent, keeps no person, masks inputs and sends to the EU", () => {
-    const { before_send: _beforeSend, ...options } = posthogOptions("app");
+    const {
+      before_send: _beforeSend,
+      session_recording: _recording,
+      ...options
+    } = posthogOptions("app");
     expect(options).toMatchObject({
       api_host: "https://eu.i.posthog.com",
       cookieless_mode: "on_reject",
@@ -64,7 +75,12 @@ describe("posthogOptions", () => {
       autocapture: false,
       capture_exceptions: false,
       respect_dnt: true,
-      session_recording: { maskAllInputs: true, recordHeaders: false, recordBody: false },
+      disable_capture_url_hashes: true,
+    });
+    expect(_recording).toMatchObject({
+      maskAllInputs: true,
+      recordHeaders: false,
+      recordBody: false,
     });
   });
 });

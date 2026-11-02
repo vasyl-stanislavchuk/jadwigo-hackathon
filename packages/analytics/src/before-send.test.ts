@@ -17,6 +17,8 @@ describe("cutPath", () => {
     ["/parent?for=lrn_2&lang=pl", "/parent"],
     ["https://app.jadwigo.pl/parent/lessons/cnv_7#x", "https://app.jadwigo.pl/parent/lessons/:id"],
     ["/en/jak-to-dziala", "/en/jak-to-dziala"],
+    ["$direct", "$direct"],
+    ["", ""],
   ])("%s becomes %s", (from, to) => {
     expect(cutPath(from)).toBe(to);
   });
@@ -62,8 +64,43 @@ describe("beforeSend", () => {
     });
   });
 
-  it("passes a replay snapshot", () => {
-    expect(beforeSend(event("$snapshot", { $snapshot_data: [1] }))?.event).toBe("$snapshot");
+  it("passes a replay snapshot with the hrefs inside it cut", () => {
+    const sent = beforeSend(
+      event("$snapshot", {
+        $snapshot_data: [
+          {
+            type: 4,
+            data: { href: "https://app.jadwigo.pl/parent?for=lrn_2&claim=asg_3", width: 1 },
+          },
+          {
+            type: 5,
+            data: {
+              tag: "$url_changed",
+              payload: { href: "https://app.jadwigo.pl/parent/children/lrn_2" },
+            },
+          },
+          { type: 3, data: { source: 0 } },
+        ],
+      }),
+    );
+    expect(sent?.properties["$snapshot_data"]).toEqual([
+      { type: 4, data: { href: "https://app.jadwigo.pl/parent", width: 1 } },
+      {
+        type: 5,
+        data: {
+          tag: "$url_changed",
+          payload: { href: "https://app.jadwigo.pl/parent/children/:id" },
+        },
+      },
+      { type: 3, data: { source: 0 } },
+    ]);
+  });
+
+  it("keeps PostHog's $direct referrer", () => {
+    const sent = beforeSend(
+      event("$pageview", { $referrer: "$direct", $initial_referrer: "$direct" }),
+    );
+    expect(sent?.properties).toEqual({ $referrer: "$direct", $initial_referrer: "$direct" });
   });
 
   it("stamps the surface and turns GeoIP off", () => {

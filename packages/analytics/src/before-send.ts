@@ -24,8 +24,10 @@ const ID_AFTER = new Set(["play", "children", "attempts", "assignments", "lesson
 /** An id-looking segment: a prefixed id (`lrn_…`), a uuid, or a long run of digits or hex. */
 const ID_SEGMENT = /^([a-z]{2,5}_[0-9A-Za-z]+|[0-9a-f-]{16,}|\d{4,})$/;
 
-/** Cuts ids out of a path or a URL, and drops its query and hash (`?claim=`, `?for=` carry ids). */
+/** Cuts ids out of a path or a URL, and drops its query and hash (`?claim=`, `?for=` carry ids).
+ * A value that is neither, such as PostHog's `$direct` referrer, passes unchanged. */
 export function cutPath(value: string): string {
+  if (!value.startsWith("/") && !/^[a-z]+:\/\//i.test(value)) return value;
   let url: URL;
   try {
     url = new URL(value, "https://x.invalid");
@@ -55,8 +57,29 @@ const URL_KEYS = [
   "title",
 ];
 
+/** rrweb's Meta event (type 4) and PostHog's `$url_changed` custom event (type 5) carry the page's
+ * href inside a replay snapshot. The recorder already cuts them (options.ts,
+ * maskCapturedNetworkRequestFn); this cuts them again on the way out. */
+function cutSnapshotHrefs(data: unknown): unknown {
+  if (!Array.isArray(data)) return data;
+  return data.map((item: unknown) => {
+    if (typeof item !== "object" || item === null) return item;
+    const event = item as { type?: unknown; data?: unknown };
+    const inner = event.data as { href?: unknown; payload?: { href?: unknown } } | undefined;
+    if (event.type === 4 && typeof inner?.href === "string")
+      return { ...event, data: { ...inner, href: cutPath(inner.href) } };
+    if (event.type === 5 && typeof inner?.payload?.href === "string")
+      return {
+        ...event,
+        data: { ...inner, payload: { ...inner.payload, href: cutPath(inner.payload.href) } },
+      };
+    return item;
+  });
+}
+
 function cutUrls(props: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = { ...props };
+  if ("$snapshot_data" in out) out["$snapshot_data"] = cutSnapshotHrefs(out["$snapshot_data"]);
   for (const key of URL_KEYS) {
     const value = out[key];
     if (key === "title") delete out[key];
