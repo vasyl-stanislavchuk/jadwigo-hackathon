@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "user": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "new_email": {
+          "type": "string"
+        },
+        "user_metadata": {
+          "type": "object",
+          "properties": {
+            "language": {}
+          },
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "email"
+      ],
+      "additionalProperties": {}
+    },
+    "email_data": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
+        },
+        "token_new": {
+          "type": "string"
+        },
+        "redirect_to": {
+          "type": "string"
+        },
+        "site_url": {
+          "type": "string"
+        },
+        "email_action_type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "token",
+        "email_action_type"
+      ],
+      "additionalProperties": {}
+    }
+  },
+  "required": [
+    "user",
+    "email_data"
+  ],
+  "additionalProperties": {}
+}

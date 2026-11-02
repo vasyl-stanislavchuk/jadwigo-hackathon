@@ -1,3 +1,4 @@
+export * from "./auth-email.ts";
 export * from "./bank.ts";
 export * from "./families/index.ts";
 export * from "./ids.ts";

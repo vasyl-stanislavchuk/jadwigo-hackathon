@@ -90,6 +90,14 @@ export function bankSearchAliasArn(): string | undefined {
 }
 
 /**
+ * The name of the SSM SecureString holding the Send Email Hook's secrets, one per Supabase project
+ * that calls it (`/jadwigo/<env>/send-email-hook-secret`, dl-liwi.33). Unset, the hook is not wired.
+ */
+export function sendEmailHookSecretParam(): string | undefined {
+  return process.env["SEND_EMAIL_HOOK_SECRET_PARAM"]?.trim() || undefined;
+}
+
+/**
  * The name of the SSM SecureString holding the read token callers present to the search route
  * (`/jadwigo/<env>/bank-read-token`). Interim until `jw login` exists (`dl-e8ov.2.11`).
  */

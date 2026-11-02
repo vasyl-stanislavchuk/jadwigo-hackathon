@@ -58,6 +58,13 @@ import {
 } from "./wire.ts";
 
 /**
+ * Supabase Auth's Send Email Hook (dl-liwi.33, `AuthEmailHook`), outside `/api/v1` and outside
+ * `ROUTES` on purpose: only Supabase calls it, signed, so it is not in the public API or its
+ * OpenAPI document, and API Gateway's `$default` route carries it to the router.
+ */
+export const AUTH_EMAIL_HOOK_PATH = "/api/hooks/auth-emails";
+
+/**
  * The `/api/v1` route table, named once (RULES.md rules 14 to 18). `apps/api` registers these and
  * `packages/api-client` calls them; neither writes a path or a schema of its own.
  */
