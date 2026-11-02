@@ -71,10 +71,13 @@ const q = (await landingWords(lang)).hero.question;
     // dl-5ssh.4.31): she fades out, the clip plays in full on her spot, and she lands back as it ends.
     const pic = sheet.querySelector<HTMLElement>(".hero-pic");
     const picImg = pic?.querySelector("img");
-    // Where the Queen stands in each: the still's figure in hero.webp, and the clip's standing Queen
-    // in its 1282x1000 frame, both as shares of their own picture.
-    const stillFigure = { left: 0.1956, top: 0.0285, right: 0.8044, bottom: 0.9715 };
-    const clipFigure = { left: 602 / 1282, top: 204 / 1000, right: 999 / 1282, bottom: 953 / 1000 };
+    // Where the Queen stands in each, crown to feet without the floor shadow: the still's figure in
+    // hero.webp, and the clip's standing Queen in its 1282x1000 frame, as shares of their own picture.
+    const stillFigure = { left: 0.1956, top: 28 / 946, right: 0.8044, bottom: 917 / 946 };
+    const clipFigure = { left: 636 / 1282, top: 205 / 1000, right: 962 / 1282, bottom: 929 / 1000 };
+    // The still is drawn with a bigger head and crown, so a pure height match reads small: the clip
+    // stands this much taller to read the same size (owner, 2026-11-02, dl-5ssh.4.34).
+    const clipScale = 1.15;
     const clipRatio = 1282 / 1000;
     // Places the clip so its standing Queen covers the still's figure, at the same height.
     const place = (v: HTMLVideoElement): boolean => {
@@ -90,7 +93,7 @@ const q = (await landingWords(lang)).hero.question;
       const figH = (stillFigure.bottom - stillFigure.top) * h;
       const figCx = x + ((stillFigure.left + stillFigure.right) / 2) * w;
       const figBottom = y + stillFigure.bottom * h;
-      const vh = figH / (clipFigure.bottom - clipFigure.top);
+      const vh = (figH / (clipFigure.bottom - clipFigure.top)) * clipScale;
       const vw = vh * clipRatio;
       Object.assign(v.style, {
         left: `${figCx - ((clipFigure.left + clipFigure.right) / 2) * vw - at.left}px`,
