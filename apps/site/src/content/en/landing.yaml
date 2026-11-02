@@ -4,8 +4,8 @@
 # Written in US English (decision draft dl-rok6), checked against workflows/_lang/en/checklist.md.
 # Copy says what Jadwigo does, never a slogan; numbers are digits.
 hero:
-  # Beside the h1 until its picture exists (owner, 2026-11-02: less text on top; dl-5ssh.4.46).
-  pic: illustration · Jadwiga and her pencil-case court at the table
+  # Beside the h1 (owner, 2026-11-02: less text on top; dl-5ssh.4.46): the alt text of the table picture (dl-5ssh.4.48).
+  pic: A parent and child over a homework notebook, with little Jadwiga and her pencil-case court beside them.
   # A grade 3 two-step word problem (design handoff "landing 3", 2026-11-01; draft).
   question:
     label: Two steps · grade 3 · question 1
@@ -122,7 +122,7 @@ promises:
 partner:
   heading: Learning with you close by.
   text: Your child practices at their own pace, and you see them grow.
-  pic: A parent and child over a homework notebook, with little Jadwiga and her pencil-case court beside them.
+  pic: "A sprout grows out of the pencil pot faster than the court can keep up: Jadwiga waters it from the top of Linijka, Gumka holds her steady and Ołówek marks the new height."
   child: { initial: S, name: Sophie, sub: Grade 3 · with Jadwigo since September }
   practising: "Practicing:"
   allDone: Can do it all.

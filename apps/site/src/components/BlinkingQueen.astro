@@ -1,0 +1,91 @@
+---
+import { Image } from "astro:assets";
+// The parent and child at the table with the Queen and her court, the Queen blinking slowly
+// (dl-5ssh.4.25, dl-5ssh.4.27): her closed eyes fade in over the open ones and out again. Lifted out of
+// the partner block into the hero (owner, 2026-11-02, dl-5ssh.4.48). The first blink comes once 60% of
+// the picture is in view, then one every 5 to 10 s at random while it is in view and the tab is showing.
+// Never under reduced motion, and without JS the picture stays still.
+// The box takes the height its parent gives it and keeps the picture's own shape inside, so the eyes
+// patch, placed in percent of the picture, stays on her face at every width.
+import { blinkEyes, slotArt } from "../lib/illustrations.ts";
+
+interface Props {
+  alt: string;
+  // The picture's rendered width, for the srcset.
+  sizes: string;
+  // Above the fold: fetched at once and first.
+  eager?: boolean;
+  class?: string;
+}
+
+const { alt, sizes, eager = false, class: extra } = Astro.props;
+const src = slotArt.partner;
+const widths = [...[320, 640, 960, 1280].filter((w) => w < src.width), src.width];
+---
+
+<div class:list={["queen", extra]}>
+  <div class="frame fade-in" data-blink>
+    <Image
+      class="base"
+      src={src}
+      alt={alt}
+      widths={widths}
+      sizes={sizes}
+      loading={eager ? "eager" : "lazy"}
+      fetchpriority={eager ? "high" : "auto"}
+    />
+    <Image class="blink-eyes" src={blinkEyes} alt="" aria-hidden="true" loading={eager ? "eager" : "lazy"} />
+  </div>
+</div>
+
+<script>
+  // Under reduced motion the CSS runs no animation, so no animationend comes and nothing repeats.
+  for (const frame of document.querySelectorAll<HTMLElement>("[data-blink]")) {
+    const eyes = frame.querySelector(".blink-eyes");
+    if (!eyes) continue;
+    let inView = false;
+    let waiting = false;
+    const blink = () => {
+      waiting = false;
+      frame.classList.remove("go");
+      void frame.offsetWidth; // restart the CSS animation
+      frame.classList.add("go");
+    };
+    // The CSS waits 0.7 s before closing her eyes, so the gap from one blink to the next is 5 to 10 s.
+    const next = () => setTimeout(() => (inView && !document.hidden ? blink() : (waiting = true)), 4300 + Math.random() * 5000);
+    eyes.addEventListener("animationend", next);
+    document.addEventListener("visibilitychange", () => {
+      if (waiting && inView && !document.hidden) blink();
+    });
+    new IntersectionObserver(
+      (entries) => {
+        inView = entries.some((e) => e.isIntersecting);
+        if (inView && (waiting || !frame.classList.contains("go"))) blink();
+      },
+      { threshold: 0.6 },
+    ).observe(frame);
+  }
+</script>
+
+<style>
+  /* The box the parent sizes; the frame is the largest picture-shaped box that fits in it, centred. */
+  .queen { container-type: size; display: grid; place-items: center; width: 100%; height: 100%; }
+  .frame { position: relative; width: min(100cqw, 100cqh * 1600 / 712); aspect-ratio: 1600 / 712; }
+  /* The base and the patch each have their own rule: a shared img rule once stretched the patch over
+     the whole picture. */
+  /* The table's 2 bottom corners, rounded (owner, 2026-11-02, dl-5ssh.4.27). The table is a rectangle
+     inside the picture (x 45 to 1554, bottom at y 667 of 1600x712), so the clip is in the picture's own
+     percent and cuts only those corners: the notebook below the table and everything else stay. */
+  .frame .base {
+    display: block; width: 100%; height: 100%;
+    clip-path: polygon(0.000% 0.000%, 100.000% 0.000%, 100.000% 89.466%, 97.125% 89.466%, 97.089% 90.288%, 96.982% 91.079%, 96.809% 91.807%, 96.576% 92.446%, 96.292% 92.970%, 95.968% 93.359%, 95.616% 93.599%, 95.250% 93.680%, 95.250% 100.000%, 4.688% 100.000%, 4.688% 93.680%, 4.322% 93.599%, 3.970% 93.359%, 3.646% 92.970%, 3.362% 92.446%, 3.128% 91.807%, 2.955% 91.079%, 2.849% 90.288%, 2.812% 89.466%, 0.000% 89.466%);
+  }
+  .frame .blink-eyes {
+    position: absolute; display: block; left: 50%; top: 62.293%; width: 6.634%; height: 7.459%;
+    opacity: 0; pointer-events: none;
+  }
+  /* One slow, content blink: close in about 0.12 s, hold, open; then rest. */
+  .frame.go .blink-eyes { animation: slow-blink 1.1s ease-in-out 0.7s 1 both; }
+  @keyframes slow-blink { 0% { opacity: 0; } 11% { opacity: 1; } 55% { opacity: 1; } 68% { opacity: 0; } 100% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .frame.go .blink-eyes { animation: none; } }
+</style>
