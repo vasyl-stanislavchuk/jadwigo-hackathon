@@ -726,6 +726,7 @@ export const COPY_KEYS = [
   "chat_tool_lesson_edit",
   "chat_tool_lesson_check",
   "chat_tool_question_search",
+  "chat_tool_question_types",
   "chat_tool_learner_skills",
   "chat_tool_learner_week",
   "chat_tool_learner_mistakes",
