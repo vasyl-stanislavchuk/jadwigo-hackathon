@@ -9,6 +9,7 @@ import {
   toolViewData,
 } from "@jadwigo/contracts";
 import type { RunEvent } from "@jadwigo/contracts/run";
+import { review } from "@jadwigo/jadwigo-ai";
 import { compileLessonFile, featuredAssignmentId } from "@jadwigo/lesson-import";
 import { check } from "@jadwigo/lesson-import/check";
 import type { Store } from "@jadwigo/store";
@@ -66,6 +67,40 @@ function checkedRevision(log: readonly RunEvent[]): Revision {
 }
 
 /**
+ * Every turn's events in the order they were written: each turn's own in its `seq` order, and the
+ * turns interleaved by `created_at`. A turn's row lock makes its `seq` the true order, while
+ * `created_at` is the transaction's start on Postgres: a parent's patch that waited on the lock
+ * while an MCP lesson_check logged a pass has the higher `seq` and the earlier `created_at`, and
+ * sorting by time alone would put the patch before the check that never saw it. Across turns the
+ * time still orders them, as a parent's patch can land on an ended turn after a later turn's
+ * check (dl-1u6fn.11). In one millisecond the earlier turn goes first.
+ *
+ * @public for its test.
+ */
+export function inWriteOrder(turns: readonly (readonly RunEvent[])[]): RunEvent[] {
+  const next = turns.map(() => 0);
+  const out: RunEvent[] = [];
+  for (;;) {
+    let pick = -1;
+    let pickAt = Number.POSITIVE_INFINITY;
+    let picked: RunEvent | undefined;
+    turns.forEach((events, t) => {
+      const e = events[next[t] ?? 0];
+      if (e === undefined) return;
+      const at = Date.parse(e.created_at);
+      if (at < pickAt) {
+        pick = t;
+        pickAt = at;
+        picked = e;
+      }
+    });
+    if (picked === undefined) return out;
+    out.push(picked);
+    next[pick] = (next[pick] ?? 0) + 1;
+  }
+}
+
+/**
  * Publishes the conversation's checked lesson and assigns it in `pod`. Each revision is its own
  * lesson (`<file id>-r<revision>`), so a later revision never changes what an earlier assignment
  * plays, and giving the same revision to the same child again answers the same assignment: every
@@ -84,19 +119,27 @@ export async function publishLesson(
   if (give.learner_id !== undefined && (await store.findLearnerPod(give.learner_id)) !== pod)
     throw new ApiError(ErrorType.enum.NotFound, "no such learner");
 
-  const log: RunEvent[] = [];
+  const turns: (readonly RunEvent[])[] = [];
   for (const run of await store.listRuns(pod, give.conversation_id))
-    log.push(...(await store.listRunEvents(pod, run.id, 0)));
-  const revision = checkedRevision(log);
+    turns.push(await store.listRunEvents(pod, run.id, 0));
+  const revision = checkedRevision(inWriteOrder(turns));
   const number = revision.payload.revision;
   if (give.revision !== undefined && give.revision !== number)
     throw refuse(`revision ${give.revision} is not the latest: revision ${number} replaced it`);
 
-  // Read again here, from the revision itself, never from a stored flag (jadwigo-ai's review.ts).
+  // Read again here, from the revision itself, never from a stored flag (jadwigo-ai's review.ts):
+  // the same review lesson_check runs, the harsh-word check included, so a revision the log's order
+  // passes by mistake still never reaches a child unreviewed.
   const file = revision.payload.lesson_file;
   const checks = check(file);
   if (!checks.ok)
     throw refuse(`the lesson does not pass the lesson checks: ${checks.errors[0]?.message ?? ""}`);
+  // A file check() passed is a lesson file's object, what review reads.
+  const reviewed = review(file as Record<string, unknown>);
+  if (!reviewed.publishable)
+    throw refuse(
+      `the lesson does not pass lesson_check: ${reviewed.findings.find((f) => f.level === "error")?.text ?? ""}`,
+    );
   if (checks.questions > LIMITS.questionsPerLesson)
     throw refuse(
       `the lesson holds ${checks.questions} questions; a lesson holds at most ${LIMITS.questionsPerLesson}`,

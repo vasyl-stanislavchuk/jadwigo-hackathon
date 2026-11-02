@@ -90,12 +90,44 @@ async function revise(
     event_id: EventId.parse(randomUUID()),
     payload: { revision: expected + 1, call_id, lesson_file },
   });
-  if (!written.ok)
-    throw new ApiError(
-      ErrorType.enum.AnswerConflict,
-      "the lesson changed after you read it (the parent edited it in the app): read it again with lesson_show, then make your change on it",
-    );
+  if (!written.ok) throw lessonMoved();
   return written.revision;
+}
+
+/**
+ * Logs a verb's result as the engine's step does, a `tool_result` before the revision it made, so
+ * the app draws it and `publishLesson` finds the `lesson_check` that passed the lesson.
+ */
+async function logResult(
+  store: Store,
+  pod: PodId,
+  run: Run,
+  verb: LessonVerb,
+  call_id: string,
+  effect: VerbEffect,
+): Promise<void> {
+  const written = await store.appendRunEvents(pod, run.id, run.attempt, [
+    {
+      type: "tool_result",
+      run_id: run.id,
+      event_id: EventId.parse(randomUUID()),
+      payload: {
+        call_id,
+        verb,
+        output: effect.output,
+        error: null,
+        ...(effect.view === undefined ? {} : { view: effect.view }),
+      },
+    },
+  ]);
+  if (written.stale) throw lessonMoved();
+}
+
+function lessonMoved(): ApiError {
+  return new ApiError(
+    ErrorType.enum.AnswerConflict,
+    "the lesson changed after you read it (the parent edited it in the app): read it again with lesson_show, then make your change on it",
+  );
 }
 
 /**
@@ -140,6 +172,7 @@ export async function draftLesson(raw: unknown, context: ToolContext): Promise<J
     idle_deadline_at: null,
     max_deadline_at: new Date(now + RUN_MAX_MS).toISOString(),
   });
+  await logResult(store, member.pod, run, "lesson_draft", call_id, effect);
   await revise(store, member.pod, run, 0, call_id, effect.lesson_file);
   // Ended as a finished turn ends (status, then turn_complete): no step is sent, the sweep skips an
   // ended run, and the app's next message opens turn 2, which reads this lesson.
@@ -164,27 +197,52 @@ export async function draftLesson(raw: unknown, context: ToolContext): Promise<J
 export async function onDraft(name: LessonVerb, raw: unknown, context: ToolContext): Promise<Json> {
   const { store, member, bank } = context;
   const input = raw as Json;
-  const run = await draftRun(store, member.pod, input["draft_id"]);
+  const draft = await draftRun(store, member.pod, input["draft_id"]);
+  // The verb runs on the conversation's latest turn and logs there, so the log reads in the order
+  // things happened, as publishLesson's check needs; the verbs know a draft by that turn's id.
+  const run = await latestTurn(store, member.pod, draft);
   const lesson = await latestLesson(store, member.pod, run);
   const call_id = randomUUID();
   const effect = await callVerb(
     name,
     bank,
     { pod: member.pod, created_by: run.created_by, run_id: run.id, call_id, lesson },
-    input,
+    { ...input, draft_id: run.id },
   );
+  // One unit with the tool call (callTool): a refused revision rolls this result back with it.
+  await logResult(store, member.pod, run, name, call_id, effect);
   if (effect.lesson_file !== undefined)
     await revise(store, member.pod, run, lesson?.revision ?? 0, call_id, effect.lesson_file);
-  return effect.output;
+  return { ...effect.output, draft_id: draft.id };
 }
 
+/**
+ * The draft's conversation's latest turn, locked to the unit's end as `acceptMessage` locks it, so
+ * no app message opens or wakes a turn in between. A turn that has not ended is the app's at work
+ * on the lesson: the parent's AI waits for it rather than write beside it.
+ */
+export async function latestTurn(store: Store, pod: PodId, draft: DraftRun): Promise<Run> {
+  const latest = (await store.listRuns(pod, draft.conversation_id)).at(-1) ?? draft;
+  const locked = await store.lockRun(pod, latest.id);
+  if (locked.status !== "completed" && locked.status !== "failed" && locked.status !== "cancelled")
+    throw new ApiError(
+      ErrorType.enum.AnswerConflict,
+      "the lesson is being changed in the app; try again in a moment",
+    );
+  return locked;
+}
+
+/** A run that belongs to a conversation, as every draft's does. */
+type DraftRun = Run & { readonly conversation_id: ConversationId };
+
 /** The run a draft_id names, in the caller's pod: another pod's, or a malformed id, is NotFound. */
-async function draftRun(store: Store, pod: PodId, draft_id: unknown): Promise<Run> {
+export async function draftRun(store: Store, pod: PodId, draft_id: unknown): Promise<DraftRun> {
   const id = RunId.safeParse(draft_id);
   if (!id.success) throw new ApiError(ErrorType.enum.NotFound, "no such draft");
   const run = await store.getRun(pod, id.data);
-  if (run.conversation_id === null) throw new ApiError(ErrorType.enum.NotFound, "no such draft");
-  return run;
+  const { conversation_id } = run;
+  if (conversation_id === null) throw new ApiError(ErrorType.enum.NotFound, "no such draft");
+  return { ...run, conversation_id };
 }
 
 /** The conversation's latest lesson, whichever turn wrote it: the MCP's or the app's. */
