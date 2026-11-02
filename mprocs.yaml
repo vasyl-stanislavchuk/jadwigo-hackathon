@@ -9,6 +9,10 @@ procs:
     shell: "bun run --cwd apps/api dev"
   copy:
     shell: "bun run --cwd packages/copy dev"
+  # The parent's sign-in on this machine: the stand-in for Supabase Auth (make dev-all, dl-5ssh.131).
+  # Any email and 123456; web and api point at it unless DEV_AUTH=supabase.
+  auth:
+    shell: "bun apps/web/e2e/auth-server.ts"
   # ASTRO_DEV_BACKGROUND set keeps astro dev in its pane: unset, Astro detaches when an agent started
   # it (dev/index.js isRunByAgent), and the server outlives mprocs.
   site:

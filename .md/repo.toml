@@ -16,6 +16,7 @@ API_PORT = 8730
 BUILDER_PORT = 5174
 SITE_PORT = 4321
 DOCS_PORT = 4322
+AUTH_PORT = 54321
 
 [run.dev]
 command = "make dev"

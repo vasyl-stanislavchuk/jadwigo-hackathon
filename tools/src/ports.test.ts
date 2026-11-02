@@ -64,3 +64,13 @@ describe(".md/repo.toml", () => {
     expect(declared).toEqual(DEV_PORTS);
   });
 });
+
+describe("AUTH_PORT", () => {
+  it("keeps the browser tests' 54321 in the main checkout and CI, and is md's in a worktree", () => {
+    expect(DEV_PORTS.AUTH_PORT).toBe(54321);
+    expect(port("AUTH_PORT", DEV_PORTS.AUTH_PORT, { AUTH_PORT: "8396" })).toBe(8396);
+    expect(() =>
+      port("AUTH_PORT", DEV_PORTS.AUTH_PORT, { MEDALLION_DEV_WORKSPACE_NAME: "lane-a" }),
+    ).toThrow(/AUTH_PORT is unset/);
+  });
+});

@@ -47,6 +47,15 @@ one (`dl-5ssh.129`).
    since 0.10 it ships as `dekit`, so `mise install` brings it). Web, api, copy and site start; docs,
    `check` and `db-reset` wait for `s`. Arrows pick a pane, `r` restarts it, `x` stops it, `q` quits
    all. Each pane also writes `.logs/dev/<name>.log`, which an agent reads to see what you see.
+
+   The parent signs in on this machine (`dl-5ssh.131`): open `http://127.0.0.1:<WEB_PORT>/parent`
+   and sign in with any email and the code `123456`, or Google or Facebook in one click. The
+   `auth` pane is `apps/web/e2e/auth-server.ts`, the browser tests' stand-in for Supabase Auth, on
+   `AUTH_PORT` (54321 in the main checkout). The same email is the same parent every run, and the
+   signing key stays in `.logs/dev/auth-key.pem`, so a signed-in tab survives a restart. The
+   parent's account, pod and children live in the local `jadwigo` database. No mail, no network.
+   `make dev-all-supabase` (or `DEV_AUTH=supabase`) signs in with jadwigo-dev's real Supabase from
+   `.env.local` instead. `make dev` and `make dev-app` always use that one.
 3. Only part of it:
    - `make dev-app`: web, api and the copy compile, without the site and the docs, whose start
      (typedoc and the OpenAPI prepare) is the slowest.

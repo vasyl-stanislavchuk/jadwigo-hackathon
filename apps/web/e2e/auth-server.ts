@@ -20,6 +20,9 @@
 //   POST /auth/v1/token?grant_type=pkce   turns that code and its verifier into the same session as
 //                                          /verify's, so an email gets one sub whichever way it
 //                                          signed in
+//   POST /auth/v1/token?grant_type=refresh_token
+//                                          a fresh session for the refresh token a session carried,
+//                                          which names its email and provider, so it needs no state
 //   POST /auth/v1/test/provider           sets the email the next provider sign-in returns, or
 //                                          none: { email: string | null }. The tests' switch, not
 //                                          Supabase's
@@ -29,7 +32,20 @@
 //
 // playwright.config.ts starts it for the `api` project. Its tokens mirror apps/api's own test
 // signer (apps/api/src/testing/token.ts).
-import { createHash, createSign, generateKeyPairSync, randomUUID } from "node:crypto";
+//
+// `make dev-all` runs it too, as the local parent sign-in (dl-5ssh.131). Two things make that
+// last: a sub is derived from the email, so the same email is the same parent in every run, and
+// with AUTH_STANDIN_KEY naming a file the key is kept there, so a signed-in tab survives a restart.
+import {
+  createHash,
+  createPrivateKey,
+  createPublicKey,
+  createSign,
+  generateKeyPairSync,
+  type KeyObject,
+  randomUUID,
+} from "node:crypto";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { AUTH_ORIGIN, AUTH_PORT } from "./auth-origin.ts";
 
@@ -37,11 +53,23 @@ const ISSUER = `${AUTH_ORIGIN}/auth/v1`;
 const CODE = "123456";
 const KID = "jadwigo-e2e";
 
-const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+/** The signing key: a new one per run, or the one in AUTH_STANDIN_KEY, made there the first time. */
+function signingKey(file: string | undefined): KeyObject {
+  if (file && existsSync(file)) return createPrivateKey(readFileSync(file, "utf8"));
+  const { privateKey: made } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  if (file) writeFileSync(file, made.export({ format: "pem", type: "pkcs8" }), { mode: 0o600 });
+  return made;
+}
+const privateKey = signingKey(process.env["AUTH_STANDIN_KEY"]);
+const publicKey = createPublicKey(privateKey);
 const jwks = {
   keys: [{ ...publicKey.export({ format: "jwk" }), kid: KID, alg: "RS256", use: "sig" }],
 };
-const subs = new Map<string, string>();
+/** One sub per email, the same in every run: a uuid-shaped digest of the email. */
+function subOf(email: string): string {
+  const hex = createHash("sha256").update(`jadwigo-auth-standin:${email}`).digest("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
 /** The email the next provider sign-in returns, or null for a provider account with none. */
 let providerEmail: string | null = "rodzic.google@example.com";
 /** Each code /authorize gave out, until /token spends it. */
@@ -81,15 +109,14 @@ function send(res: ServerResponse, status: number, body: unknown): void {
 
 /** A session for `email`, shaped like Supabase's /verify and /token answers. */
 function session(email: string, provider: string): Record<string, unknown> {
-  const sub = subs.get(email) ?? randomUUID();
-  subs.set(email, sub);
+  const sub = subOf(email);
   const now = Math.floor(Date.now() / 1000);
   return {
     access_token: accessToken(sub, email, now),
     token_type: "bearer",
     expires_in: 3600,
     expires_at: now + 3600,
-    refresh_token: randomUUID(),
+    refresh_token: b64url({ email, provider }),
     user: {
       id: sub,
       aud: "authenticated",
@@ -115,6 +142,23 @@ function answers(verifier: unknown, challenge: string, method: string): boolean 
   return method.toLowerCase() === "plain"
     ? verifier === challenge
     : createHash("sha256").update(verifier).digest("base64url") === challenge;
+}
+
+/** The email and provider a refresh token names, or undefined for one this stand-in never gave. */
+function refreshed(token: unknown): { email: string; provider: string } | undefined {
+  if (typeof token !== "string") return undefined;
+  try {
+    const held = JSON.parse(Buffer.from(token, "base64url").toString("utf8")) as Record<
+      string,
+      unknown
+    >;
+    const { email, provider } = held;
+    return typeof email === "string" && typeof provider === "string"
+      ? { email, provider }
+      : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 async function bodyOf(req: IncomingMessage): Promise<Record<string, unknown>> {
@@ -192,6 +236,21 @@ createServer(async (req, res) => {
       });
     codes.delete(code);
     return send(res, 200, session(flow.email, flow.provider));
+  }
+  if (
+    req.method === "POST" &&
+    path === "/auth/v1/token" &&
+    url.searchParams.get("grant_type") === "refresh_token"
+  ) {
+    const { refresh_token } = await bodyOf(req);
+    const held = refreshed(refresh_token);
+    if (held === undefined)
+      return send(res, 400, {
+        code: 400,
+        error_code: "refresh_token_not_found",
+        msg: "Invalid Refresh Token: Refresh Token Not Found",
+      });
+    return send(res, 200, session(held.email, held.provider));
   }
   if (req.method === "POST" && path === "/auth/v1/test/provider") {
     const { email } = await bodyOf(req);

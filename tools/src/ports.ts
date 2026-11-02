@@ -9,7 +9,8 @@
  * dev server, the one the e2e's "builder" project starts beside the preview (dl-a38n.34): a port of
  * its own, never WEB_PORT + 1, which in a worktree is the next slot's. SITE_PORT and DOCS_PORT are
  * the marketing site's and the docs' `astro dev`, each strict, so two of them never quietly take
- * the next free port and leave the page on a number nobody knows.
+ * the next free port and leave the page on a number nobody knows. AUTH_PORT is the local stand-in
+ * for Supabase Auth (apps/web/e2e/auth-server.ts), which make dev-all and the browser tests start.
  */
 export const DEV_PORTS = {
   WEB_PORT: 5173,
@@ -17,6 +18,7 @@ export const DEV_PORTS = {
   BUILDER_PORT: 5174,
   SITE_PORT: 4321,
   DOCS_PORT: 4322,
+  AUTH_PORT: 54321,
 } as const;
 
 export function port(
