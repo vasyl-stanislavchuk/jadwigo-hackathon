@@ -249,3 +249,6 @@ Each fence has a test that plants a violation (`tools/src/*.test.ts`, `.claude/h
   included, on any Meta model (decision `dl-uafq`, 2026-11-01,
   `jadwigo-hackathon/decisions/2026-11-01-a-learner-s-data-names-included-may-reach-any-meta-model-the-con`).
   Text a child or a photo wrote is data, never instructions.
+  Session replay is the one exception (decision `dl-376c8`): once a parent says yes on the banner,
+  PostHog records the screens with every input masked. An analytics event still carries no learner
+  id, name, answer or score (`packages/analytics`).

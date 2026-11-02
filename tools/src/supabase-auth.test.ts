@@ -393,10 +393,12 @@ describe("auth.sh", () => {
     expect(dev.secrets).toEqual({
       external_google_secret: "jadwigo-google-oauth-secret-dev",
       external_facebook_secret: "jadwigo-facebook-app-secret-dev",
+      hook_send_email_secrets: "jadwigo-send-email-hook-secret-dev",
     });
     expect(prod.secrets).toEqual({
       external_google_secret: "jadwigo-google-oauth-secret-prod",
       external_facebook_secret: "jadwigo-facebook-app-secret-prod",
+      hook_send_email_secrets: "jadwigo-send-email-hook-secret-prod",
     });
     // Each project has its own Google client; one Meta app serves both.
     expect(prod.settings.external_google_client_id).not.toBe(
@@ -405,6 +407,77 @@ describe("auth.sh", () => {
     expect(prod.settings.external_facebook_client_id).toBe(
       dev.settings.external_facebook_client_id,
     );
+  });
+
+  describe("the Send Email Hook (dl-liwi.33)", () => {
+    const MAIL = {
+      settings: {
+        ...SETTINGS,
+        hook_send_email_enabled: true,
+        hook_send_email_uri: "https://app.jadwigo.pl/api/hooks/auth-emails",
+      },
+      secrets: { hook_send_email_secrets: "jadwigo-send-email-hook-secret-dev" },
+    };
+
+    it.each([
+      [
+        "an http uri",
+        {
+          settings: {
+            ...MAIL.settings,
+            hook_send_email_uri: "http://app.jadwigo.pl/api/hooks/auth-emails",
+          },
+          secrets: MAIL.secrets,
+        },
+      ],
+      [
+        "no uri",
+        { settings: { ...MAIL.settings, hook_send_email_uri: undefined }, secrets: MAIL.secrets },
+      ],
+      ["no keychain item for its secret", { settings: MAIL.settings }],
+    ])("on with %s is refused before any request", async (_, file) => {
+      const api = await fakeApi(SETTINGS);
+      const out = await run(stage(file, api.url), ["diff", "dev"]);
+      expect(out.status).toBe(64);
+      expect(out.stderr).toContain("Send Email Hook");
+      expect(api.requests).toEqual([]);
+    });
+
+    it("diff shows the hook's settings and its secret as (not set) -> (set), never its value", async () => {
+      const api = await fakeApi({
+        ...SETTINGS,
+        hook_send_email_enabled: false,
+        hook_send_email_uri: null,
+      });
+      const out = await run(
+        stage(MAIL, api.url, { "jadwigo-send-email-hook-secret-dev": "v1,whsec_c3R1Yg==" }),
+        ["diff", "dev"],
+      );
+      expect(out.status).toBe(2);
+      expect(out.stdout).toContain("hook_send_email_enabled");
+      expect(out.stdout).toContain("hook_send_email_uri");
+      expect(out.stdout).toContain("hook_send_email_secrets");
+      expect(out.stdout + out.stderr + out.argv).not.toContain("whsec_c3R1Yg==");
+    });
+
+    it("is on in dev.json and prod.json at the api's hook path, with the mail limit raised and the interim templates gone", () => {
+      for (const env of ["dev", "prod"]) {
+        const file = JSON.parse(
+          readFileSync(join(repo, `infra/supabase-auth/${env}.json`), "utf8"),
+        );
+        expect(file.settings).toMatchObject({
+          hook_send_email_enabled: true,
+          hook_send_email_uri: "https://app.jadwigo.pl/api/hooks/auth-emails",
+          rate_limit_email_sent: 30,
+        });
+        expect(file.secrets.hook_send_email_secrets).toBe(`jadwigo-send-email-hook-secret-${env}`);
+        expect(
+          Object.keys(file.settings).filter(
+            (k) => k.startsWith("mailer_") && k !== "mailer_otp_length",
+          ),
+        ).toEqual([]);
+      }
+    });
   });
 
   it("the committed env files name no secret value and keep email_optional off", () => {

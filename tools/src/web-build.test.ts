@@ -27,6 +27,7 @@ const KEYS = [
   "JW_SUPABASE_KEY",
   "JW_SUPABASE_PROVIDERS",
   "VITE_MEDIA_URL",
+  "JW_POSTHOG_KEY",
 ] as const;
 /** The prod media CloudFront: terraform's media_url output, SSM /jadwigo/bank/media-url. */
 const PROD_MEDIA = "https://dx5i3bka3zn5f.cloudfront.net";
@@ -35,6 +36,9 @@ const PROD_MEDIA = "https://dx5i3bka3zn5f.cloudfront.net";
 const PROD_KEY =
   /^JW_SUPABASE_KEY=(\S*)/m.exec(readFileSync(join(infra, "web-build/prod.env"), "utf8"))?.[1] ??
   "";
+/** PostHog's public project key as prod.env writes it (decision dl-376c8). */
+const PROD_POSTHOG =
+  /^JW_POSTHOG_KEY=(\S*)/m.exec(readFileSync(join(infra, "web-build/prod.env"), "utf8"))?.[1] ?? "";
 /** What prod ships (infra/web-build/prod.env): jadwigo-prod on its supabase.co host for now
  * (dl-2qke), its publishable key, and Google's button alone while the Meta app is in Development
  * mode (dl-ovva). */
@@ -43,12 +47,14 @@ const PROD = {
   JW_SUPABASE_KEY: PROD_KEY,
   JW_SUPABASE_PROVIDERS: "google",
   VITE_MEDIA_URL: PROD_MEDIA,
+  JW_POSTHOG_KEY: PROD_POSTHOG,
 };
 const SHELL = {
   JW_SUPABASE_URL: "https://shell-sentinel.invalid",
   JW_SUPABASE_KEY: "sb_publishable_shell_sentinel",
   JW_SUPABASE_PROVIDERS: "google",
   VITE_MEDIA_URL: "https://media-shell-sentinel.invalid",
+  JW_POSTHOG_KEY: "phc_shell_sentinel",
 };
 
 /** An env file of our own naming a Supabase project. */
@@ -120,6 +126,10 @@ describe("make -C infra web-build", { timeout: 120_000 }, () => {
     expect(PROD.JW_SUPABASE_KEY).toMatch(/^sb_publishable_[A-Za-z0-9_-]{20,}$/);
     const file = readFileSync(join(infra, "web-build/prod.env"), "utf8");
     expect(file).not.toMatch(/sb_secret_|service_role/);
+  });
+
+  it("prod's PostHog key is a public project key", () => {
+    expect(PROD_POSTHOG).toMatch(/^phc_[A-Za-z0-9]{20,}$/);
   });
 
   it("the build gets the env file's values", () => {

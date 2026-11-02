@@ -27,7 +27,9 @@ Mail (`terraform/modules/mail`, `dl-5ssh.6`): an SES domain identity for jadwigo
 in eu-central-1, each with Easy DKIM (3 CNAMEs), a custom MAIL FROM at `mail.<apex>` with its MX and SPF,
 and a DMARC record (`p=quarantine`, relaxed alignment), all in the apex's own zone. The account already
 has SES production access in eu-central-1. No SMTP user: auth mail goes out through the Send Email Hook
-(`dl-liwi.33`). People's mailboxes are Google Workspace on jadwigo.pl, beside SES (`dl-e8ov.2.71`,
+(`dl-liwi.33`): the api role may send through the jadwigo.pl identity only, From `no-reply@jadwigo.pl`
+only (`modules/app/mail.tf`), and reads the hook's secrets from `/jadwigo/<env>/send-email-hook-secret`,
+which the owner sets (`docs/runbooks/auth-mail.md`). People's mailboxes are Google Workspace on jadwigo.pl, beside SES (`dl-e8ov.2.71`,
 `modules/mail/workspace`). It adds an apex MX, one apex TXT with Google's SPF and the site verification
 token, and `google._domainkey`. Each of these stays off until its input in `mail_workspace` in
 `prod.tfvars` is set. No record overlaps SES's, and `_dmarc` serves both. `docs/runbooks/google-workspace.md`

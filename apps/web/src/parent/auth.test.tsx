@@ -167,3 +167,18 @@ describe("refresh (dl-z5ja.65)", () => {
     expect(refreshSession).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("sendCode (dl-liwi.33)", () => {
+  it.each(["pl", "en"] as const)(
+    "puts the screen's language, %s, in the user's metadata for the Send Email Hook",
+    async (language) => {
+      const signInWithOtp = vi.fn(async (_: unknown) => ({ data: {}, error: null }));
+      const supabase = { auth: { signInWithOtp } } as unknown as SupabaseClient;
+      await supabaseAuth(supabase, []).sendCode("rodzic@example.com", language);
+      expect(signInWithOtp).toHaveBeenCalledWith({
+        email: "rodzic@example.com",
+        options: { shouldCreateUser: true, data: { language } },
+      });
+    },
+  );
+});
