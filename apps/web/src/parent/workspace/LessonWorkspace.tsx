@@ -31,8 +31,9 @@ import { elapsedSeconds, phaseAnnouncement, type RunPhase, usePhase } from "../.
 import { holdServer } from "../../chat/routesTransport.ts";
 import { useConversation } from "../../chat/useConversation.ts";
 import { navigate } from "../../nav/location.ts";
+import { NavLink } from "../../nav/NavLink.tsx";
 import { CATEGORY, pageLang } from "../adult.ts";
-import { lessonsPath } from "../route.ts";
+import { lessonsPath, parentPath } from "../route.ts";
 import { DetailsPanel } from "./DetailsPanel.tsx";
 import { firstMessage, type LessonEngine } from "./engine.ts";
 import { LessonFooter } from "./LessonFooter.tsx";
@@ -107,6 +108,21 @@ export function LessonWorkspace({
   const summary = lessonSummary(lesson.shown);
   const child = learners.find((l) => l.id === forLearner) ?? null;
 
+  // A lesson URL the routes refuse (another family's, or gone): one line and the way to a new one,
+  // never 3 empty columns stuck restoring (dl-uukj.47.33).
+  if (state.notFound)
+    return (
+      <div className="flex flex-col items-start gap-3 p-6" data-not-found>
+        <p className="text-jw-ink">{t("chat_not_found")}</p>
+        <NavLink
+          href={parentPath({ lang: pageLang() })}
+          className="font-bold text-jw-ink underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-jw-focus"
+        >
+          {t("parent_new_lesson")}
+        </NavLink>
+      </div>
+    );
+
   const chat = consentMissing ? (
     <div className="p-4">
       <ConsentScreen
@@ -161,7 +177,7 @@ export function LessonWorkspace({
       {...(phase === null ? {} : { chatFact: words })}
       lessonTitle={summary.title === "" ? t("parent_new_lesson") : summary.title}
       lesson={
-        lesson.shown === null ? (
+        lesson.shown === null && lesson.ghosts === 0 ? (
           <p className="text-jw-ink-soft" data-lesson-waiting>
             {said ? words : t("parent_lesson_empty")}
           </p>
@@ -174,6 +190,8 @@ export function LessonWorkspace({
             undoRefused={lesson.undoRefused}
             undoPending={lesson.undoPending}
             onEdit={edit}
+            ghosts={lesson.ghosts}
+            withChild={child !== null}
             outcomeOf={lesson.outcomeOf}
           />
         )
@@ -182,9 +200,10 @@ export function LessonWorkspace({
         <LessonFooter
           language={language}
           status={footerStatus(phase, words, summary.steps, t)}
-          // Giving the lesson comes with dl-z5ja.108.1.1; until then the primary stays quiet.
-          ready={false}
+          // Given once its latest check passed (dl-z5ja.108.1.1); "Pokaż {imię}" comes later.
+          ready={lesson.ready}
           child={child}
+          lesson={lesson.shown}
           onSave={() => navigate(lessonsPath({ lang: pageLang() }))}
           onGive={() => {}}
         />
@@ -193,6 +212,7 @@ export function LessonWorkspace({
       details={
         <DetailsPanel
           language={language}
+          learners={learners}
           child={child}
           onAddChild={onAddChild}
           changeMenu={changeMenu}

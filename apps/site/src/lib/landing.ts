@@ -39,7 +39,8 @@ export const landingSchema = z.object({
         message: "answer must be one of the choices",
       }),
   }),
-  after: z.object({ text, link: text }),
+  // Step 3's short line in the landing page's how-it-works steps (dl-5ssh.4.49).
+  after: z.object({ text }),
   links: z.array(z.object({ href: z.string().regex(/^(\/[a-z0-9-]+)+$/), label: text })).min(1),
   // /jak-to-dziala in direction 1a (design handoff "landing 3"): the intro over a wide illustration,
   // then 3 steps, each with who acts. Step 1 shows the parent's request and the build lines beside a

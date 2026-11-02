@@ -56,6 +56,11 @@ export interface ConversationState {
   connection: "live" | "restoring" | "down" | "error";
   /** The last restore did not reach the server: said as stalled, with a retry, never as restoring. */
   restoreFailed: boolean;
+  /**
+   * The routes refused the conversation itself (a 404 or a 403: another family's, or gone), so the
+   * page says there is no such lesson instead of a workspace stuck restoring (dl-uukj.47.33).
+   */
+  notFound: boolean;
   /** The words just sent, until their event is in the log or the send failed. */
   pending: Pending | null;
   /** When the page last heard anything of the conversation (an event, a run): the stall clock. */
@@ -90,7 +95,7 @@ export type ConversationAction =
   | { type: "link_error" }
   | { type: "restoring" }
   | { type: "restored" }
-  | { type: "restore_failed" }
+  | { type: "restore_failed"; notFound?: boolean }
   | { type: "pending"; pending: Pending }
   | { type: "sent"; event_id: string; run_id: RunId }
   | { type: "queued"; text: string }
@@ -103,6 +108,7 @@ export const EMPTY: ConversationState = {
   queued: [],
   connection: "live",
   restoreFailed: false,
+  notFound: false,
   pending: null,
   lastEventAt: null,
   openedAt: null,
@@ -223,7 +229,12 @@ export function conversationReducer(
     case "restored":
       return { ...state, connection: "live", restoreFailed: false };
     case "restore_failed":
-      return { ...state, connection: "error", restoreFailed: true };
+      return {
+        ...state,
+        connection: "error",
+        restoreFailed: true,
+        notFound: action.notFound ?? false,
+      };
     case "pending":
       return {
         ...state,
