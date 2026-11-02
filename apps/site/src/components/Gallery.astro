@@ -74,7 +74,7 @@ const cards = lessons.map((l) => {
             </span>
             <span class="title">{c.title}</span>
             <Pic label={c.pic.label} src={c.pic.src} sizes="17rem" class="card-pic" />
-            {c.teaser && <span class="teaser paper">{c.teaser}</span>}
+            {c.teaser ? <span class="teaser paper">{c.teaser}</span> : <span class="teaser-none" />}
             <span class="go">{words.play} →</span>
           </a>
         </li>
@@ -84,31 +84,114 @@ const cards = lessons.map((l) => {
 </div>
 
 <script>
+  // The landing page's row (dl-5ssh.4.44): it drifts on its own, slowly and without end, so every
+  // lesson passes by. A copy of the cards follows the real ones (inert: out of the tab order and hidden
+  // from a screen reader), and the row steps back by one set as it reaches the copy, which looks the
+  // same. It rests while the pointer is on it or a card has focus, for a few seconds after a touch or
+  // an arrow, while the row is off screen or the tab is hidden; under reduced motion it never moves.
+  const SPEED = 22; // px a second
+  const REST = 4000; // ms after a touch or an arrow
   for (const ui of document.querySelectorAll<HTMLElement>(".lessons-ui.row")) {
     const list = ui.querySelector<HTMLElement>(".cards");
     const cards = [...ui.querySelectorAll<HTMLElement>(".card")];
     const arrows = [...ui.querySelectorAll<HTMLButtonElement>(".arrow")];
     const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!list) continue;
+    if (!list || cards.length === 0) continue;
 
-    // The arrows go grey at either end of the row.
-    const ends = () => {
-      const max = list.scrollWidth - list.clientWidth - 1;
-      arrows[0]?.toggleAttribute("disabled", list.scrollLeft <= 0);
-      arrows[1]?.toggleAttribute("disabled", list.scrollLeft >= max);
+    const step = () => {
+      const gap = Number.parseFloat(getComputedStyle(list).columnGap) || 0;
+      return (cards[0]?.offsetWidth ?? 300) + gap;
     };
 
-    // Each arrow moves the row by one card and its gap.
+    if (still) {
+      // The arrows go grey at either end of the row.
+      const ends = () => {
+        const max = list.scrollWidth - list.clientWidth - 1;
+        arrows[0]?.toggleAttribute("disabled", list.scrollLeft <= 0);
+        arrows[1]?.toggleAttribute("disabled", list.scrollLeft >= max);
+      };
+      for (const arrow of arrows) {
+        arrow.addEventListener("click", () => list.scrollBy({ left: step() * Number(arrow.dataset["step"]) }));
+      }
+      list.addEventListener("scroll", ends, { passive: true });
+      addEventListener("resize", ends);
+      ends();
+      continue;
+    }
+
+    for (const card of cards) {
+      const copy = card.cloneNode(true) as HTMLElement;
+      copy.inert = true;
+      copy.setAttribute("aria-hidden", "true");
+      list.append(copy);
+    }
+    list.classList.add("drifting");
+    // One set of cards, from the first card to its copy.
+    const span = () => (list.children[cards.length] as HTMLElement).offsetLeft - cards[0]!.offsetLeft;
+
+    let pos = list.scrollLeft;
+    let last = performance.now();
+    let restUntil = 0;
+    let hovered = false;
+    let focused = false;
+    let seen = true;
+    const rest = () => {
+      restUntil = performance.now() + REST;
+    };
+    const wrap = () => {
+      const s = span();
+      if (s <= 0) return;
+      if (pos >= s) pos -= s;
+      if (pos < 0) pos += s;
+    };
+    const tick = (now: number) => {
+      const dt = Math.min(64, now - last);
+      last = now;
+      // A hand on the row (a swipe, a wheel) takes over; the drift goes on from where it left.
+      if (Math.abs(list.scrollLeft - pos) > 2) pos = list.scrollLeft;
+      if (!hovered && !focused && seen && !document.hidden && now > restUntil) {
+        pos += (SPEED * dt) / 1000;
+        wrap();
+        list.scrollLeft = pos;
+      } else if (list.scrollLeft >= span()) {
+        pos = list.scrollLeft - span();
+        list.scrollLeft = pos;
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+
+    list.addEventListener("pointerenter", () => {
+      hovered = true;
+    });
+    list.addEventListener("pointerleave", () => {
+      hovered = false;
+    });
+    list.addEventListener("focusin", () => {
+      focused = true;
+    });
+    list.addEventListener("focusout", () => {
+      focused = false;
+    });
+    list.addEventListener("touchstart", rest, { passive: true });
+    list.addEventListener("wheel", rest, { passive: true });
+    new IntersectionObserver((entries) => {
+      seen = entries.some((e) => e.isIntersecting);
+    }).observe(list);
+
+    // Each arrow moves the row by one card, round the loop in either direction.
     for (const arrow of arrows) {
       arrow.addEventListener("click", () => {
-        const gap = Number.parseFloat(getComputedStyle(list).columnGap) || 0;
-        const step = (cards[0]?.offsetWidth ?? 300) + gap;
-        list.scrollBy({ left: step * Number(arrow.dataset["step"]), behavior: still ? "auto" : "smooth" });
+        rest();
+        const by = step() * Number(arrow.dataset["step"]);
+        if (pos + by < 0) {
+          pos += span();
+          list.scrollLeft = pos;
+        }
+        pos = list.scrollLeft + by;
+        list.scrollBy({ left: by, behavior: "smooth" });
       });
     }
-    list.addEventListener("scroll", ends, { passive: true });
-    addEventListener("resize", ends);
-    ends();
   }
 </script>
 
@@ -127,21 +210,29 @@ const cards = lessons.map((l) => {
   .arrow:disabled { opacity: 0.4; cursor: default; }
   .arrow:focus-visible { outline: 3px solid var(--jw-focus); outline-offset: 3px; }
 
+  /* Every card's 5 parts (meta, title, picture, teaser, link) sit on shared rows (subgrid), so the
+     pictures and the teasers line up across the cards (owner, 2026-11-02, dl-5ssh.4.44). */
   .cards {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 18.75rem), 1fr)); gap: 1.25rem;
     list-style: none; margin: 1.5rem 0 0; padding: 0 0 1rem;
   }
+  .card { display: grid; grid-row: span 5; grid-template-rows: subgrid; }
   /* The row: one line of 300 px cards from the page's left margin to its right edge, snapping to a card. */
   .row .cards {
     --edge: max(1rem, calc((100vw - 72rem) / 2 + 1rem));
-    display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--edge);
+    display: grid; grid-auto-flow: column; grid-auto-columns: 18.75rem; grid-template-columns: none;
+    grid-template-rows: repeat(5, auto); row-gap: 0;
+    overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--edge);
     margin-top: 1.25rem; padding: 0.25rem var(--edge) 1.25rem;
     width: 100vw; margin-left: calc(50% - 50vw);
   }
-  .row .card { flex: 0 0 18.75rem; scroll-snap-align: start; }
+  .row .card { scroll-snap-align: start; }
+  /* While the row drifts by itself, snapping would hold it still. */
+  .row .cards.drifting { scroll-snap-type: none; scrollbar-width: none; }
+  .row .cards.drifting::-webkit-scrollbar { display: none; }
 
   .card a {
-    display: flex; flex-direction: column; gap: 0.75rem; height: 100%; padding: 1rem;
+    display: grid; grid-row: span 5; grid-template-rows: subgrid; row-gap: 0.75rem; padding: 1rem;
     border: 2px solid var(--jw-line); border-radius: var(--jw-radius-card);
     background: var(--jw-card); color: var(--jw-ink); text-decoration: none;
     box-shadow: 0 5px 0 var(--jw-line); transition: border-color 120ms;
@@ -153,6 +244,13 @@ const cards = lessons.map((l) => {
   .card a :global(.card-pic) { height: 6.5rem; min-height: 0; }
   /* The teaser: the first question as the child sees it, on exercise-book paper. */
   .teaser { --cell: 1.25rem; padding: 0.6rem 0.75rem; font-size: 1.05rem; font-weight: 700; line-height: 1.35; border-radius: var(--jw-radius-small); }
-  .go { margin-top: auto; padding-top: 0.5rem; font-weight: 700; color: var(--jw-brand-go); }
-  @media (prefers-reduced-motion: reduce) { .arrow { transition: none; } }
+  /* Play: centred at the card's foot, shown when the card is pointed at or focused; where there is no
+     hover (a touch screen) it always shows. Its place is kept, so nothing moves when it appears. */
+  .go {
+    align-self: end; justify-self: center; padding-top: 0.25rem; font-weight: 700; color: var(--jw-brand-go);
+    opacity: 0; transition: opacity 160ms ease;
+  }
+  .card a:hover .go, .card a:focus-visible .go { opacity: 1; }
+  @media (hover: none) { .go { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .arrow, .go { transition: none; } }
 </style>
