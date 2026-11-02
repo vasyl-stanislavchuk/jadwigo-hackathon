@@ -52,6 +52,30 @@ export async function runnerDatabaseUrl(read: ReadParameter = readSsm): Promise<
   return checked(value, `the SSM parameter ${name}`);
 }
 
+/** Where the verbs read the bank: the API's origin and the bank's read token. */
+export interface BankConfig {
+  base: string;
+  token: string;
+}
+
+/**
+ * The bank the verbs draw from (dl-1u6fn.4): `JADWIGO_API_URL` and the read token, from
+ * `JADWIGO_BANK_READ_TOKEN` (a local run) or the SSM SecureString `BANK_READ_TOKEN_PARAM` names,
+ * read once per cold start. Undefined when the URL is unset, and the host draws from the fixture.
+ */
+export async function bankConfig(read: ReadParameter = readSsm): Promise<BankConfig | undefined> {
+  const base = setting("JADWIGO_API_URL");
+  if (base === undefined) return undefined;
+  let token = setting("JADWIGO_BANK_READ_TOKEN");
+  if (token === undefined) {
+    const name = setting("BANK_READ_TOKEN_PARAM");
+    if (!name) throw new Error("JADWIGO_API_URL is set: set BANK_READ_TOKEN_PARAM too");
+    token = (await read(name))?.trim() || undefined;
+    if (token === undefined) throw new Error(`the SSM parameter ${name} holds no value`);
+  }
+  return { base, token };
+}
+
 /**
  * A local jadwigo database, the rule `make`'s LOCAL_DB_GATE holds: postgres(ql)://, an optional
  * login, localhost or 127.0.0.1, an optional port, and a database named jadwigo….
