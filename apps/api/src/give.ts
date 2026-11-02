@@ -119,7 +119,7 @@ export async function publishLesson(
   if (give.learner_id !== undefined && (await store.findLearnerPod(give.learner_id)) !== pod)
     throw new ApiError(ErrorType.enum.NotFound, "no such learner");
 
-  const turns: RunEvent[][] = [];
+  const turns: (readonly RunEvent[])[] = [];
   for (const run of await store.listRuns(pod, give.conversation_id))
     turns.push(await store.listRunEvents(pod, run.id, 0));
   const revision = checkedRevision(inWriteOrder(turns));
