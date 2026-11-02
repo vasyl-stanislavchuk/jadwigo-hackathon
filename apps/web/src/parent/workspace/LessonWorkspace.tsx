@@ -212,9 +212,10 @@ export function LessonWorkspace({
         <LessonFooter
           language={language}
           status={footerStatus(phase, words, summary.steps, t)}
-          // Giving the lesson comes with dl-z5ja.108.1.1; until then the primary stays quiet.
-          ready={false}
+          // Given once its latest check passed (dl-z5ja.108.1.1); "Pokaż {imię}" comes later.
+          ready={lesson.ready}
           child={child}
+          lesson={lesson.shown}
           onSave={() => navigate(lessonsPath({ lang: pageLang() }))}
           onGive={() => {}}
         />
