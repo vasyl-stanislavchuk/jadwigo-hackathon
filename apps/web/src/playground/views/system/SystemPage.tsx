@@ -103,7 +103,7 @@ export const MENU: readonly MenuEntry[] = [
     items: [sub("Six zones", "stage"), page("Six states", subId("The stage in six states"))],
   },
   page("App pages", "app-pages"),
-  page("Adult overlays", "adult-overlays"),
+  page("Adult kit", "adult-overlays"),
   page("Adult kit: display", "adult-kit-b"),
   { heading: "Words" },
   page("Interface words", "lines"),
@@ -639,8 +639,8 @@ export function SystemPage(): JSX.Element {
 
             <Section
               id="adult-overlays"
-              title="Adult overlays"
-              lead="The parent app's overlays and menus (dl-uukj.47.67.2), in the adult audience at the parent's density: tooltip, dropdown and context menu, dialog and alert dialog, popover, sheet, the three toasts, a key cap, and a disabled action that says why."
+              title="Adult kit"
+              lead="The parent app's overlays, menus and form controls (dl-uukj.47.67.2, .3), in the adult audience at the parent's density: tooltip, dropdown and context menu, dialog and alert dialog, popover, sheet, the three toasts, a key cap, a disabled action that says why, then field, textarea, code, checkbox, radio, radio cards, switch, select, the Dla combobox, segmented and rating toggles, and underlined tabs."
               app
             >
               <AdultKitA />
