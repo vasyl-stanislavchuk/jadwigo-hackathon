@@ -120,8 +120,12 @@ function engine(server: ViteDevServer, m: Modules) {
 
   /** A script per run, so every turn of the dev page plays the same way from its start. */
   const scripts = new Map<string, ScriptedMuse>();
-  /** The pace each run was sent with (`?pace=`), read by the model's think time. */
+  /**
+   * The pace each conversation was sent with (`?pace=`), so 2 pages at different paces never
+   * pace each other's turns: a run's pace is its conversation's.
+   */
   const paces = new Map<string, Pace>();
+  const conversations = new Map<string, string>();
   const muse: MuseClient = {
     async respond(request: MuseRequest): Promise<MuseResponse> {
       let scripted = scripts.get(request.run_id);
@@ -129,7 +133,10 @@ function engine(server: ViteDevServer, m: Modules) {
         scripted = new m.engine.ScriptedMuse(turnScript());
         scripts.set(request.run_id, scripted);
       }
-      const think = paces.get(request.run_id) === "slow" ? SLOW_THINK_MS : THINK_MS;
+      const pace = await paceOfRun(request.run_id);
+      // `stall`: the step has taken the parent's words into the log; the model never answers.
+      if (pace === "stall") return new Promise<MuseResponse>(() => {});
+      const think = pace === "slow" ? SLOW_THINK_MS : THINK_MS;
       await new Promise((resolve) => setTimeout(resolve, think));
       return scripted.respond(request);
     },
@@ -148,25 +155,54 @@ function engine(server: ViteDevServer, m: Modules) {
     return appended;
   };
 
-  const now = () => new Date();
+  /** A run's pace: its conversation's, looked up once. */
+  async function paceOfRun(run: string): Promise<Pace | null> {
+    let conversation = conversations.get(run);
+    if (conversation === undefined) {
+      const pod = await store.findRunPod(RunId.parse(run));
+      if (!pod) return null;
+      conversation = (await store.getRun(pod, RunId.parse(run))).conversation_id ?? "";
+      conversations.set(run, conversation);
+    }
+    return paces.get(conversation) ?? null;
+  }
+
+  /**
+   * The queue, paced: a stalled conversation's steps go to a queue of their own, which only its
+   * own drain reads; the step being drained is noted, so a failing conversation's runs on a clock
+   * past their max deadline and the engine ends them failed with `RunTimedOut`. The dev drain
+   * takes 1 step a read.
+   */
+  const stalled = new InMemoryRunQueue(() => new Date());
+  const queue = new InMemoryRunQueue(() => new Date());
+  const enqueue = queue.send.bind(queue);
+  const take = queue.read.bind(queue);
+  let failing = false;
+  queue.send = async (message, delay_s) =>
+    (await paceOfRun(message.run_id)) === "stall"
+      ? stalled.send(message, delay_s)
+      : enqueue(message, delay_s);
+  queue.read = async (vt_s, qty) => {
+    const read = await take(vt_s, qty);
+    const first = read[0];
+    failing = first !== undefined && (await paceOfRun(first.message.run_id)) === "fail";
+    return read;
+  };
+  const now = () => new Date(Date.now() + (failing ? PAST_MAX_MS : 0));
   const deps: EngineDeps = {
     store,
     muse,
     // The learner verbs read the dev page's own made-up pod (dl-z5ja.25).
     verbs: createVerbs({ bank: fixtureBank(), learners: store, now }),
-    queue: new InMemoryRunQueue(now),
+    queue,
     now,
   };
   const member = store.createAccount(m.contracts.Uuid.parse(crypto.randomUUID()), "pl");
   let draining: Promise<unknown> = Promise.resolve();
-  /**
-   * One drain at a time; a message mid-drain is picked up by the drain running. `fail` drains on a
-   * clock past the turn's max deadline, so the engine itself ends it failed with `RunTimedOut`.
-   */
-  const kick = (pace: Pace | null) => {
-    const late = () => new Date(Date.now() + PAST_MAX_MS);
+  /** One drain at a time; a message mid-drain is picked up by the drain running. */
+  const kick = () => {
     draining = draining
-      .then(() => drain(pace === "fail" ? { ...deps, now: late } : deps))
+      .then(() => drain(deps))
       .catch((e: unknown) => server.config.logger.error(`[${ENGINE_PLUGIN}] ${String(e)}`));
   };
 
@@ -174,6 +210,8 @@ function engine(server: ViteDevServer, m: Modules) {
     async send(body: SendBody, pace: Pace | null = null): Promise<SendAnswer> {
       const { pod, account } = await member;
       const conversation_id = ConversationId.parse(body.conversation_id);
+      if (pace === null) paces.delete(conversation_id);
+      else paces.set(conversation_id, pace);
       await store.createConversation(pod, {
         id: conversation_id,
         created_by: account,
@@ -201,10 +239,16 @@ function engine(server: ViteDevServer, m: Modules) {
                 }
               : { event_id: body.event_id, kind: "cancel", payload: {} },
       });
-      if (pace !== null) paces.set(run.id, pace);
-      // After the answer: the page subscribes, then fetches after its cursor. `stall` drains
-      // nothing, so the log stops at the parent's message.
-      if (pace !== "stall") setTimeout(() => kick(pace), 0);
+      // After the answer: the page subscribes, then fetches after its cursor. A `stall` step logs
+      // the parent's message and then waits on a model that never answers, on a drain and a queue
+      // of its own, so it never holds up another turn's drain, even when it is delivered again.
+      if (pace === "stall") {
+        setTimeout(() => {
+          drain({ ...deps, queue: stalled }).catch((e: unknown) =>
+            server.config.logger.error(`[${ENGINE_PLUGIN}] ${String(e)}`),
+          );
+        }, 0);
+      } else setTimeout(kick, 0);
       return { run };
     },
     async runs(conversation: string): Promise<RunsAnswer> {

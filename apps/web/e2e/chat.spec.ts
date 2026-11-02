@@ -29,14 +29,15 @@ test("1440: one scripted turn, the message in the chat, the lesson beside it", a
 
   // Side by side on a laptop: the chat's right edge before the lesson's left, their tops level.
   const left = await chat.boundingBox();
-  const right = await lesson.boundingBox();
+  // The column, not the pane inside it, which carries the same name.
+  const right = await page.locator("[data-lesson-column]").boundingBox();
   expect(left && right && left.x + left.width <= right.x).toBe(true);
   expect(left && right && Math.abs(left.y - right.y) < 2).toBe(true);
 
   // A reload draws the same conversation again from the log, and sends nothing twice.
   await page.reload();
   await expect(chat.getByText("Lekcja jest gotowa po prawej.")).toHaveCount(1);
-  await expect(chat.getByText(FIRST_WORDS)).toHaveCount(1);
+  await expect(chat.getByText(FIRST_WORDS, { exact: true })).toHaveCount(1);
   await expect(lesson.locator("[data-revision]")).toBeVisible();
 });
 
