@@ -58,6 +58,7 @@ tracker. A workstream owns a scope on it: its epics, and the label every open is
 | `packages/lesson-import` | compiles a playground lesson file into lesson questions and a published version (`dl-e8ov.2.32.5`) | contracts, core, store | platform |
 | `packages/bank` | bank code: read, search, import. Never questions | contracts | question-bank |
 | `packages/jadwigo-ai` | the AI engine: runs, steps, the Muse client, the lesson verbs as function tools, the run queue (`dl-z5ja`) | contracts, core, store, lesson-import | ai-workflows |
+| `packages/analytics` | PostHog for the site and the app: the event catalogue, the init config, consent, `before_send` (`dl-376c8`) | config | marketing |
 | `packages/api-client` | the typed client web, cli and MCP share | contracts | platform |
 | `packages/lesson-kit` | interaction families and lesson blocks | contracts, core, ui, copy | learner-experience |
 | `packages/ui` | tokens, primitives, parts | copy | learner-experience |
