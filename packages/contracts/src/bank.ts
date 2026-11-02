@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { QuestionType } from "./families/index.ts";
 import { Language } from "./records.ts";
 
 /**
@@ -227,6 +228,9 @@ const QuestionVariant = z.object({
   key: FamilyJson,
   help: FamilyJson.optional(),
   say: z.string().optional(),
+  question_type: QuestionType.describe(
+    "The question type a lesson step names; its family is the variant's family",
+  ).optional(),
 });
 
 const BodyPicture = z.object({
@@ -255,6 +259,9 @@ export const QuestionBody = z
     pl: QuestionVariant.optional(),
     en: QuestionVariant.optional(),
     problem_type: z.string().optional(),
+    question_type: QuestionType.describe(
+      "The question type of every variant that names none (an Alfik task's lettered_choice)",
+    ).optional(),
     credit: z.object({
       source: z.string().min(1),
       url: z.url().optional(),

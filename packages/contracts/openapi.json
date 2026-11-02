@@ -9071,6 +9071,10 @@
               },
               "say": {
                 "type": "string"
+              },
+              "question_type": {
+                "description": "The question type a lesson step names; its family is the variant's family",
+                "$ref": "#/components/schemas/QuestionType"
               }
             },
             "required": [
@@ -9110,6 +9114,10 @@
               },
               "say": {
                 "type": "string"
+              },
+              "question_type": {
+                "description": "The question type a lesson step names; its family is the variant's family",
+                "$ref": "#/components/schemas/QuestionType"
               }
             },
             "required": [
@@ -9121,6 +9129,10 @@
           },
           "problem_type": {
             "type": "string"
+          },
+          "question_type": {
+            "description": "The question type of every variant that names none (an Alfik task's lettered_choice)",
+            "$ref": "#/components/schemas/QuestionType"
           },
           "credit": {
             "type": "object",
