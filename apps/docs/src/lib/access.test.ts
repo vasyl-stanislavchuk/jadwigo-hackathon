@@ -9,9 +9,10 @@ describe("routesTaking", () => {
     expect(total).toBe(Object.keys(ROUTES).length);
   });
 
-  it("names the question search and the question body as the bank routes", () => {
+  it("names the question search, the question set and the question body as the bank routes", () => {
     expect(routesTaking("bank").map((row) => row.path)).toEqual([
       ROUTES.questionSearches.path,
+      ROUTES.questionSet.path,
       ROUTES.questionBody.path,
     ]);
   });

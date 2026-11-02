@@ -41,7 +41,13 @@ describe("verifyToken", () => {
     expect(verify(signToken({ sub, email: "a@example.com" }))).toEqual({
       sub,
       email: "a@example.com",
+      client_id: null,
     });
+  });
+
+  it("keeps the client_id an AI app's OAuth token carries (dl-1u6fn.17)", () => {
+    const sub = randomUUID();
+    expect(verify(signToken({ sub, client_id: "client-1" }))?.client_id).toBe("client-1");
   });
 
   it.each([
@@ -217,8 +223,13 @@ describe("the Lambda's authentication", () => {
     expect(gatewayClaims(event({ sub, email: "a@example.com" }))).toEqual({
       sub,
       email: "a@example.com",
+      client_id: null,
     });
-    expect(await lambdaAuth(signedOut)(request(), event({ sub }))).toEqual({ sub, email: null });
+    expect(await lambdaAuth(signedOut)(request(), event({ sub }))).toEqual({
+      sub,
+      email: null,
+      client_id: null,
+    });
   });
 
   it("accepts no bearer token at all without an authorizer or AUTH_JWKS_URL, the test key's included", async () => {

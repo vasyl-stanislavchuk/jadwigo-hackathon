@@ -22,7 +22,7 @@
     "vitest": "runs this package's unit test with the root vitest.config.ts"
   },
   "devDependencies": {
-    "@inlang/paraglide-js": "2.29.1",
+    "@inlang/paraglide-js": "2.29.2",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

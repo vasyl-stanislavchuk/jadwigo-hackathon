@@ -237,14 +237,14 @@ API_SESSION = $(SUPABASE_LINK); \
 AS_API = env -i PATH="$$PATH" HOME="$$HOME" USER="$$USER" TMPDIR="$${TMPDIR:-/tmp}" PGPASSWORD="$$API_PASSWORD" DATABASE_URL="$$url"
 
 ## db-reset: rebuild the local jadwigo database from nothing (the shim, every migration, the seed).
-## ENV=dev resets jadwigo-dev instead (supabase db reset --linked, which asks first). Never prod.
+## ENV=dev resets jadwigo-dev instead (supabase db reset --remote, which asks first). Never prod.
 db-reset:
 ifeq ($(ENV),)
 	@$(LOCAL_DB_GATE)
 	$(MAKE) migrate db-seed DATABASE_URL=$(LOCAL_DATABASE_URL)
 else
 	@if [ "$(ENV)" != dev ]; then echo "db-reset: only ENV=dev; prod is never reset"; exit 1; fi
-	@$(SUPABASE_LINK); supabase db reset --linked
+	@$(SUPABASE_LINK); supabase db reset --remote
 endif
 
 ## db-seed: the featured lessons, by lesson import's seed script (dl-e8ov.2.32.5), into DATABASE_URL.
@@ -378,13 +378,13 @@ release:
 db-push:
 	@$(PROD_GATE)
 	@$(SUPABASE_LINK); \
-	supabase db push --linked --dry-run || exit 1; \
+	supabase db push --remote --dry-run || exit 1; \
 	if [ -n "$(DRY_RUN)" ]; then exit 0; fi; \
 	answer=; if [ "$(ENV)" = dev ] && [ "$(origin CONFIRM)" = "command line" ]; then answer="$(CONFIRM)"; fi; \
 	if [ "$(ENV)" = prod ] && [ "$${JW_RELEASE_CONFIRMED:-}" = prod ]; then answer=prod; fi; \
 	if [ -z "$$answer" ]; then printf 'Push these to jadwigo-%s? Type %s to push: ' "$(ENV)" "$(ENV)"; read answer; fi; \
 	if [ "$$answer" != "$(ENV)" ]; then echo "db-push: nothing pushed"; exit 1; fi; \
-	supabase db push --linked
+	supabase db push --remote --yes
 
 ## db-role ENV=dev|prod: give jadwigo_api (made by the migration, nologin) a login and its password
 ## (JADWIGO_API_DB_PASSWORD_<ENV>, or the keychain item jadwigo-api-db-password-<env>). Run it after the first db-push, and after a rotation.

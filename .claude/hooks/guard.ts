@@ -456,7 +456,7 @@ function bashDenial(
       return "no Docker in jadwigo, locally or in CI. Postgres comes from Postgres.app, moto_server from pip.";
     }
     if (prog === "supabase" && args[0] === "start") {
-      return "supabase start runs Docker. Apply migrations to Postgres.app with `supabase migration up --db-url` (dl-5ssh.34.34).";
+      return "supabase start runs Docker. Apply migrations to Postgres.app with `make migrate` (psql, dl-5ssh.34.34).";
     }
 
     // 4. Git: main is reached through a PR, history is not rewritten, staging is explicit.

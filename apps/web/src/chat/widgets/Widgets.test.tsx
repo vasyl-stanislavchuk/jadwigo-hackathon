@@ -46,7 +46,11 @@ function tool(seq: number, change: Partial<ToolItem>): ToolItem {
   };
 }
 
-function draw(tools: ToolItem[], language: "pl" | "en" = "pl") {
+function draw(
+  tools: ToolItem[],
+  language: "pl" | "en" = "pl",
+  onSend: (text: string) => void = () => {},
+) {
   const view: RunView = {
     chat: tools,
     lesson: null,
@@ -68,7 +72,7 @@ function draw(tools: ToolItem[], language: "pl" | "en" = "pl") {
       restoring={false}
       stopping={false}
       sendFailed={false}
-      onSend={() => {}}
+      onSend={onSend}
       onStop={() => {}}
     />,
   );
@@ -237,12 +241,133 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
     expect(document.querySelectorAll("[data-card='plain']")).toHaveLength(2);
   });
 
-  it("draws lesson_ideas as the plain card", () => {
-    const data = { learner: { id: SKILLS.learner.id, first_name: "Ola" }, ideas: [] };
-    draw([tool(1, { verb: "lesson_ideas", view: { kind: "lesson_ideas", data } })]);
-    expect(document.querySelector("[data-widget]")).toBeNull();
-    expect(document.querySelector("[data-card='plain']")?.getAttribute("data-tool")).toBe(
-      "lesson_ideas",
+  it("draws lesson_ideas as its list, why and skill count, and asks for one in the parent's words (dl-z5ja.129)", () => {
+    const sent: string[] = [];
+    const idea = (id: string, list: string, why: string, skills: string[]) => ({
+      id,
+      list,
+      why,
+      skill_codes: skills,
+      goal_ids: [],
+      citations: [{ kind: "skill", skill_code: skills[0] }],
+    });
+    const data = {
+      learner: { id: SKILLS.learner.id, first_name: "Ola" },
+      ideas: [
+        idea("i1", "reteach", "needs_attention", ["math.add.within-10", "math.add.within-20"]),
+        idea("i2", "new", "prerequisites_met", ["math.mul.equal-groups"]),
+      ],
+    };
+    draw([tool(1, { verb: "lesson_ideas", view: { kind: "lesson_ideas", data } })], "pl", (t) =>
+      sent.push(t),
     );
+    const widget = screen.getByRole("region", { name: "Szukanie pomysłów na następną lekcję" });
+    expect(widget.closest("details")).toBeNull();
+    const rows = [...widget.querySelectorAll("[data-idea]")];
+    expect(rows.map((r) => r.getAttribute("data-idea"))).toEqual(["i1", "i2"]);
+    expect(rows[0]?.textContent).toContain("Do nauczenia jeszcze raz");
+    expect(rows[0]?.textContent).toContain("Ostatnio sprawiało trudność");
+    expect(rows[0]?.textContent).toContain("2 umiejętności");
+    expect(rows[1]?.textContent).toContain("Coś nowego");
+    expect(rows[1]?.textContent).toContain("1 umiejętność");
+    // No skill code reaches the parent.
+    expect(widget.textContent).not.toMatch(/math\./);
+    within(rows[1] as HTMLElement)
+      .getByRole("button", { name: "Ułóż tę lekcję" })
+      .click();
+    expect(sent).toEqual(["Ułóż lekcję z pomysłu 2: Coś nowego."]);
+  });
+
+  it("says when there are no ideas, and falls back to the plain card on a malformed view", () => {
+    const learner = { id: SKILLS.learner.id, first_name: "Ola" };
+    draw([
+      tool(1, {
+        verb: "lesson_ideas",
+        view: { kind: "lesson_ideas", data: { learner, ideas: [] } },
+      }),
+      tool(2, {
+        verb: "lesson_ideas",
+        view: { kind: "lesson_ideas", data: { learner, ideas: 3 } },
+      }),
+    ]);
+    const widgets = screen.getAllByRole("region", { name: "Szukanie pomysłów na następną lekcję" });
+    expect(widgets).toHaveLength(1);
+    expect(widgets[0]?.textContent).toContain("Na razie nie ma pomysłów na następną lekcję.");
+    expect(
+      [...document.querySelectorAll("[data-card='plain']")].map((c) => c.getAttribute("data-tool")),
+    ).toContain("lesson_ideas");
+  });
+
+  it("draws learner_mistakes in the parent's words, with the child's answers as text (dl-z5ja.129)", () => {
+    const attempt = "att_00000000000000000000000001";
+    const data = {
+      learner: { id: SKILLS.learner.id, first_name: "Ola" },
+      mistakes: [
+        {
+          mistake_class: "off_by_small",
+          times: 3,
+          citations: [{ kind: "attempt", attempt_id: attempt }],
+        },
+        {
+          mistake_class: "made_up_class",
+          times: 1,
+          citations: [{ kind: "attempt", attempt_id: attempt }],
+        },
+      ],
+      questions: [
+        {
+          attempt_id: attempt,
+          seq: 2,
+          say: "Ile to jest 7 + 5?",
+          mistake_classes: ["off_by_small"],
+          tries: 2,
+          skipped: false,
+          answers: ["11", "<b>13</b>"],
+        },
+        {
+          attempt_id: attempt,
+          seq: 4,
+          say: "Ile to jest 8 + 6?",
+          mistake_classes: [],
+          tries: 0,
+          skipped: true,
+          answers: [],
+        },
+      ],
+    };
+    draw([tool(1, { verb: "learner_mistakes", view: { kind: "learner_mistakes", data } })]);
+    const widget = screen.getByRole("region", { name: "Czytanie, co sprawiło dziecku trudność" });
+    const classes = [...widget.querySelectorAll("[data-mistake]")].map((m) => m.textContent);
+    expect(classes).toEqual([
+      "Bardzo blisko: różnica 1 lub 2" + "3 razy",
+      "Inna odpowiedź niż ta, której szukaliśmy" + "1 raz",
+    ]);
+    const missed = [...widget.querySelectorAll("[data-missed]")];
+    expect(missed[0]?.querySelector("[data-answers]")?.textContent).toBe(
+      "Odpowiedzi dziecka: 11 · <b>13</b>",
+    );
+    // The child's words are text: no element is made from them.
+    expect(missed[0]?.querySelector("b")).toBeNull();
+    expect(missed[1]?.querySelector("[data-answers]")?.textContent).toBe("Pominięte");
+    expect(widget.textContent).not.toMatch(/off_by_small|made_up_class/);
+  });
+
+  it("says when nothing was hard, and falls back to the plain card on a malformed mistakes view", () => {
+    const learner = { id: SKILLS.learner.id, first_name: "Ola" };
+    draw([
+      tool(1, {
+        verb: "learner_mistakes",
+        view: { kind: "learner_mistakes", data: { learner, mistakes: [], questions: [] } },
+      }),
+      tool(2, {
+        verb: "learner_mistakes",
+        view: { kind: "learner_mistakes", data: { learner, mistakes: "many" } },
+      }),
+    ]);
+    const widgets = screen.getAllByRole("region", {
+      name: "Czytanie, co sprawiło dziecku trudność",
+    });
+    expect(widgets).toHaveLength(1);
+    expect(widgets[0]?.textContent).toContain("Ostatnio nic nie sprawiało trudności.");
   });
 });

@@ -151,11 +151,11 @@ edge)
   # The boot check: the bundle loads (in Node; Deno is the deploy's) and names its fetch handler.
   node --input-type=module -e "const m = await import('$edge_bundle'); if (typeof m.probeFetch !== 'function') process.exit(1);"
   printf 'RUNNER_DATABASE_URL=%s\n' "$RUNNER_URL" > "$out/edge.env"
-  supabase secrets set --env-file "$out/edge.env" --project-ref "$SUPABASE_REF" >/dev/null && rm -f "$out/edge.env"
+  supabase secrets set --yes --env-file "$out/edge.env" --remote="$SUPABASE_REF" >/dev/null && rm -f "$out/edge.env"
   rm -f "$out/edge.env"
-  (cd "$root" && supabase functions deploy agent-step --use-api --project-ref "$SUPABASE_REF")
+  (cd "$root" && supabase functions deploy agent-step --yes --use-api --remote="$SUPABASE_REF")
   echo "step-probe edge: agent-step deployed from $(git -C "$root" rev-parse HEAD)" >&2
-  anon=$(supabase projects api-keys --project-ref "$SUPABASE_REF" -o json | jq -r '.[] | select(.name == "anon") | .api_key')
+  anon=$(supabase projects api-keys --remote="$SUPABASE_REF" -o json | jq -r '.[] | select(.name == "anon") | .api_key')
   : > "$out/edge.lines"
   for i in 1 2; do
     api seed > "$out/seed$i.json"

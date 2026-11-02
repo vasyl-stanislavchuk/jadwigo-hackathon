@@ -6,20 +6,35 @@
  * schema in `@jadwigo/contracts` (`TOOL_VIEW_DATA`, dl-z5ja.71), the one the verb wrote it through.
  */
 
-import { type FindingLevel, type LessonCheckView, toolViewData } from "@jadwigo/contracts";
+import {
+  type BriefList,
+  type FindingLevel,
+  type LearnerMistakesView,
+  type LessonCheckView,
+  type LessonIdeasView,
+  toolViewData,
+} from "@jadwigo/contracts";
 import type { VerbName } from "@jadwigo/contracts/run";
-import { type CopyKey, copy, type Language } from "@jadwigo/copy";
+import { type CopyKey, copy, type Language, mistakeCopyKey } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
 import type { ReactElement } from "react";
 import { GoalLists } from "../../parent/learner/GoalLists.tsx";
 import { WeekStrip } from "../../parent/learner/WeekStrip.tsx";
+import { Button } from "../button.tsx";
 import { TOOL_ICON } from "../toolLine.ts";
 
 export type ToolItem = Extract<ChatItem, { kind: "tool" }>;
 
+/** What a widget may do besides drawing: ask for a lesson in the parent's words (dl-z5ja.129). */
+export interface WidgetActions {
+  /** Sends words as the parent's message. */
+  onAsk?: ((text: string) => void) | undefined;
+}
+
 interface Props<T> {
   data: T;
   language: Language;
+  actions: WidgetActions;
 }
 
 /** One verb's widget: its title, how it reads the view, and how it draws it (its icon is TOOL_ICON). */
@@ -37,7 +52,7 @@ interface Registered {
   verb: VerbName;
   title: CopyKey;
   keepVisible: boolean;
-  draw(data: unknown, language: Language): ReactElement | null;
+  draw(data: unknown, language: Language, actions: WidgetActions): ReactElement | null;
 }
 
 function register<T>(entry: WidgetEntry<T>): Registered {
@@ -46,9 +61,9 @@ function register<T>(entry: WidgetEntry<T>): Registered {
     verb: entry.verb,
     title: entry.title,
     keepVisible: entry.keepVisible ?? false,
-    draw(data, language) {
+    draw(data, language, actions) {
       const read = entry.read(data);
-      return read === null ? null : <Widget data={read} language={language} />;
+      return read === null ? null : <Widget data={read} language={language} actions={actions} />;
     },
   };
 }
@@ -81,6 +96,120 @@ function Findings({ view, language }: { view: LessonCheckView; language: Languag
               {f.step_id !== null && ` · ${say("chat_lesson_step", { step: f.step_id })}`}
               {` · ${f.text}`}
               {f.fix !== "" && <span className="text-muted-foreground block">{f.fix}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+const LIST_KEY: Readonly<Record<BriefList, CopyKey>> = {
+  reteach: "chat_ideas_list_reteach",
+  review: "chat_ideas_list_review",
+  new: "chat_ideas_list_new",
+  recheck: "chat_ideas_list_recheck",
+  school: "chat_ideas_list_school",
+};
+
+const WHY_KEY: Readonly<Record<LessonIdeasView["ideas"][number]["why"], CopyKey>> = {
+  needs_attention: "chat_ideas_why_needs_attention",
+  review_due: "chat_ideas_why_review_due",
+  prerequisites_met: "chat_ideas_why_prerequisites_met",
+  second_day_owed: "chat_ideas_why_second_day_owed",
+  school_tag: "chat_ideas_why_school_tag",
+};
+
+/**
+ * lesson_ideas (dl-z5ja.129): each idea as its list, why code put it there and how many skills,
+ * with a button that asks for that lesson in the parent's words. No skill code reaches the parent;
+ * the can-do lines come with dl-hin8.21 (lead, 2026-11-02).
+ */
+function Ideas({
+  view,
+  language,
+  actions,
+}: {
+  view: LessonIdeasView;
+  language: Language;
+  actions: WidgetActions;
+}): ReactElement {
+  const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
+    copy(language, key, vars, "adult");
+  if (view.ideas.length === 0) return <p>{say("chat_ideas_none")}</p>;
+  return (
+    <ol className="flex flex-col gap-2">
+      {view.ideas.map((idea) => {
+        const n = Number(idea.id.slice(1));
+        const list = say(LIST_KEY[idea.list]);
+        return (
+          <li
+            key={idea.id}
+            data-idea={idea.id}
+            className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-jw-small border-jw border-jw-line px-2 py-1.5"
+          >
+            <span className="font-bold text-jw-ink">{list}</span>
+            <span className="text-jw-ink-soft">{say(WHY_KEY[idea.why])}</span>
+            <span className="text-jw-ink-soft">
+              {say("chat_ideas_skills", { n: idea.skill_codes.length })}
+            </span>
+            {actions.onAsk !== undefined && (
+              <Button
+                variant="outline"
+                size="xs"
+                className="ml-auto"
+                onClick={() => actions.onAsk?.(say("chat_ideas_ask_message", { n, list }))}
+                data-ask-idea={idea.id}
+              >
+                {say("chat_ideas_ask")}
+              </Button>
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/**
+ * learner_mistakes (dl-z5ja.129): each mistake class in the parent's words and how often, then the
+ * questions behind them with the child's own answers as text, never markup.
+ */
+function Mistakes({ view, language }: { view: LearnerMistakesView; language: Language }) {
+  const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
+    copy(language, key, vars, "adult");
+  if (view.mistakes.length === 0 && view.questions.length === 0)
+    return <p>{say("chat_mistakes_none")}</p>;
+  const words = (mistake: string) => say(mistakeCopyKey(mistake) ?? "parent_mistake_other");
+  return (
+    <div className="flex flex-col gap-2">
+      {view.mistakes.length > 0 && (
+        <ul className="flex flex-col gap-1">
+          {view.mistakes.map((m) => (
+            <li key={m.mistake_class} data-mistake={m.mistake_class} className="flex gap-2">
+              <span className="text-jw-ink">{words(m.mistake_class)}</span>
+              <span className="text-jw-ink-soft">{say("chat_mistakes_times", { n: m.times })}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {view.questions.length > 0 && (
+        <ul className="flex flex-col gap-1.5">
+          {view.questions.map((q) => (
+            <li
+              key={`${q.attempt_id}-${q.seq}`}
+              data-missed={`${q.attempt_id}-${q.seq}`}
+              className="flex flex-col rounded-jw-small border-jw border-jw-line px-2 py-1"
+            >
+              <span className="text-jw-ink">{q.say}</span>
+              {q.mistake_classes.length > 0 && (
+                <span className="text-jw-ink-soft">{q.mistake_classes.map(words).join(" · ")}</span>
+              )}
+              <span className="text-jw-ink-soft" data-answers>
+                {q.skipped
+                  ? say("parent_outcome_skipped")
+                  : `${say("chat_mistakes_answers")}: ${q.answers.join(" · ")}`}
+              </span>
             </li>
           ))}
         </ul>
@@ -130,8 +259,8 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
       ),
     keepVisible: true,
   }),
-  // The learner verbs (dl-z5ja.25) draw with the parent's learner page's own parts; the others
-  // (learner_mistakes, curriculum_topics, lesson_ideas) get the plain card for now.
+  // The learner verbs (dl-z5ja.25) draw with the parent's learner page's own parts and their own
+  // widgets (dl-z5ja.129); curriculum_topics gets the plain card for now.
   learner_skills: register({
     verb: "learner_skills",
     title: "chat_tool_learner_skills",
@@ -158,6 +287,22 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
     ),
     keepVisible: true,
   }),
+  lesson_ideas: register({
+    verb: "lesson_ideas",
+    title: "chat_tool_lesson_ideas",
+    read: (data) => toolViewData("lesson_ideas", data),
+    Widget: ({ data, language, actions }) => (
+      <Ideas view={data} language={language} actions={actions} />
+    ),
+    keepVisible: true,
+  }),
+  learner_mistakes: register({
+    verb: "learner_mistakes",
+    title: "chat_tool_learner_mistakes",
+    read: (data) => toolViewData("learner_mistakes", data),
+    Widget: ({ data, language }) => <Mistakes view={data} language={language} />,
+    keepVisible: true,
+  }),
 };
 
 /** What a finished tool line shows: its widget, the plain card, or nothing. */
@@ -171,11 +316,15 @@ export type ToolResult =
  * for any other done call with a view; nothing for a call still running, failed or turned down, or
  * one with no view. A view whose kind names another verb never borrows that verb's widget.
  */
-export function toolResult(tool: ToolItem, language: Language): ToolResult {
+export function toolResult(
+  tool: ToolItem,
+  language: Language,
+  actions: WidgetActions = {},
+): ToolResult {
   if (tool.state !== "done") return null;
   const entry = REGISTRY[tool.verb];
   if (entry !== undefined && tool.view !== undefined && tool.view.kind === tool.verb) {
-    const drawn = entry.draw(tool.view.data, language);
+    const drawn = entry.draw(tool.view.data, language, actions);
     if (drawn !== null) {
       const Icon = TOOL_ICON[tool.verb];
       return {

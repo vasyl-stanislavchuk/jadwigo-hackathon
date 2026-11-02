@@ -62,6 +62,12 @@ variable "schedule_enabled" {
   default     = false
 }
 
+variable "read_params" {
+  description = "ARNs of SSM parameters it reads besides its own, such as the bank's read token (dl-1u6fn.15)"
+  type        = list(string)
+  default     = []
+}
+
 variable "uploads_bucket_name" {
   description = "The uploads bucket whose pods/*/attachments/* the step host reads a message's photos from (dl-z5ja.11.2); blank for the probe, which reads none"
   type        = string

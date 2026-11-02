@@ -51,11 +51,27 @@ const page = {
     <p class="or">{words.or}</p>
     <p class="providers">
       {providers.map((p) => (
-        <a class="provider" href={withLang(providerUrl(p), lang)}><span set:html={icons[p]} />{words[p]}</a>
+        <a class="provider" data-provider={p} href={withLang(providerUrl(p), lang)}><span set:html={icons[p]} />{words[p]}</a>
       ))}
     </p>
   </section>
 </Base>
+
+<script>
+  import { track } from "@jadwigo/analytics";
+  import { pageLocale } from "../lib/page-locale.ts";
+
+  document.querySelector(".email")?.addEventListener("submit", () =>
+    track("email_sign_in_submitted", { locale: pageLocale() }),
+  );
+  for (const provider of document.querySelectorAll<HTMLElement>(".provider")) {
+    provider.addEventListener("click", () => {
+      const name = provider.dataset["provider"];
+      if (name === "google" || name === "facebook")
+        track("provider_sign_in_selected", { locale: pageLocale(), provider: name });
+    });
+  }
+</script>
 
 <style>
   .sign-in { max-width: 26rem; padding-top: clamp(2.5rem, 7vw, 4.5rem); }

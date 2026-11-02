@@ -9,6 +9,7 @@ import { ApiError } from "@jadwigo/api-client";
 import { ErrorType, type EventId } from "@jadwigo/contracts";
 import type { ConversationId, MessageContext, Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useContextClosed } from "./contextHold.ts";
 import {
   type ConversationState,
   conversationReducer,
@@ -142,6 +143,9 @@ export interface Conversation {
   sendNow(index: number): void;
   /** Takes one waiting row out (to remove it, or back to the composer), answering its words. */
   takeNext(index: number): string | null;
+  /** The parent closed the context chip: the next messages go with no context (dl-uukj.47.36). */
+  contextClosed: boolean;
+  closeContext(): void;
   /** "Spróbuj ponownie" after a failed send: the exact words that failed, sent the same way. */
   resend(): void;
   /**
@@ -149,6 +153,15 @@ export interface Conversation {
    * back again; an open turn is cancelled first, so no 2 runs race, and then its words go again.
    */
   retry(): void;
+}
+
+/** The context the parent's last message went with, or undefined (dl-uukj.47.36). */
+function lastContext(state: ConversationState): MessageContext | undefined {
+  let last: MessageContext | undefined;
+  for (const turn of turnsOf(state))
+    for (const item of turn.view.chat)
+      if (item.kind === "message" && item.from === "parent") last = item.context;
+  return last;
 }
 
 /** The words that opened a turn, or null when it holds none. */
@@ -179,6 +192,9 @@ export function useConversation(
   const latest = useRef(state);
   latest.current = state;
   const subscribed = useRef(new Map<RunId, () => void>());
+  const chip = useContextClosed(conversation);
+  const closedRef = useRef(chip.closed);
+  closedRef.current = chip.closed;
   const queue = useNextQueue(conversation, owner === false ? undefined : owner);
   /**
    * The last send that failed, of any kind (a message, a queued row, a steer, Stop, a retry's
@@ -273,7 +289,10 @@ export function useConversation(
    * a failure is kept, with whether the words came from the queue, for "Spróbuj ponownie".
    */
   const post = useCallback(
-    (text: string, context?: MessageContext, queued = false): Promise<boolean> => {
+    (text: string, given?: MessageContext, queued = false): Promise<boolean> => {
+      // The page goes on with the context the conversation already has, until the parent closes
+      // the chip; then nothing more goes with any message (dl-uukj.47.36).
+      const context = closedRef.current ? undefined : (given ?? lastContext(latest.current));
       const event_id = newEventId();
       dispatch({ type: "pending", pending: { text, event_id, at: Date.now() } });
       return transport
@@ -301,7 +320,7 @@ export function useConversation(
               const index = latestQueue.current.indexOf(text);
               if (index >= 0) redo.current?.sendNow(index);
             }, limitOf(e));
-          } else fail(() => void postRef.current?.(text, context), limitOf(e));
+          } else fail(() => void postRef.current?.(text, given), limitOf(e));
           return false;
         });
     },
@@ -493,6 +512,8 @@ export function useConversation(
     next: queue.items,
     sendNow,
     takeNext: queue.take,
+    contextClosed: chip.closed,
+    closeContext: chip.close,
     resend,
   };
 }

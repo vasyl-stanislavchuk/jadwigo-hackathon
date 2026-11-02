@@ -30,9 +30,10 @@ import {
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
 import { cn } from "@jadwigo/ui";
-import { ArrowUpIcon, CheckIcon, EyeIcon, LoaderCircleIcon } from "lucide-react";
+import { ArrowUpIcon, CheckIcon, EyeIcon, LoaderCircleIcon, XIcon } from "lucide-react";
 import { type FormEvent, type ReactElement, useEffect, useRef, useState } from "react";
 import { Button } from "./button.tsx";
+import { type ChooseAnswers, ChooseForm, recapOf } from "./ChooseForm.tsx";
 import "./chat.css";
 import { isOpen, type SendLimit, type Turn } from "./conversation.ts";
 import { JadwigoAiMark } from "./JadwigoAiMark.tsx";
@@ -54,6 +55,7 @@ const STATUS_KEY: Record<RunStatus, CopyKey> = {
 const STARTERS: readonly CopyKey[] = ["chat_starter_1", "chat_starter_2", "chat_starter_3"];
 
 type ToolItem = Extract<ChatItem, { kind: "tool" }>;
+type ApprovalItem = Extract<ChatItem, { kind: "approval" }>;
 
 /** A turn's rows with each stretch of tool lines gathered into one group. */
 type Row = { kind: "tools"; seq: number; tools: ToolItem[] } | Exclude<ChatItem, ToolItem>;
@@ -131,7 +133,7 @@ function ToolLine({
   const sentence = sentenceOf(tool.verb, tool.input, context);
   const words = copy(language, sentence.key, sentence.vars, "adult");
   const Icon = TOOL_ICON[tool.verb];
-  const result = toolResult(tool, language);
+  const result = toolResult(tool, language, context);
   const failed = tool.state === "failed";
   return (
     <li data-tool={tool.verb} data-state={tool.state}>
@@ -191,7 +193,7 @@ function ToolGroup({
     "adult",
   );
   const shown = tools.flatMap((t) => {
-    const result = toolResult(t, language);
+    const result = toolResult(t, language, context);
     return result?.kind === "widget" && result.keepVisible
       ? [{ call_id: t.call_id, element: result.element }]
       : [];
@@ -347,10 +349,20 @@ function RowView({
           : row.decision === "approved"
             ? "chat_approval_approved"
             : "chat_approval_rejected";
+      // A choose form's answers stay in the thread as one line each (dl-uukj.47.35).
+      const answers =
+        context.chosen?.(row.call_id) ?? (row.decision === null ? undefined : row.answers);
       return (
-        <p data-row="approval" className="text-sm">
-          {copy(language, key, { summary: row.summary }, "adult")}
-        </p>
+        <div data-row="approval" className="flex flex-col gap-0.5 text-sm">
+          <p>{copy(language, key, { summary: row.summary }, "adult")}</p>
+          {row.choose !== undefined &&
+            answers !== undefined &&
+            recapOf(row.choose, answers, language).map((line) => (
+              <p key={line} className="text-jw-ink-soft" data-choose-recap>
+                {line}
+              </p>
+            ))}
+        </div>
       );
     }
     case "error":
@@ -503,6 +515,19 @@ const lessMotion = (): boolean =>
 /** Smooth unless the parent asked the system for less motion. */
 const scrollBehavior = (): ScrollBehavior => (lessMotion() ? "auto" : "smooth");
 
+/** The open turn's last approval when it asks a choose form not yet answered here, else null. */
+function openChoose(
+  turns: readonly Turn[],
+  chosen: Readonly<Record<string, ChooseAnswers>>,
+): { call_id: string; choose: NonNullable<ApprovalItem["choose"]> } | null {
+  const last = turns.at(-1);
+  if (last === undefined || !isOpen(last)) return null;
+  const approval = last.view.chat.findLast((i): i is ApprovalItem => i.kind === "approval");
+  if (approval?.choose === undefined || approval.decision !== null) return null;
+  if (chosen[approval.call_id] !== undefined) return null;
+  return { call_id: approval.call_id, choose: approval.choose };
+}
+
 /** Whether a turn draws its plan (PlanCard.tsx: 3 or more entries). */
 const hasPlan = (turn: Turn): boolean => (turn.view.plan?.length ?? 0) >= PLAN_MIN;
 
@@ -574,6 +599,15 @@ export interface ChatPaneProps {
   onSendNow?: ((index: number) => void) | undefined;
   /** Takes one waiting row out, answering its words ("Zmień" puts them back in the composer). */
   onTakeNext?: ((index: number) => string | null) | undefined;
+  /** The parent closed the context chip for this conversation: it stays closed. */
+  contextClosed?: boolean;
+  /** The chip's ×; without it the chip has none. */
+  onCloseContext?: (() => void) | undefined;
+  /**
+   * A choose form's answers, by the approval's call (dl-uukj.47.35). A stand-in for now: no route
+   * resolves an approval until dl-uukj.47.48.
+   */
+  onChoose?: ((call_id: string, answers: ChooseAnswers) => void) | undefined;
 }
 
 export function ChatPane({
@@ -597,9 +631,26 @@ export function ChatPane({
   onResend,
   onSendNow,
   onTakeNext,
+  contextClosed = false,
+  onCloseContext,
+  onChoose,
 }: ChatPaneProps): ReactElement {
-  const lineContext: LineContext = nameOf === undefined ? {} : { nameOf };
-  const context = contextLine(turns, nameOf, language);
+  /** The choose forms answered on this page, by call: their recap shows until the log has one. */
+  const [chosen, setChosen] = useState<Readonly<Record<string, ChooseAnswers>>>({});
+  const composer = useRef<HTMLTextAreaElement>(null);
+  const lineContext: LineContext = {
+    ...(nameOf === undefined ? {} : { nameOf }),
+    onAsk: (text: string) => onSend(text),
+    chosen: (call_id: string) => chosen[call_id],
+  };
+  const asking = openChoose(turns, chosen);
+  // Back to the composer once the form is answered.
+  const wasAsking = useRef(false);
+  useEffect(() => {
+    if (wasAsking.current && asking === null) composer.current?.focus();
+    wasAsking.current = asking !== null;
+  }, [asking]);
+  const context = contextClosed ? null : contextLine(turns, nameOf, language);
   const parent = variant === "parent";
   const [draft, setDraft] = useState("");
   /** The last words sent, so a send that did not reach the server can go again. */
@@ -817,62 +868,86 @@ export function ChatPane({
         >
           <EyeIcon aria-hidden className="size-3.5 shrink-0" />
           <span className="min-w-0 truncate">{context}</span>
+          {onCloseContext !== undefined && (
+            <button
+              type="button"
+              aria-label={say("chat_context_close")}
+              onClick={onCloseContext}
+              className="-mr-1 grid size-5 shrink-0 place-items-center rounded-full hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus"
+              data-context-close
+            >
+              <XIcon aria-hidden className="size-3" />
+            </button>
+          )}
         </p>
       )}
-      <form
-        onSubmit={submit}
-        className={cn(
-          "flex items-end gap-2",
-          parent && "rounded-jw-control border-jw border-jw-line bg-jw-card p-2",
-        )}
-      >
-        <label className="flex flex-1 flex-col gap-1 text-sm">
-          <span className={cn(parent && "sr-only")}>{say("chat_composer_label")}</span>
-          <textarea
-            value={draft}
-            rows={2}
-            placeholder={parent ? say("parent_composer") : undefined}
-            className={cn(
-              "rounded-md border px-2 py-1",
-              parent &&
-                "resize-none border-0 bg-transparent text-jw-page-body text-jw-ink outline-none placeholder:text-jw-placeholder",
-            )}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send(draft);
-              }
-              // Stop from the keyboard, where the parent already is (dl-z5ja.28).
-              if (e.key === "Escape" && open && !stopping) {
-                e.preventDefault();
-                onStop();
-              }
-            }}
-          />
-        </label>
-        {parent ? (
-          <button
-            type="submit"
-            aria-label={say("chat_send")}
-            aria-disabled={draft.trim() === ""}
-            className={cn(
-              "grid size-8 shrink-0 place-items-center rounded-full focus-visible:outline-3 focus-visible:outline-jw-focus",
-              draft.trim() === "" ? "bg-jw-act-quiet text-jw-ink-soft" : "bg-jw-ink text-jw-card",
-            )}
-            data-send
-          >
-            <ArrowUpIcon aria-hidden className="size-4" />
-          </button>
-        ) : (
-          <Button type="submit">{say("chat_send")}</Button>
-        )}
-        {open && !parent && (
-          <Button type="button" variant="outline" disabled={stopping} onClick={onStop}>
-            {stopping ? say("chat_stopping") : say("chat_stop")}
-          </Button>
-        )}
-      </form>
+      {asking !== null ? (
+        <ChooseForm
+          key={asking.call_id}
+          form={asking.choose}
+          language={language}
+          onAnswer={(answers) => {
+            setChosen((given) => ({ ...given, [asking.call_id]: answers }));
+            onChoose?.(asking.call_id, answers);
+          }}
+        />
+      ) : (
+        <form
+          onSubmit={submit}
+          className={cn(
+            "flex items-end gap-2",
+            parent && "rounded-jw-control border-jw border-jw-line bg-jw-card p-2",
+          )}
+        >
+          <label className="flex flex-1 flex-col gap-1 text-sm">
+            <span className={cn(parent && "sr-only")}>{say("chat_composer_label")}</span>
+            <textarea
+              ref={composer}
+              value={draft}
+              rows={2}
+              placeholder={parent ? say("parent_composer") : undefined}
+              className={cn(
+                "rounded-md border px-2 py-1",
+                parent &&
+                  "resize-none border-0 bg-transparent text-jw-page-body text-jw-ink outline-none placeholder:text-jw-placeholder",
+              )}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send(draft);
+                }
+                // Stop from the keyboard, where the parent already is (dl-z5ja.28).
+                if (e.key === "Escape" && open && !stopping) {
+                  e.preventDefault();
+                  onStop();
+                }
+              }}
+            />
+          </label>
+          {parent ? (
+            <button
+              type="submit"
+              aria-label={say("chat_send")}
+              aria-disabled={draft.trim() === ""}
+              className={cn(
+                "grid size-8 shrink-0 place-items-center rounded-full focus-visible:outline-3 focus-visible:outline-jw-focus",
+                draft.trim() === "" ? "bg-jw-act-quiet text-jw-ink-soft" : "bg-jw-ink text-jw-card",
+              )}
+              data-send
+            >
+              <ArrowUpIcon aria-hidden className="size-4" />
+            </button>
+          ) : (
+            <Button type="submit">{say("chat_send")}</Button>
+          )}
+          {open && !parent && (
+            <Button type="button" variant="outline" disabled={stopping} onClick={onStop}>
+              {stopping ? say("chat_stopping") : say("chat_stop")}
+            </Button>
+          )}
+        </form>
+      )}
       {next.length > 0 && (
         <section aria-label={say("chat_queue_next")} className="flex flex-col gap-1" data-next>
           <h3 className="text-jw-page-small font-bold text-jw-ink-soft">

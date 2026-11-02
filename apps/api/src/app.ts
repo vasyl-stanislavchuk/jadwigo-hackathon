@@ -3,6 +3,7 @@ import {
   AUTH_EMAIL_HOOK_PATH,
   ErrorType,
   LIMITS,
+  MCP_PATH,
   ROUTES,
   type Route,
   type RouteName,
@@ -32,6 +33,7 @@ import {
 } from "./conversations.ts";
 import { ApiError, badRequest, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
+import { giveLesson } from "./give.ts";
 import {
   createGoal,
   createReport,
@@ -43,6 +45,13 @@ import {
   patchReport,
 } from "./knowledge.ts";
 import { handleSendEmail, type MailDeps } from "./mail/hook.ts";
+import { mcpBank } from "./mcp/bank.ts";
+import {
+  type McpConfig,
+  PROTECTED_RESOURCE_PATH,
+  protectedResource,
+  serveMcp,
+} from "./mcp/server.ts";
 import {
   claimAttempt,
   createAccount,
@@ -54,7 +63,13 @@ import {
 } from "./people.ts";
 import { playgroundExamples } from "./playground.ts";
 import { type PokeStepHost, pokeAll } from "./poke.ts";
-import { type BankDeps, type BucketDeps, questionBody, searchQuestions } from "./questions.ts";
+import {
+  type BankDeps,
+  type BucketDeps,
+  questionBody,
+  questionSet,
+  searchQuestions,
+} from "./questions.ts";
 import { getParentReview, getReview } from "./review.ts";
 import { getResults, help, patchAttempt } from "./session.ts";
 
@@ -104,6 +119,8 @@ export interface AppDeps {
    * answers NotFound, as any unwired route does.
    */
   readonly mail?: MailDeps | undefined;
+  /** The remote MCP's public URL and authorization server (dl-1u6fn.8). */
+  readonly mcp?: McpConfig | undefined;
 }
 
 /** No queue is wired: every send fails, and the unit that asked rolls back. */
@@ -136,6 +153,7 @@ export function createApp(
     now = () => new Date(),
     uploads,
     mail,
+    mcp = {},
   }: AppDeps = {},
 ): Router {
   const app = new Router();
@@ -210,6 +228,7 @@ export function createApp(
   on("getReview", (params) => run((s) => getReview(s, params.id)));
   // No store: the bank answers it (questions.ts).
   on("questionSearches", (_, body, headers) => searchQuestions(bank, headers, body));
+  on("questionSet", (params, _body, headers) => questionSet(bank, headers, params.id));
   on("questionBody", (params, _body, headers) => questionBody(bank, bucket, headers, params.id));
   // The token was verified before the unit opens; the member lookup and the route's reads and
   // writes are one unit, so the claim is one transaction.
@@ -290,6 +309,9 @@ export function createApp(
   );
 
   onSigned("rateRun", (params, body, claims) => run((s) => rateRun(s, claims, params.id, body)));
+  onSigned("giveLesson", (params, body, claims) =>
+    run((s) => giveLesson(s, claims, params.id, body)),
+  );
 
   // A message's photos (dl-z5ja.11.3): an upload form, under the pod's lock for the daily count,
   // then a link to the stored copy.
@@ -316,6 +338,18 @@ export function createApp(
     const reply = await handleSendEmail(raw, req.headers, mail);
     return json(reply.status, reply.body);
   });
+
+  // The remote MCP (dl-1u6fn.8), outside ROUTES: it verifies its own token, and its 401 names the
+  // metadata below, which says where to get one.
+  const lessonBank = mcpBank(bank, bucket);
+  const mcpRoute = ({ req, event }: { req: Request; event: unknown }) =>
+    serveMcp(req, event, store, authenticate, mcp, lessonBank);
+  app.post(MCP_PATH, mcpRoute);
+  app.get(MCP_PATH, mcpRoute);
+  app.delete(MCP_PATH, mcpRoute);
+  const metadata = ({ req }: { req: Request }) => protectedResource(req, mcp);
+  app.get(PROTECTED_RESOURCE_PATH, metadata);
+  app.get(`${PROTECTED_RESOURCE_PATH}${MCP_PATH}`, metadata);
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;

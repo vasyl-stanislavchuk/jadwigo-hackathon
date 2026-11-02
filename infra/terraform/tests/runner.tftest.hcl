@@ -124,3 +124,26 @@ run "the_probe_has_no_schedule" {
     error_message = "the probe is invoked by its script only"
   }
 }
+
+# The step host reads the bank's read token (dl-1u6fn.15): the one parameter named, beside its own.
+run "the_step_host_reads_the_bank_read_token" {
+  command = plan
+
+  module {
+    source = "./modules/runner"
+  }
+
+  variables {
+    environment = "prod"
+    handler     = "index.handler"
+    read_params = ["arn:aws:ssm:eu-central-1:123456789012:parameter/jadwigo/prod/bank-read-token"]
+  }
+
+  assert {
+    condition = contains(
+      [for s in data.aws_iam_policy_document.runner.statement : s.resources if s.sid == "ReadsItsParameters"][0],
+      "arn:aws:ssm:eu-central-1:123456789012:parameter/jadwigo/prod/bank-read-token",
+    )
+    error_message = "the role reads the named parameter with its own"
+  }
+}
