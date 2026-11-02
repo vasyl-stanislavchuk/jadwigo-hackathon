@@ -15,6 +15,7 @@ import "@jadwigo/ui/foundation.css";
 import { getCollection, getEntry } from "astro:content";
 import { m } from "@jadwigo/copy/messages";
 import wordmark from "@jadwigo/ui/brand/wordmark.svg?raw";
+import Backdrop from "../components/Backdrop.astro";
 import LanguageNote from "../components/LanguageNote.astro";
 import Segmented from "../components/Segmented.astro";
 import { strictBuild } from "../lib/build.ts";
@@ -228,6 +229,7 @@ const footerLinks = [
     </style>
   </head>
   <body class={prose ? "prose" : undefined}>
+    <Backdrop />
     <header class="site-header">
       <div class="wrap bar">
         <a class="logo" href={homeHref} aria-label={m.site_nav_home({}, locale)} set:html={wordmark} />
