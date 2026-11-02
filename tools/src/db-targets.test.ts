@@ -214,8 +214,8 @@ describe("the prod db targets", { timeout: 60_000 }, () => {
     const push = atTerminal(released, "db-push", "never-typed");
     expect(push.output).not.toContain("Type prod");
     expect(push.status, push.output).toBe(0);
-    expect(calls(s)).toContain("supabase db push --linked --dry-run");
-    expect(calls(s)).toMatch(/supabase db push --linked\n/);
+    expect(calls(s)).toContain("supabase db push --remote --dry-run");
+    expect(calls(s)).toMatch(/supabase db push --remote --yes\n/);
   });
 
   it("db-seed ENV=prod: once prod is typed, the seed sees no SUPABASE_* or JADWIGO_API_* variable", () => {

@@ -30,6 +30,8 @@ export interface TokenClaims {
   readonly alg?: string;
   /** null leaves `kid` out of the header. */
   readonly kid?: string | null;
+  /** The OAuth client an AI app's token names; none, as the web app's token, when not given. */
+  readonly client_id?: string;
 }
 
 /** A signed token. `other: true` signs with a key the JWKS does not hold. */
@@ -46,6 +48,7 @@ export function signToken(claims: TokenClaims = {}, other = false): string {
     iat: now,
     ...(claims.expiresIn === null ? {} : { exp: now + (claims.expiresIn ?? 3600) }),
     ...(claims.notBeforeIn === undefined ? {} : { nbf: now + claims.notBeforeIn }),
+    ...(claims.client_id === undefined ? {} : { client_id: claims.client_id }),
   };
   const encode = (part: object) => Buffer.from(JSON.stringify(part)).toString("base64url");
   const signed = `${encode(header)}.${encode(payload)}`;

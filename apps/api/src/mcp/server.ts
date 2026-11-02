@@ -47,6 +47,25 @@ export function protectedResource(req: Request, config: McpConfig): Response {
   });
 }
 
+/** What a 2026-07-28 request's server is built from, handed through the SDK's `authInfo.extra`. */
+interface Caller {
+  readonly store: Store | Promise<Store>;
+  readonly claims: Claims;
+  readonly deps: ToolDeps;
+}
+
+/**
+ * The 2026-07-28 handler, built once per Lambda environment, not per request: `createApp` runs per
+ * request, and the SDK logs a warning each time one is built. Each request hands it its caller.
+ */
+const MODERN = createMcpHandler(
+  ({ authInfo }) => {
+    const caller = authInfo?.extra?.["caller"] as Caller;
+    return serverFor(caller.store, caller.claims, caller.deps);
+  },
+  { legacy: "reject", responseMode: "json" },
+);
+
 /** `POST /api/mcp`: one JSON-RPC exchange as the token's parent; any other method is 405. */
 export async function serveMcp(
   req: Request,
@@ -73,7 +92,10 @@ export async function serveMcp(
   if (claims === undefined) {
     const reply = errorResponse(ErrorType.enum.NotSignedIn, "sign in to use this");
     const metadata = getOAuthProtectedResourceMetadataUrl(resource);
-    reply.headers.set("www-authenticate", `Bearer resource_metadata="${metadata}"`);
+    // A token that was sent and failed is invalid_token (RFC 6750 3.1); none sent names no error.
+    const sent = (req.headers.get("authorization") ?? "").trim() !== "";
+    const error = sent ? 'error="invalid_token", ' : "";
+    reply.headers.set("www-authenticate", `Bearer ${error}resource_metadata="${metadata}"`);
     return reply;
   }
 
@@ -87,14 +109,13 @@ export async function serveMcp(
     return rpcError(400, -32700, "Parse error: the body is not JSON");
   }
 
-  const server = () => serverFor(store, claims, deps);
   if (await isLegacyRequest(req, parsedBody)) {
     // 2025-era clients (initialize handshake): a fresh server and transport per request.
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableJsonResponse: true,
     });
-    const legacy = server();
+    const legacy = serverFor(store, claims, deps);
     await legacy.connect(transport);
     try {
       return await transport.handleRequest(req, { parsedBody });
@@ -103,9 +124,9 @@ export async function serveMcp(
     }
   }
   // 2026-07-28 clients (a per-request envelope): stateless by design.
-  return createMcpHandler(server, { legacy: "reject", responseMode: "json" }).fetch(req, {
-    parsedBody,
-  });
+  const caller: Caller = { store, claims, deps };
+  const authInfo = { token: "", clientId: claims.client_id ?? "", scopes: [], extra: { caller } };
+  return MODERN.fetch(req, { parsedBody, authInfo });
 }
 
 /** An MCP server with every tool in `TOOLS`, each call run as `claims`' pod member. */
@@ -135,6 +156,12 @@ async function callTool(
   claims: Claims,
   deps: ToolDeps,
 ): Promise<CallToolResult> {
+  // One line per call: the OAuth client (null for the web app's token), the tool and the outcome,
+  // never its arguments or what it read (dl-1u6fn.17).
+  const log = (outcome: "ok" | "refused" | "failed") =>
+    process.stdout.write(
+      `${JSON.stringify({ level: "INFO", message: "mcp tool call", client_id: claims.client_id, tool: tool.name, outcome })}\n`,
+    );
   try {
     const opened = await store;
     const result = await opened.unit(async () =>
@@ -145,10 +172,14 @@ async function callTool(
         deps,
       }),
     );
+    log("ok");
     return { content: [{ type: "text", text: JSON.stringify(result) }] };
   } catch (error) {
-    if (error instanceof ApiError || error instanceof StoreError)
+    if (error instanceof ApiError || error instanceof StoreError) {
+      log("refused");
       return { isError: true, content: [{ type: "text", text: error.message }] };
+    }
+    log("failed");
     const failure = error instanceof Error ? { name: error.name, message: error.message } : {};
     console.error(
       JSON.stringify({

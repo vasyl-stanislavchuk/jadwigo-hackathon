@@ -30,6 +30,10 @@ output "bank_read_token_param" {
   value = aws_ssm_parameter.bank_read_token.name
 }
 
+output "bank_read_token_param_arn" {
+  value = aws_ssm_parameter.bank_read_token.arn
+}
+
 output "api_id" {
   value = aws_apigatewayv2_api.api.id
 }
