@@ -132,7 +132,11 @@ export function routesTransport(
                 ? {}
                 : { patch: body.patch, base_revision: body.base_revision }),
             }
-          : { event_id: body.event_id, text: body.text };
+          : {
+              event_id: body.event_id,
+              text: body.text,
+              ...(body.context === undefined ? {} : { context: body.context }),
+            };
       return (await api.postMessage(server, message)).run;
     },
   };

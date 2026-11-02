@@ -9,6 +9,7 @@
  */
 
 import { ApiError } from "@jadwigo/api-client";
+import { LearnerId } from "@jadwigo/contracts";
 import { ConversationId, type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { FIXED_NOW, RUN_LOGS } from "@jadwigo/testing";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
@@ -66,7 +67,7 @@ function engineWith(send: (body: SendBody) => Promise<Run> = async () => run) {
   return { engine, sent, consent };
 }
 
-async function workspace(engine: LessonEngine): Promise<void> {
+async function workspace(engine: LessonEngine, forLearner: LearnerId | null = null): Promise<void> {
   await act(async () => {
     render(
       <LessonWorkspace
@@ -74,7 +75,7 @@ async function workspace(engine: LessonEngine): Promise<void> {
         conversation={CONVERSATION}
         engine={engine}
         learners={[]}
-        forLearner={null}
+        forLearner={forLearner}
         onAddChild={() => {}}
         changeMenu={(trigger) => trigger}
       />,
@@ -105,6 +106,21 @@ describe("the lesson workspace on the engine", () => {
     cleanup();
     await workspace(engine);
     expect(sent.filter((b) => b.kind === "message")).toHaveLength(1);
+  });
+
+  it("sends Dla as the first message's page, and no page without one (dl-uukj.47.12)", async () => {
+    const OLA = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
+    const withChild = engineWith();
+    firstMessage.put(CONVERSATION, "Odejmowanie przez 10");
+    await workspace(withChild.engine, OLA);
+    expect(withChild.sent[0]).toMatchObject({ kind: "message", context: { learner_id: OLA } });
+    cleanup();
+    window.sessionStorage.clear();
+    const without = engineWith();
+    firstMessage.put(CONVERSATION, "Odejmowanie przez 10");
+    await workspace(without.engine);
+    expect(without.sent[0]?.kind).toBe("message");
+    expect(without.sent[0]).not.toHaveProperty("context");
   });
 
   it("opens on a waiting line with no words to send, and sends nothing", async () => {

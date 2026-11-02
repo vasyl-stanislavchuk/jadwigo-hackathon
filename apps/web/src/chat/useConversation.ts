@@ -7,7 +7,7 @@
 
 import { ApiError } from "@jadwigo/api-client";
 import { ErrorType, type EventId } from "@jadwigo/contracts";
-import type { ConversationId, Run, RunEvent, RunId } from "@jadwigo/contracts/run";
+import type { ConversationId, MessageContext, Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import {
   type ConversationState,
@@ -107,7 +107,8 @@ export function hotTransport(pace: Pace | null = null): EngineTransport | null {
 
 export interface Conversation {
   state: ConversationState;
-  send(text: string): void;
+  /** Sends the parent's words, with the page they were sent from when there is one (dl-uukj.47.12). */
+  send(text: string, context?: MessageContext): void;
   stop(): void;
   /**
    * A parent's edit in the lesson pane (dl-z5ja.30): a steer naming the questions while the turn
@@ -153,7 +154,7 @@ export function useConversation(
   latest.current = state;
   const subscribed = useRef(new Map<RunId, () => void>());
   /** The words a route refused for want of consent, sent again once it is given. */
-  const [refused, setRefused] = useState<string | null>(null);
+  const [refused, setRefused] = useState<{ text: string; context?: MessageContext } | null>(null);
 
   /** Subscribe first, then fetch after the cursor: what lands between is buffered and merged. */
   const follow = useCallback(
@@ -203,21 +204,27 @@ export function useConversation(
   }, [transport, restore]);
 
   const send = useCallback(
-    (text: string) => {
+    (text: string, context?: MessageContext) => {
       const last = turnsOf(latest.current).at(-1);
       const event_id = newEventId();
       // Mid-turn words wait in the queue; otherwise they echo at once until their event lands.
       if (last !== undefined && isOpen(last)) dispatch({ type: "queued", text });
       else dispatch({ type: "pending", pending: { text, event_id, at: Date.now() } });
       transport
-        .send({ conversation_id: conversation, event_id, kind: "message", text })
+        .send({
+          conversation_id: conversation,
+          event_id,
+          kind: "message",
+          text,
+          ...(context === undefined ? {} : { context }),
+        })
         .then((run) => {
           dispatch({ type: "send_failed", failed: false });
           dispatch({ type: "sent", event_id, run_id: run.id });
           return follow(run);
         })
         .catch((e: unknown) => {
-          if (consentMissing(e)) setRefused(text);
+          if (consentMissing(e)) setRefused(context === undefined ? { text } : { text, context });
           else dispatch({ type: "send_failed", failed: true, limit: limitOf(e) });
         });
     },
@@ -225,9 +232,9 @@ export function useConversation(
   );
 
   const consented = useCallback(() => {
-    const text = refused;
+    const words = refused;
     setRefused(null);
-    if (text !== null) send(text);
+    if (words !== null) send(words.text, words.context);
   }, [refused, send]);
 
   const stop = useCallback(() => {
