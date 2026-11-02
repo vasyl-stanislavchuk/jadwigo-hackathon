@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "number",
+      "const": 1
+    },
+    "bank_rev": {
+      "type": "string",
+      "description": "The bank build the counts come from"
+    },
+    "types": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "grade": {
+            "type": "string",
+            "description": "The bare grade number, \"1\""
+          },
+          "language": {
+            "type": "string",
+            "description": "A language code: pl, en"
+          },
+          "question_type": {
+            "$ref": "#/$defs/QuestionType"
+          },
+          "family": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sets": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "How many sets hold a lesson-ready question of this type"
+          },
+          "ready": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "How many lesson-ready questions are of this type"
+          }
+        },
+        "required": [
+          "grade",
+          "language",
+          "question_type",
+          "family",
+          "sets",
+          "ready"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "version",
+    "types"
+  ],
+  "additionalProperties": false,
+  "description": "The question types the bank holds, per grade and language: how many sets hold each and how many lesson-ready questions it has",
+  "$defs": {
+    "QuestionType": {
+      "type": "string",
+      "enum": [
+        "true_false",
+        "recognition",
+        "lettered_choice",
+        "multi_select",
+        "mark_numbers",
+        "fraction_compare",
+        "production",
+        "short_text",
+        "expression",
+        "measure",
+        "fill_gaps",
+        "fill_table",
+        "label_picture",
+        "column",
+        "pyramid",
+        "clock_read",
+        "money_count",
+        "order",
+        "bucket",
+        "match",
+        "number_line_place",
+        "hotspot",
+        "spatial_build",
+        "draw_graph",
+        "clock_set",
+        "money_pay",
+        "fraction_shade",
+        "area_model",
+        "explain"
+      ]
+    }
+  }
+}

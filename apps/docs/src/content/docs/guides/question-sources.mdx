@@ -24,6 +24,17 @@ lettered choices, A to E.
 `GET /api/v1/question-sets/{id}` reads one set from a search row's `id`. Its `items.ids` are every
 question the set holds, and `items.ready_ids` are, per language, the ones that are lesson-ready.
 A lesson takes only a ready id, then reads that question's body by its id.
+Its `question_types` are the question types of those ready questions, `problem_types` names
+each problem type with its question types, and `ready_types` counts ready questions per language
+and type.
+
+## Which question types the bank holds
+
+`GET /api/v1/question-types?grade=1&language=pl` lists the question types the bank holds for a
+grade and language: for each, its family, how many sets hold it and how many lesson-ready
+questions it has. Leave out `grade` or `language` to list them all. A search narrows to sets
+holding a type when its need names `question_types`: `slots.fill_gaps`, a glob such as `group.*`,
+a bare family such as `choose` or a bare type such as `multi_select`.
 
 ## Every source
 

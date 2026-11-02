@@ -8,6 +8,7 @@ import {
   QuestionBody,
   QuestionSetId,
   QuestionSetPage,
+  QuestionTypeCounts,
   questionSourceOf,
   SearchEnvelope,
 } from "@jadwigo/contracts";
@@ -94,6 +95,29 @@ export async function questionSet(
   const page = QuestionSetPage.safeParse(answer);
   if (!page.success || page.data.id !== setId.data) throw unavailable();
   return page.data;
+}
+
+/**
+ * `GET /api/v1/question-types`: which question types the bank holds, per grade and language,
+ * counted over lesson-ready questions (dl-n9fr.70), from the bank Lambda (`{types: {grade?,
+ * language?}}`). Authorization runs first, as for a search; then the bank must answer 200 with
+ * the counts' shape (502 otherwise: a bank with no published counts is not a caller's error).
+ */
+export async function questionTypes(
+  bank: BankDeps | undefined,
+  headers: Headers,
+  query: { readonly grade?: string | undefined; readonly language?: string | undefined },
+): Promise<QuestionTypeCounts> {
+  if (bank === undefined) throw unavailable();
+  await authorizeRead(bank, headers);
+  const asked: { grade?: string; language?: string } = {};
+  if (query.grade !== undefined) asked.grade = query.grade;
+  if (query.language !== undefined) asked.language = query.language;
+  const { statusCode, answer } = await invokeLambda(bank, { types: asked });
+  if (statusCode !== 200) throw unavailable();
+  const counts = QuestionTypeCounts.safeParse(answer);
+  if (!counts.success) throw unavailable();
+  return counts.data;
 }
 
 /**

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Need, QuestionBody, QuestionSetPage, SearchEnvelope } from "./bank.ts";
+import { Need, QuestionBody, QuestionSetPage, QuestionTypeCounts, SearchEnvelope } from "./bank.ts";
 import {
   AssignmentId,
   AttachmentId,
@@ -627,6 +627,35 @@ export const ROUTES = {
     tag: "bank",
     description:
       "Called with the bank's shared read token, not a Supabase token: without it the reply is 401, whatever the id.",
+  },
+  /**
+   * Which question types the bank holds, per grade and language, with how many sets and
+   * lesson-ready questions each has (`src/bank.ts`, dl-n9fr.70). The bank Lambda answers it; a
+   * grade or language left out lists them all.
+   */
+  questionTypes: {
+    method: "GET",
+    path: "/api/v1/question-types",
+    params: z.object({}),
+    query: z.object({
+      grade: z
+        .string()
+        .regex(/^\d{1,2}$/, "a grade is its bare number")
+        .optional(),
+      language: z
+        .string()
+        .regex(/^[a-z]{2}$/, "a language is its two-letter code")
+        .optional(),
+    }),
+    body: null,
+    response: QuestionTypeCounts,
+    status: 200,
+    // Like questionSearches: the bank's shared read token, checked in apps/api (questions.ts).
+    auth: "none",
+    summary: "Lists the question types the bank holds, with counts per grade and language.",
+    tag: "bank",
+    description:
+      "Called with the bank's shared read token, not a Supabase token: without it the reply is 401. Counts are over lesson-ready questions.",
   },
   /**
    * One bank question's body with its key, from the content bucket (`src/bank.ts`). The id is

@@ -68,6 +68,7 @@ import {
   type BucketDeps,
   questionBody,
   questionSet,
+  questionTypes,
   searchQuestions,
 } from "./questions.ts";
 import { getParentReview, getReview } from "./review.ts";
@@ -229,6 +230,7 @@ export function createApp(
   // No store: the bank answers it (questions.ts).
   on("questionSearches", (_, body, headers) => searchQuestions(bank, headers, body));
   on("questionSet", (params, _body, headers) => questionSet(bank, headers, params.id));
+  on("questionTypes", (params, _body, headers) => questionTypes(bank, headers, params));
   on("questionBody", (params, _body, headers) => questionBody(bank, bucket, headers, params.id));
   // The token was verified before the unit opens; the member lookup and the route's reads and
   // writes are one unit, so the claim is one transaction.
