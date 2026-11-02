@@ -79,6 +79,10 @@ in only one of the two languages. The sets are listed in `dl-r772.43`'s notes.
   - `GET /api/v1/featured-lessons` listed all 12 with their grades.
   - Each opened at `/play/<assignment>` straight on its first question, with its pictures loaded.
   - Every picture ref in the 12 files answers 200 from the media URL.
+  - A scripted play-through answered every step wrong, then right, with the help opened once, at
+    420 px. All 12 lessons reached the end screen. The display bugs it found are in shared
+    lesson-kit code, not in the lessons: `dl-uukj.48`, `dl-uukj.50`, `dl-uukj.51`, `dl-uukj.52`
+    and `dl-uukj.53`.
 
 **Known display issue:** in picture and bar graphs, an axis label that is wider than its column
 can overlap the next one (`dl-uukj.48`). Two lessons have such graphs: grade 1 adding (bar graphs)
@@ -89,9 +93,12 @@ and grade 3 clocks and graphs (picture graphs).
 Follow `docs/runbooks/lesson-import.md` for each of the 12 draft files above, with `FEATURED=1`
 every time:
 
-1. Import it into jadwigo-dev and play it there.
-2. Import it into prod from your own terminal. Running prod with `FEATURED=1` is the approval.
-3. Withdraw the old 3 Polish lessons with `make lesson-withdraw` (`dl-9t2o.12`). Their assignment
+1. Local play is done: all 12 were imported into the local database and played there, step by
+   step (`dl-r772.43` notes).
+2. Import it into jadwigo-dev as the dry run. No app serves dev, so the line the import prints is
+   the check.
+3. Import it into prod from your own terminal. Running prod with `FEATURED=1` is the approval.
+4. Withdraw the old 3 Polish lessons with `make lesson-withdraw` (`dl-9t2o.12`). Their assignment
    ids are on `dl-w0b4.109`. They stay playable at their old links.
 
 The 3 English mirrors were never imported to prod, so there is nothing to withdraw for them. After
