@@ -120,6 +120,27 @@ describe("PlayScreen", () => {
     expect(storedAttempt.get(ASSIGNMENT)).toBe(FRESH);
   });
 
+  it("starts as the child a play link names in ?learner= (dl-1u6fn.5)", async () => {
+    const learner = "lrn_2h4m8gyw0fb1cvz2nkqw0px8fq";
+    window.history.replaceState(null, "", `${playPath(ASSIGNMENT)}?learner=${learner}`);
+    const startAttempt = vi.fn(async () => snapshot(FRESH, "in_progress", [question(1)]));
+    render(
+      <PlayScreen assignmentId={ASSIGNMENT} language="pl" client={client({ startAttempt })} />,
+    );
+    expect(await screen.findAllByText("Ile to jest dwa razy pięć? (1)")).not.toHaveLength(0);
+    expect(startAttempt).toHaveBeenCalledExactlyOnceWith(ASSIGNMENT, { learner_id: learner });
+  });
+
+  it("starts with no learner when ?learner= is missing or malformed", async () => {
+    window.history.replaceState(null, "", `${playPath(ASSIGNMENT)}?learner=not-an-id`);
+    const startAttempt = vi.fn(async () => snapshot(FRESH, "in_progress", [question(1)]));
+    render(
+      <PlayScreen assignmentId={ASSIGNMENT} language="pl" client={client({ startAttempt })} />,
+    );
+    expect(await screen.findAllByText("Ile to jest dwa razy pięć? (1)")).not.toHaveLength(0);
+    expect(startAttempt).toHaveBeenCalledExactlyOnceWith(ASSIGNMENT, {});
+  });
+
   it("puts the lesson's language on the question and leaves Check the screens' (dl-9t2o.3, dl-uukj.38)", async () => {
     document.documentElement.lang = "pl";
     const startAttempt = vi.fn(async () => snapshot(FRESH, "in_progress", [question(1)], "en"));

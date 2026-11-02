@@ -29,6 +29,7 @@ import {
   ErrorType,
   EventId,
   type Language,
+  type LearnerId,
 } from "@jadwigo/contracts";
 import type { Instant } from "@jadwigo/lesson-kit";
 import { browserClock } from "@jadwigo/lesson-kit";
@@ -96,10 +97,15 @@ async function untilAnswered<T>(run: () => Promise<T>, alive: () => boolean): Pr
 /** One start per assignment at a time, so React's double effect in development starts one attempt. */
 const starting = new Map<AssignmentId, Promise<AttemptSnapshot>>();
 
-function startOnce(client: AttemptClient, assignmentId: AssignmentId): Promise<AttemptSnapshot> {
+function startOnce(
+  client: AttemptClient,
+  assignmentId: AssignmentId,
+  learner: LearnerId | null,
+): Promise<AttemptSnapshot> {
   const pending = starting.get(assignmentId);
   if (pending !== undefined) return pending;
-  const started = client.startAttempt(assignmentId).then((snapshot) => {
+  const body = learner === null ? {} : { learner_id: learner };
+  const started = client.startAttempt(assignmentId, body).then((snapshot) => {
     storedAttempt.set(assignmentId, snapshot.attempt.id);
     return snapshot;
   });
@@ -108,7 +114,15 @@ function startOnce(client: AttemptClient, assignmentId: AssignmentId): Promise<A
   return started;
 }
 
-export function usePlayer(assignmentId: AssignmentId, client?: AttemptClient): Player {
+/**
+ * `learner` is the child a play link names (`?learner=`, dl-1u6fn.5): an assignment for a pod's
+ * learners starts only with one, and the attempt is that child's from its start.
+ */
+export function usePlayer(
+  assignmentId: AssignmentId,
+  client?: AttemptClient,
+  learner: LearnerId | null = null,
+): Player {
   const api = useMemo(() => client ?? createClient({ base: "" }), [client]);
   const [state, dispatch] = useReducer(runner, initialRunner);
   const [stage, setStage] = useState<Stage>({ kind: "loading" });
@@ -170,7 +184,7 @@ export function usePlayer(assignmentId: AssignmentId, client?: AttemptClient): P
     let live = true;
     const isLive = (): boolean => live;
     const start = (): Promise<AttemptSnapshot> =>
-      untilAnswered(() => startOnce(api, assignmentId), isLive);
+      untilAnswered(() => startOnce(api, assignmentId, learner), isLive);
     const stored = storedAttempt.get(assignmentId);
     const load =
       stored === null
@@ -194,7 +208,7 @@ export function usePlayer(assignmentId: AssignmentId, client?: AttemptClient): P
     return () => {
       live = false;
     };
-  }, [api, assignmentId, take]);
+  }, [api, assignmentId, learner, take]);
 
   // A new question on screen: its clock starts now. A miss keeps the question, and its clock.
   useEffect(() => {
