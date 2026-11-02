@@ -785,5 +785,10 @@
   "parent_source_authored": false,
   "parent_step_move_up": false,
   "parent_step_move_down": false,
-  "parent_step_drop": false
+  "parent_step_drop": false,
+  "parent_give_title": false,
+  "parent_this_computer": false,
+  "parent_print": false,
+  "parent_print_hint": false,
+  "parent_this_computer_soon": false
 }
