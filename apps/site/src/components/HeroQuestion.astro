@@ -11,6 +11,7 @@ import type { Language } from "@jadwigo/config";
 import queenMov from "@jadwigo/ui/brand/queen.mov";
 import queenWebm from "@jadwigo/ui/brand/queen.webm";
 import { twinPath } from "../lib/i18n.ts";
+import { slotArt } from "../lib/illustrations.ts";
 import { landingWords } from "../lib/words.ts";
 import Pic from "./Pic.astro";
 
@@ -27,7 +28,7 @@ const q = (await landingWords(lang)).hero.question;
     <p class="label">{q.label}</p>
     <div class="q">
       <p class="say" id="hero-say">{q.say}</p>
-      <Pic label={q.pic} class="hero-pic" />
+      <Pic label={q.pic} src={slotArt.hero} eager sizes="(max-width: 40rem) 100vw, 10rem" class="hero-pic" />
     </div>
     <div class="tiles" role="group" aria-labelledby="hero-say">
       {q.choices.map((c) => <button type="button" class="tile" disabled>{c}</button>)}

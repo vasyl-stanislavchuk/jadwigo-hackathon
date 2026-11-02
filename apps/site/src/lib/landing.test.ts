@@ -59,6 +59,20 @@ describe("the hero question", () => {
   });
 });
 
+describe("the card pictures' words", () => {
+  const pics = landingSchema.shape.lessons.shape.row.shape.pics;
+  const words = { rowneGrupy: "Linijka.", piatki: "Moneta.", razyCztery: "Kotki." };
+
+  it("takes alt text for every card picture", () => {
+    expect(pics.safeParse(words).success).toBe(true);
+  });
+
+  it("refuses a card picture with no words", () => {
+    expect(pics.safeParse({ ...words, piatki: "" }).success).toBe(false);
+    expect(pics.safeParse({ rowneGrupy: "Linijka.", razyCztery: "Kotki." }).success).toBe(false);
+  });
+});
+
 describe("goalLine", () => {
   const words = { practising: "Ćwiczy:", allDone: "Umie wszystko.", nextUp: "Dalej:" };
 

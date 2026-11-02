@@ -12,6 +12,7 @@ import type { Language } from "@jadwigo/config";
 import type { FeaturedLesson } from "@jadwigo/contracts";
 import { assertLanguage, gradesOf, playUrl } from "../lib/featured.ts";
 import { withLang } from "../lib/i18n.ts";
+import { cardArt } from "../lib/illustrations.ts";
 import { firstSentence, plural } from "../lib/landing.ts";
 import { landingWords } from "../lib/words.ts";
 import Pic from "./Pic.astro";
@@ -33,19 +34,26 @@ const words = (await landingWords(lang)).lessons;
 const grades = row ? gradesOf(lessons) : [];
 const first = grades[0];
 const onRow = first === undefined ? lessons : lessons.filter((l) => l.grade !== null);
-const cards = onRow.map((l) => ({
-  href: withLang(playUrl(l), lang),
-  title: l.title,
-  subject: l.subject,
-  grade: l.grade === null ? "" : String(l.grade),
-  // Before the script runs, the row shows the lowest grade's tab.
-  hidden: first !== undefined && l.grade !== first,
-  teaser: l.first_say === null ? null : firstSentence(l.first_say),
-  meta: [words.subjects[l.subject], l.grade === null ? null : `${words.grade} ${l.grade}`]
-    .filter((m): m is string => m !== null)
-    .join(" · "),
-  count: l.question_count > 0 ? plural(l.question_count, words.questions, lang) : null,
-}));
+const cards = onRow.map((l) => {
+  const art = cardArt(l);
+  return {
+    href: withLang(playUrl(l), lang),
+    title: l.title,
+    // The lesson's picture and its words, or the grey slot naming the lesson.
+    pic: art
+      ? { src: art.src, label: words.row.pics[art.alt] }
+      : { src: undefined, label: `${words.row.pic} · ${l.title}` },
+    subject: l.subject,
+    grade: l.grade === null ? "" : String(l.grade),
+    // Before the script runs, the row shows the lowest grade's tab.
+    hidden: first !== undefined && l.grade !== first,
+    teaser: l.first_say === null ? null : firstSentence(l.first_say),
+    meta: [words.subjects[l.subject], l.grade === null ? null : `${words.grade} ${l.grade}`]
+      .filter((m): m is string => m !== null)
+      .join(" · "),
+    count: l.question_count > 0 ? plural(l.question_count, words.questions, lang) : null,
+  };
+});
 const subjects = [...new Set(onRow.map((l) => l.subject))];
 const gradeOptions = grades.map((g) => ({
   value: String(g),
@@ -91,7 +99,7 @@ const shownCount = cards.filter((c) => !c.hidden).length;
               {c.count && <span>{c.count}</span>}
             </span>
             <span class="title">{c.title}</span>
-            <Pic label={`${words.row.pic} · ${c.title}`} class="card-pic" />
+            <Pic label={c.pic.label} src={c.pic.src} sizes="17rem" class="card-pic" />
             {c.teaser && <span class="teaser paper">{c.teaser}</span>}
             <span class="go">{words.play} →</span>
           </a>
