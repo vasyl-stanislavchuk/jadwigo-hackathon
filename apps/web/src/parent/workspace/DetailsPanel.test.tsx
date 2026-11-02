@@ -62,6 +62,21 @@ function Held({
 afterEach(cleanup);
 
 describe("Dla kogo in the details", () => {
+  // First in the file: React says a ref warning once per component (dl-uukj.47.49).
+  it("Zmień is ui's Button, and the menu opens on it with no ref warning", async () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(<Held learners={FAMILY} onAddChild={vi.fn()} />);
+    const change = screen.getByRole("button", { name: "Zmień" });
+    expect(change.getAttribute("data-variant")).toBe("outline");
+    expect(change.hasAttribute("data-change-child")).toBe(true);
+    await act(async () => fireEvent.click(change));
+    expect(screen.getByRole("menu")).toBeTruthy();
+    expect(change.getAttribute("aria-expanded")).toBe("true");
+    const said = errors.mock.calls.map((call) => call.map(String).join(" "));
+    errors.mockRestore();
+    expect(said.filter((line) => line.includes("cannot be given refs"))).toEqual([]);
+  });
+
   it("opens the Dla menu from Bez dziecka, lists both children, and shows the one picked with Zmień", async () => {
     const onAddChild = vi.fn();
     render(<Held learners={FAMILY} onAddChild={onAddChild} />);
