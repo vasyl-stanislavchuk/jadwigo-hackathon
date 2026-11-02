@@ -48,7 +48,7 @@ steps:
       text: You see every question, try and mistake in plain words. Jadwigo builds the next lesson from what was hard. And when you want to sit down together over something hard, it suggests where to start.
   request:
     ask: Making change, like in the workbook. Mixes up dollars and cents.
-    lines: [Looking for change questions with cents, Checking the lesson, Ready]
+    lines: [Looking for change questions with cents…, Checking the lesson…, Ready]
     soon: "Coming soon: a photo of the workbook instead of a description."
     screencast: screencast · the parent types in the chat, the lesson builds on the right, “Show my child”
   card:
@@ -64,9 +64,9 @@ steps:
     nextLabel: "Next lesson:"
     next: counting up to the next dollar, then change from $20.
     screencast: "screencast · the child's page: goals, skills, the last lesson question by question"
-# /en/jadwigo-ai (dl-w0b4.114; owner's call of 2026-11-02, draft), the twin of pl's ai. The data lines say
-# what the consent screen says (packages/copy chat_consent_*, decision dl-uafq): Meta's models may learn
-# from it. Jadwigo AI's lines carry no person and no gender.
+# /en/jadwigo-ai (dl-w0b4.114; owner's call of 2026-11-02, draft), the twin of pl's ai. Like the rest of the
+# site, it makes no claim about models either way (dl-w0b4.79, dl-w0b4.116): the consent screen in the app
+# and the privacy page say the rest. Jadwigo AI's lines carry no person and no gender.
 ai:
   title: "Jadwigo AI: a lesson built from what you write"
   description: Jadwigo AI reads what your child practices at school, finds questions in the question bank and builds a lesson. You check it before your child sees it.
@@ -85,10 +85,12 @@ ai:
     heading: What Jadwigo AI reads about your child, and where it goes
     items:
       - "Jadwigo AI reads what your request needs: your child's data, names included."
-      - That data goes to Meta's models, which may learn from it.
       - The record of your conversations stays with your family's account until the account is deleted. An archived conversation does too.
       - Your child's name is never in the lesson your child gets.
-    consent: You see the same words before your first conversation with Jadwigo AI. The conversation starts only once you agree. You can also choose “Not now”.
+    # The privacy page is linked after `text` (dl-w0b4.116).
+    more:
+      text: "The app says this once, before your first message to Jadwigo AI. More about your data:"
+      link: Privacy
   never:
     heading: What Jadwigo AI never does
     items:
