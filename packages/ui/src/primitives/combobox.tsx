@@ -52,6 +52,9 @@ function Combobox<T extends ComboboxOption>({
   const trigger = useRef<HTMLButtonElement>(null);
   const rows = useRef<(HTMLElement | null)[]>([]);
   const pending = useRef<(() => void) | null>(null);
+  // Only a pick, Esc or the footer hands the focus back to the trigger; after a click elsewhere it
+  // stays where the parent went (Radix's own rule for a non-modal popover).
+  const refocus = useRef(false);
   const picked = options.find((o) => o.value === value);
   const count = options.length + (footer === undefined ? 0 : 1);
 
@@ -59,6 +62,7 @@ function Combobox<T extends ComboboxOption>({
   const current = (): number => rows.current.indexOf(document.activeElement as HTMLElement);
 
   function pick(next: string): void {
+    refocus.current = true;
     onChange(next);
     setOpen(false);
   }
@@ -114,7 +118,12 @@ function Combobox<T extends ComboboxOption>({
           const at = options.findIndex((o) => o.value === value);
           focusRow(Math.max(at, 0));
         }}
+        onEscapeKeyDown={() => {
+          refocus.current = true;
+        }}
         onCloseAutoFocus={(e) => {
+          if (!refocus.current) return;
+          refocus.current = false;
           e.preventDefault();
           trigger.current?.focus();
           const run = pending.current;
@@ -167,6 +176,7 @@ function Combobox<T extends ComboboxOption>({
                 tabIndex={-1}
                 onClick={() => {
                   pending.current = footer.onSelect;
+                  refocus.current = true;
                   setOpen(false);
                 }}
                 className={cn(MENU_ITEM, "w-full text-left focus:bg-accent")}
