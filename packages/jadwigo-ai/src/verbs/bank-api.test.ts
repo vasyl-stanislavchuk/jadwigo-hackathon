@@ -191,6 +191,115 @@ describe("apiBank", () => {
   });
 });
 
+describe("apiBank with question types (dl-hin8.24)", () => {
+  /** Every third made-up body is a choose question: recognition, the rest production. */
+  function mixed(): Record<string, QuestionBody> {
+    return Object.fromEntries(
+      IDS.map((id, i) => {
+        const whole = body(id, i % 9, (i % 7) + 1);
+        if (i % 3 !== 0 || whole.pl === undefined) return [id, whole];
+        const pl = {
+          ...whole.pl,
+          family: "choose",
+          question_type: "recognition" as const,
+          data: { stem: { text: "1 + 1 = ?" }, options: [], select: "one", layout: "grid" },
+          key: { correct: ["o1"] },
+        };
+        return [id, { ...whole, pl }];
+      }),
+    );
+  }
+
+  it("sends the kept types in the need and draws only questions of them", async () => {
+    const { reads, asked } = fakeReads(mixed(), PAGES);
+    const questions = await apiBank(reads).sources({ ...QUERY, question_types: ["choose"] });
+    expect(asked.search[0]).toMatchObject({ question_types: ["choose"] });
+    expect(questions.map((q) => q.question_type)).toEqual(Array(5).fill("recognition"));
+    expect(questions.map((q) => q.source)).toEqual(
+      ["xmade000", "xmade003", "xmade006", "xmade009", "xmade012"].map((id) => `bank:${id}`),
+    );
+  });
+
+  it("skips a set whose page names none of the kept types without reading its bodies", async () => {
+    const typed = { ...page("set_add", IDS), question_types: ["production"] };
+    const { reads, asked } = fakeReads(mixed(), [typed]);
+    expect(await apiBank(reads).sources({ ...QUERY, question_types: ["true_false"] })).toEqual([]);
+    expect(asked.body).toEqual([]);
+  });
+
+  it("says which types it was asked for when every body read was another type", async () => {
+    const { reads } = fakeReads(BODIES, PAGES);
+    await expect(
+      apiBank(reads).sources({ ...QUERY, question_types: ["recognition"] }),
+    ).rejects.toThrow("of the types recognition in pl: read 15");
+  });
+
+  it("draws from pinned sets in their order with no search, and refuses a set it lacks", async () => {
+    const { reads, asked } = fakeReads(BODIES, PAGES);
+    const questions = await apiBank(reads).sources({ ...QUERY, sets: ["set_empty", "set_add"] });
+    expect(asked.search).toEqual([]);
+    expect(questions).toHaveLength(5);
+    await expect(apiBank(reads).sources({ ...QUERY, sets: ["set_nope"] })).rejects.toMatchObject({
+      type: "input",
+    });
+  });
+
+  it("maps a search row's question types onto its set", async () => {
+    const { reads } = fakeReads(BODIES, PAGES);
+    const plain = reads.search;
+    reads.search = async (need) => {
+      const envelope = await plain(need);
+      return {
+        ...envelope,
+        rows: envelope.rows.map((r) => ({ ...r, question_types: ["fill_gaps"] })),
+      };
+    };
+    const { sets } = await apiBank(reads).search(QUERY);
+    expect(sets[0]?.question_types).toEqual(["fill_gaps"]);
+  });
+
+  it("lists the bank's types for one grade and language, most questions first", async () => {
+    const { reads, asked } = fakeReads(BODIES, PAGES);
+    reads.types = async (typesAsked) => {
+      asked.types.push(typesAsked);
+      return {
+        version: 1,
+        types: [
+          {
+            grade: "1",
+            language: "pl",
+            question_type: "fill_gaps",
+            family: "slots",
+            sets: 1,
+            ready: 4,
+          },
+          {
+            grade: "1",
+            language: "pl",
+            question_type: "recognition",
+            family: "choose",
+            sets: 2,
+            ready: 9,
+          },
+          {
+            grade: "2",
+            language: "pl",
+            question_type: "match",
+            family: "group",
+            sets: 1,
+            ready: 3,
+          },
+        ],
+      };
+    };
+    expect(await apiBank(reads).types("1", "pl")).toEqual([
+      { question_type: "recognition", family: "choose", sets: 2, ready: 9 },
+      { question_type: "fill_gaps", family: "slots", sets: 1, ready: 4 },
+    ]);
+    expect(asked.types).toEqual([{ grade: "1", language: "pl" }]);
+  });
+});
+
 describe("lesson_draft on the real bank's shapes", () => {
   it("drafts a lesson whose every step is a bank question with based_on", async () => {
     const { reads } = fakeReads(BODIES, PAGES);

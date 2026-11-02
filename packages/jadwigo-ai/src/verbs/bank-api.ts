@@ -18,7 +18,7 @@ import {
   ROUTES,
   SearchEnvelope,
 } from "@jadwigo/contracts";
-import type { BankPort, BankQuery } from "./bank.ts";
+import { type BankPort, type BankQuery, typeKept } from "./bank.ts";
 import { VerbError } from "./types.ts";
 
 /** Which grade and language a type listing asks for; one left out lists them all. */
@@ -51,7 +51,12 @@ export function maxBodyReads(limit: number): number {
 }
 
 /** Why a draw passed over a ready id: the reason, as the error names it. */
-type PassedOver = "missing" | "no variant" | "no question_type" | "family mismatch";
+type PassedOver =
+  | "missing"
+  | "no variant"
+  | "no question_type"
+  | "family mismatch"
+  | "not of the asked types";
 
 type BankSet = Awaited<ReturnType<BankPort["search"]>>["sets"][number];
 type BankQuestion = Awaited<ReturnType<BankPort["sources"]>>[number];
@@ -68,21 +73,67 @@ export function apiBank(reads: BankReads): BankPort {
     async sources(query) {
       const limit = Math.min(query.limit, MAX_LESSON_QUESTIONS);
       const { language } = query;
+      if (limit < 1 || language === "uk") return [];
+      const tally: Tally = {
+        reads: 0,
+        max: maxBodyReads(limit),
+        passed: new Map(),
+        types: query.question_types ?? [],
+      };
+      const named = query.sets ?? [];
+      if (named.length > 0) return pinned(reads, named, limit, language, tally);
       const need = needOf(query, SETS_TRIED);
-      if (need === undefined || limit < 1 || language === "uk") return [];
+      if (need === undefined) return [];
       const { rows } = await reads.search(need);
-      const tally: Tally = { reads: 0, max: maxBodyReads(limit), passed: new Map() };
       for (const row of rows) {
         if (tally.reads >= tally.max) break;
         const page = await reads.set(row.id);
-        if (page === undefined) continue;
+        if (page === undefined || !holdsKept(page, tally.types)) continue;
         const drawn = await draw(reads, page, limit, language, tally);
         if (drawn.length > 0) return drawn;
       }
       if (tally.reads > 0) throw passedOverAll(tally, language);
       return [];
     },
+    async types(grade, language) {
+      if (language === "uk") return [];
+      const { types } = await reads.types({ grade, language });
+      return types
+        .filter((t) => t.grade === grade && t.language === language)
+        .map(({ question_type, family, sets, ready }) => ({ question_type, family, sets, ready }))
+        .sort((x, y) => y.ready - x.ready);
+    },
   };
+}
+
+/**
+ * The sets a lesson names, read by id with no search (jw's `--set`, dl-u1y5.37): questions from
+ * each in turn until the limit. A set the bank does not hold is the caller's error.
+ */
+async function pinned(
+  reads: BankReads,
+  ids: readonly string[],
+  limit: number,
+  language: "pl" | "en",
+  tally: Tally,
+): Promise<BankQuestion[]> {
+  const out: BankQuestion[] = [];
+  for (const id of ids) {
+    const page = await reads.set(id);
+    if (page === undefined)
+      throw new VerbError("input", `lesson_draft: the bank holds no set ${id}`);
+    if (out.length >= limit || tally.reads >= tally.max) continue;
+    out.push(...(await draw(reads, page, limit - out.length, language, tally)));
+  }
+  if (out.length === 0 && tally.reads > 0) throw passedOverAll(tally, language);
+  return out;
+}
+
+/** Whether a page may hold a kept type: a page that names no types is read to find out. */
+function holdsKept(page: QuestionSetPage, patterns: readonly string[]): boolean {
+  const named = page.question_types;
+  if (patterns.length === 0 || named === undefined || named.length === 0) return true;
+  return named.some((type) => typeKept(type, patterns));
 }
 
 /** The bodies one draw has read, its bound, and why each read was passed over. */
@@ -90,6 +141,8 @@ interface Tally {
   reads: number;
   readonly max: number;
   readonly passed: Map<PassedOver, number>;
+  /** The question types asked for; none keeps every type. */
+  readonly types: readonly string[];
 }
 
 /**
@@ -98,9 +151,10 @@ interface Tally {
  */
 function passedOverAll(tally: Tally, language: "pl" | "en"): VerbError {
   const why = [...tally.passed].map(([reason, n]) => `${n} ${reason}`).join(", ");
+  const types = tally.types.length === 0 ? "" : ` of the types ${tally.types.join(", ")}`;
   return new VerbError(
     "no-questions",
-    `the bank's sets for this need have no playable question in ${language}: read ${tally.reads} lesson-ready questions and passed over all of them (${why})`,
+    `the bank's sets for this need have no playable question${types} in ${language}: read ${tally.reads} lesson-ready questions and passed over all of them (${why})`,
   );
 }
 
@@ -114,6 +168,9 @@ function needOf(query: BankQuery, limit: number): Need | undefined {
     grade: query.grade,
     ...(words === undefined ? {} : { words }),
     ...(query.skills.length === 0 ? {} : { skills: [...query.skills] }),
+    ...(query.question_types === undefined || query.question_types.length === 0
+      ? {}
+      : { question_types: [...query.question_types] }),
     limit,
   };
 }
@@ -125,6 +182,7 @@ function setOf(row: SearchEnvelope["rows"][number], query: BankQuery): BankSet {
     grades: row.grade ? [row.grade] : [],
     skills: row.skill_ids ?? [],
     questions: row.items ?? 0,
+    question_types: row.question_types ?? [],
     why_found: `the bank's search ranked it ${row.rank} (arm ${row.arm})`,
   };
 }
@@ -151,7 +209,8 @@ async function draw(
     tally.reads += ids.length;
     const bodies = await Promise.all(ids.map((id) => reads.body(id)));
     for (const body of bodies) {
-      const question = body === undefined ? "missing" : questionOf(body, page, language);
+      const question =
+        body === undefined ? "missing" : questionOf(body, page, language, tally.types);
       if (typeof question === "string") {
         tally.passed.set(question, (tally.passed.get(question) ?? 0) + 1);
       } else out.push(question);
@@ -164,12 +223,14 @@ function questionOf(
   body: QuestionBody,
   page: QuestionSetPage,
   language: "pl" | "en",
+  types: readonly string[],
 ): BankQuestion | PassedOver {
   const variant = body[language];
   if (variant === undefined) return "no variant";
   const type: QuestionType | undefined = variant.question_type ?? body.question_type;
   if (type === undefined) return "no question_type";
   if (QUESTION_TYPE_FAMILY[type] !== variant.family) return "family mismatch";
+  if (!typeKept(type, types)) return "not of the asked types";
   return {
     source: `bank:${body.id}`,
     set_id: page.id,

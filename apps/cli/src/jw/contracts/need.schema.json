@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "jadwigo-bank/need",
-  "$comment": "Pinned copy of jadwigo-bank schemas/need.schema.json at bank commit 16f03f3. The bank's copy is the source of truth: change it there first, then re-copy here and update this commit.",
+  "$comment": "Pinned copy of jadwigo-bank schemas/need.schema.json at bank commit 16f03f3, plus question_types from the bank's dl-n9fr.70 PR. The bank's copy is the source of truth: change it there first, then re-copy here and update this commit.",
   "title": "Need",
   "description": "What a caller sends search: a need, not a sentence (david-learns/decisions/2026-10-25-the-question-bank-is-searched-for-question-sets-by-agents-sendin). Plain words are one field among several.",
   "type": "object",
@@ -61,6 +61,13 @@
     "resemble": {
       "type": "string",
       "description": "A task to resemble, e.g. a homework problem's text"
+    },
+    "question_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Keep only sets holding one of these question types: family.type, a glob such as group.*, a bare family (choose) or a bare type (multi_select)"
     },
     "language": {
       "enum": ["pl", "en", "uk"],

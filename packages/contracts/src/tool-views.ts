@@ -58,6 +58,10 @@ export const SearchSet = z.object({
   grades: z.array(z.string()),
   skills: z.array(z.string()),
   questions: z.int().min(0),
+  question_types: z
+    .array(z.string())
+    .describe("The question types of its lesson-ready questions (dl-hin8.24)")
+    .optional(),
   why_found: z.string(),
 });
 export type SearchSet = z.infer<typeof SearchSet>;
@@ -65,6 +69,24 @@ export type SearchSet = z.infer<typeof SearchSet>;
 /** question_search's view: the sets it found, best first. */
 export const QuestionSearchView = z.object({ sets: z.array(SearchSet) });
 export type QuestionSearchView = z.infer<typeof QuestionSearchView>;
+
+/**
+ * question_types' view (dl-hin8.24): the kinds of question the bank holds for a grade and
+ * language, most questions first, so the model offers a parent only what exists.
+ */
+export const QuestionTypesView = z.object({
+  grade: z.string(),
+  language: z.string(),
+  types: z.array(
+    z.object({
+      question_type: z.string(),
+      family: z.string(),
+      sets: z.int().min(0),
+      ready: z.int().min(0),
+    }),
+  ),
+});
+export type QuestionTypesView = z.infer<typeof QuestionTypesView>;
 
 // The learner verbs (dl-z5ja.25): one learner of the run's pod, read by code. What they may say is
 // the owner's answer on dl-z5ja.27: everything the record holds, each claim cited, and never a
@@ -195,6 +217,7 @@ export const TOOL_VIEW_DATA = {
   lesson_edit: LessonRevisionView,
   lesson_check: LessonCheckView,
   question_search: QuestionSearchView,
+  question_types: QuestionTypesView,
   learner_skills: LearnerSkillsView,
   learner_week: LearnerWeekView,
   learner_mistakes: LearnerMistakesView,
