@@ -71,6 +71,7 @@ function ChatView({
   onTakeNext,
   contextClosed,
   onCloseContext,
+  onResend,
 }: {
   language: Language;
   state: ConversationState;
@@ -87,6 +88,8 @@ function ChatView({
   /** The context chip, closed for this conversation, and its × (contextHold.ts). */
   contextClosed?: boolean;
   onCloseContext?: () => void;
+  /** "Spróbuj ponownie" after a failed send: the exact words that failed. */
+  onResend?: () => void;
   onEdit?: (text: string, question_ids: string[], change?: LessonChange) => unknown;
   onNew?: () => void;
   /** Rates a completed turn by its run (dl-z5ja.63). */
@@ -120,6 +123,7 @@ function ChatView({
           onTakeNext={onTakeNext}
           {...(contextClosed === undefined ? {} : { contextClosed })}
           onCloseContext={onCloseContext}
+          onResend={onResend}
         />
       }
       lesson={
@@ -261,6 +265,7 @@ function LiveChat({
     takeNext,
     contextClosed,
     closeContext,
+    resend,
   } = useConversation(transport, conversation);
   if (consentMissing)
     return (
@@ -291,6 +296,7 @@ function LiveChat({
       onTakeNext={takeNext}
       contextClosed={contextClosed}
       onCloseContext={closeContext}
+      onResend={resend}
     />
   );
 }
