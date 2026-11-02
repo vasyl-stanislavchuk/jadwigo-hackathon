@@ -15,12 +15,15 @@
  * A graph's y-axis title (isAxisTitle) reads bottom to top, as in Khan's graphs, and stays inside
  * the box: its centre is at least half a line from the left edge (dl-uukj.50).
  *
+ * A `<br>` in a label is a line break, never text (dl-uukj.51).
+ *
  * Plain props only: this part knows nothing of a family or of Khan. A label is TeX unless `math`
  * is false, and RichText draws it inline, so a coloured number over a drawing reads as it does in
  * the text.
  */
 
-import { isAxisTitle, labelWidths, textOnly } from "./labelWidths.ts";
+import { Fragment } from "react";
+import { isAxisTitle, labelLines, labelWidths, textOnly } from "./labelWidths.ts";
 import { RichText } from "./RichText.tsx";
 
 interface PictureLabelProps {
@@ -67,14 +70,16 @@ export function Picture({ src, alt, width, height, labels }: PictureProps): JSX.
         const wrap = widths[i] ?? null;
         // A wrapping label that is only \text{…} is drawn as plain words: KaTeX keeps it on one line.
         const vertical = labels ? isAxisTitle(l, labels.range) : false;
-        const plain = l.math === false ? l.content : wrap === null ? null : textOnly(l.content);
+        const plain = (line: string): string | null =>
+          l.math === false ? line : wrap === null ? null : textOnly(line);
+        const lines = labelLines(l.content);
         return (
           <span
             key={i}
             aria-hidden
             className={
               wrap === null
-                ? "absolute whitespace-nowrap text-sm leading-none text-foreground"
+                ? `absolute whitespace-nowrap text-sm leading-none text-foreground${lines.length > 1 ? " text-center" : ""}`
                 : "absolute hyphens-auto break-words whitespace-normal text-center text-xs leading-tight text-foreground"
             }
             style={{
@@ -86,7 +91,12 @@ export function Picture({ src, alt, width, height, labels }: PictureProps): JSX.
               ...(wrap === null ? {} : { width: "max-content", maxWidth: `${wrap}%` }),
             }}
           >
-            {plain ?? <RichText inline text={`$${l.content}$`} />}
+            {lines.map((line, n) => (
+              <Fragment key={n}>
+                {n > 0 && <br />}
+                {plain(line) ?? <RichText inline text={`$${line}$`} />}
+              </Fragment>
+            ))}
           </span>
         );
       })}

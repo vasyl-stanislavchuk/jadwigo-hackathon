@@ -51,4 +51,42 @@ describe("Picture", () => {
     expect(rows.style.transform).toBe("translate(0%, -100%)");
     expect(rows.querySelector("[data-tex]")).toBeNull();
   });
+
+  it("draws a <br> in a label as a line break, never as text (dl-uukj.51)", () => {
+    const labels = {
+      range: [
+        [0, 4],
+        [0, 4],
+      ] as [[number, number], [number, number]],
+      items: [
+        {
+          content: "Break<br>dance",
+          coordinates: [1, 0] as [number, number],
+          alignment: "below",
+          math: false as const,
+        },
+        {
+          content: "\\text{Twist and}<br/>\\text{shout}",
+          coordinates: [3, 0] as [number, number],
+          alignment: "below",
+        },
+      ],
+    };
+    const { container } = render(
+      <Picture
+        src="/media/khan/a.svg"
+        alt="A bar graph."
+        width={100}
+        height={100}
+        labels={labels}
+      />,
+    );
+    const [plain, tex] = [...container.querySelectorAll<HTMLElement>("span[aria-hidden]")];
+    for (const label of [plain, tex]) {
+      expect(must(label).querySelectorAll("br")).toHaveLength(1);
+      expect(must(label).textContent).not.toContain("<br");
+    }
+    expect(must(plain).textContent).toBe("Breakdance");
+    expect(must(tex).textContent).toBe("Twist andshout");
+  });
 });

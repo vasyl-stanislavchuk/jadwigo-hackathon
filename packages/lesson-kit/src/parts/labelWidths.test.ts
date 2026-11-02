@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAxisTitle, labelWidths, textOnly } from "./labelWidths.ts";
+import { isAxisTitle, labelLines, labelWidths, textOnly } from "./labelWidths.ts";
 
 const at = (x: number, y: number, alignment = "below") => ({
   coordinates: [x, y] as [number, number],
@@ -89,5 +89,14 @@ describe("isAxisTitle", () => {
         [0, 1],
       ]),
     ).toBe(false);
+  });
+});
+
+describe("labelLines", () => {
+  it("splits a label at <br>, <br/> and <br />", () => {
+    expect(labelLines("Break<br>dance")).toEqual(["Break", "dance"]);
+    expect(labelLines("Twist and<br/>shout")).toEqual(["Twist and", "shout"]);
+    expect(labelLines("a<BR />b")).toEqual(["a", "b"]);
+    expect(labelLines("Oatmeal ")).toEqual(["Oatmeal"]);
   });
 });
