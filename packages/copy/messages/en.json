@@ -780,6 +780,7 @@
   "chat_plan_in_progress": "in progress",
   "chat_plan_done": "done",
   "chat_plan_failed": "didn't work out",
+  "chat_plan_header": "Plan · {n} of {m}",
   "chat_why": "why?",
   "chat_citations": "What this rests on",
   "chat_choose_recommended": "recommended",

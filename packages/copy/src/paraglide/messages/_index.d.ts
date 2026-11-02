@@ -137,6 +137,7 @@ export * from "./chat_phase_thinking.js";
 export * from "./chat_plan.js";
 export * from "./chat_plan_done.js";
 export * from "./chat_plan_failed.js";
+export * from "./chat_plan_header.js";
 export * from "./chat_plan_in_progress.js";
 export * from "./chat_plan_pending.js";
 export * from "./chat_plan_progress.js";
