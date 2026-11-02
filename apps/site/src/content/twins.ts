@@ -10,6 +10,7 @@ export const twins = {
   howItWorks: { pl: "/jak-to-dziala", en: "/en/how-it-works" },
   compare: { pl: "/porownanie", en: "/en/compare" },
   signIn: { pl: "/zaloguj", en: "/en/sign-in" },
+  jadwigoAi: { pl: "/jadwigo-ai", en: "/en/jadwigo-ai" },
 } as const satisfies Record<string, Record<Language, string>>;
 
 export type Twin = keyof typeof twins;

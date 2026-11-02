@@ -41,6 +41,7 @@ const [one, two, three] = s.items;
   <section class="wrap top" aria-labelledby="page-title">
     <h1 id="page-title">{s.heading}</h1>
     <p class="intro">{s.intro}</p>
+    <p class="ai">{words.ai.teaser.text} <a href={`${twinPath("jadwigoAi", lang)}/`}>{words.ai.teaser.link}</a></p>
     <Pic label={s.pic} src={slotArt.howTop} sizes="(max-width: 72rem) 100vw, 72rem" class="wide-pic" />
   </section>
 
@@ -104,6 +105,8 @@ const [one, two, three] = s.items;
   .top { padding-top: clamp(2rem, 5vw, 3.5rem); }
   .top h1 { font-size: clamp(2.2rem, 5vw, 3.25rem); }
   .intro { margin-top: 0.75rem; max-width: 38rem; font-size: 1.2rem; color: var(--jw-ink-soft); }
+  .top .ai { margin-top: 0.5rem; max-width: 38rem; }
+  .top .ai a { font-weight: 700; }
   .top :global(.wide-pic) { margin-top: 1.5rem; height: clamp(9rem, 18vw, 14rem); }
 
   .steps { list-style: none; padding-top: 0; padding-bottom: 0; margin-top: clamp(3rem, 7vw, 5rem); display: flex; flex-direction: column; gap: clamp(3.5rem, 8vw, 6rem); }

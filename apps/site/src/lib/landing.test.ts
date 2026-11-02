@@ -73,6 +73,26 @@ describe("the card pictures' words", () => {
   });
 });
 
+describe("the Jadwigo AI page's steps (dl-w0b4.114)", () => {
+  const steps = landingSchema.shape.ai.shape.steps;
+  const step = (title: string) => ({ title, text: "Słowa." });
+  const four = [
+    "Czyta zadanie",
+    "Szuka w banku zadań",
+    "Układa i sprawdza lekcję",
+    "Ty decydujesz",
+  ];
+
+  it("takes exactly 4 steps", () => {
+    expect(steps.safeParse(four.map(step)).success).toBe(true);
+  });
+
+  it("refuses 3 or 5", () => {
+    expect(steps.safeParse(four.slice(0, 3).map(step)).success).toBe(false);
+    expect(steps.safeParse([...four, "Jeszcze"].map(step)).success).toBe(false);
+  });
+});
+
 describe("goalLine", () => {
   const words = { practising: "Ćwiczy:", allDone: "Umie wszystko.", nextUp: "Dalej:" };
 

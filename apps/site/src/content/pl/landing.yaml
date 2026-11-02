@@ -65,6 +65,48 @@ steps:
     nextLabel: "Następna lekcja:"
     next: dopełnianie do pełnego złotego, potem reszta z 50 zł.
     screencast: "screencast · strona dziecka: cele, umiejętności, ostatnia lekcja pytanie po pytaniu"
+# /jadwigo-ai (dl-w0b4.114; owner's call of 2026-11-02, draft for the native review). The data lines say
+# what the consent screen says (packages/copy chat_consent_*, decision dl-uafq): Meta's models may learn
+# from it. Jadwigo AI's lines carry no person and no gender.
+ai:
+  title: "Jadwigo AI: lekcja ułożona z Twojego opisu"
+  description: Jadwigo AI czyta, co dziecko ćwiczy w szkole, szuka pytań w banku zadań i układa lekcję. Zanim trafi do dziecka, sprawdzasz ją Ty.
+  heading: Jadwigo AI
+  intro: Jadwigo AI układa lekcję z tego, co napiszesz. Pytania bierze z banku zadań, każde ze źródłem. Gotową lekcję najpierw widzisz Ty, a dziecko dostaje ją dopiero wtedy, gdy mu ją dasz.
+  steps:
+    - title: Czyta zadanie
+      text: Piszesz zwykłymi słowami, co dziecko ćwiczy w szkole, na przykład „Zadania o wydawaniu reszty. Myli złote z groszami”. Jadwigo AI czyta też to, co Jadwigo już wie o dziecku, czyli klasę, cele i pomyłki z ostatnich lekcji.
+    - title: Szuka w banku zadań
+      text: Szuka pytań, które pasują do Twojej prośby i do tego, co dziecko już umie. Każde pytanie ma podane źródło, na przykład Alfik Matematyczny albo Khan Academy.
+    - title: Układa i sprawdza lekcję
+      text: Układa pytania od łatwiejszych do trudniejszych i dopisuje podpowiedzi tam, gdzie ich brakuje. Potem sprawdza, czy każda odpowiedź się zgadza i czy każde zdanie dla dziecka jest krótkie i życzliwe.
+    - title: Ty decydujesz
+      text: Widzisz całą lekcję, pytanie po pytaniu. Możesz zmienić pytanie, poprosić o inne albo je usunąć. Do dziecka trafia tylko to, co mu dasz.
+  data:
+    heading: Co Jadwigo AI czyta o dziecku i dokąd to trafia
+    items:
+      - "Jadwigo AI czyta to, czego potrzebuje Twoja prośba: dane dziecka, imiona też."
+      - Te dane trafiają do modeli firmy Meta, które mogą się na nich uczyć.
+      - Zapis rozmów zostaje przy koncie rodziny, dopóki konto nie zostanie usunięte. Zarchiwizowana rozmowa też.
+      - Imienia dziecka nie ma w lekcji, którą dziecko dostaje.
+    consent: Te same słowa zobaczysz przed pierwszą rozmową z Jadwigo AI. Rozmowa zaczyna się dopiero wtedy, gdy się zgodzisz. Możesz też wybrać „Nie teraz”.
+  never:
+    heading: Czego Jadwigo AI nie robi
+    items:
+      - title: Nie rozmawia z dzieckiem.
+        text: Dziecko widzi tylko lekcję, czyli pytania, podpowiedzi i swoje odpowiedzi. Z Jadwigo AI rozmawiasz tylko Ty.
+      - title: Nie daje dziecku niczego bez Ciebie.
+        text: Lekcja czeka u Ciebie, dopóki jej nie sprawdzisz i nie dasz dziecku.
+      - title: Nie ocenia dziecka.
+        text: Nie daje punktów ani poziomów i nie porównuje dziecka z innymi dziećmi. Mówi, co poszło dobrze i co ćwiczyć dalej.
+  check:
+    heading: Najpierw sprawdzasz, potem dajesz
+    text: Jadwigo AI przygotowuje lekcję, a decyzja należy do Ciebie. Przeglądasz pytania, poprawiasz to, co nie pasuje, i dopiero wtedy dajesz lekcję dziecku.
+    wrong: Jadwigo AI może się pomylić. Dlatego ostatnie słowo masz Ty.
+  # The line under the landing page's lessons and under /jak-to-dziala's intro that links this page.
+  teaser:
+    text: Lekcję z Twojego opisu układa Jadwigo AI.
+    link: Co robi Jadwigo AI
 promises:
   heading: Co dostajecie
   items:

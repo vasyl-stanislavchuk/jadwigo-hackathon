@@ -53,6 +53,7 @@ const lessons = await pageLessons(lang);
       )
     }
     <p class="after wrap">{words.after.text} <a href={`${twinPath("howItWorks", lang)}/`}>{words.after.link}</a></p>
+    <p class="after ai wrap">{words.ai.teaser.text} <a href={`${twinPath("jadwigoAi", lang)}/`}>{words.ai.teaser.link}</a></p>
   </section>
 
   <div class="band"><PartnerBlock lang={lang} /></div>
@@ -89,6 +90,7 @@ const lessons = await pageLessons(lang);
   .lessons { margin-top: clamp(3rem, 7vw, 4.5rem); }
   .after { margin-top: 0.75rem; }
   .after a { font-weight: 700; }
+  .after.ai { margin-top: 0.35rem; }
   /* Each block below the lessons starts on its own line across the page. */
   .band { border-top: 2px solid var(--jw-line); margin-top: clamp(3rem, 7vw, 5rem); padding-top: clamp(2.5rem, 6vw, 4.5rem); }
   .promises ul {

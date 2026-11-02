@@ -60,6 +60,19 @@ export const landingSchema = z.object({
       screencast: text,
     }),
   }),
+  // /jadwigo-ai (dl-w0b4.114; owner's call jadwigo-marketing/calls/2026-11-02-jadwigo-ai-gets-a-marketing-page):
+  // what Jadwigo AI does in 4 steps, what it reads about a child and where that goes (the consent
+  // screen's words, decision dl-uafq), what it never does, and that the parent checks, then gives.
+  // `teaser` is the line that links the page from the landing page and /jak-to-dziala.
+  ai: z.object({
+    ...head,
+    intro: text,
+    steps: z.array(item).length(4),
+    data: z.object({ heading: text, items: z.array(text).min(1), consent: text }),
+    never: z.object({ heading: text, items: z.array(item).min(1) }),
+    check: z.object({ heading: text, text, wrong: text }),
+    teaser: z.object({ text, link: text }),
+  }),
   promises: z.object({ heading: text, items: z.array(item).min(1) }),
   // Direction 1a, "Partner" (owner, 2026-11-01): learning the parent is close to, beside a made-up
   // child's profile as the parent app shows it. Goals and skill dots, never a score or a percentage.
