@@ -343,7 +343,7 @@ export function createApp(
   // metadata below, which says where to get one.
   const lessonBank = mcpBank(bank, bucket);
   const mcpRoute = ({ req, event }: { req: Request; event: unknown }) =>
-    serveMcp(req, event, store, authenticate, mcp, lessonBank);
+    serveMcp(req, event, store, authenticate, mcp, lessonBank, { bank, bucket, uploads, now });
   app.post(MCP_PATH, mcpRoute);
   app.get(MCP_PATH, mcpRoute);
   app.delete(MCP_PATH, mcpRoute);

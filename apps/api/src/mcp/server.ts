@@ -18,7 +18,7 @@ import {
 import type { Authenticate, Claims } from "../auth.ts";
 import { authorizeMember } from "../authorize.ts";
 import { ApiError, errorResponse, json } from "../errors.ts";
-import type { McpTool } from "./tool.ts";
+import type { McpTool, ToolDeps } from "./tool.ts";
 import { TOOLS } from "./tools/index.ts";
 
 /**
@@ -61,6 +61,7 @@ interface Caller {
   readonly bank: BankPort;
   /** A path of the app as a full URL, on the MCP's own origin (the app's, `app.jadwigo.pl`). */
   readonly appUrl: (path: string) => string;
+  readonly deps: ToolDeps;
 }
 
 /**
@@ -82,6 +83,7 @@ export async function serveMcp(
   authenticate: Authenticate,
   config: McpConfig,
   bank: BankPort,
+  deps: ToolDeps = { now: () => new Date() },
 ): Promise<Response> {
   const resource = resourceOf(req, config);
   // A browser's request from another site is refused (DNS rebinding); non-browser clients send none.
@@ -129,6 +131,7 @@ export async function serveMcp(
     claims,
     bank,
     appUrl: (path) => new URL(path, resource.origin).href,
+    deps,
   };
   if (await isLegacyRequest(req, parsedBody)) {
     // 2025-era clients (initialize handshake): a fresh server and transport per request.
@@ -172,7 +175,7 @@ function serverFor(caller: Caller): McpServer {
 async function callTool(
   tool: McpTool,
   input: unknown,
-  { store, claims, bank, appUrl }: Caller,
+  { store, claims, bank, appUrl, deps }: Caller,
 ): Promise<CallToolResult> {
   // One line per call: the OAuth client (null for the web app's token), the tool and the outcome,
   // never its arguments or what it read (dl-1u6fn.17).
@@ -189,6 +192,7 @@ async function callTool(
         claims,
         bank,
         appUrl,
+        deps,
       }),
     );
     log("ok");
