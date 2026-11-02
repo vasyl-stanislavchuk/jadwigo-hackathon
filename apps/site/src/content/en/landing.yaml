@@ -120,11 +120,12 @@ lessons:
   subjects: { math: Math, polish: Polish, english: English }
   grade: Grade
   questions: [question, questions, questions]
+  # /lekcje's heading over the lessons that have no grade yet.
+  other: More lessons
   row:
     heading: Play without signing in
     gradeLabel: Grade
     subjectLabel: Subject
-    allGrades: All
     allSubjects: All
     count: [lesson, lessons, lessons]
     prev: Previous lessons

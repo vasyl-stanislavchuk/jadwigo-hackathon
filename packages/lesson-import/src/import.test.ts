@@ -62,6 +62,22 @@ describe("compiling a lesson file", () => {
     }
   });
 
+  it("writes the file's grade on the lesson and its questions, and null without one", () => {
+    const raw = { ...file("equal-groups"), grade: 2 };
+    const graded = compileLessonFile(raw);
+    expect(graded.lesson.grade).toBe(2);
+    expect(graded.questions.every((q) => q.question.grade === 2)).toBe(true);
+
+    const { grade: _, ...bare } = raw;
+    const ungraded = compileLessonFile(bare);
+    expect(ungraded.lesson.grade).toBeNull();
+    expect(ungraded.questions.every((q) => q.question.grade === null)).toBe(true);
+  });
+
+  it("refuses a grade outside 1 to 4", () => {
+    expect(() => compileLessonFile({ ...file("equal-groups"), grade: 5 })).toThrow(/grade/);
+  });
+
   it("keeps the questions and drops teaching steps, can_do, reasons, scenarios and clip words", () => {
     const raw = file("equal-groups");
     const compiled = compileLessonFile(raw);

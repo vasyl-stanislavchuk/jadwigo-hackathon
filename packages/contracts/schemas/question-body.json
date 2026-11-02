@@ -6,8 +6,7 @@
       "$ref": "#/$defs/BankQuestionId"
     },
     "source": {
-      "type": "string",
-      "const": "khan"
+      "$ref": "#/$defs/QuestionSource"
     },
     "pl": {
       "type": "object",
@@ -148,7 +147,15 @@
     "BankQuestionId": {
       "type": "string",
       "pattern": "^[A-Za-z0-9_-]{1,64}$",
-      "description": "A bank question's id: a Khan item id such as x1a2b3c4, letters, digits, _ and - only"
+      "description": "A bank question's id: a Khan item id such as x1a2b3c4 or an Alfik task id such as alfik_2024_k2_q07, letters, digits, _ and - only"
+    },
+    "QuestionSource": {
+      "type": "string",
+      "enum": [
+        "khan",
+        "alfik"
+      ],
+      "description": "Where a bank question comes from, and its prefix in the content bucket: khan, alfik"
     }
   }
 }

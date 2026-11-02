@@ -2,12 +2,15 @@
 // The featured lessons as cards (dl-5ssh.4.3, redrawn in design handoff "landing 3", dl-5ssh.4.13):
 // the subject and grade with the question count, the title, an illustration slot, the first question
 // on squared paper, and one link to play in the app with no login. With `row`, the landing page's
-// version: grade and subject filters, a count, and one row of 300 px cards that scrolls sideways
-// with snap to the page's right edge, moved a card at a time by 2 arrow buttons. Without it, a
-// still grid (/lekcje). Only the real featured lessons show (owner, 2026-11-01).
+// version: a tab per grade present ("Klasa 1 · 2 · 3", the lowest chosen, dl-w0b4.108), a subject
+// filter only while there is more than one subject, a count, and one row of 300 px cards that
+// scrolls sideways with snap to the page's right edge, moved a card at a time by 2 arrow buttons.
+// While no lesson has a grade there are no tabs and every card shows; once one has, a lesson with
+// no grade is left off the row (it stays on /lekcje). Without `row`, a still grid (/lekcje). Only
+// the real featured lessons show (owner, 2026-11-01).
 import type { Language } from "@jadwigo/config";
 import type { FeaturedLesson } from "@jadwigo/contracts";
-import { assertLanguage, playUrl } from "../lib/featured.ts";
+import { assertLanguage, gradesOf, playUrl } from "../lib/featured.ts";
 import { withLang } from "../lib/i18n.ts";
 import { firstSentence, plural } from "../lib/landing.ts";
 import { landingWords } from "../lib/words.ts";
@@ -27,26 +30,32 @@ const { lang, lessons, row = false } = Astro.props;
 assertLanguage(lessons, lang);
 const words = (await landingWords(lang)).lessons;
 
-const cards = lessons.map((l) => ({
+const grades = row ? gradesOf(lessons) : [];
+const first = grades[0];
+const onRow = first === undefined ? lessons : lessons.filter((l) => l.grade !== null);
+const cards = onRow.map((l) => ({
   href: withLang(playUrl(l), lang),
   title: l.title,
   subject: l.subject,
   grade: l.grade === null ? "" : String(l.grade),
+  // Before the script runs, the row shows the lowest grade's tab.
+  hidden: first !== undefined && l.grade !== first,
   teaser: l.first_say === null ? null : firstSentence(l.first_say),
   meta: [words.subjects[l.subject], l.grade === null ? null : `${words.grade} ${l.grade}`]
     .filter((m): m is string => m !== null)
     .join(" · "),
   count: l.question_count > 0 ? plural(l.question_count, words.questions, lang) : null,
 }));
-const subjects = [...new Set(lessons.map((l) => l.subject))];
-const gradeOptions = [
-  { value: "all", label: words.row.allGrades },
-  ...["1", "2", "3", "4"].map((g) => ({ value: g, label: g })),
-];
+const subjects = [...new Set(onRow.map((l) => l.subject))];
+const gradeOptions = grades.map((g) => ({
+  value: String(g),
+  label: `${words.row.gradeLabel} ${g}`,
+}));
 const subjectOptions = [
   { value: "all", label: words.row.allSubjects },
   ...subjects.map((s) => ({ value: s, label: words.subjects[s] })),
 ];
+const shownCount = cards.filter((c) => !c.hidden).length;
 ---
 
 <div class:list={["lessons-ui", { row }]} data-count={JSON.stringify(words.row.count)} data-lang={lang}>
@@ -57,11 +66,15 @@ const subjectOptions = [
           <slot />
         </div>
         <div class="filters">
-          <Segmented name="grade" label={words.row.gradeLabel} options={gradeOptions} value="all" />
-          <Segmented name="subject" label={words.row.subjectLabel} options={subjectOptions} value="all" />
+          {first !== undefined && (
+            <Segmented name="grade" label={words.row.gradeLabel} options={gradeOptions} value={String(first)} hideLabel />
+          )}
+          {subjects.length > 1 && (
+            <Segmented name="subject" label={words.row.subjectLabel} options={subjectOptions} value="all" />
+          )}
         </div>
         <div class="bar">
-          <p class="count" aria-live="polite">{plural(cards.length, words.row.count, lang)}</p>
+          <p class="count" aria-live="polite">{plural(shownCount, words.row.count, lang)}</p>
           <button type="button" class="arrow" data-step="-1" aria-label={words.row.prev}>←</button>
           <button type="button" class="arrow" data-step="1" aria-label={words.row.next}>→</button>
         </div>
@@ -71,7 +84,7 @@ const subjectOptions = [
   <ul class="cards">
     {
       cards.map((c) => (
-        <li class="card" data-grade={c.grade} data-subject={c.subject}>
+        <li class="card" data-grade={c.grade} data-subject={c.subject} hidden={c.hidden}>
           <a href={c.href}>
             <span class="meta">
               <span>{c.meta}</span>
@@ -110,7 +123,8 @@ const subjectOptions = [
       arrows[1]?.toggleAttribute("disabled", list.scrollLeft >= max);
     };
 
-    // A filter shows the cards that match both choices and puts the row back at its start.
+    // A tab and the subject filter show the cards that match both choices and put the row back at
+    // its start. With no tabs (no lesson has a grade yet) every grade fits.
     const filter = () => {
       const grade = ui.querySelector<HTMLInputElement>('input[name="grade"]:checked')?.value ?? "all";
       const subject = ui.querySelector<HTMLInputElement>('input[name="subject"]:checked')?.value ?? "all";

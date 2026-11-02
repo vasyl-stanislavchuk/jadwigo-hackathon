@@ -280,3 +280,19 @@ def test_count_ready_zero_leaves_the_set_out_even_without_ids() -> None:
         (left.id, left.reason) for left in result.left_out
     ]
     assert {q.set_id for q in result.questions} == {ADD}
+
+
+
+def test_a_ready_item_whose_sample_lacks_the_language_text_is_drawn_not_left_out() -> None:
+    """dl-u1y5.39: x0792044c99182e84 was left out as 'the sample has no en text' and drawn too;
+    a page that lists an item as ready in the language vouches for it."""
+    page = {
+        "id": "set_khan_x1", "languages": {"pl": True, "en": True},
+        "items": {"ids": ["i1", "i2"], "count": {"en": 2}, "ready_ids": {"en": ["i1", "i2"]}},
+        "problem_types": [{"name": "Clocks", "samples": [{"item_id": "i1", "pl": "Zegar"}]}],
+    }
+    out = draw({"rows": [{"id": "set_khan_x1", "rank": 1}]}, {"set_khan_x1": page},
+               kind="practice", language="en", today=dt.date(2026, 11, 1))
+    drawn = {q.item_id for q in out.questions}
+    assert drawn == {"i1", "i2"}
+    assert not drawn & {left.id for left in out.left_out}

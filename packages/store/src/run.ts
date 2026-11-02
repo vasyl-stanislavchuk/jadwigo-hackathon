@@ -156,6 +156,13 @@ export interface RunStore {
   /** `NotFound` outside `pod`. */
   getRun(pod: PodId, run: RunId): Promise<Run>;
   /**
+   * The run, its row locked until the open unit ends (`select ... for update`): a caller that reads
+   * the run's `attempt` and status under it sees them stay put, and an ender's `updateRun` waits
+   * for it (#575's review). Outside a unit it locks nothing past its own statement. The in-memory
+   * store is one thread, so it reads the run.
+   */
+  lockRun(pod: PodId, run: RunId): Promise<Run>;
+  /**
    * Compare and set on `attempt` (PostHog's `generation` fence, `c54766909b8`): applies `change`
    * only while the run's attempt is `attempt`, else changes nothing and answers `stale` with the
    * stored run. A step claims a redelivery by changing `attempt` to `attempt + 1`.

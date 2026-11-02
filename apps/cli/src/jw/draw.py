@@ -28,6 +28,7 @@ back to `items.ids`, and `jw.items.load_item` then refuses each item as `not che
 
 from __future__ import annotations
 
+import dataclasses
 import datetime as dt
 import re
 from collections import deque
@@ -37,6 +38,9 @@ from typing import Any, Literal
 
 Kind = Literal["practice", "review", "check", "diagnostic"]
 Pick = Literal["unseen", "due_or_twin"]
+# How the draw takes turns: across every (set, problem type) queue, or a set at a time and the
+# set's problem types in turn within it, for sets a curated lesson pins (dl-u1y5.37).
+Spread = Literal["type", "set"]
 
 
 @dataclass(frozen=True)
@@ -265,12 +269,15 @@ def _candidates(
                 if item in flagged:
                     left.append(Left(item, "its media is flagged (raster words or no alt)"))
                     continue
-                if not sample.get(language):
+                if not sample.get(language) and ready is None:
                     left.append(Left(item, f"the sample has no {language} text"))
                     continue
+                # A page that lists the item as ready in the language vouches for it, though its
+                # sample text is missing (dl-u1y5.39): the item's own text is load_item's.
                 out.append(
                     _Candidate(
-                        item, set_id, rank, ptype["name"], sample[language], typed_skills, order
+                        item, set_id, rank, ptype["name"], sample.get(language), typed_skills,
+                        order,
                     )
                 )
         for item in [*ids, *(i for i in ready or [] if i not in ids)]:
@@ -348,6 +355,30 @@ def _interleave(cands: list[_Candidate], rule: DrawRule, reasons: Mapping[str, s
     return picked
 
 
+def _interleave_sets(
+    cands: list[_Candidate], rule: DrawRule, reasons: Mapping[str, str]
+) -> list[Drawn]:
+    """Take turns across the sets, each set's own questions varied by problem type
+    (`_interleave`), so no set gives more than its share while another still has questions."""
+    every = dataclasses.replace(rule, count=len(cands))
+    by_set = [
+        deque(_interleave([c for c in cands if c.set_id == set_id], every, reasons))
+        for set_id in dict.fromkeys(c.set_id for c in cands)
+    ]
+    turns = deque(q for q in by_set if q)
+    per_skill: dict[str, int] = {}
+    picked: list[Drawn] = []
+    while turns and len(picked) < rule.count:
+        queue = turns[0]
+        turns.rotate(-1)
+        head = queue.popleft()
+        if rule.per_skill is None or per_skill.get(head.skill, 0) < rule.per_skill:
+            per_skill[head.skill] = per_skill.get(head.skill, 0) + 1
+            picked.append(head)
+        turns = deque(q for q in turns if q)
+    return picked
+
+
 def draw(
     envelope: Mapping[str, Any],
     pages: Mapping[str, Mapping[str, Any]],
@@ -358,6 +389,7 @@ def draw(
     today: dt.date | None = None,
     flagged: Iterable[str] = (),
     rules: Mapping[str, DrawRule] | None = None,
+    spread: Spread = "type",
 ) -> Draw:
     """Draw one brief entry's questions for a lesson of `kind` from a search's sets.
 
@@ -365,6 +397,7 @@ def draw(
     rows name are drawn from, in their rank order. `flagged` is the item ids
     whose media is flagged for the lesson's language or for voice. `rules` replaces DRAW_RULES (a
     planner tuning a count); the result says which rule ran and that it is not settled.
+    `spread` "set" takes the sets in turn (`_interleave_sets`), for sets a lesson pins.
     """
     table = rules if rules is not None else DRAW_RULES
     if kind not in table:
@@ -412,7 +445,7 @@ def draw(
         kind=kind,
         rule=asdict(rule),
         rule_settled=RULES_SETTLED,
-        questions=_interleave(keep, rule, reasons),
+        questions=(_interleave_sets if spread == "set" else _interleave)(keep, rule, reasons),
         left_out=left,
     )
 

@@ -3,12 +3,14 @@ cannot (dl-a38n.42, wave-3 lead decision 8: a clean machine works).
 
 Five checks, each `ok`, `warn` or `fail`, each line with the fix to run:
 
-1. settings: the bank checkout's `sets/`, the converted items file (size, generated_by),
-   `readiness.json`, the operator's `bank.env` at mode 600, `check.ts` and `bun`, the drafts
-   directory writable at mode 700.
-2. ready ids: every set page's `items.ready_ids[<lang>]` names an item the converted file has,
-   with status plays and checked_at; the stale ones are counted with 3 examples (the 58 of the
-   2026-10-31 run, a page stamped against another converted file).
+1. settings: the bank checkout's `sets/`, each language's converted items file (size,
+   generated_by), whether those files have one home (a warn names a second copy another jw, one
+   without these settings, would read instead, dl-n9fr.64), `readiness.json`, the operator's
+   `bank.env` at mode 600, `check.ts` and `bun`, the drafts directory writable at mode 700.
+2. ready ids: every set page's `items.ready_ids[<lang>]` names an item that language's converted
+   file has, with status plays and checked_at; the stale ones are counted with 3 examples (the
+   58 of the 2026-10-31 run, a page stamped against another converted file). With no language
+   given, pl and en are both checked, each against its own file (dl-n9fr.65).
 3. stamps: the rules version (and stamp id, where written) agrees between readiness.json, the
    converted file's items and the pages' `items.ready_stamp`; "pages unstamped" without it.
 4. bank_rev: the search service's `bank_rev` from one search, against the sha256 of the local
@@ -46,6 +48,8 @@ HTTP_TIMEOUT_SECS = 3.0
 
 # What check 4 searches for: any need will do, the answer's bank_rev is what is read.
 PROBE_NEED = {"language": "pl", "grade": "3", "words": "dodawanie"}
+# The languages a doctor with no language checks: each has its own converted file.
+LANGUAGES = ("pl", "en")
 
 Get = Callable[[str], int]
 Search = Callable[..., Mapping[str, Any]]
@@ -71,10 +75,11 @@ def _bank_dir() -> Path | None:
     return None
 
 
-def _converted_line(path: Path) -> dict[str, str]:
+def _converted_line(path: Path, language: str) -> dict[str, str]:
+    name = f"converted items ({language})"
     if not path.is_file():
         return _line(
-            "converted items",
+            name,
             FAIL,
             f"no file at {path}",
             "Run `jw bank pull`, or set JADWIGO_KHAN_DIR to the synced Khan copy.",
@@ -83,11 +88,47 @@ def _converted_line(path: Path) -> dict[str, str]:
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
-        return _line(
-            "converted items", FAIL, f"{path} cannot be read: {exc}", "Run `jw bank pull`."
-        )
+        return _line(name, FAIL, f"{path} cannot be read: {exc}", "Run `jw bank pull`.")
     made_by = raw.get("generated_by") if isinstance(raw, dict) else None
-    return _line("converted items", OK, f"{path}, {size:,} bytes, generated_by {made_by or '?'}")
+    return _line(name, OK, f"{path}, {size:,} bytes, generated_by {made_by or '?'}")
+
+
+_DEFAULT_NAME = {
+    "pl": settings_keys.CONVERTED_DEFAULT,
+    "en": settings_keys.CONVERTED_EN_DEFAULT,
+}
+
+
+def homes_line(languages: Iterable[str]) -> dict[str, str]:
+    """Whether the converted files have one home (dl-n9fr.64). A warn when the languages' files
+    sit in different folders, or when the default home holds a file other than the one read here:
+    a jw started without these settings (a shell beside the MCP server, or the other way round)
+    reads that copy, and its doctor and its drafts then disagree with this one's."""
+    read = {lang: refusals.converted_file(lang).expanduser() for lang in languages}
+    problems: list[str] = []
+    folders = {path.parent for path in read.values()}
+    if len(folders) > 1:
+        problems.append(
+            "the languages read from different folders: "
+            + "; ".join(f"{lang} {path}" for lang, path in read.items())
+        )
+    for lang, path in read.items():
+        default = settings_keys.DEFAULT_KHAN_DIR / _DEFAULT_NAME[lang]
+        if default.is_file() and default.resolve() != path.resolve():
+            problems.append(
+                f"{default} is a second {lang} copy: this jw reads {path}, a jw without these "
+                "settings reads it"
+            )
+    if not problems:
+        return _line("converted homes", OK, f"one home: {', '.join(sorted(map(str, folders)))}")
+    return _line(
+        "converted homes",
+        WARN,
+        "; ".join(problems),
+        "Keep both converted files in one folder and name it with JADWIGO_KHAN_DIR (unset "
+        "JW_KHAN_CONVERTED*), in the shell and in the MCP server's env alike, or remove the "
+        "stale copy.",
+    )
 
 
 def _mode_line(
@@ -101,7 +142,8 @@ def _mode_line(
     return _line(name, OK, f"{path}, mode {mode:o}")
 
 
-def settings_check(language: str) -> dict[str, Any]:
+def settings_check(languages: Iterable[str] = LANGUAGES) -> dict[str, Any]:
+    langs = list(languages)
     lines: list[dict[str, str]] = []
     bank = _bank_dir()
     if bank is None:
@@ -117,7 +159,8 @@ def settings_check(language: str) -> dict[str, Any]:
         lines.append(_line("bank checkout", FAIL, f"no sets/ under {bank}", "Run `jw bank pull`."))
     else:
         lines.append(_line("bank checkout", OK, f"{bank / 'sets'}"))
-    lines.append(_converted_line(refusals.converted_file(language)))
+    lines += [_converted_line(refusals.converted_file(lang), lang) for lang in langs]
+    lines.append(homes_line(langs))
     ready_file = readiness.readiness_path()
     lines.append(
         _line("readiness.json", OK, str(ready_file))
@@ -201,28 +244,35 @@ def _converted_items(path: Path) -> dict[str, dict[str, Any]] | None:
 
 
 def ready_check(
-    language: str, pages: list[dict[str, Any]], converted: Mapping[str, Any] | None
+    languages: Iterable[str],
+    pages: list[dict[str, Any]],
+    converted: Mapping[str, Mapping[str, Any] | None],
 ) -> dict[str, Any]:
+    """Check 2: one line per language, its ready ids against its own converted file's items
+    (`converted` maps the language to them, None when the file cannot be read)."""
+    return _check(
+        2, "ready ids", [_ready_line(lang, pages, converted.get(lang)) for lang in languages]
+    )
+
+
+def _ready_line(
+    language: str, pages: list[dict[str, Any]], converted: Mapping[str, Any] | None
+) -> dict[str, str]:
     name = f"ready ids ({language})"
     if converted is None:
-        return _check(
-            2,
-            "ready ids",
-            [_line(name, FAIL, "no converted items to check against", "Run `jw bank pull`.")],
+        return _line(
+            name,
+            FAIL,
+            f"no converted items to check against at {refusals.converted_file(language)}",
+            "Run `jw bank pull`.",
         )
     stamped = [p for p in pages if isinstance((p.get("items") or {}).get("ready_ids"), Mapping)]
     if not stamped:
-        return _check(
-            2,
-            "ready ids",
-            [
-                _line(
-                    name,
-                    WARN,
-                    f"no page of {len(pages)} lists ready_ids",
-                    "Pull a bank checkout built after the readiness stamp: `jw bank pull`.",
-                )
-            ],
+        return _line(
+            name,
+            WARN,
+            f"no page of {len(pages)} lists ready_ids",
+            "Pull a bank checkout built after the readiness stamp: `jw bank pull`.",
         )
     total = 0
     stale: list[str] = []
@@ -237,26 +287,20 @@ def ready_check(
             )
             if why:
                 stale.append(f"{page['id']}: {item_id} ({why})")
+    path = refusals.converted_file(language)
     if stale:
-        return _check(
-            2,
-            "ready ids",
-            [
-                _line(
-                    name,
-                    FAIL,
-                    f"{len(stale)} of {total} ready ids on {len(stamped)} pages are not "
-                    "lesson-ready in "
-                    f"the converted file; e.g. {'; '.join(stale[:EXAMPLES])}",
-                    "The pages and the converted file come from different stamps: `jw bank pull` "
-                    "brings both to the bucket's current one.",
-                )
-            ],
+        return _line(
+            name,
+            FAIL,
+            f"{len(stale)} of {total} ready ids on {len(stamped)} pages are not lesson-ready in "
+            f"{path}; e.g. {'; '.join(stale[:EXAMPLES])}",
+            "The pages and the converted file come from different stamps: `jw bank pull` "
+            "brings both to the bucket's current one.",
         )
-    return _check(
-        2,
-        "ready ids",
-        [_line(name, OK, f"{total} ready ids on {len(stamped)} pages, all lesson-ready")],
+    unstamped = len(pages) - len(stamped)
+    tail = f"; {unstamped} pages list no ready_ids" if unstamped else ""
+    return _line(
+        name, OK, f"{total} ready ids on {len(stamped)} pages, all lesson-ready in {path}{tail}"
     )
 
 
@@ -487,11 +531,13 @@ def _loose_env() -> JwError | None:
 
 
 def run(
-    language: str = "pl", *, get: Get | None = None, search: Search | None = None
+    language: str | None = None, *, get: Get | None = None, search: Search | None = None
 ) -> dict[str, Any]:
-    """The 5 checks and the worst status among them. `get` and `search` default to the real HTTP
+    """The 5 checks and the worst status among them, for `language`, or for pl and en each
+    against its own converted file when it is None. `get` and `search` default to the real HTTP
     GET and bank search, looked up at call time. A check that cannot read its settings (a loose
     bank.env) fails with the reason and its fix; the others still run."""
+    langs = [language] if language else list(LANGUAGES)
     get = get or http_status
     search = search or bank_client.search
     loose = _loose_env()
@@ -501,23 +547,23 @@ def run(
             _check(1, "settings", [_line("bank.env", FAIL, str(loose), loose.hint or "")])
         )
     else:
-        checks.append(_guarded(1, "settings", lambda: settings_check(language)))
+        checks.append(_guarded(1, "settings", lambda: settings_check(langs)))
     try:
         bank = _bank_dir()
         pages = _pages(bank)
-        converted = _converted_items(refusals.converted_file(language))
+        converted = {lang: _converted_items(refusals.converted_file(lang)) for lang in langs}
     except JwError as exc:
         checks += [_failed(2, "ready ids", exc), _failed(3, "stamps", exc)]
         checks.append(_guarded(4, "bank_rev", lambda: bank_rev_check(search, None)))
     else:
         checks += [
-            _guarded(2, "ready ids", lambda: ready_check(language, pages, converted)),
-            _guarded(3, "stamps", lambda: stamp_check(pages, converted, language)),
+            _guarded(2, "ready ids", lambda: ready_check(langs, pages, converted)),
+            _guarded(3, "stamps", lambda: stamp_check(pages, converted[langs[0]], langs[0])),
             _guarded(4, "bank_rev", lambda: bank_rev_check(search, bank)),
         ]
     checks.append(_guarded(5, "services", lambda: services_check(get)))
     status = max((c["status"] for c in checks), key=_RANK.__getitem__)
-    return {"status": status, "language": language, "checks": checks}
+    return {"status": status, "language": language, "languages": langs, "checks": checks}
 
 
 def _guarded(n: int, name: str, check: Callable[[], dict[str, Any]]) -> dict[str, Any]:

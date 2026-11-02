@@ -27,6 +27,7 @@ export const SIDEBAR: readonly SidebarGroup[] = [
       "guides/first-call",
       "guides/conversations",
       "guides/errors",
+      "guides/question-sources",
     ],
   },
   {

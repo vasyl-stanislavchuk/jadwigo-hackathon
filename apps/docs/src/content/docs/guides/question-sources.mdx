@@ -1,0 +1,31 @@
+---
+title: Question sources
+description: Where a bank question comes from, how its id names that source, and the credit it carries.
+---
+
+import Generated from "../../../components/Generated.astro";
+import QuestionSourceTable from "../../../components/QuestionSourceTable.astro";
+
+This guide is for anyone reading a question from the bank: which sources it holds, and how
+`GET /api/v1/questions/{id}` finds a question's body from its id.
+
+A question body's `source` says where the question comes from. The id names the source too, so
+the route needs nothing but the id:
+
+- An id that starts with `alfik_`, such as `alfik_2024_k2_q07`, is an Alfik Matematyczny task.
+- Any other id, such as `x1a2b3c4`, is a Khan Academy item.
+
+A question from a source shows that source's credit beside its instruction, and the card it opens
+names the licence. An Alfik task is a `choose` question: the task's picture as its stem and 5
+lettered choices, A to E.
+
+## Every source
+
+<QuestionSourceTable />
+
+<Generated from="the API's own list of question sources" />
+
+## Next
+
+- [API reference](/api/): every route, its body and its reply.
+- [Errors](/guides/errors/): what a `404` or a `502` from the question route means.

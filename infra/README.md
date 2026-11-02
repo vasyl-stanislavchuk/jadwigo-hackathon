@@ -54,6 +54,17 @@ the runner role may only get under `pods/*/attachments/*`, and neither may list.
 `UPLOADS_BUCKET`; the name is also the SSM String `/jadwigo/uploads/bucket`, which `apps/api` reads when the
 variable is unset. `terraform/tests/uploads.tftest.hcl` pins all of it.
 
+Converter (`terraform/modules/converter`, `dl-z5ja.11.8`, wave 6 decision 58): `apps/converter`'s container
+Lambda, `jadwigo-converter-<env>`, which turns a PDF, DOCX or HEIC under `pods/<pod>/attachments/<id>.<ext>`
+into page JPEGs and a `pages.json` under `pods/<pod>/attachments/<id>/`. 2048 MB, 120 s, x86_64 (LibreOffice's
+RPMs), no URL, no trigger and no resource policy. Its role may get under `pods/*/attachments/*` and put under
+`pods/*/attachments/*/*` in the uploads bucket, and nothing else in S3. The runner role gains
+`lambda:InvokeFunction` on it and the runner gets `CONVERTER_FUNCTION`, its ARN. With `converter_image_tag`
+blank the module makes only the ECR repo, so the owner's order is: apply (the repo), then
+`make -C apps/converter image image-check push`, then set the tag it prints in `prod.tfvars` and apply again.
+`terraform/tests/converter.tftest.hcl` pins it. The PR plan role cannot read ECR yet (`infra/bootstrap/plan-policy.json`),
+which `dl-5ssh.34.75` adds before the first apply.
+
 Parent routes (`dl-e8ov.2.42`): a JWT authorizer named `supabase` on the HTTP API verifies Supabase Auth's
 RS256 access tokens (issuer `https://<supabase_ref>.supabase.co/auth/v1`, audience `authenticated`, the
 `Authorization` header). It sits only on the routes in `token_routes` in `terraform/main.tf`, which are the `ROUTES`

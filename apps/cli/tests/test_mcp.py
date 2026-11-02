@@ -27,6 +27,7 @@ from jw.commands.mcp import TOOLS
 from jw.settings_keys import (
     JADWIGO_BANK_DIR,
     JADWIGO_DRAFTS_DIR,
+    JADWIGO_REPO_DIR,
     JW_API_URL,
     JW_BANK_ENV_FILE,
     JW_KHAN_CONVERTED,
@@ -305,3 +306,36 @@ def test_lesson_edit_changes_one_rung_and_answers_with_that_steps_findings_only(
     assert [s["step"]["id"] for s in after["steps"]] == [f"q{n}" for n in range(1, 7)]
     assert any(f["step_id"] == "q3" for s in after["steps"] for f in s["findings"])
     assert after["render"] is None  # no page drew it
+
+
+def test_lesson_draft_takes_pinned_sets_and_question_types(tmp_path: Path) -> None:
+    """dl-u1y5.37: the tool passes sets and question_types through, and asks the bank nothing."""
+    fake = LessonBank().start()
+    env = {
+        **_env(fake.url),
+        JW_KHAN_CONVERTED: str(LESSON / "converted.json"),
+        JADWIGO_DRAFTS_DIR: str(tmp_path / "drafts"),
+        JADWIGO_REPO_DIR: str(tmp_path / "no-checkout"),  # no check.ts: the draft only
+    }
+
+    async def call() -> Any:
+        params = StdioServerParameters(command=str(JW), args=["mcp", "serve"], env=env,
+                                       cwd=str(ROOT))
+        async with stdio_client(params) as (read, write), ClientSession(read, write) as session:
+            await session.initialize()
+            return await session.call_tool("lesson_draft", {
+                "request": "6 zadań z mnożenia, klasa 3", "grade": "3", "names": [],
+                "topic": "mnożenie", "sets": ["set_khan_fx0003"],
+                "question_types": ["enter.production"],
+            })
+
+    try:
+        result = anyio.run(call)
+    finally:
+        fake.stop()
+    assert not result.is_error, result.content
+    draft = json.loads("".join(getattr(c, "text", "") for c in result.content))
+    assert draft["sets"] == ["set_khan_fx0003"]
+    assert draft["question_types"] == ["enter.production"]
+    assert len(draft["questions"]) == 6
+    assert fake.requests == []

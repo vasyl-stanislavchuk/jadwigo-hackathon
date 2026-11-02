@@ -56,6 +56,7 @@ from __future__ import annotations
 import copy
 import dataclasses
 import datetime as dt
+import fnmatch
 import hashlib
 import json
 import os
@@ -321,7 +322,7 @@ def _sibling_twin(
             or twin["family"] != spec["family"]
             or view.get("question_type") != original.get("question_type")
             or signature(twin["data"]) != signature(spec["data"])
-            or twin["key"] == spec["key"]
+            or _answer(twin) == _answer(spec)
         ):
             continue
         hints = [h for h in (twin.get("help") or {}).get("hints") or []]
@@ -339,6 +340,22 @@ def _sibling_twin(
         out["based_on"] = held["based_on"]
         return out
     return None
+
+
+def _answer(question: Mapping[str, Any]) -> Any:
+    """What a question's answer is, to tell a twin with another answer: for choose, the content of
+    its correct options, since option ids repeat across siblings (`o3` in both, dl-u1y5.39);
+    else the key."""
+    key = question.get("key") or {}
+    if question.get("family") != "choose":
+        return key
+    correct = set(key.get("correct") or []) if isinstance(key, Mapping) else set()
+    options = (question.get("data") or {}).get("options") or []
+    return sorted(
+        json.dumps(o.get("content"), sort_keys=True, ensure_ascii=False)
+        for o in options
+        if isinstance(o, Mapping) and o.get("id") in correct
+    ) or key
 
 
 def _twin_source(twin: Mapping[str, Any]) -> str:
@@ -369,6 +386,60 @@ def _pages(envelope: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
     return pages
 
 
+def _pinned(sets: Sequence[str]) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+    """The envelope and pages for the sets a lesson pins (dl-u1y5.37), in the order given, with
+    no search: the same ids draw a lesson's pl and en twins from the same sets. A pinned set
+    with no page is an error, not a left_out line: the caller named it."""
+    ids = list(dict.fromkeys(s.strip() for s in sets if s.strip()))
+    pages: dict[str, dict[str, Any]] = {}
+    for set_id in ids:
+        try:
+            pages[set_id] = question.show_page(set_id)
+        except bank_client.SetNotFound as exc:
+            raise JwError(
+                f"no page for the pinned set {set_id} in {_bank_read()}",
+                hint="Pin a set id question_search or question_show returns, or point "
+                f"{settings_keys.JADWIGO_BANK_DIR} at the bank checkout that has it.",
+            ) from exc
+    rows = [{"id": set_id, "rank": n} for n, set_id in enumerate(ids, start=1)]
+    return {"rows": rows}, pages
+
+
+def _bank_read() -> str:
+    """The bank checkout pages are read from, and its revision: the index manifest's sha256, as
+    jw doctor compares with the search service's bank_rev, else the checkout's git commit."""
+    bank = settings_keys.bank_dir()
+    manifest = bank / "index" / "manifest.json"
+    if manifest.is_file():
+        return f"{bank} (index {hashlib.sha256(manifest.read_bytes()).hexdigest()[:12]})"
+    try:
+        head = subprocess.run(
+            ["git", "-C", str(bank), "rev-parse", "--short=12", "HEAD"],
+            capture_output=True, text=True, timeout=5, check=False,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        head = ""
+    return f"{bank} ({f'git {head}' if head else 'no index manifest, no git revision'})"
+
+
+def _type_of(view: Mapping[str, Any]) -> str:
+    """An item's own `<family>.<question_type>`, from its converted step, never its set page
+    (whose families are not reliable, dl-n9fr.65)."""
+    return f"{view['question'].get('family')}.{view.get('question_type')}"
+
+
+def _type_kept(view: Mapping[str, Any], question_types: Sequence[str]) -> bool:
+    """Whether the item's type is one asked for: `slots.fill_gaps`, a family (`choose`, or
+    `group.*`), or a bare question type (`fill_gaps`). Nothing asked keeps every type."""
+    if not question_types:
+        return True
+    full = _type_of(view)
+    family, _, qtype = full.partition(".")
+    return any(
+        fnmatch.fnmatchcase(full, p) or p in (family, qtype) for p in question_types
+    )
+
+
 def _draw_loading(
     envelope: Mapping[str, Any],
     pages: Mapping[str, Mapping[str, Any]],
@@ -377,10 +448,13 @@ def _draw_loading(
     language: str,
     count: int | None,
     today: dt.date,
+    question_types: Sequence[str] = (),
+    spread: str = "type",
 ) -> tuple[LanguageDraw, list[tuple[Any, dict[str, Any]]], dict[str, str]]:
-    """Draw, load every drawn item, and draw again without the ones `load_item` refuses. When
-    nothing plays in `language`, the draw is in the sets' original language
-    (`draw_or_original`), and every item is loaded in the language the draw took."""
+    """Draw, load every drawn item, and draw again without the ones `load_item` refuses or
+    whose own type is not in `question_types`. When nothing plays in `language`, the draw is in
+    the sets' original language (`draw_or_original`), and every item is loaded in the language
+    the draw took."""
     rules = None
     if count is not None:
         rules = {**DRAW_RULES, kind: dataclasses.replace(DRAW_RULES[kind], count=count)}
@@ -394,12 +468,20 @@ def _draw_loading(
             today=today,
             flagged=refused,
             rules=rules,
+            spread=spread,
         )
         loaded: list[tuple[Any, dict[str, Any]]] = []
         new = False
         for drawn in result.draw.questions:
             try:
-                loaded.append((drawn, items.load_item(drawn.item_id, result.language)))
+                view = items.load_item(drawn.item_id, result.language)
+                if not _type_kept(view, question_types):
+                    refused[drawn.item_id] = (
+                        f"its type {_type_of(view)} is not among {', '.join(question_types)}"
+                    )
+                    new = True
+                    continue
+                loaded.append((drawn, view))
             except items.NotReady as exc:
                 refused[drawn.item_id] = exc.reason
                 new = True
@@ -410,12 +492,19 @@ def _draw_loading(
             return result, loaded, refused
 
 
+MISSING_ITEM = "no item "  # how load_item says an id is not in the converted file
+
+
 def _not_ready(left: Left, language: str) -> str:
     """The draw's reason, or for an item the page does not list as ready, load_item's own; when
     the converted file finds it ready, the page is older than the stamp, and the reason says so."""
     if left.reason != NOT_READY_ITEM:
         return left.reason
     why = items.why_not(left.id, language)
+    if why and why.startswith(MISSING_ITEM):
+        # Not converted in this language, which is why the page does not list it: said first, so
+        # it never reads as a ready id whose body is missing (dl-n9fr.64).
+        return f"not converted in {language}, so not lesson-ready: {why}"
     return why or f"its set page does not list it as lesson-ready in {language}"
 
 
@@ -711,6 +800,9 @@ def _view(stored: Mapping[str, Any], verbose: bool = False) -> dict[str, Any]:
         out["setup_warning"] = stored["setup_warning"]
     if stored.get("language_fallback"):
         out["language_fallback"] = stored["language_fallback"]
+    for pinned in ("sets", "question_types"):
+        if stored.get(pinned):
+            out[pinned] = stored[pinned]
     if verbose:
         out.update(rule=stored["rule"], reasoning=stored["lesson"]["reasoning"])
     return out
@@ -726,6 +818,8 @@ def draft(
     *,
     names: Sequence[str] | None,
     topic: str,
+    sets: Sequence[str] = (),
+    question_types: Sequence[str] = (),
     today: dt.date | None = None,
     verbose: bool = False,
     runner: Runner | None = None,
@@ -740,6 +834,10 @@ def draft(
     `topic` is what the lesson is about in a few words, distilled from the request by the calling
     agent ("mnożenie"), with no count, grade or name: it is the need's words the bank searches
     (dl-e8ov.5.38.12). The request is kept, guarded, as the draft's record and title.
+    `sets` pins the sets to draw from (dl-u1y5.37): no search, only those sets, taken in turn
+    and each varied by problem type, the same ids for every language. `question_types` keeps
+    only items whose own type matches one (`slots.fill_gaps`, `group.*`, `choose`, `fill_gaps`);
+    the rest go to left_out with that reason.
     `verbose` returns each question and left_out whole (`_view`).
     """
     called_at = now()
@@ -766,12 +864,23 @@ def draft(
         raise JwError("count must be at least 1", hint="Leave it out for the rule's count.")
     day = today or dt.date.today()
     need = _need(topic, grade, language, skills)
-    envelope = question.search_envelope(
-        grade=grade, words=topic, skills=list(skills), language=language
-    )
-    pages = _pages(envelope)
+    question_types = [t.strip() for t in question_types if t.strip()]
+    if sets:
+        envelope, pages = _pinned(sets)
+    else:
+        envelope = question.search_envelope(
+            grade=grade, words=topic, skills=list(skills), language=language
+        )
+        pages = _pages(envelope)
     drawn_in, loaded, refused = _draw_loading(
-        envelope, pages, kind=kind, language=language, count=count, today=day
+        envelope,
+        pages,
+        kind=kind,
+        language=language,
+        count=count,
+        today=day,
+        question_types=question_types,
+        spread="set" if sets else "type",
     )
     result = drawn_in.draw
     asked, language = language, drawn_in.language
@@ -813,9 +922,17 @@ def draft(
             questions[-1]["question"]["help"]["twin"] = twin
     # A refused item's left_out line says why load_item refused it, not that it was flagged; an
     # item its page does not list as ready says why the converted file holds it back.
+    # An id the draw left out in one place but took in another (a sample with no text in the
+    # language, drawn as a ready id, or as a twin) is drawn: left_out never lists it (dl-u1y5.39).
+    drawn_ids = {q["item_id"] for q in questions} | {
+        str(q["question"]["help"]["twin"]["based_on"]["question"]).removeprefix("khan:")
+        for q in questions
+        if (q["question"].get("help") or {}).get("twin")
+    }
     left_out = [
         {"id": left.id, "reason": refused.get(left.id) or _not_ready(left, language)}
         for left in result.left_out
+        if left.id not in drawn_ids
     ]
 
     used_sets = list(dict.fromkeys(q["set_id"] for q in questions))
@@ -823,8 +940,8 @@ def draft(
     subject = subjects.pop() if len(subjects) == 1 else "math"
     reasoning = (
         f'Drafted for the request "{request}" (grade {grade}): {len(questions)} questions drawn by '
-        f"the provisional {kind} rule from {', '.join(used_sets) or 'no set'}, each copied whole "
-        "from the bank."
+        f"the provisional {kind} rule from {', '.join(used_sets) or 'no set'}"
+        f"{' (pinned)' if sets else ''}, each copied whole from the bank."
     )
     where = folder or drafts_dir()
     stored: dict[str, Any] = {
@@ -834,6 +951,8 @@ def draft(
         "grade": grade,
         "language": language,
         "kind": kind,
+        **({"sets": [str(r["id"]) for r in envelope["rows"]]} if sets else {}),
+        **({"question_types": question_types} if question_types else {}),
         "rule": result.rule,
         **(
             {"language_fallback": {"asked": asked, "offered": language, "reason": _fallback_reason(asked, language)}}
@@ -847,6 +966,7 @@ def draft(
             "language": language,
             "category": CATEGORY,
             "subject": subject,
+            **_file_grade(grade),
             "reasoning": reasoning,
             "kind": kind,
         },
@@ -860,6 +980,15 @@ def draft(
     stored["timings"] = [{"tool": "lesson_draft", "called_at": called_at, "returned_at": now()}]
     _write_json(_state_path(where, draft_id), stored)
     return _view(stored, verbose)
+
+
+def _file_grade(grade: str) -> dict[str, int]:
+    """The lesson file's `grade`, the number the import writes on the lesson (dl-e8ov.2.96), or
+    nothing when the draft's grade is not one LessonFile takes (1 to 4)."""
+    text = grade.strip()
+    if text.isdigit() and 1 <= int(text) <= 4:
+        return {"grade": int(text)}
+    return {}
 
 
 def _check_copy(stored: dict[str, Any], where: Path, runner: Runner | None) -> None:
@@ -1019,6 +1148,75 @@ def from_file(q: Mapping[str, Any], step: Mapping[str, Any]) -> dict[str, Any]:
     credit as the file holds them now (after lesson_edit, or a check that left the step out)."""
     return {**q, "say": step.get("say"), "question": step.get("question") or {},
             "based_on": step.get("based_on"), "credit": step.get("credit") or q.get("credit")}
+
+
+def _file_head(path: Path) -> dict[str, Any]:
+    """The draft file's head (title, reasoning, ...), or nothing when it cannot be read."""
+    try:
+        file: Any = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, ValueError):
+        return {}
+    return {k: v for k, v in file.items() if k != "script"} if isinstance(file, Mapping) else {}
+
+
+# The part of a step each kind of the agent's words sets, as a dotted path.
+WORD_PATHS = {
+    **{rung: f"question.help.{rung}" for rung in RUNGS},
+    "twin": "question.help.twin",
+    "boost_by_mistake": "question.help.boost_by_mistake",
+}
+CHANGE_PATHS = {"say": "say", "data": "question.data", "key": "question.key"}
+
+
+def _touched(given: Mapping[str, Any]) -> set[str]:
+    """The dotted paths of a step that the agent's words for it set."""
+    out = {WORD_PATHS[k] for k, v in given.items() if k in WORD_PATHS and not _empty(v)}
+    for change in given.get("changes") or []:
+        sets = change.get("set") if isinstance(change, Mapping) else None
+        for key in sets or {}:
+            first, _, rest = str(key).partition(".")
+            base = CHANGE_PATHS.get(first, f"question.help.{first}")
+            out.add(f"{base}.{rest}" if rest else base)
+    return out
+
+
+def _prune(patch: Any, touched: set[str], at: str = "") -> Any:
+    """`patch` without the parts on or under a touched path, or above one (an object a word
+    set part of): those the words decide. None when nothing is left."""
+    if not isinstance(patch, Mapping):
+        return patch
+    out: dict[str, Any] = {}
+    for key, value in patch.items():
+        path = f"{at}{key}"
+        if any(path == t or path.startswith(f"{t}.") for t in touched):
+            continue
+        if isinstance(value, Mapping) and any(t.startswith(f"{path}.") for t in touched):
+            value = _prune(value, touched, f"{path}.")
+            if not value:
+                continue
+        elif not isinstance(value, Mapping) and any(t.startswith(f"{path}.") for t in touched):
+            continue
+        out[key] = value
+    return out or None
+
+
+def _reapply_edits(
+    step: dict[str, Any], edits: Sequence[Mapping[str, Any]], touched: set[str]
+) -> dict[str, Any]:
+    """The step rebuilt from the bank's copy and the words, with each of lesson_edit's patches
+    on it again, less what the words set; a kept patch's change record is kept too."""
+    from jw import lesson_edit  # lesson_edit imports this module
+
+    for entry in edits:
+        kept = _prune(entry.get("patch"), touched)
+        if not kept:
+            continue
+        step = lesson_edit.merge(step, kept)
+        if entry.get("record"):
+            based_on = dict(step.get("based_on") or {})
+            based_on["changes"] = [*(based_on.get("changes") or []), dict(entry["record"])]
+            step["based_on"] = based_on
+    return step
 
 
 def _file_steps(path: Path) -> dict[str, dict[str, Any]]:
@@ -1209,9 +1407,10 @@ def _check(
     an error here (rule `words`), before check.ts runs. Both carry `render` (`render_of`): the
     page's findings from its last draw, or None.
 
-    Only the steps in `words` are rebuilt, from the bank's copy and the words sent; a step left out
-    keeps what the draft file holds (its words, the bank's twin, `lesson_edit.edit`'s changes), so
-    `words={}` checks the file as it stands. Every string in `words` but a key goes through
+    Only the steps in `words` are rebuilt, from the bank's copy and the words sent, with
+    `lesson_edit.edit`'s patches put back less the parts the words set; a step left out keeps what
+    the draft file holds (its words, the bank's twin, the edits), so `words={}` checks the file as
+    it stands. `title` and `reasoning` left out keep the file's own (dl-u1y5.39). Every string in `words` but a key goes through
     `pii.guard` with `names` (`guard_words`).
     """
     stored = load_draft(draft_id, where)
@@ -1228,6 +1427,7 @@ def _check(
     ]
     path = _lesson_path(where, draft_id)
     as_filed = _file_steps(path)
+    head = _file_head(path)
     steps: dict[str, dict[str, Any]] = {}
     for q in stored["questions"]:
         sid = q["step_id"]
@@ -1243,11 +1443,16 @@ def _check(
             errors.append({"step_id": sid, "message": "a step's words are an object"})
             continue
         steps[sid], problems = _apply(q, given)
+        # lesson_edit's changes stay unless these words set the same part (dl-u1y5.39).
+        steps[sid] = _reapply_edits(steps[sid], q.get("edits") or [], _touched(given))
         errors += [{"step_id": sid, "message": p} for p in problems]
 
     for field, value in (("title", title), ("reasoning", reasoning)):
         if value is not None and value.strip():
             stored["lesson"][field] = pii.guard(value.strip(), names=guard_names).text
+        elif isinstance(head.get(field), str) and head[field].strip():
+            # Not sent: the file's own, as an earlier check or the draft wrote it (dl-u1y5.39).
+            stored["lesson"][field] = head[field]
     _make_dirs(where)
     _write_json(path, _file(stored, steps))
     paths = {"lesson_file": str(path), "draft_path": str(path)}

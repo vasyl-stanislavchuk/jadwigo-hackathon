@@ -26,6 +26,7 @@ import { storedAttempt } from "../play/storedAttempt.ts";
 import { type Auth, type Provider, type RedirectOutcome, returnOf, supabaseAuth } from "./auth.ts";
 import { result, twin } from "./overview/fixtures.ts";
 import { ParentScreen } from "./ParentScreen.tsx";
+import type { LessonEngine } from "./workspace/engine.ts";
 
 const AT = "2026-10-28T14:02:06.274Z";
 const POD = "pod_6et2fhbnwvb45aw9atcfzs33za";
@@ -33,6 +34,7 @@ const ASSIGNMENT = AssignmentId.parse("asg_0ectzj2evqb95a3v1v6wewjzy3");
 const ATTEMPT = AttemptId.parse("att_43007b83dp9w2tnfjxhha74cyq");
 const LEARNER = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
 const ACCOUNT = AccountId.parse("acc_7qre3atahx8cpak6xbjtz73var");
+const CONVERSATION = "cnv_00000000000000000000000001";
 
 const NOBODY: Me = { account: null, member: null, pod: null, learners: [] };
 const pod = { id: POD, name: "Dom", language: "pl", created_at: AT };
@@ -521,6 +523,120 @@ describe("ParentScreen", () => {
     const dialog = screen.getByRole("dialog", { name: "Dodaj dziecko" });
     await act(async () => fireEvent.click(within(dialog).getByRole("button", { name: "Anuluj" })));
     await waitFor(() => expect(document.activeElement).toBe(plus));
+  });
+
+  // The first screen's send (dl-z5ja.108).
+  function lessonEngine(create: () => Promise<unknown>) {
+    const engine = {
+      conversations: { createConversation: vi.fn(create) },
+      transport: {
+        subscribe: () => () => {},
+        onConnection: () => () => {},
+        runs: async () => [],
+        events: async () => [],
+        send: vi.fn(async () => {
+          throw new Error("not in this test");
+        }),
+      },
+      consent: { getMe: vi.fn(async () => me([])), patchPod: vi.fn(async () => ({})) },
+      ratings: null,
+    };
+    return engine as unknown as LessonEngine & typeof engine;
+  }
+
+  it("makes the conversation on Zrób lekcję, keeps the words for it and opens its workspace", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const engine = lessonEngine(async () => ({ id: CONVERSATION }));
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({ getMe: async () => me([]) })}
+        engine={engine}
+      />,
+    );
+    const field = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    fireEvent.change(field, { target: { value: "Odejmowanie przez 10" } });
+    await act(async () => fireEvent.keyDown(field, { key: "Enter" }));
+    expect(engine.conversations.createConversation).toHaveBeenCalledOnce();
+    expect(window.location.pathname).toBe(`/parent/lessons/${CONVERSATION}`);
+    // The workspace took the words from the tab and sent them on the new conversation.
+    await waitFor(() =>
+      expect(engine.transport.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          conversation_id: CONVERSATION,
+          kind: "message",
+          text: "Odejmowanie przez 10",
+        }),
+      ),
+    );
+    expect(window.sessionStorage.getItem(`jw.parent.first.${CONVERSATION}`)).toBeNull();
+    await screen.findByRole("region", { name: "Lekcja" });
+  });
+
+  it("asks for consent when the route refuses, and goes on with the same words once given", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    let refuse = true;
+    const engine = lessonEngine(async () => {
+      if (refuse) throw new ApiError("no consent", 409, "AiConsentMissing");
+      return { id: CONVERSATION };
+    });
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({ getMe: async () => me([]) })}
+        engine={engine}
+      />,
+    );
+    const field = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    fireEvent.change(field, { target: { value: "Odejmowanie przez 10" } });
+    await act(async () => fireEvent.keyDown(field, { key: "Enter" }));
+    const agree = await screen.findByRole("button", { name: "Zgadzam się" });
+    refuse = false;
+    await act(async () => fireEvent.click(agree));
+    expect(engine.consent.patchPod).toHaveBeenCalled();
+    expect(window.location.pathname).toBe(`/parent/lessons/${CONVERSATION}`);
+    // The workspace took the words from the tab and sent them on the new conversation.
+    await waitFor(() =>
+      expect(engine.transport.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          conversation_id: CONVERSATION,
+          kind: "message",
+          text: "Odejmowanie przez 10",
+        }),
+      ),
+    );
+    expect(window.sessionStorage.getItem(`jw.parent.first.${CONVERSATION}`)).toBeNull();
+  });
+
+  it("keeps the words and says so in words when the conversation cannot be made", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const engine = lessonEngine(async () => {
+      throw new TypeError("Failed to fetch");
+    });
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({ getMe: async () => me([]) })}
+        engine={engine}
+      />,
+    );
+    const field = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    fireEvent.change(field, { target: { value: "Odejmowanie przez 10" } });
+    await act(async () => fireEvent.keyDown(field, { key: "Enter" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("Nie udało się zacząć lekcji");
+    expect(
+      (screen.getByRole("textbox", { name: "Opisz zadanie domowe" }) as HTMLTextAreaElement).value,
+    ).toBe("Odejmowanie przez 10");
+    expect(window.location.pathname).toBe("/parent");
   });
 
   it("starts Dla at the child ?for names", async () => {

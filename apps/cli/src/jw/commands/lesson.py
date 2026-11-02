@@ -37,6 +37,18 @@ def group() -> None:
 @click.option("--count", default=None, type=click.IntRange(min=1), help="Questions to draw.")
 @click.option("--skill", "skills", multiple=True, help="Skill id (repeatable).")
 @click.option(
+    "--set",
+    "sets",
+    multiple=True,
+    help="A set id to draw from, with no search (repeatable); the same ids for pl and en.",
+)
+@click.option(
+    "--question-type",
+    "question_types",
+    multiple=True,
+    help="Keep only items of this type (repeatable): slots.fill_gaps, group.*, choose.",
+)
+@click.option(
     "--name",
     "names",
     multiple=True,
@@ -53,6 +65,8 @@ def draft(
     kind: str,
     count: int | None,
     skills: tuple[str, ...],
+    sets: tuple[str, ...],
+    question_types: tuple[str, ...],
     names: tuple[str, ...],
     no_names: bool,
     verbose: bool,
@@ -64,7 +78,7 @@ def draft(
         raise click.UsageError("pass every name the family uses with --name, or --no-names")
     result = lesson.draft(
         request, grade, language, kind, count, skills, names=list(names), topic=topic,
-        verbose=verbose,
+        sets=list(sets), question_types=list(question_types), verbose=verbose,
     )
     if json_mode:
         click.echo(json.dumps(result, ensure_ascii=False))
@@ -188,6 +202,31 @@ def edit(
         click.echo(f"{step_id}: {'ok' if result['ok'] else 'not ok'}  {result['card']['prompt']}")
         for finding in result["findings"]:
             click.echo(f"  {finding['level']} ({finding['rule']}): {finding['text']}")
+        click.echo(f"draft file: {result['draft_path']}")
+    if not result["ok"]:
+        raise SystemExit(1)
+
+
+@group.command(cls=_EmitErrorsCommand)
+@click.argument("draft_id")
+@click.argument("step_id")
+@click.option("--before", default=None, help="The step it goes just before.")
+@click.option("--after", default=None, help="The step it goes just after.")
+@click.option("--json", "json_mode", is_flag=True, help="Print the answer.")
+def move(
+    draft_id: str, step_id: str, before: str | None, after: str | None, json_mode: bool
+) -> None:
+    """Move step STEP_ID of the draft DRAFT_ID before or after another step (the lesson_move
+    tool), check the lesson, and print the new order."""
+    if (before is None) == (after is None):
+        raise click.UsageError("pass --before STEP or --after STEP")
+    result = lesson_edit.move(draft_id, step_id, before=before, after=after)
+    if json_mode:
+        click.echo(json.dumps(result, ensure_ascii=False))
+    else:
+        click.echo(f"order: {' '.join(result['order'])}  ({'ok' if result['ok'] else 'not ok'})")
+        for finding in result["findings"]:
+            click.echo(f"  step {finding['step_id']} ({finding['rule']}): {finding['text']}")
         click.echo(f"draft file: {result['draft_path']}")
     if not result["ok"]:
         raise SystemExit(1)

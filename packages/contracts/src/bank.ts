@@ -177,14 +177,42 @@ export const SearchEnvelope = z
 export type SearchEnvelope = z.infer<typeof SearchEnvelope>;
 
 /**
- * A bank question's id as the content bucket keys it: an `x`-prefixed or bare Khan item id, letters,
+ * A bank question's id as the content bucket keys it: an `x`-prefixed or bare Khan item id or an
+ * `alfik_` task id, letters,
  * digits, `_` and `-` only, so it can never climb out of `questions/<source>/` in a key.
  */
 export const BankQuestionId = z
   .string()
   .regex(/^[A-Za-z0-9_-]{1,64}$/)
-  .describe("A bank question's id: a Khan item id such as x1a2b3c4, letters, digits, _ and - only");
+  .describe(
+    "A bank question's id: a Khan item id such as x1a2b3c4 or an Alfik task id such as alfik_2024_k2_q07, letters, digits, _ and - only",
+  );
 export type BankQuestionId = z.infer<typeof BankQuestionId>;
+
+/**
+ * Where a bank question comes from, and so the prefix its body sits under in the content bucket,
+ * `questions/<source>/<id>.json`: `khan`, Khan Academy's items, and `alfik`, the Alfik
+ * Matematyczny contest's tasks (decision
+ * `jadwigo-question-bank/decisions/2026-11-01-alfik-tasks-text-and-pictures-go-to-the-private-content-bucket-a`,
+ * dl-gc7yn).
+ */
+export const QuestionSource = z
+  .enum(["khan", "alfik"])
+  .describe("Where a bank question comes from, and its prefix in the content bucket: khan, alfik");
+export type QuestionSource = z.infer<typeof QuestionSource>;
+
+/**
+ * What every Alfik question id starts with (`alfik_2024_k2_q07`); a Khan item id never does, so the
+ * id alone names the bucket prefix its body is read from.
+ */
+export const ALFIK_QUESTION_ID_PREFIX = "alfik_";
+
+/** The source whose bucket prefix holds the question `id`: `alfik` by its prefix, else `khan`. */
+export function questionSourceOf(id: BankQuestionId): QuestionSource {
+  return id.startsWith(ALFIK_QUESTION_ID_PREFIX)
+    ? QuestionSource.enum.alfik
+    : QuestionSource.enum.khan;
+}
 
 /**
  * A family's JSON, kept unknown-shaped at the bank seam: the families' own schemas type it where a
@@ -223,7 +251,7 @@ const BodyPicture = z.object({
 export const QuestionBody = z
   .object({
     id: BankQuestionId,
-    source: z.literal("khan").optional(),
+    source: QuestionSource.optional(),
     pl: QuestionVariant.optional(),
     en: QuestionVariant.optional(),
     problem_type: z.string().optional(),

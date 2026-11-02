@@ -1,7 +1,14 @@
 import { timingSafeEqual } from "node:crypto";
 import { InvokeCommand, LambdaClient } from "@aws-sdk/client-lambda";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { BankQuestionId, ErrorType, Need, QuestionBody, SearchEnvelope } from "@jadwigo/contracts";
+import {
+  BankQuestionId,
+  ErrorType,
+  Need,
+  QuestionBody,
+  questionSourceOf,
+  SearchEnvelope,
+} from "@jadwigo/contracts";
 import {
   bankReadTokenParam,
   bankSearchAliasArn,
@@ -75,10 +82,13 @@ export interface BucketDeps {
 
 /**
  * `GET /api/v1/questions/{id}`: one question's private body, key included, from the content
- * bucket's derived layer `questions/khan/<id>.json`. Authorization runs first, exactly as for a
+ * bucket's derived layer `questions/<source>/<id>.json`, the source read from the id
+ * (`questionSourceOf`: `alfik_` ids under `questions/alfik/`, every other under `questions/khan/`,
+ * decision dl-gc7yn). Authorization runs first, exactly as for a
  * search, so a caller without the read token is 401 whatever id it sends. Then the id must be a
  * `BankQuestionId` (404 otherwise, before it reaches a key), the object must exist (404), the read
- * must succeed (502) and the object must parse as a `QuestionBody` for that id (502).
+ * must succeed (502) and the object must parse as a `QuestionBody` for that id and, when it names
+ * one, that source (502).
  */
 export async function questionBody(
   bank: BankDeps | undefined,
@@ -91,15 +101,17 @@ export async function questionBody(
   const parsedId = BankQuestionId.safeParse(id);
   if (!parsedId.success) throw noSuchQuestion();
   if (bucket === undefined) throw unavailable();
+  const source = questionSourceOf(parsedId.data);
   let text: string | undefined;
   try {
-    text = await bucket.get(`questions/khan/${parsedId.data}.json`);
+    text = await bucket.get(`questions/${source}/${parsedId.data}.json`);
   } catch {
     throw unavailable();
   }
   if (text === undefined) throw noSuchQuestion();
   const body = QuestionBody.safeParse(parseJson(text));
   if (!body.success || body.data.id !== parsedId.data) throw unavailable();
+  if (body.data.source !== undefined && body.data.source !== source) throw unavailable();
   return body.data;
 }
 

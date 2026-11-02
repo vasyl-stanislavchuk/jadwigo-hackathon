@@ -52,7 +52,8 @@ import {
 import { setPodLanguage } from "../nav/language.ts";
 import { navigate, useLocation } from "../nav/location.ts";
 import { storedAttempt } from "../play/storedAttempt.ts";
-import { ConsentScreen } from "../playground/chat/ConsentScreen.tsx";
+import { ConsentScreen, giveConsent } from "../playground/chat/ConsentScreen.tsx";
+import { newEventId } from "../playground/chat/ids.ts";
 import { AttemptReview } from "./AttemptReview.tsx";
 import { CATEGORY, pageLang } from "./adult.ts";
 import {
@@ -68,7 +69,7 @@ import { inAppBrowser } from "./inApp.ts";
 import { LanguagePick } from "./LanguagePick.tsx";
 import { AddChildDialog } from "./newLesson/AddChildDialog.tsx";
 import { DlaSelect } from "./newLesson/DlaSelect.tsx";
-import { NewLessonBox } from "./newLesson/NewLessonBox.tsx";
+import { type LessonAsk, NewLessonBox } from "./newLesson/NewLessonBox.tsx";
 import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";
 import { ProviderButton } from "./ProviderButton.tsx";
 import {
@@ -78,6 +79,7 @@ import {
   forOf,
   historyPath,
   learnerOf,
+  lessonPath,
   lessonsPath,
   type ParentRoute,
   parentRoute,
@@ -85,9 +87,8 @@ import {
 } from "./route.ts";
 import { ParentShell } from "./shell/ParentShell.tsx";
 import type { Place } from "./shell/Sidebar.tsx";
-import { DetailsPanel } from "./workspace/DetailsPanel.tsx";
-import { LessonFooter } from "./workspace/LessonFooter.tsx";
-import { Workspace } from "./workspace/Workspace.tsx";
+import { browserEngine, firstMessage, type LessonEngine } from "./workspace/engine.ts";
+import { LessonWorkspace } from "./workspace/LessonWorkspace.tsx";
 
 /** The parent's page: the app page's prose column. */
 function ParentPage({ children }: { children: ReactNode }): ReactElement {
@@ -112,6 +113,7 @@ export function ParentScreen({
   auth = browserAuth(),
   client,
   pods,
+  engine: givenEngine,
 }: {
   language: Language;
   query: URLSearchParams;
@@ -124,7 +126,16 @@ export function ParentScreen({
    * absent. With a test's `client` and no `pods`, the consent screen is not asked.
    */
   pods?: PodClient;
+  /**
+   * The lesson engine (dl-z5ja.108), for tests; the build's conversation routes and Realtime when
+   * `client` is absent. With a test's `client` and no `engine`, sending says it is on its way.
+   */
+  engine?: LessonEngine;
 }): ReactElement {
+  const engine = useMemo<LessonEngine | null>(
+    () => givenEngine ?? (client ? null : browserEngine()),
+    [givenEngine, client],
+  );
   const own = useMemo<Client>(
     () => createClient({ base: "", token: () => auth?.token() ?? Promise.resolve(null) }),
     [auth],
@@ -182,6 +193,7 @@ export function ParentScreen({
     <SignedIn
       api={api}
       pods={podApi}
+      engine={engine}
       language={language}
       route={route ?? { kind: "home" }}
       learner={learnerOf(query)}
@@ -458,6 +470,7 @@ async function meOf(api: ParentClient, language: Language): Promise<Me> {
 function SignedIn({
   api,
   pods,
+  engine,
   language,
   route,
   learner,
@@ -467,6 +480,7 @@ function SignedIn({
 }: {
   api: ParentClient;
   pods: PodClient | null;
+  engine: LessonEngine | null;
   language: Language;
   route: ParentRoute;
   /** The attempt page's ?learner. */
@@ -482,6 +496,11 @@ function SignedIn({
   const [adding, setAdding] = useState<"plus" | "dla" | null>(null);
   const [forLearner, setForLearner] = useState<LearnerId | null>(forAtFirst);
   const [soon, setSoon] = useState(false);
+  // The first screen's send (dl-z5ja.108): on its way, refused for want of consent with the words
+  // kept, or failed.
+  const [starting, setStarting] = useState<"idle" | "busy" | "failed">("idle");
+  const [consentFor, setConsentFor] = useState<LessonAsk | null>(null);
+  const [kept, setKept] = useState("");
   const [notice, setNotice] = useState<CopyKey | null>(null);
   /** "Nie teraz" on the consent screen: asked again on the next visit, not on this one. */
   const [later, setLater] = useState(false);
@@ -553,6 +572,27 @@ function SignedIn({
     setView({ kind: "ready", me });
     if (adding === "dla") setForLearner(learner.id);
     if (pending !== null) run(() => keepFor(learner.id));
+  };
+
+  /** Makes the conversation, keeps the words for its page, and opens it there. */
+  const start = async (ask: LessonAsk): Promise<void> => {
+    if (engine === null) {
+      setSoon(true);
+      return;
+    }
+    setStarting("busy");
+    setKept(ask.text);
+    try {
+      const made = await engine.conversations.createConversation({ event_id: newEventId() });
+      firstMessage.put(made.id, ask.text);
+      setStarting("idle");
+      setKept("");
+      navigate(lessonPath({ conversation: made.id, lang: pageLang() }));
+    } catch (error) {
+      setStarting("idle");
+      if (error instanceof ApiError && error.type === "AiConsentMissing") setConsentFor(ask);
+      else setStarting("failed");
+    }
   };
 
   if (view.kind === "loading") return <Loading language={language} />;
@@ -659,7 +699,6 @@ function SignedIn({
         </ParentPage>,
       );
     case "lesson": {
-      const child = learners.find((l) => l.id === forLearner) ?? null;
       const dla = (trigger?: ReactElement): ReactElement => (
         <DlaSelect
           language={language}
@@ -670,36 +709,27 @@ function SignedIn({
           {...(trigger === undefined ? {} : { trigger })}
         />
       );
-      // The frame, with its slots waiting for the engine (dl-z5ja.108): the breadcrumb stays the
-      // first screen's, as the send leaves it.
+      // The breadcrumb stays the first screen's, as the send leaves it.
+      if (route.conversation === null || engine === null)
+        return shell(
+          { kind: "lessons" },
+          newLesson,
+          <ParentPage>
+            <Failed language={language} />
+          </ParentPage>,
+        );
       return shell(
         { kind: "lessons" },
         newLesson,
-        <Workspace
+        <LessonWorkspace
+          key={route.conversation}
           language={language}
-          chat={<p className="p-4 text-jw-ink-soft">{t("parent_chat_empty")}</p>}
-          chatBand={null}
-          lessonTitle={t("parent_new_lesson")}
-          lesson={<p className="text-jw-ink-soft">{t("parent_lesson_empty")}</p>}
-          lessonFooter={
-            <LessonFooter
-              language={language}
-              status={copy(language, "parent_steps_ready", { done: 0, total: 0 }, CATEGORY)}
-              ready={false}
-              child={child}
-              onSave={() => {}}
-              onGive={() => {}}
-            />
-          }
-          details={
-            <DetailsPanel
-              language={language}
-              child={child}
-              onAddChild={() => setAdding("dla")}
-              changeMenu={dla}
-            />
-          }
-          detailsFact={child?.first_name ?? t("parent_no_child")}
+          conversation={route.conversation}
+          engine={engine}
+          learners={learners}
+          forLearner={forLearner}
+          onAddChild={() => setAdding("dla")}
+          changeMenu={dla}
         />,
       );
     }
@@ -756,15 +786,34 @@ function SignedIn({
               <Notice>{t(notice)}</Notice>
             </div>
           )}
-          <NewLessonBox
-            language={language}
-            learners={learners}
-            forLearner={forLearner}
-            onForChange={setForLearner}
-            onAddChild={() => setAdding("dla")}
-            // The engine's send lands with dl-z5ja.108; until then the box says it is on its way.
-            onSend={() => setSoon(true)}
-          />
+          {consentFor !== null && engine !== null ? (
+            // A route refused for want of the pod's consent: asked here, then the send goes on.
+            <div className="mx-auto flex w-full max-w-jw-shell-box flex-col px-4 py-10">
+              <ConsentScreen
+                language={language}
+                onAgree={async () => {
+                  if (engine.consent === null) throw new Error("no route to give consent through");
+                  await giveConsent(engine.consent);
+                  const ask = consentFor;
+                  setConsentFor(null);
+                  await start(ask);
+                }}
+                onLater={() => setConsentFor(null)}
+              />
+            </div>
+          ) : (
+            <NewLessonBox
+              language={language}
+              learners={learners}
+              forLearner={forLearner}
+              onForChange={setForLearner}
+              onAddChild={() => setAdding("dla")}
+              onSend={(ask) => void start(ask)}
+              busy={starting === "busy"}
+              problem={starting === "failed" ? t("parent_start_failed") : null}
+              initialText={kept}
+            />
+          )}
           {soon && (
             <p className="px-4 pb-10 text-center text-jw-ink-soft" role="status" data-soon>
               {t("parent_lesson_soon")}

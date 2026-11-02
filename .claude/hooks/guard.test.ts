@@ -81,6 +81,22 @@ const cases: Array<[name: string, want: "allow" | "DENY", command: string]> = [
   ["make lesson-import ENV=dev", "allow", "make lesson-import FILE=x ENV=dev"],
   ["make lesson-import, local", "allow", "make lesson-import FILE=x"],
   ["bun run import in the package", "allow", "bun run --cwd packages/lesson-import import x.json"],
+  // lesson-withdraw's prod form too: it takes a lesson off prod's featured list (dl-9t2o.12)
+  ["make lesson-withdraw ENV=prod", "DENY", "make lesson-withdraw LESSON=les_x ENV=prod"],
+  ["lesson-withdraw, ENV=prod in front", "DENY", "ENV=prod make lesson-withdraw ASSIGNMENT=asg_x"],
+  ["lesson-withdraw UNDO=1 ENV=prod", "DENY", "make lesson-withdraw LESSON=les_x UNDO=1 ENV=prod"],
+  [
+    "lesson-withdraw in a python pty",
+    "DENY",
+    "python3 -c \"import pty; pty.spawn(['make', 'lesson-withdraw', 'LESSON=les_x', 'ENV=prod'])\"",
+  ],
+  [
+    "lesson-withdraw under env -i",
+    "DENY",
+    "env -i PATH=/usr/bin:/bin make lesson-withdraw LESSON=x",
+  ],
+  ["make lesson-withdraw ENV=dev", "allow", "make lesson-withdraw LESSON=les_x ENV=dev"],
+  ["make lesson-withdraw, local", "allow", "make lesson-withdraw LESSON=les_x"],
   ["ENV=prod in front", "DENY", "ENV=prod make db-push"],
   ["ENV quoted", "DENY", 'make -C . db-seed ENV="prod"'],
   ["exported ENV", "DENY", "export ENV=prod && make db-seed"],

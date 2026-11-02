@@ -57,6 +57,41 @@ const KHAN: Record<Language, CreditShown> = {
   },
 };
 
+/** An Alfik Matematyczny task, as the credit shows it: its own inflected lines, "z Alfika
+ * Matematycznego" (decision dl-gc7yn), and the organiser's licence. */
+const ALFIK: CreditShown = {
+  source: "Alfik Matematyczny",
+  bankSource: "alfik",
+  licence: "© Łowcy Talentów – JERSZ",
+  deedUrl: "https://example.org/alfik",
+  line: "shared",
+  home: "https://example.org/alfik",
+  notAffiliated: true,
+};
+
+/** An invented Alfik-shaped task: the task's picture as its stem and 5 lettered choices A to E. */
+const alfikTask: SpecOf<typeof Family.Choose> = {
+  id: "a7",
+  say: "Wybierz odpowiedź.",
+  question_type: QuestionType.LetteredChoice,
+  family: Family.Choose,
+  data: {
+    stem: {
+      pictures: [
+        { src: `${"ab".repeat(32)}.png`, alt: "Rysunek do zadania", width: 480, height: 240 },
+      ],
+    },
+    options: ["3", "4", "5", "6", "7"].map((text, i) => ({
+      id: must("ABCDE"[i]),
+      letter: must("ABCDE"[i]),
+      content: { kind: "text" as const, text },
+    })),
+    select: "one",
+    layout: "lettered",
+  },
+  key: { correct: ["C"] },
+};
+
 /** The flowers item as a Choose step: an instruction above a card that holds the question. */
 const flowers: SpecOf<typeof Family.Choose> = {
   id: "k1",
@@ -78,7 +113,7 @@ const flowers: SpecOf<typeof Family.Choose> = {
 /** `shell` puts the step in a container with these attributes, as StepShell draws a lesson's. */
 /** `credited` false draws a question of our own, which carries no credit. */
 function draw(
-  credited: boolean,
+  credited: boolean | CreditShown,
   language: Language = "pl",
   spec = flowers,
   shell?: Record<string, string>,
@@ -98,7 +133,10 @@ function draw(
   const container = document.body.appendChild(document.createElement("div"));
   for (const [name, value] of Object.entries(shell ?? {})) container.setAttribute(name, value);
   render(
-    <QuestionCredit credit={credited ? KHAN[language] : null} language={language}>
+    <QuestionCredit
+      credit={credited === true ? KHAN[language] : credited || null}
+      language={language}
+    >
       <StepFrame stepId={spec.id}>
         <ChooseView {...(props as unknown as ViewProps<typeof Family.Choose>)} />
       </StepFrame>
@@ -161,6 +199,29 @@ describe("the credit on a borrowed question", () => {
     expect(document.querySelector("[data-credit-licence]")?.textContent).toBe(
       "Shared under CC BY-NC-SA 4.0",
     );
+  });
+
+  it("credits an Alfik task z Alfika Matematycznego, over its picture and 5 lettered choices", () => {
+    draw(ALFIK, "pl", alfikTask);
+    expect(trigger().textContent).toBe("z Alfika Matematycznego");
+    expect(trigger().getAttribute("aria-label")).toBe("z Alfika Matematycznego, źródło i licencja");
+    fireEvent.click(trigger());
+    const dialog = screen.getByRole("dialog", { name: "Zadanie z Alfika Matematycznego" });
+    expect(dialog.querySelector("[data-credit-licence]")?.textContent).toBe(
+      "Udostępnione na licencji © Łowcy Talentów – JERSZ",
+    );
+    expect(dialog.querySelector("[data-credit-not-affiliated]")?.textContent).toBe(
+      "Jadwigo nie jest związane z Alfikiem Matematycznym",
+    );
+    expect(screen.getByRole("img", { name: "Rysunek do zadania" })).toBeTruthy();
+    expect(screen.getAllByRole("radio")).toHaveLength(5);
+  });
+
+  it("credits an Alfik task in English from Alfik Matematyczny", () => {
+    draw(ALFIK, "en", alfikTask);
+    expect(trigger().textContent).toBe("from Alfik Matematyczny");
+    fireEvent.click(trigger());
+    expect(screen.getByRole("dialog", { name: "Task from Alfik Matematyczny" })).toBeTruthy();
   });
 
   it("takes Enter as its own: Enter on the credit opens the card and does not check the answer", () => {

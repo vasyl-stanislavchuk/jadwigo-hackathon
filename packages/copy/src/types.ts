@@ -428,6 +428,11 @@ export const COPY_KEYS = [
   "credit_source",
   "credit_not_affiliated",
   "credit_close",
+  // the same lines for a source whose name Polish inflects: Alfik Matematyczny (dl-n9fr.66.6)
+  "credit_from_alfik",
+  "credit_title_alfik",
+  "credit_label_alfik",
+  "credit_not_affiliated_alfik",
   "leave_title",
   "leave_where",
   "leave_stay",
@@ -637,9 +642,14 @@ export const COPY_KEYS = [
   "parent_about_lesson",
   "parent_about_lesson_empty",
   "parent_change",
-  "parent_chat_empty",
   "parent_lesson_empty",
   // end the lesson workspace
+  // the lesson's send and its chat (dl-z5ja.108)
+  "parent_composer",
+  "parent_writing",
+  "parent_sending",
+  "parent_start_failed",
+  // end the lesson's send and its chat
   // the chat page (dl-z5ja.17): /playground/chat, a parent's chat on the left and the lesson on the right
   "chat_title",
   "chat_lesson_title",
@@ -783,6 +793,20 @@ export const COPY_KEYS = [
   "chat_sign_in",
   "chat_limit_message",
   // end the chat page
+  // a parent's photos (dl-z5ja.11.5)
+  "attach_photo_alt",
+  "attach_uploading",
+  "attach_retry",
+  "attach_heic",
+  "attach_unreadable",
+  "attach_too_large",
+  "attach_limit_day",
+  "attach_offline",
+  "attach_expired",
+  "attach_changed",
+  "attach_not_taken",
+  "attach_left_off",
+  // end a parent's photos
 ] as const;
 
 export type CopyKey = (typeof COPY_KEYS)[number];

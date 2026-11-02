@@ -9,9 +9,11 @@ import { appUrl } from "../index.ts";
 
 export const featuredUrl = new URL(ROUTES.featuredLessons.path, appUrl).href;
 
-/** Where a card goes: the app's player for that assignment (playPath in apps/web/src/play/route.ts). */
-export const playUrl = (lesson: FeaturedLesson): string =>
-  new URL(`play/${lesson.assignment_id}`, appUrl).href;
+/** The app's player (playPath in apps/web/src/play/route.ts); an assignment id follows it. */
+export const playBase = new URL("play/", appUrl).href;
+
+/** Where a card goes: the app's player for that assignment. */
+export const playUrl = (lesson: FeaturedLesson): string => `${playBase}${lesson.assignment_id}`;
 
 const shown = (lessons: FeaturedLesson[]): FeaturedLesson[] =>
   lessons.filter((l) => !/\(mock\)\s*$/i.test(l.title));
@@ -54,7 +56,56 @@ export async function pageLessons(
   get: (url: string) => Promise<Response> = fetch,
 ): Promise<FeaturedLesson[]> {
   const { lessons, from } = await featuredLessons(get);
-  const mine = lessonsIn(lessons, lang);
+  const mine = sortByGrade(lessonsIn(lessons, lang), lang);
   console.warn(`Featured ${lang} lessons: ${mine.length} of ${lessons.length}, from the ${from}`);
   return mine;
+}
+
+/**
+ * Grade 1 first, then 2 and 3, and a lesson with no grade last; within a grade, by title in the
+ * page's language (dl-w0b4.108).
+ */
+export function sortByGrade(
+  lessons: readonly FeaturedLesson[],
+  lang: FeaturedLesson["language"],
+): FeaturedLesson[] {
+  const rank = (l: FeaturedLesson): number => l.grade ?? Number.POSITIVE_INFINITY;
+  return [...lessons].sort((a, b) => rank(a) - rank(b) || a.title.localeCompare(b.title, lang));
+}
+
+/** The grades the lessons have, lowest first: the landing page's tabs. None while no lesson has a grade. */
+export const gradesOf = (lessons: readonly FeaturedLesson[]): number[] =>
+  [...new Set(lessons.flatMap((l) => (l.grade === null ? [] : [l.grade])))].sort((a, b) => a - b);
+
+/**
+ * /lekcje's groups: one per grade present, lowest first, then the lessons with no grade, which have
+ * no tab on the landing page and show only here.
+ */
+export function gradeGroups(
+  lessons: readonly FeaturedLesson[],
+): { grade: number | null; lessons: FeaturedLesson[] }[] {
+  const groups = gradesOf(lessons).map((grade) => ({
+    grade,
+    lessons: lessons.filter((l) => l.grade === grade),
+  }));
+  const loose = lessons.filter((l) => l.grade === null);
+  return loose.length > 0 ? [...groups, { grade: null, lessons: loose }] : groups;
+}
+
+/**
+ * What scripts/check-dist.ts finds wrong with a built landing or lessons page: every grade the page
+ * offers, as a tab (`name="grade" value="2"`) or a group (`id="grade-2"`), needs a card of that grade
+ * that links to the app's player. Returns one line per grade that has none.
+ */
+export function gradePlayProblems(html: string, playPrefix: string): string[] {
+  const offered = new Set(
+    [...html.matchAll(/name="grade" value="(\d+)"|id="grade-(\d+)"/g)].map((m) => m[1] ?? m[2]),
+  );
+  const cards = html.split(/<li\b/).slice(1);
+  return [...offered]
+    .filter(
+      (g) =>
+        !cards.some((c) => c.includes(`data-grade="${g}"`) && c.includes(`href="${playPrefix}`)),
+    )
+    .map((g) => `grade ${g} has no card that links to ${playPrefix}`);
 }
