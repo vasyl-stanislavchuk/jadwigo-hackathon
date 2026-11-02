@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "You got them all! Have a look at your answers." |
+* | "All done! Have a look at your answers." |
 *
 * @param {Play_Summary_AllInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const play_summary_all = /** @type {((inputs?: Play_Summary_AllInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Play_Summary_AllInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("You got them all! Have a look at your answers.")
-	return /** @type {LocalizedString} */ ("Wszystko się udało! Zobacz swoje odpowiedzi.")
+	if (locale === "en") return /** @type {LocalizedString} */ ("All done! Have a look at your answers.")
+	return /** @type {LocalizedString} */ ("Wszystkie pytania gotowe! Zobacz swoje odpowiedzi.")
 });
