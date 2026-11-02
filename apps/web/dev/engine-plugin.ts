@@ -45,8 +45,6 @@ const THINK_MS = 400;
 const SLOW_THINK_MS = 2000;
 /** How far past a turn's longest life `?pace=fail` runs its clock, so the turn ends failed. */
 const PAST_MAX_MS = 24 * 60 * 60 * 1000;
-/** The msg_id a stalled turn's step answers with: it is never enqueued. */
-const NOT_QUEUED = -1;
 /** How many follow-ups a turn's script answers after it drafts and checks. */
 const FOLLOW_UPS = 10;
 
@@ -135,7 +133,10 @@ function engine(server: ViteDevServer, m: Modules) {
         scripted = new m.engine.ScriptedMuse(turnScript());
         scripts.set(request.run_id, scripted);
       }
-      const think = (await paceOfRun(request.run_id)) === "slow" ? SLOW_THINK_MS : THINK_MS;
+      const pace = await paceOfRun(request.run_id);
+      // `stall`: the step has taken the parent's words into the log; the model never answers.
+      if (pace === "stall") return new Promise<MuseResponse>(() => {});
+      const think = pace === "slow" ? SLOW_THINK_MS : THINK_MS;
       await new Promise((resolve) => setTimeout(resolve, think));
       return scripted.respond(request);
     },
@@ -167,16 +168,20 @@ function engine(server: ViteDevServer, m: Modules) {
   }
 
   /**
-   * The queue, paced: a stalled conversation's steps are never enqueued, so no drain plays them;
-   * the step being drained is noted, so a failing conversation's runs on a clock past their max
-   * deadline and the engine ends them failed with `RunTimedOut`. The dev drain takes 1 step a read.
+   * The queue, paced: a stalled conversation's steps go to a queue of their own, which only its
+   * own drain reads; the step being drained is noted, so a failing conversation's runs on a clock
+   * past their max deadline and the engine ends them failed with `RunTimedOut`. The dev drain
+   * takes 1 step a read.
    */
+  const stalled = new InMemoryRunQueue(() => new Date());
   const queue = new InMemoryRunQueue(() => new Date());
   const enqueue = queue.send.bind(queue);
   const take = queue.read.bind(queue);
   let failing = false;
   queue.send = async (message, delay_s) =>
-    (await paceOfRun(message.run_id)) === "stall" ? NOT_QUEUED : enqueue(message, delay_s);
+    (await paceOfRun(message.run_id)) === "stall"
+      ? stalled.send(message, delay_s)
+      : enqueue(message, delay_s);
   queue.read = async (vt_s, qty) => {
     const read = await take(vt_s, qty);
     const first = read[0];
@@ -234,8 +239,16 @@ function engine(server: ViteDevServer, m: Modules) {
                 }
               : { event_id: body.event_id, kind: "cancel", payload: {} },
       });
-      // After the answer: the page subscribes, then fetches after its cursor.
-      setTimeout(kick, 0);
+      // After the answer: the page subscribes, then fetches after its cursor. A `stall` step logs
+      // the parent's message and then waits on a model that never answers, on a drain and a queue
+      // of its own, so it never holds up another turn's drain, even when it is delivered again.
+      if (pace === "stall") {
+        setTimeout(() => {
+          drain({ ...deps, queue: stalled }).catch((e: unknown) =>
+            server.config.logger.error(`[${ENGINE_PLUGIN}] ${String(e)}`),
+          );
+        }, 0);
+      } else setTimeout(kick, 0);
       return { run };
     },
     async runs(conversation: string): Promise<RunsAnswer> {
