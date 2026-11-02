@@ -1,6 +1,6 @@
 import type { Run } from "@jadwigo/contracts/run";
 import { RUN_ERROR_TYPE, RunEvent, RunId } from "@jadwigo/contracts/run";
-import type { RunView } from "@jadwigo/core";
+import { foldRun, type RunView } from "@jadwigo/core";
 import { RUN_LOGS } from "@jadwigo/testing";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -551,5 +551,70 @@ describe("tool calls explained (dl-uukj.47.30)", () => {
     expect(line("learner_week")?.querySelector("[data-sentence]")?.textContent).toBe(
       "Czytanie tygodnia · Ola",
     );
+  });
+});
+
+describe("the plan as a checklist (dl-uukj.47.31)", () => {
+  /** plan-and-cite folded up to `seq`, as a turn. */
+  function planTurn(seq: number, change: (view: RunView) => void = () => {}): Turn {
+    const turn = turnOf("plan-and-cite");
+    const log = RUN_LOGS.find((l) => l.name === "plan-and-cite")?.events ?? [];
+    const view = foldRun(log.map((e) => RunEvent.parse(e)).filter((e) => e.seq <= seq));
+    change(view);
+    return { run: turn.run, view };
+  }
+  const card = () => document.querySelector("[data-plan]") as HTMLElement | null;
+  const header = () => card()?.querySelector("[data-plan-header]")?.textContent;
+
+  it("pins the entries, each with its status in words, above the tool lines while the turn runs", () => {
+    pane({ turns: [planTurn(3)] });
+    expect(card()?.getAttribute("data-plan")).toBe("open");
+    expect(card()?.tagName.toLowerCase()).toBe("section");
+    expect(header()).toBe("Plan · 0 z 3");
+    const entries = [...(card()?.querySelectorAll("[data-plan-entry]") ?? [])];
+    expect(entries.map((e) => e.getAttribute("data-status"))).toEqual([
+      "in_progress",
+      "pending",
+      "pending",
+    ]);
+    expect(entries[0]?.textContent).toBe("Find questions on carrying" + "w toku");
+    // Jadwigo AI's one header sits over the plan.
+    expect(document.querySelectorAll("[data-ai-header]")).toHaveLength(1);
+    expect(card()?.closest("li")?.querySelector("[data-ai-header]")).not.toBeNull();
+  });
+
+  it("moves the count as entries are done, and keeps the plan above the tool lines", () => {
+    pane({ turns: [planTurn(15)] });
+    expect(header()).toBe("Plan · 1 z 3");
+    const plan = card() as HTMLElement;
+    const tools = document.querySelector("[data-tools]") as HTMLElement;
+    expect(plan.compareDocumentPosition(tools) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("folds to its header once the turn ends", () => {
+    pane({
+      turns: [
+        planTurn(15, (view) => {
+          view.turn_open = false;
+          view.status = "completed";
+        }),
+      ],
+    });
+    const folded = card() as HTMLDetailsElement;
+    expect(folded.getAttribute("data-plan")).toBe("folded");
+    expect(folded.tagName.toLowerCase()).toBe("details");
+    expect(folded.open).toBe(false);
+    expect(folded.querySelector("summary")?.textContent).toBe("Plan · 1 z 3");
+  });
+
+  it("draws nothing for a plan of 2 entries", () => {
+    pane({
+      turns: [
+        planTurn(15, (view) => {
+          view.plan = view.plan?.slice(0, 2) ?? null;
+        }),
+      ],
+    });
+    expect(card()).toBeNull();
   });
 });

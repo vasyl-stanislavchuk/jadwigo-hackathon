@@ -35,6 +35,7 @@ import { Button } from "./button.tsx";
 import "./chat.css";
 import { isOpen, type SendLimit, type Turn } from "./conversation.ts";
 import { JadwigoAiMark } from "./JadwigoAiMark.tsx";
+import { PLAN_MIN, PlanCard } from "./PlanCard.tsx";
 import { elapsedSeconds, phaseAnnouncement, type RunPhase } from "./phase.ts";
 import { Rating } from "./Rating.tsx";
 import { type LineContext, sentenceOf, TOOL_ICON } from "./toolLine.ts";
@@ -472,18 +473,30 @@ const lessMotion = (): boolean =>
 /** Smooth unless the parent asked the system for less motion. */
 const scrollBehavior = (): ScrollBehavior => (lessMotion() ? "auto" : "smooth");
 
+/** Whether a turn draws its plan (PlanCard.tsx: 3 or more entries). */
+const hasPlan = (turn: Turn): boolean => (turn.view.plan?.length ?? 0) >= PLAN_MIN;
+
+/** One entry of a turn as the pane draws it: a row, or the plan pinned above Jadwigo AI's rows. */
+type TurnEntry = { kind: "row"; row: Row; header: boolean } | { kind: "plan"; header: boolean };
+
 /**
  * A turn's rows, the first of Jadwigo AI's marked to carry its header: one header per turn, over
- * its prose, tool lines and widgets, however the parent's words fall between them.
+ * its prose, tool lines and widgets, however the parent's words fall between them. A plan of 3 or
+ * more entries goes first among Jadwigo AI's rows, under the header (dl-uukj.47.31).
  */
-function turnRows(turn: Turn): { row: Row; header: boolean }[] {
+function turnRows(turn: Turn): TurnEntry[] {
   let headed = false;
-  return rowsOf(turn.view.chat).map((row) => {
+  const entries: TurnEntry[] = [];
+  const plan = hasPlan(turn);
+  for (const row of rowsOf(turn.view.chat)) {
     const ai = !(row.kind === "message" && row.from === "parent");
-    const header = ai && !headed;
+    if (ai && !headed && plan) entries.push({ kind: "plan", header: true });
+    const header = ai && !headed && !plan;
     if (ai) headed = true;
-    return { row, header };
-  });
+    entries.push({ kind: "row", row, header });
+  }
+  if (plan && !headed) entries.push({ kind: "plan", header: true });
+  return entries;
 }
 
 /** Each message limit's line: the minute's says wait a moment, the day's says come back tomorrow. */
@@ -577,7 +590,7 @@ export function ChatPane({
   const aiSpoke =
     pending === null &&
     last !== undefined &&
-    last.view.chat.some((i) => !(i.kind === "message" && i.from === "parent"));
+    (hasPlan(last) || last.view.chat.some((i) => !(i.kind === "message" && i.from === "parent")));
   const submit = (e: FormEvent) => {
     e.preventDefault();
     send(draft);
@@ -597,20 +610,34 @@ export function ChatPane({
       )}
       <ol aria-label={say("chat_messages")} className="flex flex-1 flex-col gap-3 overflow-y-auto">
         {turns.map((turn) => [
-          ...turnRows(turn).map(({ row, header }) => (
-            <li
-              key={`${turn.run.id}-${row.seq}`}
-              className={cn(
-                "flex flex-col",
-                row.kind === "message" && row.from === "parent" ? "items-end" : "items-stretch",
-              )}
-              data-chat-row
-              {...(still ? {} : { "data-enter": "" })}
-            >
-              {header && <AiHeader language={language} />}
-              <RowView row={row} run={turn.run.id} language={language} context={lineContext} />
-            </li>
-          )),
+          ...turnRows(turn).map((entry) =>
+            entry.kind === "plan" ? (
+              <li key={`${turn.run.id}-plan`} className="flex flex-col" data-chat-row>
+                {entry.header && <AiHeader language={language} />}
+                <PlanCard plan={turn.view.plan ?? []} open={isOpen(turn)} language={language} />
+              </li>
+            ) : (
+              <li
+                key={`${turn.run.id}-${entry.row.seq}`}
+                className={cn(
+                  "flex flex-col",
+                  entry.row.kind === "message" && entry.row.from === "parent"
+                    ? "items-end"
+                    : "items-stretch",
+                )}
+                data-chat-row
+                {...(still ? {} : { "data-enter": "" })}
+              >
+                {entry.header && <AiHeader language={language} />}
+                <RowView
+                  row={entry.row}
+                  run={turn.run.id}
+                  language={language}
+                  context={lineContext}
+                />
+              </li>
+            ),
+          ),
           ...(onRate !== undefined && completed(turn)
             ? [
                 <li key={`${turn.run.id}-rating`} className="flex flex-col">
