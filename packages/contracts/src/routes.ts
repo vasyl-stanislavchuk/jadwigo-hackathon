@@ -485,7 +485,7 @@ export const ROUTES = {
     summary: "Sends the parent's message, on the open turn or a new one.",
     tag: "conversations",
     description:
-      "Idempotent by `event_id`: a resend returns the run that holds the message, and the same `event_id` with other text or photos is 409 `EventIdMismatch`. `attachment_ids` names photos from `POST /api/v1/attachments`, uploaded; one that is not there as declared is 409 `AttachmentMismatch`, and one another message carries is 409 `AttachmentAttached`, and the message is not kept. The reply comes before the AI answers: read the run's events for its answer.",
+      "Idempotent by `event_id`: a resend returns the run that holds the message, and the same `event_id` with other text, other photos or another page in `context` (or none where it had one) is 409 `EventIdMismatch`. A `context` naming a learner or a lesson the pod does not hold is 404 `NotFound`, and nothing is kept. `attachment_ids` names photos from `POST /api/v1/attachments`, uploaded; one that is not there as declared is 409 `AttachmentMismatch`, and one another message carries is 409 `AttachmentAttached`, and the message is not kept. The reply comes before the AI answers: read the run's events for its answer.",
   },
   createAttachment: {
     method: "POST",

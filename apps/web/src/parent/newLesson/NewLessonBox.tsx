@@ -1,7 +1,8 @@
 /**
  * The parent app's first screen, "Lekcje / Nowa lekcja" (decision 2026-11-01-the-parent-app-is-a-
  * sidebar-shell-and-a-3-column-lesson-workspac, dl-xo0q; handoff §5.1, docs/worklog/dl-uukj.47):
- * the question and one box, nothing else (no subtitle, no starters, no consent line). The caret is
+ * the question and one box, and under it one muted line about Jadwigo AI that opens a small dialog
+ * (AboutJadwigoAi.tsx, dl-uukj.47.37); nothing else (no subtitle, no starters, no consent line). The caret is
  * in the box on load; the placeholder is the only example.
  *
  *   empty   "Zrób lekcję" is quiet, with the reason beside it
@@ -29,6 +30,7 @@ import {
   useState,
 } from "react";
 import { CATEGORY } from "../adult.ts";
+import { AboutJadwigoAi } from "./AboutJadwigoAi.tsx";
 import { DlaSelect } from "./DlaSelect.tsx";
 
 /** What the parent sends: the words, the photos, and the child the lesson is for (or none). */
@@ -233,6 +235,7 @@ export function NewLessonBox({
           </Button>
         </div>
       </form>
+      <AboutJadwigoAi language={language} />
       {problem !== null && (
         <p role="alert" className="text-jw-ink" data-send-problem>
           {problem}

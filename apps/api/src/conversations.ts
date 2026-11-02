@@ -22,6 +22,7 @@ import {
   type RunRating,
   RunRatingCreate,
 } from "@jadwigo/contracts";
+import type { MessageContext } from "@jadwigo/contracts/run";
 import { acceptMessage, type EngineDeps, type RunQueue, type Verbs } from "@jadwigo/jadwigo-ai";
 import type { Store, UsageSince } from "@jadwigo/store";
 import { messagePhotos, type PhotoWork } from "./attachments.ts";
@@ -188,7 +189,7 @@ export async function postMessage(
   await requireConsent(store, pod);
   await requireLive(store, pod, id);
   if (parsed.data.kind === "steer") return steer(store, deps, pod, account, id, parsed.data);
-  const { event_id, text } = parsed.data;
+  const { event_id, text, context } = parsed.data;
   // One unit: the reads below, the write and the refusal. A refused message throws after
   // acceptMessage wrote, so on Postgres the unit rolls the row back and its held send is
   // dropped; nothing of it is kept (dl-z5ja.62, the steward's review of #464).
@@ -203,12 +204,20 @@ export async function postMessage(
     pod,
     created_by: account,
     conversation_id: id,
-    entry: { kind: "message", event_id, payload: { text, ...photos.payload } },
+    // The page it was sent from (dl-z5ja.114): acceptMessage refuses one the pod does not hold as
+    // NotFound, a 404, before anything is written.
+    entry: {
+      kind: "message",
+      event_id,
+      payload: { text, ...photos.payload, ...(context === undefined ? {} : { context }) },
+    },
   });
-  // A resend lands once; the same id on another message, or in another conversation, is refused.
+  // A resend lands once; the same id on another message, its words, its photos or its page, or
+  // in another conversation, is refused.
   if (
     inbox.kind !== "message" ||
     inbox.payload.text !== text ||
+    !sameContext(inbox.payload.context, context) ||
     !photos.same(inbox) ||
     run.conversation_id !== id
   )
@@ -233,6 +242,14 @@ export async function postMessage(
     );
   await photos.attach();
   return { run };
+}
+
+/** Whether 2 messages name the same page, or both none. A context has exactly one id. */
+function sameContext(a: MessageContext | undefined, b: MessageContext | undefined): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  return "learner_id" in a
+    ? "learner_id" in b && a.learner_id === b.learner_id
+    : "lesson_id" in b && a.lesson_id === b.lesson_id;
 }
 
 /**

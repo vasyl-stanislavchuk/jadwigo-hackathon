@@ -153,6 +153,8 @@ export function useConversation(
   const latest = useRef(state);
   latest.current = state;
   const subscribed = useRef(new Map<RunId, () => void>());
+  /** A retry's words, waiting for the turn it cancelled to end (dl-uukj.47.29). */
+  const afterEnd = useRef<{ run: RunId; text: string } | null>(null);
   /** The words a route refused for want of consent, sent again once it is given. */
   const [refused, setRefused] = useState<{ text: string; context?: MessageContext } | null>(null);
 
@@ -256,14 +258,27 @@ export function useConversation(
       if (text !== null) send(text);
       return;
     }
+    // A cancel only asks the turn to end (cancel_requested_at): words sent now would join the
+    // same turn's inbox and end with it. So they wait until the turn has ended, then open a new one.
+    if (text !== null) afterEnd.current = { run: last.run.id, text };
     transport
       .send({ conversation_id: conversation, event_id: newEventId(), kind: "cancel" })
-      .then((run) => {
-        void follow(run);
-        if (text !== null) send(text);
-      })
-      .catch(() => dispatch({ type: "send_failed", failed: true }));
+      .then((run) => follow(run))
+      .catch(() => {
+        afterEnd.current = null;
+        dispatch({ type: "send_failed", failed: true });
+      });
   }, [transport, conversation, follow, restore, send]);
+
+  // The retried words go out once the cancelled turn has ended, as a turn of their own.
+  useEffect(() => {
+    const waiting = afterEnd.current;
+    if (waiting === null) return;
+    const turn = turnsOf(state).find((t) => t.run.id === waiting.run);
+    if (turn === undefined || isOpen(turn)) return;
+    afterEnd.current = null;
+    send(waiting.text);
+  }, [state, send]);
 
   const edit = useCallback(
     (text: string, question_ids: string[], change?: LessonChange): EventId | null => {
