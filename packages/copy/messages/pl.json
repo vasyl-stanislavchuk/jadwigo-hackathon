@@ -1088,5 +1088,9 @@
   "email_lead_recovery": "To jest Twój kod do odzyskania konta Jadwigo. Wpisz go na stronie logowania.",
   "email_code_label": "Twój kod",
   "email_expiry": "Kod działa przez krótki czas i tylko raz.",
-  "email_ignore": "Jeśli to nie Ty, zignoruj tę wiadomość."
+  "email_ignore": "Jeśli to nie Ty, zignoruj tę wiadomość.",
+  "parent_analytics_ask": "Jadwigo zapisuje, jak używasz aplikacji, także nagrania ekranu bez tego, co wpisujesz. Dzięki temu ją ulepszamy. Zgadzasz się?",
+  "parent_analytics_accept": "Zgadzam się",
+  "parent_analytics_reject": "Nie, dziękuję",
+  "parent_analytics_privacy": "Prywatność"
 }

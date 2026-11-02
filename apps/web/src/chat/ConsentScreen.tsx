@@ -7,6 +7,7 @@
  * The screen only asks; the caller gives the consent (`PodClient.patchPod`, dl-z5ja.112).
  */
 
+import { track } from "@jadwigo/analytics";
 import type { Client } from "@jadwigo/api-client";
 import { copy, type Language } from "@jadwigo/copy";
 import { Button, Heading, Notice } from "@jadwigo/ui";
@@ -39,7 +40,10 @@ export function ConsentScreen({
   const [state, setState] = useState<"asking" | "saving" | "failed">("asking");
   const agree = () => {
     setState("saving");
-    onAgree().catch(() => setState("failed"));
+    onAgree().then(
+      () => track("ai_consent_granted", {}),
+      () => setState("failed"),
+    );
   };
   return (
     <section data-consent aria-label={say("chat_consent_title")} className="flex flex-col gap-4">

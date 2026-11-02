@@ -29,6 +29,7 @@
  * Heading, Field, Card, Notice), in the adult's lines (dl-uukj.32 wave 2).
  */
 
+import { track } from "@jadwigo/analytics";
 import {
   ApiError,
   type Client,
@@ -593,6 +594,7 @@ function SignedIn({
   const addChild = (firstName: string): void =>
     run(async () => {
       const { learner } = await api.createLearner({ first_name: firstName });
+      track("learner_created", { has_school_grade: false });
       await keepFor(learner.id);
     });
 
@@ -638,6 +640,10 @@ function SignedIn({
     setKept(ask.text);
     try {
       const made = await engine.conversations.createConversation({ event_id: newEventId() });
+      track("lesson_conversation_started", {
+        has_attachments: ask.photos.length > 0,
+        has_learner: ask.learner !== null,
+      });
       firstMessage.put(made.id, ask.text);
       // Started: the words now wait for the workspace, not the first screen.
       newLessonDraft.clear();
