@@ -91,6 +91,8 @@ export function LessonWorkspace({
     next,
     sendNow,
     takeNext,
+    contextClosed,
+    closeContext,
   } = useConversation(engine.transport, conversation);
   const lesson = useLessonWiring(state, edit);
   const { turns } = lesson;
@@ -164,6 +166,8 @@ export function LessonWorkspace({
       next={next}
       onSendNow={sendNow}
       onTakeNext={takeNext}
+      contextClosed={contextClosed}
+      onCloseContext={closeContext}
     />
   );
 

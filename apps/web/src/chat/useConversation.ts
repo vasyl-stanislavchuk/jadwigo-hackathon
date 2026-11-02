@@ -9,6 +9,7 @@ import { ApiError } from "@jadwigo/api-client";
 import { ErrorType, type EventId } from "@jadwigo/contracts";
 import type { ConversationId, MessageContext, Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useContextClosed } from "./contextHold.ts";
 import {
   type ConversationState,
   conversationReducer,
@@ -142,11 +143,23 @@ export interface Conversation {
   sendNow(index: number): void;
   /** Takes one waiting row out (to remove it, or back to the composer), answering its words. */
   takeNext(index: number): string | null;
+  /** The parent closed the context chip: the next messages go with no context (dl-uukj.47.36). */
+  contextClosed: boolean;
+  closeContext(): void;
   /**
    * "Spróbuj ponownie" on a stalled turn (dl-uukj.47.29): a failed restore reads the conversation
    * back again; an open turn is cancelled first, so no 2 runs race, and then its words go again.
    */
   retry(): void;
+}
+
+/** The context the parent's last message went with, or undefined (dl-uukj.47.36). */
+function lastContext(state: ConversationState): MessageContext | undefined {
+  let last: MessageContext | undefined;
+  for (const turn of turnsOf(state))
+    for (const item of turn.view.chat)
+      if (item.kind === "message" && item.from === "parent") last = item.context;
+  return last;
 }
 
 /** The words that opened a turn, or null when it holds none. */
@@ -168,6 +181,9 @@ export function useConversation(
   latest.current = state;
   const subscribed = useRef(new Map<RunId, () => void>());
   const queue = useNextQueue(conversation);
+  const chip = useContextClosed(conversation);
+  const closedRef = useRef(chip.closed);
+  closedRef.current = chip.closed;
   /** A retry's words, waiting for the turn it cancelled to end (dl-uukj.47.29). */
   const afterEnd = useRef<{ run: RunId; text: string } | null>(null);
   /** The words a route refused for want of consent, sent again once it is given. */
@@ -222,8 +238,11 @@ export function useConversation(
   }, [transport, restore]);
 
   const send = useCallback(
-    (text: string, context?: MessageContext) => {
+    (text: string, given?: MessageContext) => {
       const last = turnsOf(latest.current).at(-1);
+      // The page goes on with the context the conversation already has, until the parent closes
+      // the chip; then nothing more goes with any message (dl-uukj.47.36).
+      const context = closedRef.current ? undefined : (given ?? lastContext(latest.current));
       // Mid-turn words wait under "Następne" in the tab, not in the running turn's inbox.
       if ((last !== undefined && isOpen(last)) || latest.current.pending !== null) {
         queue.add(text);
@@ -387,5 +406,7 @@ export function useConversation(
     next: queue.items,
     sendNow,
     takeNext: queue.take,
+    contextClosed: chip.closed,
+    closeContext: chip.close,
   };
 }

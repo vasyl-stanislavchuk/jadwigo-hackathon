@@ -30,7 +30,7 @@ import {
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
 import { cn } from "@jadwigo/ui";
-import { ArrowUpIcon, CheckIcon, EyeIcon, LoaderCircleIcon } from "lucide-react";
+import { ArrowUpIcon, CheckIcon, EyeIcon, LoaderCircleIcon, XIcon } from "lucide-react";
 import { type FormEvent, type ReactElement, useEffect, useRef, useState } from "react";
 import { Button } from "./button.tsx";
 import "./chat.css";
@@ -563,6 +563,10 @@ export interface ChatPaneProps {
   onSendNow?: ((index: number) => void) | undefined;
   /** Takes one waiting row out, answering its words ("Zmień" puts them back in the composer). */
   onTakeNext?: ((index: number) => string | null) | undefined;
+  /** The parent closed the context chip for this conversation: it stays closed. */
+  contextClosed?: boolean;
+  /** The chip's ×; without it the chip has none. */
+  onCloseContext?: (() => void) | undefined;
 }
 
 export function ChatPane({
@@ -585,9 +589,11 @@ export function ChatPane({
   next = [],
   onSendNow,
   onTakeNext,
+  contextClosed = false,
+  onCloseContext,
 }: ChatPaneProps): ReactElement {
   const lineContext: LineContext = nameOf === undefined ? {} : { nameOf };
-  const context = contextLine(turns, nameOf, language);
+  const context = contextClosed ? null : contextLine(turns, nameOf, language);
   const parent = variant === "parent";
   const [draft, setDraft] = useState("");
   /** The last words sent, so a send that did not reach the server can go again. */
@@ -791,6 +797,17 @@ export function ChatPane({
         >
           <EyeIcon aria-hidden className="size-3.5 shrink-0" />
           <span className="min-w-0 truncate">{context}</span>
+          {onCloseContext !== undefined && (
+            <button
+              type="button"
+              aria-label={say("chat_context_close")}
+              onClick={onCloseContext}
+              className="-mr-1 grid size-5 shrink-0 place-items-center rounded-full hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus"
+              data-context-close
+            >
+              <XIcon aria-hidden className="size-3" />
+            </button>
+          )}
         </p>
       )}
       <form
