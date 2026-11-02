@@ -108,7 +108,7 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
     const card = document.querySelector("[data-card='plain']");
     expect(card?.getAttribute("data-tool")).toBe("lesson_show");
     expect(card?.parentElement?.closest("details")).not.toBeNull();
-    expect(card?.querySelector("summary")?.textContent).toBe("Szczegóły kroku");
+    expect(card?.querySelector("summary")?.textContent).toBe("Szczegóły");
     expect(card?.querySelector("[data-card-output]")?.textContent).toContain(
       '"title": "Dodawanie"',
     );
@@ -135,8 +135,8 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
     ]);
     expect(document.querySelector("[data-widget]")).toBeNull();
     expect(document.querySelector("[data-card]")).toBeNull();
-    expect(document.querySelector("[data-state='rejected']")?.textContent).toBe(
-      "Sprawdzanie lekcji: pominięte, jak prosisz",
+    expect(document.querySelector("[data-state='rejected'] summary")?.textContent).toBe(
+      "Sprawdzanie lekcji · pominięte, jak prosisz",
     );
   });
 
@@ -232,7 +232,9 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
       [...widget.querySelectorAll("[data-week]")].map((w) => w.getAttribute("data-week")),
     ).toEqual(["2026-10-26", "2026-11-02"]);
     expect(widget.querySelector("[data-lessons='2']")).not.toBeNull();
-    expect(document.querySelectorAll("[data-card='plain']")).toHaveLength(1);
+    // The malformed one draws no widget; each line keeps its raw details under Szczegóły.
+    expect(document.querySelectorAll("[data-widget]")).toHaveLength(1);
+    expect(document.querySelectorAll("[data-card='plain']")).toHaveLength(2);
   });
 
   it("draws lesson_ideas as the plain card", () => {

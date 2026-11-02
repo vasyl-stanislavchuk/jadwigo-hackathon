@@ -170,9 +170,6 @@ lessons:
   row:
     heading: Play without signing in
     gradeLabel: Grade
-    count: [lesson, lessons, lessons]
-    prev: Previous lessons
-    next: More lessons
     pic: illustration
     pics:
       cukier: Jadwiga lifts a sugar cube off a tower while Gumka the eraser faints.

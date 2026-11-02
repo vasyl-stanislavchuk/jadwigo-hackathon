@@ -3,7 +3,8 @@
  * column-lesson-workspac, dl-xo0q; handoff §3 "Pinned column footer", §5.4–5.5): a muted status line
  * in words on the left; "Zapisz na później", then the one primary on the right: "Daj lekcję" with no
  * child, "Pokaż {imię}" with one. While the lesson is not ready the primary is quiet, with the
- * reason in the status line, never a silent grey.
+ * reason in the status line, never a silent grey. Before a lesson has steps the line is the
+ * reason alone, and a long line wraps rather than being cut (dl-uukj.47.29).
  *
  * "Daj lekcję" with no child opens a small dialog with 2 choices (handoff §5.6, dl-z5ja.108.1.1):
  * "Otwórz na tym komputerze", and "Wydrukuj", which prints the lesson's sheet in place
@@ -32,7 +33,7 @@ export function LessonFooter({
   print = () => window.print(),
 }: {
   language: Language;
-  /** The lesson's state in words, such as "Gotowe zadania: 3 z 6". */
+  /** The lesson's state in words, such as "Gotowe zadania: 3 z 6"; empty before it has steps. */
   status: string;
   /** Whether the lesson passed its check, so it can be given. */
   ready: boolean;
@@ -51,6 +52,7 @@ export function LessonFooter({
   const t = (key: CopyKey, vars: Record<string, string> = {}): string =>
     copy(language, key, vars, CATEGORY);
   const statusId = useId();
+  const line = [status, ready ? "" : t("parent_give_reason")].filter((p) => p !== "").join(" · ");
   const hereId = useId();
   const [choosing, setChoosing] = useState(false);
   const [printing, setPrinting] = useState(false);
@@ -63,10 +65,10 @@ export function LessonFooter({
     <Band data-lesson-footer>
       <p
         id={statusId}
-        className="min-w-0 flex-1 truncate text-jw-page-small text-jw-ink-soft"
+        className="min-w-0 flex-1 text-jw-page-small leading-snug text-jw-ink-soft"
         data-status
       >
-        {ready ? status : `${status} · ${t("parent_give_reason")}`}
+        {line}
       </p>
       <Button type="button" variant="outline" size="control" onClick={onSave} data-save>
         {t("parent_save")}

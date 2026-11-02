@@ -339,15 +339,15 @@ const footerLinks = [
       });
     </script>
     <script is:inline>
-      // Each picture slot shows its placeholder until its picture has loaded (dl-5ssh.4.43).
+      // Each picture slot shows its placeholder until its picture has loaded (dl-5ssh.4.43). One listener
+      // on the page catches every picture, those added later too (the lesson row's copies, dl-5ssh.4.44).
+      const ready = (img) => img.closest(".fade-in")?.classList.add("ready");
+      for (const kind of ["load", "error"]) {
+        document.addEventListener(kind, (e) => e.target instanceof HTMLImageElement && ready(e.target), true);
+      }
       for (const slot of document.querySelectorAll(".fade-in")) {
         const img = slot.querySelector("img");
-        const done = () => slot.classList.add("ready");
-        if (!img || (img.complete && img.naturalWidth > 0)) done();
-        else {
-          img.addEventListener("load", done, { once: true });
-          img.addEventListener("error", done, { once: true });
-        }
+        if (!img || (img.complete && img.naturalWidth > 0)) slot.classList.add("ready");
       }
     </script>
   </body>
