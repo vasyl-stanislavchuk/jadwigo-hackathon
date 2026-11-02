@@ -30,6 +30,8 @@ import {
   ENGINE_BASE,
   type EventsAnswer,
   type LivePush,
+  type Pace,
+  paceOf,
   type RunsAnswer,
   runChannel,
   type SendAnswer,
@@ -39,6 +41,10 @@ import {
 const ENGINE_PLUGIN = "jadwigo-engine";
 /** How long the scripted model "thinks" per call, so the page shows a turn in progress. */
 const THINK_MS = 400;
+/** The same under `?pace=slow` (dl-uukj.47.27): long enough to watch each step land. */
+const SLOW_THINK_MS = 2000;
+/** How far past a turn's longest life `?pace=fail` runs its clock, so the turn ends failed. */
+const PAST_MAX_MS = 24 * 60 * 60 * 1000;
 /** How many follow-ups a turn's script answers after it drafts and checks. */
 const FOLLOW_UPS = 10;
 
@@ -114,6 +120,8 @@ function engine(server: ViteDevServer, m: Modules) {
 
   /** A script per run, so every turn of the dev page plays the same way from its start. */
   const scripts = new Map<string, ScriptedMuse>();
+  /** The pace each run was sent with (`?pace=`), read by the model's think time. */
+  const paces = new Map<string, Pace>();
   const muse: MuseClient = {
     async respond(request: MuseRequest): Promise<MuseResponse> {
       let scripted = scripts.get(request.run_id);
@@ -121,7 +129,8 @@ function engine(server: ViteDevServer, m: Modules) {
         scripted = new m.engine.ScriptedMuse(turnScript());
         scripts.set(request.run_id, scripted);
       }
-      await new Promise((resolve) => setTimeout(resolve, THINK_MS));
+      const think = paces.get(request.run_id) === "slow" ? SLOW_THINK_MS : THINK_MS;
+      await new Promise((resolve) => setTimeout(resolve, think));
       return scripted.respond(request);
     },
   };
@@ -150,15 +159,19 @@ function engine(server: ViteDevServer, m: Modules) {
   };
   const member = store.createAccount(m.contracts.Uuid.parse(crypto.randomUUID()), "pl");
   let draining: Promise<unknown> = Promise.resolve();
-  /** One drain at a time; a message mid-drain is picked up by the drain running. */
-  const kick = () => {
+  /**
+   * One drain at a time; a message mid-drain is picked up by the drain running. `fail` drains on a
+   * clock past the turn's max deadline, so the engine itself ends it failed with `RunTimedOut`.
+   */
+  const kick = (pace: Pace | null) => {
+    const late = () => new Date(Date.now() + PAST_MAX_MS);
     draining = draining
-      .then(() => drain(deps))
+      .then(() => drain(pace === "fail" ? { ...deps, now: late } : deps))
       .catch((e: unknown) => server.config.logger.error(`[${ENGINE_PLUGIN}] ${String(e)}`));
   };
 
   return {
-    async send(body: SendBody): Promise<SendAnswer> {
+    async send(body: SendBody, pace: Pace | null = null): Promise<SendAnswer> {
       const { pod, account } = await member;
       const conversation_id = ConversationId.parse(body.conversation_id);
       await store.createConversation(pod, {
@@ -188,8 +201,10 @@ function engine(server: ViteDevServer, m: Modules) {
                 }
               : { event_id: body.event_id, kind: "cancel", payload: {} },
       });
-      // After the answer: the page subscribes, then fetches after its cursor.
-      setTimeout(kick, 0);
+      if (pace !== null) paces.set(run.id, pace);
+      // After the answer: the page subscribes, then fetches after its cursor. `stall` drains
+      // nothing, so the log stops at the parent's message.
+      if (pace !== "stall") setTimeout(() => kick(pace), 0);
       return { run };
     },
     async runs(conversation: string): Promise<RunsAnswer> {
@@ -277,7 +292,9 @@ export function enginePlugin(): Plugin {
           const refused = admitPost(req);
           if (refused !== null) return answer(res, refused.status, { error: refused.error });
           return void reply(
-            Promise.all([ready(), body(req)]).then(([e, b]) => e.send(b as SendBody)),
+            Promise.all([ready(), body(req)]).then(([e, b]) =>
+              e.send(b as SendBody, paceOf(url.searchParams.get("pace"))),
+            ),
           );
         }
         if (req.method === "GET" && runs !== undefined)
