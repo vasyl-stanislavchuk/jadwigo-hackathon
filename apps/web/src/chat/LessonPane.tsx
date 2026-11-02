@@ -384,7 +384,7 @@ function StepRow({
       >
         <span aria-hidden className="w-4" />
         <span className="tabular-nums">{number}</span>
-        <span className="min-w-[140px] flex-1 truncate">
+        <span className="min-w-35 flex-1 truncate">
           {say("chat_lesson_step_hidden", { step: step.step_id })}
         </span>
         {changed && <ChangedTag say={say} />}
@@ -426,7 +426,7 @@ function StepRow({
           className={`size-4 shrink-0 text-jw-ink-soft ${open ? "rotate-90" : ""}`}
         />
         <span className="tabular-nums">{number}</span>
-        <span className="min-w-[140px] flex-1 truncate" data-step-title>
+        <span className="min-w-35 flex-1 truncate" data-step-title>
           {title}
         </span>
         {changed && <ChangedTag say={say} />}
