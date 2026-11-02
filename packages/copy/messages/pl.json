@@ -798,6 +798,7 @@
   "chat_plan_in_progress": "w toku",
   "chat_plan_done": "zrobione",
   "chat_plan_failed": "nie wyszło",
+  "chat_plan_header": "Plan · {n} z {m}",
   "chat_why": "dlaczego?",
   "chat_citations": "Na czym to opieram",
   "chat_choose_recommended": "polecane",
