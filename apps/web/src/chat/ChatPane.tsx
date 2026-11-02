@@ -763,376 +763,372 @@ export function ChatPane({
 
   // An adult's surface: the kit's Button draws flat and at the parent's sizes here (D4), while a
   // lesson preview elsewhere keeps the child's register.
-  return (
-    <RegisterProvider value="app">
-      <section
-        aria-label={say("chat_title")}
-        // The parent's pane fills its panel: the messages scroll, the composer stays at the foot.
-        className={cn("flex min-h-0 flex-col", parent ? "flex-1 gap-2 px-3 pt-2 pb-3" : "gap-3")}
-        data-variant={variant}
+  const body = (
+    <section
+      aria-label={say("chat_title")}
+      // The parent's pane fills its panel: the messages scroll, the composer stays at the foot.
+      className={cn("flex min-h-0 flex-col", parent ? "flex-1 gap-2 px-3 pt-2 pb-3" : "gap-3")}
+      data-variant={variant}
+    >
+      {!parent && <h2 className="text-jw-page-h2 font-semibold">{say("chat_title")}</h2>}
+      {restoring && (
+        <p data-row="restoring" className="text-jw-page-body text-muted-foreground">
+          {say("chat_restoring")}
+        </p>
+      )}
+      {/* In the workspace the list reaches the panel's edges, so its scrollbar sits on the right
+        edge, and pads its rows back in line with the composer. */}
+      <ol
+        aria-label={say("chat_messages")}
+        className={cn("flex flex-1 flex-col gap-3 overflow-y-auto", parent && "-mx-3 px-3")}
+        onScroll={(e) => {
+          const list = e.currentTarget;
+          atBottom.current = list.scrollHeight - list.scrollTop - list.clientHeight < 48;
+        }}
       >
-        {!parent && <h2 className="text-jw-page-h2 font-semibold">{say("chat_title")}</h2>}
-        {restoring && (
-          <p data-row="restoring" className="text-jw-page-body text-muted-foreground">
-            {say("chat_restoring")}
-          </p>
-        )}
-        {/* In the workspace the list reaches the panel's edges, so its scrollbar sits on the right
-          edge, and pads its rows back in line with the composer. */}
-        <ol
-          aria-label={say("chat_messages")}
-          className={cn("flex flex-1 flex-col gap-3 overflow-y-auto", parent && "-mx-3 px-3")}
-          onScroll={(e) => {
-            const list = e.currentTarget;
-            atBottom.current = list.scrollHeight - list.scrollTop - list.clientHeight < 48;
-          }}
-        >
-          {turns.map((turn) => [
-            ...turnRows(turn).map((entry) =>
-              entry.kind === "plan" ? (
-                // A direct child of the scrolling list, so it pins while the turn runs and the
-                // turn's tool lines scroll beneath it (dl-uukj.47.50); a sticky card inside a row as
-                // tall as itself never pinned. Jadwigo AI's header pins with it.
-                <li
-                  key={`${turn.run.id}-plan`}
-                  className={cn(
-                    "flex flex-col",
-                    isOpen(turn) && "sticky top-0 z-10 bg-jw-card",
-                    // Its fill spans the list's padding too, so no row shows beside it.
-                    isOpen(turn) && parent && "-mx-3 px-3",
-                  )}
-                  data-chat-row
-                  data-plan-row
-                >
-                  {entry.header && <AiHeader language={language} />}
-                  <PlanCard plan={turn.view.plan ?? []} open={isOpen(turn)} language={language} />
-                </li>
-              ) : (
-                <li
-                  key={`${turn.run.id}-${entry.row.seq}`}
-                  className={cn(
-                    "flex flex-col",
-                    entry.row.kind === "message" && entry.row.from === "parent"
-                      ? "items-end"
-                      : "items-stretch",
-                  )}
-                  data-chat-row
-                  {...(still ? {} : { "data-enter": "" })}
-                >
-                  {entry.header && <AiHeader language={language} />}
-                  <RowView
-                    row={entry.row}
-                    run={turn.run.id}
-                    language={language}
-                    context={lineContext}
-                  />
-                </li>
-              ),
-            ),
-            // The lesson this turn wrote, as one card under its words (handoff moment 6).
-            ...(lessonObject !== undefined &&
-            onOpen !== undefined &&
-            !isOpen(turn) &&
-            turn.view.lesson !== null &&
-            wroteLesson(turn.view)
-              ? [
-                  <li key={`${turn.run.id}-lesson`} className="flex flex-col" data-chat-row>
-                    <LessonCard
-                      lesson={turn.view.lesson}
-                      object={lessonObject}
-                      language={language}
-                      onOpen={onOpen}
-                      {...(lessonActions !== undefined && turn === newestCard(turns)
-                        ? { actions: lessonActions }
-                        : {})}
-                    />
-                  </li>,
-                ]
-              : []),
-            ...(onRate !== undefined && completed(turn)
-              ? [
-                  <li key={`${turn.run.id}-rating`} className="flex flex-col">
-                    <Rating
-                      language={language}
-                      run={turn.run.id}
-                      onRate={onRate}
-                      onRetry={retryOf(turn, resend)}
-                    />
-                  </li>,
-                ]
-              : []),
-          ])}
-          {pending !== null && (
-            <li className="flex flex-col items-end" data-chat-row data-pending>
-              <div
-                className="flex max-w-[90%] flex-col items-end gap-1 self-end"
-                data-from="parent"
+        {turns.map((turn) => [
+          ...turnRows(turn).map((entry) =>
+            entry.kind === "plan" ? (
+              // A direct child of the scrolling list, so it pins while the turn runs and the
+              // turn's tool lines scroll beneath it (dl-uukj.47.50); a sticky card inside a row as
+              // tall as itself never pinned. Jadwigo AI's header pins with it.
+              <li
+                key={`${turn.run.id}-plan`}
+                className={cn(
+                  "flex flex-col",
+                  isOpen(turn) && "sticky top-0 z-10 bg-jw-card",
+                  // Its fill spans the list's padding too, so no row shows beside it.
+                  isOpen(turn) && parent && "-mx-3 px-3",
+                )}
+                data-chat-row
+                data-plan-row
               >
-                <p className="sr-only">{say("chat_from_parent")}</p>
-                <p className={PARENT_BOX} data-bubble>
-                  {pending}
-                </p>
-              </div>
-            </li>
-          )}
-          {phase != null && (phase.open || phase.kind === "stalled") && (
-            <li className="flex flex-col" data-chat-row>
-              {!aiSpoke && <AiHeader language={language} />}
-              <ActivityLine
-                phase={phase}
-                now={now}
-                still={still}
-                onRetry={onRetry}
-                language={language}
-              />
-            </li>
-          )}
-          <li ref={end} aria-hidden className="-mt-3" />
-        </ol>
-        {turns.length === 0 && !restoring && !parent && (
-          <div data-row="empty" className="flex flex-col gap-2">
-            <p className="text-muted-foreground">{say("chat_empty")}</p>
-            <ul className="flex flex-col gap-1">
-              {STARTERS.map((key) => (
-                <li key={key}>
-                  <Button variant="outline" size="sm" onClick={() => send(say(key))}>
-                    {say(key)}
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          </div>
+                {entry.header && <AiHeader language={language} />}
+                <PlanCard plan={turn.view.plan ?? []} open={isOpen(turn)} language={language} />
+              </li>
+            ) : (
+              <li
+                key={`${turn.run.id}-${entry.row.seq}`}
+                className={cn(
+                  "flex flex-col",
+                  entry.row.kind === "message" && entry.row.from === "parent"
+                    ? "items-end"
+                    : "items-stretch",
+                )}
+                data-chat-row
+                {...(still ? {} : { "data-enter": "" })}
+              >
+                {entry.header && <AiHeader language={language} />}
+                <RowView
+                  row={entry.row}
+                  run={turn.run.id}
+                  language={language}
+                  context={lineContext}
+                />
+              </li>
+            ),
+          ),
+          // The lesson this turn wrote, as one card under its words (handoff moment 6).
+          ...(lessonObject !== undefined &&
+          onOpen !== undefined &&
+          !isOpen(turn) &&
+          turn.view.lesson !== null &&
+          wroteLesson(turn.view)
+            ? [
+                <li key={`${turn.run.id}-lesson`} className="flex flex-col" data-chat-row>
+                  <LessonCard
+                    lesson={turn.view.lesson}
+                    object={lessonObject}
+                    language={language}
+                    onOpen={onOpen}
+                    {...(lessonActions !== undefined && turn === newestCard(turns)
+                      ? { actions: lessonActions }
+                      : {})}
+                  />
+                </li>,
+              ]
+            : []),
+          ...(onRate !== undefined && completed(turn)
+            ? [
+                <li key={`${turn.run.id}-rating`} className="flex flex-col">
+                  <Rating
+                    language={language}
+                    run={turn.run.id}
+                    onRate={onRate}
+                    onRetry={retryOf(turn, resend)}
+                  />
+                </li>,
+              ]
+            : []),
+        ])}
+        {pending !== null && (
+          <li className="flex flex-col items-end" data-chat-row data-pending>
+            <div className="flex max-w-[90%] flex-col items-end gap-1 self-end" data-from="parent">
+              <p className="sr-only">{say("chat_from_parent")}</p>
+              <p className={PARENT_BOX} data-bubble>
+                {pending}
+              </p>
+            </div>
+          </li>
         )}
-        {queued.length > 0 && (
-          <ul aria-label={say("chat_queued")} className="text-jw-page-body text-muted-foreground">
-            {queued.map((text, i) => (
-              // A follow-up may repeat; its place in the queue does not.
-              <li key={`${i}-${text}`} data-row="queued">
-                {say("chat_queued")}: {text}
+        {phase != null && (phase.open || phase.kind === "stalled") && (
+          <li className="flex flex-col" data-chat-row>
+            {!aiSpoke && <AiHeader language={language} />}
+            <ActivityLine
+              phase={phase}
+              now={now}
+              still={still}
+              onRetry={onRetry}
+              language={language}
+            />
+          </li>
+        )}
+        <li ref={end} aria-hidden className="-mt-3" />
+      </ol>
+      {turns.length === 0 && !restoring && !parent && (
+        <div data-row="empty" className="flex flex-col gap-2">
+          <p className="text-muted-foreground">{say("chat_empty")}</p>
+          <ul className="flex flex-col gap-1">
+            {STARTERS.map((key) => (
+              <li key={key}>
+                <Button variant="outline" size="sm" onClick={() => send(say(key))}>
+                  {say(key)}
+                </Button>
               </li>
             ))}
           </ul>
-        )}
-        {retryText !== null && (
-          <div data-row="retry-turn" className="flex items-center gap-2 text-jw-page-body">
-            <p>{say("chat_turn_unfinished")}</p>
-            <Button variant="outline" size="sm" onClick={() => resend(retryText)}>
-              {say("chat_retry_turn")}
-            </Button>
-          </div>
-        )}
-        {/* The run's state as words, never a coloured dot alone; the parent's is in the band. */}
-        {!parent && (
-          <>
-            <p
-              data-status={phase === undefined ? (status ?? "none") : (phase?.kind ?? "none")}
-              className="text-jw-page-body"
-            >
-              {phase === undefined
-                ? status === null
-                  ? ""
-                  : say(STATUS_KEY[status])
-                : phase === null
-                  ? ""
-                  : say(phase.copyKey)}
-            </p>
-            <p role="status" aria-live="polite" data-live className="sr-only">
-              {announce === null ? "" : say(announce)}
-            </p>
-          </>
-        )}
-        {!online && (
-          <p data-row="offline" className="text-jw-page-body">
-            {say("chat_offline")}
-          </p>
-        )}
-        {sendFailed && sendLimit !== null && (
+        </div>
+      )}
+      {queued.length > 0 && (
+        <ul aria-label={say("chat_queued")} className="text-jw-page-body text-muted-foreground">
+          {queued.map((text, i) => (
+            // A follow-up may repeat; its place in the queue does not.
+            <li key={`${i}-${text}`} data-row="queued">
+              {say("chat_queued")}: {text}
+            </li>
+          ))}
+        </ul>
+      )}
+      {retryText !== null && (
+        <div data-row="retry-turn" className="flex items-center gap-2 text-jw-page-body">
+          <p>{say("chat_turn_unfinished")}</p>
+          <Button variant="outline" size="sm" onClick={() => resend(retryText)}>
+            {say("chat_retry_turn")}
+          </Button>
+        </div>
+      )}
+      {/* The run's state as words, never a coloured dot alone; the parent's is in the band. */}
+      {!parent && (
+        <>
           <p
-            role="alert"
-            data-row="send-limited"
-            data-limit={sendLimit}
+            data-status={phase === undefined ? (status ?? "none") : (phase?.kind ?? "none")}
             className="text-jw-page-body"
           >
-            {say(LIMIT_LINE[sendLimit])}
+            {phase === undefined
+              ? status === null
+                ? ""
+                : say(STATUS_KEY[status])
+              : phase === null
+                ? ""
+                : say(phase.copyKey)}
           </p>
-        )}
-        {sendFailed && sendLimit === null && (
-          <div
-            role="alert"
-            data-row="send-failed"
-            className="flex items-center gap-2 text-jw-page-body"
-          >
-            <p>{say("chat_send_again")}</p>
-            {(onResend !== undefined || lastSent !== null) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  onResend !== undefined ? onResend() : lastSent !== null && resend(lastSent)
-                }
-              >
-                {say("chat_retry_turn")}
-              </Button>
-            )}
-          </div>
-        )}
-        {context !== null && (
-          <p
-            className="flex w-fit max-w-full items-center gap-1.5 self-start rounded-full border-jw border-jw-line bg-jw-card px-2.5 py-0.5 text-jw-page-small text-jw-ink-soft"
-            data-context-chip
-          >
-            <EyeIcon aria-hidden className="size-3.5 shrink-0" />
-            <span className="min-w-0 truncate">{context}</span>
-            {onCloseContext !== undefined && (
-              <button
-                type="button"
-                aria-label={say("chat_context_close")}
-                onClick={onCloseContext}
-                className="-mr-1 grid size-5 shrink-0 place-items-center rounded-full hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
-                data-context-close
-              >
-                <XIcon aria-hidden className="size-3" />
-              </button>
-            )}
+          <p role="status" aria-live="polite" data-live className="sr-only">
+            {announce === null ? "" : say(announce)}
           </p>
-        )}
-        {asking !== null ? (
-          <ChooseForm
-            key={asking.call_id}
-            form={asking.choose}
-            language={language}
-            onAnswer={(answers) => {
-              setChosen((given) => ({ ...given, [asking.call_id]: answers }));
-              onChoose?.(asking.call_id, answers);
-            }}
-          />
-        ) : parent ? (
-          // The parent's composer, Claude-like (design review 2026-11-02): one rounded box, the words
-          // on top, then Dla on the left and an explicit Wyślij on the right.
-          <form
-            onSubmit={submit}
-            className="flex flex-col gap-2 rounded-jw-box border-jw border-input bg-background px-3 pt-3 pb-2 transition-[border-color,box-shadow] duration-jw-fast focus-within:border-jw-focus focus-within:ring-2 focus-within:ring-selected"
-            data-composer
-          >
-            <label className="flex flex-col">
-              <span className="sr-only">{say("chat_composer_label")}</span>
-              <textarea
-                ref={composer}
-                value={draft}
-                rows={3}
-                placeholder={say("parent_composer")}
-                className="resize-none border-0 bg-transparent text-jw-page-body text-jw-ink outline-none placeholder:text-jw-placeholder"
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    send(draft);
-                  }
-                  // Stop from the keyboard, where the parent already is (dl-z5ja.28).
-                  if (e.key === "Escape" && open && !stopping) {
-                    e.preventDefault();
-                    onStop();
-                  }
-                }}
-              />
-            </label>
-            <div className="flex items-center gap-2">
-              {composerLead}
-              <span className="flex-1" />
-              {/* The design system's action, as the first screen's "Zrób lekcję": quiet while empty. */}
-              <Button type="submit" size="control" aria-disabled={draft.trim() === ""} data-send>
-                {say("chat_send")}
-                <ArrowRightIcon aria-hidden />
-              </Button>
-            </div>
-          </form>
-        ) : (
-          <form onSubmit={submit} className="flex items-end gap-2">
-            <label className="flex flex-1 flex-col gap-1 text-jw-page-body">
-              <span>{say("chat_composer_label")}</span>
-              <textarea
-                ref={composer}
-                value={draft}
-                rows={2}
-                className="rounded-jw-control border-jw border-input bg-background px-2.5 py-2 text-jw-page-body text-foreground outline-none focus-visible:border-jw-focus focus-visible:ring-2 focus-visible:ring-selected"
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    send(draft);
-                  }
-                  // Stop from the keyboard, where the parent already is (dl-z5ja.28).
-                  if (e.key === "Escape" && open && !stopping) {
-                    e.preventDefault();
-                    onStop();
-                  }
-                }}
-              />
-            </label>
-            <Button type="submit" size="control">
-              {say("chat_send")}
+        </>
+      )}
+      {!online && (
+        <p data-row="offline" className="text-jw-page-body">
+          {say("chat_offline")}
+        </p>
+      )}
+      {sendFailed && sendLimit !== null && (
+        <p
+          role="alert"
+          data-row="send-limited"
+          data-limit={sendLimit}
+          className="text-jw-page-body"
+        >
+          {say(LIMIT_LINE[sendLimit])}
+        </p>
+      )}
+      {sendFailed && sendLimit === null && (
+        <div
+          role="alert"
+          data-row="send-failed"
+          className="flex items-center gap-2 text-jw-page-body"
+        >
+          <p>{say("chat_send_again")}</p>
+          {(onResend !== undefined || lastSent !== null) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                onResend !== undefined ? onResend() : lastSent !== null && resend(lastSent)
+              }
+            >
+              {say("chat_retry_turn")}
             </Button>
-            {open && (
-              <Button
-                type="button"
-                variant="outline"
-                size="control"
-                disabled={stopping}
-                onClick={onStop}
+          )}
+        </div>
+      )}
+      {context !== null && (
+        <p
+          className="flex w-fit max-w-full items-center gap-1.5 self-start rounded-full border-jw border-jw-line bg-jw-card px-2.5 py-0.5 text-jw-page-small text-jw-ink-soft"
+          data-context-chip
+        >
+          <EyeIcon aria-hidden className="size-3.5 shrink-0" />
+          <span className="min-w-0 truncate">{context}</span>
+          {onCloseContext !== undefined && (
+            <button
+              type="button"
+              aria-label={say("chat_context_close")}
+              onClick={onCloseContext}
+              className="-mr-1 grid size-5 shrink-0 place-items-center rounded-full hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+              data-context-close
+            >
+              <XIcon aria-hidden className="size-3" />
+            </button>
+          )}
+        </p>
+      )}
+      {asking !== null ? (
+        <ChooseForm
+          key={asking.call_id}
+          form={asking.choose}
+          language={language}
+          onAnswer={(answers) => {
+            setChosen((given) => ({ ...given, [asking.call_id]: answers }));
+            onChoose?.(asking.call_id, answers);
+          }}
+        />
+      ) : parent ? (
+        // The parent's composer, Claude-like (design review 2026-11-02): one rounded box, the words
+        // on top, then Dla on the left and an explicit Wyślij on the right.
+        <form
+          onSubmit={submit}
+          className="flex flex-col gap-2 rounded-jw-box border-jw border-input bg-background px-3 pt-3 pb-2 transition-[border-color,box-shadow] duration-jw-fast focus-within:border-jw-focus focus-within:ring-2 focus-within:ring-selected"
+          data-composer
+        >
+          <label className="flex flex-col">
+            <span className="sr-only">{say("chat_composer_label")}</span>
+            <textarea
+              ref={composer}
+              value={draft}
+              rows={3}
+              placeholder={say("parent_composer")}
+              className="resize-none border-0 bg-transparent text-jw-page-body text-jw-ink outline-none placeholder:text-jw-placeholder"
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send(draft);
+                }
+                // Stop from the keyboard, where the parent already is (dl-z5ja.28).
+                if (e.key === "Escape" && open && !stopping) {
+                  e.preventDefault();
+                  onStop();
+                }
+              }}
+            />
+          </label>
+          <div className="flex items-center gap-2">
+            {composerLead}
+            <span className="flex-1" />
+            {/* The design system's action, as the first screen's "Zrób lekcję": quiet while empty. */}
+            <Button type="submit" size="control" aria-disabled={draft.trim() === ""} data-send>
+              {say("chat_send")}
+              <ArrowRightIcon aria-hidden />
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <form onSubmit={submit} className="flex items-end gap-2">
+          <label className="flex flex-1 flex-col gap-1 text-jw-page-body">
+            <span>{say("chat_composer_label")}</span>
+            <textarea
+              ref={composer}
+              value={draft}
+              rows={2}
+              className="rounded-jw-control border-jw border-input bg-background px-2.5 py-2 text-jw-page-body text-foreground outline-none focus-visible:border-jw-focus focus-visible:ring-2 focus-visible:ring-selected"
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send(draft);
+                }
+                // Stop from the keyboard, where the parent already is (dl-z5ja.28).
+                if (e.key === "Escape" && open && !stopping) {
+                  e.preventDefault();
+                  onStop();
+                }
+              }}
+            />
+          </label>
+          <Button type="submit" size="control">
+            {say("chat_send")}
+          </Button>
+          {open && (
+            <Button
+              type="button"
+              variant="outline"
+              size="control"
+              disabled={stopping}
+              onClick={onStop}
+            >
+              {stopping ? say("chat_stopping") : say("chat_stop")}
+            </Button>
+          )}
+        </form>
+      )}
+      {next.length > 0 && (
+        <section aria-label={say("chat_queue_next")} className="flex flex-col gap-1" data-next>
+          <h3 className="text-jw-page-small font-bold text-jw-ink-soft">
+            {say("chat_queue_next")}
+          </h3>
+          <ol className="flex flex-col gap-1">
+            {next.map((text, i) => (
+              // A waiting row may repeat; its place in the queue does not.
+              <li
+                key={`${i}-${text}`}
+                className="flex items-center gap-2 rounded-jw-small border-jw border-jw-line bg-jw-card px-2 py-1 text-jw-page-body"
+                data-next-row
               >
-                {stopping ? say("chat_stopping") : say("chat_stop")}
-              </Button>
-            )}
-          </form>
-        )}
-        {next.length > 0 && (
-          <section aria-label={say("chat_queue_next")} className="flex flex-col gap-1" data-next>
-            <h3 className="text-jw-page-small font-bold text-jw-ink-soft">
-              {say("chat_queue_next")}
-            </h3>
-            <ol className="flex flex-col gap-1">
-              {next.map((text, i) => (
-                // A waiting row may repeat; its place in the queue does not.
-                <li
-                  key={`${i}-${text}`}
-                  className="flex items-center gap-2 rounded-jw-small border-jw border-jw-line bg-jw-card px-2 py-1 text-jw-page-body"
-                  data-next-row
-                >
-                  <span className="min-w-0 flex-1 truncate text-jw-ink">{text}</span>
-                  {onSendNow !== undefined && (
-                    <Button variant="outline" size="sm" onClick={() => onSendNow(i)} data-send-now>
-                      {say("chat_queue_send_now")}
+                <span className="min-w-0 flex-1 truncate text-jw-ink">{text}</span>
+                {onSendNow !== undefined && (
+                  <Button variant="outline" size="sm" onClick={() => onSendNow(i)} data-send-now>
+                    {say("chat_queue_send_now")}
+                  </Button>
+                )}
+                {onTakeNext !== undefined && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const words = onTakeNext(i);
+                        if (words !== null) setDraft(words);
+                      }}
+                      data-next-edit
+                    >
+                      {say("chat_queue_edit")}
                     </Button>
-                  )}
-                  {onTakeNext !== undefined && (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const words = onTakeNext(i);
-                          if (words !== null) setDraft(words);
-                        }}
-                        data-next-edit
-                      >
-                        {say("chat_queue_edit")}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onTakeNext(i)}
-                        data-next-remove
-                      >
-                        {say("chat_queue_remove")}
-                      </Button>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ol>
-          </section>
-        )}
-      </section>
-    </RegisterProvider>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onTakeNext(i)}
+                      data-next-remove
+                    >
+                      {say("chat_queue_remove")}
+                    </Button>
+                  </>
+                )}
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+    </section>
   );
+  return <RegisterProvider value="app">{body}</RegisterProvider>;
 }

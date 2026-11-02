@@ -67,87 +67,81 @@ export function ConversationList({
     );
   };
 
-  return (
-    <RegisterProvider value="app">
-      <nav aria-label={say("chat_list_title")} data-conversations className="flex flex-col gap-2">
-        <h2 className="text-jw-page-h2 font-semibold">{say("chat_list_title")}</h2>
-        {load.kind === "loading" && (
-          <p className="text-jw-page-body text-muted-foreground">{say("loading")}</p>
-        )}
-        {load.kind === "failed" && (
-          <p role="alert" className="text-jw-page-body">
-            {say("chat_list_failed")}
-          </p>
-        )}
-        {load.kind === "ready" && load.rows.length === 0 && (
-          <p data-conversations-empty className="text-jw-page-body text-muted-foreground">
-            {say("chat_list_empty")}
-          </p>
-        )}
-        {load.kind === "ready" && load.rows.length > 0 && (
-          <ul className="flex flex-col gap-2">
-            {load.rows.map((row) => (
-              <li
-                key={row.id}
-                data-conversation={row.id}
-                data-current={row.id === current || undefined}
-                className="flex flex-col gap-1 rounded-jw-card border-jw border-jw-line p-2 text-jw-page-body"
-              >
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="min-w-0 flex-1 truncate text-left"
-                    onClick={() => onOpen(row.id)}
-                  >
-                    {row.title ?? say("chat_list_untitled")}
-                  </button>
-                  <Button
-                    type="button"
-                    variant="quiet"
-                    size="sm"
-                    data-archive={row.id}
-                    onClick={() => {
-                      setAsking(row.id);
-                      setFailed(null);
-                    }}
-                  >
-                    {say("chat_list_archive")}
-                  </Button>
-                </div>
-                {asking === row.id && (
-                  <div data-archive-confirm className="flex flex-col gap-1">
-                    <p>{say("chat_list_archive_confirm")}</p>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={busy}
-                        onClick={() => archive(row.id)}
-                      >
-                        {say("chat_list_archive_yes")}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setAsking(null)}
-                      >
-                        {say("chat_edit_cancel")}
-                      </Button>
-                    </div>
+  const body = (
+    <nav aria-label={say("chat_list_title")} data-conversations className="flex flex-col gap-2">
+      <h2 className="text-jw-page-h2 font-semibold">{say("chat_list_title")}</h2>
+      {load.kind === "loading" && (
+        <p className="text-jw-page-body text-muted-foreground">{say("loading")}</p>
+      )}
+      {load.kind === "failed" && (
+        <p role="alert" className="text-jw-page-body">
+          {say("chat_list_failed")}
+        </p>
+      )}
+      {load.kind === "ready" && load.rows.length === 0 && (
+        <p data-conversations-empty className="text-jw-page-body text-muted-foreground">
+          {say("chat_list_empty")}
+        </p>
+      )}
+      {load.kind === "ready" && load.rows.length > 0 && (
+        <ul className="flex flex-col gap-2">
+          {load.rows.map((row) => (
+            <li
+              key={row.id}
+              data-conversation={row.id}
+              data-current={row.id === current || undefined}
+              className="flex flex-col gap-1 rounded-jw-card border-jw border-jw-line p-2 text-jw-page-body"
+            >
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 truncate text-left"
+                  onClick={() => onOpen(row.id)}
+                >
+                  {row.title ?? say("chat_list_untitled")}
+                </button>
+                <Button
+                  type="button"
+                  variant="quiet"
+                  size="sm"
+                  data-archive={row.id}
+                  onClick={() => {
+                    setAsking(row.id);
+                    setFailed(null);
+                  }}
+                >
+                  {say("chat_list_archive")}
+                </Button>
+              </div>
+              {asking === row.id && (
+                <div data-archive-confirm className="flex flex-col gap-1">
+                  <p>{say("chat_list_archive_confirm")}</p>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={busy}
+                      onClick={() => archive(row.id)}
+                    >
+                      {say("chat_list_archive_yes")}
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setAsking(null)}>
+                      {say("chat_edit_cancel")}
+                    </Button>
                   </div>
-                )}
-                {failed === row.id && (
-                  <p role="alert" data-archive-failed>
-                    {say("chat_list_archive_failed")}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </nav>
-    </RegisterProvider>
+                </div>
+              )}
+              {failed === row.id && (
+                <p role="alert" data-archive-failed>
+                  {say("chat_list_archive_failed")}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </nav>
   );
+  return <RegisterProvider value="app">{body}</RegisterProvider>;
 }

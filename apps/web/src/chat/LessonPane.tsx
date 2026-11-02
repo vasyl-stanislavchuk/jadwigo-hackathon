@@ -137,37 +137,36 @@ export function LessonPane({
   const say: Say = (key, vars = {}) => copy(language, key, vars, "adult");
   // The pane's chrome is an adult's (the kit draws flat at the parent's sizes); each step's preview
   // sets the child's register back, so what the child will see stays theirs.
-  return (
-    <RegisterProvider value="app">
-      <section aria-label={say("chat_lesson_title")} className="flex min-h-0 flex-col gap-4">
-        <h2 className="text-jw-page-h2 font-semibold">{say("chat_lesson_title")}</h2>
-        {lesson === null ? (
-          ghosts > 0 ? (
-            <ol className="flex flex-col gap-2" data-steps>
-              <Ghosts count={ghosts} from={1} say={say} />
-            </ol>
-          ) : (
-            <p data-row="lesson-empty" className="text-muted-foreground">
-              {say("chat_lesson_empty")}
-            </p>
-          )
+  const body = (
+    <section aria-label={say("chat_lesson_title")} className="flex min-h-0 flex-col gap-4">
+      <h2 className="text-jw-page-h2 font-semibold">{say("chat_lesson_title")}</h2>
+      {lesson === null ? (
+        ghosts > 0 ? (
+          <ol className="flex flex-col gap-2" data-steps>
+            <Ghosts count={ghosts} from={1} say={say} />
+          </ol>
         ) : (
-          <Revision
-            lesson={lesson}
-            say={say}
-            changed={changed}
-            onUndo={onUndo}
-            undoRefused={undoRefused}
-            undoPending={undoPending}
-            onEdit={onEdit}
-            outcomeOf={outcomeOf ?? (() => "pending")}
-            ghosts={ghosts}
-            withChild={withChild}
-          />
-        )}
-      </section>
-    </RegisterProvider>
+          <p data-row="lesson-empty" className="text-muted-foreground">
+            {say("chat_lesson_empty")}
+          </p>
+        )
+      ) : (
+        <Revision
+          lesson={lesson}
+          say={say}
+          changed={changed}
+          onUndo={onUndo}
+          undoRefused={undoRefused}
+          undoPending={undoPending}
+          onEdit={onEdit}
+          outcomeOf={outcomeOf ?? (() => "pending")}
+          ghosts={ghosts}
+          withChild={withChild}
+        />
+      )}
+    </section>
   );
+  return <RegisterProvider value="app">{body}</RegisterProvider>;
 }
 
 /** A row slides in only when the system allows motion (decision 8 of wave dl-uukj.47-1). */
