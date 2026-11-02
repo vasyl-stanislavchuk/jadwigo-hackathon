@@ -36,7 +36,7 @@ const widths = src ? [...[320, 640, 960, 1280].filter((w) => w < src.width), src
 
 {
   src ? (
-    <div class:list={["pic", "art", extra]} style={style}>
+    <div class:list={["pic", "art", "fade-in", extra]} style={style}>
       <Image src={src} alt={label} widths={widths} sizes={sizes} loading={eager ? "eager" : "lazy"} />
     </div>
   ) : (
