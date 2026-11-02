@@ -11,7 +11,14 @@
 
 // Types only, so dev/engine-plugin.ts, which Vite loads with Node's type stripping, can import it.
 import type { EventId } from "@jadwigo/contracts";
-import type { ConversationId, LessonPatch, Run, RunEvent, RunId } from "@jadwigo/contracts/run";
+import type {
+  ConversationId,
+  LessonPatch,
+  MessageContext,
+  Run,
+  RunEvent,
+  RunId,
+} from "@jadwigo/contracts/run";
 
 export const ENGINE_BASE = "/__engine";
 const MESSAGES_PATH = `${ENGINE_BASE}/messages`;
@@ -42,7 +49,14 @@ export const runChannel = (run: string): string => `run:${run}`;
  * the runner applies with no model call (dl-z5ja.111). `event_id` makes a resend land once.
  */
 export type SendBody =
-  | { conversation_id: ConversationId; event_id: EventId; kind: "message"; text: string }
+  | {
+      conversation_id: ConversationId;
+      event_id: EventId;
+      kind: "message";
+      text: string;
+      /** The page the message was sent from (dl-z5ja.107): the child the lesson is for (dl-uukj.47.12). */
+      context?: MessageContext;
+    }
   | { conversation_id: ConversationId; event_id: EventId; kind: "cancel" }
   | {
       conversation_id: ConversationId;
