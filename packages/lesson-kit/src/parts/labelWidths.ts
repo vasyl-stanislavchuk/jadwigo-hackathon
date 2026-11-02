@@ -57,3 +57,11 @@ export function isAxisTitle(
   const [x0, x1] = range[0];
   return item.alignment.trim() === "center" && x0 < 0 && x1 > 0 && item.coordinates[0] < 0;
 }
+
+/**
+ * A label's lines: Khan's graphs break a long category with an HTML `<br>` ("Break<br>dance",
+ * "Twist and<br>shout"), which would otherwise print as text. Picture.tsx draws a line break between
+ * the parts, in plain words and in TeX alike (dl-uukj.51).
+ */
+export const labelLines = (content: string): string[] =>
+  content.split(/<br\s*\/?>/i).map((line) => line.trim());
