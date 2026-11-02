@@ -71,7 +71,7 @@ data "aws_iam_policy_document" "runner" {
   statement {
     sid       = "ReadsItsParameters"
     actions   = ["ssm:GetParameter"]
-    resources = concat([aws_ssm_parameter.database_url.arn], [for p in aws_ssm_parameter.secret : p.arn])
+    resources = concat([aws_ssm_parameter.database_url.arn], [for p in aws_ssm_parameter.secret : p.arn], var.read_params)
   }
 
   # Only the checked copies under pods/, never pending/: the runner reads what a message carries.

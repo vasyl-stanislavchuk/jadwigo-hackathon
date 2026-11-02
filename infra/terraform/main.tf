@@ -161,6 +161,13 @@ module "app" {
     "GET /api/v1/attachments/{id}",
   ]
 
+  # The remote MCP (dl-1u6fn.8): outside ROUTES, so tools/src/check-infra-routes.ts reads only `routes`.
+  mcp_routes = [
+    "POST /api/mcp",
+    "GET /.well-known/oauth-protected-resource",
+    "GET /.well-known/oauth-protected-resource/api/mcp",
+  ]
+
   jwt_issuer = "https://${var.supabase_ref}.supabase.co/auth/v1"
 
   reserved_concurrency = var.app_reserved_concurrency
@@ -204,7 +211,13 @@ module "runner" {
   # And invokes the converter for a PDF, DOCX or HEIC (wave 6 decision 59), once it has an image.
   converter_function_arn = module.converter.function_arn
 
+  # The verbs draw from the real bank through the api's bank routes (dl-1u6fn.4, dl-1u6fn.15), with
+  # the read token the api checks; the role reads that one parameter.
+  read_params = [module.app.bank_read_token_param_arn]
+
   environment_variables = {
+    JADWIGO_API_URL            = "https://${var.app_domain}"
+    BANK_READ_TOKEN_PARAM      = module.app.bank_read_token_param
     JADWIGO_MUSE_KEY_PARAM     = "/jadwigo/${var.environment}/muse-api-key"
     JADWIGO_MUSE_CAP_USD       = var.runner_muse_cap_usd
     JADWIGO_MUSE_TIER          = var.runner_muse_tier
