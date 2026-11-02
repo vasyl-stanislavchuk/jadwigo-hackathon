@@ -244,7 +244,7 @@ function engine(server: ViteDevServer, m: Modules) {
       // of its own, so it never holds up another turn's drain, even when it is delivered again.
       if (pace === "stall") {
         setTimeout(() => {
-          drain({ ...deps, queue: stalled }).catch((e: unknown) =>
+          drain({ ...deps, queue: stalled, now: () => new Date() }).catch((e: unknown) =>
             server.config.logger.error(`[${ENGINE_PLUGIN}] ${String(e)}`),
           );
         }, 0);
