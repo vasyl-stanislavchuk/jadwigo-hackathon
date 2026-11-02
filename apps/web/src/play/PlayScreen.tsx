@@ -201,6 +201,14 @@ export function PlayScreen({
       );
     case "not_found":
       return <LessonNotFound language={language} />;
+    case "link_incomplete":
+      return (
+        <KidPage>
+          <Column>
+            <p data-link-incomplete>{copy(language, "play_link_incomplete")}</p>
+          </Column>
+        </KidPage>
+      );
     case "failed":
       return (
         <KidPage>

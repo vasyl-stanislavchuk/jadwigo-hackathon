@@ -455,6 +455,7 @@ export const COPY_KEYS = [
   "play_paused",
   "play_paused_back",
   "play_not_found",
+  "play_link_incomplete",
   // end the lesson player
   // parent login (dl-e8ov.2.38)
   "play_save",

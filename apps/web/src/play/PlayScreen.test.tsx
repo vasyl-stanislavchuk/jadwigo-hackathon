@@ -14,6 +14,7 @@ import {
   AttemptId,
   type AttemptResults,
   AttemptSnapshot,
+  LearnerId,
   LessonQuestionId,
   type PageAttemptQuestion,
 } from "@jadwigo/contracts";
@@ -132,13 +133,87 @@ describe("PlayScreen", () => {
   });
 
   it("starts with no learner when ?learner= is missing or malformed", async () => {
-    window.history.replaceState(null, "", `${playPath(ASSIGNMENT)}?learner=not-an-id`);
-    const startAttempt = vi.fn(async () => snapshot(FRESH, "in_progress", [question(1)]));
+    for (const search of ["", "?learner=not-an-id"]) {
+      window.sessionStorage.clear();
+      window.history.replaceState(null, "", `${playPath(ASSIGNMENT)}${search}`);
+      const startAttempt = vi.fn(async () => snapshot(FRESH, "in_progress", [question(1)]));
+      render(
+        <PlayScreen assignmentId={ASSIGNMENT} language="pl" client={client({ startAttempt })} />,
+      );
+      expect(await screen.findAllByText("Ile to jest dwa razy pięć? (1)")).not.toHaveLength(0);
+      expect(startAttempt).toHaveBeenCalledExactlyOnceWith(ASSIGNMENT, {});
+      cleanup();
+    }
+  });
+
+  it("never resumes a sibling's attempt: each child's link keeps its own (dl-1u6fn.5)", async () => {
+    const A = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
+    const B = LearnerId.parse("lrn_43007b83dp9w2tnfjxhha74cyq");
+    const asChild = (id: AttemptId, learner: LearnerId): AttemptSnapshot => {
+      const s = snapshot(id, "in_progress", [question(1)]);
+      return { ...s, attempt: { ...s.attempt, learner_id: learner } };
+    };
+    // A played first in this tab; B's link opens in the same tab.
+    storedAttempt.set(ASSIGNMENT, ATTEMPT, A);
+    window.history.replaceState(null, "", `${playPath(ASSIGNMENT)}?learner=${B}`);
+    const getAttempt = vi.fn(async () => asChild(ATTEMPT, A));
+    const startAttempt = vi.fn(async () => asChild(FRESH, B));
     render(
-      <PlayScreen assignmentId={ASSIGNMENT} language="pl" client={client({ startAttempt })} />,
+      <PlayScreen
+        assignmentId={ASSIGNMENT}
+        language="pl"
+        client={client({ getAttempt, startAttempt })}
+      />,
     );
     expect(await screen.findAllByText("Ile to jest dwa razy pięć? (1)")).not.toHaveLength(0);
-    expect(startAttempt).toHaveBeenCalledExactlyOnceWith(ASSIGNMENT, {});
+    expect(getAttempt).not.toHaveBeenCalled();
+    expect(startAttempt).toHaveBeenCalledExactlyOnceWith(ASSIGNMENT, { learner_id: B });
+    expect(storedAttempt.get(ASSIGNMENT, B)).toBe(FRESH);
+    expect(storedAttempt.get(ASSIGNMENT, A)).toBe(ATTEMPT);
+  });
+
+  it("starts afresh when the stored attempt is another child's", async () => {
+    const A = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
+    const B = LearnerId.parse("lrn_43007b83dp9w2tnfjxhha74cyq");
+    storedAttempt.set(ASSIGNMENT, ATTEMPT, B);
+    window.history.replaceState(null, "", `${playPath(ASSIGNMENT)}?learner=${B}`);
+    const theirs = snapshot(ATTEMPT, "in_progress", [question(1)]);
+    const getAttempt = vi.fn(async () => ({
+      ...theirs,
+      attempt: { ...theirs.attempt, learner_id: A },
+    }));
+    const startAttempt = vi.fn(async () => snapshot(FRESH, "in_progress", [question(1)]));
+    render(
+      <PlayScreen
+        assignmentId={ASSIGNMENT}
+        language="pl"
+        client={client({ getAttempt, startAttempt })}
+      />,
+    );
+    expect(await screen.findAllByText("Ile to jest dwa razy pięć? (1)")).not.toHaveLength(0);
+    expect(startAttempt).toHaveBeenCalledExactlyOnceWith(ASSIGNMENT, { learner_id: B });
+    expect(storedAttempt.get(ASSIGNMENT, B)).toBe(FRESH);
+  });
+
+  it("says the link is not complete when a learners assignment gets no valid ?learner=", async () => {
+    for (const [language, line] of [
+      ["pl", "Ten link jest niepełny. Poproś rodzica o nowy."],
+      ["en", "This link is not complete. Ask a parent for a new one."],
+    ] as const) {
+      window.history.replaceState(null, "", `${playPath(ASSIGNMENT)}?learner=lrn_broken`);
+      const startAttempt = vi.fn(async () => {
+        throw new ApiError("name one", 400, "BadRequest");
+      });
+      render(
+        <PlayScreen
+          assignmentId={ASSIGNMENT}
+          language={language}
+          client={client({ startAttempt })}
+        />,
+      );
+      expect(await screen.findByText(line)).toBeTruthy();
+      cleanup();
+    }
   });
 
   it("puts the lesson's language on the question and leaves Check the screens' (dl-9t2o.3, dl-uukj.38)", async () => {

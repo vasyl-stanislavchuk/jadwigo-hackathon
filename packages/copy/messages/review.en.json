@@ -269,6 +269,7 @@
   "play_paused": true,
   "play_paused_back": true,
   "play_not_found": true,
+  "play_link_incomplete": false,
   "play_save": true,
   "play_save_note": true,
   "parent_title": true,

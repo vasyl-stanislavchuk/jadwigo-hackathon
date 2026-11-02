@@ -470,6 +470,7 @@
   "play_paused": "Lekcja czeka na ciebie.",
   "play_paused_back": "Wracam do lekcji",
   "play_not_found": "Tej lekcji tu nie ma.",
+  "play_link_incomplete": "Ten link jest niepełny. Poproś rodzica o nowy.",
   "play_save": "Zapisz postępy",
   "play_save_note": "Dla dorosłego: zaloguj się, a ta lekcja zostanie na koncie dziecka.",
   "parent_title": "Konto rodzica",
