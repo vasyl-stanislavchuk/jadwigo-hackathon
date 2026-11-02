@@ -20,7 +20,7 @@ test("1440: one scripted turn, the message in the chat, the lesson beside it", a
   const chat = chatOf(page);
   const lesson = lessonOf(page);
 
-  await expect(chat.getByText(FIRST_WORDS)).toBeVisible();
+  await expect(chat.locator("[data-from='parent']").getByText(FIRST_WORDS)).toBeVisible();
   await expect(page.locator("[data-chat-band] [data-status]")).toHaveText("Gotowe", {
     timeout: 20_000,
   });
@@ -39,7 +39,11 @@ test("1440: one scripted turn, the message in the chat, the lesson beside it", a
   // A reload draws the same conversation again from the log, and sends nothing twice.
   await page.reload();
   await expect(chat.getByText("Lekcja jest gotowa po prawej.")).toHaveCount(1);
-  await expect(chat.getByText(FIRST_WORDS, { exact: true })).toHaveCount(1);
+  // The parent's words, sent once: counted in the parent's own rows, since the lesson card under
+  // the turn carries a title that may read the same (dl-uukj.47.58).
+  await expect(
+    chat.locator("[data-from='parent']").getByText(FIRST_WORDS, { exact: true }),
+  ).toHaveCount(1);
   await expect(lesson.locator("[data-revision]")).toBeVisible();
 });
 
