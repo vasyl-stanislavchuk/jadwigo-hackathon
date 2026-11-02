@@ -26,15 +26,17 @@ import { ChatPane } from "../../chat/ChatPane.tsx";
 import { ConsentScreen, giveConsent } from "../../chat/ConsentScreen.tsx";
 import { LessonPane } from "../../chat/LessonPane.tsx";
 import { lessonSummary, useLessonWiring } from "../../chat/lessonWiring.ts";
+import { LessonActions } from "../../chat/objects/LessonActions.tsx";
 import { type ObjectRef, sameObject } from "../../chat/objects/ref.ts";
 import { ObjectFallback, objectEntry } from "../../chat/objects/registry.tsx";
 import { elapsedSeconds, phaseAnnouncement, usePhase } from "../../chat/phase.ts";
 import { holdServer } from "../../chat/routesTransport.ts";
 import { useConversation } from "../../chat/useConversation.ts";
+import { navigate } from "../../nav/location.ts";
 import { NavLink } from "../../nav/NavLink.tsx";
 import { CATEGORY, pageLang } from "../adult.ts";
 import { DlaSelect } from "../newLesson/DlaSelect.tsx";
-import { parentPath } from "../route.ts";
+import { lessonsPath, parentPath } from "../route.ts";
 import { firstMessage, type LessonEngine } from "./engine.ts";
 import { useInspector } from "./inspector.ts";
 import { Workspace } from "./Workspace.tsx";
@@ -195,6 +197,18 @@ export function LessonWorkspace({
       onResend={resend}
       lessonObject={ownLesson}
       onOpen={inspector.open}
+      // How and when to give the lesson live in its card (dl-uukj.47.55, decision dl-hz9ks).
+      lessonActions={
+        <LessonActions
+          language={language}
+          ready={lesson.ready}
+          child={child}
+          lesson={lesson.shown}
+          onSave={() => navigate(lessonsPath({ lang: pageLang() }))}
+          // Giving to a named child waits on the giving route; the dialog's choices stand meanwhile.
+          onGive={() => {}}
+        />
+      }
     />
   );
 
