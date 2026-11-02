@@ -753,5 +753,8 @@
   "parent_analytics_ask": false,
   "parent_analytics_accept": false,
   "parent_analytics_reject": false,
-  "parent_analytics_privacy": false
+  "parent_analytics_privacy": false,
+  "site_consent_ask": false,
+  "site_consent_accept": false,
+  "site_consent_reject": false
 }

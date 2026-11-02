@@ -15,6 +15,7 @@ import "@jadwigo/ui/foundation.css";
 import { getCollection, getEntry } from "astro:content";
 import { m } from "@jadwigo/copy/messages";
 import wordmark from "@jadwigo/ui/brand/wordmark.svg?raw";
+import Analytics from "../components/Analytics.astro";
 import Backdrop from "../components/Backdrop.astro";
 import LanguageNote from "../components/LanguageNote.astro";
 import Segmented from "../components/Segmented.astro";
@@ -285,6 +286,7 @@ const footerLinks = [
         </div>
       </div>
     </footer>
+    <Analytics lang={lang} privacyHref={footer.privacy} />
     <script is:inline>
       // On a touch screen there is no hover: a tap lifts the crown, holds it 200 ms, and lets it fall back.
       document.querySelector(".logo")?.addEventListener("pointerdown", (e) => {

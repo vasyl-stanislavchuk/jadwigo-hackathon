@@ -29,7 +29,7 @@ describe("startAnalytics", () => {
     const { load, client } = double();
     expect(await startAnalytics(null, "app", load)).toBe("off");
     expect(await startAnalytics("", "app", load)).toBe("off");
-    track("parent_signup_started", { locale: "pl" });
+    track("email_sign_in_submitted", { locale: "pl" });
     acceptConsent();
     expect(load).not.toHaveBeenCalled();
     expect(client.capture).not.toHaveBeenCalled();

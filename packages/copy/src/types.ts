@@ -672,6 +672,10 @@ export const COPY_KEYS = [
   "parent_analytics_accept",
   "parent_analytics_reject",
   "parent_analytics_privacy",
+  // the analytics consent banner on the site (dl-w0b4.14, decision dl-376c8)
+  "site_consent_ask",
+  "site_consent_accept",
+  "site_consent_reject",
   // end the lesson's send and its chat
   // the chat page (dl-z5ja.17): /playground/chat, a parent's chat on the left and the lesson on the right
   "chat_title",

@@ -7,7 +7,7 @@ There is no jadwigo.kids. English reaches a deploy only once `en` is `live` in `
 
 - **Not here:** Anything behind a login; that is `apps/web`.
 - **Owner:** the marketing workstream (`docs/workstreams/marketing.md`). **Filled by:** `dl-w0b4.1` and the issues it blocks.
-- **Imports:** packages: `config` (hosts and languages), `ui` (the brand SVGs, `@jadwigo/ui/brand/*`, and `foundation.css`) and `copy` (the `site_*` messages).
+- **Imports:** packages: `config` (hosts and languages), `ui` (the brand SVGs, `@jadwigo/ui/brand/*`, and `foundation.css`) `copy` (the `site_*` messages) and `analytics` (PostHog: the consent banner and `track()`, `dl-w0b4.14`; its key comes from `infra/site-build/prod.env` at deploy).
 - **Public surface:** `src/index.ts`. Other files are private to this package.
 - **Test:** `bunx turbo run lint typecheck test build --filter=./apps/site`, then `bun run check:dist`.
   `bun run build:preview` writes `dist-preview`: every listed language and every unreviewed page,

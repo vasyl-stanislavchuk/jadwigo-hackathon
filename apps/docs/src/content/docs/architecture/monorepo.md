@@ -55,6 +55,7 @@ flowchart LR
   web --> lesson_kit
   web --> store
   web --> ui
+  site --> analytics
   site --> config
   site --> contracts
   site --> copy

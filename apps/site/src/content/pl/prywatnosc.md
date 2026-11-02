@@ -52,6 +52,16 @@ i przerobione lekcje.
 Meta przetwarza je na własnych zasadach. W samej lekcji, którą dziecko przerabia, nie ma jego
 imienia.
 
+## Statystyki i nagrania ekranu
+
+Na stronie i w aplikacji pytamy, czy możemy zapisywać, jak z nich korzystasz. Dopóki nie odpowiesz,
+nic nie zapisujemy. Gdy się zgodzisz, PostHog zapisuje odwiedzone strony, kilka kroków, takich jak
+dodanie dziecka czy logowanie, i nagrania ekranu. Na nagraniu widać to, co pokazuje ekran, także
+imię dziecka i pytania z lekcji. Nie widać tego, co wpisujesz w pola formularzy. Na urządzeniu
+zapisujemy wtedy plik cookie PostHog. Gdy odmówisz, liczymy tylko wizytę, bez cookie i bez
+nagrania. Do zdarzeń nie trafia imię, e-mail, odpowiedź ani wynik dziecka. Nie zapisujemy adresu
+IP.
+
 ## Kto przetwarza dane
 
 Dane rodziny przetwarzają dla nas te firmy:
@@ -60,6 +70,7 @@ Dane rodziny przetwarzają dla nas te firmy:
 - Amazon Web Services: serwery aplikacji Jadwigo, też we Frankfurcie.
 - Meta: modele AI, na których działa Jadwigo AI, i logowanie przez Facebooka.
 - Google: logowanie kontem Google i skrzynka privacy@jadwigo.pl.
+- PostHog: statystyki i nagrania ekranu, po Twojej zgodzie, na serwerach we Frankfurcie.
 
 ## Jak długo trzymamy dane
 

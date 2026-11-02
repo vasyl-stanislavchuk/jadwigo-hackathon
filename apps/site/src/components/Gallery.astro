@@ -111,6 +111,9 @@ const shownCount = cards.filter((c) => !c.hidden).length;
 </div>
 
 <script>
+  import { track } from "@jadwigo/analytics";
+  import { pageLocale } from "../lib/page-locale.ts";
+
   import { plural } from "../lib/landing.ts";
 
   for (const ui of document.querySelectorAll<HTMLElement>(".lessons-ui.row")) {
@@ -149,7 +152,18 @@ const shownCount = cards.filter((c) => !c.hidden).length;
       list.scrollLeft = 0;
       ends();
     };
-    for (const input of ui.querySelectorAll("input")) input.addEventListener("change", filter);
+    for (const input of ui.querySelectorAll<HTMLInputElement>("input")) {
+      input.addEventListener("change", () => {
+        filter();
+        const which = input.name === "grade" ? "grade" : "subject";
+        track("lesson_filter_applied", { locale: pageLocale(), filter: which });
+      });
+    }
+    for (const card of cards) {
+      card.querySelector("a")?.addEventListener("click", () =>
+        track("featured_lesson_opened", { locale: pageLocale() }),
+      );
+    }
 
     // Each arrow moves the row by one card and its gap.
     for (const arrow of arrows) {

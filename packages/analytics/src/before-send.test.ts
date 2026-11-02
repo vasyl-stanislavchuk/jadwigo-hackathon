@@ -67,7 +67,7 @@ describe("beforeSend", () => {
   });
 
   it("stamps the surface and turns GeoIP off", () => {
-    const sent = beforeSendFor("site")(event("parent_signup_started", { locale: "pl" }));
+    const sent = beforeSendFor("site")(event("email_sign_in_submitted", { locale: "pl" }));
     expect(sent?.properties).toEqual({ locale: "pl", surface: "site", $geoip_disable: true });
   });
 });

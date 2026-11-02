@@ -27,21 +27,35 @@ const locale = {
 
 export const CATALOG = {
   featured_lesson_opened: {
-    question: "Which placement on the site leads visitors to open a featured lesson?",
+    question: "Do visitors open a featured lesson from the site, and in which language?",
+    surfaces: ["site"],
+    props: { locale },
+  },
+  lesson_filter_applied: {
+    question: "Which of the gallery's filters do visitors use?",
     surfaces: ["site"],
     props: {
       locale,
-      placement: {
-        kind: "enum",
-        values: ["hero", "list"],
-        meaning: "where on the page the lesson was linked",
-      },
+      filter: { kind: "enum", values: ["grade", "subject"], meaning: "the filter changed" },
     },
   },
-  parent_signup_started: {
-    question: "Does the site lead parents to sign up?",
+  hero_question_answered: {
+    question: "Do visitors try the landing page's example question?",
     surfaces: ["site"],
     props: { locale },
+  },
+  email_sign_in_submitted: {
+    question: "Does the site's sign-in page hand parents to the app by email?",
+    surfaces: ["site"],
+    props: { locale },
+  },
+  provider_sign_in_selected: {
+    question: "Which provider do parents pick on the site's sign-in page?",
+    surfaces: ["site"],
+    props: {
+      locale,
+      provider: { kind: "enum", values: ["google", "facebook"], meaning: "the provider's button" },
+    },
   },
   parent_signed_in: {
     question: "How do parents sign in?",
