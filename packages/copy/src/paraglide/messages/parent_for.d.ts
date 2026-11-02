@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "For:" |
+* | "For" |
 *
 * @param {Parent_ForInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

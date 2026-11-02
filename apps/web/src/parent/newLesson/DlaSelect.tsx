@@ -1,43 +1,26 @@
 /**
- * "Dla: Bez dziecka ▾", the first screen's optional selector (decision 2026-11-01-the-parent-app-is-
- * a-sidebar-shell-and-a-3-column-lesson-workspac, dl-xo0q; handoff §3 "Optional selector", §5.2): it
- * sits inline, defaults to the no-choice value, and its menu ends with "Dodaj dziecko…". A lesson
- * belongs to the family, so no child is a full answer. "Dodaj dziecko…" puts the focus on the
- * trigger before the dialog opens, so the dialog gives it back there when it closes (handoff §7,
- * dl-uukj.47.20): the menu item it was on is gone by then.
+ * Dla, the first screen's optional pick of the child a lesson is for (decision 2026-11-01-the-parent-
+ * app-is-a-sidebar-shell-and-a-3-column-lesson-workspac, dl-xo0q), on the adult kit's Combobox
+ * (handoff dl-uukj.47.67 §6.5, S8): the trigger says "Dla", the child's disc in its tone and the name,
+ * or a dashed disc and "Bez dziecka". The list starts with "Bez dziecka", then each child with "klasa
+ * N", and ends with "+ Dodaj dziecko…". A lesson belongs to the family, so no child is a full answer.
+ * The Combobox gives the focus back to the trigger before "Dodaj dziecko…" runs, so the dialog gives
+ * it back there when it closes (dl-uukj.47.20).
  */
 
 import type { Learner, LearnerId } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
-import { cn, Popover, PopoverContent, PopoverTrigger } from "@jadwigo/ui";
-import { CheckIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
-import { type ReactElement, type ReactNode, useRef, useState } from "react";
+import { Combobox, Disc } from "@jadwigo/ui";
+import { PlusIcon } from "lucide-react";
+import type { ReactElement } from "react";
 import { CATEGORY } from "../adult.ts";
+import { learnerTone } from "../tone.ts";
 
-const ROW =
-  "flex min-h-jw-control w-full items-center gap-2 rounded-jw-small px-2 text-left text-jw-ink hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus";
-
-function Option({
-  checked,
-  onPick,
-  children,
-}: {
-  checked: boolean;
-  onPick: () => void;
-  children: ReactNode;
-}): ReactElement {
-  return (
-    <button
-      type="button"
-      role="menuitemradio"
-      aria-checked={checked}
-      onClick={onPick}
-      className={cn(ROW, checked && "font-bold")}
-    >
-      <span className="min-w-0 flex-1 truncate">{children}</span>
-      {checked && <CheckIcon aria-hidden className="size-4 shrink-0 text-jw-pick-ink" />}
-    </button>
-  );
+interface Row {
+  /** The learner's id, or "" for "Bez dziecka". */
+  value: string;
+  label: string;
+  learner?: Learner;
 }
 
 export function DlaSelect({
@@ -46,7 +29,6 @@ export function DlaSelect({
   value,
   onChange,
   onAddChild,
-  trigger,
 }: {
   language: Language;
   learners: readonly Learner[];
@@ -54,65 +36,57 @@ export function DlaSelect({
   value: LearnerId | null;
   onChange: (learner: LearnerId | null) => void;
   onAddChild: () => void;
-  /** Another control to open the same menu, such as the details' "Zmień"; "Dla: … ▾" by default. */
-  trigger?: ReactElement;
 }): ReactElement {
-  const [open, setOpen] = useState(false);
-  // The trigger, whichever element it is: focus goes back to it when "Dodaj dziecko…" opens the dialog.
-  const opener = useRef<HTMLButtonElement>(null);
-  const t = (key: CopyKey): string => copy(language, key, {}, CATEGORY);
-  const chosen = learners.find((l) => l.id === value);
-  const pick = (learner: LearnerId | null): void => {
-    onChange(learner);
-    setOpen(false);
-  };
+  const t = (key: CopyKey, params: Record<string, string | number> = {}): string =>
+    copy(language, key, params, CATEGORY);
+  const rows: Row[] = [
+    { value: "", label: t("parent_no_child") },
+    ...learners.map((learner) => ({ value: learner.id, label: learner.first_name, learner })),
+  ];
+  const disc = (row: Row | undefined): ReactElement =>
+    row?.learner === undefined ? (
+      <Disc kind="none" size={20} />
+    ) : (
+      <Disc name={row.learner.first_name} tone={learnerTone(learners, row.learner.id)} size={20} />
+    );
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild ref={opener}>
-        {trigger ?? (
-          <button
-            type="button"
-            className="flex min-h-jw-control items-center gap-1.5 rounded-jw-small px-2 text-jw-ink hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus"
-            data-dla
-          >
-            <span className="text-jw-ink-soft">{t("parent_for")}</span>
-            <span className="font-bold">{chosen?.first_name ?? t("parent_no_child")}</span>
-            <ChevronDownIcon aria-hidden className="size-4 text-jw-ink-soft" />
-          </button>
-        )}
-      </PopoverTrigger>
-      <PopoverContent className="w-64 gap-0.5 p-1.5" data-dla-menu>
-        <div role="menu" aria-label={t("parent_for")} className="flex flex-col gap-0.5">
-          <Option checked={value === null} onPick={() => pick(null)}>
-            {t("parent_no_child")}
-          </Option>
-          {learners.map((learner) => (
-            <Option key={learner.id} checked={value === learner.id} onPick={() => pick(learner.id)}>
-              {learner.first_name}
-            </Option>
-          ))}
-          <div className="my-1 border-t-jw border-jw-line" />
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              opener.current?.focus();
-              setOpen(false);
-              onAddChild();
-            }}
-            className={cn(ROW, "items-start py-1.5")}
-            data-dla-add
-          >
-            <PlusIcon aria-hidden className="mt-0.5 size-4 shrink-0 text-jw-ink-soft" />
+    <Combobox
+      label={t("parent_for")}
+      options={rows}
+      value={value ?? ""}
+      onChange={(next) => onChange(learners.find((learner) => learner.id === next)?.id ?? null)}
+      renderValue={(row) => (
+        <>
+          <span className="text-muted-foreground">{t("parent_for")}</span>
+          {disc(row)}
+          <span className="truncate font-medium">{row?.label ?? t("parent_no_child")}</span>
+        </>
+      )}
+      renderOption={(row) => (
+        <span className="flex min-w-0 items-center gap-2">
+          {disc(row)}
+          <span className="truncate">{row.label}</span>
+          {row.learner?.school_grade != null && (
+            <span className="text-muted-foreground">
+              {t("parent_grade_n", { grade: row.learner.school_grade })}
+            </span>
+          )}
+        </span>
+      )}
+      footer={{
+        label: (
+          <span className="flex items-start gap-2">
+            <PlusIcon aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
             <span className="flex flex-col">
               <span>{t("parent_add_child_menu")}</span>
-              <span className="text-jw-page-small text-jw-ink-soft">
+              <span className="text-jw-page-small text-muted-foreground">
                 {t("parent_add_child_hint")}
               </span>
             </span>
-          </button>
-        </div>
-      </PopoverContent>
-    </Popover>
+          </span>
+        ),
+        onSelect: onAddChild,
+      }}
+    />
   );
 }
