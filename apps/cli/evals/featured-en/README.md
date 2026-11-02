@@ -36,15 +36,21 @@ How each differs from its Polish lesson:
 Each file passed `lesson_check` with `ok: true` and no warning. In the jadwigo checkout, with
 `DRAFTS` the drafting machine's `JADWIGO_DRAFTS_DIR` (`~/.local/state/jadwigo/drafts` by default):
 
+Follow `docs/runbooks/lesson-import.md` for each of the 3 files, with `FEATURED=1` every time:
+
+1. Import it locally and play it with `make dev` running.
+2. Import it into jadwigo-dev as a dry run.
+3. Import it into prod from your own terminal.
+
 ```
-make lesson-import FILE=$DRAFTS/draft_bbbfa369a52a.json ENV=dev
-make lesson-import FILE=$DRAFTS/draft_0f25b23f6747.json ENV=dev
-make lesson-import FILE=$DRAFTS/draft_367bcbea90d6.json ENV=dev
+make lesson-import FILE=$DRAFTS/draft_bbbfa369a52a.json FEATURED=1
+make lesson-import FILE=$DRAFTS/draft_0f25b23f6747.json FEATURED=1
+make lesson-import FILE=$DRAFTS/draft_367bcbea90d6.json FEATURED=1
 ```
 
-Play each on dev, then import the same 3 into prod from your own terminal, as
-`docs/runbooks/lesson-import.md` says. Running the prod import is the approval: the lessons are
-featured at once, and `dl-w0b4.85` lists them on `/en/lessons`.
+Without `FEATURED=1`, a file imports as a draft that never joins the featured list. Running the
+prod import with `FEATURED=1` is the approval: the lessons are featured at once, and `dl-w0b4.85`
+lists them on `/en/lessons`.
 
 ## Drafting English today
 

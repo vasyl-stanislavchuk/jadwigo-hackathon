@@ -24,16 +24,21 @@ a draft: it plays at its own `/play/` path, but it never joins the featured list
 With it, the lesson lands in the featured pod as an open anyone-assignment, at a different
 `/play/` path (`dl-e8ov.2.97`).
 
-1. **Dev.** From the jadwigo checkout:
-   `make lesson-import FILE=$HOME/.local/state/jadwigo/drafts/<draft>.json ENV=dev FEATURED=1`
-   - It links jadwigo-dev and imports as `jadwigo_api` through the session pooler, the way
-     `make db-seed` does.
-   - It prints the lesson's `/play/<assignment>` path.
+jadwigo-dev is a Supabase project only. No app serves it, so you play a lesson on your own machine
+(`local-dev.md`). The dev import is a dry run of the prod write: the same link, the same role and
+the same pooler.
+
+1. **Play it locally.** With `make dev` running in the jadwigo checkout:
+   `make lesson-import FILE=$HOME/.local/state/jadwigo/drafts/<draft>.json FEATURED=1`
+   - It imports into the local `jadwigo` database that `make dev` serves, and prints the lesson's
+     `/play/<assignment>` path.
+   - Open that path on the local web (`http://localhost:$WEB_PORT`), in the lesson's language: add
+     `?lang=en` for an English lesson. Answer a few questions right and one wrong.
    - Rerunning is safe: the same content publishes nothing new.
-   - `curl -s https://app.dev.jadwigo.pl/api/v1/featured-lessons | jq '.lessons[] | [.language, .title]'`
-     lists it.
-2. **Play it on dev.** Open app.dev.jadwigo.pl at that path, in the lesson's language: add
-   `?lang=en` for an English lesson. Answer a few questions right and one wrong.
+2. **Dev.** `make lesson-import FILE=$HOME/.local/state/jadwigo/drafts/<draft>.json ENV=dev FEATURED=1`
+   - It links jadwigo-dev and imports as `jadwigo_api` through the session pooler, the way
+     `make db-seed` does, and prints the same kind of line.
+   - That printed line is the check, because no app serves dev to read the lesson back.
 3. **Prod.** From your own terminal:
    `make lesson-import FILE=$HOME/.local/state/jadwigo/drafts/<draft>.json ENV=prod FEATURED=1`
    - It asks you to type `prod` before it links.
@@ -60,9 +65,9 @@ lists the lesson in its language, and its `/play/` path plays on app.jadwigo.pl.
 `dl-w0b4.111`, `dl-9t2o.12`). Name it by its play path's assignment or by its lesson id:
 
 1. **Dev.** `make lesson-withdraw ASSIGNMENT=asg_… ENV=dev` (or `LESSON=les_…`).
-   - It prints `<lesson id> archived: off the featured list; its play links still play`.
-   - `curl -s https://app.dev.jadwigo.pl/api/v1/featured-lessons | jq '.lessons[] | .title'` no
-     longer lists it.
+   - It prints `<lesson id> archived: off the featured list; its play links still play`. That
+     printed line is the check, because no app serves dev.
+   - Locally, without `ENV`, the running web's `/api/v1/featured-lessons` no longer lists it.
    - Its old `/play/` link keeps playing. That is on purpose: a link a parent already shared
      still works.
 2. **Prod.** From your own terminal: `make lesson-withdraw ASSIGNMENT=asg_… ENV=prod`.
