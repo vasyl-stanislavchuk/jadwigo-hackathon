@@ -17,6 +17,8 @@
   "//": {
     "@jadwigo/testing": "the design-system check its tokens.test.ts runs (checkTokens), tests only",
     "@fontsource/andika": "Andika, the Zeszyt type a child reads, loaded by src/styles/tailwind.css",
+    "@fontsource/geist": "Geist, the adult audience's type (dl-uukj.47.67 D1), loaded by src/styles/tailwind.css",
+    "@fontsource/geist-mono": "Geist Mono, the adult audience's codes and URLs, loaded by src/styles/tailwind.css",
     "@testing-library/dom": "@testing-library/react's required peer: the queries themselves",
     "@testing-library/react": "renders a component in a *.test.tsx and queries it the way a person would",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
@@ -47,6 +49,8 @@
   },
   "dependencies": {
     "@fontsource/andika": "catalog:",
+    "@fontsource/geist": "catalog:",
+    "@fontsource/geist-mono": "catalog:",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "lucide-react": "catalog:",

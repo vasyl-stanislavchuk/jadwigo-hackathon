@@ -27,7 +27,14 @@
  *   2. roles, --jw-*: named for what they mean, set again for dark;
  *   3. aliases: the shadcn and --kid-* names the parts, families and blocks read.
  * foundation.test.ts beside this file reads it, resolves the roles and holds every text pair to 4.5:1
- * in light and dark, and every hue to its one meaning. */
+ * in light and dark, and every hue to its one meaning.
+ *
+ * Two audiences (owner, 2026-11-02, dl-uukj.47.67; docs/worklog/dl-uukj.47.67/2026-11-02-parent-ds-
+ * handoff.md): Zeszyt above is the child's look and the default. [data-audience="adult"] (the parent
+ * app, sign-in, consent and jadwigo.pl's frame) takes Geist, 1 px lines, corners 6 / 10, flat controls
+ * and an ink-blue action with white text, light only; [data-audience="kid"] or a lesson inside it gets
+ * Zeszyt back, so a preview shows exactly what the child will see. The "one look of the whole app"
+ * above now holds for what a child reads only. */
 
 /* ---- 1. Primitives ---------------------------------------------------------------------------- */
 :root,
@@ -35,11 +42,21 @@
   /* Paper by day: white, its quiet fill and its line (paper-behaviour/README.md §1, option 2c). */
   --jw-p-paper-100: #f2eee6;
   --jw-p-paper-200: #e8e2d5;
+  /* The adult layer's field edge, a facet's dashed edge, and a checkbox's or radio's edge. */
+  --jw-p-paper-250: #d9d3c6;
+  --jw-p-paper-350: #b9b3a6;
+  --jw-p-paper-450: #8e897f;
   --jw-p-paper-500: #726f68;
   --jw-p-paper-600: #50535c;
   --jw-p-paper-650: #55565c;
   --jw-p-paper-900: #22252d;
   --jw-p-white: #ffffff;
+  /* Stone, the adult layer's quiet fills: the sidebar and a table's head, a hover and a secondary
+     * button, the active sidebar row, a secondary button under the mouse. */
+  --jw-p-stone-50: #fafaf9;
+  --jw-p-stone-100: #f5f5f4;
+  --jw-p-stone-150: #efeeeb;
+  --jw-p-stone-200: #ebeae6;
   /* The desk at night: one flat tone for the page and every card. The darker and lighter tones
      * are kept for the miss edge's ink and the solution's band, so the band stands apart. */
   --jw-p-night-0: #18191d;
@@ -53,6 +70,7 @@
   --jw-p-night-900: #ece8de;
   /* Blue ink: the action, a pick, the focus ring. */
   --jw-p-ink-50: #e6eeff;
+  --jw-p-ink-75: #f3f7fe; /* a selected table row */
   --jw-p-ink-100: #dce8fb;
   --jw-p-ink-150: #d9e6ff;
   --jw-p-ink-300: #9fbaeb;
@@ -60,6 +78,7 @@
   --jw-p-ink-400: #7aa6f0;
   --jw-p-ink-500: #6585c2;
   --jw-p-ink-600: #3a5fa8;
+  --jw-p-ink-625: #33549a; /* the adult action under the mouse */
   --jw-p-ink-650: #2f63b8;
   --jw-p-ink-750: #24407a;
   --jw-p-ink-800: #163a78;
@@ -162,6 +181,18 @@
   --jw-brand-go: var(--jw-p-ink-650);
   --jw-crown: var(--jw-p-crown);
   --jw-crown-line: var(--jw-p-paper-900);
+  /* The adult layer's surfaces (dl-uukj.47.67): a hover and a secondary fill, the same a step
+     * darker under the mouse, the sidebar, its active row, a field's edge, a checkbox's or radio's
+     * edge, the action under the mouse, a selected row's tint and a chip's edge. */
+  --jw-hover: var(--jw-p-stone-100);
+  --jw-hover-strong: var(--jw-p-stone-200);
+  --jw-side: var(--jw-p-stone-50);
+  --jw-side-active: var(--jw-p-stone-150);
+  --jw-field-edge: var(--jw-p-paper-250);
+  --jw-control-edge: var(--jw-p-paper-450);
+  --jw-act-hover: var(--jw-p-ink-625);
+  --jw-pick-row: var(--jw-p-ink-75);
+  --jw-pick-soft-edge: var(--jw-p-ink-300);
 }
 
 /* ---- 2. Roles, by night ----------------------------------------------------------------------- */
@@ -206,6 +237,15 @@
   --jw-brand-go: var(--jw-p-ink-400);
   --jw-crown: var(--jw-p-crown);
   --jw-crown-line: var(--jw-p-crown);
+  --jw-hover: var(--jw-p-night-100);
+  --jw-hover-strong: var(--jw-p-night-200);
+  --jw-side: var(--jw-p-night-0);
+  --jw-side-active: var(--jw-p-night-100);
+  --jw-field-edge: var(--jw-p-night-200);
+  --jw-control-edge: var(--jw-p-night-450);
+  --jw-act-hover: var(--jw-p-ink-750);
+  --jw-pick-row: var(--jw-p-ink-950);
+  --jw-pick-soft-edge: var(--jw-p-ink-500);
 }
 
 /* ---- Type, shape, space and motion (the same by day and by night) ----------------------------- */
@@ -214,6 +254,14 @@
   /* Andika: SIL's face for children learning to read, with a single-storey a, a 1 and an l told
      * apart, and every Polish and Ukrainian letter. It has 400 and 700 only. */
   --jw-font: "Andika", "Nunito Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  /* The two audiences' faces (dl-uukj.47.67, D1): the child's is --jw-font above, kept by its old
+     * name; the adult's is Geist 400 / 500 / 600, and Geist Mono for codes and URLs. */
+  --jw-font-kid: var(--jw-font);
+  --jw-font-adult: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --jw-font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* The child's mono: the system's, as tokens.css set it before the audiences (ids, code, a slot). */
+  --jw-font-code:
+    ui-monospace, "SF Mono", "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono", monospace;
   --jw-weight-text: 400;
   --jw-weight-strong: 700;
   --jw-leading: 1.3;
@@ -247,6 +295,8 @@
   --jw-control-height: 3rem; /* 48px */
   /* The same decision's 44: a sub-row of a side menu, a switch or a segmented control in a toolbar. */
   --jw-control-height-sm: 2.75rem; /* 44px */
+  /* An adult's large control: sign-in and consent, one step up from the app's (dl-uukj.47.67 S2). */
+  --jw-control-height-lg: 2.5rem; /* 40px */
   /* A small line on an app page: a row's second fact, a muted note. The parent's density sets 12.5. */
   --jw-page-small: 0.9375rem; /* 15px */
   /* The one question a screen asks ("Jaką lekcję przygotować?"), above its one box. */
@@ -322,31 +372,20 @@
 
 /* The parent's density: the signed-in parent app (decision 2026-11-01-the-parent-app-is-a-sidebar-
  * shell-and-a-3-column-lesson-workspac, dl-xo0q). An adult works at a desk there: body 14, a small
- * line 12.5, a control 34, corners 10 and 8, 1 px lines, the action on a 3 px edge. Page density=
- * "parent" sets it, and a dialog or sheet it opens carries it through its portal. Sign-in and public
- * pages keep the app scale above. The aliases a part reads are declared again here, since an alias
- * resolves where it is declared. */
+ * line 12.5, a control 34, a section title 22 and a card's 16 (handoff dl-uukj.47.67 S2). Page
+ * density="parent" sets it, and a dialog or sheet it opens carries it through its portal. Sign-in and
+ * public pages keep the app scale above. Corners, lines and the edge are the adult audience's
+ * (below), not the density's. */
 [data-density="parent"] {
   --jw-page-body: 0.875rem; /* 14px */
   --jw-page-small: 0.78125rem; /* 12.5px */
-  --jw-page-h1: 1.25rem; /* 20px: a section title */
-  --jw-page-h2: 0.9375rem; /* 15px */
+  --jw-page-h1: 1.375rem; /* 22px: a section title */
+  --jw-page-h2: 1rem; /* 16px: a card's or a dialog's title */
   /* The settings controls (a side menu, tabs, a segmented control) read the body and small steps. */
   --jw-size-body: 0.875rem; /* 14px */
   --jw-size-small: 0.78125rem; /* 12.5px */
   --jw-control-height: 2.125rem; /* 34px */
   --jw-control-height-sm: 1.75rem; /* 28px */
-  --jw-radius-card: 0.625rem; /* 10px */
-  --jw-radius-control: 0.625rem; /* 10px */
-  --jw-radius-small: 0.5rem; /* 8px */
-  --jw-border: 1px;
-  --jw-press: 3px;
-  --radius-sm: var(--jw-radius-small);
-  --radius: var(--jw-radius-control);
-  --radius-lg: var(--jw-radius-card);
-  --radius-xl: var(--jw-radius-card);
-  --radius-2xl: var(--jw-radius-card);
-  --kid-press: var(--jw-press);
 }
 
 /* A lesson shown inside the parent's app (a step's preview) keeps the child's sizes: it shows what
@@ -354,19 +393,8 @@
 [data-density="parent"] :is([data-lesson-theme], [data-density="kid"]) {
   --jw-size-body: 1.125rem;
   --jw-size-small: 0.9375rem;
-  --jw-radius-card: 1rem;
-  --jw-radius-control: 1rem;
-  --jw-radius-small: 0.625rem;
-  --jw-border: 2px;
-  --jw-press: 4px;
   --jw-control-height: 3rem;
   --jw-control-height-sm: 2.75rem;
-  --radius-sm: var(--jw-radius-small);
-  --radius: var(--jw-radius-control);
-  --radius-lg: var(--jw-radius-card);
-  --radius-xl: var(--jw-radius-card);
-  --radius-2xl: var(--jw-radius-card);
-  --kid-press: var(--jw-press);
 }
 
 /* The logo's crown tips on hover or keyboard focus of the logo or the link around it (brand/README.md,
@@ -401,7 +429,8 @@
 :root,
 :host,
 [theme],
-[data-lesson-theme] {
+[data-lesson-theme],
+[data-audience="kid"] {
   --background: var(--jw-ground);
   --foreground: var(--jw-ink);
   --card: var(--jw-prompt-card);
@@ -423,6 +452,34 @@
   --border: var(--jw-line);
   --input: var(--jw-line-strong);
   --ring: var(--jw-focus);
+  /* The adult layer's names (handoff dl-uukj.47.67 §2), valued here too so a part reads the same
+     * name in both audiences: a pick, its ink and its soft edge, a selected row, a checkbox's edge, a
+     * link, a field's hint, the action under the mouse, and the sidebar. */
+  --selected: var(--jw-pick);
+  --selected-foreground: var(--jw-pick-ink);
+  --selected-edge: var(--jw-pick-soft-edge);
+  --selected-row: var(--jw-pick-row);
+  --control-edge: var(--jw-control-edge);
+  --link: var(--jw-focus);
+  --placeholder: var(--jw-placeholder);
+  --primary-hover: var(--jw-act-hover);
+  --hover-strong: var(--jw-hover-strong);
+  --sidebar: var(--jw-side);
+  --sidebar-foreground: var(--jw-ink);
+  --sidebar-primary: var(--jw-act);
+  --sidebar-primary-foreground: var(--jw-on-act);
+  --sidebar-accent: var(--jw-side-active);
+  --sidebar-accent-foreground: var(--jw-ink);
+  --sidebar-border: var(--jw-line);
+  --sidebar-ring: var(--jw-focus);
+  /* Destructive is ink, never red (S3); a popover's corner; one soft shadow for what floats (a
+     * popover, a menu, a toast, a tooltip) and a deeper one for a dialog, page content flat (S20). */
+  --destructive: var(--jw-ink);
+  --radius-md: 0.375rem;
+  --shadow-float:
+    0 8px 24px -8px color-mix(in srgb, var(--jw-ink) 16%, transparent),
+    0 2px 4px color-mix(in srgb, var(--jw-ink) 4%, transparent);
+  --shadow-dialog: 0 16px 40px -12px color-mix(in srgb, var(--jw-ink) 22%, transparent);
 
   --kid-correct: var(--jw-right-edge);
   --kid-correct-foreground: var(--jw-on-right-act);
@@ -462,6 +519,7 @@
 
   --font-body: var(--jw-font);
   --font-sans: var(--jw-font);
+  --font-mono: var(--jw-font-code);
   --radius-sm: var(--jw-radius-small);
   --radius: var(--jw-radius-control);
   --radius-lg: var(--jw-radius-card);
@@ -472,6 +530,74 @@
   --shadow-elevation: none;
   --duration-slow: var(--jw-dur-step);
   --theme-icon-stroke: 2;
+}
+
+/* ---- 4. The adult audience (owner, 2026-11-02, dl-uukj.47.67) ---------------------------------- */
+/* The parent app, sign-in, consent and jadwigo.pl's frame: <html data-audience="adult">. Geist, 1 px
+ * lines, corners 6 on a control, 10 on a card, flat (no pressed edge and no press move, D4), the
+ * action ink blue with white text (D5), fields on a lighter edge (D18). Light only for now (D10):
+ * lib/theme.ts keeps [theme] off an adult page. It comes after the aliases, so on <html> it wins over
+ * them, and the roles it changes are set back for a child's subtree below. */
+[data-audience="adult"] {
+  --jw-line-strong: var(--jw-p-paper-450);
+  --jw-act: var(--jw-p-ink-600);
+  --jw-on-act: var(--jw-p-white);
+  --jw-act-edge: var(--jw-p-ink-600);
+  --jw-act-quiet: var(--jw-p-stone-100);
+  --jw-on-act-quiet: var(--jw-p-paper-600);
+  --jw-radius-control: 0.375rem; /* 6px */
+  --jw-radius-card: 0.625rem; /* 10px */
+  --jw-radius-small: 0.25rem; /* 4px: a checkbox, a key cap, a chip in a facet */
+  --jw-radius-dialog: 0.625rem; /* 10px */
+  --jw-radius-box: 0.625rem; /* 10px */
+  --jw-border: 1px;
+  --jw-press: 0px;
+
+  --font-body: var(--jw-font-adult);
+  --font-sans: var(--jw-font-adult);
+  --font-mono: var(--jw-font-mono);
+  /* shadcn's names on the adult roles (handoff §2): hover and secondary are stone, a field's edge is
+     * the lighter warm line, destructive is ink and never red (S3). */
+  --secondary: var(--jw-hover);
+  --muted: var(--jw-hover);
+  --accent: var(--jw-hover);
+  --accent-foreground: var(--jw-ink);
+  --input: var(--jw-field-edge);
+  --radius-sm: var(--jw-radius-small);
+  --radius: var(--jw-radius-control);
+  --radius-md: 0.5rem; /* 8px: a popover, a menu, a toast */
+  --radius-lg: var(--jw-radius-card);
+  --radius-xl: var(--jw-radius-card);
+  --radius-2xl: var(--jw-radius-card);
+  --kid-press: var(--jw-press);
+}
+
+/* What a child reads inside an adult page (a lesson preview, a try on the attempt page, the
+ * question and lesson cards jadwigo.pl shows) is Zeszyt again: every role and shape the adult block
+ * changed, back at its :root value by day. The aliases are declared again on these elements
+ * (block 3), so they resolve on these roles and Andika. */
+[data-audience="adult"] :is([data-audience="kid"], [data-lesson-theme]) {
+  --jw-line-strong: var(--jw-p-paper-600);
+  --jw-act: var(--jw-p-ink-300);
+  --jw-on-act: var(--jw-p-ink-900);
+  --jw-act-edge: var(--jw-p-ink-500);
+  --jw-act-quiet: var(--jw-p-paper-100);
+  --jw-on-act-quiet: var(--jw-p-paper-650);
+  --jw-radius-control: 1rem;
+  --jw-radius-card: 1rem;
+  --jw-radius-small: 0.625rem;
+  --jw-radius-dialog: 0.875rem;
+  --jw-radius-box: 1rem;
+  --jw-border: 2px;
+  --jw-press: 4px;
+  --radius-md: 0.375rem; /* Tailwind's own, which the adult block moved to 8 */
+}
+
+/* Each audience sets its own type where it is marked, as LessonTheme's root does (lesson.css): a
+ * child's section that is not a lesson (jadwigo.pl's question sheet and lesson cards), and an adult
+ * sample inside the owner's playground, whose <html> is neither. */
+[data-audience] {
+  font-family: var(--font-sans);
 }
 
 /* The lesson's own text: Andika's regular weight, its leading, and digits for maths. */

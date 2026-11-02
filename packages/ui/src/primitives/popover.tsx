@@ -3,7 +3,7 @@
 // menu in Gaps opens one. Sized and coloured from the tokens; no literal colour or size.
 import { Popover as PopoverPrimitive } from "radix-ui";
 import * as React from "react";
-import { useDensity } from "../lib/register.tsx";
+import { useDensity, useRegister } from "../lib/register.tsx";
 import { cn } from "../lib/utils.ts";
 
 function Popover(props: React.ComponentProps<typeof PopoverPrimitive.Root>): JSX.Element {
@@ -27,11 +27,14 @@ function PopoverContent({
 }: React.ComponentProps<typeof PopoverPrimitive.Content>): JSX.Element {
   // A portal leaves the density's subtree, so the content carries it again (lib/register.tsx).
   const density = useDensity();
+  // A lesson's popover (a gap's menu, a term) stays a child's inside an adult page (dl-uukj.47.67).
+  const kid = useRegister() === "lesson";
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content
         data-slot="popover-content"
         data-density={density}
+        data-audience={kid ? "kid" : undefined}
         align={align}
         sideOffset={sideOffset}
         className={cn(

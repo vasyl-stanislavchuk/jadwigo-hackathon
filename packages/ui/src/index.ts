@@ -10,7 +10,7 @@ export {
   useDensity,
   useRegister,
 } from "./lib/register.tsx";
-export { followSystemTheme, heldTheme, holdTheme, type Theme } from "./lib/theme.ts";
+export { followSystemTheme, heldTheme, holdTheme, setAudience, type Theme } from "./lib/theme.ts";
 export { cn } from "./lib/utils.ts";
 export { Field } from "./parts/field.tsx";
 export { Heading } from "./parts/heading.tsx";
