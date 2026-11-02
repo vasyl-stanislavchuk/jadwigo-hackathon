@@ -133,6 +133,8 @@ const q = (await landingWords(lang)).hero.question;
         () => {
           land();
           video.hidden = true;
+          // The 6.5 s fallback goes first: a stale one would turn a sheet played again.
+          clearTimeout(timer);
           timer = setTimeout(turn, 700);
         },
         { once: true },
@@ -146,6 +148,9 @@ const q = (await landingWords(lang)).hero.question;
 
     // "Play the question again": the question as it was, the focus on its first tile.
     const reset = () => {
+      // Nothing left from the last answer turns the sheet played again: its timer, its tap.
+      clearTimeout(timer);
+      document.removeEventListener("pointerdown", turn);
       turned = false;
       sheet.classList.remove("turned", "done");
       if (join) join.hidden = true;
