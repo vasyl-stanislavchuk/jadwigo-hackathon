@@ -1,7 +1,7 @@
 # The content bucket: applying modules/content, then the first upload
 
 `infra/terraform/modules/content` (`dl-n9fr.43.2`) creates the private bucket that holds the Khan pull,
-a CloudFront distribution that serves its `khan/media/` prefix and nothing else, and 2 SSM parameters
+a CloudFront distribution that serves its `khan/media/` and `alfik/media/` prefixes and nothing else, and 2 SSM parameters
 that carry its name and the media URL. The api role may read `questions/*` and `khan/converted/*`, and
 no other prefix. jadwigo-bank's `tools/khan/sync.py` fills the bucket; Terraform owns no object in it.
 
@@ -142,6 +142,50 @@ Decisions: `jadwigo-question-bank/decisions/2026-10-29-the-monorepo-s-terraform-
     --query 'EvaluationResults[].EvalDecision' --output text
   # allowed  allowed  implicitDeny  implicitDeny
   ```
+
+## Alfik pictures (`dl-e8ov.2.98`)
+
+An Alfik question's picture is stored by sha under `alfik/media/`, and its body names it
+`/media/alfik/<sha>.png`. The player (`apps/web/src/media.ts`) turns that into
+`<media url>/alfik/media/<sha>.png`. The distribution keeps its Khan origin (path `/khan/media`) as the
+default behaviour, so a Khan URL `<media url>/<sha>.svg` is unchanged. A second origin, `alfik-media`, sits
+at the bucket root and is reached only through the behaviour `/alfik/media/*`, so the URL path is the
+bucket key. The bucket policy lets the distribution read `khan/media/*` and `alfik/media/*` and nothing
+else; any other path through `alfik-media` would need a key outside both, and the bucket answers 403.
+
+The change is a one-way door (CloudFront and the bucket policy), and the owner applies it.
+
+1. **Plan to a file**, from the owner's checkout (it has `infra/terraform/owner.auto.tfvars`), on `main`
+   after the merge:
+
+   ```sh
+   make -C infra init && AWS_PROFILE=jadwigo mise exec -- terraform -chdir=infra/terraform plan -var-file=environments/prod.tfvars -out=alfik-media.tfplan
+   ```
+
+   It ends `Plan: 0 to add, 2 to change, 0 to destroy`: `module.content.aws_cloudfront_distribution.media`
+   gains the comment `... khan/media/ and alfik/media/ pictures`, an `origin` `alfik-media` with no
+   origin path and an `ordered_cache_behavior` `/alfik/media/*` to it; and
+   `module.content.aws_s3_bucket_policy.content` grants `s3:GetObject` on `alfik/media/*` beside
+   `khan/media/*`. The default behaviour and the `media` origin do not change. Anything more, or any
+   destroy, is a stop (main's work not yet applied shows here too; `make -C infra prod-status` names it).
+2. **Apply it:** `AWS_PROFILE=jadwigo mise exec -- terraform -chdir=infra/terraform apply alfik-media.tfplan`.
+   The distribution takes 5 to 15 minutes to deploy.
+3. **Check**, with `MEDIA` as in "After" above:
+
+   ```sh
+   KEY=$(aws --profile jadwigo s3api list-objects-v2 --bucket jadwigo-content-843109108289 \
+     --prefix alfik/media/ --max-keys 1 --query 'Contents[0].Key' --output text)
+   curl -sI "$MEDIA/$KEY" | head -1
+   # HTTP/2 200
+   curl -s -o /dev/null -w '%{http_code}\n' "$MEDIA/alfik/converted/x.json"
+   # 403
+   ```
+
+   A Khan picture still answers 200 as in "After". The web build needs no new setting: it reads the same
+   `VITE_MEDIA_URL`, and the next `make -C infra web-deploy` ships the `media.ts` change.
+
+Undo: revert the `dl-e8ov.2.98` commit, plan (`0 to add, 2 to change`) and apply. Nothing is lost: the
+pictures stay in the bucket, and Alfik pictures stop loading again.
 
 ## Undo
 
