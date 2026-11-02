@@ -79,6 +79,8 @@ const buttonVariants = cva(
         variant: "secondary",
         class: "in-data-[audience=adult]:hover:bg-hover-strong",
       },
+      // A link is text: it drops the control sizes whatever size it was given.
+      { variant: "link", class: "min-h-auto min-w-auto px-0" },
       {
         register: "app",
         variant: "outline",

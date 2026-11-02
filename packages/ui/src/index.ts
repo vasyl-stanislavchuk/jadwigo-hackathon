@@ -11,6 +11,7 @@ export {
   useRegister,
 } from "./lib/register.tsx";
 export { followSystemTheme, heldTheme, holdTheme, setAudience, type Theme } from "./lib/theme.ts";
+export { TONE_COUNT, toneClasses } from "./lib/tone.ts";
 export { cn } from "./lib/utils.ts";
 export { Field } from "./parts/field.tsx";
 export { Heading } from "./parts/heading.tsx";
@@ -41,6 +42,7 @@ export {
   CardTitle,
 } from "./primitives/card.tsx";
 export { Checkbox } from "./primitives/checkbox.tsx";
+export { Chip } from "./primitives/chip.tsx";
 export type { Choice, ControlSize } from "./primitives/choice.ts";
 export { Combobox, type ComboboxOption } from "./primitives/combobox.tsx";
 export {
@@ -58,7 +60,7 @@ export {
   DialogTrigger,
 } from "./primitives/dialog.tsx";
 export { DisabledReason } from "./primitives/disabled-reason.tsx";
-export { Disc } from "./primitives/disc.tsx";
+export { Disc, DiscStack } from "./primitives/disc.tsx";
 export {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -73,14 +75,17 @@ export {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "./primitives/dropdown-menu.tsx";
+export { Empty } from "./primitives/empty.tsx";
 export { Input } from "./primitives/input.tsx";
 export { InputOtp } from "./primitives/input-otp.tsx";
 export { Kbd } from "./primitives/kbd.tsx";
+export { Pagination } from "./primitives/pagination.tsx";
 export { PanelToggle } from "./primitives/panel-toggle.tsx";
 export { Popover, PopoverContent, PopoverTrigger } from "./primitives/popover.tsx";
 export { Progress } from "./primitives/progress.tsx";
 export { RadioCards } from "./primitives/radio-cards.tsx";
 export { RadioGroup } from "./primitives/radio-group.tsx";
+export { ResultBar } from "./primitives/result-bar.tsx";
 export { SegmentedControl } from "./primitives/segmented-control.tsx";
 export {
   Select,
@@ -100,8 +105,10 @@ export {
   SheetTrigger,
 } from "./primitives/sheet.tsx";
 export { type MenuEntry, type MenuItem, SideMenu } from "./primitives/side-menu.tsx";
+export { Skeleton } from "./primitives/skeleton.tsx";
 export { Slider } from "./primitives/slider.tsx";
 export { Spinner } from "./primitives/spinner.tsx";
+export { type LessonStatus, Status } from "./primitives/status.tsx";
 export { Switch } from "./primitives/switch.tsx";
 export {
   Table,

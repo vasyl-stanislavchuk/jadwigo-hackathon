@@ -235,6 +235,44 @@ describe("Input focus", () => {
 });
 
 describe("Button", () => {
+  // The adult variants and sizes (dl-uukj.47.67 §6.1).
+  it.each([
+    ["quiet", "text-muted-foreground"],
+    ["link", "text-link"],
+  ] as const)("draws the %s variant", (variant, cls) => {
+    on("prose", <Button variant={variant}>Archiwizuj</Button>);
+    expectClasses(screen.getByRole("button", { name: "Archiwizuj" }), [cls], ["bg-jw-act"]);
+  });
+
+  it.each([
+    ["sm", "min-h-jw-control-sm"],
+    ["lg", "min-h-jw-control-lg"],
+  ] as const)("sizes %s from a token", (size, cls) => {
+    on("prose", <Button size={size}>Dalej</Button>);
+    expectClasses(screen.getByRole("button", { name: "Dalej" }), [cls], []);
+  });
+
+  it.each(["control", "lg", "sm"] as const)(
+    "keeps a link free of a control's height at size %s",
+    (size) => {
+      on(
+        "prose",
+        <Button variant="link" size={size}>
+          Zobacz
+        </Button>,
+      );
+      const link = screen.getByRole("button", { name: "Zobacz" });
+      expectClasses(
+        link,
+        ["min-h-auto", "px-0"],
+        [`min-h-jw-${size === "control" ? "control" : `control-${size}`}`],
+      );
+      expect(link.className.indexOf("min-h-auto")).toBeGreaterThan(
+        link.className.indexOf("text-link"),
+      );
+    },
+  );
+
   it("outside a lesson focuses with the page's outline, not the soft ring", () => {
     on("prose", <Button>Wyślij kod</Button>);
     expectClasses(screen.getByRole("button", { name: "Wyślij kod" }), PAGE_OUTLINE, SOFT_RING);

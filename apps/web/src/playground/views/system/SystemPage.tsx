@@ -37,6 +37,7 @@ import {
 import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { type ReactNode, useContext, useEffect, useState } from "react";
 import { AdultKitA } from "./AdultKitA.tsx";
+import { AdultKitB } from "./AdultKitB.tsx";
 import { AppPages } from "./AppPages.tsx";
 import { DESIGN_LINES, METAPHOR, ZONES } from "./data.ts";
 import { Colour, Motion, SpaceAndShape, Sub, subId, Type } from "./Foundations.tsx";
@@ -103,6 +104,7 @@ export const MENU: readonly MenuEntry[] = [
   },
   page("App pages", "app-pages"),
   page("Adult kit", "adult-overlays"),
+  page("Adult kit: display", "adult-kit-b"),
   { heading: "Words" },
   page("Interface words", "lines"),
   {
@@ -642,6 +644,15 @@ export function SystemPage(): JSX.Element {
               app
             >
               <AdultKitA />
+            </Section>
+
+            <Section
+              id="adult-kit-b"
+              title="Adult kit: display"
+              lead="The parent app's display parts (dl-uukj.47.67.4) in the adult audience: status by dot shape, counts, tags and chips, a disc in each of the 10 child tones, the parent's avatar, skeleton, empty states, result bars, the pager and the breadcrumb."
+              app
+            >
+              <AdultKitB />
             </Section>
 
             <LessonScope>
