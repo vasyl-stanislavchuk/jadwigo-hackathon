@@ -475,6 +475,8 @@ describe("ParentScreen", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(api.createLearner).toHaveBeenCalledWith({ first_name: "Ola" });
     expect(document.querySelector("[data-dla]")?.textContent).toContain("Ola");
+    // The focus comes back to Dla, where the dialog was opened from (dl-uukj.47.20).
+    await waitFor(() => expect(document.activeElement).toBe(document.querySelector("[data-dla]")));
     expect(document.querySelector(`[data-child-row="${LEARNER}"]`)).not.toBeNull();
     expect(
       (screen.getByRole("textbox", { name: "Opisz zadanie domowe" }) as HTMLTextAreaElement).value,
