@@ -8,6 +8,7 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --config ../../vitest.config.ts --project unit",
     "test:int": "vitest run --config ../../vitest.config.ts --project integration",
+    "dev": "bun src/dev.ts",
     "probe": "bun src/probe-cli.ts",
     "smoke": "bun src/smoke.ts"
   },

@@ -1,34 +1,124 @@
 {
   "lessons": [
     {
-      "assignment_id": "asg_0ectzj2evqb95a3v1v6wewjzy3",
-      "lesson_id": "les_2gj7s52rxqa5a9nkemj9dxbmpz",
-      "title": "Równe grupy",
+      "assignment_id": "asg_6cxy4ggs9qac7awm2v3vwdxnfq",
+      "lesson_id": "les_40jwhmppkbb5vvag7rc27xrn1x",
+      "title": "Dodajemy i odejmujemy do 20",
       "language": "pl",
       "subject": "math",
-      "grade": null,
-      "question_count": 4,
-      "first_say": "Ile to jest dwa razy pięć? Napisz albo powiedz."
-    },
-    {
-      "assignment_id": "asg_7kb53jh5mhaf4a6enwj43wqt9r",
-      "lesson_id": "les_4f0t7gmj5gawsspbwvekewh8as",
-      "title": "Piątki wszędzie: monety, zegar i czekolada",
-      "language": "pl",
-      "subject": "math",
-      "grade": null,
+      "grade": 1,
       "question_count": 8,
-      "first_say": "Ile to jest 5 razy 6? Napisz albo powiedz."
+      "first_say": "Ile deszczowych dni było w listopadzie?"
     },
     {
-      "assignment_id": "asg_4fygf2qfpcakz8rajf3svbpxvm",
-      "lesson_id": "les_2xqw41x6s0bw9bha5jb3yv7emm",
-      "title": "Razy cztery: podwójne razy dwa",
+      "assignment_id": "asg_67ppftwzj9a4ttbtftc3mn4z45",
+      "lesson_id": "les_0pdpkegvywbn1vvqzeyhcwvxsm",
+      "title": "Adding and taking away to 20",
+      "language": "en",
+      "subject": "math",
+      "grade": 1,
+      "question_count": 8,
+      "first_say": "How many rainy days were there in November?"
+    },
+    {
+      "assignment_id": "asg_7ddnt4j489bc2tz2fgrgm6barr",
+      "lesson_id": "les_7z05n79z6ra1z9xdj4keaktb1m",
+      "title": "Kształty, połówki i zegar",
       "language": "pl",
       "subject": "math",
-      "grade": null,
-      "question_count": 11,
-      "first_say": "Ile to jest 2 razy 7? Napisz albo powiedz."
+      "grade": 1,
+      "question_count": 6,
+      "first_say": "Która z tych figur ma kształt koła?"
+    },
+    {
+      "assignment_id": "asg_33haytpqd2b6nad3vgw919xs25",
+      "lesson_id": "les_0ek5xpnz10aqq8haa50rgnr7sx",
+      "title": "Shapes, halves and clocks",
+      "language": "en",
+      "subject": "math",
+      "grade": 1,
+      "question_count": 6,
+      "first_say": "Which shape is a circle?"
+    },
+    {
+      "assignment_id": "asg_2n8nx82ndwaczrntj9n4jfey22",
+      "lesson_id": "les_3z0kf94a2abxbv5yhe202sr6vm",
+      "title": "Dodajemy i odejmujemy na rysunkach",
+      "language": "pl",
+      "subject": "math",
+      "grade": 2,
+      "question_count": 8,
+      "first_say": "Ile kucyków jest razem? Dodaj 9 i 9."
+    },
+    {
+      "assignment_id": "asg_2e2dx0qkefbbht8k134t0nsb9v",
+      "lesson_id": "les_740yr65y84afvs62v9q1v2g7nb",
+      "title": "Adding and taking away with pictures",
+      "language": "en",
+      "subject": "math",
+      "grade": 2,
+      "question_count": 8,
+      "first_say": "How many ponies are there in all? Add 9 and 9."
+    },
+    {
+      "assignment_id": "asg_2gcf2reyaebeqvj47nq2rbgsgs",
+      "lesson_id": "les_6431cz07ssbd0vhkx4jfg8tfa4",
+      "title": "Zegar i centymetry",
+      "language": "pl",
+      "subject": "math",
+      "grade": 2,
+      "question_count": 6,
+      "first_say": "Który ołówek na rysunku ma 3 centymetry długości?"
+    },
+    {
+      "assignment_id": "asg_3947pqfd4yb7caw9kdt5rn4df3",
+      "lesson_id": "les_06hhmv04syatxr3kkf8bfwdzmr",
+      "title": "Clocks and centimeters",
+      "language": "en",
+      "subject": "math",
+      "grade": 2,
+      "question_count": 7,
+      "first_say": "Which pencil measures 3 centimeters?"
+    },
+    {
+      "assignment_id": "asg_7mtjkxt0q1b9kt5zmhtw5v1ygr",
+      "lesson_id": "les_1p7s8gcz8pamjav6amd84fd7ak",
+      "title": "Mnożenie na obrazkach",
+      "language": "pl",
+      "subject": "math",
+      "grade": 3,
+      "question_count": 8,
+      "first_say": "Który z poniższych rysunków przedstawia mnożenie 7 razy 2?"
+    },
+    {
+      "assignment_id": "asg_1h201cy8xea4p9qr30qzq6svf9",
+      "lesson_id": "les_6rcs4dkmtebxgrsgy7cfcdbjdb",
+      "title": "Multiplying with pictures",
+      "language": "en",
+      "subject": "math",
+      "grade": 3,
+      "question_count": 8,
+      "first_say": "Which image shows 7 times 2?"
+    },
+    {
+      "assignment_id": "asg_23c2a9v56dbs6br5hy8ext6nyz",
+      "lesson_id": "les_4ymyms965aakxtbz0k3t8kr2py",
+      "title": "Zegar i wykresy",
+      "language": "pl",
+      "subject": "math",
+      "grade": 3,
+      "question_count": 8,
+      "first_say": "Na których farmach jest mniej kucyków niż na Farmie Zielonej?"
+    },
+    {
+      "assignment_id": "asg_5ksa40rt1sazqs9dymj29bpfmf",
+      "lesson_id": "les_1a5was8kx4byw9rtw2x6yqh6eh",
+      "title": "Clocks and graphs",
+      "language": "en",
+      "subject": "math",
+      "grade": 3,
+      "question_count": 8,
+      "first_say": "Which farms have fewer ponies than Horse Haven?"
     }
   ]
 }

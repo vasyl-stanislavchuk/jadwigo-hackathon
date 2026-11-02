@@ -1,16 +1,31 @@
 ---
-// A living page behind every page (owner, 2026-11-02, dl-5ssh.4.33): exercise-book maths signs drift
-// slowly, as if on the kitchen table's evening air. With a fine pointer, the signs near it ease away and a
-// soft warm glow follows it, after shelestni's landing page, in Jadwigo's own theme and with no library.
-// Every sign's place, size, colour and drift is fixed here at build time, so the page never shifts and
-// stands as it is without JS. Under reduced motion nothing moves. The layer is decoration only:
-// aria-hidden, no pointer events, and quiet enough that the words on top stay easy to read.
+// A living page behind every page (dl-5ssh.4.33): true sums from grades 1-3 and small stars drift
+// slowly, as if on the kitchen table's evening air. The sums are what a child learns here, every one of
+// them right; the stars are the ones a right answer earns (owner, 2026-11-02, dl-5ssh.4.39: "Sums +
+// stars", so the background means something). With a fine pointer, everything near it leans away, the
+// stars twinkle and the sums brighten, and a faint glow follows it, after shelestni's landing page, in
+// Jadwigo's own theme and with no library. The build places a page that stands without JS; every visit
+// then deals new sums and new places (dl-5ssh.4.38). Under reduced motion nothing moves. The layer is
+// decoration only: aria-hidden, no pointer events, quiet enough that the words on top stay easy to read.
+import type { Language } from "@jadwigo/config";
+import { cloudPiece, type Subject } from "../lib/clouds.ts";
 
-const SIGNS = ["+", "−", "×", "=", "÷", "○"] as const;
-// Quiet Zeszyt colours: blue ink, the brand's go-blue, the right answer's green and the soft line.
-const TONES = ["act", "go", "green", "line"] as const;
-// The layer is as tall as the page and scrolls with it, so the count covers a long page.
-const COUNT = 72;
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+
+// One quiet Zeszyt colour per subject (dl-5ssh.4.40): maths in blue ink, Polish in the right answer's
+// green, English in the brand's go-blue. No yellow: crown yellow is the brand's only.
+const TONE: Record<Subject, "act" | "green" | "go"> = {
+  maths: "act",
+  polish: "green",
+  english: "go",
+};
+// The layer is as tall as the page and scrolls with it, so the counts cover a long page.
+const SUMS = 30;
+const STARS = 34;
 
 // A small fixed sequence (mulberry32), so every build draws the same page.
 let seed = 0x1a2b3c4d;
@@ -20,69 +35,146 @@ const next = (): number => {
   t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 };
-function pick<T>(list: readonly T[]): T {
-  return list[Math.floor(next() * list.length)] as T;
-}
+const between = (lo: number, hi: number): number => lo + next() * (hi - lo);
 
-const signs = Array.from({ length: COUNT }, () => {
-  const size = 1 + next() * 1.6;
-  return {
-    sign: pick(SIGNS),
-    tone: pick(TONES),
-    style: [
-      `left: ${(next() * 100).toFixed(2)}%`,
-      `top: ${(next() * 100).toFixed(2)}%`,
-      `font-size: ${size.toFixed(2)}rem`,
-      `--drift-x: ${(next() * 3 - 1.5).toFixed(2)}rem`,
-      `--drift-y: ${(next() * 3 - 1.5).toFixed(2)}rem`,
-      `--turn: ${Math.round(next() * 50 - 25)}deg`,
-      `--time: ${(14 + next() * 12).toFixed(1)}s`,
-      `--delay: ${(-next() * 26).toFixed(1)}s`,
-    ].join("; "),
-  };
-});
+const place = (size: number): string =>
+  [
+    `left: ${between(0, 96).toFixed(2)}%`,
+    `top: ${between(0, 100).toFixed(2)}%`,
+    `font-size: ${size.toFixed(2)}rem`,
+    `--drift-x: ${between(-1.5, 1.5).toFixed(2)}rem`,
+    `--drift-y: ${between(-1.5, 1.5).toFixed(2)}rem`,
+    `--turn: ${Math.round(between(-12, 12))}deg`,
+    `--time: ${between(14, 26).toFixed(1)}s`,
+    `--delay: ${(-between(0, 26)).toFixed(1)}s`,
+  ].join("; ");
+
+const pieces = [
+  ...Array.from({ length: SUMS }, () => {
+    const piece = cloudPiece(next, lang);
+    return {
+      kind: "sum" as const,
+      text: piece.text,
+      tone: TONE[piece.subject],
+      style: place(between(0.85, 1.2)),
+    };
+  }),
+  ...Array.from({ length: STARS }, () => ({
+    kind: "star" as const,
+    text: "",
+    tone: next() < 0.5 ? ("go" as const) : ("green" as const),
+    style: place(between(0.55, 1)),
+  })),
+];
 ---
 
-<div class="backdrop" aria-hidden="true">
+<div class="backdrop" aria-hidden="true" data-lang={lang}>
   <div class="glow"></div>
   {
-    signs.map((s) => (
-      <span class:list={["sign", s.tone]} style={s.style}>
-        <span class="drift">{s.sign}</span>
+    pieces.map((p) => (
+      <span class:list={["piece", p.kind, p.tone]} style={p.style}>
+        <span class="drift">
+          {p.kind === "sum" ? (
+            p.text
+          ) : (
+            <svg viewBox="0 0 20 20" width="1em" height="1em">
+              <path d="M10 0 C11 7 13 9 20 10 C13 11 11 13 10 20 C9 13 7 11 0 10 C7 9 9 7 10 0 Z" fill="currentColor" />
+            </svg>
+          )}
+        </span>
       </span>
     ))
   }
 </div>
 
 <script>
-  // Every visit scatters the signs anew (owner, 2026-11-02, dl-5ssh.4.38): a new place, sign, drift and
-  // phase for each. The build's places stay as the page without JS. Only this decorative layer moves,
-  // so no content shifts; under reduced motion the signs land and stay.
-  const GLYPHS = ["+", "−", "×", "=", "÷", "○"];
-  const between = (lo: number, hi: number): number => lo + Math.random() * (hi - lo);
-  for (const sign of document.querySelectorAll<HTMLElement>(".backdrop .sign")) {
-    const glyph = sign.querySelector(".drift");
-    if (glyph) glyph.textContent = GLYPHS[Math.floor(Math.random() * GLYPHS.length)] ?? "+";
-    sign.style.left = `${between(0, 100).toFixed(2)}%`;
-    sign.style.top = `${between(0, 100).toFixed(2)}%`;
-    sign.style.setProperty("--drift-x", `${between(-1.5, 1.5).toFixed(2)}rem`);
-    sign.style.setProperty("--drift-y", `${between(-1.5, 1.5).toFixed(2)}rem`);
-    sign.style.setProperty("--turn", `${Math.round(between(-25, 25))}deg`);
-    sign.style.setProperty("--delay", `${(-between(0, 26)).toFixed(1)}s`);
-  }
+  import { cloudPiece } from "../lib/clouds.ts";
 
-  // The cursor's part, on a fine pointer only and never under reduced motion: the glow follows it, and
-  // the signs within reach ease away from it, then drift back.
-  const fine = matchMedia("(pointer: fine)").matches;
-  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const backdrop = document.querySelector<HTMLElement>(".backdrop");
-  if (backdrop && fine && !still) {
-    const signs = [...backdrop.querySelectorAll<HTMLElement>(".sign")];
-    // Calm on purpose (owner, 2026-11-02, dl-5ssh.4.35): the signs only lean from the cursor.
-    const REACH = 110; // px
-    const PUSH = 9; // px at the cursor itself
-    // The cursor on the page, not the screen: the layer scrolls with the page, and only the mouse moves
-    // the signs (owner: "scroll together with everything, but react only on mouse movements").
+  const TONE = { maths: "act", polish: "green", english: "go" } as const;
+
+  const between = (lo: number, hi: number): number => lo + Math.random() * (hi - lo);
+
+  // Places the pieces, and on a first deal gives each sum new words (dl-5ssh.4.38). Only this decorative
+  // layer changes, so no content shifts; under reduced motion the pieces land and stay. How many show
+  // follows the page's length, and none lands on the words, a field or a picture, or on another piece:
+  // a short page such as the sign-in stays calm (owner, 2026-11-02). Every piece sits whole inside the
+  // page at the far end of its drift and the cursor's push, so a cut-off sum never reads as a false one
+  // ("7 · 9 = 6"); positions are in px and placed again whenever the page's width changes, so a rotated
+  // phone or a narrowed window never cuts one either.
+  const place = (backdrop: HTMLElement, deal: boolean): void => {
+    const lang = backdrop.dataset["lang"] === "en" ? "en" : "pl";
+    const pieces = [...backdrop.querySelectorAll<HTMLElement>(".piece")];
+    for (const piece of pieces) piece.hidden = false; // measured at their real size
+    const layer = backdrop.getBoundingClientRect();
+    const W = layer.width;
+    const H = layer.height;
+    // About 6 sums and 7 stars for each screen-height of page.
+    const screens = Math.max(1, H / Math.max(innerHeight, 600));
+    const room = { sum: Math.round(6 * screens), star: Math.round(7 * screens) };
+    // What a piece must keep clear of, in the layer's own coordinates, with a little air around it.
+    const AIR = 14;
+    const taken = [
+      ...document.querySelectorAll(
+        "header, footer, main :is(h1, h2, h3, p, li, label, input, button, a, img, video, table, form, blockquote, .paper, .card, .pic, .tile)",
+      ),
+    ]
+      .map((e) => e.getBoundingClientRect())
+      .filter((r) => r.width > 0 && r.height > 0)
+      .map((r) => ({
+        left: r.left - layer.left - AIR,
+        top: r.top - layer.top - AIR,
+        right: r.right - layer.left + AIR,
+        bottom: r.bottom - layer.top + AIR,
+      }));
+    const clear = (l: number, t: number, w: number, h: number): boolean =>
+      taken.every((r) => l + w < r.left || l > r.right || t + h < r.top || t > r.bottom);
+    const placed = { sum: 0, star: 0 };
+    // The drift (up to 1.5rem) and the cursor's push (up to 22px), with a little to spare.
+    const EDGE = 48;
+    const DRIFT = 24;
+    for (const piece of pieces) {
+      const kind = piece.classList.contains("sum") ? "sum" : "star";
+      const drift = piece.querySelector(".drift");
+      if (deal && drift && kind === "sum") {
+        const dealt = cloudPiece(Math.random, lang);
+        drift.textContent = dealt.text;
+        piece.classList.remove("act", "green", "go");
+        piece.classList.add(TONE[dealt.subject]);
+      }
+      const w = piece.offsetWidth;
+      const h = piece.offsetHeight;
+      let spot: [number, number] | undefined;
+      const fits = W - w - EDGE >= EDGE && H - h - EDGE >= EDGE;
+      for (let tries = 0; fits && tries < 12 && placed[kind] < room[kind] && !spot; tries++) {
+        const l = between(EDGE, W - w - EDGE);
+        const t = between(EDGE, H - h - EDGE);
+        if (clear(l, t, w, h)) spot = [l, t];
+      }
+      if (!spot) {
+        piece.hidden = true;
+        continue;
+      }
+      placed[kind]++;
+      taken.push({ left: spot[0] - DRIFT, top: spot[1] - DRIFT, right: spot[0] + w + DRIFT, bottom: spot[1] + h + DRIFT });
+      piece.style.left = `${spot[0].toFixed(0)}px`;
+      piece.style.top = `${spot[1].toFixed(0)}px`;
+      if (deal) {
+        piece.style.setProperty("--drift-x", `${between(-1.5, 1.5).toFixed(2)}rem`);
+        piece.style.setProperty("--drift-y", `${between(-1.5, 1.5).toFixed(2)}rem`);
+        piece.style.setProperty("--turn", `${Math.round(between(-12, 12))}deg`);
+        piece.style.setProperty("--delay", `${(-between(0, 26)).toFixed(1)}s`);
+      }
+    }
+  };
+
+  // The cursor's part, on a fine pointer only and never under reduced motion: the glow follows it,
+  // everything within reach leans away, the stars twinkle and the sums brighten, then all settle back.
+  const follow = (backdrop: HTMLElement): void => {
+    // Livelier than dl-5ssh.4.35's calm lean (owner, 2026-11-02: "move a bit more actively").
+    const REACH = 170; // px
+    const PUSH = 22; // px at the cursor itself
+    // The cursor on the page, not the screen: the layer scrolls with the page, and only the mouse
+    // moves the pieces.
     let x = -1000;
     let y = -1000;
     let queued = false;
@@ -91,19 +183,21 @@ const signs = Array.from({ length: COUNT }, () => {
       backdrop.style.setProperty("--glow-x", `${x}px`);
       backdrop.style.setProperty("--glow-y", `${y}px`);
       const top = backdrop.getBoundingClientRect().top;
-      for (const s of signs) {
-        const r = s.getBoundingClientRect();
+      for (const p of backdrop.querySelectorAll<HTMLElement>(".piece:not([hidden])")) {
+        const r = p.getBoundingClientRect();
         const dx = r.left + r.width / 2 - x;
         const dy = r.top - top + r.height / 2 - y;
         const d = Math.hypot(dx, dy);
         if (d > REACH || d === 0) {
-          s.style.removeProperty("--away-x");
-          s.style.removeProperty("--away-y");
+          p.classList.remove("near");
+          p.style.removeProperty("--away-x");
+          p.style.removeProperty("--away-y");
           continue;
         }
         const f = (1 - d / REACH) * PUSH;
-        s.style.setProperty("--away-x", `${((dx / d) * f).toFixed(1)}px`);
-        s.style.setProperty("--away-y", `${((dy / d) * f).toFixed(1)}px`);
+        p.classList.add("near");
+        p.style.setProperty("--away-x", `${((dx / d) * f).toFixed(1)}px`);
+        p.style.setProperty("--away-y", `${((dy / d) * f).toFixed(1)}px`);
       }
     };
     addEventListener(
@@ -120,14 +214,33 @@ const signs = Array.from({ length: COUNT }, () => {
       { passive: true },
     );
     document.documentElement.addEventListener("pointerleave", () => backdrop.classList.remove("lit"));
+  };
+
+  const backdrop = document.querySelector<HTMLElement>(".backdrop");
+  if (backdrop) {
+    // Once the font is in, so the words are measured at their real size before the pieces avoid them.
+    void document.fonts.ready.then(() => {
+      place(backdrop, true);
+      // A rotated phone or a resized window places them again, a moment after it settles.
+      let width = innerWidth;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      addEventListener("resize", () => {
+        if (innerWidth === width) return;
+        width = innerWidth;
+        clearTimeout(timer);
+        timer = setTimeout(() => place(backdrop, false), 200);
+      });
+      if (matchMedia("(pointer: fine)").matches && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        follow(backdrop);
+      }
+    });
   }
 </script>
 
 <style>
   /* As tall as the page and scrolling with it (the body is its containing block). */
   .backdrop { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
-  /* A faint glow, the evening lamp over the table: the page's own quiet paper tone, barely there, so it
-     reads as light rather than colour (owner, 2026-11-02: less evident, more elegant). */
+  /* A faint glow, the evening lamp over the table: the page's own quiet paper tone, barely there. */
   .glow {
     position: absolute; left: 0; top: 0; width: 22rem; height: 22rem; border-radius: 50%;
     background: radial-gradient(closest-side, color-mix(in srgb, var(--jw-act-quiet) 40%, transparent), transparent);
@@ -135,23 +248,34 @@ const signs = Array.from({ length: COUNT }, () => {
     opacity: 0; transition: opacity 1.2s ease;
   }
   .lit .glow { opacity: 1; }
-  .sign {
-    position: absolute; font-weight: 700; line-height: 1; user-select: none;
+  .piece[hidden] { display: none; }
+  .piece {
+    position: absolute; line-height: 1; white-space: nowrap; user-select: none;
     transform: translate(var(--away-x, 0), var(--away-y, 0));
-    transition: transform 1.6s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1), color 0.6s ease;
   }
+  .sum { font-weight: 700; letter-spacing: 0.02em; }
+  /* Without JS nothing keeps a sum whole inside the page, and a cut-off one would read as false, so
+     only the stars show. */
+  :global(html:not(.js)) .sum { display: none; }
+  .star svg { display: block; }
+  /* A star twinkles under the cursor: it grows and turns a quarter, and brightens. */
+  .star.near { transform: translate(var(--away-x, 0), var(--away-y, 0)) scale(1.7) rotate(45deg); }
   .drift { display: block; animation: drift var(--time) ease-in-out var(--delay) infinite alternate; }
   @keyframes drift {
     from { transform: translate(0, 0) rotate(0deg); }
     to { transform: translate(var(--drift-x), var(--drift-y)) rotate(var(--turn)); }
   }
-  /* Quiet: each sign is its colour mixed far into the page, so text on top keeps its contrast. */
-  .act { color: color-mix(in srgb, var(--jw-act) 55%, var(--jw-ground)); }
-  .go { color: color-mix(in srgb, var(--jw-brand-go) 30%, var(--jw-ground)); }
-  .green { color: color-mix(in srgb, var(--jw-right-edge) 30%, var(--jw-ground)); }
-  .line { color: var(--jw-line); }
+  /* Quiet: each piece is its colour mixed far into the page, so text on top keeps its contrast. Near
+     the cursor it comes forward a little. */
+  .act { color: color-mix(in srgb, var(--jw-act) 50%, var(--jw-ground)); }
+  .go { color: color-mix(in srgb, var(--jw-brand-go) 26%, var(--jw-ground)); }
+  .green { color: color-mix(in srgb, var(--jw-right-edge) 26%, var(--jw-ground)); }
+  .act.near { color: color-mix(in srgb, var(--jw-act) 85%, var(--jw-ground)); }
+  .go.near { color: color-mix(in srgb, var(--jw-brand-go) 55%, var(--jw-ground)); }
+  .green.near { color: color-mix(in srgb, var(--jw-right-edge) 55%, var(--jw-ground)); }
   @media (prefers-reduced-motion: reduce) {
     .drift { animation: none; }
-    .sign { transition: none; }
+    .piece { transition: none; }
   }
 </style>

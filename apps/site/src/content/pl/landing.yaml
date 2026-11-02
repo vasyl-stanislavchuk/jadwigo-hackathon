@@ -49,7 +49,7 @@ steps:
       text: Każde pytanie, każda próba i każda pomyłka opisane zwykłymi słowami. Następną lekcję Jadwigo zaczyna od tego, co było trudne. A gdy chcesz usiąść razem nad czymś trudnym, podpowie, od czego zacząć.
   request:
     ask: Zadania o wydawaniu reszty, tak jak w zeszycie. Myli złote z groszami.
-    lines: [Szukam zadań o reszcie z groszami, Sprawdzam lekcję, Gotowe]
+    lines: [Szukanie zadań o reszcie z groszami…, Sprawdzanie lekcji…, Gotowe]
     soon: "Wkrótce: zdjęcie zeszytu zamiast opisu."
     screencast: screencast · rodzic pisze w czacie, lekcja układa się po prawej, „Pokaż dziecku”
   card:
@@ -65,9 +65,9 @@ steps:
     nextLabel: "Następna lekcja:"
     next: dopełnianie do pełnego złotego, potem reszta z 50 zł.
     screencast: "screencast · strona dziecka: cele, umiejętności, ostatnia lekcja pytanie po pytaniu"
-# /jadwigo-ai (dl-w0b4.114; owner's call of 2026-11-02, draft for the native review). The data lines say
-# what the consent screen says (packages/copy chat_consent_*, decision dl-uafq): Meta's models may learn
-# from it. Jadwigo AI's lines carry no person and no gender.
+# /jadwigo-ai (dl-w0b4.114; owner's call of 2026-11-02, draft for the native review). Like the rest of the
+# site, it makes no claim about models either way (dl-w0b4.79, dl-w0b4.116): the consent screen in the app
+# and the privacy page say the rest. Jadwigo AI's lines carry no person and no gender.
 ai:
   title: "Jadwigo AI: lekcja ułożona z Twojego opisu"
   description: Jadwigo AI czyta, co dziecko ćwiczy w szkole, szuka pytań w banku zadań i układa lekcję. Zanim trafi do dziecka, sprawdzasz ją Ty.
@@ -86,10 +86,12 @@ ai:
     heading: Co Jadwigo AI czyta o dziecku i dokąd to trafia
     items:
       - "Jadwigo AI czyta to, czego potrzebuje Twoja prośba: dane dziecka, imiona też."
-      - Te dane trafiają do modeli firmy Meta, które mogą się na nich uczyć.
       - Zapis rozmów zostaje przy koncie rodziny, dopóki konto nie zostanie usunięte. Zarchiwizowana rozmowa też.
       - Imienia dziecka nie ma w lekcji, którą dziecko dostaje.
-    consent: Te same słowa zobaczysz przed pierwszą rozmową z Jadwigo AI. Rozmowa zaczyna się dopiero wtedy, gdy się zgodzisz. Możesz też wybrać „Nie teraz”.
+    # The privacy page is linked after `text` (dl-w0b4.116).
+    more:
+      text: "Aplikacja mówi to raz, przed Twoją pierwszą wiadomością do Jadwigo AI. Więcej o danych:"
+      link: Prywatność
   never:
     heading: Czego Jadwigo AI nie robi
     items:
@@ -168,17 +170,17 @@ lessons:
   row:
     heading: Zagraj bez logowania
     gradeLabel: Klasa
-    subjectLabel: Przedmiot
-    allSubjects: Wszystkie
     count: [lekcja, lekcje, lekcji]
     prev: Poprzednie lekcje
     next: Kolejne lekcje
-    none: Nie ma jeszcze lekcji dla tej klasy.
     pic: ilustracja
     pics:
-      rowneGrupy: Linijka pilnuje dwóch równych rzędów ciastek, Jadwiga czeka na werdykt.
-      piatki: Jadwiga toczy monetę wielką jak ona w stronę czekolady.
-      razyCztery: Ołówek narysował dwa kotki, a Jadwiga dorysowuje dwa kolejne.
+      cukier: Jadwiga zdejmuje kostkę cukru z wieży, a Gumka mdleje z wrażenia.
+      nalesnik: Linijka sprawdza naleśnik pokrojony na cztery równe części, a Jadwiga trzyma ćwiartkę jak tarczę.
+      skoki: Linijka leży jak oś liczbowa, a Jadwiga skacze po niej od kreski do kreski.
+      mierzenie: Linijka mierzy Ołówka, któremu właśnie odpadł czubek, a Jadwiga czeka na swoją kolej.
+      czekolada: Jadwiga dzieli tabliczkę czekolady i podaje Gumce cały rząd kostek.
+      spacer: Jadwiga ziewa i obchodzi brzeg zamalowanego prostokąta w zeszycie w kratkę.
 signIn:
   title: Zaloguj się · Jadwigo
   description: Zaloguj się albo załóż konto rodzica w Jadwigo kodem z e-maila, przez Google albo przez Facebooka.

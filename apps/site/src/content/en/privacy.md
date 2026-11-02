@@ -41,13 +41,13 @@ in your own words. When your child works through lessons, we save their answers 
 ## Your child's answers
 
 Only you see your child's answers and progress in lessons, in your own account. No other family sees
-them. When you ask Jadwigo's AI assistant for a lesson or a summary, the assistant reads your child's
+them. When you ask Jadwigo AI for a lesson or a summary, Jadwigo AI reads your child's
 answers and first name to prepare it.
 
-## The AI assistant and Meta's models
+## Jadwigo AI and Meta's models
 
-Jadwigo's AI assistant runs on AI models made by Meta. When you write to the assistant, we send Meta
-your messages and the data about your child that the assistant needs: first name, goals, progress, answers,
+Jadwigo AI runs on AI models made by Meta. When you write to Jadwigo AI, we send Meta
+your messages and the data about your child that Jadwigo AI needs: first name, goals, progress, answers,
 mistakes and the lessons your child has worked through. Meta processes them under Meta's own terms. The lesson your child works through doesn't
 contain your child's name.
 
@@ -57,7 +57,7 @@ These companies process your family's data for us:
 
 - Supabase: sign-in and Jadwigo's database, on servers in Frankfurt, in the European Union.
 - Amazon Web Services: the servers Jadwigo's app runs on, also in Frankfurt.
-- Meta: the assistant's AI models, and sign-in with Facebook.
+- Meta: the AI models Jadwigo AI runs on, and sign-in with Facebook.
 - Google: sign-in with Google, and the privacy@jadwigo.pl mailbox.
 
 ## How long we keep the data
