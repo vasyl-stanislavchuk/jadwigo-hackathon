@@ -30,7 +30,7 @@ const laptop = { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 
  * the lesson overview's parent-overview.spec.ts; and Google and Facebook sign-in's
  * social-sign-in.spec.ts (dl-e8ov.2.51). */
 const API =
-  /(play|no-jump|parent|review|parent-review|parent-overview|parent-shell|social-sign-in)\.spec\.ts$/;
+  /(play|no-jump|parent|review|parent-review|parent-overview|parent-shell|child-page|social-sign-in)\.spec\.ts$/;
 const phone = { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } };
 /** The specs that need the builder's dev server: only the "builder" project runs them. The chat
  * page's engine (dev/engine-plugin.ts, dl-z5ja.17) runs only while `vite` serves, as the builder's does. */

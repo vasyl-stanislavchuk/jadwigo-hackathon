@@ -276,13 +276,26 @@ describe("one honest run state (dl-uukj.47.29)", () => {
     expect(band()).toMatch(/^Utknęło/);
   });
 
-  it("retrying a stalled turn cancels it first, then sends its words again", async () => {
+  it("retrying a stalled turn cancels it, and sends its words as a new turn once it has ended", async () => {
     const q = quietEngine();
     firstMessage.put(CONVERSATION, "Odejmowanie przez 10");
     await workspace(q.engine);
     await tick(60_000);
     await act(async () =>
       fireEvent.click(screen.getByRole("button", { name: "Spróbuj ponownie" })),
+    );
+    // The cancel only asks the turn to end: the words wait, or they would join the ending turn.
+    expect(q.sent.map((b) => b.kind)).toEqual(["message", "cancel"]);
+    // The turn ends cancelled; then the words go, opening a turn of their own.
+    const end = (seq: number, from: RunEvent) =>
+      RunEvent.parse({ ...from, seq, event_id: `00000000-0000-4000-800b-00000000000${seq}` });
+    const status = events.find((e) => e.type === "status" && e.seq > 2) as RunEvent;
+    const complete = events.find((e) => e.type === "turn_complete") as RunEvent;
+    await act(async () =>
+      q.push([
+        end(1, { ...status, payload: { status: "cancelled" } } as RunEvent),
+        end(2, complete),
+      ]),
     );
     expect(q.sent.map((b) => b.kind)).toEqual(["message", "cancel", "message"]);
     const last = q.sent.at(-1);
