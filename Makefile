@@ -68,6 +68,9 @@ DEV_PORTS_MISSING = $(strip $(if $(MEDALLION_DEV_WORKSPACE_NAME),$(foreach v,$(D
 ## src/dev.ts): the api pokes it on its socket after each commit, as the Lambda pokes the runner's
 ## alias, and it drains the turn through Muse on prod's models. A turn is a paid call, so the pane
 ## starts only with a cap: make dev-all JADWIGO_MUSE_CAP_USD=0.50 (dl-uukj.47.14).
+## Its verbs draw questions from the prod bank through the API, read-only, with jw's bank.env
+## (JW_API_URL and JW_BANK_READ_TOKEN); BANK_ENV= draws from the fixture instead (dl-hin8.23).
+BANK_ENV ?= $(HOME)/.config/jadwigo-bank/bank.env
 DEV_AUTH ?= local
 LOCAL_RUNNER_URL = unix:$(CURDIR)/.logs/dev/runner.sock
 STANDIN = http://127.0.0.1:$${AUTH_PORT:-54321}
@@ -98,7 +101,7 @@ dev-all:
 	@mkdir -p .logs/dev
 	@echo "dev-all: the parent's app is http://127.0.0.1:$${WEB_PORT:-5173}/parent ($(if $(filter local,$(DEV_AUTH)),any email and the code 123456,jadwigo-dev's sign-in))"
 	$(if $(filter local,$(DEV_AUTH)),$(LOCAL_AUTH_ENV)) DATABASE_URL=$(LOCAL_DATABASE_URL) \
-	  LOCAL_RUNNER_URL=$(LOCAL_RUNNER_URL) MUSE_ENV=$(MUSE_ENV) dekit mprocs --config mprocs.yaml --log-dir .logs/dev --log-mode truncate
+	  LOCAL_RUNNER_URL=$(LOCAL_RUNNER_URL) MUSE_ENV=$(MUSE_ENV) BANK_ENV=$(BANK_ENV) dekit mprocs --config mprocs.yaml --log-dir .logs/dev --log-mode truncate
 
 dev-app:
 	@$(LOCAL_DB_GATE)
