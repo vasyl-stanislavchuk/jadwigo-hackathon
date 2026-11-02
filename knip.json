@@ -12,6 +12,9 @@
       "project": ["src/**/*.{ts,astro,mdx}", "scripts/*.ts", "*.mjs"],
       "ignoreDependencies": ["satteri", "@jadwigo/cli", "@jadwigo/api-client"]
     },
+    "apps/api": {
+      "entry": ["src/serve.ts"]
+    },
     "apps/runner": {
       "entry": ["src/index.ts", "src/probe-lambda.ts", "src/probe-edge.ts"]
     },

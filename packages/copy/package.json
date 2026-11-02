@@ -12,10 +12,11 @@
     "lint": "biome check .",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --config ../../vitest.config.ts --project unit",
-    "messages": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --emit-ts-declarations --no-emit-git-ignore --no-emit-prettier-ignore --no-emit-readme --strategy baseLocale"
+    "messages": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --emit-ts-declarations --no-emit-git-ignore --no-emit-prettier-ignore --no-emit-readme --strategy baseLocale",
+    "dev": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --emit-ts-declarations --no-emit-git-ignore --no-emit-prettier-ignore --no-emit-readme --strategy baseLocale --watch"
   },
   "//": {
-    "@inlang/paraglide-js": "compiles messages/{pl,en}.json into the typed message functions in src/paraglide (bun run messages), which copy() wraps and the site calls",
+    "@inlang/paraglide-js": "compiles messages/{pl,en}.json into the typed message functions in src/paraglide (bun run messages; bun run dev, which make dev runs, recompiles on each edit), which copy() wraps and the site calls",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit test with the root vitest.config.ts"

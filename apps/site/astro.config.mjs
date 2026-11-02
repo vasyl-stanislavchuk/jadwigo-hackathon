@@ -7,6 +7,7 @@ import { existsSync, readFileSync } from "node:fs";
 import sitemap from "@astrojs/sitemap";
 import { LANGUAGE_CODES } from "@jadwigo/config";
 import { defineConfig } from "astro/config";
+import { sitePort } from "./src/config.ts";
 import { servedHost } from "./src/index.ts";
 import { alternatesIn, pageFile, sitemapLinks } from "./src/lib/alternates.ts";
 import { canonical } from "./src/lib/seo.ts";
@@ -35,6 +36,11 @@ export default defineConfig({
   output: "static",
   trailingSlash: "ignore",
   build: { format: "directory" },
+  // md's SITE_PORT, strict: a taken port fails loudly instead of moving to the next one.
+  // Read on `dev` only: Astro calls this for every command, and a build or astro check in a worktree
+  // has no md port to read.
+  server: ({ command }) => (command === "dev" ? { host: "127.0.0.1", port: sitePort() } : {}),
+  vite: { server: { strictPort: true } },
   i18n: {
     defaultLocale: "pl",
     locales: [...LANGUAGE_CODES],

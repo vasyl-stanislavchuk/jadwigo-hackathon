@@ -7,9 +7,17 @@
  * The main checkout's ports. The api's is not 8787, which other local tools hold (dl-5ssh.98), and
  * none sits in md's worktree ranges (8100 and 3100 up). BUILDER_PORT is the lesson builder's own
  * dev server, the one the e2e's "builder" project starts beside the preview (dl-a38n.34): a port of
- * its own, never WEB_PORT + 1, which in a worktree is the next slot's.
+ * its own, never WEB_PORT + 1, which in a worktree is the next slot's. SITE_PORT and DOCS_PORT are
+ * the marketing site's and the docs' `astro dev`, each strict, so two of them never quietly take
+ * the next free port and leave the page on a number nobody knows.
  */
-export const DEV_PORTS = { WEB_PORT: 5173, API_PORT: 8730, BUILDER_PORT: 5174 } as const;
+export const DEV_PORTS = {
+  WEB_PORT: 5173,
+  API_PORT: 8730,
+  BUILDER_PORT: 5174,
+  SITE_PORT: 4321,
+  DOCS_PORT: 4322,
+} as const;
 
 export function port(
   name: string,
