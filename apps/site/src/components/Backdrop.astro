@@ -1,0 +1,140 @@
+---
+// A living page behind every page (owner, 2026-11-02, dl-5ssh.4.33): exercise-book maths signs drift
+// slowly, as if on the kitchen table's evening air. With a fine pointer, the signs near it ease away and a
+// soft warm glow follows it, after shelestni's landing page, in Jadwigo's own theme and with no library.
+// Every sign's place, size, colour and drift is fixed here at build time, so the page never shifts and
+// stands as it is without JS. Under reduced motion nothing moves. The layer is decoration only:
+// aria-hidden, no pointer events, and quiet enough that the words on top stay easy to read.
+
+const SIGNS = ["+", "−", "×", "=", "÷", "○"] as const;
+// Quiet Zeszyt colours: blue ink, the brand's go-blue, the right answer's green and the soft line.
+const TONES = ["act", "go", "green", "line"] as const;
+// The layer is as tall as the page and scrolls with it, so the count covers a long page.
+const COUNT = 72;
+
+// A small fixed sequence (mulberry32), so every build draws the same page.
+let seed = 0x1a2b3c4d;
+const next = (): number => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+function pick<T>(list: readonly T[]): T {
+  return list[Math.floor(next() * list.length)] as T;
+}
+
+const signs = Array.from({ length: COUNT }, () => {
+  const size = 1 + next() * 1.6;
+  return {
+    sign: pick(SIGNS),
+    tone: pick(TONES),
+    style: [
+      `left: ${(next() * 100).toFixed(2)}%`,
+      `top: ${(next() * 100).toFixed(2)}%`,
+      `font-size: ${size.toFixed(2)}rem`,
+      `--drift-x: ${(next() * 3 - 1.5).toFixed(2)}rem`,
+      `--drift-y: ${(next() * 3 - 1.5).toFixed(2)}rem`,
+      `--turn: ${Math.round(next() * 50 - 25)}deg`,
+      `--time: ${(14 + next() * 12).toFixed(1)}s`,
+      `--delay: ${(-next() * 26).toFixed(1)}s`,
+    ].join("; "),
+  };
+});
+---
+
+<div class="backdrop" aria-hidden="true">
+  <div class="glow"></div>
+  {
+    signs.map((s) => (
+      <span class:list={["sign", s.tone]} style={s.style}>
+        <span class="drift">{s.sign}</span>
+      </span>
+    ))
+  }
+</div>
+
+<script>
+  // The cursor's part, on a fine pointer only and never under reduced motion: the glow follows it, and
+  // the signs within reach ease away from it, then drift back.
+  const fine = matchMedia("(pointer: fine)").matches;
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const backdrop = document.querySelector<HTMLElement>(".backdrop");
+  if (backdrop && fine && !still) {
+    const signs = [...backdrop.querySelectorAll<HTMLElement>(".sign")];
+    const REACH = 140; // px
+    const PUSH = 26; // px at the cursor itself
+    // The cursor on the page, not the screen: the layer scrolls with the page, and only the mouse moves
+    // the signs (owner: "scroll together with everything, but react only on mouse movements").
+    let x = -1000;
+    let y = -1000;
+    let queued = false;
+    const frame = () => {
+      queued = false;
+      backdrop.style.setProperty("--glow-x", `${x}px`);
+      backdrop.style.setProperty("--glow-y", `${y}px`);
+      const top = backdrop.getBoundingClientRect().top;
+      for (const s of signs) {
+        const r = s.getBoundingClientRect();
+        const dx = r.left + r.width / 2 - x;
+        const dy = r.top - top + r.height / 2 - y;
+        const d = Math.hypot(dx, dy);
+        if (d > REACH || d === 0) {
+          s.style.removeProperty("--away-x");
+          s.style.removeProperty("--away-y");
+          continue;
+        }
+        const f = (1 - d / REACH) * PUSH;
+        s.style.setProperty("--away-x", `${((dx / d) * f).toFixed(1)}px`);
+        s.style.setProperty("--away-y", `${((dy / d) * f).toFixed(1)}px`);
+      }
+    };
+    addEventListener(
+      "pointermove",
+      (e) => {
+        x = e.pageX;
+        y = e.pageY;
+        backdrop.classList.add("lit");
+        if (!queued) {
+          queued = true;
+          requestAnimationFrame(frame);
+        }
+      },
+      { passive: true },
+    );
+    document.documentElement.addEventListener("pointerleave", () => backdrop.classList.remove("lit"));
+  }
+</script>
+
+<style>
+  /* As tall as the page and scrolling with it (the body is its containing block). */
+  .backdrop { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  /* A faint glow, the evening lamp over the table: the page's own quiet paper tone, barely there, so it
+     reads as light rather than colour (owner, 2026-11-02: less evident, more elegant). */
+  .glow {
+    position: absolute; left: 0; top: 0; width: 26rem; height: 26rem; border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--jw-act-quiet) 75%, transparent), transparent);
+    transform: translate(calc(var(--glow-x, -100vw) - 50%), calc(var(--glow-y, -100vh) - 50%));
+    opacity: 0; transition: opacity 0.8s ease;
+  }
+  .lit .glow { opacity: 1; }
+  .sign {
+    position: absolute; font-weight: 700; line-height: 1; user-select: none;
+    transform: translate(var(--away-x, 0), var(--away-y, 0));
+    transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .drift { display: block; animation: drift var(--time) ease-in-out var(--delay) infinite alternate; }
+  @keyframes drift {
+    from { transform: translate(0, 0) rotate(0deg); }
+    to { transform: translate(var(--drift-x), var(--drift-y)) rotate(var(--turn)); }
+  }
+  /* Quiet: each sign is its colour mixed far into the page, so text on top keeps its contrast. */
+  .act { color: color-mix(in srgb, var(--jw-act) 55%, var(--jw-ground)); }
+  .go { color: color-mix(in srgb, var(--jw-brand-go) 30%, var(--jw-ground)); }
+  .green { color: color-mix(in srgb, var(--jw-right-edge) 30%, var(--jw-ground)); }
+  .line { color: var(--jw-line); }
+  @media (prefers-reduced-motion: reduce) {
+    .drift { animation: none; }
+    .sign { transition: none; }
+  }
+</style>
