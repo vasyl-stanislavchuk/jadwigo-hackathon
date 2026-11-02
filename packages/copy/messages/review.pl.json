@@ -568,6 +568,7 @@
   "chat_plan_in_progress": false,
   "chat_plan_done": false,
   "chat_plan_failed": false,
+  "chat_plan_header": false,
   "chat_why": false,
   "chat_citations": false,
   "chat_choose_recommended": false,

@@ -778,6 +778,7 @@ export const COPY_KEYS = [
   "chat_plan_in_progress",
   "chat_plan_done",
   "chat_plan_failed",
+  "chat_plan_header",
   "chat_why",
   "chat_citations",
   "chat_choose_recommended",
