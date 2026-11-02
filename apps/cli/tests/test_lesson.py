@@ -554,7 +554,7 @@ def test_title_and_reasoning_replace_the_drafts(bank: LessonBank, check_ts: Chec
     lesson.check(view["draft_id"], _words(view), title="Mnożenie przez 6", reasoning="Na środę.")
     file = check_ts.seen[-1][1]
     assert (file["title"], file["reasoning"]) == ("Mnożenie przez 6", "Na środę.")
-    assert file["id"] == "6-zadan-z-mnozenia-klasa-3-2026-10-29"
+    assert file["id"] == "mnozenie-przez-6-2026-10-29"  # the title names it (dl-u1y5.40)
 
 
 def test_a_change_to_a_copied_part_is_recorded_in_based_on(
@@ -1645,3 +1645,30 @@ def test_the_slim_view_carries_picture_src_where_the_twin_is_the_agents(
         {k: v for k, v in picture.items() if k != "labels"}]
     assert by_twin[False]["data"]["stem"]["pictures"] == [
         {k: v for k, v in picture.items() if k not in ("labels", "src")}]
+
+
+
+def test_a_title_sent_to_check_names_the_lesson_file_id(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    """dl-u1y5.40: the id follows the title, with the draft's date; the draft_id stays; a later
+    check without a title keeps it."""
+    view = lesson.draft("redraw check", "3", names=[], topic=TOPIC, today=TODAY)
+    assert _file_now(view)["id"] == "redraw-check-2026-10-29"
+    lesson.check(view["draft_id"], _words(view), title="Mnożenie: rzędy kropek")
+    assert check_ts.seen[-1][1]["id"] == "mnozenie-rzedy-kropek-2026-10-29"
+    lesson.check(view["draft_id"], {})
+    assert check_ts.seen[-1][1]["id"] == "mnozenie-rzedy-kropek-2026-10-29"
+    assert _stored(view)["draft_id"] == view["draft_id"]
+
+
+def test_a_published_draft_is_never_renamed_by_a_title(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    view = _draft()
+    lesson.check(view["draft_id"], _words(view), title="Mnożenie przez 6")
+    (lesson.drafts_dir() / f"{view['draft_id']}.publish.json").write_text("{}")
+    with pytest.raises(JwError, match="is published as mnozenie-przez-6-2026-10-29"):
+        lesson.check(view["draft_id"], {}, title="Inny tytuł")
+    # The same title again changes nothing, so it is not refused.
+    assert lesson.check(view["draft_id"], {}, title="Mnożenie przez 6")["ok"] is True

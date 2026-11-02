@@ -1160,6 +1160,30 @@ def from_file(q: Mapping[str, Any], step: Mapping[str, Any]) -> dict[str, Any]:
             "based_on": step.get("based_on"), "credit": step.get("credit") or q.get("credit")}
 
 
+DATED_ID = re.compile(r"^(?P<slug>.+)-(?P<day>\d{4}-\d{2}-\d{2})$")
+
+
+def _retitle_id(stored: dict[str, Any], where: Path) -> None:
+    """The lesson file id follows a title sent to check (dl-u1y5.40): `<slug of the title>-<the
+    draft's date>`, the draft_id unchanged. The import names the lesson by this id, so a request's
+    words ("redraw check") never become a featured lesson's name. Kept in jw's record, so a later
+    check without a title keeps it. Refused once the draft is published: a published lesson
+    never gets a new id silently."""
+    old = str(stored["lesson"]["id"])
+    dated = DATED_ID.match(old)
+    day = dated.group("day") if dated else dt.date.today().isoformat()
+    new = f"{_slug(str(stored['lesson']['title']))}-{day}"
+    if new == old:
+        return
+    if (where / f"{stored['draft_id']}.publish.json").exists():
+        raise JwError(
+            f"{stored['draft_id']} is published as {old}; a new title would rename it {new}",
+            hint="Keep the title, or draft the lesson again for a new name.",
+        )
+    stored["lesson"]["id"] = new
+    _write_json(_state_path(where, stored["draft_id"]), stored)
+
+
 def _file_head(path: Path) -> dict[str, Any]:
     """The draft file's head (title, reasoning, ...), or nothing when it cannot be read."""
     try:
@@ -1463,6 +1487,8 @@ def _check(
         elif isinstance(head.get(field), str) and head[field].strip():
             # Not sent: the file's own, as an earlier check or the draft wrote it (dl-u1y5.39).
             stored["lesson"][field] = head[field]
+    if title is not None and title.strip():
+        _retitle_id(stored, where)
     _make_dirs(where)
     _write_json(path, _file(stored, steps))
     paths = {"lesson_file": str(path), "draft_path": str(path)}

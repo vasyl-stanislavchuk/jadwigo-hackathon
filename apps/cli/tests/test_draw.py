@@ -296,3 +296,28 @@ def test_a_ready_item_whose_sample_lacks_the_language_text_is_drawn_not_left_out
     drawn = {q.item_id for q in out.questions}
     assert drawn == {"i1", "i2"}
     assert not drawn & {left.id for left in out.left_out}
+
+
+
+def test_an_item_under_2_problem_types_or_2_sets_is_drawn_once() -> None:
+    """dl-u1y5.40: draft_24c504a005f3 drew x0792044c99182e84 as q4 and q8, its set page typing it
+    under 2 problem types."""
+    def page(set_id: str, types: dict[str, list[str]]) -> dict[str, Any]:
+        ids = sorted({i for v in types.values() for i in v})
+        return {
+            "id": set_id, "languages": {"en": True},
+            "items": {"ids": ids, "count": {"en": len(ids)}, "ready_ids": {"en": ids}},
+            "problem_types": [{"name": n, "samples": [{"item_id": i, "en": i} for i in v]}
+                              for n, v in types.items()],
+        }
+
+    pages = {
+        "set_khan_a": page("set_khan_a", {"Match": ["dup", "a1"], "Select": ["dup", "a2"]}),
+        "set_khan_b": page("set_khan_b", {"Read": ["b1", "dup"]}),
+    }
+    rows = [{"id": "set_khan_a", "rank": 1}, {"id": "set_khan_b", "rank": 2}]
+    for spread in ("type", "set"):
+        out = draw({"rows": rows}, pages, kind="practice", language="en",
+                   today=dt.date(2026, 11, 2), spread=spread)
+        ids = [q.item_id for q in out.questions]
+        assert sorted(ids) == ["a1", "a2", "b1", "dup"], spread
