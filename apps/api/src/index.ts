@@ -2,7 +2,13 @@ import { createPostgresStore, type Store } from "@jadwigo/store";
 import { createApp } from "./app.ts";
 import { s3Uploads, type UploadsBucket } from "./attachments.ts";
 import { type Authenticate, jwksUrlAuth, lambdaAuth } from "./auth.ts";
-import { authIssuer, authJwksUrl, lambdaDatabaseUrl } from "./config.ts";
+import {
+  authIssuer,
+  authJwksUrl,
+  lambdaDatabaseUrl,
+  mcpAuthorizationServer,
+  mcpResourceUrl,
+} from "./config.ts";
 import { lambdaMail, type MailDeps } from "./mail/hook.ts";
 import { lambdaPoke, type PokeStepHost } from "./poke.ts";
 import { type BankDeps, type BucketDeps, lambdaBank, lambdaBucket } from "./questions.ts";
@@ -85,8 +91,12 @@ export function createHandler(
     return opening;
   };
 
+  const mcp = { resourceUrl: mcpResourceUrl(), authorizationServer: mcpAuthorizationServer() };
   return (event: unknown, context: Context) =>
-    createApp(open(), { authenticate, bank, bucket, poke, uploads, mail }).resolve(event, context);
+    createApp(open(), { authenticate, bank, bucket, poke, uploads, mail, mcp }).resolve(
+      event,
+      context,
+    );
 }
 
 /** The Lambda entry (`index.handler` in the bundle `make api-bundle` writes). */
