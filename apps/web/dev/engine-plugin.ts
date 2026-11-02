@@ -129,6 +129,8 @@ function engine(server: ViteDevServer, m: Modules) {
         scripted = new m.engine.ScriptedMuse(turnScript());
         scripts.set(request.run_id, scripted);
       }
+      // `stall`: the step has taken the parent's words into the log; the model never answers.
+      if (paces.get(request.run_id) === "stall") return new Promise<MuseResponse>(() => {});
       const think = paces.get(request.run_id) === "slow" ? SLOW_THINK_MS : THINK_MS;
       await new Promise((resolve) => setTimeout(resolve, think));
       return scripted.respond(request);
@@ -202,9 +204,16 @@ function engine(server: ViteDevServer, m: Modules) {
               : { event_id: body.event_id, kind: "cancel", payload: {} },
       });
       if (pace !== null) paces.set(run.id, pace);
-      // After the answer: the page subscribes, then fetches after its cursor. `stall` drains
-      // nothing, so the log stops at the parent's message.
-      if (pace !== "stall") setTimeout(() => kick(pace), 0);
+      // After the answer: the page subscribes, then fetches after its cursor. A `stall` step logs
+      // the parent's message and then waits on a model that never answers, so it drains on its
+      // own and never holds up another turn's drain.
+      if (pace === "stall") {
+        setTimeout(() => {
+          drain(deps).catch((e: unknown) =>
+            server.config.logger.error(`[${ENGINE_PLUGIN}] ${String(e)}`),
+          );
+        }, 0);
+      } else setTimeout(() => kick(pace), 0);
       return { run };
     },
     async runs(conversation: string): Promise<RunsAnswer> {
