@@ -41,6 +41,9 @@ export const MCP_OUTPUT: Readonly<Record<string, McpOutput>> = {
   lesson_move: {
     says: "The new order: `ok` (the check's answer for the whole lesson), `order` (the step ids in their new order; ids do not change), `findings` from that check, `lesson_ok` and `draft_path`. A move that names no place, both places, an unknown step or the step itself is a tool error whose hint says what to pass.",
   },
+  lesson_drop: {
+    says: "What is left: `ok` (the check's answer for the whole lesson), `dropped` (the step id taken out), `order` (the step ids left, in order; ids do not change), `findings` from that check, `lesson_ok` and `draft_path`. The dropped item joins the draft's `left_out`. An unknown step, or the draft's last one, is a tool error whose hint says what to do.",
+  },
   lesson_show: {
     says: "The draft file as it stands: `draft_id`, `draft_path`, `title`, and `steps`, each the `step` as the lesson file holds it (its `say`, `question` with `data`, `key` and `help`, `based_on` and `credit`) with its `findings` from the last check, `render`, the page's findings from its last draw or null, and `left_out`, the draft's whole list, each an `id` and a `reason`.",
   },

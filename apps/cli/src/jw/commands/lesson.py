@@ -234,6 +234,26 @@ def move(
 
 @group.command(cls=_EmitErrorsCommand)
 @click.argument("draft_id")
+@click.argument("step_id")
+@click.option("--json", "json_mode", is_flag=True, help="Print the answer.")
+def drop(draft_id: str, step_id: str, json_mode: bool) -> None:
+    """Take step STEP_ID out of the draft DRAFT_ID (the lesson_drop tool), check what is left,
+    and print the new order."""
+    result = lesson_edit.drop(draft_id, step_id)
+    if json_mode:
+        click.echo(json.dumps(result, ensure_ascii=False))
+    else:
+        click.echo(f"dropped {result['dropped']}; order: {' '.join(result['order'])}  "
+                   f"({'ok' if result['ok'] else 'not ok'})")
+        for finding in result["findings"]:
+            click.echo(f"  step {finding['step_id']} ({finding['rule']}): {finding['text']}")
+        click.echo(f"draft file: {result['draft_path']}")
+    if not result["ok"]:
+        raise SystemExit(1)
+
+
+@group.command(cls=_EmitErrorsCommand)
+@click.argument("draft_id")
 @click.argument("step_id", required=False)
 def show(draft_id: str, step_id: str | None) -> None:
     """Print step STEP_ID of the draft DRAFT_ID, or every step, as JSON (the lesson_show tool)."""

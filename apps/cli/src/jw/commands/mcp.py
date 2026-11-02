@@ -42,6 +42,7 @@ TOOLS = (
     "lesson_check",
     "lesson_edit",
     "lesson_move",
+    "lesson_drop",
     "lesson_show",
     "lesson_publish",
     "doctor",
@@ -66,7 +67,8 @@ def build_server() -> Any:
             "ok with a card. Each call rewrites the draft file, so the lesson can be watched as it "
             "is built. To change one step after that, read it with lesson_show and patch it with "
             "lesson_edit, which answers with that step's findings and card; to put the steps in "
-            "another order (easy to harder), call lesson_move. question_search, "
+            "another order (easy to harder), call lesson_move, and to take one out, lesson_drop. "
+            "question_search, "
             "question_show, question_gaps and question_item look into the bank directly: sets "
             "that meet a need, one set's page, needs it cannot meet, one item. Once a check "
             "answers ok, call lesson_publish with the draft_id, without asking: it imports the "
@@ -192,7 +194,7 @@ def build_server() -> Any:
         with its credit, when the bank has one (twin_source "bank khan:<id>"); the item's own
         mistake cards are kept. The draft stays on this machine under draft_id; the result is a
         slim view of it. Per question: step_id, item_id, say, data (pictures without their
-        labels or address), key (without the rule jw adds by code), you_write (what is left
+        labels, and their address unless you write its twin), key (without the rule jw adds by code), you_write (what is left
         for you: twin only without a bank twin), cards_to_write (the classes whose mistake card the item lacks, when
         you_write names boost_by_mistake), twin_source, mistake_classes (the keys
         boost_by_mistake may use; null when unknown), why_drawn (its problem type), and, only
@@ -316,6 +318,16 @@ def build_server() -> Any:
         """
         return _call(lesson_edit.move, draft_id=draft_id, step_id=step_id, before=before,
                      after=after)
+
+    @server.tool(name="lesson_drop")
+    def lesson_drop_tool(draft_id: str, step_id: str) -> dict[str, Any]:
+        """Take one step out of a draft, so you can draw more questions than the lesson keeps
+        and drop the weakest. The other step ids do not change. The dropped item goes to the
+        draft's left_out as dropped from the draft. A draft's last step is never dropped. check.ts runs on what is left. Returns ok (the lesson's check),
+        dropped (the step id), order (the step ids left, in order), findings, lesson_ok and
+        draft_path.
+        """
+        return _call(lesson_edit.drop, draft_id=draft_id, step_id=step_id)
 
     @server.tool(name="lesson_publish")
     def lesson_publish_tool(draft_id: str, target: str = "local") -> dict[str, Any]:

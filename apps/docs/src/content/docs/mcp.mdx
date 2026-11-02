@@ -109,7 +109,8 @@ agent writes only what the bank does not have.
    `based_on.changes`. The answer is that step's findings and card. A later `lesson_check` keeps
    the edit, less any part that check's words for that step set. To put the steps in another
    order, easy to harder, call [`lesson_move`](/mcp/lesson_move/) with a step and `before` or
-   `after` another; every later check keeps the order.
+   `after` another; every later check keeps the order. To take a step out, call
+   [`lesson_drop`](/mcp/lesson_drop/); a draft keeps at least one step.
 5. **Publish, then play.** Once a check answers `ok`, call [`lesson_publish`](/mcp/lesson_publish/)
    with the `draft_id`, without asking. It imports the lesson into the local database `make dev`
    serves. Then it checks that the api answers, that a preview attempt starts with every question,

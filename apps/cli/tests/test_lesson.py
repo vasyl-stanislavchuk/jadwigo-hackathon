@@ -255,8 +255,11 @@ def test_draft_copies_6_questions_whole_and_keeps_them_by_draft_id(
 
 
 def test_the_slim_view_leaves_picture_labels_and_duplicate_worked_lines_out() -> None:
+    """dl-u1y5.40: with keep_src (a twin to write) the src stays; the labels always go."""
     picture = {"src": "/media/a.svg", "alt": "Pięć grup", "width": 3, "height": 2,
                "labels": {"range": [[0, 1], [0, 1]], "items": []}}
+    kept = lesson._slim_pictures({"pictures": [picture]}, keep_src=True)
+    assert kept == {"pictures": [{k: v for k, v in picture.items() if k != "labels"}]}
     data = {"stem": {"pictures": [picture]}, "template": "{g1}"}
     assert lesson._slim_pictures(data) == {
         "stem": {"pictures": [{k: v for k, v in picture.items() if k not in ("labels", "src")}]},
@@ -1559,3 +1562,86 @@ def test_a_twin_is_found_among_ready_siblings_with_the_same_option_ids(
     page = {"items": {"ids": ["a", "b"], "ready_ids": {"pl": ["a", "b"]}}}
     twin = lesson._sibling_twin(original, page, {"a"}, "pl", "draft_x")
     assert twin is not None and twin["based_on"]["question"] == "khan:b"
+
+
+# dl-u1y5.40: drop a step, question-type patterns, picture src in the slim view.
+
+
+def test_lesson_drop_takes_a_step_out_and_checks_keep_it_out(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    view = _draft()
+    assert lesson.check(view["draft_id"], _words(view))["ok"] is True
+    gone = next(q["item_id"] for q in view["questions"] if q["step_id"] == "q4")
+    dropped = lesson_edit.drop(view["draft_id"], "q4")
+    assert dropped["ok"] is True and dropped["dropped"] == "q4"
+    assert dropped["order"] == ["q1", "q2", "q3", "q5", "q6"] == _order(view)
+    stored = _stored(view)
+    assert [q["step_id"] for q in stored["questions"]] == dropped["order"]
+    assert {"id": gone, "reason": "dropped from the draft (q4)"} in stored["left_out"]
+    # Later checks, with every remaining step's words or none, keep it out.
+    words = {k: v for k, v in _words(view).items() if k != "q4"}
+    assert lesson.check(view["draft_id"], words)["ok"] is True
+    assert _order(view) == dropped["order"]
+    assert lesson.check(view["draft_id"], {})["ok"] is True
+    assert check_ts.seen[-1][1]["script"]["parts"][0]["steps"][3]["id"] == "q5"
+    # Words for the dropped step are refused, as for any unknown step.
+    refused = lesson.check(view["draft_id"], {"q4": {}})
+    assert refused["ok"] is False and "no step q4" in refused["errors"][0]["message"]
+
+
+def test_lesson_drop_refuses_an_unknown_or_the_last_step(
+    bank: LessonBank, check_ts: CheckTs
+) -> None:
+    view = _draft(count=1)
+    with pytest.raises(JwError, match="no step q9"):
+        lesson_edit.drop(view["draft_id"], "q9")
+    with pytest.raises(JwError, match="last step"):
+        lesson_edit.drop(view["draft_id"], "q1")
+
+
+def test_jw_lesson_drop(bank: LessonBank, check_ts: CheckTs) -> None:
+    view = _draft()
+    lesson.check(view["draft_id"], _words(view))
+    out = CliRunner().invoke(cli, ["lesson", "drop", view["draft_id"], "q2", "--json"])
+    assert out.exit_code == 0, out.output
+    assert json.loads(out.output)["order"] == ["q1", "q3", "q4", "q5", "q6"]
+
+
+@pytest.mark.parametrize(
+    "given",
+    [["enter.production"], "enter.production", ["enter.production,choose"], "production, choose"],
+)
+def test_question_type_patterns_narrow_by_subtype_from_a_list_or_one_string(
+    two_sets: Path, check_ts: CheckTs, given: Any
+) -> None:
+    """dl-u1y5.40: a subtype pattern narrows (fxa2xx are enter.short_text, the rest
+    enter.production); a bare string or a comma list is patterns, never letters."""
+    view = lesson.draft(REQUEST, "3", names=[], topic=TOPIC, today=TODAY, sets=PINNED,
+                        question_types=given, count=6)
+    types = {q["question_type"] for q in _stored(view)["questions"]}
+    assert types == {"production"}
+    assert "enter.production" in view["question_types"] or "production" in view["question_types"]
+
+
+def test_the_slim_view_carries_picture_src_where_the_twin_is_the_agents(
+    bank: LessonBank, check_ts: CheckTs, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """dl-u1y5.40: a step whose you_write names the twin shows its stem pictures' src."""
+    converted = json.loads(ITEMS_FILE.read_text(encoding="utf-8"))
+    picture = {"src": "/media/khan/fx-dots.svg", "alt": "Kropki w rzędach", "width": 4, "height": 3,
+               "labels": {"items": []}}
+    for item in converted["items"]:
+        if isinstance(item.get("spec"), dict):
+            stem = item["spec"]["data"].setdefault("stem", {}) or {}
+            item["spec"]["data"]["stem"] = {**stem, "pictures": [dict(picture)]}
+    path = tmp_path / "converted-pictures.json"
+    path.write_text(json.dumps(converted), encoding="utf-8")
+    monkeypatch.setenv(JW_KHAN_CONVERTED, str(path))
+    view = _draft()
+    by_twin = {"twin" in q["you_write"]: q for q in view["questions"]}
+    assert set(by_twin) == {True, False}
+    assert by_twin[True]["data"]["stem"]["pictures"] == [
+        {k: v for k, v in picture.items() if k != "labels"}]
+    assert by_twin[False]["data"]["stem"]["pictures"] == [
+        {k: v for k, v in picture.items() if k not in ("labels", "src")}]

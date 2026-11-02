@@ -225,16 +225,19 @@ def _add_times_rule(q: dict[str, Any]) -> None:
     )
 
 
-def _slim_pictures(value: Any) -> Any:
+def _slim_pictures(value: Any, keep_src: bool = False) -> Any:
     """`value` with each picture's labels and address left out: the bulk of a Khan picture, which
-    the agent reading the draft never needs (wave 3, lead decision 6). The draft file and
-    lesson_show keep them whole."""
+    the agent reading the draft never needs (wave 3, lead decision 6). With `keep_src`, for a
+    step whose twin is the agent's to write, the address stays, so a twin with the same picture
+    is written from the draft's answer alone (dl-u1y5.40); the 8 KB budget leaves no room for it
+    on every step. The draft file and lesson_show keep them whole."""
+    gone = ("labels",) if keep_src else ("labels", "src")
     if isinstance(value, list):
-        return [_slim_pictures(v) for v in value]
+        return [_slim_pictures(v, keep_src) for v in value]
     if isinstance(value, Mapping):
         if "src" in value and "alt" in value:
-            return {k: v for k, v in value.items() if k not in ("labels", "src")}
-        return {k: _slim_pictures(v) for k, v in value.items()}
+            return {k: v for k, v in value.items() if k not in gone}
+        return {k: _slim_pictures(v, keep_src) for k, v in value.items()}
     return value
 
 
@@ -420,6 +423,13 @@ def _bank_read() -> str:
     except (OSError, subprocess.SubprocessError):
         head = ""
     return f"{bank} ({f'git {head}' if head else 'no index manifest, no git revision'})"
+
+
+def _patterns(question_types: Sequence[str] | str) -> list[str]:
+    """The question-type patterns, one each: a list, or one string, either split on commas, so
+    "slots.fill_gaps,choose" is 2 patterns and a bare string is never read letter by letter."""
+    given = [question_types] if isinstance(question_types, str) else list(question_types)
+    return [p.strip() for item in given for p in str(item).split(",") if p.strip()]
 
 
 def _type_of(view: Mapping[str, Any]) -> str:
@@ -731,7 +741,7 @@ def _slim(q: Mapping[str, Any], verbose: bool = False) -> dict[str, Any]:
         "step_id": q["step_id"],
         "item_id": q["item_id"],
         "say": q["say"],
-        "data": _slim_pictures(spec["data"]),
+        "data": _slim_pictures(spec["data"], keep_src=verbose or "twin" in you_write),
         # The rule jw adds by code is not the agent's to read or write.
         "key": {k: v for k, v in key.items() if k != "rule"} if isinstance(key, Mapping) else key,
         "you_write": you_write,
@@ -864,7 +874,7 @@ def draft(
         raise JwError("count must be at least 1", hint="Leave it out for the rule's count.")
     day = today or dt.date.today()
     need = _need(topic, grade, language, skills)
-    question_types = [t.strip() for t in question_types if t.strip()]
+    question_types = _patterns(question_types)
     if sets:
         envelope, pages = _pinned(sets)
     else:
