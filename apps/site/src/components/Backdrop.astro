@@ -62,8 +62,9 @@ const signs = Array.from({ length: COUNT }, () => {
   const backdrop = document.querySelector<HTMLElement>(".backdrop");
   if (backdrop && fine && !still) {
     const signs = [...backdrop.querySelectorAll<HTMLElement>(".sign")];
-    const REACH = 140; // px
-    const PUSH = 26; // px at the cursor itself
+    // Calm on purpose (owner, 2026-11-02, dl-5ssh.4.35): the signs only lean from the cursor.
+    const REACH = 110; // px
+    const PUSH = 9; // px at the cursor itself
     // The cursor on the page, not the screen: the layer scrolls with the page, and only the mouse moves
     // the signs (owner: "scroll together with everything, but react only on mouse movements").
     let x = -1000;
@@ -112,16 +113,16 @@ const signs = Array.from({ length: COUNT }, () => {
   /* A faint glow, the evening lamp over the table: the page's own quiet paper tone, barely there, so it
      reads as light rather than colour (owner, 2026-11-02: less evident, more elegant). */
   .glow {
-    position: absolute; left: 0; top: 0; width: 26rem; height: 26rem; border-radius: 50%;
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--jw-act-quiet) 75%, transparent), transparent);
+    position: absolute; left: 0; top: 0; width: 22rem; height: 22rem; border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--jw-act-quiet) 40%, transparent), transparent);
     transform: translate(calc(var(--glow-x, -100vw) - 50%), calc(var(--glow-y, -100vh) - 50%));
-    opacity: 0; transition: opacity 0.8s ease;
+    opacity: 0; transition: opacity 1.2s ease;
   }
   .lit .glow { opacity: 1; }
   .sign {
     position: absolute; font-weight: 700; line-height: 1; user-select: none;
     transform: translate(var(--away-x, 0), var(--away-y, 0));
-    transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform 1.6s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .drift { display: block; animation: drift var(--time) ease-in-out var(--delay) infinite alternate; }
   @keyframes drift {
