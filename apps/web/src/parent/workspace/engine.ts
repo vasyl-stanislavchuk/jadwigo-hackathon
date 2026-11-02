@@ -28,7 +28,7 @@ export interface LessonEngine {
 }
 
 /** The `sub` of a JWT: who signed in. Null for no token or one that does not read. */
-export function subOf(jwt: string | null): string | null {
+function subOf(jwt: string | null): string | null {
   const body = jwt?.split(".")[1];
   if (body === undefined) return null;
   try {
