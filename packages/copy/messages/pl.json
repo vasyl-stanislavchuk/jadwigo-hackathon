@@ -1075,5 +1075,18 @@
   "parent_this_computer": "Otwórz na tym komputerze",
   "parent_print": "Wydrukuj",
   "parent_print_hint": "Kartka z zadaniami, bez odpowiedzi",
-  "parent_this_computer_soon": "Otwieranie lekcji na komputerze jest w drodze."
+  "parent_this_computer_soon": "Otwieranie lekcji na komputerze jest w drodze.",
+  "email_subject_signup": "Twój kod do Jadwigo",
+  "email_subject_magiclink": "Twój kod do logowania w Jadwigo",
+  "email_subject_email_change": "Twój kod do zmiany adresu e-mail w Jadwigo",
+  "email_subject_reauthentication": "Twój kod potwierdzenia w Jadwigo",
+  "email_subject_recovery": "Twój kod do odzyskania konta Jadwigo",
+  "email_lead_signup": "To jest Twój kod do Jadwigo. Wpisz go na stronie logowania, aby założyć konto.",
+  "email_lead_magiclink": "To jest Twój kod do Jadwigo. Wpisz go na stronie logowania.",
+  "email_lead_email_change": "To jest Twój kod do zmiany adresu e-mail w Jadwigo. Wpisz go tam, gdzie zmieniasz adres.",
+  "email_lead_reauthentication": "To jest Twój kod, który potwierdza, że to Ty. Wpisz go w Jadwigo.",
+  "email_lead_recovery": "To jest Twój kod do odzyskania konta Jadwigo. Wpisz go na stronie logowania.",
+  "email_code_label": "Twój kod",
+  "email_expiry": "Kod działa przez krótki czas i tylko raz.",
+  "email_ignore": "Jeśli to nie Ty, zignoruj tę wiadomość."
 }

@@ -172,6 +172,10 @@ module "app" {
   # The api role presigns, checks, copies and deletes a message's photos (modules/app/uploads.tf).
   uploads_bucket_name      = module.uploads.bucket_name
   uploads_bucket_param_arn = module.uploads.bucket_param_arn
+
+  # Auth mail through SES (dl-liwi.33): the jadwigo.pl identity, From no-reply@ only.
+  mail_identity_arn = module.mail.identity_arns["jadwigo.pl"]
+  mail_from_address = "no-reply@jadwigo.pl"
 }
 
 # The engine's step host (dl-z5ja.20): apps/runner, its own release target (`make -C infra

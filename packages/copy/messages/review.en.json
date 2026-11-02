@@ -790,5 +790,18 @@
   "parent_this_computer": false,
   "parent_print": false,
   "parent_print_hint": false,
-  "parent_this_computer_soon": false
+  "parent_this_computer_soon": false,
+  "email_subject_signup": false,
+  "email_subject_magiclink": false,
+  "email_subject_email_change": false,
+  "email_subject_reauthentication": false,
+  "email_subject_recovery": false,
+  "email_lead_signup": false,
+  "email_lead_magiclink": false,
+  "email_lead_email_change": false,
+  "email_lead_reauthentication": false,
+  "email_lead_recovery": false,
+  "email_code_label": false,
+  "email_expiry": false,
+  "email_ignore": false
 }

@@ -287,7 +287,7 @@ function SignIn({
     setBusy(true);
     setProblem(null);
     auth
-      .sendCode(to)
+      .sendCode(to, language)
       .then(
         () => setSentTo(to),
         () => setProblem("parent_send_failed"),
