@@ -86,6 +86,7 @@ import {
   lessonPath,
   lessonsPath,
   type ParentRoute,
+  parentPath,
   parentRoute,
   providerOf,
 } from "./route.ts";
@@ -215,6 +216,9 @@ export function ParentScreen({
       onSignOut={() => {
         auth.signOut().finally(() => {
           setPodLanguage(null);
+          // Back to /parent, so the next parent to sign in here never lands on this one's page,
+          // such as a lesson's workspace (dl-uukj.47.16). The page's language stays.
+          navigate(parentPath({ lang: pageLang() }), { replace: true });
           setSignedIn(false);
         });
       }}
