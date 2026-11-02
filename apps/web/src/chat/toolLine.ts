@@ -14,6 +14,7 @@ import {
   Eye,
   LayoutList,
   Lightbulb,
+  ListFilter,
   type LucideIcon,
   NotebookPen,
   PencilLine,
@@ -24,6 +25,7 @@ import { TOOL_KEY } from "./tools.ts";
 
 export const TOOL_ICON: Readonly<Record<VerbName, LucideIcon>> = {
   question_search: Search,
+  question_types: ListFilter,
   lesson_draft: LayoutList,
   lesson_edit: PencilLine,
   lesson_check: ClipboardCheck,
@@ -76,6 +78,8 @@ export function sentenceOf(
       return about("chat_tool_lesson_draft_about", "topic", field(input, "topic"));
     case "question_search":
       return about("chat_tool_question_search_about", "topic", field(input, "words"));
+    case "question_types":
+      return plain;
     case "lesson_edit":
       return about("chat_tool_lesson_edit_step", "step", field(input, "step_id"));
     case "lesson_show":
