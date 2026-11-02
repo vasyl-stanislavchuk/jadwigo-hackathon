@@ -1,10 +1,14 @@
 /**
- * The analytics consent banner on the parent screens (dl-uukj.56, decision dl-376c8). It shows only
- * while PostHog has started and the parent has not answered. A child on /play never sees it.
+ * The one cookie banner (dl-w0b4.118, decision dl-376c8), the same as the site's
+ * (apps/site/src/components/Analytics.astro). It shows only while PostHog has started and nobody on
+ * this browser has answered, on jadwigo.pl or here: the answer is a .jadwigo.pl cookie. Accept turns
+ * on the cookie and replay; the × is a no, which counts the visit cookieless. A child on /play never
+ * sees it.
  */
 import { hosts } from "@jadwigo/config";
 import { copy, type Language } from "@jadwigo/copy";
 import { Button } from "@jadwigo/ui";
+import { X } from "lucide-react";
 import type { ReactElement } from "react";
 import { CATEGORY } from "../parent/adult.ts";
 import { useAnalyticsConsent } from "./start.ts";
@@ -20,29 +24,32 @@ export function ConsentBanner({ language }: { language: Language }): ReactElemen
   return (
     <section
       data-analytics-consent
-      aria-label={say("parent_analytics_privacy")}
-      className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-xl flex-col gap-3 rounded-lg border bg-background p-4 shadow-lg"
+      aria-labelledby="consent-title"
+      className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md rounded-lg border-2 border-jw-line bg-jw-card py-5 pr-12 pl-5 text-jw-ink shadow-lg"
     >
+      <Button
+        type="button"
+        size="icon"
+        variant="ghost"
+        data-analytics-reject
+        aria-label={say("consent_close")}
+        onClick={reject}
+        className="absolute top-2 right-2 size-11 min-h-0 min-w-0"
+      >
+        <X className="size-5" aria-hidden="true" />
+      </Button>
+      <h2 id="consent-title" className="mb-1 text-lg font-bold">
+        {say("consent_title")}
+      </h2>
       <p>
-        {say("parent_analytics_ask")}{" "}
+        {say("consent_text")}{" "}
         <a className="underline" href={privacyUrl(language)} target="_blank" rel="noreferrer">
-          {say("parent_analytics_privacy")}
+          {say("consent_privacy")}
         </a>
       </p>
-      <div className="flex gap-2">
-        <Button type="button" size="control" data-analytics-accept onClick={accept}>
-          {say("parent_analytics_accept")}
-        </Button>
-        <Button
-          type="button"
-          size="control"
-          variant="outline"
-          data-analytics-reject
-          onClick={reject}
-        >
-          {say("parent_analytics_reject")}
-        </Button>
-      </div>
+      <Button type="button" size="control" data-analytics-accept onClick={accept} className="mt-3">
+        {say("consent_accept")}
+      </Button>
     </section>
   );
 }

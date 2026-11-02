@@ -22,7 +22,6 @@ import { m } from "@jadwigo/copy/messages";
 import wordmark from "@jadwigo/ui/brand/wordmark.svg?raw";
 import Analytics from "../components/Analytics.astro";
 import Backdrop from "../components/Backdrop.astro";
-import LanguageNote from "../components/LanguageNote.astro";
 import Segmented from "../components/Segmented.astro";
 import { strictBuild } from "../lib/build.ts";
 import {
@@ -162,7 +161,8 @@ const footerLinks = [
          (design handoff "landing 3", SiteHeader). On a laptop: the wordmark, the page pills, then the
          sign-in on the right, all on one centre line. On a phone: one 68 px row with the wordmark, the
          sign-in and a 48 px burger that opens the pages. The language switch is in the footer only
-         (owner, 2026-11-02, dl-5ssh.4.51); a visitor in the wrong language gets the LanguageNote. */
+         (owner, 2026-11-02, dl-5ssh.4.51). No note offers the twin page: the cookie banner is the one
+         banner a visitor sees (dl-w0b4.118). */
       .site-header {
         position: sticky; top: 0; z-index: 10; --logo-h: 3rem;
         background: var(--jw-ground); border-bottom: 2px solid var(--jw-line);
@@ -282,7 +282,6 @@ const footerLinks = [
         <a class="signin" href={`${twinPath("signIn", lang)}/`}>{m.site_nav_sign_in({}, locale)}</a>
       </div>
     </header>
-    {twin && <LanguageNote lang={lang} twin={other} href={twin === "/" ? "/" : `${twin}/`} />}
     <main>
       {prose && <h1>{page.heading}</h1>}
       {page.draftNote && <p class="draft" role="note">{page.draftNote}</p>}

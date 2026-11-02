@@ -27,7 +27,7 @@ function posthogDouble() {
   return { client, load: load as unknown as Load, loadSpy: load };
 }
 
-describe("the analytics consent banner", () => {
+describe("the cookie banner", () => {
   it("never starts PostHog on the owner's playground", async () => {
     const { loadSpy, load } = posthogDouble();
     expect(await startAppAnalytics("/playground/system", "phc_test", load)).toBe("off");
@@ -46,17 +46,17 @@ describe("the analytics consent banner", () => {
     const { client, load } = posthogDouble();
     render(<ConsentBanner language="en" />);
     await act(() => startAppAnalytics("/parent", "phc_test", load));
-    expect(screen.getByText(/screen recordings without what you type/)).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "I agree" }));
+    expect(screen.getByRole("heading", { name: "Cookies" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
     expect(client.opt_in_capturing).toHaveBeenCalledTimes(1);
     expect(document.querySelector("[data-analytics-consent]")).toBeNull();
   });
 
-  it("a no opts out, which still counts the visit cookieless, and hides it", async () => {
+  it("the × is a no: it opts out, which still counts the visit cookieless, and hides it", async () => {
     const { client, load } = posthogDouble();
     render(<ConsentBanner language="pl" />);
     await act(() => startAppAnalytics("/parent", "phc_test", load));
-    fireEvent.click(screen.getByRole("button", { name: "Nie, dziękuję" }));
+    fireEvent.click(screen.getByRole("button", { name: "Zamknij" }));
     expect(client.opt_out_capturing).toHaveBeenCalledTimes(1);
     expect(document.querySelector("[data-analytics-consent]")).toBeNull();
   });

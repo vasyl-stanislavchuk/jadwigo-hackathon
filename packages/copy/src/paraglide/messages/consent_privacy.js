@@ -3,7 +3,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 
 /** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
 
-/** @typedef {{}} Parent_Analytics_PrivacyInputs */
+/** @typedef {{}} Consent_PrivacyInputs */
 
 
 
@@ -12,11 +12,11 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 * | --- |
 * | "Privacy" |
 *
-* @param {Parent_Analytics_PrivacyInputs} inputs
+* @param {Consent_PrivacyInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
 * @returns {LocalizedString}
 */
-export const parent_analytics_privacy = /** @type {((inputs?: Parent_Analytics_PrivacyInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Parent_Analytics_PrivacyInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
+export const consent_privacy = /** @type {((inputs?: Consent_PrivacyInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Consent_PrivacyInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") return /** @type {LocalizedString} */ ("Privacy")
