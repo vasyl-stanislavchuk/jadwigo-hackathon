@@ -37,6 +37,7 @@
         "react": "catalog:",
         "react-dom": "catalog:",
         "standardwebhooks": "1.1.1",
+        "zod": "catalog:",
       },
       "devDependencies": {
         "@jadwigo/lesson-import": "workspace:*",

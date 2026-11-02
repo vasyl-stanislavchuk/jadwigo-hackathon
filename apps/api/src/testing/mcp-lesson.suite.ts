@@ -98,14 +98,13 @@ export function lessonSuite(
       const tools = (
         body as { result: { tools: { name: string; inputSchema: { required: string[] } }[] } }
       ).result.tools;
-      expect(tools.map((t) => t.name)).toEqual([
-        "me",
-        "lesson_draft",
-        "lesson_show",
-        "lesson_edit",
-        "lesson_check",
-      ]);
-      expect(tools[1]?.inputSchema.required).toContain("learner_id");
+      // The read tools share the list (dl-1u6fn.3): the lesson tools are in it, in this order.
+      const names = tools.map((t) => t.name);
+      const lessons = ["lesson_draft", "lesson_show", "lesson_edit", "lesson_check"];
+      expect(names.filter((n) => lessons.includes(n))).toEqual(lessons);
+      expect(names).toContain("me");
+      const draft = tools.find((t) => t.name === "lesson_draft");
+      expect(draft?.inputSchema.required).toContain("learner_id");
     });
 
     it("drafts into an ended run the app opens, then shows, checks and revises it", async () => {
