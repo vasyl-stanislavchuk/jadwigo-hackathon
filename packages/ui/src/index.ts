@@ -40,7 +40,9 @@ export {
   CardHeader,
   CardTitle,
 } from "./primitives/card.tsx";
+export { Checkbox } from "./primitives/checkbox.tsx";
 export type { Choice, ControlSize } from "./primitives/choice.ts";
+export { Combobox, type ComboboxOption } from "./primitives/combobox.tsx";
 export {
   ContextMenu,
   ContextMenuContent,
@@ -72,12 +74,21 @@ export {
   DropdownMenuTrigger,
 } from "./primitives/dropdown-menu.tsx";
 export { Input } from "./primitives/input.tsx";
+export { InputOtp } from "./primitives/input-otp.tsx";
 export { Kbd } from "./primitives/kbd.tsx";
 export { PanelToggle } from "./primitives/panel-toggle.tsx";
 export { Popover, PopoverContent, PopoverTrigger } from "./primitives/popover.tsx";
 export { Progress } from "./primitives/progress.tsx";
+export { RadioCards } from "./primitives/radio-cards.tsx";
 export { RadioGroup } from "./primitives/radio-group.tsx";
 export { SegmentedControl } from "./primitives/segmented-control.tsx";
+export {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./primitives/select.tsx";
 export {
   Sheet,
   SheetClose,
@@ -103,6 +114,7 @@ export {
   TableRow,
 } from "./primitives/table.tsx";
 export { Tabs } from "./primitives/tabs.tsx";
+export { Textarea } from "./primitives/textarea.tsx";
 export { showToast, Toaster, type ToastInput } from "./primitives/toast.tsx";
 export { Toggle, toggleVariants } from "./primitives/toggle.tsx";
 export { ToggleGroup, ToggleGroupItem } from "./primitives/toggle-group.tsx";

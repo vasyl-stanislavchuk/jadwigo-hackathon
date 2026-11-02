@@ -183,17 +183,18 @@ describe.each(BODY_PARTS)("%s", (_name, ui, find) => {
 });
 
 describe("Field's label", () => {
+  // An app page's label is the adult's 500 (dl-uukj.47.67 §3); a learner's stays bold.
   it.each([
-    ["prose", "text-jw-page-body", "text-jw-body"],
-    ["kid", "text-jw-body", "text-jw-page-body"],
-  ] as const)("on a %s page reads %s", (width, size, other) => {
+    ["prose", "text-jw-page-body", "text-jw-body", "font-medium"],
+    ["kid", "text-jw-body", "text-jw-page-body", "font-bold"],
+  ] as const)("on a %s page reads %s", (width, size, other, weight) => {
     on(
       width,
       <Field label="Kod">
         <Input kind="text" />
       </Field>,
     );
-    expectClasses(screen.getByText("Kod"), [size, "font-bold"], [other]);
+    expectClasses(screen.getByText("Kod"), [size, weight], [other]);
   });
 });
 
