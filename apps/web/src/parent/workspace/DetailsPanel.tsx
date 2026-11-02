@@ -9,13 +9,8 @@
 
 import type { Learner } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
-import { Button, buttonVariants, cn, Disc, useRegister } from "@jadwigo/ui";
-import {
-  type ComponentPropsWithoutRef,
-  forwardRef,
-  type ReactElement,
-  type ReactNode,
-} from "react";
+import { Button, Disc } from "@jadwigo/ui";
+import type { ReactElement, ReactNode } from "react";
 import { CATEGORY } from "../adult.ts";
 
 function Section({ title, children }: { title: string; children: ReactNode }): ReactElement {
@@ -28,29 +23,6 @@ function Section({ title, children }: { title: string; children: ReactNode }): R
     </section>
   );
 }
-
-/**
- * "Zmień", the trigger of the Dla menu: the outline control, as a button that takes a ref, so the
- * menu's popover can anchor to it (ui's Button takes none on React 18, and the menu then never
- * places itself on screen).
- */
-const ChangeButton = forwardRef<HTMLButtonElement, ComponentPropsWithoutRef<"button">>(
-  function ChangeButton({ className, ...props }, ref) {
-    const register = useRegister();
-    return (
-      <button
-        ref={ref}
-        type="button"
-        className={cn(buttonVariants({ variant: "outline", size: "control", register, className }))}
-        data-slot="button"
-        data-variant="outline"
-        data-size="control"
-        data-change-child
-        {...props}
-      />
-    );
-  },
-);
 
 export function DetailsPanel({
   language,
@@ -79,14 +51,22 @@ export function DetailsPanel({
                 {t("parent_add_child")}
               </Button>
             ) : (
-              changeMenu(<ChangeButton>{t("parent_change")}</ChangeButton>)
+              changeMenu(
+                <Button type="button" variant="outline" size="control" data-change-child>
+                  {t("parent_change")}
+                </Button>,
+              )
             )}
           </div>
         ) : (
           <div className="flex items-center gap-2" data-for-child={child.id}>
             <Disc name={child.first_name} />
             <span className="min-w-0 flex-1 truncate font-bold">{child.first_name}</span>
-            {changeMenu(<ChangeButton>{t("parent_change")}</ChangeButton>)}
+            {changeMenu(
+              <Button type="button" variant="outline" size="control" data-change-child>
+                {t("parent_change")}
+              </Button>,
+            )}
           </div>
         )}
       </Section>

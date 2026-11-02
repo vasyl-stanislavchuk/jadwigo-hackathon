@@ -78,6 +78,8 @@ export interface NextQueue {
   take(index: number): string | null;
   /** Takes out the first row with these words, once they went. */
   remove(text: string): void;
+  /** Drops every queue in the tab: the words belong to an account no longer signed in here. */
+  clear(): void;
 }
 
 /**
@@ -129,5 +131,9 @@ export function useNextQueue(
     },
     [write, now],
   );
-  return { items, ready, add, take, remove };
+  const clear = useCallback(() => {
+    clearChatQueues(held);
+    setItems([]);
+  }, [held]);
+  return { items, ready, add, take, remove, clear };
 }
