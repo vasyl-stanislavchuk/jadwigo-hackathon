@@ -2,8 +2,8 @@
  * The lesson on paper (handoff §5.6 "Wydrukuj", dl-z5ja.108.1.1): the lesson's title and each
  * question step in lesson-kit's print mode, which shows no answer, numbered as the lesson column
  * numbers them. It is drawn into the page's body and seen only by the printer
- * (LessonPanePrint.css), so printing needs no route of its own: `printLesson` asks the browser to
- * print once the sheet is in the page.
+ * (LessonPanePrint.css, scoped to the body's `data-printing` while the sheet is mounted), so printing
+ * needs no route of its own: `printLesson` asks the browser to print once the sheet is in the page.
  */
 
 import { type Category, copy, type Language } from "@jadwigo/copy";
@@ -16,7 +16,7 @@ import {
   pageSpec,
   ViewMode,
 } from "@jadwigo/lesson-kit";
-import type { ReactElement } from "react";
+import { type ReactElement, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { lessonFileToSpecs } from "./lesson/adapter.ts";
 import { readDraft } from "./lesson/readDraft.ts";
@@ -33,6 +33,10 @@ export function LessonPanePrint({
   language: Language;
   lesson: NonNullable<RunView["lesson"]>;
 }): ReactElement | null {
+  useEffect(() => {
+    document.body.setAttribute("data-printing", "");
+    return () => document.body.removeAttribute("data-printing");
+  }, []);
   const read = readDraft(lesson.lesson_file);
   if ("error" in read) return null;
   const { file, skipped } = read;

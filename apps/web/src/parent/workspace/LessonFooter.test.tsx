@@ -71,6 +71,11 @@ describe("Daj lekcję (dl-z5ja.108.1.1)", () => {
       ),
     ).toEqual(["s02", "s05", "s06", "s07"]);
     expect(sheet?.textContent).not.toContain("Poprawna odpowiedź");
+    // Only while the sheet is in the page does printing hide the app; after printing it leaves.
+    expect(document.body.hasAttribute("data-printing")).toBe(true);
+    await act(async () => window.dispatchEvent(new Event("afterprint")));
+    expect(document.querySelector("[data-print-sheet]")).toBeNull();
+    expect(document.body.hasAttribute("data-printing")).toBe(false);
   });
 
   it("Otwórz na tym komputerze is quiet with its reason until it can open the lesson", async () => {

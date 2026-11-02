@@ -16,7 +16,7 @@ import type { Learner } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { RunView } from "@jadwigo/core";
 import { Button, Dialog, DialogClose, DialogContent, DialogFooter } from "@jadwigo/ui";
-import { type ReactElement, useId, useState } from "react";
+import { type ReactElement, useEffect, useId, useState } from "react";
 import { LessonPanePrint, printLesson } from "../../chat/LessonPanePrint.tsx";
 import { CATEGORY } from "../adult.ts";
 import { Band } from "./Workspace.tsx";
@@ -56,6 +56,13 @@ export function LessonFooter({
   const hereId = useId();
   const [choosing, setChoosing] = useState(false);
   const [printing, setPrinting] = useState(false);
+  // Once the browser is done printing, the sheet leaves the page, and so does its print rule.
+  useEffect(() => {
+    if (!printing) return;
+    const done = () => setPrinting(false);
+    window.addEventListener("afterprint", done);
+    return () => window.removeEventListener("afterprint", done);
+  }, [printing]);
   const give = (): void => {
     if (!ready) return;
     if (child === null) setChoosing(true);
