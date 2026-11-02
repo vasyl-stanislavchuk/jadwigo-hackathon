@@ -35,6 +35,23 @@ export function lessonSummary(shown: RunView["lesson"]): { title: string; steps:
   return { title, steps: steps.length };
 }
 
+/**
+ * How many dashed rows say steps are still coming (handoff §3 "Ghost rows", dl-z5ja.108.1): while
+ * the open turn's lesson_draft call runs, the count the model asked it for, else 1, since the page
+ * knows a lesson is coming but not its size. lesson_draft writes the whole lesson in one revision,
+ * so a draft that is not done yet has none of its steps shown. 0 at any other time.
+ */
+export function ghostsOf(turns: readonly Turn[]): number {
+  const turn = turns[turns.length - 1];
+  if (turn === undefined || !turn.view.turn_open) return 0;
+  const draft = turn.view.chat.findLast(
+    (item) => item.kind === "tool" && item.verb === "lesson_draft",
+  );
+  if (draft?.kind !== "tool" || (draft.state !== "pending" && draft.state !== "running")) return 0;
+  const count = draft.input?.["count"];
+  return typeof count === "number" && Number.isInteger(count) && count > 0 ? count : 1;
+}
+
 export function useLessonWiring(
   state: ConversationState,
   onEdit?: (text: string, question_ids: string[], change?: LessonChange) => unknown,
@@ -88,5 +105,6 @@ export function useLessonWiring(
     undoPending: undoSent !== null && outcomeOf(undoSent) === "pending",
     outcomeOf,
     key: lessonKey(turns),
+    ghosts: ghostsOf(turns),
   };
 }

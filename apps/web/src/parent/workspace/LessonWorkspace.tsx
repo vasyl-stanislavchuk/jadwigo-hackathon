@@ -131,7 +131,7 @@ export function LessonWorkspace({
       {...(writing ? { chatFact: t("parent_writing") } : {})}
       lessonTitle={summary.title === "" ? t("parent_new_lesson") : summary.title}
       lesson={
-        lesson.shown === null ? (
+        lesson.shown === null && lesson.ghosts === 0 ? (
           <p className="text-jw-ink-soft" data-lesson-waiting>
             {t(writing ? "parent_writing" : "parent_lesson_empty")}
           </p>
@@ -144,6 +144,8 @@ export function LessonWorkspace({
             undoRefused={lesson.undoRefused}
             undoPending={lesson.undoPending}
             onEdit={edit}
+            ghosts={lesson.ghosts}
+            withChild={child !== null}
             outcomeOf={lesson.outcomeOf}
           />
         )

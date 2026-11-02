@@ -37,3 +37,26 @@ export const undoSteer = (
   question_ids: readonly string[],
   revision: number,
 ): string => UNDO[language](question_ids.join(", "), revision);
+
+const MOVE: Record<LessonLanguage, Record<"up" | "down", (step: string) => string>> = {
+  pl: {
+    up: (step) => `Rodzic sam przeniósł krok ${step} o jedno miejsce wyżej.`,
+    down: (step) => `Rodzic sam przeniósł krok ${step} o jedno miejsce niżej.`,
+  },
+  en: {
+    up: (step) => `The parent moved step ${step} one place up themselves.`,
+    down: (step) => `The parent moved step ${step} one place down themselves.`,
+  },
+};
+
+const DROP: Record<LessonLanguage, (step: string) => string> = {
+  pl: (step) => `Rodzic sam usunął krok ${step} z lekcji.`,
+  en: (step) => `The parent removed step ${step} from the lesson themselves.`,
+};
+
+/** The steer for a parent's own move of one step, sent with its patch (dl-z5ja.108.1). */
+export const moveSteer = (language: LessonLanguage, step: string, by: -1 | 1): string =>
+  MOVE[language][by === -1 ? "up" : "down"](step);
+
+/** The steer for a parent's own removal of one step, sent with its patch (dl-z5ja.108.1). */
+export const dropSteer = (language: LessonLanguage, step: string): string => DROP[language](step);

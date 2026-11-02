@@ -123,6 +123,78 @@ export function wordsPatch(
   return found ? { script: { parts } } : null;
 }
 
+/** The file's parts with each step list rebuilt by `edit`, or null when the file has no parts. */
+function withSteps(
+  file: unknown,
+  edit: (steps: readonly unknown[][]) => unknown[][] | null,
+): LessonPatch | null {
+  const script = isFields(file) ? file["script"] : undefined;
+  if (!isFields(script) || !Array.isArray(script["parts"])) return null;
+  const parts: unknown[] = script["parts"];
+  const lists = parts.map((part) =>
+    isFields(part) && Array.isArray(part["steps"]) ? [...part["steps"]] : [],
+  );
+  const next = edit(lists);
+  if (next === null) return null;
+  return {
+    script: {
+      parts: parts.map((part, p) => (isFields(part) ? { ...part, steps: next[p] ?? [] } : part)),
+    },
+  };
+}
+
+/** A teaching step: the pane does not draw it, so a move steps over it. */
+const teaching = (entry: unknown): boolean => isFields(entry) && "teach" in entry;
+
+/** Where step `step` is: its part and its place in that part's steps, or null. */
+function placeOf(
+  lists: readonly unknown[][],
+  step: string,
+): { part: number; index: number } | null {
+  for (const [part, list] of lists.entries()) {
+    const index = list.findIndex((s) => isFields(s) && s["id"] === step);
+    if (index !== -1) return { part, index };
+  }
+  return null;
+}
+
+/**
+ * The patch that moves one step a place up (-1) or down (1) among the lesson's questions (the
+ * opened step's Przenieś, dl-z5ja.108.1): it swaps places with the nearest step that way that is
+ * not a teaching step, which the pane does not draw, across parts too. Null when the step is not in
+ * the file or has nowhere to go.
+ */
+export function movePatch(file: unknown, step: string, by: -1 | 1): LessonPatch | null {
+  return withSteps(file, (lists) => {
+    const slots = lists.flatMap((list, part) =>
+      list.map((entry, index) => ({ part, index, entry })),
+    );
+    const from = slots.findIndex((s) => isFields(s.entry) && s.entry["id"] === step);
+    if (from === -1) return null;
+    let to = from + by;
+    while (teaching(slots[to]?.entry)) to += by;
+    const a = slots[from];
+    const b = slots[to];
+    if (a === undefined || b === undefined) return null;
+    const next = lists.map((l) => [...l]);
+    (next[a.part] as unknown[])[a.index] = b.entry;
+    (next[b.part] as unknown[])[b.index] = a.entry;
+    return next;
+  });
+}
+
+/**
+ * The patch that takes one step out of the lesson (the opened step's Usuń, dl-z5ja.108.1). Null
+ * when the step is not in the file, or it is the lesson's last step: a lesson keeps one.
+ */
+export function dropPatch(file: unknown, step: string): LessonPatch | null {
+  return withSteps(file, (lists) => {
+    const at = placeOf(lists, step);
+    if (at === null || lists.flat().length <= 1) return null;
+    return lists.map((list, p) => (p === at.part ? list.filter((_, i) => i !== at.index) : list));
+  });
+}
+
 /** What became of a patch the pane sent: not logged yet or on its way, in the lesson, or refused. */
 export type PatchOutcome = "pending" | "applied" | "refused";
 
