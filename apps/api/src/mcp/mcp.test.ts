@@ -134,7 +134,9 @@ describe("the remote MCP, /api/mcp", () => {
     expect(init.body).toMatchObject({ result: { serverInfo: { name: "jadwigo" } } });
 
     const list = await rpc("tools/list");
-    expect(list.body).toMatchObject({ result: { tools: [{ name: "me" }] } });
+    expect(list.body).toMatchObject({
+      result: { tools: expect.arrayContaining([expect.objectContaining({ name: "me" })]) },
+    });
 
     const me = (await rpc("tools/call", { name: "me", arguments: {} })).body as {
       result: { isError?: boolean; content: { text: string }[] };

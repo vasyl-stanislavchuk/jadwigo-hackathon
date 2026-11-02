@@ -24,7 +24,11 @@ import {
   VerbError,
 } from "@jadwigo/jadwigo-ai";
 import type { Store } from "@jadwigo/store";
-import { fromJsonSchema, type StandardSchemaWithJSON } from "@modelcontextprotocol/server";
+import {
+  fromJsonSchema,
+  type JsonSchemaType,
+  type StandardSchemaWithJSON,
+} from "@modelcontextprotocol/server";
 import { ApiError } from "../../errors.ts";
 import type { ToolContext } from "../tool.ts";
 
@@ -52,7 +56,7 @@ export function verbSchema(
     ...own,
     properties: { ...extra.properties, ...own.properties },
     required: [...extra.required, ...own.required],
-  });
+  } as JsonSchemaType);
 }
 
 /** The verb's effect; its refusal reaches the parent's AI as its message, to correct and retry. */
