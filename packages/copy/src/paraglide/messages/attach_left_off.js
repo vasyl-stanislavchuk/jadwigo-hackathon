@@ -11,8 +11,8 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | n_noun | output |
 * | --- | --- |
-* | "one" | "{max} photos fit, {n} was left off" |
-* | "other" | "{max} photos fit, {n} were left off" |
+* | "one" | "{max} files fit, {n} was left off" |
+* | "other" | "{max} files fit, {n} were left off" |
 *
 * @param {Attach_Left_OffInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -22,16 +22,16 @@ export const attach_left_off = /** @type {((inputs: Attach_Left_OffInputs, optio
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") {
 		const n_noun = registry.plural("en", i?.n, {}, true);
-		if (n_noun === "one") return /** @type {LocalizedString} */ (`${i?.max} photos fit, ${i?.n} was left off`);
-		if (n_noun === "other") return /** @type {LocalizedString} */ (`${i?.max} photos fit, ${i?.n} were left off`);
+		if (n_noun === "one") return /** @type {LocalizedString} */ (`${i?.max} files fit, ${i?.n} was left off`);
+		if (n_noun === "other") return /** @type {LocalizedString} */ (`${i?.max} files fit, ${i?.n} were left off`);
 		return /** @type {LocalizedString} */ ("attach_left_off");
 	}
 	{
 		const max_noun = registry.plural("pl", i?.max, {}, true);
-		if (max_noun === "one") return /** @type {LocalizedString} */ (`Zmieści się ${i?.max} zdjęcie, ${i?.n} pominięto`);
-		if (max_noun === "few") return /** @type {LocalizedString} */ (`Zmieszczą się ${i?.max} zdjęcia, ${i?.n} pominięto`);
-		if (max_noun === "many") return /** @type {LocalizedString} */ (`Zmieści się ${i?.max} zdjęć, ${i?.n} pominięto`);
-		if (max_noun === "other") return /** @type {LocalizedString} */ (`Zmieści się ${i?.max} zdjęcia, ${i?.n} pominięto`);
+		if (max_noun === "one") return /** @type {LocalizedString} */ (`Zmieści się ${i?.max} plik, ${i?.n} pominięto`);
+		if (max_noun === "few") return /** @type {LocalizedString} */ (`Zmieszczą się ${i?.max} pliki, ${i?.n} pominięto`);
+		if (max_noun === "many") return /** @type {LocalizedString} */ (`Zmieści się ${i?.max} plików, ${i?.n} pominięto`);
+		if (max_noun === "other") return /** @type {LocalizedString} */ (`Zmieści się ${i?.max} pliku, ${i?.n} pominięto`);
 		return /** @type {LocalizedString} */ ("attach_left_off");
 	}
 });

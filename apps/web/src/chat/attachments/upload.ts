@@ -1,11 +1,17 @@
 /**
- * One parent's photo on its way to a message (dl-z5ja.11.5, wave 5 decisions 51 and 57). The page
- * decodes the photo with its orientation applied, draws it on a canvas no larger than
- * `LIMITS.attachmentEdgePx` on its long edge, and re-encodes it to a JPEG of at most
- * `LIMITS.attachmentBytes`, which drops EXIF and GPS. A HEIC the browser cannot decode (Chrome,
- * Firefox, Android) is refused with a plain line: no LGPL decoder runs in the browser (dl-n2wys),
- * and dl-z5ja.11.10 converts it on the server later. Then `POST /api/v1/attachments` hands back a presigned S3
- * form, and the JPEG is posted straight to the bucket with progress.
+ * One parent's photo or document on its way to a message (dl-z5ja.11.5, dl-z5ja.11.12; wave 5
+ * decisions 51 and 57, wave 6 decisions 60 and 61).
+ *
+ * - A photo the browser decodes is drawn, orientation applied, on a canvas no larger than
+ *   `LIMITS.attachmentEdgePx` on its long edge, and re-encoded to a JPEG of at most
+ *   `LIMITS.attachmentBytes`, which drops EXIF and GPS. Safari decodes HEIC itself.
+ * - A PDF, a DOCX, and a HEIC the browser cannot decode (Chrome, Firefox, Android) go up as they
+ *   are, with their name and no size in pixels, up to `LIMITS.documentBytes`. The converter turns
+ *   them into page JPEGs on the server (dl-z5ja.11.10); no LGPL decoder runs in the browser
+ *   (dl-n2wys, as amended).
+ *
+ * Then `POST /api/v1/attachments` hands back a presigned S3 form, and the file is posted straight
+ * to the bucket with progress.
  *
  * Ported from md drop-comments' `Upload` (drop_runtime/src/comments/upload.ts): the browser parts
  * (decoding, the canvas, XHR, object URLs, the api call) come in through `UploadDeps`, so a test
@@ -17,6 +23,7 @@ import type { ApiError } from "@jadwigo/api-client";
 import {
   type AttachmentCreate,
   type AttachmentId,
+  type AttachmentMediaType,
   type AttachmentUpload,
   type AttachmentUploadForm,
   type EventId,
@@ -29,12 +36,17 @@ const JPEG_QUALITY = 0.85;
 /** The lowest quality tried before the photo is refused as too large. */
 const JPEG_QUALITY_FLOOR = 0.35;
 const JPEG = "image/jpeg";
+const HEIC = "image/heic";
+const PDF = "application/pdf";
+const DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+/** The longest name the api keeps (`AttachmentCreate.name`). */
+const NAME_MAX = 120;
 
 /** Why a photo has not uploaded: a copy key the chip shows. */
 export type AttachReason = Extract<
   CopyKey,
-  | "attach_heic"
   | "attach_unreadable"
+  | "attach_document_too_large"
   | "attach_too_large"
   | "attach_limit_day"
   | "attach_offline"
@@ -111,12 +123,25 @@ export interface UploadDeps {
   objectUrl: { create: (blob: Blob) => string; revoke: (url: string) => void };
 }
 
+/** What a document chip calls a file that goes up as it is. */
+export type DocumentKind = "pdf" | "docx" | "heic";
+
 /** A HEIC or HEIF by its type or, when the browser gave none, its name. */
 export function isHeif(file: { name: string; type: string }): boolean {
   const type = file.type.toLowerCase();
   if (/^image\/hei[cf](-sequence)?$/.test(type)) return true;
   return /\.hei[cf]$/i.test(file.name);
 }
+
+/** A PDF or a DOCX by its type or its name: these never go through the canvas. */
+function documentKind(file: { name: string; type: string }): "pdf" | "docx" | null {
+  const type = file.type.toLowerCase();
+  if (type === PDF || /\.pdf$/i.test(file.name)) return "pdf";
+  if (type === DOCX || /\.docx$/i.test(file.name)) return "docx";
+  return null;
+}
+
+const MEDIA: Record<DocumentKind, AttachmentMediaType> = { pdf: PDF, docx: DOCX, heic: HEIC };
 
 /** The size that fits `edge` on the long side, never larger than the picture. */
 export function fitEdge(
@@ -144,41 +169,78 @@ export function qualities(): number[] {
   return out;
 }
 
-export interface Encoded {
+interface Encoded {
   blob: Blob;
   width: number;
   height: number;
 }
 
 /**
- * The photo as the JPEG the store keeps: decoded by the browser (Safari reads HEIC itself), fitted
- * to the long edge, and exported at the first quality that fits the byte limit. A photo the
- * browser cannot decode is refused: a HEIC with the line that says to screenshot it or save a JPG.
+ * The photo as the JPEG the store keeps: decoded by the browser, fitted to the long edge, and
+ * exported at the first quality that fits the byte limit. Null when the browser cannot decode it.
  */
-export async function reencode(
+async function reencode(
   file: File,
   deps: Pick<UploadDeps, "decode" | "canvas">,
-): Promise<Encoded> {
-  const heif = isHeif(file);
+): Promise<Encoded | null> {
   const image = await deps.decode(file).catch(() => null);
-  if (!image) throw new RefusedError(heif ? "attach_heic" : "attach_unreadable");
+  if (!image) return null;
   try {
     const size = fitEdge(image.width, image.height);
     const canvas = deps.canvas();
     canvas.width = size.width;
     canvas.height = size.height;
     const context = canvas.getContext("2d");
-    if (!context) throw new RefusedError(heif ? "attach_heic" : "attach_unreadable");
+    if (!context) return null;
     context.drawImage(image.source, 0, 0, size.width, size.height);
     for (const quality of qualities()) {
       const blob = await new Promise<Blob | null>((done) => canvas.toBlob(done, JPEG, quality));
-      if (!blob) throw new RefusedError(heif ? "attach_heic" : "attach_unreadable");
+      if (!blob) return null;
       if (blob.size <= LIMITS.attachmentBytes) return { blob, ...size };
     }
     throw new RefusedError("attach_too_large");
   } finally {
     image.close?.();
   }
+}
+
+/** What goes to the bucket: the re-encoded JPEG, or the original file as it is. */
+export interface Prepared {
+  blob: Blob;
+  media_type: AttachmentMediaType;
+  width?: number;
+  height?: number;
+  /** A document's name and kind, for its chip; absent for a JPEG. */
+  document?: { name: string; kind: DocumentKind };
+}
+
+/** The original file, typed as what it is so the form's file part says so. */
+function asDocument(file: File, kind: DocumentKind): Prepared {
+  if (file.size === 0) throw new RefusedError("attach_unreadable");
+  if (file.size > LIMITS.documentBytes) throw new RefusedError("attach_document_too_large");
+  const media_type = MEDIA[kind];
+  const name = file.name.trim().slice(0, NAME_MAX) || `${kind}.${kind}`;
+  return {
+    blob: file.slice(0, file.size, media_type),
+    media_type,
+    document: { name, kind },
+  };
+}
+
+/**
+ * The file as it goes up: a PDF or a DOCX as it is; a HEIC re-encoded when the browser decodes it
+ * and as it is when it cannot; any other picture re-encoded, or refused when nothing can read it.
+ */
+export async function prepare(
+  file: File,
+  deps: Pick<UploadDeps, "decode" | "canvas">,
+): Promise<Prepared> {
+  const kind = documentKind(file);
+  if (kind) return asDocument(file, kind);
+  const encoded = await reencode(file, deps);
+  if (encoded) return { ...encoded, media_type: JPEG };
+  if (isHeif(file)) return asDocument(file, "heic");
+  throw new RefusedError("attach_unreadable");
 }
 
 /**
@@ -200,13 +262,14 @@ export function bucketReason(status: number, xml: string): AttachReason {
 function postForm(
   form: AttachmentUploadForm,
   file: Blob,
+  name: string,
   xhr: FormXhr,
   onProgress: (fraction: number) => void,
 ): Promise<void> {
   return new Promise((done, fail) => {
     const body = new FormData();
     for (const [key, value] of Object.entries(form.fields)) body.append(key, value);
-    body.append("file", file, "photo.jpg");
+    body.append("file", file, name);
     xhr.open("POST", form.url);
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable && event.total > 0) onProgress(event.loaded / event.total);
@@ -232,18 +295,21 @@ type UploadState = "uploading" | "ready" | "failed" | "refused";
 
 export interface UploadView {
   state: UploadState;
-  /** 0 to 1: how much of the JPEG the bucket has taken. */
+  /** 0 to 1: how much of the file the bucket has taken. */
   progress: number;
   reason: AttachReason | null;
   /** The attachment a message names, once the bucket holds it. */
   attachmentId: AttachmentId | null;
-  /** An object URL of the re-encoded JPEG, the bytes Jadwigo will see; null until encoded. */
+  /** An object URL of the re-encoded JPEG, the bytes Jadwigo will see; null until encoded, and
+   * always null for a document, which has no thumbnail until the server renders one. */
   preview: string | null;
+  /** A file that goes up as it is: its name and kind, for the document chip. */
+  document: { name: string; kind: DocumentKind } | null;
 }
 
 /**
- * One photo through the whole trip, as a small store the chip subscribes to. `start` encodes once;
- * `retry` keeps the JPEG and asks for a new slot under a fresh `event_id`, since a slot whose post
+ * One file through the whole trip, as a small store the chip subscribes to. `start` prepares once;
+ * `retry` keeps what it prepared and asks for a new slot under a fresh `event_id`, since a slot whose post
  * did not finish is never attached; `dispose` stops what is in flight and revokes the preview.
  */
 export class PhotoUpload {
@@ -253,8 +319,9 @@ export class PhotoUpload {
     reason: null,
     attachmentId: null,
     preview: null,
+    document: null,
   };
-  private encoded: Encoded | null = null;
+  private prepared: Prepared | null = null;
   private xhr: FormXhr | null = null;
   private stopped = false;
   private readonly listeners = new Set<() => void>();
@@ -310,21 +377,29 @@ export class PhotoUpload {
   }
 
   private async run(): Promise<AttachmentId> {
-    if (!this.encoded) {
-      this.encoded = await reencode(this.file, this.deps);
+    if (!this.prepared) {
+      try {
+        this.prepared = await prepare(this.file, this.deps);
+      } catch (error) {
+        const kind = documentKind(this.file) ?? (isHeif(this.file) ? "heic" : null);
+        if (kind) this.set({ document: { name: this.file.name, kind } });
+        throw error;
+      }
       if (this.stopped) throw new AbortedError();
-      this.set({ preview: this.deps.objectUrl.create(this.encoded.blob) });
+      const { blob, document } = this.prepared;
+      if (document) this.set({ document });
+      else this.set({ preview: this.deps.objectUrl.create(blob) });
     }
-    const { blob, width, height } = this.encoded;
+    const { blob, media_type, width, height, document } = this.prepared;
+    const body: AttachmentCreate = { event_id: this.deps.eventId(), media_type, bytes: blob.size };
+    if (width !== undefined && height !== undefined) {
+      body.width = width;
+      body.height = height;
+    }
+    if (document) body.name = document.name;
     let slot: AttachmentUpload;
     try {
-      slot = await this.deps.api.createAttachment({
-        event_id: this.deps.eventId(),
-        media_type: JPEG,
-        bytes: blob.size,
-        width,
-        height,
-      });
+      slot = await this.deps.api.createAttachment(body);
     } catch (error) {
       throw apiReason(error);
     }
@@ -332,7 +407,8 @@ export class PhotoUpload {
     const xhr = this.deps.xhr();
     this.xhr = xhr;
     try {
-      await postForm(slot.upload, blob, xhr, (progress) => this.set({ progress }));
+      const name = document ? document.name : "photo.jpg";
+      await postForm(slot.upload, blob, name, xhr, (progress) => this.set({ progress }));
     } finally {
       this.xhr = null;
     }
@@ -341,7 +417,7 @@ export class PhotoUpload {
 }
 
 /**
- * The photos a message can still take: at most `LIMITS.attachmentsPerMessage` in all, and how many
+ * The files a message can still take: at most `LIMITS.attachmentsPerMessage` in all, and how many
  * of `files` were left off, which the chips name in one line.
  */
 export function admit(held: number, files: readonly File[]): { admitted: File[]; leftOff: number } {

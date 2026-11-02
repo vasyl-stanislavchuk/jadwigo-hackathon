@@ -3,8 +3,8 @@
 /**
 * | n_noun | output |
 * | --- | --- |
-* | "one" | "{max} photos fit, {n} was left off" |
-* | "other" | "{max} photos fit, {n} were left off" |
+* | "one" | "{max} files fit, {n} was left off" |
+* | "other" | "{max} files fit, {n} were left off" |
 *
 * @param {Attach_Left_OffInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

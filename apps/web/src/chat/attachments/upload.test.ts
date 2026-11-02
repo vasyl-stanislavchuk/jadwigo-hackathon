@@ -10,19 +10,19 @@ import {
   fitEdge,
   isHeif,
   PhotoUpload,
+  prepare,
   qualities,
   RefusedError,
-  reencode,
 } from "./upload.ts";
 
 const MB = 1024 * 1024;
 
-describe("reencode", () => {
+describe("prepare", () => {
   it("yields image/jpeg with the long edge capped and the first quality that fits", async () => {
     const { deps, canvas } = harness({ decoded: picture(4032, 3024) });
-    const out = await reencode(fileOf("IMG_0001.png", "image/png"), deps);
+    const out = await prepare(fileOf("IMG_0001.png", "image/png"), deps);
     expect(out.blob.type).toBe("image/jpeg");
-    expect(Math.max(out.width, out.height)).toBe(LIMITS.attachmentEdgePx);
+    expect(Math.max(out.width ?? 0, out.height ?? 0)).toBe(LIMITS.attachmentEdgePx);
     expect(out).toMatchObject({ width: 2000, height: 1500 });
     expect(canvas.drawn).toEqual([{ width: 2000, height: 1500 }]);
     expect(canvas.tried).toEqual([0.85]);
@@ -31,7 +31,7 @@ describe("reencode", () => {
 
   it("lowers the quality until the JPEG is within the byte limit", async () => {
     const { deps, canvas } = harness({ sizeAt: (q) => (q > 0.6 ? 5 * MB : 3 * MB) });
-    const out = await reencode(fileOf("scan.jpg", "image/jpeg"), deps);
+    const out = await prepare(fileOf("scan.jpg", "image/jpeg"), deps);
     expect(canvas.tried).toEqual([0.85, 0.75, 0.65, 0.55]);
     expect(out.blob.size).toBe(3 * MB);
     expect(out.blob.size).toBeLessThanOrEqual(LIMITS.attachmentBytes);
@@ -39,7 +39,7 @@ describe("reencode", () => {
 
   it("never scales a small picture up", async () => {
     const { deps } = harness({ decoded: picture(800, 1200) });
-    expect(await reencode(fileOf("a.jpg", "image/jpeg"), deps)).toMatchObject({
+    expect(await prepare(fileOf("a.jpg", "image/jpeg"), deps)).toMatchObject({
       width: 800,
       height: 1200,
     });
@@ -47,7 +47,7 @@ describe("reencode", () => {
 
   it("refuses a photo that stays over the limit at the lowest quality", async () => {
     const { deps, canvas } = harness({ sizeAt: () => 5 * MB });
-    await expect(reencode(fileOf("huge.jpg", "image/jpeg"), deps)).rejects.toEqual(
+    await expect(prepare(fileOf("huge.jpg", "image/jpeg"), deps)).rejects.toEqual(
       new RefusedError("attach_too_large"),
     );
     expect(canvas.tried).toEqual(qualities());
@@ -55,21 +55,26 @@ describe("reencode", () => {
 
   it("re-encodes a HEIC the browser decodes (Safari) to a JPEG", async () => {
     const { deps } = harness({ decoded: picture(3024, 4032) });
-    const out = await reencode(fileOf("IMG_0002.HEIC", ""), deps);
+    const out = await prepare(fileOf("IMG_0002.HEIC", ""), deps);
     expect(out.blob.type).toBe("image/jpeg");
     expect(out).toMatchObject({ width: 1500, height: 2000 });
   });
 
-  it("refuses a HEIC the browser cannot read with the HEIC sentence", async () => {
-    const { deps } = harness({ decoded: null });
-    await expect(reencode(fileOf("broken.heic", "image/heic"), deps)).rejects.toEqual(
-      new RefusedError("attach_heic"),
-    );
+  it("keeps a HEIC the browser cannot read as it is, for the server to convert", async () => {
+    const { deps, canvas } = harness({ decoded: null });
+    const out = await prepare(fileOf("IMG_0003.heic", "image/heic", 64), deps);
+    expect(out).toMatchObject({
+      media_type: "image/heic",
+      document: { name: "IMG_0003.heic", kind: "heic" },
+    });
+    expect(out.width).toBeUndefined();
+    expect(out.blob.size).toBe(64);
+    expect(canvas.drawn).toEqual([]);
   });
 
   it("refuses any other file the browser cannot decode with its own sentence", async () => {
     const { deps } = harness({ decoded: null });
-    await expect(reencode(fileOf("notes.txt", "text/plain"), deps)).rejects.toEqual(
+    await expect(prepare(fileOf("notes.txt", "text/plain"), deps)).rejects.toEqual(
       new RefusedError("attach_unreadable"),
     );
   });
@@ -80,14 +85,31 @@ describe("the synthetic HEIC fixture", () => {
   const bytes = readFileSync(join(import.meta.dirname, "fixtures/gradient-48x32.heic"));
   const heic = (name: string, type: string) => new File([bytes], name, { type });
 
-  it("on a decoder that cannot read it (Chrome, Firefox, Android) is refused, with no Retry", async () => {
+  it("on a decoder that cannot read it (Chrome, Firefox, Android) uploads as image/heic", async () => {
     const h = harness({ decoded: null });
-    const upload = new PhotoUpload(heic("IMG_0007.heic", "image/heic"), h.deps);
-    await upload.start();
-    expect(upload.get()).toMatchObject({ state: "refused", reason: "attach_heic" });
-    await upload.retry();
-    expect(upload.get().state).toBe("refused");
-    expect(h.api.bodies).toEqual([]);
+    const upload = new PhotoUpload(heic("IMG_0007.heic", ""), h.deps);
+    const done = upload.start();
+    await settle();
+    h.xhrs[0]?.answer(204);
+    expect(await done).toMatch(/^atch_/);
+    expect(h.api.bodies).toEqual([
+      {
+        event_id: expect.any(String),
+        media_type: "image/heic",
+        bytes: bytes.length,
+        name: "IMG_0007.heic",
+      },
+    ]);
+    const posted = h.xhrs[0]?.body?.get("file") as File | undefined;
+    expect(posted?.type).toBe("image/heic");
+    expect(posted?.size).toBe(bytes.length);
+    expect(h.xhrs[0]?.body?.get("Content-Type")).toBe("image/heic");
+    expect(upload.get()).toMatchObject({
+      state: "ready",
+      preview: null,
+      document: { name: "IMG_0007.heic", kind: "heic" },
+    });
+    expect(h.canvas.drawn).toEqual([]);
   });
 
   it("on a decoder that reads it (Safari, through the port) re-encodes to JPEG and uploads", async () => {
@@ -105,6 +127,73 @@ describe("the synthetic HEIC fixture", () => {
     expect(await done).toMatch(/^atch_/);
     expect(h.api.bodies[0]).toMatchObject({ media_type: "image/jpeg", width: 48, height: 32 });
     expect((h.xhrs[0]?.body?.get("file") as File | undefined)?.type).toBe("image/jpeg");
+  });
+});
+
+describe("documents", () => {
+  const DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+  for (const [name, type, media, kind] of [
+    ["Karta pracy.pdf", "application/pdf", "application/pdf", "pdf"],
+    ["Zadanie domowe.docx", DOCX, DOCX, "docx"],
+    ["Zadanie bez typu.docx", "", DOCX, "docx"],
+  ] as const) {
+    it(`${name} (${type || "no type"}) uploads as it is, with its name and no re-encode`, async () => {
+      const h = harness();
+      const upload = new PhotoUpload(fileOf(name, type, 300), h.deps);
+      const done = upload.start();
+      await settle();
+      h.xhrs[0]?.progress(150, 300);
+      expect(upload.get().progress).toBe(0.5);
+      h.xhrs[0]?.answer(204);
+      expect(await done).toMatch(/^atch_/);
+      expect(h.api.bodies).toEqual([
+        { event_id: expect.any(String), media_type: media, bytes: 300, name },
+      ]);
+      const posted = h.xhrs[0]?.body?.get("file") as File | undefined;
+      expect(posted?.type).toBe(media);
+      expect(posted?.name).toBe(name);
+      expect(h.canvas.drawn).toEqual([]);
+      expect(upload.get()).toMatchObject({
+        state: "ready",
+        preview: null,
+        document: { name, kind },
+      });
+    });
+  }
+
+  it("a document over LIMITS.documentBytes is refused, with no Retry and no slot", async () => {
+    const h = harness();
+    const big = fileOf("Skan.pdf", "application/pdf", LIMITS.documentBytes + 1);
+    const upload = new PhotoUpload(big, h.deps);
+    await upload.start();
+    expect(upload.get()).toMatchObject({
+      state: "refused",
+      reason: "attach_document_too_large",
+      document: { name: "Skan.pdf", kind: "pdf" },
+    });
+    await upload.retry();
+    expect(upload.get().state).toBe("refused");
+    expect(h.api.bodies).toEqual([]);
+  });
+
+  it("a document of exactly LIMITS.documentBytes goes up", async () => {
+    const h = harness();
+    const upload = new PhotoUpload(
+      fileOf("Skan.pdf", "application/pdf", LIMITS.documentBytes),
+      h.deps,
+    );
+    void upload.start();
+    await settle();
+    expect(h.api.bodies[0]?.bytes).toBe(LIMITS.documentBytes);
+  });
+
+  it("a name longer than the api keeps is cut to 120 characters", async () => {
+    const h = harness();
+    const name = `${"a".repeat(200)}.pdf`;
+    void new PhotoUpload(fileOf(name, "application/pdf"), h.deps).start();
+    await settle();
+    expect(h.api.bodies[0]?.name).toHaveLength(120);
   });
 });
 
@@ -180,11 +269,11 @@ describe("PhotoUpload", () => {
     expect(upload.get()).toMatchObject({ state: "failed", reason: "attach_offline" });
   });
 
-  it("a truncated HEIC the browser cannot read is refused, and Retry does nothing", async () => {
+  it("a file that is no picture and no document is refused, and Retry does nothing", async () => {
     const h = harness({ decoded: null });
-    const upload = new PhotoUpload(fileOf("IMG_0006.heic", "image/heic"), h.deps);
+    const upload = new PhotoUpload(fileOf("notes.txt", "text/plain"), h.deps);
     await upload.start();
-    expect(upload.get()).toMatchObject({ state: "refused", reason: "attach_heic" });
+    expect(upload.get()).toMatchObject({ state: "refused", reason: "attach_unreadable" });
     await upload.retry();
     expect(h.api.bodies).toEqual([]);
   });

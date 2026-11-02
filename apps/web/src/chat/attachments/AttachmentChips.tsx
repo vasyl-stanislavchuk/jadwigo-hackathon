@@ -1,5 +1,8 @@
 /**
- * A message's photos as 64 × 80 thumbnails (the first screen's, PR #547), each in one of 4 states:
+ * A message's photos and documents as 64 × 80 chips (the first screen's, PR #547). A photo shows the
+ * re-encoded JPEG; a PDF, a DOCX or a HEIC the browser could not decode shows a document chip, an
+ * icon, its kind and its name, until the server renders a preview (wave 6 decision 61,
+ * dl-z5ja.11.12). Each chip is in one of 4 states:
  *
  *   uploading  a progress ring over the thumbnail
  *   ready      the thumbnail alone
@@ -13,11 +16,25 @@
  */
 
 import { LIMITS } from "@jadwigo/contracts";
-import { copy, type Language } from "@jadwigo/copy";
+import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { cn } from "@jadwigo/ui";
-import { RotateCwIcon, XIcon } from "lucide-react";
+import { FileTextIcon, RotateCwIcon, XIcon } from "lucide-react";
 import { type ReactElement, useId, useSyncExternalStore } from "react";
-import type { PhotoUpload } from "./upload.ts";
+import type { DocumentKind, PhotoUpload } from "./upload.ts";
+
+const KIND_KEY = {
+  pdf: "attach_kind_pdf",
+  docx: "attach_kind_docx",
+  heic: "attach_kind_heic",
+} as const satisfies Record<DocumentKind, CopyKey>;
+
+/** The size limit a reason may name, in whole MB. */
+const DOCUMENT_MB = Math.round(LIMITS.documentBytes / (1024 * 1024));
+
+/** What a chip is called: "Zdjęcie 2" for a photo, "Plik 2" for a file that goes up as it is. */
+function label(language: Language, upload: PhotoUpload, n: number): string {
+  return copy(language, upload.get().document ? "attach_file_alt" : "attach_photo_alt", { n });
+}
 
 const RING_RADIUS = 14;
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
@@ -97,14 +114,32 @@ function Chip({
 }): ReactElement {
   const view = useView(upload);
   const percent = Math.round(view.progress * 100);
-  const alt = copy(language, "attach_photo_alt", { n });
+  const alt = label(language, upload, n);
   return (
     <li
       className="relative h-20 w-16"
       data-chip={view.state}
       aria-describedby={view.reason ? reasonId : undefined}
     >
-      {view.preview ? (
+      {view.document ? (
+        <div
+          role="img"
+          aria-label={`${alt}: ${view.document.name}`}
+          className={cn(
+            "flex size-full flex-col items-center gap-0.5 overflow-hidden rounded-jw-small border-jw border-jw-line bg-jw-card px-1 pt-2 text-jw-ink",
+            view.state === "refused" && "opacity-50",
+          )}
+          data-document={view.document.kind}
+        >
+          <FileTextIcon aria-hidden className="size-5 shrink-0 text-jw-ink-soft" />
+          <span className="text-jw-page-small font-bold leading-tight">
+            {copy(language, KIND_KEY[view.document.kind])}
+          </span>
+          <span className="line-clamp-2 w-full break-all text-center text-jw-page-small leading-tight text-jw-ink-soft">
+            {view.document.name}
+          </span>
+        </div>
+      ) : view.preview ? (
         <img
           src={view.preview}
           alt={alt}
@@ -222,7 +257,7 @@ function Reason({
   if (!view.reason) return null;
   return (
     <p id={id} className="text-jw-page-small text-jw-ink-soft" data-reason={view.state}>
-      {`${copy(language, "attach_photo_alt", { n })}: ${copy(language, view.reason)}`}
+      {`${label(language, upload, n)}: ${copy(language, view.reason, { mb: DOCUMENT_MB })}`}
     </p>
   );
 }
