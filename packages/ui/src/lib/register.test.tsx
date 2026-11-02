@@ -251,19 +251,26 @@ describe("Button", () => {
     expectClasses(screen.getByRole("button", { name: "Dalej" }), [cls], []);
   });
 
-  it("keeps a link free of a control's height at any size", () => {
-    on(
-      "prose",
-      <Button variant="link" size="control">
-        Zobacz
-      </Button>,
-    );
-    const link = screen.getByRole("button", { name: "Zobacz" });
-    expectClasses(link, ["min-h-auto", "px-0"], []);
-    expect(link.className.indexOf("min-h-auto")).toBeGreaterThan(
-      link.className.indexOf("text-link"),
-    );
-  });
+  it.each(["control", "lg", "sm"] as const)(
+    "keeps a link free of a control's height at size %s",
+    (size) => {
+      on(
+        "prose",
+        <Button variant="link" size={size}>
+          Zobacz
+        </Button>,
+      );
+      const link = screen.getByRole("button", { name: "Zobacz" });
+      expectClasses(
+        link,
+        ["min-h-auto", "px-0"],
+        [`min-h-jw-${size === "control" ? "control" : `control-${size}`}`],
+      );
+      expect(link.className.indexOf("min-h-auto")).toBeGreaterThan(
+        link.className.indexOf("text-link"),
+      );
+    },
+  );
 
   it("outside a lesson focuses with the page's outline, not the soft ring", () => {
     on("prose", <Button>Wyślij kod</Button>);

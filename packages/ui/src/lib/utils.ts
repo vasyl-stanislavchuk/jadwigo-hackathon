@@ -37,6 +37,7 @@ const SPACING = [
   "kid-credit",
   "jw-control",
   "jw-control-sm",
+  "jw-control-lg",
   "jw-shell-side",
   "jw-shell-rail",
   "jw-shell-bar",
