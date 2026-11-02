@@ -12,13 +12,13 @@
     "external_facebook_enabled": true,
     "external_facebook_client_id": "3621441648030924",
     "external_facebook_email_optional": false,
-    "mailer_subjects_confirmation": "Twój kod do Jadwigo / Your Jadwigo code",
-    "mailer_subjects_magic_link": "Twój kod do Jadwigo / Your Jadwigo code",
-    "mailer_templates_confirmation_content": "<p style=\"font-size:32px;font-weight:bold;letter-spacing:6px\">{{ .Token }}</p>\n<p>To jest Twój kod do Jadwigo. Wpisz go na stronie logowania, aby założyć konto. Kod działa przez krótki czas i tylko raz.</p>\n<p>Jeśli to nie Ty, zignoruj tę wiadomość.</p>\n<hr>\n<p>This is your Jadwigo code. Enter it on the sign-in page to create your account. It works for a short time and only once.</p>\n<p>If this wasn't you, you can ignore this email.</p>",
-    "mailer_templates_magic_link_content": "<p style=\"font-size:32px;font-weight:bold;letter-spacing:6px\">{{ .Token }}</p>\n<p>To jest Twój kod do Jadwigo. Wpisz go na stronie logowania. Kod działa przez krótki czas i tylko raz.</p>\n<p>Jeśli to nie Ty, zignoruj tę wiadomość.</p>\n<hr>\n<p>This is your Jadwigo code. Enter it on the sign-in page. It works for a short time and only once.</p>\n<p>If this wasn't you, you can ignore this email.</p>"
+    "hook_send_email_enabled": true,
+    "hook_send_email_uri": "https://app.jadwigo.pl/api/hooks/auth-emails",
+    "rate_limit_email_sent": 30
   },
   "secrets": {
     "external_google_secret": "jadwigo-google-oauth-secret-dev",
-    "external_facebook_secret": "jadwigo-facebook-app-secret-dev"
+    "external_facebook_secret": "jadwigo-facebook-app-secret-dev",
+    "hook_send_email_secrets": "jadwigo-send-email-hook-secret-dev"
   }
 }

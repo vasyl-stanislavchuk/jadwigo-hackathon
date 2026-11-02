@@ -1047,5 +1047,22 @@
   "parent_this_computer": "Open on this computer",
   "parent_print": "Print",
   "parent_print_hint": "A sheet with the questions, no answers",
-  "parent_this_computer_soon": "Opening the lesson on this computer is on its way."
+  "parent_this_computer_soon": "Opening the lesson on this computer is on its way.",
+  "email_subject_signup": "Your Jadwigo code",
+  "email_subject_magiclink": "Your Jadwigo sign-in code",
+  "email_subject_email_change": "Your code to change your Jadwigo email",
+  "email_subject_reauthentication": "Your Jadwigo confirmation code",
+  "email_subject_recovery": "Your code to get back into Jadwigo",
+  "email_lead_signup": "This is your Jadwigo code. Enter it on the sign-in page to create your account.",
+  "email_lead_magiclink": "This is your Jadwigo code. Enter it on the sign-in page.",
+  "email_lead_email_change": "This is your code to change the email address of your Jadwigo account. Enter it where you are changing it.",
+  "email_lead_reauthentication": "This is your code to confirm it's you. Enter it in Jadwigo.",
+  "email_lead_recovery": "This is your code to get back into your Jadwigo account. Enter it on the sign-in page.",
+  "email_code_label": "Your code",
+  "email_expiry": "It works for a short time and only once.",
+  "email_ignore": "If this wasn't you, you can ignore this email.",
+  "parent_analytics_ask": "Jadwigo records how the app is used, including screen recordings without what you type, so we can make it better. Do you agree?",
+  "parent_analytics_accept": "I agree",
+  "parent_analytics_reject": "No, thanks",
+  "parent_analytics_privacy": "Privacy"
 }

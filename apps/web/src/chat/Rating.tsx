@@ -7,6 +7,7 @@
  * no route: the page sends the turn's own message again as a new turn.
  */
 
+import { track } from "@jadwigo/analytics";
 import type { RunId, RunRatingCreate } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { type FormEvent, type ReactElement, useState } from "react";
@@ -33,7 +34,11 @@ export function Rating({
   const rate = (body: RunRatingCreate) => {
     setState("saving");
     onRate(run, body).then(
-      () => setState("saved"),
+      () => {
+        // The verdict only: a note may hold learner data (contracts RunRating).
+        track("chat_response_rated", { verdict: body.verdict });
+        setState("saved");
+      },
       () => setState("failed"),
     );
   };
