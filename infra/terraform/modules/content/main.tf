@@ -6,7 +6,10 @@
 # jadwigo-bank's tools/khan/sync.py fills it; Terraform owns no object in it.
 locals {
   media_prefix = "khan/media"
-  media_url    = "https://${aws_cloudfront_distribution.media.domain_name}"
+  # Alfik's pictures (dl-e8ov.2.98): served at <media url>/alfik/media/<sha>.<ext>, the URL path
+  # being the bucket key, so a Khan URL (<media url>/<sha>.<ext>) keeps its shape.
+  alfik_media_prefix = "alfik/media"
+  media_url          = "https://${aws_cloudfront_distribution.media.domain_name}"
 }
 
 resource "aws_s3_bucket" "content" {
@@ -65,9 +68,11 @@ resource "aws_s3_bucket_lifecycle_configuration" "content" {
   depends_on = [aws_s3_bucket_versioning.content]
 }
 
-# Pictures for a child's browser: CloudFront over khan/media/ only, the bucket private behind origin
-# access control (jadwigo-question-bank/decisions/2026-10-29-khan-pictures-are-served-from-a-cloudfront-path-over-the-bucket).
-# The origin path is /khan/media, so /<sha>.svg reads khan/media/<sha>.svg and no other key has a URL.
+# Pictures for a child's browser: CloudFront over khan/media/ and alfik/media/ only, the bucket private
+# behind origin access control (jadwigo-question-bank/decisions/2026-10-29-khan-pictures-are-served-from-a-cloudfront-path-over-the-bucket).
+# The default origin's path is /khan/media, so /<sha>.svg reads khan/media/<sha>.svg. A second origin
+# at the bucket root serves the one behaviour /alfik/media/*, so /alfik/media/<sha>.png reads that key
+# (dl-e8ov.2.98). The bucket policy grants those 2 prefixes and no other key has a URL.
 resource "aws_cloudfront_origin_access_control" "media" {
   name                              = var.bucket_name
   origin_access_control_origin_type = "s3"
@@ -112,13 +117,31 @@ resource "aws_cloudfront_distribution" "media" {
   is_ipv6_enabled = true
   http_version    = "http2and3"
   price_class     = "PriceClass_100"
-  comment         = "${var.bucket_name} ${local.media_prefix}/ pictures"
+  comment         = "${var.bucket_name} ${local.media_prefix}/ and ${local.alfik_media_prefix}/ pictures"
 
   origin {
     origin_id                = "media"
     domain_name              = aws_s3_bucket.content.bucket_regional_domain_name
     origin_path              = "/${local.media_prefix}"
     origin_access_control_id = aws_cloudfront_origin_access_control.media.id
+  }
+
+  # The bucket root, reached only through the /alfik/media/* behaviour below.
+  origin {
+    origin_id                = "alfik-media"
+    domain_name              = aws_s3_bucket.content.bucket_regional_domain_name
+    origin_access_control_id = aws_cloudfront_origin_access_control.media.id
+  }
+
+  ordered_cache_behavior {
+    path_pattern               = "/${local.alfik_media_prefix}/*"
+    target_origin_id           = "alfik-media"
+    viewer_protocol_policy     = "redirect-to-https"
+    allowed_methods            = ["GET", "HEAD"]
+    cached_methods             = ["GET", "HEAD"]
+    compress                   = true
+    cache_policy_id            = aws_cloudfront_cache_policy.media.id
+    response_headers_policy_id = data.aws_cloudfront_response_headers_policy.security.id
   }
 
   default_cache_behavior {
@@ -142,13 +165,16 @@ resource "aws_cloudfront_distribution" "media" {
   }
 }
 
-# CloudFront reads khan/media/* and nothing else. The api role's read of questions/* and
+# CloudFront reads khan/media/* and alfik/media/* and nothing else. The api role's read of questions/* and
 # khan/converted/* is an identity policy (modules/app/bank.tf), so it needs no line here.
 data "aws_iam_policy_document" "content" {
   statement {
-    sid       = "CloudFrontReadsTheMediaOnly"
-    actions   = ["s3:GetObject"]
-    resources = ["${aws_s3_bucket.content.arn}/${local.media_prefix}/*"]
+    sid     = "CloudFrontReadsTheMediaOnly"
+    actions = ["s3:GetObject"]
+    resources = [
+      "${aws_s3_bucket.content.arn}/${local.media_prefix}/*",
+      "${aws_s3_bucket.content.arn}/${local.alfik_media_prefix}/*",
+    ]
 
     principals {
       type        = "Service"
