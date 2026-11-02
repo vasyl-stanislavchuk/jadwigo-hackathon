@@ -921,6 +921,41 @@
   "chat_choose_recap": "{question} · {answer}",
   "chat_choose_skipped": "{question} · skipped",
   "chat_readback_title": "Tasks read · untick what isn't homework · {n}",
+  "chat_ideas_list_reteach": "Teach again",
+  "chat_ideas_list_review": "Time to review",
+  "chat_ideas_list_new": "Something new",
+  "chat_ideas_list_recheck": "Check again",
+  "chat_ideas_list_school": "From school",
+  "chat_ideas_why_needs_attention": "Was hard lately",
+  "chat_ideas_why_review_due": "Due for review",
+  "chat_ideas_why_prerequisites_met": "The basics are in place",
+  "chat_ideas_why_second_day_owed": "A second day of practice",
+  "chat_ideas_why_school_tag": "School is on this now",
+  "chat_ideas_skills": [
+    {
+      "declarations": ["input n", "local count_noun = n: plural"],
+      "selectors": ["count_noun"],
+      "match": {
+        "count_noun=one": "{n} skill",
+        "count_noun=other": "{n} skills"
+      }
+    }
+  ],
+  "chat_ideas_ask": "Make this lesson",
+  "chat_ideas_ask_message": "Make a lesson from idea {n}: {list}.",
+  "chat_ideas_none": "No ideas for the next lesson yet.",
+  "chat_mistakes_times": [
+    {
+      "declarations": ["input n", "local count_noun = n: plural"],
+      "selectors": ["count_noun"],
+      "match": {
+        "count_noun=one": "{n} time",
+        "count_noun=other": "{n} times"
+      }
+    }
+  ],
+  "chat_mistakes_answers": "The child's answers",
+  "chat_mistakes_none": "Nothing was hard lately.",
   "parent_chat": "Chat",
   "parent_lesson": "Lesson",
   "parent_details": "Lesson details",
@@ -980,5 +1015,13 @@
   "parent_ai_about_you": "You decide what reaches the child.",
   "parent_ai_about_link": "More about Jadwigo AI",
   "parent_overview_empty": "Week by week, how learning goes appears here after the first lesson.",
-  "parent_add_child_reason": "Type a name first"
+  "parent_add_child_reason": "Type a name first",
+  "parent_filter_label": "Show",
+  "parent_filter_all": "All",
+  "parent_search": "Search",
+  "parent_col_child": "Child",
+  "parent_col_day": "Day",
+  "parent_col_result": "Result",
+  "parent_list_no_match": "Nothing here matches.",
+  "parent_lesson_untitled": "Untitled lesson"
 }

@@ -120,6 +120,15 @@ export function runnerLiveAliasArn(): string | undefined {
 }
 
 /**
+ * Where `make dev-all`'s step host listens on this machine (dl-uukj.47.14.1): `unix:<path>` for its
+ * socket, or an `http://` URL. Set, the local server pokes it after a commit in place of the
+ * Lambda's alias; undefined when unset or blank.
+ */
+export function localRunnerUrl(): string | undefined {
+  return process.env["LOCAL_RUNNER_URL"]?.trim() || undefined;
+}
+
+/**
  * The SSM parameter holding the uploads bucket's name when `UPLOADS_BUCKET` is unset, as with the
  * content bucket: infra's `modules/uploads` writes it (dl-z5ja.11.2).
  */

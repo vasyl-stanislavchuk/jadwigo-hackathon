@@ -248,6 +248,14 @@ function engine(server: ViteDevServer, m: Modules) {
                 }
               : { event_id: body.event_id, kind: "cancel", payload: {} },
       });
+      // A stalled turn's step hangs on its model and was archived when read, so a cancel there has
+      // no step to end it: it gets one of its own, which finds the cancel and ends the turn.
+      const open = run.status === "queued" || run.status === "in_progress";
+      if (pace === "stall" && body.kind === "cancel" && open) {
+        await enqueue({ run_id: run.id, attempt: run.attempt });
+        setTimeout(kick, 0);
+        return { run };
+      }
       // After the answer: the page subscribes, then fetches after its cursor. A `stall` step logs
       // the parent's message and then waits on a model that never answers; a `fail` step finds
       // its turn past its max deadline. Each drains in its own lane.
