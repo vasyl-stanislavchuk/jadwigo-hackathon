@@ -8,12 +8,13 @@
 
 import { type Learner, LearnerId } from "@jadwigo/contracts";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NewLessonBox } from "./NewLessonBox.tsx";
 
 const OLA = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
 const ola = { id: OLA, first_name: "Ola", school_grade: null } as unknown as Learner;
 
+beforeEach(() => window.sessionStorage.clear());
 afterEach(cleanup);
 
 function box(changes: Partial<Parameters<typeof NewLessonBox>[0]> = {}) {
@@ -32,6 +33,47 @@ function box(changes: Partial<Parameters<typeof NewLessonBox>[0]> = {}) {
 
 const field = () => screen.getByRole("textbox", { name: "Opisz zadanie domowe" });
 const send = () => screen.getByRole("button", { name: /Zrób lekcję/ });
+
+describe("the first screen's draft (dl-uukj.47.24)", () => {
+  it("keeps the words and Dla across an unmount and a remount", () => {
+    box({ forLearner: OLA });
+    fireEvent.change(field(), { target: { value: "Odejmowanie przez 10" } });
+    cleanup();
+
+    const props = box();
+    expect((field() as HTMLTextAreaElement).value).toBe("Odejmowanie przez 10");
+    expect(props.onForChange).toHaveBeenCalledWith(OLA);
+  });
+
+  it("keeps the child a page names (?for) over the tab's Dla", () => {
+    box({ forLearner: OLA });
+    cleanup();
+    const tymek = LearnerId.parse("lrn_7qre3atahx8cpak6xbjtz73var");
+    const props = box({
+      learners: [ola, { ...ola, id: tymek, first_name: "Tymek" } as Learner],
+      forLearner: tymek,
+    });
+    expect(props.onForChange).not.toHaveBeenCalled();
+  });
+
+  it("forgets a child who is no longer in the family", () => {
+    box({ forLearner: OLA });
+    cleanup();
+    const props = box({ learners: [] });
+    expect(props.onForChange).not.toHaveBeenCalled();
+  });
+
+  it("clears the words and Dla once they are sent", () => {
+    box({ forLearner: OLA });
+    fireEvent.change(field(), { target: { value: "15 − 7" } });
+    fireEvent.keyDown(field(), { key: "Enter" });
+    cleanup();
+
+    const props = box();
+    expect((field() as HTMLTextAreaElement).value).toBe("");
+    expect(props.onForChange).not.toHaveBeenCalled();
+  });
+});
 
 describe("the first screen", () => {
   it("asks one question over one box, with the caret in it and the example as its placeholder", () => {

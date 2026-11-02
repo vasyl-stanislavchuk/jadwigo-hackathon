@@ -72,6 +72,7 @@ import { LanguagePick } from "./LanguagePick.tsx";
 import { LessonsTable } from "./lessons/LessonsTable.tsx";
 import { AddChildDialog } from "./newLesson/AddChildDialog.tsx";
 import { DlaSelect } from "./newLesson/DlaSelect.tsx";
+import { newLessonDraft } from "./newLesson/draft.ts";
 import { type LessonAsk, NewLessonBox } from "./newLesson/NewLessonBox.tsx";
 import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";
 import { ProviderButton } from "./ProviderButton.tsx";
@@ -603,6 +604,8 @@ function SignedIn({
       navigate(lessonPath({ conversation: made.id, lang: pageLang() }));
     } catch (error) {
       setStarting("idle");
+      // The send cleared the tab's draft; it did not start, so the words are kept again.
+      newLessonDraft.put({ text: ask.text, learner: ask.learner });
       if (error instanceof ApiError && error.type === "AiConsentMissing") setConsentFor(ask);
       else setStarting("failed");
     }
