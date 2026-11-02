@@ -3,7 +3,7 @@
  * filter", §6 Lekcje): the segmented filter and the search above it, a row per live conversation,
  * newest first, each opening its workspace. A lesson belongs to the family, not to a child, and a
  * conversation names no child, so every row reads "Bez dziecka" in muted ink until the data says
- * otherwise. Columns, sorting and drafts against given are open with the owner; these are the
+ * otherwise. "Nowa lekcja" stands atop the table, on the empty page too (dl-uukj.47.18). Columns, sorting and drafts against given are open with the owner; these are the
  * columns the data has.
  */
 
@@ -28,6 +28,7 @@ import { Failed } from "../Failed.tsx";
 import { shows, type Who } from "../lists/filter.ts";
 import { ListControls } from "../lists/ListControls.tsx";
 import { lessonPath } from "../route.ts";
+import { NewLessonRow } from "./NewLessonRow.tsx";
 
 type Loaded = readonly Conversation[] | "failed" | null;
 
@@ -83,6 +84,7 @@ export function LessonsTable({
         search={search}
         onSearch={setSearch}
       />
+      <NewLessonRow language={language} />
       <Table>
         <TableHeader>
           <TableRow>
