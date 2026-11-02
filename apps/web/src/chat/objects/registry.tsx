@@ -112,7 +112,7 @@ const REGISTRY: Readonly<Record<ObjectKind, ObjectEntry>> = {
 };
 
 /** A kind's entry. */
-const objectEntry = (kind: ObjectKind): ObjectEntry => REGISTRY[kind];
+export const objectEntry = (kind: ObjectKind): ObjectEntry => REGISTRY[kind];
 
 /**
  * A thing the right column has no panel for yet: its kind's name and the way to its own page, or
