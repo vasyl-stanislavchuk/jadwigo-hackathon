@@ -1012,5 +1012,18 @@
   "parent_col_day": "Dzień",
   "parent_col_result": "Wynik",
   "parent_list_no_match": "Nic tu nie pasuje do wyboru.",
-  "parent_lesson_untitled": "Lekcja bez tytułu"
+  "parent_lesson_untitled": "Lekcja bez tytułu",
+  "email_subject_signup": "Twój kod do Jadwigo",
+  "email_subject_magiclink": "Twój kod do logowania w Jadwigo",
+  "email_subject_email_change": "Twój kod do zmiany adresu e-mail w Jadwigo",
+  "email_subject_reauthentication": "Twój kod potwierdzenia w Jadwigo",
+  "email_subject_recovery": "Twój kod do odzyskania konta Jadwigo",
+  "email_lead_signup": "To jest Twój kod do Jadwigo. Wpisz go na stronie logowania, aby założyć konto.",
+  "email_lead_magiclink": "To jest Twój kod do Jadwigo. Wpisz go na stronie logowania.",
+  "email_lead_email_change": "To jest Twój kod do zmiany adresu e-mail w Jadwigo. Wpisz go tam, gdzie zmieniasz adres.",
+  "email_lead_reauthentication": "To jest Twój kod, który potwierdza, że to Ty. Wpisz go w Jadwigo.",
+  "email_lead_recovery": "To jest Twój kod do odzyskania konta Jadwigo. Wpisz go na stronie logowania.",
+  "email_code_label": "Twój kod",
+  "email_expiry": "Kod działa przez krótki czas i tylko raz.",
+  "email_ignore": "Jeśli to nie Ty, zignoruj tę wiadomość."
 }

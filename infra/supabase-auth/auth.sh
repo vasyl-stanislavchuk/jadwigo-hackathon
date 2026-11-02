@@ -110,6 +110,15 @@ for env in "$@"; do
     echo "auth.sh: $file turns the token hook on without a pg-functions://postgres/<schema>/<function> uri" >&2
     exit 64
   fi
+  # The Send Email Hook (dl-liwi.33) posts every auth mail to the api, so on means an https uri and
+  # the keychain item that holds its Standard Webhooks secret: without either, no mail would go out.
+  if ! jq -e '.settings.hook_send_email_enabled != true
+      or ((.settings.hook_send_email_uri // "" | test("^https://[^/]+/"))
+        and ((.secrets // {}) | has("hook_send_email_secrets")))' \
+    "$file" >/dev/null; then
+    echo "auth.sh: $file turns the Send Email Hook on without an https:// uri and a hook_send_email_secrets keychain item" >&2
+    exit 64
+  fi
 done
 
 # apply sends nothing to any project while a keychain item it names is missing.

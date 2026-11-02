@@ -988,5 +988,18 @@
   "parent_col_day": "Day",
   "parent_col_result": "Result",
   "parent_list_no_match": "Nothing here matches.",
-  "parent_lesson_untitled": "Untitled lesson"
+  "parent_lesson_untitled": "Untitled lesson",
+  "email_subject_signup": "Your Jadwigo code",
+  "email_subject_magiclink": "Your Jadwigo sign-in code",
+  "email_subject_email_change": "Your code to change your Jadwigo email",
+  "email_subject_reauthentication": "Your Jadwigo confirmation code",
+  "email_subject_recovery": "Your code to get back into Jadwigo",
+  "email_lead_signup": "This is your Jadwigo code. Enter it on the sign-in page to create your account.",
+  "email_lead_magiclink": "This is your Jadwigo code. Enter it on the sign-in page.",
+  "email_lead_email_change": "This is your code to change the email address of your Jadwigo account. Enter it where you are changing it.",
+  "email_lead_reauthentication": "This is your code to confirm it's you. Enter it in Jadwigo.",
+  "email_lead_recovery": "This is your code to get back into your Jadwigo account. Enter it on the sign-in page.",
+  "email_code_label": "Your code",
+  "email_expiry": "It works for a short time and only once.",
+  "email_ignore": "If this wasn't you, you can ignore this email."
 }

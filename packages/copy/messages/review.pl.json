@@ -749,5 +749,18 @@
   "parent_col_day": false,
   "parent_col_result": false,
   "parent_list_no_match": false,
-  "parent_lesson_untitled": false
+  "parent_lesson_untitled": false,
+  "email_subject_signup": false,
+  "email_subject_magiclink": false,
+  "email_subject_email_change": false,
+  "email_subject_reauthentication": false,
+  "email_subject_recovery": false,
+  "email_lead_signup": false,
+  "email_lead_magiclink": false,
+  "email_lead_email_change": false,
+  "email_lead_reauthentication": false,
+  "email_lead_recovery": false,
+  "email_code_label": false,
+  "email_expiry": false,
+  "email_ignore": false
 }

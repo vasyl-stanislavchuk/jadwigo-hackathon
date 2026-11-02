@@ -1,5 +1,6 @@
 import { Router } from "@aws-lambda-powertools/event-handler/http";
 import {
+  AUTH_EMAIL_HOOK_PATH,
   ErrorType,
   LIMITS,
   ROUTES,
@@ -41,6 +42,7 @@ import {
   patchGoal,
   patchReport,
 } from "./knowledge.ts";
+import { handleSendEmail, type MailDeps } from "./mail/hook.ts";
 import {
   claimAttempt,
   createAccount,
@@ -97,6 +99,11 @@ export interface AppDeps {
    * and a message with photos fail; a message without photos never reads it.
    */
   readonly uploads?: UploadsBucket | undefined;
+  /**
+   * Supabase Auth's Send Email Hook (dl-liwi.33): its secrets and SES. With none, the hook's path
+   * answers NotFound, as any unwired route does.
+   */
+  readonly mail?: MailDeps | undefined;
 }
 
 /** No queue is wired: every send fails, and the unit that asked rolls back. */
@@ -128,6 +135,7 @@ export function createApp(
     poke,
     now = () => new Date(),
     uploads,
+    mail,
   }: AppDeps = {},
 ): Router {
   const app = new Router();
@@ -294,6 +302,21 @@ export function createApp(
     run((s) => getAttachment(s, { uploads, now }, claims, params.id)),
   );
 
+  // Outside ROUTES (routes.ts, AUTH_EMAIL_HOOK_PATH): the signature covers the raw body, so the
+  // hook reads it as text, and it answers in Supabase's shape, not the API's error envelope.
+  app.post(AUTH_EMAIL_HOOK_PATH, async ({ req }) => {
+    if (mail === undefined) return errorResponse(ErrorType.enum.NotFound, "no such route");
+    let raw: string;
+    try {
+      raw = await textOf(req);
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : "the body could not be read";
+      return json(400, { error: { http_code: 400, message } });
+    }
+    const reply = await handleSendEmail(raw, req.headers, mail);
+    return json(reply.status, reply.body);
+  });
+
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;
 }
@@ -405,6 +428,17 @@ function queryOf(route: Route, req: Request): object {
  * or stored, and a content-length that is not a byte count is refused before the body is read.
  */
 async function bodyOf(req: Request): Promise<unknown> {
+  const text = await textOf(req);
+  if (text.trim() === "") return undefined;
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new ApiError(ErrorType.enum.BadRequest, "the body is not JSON");
+  }
+}
+
+/** The body as text, refused past `LIMITS.bodyBytes` as `bodyOf` says. */
+async function textOf(req: Request): Promise<string> {
   const length = req.headers.get("content-length");
   if (length !== null && !/^\d+$/.test(length.trim())) {
     throw new ApiError(ErrorType.enum.BadRequest, "the content-length is not a number of bytes");
@@ -412,12 +446,7 @@ async function bodyOf(req: Request): Promise<unknown> {
   if (Number(length ?? 0) > LIMITS.bodyBytes) throw tooLarge();
   const text = await req.text();
   if (new TextEncoder().encode(text).byteLength > LIMITS.bodyBytes) throw tooLarge();
-  if (text.trim() === "") return undefined;
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new ApiError(ErrorType.enum.BadRequest, "the body is not JSON");
-  }
+  return text;
 }
 
 function notSignedIn(): ApiError {

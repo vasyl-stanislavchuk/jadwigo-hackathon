@@ -187,7 +187,7 @@ describe("ParentScreen", () => {
     await screen.findByText("Wyślij kod");
     type("[data-email]", "rodzic@example.com");
     await press("[data-send-code]");
-    expect(auth.sendCode).toHaveBeenCalledWith("rodzic@example.com");
+    expect(auth.sendCode).toHaveBeenCalledWith("rodzic@example.com", "pl");
 
     type("[data-code]", "111111");
     await press("[data-sign-in]");
@@ -771,7 +771,7 @@ describe("ParentScreen", () => {
         client={client({})}
       />,
     );
-    await vi.waitFor(() => expect(auth.sendCode).toHaveBeenCalledWith("mama@example.com"));
+    await vi.waitFor(() => expect(auth.sendCode).toHaveBeenCalledWith("mama@example.com", "pl"));
     expect(auth.sendCode).toHaveBeenCalledTimes(1);
     expect(window.location.search).toBe("");
   });
