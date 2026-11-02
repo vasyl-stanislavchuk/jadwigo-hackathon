@@ -41,6 +41,10 @@ function limitOf(e: unknown): SendLimit | null {
   return null;
 }
 
+/** Whether the routes refused the conversation itself: not this family's, or not there (dl-uukj.47.33). */
+const refusedConversation = (e: unknown): boolean =>
+  e instanceof ApiError && (e.status === 404 || e.status === 403);
+
 /** Whether a route refused for want of the pod's consent to the AI (dl-z5ja.112), by its type. */
 const consentMissing = (e: unknown): boolean =>
   e instanceof ApiError && e.type === ErrorType.enum.AiConsentMissing;
@@ -181,10 +185,11 @@ export function useConversation(
       const runs = await transport.runs(conversation);
       await Promise.all(runs.map(follow));
       dispatch({ type: "restored" });
-    } catch {
+    } catch (e) {
       // The page keeps what it drew and says the restore stalled, with a retry; the socket's
-      // next connect tries again too (dl-uukj.47.15).
-      dispatch({ type: "restore_failed" });
+      // next connect tries again too (dl-uukj.47.15). A conversation the routes refuse is not
+      // there for this parent at all (dl-uukj.47.33).
+      dispatch({ type: "restore_failed", notFound: refusedConversation(e) });
     }
   }, [transport, conversation, follow]);
 

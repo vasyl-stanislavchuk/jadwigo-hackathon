@@ -31,8 +31,9 @@ import { elapsedSeconds, phaseAnnouncement, type RunPhase, usePhase } from "../.
 import { holdServer } from "../../chat/routesTransport.ts";
 import { useConversation } from "../../chat/useConversation.ts";
 import { navigate } from "../../nav/location.ts";
+import { NavLink } from "../../nav/NavLink.tsx";
 import { CATEGORY, pageLang } from "../adult.ts";
-import { lessonsPath } from "../route.ts";
+import { lessonsPath, parentPath } from "../route.ts";
 import { DetailsPanel } from "./DetailsPanel.tsx";
 import { firstMessage, type LessonEngine } from "./engine.ts";
 import { LessonFooter } from "./LessonFooter.tsx";
@@ -106,6 +107,21 @@ export function LessonWorkspace({
   const said = phase !== null && phase.kind !== "done";
   const summary = lessonSummary(lesson.shown);
   const child = learners.find((l) => l.id === forLearner) ?? null;
+
+  // A lesson URL the routes refuse (another family's, or gone): one line and the way to a new one,
+  // never 3 empty columns stuck restoring (dl-uukj.47.33).
+  if (state.notFound)
+    return (
+      <div className="flex flex-col items-start gap-3 p-6" data-not-found>
+        <p className="text-jw-ink">{t("chat_not_found")}</p>
+        <NavLink
+          href={parentPath({ lang: pageLang() })}
+          className="font-bold text-jw-ink underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-jw-focus"
+        >
+          {t("parent_new_lesson")}
+        </NavLink>
+      </div>
+    );
 
   const chat = consentMissing ? (
     <div className="p-4">
