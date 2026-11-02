@@ -34,6 +34,23 @@ describe("labelWidths", () => {
   });
 });
 
+describe("labelWidths beside a y-axis", () => {
+  it("does not squeeze the axis title against the tick at its height", () => {
+    // Grade 1's bar graph: ticks 0..10 left of the axis, the title "Liczba dzieci" centred at y = 5.
+    const range = [
+      [-0.65, 3.52],
+      [-1, 11],
+    ] as const;
+    const ticks = [4, 5, 6].map((y) => at(-0.05, y, "left"));
+    expect(labelWidths([...ticks, at(-0.52, 5, "center")], range)).toEqual([
+      null,
+      null,
+      null,
+      null,
+    ]);
+  });
+});
+
 describe("textOnly", () => {
   it("reads the words of a label that is only \\text{…}", () => {
     expect(textOnly("\\text{Fancy Farm}")).toBe("Fancy Farm");
