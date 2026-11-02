@@ -3,6 +3,8 @@
  * lesson-workspac, dl-xo0q; handoff §5.3): the first name, with the note that it never goes into a
  * lesson, and the class as one row of 1 to 6. Anuluj, Dodaj. It opens from the sidebar's "+" or from
  * Dla's "Dodaj dziecko…", leaves the page as it was, and gives the focus back to what opened it.
+ * With no name, Dodaj is quiet with its reason beside it (handoff §3 "Quiet button with a reason",
+ * dl-uukj.47.20), never the browser's own "Please fill out this field". Klasa stays optional.
  * The class is asked but not stored yet: LearnerCreate takes no school_grade (dl-e8ov.2.90).
  */
 
@@ -40,6 +42,8 @@ export function AddChildDialog({
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const noteId = useId();
+  const reasonId = useId();
+  const ready = name.trim() !== "";
   // What had the focus when the dialog opened: the "+" or Dla. A dialog opened from state has no
   // Radix trigger to give it back to, so it is kept here.
   const opener = useRef<HTMLElement | null>(null);
@@ -77,7 +81,7 @@ export function AddChildDialog({
         }}
         data-add-child-dialog
       >
-        <form onSubmit={submit} className="flex flex-col gap-4">
+        <form onSubmit={submit} noValidate className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Field
               label={t("parent_first_name")}
@@ -85,7 +89,6 @@ export function AddChildDialog({
             >
               <Input
                 kind="text"
-                required
                 maxLength={60}
                 autoComplete="off"
                 value={name}
@@ -111,7 +114,23 @@ export function AddChildDialog({
                 {t("parent_cancel")}
               </Button>
             </DialogClose>
-            <Button type="submit" size="control" disabled={busy} data-add>
+            {!ready && (
+              <span
+                id={reasonId}
+                className="self-center text-jw-page-small text-jw-ink-soft"
+                data-reason
+              >
+                {t("parent_add_child_reason")}
+              </span>
+            )}
+            <Button
+              type="submit"
+              size="control"
+              aria-disabled={!ready || busy}
+              aria-busy={busy}
+              aria-describedby={ready ? undefined : reasonId}
+              data-add
+            >
               {t("parent_add")}
             </Button>
           </DialogFooter>

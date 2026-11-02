@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { museConfig, runnerDatabaseUrl } from "./config.ts";
+import { devDatabaseUrl, isLocalDatabaseUrl, museConfig, runnerDatabaseUrl } from "./config.ts";
 
 const KEYS = [
   "META_API_KEY",
@@ -10,6 +10,7 @@ const KEYS = [
   "DATABASE_URL",
   "RUNNER_DATABASE_URL",
   "JADWIGO_RUNNER_DB_URL_PARAM",
+  "LOCAL_DATABASE_URL",
 ];
 const saved = Object.fromEntries(KEYS.map((k) => [k, process.env[k]]));
 
@@ -83,5 +84,41 @@ describe("the runner's settings", () => {
     env({ DATABASE_URL: "mysql://user:secret@host/db" });
     await expect(runnerDatabaseUrl()).rejects.toThrow("is not a postgres:// or postgresql:// URL");
     await expect(runnerDatabaseUrl()).rejects.not.toThrow("secret");
+  });
+});
+
+describe("the dev runner's database (dl-uukj.47.14.2's review)", () => {
+  it("takes a local jadwigo database, from LOCAL_DATABASE_URL first", () => {
+    env({
+      LOCAL_DATABASE_URL: "postgresql://localhost:5433/jadwigo",
+      DATABASE_URL: "postgresql://127.0.0.1/jadwigo_test",
+    });
+    expect(devDatabaseUrl()).toBe("postgresql://localhost:5433/jadwigo");
+    env({ DATABASE_URL: "postgres://me:pw@127.0.0.1/jadwigo_test" });
+    expect(devDatabaseUrl()).toBe("postgres://me:pw@127.0.0.1/jadwigo_test");
+  });
+
+  it("refuses a deployed database, and never reads RUNNER_DATABASE_URL or SSM", () => {
+    env({ DATABASE_URL: "postgresql://runner:pw@db.example.supabase.co:5432/postgres" });
+    expect(() => devDatabaseUrl()).toThrow(/local database only/);
+    env({
+      RUNNER_DATABASE_URL: "postgresql://localhost/jadwigo",
+      JADWIGO_RUNNER_DB_URL_PARAM: "/jadwigo/prod/runner",
+    });
+    expect(() => devDatabaseUrl()).toThrow(/set LOCAL_DATABASE_URL/);
+    env({ LOCAL_DATABASE_URL: "postgresql://localhost/postgres" });
+    expect(() => devDatabaseUrl()).toThrow(/local database only/);
+  });
+
+  it("matches make's LOCAL_DB_GATE", () => {
+    for (const ok of ["postgresql://localhost/jadwigo", "postgres://u@127.0.0.1:5433/jadwigo_test"])
+      expect(isLocalDatabaseUrl(ok), ok).toBe(true);
+    for (const no of [
+      "postgresql://localhost.evil.com/jadwigo",
+      "postgresql://10.0.0.5/jadwigo",
+      "postgresql://localhost/jadwigo?host=db.example.com",
+      "mysql://localhost/jadwigo",
+    ])
+      expect(isLocalDatabaseUrl(no), no).toBe(false);
   });
 });
