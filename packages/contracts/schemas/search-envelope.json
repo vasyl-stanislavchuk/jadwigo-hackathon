@@ -358,6 +358,13 @@
           "type": "string",
           "description": "A task to resemble, e.g. a homework problem's text"
         },
+        "question_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Keep only sets holding one of these question types: family.type, a glob such as group.*, a bare family (choose) or a bare type (multi_select)"
+        },
         "language": {
           "$ref": "#/$defs/Language"
         },

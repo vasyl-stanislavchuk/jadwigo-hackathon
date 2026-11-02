@@ -5,11 +5,12 @@ import {
   type BucketDeps,
   questionBody,
   questionSet,
+  questionTypes,
   searchQuestions,
 } from "../questions.ts";
 
 /**
- * The bank the MCP's lesson verbs draw from (dl-1u6fn.10): the api's own 3 bank routes called
+ * The bank the MCP's lesson verbs draw from (dl-1u6fn.10): the api's own bank routes called
  * in-process, so no HTTP call goes back to this Lambda and the parent never holds the bank's read
  * token. They check that token as for any caller, so a Lambda whose token is unset refuses here
  * as it refuses over HTTP. With no bank wired (the local server, the tests), the fixture bank.
@@ -22,6 +23,7 @@ export function mcpBank(bank: BankDeps | undefined, bucket: BucketDeps | undefin
     search: async (need) => searchQuestions(bank, await headers(), need),
     set: async (id) => absentAsUndefined(questionSet(bank, await headers(), id)),
     body: async (id) => absentAsUndefined(questionBody(bank, bucket, await headers(), id)),
+    types: async (asked) => questionTypes(bank, await headers(), asked),
   };
   return apiBank(reads);
 }

@@ -58,6 +58,55 @@
         "ready_ids"
       ],
       "additionalProperties": false
+    },
+    "question_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The question types of the set's lesson-ready questions, in any language (dl-n9fr.70)"
+    },
+    "problem_types": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "question_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The question types of its lesson-ready questions"
+          }
+        },
+        "required": [
+          "name",
+          "question_types"
+        ],
+        "additionalProperties": false
+      },
+      "description": "The set's problem types, each with the question types it holds"
+    },
+    "ready_types": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "propertyNames": {
+          "type": "string"
+        },
+        "additionalProperties": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "description": "By language code: how many lesson-ready questions of each question type"
     }
   },
   "required": [
@@ -68,7 +117,7 @@
     "items"
   ],
   "additionalProperties": false,
-  "description": "One question set's public page: its titles, skills and credit, the ids of its questions, and which are lesson-ready per language; never a question's body",
+  "description": "One question set's public page: its titles, skills and credit, the ids of its questions, which are lesson-ready per language and their question types; never a question's body",
   "$defs": {
     "QuestionSetId": {
       "type": "string",

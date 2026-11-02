@@ -6,6 +6,7 @@ import {
   ErrorType,
   QuestionBody,
   QuestionSetPage,
+  QuestionTypeCounts,
   ROUTES,
   SearchEnvelope,
 } from "@jadwigo/contracts";
@@ -656,6 +657,26 @@ describe("GET /api/v1/question-sets/{id}", () => {
     expect(sent).toEqual([{ set_id: SET_PAGE.id }]);
   });
 
+  it("passes the set's question types through, and drops a problem type's samples", async () => {
+    const typed = {
+      ...SET_PAGE,
+      question_types: ["fill_gaps", "recognition"],
+      problem_types: [
+        { name: "add-two-digit", question_types: ["fill_gaps"], samples: [{ pl: "1+1=" }] },
+      ],
+      ready_types: { pl: { fill_gaps: 1, recognition: 1 } },
+    };
+    const { bank } = fakeBank(async () => answered(200, typed));
+    const reply = await getSet(bank, SET_PAGE.id);
+    expect(reply.status).toBe(200);
+    expect(reply.body).toMatchObject({
+      question_types: ["fill_gaps", "recognition"],
+      problem_types: [{ name: "add-two-digit", question_types: ["fill_gaps"] }],
+      ready_types: { pl: { fill_gaps: 1, recognition: 1 } },
+    });
+    expect(JSON.stringify(reply.body)).not.toContain("samples");
+  });
+
   it("drops a field the page schema does not name, a question body among them", async () => {
     const { bank } = fakeBank(async () => answered(200, { ...SET_PAGE, body: { key: 1 } }));
     const reply = await getSet(bank, SET_PAGE.id);
@@ -686,5 +707,85 @@ describe("GET /api/v1/question-sets/{id}", () => {
 
   it("answers 502 when no bank is wired, as on the local server", async () => {
     refusedWith(await getSet(undefined, SET_PAGE.id), ErrorType.enum.BankUnavailable);
+  });
+});
+
+/** Made-up counts, as the bank Lambda answers `{types}` (jadwigo-bank service/handler.py). */
+const TYPE_COUNTS = {
+  version: 1,
+  bank_rev: "rev-made-up",
+  types: [
+    {
+      grade: "1",
+      language: "pl",
+      question_type: "recognition",
+      family: "choose",
+      sets: 3,
+      ready: 40,
+    },
+    { grade: "1", language: "pl", question_type: "fill_gaps", family: "slots", sets: 2, ready: 12 },
+  ],
+};
+
+async function getTypes(
+  bank: BankDeps | undefined,
+  query: string,
+  headers: Record<string, string> = { authorization: `Bearer ${TOKEN}` },
+): Promise<{ status: number; body: unknown }> {
+  const app = createApp(new InMemoryStore(), { bank });
+  const path = ROUTES.questionTypes.path;
+  const reply = (await app.resolve(
+    {
+      version: "2.0",
+      routeKey: "$default",
+      rawPath: path,
+      rawQueryString: query,
+      headers,
+      requestContext: { http: { method: "GET", path }, stage: "$default" },
+      isBase64Encoded: false,
+    },
+    {} as Parameters<typeof app.resolve>[1],
+  )) as { statusCode: number; body?: string };
+  return { status: reply.statusCode, body: reply.body ? JSON.parse(reply.body) : null };
+}
+
+describe("GET /api/v1/question-types", () => {
+  it("refuses a caller without the read token as 401 and never invokes the bank", async () => {
+    const { bank, sent } = fakeBank(async () => answered(200, TYPE_COUNTS));
+    refusedWith(await getTypes(bank, "grade=1", {}), ErrorType.enum.Unauthorized);
+    expect(sent).toEqual([]);
+  });
+
+  it("invokes the bank with the grade and language asked and returns the counts", async () => {
+    const { bank, sent } = fakeBank(async () => answered(200, TYPE_COUNTS));
+    const reply = await getTypes(bank, "grade=1&language=pl");
+    expect(reply.status).toBe(200);
+    expect(reply.body).toEqual(QuestionTypeCounts.parse(TYPE_COUNTS));
+    expect(sent).toEqual([{ types: { grade: "1", language: "pl" } }]);
+  });
+
+  it("asks for every grade and language when the query names none", async () => {
+    const { bank, sent } = fakeBank(async () => answered(200, TYPE_COUNTS));
+    expect((await getTypes(bank, "")).status).toBe(200);
+    expect(sent).toEqual([{ types: {} }]);
+  });
+
+  it("refuses a malformed grade as 400 without invoking the bank", async () => {
+    const { bank, sent } = fakeBank(async () => answered(200, TYPE_COUNTS));
+    refusedWith(await getTypes(bank, "grade=first"), ErrorType.enum.BadRequest);
+    expect(sent).toEqual([]);
+  });
+
+  it.each([
+    ["a 404 (no counts published)", async () => answered(404, { detail: "no _types item" })],
+    ["counts that do not parse", async () => answered(200, { version: 1, types: [{}] })],
+    ["a function error", async () => ({ payload: "{}", functionError: "Unhandled" })],
+  ])("answers 502 for %s", async (_, reply) => {
+    const { bank } = fakeBank(reply);
+    refusedWith(await getTypes(bank, "grade=1"), ErrorType.enum.BankUnavailable);
+  });
+
+  it("answers 502 when no bank is wired", async () => {
+    refusedWith(await getTypes(undefined, ""), ErrorType.enum.BankUnavailable);
   });
 });
