@@ -4,10 +4,11 @@
  * the running Claude Code session through the jadwigo-builder channel; it never edits the lesson.
  * English chrome, as the rest of the playground's.
  */
-import { Button, cn } from "@jadwigo/ui";
+import { cn } from "@jadwigo/ui";
 import { type FormEvent, type ReactElement, useState } from "react";
 import type { Ask } from "../../../../../../tools/builder/drafts.ts";
 import { Badge } from "../../tool/badge.tsx";
+import { Button } from "../../tool/button.tsx";
 import { WorkFold } from "../activity/WorkFold.tsx";
 import { useAsks } from "./source.ts";
 import {
@@ -99,7 +100,7 @@ export function CommentsSlot({
             <Button
               key={option.value}
               type="button"
-              size="sm"
+              size="xs"
               variant={intent === option.value ? "secondary" : "ghost"}
               aria-pressed={intent === option.value}
               title={option.hint}

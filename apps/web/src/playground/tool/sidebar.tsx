@@ -1,16 +1,9 @@
-import {
-  Button,
-  cn,
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@jadwigo/ui";
+import { cn, Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@jadwigo/ui";
 import { cva, type VariantProps } from "class-variance-authority";
 import { PanelLeftIcon } from "lucide-react";
 import { Slot } from "radix-ui";
 import * as React from "react";
+import { Button } from "./button.tsx";
 import { Input } from "./input.tsx";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip.tsx";
 import { useIsMobile } from "./use-mobile.ts";
@@ -243,7 +236,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       variant="ghost"
-      size="sm"
+      size="icon-sm"
       className={cn(className)}
       onClick={(event) => {
         onClick?.(event);

@@ -19,11 +19,11 @@ import {
   StepFrame,
   ViewMode,
 } from "@jadwigo/lesson-kit";
-import { Button } from "@jadwigo/ui";
 import { type ReactElement, useRef, useState } from "react";
 import type { WrittenExample } from "../examples/index.ts";
 import { TryExample } from "../panels/TryExample.tsx";
 import { Badge } from "../tool/badge.tsx";
+import { Button } from "../tool/button.tsx";
 import { StepData } from "./data/StepData.tsx";
 import { useRenderCheck } from "./render/useRenderCheck.ts";
 import { rungsOf } from "./rungs.ts";

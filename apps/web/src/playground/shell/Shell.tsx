@@ -4,9 +4,10 @@
  * a narrow screen; the controls panel folds with the button top-right and is remembered.
  */
 
-import { Button, cn } from "@jadwigo/ui";
+import { cn } from "@jadwigo/ui";
 import { PanelRight } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
+import { Button } from "../tool/button.tsx";
 import { Separator } from "../tool/separator.tsx";
 import {
   Sidebar,

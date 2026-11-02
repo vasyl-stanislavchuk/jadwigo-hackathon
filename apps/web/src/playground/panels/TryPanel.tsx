@@ -13,7 +13,6 @@
 
 import type { Category, Language } from "@jadwigo/copy";
 import { type FamilySpec, LessonTheme, StepFrame } from "@jadwigo/lesson-kit";
-import { Button } from "@jadwigo/ui";
 import { RotateCcw } from "lucide-react";
 import { type ReactElement, useCallback, useState } from "react";
 import type { WrittenExample } from "../examples/index.ts";
@@ -22,6 +21,7 @@ import { useReviewTheme } from "../review/useReviewTheme.ts";
 import { queryTheme, setQuery, useLocation } from "../route.ts";
 import { ControlGroup, Controls, Segmented } from "../shell/controls.tsx";
 import { Badge } from "../tool/badge.tsx";
+import { Button } from "../tool/button.tsx";
 import { LearnerControls } from "./LearnerControls.tsx";
 import { type Found, fillButtons, foundOf, humanClass, scenariosIn } from "./question.ts";
 import { TryExample } from "./TryExample.tsx";

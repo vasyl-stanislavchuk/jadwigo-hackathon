@@ -19,7 +19,7 @@ import {
   type QuestionTypeInfo,
   questionTypesOf,
 } from "@jadwigo/lesson-kit";
-import { Button, Spinner } from "@jadwigo/ui";
+import { Spinner } from "@jadwigo/ui";
 import { ClipboardCheck, Info, Maximize2, Minimize2, SquareMousePointer } from "lucide-react";
 import { type ReactElement, type ReactNode, useEffect, useState } from "react";
 import { examplesFor, useExamples, type WrittenExample } from "../examples/index.ts";
@@ -42,6 +42,7 @@ import {
 } from "../route.ts";
 import { statusLabel, statusMeans } from "../status.ts";
 import { Badge } from "../tool/badge.tsx";
+import { Button } from "../tool/button.tsx";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../tool/select.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../tool/tabs.tsx";
 

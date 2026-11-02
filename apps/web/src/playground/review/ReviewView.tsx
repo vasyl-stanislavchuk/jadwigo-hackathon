@@ -14,7 +14,6 @@
 
 import type { Category, Language } from "@jadwigo/copy";
 import { type FamilySpec, FamilyView, LessonTheme, StepFrame } from "@jadwigo/lesson-kit";
-import { Button } from "@jadwigo/ui";
 import { RotateCcw } from "lucide-react";
 import {
   type ComponentProps,
@@ -32,6 +31,7 @@ import type { TryState } from "../panels/tryState.ts";
 import { queryLevel, queryTheme, setQuery, useLocation } from "../route.ts";
 import { Controls, Segmented } from "../shell/controls.tsx";
 import { Badge } from "../tool/badge.tsx";
+import { Button } from "../tool/button.tsx";
 import { ChecklistPanel } from "./ChecklistPanel.tsx";
 import { LEVEL_LABEL, LEVEL_TITLE, type Level, levelSpec, levelsOf } from "./levels.ts";
 import { variantsOf } from "./options.ts";
