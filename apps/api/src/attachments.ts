@@ -55,7 +55,7 @@ const FORM_MS = 10 * 60_000;
 const PENDING_MS = 24 * 60 * 60_000;
 /** How long the link to a stored photo is good for. */
 const LINK_MS = 5 * 60_000;
-/** The first bytes the check reads: enough for every header a re-encoded JPEG has. */
+/** The first bytes the check reads: enough for every header a re-encoded JPEG has, and any kind's magic. */
 export const HEAD_BYTES = 64 * 1024;
 const JPEG = "image/jpeg";
 
@@ -72,8 +72,18 @@ export interface UploadsBucket {
   size(key: string): Promise<number | undefined>;
   /** The object's first `bytes` bytes (fewer when it is shorter), or undefined when there is none. */
   head(key: string, bytes: number): Promise<Uint8Array | undefined>;
-  /** Copies `from` to `to` with the headers the server picks: the type, shown inline. */
-  copy(from: string, to: string, contentType: string): Promise<void>;
+  /** The object's bytes from `start` to `end`, both included, or undefined when there is none. */
+  range(key: string, start: number, end: number): Promise<Uint8Array | undefined>;
+  /**
+   * Copies `from` to `to` with the headers the server picks: the type, and `inline` for a photo
+   * or `attachment` for a document, so a browser never renders a PDF from the bucket's origin.
+   */
+  copy(
+    from: string,
+    to: string,
+    contentType: string,
+    disposition: "inline" | "attachment",
+  ): Promise<void>;
   remove(keys: readonly string[]): Promise<void>;
   /** A link that reads `key` for `expiresInS` seconds. */
   presignGet(key: string, expiresInS: number): Promise<string>;
@@ -84,9 +94,133 @@ export function pendingKey(pod: PodId, id: AttachmentId): string {
   return `pending/${pod}/${id}`;
 }
 
-/** Where a sent photo is kept, under its pod: the copy the model and the thread read. */
-export function storedKey(pod: PodId, id: AttachmentId): string {
-  return `pods/${pod}/attachments/${id}.jpg`;
+/** Each kind's extension in the bucket, and whether a browser may show it in place. */
+const KINDS: Readonly<
+  Record<
+    AttachmentMediaType,
+    { readonly ext: string; readonly disposition: "inline" | "attachment" }
+  >
+> = {
+  "image/jpeg": { ext: "jpg", disposition: "inline" },
+  "image/heic": { ext: "heic", disposition: "inline" },
+  "application/pdf": { ext: "pdf", disposition: "attachment" },
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+    ext: "docx",
+    disposition: "attachment",
+  },
+};
+
+/**
+ * Where a sent file is kept, under its pod: the copy the model and the thread read,
+ * `pods/<pod>/attachments/<id>.<jpg|heic|pdf|docx>`.
+ */
+export function storedKey(
+  pod: PodId,
+  id: AttachmentId,
+  media_type: AttachmentMediaType = JPEG,
+): string {
+  return `pods/${pod}/attachments/${id}.${KINDS[media_type].ext}`;
+}
+
+/** The converter's first page of a sent HEIC, PDF or DOCX (wave 6 decision 58). */
+export function previewKey(pod: PodId, id: AttachmentId): string {
+  return `pods/${pod}/attachments/${id}/p1.jpg`;
+}
+
+const ascii = (bytes: Uint8Array, start: number, end: number): string =>
+  String.fromCharCode(...bytes.subarray(start, end));
+
+/** Whether `head` is a HEIF of a HEIC brand: `ftyp` at byte 4, then heic, heix or mif1. */
+export function isHeic(head: Uint8Array): boolean {
+  return ascii(head, 4, 8) === "ftyp" && ["heic", "heix", "mif1"].includes(ascii(head, 8, 12));
+}
+
+/** Whether `head` starts as a PDF does. */
+export function isPdf(head: Uint8Array): boolean {
+  return ascii(head, 0, 5) === "%PDF-";
+}
+
+/** The bytes a ZIP's end of central directory record takes, and the most its comment adds. */
+const EOCD_BYTES = 22;
+const ZIP_TAIL = EOCD_BYTES + 0xffff;
+/** A DOCX's central directory is a few KB; past this it is not one the page would send. */
+const MAX_DIRECTORY = 1024 * 1024;
+
+const u16 = (b: Uint8Array, at: number) => (b[at] ?? 0) | ((b[at + 1] ?? 0) << 8);
+const u32 = (b: Uint8Array, at: number) => (u16(b, at) | (u16(b, at + 2) << 16)) >>> 0;
+
+/**
+ * Where a ZIP's central directory is, from `tail`, the file's last bytes, and `size`, the file's
+ * size: the last end-of-central-directory record, and the directory inside the file. Undefined
+ * when there is no record, or the directory is ZIP64, past the file or larger than a DOCX's.
+ */
+export function zipDirectory(
+  tail: Uint8Array,
+  size: number,
+): { offset: number; length: number } | undefined {
+  for (let at = tail.length - EOCD_BYTES; at >= 0; at--) {
+    if (u32(tail, at) !== 0x06054b50) continue;
+    const length = u32(tail, at + 12);
+    const offset = u32(tail, at + 16);
+    if (offset === 0xffffffff || length === 0xffffffff) return undefined;
+    if (length === 0 || length > MAX_DIRECTORY || offset + length > size) return undefined;
+    return { offset, length };
+  }
+  return undefined;
+}
+
+/** Whether a ZIP's central directory names `name` among its file headers. */
+export function zipNames(directory: Uint8Array, name: string): boolean {
+  let at = 0;
+  while (at + 46 <= directory.length && u32(directory, at) === 0x02014b50) {
+    const nameLength = u16(directory, at + 28);
+    const extra = u16(directory, at + 30);
+    const comment = u16(directory, at + 32);
+    if (ascii(directory, at + 46, at + 46 + nameLength) === name) return true;
+    at += 46 + nameLength + extra + comment;
+  }
+  return false;
+}
+
+/**
+ * Whether the upload at `key`, of `size` bytes, is a DOCX: a ZIP (its local header first) whose
+ * central directory, read by ranged GETs from the end, names `word/document.xml`.
+ */
+async function isDocx(
+  uploads: UploadsBucket,
+  key: string,
+  head: Uint8Array,
+  size: number,
+): Promise<boolean> {
+  if (u32(head, 0) !== 0x04034b50) return false;
+  const start = Math.max(0, size - ZIP_TAIL);
+  const tail = await uploads.range(key, start, size - 1);
+  if (tail === undefined) return false;
+  const found = zipDirectory(tail, size);
+  if (found === undefined) return false;
+  const directory = await uploads.range(key, found.offset, found.offset + found.length - 1);
+  return directory !== undefined && zipNames(directory, "word/document.xml");
+}
+
+/** Whether the upload is the kind it was declared as, by its first bytes (and a DOCX's last). */
+async function isDeclaredKind(
+  uploads: UploadsBucket,
+  key: string,
+  media_type: AttachmentMediaType,
+  size: number,
+): Promise<boolean> {
+  const head = await uploads.head(key, HEAD_BYTES);
+  if (head === undefined) return false;
+  switch (media_type) {
+    case "image/jpeg":
+      return jpegHasNoExif(head);
+    case "image/heic":
+      return isHeic(head);
+    case "application/pdf":
+      return isPdf(head);
+    default:
+      return isDocx(uploads, key, head, size);
+  }
 }
 
 /**
@@ -162,10 +296,6 @@ export async function createAttachment(
   const uploads = deps.uploads;
   if (uploads === undefined) throw noBucket();
   const declared = parsed.data;
-  // Wave 6 step 0 (dl-z5ja.11.11): the contract takes a HEIC, a PDF and a DOCX before the API
-  // does; until dl-z5ja.11.10 checks and copies them, only a JPEG gets a form.
-  if (declared.media_type !== JPEG)
-    throw new ApiError(ErrorType.enum.AttachmentMismatch, "only photos are taken yet");
   const id = attachmentIdFor(pod, declared.event_id);
   const now = deps.now().getTime();
   await deps.lockPod(pod);
@@ -200,9 +330,11 @@ export async function createAttachment(
   if (attachment.state === "attached")
     throw new ApiError(ErrorType.enum.AttachmentAttached, "a message carries this photo already");
   if (attachment.expires_at === null || Date.parse(attachment.expires_at) <= now) throw expired();
+  // Bound to the file's own kind and its exact size: at most attachmentBytes for a JPEG and
+  // documentBytes for the rest, as AttachmentCreate holds them.
   const form = await uploads.presignPost(
     pendingKey(pod, id),
-    JPEG,
+    attachment.media_type,
     attachment.bytes,
     FORM_MS / 1000,
   );
@@ -225,8 +357,15 @@ export async function getAttachment(
     throw new ApiError(ErrorType.enum.NotFound, "this photo is not on a message");
   if (deps.uploads === undefined) throw noBucket();
   const url = await deps.uploads.presignGet(attachment.storage_path, LINK_MS / 1000);
-  // A JPEG is its own preview; a document's first page comes with dl-z5ja.11.10.
-  return { attachment, url, preview_url: null, expires_at: iso(deps.now().getTime() + LINK_MS) };
+  // A JPEG is its own preview. Another kind's is the converter's first page, once a turn has read
+  // the file (wave 6 decision 61); until then, none.
+  let preview_url: string | null = null;
+  if (attachment.media_type !== JPEG) {
+    const preview = previewKey(pod, attachment.id);
+    if ((await deps.uploads.size(preview)) !== undefined)
+      preview_url = await deps.uploads.presignGet(preview, LINK_MS / 1000);
+  }
+  return { attachment, url, preview_url, expires_at: iso(deps.now().getTime() + LINK_MS) };
 }
 
 async function stored(store: Store, pod: PodId, id: AttachmentId): Promise<Attachment | undefined> {
@@ -368,17 +507,21 @@ async function checkAndCopy(
   const from = pendingKey(pod, id);
   if ((await uploads.size(from)) !== row.bytes)
     throw mismatch("a photo did not arrive at the size it was declared");
-  const head = await uploads.head(from, HEAD_BYTES);
-  if (head === undefined || !jpegHasNoExif(head))
-    throw mismatch("a photo is not a JPEG without Exif data");
-  const to = storedKey(pod, id);
-  await uploads.copy(from, to, JPEG);
+  const media_type = AttachmentMediaType.parse(row.media_type);
+  if (!(await isDeclaredKind(uploads, from, media_type, row.bytes)))
+    throw mismatch(
+      media_type === JPEG
+        ? "a photo is not a JPEG without Exif data"
+        : "a file is not the kind it was declared as",
+    );
+  const to = storedKey(pod, id, media_type);
+  await uploads.copy(from, to, media_type, KINDS[media_type].disposition);
   work.copied.push(to);
   work.taken.push(from);
   return {
     attachment_id: id,
     storage_path: to,
-    media_type: AttachmentMediaType.parse(row.media_type),
+    media_type,
     bytes: row.bytes,
     width: row.width,
     height: row.height,
@@ -450,7 +593,22 @@ export function s3Uploads(
         throw error;
       }
     },
-    async copy(from, to, contentType) {
+    async range(key, start, end) {
+      try {
+        const out = await client.send(
+          new GetObjectCommand({
+            Bucket: await bucket(),
+            Key: key,
+            Range: `bytes=${start}-${end}`,
+          }),
+        );
+        return out.Body === undefined ? undefined : await out.Body.transformToByteArray();
+      } catch (error) {
+        if (missing(error)) return undefined;
+        throw error;
+      }
+    },
+    async copy(from, to, contentType, disposition) {
       const Bucket = await bucket();
       await client.send(
         new CopyObjectCommand({
@@ -458,7 +616,7 @@ export function s3Uploads(
           Key: to,
           CopySource: `${Bucket}/${from}`,
           ContentType: contentType,
-          ContentDisposition: "inline",
+          ContentDisposition: disposition,
           MetadataDirective: "REPLACE",
         }),
       );
