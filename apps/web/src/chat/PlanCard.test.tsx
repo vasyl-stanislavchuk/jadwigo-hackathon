@@ -115,7 +115,7 @@ describe("an opened tool line shows what was done (dl-uukj.47.50)", () => {
   const opened = (verb: string) =>
     document.querySelector(`[data-tool-group] [data-tool='${verb}'] [data-tool-line] > div`);
 
-  it("draws a kept-visible widget (lesson_check) inside the opened line, not only the state word", () => {
+  it("says a kept-visible widget's line (lesson_check) in plain words; the widget stays drawn once", () => {
     pane({
       turns: [
         turnAt("happy-turn", 17, (view) => {
@@ -125,8 +125,10 @@ describe("an opened tool line shows what was done (dl-uukj.47.50)", () => {
         }),
       ],
     });
-    expect(opened("lesson_check")?.querySelector("[data-widget='lesson_check']")).not.toBeNull();
-    expect(opened("lesson_check")?.querySelector("[data-what-done]")).toBeNull();
+    expect(opened("lesson_check")?.querySelector("[data-what-done]")?.textContent).toBe(
+      "Sprawdzanie lekcjigotowe",
+    );
+    expect(document.querySelectorAll("[data-widget='lesson_check']")).toHaveLength(1);
   });
 
   it("says a line with no widget in plain words: its sentence and its state", () => {

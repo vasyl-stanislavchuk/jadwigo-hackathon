@@ -150,12 +150,12 @@ function ToolLine({
           <p className="text-jw-page-small font-bold text-jw-ink-soft">
             {say("chat_tool_what_done")}
           </p>
-          {result?.kind === "widget" ? (
-            // A widget kept in view under the fold is drawn here too: the opened line shows what
-            // was done, never only the state word (dl-uukj.47.50).
+          {result?.kind === "widget" && !result.keepVisible ? (
             result.element
           ) : (
-            // No widget: the line in plain words, its sentence and where it stands.
+            // No widget here (none, or one kept in view under the fold, drawn once there): the line
+            // in plain words, its sentence and where it stands, never only the state word
+            // (dl-uukj.47.50).
             <p className="flex flex-wrap gap-x-2" data-what-done>
               <span>{words}</span>
               <span className="text-jw-ink-soft">{stateWords(tool, language)}</span>
