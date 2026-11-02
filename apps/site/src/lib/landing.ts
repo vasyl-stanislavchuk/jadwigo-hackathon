@@ -61,14 +61,19 @@ export const landingSchema = z.object({
     }),
   }),
   // /jadwigo-ai (dl-w0b4.114; owner's call jadwigo-marketing/calls/2026-11-02-jadwigo-ai-gets-a-marketing-page):
-  // what Jadwigo AI does in 4 steps, what it reads about a child and where that goes (the consent
-  // screen's words, decision dl-uafq), what it never does, and that the parent checks, then gives.
+  // what Jadwigo AI does in 4 steps, what it reads about a child and where that goes (no claim about
+  // models either way, dl-w0b4.79; `more` points to the consent screen and the privacy page, dl-w0b4.116),
+  // what it never does, and that the parent checks, then gives.
   // `teaser` is the line that links the page from the landing page and /jak-to-dziala.
   ai: z.object({
     ...head,
     intro: text,
     steps: z.array(item).length(4),
-    data: z.object({ heading: text, items: z.array(text).min(1), consent: text }),
+    data: z.object({
+      heading: text,
+      items: z.array(text).min(1),
+      more: z.object({ text, link: text }),
+    }),
     never: z.object({ heading: text, items: z.array(item).min(1) }),
     check: z.object({ heading: text, text, wrong: text }),
     teaser: z.object({ text, link: text }),

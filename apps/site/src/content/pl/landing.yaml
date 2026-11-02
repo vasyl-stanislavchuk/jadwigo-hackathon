@@ -65,9 +65,9 @@ steps:
     nextLabel: "Następna lekcja:"
     next: dopełnianie do pełnego złotego, potem reszta z 50 zł.
     screencast: "screencast · strona dziecka: cele, umiejętności, ostatnia lekcja pytanie po pytaniu"
-# /jadwigo-ai (dl-w0b4.114; owner's call of 2026-11-02, draft for the native review). The data lines say
-# what the consent screen says (packages/copy chat_consent_*, decision dl-uafq): Meta's models may learn
-# from it. Jadwigo AI's lines carry no person and no gender.
+# /jadwigo-ai (dl-w0b4.114; owner's call of 2026-11-02, draft for the native review). Like the rest of the
+# site, it makes no claim about models either way (dl-w0b4.79, dl-w0b4.116): the consent screen in the app
+# and the privacy page say the rest. Jadwigo AI's lines carry no person and no gender.
 ai:
   title: "Jadwigo AI: lekcja ułożona z Twojego opisu"
   description: Jadwigo AI czyta, co dziecko ćwiczy w szkole, szuka pytań w banku zadań i układa lekcję. Zanim trafi do dziecka, sprawdzasz ją Ty.
@@ -86,10 +86,12 @@ ai:
     heading: Co Jadwigo AI czyta o dziecku i dokąd to trafia
     items:
       - "Jadwigo AI czyta to, czego potrzebuje Twoja prośba: dane dziecka, imiona też."
-      - Te dane trafiają do modeli firmy Meta, które mogą się na nich uczyć.
       - Zapis rozmów zostaje przy koncie rodziny, dopóki konto nie zostanie usunięte. Zarchiwizowana rozmowa też.
       - Imienia dziecka nie ma w lekcji, którą dziecko dostaje.
-    consent: Te same słowa zobaczysz przed pierwszą rozmową z Jadwigo AI. Rozmowa zaczyna się dopiero wtedy, gdy się zgodzisz. Możesz też wybrać „Nie teraz”.
+    # The privacy page is linked after `text` (dl-w0b4.116).
+    more:
+      text: "Aplikacja mówi to raz, przed Twoją pierwszą wiadomością do Jadwigo AI. Więcej o danych:"
+      link: Prywatność
   never:
     heading: Czego Jadwigo AI nie robi
     items:
