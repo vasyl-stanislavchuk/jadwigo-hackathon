@@ -61,6 +61,12 @@ dev:
 dev-all:
 	@$(LOCAL_DB_GATE)
 	@command -v dekit >/dev/null || { echo "dev-all: dekit (mprocs) is not installed. Run: mise install"; exit 1; }
+	@if [ -n "$$MEDALLION_DEV_WORKSPACE_NAME" ]; then missing=""; \
+	  for v in WEB_PORT API_PORT SITE_PORT DOCS_PORT BUILDER_PORT; do eval "[ -n \"\$${$$v:-}\" ]" || missing="$$missing $$v"; done; \
+	  if [ -n "$$missing" ]; then echo "dev-all: md worktree $$MEDALLION_DEV_WORKSPACE_NAME has no$$missing, so every pane would stop on it."; \
+	    echo "  Run: env -u MEDALLION_DEV_REPO md run all --here"; \
+	    echo "  Or pick free ports: WEB_PORT=8391 API_PORT=8392 SITE_PORT=8393 DOCS_PORT=8394 BUILDER_PORT=8395 make dev-all"; exit 1; fi; \
+	fi
 	@mkdir -p .logs/dev
 	DATABASE_URL=$(LOCAL_DATABASE_URL) dekit mprocs --config mprocs.yaml --log-dir .logs/dev --log-mode truncate
 
