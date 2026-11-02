@@ -2,10 +2,14 @@
 # make release: origin/main to prod with one typed prod (dl-5ssh.34.67, decision bead dl-sh8m).
 # The owner runs it from their own terminal; a merge still deploys nothing.
 #   1. checks: a terminal and no agent, a clean checkout at origin/main, the AWS account
-#   2. preview, writing nothing: the migrations prod lacks, a saved Terraform plan, prod-status
+#   2. preview, writing nothing: the migrations prod lacks, a saved Terraform plan, prod-status,
+#      whether the runner would deploy (runner-deploy's path filter), and Supabase Auth's drift
+#      from infra/supabase-auth/prod.json (auth.sh diff prod: shown only, never applied here)
 #   3. one question: type prod
 #   4. the release, without stopping: migrations, jadwigo_api's login, the seed, the saved plan,
-#      the api, a health check, the web, the site and the docs, then prod-status again
+#      the api, a health check, the runner (runner-deploy, then runner-status: every release
+#      deploys it too, decision bead dl-hmvzn), the web, the site and the docs, prod-status again,
+#      and last one engine-smoke turn on prod through the live runner (one paid Muse call)
 # It stops before the question when the plan destroys or replaces anything: apply that by hand
 # (make -C infra plan apply). Every step is safe to rerun, so after a failure run it again.
 set -eu
@@ -79,9 +83,36 @@ fi
 
 make -s -C infra prod-status || true
 
+# The runner: runner-deploy's own path filter, read here so the preview says what it will do.
+runner_paths=$(sed -n 's/^RUNNER_PATHS := *//p' infra/Makefile)
+runner_was=$(make -s -C infra runner-status 2>/dev/null || true)
+[ -z "$runner_was" ] || echo "$runner_was"
+runner_live=$(printf '%s\n' "$runner_was" | sed -n 's/.* live is version \([0-9][0-9]*\): .*/\1/p')
+shipped=$(printf '%s\n' "$runner_was" | sed -n 's/.* live is version [0-9][0-9]*: \([0-9a-f]\{7,40\}\).*/\1/p')
+# shellcheck disable=SC2086 # RUNNER_PATHS is a list of paths
+if [ -n "$shipped" ] && git cat-file -e "$shipped^{commit}" 2>/dev/null &&
+  git diff --quiet "$shipped" HEAD -- $runner_paths; then
+  runner=unchanged
+  echo "runner: nothing it bundles changed since $shipped; runner-deploy will skip it"
+else
+  runner=deploys
+  echo "runner: will deploy (live commit ${shipped:-unknown})"
+fi
+
+# Supabase Auth, read-only: auth.sh exits 2 on drift and 1 when it cannot read. Neither stops the release.
+set +e
+infra/supabase-auth/auth.sh diff prod
+auth_rc=$?
+set -e
+case $auth_rc in
+  0) echo "auth: prod matches infra/supabase-auth/prod.json" ;;
+  2) echo "auth: prod differs from infra/supabase-auth/prod.json (above). The release does not apply it: run infra/supabase-auth/auth.sh apply prod yourself" ;;
+  *) echo "auth: the diff could not read prod's auth config (exit $auth_rc); the release goes on without it" ;;
+esac
+
 say "3/4 one question"
-printf 'Release %s to prod: %s migration(s), terraform %s, the seed, then api, web, site and docs. Type prod to go on: ' \
-  "$(git rev-parse --short HEAD)" "$migrations" "$tf"
+printf 'Release %s to prod: %s migration(s), terraform %s, the seed, then api, runner (%s), web, site and docs, and one engine-smoke turn. Type prod to go on: ' \
+  "$(git rev-parse --short HEAD)" "$migrations" "$tf" "$runner"
 read -r answer
 [ "$answer" = prod ] || die "nothing done on prod"
 export JW_RELEASE_CONFIRMED=prod
@@ -100,7 +131,16 @@ for _ in 1 2 3 4 5 6; do
 done
 [ "$code" = 200 ] || die "GET /api/health answers $code after the api deploy; the web, site and docs are not deployed. Fix the api, then run release again"
 echo "GET /api/health -> 200"
+make -s -C infra runner-deploy ||
+  die "runner-deploy failed; the api is out, the web, site and docs are not deployed. Fix it, then run release again"
+make -s -C infra runner-status || true
 make -s -C infra web-deploy site-deploy docs-deploy
 make -s -C infra prod-status || true
+back="make -C infra runner-rollback VERSION=${runner_live:-<the version runner-status named before>}"
+if ! make -s engine-smoke ENV=prod; then
+  say "ENGINE-SMOKE FAILED on prod"
+  echo "Everything above is deployed. If the runner is at fault, point live back: $back"
+  die "engine-smoke ENV=prod failed after the deploys"
+fi
 echo
 echo "Released $(git rev-parse --short HEAD)."
