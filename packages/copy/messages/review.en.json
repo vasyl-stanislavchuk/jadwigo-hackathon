@@ -654,6 +654,7 @@
   "parent_send_reason": false,
   "parent_send_uploading": false,
   "parent_send_photo_failed": false,
+  "parent_send_photo_refused": false,
   "parent_name_note": false,
   "parent_grade": false,
   "parent_cancel": false,

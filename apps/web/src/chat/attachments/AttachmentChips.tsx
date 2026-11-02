@@ -57,7 +57,9 @@ export function AttachmentChips({
   const id = useId();
   if (uploads.length === 0 && leftOff === 0) return null;
   return (
-    <div className="flex flex-col gap-2" data-attachments>
+    // ph-no-capture: a document chip shows its file name, which may name the child, so the chips
+    // stay out of a session replay (decision dl-376c8, packages/analytics/src/options.ts).
+    <div className="ph-no-capture flex flex-col gap-2" data-attachments>
       {uploads.length > 0 && (
         <ul className="flex flex-wrap gap-2">
           {uploads.map((upload, index) => (

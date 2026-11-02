@@ -618,6 +618,7 @@ export const COPY_KEYS = [
   "parent_send_reason",
   "parent_send_uploading",
   "parent_send_photo_failed",
+  "parent_send_photo_refused",
   "parent_name_note",
   "parent_grade",
   "parent_cancel",
