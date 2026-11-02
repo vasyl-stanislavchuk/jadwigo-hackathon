@@ -78,6 +78,9 @@ const cards = lessons.map((l) => {
 </div>
 
 <script>
+  import { track } from "@jadwigo/analytics";
+  import { pageLocale } from "../lib/page-locale.ts";
+
   // The landing page's row (dl-5ssh.4.44): it drifts on its own, slowly and without end, so every
   // lesson passes by. A copy of the cards follows the real ones (inert: out of the tab order and hidden
   // from a screen reader), and the row steps back by one set as it reaches the copy, which looks the
@@ -90,6 +93,13 @@ const cards = lessons.map((l) => {
     const cards = [...ui.querySelectorAll<HTMLElement>(".card")];
     const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (!list || cards.length === 0) continue;
+
+    // A featured lesson opened from the row (dl-w0b4.14). The drifting copies below are inert.
+    for (const card of cards) {
+      card.querySelector("a")?.addEventListener("click", () =>
+        track("featured_lesson_opened", { locale: pageLocale() }),
+      );
+    }
 
     // Under reduced motion the row stays still; a hand scrolls it.
     if (still) continue;

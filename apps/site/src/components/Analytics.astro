@@ -1,0 +1,67 @@
+---
+// PostHog on every page (decision dl-376c8, dl-w0b4.14) through packages/analytics: nothing is
+// captured until the visitor answers this banner. Yes turns on storage and session replay with every
+// input masked; no counts the visit cookieless. With no key in the build, nothing loads and the
+// banner is never written.
+import type { Language } from "@jadwigo/config";
+import { m } from "@jadwigo/copy/messages";
+import { posthogKey } from "../config.ts";
+
+interface Props {
+  lang: Language;
+  privacyHref: string;
+}
+
+const { lang, privacyHref } = Astro.props;
+const locale = { locale: lang } as const;
+const key = posthogKey();
+---
+{
+  key && (
+    <section class="consent" data-analytics-consent data-key={key} aria-label={m.site_footer_privacy({}, locale)} hidden>
+      <p>
+        {m.site_consent_ask({}, locale)} <a href={`${privacyHref}/`}>{m.site_footer_privacy({}, locale)}</a>
+      </p>
+      <p class="answers">
+        <button type="button" class="yes" data-analytics-accept>{m.site_consent_accept({}, locale)}</button>
+        <button type="button" class="no" data-analytics-reject>{m.site_consent_reject({}, locale)}</button>
+      </p>
+    </section>
+  )
+}
+
+<script>
+  import { acceptConsent, rejectConsent, startAnalytics } from "@jadwigo/analytics";
+
+  const banner = document.querySelector<HTMLElement>("[data-analytics-consent]");
+  const key = banner?.dataset["key"];
+  if (banner && key) {
+    void startAnalytics(key, "site").then((status) => {
+      banner.hidden = status !== "pending";
+    });
+    banner.querySelector("[data-analytics-accept]")?.addEventListener("click", () => {
+      acceptConsent();
+      banner.hidden = true;
+    });
+    banner.querySelector("[data-analytics-reject]")?.addEventListener("click", () => {
+      rejectConsent();
+      banner.hidden = true;
+    });
+  }
+</script>
+
+<style>
+  .consent {
+    position: fixed; inset: auto 1rem 1rem; z-index: 50; max-width: 36rem; margin-inline: auto;
+    padding: 1rem 1.25rem; color: var(--jw-ink); background: var(--jw-card);
+    border: 2px solid var(--jw-line-strong); border-radius: var(--jw-radius-control);
+    box-shadow: 0 3px 0 var(--jw-line-strong);
+  }
+  .consent[hidden] { display: none; }
+  .answers { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+  .answers button {
+    font: inherit; font-weight: 700; padding: 0.5rem 1rem; cursor: pointer; color: var(--jw-ink);
+    background: var(--jw-card); border: 2px solid var(--jw-line-strong); border-radius: var(--jw-radius-control);
+  }
+  .answers .yes { color: var(--jw-card); background: var(--jw-ink); border-color: var(--jw-ink); }
+</style>

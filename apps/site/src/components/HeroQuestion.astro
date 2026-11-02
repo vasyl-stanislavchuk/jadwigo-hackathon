@@ -48,6 +48,9 @@ const q = (await landingWords(lang)).hero.question;
 </div>
 
 <script>
+  import { track } from "@jadwigo/analytics";
+  import { pageLocale } from "../lib/page-locale.ts";
+
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   for (const sheet of document.querySelectorAll<HTMLElement>(".sheet")) {
@@ -173,6 +176,8 @@ const q = (await landingWords(lang)).hero.question;
       tile.disabled = false;
       tile.addEventListener("click", () => {
         const right = tile.textContent === sheet.dataset["answer"];
+        // That a visitor tried the question, never whether they got it right (no score in analytics).
+        track("hero_question_answered", { locale: pageLocale() });
         for (const t of tiles) t.classList.remove("miss");
         tile.classList.add(right ? "right" : "miss");
         if (said) {
