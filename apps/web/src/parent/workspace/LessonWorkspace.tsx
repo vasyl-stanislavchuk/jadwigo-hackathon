@@ -109,7 +109,7 @@ export function LessonWorkspace({
     contextClosed,
     closeContext,
     resend,
-  } = useConversation(engine.transport, conversation, owner);
+  } = useConversation(engine.transport, conversation, owner, engine.owner);
   const lesson = useLessonWiring(state, edit);
   const { turns } = lesson;
   const restoring = state.connection === "restoring";
