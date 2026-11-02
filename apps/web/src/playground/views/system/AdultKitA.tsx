@@ -4,7 +4,9 @@
  * tooltip with a shortcut, the account Dropdown Menu with its Język strony submenu, a row's Context
  * Menu, the Alert Dialog for a permanent delete, the Dialog, Popover and Sheet in the adult look, the
  * three toasts, a Kbd, and a disabled action that says why. The playground is the owner's English
- * tool, so the sample words are typed here.
+ * tool, so the sample words are typed here. Then the form controls (dl-uukj.47.67.3): Field with
+ * Input, Textarea and the OTP, Checkbox, Radio Group, Radio Cards, Switch, Select, the Dla Combobox,
+ * the segmented and rating Toggle Groups, and the underlined Tabs.
  */
 
 import {
@@ -15,6 +17,8 @@ import {
   AlertDialogFooter,
   AlertDialogTrigger,
   Button,
+  Checkbox,
+  Combobox,
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
@@ -39,18 +43,34 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
+  Field,
+  Input,
+  InputOtp,
   Kbd,
+  Label,
   Popover,
   PopoverContent,
   PopoverTrigger,
+  RadioCards,
+  RadioGroup,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  Switch,
   showToast,
+  Tabs,
+  Textarea,
   Toaster,
+  ToggleGroup,
+  ToggleGroupItem,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -161,6 +181,149 @@ function Toasts(): JSX.Element {
       >
         Nie wyszło
       </Button>
+    </>
+  );
+}
+
+const KIDS = [
+  { value: "none", label: "Bez dziecka" },
+  { value: "marta", label: "Marta", grade: 2 },
+  { value: "ola", label: "Ola", grade: 1 },
+  { value: "kuba", label: "Kuba", grade: 3 },
+];
+
+const GRADES = [1, 2, 3, 4, 5, 6].map((n) => ({
+  value: String(n),
+  label: `${n} klasa`,
+  hint: `${n + 6}–${n + 7} lat`,
+}));
+
+function Forms(): JSX.Element {
+  const [name, setName] = useState("");
+  const [code, setCode] = useState("12");
+  const [dla, setDla] = useState("marta");
+  const [grade, setGrade] = useState<string | undefined>("2");
+  const [where, setWhere] = useState("screen");
+  const [tab, setTab] = useState("overview");
+  return (
+    <>
+      <Demo title="Field, Input, Textarea, OTP">
+        <div className="flex w-full flex-col gap-4">
+          <Field label="Imię" description="Tak, jak dziecko je zna.">
+            <Input
+              kind="text"
+              placeholder="np. Marta"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </Field>
+          <Field label="Imię" problem="Wpisz imię, żeby dziecko je rozpoznało.">
+            <Input kind="text" />
+          </Field>
+          <Textarea aria-label="Czego ma się uczyć?" placeholder="Napisz, czego dziecko się uczy" />
+          <InputOtp aria-label="Kod z e-maila" value={code} onChange={setCode} />
+        </div>
+      </Demo>
+
+      <Demo title="Checkbox, Radio Group, Switch">
+        <div className="flex w-full flex-col gap-3">
+          <Label className="flex items-center gap-2">
+            <Checkbox defaultChecked /> Marta
+          </Label>
+          <Label className="flex items-center gap-2">
+            <Checkbox checked="indeterminate" /> Wszystkie
+          </Label>
+          <RadioGroup
+            label="Gdzie"
+            value={where}
+            onChange={setWhere}
+            options={[
+              { value: "screen", label: "Na ekranie", hint: "Na tym komputerze" },
+              { value: "paper", label: "Na papierze", hint: "Wydrukuj kartę" },
+            ]}
+          />
+          <Switch defaultChecked>Przypomnienia</Switch>
+        </div>
+      </Demo>
+
+      <Demo title="Radio Cards (compact, as in Dodaj dziecko)">
+        <RadioCards
+          label="Klasa"
+          options={GRADES}
+          value={grade}
+          onChange={setGrade}
+          compact
+          className="w-full"
+        />
+      </Demo>
+
+      <Demo title="Select and the Dla Combobox">
+        <Select defaultValue="pl">
+          <SelectTrigger aria-label="Język lekcji" className="w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pl">Polski</SelectItem>
+            <SelectItem value="en">English</SelectItem>
+          </SelectContent>
+        </Select>
+        <Combobox
+          label="Dla"
+          options={KIDS}
+          value={dla}
+          onChange={setDla}
+          renderValue={(o) => (
+            <>
+              <span className="text-muted-foreground">Dla</span>
+              <span className="font-medium">{o?.label}</span>
+            </>
+          )}
+          renderOption={(o) => (
+            <span className="flex flex-col">
+              <span>{o.label}</span>
+              {"grade" in o && (
+                <span className="text-jw-page-small text-muted-foreground">klasa {o.grade}</span>
+              )}
+            </span>
+          )}
+          footer={{
+            label: (
+              <>
+                <Plus aria-hidden="true" /> Dodaj dziecko…
+              </>
+            ),
+            onSelect: () => undefined,
+          }}
+        />
+      </Demo>
+
+      <Demo title="Toggle Group: segmented and rating">
+        <ToggleGroup type="single" kind="segment" defaultValue="week" aria-label="Okres">
+          <ToggleGroupItem value="week">Tydzień</ToggleGroupItem>
+          <ToggleGroupItem value="month">Miesiąc</ToggleGroupItem>
+          <ToggleGroupItem value="year">Rok</ToggleGroupItem>
+        </ToggleGroup>
+        <ToggleGroup type="single" kind="rating" defaultValue="right" aria-label="Jak trudna?">
+          <ToggleGroupItem value="easy">Za łatwa</ToggleGroupItem>
+          <ToggleGroupItem value="right">W sam raz</ToggleGroupItem>
+          <ToggleGroupItem value="hard">Za trudna</ToggleGroupItem>
+        </ToggleGroup>
+      </Demo>
+
+      <Demo title="Tabs, underlined">
+        <Tabs
+          label="Strona dziecka"
+          className="w-full"
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { value: "overview", label: "Przegląd", panel: "Tydzień Marty." },
+            { value: "goals", label: "Cele", panel: "Cele." },
+            { value: "report", label: "Raport", panel: "Raport." },
+            { value: "lessons", label: "Lekcje", count: 12, panel: "12 lekcji." },
+          ]}
+        />
+      </Demo>
     </>
   );
 }
@@ -278,6 +441,7 @@ export function AdultKitA(): JSX.Element {
         <Demo title="Toast: the three kinds">
           <Toasts />
         </Demo>
+        <Forms />
         <Toaster label="Powiadomienia" />
       </div>
     </DensityScope>
