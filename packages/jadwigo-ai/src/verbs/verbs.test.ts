@@ -21,6 +21,7 @@ function countingBank() {
       asked.sources += 1;
       return inner.sources(q);
     },
+    types: (grade, language) => inner.types(grade, language),
   };
   return { bank, asked };
 }
@@ -83,7 +84,11 @@ describe("lesson_draft", () => {
   });
 
   it("refuses when the bank has nothing", async () => {
-    const empty: BankPort = { search: async () => ({ sets: [] }), sources: async () => [] };
+    const empty: BankPort = {
+      search: async () => ({ sets: [] }),
+      sources: async () => [],
+      types: async () => [],
+    };
     const verbs = createVerbs({ bank: empty });
     await expect(
       verbs.lesson_draft.run(contextFor(runId(), "call_1"), DRAFT),
@@ -122,17 +127,74 @@ describe("a verb is idempotent by call_id", () => {
     expect(stepsOf(replayed.lesson_file)[0]).toEqual(stepsOf(once.lesson_file)[0]);
   });
 
-  it("refuses pinned sets and kept question types, which only jw draws by yet (dl-u1y5.37)", async () => {
+  it.each([
+    [["recognition"], "recognition"],
+    [["choose"], "recognition"],
+    [["choose.*"], "recognition"],
+    [["enter.production"], "production"],
+  ])(
+    "draws only the kept question types %j, each step keeping its type and based_on (dl-hin8.24)",
+    async (question_types, type) => {
+      const verbs = createVerbs({ bank: fixtureBank() });
+      const effect = await verbs.lesson_draft.run(contextFor(runId(), "call_1"), {
+        ...DRAFT,
+        question_types,
+      });
+      const steps = stepsOf(effect.lesson_file) as {
+        question_type: string;
+        based_on: { question: string };
+      }[];
+      expect(steps.length).toBeGreaterThan(0);
+      for (const step of steps) {
+        expect(step.question_type).toBe(type);
+        expect(step.based_on.question).toMatch(/^authored:fixture-add-/);
+      }
+    },
+  );
+
+  it("refuses a kind of question the bank does not hold, and points to question_types", async () => {
     const verbs = createVerbs({ bank: fixtureBank() });
-    for (const extra of [{ sets: ["set_khan_fx0001"] }, { question_types: ["enter.*"] }]) {
-      await expect(
-        verbs.lesson_draft.run(contextFor(runId(), "call_1"), { ...DRAFT, ...extra }),
-      ).rejects.toMatchObject({ type: "input" });
-    }
+    await expect(
+      verbs.lesson_draft.run(contextFor(runId(), "call_1"), {
+        ...DRAFT,
+        question_types: ["true_false"],
+      }),
+    ).rejects.toMatchObject({
+      type: "no-questions",
+      message: expect.stringContaining("question_types lists the kinds it holds"),
+    });
+  });
+
+  it("draws only from pinned sets, in their order, with no search (dl-u1y5.37)", async () => {
+    const { bank, asked } = countingBank();
+    const verbs = createVerbs({ bank });
+    const effect = await verbs.lesson_draft.run(contextFor(runId(), "call_1"), {
+      ...DRAFT,
+      sets: ["set_fixture-sub-20"],
+    });
+    const steps = stepsOf(effect.lesson_file) as { based_on: { question: string } }[];
+    expect(steps.map((s) => s.based_on.question)).toEqual(
+      steps.map((_, i) => `authored:fixture-sub-20-${i + 1}`),
+    );
+    expect(asked.search).toBe(0);
     // Left out, or empty, they change nothing.
     await expect(
       verbs.lesson_draft.run(contextFor(runId(), "call_1"), { ...DRAFT, sets: null }),
     ).resolves.toHaveProperty("lesson_file");
+  });
+
+  it("lists the question types the bank holds for a grade, most questions first", async () => {
+    const verbs = createVerbs({ bank: fixtureBank() });
+    const effect = await verbs.question_types.run(contextFor(runId(), "call_1"), { grade: "1" });
+    expect(effect.output).toEqual({
+      grade: "1",
+      language: "pl",
+      types: [
+        { question_type: "production", family: "enter", sets: 2, ready: 14 },
+        { question_type: "recognition", family: "choose", sets: 1, ready: 6 },
+      ],
+    });
+    expect(effect.view?.kind).toBe("question_types");
   });
 
   it("a refusal is not remembered", async () => {
@@ -371,7 +433,11 @@ describe("lesson_show and question_search", () => {
       language: "pl",
     });
     const sets = found.output["sets"] as { set_id: string }[];
-    expect(sets.map((s) => s.set_id)).toEqual(["set_fixture-sub-20", "set_fixture-add-20"]);
+    expect(sets.map((s) => s.set_id)).toEqual([
+      "set_fixture-sub-20",
+      "set_fixture-add-20",
+      "set_fixture-add-choose-20",
+    ]);
     await expect(
       verbs.question_search.run(contextFor(runId(), "call_2"), { words: "x" }),
     ).rejects.toMatchObject({

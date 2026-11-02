@@ -167,13 +167,6 @@ export async function lessonDraft(
     "sets",
     "question_types",
   ]);
-  // jw's lesson_draft pins sets and keeps only some question types (dl-u1y5.37). The engine draws
-  // from its bank's search, so it says so rather than answer a lesson the model did not ask for.
-  for (const key of ["sets", "question_types"] as const) {
-    if (input.strings(key, false).length > 0) {
-      throw new VerbError("input", `lesson_draft: ${key} is not taken here yet; leave it out`);
-    }
-  }
   input.string("request");
   input.flag("verbose"); // jw's switch; the engine answers its compact form either way
   input.strings("names", true);
@@ -182,17 +175,26 @@ export async function lessonDraft(
   const language = input.oneOf("language", LANGUAGES, "pl");
   const kind = input.oneOf("kind", KINDS, "practice");
   const count = input.optionalInt("count", 1, 20) ?? DEFAULT_COUNT;
+  // jw's lesson_draft pins sets and keeps only some question types (dl-u1y5.37); so does this one.
+  const sets = input.strings("sets", false);
+  const question_types = input.strings("question_types", false);
   const query: BankQuery = {
     grade,
     words: topic,
     language,
     skills: input.strings("skills", false),
     limit: count,
+    ...(sets.length === 0 ? {} : { sets }),
+    ...(question_types.length === 0 ? {} : { question_types }),
   };
   const questions = await bank.sources(query);
   const first = questions[0];
   if (first === undefined) {
-    throw new VerbError("no-questions", `the bank has no question for "${topic}", grade ${grade}`);
+    const kinds = question_types.length === 0 ? "" : ` of the types ${question_types.join(", ")}`;
+    throw new VerbError(
+      "no-questions",
+      `the bank has no question${kinds} for "${topic}", grade ${grade}; question_types lists the kinds it holds`,
+    );
   }
   const drawn: Step[] = questions.map((q, i) => ({
     id: `s${String(i + 1).padStart(2, "0")}`,
@@ -441,8 +443,10 @@ export async function questionSearch(bank: BankPort, raw: Json): Promise<VerbEff
     "limit",
     "arm",
     "stage",
+    "question_types",
   ]);
   input.strings("mistakes", false);
+  const question_types = input.strings("question_types", false);
   input.optionalString("arm");
   input.optionalString("stage");
   const query: BankQuery = {
@@ -451,10 +455,29 @@ export async function questionSearch(bank: BankPort, raw: Json): Promise<VerbEff
     language: input.oneOf("language", LANGUAGES, "pl"),
     skills: input.strings("skills", false),
     limit: input.optionalInt("limit", 1, 50) ?? 20,
+    ...(question_types.length === 0 ? {} : { question_types }),
   };
   const { sets } = await bank.search(query);
   const view = toolView("question_search", {
-    sets: sets.map((set) => ({ ...set, grades: [...set.grades], skills: [...set.skills] })),
+    sets: sets.map((set) => ({
+      ...set,
+      grades: [...set.grades],
+      skills: [...set.skills],
+      question_types: [...set.question_types],
+    })),
   });
   return { output: { sets }, view };
+}
+
+/**
+ * question_types (dl-hin8.24): the kinds of question the bank holds for a grade and language, so
+ * the model offers a parent only what exists and passes real types to lesson_draft.
+ */
+export async function questionTypes(bank: BankPort, raw: Json): Promise<VerbEffect> {
+  const input = new Input("question_types", raw, ["grade", "language"]);
+  const grade = input.string("grade");
+  const language = input.oneOf("language", LANGUAGES, "pl");
+  const types = (await bank.types(grade, language)).map((t) => ({ ...t }));
+  const view = toolView("question_types", { grade, language, types });
+  return { output: { grade, language, types }, view };
 }

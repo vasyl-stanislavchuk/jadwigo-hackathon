@@ -55,6 +55,7 @@ def search_envelope(
     words_en: str | None = None,
     skills: list[str] | tuple[str, ...] = (),
     mistakes: list[str] | tuple[str, ...] = (),
+    question_types: list[str] | tuple[str, ...] = (),
     language: str = "pl",
     limit: int = 20,
     arm: str | None = None,
@@ -70,6 +71,8 @@ def search_envelope(
         need["skills"] = list(skills)
     if mistakes:
         need["mistakes"] = list(mistakes)
+    if question_types:
+        need["question_types"] = list(question_types)
     return bank_client.search(need, arm=arm, limit=limit, stage=stage)
 
 

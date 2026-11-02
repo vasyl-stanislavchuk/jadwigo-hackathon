@@ -3,7 +3,8 @@ import { InMemoryStore } from "@jadwigo/store";
 import { FIXED_NOW, finishedAttempt } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
 import { runId } from "../testing/context.ts";
-import { createVerbs, ENGINE_ONLY, fixtureBank } from "./index.ts";
+import { createVerbs, fixtureBank } from "./index.ts";
+import { LEARNER_TOOLS, type LearnerVerbName } from "./learner.ts";
 import { type VerbContext, VerbError } from "./types.ts";
 
 /**
@@ -45,8 +46,11 @@ function naming(learner: LearnerId | string): Record<string, unknown> {
 /** The words no learner verb's answer may hold: a level name, a score, a percentage. */
 const NEVER = /mastered|proficient|familiar|attempted|"level"|score|percent|%/i;
 
+/** The learner verbs, each reading one learner of the run's pod. */
+const LEARNER_VERBS = Object.keys(LEARNER_TOOLS) as LearnerVerbName[];
+
 describe("every learner verb is scoped by the run's pod", () => {
-  it.each(ENGINE_ONLY)(
+  it.each(LEARNER_VERBS)(
     "%s refuses another pod's learner, as it refuses an unknown one",
     async (name) => {
       const t = await world();
@@ -64,14 +68,14 @@ describe("every learner verb is scoped by the run's pod", () => {
     },
   );
 
-  it.each(ENGINE_ONLY)("%s takes no pod from the model's arguments", async (name) => {
+  it.each(LEARNER_VERBS)("%s takes no pod from the model's arguments", async (name) => {
     const t = await world();
     await expect(
       t.verbs[name].run(t.context(), { ...naming(t.ola), pod_id: t.other.pod }),
     ).rejects.toMatchObject({ type: "input" });
   });
 
-  it.each(ENGINE_ONLY)("%s refuses when the engine was given no store to read", async (name) => {
+  it.each(LEARNER_VERBS)("%s refuses when the engine was given no store to read", async (name) => {
     const verbs = createVerbs({ bank: fixtureBank() });
     const t = await world();
     await expect(verbs[name].run(t.context(), naming(t.ola))).rejects.toMatchObject({

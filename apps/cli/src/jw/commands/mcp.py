@@ -94,6 +94,7 @@ def build_server() -> Any:
         words_en: str | None = None,
         skills: list[str] | None = None,
         mistakes: list[str] | None = None,
+        question_types: list[str] | None = None,
         language: str = "pl",
         limit: int = 20,
         arm: str | None = None,
@@ -102,7 +103,8 @@ def build_server() -> Any:
         """Search the bank for question sets that meet a need; the bank's search envelope.
 
         grade is the bare grade number ("3"); words is the need in plain words in `language`
-        (pl or en). arm and stage reach only the bank's own route (JW_BANK_URL); the /api/v1
+        (pl or en); question_types keeps only sets holding those kinds of question (family.type,
+        a glob such as group.*, a bare family or a bare type). arm and stage reach only the bank's own route (JW_BANK_URL); the /api/v1
         route answers stage final with every arm.
         """
         return _call(
@@ -112,6 +114,7 @@ def build_server() -> Any:
             words_en=words_en,
             skills=skills or [],
             mistakes=mistakes or [],
+            question_types=question_types or [],
             language=language,
             limit=limit,
             arm=arm,

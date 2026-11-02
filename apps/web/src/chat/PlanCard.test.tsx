@@ -17,6 +17,7 @@ import {
   Eye,
   LayoutList,
   Lightbulb,
+  ListFilter,
   NotebookPen,
   PencilLine,
   Search,
@@ -147,6 +148,7 @@ describe("each verb's icon and sentence (dl-uukj.47.50)", () => {
   it("pins the verb-to-icon map", () => {
     expect(TOOL_ICON).toEqual({
       question_search: Search,
+      question_types: ListFilter,
       lesson_draft: LayoutList,
       lesson_edit: PencilLine,
       lesson_check: ClipboardCheck,
