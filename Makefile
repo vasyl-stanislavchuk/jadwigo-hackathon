@@ -22,7 +22,7 @@ ifneq (,$(wildcard $(HOME)/perl5/bin/pg_prove))
 export PATH := $(HOME)/perl5/bin:$(PATH)
 export PERL5LIB := $(HOME)/perl5/lib/perl5$(if $(PERL5LIB),:$(PERL5LIB))
 endif
-.PHONY: check check-all dev dev-app dev-site dev-fresh dbpgmq migrate pgtap db-reset db-seed lesson-import lesson-withdraw api-dev api-bundle api-invoke db-push db-role release skills drops icons builder runner-bundle db-runner-role step-probe step-probe-local engine-smoke
+.PHONY: check check-all dev dev-all dev-app dev-site dev-fresh db pgmq migrate pgtap db-reset db-seed lesson-import lesson-withdraw api-dev api-bundle api-invoke db-push db-role release skills drops icons builder runner-bundle db-runner-role step-probe step-probe-local engine-smoke
 
 ## check: lint, typecheck and test what changed since main (turbo --affected), uv's pytest
 ## included, then the repo-wide checks turbo cannot scope: knip, dependency-cruiser, no-bank, worklog,
@@ -54,6 +54,15 @@ LOCAL_DB_GATE = printf '%s\n' "$(LOCAL_DATABASE_URL)" | grep -Eq '^postgres(ql)?
 dev:
 	@$(LOCAL_DB_GATE)
 	DATABASE_URL=$(LOCAL_DATABASE_URL) bunx turbo run dev --env-mode=loose
+
+## dev-all: the same servers as dev, each in its own pane of one terminal (mprocs.yaml), with docs,
+## check and db-reset a key away. mprocs ships as dekit, pinned in mise.toml; each pane also logs
+## to .logs/dev/<name>.log. Needs a terminal: run it yourself, or through `md run all` in a worktree.
+dev-all:
+	@$(LOCAL_DB_GATE)
+	@command -v dekit >/dev/null || { echo "dev-all: dekit (mprocs) is not installed. Run: mise install"; exit 1; }
+	@mkdir -p .logs/dev
+	DATABASE_URL=$(LOCAL_DATABASE_URL) dekit mprocs --config mprocs.yaml --log-dir .logs/dev --log-mode truncate
 
 ## dev-app: the app alone, apps/web and apps/api (and packages/copy's message compile), on the
 ## same ports and database as dev. The api restarts on each edit (bun --watch); web is Vite's HMR.

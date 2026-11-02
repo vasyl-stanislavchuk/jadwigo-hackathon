@@ -1,0 +1,30 @@
+# `make dev-all`: every dev server in one terminal, one pane each (mprocs, run as `dekit mprocs`;
+# mise.toml pins it). Each process also logs to .logs/dev/<name>.log, so an agent can read what a
+# pane shows. Keys: arrows pick a pane, s starts, x stops, r restarts, q quits all.
+# The ports and the database come from `make dev-all` (md's ports in a worktree, the local jadwigo db).
+procs:
+  web:
+    shell: "bun run --cwd apps/web dev"
+  api:
+    shell: "bun run --cwd apps/api dev"
+  copy:
+    shell: "bun run --cwd packages/copy dev"
+  # ASTRO_DEV_BACKGROUND set keeps astro dev in its pane: unset, Astro detaches when an agent started
+  # it (dev/index.js isRunByAgent), and the server outlives mprocs.
+  site:
+    shell: "bun run --cwd apps/site dev"
+    env:
+      ASTRO_DEV_BACKGROUND: "0"
+  # The slowest to start (typedoc and the OpenAPI prepare): s to start it.
+  docs:
+    shell: "bun run --cwd apps/docs dev"
+    autostart: false
+    env:
+      ASTRO_DEV_BACKGROUND: "0"
+  # On demand: the gate, and the local database rebuilt after a pull brings migrations.
+  check:
+    shell: "make check"
+    autostart: false
+  db-reset:
+    shell: "make db-reset ENV="
+    autostart: false
