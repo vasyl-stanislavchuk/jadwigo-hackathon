@@ -1,7 +1,8 @@
 // The email code at sign-in (handoff dl-uukj.47.67 §6.2, lead decision 5: no OTP library): one numeric
 // input, so a paste, the phone's code suggestion (one-time-code) and a screen reader all meet one
 // field, drawn as 6 cells. The input lies over the cells, transparent; the cell where the next digit
-// goes carries the focus halo. Only digits are kept.
+// goes carries the focus halo. Only digits are kept. The cells copy the code into the page, and
+// session replay masks only inputs, so the whole field is ph-no-capture: replay never records it.
 import { type ChangeEvent, type ComponentProps, type ReactElement, useState } from "react";
 import { cn } from "../lib/utils.ts";
 
@@ -20,7 +21,10 @@ function InputOtp({
   const cells = Array.from({ length }, (_, i) => value[i] ?? "");
   const at = Math.min(value.length, length - 1);
   return (
-    <div data-slot="input-otp" className={cn("relative inline-flex gap-2", className)}>
+    <div
+      data-slot="input-otp"
+      className={cn("ph-no-capture relative inline-flex gap-2", className)}
+    >
       {cells.map((digit, i) => (
         <span
           // biome-ignore lint/suspicious/noArrayIndexKey: the cells are positions, fixed in number

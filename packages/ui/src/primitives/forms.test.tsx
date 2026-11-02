@@ -106,6 +106,8 @@ describe("InputOtp", () => {
     expect(cells.map((c) => c.textContent).join("")).toBe("1234");
     act(() => field.focus());
     expect(cells[4]?.hasAttribute("data-active")).toBe(true);
+    // The cells copy the code into the page; session replay must never record them.
+    expect(container.querySelector("[data-slot=input-otp]")?.classList).toContain("ph-no-capture");
   });
 });
 
