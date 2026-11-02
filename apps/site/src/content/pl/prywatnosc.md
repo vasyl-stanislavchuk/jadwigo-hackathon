@@ -58,8 +58,10 @@ Na stronie i w aplikacji pytamy, czy możemy zapisywać, jak z nich korzystasz. 
 nic nie zapisujemy. Gdy się zgodzisz, PostHog zapisuje odwiedzone strony, kilka kroków, takich jak
 dodanie dziecka czy logowanie, i nagrania ekranu. Na nagraniu widać to, co pokazuje ekran, także
 imię dziecka i pytania z lekcji. Nie widać tego, co wpisujesz w pola formularzy. Na urządzeniu
-zapisujemy wtedy plik cookie PostHog. Gdy zamkniesz pytanie krzyżykiem, liczymy tylko wizytę i te kroki, bez cookie i bez
-nagrania, więc nie wiemy, że to wciąż Ty. Do zdarzeń nie trafia imię, e-mail, odpowiedź ani wynik dziecka. Nie zapisujemy adresu
+zapisujemy wtedy plik cookie PostHog. Gdy zamkniesz pytanie krzyżykiem, liczymy tylko wizytę i te kroki, bez nagrania i bez
+cookie, które mogłoby Cię rozpoznać, więc nie wiemy, że to wciąż Ty. W obu przypadkach mały plik
+cookie pamięta tylko Twoją odpowiedź (tak albo nie, bez identyfikatora), a jedna odpowiedź
+obowiązuje i na jadwigo.pl, i na app.jadwigo.pl. Do zdarzeń nie trafia imię, e-mail, odpowiedź ani wynik dziecka. Nie zapisujemy adresu
 IP.
 
 ## Kto przetwarza dane

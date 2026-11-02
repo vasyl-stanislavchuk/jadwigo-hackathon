@@ -58,7 +58,9 @@ record nothing. If you agree, PostHog records the pages you visit, a few steps s
 child or signing in, and screen recordings. A recording shows what the screen shows, including
 your child's first name and the lesson's questions. It doesn't show what you type into form fields.
 We then store a PostHog cookie on your device. If you close it with the ×, we only count the visit and those
-steps, with no cookie and no recording, so we can't tell it's still you. No event carries your child's name, your email, an answer or a score. We
+steps, with no recording and no cookie that could recognise you, so we can't tell it's still you.
+Either way a small cookie remembers only your answer (yes or no, with no identifier), and one answer
+covers both jadwigo.pl and app.jadwigo.pl. No event carries your child's name, your email, an answer or a score. We
 don't record IP addresses.
 
 ## Who processes the data
