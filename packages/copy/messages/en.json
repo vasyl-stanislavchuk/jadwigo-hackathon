@@ -1067,5 +1067,14 @@
   "parent_analytics_privacy": "Privacy",
   "site_consent_ask": "Jadwigo records how the site is used, including screen recordings without what you type, so we can make it better. Do you agree?",
   "site_consent_accept": "I agree",
-  "site_consent_reject": "No, thanks"
+  "site_consent_reject": "No, thanks",
+  "oauth_title": "Connect {app} to Jadwigo",
+  "oauth_address": "The app's address: {host}",
+  "oauth_can": "This app will be able to:",
+  "oauth_can_read": "read your family's data and the question bank",
+  "oauth_can_lessons": "make lessons and give them to your children",
+  "oauth_data": "Your children's data, names included, will go to {app}.",
+  "oauth_approve": "Allow",
+  "oauth_deny": "Deny",
+  "oauth_failed": "We couldn't connect. Go back to the app and try again."
 }

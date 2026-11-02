@@ -15,7 +15,7 @@
 
 import { track } from "@jadwigo/analytics";
 import type { Language } from "@jadwigo/copy";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { type AuthOAuthServerApi, createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Provider } from "../config.ts";
 
 export type { Provider } from "../config.ts";
@@ -211,33 +211,50 @@ export function supabaseAuth(
   };
 }
 
+let client: SupabaseClient | null | undefined;
+
+/** The build's Supabase client, made once, or null when the build has no Supabase project. */
+function browserClient(): SupabaseClient | null {
+  if (client === undefined) {
+    const config = typeof __JW_AUTH__ === "undefined" ? null : __JW_AUTH__;
+    client =
+      config === null
+        ? null
+        : createClient(config.url, config.key, {
+            auth: {
+              storageKey: SESSION_KEY,
+              persistSession: true,
+              detectSessionInUrl: false,
+              flowType: "pkce",
+            },
+          });
+  }
+  return client;
+}
+
 let shared: Auth | null | undefined;
 
 /** The page's sign-in, made once, or null when the build has no Supabase project. */
 export function browserAuth(): Auth | null {
   if (shared === undefined) {
+    const supabase = browserClient();
     const config = typeof __JW_AUTH__ === "undefined" ? null : __JW_AUTH__;
     shared =
-      config === null
+      supabase === null || config === null
         ? null
-        : supabaseAuth(
-            createClient(config.url, config.key, {
-              auth: {
-                storageKey: SESSION_KEY,
-                persistSession: true,
-                detectSessionInUrl: false,
-                flowType: "pkce",
-              },
-            }),
-            config.providers ?? [],
-            async () => {
-              const reply = await fetch(`${config.url}/auth/v1/settings`, {
-                headers: { apikey: config.key },
-              });
-              if (!reply.ok) throw new Error(`settings ${reply.status}`);
-              return reply.json();
-            },
-          );
+        : supabaseAuth(supabase, config.providers ?? [], async () => {
+            const reply = await fetch(`${config.url}/auth/v1/settings`, {
+              headers: { apikey: config.key },
+            });
+            if (!reply.ok) throw new Error(`settings ${reply.status}`);
+            return reply.json();
+          });
   }
   return shared;
+}
+
+/** The OAuth server's consent calls on the same client, so its session is the sign-in's
+ * (oauth/ConsentScreen.tsx, dl-1u6fn.7); null when the build has no Supabase project. */
+export function browserOAuth(): AuthOAuthServerApi | null {
+  return browserClient()?.auth.oauth ?? null;
 }
