@@ -124,6 +124,8 @@ const pieces = [
     const clear = (l: number, t: number, w: number, h: number): boolean =>
       taken.every((r) => l + w < r.left || l > r.right || t + h < r.top || t > r.bottom);
     const placed = { sum: 0, star: 0 };
+    // The drift (up to 1.5rem) and the cursor's push (up to 22px), with a little to spare.
+    const EDGE = 48;
     for (const piece of backdrop.querySelectorAll<HTMLElement>(".piece")) {
       const kind = piece.classList.contains("sum") ? "sum" : "star";
       const drift = piece.querySelector(".drift");
@@ -137,8 +139,11 @@ const pieces = [
       const h = piece.offsetHeight;
       let spot: [number, number] | undefined;
       for (let tries = 0; tries < 12 && placed[kind] < room[kind] && !spot; tries++) {
-        const l = between(0, Math.max(0, W - w));
-        const t = between(0, Math.max(0, H - h));
+        // Whole inside the page even at the far end of its drift and the cursor's push, so a cut-off
+        // sum never reads as a false one ("7 · 9 = 6"): a margin each side for both.
+        const l = between(EDGE, W - w - EDGE);
+        const t = between(EDGE, H - h - EDGE);
+        if (W - w - EDGE < EDGE) break;
         if (clear(l, t, w, h)) spot = [l, t];
       }
       if (!spot) {
@@ -232,6 +237,9 @@ const pieces = [
     transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1), color 0.6s ease;
   }
   .sum { font-weight: 700; letter-spacing: 0.02em; }
+  /* Without JS nothing keeps a sum whole inside the page, and a cut-off one would read as false, so
+     only the stars show. */
+  :global(html:not(.js)) .sum { display: none; }
   .star svg { display: block; }
   /* A star twinkles under the cursor: it grows and turns a quarter, and brightens. */
   .star.near { transform: translate(var(--away-x, 0), var(--away-y, 0)) scale(1.7) rotate(45deg); }
