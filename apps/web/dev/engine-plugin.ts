@@ -168,27 +168,30 @@ function engine(server: ViteDevServer, m: Modules) {
   }
 
   /**
-   * The queue, paced: a stalled conversation's steps go to a queue of their own, which only its
-   * own drain reads; the step being drained is noted, so a failing conversation's runs on a clock
-   * past their max deadline and the engine ends them failed with `RunTimedOut`. The dev drain
-   * takes 1 step a read.
+   * The queue, paced: a stalled or failing conversation's steps go to a lane of their own, which
+   * only that pace's drains read, so no pace ever plays another's turn. A stalled step is archived
+   * the moment it is read: its model never answers, and a step delivered again would hang the next
+   * stalled drain on it (and write a retry into a log that must stay still). A failing lane drains
+   * on a clock past the turn's max deadline, so the engine ends it failed with `RunTimedOut`.
    */
-  const stalled = new InMemoryRunQueue(() => new Date());
-  const queue = new InMemoryRunQueue(() => new Date());
-  const enqueue = queue.send.bind(queue);
-  const take = queue.read.bind(queue);
-  let failing = false;
-  queue.send = async (message, delay_s) =>
-    (await paceOfRun(message.run_id)) === "stall"
-      ? stalled.send(message, delay_s)
-      : enqueue(message, delay_s);
-  queue.read = async (vt_s, qty) => {
-    const read = await take(vt_s, qty);
-    const first = read[0];
-    failing = first !== undefined && (await paceOfRun(first.message.run_id)) === "fail";
+  const lane = (): Engine.InMemoryRunQueue => new InMemoryRunQueue(() => new Date());
+  const stalled = lane();
+  const readStalled = stalled.read.bind(stalled);
+  stalled.read = async (vt_s, qty) => {
+    const read = await readStalled(vt_s, qty);
+    for (const step of read) await stalled.archive(step.msg_id);
     return read;
   };
-  const now = () => new Date(Date.now() + (failing ? PAST_MAX_MS : 0));
+  const failing = lane();
+  const queue = lane();
+  const enqueue = queue.send.bind(queue);
+  queue.send = async (message, delay_s) => {
+    const pace = await paceOfRun(message.run_id);
+    if (pace === "stall") return stalled.send(message, delay_s);
+    if (pace === "fail") return failing.send(message, delay_s);
+    return enqueue(message, delay_s);
+  };
+  const now = () => new Date();
   const deps: EngineDeps = {
     store,
     muse,
@@ -199,6 +202,12 @@ function engine(server: ViteDevServer, m: Modules) {
   };
   const member = store.createAccount(m.contracts.Uuid.parse(crypto.randomUUID()), "pl");
   let draining: Promise<unknown> = Promise.resolve();
+  /** A paced lane's drain: on its own, so it never holds up another turn's. */
+  const drainLane = (lane: EngineDeps["queue"], clock: () => Date) => {
+    drain({ ...deps, queue: lane, now: clock }).catch((e: unknown) =>
+      server.config.logger.error(`[${ENGINE_PLUGIN}] ${String(e)}`),
+    );
+  };
   /** One drain at a time; a message mid-drain is picked up by the drain running. */
   const kick = () => {
     draining = draining
@@ -240,15 +249,13 @@ function engine(server: ViteDevServer, m: Modules) {
               : { event_id: body.event_id, kind: "cancel", payload: {} },
       });
       // After the answer: the page subscribes, then fetches after its cursor. A `stall` step logs
-      // the parent's message and then waits on a model that never answers, on a drain and a queue
-      // of its own, so it never holds up another turn's drain, even when it is delivered again.
-      if (pace === "stall") {
-        setTimeout(() => {
-          drain({ ...deps, queue: stalled, now: () => new Date() }).catch((e: unknown) =>
-            server.config.logger.error(`[${ENGINE_PLUGIN}] ${String(e)}`),
-          );
-        }, 0);
-      } else setTimeout(kick, 0);
+      // the parent's message and then waits on a model that never answers; a `fail` step finds
+      // its turn past its max deadline. Each drains in its own lane.
+      setTimeout(() => {
+        if (pace === "stall") drainLane(stalled, now);
+        else if (pace === "fail") drainLane(failing, () => new Date(Date.now() + PAST_MAX_MS));
+        else kick();
+      }, 0);
       return { run };
     },
     async runs(conversation: string): Promise<RunsAnswer> {
