@@ -242,12 +242,12 @@ function Revision({
   };
   return (
     <div data-revision={lesson.revision} className="flex flex-col gap-4 overflow-y-auto">
-      <div className="flex items-baseline gap-2">
-        <h3 className="text-lg font-medium">{file.title}</h3>
-        <span className="text-muted-foreground text-xs">
-          {say("chat_lesson_revision", { n: lesson.revision })}
-        </span>
-        <div className="ml-auto flex items-baseline gap-2">
+      <div className="flex flex-col gap-1">
+        <h3 className="min-w-0 text-lg font-medium break-words">{file.title}</h3>
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground text-xs">
+            {say("chat_lesson_revision", { n: lesson.revision })}
+          </span>
           {changed.size > 0 && onUndo && (
             <button
               type="button"
@@ -264,7 +264,7 @@ function Revision({
               type="button"
               data-expand-all={allOpen ? "close" : "open"}
               onClick={() => setOpen(allOpen ? new Set() : new Set(openable))}
-              className="rounded-md px-2 py-0.5 text-sm underline-offset-4 hover:underline"
+              className="ml-auto rounded-md px-2 py-0.5 text-sm whitespace-nowrap underline-offset-4 hover:underline"
             >
               {say(allOpen ? "parent_collapse_all" : "parent_expand_all")}
             </button>
@@ -387,6 +387,7 @@ function StepRow({
         <span className="min-w-[140px] flex-1 truncate">
           {say("chat_lesson_step_hidden", { step: step.step_id })}
         </span>
+        {changed && <ChangedTag say={say} />}
       </li>
     );
   const title =
@@ -428,11 +429,7 @@ function StepRow({
         <span className="min-w-[140px] flex-1 truncate" data-step-title>
           {title}
         </span>
-        {changed && (
-          <span data-changed-mark className="shrink-0 text-xs font-medium text-primary">
-            {say("chat_revision_by_ai")}
-          </span>
-        )}
+        {changed && <ChangedTag say={say} />}
         <span className="shrink-0 text-jw-page-small text-jw-ink-soft" data-step-kind>
           {say(KIND[step.spec.family])}
         </span>
@@ -514,6 +511,15 @@ function StepRow({
   );
 }
 
+/** The tag on a row this revision changed: words, not only a coloured edge. */
+function ChangedTag({ say }: { say: Say }): ReactElement {
+  return (
+    <span data-changed-mark className="shrink-0 text-xs font-medium text-primary">
+      {say("chat_revision_by_ai")}
+    </span>
+  );
+}
+
 /** One fact about an opened step under a small heading. */
 function Fact({ title, children }: { title: string; children: ReactNode }): ReactElement {
   return (
@@ -573,9 +579,11 @@ function StepEdit({
   }, [outcome, sent]);
   if (!open)
     return (
-      <div className="mt-2 flex items-center gap-2 text-sm">
-        <button
+      <div className="flex items-center gap-2 text-sm">
+        <Button
           type="button"
+          variant="outline"
+          size="control"
           data-edit-step={step}
           onClick={() => {
             setOpen(true);
@@ -584,10 +592,9 @@ function StepEdit({
             setSent(null);
             setRefused(false);
           }}
-          className="rounded-md border px-2 py-0.5"
         >
           {say("chat_edit_step")}
-        </button>
+        </Button>
         {toAi && <span data-edit-sent>{say("chat_edit_sent")}</span>}
         {outcome === "pending" && <span data-edit-sent="saving">{say("chat_edit_saving")}</span>}
         {outcome === "applied" && <span data-edit-sent="lesson">{say("chat_edit_saved")}</span>}
