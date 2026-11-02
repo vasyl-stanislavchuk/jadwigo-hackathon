@@ -6,6 +6,7 @@
  * way.
  */
 
+import { toolViewData } from "@jadwigo/contracts";
 import type { RunView } from "@jadwigo/core";
 import { useState } from "react";
 import { type ConversationState, lessonOf, type Turn, turnsOf } from "./conversation.ts";
@@ -50,6 +51,36 @@ export function ghostsOf(turns: readonly Turn[]): number {
   if (draft?.kind !== "tool" || (draft.state !== "pending" && draft.state !== "running")) return 0;
   const count = draft.input?.["count"];
   return typeof count === "number" && Number.isInteger(count) && count > 0 ? count : 1;
+}
+
+/**
+ * Whether the lesson shown may be given (handoff §5.5, dl-z5ja.108.1.1): the latest lesson_check
+ * said it is publishable, and nothing wrote the lesson after it, neither the AI (a lesson_draft or
+ * lesson_edit done later) nor the parent (a patch steer, which writes a revision no tool call names).
+ * False before any check. Conservative: when in doubt the lesson is checked again, never given unchecked.
+ */
+export function readyOf(turns: readonly Turn[]): boolean {
+  for (let i = turns.length - 1; i >= 0; i -= 1) {
+    const turn = turns[i];
+    if (!turn?.view.lesson) continue;
+    const tools = turn.view.chat.flatMap((item) =>
+      item.kind === "tool" && item.state === "done" ? [item] : [],
+    );
+    const check = tools.findLast((item) => item.verb === "lesson_check");
+    if (check === undefined || check.view?.kind !== "lesson_check") return false;
+    const data = toolViewData("lesson_check", check.view.data);
+    if (data === null || !data.publishable) return false;
+    const rewritten = tools.some(
+      (item) =>
+        (item.verb === "lesson_draft" || item.verb === "lesson_edit") && item.seq > check.seq,
+    );
+    const byParent =
+      turn.writer !== undefined &&
+      turn.writer !== null &&
+      !tools.some((item) => item.call_id === turn.writer);
+    return !rewritten && !byParent;
+  }
+  return false;
 }
 
 export function useLessonWiring(
@@ -106,5 +137,6 @@ export function useLessonWiring(
     outcomeOf,
     key: lessonKey(turns),
     ghosts: ghostsOf(turns),
+    ready: readyOf(turns),
   };
 }

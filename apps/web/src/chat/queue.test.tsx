@@ -5,12 +5,13 @@
  * in order, one turn each; a reload keeps them; the pane draws them under the composer.
  */
 
+import { ApiError } from "@jadwigo/api-client";
 import { ConversationId, type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { RUN_LOGS } from "@jadwigo/testing";
 import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ChatPane } from "./ChatPane.tsx";
-import { heldQueue } from "./queue.ts";
+import { clearChatQueues, heldQueue } from "./queue.ts";
 import { type EngineTransport, useConversation } from "./useConversation.ts";
 import type { SendBody } from "./wire.ts";
 
@@ -52,6 +53,8 @@ const ending = (run: Run): RunEvent[] =>
 function standIn() {
   const sent: SendBody[] = [];
   const runs: Run[] = [];
+  /** How many sends to refuse next, as a network failure would. */
+  const refuse = { next: 0 };
   const pushes = new Map<string, (events: readonly RunEvent[]) => void>();
   const transport: EngineTransport = {
     subscribe: (run, on) => {
@@ -62,6 +65,10 @@ function standIn() {
     runs: async () => runs,
     events: async () => [],
     send: async (body) => {
+      if (refuse.next > 0) {
+        refuse.next -= 1;
+        throw new Error("the network went away");
+      }
       sent.push(body);
       if (body.kind === "message") runs.push(runOf(runs.length + 1));
       return runs.at(-1) as Run;
@@ -71,7 +78,7 @@ function standIn() {
     const run = runs[n - 1] as Run;
     await act(async () => pushes.get(run.id)?.(ending(run)));
   };
-  return { transport, sent, end };
+  return { transport, sent, end, refuse };
 }
 
 const said = (sent: SendBody[]) =>
@@ -89,7 +96,7 @@ describe("the Następne queue", () => {
     for (const text of ["A", "B", "C"]) await act(async () => result.current.send(text));
     expect(said(s.sent)).toEqual(["message:Pierwsza"]);
     expect(result.current.next).toEqual(["A", "B", "C"]);
-    expect(heldQueue(CONVERSATION)).toEqual(["A", "B", "C"]);
+    expect(heldQueue(CONVERSATION, null)).toEqual(["A", "B", "C"]);
 
     await act(async () => result.current.sendNow(1));
     expect(s.sent.at(-1)).toMatchObject({ kind: "steer", source: "chat", text: "B" });
@@ -152,5 +159,75 @@ describe("the Następne queue", () => {
     expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe("B");
     fireEvent.click(screen.getAllByRole("button", { name: "Usuń" })[0] as HTMLElement);
     expect(taken).toEqual([1, 0]);
+  });
+
+  it("keeps a row whose Wyślij teraz failed, and Spróbuj ponownie sends those exact words", async () => {
+    const s = standIn();
+    const { result } = renderHook(() => useConversation(s.transport, CONVERSATION));
+    await act(async () => {});
+    await act(async () => result.current.send("Pierwsza"));
+    for (const text of ["A", "B"]) await act(async () => result.current.send(text));
+    s.refuse.next = 1;
+    await act(async () => result.current.sendNow(1));
+    expect(result.current.state.sendFailed).toBe(true);
+    expect(result.current.next).toEqual(["A", "B"]);
+    await act(async () => result.current.resend());
+    expect(s.sent.at(-1)).toMatchObject({ kind: "steer", text: "B" });
+    expect(result.current.next).toEqual(["A"]);
+  });
+
+  it("keeps a drained row whose send failed, and waits for Spróbuj ponownie to send it", async () => {
+    const s = standIn();
+    const { result } = renderHook(() => useConversation(s.transport, CONVERSATION));
+    await act(async () => {});
+    await act(async () => result.current.send("Pierwsza"));
+    await act(async () => result.current.send("A"));
+    s.refuse.next = 1;
+    await s.end(1);
+    expect(said(s.sent)).toEqual(["message:Pierwsza"]);
+    expect(result.current.next).toEqual(["A"]);
+    await act(async () => result.current.resend());
+    expect(said(s.sent)).toEqual(["message:Pierwsza", "message:A"]);
+    expect(result.current.next).toEqual([]);
+  });
+
+  it("reads no other account's queue, drops it, and sign-out clears every queue", async () => {
+    const key = `jw.chat.next.${CONVERSATION}`;
+    window.sessionStorage.setItem(key, JSON.stringify({ owner: "acc_a", items: ["A's words"] }));
+    window.sessionStorage.setItem(
+      "jw.chat.next.cnv_00000000000000000000000009",
+      JSON.stringify({ owner: "acc_a", items: ["more of A's"] }),
+    );
+    const s = standIn();
+    const { result } = renderHook(() => useConversation(s.transport, CONVERSATION, "acc_b"));
+    await act(async () => {});
+    expect(result.current.next).toEqual([]);
+    expect(window.sessionStorage.getItem(key)).toBeNull();
+    expect(window.sessionStorage.getItem("jw.chat.next.cnv_00000000000000000000000009")).toBeNull();
+    expect(said(s.sent)).toEqual([]);
+
+    window.sessionStorage.setItem(key, JSON.stringify({ owner: "acc_b", items: ["B's"] }));
+    clearChatQueues();
+    expect(window.sessionStorage.getItem(key)).toBeNull();
+  });
+
+  it("reads and drains nothing until the account is known, nor on a lesson that is not there", async () => {
+    const key = `jw.chat.next.${CONVERSATION}`;
+    window.sessionStorage.setItem(key, JSON.stringify({ owner: "acc_b", items: ["B's"] }));
+    const s = standIn();
+    const unknown = renderHook(() => useConversation(s.transport, CONVERSATION, false));
+    await act(async () => {});
+    expect(unknown.result.current.next).toEqual([]);
+    expect(s.sent).toEqual([]);
+    unknown.unmount();
+
+    s.transport.runs = async () => {
+      throw new ApiError("no such conversation", 404, null);
+    };
+    const missing = renderHook(() => useConversation(s.transport, CONVERSATION, "acc_b"));
+    await act(async () => {});
+    expect(missing.result.current.state.notFound).toBe(true);
+    expect(missing.result.current.next).toEqual(["B's"]);
+    expect(s.sent).toEqual([]);
   });
 });
