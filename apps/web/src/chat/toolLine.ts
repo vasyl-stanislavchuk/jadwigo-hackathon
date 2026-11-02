@@ -41,6 +41,8 @@ export interface LineContext {
   nameOf?: (learner: string) => string | null;
   /** Sends words as the parent's message: a widget's "Ułóż tę lekcję" (dl-z5ja.129). */
   onAsk?: (text: string) => void;
+  /** The answers given in this page to an approval's choose form, by its call (dl-uukj.47.35). */
+  chosen?: (call_id: string) => readonly (string | null)[] | undefined;
 }
 
 export interface Sentence {
