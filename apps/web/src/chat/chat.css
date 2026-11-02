@@ -1,0 +1,8 @@
+/* A chat row enters with Zeszyt's fade (dl-uukj.47.28), only when the system allows motion. The
+ * pane also leaves data-enter off every row under prefers-reduced-motion (ChatPane.tsx), so nothing
+ * moves there whichever way the page is read. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-chat-row][data-enter] {
+    animation: jw-fade-in var(--jw-dur-band) var(--jw-ease-out) both;
+  }
+}

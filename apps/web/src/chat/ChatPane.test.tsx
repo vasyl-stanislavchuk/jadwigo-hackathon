@@ -397,3 +397,52 @@ describe("the message limits (dl-z5ja.62, .100)", () => {
     expect(screen.queryByRole("button", { name: "Spróbuj ponownie" })).toBeNull();
   });
 });
+
+describe("the two sides apart (dl-uukj.47.28)", () => {
+  it("draws the parent's words as a filled bubble on the right, with Ty for a screen reader", () => {
+    pane({ turns: [turnOf("happy-turn")] });
+    const parent = document.querySelector("[data-from='parent']") as HTMLElement;
+    expect(parent.className).toContain("self-end");
+    expect(parent.className).toContain("max-w-[85%]");
+    const bubble = parent.querySelector("[data-bubble]") as HTMLElement;
+    expect(bubble.className).toContain("bg-jw-pick");
+    expect(bubble.className).toContain("rounded-jw-dialog");
+    expect(bubble.textContent).toBe("A short lesson on equal groups for grade 2, please.");
+    const label = within(parent).getByText("Ty");
+    expect(label.className).toContain("sr-only");
+  });
+
+  it("heads Jadwigo AI's turn once, with its mark and name, over prose with no border", () => {
+    pane({ variant: "parent", turns: [turnOf("happy-turn")] });
+    const headers = document.querySelectorAll("[data-ai-header]");
+    expect(headers).toHaveLength(1);
+    const header = headers[0] as HTMLElement;
+    expect(header.textContent).toBe("Jadwigo AI");
+    expect(header.querySelector("[data-ai-mark]")?.getAttribute("aria-hidden")).toBe("true");
+    // The header sits over the turn's first row of Jadwigo AI, the tool lines, not the parent's.
+    expect(header.closest("li")?.querySelector("[data-from='parent']")).toBeNull();
+    const prose = document.querySelector("[data-prose]") as HTMLElement;
+    expect(prose.textContent).toBe("Your lesson is ready on the right.");
+    expect(prose.className).not.toMatch(/\bborder\b|rounded/);
+    expect(prose.closest("li")?.className).not.toContain("items-end");
+  });
+
+  it("gives each turn a header of its own", () => {
+    pane({ turns: [turnOf("happy-turn"), turnOf("happy-turn", () => {})] });
+    expect(document.querySelectorAll("[data-ai-header]")).toHaveLength(1 * 2);
+  });
+
+  it("fades rows in only when the system allows motion", () => {
+    pane({ turns: [turnOf("happy-turn")] });
+    expect(document.querySelectorAll("[data-chat-row][data-enter]").length).toBeGreaterThan(0);
+    cleanup();
+    vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce") }));
+    try {
+      pane({ turns: [turnOf("happy-turn")] });
+      expect(document.querySelectorAll("[data-chat-row]").length).toBeGreaterThan(0);
+      expect(document.querySelectorAll("[data-enter]")).toHaveLength(0);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
