@@ -22,7 +22,7 @@ ifneq (,$(wildcard $(HOME)/perl5/bin/pg_prove))
 export PATH := $(HOME)/perl5/bin:$(PATH)
 export PERL5LIB := $(HOME)/perl5/lib/perl5$(if $(PERL5LIB),:$(PERL5LIB))
 endif
-.PHONY: check check-all dev dev-all dev-app dev-site dev-fresh db pgmq migrate pgtap db-reset db-seed lesson-import lesson-withdraw api-dev api-bundle api-invoke db-push db-role release skills drops icons builder runner-bundle db-runner-role step-probe step-probe-local engine-smoke
+.PHONY: check check-all dev dev-all dev-all-supabase dev-app dev-site dev-fresh db pgmq migrate pgtap db-reset db-seed lesson-import lesson-withdraw api-dev api-bundle api-invoke db-push db-role release skills drops icons builder runner-bundle db-runner-role step-probe step-probe-local engine-smoke
 
 ## check: lint, typecheck and test what changed since main (turbo --affected), uv's pytest
 ## included, then the repo-wide checks turbo cannot scope: knip, dependency-cruiser, no-bank, worklog,
@@ -58,17 +58,32 @@ dev:
 ## dev-all: the same servers as dev, each in its own pane of one terminal (mprocs.yaml), with docs,
 ## check and db-reset a key away. mprocs ships as dekit, pinned in mise.toml; each pane also logs
 ## to .logs/dev/<name>.log. Needs a terminal: run it yourself, or through `md run all` in a worktree.
+## The parent signs in locally (dl-5ssh.131): the auth pane is apps/web/e2e/auth-server.ts, the
+## browser tests' stand-in for Supabase Auth, and web and api point at it. Any email signs in with
+## the code 123456, Google and Facebook at once; the same email is the same parent in every run,
+## and its key stays in .logs/dev/auth-key.pem. DEV_AUTH=supabase (or dev-all-supabase) keeps
+## jadwigo-dev's real sign-in from .env.local instead.
+DEV_AUTH ?= local
+STANDIN = http://127.0.0.1:$${AUTH_PORT:-54321}
+LOCAL_AUTH_ENV = JW_SUPABASE_URL=$(STANDIN) JW_SUPABASE_KEY=local JW_SUPABASE_PROVIDERS=google,facebook \
+	AUTH_JWKS_URL=$(STANDIN)/auth/v1/.well-known/jwks.json AUTH_ISSUER=$(STANDIN)/auth/v1 \
+	AUTH_STANDIN_KEY=.logs/dev/auth-key.pem
 dev-all:
 	@$(LOCAL_DB_GATE)
+	@case "$(DEV_AUTH)" in local|supabase) ;; *) echo "dev-all: DEV_AUTH=local or DEV_AUTH=supabase, not $(DEV_AUTH)"; exit 1;; esac
 	@command -v dekit >/dev/null || { echo "dev-all: dekit (mprocs) is not installed. Run: mise install"; exit 1; }
 	@if [ -n "$$MEDALLION_DEV_WORKSPACE_NAME" ]; then missing=""; \
-	  for v in WEB_PORT API_PORT SITE_PORT DOCS_PORT BUILDER_PORT; do eval "[ -n \"\$${$$v:-}\" ]" || missing="$$missing $$v"; done; \
+	  for v in WEB_PORT API_PORT SITE_PORT DOCS_PORT AUTH_PORT; do eval "[ -n \"\$${$$v:-}\" ]" || missing="$$missing $$v"; done; \
 	  if [ -n "$$missing" ]; then echo "dev-all: md worktree $$MEDALLION_DEV_WORKSPACE_NAME has no$$missing, so every pane would stop on it."; \
-	    echo "  Run: env -u MEDALLION_DEV_REPO md run all --here"; \
-	    echo "  Or pick free ports: WEB_PORT=8391 API_PORT=8392 SITE_PORT=8393 DOCS_PORT=8394 BUILDER_PORT=8395 make dev-all"; exit 1; fi; \
+	    echo "  Run: env -u MEDALLION_DEV_REPO md run all --here"; exit 1; fi; \
 	fi
 	@mkdir -p .logs/dev
-	DATABASE_URL=$(LOCAL_DATABASE_URL) dekit mprocs --config mprocs.yaml --log-dir .logs/dev --log-mode truncate
+	@echo "dev-all: the parent's app is http://127.0.0.1:$${WEB_PORT:-5173}/parent ($(if $(filter local,$(DEV_AUTH)),any email and the code 123456,jadwigo-dev's sign-in))"
+	$(if $(filter local,$(DEV_AUTH)),$(LOCAL_AUTH_ENV)) DATABASE_URL=$(LOCAL_DATABASE_URL) dekit mprocs --config mprocs.yaml --log-dir .logs/dev --log-mode truncate
+
+## dev-all-supabase: dev-all with jadwigo-dev's real sign-in (.env.local), not the local stand-in.
+dev-all-supabase:
+	$(MAKE) dev-all DEV_AUTH=supabase
 
 ## dev-app: the app alone, apps/web and apps/api (and packages/copy's message compile), on the
 ## same ports and database as dev. The api restarts on each edit (bun --watch); web is Vite's HMR.
