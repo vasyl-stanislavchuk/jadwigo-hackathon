@@ -243,6 +243,17 @@ describe("the first screen's photos (dl-z5ja.11.16)", () => {
     });
   });
 
+  it("asks to remove a refused photo, which has no Retry, and holds the send", async () => {
+    fake = harness({ decoded: null });
+    const props = withPhotos();
+    fireEvent.change(field(), { target: { value: "Odejmowanie" } });
+    await pick(photo());
+    expect(chips().map((c) => c.getAttribute("data-chip"))).toEqual(["refused"]);
+    expect(sendReason()).toBe("Usuń zdjęcie, którego nie da się wysłać");
+    fireEvent.keyDown(field(), { key: "Enter" });
+    expect(props.onSend).not.toHaveBeenCalled();
+  });
+
   it("sends without a photo whose chip was removed", async () => {
     const props = withPhotos();
     fireEvent.change(field(), { target: { value: "Odejmowanie" } });

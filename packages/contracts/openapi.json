@@ -1878,6 +1878,62 @@
         }
       }
     },
+    "/api/v1/question-types": {
+      "get": {
+        "operationId": "questionTypes",
+        "summary": "Lists the question types the bank holds, with counts per grade and language.",
+        "description": "Called with the bank's shared read token, not a Supabase token: without it the reply is 401. Counts are over lesson-ready questions.",
+        "tags": [
+          "bank"
+        ],
+        "security": [
+          {
+            "bankToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "grade",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{1,2}$"
+            }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z]{2}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionTypeCounts"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/api/v1/questions/{id}": {
       "get": {
         "operationId": "questionBody",
@@ -7480,6 +7536,13 @@
             "type": "string",
             "description": "A task to resemble, e.g. a homework problem's text"
           },
+          "question_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Keep only sets holding one of these question types: family.type, a glob such as group.*, a bare family (choose) or a bare type (multi_select)"
+          },
           "language": {
             "$ref": "#/components/schemas/Language"
           },
@@ -9390,6 +9453,55 @@
               "ready_ids"
             ],
             "additionalProperties": false
+          },
+          "question_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The question types of the set's lesson-ready questions, in any language (dl-n9fr.70)"
+          },
+          "problem_types": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "question_types": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "The question types of its lesson-ready questions"
+                }
+              },
+              "required": [
+                "name",
+                "question_types"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The set's problem types, each with the question types it holds"
+          },
+          "ready_types": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "description": "By language code: how many lesson-ready questions of each question type"
           }
         },
         "required": [
@@ -9400,7 +9512,7 @@
           "items"
         ],
         "additionalProperties": false,
-        "description": "One question set's public page: its titles, skills and credit, the ids of its questions, and which are lesson-ready per language; never a question's body"
+        "description": "One question set's public page: its titles, skills and credit, the ids of its questions, which are lesson-ready per language and their question types; never a question's body"
       },
       "QuestionSource": {
         "type": "string",
@@ -9443,6 +9555,69 @@
           "area_model",
           "explain"
         ]
+      },
+      "QuestionTypeCounts": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "const": 1
+          },
+          "bank_rev": {
+            "type": "string",
+            "description": "The bank build the counts come from"
+          },
+          "types": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "grade": {
+                  "type": "string",
+                  "description": "The bare grade number, \"1\""
+                },
+                "language": {
+                  "type": "string",
+                  "description": "A language code: pl, en"
+                },
+                "question_type": {
+                  "$ref": "#/components/schemas/QuestionType"
+                },
+                "family": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "sets": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991,
+                  "description": "How many sets hold a lesson-ready question of this type"
+                },
+                "ready": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991,
+                  "description": "How many lesson-ready questions are of this type"
+                }
+              },
+              "required": [
+                "grade",
+                "language",
+                "question_type",
+                "family",
+                "sets",
+                "ready"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "version",
+          "types"
+        ],
+        "additionalProperties": false,
+        "description": "The question types the bank holds, per grade and language: how many sets hold each and how many lesson-ready questions it has"
       },
       "Region": {
         "type": "object",
@@ -11777,6 +11952,7 @@
           "lesson_edit",
           "lesson_check",
           "question_search",
+          "question_types",
           "learner_skills",
           "learner_week",
           "learner_mistakes",
@@ -11891,6 +12067,7 @@
           "lesson_edit",
           "lesson_check",
           "question_search",
+          "question_types",
           "learner_skills",
           "learner_week",
           "learner_mistakes",

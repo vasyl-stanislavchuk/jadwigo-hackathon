@@ -13,7 +13,14 @@ import {
   learnerWeek,
   lessonIdeasVerb,
 } from "./learner.ts";
-import { lessonCheck, lessonDraft, lessonEdit, lessonShow, questionSearch } from "./lesson.ts";
+import {
+  lessonCheck,
+  lessonDraft,
+  lessonEdit,
+  lessonShow,
+  questionSearch,
+  questionTypes,
+} from "./lesson.ts";
 import { type Verb, type VerbContext, type VerbEffect, VerbError, type Verbs } from "./types.ts";
 
 export { type BankPort, fixtureBank } from "./bank.ts";
@@ -37,10 +44,12 @@ export interface VerbDeps {
 }
 
 /**
- * The verbs only the hosted engine has: they read a learner of the run's pod, and `jw mcp serve`
- * holds no learner. `parity.test.ts` holds every other verb to jw's tools, and these to their absence.
+ * The verbs only the hosted engine has: the learner verbs read a learner of the run's pod, and
+ * `jw mcp serve` holds no learner; `question_types` waits on jw's own tool (dl-u1y5.43).
+ * `parity.test.ts` holds every other verb to jw's tools, and these to their absence.
  */
-export const ENGINE_ONLY: readonly LearnerVerbName[] = [
+export const ENGINE_ONLY: readonly VerbName[] = [
+  "question_types",
   "learner_skills",
   "learner_week",
   "learner_mistakes",
@@ -75,7 +84,7 @@ export const TOOLS: Readonly<Record<VerbName, MuseTool>> = {
   lesson_draft: {
     name: "lesson_draft",
     description:
-      "Draft a lesson for the parent's request: questions drawn from the bank and copied whole. topic is what the lesson is about in a few words, with no count, grade or name; grade the bare grade number; names every name the family uses, or []. Per question it returns step_id, prompt, key, rungs and you_write: write only what you_write lists, then call lesson_check.",
+      "Draft a lesson for the parent's request: questions drawn from the bank and copied whole. topic is what the lesson is about in a few words, with no count, grade or name; grade the bare grade number; names every name the family uses, or []. question_types keeps only those kinds of question (a type such as recognition, a family such as choose, or family.type); take them from question_types, never guess. sets draws only from those set ids, in order, with no search. Per question it returns step_id, prompt, key, rungs and you_write: write only what you_write lists, then call lesson_check.",
     parameters: params(
       {
         request: str,
@@ -91,8 +100,7 @@ export const TOOLS: Readonly<Record<VerbName, MuseTool>> = {
         count: { anyOf: [{ type: "integer", minimum: 1, maximum: 20 }, { type: "null" }] },
         skills: strsOrNull,
         verbose: detail,
-        // jw pins sets and keeps only some question types (dl-u1y5.37); the engine refuses both
-        // until it draws that way too (lesson.ts).
+        // jw pins sets and keeps only some question types (dl-u1y5.37); so does the engine (dl-hin8.24).
         sets: strsOrNull,
         question_types: strsOrNull,
       },
@@ -148,7 +156,7 @@ export const TOOLS: Readonly<Record<VerbName, MuseTool>> = {
   question_search: {
     name: "question_search",
     description:
-      "Search the bank for question sets that meet a need. grade is the bare grade number; words the need in plain words in language.",
+      "Search the bank for question sets that meet a need. grade is the bare grade number; words the need in plain words in language; question_types keeps only sets holding those kinds of question. Each set names its question_types.",
     parameters: params(
       {
         grade: str,
@@ -156,6 +164,7 @@ export const TOOLS: Readonly<Record<VerbName, MuseTool>> = {
         words_en: strOrNull,
         skills: strsOrNull,
         mistakes: strsOrNull,
+        question_types: strsOrNull,
         language: { type: "string", enum: ["pl", "uk", "en"], default: "pl" },
         limit: { type: "integer", minimum: 1, maximum: 50, default: 20 },
         arm: strOrNull,
@@ -164,11 +173,21 @@ export const TOOLS: Readonly<Record<VerbName, MuseTool>> = {
       ["grade"],
     ),
   },
+  question_types: {
+    name: "question_types",
+    description:
+      "The kinds of question the bank holds for a grade and language, most questions first: each question_type with its family, how many sets hold it and how many questions are ready. Call it when a parent asks for a kind of question ('only true/false', 'pick the answer', 'with pictures', 'put in order'), then offer and draw only types it lists. Choose types (recognition, lettered_choice, multi_select) are picking an answer; if the kind asked for is not listed, say so plainly and offer the nearest listed ones.",
+    parameters: params(
+      { grade: str, language: { type: "string", enum: ["pl", "uk", "en"], default: "pl" } },
+      ["grade"],
+    ),
+  },
   ...LEARNER_TOOLS,
 };
 
 /**
- * The 10 verbs: lesson_draft, lesson_show, lesson_edit, lesson_check, question_search, and the
+ * The 11 verbs: lesson_draft, lesson_show, lesson_edit, lesson_check, question_search,
+ * question_types, and the
  * learner verbs (`./learner.ts`): learner_skills, learner_week, learner_mistakes,
  * curriculum_topics, lesson_ideas. Each is
  * idempotent by `call_id`: a second call with one run and call id answers the first call's effect
@@ -209,6 +228,7 @@ export function createVerbs(deps: VerbDeps): Verbs {
     lesson_edit: verb("lesson_edit", lessonEdit),
     lesson_check: verb("lesson_check", lessonCheck),
     question_search: verb("question_search", (_c, i) => questionSearch(deps.bank, i)),
+    question_types: verb("question_types", (_c, i) => questionTypes(deps.bank, i)),
     learner_skills: verb("learner_skills", (c, i) =>
       learnerSkills(reads("learner_skills"), now(), c, i),
     ),

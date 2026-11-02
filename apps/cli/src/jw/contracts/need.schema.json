@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "jadwigo-bank/need",
-  "$comment": "Pinned copy of jadwigo-bank schemas/need.schema.json at bank commit 16f03f3. The bank's copy is the source of truth: change it there first, then re-copy here and update this commit.",
+  "$comment": "Pinned copy of jadwigo-bank schemas/need.schema.json at bank commit d03e42a. The bank's copy is the source of truth: change it there first, then re-copy here and update this commit.",
   "title": "Need",
   "description": "What a caller sends search: a need, not a sentence (david-learns/decisions/2026-10-25-the-question-bank-is-searched-for-question-sets-by-agents-sendin). Plain words are one field among several.",
   "type": "object",
@@ -61,6 +61,14 @@
     "resemble": {
       "type": "string",
       "description": "A task to resemble, e.g. a homework problem's text"
+    },
+    "question_types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Keep only sets holding a question type one of these patterns keeps (dl-n9fr.70), applied after the ranking and before the limit. A pattern p keeps a type t of family f when fnmatchcase(f + '.' + t, p), p == f or p == t: \"true_false\", \"choose\", \"place.*\". Absent or empty narrows nothing."
     },
     "language": {
       "enum": ["pl", "en", "uk"],

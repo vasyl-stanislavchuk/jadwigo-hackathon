@@ -76,7 +76,6 @@ import { LanguagePick } from "./LanguagePick.tsx";
 import { LessonsTable } from "./lessons/LessonsTable.tsx";
 import { useLessons } from "./lessons/useLessons.ts";
 import { AddChildDialog } from "./newLesson/AddChildDialog.tsx";
-import { DlaSelect } from "./newLesson/DlaSelect.tsx";
 import { newLessonDraft } from "./newLesson/draft.ts";
 import { type LessonAsk, NewLessonBox } from "./newLesson/NewLessonBox.tsx";
 import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";
@@ -99,11 +98,19 @@ import { ParentShell } from "./shell/ParentShell.tsx";
 import type { Place } from "./shell/Sidebar.tsx";
 import { browserEngine, firstMessage, type LessonEngine } from "./workspace/engine.ts";
 import { LessonWorkspace } from "./workspace/LessonWorkspace.tsx";
+import { ChatFoldToggle, LessonToggle } from "./workspace/Workspace.tsx";
 
 /** The parent's page: the app page's prose column. */
-function ParentPage({ children }: { children: ReactNode }): ReactElement {
+/** A parent page: the prose column, or a wider one for a list that needs the room (Lekcje). */
+function ParentPage({
+  children,
+  wide = false,
+}: {
+  children: ReactNode;
+  wide?: boolean;
+}): ReactElement {
   return (
-    <Page width="prose" data-parent>
+    <Page width="prose" className={wide ? "max-w-6xl" : undefined} data-parent>
       {children}
     </Page>
   );
@@ -683,8 +690,16 @@ function SignedIn({
   const lessons: Crumb = { label: t("parent_nav_lessons"), href: lessonsPath({ lang }) };
   const history: Crumb = { label: t("parent_nav_history"), href: historyPath({ lang }) };
   const newLesson: Crumb[] = [lessons, { label: t("parent_new_lesson") }];
-  const shell = (place: Place, trail: readonly Crumb[], body: ReactNode): ReactElement => (
+  const shell = (
+    place: Place,
+    trail: readonly Crumb[],
+    body: ReactNode,
+    barLead?: ReactNode,
+    barEnd?: ReactNode,
+  ): ReactElement => (
     <ParentShell
+      barLead={barLead}
+      barEnd={barEnd}
       language={language}
       learners={learners}
       place={place}
@@ -771,7 +786,7 @@ function SignedIn({
       return shell(
         { kind: "lessons" },
         [{ label: t("parent_nav_lessons") }],
-        <ParentPage>
+        <ParentPage wide>
           <LessonsTable
             language={language}
             learners={learners}
@@ -781,16 +796,6 @@ function SignedIn({
         </ParentPage>,
       );
     case "lesson": {
-      const dla = (trigger?: ReactElement): ReactElement => (
-        <DlaSelect
-          language={language}
-          learners={learners}
-          value={forLearner}
-          onChange={setForLearner}
-          onAddChild={() => setAdding("dla")}
-          {...(trigger === undefined ? {} : { trigger })}
-        />
-      );
       // The breadcrumb stays the first screen's, as the send leaves it.
       if (route.conversation === null || engine === null)
         return shell(
@@ -810,9 +815,12 @@ function SignedIn({
           engine={engine}
           learners={learners}
           forLearner={forLearner}
+          onForChange={setForLearner}
           onAddChild={() => setAdding("dla")}
-          changeMenu={dla}
+          api={api}
         />,
+        <ChatFoldToggle language={language} />,
+        <LessonToggle language={language} />,
       );
     }
     case "history":

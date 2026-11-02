@@ -7,10 +7,9 @@
  *            the tools folded, the composer that stays live; Esc stops a run, no Stop button
  *   band     the run's state in words, and the polite live region that speaks when a turn ends or
  *            needs the parent
- *   lesson   the latest revision (LessonPane), its changed steps marked, Cofnij and step edits
- *   footer   the steps so far, "Zapisz na później" and the one primary, quiet until giving exists
- *            (dl-z5ja.108.1.1)
- *   details  who the lesson is for, and about it
+ *   lesson   the latest revision (LessonPane), its changed steps marked, Cofnij and step edits;
+ *            or, when `?open` names another thing, that thing's panel (the inspector, dl-uukj.47.58)
+ *   (no footer: giving the lesson, and when, happen in the chat; design review 2026-11-02)
  *
  * The run's state everywhere (the band, the folded strip, the lesson's placeholder, the footer and
  * the live region) is one `runPhase` (src/chat/phase.ts, dl-uukj.47.29), so they never disagree.
@@ -20,6 +19,7 @@
  * answers AiConsentMissing puts the consent screen in the chat until the parent agrees.
  */
 
+import type { ParentClient } from "@jadwigo/api-client";
 import type { ConversationId, Learner, LearnerId } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { type ReactElement, useEffect, useRef, useState } from "react";
@@ -27,33 +27,18 @@ import { ChatPane } from "../../chat/ChatPane.tsx";
 import { ConsentScreen, giveConsent } from "../../chat/ConsentScreen.tsx";
 import { LessonPane } from "../../chat/LessonPane.tsx";
 import { lessonSummary, useLessonWiring } from "../../chat/lessonWiring.ts";
-import { elapsedSeconds, phaseAnnouncement, type RunPhase, usePhase } from "../../chat/phase.ts";
+import { type ObjectRef, sameObject } from "../../chat/objects/ref.ts";
+import { ObjectPanel, objectHeading, type PanelPage } from "../../chat/objects/registry.tsx";
+import { elapsedSeconds, phaseAnnouncement, usePhase } from "../../chat/phase.ts";
 import { holdServer } from "../../chat/routesTransport.ts";
 import { useConversation } from "../../chat/useConversation.ts";
-import { navigate } from "../../nav/location.ts";
 import { NavLink } from "../../nav/NavLink.tsx";
 import { CATEGORY, pageLang } from "../adult.ts";
-import { lessonsPath, parentPath } from "../route.ts";
-import { DetailsPanel } from "./DetailsPanel.tsx";
+import { DlaSelect } from "../newLesson/DlaSelect.tsx";
+import { parentPath } from "../route.ts";
 import { firstMessage, type LessonEngine } from "./engine.ts";
-import { LessonFooter } from "./LessonFooter.tsx";
+import { useInspector } from "./inspector.ts";
 import { Workspace } from "./Workspace.tsx";
-
-/**
- * The footer's line: the run's state while a turn is open or ended badly, then the steps once the
- * lesson has any; never "0 z 0" (dl-uukj.47.23).
- */
-function footerStatus(
-  phase: RunPhase | null,
-  words: string,
-  steps: number,
-  t: (key: CopyKey, vars?: Record<string, string | number>) => string,
-): string {
-  const parts: string[] = [];
-  if (phase !== null && phase.kind !== "done") parts.push(words);
-  if (steps > 0) parts.push(t("parent_steps_ready", { done: steps, total: steps }));
-  return parts.join(" · ");
-}
 
 export function LessonWorkspace({
   language,
@@ -61,8 +46,9 @@ export function LessonWorkspace({
   engine,
   learners,
   forLearner,
+  onForChange,
   onAddChild,
-  changeMenu,
+  api = null,
 }: {
   language: Language;
   /** The server's conversation: the route's id. */
@@ -71,9 +57,12 @@ export function LessonWorkspace({
   learners: readonly Learner[];
   /** Dla: who the lesson is for, or null. */
   forLearner: LearnerId | null;
+  /** Dla's change, from the composer's picker. */
+  onForChange: (learner: LearnerId | null) => void;
+  /** Opens Dodaj dziecko from Dla's menu. */
   onAddChild: () => void;
-  /** Wraps the details' "Zmień" in the Dla menu. */
-  changeMenu: (trigger: ReactElement) => ReactElement;
+  /** The parent's client, for a child opened beside the chat (dl-uukj.47.59); none in a playground. */
+  api?: ParentClient | null;
 }): ReactElement {
   const t = (key: CopyKey, vars: Record<string, string | number> = {}): string =>
     copy(language, key, vars, CATEGORY);
@@ -115,6 +104,14 @@ export function LessonWorkspace({
   const restoring = state.connection === "restoring";
   const { ratings } = engine;
   const { phase, now } = usePhase(turns, state, refetch);
+  // The right column: this conversation's lesson, unless the URL opened another thing beside it.
+  const inspector = useInspector();
+  const ownLesson: ObjectRef = { kind: "lesson", id: conversation };
+  const other =
+    inspector.current !== null && !sameObject(inspector.current, ownLesson)
+      ? inspector.current
+      : null;
+  const panelPage: PanelPage = { language, lang: pageLang(), learners, api };
 
   // The first screen's words and photos: sent once the page has read the conversation back with no turn in it,
   // with Dla as their page, so the run reads that child's record (dl-uukj.47.12).
@@ -123,7 +120,9 @@ export function LessonWorkspace({
     if (firstDone.current || restoring) return;
     firstDone.current = true;
     const first = firstMessage.take(conversation);
-    if (first !== null && state.runs.length === 0)
+    // A message has words or a photo; one with neither (a kept value that did not read) goes nowhere.
+    const sendable = first !== null && (first.text !== "" || first.attachment_ids.length > 0);
+    if (first !== null && sendable && state.runs.length === 0)
       send(
         first.text,
         forLearner === null ? undefined : { learner_id: forLearner },
@@ -155,7 +154,7 @@ export function LessonWorkspace({
     );
 
   const chat = consentMissing ? (
-    <div className="p-4">
+    <div className="min-h-0 flex-1 overflow-y-auto p-4">
       <ConsentScreen
         language={language}
         onAgree={async () => {
@@ -175,7 +174,17 @@ export function LessonWorkspace({
       stopping={state.stopping}
       sendFailed={state.sendFailed}
       sendLimit={state.sendLimit}
-      onSend={send}
+      // Each message carries Dla as its page, as the first one did, so the run reads that child.
+      onSend={(text) => send(text, forLearner === null ? undefined : { learner_id: forLearner })}
+      composerLead={
+        <DlaSelect
+          language={language}
+          learners={learners}
+          value={forLearner}
+          onChange={onForChange}
+          onAddChild={onAddChild}
+        />
+      }
       onStop={stop}
       onRate={ratings === null ? undefined : (run, body) => ratings.rateRun(run, body)}
       phase={phase}
@@ -189,6 +198,8 @@ export function LessonWorkspace({
       contextClosed={contextClosed}
       onCloseContext={closeContext}
       onResend={resend}
+      lessonObject={ownLesson}
+      onOpen={inspector.open}
     />
   );
 
@@ -212,9 +223,17 @@ export function LessonWorkspace({
         </>
       }
       {...(phase === null ? {} : { chatFact: words })}
-      lessonTitle={summary.title === "" ? t("parent_new_lesson") : summary.title}
+      lessonTitle={
+        other !== null
+          ? objectHeading(other, panelPage)
+          : summary.title === ""
+            ? t("parent_new_lesson")
+            : summary.title
+      }
       lesson={
-        lesson.shown === null && lesson.ghosts === 0 ? (
+        other !== null ? (
+          <ObjectPanel object={other} page={panelPage} />
+        ) : lesson.shown === null && lesson.ghosts === 0 ? (
           <p className="text-jw-ink-soft" data-lesson-waiting>
             {said ? words : t("parent_lesson_empty")}
           </p>
@@ -233,29 +252,7 @@ export function LessonWorkspace({
           />
         )
       }
-      lessonFooter={
-        <LessonFooter
-          language={language}
-          status={footerStatus(phase, words, summary.steps, t)}
-          // Given once its latest check passed (dl-z5ja.108.1.1); "Pokaż {imię}" comes later.
-          ready={lesson.ready}
-          child={child}
-          lesson={lesson.shown}
-          onSave={() => navigate(lessonsPath({ lang: pageLang() }))}
-          onGive={() => {}}
-        />
-      }
       {...(lesson.key === null ? {} : { lessonKey: lesson.key })}
-      details={
-        <DetailsPanel
-          language={language}
-          learners={learners}
-          child={child}
-          onAddChild={onAddChild}
-          changeMenu={changeMenu}
-        />
-      }
-      detailsFact={child?.first_name ?? t("parent_no_child")}
     />
   );
 }

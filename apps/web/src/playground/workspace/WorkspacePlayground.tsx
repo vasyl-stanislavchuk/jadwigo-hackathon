@@ -19,9 +19,9 @@ import { type EngineTransport, hotTransport } from "../../chat/useConversation.t
 import { type Pace, paceOf } from "../../chat/wire.ts";
 import { queryLanguage, useLocation } from "../../nav/location.ts";
 import { CATEGORY } from "../../parent/adult.ts";
-import { DlaSelect } from "../../parent/newLesson/DlaSelect.tsx";
 import { firstMessage, type LessonEngine } from "../../parent/workspace/engine.ts";
 import { LessonWorkspace } from "../../parent/workspace/LessonWorkspace.tsx";
+import { ChatFoldToggle, LessonToggle } from "../../parent/workspace/Workspace.tsx";
 import { ACCOUNT, FIRST_WORDS, LEARNERS, POD } from "./fixtures.ts";
 
 const STORED = (pace: Pace | null) => `jadwigo.playground.workspace.${pace ?? "normal"}`;
@@ -56,13 +56,18 @@ function devEngine(transport: EngineTransport): LessonEngine {
 }
 
 /** The parent shell's frame without its sidebar: the workspace fills it. */
-function Frame({ children }: { children: ReactNode }): ReactElement {
+function Frame({ language, children }: { language: Language; children: ReactNode }): ReactElement {
   return (
     <DensityScope
       value="parent"
       className="flex h-dvh bg-jw-ground text-jw-page-body leading-jw-page text-jw-ink"
     >
       <div className="flex min-w-0 flex-1 flex-col" data-page="workspace">
+        {/* The shell's top bar, cut down: the chat's fold button and "Pokaż lekcję". */}
+        <div className="flex shrink-0 items-center justify-end gap-2 border-b-jw border-jw-line px-4 py-2 max-lg:hidden">
+          <ChatFoldToggle language={language} />
+          <LessonToggle language={language} />
+        </div>
         {children}
       </div>
     </DensityScope>
@@ -91,7 +96,7 @@ export function WorkspacePlayground({
   if (engine === null)
     return <p className="p-4">{copy(language, "chat_dev_only", {}, CATEGORY)}</p>;
   return (
-    <Frame>
+    <Frame language={language}>
       <LessonWorkspace
         key={conversation}
         language={language}
@@ -99,17 +104,8 @@ export function WorkspacePlayground({
         engine={engine}
         learners={LEARNERS}
         forLearner={forLearner}
+        onForChange={setForLearner}
         onAddChild={() => {}}
-        changeMenu={(trigger) => (
-          <DlaSelect
-            language={language}
-            learners={LEARNERS}
-            value={forLearner}
-            onChange={setForLearner}
-            onAddChild={() => {}}
-            trigger={trigger}
-          />
-        )}
       />
     </Frame>
   );

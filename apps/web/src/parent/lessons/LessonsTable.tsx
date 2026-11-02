@@ -3,7 +3,8 @@
  * filter", §6 Lekcje): the segmented filter and the search above it, a row per live conversation,
  * newest first, each opening its workspace. A lesson belongs to the family, not to a child, and a
  * conversation names no child, so every row reads "Bez dziecka" in muted ink until the data says
- * otherwise. "Nowa lekcja" stands atop the table, on the empty page too (dl-uukj.47.18). Each row
+ * otherwise. "Nowa lekcja" is the page's first thing, a primary button at its top left above the
+ * filters, on the empty page too (dl-uukj.47.18). Each row
  * has Archive, the parent's delete (dl-uukj.47.9, decision dl-84wo): it asks once with a line that
  * says what it does, and the row leaves only once the route answers; a failure keeps it and says
  * so. The rows come from the page (useLessons), which the sidebar reads too. Columns, sorting and
@@ -90,6 +91,7 @@ export function LessonsTable({
 
   return (
     <section className="flex w-full flex-col gap-4" data-lessons-table>
+      <NewLessonRow language={language} />
       <ListControls
         language={language}
         learners={learners}
@@ -98,7 +100,6 @@ export function LessonsTable({
         search={search}
         onSearch={setSearch}
       />
-      <NewLessonRow language={language} />
       <Table>
         <TableHeader>
           <TableRow>

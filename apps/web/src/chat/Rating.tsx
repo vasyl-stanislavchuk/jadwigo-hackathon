@@ -5,13 +5,52 @@
  * leave empty. The rating goes to `POST /api/v1/runs/{id}/ratings` with the turn's run id (wave 4
  * lead decision 37), never to an analytics event, since a note may hold learner data. Try again is
  * no route: the page sends the turn's own message again as a new turn.
+ *
+ * Super compact (design review 2026-11-02): one row of three small icon buttons under the turn,
+ * thumbs up, thumbs down and try again, each named from copy and titled with the same words; "Jak
+ * poszło?" names the group for a screen reader. Słabo opens the note under the row.
  */
 
 import { track } from "@jadwigo/analytics";
 import type { RunId, RunRatingCreate } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
-import { type FormEvent, type ReactElement, useState } from "react";
+import { cn } from "@jadwigo/ui";
+import { RotateCcwIcon, ThumbsDownIcon, ThumbsUpIcon } from "lucide-react";
+import type { FormEvent, ReactElement, ReactNode } from "react";
+import { useState } from "react";
 import { Button } from "./button.tsx";
+
+/** A small icon-only control, named and titled from copy. */
+function IconAction({
+  label,
+  onClick,
+  disabled = false,
+  pressed,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  pressed?: boolean;
+  children: ReactNode;
+}): ReactElement {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      {...(pressed === undefined ? {} : { "aria-pressed": pressed })}
+      onClick={onClick}
+      className={cn(
+        "grid size-7 place-items-center rounded-jw-small text-jw-ink-soft hover:bg-jw-act-quiet hover:text-jw-ink focus-visible:outline-3 focus-visible:outline-jw-focus disabled:opacity-50",
+        pressed === true && "bg-jw-act-quiet text-jw-ink",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
 
 type State = "asking" | "missing" | "saving" | "saved" | "failed";
 
@@ -49,39 +88,37 @@ export function Rating({
   };
   if (state === "saved")
     return (
-      <p data-rating={run} data-rated className="text-muted-foreground text-sm">
+      <p data-rating={run} data-rated className="text-jw-page-small text-jw-ink-soft">
         {say("chat_rate_thanks")}
       </p>
     );
   return (
     <div data-rating={run} className="flex flex-col gap-1 text-sm">
-      <div className="flex flex-wrap items-center gap-2">
-        <span>{say("chat_rate_ask")}</span>
-        <Button
-          variant="outline"
-          size="sm"
+      <div role="group" aria-label={say("chat_rate_ask")} className="-ml-1.5 flex items-center">
+        <IconAction
+          label={say("chat_rate_good")}
           disabled={state === "saving"}
           onClick={() => rate({ verdict: "good" })}
         >
-          {say("chat_rate_good")}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
+          <ThumbsUpIcon aria-hidden className="size-4" />
+        </IconAction>
+        <IconAction
+          label={say("chat_rate_bad")}
           disabled={state === "saving"}
+          pressed={state === "missing"}
           onClick={() => setState("missing")}
         >
-          {say("chat_rate_bad")}
-        </Button>
+          <ThumbsDownIcon aria-hidden className="size-4" />
+        </IconAction>
         {onRetry && (
-          <Button variant="outline" size="sm" onClick={onRetry}>
-            {say("chat_rate_retry")}
-          </Button>
+          <IconAction label={say("chat_rate_retry")} onClick={onRetry}>
+            <RotateCcwIcon aria-hidden className="size-4" />
+          </IconAction>
         )}
       </div>
       {state === "missing" && (
         <form onSubmit={sendBad} className="flex flex-col gap-1">
-          <label className="flex flex-col gap-1">
+          <label className="flex flex-col gap-1 text-jw-page-small text-jw-ink-soft">
             {say("chat_rate_missing")}
             <textarea
               value={note}

@@ -3,14 +3,15 @@
  * column-lesson-workspac, dl-xo0q; handoff §2.1, docs/worklog/dl-uukj.47):
  *
  *   ┌──────────────┬───────────────────────────────────┐
- *   │ logo     [▯] │ breadcrumb                        │ ← one 56 px line across
+ *   │ logo         │ breadcrumb                account │ ← one 56 px line across
  *   ├──────────────┼───────────────────────────────────┤
  *   │ sidebar      │ the page                          │
+ *   │ [▯] Zwiń menu│                                   │
  *   └──────────────┴───────────────────────────────────┘
  *     232, folds to 60
  *
- * The top bar holds the breadcrumb only: no button, no account, no language, no call to action in
- * its corner. On a phone the sidebar is a drawer, opened by the one control the bar has there, on
+ * The top bar holds the breadcrumb and, in its right corner, the account (the language and
+ * signing out). The sidebar's foot holds the fold button only. On a phone the sidebar is a drawer, opened by the one control the bar has there, on
  * its left. The sidebar's fold is remembered per device (fold.ts). Everything inside draws in the
  * parent's density.
  */
@@ -32,7 +33,7 @@ import { type ReactElement, type ReactNode, useEffect, useState } from "react";
 import { navigate, useLocation } from "../../nav/location.ts";
 import { CATEGORY } from "../adult.ts";
 import { usePanel } from "./fold.ts";
-import { LogoRow, type Place, SidebarBody, SidebarRail } from "./Sidebar.tsx";
+import { Account, FoldButton, LogoRow, type Place, SidebarBody, SidebarRail } from "./Sidebar.tsx";
 
 const SIDEBAR_ID = "parent-sidebar";
 
@@ -44,6 +45,8 @@ export function ParentShell({
   trail,
   onAddChild,
   onSignOut,
+  barLead,
+  barEnd,
   children,
 }: {
   language: Language;
@@ -55,12 +58,16 @@ export function ParentShell({
   trail: readonly Crumb[];
   onAddChild: () => void;
   onSignOut: () => void;
+  /** What leads the top bar before the breadcrumb, such as the lesson chat's fold button. */
+  barLead?: ReactNode;
+  /** What stands at the bar's right, before the account, such as "Pokaż lekcję". */
+  barEnd?: ReactNode;
   children: ReactNode;
 }): ReactElement {
   const [open, setOpen] = usePanel("sidebar");
   const [drawer, setDrawer] = useState(false);
   const t = (key: Parameters<typeof copy>[1]): string => copy(language, key, {}, CATEGORY);
-  const sidebar = { language, learners, place, hasLessons, onAddChild, onSignOut };
+  const sidebar = { language, learners, place, hasLessons, onAddChild };
 
   // A move to another page closes the phone's drawer.
   const { path } = useLocation();
@@ -81,23 +88,18 @@ export function ParentShell({
           open ? "w-jw-shell-side" : "w-jw-shell-rail",
         )}
       >
-        <LogoRow
-          language={language}
-          folded={!open}
-          toggle={
-            open && (
-              <PanelToggle
-                side="left"
-                expanded
+        <LogoRow language={language} folded={!open} />
+        {open ? (
+          <SidebarBody
+            {...sidebar}
+            foot={
+              <FoldButton
                 label={t("parent_menu_fold")}
                 controls={SIDEBAR_ID}
-                onToggle={() => setOpen(false)}
+                onFold={() => setOpen(false)}
               />
-            )
-          }
-        />
-        {open ? (
-          <SidebarBody {...sidebar} />
+            }
+          />
         ) : (
           <SidebarRail
             {...sidebar}
@@ -141,11 +143,16 @@ export function ParentShell({
               <SidebarBody {...sidebar} />
             </SheetContent>
           </Sheet>
+          {barLead}
           <Breadcrumb
             label={t("parent_breadcrumb_label")}
             trail={trail}
             onNavigate={(href) => navigate(href)}
           />
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            {barEnd}
+            <Account language={language} onSignOut={onSignOut} />
+          </div>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto" data-shell-page>
           {children}

@@ -15,10 +15,12 @@ const lessonOf = (page: Page) => page.getByRole("region", { name: "Lekcja" });
 test("1440: one scripted turn, the message in the chat, the lesson beside it", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/playground/workspace");
+  // The chat is the main view; the lesson opens beside it from "Pokaż lekcję" (2026-11-02).
+  await page.getByRole("button", { name: "Pokaż lekcję" }).click();
   const chat = chatOf(page);
   const lesson = lessonOf(page);
 
-  await expect(chat.getByText(FIRST_WORDS)).toBeVisible();
+  await expect(chat.locator("[data-from='parent']").getByText(FIRST_WORDS)).toBeVisible();
   await expect(page.locator("[data-chat-band] [data-status]")).toHaveText("Gotowe", {
     timeout: 20_000,
   });
@@ -37,7 +39,11 @@ test("1440: one scripted turn, the message in the chat, the lesson beside it", a
   // A reload draws the same conversation again from the log, and sends nothing twice.
   await page.reload();
   await expect(chat.getByText("Lekcja jest gotowa po prawej.")).toHaveCount(1);
-  await expect(chat.getByText(FIRST_WORDS, { exact: true })).toHaveCount(1);
+  // The parent's words, sent once: counted in the parent's own rows, since the lesson card under
+  // the turn carries a title that may read the same (dl-uukj.47.58).
+  await expect(
+    chat.locator("[data-from='parent']").getByText(FIRST_WORDS, { exact: true }),
+  ).toHaveCount(1);
   await expect(lesson.locator("[data-revision]")).toBeVisible();
 });
 
@@ -79,4 +85,40 @@ test("?pace=fail: the turn ends failed", async ({ page }) => {
   await expect(page.locator("[data-chat-band] [data-status]")).toHaveText("Nie udało się", {
     timeout: 20_000,
   });
+});
+
+// The lesson-ready card (dl-uukj.47.58): the chat alone, then a click on the card under the turn
+// opens the lesson beside it on a laptop, and brings Lekcja to the front on a phone.
+test("1440: the lesson card opens the lesson beside the chat", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/playground/workspace");
+  const chat = chatOf(page);
+  const card = chat.locator("[data-object-card='lesson']");
+  await expect(card).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator("[data-lesson-column]")).toBeHidden();
+
+  await card.getByRole("button", { name: /^Otwórz lekcję: / }).click();
+  await expect(lessonOf(page).locator("[data-step]").first()).toBeVisible();
+  await expect(page).toHaveURL(/[?&]open=lesson%3Acnv_/);
+  const left = await chat.boundingBox();
+  const right = await page.locator("[data-lesson-column]").boundingBox();
+  expect(left && right && left.x + left.width <= right.x).toBe(true);
+
+  // A reload keeps the lesson open: ?open names it.
+  await page.reload();
+  await expect(lessonOf(page).locator("[data-step]").first()).toBeVisible();
+});
+
+test("390: the lesson card brings Lekcja to the front", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/playground/workspace");
+  const card = chatOf(page).locator("[data-object-card='lesson']");
+  await expect(card).toBeVisible({ timeout: 20_000 });
+  await card.getByRole("button", { name: /^Otwórz lekcję: / }).click();
+  const lessonTab = page
+    .getByRole("tablist", { name: "Rozmowa i lekcja" })
+    .getByRole("tab", { name: "Lekcja" });
+  await expect(lessonTab).toHaveAttribute("aria-selected", "true");
+  await expect(chatOf(page)).toBeHidden();
+  await expect(lessonOf(page).locator("[data-step]").first()).toBeVisible();
 });

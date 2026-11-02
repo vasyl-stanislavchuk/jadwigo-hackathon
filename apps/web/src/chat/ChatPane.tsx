@@ -9,13 +9,15 @@
  *
  * `variant="parent"` is the same pane inside the parent app's lesson workspace (dl-z5ja.108,
  * decision dl-xo0q): no heading (the panel has one), no starters (the first screen asked), no Stop
- * button (Esc still stops), the run's state in the workspace's band instead (`statusOf`), and the
- * composer "Możesz pisać dalej…" with a 32 px round ink send button, quiet while empty.
+ * button (Esc still stops), the run's state in the workspace's band instead (`statusOf`), and a
+ * Claude-like composer (design review 2026-11-02): one rounded box, "Możesz pisać dalej…" on top,
+ * then Dla (`composerLead`) on the left and an explicit "Wyślij" button, quiet while empty.
  *
- * The two sides read apart (dl-uukj.47.28; owner's call of 2026-11-02): the parent's words are a
- * filled bubble on the right, "Ty" kept for screen readers; Jadwigo AI's turn is plain prose on the
- * left under one header (its crown mark and its name), its tool lines and widgets in the same
- * column. A parent's steer keeps its label in view ("Ty · Twoja zmiana w lekcji"). Rows fade in
+ * The two sides read apart (dl-uukj.47.28; owner's calls of 2026-11-02): the parent's words are a
+ * quiet box in the soft paper fill on the right, "Ty" kept for screen readers; Jadwigo AI's turn is plain prose on
+ * the left under one header (its crown mark and its name), its words drawn as markdown (ChatMarkdown.tsx), its tool lines folded into one small muted
+ * line with a chevron, closed by default, and its widgets in the same column. In the workspace the
+ * messages scroll and the composer stays at the panel's foot. A parent's steer keeps its label in view ("Ty · Twoja zmiana w lekcji"). Rows fade in
  * only when the system allows motion (chat.css).
  */
 
@@ -29,14 +31,33 @@ import {
 } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
-import { cn } from "@jadwigo/ui";
-import { ArrowUpIcon, CheckIcon, EyeIcon, LoaderCircleIcon, XIcon } from "lucide-react";
-import { type FormEvent, type ReactElement, useEffect, useRef, useState } from "react";
+import { cn, Button as UiButton } from "@jadwigo/ui";
+import {
+  ArrowRightIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  EyeIcon,
+  LoaderCircleIcon,
+  XIcon,
+  ZapIcon,
+} from "lucide-react";
+import {
+  type FormEvent,
+  type ReactElement,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Button } from "./button.tsx";
+import { ChatMarkdown } from "./ChatMarkdown.tsx";
 import { type ChooseAnswers, ChooseForm, recapOf } from "./ChooseForm.tsx";
 import "./chat.css";
 import { isOpen, type SendLimit, type Turn } from "./conversation.ts";
 import { JadwigoAiMark } from "./JadwigoAiMark.tsx";
+import { CitationChips } from "./objects/CitationChips.tsx";
+import { LessonCard, wroteLesson } from "./objects/LessonCard.tsx";
+import type { ObjectRef } from "./objects/ref.ts";
 import { PLAN_MIN, PlanCard } from "./PlanCard.tsx";
 import { elapsedSeconds, phaseAnnouncement, type RunPhase } from "./phase.ts";
 import { Rating } from "./Rating.tsx";
@@ -53,6 +74,10 @@ const STATUS_KEY: Record<RunStatus, CopyKey> = {
 };
 
 const STARTERS: readonly CopyKey[] = ["chat_starter_1", "chat_starter_2", "chat_starter_3"];
+
+/** The parent's words: a quiet box in the soft paper fill on the right, Jadwigo AI's answer plain prose beside it. */
+const PARENT_BOX =
+  "rounded-jw-box border-jw border-jw-line bg-jw-act-quiet px-3.5 shadow-sm py-2.5 whitespace-pre-wrap text-jw-ink";
 
 type ToolItem = Extract<ChatItem, { kind: "tool" }>;
 type ApprovalItem = Extract<ChatItem, { kind: "approval" }>;
@@ -148,17 +173,18 @@ function ToolLine({
             {` · ${stateWords(tool, language)}`}
           </span>
         </summary>
-        <div className="ml-6 flex flex-col gap-2 py-1">
-          <p className="text-jw-page-small font-bold text-jw-ink-soft">
-            {say("chat_tool_what_done")}
-          </p>
+        {/* Opened: the widget, if the step has one, then Szczegóły. The summary already says the
+            step and its state, so the plain-words line is for screen readers only (design review
+            2026-11-02: one structure, one small size). */}
+        <div className="ml-6 flex flex-col gap-1.5 py-1 text-jw-page-small">
+          <p className="sr-only">{say("chat_tool_what_done")}</p>
           {result?.kind === "widget" && !result.keepVisible ? (
             result.element
           ) : (
             // No widget here (none, or one kept in view under the fold, drawn once there): the line
             // in plain words, its sentence and where it stands, never only the state word
             // (dl-uukj.47.50).
-            <p className="flex flex-wrap gap-x-2" data-what-done>
+            <p className="sr-only" data-what-done>
               <span>{words}</span>
               <span className="text-jw-ink-soft">{stateWords(tool, language)}</span>
             </p>
@@ -200,11 +226,20 @@ function ToolGroup({
   });
   return (
     <div className="flex flex-col gap-1 text-sm" data-tools>
-      <details className="text-jw-ink-soft" data-tool-group>
-        <summary className="cursor-pointer">{head}</summary>
+      {/* Small and quiet (design review 2026-11-02): parents rarely open it, the lesson is the
+          goal. One muted line, the steps under a thin rule on the left once opened. */}
+      <details className="group text-jw-page-small text-jw-ink-soft" data-tool-group>
+        <summary className="flex w-fit max-w-full cursor-pointer list-none items-center gap-1.5 rounded-jw-small py-0.5 hover:text-jw-ink [&::-webkit-details-marker]:hidden">
+          <ZapIcon aria-hidden className="size-3.5 shrink-0" />
+          <span className="min-w-0 truncate">{head}</span>
+          <ChevronDownIcon
+            aria-hidden
+            className="size-3.5 shrink-0 transition-transform duration-jw-fast group-open:rotate-180"
+          />
+        </summary>
         <ul
           aria-label={copy(language, "chat_tool_lines", {}, "adult")}
-          className="mt-1 flex flex-col gap-1"
+          className="mt-1 ml-1.5 flex flex-col gap-1 border-l-jw border-jw-line pl-3"
         >
           {tools.map((t) => (
             <ToolLine key={t.call_id} tool={t} language={language} context={context} />
@@ -307,25 +342,26 @@ function RowView({
           <div
             data-from="parent"
             data-steer={row.steer?.source}
-            className="flex max-w-[85%] flex-col items-end gap-1 self-end"
+            className="flex max-w-[90%] flex-col items-end gap-1 self-end"
           >
             {/* "Ty" for a screen reader; a steer says what it was in view. */}
             <p className={cn("text-jw-page-small text-jw-ink-soft", steer === null && "sr-only")}>
               {copy(language, "chat_from_parent", {}, "adult")}
               {steer !== null && ` · ${steer}`}
             </p>
-            <p
-              className="rounded-jw-dialog bg-jw-pick px-3 py-2 whitespace-pre-wrap text-jw-pick-ink"
-              data-bubble
-            >
+            <p className={PARENT_BOX} data-bubble>
               {row.text}
             </p>
           </div>
         );
       return (
-        <p data-from={row.from} className="whitespace-pre-wrap text-jw-ink" data-prose>
-          {row.text}
-        </p>
+        <div data-from={row.from} className="text-jw-ink" data-prose>
+          <ChatMarkdown text={row.text} />
+          {/* What the message rests on, each opening beside the chat (dl-uukj.47.62). */}
+          {context.onOpen !== undefined && row.citations !== undefined && (
+            <CitationChips citations={row.citations} language={language} onOpen={context.onOpen} />
+          )}
+        </div>
       );
     }
     case "tools":
@@ -608,6 +644,15 @@ export interface ChatPaneProps {
    * resolves an approval until dl-uukj.47.48.
    */
   onChoose?: ((call_id: string, answers: ChooseAnswers) => void) | undefined;
+  /** The parent composer's bottom-left control, such as Dla, the child the lesson is for. */
+  composerLead?: ReactNode;
+  /**
+   * The conversation's lesson as a thing to open (dl-uukj.47.58): with `onOpen`, a turn that wrote
+   * the lesson ends in its card, and a click opens the lesson beside the chat.
+   */
+  lessonObject?: ObjectRef | undefined;
+  /** Opens a thing beside the chat: the lesson card's click, and a widget's (WidgetActions). */
+  onOpen?: ((object: ObjectRef) => void) | undefined;
 }
 
 export function ChatPane({
@@ -634,6 +679,9 @@ export function ChatPane({
   contextClosed = false,
   onCloseContext,
   onChoose,
+  composerLead,
+  lessonObject,
+  onOpen,
 }: ChatPaneProps): ReactElement {
   /** The choose forms answered on this page, by call: their recap shows until the log has one. */
   const [chosen, setChosen] = useState<Readonly<Record<string, ChooseAnswers>>>({});
@@ -641,6 +689,7 @@ export function ChatPane({
   const lineContext: LineContext = {
     ...(nameOf === undefined ? {} : { nameOf }),
     onAsk: (text: string) => onSend(text),
+    ...(onOpen === undefined ? {} : { onOpen }),
     chosen: (call_id: string) => chosen[call_id],
   };
   const asking = openChoose(turns, chosen);
@@ -658,11 +707,19 @@ export function ChatPane({
   const online = useOnline();
   /** Rows enter with a fade only when the system allows motion (chat.css). */
   const [still] = useState(lessMotion);
-  const end = useRef<HTMLDivElement>(null);
+  // The list follows Jadwigo AI to the bottom as it writes (design review 2026-11-02): a new row,
+  // a reply that grows, the echo, the activity line. Only while the parent is at the bottom: one
+  // who scrolled up to read stays where they are until they come back down.
+  const end = useRef<HTMLLIElement>(null);
+  const atBottom = useRef(true);
   const rowCount = turns.reduce((n, t) => n + t.view.chat.length, 0);
+  const lastItem = turns.at(-1)?.view.chat.at(-1);
+  const growth = lastItem?.kind === "message" ? lastItem.text.length : 0;
+  const follow = `${rowCount}:${growth}:${pending ?? ""}:${phase?.kind ?? ""}`;
   useEffect(() => {
-    if (rowCount > 0) end.current?.scrollIntoView?.({ block: "end", behavior: scrollBehavior() });
-  }, [rowCount]);
+    if (rowCount > 0 && atBottom.current)
+      end.current?.scrollIntoView?.({ block: "end", behavior: scrollBehavior() });
+  }, [follow]);
   const last = turns.at(-1);
   const open = last !== undefined && isOpen(last);
   const status: RunStatus | null =
@@ -696,7 +753,8 @@ export function ChatPane({
   return (
     <section
       aria-label={say("chat_title")}
-      className={cn("flex min-h-0 flex-col gap-3", parent && "h-full p-4")}
+      // The parent's pane fills its panel: the messages scroll, the composer stays at the foot.
+      className={cn("flex min-h-0 flex-col", parent ? "flex-1 gap-2 px-3 pt-2 pb-3" : "gap-3")}
       data-variant={variant}
     >
       {!parent && <h2 className="text-base font-medium">{say("chat_title")}</h2>}
@@ -705,7 +763,16 @@ export function ChatPane({
           {say("chat_restoring")}
         </p>
       )}
-      <ol aria-label={say("chat_messages")} className="flex flex-1 flex-col gap-3 overflow-y-auto">
+      {/* In the workspace the list reaches the panel's edges, so its scrollbar sits on the right
+          edge, and pads its rows back in line with the composer. */}
+      <ol
+        aria-label={say("chat_messages")}
+        className={cn("flex flex-1 flex-col gap-3 overflow-y-auto", parent && "-mx-3 px-3")}
+        onScroll={(e) => {
+          const list = e.currentTarget;
+          atBottom.current = list.scrollHeight - list.scrollTop - list.clientHeight < 48;
+        }}
+      >
         {turns.map((turn) => [
           ...turnRows(turn).map((entry) =>
             entry.kind === "plan" ? (
@@ -714,7 +781,12 @@ export function ChatPane({
               // tall as itself never pinned. Jadwigo AI's header pins with it.
               <li
                 key={`${turn.run.id}-plan`}
-                className={cn("flex flex-col", isOpen(turn) && "sticky top-0 z-10 bg-jw-card")}
+                className={cn(
+                  "flex flex-col",
+                  isOpen(turn) && "sticky top-0 z-10 bg-jw-card",
+                  // Its fill spans the list's padding too, so no row shows beside it.
+                  isOpen(turn) && parent && "-mx-3 px-3",
+                )}
                 data-chat-row
                 data-plan-row
               >
@@ -743,6 +815,23 @@ export function ChatPane({
               </li>
             ),
           ),
+          // The lesson this turn wrote, as one card under its words (handoff moment 6).
+          ...(lessonObject !== undefined &&
+          onOpen !== undefined &&
+          !isOpen(turn) &&
+          turn.view.lesson !== null &&
+          wroteLesson(turn.view)
+            ? [
+                <li key={`${turn.run.id}-lesson`} className="flex flex-col" data-chat-row>
+                  <LessonCard
+                    lesson={turn.view.lesson}
+                    object={lessonObject}
+                    language={language}
+                    onOpen={onOpen}
+                  />
+                </li>,
+              ]
+            : []),
           ...(onRate !== undefined && completed(turn)
             ? [
                 <li key={`${turn.run.id}-rating`} className="flex flex-col">
@@ -758,12 +847,9 @@ export function ChatPane({
         ])}
         {pending !== null && (
           <li className="flex flex-col items-end" data-chat-row data-pending>
-            <div className="flex max-w-[85%] flex-col items-end gap-1 self-end" data-from="parent">
+            <div className="flex max-w-[90%] flex-col items-end gap-1 self-end" data-from="parent">
               <p className="sr-only">{say("chat_from_parent")}</p>
-              <p
-                className="rounded-jw-dialog bg-jw-pick px-3 py-2 whitespace-pre-wrap text-jw-pick-ink"
-                data-bubble
-              >
+              <p className={PARENT_BOX} data-bubble>
                 {pending}
               </p>
             </div>
@@ -781,8 +867,8 @@ export function ChatPane({
             />
           </li>
         )}
+        <li ref={end} aria-hidden className="-mt-3" />
       </ol>
-      <div ref={end} aria-hidden />
       {turns.length === 0 && !restoring && !parent && (
         <div data-row="empty" className="flex flex-col gap-2">
           <p className="text-muted-foreground">{say("chat_empty")}</p>
@@ -891,26 +977,22 @@ export function ChatPane({
             onChoose?.(asking.call_id, answers);
           }}
         />
-      ) : (
+      ) : parent ? (
+        // The parent's composer, Claude-like (design review 2026-11-02): one rounded box, the words
+        // on top, then Dla on the left and an explicit Wyślij on the right.
         <form
           onSubmit={submit}
-          className={cn(
-            "flex items-end gap-2",
-            parent && "rounded-jw-control border-jw border-jw-line bg-jw-card p-2",
-          )}
+          className="flex flex-col gap-2 rounded-jw-box border-jw border-jw-line bg-jw-card px-3 pt-3 pb-2 shadow-sm transition-colors duration-jw-fast focus-within:border-jw-ink-soft"
+          data-composer
         >
-          <label className="flex flex-1 flex-col gap-1 text-sm">
-            <span className={cn(parent && "sr-only")}>{say("chat_composer_label")}</span>
+          <label className="flex flex-col">
+            <span className="sr-only">{say("chat_composer_label")}</span>
             <textarea
               ref={composer}
               value={draft}
-              rows={2}
-              placeholder={parent ? say("parent_composer") : undefined}
-              className={cn(
-                "rounded-md border px-2 py-1",
-                parent &&
-                  "resize-none border-0 bg-transparent text-jw-page-body text-jw-ink outline-none placeholder:text-jw-placeholder",
-              )}
+              rows={3}
+              placeholder={say("parent_composer")}
+              className="resize-none border-0 bg-transparent text-jw-page-body text-jw-ink outline-none placeholder:text-jw-placeholder"
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
@@ -925,23 +1007,41 @@ export function ChatPane({
               }}
             />
           </label>
-          {parent ? (
-            <button
-              type="submit"
-              aria-label={say("chat_send")}
-              aria-disabled={draft.trim() === ""}
-              className={cn(
-                "grid size-8 shrink-0 place-items-center rounded-full focus-visible:outline-3 focus-visible:outline-jw-focus",
-                draft.trim() === "" ? "bg-jw-act-quiet text-jw-ink-soft" : "bg-jw-ink text-jw-card",
-              )}
-              data-send
-            >
-              <ArrowUpIcon aria-hidden className="size-4" />
-            </button>
-          ) : (
-            <Button type="submit">{say("chat_send")}</Button>
-          )}
-          {open && !parent && (
+          <div className="flex items-center gap-2">
+            {composerLead}
+            <span className="flex-1" />
+            {/* The design system's action, as the first screen's "Zrób lekcję": quiet while empty. */}
+            <UiButton type="submit" size="control" aria-disabled={draft.trim() === ""} data-send>
+              {say("chat_send")}
+              <ArrowRightIcon aria-hidden />
+            </UiButton>
+          </div>
+        </form>
+      ) : (
+        <form onSubmit={submit} className="flex items-end gap-2">
+          <label className="flex flex-1 flex-col gap-1 text-sm">
+            <span>{say("chat_composer_label")}</span>
+            <textarea
+              ref={composer}
+              value={draft}
+              rows={2}
+              className="rounded-md border px-2 py-1"
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send(draft);
+                }
+                // Stop from the keyboard, where the parent already is (dl-z5ja.28).
+                if (e.key === "Escape" && open && !stopping) {
+                  e.preventDefault();
+                  onStop();
+                }
+              }}
+            />
+          </label>
+          <Button type="submit">{say("chat_send")}</Button>
+          {open && (
             <Button type="button" variant="outline" disabled={stopping} onClick={onStop}>
               {stopping ? say("chat_stopping") : say("chat_stop")}
             </Button>
@@ -995,9 +1095,6 @@ export function ChatPane({
           </ol>
         </section>
       )}
-      <p className="text-jw-page-small text-jw-ink-soft" data-footnote>
-        {say("chat_footnote")}
-      </p>
     </section>
   );
 }

@@ -724,6 +724,7 @@
   "chat_tool_lesson_edit": "Zmienianie lekcji",
   "chat_tool_lesson_check": "Sprawdzanie lekcji",
   "chat_tool_question_search": "Szukanie zadań",
+  "chat_tool_question_types": "Sprawdzanie rodzajów zadań",
   "chat_tool_learner_skills": "Czytanie celów dziecka",
   "chat_tool_learner_week": "Czytanie tygodnia dziecka",
   "chat_tool_learner_mistakes": "Czytanie, co sprawiło dziecku trudność",
@@ -748,6 +749,33 @@
   "chat_lesson_revision": "Wersja {n}",
   "chat_lesson_unreadable": "Tej wersji lekcji nie da się jeszcze pokazać.",
   "chat_lesson_step_hidden": "Kroku {step} nie da się jeszcze pokazać.",
+  "chat_object_lesson": "Lekcja",
+  "chat_object_learner": "Dziecko",
+  "chat_object_skill": "Umiejętność",
+  "chat_object_assignment": "Dana lekcja",
+  "chat_object_attempt": "Rozegrana lekcja",
+  "chat_object_open_page": "Otwórz na osobnej stronie",
+  "chat_object_not_here": "Tego nie da się jeszcze tu pokazać.",
+  "chat_learner_open": "Szczegóły: {name}",
+  "chat_learner_open_page": "Strona dziecka: {name}",
+  "chat_lesson_card": "Lekcja gotowa",
+  "chat_lesson_card_open": "Otwórz",
+  "chat_lesson_card_open_named": "Otwórz lekcję: {title}",
+  "chat_lesson_card_first": "Na początek: {say}",
+  "chat_lesson_card_steps": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "{n} zadanie",
+        "q_noun=few": "{n} zadania",
+        "q_noun=many": "{n} zadań",
+        "q_noun=other": "{n} zadania"
+      }
+    }
+  ],
+  "chat_citations_why": "Dlaczego?",
+  "chat_citation_nth": "{title} {n}",
   "chat_tool_count": [
     {
       "declarations": ["input n", "local steps_noun = n: plural"],
@@ -895,6 +923,7 @@
   "parent_send_reason": "Najpierw opisz zadanie albo dodaj zdjęcie",
   "parent_send_uploading": "Czekam, aż zdjęcia się wyślą",
   "parent_send_photo_failed": "Ponów albo usuń zdjęcie, które się nie wysłało",
+  "parent_send_photo_refused": "Usuń zdjęcie, którego nie da się wysłać",
   "parent_name_note": "Widzisz je tylko Ty i Jadwigo w rozmowie. Nie trafia do lekcji.",
   "parent_grade": "Klasa",
   "parent_cancel": "Anuluj",
@@ -988,6 +1017,8 @@
   "parent_workspace_tabs": "Rozmowa i lekcja",
   "parent_chat_fold": "Zwiń rozmowę",
   "parent_chat_unfold": "Rozwiń rozmowę",
+  "parent_lesson_show": "Pokaż lekcję",
+  "parent_lesson_hide": "Ukryj lekcję",
   "parent_details_fold": "Zwiń szczegóły",
   "parent_details_unfold": "Rozwiń szczegóły",
   "parent_save": "Zapisz na później",

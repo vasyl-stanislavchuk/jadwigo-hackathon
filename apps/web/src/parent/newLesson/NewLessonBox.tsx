@@ -119,15 +119,19 @@ export function NewLessonBox({
   const views = uploads.map((upload) => upload.get());
   const ready = text.trim() !== "" || uploads.length > 0;
   const uploading = views.some((view) => view.state === "uploading");
-  const stuck = views.some((view) => view.state === "failed" || view.state === "refused");
+  const failed = views.some((view) => view.state === "failed");
+  const refused = views.some((view) => view.state === "refused");
+  const stuck = failed || refused;
   const go = ready && !uploading && !stuck;
   const reason: CopyKey | null = !ready
     ? "parent_send_reason"
-    : stuck
-      ? "parent_send_photo_failed"
-      : uploading
-        ? "parent_send_uploading"
-        : null;
+    : refused
+      ? "parent_send_photo_refused"
+      : failed
+        ? "parent_send_photo_failed"
+        : uploading
+          ? "parent_send_uploading"
+          : null;
 
   // The caret is in the box on load.
   useEffect(() => box.current?.focus(), []);
@@ -193,7 +197,7 @@ export function NewLessonBox({
   };
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center gap-6 px-4 py-10 lg:px-6">
+    <div className="flex min-h-full flex-col items-center justify-center gap-6 px-4 pt-10 pb-40 lg:px-6">
       <h1 className="text-center text-jw-page-question leading-tight font-bold">
         {t("parent_question")}
       </h1>
@@ -204,13 +208,13 @@ export function NewLessonBox({
         data-new-lesson
         data-ready={ready ? "" : undefined}
         className={cn(
-          "flex w-full max-w-jw-shell-box flex-col gap-3 rounded-jw-box border-2 bg-jw-card p-4 transition-colors duration-jw-fast",
+          "flex w-full max-w-4xl flex-col gap-3 rounded-jw-box border-2 bg-jw-card p-4 transition-colors duration-jw-fast",
           ready ? "border-jw-focus" : "border-jw-ink-soft",
         )}
       >
         <textarea
           ref={box}
-          rows={3}
+          rows={4}
           value={text}
           onChange={(event) => setText(event.target.value)}
           onKeyDown={keys}

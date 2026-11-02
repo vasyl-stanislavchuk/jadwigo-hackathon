@@ -12,6 +12,7 @@ export const TOOL_KEY: Readonly<Record<VerbName, CopyKey>> = {
   lesson_edit: "chat_tool_lesson_edit",
   lesson_check: "chat_tool_lesson_check",
   question_search: "chat_tool_question_search",
+  question_types: "chat_tool_question_types",
   learner_skills: "chat_tool_learner_skills",
   learner_week: "chat_tool_learner_week",
   learner_mistakes: "chat_tool_learner_mistakes",

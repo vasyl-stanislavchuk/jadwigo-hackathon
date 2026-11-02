@@ -17,6 +17,7 @@ import {
   Eye,
   LayoutList,
   Lightbulb,
+  ListFilter,
   NotebookPen,
   PencilLine,
   Search,
@@ -121,7 +122,8 @@ describe("an opened tool line shows what was done (dl-uukj.47.50)", () => {
         turnAt("happy-turn", 17, (view) => {
           const check = view.chat.find((c) => c.kind === "tool" && c.verb === "lesson_check");
           if (check?.kind === "tool")
-            check.view = { kind: "lesson_check", data: { publishable: true, findings: [] } };
+            // Not publishable yet: a check that is news stays in view (a clean pass folds in).
+            check.view = { kind: "lesson_check", data: { publishable: false, findings: [] } };
         }),
       ],
     });
@@ -146,6 +148,7 @@ describe("each verb's icon and sentence (dl-uukj.47.50)", () => {
   it("pins the verb-to-icon map", () => {
     expect(TOOL_ICON).toEqual({
       question_search: Search,
+      question_types: ListFilter,
       lesson_draft: LayoutList,
       lesson_edit: PencilLine,
       lesson_check: ClipboardCheck,

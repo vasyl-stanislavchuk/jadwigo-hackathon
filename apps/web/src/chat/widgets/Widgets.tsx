@@ -10,6 +10,7 @@ import {
   type BriefList,
   type FindingLevel,
   type LearnerMistakesView,
+  type LearnerRef,
   type LessonCheckView,
   type LessonIdeasView,
   toolViewData,
@@ -17,10 +18,12 @@ import {
 import type { VerbName } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language, mistakeCopyKey } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
+import { ChevronRightIcon } from "lucide-react";
 import type { ReactElement } from "react";
 import { GoalLists } from "../../parent/learner/GoalLists.tsx";
 import { WeekStrip } from "../../parent/learner/WeekStrip.tsx";
 import { Button } from "../button.tsx";
+import type { ObjectRef } from "../objects/ref.ts";
 import { TOOL_ICON } from "../toolLine.ts";
 
 export type ToolItem = Extract<ChatItem, { kind: "tool" }>;
@@ -29,6 +32,8 @@ export type ToolItem = Extract<ChatItem, { kind: "tool" }>;
 export interface WidgetActions {
   /** Sends words as the parent's message. */
   onAsk?: ((text: string) => void) | undefined;
+  /** Opens a thing beside the chat: a lesson, a learner, a skill (objects/ref.ts, dl-uukj.47.58). */
+  onOpen?: ((object: ObjectRef) => void) | undefined;
 }
 
 interface Props<T> {
@@ -43,15 +48,16 @@ interface WidgetEntry<T> {
   title: CopyKey;
   read(data: unknown): T | null;
   Widget(props: Props<T>): ReactElement;
-  /** Drawn in view under the folded tool lines, not inside the fold. */
-  keepVisible?: boolean;
+  /** Drawn in view under the folded tool lines, not inside the fold; a function decides per view. */
+  keepVisible?: boolean | ((data: T) => boolean);
 }
 
 /** An entry with its type closed over, so entries of different views sit in one registry. */
 interface Registered {
   verb: VerbName;
   title: CopyKey;
-  keepVisible: boolean;
+  /** Whether this view stays in view under the fold. */
+  keepVisible(data: unknown): boolean;
   draw(data: unknown, language: Language, actions: WidgetActions): ReactElement | null;
 }
 
@@ -60,7 +66,12 @@ function register<T>(entry: WidgetEntry<T>): Registered {
   return {
     verb: entry.verb,
     title: entry.title,
-    keepVisible: entry.keepVisible ?? false,
+    keepVisible(data) {
+      const rule = entry.keepVisible ?? false;
+      if (typeof rule === "boolean") return rule;
+      const read = entry.read(data);
+      return read !== null && rule(read);
+    },
     draw(data, language, actions) {
       const read = entry.read(data);
       return read === null ? null : <Widget data={read} language={language} actions={actions} />;
@@ -218,13 +229,44 @@ function Mistakes({ view, language }: { view: LearnerMistakesView; language: Lan
   );
 }
 
+/**
+ * "Szczegóły: {imię}" under a learner verb's widget (dl-uukj.47.59): opens the child beside the
+ * chat, their goals, weeks and report, with the way to their own page. Drawn only where the page
+ * can open things.
+ */
+function OpenLearner({
+  learner,
+  language,
+  actions,
+}: {
+  learner: LearnerRef;
+  language: Language;
+  actions: WidgetActions;
+}): ReactElement | null {
+  const open = actions.onOpen;
+  if (open === undefined) return null;
+  return (
+    <Button
+      variant="outline"
+      size="xs"
+      className="w-fit"
+      onClick={() => open({ kind: "learner", id: learner.id })}
+      data-open-learner={learner.id}
+    >
+      {copy(language, "chat_learner_open", { name: learner.first_name }, "adult")}
+    </Button>
+  );
+}
+
 const REGISTRY: Partial<Record<VerbName, Registered>> = {
   lesson_check: register({
     verb: "lesson_check",
     title: "chat_tool_lesson_check",
     read: (data) => toolViewData("lesson_check", data),
     Widget: ({ data, language }) => <Findings view={data} language={language} />,
-    keepVisible: true,
+    // A clean pass folds in with the other steps (design review 2026-11-02): the lesson is the
+    // news. Findings, or a lesson that cannot be given yet, stay in view.
+    keepVisible: (data) => !data.publishable || data.findings.length > 0,
   }),
   lesson_edit: register({
     verb: "lesson_edit",
@@ -265,8 +307,11 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
     verb: "learner_skills",
     title: "chat_tool_learner_skills",
     read: (data) => toolViewData("learner_skills", data),
-    Widget: ({ data, language }) => (
-      <GoalLists goals={data.goals} catalogue={data.skills} language={language} />
+    Widget: ({ data, language, actions }) => (
+      <>
+        <GoalLists goals={data.goals} catalogue={data.skills} language={language} />
+        <OpenLearner learner={data.learner} language={language} actions={actions} />
+      </>
     ),
     keepVisible: true,
   }),
@@ -274,16 +319,19 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
     verb: "learner_week",
     title: "chat_tool_learner_week",
     read: (data) => toolViewData("learner_week", data),
-    Widget: ({ data, language }) => (
-      <WeekStrip
-        weeks={data.weeks.map((w) => ({
-          monday: w.monday,
-          lessons: w.lessons,
-          movedUp: w.moved_up,
-          attention: w.attention,
-        }))}
-        language={language}
-      />
+    Widget: ({ data, language, actions }) => (
+      <>
+        <WeekStrip
+          weeks={data.weeks.map((w) => ({
+            monday: w.monday,
+            lessons: w.lessons,
+            movedUp: w.moved_up,
+            attention: w.attention,
+          }))}
+          language={language}
+        />
+        <OpenLearner learner={data.learner} language={language} actions={actions} />
+      </>
     ),
     keepVisible: true,
   }),
@@ -300,7 +348,12 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
     verb: "learner_mistakes",
     title: "chat_tool_learner_mistakes",
     read: (data) => toolViewData("learner_mistakes", data),
-    Widget: ({ data, language }) => <Mistakes view={data} language={language} />,
+    Widget: ({ data, language, actions }) => (
+      <>
+        <Mistakes view={data} language={language} />
+        <OpenLearner learner={data.learner} language={language} actions={actions} />
+      </>
+    ),
     keepVisible: true,
   }),
 };
@@ -329,7 +382,7 @@ export function toolResult(
       const Icon = TOOL_ICON[tool.verb];
       return {
         kind: "widget",
-        keepVisible: entry.keepVisible,
+        keepVisible: entry.keepVisible(tool.view.data),
         element: (
           <section
             data-widget={tool.verb}
@@ -350,6 +403,10 @@ export function toolResult(
   return { kind: "plain", element: <ToolDetails tool={tool} language={language} /> };
 }
 
+/** The raw input and output: small mono on the soft fill, scrolling past a few lines. */
+const RAW =
+  "max-h-48 overflow-auto rounded-jw-small bg-jw-act-quiet px-2 py-1.5 font-mono text-jw-page-small leading-snug text-jw-ink";
+
 /**
  * "Szczegóły": what Jadwigo AI sent the verb and what came back, one more tap under an opened
  * tool line (dl-z5ja.68, dl-uukj.47.30). What came back is the call's output, or its view when the
@@ -365,20 +422,38 @@ export function ToolDetails({
   const say = (key: CopyKey) => copy(language, key, {}, "adult");
   const back = tool.output !== undefined ? tool.output : (tool.view?.data ?? null);
   return (
-    <details data-card="plain" data-tool={tool.verb} className="text-sm">
-      <summary className="cursor-pointer">{say("chat_tool_details")}</summary>
-      {tool.input !== undefined && (
-        <>
-          <p className="text-muted-foreground text-xs">{say("chat_card_input")}</p>
-          <pre data-card-input className="overflow-x-auto rounded-md border p-2 text-xs">
-            {JSON.stringify(tool.input, null, 2)}
-          </pre>
-        </>
-      )}
-      <p className="text-muted-foreground text-xs">{say("chat_card_output")}</p>
-      <pre data-card-output className="overflow-x-auto rounded-md border p-2 text-xs">
-        {JSON.stringify(back, null, 2)}
-      </pre>
+    <details
+      data-card="plain"
+      data-tool={tool.verb}
+      className="group/details text-jw-page-small text-jw-ink-soft"
+    >
+      <summary className="flex w-fit cursor-pointer list-none items-center gap-1 hover:text-jw-ink [&::-webkit-details-marker]:hidden">
+        <ChevronRightIcon
+          aria-hidden
+          className="size-3.5 shrink-0 transition-transform duration-jw-fast group-open/details:rotate-90"
+        />
+        {say("chat_tool_details")}
+      </summary>
+      <dl className="mt-1.5 ml-4.5 flex flex-col gap-1.5">
+        {tool.input !== undefined && (
+          <div className="flex flex-col gap-0.5">
+            <dt className="font-bold">{say("chat_card_input")}</dt>
+            <dd>
+              <pre data-card-input className={RAW}>
+                {JSON.stringify(tool.input, null, 2)}
+              </pre>
+            </dd>
+          </div>
+        )}
+        <div className="flex flex-col gap-0.5">
+          <dt className="font-bold">{say("chat_card_output")}</dt>
+          <dd>
+            <pre data-card-output className={RAW}>
+              {JSON.stringify(back, null, 2)}
+            </pre>
+          </dd>
+        </div>
+      </dl>
     </details>
   );
 }

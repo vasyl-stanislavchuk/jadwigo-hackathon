@@ -14,16 +14,19 @@ import {
   Eye,
   LayoutList,
   Lightbulb,
+  ListFilter,
   type LucideIcon,
   NotebookPen,
   PencilLine,
   Search,
   Target,
 } from "lucide-react";
+import type { ObjectRef } from "./objects/ref.ts";
 import { TOOL_KEY } from "./tools.ts";
 
 export const TOOL_ICON: Readonly<Record<VerbName, LucideIcon>> = {
   question_search: Search,
+  question_types: ListFilter,
   lesson_draft: LayoutList,
   lesson_edit: PencilLine,
   lesson_check: ClipboardCheck,
@@ -41,6 +44,8 @@ export interface LineContext {
   nameOf?: (learner: string) => string | null;
   /** Sends words as the parent's message: a widget's "Ułóż tę lekcję" (dl-z5ja.129). */
   onAsk?: (text: string) => void;
+  /** Opens a thing beside the chat (objects/ref.ts, dl-uukj.47.58). */
+  onOpen?: (object: ObjectRef) => void;
   /** The answers given in this page to an approval's choose form, by its call (dl-uukj.47.35). */
   chosen?: (call_id: string) => readonly (string | null)[] | undefined;
 }
@@ -76,6 +81,8 @@ export function sentenceOf(
       return about("chat_tool_lesson_draft_about", "topic", field(input, "topic"));
     case "question_search":
       return about("chat_tool_question_search_about", "topic", field(input, "words"));
+    case "question_types":
+      return plain;
     case "lesson_edit":
       return about("chat_tool_lesson_edit_step", "step", field(input, "step_id"));
     case "lesson_show":

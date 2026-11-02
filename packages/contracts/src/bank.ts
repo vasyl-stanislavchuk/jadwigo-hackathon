@@ -35,6 +35,9 @@ export const Need = z
     contexts: Words.optional(),
     curriculum_tags: Words.describe("e.g. pl-2017:II.3.3, ccss:3.OA.C.7").optional(),
     resemble: z.string().describe("A task to resemble, e.g. a homework problem's text").optional(),
+    question_types: Words.describe(
+      "Keep only sets holding one of these question types: family.type, a glob such as group.*, a bare family (choose) or a bare type (multi_select)",
+    ).optional(),
     language: Language,
     grade: z.string().describe('Canonical form: the bare number, e.g. "3"'),
     limit: z.int().min(1).optional(),
@@ -305,8 +308,49 @@ export const QuestionSetPage = z
         .record(z.string(), z.array(BankQuestionId))
         .describe("By language code: the questions that are lesson-ready in it, in set order"),
     }),
+    question_types: Words.describe(
+      "The question types of the set's lesson-ready questions, in any language (dl-n9fr.70)",
+    ).optional(),
+    problem_types: z
+      .array(
+        z.object({
+          name: z.string(),
+          question_types: Words.describe("The question types of its lesson-ready questions"),
+        }),
+      )
+      .describe("The set's problem types, each with the question types it holds")
+      .optional(),
+    ready_types: z
+      .record(z.string(), z.record(z.string(), z.int().min(0)))
+      .describe("By language code: how many lesson-ready questions of each question type")
+      .optional(),
   })
   .describe(
-    "One question set's public page: its titles, skills and credit, the ids of its questions, and which are lesson-ready per language; never a question's body",
+    "One question set's public page: its titles, skills and credit, the ids of its questions, which are lesson-ready per language and their question types; never a question's body",
   );
 export type QuestionSetPage = z.infer<typeof QuestionSetPage>;
+
+/**
+ * Which question types the bank holds, per grade and language, counted over lesson-ready questions
+ * (dl-n9fr.70): what a model offers a parent who asks for a kind of question. Route:
+ * `ROUTES.questionTypes`, answered by the bank Lambda from the `_types` item its publisher writes.
+ */
+export const QuestionTypeCounts = z
+  .object({
+    version: z.literal(1),
+    bank_rev: z.string().describe("The bank build the counts come from").optional(),
+    types: z.array(
+      z.object({
+        grade: z.string().describe('The bare grade number, "1"'),
+        language: z.string().describe("A language code: pl, en"),
+        question_type: QuestionType,
+        family: z.string().min(1),
+        sets: z.int().min(0).describe("How many sets hold a lesson-ready question of this type"),
+        ready: z.int().min(0).describe("How many lesson-ready questions are of this type"),
+      }),
+    ),
+  })
+  .describe(
+    "The question types the bank holds, per grade and language: how many sets hold each and how many lesson-ready questions it has",
+  );
+export type QuestionTypeCounts = z.infer<typeof QuestionTypeCounts>;

@@ -53,6 +53,7 @@ const MADE_UP_USAGE = { input_tokens: 0, cached_tokens: 0, output_tokens: 0 };
 import {
   acceptMessage,
   authorizeRun,
+  CARD_RULE,
   drain,
   type EngineDeps,
   type EngineWarning,
@@ -295,6 +296,7 @@ function fakeVerbs(hooks: Partial<Record<VerbName, Hook>> = {}): Verbs {
     lesson_edit: verb("lesson_edit"),
     lesson_check: verb("lesson_check"),
     question_search: verb("question_search"),
+    question_types: verb("question_types"),
     learner_skills: verb("learner_skills"),
     learner_week: verb("learner_week"),
     learner_mistakes: verb("learner_mistakes"),
@@ -903,6 +905,20 @@ describe("runStep and drain", () => {
       );
     }
     expect(t.muse.calls).toHaveLength(3);
+  });
+
+  it("tells every call the parent sees the lesson as a card, so the answer never restates it (dl-z5ja.141)", async () => {
+    const t = await setup([{ calls: [{ verb: "lesson_draft" }] }, { text: "Ready." }]);
+    await t.say("A short lesson on equal groups.");
+    await drain(t.deps);
+
+    expect(t.muse.calls).toHaveLength(2);
+    for (const call of t.muse.calls) {
+      expect(call.instructions).toContain(CARD_RULE);
+      // A new instructions text, a new cache key: no call reads a prefix cached without the rule.
+      expect(call.prompt_cache_key).toBe("jadwigo-lesson-compose:3");
+    }
+    expect(CARD_RULE).toMatch(/never list or repeat the lesson's questions/);
   });
 
   it("sends a child's words the parent pasted only inside the fence, markup neutralised", async () => {

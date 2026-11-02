@@ -39,7 +39,12 @@ function Logo({
   return (
     <span
       data-slot="logo"
-      className={cn("inline-flex h-6 [&>svg]:h-full [&>svg]:w-auto", className)}
+      // overflow-visible: the crown tips up past the viewBox on hover (foundation.css), and the
+      // SVG would clip it.
+      className={cn(
+        "inline-flex h-6 [&>svg]:h-full [&>svg]:w-auto [&>svg]:overflow-visible",
+        className,
+      )}
       // The wordmark is this package's own file, read at build time: no outside text reaches it. Inlined, not an <img>, so the tokens and the crown's tip reach the SVG.
       dangerouslySetInnerHTML={{ __html: wordmark }}
     />

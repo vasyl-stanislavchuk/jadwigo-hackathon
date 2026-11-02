@@ -9,13 +9,14 @@
  */
 
 import { ApiError } from "@jadwigo/api-client";
-import { AttachmentId, ID_PREFIXES, idOf, LearnerId } from "@jadwigo/contracts";
+import { AttachmentId, ID_PREFIXES, idOf, type Learner, LearnerId } from "@jadwigo/contracts";
 import { ConversationId, type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { FIXED_NOW, RUN_LOGS } from "@jadwigo/testing";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { EngineTransport } from "../../chat/useConversation.ts";
 import type { SendBody } from "../../chat/wire.ts";
+import { folds } from "../shell/fold.ts";
 import { firstMessage, type LessonEngine } from "./engine.ts";
 import { LessonWorkspace } from "./LessonWorkspace.tsx";
 
@@ -76,8 +77,8 @@ async function workspace(engine: LessonEngine, forLearner: LearnerId | null = nu
         engine={engine}
         learners={[]}
         forLearner={forLearner}
+        onForChange={() => {}}
         onAddChild={() => {}}
-        changeMenu={(trigger) => trigger}
       />,
     );
   });
@@ -122,6 +123,16 @@ describe("the lesson workspace on the engine", () => {
     cleanup();
     await workspace(engine);
     expect(sent.filter((b) => b.kind === "message")).toHaveLength(1);
+  });
+
+  it("posts nothing for a kept first message with no words and no photo that reads", async () => {
+    const { engine, sent } = engineWith();
+    window.sessionStorage.setItem(
+      `jw.parent.first.${CONVERSATION}`,
+      JSON.stringify({ text: "", attachment_ids: ["not-an-id"] }),
+    );
+    await workspace(engine);
+    expect(sent.filter((b) => b.kind === "message")).toHaveLength(0);
   });
 
   it("sends an older tab's plain words with no photos", async () => {
@@ -262,8 +273,6 @@ function quietEngine() {
 
 const band = () => document.querySelector("[data-chat-band] [data-status]")?.textContent ?? "";
 const live = () => document.querySelector("[data-chat-band] [data-live]")?.textContent ?? "";
-const footer = () =>
-  document.querySelector("[data-lesson-footer] [data-status]")?.textContent ?? "";
 const placeholder = () => document.querySelector("[data-lesson-waiting]")?.textContent ?? "";
 const activity = () => document.querySelector("[data-activity]")?.getAttribute("data-phase");
 const tick = async (ms: number) => {
@@ -358,7 +367,7 @@ describe("one honest run state (dl-uukj.47.29)", () => {
     expect(last?.kind === "message" && last.text).toBe("Odejmowanie przez 10");
   });
 
-  it("says one state in the band, the footer, the placeholder, the live region and the strip", async () => {
+  it("says one state in the band, the placeholder, the live region and the strip", async () => {
     const q = quietEngine();
     firstMessage.put(CONVERSATION, "Odejmowanie przez 10");
     await workspace(q.engine);
@@ -370,14 +379,95 @@ describe("one honest run state (dl-uukj.47.29)", () => {
       await tick(wait);
       expect(band().startsWith(words)).toBe(true);
       expect(placeholder()).toBe(words);
-      // Before the lesson has steps the footer has no "0 z 0": the state, then the reason.
-      expect(footer()).toBe(`${words} · „Daj lekcję” zadziała, gdy lekcja przejdzie sprawdzenie`);
       expect(
         document.querySelector("[data-activity] [data-shimmer], [data-activity] span")?.textContent,
       ).toBe(words);
     }
     expect(live()).toBe("Utknęło");
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Zwiń rozmowę" })));
+    // The chat folds only beside the open lesson, from the shell's top bar (ChatFoldToggle).
+    await act(async () => {
+      folds.set("lesson", true);
+      folds.set("chat", false);
+    });
     expect(document.querySelector("[data-strip-fact]")?.textContent).toBe("Utknęło");
+  });
+});
+
+describe("opening things from the chat (dl-uukj.47.58)", () => {
+  beforeEach(() => {
+    folds.set("lesson", false);
+    window.history.replaceState(null, "", `/parent/lessons/${CONVERSATION}`);
+  });
+
+  /** Whether the lesson column is shut on a laptop (its own `lg:hidden`, not the phone's). */
+  const shut = () =>
+    (document.querySelector("[data-lesson-column]") as HTMLElement).classList.contains("lg:hidden");
+
+  it("the lesson card under the turn opens the lesson beside the chat", async () => {
+    const { engine } = engineWith();
+    firstMessage.put(CONVERSATION, "Odejmowanie przez 10");
+    await workspace(engine);
+    await screen.findByText("Your lesson is ready on the right.");
+    // The chat alone: the lesson column is shut on a laptop.
+    expect(shut()).toBe(true);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /^Otwórz lekcję: / }));
+    });
+    expect(shut()).toBe(false);
+    expect(window.location.search).toBe(`?open=lesson%3A${CONVERSATION}`);
+    // On a phone the Lekcja pane comes to the front.
+    expect(document.querySelector("[data-tab='lesson']")?.getAttribute("aria-selected")).toBe(
+      "true",
+    );
+  });
+
+  it("a link that opens a child of the family draws their panel: the name, the way to their page (dl-uukj.47.59)", async () => {
+    // A made-up child of the family: the panel reads only what the list holds.
+    const child = {
+      id: LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq"),
+      pod_id: "pod_00000000000000000000000001",
+      handle: "ola",
+      first_name: "Ola",
+      created_at: "2026-10-28T14:02:06.274Z",
+    } as unknown as Learner;
+    window.history.replaceState(
+      null,
+      "",
+      `/parent/lessons/${CONVERSATION}?open=learner:${child.id}`,
+    );
+    const { engine } = engineWith();
+    await act(async () => {
+      render(
+        <LessonWorkspace
+          language="pl"
+          conversation={CONVERSATION}
+          engine={engine}
+          learners={[child]}
+          forLearner={null}
+          onForChange={() => {}}
+          onAddChild={() => {}}
+        />,
+      );
+    });
+    expect(shut()).toBe(false);
+    expect(document.querySelector("[data-lesson-title]")?.textContent).toBe("Ola");
+    expect(document.querySelector(`[data-learner-panel='${child.id}']`)).not.toBeNull();
+    expect(screen.getByRole("link", { name: "Strona dziecka: Ola" }).getAttribute("href")).toBe(
+      `/parent/children/${child.id}`,
+    );
+  });
+
+  it("a link that opens a child the family lacks says so and reads nothing", async () => {
+    const learner = "lrn_00000000000000000000000001";
+    window.history.replaceState(
+      null,
+      "",
+      `/parent/lessons/${CONVERSATION}?open=learner:${learner}`,
+    );
+    const { engine } = engineWith();
+    await workspace(engine);
+    expect(shut()).toBe(false);
+    expect(document.querySelector("[data-learner-panel='unknown']")).not.toBeNull();
+    expect(screen.queryByRole("link", { name: /^Strona dziecka/ })).toBeNull();
   });
 });
