@@ -13,3 +13,8 @@ export const twins = {
 } as const satisfies Record<string, Record<Language, string>>;
 
 export type Twin = keyof typeof twins;
+
+// Pages kept in the source but neither built nor linked, in every language: the header and footer list
+// only served pages, so a hidden page's links go too. Compare is hidden for now (owner, 2026-11-02,
+// dl-5ssh.4.28); taking it out of this set brings the page back.
+export const hiddenTwins: ReadonlySet<Twin> = new Set<Twin>(["compare"]);
