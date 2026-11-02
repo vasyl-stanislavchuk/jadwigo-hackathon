@@ -15,6 +15,8 @@ const lessonOf = (page: Page) => page.getByRole("region", { name: "Lekcja" });
 test("1440: one scripted turn, the message in the chat, the lesson beside it", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/playground/workspace");
+  // The chat is the main view; the lesson opens beside it from "Pokaż lekcję" (2026-11-02).
+  await page.getByRole("button", { name: "Pokaż lekcję" }).click();
   const chat = chatOf(page);
   const lesson = lessonOf(page);
 

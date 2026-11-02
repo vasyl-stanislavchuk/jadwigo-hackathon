@@ -2,16 +2,26 @@
  * The lesson workspace (decision 2026-11-01-the-parent-app-is-a-sidebar-shell-and-a-3-column-
  * lesson-workspac, dl-xo0q; handoff §2.2, docs/worklog/dl-uukj.47):
  *
- *   ┌─ chat 360 ───────┬─ lesson (flex) ──────────────┬▯┐
- *   │ messages         │ title                        │ │ ← details 290, folded by default
- *   │                  │ steps scroll here            │ │   to its 52 px strip
- *   ├──────────────────┼──────────────────────────────┤ │
- *   │ run state/rating │ status line   [Zapisz] [Daj] │ │ ← one 68 px band under both
- *   └──────────────────┴──────────────────────────────┴─┘
+ *   ┌─ chat 360 ───────┬─ lesson (flex) ──────────────┐
+ *   │ messages         │ title                        │ ← shut until "Pokaż lekcję"
+ *   │                  │ steps scroll here            │
+ *   │ composer         │                              │
+ *   └──────────────────┴──────────────────────────────┘
  *
- * Chat and details each fold to a 52 px strip that keeps the unfold button, the panel's name
+ * The chat is the main view (design review 2026-11-02): the lesson column is shut until the parent
+ * opens it with "Pokaż lekcję" in the top bar (LessonToggle). No footer: how and when to
+ * give the lesson are the chat's to offer.
+ *
+ * No details panel (design review 2026-11-02): who the lesson is for and what it practises move
+ * into the chat's widgets.
+ *
+ * The chat has no band of its own: its composer sits at the column's foot, and the run's state is
+ * read out from a screen-reader-only slot (design review 2026-11-02).
+ *
+ * The open chat has no header row: the top bar's line heads it, with its fold button beside the
+ * breadcrumb (ChatFoldToggle). The chat folds to a 52 px strip that keeps the unfold button, the panel's name
  * written down its length and one key fact; the parent's choice is remembered per device (the
- * shell's fold.ts). Paper: the lesson column is the page, chat, details and the bands are surfaces.
+ * shell's fold.ts). Paper: the lesson column is the page, the chat is a surface.
  * Below lg there is one column and a Rozmowa / Lekcja switch, as ChatScreen has it, with a mark on
  * Lekcja when the lesson changes while the chat is in front. The panes are slots: the engine fills
  * them (dl-z5ja.108).
@@ -19,12 +29,13 @@
 
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { cn, PanelToggle } from "@jadwigo/ui";
+import { BookOpenIcon } from "lucide-react";
 import { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
 import { CATEGORY } from "../adult.ts";
 import { usePanel } from "../shell/fold.ts";
 
 const CHAT_ID = "parent-chat";
-const DETAILS_ID = "parent-details";
+const LESSON_ID = "parent-lesson";
 
 /** A side panel: open at its width, or folded to the strip with its name and one key fact. */
 function SidePanel({
@@ -38,6 +49,7 @@ function SidePanel({
   fact,
   width,
   className,
+  bare = false,
   children,
 }: {
   id: string;
@@ -51,6 +63,8 @@ function SidePanel({
   fact?: string | undefined;
   width: string;
   className?: string;
+  /** Open with no header row of its own: its fold button lives elsewhere (the chat's, in the top bar). */
+  bare?: boolean;
   children: ReactNode;
 }): ReactElement {
   return (
@@ -66,11 +80,17 @@ function SidePanel({
         className,
       )}
     >
-      {open ? (
+      {open && bare ? (
+        <>
+          <h2 className="sr-only">{name}</h2>
+          {children}
+        </>
+      ) : open ? (
         <>
           <div
             className={cn(
-              "flex h-12 shrink-0 items-center gap-2 px-3",
+              // Compact, with a line under it (design review 2026-11-02).
+              "flex shrink-0 items-center gap-1 border-b-jw border-jw-line px-1.5 py-0.5",
               side === "right" && "flex-row-reverse",
             )}
           >
@@ -80,8 +100,11 @@ function SidePanel({
               label={foldLabel}
               controls={id}
               onToggle={() => onToggle(false)}
+              className="min-h-8 min-w-8"
             />
-            <h2 className="min-w-0 flex-1 truncate text-jw-page-h2 font-bold">{name}</h2>
+            <h2 className="min-w-0 flex-1 truncate text-jw-page-body leading-tight font-bold">
+              {name}
+            </h2>
           </div>
           {children}
         </>
@@ -111,22 +134,52 @@ function SidePanel({
   );
 }
 
-/** A 68 px band at a column's foot, with its line on top: the run state, or the lesson's actions. */
-export function Band({
-  className,
-  children,
-  ...props
-}: { className?: string; children: ReactNode } & Record<`data-${string}`, string | boolean>) {
+/**
+ * The chat's fold button for the top bar, beside the breadcrumb: the open chat has no header row,
+ * so the bar's line heads it. Desktop only; the phone has its Rozmowa / Lekcja switch.
+ */
+export function ChatFoldToggle({ language }: { language: Language }): ReactElement | null {
+  const [open, setOpen] = usePanel("chat");
+  const [lessonOpen] = usePanel("lesson");
+  // Alone, the chat is the page: nothing to fold it beside.
+  if (!lessonOpen) return null;
   return (
-    <div
+    <PanelToggle
+      side="left"
+      expanded={open}
+      label={copy(language, open ? "parent_chat_fold" : "parent_chat_unfold", {}, CATEGORY)}
+      controls={CHAT_ID}
+      onToggle={() => setOpen(!open)}
+      className="-ml-2 max-lg:hidden"
+    />
+  );
+}
+
+/**
+ * "Pokaż lekcję" / "Ukryj lekcję" in the top bar (design review 2026-11-02): the chat is the main
+ * view, and the lesson opens beside it here for a parent who wants to look. Desktop only; the phone
+ * has its Rozmowa / Lekcja switch.
+ */
+export function LessonToggle({ language }: { language: Language }): ReactElement {
+  const [open, setOpen] = usePanel("lesson");
+  const label = copy(language, open ? "parent_lesson_hide" : "parent_lesson_show", {}, CATEGORY);
+  return (
+    <button
+      type="button"
+      aria-expanded={open}
+      aria-controls={LESSON_ID}
+      onClick={() => setOpen(!open)}
       className={cn(
-        "flex h-jw-shell-band shrink-0 items-center gap-3 border-t-jw border-jw-line bg-jw-card px-4",
-        className,
+        "flex min-h-jw-control shrink-0 items-center gap-1.5 rounded-jw-small border-jw px-2.5 text-jw-page-small font-bold focus-visible:outline-3 focus-visible:outline-jw-focus max-lg:hidden",
+        open
+          ? "border-jw-pick-edge bg-jw-pick text-jw-pick-ink"
+          : "border-jw-line text-jw-ink hover:bg-jw-act-quiet",
       )}
-      {...props}
+      data-lesson-toggle
     >
-      {children}
-    </div>
+      <BookOpenIcon aria-hidden className="size-4" />
+      {label}
+    </button>
   );
 }
 
@@ -137,32 +190,26 @@ export function Workspace({
   chatFact,
   lessonTitle,
   lesson,
-  lessonFooter,
   lessonKey,
-  details,
-  detailsFact,
 }: {
   language: Language;
   /** The messages and the composer. */
   chat: ReactNode;
-  /** The chat's 68 px band: the run state in words, then the rating. */
+  /** The run's state in words and its live region, for screen readers only: no visible band. */
   chatBand: ReactNode;
   /** What the folded chat's strip says, such as "Układanie lekcji". */
   chatFact?: string;
   lessonTitle: ReactNode;
   /** The steps, scrolling between the title and the footer. */
   lesson: ReactNode;
-  /** The lesson's pinned footer: the status line and the actions (LessonFooter). */
-  lessonFooter: ReactNode;
   /** Changes when the lesson does, so the phone's Lekcja tab can say so while the chat is in front. */
   lessonKey?: string;
-  details: ReactNode;
-  /** What the folded details' strip says: who the lesson is for. */
-  detailsFact?: string;
 }): ReactElement {
   const t = (key: CopyKey): string => copy(language, key, {}, CATEGORY);
   const [chatOpen, setChatOpen] = usePanel("chat");
-  const [detailsOpen, setDetailsOpen] = usePanel("details");
+  // The chat is the main view (design review 2026-11-02): the lesson opens beside it only when the
+  // parent asks, from the top bar (LessonToggle). With the lesson shut the chat can't fold.
+  const [lessonOpen] = usePanel("lesson");
 
   // The phone's one column: which pane is in front, and a mark when the lesson changed behind.
   const [front, setFront] = useState<"chat" | "lesson">("chat");
@@ -215,29 +262,45 @@ export function Workspace({
         <SidePanel
           id={CHAT_ID}
           side="left"
-          open={chatOpen}
+          open={chatOpen || !lessonOpen}
           onToggle={setChatOpen}
           name={t("parent_chat")}
           foldLabel={t("parent_chat_fold")}
           unfoldLabel={t("parent_chat_unfold")}
           fact={chatFact}
-          width="w-jw-shell-chat"
+          width={lessonOpen ? "w-jw-shell-chat" : "flex-1 border-r-0"}
+          // No "Rozmowa" row (design review 2026-11-02): the top bar's line is the chat's header,
+          // its fold button beside the breadcrumb (ChatFoldToggle), so the new lesson and the
+          // chat read as one thing.
+          bare
           // On a phone the chat is the whole column while it is in front, and hidden behind the lesson.
           className={cn(
             "max-lg:w-full max-lg:border-r-0",
             front === "chat" ? "max-lg:flex" : "max-lg:hidden",
           )}
         >
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto" data-chat-body>
+          {/* The chat scrolls its own messages, so its composer stays at the foot. */}
+          <div
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            data-chat-body
+            // Alone, the chat keeps a readable column in the middle (chat.css).
+            {...(lessonOpen ? {} : { "data-chat-wide": "" })}
+          >
             {chat}
           </div>
-          <Band data-chat-band>{chatBand}</Band>
+          {/* No visible band under the chat (design review 2026-11-02): the composer is the column's
+              foot. The run's state stays here for screen readers and its live region. */}
+          <div className="sr-only" data-chat-band>
+            {chatBand}
+          </div>
         </SidePanel>
         <section
+          id={LESSON_ID}
           aria-label={t("parent_lesson")}
           className={cn(
             "flex min-w-0 flex-1 flex-col bg-jw-ground",
             front === "lesson" ? "max-lg:flex" : "max-lg:hidden",
+            !lessonOpen && "lg:hidden",
           )}
           data-lesson-column
         >
@@ -247,22 +310,7 @@ export function Workspace({
           <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6" data-steps>
             {lesson}
           </div>
-          {lessonFooter}
         </section>
-        <SidePanel
-          id={DETAILS_ID}
-          side="right"
-          open={detailsOpen}
-          onToggle={setDetailsOpen}
-          name={t("parent_details")}
-          foldLabel={t("parent_details_fold")}
-          unfoldLabel={t("parent_details_unfold")}
-          fact={detailsFact}
-          width="w-jw-shell-details"
-          className="max-lg:hidden"
-        >
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">{details}</div>
-        </SidePanel>
       </div>
     </div>
   );

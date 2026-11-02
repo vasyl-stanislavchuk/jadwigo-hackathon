@@ -963,6 +963,8 @@
   "parent_workspace_tabs": "Chat and lesson",
   "parent_chat_fold": "Fold the chat",
   "parent_chat_unfold": "Unfold the chat",
+  "parent_lesson_show": "Show the lesson",
+  "parent_lesson_hide": "Hide the lesson",
   "parent_details_fold": "Fold the details",
   "parent_details_unfold": "Unfold the details",
   "parent_save": "Save for later",

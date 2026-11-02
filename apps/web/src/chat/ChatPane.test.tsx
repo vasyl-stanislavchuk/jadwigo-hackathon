@@ -401,14 +401,14 @@ describe("the message limits (dl-z5ja.62, .100)", () => {
 });
 
 describe("the two sides apart (dl-uukj.47.28)", () => {
-  it("draws the parent's words as a filled bubble on the right, with Ty for a screen reader", () => {
+  it("draws the parent's words as a bordered box on the right, with Ty for a screen reader", () => {
     pane({ turns: [turnOf("happy-turn")] });
     const parent = document.querySelector("[data-from='parent']") as HTMLElement;
     expect(parent.className).toContain("self-end");
-    expect(parent.className).toContain("max-w-[85%]");
+    expect(parent.className).toContain("max-w-[90%]");
     const bubble = parent.querySelector("[data-bubble]") as HTMLElement;
-    expect(bubble.className).toContain("bg-jw-pick");
-    expect(bubble.className).toContain("rounded-jw-dialog");
+    expect(bubble.className).toContain("border-jw-line");
+    expect(bubble.className).toContain("rounded-jw-box");
     expect(bubble.textContent).toBe("A short lesson on equal groups for grade 2, please.");
     const label = within(parent).getByText("Ty");
     expect(label.className).toContain("sr-only");
@@ -667,18 +667,9 @@ describe("the context chip and the footnote (dl-uukj.47.32)", () => {
     expect(chip()).toBeNull();
   });
 
-  it("keeps the footnote under the composer, in both languages", () => {
+  it("has no footnote under the composer (design review 2026-11-02)", () => {
     pane({ variant: "parent" });
-    const note = document.querySelector("[data-footnote]") as HTMLElement;
-    expect(note.textContent).toBe(
-      "Jadwigo AI może się mylić. Nic nie trafi do dziecka, zanim tego nie sprawdzisz.",
-    );
-    const form = document.querySelector("form") as HTMLElement;
-    expect(form.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    cleanup();
-    pane({ variant: "parent", language: "en" });
-    expect(document.querySelector("[data-footnote]")?.textContent).toBe(
-      "Jadwigo AI isn't always right. Nothing reaches the child before you check it.",
-    );
+    expect(document.querySelector("[data-footnote]")).toBeNull();
+    expect(screen.queryByText(/może się mylić/)).toBeNull();
   });
 });

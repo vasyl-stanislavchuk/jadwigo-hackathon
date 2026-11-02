@@ -91,7 +91,8 @@ describe("the workspace's dev route", () => {
     expect(await screen.findByText("Your lesson is ready on the right.")).toBeTruthy();
     expect(screen.getByText("Wersja 2")).toBeTruthy();
     expect(document.querySelector("[data-page='workspace'] #parent-chat")).not.toBeNull();
-    expect(document.querySelector("[data-page='workspace'] #parent-details")).not.toBeNull();
+    // No details panel (design review 2026-11-02): who and what move into the chat's widgets.
+    expect(document.querySelector("[data-page='workspace'] #parent-details")).toBeNull();
 
     const first = sent[0]?.conversation_id;
     cleanup();

@@ -8,9 +8,7 @@
  *   band     the run's state in words, and the polite live region that speaks when a turn ends or
  *            needs the parent
  *   lesson   the latest revision (LessonPane), its changed steps marked, Cofnij and step edits
- *   footer   the steps so far, "Zapisz na później" and the one primary, quiet until giving exists
- *            (dl-z5ja.108.1.1)
- *   details  who the lesson is for, and about it
+ *   (no footer: giving the lesson, and when, happen in the chat; design review 2026-11-02)
  *
  * The run's state everywhere (the band, the folded strip, the lesson's placeholder, the footer and
  * the live region) is one `runPhase` (src/chat/phase.ts, dl-uukj.47.29), so they never disagree.
@@ -27,33 +25,15 @@ import { ChatPane } from "../../chat/ChatPane.tsx";
 import { ConsentScreen, giveConsent } from "../../chat/ConsentScreen.tsx";
 import { LessonPane } from "../../chat/LessonPane.tsx";
 import { lessonSummary, useLessonWiring } from "../../chat/lessonWiring.ts";
-import { elapsedSeconds, phaseAnnouncement, type RunPhase, usePhase } from "../../chat/phase.ts";
+import { elapsedSeconds, phaseAnnouncement, usePhase } from "../../chat/phase.ts";
 import { holdServer } from "../../chat/routesTransport.ts";
 import { useConversation } from "../../chat/useConversation.ts";
-import { navigate } from "../../nav/location.ts";
 import { NavLink } from "../../nav/NavLink.tsx";
 import { CATEGORY, pageLang } from "../adult.ts";
-import { lessonsPath, parentPath } from "../route.ts";
-import { DetailsPanel } from "./DetailsPanel.tsx";
+import { DlaSelect } from "../newLesson/DlaSelect.tsx";
+import { parentPath } from "../route.ts";
 import { firstMessage, type LessonEngine } from "./engine.ts";
-import { LessonFooter } from "./LessonFooter.tsx";
 import { Workspace } from "./Workspace.tsx";
-
-/**
- * The footer's line: the run's state while a turn is open or ended badly, then the steps once the
- * lesson has any; never "0 z 0" (dl-uukj.47.23).
- */
-function footerStatus(
-  phase: RunPhase | null,
-  words: string,
-  steps: number,
-  t: (key: CopyKey, vars?: Record<string, string | number>) => string,
-): string {
-  const parts: string[] = [];
-  if (phase !== null && phase.kind !== "done") parts.push(words);
-  if (steps > 0) parts.push(t("parent_steps_ready", { done: steps, total: steps }));
-  return parts.join(" · ");
-}
 
 export function LessonWorkspace({
   language,
@@ -61,8 +41,8 @@ export function LessonWorkspace({
   engine,
   learners,
   forLearner,
+  onForChange,
   onAddChild,
-  changeMenu,
 }: {
   language: Language;
   /** The server's conversation: the route's id. */
@@ -71,9 +51,10 @@ export function LessonWorkspace({
   learners: readonly Learner[];
   /** Dla: who the lesson is for, or null. */
   forLearner: LearnerId | null;
+  /** Dla's change, from the composer's picker. */
+  onForChange: (learner: LearnerId | null) => void;
+  /** Opens Dodaj dziecko from Dla's menu. */
   onAddChild: () => void;
-  /** Wraps the details' "Zmień" in the Dla menu. */
-  changeMenu: (trigger: ReactElement) => ReactElement;
 }): ReactElement {
   const t = (key: CopyKey, vars: Record<string, string | number> = {}): string =>
     copy(language, key, vars, CATEGORY);
@@ -157,7 +138,7 @@ export function LessonWorkspace({
     );
 
   const chat = consentMissing ? (
-    <div className="p-4">
+    <div className="min-h-0 flex-1 overflow-y-auto p-4">
       <ConsentScreen
         language={language}
         onAgree={async () => {
@@ -177,7 +158,17 @@ export function LessonWorkspace({
       stopping={state.stopping}
       sendFailed={state.sendFailed}
       sendLimit={state.sendLimit}
-      onSend={send}
+      // Each message carries Dla as its page, as the first one did, so the run reads that child.
+      onSend={(text) => send(text, forLearner === null ? undefined : { learner_id: forLearner })}
+      composerLead={
+        <DlaSelect
+          language={language}
+          learners={learners}
+          value={forLearner}
+          onChange={onForChange}
+          onAddChild={onAddChild}
+        />
+      }
       onStop={stop}
       onRate={ratings === null ? undefined : (run, body) => ratings.rateRun(run, body)}
       phase={phase}
@@ -235,29 +226,7 @@ export function LessonWorkspace({
           />
         )
       }
-      lessonFooter={
-        <LessonFooter
-          language={language}
-          status={footerStatus(phase, words, summary.steps, t)}
-          // Given once its latest check passed (dl-z5ja.108.1.1); "Pokaż {imię}" comes later.
-          ready={lesson.ready}
-          child={child}
-          lesson={lesson.shown}
-          onSave={() => navigate(lessonsPath({ lang: pageLang() }))}
-          onGive={() => {}}
-        />
-      }
       {...(lesson.key === null ? {} : { lessonKey: lesson.key })}
-      details={
-        <DetailsPanel
-          language={language}
-          learners={learners}
-          child={child}
-          onAddChild={onAddChild}
-          changeMenu={changeMenu}
-        />
-      }
-      detailsFact={child?.first_name ?? t("parent_no_child")}
     />
   );
 }

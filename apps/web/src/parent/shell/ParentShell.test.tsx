@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 /**
  * The parent app's frame (dl-uukj.47.4, decision dl-xo0q): the sidebar folds to its rail and back
- * and remembers it per device, the top bar holds the breadcrumb and nothing to press but the phone's
- * menu, and the children are rows with a "+" beside their heading. happy-dom does no layout, so the
+ * and remembers it per device, the top bar holds the breadcrumb, the phone's menu and the account in
+ * its right corner, and the children are rows with a "+" beside their heading. happy-dom does no layout, so the
  * widths and the 56 px line are apps/web/e2e/parent-shell.spec.ts's.
  */
 
@@ -71,7 +71,7 @@ describe("the sidebar's fold", () => {
   });
 
   it("opens the chat and folds the details before the parent chooses", () => {
-    expect(OPEN_AT_FIRST).toEqual({ sidebar: true, chat: true, details: false });
+    expect(OPEN_AT_FIRST).toEqual({ sidebar: true, chat: true, details: false, lesson: false });
     expect(folds.open("details")).toBe(false);
   });
 
@@ -90,18 +90,18 @@ describe("the sidebar's fold", () => {
 });
 
 describe("the top bar", () => {
-  it("holds the breadcrumb, with the current page marked, and only the phone's menu to press", () => {
+  it("holds the breadcrumb, with the current page marked, the phone's menu and the account", () => {
     shell();
     const bar = document.querySelector("[data-top-bar]") as HTMLElement;
     const crumbs = within(bar).getByRole("navigation", { name: "Gdzie jesteś" });
     expect(within(crumbs).getByText("Nowa lekcja").getAttribute("aria-current")).toBe("page");
     expect(within(crumbs).getByRole("link", { name: "Lekcje" })).toBeDefined();
-    // No call to action in the corner: the one button is the phone's drawer.
+    // No call to action: the phone's drawer, then the account in the right corner.
     expect(
       within(bar)
         .getAllByRole("button")
-        .map((b) => b.getAttribute("aria-label")),
-    ).toEqual(["Otwórz menu"]);
+        .map((b) => b.textContent || b.getAttribute("aria-label")),
+    ).toEqual(["Otwórz menu", "Konto i ustawienia"]);
   });
 });
 

@@ -989,6 +989,8 @@
   "parent_workspace_tabs": "Rozmowa i lekcja",
   "parent_chat_fold": "Zwiń rozmowę",
   "parent_chat_unfold": "Rozwiń rozmowę",
+  "parent_lesson_show": "Pokaż lekcję",
+  "parent_lesson_hide": "Ukryj lekcję",
   "parent_details_fold": "Zwiń szczegóły",
   "parent_details_unfold": "Rozwiń szczegóły",
   "parent_save": "Zapisz na później",

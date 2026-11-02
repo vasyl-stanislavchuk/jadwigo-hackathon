@@ -631,6 +631,8 @@ export const COPY_KEYS = [
   "parent_workspace_tabs",
   "parent_chat_fold",
   "parent_chat_unfold",
+  "parent_lesson_show",
+  "parent_lesson_hide",
   "parent_details_fold",
   "parent_details_unfold",
   "parent_save",
