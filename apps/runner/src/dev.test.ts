@@ -12,8 +12,8 @@ import {
 } from "@jadwigo/jadwigo-ai";
 import { InMemoryStore } from "@jadwigo/store";
 import { FIXED_NOW } from "@jadwigo/testing";
-import { describe, expect, it } from "vitest";
-import { createDevRunner, listenOf, settingsLine } from "./dev.ts";
+import { afterEach, describe, expect, it } from "vitest";
+import { createDevRunner, devBankConfig, listenOf, settingsLine } from "./dev.ts";
 import { createRunnerHandler } from "./handler.ts";
 import { createHost, type HostReport } from "./host.ts";
 import { ProbeMuse, turnOf } from "./probe.ts";
@@ -153,7 +153,54 @@ describe("the local step host (dl-uukj.47.14.2)", () => {
       tier: "contributor",
       models: { contributor: CONTRIBUTOR_MODEL, private: null },
       lane_cap_usd: 0.5,
+      bank: "fixture",
     });
     expect(line).not.toContain("mk-secret");
+  });
+
+  it("names the bank's origin in its settings line, never the token", () => {
+    const muse = {
+      api_key: "mk",
+      lane_cap_usd: 0.5,
+      tier: "contributor",
+      private_model: null,
+    } as const;
+    const line = settingsLine(muse, { base: "https://app.example.test/", token: "bank-secret" });
+    expect(JSON.parse(line).bank).toBe("api https://app.example.test");
+    expect(line).not.toContain("bank-secret");
+  });
+});
+
+describe("the dev runner's bank", () => {
+  const KEYS = ["JADWIGO_API_URL", "JADWIGO_BANK_READ_TOKEN", "BANK_READ_TOKEN_PARAM"] as const;
+  const saved = Object.fromEntries(KEYS.map((k) => [k, process.env[k]]));
+  function env(values: Partial<Record<(typeof KEYS)[number], string>>) {
+    for (const k of KEYS) {
+      const v = values[k];
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+  }
+  afterEach(() => {
+    for (const k of KEYS) {
+      const v = saved[k];
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+  });
+
+  it("draws from the fixture with no URL, and from the API with a URL and a token", async () => {
+    env({});
+    expect(await devBankConfig()).toBeUndefined();
+    env({ JADWIGO_API_URL: "https://app.example.test", JADWIGO_BANK_READ_TOKEN: "t" });
+    expect(await devBankConfig()).toEqual({ base: "https://app.example.test", token: "t" });
+  });
+
+  it("never reads a deployed SSM parameter for the token", async () => {
+    env({
+      JADWIGO_API_URL: "https://app.example.test",
+      BANK_READ_TOKEN_PARAM: "/jadwigo/prod/bank-read-token",
+    });
+    await expect(devBankConfig()).rejects.toThrow("JADWIGO_BANK_READ_TOKEN");
   });
 });
