@@ -10,9 +10,17 @@ procs:
   copy:
     shell: "bun run --cwd packages/copy dev"
   # The parent's sign-in on this machine: the stand-in for Supabase Auth (make dev-all, dl-5ssh.131).
-  # Any email and 123456; web and api point at it unless DEV_AUTH=supabase.
+  # Any email and 123456; web and api point at it unless DEV_AUTH=supabase. On the same port, the
+  # stand-in for Realtime: the run channel, its join checked by the run_join policy, and the
+  # broadcasts realtime.send keeps in the local database (dl-uukj.47.14.1).
   auth:
-    shell: "bun apps/web/e2e/auth-server.ts"
+    shell: "bun apps/web/e2e/realtime-server.ts"
+  # The step host, as the runner Lambda: drains agent_step as jadwigo_runner when the api pokes
+  # LOCAL_RUNNER_URL after a commit, through HttpMuse on prod's model settings (apps/runner/src/dev.ts,
+  # dl-uukj.47.14.2). Every turn is a paid Muse call: it starts only with JADWIGO_MUSE_CAP_USD set
+  # and META_API_KEY in MUSE_ENV (make dev-all JADWIGO_MUSE_CAP_USD=0.50).
+  runner:
+    shell: "if [ -f \"$MUSE_ENV\" ]; then set -a; . \"$MUSE_ENV\"; set +a; fi; exec bun run --cwd apps/runner dev --listen \"$LOCAL_RUNNER_URL\""
   # ASTRO_DEV_BACKGROUND set keeps astro dev in its pane: unset, Astro detaches when an agent started
   # it (dev/index.js isRunByAgent), and the server outlives mprocs.
   site:

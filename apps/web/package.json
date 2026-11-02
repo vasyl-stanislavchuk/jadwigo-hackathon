@@ -44,7 +44,9 @@
     "vite": "serves and builds the app (vite.config.ts)",
     "vitest": "runs this package's unit test with the root vitest.config.ts",
     "@jadwigo/jadwigo-ai": "the engine dev/engine-plugin.ts runs in the dev server for /playground/chat: acceptMessage, drain, ScriptedMuse, createVerbs, fixtureBank, InMemoryRunQueue (dl-z5ja.17)",
-    "@jadwigo/store": "InMemoryStore, the store dev/engine-plugin.ts keeps the chat page's runs in (dl-z5ja.17)"
+    "@jadwigo/store": "InMemoryStore, the store dev/engine-plugin.ts keeps the chat page's runs in (dl-z5ja.17)",
+    "pg": "e2e/realtime-server.ts, make dev-all's Realtime stand-in: checks a join against the run_join policy and reads the broadcasts realtime.messages keeps (dl-uukj.47.14.1)",
+    "@types/pg": "types for pg"
   },
   "devDependencies": {
     "@jadwigo/testing": "workspace:*",
@@ -53,10 +55,12 @@
     "@testing-library/dom": "catalog:",
     "@testing-library/react": "catalog:",
     "@types/node": "catalog:",
+    "@types/pg": "8.23.1",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "happy-dom": "catalog:",
+    "pg": "8.23.1",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"

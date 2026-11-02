@@ -1,6 +1,7 @@
+import { request } from "node:http";
 import { InvokeCommand, LambdaClient } from "@aws-sdk/client-lambda";
 import type { RunStepInput } from "@jadwigo/contracts";
-import { runnerLiveAliasArn } from "./config.ts";
+import { localRunnerUrl, runnerLiveAliasArn } from "./config.ts";
 
 /**
  * Wakes the step host for one step its route just committed (dl-z5ja.88, the interface the host
@@ -33,6 +34,72 @@ export function lambdaPoke(
       }),
     );
   };
+}
+
+/** Where a local poke goes: a unix socket's path, or a host and port, and the request path. */
+export type PokeTarget =
+  | { socketPath: string; path: string }
+  | { host: string; port: number; path: string };
+
+/** The path the local step host answers a poke on (apps/runner/src/dev.ts). */
+const LOCAL_POKE_PATH = "/poke";
+
+/**
+ * Where `LOCAL_RUNNER_URL` points: `unix:<absolute path>` (what `make dev-all` sets, so the host
+ * needs no port of its own) or `http://host:port`. Anything else throws, naming the form.
+ */
+export function pokeTarget(url: string): PokeTarget {
+  if (url.startsWith("unix:")) {
+    const socketPath = url.slice("unix:".length);
+    if (!socketPath.startsWith("/"))
+      throw new Error("LOCAL_RUNNER_URL: unix:<absolute path to the step host's socket>");
+    return { socketPath, path: LOCAL_POKE_PATH };
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error("LOCAL_RUNNER_URL is neither unix:<path> nor an http:// URL");
+  }
+  if (parsed.protocol !== "http:")
+    throw new Error("LOCAL_RUNNER_URL is neither unix:<path> nor an http:// URL");
+  return { host: parsed.hostname, port: Number(parsed.port || 80), path: LOCAL_POKE_PATH };
+}
+
+/** Posts one JSON body to a target and resolves on a 2xx answer; the default speaks node:http. */
+export type PostJson = (target: PokeTarget, body: string) => Promise<void>;
+
+const httpPost: PostJson = (target, body) =>
+  new Promise((resolve, reject) => {
+    const req = request(
+      {
+        ...target,
+        method: "POST",
+        headers: { "content-type": "application/json", "content-length": Buffer.byteLength(body) },
+      },
+      (res) => {
+        res.resume();
+        const status = res.statusCode ?? 0;
+        if (status >= 200 && status < 300) resolve();
+        else reject(new Error(`the local step host answered ${status}`));
+      },
+    );
+    req.on("error", reject);
+    req.end(body);
+  });
+
+/**
+ * The poke on this machine (dl-uukj.47.14.1): `make dev-all`'s step host (apps/runner/src/dev.ts)
+ * takes the step as Lambda's alias does, a POST of the run's wire id and attempt only. Undefined
+ * when `LOCAL_RUNNER_URL` is unset, so the routes poke nothing.
+ */
+export function localPoke(
+  url = localRunnerUrl(),
+  post: PostJson = httpPost,
+): PokeStepHost | undefined {
+  if (url === undefined) return undefined;
+  const target = pokeTarget(url);
+  return (step) => post(target, JSON.stringify(step));
 }
 
 /**
