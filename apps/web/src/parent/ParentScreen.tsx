@@ -212,6 +212,8 @@ export function ParentScreen({
       forLearner={forOf(query)}
       claim={claimOf(query)}
       onSignOut={() => {
+        // The next parent on this tab never finds this one's unsent words (dl-uukj.47.24).
+        newLessonDraft.clear();
         auth.signOut().finally(() => {
           setPodLanguage(null);
           setSignedIn(false);
@@ -590,7 +592,10 @@ function SignedIn({
 
   /** Makes the conversation, keeps the words for its page, and opens it there. */
   const start = async (ask: LessonAsk): Promise<void> => {
+    // The send cleared the tab's draft; a send that does not start keeps the words again.
+    const keepDraft = (): void => newLessonDraft.put({ text: ask.text, learner: ask.learner });
     if (engine === null) {
+      keepDraft();
       setSoon(true);
       return;
     }
@@ -599,13 +604,14 @@ function SignedIn({
     try {
       const made = await engine.conversations.createConversation({ event_id: newEventId() });
       firstMessage.put(made.id, ask.text);
+      // Started: the words now wait for the workspace, not the first screen.
+      newLessonDraft.clear();
       setStarting("idle");
       setKept("");
       navigate(lessonPath({ conversation: made.id, lang: pageLang() }));
     } catch (error) {
       setStarting("idle");
-      // The send cleared the tab's draft; it did not start, so the words are kept again.
-      newLessonDraft.put({ text: ask.text, learner: ask.learner });
+      keepDraft();
       if (error instanceof ApiError && error.type === "AiConsentMissing") setConsentFor(ask);
       else setStarting("failed");
     }

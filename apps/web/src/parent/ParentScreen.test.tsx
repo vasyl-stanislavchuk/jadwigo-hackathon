@@ -637,9 +637,13 @@ describe("ParentScreen", () => {
     fireEvent.change(field, { target: { value: "Odejmowanie przez 10" } });
     await act(async () => fireEvent.keyDown(field, { key: "Enter" }));
     const agree = await screen.findByRole("button", { name: "Zgadzam się" });
+    // Refused: the tab keeps the words while the consent is asked (dl-uukj.47.24).
+    expect(window.sessionStorage.getItem("jw.parent.draft")).toContain("Odejmowanie przez 10");
     refuse = false;
     await act(async () => fireEvent.click(agree));
     expect(engine.consent.patchPod).toHaveBeenCalled();
+    // Started: the first screen's draft is gone.
+    expect(window.sessionStorage.getItem("jw.parent.draft")).toBeNull();
     expect(window.location.pathname).toBe(`/parent/lessons/${CONVERSATION}`);
     // The workspace took the words from the tab and sent them on the new conversation.
     await waitFor(() =>
@@ -677,6 +681,33 @@ describe("ParentScreen", () => {
       (screen.getByRole("textbox", { name: "Opisz zadanie domowe" }) as HTMLTextAreaElement).value,
     ).toBe("Odejmowanie przez 10");
     expect(window.location.pathname).toBe("/parent");
+    // The tab keeps them too, for a reload (dl-uukj.47.24).
+    expect(window.sessionStorage.getItem("jw.parent.draft")).toContain("Odejmowanie przez 10");
+  });
+
+  it("keeps the tab's draft when the send cannot start here, and forgets it on sign-out", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({ getMe: async () => me([]) })}
+      />,
+    );
+    const field = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    fireEvent.change(field, { target: { value: "Ola myli odejmowanie przez 10" } });
+    // No engine in this build: the send says it is on its way and keeps the words.
+    await act(async () => fireEvent.keyDown(field, { key: "Enter" }));
+    await screen.findByText("Robienie lekcji z tego miejsca jest w drodze. Wkrótce zadziała.");
+    expect(window.sessionStorage.getItem("jw.parent.draft")).toContain("Ola myli");
+
+    const account = await screen.findByRole("button", { name: "Konto i ustawienia" });
+    await act(async () => fireEvent.click(account));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyloguj się" })));
+    await screen.findByText("Wyślij kod");
+    expect(window.sessionStorage.getItem("jw.parent.draft")).toBeNull();
   });
 
   it("starts Dla at the child ?for names", async () => {
