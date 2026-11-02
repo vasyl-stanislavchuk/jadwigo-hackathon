@@ -2,7 +2,7 @@
 // lesson.test.ts and on PostgresStore by lesson.int.test.ts: a draft is a conversation whose one
 // run is created ended, so the runner never calls a model on it.
 import { randomUUID } from "node:crypto";
-import { MCP_PATH, type Me, ROUTES } from "@jadwigo/contracts";
+import { ID_PREFIXES, idOf, MCP_PATH, type Me, ROUTES } from "@jadwigo/contracts";
 import type { RunId } from "@jadwigo/contracts/run";
 import type { Store } from "@jadwigo/store";
 import { LESSON_FILES } from "@jadwigo/testing";
@@ -187,6 +187,104 @@ export function lessonSuite(
       });
       expect(await tool("lesson_publish", { draft_id, learner_id })).toEqual({
         error: expect.stringMatching(/lesson_check/),
+      });
+    });
+
+    it("orders the MCP's and the app's turns by when they wrote, and waits while the app works", async () => {
+      const { tool, learner_id, pod } = await parent();
+      const draft_id = (await tool("lesson_draft", { ...DRAFT, learner_id }))["draft_id"] as string;
+      await tool("lesson_check", { draft_id, names: [], help: {} });
+      const first = await store.getRun(pod as never, draft_id as never);
+      const conversation_id = first.conversation_id as string;
+      const events = async (run: string) => store.listRunEvents(pod as never, run as never, 0);
+      const passed = (await events(draft_id)).findLast((e) => e.type === "tool_result");
+      if (passed?.type !== "tool_result") throw new Error("the draft has no check");
+
+      /** The app's next turn on the conversation, as acceptMessage opens it. */
+      const appTurn = async () =>
+        store.createRun(pod as never, {
+          id: idOf(ID_PREFIXES.run, randomUUID()) as never,
+          created_by: first.created_by,
+          conversation_id: conversation_id as never,
+          workflow: "jadwigo-lesson-compose",
+          resumes: null,
+          cap_usd: 1,
+          idle_deadline_at: new Date(Date.now() + 600_000).toISOString(),
+          max_deadline_at: new Date(Date.now() + 1_800_000).toISOString(),
+        });
+      const end = async (run: { id: string; attempt: number }) =>
+        store.updateRun(pod as never, run.id as never, run.attempt, {
+          status: "completed",
+          completed_at: new Date().toISOString(),
+        });
+      const append = (run: { id: string; attempt: number }, e: object) =>
+        store.appendRunEvents(pod as never, run.id as never, run.attempt, [
+          { run_id: run.id, event_id: randomUUID(), ...e } as never,
+        ]);
+
+      // While the app's turn runs, the parent's AI is told to wait, and nothing is written.
+      const two = await appTurn();
+      expect(await tool("lesson_show", { draft_id })).toEqual({
+        error: "the lesson is being changed in the app; try again in a moment",
+      });
+      expect(await tool("lesson_publish", { draft_id, learner_id })).toEqual({
+        error: "the lesson is being changed in the app; try again in a moment",
+      });
+
+      // The app checks the lesson, then the MCP edits it: the edit is not checked.
+      await append(two, {
+        type: "tool_result",
+        payload: { ...passed.payload, call_id: "app-check" },
+      });
+      await end(two);
+      const edited = await tool("lesson_edit", {
+        draft_id,
+        step_id: "s01",
+        patch: { say: "Policz." },
+        why: "the parent asked for a shorter line",
+        names: [],
+      });
+      expect(edited["draft_id"]).toBe(draft_id);
+      expect((await events(two.id)).map((e) => e.type)).toEqual([
+        "tool_result",
+        "tool_result",
+        "lesson_revision",
+      ]);
+      expect(await tool("lesson_publish", { draft_id, learner_id })).toEqual({
+        error: "the lesson changed after its last lesson_check: check it again first",
+      });
+
+      // The app writes a revision, then the MCP checks it: that check counts.
+      const three = await appTurn();
+      const shown = (await tool("lesson_show", { draft_id }).catch(() => null)) as unknown;
+      expect(shown).toEqual({
+        error: "the lesson is being changed in the app; try again in a moment",
+      });
+      const latest = (await events(two.id)).findLast((e) => e.type === "lesson_revision");
+      if (latest?.type !== "lesson_revision") throw new Error("no revision");
+      const written = await store.appendLessonRevision(
+        pod as never,
+        three.id,
+        three.attempt,
+        latest.payload.revision,
+        {
+          type: "lesson_revision",
+          run_id: three.id,
+          event_id: randomUUID() as never,
+          payload: {
+            revision: latest.payload.revision + 1,
+            call_id: "app-patch",
+            lesson_file: latest.payload.lesson_file,
+          },
+        },
+      );
+      expect(written.ok).toBe(true);
+      await end(three);
+      expect(await tool("lesson_check", { draft_id, names: [], help: {} })).toMatchObject({
+        ok: true,
+      });
+      expect(await tool("lesson_publish", { draft_id, learner_id })).toMatchObject({
+        play_url: expect.stringContaining("?learner="),
       });
     });
 

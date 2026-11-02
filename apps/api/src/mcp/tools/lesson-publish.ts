@@ -3,7 +3,7 @@ import { fromJsonSchema } from "@modelcontextprotocol/server";
 import { ApiError } from "../../errors.ts";
 import { publishLesson } from "../../give.ts";
 import type { McpTool } from "../tool.ts";
-import { draftRun } from "./lesson-draft-run.ts";
+import { draftRun, latestTurn } from "./lesson-draft-run.ts";
 
 /**
  * lesson_publish (dl-1u6fn.11): the parent said yes in their own AI's chat, which is the
@@ -23,12 +23,13 @@ export const lessonPublish: McpTool = {
   }),
   run: async (raw, { store, member, appUrl }) => {
     const input = raw as { draft_id?: unknown; learner_id?: unknown };
-    const run = await draftRun(store, member.pod, input.draft_id);
+    const draft = await draftRun(store, member.pod, input.draft_id);
+    // Not while the app is changing the lesson: its next revision would go out unchecked or unseen.
+    await latestTurn(store, member.pod, draft);
     const learner = LearnerId.safeParse(input.learner_id);
-    if (!learner.success || run.conversation_id === null)
-      throw new ApiError(ErrorType.enum.NotFound, "no such learner in your family: call me");
+    if (!learner.success) throw new ApiError(ErrorType.enum.NotFound, "no such learner");
     const { assignment, lesson_version } = await publishLesson(store, member.pod, {
-      conversation_id: run.conversation_id,
+      conversation_id: draft.conversation_id,
       learner_id: learner.data,
     });
     return {

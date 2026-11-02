@@ -87,6 +87,10 @@ export async function publishLesson(
   const log: RunEvent[] = [];
   for (const run of await store.listRuns(pod, give.conversation_id))
     log.push(...(await store.listRunEvents(pod, run.id, 0)));
+  // In the order they were written across the turns, not turn by turn: a parent's patch lands on an
+  // ended turn, after a later turn's check (dl-1u6fn.11). The sort is stable, so events written in
+  // one millisecond keep their turn and seq order.
+  log.sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
   const revision = checkedRevision(log);
   const number = revision.payload.revision;
   if (give.revision !== undefined && give.revision !== number)
