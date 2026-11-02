@@ -819,5 +819,7 @@
   "oauth_data": false,
   "oauth_approve": false,
   "oauth_deny": false,
-  "oauth_failed": false
+  "oauth_failed": false,
+  "oauth_as": false,
+  "oauth_not_you": false
 }

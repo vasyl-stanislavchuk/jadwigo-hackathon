@@ -9,7 +9,12 @@
  *                children's data, names included, goes to it (decision
  *                2026-11-02-a-child-s-data-names-included-may-go-to-the-ai-app-the-parent-co).
  *                Allow or Deny, then on to the app's redirect URL
- *   consented    no authorization_id in the details: straight on to its redirect URL
+ *                The signed-in parent's email sits above Allow, with "Not you? Sign out", which signs
+ *                out and shows the sign-in on this same URL: a shared tablet keeps one parent's
+ *                session, and another must not approve with it
+ *   consented    no authorization_id in the details: straight on to its redirect URL, but only when
+ *                the parent signed in on this page; a session saved before is signed out first,
+ *                since that answer names no account to show
  */
 
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
@@ -30,6 +35,8 @@ export type ConsentApi = Pick<
 interface Ask {
   app: string;
   host: string;
+  /** Who approves: the signed-in parent's email. */
+  email: string;
 }
 
 type View = { kind: "loading" } | { kind: "failed" } | { kind: "ask"; ask: Ask };
@@ -84,6 +91,20 @@ export function ConsentScreen({
   const [busy, setBusy] = useState(false);
   // As on /parent: a provider's return is read off the URL the page opened at.
   const arrivedAt = useRef(window.location.href);
+  // True once the parent signed in on this page (the code, or a provider's return to it), not
+  // with a session saved before.
+  const fresh = useRef(false);
+
+  const signOut = (): void => {
+    if (auth === null) return;
+    setBusy(true);
+    auth.signOut().finally(() => {
+      fresh.current = false;
+      setBusy(false);
+      setView({ kind: "loading" });
+      setSignedIn(false);
+    });
+  };
 
   useEffect(() => {
     if (auth === null) return;
@@ -93,6 +114,7 @@ export function ConsentScreen({
       .catch((): RedirectOutcome => "failed")
       .then((outcome) => {
         if (live) setReturned(RETURN_LINE[outcome]);
+        if (outcome === "signed-in") fresh.current = true;
         return auth.token();
       })
       .then(
@@ -115,9 +137,16 @@ export function ConsentScreen({
       ({ data, error }) => {
         if (!live) return;
         if (error !== null || data === null) return setView({ kind: "failed" });
-        // Already consented: Supabase hands back where to go.
-        if (!("authorization_id" in data)) return go(data.redirect_url);
-        setView({ kind: "ask", ask: { app: data.client.name, host: hostOf(data.redirect_uri) } });
+        // Already consented: Supabase hands back where to go, and names no account. A session
+        // from before this page is signed out first, so the parent signs in as themselves.
+        if (!("authorization_id" in data)) {
+          if (fresh.current) return go(data.redirect_url);
+          return signOut();
+        }
+        setView({
+          kind: "ask",
+          ask: { app: data.client.name, host: hostOf(data.redirect_uri), email: data.user.email },
+        });
       },
       () => live && setView({ kind: "failed" }),
     );
@@ -140,6 +169,7 @@ export function ConsentScreen({
         returned={returned}
         handoff={{ provider: null, email: null }}
         onSignedIn={() => {
+          fresh.current = true;
           setReturned(null);
           setSignedIn(true);
         }}
@@ -178,7 +208,7 @@ export function ConsentScreen({
     );
   };
 
-  const { app, host } = view.ask;
+  const { app, host, email } = view.ask;
   return (
     <ConsentPage>
       <Heading>{copy(language, "oauth_title", { app }, CATEGORY)}</Heading>
@@ -191,6 +221,18 @@ export function ConsentScreen({
         <li>{copy(language, "oauth_can_lessons", {}, CATEGORY)}</li>
       </ul>
       <Notice data-consent-data>{copy(language, "oauth_data", { app }, CATEGORY)}</Notice>
+      <p data-consent-as>
+        {copy(language, "oauth_as", { email }, CATEGORY)}{" "}
+        <button
+          type="button"
+          className="font-bold text-jw-ink underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-jw-focus"
+          disabled={busy}
+          onClick={signOut}
+          data-consent-not-you
+        >
+          {copy(language, "oauth_not_you", {}, CATEGORY)}
+        </button>
+      </p>
       <div className="flex w-full flex-col gap-3">
         <Button
           type="button"

@@ -1073,8 +1073,10 @@
   "oauth_can": "This app will be able to:",
   "oauth_can_read": "read your family's data and the question bank",
   "oauth_can_lessons": "make lessons and give them to your children",
-  "oauth_data": "Your children's data, names included, will go to {app}.",
+  "oauth_data": "{app} will get your children's names, lessons and results.",
   "oauth_approve": "Allow",
   "oauth_deny": "Deny",
-  "oauth_failed": "We couldn't connect. Go back to the app and try again."
+  "oauth_failed": "We couldn't connect. Go back to the app and try again.",
+  "oauth_as": "Signed in as {email}.",
+  "oauth_not_you": "Not you? Sign out"
 }

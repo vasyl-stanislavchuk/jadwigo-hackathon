@@ -1101,8 +1101,10 @@
   "oauth_can": "Ta aplikacja będzie mogła:",
   "oauth_can_read": "czytać dane Twojej rodziny i bank pytań",
   "oauth_can_lessons": "tworzyć lekcje i dawać je dzieciom",
-  "oauth_data": "Dane Twoich dzieci, także ich imiona, trafią do {app}.",
+  "oauth_data": "{app} dostanie imiona Twoich dzieci, ich lekcje i wyniki.",
   "oauth_approve": "Zezwól",
   "oauth_deny": "Odmów",
-  "oauth_failed": "Nie udało się połączyć. Wróć do aplikacji i spróbuj jeszcze raz."
+  "oauth_failed": "Nie udało się połączyć. Wróć do aplikacji i spróbuj jeszcze raz.",
+  "oauth_as": "Zalogowano jako {email}.",
+  "oauth_not_you": "To nie Ty? Wyloguj się"
 }

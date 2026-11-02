@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Your children's data, names included, will go to {app}." |
+* | "{app} will get your children's names, lessons and results." |
 *
 * @param {Oauth_DataInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -18,6 +18,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 */
 export const oauth_data = /** @type {((inputs: Oauth_DataInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Oauth_DataInputs, { locale?: "pl" | "en" }, {}>} */ ((i, options = {}) => {
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ (`Your children's data, names included, will go to ${i?.app}.`)
-	return /** @type {LocalizedString} */ (`Dane Twoich dzieci, także ich imiona, trafią do ${i?.app}.`)
+	if (locale === "en") return /** @type {LocalizedString} */ (`${i?.app} will get your children's names, lessons and results.`)
+	return /** @type {LocalizedString} */ (`${i?.app} dostanie imiona Twoich dzieci, ich lekcje i wyniki.`)
 });

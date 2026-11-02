@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Your children's data, names included, will go to {app}." |
+* | "{app} will get your children's names, lessons and results." |
 *
 * @param {Oauth_DataInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

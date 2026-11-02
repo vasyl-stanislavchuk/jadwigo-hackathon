@@ -37,7 +37,9 @@ function fakeAuth(signedIn: boolean): Auth {
     handoffProviders: async () => [],
     signInWith: vi.fn(async () => {}),
     completeRedirect: async () => "none",
-    signOut: async () => {},
+    signOut: vi.fn(async () => {
+      inside = false;
+    }),
   };
 }
 
@@ -47,6 +49,20 @@ function fakeOAuth(details: object = DETAILS) {
     approveAuthorization: vi.fn(async () => ({ data: { redirect_url: BACK }, error: null })),
     denyAuthorization: vi.fn(async () => ({ data: { redirect_url: DENIED }, error: null })),
   } as unknown as ConsentApi & Record<keyof ConsentApi, ReturnType<typeof vi.fn>>;
+}
+
+/** Signs in on the page's own sign-in with the email code. */
+async function signIn(): Promise<void> {
+  await screen.findByText("Wyślij kod");
+  fireEvent.change(document.querySelector("[data-email]") as Element, {
+    target: { value: "rodzic@example.com" },
+  });
+  fireEvent.submit(document.querySelector("[data-email-step]") as Element);
+  await screen.findByText("Zaloguj się");
+  fireEvent.change(document.querySelector("[data-code]") as Element, {
+    target: { value: "123456" },
+  });
+  fireEvent.submit(document.querySelector("[data-code-step]") as Element);
 }
 
 const press = (selector: string): void => {
@@ -67,21 +83,16 @@ describe("ConsentScreen", () => {
 
     await screen.findByText("Wyślij kod");
     expect(oauth.getAuthorizationDetails).not.toHaveBeenCalled();
-    fireEvent.change(document.querySelector("[data-email]") as Element, {
-      target: { value: "rodzic@example.com" },
-    });
-    fireEvent.submit(document.querySelector("[data-email-step]") as Element);
-    await screen.findByText("Zaloguj się");
-    fireEvent.change(document.querySelector("[data-code]") as Element, {
-      target: { value: "123456" },
-    });
-    fireEvent.submit(document.querySelector("[data-code-step]") as Element);
+    await signIn();
 
     await screen.findByRole("heading", { name: "Połącz Claude z Jadwigo" });
     expect(oauth.getAuthorizationDetails).toHaveBeenCalledWith(ID);
     expect(document.querySelector("[data-consent-host]")?.textContent).toContain("claude.ai");
     expect(document.querySelector("[data-consent-data]")?.textContent).toBe(
-      "Dane Twoich dzieci, także ich imiona, trafią do Claude.",
+      "Claude dostanie imiona Twoich dzieci, ich lekcje i wyniki.",
+    );
+    expect(document.querySelector("[data-consent-as]")?.textContent).toContain(
+      "Zalogowano jako rodzic@example.com.",
     );
 
     press("[data-consent-approve]");
@@ -97,25 +108,59 @@ describe("ConsentScreen", () => {
       <ConsentScreen language="en" query={QUERY} auth={fakeAuth(true)} oauth={oauth} go={go} />,
     );
 
-    await screen.findByText("Your children's data, names included, will go to Claude.");
+    await screen.findByText("Claude will get your children's names, lessons and results.");
     press("[data-consent-deny]");
     await waitFor(() => expect(go).toHaveBeenCalledWith(DENIED));
     expect(oauth.denyAuthorization).toHaveBeenCalledWith(ID, { skipBrowserRedirect: true });
     expect(oauth.approveAuthorization).not.toHaveBeenCalled();
   });
 
-  it("goes straight on when the parent already consented", async () => {
+  it("goes straight on when the parent already consented, once they signed in on the page", async () => {
+    const auth = fakeAuth(false);
     const go = vi.fn();
     render(
       <ConsentScreen
         language="pl"
         query={QUERY}
-        auth={fakeAuth(true)}
+        auth={auth}
         oauth={fakeOAuth({ redirect_url: BACK })}
         go={go}
       />,
     );
+    await signIn();
     await waitFor(() => expect(go).toHaveBeenCalledWith(BACK));
+    expect(auth.signOut).not.toHaveBeenCalled();
+  });
+
+  it("signs a session saved before out when the app was already approved, so nobody goes on as someone else", async () => {
+    const auth = fakeAuth(true);
+    const oauth = fakeOAuth({ redirect_url: BACK });
+    const go = vi.fn();
+    render(<ConsentScreen language="pl" query={QUERY} auth={auth} oauth={oauth} go={go} />);
+    await screen.findByText("Wyślij kod");
+    expect(auth.signOut).toHaveBeenCalled();
+    expect(go).not.toHaveBeenCalled();
+
+    await signIn();
+    await waitFor(() => expect(go).toHaveBeenCalledWith(BACK));
+    expect(oauth.getAuthorizationDetails).toHaveBeenLastCalledWith(ID);
+  });
+
+  it("shows who approves, and Not you signs out to the sign-in with the request kept", async () => {
+    const auth = fakeAuth(true);
+    const oauth = fakeOAuth();
+    render(<ConsentScreen language="pl" query={QUERY} auth={auth} oauth={oauth} go={vi.fn()} />);
+    await screen.findByText("Zalogowano jako rodzic@example.com.", { exact: false });
+
+    press("[data-consent-not-you]");
+    await screen.findByText("Wyślij kod");
+    expect(auth.signOut).toHaveBeenCalled();
+    expect(oauth.approveAuthorization).not.toHaveBeenCalled();
+
+    await signIn();
+    await screen.findByRole("heading", { name: "Połącz Claude z Jadwigo" });
+    expect(oauth.getAuthorizationDetails).toHaveBeenCalledTimes(2);
+    expect(oauth.getAuthorizationDetails).toHaveBeenLastCalledWith(ID);
   });
 
   it("says it could not connect when the request is gone or has no id", async () => {

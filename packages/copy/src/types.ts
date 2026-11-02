@@ -917,6 +917,8 @@ export const COPY_KEYS = [
   "oauth_approve",
   "oauth_deny",
   "oauth_failed",
+  "oauth_as",
+  "oauth_not_you",
   // end the OAuth consent page
 ] as const;
 
