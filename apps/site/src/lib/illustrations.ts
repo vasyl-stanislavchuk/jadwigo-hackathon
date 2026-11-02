@@ -16,11 +16,17 @@ import hero from "../assets/illustrations/hero.webp";
 import howStep2 from "../assets/illustrations/how-step2.webp";
 import howTop from "../assets/illustrations/how-top.webp";
 import partner from "../assets/illustrations/partner.webp";
+import partnerGrow from "../assets/illustrations/partner-grow.webp";
 
-export const slotArt = { hero, partner, howTop, howStep2 } satisfies Record<string, ImageMetadata>;
+// `partner` is the table picture with the blinking Queen, in the landing page's hero since
+// dl-5ssh.4.48; `partnerGrow`, the sprout, is the partner block's picture.
+export const slotArt = { hero, partner, partnerGrow, howTop, howStep2 } satisfies Record<
+  string,
+  ImageMetadata
+>;
 
-// The Queen's slow blink on the partner picture (dl-5ssh.4.25, approved 2026-11-02): her closed eyes, a
-// feathered 2 KB patch cut from partner.webp exactly as it is. If partner.webp is ever re-cropped,
+// The Queen's slow blink on the table picture (dl-5ssh.4.25, approved 2026-11-02; drawn by
+// src/components/BlinkingQueen.astro): her closed eyes, a feathered 2 KB patch cut from partner.webp exactly as it is. If partner.webp is ever re-cropped,
 // re-exported or replaced, cut the patch again (jadwigo-art/marketing/motion/blink/HANDOFF.md section 6).
 export const blinkEyes = eyesClosed;
 

@@ -12,6 +12,8 @@ import {
   EventId,
   ID_PREFIXES,
   idOf,
+  type LearnerSnapshot,
+  type LessonGiven,
   LIMITS,
   type Me,
   type Pod,
@@ -20,9 +22,11 @@ import {
   type RunEvents,
   RunId,
   type RunRating,
+  toolView,
 } from "@jadwigo/contracts";
 import type { RunQueue } from "@jadwigo/jadwigo-ai";
 import type { Store } from "@jadwigo/store";
+import { LESSON_FILES } from "@jadwigo/testing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { pathOf, type Seeded, seeded } from "./client.ts";
 import { bearerOf, signToken } from "./token.ts";
@@ -645,6 +649,131 @@ export function conversationSuite(
       );
       expect(reply.status).toBe(409);
       expect(reply.body.error.type).toBe("AccountMissing");
+    });
+
+    describe("giving a lesson (dl-5ssh.136)", () => {
+      type Lesson = { id: string; script: { parts: { steps: { id: string }[] }[] } };
+      const LESSON = LESSON_FILES[1] as Lesson; // multiplication-times-four: 11 questions, passes check()
+
+      /** A conversation with one turn whose log holds what the step host would write. */
+      async function drafted(a: Awaited<ReturnType<typeof parent>>) {
+        const conversation = await a.conversation();
+        const { run } = (await a.say(conversation.id, "A lesson, please")).body;
+        let revision = 0;
+        const write = async (file: unknown = LESSON, call_id = randomUUID()) => {
+          revision += 1;
+          const made = await s.store.appendLessonRevision(
+            a.pod,
+            run.id,
+            run.attempt,
+            revision - 1,
+            {
+              run_id: run.id,
+              event_id: event(),
+              type: "lesson_revision",
+              payload: { revision, call_id, lesson_file: file as never },
+            },
+          );
+          expect(made.ok).toBe(true);
+          return revision;
+        };
+        const checked = async (publishable: boolean) => {
+          await s.store.appendRunEvents(a.pod, run.id, run.attempt, [
+            {
+              run_id: run.id,
+              event_id: event(),
+              type: "tool_result",
+              payload: {
+                call_id: randomUUID(),
+                verb: "lesson_check",
+                output: { ok: publishable },
+                error: null,
+                view: toolView("lesson_check", { publishable, findings: [] }),
+              },
+            },
+          ]);
+        };
+        const give = (body: object = {}) =>
+          a.call<LessonGiven & ErrorEnvelope>(
+            "POST",
+            pathOf("giveLesson", { id: conversation.id }),
+            body,
+          );
+        return { conversation, write, checked, give };
+      }
+
+      it("gives a checked revision: a published version and an assignment, once per child", async () => {
+        const a = await parent();
+        const d = await drafted(a);
+        const revision = await d.write();
+        await d.checked(true);
+
+        const given = await d.give({ revision });
+        expect(given.status).toBe(201);
+        expect(given.body.assignment).toMatchObject({
+          pod_id: a.pod,
+          audience: "learners",
+          identity: "pick",
+          lesson_id: given.body.lesson_version.lesson_id,
+        });
+        const version = await s.store.getLessonVersion(a.pod, given.body.lesson_version.id);
+        expect(version.questions.filter((q) => q.role === "planned")).toHaveLength(11);
+        // The same revision again is the same assignment; a child of the pod is another one.
+        expect((await d.give({ revision })).body.assignment.id).toBe(given.body.assignment.id);
+        const child = await a.call<LearnerSnapshot>("POST", pathOf("createLearner", {}), {
+          first_name: "Fox",
+        });
+        expect(child.status).toBe(201);
+        const theirs = await d.give({ learner_id: child.body.learner.id });
+        expect(theirs.status).toBe(201);
+        expect(theirs.body.assignment.id).not.toBe(given.body.assignment.id);
+        expect(theirs.body.lesson_version.id).toBe(given.body.lesson_version.id);
+      });
+
+      it("refuses an unchecked, failed, superseded or too long revision", async () => {
+        const a = await parent();
+        const d = await drafted(a);
+        const refused = async (body: object = {}, why = /./) => {
+          const reply = await d.give(body);
+          expect(reply.status).toBe(409);
+          expect(reply.body.error.type).toBe("LessonNotPublishable");
+          expect(reply.body.error.message).toMatch(why);
+        };
+        await refused(); // no lesson yet
+        const first = await d.write();
+        await refused(); // never checked
+        await d.checked(false);
+        await refused(); // checked, not publishable
+        await d.checked(true);
+        await d.write(); // a parent's patch after the check
+        await refused();
+        await d.checked(true);
+        await refused({ revision: first }, /not the latest/);
+        expect((await d.give({ revision: first + 1 })).status).toBe(201);
+
+        // 22 questions: the 11 twice, under new step ids (decision: at most 20).
+        const long = structuredClone(LESSON);
+        for (const part of long.script.parts)
+          part.steps = [...part.steps, ...part.steps.map((st) => ({ ...st, id: `${st.id}x` }))];
+        await d.write(long);
+        await d.checked(true);
+        await refused({}, /holds 22 questions; a lesson holds at most 20/);
+      });
+
+      it("is 404 for another pod's conversation or learner", async () => {
+        const a = await parent();
+        const b = await parent();
+        const d = await drafted(a);
+        await d.write();
+        await d.checked(true);
+        const path = pathOf("giveLesson", { id: d.conversation.id });
+        expect((await b.call<ErrorEnvelope>("POST", path, {})).status).toBe(404);
+        const child = await b.call<LearnerSnapshot>("POST", pathOf("createLearner", {}), {
+          first_name: "Owl",
+        });
+        const theirs = await d.give({ learner_id: child.body.learner.id });
+        expect(theirs.status).toBe(404);
+      });
     });
   });
 }

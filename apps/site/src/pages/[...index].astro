@@ -6,11 +6,12 @@ import { getEntry } from "astro:content";
 // to beside an example child's profile, what a family gets, and the sign-up. Each header link is its own page. The words are in src/content/<lang>/index.md (head and h1) and
 // src/content/<lang>/landing.yaml; the page builds at / and /en (dl-w0b4.81).
 import type { Language } from "@jadwigo/config";
+import BlinkingQueen from "../components/BlinkingQueen.astro";
 import EndBand from "../components/EndBand.astro";
 import Gallery from "../components/Gallery.astro";
 import HeroQuestion from "../components/HeroQuestion.astro";
 import PartnerBlock from "../components/PartnerBlock.astro";
-import Pic from "../components/Pic.astro";
+import StepPath from "../components/StepPath.astro";
 import Base from "../layouts/Base.astro";
 import { strictBuild } from "../lib/build.ts";
 import { pageLessons } from "../lib/featured.ts";
@@ -38,7 +39,23 @@ const [one, two, three] = words.steps.items;
 <Base page={page} path={twinPath("index", lang)}>
   <section class="hero wrap" aria-labelledby="hero-title">
     <h1 id="hero-title">{entry.data.heading}</h1>
-    <Pic label={words.hero.pic} class="hero-art" />
+    <BlinkingQueen alt={words.hero.pic} sizes="(max-width: 52rem) 100vw, 36rem" eager class="hero-art" />
+  </section>
+
+  {/* How it works as one path of 3 steps, then one question to try, above the lessons (owner,
+      2026-11-02, dl-5ssh.4.46, dl-5ssh.4.49, dl-5ssh.4.50). The words are /jak-to-dziala's own steps. */}
+  <section class="how wrap" aria-labelledby="how-title">
+    <h2 id="how-title">{words.steps.heading}</h2>
+    <StepPath
+      steps={[
+        { who: one?.who ?? "", title: one?.title ?? "", text: one?.text ?? "", turn: "parent" },
+        { who: two?.who ?? "", title: two?.title ?? "", text: two?.text ?? "", turn: "child" },
+        { who: three?.who ?? "", title: three?.title ?? "", text: words.after.text, turn: "parent" },
+      ]}
+    />
+    <div class="try">
+      <HeroQuestion lang={lang} />
+    </div>
   </section>
 
   <section id={lessonsId} class="lessons" aria-labelledby="lessons-title">
@@ -54,31 +71,6 @@ const [one, two, three] = words.steps.items;
         </>
       )
     }
-  </section>
-
-  {/* How it works in 3 short steps, with one question to try between the child's step and the parent's
-      (owner, 2026-11-02, dl-5ssh.4.46, dl-5ssh.4.49). The words are /jak-to-dziala's own steps. */}
-  <section class="how wrap" aria-labelledby="how-title">
-    <h2 id="how-title">{words.steps.heading}</h2>
-    <div class="steps">
-      {
-        [one, two].map((s, i) => (
-          <div class="step">
-            <p class="num" aria-hidden="true">{i + 1} <span>{s?.who}</span></p>
-            <h3><span class="sr-only">{i + 1}. {s?.who}: </span>{s?.title}</h3>
-            <p>{s?.text}</p>
-          </div>
-        ))
-      }
-    </div>
-    <div class="try">
-      <HeroQuestion lang={lang} />
-    </div>
-    <div class="step last">
-      <p class="num" aria-hidden="true">3 <span>{three?.who}</span></p>
-      <h3><span class="sr-only">3. {three?.who}: </span>{three?.title}</h3>
-      <p>{words.after.text}</p>
-    </div>
   </section>
 
   <div class="band"><PartnerBlock lang={lang} /></div>
@@ -103,30 +95,24 @@ const [one, two, three] = words.steps.items;
 </Base>
 
 <style>
-  /* A phone reads the h1, then the illustration. From 52rem the h1 stands left and the picture right:
+  /* A phone reads the h1, then the picture. From 52rem the h1 stands left and the picture right:
      the top carries one line of words (owner, 2026-11-02, dl-5ssh.4.46). */
   .hero {
     display: grid; gap: 1.5rem; align-items: center;
-    padding-top: clamp(1.5rem, 5vw, 3rem);
+    padding-block: clamp(2.5rem, 7vw, 5rem);
   }
   .hero h1 { max-width: 15ch; font-size: clamp(2.2rem, 5vw, 3.5rem); line-height: 1.08; letter-spacing: -0.015em; }
   @media (min-width: 52rem) {
-    .hero { grid-template-columns: 1fr 1.15fr; column-gap: 3.5rem; }
+    /* The headline and the picture own the first screen: what Jadwigo is for, in focus (owner,
+       2026-11-02, dl-5ssh.4.50). */
+    .hero { grid-template-columns: 1fr 1.15fr; column-gap: 3.5rem; min-height: min(72vh, 42rem); }
   }
-  .hero :global(.hero-art) { height: clamp(12rem, 26vw, 20rem); }
+  .hero :global(.hero-art) { height: clamp(13rem, 30vw, 23rem); }
+  /* How it works: the path of 3 steps, then the question to try as the child sees it. */
+  .how { margin-top: clamp(3rem, 7vw, 4.5rem); display: grid; gap: clamp(1.75rem, 4vw, 2.75rem); }
   .lessons { margin-top: clamp(3rem, 7vw, 4.5rem); }
-  /* How it works: steps 1 and 2 side by side, the question to try as the child sees it, then step 3. */
-  .how { margin-top: clamp(3rem, 7vw, 4.5rem); display: grid; gap: clamp(1.5rem, 4vw, 2.5rem); }
-  .steps { display: grid; gap: 1.5rem 3rem; }
-  @media (min-width: 52rem) { .steps { grid-template-columns: 1fr 1fr; } }
-  .step h3 { font-size: 1.2rem; line-height: 1.3; }
-  .step > p:not(.num) { margin-top: 0.4rem; color: var(--jw-ink-soft); max-width: 34rem; }
-  .step.last { justify-self: center; width: min(100%, 40rem); }
-  .num { display: flex; align-items: center; gap: 0.6rem; font-size: 2.6rem; font-weight: 700; line-height: 1; color: var(--jw-brand-go); }
-  .num span { font-size: 0.95rem; color: var(--jw-ink); }
-  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   /* The question to try: one sheet, centred, as wide as a page of a notebook. */
-  .try { display: grid; justify-items: center; }
+  .try { display: grid; justify-items: center; margin-block: clamp(1rem, 3vw, 2rem); }
   .try > :global(.sheet) { width: min(100%, 40rem); }
   /* Each block below the lessons starts on its own line across the page. */
   .band { border-top: 2px solid var(--jw-line); margin-top: clamp(3rem, 7vw, 5rem); padding-top: clamp(2.5rem, 6vw, 4.5rem); }

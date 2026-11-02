@@ -19,6 +19,12 @@ A question from a source shows that source's credit beside its instruction, and 
 names the licence. An Alfik task is a `choose` question: the task's picture as its stem and 5
 lettered choices, A to E.
 
+## Which questions a set holds
+
+`GET /api/v1/question-sets/{id}` reads one set from a search row's `id`. Its `items.ids` are every
+question the set holds, and `items.ready_ids` are, per language, the ones that are lesson-ready.
+A lesson takes only a ready id, then reads that question's body by its id.
+
 ## Every source
 
 <QuestionSourceTable />

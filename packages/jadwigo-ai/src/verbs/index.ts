@@ -17,6 +17,12 @@ import { lessonCheck, lessonDraft, lessonEdit, lessonShow, questionSearch } from
 import { type Verb, type VerbContext, type VerbEffect, VerbError, type Verbs } from "./types.ts";
 
 export { type BankPort, fixtureBank } from "./bank.ts";
+export {
+  apiBank,
+  type BankReads,
+  type HttpBankOptions,
+  httpBankReads,
+} from "./bank-api.ts";
 export type { LearnerReads } from "./learner.ts";
 
 export interface VerbDeps {

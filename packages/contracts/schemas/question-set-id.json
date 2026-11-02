@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "string",
+  "pattern": "^set_[A-Za-z0-9_-]{1,120}$",
+  "description": "A question set's id, such as set_khan_x24e08583ca4994d1: set_ then letters, digits, _ and -"
+}

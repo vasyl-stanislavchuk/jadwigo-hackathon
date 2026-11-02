@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { QuestionType } from "./families/index.ts";
 import { Language } from "./records.ts";
 
 /**
@@ -227,6 +228,9 @@ const QuestionVariant = z.object({
   key: FamilyJson,
   help: FamilyJson.optional(),
   say: z.string().optional(),
+  question_type: QuestionType.describe(
+    "The question type a lesson step names; its family is the variant's family",
+  ).optional(),
 });
 
 const BodyPicture = z.object({
@@ -255,6 +259,9 @@ export const QuestionBody = z
     pl: QuestionVariant.optional(),
     en: QuestionVariant.optional(),
     problem_type: z.string().optional(),
+    question_type: QuestionType.describe(
+      "The question type of every variant that names none (an Alfik task's lettered_choice)",
+    ).optional(),
     credit: z.object({
       source: z.string().min(1),
       url: z.url().optional(),
@@ -266,3 +273,40 @@ export const QuestionBody = z
     "One bank question's private body from questions/<source>/<id>.json: a version per language with its family, data, key and help, the credit and the pictures by sha; a question with no playable variant yet carries only id, credit and problem_type; it reaches only a caller with the read token",
   );
 export type QuestionBody = z.infer<typeof QuestionBody>;
+
+/** A question set's id as the bank keys it: `set_` then letters, digits, `_` and `-`. */
+export const QuestionSetId = z
+  .string()
+  .regex(/^set_[A-Za-z0-9_-]{1,120}$/)
+  .describe(
+    "A question set's id, such as set_khan_x24e08583ca4994d1: set_ then letters, digits, _ and -",
+  );
+export type QuestionSetId = z.infer<typeof QuestionSetId>;
+
+/**
+ * One question set's public page (dl-e8ov.5.2.22): which questions it holds and which of them are
+ * lesson-ready in each language, so a lesson draws only those (decisions dl-kaxj and dl-be2l). It
+ * names questions by id and never carries a body or a key; a field the schema does not name is
+ * dropped.
+ */
+export const QuestionSetPage = z
+  .object({
+    id: QuestionSetId,
+    titles: ByLanguage,
+    grade: z.string().describe('The bare grade number, "3", or "" when the set names none'),
+    skill_ids: Words,
+    credit: z
+      .string()
+      .describe("The attribution line the product must show for the set's questions")
+      .optional(),
+    items: z.object({
+      ids: z.array(BankQuestionId).describe("Every question the set holds, in set order"),
+      ready_ids: z
+        .record(z.string(), z.array(BankQuestionId))
+        .describe("By language code: the questions that are lesson-ready in it, in set order"),
+    }),
+  })
+  .describe(
+    "One question set's public page: its titles, skills and credit, the ids of its questions, and which are lesson-ready per language; never a question's body",
+  );
+export type QuestionSetPage = z.infer<typeof QuestionSetPage>;
