@@ -67,15 +67,30 @@ const p = (await landingWords(Astro.props.lang)).partner;
 </section>
 
 <script>
-  // Once, when 60% of the picture is in view.
-  const frame = document.querySelector("[data-blink]");
-  if (frame) {
+  // The first blink once 60% of the picture is in view; then one more every 5 to 10 s, at random, while
+  // it is in view and the tab is showing (owner, 2026-11-02, dl-5ssh.4.27). Under reduced motion the CSS
+  // runs no animation, so no animationend comes and nothing repeats.
+  const frame = document.querySelector<HTMLElement>("[data-blink]");
+  const eyes = frame?.querySelector(".blink-eyes");
+  if (frame && eyes) {
+    let inView = false;
+    let waiting = false;
+    const blink = () => {
+      waiting = false;
+      frame.classList.remove("go");
+      void frame.offsetWidth; // restart the CSS animation
+      frame.classList.add("go");
+    };
+    // The CSS waits 0.7 s before closing her eyes, so the gap from one blink to the next is 5 to 10 s.
+    const next = () => setTimeout(() => (inView && !document.hidden ? blink() : (waiting = true)), 4300 + Math.random() * 5000);
+    eyes.addEventListener("animationend", next);
+    document.addEventListener("visibilitychange", () => {
+      if (waiting && inView && !document.hidden) blink();
+    });
     new IntersectionObserver(
-      (entries, observer) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          frame.classList.add("go");
-          observer.disconnect();
-        }
+      (entries) => {
+        inView = entries.some((e) => e.isIntersecting);
+        if (inView && (waiting || !frame.classList.contains("go"))) blink();
       },
       { threshold: 0.6 },
     ).observe(frame);
@@ -93,7 +108,13 @@ const p = (await landingWords(Astro.props.lang)).partner;
      picture, stays on her face at every width. The base and the patch each have their own rule: a
      shared img rule once stretched the patch over the whole picture. */
   .frame { position: relative; height: 100%; max-width: 100%; aspect-ratio: 1600 / 712; }
-  .frame .base { display: block; width: 100%; height: 100%; }
+  /* The table's 2 bottom corners, rounded (owner, 2026-11-02, dl-5ssh.4.27). The table is a rectangle
+     inside the picture (x 45 to 1554, bottom at y 667 of 1600x712), so the clip is in the picture's own
+     percent and cuts only those corners: the notebook below the table and everything else stay. */
+  .frame .base {
+    display: block; width: 100%; height: 100%;
+    clip-path: polygon(0.000% 0.000%, 100.000% 0.000%, 100.000% 89.466%, 97.125% 89.466%, 97.089% 90.288%, 96.982% 91.079%, 96.809% 91.807%, 96.576% 92.446%, 96.292% 92.970%, 95.968% 93.359%, 95.616% 93.599%, 95.250% 93.680%, 95.250% 100.000%, 4.688% 100.000%, 4.688% 93.680%, 4.322% 93.599%, 3.970% 93.359%, 3.646% 92.970%, 3.362% 92.446%, 3.128% 91.807%, 2.955% 91.079%, 2.849% 90.288%, 2.812% 89.466%, 0.000% 89.466%);
+  }
   .frame .blink-eyes {
     position: absolute; display: block; left: 50%; top: 62.293%; width: 6.634%; height: 7.459%;
     opacity: 0; pointer-events: none;
