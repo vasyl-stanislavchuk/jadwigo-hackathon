@@ -126,6 +126,7 @@
       "dependencies": {
         "@astrojs/sitemap": "3.7.4",
         "@fontsource/andika": "catalog:",
+        "@fontsource/geist": "catalog:",
         "@jadwigo/analytics": "workspace:*",
         "@jadwigo/config": "workspace:*",
         "@jadwigo/contracts": "workspace:*",
