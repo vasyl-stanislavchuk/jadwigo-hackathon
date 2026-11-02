@@ -130,3 +130,42 @@ run "no_alias_no_grant" {
     error_message = "with no alias named the api pokes nothing"
   }
 }
+
+# The remote MCP (dl-1u6fn.2): its routes reach the Lambda with no JWT authorizer (the Lambda verifies
+# the token), the metadata path goes to the api, and the Lambda knows Supabase's keys and its own URL.
+run "the_mcp_routes_reach_the_lambda_unauthorized" {
+  command = plan
+
+  module {
+    source = "./modules/app"
+  }
+
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
+
+  variables {
+    mcp_routes = ["POST /api/mcp", "GET /.well-known/oauth-protected-resource"]
+  }
+
+  assert {
+    condition     = aws_apigatewayv2_route.api["POST /api/mcp"].authorization_type == "NONE"
+    error_message = "POST /api/mcp has no gateway authorizer: the Lambda verifies the token"
+  }
+
+  assert {
+    condition = (
+      aws_lambda_function.api.environment[0].variables["MCP_RESOURCE_URL"] == "https://app.jadwigo.test/api/mcp" &&
+      aws_lambda_function.api.environment[0].variables["MCP_AUTHORIZATION_SERVER"] == var.jwt_issuer &&
+      aws_lambda_function.api.environment[0].variables["AUTH_ISSUER"] == var.jwt_issuer &&
+      aws_lambda_function.api.environment[0].variables["AUTH_JWKS_URL"] == "${var.jwt_issuer}/.well-known/jwks.json"
+    )
+    error_message = "the Lambda knows its public MCP URL, the authorization server, and the keys it verifies with"
+  }
+
+  assert {
+    condition     = contains([for b in aws_cloudfront_distribution.app.ordered_cache_behavior : b.path_pattern], "/.well-known/oauth-protected-resource*")
+    error_message = "CloudFront sends the protected-resource metadata to the api"
+  }
+}

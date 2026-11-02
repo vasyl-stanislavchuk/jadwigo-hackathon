@@ -455,6 +455,7 @@ export const COPY_KEYS = [
   "play_paused",
   "play_paused_back",
   "play_not_found",
+  "play_link_incomplete",
   // end the lesson player
   // parent login (dl-e8ov.2.38)
   "play_save",
@@ -907,6 +908,19 @@ export const COPY_KEYS = [
   "attach_kind_docx",
   "attach_kind_heic",
   // end a parent's photos
+  // the OAuth consent page, an AI app a parent connects (dl-1u6fn.7)
+  "oauth_title",
+  "oauth_address",
+  "oauth_can",
+  "oauth_can_read",
+  "oauth_can_lessons",
+  "oauth_data",
+  "oauth_approve",
+  "oauth_deny",
+  "oauth_failed",
+  "oauth_as",
+  "oauth_not_you",
+  // end the OAuth consent page
 ] as const;
 
 export type CopyKey = (typeof COPY_KEYS)[number];

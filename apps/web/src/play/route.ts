@@ -3,13 +3,14 @@
  *
  *   /                                  opens the featured lesson
  *   /play/<assignment id>              plays that assignment; a reload resumes the tab's attempt
+ *   /play/<assignment id>?learner=<id> plays it as that child of the pod (dl-1u6fn.5)
  *   /play/<assignment id>/review/<seq> once it is finished, that question again, from the end list
  *
  * Moving around uses the app's pushState helpers (src/nav/location.ts), so both share one
  * live URL.
  */
 
-import { AssignmentId } from "@jadwigo/contracts";
+import { AssignmentId, LearnerId } from "@jadwigo/contracts";
 
 export interface PlayRoute {
   assignmentId: AssignmentId | null;
@@ -39,3 +40,9 @@ export const playPath = (assignmentId: AssignmentId): string => `/play/${assignm
 
 export const reviewPath = (assignmentId: AssignmentId, seq: number): string =>
   `${playPath(assignmentId)}/review/${seq}`;
+
+/** The child a play link names in `?learner=`, or null when it names none or a malformed id. */
+export function playLearner(query: URLSearchParams): LearnerId | null {
+  const parsed = LearnerId.safeParse(query.get("learner"));
+  return parsed.success ? parsed.data : null;
+}

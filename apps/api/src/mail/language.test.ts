@@ -25,6 +25,15 @@ describe("pickLanguage: the metadata, then the host, then Polish", () => {
   it.each([
     ["the metadata's en wins over a .pl host", "en", "https://app.jadwigo.pl/parent", "pl", "en"],
     ["the metadata's pl wins over a .kids host", "pl", "https://app.jadwigo.kids/", "en", "pl"],
+    ["an upper-case metadata tag counts", " PL ", "https://app.jadwigo.kids/", "en", "pl"],
+    ["en-GB in the metadata is English", "en-GB", "https://app.jadwigo.pl/", "pl", "en"],
+    [
+      "a trailing-dot .kids host is English",
+      undefined,
+      "https://app.jadwigo.kids./parent",
+      "pl",
+      "en",
+    ],
     [
       "no metadata: a .kids redirect is English",
       undefined,

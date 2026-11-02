@@ -3,9 +3,17 @@ import type { SendEmailCommand } from "@aws-sdk/client-sesv2";
 import { AUTH_EMAIL_HOOK_PATH, LIMITS } from "@jadwigo/contracts";
 import { InMemoryStore } from "@jadwigo/store";
 import { Webhook } from "standardwebhooks";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createApp } from "../app.ts";
-import { AUTH_EMAIL_FROM, handleSendEmail, lambdaMail, type MailDeps, secretsOf } from "./hook.ts";
+import {
+  AUTH_EMAIL_FROM,
+  handleSendEmail,
+  lambdaMail,
+  type MailDeps,
+  REPLAY_MS,
+  secretsOf,
+  sesAddress,
+} from "./hook.ts";
 
 // Keys made per run, never committed (apps/api/AGENTS.md). Supabase shows a secret as v1,whsec_<base64>.
 const KEY = randomBytes(32).toString("base64");
@@ -65,6 +73,8 @@ function fakeMail(secrets: string | undefined = SECRET) {
       },
     },
     log: (line) => void logs.push(line),
+    logError: (line) => void logs.push(line),
+    sent: new Map(),
   };
   return { deps, sent, logs };
 }
@@ -209,11 +219,11 @@ describe("the Send Email Hook's mail", () => {
     },
   );
 
-  // A signed body that is not JSON never gets this far: the library's verify parses it, so it is 401.
   it("refuses a signed body that is not a hook payload, or carries no 6-digit code", async () => {
     for (const raw of [
       "{}",
-
+      "{",
+      "not json",
       payload("signup", { token: "" }),
       payload("signup", { token: "12ab56" }),
     ]) {
@@ -328,5 +338,100 @@ describe("lambdaMail", () => {
     expect(await mail?.readSecrets()).toBe(SECRET);
     expect(await mail?.readSecrets()).toBe(SECRET);
     expect(reads).toBe(2);
+  });
+});
+
+describe("hardening (dl-e8ov.2.100)", () => {
+  it("sends a replayed request once: the same webhook-id gets 200 and no second mail", async () => {
+    const { deps, sent } = fakeMail();
+    const raw = payload("signup");
+    const headers = signedHeaders(raw);
+    expect((await handleSendEmail(raw, headers, deps)).status).toBe(200);
+    expect((await handleSendEmail(raw, headers, deps)).status).toBe(200);
+    expect(sent).toHaveLength(1);
+  });
+
+  it("forgets a webhook-id once the memo's 5 minutes have passed", async () => {
+    const { deps } = fakeMail();
+    let clock = Date.now();
+    const later: MailDeps = { ...deps, now: () => clock };
+    const raw = payload("signup");
+    await handleSendEmail(raw, signedHeaders(raw), later);
+    expect(deps.sent?.size).toBe(1);
+    clock += REPLAY_MS + 1;
+    // By then the signature is past its 5 minutes too, so a real replay is refused at 401; the
+    // memo drops the old id rather than growing.
+    const next = payload("magiclink");
+    await handleSendEmail(next, signedHeaders(next), later);
+    expect(deps.sent?.size).toBe(1);
+  });
+
+  it("on a retried email change whose 2nd send failed, sends only the 2nd", async () => {
+    const { deps, sent } = fakeMail();
+    let calls = 0;
+    const flaky: MailDeps = {
+      ...deps,
+      client: {
+        send: async (command) => {
+          calls += 1;
+          if (calls === 2)
+            throw Object.assign(new Error("throttled"), { name: "TooManyRequestsException" });
+          return deps.client.send(command);
+        },
+      },
+    };
+    const raw = payload(
+      "email_change",
+      { token: "111111", token_new: "222222" },
+      { new_email: NEW_ADDRESS },
+    );
+    const headers = signedHeaders(raw);
+    expect((await handleSendEmail(raw, headers, flaky)).status).toBe(500);
+    expect((await handleSendEmail(raw, headers, flaky)).status).toBe(200);
+    expect(sent.map((c) => c.input.Destination?.ToAddresses?.[0])).toEqual([ADDRESS, NEW_ADDRESS]);
+  });
+
+  it("sends a Polish-letter domain to SES as Punycode", async () => {
+    const { deps, sent } = fakeMail();
+    const raw = payload("signup", {}, { email: "rodzic@żółw.example" });
+    expect((await handleSendEmail(raw, signedHeaders(raw), deps)).status).toBe(200);
+    expect(sent[0]?.input.Destination?.ToAddresses).toEqual(["rodzic@xn--w-uga1v8h.example"]);
+  });
+
+  it.each(["", "no-at-sign", "@example.com", "rodzic@"])(
+    "refuses the address %j with 400 and sends nothing",
+    async (email) => {
+      const { deps, sent } = fakeMail();
+      const raw = payload("signup", {}, { email });
+      expect((await handleSendEmail(raw, signedHeaders(raw), deps)).status).toBe(400);
+      expect(sent).toHaveLength(0);
+    },
+  );
+
+  it("sesAddress keeps an ASCII address and lower-cases its domain", () => {
+    expect(sesAddress("Rodzic@Example.COM")).toBe("Rodzic@example.com");
+  });
+
+  it("writes a sent mail's line to stdout and a failure's to stderr by default", async () => {
+    const out = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const { deps } = fakeMail();
+      const quiet: MailDeps = { readSecrets: deps.readSecrets, client: deps.client };
+      const raw = payload("signup");
+      await handleSendEmail(raw, signedHeaders(raw), quiet);
+      expect(out.mock.calls.map((c) => String(c[0])).join("")).toContain("auth mail sent");
+      expect(err).not.toHaveBeenCalled();
+      const failing: MailDeps = {
+        ...quiet,
+        client: { send: () => Promise.reject(new Error("down")) },
+      };
+      const again = payload("magiclink");
+      await handleSendEmail(again, signedHeaders(again), failing);
+      expect(String(err.mock.calls[0]?.[0])).toContain("auth mail failed");
+    } finally {
+      out.mockRestore();
+      err.mockRestore();
+    }
   });
 });

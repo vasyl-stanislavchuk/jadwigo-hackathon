@@ -4,7 +4,7 @@
 locals {
   name          = "jadwigo-api-${var.environment}"
   health        = "GET /api/health"
-  throttled     = setsubtract(concat(var.routes, ["$default"]), [local.health])
+  throttled     = setsubtract(concat(var.routes, var.mcp_routes, ["$default"]), [local.health])
   db_url_param  = "/jadwigo/${var.environment}/database-url"
   log_retention = var.log_retention_days
 }
@@ -119,6 +119,13 @@ resource "aws_lambda_function" "api" {
         BANK_SEARCH_ALIAS_ARN = data.aws_ssm_parameter.bank_search_alias_arn.insecure_value
         BANK_READ_TOKEN_PARAM = aws_ssm_parameter.bank_read_token.name
         CONTENT_BUCKET        = var.content_bucket_name
+        # The remote MCP verifies the parent's token in the Lambda, with no gateway authorizer in
+        # front (dl-1u6fn.8): Supabase's keys and issuer, and the metadata's two URLs. CloudFront
+        # hands the Lambda API Gateway's host, so the public URL is set, never derived.
+        AUTH_JWKS_URL            = "${var.jwt_issuer}/.well-known/jwks.json"
+        AUTH_ISSUER              = var.jwt_issuer
+        MCP_AUTHORIZATION_SERVER = var.jwt_issuer
+        MCP_RESOURCE_URL         = "https://${var.domain_name}/api/mcp"
       },
       # The step host the routes poke (dl-z5ja.88); absent, they poke nothing.
       var.runner_alias_arn == "" ? {} : { RUNNER_LIVE_ALIAS_ARN = var.runner_alias_arn },
@@ -170,10 +177,10 @@ resource "aws_apigatewayv2_authorizer" "supabase" {
   }
 }
 
-# One route per ROUTES entry, so each carries its own throttle; $default sends the rest to the
-# router, which answers NotFound. Only the token routes carry the authorizer.
+# One route per ROUTES entry and per MCP route, so each carries its own throttle; $default sends the
+# rest to the router, which answers NotFound. Only the token routes carry the authorizer.
 resource "aws_apigatewayv2_route" "api" {
-  for_each = toset(concat(var.routes, ["$default"]))
+  for_each = toset(concat(var.routes, var.mcp_routes, ["$default"]))
 
   api_id             = aws_apigatewayv2_api.api.id
   route_key          = each.key

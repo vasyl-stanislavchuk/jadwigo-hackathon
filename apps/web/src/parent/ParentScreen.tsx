@@ -257,7 +257,7 @@ const PROVIDER_LABEL: Record<Provider, CopyKey> = {
   facebook: "parent_continue_facebook",
 };
 
-function SignIn({
+export function SignIn({
   auth,
   language,
   returned,
