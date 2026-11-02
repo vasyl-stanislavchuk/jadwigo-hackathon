@@ -79,6 +79,10 @@ export async function serveMcp(
   const origins = [resource.hostname, ...(local ? localhostAllowedOrigins() : [])];
   const badOrigin = originValidationResponse(req, origins);
   if (badOrigin) return badOrigin;
+  // The SDK compares the host only: an http page on the same host is another origin too.
+  const origin = req.headers.get("origin");
+  if (origin !== null && !local && URL.parse(origin)?.protocol !== resource.protocol)
+    return rpcError(403, -32000, "Forbidden: the Origin's scheme is not the resource's");
   if (req.method !== "POST") {
     // Stateless: no SSE stream to GET and no session to DELETE.
     const reply = rpcError(405, -32000, "Method not allowed.");
@@ -106,6 +110,9 @@ export async function serveMcp(
   } catch {
     return rpcError(400, -32700, "Parse error: the body is not JSON");
   }
+  // The 2025-06-18 spec dropped JSON-RPC batching, and the 2026-07-28 one has none either.
+  if (Array.isArray(parsedBody))
+    return rpcError(400, -32600, "Invalid Request: a batch is not supported, send one message");
 
   if (await isLegacyRequest(req, parsedBody)) {
     // 2025-era clients (initialize handshake): a fresh server and transport per request.
