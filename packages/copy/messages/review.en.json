@@ -288,7 +288,6 @@
   "parent_whose": true,
   "parent_claimed_elsewhere": true,
   "parent_claim_preview": true,
-  "parent_no_attempts": true,
   "parent_sign_out": true,
   "parent_or": true,
   "parent_continue_google": true,
