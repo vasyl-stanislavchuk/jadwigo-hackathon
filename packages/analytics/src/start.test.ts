@@ -71,6 +71,8 @@ describe("posthogOptions", () => {
     expect(options).toMatchObject({
       api_host: "https://eu.i.posthog.com",
       cookieless_mode: "on_reject",
+      opt_out_capturing_persistence_type: "cookie",
+      cross_subdomain_cookie: true,
       person_profiles: "never",
       autocapture: false,
       capture_exceptions: false,

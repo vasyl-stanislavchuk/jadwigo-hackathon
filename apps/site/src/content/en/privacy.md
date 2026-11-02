@@ -57,7 +57,7 @@ On the site and in the app we ask whether we may record how you use them. Until 
 record nothing. If you agree, PostHog records the pages you visit, a few steps such as adding a
 child or signing in, and screen recordings. A recording shows what the screen shows, including
 your child's first name and the lesson's questions. It doesn't show what you type into form fields.
-We then store a PostHog cookie on your device. If you say no, we only count the visit and those
+We then store a PostHog cookie on your device. If you close it with the ×, we only count the visit and those
 steps, with no cookie and no recording, so we can't tell it's still you. No event carries your child's name, your email, an answer or a score. We
 don't record IP addresses.
 
