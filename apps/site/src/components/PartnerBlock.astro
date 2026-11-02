@@ -1,14 +1,17 @@
 ---
+import { Image } from "astro:assets";
 // Direction 1a, "Partner" (design handoff "landing 3", owner, 2026-11-01): learning the parent is close
 // to, beside a simplified child profile from the parent app's child page. A made-up child (never a real
 // learner), 3 goals, 4 skill dots each (filled = can do, ink ring = practising now, dashed = next), the
 // goal's second line and the next lesson. No percentages, no status words, no recent lessons: the owner
 // asked to keep it this simple. The dots carry their meaning in text for a screen reader.
+// The picture's Queen blinks once, slowly, when it is 60% in view (dl-5ssh.4.25, the owner's one
+// exception to "motion only in the hero clip and the 404"): her closed eyes fade in over the open ones
+// and out again. Once per page view, never under reduced motion, and without JS the picture stays.
 import type { Language } from "@jadwigo/config";
-import { slotArt } from "../lib/illustrations.ts";
+import { blinkEyes, slotArt } from "../lib/illustrations.ts";
 import { goalLine } from "../lib/landing.ts";
 import { landingWords } from "../lib/words.ts";
-import Pic from "./Pic.astro";
 
 interface Props {
   lang: Language;
@@ -21,7 +24,18 @@ const p = (await landingWords(Astro.props.lang)).partner;
   <div class="lead">
     <h2 id="partner-title">{p.heading}</h2>
     <p class="text">{p.text}</p>
-    <Pic label={p.pic} src={slotArt.partner} sizes="(max-width: 40rem) 100vw, 34rem" class="partner-pic" />
+    <div class="partner-pic">
+      <div class="frame" data-blink>
+        <Image
+          class="base"
+          src={slotArt.partner}
+          alt={p.pic}
+          widths={[320, 640, 960, 1280, slotArt.partner.width]}
+          sizes="(max-width: 40rem) 100vw, 34rem"
+        />
+        <Image class="blink-eyes" src={blinkEyes} alt="" aria-hidden="true" />
+      </div>
+    </div>
   </div>
   <div class="profile">
     <div class="child">
@@ -52,13 +66,42 @@ const p = (await landingWords(Astro.props.lang)).partner;
   </div>
 </section>
 
+<script>
+  // Once, when 60% of the picture is in view.
+  const frame = document.querySelector("[data-blink]");
+  if (frame) {
+    new IntersectionObserver(
+      (entries, observer) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          frame.classList.add("go");
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.6 },
+    ).observe(frame);
+  }
+</script>
+
 <style>
   .partner { display: grid; gap: 2rem; align-items: center; }
   @media (min-width: 56rem) { .partner { grid-template-columns: 1fr 1fr; gap: 2.5rem; } }
   .lead { display: flex; flex-direction: column; gap: 0.75rem; }
   .lead h2 { font-size: clamp(1.9rem, 4vw, 2.6rem); line-height: 1.12; max-width: 18ch; }
   .text { font-size: 1.15rem; color: var(--jw-ink-soft); }
-  .lead :global(.partner-pic) { margin-top: 0.75rem; height: clamp(10rem, 22vw, 15rem); }
+  .partner-pic { margin-top: 0.75rem; height: clamp(10rem, 22vw, 15rem); display: grid; place-items: center; }
+  /* The picture keeps its own shape inside the slot, so the eyes patch, placed in percent of the
+     picture, stays on her face at every width. The base and the patch each have their own rule: a
+     shared img rule once stretched the patch over the whole picture. */
+  .frame { position: relative; height: 100%; max-width: 100%; aspect-ratio: 1600 / 712; }
+  .frame .base { display: block; width: 100%; height: 100%; }
+  .frame .blink-eyes {
+    position: absolute; display: block; left: 50%; top: 62.293%; width: 6.634%; height: 7.459%;
+    opacity: 0; pointer-events: none;
+  }
+  /* One slow, content blink: close in about 0.12 s, hold, open; then rest. */
+  .frame.go .blink-eyes { animation: slow-blink 1.1s ease-in-out 0.7s 1 both; }
+  @keyframes slow-blink { 0% { opacity: 0; } 11% { opacity: 1; } 55% { opacity: 1; } 68% { opacity: 0; } 100% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .frame.go .blink-eyes { animation: none; } }
   .profile {
     padding: 1.25rem; border: 2px solid var(--jw-line); border-radius: var(--jw-radius-card);
     background: var(--jw-card); box-shadow: 0 5px 0 var(--jw-line);

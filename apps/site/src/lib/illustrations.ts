@@ -8,12 +8,18 @@ import type { ImageMetadata } from "astro";
 import cardPiatki from "../assets/illustrations/card-piatki.webp";
 import cardRazyCztery from "../assets/illustrations/card-razy-cztery.webp";
 import cardRowneGrupy from "../assets/illustrations/card-rowne-grupy.webp";
+import eyesClosed from "../assets/illustrations/eyes-closed.webp";
 import hero from "../assets/illustrations/hero.webp";
 import howStep2 from "../assets/illustrations/how-step2.webp";
 import howTop from "../assets/illustrations/how-top.webp";
 import partner from "../assets/illustrations/partner.webp";
 
 export const slotArt = { hero, partner, howTop, howStep2 } satisfies Record<string, ImageMetadata>;
+
+// The Queen's slow blink on the partner picture (dl-5ssh.4.25, approved 2026-11-02): her closed eyes, a
+// feathered 2 KB patch cut from partner.webp exactly as it is. If partner.webp is ever re-cropped,
+// re-exported or replaced, cut the patch again (jadwigo-art/marketing/motion/blink/HANDOFF.md section 6).
+export const blinkEyes = eyesClosed;
 
 // A featured lesson's card picture, keyed by its lesson id because titles change. `alt` names its
 // words under `lessons.row.pics`. A lesson with no picture keeps the grey slot.
