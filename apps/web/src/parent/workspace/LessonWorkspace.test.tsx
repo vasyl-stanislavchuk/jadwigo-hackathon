@@ -9,7 +9,7 @@
  */
 
 import { ApiError } from "@jadwigo/api-client";
-import { AttachmentId, ID_PREFIXES, idOf, LearnerId } from "@jadwigo/contracts";
+import { AttachmentId, ID_PREFIXES, idOf, type Learner, LearnerId } from "@jadwigo/contracts";
 import { ConversationId, type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { FIXED_NOW, RUN_LOGS } from "@jadwigo/testing";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
@@ -421,7 +421,43 @@ describe("opening things from the chat (dl-uukj.47.58)", () => {
     );
   });
 
-  it("a link that opens another thing draws its fallback: its name and its own page", async () => {
+  it("a link that opens a child of the family draws their panel: the name, the way to their page (dl-uukj.47.59)", async () => {
+    // A made-up child of the family: the panel reads only what the list holds.
+    const child = {
+      id: LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq"),
+      pod_id: "pod_00000000000000000000000001",
+      handle: "ola",
+      first_name: "Ola",
+      created_at: "2026-10-28T14:02:06.274Z",
+    } as unknown as Learner;
+    window.history.replaceState(
+      null,
+      "",
+      `/parent/lessons/${CONVERSATION}?open=learner:${child.id}`,
+    );
+    const { engine } = engineWith();
+    await act(async () => {
+      render(
+        <LessonWorkspace
+          language="pl"
+          conversation={CONVERSATION}
+          engine={engine}
+          learners={[child]}
+          forLearner={null}
+          onForChange={() => {}}
+          onAddChild={() => {}}
+        />,
+      );
+    });
+    expect(shut()).toBe(false);
+    expect(document.querySelector("[data-lesson-title]")?.textContent).toBe("Ola");
+    expect(document.querySelector(`[data-learner-panel='${child.id}']`)).not.toBeNull();
+    expect(screen.getByRole("link", { name: "Strona dziecka: Ola" }).getAttribute("href")).toBe(
+      `/parent/children/${child.id}`,
+    );
+  });
+
+  it("a link that opens a child the family lacks says so and reads nothing", async () => {
     const learner = "lrn_00000000000000000000000001";
     window.history.replaceState(
       null,
@@ -431,10 +467,7 @@ describe("opening things from the chat (dl-uukj.47.58)", () => {
     const { engine } = engineWith();
     await workspace(engine);
     expect(shut()).toBe(false);
-    const fallback = document.querySelector("[data-object-fallback='learner']");
-    expect(fallback).not.toBeNull();
-    expect(
-      screen.getByRole("link", { name: "Otwórz na osobnej stronie" }).getAttribute("href"),
-    ).toBe(`/parent/children/${learner}`);
+    expect(document.querySelector("[data-learner-panel='unknown']")).not.toBeNull();
+    expect(screen.queryByRole("link", { name: /^Strona dziecka/ })).toBeNull();
   });
 });

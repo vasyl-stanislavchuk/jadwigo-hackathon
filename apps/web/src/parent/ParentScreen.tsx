@@ -817,6 +817,7 @@ function SignedIn({
           forLearner={forLearner}
           onForChange={setForLearner}
           onAddChild={() => setAdding("dla")}
+          api={api}
         />,
         <ChatFoldToggle language={language} />,
         <LessonToggle language={language} />,

@@ -756,6 +756,8 @@
   "chat_object_attempt": "Rozegrana lekcja",
   "chat_object_open_page": "Otwórz na osobnej stronie",
   "chat_object_not_here": "Tego nie da się jeszcze tu pokazać.",
+  "chat_learner_open": "Szczegóły: {name}",
+  "chat_learner_open_page": "Strona dziecka: {name}",
   "chat_lesson_card": "Lekcja gotowa",
   "chat_lesson_card_open": "Otwórz",
   "chat_lesson_card_open_named": "Otwórz lekcję: {title}",
