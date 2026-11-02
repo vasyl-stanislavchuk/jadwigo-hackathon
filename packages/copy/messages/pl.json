@@ -1004,5 +1004,13 @@
   "parent_ai_about_you": "Ty decydujesz, co trafi do dziecka.",
   "parent_ai_about_link": "Więcej o Jadwigo AI",
   "parent_overview_empty": "Tu pojawi się tydzień po tygodniu, jak idzie nauka, po pierwszej lekcji.",
-  "parent_add_child_reason": "Najpierw wpisz imię"
+  "parent_add_child_reason": "Najpierw wpisz imię",
+  "parent_filter_label": "Pokaż",
+  "parent_filter_all": "Wszystkie",
+  "parent_search": "Szukaj",
+  "parent_col_child": "Dziecko",
+  "parent_col_day": "Dzień",
+  "parent_col_result": "Wynik",
+  "parent_list_no_match": "Nic tu nie pasuje do wyboru.",
+  "parent_lesson_untitled": "Lekcja bez tytułu"
 }
