@@ -20,3 +20,7 @@ DOCS_PORT = 4322
 [run.dev]
 command = "make dev"
 default = true
+
+# Every dev server in one terminal, one pane each (make dev-all, mprocs.yaml).
+[run.all]
+command = "make dev-all"

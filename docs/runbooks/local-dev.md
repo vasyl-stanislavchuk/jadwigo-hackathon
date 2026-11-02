@@ -42,13 +42,18 @@ one (`dl-5ssh.129`).
 
 1. In the main checkout, run `make dev`. You should see `api on http://127.0.0.1:8730` and Vite's
    `Local: http://127.0.0.1:5173/`.
-2. Only part of it:
+2. All of it in one terminal, one pane per server: `make dev-all` (in a worktree:
+   `env -u MEDALLION_DEV_REPO md run all --here`). It runs mprocs (`mprocs.yaml`; mise pins it, and
+   since 0.10 it ships as `dekit`, so `mise install` brings it). Web, api, copy and site start; docs,
+   `check` and `db-reset` wait for `s`. Arrows pick a pane, `r` restarts it, `x` stops it, `q` quits
+   all. Each pane also writes `.logs/dev/<name>.log`, which an agent reads to see what you see.
+3. Only part of it:
    - `make dev-app`: web, api and the copy compile, without the site and the docs, whose start
      (typedoc and the OpenAPI prepare) is the slowest.
    - `make dev-site`: the landing and the copy compile.
    - `make dev-fresh`: rebuild the local database first (the local `db-reset`), then `make dev`.
      Run it after a pull that brings migrations. Until you do, the dev database is stale, with no warning.
-3. In a worktree, run `md run dev`. It opens a cmux tab with the worktree's ports. Add `--here`
+4. In a worktree, run `md run dev`. It opens a cmux tab with the worktree's ports. Add `--here`
    to run it in this terminal instead. Until md fixes the bug below, run it as
    `env -u MEDALLION_DEV_REPO md run dev --here`. md exports the ports only to what it runs, so
    in a worktree a bare `make dev-app` or `make dev-site` stops on the first unset port and names it.
@@ -57,13 +62,13 @@ one (`dl-5ssh.129`).
    The bug: the worktree's `.envrc` exports `MEDALLION_DEV_REPO`, and md reads that as `--repo`
    with no worktree, which means the main checkout. So a bare `md run dev` from a worktree
    starts `make dev` in `~/projects/jadwigo-hackathon`. It is md's bug, reported from `dl-5ssh.98`.
-4. To start one app by hand, give it its port: `API_PORT=<n> bun run --cwd apps/api dev`,
+5. To start one app by hand, give it its port: `API_PORT=<n> bun run --cwd apps/api dev`,
    `API_PORT=<n> WEB_PORT=<m> bun run --cwd apps/web dev`, `SITE_PORT=<n> bun run --cwd apps/site dev`.
 
 ## Iterating with an agent
 
-- Leave `make dev` (or `make dev-app`) running in its own tab. The agent edits files and the page
-  updates: the web and the site through HMR, the api through its restart. Nothing needs to be
+- Leave `make dev-all` (or `make dev`, `make dev-app`) running in its own tab. The agent edits files and the page
+  updates, and reads a pane through `.logs/dev/<name>.log`: the web and the site through HMR, the api through its restart. Nothing needs to be
   started again, except after a migration (`make dev-fresh`).
 - An agent session that runs `astro dev` itself gets Astro's background server, not a foreground
   one: it prints `Dev server running at … (pid <n>)`, writes its log to `.astro/dev.log`, and stops
