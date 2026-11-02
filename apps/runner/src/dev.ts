@@ -1,7 +1,7 @@
 import { rmSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { CONTRIBUTOR_MODEL } from "@jadwigo/jadwigo-ai";
-import { type MuseConfig, museConfig, runnerDatabaseUrl } from "./config.ts";
+import { devDatabaseUrl, type MuseConfig, museConfig } from "./config.ts";
 import { postgresEngineHost } from "./engine.ts";
 import { createRunnerHandler } from "./handler.ts";
 import { createHost, type HostReport } from "./host.ts";
@@ -141,7 +141,9 @@ function quiet(line: string): boolean {
 
 async function main(argv: readonly string[]): Promise<void> {
   const listen = listenOf(argv);
-  const [muse, url] = await Promise.all([museConfig(), runnerDatabaseUrl()]);
+  // A local jadwigo database only, never a deployed one (dl-uukj.47.14.2 review).
+  const url = devDatabaseUrl();
+  const muse = await museConfig();
   const log = (line: string) => process.stdout.write(`${line}\n`);
   log(settingsLine(muse));
   const host = createHost(async () =>
@@ -175,7 +177,7 @@ async function main(argv: readonly string[]): Promise<void> {
 
 if (import.meta.main) {
   main(process.argv.slice(2)).catch((error: unknown) => {
-    // museConfig's and runnerDatabaseUrl's errors name the setting, never its value.
+    // museConfig's and devDatabaseUrl's errors name the setting, never its value.
     process.stderr.write(`dev: ${error instanceof Error ? error.message : String(error)}\n`);
     process.exit(1);
   });
