@@ -48,14 +48,25 @@ const PAST_MAX_MS = 24 * 60 * 60 * 1000;
 /** How many follow-ups a turn's script answers after it drafts and checks. */
 const FOLLOW_UPS = 10;
 
+/** The engine's fence around words someone wrote (packages/jadwigo-ai src/fence): tag, what it says, the words. */
+const FENCED = /^<jadwigo_untrusted source="[a-z]+">\n[^\n]*\n([\s\S]*)\n<\/jadwigo_untrusted>$/;
+
+/**
+ * The words inside the engine's fence, or the text as it came when it has none (dl-uukj.47.39):
+ * the scripted draft is about what the parent wrote, never about the fence's own sentence.
+ */
+export function unfenced(text: string): string {
+  return FENCED.exec(text.trim())?.[1]?.trim() ?? text;
+}
+
 /** The parent's latest words in a request: what the scripted draft is about. */
 function lastWords(request: MuseRequest): string {
   const said = request.input.filter((i) => i.type === "message" && i.role === "user");
   const last = said.at(-1);
   if (last?.type !== "message") return "";
   // A message with photos carries parts (dl-z5ja.11.4): its words are its text parts.
-  if (typeof last.text === "string") return last.text;
-  return last.text.flatMap((p) => (p.type === "input_text" ? [p.text] : [])).join(" ");
+  if (typeof last.text === "string") return unfenced(last.text);
+  return last.text.flatMap((p) => (p.type === "input_text" ? [unfenced(p.text)] : [])).join(" ");
 }
 
 /** One turn's script: draft from the parent's words, check, say it is ready; then an edit and a
