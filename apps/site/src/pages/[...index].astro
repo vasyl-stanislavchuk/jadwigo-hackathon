@@ -6,11 +6,11 @@ import { getEntry } from "astro:content";
 // to beside an example child's profile, what a family gets, and the sign-up. Each header link is its own page. The words are in src/content/<lang>/index.md (head and h1) and
 // src/content/<lang>/landing.yaml; the page builds at / and /en (dl-w0b4.81).
 import type { Language } from "@jadwigo/config";
+import BlinkingQueen from "../components/BlinkingQueen.astro";
 import EndBand from "../components/EndBand.astro";
 import Gallery from "../components/Gallery.astro";
 import HeroQuestion from "../components/HeroQuestion.astro";
 import PartnerBlock from "../components/PartnerBlock.astro";
-import Pic from "../components/Pic.astro";
 import Base from "../layouts/Base.astro";
 import { strictBuild } from "../lib/build.ts";
 import { pageLessons } from "../lib/featured.ts";
@@ -38,7 +38,7 @@ const [one, two, three] = words.steps.items;
 <Base page={page} path={twinPath("index", lang)}>
   <section class="hero wrap" aria-labelledby="hero-title">
     <h1 id="hero-title">{entry.data.heading}</h1>
-    <Pic label={words.hero.pic} class="hero-art" />
+    <BlinkingQueen alt={words.hero.pic} sizes="(max-width: 52rem) 100vw, 36rem" eager class="hero-art" />
   </section>
 
   <section id={lessonsId} class="lessons" aria-labelledby="lessons-title">
@@ -103,7 +103,7 @@ const [one, two, three] = words.steps.items;
 </Base>
 
 <style>
-  /* A phone reads the h1, then the illustration. From 52rem the h1 stands left and the picture right:
+  /* A phone reads the h1, then the picture. From 52rem the h1 stands left and the picture right:
      the top carries one line of words (owner, 2026-11-02, dl-5ssh.4.46). */
   .hero {
     display: grid; gap: 1.5rem; align-items: center;
