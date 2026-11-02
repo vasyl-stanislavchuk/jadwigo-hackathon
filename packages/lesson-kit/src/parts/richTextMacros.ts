@@ -88,6 +88,9 @@ const COLOUR_NAMES: ReadonlySet<string> = new Set(
   Object.keys(colourMacros()).map((k) => k.slice(1)),
 );
 
+/** Whether `name` (no backslash) is one of Khan's colour macros, `blueD` and so on. */
+export const isColourMacro = (name: string): boolean => COLOUR_NAMES.has(name);
+
 /** Commands with a fixed number of arguments whose slots Khan fills with a bare colour macro. */
 const ARITY: Readonly<Record<string, number>> = {
   underline: 1,

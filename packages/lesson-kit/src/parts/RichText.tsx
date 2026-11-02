@@ -8,7 +8,9 @@
  *
  * Formulas follow the lesson frame's rule 17: × = + − are text in the lesson's face and a formula
  * never breaks across lines, so a TeX span of numbers and signs alone is drawn as text on one line.
- * KaTeX draws the rest (fractions, powers, roots), in Andika (stage.css).
+ * KaTeX draws the rest (fractions, powers, roots), in Andika (stage.css). A word formula, words in
+ * `\text{…}` joined by signs ("Number of rows × Number of objects in each row = Total"), is a
+ * sentence: it is drawn a word at a time so it wraps inside a help card (wordFormula.ts, dl-uukj.52).
  *
  * KaTeX's output is the only HTML set from a string, and KaTeX escapes its input; no markdown HTML
  * is ever rendered. Sizes come from the host and the tokens: KaTeX draws in em, so maths scales
@@ -24,6 +26,7 @@ import { notationTex, notationText, useNotation } from "./notation.ts";
 import { renderTex, texWords } from "./richTextMacros.ts";
 import { type Block, type Inline, parseInline, parseRichText } from "./richTextParse.ts";
 import { Term } from "./Term.tsx";
+import { wordFormula } from "./wordFormula.ts";
 
 export interface RichTextProps {
   text: string;
@@ -73,6 +76,29 @@ function Tex({ tex: written, display }: { tex: string; display: boolean }): JSX.
     return (
       <span role="math" aria-label={texWords(tex)} data-tex="inline" data-formula>
         {plain}
+      </span>
+    );
+  const words = wordFormula(tex);
+  if (words !== null)
+    return (
+      <span
+        role="math"
+        aria-label={texWords(tex)}
+        data-tex={display ? "display" : "inline"}
+        data-word-formula
+        className={display ? "block text-center" : undefined}
+      >
+        {words.map((p, i) => (
+          <Fragment key={i}>
+            {/* A sign keeps to the word before it; a line breaks only before a word. */}
+            {i > 0 && (p.kind === "sign" ? "\u00a0" : " ")}
+            {p.kind === "sign" ? (
+              <span aria-hidden>{p.text}</span>
+            ) : (
+              <span aria-hidden dangerouslySetInnerHTML={{ __html: renderTex(p.tex, false) }} />
+            )}
+          </Fragment>
+        ))}
       </span>
     );
   // eslint-disable-next-line react/no-danger -- KaTeX output only; KaTeX escapes its input.
