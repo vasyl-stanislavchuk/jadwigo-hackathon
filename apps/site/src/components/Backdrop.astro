@@ -55,6 +55,22 @@ const signs = Array.from({ length: COUNT }, () => {
 </div>
 
 <script>
+  // Every visit scatters the signs anew (owner, 2026-11-02, dl-5ssh.4.38): a new place, sign, drift and
+  // phase for each. The build's places stay as the page without JS. Only this decorative layer moves,
+  // so no content shifts; under reduced motion the signs land and stay.
+  const GLYPHS = ["+", "−", "×", "=", "÷", "○"];
+  const between = (lo: number, hi: number): number => lo + Math.random() * (hi - lo);
+  for (const sign of document.querySelectorAll<HTMLElement>(".backdrop .sign")) {
+    const glyph = sign.querySelector(".drift");
+    if (glyph) glyph.textContent = GLYPHS[Math.floor(Math.random() * GLYPHS.length)] ?? "+";
+    sign.style.left = `${between(0, 100).toFixed(2)}%`;
+    sign.style.top = `${between(0, 100).toFixed(2)}%`;
+    sign.style.setProperty("--drift-x", `${between(-1.5, 1.5).toFixed(2)}rem`);
+    sign.style.setProperty("--drift-y", `${between(-1.5, 1.5).toFixed(2)}rem`);
+    sign.style.setProperty("--turn", `${Math.round(between(-25, 25))}deg`);
+    sign.style.setProperty("--delay", `${(-between(0, 26)).toFixed(1)}s`);
+  }
+
   // The cursor's part, on a fine pointer only and never under reduced motion: the glow follows it, and
   // the signs within reach ease away from it, then drift back.
   const fine = matchMedia("(pointer: fine)").matches;
