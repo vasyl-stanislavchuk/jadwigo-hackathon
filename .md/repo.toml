@@ -9,6 +9,9 @@ vite = "http://127.0.0.1:${WEB_PORT}"
 frontend = "apps/web"
 vite_config = "vite.config.ts"
 entry = "src/main.tsx"
+# `md annotate on` names `make dev-all` when nothing answers on vite, and opens the parent's screens.
+start = "all"
+open = "/parent"
 
 [review.ports]
 WEB_PORT = 5173

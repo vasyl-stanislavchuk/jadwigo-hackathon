@@ -21,3 +21,7 @@ supabase/.temp/
 supabase/functions/*/*.bundle.mjs
 # make dev-all: one log per mprocs pane (mprocs.yaml)
 .logs/
+
+# md annotate: the Vite mask md seeds into apps/web, and its on switch (apps/web dev loads the mask).
+apps/web/vite.config.md.mts
+.md-annotate.json
