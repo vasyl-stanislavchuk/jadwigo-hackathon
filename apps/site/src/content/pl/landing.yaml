@@ -170,9 +170,6 @@ lessons:
   row:
     heading: Zagraj bez logowania
     gradeLabel: Klasa
-    count: [lekcja, lekcje, lekcji]
-    prev: Poprzednie lekcje
-    next: Kolejne lekcje
     pic: ilustracja
     pics:
       cukier: Jadwiga zdejmuje kostkę cukru z wieży, a Gumka mdleje z wrażenia.

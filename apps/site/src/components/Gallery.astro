@@ -2,11 +2,10 @@
 // The featured lessons as cards (dl-5ssh.4.3, redrawn in design handoff "landing 3", dl-5ssh.4.13):
 // the subject and grade with the question count, the title, an illustration slot, the first question
 // on exercise-book paper, and one link to play in the app with no login. With `row`, the landing page's
-// version: a count and one row of 300 px cards with every featured lesson, in the featured order
-// (grade 1 first), that scrolls sideways with snap to the page's right edge, moved a card at a time by
-// 2 arrow buttons. No grade tabs and no subject filter: every picture shows in the row (owner,
-// 2026-11-02, dl-5ssh.4.42). Without `row`, a still grid (/lekcje). Only the real featured lessons
-// show (owner, 2026-11-01).
+// version: the heading and one row of 300 px cards with every featured lesson, in the featured order
+// (grade 1 first), drifting sideways by itself and scrolled by hand. No grade tabs, no subject filter
+// (dl-5ssh.4.42), no count and no arrows (owner, 2026-11-02, dl-5ssh.4.44). Without `row`, a still
+// grid (/lekcje). Only the real featured lessons show (owner, 2026-11-01).
 import type { Language } from "@jadwigo/config";
 import type { FeaturedLesson } from "@jadwigo/contracts";
 import { assertLanguage, playUrl } from "../lib/featured.ts";
@@ -55,11 +54,6 @@ const cards = lessons.map((l) => {
         <div class="head">
           <slot />
         </div>
-        <div class="bar">
-          <p class="count">{plural(cards.length, words.row.count, lang)}</p>
-          <button type="button" class="arrow" data-step="-1" aria-label={words.row.prev}>←</button>
-          <button type="button" class="arrow" data-step="1" aria-label={words.row.next}>→</button>
-        </div>
       </div>
     )
   }
@@ -88,41 +82,27 @@ const cards = lessons.map((l) => {
   // lesson passes by. A copy of the cards follows the real ones (inert: out of the tab order and hidden
   // from a screen reader), and the row steps back by one set as it reaches the copy, which looks the
   // same. It rests while the pointer is on it or a card has focus, for a few seconds after a touch or
-  // an arrow, while the row is off screen or the tab is hidden; under reduced motion it never moves.
+  // a wheel, while the row is off screen or the tab is hidden; under reduced motion it never moves.
   const SPEED = 22; // px a second
-  const REST = 4000; // ms after a touch or an arrow
+  const REST = 4000; // ms after a touch or a wheel
   for (const ui of document.querySelectorAll<HTMLElement>(".lessons-ui.row")) {
     const list = ui.querySelector<HTMLElement>(".cards");
     const cards = [...ui.querySelectorAll<HTMLElement>(".card")];
-    const arrows = [...ui.querySelectorAll<HTMLButtonElement>(".arrow")];
     const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (!list || cards.length === 0) continue;
 
-    const step = () => {
-      const gap = Number.parseFloat(getComputedStyle(list).columnGap) || 0;
-      return (cards[0]?.offsetWidth ?? 300) + gap;
-    };
-
-    if (still) {
-      // The arrows go grey at either end of the row.
-      const ends = () => {
-        const max = list.scrollWidth - list.clientWidth - 1;
-        arrows[0]?.toggleAttribute("disabled", list.scrollLeft <= 0);
-        arrows[1]?.toggleAttribute("disabled", list.scrollLeft >= max);
-      };
-      for (const arrow of arrows) {
-        arrow.addEventListener("click", () => list.scrollBy({ left: step() * Number(arrow.dataset["step"]) }));
-      }
-      list.addEventListener("scroll", ends, { passive: true });
-      addEventListener("resize", ends);
-      ends();
-      continue;
-    }
+    // Under reduced motion the row stays still; a hand scrolls it.
+    if (still) continue;
 
     for (const card of cards) {
       const copy = card.cloneNode(true) as HTMLElement;
       copy.inert = true;
       copy.setAttribute("aria-hidden", "true");
+      // A copied picture that is already in shows at once; one still on its way fades in when it lands.
+      for (const slot of copy.querySelectorAll(".fade-in")) {
+        const img = slot.querySelector("img");
+        if (img?.complete && img.naturalWidth > 0) slot.classList.add("ready");
+      }
       list.append(copy);
     }
     list.classList.add("drifting");
@@ -179,36 +159,12 @@ const cards = lessons.map((l) => {
       seen = entries.some((e) => e.isIntersecting);
     }).observe(list);
 
-    // Each arrow moves the row by one card, round the loop in either direction.
-    for (const arrow of arrows) {
-      arrow.addEventListener("click", () => {
-        rest();
-        const by = step() * Number(arrow.dataset["step"]);
-        if (pos + by < 0) {
-          pos += span();
-          list.scrollLeft = pos;
-        }
-        pos = list.scrollLeft + by;
-        list.scrollBy({ left: by, behavior: "smooth" });
-      });
-    }
   }
 </script>
 
 <style>
-  /* The heading, then the count and the arrows. */
+  /* The row's heading. */
   .controls { display: grid; gap: 1rem 1.5rem; }
-  .bar { display: flex; align-items: center; gap: 0.75rem; }
-  .count { flex: 1; font-weight: 700; color: var(--jw-ink-soft); }
-  .arrow {
-    width: 48px; height: 48px; display: grid; place-items: center; cursor: pointer;
-    font: inherit; font-size: 1.3rem; font-weight: 700; color: var(--jw-ink);
-    background: var(--jw-card); border: 2px solid var(--jw-line-strong); border-radius: var(--jw-radius-control);
-    box-shadow: 0 3px 0 var(--jw-line-strong); transition: transform 80ms, box-shadow 80ms;
-  }
-  .arrow:not(:disabled):active { transform: translateY(2px); box-shadow: 0 1px 0 var(--jw-line-strong); }
-  .arrow:disabled { opacity: 0.4; cursor: default; }
-  .arrow:focus-visible { outline: 3px solid var(--jw-focus); outline-offset: 3px; }
 
   /* Every card's 5 parts (meta, title, picture, teaser, link) sit on shared rows (subgrid), so the
      pictures and the teasers line up across the cards (owner, 2026-11-02, dl-5ssh.4.44). */
@@ -252,5 +208,5 @@ const cards = lessons.map((l) => {
   }
   .card a:hover .go, .card a:focus-visible .go { opacity: 1; }
   @media (hover: none) { .go { opacity: 1; } }
-  @media (prefers-reduced-motion: reduce) { .arrow, .go { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .go { transition: none; } }
 </style>

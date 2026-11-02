@@ -115,15 +115,12 @@ export const landingSchema = z.object({
     questions: z.tuple([text, text, text]),
     // /lekcje's heading over the lessons with no grade, after the grades' groups (dl-w0b4.108).
     other: text,
-    // The landing page's row: its heading, the count and the arrows. Every featured lesson shows on it,
+    // The landing page's row: its heading. Every featured lesson shows on it and the row drifts by itself,
     // with no grade tabs and no subject filter (owner, 2026-11-02, dl-5ssh.4.42).
     row: z.object({
       heading: text,
       // /lekcje's heading over each grade's group ("Klasa 1").
       gradeLabel: text,
-      count: z.tuple([text, text, text]),
-      prev: text,
-      next: text,
       // The grey slot's label on a card with no picture yet.
       pic: text,
       // Each card picture's alt text, by its name in src/lib/illustrations.ts (CardArt).
