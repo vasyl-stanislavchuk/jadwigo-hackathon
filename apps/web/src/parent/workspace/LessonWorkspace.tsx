@@ -193,6 +193,7 @@ export function LessonWorkspace({
       details={
         <DetailsPanel
           language={language}
+          learners={learners}
           child={child}
           onAddChild={onAddChild}
           changeMenu={changeMenu}
