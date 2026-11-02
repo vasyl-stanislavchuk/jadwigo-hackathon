@@ -3,6 +3,7 @@ import {
   AUTH_EMAIL_HOOK_PATH,
   ErrorType,
   LIMITS,
+  MCP_PATH,
   ROUTES,
   type Route,
   type RouteName,
@@ -44,6 +45,12 @@ import {
   patchReport,
 } from "./knowledge.ts";
 import { handleSendEmail, type MailDeps } from "./mail/hook.ts";
+import {
+  type McpConfig,
+  PROTECTED_RESOURCE_PATH,
+  protectedResource,
+  serveMcp,
+} from "./mcp/server.ts";
 import {
   claimAttempt,
   createAccount,
@@ -111,6 +118,8 @@ export interface AppDeps {
    * answers NotFound, as any unwired route does.
    */
   readonly mail?: MailDeps | undefined;
+  /** The remote MCP's public URL and authorization server (dl-1u6fn.8). */
+  readonly mcp?: McpConfig | undefined;
 }
 
 /** No queue is wired: every send fails, and the unit that asked rolls back. */
@@ -143,6 +152,7 @@ export function createApp(
     now = () => new Date(),
     uploads,
     mail,
+    mcp = {},
   }: AppDeps = {},
 ): Router {
   const app = new Router();
@@ -327,6 +337,17 @@ export function createApp(
     const reply = await handleSendEmail(raw, req.headers, mail);
     return json(reply.status, reply.body);
   });
+
+  // The remote MCP (dl-1u6fn.8), outside ROUTES: it verifies its own token, and its 401 names the
+  // metadata below, which says where to get one.
+  const mcpRoute = ({ req, event }: { req: Request; event: unknown }) =>
+    serveMcp(req, event, store, authenticate, mcp);
+  app.post(MCP_PATH, mcpRoute);
+  app.get(MCP_PATH, mcpRoute);
+  app.delete(MCP_PATH, mcpRoute);
+  const metadata = ({ req }: { req: Request }) => protectedResource(req, mcp);
+  app.get(PROTECTED_RESOURCE_PATH, metadata);
+  app.get(`${PROTECTED_RESOURCE_PATH}${MCP_PATH}`, metadata);
 
   app.notFound(async () => errorResponse(ErrorType.enum.NotFound, "no such route"));
   return app;

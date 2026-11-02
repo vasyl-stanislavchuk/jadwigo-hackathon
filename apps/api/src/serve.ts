@@ -2,11 +2,19 @@
 // DATABASE_URL is set, else on an in-memory store seeded with nothing. It listens on 127.0.0.1 only,
 // so `make api-dev ENV=dev` never serves jadwigo-dev data to the local network.
 import { createServer } from "node:http";
+import { MCP_PATH } from "@jadwigo/contracts";
 import { InMemoryRunQueue } from "@jadwigo/jadwigo-ai";
 import { createPostgresStore, InMemoryStore } from "@jadwigo/store";
 import { createApp } from "./app.ts";
 import { jwksUrlAuth } from "./auth.ts";
-import { authIssuer, authJwksUrl, databaseUrl, port } from "./config.ts";
+import {
+  authIssuer,
+  authJwksUrl,
+  databaseUrl,
+  mcpAuthorizationServer,
+  mcpResourceUrl,
+  port,
+} from "./config.ts";
 import { localPoke, type PokeStepHost } from "./poke.ts";
 
 const url = databaseUrl();
@@ -31,6 +39,11 @@ const app = createApp(url === undefined ? new InMemoryStore() : createPostgresSt
   authenticate,
   queue,
   poke,
+  // The router builds request URLs as https; this server is plain http on 127.0.0.1.
+  mcp: {
+    resourceUrl: mcpResourceUrl() ?? `http://127.0.0.1:${port()}${MCP_PATH}`,
+    authorizationServer: mcpAuthorizationServer(),
+  },
 });
 const context = {} as Parameters<typeof app.resolve>[1];
 

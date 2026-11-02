@@ -82,6 +82,25 @@ export function authIssuer(): string | undefined {
 }
 
 /**
+ * The OAuth authorization server the remote MCP names in its protected-resource metadata
+ * (`/.well-known/oauth-protected-resource`, dl-1u6fn.8): `MCP_AUTHORIZATION_SERVER`, else
+ * `AUTH_ISSUER`, since a token's `iss` is its authorization server's issuer. Undefined when both
+ * are unset: the metadata then names none.
+ */
+export function mcpAuthorizationServer(): string | undefined {
+  return process.env["MCP_AUTHORIZATION_SERVER"]?.trim() || authIssuer();
+}
+
+/**
+ * The remote MCP's public URL, `https://app.jadwigo.pl/api/mcp`, as its metadata's `resource`
+ * and its 401's `resource_metadata` name it. CloudFront hands the Lambda API Gateway's host, so
+ * the Lambda needs it set (dl-1u6fn.2); unset or blank, the request's own URL stands in (`make dev`).
+ */
+export function mcpResourceUrl(): string | undefined {
+  return process.env["MCP_RESOURCE_URL"]?.trim() || undefined;
+}
+
+/**
  * The bank Lambda's `live` alias ARN the search route invokes, which Terraform sets from the
  * bank root's SSM handshake (`dl-5ssh.57`). Undefined when unset or blank: no bank is wired.
  */

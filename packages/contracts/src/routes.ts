@@ -67,6 +67,13 @@ import {
 export const AUTH_EMAIL_HOOK_PATH = "/api/hooks/auth-emails";
 
 /**
+ * The remote MCP for parents (dl-1u6fn.8), outside `/api/v1` and `ROUTES`: one JSON-RPC endpoint,
+ * Streamable HTTP, whose tools are its surface. Its RFC 9728 metadata is served at
+ * `/.well-known/oauth-protected-resource` and at that path followed by this one.
+ */
+export const MCP_PATH = "/api/mcp";
+
+/**
  * The `/api/v1` route table, named once (RULES.md rules 14 to 18). `apps/api` registers these and
  * `packages/api-client` calls them; neither writes a path or a schema of its own.
  */
