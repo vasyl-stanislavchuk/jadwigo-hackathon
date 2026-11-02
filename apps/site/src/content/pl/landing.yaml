@@ -3,6 +3,8 @@
 # The hero is the h1 and one question to answer: no lead line, no buttons (owner, 2026-10-31, dl-5ssh.4.9).
 # Lines below marked "draft" are the design handoff "landing 3" drafts (2026-11-01), for the native review.
 hero:
+  # Beside the h1 until its picture exists (owner, 2026-11-02: less text on top; dl-5ssh.4.46).
+  pic: ilustracja · Jadwiga i jej dwór z piórnika przy stole
   # A grade 3 two-step word problem: the owner found "2 razy 7" too simple for a 9-10-year-old (draft).
   # 36 is "forgot to take away", 45 is "added instead". The source is not confirmed yet.
   question:
@@ -170,9 +172,6 @@ lessons:
   row:
     heading: Zagraj bez logowania
     gradeLabel: Klasa
-    count: [lekcja, lekcje, lekcji]
-    prev: Poprzednie lekcje
-    next: Kolejne lekcje
     pic: ilustracja
     pics:
       cukier: Jadwiga zdejmuje kostkę cukru z wieży, a Gumka mdleje z wrażenia.
