@@ -633,6 +633,12 @@ describe("the adult audience", () => {
       expect(kid[name], `--${name}`).toBe(day[name]);
     }
     expect(kid["radius-md"], "Tailwind's radius-md").toBe("0.375rem");
+    // The aliases a child's subtree declares again put back every font the adult block changed.
+    for (const name of ["font-sans", "font-body", "font-mono"]) {
+      expect(adult[name], `adult --${name}`).toBeDefined();
+      expect(c(light, name), `--${name}`).not.toBe(c(vars, name));
+      expect(declared(ALIASES)[name], `aliases --${name}`).toBeDefined();
+    }
   });
 
   it("declares the aliases again on a child's subtree, so they resolve on Zeszyt there", () => {
