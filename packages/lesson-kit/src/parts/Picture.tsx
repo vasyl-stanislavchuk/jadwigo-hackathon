@@ -10,13 +10,17 @@
  *
  * Labels that share a row, like a graph's category names, wrap centred within the gap to their
  * nearest neighbour, so a long name never runs into the next column (dl-uukj.48, labelWidths.ts).
+ * They are a size smaller (text-xs), so a word like "Pasture" fits its column whole (dl-uukj.50).
+ *
+ * A graph's y-axis title (isAxisTitle) reads bottom to top, as in Khan's graphs, and stays inside
+ * the box: its centre is at least half a line from the left edge (dl-uukj.50).
  *
  * Plain props only: this part knows nothing of a family or of Khan. A label is TeX unless `math`
  * is false, and RichText draws it inline, so a coloured number over a drawing reads as it does in
  * the text.
  */
 
-import { labelWidths, textOnly } from "./labelWidths.ts";
+import { isAxisTitle, labelWidths, textOnly } from "./labelWidths.ts";
 import { RichText } from "./RichText.tsx";
 
 interface PictureLabelProps {
@@ -62,6 +66,7 @@ export function Picture({ src, alt, width, height, labels }: PictureProps): JSX.
         const top = 100 - (100 * (l.coordinates[1] - y0)) / (y1 - y0);
         const wrap = widths[i] ?? null;
         // A wrapping label that is only \text{…} is drawn as plain words: KaTeX keeps it on one line.
+        const vertical = labels ? isAxisTitle(l, labels.range) : false;
         const plain = l.math === false ? l.content : wrap === null ? null : textOnly(l.content);
         return (
           <span
@@ -70,12 +75,13 @@ export function Picture({ src, alt, width, height, labels }: PictureProps): JSX.
             className={
               wrap === null
                 ? "absolute whitespace-nowrap text-sm leading-none text-foreground"
-                : "absolute hyphens-auto break-words whitespace-normal text-center text-sm leading-tight text-foreground"
+                : "absolute hyphens-auto break-words whitespace-normal text-center text-xs leading-tight text-foreground"
             }
             style={{
-              left: `${left}%`,
+              // Turned, the title is 1 line (1em, leading-none) wide: half of it must fit left of its centre.
+              left: vertical ? `max(${left}%, 0.6em)` : `${left}%`,
               top: `${top}%`,
-              transform: shift(l.alignment),
+              transform: vertical ? `${shift(l.alignment)} rotate(-90deg)` : shift(l.alignment),
               // max-content, so the width is the label's own and not what is left to the right edge.
               ...(wrap === null ? {} : { width: "max-content", maxWidth: `${wrap}%` }),
             }}

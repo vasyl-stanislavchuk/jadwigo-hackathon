@@ -43,3 +43,17 @@ export function labelWidths(
 export function textOnly(tex: string): string | null {
   return tex.trim().match(/^\\text\s*\{([^{}\\$]*)\}(?:\\hphantom\{[^{}]*\})?$/)?.[1] ?? null;
 }
+
+/**
+ * Whether a label is a graph's y-axis title: centred on a point left of the drawing's x = 0, in the
+ * margin beside the y-axis, such as "Ponies" or "Number of kids" on Khan's picture and bar graphs.
+ * Khan sets that title vertically; drawn level at the left edge it runs off the picture ("cyki"),
+ * so Picture.tsx turns it a quarter left and keeps it inside the box (dl-uukj.50).
+ */
+export function isAxisTitle(
+  item: LabelSpot,
+  range: readonly [readonly [number, number], readonly [number, number]],
+): boolean {
+  const [x0, x1] = range[0];
+  return item.alignment.trim() === "center" && x0 < 0 && x1 > 0 && item.coordinates[0] < 0;
+}
