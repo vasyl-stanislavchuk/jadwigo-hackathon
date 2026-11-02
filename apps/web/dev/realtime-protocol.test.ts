@@ -8,7 +8,7 @@ import {
   OPCODE,
   RealtimeHub,
   type Vsn,
-} from "./realtime-protocol.ts";
+} from "../e2e/realtime-protocol.ts";
 
 /** A client frame: masked, as a browser sends it. */
 function clientFrame(opcode: number, text: string, fin = true): Buffer {
