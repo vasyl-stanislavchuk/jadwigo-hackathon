@@ -230,4 +230,64 @@ describe("the Następne queue", () => {
     expect(missing.result.current.next).toEqual(["B's"]);
     expect(s.sent).toEqual([]);
   });
+
+  it("sends no queued words once another account has signed in on another tab, and drops them", async () => {
+    const s = standIn();
+    const who = { now: "acc_a" as string | null };
+    const whoNow = async () => who.now;
+    const { result } = renderHook(() =>
+      useConversation(s.transport, CONVERSATION, "acc_a", whoNow),
+    );
+    await act(async () => {});
+    await act(async () => result.current.send("Pierwsza"));
+    for (const text of ["A", "B"]) await act(async () => result.current.send(text));
+    expect(result.current.next).toEqual(["A", "B"]);
+
+    // Tab 2 signs in parent B: this tab's token is now B's.
+    who.now = "acc_b";
+    await act(async () => result.current.sendNow(1));
+    await s.end(1);
+    expect(said(s.sent)).toEqual(["message:Pierwsza"]);
+    expect(result.current.next).toEqual([]);
+    expect(window.sessionStorage.getItem(`jw.chat.next.${CONVERSATION}`)).toBeNull();
+  });
+
+  it("holds the queue after a failed Stop, and Spróbuj ponownie stops again, then the queue goes", async () => {
+    const s = standIn();
+    const { result } = renderHook(() => useConversation(s.transport, CONVERSATION));
+    await act(async () => {});
+    await act(async () => result.current.send("Pierwsza"));
+    await act(async () => result.current.send("A"));
+    s.refuse.next = 1;
+    await act(async () => result.current.stop());
+    expect(result.current.state.sendFailed).toBe(true);
+    await s.end(1);
+    // The failure stands: nothing drains behind it.
+    expect(said(s.sent)).toEqual(["message:Pierwsza"]);
+    await act(async () => result.current.resend());
+    await act(async () => {});
+    expect(said(s.sent)).toEqual(["message:Pierwsza", "cancel", "message:A"]);
+    expect(result.current.next).toEqual([]);
+  });
+
+  it("sends a failed lesson-edit steer again on Spróbuj ponownie", async () => {
+    const s = standIn();
+    const { result } = renderHook(() => useConversation(s.transport, CONVERSATION));
+    await act(async () => {});
+    await act(async () => result.current.send("Pierwsza"));
+    s.refuse.next = 1;
+    await act(async () => {
+      result.current.edit("Rodzic prosi o zmianę w kroku s02: …", ["s02"]);
+    });
+    expect(result.current.state.sendFailed).toBe(true);
+    expect(said(s.sent)).toEqual(["message:Pierwsza"]);
+    await act(async () => result.current.resend());
+    expect(s.sent.at(-1)).toMatchObject({
+      kind: "steer",
+      source: "lesson_edit",
+      question_ids: ["s02"],
+      text: "Rodzic prosi o zmianę w kroku s02: …",
+    });
+    expect(result.current.state.sendFailed).toBe(false);
+  });
 });
