@@ -1,7 +1,7 @@
 # md's committed layer (medallion-dev-cli docs/repo-registry/contract.md). md reads it from main.
 
-# The ports md exports to `md run`, under these names: the main checkout runs on these numbers,
-# every other worktree on its own slot. tools/src/ports.ts reads them (DEV_PORTS, kept equal by
+# The ports md exports to `md run`, `md exec` and `md env`, under these names: the main checkout
+# runs on these numbers, every other worktree on its own slot. tools/src/ports.ts reads them (DEV_PORTS, kept equal by
 # ports.test.ts). The api is not on 8787, which other local tools hold (dl-5ssh.98).
 [review]
 app = "http://127.0.0.1:${API_PORT}"

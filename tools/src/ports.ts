@@ -30,7 +30,7 @@ export function port(
   if (raw === undefined || raw === "") {
     if (env["MEDALLION_DEV_WORKSPACE_NAME"]) {
       throw new Error(
-        `${name} is unset inside md worktree ${env["MEDALLION_DEV_WORKSPACE_NAME"]}. Start it with \`md run <id>\`, which exports the worktree's own ports.`,
+        `${name} is unset inside md worktree ${env["MEDALLION_DEV_WORKSPACE_NAME"]}. Run it under \`md exec -- <command>\`, which gives it the worktree's own ports (\`md env\` lists them).`,
       );
     }
     return fallback;

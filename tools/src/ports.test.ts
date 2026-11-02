@@ -9,6 +9,9 @@ describe("port", () => {
     expect(() => port("WEB_PORT", 5173, { MEDALLION_DEV_WORKSPACE_NAME: "lane-a" })).toThrow(
       /unset inside md worktree lane-a/,
     );
+    expect(() => port("WEB_PORT", 5173, { MEDALLION_DEV_WORKSPACE_NAME: "lane-a" })).toThrow(
+      /md exec -- <command>/,
+    );
     expect(() => port("WEB_PORT", 5173, { WEB_PORT: "http" })).toThrow(/not a port/);
   });
 });
