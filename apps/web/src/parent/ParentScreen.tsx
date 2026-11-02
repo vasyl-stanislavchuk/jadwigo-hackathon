@@ -53,6 +53,7 @@ import {
 } from "react";
 import { ConsentScreen, giveConsent } from "../chat/ConsentScreen.tsx";
 import { newEventId } from "../chat/ids.ts";
+import { clearChatQueues } from "../chat/queue.ts";
 import { setPodLanguage } from "../nav/language.ts";
 import { navigate, useLocation } from "../nav/location.ts";
 import { storedAttempt } from "../play/storedAttempt.ts";
@@ -163,7 +164,11 @@ export function ParentScreen({
   // Signed out, however the session ended (this tab, another tab, an expired or revoked token): the
   // first screen's draft goes, so the next parent on this tab never finds it (dl-uukj.47.24).
   useEffect(() => {
-    if (signedIn === false) newLessonDraft.clear();
+    if (signedIn === false) {
+      newLessonDraft.clear();
+      // And the chat's queued words, every conversation's (dl-uukj.47.34).
+      clearChatQueues();
+    }
   }, [signedIn]);
   // The URL the page opened at. completeRedirect takes the return off the address bar, so a second
   // run of the effect (dev StrictMode) reads it here, gets the first exchange's outcome, and still
@@ -223,6 +228,7 @@ export function ParentScreen({
       onSignOut={() => {
         // The next parent on this tab never finds this one's unsent words (dl-uukj.47.24).
         newLessonDraft.clear();
+        clearChatQueues();
         auth.signOut().finally(() => {
           setPodLanguage(null);
           // Back to /parent, so the next parent to sign in here never lands on this one's page,
@@ -288,7 +294,7 @@ function SignIn({
     setBusy(true);
     setProblem(null);
     auth
-      .sendCode(to)
+      .sendCode(to, language)
       .then(
         () => setSentTo(to),
         () => setProblem("parent_send_failed"),

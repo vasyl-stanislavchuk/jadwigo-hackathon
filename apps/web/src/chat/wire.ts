@@ -63,8 +63,9 @@ export type SendBody =
       event_id: EventId;
       kind: "steer";
       text: string;
-      source: "lesson_edit";
-      question_ids: string[];
+      /** A lesson-pane edit names its questions; a chat steer ("Wyślij teraz", dl-uukj.47.34) none. */
+      source: "lesson_edit" | "chat";
+      question_ids?: string[];
       patch?: LessonPatch;
       /** The lesson revision the patch was made on: sent with a patch, never without. */
       base_revision?: number;

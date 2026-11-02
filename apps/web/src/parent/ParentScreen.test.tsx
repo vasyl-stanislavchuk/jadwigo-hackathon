@@ -188,7 +188,7 @@ describe("ParentScreen", () => {
     await screen.findByText("Wyślij kod");
     type("[data-email]", "rodzic@example.com");
     await press("[data-send-code]");
-    expect(auth.sendCode).toHaveBeenCalledWith("rodzic@example.com");
+    expect(auth.sendCode).toHaveBeenCalledWith("rodzic@example.com", "pl");
 
     type("[data-code]", "111111");
     await press("[data-sign-in]");
@@ -772,12 +772,18 @@ describe("ParentScreen", () => {
     await act(async () => fireEvent.keyDown(field, { key: "Enter" }));
     await screen.findByText("Robienie lekcji z tego miejsca jest w drodze. Wkrótce zadziała.");
     expect(window.sessionStorage.getItem("jw.parent.draft")).toContain("Ola myli");
+    // A chat's queued words, kept in the tab like the draft (dl-uukj.47.34).
+    window.sessionStorage.setItem(
+      "jw.chat.next.cnv_00000000000000000000000001",
+      JSON.stringify({ owner: "acc_a", items: ["Jeszcze jedno"] }),
+    );
 
     const account = await screen.findByRole("button", { name: "Konto i ustawienia" });
     await act(async () => fireEvent.click(account));
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyloguj się" })));
     await screen.findByText("Wyślij kod");
     expect(window.sessionStorage.getItem("jw.parent.draft")).toBeNull();
+    expect(window.sessionStorage.getItem("jw.chat.next.cnv_00000000000000000000000001")).toBeNull();
   });
 
   it("never shows one parent's unsent words to the next parent who signs in on the tab", async () => {
@@ -985,7 +991,7 @@ describe("ParentScreen", () => {
         client={client({})}
       />,
     );
-    await vi.waitFor(() => expect(auth.sendCode).toHaveBeenCalledWith("mama@example.com"));
+    await vi.waitFor(() => expect(auth.sendCode).toHaveBeenCalledWith("mama@example.com", "pl"));
     expect(auth.sendCode).toHaveBeenCalledTimes(1);
     expect(window.location.search).toBe("");
   });

@@ -14,6 +14,7 @@
  */
 
 import { track } from "@jadwigo/analytics";
+import type { Language } from "@jadwigo/copy";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Provider } from "../config.ts";
 
@@ -37,8 +38,11 @@ export interface Auth {
    * chat page's run channel refreshes once so its join carries one (dl-z5ja.65, dl-z5ja.92).
    */
   refresh(): Promise<string | null>;
-  /** Mails a 6-digit code, making the user on first use. */
-  sendCode(email: string): Promise<void>;
+  /**
+   * Mails a 6-digit code, making the user on first use. `language` goes into the user's metadata,
+   * where the Send Email Hook reads which language the mail speaks (dl-liwi.33).
+   */
+  sendCode(email: string, language: Language): Promise<void>;
   /** Turns the code into a session; false when the code does not match. */
   verifyCode(email: string, code: string): Promise<boolean>;
   /** The providers the build turns on, in the screen's order (src/config.ts PROVIDERS). */
@@ -154,10 +158,10 @@ export function supabaseAuth(
       const { data, error } = await supabase.auth.refreshSession();
       return error ? null : (data.session?.access_token ?? null);
     },
-    async sendCode(email) {
+    async sendCode(email, language) {
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { shouldCreateUser: true },
+        options: { shouldCreateUser: true, data: { language } },
       });
       if (error) throw error;
     },
