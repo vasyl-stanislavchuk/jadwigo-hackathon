@@ -6,6 +6,13 @@ export const hosts: Record<Environment, { site: string; app: string; docs: strin
   prod: { site: "jadwigo.pl", app: "app.jadwigo.pl", docs: "docs.jadwigo.pl" },
 };
 
+/** PostHog's EU cloud (Frankfurt): where events and replays go, and where the project is read
+ * (decision dl-376c8). `/ingest` on our own hosts replaces `ingest` later (dl-5ssh.135). */
+export const posthogHosts = {
+  ingest: "https://eu.i.posthog.com",
+  ui: "https://eu.posthog.com",
+} as const;
+
 export {
   LANGUAGE_CODES,
   LANGUAGE_STATUSES,
