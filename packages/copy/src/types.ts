@@ -659,6 +659,14 @@ export const COPY_KEYS = [
   "parent_ai_about_link",
   "parent_overview_empty",
   "parent_add_child_reason",
+  "parent_filter_label",
+  "parent_filter_all",
+  "parent_search",
+  "parent_col_child",
+  "parent_col_day",
+  "parent_col_result",
+  "parent_list_no_match",
+  "parent_lesson_untitled",
   // end the lesson's send and its chat
   // the chat page (dl-z5ja.17): /playground/chat, a parent's chat on the left and the lesson on the right
   "chat_title",
