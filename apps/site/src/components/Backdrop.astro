@@ -8,7 +8,7 @@
 // then deals new sums and new places (dl-5ssh.4.38). Under reduced motion nothing moves. The layer is
 // decoration only: aria-hidden, no pointer events, quiet enough that the words on top stay easy to read.
 import type { Language } from "@jadwigo/config";
-import { trueSum } from "../lib/sums.ts";
+import { cloudPiece, type Subject } from "../lib/clouds.ts";
 
 interface Props {
   lang: Language;
@@ -16,9 +16,13 @@ interface Props {
 
 const { lang } = Astro.props;
 
-// Quiet Zeszyt colours: blue ink, the brand's go-blue and the right answer's green. No yellow: crown
-// yellow is the brand's only.
-const TONES = ["act", "go", "green"] as const;
+// One quiet Zeszyt colour per subject (dl-5ssh.4.40): maths in blue ink, Polish in the right answer's
+// green, English in the brand's go-blue. No yellow: crown yellow is the brand's only.
+const TONE: Record<Subject, "act" | "green" | "go"> = {
+  maths: "act",
+  polish: "green",
+  english: "go",
+};
 // The layer is as tall as the page and scrolls with it, so the counts cover a long page.
 const SUMS = 30;
 const STARS = 34;
@@ -46,12 +50,15 @@ const place = (size: number): string =>
   ].join("; ");
 
 const pieces = [
-  ...Array.from({ length: SUMS }, () => ({
-    kind: "sum" as const,
-    text: trueSum(next, lang),
-    tone: TONES[Math.floor(next() * TONES.length)] ?? "act",
-    style: place(between(0.85, 1.2)),
-  })),
+  ...Array.from({ length: SUMS }, () => {
+    const piece = cloudPiece(next, lang);
+    return {
+      kind: "sum" as const,
+      text: piece.text,
+      tone: TONE[piece.subject],
+      style: place(between(0.85, 1.2)),
+    };
+  }),
   ...Array.from({ length: STARS }, () => ({
     kind: "star" as const,
     text: "",
@@ -81,7 +88,9 @@ const pieces = [
 </div>
 
 <script>
-  import { trueSum } from "../lib/sums.ts";
+  import { cloudPiece } from "../lib/clouds.ts";
+
+  const TONE = { maths: "act", polish: "green", english: "go" } as const;
 
   // Once the font is in, so the words are measured at their real size before the pieces avoid them.
   const start = (backdrop: HTMLElement) => {
@@ -118,7 +127,12 @@ const pieces = [
     for (const piece of backdrop.querySelectorAll<HTMLElement>(".piece")) {
       const kind = piece.classList.contains("sum") ? "sum" : "star";
       const drift = piece.querySelector(".drift");
-      if (drift && kind === "sum") drift.textContent = trueSum(Math.random, lang);
+      if (drift && kind === "sum") {
+        const dealt = cloudPiece(Math.random, lang);
+        drift.textContent = dealt.text;
+        piece.classList.remove("act", "green", "go");
+        piece.classList.add(TONE[dealt.subject]);
+      }
       const w = piece.offsetWidth;
       const h = piece.offsetHeight;
       let spot: [number, number] | undefined;
@@ -132,6 +146,9 @@ const pieces = [
         continue;
       }
       placed[kind]++;
+      // Pieces keep clear of each other too, with room for their drift (up to 1.5rem each way).
+      const DRIFT = 24;
+      taken.push({ left: spot[0] - DRIFT, top: spot[1] - DRIFT, right: spot[0] + w + DRIFT, bottom: spot[1] + h + DRIFT });
       piece.hidden = false;
       piece.style.left = `${((spot[0] / W) * 100).toFixed(2)}%`;
       piece.style.top = `${((spot[1] / H) * 100).toFixed(2)}%`;
