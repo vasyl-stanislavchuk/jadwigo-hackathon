@@ -707,9 +707,13 @@ describe("ParentScreen", () => {
     fireEvent.change(field, { target: { value: "Odejmowanie przez 10" } });
     await act(async () => fireEvent.keyDown(field, { key: "Enter" }));
     const agree = await screen.findByRole("button", { name: "Zgadzam się" });
+    // Refused: the tab keeps the words while the consent is asked (dl-uukj.47.24).
+    expect(window.sessionStorage.getItem("jw.parent.draft")).toContain("Odejmowanie przez 10");
     refuse = false;
     await act(async () => fireEvent.click(agree));
     expect(engine.consent.patchPod).toHaveBeenCalled();
+    // Started: the first screen's draft is gone.
+    expect(window.sessionStorage.getItem("jw.parent.draft")).toBeNull();
     expect(window.location.pathname).toBe(`/parent/lessons/${CONVERSATION}`);
     // The workspace took the words from the tab and sent them on the new conversation.
     await waitFor(() =>
@@ -747,6 +751,144 @@ describe("ParentScreen", () => {
       (screen.getByRole("textbox", { name: "Opisz zadanie domowe" }) as HTMLTextAreaElement).value,
     ).toBe("Odejmowanie przez 10");
     expect(window.location.pathname).toBe("/parent");
+    // The tab keeps them too, for a reload (dl-uukj.47.24).
+    expect(window.sessionStorage.getItem("jw.parent.draft")).toContain("Odejmowanie przez 10");
+  });
+
+  it("keeps the tab's draft when the send cannot start here, and forgets it on sign-out", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({ getMe: async () => me([]) })}
+      />,
+    );
+    const field = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    fireEvent.change(field, { target: { value: "Ola myli odejmowanie przez 10" } });
+    // No engine in this build: the send says it is on its way and keeps the words.
+    await act(async () => fireEvent.keyDown(field, { key: "Enter" }));
+    await screen.findByText("Robienie lekcji z tego miejsca jest w drodze. Wkrótce zadziała.");
+    expect(window.sessionStorage.getItem("jw.parent.draft")).toContain("Ola myli");
+
+    const account = await screen.findByRole("button", { name: "Konto i ustawienia" });
+    await act(async () => fireEvent.click(account));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyloguj się" })));
+    await screen.findByText("Wyślij kod");
+    expect(window.sessionStorage.getItem("jw.parent.draft")).toBeNull();
+  });
+
+  it("never shows one parent's unsent words to the next parent who signs in on the tab", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    let who = ACCOUNT;
+    const other = AccountId.parse("acc_2h4m8gyw0fb1cvz2nkqw0px8fq");
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({
+          getMe: async () => ({ ...me([]), account: { ...account, id: who } }) as unknown as Me,
+        })}
+      />,
+    );
+    const field = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    fireEvent.change(field, { target: { value: "Ola myli odejmowanie przez 10" } });
+    const account1 = await screen.findByRole("button", { name: "Konto i ustawienia" });
+    await act(async () => fireEvent.click(account1));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyloguj się" })));
+
+    who = other;
+    await screen.findByText("Wyślij kod");
+    type("[data-email]", "drugi@example.com");
+    await press("[data-send-code]");
+    type("[data-code]", "123456");
+    await press("[data-sign-in]");
+    const box = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    expect((box as HTMLTextAreaElement).value).toBe("");
+  });
+
+  it("reads back only the signed-in account's draft, not one another account left in the tab", async () => {
+    window.sessionStorage.setItem(
+      "jw.parent.draft",
+      JSON.stringify({
+        owner: "acc_2h4m8gyw0fb1cvz2nkqw0px8fq",
+        text: "Cudze słowa",
+        learner: null,
+      }),
+    );
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({ getMe: async () => me([]) })}
+      />,
+    );
+    const box = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    expect((box as HTMLTextAreaElement).value).toBe("");
+  });
+
+  it("forgets the draft when the tab opens signed out, as after an expired session, so the next parent's box is empty", async () => {
+    window.sessionStorage.setItem(
+      "jw.parent.draft",
+      JSON.stringify({ owner: ACCOUNT, text: "Ola myli odejmowanie przez 10", learner: null }),
+    );
+    const auth = signedOutAuth();
+    const other = AccountId.parse("acc_2h4m8gyw0fb1cvz2nkqw0px8fq");
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({
+          getMe: async () => ({ ...me([]), account: { ...account, id: other } }) as unknown as Me,
+        })}
+      />,
+    );
+    await screen.findByText("Wyślij kod");
+    expect(window.sessionStorage.getItem("jw.parent.draft")).toBeNull();
+    type("[data-email]", "drugi@example.com");
+    await press("[data-send-code]");
+    type("[data-code]", "123456");
+    await press("[data-sign-in]");
+    const box = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    expect((box as HTMLTextAreaElement).value).toBe("");
+  });
+
+  it("keeps nothing when a send fails after the parent signed out", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    let fail: (error: Error) => void = () => {};
+    const engine = lessonEngine(
+      () =>
+        new Promise((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({ getMe: async () => me([]) })}
+        engine={engine}
+      />,
+    );
+    const field = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    fireEvent.change(field, { target: { value: "Ola myli odejmowanie przez 10" } });
+    await act(async () => fireEvent.keyDown(field, { key: "Enter" }));
+    const account1 = await screen.findByRole("button", { name: "Konto i ustawienia" });
+    await act(async () => fireEvent.click(account1));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyloguj się" })));
+    await screen.findByText("Wyślij kod");
+    await act(async () => fail(new TypeError("Failed to fetch")));
+    expect(window.sessionStorage.getItem("jw.parent.draft")).toBeNull();
   });
 
   it("starts Dla at the child ?for names", async () => {
