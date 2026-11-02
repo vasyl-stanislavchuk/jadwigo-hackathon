@@ -211,7 +211,7 @@ export function NewLessonBox({
         onDrop={drop}
         data-new-lesson
         data-ready={ready ? "" : undefined}
-        className="flex w-full max-w-4xl flex-col gap-3 rounded-jw-box border border-input bg-background p-3 transition-[border-color,box-shadow] duration-jw-fast focus-within:border-jw-focus focus-within:ring-2 focus-within:ring-selected"
+        className="flex w-full max-w-4xl flex-col gap-3 rounded-jw-box border border-input bg-background p-3 transition-[border-color,box-shadow] duration-jw-fast has-[textarea:focus]:border-jw-focus has-[textarea:focus]:ring-2 has-[textarea:focus]:ring-selected"
       >
         <Textarea
           ref={box}
@@ -264,20 +264,22 @@ export function NewLessonBox({
             onChange={onForChange}
             onAddChild={onAddChild}
           />
-          <span className="flex-1" />
-          {reason === null ? (
-            <Button type="submit" size="control" aria-disabled={busy} aria-busy={busy} data-send>
-              {busy ? t("parent_sending") : t("parent_send")}
-              <ArrowRightIcon aria-hidden />
-            </Button>
-          ) : (
-            <DisabledReason reason={t(reason)}>
-              <Button type="submit" size="control" data-send>
-                {t("parent_send")}
+          {/* The send keeps to the right, on the row or on its own line on a phone. */}
+          <span className="ml-auto">
+            {reason === null ? (
+              <Button type="submit" size="control" aria-disabled={busy} aria-busy={busy} data-send>
+                {busy ? t("parent_sending") : t("parent_send")}
                 <ArrowRightIcon aria-hidden />
               </Button>
-            </DisabledReason>
-          )}
+            ) : (
+              <DisabledReason reason={t(reason)}>
+                <Button type="submit" size="control" data-send>
+                  {t("parent_send")}
+                  <ArrowRightIcon aria-hidden />
+                </Button>
+              </DisabledReason>
+            )}
+          </span>
         </div>
       </form>
       <AboutJadwigoAi language={language} />
