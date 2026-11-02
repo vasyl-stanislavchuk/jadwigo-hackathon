@@ -7,16 +7,15 @@
  */
 
 import type { ParentClient } from "@jadwigo/api-client";
-import type { AttemptResult, Learner, LearnerAttempts } from "@jadwigo/contracts";
+import type { Learner, LearnerAttempts } from "@jadwigo/contracts";
 import { copy, type Language } from "@jadwigo/copy";
-import { Card, CardContent, Link, OutcomeTile, Spinner } from "@jadwigo/ui";
+import { Card, CardContent, Link, Spinner } from "@jadwigo/ui";
 import { type ReactElement, useEffect, useState } from "react";
 import { NavLink } from "../../nav/NavLink.tsx";
 import { CATEGORY, pageLang } from "../adult.ts";
 import { Failed } from "../Failed.tsx";
 import { LearnerKnowledge } from "../learner/LearnerKnowledge.tsx";
-import { cellsOf } from "../overview/grid.ts";
-import { OUTCOME_TONE, OutcomeIcon, TwinMark, tileLabel } from "../overview/outcome.tsx";
+import { LessonTiles } from "../overview/LessonTiles.tsx";
 import { assignmentPath, attemptPath } from "../route.ts";
 
 export function LearnerOverview({
@@ -69,7 +68,7 @@ export function LearnerOverview({
                   <span className="text-jw-small text-jw-ink-soft">
                     {day.format(new Date(attempt.started_at))}
                   </span>
-                  <Tiles results={results} language={language} />
+                  <LessonTiles results={results} language={language} />
                   <Link asChild size="small">
                     <NavLink
                       href={assignmentPath({ assignment: attempt.assignment_id, lang: pageLang() })}
@@ -85,41 +84,5 @@ export function LearnerOverview({
         </ol>
       )}
     </div>
-  );
-}
-
-/** A lesson's tiles: one per planned question, its twins folded in, as the heatmap draws its row.
- * Each keeps the stored ended on its item. */
-function Tiles({
-  results,
-  language,
-}: {
-  results: AttemptResult[];
-  language: Language;
-}): ReactElement {
-  return (
-    <ol className="flex flex-wrap gap-2 pt-1" data-lesson-tiles>
-      {cellsOf(results).map((cell, index) => (
-        <li
-          key={cell.planned.seq}
-          data-seq={cell.planned.seq}
-          data-ended={cell.planned.ended ?? "open"}
-        >
-          <OutcomeTile
-            size="sm"
-            tone={OUTCOME_TONE[cell.outcome]}
-            outcome={cell.outcome}
-            icon={<OutcomeIcon outcome={cell.outcome} />}
-            label={tileLabel(language, index + 1, cell)}
-          >
-            {cell.twin && (
-              <span className="absolute top-0.5 right-0.5">
-                <TwinMark />
-              </span>
-            )}
-          </OutcomeTile>
-        </li>
-      ))}
-    </ol>
   );
 }
