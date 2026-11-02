@@ -2,7 +2,9 @@
 // terraform, aws, bun and curl in a throwaway repo with its own origin, so nothing reaches AWS or
 // Supabase. It refuses an agent and a shell with no terminal, previews before its one question,
 // stops before the question on a plan that destroys, and after one typed prod runs every step with
-// JW_RELEASE_CONFIRMED=prod, the api and its health check before the web, site and docs.
+// JW_RELEASE_CONFIRMED=prod, the api and its health check before the runner, the web, site and docs,
+// and one engine-smoke turn last (dl-5ssh.34.73, decision bead dl-hmvzn). The preview shows the
+// runner's path filter and auth.sh diff prod, and nothing ever runs auth.sh apply.
 import { spawnSync } from "node:child_process";
 import {
   chmodSync,
@@ -62,6 +64,12 @@ interface Options {
   readonly dirty?: boolean;
   /** A local commit origin/main does not have. */
   readonly ahead?: boolean;
+  /** The runner's code changed since the commit its live version names. */
+  readonly runnerChanged?: boolean;
+  /** auth.sh diff prod's exit: 0 matches, 2 differs, 1 cannot read. */
+  readonly authRc?: number;
+  /** engine-smoke ENV=prod's exit. */
+  readonly smokeRc?: number;
 }
 
 function stage(o: Options = {}) {
@@ -82,10 +90,24 @@ function stage(o: Options = {}) {
   const work = join(dir, "work");
   git(dir, "init", "-q", "--bare", "-b", "main", origin);
   git(dir, "clone", "-q", origin, work);
-  mkdirSync(join(work, "infra"));
+  mkdirSync(join(work, "infra/supabase-auth"), { recursive: true });
+  mkdirSync(join(work, "apps/runner"), { recursive: true });
   writeFileSync(join(work, "infra/aws.mk"), "AWS_PROFILE := jadwigo\n");
-  git(work, "add", "infra");
+  writeFileSync(join(work, "infra/Makefile"), "RUNNER_PATHS := apps/runner packages/core\n");
+  writeFileSync(join(work, "apps/runner/index.ts"), "1\n");
+  const auth = join(work, "infra/supabase-auth/auth.sh");
+  writeFileSync(
+    auth,
+    `#!/bin/sh\necho "auth.sh $*" >> "${log}"\necho "site_url differs"\nexit ${o.authRc ?? 0}\n`,
+  );
+  chmodSync(auth, 0o755);
+  git(work, "add", "infra", "apps");
   git(work, "commit", "-qm", "one");
+  // The commit the runner's live version names; the next commit touches its code or not.
+  const shipped = git(work, "rev-parse", "HEAD").stdout.toString().trim();
+  if (o.runnerChanged) writeFileSync(join(work, "apps/runner/index.ts"), "2\n");
+  else writeFileSync(join(work, "infra/aws.mk"), "AWS_PROFILE := jadwigo\n# not the runner\n");
+  git(work, "commit", "-qam", "two");
   git(work, "push", "-q", "origin", "HEAD:main");
   git(work, "branch", "-q", "--set-upstream-to=origin/main");
   if (o.dirty) writeFileSync(join(work, "stray"), "x");
@@ -99,7 +121,11 @@ function stage(o: Options = {}) {
   stub(
     "make",
     `echo "make $* token=\${JW_RELEASE_CONFIRMED:-}" >> "${log}"
-case "$*" in *DRY_RUN=1*) printf '%s\\n' ${sqls.length ? `"Would push these migrations:" ${sqls.map((s) => `"${s}"`).join(" ")}` : '"Remote database is up to date."'} ;; esac`,
+case "$*" in
+  *DRY_RUN=1*) printf '%s\\n' ${sqls.length ? `"Would push these migrations:" ${sqls.map((s) => `"${s}"`).join(" ")}` : '"Remote database is up to date."'} ;;
+  *runner-status*) echo "runner-status: jadwigo-runner-prod live is version 7: ${shipped} sha256:abc" ;;
+  *engine-smoke*) exit ${o.smokeRc ?? 0} ;;
+esac`,
   );
   stub(
     "terraform",
@@ -176,7 +202,37 @@ describe("make release", { timeout: 60_000 }, () => {
     const log = calls(s);
     expect(log).toContain("make -s db-push ENV=prod DRY_RUN=1 token=prod");
     expect(log).not.toContain("apply");
-    expect(log).not.toMatch(/db-push ENV=prod token|db-seed|deploy/);
+    expect(log).not.toMatch(/db-push ENV=prod token|db-seed|deploy|engine-smoke/);
+  });
+
+  it("previews the runner's path filter and Supabase Auth's drift, and never applies auth", () => {
+    const unchanged = stage({ authRc: 2 });
+    const quiet = atTerminal(unchanged, "no");
+    expect(quiet.output).toContain("runner: nothing it bundles changed since");
+    expect(quiet.output).toContain("runner (unchanged)");
+    expect(quiet.output).toContain("site_url differs");
+    expect(quiet.output).toContain("auth: prod differs from infra/supabase-auth/prod.json");
+    expect(calls(unchanged)).toContain("auth.sh diff prod");
+
+    const changed = stage({ runnerChanged: true, authRc: 1 });
+    const run = atTerminal(changed, "prod");
+    expect(run.status, run.output).toBe(0);
+    expect(run.output).toContain("runner: will deploy");
+    expect(run.output).toContain("runner (deploys)");
+    expect(run.output).toContain("auth: the diff could not read");
+    expect(calls(changed)).not.toContain("auth.sh apply");
+  });
+
+  it("a failed engine-smoke fails the release loudly, after every deploy, naming the rollback", () => {
+    const s = stage({ smokeRc: 1 });
+    const run = atTerminal(s, "prod");
+    expect(run.status).not.toBe(0);
+    expect(run.output).toContain("ENGINE-SMOKE FAILED on prod");
+    expect(run.output).toContain("make -C infra runner-rollback VERSION=7");
+    expect(run.output).not.toContain("Released");
+    const log = calls(s);
+    expect(log).toContain("runner-deploy token=prod");
+    expect(log).toContain("web-deploy site-deploy docs-deploy token=prod");
   });
 
   it("stops before the question when the plan destroys or replaces anything", () => {
@@ -197,18 +253,26 @@ describe("make release", { timeout: 60_000 }, () => {
     expect(run.output.match(/Type prod/g)).toHaveLength(1);
     const steps = calls(s)
       .split("\n")
-      .filter((l) => /^make (?!.*DRY_RUN)|^terraform .*apply|^curl/.test(l) && !l.includes(" init"))
+      .filter(
+        (l) =>
+          /^make (?!.*DRY_RUN)|^terraform .*apply|^curl|^auth\.sh/.test(l) && !l.includes(" init"),
+      )
       .map((l) => l.replace(/^make -s (-C infra )?/, "").replace(/ -input=false .*/, ""));
     expect(steps).toEqual([
       "prod-status token=",
+      "runner-status token=",
+      "auth.sh diff prod",
       "db-push ENV=prod token=prod",
       "db-role ENV=prod token=prod",
       "db-seed ENV=prod token=prod",
       "terraform -chdir=infra/terraform apply",
       "api-deploy token=prod",
       expect.stringContaining("curl -s -o /dev/null"),
+      "runner-deploy token=prod",
+      "runner-status token=prod",
       "web-deploy site-deploy docs-deploy token=prod",
       "prod-status token=prod",
+      "engine-smoke ENV=prod token=prod",
     ]);
   });
 
