@@ -39,6 +39,7 @@ import type { AttachmentReader, Converter } from "./attachments.ts";
 import { earlierLine, refusedLine, turnFiles } from "./files.ts";
 import { eventIdFor, turnRunIdFor } from "./ids.ts";
 import { inLanguage } from "./language.ts";
+import { movePlan, planIn, startPlan } from "./plan.ts";
 
 /**
  * The engine's loop (Lead decisions 5-9, 13): a message lands in the run inbox, a step is one Muse
@@ -658,6 +659,20 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     if (words !== null && checked === null) {
       recorded.push(agentMessage(w, words, await w.id("call", call_no, "message")));
     }
+    // A lesson-building turn's plan, all pending, before its first tool call (dl-hin8.19).
+    const plan = startPlan(
+      w.log,
+      response.tool_calls[0]?.verb,
+      response.tool_calls.length > 0 ? await planLanguage(deps, w, scope, prior) : "pl",
+    );
+    if (plan !== null) {
+      recorded.push({
+        type: "plan",
+        run_id: run.id,
+        event_id: await w.id("call", call_no, "plan"),
+        payload: { entries: plan },
+      });
+    }
     for (const call of response.tool_calls) {
       recorded.push({
         type: "tool_call",
@@ -831,6 +846,22 @@ async function recordLanguage(
   return me.pod?.language ?? "pl";
 }
 
+/**
+ * The language of the plan's lines (dl-hin8.19): the run's lesson's, else the pod's, which the
+ * parent chose at sign-up. The pod is read only when the turn's first tool calls come in.
+ */
+async function planLanguage(
+  deps: EngineDeps,
+  w: Writer,
+  scope: Scope,
+  prior: { lesson: VerbContext["lesson"] },
+): Promise<Language> {
+  const lesson = languageOf(w.log, prior.lesson);
+  if (lesson !== null || w.log.some((e) => e.type === "tool_call")) return lesson ?? "pl";
+  const me = await deps.store.getMe(scope.pod, scope.created_by);
+  return me.pod?.language ?? "pl";
+}
+
 /** The language of the run's lesson as it stands in `log`, else the turn before's: null with none. */
 function languageOf(log: readonly RunEvent[], base: VerbContext["lesson"]): Language | null {
   const lesson = lessonOf(log) ?? base;
@@ -943,6 +974,17 @@ async function runTool(
     call_id: call.call_id,
     lesson,
   };
+  // Its stage of the plan is under way (dl-hin8.19); a redelivery writes the same event once.
+  const started = movePlan(planIn(w.log), call.verb, "in_progress");
+  if (started !== null)
+    await w.append([
+      {
+        type: "plan",
+        run_id: scope.run.id,
+        event_id: await w.id("tool", call.call_id, "plan", "start"),
+        payload: { entries: started },
+      },
+    ]);
   let effect: VerbEffect | null = null;
   let error: RunError | null = null;
   try {
@@ -987,12 +1029,26 @@ async function runTool(
       ...(effect?.view === undefined ? {} : { view: effect.view }),
     },
   };
+  // The stage is done, or failed with the verb, in the same unit as its result (dl-hin8.19).
+  const ended = movePlan(planIn(w.log), call.verb, error === null ? "done" : "failed");
+  const planned: NewRunEvent[] =
+    ended === null
+      ? []
+      : [
+          {
+            type: "plan",
+            run_id: scope.run.id,
+            event_id: await w.id("tool", call.call_id, "plan", "end"),
+            payload: { entries: ended },
+          },
+        ];
   await deps.store.unit(async () => {
     await w.append([result]);
-    if (effect === null || revision === null) return;
-    if (!(await w.revise(expected, revision))) {
+    if (effect !== null && revision !== null && !(await w.revise(expected, revision))) {
       throw new Error(`lesson revision ${expected + 1} lost its race: the step is redone`);
     }
+    // After the result and its revision, so those 2 stay side by side in the log.
+    await w.append(planned);
   });
 }
 
