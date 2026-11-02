@@ -15,6 +15,36 @@ async function signIn(page: Page): Promise<void> {
   await expect(page.locator("[data-top-bar]")).toBeVisible();
 }
 
+/**
+ * A conversation the signed-in parent's pod holds, made through the api as the page would (the
+ * pod's AI consent first, then POST /api/v1/conversations). A made-up id is not this parent's, and
+ * the workspace answers it with "no such lesson", not the columns (dl-uukj.47.33).
+ */
+async function ownConversation(page: Page): Promise<string> {
+  return page.evaluate(async () => {
+    const session = JSON.parse(window.localStorage.getItem("jw.auth") ?? "{}") as {
+      access_token?: string;
+    };
+    const headers = {
+      authorization: `Bearer ${session.access_token ?? ""}`,
+      "content-type": "application/json",
+    };
+    const me = (await (await fetch("/api/v1/me", { headers })).json()) as { pod: { id: string } };
+    await fetch(`/api/v1/pods/${me.pod.id}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ ai_consented: true }),
+    });
+    const made = await fetch("/api/v1/conversations", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ event_id: crypto.randomUUID() }),
+    });
+    if (!made.ok) throw new Error(`conversation ${made.status}`);
+    return ((await made.json()) as { id: string }).id;
+  });
+}
+
 const box = async (page: Page, selector: string) => {
   const found = await page.locator(selector).first().boundingBox();
   if (found === null) throw new Error(`${selector} is not drawn`);
@@ -59,7 +89,7 @@ test("the workspace: chat 360, details folded to 52, one 68 px band under the ch
   page,
 }) => {
   await signIn(page);
-  await page.goto("/parent/lessons/cnv_00000000000000000000000001");
+  await page.goto(`/parent/lessons/${await ownConversation(page)}`);
   await expect(page.locator("[data-workspace]")).toBeVisible();
   expect(Math.round((await box(page, "#parent-chat")).width)).toBe(360);
   expect(Math.round((await box(page, "#parent-details")).width)).toBe(52);

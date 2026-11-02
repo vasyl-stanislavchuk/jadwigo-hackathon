@@ -11,7 +11,7 @@ import type { Learner, LearnerId } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { cn, Popover, PopoverContent, PopoverTrigger } from "@jadwigo/ui";
 import { CheckIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
-import { type ReactElement, type ReactNode, useId, useState } from "react";
+import { type ReactElement, type ReactNode, useRef, useState } from "react";
 import { CATEGORY } from "../adult.ts";
 
 const ROW =
@@ -58,9 +58,8 @@ export function DlaSelect({
   trigger?: ReactElement;
 }): ReactElement {
   const [open, setOpen] = useState(false);
-  // The kit's PopoverTrigger takes no ref (a plain function component on React 18), so the trigger
-  // is found by a mark of its own, whichever element it is.
-  const opener = useId();
+  // The trigger, whichever element it is: focus goes back to it when "Dodaj dziecko…" opens the dialog.
+  const opener = useRef<HTMLButtonElement>(null);
   const t = (key: CopyKey): string => copy(language, key, {}, CATEGORY);
   const chosen = learners.find((l) => l.id === value);
   const pick = (learner: LearnerId | null): void => {
@@ -69,7 +68,7 @@ export function DlaSelect({
   };
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild data-dla-opener={opener}>
+      <PopoverTrigger asChild ref={opener}>
         {trigger ?? (
           <button
             type="button"
@@ -97,7 +96,7 @@ export function DlaSelect({
             type="button"
             role="menuitem"
             onClick={() => {
-              document.querySelector<HTMLElement>(`[data-dla-opener="${opener}"]`)?.focus();
+              opener.current?.focus();
               setOpen(false);
               onAddChild();
             }}
