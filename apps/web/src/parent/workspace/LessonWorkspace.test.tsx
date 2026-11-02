@@ -10,7 +10,7 @@
 
 import { ApiError } from "@jadwigo/api-client";
 import { ConversationId, type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
-import { RUN_LOGS } from "@jadwigo/testing";
+import { FIXED_NOW, RUN_LOGS } from "@jadwigo/testing";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { EngineTransport } from "../../chat/useConversation.ts";
@@ -99,7 +99,7 @@ describe("the lesson workspace on the engine", () => {
     expect(screen.getByText("Wersja 2")).toBeTruthy();
     expect(
       document.querySelector("[data-chat-band] [data-status]")?.getAttribute("data-status"),
-    ).toBe("completed");
+    ).toBe("done");
 
     // A remount (a reload) finds the turn and sends nothing more.
     cleanup();
@@ -142,5 +142,157 @@ describe("the lesson workspace on the engine", () => {
     expect(sendButton?.getAttribute("aria-disabled")).toBe("true");
     fireEvent.change(box, { target: { value: "Dodaj jedno zadanie" } });
     expect(sendButton?.getAttribute("aria-disabled")).toBe("false");
+  });
+});
+
+/** A turn that is sent and then never heard from: the live channel and the state are the test's. */
+function quietEngine() {
+  const queued: Run = { ...run, status: "queued" };
+  let started = false;
+  let push: (events: readonly RunEvent[]) => void = () => {};
+  let link: (state: "up" | "down" | "error") => void = () => {};
+  const reads = { runs: 0 };
+  const sent: SendBody[] = [];
+  const transport: EngineTransport = {
+    subscribe: (_run, onEvents) => {
+      push = onEvents;
+      return () => {};
+    },
+    onConnection: (on) => {
+      link = on;
+      return () => {};
+    },
+    runs: async () => {
+      reads.runs += 1;
+      return started ? [queued] : [];
+    },
+    events: async () => [],
+    send: async (body) => {
+      sent.push(body);
+      started = true;
+      return queued;
+    },
+  };
+  const engine: LessonEngine = {
+    conversations: { createConversation: vi.fn() },
+    transport,
+    consent: null,
+    ratings: null,
+  };
+  return {
+    engine,
+    sent,
+    reads,
+    push: (events: readonly RunEvent[]) => push(events),
+    link: (state: "up" | "down" | "error") => link(state),
+  };
+}
+
+const band = () => document.querySelector("[data-chat-band] [data-status]")?.textContent ?? "";
+const live = () => document.querySelector("[data-chat-band] [data-live]")?.textContent ?? "";
+const footer = () =>
+  document.querySelector("[data-lesson-footer] [data-status]")?.textContent ?? "";
+const placeholder = () => document.querySelector("[data-lesson-waiting]")?.textContent ?? "";
+const activity = () => document.querySelector("[data-activity]")?.getAttribute("data-phase");
+const tick = async (ms: number) => {
+  await act(async () => {
+    vi.advanceTimersByTime(ms);
+  });
+};
+
+describe("one honest run state (dl-uukj.47.29)", () => {
+  // The page's clock ticks here, from the unit tests' pinned FIXED_NOW, and is pinned again after.
+  beforeEach(() => {
+    vi.useFakeTimers({
+      now: FIXED_NOW,
+      toFake: ["Date", "setInterval", "clearInterval", "setTimeout", "clearTimeout"],
+    });
+  });
+  afterEach(() => {
+    vi.useFakeTimers({ now: FIXED_NOW, toFake: ["Date"] });
+  });
+
+  it("echoes the words before any event, goes slow at 20 s with one read back, stalled at 60 s", async () => {
+    const q = quietEngine();
+    firstMessage.put(CONVERSATION, "Odejmowanie przez 10");
+    await workspace(q.engine);
+    // The echo, at once: the parent's bubble with the words, and the turn queued.
+    const echo = document.querySelector("[data-pending] [data-bubble]");
+    expect(echo?.textContent).toBe("Odejmowanie przez 10");
+    expect(band()).toMatch(/^W kolejce/);
+    expect(activity()).toBe("queued");
+
+    const before = q.reads.runs;
+    await tick(20_000);
+    expect(band()).toMatch(/^To trwa dłużej niż zwykle · 20 s/);
+    expect(q.reads.runs).toBe(before + 1);
+    await tick(20_000);
+    // Read back once on entering slow, not again while it stays slow.
+    expect(q.reads.runs).toBe(before + 1);
+
+    await tick(20_000);
+    expect(band()).toMatch(/^Utknęło/);
+    expect(band()).not.toMatch(/Nie udało się/);
+    expect(live()).toBe("Utknęło");
+    expect(screen.getByRole("button", { name: "Spróbuj ponownie" })).toBeTruthy();
+    expect(
+      document.querySelector("[data-row='stalled'] [data-details]")?.getAttribute("data-details"),
+    ).toBe(`run ${run.id}`);
+  });
+
+  it("comes back from slow when a late event arrives", async () => {
+    const q = quietEngine();
+    firstMessage.put(CONVERSATION, "Odejmowanie przez 10");
+    await workspace(q.engine);
+    await tick(30_000);
+    expect(activity()).toBe("slow");
+    await act(async () => q.push(events.filter((e) => e.seq <= 5)));
+    expect(activity()).toBe("tool");
+    expect(band()).toMatch(/^Układanie lekcji/);
+  });
+
+  it("says a channel error as stalled, not failed", async () => {
+    const q = quietEngine();
+    firstMessage.put(CONVERSATION, "Odejmowanie przez 10");
+    await workspace(q.engine);
+    await act(async () => q.link("error"));
+    expect(activity()).toBe("stalled");
+    expect(band()).toMatch(/^Utknęło/);
+  });
+
+  it("retrying a stalled turn cancels it first, then sends its words again", async () => {
+    const q = quietEngine();
+    firstMessage.put(CONVERSATION, "Odejmowanie przez 10");
+    await workspace(q.engine);
+    await tick(60_000);
+    await act(async () =>
+      fireEvent.click(screen.getByRole("button", { name: "Spróbuj ponownie" })),
+    );
+    expect(q.sent.map((b) => b.kind)).toEqual(["message", "cancel", "message"]);
+    const last = q.sent.at(-1);
+    expect(last?.kind === "message" && last.text).toBe("Odejmowanie przez 10");
+  });
+
+  it("says one state in the band, the footer, the placeholder, the live region and the strip", async () => {
+    const q = quietEngine();
+    firstMessage.put(CONVERSATION, "Odejmowanie przez 10");
+    await workspace(q.engine);
+    for (const [wait, words] of [
+      [0, "W kolejce"],
+      [20_000, "To trwa dłużej niż zwykle"],
+      [40_000, "Utknęło"],
+    ] as const) {
+      await tick(wait);
+      expect(band().startsWith(words)).toBe(true);
+      expect(placeholder()).toBe(words);
+      // Before the lesson has steps the footer has no "0 z 0": the state, then the reason.
+      expect(footer()).toBe(`${words} · „Daj lekcję” zadziała, gdy lekcja przejdzie sprawdzenie`);
+      expect(
+        document.querySelector("[data-activity] [data-shimmer], [data-activity] span")?.textContent,
+      ).toBe(words);
+    }
+    expect(live()).toBe("Utknęło");
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Zwiń rozmowę" })));
+    expect(document.querySelector("[data-strip-fact]")?.textContent).toBe("Utknęło");
   });
 });

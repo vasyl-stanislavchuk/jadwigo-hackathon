@@ -10,13 +10,13 @@ import type { ConversationClient } from "@jadwigo/api-client";
 import type { EventId } from "@jadwigo/contracts";
 import { ConversationId, type RunEvent, type RunId } from "@jadwigo/contracts/run";
 import { newEventId } from "./ids.ts";
-import type { EngineTransport } from "./useConversation.ts";
+import type { EngineTransport, Link } from "./useConversation.ts";
 import { runChannel } from "./wire.ts";
 
 /** The live side: a poke per broadcast on a topic, and the connection going down and back. */
 export interface RunLive {
   subscribe(topic: string, onPoke: () => void): () => void;
-  onConnection(on: (up: boolean) => void): () => void;
+  onConnection(on: (link: Link) => void): () => void;
 }
 
 /** Where the page keeps which server conversation its own conversation id maps to. */

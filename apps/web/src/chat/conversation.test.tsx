@@ -70,7 +70,7 @@ describe("conversationReducer", () => {
       events: events.slice(0, 8),
     });
     state = conversationReducer(state, { type: "disconnected" });
-    expect(state.connection).toBe("restoring");
+    expect(state.connection).toBe("down");
     state = conversationReducer(state, { type: "live", run_id: run.id, events: events.slice(12) });
     state = conversationReducer(state, {
       type: "fetched",

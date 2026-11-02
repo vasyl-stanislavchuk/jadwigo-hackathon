@@ -8,7 +8,7 @@ import { type Client, createClient } from "@jadwigo/api-client";
 import { createClient as createSupabase, type SupabaseClient } from "@supabase/supabase-js";
 import { type Auth, browserAuth } from "../parent/auth.ts";
 import { type RunLive, routesTransport } from "./routesTransport.ts";
-import type { EngineTransport } from "./useConversation.ts";
+import type { EngineTransport, Link } from "./useConversation.ts";
 
 /** What the run channel needs of a Supabase client, so a test can stand in for it. */
 type LiveClient = Pick<SupabaseClient, "channel" | "removeChannel"> & {
@@ -27,12 +27,12 @@ export function supabaseLive(
   token: () => Promise<string | null>,
   refresh: () => Promise<unknown> = () => Promise.resolve(),
 ): RunLive {
-  const listeners = new Set<(up: boolean) => void>();
-  let down = false;
-  const say = (up: boolean) => {
-    if (up === !down) return;
-    down = !up;
-    for (const on of listeners) on(up);
+  const listeners = new Set<(link: Link) => void>();
+  let now: Link = "up";
+  const say = (link: Link) => {
+    if (link === now) return;
+    now = link;
+    for (const on of listeners) on(link);
   };
   let refreshed: Promise<void> | null = null;
   const firstRefresh = () =>
@@ -57,12 +57,15 @@ export function supabaseLive(
         joined.on("broadcast", { event: "run_event" }, () => {
           if (!closed) onPoke();
         });
+        // A timeout is the channel down, and it may come back; a refusal after the one retry is an
+        // error the page says as stalled (dl-uukj.47.29).
         joined.subscribe((status) => {
-          if (status === "SUBSCRIBED") say(true);
+          if (status === "SUBSCRIBED") say("up");
           else if (status === "CHANNEL_ERROR" && !retried && !closed) {
             void client.removeChannel(joined);
             void join(true);
-          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") say(false);
+          } else if (status === "CHANNEL_ERROR") say("error");
+          else if (status === "TIMED_OUT") say("down");
         });
       };
       void join(false);

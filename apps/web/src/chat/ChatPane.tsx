@@ -25,7 +25,6 @@ import {
   type RunId,
   type RunRatingCreate,
   type RunStatus,
-  type VerbName,
 } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
@@ -36,23 +35,12 @@ import { Button } from "./button.tsx";
 import "./chat.css";
 import { isOpen, type SendLimit, type Turn } from "./conversation.ts";
 import { JadwigoAiMark } from "./JadwigoAiMark.tsx";
+import { elapsedSeconds, phaseAnnouncement, type RunPhase } from "./phase.ts";
 import { Rating } from "./Rating.tsx";
+import { TOOL_KEY } from "./tools.ts";
 import { toolResult } from "./widgets/Widgets.tsx";
 
-const TOOL_KEY: Record<VerbName, CopyKey> = {
-  lesson_draft: "chat_tool_lesson_draft",
-  lesson_show: "chat_tool_lesson_show",
-  lesson_edit: "chat_tool_lesson_edit",
-  lesson_check: "chat_tool_lesson_check",
-  question_search: "chat_tool_question_search",
-  learner_skills: "chat_tool_learner_skills",
-  learner_week: "chat_tool_learner_week",
-  learner_mistakes: "chat_tool_learner_mistakes",
-  curriculum_topics: "chat_tool_curriculum_topics",
-  lesson_ideas: "chat_tool_lesson_ideas",
-};
-
-export const STATUS_KEY: Record<RunStatus, CopyKey> = {
+const STATUS_KEY: Record<RunStatus, CopyKey> = {
   queued: "chat_status_queued",
   in_progress: "chat_status_in_progress",
   awaiting_input: "chat_status_awaiting_input",
@@ -159,6 +147,25 @@ function problemOf(error: RunError, retryable: boolean, language: Language): str
   return retryable ? `${line} ${say("chat_problem_retrying")}` : line;
 }
 
+/** Copy details: the words to paste into a message to us, the run id first. */
+function CopyDetails({ details, language }: { details: string; language: Language }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Button
+      variant="outline"
+      size="xs"
+      data-details={details}
+      onClick={() => {
+        void navigator.clipboard?.writeText(details).then(() => setCopied(true));
+      }}
+    >
+      {copied
+        ? copy(language, "chat_copied", {}, "adult")
+        : copy(language, "chat_copy_details", {}, "adult")}
+    </Button>
+  );
+}
+
 function ErrorRow({
   item,
   run,
@@ -168,23 +175,11 @@ function ErrorRow({
   run: RunId;
   language: Language;
 }): ReactElement {
-  const [copied, setCopied] = useState(false);
   const details = `run ${run} attempt ${item.attempt}: ${item.error.type}`;
   return (
     <div role="alert" data-row="error" className="rounded-md border p-2 text-sm">
       <p>{problemOf(item.error, item.retryable, language)}</p>
-      <Button
-        variant="outline"
-        size="xs"
-        data-details={details}
-        onClick={() => {
-          void navigator.clipboard?.writeText(details).then(() => setCopied(true));
-        }}
-      >
-        {copied
-          ? copy(language, "chat_copied", {}, "adult")
-          : copy(language, "chat_copy_details", {}, "adult")}
-      </Button>
+      <CopyDetails details={details} language={language} />
     </div>
   );
 }
@@ -274,15 +269,71 @@ function announcementOf(last: Turn | undefined, restoring: boolean): CopyKey | n
   return "chat_announce_done";
 }
 
-/** The last turn's state, which the pane, or the parent workspace's band, writes in words. */
-export function statusOf(turns: readonly Turn[]): RunStatus | null {
-  const last = turns.at(-1);
-  return last === undefined ? null : (last.view.status ?? last.run.status);
+/** The kinds of phase while Jadwigo AI is at work: the activity line shimmers then. */
+const WORKING: ReadonlySet<RunPhase["kind"]> = new Set([
+  "connecting",
+  "queued",
+  "thinking",
+  "tool",
+]);
+
+/** The header over Jadwigo AI's rows: its crown mark and its name. */
+function AiHeader({ language }: { language: Language }): ReactElement {
+  return (
+    <p
+      className="mb-1 flex items-center gap-2 text-jw-page-small font-bold text-jw-ink"
+      data-ai-header
+    >
+      <JadwigoAiMark />
+      {copy(language, "chat_from_agent", {}, "adult")}
+    </p>
+  );
 }
 
-/** What the live region says, for the parent workspace's band (the pane's own logic). */
-export function announcementFor(turns: readonly Turn[], restoring: boolean): CopyKey | null {
-  return announcementOf(turns.at(-1), restoring);
+/**
+ * The activity line under Jadwigo AI's turn (dl-uukj.47.29): the phase in words, a tool's own
+ * words while it runs, the elapsed seconds, and a shimmer only when the system allows motion.
+ * Stalled, it offers Spróbuj ponownie and Copy details with the run id.
+ */
+function ActivityLine({
+  phase,
+  now,
+  still,
+  onRetry,
+  language,
+}: {
+  phase: RunPhase;
+  now: number;
+  still: boolean;
+  onRetry?: (() => void) | undefined;
+  language: Language;
+}): ReactElement {
+  const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
+    copy(language, key, vars, "adult");
+  const seconds = phase.kind === "awaiting_input" ? null : elapsedSeconds(phase, now);
+  const working = WORKING.has(phase.kind);
+  return (
+    <div className="flex flex-col gap-2" data-activity data-phase={phase.kind}>
+      <p className="flex items-baseline gap-2 text-jw-page-small text-jw-ink-soft">
+        <span {...(working && !still ? { "data-shimmer": "" } : {})}>{say(phase.copyKey)}</span>
+        {seconds !== null && (
+          <span className="tabular-nums" data-elapsed>
+            {say("chat_phase_elapsed", { seconds })}
+          </span>
+        )}
+      </p>
+      {phase.kind === "stalled" && (
+        <div className="flex flex-wrap items-center gap-2" data-row="stalled">
+          {onRetry !== undefined && (
+            <Button variant="outline" size="sm" onClick={onRetry}>
+              {say("chat_retry_turn")}
+            </Button>
+          )}
+          {phase.run !== null && <CopyDetails details={`run ${phase.run}`} language={language} />}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /** A turn that ended well: its rating band shows (dl-z5ja.63). */
@@ -363,6 +414,14 @@ export interface ChatPaneProps {
   onRate?: ((run: RunId, body: RunRatingCreate) => Promise<unknown>) | undefined;
   /** The playground's pane, or the parent workspace's (see the header). */
   variant?: "playground" | "parent";
+  /** The run's one state (phase.ts); the activity line and the status read it when given. */
+  phase?: RunPhase | null;
+  /** The clock the phase was read at, for the elapsed seconds. */
+  now?: number;
+  /** The words just sent, echoed until their event is in the log. */
+  pending?: string | null;
+  /** Spróbuj ponownie on a stalled turn. */
+  onRetry?: (() => void) | undefined;
 }
 
 export function ChatPane({
@@ -377,6 +436,10 @@ export function ChatPane({
   onStop,
   onRate,
   variant = "playground",
+  phase,
+  now = Date.now(),
+  pending = null,
+  onRetry,
 }: ChatPaneProps): ReactElement {
   const parent = variant === "parent";
   const [draft, setDraft] = useState("");
@@ -408,8 +471,13 @@ export function ChatPane({
     onSend(text);
     setLastSent(text);
   };
-  const announce = announcementOf(last, restoring);
+  const announce = phase === undefined ? announcementOf(last, restoring) : phaseAnnouncement(phase);
   const retryText = last !== undefined && status === "failed" ? parentTextOf(last) : null;
+  /** Whether Jadwigo AI has a row in the last turn yet, so the activity line needs no header. */
+  const aiSpoke =
+    pending === null &&
+    last !== undefined &&
+    last.view.chat.some((i) => !(i.kind === "message" && i.from === "parent"));
   const submit = (e: FormEvent) => {
     e.preventDefault();
     send(draft);
@@ -439,15 +507,7 @@ export function ChatPane({
               data-chat-row
               {...(still ? {} : { "data-enter": "" })}
             >
-              {header && (
-                <p
-                  className="mb-1 flex items-center gap-2 text-jw-page-small font-bold text-jw-ink"
-                  data-ai-header
-                >
-                  <JadwigoAiMark />
-                  {say("chat_from_agent")}
-                </p>
-              )}
+              {header && <AiHeader language={language} />}
               <RowView row={row} run={turn.run.id} language={language} />
             </li>
           )),
@@ -464,6 +524,31 @@ export function ChatPane({
               ]
             : []),
         ])}
+        {pending !== null && (
+          <li className="flex flex-col items-end" data-chat-row data-pending>
+            <div className="flex max-w-[85%] flex-col items-end gap-1 self-end" data-from="parent">
+              <p className="sr-only">{say("chat_from_parent")}</p>
+              <p
+                className="rounded-jw-dialog bg-jw-pick px-3 py-2 whitespace-pre-wrap text-jw-pick-ink"
+                data-bubble
+              >
+                {pending}
+              </p>
+            </div>
+          </li>
+        )}
+        {phase != null && (phase.open || phase.kind === "stalled") && (
+          <li className="flex flex-col" data-chat-row>
+            {!aiSpoke && <AiHeader language={language} />}
+            <ActivityLine
+              phase={phase}
+              now={now}
+              still={still}
+              onRetry={onRetry}
+              language={language}
+            />
+          </li>
+        )}
       </ol>
       <div ref={end} aria-hidden />
       {turns.length === 0 && !restoring && !parent && (
@@ -501,8 +586,17 @@ export function ChatPane({
       {/* The run's state as words, never a coloured dot alone; the parent's is in the band. */}
       {!parent && (
         <>
-          <p data-status={status ?? "none"} className="text-sm">
-            {status === null ? "" : say(STATUS_KEY[status])}
+          <p
+            data-status={phase === undefined ? (status ?? "none") : (phase?.kind ?? "none")}
+            className="text-sm"
+          >
+            {phase === undefined
+              ? status === null
+                ? ""
+                : say(STATUS_KEY[status])
+              : phase === null
+                ? ""
+                : say(phase.copyKey)}
           </p>
           <p role="status" aria-live="polite" data-live className="sr-only">
             {announce === null ? "" : say(announce)}
