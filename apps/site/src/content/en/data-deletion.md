@@ -24,10 +24,10 @@ includes an account you sign in to with Google or Facebook.
    account, we ask you to confirm from the account's address.
 2. We delete the account and the data linked to it. In Supabase, we delete the email address and the
    link to your Google or Facebook account. In Jadwigo, we delete your children's data, their answers
-   and progress in lessons, and your conversations with the AI assistant.
+   and progress in lessons, and your conversations with Jadwigo AI.
 3. We write to you once the data is deleted, no later than 1 month after we receive your request.
 
-The assistant may already have sent some of the data to Meta. Meta keeps that data under Meta's own terms.
+Jadwigo AI may already have sent some of the data to Meta. Meta keeps that data under Meta's own terms.
 
 A deleted account can't be restored. You can set up a new one later.
 

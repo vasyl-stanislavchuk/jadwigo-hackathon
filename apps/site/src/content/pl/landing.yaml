@@ -49,7 +49,7 @@ steps:
       text: Każde pytanie, każda próba i każda pomyłka opisane zwykłymi słowami. Następną lekcję Jadwigo zaczyna od tego, co było trudne. A gdy chcesz usiąść razem nad czymś trudnym, podpowie, od czego zacząć.
   request:
     ask: Zadania o wydawaniu reszty, tak jak w zeszycie. Myli złote z groszami.
-    lines: [Szukam zadań o reszcie z groszami, Sprawdzam lekcję, Gotowe]
+    lines: [Szukanie zadań o reszcie z groszami…, Sprawdzanie lekcji…, Gotowe]
     soon: "Wkrótce: zdjęcie zeszytu zamiast opisu."
     screencast: screencast · rodzic pisze w czacie, lekcja układa się po prawej, „Pokaż dziecku”
   card:
