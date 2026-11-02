@@ -1,12 +1,17 @@
+import type { BankPort } from "@jadwigo/jadwigo-ai";
 import type { MemberScope, Store } from "@jadwigo/store";
 import type { StandardSchemaWithJSON } from "@modelcontextprotocol/server";
 import type { Claims } from "../auth.ts";
 
 /** What every tool call runs with: the caller's pod member, found by `authorizeMember`, in one unit. */
-interface ToolContext {
+export interface ToolContext {
   readonly store: Store;
   readonly member: MemberScope;
   readonly claims: Claims;
+  /** The bank the lesson verbs draw from (`mcpBank`). */
+  readonly bank: BankPort;
+  /** A path of the app (`/parent/lessons/<cnv_>`) as the full URL a parent's AI can link to. */
+  appUrl(path: string): string;
 }
 
 /**
