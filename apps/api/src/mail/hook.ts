@@ -6,7 +6,12 @@
  * https://supabase.com/docs/guides/auth/auth-hooks/send-email-hook
  *
  * No address, code or body is ever logged: a sent mail logs its kind, its language and SES's id.
+ *
+ * Hardening (dl-e8ov.2.100): a delivery already sent for a webhook-id in the last 5 minutes is not
+ * sent again, per instance (owner, 2026-11-02: no shared store); an address's domain reaches SES
+ * as Punycode; a signed body that is not JSON is 400.
  */
+import { domainToASCII } from "node:url";
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 import { AuthEmailAction, AuthEmailHook } from "@jadwigo/contracts";
 import { Webhook } from "standardwebhooks";
@@ -30,9 +35,22 @@ export interface MailDeps {
    */
   readonly readSecrets: () => Promise<string | undefined>;
   readonly client: SendEmailClient;
-  /** Where the log line goes; stdout by default. */
+  /**
+   * The deliveries this instance sent, `<webhook-id> <address>` to when it sent them, so a replay
+   * or Supabase's retry of a half-sent email change sends nothing twice. Kept for `REPLAY_MS`.
+   * With none, every signed request sends.
+   */
+  readonly sent?: Map<string, number>;
+  /** The clock the memo keeps time by; `Date.now` by default. */
+  readonly now?: () => number;
+  /** Where a sent mail's line goes; stdout by default, so CloudWatch does not tag it ERROR. */
   readonly log?: (line: string) => void;
+  /** Where a failed send's line goes; stderr by default. */
+  readonly logError?: (line: string) => void;
 }
+
+/** The Standard Webhooks tolerance: a signature older than this is refused anyway. */
+export const REPLAY_MS = 5 * 60 * 1000;
 
 export interface HookReply {
   readonly status: number;
@@ -61,7 +79,8 @@ function signed(raw: string, headers: Headers, secrets: readonly string[]): bool
   };
   return secrets.some((secret) => {
     try {
-      new Webhook(secret).verify(raw, wanted);
+      // jsonParse off: a signed body that is not JSON is a bad payload (400), not a bad signature.
+      new Webhook(secret).verify(raw, wanted, { jsonParse: false });
       return true;
     } catch {
       return false;
@@ -84,6 +103,17 @@ function deliveries(hook: AuthEmailHook, action: AuthEmailAction): { to: string;
       { to: new_email, token: token_new },
     ];
   return [{ to: new_email || email, token: token || token_new || "" }];
+}
+
+/**
+ * `address` with its domain in ASCII, as SES needs it: a Polish-letter domain becomes its `xn--`
+ * Punycode. Undefined for an address with no local part or no valid domain.
+ */
+export function sesAddress(address: string): string | undefined {
+  const at = address.lastIndexOf("@");
+  if (at <= 0) return undefined;
+  const domain = domainToASCII(address.slice(at + 1).trim());
+  return domain === "" ? undefined : `${address.slice(0, at).trim()}@${domain}`;
 }
 
 export async function handleSendEmail(
@@ -109,13 +139,22 @@ export async function handleSendEmail(
   const action = AuthEmailAction.safeParse(hook.email_data.email_action_type);
   if (!action.success) return failed(400, "this kind of auth mail is not sent");
   const language = pickLanguage(hook);
-  const sends = deliveries(hook, action.data);
+  const sends = deliveries(hook, action.data).map((d) => ({ ...d, to: sesAddress(d.to) }));
   if (sends.some((s) => !/^\d{6}$/.test(s.token)))
     return failed(400, "the hook carries no 6-digit code");
+  if (sends.some((s) => s.to === undefined))
+    return failed(400, "the hook carries no valid address");
 
-  // One JSON line on stderr, as every api log is; its `level` says what it is.
-  const log = deps.log ?? ((line: string) => console.error(line));
+  // A sent mail on stdout, where Lambda's text log does not tag it ERROR; a failure on stderr.
+  const log = deps.log ?? ((line: string) => void process.stdout.write(`${line}\n`));
+  const logError = deps.logError ?? ((line: string) => console.error(line));
+  const now = (deps.now ?? Date.now)();
+  const id = headers.get("webhook-id") ?? "";
+  for (const [key, at] of deps.sent ?? []) if (now - at > REPLAY_MS) deps.sent?.delete(key);
   for (const { to, token } of sends) {
+    if (to === undefined) continue;
+    const key = `${id} ${to}`;
+    if (deps.sent?.has(key)) continue;
     const mail = await renderAuthEmail(action.data, language, token);
     let messageId: string | undefined;
     try {
@@ -135,9 +174,10 @@ export async function handleSendEmail(
         }),
       );
       messageId = sent.MessageId;
+      deps.sent?.set(key, now);
     } catch (error) {
       const name = error instanceof Error ? error.name : typeof error;
-      log(
+      logError(
         JSON.stringify({
           level: "ERROR",
           message: "auth mail failed",
@@ -164,7 +204,7 @@ export async function handleSendEmail(
 /**
  * The hook in the Lambda: the secrets from the SSM SecureString `SEND_EMAIL_HOOK_SECRET_PARAM`
  * names, read on the first mail and kept for the execution environment (again after a failed
- * read), and SES in the Lambda's own region. Undefined when the parameter is unset, so the route
+ * read), SES in the Lambda's own region, and the memo of deliveries this instance sent. Undefined when the parameter is unset, so the route
  * answers NotFound.
  */
 export function lambdaMail(
@@ -176,6 +216,7 @@ export function lambdaMail(
   let secrets: Promise<string | undefined> | undefined;
   return {
     client,
+    sent: new Map(),
     readSecrets() {
       secrets ??= read(param);
       secrets.catch(() => {

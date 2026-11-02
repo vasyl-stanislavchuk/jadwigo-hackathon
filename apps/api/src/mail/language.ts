@@ -9,7 +9,7 @@ import { type AuthEmailHook, Language } from "@jadwigo/contracts";
  * 3. else Polish, the default a new parent gets (dl-liwi.32)
  */
 export function pickLanguage(hook: AuthEmailHook): Language {
-  const chosen = Language.safeParse(hook.user.user_metadata?.language);
+  const chosen = Language.safeParse(primaryTag(hook.user.user_metadata?.language));
   if (chosen.success) return chosen.data;
   for (const url of [hook.email_data.redirect_to, hook.email_data.site_url]) {
     const host = hostOf(url);
@@ -22,8 +22,14 @@ export function pickLanguage(hook: AuthEmailHook): Language {
 function hostOf(url: string | undefined): string | undefined {
   if (!url) return undefined;
   try {
-    return new URL(url).hostname.toLowerCase();
+    // A fully qualified name's trailing dot (jadwigo.kids.) names the same host.
+    return new URL(url).hostname.toLowerCase().replace(/\.$/, "");
   } catch {
     return undefined;
   }
+}
+
+/** A language tag's primary subtag, lower-cased: ` PL `, `pl-PL` and `pl_PL` are all `pl`. */
+function primaryTag(value: unknown): unknown {
+  return typeof value === "string" ? value.trim().toLowerCase().split(/[-_]/)[0] : value;
 }
