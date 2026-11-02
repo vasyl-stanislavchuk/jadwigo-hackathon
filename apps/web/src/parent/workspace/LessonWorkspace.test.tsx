@@ -9,7 +9,7 @@
  */
 
 import { ApiError } from "@jadwigo/api-client";
-import { LearnerId } from "@jadwigo/contracts";
+import { AttachmentId, ID_PREFIXES, idOf, LearnerId } from "@jadwigo/contracts";
 import { ConversationId, type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { FIXED_NOW, RUN_LOGS } from "@jadwigo/testing";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
@@ -106,6 +106,30 @@ describe("the lesson workspace on the engine", () => {
     cleanup();
     await workspace(engine);
     expect(sent.filter((b) => b.kind === "message")).toHaveLength(1);
+  });
+
+  it("posts the first screen's photos on its first message, once (dl-z5ja.11.16)", async () => {
+    const photo = AttachmentId.parse(
+      idOf(ID_PREFIXES.attachment, "00000000-0000-4000-8000-000000000001"),
+    );
+    const { engine, sent } = engineWith();
+    firstMessage.put(CONVERSATION, { text: "Zadanie ze zdjęcia", attachment_ids: [photo] });
+    await workspace(engine);
+    const messages = sent.filter((b) => b.kind === "message");
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toMatchObject({ text: "Zadanie ze zdjęcia", attachment_ids: [photo] });
+
+    cleanup();
+    await workspace(engine);
+    expect(sent.filter((b) => b.kind === "message")).toHaveLength(1);
+  });
+
+  it("sends an older tab's plain words with no photos", async () => {
+    const { engine, sent } = engineWith();
+    window.sessionStorage.setItem(`jw.parent.first.${CONVERSATION}`, "Odejmowanie przez 10");
+    await workspace(engine);
+    expect(sent[0]).toMatchObject({ kind: "message", text: "Odejmowanie przez 10" });
+    expect(sent[0]).not.toHaveProperty("attachment_ids");
   });
 
   it("sends Dla as the first message's page, and no page without one (dl-uukj.47.12)", async () => {

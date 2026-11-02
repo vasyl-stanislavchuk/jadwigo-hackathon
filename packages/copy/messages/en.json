@@ -873,6 +873,8 @@
   "parent_add_child_hint": "Name and class. Jadwigo will start following what they can do.",
   "parent_send": "Make the lesson",
   "parent_send_reason": "Describe the homework or add a photo first",
+  "parent_send_uploading": "Waiting for the photos to upload",
+  "parent_send_photo_failed": "Retry or remove the photo that did not upload",
   "parent_name_note": "Only you and Jadwigo in the chat see it. It never goes into a lesson.",
   "parent_grade": "Class",
   "parent_cancel": "Cancel",

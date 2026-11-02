@@ -10,17 +10,20 @@
  *           Enter sends, Shift+Enter makes a new line
  *
  * Under the text: "Dodaj zdjęcie", then "Dla: Bez dziecka ▾", then the reason and the button.
- * Photos (picked, pasted with Ctrl+V or dropped) show as 64 × 80 thumbnails, each with ×. They wait
- * on the upload route (dl-z5ja.11), so `photos` keeps them off until it exists.
+ * Photos (picked, pasted with Ctrl+V or dropped) upload as soon as they are added, each through a
+ * PhotoUpload, and show as the chat's 64 × 80 chips with progress, reason, Retry and × (dl-z5ja.11.16).
+ * "Zrób lekcję" waits until every photo has uploaded: while one uploads the reason says so, and one
+ * that failed holds the send with its reason until it is retried or removed. The send carries the
+ * uploaded photos' attachment ids in the order they were added.
  *
  * The unsent words and Dla are kept in the tab as they change (draft.ts, dl-uukj.47.24): leaving for
  * a child's page or reloading brings them back, and a send clears them.
  */
 
-import type { Learner, LearnerId } from "@jadwigo/contracts";
+import type { AttachmentId, Learner, LearnerId } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { Button, cn } from "@jadwigo/ui";
-import { ArrowRightIcon, ImagePlusIcon, XIcon } from "lucide-react";
+import { ArrowRightIcon, ImagePlusIcon } from "lucide-react";
 import {
   type ClipboardEvent,
   type DragEvent,
@@ -29,24 +32,22 @@ import {
   type ReactElement,
   useEffect,
   useId,
+  useReducer,
   useRef,
   useState,
 } from "react";
+import { AttachmentChips } from "../../chat/attachments/AttachmentChips.tsx";
+import { admit, PhotoUpload, type UploadDeps } from "../../chat/attachments/upload.ts";
 import { CATEGORY } from "../adult.ts";
 import { AboutJadwigoAi } from "./AboutJadwigoAi.tsx";
 import { DlaSelect } from "./DlaSelect.tsx";
 import { newLessonDraft } from "./draft.ts";
 
-/** What the parent sends: the words, the photos, and the child the lesson is for (or none). */
+/** What the parent sends: the words, the uploaded photos, and the child the lesson is for (or none). */
 export interface LessonAsk {
   text: string;
-  photos: readonly File[];
+  attachmentIds: AttachmentId[];
   learner: LearnerId | null;
-}
-
-interface Photo {
-  file: File;
-  url: string;
 }
 
 const images = (files: Iterable<File>): File[] =>
@@ -59,7 +60,8 @@ export function NewLessonBox({
   onForChange,
   onAddChild,
   onSend,
-  photos: photosOn = false,
+  photos = false,
+  uploadDeps,
   busy = false,
   problem = null,
   initialText = "",
@@ -73,8 +75,10 @@ export function NewLessonBox({
   /** Opens Dodaj dziecko from Dla's menu. */
   onAddChild: () => void;
   onSend: (ask: LessonAsk) => void;
-  /** Whether photos can be added: off until the upload route exists (dl-z5ja.11). */
+  /** Whether photos can be added; they need `uploadDeps` too (dl-z5ja.11.16). */
   photos?: boolean;
+  /** What a photo's upload runs on: the api's `createAttachment` and the browser's canvas and XHR. */
+  uploadDeps?: UploadDeps;
   /** The send is on its way: the button says so and takes no second press (dl-z5ja.108). */
   busy?: boolean;
   /** Why the last send did not start, in words, under the box; null for none. */
@@ -86,11 +90,44 @@ export function NewLessonBox({
 }): ReactElement {
   const t = (key: CopyKey): string => copy(language, key, {}, CATEGORY);
   const [text, setText] = useState(() => initialText || (newLessonDraft.get(owner)?.text ?? ""));
-  const [photos, setPhotos] = useState<Photo[]>([]);
+  const deps = photos ? (uploadDeps ?? null) : null;
+  const photosOn = deps !== null;
+  const [uploads, setUploads] = useState<PhotoUpload[]>([]);
+  const [leftOff, setLeftOff] = useState(0);
   const box = useRef<HTMLTextAreaElement>(null);
   const picker = useRef<HTMLInputElement>(null);
   const reasonId = useId();
-  const ready = text.trim() !== "" || photos.length > 0;
+
+  // Each upload's state change draws the box again, so the reason and the button follow it.
+  const [, redraw] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    const offs = uploads.map((upload) => upload.subscribe(redraw));
+    return () => {
+      for (const off of offs) off();
+    };
+  }, [uploads]);
+  // Every upload stops when the screen goes; an id already taken is in the send that left.
+  const held = useRef<PhotoUpload[]>([]);
+  held.current = uploads;
+  useEffect(
+    () => () => {
+      for (const upload of held.current) upload.dispose();
+    },
+    [],
+  );
+
+  const views = uploads.map((upload) => upload.get());
+  const ready = text.trim() !== "" || uploads.length > 0;
+  const uploading = views.some((view) => view.state === "uploading");
+  const stuck = views.some((view) => view.state === "failed" || view.state === "refused");
+  const go = ready && !uploading && !stuck;
+  const reason: CopyKey | null = !ready
+    ? "parent_send_reason"
+    : stuck
+      ? "parent_send_photo_failed"
+      : uploading
+        ? "parent_send_uploading"
+        : null;
 
   // The caret is in the box on load.
   useEffect(() => box.current?.focus(), []);
@@ -109,32 +146,30 @@ export function NewLessonBox({
     [owner, text, forLearner],
   );
 
-  // Each thumbnail's URL goes when its photo does, and all of them when the screen does.
-  const urls = useRef<Photo[]>([]);
-  urls.current = photos;
-  useEffect(
-    () => () => {
-      for (const photo of urls.current) URL.revokeObjectURL(photo.url);
-    },
-    [],
-  );
-
   const add = (files: File[]): void => {
-    if (!photosOn || files.length === 0) return;
-    setPhotos((now) => [
-      ...now,
-      ...files.map((file) => ({ file, url: URL.createObjectURL(file) })),
-    ]);
+    if (deps === null || files.length === 0) return;
+    const { admitted, leftOff: left } = admit(held.current.length, files);
+    setLeftOff(left);
+    if (admitted.length === 0) return;
+    const added = admitted.map((file) => new PhotoUpload(file, deps));
+    held.current = [...held.current, ...added];
+    setUploads(held.current);
+    for (const upload of added) void upload.start();
   };
-  const remove = (photo: Photo): void => {
-    URL.revokeObjectURL(photo.url);
-    setPhotos((now) => now.filter((p) => p !== photo));
+  // The chip has already stopped the upload and revoked its preview.
+  const remove = (upload: PhotoUpload): void => {
+    held.current = held.current.filter((u) => u !== upload);
+    setUploads(held.current);
+    setLeftOff(0);
   };
 
   const send = (): void => {
-    if (!ready || busy) return;
+    if (!go || busy) return;
+    const attachmentIds = views.flatMap((view) =>
+      view.attachmentId === null ? [] : [view.attachmentId],
+    );
     newLessonDraft.clear();
-    onSend({ text: text.trim(), photos: photos.map((p) => p.file), learner: forLearner });
+    onSend({ text: text.trim(), attachmentIds, learner: forLearner });
   };
   const submit = (event: FormEvent): void => {
     event.preventDefault();
@@ -185,27 +220,12 @@ export function NewLessonBox({
           className="w-full resize-none bg-transparent text-jw-page-body leading-jw-page text-jw-ink outline-none placeholder:text-jw-placeholder"
           data-ask
         />
-        {photos.length > 0 && (
-          <ul className="flex flex-wrap gap-2" data-photos>
-            {photos.map((photo) => (
-              <li key={photo.url} className="relative">
-                <img
-                  src={photo.url}
-                  alt=""
-                  className="h-20 w-16 rounded-jw-small border-jw border-jw-line object-cover"
-                />
-                <button
-                  type="button"
-                  aria-label={t("parent_remove_photo")}
-                  onClick={() => remove(photo)}
-                  className="absolute -top-2 -right-2 grid size-6 place-items-center rounded-full border-jw border-jw-line bg-jw-card text-jw-ink-soft hover:text-jw-ink focus-visible:outline-3 focus-visible:outline-jw-focus"
-                >
-                  <XIcon aria-hidden className="size-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+        <AttachmentChips
+          language={language}
+          uploads={uploads}
+          leftOff={leftOff}
+          onRemove={remove}
+        />
         <div className="flex flex-wrap items-center gap-2">
           {photosOn && (
             <>
@@ -239,17 +259,17 @@ export function NewLessonBox({
             onAddChild={onAddChild}
           />
           <span className="flex-1" />
-          {!ready && (
-            <span id={reasonId} className="text-jw-page-small text-jw-ink-soft" data-reason>
-              {t("parent_send_reason")}
+          {reason !== null && (
+            <span id={reasonId} className="text-jw-page-small text-jw-ink-soft" data-send-reason>
+              {t(reason)}
             </span>
           )}
           <Button
             type="submit"
             size="control"
-            aria-disabled={!ready || busy}
+            aria-disabled={!go || busy}
             aria-busy={busy}
-            aria-describedby={ready ? undefined : reasonId}
+            aria-describedby={reason === null ? undefined : reasonId}
             data-send
           >
             {busy ? t("parent_sending") : t("parent_send")}
