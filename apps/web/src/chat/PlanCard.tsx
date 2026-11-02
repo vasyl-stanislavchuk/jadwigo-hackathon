@@ -41,7 +41,7 @@ export function PlanCard({
   const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
     copy(language, key, vars, "adult");
   const done = plan.filter((e) => e.status === "done").length;
-  const header = `${say("chat_plan")} · ${say("chat_plan_progress", { n: done, m: plan.length })}`;
+  const header = say("chat_plan_header", { n: done, m: plan.length });
   const rows = (
     <ol className="mt-1 flex flex-col gap-1">
       {plan.map((entry, i) => {
