@@ -466,6 +466,7 @@ export const COPY_KEYS = [
   "parent_guardian",
   "parent_email",
   "parent_send_code",
+  "parent_email_hint",
   "parent_send_failed",
   "parent_code",
   "parent_code_sent",

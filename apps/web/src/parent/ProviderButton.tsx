@@ -62,7 +62,7 @@ export function ProviderButton({
     <Button
       type="button"
       variant="outline"
-      size="control"
+      size="lg"
       className="gap-2.5"
       style={mark.look}
       disabled={disabled}
