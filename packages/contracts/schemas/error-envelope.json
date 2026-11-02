@@ -52,6 +52,7 @@
         "AttachmentAttached",
         "AttachmentExpired",
         "AttachmentLimitDay",
+        "LessonNotPublishable",
         "Unauthorized",
         "BankUnavailable"
       ]

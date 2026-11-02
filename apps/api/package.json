@@ -24,7 +24,7 @@
     "@aws-sdk/client-ssm": "reads the SecureString with DATABASE_URL once per cold start in src/config.ts (dl-5ssh.25)",
     "@jadwigo/contracts": "the route table, the wire schemas, the error types and pageEnded",
     "@jadwigo/core": "the family judges and the help ladder the answer and help routes run",
-    "@jadwigo/lesson-import": "seeds the route tests' stores with the fixture lessons (test only, lead 2026-10-28)",
+    "@jadwigo/lesson-import": "compiles a checked lesson revision into a lesson version in src/give.ts (dl-5ssh.136), and seeds the route tests' stores with the fixture lessons",
     "@jadwigo/store": "the Store the routes read and write through, in memory or on Postgres",
     "@jadwigo/testing": "the fixture lesson files and the pinned clock of the route tests",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
