@@ -9,7 +9,8 @@
 const SIGNS = ["+", "−", "×", "=", "÷", "○"] as const;
 // Quiet Zeszyt colours: blue ink, the brand's go-blue, the right answer's green and the soft line.
 const TONES = ["act", "go", "green", "line"] as const;
-const COUNT = 38;
+// The layer is as tall as the page and scrolls with it, so the count covers a long page.
+const COUNT = 72;
 
 // A small fixed sequence (mulberry32), so every build draws the same page.
 let seed = 0x1a2b3c4d;
@@ -63,6 +64,8 @@ const signs = Array.from({ length: COUNT }, () => {
     const signs = [...backdrop.querySelectorAll<HTMLElement>(".sign")];
     const REACH = 140; // px
     const PUSH = 26; // px at the cursor itself
+    // The cursor on the page, not the screen: the layer scrolls with the page, and only the mouse moves
+    // the signs (owner: "scroll together with everything, but react only on mouse movements").
     let x = -1000;
     let y = -1000;
     let queued = false;
@@ -70,10 +73,11 @@ const signs = Array.from({ length: COUNT }, () => {
       queued = false;
       backdrop.style.setProperty("--glow-x", `${x}px`);
       backdrop.style.setProperty("--glow-y", `${y}px`);
+      const top = backdrop.getBoundingClientRect().top;
       for (const s of signs) {
         const r = s.getBoundingClientRect();
         const dx = r.left + r.width / 2 - x;
-        const dy = r.top + r.height / 2 - y;
+        const dy = r.top - top + r.height / 2 - y;
         const d = Math.hypot(dx, dy);
         if (d > REACH || d === 0) {
           s.style.removeProperty("--away-x");
@@ -88,8 +92,8 @@ const signs = Array.from({ length: COUNT }, () => {
     addEventListener(
       "pointermove",
       (e) => {
-        x = e.clientX;
-        y = e.clientY;
+        x = e.pageX;
+        y = e.pageY;
         backdrop.classList.add("lit");
         if (!queued) {
           queued = true;
@@ -103,7 +107,8 @@ const signs = Array.from({ length: COUNT }, () => {
 </script>
 
 <style>
-  .backdrop { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  /* As tall as the page and scrolling with it (the body is its containing block). */
+  .backdrop { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
   /* A faint glow, the evening lamp over the table: the page's own quiet paper tone, barely there, so it
      reads as light rather than colour (owner, 2026-11-02: less evident, more elegant). */
   .glow {

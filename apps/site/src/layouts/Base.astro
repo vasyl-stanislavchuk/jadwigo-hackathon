@@ -106,6 +106,7 @@ const footerLinks = [
       @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
       body {
         margin: 0; background: var(--jw-ground); color: var(--jw-ink);
+        position: relative; /* the backdrop spans the whole page (Backdrop.astro) */
         font-family: var(--jw-font); font-size: 1.0625rem; line-height: 1.55;
       }
       a { color: var(--jw-brand-go); }
