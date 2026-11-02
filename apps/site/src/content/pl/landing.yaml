@@ -8,7 +8,8 @@ hero:
   question:
     label: Dwa działania · klasa 3 · pytanie 1
     say: Zoja ma 3 paczki kredek, po 12 w każdej. Koleżankom dała 9 kredek. Ile kredek jej zostało?
-    pic: ilustracja · Zoja z 3 paczkami kredek
+    # Each `pic` is its picture's alt text (dl-5ssh.4.24); the pictures are in src/lib/illustrations.ts.
+    pic: Mała królowa Jadwiga niesie na ramieniu kredkę większą od siebie, korona zsunęła się jej na oko.
     source: "Źródło: Alfik Matematyczny"
     choices: ["27", "36", "45"]
     answer: "27"
@@ -35,7 +36,7 @@ steps:
   description: Piszesz, co dziecko ćwiczy w szkole. Dziecko przerabia krótką lekcję. Ty wiesz, co już umie i nad czym pracuje.
   heading: Jak to działa
   intro: Nie musisz siedzieć obok przez całą lekcję. Wystarczy kilka minut, żeby wiedzieć, co dziecko umie i z czym ma trudność.
-  pic: ilustracja · Jadwiga z zeszytem, obok jej klasa
+  pic: Jadwiga otwiera wielki zeszyt, a Gumka, Ołówek i Linijka szykują stół.
   items:
     - who: Ty
       title: Napisz, co dziecko ćwiczy w szkole.
@@ -55,7 +56,7 @@ steps:
     say: Bilet kosztuje 14 zł 50 gr. Płacisz 20 zł. Ile reszty?
     choices: ["5 zł 50 gr", "6 zł 50 gr", "5 zł"]
     hint: Od 14 zł 50 gr do 15 zł brakuje 50 gr. Ile od 15 zł do 20 zł?
-    pic: ilustracja · dziecko przy stole z tabletem, rodzic obok
+    pic: Dziecko gra na tablecie, rodzic jest obok; Linijka trzyma żółtą karteczkę z podpowiedzią.
   record:
     counts:
       - { value: 8, label: pytań }
@@ -80,7 +81,7 @@ promises:
 partner:
   heading: Nauka, przy której jesteś blisko.
   text: Dziecko ćwiczy w swoim tempie, a Ty widzisz, jak rośnie.
-  pic: ilustracja · rodzic i dziecko przy stole nad zeszytem
+  pic: Rodzic i dziecko nad zeszytem z pracą domową, obok mała Jadwiga i jej dwór z piórnika.
   child: { initial: Z, name: Zosia, sub: klasa 3 · z Jadwigo od września }
   practising: "Ćwiczy:"
   allDone: Umie wszystko.
@@ -134,6 +135,10 @@ lessons:
     next: Kolejne lekcje
     none: Nie ma jeszcze lekcji dla tej klasy.
     pic: ilustracja
+    pics:
+      rowneGrupy: Linijka pilnuje dwóch równych rzędów ciastek, Jadwiga czeka na werdykt.
+      piatki: Jadwiga toczy monetę wielką jak ona w stronę czekolady.
+      razyCztery: Ołówek narysował dwa kotki, a Jadwiga dorysowuje dwa kolejne.
 signIn:
   title: Zaloguj się · Jadwigo
   description: Zaloguj się albo załóż konto rodzica w Jadwigo kodem z e-maila, przez Google albo przez Facebooka.

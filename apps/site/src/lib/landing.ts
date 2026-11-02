@@ -109,7 +109,10 @@ export const landingSchema = z.object({
       next: text,
       // Shown when a filter leaves no lesson.
       none: text,
+      // The grey slot's label on a card with no picture yet.
       pic: text,
+      // Each card picture's alt text, by its name in src/lib/illustrations.ts (CardArt).
+      pics: z.object({ rowneGrupy: text, piatki: text, razyCztery: text }),
     }),
   }),
   compare: z.object({

@@ -12,6 +12,7 @@ import Pic from "../components/Pic.astro";
 import Base from "../layouts/Base.astro";
 import { strictBuild } from "../lib/build.ts";
 import { otherLanguage, twinPath, twinStaticPaths } from "../lib/i18n.ts";
+import { slotArt } from "../lib/illustrations.ts";
 import { landingReviewed, landingWords } from "../lib/words.ts";
 
 export const getStaticPaths = () => twinStaticPaths("howItWorks", strictBuild);
@@ -40,7 +41,7 @@ const [one, two, three] = s.items;
   <section class="wrap top" aria-labelledby="page-title">
     <h1 id="page-title">{s.heading}</h1>
     <p class="intro">{s.intro}</p>
-    <Pic label={s.pic} class="wide-pic" />
+    <Pic label={s.pic} src={slotArt.howTop} sizes="(max-width: 72rem) 100vw, 72rem" class="wide-pic" />
   </section>
 
   <ol class="wrap steps">
@@ -65,7 +66,7 @@ const [one, two, three] = s.items;
         <p>{two?.text}</p>
       </div>
       <div class="stage">
-        <Pic label={s.card.pic} class="stage-pic" />
+        <Pic label={s.card.pic} src={slotArt.howStep2} sizes="(max-width: 48rem) 100vw, 36rem" class="stage-pic" />
         <div class="card paper">
           <p class="say">{s.card.say}</p>
           <div class="tiles" aria-hidden="true">{s.card.choices.map((c) => <span class="tile">{c}</span>)}</div>
@@ -126,7 +127,16 @@ const [one, two, three] = s.items;
   .stage :global(.stage-pic) { height: clamp(14rem, 28vw, 19rem); }
   /* The label sits at the slot's top, clear of the card that overlaps its bottom. */
   .stage :global(.stage-pic .body) { place-content: start center; padding-top: 2rem; }
-  .card { position: absolute; right: 0; bottom: 0; width: min(19rem, 85%); padding: 0.9rem; box-shadow: 0 5px 0 var(--jw-line); --cell: 1.25rem; }
+  /* Centred at the bottom: the picture keeps its centre and bottom-middle empty for it (dl-5ssh.4.24). */
+  .card { position: absolute; left: 0; right: 0; bottom: 0; margin-inline: auto; width: min(19rem, 85%); padding: 0.9rem; box-shadow: 0 5px 0 var(--jw-line); --cell: 1.25rem; }
+  /* In one column (phone, tablet) the picture is short beside the card, which would hide the people in it:
+     the picture takes its own height and the card sits under it, overlapping only the table's edge. */
+  @media (max-width: 55.99rem) {
+    .stage { padding-bottom: 0; }
+    .stage :global(.stage-pic) { height: auto; min-height: 0; max-width: 36rem; margin-inline: auto; }
+    .stage :global(.stage-pic img) { height: auto; }
+    .card { position: relative; margin-top: -1.5rem; }
+  }
   .card .say { font-weight: 700; font-size: 0.95rem; line-height: 1.35; }
   .card .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-top: 0.6rem; }
   .card .tile {

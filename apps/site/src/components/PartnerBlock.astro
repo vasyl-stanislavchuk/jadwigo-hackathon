@@ -5,6 +5,7 @@
 // goal's second line and the next lesson. No percentages, no status words, no recent lessons: the owner
 // asked to keep it this simple. The dots carry their meaning in text for a screen reader.
 import type { Language } from "@jadwigo/config";
+import { slotArt } from "../lib/illustrations.ts";
 import { goalLine } from "../lib/landing.ts";
 import { landingWords } from "../lib/words.ts";
 import Pic from "./Pic.astro";
@@ -20,7 +21,7 @@ const p = (await landingWords(Astro.props.lang)).partner;
   <div class="lead">
     <h2 id="partner-title">{p.heading}</h2>
     <p class="text">{p.text}</p>
-    <Pic label={p.pic} class="partner-pic" />
+    <Pic label={p.pic} src={slotArt.partner} sizes="(max-width: 40rem) 100vw, 34rem" class="partner-pic" />
   </div>
   <div class="profile">
     <div class="child">

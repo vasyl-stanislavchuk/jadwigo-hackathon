@@ -8,7 +8,8 @@ hero:
   question:
     label: Two steps · grade 3 · question 1
     say: Zoja has 3 packs of 12 crayons. She gives 9 crayons to her friends. How many crayons does she have left?
-    pic: illustration · Zoja with 3 packs of crayons
+    # Each `pic` is its picture's alt text (dl-5ssh.4.24); the pictures are in src/lib/illustrations.ts.
+    pic: Little Queen Jadwiga carries a crayon bigger than herself on her shoulder, her crown slipping over one eye.
     source: "Source: Alfik Matematyczny"
     choices: ["27", "36", "45"]
     answer: "27"
@@ -34,7 +35,7 @@ steps:
   description: You write what your child practices at school, your child plays a short lesson, and you know what they can do and what they're working on.
   heading: How it works
   intro: You don't need to sit beside your child for the whole lesson. A few minutes are enough to know what they can do and where they struggle.
-  pic: illustration · Jadwiga with her notebook, her class beside her
+  pic: Jadwiga opens a huge notebook while Gumka, Ołówek and Linijka get the table ready.
   items:
     - who: You
       title: Write what your child practices at school.
@@ -54,7 +55,7 @@ steps:
     say: A ticket costs $4.50. You pay $10. How much change?
     choices: ["$5.50", "$6.50", "$5"]
     hint: From $4.50 to $5 is 50 cents. How much from $5 to $10?
-    pic: illustration · a child at the table with a tablet, a parent beside them
+    pic: The child plays on a tablet with the parent nearby; Linijka holds up a yellow help note.
   record:
     counts:
       - { value: 8, label: questions }
@@ -78,7 +79,7 @@ promises:
 partner:
   heading: Learning with you close by.
   text: Your child practices at their own pace, and you see them grow.
-  pic: illustration · a parent and child at the table over a notebook
+  pic: A parent and child over a homework notebook, with little Jadwiga and her pencil-case court beside them.
   child: { initial: S, name: Sophie, sub: Grade 3 · with Jadwigo since September }
   practising: "Practicing:"
   allDone: Can do it all.
@@ -132,6 +133,10 @@ lessons:
     next: More lessons
     none: No lessons for this grade yet.
     pic: illustration
+    pics:
+      rowneGrupy: Linijka the ruler checks two equal rows of biscuits while Jadwiga waits for the verdict.
+      piatki: Jadwiga rolls a coin as big as herself towards a chocolate bar.
+      razyCztery: Ołówek the pencil has drawn two cats and Jadwiga draws two more.
 signIn:
   title: Sign in · Jadwigo
   description: Sign in or create a Jadwigo parent account with a code from your email, with Google or with Facebook.
