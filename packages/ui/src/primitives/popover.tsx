@@ -2,7 +2,7 @@
 // its trigger, closes on Escape or a tap outside, and returns focus to the trigger. The chosen-gap
 // menu in Gaps opens one. Sized and coloured from the tokens; no literal colour or size.
 import { Popover as PopoverPrimitive } from "radix-ui";
-import type * as React from "react";
+import * as React from "react";
 import { useDensity } from "../lib/register.tsx";
 import { cn } from "../lib/utils.ts";
 
@@ -10,9 +10,14 @@ function Popover(props: React.ComponentProps<typeof PopoverPrimitive.Root>): JSX
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
-function PopoverTrigger(props: React.ComponentProps<typeof PopoverPrimitive.Trigger>): JSX.Element {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
-}
+// The trigger takes the ref Radix's Popper anchors to, and a caller's (dl-uukj.47.42): a plain
+// function component drops a ref on React 18, so the popover had no anchor to measure.
+const PopoverTrigger = React.forwardRef<
+  React.ElementRef<typeof PopoverPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Trigger>
+>(function PopoverTrigger(props, ref) {
+  return <PopoverPrimitive.Trigger ref={ref} data-slot="popover-trigger" {...props} />;
+});
 
 function PopoverContent({
   className,
