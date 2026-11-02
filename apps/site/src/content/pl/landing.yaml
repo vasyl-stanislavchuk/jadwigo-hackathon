@@ -24,7 +24,6 @@ hero:
 # Under the lessons, one line for the parent.
 after:
   text: Po każdej lekcji widzisz, co poszło dobrze i co ćwiczyć dalej.
-  link: Jak to działa
 # Every page in the header, in order (owner, 2026-10-31: each link its own page).
 links:
   - { href: /lekcje, label: Lekcje }

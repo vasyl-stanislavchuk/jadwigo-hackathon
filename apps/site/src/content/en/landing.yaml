@@ -24,7 +24,6 @@ hero:
 # Under the lessons, one line for the parent.
 after:
   text: After each lesson you see what went well and what to practice next.
-  link: How it works
 # Every page in the header, in order, each its own page.
 links:
   - { href: /en/lessons, label: Lessons }
